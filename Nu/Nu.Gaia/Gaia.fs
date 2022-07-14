@@ -1411,7 +1411,6 @@ module Gaia =
             match (getEditorState world).DragEntityState with
             | DragEntity2dPosition (mousePositionWorldOriginal, entityDragOffset, entity) ->
                 if entity.Exists world then
-                    // TODO: 3D: implmeent entity constraints here as well.
                     let mousePositionWorld = World.getMousePositionWorld2d (entity.GetAbsolute world) world
                     let entityPosition = (entityDragOffset - mousePositionWorldOriginal) + (mousePositionWorld - mousePositionWorldOriginal)
                     let entityPositionSnapped =
@@ -1419,9 +1418,22 @@ module Gaia =
                         then Math.snapF3d (Triple.fst (getSnaps form)) entityPosition.V3
                         else entityPosition.V3
                     let world =
-                        if entity.MountExists world
-                        then entity.SetPositionLocal entityPositionSnapped world
-                        else entity.SetPosition entityPositionSnapped world
+                        if entity.MountExists world then
+                            let entityPositionDelta = entityPositionSnapped - entity.GetPositionLocal world
+                            let entityPositionConstrained =
+                                match (form.constrainXButton.Checked, form.constrainYButton.Checked, form.constrainZButton.Checked) with
+                                | (true, false, _) -> entity.GetPositionLocal world + entityPositionDelta * v3Right
+                                | (false, true, _) -> entity.GetPositionLocal world + entityPositionDelta * v3Up
+                                | (_, _, _) -> entity.GetPositionLocal world + entityPositionDelta
+                            entity.SetPositionLocal entityPositionConstrained world
+                        else
+                            let entityPositionDelta = entityPositionSnapped - entity.GetPosition world
+                            let entityPositionConstrained =
+                                match (form.constrainXButton.Checked, form.constrainYButton.Checked, form.constrainZButton.Checked) with
+                                | (true, false, _) -> entity.GetPosition world + entityPositionDelta * v3Right
+                                | (false, true, _) -> entity.GetPosition world + entityPositionDelta * v3Up
+                                | (_, _, _) -> entity.GetPosition world + entityPositionDelta
+                            entity.SetPosition entityPositionConstrained world
                     // NOTE: disabled the following line to fix perf issue caused by refreshing the property grid every frame
                     // form.entityPropertyGrid.Refresh ()
                     world
@@ -1436,9 +1448,9 @@ module Gaia =
                             if form.snap3dButton.Checked
                             then Math.snapF3d (Triple.fst (getSnaps form)) entityPosition
                             else entityPosition
+                        let entityPositionDelta = entityPositionSnapped - entity.GetPosition world
                         let world =
                             if entity.MountExists world then
-                                let entityPositionDelta = entityPositionSnapped - entity.GetPosition world
                                 let entityPositionConstrained =
                                     match (form.constrainXButton.Checked, form.constrainYButton.Checked, form.constrainZButton.Checked) with
                                     | (true, false, false) -> entity.GetPositionLocal world + entityPositionDelta * v3Right

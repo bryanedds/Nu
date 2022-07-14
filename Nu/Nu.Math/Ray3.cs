@@ -392,7 +392,7 @@ namespace Nu
 
         /// <summary>
         /// Attempt to find the intersection of the <see cref="Ray3"/> with a <see cref="Plane3"/>.
-        /// TODO: 3D: get rid of this function and use Intersects instead.
+        /// TODO: get rid of this function and use Intersects instead.
         /// </summary>
         public Vector3? Intersection(Plane3 plane)
         {
