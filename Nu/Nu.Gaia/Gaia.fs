@@ -1086,10 +1086,10 @@ module Gaia =
         addWorldChanger $ fun world ->
             Globals.pushPastWorld world
             let selectedGroup = (getEditorState world).SelectedGroup
-            let (positionSnap, rotationSnap, scaleSnap) = getSnaps form
             let editorState = getEditorState world
             let surnamesOpt = World.tryGetEntityDispatcherNameOnClipboard world |> Option.map (flip generateEntityName world) |> Option.map Array.singleton
-            let (entityOpt, world) = World.pasteEntityFromClipboard atMouse editorState.RightClickPosition positionSnap rotationSnap scaleSnap surnamesOpt selectedGroup world
+            let snapsEir = getSnaps form |> if form.snap3dButton.Checked then Right else Left
+            let (entityOpt, world) = World.pasteEntityFromClipboard atMouse editorState.RightClickPosition snapsEir surnamesOpt selectedGroup world
             match entityOpt with
             | Some entity -> selectEntity entity form world; world
             | None -> world
