@@ -2663,7 +2663,7 @@ module StaticSceneDispatcherModule =
                         match node with
                         | OpenGL.PhysicallyBased.PhysicallyBasedNode names ->
                             let world = world'
-                            let childSurnames = Array.append entity.Surnames names // TODO: 3D: check if an entity with the same address already exists because surface name is non-unique, or if it is null or empty.
+                            let childSurnames = Array.append entity.Surnames names
                             let (child, world) = World.createEntity<Entity3dDispatcher> (Some childSurnames) DefaultOverlay Simulants.Default.Group world
                             let world = child.SetPersistent false world
                             let world = child.SetStatic (entity.GetStatic world) world
@@ -2672,7 +2672,7 @@ module StaticSceneDispatcherModule =
                             world' <- world
                         | OpenGL.PhysicallyBased.PhysicallyBasedLight light ->
                             let world = world'
-                            let childSurnames = Array.append entity.Surnames light.LightNames // TODO: 3D: check if an entity with the same address already exists because surface name is non-unique, or if it is null or empty.
+                            let childSurnames = Array.append entity.Surnames light.LightNames
                             let (child, world) = World.createEntity<Light3dDispatcher> (Some childSurnames) DefaultOverlay Simulants.Default.Group world
                             let transform = light.LightMatrix
                             let position = transform.Translation
@@ -2690,7 +2690,7 @@ module StaticSceneDispatcherModule =
                             world' <- world
                         | OpenGL.PhysicallyBased.PhysicallyBasedSurface surface ->
                             let world = world'
-                            let childSurnames = Array.append entity.Surnames surface.SurfaceNames // TODO: 3D: check if an entity with the same address already exists because surface name is non-unique, or if it is null or empty.
+                            let childSurnames = Array.append entity.Surnames surface.SurfaceNames
                             let (child, world) = World.createEntity<StaticModelSurfaceDispatcher> (Some childSurnames) DefaultOverlay Simulants.Default.Group world
                             let transform = surface.SurfaceMatrix
                             let position = transform.Translation

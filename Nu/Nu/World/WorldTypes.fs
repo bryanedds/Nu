@@ -653,7 +653,7 @@ module WorldTypes =
         member this.Scale with get () = this.Transform.Scale and set value = this.Transform.Scale <- value
         member this.Offset with get () = this.Transform.Offset and set value = this.Transform.Offset <- value
         member this.Angles with get () = this.Transform.Angles and set value = this.Transform.Angles <- value
-        member this.Degrees with get () = Math.radiansToDegrees3d this.Transform.Angles and set value = this.Transform.Angles <- Math.degreesToRadians3d value
+        member this.Degrees with get () = this.Transform.Degrees and set value = this.Transform.Degrees <- value
         member this.DegreesLocal with get () = Math.radiansToDegrees3d this.AnglesLocal and set value = this.AnglesLocal <- Math.degreesToRadians3d value
         member this.Size with get () = this.Transform.Size and set value = this.Transform.Size <- value
         member this.Elevation with get () = this.Transform.Elevation and set value = this.Transform.Elevation <- value
