@@ -385,6 +385,7 @@ module Gaia =
                 let renderMaterial = Unchecked.defaultof<_>
                 let renderType = ForwardRenderType
                 let staticModel = Assets.Default.HighlightModel
+                // TODO: 3D: make it so this renders last
                 let world = World.enqueueRenderMessage3d (RenderStaticModelDescriptor (absolute, boundsMatrix, renderMaterial, renderType, staticModel)) world
                 (Cascade, world)
         | _ -> (Cascade, world)
