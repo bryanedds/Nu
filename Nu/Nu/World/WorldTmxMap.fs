@@ -378,8 +378,9 @@ module TmxMap =
                             transform.Elevation <- elevation
                             transform.Absolute <- absolute
 
-                            // check if in view bounds
-                            if Math.isBoundsIntersectingBounds2d (box2 transform.Position.V2 transform.Size.V2) viewBounds then
+                            // check if strip in view bounds
+                            let stripBounds = box2 transform.Position.V2 transform.Size.V2
+                            if stripBounds.Intersects viewBounds then
 
                                 // accumulate descriptor
                                 descriptors.Add

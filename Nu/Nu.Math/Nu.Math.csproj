@@ -46,8 +46,9 @@
     <Compile Include="Box3.cs" />
     <Compile Include="ContainmentType.cs" />
     <Compile Include="Frustum.cs" />
+    <Compile Include="Plane3.cs" />
     <Compile Include="PlaneIntersectionType.cs" />
-    <Compile Include="Ray.cs" />
+    <Compile Include="Ray3.cs" />
     <Compile Include="ReadOnlySet.cs" />
     <Compile Include="Sphere.cs" />
     <Compile Include="TopoSort.cs" />

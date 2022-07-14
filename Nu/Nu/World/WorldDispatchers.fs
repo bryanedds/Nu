@@ -1730,8 +1730,9 @@ module ButtonDispatcherModule =
             let entity = evt.Subscriber : Entity
             if entity.GetVisible world then
                 let mutable transform = entity.GetTransform world
+                let perimeter = transform.Perimeter.Box2
                 let mousePositionWorld = World.getMousePositionWorld2d transform.Absolute world
-                if Math.isPointInBounds2d mousePositionWorld transform.Perimeter.Box2 then // gui currently ignores rotation
+                if perimeter.Intersects mousePositionWorld then // gui currently ignores rotation
                     if transform.Enabled then
                         let world = entity.SetDown true world
                         let world = entity.SetTextOffset (entity.GetDownTextOffset world) world
@@ -1749,8 +1750,9 @@ module ButtonDispatcherModule =
             let world = entity.SetTextOffset v3Zero world
             if entity.GetVisible world then
                 let mutable transform = entity.GetTransform world
+                let perimeter = transform.Perimeter.Box2
                 let mousePositionWorld = World.getMousePositionWorld2d transform.Absolute world
-                if Math.isPointInBounds2d mousePositionWorld transform.Perimeter.Box2 then // gui currently ignores rotation
+                if perimeter.Intersects mousePositionWorld then // gui currently ignores rotation
                     if transform.Enabled && wasDown then
                         let eventTrace = EventTrace.debug "ButtonDispatcher" "handleMouseLeftUp" "Up" EventTrace.empty
                         let world = World.publishPlus () (Events.Up --> entity) eventTrace entity true false world
@@ -1935,8 +1937,9 @@ module ToggleButtonDispatcherModule =
             let entity = evt.Subscriber : Entity
             if entity.GetVisible world then
                 let mutable transform = entity.GetTransform world
+                let perimeter = transform.Perimeter.Box2
                 let mousePositionWorld = World.getMousePositionWorld2d transform.Absolute world
-                if Math.isPointInBounds2d mousePositionWorld transform.Perimeter.Box2 then // gui currently ignores rotation
+                if perimeter.Intersects mousePositionWorld then // gui currently ignores rotation
                     if transform.Enabled then
                         let world = entity.SetPressed true world
                         (Resolve, world)
@@ -1950,8 +1953,9 @@ module ToggleButtonDispatcherModule =
             let world = if wasPressed then entity.SetPressed false world else world
             if entity.GetVisible world then
                 let mutable transform = entity.GetTransform world
+                let perimeter = transform.Perimeter.Box2
                 let mousePositionWorld = World.getMousePositionWorld2d transform.Absolute world
-                if Math.isPointInBounds2d mousePositionWorld transform.Perimeter.Box2 then // gui currently ignores rotation
+                if perimeter.Intersects mousePositionWorld then // gui currently ignores rotation
                     if transform.Enabled && wasPressed then
                         let world = entity.SetToggled (not (entity.GetToggled world)) world
                         let toggled = entity.GetToggled world
@@ -2058,8 +2062,9 @@ module RadioButtonDispatcherModule =
             let entity = evt.Subscriber : Entity
             if entity.GetVisible world then
                 let mutable transform = entity.GetTransform world
+                let perimeter = transform.Perimeter.Box2
                 let mousePositionWorld = World.getMousePositionWorld2d transform.Absolute world
-                if Math.isPointInBounds2d mousePositionWorld transform.Perimeter.Box2 then // gui currently ignores rotation
+                if perimeter.Intersects mousePositionWorld then // gui currently ignores rotation
                     if transform.Enabled then
                         let world = entity.SetPressed true world
                         (Resolve, world)
@@ -2074,8 +2079,9 @@ module RadioButtonDispatcherModule =
             let wasDialed = entity.GetDialed world
             if entity.GetVisible world then
                 let mutable transform = entity.GetTransform world
+                let perimeter = transform.Perimeter.Box2
                 let mousePositionWorld = World.getMousePositionWorld2d transform.Absolute world
-                if Math.isPointInBounds2d mousePositionWorld transform.Perimeter.Box2 then // gui currently ignores rotation
+                if perimeter.Intersects mousePositionWorld then // gui currently ignores rotation
                     if transform.Enabled && wasPressed && not wasDialed then
                         let world = entity.SetDialed true world
                         let dialed = entity.GetDialed world
@@ -2209,8 +2215,9 @@ module FeelerDispatcherModule =
             let data = evt.Data : MouseButtonData
             if entity.GetVisible world then
                 let mutable transform = entity.GetTransform world
+                let perimeter = transform.Perimeter.Box2
                 let mousePositionWorld = World.getMousePositionWorld2d transform.Absolute world
-                if Math.isPointInBounds2d mousePositionWorld transform.Perimeter.Box2 then // gui currently ignores rotation
+                if perimeter.Intersects mousePositionWorld then // gui currently ignores rotation
                     if transform.Enabled then
                         let world = entity.SetTouched true world
                         let eventTrace = EventTrace.debug "FeelerDispatcher" "handleMouseLeftDown" "" EventTrace.empty

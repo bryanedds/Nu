@@ -386,7 +386,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
                             (position.Y - tileSize.Y - tileSize.Y * single j + size.Y)
                     let tileBounds = box2 tilePosition tileSize
                     let viewBounds = box2 (eyePosition - eyeSize * 0.5f) eyeSize
-                    if Math.isBoundsIntersectingBounds2d tileBounds viewBounds then
+                    if tileBounds.Intersects viewBounds then
         
                         // compute tile flip
                         let flip =

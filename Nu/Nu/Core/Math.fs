@@ -1080,16 +1080,19 @@ type ColorConverter () =
         | :? Color -> source
         | _ -> failconv "Invalid ColorConverter conversion from source." None
 
-// TODO: 3D: ray and plane ctor functions.
 [<AutoOpen>]
-module Plane =
+module Plane3 =
+
+    let inline plane3 (position : Vector3) (normal : Vector3) = Plane3 (position, normal)
+    let inline plane3Equation (normal : Vector3) (d : single) = Plane3 (normal, d)
+    let inline plane3Eq (left : Plane3) (right : Plane3) = left.Equals right
+    let inline plane3Neq (left : Plane3) (right : Plane3) = not (left.Equals right)
 
     /// Create a plane at the specified position and normal.
     let CreateFromPositionAndNormal (position : Vector3, normal : Vector3) =
-        let d = Vector3.Dot(position, normal)
-        Plane (normal, -d)
+        plane3 position normal
 
-    type Plane with
+    type Plane3 with
 
         /// Calculate a position on the plane.
         member this.Position = this.Normal * -this.D;
@@ -1103,8 +1106,23 @@ module Plane =
             Vector3.Cross(b, (Vector3.Cross(a, b) / bm) / bm)
 
         /// Attempt to find the intersection of the given ray with the plane.
-        member this.Intersection (ray : Ray) =
+        member this.Intersection (ray : Ray3) =
             ray.Intersection this
+
+[<AutoOpen>]
+module Ray3 =
+
+    let inline ray (position : Vector3) (direction : Vector3) = Ray3 (position, direction)
+    let inline rayEq (left : Ray3) (right : Ray3) = left.Equals right
+    let inline rayNeq (left : Ray3) (right : Ray3) = not (left.Equals right)
+
+/// Type of light.
+[<Syntax
+    ("PointLight", "", "", "", "",
+     Constants.PrettyPrinter.DefaultThresholdMin,
+     Constants.PrettyPrinter.DefaultThresholdMax)>]
+type [<StructuralEquality; NoComparison>] LightType =
+    | PointLight
 
 /// The input for a 2d ray cast operation.
 type [<StructuralEquality; NoComparison; Struct>] RayCast2Input =
@@ -1185,66 +1203,14 @@ module Math =
         else value
 
     /// Snap a single value to an offset.
+    /// Has a minimum granularity of 0.01f.
     let snapF (offset : single) (value : single) =
         single ((snapI (int (offset * 100.0f)) (int (value * 100.0f)))) * 0.01f
 
     /// Snap a Vector3 value to an offset.
+    /// Has a minimum granularity of 0.01f.
     let snapF3d offset (v3 : Vector3) =
         Vector3 (snapF offset v3.X, snapF offset v3.Y, snapF offset v3.Z)
-
-    /// Check that a point is within the given bounds.
-    /// TODO: 3D: move this into Box3 definition.
-    let isPointInBounds3d (point : Vector3) (bounds : Box3) =
-        point.X >= bounds.Position.X &&
-        point.Y >= bounds.Position.Y &&
-        point.Z >= bounds.Position.Z &&
-        point.X <= bounds.Position.X + bounds.Size.X &&
-        point.Y <= bounds.Position.Y + bounds.Size.Y &&
-        point.Z <= bounds.Position.Z + bounds.Size.Z
-
-    /// Check that a point is within the given bounds.
-    /// TODO: 3D: move this into Box2 definition.
-    let isPointInBounds2d (point : Vector2) (bounds : Box2) =
-        point.X >= bounds.Position.X &&
-        point.Y >= bounds.Position.Y &&
-        point.X <= bounds.Position.X + bounds.Size.X &&
-        point.Y <= bounds.Position.Y + bounds.Size.Y
-
-    /// Check that a bounds is within the given bounds.
-    /// TODO: 3D: move this into Box3 definition.
-    let isBoundsInBounds3d (bounds : Box3) (bounds2 : Box3) =
-        bounds.Position.X >= bounds2.Position.X &&
-        bounds.Position.Y >= bounds2.Position.Y &&
-        bounds.Position.Z >= bounds2.Position.Z &&
-        bounds.Position.X + bounds.Size.X <= bounds2.Position.X + bounds2.Size.X &&
-        bounds.Position.Y + bounds.Size.Y <= bounds2.Position.Y + bounds2.Size.Y &&
-        bounds.Position.Z + bounds.Size.Z <= bounds2.Position.Z + bounds2.Size.Z
-
-    /// Check that a bounds is within the given bounds.
-    /// TODO: 3D: move this into Box2 definition.
-    let isBoundsInBounds2d (bounds : Box2) (bounds2 : Box2) =
-        bounds.Position.X >= bounds2.Position.X &&
-        bounds.Position.Y >= bounds2.Position.Y &&
-        bounds.Position.X + bounds.Size.X <= bounds2.Position.X + bounds2.Size.X &&
-        bounds.Position.Y + bounds.Size.Y <= bounds2.Position.Y + bounds2.Size.Y
-
-    /// Check that a bounds is intersecting the given bounds.
-    /// TODO: 3D: move this into Box3 definition.
-    let isBoundsIntersectingBounds3d (bounds : Box3) (bounds2 : Box3) =
-        bounds.Position.X < bounds2.Position.X + bounds2.Size.X &&
-        bounds.Position.Y < bounds2.Position.Y + bounds2.Size.Y &&
-        bounds.Position.Z < bounds2.Position.Z + bounds2.Size.Z &&
-        bounds.Position.X + bounds.Size.X > bounds2.Position.X &&
-        bounds.Position.Y + bounds.Size.Y > bounds2.Position.Y &&
-        bounds.Position.Z + bounds.Size.Z > bounds2.Position.Z
-
-    /// Check that a bounds is intersecting the given bounds.
-    /// TODO: 3D: move this into Box2 definition.
-    let isBoundsIntersectingBounds2d (bounds : Box2) (bounds2 : Box2) =
-        bounds.Position.X < bounds2.Position.X + bounds2.Size.X &&
-        bounds.Position.Y < bounds2.Position.Y + bounds2.Size.Y &&
-        bounds.Position.X + bounds.Size.X > bounds2.Position.X &&
-        bounds.Position.Y + bounds.Size.Y > bounds2.Position.Y
 
     /// Perform a 2d ray cast on a circle.
     /// Code adapted from - https://github.com/tainicom/Aether.Physics2D/blob/aa8a6b45c63e26c2f408ffde40f03cbe78ecfa7c/Physics2D/Collision/Shapes/CircleShape.cs#L93-L134

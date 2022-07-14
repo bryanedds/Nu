@@ -501,7 +501,8 @@ module WorldEntityModule =
                     let eyePosition = World.getEyePosition2d world
                     let eyeSize = World.getEyeSize2d world
                     let positionWorld = viewport.MouseToWorld2d (entity.GetAbsolute world, position, eyePosition, eyeSize)
-                    Math.isPointInBounds2d positionWorld (entity.GetPerimeterOriented world).Box2)
+                    let perimeterOriented = (entity.GetPerimeterOriented world).Box2
+                    perimeterOriented.Intersects positionWorld)
                 entitiesSorted
 
         /// Try to pick a 3d entity with the given ray.

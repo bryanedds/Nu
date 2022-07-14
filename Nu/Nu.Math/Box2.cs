@@ -121,5 +121,72 @@ namespace Nu
         {
             return String.Format("{0}\n{1}", Position, Size);
         }
+
+        /// <summary>
+        /// Check if this <see cref="Box2"/> is intersected by a <see cref="Vector2"/>.
+        /// </summary>
+        /// <param name="point">The <see cref="Vector2"/> to test for intersection.</param>
+        /// <returns>
+        ///   <code>true</code> if this <see cref="Box2"/> intersects <paramref name="point"/>,
+        ///   <code>false</code> if it does not.
+        /// </returns>
+        public bool Intersects(Vector2 point)
+        {
+            bool result;
+            Intersects(in point, out result);
+            return result;
+        }
+
+        /// <summary>
+        /// Check if this <see cref="Box2"/> is intersected by a <see cref="Vector2"/>.
+        /// </summary>
+        /// <param name="point">The <see cref="Vector2"/> to test for intersection.</param>
+        /// <param name="result">
+        ///   <code>true</code> if this <see cref="Box2"/> intersects <paramref name="point"/>,
+        ///   <code>false</code> if it does not.
+        /// </param>
+        public void Intersects(in Vector2 point, out bool result)
+        {
+            Vector2 min = this.Position, max = this.Position + this.Size;
+            result =
+                max.X >= point.X &&
+                max.Y >= point.Y &&
+                min.X <= point.X &&
+                min.Y <= point.Y;
+        }
+
+        /// <summary>
+        /// Check if this <see cref="Box2"/> intersects another <see cref="Box2"/>.
+        /// </summary>
+        /// <param name="box">The <see cref="Box2"/> to test for intersection.</param>
+        /// <returns>
+        ///   <code>true</code> if this <see cref="Box2"/> intersects <paramref name="box"/>,
+        ///   <code>false</code> if it does not.
+        /// </returns>
+        public bool Intersects(Box2 box)
+        {
+            bool result;
+            Intersects(in box, out result);
+            return result;
+        }
+
+        /// <summary>
+        /// Check if this <see cref="Box2"/> intersects another <see cref="Box2"/>.
+        /// </summary>
+        /// <param name="box">The <see cref="Box2"/> to test for intersection.</param>
+        /// <param name="result">
+        ///   <code>true</code> if this <see cref="Box2"/> intersects <paramref name="box"/>,
+        ///   <code>false</code> if it does not.
+        /// </param>
+        public void Intersects(in Box2 box, out bool result)
+        {
+            Vector2 min = this.Position, max = this.Position + this.Size;
+            Vector2 min2 = box.Position, max2 = box.Position + box.Size;
+            result =
+                !(max.X < min2.X ||
+                  max.Y < min2.Y ||
+                  min.X > max2.X ||
+                  min.Y > max2.Y);
+        }
     }
 }

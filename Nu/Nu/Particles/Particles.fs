@@ -234,7 +234,7 @@ module Particles =
                     let body = &bodies.[i]
                     let positionNext = body.Position + body.LinearVelocity
                     let delta = positionNext - box.Center
-                    if Math.isPointInBounds3d positionNext box then
+                    if box.Intersects positionNext then
                         let speed = body.LinearVelocity.Magnitude
                         let distanceNormalized = Vector3.Normalize delta
                         let linearVelocity = speed * distanceNormalized * body.Restitution

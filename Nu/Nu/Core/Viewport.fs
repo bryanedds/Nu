@@ -140,4 +140,4 @@ module Viewport =
             let viewProjection = this.ViewProjection3d (absolute, Constants.Render.NearPlaneDistance, Constants.Render.FarPlaneDistanceOmnipresent, v3Zero, eyeRotation)
             let near = this.Unproject (mousePosition.V3.WithZ 0.0f, viewProjection)
             let far = this.Unproject (mousePosition.V3.WithZ 1.0f, viewProjection)
-            Ray (near + eyePosition, Vector3.Normalize (far - near))
+            ray (near + eyePosition) (Vector3.Normalize (far - near))

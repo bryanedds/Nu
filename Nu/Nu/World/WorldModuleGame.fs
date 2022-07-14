@@ -364,7 +364,7 @@ module WorldModuleGame =
         [<FunctionBinding>]
         static member isBoundsInView2d (bounds : Box2) world =
             let viewBounds = World.getViewBounds2d world
-            Math.isBoundsIntersectingBounds2d bounds viewBounds
+            bounds.Intersects viewBounds
 
         /// Get the view bounds of the 3d eye's sight.
         [<FunctionBinding>]
@@ -397,7 +397,7 @@ module WorldModuleGame =
         [<FunctionBinding>]
         static member isBoundsInPlay3d (bounds : Box3) world =
             let struct (viewBox, viewFrustum) = World.getPlayBounds3d world
-            if Math.isBoundsInBounds3d viewBox bounds then true
+            if bounds.Intersects viewBox then true
             else
                 let containment = viewFrustum.Contains bounds
                 containment = ContainmentType.Contains ||

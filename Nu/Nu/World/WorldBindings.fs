@@ -1189,7 +1189,7 @@ module WorldBindings =
                 | None -> failwith "Invalid argument type for 'absolute'; expecting a value convertable to Boolean."
             let result = World.getMouseRayWorld3d absolute world
             let value = result
-            let value = ScriptingSystem.tryImport typeof<Ray> value world |> Option.get
+            let value = ScriptingSystem.tryImport typeof<Ray3> value world |> Option.get
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getMouseRayWorld3d' due to: " + scstring exn, ValueNone)
