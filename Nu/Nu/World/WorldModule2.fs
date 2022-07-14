@@ -374,7 +374,7 @@ module WorldModule2 =
             let splashGroup = screen / "SplashGroup"
             let splashSprite = splashGroup / "SplashSprite"
             let world = World.destroyGroupImmediate splashGroup world
-            let cameraEyeSize = World.getEyeSize2d world
+            let cameraEyeSize = World.getEye2dSize world
             let world = screen.SetSplashOpt (Some { IdlingTime = splashDescriptor.IdlingTime; Destination = destination }) world
             let world = World.createGroup<GroupDispatcher> (Some splashGroup.Name) screen world |> snd
             let world = splashGroup.SetPersistent false world
@@ -892,8 +892,8 @@ module WorldModule2 =
 
         static member private actualizeScreenTransition (screen : Screen) world =
             match screen.GetTransitionState world with
-            | IncomingState -> World.actualizeScreenTransition5 (World.getEyePosition2d world) (World.getEyeSize2d world) screen (screen.GetIncoming world) world
-            | OutgoingState -> World.actualizeScreenTransition5 (World.getEyePosition2d world) (World.getEyeSize2d world) screen (screen.GetOutgoing world) world
+            | IncomingState -> World.actualizeScreenTransition5 (World.getEye2dPosition world) (World.getEye2dSize world) screen (screen.GetIncoming world) world
+            | OutgoingState -> World.actualizeScreenTransition5 (World.getEye2dPosition world) (World.getEye2dSize world) screen (screen.GetOutgoing world) world
             | IdlingState -> world
 
         static member private actualizeSimulants world =
@@ -1031,10 +1031,10 @@ module WorldModule2 =
                                                         let rendererProcess = World.getRendererProcess world
                                                         if not firstFrame then rendererProcess.Swap ()
                                                         rendererProcess.SubmitMessages
-                                                            (World.getEyePosition2d world)
-                                                            (World.getEyeSize2d world)
-                                                            (World.getEyePosition3d world)
-                                                            (World.getEyeRotation3d world)
+                                                            (World.getEye2dPosition world)
+                                                            (World.getEye2dSize world)
+                                                            (World.getEye3dPosition world)
+                                                            (World.getEye3dRotation world)
                                                             (World.getWindowSize world)
 
                                                         // post-process the world

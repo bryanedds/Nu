@@ -195,7 +195,7 @@ module WorldTypes =
              Define? AnglesLocal Vector3.Zero
              Define? Degrees Vector3.Zero
              Define? DegreesLocal Vector3.Zero
-             Define? Size Constants.Engine.EntitySize3dDefault // arbitrarily chosen
+             Define? Size Constants.Engine.Entity3dSizeDefault // arbitrarily chosen
              Define? Elevation 0.0f
              Define? ElevationLocal 0.0f
              Define? Overflow 1.0f
@@ -257,8 +257,8 @@ module WorldTypes =
         abstract GetQuickSize : Entity * World -> Vector3
         default this.GetQuickSize (_, _) =
             if this.Is2d
-            then Constants.Engine.EntitySize2dDefault
-            else Constants.Engine.EntitySize3dDefault
+            then Constants.Engine.Entity2dSizeDefault
+            else Constants.Engine.Entity3dSizeDefault
 
         /// Attempt to pick an entity with a ray.
         abstract RayCast : Ray3 * Entity * World -> single array
@@ -326,8 +326,8 @@ module WorldTypes =
         abstract GetQuickSize : Entity * World -> Vector3
         default this.GetQuickSize (entity, world) =
             if getEntityIs2d entity world
-            then Constants.Engine.EntitySize2dDefault
-            else Constants.Engine.EntitySize3dDefault
+            then Constants.Engine.Entity2dSizeDefault
+            else Constants.Engine.Entity3dSizeDefault
 
         /// Whether a facet participates in a physics system.
         member this.Physical = physical
@@ -347,10 +347,10 @@ module WorldTypes =
           SelectedScreenOpt : Screen option
           ScreenTransitionDestinationOpt : Screen option
           DesiredScreenOpt : Screen option
-          EyePosition2d : Vector2
-          EyeSize2d : Vector2
-          EyePosition3d : Vector3
-          EyeRotation3d : Quaternion
+          Eye2dPosition : Vector2
+          Eye2dSize : Vector2
+          Eye3dPosition : Vector3
+          Eye3dRotation : Quaternion
           EyeFrustumEnclosed3d : Frustum
           EyeFrustumUnenclosed3d : Frustum
           EyeFrustumProminent3d : Frustum
@@ -363,8 +363,8 @@ module WorldTypes =
 
         /// Make a game state value.
         static member make (dispatcher : GameDispatcher) =
-            let eyePosition3d = Constants.Engine.EyePosition3dDefault
-            let eyeRotation3d = quatIdentity
+            let eye3dPosition = Constants.Engine.Eye3dPositionDefault
+            let eye3dRotation = quatIdentity
             let viewport = Constants.Render.Viewport
             { Dispatcher = dispatcher
               Xtension = Xtension.makeFunctional ()
@@ -373,13 +373,13 @@ module WorldTypes =
               SelectedScreenOpt = None
               ScreenTransitionDestinationOpt = None
               DesiredScreenOpt = None
-              EyePosition2d = v2Zero
-              EyeSize2d = v2 (single Constants.Render.VirtualResolutionX) (single Constants.Render.VirtualResolutionY)
-              EyePosition3d = eyePosition3d
-              EyeRotation3d = eyeRotation3d
-              EyeFrustumEnclosed3d = viewport.Frustum (Constants.Render.NearPlaneDistance, Constants.Render.FarPlaneDistanceEnclosed, eyePosition3d, eyeRotation3d)
-              EyeFrustumUnenclosed3d = viewport.Frustum (Constants.Render.NearPlaneDistance, Constants.Render.FarPlaneDistanceUnenclosed, eyePosition3d, eyeRotation3d)
-              EyeFrustumProminent3d = viewport.Frustum (Constants.Render.NearPlaneDistance, Constants.Render.FarPlaneDistanceProminent, eyePosition3d, eyeRotation3d)
+              Eye2dPosition = v2Zero
+              Eye2dSize = v2 (single Constants.Render.VirtualResolutionX) (single Constants.Render.VirtualResolutionY)
+              Eye3dPosition = eye3dPosition
+              Eye3dRotation = eye3dRotation
+              EyeFrustumEnclosed3d = viewport.Frustum (Constants.Render.NearPlaneDistance, Constants.Render.FarPlaneDistanceEnclosed, eye3dPosition, eye3dRotation)
+              EyeFrustumUnenclosed3d = viewport.Frustum (Constants.Render.NearPlaneDistance, Constants.Render.FarPlaneDistanceUnenclosed, eye3dPosition, eye3dRotation)
+              EyeFrustumProminent3d = viewport.Frustum (Constants.Render.NearPlaneDistance, Constants.Render.FarPlaneDistanceProminent, eye3dPosition, eye3dRotation)
               ScriptFrame = Scripting.DeclarationFrame StringComparer.Ordinal
               Order = Core.getUniqueTimeStamp ()
               Id = Gen.id }

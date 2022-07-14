@@ -1184,8 +1184,8 @@ module FieldDispatcher =
                     let avatar = Simulants.Field.Scene.Avatar
                     let lowerCenter = field.Avatar.LowerCenter
                     let viewport = World.getViewport world
-                    let eyePosition = World.getEyePosition2d world
-                    let eyeSize = World.getEyeSize2d world
+                    let eyePosition = World.getEye2dPosition world
+                    let eyeSize = World.getEye2dSize world
                     let position = viewport.MouseToWorld2d (false, position, eyePosition, eyeSize)
                     let heading = position.V3 - lowerCenter
                     if heading.Magnitude >= 6.0f then // TODO: make constant DeadZoneRadius.
@@ -1199,7 +1199,7 @@ module FieldDispatcher =
 
             | UpdateEye ->
                 if World.getUpdateRate world <> 0L then
-                    let world = World.setEyePosition2d field.Avatar.Center.V2 world
+                    let world = World.setEye2dPosition field.Avatar.Center.V2 world
                     let tileMapPerimeter2d = (Simulants.Field.Scene.TileMap.GetPerimeter world).Box2
                     let eyeBounds = tileMapPerimeter2d.WithPosition (tileMapPerimeter2d.Position + v2 48.0f 48.0f)
                     let eyeBounds = eyeBounds.WithSize (tileMapPerimeter2d.Size - v2 96.0f 96.0f)

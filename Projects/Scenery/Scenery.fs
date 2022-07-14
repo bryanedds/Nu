@@ -37,39 +37,39 @@ type SceneryDispatcher () =
         | Update ->
             let moveSpeed = if KeyboardState.isKeyDown KeyboardKey.Return then 0.5f elif KeyboardState.isShiftDown () then 0.02f else 0.12f
             let turnSpeed = if KeyboardState.isShiftDown () then 0.025f else 0.05f
-            let position = World.getEyePosition3d world
-            let rotation = World.getEyeRotation3d world
+            let position = World.getEye3dPosition world
+            let rotation = World.getEye3dRotation world
             let world =
                 if KeyboardState.isKeyDown KeyboardKey.W
-                then World.setEyePosition3d (position + Vector3.Transform (v3Forward, rotation) * moveSpeed) world
+                then World.setEye3dPosition (position + Vector3.Transform (v3Forward, rotation) * moveSpeed) world
                 else world
             let world =
                 if KeyboardState.isKeyDown KeyboardKey.S
-                then World.setEyePosition3d (position + Vector3.Transform (v3Back, rotation) * moveSpeed) world
+                then World.setEye3dPosition (position + Vector3.Transform (v3Back, rotation) * moveSpeed) world
                 else world
             let world =
                 if KeyboardState.isKeyDown KeyboardKey.A
-                then World.setEyePosition3d (position + Vector3.Transform (v3Left, rotation) * moveSpeed) world
+                then World.setEye3dPosition (position + Vector3.Transform (v3Left, rotation) * moveSpeed) world
                 else world
             let world =
                 if KeyboardState.isKeyDown KeyboardKey.D
-                then World.setEyePosition3d (position + Vector3.Transform (v3Right, rotation) * moveSpeed) world
+                then World.setEye3dPosition (position + Vector3.Transform (v3Right, rotation) * moveSpeed) world
                 else world
             let world =
                 if KeyboardState.isKeyDown KeyboardKey.Up
-                then World.setEyePosition3d (position + Vector3.Transform (v3Up, rotation) * moveSpeed) world
+                then World.setEye3dPosition (position + Vector3.Transform (v3Up, rotation) * moveSpeed) world
                 else world
             let world =
                 if KeyboardState.isKeyDown KeyboardKey.Down
-                then World.setEyePosition3d (position + Vector3.Transform (v3Down, rotation) * moveSpeed) world
+                then World.setEye3dPosition (position + Vector3.Transform (v3Down, rotation) * moveSpeed) world
                 else world
             let world =
                 if KeyboardState.isKeyDown KeyboardKey.Left
-                then World.setEyeRotation3d (rotation * Quaternion.CreateFromAxisAngle (v3Up, turnSpeed)) world
+                then World.setEye3dRotation (rotation * Quaternion.CreateFromAxisAngle (v3Up, turnSpeed)) world
                 else world
             let world =
                 if KeyboardState.isKeyDown KeyboardKey.Right
-                then World.setEyeRotation3d (rotation * Quaternion.CreateFromAxisAngle (v3Down, turnSpeed)) world
+                then World.setEye3dRotation (rotation * Quaternion.CreateFromAxisAngle (v3Down, turnSpeed)) world
                 else world
             just world
 
@@ -116,5 +116,5 @@ type SceneryDispatcher () =
 
     override this.PostUpdate (entity, world) =
         let world = base.PostUpdate (entity, world)
-        let world = Simulants.Light.SetPosition (World.getEyePosition3d world + v3Up * 3.0f) world
+        let world = Simulants.Light.SetPosition (World.getEye3dPosition world + v3Up * 3.0f) world
         world
