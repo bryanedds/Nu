@@ -2634,21 +2634,10 @@ module StaticModelSurfaceDispatcherModule =
 [<AutoOpen>]
 module StaticSceneDispatcherModule =
 
-    type Entity with
-        member this.GetStaticScene world : StaticModel AssetTag = this.Get Property? StaticScene world
-        member this.SetStaticScene (value : StaticModel AssetTag) world = this.Set Property? StaticScene value world
-        member this.StaticScene = lens Property? StaticScene this.GetStaticScene this.SetStaticScene this
+    type World with
 
-    type StaticSceneDispatcher () =
-        inherit Entity3dDispatcher (true, false)
-
-        static let destroyChildren (entity : Entity) world =
-            Seq.fold (fun world child ->
-                World.destroyEntity child world)
-                world (entity.GetChildren world)
-
-        static let tryCreateChildren (entity : Entity) world =
-            let staticModel = entity.GetStaticScene world
+        /// Attempt to import scene below the target entity.
+        static member tryImportScene static_ staticModel (parent : Either<Group, Entity>) world =
             match World.tryGetStaticModelMetadata staticModel world with
             | Some staticModelMetadata ->
                 // Unity Scene Export Instructions:
@@ -2663,17 +2652,22 @@ module StaticSceneDispatcherModule =
                         match node with
                         | OpenGL.PhysicallyBased.PhysicallyBasedNode names ->
                             let world = world'
-                            let childSurnames = Array.append entity.Surnames names
-                            let (child, world) = World.createEntity<Entity3dDispatcher> (Some childSurnames) DefaultOverlay Simulants.Default.Group world
-                            let world = child.SetPersistent false world
-                            let world = child.SetStatic (entity.GetStatic world) world
-                            let world = child.SetMountOpt (Some (Relation.makeParent ())) world
+                            let (mountToParent, surnames, group) =
+                                match parent with
+                                | Left group -> (names.Length > 0, names, group)
+                                | Right entity -> (true, Array.append entity.Surnames names, entity.Group)
+                            let (child, world) = World.createEntity<Entity3dDispatcher> (Some surnames) DefaultOverlay group world
+                            let world = child.SetStatic static_ world
+                            let world = if mountToParent then child.SetMountOpt (Some (Relation.makeParent ())) world else world
                             let world = child.QuickSize world
                             world' <- world
                         | OpenGL.PhysicallyBased.PhysicallyBasedLight light ->
                             let world = world'
-                            let childSurnames = Array.append entity.Surnames light.LightNames
-                            let (child, world) = World.createEntity<Light3dDispatcher> (Some childSurnames) DefaultOverlay Simulants.Default.Group world
+                            let (mountToParent, surnames, group) =
+                                match parent with
+                                | Left group -> (light.LightNames.Length > 0, light.LightNames, group)
+                                | Right entity -> (true, Array.append entity.Surnames light.LightNames, entity.Group)
+                            let (child, world) = World.createEntity<Light3dDispatcher> (Some surnames) DefaultOverlay group world
                             let transform = light.LightMatrix
                             let position = transform.Translation
                             let mutable rotation = transform
@@ -2683,15 +2677,17 @@ module StaticSceneDispatcherModule =
                             let world = child.SetPositionLocal position world
                             let world = child.SetRotationLocal rotation world
                             let world = child.SetScaleLocal scale world
-                            let world = child.SetPersistent false world
-                            let world = child.SetStatic (entity.GetStatic world) world
-                            let world = child.SetMountOpt (Some (Relation.makeParent ())) world
+                            let world = child.SetStatic static_ world
+                            let world = if mountToParent then child.SetMountOpt (Some (Relation.makeParent ())) world else world
                             let world = child.QuickSize world
                             world' <- world
                         | OpenGL.PhysicallyBased.PhysicallyBasedSurface surface ->
                             let world = world'
-                            let childSurnames = Array.append entity.Surnames surface.SurfaceNames
-                            let (child, world) = World.createEntity<StaticModelSurfaceDispatcher> (Some childSurnames) DefaultOverlay Simulants.Default.Group world
+                            let (mountToParent, surnames, group) =
+                                match parent with
+                                | Left group -> (surface.SurfaceNames.Length > 0, surface.SurfaceNames, group)
+                                | Right entity -> (true, Array.append entity.Surnames surface.SurfaceNames, entity.Group)
+                            let (child, world) = World.createEntity<StaticModelSurfaceDispatcher> (Some surnames) DefaultOverlay group world
                             let transform = surface.SurfaceMatrix
                             let position = transform.Translation
                             let mutable rotation = transform
@@ -2701,9 +2697,8 @@ module StaticSceneDispatcherModule =
                             let world = child.SetPositionLocal position world
                             let world = child.SetRotationLocal rotation world
                             let world = child.SetScaleLocal scale world
-                            let world = child.SetPersistent false world
-                            let world = child.SetStatic (entity.GetStatic world) world
-                            let world = child.SetMountOpt (Some (Relation.makeParent ())) world
+                            let world = child.SetStatic static_ world
+                            let world = if mountToParent then child.SetMountOpt (Some (Relation.makeParent ())) world else world
                             let world = child.SetSurfaceIndex i world
                             let world = child.SetStaticModel staticModel world
                             let world = child.SetAlbedoOpt (Some surface.PhysicallyBasedMaterial.Albedo) world
@@ -2716,28 +2711,40 @@ module StaticSceneDispatcherModule =
                 world'
             | None -> world
 
+    type Entity with
+        member this.GetStaticScene world : StaticModel AssetTag = this.Get Property? StaticScene world
+        member this.SetStaticScene (value : StaticModel AssetTag) world = this.Set Property? StaticScene value world
+        member this.StaticScene = lens Property? StaticScene this.GetStaticScene this.SetStaticScene this
+        member this.GetLoaded world : bool = this.Get Property? Loaded world
+        member this.SetLoaded (value : bool) world = this.Set Property? Loaded value world
+        member this.Loaded = lens Property? Loaded this.GetLoaded this.SetLoaded this
+
+    type StaticSceneDispatcher () =
+        inherit Entity3dDispatcher (true, false)
+
+        static let destroyChildren (entity : Entity) world =
+            Seq.fold (fun world child ->
+                World.destroyEntity child world)
+                world (entity.GetChildren world)
+
         static let syncChildren evt world =
             let entity = evt.Subscriber : Entity
             let world = destroyChildren entity world
-            let world = tryCreateChildren entity world
-            (Cascade, world)
-
-        static let syncChildrenStatic evt world =
-            let entity = evt.Subscriber : Entity
-            let static_ = entity.GetStatic world
-            let world =
-                Seq.fold
-                    (fun world (child : Entity) -> child.SetStatic static_ world)
-                    world (entity.GetChildren world)
+            let world = World.tryImportScene true (entity.GetStaticScene world) (Right entity) world
             (Cascade, world)
 
         static member Properties =
-            [define Entity.StaticScene Assets.Default.StaticModel]
+            [define Entity.StaticScene Assets.Default.StaticModel
+             define Entity.Loaded false]
 
         override this.Register (entity, world) =
-            let world = tryCreateChildren entity world
+            let world =
+                if not (entity.GetLoaded world) then
+                    let world = World.tryImportScene true (entity.GetStaticScene world) (Right entity) world
+                    let world = entity.SetLoaded true world
+                    world
+                else world
             let world = World.monitor syncChildren (entity.ChangeEvent Property? StaticScene) entity world
-            let world = World.monitor syncChildrenStatic (entity.ChangeEvent Property? Static) entity world
             world
 
 [<AutoOpen>]

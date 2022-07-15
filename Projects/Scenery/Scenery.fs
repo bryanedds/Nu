@@ -91,8 +91,6 @@ type SceneryDispatcher () =
     // NOTE: performance goal: 60fps, current: 37fps.
     override this.Register (game, world) =
         let world = base.Register (game, world)
-        let (staticScene, world) = World.createEntity<StaticSceneDispatcher> (Some [|"StaticScene"|]) DefaultOverlay Simulants.Default.Group world
-        let world = staticScene.SetStaticScene (asset "Default" "GameObject") world
 #if DEBUG
         let population = 25
 #else
