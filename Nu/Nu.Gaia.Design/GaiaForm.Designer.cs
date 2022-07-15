@@ -108,7 +108,7 @@
 			this.positionSnapLabel = new System.Windows.Forms.ToolStripLabel();
 			this.positionSnapTextBox = new System.Windows.Forms.ToolStripTextBox();
 			this.degreesSnapLabel = new System.Windows.Forms.ToolStripLabel();
-			this.rotationSnapTextBox = new System.Windows.Forms.ToolStripTextBox();
+			this.degreesSnapTextBox = new System.Windows.Forms.ToolStripTextBox();
 			this.createEntityButton = new System.Windows.Forms.ToolStripButton();
 			this.createEntityComboBox = new System.Windows.Forms.ToolStripComboBox();
 			this.toolStripLabel1 = new System.Windows.Forms.ToolStripLabel();
@@ -1092,11 +1092,11 @@
 			this.degreesSnapLabel.Size = new System.Drawing.Size(31, 22);
 			this.degreesSnapLabel.Text = "Deg.";
 			// 
-			// rotationSnapTextBox
+			// degreesSnapTextBox
 			// 
-			this.rotationSnapTextBox.Font = new System.Drawing.Font("Tahoma", 8.25F);
-			this.rotationSnapTextBox.Name = "rotationSnapTextBox";
-			this.rotationSnapTextBox.Size = new System.Drawing.Size(25, 25);
+			this.degreesSnapTextBox.Font = new System.Drawing.Font("Tahoma", 8.25F);
+			this.degreesSnapTextBox.Name = "degreesSnapTextBox";
+			this.degreesSnapTextBox.Size = new System.Drawing.Size(25, 25);
 			// 
 			// createEntityButton
 			// 
@@ -1251,7 +1251,7 @@
             this.positionSnapLabel,
             this.positionSnapTextBox,
             this.degreesSnapLabel,
-            this.rotationSnapTextBox,
+            this.degreesSnapTextBox,
             this.toolStripLabel4,
             this.scaleSnapTextBox,
             this.toolStripSeparator9,
@@ -1861,7 +1861,7 @@
         public System.Windows.Forms.ToolStripLabel positionSnapLabel;
         public System.Windows.Forms.ToolStripTextBox positionSnapTextBox;
         public System.Windows.Forms.ToolStripLabel degreesSnapLabel;
-        public System.Windows.Forms.ToolStripTextBox rotationSnapTextBox;
+        public System.Windows.Forms.ToolStripTextBox degreesSnapTextBox;
         public System.Windows.Forms.ToolStripButton createEntityButton;
         public System.Windows.Forms.ToolStripComboBox createEntityComboBox;
         private System.Windows.Forms.ToolStripLabel toolStripLabel1;

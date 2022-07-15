@@ -51,9 +51,9 @@ module Gaia =
 
     let private getSnaps (form : GaiaForm) =
         let positionSnap = snd (Single.TryParse form.positionSnapTextBox.Text)
-        let rotationSnap = snd (Single.TryParse form.rotationSnapTextBox.Text)
+        let degreesSnap = snd (Single.TryParse form.degreesSnapTextBox.Text)
         let scaleSnap = snd (Single.TryParse form.scaleSnapTextBox.Text)
-        (positionSnap, rotationSnap, scaleSnap)
+        (positionSnap, degreesSnap, scaleSnap)
     
     let private getCreationElevation (form : GaiaForm) =
         snd (Single.TryParse form.createElevationTextBox.Text)
@@ -898,7 +898,7 @@ module Gaia =
                         Array.add name parent.Surnames
                     | _ -> [|name|]
                 let (entity, world) = World.createEntity5 dispatcherName (Some surnames) overlayNameDescriptor selectedGroup world
-                let (positionSnap, rotationSnap, scaleSnap) = getSnaps form
+                let (positionSnap, degreesSnap, scaleSnap) = getSnaps form
                 let viewport = World.getViewport world
                 let mousePosition = World.getMousePosition world
                 let mutable entityTransform = entity.GetTransform world
@@ -914,7 +914,7 @@ module Gaia =
                         entityTransform.Size <- entity.GetQuickSize world
                         entityTransform.Elevation <- getCreationElevation form
                         if not form.snap3dButton.Checked
-                        then entity.SetTransformSnapped positionSnap rotationSnap scaleSnap entityTransform world
+                        then entity.SetTransformSnapped positionSnap degreesSnap scaleSnap entityTransform world
                         else entity.SetTransform entityTransform world
                     else
                         let eyePosition = World.getEye3dPosition world
@@ -929,7 +929,7 @@ module Gaia =
                         entityTransform.Position <- entityPosition
                         entityTransform.Size <- entity.GetQuickSize world
                         if form.snap3dButton.Checked
-                        then entity.SetTransformSnapped positionSnap rotationSnap scaleSnap entityTransform world
+                        then entity.SetTransformSnapped positionSnap degreesSnap scaleSnap entityTransform world
                         else entity.SetTransform entityTransform world
                 let world =
                     if inHierarchy
@@ -1129,12 +1129,12 @@ module Gaia =
             let (positionSnap, degreesSnap, scaleSnap) = editorState.OtherSnaps
             let otherSnaps =
                 (snd (Single.TryParse form.positionSnapTextBox.Text),
-                 snd (Single.TryParse form.rotationSnapTextBox.Text),
+                 snd (Single.TryParse form.degreesSnapTextBox.Text),
                  snd (Single.TryParse form.scaleSnapTextBox.Text))
             let editorState = { editorState with OtherSnaps = otherSnaps }
             let world = setEditorState editorState world
             form.positionSnapTextBox.Text <- scstring positionSnap
-            form.rotationSnapTextBox.Text <- scstring degreesSnap
+            form.degreesSnapTextBox.Text <- scstring degreesSnap
             form.scaleSnapTextBox.Text <- scstring scaleSnap
             world
 
@@ -1691,7 +1691,7 @@ module Gaia =
         // configure controls
         form.displayPanel.MaximumSize <- Drawing.Size (Constants.Render.ResolutionX, Constants.Render.ResolutionY)
         form.positionSnapTextBox.Text <- scstring Constants.Editor.Position2dSnapDefault
-        form.rotationSnapTextBox.Text <- scstring Constants.Editor.Degrees2dSnapDefault
+        form.degreesSnapTextBox.Text <- scstring Constants.Editor.Degrees2dSnapDefault
         form.scaleSnapTextBox.Text <- scstring Constants.Editor.Scale2dSnapDefault
         form.createElevationTextBox.Text <- scstring Constants.Editor.CreationElevationDefault
 
