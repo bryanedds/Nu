@@ -28,6 +28,7 @@ type EditorState =
       RightClickPosition : Vector2
       DragEntityState : DragEntityState
       DragEyeState : DragEyeState
+      OtherSnaps : single * single * single
       SelectedGroup : Group
       FilePaths : Map<Group Address, string>
       RefreshHierarchyViewRequested : bool } // HACK: make sure hierarchy view isn't updated more than once per frame.

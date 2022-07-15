@@ -107,7 +107,7 @@
 			this.toolStripSeparator6 = new System.Windows.Forms.ToolStripSeparator();
 			this.positionSnapLabel = new System.Windows.Forms.ToolStripLabel();
 			this.positionSnapTextBox = new System.Windows.Forms.ToolStripTextBox();
-			this.rotationSnapLabel = new System.Windows.Forms.ToolStripLabel();
+			this.degreesSnapLabel = new System.Windows.Forms.ToolStripLabel();
 			this.rotationSnapTextBox = new System.Windows.Forms.ToolStripTextBox();
 			this.createEntityButton = new System.Windows.Forms.ToolStripButton();
 			this.createEntityComboBox = new System.Windows.Forms.ToolStripComboBox();
@@ -1084,19 +1084,19 @@
 			// 
 			this.positionSnapTextBox.Font = new System.Drawing.Font("Tahoma", 8.25F);
 			this.positionSnapTextBox.Name = "positionSnapTextBox";
-			this.positionSnapTextBox.Size = new System.Drawing.Size(20, 25);
+			this.positionSnapTextBox.Size = new System.Drawing.Size(25, 25);
 			// 
-			// rotationSnapLabel
+			// degreesSnapLabel
 			// 
-			this.rotationSnapLabel.Name = "rotationSnapLabel";
-			this.rotationSnapLabel.Size = new System.Drawing.Size(28, 22);
-			this.rotationSnapLabel.Text = "Rot.";
+			this.degreesSnapLabel.Name = "degreesSnapLabel";
+			this.degreesSnapLabel.Size = new System.Drawing.Size(31, 22);
+			this.degreesSnapLabel.Text = "Deg.";
 			// 
 			// rotationSnapTextBox
 			// 
 			this.rotationSnapTextBox.Font = new System.Drawing.Font("Tahoma", 8.25F);
 			this.rotationSnapTextBox.Name = "rotationSnapTextBox";
-			this.rotationSnapTextBox.Size = new System.Drawing.Size(20, 25);
+			this.rotationSnapTextBox.Size = new System.Drawing.Size(25, 25);
 			// 
 			// createEntityButton
 			// 
@@ -1250,7 +1250,7 @@
             this.snap3dButton,
             this.positionSnapLabel,
             this.positionSnapTextBox,
-            this.rotationSnapLabel,
+            this.degreesSnapLabel,
             this.rotationSnapTextBox,
             this.toolStripLabel4,
             this.scaleSnapTextBox,
@@ -1271,7 +1271,7 @@
             this.songPlaybackButton});
 			this.toolStrip.Location = new System.Drawing.Point(0, 0);
 			this.toolStrip.Name = "toolStrip";
-			this.toolStrip.Size = new System.Drawing.Size(1309, 25);
+			this.toolStrip.Size = new System.Drawing.Size(1358, 25);
 			this.toolStrip.TabIndex = 1;
 			this.toolStrip.Text = "toolStrip1";
 			// 
@@ -1485,7 +1485,7 @@
 			// 
 			this.scaleSnapTextBox.Font = new System.Drawing.Font("Tahoma", 8.25F);
 			this.scaleSnapTextBox.Name = "scaleSnapTextBox";
-			this.scaleSnapTextBox.Size = new System.Drawing.Size(20, 25);
+			this.scaleSnapTextBox.Size = new System.Drawing.Size(25, 25);
 			// 
 			// toolStripSeparator1
 			// 
@@ -1860,7 +1860,7 @@
         public System.Windows.Forms.ToolStripSeparator toolStripSeparator6;
         public System.Windows.Forms.ToolStripLabel positionSnapLabel;
         public System.Windows.Forms.ToolStripTextBox positionSnapTextBox;
-        public System.Windows.Forms.ToolStripLabel rotationSnapLabel;
+        public System.Windows.Forms.ToolStripLabel degreesSnapLabel;
         public System.Windows.Forms.ToolStripTextBox rotationSnapTextBox;
         public System.Windows.Forms.ToolStripButton createEntityButton;
         public System.Windows.Forms.ToolStripComboBox createEntityComboBox;
