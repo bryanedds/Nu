@@ -845,6 +845,19 @@ module Gaia =
                 target.SetMountOptWithAdjustment mountOpt world
             else world
 
+    let private handleFormHierarchyShowSelected (form : GaiaForm) (_ : EventArgs) =
+        let pathOpt =
+            match form.entityPropertyGrid.SelectedObject with
+            | null -> None
+            | :? EntityTypeDescriptorSource as entityTds -> entityTds.DescribedEntity.EntityAddress.Names |> Array.skip 1 |> String.join "/" |> Some
+            | _ -> None
+        match pathOpt with
+        | Some path ->
+            let nodeOpt = form.hierarchyTreeView.TryGetNodeFromPath path
+            if notNull nodeOpt then
+                form.hierarchyTreeView.SelectedNode <- nodeOpt
+        | None -> ()
+
     let private handleFormHierarchyTreeViewNodeSelect (form : GaiaForm) (_ : EventArgs) =
         addWorldChanger $ fun world ->
             if notNull form.hierarchyTreeView.SelectedNode then
@@ -1723,6 +1736,7 @@ module Gaia =
         form.discardAssetGraphButton.Click.Add (handleLoadAssetGraphClick form)
         form.applyOverlayerButton.Click.Add (handleSaveOverlayerClick form)
         form.discardOverlayerButton.Click.Add (handleLoadOverlayerClick form)
+        form.hierarchyShowSelectedButton.Click.Add (handleFormHierarchyShowSelected form)
         form.hierarchyTreeView.AfterSelect.Add (handleFormHierarchyTreeViewNodeSelect form)
         form.hierarchyTreeView.ItemDrag.Add (handleFormHierarchyTreeViewItemDrag form)
         form.hierarchyTreeView.DragEnter.Add (handleFormHierarchyTreeViewDragEnter form)
