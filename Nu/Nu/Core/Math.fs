@@ -1160,7 +1160,7 @@ module Math =
 
     /// Convert radians to degrees.
     let radiansToDegrees (radians : single) =
-        -radians.ToDegrees ()
+        radians.ToDegrees ()
 
     /// Convert radians to degrees in 3d.
     let radiansToDegrees3d (radians : Vector3) =
@@ -1171,7 +1171,7 @@ module Math =
 
     /// Convert degrees to radians.
     let degreesToRadians (degrees : single) =
-        -degrees.ToRadians ()
+        degrees.ToRadians ()
 
     /// Convert degrees to radians in 3d.
     let degreesToRadians3d (degrees : Vector3) =
