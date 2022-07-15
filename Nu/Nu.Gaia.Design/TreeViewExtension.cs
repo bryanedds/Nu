@@ -26,13 +26,13 @@ namespace System.Windows.Forms
                     foreach (var nodeState in state.ExpandedNodes)
                         ExpandNodes(node, nodeState);
 
-                tree.TopNode = findNodeFromPath(tree, state.TopNodePath);
-                tree.SelectedNode = findNodeFromPath(tree, state.SelectedNodePath);
+                tree.TopNode = TryGetNodeFromPath(tree, state.TopNodePath);
+                tree.SelectedNode = TryGetNodeFromPath(tree, state.SelectedNodePath);
             }
             tree.EndUpdate();
         }
 
-        static TreeNode findNodeFromPath(TreeView tree, string path)
+        public static TreeNode TryGetNodeFromPath(this TreeView tree, string path)
         {
             if (string.IsNullOrWhiteSpace(path))
                 return null;
