@@ -47,6 +47,8 @@ module Reflection =
              ("AffineMatrix", true)
              ("Angles", true)
              ("AnglesLocal", true)
+             ("Degrees", true)
+             ("DegreesLocal", true)
              ("Imperative", true)
              ("PublishChangeBindings", true)
              ("PublishChangeEvents", true)
@@ -350,8 +352,7 @@ module Reflection =
     /// Write a member property value to a property descriptors.
     let private writeMemberProperty (propertyValue : obj) (property : PropertyInfo) shouldWriteProperty propertyDescriptors (target : 'a) =
         if  not (isPropertyNonPersistent property target) &&
-            shouldWriteProperty property.Name property.PropertyType propertyValue &&
-            property.Name <> "Degrees" && property.Name <> "DegreesLocal" then // HACK: never write degrees as those are only intended for the editor.
+            shouldWriteProperty property.Name property.PropertyType propertyValue then // HACK: never write degrees as those are only intended for the editor.
             if  property.Name = Property? Transform &&
                 property.PropertyType = typeof<Transform> then
                 propertyDescriptors // nothing to do here since the custom .NET properties will take care of this...

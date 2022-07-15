@@ -48,8 +48,8 @@ and EntityPropertyDescriptor (propertyDescriptor, attributes) =
     override this.ShouldSerializeValue _ = true
 
     override this.IsReadOnly =
-        not propertyCanWrite ||
-        Reflection.isPropertyNonPersistentByName propertyName
+        propertyName <> "Degrees" && propertyName <> "DegreesLocal" && // HACK: we allow degrees specifically for the editor.
+        (not propertyCanWrite || Reflection.isPropertyNonPersistentByName propertyName)
 
     override this.GetValue source =
         match source with
