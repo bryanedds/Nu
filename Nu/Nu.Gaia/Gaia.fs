@@ -34,6 +34,9 @@ module Gaia =
     let private updateEditorState updater world =
         World.updateKeyedValue<EditorState> updater Globals.EditorGuid world
 
+    let private setEditorState editorState world =
+        updateEditorState (constant editorState) world
+
     let private getPickableEntities2d world =
         let selectedGroup = (getEditorState world).SelectedGroup
         let (entities, world) = World.getEntitiesInView2d (HashSet ()) world
@@ -1122,14 +1125,17 @@ module Gaia =
 
     let private handleFormSnap3d (form : GaiaForm) (_ : EventArgs) =
         addWorldChanger $ fun world ->
-            if not form.snap3dButton.Checked then
-                form.positionSnapTextBox.Text <- scstring Constants.Editor.PositionSnap2dDefault
-                form.rotationSnapTextBox.Text <- scstring Constants.Editor.RotationSnap2dDefault
-                form.scaleSnapTextBox.Text <- scstring Constants.Editor.ScaleSnap2dDefault
-            else
-                form.positionSnapTextBox.Text <- scstring Constants.Editor.PositionSnap3dDefault
-                form.rotationSnapTextBox.Text <- scstring Constants.Editor.RotationSnap3dDefault
-                form.scaleSnapTextBox.Text <- scstring Constants.Editor.ScaleSnap3dDefault
+            let editorState = getEditorState world
+            let (positionSnap, degreesSnap, scaleSnap) = editorState.OtherSnaps
+            let otherSnaps =
+                (snd (Single.TryParse form.positionSnapTextBox.Text),
+                 snd (Single.TryParse form.rotationSnapTextBox.Text),
+                 snd (Single.TryParse form.scaleSnapTextBox.Text))
+            let editorState = { editorState with OtherSnaps = otherSnaps }
+            let world = setEditorState editorState world
+            form.positionSnapTextBox.Text <- scstring positionSnap
+            form.rotationSnapTextBox.Text <- scstring degreesSnap
+            form.scaleSnapTextBox.Text <- scstring scaleSnap
             world
 
     let private handleFormResetEye (_ : GaiaForm) (_ : EventArgs) =
@@ -1554,6 +1560,7 @@ module Gaia =
                               RightClickPosition = Vector2.Zero
                               DragEntityState = DragEntityInactive
                               DragEyeState = DragEyeInactive
+                              OtherSnaps = (Constants.Editor.Position3dSnapDefault, Constants.Editor.Degrees3dSnapDefault, Constants.Editor.Scale3dSnapDefault)
                               SelectedGroup = defaultGroup
                               FilePaths = Map.empty
                               RefreshHierarchyViewRequested = false }
@@ -1683,9 +1690,9 @@ module Gaia =
 
         // configure controls
         form.displayPanel.MaximumSize <- Drawing.Size (Constants.Render.ResolutionX, Constants.Render.ResolutionY)
-        form.positionSnapTextBox.Text <- scstring Constants.Editor.PositionSnap2dDefault
-        form.rotationSnapTextBox.Text <- scstring Constants.Editor.RotationSnap2dDefault
-        form.scaleSnapTextBox.Text <- scstring Constants.Editor.ScaleSnap2dDefault
+        form.positionSnapTextBox.Text <- scstring Constants.Editor.Position2dSnapDefault
+        form.rotationSnapTextBox.Text <- scstring Constants.Editor.Degrees2dSnapDefault
+        form.scaleSnapTextBox.Text <- scstring Constants.Editor.Scale2dSnapDefault
         form.createElevationTextBox.Text <- scstring Constants.Editor.CreationElevationDefault
 
         // build tree view sorter
