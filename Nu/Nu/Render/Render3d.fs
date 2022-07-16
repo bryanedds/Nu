@@ -17,7 +17,7 @@ open Nu
 /// The type of rendering used on a surface.
 type [<NoEquality; NoComparison; Struct>] RenderType =
     | DeferredRenderType
-    | ForwardRenderType
+    | ForwardRenderType of single
 
 /// Materials used for rendering models.
 and [<StructuralEquality; NoComparison; Struct>] RenderMaterial =
@@ -30,8 +30,8 @@ and [<StructuralEquality; NoComparison; Struct>] RenderMaterial =
 and [<NoEquality; NoComparison>] RenderTasks =
     { RenderSurfacesDeferredAbsolute : Dictionary<OpenGL.PhysicallyBased.PhysicallyBasedSurface, struct (Matrix4x4 * RenderMaterial) SegmentedList>
       RenderSurfacesDeferredRelative : Dictionary<OpenGL.PhysicallyBased.PhysicallyBasedSurface, struct (Matrix4x4 * RenderMaterial) SegmentedList>
-      mutable RenderSurfacesForwardAbsolute : struct (Matrix4x4 * RenderMaterial * OpenGL.PhysicallyBased.PhysicallyBasedSurface) SegmentedList
-      mutable RenderSurfacesForwardRelative : struct (Matrix4x4 * RenderMaterial * OpenGL.PhysicallyBased.PhysicallyBasedSurface) SegmentedList
+      mutable RenderSurfacesForwardAbsolute : struct (single * Matrix4x4 * RenderMaterial * OpenGL.PhysicallyBased.PhysicallyBasedSurface) SegmentedList
+      mutable RenderSurfacesForwardRelative : struct (single * Matrix4x4 * RenderMaterial * OpenGL.PhysicallyBased.PhysicallyBasedSurface) SegmentedList
       mutable RenderSurfacesForwardAbsoluteSorted : struct (Matrix4x4 * RenderMaterial * OpenGL.PhysicallyBased.PhysicallyBasedSurface) SegmentedList
       mutable RenderSurfacesForwardRelativeSorted : struct (Matrix4x4 * RenderMaterial * OpenGL.PhysicallyBased.PhysicallyBasedSurface) SegmentedList
       mutable RenderSkyBoxes : CubeMap AssetTag SegmentedList
@@ -319,10 +319,10 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                 match renderer.RenderTasks.RenderSurfacesDeferredRelative.TryGetValue surface with
                 | (true, renderTasks) -> SegmentedList.add struct (surfaceMatrix, renderMaterial) renderTasks
                 | (false, _) -> renderer.RenderTasks.RenderSurfacesDeferredRelative.Add (surface, SegmentedList.singleton (surfaceMatrix, renderMaterial))
-        | ForwardRenderType ->
+        | ForwardRenderType subsort ->
             if modelAbsolute
-            then SegmentedList.add struct (surfaceMatrix, renderMaterial, surface) renderer.RenderTasks.RenderSurfacesForwardAbsolute
-            else SegmentedList.add struct (surfaceMatrix, renderMaterial, surface) renderer.RenderTasks.RenderSurfacesForwardRelative
+            then SegmentedList.add struct (subsort, surfaceMatrix, renderMaterial, surface) renderer.RenderTasks.RenderSurfacesForwardAbsolute
+            else SegmentedList.add struct (subsort, surfaceMatrix, renderMaterial, surface) renderer.RenderTasks.RenderSurfacesForwardRelative
 
     static member inline private categorizeStaticModelSurfaceByIndex
         (modelAbsolute,
@@ -395,12 +395,12 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
              shader,
              skyBoxSurface)
 
-    static member private sortSurfaces eyePosition (surfaces : struct (Matrix4x4 * RenderMaterial * OpenGL.PhysicallyBased.PhysicallyBasedSurface) SegmentedList) =
+    static member private sortSurfaces eyePosition (surfaces : struct (single * Matrix4x4 * RenderMaterial * OpenGL.PhysicallyBased.PhysicallyBasedSurface) SegmentedList) =
         surfaces |>
-        Seq.map (fun struct (model, renderMaterial, surface) -> struct (model, renderMaterial, surface, (model.Translation - eyePosition).MagnitudeSquared)) |>
+        Seq.map (fun struct (subsort, model, renderMaterial, surface) -> struct (subsort, model, renderMaterial, surface, (model.Translation - eyePosition).MagnitudeSquared)) |>
         Seq.toArray |> // TODO: 3D: use a preallocated array to avoid allocating on the LOH.
-        Array.sortByDescending (fun struct (_, _, _, distanceSquared) -> distanceSquared) |>
-        Array.map (fun struct (model, renderMaterialOpt, surface, _) -> struct (model, renderMaterialOpt, surface))
+        Array.sortByDescending (fun struct (subsort, _, _, _, distanceSquared) -> struct (distanceSquared, subsort)) |>
+        Array.map (fun struct (_, model, renderMaterialOpt, surface, _) -> struct (model, renderMaterialOpt, surface))
 
     static member private renderPhysicallyBasedSurfaces
         eyePosition
