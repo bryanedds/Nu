@@ -1328,7 +1328,7 @@ module StaticModelFacetModule =
 
     type RenderStyle =
         | Deferred
-        | Forward
+        | Forward of single
 
     type Entity with
         member this.GetStaticModel world : StaticModel AssetTag = this.Get Property? StaticModel world
@@ -1375,7 +1375,7 @@ module StaticModelFacetModule =
                 let renderType =
                     match entity.GetRenderStyle world with
                     | Deferred -> DeferredRenderType
-                    | Forward -> ForwardRenderType
+                    | Forward subsort -> ForwardRenderType subsort
                 World.enqueueRenderMessage3d (RenderStaticModelDescriptor (absolute, affineMatrix, renderMaterial, renderType, staticModel)) world
             else world
 
@@ -1456,7 +1456,7 @@ module StaticModelSurfaceFacetModule =
                     let renderType =
                         match entity.GetRenderStyle world with
                         | Deferred -> DeferredRenderType
-                        | Forward -> ForwardRenderType
+                        | Forward subsort -> ForwardRenderType subsort
                     World.enqueueRenderMessage3d (RenderStaticModelSurfaceDescriptor (absolute, affineMatrix, renderMaterial, renderType, staticModel, surfaceIndex)) world
             else world
 
