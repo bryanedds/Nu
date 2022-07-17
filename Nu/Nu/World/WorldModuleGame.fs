@@ -162,17 +162,17 @@ module WorldModuleGame =
 
         /// Get the current enclosed 3d eye frustum.
         [<FunctionBinding>]
-        static member getEyeFrustumEnclosed3d world =
+        static member getEye3dFrustumEnclosed world =
             (World.getGameState world).EyeFrustumEnclosed3d
 
         /// Get the current unenclosed 3d eye frustum.
         [<FunctionBinding>]
-        static member getEyeFrustumUnenclosed3d world =
+        static member getEye3dFrustumUnenclosed world =
             (World.getGameState world).EyeFrustumUnenclosed3d
 
         /// Get the current prominent 3d eye frustum.
         [<FunctionBinding>]
-        static member getEyeFrustumProminent3d world =
+        static member getEye3dFrustumProminent world =
             (World.getGameState world).EyeFrustumProminent3d
 
         /// Get the current 3d light box.
@@ -370,9 +370,9 @@ module WorldModuleGame =
         [<FunctionBinding>]
         static member getViewBounds3d presence world =
             match presence with
-            | Enclosed -> struct (World.getEyeFrustumEnclosed3d world, World.getLightbox3d world)
-            | Unenclosed -> struct (World.getEyeFrustumUnenclosed3d world, World.getLightbox3d world)
-            | Prominent -> struct (World.getEyeFrustumProminent3d world, World.getLightbox3d world)
+            | Enclosed -> struct (World.getEye3dFrustumEnclosed world, World.getLightbox3d world)
+            | Unenclosed -> struct (World.getEye3dFrustumUnenclosed world, World.getLightbox3d world)
+            | Prominent -> struct (World.getEye3dFrustumProminent world, World.getLightbox3d world)
             | Omnipresent -> failwith "Cannot get the view bounds of an Omnipresent thing."
 
         /// Get the bounds of the 3d play zone.
@@ -380,7 +380,7 @@ module WorldModuleGame =
         static member getPlayBounds3d world =
             let eyePosition = World.getEye3dPosition world
             let eyeBox = box3 (eyePosition - Constants.Render.PlayBox3dSize * 0.5f) Constants.Render.PlayBox3dSize
-            let eyeFrustum = World.getEyeFrustumEnclosed3d world
+            let eyeFrustum = World.getEye3dFrustumEnclosed world
             struct (eyeBox, eyeFrustum)
 
         /// Check that the given bounds is within the 3d eye's sight.
