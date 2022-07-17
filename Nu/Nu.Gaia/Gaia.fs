@@ -276,22 +276,22 @@ module Gaia =
                     updateEditorState (fun editorState ->
                         if entity.GetIs2d world then
                             let viewport = World.getViewport world
-                            let eyePosition = World.getEye2dPosition world
-                            let eyeSize = World.getEye2dSize world
+                            let eyePosition = World.getEyePosition2d world
+                            let eyeSize = World.getEyeSize2d world
                             let mousePositionWorld = viewport.MouseToWorld2d (entity.GetAbsolute world, mousePosition, eyePosition, eyeSize)
                             let entityPosition = if entity.MountExists world then entity.GetPositionLocal world else entity.GetPosition world
-                            { editorState with DragEntityState = DragEntity2dPosition (mousePositionWorld, entityPosition.V2 + mousePositionWorld, entity) }
+                            { editorState with DragEntityState = DragEntityPosition2d (mousePositionWorld, entityPosition.V2 + mousePositionWorld, entity) }
                         else
                             let viewport = World.getViewport world
-                            let eyePosition = World.getEye3dPosition world
-                            let eyeRotation = World.getEye3dRotation world
+                            let eyePosition = World.getEyePosition3d world
+                            let eyeRotation = World.getEyeRotation3d world
                             let mouseRayWorld = viewport.MouseToWorld3d (entity.GetAbsolute world, mousePosition, eyePosition, eyeRotation)
                             let entityPosition = entity.GetPosition world
-                            let entityPlane = plane3 entityPosition (Vector3.Transform (v3Forward, World.getEye3dRotation world))
+                            let entityPlane = plane3 entityPosition (Vector3.Transform (v3Forward, World.getEyeRotation3d world))
                             let intersectionOpt = mouseRayWorld.Intersection entityPlane
                             if intersectionOpt.HasValue then
                                 let entityDragOffset = intersectionOpt.Value - entityPosition
-                                { editorState with DragEntityState = DragEntity3dPosition (entityDragOffset, entityPlane, entity) }
+                                { editorState with DragEntityState = DragEntityPosition3d (entityDragOffset, entityPlane, entity) }
                             else editorState)
                         world
                 (handled, world)
@@ -303,23 +303,23 @@ module Gaia =
         else
             let handled = if World.isAdvancing world then Cascade else Resolve
             match (getEditorState world).DragEntityState with
-            | DragEntity2dPosition _
+            | DragEntityPosition2d _
             | DragEntityRotation2d _
-            | DragEntity3dPosition _ ->
+            | DragEntityPosition3d _ ->
                 let world = updateEditorState (fun editorState -> { editorState with DragEntityState = DragEntityInactive }) world
                 form.entityPropertyGrid.Refresh ()
                 (handled, world)
             | DragEntityInactive -> (Resolve, world)
 
     let private handleNuCameraDragBegin (_ : GaiaForm) (_ : Event<MouseButtonData, Game>) world =
-        let mousePositionScreen = World.getMousePositionScreen2d world
-        let dragState = DragEye2dPosition (World.getEye2dPosition world + mousePositionScreen, mousePositionScreen)
+        let mousePositionScreen = World.getMousePosition2dScreen world
+        let dragState = DragEyePosition2d (World.getEyePosition2d world + mousePositionScreen, mousePositionScreen)
         let world = updateEditorState (fun editorState -> { editorState with DragEyeState = dragState }) world
         (Resolve, world)
 
     let private handleNuCameraDragEnd (_ : GaiaForm) (_ : Event<MouseButtonData, Game>) world =
         match (getEditorState world).DragEyeState with
-        | DragEye2dPosition _ ->
+        | DragEyePosition2d _ ->
             let world = updateEditorState (fun editorState -> { editorState with DragEyeState = DragEyeInactive }) world
             (Resolve, world)
         | DragEyeInactive -> (Resolve, world)
@@ -335,39 +335,39 @@ module Gaia =
                 if KeyboardState.isCtrlDown () then 0.0f // ignore turning while ctrl pressed
                 elif KeyboardState.isShiftDown () then 0.025f
                 else 0.05f
-            let position = World.getEye3dPosition world
-            let rotation = World.getEye3dRotation world
+            let position = World.getEyePosition3d world
+            let rotation = World.getEyeRotation3d world
             let world =
                 if KeyboardState.isKeyDown KeyboardKey.W
-                then World.setEye3dPosition (position + Vector3.Transform (v3Forward, rotation) * moveSpeed) world
+                then World.setEyePosition3d (position + Vector3.Transform (v3Forward, rotation) * moveSpeed) world
                 else world
             let world =
                 if KeyboardState.isKeyDown KeyboardKey.S
-                then World.setEye3dPosition (position + Vector3.Transform (v3Back, rotation) * moveSpeed) world
+                then World.setEyePosition3d (position + Vector3.Transform (v3Back, rotation) * moveSpeed) world
                 else world
             let world =
                 if KeyboardState.isKeyDown KeyboardKey.A
-                then World.setEye3dPosition (position + Vector3.Transform (v3Left, rotation) * moveSpeed) world
+                then World.setEyePosition3d (position + Vector3.Transform (v3Left, rotation) * moveSpeed) world
                 else world
             let world =
                 if KeyboardState.isKeyDown KeyboardKey.D
-                then World.setEye3dPosition (position + Vector3.Transform (v3Right, rotation) * moveSpeed) world
+                then World.setEyePosition3d (position + Vector3.Transform (v3Right, rotation) * moveSpeed) world
                 else world
             let world =
                 if KeyboardState.isKeyDown KeyboardKey.Up
-                then World.setEye3dPosition (position + Vector3.Transform (v3Up, rotation) * moveSpeed) world
+                then World.setEyePosition3d (position + Vector3.Transform (v3Up, rotation) * moveSpeed) world
                 else world
             let world =
                 if KeyboardState.isKeyDown KeyboardKey.Down
-                then World.setEye3dPosition (position + Vector3.Transform (v3Down, rotation) * moveSpeed) world
+                then World.setEyePosition3d (position + Vector3.Transform (v3Down, rotation) * moveSpeed) world
                 else world
             let world =
                 if KeyboardState.isKeyDown KeyboardKey.Left
-                then World.setEye3dRotation (rotation * Quaternion.CreateFromAxisAngle (v3Up, turnSpeed)) world
+                then World.setEyeRotation3d (rotation * Quaternion.CreateFromAxisAngle (v3Up, turnSpeed)) world
                 else world
             let world =
                 if KeyboardState.isKeyDown KeyboardKey.Right
-                then World.setEye3dRotation (rotation * Quaternion.CreateFromAxisAngle (v3Down, turnSpeed)) world
+                then World.setEyeRotation3d (rotation * Quaternion.CreateFromAxisAngle (v3Down, turnSpeed)) world
                 else world
             (Cascade, world)
         else (Cascade, world)
@@ -384,7 +384,7 @@ module Gaia =
                 let absolute = entity.GetAbsolute world
                 let bounds = entity.GetHighlightBounds world
                 let mutable boundsMatrix = Matrix4x4.CreateScale bounds.Size
-                boundsMatrix.Translation <- bounds.Center - Vector3.Transform (v3Forward * 0.01f, World.getEye3dRotation world) // slightly closer to eye to prevent z-fighting with selected entity
+                boundsMatrix.Translation <- bounds.Center - Vector3.Transform (v3Forward * 0.01f, World.getEyeRotation3d world) // slightly closer to eye to prevent z-fighting with selected entity
                 let renderMaterial = Unchecked.defaultof<_>
                 let renderType = ForwardRenderType Single.MinValue
                 let staticModel = Assets.Default.HighlightModel
@@ -904,12 +904,12 @@ module Gaia =
                 let mutable entityTransform = entity.GetTransform world
                 let world =
                     if entity.GetIs2d world then
-                        let eyePosition = World.getEye2dPosition world
-                        let eyeSize = World.getEye2dSize world
+                        let eyePosition = World.getEyePosition2d world
+                        let eyeSize = World.getEyeSize2d world
                         let entityPosition =
                             if atMouse
                             then viewport.MouseToWorld2d (entity.GetAbsolute world, mousePosition, eyePosition, eyeSize)
-                            else viewport.MouseToWorld2d (entity.GetAbsolute world, World.getEye2dSize world * 0.5f, eyePosition, eyeSize)
+                            else viewport.MouseToWorld2d (entity.GetAbsolute world, World.getEyeSize2d world * 0.5f, eyePosition, eyeSize)
                         entityTransform.Position <- entityPosition.V3
                         entityTransform.Size <- entity.GetQuickSize world
                         entityTransform.Elevation <- getCreationElevation form
@@ -917,15 +917,15 @@ module Gaia =
                         then entity.SetTransformSnapped positionSnap degreesSnap scaleSnap entityTransform world
                         else entity.SetTransform entityTransform world
                     else
-                        let eyePosition = World.getEye3dPosition world
-                        let eyeRotation = World.getEye3dRotation world
+                        let eyePosition = World.getEyePosition3d world
+                        let eyeRotation = World.getEyeRotation3d world
                         let entityPosition =
                             if atMouse then
                                 let ray = viewport.MouseToWorld3d (entity.GetAbsolute world, mousePosition, eyePosition, eyeRotation)
                                 let forward = Vector3.Transform (v3Forward, eyeRotation)
-                                let plane = plane3 (eyePosition + forward * Constants.Engine.Eye3dPositionDefault.Z) -forward
+                                let plane = plane3 (eyePosition + forward * Constants.Engine.EyePosition3dDefault.Z) -forward
                                 (ray.Intersection plane).Value
-                            else eyePosition + Vector3.Transform (v3Forward, eyeRotation) * Constants.Engine.Eye3dPositionDefault.Z
+                            else eyePosition + Vector3.Transform (v3Forward, eyeRotation) * Constants.Engine.EyePosition3dDefault.Z
                         entityTransform.Position <- entityPosition
                         entityTransform.Size <- entity.GetQuickSize world
                         if form.snap3dButton.Checked
@@ -1140,9 +1140,9 @@ module Gaia =
 
     let private handleFormResetEye (_ : GaiaForm) (_ : EventArgs) =
         addWorldChanger $ fun world ->
-            let world = World.setEye2dPosition v2Zero world
-            let world = World.setEye3dPosition Constants.Engine.Eye3dPositionDefault world
-            let world = World.setEye3dRotation quatIdentity world
+            let world = World.setEyePosition2d v2Zero world
+            let world = World.setEyePosition3d Constants.Engine.EyePosition3dDefault world
+            let world = World.setEyeRotation3d quatIdentity world
             world
 
     let private handleFormReloadAssets (form : GaiaForm) (_ : EventArgs) =
@@ -1428,9 +1428,9 @@ module Gaia =
     let private updateEntityDrag (form : GaiaForm) world =
         if not (canEditWithMouse form world) then
             match (getEditorState world).DragEntityState with
-            | DragEntity2dPosition (mousePositionWorldOriginal, entityDragOffset, entity) ->
+            | DragEntityPosition2d (mousePositionWorldOriginal, entityDragOffset, entity) ->
                 if entity.Exists world then
-                    let mousePositionWorld = World.getMousePositionWorld2d (entity.GetAbsolute world) world
+                    let mousePositionWorld = World.getMousePostion2dWorld (entity.GetAbsolute world) world
                     let entityPosition = (entityDragOffset - mousePositionWorldOriginal) + (mousePositionWorld - mousePositionWorldOriginal)
                     let entityPositionSnapped =
                         if not form.snap3dButton.Checked
@@ -1457,9 +1457,9 @@ module Gaia =
                     // form.entityPropertyGrid.Refresh ()
                     world
                 else world
-            | DragEntity3dPosition (entityDragOffset, entityPlane, entity) ->
+            | DragEntityPosition3d (entityDragOffset, entityPlane, entity) ->
                 if entity.Exists world then
-                    let mouseRayWorld = World.getMouseRayWorld3d (entity.GetAbsolute world) world
+                    let mouseRayWorld = World.getMouseRay3dWorld (entity.GetAbsolute world) world
                     let intersectionOpt = mouseRayWorld.Intersection entityPlane
                     if intersectionOpt.HasValue then
                         let entityPosition = intersectionOpt.Value - entityDragOffset
@@ -1501,12 +1501,12 @@ module Gaia =
 
     let private updateEyeDrag (_ : GaiaForm) world =
         match (getEditorState world).DragEyeState with
-        | DragEye2dPosition (entityDragOffset, mousePositionScreenOrig) ->
-            let mousePositionScreen = World.getMousePositionScreen2d world
+        | DragEyePosition2d (entityDragOffset, mousePositionScreenOrig) ->
+            let mousePositionScreen = World.getMousePosition2dScreen world
             let eyePosition = (entityDragOffset - mousePositionScreenOrig) + -Constants.Editor.CameraSpeed * (mousePositionScreen - mousePositionScreenOrig)
-            let world = World.setEye2dPosition eyePosition world
+            let world = World.setEyePosition2d eyePosition world
             updateEditorState (fun editorState ->
-                { editorState with DragEyeState = DragEye2dPosition (entityDragOffset, mousePositionScreenOrig) })
+                { editorState with DragEyeState = DragEyePosition2d (entityDragOffset, mousePositionScreenOrig) })
                 world
         | DragEyeInactive -> world
 

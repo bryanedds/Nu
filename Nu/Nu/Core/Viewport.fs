@@ -42,7 +42,7 @@ module Viewport =
     type Viewport with
 
         /// Compute the 2d absolute view matrix.
-        member this.ViewAbsolute2d (_ : Vector2, eyeSize : Vector2) =
+        member this.View2dAbsolute (_ : Vector2, eyeSize : Vector2) =
             let translation = eyeSize * 0.5f * Constants.Render.VirtualScalar2
             Matrix4x4.CreateTranslation (v3 translation.X translation.Y 1.0f)
 
@@ -54,7 +54,7 @@ module Viewport =
         /// Compute a 2d view matrix.
         member this.View2d (absolute, eyePosition, eyeSize) =
             if absolute
-            then this.ViewAbsolute2d (eyePosition, eyeSize)
+            then this.View2dAbsolute (eyePosition, eyeSize)
             else this.ViewRelative2d (eyePosition, eyeSize)
 
         /// Compute the 2d projection matrix.
@@ -73,14 +73,14 @@ module Viewport =
             view * projection
 
         /// Transform the given mouse position to 2d screen space.
-        member this.MouseToScreen2d (mousePosition : Vector2, _ : Vector2, eyeSize : Vector2) =
+        member this.MouseTo2dScreen (mousePosition : Vector2, _ : Vector2, eyeSize : Vector2) =
             v2
                 +(mousePosition.X / single Constants.Render.VirtualScalar - eyeSize.X * 0.5f)
                 -(mousePosition.Y / single Constants.Render.VirtualScalar - eyeSize.Y * 0.5f) // negation for right-handedness
 
         /// Transform the given mouse position to 2d world space.
         member this.MouseToWorld2d (absolute, mousePosition, eyePosition : Vector2, eyeSize : Vector2) =
-            let mouseScreen = this.MouseToScreen2d (mousePosition, eyePosition, eyeSize)
+            let mouseScreen = this.MouseTo2dScreen (mousePosition, eyePosition, eyeSize)
             let view =
                 if absolute
                 then Matrix4x4.Identity
@@ -93,7 +93,7 @@ module Viewport =
             entityPosition - mouseWorld
 
         /// Compute the 3d absolute view matrix.
-        member this.ViewAbsolute3d (_ : Vector3, _ : Quaternion) =
+        member this.View3dAbsolute (_ : Vector3, _ : Quaternion) =
             m4Identity
 
         /// Compute the 3d relative view matrix.
@@ -104,7 +104,7 @@ module Viewport =
         /// Compute a 3d view matrix.
         member this.View3d (absolute, eyePosition, eyeRotation) =
             if absolute
-            then this.ViewAbsolute3d (eyePosition, eyeRotation)
+            then this.View3dAbsolute (eyePosition, eyeRotation)
             else this.ViewRelative3d (eyePosition, eyeRotation)
 
         /// Compute the 3d projection matrix.
@@ -130,7 +130,7 @@ module Viewport =
             Frustum viewProjection
 
         /// Transform the given mouse position to 3d screen space (normalized device coordinates).
-        member this.MouseToScreen3d (mousePosition : Vector2) =
+        member this.MouseTo3dScreen (mousePosition : Vector2) =
             v2
                 (mousePosition.X / single Constants.Render.ResolutionX)
                 (1.0f - (mousePosition.Y / single Constants.Render.ResolutionY)) // inversion for right-handedness

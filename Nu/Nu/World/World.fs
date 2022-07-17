@@ -409,8 +409,8 @@ module WorldModule3 =
             // TODO: consider if we should reflectively generate these.
             Map.ofListBy World.pairWithName $
                 [EntityDispatcher (true, false, false)
-                 Entity2dDispatcher (false, false) :> EntityDispatcher
-                 Entity3dDispatcher (true, false) :> EntityDispatcher
+                 EntityDispatcher2d (false, false) :> EntityDispatcher
+                 EntityDispatcher3d (true, false) :> EntityDispatcher
                  StaticSpriteDispatcher () :> EntityDispatcher
                  AnimatedSpriteDispatcher () :> EntityDispatcher
                  GuiDispatcher () :> EntityDispatcher
@@ -422,14 +422,14 @@ module WorldModule3 =
                  FpsDispatcher () :> EntityDispatcher
                  FeelerDispatcher () :> EntityDispatcher
                  FillBarDispatcher () :> EntityDispatcher
-                 BasicEmitter2dDispatcher () :> EntityDispatcher
-                 Effect2dDispatcher () :> EntityDispatcher
-                 Block2dDispatcher () :> EntityDispatcher
-                 Box2dDispatcher () :> EntityDispatcher
+                 BasicEmitterDispatcher2d () :> EntityDispatcher
+                 EffectDispatcher2d () :> EntityDispatcher
+                 BlockDispatcher2d () :> EntityDispatcher
+                 BoxDispatcher2d () :> EntityDispatcher
                  SideViewCharacterDispatcher () :> EntityDispatcher
                  TileMapDispatcher () :> EntityDispatcher
                  TmxMapDispatcher () :> EntityDispatcher
-                 Light3dDispatcher () :> EntityDispatcher
+                 LightDispatcher3d () :> EntityDispatcher
                  SkyBoxDispatcher () :> EntityDispatcher
                  StaticModelSurfaceDispatcher () :> EntityDispatcher
                  StaticModelDispatcher () :> EntityDispatcher

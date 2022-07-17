@@ -4,33 +4,33 @@
   [Name Scene]
   [Persistent True]
   [Visible True]]
- [[Block2dDispatcher
+ [[BlockDispatcher2d
    [[Position [-320 -184 0]]
     [Size [200 200 0]]]]
-  [Block2dDispatcher
+  [BlockDispatcher2d
    [[Position [256 -392 0]]
     [Size [200 200 0]]]]
-  [Block2dDispatcher
+  [BlockDispatcher2d
    [[Position [456 -392 0]]
     [Size [200 200 0]]]]
-  [Block2dDispatcher
+  [BlockDispatcher2d
    [[Position [-384 16 0]]
     [Size [200 200 0]]]]
-  [Block2dDispatcher
+  [BlockDispatcher2d
    [[Position [-432 -384 0]]
     [Size [200 200 0]]]]
-  [Block2dDispatcher
+  [BlockDispatcher2d
    [[Position [-144 -384 0]]
     [Size [200 200 0]]]]
-  [Block2dDispatcher
+  [BlockDispatcher2d
    [[Position [56 -360 0]]
     [Size [200 200 0]]]]
-  [Block2dDispatcher
+  [BlockDispatcher2d
    [[Position [376 -192 0]]
     [Size [200 200 0]]]]
   [SkyBoxDispatcher
    []]
-  [Light3dDispatcher
+  [LightDispatcher3d
    [[Position [0 5 2]]]]
   [StaticModelDispatcher
    [[Name SphereLeft]

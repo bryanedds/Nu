@@ -257,7 +257,7 @@ module WorldTypes =
         abstract GetQuickSize : Entity * World -> Vector3
         default this.GetQuickSize (_, _) =
             if this.Is2d
-            then Constants.Engine.Entity2dSizeDefault
+            then Constants.Engine.EntitySize2dDefault
             else Constants.Engine.Entity3dSizeDefault
 
         /// Attempt to pick an entity with a ray.
@@ -326,7 +326,7 @@ module WorldTypes =
         abstract GetQuickSize : Entity * World -> Vector3
         default this.GetQuickSize (entity, world) =
             if getEntityIs2d entity world
-            then Constants.Engine.Entity2dSizeDefault
+            then Constants.Engine.EntitySize2dDefault
             else Constants.Engine.Entity3dSizeDefault
 
         /// Whether a facet participates in a physics system.
@@ -347,10 +347,10 @@ module WorldTypes =
           SelectedScreenOpt : Screen option
           ScreenTransitionDestinationOpt : Screen option
           DesiredScreenOpt : Screen option
-          Eye2dPosition : Vector2
-          Eye2dSize : Vector2
-          Eye3dPosition : Vector3
-          Eye3dRotation : Quaternion
+          EyePosition2d : Vector2
+          EyeSize2d : Vector2
+          EyePosition3d : Vector3
+          EyeRotation3d : Quaternion
           EyeFrustumEnclosed3d : Frustum
           EyeFrustumUnenclosed3d : Frustum
           EyeFrustumProminent3d : Frustum
@@ -363,8 +363,8 @@ module WorldTypes =
 
         /// Make a game state value.
         static member make (dispatcher : GameDispatcher) =
-            let eye3dPosition = Constants.Engine.Eye3dPositionDefault
-            let eye3dRotation = quatIdentity
+            let eyePosition3d = Constants.Engine.EyePosition3dDefault
+            let eyeRotation3d = quatIdentity
             let viewport = Constants.Render.Viewport
             { Dispatcher = dispatcher
               Xtension = Xtension.makeFunctional ()
@@ -373,13 +373,13 @@ module WorldTypes =
               SelectedScreenOpt = None
               ScreenTransitionDestinationOpt = None
               DesiredScreenOpt = None
-              Eye2dPosition = v2Zero
-              Eye2dSize = v2 (single Constants.Render.VirtualResolutionX) (single Constants.Render.VirtualResolutionY)
-              Eye3dPosition = eye3dPosition
-              Eye3dRotation = eye3dRotation
-              EyeFrustumEnclosed3d = viewport.Frustum (Constants.Render.NearPlaneDistance, Constants.Render.FarPlaneDistanceEnclosed, eye3dPosition, eye3dRotation)
-              EyeFrustumUnenclosed3d = viewport.Frustum (Constants.Render.NearPlaneDistance, Constants.Render.FarPlaneDistanceUnenclosed, eye3dPosition, eye3dRotation)
-              EyeFrustumProminent3d = viewport.Frustum (Constants.Render.NearPlaneDistance, Constants.Render.FarPlaneDistanceProminent, eye3dPosition, eye3dRotation)
+              EyePosition2d = v2Zero
+              EyeSize2d = v2 (single Constants.Render.VirtualResolutionX) (single Constants.Render.VirtualResolutionY)
+              EyePosition3d = eyePosition3d
+              EyeRotation3d = eyeRotation3d
+              EyeFrustumEnclosed3d = viewport.Frustum (Constants.Render.NearPlaneDistance, Constants.Render.FarPlaneDistanceEnclosed, eyePosition3d, eyeRotation3d)
+              EyeFrustumUnenclosed3d = viewport.Frustum (Constants.Render.NearPlaneDistance, Constants.Render.FarPlaneDistanceUnenclosed, eyePosition3d, eyeRotation3d)
+              EyeFrustumProminent3d = viewport.Frustum (Constants.Render.NearPlaneDistance, Constants.Render.FarPlaneDistanceProminent, eyePosition3d, eyeRotation3d)
               ScriptFrame = Scripting.DeclarationFrame StringComparer.Ordinal
               Order = Core.getUniqueTimeStamp ()
               Id = Gen.id }

@@ -145,7 +145,7 @@ module Metadata =
         | None -> None
 
     /// Try to get the 2d texture metadata of the given asset.
-    let tryGetTexture2dSize (assetTag : Image AssetTag) metadata =
+    let tryGetTextureSize2d (assetTag : Image AssetTag) metadata =
         match tryGetMetadata (AssetTag.generalize assetTag) metadata with
         | Some (Texture2dMetadata (size, _)) -> Some size
         | None -> None
@@ -159,18 +159,18 @@ module Metadata =
         | _ -> None
 
     /// Forcibly get the 2d texture size metadata of the given asset (throwing on failure).
-    let getTexture2dSize assetTag metadata =
-        Option.get (tryGetTexture2dSize assetTag metadata)
+    let getTextureSize2d assetTag metadata =
+        Option.get (tryGetTextureSize2d assetTag metadata)
 
     /// Try to get the 2d texture size metadata of the given asset.
-    let tryGetTexture2dSizeF assetTag metadata =
-        match tryGetTexture2dSize assetTag metadata with
+    let tryGetTextureSize2dF assetTag metadata =
+        match tryGetTextureSize2d assetTag metadata with
         | Some size -> Some (v2 (single size.X) (single size.Y))
         | None -> None
 
     /// Forcibly get the 2d texture size metadata of the given asset (throwing on failure).
-    let getTexture2dSizeF assetTag metadata =
-        Option.get (tryGetTexture2dSizeF assetTag metadata)
+    let getTextureSize2dF assetTag metadata =
+        Option.get (tryGetTextureSize2dF assetTag metadata)
 
     /// Try to get the tile map metadata of the given asset.
     let tryGetTileMapMetadata (assetTag : TileMap AssetTag) metadata =

@@ -81,7 +81,7 @@ module MyGameplay =
                 | UpdateEye ->
                     if World.getUpdateRate world <> 0L then
                         let characterCenter = Simulants.Gameplay.Player.Character.GetCenter world
-                        Simulants.Game.SetEye2dPosition characterCenter.V2 world
+                        Simulants.Game.SetEyePosition2d characterCenter.V2 world
                     else world
                 | Nop -> world
             just world

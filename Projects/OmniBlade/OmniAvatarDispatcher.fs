@@ -30,7 +30,7 @@ module AvatarDispatcher =
         member this.Avatar = this.ModelGeneric<Avatar> ()
 
     type AvatarDispatcher () =
-        inherit Entity2dDispatcher<Avatar, AvatarMessage, AvatarCommand>
+        inherit EntityDispatcher2d<Avatar, AvatarMessage, AvatarCommand>
             (false, true, Avatar.make (box3 v3Zero Constants.Gameplay.CharacterSize) Assets.Field.JinnAnimationSheet Downward)
 
         static let coreShapeId = Gen.id
