@@ -757,8 +757,8 @@ module WorldModule2 =
 
         /// Get all 3d entities in the current 3d view, including all uncullable entities.
         static member getEntitiesInView3d set world =
-            let frustumEnclosed = World.getEyeFrustumEnclosed3d world
-            let frustumUnenclosed = World.getEyeFrustumUnenclosed3d world
+            let frustumEnclosed = World.getEye3dFrustumEnclosed world
+            let frustumUnenclosed = World.getEye3dFrustumUnenclosed world
             let lightBox = World.getLightbox3d world
             let (elements, world) = World.getEntities3dBy (Octree.getElementsInView frustumEnclosed frustumUnenclosed lightBox set) world
             let entities = Seq.map (fun element -> element.Entry) elements
