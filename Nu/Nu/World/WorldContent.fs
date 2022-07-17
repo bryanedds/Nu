@@ -161,10 +161,10 @@ module Content =
         entityWithContent<'d> entityName initializers []
 
     /// Describe a 2d basic emitter with the given initializers.
-    let basicEmitter2d entityName initializers = entity<BasicEmitter2dDispatcher> entityName initializers
+    let basicEmitter2d entityName initializers = entity<BasicEmitterDispatcher2d> entityName initializers
 
     /// Describe a 2d effect with the given initializers.
-    let effect2d entityName initializers = entity<Effect2dDispatcher> entityName initializers
+    let effect2d entityName initializers = entity<EffectDispatcher2d> entityName initializers
 
     /// Describe a static sprite with the given initializers.
     let staticSprite entityName initializers = entity<StaticSpriteDispatcher> entityName initializers
@@ -203,10 +203,10 @@ module Content =
     let fillBar entityName initializers = entity<FillBarDispatcher> entityName initializers
 
     /// Describe a 2d block with the given initializers.
-    let block2d entityName initializers = entity<Block2dDispatcher> entityName initializers
+    let block2d entityName initializers = entity<BlockDispatcher2d> entityName initializers
 
     /// Describe a 2d box with the given initializers.
-    let box2d entityName initializers = entity<Box2dDispatcher> entityName initializers
+    let box2d entityName initializers = entity<BoxDispatcher2d> entityName initializers
 
     /// Describe a side-view character with the given initializers.
     let sideViewCharacter entityName initializers = entity<SideViewCharacterDispatcher> entityName initializers
@@ -217,22 +217,19 @@ module Content =
     /// Describe a tmx map with the given initializers.
     let tmxMap entityName initializers = entity<TmxMapDispatcher> entityName initializers
 
-    /// Describe static scenery with the given initializers.
-    let staticScenery entityName initializers = entity<TmxMapDispatcher> entityName initializers
+    /// Describe a 3d light with the given initializers.
+    let light3d entityName initializers = entity<LightDispatcher3d> entityName initializers
 
-    /// Describe light with the given initializers.
-    let light3d entityName initializers = entity<Light3dDispatcher> entityName initializers
-
-    /// Describe sky box with the given initializers.
+    /// Describe a sky box with the given initializers.
     let skyBox entityName initializers = entity<SkyBoxDispatcher> entityName initializers
 
-    /// Describe static model with the given initializers.
+    /// Describe a static model with the given initializers.
     let staticModel entityName initializers = entity<StaticModelDispatcher> entityName initializers
 
-    /// Describe static model surface with the given initializers.
+    /// Describe a static model surface with the given initializers.
     let staticModelSurface entityName initializers = entity<StaticModelSurfaceDispatcher> entityName initializers
 
-    /// Describe static scene with the given initializers.
+    /// Describe a static scene with the given initializers.
     let staticScene entityName initializers = entity<StaticSceneDispatcher> entityName initializers
 
 [<AutoOpen>]

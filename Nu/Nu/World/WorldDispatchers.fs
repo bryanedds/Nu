@@ -289,9 +289,9 @@ module StaticSpriteFacetModule =
             else world
 
         override this.GetQuickSize (entity, world) =
-            match World.tryGetTexture2dSizeF (entity.GetStaticImage world) world with
+            match World.tryGetTextureSize2dF (entity.GetStaticImage world) world with
             | Some size -> size.V3
-            | None -> Constants.Engine.Entity2dSizeDefault
+            | None -> Constants.Engine.EntitySize2dDefault
 
 [<AutoOpen>]
 module AnimatedSpriteFacetModule =
@@ -619,7 +619,7 @@ module BasicEmitter2dFacetModule =
              define Entity.ParticleLifeTimeMaxOpt 60L
              define Entity.ParticleRate 1.0f
              define Entity.ParticleMax 60
-             define Entity.BasicParticleSeed { Life = Particles.Life.make 0L 60L; Body = Particles.Body.defaultBody2d; Size = Constants.Engine.Particle2dSizeDefault; Offset = v3Zero; Inset = box2Zero; Color = Color.One; Glow = Color.Zero; Flip = FlipNone }
+             define Entity.BasicParticleSeed { Life = Particles.Life.make 0L 60L; Body = Particles.Body.defaultBody2d; Size = Constants.Engine.ParticleSize2dDefault; Offset = v3Zero; Inset = box2Zero; Color = Color.One; Glow = Color.Zero; Flip = FlipNone }
              define Entity.EmitterConstraint Particles.Constraint.empty
              define Entity.EmitterStyle "BasicEmitter2d"
              nonPersistent Entity.ParticleSystem ParticleSystem.empty]
@@ -1161,7 +1161,7 @@ module TileMapFacetModule =
         override this.GetQuickSize (entity, world) =
             match TmxMap.tryGetTileMap (entity.GetTileMap world) world with
             | Some tileMap -> TmxMap.getQuickSize tileMap
-            | None -> Constants.Engine.Entity2dSizeDefault
+            | None -> Constants.Engine.EntitySize2dDefault
 
 [<AutoOpen>]
 module TmxMapFacetModule =
@@ -1501,15 +1501,15 @@ module StaticModelSurfaceFacetModule =
 module EntityDispatcherModule =
 
     /// A 2d entity dispatcher.
-    type Entity2dDispatcher (centered, physical) =
+    type EntityDispatcher2d (centered, physical) =
         inherit EntityDispatcher (true, centered, physical)
 
         static member Properties =
             [define Entity.Centered false
-             define Entity.Size Constants.Engine.Entity2dSizeDefault]
+             define Entity.Size Constants.Engine.EntitySize2dDefault]
 
     /// A 3d entity dispatcher.
-    type Entity3dDispatcher (centered, physical) =
+    type EntityDispatcher3d (centered, physical) =
         inherit EntityDispatcher (false, centered, physical)
 
         static member Properties =
@@ -1621,14 +1621,14 @@ module EntityDispatcherModule =
         abstract member View : 'model * Entity * World -> View
         default this.View (_, _, _) = View.empty
 
-    and [<AbstractClass>] Entity2dDispatcher<'model, 'message, 'command> (centered, physical, initial) =
+    and [<AbstractClass>] EntityDispatcher2d<'model, 'message, 'command> (centered, physical, initial) =
         inherit EntityDispatcher<'model, 'message, 'command> (true, centered, physical, initial)
 
         static member Properties =
             [define Entity.Centered false
-             define Entity.Size Constants.Engine.Entity2dSizeDefault]
+             define Entity.Size Constants.Engine.EntitySize2dDefault]
 
-    and [<AbstractClass>] Entity3dDispatcher<'model, 'message, 'command> (centered, physical, initial) =
+    and [<AbstractClass>] EntityDispatcher3d<'model, 'message, 'command> (centered, physical, initial) =
         inherit EntityDispatcher<'model, 'message, 'command> (false, centered, physical, initial)
 
         static member Properties =
@@ -1638,7 +1638,7 @@ module EntityDispatcherModule =
 module StaticSpriteDispatcherModule =
 
     type StaticSpriteDispatcher () =
-        inherit Entity2dDispatcher (false, false)
+        inherit EntityDispatcher2d (false, false)
 
         static member Facets =
             [typeof<StaticSpriteFacet>]
@@ -1654,7 +1654,7 @@ module StaticSpriteDispatcherModule =
 module AnimatedSpriteDispatcherModule =
 
     type AnimatedSpriteDispatcher () =
-        inherit Entity2dDispatcher (false, false)
+        inherit EntityDispatcher2d (false, false)
 
         static member Facets =
             [typeof<AnimatedSpriteFacet>]
@@ -1678,23 +1678,23 @@ module GuiDispatcherModule =
         member this.DisabledColor = lens Property? DisabledColor this.GetDisabledColor this.SetDisabledColor this
 
     type GuiDispatcher () =
-        inherit Entity2dDispatcher (false, false)
+        inherit EntityDispatcher2d (false, false)
 
         static member Properties =
             [define Entity.Absolute true
              define Entity.AlwaysUpdate true
              define Entity.Presence Omnipresent
-             define Entity.Size Constants.Engine.EntityGuiSizeDefault
+             define Entity.Size Constants.Engine.EntitySizeGuiDefault
              define Entity.DisabledColor (Color (0.75f, 0.75f, 0.75f, 0.75f))]
 
     type [<AbstractClass>] GuiDispatcher<'model, 'message, 'command> (model) =
-        inherit Entity2dDispatcher<'model, 'message, 'command> (false, false, model)
+        inherit EntityDispatcher2d<'model, 'message, 'command> (false, false, model)
 
         static member Properties =
             [define Entity.Presence Omnipresent
              define Entity.Absolute true
              define Entity.AlwaysUpdate true
-             define Entity.Size Constants.Engine.EntityGuiSizeDefault
+             define Entity.Size Constants.Engine.EntitySizeGuiDefault
              define Entity.DisabledColor (Color (0.75f, 0.75f, 0.75f, 0.75f))]
 
 [<AutoOpen>]
@@ -1731,7 +1731,7 @@ module ButtonDispatcherModule =
             if entity.GetVisible world then
                 let mutable transform = entity.GetTransform world
                 let perimeter = transform.Perimeter.Box2
-                let mousePositionWorld = World.getMousePositionWorld2d transform.Absolute world
+                let mousePositionWorld = World.getMousePostion2dWorld transform.Absolute world
                 if perimeter.Intersects mousePositionWorld then // gui currently ignores rotation
                     if transform.Enabled then
                         let world = entity.SetDown true world
@@ -1751,7 +1751,7 @@ module ButtonDispatcherModule =
             if entity.GetVisible world then
                 let mutable transform = entity.GetTransform world
                 let perimeter = transform.Perimeter.Box2
-                let mousePositionWorld = World.getMousePositionWorld2d transform.Absolute world
+                let mousePositionWorld = World.getMousePostion2dWorld transform.Absolute world
                 if perimeter.Intersects mousePositionWorld then // gui currently ignores rotation
                     if transform.Enabled && wasDown then
                         let eventTrace = EventTrace.debug "ButtonDispatcher" "handleMouseLeftUp" "Up" EventTrace.empty
@@ -1805,9 +1805,9 @@ module ButtonDispatcherModule =
             else world
 
         override this.GetQuickSize (entity, world) =
-            match World.tryGetTexture2dSizeF (entity.GetUpImage world) world with
+            match World.tryGetTextureSize2dF (entity.GetUpImage world) world with
             | Some size -> size.V3
-            | None -> Constants.Engine.EntityGuiSizeDefault
+            | None -> Constants.Engine.EntitySizeGuiDefault
 
 [<AutoOpen>]
 module LabelDispatcherModule =
@@ -1845,9 +1845,9 @@ module LabelDispatcherModule =
             else world
 
         override this.GetQuickSize (entity, world) =
-            match World.tryGetTexture2dSizeF (entity.GetLabelImage world) world with
+            match World.tryGetTextureSize2dF (entity.GetLabelImage world) world with
             | Some size -> size.V3
-            | None -> Constants.Engine.EntityGuiSizeDefault
+            | None -> Constants.Engine.EntitySizeGuiDefault
 
 [<AutoOpen>]
 module TextDispatcherModule =
@@ -1893,10 +1893,10 @@ module TextDispatcherModule =
         override this.GetQuickSize (entity, world) =
             match entity.GetBackgroundImageOpt world with
             | Some image ->
-                match World.tryGetTexture2dSizeF image world with
+                match World.tryGetTextureSize2dF image world with
                 | Some size -> size.V3
-                | None -> Constants.Engine.EntityGuiSizeDefault
-            | None -> Constants.Engine.EntityGuiSizeDefault
+                | None -> Constants.Engine.EntitySizeGuiDefault
+            | None -> Constants.Engine.EntitySizeGuiDefault
 
 [<AutoOpen>]
 module ToggleButtonDispatcherModule =
@@ -1938,7 +1938,7 @@ module ToggleButtonDispatcherModule =
             if entity.GetVisible world then
                 let mutable transform = entity.GetTransform world
                 let perimeter = transform.Perimeter.Box2
-                let mousePositionWorld = World.getMousePositionWorld2d transform.Absolute world
+                let mousePositionWorld = World.getMousePostion2dWorld transform.Absolute world
                 if perimeter.Intersects mousePositionWorld then // gui currently ignores rotation
                     if transform.Enabled then
                         let world = entity.SetPressed true world
@@ -1954,7 +1954,7 @@ module ToggleButtonDispatcherModule =
             if entity.GetVisible world then
                 let mutable transform = entity.GetTransform world
                 let perimeter = transform.Perimeter.Box2
-                let mousePositionWorld = World.getMousePositionWorld2d transform.Absolute world
+                let mousePositionWorld = World.getMousePostion2dWorld transform.Absolute world
                 if perimeter.Intersects mousePositionWorld then // gui currently ignores rotation
                     if transform.Enabled && wasPressed then
                         let world = entity.SetToggled (not (entity.GetToggled world)) world
@@ -2025,9 +2025,9 @@ module ToggleButtonDispatcherModule =
             else world
 
         override this.GetQuickSize (entity, world) =
-            match World.tryGetTexture2dSizeF (entity.GetUntoggledImage world) world with
+            match World.tryGetTextureSize2dF (entity.GetUntoggledImage world) world with
             | Some size -> size.V3
-            | None -> Constants.Engine.EntityGuiSizeDefault
+            | None -> Constants.Engine.EntitySizeGuiDefault
 
 [<AutoOpen>]
 module RadioButtonDispatcherModule =
@@ -2063,7 +2063,7 @@ module RadioButtonDispatcherModule =
             if entity.GetVisible world then
                 let mutable transform = entity.GetTransform world
                 let perimeter = transform.Perimeter.Box2
-                let mousePositionWorld = World.getMousePositionWorld2d transform.Absolute world
+                let mousePositionWorld = World.getMousePostion2dWorld transform.Absolute world
                 if perimeter.Intersects mousePositionWorld then // gui currently ignores rotation
                     if transform.Enabled then
                         let world = entity.SetPressed true world
@@ -2080,7 +2080,7 @@ module RadioButtonDispatcherModule =
             if entity.GetVisible world then
                 let mutable transform = entity.GetTransform world
                 let perimeter = transform.Perimeter.Box2
-                let mousePositionWorld = World.getMousePositionWorld2d transform.Absolute world
+                let mousePositionWorld = World.getMousePostion2dWorld transform.Absolute world
                 if perimeter.Intersects mousePositionWorld then // gui currently ignores rotation
                     if transform.Enabled && wasPressed && not wasDialed then
                         let world = entity.SetDialed true world
@@ -2151,9 +2151,9 @@ module RadioButtonDispatcherModule =
             else world
 
         override this.GetQuickSize (entity, world) =
-            match World.tryGetTexture2dSizeF (entity.GetUndialedImage world) world with
+            match World.tryGetTextureSize2dF (entity.GetUndialedImage world) world with
             | Some size -> size.V3
-            | None -> Constants.Engine.Entity2dSizeDefault
+            | None -> Constants.Engine.EntitySize2dDefault
 
 [<AutoOpen>]
 module FpsDispatcherModule =
@@ -2216,7 +2216,7 @@ module FeelerDispatcherModule =
             if entity.GetVisible world then
                 let mutable transform = entity.GetTransform world
                 let perimeter = transform.Perimeter.Box2
-                let mousePositionWorld = World.getMousePositionWorld2d transform.Absolute world
+                let mousePositionWorld = World.getMousePostion2dWorld transform.Absolute world
                 if perimeter.Intersects mousePositionWorld then // gui currently ignores rotation
                     if transform.Enabled then
                         let world = entity.SetTouched true world
@@ -2277,7 +2277,7 @@ module FeelerDispatcherModule =
             else world
 
         override this.GetQuickSize (_, _) =
-            Constants.Engine.EntityGuiSizeDefault
+            Constants.Engine.EntitySizeGuiDefault
 
 [<AutoOpen>]
 module FillBarDispatcherModule =
@@ -2381,15 +2381,15 @@ module FillBarDispatcherModule =
             else world
 
         override this.GetQuickSize (entity, world) =
-            match World.tryGetTexture2dSizeF (entity.GetBorderImage world) world with
+            match World.tryGetTextureSize2dF (entity.GetBorderImage world) world with
             | Some size -> size.V3
-            | None -> Constants.Engine.Entity2dSizeDefault
+            | None -> Constants.Engine.EntitySize2dDefault
 
 [<AutoOpen>]
-module BasicEmitter2dDispatcherModule =
+module BasicEmitterDispatcher2dModule =
 
-    type BasicEmitter2dDispatcher () =
-        inherit Entity2dDispatcher (true, false)
+    type BasicEmitterDispatcher2d () =
+        inherit EntityDispatcher2d (true, false)
 
         static member Facets =
             [typeof<BasicEmitter2dFacet>]
@@ -2398,10 +2398,10 @@ module BasicEmitter2dDispatcherModule =
             [define Entity.Centered true]
 
 [<AutoOpen>]
-module Effect2dDispatcherModule =
+module EffectDispatcher2dModule =
 
-    type Effect2dDispatcher () =
-        inherit Entity2dDispatcher (true, false)
+    type EffectDispatcher2d () =
+        inherit EntityDispatcher2d (true, false)
 
         static member Facets =
             [typeof<Effect2dFacet>]
@@ -2411,10 +2411,10 @@ module Effect2dDispatcherModule =
              define Entity.Effect (scvalue<Effect> "[Effect None [] [Contents [Shift 0] [[StaticSprite [Resource Default Image] [] Nil]]]]")]
 
 [<AutoOpen>]
-module Block2dDispatcherModule =
+module BlockDispatcher2dModule =
 
-    type Block2dDispatcher () =
-        inherit Entity2dDispatcher (false, true)
+    type BlockDispatcher2d () =
+        inherit EntityDispatcher2d (false, true)
 
         static member Facets =
             [typeof<RigidBodyFacet>
@@ -2425,10 +2425,10 @@ module Block2dDispatcherModule =
              define Entity.StaticImage Assets.Default.Image6]
 
 [<AutoOpen>]
-module Box2dDispatcherModule =
+module BoxDispatcher2dModule =
 
-    type Box2dDispatcher () =
-        inherit Entity2dDispatcher (false, true)
+    type BoxDispatcher2d () =
+        inherit EntityDispatcher2d (false, true)
 
         static member Facets =
             [typeof<RigidBodyFacet>
@@ -2455,7 +2455,7 @@ module SideViewCharacterDispatcherModule =
         member this.SideViewCharacterFacingLeft = lens Property? SideViewCharacterFacingLeft this.GetSideViewCharacterFacingLeft this.SetSideViewCharacterFacingLeft this
 
     type SideViewCharacterDispatcher () =
-        inherit Entity2dDispatcher (false, true)
+        inherit EntityDispatcher2d (false, true)
 
         static let computeWalkCelInset (celSize : Vector2) (celRun : int) delay time =
             let compressedTime = time / delay
@@ -2531,7 +2531,7 @@ module SideViewCharacterDispatcherModule =
 module TileMapDispatcherModule =
 
     type TileMapDispatcher () =
-        inherit Entity2dDispatcher (false, true)
+        inherit EntityDispatcher2d (false, true)
 
         static member Facets =
             [typeof<TileMapFacet>]
@@ -2554,7 +2554,7 @@ module TileMapDispatcherModule =
 module TmxMapDispatcherModule =
 
     type TmxMapDispatcher () =
-        inherit Entity2dDispatcher (false, true)
+        inherit EntityDispatcher2d (false, true)
 
         static member Facets =
             [typeof<TmxMapFacet>]
@@ -2575,7 +2575,7 @@ module TmxMapDispatcherModule =
 module SkyBoxDispatcherModule =
 
     type SkyBoxDispatcher () =
-        inherit Entity3dDispatcher (true, false)
+        inherit EntityDispatcher3d (true, false)
 
         static member Facets =
             [typeof<SkyBoxFacet>]
@@ -2586,10 +2586,10 @@ module SkyBoxDispatcherModule =
              define Entity.CubeMap Assets.Default.SkyBoxMap]
 
 [<AutoOpen>]
-module Light3dDispatcherModule =
+module LightDispatcher3dModule =
 
-    type Light3dDispatcher () =
-        inherit Entity3dDispatcher (true, false)
+    type LightDispatcher3d () =
+        inherit EntityDispatcher3d (true, false)
 
         static member Facets =
             [typeof<Light3dFacet>]
@@ -2608,7 +2608,7 @@ module Light3dDispatcherModule =
 module StaticModelDispatcherModule =
 
     type StaticModelDispatcher () =
-        inherit Entity3dDispatcher (true, false)
+        inherit EntityDispatcher3d (true, false)
 
         static member Facets =
             [typeof<StaticModelFacet>]
@@ -2621,7 +2621,7 @@ module StaticModelDispatcherModule =
 module StaticModelSurfaceDispatcherModule =
 
     type StaticModelSurfaceDispatcher () =
-        inherit Entity3dDispatcher (true, false)
+        inherit EntityDispatcher3d (true, false)
 
         static member Facets =
             [typeof<StaticModelSurfaceFacet>]
@@ -2656,7 +2656,7 @@ module StaticSceneDispatcherModule =
                                 match parent with
                                 | Left group -> (names.Length > 0, names, group)
                                 | Right entity -> (true, Array.append entity.Surnames names, entity.Group)
-                            let (child, world) = World.createEntity<Entity3dDispatcher> (Some surnames) DefaultOverlay group world
+                            let (child, world) = World.createEntity<EntityDispatcher3d> (Some surnames) DefaultOverlay group world
                             let world = child.SetStatic static_ world
                             let world = if mountToParent then child.SetMountOpt (Some (Relation.makeParent ())) world else world
                             let world = child.QuickSize world
@@ -2667,7 +2667,7 @@ module StaticSceneDispatcherModule =
                                 match parent with
                                 | Left group -> (light.LightNames.Length > 0, light.LightNames, group)
                                 | Right entity -> (true, Array.append entity.Surnames light.LightNames, entity.Group)
-                            let (child, world) = World.createEntity<Light3dDispatcher> (Some surnames) DefaultOverlay group world
+                            let (child, world) = World.createEntity<LightDispatcher3d> (Some surnames) DefaultOverlay group world
                             let transform = light.LightMatrix
                             let position = transform.Translation
                             let mutable rotation = transform
@@ -2720,7 +2720,7 @@ module StaticSceneDispatcherModule =
         member this.Loaded = lens Property? Loaded this.GetLoaded this.SetLoaded this
 
     type StaticSceneDispatcher () =
-        inherit Entity3dDispatcher (true, false)
+        inherit EntityDispatcher3d (true, false)
 
         static let destroyChildren (entity : Entity) world =
             Seq.fold (fun world child ->

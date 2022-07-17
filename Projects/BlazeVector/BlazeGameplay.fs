@@ -10,7 +10,7 @@ open BlazeVector
 module Bullet =
 
     type BulletDispatcher () =
-        inherit Entity2dDispatcher (false, true)
+        inherit EntityDispatcher2d (false, true)
 
         static let [<Literal>] BulletLifeTime =
             27L
@@ -57,7 +57,7 @@ module Enemy =
             viewBounds.Intersects center.V2
 
     type EnemyDispatcher () =
-        inherit Entity2dDispatcher (false, true)
+        inherit EntityDispatcher2d (false, true)
         
         static let move (enemy : Entity) world =
             let force = v3 -750.0f -5000.0f 0.0f
@@ -123,7 +123,7 @@ module Player =
         member this.HasFallen world = (this.GetPosition world).Y < -600.0f
 
     type PlayerDispatcher () =
-        inherit Entity2dDispatcher (false, true)
+        inherit EntityDispatcher2d (false, true)
 
         static let [<Literal>] WalkForce = 1750.0f
         static let [<Literal>] FallForce = -5000.0f
@@ -302,10 +302,10 @@ module Gameplay =
                     if World.getUpdateRate world <> 0L then
                         let playerPosition = Simulants.Gameplay.Scene.Player.GetPosition world
                         let playerSize = Simulants.Gameplay.Scene.Player.GetSize world
-                        let eyePosition = World.getEye2dPosition world
-                        let eyeSize = World.getEye2dSize world
+                        let eyePosition = World.getEyePosition2d world
+                        let eyeSize = World.getEyeSize2d world
                         let eyePosition = v2 (playerPosition.X + playerSize.X * 0.5f + eyeSize.X * 0.33f) eyePosition.Y
-                        Game.SetEye2dPosition eyePosition world
+                        Game.SetEyePosition2d eyePosition world
                     else world
 
                 // update player fall

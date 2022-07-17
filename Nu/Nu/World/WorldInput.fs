@@ -37,32 +37,32 @@ module WorldInputModule =
 
         /// Get the 2d screen position of the mouse.
         [<FunctionBinding>]
-        static member getMousePositionScreen2d world =
+        static member getMousePosition2dScreen world =
             let viewport = World.getViewport world
-            let eyePosition = World.getEye2dPosition world
-            let eyeSize = World.getEye2dSize world
-            viewport.MouseToScreen2d (World.getMousePosition world, eyePosition, eyeSize)
+            let eyePosition = World.getEyePosition2d world
+            let eyeSize = World.getEyeSize2d world
+            viewport.MouseTo2dScreen (World.getMousePosition world, eyePosition, eyeSize)
 
         /// Get the 2d world position of the mouse.
         [<FunctionBinding>]
-        static member getMousePositionWorld2d absolute world =
+        static member getMousePostion2dWorld absolute world =
             let viewport = World.getViewport world
-            let eyePosition = World.getEye2dPosition world
-            let eyeSize = World.getEye2dSize world
+            let eyePosition = World.getEyePosition2d world
+            let eyeSize = World.getEyeSize2d world
             viewport.MouseToWorld2d (absolute, World.getMousePosition world, eyePosition, eyeSize)
 
         /// Get the 3d screen position of the mouse.
         [<FunctionBinding>]
-        static member getMousePositionScreen3d world =
+        static member getMousePosition3dScreen world =
             let viewport = World.getViewport world
-            viewport.MouseToScreen3d (World.getMousePosition world)
+            viewport.MouseTo3dScreen (World.getMousePosition world)
 
         /// Get the 3d world ray of the mouse.
         [<FunctionBinding>]
-        static member getMouseRayWorld3d absolute world =
+        static member getMouseRay3dWorld absolute world =
             let viewport = World.getViewport world
-            let eyePosition = World.getEye3dPosition world
-            let eyeRotation = World.getEye3dRotation world
+            let eyePosition = World.getEyePosition3d world
+            let eyeRotation = World.getEyeRotation3d world
             viewport.MouseToWorld3d (absolute, World.getMousePosition world, eyePosition, eyeRotation)
 
         /// Check that the given keyboard key is down.

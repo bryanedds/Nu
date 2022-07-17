@@ -64,12 +64,12 @@ type RendererInline (createRenderer2d, createRenderer3d) =
             messages3d.Clear ()
             messages2d.Clear ()
 
-        member this.SubmitMessages eye2dPosition eye2dSize eye3dPosition eye3dRotation windowSize =
+        member this.SubmitMessages eyePosition2d eyeSize2d eyePosition3d eyeRotation3d windowSize =
             match renderersOpt with
             | Some (renderer2d, renderer3d) ->
-                renderer3d.Render eye3dPosition eye3dRotation windowSize messages3d
+                renderer3d.Render eyePosition3d eyeRotation3d windowSize messages3d
                 messages3d.Clear ()
-                renderer2d.Render eye2dPosition eye2dSize windowSize messages2d
+                renderer2d.Render eyePosition2d eyeSize2d windowSize messages2d
                 messages2d.Clear ()
             | None -> raise (InvalidOperationException "Renderers are not yet or are no longer valid.")
 
@@ -170,17 +170,17 @@ type RendererThread (createRenderer2d, createRenderer3d) =
             if not terminated then
 
                 // receive submission
-                let (messages3d, messages2d, eye3dPosition, eye3dRotation, eye2dPosition, eye2dSize, windowSize) = Option.get submissionOpt
+                let (messages3d, messages2d, eyePosition3d, eyeRotation3d, eyePosition2d, eyeSize2d, windowSize) = Option.get submissionOpt
                 submissionOpt <- None
 
                 // render 3d
-                renderer3d.Render eye3dPosition eye3dRotation windowSize messages3d
+                renderer3d.Render eyePosition3d eyeRotation3d windowSize messages3d
                 
                 // recover cached static model messages
                 freeStaticModelMessages messages3d
 
                 // render 2d
-                renderer2d.Render eye2dPosition eye2dSize windowSize messages2d
+                renderer2d.Render eyePosition2d eyeSize2d windowSize messages2d
             
                 // recover cached sprite messages
                 freeSpriteMessages messages2d
@@ -269,7 +269,7 @@ type RendererThread (createRenderer2d, createRenderer3d) =
             messageBuffers3d.[messageBufferIndex].Clear ()
             messageBuffers2d.[messageBufferIndex].Clear ()
 
-        member this.SubmitMessages eye2dPosition eye2dSize eye3dPosition eye3dRotation eyeMargin =
+        member this.SubmitMessages eyePosition2d eyeSize2d eyePosition3d eyeRotation3d eyeMargin =
             if Option.isNone taskOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
             while swap do Thread.Yield () |> ignore<bool>
             let messages3d = messageBuffers3d.[messageBufferIndex]
@@ -277,7 +277,7 @@ type RendererThread (createRenderer2d, createRenderer3d) =
             messageBufferIndex <- if messageBufferIndex = 0 then 1 else 0
             messageBuffers3d.[messageBufferIndex].Clear ()
             messageBuffers2d.[messageBufferIndex].Clear ()
-            submissionOpt <- Some (messages3d, messages2d, eye3dPosition, eye3dRotation, eye2dPosition, eye2dSize, eyeMargin)
+            submissionOpt <- Some (messages3d, messages2d, eyePosition3d, eyeRotation3d, eyePosition2d, eyeSize2d, eyeMargin)
 
         member this.Swap () =
             if Option.isNone taskOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")

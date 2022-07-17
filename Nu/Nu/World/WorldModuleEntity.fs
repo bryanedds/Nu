@@ -2218,27 +2218,27 @@ module WorldModuleEntity =
                 let (position, snapsOpt) =
                     if entityState.Is2d then
                         let viewport = World.getViewport world
-                        let eyePosition = World.getEye2dPosition world
-                        let eyeSize = World.getEye2dSize world
+                        let eyePosition = World.getEyePosition2d world
+                        let eyeSize = World.getEyeSize2d world
                         let position =
                             if atMouse
                             then (viewport.MouseToWorld2d (entityState.Absolute, rightClickPosition, eyePosition, eyeSize)).V3
-                            else (viewport.MouseToWorld2d (entityState.Absolute, (World.getEye2dSize world * 0.5f), eyePosition, eyeSize)).V3
+                            else (viewport.MouseToWorld2d (entityState.Absolute, (World.getEyeSize2d world * 0.5f), eyePosition, eyeSize)).V3
                         match snapsEir with
                         | Left (positionSnap, degreesSnap, scaleSnap) -> (position, Some (positionSnap, degreesSnap, scaleSnap))
                         | Right _ -> (position, None)
                     else
-                        let eyePosition = World.getEye3dPosition world
-                        let eyeRotation = World.getEye3dRotation world
+                        let eyePosition = World.getEyePosition3d world
+                        let eyeRotation = World.getEyeRotation3d world
                         let position =
                             if atMouse then
                                 let viewport = Constants.Render.Viewport
                                 let ray = viewport.MouseToWorld3d (entityState.Absolute, rightClickPosition, eyePosition, eyeRotation)
                                 let forward = Vector3.Transform (v3Forward, eyeRotation)
-                                let plane = plane3 (eyePosition + forward * Constants.Engine.Eye3dPositionDefault.Z) -forward
+                                let plane = plane3 (eyePosition + forward * Constants.Engine.EyePosition3dDefault.Z) -forward
                                 let intersectionOpt = ray.Intersection plane
                                 intersectionOpt.Value
-                            else eyePosition + Vector3.Transform (v3Forward, eyeRotation) * Constants.Engine.Eye3dPositionDefault.Z
+                            else eyePosition + Vector3.Transform (v3Forward, eyeRotation) * Constants.Engine.EyePosition3dDefault.Z
                         match snapsEir with
                         | Right (positionSnap, degreesSnap, scaleSnap) -> (position, Some (positionSnap, degreesSnap, scaleSnap))
                         | Left _ -> (position, None)

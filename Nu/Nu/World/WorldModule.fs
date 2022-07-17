@@ -320,23 +320,23 @@ module WorldModule =
 
         /// Try to get the 2d texture metadata of the given asset.
         [<FunctionBinding>]
-        static member tryGetTexture2dSize assetTag world =
-            Metadata.tryGetTexture2dSize assetTag (World.getMetadata world)
+        static member tryGetTextureSize2d assetTag world =
+            Metadata.tryGetTextureSize2d assetTag (World.getMetadata world)
 
         /// Forcibly get the 2d texture size metadata of the given asset (throwing on failure).
         [<FunctionBinding>]
-        static member getTexture2dSize assetTag world =
-            Metadata.getTexture2dSize assetTag (World.getMetadata world)
+        static member getTextureSize2d assetTag world =
+            Metadata.getTextureSize2d assetTag (World.getMetadata world)
 
         /// Try to get the 2d texture size metadata of the given asset.
         [<FunctionBinding>]
-        static member tryGetTexture2dSizeF assetTag world =
-            Metadata.tryGetTexture2dSizeF assetTag (World.getMetadata world)
+        static member tryGetTextureSize2dF assetTag world =
+            Metadata.tryGetTextureSize2dF assetTag (World.getMetadata world)
 
         /// Forcibly get the 2d texture size metadata of the given asset (throwing on failure).
         [<FunctionBinding>]
-        static member getTexture2dSizeF assetTag world =
-            Metadata.getTexture2dSizeF assetTag (World.getMetadata world)
+        static member getTextureSize2dF assetTag world =
+            Metadata.getTextureSize2dF assetTag (World.getMetadata world)
 
         /// Try to get the tile map metadata of the given asset.
         static member tryGetTileMapMetadata assetTag world =

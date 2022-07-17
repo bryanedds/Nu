@@ -1184,8 +1184,8 @@ module FieldDispatcher =
                     let avatar = Simulants.Field.Scene.Avatar
                     let lowerCenter = field.Avatar.LowerCenter
                     let viewport = World.getViewport world
-                    let eyePosition = World.getEye2dPosition world
-                    let eyeSize = World.getEye2dSize world
+                    let eyePosition = World.getEyePosition2d world
+                    let eyeSize = World.getEyeSize2d world
                     let position = viewport.MouseToWorld2d (false, position, eyePosition, eyeSize)
                     let heading = position.V3 - lowerCenter
                     if heading.Magnitude >= 6.0f then // TODO: make constant DeadZoneRadius.
@@ -1199,11 +1199,11 @@ module FieldDispatcher =
 
             | UpdateEye ->
                 if World.getUpdateRate world <> 0L then
-                    let world = World.setEye2dPosition field.Avatar.Center.V2 world
+                    let world = World.setEyePosition2d field.Avatar.Center.V2 world
                     let tileMapPerimeter2d = (Simulants.Field.Scene.TileMap.GetPerimeter world).Box2
                     let eyeBounds = tileMapPerimeter2d.WithPosition (tileMapPerimeter2d.Position + v2 48.0f 48.0f)
                     let eyeBounds = eyeBounds.WithSize (tileMapPerimeter2d.Size - v2 96.0f 96.0f)
-                    let world = World.constrainEye2dBounds eyeBounds world
+                    let world = World.constrainEyeBounds2d eyeBounds world
                     just world
                 else just world
 
@@ -1288,7 +1288,7 @@ module FieldDispatcher =
 
                  // backdrop sprite
                  Content.staticSprite Gen.name
-                    [Entity.Perimeter <== field --|> (fun _ world -> (World.getViewBoundsAbsolute2d world).Box3); Entity.Elevation == Single.MinValue; Entity.Absolute == true
+                    [Entity.Perimeter <== field --|> (fun _ world -> (World.getViewBounds2dAbsolute world).Box3); Entity.Elevation == Single.MinValue; Entity.Absolute == true
                      Entity.StaticImage == Assets.Default.Image9
                      Entity.Color <== field --> fun field ->
                         match Data.Value.Fields.TryGetValue field.FieldType with
@@ -1297,7 +1297,7 @@ module FieldDispatcher =
 
                  // transition fade sprite
                  Content.staticSprite Gen.name
-                    [Entity.Perimeter <== field --|> (fun _ world -> (World.getViewBoundsAbsolute2d world).Box3); Entity.Elevation == Single.MaxValue; Entity.Absolute == true
+                    [Entity.Perimeter <== field --|> (fun _ world -> (World.getViewBounds2dAbsolute world).Box3); Entity.Elevation == Single.MaxValue; Entity.Absolute == true
                      Entity.StaticImage == Assets.Default.Image8
                      Entity.Visible <== field --> fun field -> Option.isSome field.FieldTransitionOpt
                      Entity.Color <== field --|> fun field world ->
