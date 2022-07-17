@@ -111,7 +111,7 @@ module WorldModuleGame =
 
         /// Get the current 2d eye bounds.
         [<FunctionBinding>]
-        static member getEyeBounds2d world =
+        static member getEye2dBounds world =
             let eyePosition = World.getEye2dPosition world
             let eyeSize = World.getEye2dSize world
             box2 (eyePosition - eyeSize * 0.5f) eyeSize
@@ -217,8 +217,8 @@ module WorldModuleGame =
 
         /// Constrain the eye to the given 2d bounds.
         [<FunctionBinding>]
-        static member constrainEyeBounds2d (bounds : Box2) world =
-            let mutable eyeBounds = World.getEyeBounds2d world
+        static member constrainEye2dBounds (bounds : Box2) world =
+            let mutable eyeBounds = World.getEye2dBounds world
             eyeBounds.Position <-
                 v2
                     (if eyeBounds.Position.X < bounds.Position.X then bounds.Position.X
