@@ -10,6 +10,7 @@ open System.Collections.Generic
 [<RequireQualifiedAccess>]
 module SegmentedList =
 
+    /// TODO: implement remove.
     type [<ReferenceEquality; NoComparison>] 'a SegmentedList =
         private
             { mutable TotalLength : int
