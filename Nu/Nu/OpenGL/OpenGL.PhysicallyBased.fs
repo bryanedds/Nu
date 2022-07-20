@@ -540,7 +540,7 @@ module PhysicallyBased =
                     let lightNodes =
                         seq {
                             for i in 0 .. dec scene.LightCount do
-                                let light = scene.Lights[i]
+                                let light = scene.Lights.[i]
                                 let node = scene.RootNode.FindNode light.Name
                                 yield (light, node) } |>
                         Seq.toArray
