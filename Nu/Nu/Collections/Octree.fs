@@ -142,24 +142,25 @@ module internal Octnode =
                     getElementsInViewFrustum enclosed exposed imposter frustum node set
         | ValueRight elements ->
             for element in elements do
-                if element.Enclosed then
-                    if enclosed then
+                if enclosed then
+                    if element.Enclosed || element.Exposed || element.Prominent then
                         set.Add element |> ignore
-                elif element.Exposed || element.Prominent then
-                    set.Add element |> ignore
-                elif element.Imposter then
-                    set.Add element |> ignore
+                elif exposed then
+                    if element.Exposed || element.Prominent then
+                        set.Add element |> ignore
+                elif imposter then
+                    if element.Imposter || element.Prominent then
+                        set.Add element |> ignore
 
     let rec internal getElementsInView frustumEnclosed frustumExposed frustumImposter lightBox node (set : 'e Octelement HashSet) =
         match node.Children with
         | ValueLeft nodes ->
             for node in nodes do
-                let intersectingEnclosed = isIntersectingFrustum frustumEnclosed node
-                let intersectingExposed = isIntersectingFrustum frustumExposed node
-                if intersectingEnclosed || intersectingExposed then
-                    if intersectingEnclosed then getElementsInViewFrustum true false false frustumEnclosed node set
-                    if intersectingExposed then getElementsInViewFrustum false true false frustumExposed node set
-                elif isIntersectingFrustum frustumImposter node then
+                if isIntersectingFrustum frustumEnclosed node then
+                    getElementsInViewFrustum true false false frustumEnclosed node set
+                if isIntersectingFrustum frustumExposed node then
+                    getElementsInViewFrustum false true false frustumExposed node set
+                if isIntersectingFrustum frustumImposter node then
                     getElementsInViewFrustum false false true frustumImposter node set
                 if isIntersectingBox lightBox node then
                     getLightsInBox lightBox node set
