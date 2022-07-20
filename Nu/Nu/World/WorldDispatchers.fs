@@ -1326,7 +1326,7 @@ module Light3dFacetModule =
 [<AutoOpen>]
 module StaticModelFacetModule =
 
-    type RenderStyle =
+    type [<StructuralEquality; StructuralComparison>] RenderStyle =
         | Deferred
         | Forward of single
 
