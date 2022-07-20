@@ -922,7 +922,7 @@ module WorldModule2 =
                     Seq.fold (fun world (entity : Entity) ->
                         World.actualizeEntity entity world)
                         world entities
-                else 
+                else
                     Seq.fold (fun world (entity : Entity) ->
                         let group = entity.Group
                         if group.GetVisible world

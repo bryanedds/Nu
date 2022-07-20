@@ -311,11 +311,6 @@
     <Reference Include="System.Xml.Linq" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Nu.AStar\Nu.AStar.csproj">
-      <Name>Nu.AStar</Name>
-      <Project>{61667008-ee77-43b4-8825-0231d241cca6}</Project>
-      <Private>True</Private>
-    </ProjectReference>
     <ProjectReference Include="..\Nu.Math\Nu.Math.csproj">
       <Name>Nu.Math</Name>
       <Project>{f184a111-8c28-40b4-8cde-7bf2a64b3ca7}</Project>
