@@ -156,11 +156,6 @@
     <Reference Include="System.Numerics" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Windows.Forms" />
-    <ProjectReference Include="..\Nu.AStar\Nu.AStar.csproj">
-      <Name>Nu.AStar</Name>
-      <Project>{61667008-ee77-43b4-8825-0231d241cca6}</Project>
-      <Private>True</Private>
-    </ProjectReference>
     <ProjectReference Include="..\Nu.Gaia.Design\Nu.Gaia.Design.csproj">
       <Name>Nu.Gaia.Design</Name>
       <Project>{f67217c1-6bb3-4180-916b-b7b4cdc14c2d}</Project>
