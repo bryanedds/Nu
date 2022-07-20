@@ -46,11 +46,11 @@ module WorldBindings =
         "createEntity renameEntity trySetEntityOverlayNameOpt trySetEntityFacetNames " +
         "getEyePosition2d setEyePosition2d getEyeSize2d setEyeSize2d " +
         "getEyeBounds2d getEyePosition3d setEyePosition3d getEyeRotation3d " +
-        "setEyeRotation3d getEyeFrustum3dEnclosed getEyeFrustum3dUnenclosed getEyeFrustum3dProminent " +
+        "setEyeRotation3d getEyeFrustum3dEnclosed getEyeFrustum3dExposed getEyeFrustum3dImposter " +
         "getLightBox3d getOmniScreenOpt setOmniScreenOpt getOmniScreen " +
         "setOmniScreen getSelectedScreenOpt constrainEyeBounds2d getSelectedScreen " +
         "setSelectedScreen getViewBounds2dAbsolute getPlayBounds2dAbsolute getViewBounds2d " +
-        "getPlayBounds2d isBoundsInView2d getViewBounds3d getPlayBounds3d " +
+        "getPlayBounds2d isBoundsInView2d getPlayBounds3d " +
         "isBoundsInView3d isBoundsInPlay3d reloadSymbols getImperative " +
         "getStandAlone getCollectionConfig getLiveness getUpdateRate " +
         "setUpdateRate isAdvancing isHalted getUpdateTime " +
@@ -2215,26 +2215,26 @@ module WorldBindings =
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getEyeFrustum3dEnclosed' due to: " + scstring exn, ValueNone)
             struct (violation, World.choose oldWorld)
 
-    let getEyeFrustum3dUnenclosed world =
+    let getEyeFrustum3dExposed world =
         let oldWorld = world
         try
-            let result = World.getEyeFrustum3dUnenclosed world
+            let result = World.getEyeFrustum3dExposed world
             let value = result
             let value = ScriptingSystem.tryImport typeof<Frustum> value world |> Option.get
             struct (value, world)
         with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getEyeFrustum3dUnenclosed' due to: " + scstring exn, ValueNone)
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getEyeFrustum3dExposed' due to: " + scstring exn, ValueNone)
             struct (violation, World.choose oldWorld)
 
-    let getEyeFrustum3dProminent world =
+    let getEyeFrustum3dImposter world =
         let oldWorld = world
         try
-            let result = World.getEyeFrustum3dProminent world
+            let result = World.getEyeFrustum3dImposter world
             let value = result
             let value = ScriptingSystem.tryImport typeof<Frustum> value world |> Option.get
             struct (value, world)
         with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getEyeFrustum3dProminent' due to: " + scstring exn, ValueNone)
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getEyeFrustum3dImposter' due to: " + scstring exn, ValueNone)
             struct (violation, World.choose oldWorld)
 
     let getLightBox3d world =
@@ -2413,21 +2413,6 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'isBoundsInView2d' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
-
-    let getViewBounds3d presence world =
-        let oldWorld = world
-        try
-            let presence =
-                match ScriptingSystem.tryExport typeof<Presence> presence world with
-                | Some value -> value :?> Presence
-                | None -> failwith "Invalid argument type for 'presence'; expecting a value convertable to Presence."
-            let result = World.getViewBounds3d presence world
-            let value = result
-            let value = ScriptingSystem.tryImport typeof<ValueTuple<Frustum, Box3>> value world |> Option.get
-            struct (value, world)
-        with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getViewBounds3d' due to: " + scstring exn, ValueNone)
             struct (violation, World.choose oldWorld)
 
     let getPlayBounds3d world =
@@ -4059,23 +4044,23 @@ module WorldBindings =
                 struct (violation, world)
         | Some violation -> struct (violation, world)
 
-    let evalGetEyeFrustum3dUnenclosedBinding fnName exprs originOpt world =
+    let evalGetEyeFrustum3dExposedBinding fnName exprs originOpt world =
         let struct (evaleds, world) = World.evalManyInternal exprs world
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [||] -> getEyeFrustum3dUnenclosed world
+            | [||] -> getEyeFrustum3dExposed world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
                 struct (violation, world)
         | Some violation -> struct (violation, world)
 
-    let evalgetEyeFrustum3dProminentBinding fnName exprs originOpt world =
+    let evalgetEyeFrustum3dImposterBinding fnName exprs originOpt world =
         let struct (evaleds, world) = World.evalManyInternal exprs world
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [||] -> getEyeFrustum3dProminent world
+            | [||] -> getEyeFrustum3dImposter world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
                 struct (violation, world)
@@ -4230,17 +4215,6 @@ module WorldBindings =
         | None ->
             match evaleds with
             | [|bounds|] -> isBoundsInView2d bounds world
-            | _ ->
-                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
-                struct (violation, world)
-        | Some violation -> struct (violation, world)
-
-    let evalGetViewBounds3dBinding fnName exprs originOpt world =
-        let struct (evaleds, world) = World.evalManyInternal exprs world
-        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
-        | None ->
-            match evaleds with
-            | [|presence|] -> getViewBounds3d presence world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
                 struct (violation, world)
@@ -4689,8 +4663,8 @@ module WorldBindings =
              ("getEyeRotation3d", { Fn = evalGetEyeRotation3dBinding; Pars = [||]; DocOpt = None })
              ("setEyeRotation3d", { Fn = evalSetEyeRotation3dBinding; Pars = [|"value"|]; DocOpt = None })
              ("getEyeFrustum3dEnclosed", { Fn = evalGetEyeFrustum3dEnclosedBinding; Pars = [||]; DocOpt = None })
-             ("getEyeFrustum3dUnenclosed", { Fn = evalGetEyeFrustum3dUnenclosedBinding; Pars = [||]; DocOpt = None })
-             ("getEyeFrustum3dProminent", { Fn = evalgetEyeFrustum3dProminentBinding; Pars = [||]; DocOpt = None })
+             ("getEyeFrustum3dExposed", { Fn = evalGetEyeFrustum3dExposedBinding; Pars = [||]; DocOpt = None })
+             ("getEyeFrustum3dImposter", { Fn = evalgetEyeFrustum3dImposterBinding; Pars = [||]; DocOpt = None })
              ("getLightBox3d", { Fn = evalGetLightBox3dBinding; Pars = [||]; DocOpt = None })
              ("getOmniScreenOpt", { Fn = evalGetOmniScreenOptBinding; Pars = [||]; DocOpt = None })
              ("setOmniScreenOpt", { Fn = evalSetOmniScreenOptBinding; Pars = [|"value"|]; DocOpt = None })
@@ -4705,7 +4679,6 @@ module WorldBindings =
              ("getViewBounds2d", { Fn = evalGetViewBounds2dBinding; Pars = [||]; DocOpt = None })
              ("getPlayBounds2d", { Fn = evalGetPlayBounds2dBinding; Pars = [||]; DocOpt = None })
              ("isBoundsInView2d", { Fn = evalIsBoundsInView2dBinding; Pars = [|"bounds"|]; DocOpt = None })
-             ("getViewBounds3d", { Fn = evalGetViewBounds3dBinding; Pars = [|"presence"|]; DocOpt = None })
              ("getPlayBounds3d", { Fn = evalGetPlayBounds3dBinding; Pars = [||]; DocOpt = None })
              ("isBoundsInView3d", { Fn = evalIsBoundsInView3dBinding; Pars = [|"light"; "presence"; "bounds"|]; DocOpt = None })
              ("isBoundsInPlay3d", { Fn = evalIsBoundsInPlay3dBinding; Pars = [|"bounds"|]; DocOpt = None })

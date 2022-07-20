@@ -199,7 +199,7 @@ module WorldTypes =
              Define? Elevation 0.0f
              Define? ElevationLocal 0.0f
              Define? Overflow 1.0f
-             Define? Presence Unenclosed
+             Define? Presence Exposed
              Define? Absolute false
              Define? Model { DesignerType = typeof<unit>; DesignerValue = () }
              Define? MountOpt Option<Entity Relation>.None
@@ -351,9 +351,9 @@ module WorldTypes =
           EyeSize2d : Vector2
           EyePosition3d : Vector3
           EyeRotation3d : Quaternion
-          EyeFrustumEnclosed3d : Frustum
-          EyeFrustumUnenclosed3d : Frustum
-          EyeFrustumProminent3d : Frustum
+          EyeFrustum3dEnclosed : Frustum
+          EyeFrustum3dExposed : Frustum
+          EyeFrustum3dImposter : Frustum
           ScriptFrame : Scripting.DeclarationFrame
           Order : int64
           Id : Guid }
@@ -377,9 +377,9 @@ module WorldTypes =
               EyeSize2d = v2 (single Constants.Render.VirtualResolutionX) (single Constants.Render.VirtualResolutionY)
               EyePosition3d = eyePosition3d
               EyeRotation3d = eyeRotation3d
-              EyeFrustumEnclosed3d = viewport.Frustum (Constants.Render.NearPlaneDistance, Constants.Render.FarPlaneDistanceEnclosed, eyePosition3d, eyeRotation3d)
-              EyeFrustumUnenclosed3d = viewport.Frustum (Constants.Render.NearPlaneDistance, Constants.Render.FarPlaneDistanceUnenclosed, eyePosition3d, eyeRotation3d)
-              EyeFrustumProminent3d = viewport.Frustum (Constants.Render.NearPlaneDistance, Constants.Render.FarPlaneDistanceProminent, eyePosition3d, eyeRotation3d)
+              EyeFrustum3dEnclosed = viewport.Frustum (Constants.Render.NearPlaneDistanceEnclosed, Constants.Render.FarPlaneDistanceEnclosed, eyePosition3d, eyeRotation3d)
+              EyeFrustum3dExposed = viewport.Frustum (Constants.Render.NearPlaneDistanceExposed, Constants.Render.FarPlaneDistanceExposed, eyePosition3d, eyeRotation3d)
+              EyeFrustum3dImposter = viewport.Frustum (Constants.Render.NearPlaneDistanceImposter, Constants.Render.FarPlaneDistanceImposter, eyePosition3d, eyeRotation3d)
               ScriptFrame = Scripting.DeclarationFrame StringComparer.Ordinal
               Order = Core.getUniqueTimeStamp ()
               Id = Gen.id }
