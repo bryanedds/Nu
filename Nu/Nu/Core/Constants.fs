@@ -11,7 +11,9 @@ open Prime
 [<RequireQualifiedAccess>]
 module Engine =
 
-    let [<Literal>] DesiredFps = 60
+    let (*Literal*) FpsDesired = Fps60
+    let (*Literal*) FpsDesiredI = match FpsDesired with Fps30 -> 30 | Fps60 -> 60
+    let (*Literal*) FpsDesiredF = match FpsDesired with Fps30 -> 30.0f | Fps60 -> 60.0f
     let [<Literal>] SuccessExitCode = 0
     let [<Literal>] FailureExitCode = 1
     let [<Literal>] NamePropertyName = "Name"
@@ -111,7 +113,7 @@ module Audio =
 [<RequireQualifiedAccess>]
 module Physics =
 
-    let (*Literal*) PhysicsStepRate = 1.0f / single Engine.DesiredFps
+    let (*Literal*) PhysicsStepRate = 1.0f / match Engine.FpsDesired with Fps30 -> 30.0f | Fps60 -> 60.0f
     let [<Literal>] PhysicsToPixelRatio = 48.0f // 48 pixels = 1 meter
     let (*Literal*) PixelToPhysicsRatio = 1.0f / PhysicsToPixelRatio
     let [<Literal>] DensityDefault = 1.0f
@@ -133,7 +135,7 @@ module Particles =
 [<RequireQualifiedAccess>]
 module Effects =
 
-    let [<Literal>] EffectHistoryMaxDefault = Engine.DesiredFps // 1 second of effect history
+    let [<Literal>] EffectHistoryMaxDefault = 60 // 1 second of effect history @ 60 fps
 
 [<RequireQualifiedAccess>]
 module Ecs =
