@@ -195,7 +195,7 @@ module WorldTypes =
              Define? AnglesLocal Vector3.Zero
              Define? Degrees Vector3.Zero
              Define? DegreesLocal Vector3.Zero
-             Define? Size Constants.Engine.Entity3dSizeDefault // arbitrarily chosen
+             Define? Size Constants.Engine.EntitySize3dDefault // arbitrarily chosen
              Define? Elevation 0.0f
              Define? ElevationLocal 0.0f
              Define? Overflow 1.0f
@@ -258,7 +258,7 @@ module WorldTypes =
         default this.GetQuickSize (_, _) =
             if this.Is2d
             then Constants.Engine.EntitySize2dDefault
-            else Constants.Engine.Entity3dSizeDefault
+            else Constants.Engine.EntitySize3dDefault
 
         /// Attempt to pick an entity with a ray.
         abstract RayCast : Ray3 * Entity * World -> single array
@@ -327,7 +327,7 @@ module WorldTypes =
         default this.GetQuickSize (entity, world) =
             if getEntityIs2d entity world
             then Constants.Engine.EntitySize2dDefault
-            else Constants.Engine.Entity3dSizeDefault
+            else Constants.Engine.EntitySize3dDefault
 
         /// Whether a facet participates in a physics system.
         member this.Physical = physical
