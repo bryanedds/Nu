@@ -178,7 +178,7 @@ module WorldModuleGame =
         /// Get the current 3d light box.
         [<FunctionBinding>]
         static member getLightBox3d world =
-            let lightBoxSize = Constants.Render.LightBox3dSize
+            let lightBoxSize = Constants.Render.LightBoxSize3d
             box3 ((World.getGameState world).EyePosition3d - lightBoxSize * 0.5f) lightBoxSize
 
         /// Get the omni-screen, if any.
@@ -379,7 +379,7 @@ module WorldModuleGame =
         [<FunctionBinding>]
         static member getPlayBounds3d world =
             let eyePosition = World.getEyePosition3d world
-            let eyeBox = box3 (eyePosition - Constants.Render.PlayBox3dSize * 0.5f) Constants.Render.PlayBox3dSize
+            let eyeBox = box3 (eyePosition - Constants.Render.PlayBoxSize3d * 0.5f) Constants.Render.PlayBoxSize3d
             let eyeFrustum = World.getEyeFrustum3dEnclosed world
             struct (eyeBox, eyeFrustum)
 

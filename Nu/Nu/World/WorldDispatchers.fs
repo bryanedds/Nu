@@ -1467,7 +1467,7 @@ module StaticModelSurfaceFacetModule =
                 let bounds = staticModel.Surfaces.[surfaceIndex].SurfaceBounds
                 let boundsExtended = bounds.Combine bounds.Mirror
                 boundsExtended.Size
-            else Constants.Engine.Entity3dSizeDefault
+            else Constants.Engine.EntitySize3dDefault
 
         override this.RayCast (ray, entity, world) =
             let rayEntity = ray.Transform (Matrix4x4.Invert (entity.GetAffineMatrix world) |> snd)
@@ -1513,7 +1513,7 @@ module EntityDispatcherModule =
         inherit EntityDispatcher (false, centered, physical)
 
         static member Properties =
-            [define Entity.Size Constants.Engine.Entity3dSizeDefault]
+            [define Entity.Size Constants.Engine.EntitySize3dDefault]
 
     type World with
 
@@ -1632,7 +1632,7 @@ module EntityDispatcherModule =
         inherit EntityDispatcher<'model, 'message, 'command> (false, centered, physical, initial)
 
         static member Properties =
-            [define Entity.Size Constants.Engine.Entity3dSizeDefault]
+            [define Entity.Size Constants.Engine.EntitySize3dDefault]
 
 [<AutoOpen>]
 module StaticSpriteDispatcherModule =
