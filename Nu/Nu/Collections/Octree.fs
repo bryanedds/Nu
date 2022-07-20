@@ -31,7 +31,6 @@ type [<CustomEquality; NoComparison>] Octelement<'e when 'e : equality> =
     member this.Imposter with get () = this.Presence.ImposterType
     member this.Prominent with get () = this.Presence.ProminentType
     member this.Omnipresent with get () = this.Presence.OmnipresentType
-    member this.Uncullable with get () = this.Presence.Uncullable
     override this.GetHashCode () = this.HashCode
     override this.Equals that = match that with :? Octelement<'e> as that -> this.Entry.Equals that.Entry | _ -> false
     static member make static_ light presence (entry : 'e) =
@@ -268,85 +267,85 @@ module Octree =
     type [<NoEquality; NoComparison>] Octree<'e when 'e : equality> =
         private
             { Node : 'e Octnode
-              Uncullable : 'e Octelement HashSet
+              Omnipresent : 'e Octelement HashSet
               Depth : int
               Granularity : int
               Bounds : Box3 }
 
     let addElement bounds element tree =
-        if element.Presence.Uncullable then
-            tree.Uncullable.Remove element |> ignore
-            tree.Uncullable.Add element |> ignore
+        if element.Presence.OmnipresentType then
+            tree.Omnipresent.Remove element |> ignore
+            tree.Omnipresent.Add element |> ignore
         else
             if not (Octnode.isIntersectingBox bounds tree.Node) then
                 Log.info "Element is outside the octree's containment area or is being added redundantly."
-                tree.Uncullable.Remove element |> ignore
-                tree.Uncullable.Add element |> ignore
+                tree.Omnipresent.Remove element |> ignore
+                tree.Omnipresent.Add element |> ignore
             else Octnode.addElement bounds element tree.Node
 
     let removeElement bounds element tree =
-        if element.Presence.Uncullable then 
-            tree.Uncullable.Remove element |> ignore
+        if element.Presence.OmnipresentType then 
+            tree.Omnipresent.Remove element |> ignore
         else
             if not (Octnode.isIntersectingBox bounds tree.Node) then
                 Log.info "Element is outside the octree's containment area or is not present for removal."
-                tree.Uncullable.Remove element |> ignore
+                tree.Omnipresent.Remove element |> ignore
             else Octnode.removeElement bounds element tree.Node
 
     let updateElement (oldPresence : Presence) oldBounds (newPresence : Presence) newBounds element tree =
-        let wasInNode = oldPresence.Cullable && Octnode.isIntersectingBox oldBounds tree.Node
-        let isInNode = newPresence.Cullable && Octnode.isIntersectingBox newBounds tree.Node
+        let wasInNode = not oldPresence.OmnipresentType && Octnode.isIntersectingBox oldBounds tree.Node
+        let isInNode = not newPresence.OmnipresentType && Octnode.isIntersectingBox newBounds tree.Node
         if wasInNode then
             if isInNode then
                 Octnode.updateElement oldBounds newBounds element tree.Node
             else
                 Octnode.removeElement oldBounds element tree.Node |> ignore
-                tree.Uncullable.Remove element |> ignore
-                tree.Uncullable.Add element |> ignore
+                tree.Omnipresent.Remove element |> ignore
+                tree.Omnipresent.Add element |> ignore
         else
             if isInNode then
-                tree.Uncullable.Remove element |> ignore
+                tree.Omnipresent.Remove element |> ignore
                 Octnode.addElement newBounds element tree.Node
             else
-                tree.Uncullable.Remove element |> ignore
-                tree.Uncullable.Add element |> ignore
+                tree.Omnipresent.Remove element |> ignore
+                tree.Omnipresent.Add element |> ignore
 
-    let getElementsUncullable (set : _ HashSet) tree =
-        new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (tree.Uncullable, set)) :> 'e Octelement IEnumerable
+    let getElementsOmnipresent (set : _ HashSet) tree =
+        new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (tree.Omnipresent, set)) :> 'e Octelement IEnumerable
 
     let getElementsAtPoint point (set : _ HashSet) tree =
         Octnode.getElementsAtPoint point tree.Node set
-        new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (tree.Uncullable, set)) :> 'e Octelement IEnumerable
+        new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (tree.Omnipresent, set)) :> 'e Octelement IEnumerable
 
     let getElementsInBounds bounds (set : _ HashSet) tree =
         Octnode.getElementsInBox bounds tree.Node set
-        new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (tree.Uncullable, set)) :> 'e Octelement IEnumerable
+        new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (tree.Omnipresent, set)) :> 'e Octelement IEnumerable
 
     let getElementsInFrustum frustum (set : _ HashSet) tree =
         Octnode.getElementsInFrustum frustum tree.Node set
-        new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (tree.Uncullable, set)) :> 'e Octelement IEnumerable
+        new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (tree.Omnipresent, set)) :> 'e Octelement IEnumerable
 
     let getElementsInView frustumEnclosed frustumExposed frustumImposter lightBox (set : _ HashSet) tree =
         Octnode.getElementsInView frustumEnclosed frustumExposed frustumImposter lightBox tree.Node set
-        new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (tree.Uncullable, set)) :> 'e Octelement IEnumerable
+        new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (tree.Omnipresent, set)) :> 'e Octelement IEnumerable
 
     let getElementsInPlay playBox playFrustum (set : _ HashSet) tree =
         Octnode.getElementsInPlay playBox playFrustum tree.Node set
-        new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (tree.Uncullable, set)) :> 'e Octelement IEnumerable
+        new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (tree.Omnipresent, set)) :> 'e Octelement IEnumerable
 
     let getDepth tree =
         tree.Depth
 
     let clone tree =
         { Node = Octnode.clone tree.Node
-          Uncullable = HashSet (tree.Uncullable, HashIdentity.Structural)
+          Omnipresent = HashSet (tree.Omnipresent, HashIdentity.Structural)
           Depth = tree.Depth
           Granularity = tree.Granularity
           Bounds = tree.Bounds }
 
     let make<'e when 'e : equality> granularity depth bounds =
         { Node = Octnode.make<'e> granularity depth bounds
-          Uncullable = HashSet HashIdentity.Structural
+          Omnipresent = HashSet HashIdentity.Structural
           Depth = depth
           Granularity = granularity
           Bounds = bounds }
