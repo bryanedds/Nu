@@ -643,7 +643,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             let viewSkyBox = Matrix4x4.CreateFromQuaternion (Quaternion.Inverse eyeRotation)
             let viewSkyBoxArray = viewSkyBox.ToArray ()
             let viewport = Constants.Render.Viewport
-            let projection = viewport.Projection3d Constants.Render.NearPlaneDistance Constants.Render.FarPlaneDistanceOmnipresent
+            let projection = viewport.Projection3d Constants.Render.NearPlaneDistanceOmnipresent Constants.Render.FarPlaneDistanceOmnipresent
             let projectionArray = projection.ToArray ()
             OpenGL.Hl.Assert ()
 

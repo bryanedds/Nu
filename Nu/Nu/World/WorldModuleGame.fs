@@ -128,9 +128,9 @@ module WorldModuleGame =
                     let viewport = Constants.Render.Viewport
                     { gameState with
                         EyePosition3d = value
-                        EyeFrustumEnclosed3d = viewport.Frustum (Constants.Render.NearPlaneDistance, Constants.Render.FarPlaneDistanceEnclosed, value, gameState.EyeRotation3d)
-                        EyeFrustumUnenclosed3d = viewport.Frustum (Constants.Render.NearPlaneDistance, Constants.Render.FarPlaneDistanceUnenclosed, value, gameState.EyeRotation3d)
-                        EyeFrustumProminent3d = viewport.Frustum (Constants.Render.NearPlaneDistance, Constants.Render.FarPlaneDistanceProminent, value, gameState.EyeRotation3d) }
+                        EyeFrustum3dEnclosed = viewport.Frustum (Constants.Render.NearPlaneDistanceEnclosed, Constants.Render.FarPlaneDistanceEnclosed, value, gameState.EyeRotation3d)
+                        EyeFrustum3dExposed = viewport.Frustum (Constants.Render.NearPlaneDistanceExposed, Constants.Render.FarPlaneDistanceExposed, value, gameState.EyeRotation3d)
+                        EyeFrustum3dImposter = viewport.Frustum (Constants.Render.NearPlaneDistanceImposter, Constants.Render.FarPlaneDistanceImposter, value, gameState.EyeRotation3d) }
                 else Unchecked.defaultof<_>) Property? EyePosition3d value world
 
         /// Set the current 3d eye position.
@@ -150,9 +150,9 @@ module WorldModuleGame =
                     let viewport = Constants.Render.Viewport
                     { gameState with
                         EyeRotation3d = value
-                        EyeFrustumEnclosed3d = viewport.Frustum (Constants.Render.NearPlaneDistance, Constants.Render.FarPlaneDistanceEnclosed, gameState.EyePosition3d, value)
-                        EyeFrustumUnenclosed3d = viewport.Frustum (Constants.Render.NearPlaneDistance, Constants.Render.FarPlaneDistanceUnenclosed, gameState.EyePosition3d, value)
-                        EyeFrustumProminent3d = viewport.Frustum (Constants.Render.NearPlaneDistance, Constants.Render.FarPlaneDistanceProminent, gameState.EyePosition3d, value) }
+                        EyeFrustum3dEnclosed = viewport.Frustum (Constants.Render.NearPlaneDistanceEnclosed, Constants.Render.FarPlaneDistanceEnclosed, gameState.EyePosition3d, value)
+                        EyeFrustum3dExposed = viewport.Frustum (Constants.Render.NearPlaneDistanceExposed, Constants.Render.FarPlaneDistanceExposed, gameState.EyePosition3d, value)
+                        EyeFrustum3dImposter = viewport.Frustum (Constants.Render.NearPlaneDistanceImposter, Constants.Render.FarPlaneDistanceImposter, gameState.EyePosition3d, value) }
                 else Unchecked.defaultof<_>) Property? EyeRotation3d value world
 
         /// Set the current 3d eye rotation.
@@ -163,17 +163,17 @@ module WorldModuleGame =
         /// Get the current enclosed 3d eye frustum.
         [<FunctionBinding>]
         static member getEyeFrustum3dEnclosed world =
-            (World.getGameState world).EyeFrustumEnclosed3d
+            (World.getGameState world).EyeFrustum3dEnclosed
 
         /// Get the current unenclosed 3d eye frustum.
         [<FunctionBinding>]
-        static member getEyeFrustum3dUnenclosed world =
-            (World.getGameState world).EyeFrustumUnenclosed3d
+        static member getEyeFrustum3dExposed world =
+            (World.getGameState world).EyeFrustum3dExposed
 
-        /// Get the current prominent 3d eye frustum.
+        /// Get the current imposter 3d eye frustum.
         [<FunctionBinding>]
-        static member getEyeFrustum3dProminent world =
-            (World.getGameState world).EyeFrustumProminent3d
+        static member getEyeFrustum3dImposter world =
+            (World.getGameState world).EyeFrustum3dImposter
 
         /// Get the current 3d light box.
         [<FunctionBinding>]
@@ -366,15 +366,6 @@ module WorldModuleGame =
             let viewBounds = World.getViewBounds2d world
             bounds.Intersects viewBounds
 
-        /// Get the view bounds of the 3d eye's sight.
-        [<FunctionBinding>]
-        static member getViewBounds3d presence world =
-            match presence with
-            | Enclosed -> struct (World.getEyeFrustum3dEnclosed world, World.getLightBox3d world)
-            | Unenclosed -> struct (World.getEyeFrustum3dUnenclosed world, World.getLightBox3d world)
-            | Prominent -> struct (World.getEyeFrustum3dProminent world, World.getLightBox3d world)
-            | Omnipresent -> failwith "Cannot get the view bounds of an Omnipresent thing."
-
         /// Get the bounds of the 3d play zone.
         [<FunctionBinding>]
         static member getPlayBounds3d world =
@@ -386,12 +377,46 @@ module WorldModuleGame =
         /// Check that the given bounds is within the 3d eye's sight.
         [<FunctionBinding>]
         static member isBoundsInView3d light presence (bounds : Box3) world =
-            let struct (frustum, lightBox) = World.getViewBounds3d presence world
-            if light && lightBox.Intersects bounds then true
+            if light then
+                let lightBox = World.getLightBox3d world
+                lightBox.Intersects bounds
             else
-                let containment = frustum.Contains bounds
-                containment = ContainmentType.Contains ||
-                containment = ContainmentType.Intersects
+                match presence with
+                | Enclosed ->
+                    let enclosedFrustum = World.getEyeFrustum3dEnclosed world
+                    let containment = enclosedFrustum.Contains bounds
+                    containment = ContainmentType.Contains ||
+                    containment = ContainmentType.Intersects
+                | Exposed ->
+                    let enclosedFrustum = World.getEyeFrustum3dEnclosed world
+                    let containment = enclosedFrustum.Contains bounds
+                    if  containment = ContainmentType.Contains ||
+                        containment = ContainmentType.Intersects then true
+                    else
+                        let exposedFrustum = World.getEyeFrustum3dExposed world
+                        let containment = exposedFrustum.Contains bounds
+                        containment = ContainmentType.Contains ||
+                        containment = ContainmentType.Intersects
+                | Imposter ->
+                    let imposterFrustum = World.getEyeFrustum3dImposter world
+                    let containment = imposterFrustum.Contains bounds
+                    containment = ContainmentType.Contains ||
+                    containment = ContainmentType.Intersects
+                | Prominent | Omnipresent ->
+                    let enclosedFrustum = World.getEyeFrustum3dEnclosed world
+                    let containment = enclosedFrustum.Contains bounds
+                    if  containment = ContainmentType.Contains ||
+                        containment = ContainmentType.Intersects then true
+                    else
+                        let exposedFrustum = World.getEyeFrustum3dExposed world
+                        let containment = exposedFrustum.Contains bounds
+                        if  containment = ContainmentType.Contains ||
+                            containment = ContainmentType.Intersects then true
+                        else
+                            let imposterFrustum = World.getEyeFrustum3dImposter world
+                            let containment = imposterFrustum.Contains bounds
+                            containment = ContainmentType.Contains ||
+                            containment = ContainmentType.Intersects
 
         /// Check that the given bounds is within the 3d eye's play bounds.
         [<FunctionBinding>]

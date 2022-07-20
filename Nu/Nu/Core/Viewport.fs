@@ -5,19 +5,21 @@ open Nu
 
 /// Describes the form of an element's presence.
 [<Syntax
-        ("Enclosed Unenclosed Prominent Omnipresent", "", "", "", "",
+        ("Enclosed Exposed Imposter Prominent Omnipresent", "", "", "", "",
          Constants.PrettyPrinter.DefaultThresholdMin,
          Constants.PrettyPrinter.DefaultThresholdMax)>]
 type [<StructuralEquality; NoComparison; Struct>] Presence =
     | Enclosed
-    | Unenclosed
-    | Prominent
+    | Exposed
+    | Imposter
+    | Prominent // both exposed and imposter
     | Omnipresent
     member this.EnclosedType with get () = match this with Enclosed -> true | _ -> false
-    member this.UnenclosedType with get () = match this with Unenclosed -> true | _ -> false
+    member this.ExposedType with get () = match this with Exposed -> true | _ -> false
+    member this.ImposterType with get () = match this with Imposter -> true | _ -> false
     member this.ProminentType with get () = match this with Prominent -> true | _ -> false
     member this.OmnipresentType with get () = match this with Omnipresent -> true | _ -> false
-    member this.Cullable with get () = match this with Enclosed | Unenclosed -> true | _ -> false
+    member this.Cullable with get () = match this with Enclosed | Exposed -> true | _ -> false
     member this.Uncullable with get () = not this.Cullable
 
 [<AutoOpen>]
@@ -27,7 +29,8 @@ module PresenceOperators =
     let presenceEq left right =
         match (left, right) with
         | (Enclosed, Enclosed)
-        | (Unenclosed, Unenclosed)
+        | (Exposed, Exposed)
+        | (Imposter, Imposter)
         | (Prominent, Prominent)
         | (Omnipresent, Omnipresent) -> true
         | (_, _) -> false
@@ -137,7 +140,7 @@ module Viewport =
 
         /// Transform the given mouse position to 3d world space.
         member this.MouseToWorld3d (absolute, mousePosition : Vector2, eyePosition, eyeRotation) =
-            let viewProjection = this.ViewProjection3d (absolute, Constants.Render.NearPlaneDistance, Constants.Render.FarPlaneDistanceOmnipresent, v3Zero, eyeRotation)
+            let viewProjection = this.ViewProjection3d (absolute, Constants.Render.NearPlaneDistanceOmnipresent, Constants.Render.FarPlaneDistanceOmnipresent, v3Zero, eyeRotation)
             let near = this.Unproject (mousePosition.V3.WithZ 0.0f, viewProjection)
             let far = this.Unproject (mousePosition.V3.WithZ 1.0f, viewProjection)
             ray (near + eyePosition) (Vector3.Normalize (far - near))
