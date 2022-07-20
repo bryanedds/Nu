@@ -965,7 +965,7 @@ module WorldModule2 =
         static member runWithoutCleanUp runWhile preProcess postProcess sdlDeps liveness firstFrame world =
             TotalTimer.Start ()
             if runWhile world then
-                if World.shouldSleep world then Thread.Sleep (1000 / Constants.Engine.DesiredFps) // don't let game run too fast while full screen unfocused
+                if World.shouldSleep world then Thread.Sleep (1000 / Constants.Engine.FpsDesiredI) // don't let game run too fast while full screen unfocused
                 PreFrameTimer.Start ()
                 let world = preProcess world
                 let world = World.preFrame world
