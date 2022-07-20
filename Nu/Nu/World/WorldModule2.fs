@@ -710,8 +710,8 @@ module WorldModule2 =
             (entities, world)
 
         /// Get all uncullable (non-cullable) 2d entities.
-        static member getEntitiesUncullable2d set world =
-            World.getEntities2dBy (Quadtree.getElementsUncullable set) world
+        static member getEntitiesOmnipresent2d set world =
+            World.getEntities2dBy (Quadtree.getElementsOmnipresent set) world
 
         /// Get all 2d entities in the given bounds, including all uncullable entities.
         static member getEntitiesInBounds2d bounds set world =
@@ -739,8 +739,8 @@ module WorldModule2 =
             (entities, world)
 
         /// Get all uncullable 3d entities.
-        static member getEntitiesUncullable3d set world =
-            World.getEntities3dBy (Octree.getElementsUncullable set) world
+        static member getEntitiesOmnipresent3d set world =
+            World.getEntities3dBy (Octree.getElementsOmnipresent set) world
 
         /// Get all 3d entities in the given bounds, including all uncullable entities.
         static member getEntitiesInBounds3d bounds set world =

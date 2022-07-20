@@ -19,8 +19,6 @@ type [<StructuralEquality; NoComparison; Struct>] Presence =
     member this.ImposterType with get () = match this with Imposter -> true | _ -> false
     member this.ProminentType with get () = match this with Prominent -> true | _ -> false
     member this.OmnipresentType with get () = match this with Omnipresent -> true | _ -> false
-    member this.Cullable with get () = match this with Enclosed | Exposed | Imposter | Prominent -> true | _ -> false
-    member this.Uncullable with get () = not this.Cullable
 
 [<AutoOpen>]
 module PresenceOperators =

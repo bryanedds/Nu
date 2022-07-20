@@ -148,73 +148,73 @@ module Quadtree =
     type [<NoEquality; NoComparison>] Quadtree<'e when 'e : equality> =
         private
             { Node : 'e Quadnode
-              Uncullable : 'e HashSet
+              Omnipresent : 'e HashSet
               Depth : int
               Granularity : int
               Bounds : Box2 }
 
     let addElement (presence : Presence) bounds element tree =
-        if presence.Uncullable then
-            tree.Uncullable.Remove element |> ignore
-            tree.Uncullable.Add element |> ignore
+        if presence.OmnipresentType then
+            tree.Omnipresent.Remove element |> ignore
+            tree.Omnipresent.Add element |> ignore
         else
             if not (Quadnode.isIntersectingBounds bounds tree.Node) then
                 Log.info "Element is outside the quadtree's containment area or is being added redundantly."
-                tree.Uncullable.Remove element |> ignore
-                tree.Uncullable.Add element |> ignore
+                tree.Omnipresent.Remove element |> ignore
+                tree.Omnipresent.Add element |> ignore
             else Quadnode.addElement bounds element tree.Node
 
     let removeElement (presence : Presence) bounds element tree =
-        if presence.Uncullable then 
-            tree.Uncullable.Remove element |> ignore
+        if presence.OmnipresentType then 
+            tree.Omnipresent.Remove element |> ignore
         else
             if not (Quadnode.isIntersectingBounds bounds tree.Node) then
                 Log.info "Element is outside the quadtree's containment area or is not present for removal."
-                tree.Uncullable.Remove element |> ignore
+                tree.Omnipresent.Remove element |> ignore
             else Quadnode.removeElement bounds element tree.Node
 
     let updateElement (oldPresence : Presence) oldBounds (newPresence : Presence) newBounds element tree =
-        let wasInNode = oldPresence.Cullable && Quadnode.isIntersectingBounds oldBounds tree.Node
-        let isInNode = newPresence.Cullable && Quadnode.isIntersectingBounds newBounds tree.Node
+        let wasInNode = not oldPresence.OmnipresentType && Quadnode.isIntersectingBounds oldBounds tree.Node
+        let isInNode = not newPresence.OmnipresentType && Quadnode.isIntersectingBounds newBounds tree.Node
         if wasInNode then
             if isInNode then
                 Quadnode.updateElement oldBounds newBounds element tree.Node
             else
                 Quadnode.removeElement oldBounds element tree.Node |> ignore
-                tree.Uncullable.Remove element |> ignore
-                tree.Uncullable.Add element |> ignore
+                tree.Omnipresent.Remove element |> ignore
+                tree.Omnipresent.Add element |> ignore
         else
             if isInNode then
-                tree.Uncullable.Remove element |> ignore
+                tree.Omnipresent.Remove element |> ignore
                 Quadnode.addElement newBounds element tree.Node
             else
-                tree.Uncullable.Remove element |> ignore
-                tree.Uncullable.Add element |> ignore
+                tree.Omnipresent.Remove element |> ignore
+                tree.Omnipresent.Add element |> ignore
 
-    let getElementsUncullable set tree =
-        new QuadtreeEnumerable<'e> (new QuadtreeEnumerator<'e> (tree.Uncullable, set)) :> 'e IEnumerable
+    let getElementsOmnipresent set tree =
+        new QuadtreeEnumerable<'e> (new QuadtreeEnumerator<'e> (tree.Omnipresent, set)) :> 'e IEnumerable
 
     let getElementsAtPoint point set tree =
         Quadnode.getElementsAtPoint point tree.Node set
-        new QuadtreeEnumerable<'e> (new QuadtreeEnumerator<'e> (tree.Uncullable, set)) :> 'e IEnumerable
+        new QuadtreeEnumerable<'e> (new QuadtreeEnumerator<'e> (tree.Omnipresent, set)) :> 'e IEnumerable
 
     let getElementsInBounds bounds set tree =
         Quadnode.getElementsInBounds bounds tree.Node set
-        new QuadtreeEnumerable<'e> (new QuadtreeEnumerator<'e> (tree.Uncullable, set)) :> 'e IEnumerable
+        new QuadtreeEnumerable<'e> (new QuadtreeEnumerator<'e> (tree.Omnipresent, set)) :> 'e IEnumerable
 
     let getDepth tree =
         tree.Depth
 
     let clone tree =
         { Node = Quadnode.clone tree.Node
-          Uncullable = HashSet (tree.Uncullable, HashIdentity.Structural)
+          Omnipresent = HashSet (tree.Omnipresent, HashIdentity.Structural)
           Depth = tree.Depth
           Granularity = tree.Granularity
           Bounds = tree.Bounds }
 
     let make<'e when 'e : equality> granularity depth bounds =
         { Node = Quadnode.make<'e> granularity depth bounds
-          Uncullable = HashSet HashIdentity.Structural
+          Omnipresent = HashSet HashIdentity.Structural
           Depth = depth
           Granularity = granularity
           Bounds = bounds }
