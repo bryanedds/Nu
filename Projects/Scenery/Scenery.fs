@@ -14,10 +14,21 @@ module Simulants =
 
 // this is a custom entity for performance testing
 type CustomModelDispatcher () =
-    inherit StaticModelDispatcher ()
+    inherit EntityDispatcher3d (true, false)
 
     override this.Update (entity, world) =
         entity.SetRotation (entity.GetRotation world * Quaternion.CreateFromAxisAngle (v3Up, 0.01f)) world
+
+    override this.Actualize (entity, world) =
+        if entity.GetVisible world then
+            let mutable transform = entity.GetTransform world
+            let absolute = transform.Absolute
+            let affineMatrix = transform.AffineMatrix
+            let staticModel = Assets.Default.StaticModel
+            let renderMaterial = { AlbedoOpt = None; MetalnessOpt = None; RoughnessOpt = None; AmbientOcclusionOpt = None }
+            let renderType = DeferredRenderType
+            World.enqueueRenderMessage3d (RenderStaticModelDescriptor (absolute, affineMatrix, renderMaterial, renderType, staticModel)) world
+        else world
 
 // this is our Elm-style command type
 type Command =
@@ -94,9 +105,9 @@ type SceneryDispatcher () =
 #if DEBUG
         let population = 25
 #else
-        let population = 50
+        let population = 60
 #endif
-        let spread = 20.0f
+        let spread = 15.0f
         let offset = v3Dup spread * single population * 0.5f
         let positions = List ()
         for i in 0 .. population do
