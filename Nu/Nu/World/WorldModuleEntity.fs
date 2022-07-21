@@ -1728,7 +1728,7 @@ module WorldModuleEntity =
             | (None, None) -> ()
             match boundsOpt with
             | Some bounds -> bounds
-            | None -> box3 (v3Dup 0.5f) v3One
+            | None -> box3 (v3Dup -0.5f) v3One
 
         static member internal updateEntityPublishUpdateFlag entity world =
             World.updateEntityPublishEventFlag World.setEntityPublishUpdates entity (atooa entity.UpdateEvent) world

@@ -1279,7 +1279,7 @@ module SkyBoxFacetModule =
             else world
 
 [<AutoOpen>]
-module Light3dFacetModule =
+module LightFacet3dModule =
 
     type Entity with
         member this.GetBrightness world : single = this.Get Property? Brightness world
@@ -1292,7 +1292,7 @@ module Light3dFacetModule =
         member this.SetLightType (value : LightType) world = this.Set Property? LightType value world
         member this.LightType = lens Property? LightType this.GetLightType this.SetLightType this
 
-    type Light3dFacet () =
+    type LightFacet3d () =
         inherit Facet (false)
 
         static member Properties =
@@ -1410,7 +1410,7 @@ module StaticModelFacetModule =
             | Some staticModel ->
                 let mutable boundsOpt = None
                 for surface in staticModel.Surfaces do
-                    let bounds2 = surface.PhysicallyBasedGeometry.Bounds
+                    let bounds2 = surface.SurfaceBounds.Transform surface.SurfaceMatrix
                     match boundsOpt with
                     | Some (bounds : Box3) -> boundsOpt <- Some (bounds.Combine bounds2)
                     | None -> boundsOpt <- Some bounds2
@@ -2592,7 +2592,7 @@ module LightDispatcher3dModule =
         inherit EntityDispatcher3d (true, false)
 
         static member Facets =
-            [typeof<Light3dFacet>]
+            [typeof<LightFacet3d>]
 
         static member Properties =
             [define Entity.Light true
