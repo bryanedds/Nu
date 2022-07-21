@@ -100,12 +100,12 @@ module internal Octnode =
         | ValueLeft nodes -> for node in nodes do if isIntersectingFrustum frustum node then getElementsInFrustum frustum node set
         | ValueRight elements -> for element in elements do set.Add element |> ignore
 
-    let rec internal getUpdatingElementsInBox box node (set : 'e Octelement HashSet) =
+    let rec internal getElementsInPlayBox box node (set : 'e Octelement HashSet) =
         match node.Children with
         | ValueLeft nodes ->
             for node in nodes do
                 if isIntersectingBox box node then
-                    getUpdatingElementsInBox box node set
+                    getElementsInPlayBox box node set
         | ValueRight elements ->
             for element in elements do
                 if not element.Static then
@@ -171,7 +171,7 @@ module internal Octnode =
         | ValueLeft nodes ->
             for node in nodes do
                 if isIntersectingBox playBox node then
-                    getUpdatingElementsInBox playBox node set
+                    getElementsInPlayBox playBox node set
                 if isIntersectingFrustum playFrustum node then
                     getElementsInPlayFrustum playFrustum node set
         | ValueRight _ -> ()
