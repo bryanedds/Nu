@@ -449,7 +449,7 @@ module WorldModule3 =
                  JointFacet () :> Facet
                  TileMapFacet () :> Facet
                  TmxMapFacet () :> Facet
-                 Light3dFacet () :> Facet
+                 LightFacet3d () :> Facet
                  SkyBoxFacet () :> Facet
                  StaticModelSurfaceFacet () :> Facet
                  StaticModelFacet () :> Facet]
