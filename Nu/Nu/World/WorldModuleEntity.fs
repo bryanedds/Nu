@@ -613,7 +613,10 @@ module WorldModuleEntity =
             struct (changed, world)
 
         static member inline internal getEntityTransform entity world =
-            (World.getEntityState entity world).Transform
+            let entityState = World.getEntityState entity world
+            let transform = &entityState.Transform
+            transform.CleanRotationMatrix () // OPTIMIZATION: ensure rotation matrix is clean so that redundant cleans don't happen when transform is handed out.
+            transform
 
         static member internal setEntityTransformByRefWithoutEvent (valueInRef : Transform inref, entityState : EntityState, entity : Entity, world) =
             let oldWorld = world
