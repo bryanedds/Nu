@@ -572,7 +572,7 @@ module PhysicallyBased =
                                                   LightMatrixIsIdentity = transform.IsIdentity
                                                   LightMatrix = transform
                                                   LightColor = color
-                                                  LightBrightness = light.AttenuationConstant
+                                                  LightBrightness = max 1.0f light.AttenuationConstant // TODO: 3D: figure out how to populate this.
                                                   LightIntensity = 1.0f // TODO: 3D: see if we can figure out how to populate this. Should it become Linear and / or Quadratic?
                                                   PhysicallyBasedLightType = PointLight }
                                             SegmentedList.add physicallyBasedLight lights
