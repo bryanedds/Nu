@@ -77,6 +77,7 @@ and [<NoEquality; NoComparison>] RenderMessage3d =
     | RenderStaticModelSurfaceDescriptor of bool * Matrix4x4 * RenderMaterial * RenderType * StaticModel AssetTag * int
     | RenderStaticModelDescriptor of bool * Matrix4x4 * RenderMaterial * RenderType * StaticModel AssetTag
     | RenderStaticModelsDescriptor of bool * (Matrix4x4 * RenderMaterial) array * RenderType * StaticModel AssetTag
+    | RenderStaticSurfaceDescriptor of bool * Matrix4x4 * RenderMaterial * RenderType * OpenGL.PhysicallyBased.PhysicallyBasedGeometry
     | RenderCachedStaticModelDescriptor of CachedStaticModelDescriptor
     | RenderSkyBoxDescriptor of CubeMap AssetTag
     | RenderLightDescriptor of Vector3 * Color * single * single * LightType
