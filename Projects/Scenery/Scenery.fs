@@ -32,13 +32,14 @@ module Field =
         match FieldGeometries.TryGetValue field.FieldTileMap with
         | (true, geometry) -> geometry
         | (false, _) ->
+
             let (_, tileSets, tileMap) = World.getTileMapMetadata field.FieldTileMap world
             let untraversableLayer = tileMap.Layers.["Untraversable"] :?> TmxLayer
             let untraversableHeightLayer = tileMap.Layers.["UntraversableHeight"] :?> TmxLayer
             let traversableLayer = tileMap.Layers.["Traversable"] :?> TmxLayer
             let traversableHeightLayer = tileMap.Layers.["TraversableHeight"] :?> TmxLayer
 
-            let texCoords = Array.zeroCreate<single> (tileMap.Width * tileMap.Height * 2 * 6)
+            let texCoords = Array.zeroCreate<Vector2> (tileMap.Width * tileMap.Height * 6)
 
             for i in 0 .. dec tileMap.Width do
                 for j in 0 .. dec tileMap.Height do
@@ -61,15 +62,15 @@ module Field =
                         let texCoordX2 = texCoordX + 1.0f / single tileSet.Image.Width.Value
                         let texCoordY2 = texCoordY + 1.0f / single tileSet.Image.Height.Value
                         let u = t * 6
-                        texCoords.[u] <- texCoordX
-                        texCoords.[u+1] <- texCoordX2
-                        texCoords.[u+2] <- texCoordY
-                        texCoords.[u+3] <- texCoordX
-                        texCoords.[u+4] <- texCoordY2
-                        texCoords.[u+5] <- texCoordX2
+                        texCoords.[u] <- v2 texCoordX texCoordY
+                        texCoords.[u+1] <- v2 texCoordX2 texCoordY
+                        texCoords.[u+2] <- v2 texCoordX2 texCoordY2
+                        texCoords.[u+3] <- v2 texCoordX texCoordY
+                        texCoords.[u+4] <- v2 texCoordX2 texCoordY2
+                        texCoords.[u+5] <- v2 texCoordX texCoordY
                     | None -> ()
 
-            let positions = Array.zeroCreate<single> (tileMap.Width * tileMap.Height * 3 * 6)
+            let positions = Array.zeroCreate<Vector3> (tileMap.Width * tileMap.Height * 6)
 
             for i in 0 .. dec tileMap.Width do
                 for j in 0 .. dec tileMap.Height do
@@ -87,6 +88,41 @@ module Field =
                     match tileSetOpt with
                     | Some tileSet ->
                         let height = tile.Gid - tileSet.FirstGid
+                        let u = t * 3 * 6
+                        let position = v3 (single i) (single j) (single height)
+                        positions.[u] <- position
+                        positions.[u+1] <- position
+                        positions.[u+2] <- position
+                        positions.[u+3] <- position
+                        positions.[u+4] <- position
+                        positions.[u+5] <- position
+                    | None -> ()
+
+            for i in 1 .. dec tileMap.Width do
+                for j in 1 .. dec tileMap.Height do
+                    let u = i * tileMap.Width + j
+                    let positionM1 = &positions.[dec u]
+                    let position = &positions.[u]
+                    position.X <- (positionM1.X + position.X) / 2.0f
+                    let positionM1 = &positions.[dec u+3]
+                    let position = &positions.[u+3]
+                    position.X <- (positionM1.X + position.X) / 2.0f
+                    let positionM1 = &positions.[dec u+5]
+                    let position = &positions.[u+5]
+                    position.X <- (positionM1.X + position.X) / 2.0f
+
+            let normals = Array.zeroCreate<Vector3> (tileMap.Width * tileMap.Height * 6)
+
+            for i in 1 .. dec tileMap.Width do
+                for j in 1 .. dec tileMap.Height do
+                    let u = i * tileMap.Width + j
+                    let normal = Vector3.Normalize (Vector3.Cross (positions.[u+1] - positions.[u], positions.[u+5] - positions.[u]))
+                    normals.[u] <- normal
+                    normals.[u+1] <- normal
+                    normals.[u+2] <- normal
+                    normals.[u+3] <- normal
+                    normals.[u+4] <- normal
+                    normals.[u+5] <- normal
 
 // this is our Elm-style command type
 type Command =
