@@ -1275,7 +1275,7 @@ module SkyBoxFacetModule =
         override this.Actualize (entity, world) =
             if entity.GetVisible world then
                 let cubeMap = entity.GetCubeMap world
-                World.enqueueRenderMessage3d (RenderSkyBoxDescriptor cubeMap) world
+                World.enqueueRenderMessage3d (RenderSkyBoxMessage cubeMap) world
             else world
 
 [<AutoOpen>]
@@ -1309,7 +1309,7 @@ module LightFacet3dModule =
                 let brightness = entity.GetBrightness world
                 let intensity = entity.GetIntensity world
                 let lightType = entity.GetLightType world
-                World.enqueueRenderMessage3d (RenderLightDescriptor (position, color, brightness, intensity, lightType)) world
+                World.enqueueRenderMessage3d (RenderLightMessage3d (position, color, brightness, intensity, lightType)) world
             else world
 
         override this.RayCast (ray, entity, world) =
@@ -1376,7 +1376,7 @@ module StaticModelFacetModule =
                     match entity.GetRenderStyle world with
                     | Deferred -> DeferredRenderType
                     | Forward subsort -> ForwardRenderType subsort
-                World.enqueueRenderMessage3d (RenderStaticModelDescriptor (absolute, affineMatrix, renderMaterial, renderType, staticModel)) world
+                World.enqueueRenderMessage3d (RenderStaticModelMessage (absolute, affineMatrix, renderMaterial, renderType, staticModel)) world
             else world
 
         override this.GetQuickSize (entity, world) =
@@ -1457,7 +1457,7 @@ module StaticModelSurfaceFacetModule =
                         match entity.GetRenderStyle world with
                         | Deferred -> DeferredRenderType
                         | Forward subsort -> ForwardRenderType subsort
-                    World.enqueueRenderMessage3d (RenderStaticModelSurfaceDescriptor (absolute, affineMatrix, renderMaterial, renderType, staticModel, surfaceIndex)) world
+                    World.enqueueRenderMessage3d (RenderStaticModelSurfaceMessage (absolute, affineMatrix, renderMaterial, renderType, staticModel, surfaceIndex)) world
             else world
 
         override this.GetQuickSize (entity, world) =

@@ -115,7 +115,7 @@ type RendererThread (createRenderer2d, createRenderer3d) =
                           CachedStaticModelRenderMaterial = Unchecked.defaultof<_>
                           CachedStaticModelRenderType = Unchecked.defaultof<_>
                           CachedStaticModel = Unchecked.defaultof<_> }
-                    let cachedStaticModelMessage = RenderCachedStaticModelDescriptor staticModelDescriptor
+                    let cachedStaticModelMessage = RenderCachedStaticModelMessage staticModelDescriptor
                     cachedStaticModelMessages.Enqueue cachedStaticModelMessage
                 cachedStaticModelMessagesCapacity <- cachedStaticModelMessagesCapacity * 2
                 cachedStaticModelMessages.Dequeue ()
@@ -125,7 +125,7 @@ type RendererThread (createRenderer2d, createRenderer3d) =
         lock cachedStaticModelMessagesLock (fun () ->
             for message in messages do
                 match message with
-                | RenderCachedStaticModelDescriptor _ -> cachedStaticModelMessages.Enqueue message
+                | RenderCachedStaticModelMessage _ -> cachedStaticModelMessages.Enqueue message
                 | _ -> ())
 
     let allocSpriteMessage () =
@@ -224,10 +224,10 @@ type RendererThread (createRenderer2d, createRenderer3d) =
         member this.EnqueueMessage3d message =
             if Option.isNone taskOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
             match message with
-            | RenderStaticModelDescriptor (absolute, modelMatrix, renderMaterial, renderType, staticModel) ->
+            | RenderStaticModelMessage (absolute, modelMatrix, renderMaterial, renderType, staticModel) ->
                 let cachedStaticModelMessage = allocStaticModelMessage ()
                 match cachedStaticModelMessage with
-                | RenderCachedStaticModelDescriptor cachedDescriptor ->
+                | RenderCachedStaticModelMessage cachedDescriptor ->
                     cachedDescriptor.CachedStaticModelAbsolute <- absolute
                     cachedDescriptor.CachedStaticModelMatrix <- modelMatrix
                     cachedDescriptor.CachedStaticModelRenderMaterial <- renderMaterial
