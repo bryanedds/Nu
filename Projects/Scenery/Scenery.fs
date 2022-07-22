@@ -24,126 +24,107 @@ module Field =
 
     let CachedGeometries = dictPlus HashIdentity.Structural []
 
-    let private createGeometryFromLayers tileMapWidth tileMapHeight (tileSets : TmxTileset array) (tileLayer : TmxLayer) (heightLayer : TmxLayer) =
+    let private createGeometryFromLayerMessage tileMapWidth tileMapHeight (tileSets : TmxTileset array) (tileLayer : TmxLayer) (heightLayer : TmxLayer) staticModelAssetTag =
         
-            let texCoords = Array.zeroCreate<Vector2> (tileMapWidth * tileMapHeight * 6)
+        let texCoordses = Array.zeroCreate<Vector2> (tileMapWidth * tileMapHeight * 6)
 
-            for i in 0 .. dec tileMapWidth do
-                for j in 0 .. dec tileMapHeight do
-                    let t = i * tileMapWidth + j
-                    let tile = tileLayer.Tiles.[t]
-                    let mutable tileSetOpt = None
-                    for tileSet in tileSets do
-                        match tileSetOpt with
-                        | None ->
-                            if tile.Gid = 0 then
-                                tileSetOpt <- Some tileSet // just use the first tile set for the empty tile
-                            elif tile.Gid >= tileSet.FirstGid && tile.Gid < tileSet.FirstGid + tileSet.TileCount.GetValueOrDefault 0 then
-                                tileSetOpt <- Some tileSet
-                        | Some _ -> ()
+        for i in 0 .. dec tileMapWidth do
+            for j in 0 .. dec tileMapHeight do
+                let t = i * tileMapWidth + j
+                let tile = tileLayer.Tiles.[t]
+                let mutable tileSetOpt = None
+                for tileSet in tileSets do
                     match tileSetOpt with
-                    | Some tileSet ->
-                        let tileId = tile.Gid - tileSet.FirstGid
-                        let texCoordX = single (tileId / tileSet.Columns.Value) / single tileSet.Image.Width.Value
-                        let texCoordY = single (tileId % tileSet.Columns.Value) / single tileSet.Image.Height.Value
-                        let texCoordX2 = texCoordX + 1.0f / single tileSet.Image.Width.Value
-                        let texCoordY2 = texCoordY + 1.0f / single tileSet.Image.Height.Value
-                        let u = t * 6
-                        texCoords.[u] <- v2 texCoordX texCoordY
-                        texCoords.[u+1] <- v2 texCoordX2 texCoordY
-                        texCoords.[u+2] <- v2 texCoordX2 texCoordY2
-                        texCoords.[u+3] <- v2 texCoordX texCoordY
-                        texCoords.[u+4] <- v2 texCoordX2 texCoordY2
-                        texCoords.[u+5] <- v2 texCoordX texCoordY
-                    | None -> ()
+                    | None ->
+                        if tile.Gid = 0 then
+                            tileSetOpt <- Some tileSet // just use the first tile set for the empty tile
+                        elif tile.Gid >= tileSet.FirstGid && tile.Gid < tileSet.FirstGid + tileSet.TileCount.GetValueOrDefault 0 then
+                            tileSetOpt <- Some tileSet
+                    | Some _ -> ()
+                match tileSetOpt with
+                | Some tileSet ->
+                    let tileId = tile.Gid - tileSet.FirstGid
+                    let texCoordX = single (tileId / tileSet.Columns.Value) / single tileSet.Image.Width.Value
+                    let texCoordY = single (tileId % tileSet.Columns.Value) / single tileSet.Image.Height.Value
+                    let texCoordX2 = texCoordX + 1.0f / single tileSet.Image.Width.Value
+                    let texCoordY2 = texCoordY + 1.0f / single tileSet.Image.Height.Value
+                    let u = t * 6
+                    texCoordses.[u] <- v2 texCoordX texCoordY
+                    texCoordses.[u+1] <- v2 texCoordX2 texCoordY
+                    texCoordses.[u+2] <- v2 texCoordX2 texCoordY2
+                    texCoordses.[u+3] <- v2 texCoordX texCoordY
+                    texCoordses.[u+4] <- v2 texCoordX2 texCoordY2
+                    texCoordses.[u+5] <- v2 texCoordX texCoordY
+                | None -> ()
 
-            let positions = Array.zeroCreate<Vector3> (tileMapWidth * tileMapHeight * 6)
+        let positions = Array.zeroCreate<Vector3> (tileMapWidth * tileMapHeight * 6)
 
-            for i in 0 .. dec tileMapWidth do
-                for j in 0 .. dec tileMapHeight do
-                    let t = i * tileMapWidth + j
-                    let tile = heightLayer.Tiles.[t]
-                    let mutable tileSetOpt = None
-                    for tileSet in tileSets do
-                        match tileSetOpt with
-                        | None ->
-                            if tile.Gid = 0 then
-                                tileSetOpt <- Some tileSet // just use the first tile set for the empty tile
-                            elif tile.Gid >= tileSet.FirstGid && tile.Gid < tileSet.FirstGid + tileSet.TileCount.GetValueOrDefault 0 then
-                                tileSetOpt <- Some tileSet
-                        | Some _ -> ()
+        for i in 0 .. dec tileMapWidth do
+            for j in 0 .. dec tileMapHeight do
+                let t = i * tileMapWidth + j
+                let tile = heightLayer.Tiles.[t]
+                let mutable tileSetOpt = None
+                for tileSet in tileSets do
                     match tileSetOpt with
-                    | Some tileSet ->
-                        let height = tile.Gid - tileSet.FirstGid
-                        let u = t * 3 * 6
-                        let position = v3 (single i) (single j) (single height)
-                        positions.[u] <- position
-                        positions.[u+1] <- position
-                        positions.[u+2] <- position
-                        positions.[u+3] <- position
-                        positions.[u+4] <- position
-                        positions.[u+5] <- position
-                    | None -> ()
+                    | None ->
+                        if tile.Gid = 0 then
+                            tileSetOpt <- Some tileSet // just use the first tile set for the empty tile
+                        elif tile.Gid >= tileSet.FirstGid && tile.Gid < tileSet.FirstGid + tileSet.TileCount.GetValueOrDefault 0 then
+                            tileSetOpt <- Some tileSet
+                    | Some _ -> ()
+                match tileSetOpt with
+                | Some tileSet ->
+                    let height = tile.Gid - tileSet.FirstGid
+                    let u = t * 3 * 6
+                    let position = v3 (single i) (single j) (single height)
+                    positions.[u] <- position
+                    positions.[u+1] <- position
+                    positions.[u+2] <- position
+                    positions.[u+3] <- position
+                    positions.[u+4] <- position
+                    positions.[u+5] <- position
+                | None -> ()
 
-            for i in 1 .. dec tileMapWidth do
-                for j in 1 .. dec tileMapHeight do
-                    let u = i * tileMapWidth + j
-                    let positionM1 = &positions.[dec u]
-                    let position = &positions.[u]
-                    position.X <- (positionM1.X + position.X) / 2.0f
-                    let positionM1 = &positions.[dec u+3]
-                    let position = &positions.[u+3]
-                    position.X <- (positionM1.X + position.X) / 2.0f
-                    let positionM1 = &positions.[dec u+5]
-                    let position = &positions.[u+5]
-                    position.X <- (positionM1.X + position.X) / 2.0f
+        for i in 1 .. dec tileMapWidth do
+            for j in 1 .. dec tileMapHeight do
+                let u = i * tileMapWidth + j
+                let positionM1 = &positions.[dec u]
+                let position = &positions.[u]
+                position.X <- (positionM1.X + position.X) / 2.0f
+                let positionM1 = &positions.[dec u+3]
+                let position = &positions.[u+3]
+                position.X <- (positionM1.X + position.X) / 2.0f
+                let positionM1 = &positions.[dec u+5]
+                let position = &positions.[u+5]
+                position.X <- (positionM1.X + position.X) / 2.0f
 
-            let normals = Array.zeroCreate<Vector3> (tileMapWidth * tileMapHeight * 6)
+        let normals = Array.zeroCreate<Vector3> (tileMapWidth * tileMapHeight * 6)
 
-            for i in 1 .. dec tileMapWidth do
-                for j in 1 .. dec tileMapHeight do
-                    let u = i * tileMapWidth + j
-                    let normal = Vector3.Normalize (Vector3.Cross (positions.[u+1] - positions.[u], positions.[u+5] - positions.[u]))
-                    normals.[u] <- normal
-                    normals.[u+1] <- normal
-                    normals.[u+2] <- normal
-                    normals.[u+3] <- normal
-                    normals.[u+4] <- normal
-                    normals.[u+5] <- normal
+        for i in 1 .. dec tileMapWidth do
+            for j in 1 .. dec tileMapHeight do
+                let u = i * tileMapWidth + j
+                let normal = Vector3.Normalize (Vector3.Cross (positions.[u+1] - positions.[u], positions.[u+5] - positions.[u]))
+                normals.[u] <- normal
+                normals.[u+1] <- normal
+                normals.[u+2] <- normal
+                normals.[u+3] <- normal
+                normals.[u+4] <- normal
+                normals.[u+5] <- normal
 
-            let vertices = Array.zeroCreate (tileMapWidth * tileMapHeight * 6 * 8)
+        let indices = Array.init (tileMapWidth * tileMapHeight * 6) id
 
-            for u in 0 .. dec vertices.Length / 8 do
-                vertices.[u] <- positions.[u].X
-                vertices.[u+1] <- positions.[u].Y
-                vertices.[u+2] <- positions.[u].Z
-                vertices.[u+3] <- texCoords.[u].X
-                vertices.[u+4] <- texCoords.[u].Y
-                vertices.[u+5] <- normals.[u].X
-                vertices.[u+6] <- normals.[u].Y
-                vertices.[u+7] <- normals.[u].Z
+        let bounds =
+            box3
+                v3Zero
+                (v3 (single tileMapWidth) 16.0f (single tileMapHeight))
 
-            let indices = Array.init (tileMapWidth * tileMapHeight * 6) id
+        let message =
+            CreateStaticModelMessage
+                (positions, texCoordses, normals, indices, OpenGL.PrimitiveType.Triangles, bounds,
+                 Color.White, (), 0.0f, Assets.Default.MaterialMetalness, 1.0f, Assets.Default.MaterialRoughness, 1.0f, Assets.Default.MaterialAmbientOcclusion,
+                 staticModelAssetTag)
 
-            let bounds = v3 (single tileMapWidth) 16.0f (single tileMapHeight)
-
-            let geometry = OpenGL.PhysicallyBased.CreatePhysicallyBasedGeometry (true, vertices, indices, box3 v3Zero bounds)
-
-            let material =
-                { OpenGL.PhysicallyBased.PhysicallyBasedMaterial.Albedo = Color.White
-                  AlbedoTexture : uint
-                  Metalness : single
-                  MetalnessTexture : uint
-                  Roughness : single
-                  RoughnessTexture : uint
-                  AmbientOcclusion : single
-                  AmbientOcclusionTexture : uint
-                  NormalTexture : uint
-                  TwoSided : bool }
-
-            OpenGL.PhysicallyBased.PhysicallyBasedSurface.make [||] m4Identity bounds  
-
-            geometry
+        message
 
     type Field =
         private
