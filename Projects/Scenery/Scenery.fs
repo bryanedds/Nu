@@ -125,7 +125,23 @@ module Field =
 
             let indices = Array.init (tileMapWidth * tileMapHeight * 6) id
 
-            let geometry = OpenGL.PhysicallyBased.CreatePhysicallyBasedGeometry (true, vertices, indices, box3 v3Zero (v3 (single tileMapWidth) 16.0f (single tileMapHeight)))
+            let bounds = v3 (single tileMapWidth) 16.0f (single tileMapHeight)
+
+            let geometry = OpenGL.PhysicallyBased.CreatePhysicallyBasedGeometry (true, vertices, indices, box3 v3Zero bounds)
+
+            let material =
+                { OpenGL.PhysicallyBased.PhysicallyBasedMaterial.Albedo = Color.White
+                  AlbedoTexture : uint
+                  Metalness : single
+                  MetalnessTexture : uint
+                  Roughness : single
+                  RoughnessTexture : uint
+                  AmbientOcclusion : single
+                  AmbientOcclusionTexture : uint
+                  NormalTexture : uint
+                  TwoSided : bool }
+
+            OpenGL.PhysicallyBased.PhysicallyBasedSurface.make [||] m4Identity bounds  
 
             geometry
 
@@ -148,6 +164,9 @@ module Field =
             CachedGeometries.Add (field.FieldTileMap, geometries)
             geometries
         | (true, geometries) -> geometries
+
+    let make tileMap =
+        { FieldTileMap = tileMap }
 
 // this is our Elm-style command type
 type Command =
@@ -221,6 +240,7 @@ type SceneryDispatcher () =
     // NOTE: performance goal: 60fps, current: 57fps.
     override this.Register (game, world) =
         let world = base.Register (game, world)
+        let field = Field.make (asset "Field" "Field")
 #if DEBUG
         let population = 25
 #else
