@@ -38,7 +38,7 @@ and [<NoEquality; NoComparison>] RenderTasks =
       mutable RenderLights : SortableLight SegmentedList }
 
 /// The parameters for completing a render pass.
-and [<NoEquality; NoComparison>] RenderPass3dDescriptor =
+and [<NoEquality; NoComparison>] RenderPassParameters3d =
     { EyePosition : Vector3
       EyeRotation : Quaternion
       ViewAbsolute : Matrix4x4
@@ -50,22 +50,22 @@ and [<NoEquality; NoComparison>] RenderPass3dDescriptor =
       Renderer3d : Renderer3d }
 
 /// Describes a 3d render pass.
-and [<CustomEquality; CustomComparison>] RenderPassDescriptor3d =
+and [<CustomEquality; CustomComparison>] RenderPassMessage3d =
     { RenderPassOrder : int64
-      RenderPass3d : RenderPass3dDescriptor -> unit }
+      RenderPassParameters3d : RenderPassParameters3d -> unit }
     interface IComparable with
         member this.CompareTo that =
             match that with
-            | :? RenderPassDescriptor3d as that -> this.RenderPassOrder.CompareTo that.RenderPassOrder
+            | :? RenderPassMessage3d as that -> this.RenderPassOrder.CompareTo that.RenderPassOrder
             | _ -> -1
     override this.Equals (that : obj) =
         match that with
-        | :? RenderPassDescriptor3d as that -> this.RenderPassOrder = that.RenderPassOrder
+        | :? RenderPassMessage3d as that -> this.RenderPassOrder = that.RenderPassOrder
         | _ -> false
     override this.GetHashCode () = hash this.RenderPassOrder
 
-/// Describes an internally cached static model used to avoid GC promotion of static model descriptors.
-and [<NoEquality; NoComparison>] CachedStaticModelDescriptor =
+/// Describes an internally cached static model used to avoid GC promotion of static model messages.
+and [<NoEquality; NoComparison>] CachedStaticModelMessage =
     { mutable CachedStaticModelAbsolute : bool
       mutable CachedStaticModelMatrix : Matrix4x4
       mutable CachedStaticModelRenderMaterial : RenderMaterial
@@ -74,14 +74,14 @@ and [<NoEquality; NoComparison>] CachedStaticModelDescriptor =
 
 /// A message to the 3d renderer.
 and [<NoEquality; NoComparison>] RenderMessage3d =
-    | RenderStaticModelSurfaceDescriptor of bool * Matrix4x4 * RenderMaterial * RenderType * StaticModel AssetTag * int
-    | RenderStaticModelDescriptor of bool * Matrix4x4 * RenderMaterial * RenderType * StaticModel AssetTag
-    | RenderStaticModelsDescriptor of bool * (Matrix4x4 * RenderMaterial) array * RenderType * StaticModel AssetTag
-    | RenderStaticSurfaceDescriptor of bool * Matrix4x4 * RenderMaterial * RenderType * OpenGL.PhysicallyBased.PhysicallyBasedGeometry
-    | RenderCachedStaticModelDescriptor of CachedStaticModelDescriptor
-    | RenderSkyBoxDescriptor of CubeMap AssetTag
-    | RenderLightDescriptor of Vector3 * Color * single * single * LightType
-    | RenderPostPassDescriptor3d of RenderPassDescriptor3d
+    | RenderStaticModelSurfaceMessage of bool * Matrix4x4 * RenderMaterial * RenderType * StaticModel AssetTag * int
+    | RenderStaticModelMessage of bool * Matrix4x4 * RenderMaterial * RenderType * StaticModel AssetTag
+    | RenderStaticModelsMessage of bool * (Matrix4x4 * RenderMaterial) array * RenderType * StaticModel AssetTag
+    | RenderCachedStaticModelMessage of CachedStaticModelMessage
+    | RenderSkyBoxMessage of CubeMap AssetTag
+    | RenderLightMessage3d of Vector3 * Color * single * single * LightType
+    | RenderPostPassMessage3d of RenderPassMessage3d
+    | CreateStaticModelMessage of Vector3 array * Vector2 array * Vector3 array * Box3 * Color * Image AssetTag * single * Image AssetTag * single * Image AssetTag * single * Image AssetTag * StaticModel AssetTag
     | HintRenderPackageUseMessage3d of string
     | HintRenderPackageDisuseMessage3d of string
     | ReloadRenderAssetsMessage3d
@@ -649,28 +649,28 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             OpenGL.Hl.Assert ()
 
             // categorize messages
-            let postPasses = hashSetPlus<RenderPassDescriptor3d> HashIdentity.Structural []
+            let postPasses = hashSetPlus<RenderPassMessage3d> HashIdentity.Structural []
             for message in renderMessages do
                 match message with
-                | RenderStaticModelSurfaceDescriptor (absolute, modelMatrix, renderMaterial, renderType, staticModel, surfaceIndex) ->
+                | RenderStaticModelSurfaceMessage (absolute, modelMatrix, renderMaterial, renderType, staticModel, surfaceIndex) ->
                     GlRenderer3d.categorizeStaticModelSurfaceByIndex (absolute, &modelMatrix, &renderMaterial, renderType, staticModel, surfaceIndex, renderer)
-                | RenderStaticModelDescriptor (absolute, modelMatrix, renderMaterial, renderType, staticModel) ->
+                | RenderStaticModelMessage (absolute, modelMatrix, renderMaterial, renderType, staticModel) ->
                     GlRenderer3d.categorizeStaticModel (absolute, &modelMatrix, &renderMaterial, renderType, staticModel, renderer)
-                | RenderStaticModelsDescriptor (absolute, parameters, renderType, staticModel) ->
+                | RenderStaticModelsMessage (absolute, parameters, renderType, staticModel) ->
                     for (modelMatrix, renderMaterial) in parameters do
                         GlRenderer3d.categorizeStaticModel (absolute, &modelMatrix, &renderMaterial, renderType, staticModel, renderer)
-                | RenderCachedStaticModelDescriptor d ->
+                | RenderCachedStaticModelMessage d ->
                     GlRenderer3d.categorizeStaticModel (d.CachedStaticModelAbsolute, &d.CachedStaticModelMatrix, &d.CachedStaticModelRenderMaterial, d.CachedStaticModelRenderType, d.CachedStaticModel, renderer)
-                | RenderSkyBoxDescriptor cubeMap ->
+                | RenderSkyBoxMessage cubeMap ->
                     SegmentedList.add cubeMap renderer.RenderTasks.RenderSkyBoxes
-                | RenderLightDescriptor (position, color, brightness, intensity, _) ->
+                | RenderLightMessage3d (position, color, brightness, intensity, _) ->
                     let light = { SortableLightPosition = position; SortableLightColor = color; SortableLightBrightness = brightness; SortableLightIntensity = intensity; SortableLightDistanceSquared = Single.MaxValue }
                     SegmentedList.add light renderer.RenderTasks.RenderLights
                 | HintRenderPackageUseMessage3d hintPackageUse ->
                     GlRenderer3d.handleHintRenderPackage3dUse hintPackageUse renderer
                 | HintRenderPackageDisuseMessage3d hintPackageDisuse ->
                     GlRenderer3d.handleHintRenderPackage3dDisuse hintPackageDisuse renderer
-                | RenderPostPassDescriptor3d postPass ->
+                | RenderPostPassMessage3d postPass ->
                     postPasses.Add postPass |> ignore<bool>
                 | ReloadRenderAssetsMessage3d ->
                     () // TODO: 3D: implement asset reloading?
@@ -864,7 +864,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                   RenderTasks = renderer.RenderTasks
                   Renderer3d = renderer }
             for pass in postPasses do
-                pass.RenderPass3d passParameters
+                pass.RenderPassParameters3d passParameters
                 OpenGL.Hl.Assert ()
 
             // clear render tasks
