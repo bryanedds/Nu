@@ -3,6 +3,9 @@
  <tileset firstgid="1" source="Forest.tsx"/>
  <tileset firstgid="2311" source="Height.tsx"/>
  <layer id="1" name="Untraversable" width="16" height="16">
+  <properties>
+   <property name="Image" value="[Field Forest]"/>
+  </properties>
   <data encoding="base64" compression="zlib">
    eJzrZ2Rg6B/Fo3gUj0gMADPvkAE=
   </data>
@@ -13,6 +16,9 @@
   </data>
  </layer>
  <layer id="2" name="Traversable" width="16" height="16">
+  <properties>
+   <property name="Image" value="[Field Forest]"/>
+  </properties>
   <data encoding="base64" compression="zlib">
    eJxjYGBgqGBjYChFwuVATCwA6S0D4rkMCFyCZh4+s03Q9BLCJWhmkKof3Qxy9CObQa5+EDYa1T/g+s2A+BMr6Xo/APWYQtMQyIyPrMSbg6wXGcDMIYSx6SUXAADsLH2w
   </data>

@@ -20,14 +20,64 @@ type CustomModelDispatcher () =
     override this.Update (entity, world) =
         entity.SetRotation (entity.GetRotation world * Quaternion.CreateFromAxisAngle (v3Up, 0.01f)) world
 
+[<RequireQualifiedAccess>]
 module Field =
 
     let CachedGeometries = dictPlus HashIdentity.Structural []
 
-    let private createGeometryFromLayerMessage tileMapWidth tileMapHeight (tileSets : TmxTileset array) (tileLayer : TmxLayer) (heightLayer : TmxLayer) staticModelAssetTag =
+    let private createFieldGeometryMessage tileMapWidth tileMapHeight (tileSets : TmxTileset array) (tileLayer : TmxLayer) (heightLayer : TmxLayer) staticModelAssetTag =
+
+        // make positions array
+        let positions = Array.zeroCreate<Vector3> (tileMapWidth * tileMapHeight * 6)
+
+        // initialize positions flat
+        for i in 0 .. dec tileMapWidth do
+            for j in 0 .. dec tileMapHeight do
+                let t = i * tileMapWidth + j
+                let tile = heightLayer.Tiles.[t]
+                let mutable tileSetOpt = None
+                for tileSet in tileSets do
+                    match tileSetOpt with
+                    | None ->
+                        if  tile.Gid >= tileSet.FirstGid &&
+                            tile.Gid < tileSet.FirstGid + tileSet.TileCount.GetValueOrDefault 0 then
+                            tileSetOpt <- Some tileSet
+                    | Some _ -> ()
+                let height =
+                    match tileSetOpt with
+                    | None -> 0
+                    | Some tileSet -> tile.Gid - tileSet.FirstGid
+                match tileSetOpt with
+                | Some tileSet ->
+                    let u = t * 3 * 6
+                    let position = v3 (single i) (single j) (single height)
+                    positions.[u] <- position
+                    positions.[u+1] <- position
+                    positions.[u+2] <- position
+                    positions.[u+3] <- position
+                    positions.[u+4] <- position
+                    positions.[u+5] <- position
+                | None -> ()
+
+        // slope positions
+        for i in 1 .. dec tileMapWidth do
+            for j in 1 .. dec tileMapHeight do
+                let u = i * tileMapWidth + j
+                let positionM1 = &positions.[dec u]
+                let position = &positions.[u]
+                position.X <- (positionM1.X + position.X) / 2.0f
+                let positionM1 = &positions.[dec u+3]
+                let position = &positions.[u+3]
+                position.X <- (positionM1.X + position.X) / 2.0f
+                let positionM1 = &positions.[dec u+5]
+                let position = &positions.[u+5]
+                position.X <- (positionM1.X + position.X) / 2.0f
         
+        // make tex coordses array
         let texCoordses = Array.zeroCreate<Vector2> (tileMapWidth * tileMapHeight * 6)
 
+        // populate tex coordses
+        let mutable albedoTileSetOpt = None
         for i in 0 .. dec tileMapWidth do
             for j in 0 .. dec tileMapHeight do
                 let t = i * tileMapWidth + j
@@ -40,6 +90,7 @@ module Field =
                             tileSetOpt <- Some tileSet // just use the first tile set for the empty tile
                         elif tile.Gid >= tileSet.FirstGid && tile.Gid < tileSet.FirstGid + tileSet.TileCount.GetValueOrDefault 0 then
                             tileSetOpt <- Some tileSet
+                            albedoTileSetOpt <- tileSetOpt // use tile set that is first to be non-zero
                     | Some _ -> ()
                 match tileSetOpt with
                 | Some tileSet ->
@@ -57,49 +108,10 @@ module Field =
                     texCoordses.[u+5] <- v2 texCoordX texCoordY
                 | None -> ()
 
-        let positions = Array.zeroCreate<Vector3> (tileMapWidth * tileMapHeight * 6)
-
-        for i in 0 .. dec tileMapWidth do
-            for j in 0 .. dec tileMapHeight do
-                let t = i * tileMapWidth + j
-                let tile = heightLayer.Tiles.[t]
-                let mutable tileSetOpt = None
-                for tileSet in tileSets do
-                    match tileSetOpt with
-                    | None ->
-                        if tile.Gid = 0 then
-                            tileSetOpt <- Some tileSet // just use the first tile set for the empty tile
-                        elif tile.Gid >= tileSet.FirstGid && tile.Gid < tileSet.FirstGid + tileSet.TileCount.GetValueOrDefault 0 then
-                            tileSetOpt <- Some tileSet
-                    | Some _ -> ()
-                match tileSetOpt with
-                | Some tileSet ->
-                    let height = tile.Gid - tileSet.FirstGid
-                    let u = t * 3 * 6
-                    let position = v3 (single i) (single j) (single height)
-                    positions.[u] <- position
-                    positions.[u+1] <- position
-                    positions.[u+2] <- position
-                    positions.[u+3] <- position
-                    positions.[u+4] <- position
-                    positions.[u+5] <- position
-                | None -> ()
-
-        for i in 1 .. dec tileMapWidth do
-            for j in 1 .. dec tileMapHeight do
-                let u = i * tileMapWidth + j
-                let positionM1 = &positions.[dec u]
-                let position = &positions.[u]
-                position.X <- (positionM1.X + position.X) / 2.0f
-                let positionM1 = &positions.[dec u+3]
-                let position = &positions.[u+3]
-                position.X <- (positionM1.X + position.X) / 2.0f
-                let positionM1 = &positions.[dec u+5]
-                let position = &positions.[u+5]
-                position.X <- (positionM1.X + position.X) / 2.0f
-
+        // make normals array
         let normals = Array.zeroCreate<Vector3> (tileMapWidth * tileMapHeight * 6)
 
+        // populate normals
         for i in 1 .. dec tileMapWidth do
             for j in 1 .. dec tileMapHeight do
                 let u = i * tileMapWidth + j
@@ -111,20 +123,31 @@ module Field =
                 normals.[u+4] <- normal
                 normals.[u+5] <- normal
 
+        // create indices
         let indices = Array.init (tileMapWidth * tileMapHeight * 6) id
 
+        // create bounds
         let bounds =
             box3
                 v3Zero
                 (v3 (single tileMapWidth) 16.0f (single tileMapHeight))
 
-        let message =
-            CreateStaticModelMessage
-                (positions, texCoordses, normals, indices, OpenGL.PrimitiveType.Triangles, bounds,
-                 Color.White, (), 0.0f, Assets.Default.MaterialMetalness, 1.0f, Assets.Default.MaterialRoughness, 1.0f, Assets.Default.MaterialAmbientOcclusion,
-                 staticModelAssetTag)
+        // ensure we've found an albedo tile set
+        match albedoTileSetOpt with
+        | Some albedoTileSet ->
+            
+            // create message
+            let message =
+                CreateStaticModelMessage
+                    (positions, texCoordses, normals, indices, OpenGL.PrimitiveType.Triangles, bounds,
+                     Color.White, albedoTileSet.ImageAsset, 0.0f, Assets.Default.MaterialMetalness, 1.0f, Assets.Default.MaterialRoughness, 1.0f, Assets.Default.MaterialAmbientOcclusion,
+                     staticModelAssetTag)
 
-        message
+            // fin
+            message
+
+        // did not find albedo tile set
+        | None -> failwith "Unable to find custom TmxLayer Image property; cannot create tactical map."
 
     type Field =
         private
