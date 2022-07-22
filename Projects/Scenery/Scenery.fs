@@ -22,31 +22,18 @@ type CustomModelDispatcher () =
 
 module Field =
 
-    let FieldGeometries = dictPlus HashIdentity.Structural []
+    let CachedGeometries = dictPlus HashIdentity.Structural []
 
-    type Field =
-        private
-            { FieldTileMap : TileMap AssetTag }
+    let private createGeometryFromLayers tileMapWidth tileMapHeight (tileSets : TmxTileset array) (tileLayer : TmxLayer) (heightLayer : TmxLayer) =
+        
+            let texCoords = Array.zeroCreate<Vector2> (tileMapWidth * tileMapHeight * 6)
 
-    let getFieldGeometry (field : Field) world =
-        match FieldGeometries.TryGetValue field.FieldTileMap with
-        | (true, geometry) -> geometry
-        | (false, _) ->
-
-            let (_, tileSets, tileMap) = World.getTileMapMetadata field.FieldTileMap world
-            let untraversableLayer = tileMap.Layers.["Untraversable"] :?> TmxLayer
-            let untraversableHeightLayer = tileMap.Layers.["UntraversableHeight"] :?> TmxLayer
-            let traversableLayer = tileMap.Layers.["Traversable"] :?> TmxLayer
-            let traversableHeightLayer = tileMap.Layers.["TraversableHeight"] :?> TmxLayer
-
-            let texCoords = Array.zeroCreate<Vector2> (tileMap.Width * tileMap.Height * 6)
-
-            for i in 0 .. dec tileMap.Width do
-                for j in 0 .. dec tileMap.Height do
-                    let t = i * tileMap.Width + j
-                    let tile = untraversableLayer.Tiles.[t]
+            for i in 0 .. dec tileMapWidth do
+                for j in 0 .. dec tileMapHeight do
+                    let t = i * tileMapWidth + j
+                    let tile = tileLayer.Tiles.[t]
                     let mutable tileSetOpt = None
-                    for (tileSet, _) in tileSets do
+                    for tileSet in tileSets do
                         match tileSetOpt with
                         | None ->
                             if tile.Gid = 0 then
@@ -70,14 +57,14 @@ module Field =
                         texCoords.[u+5] <- v2 texCoordX texCoordY
                     | None -> ()
 
-            let positions = Array.zeroCreate<Vector3> (tileMap.Width * tileMap.Height * 6)
+            let positions = Array.zeroCreate<Vector3> (tileMapWidth * tileMapHeight * 6)
 
-            for i in 0 .. dec tileMap.Width do
-                for j in 0 .. dec tileMap.Height do
-                    let t = i * tileMap.Width + j
-                    let tile = untraversableHeightLayer.Tiles.[t]
+            for i in 0 .. dec tileMapWidth do
+                for j in 0 .. dec tileMapHeight do
+                    let t = i * tileMapWidth + j
+                    let tile = heightLayer.Tiles.[t]
                     let mutable tileSetOpt = None
-                    for (tileSet, _) in tileSets do
+                    for tileSet in tileSets do
                         match tileSetOpt with
                         | None ->
                             if tile.Gid = 0 then
@@ -98,9 +85,9 @@ module Field =
                         positions.[u+5] <- position
                     | None -> ()
 
-            for i in 1 .. dec tileMap.Width do
-                for j in 1 .. dec tileMap.Height do
-                    let u = i * tileMap.Width + j
+            for i in 1 .. dec tileMapWidth do
+                for j in 1 .. dec tileMapHeight do
+                    let u = i * tileMapWidth + j
                     let positionM1 = &positions.[dec u]
                     let position = &positions.[u]
                     position.X <- (positionM1.X + position.X) / 2.0f
@@ -111,11 +98,11 @@ module Field =
                     let position = &positions.[u+5]
                     position.X <- (positionM1.X + position.X) / 2.0f
 
-            let normals = Array.zeroCreate<Vector3> (tileMap.Width * tileMap.Height * 6)
+            let normals = Array.zeroCreate<Vector3> (tileMapWidth * tileMapHeight * 6)
 
-            for i in 1 .. dec tileMap.Width do
-                for j in 1 .. dec tileMap.Height do
-                    let u = i * tileMap.Width + j
+            for i in 1 .. dec tileMapWidth do
+                for j in 1 .. dec tileMapHeight do
+                    let u = i * tileMapWidth + j
                     let normal = Vector3.Normalize (Vector3.Cross (positions.[u+1] - positions.[u], positions.[u+5] - positions.[u]))
                     normals.[u] <- normal
                     normals.[u+1] <- normal
@@ -123,6 +110,44 @@ module Field =
                     normals.[u+3] <- normal
                     normals.[u+4] <- normal
                     normals.[u+5] <- normal
+
+            let vertices = Array.zeroCreate (tileMapWidth * tileMapHeight * 6 * 8)
+
+            for u in 0 .. dec vertices.Length / 8 do
+                vertices.[u] <- positions.[u].X
+                vertices.[u+1] <- positions.[u].Y
+                vertices.[u+2] <- positions.[u].Z
+                vertices.[u+3] <- texCoords.[u].X
+                vertices.[u+4] <- texCoords.[u].Y
+                vertices.[u+5] <- normals.[u].X
+                vertices.[u+6] <- normals.[u].Y
+                vertices.[u+7] <- normals.[u].Z
+
+            let indices = Array.init (tileMapWidth * tileMapHeight * 6) id
+
+            let geometry = OpenGL.PhysicallyBased.CreatePhysicallyBasedGeometry (true, vertices, indices, box3 v3Zero (v3 (single tileMapWidth) 16.0f (single tileMapHeight)))
+
+            geometry
+
+    type Field =
+        private
+            { FieldTileMap : TileMap AssetTag }
+
+    let getFieldGeometries (field : Field) world =
+        match CachedGeometries.TryGetValue field.FieldTileMap with
+        | (false, _) ->
+            let (_, tileSetsAndImages, tileMap) = World.getTileMapMetadata field.FieldTileMap world
+            let tileSets = Array.map fst tileSetsAndImages
+            let untraversableLayer = tileMap.Layers.["Untraversable"] :?> TmxLayer
+            let untraversableHeightLayer = tileMap.Layers.["UntraversableHeight"] :?> TmxLayer
+            let traversableLayer = tileMap.Layers.["Traversable"] :?> TmxLayer
+            let traversableHeightLayer = tileMap.Layers.["TraversableHeight"] :?> TmxLayer
+            let untraversableGeometry = createGeometryFromLayers tileMap.Width tileMap.Height tileSets untraversableLayer untraversableHeightLayer
+            let traversableGeometry = createGeometryFromLayers tileMap.Width tileMap.Height tileSets traversableLayer traversableHeightLayer
+            let geometries = (untraversableGeometry, traversableGeometry)
+            CachedGeometries.Add (field.FieldTileMap, geometries)
+            geometries
+        | (true, geometries) -> geometries
 
 // this is our Elm-style command type
 type Command =
