@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="16" height="16" tilewidth="48" tileheight="48" infinite="0" nextlayerid="5" nextobjectid="1">
+ <tileset firstgid="1" source="Forest.tsx"/>
+ <tileset firstgid="2311" source="Height.tsx"/>
+ <layer id="1" name="Untraversable" width="16" height="16">
+  <data encoding="base64" compression="zlib">
+   eJzrZ2Rg6B/Fo3gUj0gMADPvkAE=
+  </data>
+ </layer>
+ <layer id="4" name="UntraversableHeight" width="16" height="16" opacity="0.25">
+  <data encoding="base64" compression="zlib">
+   eJxj52RgYB/Fo3gUj0gMABzgEAE=
+  </data>
+ </layer>
+ <layer id="2" name="Traversable" width="16" height="16">
+  <data encoding="base64" compression="zlib">
+   eJxjYGBgqGBjYChFwuVATCwA6S0D4rkMCFyCZh4+s03Q9BLCJWhmkKof3Qxy9CObQa5+EDYa1T/g+s2A+BMr6Xo/APWYQtMQyIyPrMSbg6wXGcDMIYSx6SUXAADsLH2w
+  </data>
+ </layer>
+ <layer id="3" name="TraversableHeight" width="16" height="16" opacity="0.25">
+  <data encoding="base64" compression="zlib">
+   eJzj5mRg4B4EmAcHplQ/sebB5HmhGMbng2JCZiDr50Mygw/NLGL0o7uBGD/woJmBzkc2k5Twg+kTQjOXlPjA5id09UIE3EPIblg8USs9YTNnoPMILTAAXMsUkA==
+  </data>
+ </layer>
+</map>

@@ -2,6 +2,7 @@
 open System.Collections.Generic
 open System.Numerics
 open Prime
+open TiledSharp
 open Nu
 open Nu.Declarative
 
@@ -18,6 +19,74 @@ type CustomModelDispatcher () =
 
     override this.Update (entity, world) =
         entity.SetRotation (entity.GetRotation world * Quaternion.CreateFromAxisAngle (v3Up, 0.01f)) world
+
+module Field =
+
+    let FieldGeometries = dictPlus HashIdentity.Structural []
+
+    type Field =
+        private
+            { FieldTileMap : TileMap AssetTag }
+
+    let getFieldGeometry (field : Field) world =
+        match FieldGeometries.TryGetValue field.FieldTileMap with
+        | (true, geometry) -> geometry
+        | (false, _) ->
+            let (_, tileSets, tileMap) = World.getTileMapMetadata field.FieldTileMap world
+            let untraversableLayer = tileMap.Layers.["Untraversable"] :?> TmxLayer
+            let untraversableHeightLayer = tileMap.Layers.["UntraversableHeight"] :?> TmxLayer
+            let traversableLayer = tileMap.Layers.["Traversable"] :?> TmxLayer
+            let traversableHeightLayer = tileMap.Layers.["TraversableHeight"] :?> TmxLayer
+
+            let texCoords = Array.zeroCreate<single> (tileMap.Width * tileMap.Height * 2 * 6)
+
+            for i in 0 .. dec tileMap.Width do
+                for j in 0 .. dec tileMap.Height do
+                    let t = i * tileMap.Width + j
+                    let tile = untraversableLayer.Tiles.[t]
+                    let mutable tileSetOpt = None
+                    for (tileSet, _) in tileSets do
+                        match tileSetOpt with
+                        | None ->
+                            if tile.Gid = 0 then
+                                tileSetOpt <- Some tileSet // just use the first tile set for the empty tile
+                            elif tile.Gid >= tileSet.FirstGid && tile.Gid < tileSet.FirstGid + tileSet.TileCount.GetValueOrDefault 0 then
+                                tileSetOpt <- Some tileSet
+                        | Some _ -> ()
+                    match tileSetOpt with
+                    | Some tileSet ->
+                        let tileId = tile.Gid - tileSet.FirstGid
+                        let texCoordX = single (tileId / tileSet.Columns.Value) / single tileSet.Image.Width.Value
+                        let texCoordY = single (tileId % tileSet.Columns.Value) / single tileSet.Image.Height.Value
+                        let texCoordX2 = texCoordX + 1.0f / single tileSet.Image.Width.Value
+                        let texCoordY2 = texCoordY + 1.0f / single tileSet.Image.Height.Value
+                        let u = t * 6
+                        texCoords.[u] <- texCoordX
+                        texCoords.[u+1] <- texCoordX2
+                        texCoords.[u+2] <- texCoordY
+                        texCoords.[u+3] <- texCoordX
+                        texCoords.[u+4] <- texCoordY2
+                        texCoords.[u+5] <- texCoordX2
+                    | None -> ()
+
+            let positions = Array.zeroCreate<single> (tileMap.Width * tileMap.Height * 3 * 6)
+
+            for i in 0 .. dec tileMap.Width do
+                for j in 0 .. dec tileMap.Height do
+                    let t = i * tileMap.Width + j
+                    let tile = untraversableHeightLayer.Tiles.[t]
+                    let mutable tileSetOpt = None
+                    for (tileSet, _) in tileSets do
+                        match tileSetOpt with
+                        | None ->
+                            if tile.Gid = 0 then
+                                tileSetOpt <- Some tileSet // just use the first tile set for the empty tile
+                            elif tile.Gid >= tileSet.FirstGid && tile.Gid < tileSet.FirstGid + tileSet.TileCount.GetValueOrDefault 0 then
+                                tileSetOpt <- Some tileSet
+                        | Some _ -> ()
+                    match tileSetOpt with
+                    | Some tileSet ->
+                        let height = tile.Gid - tileSet.FirstGid
 
 // this is our Elm-style command type
 type Command =
