@@ -252,8 +252,8 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                     match Dictionary.tryFind packageName renderer.RenderPackages with
                     | Some renderPackage -> renderPackage
                     | None ->
-                        let packageState = { Texture2dMemo = OpenGL.Texture2d.Texture2dMemo.make (); CubeMapMemo = OpenGL.CubeMap.CubeMapMemo.make () }
-                        let renderPackage = { Assets = dictPlus StringComparer.Ordinal []; PackageState = packageState }
+                        let renderPackageState = { Texture2dMemo = OpenGL.Texture2d.Texture2dMemo.make (); CubeMapMemo = OpenGL.CubeMap.CubeMapMemo.make () }
+                        let renderPackage = { Assets = dictPlus StringComparer.Ordinal []; PackageState = renderPackageState }
                         renderer.RenderPackages.Assign (packageName, renderPackage)
                         renderPackage
                 let renderAssetOpts = List.map (fun asset -> GlRenderer3d.tryLoadRenderAsset renderPackage.PackageState asset renderer) assets
@@ -741,7 +741,13 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                           Surfaces = surfaces
                           PhysicallyBasedStaticHierarchy = hierarchy }
 
-                    ()
+                    match renderer.RenderPackages.TryGetValue assetTag.PackageName with
+                    | (true, package) ->
+                        package.Assets.Add (assetTag.AssetName, StaticModelAsset staticModel)
+                    | (false, _) ->
+                        let packageState = { Texture2dMemo = OpenGL.Texture2d.Texture2dMemo.make (); CubeMapMemo = OpenGL.CubeMap.CubeMapMemo.make () }
+                        let package = { Assets = Dictionary.singleton StringComparer.Ordinal assetTag.AssetName (StaticModelAsset staticModel); PackageState = packageState }
+                        renderer.RenderPackages.Add (assetTag.PackageName, package)
 
                 | HintRenderPackageUseMessage3d hintPackageUse ->
                     GlRenderer3d.handleHintRenderPackage3dUse hintPackageUse renderer

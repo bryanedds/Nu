@@ -62,13 +62,13 @@ module Field =
                 let u = i * tileMapWidth + j
                 let positionM1 = &positions.[dec u]
                 let position = &positions.[u]
-                position.X <- (positionM1.X + position.X) / 2.0f
+                position.Y <- positionM1.Y
                 let positionM1 = &positions.[dec u+3]
                 let position = &positions.[u+3]
-                position.X <- (positionM1.X + position.X) / 2.0f
+                position.Y <- positionM1.Y
                 let positionM1 = &positions.[dec u+5]
                 let position = &positions.[u+5]
-                position.X <- (positionM1.X + position.X) / 2.0f
+                position.Y <- positionM1.Y
         
         // make tex coordses array
         let texCoordses = Array.zeroCreate<Vector2> (tileMapWidth * tileMapHeight * 6)
@@ -88,7 +88,7 @@ module Field =
                         elif tile.Gid >= tileSet.FirstGid && tile.Gid < tileSet.FirstGid + tileSet.TileCount.GetValueOrDefault 0 then
                             tileSetOpt <- Some tileSet
                             albedoTileSetOpt <- tileSetOpt // use tile set that is first to be non-zero
-                    | Some _ -> ()
+                    | Some _ -> tileSetOpt <- albedoTileSetOpt
                 match tileSetOpt with
                 | Some tileSet ->
                     let tileId = tile.Gid - tileSet.FirstGid
@@ -273,7 +273,6 @@ type SceneryDispatcher () =
     // NOTE: performance goal: 60fps, current: 57fps.
     override this.Register (game, world) =
         let world = base.Register (game, world)
-        let field = Field.make (asset "Field" "Field")
 #if DEBUG
         let population = 25
 #else
