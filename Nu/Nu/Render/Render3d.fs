@@ -72,6 +72,10 @@ and [<NoEquality; NoComparison>] CachedStaticModelMessage =
       mutable CachedStaticModelRenderType : RenderType
       mutable CachedStaticModel : StaticModel AssetTag }
 
+/// TODO: 3D: make this a record.
+and StaticModelSurfaceDescriptor =
+    Vector3 array * Vector2 array * Vector3 array * int array * OpenGL.PrimitiveType * Box3 * Color * Image AssetTag * single * Image AssetTag * single * Image AssetTag * single * Image AssetTag
+
 /// A message to the 3d renderer.
 and [<NoEquality; NoComparison>] RenderMessage3d =
     | RenderStaticModelSurfaceMessage of bool * Matrix4x4 * RenderMaterial * RenderType * StaticModel AssetTag * int
@@ -81,7 +85,7 @@ and [<NoEquality; NoComparison>] RenderMessage3d =
     | RenderSkyBoxMessage of CubeMap AssetTag
     | RenderLightMessage3d of Vector3 * Color * single * single * LightType
     | RenderPostPassMessage3d of RenderPassMessage3d
-    | CreateStaticModelMessage of Vector3 array * Vector2 array * Vector3 array * int array * OpenGL.PrimitiveType * Box3 * Color * Image AssetTag * single * Image AssetTag * single * Image AssetTag * single * Image AssetTag * StaticModel AssetTag
+    | CreateStaticModelMessage of StaticModelSurfaceDescriptor array * StaticModel AssetTag
     | HintRenderPackageUseMessage3d of string
     | HintRenderPackageDisuseMessage3d of string
     | ReloadRenderAssetsMessage3d

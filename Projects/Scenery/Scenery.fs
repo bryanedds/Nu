@@ -23,9 +23,9 @@ type CustomModelDispatcher () =
 [<RequireQualifiedAccess>]
 module Field =
 
-    let CachedGeometries = dictPlus HashIdentity.Structural []
+    let CachedModels = dictPlus<StaticModel AssetTag, StaticModelSurfaceDescriptor array> HashIdentity.Structural []
 
-    let private createFieldGeometryMessage tileMapWidth tileMapHeight (tileSets : TmxTileset array) (tileLayer : TmxLayer) (heightLayer : TmxLayer) staticModelAssetTag =
+    let private createFieldSurfaceDescriptor tileMapWidth tileMapHeight (tileSets : TmxTileset array) (tileLayer : TmxLayer) (heightLayer : TmxLayer) =
 
         // make positions array
         let positions = Array.zeroCreate<Vector3> (tileMapWidth * tileMapHeight * 6)
@@ -135,16 +135,17 @@ module Field =
         // ensure we've found an albedo tile set
         match albedoTileSetOpt with
         | Some albedoTileSet ->
-            
-            // create message
-            let message =
-                CreateStaticModelMessage
-                    (positions, texCoordses, normals, indices, OpenGL.PrimitiveType.Triangles, bounds,
-                     Color.White, albedoTileSet.ImageAsset, 0.0f, Assets.Default.MaterialMetalness, 1.0f, Assets.Default.MaterialRoughness, 1.0f, Assets.Default.MaterialAmbientOcclusion,
-                     staticModelAssetTag)
 
+            // create static model surface descriptor
+            let descriptor =
+                (positions, texCoordses, normals, indices, OpenGL.PrimitiveType.Triangles, bounds,
+                 Color.White, albedoTileSet.ImageAsset,
+                 0.0f, Assets.Default.MaterialMetalness,
+                 1.0f, Assets.Default.MaterialRoughness,
+                 1.0f, Assets.Default.MaterialAmbientOcclusion)
+            
             // fin
-            message
+            descriptor
 
         // did not find albedo tile set
         | None -> failwith "Unable to find custom TmxLayer Image property; cannot create tactical map."
@@ -153,8 +154,9 @@ module Field =
         private
             { FieldTileMap : TileMap AssetTag }
 
-    let getFieldGeometries (field : Field) world =
-        match CachedGeometries.TryGetValue field.FieldTileMap with
+    let getFieldModelDescriptors (field : Field) world =
+        let fieldModelAssetName = asset field.FieldTileMap.PackageName (field.FieldTileMap.AssetName + "Model")
+        match CachedModels.TryGetValue fieldModelAssetName with
         | (false, _) ->
             let (_, tileSetsAndImages, tileMap) = World.getTileMapMetadata field.FieldTileMap world
             let tileSets = Array.map fst tileSetsAndImages
@@ -162,12 +164,13 @@ module Field =
             let untraversableHeightLayer = tileMap.Layers.["UntraversableHeight"] :?> TmxLayer
             let traversableLayer = tileMap.Layers.["Traversable"] :?> TmxLayer
             let traversableHeightLayer = tileMap.Layers.["TraversableHeight"] :?> TmxLayer
-            let untraversableGeometry = createGeometryFromLayers tileMap.Width tileMap.Height tileSets untraversableLayer untraversableHeightLayer
-            let traversableGeometry = createGeometryFromLayers tileMap.Width tileMap.Height tileSets traversableLayer traversableHeightLayer
-            let geometries = (untraversableGeometry, traversableGeometry)
-            CachedGeometries.Add (field.FieldTileMap, geometries)
-            geometries
-        | (true, geometries) -> geometries
+            let untraversableSurfaceDescriptor = createFieldSurfaceDescriptor tileMap.Width tileMap.Height tileSets untraversableLayer untraversableHeightLayer
+            let traversableSurfaceDescriptor = createFieldSurfaceDescriptor tileMap.Width tileMap.Height tileSets traversableLayer traversableHeightLayer
+            let descriptors = [|untraversableSurfaceDescriptor; traversableSurfaceDescriptor|]
+            let world = World.enqueueRenderMessage3d (CreateStaticModelMessage (descriptors, fieldModelAssetName)) world
+            CachedModels.Add (fieldModelAssetName, descriptors)
+            (descriptors, world)
+        | (true, descriptors) -> (descriptors, world)
 
     let make tileMap =
         { FieldTileMap = tileMap }
