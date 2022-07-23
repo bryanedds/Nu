@@ -74,7 +74,7 @@ and [<NoEquality; NoComparison>] CachedStaticModelMessage =
 
 /// TODO: 3D: make this a record.
 and StaticModelSurfaceDescriptor =
-    Vector3 array * Vector2 array * Vector3 array * int array * OpenGL.PrimitiveType * Box3 * Color * Image AssetTag * single * Image AssetTag * single * Image AssetTag * single * Image AssetTag * Image AssetTag * bool
+    Vector3 array * Vector2 array * Vector3 array * int array * Matrix4x4 * Box3 * Color * Image AssetTag * single * Image AssetTag * single * Image AssetTag * single * Image AssetTag * Image AssetTag * bool
 
 /// A message to the 3d renderer.
 and [<NoEquality; NoComparison>] RenderMessage3d =
@@ -85,7 +85,7 @@ and [<NoEquality; NoComparison>] RenderMessage3d =
     | RenderSkyBoxMessage of CubeMap AssetTag
     | RenderLightMessage3d of Vector3 * Color * single * single * LightType
     | RenderPostPassMessage3d of RenderPassMessage3d
-    | CreateStaticModelMessage of StaticModelSurfaceDescriptor array * StaticModel AssetTag
+    | CreateStaticModelMessage of StaticModelSurfaceDescriptor array * Box3 * StaticModel AssetTag
     | HintRenderPackageUseMessage3d of string
     | HintRenderPackageDisuseMessage3d of string
     | ReloadRenderAssetsMessage3d
@@ -672,14 +672,26 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                     SegmentedList.add light renderer.RenderTasks.RenderLights
                 | RenderPostPassMessage3d postPass ->
                     postPasses.Add postPass |> ignore<bool>
-                | CreateStaticModelMessage (surfaceDescriptors, assetTag) ->
+                | CreateStaticModelMessage (surfaceDescriptors, bounds, assetTag) ->
 
                     let surfaces = List ()
 
-                    for (positions, texCoordses, normals, indices, primitiveType, bounds, albedo, albedoImage, metalness, metalnessImage, roughness, roughnessImage, ambientOcclusion, ambientOcclusionImage, normalImage, twoSided) in surfaceDescriptors do
+                    for (positions, texCoordses, normals, indices, transform, bounds, albedo, albedoImage, metalness, metalnessImage, roughness, roughnessImage, ambientOcclusion, ambientOcclusionImage, normalImage, twoSided) in surfaceDescriptors do
+
+                        let material : OpenGL.PhysicallyBased.PhysicallyBasedMaterial =
+                            { Albedo = albedo
+                              AlbedoTexture = ValueOption.defaultValue 0u (match GlRenderer3d.tryFindRenderAsset (AssetTag.generalize albedoImage) renderer with ValueSome (Texture2dAsset (_, texture)) -> ValueSome texture | _ -> ValueNone)
+                              Metalness = metalness
+                              MetalnessTexture = ValueOption.defaultValue 0u (match GlRenderer3d.tryFindRenderAsset (AssetTag.generalize metalnessImage) renderer with ValueSome (Texture2dAsset (_, texture)) -> ValueSome texture | _ -> ValueNone)
+                              Roughness = roughness
+                              RoughnessTexture = ValueOption.defaultValue 0u (match GlRenderer3d.tryFindRenderAsset (AssetTag.generalize roughnessImage) renderer with ValueSome (Texture2dAsset (_, texture)) -> ValueSome texture | _ -> ValueNone)
+                              AmbientOcclusion = ambientOcclusion
+                              AmbientOcclusionTexture = ValueOption.defaultValue 0u (match GlRenderer3d.tryFindRenderAsset (AssetTag.generalize ambientOcclusionImage) renderer with ValueSome (Texture2dAsset (_, texture)) -> ValueSome texture | _ -> ValueNone)
+                              NormalTexture = ValueOption.defaultValue 0u (match GlRenderer3d.tryFindRenderAsset (AssetTag.generalize normalImage) renderer with ValueSome (Texture2dAsset (_, texture)) -> ValueSome texture | _ -> ValueNone)
+                              TwoSided = twoSided }
                 
                         let vertices = Array.zeroCreate (positions.Length * 8)
-                
+
                         for i in 0 .. dec vertices.Length do
                             let u = i * 8
                             vertices.[u] <- positions.[i].X
@@ -690,34 +702,25 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                             vertices.[u+5] <- normals.[i].X
                             vertices.[u+6] <- normals.[i].Y
                             vertices.[u+7] <- normals.[i].Z
-                
+
                         let geometry = OpenGL.PhysicallyBased.CreatePhysicallyBasedGeometry (true, vertices, indices, bounds)
 
-                        let material : OpenGL.PhysicallyBased.PhysicallyBasedMaterial =
-                            { Albedo = albedo
-                              AlbedoTexture = GlRenderer3d.tryFindRenderAsset albedoImage renderer
-                              Metalness = metalness
-                              MetalnessTexture = GlRenderer3d.tryFindRenderAsset metalnessImage renderer
-                              Roughness = roughness
-                              RoughnessTexture = GlRenderer3d.tryFindRenderAsset roughnessImage renderer
-                              AmbientOcclusion = ambientOcclusion
-                              AmbientOcclusionTexture = GlRenderer3d.tryFindRenderAsset ambientOcclusionImage renderer
-                              NormalTexture = GlRenderer3d.tryFindRenderAsset normalImage renderer
-                              TwoSided = twoSided }
-                        
-                        let surface =
-                            OpenGL.PhysicallyBased.PhysicallyBasedSurface.make [||] m4Identity bounds material geometry
+                        let surface = OpenGL.PhysicallyBased.CreatePhysicallyBasedSurface ([||], transform, bounds, material, geometry)
 
                         surfaces.Add surface
 
+                    let surfaces = Seq.toArray surfaces
+
+                    let hierarchy = TreeNode (Array.map OpenGL.PhysicallyBased.PhysicallyBasedSurface surfaces)
+
                     let staticModel : OpenGL.PhysicallyBased.PhysicallyBasedStaticModel =
-                        { Bounds = ()
+                        { Bounds = bounds
                           Lights = [||]
                           Surfaces = surfaces
-                          PhysicallyBasedStaticHierarchy = () }
+                          PhysicallyBasedStaticHierarchy = hierarchy }
 
                     ()
-                
+
                 | HintRenderPackageUseMessage3d hintPackageUse ->
                     GlRenderer3d.handleHintRenderPackage3dUse hintPackageUse renderer
                 | HintRenderPackageDisuseMessage3d hintPackageDisuse ->

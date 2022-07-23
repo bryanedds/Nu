@@ -59,7 +59,17 @@ module PhysicallyBased =
             int surface.PhysicallyBasedGeometry.PrimitiveType ^^^
             int surface.PhysicallyBasedGeometry.PhysicallyBasedVao
 
-        static member make surfaceNames (surfaceMatrix : Matrix4x4) surfaceBounds physicallyBasedMaterial physicallyBasedGeometry =
+        static member inline equals left right =
+            left.PhysicallyBasedMaterial.AlbedoTexture = right.PhysicallyBasedMaterial.AlbedoTexture &&
+            left.PhysicallyBasedMaterial.MetalnessTexture = right.PhysicallyBasedMaterial.MetalnessTexture &&
+            left.PhysicallyBasedMaterial.RoughnessTexture = right.PhysicallyBasedMaterial.RoughnessTexture &&
+            left.PhysicallyBasedMaterial.AmbientOcclusionTexture = right.PhysicallyBasedMaterial.AmbientOcclusionTexture &&
+            left.PhysicallyBasedMaterial.NormalTexture = right.PhysicallyBasedMaterial.NormalTexture &&
+            left.PhysicallyBasedMaterial.TwoSided = right.PhysicallyBasedMaterial.TwoSided &&
+            left.PhysicallyBasedGeometry.PrimitiveType = right.PhysicallyBasedGeometry.PrimitiveType &&
+            left.PhysicallyBasedGeometry.PhysicallyBasedVao = right.PhysicallyBasedGeometry.PhysicallyBasedVao
+
+        static member internal make surfaceNames (surfaceMatrix : Matrix4x4) surfaceBounds physicallyBasedMaterial physicallyBasedGeometry =
             let mutable result =
                 { HashCode = 0
                   SurfaceNames = surfaceNames
@@ -70,16 +80,6 @@ module PhysicallyBased =
                   PhysicallyBasedGeometry = physicallyBasedGeometry }
             result.HashCode <- PhysicallyBasedSurface.hash result
             result
-
-        static member inline equals left right =
-            left.PhysicallyBasedMaterial.AlbedoTexture = right.PhysicallyBasedMaterial.AlbedoTexture &&
-            left.PhysicallyBasedMaterial.MetalnessTexture = right.PhysicallyBasedMaterial.MetalnessTexture &&
-            left.PhysicallyBasedMaterial.RoughnessTexture = right.PhysicallyBasedMaterial.RoughnessTexture &&
-            left.PhysicallyBasedMaterial.AmbientOcclusionTexture = right.PhysicallyBasedMaterial.AmbientOcclusionTexture &&
-            left.PhysicallyBasedMaterial.NormalTexture = right.PhysicallyBasedMaterial.NormalTexture &&
-            left.PhysicallyBasedMaterial.TwoSided = right.PhysicallyBasedMaterial.TwoSided &&
-            left.PhysicallyBasedGeometry.PrimitiveType = right.PhysicallyBasedGeometry.PrimitiveType &&
-            left.PhysicallyBasedGeometry.PhysicallyBasedVao = right.PhysicallyBasedGeometry.PhysicallyBasedVao
 
         member this.Equals that =
             PhysicallyBasedSurface.equals this that
@@ -501,6 +501,10 @@ module PhysicallyBased =
           AmbientOcclusionTexture = ambientOcclusionTexture
           NormalTexture = normalTexture
           TwoSided = material.IsTwoSided }
+
+    /// Create a physically-based surface.
+    let CreatePhysicallyBasedSurface (surfaceNames, surfaceMatrix, surfaceBounds, physicallyBasedMaterial, physicallyBasedGeometry) =
+        PhysicallyBasedSurface.make surfaceNames surfaceMatrix surfaceBounds physicallyBasedMaterial physicallyBasedGeometry
 
     /// Attempt to create physically-based material from an assimp scene.
     let TryCreatePhysicallyBasedMaterials (renderable, dirPath, defaultMaterial, textureMemo, scene : Assimp.Scene) =
