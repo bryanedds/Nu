@@ -33,7 +33,7 @@ module Field =
         // initialize positions flat
         for i in 0 .. dec tileMapWidth do
             for j in 0 .. dec tileMapHeight do
-                let t = i * tileMapWidth + j
+                let t = j * tileMapWidth + i
                 let tile = heightLayer.Tiles.[t]
                 let mutable tileSetOpt = None
                 for tileSet in tileSets do
@@ -74,7 +74,7 @@ module Field =
         let mutable albedoTileSetOpt = None
         for i in 0 .. dec tileMapWidth do
             for j in 0 .. dec tileMapHeight do
-                let t = i * tileMapWidth + j
+                let t = j * tileMapWidth + i
                 let tile = tileLayer.Tiles.[t]
                 let mutable tileSetOpt = None
                 for tileSet in tileSets do
@@ -89,14 +89,15 @@ module Field =
                 match tileSetOpt with
                 | Some tileSet ->
                     let tileId = tile.Gid - tileSet.FirstGid
-                    let columns = tileSet.Columns.Value
-                    let rows = tileSet.TileCount.Value / columns
-                    let tileX = tileId % tileSet.Columns.Value
-                    let tileY = tileId / tileSet.Columns.Value
-                    let texCoordX = single tileX / single columns
-                    let texCoordY = single tileY / single rows
-                    let texCoordX2 = texCoordX + single tileSet.TileWidth / single tileSet.Image.Width.Value
-                    let texCoordY2 = texCoordY + single tileSet.TileHeight / single tileSet.Image.Height.Value
+                    let tileWidthNormalized = single tileSet.TileWidth / single tileSet.Image.Width.Value
+                    let tileHeightNormalized = single tileSet.TileHeight / single tileSet.Image.Height.Value
+                    let tileXCount = tileSet.Columns.Value
+                    let tileX = tileId % tileXCount
+                    let tileY = tileId / tileXCount + 1
+                    let texCoordX = single tileX * tileWidthNormalized
+                    let texCoordY = single tileY * tileHeightNormalized
+                    let texCoordX2 = texCoordX + tileWidthNormalized
+                    let texCoordY2 = texCoordY - tileHeightNormalized
                     let u = t * 6
                     texCoordses.[u] <- v2 texCoordX texCoordY
                     texCoordses.[u+1] <- v2 texCoordX2 texCoordY
@@ -255,6 +256,8 @@ type SceneryDispatcher () =
                      Entity.Intensity == 1.0f]
                  Content.fps Gen.name
                     [Entity.Position == v3 250.0f -200.0f 0.0f]
+                 Content.skyBox Gen.name
+                    [Entity.CubeMap == Assets.Default.SkyBoxMap]
                  Content.staticModelSurface Gen.name
                     [Entity.SurfaceIndex == 0
                      Entity.StaticModel <== field --|> fun field world -> snd (Field.getFieldModelDescriptorsAndAssetTag field world)
