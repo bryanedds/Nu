@@ -471,7 +471,7 @@ module WorldModule2 =
                 | Left struct (error, world) -> (Left error, world)
             with exn -> (Left (scstring exn), World.choose world)
 
-        /// Send a message to the subcomponents to reload its assets.
+        /// Send a message to the subsystems to reload their existing assets.
         [<FunctionBinding>]
         static member reloadExistingAssets world =
             World.reloadRenderAssets2d world
@@ -502,7 +502,7 @@ module WorldModule2 =
                     let world = World.reloadExistingAssets world
                     let world = World.publish () Events.AssetsReload (EventTrace.debug "World" "publishAssetsReload" "" EventTrace.empty) Simulants.Game world
                     (Right assetGraph, world)
-        
+
                 // propagate errors
                 | Left error -> (Left error, world)
             with exn -> (Left (scstring exn), World.choose world)

@@ -21,21 +21,11 @@ module DeclarativeOperators2 =
                 let message = { Elevation = elevation; Horizon = horizon; AssetTag = AssetTag.generalize assetTag; RenderDescriptor2d = descriptor }
                 World.enqueueRenderLayeredMessage2d message world
                 world
-            | Render3d renderMessage ->
-                World.enqueueRenderMessage3d renderMessage world
-                world
-            | PlaySound (volume, assetTag) ->
-                World.playSound volume assetTag world
-                world
-            | PlaySong (fadeIn, fadeOut, volume, start, assetTag) ->
-                World.playSong fadeIn fadeOut volume start assetTag world
-                world
-            | FadeOutSong fade ->
-                World.fadeOutSong fade world
-                world
-            | StopSong ->
-                World.stopSong world
-                world
+            | Render3d renderMessage -> World.enqueueRenderMessage3d renderMessage world; world
+            | PlaySound (volume, assetTag) -> World.playSound volume assetTag world; world
+            | PlaySong (fadeIn, fadeOut, volume, start, assetTag) -> World.playSong fadeIn fadeOut volume start assetTag world; world
+            | FadeOutSong fade -> World.fadeOutSong fade world; world
+            | StopSong -> World.stopSong world; world
             | SpawnEmitter (_, _) -> world
             | Tag _ -> world
             | Views views -> Array.fold (fun world view -> World.actualizeView view world) world views
@@ -1769,12 +1759,9 @@ module ButtonDispatcherModule =
                         let world = World.publishPlus () (Events.Up --> entity) eventTrace entity true false world
                         let eventTrace = EventTrace.debug "ButtonDispatcher" "handleMouseLeftUp" "Click" EventTrace.empty
                         let world = World.publishPlus () (Events.Click --> entity) eventTrace entity true false world
-                        let world =
-                            match entity.GetClickSoundOpt world with
-                            | Some clickSound ->
-                                World.playSound (entity.GetClickSoundVolume world) clickSound world
-                                world
-                            | None -> world
+                        match entity.GetClickSoundOpt world with
+                        | Some clickSound -> World.playSound (entity.GetClickSoundVolume world) clickSound world
+                        | None -> ()
                         (Resolve, world)
                     else (Cascade, world)
                 else (Cascade, world)
@@ -1977,12 +1964,9 @@ module ToggleButtonDispatcherModule =
                         let world = World.publishPlus () (eventAddress --> entity) eventTrace entity true false world
                         let eventTrace = EventTrace.debug "ToggleDispatcher" "handleMouseLeftUp" "Toggle" EventTrace.empty
                         let world = World.publishPlus toggled (Events.Toggle --> entity) eventTrace entity true false world
-                        let world =
-                            match entity.GetToggleSoundOpt world with
-                            | Some toggleSound ->
-                                World.playSound (entity.GetToggleSoundVolume world) toggleSound world
-                                world
-                            | None -> world
+                        match entity.GetToggleSoundOpt world with
+                        | Some toggleSound -> World.playSound (entity.GetToggleSoundVolume world) toggleSound world
+                        | None -> ()
                         (Resolve, world)
                     else (Cascade, world)
                 else (Cascade, world)
@@ -2105,12 +2089,9 @@ module RadioButtonDispatcherModule =
                         let world = World.publishPlus () (eventAddress --> entity) eventTrace entity true false world
                         let eventTrace = EventTrace.debug "RadioButtonDispatcher" "handleMouseLeftUp" "Dial" EventTrace.empty
                         let world = World.publishPlus dialed (Events.Dial --> entity) eventTrace entity true false world
-                        let world =
-                            match entity.GetDialSoundOpt world with
-                            | Some dialSound ->
-                                World.playSound (entity.GetDialSoundVolume world) dialSound world
-                                world
-                            | None -> world
+                        match entity.GetDialSoundOpt world with
+                        | Some dialSound -> World.playSound (entity.GetDialSoundVolume world) dialSound world
+                        | None -> ()
                         (Resolve, world)
                     else (Cascade, world)
                 else (Cascade, world)
