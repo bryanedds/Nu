@@ -196,6 +196,7 @@ module AssetGraph =
                         for extension in extensions do
                             yield! Directory.GetFiles (directory, "*." + extension, SearchOption.AllDirectories) }
                 for filePath in filePaths do
+                    let filePath = filePath.Replace ("\\", "/") // normalize format
                     let extension = (Path.GetExtension filePath).Replace (".", "")
                     let assetName = (Path.GetFileNameWithoutExtension filePath)
                     let tag = AssetTag.make<obj> packageName assetName

@@ -181,11 +181,13 @@ module Field =
             let bounds = untraversableSurfaceDescriptor.Bounds.Combine traversableSurfaceDescriptor.Bounds
             World.enqueueRenderMessage3d (CreateStaticModelMessage (descriptors, bounds, fieldModelAssetTag)) world
             CachedDescriptors.Add (fieldModelAssetTag, descriptors)
-            (descriptors, fieldModelAssetTag, world)
-        | (true, descriptors) -> (descriptors, fieldModelAssetTag, world)
+            (descriptors, fieldModelAssetTag)
+        | (true, descriptors) -> (descriptors, fieldModelAssetTag)
 
     let make tileMap =
         { FieldTileMap = tileMap }
+
+type Field = Field.Field
 
 // this is our Elm-style command type
 type Command =
@@ -193,7 +195,7 @@ type Command =
 
 // this is our Elm-style game dispatcher
 type SceneryDispatcher () =
-    inherit GameDispatcher<unit, unit, Command> (())
+    inherit GameDispatcher<Field, unit, Command> (Field.make (asset "Field" "Field"))
 
     // here we channel from events to signals
     override this.Channel (_, game) =
@@ -242,7 +244,7 @@ type SceneryDispatcher () =
             just world
 
     // here we describe the content of the game
-    override this.Content (_, _) =
+    override this.Content (field, _) =
         [Content.screen Simulants.Default.Screen.Name Vanilla []
             [Content.group Simulants.Default.Group.Name []
                 [Content.light3d Simulants.Light.Name
@@ -253,7 +255,13 @@ type SceneryDispatcher () =
                  Content.skyBox Gen.name
                     [Entity.Position == v3 0.0f 0.0f 0.0f]
                  Content.fps Gen.name
-                    [Entity.Position == v3 250.0f -200.0f 0.0f]]]]
+                    [Entity.Position == v3 250.0f -200.0f 0.0f]
+                 Content.staticModelSurface Gen.name
+                    [Entity.SurfaceIndex == 0
+                     Entity.StaticModel <== field --|> fun field world -> snd (Field.getFieldModelDescriptorsAndAssetTag field world)]
+                 Content.staticModelSurface Gen.name
+                    [Entity.SurfaceIndex == 1
+                     Entity.StaticModel <== field --|> fun field world -> snd (Field.getFieldModelDescriptorsAndAssetTag field world)]]]]
 
     // here we create the scenery in an imperative fashion
     // NOTE: performance goal: 60fps, current: 57fps.
