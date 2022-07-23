@@ -45,10 +45,10 @@ module Field =
                     | Some _ -> ()
                 let height =
                     match tileSetOpt with
-                    | None -> 0
-                    | Some tileSet -> tile.Gid - tileSet.FirstGid
+                    | None -> 0.0f
+                    | Some tileSet -> single (tile.Gid - tileSet.FirstGid) / 4.0f
                 let u = t * 6
-                let position = v3 (single i) (single j) (single height)
+                let position = v3 (single i) height (single j)
                 positions.[u] <- position
                 positions.[u+1] <- position + v3Right
                 positions.[u+2] <- position + v3Right + v3Forward
@@ -60,15 +60,12 @@ module Field =
         for i in 1 .. dec tileMapWidth do
             for j in 1 .. dec tileMapHeight do
                 let u = i * tileMapWidth + j
-                let positionM1 = &positions.[dec u]
-                let position = &positions.[u]
-                position.Y <- positionM1.Y
-                let positionM1 = &positions.[dec u+3]
-                let position = &positions.[u+3]
-                position.Y <- positionM1.Y
-                let positionM1 = &positions.[dec u+5]
-                let position = &positions.[u+5]
-                position.Y <- positionM1.Y
+                let a = &positions.[dec u+1]
+                let b = &positions.[u]
+                b.Y <- a.Y
+                let a = &positions.[dec u+5]
+                let b = &positions.[u+2]
+                b.Y <- a.Y
         
         // make tex coordses array
         let texCoordses = Array.zeroCreate<Vector2> (tileMapWidth * tileMapHeight * 6)
