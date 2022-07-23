@@ -19,7 +19,7 @@ module WorldAudio =
 
         /// Enqueue an audio message to the world.
         static member enqueueAudioMessage (message : AudioMessage) world =
-            world.Subsystems.AudioPlayer.EnqueueMessage message 
+            world.Subsystems.AudioPlayer.EnqueueMessage message
 
         /// Enqueue multiple audio messages to the world.
         static member enqueueAudioMessages (messages : AudioMessage seq) world =
@@ -61,24 +61,28 @@ module WorldAudio =
         static member setMasterAudioVolume volume world =
             let audioPlayer = World.getAudioPlayer world
             audioPlayer.MasterAudioVolume <- volume
+            world
 
         /// Set the master sound volume.
         [<FunctionBinding>]
         static member setMasterSoundVolume volume world =
             let audioPlayer = World.getAudioPlayer world
             audioPlayer.MasterSoundVolume <- volume
+            world
 
         /// Set the master song volume.
         [<FunctionBinding>]
         static member setMasterSongVolume volume world =
             let audioPlayer = World.getAudioPlayer world
             audioPlayer.MasterSongVolume <- volume
+            world
 
         /// Send a message to the audio system to play a song.
         [<FunctionBinding>]
         static member playSong timeToFadeInSongMs timeToFadeOutSongMs volume start song world =
             let playSongMessage = PlaySongMessage { FadeInMs = timeToFadeInSongMs; FadeOutMs = timeToFadeOutSongMs; Volume = volume; Start = start; Song = song }
             World.enqueueAudioMessage playSongMessage world
+            world
 
         /// Send a message to the audio system to play a song.
         [<FunctionBinding "playSong6">]
@@ -91,6 +95,7 @@ module WorldAudio =
         static member playSound volume sound world =
             let playSoundMessage = PlaySoundMessage { Sound = sound; Volume = volume }
             World.enqueueAudioMessage playSoundMessage world
+            world
 
         /// Send a message to the audio system to play a sound.
         [<FunctionBinding "playSound3">]
@@ -103,11 +108,13 @@ module WorldAudio =
         static member fadeOutSong timeToFadeOutSongMs world =
             let fadeOutSongMessage = FadeOutSongMessage timeToFadeOutSongMs
             World.enqueueAudioMessage fadeOutSongMessage world
+            world
 
         /// Send a message to the audio system to stop a song.
         [<FunctionBinding>]
         static member stopSong world =
             World.enqueueAudioMessage StopSongMessage world
+            world
             
         /// Hint that an audio asset package with the given name should be loaded. Should be used
         /// to avoid loading assets at inconvenient times (such as in the middle of game play!)
@@ -115,6 +122,7 @@ module WorldAudio =
         static member hintAudioPackageUse packageName world =
             let hintAudioPackageUseMessage = HintAudioPackageUseMessage packageName
             World.enqueueAudioMessage hintAudioPackageUseMessage world
+            world
             
         /// Hint that an audio package should be unloaded since its assets will not be used again
         /// (or until specified via a HintAudioPackageUseMessage).
@@ -122,9 +130,11 @@ module WorldAudio =
         static member hintAudioPackageDisuse packageName world =
             let hintAudioPackageDisuseMessage = HintAudioPackageDisuseMessage packageName
             World.enqueueAudioMessage hintAudioPackageDisuseMessage world
+            world
 
         /// Send a message to the audio player to reload its audio assets.
         [<FunctionBinding>]
         static member reloadAudioAssets world =
             let reloadAudioAssetsMessage = ReloadAudioAssetsMessage
             World.enqueueAudioMessage reloadAudioAssetsMessage world
+            world

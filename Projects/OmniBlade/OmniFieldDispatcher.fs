@@ -1245,15 +1245,15 @@ module FieldDispatcher =
                 | (false, _) -> just world
 
             | PlaySound (delay, volume, sound) ->
-                let world = World.schedule (fun world -> World.playSound volume sound world; world) (World.getUpdateTime world + delay) screen world
+                let world = World.schedule (World.playSound volume sound) (World.getUpdateTime world + delay) screen world
                 just world
 
             | PlaySong (fadeIn, fadeOut, volume, start, assetTag) ->
-                World.playSong fadeIn fadeOut volume start assetTag world
+                let world = World.playSong fadeIn fadeOut volume start assetTag world
                 just world
 
             | FadeOutSong fade ->
-                World.fadeOutSong fade world
+                let world = World.fadeOutSong fade world
                 just world
 
             | Nop -> just world
