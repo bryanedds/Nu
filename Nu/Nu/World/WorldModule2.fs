@@ -242,7 +242,7 @@ module WorldModule2 =
                             | Some playSong ->
                                 match World.getCurrentSongOpt world with
                                 | Some song when assetEq song.Song playSong.Song -> world // do nothing when song is the same
-                                | _ -> World.playSong playSong.FadeInMs playSong.FadeOutMs playSong.Volume 0.0 playSong.Song world; world // play song when song is different
+                                | _ -> World.playSong playSong.FadeInMs playSong.FadeOutMs playSong.Volume 0.0 playSong.Song world // play song when song is different
                             | None -> world
                         let eventTrace = EventTrace.debug "World" "updateScreenIncoming" "IncomingStart" EventTrace.empty
                         World.publish () (Events.IncomingStart --> selectedScreen) eventTrace selectedScreen world
@@ -299,7 +299,7 @@ module WorldModule2 =
                                 match (incoming.SongOpt, (destination.GetIncoming world).SongOpt) with
                                 | (Some song, Some song2) when assetEq song.Song song2.Song -> world // do nothing when song is the same
                                 | (None, None) -> world // do nothing when neither plays a song (allowing manual control)
-                                | (_, _) -> World.fadeOutSong playSong.FadeOutMs world; world // fade out when song is different
+                                | (_, _) -> World.fadeOutSong playSong.FadeOutMs world // fade out when song is different
                             | None -> world
                         | None -> world
                     let eventTrace = EventTrace.debug "World" "updateScreenTransition" "OutgoingStart" EventTrace.empty
@@ -474,11 +474,12 @@ module WorldModule2 =
         /// Send a message to the subsystems to reload their existing assets.
         [<FunctionBinding>]
         static member reloadExistingAssets world =
-            World.reloadRenderAssets2d world
-            // TODO: 3D: World.reloadRenderAssets3d world
-            World.reloadAudioAssets world
-            World.reloadSymbols world
-            World.regenerateMetadata world
+            let world = World.reloadRenderAssets2d world
+            // TODO: 3D: let world = World.reloadRenderAssets3d world
+            let world = World.reloadAudioAssets world
+            let world = World.reloadSymbols world
+            let world = World.regenerateMetadata world
+            world
 
         /// Attempt to reload the asset graph.
         /// Currently does not support reloading of song assets, and possibly others that are

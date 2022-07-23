@@ -64,7 +64,7 @@ module Enemy =
             World.applyBodyForce force (enemy.GetPhysicsId world) world
 
         static let die (enemy : Entity) world =
-            World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.ExplosionSound world
+            let world = World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.ExplosionSound world
             World.destroyEntity enemy world
 
         static let handleUpdate evt world =
@@ -80,7 +80,7 @@ module Enemy =
                     let collidee = evt.Data.BodyCollidee.Entity
                     let bullet = collidee.Is<BulletDispatcher> world
                     if bullet then
-                        World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.HitSound world
+                        let world = World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.HitSound world
                         enemy.SetHealth (enemy.GetHealth world - 1) world
                     else world
                 else world
@@ -139,7 +139,7 @@ module Player =
             (bullet, world)
 
         static let propelBullet (bullet : Entity) world =
-            World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.ShotSound world
+            let world = World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.ShotSound world
             World.applyBodyLinearImpulse (v3 BulletForce 0.0f 0.0f) (bullet.GetPhysicsId world) world
 
         static let shootBullet (player : Entity) world =
@@ -183,7 +183,7 @@ module Player =
             let time = World.getUpdateTime world
             if  time >= player.GetLastTimeJump world + 12L &&
                 time <= player.GetLastTimeOnGround world + 10L then
-                World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.JumpSound world
+                let world = World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.JumpSound world
                 let world = player.SetLastTimeJump time world
                 let world = World.applyBodyLinearImpulse (v3 0.0f JumpForce 0.0f) (player.GetPhysicsId world) world
                 (Cascade, world)
@@ -309,7 +309,7 @@ module Gameplay =
 
                 // update player fall
                 if Simulants.Gameplay.Scene.Player.HasFallen world && World.isSelectedScreenIdling world then
-                    World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.DeathSound world
+                    let world = World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.DeathSound world
                     if Simulants.Title.Screen.Exists world
                     then withMsg Quit world
                     else just world

@@ -532,6 +532,7 @@ module WorldModule =
         [<FunctionBinding>]
         static member reloadSymbols world =
             World.getSymbolicsBy Symbolics.reloadSymbols world
+            world
 
         static member internal getOverlayerBy by world =
             let overlayer = World.getAmbientStateBy AmbientState.getOverlayer world
