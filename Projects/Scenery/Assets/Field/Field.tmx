@@ -20,10 +20,10 @@
    <property name="Image" value="[Field Forest]"/>
   </properties>
   <data encoding="base64" compression="zlib">
-   eJxjYGBgqGBjYChFwuVATCwA6S0D4rkMCFyCZh4+s03Q9BLCJWhmkKof3Qxy9CObQa5+EDYa1T/g+s2A+BMr6Xo/APWYQtMQyIyPrMSbg6wXGcDMIYSx6SUXAADsLH2w
+   eJyrYGNgKEXD5UBMLDABqp3LgIpLsJiJy2xs+vHhEjQzSNWPbgY5+pHNIFc/CBuN6h9w/WZA/ImVdL0fgHpMoWkIZMZHVuLNQdaLDGDmEMLY9JILAFSSfgg=
   </data>
  </layer>
- <layer id="3" name="TraversableHeight" width="16" height="16" opacity="0.25">
+ <layer id="3" name="TraversableHeight" width="16" height="16" visible="0" opacity="0.25">
   <data encoding="base64" compression="zlib">
    eJzj5mRg4B4EmAcHplQ/sebB5HmhGMbng2JCZiDr50Mygw/NLGL0o7uBGD/woJmBzkc2k5Twg+kTQjOXlPjA5id09UIE3EPIblg8USs9YTNnoPMILTAAXMsUkA==
   </data>
