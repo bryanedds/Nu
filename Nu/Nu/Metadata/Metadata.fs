@@ -135,6 +135,25 @@ module Metadata =
             (UMap.makeEmpty HashIdentity.Structural config)
             packageNames
 
+    /// Regenerate metadata.
+    let regenerateMetadata imperative metadata =
+        let packageNames = metadata.MetadataMap |> Seq.map fst
+        let metadataMap =
+            Seq.fold
+                (fun metadataMap packageName ->
+                    match AssetGraph.tryMakeFromFile Assets.Global.AssetGraphFilePath with
+                    | Right assetGraph ->
+                        let (packageName, submap) = tryGenerateMetadataSubmap imperative packageName assetGraph
+                        match UMap.tryFind packageName metadataMap with
+                        | Some submapExisting -> UMap.add packageName (UMap.addMany (seq submap) submapExisting) metadataMap
+                        | None -> UMap.add packageName submap metadataMap
+                    | Left error ->
+                        Log.info ("Metadata submap regeneration failed due to: '" + error)
+                        metadataMap)
+                metadata.MetadataMap
+                packageNames
+        { metadata with MetadataMap = metadataMap }
+
     /// Try to get the metadata of the given asset.
     let tryGetMetadata (assetTag : obj AssetTag) metadata =
         match UMap.tryFind assetTag.PackageName metadata.MetadataMap with
