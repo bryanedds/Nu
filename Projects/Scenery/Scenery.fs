@@ -138,11 +138,22 @@ module Field =
 
             // create static model surface descriptor
             let descriptor =
-                (positions, texCoordses, normals, indices, OpenGL.PrimitiveType.Triangles, bounds,
-                 Color.White, albedoTileSet.ImageAsset,
-                 0.0f, Assets.Default.MaterialMetalness,
-                 1.0f, Assets.Default.MaterialRoughness,
-                 1.0f, Assets.Default.MaterialAmbientOcclusion)
+                { Positions = positions
+                  TexCoordses = texCoordses
+                  Normals = normals
+                  Indices = indices
+                  Transform = m4Identity
+                  Bounds = bounds
+                  Albedo = Color.White
+                  AlbedoImage = albedoTileSet.ImageAsset
+                  Metalness = 0.0f
+                  MetalnessImage = Assets.Default.MaterialMetalness
+                  Roughness = 1.0f
+                  RoughnessImage = Assets.Default.MaterialRoughness
+                  AmbientOcclusion = 1.0f
+                  AmbientOcclusionImage = Assets.Default.MaterialAmbientOcclusion
+                  NormalImage = Assets.Default.MaterialNormal
+                  TwoSided = false }
             
             // fin
             descriptor
@@ -155,7 +166,7 @@ module Field =
             { FieldTileMap : TileMap AssetTag }
 
     let getFieldModelDescriptorsAndAssetTag (field : Field) world =
-        let fieldModelAssetTag = asset "Cached" (field.FieldTileMap.AssetName + "Model")
+        let fieldModelAssetTag = asset field.FieldTileMap.PackageName (field.FieldTileMap.AssetName + "Model")
         match CachedDescriptors.TryGetValue fieldModelAssetTag with
         | (false, _) ->
             let (_, tileSetsAndImages, tileMap) = World.getTileMapMetadata field.FieldTileMap world
@@ -167,7 +178,8 @@ module Field =
             let untraversableSurfaceDescriptor = createFieldSurfaceDescriptor tileMap.Width tileMap.Height tileSets untraversableLayer untraversableHeightLayer
             let traversableSurfaceDescriptor = createFieldSurfaceDescriptor tileMap.Width tileMap.Height tileSets traversableLayer traversableHeightLayer
             let descriptors = [|untraversableSurfaceDescriptor; traversableSurfaceDescriptor|]
-            World.enqueueRenderMessage3d (CreateStaticModelMessage (descriptors, fieldModelAssetTag)) world
+            let bounds = untraversableSurfaceDescriptor.Bounds.Combine traversableSurfaceDescriptor.Bounds
+            World.enqueueRenderMessage3d (CreateStaticModelMessage (descriptors, bounds, fieldModelAssetTag)) world
             CachedDescriptors.Add (fieldModelAssetTag, descriptors)
             (descriptors, fieldModelAssetTag, world)
         | (true, descriptors) -> (descriptors, fieldModelAssetTag, world)
