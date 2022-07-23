@@ -49,7 +49,7 @@ and [<NoEquality; NoComparison>] RenderPassParameters3d =
       RenderTasks : RenderTasks
       Renderer3d : Renderer3d }
 
-/// Describes a 3d render pass.
+/// A 3d render pass message.
 and [<CustomEquality; CustomComparison>] RenderPassMessage3d =
     { RenderPassOrder : int64
       RenderPassParameters3d : RenderPassParameters3d -> unit }
@@ -64,7 +64,7 @@ and [<CustomEquality; CustomComparison>] RenderPassMessage3d =
         | _ -> false
     override this.GetHashCode () = hash this.RenderPassOrder
 
-/// Describes an internally cached static model used to avoid GC promotion of static model messages.
+/// An internally cached static model used to avoid GC promotion of static model messages.
 and [<NoEquality; NoComparison>] CachedStaticModelMessage =
     { mutable CachedStaticModelAbsolute : bool
       mutable CachedStaticModelMatrix : Matrix4x4
@@ -72,9 +72,24 @@ and [<NoEquality; NoComparison>] CachedStaticModelMessage =
       mutable CachedStaticModelRenderType : RenderType
       mutable CachedStaticModel : StaticModel AssetTag }
 
-/// TODO: 3D: make this a record.
-and StaticModelSurfaceDescriptor =
-    Vector3 array * Vector2 array * Vector3 array * int array * Matrix4x4 * Box3 * Color * Image AssetTag * single * Image AssetTag * single * Image AssetTag * single * Image AssetTag * Image AssetTag * bool
+/// Describes a user-defined static model surface.
+and [<NoEquality; NoComparison>] StaticModelSurfaceDescriptor =
+    { Positions : Vector3 array
+      TexCoordses : Vector2 array
+      Normals : Vector3 array
+      Indices : int array
+      Transform : Matrix4x4
+      Bounds : Box3
+      Albedo : Color
+      AlbedoImage : Image AssetTag
+      Metalness : single
+      MetalnessImage : Image AssetTag
+      Roughness : single
+      RoughnessImage : Image AssetTag
+      AmbientOcclusion : single
+      AmbientOcclusionImage : Image AssetTag
+      NormalImage : Image AssetTag
+      TwoSided : bool }
 
 /// A message to the 3d renderer.
 and [<NoEquality; NoComparison>] RenderMessage3d =
@@ -676,36 +691,36 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
 
                     let surfaces = List ()
 
-                    for (positions, texCoordses, normals, indices, transform, bounds, albedo, albedoImage, metalness, metalnessImage, roughness, roughnessImage, ambientOcclusion, ambientOcclusionImage, normalImage, twoSided) in surfaceDescriptors do
+                    for surfaceDescriptor in surfaceDescriptors do
 
                         let material : OpenGL.PhysicallyBased.PhysicallyBasedMaterial =
-                            { Albedo = albedo
-                              AlbedoTexture = ValueOption.defaultValue 0u (match GlRenderer3d.tryFindRenderAsset (AssetTag.generalize albedoImage) renderer with ValueSome (Texture2dAsset (_, texture)) -> ValueSome texture | _ -> ValueNone)
-                              Metalness = metalness
-                              MetalnessTexture = ValueOption.defaultValue 0u (match GlRenderer3d.tryFindRenderAsset (AssetTag.generalize metalnessImage) renderer with ValueSome (Texture2dAsset (_, texture)) -> ValueSome texture | _ -> ValueNone)
-                              Roughness = roughness
-                              RoughnessTexture = ValueOption.defaultValue 0u (match GlRenderer3d.tryFindRenderAsset (AssetTag.generalize roughnessImage) renderer with ValueSome (Texture2dAsset (_, texture)) -> ValueSome texture | _ -> ValueNone)
-                              AmbientOcclusion = ambientOcclusion
-                              AmbientOcclusionTexture = ValueOption.defaultValue 0u (match GlRenderer3d.tryFindRenderAsset (AssetTag.generalize ambientOcclusionImage) renderer with ValueSome (Texture2dAsset (_, texture)) -> ValueSome texture | _ -> ValueNone)
-                              NormalTexture = ValueOption.defaultValue 0u (match GlRenderer3d.tryFindRenderAsset (AssetTag.generalize normalImage) renderer with ValueSome (Texture2dAsset (_, texture)) -> ValueSome texture | _ -> ValueNone)
-                              TwoSided = twoSided }
+                            { Albedo = surfaceDescriptor.Albedo
+                              AlbedoTexture = ValueOption.defaultValue 0u (match GlRenderer3d.tryFindRenderAsset (AssetTag.generalize surfaceDescriptor.AlbedoImage) renderer with ValueSome (Texture2dAsset (_, texture)) -> ValueSome texture | _ -> ValueNone)
+                              Metalness = surfaceDescriptor.Metalness
+                              MetalnessTexture = ValueOption.defaultValue 0u (match GlRenderer3d.tryFindRenderAsset (AssetTag.generalize surfaceDescriptor.MetalnessImage) renderer with ValueSome (Texture2dAsset (_, texture)) -> ValueSome texture | _ -> ValueNone)
+                              Roughness = surfaceDescriptor.Roughness
+                              RoughnessTexture = ValueOption.defaultValue 0u (match GlRenderer3d.tryFindRenderAsset (AssetTag.generalize surfaceDescriptor.RoughnessImage) renderer with ValueSome (Texture2dAsset (_, texture)) -> ValueSome texture | _ -> ValueNone)
+                              AmbientOcclusion = surfaceDescriptor.AmbientOcclusion
+                              AmbientOcclusionTexture = ValueOption.defaultValue 0u (match GlRenderer3d.tryFindRenderAsset (AssetTag.generalize surfaceDescriptor.AmbientOcclusionImage) renderer with ValueSome (Texture2dAsset (_, texture)) -> ValueSome texture | _ -> ValueNone)
+                              NormalTexture = ValueOption.defaultValue 0u (match GlRenderer3d.tryFindRenderAsset (AssetTag.generalize surfaceDescriptor.NormalImage) renderer with ValueSome (Texture2dAsset (_, texture)) -> ValueSome texture | _ -> ValueNone)
+                              TwoSided = surfaceDescriptor.TwoSided }
                 
-                        let vertices = Array.zeroCreate (positions.Length * 8)
+                        let vertices = Array.zeroCreate (surfaceDescriptor.Positions.Length * 8)
 
                         for i in 0 .. dec vertices.Length do
                             let u = i * 8
-                            vertices.[u] <- positions.[i].X
-                            vertices.[u+1] <- positions.[i].Y
-                            vertices.[u+2] <- positions.[i].Z
-                            vertices.[u+3] <- texCoordses.[i].X
-                            vertices.[u+4] <- texCoordses.[i].Y
-                            vertices.[u+5] <- normals.[i].X
-                            vertices.[u+6] <- normals.[i].Y
-                            vertices.[u+7] <- normals.[i].Z
+                            vertices.[u] <- surfaceDescriptor.Positions.[i].X
+                            vertices.[u+1] <- surfaceDescriptor.Positions.[i].Y
+                            vertices.[u+2] <- surfaceDescriptor.Positions.[i].Z
+                            vertices.[u+3] <- surfaceDescriptor.TexCoordses.[i].X
+                            vertices.[u+4] <- surfaceDescriptor.TexCoordses.[i].Y
+                            vertices.[u+5] <- surfaceDescriptor.Normals.[i].X
+                            vertices.[u+6] <- surfaceDescriptor.Normals.[i].Y
+                            vertices.[u+7] <- surfaceDescriptor.Normals.[i].Z
 
-                        let geometry = OpenGL.PhysicallyBased.CreatePhysicallyBasedGeometry (true, vertices, indices, bounds)
+                        let geometry = OpenGL.PhysicallyBased.CreatePhysicallyBasedGeometry (true, vertices, surfaceDescriptor.Indices, surfaceDescriptor.Bounds)
 
-                        let surface = OpenGL.PhysicallyBased.CreatePhysicallyBasedSurface ([||], transform, bounds, material, geometry)
+                        let surface = OpenGL.PhysicallyBased.CreatePhysicallyBasedSurface ([||], surfaceDescriptor.Transform, surfaceDescriptor.Bounds, material, geometry)
 
                         surfaces.Add surface
 
