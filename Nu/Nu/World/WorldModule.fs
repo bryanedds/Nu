@@ -318,6 +318,10 @@ module WorldModule =
         static member internal setMetadata assetMetadataMap world =
             World.updateAmbientState (AmbientState.setMetadata assetMetadataMap) world
 
+        /// Regerate metadata.
+        static member regenerateMetadata world =
+            World.updateAmbientState (AmbientState.regenerateMetadata (World.getImperative world)) world
+
         /// Try to get the 2d texture metadata of the given asset.
         [<FunctionBinding>]
         static member tryGetTextureSize2d assetTag world =

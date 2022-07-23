@@ -219,7 +219,6 @@ type [<ReferenceEquality; NoComparison>] SdlAudioPlayer =
 
     static member private handleReloadAudioAssets audioPlayer =
         let packageNames = audioPlayer.AudioPackages |> Seq.map (fun entry -> entry.Key) |> Array.ofSeq
-        audioPlayer.AudioPackages.Clear ()
         for packageName in packageNames do
             SdlAudioPlayer.tryLoadAudioPackage packageName audioPlayer
 

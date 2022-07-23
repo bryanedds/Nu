@@ -198,7 +198,6 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
 
     static member private handleReloadRender2dAssets renderer =
         let packageNames = renderer.RenderPackages |> Seq.map (fun entry -> entry.Key) |> Array.ofSeq
-        renderer.RenderPackages.Clear ()
         for packageName in packageNames do
             GlRenderer2d.tryLoadRenderPackage packageName renderer
 

@@ -319,6 +319,10 @@ module AmbientState =
     let setMetadata metadata state =
         { state with Metadata = metadata }
 
+    /// Regenerate metadata.
+    let regenerateMetadata imperative state =
+        { state with Metadata = Metadata.regenerateMetadata imperative state.Metadata }
+
     /// Get the key-value store with the by map.
     let getKeyValueStoreBy by state =
         by state.KeyValueStore

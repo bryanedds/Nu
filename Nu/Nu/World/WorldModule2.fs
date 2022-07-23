@@ -475,8 +475,10 @@ module WorldModule2 =
         [<FunctionBinding>]
         static member reloadExistingAssets world =
             World.reloadRenderAssets2d world
+            // TODO: 3D: World.reloadRenderAssets3d world
             World.reloadAudioAssets world
             World.reloadSymbols world
+            World.regenerateMetadata world
 
         /// Attempt to reload the asset graph.
         /// Currently does not support reloading of song assets, and possibly others that are
@@ -497,7 +499,7 @@ module WorldModule2 =
                     AssetGraph.buildAssets inputDirectory outputDirectory refinementDirectory false assetGraph
                     let metadata = Metadata.make (World.getImperative world) assetGraph
                     let world = World.setMetadata metadata world
-                    World.reloadExistingAssets world
+                    let world = World.reloadExistingAssets world
                     let world = World.publish () Events.AssetsReload (EventTrace.debug "World" "publishAssetsReload" "" EventTrace.empty) Simulants.Game world
                     (Right assetGraph, world)
         

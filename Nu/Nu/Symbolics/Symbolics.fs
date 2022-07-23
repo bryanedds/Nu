@@ -100,7 +100,6 @@ module Symbolics =
     /// Reload all the symbols in symbolics.
     let reloadSymbols symbolics =
         let symbolPackages = Dictionary<_, _> symbolics.SymbolPackages
-        symbolics.SymbolPackages.Clear ()
         for packageEntry in symbolPackages do
             let packageName = packageEntry.Key
             let packageValue = packageEntry.Value
