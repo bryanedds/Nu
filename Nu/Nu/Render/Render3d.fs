@@ -704,7 +704,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                               AmbientOcclusionTexture = ValueOption.defaultValue 0u (match GlRenderer3d.tryFindRenderAsset (AssetTag.generalize surfaceDescriptor.AmbientOcclusionImage) renderer with ValueSome (Texture2dAsset (_, texture)) -> ValueSome texture | _ -> ValueNone)
                               NormalTexture = ValueOption.defaultValue 0u (match GlRenderer3d.tryFindRenderAsset (AssetTag.generalize surfaceDescriptor.NormalImage) renderer with ValueSome (Texture2dAsset (_, texture)) -> ValueSome texture | _ -> ValueNone)
                               TwoSided = surfaceDescriptor.TwoSided }
-                
+
                         let vertices = Array.zeroCreate (surfaceDescriptor.Positions.Length * 8)
 
                         for i in 0 .. dec vertices.Length do
@@ -741,7 +741,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                 | HintRenderPackageDisuseMessage3d hintPackageDisuse ->
                     GlRenderer3d.handleHintRenderPackage3dDisuse hintPackageDisuse renderer
                 | ReloadRenderAssetsMessage3d ->
-                    () // TODO: 3D: implement asset reloading?
+                    () // TODO: 3D: implement asset reloading.
 
             // sort absolute forward surfaces
             let forwardSurfacesSorted = GlRenderer3d.sortSurfaces eyePosition renderer.RenderTasks.RenderSurfacesForwardAbsolute
