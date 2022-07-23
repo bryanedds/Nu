@@ -116,7 +116,7 @@ module Field =
                 let a = positions.[u]
                 let b = positions.[u+1]
                 let c = positions.[u+5]
-                let normal = v3Up // Vector3.Normalize (Vector3.Cross (b - a, c - a))
+                let normal = Vector3.Normalize (Vector3.Cross (b - a, c - a))
                 normals.[u] <- normal
                 normals.[u+1] <- normal
                 normals.[u+2] <- normal
@@ -253,8 +253,6 @@ type SceneryDispatcher () =
                      Entity.Color == Color.White
                      Entity.Brightness == 10.0f
                      Entity.Intensity == 1.0f]
-                 Content.skyBox Gen.name
-                    [Entity.Position == v3 0.0f 0.0f 0.0f]
                  Content.fps Gen.name
                     [Entity.Position == v3 250.0f -200.0f 0.0f]
                  Content.staticModelSurface Gen.name

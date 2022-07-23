@@ -12,7 +12,7 @@
  </layer>
  <layer id="4" name="UntraversableHeight" width="16" height="16" opacity="0.25">
   <data encoding="base64" compression="zlib">
-   eJxj52RgYB/Fo3gUj0gMABzgEAE=
+   eJzj4mRg4BrFo3gUj0gMACM6EwE=
   </data>
  </layer>
  <layer id="2" name="Traversable" width="16" height="16">
