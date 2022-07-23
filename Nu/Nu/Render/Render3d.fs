@@ -672,23 +672,25 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                     SegmentedList.add light renderer.RenderTasks.RenderLights
                 | RenderPostPassMessage3d postPass ->
                     postPasses.Add postPass |> ignore<bool>
-                | CreateStaticModelMessage (positions, texCoordses, normals, indices, primitiveType, bounds, albedoColor, albedoImage, metalness, metalnessImage, roughness, roughnessImage,  ambientOcclusion, ambientOcclusionImage, modelAsset) ->
-                    
-                    
-
-                    let vertices = Array.zeroCreate (tileMapWidth * tileMapHeight * 6 * 8)
-
-                    for u in 0 .. dec vertices.Length / 8 do
-                        vertices.[u] <- positions.[u].X
-                        vertices.[u+1] <- positions.[u].Y
-                        vertices.[u+2] <- positions.[u].Z
-                        vertices.[u+3] <- texCoordses.[u].X
-                        vertices.[u+4] <- texCoordses.[u].Y
-                        vertices.[u+5] <- normals.[u].X
-                        vertices.[u+6] <- normals.[u].Y
-                        vertices.[u+7] <- normals.[u].Z
-
-                    let geometry = OpenGL.PhysicallyBased.CreatePhysicallyBasedGeometry (true, vertices, indices, box3 v3Zero bounds)
+                //| CreateStaticModelMessage (positions, texCoordses, normals, indices, primitiveType, bounds, albedoColor, albedoImage, metalness, metalnessImage, roughness, roughnessImage,  ambientOcclusion, ambientOcclusionImage, modelAsset) ->
+                //    
+                //    
+                //
+                //    let vertices = Array.zeroCreate (tileMapWidth * tileMapHeight * 6 * 8)
+                //
+                //    for u in 0 .. dec vertices.Length / 8 do
+                //        vertices.[u] <- positions.[u].X
+                //        vertices.[u+1] <- positions.[u].Y
+                //        vertices.[u+2] <- positions.[u].Z
+                //        vertices.[u+3] <- texCoordses.[u].X
+                //        vertices.[u+4] <- texCoordses.[u].Y
+                //        vertices.[u+5] <- normals.[u].X
+                //        vertices.[u+6] <- normals.[u].Y
+                //        vertices.[u+7] <- normals.[u].Z
+                //
+                //    let geometry = OpenGL.PhysicallyBased.CreatePhysicallyBasedGeometry (true, vertices, indices, box3 v3Zero bounds)
+                //    ()
+                //
                 | HintRenderPackageUseMessage3d hintPackageUse ->
                     GlRenderer3d.handleHintRenderPackage3dUse hintPackageUse renderer
                 | HintRenderPackageDisuseMessage3d hintPackageDisuse ->

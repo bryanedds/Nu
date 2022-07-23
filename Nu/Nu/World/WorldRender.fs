@@ -20,24 +20,20 @@ module WorldRender =
         /// Enqueue a rendering message to the world.
         static member enqueueRenderMessage2d (message : RenderMessage2d) world =
             (World.getRendererProcess world).EnqueueMessage2d message
-            world
 
         /// Enqueue multiple rendering messages to the world.
         static member enqueueRenderMessages2d (messages : RenderMessage2d seq) world =
             let rendererProcess = World.getRendererProcess world
             for message in messages do rendererProcess.EnqueueMessage2d message
-            world
             
         /// Enqueue a layered message for rendering, bypassing enqueueRenderMessage for speed.
         static member enqueueRenderLayeredMessage2d (message : RenderLayeredMessage2d) world =
             (World.getRendererProcess world).EnqueueMessage2d (RenderLayeredMessage2d message)
-            world
 
         /// Enqueue multiple layered rendering messages to the world, bypassing enqueueRenderMessage for speed.
         static member enqueueRenderLayeredMessages2d (messages : RenderLayeredMessage2d seq) world =
             let rendererProcess = World.getRendererProcess world
             for message in messages do rendererProcess.EnqueueMessage2d (RenderLayeredMessage2d message)
-            world
 
         /// Hint that a rendering asset package with the given name should be loaded. Should be
         /// used to avoid loading assets at inconvenient times (such as in the middle of game play!)
@@ -62,10 +58,8 @@ module WorldRender =
         /// Enqueue a rendering message to the world.
         static member enqueueRenderMessage3d (message : RenderMessage3d) world =
             (World.getRendererProcess world).EnqueueMessage3d message
-            world
 
         /// Enqueue multiple rendering messages to the world.
         static member enqueueRenderMessages3d (messages : RenderMessage3d seq) world =
             let rendererProcess = World.getRendererProcess world
             for message in messages do rendererProcess.EnqueueMessage3d message
-            world

@@ -20,11 +20,22 @@ module DeclarativeOperators2 =
             | Render2d (elevation, horizon, assetTag, descriptor) ->
                 let message = { Elevation = elevation; Horizon = horizon; AssetTag = AssetTag.generalize assetTag; RenderDescriptor2d = descriptor }
                 World.enqueueRenderLayeredMessage2d message world
-            | Render3d renderMessage -> World.enqueueRenderMessage3d renderMessage world
-            | PlaySound (volume, assetTag) -> World.playSound volume assetTag world
-            | PlaySong (fadeIn, fadeOut, volume, start, assetTag) -> World.playSong fadeIn fadeOut volume start assetTag world
-            | FadeOutSong fade -> World.fadeOutSong fade world
-            | StopSong -> World.stopSong world
+                world
+            | Render3d renderMessage ->
+                World.enqueueRenderMessage3d renderMessage world
+                world
+            | PlaySound (volume, assetTag) ->
+                World.playSound volume assetTag world
+                world
+            | PlaySong (fadeIn, fadeOut, volume, start, assetTag) ->
+                World.playSong fadeIn fadeOut volume start assetTag world
+                world
+            | FadeOutSong fade ->
+                World.fadeOutSong fade world
+                world
+            | StopSong ->
+                World.stopSong world
+                world
             | SpawnEmitter (_, _) -> world
             | Tag _ -> world
             | Views views -> Array.fold (fun world view -> World.actualizeView view world) world views
@@ -286,7 +297,7 @@ module StaticSpriteFacetModule =
                               Glow = entity.GetGlow world
                               Flip = entity.GetFlip world }}
                     world
-            else world
+            world
 
         override this.GetQuickSize (entity, world) =
             match World.tryGetTextureSize2dF (entity.GetStaticImage world) world with
@@ -360,7 +371,7 @@ module AnimatedSpriteFacetModule =
                               Glow = entity.GetGlow world
                               Flip = entity.GetFlip world }}
                     world
-            else world
+            world
 
         override this.GetQuickSize (entity, world) =
             (entity.GetCelSize world).V3
@@ -428,7 +439,7 @@ module TextFacetModule =
                               Color = if transform.Enabled then entity.GetTextColor world else entity.GetTextDisabledColor world
                               Justification = entity.GetJustification world }}
                     world
-            else world
+            world
 
 [<AutoOpen>]
 module BasicEmitter2dFacetModule =
@@ -529,7 +540,7 @@ module BasicEmitter2dFacetModule =
 
         static let rec processOutput output entity world =
             match output with
-            | Particles.OutputSound (volume, sound) -> World.enqueueAudioMessage (PlaySoundMessage { Volume = volume; Sound = sound }) world
+            | Particles.OutputSound (volume, sound) -> World.enqueueAudioMessage (PlaySoundMessage { Volume = volume; Sound = sound }) world; world
             | Particles.OutputEmitter (name, emitter) -> updateParticleSystem (fun ps -> { ps with Emitters = Map.add name emitter ps.Emitters }) entity world
             | Particles.Outputs outputs -> SegmentedArray.fold (fun world output -> processOutput output entity world) world outputs
 
@@ -669,7 +680,7 @@ module BasicEmitter2dFacetModule =
                           AssetTag = AssetTag.generalize descriptor.Image
                           RenderDescriptor2d = ParticlesDescriptor descriptor })
                 World.enqueueRenderLayeredMessages2d particlesMessages world
-            else world
+            world
 
 [<AutoOpen>]
 module Effect2dFacetModule =
@@ -730,7 +741,7 @@ module Effect2dFacetModule =
 
         static let rec processOutput output entity world =
             match output with
-            | Particles.OutputSound (volume, sound) -> World.enqueueAudioMessage (PlaySoundMessage { Volume = volume; Sound = sound }) world
+            | Particles.OutputSound (volume, sound) -> World.enqueueAudioMessage (PlaySoundMessage { Volume = volume; Sound = sound }) world; world
             | Particles.OutputEmitter (name, emitter) -> updateParticleSystem (fun ps -> { ps with Emitters = Map.add name emitter ps.Emitters }) entity world
             | Particles.Outputs outputs -> SegmentedArray.fold (fun world output -> processOutput output entity world) world outputs
 
@@ -863,14 +874,14 @@ module Effect2dFacetModule =
                           Horizon = descriptor.Horizon
                           AssetTag = AssetTag.generalize descriptor.Image
                           RenderDescriptor2d = ParticlesDescriptor descriptor })
-                let world = World.enqueueRenderLayeredMessages2d particlesMessages world
+                World.enqueueRenderLayeredMessages2d particlesMessages world
 
                 // update effect history in-place
                 effectHistory.AddToFront effectSlice
                 if effectHistory.Count > entity.GetEffectHistoryMax world then effectHistory.RemoveFromBack () |> ignore
                 world
 
-            // no need to evaluate non-visible effect
+            // fin
             else world
 
         override this.Register (entity, world) =
@@ -1155,8 +1166,8 @@ module TileMapFacetModule =
                             (entity.GetTileIndexOffsetRange world)
                             tileMap
                     World.enqueueRenderLayeredMessages2d tileMapMessages world
-                | None -> world
-            else world
+                | None -> ()
+            world
 
         override this.GetQuickSize (entity, world) =
             match TmxMap.tryGetTileMap (entity.GetTileMap world) world with
@@ -1250,7 +1261,7 @@ module TmxMapFacetModule =
                         (entity.GetTileIndexOffsetRange world)
                         tmxMap
                 World.enqueueRenderLayeredMessages2d tmxMapMessages world
-            else world
+            world
 
         override this.GetQuickSize (entity, world) =
             let tmxMap = entity.GetTmxMap world
@@ -1276,7 +1287,7 @@ module SkyBoxFacetModule =
             if entity.GetVisible world then
                 let cubeMap = entity.GetCubeMap world
                 World.enqueueRenderMessage3d (RenderSkyBoxMessage cubeMap) world
-            else world
+            world
 
 [<AutoOpen>]
 module LightFacet3dModule =
@@ -1310,7 +1321,7 @@ module LightFacet3dModule =
                 let intensity = entity.GetIntensity world
                 let lightType = entity.GetLightType world
                 World.enqueueRenderMessage3d (RenderLightMessage3d (position, color, brightness, intensity, lightType)) world
-            else world
+            world
 
         override this.RayCast (ray, entity, world) =
             let intersectionOpt = ray.Intersects (entity.GetBounds world)
@@ -1377,7 +1388,7 @@ module StaticModelFacetModule =
                     | Deferred -> DeferredRenderType
                     | Forward subsort -> ForwardRenderType subsort
                 World.enqueueRenderMessage3d (RenderStaticModelMessage (absolute, affineMatrix, renderMaterial, renderType, staticModel)) world
-            else world
+            world
 
         override this.GetQuickSize (entity, world) =
             let staticModel = entity.GetStaticModel world
@@ -1442,7 +1453,7 @@ module StaticModelSurfaceFacetModule =
         override this.Actualize (entity, world) =
             if entity.GetVisible world then
                 match entity.GetSurfaceIndex world with
-                | -1 -> world
+                | -1 -> ()
                 | surfaceIndex ->
                     let mutable transform = entity.GetTransform world
                     let absolute = transform.Absolute
@@ -1458,7 +1469,7 @@ module StaticModelSurfaceFacetModule =
                         | Deferred -> DeferredRenderType
                         | Forward subsort -> ForwardRenderType subsort
                     World.enqueueRenderMessage3d (RenderStaticModelSurfaceMessage (absolute, affineMatrix, renderMaterial, renderType, staticModel, surfaceIndex)) world
-            else world
+            world
 
         override this.GetQuickSize (entity, world) =
             let staticModel = World.getStaticModelMetadata (entity.GetStaticModel world) world
@@ -1760,7 +1771,9 @@ module ButtonDispatcherModule =
                         let world = World.publishPlus () (Events.Click --> entity) eventTrace entity true false world
                         let world =
                             match entity.GetClickSoundOpt world with
-                            | Some clickSound -> World.playSound (entity.GetClickSoundVolume world) clickSound world
+                            | Some clickSound ->
+                                World.playSound (entity.GetClickSoundVolume world) clickSound world
+                                world
                             | None -> world
                         (Resolve, world)
                     else (Cascade, world)
@@ -1802,7 +1815,7 @@ module ButtonDispatcherModule =
                               Glow = Color.Zero
                               Flip = FlipNone }}
                     world
-            else world
+            world
 
         override this.GetQuickSize (entity, world) =
             match World.tryGetTextureSize2dF (entity.GetUpImage world) world with
@@ -1842,7 +1855,7 @@ module LabelDispatcherModule =
                               Glow = Color.Zero
                               Flip = FlipNone }}
                     world
-            else world
+            world
 
         override this.GetQuickSize (entity, world) =
             match World.tryGetTextureSize2dF (entity.GetLabelImage world) world with
@@ -1887,8 +1900,8 @@ module TextDispatcherModule =
                                   Glow = Color.Zero
                                   Flip = FlipNone }}
                         world
-                | None -> world
-            else world
+                | None -> ()
+            world
 
         override this.GetQuickSize (entity, world) =
             match entity.GetBackgroundImageOpt world with
@@ -1966,7 +1979,9 @@ module ToggleButtonDispatcherModule =
                         let world = World.publishPlus toggled (Events.Toggle --> entity) eventTrace entity true false world
                         let world =
                             match entity.GetToggleSoundOpt world with
-                            | Some toggleSound -> World.playSound (entity.GetToggleSoundVolume world) toggleSound world
+                            | Some toggleSound ->
+                                World.playSound (entity.GetToggleSoundVolume world) toggleSound world
+                                world
                             | None -> world
                         (Resolve, world)
                     else (Cascade, world)
@@ -2022,7 +2037,7 @@ module ToggleButtonDispatcherModule =
                               Glow = Color.Zero
                               Flip = FlipNone }}
                     world
-            else world
+            world
 
         override this.GetQuickSize (entity, world) =
             match World.tryGetTextureSize2dF (entity.GetUntoggledImage world) world with
@@ -2092,7 +2107,9 @@ module RadioButtonDispatcherModule =
                         let world = World.publishPlus dialed (Events.Dial --> entity) eventTrace entity true false world
                         let world =
                             match entity.GetDialSoundOpt world with
-                            | Some dialSound -> World.playSound (entity.GetDialSoundVolume world) dialSound world
+                            | Some dialSound ->
+                                World.playSound (entity.GetDialSoundVolume world) dialSound world
+                                world
                             | None -> world
                         (Resolve, world)
                     else (Cascade, world)
@@ -2148,7 +2165,7 @@ module RadioButtonDispatcherModule =
                               Glow = Color.Zero
                               Flip = FlipNone }}
                     world
-            else world
+            world
 
         override this.GetQuickSize (entity, world) =
             match World.tryGetTextureSize2dF (entity.GetUndialedImage world) world with
@@ -2329,21 +2346,20 @@ module FillBarDispatcherModule =
                 let disabledColor = entity.GetDisabledColor world
                 let borderImageColor = (entity.GetBorderColor world).WithA disabledColor.A
                 let borderImage = entity.GetBorderImage world
-                let world =
-                    World.enqueueRenderLayeredMessage2d
-                        { Elevation = borderTransform.Elevation
-                          Horizon = horizon
-                          AssetTag = AssetTag.generalize borderImage
-                          RenderDescriptor2d =
-                            SpriteDescriptor
-                                { Transform = borderTransform
-                                  InsetOpt = ValueNone
-                                  Image = borderImage
-                                  Color = borderImageColor
-                                  Blend = Transparent
-                                  Glow = Color.Zero
-                                  Flip = FlipNone }}
-                        world
+                World.enqueueRenderLayeredMessage2d
+                    { Elevation = borderTransform.Elevation
+                      Horizon = horizon
+                      AssetTag = AssetTag.generalize borderImage
+                      RenderDescriptor2d =
+                        SpriteDescriptor
+                            { Transform = borderTransform
+                              InsetOpt = ValueNone
+                              Image = borderImage
+                              Color = borderImageColor
+                              Blend = Transparent
+                              Glow = Color.Zero
+                              Flip = FlipNone }}
+                    world
 
                 // fill sprite
                 let fillSize = perimeter.Size
@@ -2360,25 +2376,23 @@ module FillBarDispatcherModule =
                 fillTransform.Absolute <- transform.Absolute
                 let fillImageColor = (entity.GetFillColor world).WithA disabledColor.A
                 let fillImage = entity.GetFillImage world
-                let world =
-                    World.enqueueRenderLayeredMessage2d
-                        { Elevation = fillTransform.Elevation
-                          Horizon = horizon
-                          AssetTag = AssetTag.generalize fillImage
-                          RenderDescriptor2d =
-                              SpriteDescriptor
-                                  { Transform = fillTransform
-                                    InsetOpt = ValueNone
-                                    Image = fillImage
-                                    Color = fillImageColor
-                                    Blend = Transparent
-                                    Glow = Color.Zero
-                                    Flip = FlipNone }}
-                        world
+                World.enqueueRenderLayeredMessage2d
+                    { Elevation = fillTransform.Elevation
+                      Horizon = horizon
+                      AssetTag = AssetTag.generalize fillImage
+                      RenderDescriptor2d =
+                          SpriteDescriptor
+                              { Transform = fillTransform
+                                InsetOpt = ValueNone
+                                Image = fillImage
+                                Color = fillImageColor
+                                Blend = Transparent
+                                Glow = Color.Zero
+                                Flip = FlipNone }}
+                    world
 
-                // fin
-                world
-            else world
+            // fin
+            world
 
         override this.GetQuickSize (entity, world) =
             match World.tryGetTextureSize2dF (entity.GetBorderImage world) world with
@@ -2525,7 +2539,7 @@ module SideViewCharacterDispatcherModule =
                               Glow = Color.Zero
                               Flip = if facingLeft then FlipH else FlipNone }}
                     world
-            else world
+            world
 
 [<AutoOpen>]
 module TileMapDispatcherModule =
