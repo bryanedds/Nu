@@ -23,7 +23,7 @@ type CustomModelDispatcher () =
 [<RequireQualifiedAccess>]
 module Field =
 
-    let CachedModels = dictPlus<StaticModel AssetTag, StaticModelSurfaceDescriptor array> HashIdentity.Structural []
+    let CachedDescriptors = dictPlus<StaticModel AssetTag, StaticModelSurfaceDescriptor array> HashIdentity.Structural []
 
     let private createFieldSurfaceDescriptor tileMapWidth tileMapHeight (tileSets : TmxTileset array) (tileLayer : TmxLayer) (heightLayer : TmxLayer) =
 
@@ -154,9 +154,9 @@ module Field =
         private
             { FieldTileMap : TileMap AssetTag }
 
-    let getFieldModelDescriptors (field : Field) world =
-        let fieldModelAssetName = asset field.FieldTileMap.PackageName (field.FieldTileMap.AssetName + "Model")
-        match CachedModels.TryGetValue fieldModelAssetName with
+    let getFieldModelDescriptorsAndAssetTag (field : Field) world =
+        let fieldModelAssetTag = asset "Cached" (field.FieldTileMap.AssetName + "Model")
+        match CachedDescriptors.TryGetValue fieldModelAssetTag with
         | (false, _) ->
             let (_, tileSetsAndImages, tileMap) = World.getTileMapMetadata field.FieldTileMap world
             let tileSets = Array.map fst tileSetsAndImages
@@ -167,10 +167,10 @@ module Field =
             let untraversableSurfaceDescriptor = createFieldSurfaceDescriptor tileMap.Width tileMap.Height tileSets untraversableLayer untraversableHeightLayer
             let traversableSurfaceDescriptor = createFieldSurfaceDescriptor tileMap.Width tileMap.Height tileSets traversableLayer traversableHeightLayer
             let descriptors = [|untraversableSurfaceDescriptor; traversableSurfaceDescriptor|]
-            let world = World.enqueueRenderMessage3d (CreateStaticModelMessage (descriptors, fieldModelAssetName)) world
-            CachedModels.Add (fieldModelAssetName, descriptors)
-            (descriptors, world)
-        | (true, descriptors) -> (descriptors, world)
+            let world = World.enqueueRenderMessage3d (CreateStaticModelMessage (descriptors, fieldModelAssetTag)) world
+            CachedDescriptors.Add (fieldModelAssetTag, descriptors)
+            (descriptors, fieldModelAssetTag, world)
+        | (true, descriptors) -> (descriptors, fieldModelAssetTag, world)
 
     let make tileMap =
         { FieldTileMap = tileMap }
