@@ -388,7 +388,7 @@ module Gaia =
                 let renderMaterial = Unchecked.defaultof<_>
                 let renderType = ForwardRenderType Single.MinValue
                 let staticModel = Assets.Default.HighlightModel
-                let world = World.enqueueRenderMessage3d (RenderStaticModelMessage (absolute, boundsMatrix, renderMaterial, renderType, staticModel)) world
+                World.enqueueRenderMessage3d (RenderStaticModelMessage (absolute, boundsMatrix, renderMaterial, renderType, staticModel)) world
                 (Cascade, world)
         | _ -> (Cascade, world)
 
@@ -1079,6 +1079,7 @@ module Gaia =
             if form.songPlaybackButton.Checked
             then World.setMasterSongVolume 1.0f world
             else World.setMasterSongVolume 0.0f world
+            world
 
     let private handleFormCopy (form : GaiaForm) (_ : EventArgs) =
         addWorldChanger $ fun world ->
@@ -1610,8 +1611,7 @@ module Gaia =
 
     let private run3 runWhile targetDir sdlDeps (form : GaiaForm) =
         let (defaultGroup, world) = attachToWorld targetDir form Globals.World
-        let world = World.setMasterSongVolume 0.0f world // no song playback in editor by default
-        Globals.World <- world
+        World.setMasterSongVolume 0.0f Globals.World // no song playback in editor by default
         refreshOverlayComboBox form Globals.World
         refreshCreateComboBox form Globals.World
         refreshCreateContextMenuItemChildren true false form.createContextMenuItem form Globals.World

@@ -20,13 +20,11 @@ module WorldAudio =
         /// Enqueue an audio message to the world.
         static member enqueueAudioMessage (message : AudioMessage) world =
             world.Subsystems.AudioPlayer.EnqueueMessage message 
-            world
 
         /// Enqueue multiple audio messages to the world.
         static member enqueueAudioMessages (messages : AudioMessage seq) world =
             let audioPlayer = World.getAudioPlayer world
             for message in messages do audioPlayer.EnqueueMessage message
-            world
 
         /// Get the currently playing song, if any.
         [<FunctionBinding>]
@@ -63,21 +61,18 @@ module WorldAudio =
         static member setMasterAudioVolume volume world =
             let audioPlayer = World.getAudioPlayer world
             audioPlayer.MasterAudioVolume <- volume
-            world
 
         /// Set the master sound volume.
         [<FunctionBinding>]
         static member setMasterSoundVolume volume world =
             let audioPlayer = World.getAudioPlayer world
             audioPlayer.MasterSoundVolume <- volume
-            world
 
         /// Set the master song volume.
         [<FunctionBinding>]
         static member setMasterSongVolume volume world =
             let audioPlayer = World.getAudioPlayer world
             audioPlayer.MasterSongVolume <- volume
-            world
 
         /// Send a message to the audio system to play a song.
         [<FunctionBinding>]

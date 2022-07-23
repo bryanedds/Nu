@@ -167,7 +167,7 @@ module Field =
             let untraversableSurfaceDescriptor = createFieldSurfaceDescriptor tileMap.Width tileMap.Height tileSets untraversableLayer untraversableHeightLayer
             let traversableSurfaceDescriptor = createFieldSurfaceDescriptor tileMap.Width tileMap.Height tileSets traversableLayer traversableHeightLayer
             let descriptors = [|untraversableSurfaceDescriptor; traversableSurfaceDescriptor|]
-            let world = World.enqueueRenderMessage3d (CreateStaticModelMessage (descriptors, fieldModelAssetTag)) world
+            World.enqueueRenderMessage3d (CreateStaticModelMessage (descriptors, fieldModelAssetTag)) world
             CachedDescriptors.Add (fieldModelAssetTag, descriptors)
             (descriptors, fieldModelAssetTag, world)
         | (true, descriptors) -> (descriptors, fieldModelAssetTag, world)
