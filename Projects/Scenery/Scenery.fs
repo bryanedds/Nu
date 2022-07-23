@@ -91,8 +91,8 @@ module Field =
                     let tileId = tile.Gid - tileSet.FirstGid
                     let columns = tileSet.Columns.Value
                     let rows = tileSet.TileCount.Value / columns
-                    let tileX = tileId / tileSet.Columns.Value
-                    let tileY = tileId % tileSet.Columns.Value
+                    let tileX = tileId % tileSet.Columns.Value
+                    let tileY = tileId / tileSet.Columns.Value
                     let texCoordX = single tileX / single columns
                     let texCoordY = single tileY / single rows
                     let texCoordX2 = texCoordX + single tileSet.TileWidth / single tileSet.Image.Width.Value
@@ -103,7 +103,7 @@ module Field =
                     texCoordses.[u+2] <- v2 texCoordX2 texCoordY2
                     texCoordses.[u+3] <- v2 texCoordX texCoordY
                     texCoordses.[u+4] <- v2 texCoordX2 texCoordY2
-                    texCoordses.[u+5] <- v2 texCoordX texCoordY
+                    texCoordses.[u+5] <- v2 texCoordX texCoordY2
                 | None -> ()
 
         // make normals array
@@ -264,7 +264,7 @@ type SceneryDispatcher () =
                  Content.staticModelSurface Gen.name
                     [Entity.SurfaceIndex == 1
                      Entity.StaticModel <== field --|> fun field world -> snd (Field.getFieldModelDescriptorsAndAssetTag field world)
-                     Entity.RenderStyle == Forward 1.0f]]]]
+                     Entity.RenderStyle == Forward -1.0f]]]]
 
     // here we create the scenery in an imperative fashion
     // NOTE: performance goal: 60fps, current: 57fps.
