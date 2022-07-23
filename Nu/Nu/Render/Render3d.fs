@@ -74,7 +74,7 @@ and [<NoEquality; NoComparison>] CachedStaticModelMessage =
 
 /// TODO: 3D: make this a record.
 and StaticModelSurfaceDescriptor =
-    Vector3 array * Vector2 array * Vector3 array * int array * OpenGL.PrimitiveType * Box3 * Color * Image AssetTag * single * Image AssetTag * single * Image AssetTag * single * Image AssetTag
+    Vector3 array * Vector2 array * Vector3 array * int array * OpenGL.PrimitiveType * Box3 * Color * Image AssetTag * single * Image AssetTag * single * Image AssetTag * single * Image AssetTag * Image AssetTag * bool
 
 /// A message to the 3d renderer.
 and [<NoEquality; NoComparison>] RenderMessage3d =
@@ -672,25 +672,52 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                     SegmentedList.add light renderer.RenderTasks.RenderLights
                 | RenderPostPassMessage3d postPass ->
                     postPasses.Add postPass |> ignore<bool>
-                //| CreateStaticModelMessage (positions, texCoordses, normals, indices, primitiveType, bounds, albedoColor, albedoImage, metalness, metalnessImage, roughness, roughnessImage,  ambientOcclusion, ambientOcclusionImage, modelAsset) ->
-                //    
-                //    
-                //
-                //    let vertices = Array.zeroCreate (tileMapWidth * tileMapHeight * 6 * 8)
-                //
-                //    for u in 0 .. dec vertices.Length / 8 do
-                //        vertices.[u] <- positions.[u].X
-                //        vertices.[u+1] <- positions.[u].Y
-                //        vertices.[u+2] <- positions.[u].Z
-                //        vertices.[u+3] <- texCoordses.[u].X
-                //        vertices.[u+4] <- texCoordses.[u].Y
-                //        vertices.[u+5] <- normals.[u].X
-                //        vertices.[u+6] <- normals.[u].Y
-                //        vertices.[u+7] <- normals.[u].Z
-                //
-                //    let geometry = OpenGL.PhysicallyBased.CreatePhysicallyBasedGeometry (true, vertices, indices, box3 v3Zero bounds)
-                //    ()
-                //
+                | CreateStaticModelMessage (surfaceDescriptors, assetTag) ->
+
+                    let surfaces = List ()
+
+                    for (positions, texCoordses, normals, indices, primitiveType, bounds, albedo, albedoImage, metalness, metalnessImage, roughness, roughnessImage, ambientOcclusion, ambientOcclusionImage, normalImage, twoSided) in surfaceDescriptors do
+                
+                        let vertices = Array.zeroCreate (positions.Length * 8)
+                
+                        for i in 0 .. dec vertices.Length do
+                            let u = i * 8
+                            vertices.[u] <- positions.[i].X
+                            vertices.[u+1] <- positions.[i].Y
+                            vertices.[u+2] <- positions.[i].Z
+                            vertices.[u+3] <- texCoordses.[i].X
+                            vertices.[u+4] <- texCoordses.[i].Y
+                            vertices.[u+5] <- normals.[i].X
+                            vertices.[u+6] <- normals.[i].Y
+                            vertices.[u+7] <- normals.[i].Z
+                
+                        let geometry = OpenGL.PhysicallyBased.CreatePhysicallyBasedGeometry (true, vertices, indices, bounds)
+
+                        let material : OpenGL.PhysicallyBased.PhysicallyBasedMaterial =
+                            { Albedo = albedo
+                              AlbedoTexture = GlRenderer3d.tryFindRenderAsset albedoImage renderer
+                              Metalness = metalness
+                              MetalnessTexture = GlRenderer3d.tryFindRenderAsset metalnessImage renderer
+                              Roughness = roughness
+                              RoughnessTexture = GlRenderer3d.tryFindRenderAsset roughnessImage renderer
+                              AmbientOcclusion = ambientOcclusion
+                              AmbientOcclusionTexture = GlRenderer3d.tryFindRenderAsset ambientOcclusionImage renderer
+                              NormalTexture = GlRenderer3d.tryFindRenderAsset normalImage renderer
+                              TwoSided = twoSided }
+                        
+                        let surface =
+                            OpenGL.PhysicallyBased.PhysicallyBasedSurface.make [||] m4Identity bounds material geometry
+
+                        surfaces.Add surface
+
+                    let staticModel : OpenGL.PhysicallyBased.PhysicallyBasedStaticModel =
+                        { Bounds = ()
+                          Lights = [||]
+                          Surfaces = surfaces
+                          PhysicallyBasedStaticHierarchy = () }
+
+                    ()
+                
                 | HintRenderPackageUseMessage3d hintPackageUse ->
                     GlRenderer3d.handleHintRenderPackage3dUse hintPackageUse renderer
                 | HintRenderPackageDisuseMessage3d hintPackageDisuse ->
