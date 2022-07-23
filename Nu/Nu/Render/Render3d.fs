@@ -769,13 +769,11 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             // setup geometry buffer
             let (positionTexture, albedoTexture, materialTexture, normalTexture, geometryFramebuffer) = renderer.RenderGeometryFramebuffer
             OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, geometryFramebuffer)
-            OpenGL.Gl.DepthMask true
             OpenGL.Gl.Enable OpenGL.EnableCap.ScissorTest
             OpenGL.Gl.Scissor (viewportOffset.Bounds.Position.X, viewportOffset.Bounds.Position.Y, viewportOffset.Bounds.Size.X, viewportOffset.Bounds.Size.Y)
             OpenGL.Gl.ClearColor (Constants.Render.WindowClearColor.R, Constants.Render.WindowClearColor.G, Constants.Render.WindowClearColor.B, Constants.Render.WindowClearColor.A)
             OpenGL.Gl.Clear (OpenGL.ClearBufferMask.ColorBufferBit ||| OpenGL.ClearBufferMask.DepthBufferBit ||| OpenGL.ClearBufferMask.StencilBufferBit)
             OpenGL.Gl.Disable OpenGL.EnableCap.ScissorTest
-            OpenGL.Gl.DepthMask false
             OpenGL.Hl.Assert ()
 
             // attempt to locate last sky box

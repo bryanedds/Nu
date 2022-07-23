@@ -95,10 +95,8 @@ module Hl =
         Assert ()
 
         // clear inner viewport
-        Gl.DepthMask true
         Gl.ClearColor (Constants.Render.WindowClearColor.R, Constants.Render.WindowClearColor.G, Constants.Render.WindowClearColor.B, Constants.Render.WindowClearColor.A)
         Gl.Clear (ClearBufferMask.ColorBufferBit ||| ClearBufferMask.DepthBufferBit ||| ClearBufferMask.StencilBufferBit)
-        Gl.DepthMask false
         Assert ()
 
         // clear drawing target

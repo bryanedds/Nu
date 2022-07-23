@@ -716,7 +716,6 @@ module PhysicallyBased =
             Gl.BlendEquation BlendEquationMode.FuncAdd
             Gl.BlendFunc (BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha)
             Gl.Enable EnableCap.Blend
-        else Gl.DepthMask true
         if not material.TwoSided then Gl.Enable EnableCap.CullFace
         Hl.Assert ()
 
@@ -819,7 +818,6 @@ module PhysicallyBased =
             Gl.Disable EnableCap.Blend
             Gl.BlendFunc (BlendingFactor.One, BlendingFactor.Zero)
             Gl.BlendEquation BlendEquationMode.FuncAdd
-        else Gl.DepthMask false
         Gl.Disable EnableCap.DepthTest
         Gl.DepthFunc DepthFunction.Less
 
