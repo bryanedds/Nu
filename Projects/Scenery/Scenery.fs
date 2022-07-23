@@ -47,17 +47,14 @@ module Field =
                     match tileSetOpt with
                     | None -> 0
                     | Some tileSet -> tile.Gid - tileSet.FirstGid
-                match tileSetOpt with
-                | Some tileSet ->
-                    let u = t * 3 * 6
-                    let position = v3 (single i) (single j) (single height)
-                    positions.[u] <- position
-                    positions.[u+1] <- position
-                    positions.[u+2] <- position
-                    positions.[u+3] <- position
-                    positions.[u+4] <- position
-                    positions.[u+5] <- position
-                | None -> ()
+                let u = t * 6
+                let position = v3 (single i) (single j) (single height)
+                positions.[u] <- position
+                positions.[u+1] <- position
+                positions.[u+2] <- position
+                positions.[u+3] <- position
+                positions.[u+4] <- position
+                positions.[u+5] <- position
 
         // slope positions
         for i in 1 .. dec tileMapWidth do
@@ -84,7 +81,7 @@ module Field =
                 let tile = tileLayer.Tiles.[t]
                 let mutable tileSetOpt = None
                 for tileSet in tileSets do
-                    match tileSetOpt with
+                    match albedoTileSetOpt with
                     | None ->
                         if tile.Gid = 0 then
                             tileSetOpt <- Some tileSet // just use the first tile set for the empty tile
@@ -95,10 +92,14 @@ module Field =
                 match tileSetOpt with
                 | Some tileSet ->
                     let tileId = tile.Gid - tileSet.FirstGid
-                    let texCoordX = single (tileId / tileSet.Columns.Value) / single tileSet.Image.Width.Value
-                    let texCoordY = single (tileId % tileSet.Columns.Value) / single tileSet.Image.Height.Value
-                    let texCoordX2 = texCoordX + 1.0f / single tileSet.Image.Width.Value
-                    let texCoordY2 = texCoordY + 1.0f / single tileSet.Image.Height.Value
+                    let columns = tileSet.Columns.Value
+                    let rows = tileSet.TileCount.Value / columns
+                    let tileX = tileId / tileSet.Columns.Value
+                    let tileY = tileId % tileSet.Columns.Value
+                    let texCoordX = single tileX / single columns
+                    let texCoordY = single tileY / single rows
+                    let texCoordX2 = texCoordX + single tileSet.TileWidth / single tileSet.Image.Width.Value
+                    let texCoordY2 = texCoordY + single tileSet.TileHeight / single tileSet.Image.Height.Value
                     let u = t * 6
                     texCoordses.[u] <- v2 texCoordX texCoordY
                     texCoordses.[u+1] <- v2 texCoordX2 texCoordY
