@@ -706,10 +706,11 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                               TwoSided = surfaceDescriptor.TwoSided }
 
                         // create vertex data, truncating it when required
-                        let mutable vertexData = Array.zeroCreate (surfaceDescriptor.Positions.Length * 8)
+                        let vertexCount = surfaceDescriptor.Positions.Length
+                        let mutable vertexData = Array.zeroCreate (vertexCount * 8)
                         let mutable i = 0
                         try
-                            while i < vertexData.Length do
+                            while i < vertexCount do
                                 let u = i * 8
                                 vertexData.[u] <- surfaceDescriptor.Positions.[i].X
                                 vertexData.[u+1] <- surfaceDescriptor.Positions.[i].Y
@@ -721,7 +722,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                                 vertexData.[u+7] <- surfaceDescriptor.Normals.[i].Z
                                 i <- inc i
                         with :? IndexOutOfRangeException ->
-                            vertexData <- Array.take (i / 8) vertexData
+                            vertexData <- Array.take i vertexData
                             Log.debug "Vertex data truncated due to an inequal count among surface descriptor Positions, TexCoordses, and Normals."
 
                         let geometry = OpenGL.PhysicallyBased.CreatePhysicallyBasedGeometry (true, vertexData, surfaceDescriptor.Indices, surfaceDescriptor.Bounds)

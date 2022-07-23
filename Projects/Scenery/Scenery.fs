@@ -50,11 +50,11 @@ module Field =
                 let u = t * 6
                 let position = v3 (single i) (single j) (single height)
                 positions.[u] <- position
-                positions.[u+1] <- position
-                positions.[u+2] <- position
+                positions.[u+1] <- position + v3Right
+                positions.[u+2] <- position + v3Right + v3Forward
                 positions.[u+3] <- position
-                positions.[u+4] <- position
-                positions.[u+5] <- position
+                positions.[u+4] <- position + v3Right + v3Forward
+                positions.[u+5] <- position + v3Forward
 
         // slope positions
         for i in 1 .. dec tileMapWidth do
@@ -113,10 +113,13 @@ module Field =
         let normals = Array.zeroCreate<Vector3> (tileMapWidth * tileMapHeight * 6)
 
         // populate normals
-        for i in 1 .. dec tileMapWidth do
-            for j in 1 .. dec tileMapHeight do
+        for i in 0 .. dec tileMapWidth do
+            for j in 0 .. dec tileMapHeight do
                 let u = i * tileMapWidth + j
-                let normal = Vector3.Normalize (Vector3.Cross (positions.[u+1] - positions.[u], positions.[u+5] - positions.[u]))
+                let a = positions.[u]
+                let b = positions.[u+1]
+                let c = positions.[u+5]
+                let normal = Vector3.Normalize (Vector3.Cross (b - a, c - a))
                 normals.[u] <- normal
                 normals.[u+1] <- normal
                 normals.[u+2] <- normal
@@ -259,10 +262,12 @@ type SceneryDispatcher () =
                     [Entity.Position == v3 250.0f -200.0f 0.0f]
                  Content.staticModelSurface Gen.name
                     [Entity.SurfaceIndex == 0
-                     Entity.StaticModel <== field --|> fun field world -> snd (Field.getFieldModelDescriptorsAndAssetTag field world)]
+                     Entity.StaticModel <== field --|> fun field world -> snd (Field.getFieldModelDescriptorsAndAssetTag field world)
+                     Entity.RenderStyle == Forward 0.0f]
                  Content.staticModelSurface Gen.name
                     [Entity.SurfaceIndex == 1
-                     Entity.StaticModel <== field --|> fun field world -> snd (Field.getFieldModelDescriptorsAndAssetTag field world)]]]]
+                     Entity.StaticModel <== field --|> fun field world -> snd (Field.getFieldModelDescriptorsAndAssetTag field world)
+                     Entity.RenderStyle == Forward 1.0f]]]]
 
     // here we create the scenery in an imperative fashion
     // NOTE: performance goal: 60fps, current: 57fps.
