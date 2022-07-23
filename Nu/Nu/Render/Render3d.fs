@@ -705,20 +705,26 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                               NormalTexture = ValueOption.defaultValue 0u (match GlRenderer3d.tryFindRenderAsset (AssetTag.generalize surfaceDescriptor.NormalImage) renderer with ValueSome (Texture2dAsset (_, texture)) -> ValueSome texture | _ -> ValueNone)
                               TwoSided = surfaceDescriptor.TwoSided }
 
-                        let vertices = Array.zeroCreate (surfaceDescriptor.Positions.Length * 8)
+                        // create vertex data, truncating it when required
+                        let mutable vertexData = Array.zeroCreate (surfaceDescriptor.Positions.Length * 8)
+                        let mutable i = 0
+                        try
+                            while i < vertexData.Length do
+                                let u = i * 8
+                                vertexData.[u] <- surfaceDescriptor.Positions.[i].X
+                                vertexData.[u+1] <- surfaceDescriptor.Positions.[i].Y
+                                vertexData.[u+2] <- surfaceDescriptor.Positions.[i].Z
+                                vertexData.[u+3] <- surfaceDescriptor.TexCoordses.[i].X
+                                vertexData.[u+4] <- surfaceDescriptor.TexCoordses.[i].Y
+                                vertexData.[u+5] <- surfaceDescriptor.Normals.[i].X
+                                vertexData.[u+6] <- surfaceDescriptor.Normals.[i].Y
+                                vertexData.[u+7] <- surfaceDescriptor.Normals.[i].Z
+                                i <- inc i
+                        with :? IndexOutOfRangeException ->
+                            vertexData <- Array.take (i / 8) vertexData
+                            Log.debug "Vertex data truncated due to an inequal count among surface descriptor Positions, TexCoordses, and Normals."
 
-                        for i in 0 .. dec vertices.Length do
-                            let u = i * 8
-                            vertices.[u] <- surfaceDescriptor.Positions.[i].X
-                            vertices.[u+1] <- surfaceDescriptor.Positions.[i].Y
-                            vertices.[u+2] <- surfaceDescriptor.Positions.[i].Z
-                            vertices.[u+3] <- surfaceDescriptor.TexCoordses.[i].X
-                            vertices.[u+4] <- surfaceDescriptor.TexCoordses.[i].Y
-                            vertices.[u+5] <- surfaceDescriptor.Normals.[i].X
-                            vertices.[u+6] <- surfaceDescriptor.Normals.[i].Y
-                            vertices.[u+7] <- surfaceDescriptor.Normals.[i].Z
-
-                        let geometry = OpenGL.PhysicallyBased.CreatePhysicallyBasedGeometry (true, vertices, surfaceDescriptor.Indices, surfaceDescriptor.Bounds)
+                        let geometry = OpenGL.PhysicallyBased.CreatePhysicallyBasedGeometry (true, vertexData, surfaceDescriptor.Indices, surfaceDescriptor.Bounds)
 
                         let surface = OpenGL.PhysicallyBased.CreatePhysicallyBasedSurface ([||], surfaceDescriptor.Transform, surfaceDescriptor.Bounds, material, geometry)
 
