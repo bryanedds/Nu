@@ -12,7 +12,7 @@
  </layer>
  <layer id="4" name="UntraversableHeight" width="16" height="16" opacity="0.25">
   <data encoding="base64" compression="zlib">
-   eJzj4mRg4BrFo3gUj0gMACM6EwE=
+   eJzj5mRg4B7Fo3gUj0gMACVYFAE=
   </data>
  </layer>
  <layer id="2" name="Traversable" width="16" height="16">
@@ -20,12 +20,12 @@
    <property name="Image" value="[Field Forest]"/>
   </properties>
   <data encoding="base64" compression="zlib">
-   eJyrYGNgKEXD5UBMLDABqp3LgIpLsJiJy2xs+vHhEjQzSNWPbgY5+pHNIFc/CBuN6h9w/WZA/ImVdL0fgHpMoWkIZMZHVuLNQdaLDGDmEMLY9JILAFSSfgg=
+   eJyrYGNgKEXD5UBMLDABqp3LgIpLsJiJy3xs+glhIwr1lyC5gRz9yGaQqx/mj1H9A6vfDIg/sZKu9wNQjyk0DYHM+MhKvDnIepEBzBxCGJtecgEAmVF+YQ==
   </data>
  </layer>
- <layer id="3" name="TraversableHeight" width="16" height="16" visible="0" opacity="0.25">
+ <layer id="3" name="TraversableHeight" width="16" height="16" opacity="0.25">
   <data encoding="base64" compression="zlib">
-   eJzj5mRg4B4EmAcHplQ/sebB5HmhGMbng2JCZiDr50Mygw/NLGL0o7uBGD/woJmBzkc2k5Twg+kTQjOXlPjA5id09UIE3EPIblg8USs9YTNnoPMILTAAXMsUkA==
+   eJzj5mRg4B4EmAcHplQ/sebB5HmhGMbng2JCZiDr50Mygw/NLGL0o7uBGD/woJmBzkc2k5Twg+njQzOXlPjA5id09bxoNDZ3EBv+1EhP2Pwx0HmEFhgATnsUhw==
   </data>
  </layer>
 </map>
