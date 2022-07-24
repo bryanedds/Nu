@@ -56,19 +56,45 @@ module Field =
                 positions.[u+4] <- position + v3Right + v3Forward
                 positions.[u+5] <- position + v3Forward
 
-        // slope positions
-        for i in 0 .. dec tileMapWidth-1 do
-            for j in 0 .. dec tileMapHeight-1 do
-                let t = j * tileMapWidth + i
-                let t' = inc t
-                let u = t * 6
-                let u' = t' * 6
-                let a = &positions.[u]
-                let b = &positions.[u'+1]
-                b.Y <- a.Y
-                let a = &positions.[u+2]
-                let b = &positions.[u'+5]
-                b.Y <- a.Y
+        // slope positions horizontal
+        for i in 0 .. dec tileMapWidth do
+            for j in 0 .. dec tileMapHeight do
+                if j % 2 = 0 then
+                    let t = j * tileMapWidth + i
+                    let tNorth = t - tileMapWidth
+                    if tNorth >= 0 then
+                        let u = t * 6
+                        let uNorth = tNorth * 6
+                        positions.[u+5].Y <- positions.[uNorth].Y
+                        positions.[u+2].Y <- positions.[uNorth+1].Y
+                        positions.[u+4].Y <- positions.[uNorth+1].Y
+                    let tSouth = t + tileMapWidth
+                    if tSouth < tileMapWidth * tileMapHeight then
+                        let u = t * 6
+                        let uSouth = tSouth * 6
+                        positions.[u].Y <- positions.[uSouth+5].Y
+                        positions.[u+3].Y <- positions.[uSouth+5].Y
+                        positions.[u+1].Y <- positions.[uSouth+2].Y
+
+        // slope positions vertical
+        for i in 0 .. dec tileMapWidth do
+            if i % 2 = 0 then
+                for j in 0 .. dec tileMapHeight do
+                    let t = j * tileMapWidth + i
+                    let tWest = t - 1
+                    if tWest >= 0 then
+                        let u = t * 6
+                        let uWest = tWest * 6
+                        positions.[u].Y <- positions.[uWest+1].Y
+                        positions.[u+3].Y <- positions.[uWest+1].Y
+                        positions.[u+5].Y <- positions.[uWest+2].Y
+                    let tEast = t + 1
+                    if tEast < tileMapWidth * tileMapHeight then
+                        let u = t * 6
+                        let uEast = tEast * 6
+                        positions.[u+1].Y <- positions.[uEast].Y
+                        positions.[u+2].Y <- positions.[uEast+5].Y
+                        positions.[u+4].Y <- positions.[uEast+5].Y
 
         // make tex coordses array
         let texCoordses = Array.zeroCreate<Vector2> (tileMapWidth * tileMapHeight * 6)
