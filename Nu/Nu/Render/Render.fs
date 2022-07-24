@@ -25,7 +25,7 @@ type StaticModel = private { __ : unit }
 
 /// An asset that is used for rendering.
 type [<NoEquality; NoComparison>] RenderAsset =
-    | Texture2dAsset of OpenGL.Texture2d.Texture2dMetadata * uint
+    | TextureAsset of OpenGL.Texture.TextureMetadata * uint
     | FontAsset of int * nativeint
     | CubeMapAsset of uint * (uint * uint) option ref
     | StaticModelAsset of OpenGL.PhysicallyBased.PhysicallyBasedStaticModel

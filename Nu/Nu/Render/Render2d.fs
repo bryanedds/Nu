@@ -99,7 +99,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
     static member private freeRenderAsset renderAsset renderer =
         GlRenderer2d.invalidateCaches renderer
         match renderAsset with
-        | Texture2dAsset (_, texture2d) -> OpenGL.Texture2d.DeleteTexture2d texture2d
+        | TextureAsset (_, texture) -> OpenGL.Texture.DeleteTexture texture
         | FontAsset (_, font) -> SDL_ttf.TTF_CloseFont font
         | CubeMapAsset _ -> ()
         | StaticModelAsset _ -> ()
@@ -110,11 +110,11 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
         | ".bmp"
         | ".png"
         | ".tif" ->
-            match OpenGL.Texture2d.TryCreateTexture2dUnfiltered asset.FilePath with
-            | Right texture2d ->
-                Some (asset.AssetTag.AssetName, Texture2dAsset texture2d)
+            match OpenGL.Texture.TryCreateTextureUnfiltered asset.FilePath with
+            | Right texture ->
+                Some (asset.AssetTag.AssetName, TextureAsset texture)
             | Left error ->
-                Log.debug ("Could not load 2d texture '" + asset.FilePath + "' due to '" + error + "'.")
+                Log.debug ("Could not load texture '" + asset.FilePath + "' due to '" + error + "'.")
                 None
         | ".ttf" ->
             let fileFirstName = Path.GetFileNameWithoutExtension asset.FilePath
@@ -234,8 +234,8 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
         pivot
         rotation
         (insetOpt : Box2 voption)
-        (texture2dMetadata : OpenGL.Texture2d.Texture2dMetadata)
-        texture2d
+        (textureMetadata : OpenGL.Texture.TextureMetadata)
+        texture
         (color : Color)
         blend
         (glow : Color)
@@ -246,8 +246,8 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
         let texCoordsUnflipped =
             match insetOpt with
             | ValueSome inset ->
-                let texelWidth = texture2dMetadata.Texture2dTexelWidth
-                let texelHeight = texture2dMetadata.Texture2dTexelHeight
+                let texelWidth = textureMetadata.TextureTexelWidth
+                let texelHeight = textureMetadata.TextureTexelHeight
                 let borderWidth = texelWidth * Constants.Render.SpriteBorderTexelScalar
                 let borderHeight = texelHeight * Constants.Render.SpriteBorderTexelScalar
                 let px = inset.Position.X * texelWidth + borderWidth
@@ -284,11 +284,11 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
 
         // attempt to draw normal sprite
         if color.A <> 0.0f then
-            OpenGL.SpriteBatch.SubmitSpriteBatchSprite (absolute, position, size, pivot, rotation, &texCoords, &color, bfs, bfd, beq, texture2d, renderer.RenderSpriteBatchEnv)
+            OpenGL.SpriteBatch.SubmitSpriteBatchSprite (absolute, position, size, pivot, rotation, &texCoords, &color, bfs, bfd, beq, texture, renderer.RenderSpriteBatchEnv)
 
         // attempt to draw glow sprite
         if glow.A <> 0.0f then
-            OpenGL.SpriteBatch.SubmitSpriteBatchSprite (absolute, position, size, pivot, rotation, &texCoords, &glow, OpenGL.BlendingFactor.SrcAlpha, OpenGL.BlendingFactor.One, OpenGL.BlendEquationMode.FuncAdd, texture2d, renderer.RenderSpriteBatchEnv)
+            OpenGL.SpriteBatch.SubmitSpriteBatchSprite (absolute, position, size, pivot, rotation, &texCoords, &glow, OpenGL.BlendingFactor.SrcAlpha, OpenGL.BlendingFactor.One, OpenGL.BlendEquationMode.FuncAdd, texture, renderer.RenderSpriteBatchEnv)
 
     /// Render sprite.
     static member renderSprite
@@ -310,8 +310,8 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
         match GlRenderer2d.tryFindRenderAsset image renderer with
         | ValueSome renderAsset ->
             match renderAsset with
-            | Texture2dAsset (texture2dMetadata, texture2d) ->
-                GlRenderer2d.batchSprite absolute position size pivot rotation insetOpt texture2dMetadata texture2d color blend glow flip renderer
+            | TextureAsset (textureMetadata, texture) ->
+                GlRenderer2d.batchSprite absolute position size pivot rotation insetOpt textureMetadata texture color blend glow flip renderer
             | _ -> Log.trace "Cannot render sprite with a non-texture asset."
         | _ -> Log.info ("SpriteDescriptor failed to render due to unloadable assets for '" + scstring image + "'.")
 
@@ -321,7 +321,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
         match GlRenderer2d.tryFindRenderAsset image renderer with
         | ValueSome renderAsset ->
             match renderAsset with
-            | Texture2dAsset (texture2dMetadata, texture2d) ->
+            | TextureAsset (textureMetadata, texture) ->
                 let mutable index = 0
                 while index < particles.Length do
                     let particle = &particles.[index]
@@ -336,7 +336,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
                     let glow = &particle.Glow
                     let flip = particle.Flip
                     let insetOpt = &particle.InsetOpt
-                    GlRenderer2d.batchSprite absolute position size pivot rotation insetOpt texture2dMetadata texture2d color blend glow flip renderer
+                    GlRenderer2d.batchSprite absolute position size pivot rotation insetOpt textureMetadata texture color blend glow flip renderer
                     index <- inc index
             | _ -> Log.trace "Cannot render particle with a non-texture asset."
         | _ -> Log.info ("RenderDescriptors failed to render due to unloadable assets for '" + scstring image + "'.")
@@ -366,7 +366,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
             tileAssets |>
             Array.map (fun (tileSet, tileSetImage) ->
                 match GlRenderer2d.tryFindRenderAsset (AssetTag.generalize tileSetImage) renderer with
-                | ValueSome (Texture2dAsset (tileSetTexture2d, tileSetTexture2dMetadata)) -> Some (tileSet, tileSetImage, tileSetTexture2d, tileSetTexture2dMetadata)
+                | ValueSome (TextureAsset (tileSetTexture, tileSetTextureMetadata)) -> Some (tileSet, tileSetImage, tileSetTexture, tileSetTextureMetadata)
                 | ValueSome _ -> None
                 | ValueNone -> None) |>
             Array.definitizePlus
@@ -395,30 +395,30 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
                             | (false, true) -> FlipV
                             | (true, true) -> FlipHV
         
-                        // attempt to compute tile set 2d texture
+                        // attempt to compute tile set texture
                         let mutable tileOffset = 1 // gid 0 is the empty tile
                         let mutable tileSetIndex = 0
                         let mutable tileSetWidth = 0
-                        let mutable tileSetTexture2dOpt = None
-                        for (set, _, texture2dMetadata, texture2d) in tileSetTextures do
+                        let mutable tileSetTextureOpt = None
+                        for (set, _, textureMetadata, texture) in tileSetTextures do
                             let tileCountOpt = set.TileCount
                             let tileCount = if tileCountOpt.HasValue then tileCountOpt.Value else 0
                             if  tile.Gid >= set.FirstGid && tile.Gid < set.FirstGid + tileCount ||
                                 not tileCountOpt.HasValue then // HACK: when tile count is missing, assume we've found the tile...?
                                 tileSetWidth <- let tileSetWidthOpt = set.Image.Width in tileSetWidthOpt.Value
-                                tileSetTexture2dOpt <- Some (texture2dMetadata, texture2d)
-                            if Option.isNone tileSetTexture2dOpt then
+                                tileSetTextureOpt <- Some (textureMetadata, texture)
+                            if Option.isNone tileSetTextureOpt then
                                 tileSetIndex <- inc tileSetIndex
                                 tileOffset <- tileOffset + tileCount
         
                         // attempt to render tile
-                        match tileSetTexture2dOpt with
-                        | Some (texture2dMetadata, texture2d) ->
+                        match tileSetTextureOpt with
+                        | Some (textureMetadata, texture) ->
                             let tileId = tile.Gid - tileOffset
                             let tileIdPosition = tileId * tileSourceSize.X
                             let tileSourcePosition = v2 (single (tileIdPosition % tileSetWidth)) (single (tileIdPosition / tileSetWidth * tileSourceSize.Y))
                             let inset = box2 tileSourcePosition (v2 (single tileSourceSize.X) (single tileSourceSize.Y))
-                            GlRenderer2d.batchSprite absolute tilePosition tileSize tilePivot 0.0f (ValueSome inset) texture2dMetadata texture2d color Transparent glow flip renderer
+                            GlRenderer2d.batchSprite absolute tilePosition tileSize tilePivot 0.0f (ValueSome inset) textureMetadata texture color Transparent glow flip renderer
                         | None -> ()
 
                 tileIndex <- inc tileIndex
@@ -451,7 +451,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
 
                     // gather rendering resources
                     // NOTE: the resource implications (throughput and fragmentation?) of creating and destroying a
-                    // surface and 2d texture one or more times a frame must be understood!
+                    // surface and texture one or more times a frame must be understood!
                     let (offset, textSurface, textSurfacePtr) =
 
                         // create sdl color
@@ -507,9 +507,9 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
                         let modelMatrix = modelScale * modelTranslation
                         let modelViewProjection = modelMatrix * viewProjection
 
-                        // upload 2d texture
-                        let textTexture2d = OpenGL.Gl.GenTexture ()
-                        OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, textTexture2d)
+                        // upload texture
+                        let textTexture = OpenGL.Gl.GenTexture ()
+                        OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, textTexture)
                         OpenGL.Gl.TexImage2D (OpenGL.TextureTarget.Texture2d, 0, OpenGL.InternalFormat.Rgba8, textSurface.w, textSurface.h, 0, OpenGL.PixelFormat.Bgra, OpenGL.PixelType.UnsignedByte, textSurface.pixels)
                         OpenGL.Gl.TexParameter (OpenGL.TextureTarget.Texture2d, OpenGL.TextureParameterName.TextureMinFilter, int OpenGL.TextureMinFilter.Nearest)
                         OpenGL.Gl.TexParameter (OpenGL.TextureTarget.Texture2d, OpenGL.TextureParameterName.TextureMagFilter, int OpenGL.TextureMagFilter.Nearest)
@@ -520,11 +520,11 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
                         // NOTE: we allocate an array here, too.
                         let (vertices, indices, vao) = renderer.RenderTextQuad
                         let (modelViewProjectionUniform, texCoords4Uniform, colorUniform, texUniform, shader) = renderer.RenderSpriteShader
-                        OpenGL.Sprite.DrawSprite (vertices, indices, vao, modelViewProjection.ToArray (), ValueNone, Color.White, FlipNone, textSurface.w, textSurface.h, textTexture2d, modelViewProjectionUniform, texCoords4Uniform, colorUniform, texUniform, shader)
+                        OpenGL.Sprite.DrawSprite (vertices, indices, vao, modelViewProjection.ToArray (), ValueNone, Color.White, FlipNone, textSurface.w, textSurface.h, textTexture, modelViewProjectionUniform, texCoords4Uniform, colorUniform, texUniform, shader)
                         OpenGL.Hl.Assert ()
 
-                        // destroy 2d texture
-                        OpenGL.Gl.DeleteTextures textTexture2d
+                        // destroy texture
+                        OpenGL.Gl.DeleteTextures textTexture
                         OpenGL.Hl.Assert ()
 
                     SDL.SDL_FreeSurface textSurfacePtr

@@ -10,7 +10,7 @@ open Nu
 module Framebuffer =
 
     /// Attempt to create a texture 2d framebuffer.
-    let TryCreateTexture2dFramebuffer () =
+    let TryCreateTextureFramebuffer () =
 
         // create frame buffer object
         let framebuffer = Gl.GenFramebuffer ()
@@ -18,12 +18,12 @@ module Framebuffer =
         Hl.Assert ()
 
         // create texture 2d buffer
-        let texture2d = Gl.GenTexture ()
-        Gl.BindTexture (TextureTarget.Texture2d, texture2d)
+        let texture = Gl.GenTexture ()
+        Gl.BindTexture (TextureTarget.Texture2d, texture)
         Gl.TexImage2D (TextureTarget.Texture2d, 0, InternalFormat.Rgba16f, Constants.Render.ResolutionX, Constants.Render.ResolutionY, 0, PixelFormat.Rgba, PixelType.Float, nativeint 0)
         Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, int TextureMinFilter.Nearest)
         Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, int TextureMagFilter.Nearest)
-        Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2d, texture2d, 0)
+        Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2d, texture, 0)
         Hl.Assert ()
 
         // create depth and stencil buffers
@@ -35,7 +35,7 @@ module Framebuffer =
 
         // ensure framebuffer is complete
         if Gl.CheckFramebufferStatus FramebufferTarget.Framebuffer = FramebufferStatus.FramebufferComplete
-        then Right (texture2d, framebuffer)
+        then Right (texture, framebuffer)
         else Left ("Could not create complete texture 2d framebuffer.")
 
     /// Attempt to create an hdr framebuffer.
