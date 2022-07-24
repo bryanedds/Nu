@@ -46,7 +46,7 @@ module Field =
                 let height =
                     match tileSetOpt with
                     | None -> 0.0f
-                    | Some tileSet -> single (tile.Gid - tileSet.FirstGid) / 4.0f
+                    | Some tileSet -> single (tile.Gid - tileSet.FirstGid) * 0.5f
                 let u = t * 6
                 let position = v3 (single i) height (single j)
                 positions.[u] <- position
@@ -147,7 +147,7 @@ module Field =
                 let a = positions.[u]
                 let b = positions.[u+1]
                 let c = positions.[u+5]
-                let normal = v3 0.5f 0.5f 1.0f // Vector3.Normalize (Vector3.Cross (b - a, c - a))
+                let normal = Vector3.Normalize (Vector3.Cross (b - a, c - a))
                 normals.[u] <- normal
                 normals.[u+1] <- normal
                 normals.[u+2] <- normal
