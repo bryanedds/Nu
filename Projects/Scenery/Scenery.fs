@@ -57,15 +57,17 @@ module Field =
                 positions.[u+5] <- position + v3Forward
 
         // slope positions
-        for i in 1 .. dec tileMapWidth do
-            for j in 1 .. dec tileMapHeight do
+        for i in 0 .. dec tileMapWidth-1 do
+            for j in 0 .. dec tileMapHeight-1 do
                 let t = j * tileMapWidth + i
+                let t' = inc t
                 let u = t * 6
-                let a = &positions.[dec u+1]
-                let b = &positions.[u]
+                let u' = t' * 6
+                let a = &positions.[u]
+                let b = &positions.[u'+1]
                 b.Y <- a.Y
-                let a = &positions.[dec u+5]
-                let b = &positions.[u+2]
+                let a = &positions.[u+2]
+                let b = &positions.[u'+5]
                 b.Y <- a.Y
 
         // make tex coordses array
