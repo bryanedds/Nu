@@ -100,6 +100,8 @@ and [<NoEquality; NoComparison>] RenderMessage3d =
     | RenderSkyBoxMessage of CubeMap AssetTag
     | RenderLightMessage3d of Vector3 * Color * single * single * LightType
     | RenderPostPassMessage3d of RenderPassMessage3d
+    | SetImageMinFilter of OpenGL.TextureMinFilter * Image AssetTag
+    | SetImageMagFilter of OpenGL.TextureMagFilter * Image AssetTag
     | CreateStaticModelMessage of StaticModelSurfaceDescriptor array * Box3 * StaticModel AssetTag
     | HintRenderPackageUseMessage3d of string
     | HintRenderPackageDisuseMessage3d of string
@@ -169,7 +171,7 @@ type [<ReferenceEquality; NoComparison>] MockRenderer3d =
 
 /// The internally used package state for the 3d OpenGL renderer.
 type [<NoEquality; NoComparison>] private GlPackageState3d =
-    { Texture2dMemo : OpenGL.Texture2d.Texture2dMemo
+    { TextureMemo : OpenGL.Texture.TextureMemo
       CubeMapMemo : OpenGL.CubeMap.CubeMapMemo }
 
 /// The OpenGL implementation of Renderer3d.
@@ -190,7 +192,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
           RenderPhysicallyBasedQuad : OpenGL.PhysicallyBased.PhysicallyBasedGeometry
           RenderIrradianceMap : uint
           RenderEnvironmentFilterMap : uint
-          RenderBrdfTexture2d : uint
+          RenderBrdfTexture : uint
           RenderPhysicallyBasedMaterial : OpenGL.PhysicallyBased.PhysicallyBasedMaterial
           mutable RenderModelsFields : single array
           mutable RenderAlbedosFields : single array
@@ -213,11 +215,11 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
         | ".bmp"
         | ".png"
         | ".tif" ->
-            match OpenGL.Texture2d.TryCreateTexture2dMemoizedFiltered (asset.FilePath, packageState.Texture2dMemo) with
-            | Right texture2d ->
-                Some (asset.AssetTag.AssetName, Texture2dAsset texture2d)
+            match OpenGL.Texture.TryCreateTextureMemoizedFiltered (asset.FilePath, packageState.TextureMemo) with
+            | Right texture ->
+                Some (asset.AssetTag.AssetName, TextureAsset texture)
             | Left error ->
-                Log.debug ("Could not load 2d texture '" + asset.FilePath + "' due to '" + error + "'.")
+                Log.debug ("Could not load texture '" + asset.FilePath + "' due to '" + error + "'.")
                 None
         | ".cbm" ->
             match File.ReadAllLines asset.FilePath |> Array.filter (String.IsNullOrWhiteSpace >> not) with
@@ -234,11 +236,11 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                 | Left error -> Log.debug ("Could not load cube map '" + asset.FilePath + "' due to: " + error); None
             | _ -> Log.debug ("Could not load cube map '" + asset.FilePath + "' due to requiring exactly 6 file paths with each file path on its own line."); None
         | ".fbx" ->
-            match OpenGL.PhysicallyBased.TryCreatePhysicallyBasedStaticModel (true, UnitCentimeters, asset.FilePath, renderer.RenderPhysicallyBasedMaterial, packageState.Texture2dMemo, renderer.RenderAssimp) with
+            match OpenGL.PhysicallyBased.TryCreatePhysicallyBasedStaticModel (true, UnitCentimeters, asset.FilePath, renderer.RenderPhysicallyBasedMaterial, packageState.TextureMemo, renderer.RenderAssimp) with
             | Right model -> Some (asset.AssetTag.AssetName, StaticModelAsset model)
             | Left error -> Log.debug ("Could not load static model '" + asset.FilePath + "' due to: " + error); None
         | ".obj" ->
-            match OpenGL.PhysicallyBased.TryCreatePhysicallyBasedStaticModel (true, UnitMeters, asset.FilePath, renderer.RenderPhysicallyBasedMaterial, packageState.Texture2dMemo, renderer.RenderAssimp) with
+            match OpenGL.PhysicallyBased.TryCreatePhysicallyBasedStaticModel (true, UnitMeters, asset.FilePath, renderer.RenderPhysicallyBasedMaterial, packageState.TextureMemo, renderer.RenderAssimp) with
             | Right model -> Some (asset.AssetTag.AssetName, StaticModelAsset model)
             | Left error -> Log.debug ("Could not load static model '" + asset.FilePath + "' due to: " + error); None
         | _ -> None
@@ -252,7 +254,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                     match Dictionary.tryFind packageName renderer.RenderPackages with
                     | Some renderPackage -> renderPackage
                     | None ->
-                        let renderPackageState = { Texture2dMemo = OpenGL.Texture2d.Texture2dMemo.make (); CubeMapMemo = OpenGL.CubeMap.CubeMapMemo.make () }
+                        let renderPackageState = { TextureMemo = OpenGL.Texture.TextureMemo.make (); CubeMapMemo = OpenGL.CubeMap.CubeMapMemo.make () }
                         let renderPackage = { Assets = dictPlus StringComparer.Ordinal []; PackageState = renderPackageState }
                         renderer.RenderPackages.Assign (packageName, renderPackage)
                         renderPackage
@@ -306,7 +308,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
     static member private handleHintRenderPackage3dDisuse hintPackageName renderer =
         match Dictionary.tryFind hintPackageName renderer.RenderPackages with
         | Some package ->
-            OpenGL.Texture2d.DeleteTexture2dsMemoized package.PackageState.Texture2dMemo
+            OpenGL.Texture.DeleteTexturesMemoized package.PackageState.TextureMemo
             OpenGL.CubeMap.DeleteCubeMapsMemoized package.PackageState.CubeMapMemo
             renderer.RenderPackages.Remove hintPackageName |> ignore
         | None -> ()
@@ -578,23 +580,23 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
         let environmentFilterMap = GlRenderer3d.createEnvironmentFilterMap Constants.Render.Viewport 0u environmentFilterRenderbuffer environmentFilterFramebuffer environmentFilterShader skyBoxSurface
         OpenGL.Hl.Assert ()
 
-        // create brdf 2d texture
-        let brdfTexture2d =
-            match OpenGL.Texture2d.TryCreateTexture2dUnfiltered Constants.Paths.BrdfTextureFilePath with
-            | Right (_, texture2d) -> texture2d
-            | Left error -> failwith ("Could not load BRDF 2d texture due to: " + error)
+        // create brdf texture
+        let brdfTexture =
+            match OpenGL.Texture.TryCreateTextureUnfiltered Constants.Paths.BrdfTextureFilePath with
+            | Right (_, texture) -> texture
+            | Left error -> failwith ("Could not load BRDF texture due to: " + error)
 
         // create default physically-based material
         let physicallyBasedMaterial : OpenGL.PhysicallyBased.PhysicallyBasedMaterial =
             { Albedo = Color.White
-              AlbedoTexture = OpenGL.Texture2d.TryCreateTexture2dFiltered ("Assets/Default/MaterialAlbedo.png") |> Either.getRight |> snd
+              AlbedoTexture = OpenGL.Texture.TryCreateTextureFiltered ("Assets/Default/MaterialAlbedo.png") |> Either.getRight |> snd
               Metalness = 1.0f
-              MetalnessTexture = OpenGL.Texture2d.TryCreateTexture2dFiltered ("Assets/Default/MaterialMetalness.png") |> Either.getRight |> snd
+              MetalnessTexture = OpenGL.Texture.TryCreateTextureFiltered ("Assets/Default/MaterialMetalness.png") |> Either.getRight |> snd
               Roughness = 1.0f
-              RoughnessTexture = OpenGL.Texture2d.TryCreateTexture2dFiltered ("Assets/Default/MaterialRoughness.png") |> Either.getRight |> snd
+              RoughnessTexture = OpenGL.Texture.TryCreateTextureFiltered ("Assets/Default/MaterialRoughness.png") |> Either.getRight |> snd
               AmbientOcclusion = 1.0f
-              AmbientOcclusionTexture = OpenGL.Texture2d.TryCreateTexture2dFiltered ("Assets/Default/MaterialAmbientOcclusion.png") |> Either.getRight |> snd
-              NormalTexture = OpenGL.Texture2d.TryCreateTexture2dFiltered ("Assets/Default/MaterialNormal.png") |> Either.getRight |> snd
+              AmbientOcclusionTexture = OpenGL.Texture.TryCreateTextureFiltered ("Assets/Default/MaterialAmbientOcclusion.png") |> Either.getRight |> snd
+              NormalTexture = OpenGL.Texture.TryCreateTextureFiltered ("Assets/Default/MaterialNormal.png") |> Either.getRight |> snd
               TwoSided = false }
 
         // create render tasks
@@ -625,7 +627,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
               RenderPhysicallyBasedQuad = physicallyBasedQuad
               RenderIrradianceMap = irradianceMap
               RenderEnvironmentFilterMap = environmentFilterMap
-              RenderBrdfTexture2d = brdfTexture2d
+              RenderBrdfTexture = brdfTexture
               RenderPhysicallyBasedMaterial = physicallyBasedMaterial
               RenderModelsFields = Array.zeroCreate<single> (16 * Constants.Render.GeometryBatchPrealloc)
               RenderAlbedosFields = Array.zeroCreate<single> (4 * Constants.Render.GeometryBatchPrealloc)
@@ -687,6 +689,14 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                     SegmentedList.add light renderer.RenderTasks.RenderLights
                 | RenderPostPassMessage3d postPass ->
                     postPasses.Add postPass |> ignore<bool>
+                | SetImageMinFilter (minFilter, image) ->
+                    match GlRenderer3d.tryFindRenderAsset (AssetTag.generalize image) renderer with
+                    | ValueSome (TextureAsset (_, texture)) -> OpenGL.Texture.SetMinFilter (minFilter, texture)
+                    | _ -> Log.debug ("Could not set min filter for non-texture or missing asset '" + scstring image + "'")
+                | SetImageMagFilter (magFilter, image) ->
+                    match GlRenderer3d.tryFindRenderAsset (AssetTag.generalize image) renderer with
+                    | ValueSome (TextureAsset (_, texture)) -> OpenGL.Texture.SetMagFilter (magFilter, texture)
+                    | _ -> Log.debug ("Could not set mag filter for non-texture or missing asset '" + scstring image + "'")
                 | CreateStaticModelMessage (surfaceDescriptors, bounds, assetTag) ->
 
                     let surfaces = List ()
@@ -695,14 +705,14 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
 
                         let material : OpenGL.PhysicallyBased.PhysicallyBasedMaterial =
                             { Albedo = surfaceDescriptor.Albedo
-                              AlbedoTexture = ValueOption.defaultValue 0u (match GlRenderer3d.tryFindRenderAsset (AssetTag.generalize surfaceDescriptor.AlbedoImage) renderer with ValueSome (Texture2dAsset (_, texture)) -> ValueSome texture | _ -> ValueNone)
+                              AlbedoTexture = ValueOption.defaultValue 0u (match GlRenderer3d.tryFindRenderAsset (AssetTag.generalize surfaceDescriptor.AlbedoImage) renderer with ValueSome (TextureAsset (_, texture)) -> ValueSome texture | _ -> ValueNone)
                               Metalness = surfaceDescriptor.Metalness
-                              MetalnessTexture = ValueOption.defaultValue 0u (match GlRenderer3d.tryFindRenderAsset (AssetTag.generalize surfaceDescriptor.MetalnessImage) renderer with ValueSome (Texture2dAsset (_, texture)) -> ValueSome texture | _ -> ValueNone)
+                              MetalnessTexture = ValueOption.defaultValue 0u (match GlRenderer3d.tryFindRenderAsset (AssetTag.generalize surfaceDescriptor.MetalnessImage) renderer with ValueSome (TextureAsset (_, texture)) -> ValueSome texture | _ -> ValueNone)
                               Roughness = surfaceDescriptor.Roughness
-                              RoughnessTexture = ValueOption.defaultValue 0u (match GlRenderer3d.tryFindRenderAsset (AssetTag.generalize surfaceDescriptor.RoughnessImage) renderer with ValueSome (Texture2dAsset (_, texture)) -> ValueSome texture | _ -> ValueNone)
+                              RoughnessTexture = ValueOption.defaultValue 0u (match GlRenderer3d.tryFindRenderAsset (AssetTag.generalize surfaceDescriptor.RoughnessImage) renderer with ValueSome (TextureAsset (_, texture)) -> ValueSome texture | _ -> ValueNone)
                               AmbientOcclusion = surfaceDescriptor.AmbientOcclusion
-                              AmbientOcclusionTexture = ValueOption.defaultValue 0u (match GlRenderer3d.tryFindRenderAsset (AssetTag.generalize surfaceDescriptor.AmbientOcclusionImage) renderer with ValueSome (Texture2dAsset (_, texture)) -> ValueSome texture | _ -> ValueNone)
-                              NormalTexture = ValueOption.defaultValue 0u (match GlRenderer3d.tryFindRenderAsset (AssetTag.generalize surfaceDescriptor.NormalImage) renderer with ValueSome (Texture2dAsset (_, texture)) -> ValueSome texture | _ -> ValueNone)
+                              AmbientOcclusionTexture = ValueOption.defaultValue 0u (match GlRenderer3d.tryFindRenderAsset (AssetTag.generalize surfaceDescriptor.AmbientOcclusionImage) renderer with ValueSome (TextureAsset (_, texture)) -> ValueSome texture | _ -> ValueNone)
+                              NormalTexture = ValueOption.defaultValue 0u (match GlRenderer3d.tryFindRenderAsset (AssetTag.generalize surfaceDescriptor.NormalImage) renderer with ValueSome (TextureAsset (_, texture)) -> ValueSome texture | _ -> ValueNone)
                               TwoSided = surfaceDescriptor.TwoSided }
 
                         // create vertex data, truncating it when required
@@ -745,7 +755,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                     | (true, package) ->
                         package.Assets.Add (assetTag.AssetName, StaticModelAsset staticModel)
                     | (false, _) ->
-                        let packageState = { Texture2dMemo = OpenGL.Texture2d.Texture2dMemo.make (); CubeMapMemo = OpenGL.CubeMap.CubeMapMemo.make () }
+                        let packageState = { TextureMemo = OpenGL.Texture.TextureMemo.make (); CubeMapMemo = OpenGL.CubeMap.CubeMapMemo.make () }
                         let package = { Assets = Dictionary.singleton StringComparer.Ordinal assetTag.AssetName (StaticModelAsset staticModel); PackageState = packageState }
                         renderer.RenderPackages.Add (assetTag.PackageName, package)
 
@@ -829,7 +839,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                     false
                     irradianceMap
                     environmentFilterMap
-                    renderer.RenderBrdfTexture2d
+                    renderer.RenderBrdfTexture
                     lightPositions
                     lightColors
                     lightBrightnesses
@@ -849,7 +859,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                     false
                     irradianceMap
                     environmentFilterMap
-                    renderer.RenderBrdfTexture2d
+                    renderer.RenderBrdfTexture
                     lightPositions
                     lightColors
                     lightBrightnesses
@@ -876,7 +886,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             // render deferred lighting quad
             OpenGL.PhysicallyBased.DrawPhysicallyBasedDeferred2Surface
                 (eyePosition, positionTexture, albedoTexture, materialTexture, normalTexture,
-                 irradianceMap, environmentFilterMap, renderer.RenderBrdfTexture2d, lightPositions, lightColors, lightBrightnesses, lightIntensities,
+                 irradianceMap, environmentFilterMap, renderer.RenderBrdfTexture, lightPositions, lightColors, lightBrightnesses, lightIntensities,
                  renderer.RenderPhysicallyBasedQuad, renderer.RenderPhysicallyBasedDeferred2Shader)
             OpenGL.Hl.Assert ()
 
@@ -899,7 +909,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                     true
                     irradianceMap
                     environmentFilterMap
-                    renderer.RenderBrdfTexture2d
+                    renderer.RenderBrdfTexture
                     lightColors
                     lightPositions
                     lightBrightnesses
@@ -921,7 +931,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                     true
                     irradianceMap
                     environmentFilterMap
-                    renderer.RenderBrdfTexture2d
+                    renderer.RenderBrdfTexture
                     lightPositions
                     lightColors
                     lightBrightnesses
@@ -967,7 +977,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
         member renderer.CleanUp () =
             let renderPackages = renderer.RenderPackages |> Seq.map (fun entry -> entry.Value)
             for renderPackage in renderPackages do
-                OpenGL.Texture2d.DeleteTexture2dsMemoized renderPackage.PackageState.Texture2dMemo
+                OpenGL.Texture.DeleteTexturesMemoized renderPackage.PackageState.TextureMemo
                 OpenGL.CubeMap.DeleteCubeMapsMemoized renderPackage.PackageState.CubeMapMemo
             renderer.RenderPackages.Clear ()
             renderer.RenderAssimp.Dispose ()

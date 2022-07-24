@@ -212,6 +212,8 @@ module Field =
             let descriptors = [|untraversableSurfaceDescriptor; traversableSurfaceDescriptor|]
             let bounds = untraversableSurfaceDescriptor.Bounds.Combine traversableSurfaceDescriptor.Bounds
             World.enqueueRenderMessage3d (CreateStaticModelMessage (descriptors, bounds, fieldModelAssetTag)) world
+            World.enqueueRenderMessage3d (SetImageMinFilter (OpenGL.TextureMinFilter.Nearest, untraversableSurfaceDescriptor.AlbedoImage)) world
+            World.enqueueRenderMessage3d (SetImageMinFilter (OpenGL.TextureMinFilter.Nearest, traversableSurfaceDescriptor.AlbedoImage)) world
             CachedDescriptors.Add (fieldModelAssetTag, descriptors)
             (descriptors, fieldModelAssetTag)
         | (true, descriptors) -> (descriptors, fieldModelAssetTag)
@@ -302,7 +304,7 @@ type SceneryDispatcher () =
     override this.Register (game, world) =
         let world = base.Register (game, world)
 #if DEBUG
-        let population = 25
+        let population = 1
 #else
         let population = 50
 #endif
