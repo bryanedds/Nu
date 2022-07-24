@@ -234,7 +234,7 @@ module Field =
             let descriptors = [|untraversableSurfaceDescriptor; traversableSurfaceDescriptor|]
             let bounds = let bounds = untraversableSurfaceDescriptor.Bounds in bounds.Combine traversableSurfaceDescriptor.Bounds
             World.enqueueRenderMessage3d (CreateStaticModelMessage (descriptors, bounds, fieldModelAssetTag)) world
-            World.enqueueRenderMessage3d (SetImageMinFilter (OpenGL.TextureMinFilter.Nearest, untraversableSurfaceDescriptor.AlbedoImage)) world
+            World.enqueueRenderMessage3d (SetImageMinFilter (OpenGL.TextureMinFilter.NearestMipmapNearest, untraversableSurfaceDescriptor.AlbedoImage)) world
             World.enqueueRenderMessage3d (SetImageMagFilter (OpenGL.TextureMagFilter.Nearest, traversableSurfaceDescriptor.AlbedoImage)) world
             CachedDescriptors.Add (fieldModelAssetTag, traversableHeightMap)
             (traversableHeightMap, fieldModelAssetTag)
