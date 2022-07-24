@@ -63,7 +63,7 @@ module Texture =
     /// Set the magnification filter of a texture.
     let SetMagFilter (magFilter : OpenGL.TextureMagFilter, texture) =
         Gl.BindTexture (TextureTarget.Texture2d, texture)
-        Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, int magFilter)
+        Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, int magFilter)
         Gl.BindTexture (TextureTarget.Texture2d, 0u)
 
     let private TryCreateImageBitmap (filePath : string) =

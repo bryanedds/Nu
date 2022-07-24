@@ -691,11 +691,15 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                     postPasses.Add postPass |> ignore<bool>
                 | SetImageMinFilter (minFilter, image) ->
                     match GlRenderer3d.tryFindRenderAsset (AssetTag.generalize image) renderer with
-                    | ValueSome (TextureAsset (_, texture)) -> OpenGL.Texture.SetMinFilter (minFilter, texture)
+                    | ValueSome (TextureAsset (_, texture)) ->
+                        OpenGL.Texture.SetMinFilter (minFilter, texture)
+                        OpenGL.Hl.Assert ()
                     | _ -> Log.debug ("Could not set min filter for non-texture or missing asset '" + scstring image + "'")
                 | SetImageMagFilter (magFilter, image) ->
                     match GlRenderer3d.tryFindRenderAsset (AssetTag.generalize image) renderer with
-                    | ValueSome (TextureAsset (_, texture)) -> OpenGL.Texture.SetMagFilter (magFilter, texture)
+                    | ValueSome (TextureAsset (_, texture)) ->
+                        OpenGL.Texture.SetMagFilter (magFilter, texture)
+                        OpenGL.Hl.Assert ()
                     | _ -> Log.debug ("Could not set mag filter for non-texture or missing asset '" + scstring image + "'")
                 | CreateStaticModelMessage (surfaceDescriptors, bounds, assetTag) ->
 
