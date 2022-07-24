@@ -302,6 +302,70 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                     | (false, _) -> ValueNone
                 | (false, _) -> ValueNone
 
+    static member private handleCreateStaticModelMessage surfaceDescriptors bounds assetTag renderer =
+
+        // create surfaces
+        let surfaces = List ()
+        for surfaceDescriptor in surfaceDescriptors do
+
+            // create material
+            let material : OpenGL.PhysicallyBased.PhysicallyBasedMaterial =
+                { Albedo = surfaceDescriptor.Albedo
+                  AlbedoTexture = ValueOption.defaultValue 0u (match GlRenderer3d.tryFindRenderAsset (AssetTag.generalize surfaceDescriptor.AlbedoImage) renderer with ValueSome (TextureAsset (_, texture)) -> ValueSome texture | _ -> ValueNone)
+                  Metalness = surfaceDescriptor.Metalness
+                  MetalnessTexture = ValueOption.defaultValue 0u (match GlRenderer3d.tryFindRenderAsset (AssetTag.generalize surfaceDescriptor.MetalnessImage) renderer with ValueSome (TextureAsset (_, texture)) -> ValueSome texture | _ -> ValueNone)
+                  Roughness = surfaceDescriptor.Roughness
+                  RoughnessTexture = ValueOption.defaultValue 0u (match GlRenderer3d.tryFindRenderAsset (AssetTag.generalize surfaceDescriptor.RoughnessImage) renderer with ValueSome (TextureAsset (_, texture)) -> ValueSome texture | _ -> ValueNone)
+                  AmbientOcclusion = surfaceDescriptor.AmbientOcclusion
+                  AmbientOcclusionTexture = ValueOption.defaultValue 0u (match GlRenderer3d.tryFindRenderAsset (AssetTag.generalize surfaceDescriptor.AmbientOcclusionImage) renderer with ValueSome (TextureAsset (_, texture)) -> ValueSome texture | _ -> ValueNone)
+                  NormalTexture = ValueOption.defaultValue 0u (match GlRenderer3d.tryFindRenderAsset (AssetTag.generalize surfaceDescriptor.NormalImage) renderer with ValueSome (TextureAsset (_, texture)) -> ValueSome texture | _ -> ValueNone)
+                  TwoSided = surfaceDescriptor.TwoSided }
+
+            // create vertex data, truncating it when required
+            let vertexCount = surfaceDescriptor.Positions.Length
+            let mutable vertexData = Array.zeroCreate (vertexCount * 8)
+            let mutable i = 0
+            try
+                while i < vertexCount do
+                    let u = i * 8
+                    vertexData.[u] <- surfaceDescriptor.Positions.[i].X
+                    vertexData.[u+1] <- surfaceDescriptor.Positions.[i].Y
+                    vertexData.[u+2] <- surfaceDescriptor.Positions.[i].Z
+                    vertexData.[u+3] <- surfaceDescriptor.TexCoordses.[i].X
+                    vertexData.[u+4] <- surfaceDescriptor.TexCoordses.[i].Y
+                    vertexData.[u+5] <- surfaceDescriptor.Normals.[i].X
+                    vertexData.[u+6] <- surfaceDescriptor.Normals.[i].Y
+                    vertexData.[u+7] <- surfaceDescriptor.Normals.[i].Z
+                    i <- inc i
+            with :? IndexOutOfRangeException ->
+                vertexData <- Array.take i vertexData
+                Log.debug "Vertex data truncated due to an inequal count among surface descriptor Positions, TexCoordses, and Normals."
+
+            // crete geometry
+            let geometry = OpenGL.PhysicallyBased.CreatePhysicallyBasedGeometry (true, vertexData, surfaceDescriptor.Indices, surfaceDescriptor.Bounds)
+
+            // create surface
+            let surface = OpenGL.PhysicallyBased.CreatePhysicallyBasedSurface ([||], surfaceDescriptor.Transform, surfaceDescriptor.Bounds, material, geometry)
+            surfaces.Add surface
+
+        // create static model
+        let surfaces = Seq.toArray surfaces
+        let hierarchy = TreeNode (Array.map OpenGL.PhysicallyBased.PhysicallyBasedSurface surfaces)
+        let staticModel : OpenGL.PhysicallyBased.PhysicallyBasedStaticModel =
+            { Bounds = bounds
+              Lights = [||]
+              Surfaces = surfaces
+              PhysicallyBasedStaticHierarchy = hierarchy }
+
+        // add static model to appropriate render package
+        match renderer.RenderPackages.TryGetValue assetTag.PackageName with
+        | (true, package) ->
+            package.Assets.Add (assetTag.AssetName, StaticModelAsset staticModel)
+        | (false, _) ->
+            let packageState = { TextureMemo = OpenGL.Texture.TextureMemo.make (); CubeMapMemo = OpenGL.CubeMap.CubeMapMemo.make () }
+            let package = { Assets = Dictionary.singleton StringComparer.Ordinal assetTag.AssetName (StaticModelAsset staticModel); PackageState = packageState }
+            renderer.RenderPackages.Add (assetTag.PackageName, package)
+
     static member private handleHintRenderPackage3dUse hintPackageName renderer =
         GlRenderer3d.tryLoadRenderPackage hintPackageName renderer
 
@@ -702,67 +766,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                         OpenGL.Hl.Assert ()
                     | _ -> Log.debug ("Could not set mag filter for non-texture or missing asset '" + scstring image + "'")
                 | CreateStaticModelMessage (surfaceDescriptors, bounds, assetTag) ->
-
-                    let surfaces = List ()
-
-                    for surfaceDescriptor in surfaceDescriptors do
-
-                        let material : OpenGL.PhysicallyBased.PhysicallyBasedMaterial =
-                            { Albedo = surfaceDescriptor.Albedo
-                              AlbedoTexture = ValueOption.defaultValue 0u (match GlRenderer3d.tryFindRenderAsset (AssetTag.generalize surfaceDescriptor.AlbedoImage) renderer with ValueSome (TextureAsset (_, texture)) -> ValueSome texture | _ -> ValueNone)
-                              Metalness = surfaceDescriptor.Metalness
-                              MetalnessTexture = ValueOption.defaultValue 0u (match GlRenderer3d.tryFindRenderAsset (AssetTag.generalize surfaceDescriptor.MetalnessImage) renderer with ValueSome (TextureAsset (_, texture)) -> ValueSome texture | _ -> ValueNone)
-                              Roughness = surfaceDescriptor.Roughness
-                              RoughnessTexture = ValueOption.defaultValue 0u (match GlRenderer3d.tryFindRenderAsset (AssetTag.generalize surfaceDescriptor.RoughnessImage) renderer with ValueSome (TextureAsset (_, texture)) -> ValueSome texture | _ -> ValueNone)
-                              AmbientOcclusion = surfaceDescriptor.AmbientOcclusion
-                              AmbientOcclusionTexture = ValueOption.defaultValue 0u (match GlRenderer3d.tryFindRenderAsset (AssetTag.generalize surfaceDescriptor.AmbientOcclusionImage) renderer with ValueSome (TextureAsset (_, texture)) -> ValueSome texture | _ -> ValueNone)
-                              NormalTexture = ValueOption.defaultValue 0u (match GlRenderer3d.tryFindRenderAsset (AssetTag.generalize surfaceDescriptor.NormalImage) renderer with ValueSome (TextureAsset (_, texture)) -> ValueSome texture | _ -> ValueNone)
-                              TwoSided = surfaceDescriptor.TwoSided }
-
-                        // create vertex data, truncating it when required
-                        let vertexCount = surfaceDescriptor.Positions.Length
-                        let mutable vertexData = Array.zeroCreate (vertexCount * 8)
-                        let mutable i = 0
-                        try
-                            while i < vertexCount do
-                                let u = i * 8
-                                vertexData.[u] <- surfaceDescriptor.Positions.[i].X
-                                vertexData.[u+1] <- surfaceDescriptor.Positions.[i].Y
-                                vertexData.[u+2] <- surfaceDescriptor.Positions.[i].Z
-                                vertexData.[u+3] <- surfaceDescriptor.TexCoordses.[i].X
-                                vertexData.[u+4] <- surfaceDescriptor.TexCoordses.[i].Y
-                                vertexData.[u+5] <- surfaceDescriptor.Normals.[i].X
-                                vertexData.[u+6] <- surfaceDescriptor.Normals.[i].Y
-                                vertexData.[u+7] <- surfaceDescriptor.Normals.[i].Z
-                                i <- inc i
-                        with :? IndexOutOfRangeException ->
-                            vertexData <- Array.take i vertexData
-                            Log.debug "Vertex data truncated due to an inequal count among surface descriptor Positions, TexCoordses, and Normals."
-
-                        let geometry = OpenGL.PhysicallyBased.CreatePhysicallyBasedGeometry (true, vertexData, surfaceDescriptor.Indices, surfaceDescriptor.Bounds)
-
-                        let surface = OpenGL.PhysicallyBased.CreatePhysicallyBasedSurface ([||], surfaceDescriptor.Transform, surfaceDescriptor.Bounds, material, geometry)
-
-                        surfaces.Add surface
-
-                    let surfaces = Seq.toArray surfaces
-
-                    let hierarchy = TreeNode (Array.map OpenGL.PhysicallyBased.PhysicallyBasedSurface surfaces)
-
-                    let staticModel : OpenGL.PhysicallyBased.PhysicallyBasedStaticModel =
-                        { Bounds = bounds
-                          Lights = [||]
-                          Surfaces = surfaces
-                          PhysicallyBasedStaticHierarchy = hierarchy }
-
-                    match renderer.RenderPackages.TryGetValue assetTag.PackageName with
-                    | (true, package) ->
-                        package.Assets.Add (assetTag.AssetName, StaticModelAsset staticModel)
-                    | (false, _) ->
-                        let packageState = { TextureMemo = OpenGL.Texture.TextureMemo.make (); CubeMapMemo = OpenGL.CubeMap.CubeMapMemo.make () }
-                        let package = { Assets = Dictionary.singleton StringComparer.Ordinal assetTag.AssetName (StaticModelAsset staticModel); PackageState = packageState }
-                        renderer.RenderPackages.Add (assetTag.PackageName, package)
-
+                    GlRenderer3d.handleCreateStaticModelMessage surfaceDescriptors bounds assetTag renderer
                 | HintRenderPackageUseMessage3d hintPackageUse ->
                     GlRenderer3d.handleHintRenderPackage3dUse hintPackageUse renderer
                 | HintRenderPackageDisuseMessage3d hintPackageDisuse ->
