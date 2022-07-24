@@ -12,6 +12,10 @@ open SDL2
 open Prime
 open Nu
 
+// NOTE: on Nu's texturing nomenclature -
+// Texture | Texture2d =    2d texture
+// Texture3d =              3d texture
+// (Cube|_)Map =            cube map
 [<RequireQualifiedAccess>]
 module Texture =
 
