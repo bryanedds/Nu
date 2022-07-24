@@ -56,16 +56,17 @@ module Field =
                 positions.[u+4] <- position + v3Right + v3Forward
                 positions.[u+5] <- position + v3Forward
 
-        //// slope positions
-        //for i in 1 .. dec tileMapWidth do
-        //    for j in 1 .. dec tileMapHeight do
-        //        let u = i * tileMapWidth + j
-        //        let a = &positions.[dec u+1]
-        //        let b = &positions.[u]
-        //        b.Y <- a.Y
-        //        let a = &positions.[dec u+5]
-        //        let b = &positions.[u+2]
-        //        b.Y <- a.Y
+        // slope positions
+        for i in 1 .. dec tileMapWidth do
+            for j in 1 .. dec tileMapHeight do
+                let t = j * tileMapWidth + i
+                let u = t * 6
+                let a = &positions.[dec u+1]
+                let b = &positions.[u]
+                b.Y <- a.Y
+                let a = &positions.[dec u+5]
+                let b = &positions.[u+2]
+                b.Y <- a.Y
 
         // make tex coordses array
         let texCoordses = Array.zeroCreate<Vector2> (tileMapWidth * tileMapHeight * 6)
@@ -113,11 +114,12 @@ module Field =
         // populate normals
         for i in 0 .. dec tileMapWidth do
             for j in 0 .. dec tileMapHeight do
-                let u = i * tileMapWidth + j
+                let t = j * tileMapWidth + i
+                let u = t * 6
                 let a = positions.[u]
                 let b = positions.[u+1]
                 let c = positions.[u+5]
-                let normal = Vector3.Normalize (Vector3.Cross (b - a, c - a))
+                let normal = v3 0.5f 0.5f 1.0f // Vector3.Normalize (Vector3.Cross (b - a, c - a))
                 normals.[u] <- normal
                 normals.[u+1] <- normal
                 normals.[u+2] <- normal
@@ -150,10 +152,10 @@ module Field =
                   AlbedoImage = albedoTileSet.ImageAsset
                   Metalness = 0.0f
                   MetalnessImage = Assets.Default.MaterialMetalness
-                  Roughness = 1.0f
+                  Roughness = 1.225f
                   RoughnessImage = Assets.Default.MaterialRoughness
                   AmbientOcclusion = 1.0f
-                  AmbientOcclusionImage = Assets.Default.MaterialAmbientOcclusion
+                  AmbientOcclusionImage = albedoTileSet.ImageAsset
                   NormalImage = Assets.Default.MaterialNormal
                   TwoSided = false }
             
