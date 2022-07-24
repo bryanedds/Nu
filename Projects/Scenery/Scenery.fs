@@ -23,9 +23,9 @@ type CustomModelDispatcher () =
 [<RequireQualifiedAccess>]
 module Field =
 
-    let CachedDescriptors = dictPlus<StaticModel AssetTag, StaticModelSurfaceDescriptor array> HashIdentity.Structural []
+    let CachedDescriptors = dictPlus<StaticModel AssetTag, Map<Vector2i, single>> HashIdentity.Structural []
 
-    let private createFieldSurfaceDescriptor tileMapWidth tileMapHeight (tileSets : TmxTileset array) (tileLayer : TmxLayer) (heightLayer : TmxLayer) =
+    let private createFieldSurfaceDescriptorAndHeightMap tileMapWidth tileMapHeight (tileSets : TmxTileset array) (tileLayer : TmxLayer) (heightLayer : TmxLayer) =
 
         // make positions array
         let positions = Array.zeroCreate<Vector3> (tileMapWidth * tileMapHeight * 6)
@@ -37,10 +37,12 @@ module Field =
                 let tile = heightLayer.Tiles.[t]
                 let mutable tileSetOpt = None
                 for tileSet in tileSets do
+                    let tileZero = tileSet.FirstGid
+                    let tileCount = let opt = tileSet.TileCount in opt.GetValueOrDefault 0
                     match tileSetOpt with
                     | None ->
-                        if  tile.Gid >= tileSet.FirstGid &&
-                            tile.Gid < tileSet.FirstGid + tileSet.TileCount.GetValueOrDefault 0 then
+                        if  tile.Gid >= tileZero &&
+                            tile.Gid < tileZero + tileCount then
                             tileSetOpt <- Some tileSet
                     | Some _ -> ()
                 let height =
@@ -96,6 +98,22 @@ module Field =
                         positions.[u+2].Y <- positions.[uEast+5].Y
                         positions.[u+4].Y <- positions.[uEast+5].Y
 
+        // make height map in-place
+        let mutable heightMap = Map.empty
+
+        // populate height map
+        for i in 0 .. dec tileMapWidth do
+            for j in 0 .. dec tileMapHeight do
+                let t = j * tileMapWidth + i
+                let u = t * 6
+                let height =
+                    (positions.[u].Y +
+                     positions.[u+1].Y +
+                     positions.[u+2].Y +
+                     positions.[u+5].Y) *
+                    0.25f
+                heightMap <- Map.add (v2i i j) height heightMap
+
         // make tex coordses array
         let texCoordses = Array.zeroCreate<Vector2> (tileMapWidth * tileMapHeight * 6)
 
@@ -107,20 +125,24 @@ module Field =
                 let tile = tileLayer.Tiles.[t]
                 let mutable tileSetOpt = None
                 for tileSet in tileSets do
+                    let tileZero = tileSet.FirstGid
+                    let tileCount = let opt = tileSet.TileCount in opt.GetValueOrDefault 0
                     match albedoTileSetOpt with
                     | None ->
                         if tile.Gid = 0 then
                             tileSetOpt <- Some tileSet // just use the first tile set for the empty tile
-                        elif tile.Gid >= tileSet.FirstGid && tile.Gid < tileSet.FirstGid + tileSet.TileCount.GetValueOrDefault 0 then
+                        elif tile.Gid >= tileZero && tile.Gid < tileZero + tileCount then
                             tileSetOpt <- Some tileSet
                             albedoTileSetOpt <- tileSetOpt // use tile set that is first to be non-zero
                     | Some _ -> tileSetOpt <- albedoTileSetOpt
                 match tileSetOpt with
                 | Some tileSet ->
                     let tileId = tile.Gid - tileSet.FirstGid
-                    let tileWidthNormalized = single tileSet.TileWidth / single tileSet.Image.Width.Value
-                    let tileHeightNormalized = single tileSet.TileHeight / single tileSet.Image.Height.Value
-                    let tileXCount = tileSet.Columns.Value
+                    let tileImageWidth = let opt = tileSet.Image.Width in opt.Value
+                    let tileImageHeight = let opt = tileSet.Image.Height in opt.Value
+                    let tileWidthNormalized = single tileSet.TileWidth / single tileImageWidth
+                    let tileHeightNormalized = single tileSet.TileHeight / single tileImageHeight
+                    let tileXCount = let opt = tileSet.Columns in opt.Value
                     let tileX = tileId % tileXCount
                     let tileY = tileId / tileXCount + 1
                     let texCoordX = single tileX * tileWidthNormalized
@@ -188,7 +210,7 @@ module Field =
                   TwoSided = false }
             
             // fin
-            descriptor
+            (descriptor, heightMap)
 
         // did not find albedo tile set
         | None -> failwith "Unable to find custom TmxLayer Image property; cannot create tactical map."
@@ -197,7 +219,7 @@ module Field =
         private
             { FieldTileMap : TileMap AssetTag }
 
-    let getFieldModelDescriptorsAndAssetTag (field : Field) world =
+    let getFieldHeightMapAndStaticModel (field : Field) world =
         let fieldModelAssetTag = asset field.FieldTileMap.PackageName (field.FieldTileMap.AssetName + "Model")
         match CachedDescriptors.TryGetValue fieldModelAssetTag with
         | (false, _) ->
@@ -207,16 +229,16 @@ module Field =
             let untraversableHeightLayer = tileMap.Layers.["UntraversableHeight"] :?> TmxLayer
             let traversableLayer = tileMap.Layers.["Traversable"] :?> TmxLayer
             let traversableHeightLayer = tileMap.Layers.["TraversableHeight"] :?> TmxLayer
-            let untraversableSurfaceDescriptor = createFieldSurfaceDescriptor tileMap.Width tileMap.Height tileSets untraversableLayer untraversableHeightLayer
-            let traversableSurfaceDescriptor = createFieldSurfaceDescriptor tileMap.Width tileMap.Height tileSets traversableLayer traversableHeightLayer
+            let (untraversableSurfaceDescriptor, _) = createFieldSurfaceDescriptorAndHeightMap tileMap.Width tileMap.Height tileSets untraversableLayer untraversableHeightLayer
+            let (traversableSurfaceDescriptor, traversableHeightMap) = createFieldSurfaceDescriptorAndHeightMap tileMap.Width tileMap.Height tileSets traversableLayer traversableHeightLayer
             let descriptors = [|untraversableSurfaceDescriptor; traversableSurfaceDescriptor|]
-            let bounds = untraversableSurfaceDescriptor.Bounds.Combine traversableSurfaceDescriptor.Bounds
+            let bounds = let bounds = untraversableSurfaceDescriptor.Bounds in bounds.Combine traversableSurfaceDescriptor.Bounds
             World.enqueueRenderMessage3d (CreateStaticModelMessage (descriptors, bounds, fieldModelAssetTag)) world
             World.enqueueRenderMessage3d (SetImageMinFilter (OpenGL.TextureMinFilter.Nearest, untraversableSurfaceDescriptor.AlbedoImage)) world
             World.enqueueRenderMessage3d (SetImageMagFilter (OpenGL.TextureMagFilter.Nearest, traversableSurfaceDescriptor.AlbedoImage)) world
-            CachedDescriptors.Add (fieldModelAssetTag, descriptors)
-            (descriptors, fieldModelAssetTag)
-        | (true, descriptors) -> (descriptors, fieldModelAssetTag)
+            CachedDescriptors.Add (fieldModelAssetTag, traversableHeightMap)
+            (traversableHeightMap, fieldModelAssetTag)
+        | (true, traversableHeightMap) -> (traversableHeightMap, fieldModelAssetTag)
 
     let make tileMap =
         { FieldTileMap = tileMap }
@@ -292,11 +314,11 @@ type SceneryDispatcher () =
                     [Entity.CubeMap == Assets.Default.SkyBoxMap]
                  Content.staticModelSurface Gen.name
                     [Entity.SurfaceIndex == 0
-                     Entity.StaticModel <== field --|> fun field world -> snd (Field.getFieldModelDescriptorsAndAssetTag field world)
+                     Entity.StaticModel <== field --|> fun field world -> snd (Field.getFieldHeightMapAndStaticModel field world)
                      Entity.RenderStyle == Forward 0.0f]
                  Content.staticModelSurface Gen.name
                     [Entity.SurfaceIndex == 1
-                     Entity.StaticModel <== field --|> fun field world -> snd (Field.getFieldModelDescriptorsAndAssetTag field world)
+                     Entity.StaticModel <== field --|> fun field world -> snd (Field.getFieldHeightMapAndStaticModel field world)
                      Entity.RenderStyle == Forward -1.0f]]]]
 
     // here we create the scenery in an imperative fashion
