@@ -219,7 +219,7 @@ module Field =
         private
             { FieldTileMap : TileMap AssetTag }
 
-    let getFieldHeightMapAndStaticModel (field : Field) world =
+    let getFieldStaticModelAndHeightMap (field : Field) world =
         let fieldModelAssetTag = asset field.FieldTileMap.PackageName (field.FieldTileMap.AssetName + "Model")
         match CachedDescriptors.TryGetValue fieldModelAssetTag with
         | (false, _) ->
@@ -237,8 +237,8 @@ module Field =
             World.enqueueRenderMessage3d (SetImageMinFilter (OpenGL.TextureMinFilter.NearestMipmapNearest, traversableSurfaceDescriptor.AlbedoImage)) world
             World.enqueueRenderMessage3d (SetImageMagFilter (OpenGL.TextureMagFilter.Nearest, traversableSurfaceDescriptor.AlbedoImage)) world
             CachedDescriptors.Add (fieldModelAssetTag, traversableHeightMap)
-            (traversableHeightMap, fieldModelAssetTag)
-        | (true, traversableHeightMap) -> (traversableHeightMap, fieldModelAssetTag)
+            (fieldModelAssetTag, traversableHeightMap)
+        | (true, traversableHeightMap) -> (fieldModelAssetTag, traversableHeightMap)
 
     let make tileMap =
         { FieldTileMap = tileMap }
@@ -314,11 +314,11 @@ type SceneryDispatcher () =
                     [Entity.CubeMap == Assets.Default.SkyBoxMap]
                  Content.staticModelSurface Gen.name
                     [Entity.SurfaceIndex == 0
-                     Entity.StaticModel <== field --|> fun field world -> snd (Field.getFieldHeightMapAndStaticModel field world)
+                     Entity.StaticModel <== field --|> fun field world -> fst (Field.getFieldStaticModelAndHeightMap field world)
                      Entity.RenderStyle == Forward 0.0f]
                  Content.staticModelSurface Gen.name
                     [Entity.SurfaceIndex == 1
-                     Entity.StaticModel <== field --|> fun field world -> snd (Field.getFieldHeightMapAndStaticModel field world)
+                     Entity.StaticModel <== field --|> fun field world -> fst (Field.getFieldStaticModelAndHeightMap field world)
                      Entity.RenderStyle == Forward -1.0f]]]]
 
     // here we create the scenery in an imperative fashion
@@ -328,9 +328,9 @@ type SceneryDispatcher () =
 #if DEBUG
         let population = 1
 #else
-        let population = 50
+        let population = 45
 #endif
-        let spread = 20.0f
+        let spread = 22.0f
         let offset = v3Dup spread * single population * 0.5f
         let positions = List ()
         for i in 0 .. population do
