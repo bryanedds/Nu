@@ -231,6 +231,54 @@ module PhysicallyBased =
         // fin
         (vertexData, indexData, bounds)
 
+    /// Create a mesh for a physically-based particle.
+    let CreatePhysicallyBasedParticleMesh () =
+
+        // make vertex data
+        let vertexData =
+            [|
+                (*   positions   *)         (* tex coords *)    (*   normals   *)
+                -0.5f; -0.5f; +0.0f;        0.0f; 0.0f;         0.0f;  0.0f; 1.0f;  // bottom-left
+                +0.5f; -0.5f; +0.0f;        0.0f; 0.0f;         0.0f;  0.0f; 1.0f;  // bottom-right
+                +0.5f; +0.5f; +0.0f;        0.0f; 0.0f;         0.0f;  0.0f; 1.0f;  // top-right
+                +0.5f; +0.5f; +0.0f;        0.0f; 0.0f;         0.0f;  0.0f; 1.0f;  // top-right
+                -0.5f; +0.5f; +0.0f;        0.0f; 0.0f;         0.0f;  0.0f; 1.0f;  // top-left
+                -0.5f; -0.5f; +0.0f;        0.0f; 0.0f;         0.0f;  0.0f; 1.0f;  // bottom-left
+            |]
+
+        // make index data trivially
+        let indexData = Array.init 6 id
+
+        // make bounds trivially
+        let bounds = box3 (v3 -0.5f -0.5f 0.0f) (v3 1.0f 1.0f 0.0f)
+
+        // fin
+        (vertexData, indexData, bounds)
+
+    /// Create a mesh for a physically-based billboard.
+    let CreatePhysicallyBasedBillboardMesh () =
+
+        // make vertex data
+        let vertexData =
+            [|
+                (*   positions   *)         (* tex coords *)    (*   normals   *)
+                -0.5f; +0.0f; +0.0f;        0.0f; 0.0f;         0.0f;  0.0f; 1.0f;  // bottom-left
+                +0.5f; +0.0f; +0.0f;        0.0f; 0.0f;         0.0f;  0.0f; 1.0f;  // bottom-right
+                +0.5f; +1.0f; +0.0f;        0.0f; 0.0f;         0.0f;  0.0f; 1.0f;  // top-right
+                +0.5f; +1.0f; +0.0f;        0.0f; 0.0f;         0.0f;  0.0f; 1.0f;  // top-right
+                -0.5f; +1.0f; +0.0f;        0.0f; 0.0f;         0.0f;  0.0f; 1.0f;  // top-left
+                -0.5f; +0.0f; +0.0f;        0.0f; 0.0f;         0.0f;  0.0f; 1.0f;  // bottom-left
+            |]
+
+        // make index data trivially
+        let indexData = Array.init 6 id
+
+        // make bounds trivially
+        let bounds = box3 (v3 -0.5f 0.0f 0.0f) (v3 1.0f 1.0f 0.0f)
+
+        // fin
+        (vertexData, indexData, bounds)
+
     /// Create a mesh for a physically-based cube.
     let CreatePhysicallyBasedCubeMesh () =
 
@@ -373,11 +421,11 @@ module PhysicallyBased =
                 // create texCoordsOffset buffer
                 let texCoordsOffsetBuffer = Gl.GenBuffer ()
                 Gl.BindBuffer (BufferTarget.ArrayBuffer, texCoordsOffsetBuffer)
-                let texCoordsOffsetDataPtr = GCHandle.Alloc ([|1.0f; 1.0f|], GCHandleType.Pinned)
-                try Gl.BufferData (BufferTarget.ArrayBuffer, uint (2 * sizeof<single>), texCoordsOffsetDataPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
+                let texCoordsOffsetDataPtr = GCHandle.Alloc ([|0.0f; 0.0f; 0.0f; 0.0f|], GCHandleType.Pinned)
+                try Gl.BufferData (BufferTarget.ArrayBuffer, uint (4 * sizeof<single>), texCoordsOffsetDataPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
                 finally texCoordsOffsetDataPtr.Free ()
                 Gl.EnableVertexAttribArray 9u
-                Gl.VertexAttribPointer (9u, 2, VertexAttribType.Float, false, 2 * sizeof<single>, nativeint 0)
+                Gl.VertexAttribPointer (9u, 4, VertexAttribType.Float, false, 4 * sizeof<single>, nativeint 0)
                 Gl.VertexAttribDivisor (9u, 1u)
                 Hl.Assert ()
 
@@ -444,6 +492,11 @@ module PhysicallyBased =
     /// Create physically-based quad.
     let CreatePhysicallyBasedQuad renderable =
         let (vertexData, indexData, bounds) = CreatePhysicallyBasedQuadMesh ()
+        CreatePhysicallyBasedGeometry (renderable, vertexData, indexData, bounds)
+
+    /// Create physically-based billboard.
+    let CreatePhysicallyBasedBillboard renderable =
+        let (vertexData, indexData, bounds) = CreatePhysicallyBasedBillboardMesh ()
         CreatePhysicallyBasedGeometry (renderable, vertexData, indexData, bounds)
 
     /// Create physically-based cube.
@@ -795,7 +848,7 @@ module PhysicallyBased =
         // update texCoordsOffsets buffer
         let texCoordsOffsetsFieldsPtr = GCHandle.Alloc (texCoordsOffsetsFields, GCHandleType.Pinned)
         try Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.TexCoordsOffsetBuffer)
-            Gl.BufferData (BufferTarget.ArrayBuffer, uint (surfacesCount * 2 * sizeof<single>), texCoordsOffsetsFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
+            Gl.BufferData (BufferTarget.ArrayBuffer, uint (surfacesCount * 4 * sizeof<single>), texCoordsOffsetsFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
         finally texCoordsOffsetsFieldsPtr.Free ()
         Gl.BindBuffer (BufferTarget.ArrayBuffer, 0u)
         Hl.Assert ()
