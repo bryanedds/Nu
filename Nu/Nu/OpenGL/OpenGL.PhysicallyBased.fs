@@ -36,6 +36,7 @@ module PhysicallyBased =
           ModelBuffer : uint
           AlbedoBuffer : uint
           MaterialBuffer : uint
+          TexCoordsOffsetBuffer : uint
           IndexBuffer : uint
           PhysicallyBasedVao : uint }
 
@@ -300,7 +301,7 @@ module PhysicallyBased =
     let CreatePhysicallyBasedGeometry (renderable, vertexData : single array, indexData : int array, bounds) =
 
         // make buffers
-        let (vertices, indices, vertexBuffer, modelBuffer, albedoBuffer, materialBuffer, indexBuffer, vao) =
+        let (vertices, indices, vertexBuffer, modelBuffer, albedoBuffer, materialBuffer, texCoordsOffsetBuffer, indexBuffer, vao) =
 
             // make renderable
             if renderable then
@@ -369,6 +370,17 @@ module PhysicallyBased =
                 Gl.VertexAttribDivisor (8u, 1u)
                 Hl.Assert ()
 
+                // create texCoordsOffset buffer
+                let texCoordsOffsetBuffer = Gl.GenBuffer ()
+                Gl.BindBuffer (BufferTarget.ArrayBuffer, texCoordsOffsetBuffer)
+                let texCoordsOffsetDataPtr = GCHandle.Alloc ([|1.0f; 1.0f|], GCHandleType.Pinned)
+                try Gl.BufferData (BufferTarget.ArrayBuffer, uint (2 * sizeof<single>), texCoordsOffsetDataPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
+                finally texCoordsOffsetDataPtr.Free ()
+                Gl.EnableVertexAttribArray 9u
+                Gl.VertexAttribPointer (9u, 2, VertexAttribType.Float, false, 2 * sizeof<single>, nativeint 0)
+                Gl.VertexAttribDivisor (9u, 1u)
+                Hl.Assert ()
+
                 // create index buffer
                 let indexBuffer = Gl.GenBuffer ()
                 Gl.BindBuffer (BufferTarget.ElementArrayBuffer, indexBuffer)
@@ -383,7 +395,7 @@ module PhysicallyBased =
                 Hl.Assert ()
 
                 // fin
-                ([||], indexData, vertexBuffer, modelBuffer, albedoBuffer, materialBuffer, indexBuffer, vao)
+                ([||], indexData, vertexBuffer, modelBuffer, albedoBuffer, materialBuffer, texCoordsOffsetBuffer, indexBuffer, vao)
 
             // fake buffers
             else
@@ -396,7 +408,7 @@ module PhysicallyBased =
                     vertices.[i] <- vertex
 
                 // fin
-                (vertices, indexData, 0u, 0u, 0u, 0u, 0u, 0u)
+                (vertices, indexData, 0u, 0u, 0u, 0u, 0u, 0u, 0u)
 
         // make physically-based geometry
         let geometry =
@@ -409,6 +421,7 @@ module PhysicallyBased =
               ModelBuffer = modelBuffer
               AlbedoBuffer = albedoBuffer
               MaterialBuffer = materialBuffer
+              TexCoordsOffsetBuffer = texCoordsOffsetBuffer
               IndexBuffer = indexBuffer
               PhysicallyBasedVao = vao }
 
@@ -695,6 +708,7 @@ module PhysicallyBased =
          modelsFields : single array,
          albedosFields : single array,
          materialsFields : single array,
+         texCoordsOffsetsFields : single array,
          view : single array,
          projection : single array,
          blending,
@@ -757,7 +771,7 @@ module PhysicallyBased =
         // update models buffer
         let modelsFieldsPtr = GCHandle.Alloc (modelsFields, GCHandleType.Pinned)
         try Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.ModelBuffer)
-            Gl.BufferData (BufferTarget.ArrayBuffer, uint (surfacesCount * 16 * sizeof<single>), modelsFieldsPtr.AddrOfPinnedObject (), BufferUsage.DynamicDraw)
+            Gl.BufferData (BufferTarget.ArrayBuffer, uint (surfacesCount * 16 * sizeof<single>), modelsFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
         finally modelsFieldsPtr.Free ()
         Gl.BindBuffer (BufferTarget.ArrayBuffer, 0u)
         Hl.Assert ()
@@ -765,7 +779,7 @@ module PhysicallyBased =
         // update colors buffer
         let colorsFieldsPtr = GCHandle.Alloc (albedosFields, GCHandleType.Pinned)
         try Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.AlbedoBuffer)
-            Gl.BufferData (BufferTarget.ArrayBuffer, uint (surfacesCount * 4 * sizeof<single>), colorsFieldsPtr.AddrOfPinnedObject (), BufferUsage.DynamicDraw)
+            Gl.BufferData (BufferTarget.ArrayBuffer, uint (surfacesCount * 4 * sizeof<single>), colorsFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
         finally colorsFieldsPtr.Free ()
         Gl.BindBuffer (BufferTarget.ArrayBuffer, 0u)
         Hl.Assert ()
@@ -773,8 +787,16 @@ module PhysicallyBased =
         // update materials buffer
         let materialsFieldsPtr = GCHandle.Alloc (materialsFields, GCHandleType.Pinned)
         try Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.MaterialBuffer)
-            Gl.BufferData (BufferTarget.ArrayBuffer, uint (surfacesCount * 3 * sizeof<single>), materialsFieldsPtr.AddrOfPinnedObject (), BufferUsage.DynamicDraw)
+            Gl.BufferData (BufferTarget.ArrayBuffer, uint (surfacesCount * 3 * sizeof<single>), materialsFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
         finally materialsFieldsPtr.Free ()
+        Gl.BindBuffer (BufferTarget.ArrayBuffer, 0u)
+        Hl.Assert ()
+
+        // update texCoordsOffsets buffer
+        let texCoordsOffsetsFieldsPtr = GCHandle.Alloc (texCoordsOffsetsFields, GCHandleType.Pinned)
+        try Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.TexCoordsOffsetBuffer)
+            Gl.BufferData (BufferTarget.ArrayBuffer, uint (surfacesCount * 2 * sizeof<single>), texCoordsOffsetsFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
+        finally texCoordsOffsetsFieldsPtr.Free ()
         Gl.BindBuffer (BufferTarget.ArrayBuffer, 0u)
         Hl.Assert ()
 
@@ -906,6 +928,7 @@ module PhysicallyBased =
         Gl.DeleteBuffers geometry.ModelBuffer
         Gl.DeleteBuffers geometry.AlbedoBuffer
         Gl.DeleteBuffers geometry.MaterialBuffer
+        Gl.DeleteBuffers geometry.TexCoordsOffsetBuffer
         Gl.DeleteBuffers geometry.IndexBuffer
         Gl.BindVertexArray 0u
         Gl.DeleteVertexArrays geometry.PhysicallyBasedVao
