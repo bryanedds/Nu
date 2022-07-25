@@ -80,7 +80,7 @@ module Symbolics =
 
     /// Unload a symbol package with the given name.
     let unloadSymbolPackage packageName symbolics =
-        symbolics.SymbolPackages.Remove packageName |> ignore
+        symbolics.SymbolPackages.Remove packageName |> ignore<bool>
 
     /// Try to find a symbol with the given asset tag.
     let tryFindSymbol assetTag metadata symbolics =

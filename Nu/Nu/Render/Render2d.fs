@@ -108,7 +108,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
         GlRenderer2d.invalidateCaches renderer
         match Path.GetExtension asset.FilePath with
         | ".bmp" | ".png" | ".tif" ->
-            match OpenGL.Texture.TryCreateTextureUnfiltered (None, asset.FilePath) with
+            match OpenGL.Texture.TryCreateTextureUnfiltered asset.FilePath with
             | Right (textureMetadata, texture) ->
                 Some (TextureAsset (asset.FilePath, textureMetadata, texture))
             | Left error ->
