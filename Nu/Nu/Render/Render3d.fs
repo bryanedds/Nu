@@ -368,13 +368,13 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
 
     static member private handleSetStaticModelMessage surfaceDescriptors bounds assetTag renderer =
 
-        // free any existing asset
+        // free any existing asset and ensure target package is loaded
         match renderer.RenderPackages.TryGetValue assetTag.PackageName with
         | (true, package) ->
             match package.Assets.TryGetValue assetTag.AssetName with
             | (true, asset) -> GlRenderer3d.freeRenderAsset package.PackageState asset renderer
             | (false, _) -> ()
-        | (false, _) -> ()
+        | (false, _) -> GlRenderer3d.tryLoadRenderPackage false assetTag.PackageName renderer
 
         // create surfaces
         let surfaces = List ()
