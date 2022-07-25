@@ -230,6 +230,7 @@ module Field =
             let traversableLayer = tileMap.Layers.["Traversable"] :?> TmxLayer
             let traversableHeightLayer = tileMap.Layers.["TraversableHeight"] :?> TmxLayer
             let (untraversableSurfaceDescriptor, _) = createFieldSurfaceDescriptorAndHeightMap tileMap.Width tileMap.Height tileSets untraversableLayer untraversableHeightLayer
+            let untraversableSurfaceDescriptor = { untraversableSurfaceDescriptor with Roughness = 0.0f }
             let (traversableSurfaceDescriptor, traversableHeightMap) = createFieldSurfaceDescriptorAndHeightMap tileMap.Width tileMap.Height tileSets traversableLayer traversableHeightLayer
             let surfaceDescriptors = [|untraversableSurfaceDescriptor; traversableSurfaceDescriptor|]
             let bounds = let bounds = untraversableSurfaceDescriptor.Bounds in bounds.Combine traversableSurfaceDescriptor.Bounds
@@ -321,12 +322,10 @@ type SceneryDispatcher () =
                      Entity.StaticModel <== field --|> fun field world -> fst (Field.getFieldStaticModelAndHeightMap field world)
                      Entity.RenderStyle == Forward -1.0f]]]]
 
-    // here we create the scenery in an imperative fashion
-    // NOTE: performance goal: 60fps, current: 57fps.
     override this.Register (game, world) =
         let world = base.Register (game, world)
 #if DEBUG
-        let population = 1
+        let population = 10
 #else
         let population = 45
 #endif
