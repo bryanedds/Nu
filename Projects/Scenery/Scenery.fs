@@ -202,7 +202,7 @@ module Field =
                   AlbedoImage = albedoTileSet.ImageAsset
                   Metalness = 0.0f
                   MetalnessImage = Assets.Default.MaterialMetalness
-                  Roughness = 1.225f
+                  Roughness = 1.2f
                   RoughnessImage = Assets.Default.MaterialRoughness
                   AmbientOcclusion = 1.0f
                   AmbientOcclusionImage = albedoTileSet.ImageAsset
@@ -231,9 +231,9 @@ module Field =
             let traversableHeightLayer = tileMap.Layers.["TraversableHeight"] :?> TmxLayer
             let (untraversableSurfaceDescriptor, _) = createFieldSurfaceDescriptorAndHeightMap tileMap.Width tileMap.Height tileSets untraversableLayer untraversableHeightLayer
             let (traversableSurfaceDescriptor, traversableHeightMap) = createFieldSurfaceDescriptorAndHeightMap tileMap.Width tileMap.Height tileSets traversableLayer traversableHeightLayer
-            let descriptors = [|untraversableSurfaceDescriptor; traversableSurfaceDescriptor|]
+            let surfaceDescriptors = [|untraversableSurfaceDescriptor; traversableSurfaceDescriptor|]
             let bounds = let bounds = untraversableSurfaceDescriptor.Bounds in bounds.Combine traversableSurfaceDescriptor.Bounds
-            World.enqueueRenderMessage3d (CreateStaticModelMessage (descriptors, bounds, fieldModelAssetTag)) world
+            World.enqueueRenderMessage3d (SetStaticModelMessage (surfaceDescriptors, bounds, fieldModelAssetTag)) world
             World.enqueueRenderMessage3d (SetImageMinFilter (OpenGL.TextureMinFilter.NearestMipmapNearest, traversableSurfaceDescriptor.AlbedoImage)) world
             World.enqueueRenderMessage3d (SetImageMagFilter (OpenGL.TextureMagFilter.Nearest, traversableSurfaceDescriptor.AlbedoImage)) world
             CachedDescriptors.Add (fieldModelAssetTag, traversableHeightMap)

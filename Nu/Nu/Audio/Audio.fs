@@ -94,12 +94,23 @@ type [<ReferenceEquality; NoComparison>] SdlAudioPlayer =
           mutable MasterSongVolume : single
           mutable CurrentSongOpt : (SongDescriptor * nativeint) option }
 
+    static member private freeAudioAsset (audioAsset : AudioAsset) (audioPlayer : SdlAudioPlayer) =
+        match audioAsset with
+        | WavAsset wav ->
+            match audioPlayer.CurrentSongOpt with
+            | Some (_, wavPlaying) -> if wav <> wavPlaying then SDL_mixer.Mix_FreeChunk wav
+            | None -> SDL_mixer.Mix_FreeChunk wav
+        | OggAsset ogg ->
+            match audioPlayer.CurrentSongOpt with
+            | Some (_, oggPlaying) -> if ogg <> oggPlaying then SDL_mixer.Mix_FreeMusic ogg
+            | None -> SDL_mixer.Mix_FreeMusic ogg
+
     static member private haltSound () =
         SDL_mixer.Mix_HaltMusic () |> ignore
         let (_, _, _, channelCount) =  SDL_mixer.Mix_QuerySpec ()
         for i in [0 .. channelCount - 1] do
             SDL_mixer.Mix_HaltChannel i |> ignore
-    
+
     static member private tryLoadAudioAsset (asset : obj Asset) =
         match Path.GetExtension asset.FilePath with
         | ".wav" ->
@@ -118,7 +129,7 @@ type [<ReferenceEquality; NoComparison>] SdlAudioPlayer =
                 None
         | _ -> None
 
-    static member private tryLoadAudioPackage packageName audioPlayer =
+    static member private tryLoadAudioPackage freeExistingAssets packageName audioPlayer =
         match AssetGraph.tryMakeFromFile Assets.Global.AssetGraphFilePath with
         | Right assetGraph ->
             match AssetGraph.tryCollectAssetsFromPackage (Some Constants.Associations.Audio) packageName assetGraph with
@@ -133,6 +144,10 @@ type [<ReferenceEquality; NoComparison>] SdlAudioPlayer =
                 let audioAssetOpts = List.map SdlAudioPlayer.tryLoadAudioAsset assets
                 let audioAssets = List.definitize audioAssetOpts
                 for (key, value) in audioAssets do
+                    if freeExistingAssets then
+                        match audioPackage.Assets.TryGetValue key with
+                        | (true, audioAsset) -> SdlAudioPlayer.freeAudioAsset audioAsset audioPlayer
+                        | (false, _) -> ()
                     audioPackage.Assets.Assign (key, value)
             | Left error ->
                 Log.info ("Audio package load failed due to unloadable assets '" + error + "' for package '" + packageName + "'.")
@@ -144,7 +159,7 @@ type [<ReferenceEquality; NoComparison>] SdlAudioPlayer =
         | Some package -> Dictionary.tryFind assetTag.AssetName package.Assets
         | None ->
             Log.info ("Loading Audio package '" + assetTag.PackageName + "' for asset '" + assetTag.AssetName + "' on the fly.")
-            SdlAudioPlayer.tryLoadAudioPackage assetTag.PackageName audioPlayer
+            SdlAudioPlayer.tryLoadAudioPackage false assetTag.PackageName audioPlayer
             match Dictionary.tryFind assetTag.PackageName audioPlayer.AudioPackages with
             | Some package -> Dictionary.tryFind assetTag.AssetName package.Assets
             | None -> None
@@ -175,7 +190,7 @@ type [<ReferenceEquality; NoComparison>] SdlAudioPlayer =
             Log.info ("PlaySongMessage failed due to unloadable assets for '" + scstring song + "'.")
     
     static member private handleHintAudioPackageUse hintPackageName audioPlayer =
-        SdlAudioPlayer.tryLoadAudioPackage hintPackageName audioPlayer
+        SdlAudioPlayer.tryLoadAudioPackage false hintPackageName audioPlayer
     
     static member private handleHintAudioPackageDisuse hintPackageName audioPlayer =
         match Dictionary.tryFind hintPackageName  audioPlayer.AudioPackages with
@@ -220,7 +235,7 @@ type [<ReferenceEquality; NoComparison>] SdlAudioPlayer =
     static member private handleReloadAudioAssets audioPlayer =
         let packageNames = audioPlayer.AudioPackages |> Seq.map (fun entry -> entry.Key) |> Array.ofSeq
         for packageName in packageNames do
-            SdlAudioPlayer.tryLoadAudioPackage packageName audioPlayer
+            SdlAudioPlayer.tryLoadAudioPackage true packageName audioPlayer
 
     static member private handleAudioMessage audioMessage audioPlayer =
         match audioMessage with
