@@ -12,6 +12,7 @@ open Nu
 module CubeMap =
 
     /// The key identifying a cube map.
+    /// TODO: 3D: consider keeping the original cube map face list file path in key so that its faces can be changed when recreated.
     type CubeMapMemoKey =
         string * string * string * string * string * string
 
@@ -94,7 +95,6 @@ module CubeMap =
         | (true, cubeMap) -> Right cubeMap
 
     /// Recreate the memoized cube maps.
-    /// TODO: 3D: keep the original cube map metadata file path in key so that its faces can be changed when recreated.
     let RecreateCubeMapsMemoized cubeMapMemo =
         for entry in cubeMapMemo.CubeMaps do
             let (f0, f1, f2, f3, f4, f5) = entry.Key
