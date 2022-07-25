@@ -209,10 +209,10 @@ type [<ReferenceEquality; NoComparison>] SdlAudioPlayer =
                 audioPlayer.CurrentSongOpt <- Some (playSongMessage, oggAsset)
         | None ->
             Log.info ("PlaySongMessage failed due to unloadable assets for '" + scstring song + "'.")
-    
+
     static member private handleHintAudioPackageUse hintPackageName audioPlayer =
         SdlAudioPlayer.tryLoadAudioPackage false hintPackageName audioPlayer
-    
+
     static member private handleHintAudioPackageDisuse hintPackageName audioPlayer =
         match Dictionary.tryFind hintPackageName  audioPlayer.AudioPackages with
         | Some package ->

@@ -311,12 +311,11 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                             | TextureAsset _ -> () // already reloaded via texture memo
                             | FontAsset _ -> () // not yet used in 3d renderer
                             | CubeMapAsset _ -> () // already reloaded via cube map memo
-                            | StaticModelAsset _ ->
+                            | StaticModelAsset staticModel ->
+                                OpenGL.PhysicallyBased.DestroyPhysicallyBasedStaticModel staticModel
+                                OpenGL.Hl.Assert ()
                                 match GlRenderer3d.tryLoadStaticModelAsset renderPackage.PackageState asset renderer with
-                                | Some staticModel ->
-                                    OpenGL.PhysicallyBased.DestroyPhysicallyBasedStaticModel staticModel
-                                    OpenGL.Hl.Assert ()
-                                    renderPackage.Assets.Assign (asset.AssetTag.AssetName, renderAsset)
+                                | Some staticModel -> renderPackage.Assets.Assign (asset.AssetTag.AssetName, StaticModelAsset staticModel)
                                 | None -> ()
                         | (false, _) -> ()
 
@@ -440,7 +439,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             renderer.RenderPackages.Assign (assetTag.PackageName, package)
 
     static member private handleHintRenderPackageUse hintPackageName renderer =
-        GlRenderer3d.tryLoadRenderPackage hintPackageName renderer
+        GlRenderer3d.tryLoadRenderPackage false hintPackageName renderer
 
     static member private handleHintRenderPackageDisuse hintPackageName renderer =
         GlRenderer3d.invalidateCaches renderer
@@ -842,7 +841,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                 | SetStaticModelMessage (surfaceDescriptors, bounds, assetTag) ->
                     GlRenderer3d.handleSetStaticModelMessage surfaceDescriptors bounds assetTag renderer
                 | HintRenderPackageUseMessage3d hintPackageUse ->
-                    GlRenderer3d.handleHintRenderPackageUse false hintPackageUse renderer
+                    GlRenderer3d.handleHintRenderPackageUse hintPackageUse renderer
                 | HintRenderPackageDisuseMessage3d hintPackageDisuse ->
                     GlRenderer3d.handleHintRenderPackageDisuse hintPackageDisuse renderer
                 | ReloadRenderAssetsMessage3d ->
