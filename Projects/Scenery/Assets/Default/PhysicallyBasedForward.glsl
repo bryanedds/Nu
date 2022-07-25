@@ -10,6 +10,7 @@ layout (location = 2) in vec3 normal;
 layout (location = 3) in mat4 model;
 layout (location = 7) in vec4 albedo;
 layout (location = 8) in vec3 material;
+layout (location = 9) in vec2 texCoordsOffset;
 
 out vec3 positionOut;
 out vec2 texCoordsOut;
@@ -20,7 +21,7 @@ out vec3 normalOut;
 void main()
 {
     positionOut = vec3(model * vec4(position, 1.0));
-    texCoordsOut = texCoords;
+    texCoordsOut = texCoords + texCoordsOffset;
     albedoOut = albedo;
     materialOut = material;
     normalOut = mat3(model) * normal;

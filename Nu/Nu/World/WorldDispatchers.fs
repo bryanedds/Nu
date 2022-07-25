@@ -1335,6 +1335,9 @@ module StaticModelFacetModule =
         member this.GetStaticModel world : StaticModel AssetTag = this.Get Property? StaticModel world
         member this.SetStaticModel (value : StaticModel AssetTag) world = this.Set Property? StaticModel value world
         member this.StaticModel = lens Property? StaticModel this.GetStaticModel this.SetStaticModel this
+        member this.GetTexCoordsOffset world : Vector2 = this.Get Property? TexCoordsOffset world
+        member this.SetTexCoordsOffset (value : Vector2) world = this.Set Property? TexCoordsOffset value world
+        member this.TexCoordsOffset = lens Property? TexCoordsOffset this.GetTexCoordsOffset this.SetTexCoordsOffset this
         member this.GetAlbedoOpt world : Color option = this.Get Property? AlbedoOpt world
         member this.SetAlbedoOpt (value : Color option) world = this.Set Property? AlbedoOpt value world
         member this.AlbedoOpt = lens Property? AlbedoOpt this.GetAlbedoOpt this.SetAlbedoOpt this
@@ -1356,6 +1359,7 @@ module StaticModelFacetModule =
 
         static member Properties =
             [define Entity.StaticModel Assets.Default.StaticModel
+             define Entity.TexCoordsOffset v2Zero
              define Entity.AlbedoOpt None
              define Entity.MetalnessOpt None
              define Entity.RoughnessOpt None
@@ -1368,6 +1372,7 @@ module StaticModelFacetModule =
                 let absolute = transform.Absolute
                 let affineMatrix = transform.AffineMatrix
                 let staticModel = entity.GetStaticModel world
+                let texCoordsOffset = entity.GetTexCoordsOffset world
                 let renderMaterial =
                     { AlbedoOpt = entity.GetAlbedoOpt world
                       MetalnessOpt = entity.GetMetalnessOpt world
@@ -1377,7 +1382,7 @@ module StaticModelFacetModule =
                     match entity.GetRenderStyle world with
                     | Deferred -> DeferredRenderType
                     | Forward subsort -> ForwardRenderType subsort
-                World.enqueueRenderMessage3d (RenderStaticModelMessage (absolute, affineMatrix, renderMaterial, renderType, staticModel)) world
+                World.enqueueRenderMessage3d (RenderStaticModelMessage (absolute, affineMatrix, texCoordsOffset, renderMaterial, renderType, staticModel)) world
             world
 
         override this.GetQuickSize (entity, world) =
@@ -1434,6 +1439,7 @@ module StaticModelSurfaceFacetModule =
         static member Properties =
             [define Entity.SurfaceIndex 0
              define Entity.StaticModel Assets.Default.StaticModel
+             define Entity.TexCoordsOffset v2Zero
              define Entity.AlbedoOpt None
              define Entity.MetalnessOpt None
              define Entity.RoughnessOpt None
@@ -1449,6 +1455,7 @@ module StaticModelSurfaceFacetModule =
                     let absolute = transform.Absolute
                     let affineMatrix = transform.AffineMatrix
                     let staticModel = entity.GetStaticModel world
+                    let texCoordsOffset = entity.GetTexCoordsOffset world
                     let renderMaterial =
                         { AlbedoOpt = entity.GetAlbedoOpt world
                           MetalnessOpt = entity.GetMetalnessOpt world
@@ -1458,7 +1465,7 @@ module StaticModelSurfaceFacetModule =
                         match entity.GetRenderStyle world with
                         | Deferred -> DeferredRenderType
                         | Forward subsort -> ForwardRenderType subsort
-                    World.enqueueRenderMessage3d (RenderStaticModelSurfaceMessage (absolute, affineMatrix, renderMaterial, renderType, staticModel, surfaceIndex)) world
+                    World.enqueueRenderMessage3d (RenderStaticModelSurfaceMessage (absolute, affineMatrix, texCoordsOffset, renderMaterial, renderType, staticModel, surfaceIndex)) world
             world
 
         override this.GetQuickSize (entity, world) =
