@@ -89,6 +89,13 @@ module CubeMap =
         // already exists
         | (true, cubeMap) -> Right cubeMap
 
+    /// Recreate the memoized cube maps.
+    let RecreateCubeMapsMemoized cubeMapMemo =
+        for entry in cubeMapMemo.CubeMaps do
+            let (f0, f1, f2, f3, f4, f5) = entry.Key
+            let cubeMap = entry.Value
+            TryCreateCubeMap (Some cubeMap, f0, f1, f2, f3, f4, f5) |> ignore
+
     /// Delete a memoized cube map.
     let DeleteCubeMapMemoized cubeMapKey (cubeMapMemo : CubeMapMemo) =
         match cubeMapMemo.CubeMaps.TryGetValue cubeMapKey with

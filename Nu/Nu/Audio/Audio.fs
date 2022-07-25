@@ -94,16 +94,26 @@ type [<ReferenceEquality; NoComparison>] SdlAudioPlayer =
           mutable MasterSongVolume : single
           mutable CurrentSongOpt : (SongDescriptor * nativeint) option }
 
-    static member private freeAudioAsset (audioAsset : AudioAsset) (audioPlayer : SdlAudioPlayer) =
+    static member private tryFreeAudioAsset (audioAsset : AudioAsset) (audioPlayer : SdlAudioPlayer) =
         match audioAsset with
         | WavAsset wav ->
             match audioPlayer.CurrentSongOpt with
-            | Some (_, wavPlaying) -> if wav <> wavPlaying then SDL_mixer.Mix_FreeChunk wav
-            | None -> SDL_mixer.Mix_FreeChunk wav
+            | Some (_, wavPlaying) ->
+                let freeing = wav <> wavPlaying
+                if freeing then SDL_mixer.Mix_FreeChunk wav
+                freeing
+            | None ->
+                SDL_mixer.Mix_FreeChunk wav
+                true
         | OggAsset ogg ->
             match audioPlayer.CurrentSongOpt with
-            | Some (_, oggPlaying) -> if ogg <> oggPlaying then SDL_mixer.Mix_FreeMusic ogg
-            | None -> SDL_mixer.Mix_FreeMusic ogg
+            | Some (_, oggPlaying) ->
+                let freeing = ogg <> oggPlaying
+                if freeing then SDL_mixer.Mix_FreeMusic ogg
+                freeing
+            | None ->
+                SDL_mixer.Mix_FreeMusic ogg
+                true
 
     static member private haltSound () =
         SDL_mixer.Mix_HaltMusic () |> ignore
@@ -115,25 +125,28 @@ type [<ReferenceEquality; NoComparison>] SdlAudioPlayer =
         match Path.GetExtension asset.FilePath with
         | ".wav" ->
             let wavOpt = SDL_mixer.Mix_LoadWAV asset.FilePath
-            if wavOpt <> IntPtr.Zero then Some (asset.AssetTag.AssetName, WavAsset wavOpt)
+            if wavOpt <> IntPtr.Zero then Some (WavAsset wavOpt)
             else
                 let errorMsg = SDL.SDL_GetError ()
                 Log.debug ("Could not load wav '" + asset.FilePath + "' due to '" + errorMsg + "'.")
                 None
         | ".ogg" ->
             let oggOpt = SDL_mixer.Mix_LoadMUS asset.FilePath
-            if oggOpt <> IntPtr.Zero then Some (asset.AssetTag.AssetName, OggAsset oggOpt)
+            if oggOpt <> IntPtr.Zero then Some (OggAsset oggOpt)
             else
                 let errorMsg = SDL.SDL_GetError ()
                 Log.debug ("Could not load ogg '" + asset.FilePath + "' due to '" + errorMsg + "'.")
                 None
         | _ -> None
 
+    // TODO: 3D: split this into two functions instead of passing reloading boolean.
     static member private tryLoadAudioPackage reloading packageName audioPlayer =
         match AssetGraph.tryMakeFromFile Assets.Global.AssetGraphFilePath with
         | Right assetGraph ->
             match AssetGraph.tryCollectAssetsFromPackage (Some Constants.Associations.Audio) packageName assetGraph with
             | Right assets ->
+
+                // find or create audio package
                 let audioPackage =
                     match Dictionary.tryFind packageName audioPlayer.AudioPackages with
                     | Some audioPackage -> audioPackage
@@ -141,11 +154,22 @@ type [<ReferenceEquality; NoComparison>] SdlAudioPlayer =
                         let audioPackage = { Assets = dictPlus StringComparer.Ordinal []; PackageState = () }
                         audioPlayer.AudioPackages.Assign (packageName, audioPackage)
                         audioPackage
-                let audioAssetOpts = List.map SdlAudioPlayer.tryLoadAudioAsset assets
-                let audioAssets = List.definitize audioAssetOpts
-                for (key, value) in audioAssets do
-                    if reloading then SdlAudioPlayer.freeAudioAsset audioPackage.Assets.[key] audioPlayer
-                    audioPackage.Assets.Assign (key, value)
+
+                // reload assets if specified
+                if reloading then
+                    for asset in assets do
+                        if SdlAudioPlayer.tryFreeAudioAsset audioPackage.Assets.[asset.AssetTag.AssetName] audioPlayer then
+                            match SdlAudioPlayer.tryLoadAudioAsset asset with
+                            | Some audioAsset -> audioPackage.Assets.Assign (asset.AssetTag.AssetName, audioAsset)
+                            | None -> ()
+
+                // otherwise create assets
+                else
+                    for asset in assets do
+                        match SdlAudioPlayer.tryLoadAudioAsset asset with
+                        | Some audioAsset -> audioPackage.Assets.Assign (asset.AssetTag.AssetName, audioAsset)
+                        | None -> ()
+
             | Left error ->
                 Log.info ("Audio package load failed due to unloadable assets '" + error + "' for package '" + packageName + "'.")
         | Left error ->

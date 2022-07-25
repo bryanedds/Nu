@@ -110,7 +110,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
         | ".bmp" | ".png" | ".tif" ->
             match OpenGL.Texture.TryCreateTextureUnfiltered (None, asset.FilePath) with
             | Right (textureMetadata, texture) ->
-                Some (asset.AssetTag.AssetName, TextureAsset (asset.FilePath, textureMetadata, texture))
+                Some (TextureAsset (asset.FilePath, textureMetadata, texture))
             | Left error ->
                 Log.debug ("Could not load texture '" + asset.FilePath + "' due to '" + error + "'.")
                 None
@@ -122,17 +122,20 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
                 match Int32.TryParse fontSizeText with
                 | (true, fontSize) ->
                     let fontOpt = SDL_ttf.TTF_OpenFont (asset.FilePath, fontSize)
-                    if fontOpt <> IntPtr.Zero then Some (asset.AssetTag.AssetName, FontAsset (asset.FilePath, fontSize, fontOpt))
+                    if fontOpt <> IntPtr.Zero then Some (FontAsset (asset.FilePath, fontSize, fontOpt))
                     else Log.debug ("Could not load font due to unparsable font size in file name '" + asset.FilePath + "'."); None
                 | (false, _) -> Log.debug ("Could not load font due to file name being too short: '" + asset.FilePath + "'."); None
             else Log.debug ("Could not load font '" + asset.FilePath + "'."); None
         | _ -> None
 
+    // TODO: 3D: split this into two functions instead of passing reloading boolean.
     static member private tryLoadRenderPackage reloading packageName renderer =
         match AssetGraph.tryMakeFromFile Assets.Global.AssetGraphFilePath with
         | Right assetGraph ->
             match AssetGraph.tryCollectAssetsFromPackage (Some Constants.Associations.Render2d) packageName assetGraph with
             | Right assets ->
+
+                // find or create render package
                 let renderPackage =
                     match Dictionary.tryFind packageName renderer.RenderPackages with
                     | Some renderPackage -> renderPackage
@@ -140,11 +143,22 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
                         let renderPackage = { Assets = dictPlus StringComparer.Ordinal []; PackageState = () }
                         renderer.RenderPackages.Assign (packageName, renderPackage)
                         renderPackage
-                let renderAssetOpts = List.map (fun asset -> GlRenderer2d.tryLoadRenderAsset asset renderer) assets
-                let renderAssets = List.definitize renderAssetOpts
-                for (key, value) in renderAssets do
-                    if reloading then GlRenderer2d.freeRenderAsset renderPackage.Assets.[key] renderer
-                    renderPackage.Assets.Assign (key, value)
+
+                // reload assets if specified
+                if reloading then
+                    for asset in assets do
+                        GlRenderer2d.freeRenderAsset renderPackage.Assets.[asset.AssetTag.AssetName] renderer
+                        match GlRenderer2d.tryLoadRenderAsset asset renderer with
+                        | Some renderAsset -> renderPackage.Assets.Assign (asset.AssetTag.AssetName, renderAsset)
+                        | None -> ()
+
+                // otherwise create assets
+                else
+                    for asset in assets do
+                        match GlRenderer2d.tryLoadRenderAsset asset renderer with
+                        | Some renderAsset -> renderPackage.Assets.Assign (asset.AssetTag.AssetName, renderAsset)
+                        | None -> ()
+
             | Left failedAssetNames ->
                 Log.info ("Render package load failed due to unloadable assets '" + failedAssetNames + "' for package '" + packageName + "'.")
         | Left error ->
