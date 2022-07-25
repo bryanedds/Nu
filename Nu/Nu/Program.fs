@@ -30,7 +30,7 @@ module Program =
     particles       | F#                        | Visual Studio
     subsystems      | F#                        | Visual Studio
     ECS             | F#                        | Visual Studio
-    OO components   | F# (facets / dispatchers) | Visual Studio
+    EC components   | F# (facets / dispatchers) | Visual Studio
     elmish / MVU    | F# (facets / dispatchers) | Visual Studio
     interactions    | F# (chains)               | Visual Studio (deprecated, but still usable)
 

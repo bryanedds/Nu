@@ -25,7 +25,7 @@ module CubeMap =
             { CubeMaps = Dictionary HashIdentity.Structural }
 
     /// Attempt to create a cube map from 6 files.
-    let TryCreateCubeMap (cubeMapOpt, faceRightFilePath, faceLeftFilePath, faceTopFilePath, faceBottomFilePath, faceBackFilePath, faceFrontFilePath) =
+    let private TryCreateCubeMapInternal (cubeMapOpt, faceRightFilePath, faceLeftFilePath, faceTopFilePath, faceBottomFilePath, faceBackFilePath, faceFrontFilePath) =
 
         // bind new cube map
         let cubeMap = match cubeMapOpt with Some cubeMap -> cubeMap | None -> Gl.GenTexture ()
@@ -58,12 +58,16 @@ module CubeMap =
             Texture.DeleteTexture cubeMap
             Left error
 
+    /// Attempt to create a cube map from 6 files.
+    let TryCreateCubeMap (faceRightFilePath, faceLeftFilePath, faceTopFilePath, faceBottomFilePath, faceBackFilePath, faceFrontFilePath) =
+        TryCreateCubeMapInternal (None, faceRightFilePath, faceLeftFilePath, faceTopFilePath, faceBottomFilePath, faceBackFilePath, faceFrontFilePath)
+
     /// Delete a cube map.
     let DeleteCubeMap (cubeMap : uint) =
         Gl.DeleteTextures cubeMap
 
     /// Attempt to create a cube map from 6 files.
-    let TryCreateCubeMapMemoized (cubeMapOpt, cubeMapMemoKey, cubeMapMemo) =
+    let TryCreateCubeMapMemoized (cubeMapMemoKey, cubeMapMemo) =
 
         // deconstruct key
         let (faceRightFilePath, faceLeftFilePath, faceTopFilePath, faceBottomFilePath, faceBackFilePath, faceFrontFilePath) = cubeMapMemoKey
@@ -80,7 +84,7 @@ module CubeMap =
         | (false, _) ->
 
             // attempt to create cube map
-            match TryCreateCubeMap (cubeMapOpt, faceRightFilePath, faceLeftFilePath, faceTopFilePath, faceBottomFilePath, faceBackFilePath, faceFrontFilePath) with
+            match TryCreateCubeMap (faceRightFilePath, faceLeftFilePath, faceTopFilePath, faceBottomFilePath, faceBackFilePath, faceFrontFilePath) with
             | Right cubeMap ->
                 cubeMapMemo.CubeMaps.Add (cubeMapKey, cubeMap)
                 Right cubeMap
@@ -94,7 +98,7 @@ module CubeMap =
         for entry in cubeMapMemo.CubeMaps do
             let (f0, f1, f2, f3, f4, f5) = entry.Key
             let cubeMap = entry.Value
-            TryCreateCubeMap (Some cubeMap, f0, f1, f2, f3, f4, f5) |> ignore
+            TryCreateCubeMapInternal (Some cubeMap, f0, f1, f2, f3, f4, f5) |> ignore
 
     /// Delete a memoized cube map.
     let DeleteCubeMapMemoized cubeMapKey (cubeMapMemo : CubeMapMemo) =

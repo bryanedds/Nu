@@ -447,7 +447,7 @@ module PhysicallyBased =
         let (_, albedoTexture) = material.GetMaterialTexture (Assimp.TextureType.Diffuse, 0)
         let albedoTexture =
             if renderable && not (String.IsNullOrEmpty albedoTexture.FilePath) then
-                match Texture.TryCreateTextureMemoizedFiltered (None, dirPath + "/" + albedoTexture.FilePath, textureMemo) with
+                match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + albedoTexture.FilePath, textureMemo) with
                 | Right (_, texture) -> texture
                 | Left _ -> defaultMaterial.AlbedoTexture
             else defaultMaterial.AlbedoTexture
@@ -458,7 +458,7 @@ module PhysicallyBased =
         let (_, metalnessTexture) = material.GetMaterialTexture (Assimp.TextureType.Specular, 0)
         let metalnessTexture =
             if renderable && not (String.IsNullOrEmpty metalnessTexture.FilePath) then
-                match Texture.TryCreateTextureMemoizedFiltered (None, dirPath + "/" + metalnessTexture.FilePath, textureMemo) with
+                match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + metalnessTexture.FilePath, textureMemo) with
                 | Right (_, texture) -> texture
                 | Left _ -> defaultMaterial.MetalnessTexture
             else defaultMaterial.MetalnessTexture
@@ -469,7 +469,7 @@ module PhysicallyBased =
         let (_, roughnessTexture) = material.GetMaterialTexture (Assimp.TextureType.Height, 0)
         let roughnessTexture =
             if renderable && not (String.IsNullOrEmpty roughnessTexture.FilePath) then
-                match Texture.TryCreateTextureMemoizedFiltered (None, dirPath + "/" + roughnessTexture.FilePath, textureMemo) with
+                match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + roughnessTexture.FilePath, textureMemo) with
                 | Right (_, texture) -> texture
                 | Left _ -> defaultMaterial.RoughnessTexture
             else defaultMaterial.RoughnessTexture
@@ -480,14 +480,14 @@ module PhysicallyBased =
         let (_, ambientOcclusionTexture) = material.GetMaterialTexture (Assimp.TextureType.Ambient, 0)
         let ambientOcclusionTexture =
             if renderable && not (String.IsNullOrEmpty ambientOcclusionTexture.FilePath) then
-                match Texture.TryCreateTextureMemoizedFiltered (None, dirPath + "/" + ambientOcclusionTexture.FilePath, textureMemo) with
+                match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + ambientOcclusionTexture.FilePath, textureMemo) with
                 | Right (_, texture) -> texture
                 | Left _ -> defaultMaterial.AmbientOcclusionTexture
             else defaultMaterial.AmbientOcclusionTexture
         let (_, normal) = material.GetMaterialTexture (Assimp.TextureType.Normals, 0)
         let normalTexture =
             if renderable && not (String.IsNullOrEmpty normal.FilePath) then
-                match Texture.TryCreateTextureMemoizedFiltered (None, dirPath + "/" + normal.FilePath, textureMemo) with
+                match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + normal.FilePath, textureMemo) with
                 | Right (_, texture) -> texture
                 | Left _ -> defaultMaterial.NormalTexture
             else defaultMaterial.NormalTexture

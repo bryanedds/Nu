@@ -224,16 +224,16 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             OpenGL.PhysicallyBased.DestroyPhysicallyBasedStaticModel staticModel
             OpenGL.Hl.Assert ()
 
-    static member private tryLoadTextureAsset textureOpt packageState (asset : obj Asset) renderer =
+    static member private tryLoadTextureAsset packageState (asset : obj Asset) renderer =
         GlRenderer3d.invalidateCaches renderer
-        match OpenGL.Texture.TryCreateTextureMemoizedFiltered (textureOpt, asset.FilePath, packageState.TextureMemo) with
+        match OpenGL.Texture.TryCreateTextureMemoizedFiltered (asset.FilePath, packageState.TextureMemo) with
         | Right (textureMetadata, texture) ->
             Some (asset.FilePath, textureMetadata, texture)
         | Left error ->
             Log.debug ("Could not load texture '" + asset.FilePath + "' due to '" + error + "'.")
             None
 
-    static member private tryLoadCubeMapAsset cubeMapOpt packageState (asset : obj Asset) renderer =
+    static member private tryLoadCubeMapAsset packageState (asset : obj Asset) renderer =
         GlRenderer3d.invalidateCaches renderer
         match File.ReadAllLines asset.FilePath |> Array.filter (String.IsNullOrWhiteSpace >> not) with
         | [|faceRightFilePath; faceLeftFilePath; faceTopFilePath; faceBottomFilePath; faceBackFilePath; faceFrontFilePath|] ->
@@ -245,7 +245,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             let faceBackFilePath = dirPath + "/" + faceBackFilePath |> fun str -> str.Trim ()
             let faceFrontFilePath = dirPath + "/" + faceFrontFilePath |> fun str -> str.Trim ()
             let cubeMapMemoKey = (faceRightFilePath, faceLeftFilePath, faceTopFilePath, faceBottomFilePath, faceBackFilePath, faceFrontFilePath)
-            match OpenGL.CubeMap.TryCreateCubeMapMemoized (cubeMapOpt, cubeMapMemoKey, packageState.CubeMapMemo) with
+            match OpenGL.CubeMap.TryCreateCubeMapMemoized (cubeMapMemoKey, packageState.CubeMapMemo) with
             | Right cubeMap -> Some (cubeMapMemoKey, cubeMap, ref None)
             | Left error -> Log.debug ("Could not load cube map '" + asset.FilePath + "' due to: " + error); None
         | _ -> Log.debug ("Could not load cube map '" + asset.FilePath + "' due to requiring exactly 6 file paths with each file path on its own line."); None
@@ -268,11 +268,11 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
         GlRenderer3d.invalidateCaches renderer
         match Path.GetExtension asset.FilePath with
         | ".bmp" | ".png" | ".tif" ->
-            match GlRenderer3d.tryLoadTextureAsset None packageState asset renderer with
+            match GlRenderer3d.tryLoadTextureAsset packageState asset renderer with
             | Some (filePath, metadata, texture) -> Some (TextureAsset (filePath, metadata, texture))
             | None -> None
         | ".cbm" ->
-            match GlRenderer3d.tryLoadCubeMapAsset None packageState asset renderer with
+            match GlRenderer3d.tryLoadCubeMapAsset packageState asset renderer with
             | Some (cubeMapMemoKey, cubeMap, opt) -> Some (CubeMapAsset (cubeMapMemoKey, cubeMap, opt))
             | None -> None
         | ".fbx" | ".obj" ->
@@ -688,8 +688,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
         let skyBoxMap =
             match 
                 OpenGL.CubeMap.TryCreateCubeMap
-                    (None,
-                     "Assets/Default/Image9.bmp",
+                    ("Assets/Default/Image9.bmp",
                      "Assets/Default/Image9.bmp",
                      "Assets/Default/Image9.bmp",
                      "Assets/Default/Image9.bmp",
@@ -721,21 +720,21 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
 
         // create brdf texture
         let brdfTexture =
-            match OpenGL.Texture.TryCreateTextureUnfiltered (None, Constants.Paths.BrdfTextureFilePath) with
+            match OpenGL.Texture.TryCreateTextureUnfiltered (Constants.Paths.BrdfTextureFilePath) with
             | Right (_, texture) -> texture
             | Left error -> failwith ("Could not load BRDF texture due to: " + error)
 
         // create default physically-based material
         let physicallyBasedMaterial : OpenGL.PhysicallyBased.PhysicallyBasedMaterial =
             { Albedo = Color.White
-              AlbedoTexture = OpenGL.Texture.TryCreateTextureFiltered (None, "Assets/Default/MaterialAlbedo.png") |> Either.getRight |> snd
+              AlbedoTexture = OpenGL.Texture.TryCreateTextureFiltered ("Assets/Default/MaterialAlbedo.png") |> Either.getRight |> snd
               Metalness = 1.0f
-              MetalnessTexture = OpenGL.Texture.TryCreateTextureFiltered (None, "Assets/Default/MaterialMetalness.png") |> Either.getRight |> snd
+              MetalnessTexture = OpenGL.Texture.TryCreateTextureFiltered ("Assets/Default/MaterialMetalness.png") |> Either.getRight |> snd
               Roughness = 1.0f
-              RoughnessTexture = OpenGL.Texture.TryCreateTextureFiltered (None, "Assets/Default/MaterialRoughness.png") |> Either.getRight |> snd
+              RoughnessTexture = OpenGL.Texture.TryCreateTextureFiltered ("Assets/Default/MaterialRoughness.png") |> Either.getRight |> snd
               AmbientOcclusion = 1.0f
-              AmbientOcclusionTexture = OpenGL.Texture.TryCreateTextureFiltered (None, "Assets/Default/MaterialAmbientOcclusion.png") |> Either.getRight |> snd
-              NormalTexture = OpenGL.Texture.TryCreateTextureFiltered (None, "Assets/Default/MaterialNormal.png") |> Either.getRight |> snd
+              AmbientOcclusionTexture = OpenGL.Texture.TryCreateTextureFiltered ("Assets/Default/MaterialAmbientOcclusion.png") |> Either.getRight |> snd
+              NormalTexture = OpenGL.Texture.TryCreateTextureFiltered ("Assets/Default/MaterialNormal.png") |> Either.getRight |> snd
               TwoSided = false }
 
         // create render tasks
