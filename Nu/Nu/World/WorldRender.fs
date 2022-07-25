@@ -66,3 +66,10 @@ module WorldRender =
         static member enqueueRenderMessages3d (messages : RenderMessage3d seq) world =
             let rendererProcess = World.getRendererProcess world
             for message in messages do rendererProcess.EnqueueMessage3d message
+
+        /// Send a message to the renderer to reload its rendering assets.
+        [<FunctionBinding>]
+        static member reloadRenderAssets3d world =
+            let reloadRenderAssetsMessage = ReloadRenderAssetsMessage3d
+            World.enqueueRenderMessage3d reloadRenderAssetsMessage world
+            world

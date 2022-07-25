@@ -102,7 +102,7 @@ and [<NoEquality; NoComparison>] RenderMessage3d =
     | RenderPostPassMessage3d of RenderPassMessage3d
     | SetImageMinFilter of OpenGL.TextureMinFilter * Image AssetTag
     | SetImageMagFilter of OpenGL.TextureMagFilter * Image AssetTag
-    | CreateStaticModelMessage of StaticModelSurfaceDescriptor array * Box3 * StaticModel AssetTag
+    | SetStaticModelMessage of StaticModelSurfaceDescriptor array * Box3 * StaticModel AssetTag
     | HintRenderPackageUseMessage3d of string
     | HintRenderPackageDisuseMessage3d of string
     | ReloadRenderAssetsMessage3d
@@ -209,6 +209,18 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
         renderer.RenderPackageCachedOpt <- Unchecked.defaultof<_>
         renderer.RenderAssetCachedOpt <- Unchecked.defaultof<_>
 
+    static member private freeRenderAsset renderAsset renderer =
+        GlRenderer3d.invalidateCaches renderer
+        match renderAsset with
+        | TextureAsset (_, texture) -> OpenGL.Texture.DeleteTexture texture
+        | FontAsset (_, font) -> SDL_ttf.TTF_CloseFont font
+        | CubeMapAsset  (cubeMap, _) ->
+            OpenGL.CubeMap.DeleteCubeMap cubeMap
+            OpenGL.Hl.Assert ()
+        | StaticModelAsset staticModel ->
+            OpenGL.PhysicallyBased.DestroyPhysicallyBasedStaticModel staticModel
+            OpenGL.Hl.Assert ()
+
     static member private tryLoadRenderAsset packageState (asset : obj Asset) renderer =
         GlRenderer3d.invalidateCaches renderer
         match Path.GetExtension asset.FilePath with
@@ -245,7 +257,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             | Left error -> Log.debug ("Could not load static model '" + asset.FilePath + "' due to: " + error); None
         | _ -> None
 
-    static member private tryLoadRenderPackage packageName renderer =
+    static member private tryLoadRenderPackage freeExistingAssets packageName renderer =
         match AssetGraph.tryMakeFromFile Assets.Global.AssetGraphFilePath with
         | Right assetGraph ->
             match AssetGraph.tryCollectAssetsFromPackage (Some Constants.Associations.Render3d) packageName assetGraph with
@@ -261,6 +273,10 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                 let renderAssetOpts = List.map (fun asset -> GlRenderer3d.tryLoadRenderAsset renderPackage.PackageState asset renderer) assets
                 let renderAssets = List.definitize renderAssetOpts
                 for (key, value) in renderAssets do
+                    if freeExistingAssets then
+                        match renderPackage.Assets.TryGetValue key with
+                        | (true, renderAsset) -> GlRenderer3d.freeRenderAsset renderAsset renderer
+                        | (false, _) -> ()
                     renderPackage.Assets.Assign (key, value)
             | Left failedAssetNames ->
                 Log.info ("Render package load failed due to unloadable assets '" + failedAssetNames + "' for package '" + packageName + "'.")
@@ -291,7 +307,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                 | (false, _) -> ValueNone
             | None ->
                 Log.info ("Loading Render3d package '" + assetTag.PackageName + "' for asset '" + assetTag.AssetName + "' on the fly.")
-                GlRenderer3d.tryLoadRenderPackage assetTag.PackageName renderer
+                GlRenderer3d.tryLoadRenderPackage false assetTag.PackageName renderer
                 match renderer.RenderPackages.TryGetValue assetTag.PackageName with
                 | (true, package) ->
                     renderer.RenderPackageCachedOpt <- (assetTag.PackageName, package.Assets)
@@ -302,7 +318,15 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                     | (false, _) -> ValueNone
                 | (false, _) -> ValueNone
 
-    static member private handleCreateStaticModelMessage surfaceDescriptors bounds assetTag renderer =
+    static member private handleSetStaticModelMessage surfaceDescriptors bounds assetTag renderer =
+
+        // free any existing asset
+        match renderer.RenderPackages.TryGetValue assetTag.PackageName with
+        | (true, package) ->
+            match package.Assets.TryGetValue assetTag.AssetName with
+            | (true, asset) -> GlRenderer3d.freeRenderAsset asset renderer
+            | (false, _) -> ()
+        | (false, _) -> ()
 
         // create surfaces
         let surfaces = List ()
@@ -357,19 +381,20 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
               Surfaces = surfaces
               PhysicallyBasedStaticHierarchy = hierarchy }
 
-        // add static model to appropriate render package
+        // assign static model as appropriate render package asset
         match renderer.RenderPackages.TryGetValue assetTag.PackageName with
         | (true, package) ->
-            package.Assets.Add (assetTag.AssetName, StaticModelAsset staticModel)
+            package.Assets.Assign (assetTag.AssetName, StaticModelAsset staticModel)
         | (false, _) ->
             let packageState = { TextureMemo = OpenGL.Texture.TextureMemo.make (); CubeMapMemo = OpenGL.CubeMap.CubeMapMemo.make () }
             let package = { Assets = Dictionary.singleton StringComparer.Ordinal assetTag.AssetName (StaticModelAsset staticModel); PackageState = packageState }
-            renderer.RenderPackages.Add (assetTag.PackageName, package)
+            renderer.RenderPackages.Assign (assetTag.PackageName, package)
 
-    static member private handleHintRenderPackage3dUse hintPackageName renderer =
+    static member private handleHintRenderPackageUse hintPackageName renderer =
         GlRenderer3d.tryLoadRenderPackage hintPackageName renderer
 
-    static member private handleHintRenderPackage3dDisuse hintPackageName renderer =
+    static member private handleHintRenderPackageDisuse hintPackageName renderer =
+        GlRenderer3d.invalidateCaches renderer
         match Dictionary.tryFind hintPackageName renderer.RenderPackages with
         | Some package ->
             OpenGL.Texture.DeleteTexturesMemoized package.PackageState.TextureMemo
@@ -377,11 +402,11 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             renderer.RenderPackages.Remove hintPackageName |> ignore
         | None -> ()
 
-    static member private handleReloadRender3dAssets renderer =
+    static member private handleReloadRenderAssets renderer =
+        GlRenderer3d.invalidateCaches renderer
         let packageNames = renderer.RenderPackages |> Seq.map (fun entry -> entry.Key) |> Array.ofSeq
-        renderer.RenderPackages.Clear ()
         for packageName in packageNames do
-            GlRenderer3d.tryLoadRenderPackage packageName renderer
+            GlRenderer3d.tryLoadRenderPackage true packageName renderer
 
     static member inline private categorizeStaticModelSurface
         (modelAbsolute,
@@ -765,14 +790,14 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                         OpenGL.Texture.SetMagFilter (magFilter, texture)
                         OpenGL.Hl.Assert ()
                     | _ -> Log.debug ("Could not set mag filter for non-texture or missing asset '" + scstring image + "'")
-                | CreateStaticModelMessage (surfaceDescriptors, bounds, assetTag) ->
-                    GlRenderer3d.handleCreateStaticModelMessage surfaceDescriptors bounds assetTag renderer
+                | SetStaticModelMessage (surfaceDescriptors, bounds, assetTag) ->
+                    GlRenderer3d.handleSetStaticModelMessage surfaceDescriptors bounds assetTag renderer
                 | HintRenderPackageUseMessage3d hintPackageUse ->
-                    GlRenderer3d.handleHintRenderPackage3dUse hintPackageUse renderer
+                    GlRenderer3d.handleHintRenderPackageUse false hintPackageUse renderer
                 | HintRenderPackageDisuseMessage3d hintPackageDisuse ->
-                    GlRenderer3d.handleHintRenderPackage3dDisuse hintPackageDisuse renderer
+                    GlRenderer3d.handleHintRenderPackageDisuse hintPackageDisuse renderer
                 | ReloadRenderAssetsMessage3d ->
-                    () // TODO: 3D: implement asset reloading.
+                    GlRenderer3d.handleReloadRenderAssets renderer
 
             // sort absolute forward surfaces
             let forwardSurfacesSorted = GlRenderer3d.sortSurfaces eyePosition renderer.RenderTasks.RenderSurfacesForwardAbsolute
@@ -801,7 +826,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                     match GlRenderer3d.tryFindRenderAsset (AssetTag.generalize cubeMap) renderer with
                     | ValueSome asset ->
                         match asset with
-                        | CubeMapAsset (cubeMap, cubeMapIrradianceOptRef) -> Some (cubeMap, cubeMapIrradianceOptRef)
+                        | CubeMapAsset (cubeMap, cubeMapIrradianceAndEnvironmentMapOptRef) -> Some (cubeMap, cubeMapIrradianceAndEnvironmentMapOptRef)
                         | _ -> Log.debug "Could not utilize sky box due to mismatched cube map asset."; None
                     | ValueNone -> Log.debug "Could not utilize sky box due to non-existent cube map asset."; None
                 | None -> None

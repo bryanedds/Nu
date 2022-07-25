@@ -475,7 +475,7 @@ module WorldModule2 =
         [<FunctionBinding>]
         static member reloadExistingAssets world =
             let world = World.reloadRenderAssets2d world
-            // TODO: 3D: let world = World.reloadRenderAssets3d world
+            let world = World.reloadRenderAssets3d world
             let world = World.reloadAudioAssets world
             let world = World.reloadSymbols world
             let world = World.regenerateMetadata world

@@ -898,3 +898,19 @@ module PhysicallyBased =
         Gl.ActiveTexture TextureUnit.Texture6
         Gl.BindTexture (TextureTarget.Texture2d, 0u)
         Gl.UseProgram 0u
+
+    /// Destroy physically-based geometry resources.
+    let DestroyPhysicallyBasedGeometry geometry =
+        Gl.BindVertexArray geometry.PhysicallyBasedVao
+        Gl.DeleteBuffers geometry.VertexBuffer
+        Gl.DeleteBuffers geometry.ModelBuffer
+        Gl.DeleteBuffers geometry.AlbedoBuffer
+        Gl.DeleteBuffers geometry.MaterialBuffer
+        Gl.DeleteBuffers geometry.IndexBuffer
+        Gl.BindVertexArray 0u
+        Gl.DeleteVertexArrays geometry.PhysicallyBasedVao
+
+    /// Destroy physically-based static model resources.
+    let DestroyPhysicallyBasedStaticModel staticModel =
+        for surface in staticModel.Surfaces do
+            DestroyPhysicallyBasedGeometry surface.PhysicallyBasedGeometry
