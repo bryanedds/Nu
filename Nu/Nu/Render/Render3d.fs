@@ -224,44 +224,64 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             OpenGL.PhysicallyBased.DestroyPhysicallyBasedStaticModel staticModel
             OpenGL.Hl.Assert ()
 
+    static member private tryLoadTextureAsset textureOpt packageState (asset : obj Asset) renderer =
+        GlRenderer3d.invalidateCaches renderer
+        match OpenGL.Texture.TryCreateTextureMemoizedFiltered (textureOpt, asset.FilePath, packageState.TextureMemo) with
+        | Right (textureMetadata, texture) ->
+            Some (asset.FilePath, textureMetadata, texture)
+        | Left error ->
+            Log.debug ("Could not load texture '" + asset.FilePath + "' due to '" + error + "'.")
+            None
+
+    static member private tryLoadCubeMapAsset cubeMapOpt packageState (asset : obj Asset) renderer =
+        GlRenderer3d.invalidateCaches renderer
+        match File.ReadAllLines asset.FilePath |> Array.filter (String.IsNullOrWhiteSpace >> not) with
+        | [|faceRightFilePath; faceLeftFilePath; faceTopFilePath; faceBottomFilePath; faceBackFilePath; faceFrontFilePath|] ->
+            let dirPath = Path.GetDirectoryName asset.FilePath
+            let faceRightFilePath = dirPath + "/" + faceRightFilePath |> fun str -> str.Trim ()
+            let faceLeftFilePath = dirPath + "/" + faceLeftFilePath |> fun str -> str.Trim ()
+            let faceTopFilePath = dirPath + "/" + faceTopFilePath |> fun str -> str.Trim ()
+            let faceBottomFilePath = dirPath + "/" + faceBottomFilePath |> fun str -> str.Trim ()
+            let faceBackFilePath = dirPath + "/" + faceBackFilePath |> fun str -> str.Trim ()
+            let faceFrontFilePath = dirPath + "/" + faceFrontFilePath |> fun str -> str.Trim ()
+            let cubeMapMemoKey = (faceRightFilePath, faceLeftFilePath, faceTopFilePath, faceBottomFilePath, faceBackFilePath, faceFrontFilePath)
+            match OpenGL.CubeMap.TryCreateCubeMapMemoized (cubeMapOpt, cubeMapMemoKey, packageState.CubeMapMemo) with
+            | Right cubeMap -> Some (cubeMapMemoKey, cubeMap, ref None)
+            | Left error -> Log.debug ("Could not load cube map '" + asset.FilePath + "' due to: " + error); None
+        | _ -> Log.debug ("Could not load cube map '" + asset.FilePath + "' due to requiring exactly 6 file paths with each file path on its own line."); None
+
+    static member private tryLoadStaticModelAsset packageState (asset : obj Asset) renderer =
+        GlRenderer3d.invalidateCaches renderer
+        let unitTypeOpt =
+            match Path.GetExtension asset.FilePath with
+            | ".fbx" -> Some UnitCentimeters
+            | ".obj" -> Some UnitMeters
+            | _ -> None
+        match unitTypeOpt with
+        | Some unitType ->
+            match OpenGL.PhysicallyBased.TryCreatePhysicallyBasedStaticModel (true, unitType, asset.FilePath, renderer.RenderPhysicallyBasedMaterial, packageState.TextureMemo, renderer.RenderAssimp) with
+            | Right staticModel -> Some staticModel
+            | Left error -> Log.debug ("Could not load static model '" + asset.FilePath + "' due to: " + error); None
+        | None -> None
+
     static member private tryLoadRenderAsset packageState (asset : obj Asset) renderer =
         GlRenderer3d.invalidateCaches renderer
         match Path.GetExtension asset.FilePath with
-        | ".bmp"
-        | ".png"
-        | ".tif" ->
-            match OpenGL.Texture.TryCreateTextureMemoizedFiltered (asset.FilePath, packageState.TextureMemo) with
-            | Right (textureMetadata, texture) ->
-                Some (asset.AssetTag.AssetName, TextureAsset (asset.FilePath, textureMetadata, texture))
-            | Left error ->
-                Log.debug ("Could not load texture '" + asset.FilePath + "' due to '" + error + "'.")
-                None
+        | ".bmp" | ".png" | ".tif" ->
+            match GlRenderer3d.tryLoadTextureAsset None packageState asset renderer with
+            | Some (filePath, metadata, texture) -> Some (TextureAsset (filePath, metadata, texture))
+            | None -> None
         | ".cbm" ->
-            match File.ReadAllLines asset.FilePath |> Array.filter (String.IsNullOrWhiteSpace >> not) with
-            | [|faceRightFilePath; faceLeftFilePath; faceTopFilePath; faceBottomFilePath; faceBackFilePath; faceFrontFilePath|] ->
-                let dirPath = Path.GetDirectoryName asset.FilePath
-                let faceRightFilePath = dirPath + "/" + faceRightFilePath |> fun str -> str.Trim ()
-                let faceLeftFilePath = dirPath + "/" + faceLeftFilePath |> fun str -> str.Trim ()
-                let faceTopFilePath = dirPath + "/" + faceTopFilePath |> fun str -> str.Trim ()
-                let faceBottomFilePath = dirPath + "/" + faceBottomFilePath |> fun str -> str.Trim ()
-                let faceBackFilePath = dirPath + "/" + faceBackFilePath |> fun str -> str.Trim ()
-                let faceFrontFilePath = dirPath + "/" + faceFrontFilePath |> fun str -> str.Trim ()
-                let cubeMapMemoKey = (faceRightFilePath, faceLeftFilePath, faceTopFilePath, faceBottomFilePath, faceBackFilePath, faceFrontFilePath)
-                match OpenGL.CubeMap.TryCreateCubeMapMemoized (cubeMapMemoKey, packageState.CubeMapMemo) with
-                | Right cubeMap -> Some (asset.AssetTag.AssetName, CubeMapAsset (cubeMapMemoKey, cubeMap, ref None))
-                | Left error -> Log.debug ("Could not load cube map '" + asset.FilePath + "' due to: " + error); None
-            | _ -> Log.debug ("Could not load cube map '" + asset.FilePath + "' due to requiring exactly 6 file paths with each file path on its own line."); None
-        | ".fbx" ->
-            match OpenGL.PhysicallyBased.TryCreatePhysicallyBasedStaticModel (true, UnitCentimeters, asset.FilePath, renderer.RenderPhysicallyBasedMaterial, packageState.TextureMemo, renderer.RenderAssimp) with
-            | Right model -> Some (asset.AssetTag.AssetName, StaticModelAsset model)
-            | Left error -> Log.debug ("Could not load static model '" + asset.FilePath + "' due to: " + error); None
-        | ".obj" ->
-            match OpenGL.PhysicallyBased.TryCreatePhysicallyBasedStaticModel (true, UnitMeters, asset.FilePath, renderer.RenderPhysicallyBasedMaterial, packageState.TextureMemo, renderer.RenderAssimp) with
-            | Right model -> Some (asset.AssetTag.AssetName, StaticModelAsset model)
-            | Left error -> Log.debug ("Could not load static model '" + asset.FilePath + "' due to: " + error); None
+            match GlRenderer3d.tryLoadCubeMapAsset None packageState asset renderer with
+            | Some (cubeMapMemoKey, cubeMap, opt) -> Some (CubeMapAsset (cubeMapMemoKey, cubeMap, opt))
+            | None -> None
+        | ".fbx" | ".obj" ->
+            match GlRenderer3d.tryLoadStaticModelAsset packageState asset renderer with
+            | Some model -> Some (StaticModelAsset model)
+            | None -> None
         | _ -> None
 
-    static member private tryLoadRenderPackage freeExistingAssets packageName renderer =
+    static member private tryLoadRenderPackage reloading packageName renderer =
         match AssetGraph.tryMakeFromFile Assets.Global.AssetGraphFilePath with
         | Right assetGraph ->
             match AssetGraph.tryCollectAssetsFromPackage (Some Constants.Associations.Render3d) packageName assetGraph with
@@ -274,11 +294,33 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                         let renderPackage = { Assets = dictPlus StringComparer.Ordinal []; PackageState = renderPackageState }
                         renderer.RenderPackages.Assign (packageName, renderPackage)
                         renderPackage
-                let renderAssetOpts = List.map (fun asset -> GlRenderer3d.tryLoadRenderAsset renderPackage.PackageState asset renderer) assets
-                let renderAssets = List.definitize renderAssetOpts
-                for (key, value) in renderAssets do
-                    if freeExistingAssets then GlRenderer3d.freeRenderAsset renderPackage.PackageState renderPackage.Assets.[key] renderer
-                    renderPackage.Assets.Assign (key, value)
+                for asset in assets do
+                    if reloading then
+                        match renderPackage.Assets.TryGetValue asset.AssetTag.AssetName with
+                        | (true, renderAsset) ->
+                            match renderAsset with
+                            | TextureAsset (_, _, texture) ->
+                                match GlRenderer3d.tryLoadTextureAsset (Some texture) renderPackage.PackageState asset renderer with
+                                | Some (filePath, metadata, texture) -> renderPackage.Assets.Assign (asset.AssetTag.AssetName, TextureAsset (filePath, metadata, texture))
+                                | None -> ()
+                            | FontAsset _ ->
+                                () // NOTE: fonts not loaded by this renderer.
+                            | CubeMapAsset (_, cubeMap, _) ->
+                                match GlRenderer3d.tryLoadCubeMapAsset (Some cubeMap) renderPackage.PackageState asset renderer with
+                                | Some (filePath, cubeMap, opt) -> renderPackage.Assets.Assign (asset.AssetTag.AssetName, CubeMapAsset (filePath, cubeMap, opt))
+                                | None -> ()
+                            | StaticModelAsset _ ->
+                                match GlRenderer3d.tryLoadStaticModelAsset renderPackage.PackageState asset renderer with
+                                | Some staticModel ->
+                                    OpenGL.PhysicallyBased.DestroyPhysicallyBasedStaticModel staticModel
+                                    OpenGL.Hl.Assert ()
+                                    renderPackage.Assets.Assign (asset.AssetTag.AssetName, renderAsset)
+                                | None -> ()
+                        | (false, _) -> ()
+                    else
+                        match GlRenderer3d.tryLoadRenderAsset renderPackage.PackageState asset renderer with
+                        | Some renderAsset -> renderPackage.Assets.Assign (asset.AssetTag.AssetName, renderAsset)
+                        | None -> ()
             | Left failedAssetNames ->
                 Log.info ("Render package load failed due to unloadable assets '" + failedAssetNames + "' for package '" + packageName + "'.")
         | Left error ->
@@ -640,7 +682,8 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
         let skyBoxMap =
             match 
                 OpenGL.CubeMap.TryCreateCubeMap
-                    ("Assets/Default/Image9.bmp",
+                    (None,
+                     "Assets/Default/Image9.bmp",
                      "Assets/Default/Image9.bmp",
                      "Assets/Default/Image9.bmp",
                      "Assets/Default/Image9.bmp",
@@ -672,21 +715,21 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
 
         // create brdf texture
         let brdfTexture =
-            match OpenGL.Texture.TryCreateTextureUnfiltered Constants.Paths.BrdfTextureFilePath with
+            match OpenGL.Texture.TryCreateTextureUnfiltered (None, Constants.Paths.BrdfTextureFilePath) with
             | Right (_, texture) -> texture
             | Left error -> failwith ("Could not load BRDF texture due to: " + error)
 
         // create default physically-based material
         let physicallyBasedMaterial : OpenGL.PhysicallyBased.PhysicallyBasedMaterial =
             { Albedo = Color.White
-              AlbedoTexture = OpenGL.Texture.TryCreateTextureFiltered ("Assets/Default/MaterialAlbedo.png") |> Either.getRight |> snd
+              AlbedoTexture = OpenGL.Texture.TryCreateTextureFiltered (None, "Assets/Default/MaterialAlbedo.png") |> Either.getRight |> snd
               Metalness = 1.0f
-              MetalnessTexture = OpenGL.Texture.TryCreateTextureFiltered ("Assets/Default/MaterialMetalness.png") |> Either.getRight |> snd
+              MetalnessTexture = OpenGL.Texture.TryCreateTextureFiltered (None, "Assets/Default/MaterialMetalness.png") |> Either.getRight |> snd
               Roughness = 1.0f
-              RoughnessTexture = OpenGL.Texture.TryCreateTextureFiltered ("Assets/Default/MaterialRoughness.png") |> Either.getRight |> snd
+              RoughnessTexture = OpenGL.Texture.TryCreateTextureFiltered (None, "Assets/Default/MaterialRoughness.png") |> Either.getRight |> snd
               AmbientOcclusion = 1.0f
-              AmbientOcclusionTexture = OpenGL.Texture.TryCreateTextureFiltered ("Assets/Default/MaterialAmbientOcclusion.png") |> Either.getRight |> snd
-              NormalTexture = OpenGL.Texture.TryCreateTextureFiltered ("Assets/Default/MaterialNormal.png") |> Either.getRight |> snd
+              AmbientOcclusionTexture = OpenGL.Texture.TryCreateTextureFiltered (None, "Assets/Default/MaterialAmbientOcclusion.png") |> Either.getRight |> snd
+              NormalTexture = OpenGL.Texture.TryCreateTextureFiltered (None, "Assets/Default/MaterialNormal.png") |> Either.getRight |> snd
               TwoSided = false }
 
         // create render tasks

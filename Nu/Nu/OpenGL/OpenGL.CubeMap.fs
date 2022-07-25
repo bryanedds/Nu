@@ -25,10 +25,10 @@ module CubeMap =
             { CubeMaps = Dictionary HashIdentity.Structural }
 
     /// Attempt to create a cube map from 6 files.
-    let TryCreateCubeMap (faceRightFilePath, faceLeftFilePath, faceTopFilePath, faceBottomFilePath, faceBackFilePath, faceFrontFilePath) =
+    let TryCreateCubeMap (cubeMapOpt, faceRightFilePath, faceLeftFilePath, faceTopFilePath, faceBottomFilePath, faceBackFilePath, faceFrontFilePath) =
 
         // bind new cube map
-        let cubeMap = Gl.GenTexture ()
+        let cubeMap = match cubeMapOpt with Some cubeMap -> cubeMap | None -> Gl.GenTexture ()
         Gl.BindTexture (TextureTarget.TextureCubeMap, cubeMap)
         Hl.Assert ()
 
@@ -63,7 +63,7 @@ module CubeMap =
         Gl.DeleteTextures cubeMap
 
     /// Attempt to create a cube map from 6 files.
-    let TryCreateCubeMapMemoized (cubeMapMemoKey, cubeMapMemo) =
+    let TryCreateCubeMapMemoized (cubeMapOpt, cubeMapMemoKey, cubeMapMemo) =
 
         // deconstruct key
         let (faceRightFilePath, faceLeftFilePath, faceTopFilePath, faceBottomFilePath, faceBackFilePath, faceFrontFilePath) = cubeMapMemoKey
@@ -80,7 +80,7 @@ module CubeMap =
         | (false, _) ->
 
             // attempt to create cube map
-            match TryCreateCubeMap (faceRightFilePath, faceLeftFilePath, faceTopFilePath, faceBottomFilePath, faceBackFilePath, faceFrontFilePath) with
+            match TryCreateCubeMap (cubeMapOpt, faceRightFilePath, faceLeftFilePath, faceTopFilePath, faceBottomFilePath, faceBackFilePath, faceFrontFilePath) with
             | Right cubeMap ->
                 cubeMapMemo.CubeMaps.Add (cubeMapKey, cubeMap)
                 Right cubeMap

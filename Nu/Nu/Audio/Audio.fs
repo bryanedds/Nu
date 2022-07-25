@@ -129,7 +129,7 @@ type [<ReferenceEquality; NoComparison>] SdlAudioPlayer =
                 None
         | _ -> None
 
-    static member private tryLoadAudioPackage freeExistingAssets packageName audioPlayer =
+    static member private tryLoadAudioPackage reloading packageName audioPlayer =
         match AssetGraph.tryMakeFromFile Assets.Global.AssetGraphFilePath with
         | Right assetGraph ->
             match AssetGraph.tryCollectAssetsFromPackage (Some Constants.Associations.Audio) packageName assetGraph with
@@ -144,7 +144,7 @@ type [<ReferenceEquality; NoComparison>] SdlAudioPlayer =
                 let audioAssetOpts = List.map SdlAudioPlayer.tryLoadAudioAsset assets
                 let audioAssets = List.definitize audioAssetOpts
                 for (key, value) in audioAssets do
-                    if freeExistingAssets then SdlAudioPlayer.freeAudioAsset audioPackage.Assets.[key] audioPlayer
+                    if reloading then SdlAudioPlayer.freeAudioAsset audioPackage.Assets.[key] audioPlayer
                     audioPackage.Assets.Assign (key, value)
             | Left error ->
                 Log.info ("Audio package load failed due to unloadable assets '" + error + "' for package '" + packageName + "'.")

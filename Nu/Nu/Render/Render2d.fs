@@ -107,10 +107,8 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
     static member private tryLoadRenderAsset (asset : obj Asset) renderer =
         GlRenderer2d.invalidateCaches renderer
         match Path.GetExtension asset.FilePath with
-        | ".bmp"
-        | ".png"
-        | ".tif" ->
-            match OpenGL.Texture.TryCreateTextureUnfiltered asset.FilePath with
+        | ".bmp" | ".png" | ".tif" ->
+            match OpenGL.Texture.TryCreateTextureUnfiltered (None, asset.FilePath) with
             | Right (textureMetadata, texture) ->
                 Some (asset.AssetTag.AssetName, TextureAsset (asset.FilePath, textureMetadata, texture))
             | Left error ->
@@ -130,7 +128,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
             else Log.debug ("Could not load font '" + asset.FilePath + "'."); None
         | _ -> None
 
-    static member private tryLoadRenderPackage freeExistingAssets packageName renderer =
+    static member private tryLoadRenderPackage reloading packageName renderer =
         match AssetGraph.tryMakeFromFile Assets.Global.AssetGraphFilePath with
         | Right assetGraph ->
             match AssetGraph.tryCollectAssetsFromPackage (Some Constants.Associations.Render2d) packageName assetGraph with
@@ -145,7 +143,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
                 let renderAssetOpts = List.map (fun asset -> GlRenderer2d.tryLoadRenderAsset asset renderer) assets
                 let renderAssets = List.definitize renderAssetOpts
                 for (key, value) in renderAssets do
-                    if freeExistingAssets then GlRenderer2d.freeRenderAsset renderPackage.Assets.[key] renderer
+                    if reloading then GlRenderer2d.freeRenderAsset renderPackage.Assets.[key] renderer
                     renderPackage.Assets.Assign (key, value)
             | Left failedAssetNames ->
                 Log.info ("Render package load failed due to unloadable assets '" + failedAssetNames + "' for package '" + packageName + "'.")
