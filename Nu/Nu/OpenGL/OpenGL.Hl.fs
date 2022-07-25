@@ -29,7 +29,7 @@ module Hl =
         if AssertEnabled then
             let error = Gl.GetError ()
             if error <> ErrorCode.NoError then
-                Log.debug ("OpenGL assertion failed due to: " + string error)
+                () // Log.debug ("OpenGL assertion failed due to: " + string error)
         a
 
 #if DEBUG
@@ -40,7 +40,7 @@ module Hl =
         match severity with
         | DebugSeverity.DebugSeverityLow -> Log.info messageStr
         | DebugSeverity.DebugSeverityMedium
-        | DebugSeverity.DebugSeverityHigh -> Log.debug messageStr
+        | DebugSeverity.DebugSeverityHigh -> () // Log.debug messageStr
         | DebugSeverity.DebugSeverityNotification
         | DebugSeverity.DontCare
         | _ -> ()
