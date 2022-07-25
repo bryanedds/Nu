@@ -28,12 +28,13 @@ and [<StructuralEquality; NoComparison; Struct>] RenderMaterial =
 
 /// A collection of render tasks in a pass.
 and [<NoEquality; NoComparison>] RenderTasks =
-    { RenderSurfacesDeferredAbsolute : Dictionary<OpenGL.PhysicallyBased.PhysicallyBasedSurface, struct (Matrix4x4 * Vector2 * RenderMaterial) SegmentedList>
-      RenderSurfacesDeferredRelative : Dictionary<OpenGL.PhysicallyBased.PhysicallyBasedSurface, struct (Matrix4x4 * Vector2 * RenderMaterial) SegmentedList>
-      mutable RenderSurfacesForwardAbsolute : struct (single * Matrix4x4 * Vector2 * RenderMaterial * OpenGL.PhysicallyBased.PhysicallyBasedSurface) SegmentedList
-      mutable RenderSurfacesForwardRelative : struct (single * Matrix4x4 * Vector2 * RenderMaterial * OpenGL.PhysicallyBased.PhysicallyBasedSurface) SegmentedList
-      mutable RenderSurfacesForwardAbsoluteSorted : struct (Matrix4x4 * Vector2 * RenderMaterial * OpenGL.PhysicallyBased.PhysicallyBasedSurface) SegmentedList
-      mutable RenderSurfacesForwardRelativeSorted : struct (Matrix4x4 * Vector2 * RenderMaterial * OpenGL.PhysicallyBased.PhysicallyBasedSurface) SegmentedList
+    { RenderSurfacesDeferredAbsolute : Dictionary<OpenGL.PhysicallyBased.PhysicallyBasedSurface, struct (Matrix4x4 * Box2 * RenderMaterial) SegmentedList>
+      RenderSurfacesDeferredRelative : Dictionary<OpenGL.PhysicallyBased.PhysicallyBasedSurface, struct (Matrix4x4 * Box2 * RenderMaterial) SegmentedList>
+      mutable RenderSurfacesForwardAbsolute : struct (single * Matrix4x4 * Box2 * RenderMaterial * OpenGL.PhysicallyBased.PhysicallyBasedSurface) SegmentedList
+      mutable RenderSurfacesForwardRelative : struct (single * Matrix4x4 * Box2 * RenderMaterial * OpenGL.PhysicallyBased.PhysicallyBasedSurface) SegmentedList
+      mutable RenderSurfacesForwardAbsoluteSorted : struct (Matrix4x4 * Box2 * RenderMaterial * OpenGL.PhysicallyBased.PhysicallyBasedSurface) SegmentedList
+      mutable RenderSurfacesForwardRelativeSorted : struct (Matrix4x4 * Box2 * RenderMaterial * OpenGL.PhysicallyBased.PhysicallyBasedSurface) SegmentedList
+      mutable RenderBillboards : struct (bool * Matrix4x4 * Box2 * RenderMaterial * uint * uint * uint * uint * uint * RenderType) SegmentedList
       mutable RenderSkyBoxes : CubeMap AssetTag SegmentedList
       mutable RenderLights : SortableLight SegmentedList }
 
@@ -68,7 +69,6 @@ and [<CustomEquality; CustomComparison>] RenderPassMessage3d =
 and [<NoEquality; NoComparison>] CachedStaticModelMessage =
     { mutable CachedStaticModelAbsolute : bool
       mutable CachedStaticModelMatrix : Matrix4x4
-      mutable CachedStaticModelTexCoordsOffset : Vector2
       mutable CachedStaticModelRenderMaterial : RenderMaterial
       mutable CachedStaticModelRenderType : RenderType
       mutable CachedStaticModel : StaticModel AssetTag }
@@ -94,10 +94,11 @@ and [<NoEquality; NoComparison>] StaticModelSurfaceDescriptor =
 
 /// A message to the 3d renderer.
 and [<NoEquality; NoComparison>] RenderMessage3d =
-    | RenderStaticModelSurfaceMessage of bool * Matrix4x4 * Vector2 * RenderMaterial * RenderType * StaticModel AssetTag * int
-    | RenderStaticModelMessage of bool * Matrix4x4 * Vector2 * RenderMaterial * RenderType * StaticModel AssetTag
-    | RenderStaticModelsMessage of bool * (Matrix4x4 * Vector2 * RenderMaterial) array * RenderType * StaticModel AssetTag
+    | RenderStaticModelSurfaceMessage of bool * Matrix4x4 * RenderMaterial * RenderType * StaticModel AssetTag * int
+    | RenderStaticModelMessage of bool * Matrix4x4 * RenderMaterial * RenderType * StaticModel AssetTag
+    | RenderStaticModelsMessage of bool * (Matrix4x4 * RenderMaterial) array * RenderType * StaticModel AssetTag
     | RenderCachedStaticModelMessage of CachedStaticModelMessage
+    | RenderBillboardMessage of bool * Matrix4x4 * Box2 option * RenderMaterial * Image AssetTag * Image AssetTag * Image AssetTag * Image AssetTag * Image AssetTag * RenderType
     | RenderSkyBoxMessage of CubeMap AssetTag
     | RenderLightMessage3d of Vector3 * Color * single * single * LightType
     | RenderPostPassMessage3d of RenderPassMessage3d
@@ -189,6 +190,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
           RenderIrradianceFramebuffer : uint * uint
           RenderEnvironmentFilterFramebuffer : uint * uint
           RenderGeometryFramebuffer : uint * uint * uint * uint * uint
+          RenderBillboardGeometry : OpenGL.PhysicallyBased.PhysicallyBasedGeometry
           RenderSkyBoxGeometry : OpenGL.SkyBox.SkyBoxGeometry
           RenderPhysicallyBasedQuad : OpenGL.PhysicallyBased.PhysicallyBasedGeometry
           RenderIrradianceMap : uint
@@ -461,7 +463,6 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
     static member inline private categorizeStaticModelSurface
         (modelAbsolute,
          modelMatrix : Matrix4x4 inref,
-         texCoordsOffset : Vector2 inref,
          renderMaterial : RenderMaterial inref,
          renderType : RenderType,
          ignoreSurfaceMatrix,
@@ -475,21 +476,20 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
         | DeferredRenderType ->
             if modelAbsolute then
                 match renderer.RenderTasks.RenderSurfacesDeferredAbsolute.TryGetValue surface with
-                | (true, renderTasks) -> SegmentedList.add struct (surfaceMatrix, texCoordsOffset, renderMaterial) renderTasks
-                | (false, _) -> renderer.RenderTasks.RenderSurfacesDeferredAbsolute.Add (surface, SegmentedList.singleton (surfaceMatrix, texCoordsOffset, renderMaterial))
+                | (true, renderTasks) -> SegmentedList.add struct (surfaceMatrix, box2Zero, renderMaterial) renderTasks
+                | (false, _) -> renderer.RenderTasks.RenderSurfacesDeferredAbsolute.Add (surface, SegmentedList.singleton (surfaceMatrix, box2Zero, renderMaterial))
             else
                 match renderer.RenderTasks.RenderSurfacesDeferredRelative.TryGetValue surface with
-                | (true, renderTasks) -> SegmentedList.add struct (surfaceMatrix, texCoordsOffset, renderMaterial) renderTasks
-                | (false, _) -> renderer.RenderTasks.RenderSurfacesDeferredRelative.Add (surface, SegmentedList.singleton (surfaceMatrix, texCoordsOffset, renderMaterial))
+                | (true, renderTasks) -> SegmentedList.add struct (surfaceMatrix, box2Zero, renderMaterial) renderTasks
+                | (false, _) -> renderer.RenderTasks.RenderSurfacesDeferredRelative.Add (surface, SegmentedList.singleton (surfaceMatrix, box2Zero, renderMaterial))
         | ForwardRenderType subsort ->
             if modelAbsolute
-            then SegmentedList.add struct (subsort, surfaceMatrix, texCoordsOffset, renderMaterial, surface) renderer.RenderTasks.RenderSurfacesForwardAbsolute
-            else SegmentedList.add struct (subsort, surfaceMatrix, texCoordsOffset, renderMaterial, surface) renderer.RenderTasks.RenderSurfacesForwardRelative
+            then SegmentedList.add struct (subsort, surfaceMatrix, box2Zero, renderMaterial, surface) renderer.RenderTasks.RenderSurfacesForwardAbsolute
+            else SegmentedList.add struct (subsort, surfaceMatrix, box2Zero, renderMaterial, surface) renderer.RenderTasks.RenderSurfacesForwardRelative
 
     static member inline private categorizeStaticModelSurfaceByIndex
         (modelAbsolute,
          modelMatrix : Matrix4x4 inref,
-         texCoordsOffset : Vector2 inref,
          renderMaterial : RenderMaterial inref,
          renderType : RenderType,
          staticModel : StaticModel AssetTag,
@@ -501,14 +501,13 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             | StaticModelAsset modelAsset ->
                 if surfaceIndex > -1 && surfaceIndex < modelAsset.Surfaces.Length then
                     let surface = modelAsset.Surfaces.[surfaceIndex]
-                    GlRenderer3d.categorizeStaticModelSurface (modelAbsolute, &modelMatrix, &texCoordsOffset, &renderMaterial, renderType, true, surface, renderer)
+                    GlRenderer3d.categorizeStaticModelSurface (modelAbsolute, &modelMatrix, &renderMaterial, renderType, true, surface, renderer)
             | _ -> Log.trace "Cannot render static model surface with a non-model asset."
         | _ -> Log.info ("Cannot render static model surface due to unloadable assets for '" + scstring staticModel + "'.")
 
     static member private categorizeStaticModel
         (modelAbsolute,
          modelMatrix : Matrix4x4 inref,
-         texCoordsOffset : Vector2 inref,
          renderMaterial : RenderMaterial inref,
          renderType,
          staticModel : StaticModel AssetTag,
@@ -527,7 +526,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                           SortableLightDistanceSquared = Single.MaxValue }
                     SegmentedList.add light renderer.RenderTasks.RenderLights
                 for surface in modelAsset.Surfaces do
-                    GlRenderer3d.categorizeStaticModelSurface (modelAbsolute, &modelMatrix, &texCoordsOffset, &renderMaterial, renderType, false, surface, renderer)
+                    GlRenderer3d.categorizeStaticModelSurface (modelAbsolute, &modelMatrix, &renderMaterial, renderType, false, surface, renderer)
             | _ -> Log.trace "Cannot render static model with a non-model asset."
         | _ -> Log.info ("Cannot render static model due to unloadable assets for '" + scstring staticModel + "'.")
 
@@ -559,7 +558,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
              shader,
              skyBoxSurface)
 
-    static member private sortSurfaces eyePosition (surfaces : struct (single * Matrix4x4 * Vector2 * RenderMaterial * OpenGL.PhysicallyBased.PhysicallyBasedSurface) SegmentedList) =
+    static member private sortSurfaces eyePosition (surfaces : struct (single * Matrix4x4 * Box2 * RenderMaterial * OpenGL.PhysicallyBased.PhysicallyBasedSurface) SegmentedList) =
         surfaces |>
         Seq.map (fun struct (subsort, model, texCoordsOffset, renderMaterial, surface) -> struct (subsort, model, texCoordsOffset, renderMaterial, surface, (model.Translation - eyePosition).MagnitudeSquared)) |>
         Seq.toArray |> // TODO: 3D: use a preallocated array to avoid allocating on the LOH.
@@ -570,7 +569,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
         eyePosition
         viewArray
         projectionArray
-        (parameters : struct (Matrix4x4 * Vector2 * RenderMaterial) SegmentedList)
+        (parameters : struct (Matrix4x4 * Box2 * RenderMaterial) SegmentedList)
         blending
         irradianceMap
         environmentFilterMap
@@ -606,7 +605,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
 
             // ensure we have a large enough texCoordsOffsets fields array
             let mutable length = renderer.RenderTexCoordsOffsetsFields.Length
-            while parameters.Length * 2 > length do length <- length * 2
+            while parameters.Length * 4 > length do length <- length * 2
             if renderer.RenderTexCoordsOffsetsFields.Length < length then
                 renderer.RenderTexCoordsOffsetsFields <- Array.zeroCreate<single> length
 
@@ -626,8 +625,10 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                 renderer.RenderMaterialsFields.[i * 3] <- metalness
                 renderer.RenderMaterialsFields.[i * 3 + 1] <- roughness
                 renderer.RenderMaterialsFields.[i * 3 + 2] <- ambientOcclusion
-                renderer.RenderTexCoordsOffsetsFields.[i * 2] <- texCoordsOffset.X
-                renderer.RenderTexCoordsOffsetsFields.[i * 2 + 1] <- texCoordsOffset.Y
+                renderer.RenderTexCoordsOffsetsFields.[i * 2] <- texCoordsOffset.Position.X
+                renderer.RenderTexCoordsOffsetsFields.[i * 2 + 1] <- texCoordsOffset.Position.Y
+                renderer.RenderTexCoordsOffsetsFields.[i * 2 + 2] <- texCoordsOffset.Position.X + texCoordsOffset.Size.X
+                renderer.RenderTexCoordsOffsetsFields.[i * 2 + 3] <- texCoordsOffset.Position.Y + texCoordsOffset.Size.Y
 
             // draw surfaces
             OpenGL.PhysicallyBased.DrawPhysicallyBasedSurfaces
@@ -710,6 +711,10 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             | Left error -> failwith error
         OpenGL.Hl.Assert ()
 
+        // create billboard geometry
+        let billboardGeometry = OpenGL.PhysicallyBased.CreatePhysicallyBasedBillboard true
+        OpenGL.Hl.Assert ()
+
         // create sky box geometry
         let skyBoxGeometry = OpenGL.SkyBox.CreateSkyBoxGeometry true
         OpenGL.Hl.Assert ()
@@ -757,6 +762,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
               RenderSurfacesForwardRelative = SegmentedList.make ()
               RenderSurfacesForwardAbsoluteSorted = SegmentedList.make ()
               RenderSurfacesForwardRelativeSorted = SegmentedList.make ()
+              RenderBillboards = SegmentedList.make ()
               RenderSkyBoxes = SegmentedList.make ()
               RenderLights = SegmentedList.make () }
 
@@ -773,6 +779,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
               RenderIrradianceFramebuffer = (irradianceRenderbuffer, irradianceFramebuffer)
               RenderEnvironmentFilterFramebuffer = (environmentFilterRenderbuffer, environmentFilterFramebuffer)
               RenderGeometryFramebuffer = geometryFramebuffer
+              RenderBillboardGeometry = billboardGeometry
               RenderSkyBoxGeometry = skyBoxGeometry
               RenderPhysicallyBasedQuad = physicallyBasedQuad
               RenderIrradianceMap = irradianceMap
@@ -782,7 +789,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
               RenderModelsFields = Array.zeroCreate<single> (16 * Constants.Render.GeometryBatchPrealloc)
               RenderAlbedosFields = Array.zeroCreate<single> (4 * Constants.Render.GeometryBatchPrealloc)
               RenderMaterialsFields = Array.zeroCreate<single> (3 * Constants.Render.GeometryBatchPrealloc)
-              RenderTexCoordsOffsetsFields = Array.zeroCreate<single> (2 * Constants.Render.GeometryBatchPrealloc)
+              RenderTexCoordsOffsetsFields = Array.zeroCreate<single> (4 * Constants.Render.GeometryBatchPrealloc)
               RenderTasks = renderTasks
               RenderPackages = dictPlus StringComparer.Ordinal []
               RenderPackageCachedOpt = Unchecked.defaultof<_>
@@ -824,15 +831,50 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             let postPasses = hashSetPlus<RenderPassMessage3d> HashIdentity.Structural []
             for message in renderMessages do
                 match message with
-                | RenderStaticModelSurfaceMessage (absolute, modelMatrix, texCoordsOffset, renderMaterial, renderType, staticModel, surfaceIndex) ->
-                    GlRenderer3d.categorizeStaticModelSurfaceByIndex (absolute, &modelMatrix, &texCoordsOffset, &renderMaterial, renderType, staticModel, surfaceIndex, renderer)
-                | RenderStaticModelMessage (absolute, modelMatrix, texCoordsOffset, renderMaterial, renderType, staticModel) ->
-                    GlRenderer3d.categorizeStaticModel (absolute, &modelMatrix, &texCoordsOffset, &renderMaterial, renderType, staticModel, renderer)
+                | RenderStaticModelSurfaceMessage (absolute, modelMatrix, renderMaterial, renderType, staticModel, surfaceIndex) ->
+                    GlRenderer3d.categorizeStaticModelSurfaceByIndex (absolute, &modelMatrix, &renderMaterial, renderType, staticModel, surfaceIndex, renderer)
+                | RenderStaticModelMessage (absolute, modelMatrix, renderMaterial, renderType, staticModel) ->
+                    GlRenderer3d.categorizeStaticModel (absolute, &modelMatrix, &renderMaterial, renderType, staticModel, renderer)
                 | RenderStaticModelsMessage (absolute, parameters, renderType, staticModel) ->
-                    for (modelMatrix, texCoordsOffset, renderMaterial) in parameters do
-                        GlRenderer3d.categorizeStaticModel (absolute, &modelMatrix, &texCoordsOffset, &renderMaterial, renderType, staticModel, renderer)
+                    for (modelMatrix, renderMaterial) in parameters do
+                        GlRenderer3d.categorizeStaticModel (absolute, &modelMatrix, &renderMaterial, renderType, staticModel, renderer)
                 | RenderCachedStaticModelMessage d ->
-                    GlRenderer3d.categorizeStaticModel (d.CachedStaticModelAbsolute, &d.CachedStaticModelMatrix, &d.CachedStaticModelTexCoordsOffset, &d.CachedStaticModelRenderMaterial, d.CachedStaticModelRenderType, d.CachedStaticModel, renderer)
+                    GlRenderer3d.categorizeStaticModel (d.CachedStaticModelAbsolute, &d.CachedStaticModelMatrix, &d.CachedStaticModelRenderMaterial, d.CachedStaticModelRenderType, d.CachedStaticModel, renderer)
+                | RenderBillboardMessage (absolute, modelMatrix, insetOpt, renderMaterial, albedoImage, metalnessImage, roughnessImage, ambientOcclusionImage, normalImage, renderType) ->
+                    let (albedoMetadata, albedoTexture) =
+                        match GlRenderer3d.tryFindRenderAsset (AssetTag.generalize albedoImage) renderer with
+                        | ValueSome (TextureAsset (_, textureMetadata, texture)) -> (textureMetadata, texture)
+                        | _ -> (OpenGL.Texture.TextureMetadata.empty, renderer.RenderPhysicallyBasedMaterial.AlbedoTexture)
+                    let metalnessTexture =
+                        match GlRenderer3d.tryFindRenderAsset (AssetTag.generalize metalnessImage) renderer with
+                        | ValueSome (TextureAsset (_, _, texture)) -> texture
+                        | _ -> renderer.RenderPhysicallyBasedMaterial.MetalnessTexture
+                    let roughnessTexture =
+                        match GlRenderer3d.tryFindRenderAsset (AssetTag.generalize roughnessImage) renderer with
+                        | ValueSome (TextureAsset (_, _, texture)) -> texture
+                        | _ -> renderer.RenderPhysicallyBasedMaterial.RoughnessTexture
+                    let ambientOcclusionTexture =
+                        match GlRenderer3d.tryFindRenderAsset (AssetTag.generalize ambientOcclusionImage) renderer with
+                        | ValueSome (TextureAsset (_, _, texture)) -> texture
+                        | _ -> renderer.RenderPhysicallyBasedMaterial.AmbientOcclusionTexture
+                    let normalTexture =
+                        match GlRenderer3d.tryFindRenderAsset (AssetTag.generalize normalImage) renderer with
+                        | ValueSome (TextureAsset (_, _, texture)) -> texture
+                        | _ -> renderer.RenderPhysicallyBasedMaterial.NormalTexture
+                    let texCoordsOffset =
+                        match insetOpt with
+                        | Some inset ->
+                            let texelWidth = albedoMetadata.TextureTexelWidth
+                            let texelHeight = albedoMetadata.TextureTexelHeight
+                            let borderWidth = texelWidth * Constants.Render.SpriteBorderTexelScalar
+                            let borderHeight = texelHeight * Constants.Render.SpriteBorderTexelScalar
+                            let px = inset.Position.X * texelWidth + borderWidth
+                            let py = (inset.Position.Y + inset.Size.Y) * texelHeight - borderHeight
+                            let sx = inset.Size.X * texelWidth - borderWidth * 2.0f
+                            let sy = -inset.Size.Y * texelHeight + borderHeight * 2.0f
+                            Box2 (px, py, sx, sy)
+                        | None -> box2 v2Zero v2One
+                    SegmentedList.add struct (absolute, modelMatrix, texCoordsOffset, renderMaterial, albedoTexture, metalnessTexture, roughnessTexture, ambientOcclusionTexture, normalTexture, renderType) renderer.RenderTasks.RenderBillboards
                 | RenderSkyBoxMessage cubeMap ->
                     SegmentedList.add cubeMap renderer.RenderTasks.RenderSkyBoxes
                 | RenderLightMessage3d (position, color, brightness, intensity, _) ->
@@ -924,7 +966,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             let (lightPositions, lightColors, lightBrightnesses, lightIntensities) =
                 SortableLight.sortLightsIntoArrays eyePosition renderer.RenderTasks.RenderLights
 
-            // render deferred pass w/ absolute-transformed surfaces
+            // deferred render surfaces w/ absolute-transforms
             for entry in renderer.RenderTasks.RenderSurfacesDeferredAbsolute do
                 GlRenderer3d.renderPhysicallyBasedSurfaces
                     eyePosition
@@ -944,7 +986,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                     renderer
                 OpenGL.Hl.Assert ()
 
-            // render deferred pass w/ relative-transformed surfaces
+            // deferred render surfaces w/ relative-transforms
             for entry in renderer.RenderTasks.RenderSurfacesDeferredRelative do
                 GlRenderer3d.renderPhysicallyBasedSurfaces
                     eyePosition
@@ -964,6 +1006,42 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                     renderer
                 OpenGL.Hl.Assert ()
 
+            // deferred render billboards
+            // NOTE: no batching is used here, so this is very slow.
+            for (absolute, modelMatrix, texCoordOffset, renderMaterial, albedoTexture, metalnessTexture, roughnessTexture, ambientOcclusionTexture, normalTexture, renderType) in renderer.RenderTasks.RenderBillboards do
+                match renderType with
+                | DeferredRenderType ->
+                    let billboardMaterial : OpenGL.PhysicallyBased.PhysicallyBasedMaterial =
+                        { Albedo = Option.defaultValue Color.White renderMaterial.AlbedoOpt
+                          AlbedoTexture = albedoTexture
+                          Metalness = Option.defaultValue 1.0f renderMaterial.MetalnessOpt
+                          MetalnessTexture = metalnessTexture
+                          Roughness = Option.defaultValue 1.0f renderMaterial.RoughnessOpt
+                          RoughnessTexture = roughnessTexture
+                          AmbientOcclusion = Option.defaultValue 1.0f renderMaterial.AmbientOcclusionOpt
+                          AmbientOcclusionTexture = ambientOcclusionTexture
+                          NormalTexture = normalTexture
+                          TwoSided = false }
+                    let billboardSurface = OpenGL.PhysicallyBased.CreatePhysicallyBasedSurface ([||], m4Identity, box3Zero, billboardMaterial, renderer.RenderBillboardGeometry)
+                    GlRenderer3d.renderPhysicallyBasedSurfaces
+                        eyePosition
+                        (if absolute then viewAbsoluteArray else viewRelativeArray)
+                        projectionArray
+                        (SegmentedList.singleton struct (modelMatrix, texCoordOffset, renderMaterial))
+                        false
+                        irradianceMap
+                        environmentFilterMap
+                        renderer.RenderBrdfTexture
+                        lightPositions
+                        lightColors
+                        lightBrightnesses
+                        lightIntensities
+                        billboardSurface
+                        renderer.RenderPhysicallyBasedDeferredShader
+                        renderer
+                    OpenGL.Hl.Assert ()
+                | ForwardRenderType _ -> ()
+
             // copy depths from geometry framebuffer to main framebuffer
             OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.ReadFramebuffer, geometryFramebuffer)
             OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.DrawFramebuffer, 0u)
@@ -978,7 +1056,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, 0u)
             OpenGL.Hl.Assert ()
 
-            // render deferred lighting quad
+            // deferred render lighting quad
             OpenGL.PhysicallyBased.DrawPhysicallyBasedDeferred2Surface
                 (eyePosition, positionTexture, albedoTexture, materialTexture, normalTexture,
                  irradianceMap, environmentFilterMap, renderer.RenderBrdfTexture, lightPositions, lightColors, lightBrightnesses, lightIntensities,
@@ -992,15 +1070,15 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                 OpenGL.Hl.Assert ()
             | None -> ()
 
-            // render forward pass w/ absolute-transformed surfaces
-            for (model, texCoordsOffset, renderMaterial, surface) in renderer.RenderTasks.RenderSurfacesForwardAbsoluteSorted do
+            // forward render surfaces w/ absolute-transforms
+            for (model, _, renderMaterial, surface) in renderer.RenderTasks.RenderSurfacesForwardAbsoluteSorted do
                 let (lightPositions, lightColors, lightBrightnesses, lightIntensities) =
                     SortableLight.sortLightsIntoArrays model.Translation renderer.RenderTasks.RenderLights
                 GlRenderer3d.renderPhysicallyBasedSurfaces
                     eyePosition
                     viewAbsoluteArray
                     projectionArray
-                    (SegmentedList.singleton (model, texCoordsOffset, renderMaterial))
+                    (SegmentedList.singleton (model, box2Zero, renderMaterial))
                     true
                     irradianceMap
                     environmentFilterMap
@@ -1014,15 +1092,15 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                     renderer
                 OpenGL.Hl.Assert ()
 
-            // render forward pass w/ relative-transformed surfaces
-            for (model, texCoordsOffset, renderMaterial, surface) in renderer.RenderTasks.RenderSurfacesForwardRelativeSorted do
+            // forward render surfaces w/ relative-transforms
+            for (model, _, renderMaterial, surface) in renderer.RenderTasks.RenderSurfacesForwardRelativeSorted do
                 let (lightPositions, lightColors, lightBrightnesses, lightIntensities) =
                     SortableLight.sortLightsIntoArrays model.Translation renderer.RenderTasks.RenderLights
                 GlRenderer3d.renderPhysicallyBasedSurfaces
                     eyePosition
                     viewRelativeArray
                     projectionArray
-                    (SegmentedList.singleton (model, texCoordsOffset, renderMaterial))
+                    (SegmentedList.singleton (model, box2Zero, renderMaterial))
                     true
                     irradianceMap
                     environmentFilterMap
@@ -1035,6 +1113,42 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                     renderer.RenderPhysicallyBasedForwardShader
                     renderer
                 OpenGL.Hl.Assert ()
+
+            // forward render billboards
+            // NOTE: no batching is used here, so this is very slow.
+            for (absolute, modelMatrix, texCoordOffset, renderMaterial, albedoTexture, metalnessTexture, roughnessTexture, ambientOcclusionTexture, normalTexture, renderType) in renderer.RenderTasks.RenderBillboards do
+                match renderType with
+                | ForwardRenderType _ ->
+                    let billboardMaterial : OpenGL.PhysicallyBased.PhysicallyBasedMaterial =
+                        { Albedo = Option.defaultValue Color.White renderMaterial.AlbedoOpt
+                          AlbedoTexture = albedoTexture
+                          Metalness = Option.defaultValue 1.0f renderMaterial.MetalnessOpt
+                          MetalnessTexture = metalnessTexture
+                          Roughness = Option.defaultValue 1.0f renderMaterial.RoughnessOpt
+                          RoughnessTexture = roughnessTexture
+                          AmbientOcclusion = Option.defaultValue 1.0f renderMaterial.AmbientOcclusionOpt
+                          AmbientOcclusionTexture = ambientOcclusionTexture
+                          NormalTexture = normalTexture
+                          TwoSided = false }
+                    let billboardSurface = OpenGL.PhysicallyBased.CreatePhysicallyBasedSurface ([||], m4Identity, box3Zero, billboardMaterial, renderer.RenderBillboardGeometry)
+                    GlRenderer3d.renderPhysicallyBasedSurfaces
+                        eyePosition
+                        (if absolute then viewAbsoluteArray else viewRelativeArray)
+                        projectionArray
+                        (SegmentedList.singleton struct (modelMatrix, texCoordOffset, renderMaterial))
+                        true
+                        irradianceMap
+                        environmentFilterMap
+                        renderer.RenderBrdfTexture
+                        lightPositions
+                        lightColors
+                        lightBrightnesses
+                        lightIntensities
+                        billboardSurface
+                        renderer.RenderPhysicallyBasedForwardShader
+                        renderer
+                    OpenGL.Hl.Assert ()
+                | DeferredRenderType -> ()
 
             // render post-passes
             let passParameters =
