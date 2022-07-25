@@ -119,17 +119,17 @@ module WorldAudio =
         /// Hint that an audio asset package with the given name should be loaded. Should be used
         /// to avoid loading assets at inconvenient times (such as in the middle of game play!)
         [<FunctionBinding>]
-        static member hintAudioPackageUse packageName world =
-            let hintAudioPackageUseMessage = HintAudioPackageUseMessage packageName
-            World.enqueueAudioMessage hintAudioPackageUseMessage world
+        static member loadAudioPackage packageName world =
+            let loadAudioPackageMessage = LoadAudioPackageMessage packageName
+            World.enqueueAudioMessage loadAudioPackageMessage world
             world
             
         /// Hint that an audio package should be unloaded since its assets will not be used again
-        /// (or until specified via a HintAudioPackageUseMessage).
+        /// (or until specified via a LoadAudioPackageMessage).
         [<FunctionBinding>]
-        static member hintAudioPackageDisuse packageName world =
-            let hintAudioPackageDisuseMessage = HintAudioPackageDisuseMessage packageName
-            World.enqueueAudioMessage hintAudioPackageDisuseMessage world
+        static member unloadAudioPackage packageName world =
+            let unloadAudioPackageMessage = UnloadAudioPackageMessage packageName
+            World.enqueueAudioMessage unloadAudioPackageMessage world
             world
 
         /// Send a message to the audio player to reload its audio assets.
