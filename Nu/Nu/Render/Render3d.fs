@@ -277,10 +277,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                 let renderAssetOpts = List.map (fun asset -> GlRenderer3d.tryLoadRenderAsset renderPackage.PackageState asset renderer) assets
                 let renderAssets = List.definitize renderAssetOpts
                 for (key, value) in renderAssets do
-                    if freeExistingAssets then
-                        match renderPackage.Assets.TryGetValue key with
-                        | (true, renderAsset) -> GlRenderer3d.freeRenderAsset renderPackage.PackageState renderAsset renderer
-                        | (false, _) -> ()
+                    if freeExistingAssets then GlRenderer3d.freeRenderAsset renderPackage.PackageState renderPackage.Assets.[key] renderer
                     renderPackage.Assets.Assign (key, value)
             | Left failedAssetNames ->
                 Log.info ("Render package load failed due to unloadable assets '" + failedAssetNames + "' for package '" + packageName + "'.")

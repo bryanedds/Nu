@@ -144,10 +144,7 @@ type [<ReferenceEquality; NoComparison>] SdlAudioPlayer =
                 let audioAssetOpts = List.map SdlAudioPlayer.tryLoadAudioAsset assets
                 let audioAssets = List.definitize audioAssetOpts
                 for (key, value) in audioAssets do
-                    if freeExistingAssets then
-                        match audioPackage.Assets.TryGetValue key with
-                        | (true, audioAsset) -> SdlAudioPlayer.freeAudioAsset audioAsset audioPlayer
-                        | (false, _) -> ()
+                    if freeExistingAssets then SdlAudioPlayer.freeAudioAsset audioPackage.Assets.[key] audioPlayer
                     audioPackage.Assets.Assign (key, value)
             | Left error ->
                 Log.info ("Audio package load failed due to unloadable assets '" + error + "' for package '" + packageName + "'.")
