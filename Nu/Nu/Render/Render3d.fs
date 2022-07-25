@@ -281,11 +281,14 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             | None -> None
         | _ -> None
 
+    // TODO: 3D: split this into two functions instead of passing reloading boolean.
     static member private tryLoadRenderPackage reloading packageName renderer =
         match AssetGraph.tryMakeFromFile Assets.Global.AssetGraphFilePath with
         | Right assetGraph ->
             match AssetGraph.tryCollectAssetsFromPackage (Some Constants.Associations.Render3d) packageName assetGraph with
             | Right assets ->
+
+                // find or create render package
                 let renderPackage =
                     match Dictionary.tryFind packageName renderer.RenderPackages with
                     | Some renderPackage -> renderPackage
@@ -294,21 +297,20 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                         let renderPackage = { Assets = dictPlus StringComparer.Ordinal []; PackageState = renderPackageState }
                         renderer.RenderPackages.Assign (packageName, renderPackage)
                         renderPackage
-                for asset in assets do
-                    if reloading then
+
+                // reload assets if specified
+                if reloading then
+                    OpenGL.Texture.RecreateTexturesMemoized true renderPackage.PackageState.TextureMemo
+                    OpenGL.Hl.Assert ()
+                    OpenGL.CubeMap.RecreateCubeMapsMemoized renderPackage.PackageState.CubeMapMemo
+                    OpenGL.Hl.Assert ()
+                    for asset in assets do
                         match renderPackage.Assets.TryGetValue asset.AssetTag.AssetName with
                         | (true, renderAsset) ->
                             match renderAsset with
-                            | TextureAsset (_, _, texture) ->
-                                match GlRenderer3d.tryLoadTextureAsset (Some texture) renderPackage.PackageState asset renderer with
-                                | Some (filePath, metadata, texture) -> renderPackage.Assets.Assign (asset.AssetTag.AssetName, TextureAsset (filePath, metadata, texture))
-                                | None -> ()
-                            | FontAsset _ ->
-                                () // NOTE: fonts not loaded by this renderer.
-                            | CubeMapAsset (_, cubeMap, _) ->
-                                match GlRenderer3d.tryLoadCubeMapAsset (Some cubeMap) renderPackage.PackageState asset renderer with
-                                | Some (filePath, cubeMap, opt) -> renderPackage.Assets.Assign (asset.AssetTag.AssetName, CubeMapAsset (filePath, cubeMap, opt))
-                                | None -> ()
+                            | TextureAsset _ -> () // already reloaded via texture memo
+                            | FontAsset _ -> () // not yet used in 3d renderer
+                            | CubeMapAsset _ -> () // already reloaded via cube map memo
                             | StaticModelAsset _ ->
                                 match GlRenderer3d.tryLoadStaticModelAsset renderPackage.PackageState asset renderer with
                                 | Some staticModel ->
@@ -317,10 +319,14 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                                     renderPackage.Assets.Assign (asset.AssetTag.AssetName, renderAsset)
                                 | None -> ()
                         | (false, _) -> ()
-                    else
+
+                // otherwise create assets
+                else
+                    for asset in assets do
                         match GlRenderer3d.tryLoadRenderAsset renderPackage.PackageState asset renderer with
                         | Some renderAsset -> renderPackage.Assets.Assign (asset.AssetTag.AssetName, renderAsset)
                         | None -> ()
+
             | Left failedAssetNames ->
                 Log.info ("Render package load failed due to unloadable assets '" + failedAssetNames + "' for package '" + packageName + "'.")
         | Left error ->

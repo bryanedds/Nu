@@ -111,7 +111,7 @@ module Texture =
         | _ -> TryCreateImageSurface filePath
 
     /// Attempt to create a texture from a file.
-    let TryCreateTexture (minFilter, magFilter, generateMipmaps, textureOpt : uint option, filePath : string) =
+    let TryCreateTextureDefault (generateMipmaps, textureOpt : uint option, filePath : string) =
 
         // attmept to load image
         match TryCreateImageData filePath with
@@ -122,6 +122,19 @@ module Texture =
             let texture = match textureOpt with Some texture -> texture | None -> Gl.GenTexture ()
             Gl.BindTexture (TextureTarget.Texture2d, texture)
             Gl.TexImage2D (TextureTarget.Texture2d, 0, metadata.TextureInternalFormat, metadata.TextureWidth, metadata.TextureHeight, 0, PixelFormat.Bgra, PixelType.UnsignedByte, imageData)
+            if generateMipmaps then Gl.GenerateMipmap TextureTarget.Texture2d
+            Gl.BindTexture (TextureTarget.Texture2d, 0u)
+            Right (metadata, texture)
+
+        // failure
+        | None -> Left ("Missing file or unloadable image data '" + filePath + "'.")
+
+    /// Attempt to create a texture from a file.
+    let TryCreateTexture (minFilter, magFilter, generateMipmaps, textureOpt, filePath) =
+
+        match TryCreateTextureDefault (generateMipmaps, textureOpt, filePath) with
+        | Right (metadata, texture) ->
+            Gl.BindTexture (TextureTarget.Texture2d, texture)
             Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, int minFilter)
             Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, int magFilter)
             Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureWrapS, int TextureWrapMode.ClampToEdge)
@@ -129,9 +142,7 @@ module Texture =
             Gl.TexParameter (TextureTarget.Texture2d, LanguagePrimitives.EnumOfValue Gl.TEXTURE_MAX_ANISOTROPY, Constants.Render.TextureAnisotropyMax) // NOTE: tho an extension, this one's considered ubiquitous.
             if generateMipmaps then Gl.GenerateMipmap TextureTarget.Texture2d
             Right (metadata, texture)
-
-        // failure
-        | None -> Left ("Missing file or unloadable image data '" + filePath + "'.")
+        | Left _ as error -> error
 
     /// Attempt to create an unfiltered texture from a file.
     let TryCreateTextureUnfiltered (textureOpt, filePath) =
@@ -169,6 +180,13 @@ module Texture =
     /// Attempt to create a memoized filtered texture from a file.
     let TryCreateTextureMemoizedFiltered (textureOpt, filePath, textureMemo) =
         TryCreateTextureMemoized (TextureMinFilter.LinearMipmapLinear, TextureMagFilter.Linear, true, textureOpt, filePath, textureMemo)
+
+    /// Recreate the memoized textures.
+    let RecreateTexturesMemoized generateMipmaps textureMemo =
+        for entry in textureMemo.Textures do
+            let filePath = entry.Key
+            let (_, texture) = entry.Value
+            TryCreateTextureDefault (generateMipmaps, Some texture, filePath) |> ignore
 
     /// Delete a memoized texture.
     let DeleteTextureMemoized textureKey (textureMemo : TextureMemo) =

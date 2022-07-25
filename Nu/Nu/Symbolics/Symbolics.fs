@@ -28,7 +28,7 @@ module Symbolics =
             match Path.GetExtension asset.FilePath with
             | ".csv" ->
                 try let symbol = Symbol.ofStringCsv metadata.StripCsvHeader text (Some asset.FilePath)
-                    Some (asset.AssetTag.AssetName, (metadata, symbol))
+                    Some (metadata, symbol)
                 with exn ->
                     Log.info ("Failed to convert text in file '" + asset.FilePath + "' for package '" + packageName + "' to symbol due to: " + scstring exn)
                     None
@@ -38,7 +38,7 @@ module Symbolics =
                     then Symbol.OpenSymbolsStr + text + Symbol.CloseSymbolsStr
                     else text
                 try let symbol = Symbol.ofString text (Some asset.FilePath)
-                    Some (asset.AssetTag.AssetName, (metadata, symbol))
+                    Some (metadata, symbol)
                 with exn ->
                     Log.info ("Failed to convert text in file '" + asset.FilePath + "' for package '" + packageName + "' to symbol due to: " + scstring exn)
                     None
@@ -59,11 +59,10 @@ module Symbolics =
                         let symbolPackage = { Assets = dictPlus StringComparer.Ordinal []; PackageState = () }
                         symbolics.SymbolPackages.Assign (packageName, symbolPackage)
                         symbolPackage
-                let symbolAssets = List.map Asset.specialize<Symbol> assets
-                let symbolOpts = List.map (tryLoadSymbol3 metadata packageName) symbolAssets
-                let symbols = List.definitize symbolOpts
-                for (key, value) in symbols do
-                    symbolPackage.Assets.Assign (key, value)
+                for asset in assets do
+                    match tryLoadSymbol3 metadata packageName (Asset.convert asset) with
+                    | Some symbol -> symbolPackage.Assets.Assign (asset.AssetTag.AssetName, symbol)
+                    | None -> ()
             | Left error ->
                 Log.info ("Symbol package load failed due to unloadable assets '" + error + "' for package '" + packageName + "'.")
         | Left error ->
