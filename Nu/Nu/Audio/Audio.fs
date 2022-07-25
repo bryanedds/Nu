@@ -30,8 +30,8 @@ type [<NoEquality; NoComparison>] SoundDescriptor =
 
 /// A message to the audio system.
 type [<NoEquality; NoComparison>] AudioMessage =
-    | HintAudioPackageUseMessage of string
-    | HintAudioPackageDisuseMessage of string
+    | LoadAudioPackageMessage of string
+    | UnloadAudioPackageMessage of string
     | PlaySoundMessage of SoundDescriptor
     | PlaySongMessage of SongDescriptor
     | FadeOutSongMessage of int
@@ -210,11 +210,11 @@ type [<ReferenceEquality; NoComparison>] SdlAudioPlayer =
         | None ->
             Log.info ("PlaySongMessage failed due to unloadable assets for '" + scstring song + "'.")
 
-    static member private handleHintAudioPackageUse hintPackageName audioPlayer =
-        SdlAudioPlayer.tryLoadAudioPackage false hintPackageName audioPlayer
+    static member private handleLoadAudioPackage packageName audioPlayer =
+        SdlAudioPlayer.tryLoadAudioPackage false packageName audioPlayer
 
-    static member private handleHintAudioPackageDisuse hintPackageName audioPlayer =
-        match Dictionary.tryFind hintPackageName  audioPlayer.AudioPackages with
+    static member private handleUnloadAudioPackage packageName audioPlayer =
+        match Dictionary.tryFind packageName  audioPlayer.AudioPackages with
         | Some package ->
             // all sounds / music must be halted because one of them might be playing during unload
             // (which is very bad according to the API docs).
@@ -223,7 +223,7 @@ type [<ReferenceEquality; NoComparison>] SdlAudioPlayer =
                 match asset.Value with
                 | WavAsset wavAsset -> SDL_mixer.Mix_FreeChunk wavAsset
                 | OggAsset oggAsset -> SDL_mixer.Mix_FreeMusic oggAsset
-            audioPlayer.AudioPackages.Remove hintPackageName |> ignore
+            audioPlayer.AudioPackages.Remove packageName |> ignore
         | None -> ()
 
     static member private handlePlaySound playSoundMessage audioPlayer =
@@ -260,8 +260,8 @@ type [<ReferenceEquality; NoComparison>] SdlAudioPlayer =
 
     static member private handleAudioMessage audioMessage audioPlayer =
         match audioMessage with
-        | HintAudioPackageUseMessage hintPackageUse -> SdlAudioPlayer.handleHintAudioPackageUse hintPackageUse audioPlayer
-        | HintAudioPackageDisuseMessage hintPackageDisuse -> SdlAudioPlayer.handleHintAudioPackageDisuse hintPackageDisuse audioPlayer
+        | LoadAudioPackageMessage packageName -> SdlAudioPlayer.handleLoadAudioPackage packageName audioPlayer
+        | UnloadAudioPackageMessage packageName -> SdlAudioPlayer.handleUnloadAudioPackage packageName audioPlayer
         | PlaySoundMessage playSoundMessage -> SdlAudioPlayer.handlePlaySound playSoundMessage audioPlayer
         | PlaySongMessage playSongMessage -> SdlAudioPlayer.handlePlaySong playSongMessage audioPlayer
         | FadeOutSongMessage timeToFadeSongMs -> SdlAudioPlayer.handleFadeOutSong timeToFadeSongMs

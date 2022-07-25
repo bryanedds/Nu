@@ -34,8 +34,8 @@ and [<NoEquality; NoComparison>] RenderLayeredMessage2d =
 /// A message to the 2d rendering system.
 and [<NoEquality; NoComparison>] RenderMessage2d =
     | RenderLayeredMessage2d of RenderLayeredMessage2d
-    | HintRenderPackageUseMessage2d of string
-    | HintRenderPackageDisuseMessage2d of string
+    | LoadRenderPackageMessage2d of string
+    | UnloadRenderPackageMessage2d of string
     | ReloadRenderAssetsMessage2d
 
 /// The 2d renderer. Represents the 2d rendering system in Nu generally.
@@ -199,10 +199,10 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
                     | (false, _) -> ValueNone
                 | (false, _) -> ValueNone
 
-    static member private handleHintRenderPackageUse hintPackageName renderer =
+    static member private handleLoadRenderPackage hintPackageName renderer =
         GlRenderer2d.tryLoadRenderPackage hintPackageName renderer
 
-    static member private handleHintRenderPackageDisuse hintPackageName renderer =
+    static member private handleUnloadRenderPackage hintPackageName renderer =
         GlRenderer2d.invalidateCaches renderer
         match Dictionary.tryFind hintPackageName renderer.RenderPackages with
         | Some package ->
@@ -219,8 +219,8 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
     static member private handleRenderMessage renderMessage renderer =
         match renderMessage with
         | RenderLayeredMessage2d message -> renderer.RenderLayeredMessages.Add message
-        | HintRenderPackageUseMessage2d hintPackageUse -> GlRenderer2d.handleHintRenderPackageUse false hintPackageUse renderer
-        | HintRenderPackageDisuseMessage2d hintPackageDisuse -> GlRenderer2d.handleHintRenderPackageDisuse hintPackageDisuse renderer
+        | LoadRenderPackageMessage2d hintPackageUse -> GlRenderer2d.handleLoadRenderPackage false hintPackageUse renderer
+        | UnloadRenderPackageMessage2d hintPackageDisuse -> GlRenderer2d.handleUnloadRenderPackage hintPackageDisuse renderer
         | ReloadRenderAssetsMessage2d -> GlRenderer2d.handleReloadRenderAssets renderer
 
     static member private handleRenderMessages renderMessages renderer =

@@ -103,8 +103,8 @@ and [<NoEquality; NoComparison>] RenderMessage3d =
     | SetImageMinFilter of OpenGL.TextureMinFilter * Image AssetTag
     | SetImageMagFilter of OpenGL.TextureMagFilter * Image AssetTag
     | SetStaticModelMessage of StaticModelSurfaceDescriptor array * Box3 * StaticModel AssetTag
-    | HintRenderPackageUseMessage3d of string
-    | HintRenderPackageDisuseMessage3d of string
+    | LoadRenderPackageMessage3d of string
+    | UnloadRenderPackageMessage3d of string
     | ReloadRenderAssetsMessage3d
 
 /// A sortable light.
@@ -438,10 +438,10 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             let package = { Assets = Dictionary.singleton StringComparer.Ordinal assetTag.AssetName (StaticModelAsset staticModel); PackageState = packageState }
             renderer.RenderPackages.Assign (assetTag.PackageName, package)
 
-    static member private handleHintRenderPackageUse hintPackageName renderer =
+    static member private handleLoadRenderPackage hintPackageName renderer =
         GlRenderer3d.tryLoadRenderPackage false hintPackageName renderer
 
-    static member private handleHintRenderPackageDisuse hintPackageName renderer =
+    static member private handleUnloadRenderPackage hintPackageName renderer =
         GlRenderer3d.invalidateCaches renderer
         match Dictionary.tryFind hintPackageName renderer.RenderPackages with
         | Some package ->
@@ -840,10 +840,10 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                     | _ -> Log.debug ("Could not set mag filter for non-texture or missing asset '" + scstring image + "'")
                 | SetStaticModelMessage (surfaceDescriptors, bounds, assetTag) ->
                     GlRenderer3d.handleSetStaticModelMessage surfaceDescriptors bounds assetTag renderer
-                | HintRenderPackageUseMessage3d hintPackageUse ->
-                    GlRenderer3d.handleHintRenderPackageUse hintPackageUse renderer
-                | HintRenderPackageDisuseMessage3d hintPackageDisuse ->
-                    GlRenderer3d.handleHintRenderPackageDisuse hintPackageDisuse renderer
+                | LoadRenderPackageMessage3d hintPackageUse ->
+                    GlRenderer3d.handleLoadRenderPackage hintPackageUse renderer
+                | UnloadRenderPackageMessage3d hintPackageDisuse ->
+                    GlRenderer3d.handleUnloadRenderPackage hintPackageDisuse renderer
                 | ReloadRenderAssetsMessage3d ->
                     GlRenderer3d.handleReloadRenderAssets renderer
 

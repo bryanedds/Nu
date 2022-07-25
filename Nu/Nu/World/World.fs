@@ -593,12 +593,12 @@ module WorldModule3 =
                         then RendererThread (createRenderer2d, createRenderer3d) :> RendererProcess
                         else RendererInline (createRenderer2d, createRenderer3d) :> RendererProcess
                     rendererProcess.Start ()
-                    rendererProcess.EnqueueMessage2d (HintRenderPackageUseMessage2d Assets.Default.PackageName) // enqueue default package hint
+                    rendererProcess.EnqueueMessage2d (LoadRenderPackageMessage2d Assets.Default.PackageName) // enqueue default package hint
                     let audioPlayer =
                         if SDL.SDL_WasInit SDL.SDL_INIT_AUDIO <> 0u
                         then SdlAudioPlayer.make () :> AudioPlayer
                         else MockAudioPlayer.make () :> AudioPlayer
-                    audioPlayer.EnqueueMessage (HintAudioPackageUseMessage Assets.Default.PackageName) // enqueue default package hint
+                    audioPlayer.EnqueueMessage (LoadAudioPackageMessage Assets.Default.PackageName) // enqueue default package hint
                     { PhysicsEngine2d = physicsEngine2d
                       RendererProcess = rendererProcess
                       AudioPlayer = audioPlayer }

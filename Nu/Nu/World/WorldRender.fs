@@ -39,16 +39,16 @@ module WorldRender =
         /// used to avoid loading assets at inconvenient times (such as in the middle of game play!)
         [<FunctionBinding>]
         static member hintRenderPackageUse2d packageName world =
-            let hintRenderPackageUseMessage = HintRenderPackageUseMessage2d packageName
+            let hintRenderPackageUseMessage = LoadRenderPackageMessage2d packageName
             World.enqueueRenderMessage2d hintRenderPackageUseMessage world
             world
 
         /// Hint that a rendering package should be unloaded since its assets will not be used
         /// again (or until specified via World.hintRenderPackageUse).
         [<FunctionBinding>]
-        static member hintRenderPackageDisuse2d packageName world =
-            let hintRenderPackageDisuseMessage = HintRenderPackageDisuseMessage2d packageName
-            World.enqueueRenderMessage2d hintRenderPackageDisuseMessage world
+        static member unloadRenderPackage2d packageName world =
+            let unloadRenderPackageMessage = UnloadRenderPackageMessage2d packageName
+            World.enqueueRenderMessage2d unloadRenderPackageMessage world
             world
 
         /// Send a message to the renderer to reload its rendering assets.
