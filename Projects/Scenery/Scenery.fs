@@ -230,7 +230,7 @@ module Field =
             let traversableLayer = tileMap.Layers.["Traversable"] :?> TmxLayer
             let traversableHeightLayer = tileMap.Layers.["TraversableHeight"] :?> TmxLayer
             let (untraversableSurfaceDescriptor, _) = createFieldSurfaceDescriptorAndHeightMap tileMap.Width tileMap.Height tileSets untraversableLayer untraversableHeightLayer
-            let untraversableSurfaceDescriptor = { untraversableSurfaceDescriptor with Roughness = 0.0f }
+            let untraversableSurfaceDescriptor = { untraversableSurfaceDescriptor with Roughness = 0.1f }
             let (traversableSurfaceDescriptor, traversableHeightMap) = createFieldSurfaceDescriptorAndHeightMap tileMap.Width tileMap.Height tileSets traversableLayer traversableHeightLayer
             let surfaceDescriptors = [|untraversableSurfaceDescriptor; traversableSurfaceDescriptor|]
             let bounds = let bounds = untraversableSurfaceDescriptor.Bounds in bounds.Combine traversableSurfaceDescriptor.Bounds
