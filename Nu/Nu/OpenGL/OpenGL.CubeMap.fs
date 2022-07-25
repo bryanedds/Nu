@@ -11,10 +11,14 @@ open Nu
 [<RequireQualifiedAccess>]
 module CubeMap =
 
+    /// The key identifying a cube map.
+    type CubeMapMemoKey =
+        string * string * string * string * string * string
+
     /// Memoizes cube map loads.
     type [<NoEquality; NoComparison>] CubeMapMemo =
         private
-            { CubeMaps : Dictionary<string * string * string * string * string * string, uint> }
+            { CubeMaps : Dictionary<CubeMapMemoKey, uint> }
 
         /// Make a cube map memoizer.
         static member make () =
@@ -59,7 +63,10 @@ module CubeMap =
         Gl.DeleteTextures cubeMap
 
     /// Attempt to create a cube map from 6 files.
-    let TryCreateCubeMapMemoized (faceRightFilePath, faceLeftFilePath, faceTopFilePath, faceBottomFilePath, faceBackFilePath, faceFrontFilePath, cubeMapMemo) =
+    let TryCreateCubeMapMemoized (cubeMapMemoKey, cubeMapMemo) =
+
+        // deconstruct key
+        let (faceRightFilePath, faceLeftFilePath, faceTopFilePath, faceBottomFilePath, faceBackFilePath, faceFrontFilePath) = cubeMapMemoKey
 
         // memoize cube map
         let cubeMapKey =
@@ -81,6 +88,14 @@ module CubeMap =
 
         // already exists
         | (true, cubeMap) -> Right cubeMap
+
+    /// Delete a memoized cube map.
+    let DeleteCubeMapMemoized cubeMapKey (cubeMapMemo : CubeMapMemo) =
+        match cubeMapMemo.CubeMaps.TryGetValue cubeMapKey with
+        | (true, cubeMap) ->
+            DeleteCubeMap cubeMap
+            cubeMapMemo.CubeMaps.Remove cubeMapKey |> ignore<bool>
+        | (false, _) -> ()
 
     /// Delete memoized cube maps.
     let DeleteCubeMapsMemoized (cubeMapMemo) =

@@ -99,8 +99,8 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
     static member private freeRenderAsset renderAsset renderer =
         GlRenderer2d.invalidateCaches renderer
         match renderAsset with
-        | TextureAsset (_, texture) -> OpenGL.Texture.DeleteTexture texture
-        | FontAsset (_, font) -> SDL_ttf.TTF_CloseFont font
+        | TextureAsset (_, _, texture) -> OpenGL.Texture.DeleteTexture texture
+        | FontAsset (_, _, font) -> SDL_ttf.TTF_CloseFont font
         | CubeMapAsset _ -> ()
         | StaticModelAsset _ -> ()
 
@@ -111,8 +111,8 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
         | ".png"
         | ".tif" ->
             match OpenGL.Texture.TryCreateTextureUnfiltered asset.FilePath with
-            | Right texture ->
-                Some (asset.AssetTag.AssetName, TextureAsset texture)
+            | Right (textureMetadata, texture) ->
+                Some (asset.AssetTag.AssetName, TextureAsset (asset.FilePath, textureMetadata, texture))
             | Left error ->
                 Log.debug ("Could not load texture '" + asset.FilePath + "' due to '" + error + "'.")
                 None
@@ -124,7 +124,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
                 match Int32.TryParse fontSizeText with
                 | (true, fontSize) ->
                     let fontOpt = SDL_ttf.TTF_OpenFont (asset.FilePath, fontSize)
-                    if fontOpt <> IntPtr.Zero then Some (asset.AssetTag.AssetName, FontAsset (fontSize, fontOpt))
+                    if fontOpt <> IntPtr.Zero then Some (asset.AssetTag.AssetName, FontAsset (asset.FilePath, fontSize, fontOpt))
                     else Log.debug ("Could not load font due to unparsable font size in file name '" + asset.FilePath + "'."); None
                 | (false, _) -> Log.debug ("Could not load font due to file name being too short: '" + asset.FilePath + "'."); None
             else Log.debug ("Could not load font '" + asset.FilePath + "'."); None
@@ -316,7 +316,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
         match GlRenderer2d.tryFindRenderAsset image renderer with
         | ValueSome renderAsset ->
             match renderAsset with
-            | TextureAsset (textureMetadata, texture) ->
+            | TextureAsset (_, textureMetadata, texture) ->
                 GlRenderer2d.batchSprite absolute position size pivot rotation insetOpt textureMetadata texture color blend glow flip renderer
             | _ -> Log.trace "Cannot render sprite with a non-texture asset."
         | _ -> Log.info ("SpriteDescriptor failed to render due to unloadable assets for '" + scstring image + "'.")
@@ -327,7 +327,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
         match GlRenderer2d.tryFindRenderAsset image renderer with
         | ValueSome renderAsset ->
             match renderAsset with
-            | TextureAsset (textureMetadata, texture) ->
+            | TextureAsset (_, textureMetadata, texture) ->
                 let mutable index = 0
                 while index < particles.Length do
                     let particle = &particles.[index]
@@ -372,7 +372,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
             tileAssets |>
             Array.map (fun (tileSet, tileSetImage) ->
                 match GlRenderer2d.tryFindRenderAsset (AssetTag.generalize tileSetImage) renderer with
-                | ValueSome (TextureAsset (tileSetTexture, tileSetTextureMetadata)) -> Some (tileSet, tileSetImage, tileSetTexture, tileSetTextureMetadata)
+                | ValueSome (TextureAsset (_, tileSetTexture, tileSetTextureMetadata)) -> Some (tileSet, tileSetImage, tileSetTexture, tileSetTextureMetadata)
                 | ValueSome _ -> None
                 | ValueNone -> None) |>
             Array.definitizePlus
@@ -453,7 +453,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
             match GlRenderer2d.tryFindRenderAsset font renderer with
             | ValueSome renderAsset ->
                 match renderAsset with
-                | FontAsset (_, font) ->
+                | FontAsset (_, _, font) ->
 
                     // gather rendering resources
                     // NOTE: the resource implications (throughput and fragmentation?) of creating and destroying a

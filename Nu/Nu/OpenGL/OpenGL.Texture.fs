@@ -38,7 +38,7 @@ module Texture =
     /// Memoizes texture loads.
     type [<NoEquality; NoComparison>] TextureMemo =
         private
-            { Textures : Dictionary<TextureMinFilter * TextureMagFilter * bool * string, TextureMetadata * uint> }
+            { Textures : Dictionary<string, TextureMetadata * uint> }
 
         /// Make a texture memoizer.
         static member make () =
@@ -149,14 +149,13 @@ module Texture =
     let TryCreateTextureMemoized (minFilter, magFilter, generateMipmaps, filePath : string, textureMemo) =
 
         // memoize texture
-        let textureKey = (minFilter, magFilter, generateMipmaps, Path.Simplify filePath)
-        match textureMemo.Textures.TryGetValue textureKey with
+        match textureMemo.Textures.TryGetValue filePath with
         | (false, _) ->
 
             // attempt to create texture
             match TryCreateTexture (minFilter, magFilter, generateMipmaps, filePath) with
             | Right texture ->
-                textureMemo.Textures.Add (textureKey, texture)
+                textureMemo.Textures.Add (filePath, texture)
                 Right texture
             | Left error -> Left error
 
@@ -171,8 +170,16 @@ module Texture =
     let TryCreateTextureMemoizedFiltered (filePath, textureMemo) =
         TryCreateTextureMemoized (TextureMinFilter.LinearMipmapLinear, TextureMagFilter.Linear, true, filePath, textureMemo)
 
+    /// Delete a memoized texture.
+    let DeleteTextureMemoized textureKey (textureMemo : TextureMemo) =
+        match textureMemo.Textures.TryGetValue textureKey with
+        | (true, (_, texture)) ->
+            Gl.DeleteTextures texture
+            textureMemo.Textures.Remove textureKey |> ignore<bool>
+        | (false, _) -> ()
+
     /// Delete memoized textures.
-    let DeleteTexturesMemoized (textureMemo) =
+    let DeleteTexturesMemoized textureMemo =
         for entry in textureMemo.Textures do
             DeleteTexture (snd entry.Value)
         textureMemo.Textures.Clear ()

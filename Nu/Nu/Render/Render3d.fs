@@ -209,13 +209,16 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
         renderer.RenderPackageCachedOpt <- Unchecked.defaultof<_>
         renderer.RenderAssetCachedOpt <- Unchecked.defaultof<_>
 
-    static member private freeRenderAsset renderAsset renderer =
+    static member private freeRenderAsset packageState renderAsset renderer =
         GlRenderer3d.invalidateCaches renderer
         match renderAsset with
-        | TextureAsset (_, texture) -> OpenGL.Texture.DeleteTexture texture
-        | FontAsset (_, font) -> SDL_ttf.TTF_CloseFont font
-        | CubeMapAsset  (cubeMap, _) ->
-            OpenGL.CubeMap.DeleteCubeMap cubeMap
+        | TextureAsset (filePath, _, _) ->
+            OpenGL.Texture.DeleteTextureMemoized filePath packageState.TextureMemo
+            OpenGL.Hl.Assert ()
+        | FontAsset (_, _, font) ->
+            SDL_ttf.TTF_CloseFont font
+        | CubeMapAsset (cubeMapFilePaths, _, _) ->
+            OpenGL.CubeMap.DeleteCubeMapMemoized cubeMapFilePaths packageState.CubeMapMemo
             OpenGL.Hl.Assert ()
         | StaticModelAsset staticModel ->
             OpenGL.PhysicallyBased.DestroyPhysicallyBasedStaticModel staticModel
@@ -228,8 +231,8 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
         | ".png"
         | ".tif" ->
             match OpenGL.Texture.TryCreateTextureMemoizedFiltered (asset.FilePath, packageState.TextureMemo) with
-            | Right texture ->
-                Some (asset.AssetTag.AssetName, TextureAsset texture)
+            | Right (textureMetadata, texture) ->
+                Some (asset.AssetTag.AssetName, TextureAsset (asset.FilePath, textureMetadata, texture))
             | Left error ->
                 Log.debug ("Could not load texture '" + asset.FilePath + "' due to '" + error + "'.")
                 None
@@ -243,8 +246,9 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                 let faceBottomFilePath = dirPath + "/" + faceBottomFilePath |> fun str -> str.Trim ()
                 let faceBackFilePath = dirPath + "/" + faceBackFilePath |> fun str -> str.Trim ()
                 let faceFrontFilePath = dirPath + "/" + faceFrontFilePath |> fun str -> str.Trim ()
-                match OpenGL.CubeMap.TryCreateCubeMapMemoized (faceRightFilePath, faceLeftFilePath, faceTopFilePath, faceBottomFilePath, faceBackFilePath, faceFrontFilePath, packageState.CubeMapMemo) with
-                | Right cubeMap -> Some (asset.AssetTag.AssetName, CubeMapAsset (cubeMap, ref None))
+                let cubeMapMemoKey = (faceRightFilePath, faceLeftFilePath, faceTopFilePath, faceBottomFilePath, faceBackFilePath, faceFrontFilePath)
+                match OpenGL.CubeMap.TryCreateCubeMapMemoized (cubeMapMemoKey, packageState.CubeMapMemo) with
+                | Right cubeMap -> Some (asset.AssetTag.AssetName, CubeMapAsset (cubeMapMemoKey, cubeMap, ref None))
                 | Left error -> Log.debug ("Could not load cube map '" + asset.FilePath + "' due to: " + error); None
             | _ -> Log.debug ("Could not load cube map '" + asset.FilePath + "' due to requiring exactly 6 file paths with each file path on its own line."); None
         | ".fbx" ->
@@ -275,7 +279,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                 for (key, value) in renderAssets do
                     if freeExistingAssets then
                         match renderPackage.Assets.TryGetValue key with
-                        | (true, renderAsset) -> GlRenderer3d.freeRenderAsset renderAsset renderer
+                        | (true, renderAsset) -> GlRenderer3d.freeRenderAsset renderPackage.PackageState renderAsset renderer
                         | (false, _) -> ()
                     renderPackage.Assets.Assign (key, value)
             | Left failedAssetNames ->
@@ -324,7 +328,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
         match renderer.RenderPackages.TryGetValue assetTag.PackageName with
         | (true, package) ->
             match package.Assets.TryGetValue assetTag.AssetName with
-            | (true, asset) -> GlRenderer3d.freeRenderAsset asset renderer
+            | (true, asset) -> GlRenderer3d.freeRenderAsset package.PackageState asset renderer
             | (false, _) -> ()
         | (false, _) -> ()
 
@@ -335,14 +339,14 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             // create material
             let material : OpenGL.PhysicallyBased.PhysicallyBasedMaterial =
                 { Albedo = surfaceDescriptor.Albedo
-                  AlbedoTexture = ValueOption.defaultValue 0u (match GlRenderer3d.tryFindRenderAsset (AssetTag.generalize surfaceDescriptor.AlbedoImage) renderer with ValueSome (TextureAsset (_, texture)) -> ValueSome texture | _ -> ValueNone)
+                  AlbedoTexture = ValueOption.defaultValue 0u (match GlRenderer3d.tryFindRenderAsset (AssetTag.generalize surfaceDescriptor.AlbedoImage) renderer with ValueSome (TextureAsset (_, _, texture)) -> ValueSome texture | _ -> ValueNone)
                   Metalness = surfaceDescriptor.Metalness
-                  MetalnessTexture = ValueOption.defaultValue 0u (match GlRenderer3d.tryFindRenderAsset (AssetTag.generalize surfaceDescriptor.MetalnessImage) renderer with ValueSome (TextureAsset (_, texture)) -> ValueSome texture | _ -> ValueNone)
+                  MetalnessTexture = ValueOption.defaultValue 0u (match GlRenderer3d.tryFindRenderAsset (AssetTag.generalize surfaceDescriptor.MetalnessImage) renderer with ValueSome (TextureAsset (_, _, texture)) -> ValueSome texture | _ -> ValueNone)
                   Roughness = surfaceDescriptor.Roughness
-                  RoughnessTexture = ValueOption.defaultValue 0u (match GlRenderer3d.tryFindRenderAsset (AssetTag.generalize surfaceDescriptor.RoughnessImage) renderer with ValueSome (TextureAsset (_, texture)) -> ValueSome texture | _ -> ValueNone)
+                  RoughnessTexture = ValueOption.defaultValue 0u (match GlRenderer3d.tryFindRenderAsset (AssetTag.generalize surfaceDescriptor.RoughnessImage) renderer with ValueSome (TextureAsset (_, _, texture)) -> ValueSome texture | _ -> ValueNone)
                   AmbientOcclusion = surfaceDescriptor.AmbientOcclusion
-                  AmbientOcclusionTexture = ValueOption.defaultValue 0u (match GlRenderer3d.tryFindRenderAsset (AssetTag.generalize surfaceDescriptor.AmbientOcclusionImage) renderer with ValueSome (TextureAsset (_, texture)) -> ValueSome texture | _ -> ValueNone)
-                  NormalTexture = ValueOption.defaultValue 0u (match GlRenderer3d.tryFindRenderAsset (AssetTag.generalize surfaceDescriptor.NormalImage) renderer with ValueSome (TextureAsset (_, texture)) -> ValueSome texture | _ -> ValueNone)
+                  AmbientOcclusionTexture = ValueOption.defaultValue 0u (match GlRenderer3d.tryFindRenderAsset (AssetTag.generalize surfaceDescriptor.AmbientOcclusionImage) renderer with ValueSome (TextureAsset (_, _, texture)) -> ValueSome texture | _ -> ValueNone)
+                  NormalTexture = ValueOption.defaultValue 0u (match GlRenderer3d.tryFindRenderAsset (AssetTag.generalize surfaceDescriptor.NormalImage) renderer with ValueSome (TextureAsset (_, _, texture)) -> ValueSome texture | _ -> ValueNone)
                   TwoSided = surfaceDescriptor.TwoSided }
 
             // create vertex data, truncating it when required
@@ -780,13 +784,13 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                     postPasses.Add postPass |> ignore<bool>
                 | SetImageMinFilter (minFilter, image) ->
                     match GlRenderer3d.tryFindRenderAsset (AssetTag.generalize image) renderer with
-                    | ValueSome (TextureAsset (_, texture)) ->
+                    | ValueSome (TextureAsset (_, _, texture)) ->
                         OpenGL.Texture.SetMinFilter (minFilter, texture)
                         OpenGL.Hl.Assert ()
                     | _ -> Log.debug ("Could not set min filter for non-texture or missing asset '" + scstring image + "'")
                 | SetImageMagFilter (magFilter, image) ->
                     match GlRenderer3d.tryFindRenderAsset (AssetTag.generalize image) renderer with
-                    | ValueSome (TextureAsset (_, texture)) ->
+                    | ValueSome (TextureAsset (_, _, texture)) ->
                         OpenGL.Texture.SetMagFilter (magFilter, texture)
                         OpenGL.Hl.Assert ()
                     | _ -> Log.debug ("Could not set mag filter for non-texture or missing asset '" + scstring image + "'")
@@ -826,7 +830,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                     match GlRenderer3d.tryFindRenderAsset (AssetTag.generalize cubeMap) renderer with
                     | ValueSome asset ->
                         match asset with
-                        | CubeMapAsset (cubeMap, cubeMapIrradianceAndEnvironmentMapOptRef) -> Some (cubeMap, cubeMapIrradianceAndEnvironmentMapOptRef)
+                        | CubeMapAsset (_, cubeMap, cubeMapIrradianceAndEnvironmentMapOptRef) -> Some (cubeMap, cubeMapIrradianceAndEnvironmentMapOptRef)
                         | _ -> Log.debug "Could not utilize sky box due to mismatched cube map asset."; None
                     | ValueNone -> Log.debug "Could not utilize sky box due to non-existent cube map asset."; None
                 | None -> None
