@@ -1,31 +1,31 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="16" height="16" tilewidth="16" tileheight="16" infinite="0" nextlayerid="5" nextobjectid="1">
+<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="16" tileheight="16" infinite="0" nextlayerid="5" nextobjectid="1">
  <tileset firstgid="1" source="Forest.tsx"/>
  <tileset firstgid="2311" source="Height.tsx"/>
- <layer id="1" name="Untraversable" width="16" height="16">
+ <layer id="1" name="Untraversable" width="32" height="32">
   <properties>
    <property name="Image" value="[Field Forest]"/>
   </properties>
   <data encoding="base64" compression="zlib">
-   eJzrZ2Rg6B/Fo3gUj0gMADPvkAE=
+   eJztw7ENAAAMAiD7/+DL/tFAQi+pqqqq+voAmktAHw==
   </data>
  </layer>
- <layer id="4" name="UntraversableHeight" width="16" height="16" opacity="0.25">
+ <layer id="4" name="UntraversableHeight" width="32" height="32" opacity="0.25">
   <data encoding="base64" compression="zlib">
-   eJzj5mRg4B7Fo3gUj0gMACVYFAE=
+   eJztwzEJAAAMA7C+o/791sdIIL2kqqqq6usDsYBQAQ==
   </data>
  </layer>
- <layer id="2" name="Traversable" width="16" height="16">
+ <layer id="2" name="Traversable" width="32" height="32">
   <properties>
    <property name="Image" value="[Field Forest]"/>
   </properties>
   <data encoding="base64" compression="zlib">
-   eJyrYGNgKEXD5UBMLDABqp3LgIpLsJiJy3xs+glhIwr1lyC5gRz9yGaQqx/mj1H9A6vfDIg/sZKu9wNQjyk0DYHM+MhKvDnIepEBzBxCGJtecgEAmVF+YQ==
+   eJztlEEOQDAURGfTHkhwsgqXcUecwLckPynNlIV5ySzrvbQJQAghfKYIDJeN8T1/a64Z5yWnqVaf58+t+difiHdQ4mc2lPpZ7yC//H/29/aNLTx3L3amI/2DjoY13O9gur2O3Gq4hRCCzQ5me35h
   </data>
  </layer>
- <layer id="3" name="TraversableHeight" width="16" height="16" opacity="0.25">
+ <layer id="3" name="TraversableHeight" width="32" height="32" opacity="0.25">
   <data encoding="base64" compression="zlib">
-   eJzj5mRg4B4EmAcHplQ/sebB5HmhGMbng2JCZiDr50Mygw/NLGL0o7uBGD/woJmBzkc2k5Twg+njQzOXlPjA5id09bxoNDZ3EBv+1EhP2Pwx0HmEFhgATnsUhw==
+   eJztk7EKwDAIBbOWNP7/53aJINI4FHxdbjhCFs/4zLzGmAAAcOQ+8Ldf1Y/XXxu/26a7h+i30EN0m8ifZ6DIINbP7tyTcv/cGzNR/Ivq/R3+lc63Oaj2v8qje+5VDmo3AAB85wEaX1CH
   </data>
  </layer>
 </map>
