@@ -1166,12 +1166,13 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                 OpenGL.Hl.Assert ()
 
             // clear render tasks
+            SegmentedList.clear renderer.RenderTasks.RenderLights
+            SegmentedList.clear renderer.RenderTasks.RenderSkyBoxes
+            SegmentedList.clear renderer.RenderTasks.RenderBillboards
             renderer.RenderTasks.RenderSurfacesDeferredAbsolute.Clear ()
             renderer.RenderTasks.RenderSurfacesDeferredRelative.Clear ()
             SegmentedList.clear renderer.RenderTasks.RenderSurfacesForwardAbsoluteSorted
             SegmentedList.clear renderer.RenderTasks.RenderSurfacesForwardRelativeSorted
-            SegmentedList.clear renderer.RenderTasks.RenderSkyBoxes
-            SegmentedList.clear renderer.RenderTasks.RenderLights
 
             // end frame
             if renderer.RenderShouldEndFrame then
