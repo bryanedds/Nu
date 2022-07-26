@@ -198,9 +198,9 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
           RenderBrdfTexture : uint
           RenderPhysicallyBasedMaterial : OpenGL.PhysicallyBased.PhysicallyBasedMaterial
           mutable RenderModelsFields : single array
+          mutable RenderTexCoordsOffsetsFields : single array
           mutable RenderAlbedosFields : single array
           mutable RenderMaterialsFields : single array
-          mutable RenderTexCoordsOffsetsFields : single array
           RenderTasks : RenderTasks
           RenderPackages : Packages<RenderAsset, GlPackageState3d>
           mutable RenderPackageCachedOpt : string * Dictionary<string, RenderAsset> // OPTIMIZATION: nullable for speed
@@ -635,6 +635,12 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             if renderer.RenderModelsFields.Length < length then
                 renderer.RenderModelsFields <- Array.zeroCreate<single> length
 
+            // ensure we have a large enough texCoordsOffsets fields array
+            let mutable length = renderer.RenderTexCoordsOffsetsFields.Length
+            while parameters.Length * 4 > length do length <- length * 2
+            if renderer.RenderTexCoordsOffsetsFields.Length < length then
+                renderer.RenderTexCoordsOffsetsFields <- Array.zeroCreate<single> length
+
             // ensure we have a large enough abledos fields array
             let mutable length = renderer.RenderAlbedosFields.Length
             while parameters.Length * 4 > length do length <- length * 2
@@ -647,16 +653,14 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             if renderer.RenderMaterialsFields.Length < length then
                 renderer.RenderMaterialsFields <- Array.zeroCreate<single> length
 
-            // ensure we have a large enough texCoordsOffsets fields array
-            let mutable length = renderer.RenderTexCoordsOffsetsFields.Length
-            while parameters.Length * 4 > length do length <- length * 2
-            if renderer.RenderTexCoordsOffsetsFields.Length < length then
-                renderer.RenderTexCoordsOffsetsFields <- Array.zeroCreate<single> length
-
             // blit parameters to field arrays
             for i in 0 .. dec parameters.Length do
                 let struct (model, texCoordsOffset, renderMaterial) = parameters.[i]
                 model.ToArray (renderer.RenderModelsFields, i * 16)
+                renderer.RenderTexCoordsOffsetsFields.[i * 2] <- texCoordsOffset.Position.X
+                renderer.RenderTexCoordsOffsetsFields.[i * 2 + 1] <- texCoordsOffset.Position.Y
+                renderer.RenderTexCoordsOffsetsFields.[i * 2 + 2] <- texCoordsOffset.Position.X + texCoordsOffset.Size.X
+                renderer.RenderTexCoordsOffsetsFields.[i * 2 + 3] <- texCoordsOffset.Position.Y + texCoordsOffset.Size.Y
                 let (albedo, metalness, roughness, ambientOcclusion) =
                     ((match renderMaterial.AlbedoOpt with Some value -> value | None -> surface.PhysicallyBasedMaterial.Albedo),
                      (match renderMaterial.MetalnessOpt with Some value -> value | None -> surface.PhysicallyBasedMaterial.Metalness),
@@ -669,14 +673,10 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                 renderer.RenderMaterialsFields.[i * 3] <- metalness
                 renderer.RenderMaterialsFields.[i * 3 + 1] <- roughness
                 renderer.RenderMaterialsFields.[i * 3 + 2] <- ambientOcclusion
-                renderer.RenderTexCoordsOffsetsFields.[i * 2] <- texCoordsOffset.Position.X
-                renderer.RenderTexCoordsOffsetsFields.[i * 2 + 1] <- texCoordsOffset.Position.Y
-                renderer.RenderTexCoordsOffsetsFields.[i * 2 + 2] <- texCoordsOffset.Position.X + texCoordsOffset.Size.X
-                renderer.RenderTexCoordsOffsetsFields.[i * 2 + 3] <- texCoordsOffset.Position.Y + texCoordsOffset.Size.Y
 
             // draw surfaces
             OpenGL.PhysicallyBased.DrawPhysicallyBasedSurfaces
-                (eyePosition, parameters.Length, renderer.RenderModelsFields, renderer.RenderAlbedosFields, renderer.RenderMaterialsFields, renderer.RenderTexCoordsOffsetsFields, viewArray, projectionArray,
+                (eyePosition, parameters.Length, renderer.RenderModelsFields, renderer.RenderTexCoordsOffsetsFields, renderer.RenderAlbedosFields, renderer.RenderMaterialsFields, viewArray, projectionArray,
                  blending, irradianceMap, environmentFilterMap, brdfTexture, lightPositions, lightColors, lightBrightnesses, lightIntensities,
                  surface.PhysicallyBasedMaterial, surface.PhysicallyBasedGeometry, shader)
 
@@ -830,9 +830,9 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
               RenderBrdfTexture = brdfTexture
               RenderPhysicallyBasedMaterial = physicallyBasedMaterial
               RenderModelsFields = Array.zeroCreate<single> (16 * Constants.Render.GeometryBatchPrealloc)
+              RenderTexCoordsOffsetsFields = Array.zeroCreate<single> (4 * Constants.Render.GeometryBatchPrealloc)
               RenderAlbedosFields = Array.zeroCreate<single> (4 * Constants.Render.GeometryBatchPrealloc)
               RenderMaterialsFields = Array.zeroCreate<single> (3 * Constants.Render.GeometryBatchPrealloc)
-              RenderTexCoordsOffsetsFields = Array.zeroCreate<single> (4 * Constants.Render.GeometryBatchPrealloc)
               RenderTasks = renderTasks
               RenderPackages = dictPlus StringComparer.Ordinal []
               RenderPackageCachedOpt = Unchecked.defaultof<_>
