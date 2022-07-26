@@ -219,7 +219,10 @@ module Field =
 
     type Field =
         private
-            { FieldTileMap : TileMap AssetTag }
+            { FieldTickTime : uint64
+              FieldTileMap : TileMap AssetTag }
+
+        member this.UpdateTime = this.FieldTickTime
 
     let getFieldStaticModelAndSizeAndHeightMap (field : Field) world =
         let fieldModelAssetTag = asset field.FieldTileMap.PackageName (field.FieldTileMap.AssetName + "Model")
@@ -243,27 +246,41 @@ module Field =
             (fieldModelAssetTag, traversableSize, traversableHeightMap)
         | (true, (traversableSize, traversableHeightMap)) -> (fieldModelAssetTag, traversableSize, traversableHeightMap)
 
+    let advance field =
+        { field with FieldTickTime = inc field.FieldTickTime }
+
     let make tileMap =
-        { FieldTileMap = tileMap }
+        { FieldTickTime = 0UL
+          FieldTileMap = tileMap }
 
 type Field = Field.Field
 
+// this is our Elm-style message type
+type Message =
+    | UpdateMessage
+
 // this is our Elm-style command type
 type Command =
-    | Update
+    | UpdateCommand
 
 // this is our Elm-style game dispatcher
 type SceneryDispatcher () =
-    inherit GameDispatcher<Field, unit, Command> (Field.make (asset "Field" "Field"))
+    inherit GameDispatcher<Field, Message, Command> (Field.make (asset "Field" "Field"))
 
     // here we channel from events to signals
     override this.Channel (_, game) =
-        [game.UpdateEvent => cmd Update]
+        [game.UpdateEvent => msg UpdateMessage
+         game.UpdateEvent => cmd UpdateCommand]
+
+    // here we handle the Elm-style messages
+    override this.Message (field, message, _, _) =
+        match message with
+        | UpdateMessage -> just (Field.advance field)
 
     // here we handle the Elm-style commands
     override this.Command (_, command, _, world) =
         match command with
-        | Update ->
+        | UpdateCommand ->
             let moveSpeed = if KeyboardState.isKeyDown KeyboardKey.Return then 0.5f elif KeyboardState.isShiftDown () then 0.02f else 0.12f
             let turnSpeed = if KeyboardState.isShiftDown () then 0.025f else 0.05f
             let position = World.getEyePosition3d world
@@ -322,11 +339,13 @@ type SceneryDispatcher () =
                     [Entity.SurfaceIndex == 0
                      Entity.Size <== field --|> fun field world -> Triple.snd (Field.getFieldStaticModelAndSizeAndHeightMap field world)
                      Entity.StaticModel <== field --|> fun field world -> Triple.fst (Field.getFieldStaticModelAndSizeAndHeightMap field world)
+                     Entity.InsetOpt <== field --> fun field -> Some (box2 (v2 (16.0f * (single (field.UpdateTime / 20UL % 3UL))) 0.0f) v2Zero)
                      Entity.RenderStyle == Forward 0.0f]
                  Content.staticModelSurface Gen.name
                     [Entity.SurfaceIndex == 1
                      Entity.Size <== field --|> fun field world -> Triple.snd (Field.getFieldStaticModelAndSizeAndHeightMap field world)
                      Entity.StaticModel <== field --|> fun field world -> Triple.fst (Field.getFieldStaticModelAndSizeAndHeightMap field world)
+                     Entity.InsetOpt <== field --> fun field -> Some (box2 (v2 (16.0f * (single (field.UpdateTime / 20UL % 3UL))) 0.0f) v2Zero)
                      Entity.RenderStyle == Forward -1.0f]]]]
 
     override this.Register (game, world) =
