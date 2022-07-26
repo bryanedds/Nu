@@ -490,7 +490,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                 let sx = inset.Size.X * texelWidth - borderWidth * 2.0f
                 let sy = -inset.Size.Y * texelHeight + borderHeight * 2.0f
                 Box2 (px, py, sx, sy)
-            | None -> box2 v2Zero v2One
+            | None -> box2 v2Zero v2One // TODO: 3D: shouldn't we still be using borders?
         let eyeForward =
             (Vector3.Transform (v3Forward, eyeRotation)).WithY 0.0f
         if v3Neq eyeForward v3Zero then
@@ -538,7 +538,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                 let sx = inset.Size.X * texelWidth - borderWidth * 2.0f
                 let sy = -inset.Size.Y * texelHeight + borderHeight * 2.0f
                 Box2 (px, py, sx, sy)
-            | None -> box2 v2Zero v2One
+            | None -> box2 v2Zero v2Zero
         match renderType with
         | DeferredRenderType ->
             if modelAbsolute then
@@ -1145,14 +1145,14 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             | None -> ()
 
             // forward render surfaces w/ absolute transforms
-            for (model, _, renderMaterial, surface) in renderer.RenderTasks.RenderSurfacesForwardAbsoluteSorted do
+            for (model, texCoordsOffset, renderMaterial, surface) in renderer.RenderTasks.RenderSurfacesForwardAbsoluteSorted do
                 let (lightPositions, lightColors, lightBrightnesses, lightIntensities) =
                     SortableLight.sortLightsIntoArrays model.Translation renderer.RenderTasks.RenderLights
                 GlRenderer3d.renderPhysicallyBasedSurfaces
                     eyePosition
                     viewAbsoluteArray
                     projectionArray
-                    (SegmentedList.singleton (model, box2Zero, renderMaterial))
+                    (SegmentedList.singleton (model, texCoordsOffset, renderMaterial))
                     true
                     irradianceMap
                     environmentFilterMap
@@ -1167,14 +1167,14 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                 OpenGL.Hl.Assert ()
 
             // forward render surfaces w/ relative transforms
-            for (model, _, renderMaterial, surface) in renderer.RenderTasks.RenderSurfacesForwardRelativeSorted do
+            for (model, texCoordsOffset, renderMaterial, surface) in renderer.RenderTasks.RenderSurfacesForwardRelativeSorted do
                 let (lightPositions, lightColors, lightBrightnesses, lightIntensities) =
                     SortableLight.sortLightsIntoArrays model.Translation renderer.RenderTasks.RenderLights
                 GlRenderer3d.renderPhysicallyBasedSurfaces
                     eyePosition
                     viewRelativeArray
                     projectionArray
-                    (SegmentedList.singleton (model, box2Zero, renderMaterial))
+                    (SegmentedList.singleton (model, texCoordsOffset, renderMaterial))
                     true
                     irradianceMap
                     environmentFilterMap

@@ -270,7 +270,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
                 let sx = inset.Size.X * texelWidth - borderWidth * 2.0f
                 let sy = -inset.Size.Y * texelHeight + borderHeight * 2.0f
                 Box2 (px, py, sx, sy)
-            | ValueNone -> Box2 (0.0f, 1.0f, 1.0f, -1.0f)
+            | ValueNone -> Box2 (0.0f, 1.0f, 1.0f, -1.0f) // TODO: 3D: shouldn't we still be using borders?
 
         // compute a flipping flags
         let struct (flipH, flipV) =
