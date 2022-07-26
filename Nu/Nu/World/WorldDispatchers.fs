@@ -1325,7 +1325,7 @@ module LightFacet3dModule =
             v3Dup 0.5f
 
 [<AutoOpen>]
-module BillboardFacetModule =
+module StaticBillboardFacetModule =
 
     type [<StructuralEquality; StructuralComparison>] RenderStyle =
         | Deferred
@@ -1363,7 +1363,7 @@ module BillboardFacetModule =
         member this.SetRenderStyle (value : RenderStyle) world = this.Set Property? RenderStyle value world
         member this.RenderStyle = lens Property? RenderStyle this.GetRenderStyle this.SetRenderStyle this
 
-    type BillboardFacet () =
+    type StaticBillboardFacet () =
         inherit Facet (false)
 
         static member Properties =
@@ -1406,7 +1406,7 @@ module BillboardFacetModule =
                     world
             world
 
-        override this.GetQuickSize (entity, world) =
+        override this.GetQuickSize (_, _) =
             v3 1.0f 2.0f 1.0f
 
         override this.RayCast (ray, entity, world) =
@@ -2685,13 +2685,13 @@ module LightDispatcher3dModule =
             v3Dup 0.5f
 
 [<AutoOpen>]
-module BillboardDispatcherModule =
+module StaticBillboardDispatcherModule =
 
-    type BillboardDispatcher () =
+    type StaticBillboardDispatcher () =
         inherit EntityDispatcher3d (true, false)
 
         static member Facets =
-            [typeof<BillboardFacet>]
+            [typeof<StaticBillboardFacet>]
 
         static member Properties =
             [define Entity.InsetOpt None
