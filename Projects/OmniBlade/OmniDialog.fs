@@ -107,7 +107,7 @@ type [<ReferenceEquality; NoComparison>] Dialog =
                 | None -> Unjustified true
              Entity.Margins == v3 30.0f 30.0f 0.0f]
             [Content.button "Left"
-                [Entity.PositionLocal == v3 186.0f 18.0f 0.0f; Entity.ElevationLocal == 2.0f
+                [Entity.PositionLocal == v3 186.0f 18.0f 0.0f; Entity.ElevationLocal == 2.0f; Entity.Size == v3 192.0f 48.0f 0.0f
                  Entity.VisibleLocal <== detokenizeAndDialogOpt --> fun (detokenize, dialogOpt) ->
                     match dialogOpt with
                     | Some dialog -> Option.isSome dialog.DialogPromptOpt && Dialog.isExhausted detokenize dialog
@@ -118,7 +118,7 @@ type [<ReferenceEquality; NoComparison>] Dialog =
                     | None -> ""
                  Entity.ClickEvent ==> msg promptLeft]
              Content.button "Right"
-                [Entity.PositionLocal == v3 486.0f 18.0f 0.0f; Entity.ElevationLocal == 2.0f
+                [Entity.PositionLocal == v3 486.0f 18.0f 0.0f; Entity.ElevationLocal == 2.0f; Entity.Size == v3 192.0f 48.0f 0.0f
                  Entity.VisibleLocal <== detokenizeAndDialogOpt --> fun (detokenize, dialogOpt) ->
                     match dialogOpt with
                     | Some dialog -> Option.isSome dialog.DialogPromptOpt && Dialog.isExhausted detokenize dialog

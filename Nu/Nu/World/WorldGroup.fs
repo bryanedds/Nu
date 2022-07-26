@@ -184,7 +184,12 @@ module WorldGroupModule =
                     world descriptor.SimulantProperties
             let world =
                 List.fold (fun world childDescriptor ->
-                    World.createEntity4 DefaultOverlay childDescriptor group world |> snd)
+                    let (entity, world) = World.createEntity4 DefaultOverlay childDescriptor group world
+                    // quick size entity if a size was not specified by the descriptor properties
+                    if not (List.exists (fun (name, _) -> name = Property? Size) childDescriptor.SimulantProperties) then
+                        let quickSize = entity.GetQuickSize world
+                        entity.SetSize quickSize world
+                    else world)
                     world descriptor.SimulantChildren
             (group, world)
 
