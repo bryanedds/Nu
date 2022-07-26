@@ -746,7 +746,13 @@ module WorldEntityModule =
                             (handler, partialAddress --> entity, entity :> Simulant)) handlers
                     let binds = List.map (fun (_, left, right, twoWay) -> (entity :> Simulant, left, right, twoWay)) binds
                     let world =
-                        // only set mount if one was not specified by the descriptor properties
+                        // quick size entity if a size was not specified by the descriptor properties
+                        if not (List.exists (fun (name, _) -> name = Property? Size) descriptor.SimulantProperties) then
+                            let size = entity.GetQuickSize world
+                            entity.SetSize size world
+                        else world
+                    let world =
+                        // set mount if one was not specified by the descriptor properties
                         if not (List.exists (fun (name, _) -> name = Property? MountOpt) descriptor.SimulantProperties) then
                             let mountOpt = if owner :? Entity then Some (Relation.makeParent ()) else None
                             World.setEntityMountOpt mountOpt entity world |> snd'

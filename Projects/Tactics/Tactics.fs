@@ -369,6 +369,25 @@ module CharacterDispatcher =
                 characterView
             else View.empty
 
+        override this.GetQuickSize (_, _) =
+            v3 1.0f 2.0f 1.0f
+
+        override this.RayCast (ray, entity, world) =
+            // TODO: 3D: intersect against oriented quad rather than box.
+            match this.TryGetHighlightBounds (entity, world) with
+            | Some bounds ->
+                let intersectionOpt = ray.Intersects bounds
+                if intersectionOpt.HasValue then [|intersectionOpt.Value|]
+                else [||]
+            | None -> [||]
+
+        override this.TryGetHighlightBounds (entity, world) =
+            let bounds = entity.GetBounds world
+            Some
+                (box3
+                    (bounds.Position + bounds.Size * v3 0.0f 0.5f 0.0f)
+                    (bounds.Size * v3 1.0f 0.5f 1.0f))
+
 [<RequireQualifiedAccess>]
 module Field =
 
