@@ -68,7 +68,7 @@ and [<CustomEquality; CustomComparison>] RenderPassMessage3d =
 and [<NoEquality; NoComparison>] CachedStaticModelMessage =
     { mutable CachedStaticModelAbsolute : bool
       mutable CachedStaticModelAffineMatrix : Matrix4x4
-      mutable CachedStaticModelInsetOpt : Box2 option
+      mutable CachedStaticModelInsetOpt : Box2 voption
       mutable CachedStaticModelRenderMaterial : RenderMaterial
       mutable CachedStaticModelRenderType : RenderType
       mutable CachedStaticModel : StaticModel AssetTag }
@@ -96,11 +96,11 @@ and [<NoEquality; NoComparison>] StaticModelSurfaceDescriptor =
 and [<NoEquality; NoComparison>] RenderMessage3d =
     | RenderSkyBoxMessage of CubeMap AssetTag
     | RenderLightMessage3d of Vector3 * Color * single * single * LightType
-    | RenderBillboardMessage of bool * Matrix4x4 * Box2 option * RenderMaterial * Image AssetTag * Image AssetTag * Image AssetTag * Image AssetTag * Image AssetTag * RenderType
-    | RenderBillboardsMessage of bool * (Matrix4x4 * Box2 option) SegmentedList * RenderMaterial * Image AssetTag * Image AssetTag * Image AssetTag * Image AssetTag * Image AssetTag * RenderType
-    | RenderStaticModelSurfaceMessage of bool * Matrix4x4 * Box2 option * RenderMaterial * RenderType * StaticModel AssetTag * int
-    | RenderStaticModelMessage of bool * Matrix4x4 * Box2 option * RenderMaterial * RenderType * StaticModel AssetTag
-    | RenderStaticModelsMessage of bool * (Matrix4x4 * Box2 option * RenderMaterial) SegmentedList * RenderType * StaticModel AssetTag
+    | RenderBillboardMessage of bool * Matrix4x4 * Box2 voption * RenderMaterial * Image AssetTag * Image AssetTag * Image AssetTag * Image AssetTag * Image AssetTag * RenderType
+    | RenderBillboardsMessage of bool * (Matrix4x4 * Box2 voption) SegmentedList * RenderMaterial * Image AssetTag * Image AssetTag * Image AssetTag * Image AssetTag * Image AssetTag * RenderType
+    | RenderStaticModelSurfaceMessage of bool * Matrix4x4 * Box2 voption * RenderMaterial * RenderType * StaticModel AssetTag * int
+    | RenderStaticModelMessage of bool * Matrix4x4 * Box2 voption * RenderMaterial * RenderType * StaticModel AssetTag
+    | RenderStaticModelsMessage of bool * (Matrix4x4 * Box2 voption * RenderMaterial) SegmentedList * RenderType * StaticModel AssetTag
     | RenderCachedStaticModelMessage of CachedStaticModelMessage
     | RenderPostPassMessage3d of RenderPassMessage3d
     | SetImageMinFilter of OpenGL.TextureMinFilter * Image AssetTag
@@ -472,7 +472,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
         (absolute,
          eyeRotation : Quaternion,
          affineMatrix,
-         insetOpt : Box2 option,
+         insetOpt : Box2 voption,
          albedoMetadata : OpenGL.Texture.TextureMetadata,
          renderMaterial,
          renderType,
@@ -480,7 +480,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
          renderer) =
         let texCoordsOffset =
             match insetOpt with
-            | Some inset ->
+            | ValueSome inset ->
                 let texelWidth = albedoMetadata.TextureTexelWidth
                 let texelHeight = albedoMetadata.TextureTexelHeight
                 let borderWidth = texelWidth * Constants.Render.SpriteBorderTexelScalar
@@ -490,7 +490,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                 let sx = inset.Size.X * texelWidth - borderWidth * 2.0f
                 let sy = -inset.Size.Y * texelHeight + borderHeight * 2.0f
                 Box2 (px, py, sx, sy)
-            | None -> box2 v2Zero v2One // TODO: 3D: shouldn't we still be using borders?
+            | ValueNone -> box2 v2Zero v2One // TODO: 3D: shouldn't we still be using borders?
         let eyeForward =
             (Vector3.Transform (v3Forward, eyeRotation)).WithY 0.0f
         if v3Neq eyeForward v3Zero then
@@ -515,7 +515,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
     static member inline private categorizeStaticModelSurface
         (modelAbsolute,
          modelMatrix : Matrix4x4 inref,
-         insetOpt : Box2 option,
+         insetOpt : Box2 voption,
          renderMaterial : RenderMaterial inref,
          renderType : RenderType,
          ignoreSurfaceMatrix,
@@ -527,7 +527,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             else surface.SurfaceMatrix * modelMatrix
         let texCoordsOffset =
             match insetOpt with
-            | Some inset ->
+            | ValueSome inset ->
                 let albedoMetadata = surface.PhysicallyBasedMaterial.AlbedoMetadata
                 let texelWidth = albedoMetadata.TextureTexelWidth
                 let texelHeight = albedoMetadata.TextureTexelHeight
@@ -538,7 +538,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                 let sx = inset.Size.X * texelWidth - borderWidth * 2.0f
                 let sy = -inset.Size.Y * texelHeight + borderHeight * 2.0f
                 Box2 (px, py, sx, sy)
-            | None -> box2 v2Zero v2Zero
+            | ValueNone -> box2 v2Zero v2Zero
         match renderType with
         | DeferredRenderType ->
             if modelAbsolute then
@@ -557,7 +557,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
     static member inline private categorizeStaticModelSurfaceByIndex
         (modelAbsolute,
          modelMatrix : Matrix4x4 inref,
-         insetOpt : Box2 option,
+         insetOpt : Box2 voption,
          renderMaterial : RenderMaterial inref,
          renderType : RenderType,
          staticModel : StaticModel AssetTag,
@@ -576,7 +576,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
     static member private categorizeStaticModel
         (modelAbsolute,
          modelMatrix : Matrix4x4 inref,
-         insetOpt : Box2 option,
+         insetOpt : Box2 voption,
          renderMaterial : RenderMaterial inref,
          renderType,
          staticModel : StaticModel AssetTag,
