@@ -2666,6 +2666,28 @@ module LightDispatcher3dModule =
             v3Dup 0.5f
 
 [<AutoOpen>]
+module BillboardDispatcherModule =
+
+    type BillboardDispatcher () =
+        inherit EntityDispatcher3d (true, false)
+
+        static member Facets =
+            [typeof<BillboardFacet>]
+
+        static member Properties =
+            [define Entity.InsetOpt None
+             define Entity.AlbedoOpt None
+             define Entity.AlbedoImage Assets.Default.MaterialAlbedo
+             define Entity.MetalnessOpt None
+             define Entity.MetalnessImage Assets.Default.MaterialMetalness
+             define Entity.RoughnessOpt None
+             define Entity.RoughnessImage Assets.Default.MaterialRoughness
+             define Entity.AmbientOcclusionOpt None
+             define Entity.AmbientOcclusionImage Assets.Default.MaterialAmbientOcclusion
+             define Entity.NormalImage Assets.Default.MaterialNormal
+             define Entity.RenderStyle Deferred]
+
+[<AutoOpen>]
 module StaticModelDispatcherModule =
 
     type StaticModelDispatcher () =
