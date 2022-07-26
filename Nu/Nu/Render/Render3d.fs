@@ -971,35 +971,40 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             for (absolute, modelMatrix, texCoordOffset, renderMaterial, albedoTexture, metalnessTexture, roughnessTexture, ambientOcclusionTexture, normalTexture, renderType) in renderer.RenderTasks.RenderBillboards do
                 match renderType with
                 | DeferredRenderType ->
-                    let billboardMaterial : OpenGL.PhysicallyBased.PhysicallyBasedMaterial =
-                        { Albedo = Option.defaultValue Color.White renderMaterial.AlbedoOpt
-                          AlbedoTexture = albedoTexture
-                          Metalness = Option.defaultValue 1.0f renderMaterial.MetalnessOpt
-                          MetalnessTexture = metalnessTexture
-                          Roughness = Option.defaultValue 1.0f renderMaterial.RoughnessOpt
-                          RoughnessTexture = roughnessTexture
-                          AmbientOcclusion = Option.defaultValue 1.0f renderMaterial.AmbientOcclusionOpt
-                          AmbientOcclusionTexture = ambientOcclusionTexture
-                          NormalTexture = normalTexture
-                          TwoSided = false }
-                    let billboardSurface = OpenGL.PhysicallyBased.CreatePhysicallyBasedSurface ([||], m4Identity, box3Zero, billboardMaterial, renderer.RenderBillboardGeometry)
-                    GlRenderer3d.renderPhysicallyBasedSurfaces
-                        eyePosition
-                        (if absolute then viewAbsoluteArray else viewRelativeArray)
-                        projectionArray
-                        (SegmentedList.singleton struct (modelMatrix, texCoordOffset, renderMaterial))
-                        false
-                        irradianceMap
-                        environmentFilterMap
-                        renderer.RenderBrdfTexture
-                        lightPositions
-                        lightColors
-                        lightBrightnesses
-                        lightIntensities
-                        billboardSurface
-                        renderer.RenderPhysicallyBasedDeferredShader
-                        renderer
-                    OpenGL.Hl.Assert ()
+                    let eyeForward = (Vector3.Transform (v3Forward, eyeRotation)).WithY 0.0f
+                    if v3Neq eyeForward v3Zero then
+                        let billboardAngle = if Vector3.Dot (eyeForward, v3Right) >= 0.0f then -eyeForward.AngleBetween v3Forward else eyeForward.AngleBetween v3Forward
+                        let billboardRotation = Matrix4x4.CreateFromQuaternion (Quaternion.CreateFromAxisAngle (v3Up, billboardAngle))
+                        let billboardMatrix = billboardRotation * modelMatrix
+                        let billboardMaterial : OpenGL.PhysicallyBased.PhysicallyBasedMaterial =
+                            { Albedo = Option.defaultValue Color.White renderMaterial.AlbedoOpt
+                              AlbedoTexture = albedoTexture
+                              Metalness = Option.defaultValue 1.0f renderMaterial.MetalnessOpt
+                              MetalnessTexture = metalnessTexture
+                              Roughness = Option.defaultValue 1.0f renderMaterial.RoughnessOpt
+                              RoughnessTexture = roughnessTexture
+                              AmbientOcclusion = Option.defaultValue 1.0f renderMaterial.AmbientOcclusionOpt
+                              AmbientOcclusionTexture = ambientOcclusionTexture
+                              NormalTexture = normalTexture
+                              TwoSided = false }
+                        let billboardSurface = OpenGL.PhysicallyBased.CreatePhysicallyBasedSurface ([||], m4Identity, box3Zero, billboardMaterial, renderer.RenderBillboardGeometry)
+                        GlRenderer3d.renderPhysicallyBasedSurfaces
+                            eyePosition
+                            (if absolute then viewAbsoluteArray else viewRelativeArray)
+                            projectionArray
+                            (SegmentedList.singleton struct (billboardMatrix, texCoordOffset, renderMaterial))
+                            false
+                            irradianceMap
+                            environmentFilterMap
+                            renderer.RenderBrdfTexture
+                            lightPositions
+                            lightColors
+                            lightBrightnesses
+                            lightIntensities
+                            billboardSurface
+                            renderer.RenderPhysicallyBasedDeferredShader
+                            renderer
+                        OpenGL.Hl.Assert ()
                 | ForwardRenderType _ -> ()
 
             // deferred render surfaces w/ absolute-transforms
@@ -1075,35 +1080,40 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             for (absolute, modelMatrix, texCoordOffset, renderMaterial, albedoTexture, metalnessTexture, roughnessTexture, ambientOcclusionTexture, normalTexture, renderType) in renderer.RenderTasks.RenderBillboards do
                 match renderType with
                 | ForwardRenderType _ ->
-                    let billboardMaterial : OpenGL.PhysicallyBased.PhysicallyBasedMaterial =
-                        { Albedo = Option.defaultValue Color.White renderMaterial.AlbedoOpt
-                          AlbedoTexture = albedoTexture
-                          Metalness = Option.defaultValue 1.0f renderMaterial.MetalnessOpt
-                          MetalnessTexture = metalnessTexture
-                          Roughness = Option.defaultValue 1.0f renderMaterial.RoughnessOpt
-                          RoughnessTexture = roughnessTexture
-                          AmbientOcclusion = Option.defaultValue 1.0f renderMaterial.AmbientOcclusionOpt
-                          AmbientOcclusionTexture = ambientOcclusionTexture
-                          NormalTexture = normalTexture
-                          TwoSided = false }
-                    let billboardSurface = OpenGL.PhysicallyBased.CreatePhysicallyBasedSurface ([||], m4Identity, box3Zero, billboardMaterial, renderer.RenderBillboardGeometry)
-                    GlRenderer3d.renderPhysicallyBasedSurfaces
-                        eyePosition
-                        (if absolute then viewAbsoluteArray else viewRelativeArray)
-                        projectionArray
-                        (SegmentedList.singleton struct (modelMatrix, texCoordOffset, renderMaterial))
-                        true
-                        irradianceMap
-                        environmentFilterMap
-                        renderer.RenderBrdfTexture
-                        lightPositions
-                        lightColors
-                        lightBrightnesses
-                        lightIntensities
-                        billboardSurface
-                        renderer.RenderPhysicallyBasedForwardShader
-                        renderer
-                    OpenGL.Hl.Assert ()
+                    let eyeForward = (Vector3.Transform (v3Forward, eyeRotation)).WithY 0.0f
+                    if v3Neq eyeForward v3Zero then
+                        let billboardAngle = if Vector3.Dot (eyeForward, v3Right) >= 0.0f then -eyeForward.AngleBetween v3Forward else eyeForward.AngleBetween v3Forward
+                        let billboardRotation = Matrix4x4.CreateFromQuaternion (Quaternion.CreateFromAxisAngle (v3Up, billboardAngle))
+                        let billboardMatrix = billboardRotation * modelMatrix
+                        let billboardMaterial : OpenGL.PhysicallyBased.PhysicallyBasedMaterial =
+                            { Albedo = Option.defaultValue Color.White renderMaterial.AlbedoOpt
+                              AlbedoTexture = albedoTexture
+                              Metalness = Option.defaultValue 1.0f renderMaterial.MetalnessOpt
+                              MetalnessTexture = metalnessTexture
+                              Roughness = Option.defaultValue 1.0f renderMaterial.RoughnessOpt
+                              RoughnessTexture = roughnessTexture
+                              AmbientOcclusion = Option.defaultValue 1.0f renderMaterial.AmbientOcclusionOpt
+                              AmbientOcclusionTexture = ambientOcclusionTexture
+                              NormalTexture = normalTexture
+                              TwoSided = false }
+                        let billboardSurface = OpenGL.PhysicallyBased.CreatePhysicallyBasedSurface ([||], m4Identity, box3Zero, billboardMaterial, renderer.RenderBillboardGeometry)
+                        GlRenderer3d.renderPhysicallyBasedSurfaces
+                            eyePosition
+                            (if absolute then viewAbsoluteArray else viewRelativeArray)
+                            projectionArray
+                            (SegmentedList.singleton struct (billboardMatrix, texCoordOffset, renderMaterial))
+                            true
+                            irradianceMap
+                            environmentFilterMap
+                            renderer.RenderBrdfTexture
+                            lightPositions
+                            lightColors
+                            lightBrightnesses
+                            lightIntensities
+                            billboardSurface
+                            renderer.RenderPhysicallyBasedForwardShader
+                            renderer
+                        OpenGL.Hl.Assert ()
                 | DeferredRenderType -> ()
 
             // forward render surfaces w/ absolute-transforms

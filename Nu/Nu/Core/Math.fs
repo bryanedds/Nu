@@ -21,6 +21,10 @@ module Vector2 =
         member this.WithX x = Vector2 (x, this.Y)
         member this.WithY y = Vector2 (this.X, y)
         member this.Rotate r = Vector2 (cos r * this.X - sin r * this.Y, sin r * this.X + cos r * this.Y)
+        member this.AngleBetween (that : Vector2) =
+            let a = Vector2.Normalize this
+            let b = Vector2.Normalize that
+            acos (Vector2.Dot (a, b))
 
     let inline v2 x y = Vector2 (x, y)
     let inline v2Eq (v : Vector2) (v2 : Vector2) = v.X = v2.X && v.Y = v2.Y
@@ -122,6 +126,10 @@ module Vector3 =
         member this.WithY y = Vector3 (this.X, y, this.Z)
         member this.WithZ z = Vector3 (this.X, this.Y, z)
         member this.RollPitchYaw = MathHelper.RollPitchYaw &this
+        member this.AngleBetween (that : Vector3) =
+            let a = Vector3.Normalize this
+            let b = Vector3.Normalize that
+            acos (Vector3.Dot (a, b))
 
     let inline v3 x y z = Vector3 (x, y, z)
     let inline v3Eq (v : Vector3) (v2 : Vector3) = v.X = v2.X && v.Y = v2.Y && v.Z = v2.Z
