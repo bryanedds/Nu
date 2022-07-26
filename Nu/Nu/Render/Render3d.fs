@@ -67,7 +67,7 @@ and [<CustomEquality; CustomComparison>] RenderPassMessage3d =
 /// An internally cached static model used to avoid GC promotion of static model messages.
 and [<NoEquality; NoComparison>] CachedStaticModelMessage =
     { mutable CachedStaticModelAbsolute : bool
-      mutable CachedStaticModelMatrix : Matrix4x4
+      mutable CachedStaticModelAffineMatrix : Matrix4x4
       mutable CachedStaticModelRenderMaterial : RenderMaterial
       mutable CachedStaticModelRenderType : RenderType
       mutable CachedStaticModel : StaticModel AssetTag }
@@ -78,7 +78,7 @@ and [<NoEquality; NoComparison>] StaticModelSurfaceDescriptor =
       TexCoordses : Vector2 array
       Normals : Vector3 array
       Indices : int array
-      Transform : Matrix4x4
+      AffineMatrix : Matrix4x4
       Bounds : Box3
       Albedo : Color
       AlbedoImage : Image AssetTag
@@ -421,7 +421,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             let geometry = OpenGL.PhysicallyBased.CreatePhysicallyBasedGeometry (true, vertexData, surfaceDescriptor.Indices, surfaceDescriptor.Bounds)
 
             // create surface
-            let surface = OpenGL.PhysicallyBased.CreatePhysicallyBasedSurface ([||], surfaceDescriptor.Transform, surfaceDescriptor.Bounds, material, geometry)
+            let surface = OpenGL.PhysicallyBased.CreatePhysicallyBasedSurface ([||], surfaceDescriptor.AffineMatrix, surfaceDescriptor.Bounds, material, geometry)
             surfaces.Add surface
 
         // create static model
@@ -912,7 +912,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                           NormalTexture = normalTexture
                           TwoSided = false }
                     let billboardSurface =
-                        OpenGL.PhysicallyBased.CreatePhysicallyBasedSurface ([||], m4Identity, box3Zero, billboardMaterial, renderer.RenderBillboardGeometry)
+                        OpenGL.PhysicallyBased.CreatePhysicallyBasedSurface ([||], m4Identity, box3 (v3 -0.5f 0.0f -0.5f) v3One, billboardMaterial, renderer.RenderBillboardGeometry)
                     for (modelMatrix, insetOpt) in billboards do
                         GlRenderer3d.categorizeBillboardSurface (absolute, eyeRotation, modelMatrix, insetOpt, albedoMetadata, renderMaterial, renderType, billboardSurface, renderer)
                 | RenderBillboardMessage (absolute, modelMatrix, insetOpt, renderMaterial, albedoImage, metalnessImage, roughnessImage, ambientOcclusionImage, normalImage, renderType) ->
@@ -948,7 +948,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                           NormalTexture = normalTexture
                           TwoSided = false }
                     let billboardSurface =
-                        OpenGL.PhysicallyBased.CreatePhysicallyBasedSurface ([||], m4Identity, box3Zero, billboardMaterial, renderer.RenderBillboardGeometry)
+                        OpenGL.PhysicallyBased.CreatePhysicallyBasedSurface ([||], m4Identity, box3 (v3 -0.5f 0.0f -0.5f) v3One, billboardMaterial, renderer.RenderBillboardGeometry)
                     GlRenderer3d.categorizeBillboardSurface (absolute, eyeRotation, modelMatrix, insetOpt, albedoMetadata, renderMaterial, renderType, billboardSurface, renderer)
                 | RenderStaticModelSurfaceMessage (absolute, modelMatrix, renderMaterial, renderType, staticModel, surfaceIndex) ->
                     GlRenderer3d.categorizeStaticModelSurfaceByIndex (absolute, &modelMatrix, &renderMaterial, renderType, staticModel, surfaceIndex, renderer)
@@ -958,7 +958,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                     for (modelMatrix, renderMaterial) in parameters do
                         GlRenderer3d.categorizeStaticModel (absolute, &modelMatrix, &renderMaterial, renderType, staticModel, renderer)
                 | RenderCachedStaticModelMessage d ->
-                    GlRenderer3d.categorizeStaticModel (d.CachedStaticModelAbsolute, &d.CachedStaticModelMatrix, &d.CachedStaticModelRenderMaterial, d.CachedStaticModelRenderType, d.CachedStaticModel, renderer)
+                    GlRenderer3d.categorizeStaticModel (d.CachedStaticModelAbsolute, &d.CachedStaticModelAffineMatrix, &d.CachedStaticModelRenderMaterial, d.CachedStaticModelRenderType, d.CachedStaticModel, renderer)
                 | RenderPostPassMessage3d postPass ->
                     postPasses.Add postPass |> ignore<bool>
                 | SetImageMinFilter (minFilter, image) ->
@@ -1045,7 +1045,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             let (lightPositions, lightColors, lightBrightnesses, lightIntensities) =
                 SortableLight.sortLightsIntoArrays eyePosition renderer.RenderTasks.RenderLights
 
-            // deferred render surfaces w/ absolute-transforms
+            // deferred render surfaces w/ absolute transforms
             for entry in renderer.RenderTasks.RenderSurfacesDeferredAbsolute do
                 GlRenderer3d.renderPhysicallyBasedSurfaces
                     eyePosition
@@ -1065,7 +1065,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                     renderer
                 OpenGL.Hl.Assert ()
 
-            // deferred render surfaces w/ relative-transforms
+            // deferred render surfaces w/ relative transforms
             for entry in renderer.RenderTasks.RenderSurfacesDeferredRelative do
                 GlRenderer3d.renderPhysicallyBasedSurfaces
                     eyePosition
@@ -1113,7 +1113,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                 OpenGL.Hl.Assert ()
             | None -> ()
 
-            // forward render surfaces w/ absolute-transforms
+            // forward render surfaces w/ absolute transforms
             for (model, _, renderMaterial, surface) in renderer.RenderTasks.RenderSurfacesForwardAbsoluteSorted do
                 let (lightPositions, lightColors, lightBrightnesses, lightIntensities) =
                     SortableLight.sortLightsIntoArrays model.Translation renderer.RenderTasks.RenderLights
@@ -1135,7 +1135,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                     renderer
                 OpenGL.Hl.Assert ()
 
-            // forward render surfaces w/ relative-transforms
+            // forward render surfaces w/ relative transforms
             for (model, _, renderMaterial, surface) in renderer.RenderTasks.RenderSurfacesForwardRelativeSorted do
                 let (lightPositions, lightColors, lightBrightnesses, lightIntensities) =
                     SortableLight.sortLightsIntoArrays model.Translation renderer.RenderTasks.RenderLights

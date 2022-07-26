@@ -584,6 +584,7 @@ module PhysicallyBased =
         | Some error -> Left error
         | None -> Right materials
 
+    /// Attempt to create physically-based geometries from an assimp scene.
     let TryCreatePhysicallyBasedGeometries (renderable, unitType, filePath, scene : Assimp.Scene) =
         let mutable errorOpt = None
         let geometries = SegmentedList.make ()
@@ -596,6 +597,7 @@ module PhysicallyBased =
         | Some error -> Left error
         | None -> Right geometries
 
+    /// Attempt to create physically-based model from a model file with assimp.
     let TryCreatePhysicallyBasedStaticModel (renderable, unitType, filePath, defaultMaterial, textureMemo, assimp : Assimp.AssimpContext) =
 
         // attempt to import from assimp scene
@@ -621,7 +623,7 @@ module PhysicallyBased =
                     let surfaces = SegmentedList.make ()
                     let mutable bounds = box3Zero
                     let hierarchy =
-                        scene.RootNode.Map (unitType, [||], m4Identity, fun node names transform ->
+                        scene.RootNode.Map (unitType, [||], m4Identity, fun node names surfaceMatrix ->
                             seq {
 
                                 // collect node
@@ -633,14 +635,14 @@ module PhysicallyBased =
                                     let (light, lightNode) = lightNodes.[i]
                                     if lightNode = node then
                                         let names = Array.append names [|"Light" + if i > 0 then string i else ""|]
-                                        let transform = node.ImportMatrix (unitType, node.TransformWorld)
+                                        let lightMatrix = node.ImportMatrix (unitType, node.TransformWorld)
                                         let color = color light.ColorDiffuse.R light.ColorDiffuse.G light.ColorDiffuse.B 1.0f
                                         match light.LightType with
                                         | _ -> // just use point light for all lights right now
                                             let physicallyBasedLight =
                                                 { LightNames = names
-                                                  LightMatrixIsIdentity = transform.IsIdentity
-                                                  LightMatrix = transform
+                                                  LightMatrixIsIdentity = lightMatrix.IsIdentity
+                                                  LightMatrix = lightMatrix
                                                   LightColor = color
                                                   LightBrightness = if light.AttenuationConstant > 0.0f then light.AttenuationConstant else 1.0f // TODO: 3D: figure out how to populate this.
                                                   LightIntensity = 1.0f // TODO: 3D: see if we can figure out how to populate this. Should it become Linear and / or Quadratic?
@@ -648,18 +650,18 @@ module PhysicallyBased =
                                             SegmentedList.add physicallyBasedLight lights
                                             yield PhysicallyBasedLight physicallyBasedLight
 
+                                // collect surfaces
                                 for i in 0 .. dec node.MeshIndices.Count do
-
-                                    // collect surfaces
                                     let meshIndex = node.MeshIndices.[i]
                                     let names = Array.append names [|"Geometry" + if i > 0 then string i else ""|]
                                     let materialIndex = scene.Meshes.[meshIndex].MaterialIndex
                                     let material = materials.[materialIndex]
                                     let geometry = geometries.[meshIndex]
-                                    let surface = PhysicallyBasedSurface.make names transform geometry.Bounds material geometry
-                                    bounds <- bounds.Combine (geometry.Bounds.Transform transform)
+                                    let surface = PhysicallyBasedSurface.make names surfaceMatrix geometry.Bounds material geometry
+                                    bounds <- bounds.Combine (geometry.Bounds.Transform surfaceMatrix)
                                     SegmentedList.add surface surfaces
                                     yield PhysicallyBasedSurface surface } |>
+
                             Seq.toArray |>
                             TreeNode)
 
@@ -675,6 +677,7 @@ module PhysicallyBased =
             | Left error -> Left ("Could not load materials for static model in file name '" + filePath + "' due to: " + error)
         with exn -> Left ("Could not load static model '" + filePath + "' due to: " + scstring exn)
 
+    /// Create a physically-based shader.
     let CreatePhysicallyBasedShader (shaderFilePath : string) =
 
         // create shader
@@ -715,6 +718,7 @@ module PhysicallyBased =
           LightColorsUniform = lightColorsUniform
           PhysicallyBasedShader = shader }
 
+    /// Create a physically-based shader for the second step of deferred rendering.
     let CreatePhysicallyBasedDeferred2Shader (shaderFilePath : string) =
 
         // create shader
@@ -749,6 +753,7 @@ module PhysicallyBased =
           LightColorsUniform = lightColorsUniform
           PhysicallyBasedDeferred2Shader = shader }
 
+    /// Create the first and second shaders for physically-based deferred rendering.
     let CreatePhysicallyBasedDeferredShaders (shaderFilePath, shader2FilePath) =
         let shader = CreatePhysicallyBasedShader shaderFilePath // deferred shader 1 uses the same API as physically based shader
         let shader2 = CreatePhysicallyBasedDeferred2Shader shader2FilePath
