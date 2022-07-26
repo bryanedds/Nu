@@ -1325,31 +1325,94 @@ module LightFacet3dModule =
             v3Dup 0.5f
 
 [<AutoOpen>]
-module StaticModelFacetModule =
+module BillboardFacetModule =
 
     type [<StructuralEquality; StructuralComparison>] RenderStyle =
         | Deferred
         | Forward of single
 
     type Entity with
-        member this.GetStaticModel world : StaticModel AssetTag = this.Get Property? StaticModel world
-        member this.SetStaticModel (value : StaticModel AssetTag) world = this.Set Property? StaticModel value world
-        member this.StaticModel = lens Property? StaticModel this.GetStaticModel this.SetStaticModel this
         member this.GetAlbedoOpt world : Color option = this.Get Property? AlbedoOpt world
         member this.SetAlbedoOpt (value : Color option) world = this.Set Property? AlbedoOpt value world
         member this.AlbedoOpt = lens Property? AlbedoOpt this.GetAlbedoOpt this.SetAlbedoOpt this
+        member this.GetAlbedoImage world : Image AssetTag = this.Get Property? AlbedoImage world
+        member this.SetAlbedoImage (value : Image AssetTag) world = this.Set Property? AlbedoImage value world
+        member this.AlbedoImage = lens Property? AlbedoImage this.GetAlbedoImage this.SetAlbedoImage this
         member this.GetMetalnessOpt world : single option = this.Get Property? MetalnessOpt world
         member this.SetMetalnessOpt (value : single option) world = this.Set Property? MetalnessOpt value world
         member this.MetalnessOpt = lens Property? MetalnessOpt this.GetMetalnessOpt this.SetMetalnessOpt this
+        member this.GetMetalnessImage world : Image AssetTag = this.Get Property? MetalnessImage world
+        member this.SetMetalnessImage (value : Image AssetTag) world = this.Set Property? MetalnessImage value world
+        member this.MetalnessImage = lens Property? MetalnessImage this.GetMetalnessImage this.SetMetalnessImage this
         member this.GetRoughnessOpt world : single option = this.Get Property? RoughnessOpt world
         member this.SetRoughnessOpt (value : single option) world = this.Set Property? RoughnessOpt value world
         member this.RoughnessOpt = lens Property? RoughnessOpt this.GetRoughnessOpt this.SetRoughnessOpt this
+        member this.GetRoughnessImage world : Image AssetTag = this.Get Property? RoughnessImage world
+        member this.SetRoughnessImage (value : Image AssetTag) world = this.Set Property? RoughnessImage value world
+        member this.RoughnessImage = lens Property? RoughnessImage this.GetRoughnessImage this.SetRoughnessImage this
+        member this.GetAmbientOcclusionImage world : Image AssetTag = this.Get Property? AmbientOcclusionImage world
+        member this.SetAmbientOcclusionImage (value : Image AssetTag) world = this.Set Property? AmbientOcclusionImage value world
         member this.GetAmbientOcclusionOpt world : single option = this.Get Property? AmbientOcclusionOpt world
         member this.SetAmbientOcclusionOpt (value : single option) world = this.Set Property? AmbientOcclusionOpt value world
         member this.AmbientOcclusionOpt = lens Property? AmbientOcclusionOpt this.GetAmbientOcclusionOpt this.SetAmbientOcclusionOpt this
+        member this.AmbientOcclusionImage = lens Property? AmbientOcclusionImage this.GetAmbientOcclusionImage this.SetAmbientOcclusionImage this
+        member this.GetNormalImage world : Image AssetTag = this.Get Property? NormalImage world
+        member this.SetNormalImage (value : Image AssetTag) world = this.Set Property? NormalImage value world
+        member this.NormalImage = lens Property? NormalImage this.GetNormalImage this.SetNormalImage this
         member this.GetRenderStyle world : RenderStyle = this.Get Property? RenderStyle world
         member this.SetRenderStyle (value : RenderStyle) world = this.Set Property? RenderStyle value world
         member this.RenderStyle = lens Property? RenderStyle this.GetRenderStyle this.SetRenderStyle this
+
+    type BillboardFacet () =
+        inherit Facet (false)
+
+        static member Properties =
+            [define Entity.InsetOpt None
+             define Entity.AlbedoOpt None
+             define Entity.AlbedoImage Assets.Default.MaterialAlbedo
+             define Entity.MetalnessOpt None
+             define Entity.MetalnessImage Assets.Default.MaterialMetalness
+             define Entity.RoughnessOpt None
+             define Entity.RoughnessImage Assets.Default.MaterialRoughness
+             define Entity.AmbientOcclusionOpt None
+             define Entity.AmbientOcclusionImage Assets.Default.MaterialAmbientOcclusion
+             define Entity.NormalImage Assets.Default.MaterialNormal
+             define Entity.RenderStyle Deferred]
+
+        override this.Actualize (entity, world) =
+            if entity.GetVisible world then
+                let mutable transform = entity.GetTransform world
+                let absolute = transform.Absolute
+                let affineMatrix = transform.AffineMatrix
+                let insetOpt = entity.GetInsetOpt world
+                let renderMaterial =
+                    { AlbedoOpt = entity.GetAlbedoOpt world
+                      MetalnessOpt = entity.GetMetalnessOpt world
+                      RoughnessOpt = entity.GetRoughnessOpt world
+                      AmbientOcclusionOpt = entity.GetAmbientOcclusionOpt world }
+                let albedoImage = entity.GetAlbedoImage world
+                let metalnessImage = entity.GetMetalnessImage world
+                let roughnessImage = entity.GetRoughnessImage world
+                let ambientOcclusionImage = entity.GetAmbientOcclusionImage world
+                let normalImage = entity.GetNormalImage world
+                let renderType =
+                    match entity.GetRenderStyle world with
+                    | Deferred -> DeferredRenderType
+                    | Forward subsort -> ForwardRenderType subsort
+                World.enqueueRenderMessage3d
+                    (RenderBillboardMessage
+                        (absolute, affineMatrix, insetOpt, renderMaterial,
+                         albedoImage, metalnessImage, roughnessImage, ambientOcclusionImage, normalImage, renderType))
+                    world
+            world
+
+[<AutoOpen>]
+module StaticModelFacetModule =
+
+    type Entity with
+        member this.GetStaticModel world : StaticModel AssetTag = this.Get Property? StaticModel world
+        member this.SetStaticModel (value : StaticModel AssetTag) world = this.Set Property? StaticModel value world
+        member this.StaticModel = lens Property? StaticModel this.GetStaticModel this.SetStaticModel this
 
     type StaticModelFacet () =
         inherit Facet (false)
