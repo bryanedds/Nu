@@ -10,6 +10,7 @@ layout (location = 2) in vec3 normal;
 layout (location = 3) in mat4 model;
 layout (location = 7) in vec4 albedo;
 layout (location = 8) in vec3 material;
+layout (location = 9) in vec4 texCoordsOffset;
 
 out vec3 positionOut;
 out vec2 texCoordsOut;
@@ -20,7 +21,14 @@ out vec3 normalOut;
 void main()
 {
     positionOut = vec3(model * vec4(position, 1.0));
-    texCoordsOut = texCoords;
+    switch (gl_VertexID % 6) // TODO: 3D: use a filter array instead of a switch statement.
+    {
+        case 0: case 3: texCoordsOut = texCoords + texCoordsOffset.xy; break;
+        case 1: texCoordsOut = texCoords + texCoordsOffset.zy; break;
+        case 2: case 4: texCoordsOut = texCoords + texCoordsOffset.zw; break;
+        case 5: texCoordsOut = texCoords + texCoordsOffset.xw; break;
+        default: texCoordsOut = texCoords; break;
+    }
     albedoOut = albedo;
     materialOut = material;
     normalOut = transpose(inverse(mat3(model))) * normal;
@@ -72,12 +80,16 @@ void main()
     vec4 albedoSample = texture(albedoTexture, texCoordsOut);
     albedo = pow(albedoSample.rgb * albedoOut.rgb, vec3(GAMMA));
 
+    // discard fragment if alpha is zero
+    float alpha = albedoSample.a * albedoOut.a;
+    if (alpha == 0.0f) discard;
+
     // compute material properties
     float metalness = texture(metalnessTexture, texCoordsOut).r * materialOut.r;
     float roughness = texture(roughnessTexture, texCoordsOut).r * materialOut.g;
     float ambientOcclusion = texture(ambientOcclusionTexture, texCoordsOut).r * materialOut.b;
     material = vec3(metalness, roughness, ambientOcclusion);
 
-    // forward normal
+    // compute normal
     normal = getNormal();
 }
