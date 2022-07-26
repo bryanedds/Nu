@@ -8,9 +8,9 @@ layout (location = 0) in vec3 position;
 layout (location = 1) in vec2 texCoords;
 layout (location = 2) in vec3 normal;
 layout (location = 3) in mat4 model;
-layout (location = 7) in vec4 albedo;
-layout (location = 8) in vec3 material;
-layout (location = 9) in vec4 texCoordsOffset;
+layout (location = 7) in vec4 texCoordsOffset;
+layout (location = 8) in vec4 albedo;
+layout (location = 9) in vec3 material;
 
 out vec3 positionOut;
 out vec2 texCoordsOut;
