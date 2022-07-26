@@ -431,7 +431,7 @@ module WorldModule3 =
                  TmxMapDispatcher () :> EntityDispatcher
                  LightDispatcher3d () :> EntityDispatcher
                  SkyBoxDispatcher () :> EntityDispatcher
-                 BillboardDispatcher () :> EntityDispatcher
+                 StaticBillboardDispatcher () :> EntityDispatcher
                  StaticModelSurfaceDispatcher () :> EntityDispatcher
                  StaticModelDispatcher () :> EntityDispatcher
                  StaticSceneDispatcher () :> EntityDispatcher]
@@ -452,7 +452,7 @@ module WorldModule3 =
                  TmxMapFacet () :> Facet
                  LightFacet3d () :> Facet
                  SkyBoxFacet () :> Facet
-                 BillboardFacet () :> Facet
+                 StaticBillboardFacet () :> Facet
                  StaticModelSurfaceFacet () :> Facet
                  StaticModelFacet () :> Facet]
 

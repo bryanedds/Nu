@@ -223,8 +223,8 @@ module Content =
     /// Describe a sky box with the given initializers.
     let skyBox entityName initializers = entity<SkyBoxDispatcher> entityName initializers
 
-    /// Describe a billboard with the given initializers.
-    let billboard entityName initializers = entity<BillboardDispatcher> entityName initializers
+    /// Describe a static billboard with the given initializers.
+    let staticBillboard entityName initializers = entity<StaticBillboardDispatcher> entityName initializers
 
     /// Describe a static model with the given initializers.
     let staticModel entityName initializers = entity<StaticModelDispatcher> entityName initializers

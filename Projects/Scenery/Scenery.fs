@@ -315,7 +315,7 @@ type SceneryDispatcher () =
                     [Entity.Position == v3 250.0f -200.0f 0.0f]
                  Content.skyBox Gen.name
                     [Entity.CubeMap == Assets.Default.SkyBoxMap]
-                 Content.billboard Gen.name
+                 Content.staticBillboard Gen.name
                     [Entity.Position == v3 10.0f 0.0f -10.0f
                      Entity.Scale == v3Dup 10.0f]
                  Content.staticModelSurface Gen.name
