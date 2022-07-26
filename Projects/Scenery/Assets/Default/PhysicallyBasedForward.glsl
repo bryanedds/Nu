@@ -146,8 +146,9 @@ void main()
         // per-light radiance
         vec3 l = normalize(lightPositions[i] - positionOut);
         vec3 h = normalize(v + l);
-        float distance = length(lightPositions[i] - positionOut);
-        float attenuation = 1.0 / (distance * distance);
+        vec3 d = lightPositions[i] - positionOut;
+        float distanceSquared = dot(d, d);
+        float attenuation = 1.0 / distanceSquared;
         float intensity =
             // TODO: 3D: figure out an algorithm for intensity that doesn't create a black hole at origin like this one -
             // pow(max(attenuation, 0.0001), 1.0 / lightIntensities[i]);
