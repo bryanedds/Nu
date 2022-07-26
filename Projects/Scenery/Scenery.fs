@@ -316,7 +316,8 @@ type SceneryDispatcher () =
                  Content.skyBox Gen.name
                     [Entity.CubeMap == Assets.Default.SkyBoxMap]
                  Content.billboard Gen.name
-                    [Entity.Scale == v3Dup 10.0f]
+                    [Entity.Position == v3 10.0f 0.0f -10.0f
+                     Entity.Scale == v3Dup 10.0f]
                  Content.staticModelSurface Gen.name
                     [Entity.SurfaceIndex == 0
                      Entity.Size <== field --|> fun field world -> Triple.snd (Field.getFieldStaticModelAndSizeAndHeightMap field world)
