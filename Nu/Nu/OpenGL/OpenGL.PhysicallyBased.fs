@@ -36,7 +36,7 @@ module PhysicallyBased =
           ModelBuffer : uint
           AlbedoBuffer : uint
           MaterialBuffer : uint
-          TexCoordsOffsetBuffer : uint
+          TexCoordsOffsetBuffer : uint // TODO: 3D: reorder this buffer after ModelBuffer.
           IndexBuffer : uint
           PhysicallyBasedVao : uint }
 
