@@ -1,4 +1,4 @@
-﻿namespace Scenery
+﻿namespace Tactics
 open System
 open System.Collections.Generic
 open System.Numerics
@@ -613,7 +613,7 @@ type Command =
     | UpdateCommand
 
 // this is our Elm-style game dispatcher
-type SceneryDispatcher () =
+type TacticsDispatcher () =
     inherit GameDispatcher<Field, Message, Command> (Field.make (asset "Field" "Field"))
 
     // here we channel from events to signals

@@ -1,14 +1,14 @@
-﻿namespace Scenery
+﻿namespace Tactics
 open System
 open Nu
-open Scenery
+open Tactics
 module Program =
 
     // this the entry point for your Nu application
     let [<EntryPoint; STAThread>] main _ =
 
         // this specifies the window configuration used to display the game
-        let sdlWindowConfig = { SdlWindowConfig.defaultConfig with WindowTitle = "Scenery" }
+        let sdlWindowConfig = { SdlWindowConfig.defaultConfig with WindowTitle = "Tactics" }
         
         // this specifies the configuration of the game engine's use of SDL
         let sdlConfig = { SdlConfig.defaultConfig with ViewConfig = NewWindow sdlWindowConfig }
@@ -20,4 +20,4 @@ module Program =
         Nu.init worldConfig.NuConfig
         
         // run the engine with the given config and plugin
-        World.run worldConfig (SceneryPlugin ())
+        World.run worldConfig (TacticsPlugin ())
