@@ -23,11 +23,11 @@ void main()
     positionOut = vec3(model * vec4(position, 1.0));
     switch (gl_VertexID % 6) // TODO: 3D: use a filter array instead of a switch statement.
     {
-        case 0: case 3: texCoordsOut = texCoords + texCoordsOffset.xy;
-        case 1: texCoordsOut = texCoords + texCoordsOffset.zy;
-        case 2: case 4: texCoordsOut = texCoords + texCoordsOffset.zw;
-        case 5: texCoordsOut = texCoords + texCoordsOffset.xw;
-        default: texCoordsOut = texCoords;
+        case 0: case 3: texCoordsOut = texCoords + texCoordsOffset.xy; break;
+        case 1: texCoordsOut = texCoords + texCoordsOffset.zy; break;
+        case 2: case 4: texCoordsOut = texCoords + texCoordsOffset.zw; break;
+        case 5: texCoordsOut = texCoords + texCoordsOffset.xw; break;
+        default: texCoordsOut = texCoords; break;
     }
     albedoOut = albedo;
     materialOut = material;
