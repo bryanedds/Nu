@@ -7,11 +7,11 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{3892b965-b3a4-4f67-a085-e23b123a0cda}</ProjectGuid>
     <OutputType>Exe</OutputType>
-    <RootNamespace>Scenery</RootNamespace>
-    <AssemblyName>Scenery</AssemblyName>
+    <RootNamespace>Tactics</RootNamespace>
+    <AssemblyName>Tactics</AssemblyName>
     <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
-    <Name>Scenery</Name>
+    <Name>Tectics</Name>
     <TargetFrameworkProfile />
     <NuGetPackageImportStamp>
     </NuGetPackageImportStamp>
@@ -24,7 +24,7 @@
     <OutputPath>bin\Debug\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <WarningLevel>5</WarningLevel>
-    <DocumentationFile>bin\Debug\Scenery.xml</DocumentationFile>
+    <DocumentationFile>bin\Debug\Tactics.xml</DocumentationFile>
     <Prefer32Bit>false</Prefer32Bit>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
     <WarningsAsErrors />
@@ -38,7 +38,7 @@
     <OutputPath>bin\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <WarningLevel>5</WarningLevel>
-    <DocumentationFile>bin\Release\Scenery.xml</DocumentationFile>
+    <DocumentationFile>bin\Release\Tactics.xml</DocumentationFile>
     <Prefer32Bit>false</Prefer32Bit>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
     <WarningsAsErrors />
@@ -68,8 +68,8 @@
     <DisableFastUpToDateCheck>true</DisableFastUpToDateCheck>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="Scenery.fs" />
-    <Compile Include="SceneryPlugin.fs" />
+    <Compile Include="Tactics.fs" />
+    <Compile Include="TacticsPlugin.fs" />
     <Compile Include="Program.fs" />
     <None Include="Interactive.fsx" />
     <None Include="App.config" />

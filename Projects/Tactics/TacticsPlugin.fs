@@ -1,11 +1,11 @@
-﻿namespace Scenery
+﻿namespace Tactics
 open Nu
-open Scenery
+open Tactics
 
 // this is a plugin for the Nu game engine that directs the execution of your application and editor
-type SceneryPlugin () =
+type TacticsPlugin () =
     inherit NuPlugin ()
     
     // this specifies the game dispatcher to use in your application
     override this.StandAloneConfig =
-        typeof<SceneryDispatcher>
+        typeof<TacticsDispatcher>
