@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="16" tileheight="16" infinite="0" nextlayerid="5" nextobjectid="1">
+<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="16" tileheight="16" infinite="0" nextlayerid="6" nextobjectid="1">
  <tileset firstgid="1" source="Forest.tsx"/>
  <tileset firstgid="2311" source="Height.tsx"/>
  <layer id="1" name="Untraversable" width="32" height="32">
@@ -7,12 +7,12 @@
    <property name="Image" value="[Field Forest]"/>
   </properties>
   <data encoding="base64" compression="zlib">
-   eJztw7ENAAAMAiD7/+DL/tFAQi+pqqqq+voAmktAHw==
+   eJztwzENACAQBLBjRRfaXhuyUEFuaZNOkim+5Xt1n6iqqur/D1r5IbA=
   </data>
  </layer>
  <layer id="4" name="UntraversableHeight" width="32" height="32" opacity="0.25">
   <data encoding="base64" compression="zlib">
-   eJztwzEJAAAMA7C+o/791sdIIL2kqqqq6usDsYBQAQ==
+   eJztw7ENAAAEADCr4P93nWHQJp2MmMN9vFRVVfXBBYqaUGE=
   </data>
  </layer>
  <layer id="2" name="Traversable" width="32" height="32">
@@ -20,7 +20,7 @@
    <property name="Image" value="[Field Forest]"/>
   </properties>
   <data encoding="base64" compression="zlib">
-   eJztlEEOQDAURGfTHkhwsgqXcUecwLckPynNlIV5ySzrvbQJQAghfKYIDJeN8T1/a64Z5yWnqVaf58+t+difiHdQ4mc2lPpZ7yC//H/29/aNLTx3L3amI/2DjoY13O9gur2O3Gq4hRCCzQ5me35h
+   eJxjYBgFo2AUjALsYBkLA0MIEypOYaGf/TeA9s1lQMVCTJhuopX7sNlPCF9gHFj7hagYBuTYT003kGs/teJh1P5R+0ey/S+AeViKmXS7+4B2K1GpDAK5IYaZeHdQ025s7iCEaWH3KBgFo2AUUBsAAEIagIM=
   </data>
  </layer>
  <layer id="3" name="TraversableHeight" width="32" height="32" opacity="0.25">
