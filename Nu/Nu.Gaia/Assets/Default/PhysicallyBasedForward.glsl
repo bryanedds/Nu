@@ -1,6 +1,26 @@
 #shader vertex
 #version 410 core
 
+const int TexCoordsOffsetVerts = 6;
+
+const vec2 TexCoordsOffsetFilters[TexCoordsOffsetVerts] =
+  vec2[TexCoordsOffsetVerts](
+      vec2(1,1),
+      vec2(0,1),
+      vec2(0,0),
+      vec2(1,1),
+      vec2(0,0),
+      vec2(1,0));
+
+const vec2 TexCoordsOffsetFilters2[TexCoordsOffsetVerts] =
+  vec2[TexCoordsOffsetVerts](
+      vec2(0,0),
+      vec2(1,0),
+      vec2(1,1),
+      vec2(0,0),
+      vec2(1,1),
+      vec2(0,1));
+
 uniform mat4 view;
 uniform mat4 projection;
 
@@ -21,14 +41,10 @@ out vec3 normalOut;
 void main()
 {
     positionOut = vec3(model * vec4(position, 1.0));
-    switch (gl_VertexID % 6) // TODO: 3D: use a filter array instead of a switch statement.
-    {
-        case 0: case 3: texCoordsOut = texCoords + texCoordsOffset.xy; break;
-        case 1: texCoordsOut = texCoords + texCoordsOffset.zy; break;
-        case 2: case 4: texCoordsOut = texCoords + texCoordsOffset.zw; break;
-        case 5: texCoordsOut = texCoords + texCoordsOffset.xw; break;
-        default: texCoordsOut = texCoords; break;
-    }
+    int texCoordsOffsetIndex = gl_VertexID % TexCoordsOffsetVerts;
+    vec2 texCoordsOffsetFilter = TexCoordsOffsetFilters[texCoordsOffsetIndex];
+    vec2 texCoordsOffsetFilter2 = TexCoordsOffsetFilters2[texCoordsOffsetIndex];
+    texCoordsOut = texCoords + texCoordsOffset.xy * texCoordsOffsetFilter + texCoordsOffset.zw * texCoordsOffsetFilter2;
     albedoOut = albedo;
     materialOut = material;
     normalOut = mat3(model) * normal;
