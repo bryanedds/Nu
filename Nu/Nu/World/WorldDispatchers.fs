@@ -1437,7 +1437,8 @@ module StaticModelFacetModule =
         inherit Facet (false)
 
         static member Properties =
-            [define Entity.StaticModel Assets.Default.StaticModel
+            [define Entity.InsetOpt None
+             define Entity.StaticModel Assets.Default.StaticModel
              define Entity.AlbedoOpt None
              define Entity.MetalnessOpt None
              define Entity.RoughnessOpt None
@@ -1449,6 +1450,7 @@ module StaticModelFacetModule =
                 let mutable transform = entity.GetTransform world
                 let absolute = transform.Absolute
                 let affineMatrix = transform.AffineMatrix
+                let insetOpt = entity.GetInsetOpt world
                 let staticModel = entity.GetStaticModel world
                 let renderMaterial =
                     { AlbedoOpt = entity.GetAlbedoOpt world
@@ -1459,7 +1461,7 @@ module StaticModelFacetModule =
                     match entity.GetRenderStyle world with
                     | Deferred -> DeferredRenderType
                     | Forward subsort -> ForwardRenderType subsort
-                World.enqueueRenderMessage3d (RenderStaticModelMessage (absolute, affineMatrix, renderMaterial, renderType, staticModel)) world
+                World.enqueueRenderMessage3d (RenderStaticModelMessage (absolute, affineMatrix, insetOpt, renderMaterial, renderType, staticModel)) world
             world
 
         override this.GetQuickSize (entity, world) =
@@ -1514,7 +1516,8 @@ module StaticModelSurfaceFacetModule =
         inherit Facet (false)
 
         static member Properties =
-            [define Entity.SurfaceIndex 0
+            [define Entity.InsetOpt None
+             define Entity.SurfaceIndex 0
              define Entity.StaticModel Assets.Default.StaticModel
              define Entity.AlbedoOpt None
              define Entity.MetalnessOpt None
@@ -1531,6 +1534,7 @@ module StaticModelSurfaceFacetModule =
                     let absolute = transform.Absolute
                     let affineMatrix = transform.AffineMatrix
                     let staticModel = entity.GetStaticModel world
+                    let insetOpt = entity.GetInsetOpt world
                     let renderMaterial =
                         { AlbedoOpt = entity.GetAlbedoOpt world
                           MetalnessOpt = entity.GetMetalnessOpt world
@@ -1540,7 +1544,7 @@ module StaticModelSurfaceFacetModule =
                         match entity.GetRenderStyle world with
                         | Deferred -> DeferredRenderType
                         | Forward subsort -> ForwardRenderType subsort
-                    World.enqueueRenderMessage3d (RenderStaticModelSurfaceMessage (absolute, affineMatrix, renderMaterial, renderType, staticModel, surfaceIndex)) world
+                    World.enqueueRenderMessage3d (RenderStaticModelSurfaceMessage (absolute, affineMatrix, insetOpt, renderMaterial, renderType, staticModel, surfaceIndex)) world
             world
 
         override this.GetQuickSize (entity, world) =

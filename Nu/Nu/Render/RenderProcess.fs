@@ -112,6 +112,7 @@ type RendererThread (createRenderer2d, createRenderer3d) =
                     let staticModelDescriptor =
                         { CachedStaticModelAbsolute = Unchecked.defaultof<_>
                           CachedStaticModelAffineMatrix = Unchecked.defaultof<_>
+                          CachedStaticModelInsetOpt = Unchecked.defaultof<_>
                           CachedStaticModelRenderMaterial = Unchecked.defaultof<_>
                           CachedStaticModelRenderType = Unchecked.defaultof<_>
                           CachedStaticModel = Unchecked.defaultof<_> }
@@ -224,12 +225,13 @@ type RendererThread (createRenderer2d, createRenderer3d) =
         member this.EnqueueMessage3d message =
             if Option.isNone taskOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
             match message with
-            | RenderStaticModelMessage (absolute, affineMatrix, renderMaterial, renderType, staticModel) ->
+            | RenderStaticModelMessage (absolute, affineMatrix, insetOpt, renderMaterial, renderType, staticModel) ->
                 let cachedStaticModelMessage = allocStaticModelMessage ()
                 match cachedStaticModelMessage with
                 | RenderCachedStaticModelMessage cachedDescriptor ->
                     cachedDescriptor.CachedStaticModelAbsolute <- absolute
                     cachedDescriptor.CachedStaticModelAffineMatrix <- affineMatrix
+                    cachedDescriptor.CachedStaticModelInsetOpt <- insetOpt
                     cachedDescriptor.CachedStaticModelRenderMaterial <- renderMaterial
                     cachedDescriptor.CachedStaticModelRenderType <- renderType
                     cachedDescriptor.CachedStaticModel <- staticModel

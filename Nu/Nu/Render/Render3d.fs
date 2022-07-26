@@ -68,6 +68,7 @@ and [<CustomEquality; CustomComparison>] RenderPassMessage3d =
 and [<NoEquality; NoComparison>] CachedStaticModelMessage =
     { mutable CachedStaticModelAbsolute : bool
       mutable CachedStaticModelAffineMatrix : Matrix4x4
+      mutable CachedStaticModelInsetOpt : Box2 option
       mutable CachedStaticModelRenderMaterial : RenderMaterial
       mutable CachedStaticModelRenderType : RenderType
       mutable CachedStaticModel : StaticModel AssetTag }
@@ -97,9 +98,9 @@ and [<NoEquality; NoComparison>] RenderMessage3d =
     | RenderLightMessage3d of Vector3 * Color * single * single * LightType
     | RenderBillboardMessage of bool * Matrix4x4 * Box2 option * RenderMaterial * Image AssetTag * Image AssetTag * Image AssetTag * Image AssetTag * Image AssetTag * RenderType
     | RenderBillboardsMessage of bool * (Matrix4x4 * Box2 option) SegmentedList * RenderMaterial * Image AssetTag * Image AssetTag * Image AssetTag * Image AssetTag * Image AssetTag * RenderType
-    | RenderStaticModelSurfaceMessage of bool * Matrix4x4 * RenderMaterial * RenderType * StaticModel AssetTag * int
-    | RenderStaticModelMessage of bool * Matrix4x4 * RenderMaterial * RenderType * StaticModel AssetTag
-    | RenderStaticModelsMessage of bool * (Matrix4x4 * RenderMaterial) SegmentedList * RenderType * StaticModel AssetTag
+    | RenderStaticModelSurfaceMessage of bool * Matrix4x4 * Box2 option * RenderMaterial * RenderType * StaticModel AssetTag * int
+    | RenderStaticModelMessage of bool * Matrix4x4 * Box2 option * RenderMaterial * RenderType * StaticModel AssetTag
+    | RenderStaticModelsMessage of bool * (Matrix4x4 * Box2 option * RenderMaterial) SegmentedList * RenderType * StaticModel AssetTag
     | RenderCachedStaticModelMessage of CachedStaticModelMessage
     | RenderPostPassMessage3d of RenderPassMessage3d
     | SetImageMinFilter of OpenGL.TextureMinFilter * Image AssetTag
@@ -384,17 +385,24 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
         let surfaces = List ()
         for surfaceDescriptor in surfaceDescriptors do
 
+            // get albedo metadata and texture
+            let (albedoMetadata, albedoTexture) =
+                match GlRenderer3d.tryFindRenderAsset (AssetTag.generalize surfaceDescriptor.AlbedoImage) renderer with
+                | ValueSome (TextureAsset (_, textureMetadata, texture)) -> (textureMetadata, texture)
+                | _ -> (renderer.RenderPhysicallyBasedMaterial.AlbedoMetadata, renderer.RenderPhysicallyBasedMaterial.AlbedoTexture)
+
             // create material
             let material : OpenGL.PhysicallyBased.PhysicallyBasedMaterial =
                 { Albedo = surfaceDescriptor.Albedo
-                  AlbedoTexture = ValueOption.defaultValue 0u (match GlRenderer3d.tryFindRenderAsset (AssetTag.generalize surfaceDescriptor.AlbedoImage) renderer with ValueSome (TextureAsset (_, _, texture)) -> ValueSome texture | _ -> ValueNone)
+                  AlbedoMetadata = albedoMetadata
+                  AlbedoTexture = albedoTexture
                   Metalness = surfaceDescriptor.Metalness
-                  MetalnessTexture = ValueOption.defaultValue 0u (match GlRenderer3d.tryFindRenderAsset (AssetTag.generalize surfaceDescriptor.MetalnessImage) renderer with ValueSome (TextureAsset (_, _, texture)) -> ValueSome texture | _ -> ValueNone)
+                  MetalnessTexture = match GlRenderer3d.tryFindRenderAsset (AssetTag.generalize surfaceDescriptor.MetalnessImage) renderer with ValueSome (TextureAsset (_, _, texture)) -> texture | _ -> renderer.RenderPhysicallyBasedMaterial.MetalnessTexture
                   Roughness = surfaceDescriptor.Roughness
-                  RoughnessTexture = ValueOption.defaultValue 0u (match GlRenderer3d.tryFindRenderAsset (AssetTag.generalize surfaceDescriptor.RoughnessImage) renderer with ValueSome (TextureAsset (_, _, texture)) -> ValueSome texture | _ -> ValueNone)
+                  RoughnessTexture = match GlRenderer3d.tryFindRenderAsset (AssetTag.generalize surfaceDescriptor.RoughnessImage) renderer with ValueSome (TextureAsset (_, _, texture)) -> texture | _ -> renderer.RenderPhysicallyBasedMaterial.RoughnessTexture
                   AmbientOcclusion = surfaceDescriptor.AmbientOcclusion
-                  AmbientOcclusionTexture = ValueOption.defaultValue 0u (match GlRenderer3d.tryFindRenderAsset (AssetTag.generalize surfaceDescriptor.AmbientOcclusionImage) renderer with ValueSome (TextureAsset (_, _, texture)) -> ValueSome texture | _ -> ValueNone)
-                  NormalTexture = ValueOption.defaultValue 0u (match GlRenderer3d.tryFindRenderAsset (AssetTag.generalize surfaceDescriptor.NormalImage) renderer with ValueSome (TextureAsset (_, _, texture)) -> ValueSome texture | _ -> ValueNone)
+                  AmbientOcclusionTexture = match GlRenderer3d.tryFindRenderAsset (AssetTag.generalize surfaceDescriptor.AmbientOcclusionImage) renderer with ValueSome (TextureAsset (_, _, texture)) -> texture | _ -> renderer.RenderPhysicallyBasedMaterial.AmbientOcclusionTexture
+                  NormalTexture = match GlRenderer3d.tryFindRenderAsset (AssetTag.generalize surfaceDescriptor.NormalImage) renderer with ValueSome (TextureAsset (_, _, texture)) -> texture | _ -> renderer.RenderPhysicallyBasedMaterial.NormalTexture
                   TwoSided = surfaceDescriptor.TwoSided }
 
             // create vertex data, truncating it when required
@@ -507,6 +515,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
     static member inline private categorizeStaticModelSurface
         (modelAbsolute,
          modelMatrix : Matrix4x4 inref,
+         insetOpt : Box2 option,
          renderMaterial : RenderMaterial inref,
          renderType : RenderType,
          ignoreSurfaceMatrix,
@@ -516,24 +525,39 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             if ignoreSurfaceMatrix || surface.SurfaceMatrixIsIdentity
             then modelMatrix
             else surface.SurfaceMatrix * modelMatrix
+        let texCoordsOffset =
+            match insetOpt with
+            | Some inset ->
+                let albedoMetadata = surface.PhysicallyBasedMaterial.AlbedoMetadata
+                let texelWidth = albedoMetadata.TextureTexelWidth
+                let texelHeight = albedoMetadata.TextureTexelHeight
+                let borderWidth = texelWidth * Constants.Render.SpriteBorderTexelScalar
+                let borderHeight = texelHeight * Constants.Render.SpriteBorderTexelScalar
+                let px = inset.Position.X * texelWidth + borderWidth
+                let py = (inset.Position.Y + inset.Size.Y) * texelHeight - borderHeight
+                let sx = inset.Size.X * texelWidth - borderWidth * 2.0f
+                let sy = -inset.Size.Y * texelHeight + borderHeight * 2.0f
+                Box2 (px, py, sx, sy)
+            | None -> box2 v2Zero v2One
         match renderType with
         | DeferredRenderType ->
             if modelAbsolute then
                 match renderer.RenderTasks.RenderSurfacesDeferredAbsolute.TryGetValue surface with
-                | (true, renderTasks) -> SegmentedList.add struct (surfaceMatrix, box2Zero, renderMaterial) renderTasks
-                | (false, _) -> renderer.RenderTasks.RenderSurfacesDeferredAbsolute.Add (surface, SegmentedList.singleton (surfaceMatrix, box2Zero, renderMaterial))
+                | (true, renderTasks) -> SegmentedList.add struct (surfaceMatrix, texCoordsOffset, renderMaterial) renderTasks
+                | (false, _) -> renderer.RenderTasks.RenderSurfacesDeferredAbsolute.Add (surface, SegmentedList.singleton (surfaceMatrix, texCoordsOffset, renderMaterial))
             else
                 match renderer.RenderTasks.RenderSurfacesDeferredRelative.TryGetValue surface with
-                | (true, renderTasks) -> SegmentedList.add struct (surfaceMatrix, box2Zero, renderMaterial) renderTasks
-                | (false, _) -> renderer.RenderTasks.RenderSurfacesDeferredRelative.Add (surface, SegmentedList.singleton (surfaceMatrix, box2Zero, renderMaterial))
+                | (true, renderTasks) -> SegmentedList.add struct (surfaceMatrix, texCoordsOffset, renderMaterial) renderTasks
+                | (false, _) -> renderer.RenderTasks.RenderSurfacesDeferredRelative.Add (surface, SegmentedList.singleton (surfaceMatrix, texCoordsOffset, renderMaterial))
         | ForwardRenderType subsort ->
             if modelAbsolute
-            then SegmentedList.add struct (subsort, surfaceMatrix, box2Zero, renderMaterial, surface) renderer.RenderTasks.RenderSurfacesForwardAbsolute
-            else SegmentedList.add struct (subsort, surfaceMatrix, box2Zero, renderMaterial, surface) renderer.RenderTasks.RenderSurfacesForwardRelative
+            then SegmentedList.add struct (subsort, surfaceMatrix, texCoordsOffset, renderMaterial, surface) renderer.RenderTasks.RenderSurfacesForwardAbsolute
+            else SegmentedList.add struct (subsort, surfaceMatrix, texCoordsOffset, renderMaterial, surface) renderer.RenderTasks.RenderSurfacesForwardRelative
 
     static member inline private categorizeStaticModelSurfaceByIndex
         (modelAbsolute,
          modelMatrix : Matrix4x4 inref,
+         insetOpt : Box2 option,
          renderMaterial : RenderMaterial inref,
          renderType : RenderType,
          staticModel : StaticModel AssetTag,
@@ -545,13 +569,14 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             | StaticModelAsset modelAsset ->
                 if surfaceIndex > -1 && surfaceIndex < modelAsset.Surfaces.Length then
                     let surface = modelAsset.Surfaces.[surfaceIndex]
-                    GlRenderer3d.categorizeStaticModelSurface (modelAbsolute, &modelMatrix, &renderMaterial, renderType, true, surface, renderer)
+                    GlRenderer3d.categorizeStaticModelSurface (modelAbsolute, &modelMatrix, insetOpt, &renderMaterial, renderType, true, surface, renderer)
             | _ -> Log.trace "Cannot render static model surface with a non-model asset."
         | _ -> Log.info ("Cannot render static model surface due to unloadable assets for '" + scstring staticModel + "'.")
 
     static member private categorizeStaticModel
         (modelAbsolute,
          modelMatrix : Matrix4x4 inref,
+         insetOpt : Box2 option,
          renderMaterial : RenderMaterial inref,
          renderType,
          staticModel : StaticModel AssetTag,
@@ -570,7 +595,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                           SortableLightDistanceSquared = Single.MaxValue }
                     SegmentedList.add light renderer.RenderTasks.RenderLights
                 for surface in modelAsset.Surfaces do
-                    GlRenderer3d.categorizeStaticModelSurface (modelAbsolute, &modelMatrix, &renderMaterial, renderType, false, surface, renderer)
+                    GlRenderer3d.categorizeStaticModelSurface (modelAbsolute, &modelMatrix, insetOpt, &renderMaterial, renderType, false, surface, renderer)
             | _ -> Log.trace "Cannot render static model with a non-model asset."
         | _ -> Log.info ("Cannot render static model due to unloadable assets for '" + scstring staticModel + "'.")
 
@@ -785,10 +810,14 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             | Right (_, texture) -> texture
             | Left error -> failwith ("Could not load BRDF texture due to: " + error)
 
+        // get albedo metadata and texture
+        let (albedoMetadata, albedoTexture) = OpenGL.Texture.TryCreateTextureFiltered ("Assets/Default/MaterialAlbedo.png") |> Either.getRight
+
         // create default physically-based material
         let physicallyBasedMaterial : OpenGL.PhysicallyBased.PhysicallyBasedMaterial =
             { Albedo = Color.White
-              AlbedoTexture = OpenGL.Texture.TryCreateTextureFiltered ("Assets/Default/MaterialAlbedo.png") |> Either.getRight |> snd
+              AlbedoMetadata = albedoMetadata
+              AlbedoTexture = albedoTexture
               Metalness = 1.0f
               MetalnessTexture = OpenGL.Texture.TryCreateTextureFiltered ("Assets/Default/MaterialMetalness.png") |> Either.getRight |> snd
               Roughness = 1.0f
@@ -902,6 +931,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                         | _ -> renderer.RenderPhysicallyBasedMaterial.NormalTexture
                     let billboardMaterial : OpenGL.PhysicallyBased.PhysicallyBasedMaterial =
                         { Albedo = Option.defaultValue Color.White renderMaterial.AlbedoOpt
+                          AlbedoMetadata = albedoMetadata
                           AlbedoTexture = albedoTexture
                           Metalness = Option.defaultValue 1.0f renderMaterial.MetalnessOpt
                           MetalnessTexture = metalnessTexture
@@ -938,6 +968,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                         | _ -> renderer.RenderPhysicallyBasedMaterial.NormalTexture
                     let billboardMaterial : OpenGL.PhysicallyBased.PhysicallyBasedMaterial =
                         { Albedo = Option.defaultValue Color.White renderMaterial.AlbedoOpt
+                          AlbedoMetadata = albedoMetadata
                           AlbedoTexture = albedoTexture
                           Metalness = Option.defaultValue 1.0f renderMaterial.MetalnessOpt
                           MetalnessTexture = metalnessTexture
@@ -950,15 +981,15 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                     let billboardSurface =
                         OpenGL.PhysicallyBased.CreatePhysicallyBasedSurface ([||], m4Identity, box3 (v3 -0.5f 0.0f -0.5f) v3One, billboardMaterial, renderer.RenderBillboardGeometry)
                     GlRenderer3d.categorizeBillboardSurface (absolute, eyeRotation, modelMatrix, insetOpt, albedoMetadata, renderMaterial, renderType, billboardSurface, renderer)
-                | RenderStaticModelSurfaceMessage (absolute, modelMatrix, renderMaterial, renderType, staticModel, surfaceIndex) ->
-                    GlRenderer3d.categorizeStaticModelSurfaceByIndex (absolute, &modelMatrix, &renderMaterial, renderType, staticModel, surfaceIndex, renderer)
-                | RenderStaticModelMessage (absolute, modelMatrix, renderMaterial, renderType, staticModel) ->
-                    GlRenderer3d.categorizeStaticModel (absolute, &modelMatrix, &renderMaterial, renderType, staticModel, renderer)
+                | RenderStaticModelSurfaceMessage (absolute, modelMatrix, insetOpt, renderMaterial, renderType, staticModel, surfaceIndex) ->
+                    GlRenderer3d.categorizeStaticModelSurfaceByIndex (absolute, &modelMatrix, insetOpt, &renderMaterial, renderType, staticModel, surfaceIndex, renderer)
+                | RenderStaticModelMessage (absolute, modelMatrix, insetOpt, renderMaterial, renderType, staticModel) ->
+                    GlRenderer3d.categorizeStaticModel (absolute, &modelMatrix, insetOpt, &renderMaterial, renderType, staticModel, renderer)
                 | RenderStaticModelsMessage (absolute, parameters, renderType, staticModel) ->
-                    for (modelMatrix, renderMaterial) in parameters do
-                        GlRenderer3d.categorizeStaticModel (absolute, &modelMatrix, &renderMaterial, renderType, staticModel, renderer)
+                    for (modelMatrix, insetOpt, renderMaterial) in parameters do
+                        GlRenderer3d.categorizeStaticModel (absolute, &modelMatrix, insetOpt, &renderMaterial, renderType, staticModel, renderer)
                 | RenderCachedStaticModelMessage d ->
-                    GlRenderer3d.categorizeStaticModel (d.CachedStaticModelAbsolute, &d.CachedStaticModelAffineMatrix, &d.CachedStaticModelRenderMaterial, d.CachedStaticModelRenderType, d.CachedStaticModel, renderer)
+                    GlRenderer3d.categorizeStaticModel (d.CachedStaticModelAbsolute, &d.CachedStaticModelAffineMatrix, d.CachedStaticModelInsetOpt, &d.CachedStaticModelRenderMaterial, d.CachedStaticModelRenderType, d.CachedStaticModel, renderer)
                 | RenderPostPassMessage3d postPass ->
                     postPasses.Add postPass |> ignore<bool>
                 | SetImageMinFilter (minFilter, image) ->

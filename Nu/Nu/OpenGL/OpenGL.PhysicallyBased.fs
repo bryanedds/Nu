@@ -15,6 +15,7 @@ module PhysicallyBased =
     /// Describes a physically-based material.
     type [<StructuralEquality; NoComparison; Struct>] PhysicallyBasedMaterial =
         { Albedo : Color
+          AlbedoMetadata : Texture.TextureMetadata
           AlbedoTexture : uint
           Metalness : single
           MetalnessTexture : uint
@@ -511,12 +512,12 @@ module PhysicallyBased =
             then color material.ColorDiffuse.R material.ColorDiffuse.G material.ColorDiffuse.B material.ColorDiffuse.A
             else Color.White
         let (_, albedoTexture) = material.GetMaterialTexture (Assimp.TextureType.Diffuse, 0)
-        let albedoTexture =
+        let (albedoMetadata, albedoTexture) =
             if renderable && not (String.IsNullOrEmpty albedoTexture.FilePath) then
                 match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + albedoTexture.FilePath, textureMemo) with
-                | Right (_, texture) -> texture
-                | Left _ -> defaultMaterial.AlbedoTexture
-            else defaultMaterial.AlbedoTexture
+                | Right (textureMetadata, texture) -> (textureMetadata, texture)
+                | Left _ -> (defaultMaterial.AlbedoMetadata, defaultMaterial.AlbedoTexture)
+            else (defaultMaterial.AlbedoMetadata, defaultMaterial.AlbedoTexture)
         let metalness =
             if material.HasColorSpecular
             then material.ColorSpecular.R
@@ -558,6 +559,7 @@ module PhysicallyBased =
                 | Left _ -> defaultMaterial.NormalTexture
             else defaultMaterial.NormalTexture
         { Albedo = color albedo.R albedo.G albedo.B albedo.A
+          AlbedoMetadata = albedoMetadata
           AlbedoTexture = albedoTexture
           Metalness = metalness
           MetalnessTexture = metalnessTexture
