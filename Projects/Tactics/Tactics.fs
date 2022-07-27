@@ -355,17 +355,13 @@ module CharacterDispatcher =
                       RoughnessOpt = ValueSome 1.25f
                       AmbientOcclusionOpt = ValueSome 1.0f }
                 let albedoImage = asset "Field" "Jinn"
-
-                World.enqueueRenderMessage3d (SetImageMinFilter (OpenGL.TextureMinFilter.NearestMipmapNearest, albedoImage)) world
-                World.enqueueRenderMessage3d (SetImageMagFilter (OpenGL.TextureMagFilter.Nearest, albedoImage)) world
-
                 let inset = getSpriteInset character world
                 let characterView =
                     Render3d (
                         RenderBillboardMessage
                             (transform.Absolute, transform.AffineMatrix, ValueSome inset, renderMaterial,
                              albedoImage, Assets.Default.MaterialMetalness, Assets.Default.MaterialRoughness, Assets.Default.MaterialRoughness, albedoImage,
-                             DeferredRenderType))
+                             ValueSome OpenGL.TextureMinFilter.NearestMipmapNearest, ValueSome OpenGL.TextureMagFilter.Nearest, DeferredRenderType))
                 characterView
             else View.empty
 
@@ -577,6 +573,8 @@ module Field =
                   AmbientOcclusion = 1.0f
                   AmbientOcclusionImage = albedoTileSet.ImageAsset
                   NormalImage = Assets.Default.MaterialNormal
+                  TextureMinFilterOpt = ValueSome OpenGL.TextureMinFilter.NearestMipmapNearest
+                  TextureMagFilterOpt = ValueSome OpenGL.TextureMagFilter.Nearest
                   TwoSided = false }
 
             // fin

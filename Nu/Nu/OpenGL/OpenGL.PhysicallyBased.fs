@@ -24,6 +24,8 @@ module PhysicallyBased =
           AmbientOcclusion : single
           AmbientOcclusionTexture : uint
           NormalTexture : uint
+          TextureMinFilterOpt : OpenGL.TextureMinFilter voption
+          TextureMagFilterOpt : OpenGL.TextureMagFilter voption
           TwoSided : bool }
 
     /// Describes some physically-based geometry that's loaded into VRAM.
@@ -48,38 +50,48 @@ module PhysicallyBased =
           SurfaceMatrixIsIdentity : bool // OPTIMIZATION: avoid matrix multiply when unecessary.
           SurfaceMatrix : Matrix4x4
           SurfaceBounds : Box3
-          PhysicallyBasedMaterial : PhysicallyBasedMaterial
+          SurfaceMaterial : PhysicallyBasedMaterial
           PhysicallyBasedGeometry : PhysicallyBasedGeometry }
 
         static member inline hash surface =
-            int surface.PhysicallyBasedMaterial.AlbedoTexture ^^^
-            int surface.PhysicallyBasedMaterial.MetalnessTexture ^^^
-            int surface.PhysicallyBasedMaterial.RoughnessTexture ^^^
-            int surface.PhysicallyBasedMaterial.AmbientOcclusionTexture ^^^
-            int surface.PhysicallyBasedMaterial.NormalTexture ^^^
-            hash surface.PhysicallyBasedMaterial.TwoSided ^^^
+            hash surface.SurfaceMaterial.TextureMinFilterOpt ^^^
+            hash surface.SurfaceMaterial.TextureMagFilterOpt ^^^
+            int surface.SurfaceMaterial.AlbedoTexture ^^^
+            int surface.SurfaceMaterial.MetalnessTexture ^^^
+            int surface.SurfaceMaterial.RoughnessTexture ^^^
+            int surface.SurfaceMaterial.AmbientOcclusionTexture ^^^
+            int surface.SurfaceMaterial.NormalTexture ^^^
+            hash surface.SurfaceMaterial.TwoSided ^^^
             int surface.PhysicallyBasedGeometry.PrimitiveType ^^^
             int surface.PhysicallyBasedGeometry.PhysicallyBasedVao
 
         static member inline equals left right =
-            left.PhysicallyBasedMaterial.AlbedoTexture = right.PhysicallyBasedMaterial.AlbedoTexture &&
-            left.PhysicallyBasedMaterial.MetalnessTexture = right.PhysicallyBasedMaterial.MetalnessTexture &&
-            left.PhysicallyBasedMaterial.RoughnessTexture = right.PhysicallyBasedMaterial.RoughnessTexture &&
-            left.PhysicallyBasedMaterial.AmbientOcclusionTexture = right.PhysicallyBasedMaterial.AmbientOcclusionTexture &&
-            left.PhysicallyBasedMaterial.NormalTexture = right.PhysicallyBasedMaterial.NormalTexture &&
-            left.PhysicallyBasedMaterial.TwoSided = right.PhysicallyBasedMaterial.TwoSided &&
+            (match (left.SurfaceMaterial.TextureMinFilterOpt, right.SurfaceMaterial.TextureMinFilterOpt) with // TODO: 3D: implement voptEq.
+             | (ValueSome leftFilter, ValueSome rightFilter) -> leftFilter = rightFilter
+             | (ValueNone, ValueNone) -> true
+             | (_, _) -> false) &&
+            (match (left.SurfaceMaterial.TextureMagFilterOpt, right.SurfaceMaterial.TextureMagFilterOpt) with
+             | (ValueSome leftFilter, ValueSome rightFilter) -> leftFilter = rightFilter
+             | (ValueNone, ValueNone) -> true
+             | (_, _) -> false) &&
+            left.SurfaceMaterial.AlbedoTexture = right.SurfaceMaterial.AlbedoTexture &&
+            left.SurfaceMaterial.MetalnessTexture = right.SurfaceMaterial.MetalnessTexture &&
+            left.SurfaceMaterial.RoughnessTexture = right.SurfaceMaterial.RoughnessTexture &&
+            left.SurfaceMaterial.AmbientOcclusionTexture = right.SurfaceMaterial.AmbientOcclusionTexture &&
+            left.SurfaceMaterial.NormalTexture = right.SurfaceMaterial.NormalTexture &&
+            left.SurfaceMaterial.TwoSided = right.SurfaceMaterial.TwoSided &&
             left.PhysicallyBasedGeometry.PrimitiveType = right.PhysicallyBasedGeometry.PrimitiveType &&
             left.PhysicallyBasedGeometry.PhysicallyBasedVao = right.PhysicallyBasedGeometry.PhysicallyBasedVao
 
-        static member internal make surfaceNames (surfaceMatrix : Matrix4x4) surfaceBounds physicallyBasedMaterial physicallyBasedGeometry =
+        static member internal make names (surfaceMatrix : Matrix4x4) bounds material geometry =
             let mutable result =
                 { HashCode = 0
-                  SurfaceNames = surfaceNames
+                  SurfaceNames = names
                   SurfaceMatrixIsIdentity = surfaceMatrix.IsIdentity
                   SurfaceMatrix = surfaceMatrix
-                  SurfaceBounds = surfaceBounds
-                  PhysicallyBasedMaterial = physicallyBasedMaterial
-                  PhysicallyBasedGeometry = physicallyBasedGeometry }
+                  SurfaceBounds = bounds
+                  SurfaceMaterial = material
+                  PhysicallyBasedGeometry = geometry }
             result.HashCode <- PhysicallyBasedSurface.hash result
             result
 
@@ -506,7 +518,7 @@ module PhysicallyBased =
         CreatePhysicallyBasedGeometry (renderable, vertexData, indexData, bounds)
 
     /// Create physically-based material from an assimp mesh. falling back on default in case of missing textures.
-    let CreatePhysicallyBasedMaterial (renderable, dirPath, defaultMaterial, textureMemo, material : Assimp.Material) =
+    let CreatePhysicallyBasedMaterial (renderable, dirPath, defaultMaterial, minFilterOpt, magFilterOpt, textureMemo, material : Assimp.Material) =
         let albedo =
             if material.HasColorDiffuse
             then color material.ColorDiffuse.R material.ColorDiffuse.G material.ColorDiffuse.B material.ColorDiffuse.A
@@ -568,6 +580,8 @@ module PhysicallyBased =
           AmbientOcclusion = ambientOcclusion
           AmbientOcclusionTexture = ambientOcclusionTexture
           NormalTexture = normalTexture
+          TextureMinFilterOpt = minFilterOpt
+          TextureMagFilterOpt = magFilterOpt
           TwoSided = material.IsTwoSided }
 
     /// Create a physically-based surface.
@@ -580,7 +594,7 @@ module PhysicallyBased =
         let materials = Array.zeroCreate scene.Materials.Count
         for i in 0 .. dec scene.Materials.Count do
             if Option.isNone errorOpt then
-                let material = CreatePhysicallyBasedMaterial (renderable, dirPath, defaultMaterial, textureMemo, scene.Materials.[i])
+                let material = CreatePhysicallyBasedMaterial (renderable, dirPath, defaultMaterial, ValueNone, ValueNone, textureMemo, scene.Materials.[i])
                 materials.[i] <- material
         match errorOpt with
         | Some error -> Left error
@@ -810,6 +824,9 @@ module PhysicallyBased =
         Gl.Uniform1 (shader.LightBrightnessesUniform, lightBrightnesses)
         Gl.Uniform1 (shader.LightIntensitiesUniform, lightIntensities)
         Gl.Uniform4 (shader.LightColorsUniform, lightColors)
+        Hl.Assert ()
+
+        // setup textures
         Gl.ActiveTexture TextureUnit.Texture0
         Gl.BindTexture (TextureTarget.Texture2d, material.AlbedoTexture)
         Gl.ActiveTexture TextureUnit.Texture1
@@ -826,6 +843,20 @@ module PhysicallyBased =
         Gl.BindTexture (TextureTarget.TextureCubeMap, environmentFilterMap)
         Gl.ActiveTexture TextureUnit.Texture7
         Gl.BindTexture (TextureTarget.Texture2d, brdfTexture)
+        Hl.Assert ()
+
+        // setup texture filters
+        for i in 0 .. dec 5 do
+            Gl.ActiveTexture (LanguagePrimitives.EnumOfValue (int TextureUnit.Texture0 + i))
+            match material.TextureMinFilterOpt with
+            | ValueSome minFilter -> Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, int minFilter)
+            | ValueNone -> ()
+            match material.TextureMagFilterOpt with
+            | ValueSome magFilter -> Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, int magFilter)
+            | ValueNone -> ()
+        match material.TextureMinFilterOpt with
+        | ValueSome minFilter -> Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, int minFilter)
+        | ValueNone -> ()
         Hl.Assert ()
 
         // update models buffer
@@ -874,7 +905,17 @@ module PhysicallyBased =
         Gl.BindVertexArray 0u
         Hl.Assert ()
 
-        // teardown shader
+        // teardown texture filters
+        for i in 0 .. dec 5 do
+            Gl.ActiveTexture (LanguagePrimitives.EnumOfValue (int TextureUnit.Texture0 + i))
+            if material.TextureMinFilterOpt.IsSome then
+                Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, int TextureMinFilter.Linear)
+            if material.TextureMagFilterOpt.IsSome then
+                Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, int TextureMinFilter.LinearMipmapLinear)
+            Gl.BindTexture (TextureTarget.Texture2d, 0u)
+            Hl.Assert ()
+
+        // teardown textures
         Gl.ActiveTexture TextureUnit.Texture0
         Gl.BindTexture (TextureTarget.Texture2d, 0u)
         Gl.ActiveTexture TextureUnit.Texture1
@@ -891,6 +932,9 @@ module PhysicallyBased =
         Gl.BindTexture (TextureTarget.TextureCubeMap, 0u)
         Gl.ActiveTexture TextureUnit.Texture7
         Gl.BindTexture (TextureTarget.Texture2d, 0u)
+        Hl.Assert ()
+
+        // teardown shader
         Gl.UseProgram 0u
         Hl.Assert ()
 
@@ -934,6 +978,9 @@ module PhysicallyBased =
         Gl.Uniform1 (shader.LightBrightnessesUniform, lightBrightnesses)
         Gl.Uniform1 (shader.LightIntensitiesUniform, lightIntensities)
         Gl.Uniform4 (shader.LightColorsUniform, lightColors)
+        Hl.Assert ()
+
+        // setup textures
         Gl.ActiveTexture TextureUnit.Texture0
         Gl.BindTexture (TextureTarget.Texture2d, positionTexture)
         Gl.ActiveTexture TextureUnit.Texture1
@@ -964,7 +1011,7 @@ module PhysicallyBased =
         Gl.BindVertexArray 0u
         Hl.Assert ()
 
-        // teardown shader
+        // teardown textures
         Gl.ActiveTexture TextureUnit.Texture0
         Gl.BindTexture (TextureTarget.Texture2d, 0u)
         Gl.ActiveTexture TextureUnit.Texture1
@@ -979,6 +1026,9 @@ module PhysicallyBased =
         Gl.BindTexture (TextureTarget.TextureCubeMap, 0u)
         Gl.ActiveTexture TextureUnit.Texture6
         Gl.BindTexture (TextureTarget.Texture2d, 0u)
+        Hl.Assert ()
+
+        // teardown shader
         Gl.UseProgram 0u
 
     /// Destroy physically-based geometry resources.
