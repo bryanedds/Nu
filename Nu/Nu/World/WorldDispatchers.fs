@@ -1359,6 +1359,12 @@ module StaticBillboardFacetModule =
         member this.GetNormalImage world : Image AssetTag = this.Get Property? NormalImage world
         member this.SetNormalImage (value : Image AssetTag) world = this.Set Property? NormalImage value world
         member this.NormalImage = lens Property? NormalImage this.GetNormalImage this.SetNormalImage this
+        member this.GetTextureMinFilterOpt world : OpenGL.TextureMinFilter option = this.Get Property? TextureMinFilterOpt world
+        member this.SetTextureMinFilterOpt (value : OpenGL.TextureMinFilter option) world = this.Set Property? TextureMinFilterOpt value world
+        member this.TextureMinFilterOpt = lens Property? TextureMinFilterOpt this.GetTextureMinFilterOpt this.SetTextureMinFilterOpt this
+        member this.GetTextureMagFilterOpt world : OpenGL.TextureMagFilter option = this.Get Property? TextureMagFilterOpt world
+        member this.SetTextureMagFilterOpt (value : OpenGL.TextureMagFilter option) world = this.Set Property? TextureMagFilterOpt value world
+        member this.TextureMagFilterOpt = lens Property? TextureMagFilterOpt this.GetTextureMagFilterOpt this.SetTextureMagFilterOpt this
         member this.GetRenderStyle world : RenderStyle = this.Get Property? RenderStyle world
         member this.SetRenderStyle (value : RenderStyle) world = this.Set Property? RenderStyle value world
         member this.RenderStyle = lens Property? RenderStyle this.GetRenderStyle this.SetRenderStyle this
@@ -1377,6 +1383,8 @@ module StaticBillboardFacetModule =
              define Entity.AmbientOcclusionOpt None
              define Entity.AmbientOcclusionImage Assets.Default.MaterialAmbientOcclusion
              define Entity.NormalImage Assets.Default.MaterialNormal
+             define Entity.TextureMinFilterOpt None
+             define Entity.TextureMagFilterOpt None
              define Entity.RenderStyle Deferred]
 
         override this.Actualize (entity, world) =
@@ -1395,6 +1403,8 @@ module StaticBillboardFacetModule =
                 let roughnessImage = entity.GetRoughnessImage world
                 let ambientOcclusionImage = entity.GetAmbientOcclusionImage world
                 let normalImage = entity.GetNormalImage world
+                let minFilterOpt = match entity.GetTextureMinFilterOpt world with Some filter -> ValueSome filter | None -> ValueNone
+                let magFilterOpt = match entity.GetTextureMagFilterOpt world with Some filter -> ValueSome filter | None -> ValueNone
                 let renderType =
                     match entity.GetRenderStyle world with
                     | Deferred -> DeferredRenderType
@@ -1402,7 +1412,8 @@ module StaticBillboardFacetModule =
                 World.enqueueRenderMessage3d
                     (RenderBillboardMessage
                         (absolute, affineMatrix, insetOpt, renderMaterial,
-                         albedoImage, metalnessImage, roughnessImage, ambientOcclusionImage, normalImage, renderType))
+                         albedoImage, metalnessImage, roughnessImage, ambientOcclusionImage, normalImage,
+                         minFilterOpt, magFilterOpt, renderType))
                     world
             world
 
@@ -2807,10 +2818,10 @@ module StaticSceneDispatcherModule =
                             let world = if mountToParent then child.SetMountOpt (Some (Relation.makeParent ())) world else world
                             let world = child.SetSurfaceIndex i world
                             let world = child.SetStaticModel staticModel world
-                            let world = child.SetAlbedoOpt (Some surface.PhysicallyBasedMaterial.Albedo) world
-                            let world = child.SetMetalnessOpt (Some surface.PhysicallyBasedMaterial.Metalness) world
-                            let world = child.SetRoughnessOpt (Some surface.PhysicallyBasedMaterial.Roughness) world
-                            let world = child.SetAmbientOcclusionOpt (Some surface.PhysicallyBasedMaterial.AmbientOcclusion) world
+                            let world = child.SetAlbedoOpt (Some surface.SurfaceMaterial.Albedo) world
+                            let world = child.SetMetalnessOpt (Some surface.SurfaceMaterial.Metalness) world
+                            let world = child.SetRoughnessOpt (Some surface.SurfaceMaterial.Roughness) world
+                            let world = child.SetAmbientOcclusionOpt (Some surface.SurfaceMaterial.AmbientOcclusion) world
                             let world = child.QuickSize world
                             world' <- world
                             i <- inc i)
