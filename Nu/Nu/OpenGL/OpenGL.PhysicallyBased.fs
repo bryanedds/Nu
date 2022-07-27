@@ -854,9 +854,6 @@ module PhysicallyBased =
             match material.TextureMagFilterOpt with
             | ValueSome magFilter -> Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, int magFilter)
             | ValueNone -> ()
-        match material.TextureMinFilterOpt with
-        | ValueSome minFilter -> Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, int minFilter)
-        | ValueNone -> ()
         Hl.Assert ()
 
         // update models buffer
@@ -909,9 +906,9 @@ module PhysicallyBased =
         for i in 0 .. dec 5 do
             Gl.ActiveTexture (LanguagePrimitives.EnumOfValue (int TextureUnit.Texture0 + i))
             if material.TextureMinFilterOpt.IsSome then
-                Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, int TextureMinFilter.Linear)
+                Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, int TextureMinFilter.LinearMipmapLinear)
             if material.TextureMagFilterOpt.IsSome then
-                Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, int TextureMinFilter.LinearMipmapLinear)
+                Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, int TextureMagFilter.Linear)
             Gl.BindTexture (TextureTarget.Texture2d, 0u)
             Hl.Assert ()
 

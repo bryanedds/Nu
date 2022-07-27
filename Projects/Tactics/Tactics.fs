@@ -573,7 +573,7 @@ module Field =
                   AmbientOcclusion = 1.0f
                   AmbientOcclusionImage = albedoTileSet.ImageAsset
                   NormalImage = Assets.Default.MaterialNormal
-                  TextureMinFilterOpt = ValueSome OpenGL.TextureMinFilter.NearestMipmapNearest
+                  TextureMinFilterOpt = ValueSome OpenGL.TextureMinFilter.Nearest
                   TextureMagFilterOpt = ValueSome OpenGL.TextureMagFilter.Nearest
                   TwoSided = false }
 
@@ -606,8 +606,6 @@ module Field =
             let surfaceDescriptors = [|untraversableSurfaceDescriptor; traversableSurfaceDescriptor|]
             let bounds = let bounds = untraversableSurfaceDescriptor.Bounds in bounds.Combine traversableSurfaceDescriptor.Bounds
             World.enqueueRenderMessage3d (SetStaticModelMessage (surfaceDescriptors, bounds, fieldModelAssetTag)) world
-            World.enqueueRenderMessage3d (SetImageMinFilter (OpenGL.TextureMinFilter.NearestMipmapNearest, traversableSurfaceDescriptor.AlbedoImage)) world
-            World.enqueueRenderMessage3d (SetImageMagFilter (OpenGL.TextureMagFilter.Nearest, traversableSurfaceDescriptor.AlbedoImage)) world
             CachedDescriptors.Add (fieldModelAssetTag, (traversableSize, traversableHeightMap))
             (fieldModelAssetTag, traversableSize, traversableHeightMap)
         | (true, (traversableSize, traversableHeightMap)) -> (fieldModelAssetTag, traversableSize, traversableHeightMap)
@@ -710,7 +708,6 @@ type TacticsDispatcher () =
                     [Entity.SurfaceIndex == 1
                      Entity.Size <== field --|> fun field world -> Triple.snd (Field.getFieldStaticModelAndSizeAndHeightMap field world)
                      Entity.StaticModel <== field --|> fun field world -> Triple.fst (Field.getFieldStaticModelAndSizeAndHeightMap field world)
-                     Entity.InsetOpt <== field --> fun field -> Some (box2 (v2 (16.0f * (single (field.UpdateTime / 20UL % 3UL))) 0.0f) v2Zero)
                      Entity.RenderStyle == Forward -1.0f]]]]
 
     override this.Register (game, world) =
