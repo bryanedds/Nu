@@ -1386,10 +1386,10 @@ module StaticBillboardFacetModule =
                 let affineMatrix = transform.AffineMatrix
                 let insetOpt = match entity.GetInsetOpt world with Some inset -> ValueSome inset | None -> ValueNone // TODO: 3D: make converstion fn from option to voption and vice versa.
                 let renderMaterial =
-                    { AlbedoOpt = entity.GetAlbedoOpt world
-                      MetalnessOpt = entity.GetMetalnessOpt world
-                      RoughnessOpt = entity.GetRoughnessOpt world
-                      AmbientOcclusionOpt = entity.GetAmbientOcclusionOpt world }
+                    { AlbedoOpt = match entity.GetAlbedoOpt world with Some albedo -> ValueSome albedo | None -> ValueNone
+                      MetalnessOpt = match entity.GetMetalnessOpt world with Some metalness -> ValueSome metalness | None -> ValueNone
+                      RoughnessOpt = match entity.GetRoughnessOpt world with Some roughness -> ValueSome roughness | None -> ValueNone
+                      AmbientOcclusionOpt = match entity.GetAmbientOcclusionOpt world with Some ambientOcclusion -> ValueSome ambientOcclusion | None -> ValueNone }
                 let albedoImage = entity.GetAlbedoImage world
                 let metalnessImage = entity.GetMetalnessImage world
                 let roughnessImage = entity.GetRoughnessImage world
@@ -1453,10 +1453,10 @@ module StaticModelFacetModule =
                 let insetOpt = match entity.GetInsetOpt world with Some inset -> ValueSome inset | None -> ValueNone
                 let staticModel = entity.GetStaticModel world
                 let renderMaterial =
-                    { AlbedoOpt = entity.GetAlbedoOpt world
-                      MetalnessOpt = entity.GetMetalnessOpt world
-                      RoughnessOpt = entity.GetRoughnessOpt world
-                      AmbientOcclusionOpt = entity.GetAmbientOcclusionOpt world }
+                    { AlbedoOpt = match entity.GetAlbedoOpt world with Some albedo -> ValueSome albedo | None -> ValueNone
+                      MetalnessOpt = match entity.GetMetalnessOpt world with Some metalness -> ValueSome metalness | None -> ValueNone
+                      RoughnessOpt = match entity.GetRoughnessOpt world with Some roughness -> ValueSome roughness | None -> ValueNone
+                      AmbientOcclusionOpt = match entity.GetAmbientOcclusionOpt world with Some ambientOcclusion -> ValueSome ambientOcclusion | None -> ValueNone }
                 let renderType =
                     match entity.GetRenderStyle world with
                     | Deferred -> DeferredRenderType
@@ -1536,10 +1536,10 @@ module StaticModelSurfaceFacetModule =
                     let staticModel = entity.GetStaticModel world
                     let insetOpt = match entity.GetInsetOpt world with Some inset -> ValueSome inset | None -> ValueNone
                     let renderMaterial =
-                        { AlbedoOpt = entity.GetAlbedoOpt world
-                          MetalnessOpt = entity.GetMetalnessOpt world
-                          RoughnessOpt = entity.GetRoughnessOpt world
-                          AmbientOcclusionOpt = entity.GetAmbientOcclusionOpt world }
+                        { AlbedoOpt = match entity.GetAlbedoOpt world with Some albedo -> ValueSome albedo | None -> ValueNone
+                          MetalnessOpt = match entity.GetMetalnessOpt world with Some metalness -> ValueSome metalness | None -> ValueNone
+                          RoughnessOpt = match entity.GetRoughnessOpt world with Some roughness -> ValueSome roughness | None -> ValueNone
+                          AmbientOcclusionOpt = match entity.GetAmbientOcclusionOpt world with Some ambientOcclusion -> ValueSome ambientOcclusion | None -> ValueNone }
                     let renderType =
                         match entity.GetRenderStyle world with
                         | Deferred -> DeferredRenderType

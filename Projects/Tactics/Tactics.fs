@@ -350,10 +350,10 @@ module CharacterDispatcher =
             if entity.GetVisible world then
                 let mutable transform = entity.GetTransform world
                 let renderMaterial =
-                    { AlbedoOpt = Some Color.White
-                      MetalnessOpt = Some 0.0f
-                      RoughnessOpt = Some 1.25f
-                      AmbientOcclusionOpt = Some 1.0f }
+                    { AlbedoOpt = ValueSome Color.White
+                      MetalnessOpt = ValueSome 0.0f
+                      RoughnessOpt = ValueSome 1.25f
+                      AmbientOcclusionOpt = ValueSome 1.0f }
                 let albedoImage = asset "Field" "Jinn"
 
                 World.enqueueRenderMessage3d (SetImageMinFilter (OpenGL.TextureMinFilter.NearestMipmapNearest, albedoImage)) world

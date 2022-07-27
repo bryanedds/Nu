@@ -21,10 +21,10 @@ type [<NoEquality; NoComparison; Struct>] RenderType =
 
 /// Materials used for rendering models.
 and [<StructuralEquality; NoComparison; Struct>] RenderMaterial =
-    { AlbedoOpt : Color option
-      MetalnessOpt : single option
-      RoughnessOpt : single option
-      AmbientOcclusionOpt : single option }
+    { AlbedoOpt : Color voption
+      MetalnessOpt : single voption
+      RoughnessOpt : single voption
+      AmbientOcclusionOpt : single voption }
 
 /// A collection of render tasks in a pass.
 and [<NoEquality; NoComparison>] RenderTasks =
@@ -687,10 +687,10 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                 renderer.RenderTexCoordsOffsetsFields.[i * 2 + 2] <- texCoordsOffset.Position.X + texCoordsOffset.Size.X
                 renderer.RenderTexCoordsOffsetsFields.[i * 2 + 3] <- texCoordsOffset.Position.Y + texCoordsOffset.Size.Y
                 let (albedo, metalness, roughness, ambientOcclusion) =
-                    ((match renderMaterial.AlbedoOpt with Some value -> value | None -> surface.PhysicallyBasedMaterial.Albedo),
-                     (match renderMaterial.MetalnessOpt with Some value -> value | None -> surface.PhysicallyBasedMaterial.Metalness),
-                     (match renderMaterial.RoughnessOpt with Some value -> value | None -> surface.PhysicallyBasedMaterial.Roughness),
-                     (match renderMaterial.AmbientOcclusionOpt with Some value -> value | None -> surface.PhysicallyBasedMaterial.AmbientOcclusion))
+                    ((match renderMaterial.AlbedoOpt with ValueSome value -> value | ValueNone -> surface.PhysicallyBasedMaterial.Albedo),
+                     (match renderMaterial.MetalnessOpt with ValueSome value -> value | ValueNone -> surface.PhysicallyBasedMaterial.Metalness),
+                     (match renderMaterial.RoughnessOpt with ValueSome value -> value | ValueNone -> surface.PhysicallyBasedMaterial.Roughness),
+                     (match renderMaterial.AmbientOcclusionOpt with ValueSome value -> value | ValueNone -> surface.PhysicallyBasedMaterial.AmbientOcclusion))
                 renderer.RenderAlbedosFields.[i * 4] <- albedo.R
                 renderer.RenderAlbedosFields.[i * 4 + 1] <- albedo.G
                 renderer.RenderAlbedosFields.[i * 4 + 2] <- albedo.B
@@ -930,14 +930,14 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                         | ValueSome (TextureAsset (_, _, texture)) -> texture
                         | _ -> renderer.RenderPhysicallyBasedMaterial.NormalTexture
                     let billboardMaterial : OpenGL.PhysicallyBased.PhysicallyBasedMaterial =
-                        { Albedo = Option.defaultValue Color.White renderMaterial.AlbedoOpt
+                        { Albedo = ValueOption.defaultValue Color.White renderMaterial.AlbedoOpt
                           AlbedoMetadata = albedoMetadata
                           AlbedoTexture = albedoTexture
-                          Metalness = Option.defaultValue 1.0f renderMaterial.MetalnessOpt
+                          Metalness = ValueOption.defaultValue 1.0f renderMaterial.MetalnessOpt
                           MetalnessTexture = metalnessTexture
-                          Roughness = Option.defaultValue 1.0f renderMaterial.RoughnessOpt
+                          Roughness = ValueOption.defaultValue 1.0f renderMaterial.RoughnessOpt
                           RoughnessTexture = roughnessTexture
-                          AmbientOcclusion = Option.defaultValue 1.0f renderMaterial.AmbientOcclusionOpt
+                          AmbientOcclusion = ValueOption.defaultValue 1.0f renderMaterial.AmbientOcclusionOpt
                           AmbientOcclusionTexture = ambientOcclusionTexture
                           NormalTexture = normalTexture
                           TwoSided = false }
@@ -967,14 +967,14 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                         | ValueSome (TextureAsset (_, _, texture)) -> texture
                         | _ -> renderer.RenderPhysicallyBasedMaterial.NormalTexture
                     let billboardMaterial : OpenGL.PhysicallyBased.PhysicallyBasedMaterial =
-                        { Albedo = Option.defaultValue Color.White renderMaterial.AlbedoOpt
+                        { Albedo = ValueOption.defaultValue Color.White renderMaterial.AlbedoOpt
                           AlbedoMetadata = albedoMetadata
                           AlbedoTexture = albedoTexture
-                          Metalness = Option.defaultValue 1.0f renderMaterial.MetalnessOpt
+                          Metalness = ValueOption.defaultValue 1.0f renderMaterial.MetalnessOpt
                           MetalnessTexture = metalnessTexture
-                          Roughness = Option.defaultValue 1.0f renderMaterial.RoughnessOpt
+                          Roughness = ValueOption.defaultValue 1.0f renderMaterial.RoughnessOpt
                           RoughnessTexture = roughnessTexture
-                          AmbientOcclusion = Option.defaultValue 1.0f renderMaterial.AmbientOcclusionOpt
+                          AmbientOcclusion = ValueOption.defaultValue 1.0f renderMaterial.AmbientOcclusionOpt
                           AmbientOcclusionTexture = ambientOcclusionTexture
                           NormalTexture = normalTexture
                           TwoSided = false }
