@@ -361,7 +361,7 @@ module CharacterDispatcher =
                         RenderBillboardMessage
                             (transform.Absolute, transform.AffineMatrix, ValueSome inset, renderMaterial,
                              albedoImage, Assets.Default.MaterialMetalness, Assets.Default.MaterialRoughness, Assets.Default.MaterialRoughness, albedoImage,
-                             ValueSome OpenGL.TextureMinFilter.Nearest, ValueSome OpenGL.TextureMagFilter.Nearest, DeferredRenderType))
+                             ValueSome OpenGL.TextureMinFilter.NearestMipmapNearest, ValueSome OpenGL.TextureMagFilter.Nearest, DeferredRenderType))
                 characterView
             else View.empty
 
@@ -573,7 +573,7 @@ module Field =
                   AmbientOcclusion = 1.0f
                   AmbientOcclusionImage = albedoTileSet.ImageAsset
                   NormalImage = Assets.Default.MaterialNormal
-                  TextureMinFilterOpt = ValueSome OpenGL.TextureMinFilter.Nearest
+                  TextureMinFilterOpt = ValueSome OpenGL.TextureMinFilter.NearestMipmapNearest
                   TextureMagFilterOpt = ValueSome OpenGL.TextureMagFilter.Nearest
                   TwoSided = false }
 
