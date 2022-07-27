@@ -20,6 +20,7 @@ type [<NoEquality; NoComparison; Struct>] RenderType =
     | ForwardRenderType of single
 
 /// Materials used for rendering models.
+/// TODO: 3D: consider adding texture filter opts to override what's in the backing material.
 and [<StructuralEquality; NoComparison; Struct>] RenderMaterial =
     { AlbedoOpt : Color voption
       MetalnessOpt : single voption
