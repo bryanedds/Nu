@@ -361,7 +361,7 @@ module CharacterDispatcher =
                         RenderBillboardMessage
                             (transform.Absolute, transform.AffineMatrix, ValueSome inset, renderMaterial,
                              albedoImage, Assets.Default.MaterialMetalness, Assets.Default.MaterialRoughness, Assets.Default.MaterialRoughness, albedoImage,
-                             ValueSome OpenGL.TextureMinFilter.NearestMipmapNearest, ValueSome OpenGL.TextureMagFilter.Nearest, DeferredRenderType))
+                             ValueSome OpenGL.TextureMinFilter.Nearest, ValueSome OpenGL.TextureMagFilter.Nearest, DeferredRenderType))
                 characterView
             else View.empty
 
@@ -708,6 +708,7 @@ type TacticsDispatcher () =
                     [Entity.SurfaceIndex == 1
                      Entity.Size <== field --|> fun field world -> Triple.snd (Field.getFieldStaticModelAndSizeAndHeightMap field world)
                      Entity.StaticModel <== field --|> fun field world -> Triple.fst (Field.getFieldStaticModelAndSizeAndHeightMap field world)
+                     Entity.InsetOpt <== field --> fun field -> Some (box2 (v2 (16.0f * (single (field.UpdateTime / 20UL % 3UL))) 0.0f) v2Zero)
                      Entity.RenderStyle == Forward -1.0f]]]]
 
     override this.Register (game, world) =
