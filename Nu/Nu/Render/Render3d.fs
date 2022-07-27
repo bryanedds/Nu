@@ -106,8 +106,6 @@ and [<NoEquality; NoComparison>] RenderMessage3d =
     | RenderStaticModelsMessage of bool * (Matrix4x4 * Box2 voption * RenderMaterial) SegmentedList * RenderType * StaticModel AssetTag
     | RenderCachedStaticModelMessage of CachedStaticModelMessage
     | RenderPostPassMessage3d of RenderPassMessage3d
-    | SetImageMinFilter of OpenGL.TextureMinFilter * Image AssetTag
-    | SetImageMagFilter of OpenGL.TextureMagFilter * Image AssetTag
     | SetStaticModelMessage of StaticModelSurfaceDescriptor array * Box3 * StaticModel AssetTag
     | LoadRenderPackageMessage3d of string
     | UnloadRenderPackageMessage3d of string
@@ -1003,18 +1001,6 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                     GlRenderer3d.categorizeStaticModel (d.CachedStaticModelAbsolute, &d.CachedStaticModelAffineMatrix, d.CachedStaticModelInsetOpt, &d.CachedStaticModelRenderMaterial, d.CachedStaticModelRenderType, d.CachedStaticModel, renderer)
                 | RenderPostPassMessage3d postPass ->
                     postPasses.Add postPass |> ignore<bool>
-                | SetImageMinFilter (minFilter, image) ->
-                    match GlRenderer3d.tryFindRenderAsset (AssetTag.generalize image) renderer with
-                    | ValueSome (TextureAsset (_, _, texture)) ->
-                        OpenGL.Texture.SetMinFilter (minFilter, texture)
-                        OpenGL.Hl.Assert ()
-                    | _ -> Log.debug ("Could not set min filter for non-texture or missing asset '" + scstring image + "'")
-                | SetImageMagFilter (magFilter, image) ->
-                    match GlRenderer3d.tryFindRenderAsset (AssetTag.generalize image) renderer with
-                    | ValueSome (TextureAsset (_, _, texture)) ->
-                        OpenGL.Texture.SetMagFilter (magFilter, texture)
-                        OpenGL.Hl.Assert ()
-                    | _ -> Log.debug ("Could not set mag filter for non-texture or missing asset '" + scstring image + "'")
                 | SetStaticModelMessage (surfaceDescriptors, bounds, assetTag) ->
                     GlRenderer3d.handleSetStaticModelMessage surfaceDescriptors bounds assetTag renderer
                 | LoadRenderPackageMessage3d hintPackageUse ->
