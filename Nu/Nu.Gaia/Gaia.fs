@@ -388,7 +388,7 @@ module Gaia =
                 let renderMaterial = Unchecked.defaultof<_>
                 let renderType = ForwardRenderType Single.MinValue
                 let staticModel = Assets.Default.HighlightModel
-                World.enqueueRenderMessage3d (RenderStaticModelMessage (absolute, boundsMatrix, renderMaterial, renderType, staticModel)) world
+                World.enqueueRenderMessage3d (RenderStaticModelMessage (absolute, boundsMatrix, ValueNone, renderMaterial, renderType, staticModel)) world
                 (Cascade, world)
         | _ -> (Cascade, world)
 
