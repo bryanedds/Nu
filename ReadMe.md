@@ -19,20 +19,17 @@ This repository hosts several projects, including -
 
 Here is some media on the Nu Game Engine -
 
+![image](https://user-images.githubusercontent.com/1625560/181412133-4fe1b6df-3655-4881-b527-5d3769119620.png)
+Nu's tutorial game, BlazeVector.
+
 ![image](https://user-images.githubusercontent.com/1625560/181411155-d66b3c98-3506-42f7-8974-34b7eb5de877.png)
-Editing a scene import from Unity in Nu's editor, Gaia.
+Editing a 3D scene imported from Unity in Nu's editor, Gaia.
 
 ![image](https://user-images.githubusercontent.com/1625560/181410397-8b89a9bb-9007-4518-af6f-f11e56e58ab4.png)
 A Tactics-style game I'm working on with the new deferred, physically-based 3D renderer.
 
-![Screenshot](Projects/BlazeVector/Promotional/BlastingAwayInBlazeVector.png?raw=true)
-Nu's tutorial game, BlazeVector!
-
-![Screenshot](Nu/Nu.Promotional/SpecialEffect.png?raw=true)
-Editing a special effect in Gaia.
-
 ![Screenshot](Projects/OmniBlade/Promotional/OmniBladeOuterTomb.png?raw=true)
-Wandering around the encampment in OmniBlade.
+Wandering around the encampment in the Nu team's first release, OmniBlade.
 
 ![Screenshot](Projects/OmniBlade/Promotional/OmniBladeShop.png?raw=true)
 Shopping for items in OmniBlade.
@@ -42,6 +39,9 @@ Exploring a level in OmniBlade.
 
 ![Screenshot](Projects/OmniBlade/Promotional/OmniBladeCancel.png?raw=true)
 A Chrono Trigger / Grandia-style battle in OmniBlade.
+
+![Screenshot](Nu/Nu.Promotional/SpecialEffect.png?raw=true)
+Editing a declarative special effect in Gaia.
 
 Getting Started
 ===============
