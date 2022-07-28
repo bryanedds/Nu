@@ -19,11 +19,14 @@ This repository hosts several projects, including -
 
 Here is some media on the Nu Game Engine -
 
+![image](https://user-images.githubusercontent.com/1625560/181411155-d66b3c98-3506-42f7-8974-34b7eb5de877.png)
+Editing a scene import from Unity in Nu's editor, Gaia.
+
+![image](https://user-images.githubusercontent.com/1625560/181410397-8b89a9bb-9007-4518-af6f-f11e56e58ab4.png)
+A Tactics-style game I'm working on with the new deferred, physically-based 3D renderer.
+
 ![Screenshot](Projects/BlazeVector/Promotional/BlastingAwayInBlazeVector.png?raw=true)
 Nu's tutorial game, BlazeVector!
-
-![Screenshot](Projects/BlazeVector/Promotional/EditingASectionOfABlazeVectorStage.png?raw=true)
-Editing a section of a BlazeVector stage in Gaia (Nu's rewindable game editor).
 
 ![Screenshot](Nu/Nu.Promotional/SpecialEffect.png?raw=true)
 Editing a special effect in Gaia.
@@ -39,9 +42,6 @@ Exploring a level in OmniBlade.
 
 ![Screenshot](Projects/OmniBlade/Promotional/OmniBladeCancel.png?raw=true)
 A Chrono Trigger / Grandia-style battle in OmniBlade.
-
-![image](https://user-images.githubusercontent.com/1625560/181409933-1253cc2d-fa27-4955-8612-a2ed1d205a86.png)
-A Tactics-style game I'm working on with the new deferred, physically-based 3D renderer.
 
 Getting Started
 ===============
