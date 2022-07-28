@@ -34,17 +34,16 @@ module WorldRender =
         static member enqueueRenderLayeredMessages2d (messages : RenderLayeredMessage2d seq) world =
             let rendererProcess = World.getRendererProcess world
             for message in messages do rendererProcess.EnqueueMessage2d (RenderLayeredMessage2d message)
-
-        /// Hint that a rendering asset package with the given name should be loaded. Should be
-        /// used to avoid loading assets at inconvenient times (such as in the middle of game play!)
+            
+        /// Load an audio asset package. Should be used to avoid loading assets at inconvenient times (such as in the
+        /// middle of game play!)
         [<FunctionBinding>]
         static member hintRenderPackageUse2d packageName world =
             let hintRenderPackageUseMessage = LoadRenderPackageMessage2d packageName
             World.enqueueRenderMessage2d hintRenderPackageUseMessage world
             world
-
-        /// Hint that a rendering package should be unloaded since its assets will not be used
-        /// again (or until specified via World.hintRenderPackageUse).
+            
+        /// Unload an audio package should be unloaded since its assets will not be used again soon.
         [<FunctionBinding>]
         static member unloadRenderPackage2d packageName world =
             let unloadRenderPackageMessage = UnloadRenderPackageMessage2d packageName

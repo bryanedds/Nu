@@ -6,7 +6,6 @@ open System
 open System.Collections.Generic
 open System.Drawing
 open System.Drawing.Imaging
-open System.IO
 open System.Runtime.InteropServices
 open SDL2
 open Prime
@@ -58,18 +57,6 @@ module Texture =
             Marshal.Copy (rowTop, 0, pixelsBottom, surface.pitch)
             Marshal.Copy (rowBottom, 0, pixelsTop, surface.pitch)
 
-    /// Set the minification filter of a texture.
-    let SetMinFilter (minFilter : OpenGL.TextureMinFilter, texture) =
-        Gl.BindTexture (TextureTarget.Texture2d, texture)
-        Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, int minFilter)
-        Gl.BindTexture (TextureTarget.Texture2d, 0u)
-
-    /// Set the magnification filter of a texture.
-    let SetMagFilter (magFilter : OpenGL.TextureMagFilter, texture) =
-        Gl.BindTexture (TextureTarget.Texture2d, texture)
-        Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, int magFilter)
-        Gl.BindTexture (TextureTarget.Texture2d, 0u)
-
     let private TryCreateImageBitmap (filePath : string) =
         try let bitmap = new Bitmap (filePath)
             let data = bitmap.LockBits (Rectangle (0, 0, bitmap.Width, bitmap.Height), ImageLockMode.ReadOnly, Imaging.PixelFormat.Format32bppRgb)
@@ -110,7 +97,6 @@ module Texture =
         | PlatformID.Win32Windows -> TryCreateImageBitmap filePath
         | _ -> TryCreateImageSurface filePath
 
-    /// Attempt to create a texture from a file.
     let private TryCreateTextureInternal (textureOpt, generateMipmaps, filePath : string) =
 
         // attmept to load image
@@ -131,7 +117,6 @@ module Texture =
 
     /// Attempt to create a texture from a file.
     let TryCreateTexture (minFilter, magFilter, generateMipmaps, filePath) =
-
         match TryCreateTextureInternal (None, generateMipmaps, filePath) with
         | Right (metadata, texture) ->
             Gl.BindTexture (TextureTarget.Texture2d, texture)

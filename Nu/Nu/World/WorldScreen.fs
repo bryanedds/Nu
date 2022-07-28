@@ -264,8 +264,8 @@ module WorldScreenModule =
             (screen, world)
         
         /// Create a screen with a dissolving transition, and add it to the world.
-        static member createDissolveScreen<'d when 'd :> ScreenDispatcher> nameOpt dissolveDescriptor world =
-            World.createDissolveScreen5 typeof<'d>.Name nameOpt dissolveDescriptor world
+        static member createDissolveScreen<'d when 'd :> ScreenDispatcher> nameOpt dissolveDescriptor songOpt world =
+            World.createDissolveScreen5 typeof<'d>.Name nameOpt dissolveDescriptor songOpt world
 
         /// Write a screen to a screen descriptor.
         static member writeScreen screen screenDescriptor world =

@@ -109,7 +109,7 @@ module WorldModule2 =
             octree
 
         /// Resolve a relation to an address in the current script context.
-        static member resolve relation world =
+        static member resolve<'a> (relation : 'a Relation) world =
             let scriptContext = World.getScriptContext world
             let address = Relation.resolve scriptContext.SimulantAddress relation
             address
@@ -120,7 +120,7 @@ module WorldModule2 =
             World.resolve relation world
     
         /// Relate an address to the current script context.
-        static member relate address world =
+        static member relate<'a> (address : 'a Address) world =
             let scriptContext = World.getScriptContext world
             let address = Relation.relate scriptContext.SimulantAddress address
             address
@@ -733,11 +733,12 @@ module WorldModule2 =
             let viewBounds = World.getViewBounds2d world
             World.getEntities2dBy (Quadtree.getElementsInBounds viewBounds set) world
 
-        static member private getEntities3dBy getElementsFromQuadtree world =
+        static member private getEntities3dBy getElementsFromOctree world =
             let octree = World.getOctree world
             let (octree, octreeCache) = MutantCache.getMutant (fun () -> World.rebuildOctree world) octree
             let world = World.setOctree octreeCache world
-            let entities = getElementsFromQuadtree octree
+            let elements = getElementsFromOctree octree
+            let entities = Seq.map (fun element -> element.Entry) elements
             (entities, world)
 
         /// Get all uncullable 3d entities.
@@ -763,9 +764,7 @@ module WorldModule2 =
             let frustumExposed = World.getEyeFrustum3dExposed world
             let frustumImposter = World.getEyeFrustum3dImposter world
             let lightBox = World.getLightBox3d world
-            let (elements, world) = World.getEntities3dBy (Octree.getElementsInView frustumEnclosed frustumExposed frustumImposter lightBox set) world
-            let entities = Seq.map (fun element -> element.Entry) elements
-            (entities, world)
+            World.getEntities3dBy (Octree.getElementsInView frustumEnclosed frustumExposed frustumImposter lightBox set) world
 
         static member private updateSimulants world =
 
@@ -775,8 +774,7 @@ module WorldModule2 =
             let screens = match World.getSelectedScreenOpt world with Some selectedScreen -> selectedScreen :: screens | None -> screens
             let screens = List.rev screens
             let groups = Seq.concat (List.map (flip World.getGroups world) screens)
-            let (octelements, world) = World.getEntitiesInPlay3d CachedHashSet3d world
-            let entities3d = Seq.map (fun octelement -> octelement.Entry) octelements
+            let (entities3d, world) = World.getEntitiesInPlay3d CachedHashSet3d world
             let (entities2d, world) = World.getEntitiesInPlay2d CachedHashSet2d world
             let entities = Seq.append entities3d entities2d
             UpdateGatherTimer.Stop ()
@@ -966,7 +964,7 @@ module WorldModule2 =
             World.cleanUpSubsystems world |> ignore
 
         /// Run the game engine with threading with the given handlers, but don't clean up at the end, and return the world.
-        static member runWithoutCleanUp runWhile preProcess postProcess sdlDeps liveness firstFrame world =
+        static member runWithoutCleanUp runWhile preProcess postProcess (sdlDeps : SdlDeps) liveness firstFrame world =
             TotalTimer.Start ()
             if runWhile world then
                 if World.shouldSleep world then Thread.Sleep (1000 / Constants.Engine.FpsDesiredI) // don't let game run too fast while full screen unfocused
@@ -1068,7 +1066,7 @@ module WorldModule2 =
             else world
 
         /// Run the game engine with the given handler.
-        static member run4 runWhile sdlDeps liveness world =
+        static member run4 runWhile (sdlDeps : SdlDeps) liveness world =
             let result =
                 try let world = World.runWithoutCleanUp runWhile id id sdlDeps liveness true world
                     World.cleanUp world
