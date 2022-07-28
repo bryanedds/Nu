@@ -37,11 +37,11 @@ Shopping for items in OmniBlade.
 ![Screenshot](Projects/OmniBlade/Promotional/OmniBladeChest.png?raw=true)
 Exploring a level in OmniBlade.
 
-![Screenshot](Projects/OmniBlade/Promotional/OmniBladeBattle.png?raw=true)
-A Chrono Trigger-style battle in OmniBlade.
-
 ![Screenshot](Projects/OmniBlade/Promotional/OmniBladeCancel.png?raw=true)
-The Grandia-style Cancel mechanic.
+A Chrono Trigger / Grandia-style battle in OmniBlade.
+
+![image](https://user-images.githubusercontent.com/1625560/181409933-1253cc2d-fa27-4955-8612-a2ed1d205a86.png)
+A Tactics-style game I'm working on with the new deferred, physically-based 3D renderer.
 
 Getting Started
 ===============
