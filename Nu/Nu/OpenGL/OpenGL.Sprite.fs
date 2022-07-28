@@ -23,10 +23,10 @@ module Sprite =
         let vertexShaderStr =
             [Constants.Render.GlslVersionPragma
              ""
-             "const int Verts = 6;"
+             "const int Verts = 4;"
              ""
              "const vec4 Filters[Verts] ="
-             "  vec4[4]("
+             "  vec4[Verts]("
              "      vec4(1,1,0,0),"
              "      vec4(1,1,1,0),"
              "      vec4(1,1,1,1),"
@@ -39,7 +39,7 @@ module Sprite =
              "void main()"
              "{"
              "  int vertexId = gl_VertexID % Verts;"
-             "  vec4 filt = filters[vertexId];"
+             "  vec4 filt = Filters[vertexId];"
              "  gl_Position = modelViewProjection * vec4(position.x, position.y, 0, 1);"
              "  texCoords = vec2(texCoords4.x * filt.x + texCoords4.z * filt.z, texCoords4.y * filt.y + texCoords4.w * filt.w);"
              "}"] |> String.join "\n"
