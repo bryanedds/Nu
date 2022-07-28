@@ -222,6 +222,12 @@ module Metadata =
             Map.ofSeq
         map
 
+    /// Attempt to get a copy of a metadata submap with the given package name.
+    let tryGetMetadataSubmap packageName metadata =
+        match metadata.MetadataMap.TryGetValue packageName with
+        | (true, submap) -> Some (submap |> UMap.toSeq |> Map.ofSeq)
+        | (false, _) -> None
+
     /// Get a map of all the discovered assets.
     let getAssetMap metadata =
         let assetMap =

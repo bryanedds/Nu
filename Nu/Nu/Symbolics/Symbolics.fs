@@ -89,12 +89,12 @@ module Symbolics =
     /// Try to find the symbols with the given asset tags.
     let tryFindSymbols metadata assetTags symbolics =
         List.foldBack
-            (fun assetTag (symbolOpts, symbolics) ->
+            (fun assetTag symbols ->
                 match tryFindSymbol metadata assetTag symbolics with
-                | Some symbol -> (Some symbol :: symbolOpts, symbolics)
-                | None -> (None :: symbolOpts, symbolics))
+                | Some symbol -> symbol :: symbols
+                | None -> symbols)
             assetTags
-            ([], symbolics)
+            []
 
     /// Reload all the symbols in symbolics.
     let reloadSymbols symbolics =

@@ -116,16 +116,15 @@ module WorldAudio =
             World.enqueueAudioMessage StopSongMessage world
             world
             
-        /// Hint that an audio asset package with the given name should be loaded. Should be used
-        /// to avoid loading assets at inconvenient times (such as in the middle of game play!)
+        /// Load an audio asset package. Should be used to avoid loading assets at inconvenient times (such as in the
+        /// middle of game play!)
         [<FunctionBinding>]
         static member loadAudioPackage packageName world =
             let loadAudioPackageMessage = LoadAudioPackageMessage packageName
             World.enqueueAudioMessage loadAudioPackageMessage world
             world
             
-        /// Hint that an audio package should be unloaded since its assets will not be used again
-        /// (or until specified via a LoadAudioPackageMessage).
+        /// Unload an audio package should be unloaded since its assets will not be used again soon.
         [<FunctionBinding>]
         static member unloadAudioPackage packageName world =
             let unloadAudioPackageMessage = UnloadAudioPackageMessage packageName

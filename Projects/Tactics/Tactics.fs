@@ -550,7 +550,7 @@ module Field =
                 normals.[u+5] <- normal
 
         // create indices
-        let indices = Array.init (tileMapWidth * tileMapHeight * 6) id
+        let indices = Array.init (tileMapWidth * tileMapHeight * 6) id;
 
         // ensure we've found an albedo tile set
         match albedoTileSetOpt with
