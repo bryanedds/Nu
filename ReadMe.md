@@ -9,13 +9,12 @@ https://dlive.tv/NuGameEngine
 
 What is the **Nu Game Engine**?
 
-*"The Nu Game Engine is the world's first practical functional game engine (functional in the functional programming sense). It offers a declarative Elm-style reactive programming API, as well as an imperative and ECS programming APIs for scalability. After finally reaching v1.3.0.4, the implementation has matured enough to prove both the efficacy and viability of functional programming in games in terms of performance, programmability, and reliability."*
+*"The Nu Game Engine is the world's first practical functional 2D and 3D cross-platform game engine built in F#. It offers a declarative Elm-style reactive programming API, as well as an algebraic ECS programming API for scalability. After finally reaching v1.3.0.4, the implementation has matured enough to prove both the efficacy and viability of functional programming techniques in games in terms of performance, programmability, and reliability. It currently utilizes SDL2, OpenGL, Aether 2D Physics, and soon Bepu 3D Physics."*
 
 This repository hosts several projects, including -
 
-- the **Nu Game Engine**, a cross-platform F# 2D game engine built in the functional style. Uses SDL2 and Farseer Physics.
 - the sample game **BlazeVector**.
-- the Chrono Trigger-like game, **OmniBlade** that is now in production.
+- the Chrono Trigger-like game, **OmniBlade** available free for Windows (https://github.com/bryanedds/Nu/releases/download/v9.4.0/OmniBlade.Windows.zip) and Linux (https://github.com/bryanedds/Nu/releases/download/v9.4.0/OmniBlade.Windows.zip)
 
 Here is some media on the Nu Game Engine -
 
