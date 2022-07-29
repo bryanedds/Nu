@@ -321,7 +321,7 @@ namespace Nu
         }
 
         /// <summary>
-        /// Get all of the ray intersections of a triangle.
+        /// Get all of the ray intersections of the given mesh.
         /// </summary>
         public IEnumerable<(int, float)> Intersects(int[] indices, Vector3[] vertices)
         {
