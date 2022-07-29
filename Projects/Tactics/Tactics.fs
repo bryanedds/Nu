@@ -322,6 +322,15 @@ module Character =
 
 type Character = Character.Character
 
+type Occupant =
+    | Character of Character
+    | Chest of unit
+
+type [<StructuralEquality; StructuralComparison>] OccupantIndex =
+    | AllyIndex of int
+    | EnemyIndex of int
+    | ChestIndex of int
+
 // this is a custom entity for performance testing
 type CustomModelDispatcher () =
     inherit StaticModelDispatcher ()
@@ -387,9 +396,9 @@ module CharacterDispatcher =
 [<RequireQualifiedAccess>]
 module Field =
 
-    let CachedDescriptors = dictPlus<StaticModel AssetTag, Vector3 * Map<Vector2i, single>> HashIdentity.Structural []
+    let CachedDescriptors = dictPlus<StaticModel AssetTag, Vector3 * Map<Vector2i, Vector3 array>> HashIdentity.Structural []
 
-    let private createFieldSurfaceDescriptorAndSizeAndHeightMap tileMapWidth tileMapHeight (tileSets : TmxTileset array) (tileLayer : TmxLayer) (heightLayer : TmxLayer) =
+    let private createFieldSurfaceDescriptorAndSizeAndVertexMap tileMapWidth tileMapHeight (tileSets : TmxTileset array) (tileLayer : TmxLayer) (heightLayer : TmxLayer) =
 
         // compute bounds
         let heightScalar = 0.5f
@@ -470,21 +479,20 @@ module Field =
                         positions.[u+2].Y <- positions.[uEast+5].Y
                         positions.[u+4].Y <- positions.[uEast+5].Y
 
-        // make height map in-place
-        let mutable heightMap = Map.empty
+        // make vertex map in-place
+        let mutable vertexMap = Map.empty
 
-        // populate height map
+        // populate vertex map
         for i in 0 .. dec tileMapWidth do
             for j in 0 .. dec tileMapHeight do
                 let t = j * tileMapWidth + i
                 let u = t * 6
-                let height =
-                    (positions.[u].Y +
-                     positions.[u+1].Y +
-                     positions.[u+2].Y +
-                     positions.[u+5].Y) *
-                    0.25f
-                heightMap <- Map.add (v2i i j) height heightMap
+                let vertices =
+                    [|positions.[u]
+                      positions.[u+1]
+                      positions.[u+2]
+                      positions.[u+5]|]
+                vertexMap <- Map.add (v2i i j) vertices vertexMap
 
         // make tex coordses array
         let texCoordses = Array.zeroCreate<Vector2> (tileMapWidth * tileMapHeight * 6)
@@ -578,19 +586,23 @@ module Field =
                   TwoSided = false }
 
             // fin
-            (descriptor, size, heightMap)
+            (descriptor, size, vertexMap)
 
         // did not find albedo tile set
         | None -> failwith "Unable to find custom TmxLayer Image property; cannot create tactical map."
 
-    type Field =
+    type [<ReferenceEquality; NoComparison>] Field =
         private
             { FieldTickTime : uint64
-              FieldTileMap : TileMap AssetTag }
+              FieldTileMap : TileMap AssetTag
+              OccupantIndices : Map<Vector2i, OccupantIndex list>
+              OccupantPositions : Map<OccupantIndex, Vector2i>
+              Occupants : Map<OccupantIndex, Occupant>
+              SelectedTile : Vector2i }
 
         member this.UpdateTime = this.FieldTickTime
 
-    let getFieldStaticModelAndSizeAndHeightMap (field : Field) world =
+    let getFieldStaticModelAndSizeAndVertexMap (field : Field) world =
         let fieldModelAssetTag = asset field.FieldTileMap.PackageName (field.FieldTileMap.AssetName + "Model")
         match CachedDescriptors.TryGetValue fieldModelAssetTag with
         | (false, _) ->
@@ -600,22 +612,51 @@ module Field =
             let untraversableHeightLayer = tileMap.Layers.["UntraversableHeight"] :?> TmxLayer
             let traversableLayer = tileMap.Layers.["Traversable"] :?> TmxLayer
             let traversableHeightLayer = tileMap.Layers.["TraversableHeight"] :?> TmxLayer
-            let (untraversableSurfaceDescriptor, _, _) = createFieldSurfaceDescriptorAndSizeAndHeightMap tileMap.Width tileMap.Height tileSets untraversableLayer untraversableHeightLayer
+            let (untraversableSurfaceDescriptor, _, _) = createFieldSurfaceDescriptorAndSizeAndVertexMap tileMap.Width tileMap.Height tileSets untraversableLayer untraversableHeightLayer
             let untraversableSurfaceDescriptor = { untraversableSurfaceDescriptor with Roughness = 0.1f }
-            let (traversableSurfaceDescriptor, traversableSize, traversableHeightMap) = createFieldSurfaceDescriptorAndSizeAndHeightMap tileMap.Width tileMap.Height tileSets traversableLayer traversableHeightLayer
+            let (traversableSurfaceDescriptor, traversableSize, traversableVertexMap) = createFieldSurfaceDescriptorAndSizeAndVertexMap tileMap.Width tileMap.Height tileSets traversableLayer traversableHeightLayer
             let surfaceDescriptors = [|untraversableSurfaceDescriptor; traversableSurfaceDescriptor|]
             let bounds = let bounds = untraversableSurfaceDescriptor.Bounds in bounds.Combine traversableSurfaceDescriptor.Bounds
             World.enqueueRenderMessage3d (SetStaticModelMessage (surfaceDescriptors, bounds, fieldModelAssetTag)) world
-            CachedDescriptors.Add (fieldModelAssetTag, (traversableSize, traversableHeightMap))
-            (fieldModelAssetTag, traversableSize, traversableHeightMap)
-        | (true, (traversableSize, traversableHeightMap)) -> (fieldModelAssetTag, traversableSize, traversableHeightMap)
+            CachedDescriptors.Add (fieldModelAssetTag, (traversableSize, traversableVertexMap))
+            (fieldModelAssetTag, traversableSize, traversableVertexMap)
+        | (true, (traversableSize, traversableVertexMap)) -> (fieldModelAssetTag, traversableSize, traversableVertexMap)
+
+    let tryGetVertices index field world =
+        let (_, _, vertexMap) = getFieldStaticModelAndSizeAndVertexMap field world
+        match Map.tryFind index vertexMap with
+        | Some index -> Some index
+        | None -> None
+
+    let getVertices index field world =
+        match tryGetVertices index field world with
+        | Some vertices -> vertices
+        | None -> failwith ("Field vertex index '" + scstring index + "' out of range.")
+
+    let tryGetFieldIndexAtMouse field world =
+        let mouseRay = World.getMouseRay3dWorld false world
+        let (_, _, vertexMap) = getFieldStaticModelAndSizeAndVertexMap field world
+        let indices = [|0; 1; 2; 0; 2; 3|]
+        let intersectionMap =
+            Map.map (fun _ vertices ->
+                let intersections = mouseRay.Intersects (indices, vertices)
+                let intersectionOpt = Seq.tryHead intersections // only need one intersection
+                Option.map snd' intersectionOpt)
+                vertexMap
+        let intersections = intersectionMap |> Seq.map (fun (kvp : KeyValuePair<_, _>) -> (kvp.Key, kvp.Value)) |> Seq.toArray 
+        let intersectionsSorted = Array.sortBy snd intersections
+        Seq.tryHead intersectionsSorted
 
     let advance field =
         { field with FieldTickTime = inc field.FieldTickTime }
 
     let make tileMap =
         { FieldTickTime = 0UL
-          FieldTileMap = tileMap }
+          FieldTileMap = tileMap
+          OccupantIndices = Map.empty
+          OccupantPositions = Map.empty
+          Occupants = Map.empty
+          SelectedTile = v2iZero }
 
 type Field = Field.Field
 
@@ -700,14 +741,14 @@ type TacticsDispatcher () =
                     [Entity.Position == v3 0.0f 2.5f 0.0f]
                  Content.staticModelSurface Gen.name
                     [Entity.SurfaceIndex == 0
-                     Entity.Size <== field --|> fun field world -> Triple.snd (Field.getFieldStaticModelAndSizeAndHeightMap field world)
-                     Entity.StaticModel <== field --|> fun field world -> Triple.fst (Field.getFieldStaticModelAndSizeAndHeightMap field world)
+                     Entity.Size <== field --|> fun field world -> Triple.snd (Field.getFieldStaticModelAndSizeAndVertexMap field world)
+                     Entity.StaticModel <== field --|> fun field world -> Triple.fst (Field.getFieldStaticModelAndSizeAndVertexMap field world)
                      Entity.InsetOpt <== field --> fun field -> Some (box2 (v2 (16.0f * (single (field.UpdateTime / 20UL % 3UL))) 0.0f) v2Zero)
                      Entity.RenderStyle == Forward 0.0f]
                  Content.staticModelSurface Gen.name
                     [Entity.SurfaceIndex == 1
-                     Entity.Size <== field --|> fun field world -> Triple.snd (Field.getFieldStaticModelAndSizeAndHeightMap field world)
-                     Entity.StaticModel <== field --|> fun field world -> Triple.fst (Field.getFieldStaticModelAndSizeAndHeightMap field world)
+                     Entity.Size <== field --|> fun field world -> Triple.snd (Field.getFieldStaticModelAndSizeAndVertexMap field world)
+                     Entity.StaticModel <== field --|> fun field world -> Triple.fst (Field.getFieldStaticModelAndSizeAndVertexMap field world)
                      Entity.InsetOpt <== field --> fun field -> Some (box2 (v2 (16.0f * (single (field.UpdateTime / 20UL % 3UL))) 0.0f) v2Zero)
                      Entity.RenderStyle == Forward -1.0f]]]]
 
