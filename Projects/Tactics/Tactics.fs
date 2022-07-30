@@ -633,19 +633,26 @@ module Field =
         | Some vertices -> vertices
         | None -> failwith ("Field vertex index '" + scstring index + "' out of range.")
 
-    let tryGetFieldIndexAtMouse field world =
+    let tryGetFieldDataAtMouse field world =
         let mouseRay = World.getMouseRay3dWorld false world
         let (_, _, vertexMap) = getFieldStaticModelAndSizeAndVertexMap field world
         let indices = [|0; 1; 2; 0; 2; 3|]
         let intersectionMap =
             Map.map (fun _ vertices ->
                 let intersections = mouseRay.Intersects (indices, vertices)
-                let intersectionOpt = Seq.tryHead intersections // only need one intersection
-                Option.map snd' intersectionOpt)
+                match Seq.tryHead intersections with
+                | Some struct (_, intersection) -> Some (intersection, vertices)
+                | None -> None)
                 vertexMap
-        let intersections = intersectionMap |> Seq.map (fun (kvp : KeyValuePair<_, _>) -> (kvp.Key, kvp.Value)) |> Seq.toArray 
-        let intersectionsSorted = Array.sortBy snd intersections
-        Seq.tryHead intersectionsSorted
+        let intersections =
+            intersectionMap |>
+            Seq.map (fun (kvp : KeyValuePair<_, _>) -> (kvp.Key, kvp.Value)) |>
+            Seq.filter (fun (_, opt) -> opt.IsSome) |>
+            Seq.map (fun (key, Some (a, b)) -> (key, a, b)) |>
+            Seq.toArray |>
+            Array.sortBy Triple.snd |>
+            Array.tryHead
+        intersections
 
     let advance field =
         { field with FieldTickTime = inc field.FieldTickTime }
@@ -750,7 +757,12 @@ type TacticsDispatcher () =
                      Entity.Size <== field --|> fun field world -> Triple.snd (Field.getFieldStaticModelAndSizeAndVertexMap field world)
                      Entity.StaticModel <== field --|> fun field world -> Triple.fst (Field.getFieldStaticModelAndSizeAndVertexMap field world)
                      Entity.InsetOpt <== field --> fun field -> Some (box2 (v2 (16.0f * (single (field.UpdateTime / 20UL % 3UL))) 0.0f) v2Zero)
-                     Entity.RenderStyle == Forward -1.0f]]]]
+                     Entity.RenderStyle == Forward -1.0f]
+                 Content.staticModel Gen.name
+                    [Entity.Position <== field --|> fun field world ->
+                        match Field.tryGetFieldDataAtMouse field world with
+                        | Some (_, _, [|a; b; c; d|]) -> (a + b + c + d) / 4.0f
+                        | None -> v3Zero]]]]
 
     override this.Register (game, world) =
         let world = base.Register (game, world)
