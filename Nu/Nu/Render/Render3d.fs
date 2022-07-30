@@ -107,7 +107,7 @@ and [<NoEquality; NoComparison>] RenderMessage3d =
     | RenderStaticModelMessage of bool * Matrix4x4 * Box2 voption * RenderMaterial * RenderType * StaticModel AssetTag
     | RenderStaticModelsMessage of bool * (Matrix4x4 * Box2 voption * RenderMaterial) SegmentedList * RenderType * StaticModel AssetTag
     | RenderCachedStaticModelMessage of CachedStaticModelMessage
-    | RenderUserDefinedStaticModel of bool * Matrix4x4 * Box2 voption * RenderMaterial * RenderType * StaticModelSurfaceDescriptor array * Box3 * StaticModel AssetTag
+    | RenderUserDefinedStaticModel of bool * Matrix4x4 * Box2 voption * RenderMaterial * RenderType * StaticModelSurfaceDescriptor array * Box3
     | RenderPostPassMessage3d of RenderPassMessage3d
     | LoadRenderPackageMessage3d of string
     | UnloadRenderPackageMessage3d of string
@@ -1039,10 +1039,11 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                         GlRenderer3d.categorizeStaticModel (absolute, &modelMatrix, insetOpt, &renderMaterial, renderType, staticModel, renderer)
                 | RenderCachedStaticModelMessage d ->
                     GlRenderer3d.categorizeStaticModel (d.CachedStaticModelAbsolute, &d.CachedStaticModelAffineMatrix, d.CachedStaticModelInsetOpt, &d.CachedStaticModelRenderMaterial, d.CachedStaticModelRenderType, d.CachedStaticModel, renderer)
-                | RenderUserDefinedStaticModel (absolute, modelMatrix, insetOpt, renderMaterial, renderType, surfaceDescriptors, bounds, staticModel) ->
-                    GlRenderer3d.tryCreateUserDefinedStaticModel surfaceDescriptors bounds staticModel renderer
-                    GlRenderer3d.categorizeStaticModel (absolute, &modelMatrix, insetOpt, &renderMaterial, renderType, staticModel, renderer)
-                    SegmentedList.add staticModel userDefinedStaticModelsToDestroy
+                | RenderUserDefinedStaticModel (absolute, modelMatrix, insetOpt, renderMaterial, renderType, surfaceDescriptors, bounds) ->
+                    let assetTag = asset Assets.Default.PackageName Gen.name // TODO: see if we should instead use a specialized package for temporary assets like these.
+                    GlRenderer3d.tryCreateUserDefinedStaticModel surfaceDescriptors bounds assetTag renderer
+                    GlRenderer3d.categorizeStaticModel (absolute, &modelMatrix, insetOpt, &renderMaterial, renderType, assetTag, renderer)
+                    SegmentedList.add assetTag userDefinedStaticModelsToDestroy
                 | RenderPostPassMessage3d postPass ->
                     postPasses.Add postPass |> ignore<bool>
                 | LoadRenderPackageMessage3d hintPackageUse ->
