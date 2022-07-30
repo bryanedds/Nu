@@ -17,7 +17,7 @@ open Nu
 /// The type of rendering used on a surface.
 type [<NoEquality; NoComparison; Struct>] RenderType =
     | DeferredRenderType
-    | ForwardRenderType of single
+    | ForwardRenderType of single * single
 
 /// Materials used for rendering models.
 /// TODO: 3D: consider adding texture filter opts to override what's in the backing material.
@@ -33,8 +33,8 @@ and [<NoEquality; NoComparison>] RenderTasks =
       mutable RenderLights : SortableLight SegmentedList
       RenderSurfacesDeferredAbsolute : Dictionary<OpenGL.PhysicallyBased.PhysicallyBasedSurface, struct (Matrix4x4 * Box2 * RenderMaterial) SegmentedList>
       RenderSurfacesDeferredRelative : Dictionary<OpenGL.PhysicallyBased.PhysicallyBasedSurface, struct (Matrix4x4 * Box2 * RenderMaterial) SegmentedList>
-      mutable RenderSurfacesForwardAbsolute : struct (single * Matrix4x4 * Box2 * RenderMaterial * OpenGL.PhysicallyBased.PhysicallyBasedSurface) SegmentedList
-      mutable RenderSurfacesForwardRelative : struct (single * Matrix4x4 * Box2 * RenderMaterial * OpenGL.PhysicallyBased.PhysicallyBasedSurface) SegmentedList
+      mutable RenderSurfacesForwardAbsolute : struct (single * single * Matrix4x4 * Box2 * RenderMaterial * OpenGL.PhysicallyBased.PhysicallyBasedSurface) SegmentedList
+      mutable RenderSurfacesForwardRelative : struct (single * single * Matrix4x4 * Box2 * RenderMaterial * OpenGL.PhysicallyBased.PhysicallyBasedSurface) SegmentedList
       mutable RenderSurfacesForwardAbsoluteSorted : struct (Matrix4x4 * Box2 * RenderMaterial * OpenGL.PhysicallyBased.PhysicallyBasedSurface) SegmentedList
       mutable RenderSurfacesForwardRelativeSorted : struct (Matrix4x4 * Box2 * RenderMaterial * OpenGL.PhysicallyBased.PhysicallyBasedSurface) SegmentedList }
 
@@ -510,10 +510,10 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                     match renderer.RenderTasks.RenderSurfacesDeferredRelative.TryGetValue billboardSurface with
                     | (true, renderTasks) -> SegmentedList.add struct (billboardMatrix, texCoordsOffset, renderMaterial) renderTasks
                     | (false, _) -> renderer.RenderTasks.RenderSurfacesDeferredRelative.Add (billboardSurface, SegmentedList.singleton (billboardMatrix, texCoordsOffset, renderMaterial))
-            | ForwardRenderType subsort ->
+            | ForwardRenderType (sort, subsort) ->
                 if absolute
-                then SegmentedList.add struct (subsort, billboardMatrix, texCoordsOffset, renderMaterial, billboardSurface) renderer.RenderTasks.RenderSurfacesForwardAbsolute
-                else SegmentedList.add struct (subsort, billboardMatrix, texCoordsOffset, renderMaterial, billboardSurface) renderer.RenderTasks.RenderSurfacesForwardRelative
+                then SegmentedList.add struct (sort, subsort, billboardMatrix, texCoordsOffset, renderMaterial, billboardSurface) renderer.RenderTasks.RenderSurfacesForwardAbsolute
+                else SegmentedList.add struct (sort, subsort, billboardMatrix, texCoordsOffset, renderMaterial, billboardSurface) renderer.RenderTasks.RenderSurfacesForwardRelative
 
     static member inline private categorizeStaticModelSurface
         (modelAbsolute,
@@ -552,10 +552,10 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                 match renderer.RenderTasks.RenderSurfacesDeferredRelative.TryGetValue surface with
                 | (true, renderTasks) -> SegmentedList.add struct (surfaceMatrix, texCoordsOffset, renderMaterial) renderTasks
                 | (false, _) -> renderer.RenderTasks.RenderSurfacesDeferredRelative.Add (surface, SegmentedList.singleton (surfaceMatrix, texCoordsOffset, renderMaterial))
-        | ForwardRenderType subsort ->
+        | ForwardRenderType (sort, subsort) ->
             if modelAbsolute
-            then SegmentedList.add struct (subsort, surfaceMatrix, texCoordsOffset, renderMaterial, surface) renderer.RenderTasks.RenderSurfacesForwardAbsolute
-            else SegmentedList.add struct (subsort, surfaceMatrix, texCoordsOffset, renderMaterial, surface) renderer.RenderTasks.RenderSurfacesForwardRelative
+            then SegmentedList.add struct (sort, subsort, surfaceMatrix, texCoordsOffset, renderMaterial, surface) renderer.RenderTasks.RenderSurfacesForwardAbsolute
+            else SegmentedList.add struct (sort, subsort, surfaceMatrix, texCoordsOffset, renderMaterial, surface) renderer.RenderTasks.RenderSurfacesForwardRelative
 
     static member inline private categorizeStaticModelSurfaceByIndex
         (modelAbsolute,
@@ -630,12 +630,12 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
              shader,
              skyBoxSurface)
 
-    static member private sortSurfaces eyePosition (surfaces : struct (single * Matrix4x4 * Box2 * RenderMaterial * OpenGL.PhysicallyBased.PhysicallyBasedSurface) SegmentedList) =
+    static member private sortSurfaces eyePosition (surfaces : struct (single * single * Matrix4x4 * Box2 * RenderMaterial * OpenGL.PhysicallyBased.PhysicallyBasedSurface) SegmentedList) =
         surfaces |>
-        Seq.map (fun struct (subsort, model, texCoordsOffset, renderMaterial, surface) -> struct (subsort, model, texCoordsOffset, renderMaterial, surface, (model.Translation - eyePosition).MagnitudeSquared)) |>
+        Seq.map (fun struct (sort, subsort, model, texCoordsOffset, renderMaterial, surface) -> struct (sort, subsort, model, texCoordsOffset, renderMaterial, surface, (model.Translation - eyePosition).MagnitudeSquared)) |>
         Seq.toArray |> // TODO: 3D: use a preallocated array to avoid allocating on the LOH.
-        Array.sortByDescending (fun struct (subsort, _, _, _, _, distanceSquared) -> struct (distanceSquared, subsort)) |>
-        Array.map (fun struct (_, model, texCoordsOffset, renderMaterialOpt, surface, _) -> struct (model, texCoordsOffset, renderMaterialOpt, surface))
+        Array.sortByDescending (fun struct (sort, subsort, _, _, _, _, distanceSquared) -> struct (sort, distanceSquared, subsort)) |>
+        Array.map (fun struct (_, _, model, texCoordsOffset, renderMaterialOpt, surface, _) -> struct (model, texCoordsOffset, renderMaterialOpt, surface))
 
     static member private renderPhysicallyBasedSurfaces
         eyePosition

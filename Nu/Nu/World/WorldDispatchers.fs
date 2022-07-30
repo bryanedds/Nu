@@ -1329,7 +1329,7 @@ module StaticBillboardFacetModule =
 
     type [<StructuralEquality; StructuralComparison>] RenderStyle =
         | Deferred
-        | Forward of single
+        | Forward of single * single
 
     type Entity with
         member this.GetAlbedoOpt world : Color option = this.Get Property? AlbedoOpt world
@@ -1408,7 +1408,7 @@ module StaticBillboardFacetModule =
                 let renderType =
                     match entity.GetRenderStyle world with
                     | Deferred -> DeferredRenderType
-                    | Forward subsort -> ForwardRenderType subsort
+                    | Forward (sort, subsort) -> ForwardRenderType (sort, subsort)
                 World.enqueueRenderMessage3d
                     (RenderBillboardMessage
                         (absolute, affineMatrix, insetOpt, renderMaterial,
@@ -1471,7 +1471,7 @@ module StaticModelFacetModule =
                 let renderType =
                     match entity.GetRenderStyle world with
                     | Deferred -> DeferredRenderType
-                    | Forward subsort -> ForwardRenderType subsort
+                    | Forward (sort, subsort) -> ForwardRenderType (sort, subsort)
                 World.enqueueRenderMessage3d (RenderStaticModelMessage (absolute, affineMatrix, insetOpt, renderMaterial, renderType, staticModel)) world
             world
 
@@ -1554,7 +1554,7 @@ module StaticModelSurfaceFacetModule =
                     let renderType =
                         match entity.GetRenderStyle world with
                         | Deferred -> DeferredRenderType
-                        | Forward subsort -> ForwardRenderType subsort
+                        | Forward (sort, subsort) -> ForwardRenderType (sort, subsort)
                     World.enqueueRenderMessage3d (RenderStaticModelSurfaceMessage (absolute, affineMatrix, insetOpt, renderMaterial, renderType, staticModel, surfaceIndex)) world
             world
 
