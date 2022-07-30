@@ -398,6 +398,32 @@ module Field =
 
     let CachedDescriptors = dictPlus<StaticModel AssetTag, Vector3 * Map<Vector2i, Vector3 array>> HashIdentity.Structural []
 
+    let createFieldHighlightSurfaceDescriptor (vertices : Vector3 array) =
+        let bounds = Box3.Enclose vertices
+        let indices = [|0; 1; 2; 0; 2; 3|]
+        let texCoordses = [|v2 0.0f 0.0f; v2 1.0f 0.0f; v2 1.0f 1.0f; v2 0.0f 1.0f|]
+        let normals = Array.init 4 (fun _ -> v3Up)
+        let descriptor =
+            { Positions = vertices
+              TexCoordses = texCoordses
+              Normals = normals
+              Indices = indices
+              AffineMatrix = m4Identity
+              Bounds = bounds
+              Albedo = Color.White
+              AlbedoImage = asset "Default" "HighlightModelAlbedo"
+              Metalness = 0.0f
+              MetalnessImage = Assets.Default.MaterialMetalness
+              Roughness = 1.2f
+              RoughnessImage = Assets.Default.MaterialRoughness
+              AmbientOcclusion = 1.0f
+              AmbientOcclusionImage = Assets.Default.MaterialAmbientOcclusion
+              NormalImage = Assets.Default.MaterialNormal
+              TextureMinFilterOpt = ValueSome OpenGL.TextureMinFilter.NearestMipmapNearest
+              TextureMagFilterOpt = ValueSome OpenGL.TextureMagFilter.Nearest
+              TwoSided = false }
+        descriptor
+
     let private createFieldSurfaceDescriptorAndSizeAndVertexMap tileMapWidth tileMapHeight (tileSets : TmxTileset array) (tileLayer : TmxLayer) (heightLayer : TmxLayer) =
 
         // compute bounds
@@ -757,14 +783,7 @@ type TacticsDispatcher () =
                      Entity.Size <== field --|> fun field world -> Triple.snd (Field.getFieldStaticModelAndSizeAndVertexMap field world)
                      Entity.StaticModel <== field --|> fun field world -> Triple.fst (Field.getFieldStaticModelAndSizeAndVertexMap field world)
                      Entity.InsetOpt <== field --> fun field -> Some (box2 (v2 (16.0f * (single (field.UpdateTime / 20UL % 3UL))) 0.0f) v2Zero)
-                     Entity.RenderStyle == Forward (0.0f, -1.0f)]
-                 Content.staticModel Gen.name
-                    [Entity.StaticModel == Assets.Default.HighlightModel
-                     Entity.RenderStyle == Forward (-1.0f, 0.0f)
-                     Entity.Position <== field --|> fun field world ->
-                        match Field.tryGetFieldDataAtMouse field world with
-                        | Some (_, _, [|a; b; c; d|]) -> (a + b + c + d) / 4.0f
-                        | None -> v3Zero]]]]
+                     Entity.RenderStyle == Forward (0.0f, -1.0f)]]]]
 
     override this.Register (game, world) =
         let world = base.Register (game, world)
@@ -793,3 +812,10 @@ type TacticsDispatcher () =
         let world = base.PostUpdate (entity, world)
         let world = Simulants.Light.SetPosition (World.getEyePosition3d world + v3Up * 3.0f) world
         world
+
+    override this.View (field, _, world) =
+        match Field.tryGetFieldDataAtMouse field world with
+        | Some (_, _, vertices) ->
+            let highlightDescriptor = Field.createFieldHighlightSurfaceDescriptor vertices
+            View.Render3d (RenderUserDefinedStaticModel (false, m4Identity, ValueNone, Unchecked.defaultof<_>, ForwardRenderType (-1.0f, 0.0f), [|highlightDescriptor|], highlightDescriptor.Bounds))
+        | None -> View.empty
