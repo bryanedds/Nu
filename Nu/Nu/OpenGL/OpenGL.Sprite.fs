@@ -81,12 +81,12 @@ module Sprite =
                   -1.0f; +1.0f|]
 
         // initialize vao
-        let vao = Gl.GenVertexArray ()
+        let vao = Hl.AllocVertexArray ()
         Gl.BindVertexArray vao
         Hl.Assert ()
 
         // create vertex buffer
-        let vertexBuffer = Gl.GenBuffer ()
+        let vertexBuffer = Hl.AllocBuffer ()
         Gl.BindBuffer (BufferTarget.ArrayBuffer, vertexBuffer)
         let vertexSize = sizeof<single> * 2
         let vertexDataSize = vertexSize * 4
@@ -97,7 +97,7 @@ module Sprite =
 
         // create index buffer
         let indexData = [|0u; 1u; 2u; 2u; 3u; 0u|]
-        let indexBuffer = Gl.GenBuffer ()
+        let indexBuffer = Hl.AllocBuffer ()
         Gl.BindBuffer (BufferTarget.ElementArrayBuffer, indexBuffer)
         let indexDataSize = uint (indexData.Length * sizeof<uint>)
         let indexDataPtr = GCHandle.Alloc (indexData, GCHandleType.Pinned)

@@ -8,6 +8,7 @@ namespace Nu
 module OpenGL = let _ = ()
 
 namespace OpenGL
+open System.Collections.Generic
 open System.Runtime.InteropServices
 open System.Text
 open SDL2
@@ -19,6 +20,12 @@ module Hl =
 
     let mutable private AssertEnabled =
         false
+
+    /// Cached buffers.
+    let private CachedBuffers = Queue ()
+
+    /// Cached vertex arrays.
+    let private CachedVertexArrays = Queue ()
 
     /// Initialize OpenGL.Hl.
     let InitAssert assertEnabled =
@@ -56,6 +63,28 @@ module Hl =
     let AttachDebugMessageCallback () =
         ()
 #endif
+
+    /// Allocate a vertex array, generating one via OpenGL is no cached vertex array is available.
+    let AllocVertexArray () =
+        if CachedVertexArrays.Count <> 0 then
+            CachedVertexArrays.Dequeue ()
+        else
+            Gl.GenVertexArray ()
+
+    /// Deallocate a vertex array into the vertex array cache.
+    let FreeVertexArray vertexArray =
+        CachedVertexArrays.Enqueue vertexArray
+
+    /// Allocate a buffer, generating one via OpenGL is no cached buffer is available.
+    let AllocBuffer () =
+        if CachedBuffers.Count <> 0 then
+            CachedBuffers.Dequeue ()
+        else
+            Gl.GenBuffer ()
+
+    /// Deallocate a buffer into the buffer cache.
+    let FreeBuffer buffer =
+        CachedBuffers.Enqueue buffer
 
     /// Create an SDL OpenGL context.
     let CreateSglContext window =

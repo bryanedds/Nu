@@ -122,12 +122,12 @@ module SkyBox =
             if renderable then
 
                 // initialize vao
-                let vao = Gl.GenVertexArray ()
+                let vao = Hl.AllocVertexArray ()
                 Gl.BindVertexArray vao
                 Hl.Assert ()
 
                 // create vertex buffer
-                let vertexBuffer = Gl.GenBuffer ()
+                let vertexBuffer = Hl.AllocBuffer ()
                 let vertexSize = (3 (*position*)) * sizeof<single>
                 Gl.BindBuffer (BufferTarget.ArrayBuffer, vertexBuffer)
                 let vertexDataPtr = GCHandle.Alloc (vertexData, GCHandleType.Pinned)
@@ -138,7 +138,7 @@ module SkyBox =
                 Hl.Assert ()
 
                 // create index buffer
-                let indexBuffer = Gl.GenBuffer ()
+                let indexBuffer = Hl.AllocBuffer ()
                 Gl.BindBuffer (BufferTarget.ElementArrayBuffer, indexBuffer)
                 let indexDataSize = uint (indexData.Length * sizeof<uint>)
                 let indexDataPtr = GCHandle.Alloc (indexData, GCHandleType.Pinned)
