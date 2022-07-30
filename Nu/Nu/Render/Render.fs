@@ -28,7 +28,7 @@ type [<NoEquality; NoComparison>] RenderAsset =
     | TextureAsset of string * OpenGL.Texture.TextureMetadata * uint
     | FontAsset of string * int * nativeint
     | CubeMapAsset of OpenGL.CubeMap.CubeMapMemoKey * uint * (uint * uint) option ref
-    | StaticModelAsset of OpenGL.PhysicallyBased.PhysicallyBasedStaticModel
+    | StaticModelAsset of bool * OpenGL.PhysicallyBased.PhysicallyBasedStaticModel
 
 /// The blend mode of a sprite.
 [<Syntax

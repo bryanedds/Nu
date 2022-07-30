@@ -97,6 +97,8 @@ and [<NoEquality; NoComparison>] StaticModelSurfaceDescriptor =
 
 /// A message to the 3d renderer.
 and [<NoEquality; NoComparison>] RenderMessage3d =
+    | CreateUserDefinedStaticModelMessage of StaticModelSurfaceDescriptor array * Box3 * StaticModel AssetTag
+    | DestroyUserDefinedStaticModelMessage of StaticModel AssetTag
     | RenderSkyBoxMessage of CubeMap AssetTag
     | RenderLightMessage3d of Vector3 * Color * single * single * LightType
     | RenderBillboardMessage of bool * Matrix4x4 * Box2 voption * RenderMaterial * Image AssetTag * Image AssetTag * Image AssetTag * Image AssetTag * Image AssetTag * OpenGL.TextureMinFilter voption * OpenGL.TextureMagFilter voption * RenderType
@@ -105,8 +107,8 @@ and [<NoEquality; NoComparison>] RenderMessage3d =
     | RenderStaticModelMessage of bool * Matrix4x4 * Box2 voption * RenderMaterial * RenderType * StaticModel AssetTag
     | RenderStaticModelsMessage of bool * (Matrix4x4 * Box2 voption * RenderMaterial) SegmentedList * RenderType * StaticModel AssetTag
     | RenderCachedStaticModelMessage of CachedStaticModelMessage
+    | RenderUserDefinedStaticModel of bool * Matrix4x4 * Box2 voption * RenderMaterial * RenderType * StaticModelSurfaceDescriptor array * Box3 * StaticModel AssetTag
     | RenderPostPassMessage3d of RenderPassMessage3d
-    | SetStaticModelMessage of StaticModelSurfaceDescriptor array * Box3 * StaticModel AssetTag
     | LoadRenderPackageMessage3d of string
     | UnloadRenderPackageMessage3d of string
     | ReloadRenderAssetsMessage3d
@@ -226,7 +228,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
         | CubeMapAsset (cubeMapFilePaths, _, _) ->
             OpenGL.CubeMap.DeleteCubeMapMemoized cubeMapFilePaths packageState.CubeMapMemo
             OpenGL.Hl.Assert ()
-        | StaticModelAsset staticModel ->
+        | StaticModelAsset (_, staticModel) ->
             OpenGL.PhysicallyBased.DestroyPhysicallyBasedStaticModel staticModel
             OpenGL.Hl.Assert ()
 
@@ -283,7 +285,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             | None -> None
         | ".fbx" | ".obj" ->
             match GlRenderer3d.tryLoadStaticModelAsset packageState asset renderer with
-            | Some model -> Some (StaticModelAsset model)
+            | Some model -> Some (StaticModelAsset (false, model))
             | None -> None
         | _ -> None
 
@@ -317,11 +319,11 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                             | TextureAsset _ -> () // already reloaded via texture memo
                             | FontAsset _ -> () // not yet used in 3d renderer
                             | CubeMapAsset _ -> () // already reloaded via cube map memo
-                            | StaticModelAsset staticModel ->
+                            | StaticModelAsset (userDefined, staticModel) ->
                                 OpenGL.PhysicallyBased.DestroyPhysicallyBasedStaticModel staticModel
                                 OpenGL.Hl.Assert ()
                                 match GlRenderer3d.tryLoadStaticModelAsset renderPackage.PackageState asset renderer with
-                                | Some staticModel -> renderPackage.Assets.Assign (asset.AssetTag.AssetName, StaticModelAsset staticModel)
+                                | Some staticModel -> renderPackage.Assets.Assign (asset.AssetTag.AssetName, StaticModelAsset (userDefined, staticModel))
                                 | None -> ()
                         | (false, _) -> ()
 
@@ -372,86 +374,119 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                     | (false, _) -> ValueNone
                 | (false, _) -> ValueNone
 
-    static member private handleSetStaticModelMessage surfaceDescriptors bounds assetTag renderer =
+    static member private tryDestroyUserDefinedStaticModel assetTag renderer =
 
-        // free any existing asset and ensure target package is loaded
+        // ensure target package is loaded if possible
+        if not (renderer.RenderPackages.ContainsKey assetTag.PackageName) then
+            GlRenderer3d.tryLoadRenderPackage false assetTag.PackageName renderer
+
+        // free any existing user-created static model, also determining if target asset can be user-created
         match renderer.RenderPackages.TryGetValue assetTag.PackageName with
         | (true, package) ->
             match package.Assets.TryGetValue assetTag.AssetName with
-            | (true, asset) -> GlRenderer3d.freeRenderAsset package.PackageState asset renderer
+            | (true, asset) ->
+                match asset with
+                | StaticModelAsset (userDefined, _) when userDefined -> GlRenderer3d.freeRenderAsset package.PackageState asset renderer
+                | _ -> ()
             | (false, _) -> ()
-        | (false, _) -> GlRenderer3d.tryLoadRenderPackage false assetTag.PackageName renderer
+        | (false, _) -> ()
 
-        // create surfaces
-        let surfaces = List ()
-        for surfaceDescriptor in surfaceDescriptors do
+    static member private tryCreateUserDefinedStaticModel surfaceDescriptors bounds assetTag renderer =
 
-            // get albedo metadata and texture
-            let (albedoMetadata, albedoTexture) =
-                match GlRenderer3d.tryFindRenderAsset (AssetTag.generalize surfaceDescriptor.AlbedoImage) renderer with
-                | ValueSome (TextureAsset (_, textureMetadata, texture)) -> (textureMetadata, texture)
-                | _ -> (renderer.RenderPhysicallyBasedMaterial.AlbedoMetadata, renderer.RenderPhysicallyBasedMaterial.AlbedoTexture)
+        // ensure target package is loaded if possible
+        if not (renderer.RenderPackages.ContainsKey assetTag.PackageName) then
+            GlRenderer3d.tryLoadRenderPackage false assetTag.PackageName renderer
 
-            // create material
-            let material : OpenGL.PhysicallyBased.PhysicallyBasedMaterial =
-                { Albedo = surfaceDescriptor.Albedo
-                  AlbedoMetadata = albedoMetadata
-                  AlbedoTexture = albedoTexture
-                  Metalness = surfaceDescriptor.Metalness
-                  MetalnessTexture = match GlRenderer3d.tryFindRenderAsset (AssetTag.generalize surfaceDescriptor.MetalnessImage) renderer with ValueSome (TextureAsset (_, _, texture)) -> texture | _ -> renderer.RenderPhysicallyBasedMaterial.MetalnessTexture
-                  Roughness = surfaceDescriptor.Roughness
-                  RoughnessTexture = match GlRenderer3d.tryFindRenderAsset (AssetTag.generalize surfaceDescriptor.RoughnessImage) renderer with ValueSome (TextureAsset (_, _, texture)) -> texture | _ -> renderer.RenderPhysicallyBasedMaterial.RoughnessTexture
-                  AmbientOcclusion = surfaceDescriptor.AmbientOcclusion
-                  AmbientOcclusionTexture = match GlRenderer3d.tryFindRenderAsset (AssetTag.generalize surfaceDescriptor.AmbientOcclusionImage) renderer with ValueSome (TextureAsset (_, _, texture)) -> texture | _ -> renderer.RenderPhysicallyBasedMaterial.AmbientOcclusionTexture
-                  NormalTexture = match GlRenderer3d.tryFindRenderAsset (AssetTag.generalize surfaceDescriptor.NormalImage) renderer with ValueSome (TextureAsset (_, _, texture)) -> texture | _ -> renderer.RenderPhysicallyBasedMaterial.NormalTexture
-                  TextureMinFilterOpt = surfaceDescriptor.TextureMinFilterOpt
-                  TextureMagFilterOpt = surfaceDescriptor.TextureMagFilterOpt
-                  TwoSided = surfaceDescriptor.TwoSided }
+        // free any existing user-created static model, also determining if target asset can be user-created
+        let canCreateUserDefinedStaticModel =
+            match renderer.RenderPackages.TryGetValue assetTag.PackageName with
+            | (true, package) ->
+                match package.Assets.TryGetValue assetTag.AssetName with
+                | (true, asset) ->
+                    match asset with
+                    | StaticModelAsset (userDefined, _) when userDefined ->
+                        GlRenderer3d.freeRenderAsset package.PackageState asset renderer
+                        true
+                    | _ -> false
+                | (false, _) -> true
+            | (false, _) -> true
 
-            // create vertex data, truncating it when required
-            let vertexCount = surfaceDescriptor.Positions.Length
-            let mutable vertexData = Array.zeroCreate (vertexCount * 8)
-            let mutable i = 0
-            try
-                while i < vertexCount do
-                    let u = i * 8
-                    vertexData.[u] <- surfaceDescriptor.Positions.[i].X
-                    vertexData.[u+1] <- surfaceDescriptor.Positions.[i].Y
-                    vertexData.[u+2] <- surfaceDescriptor.Positions.[i].Z
-                    vertexData.[u+3] <- surfaceDescriptor.TexCoordses.[i].X
-                    vertexData.[u+4] <- surfaceDescriptor.TexCoordses.[i].Y
-                    vertexData.[u+5] <- surfaceDescriptor.Normals.[i].X
-                    vertexData.[u+6] <- surfaceDescriptor.Normals.[i].Y
-                    vertexData.[u+7] <- surfaceDescriptor.Normals.[i].Z
-                    i <- inc i
-            with :? IndexOutOfRangeException ->
-                vertexData <- Array.take i vertexData
-                Log.debug "Vertex data truncated due to an inequal count among surface descriptor Positions, TexCoordses, and Normals."
+        // ensure the user can create the static model
+        if canCreateUserDefinedStaticModel then
 
-            // crete geometry
-            let geometry = OpenGL.PhysicallyBased.CreatePhysicallyBasedGeometry (true, vertexData, surfaceDescriptor.Indices, surfaceDescriptor.Bounds)
+            // create surfaces
+            let surfaces = List ()
+            for surfaceDescriptor in surfaceDescriptors do
 
-            // create surface
-            let surface = OpenGL.PhysicallyBased.CreatePhysicallyBasedSurface ([||], surfaceDescriptor.AffineMatrix, surfaceDescriptor.Bounds, material, geometry)
-            surfaces.Add surface
+                // get albedo metadata and texture
+                let (albedoMetadata, albedoTexture) =
+                    match GlRenderer3d.tryFindRenderAsset (AssetTag.generalize surfaceDescriptor.AlbedoImage) renderer with
+                    | ValueSome (TextureAsset (_, textureMetadata, texture)) -> (textureMetadata, texture)
+                    | _ -> (renderer.RenderPhysicallyBasedMaterial.AlbedoMetadata, renderer.RenderPhysicallyBasedMaterial.AlbedoTexture)
 
-        // create static model
-        let surfaces = Seq.toArray surfaces
-        let hierarchy = TreeNode (Array.map OpenGL.PhysicallyBased.PhysicallyBasedSurface surfaces)
-        let staticModel : OpenGL.PhysicallyBased.PhysicallyBasedStaticModel =
-            { Bounds = bounds
-              Lights = [||]
-              Surfaces = surfaces
-              PhysicallyBasedStaticHierarchy = hierarchy }
+                // create material
+                let material : OpenGL.PhysicallyBased.PhysicallyBasedMaterial =
+                    { Albedo = surfaceDescriptor.Albedo
+                      AlbedoMetadata = albedoMetadata
+                      AlbedoTexture = albedoTexture
+                      Metalness = surfaceDescriptor.Metalness
+                      MetalnessTexture = match GlRenderer3d.tryFindRenderAsset (AssetTag.generalize surfaceDescriptor.MetalnessImage) renderer with ValueSome (TextureAsset (_, _, texture)) -> texture | _ -> renderer.RenderPhysicallyBasedMaterial.MetalnessTexture
+                      Roughness = surfaceDescriptor.Roughness
+                      RoughnessTexture = match GlRenderer3d.tryFindRenderAsset (AssetTag.generalize surfaceDescriptor.RoughnessImage) renderer with ValueSome (TextureAsset (_, _, texture)) -> texture | _ -> renderer.RenderPhysicallyBasedMaterial.RoughnessTexture
+                      AmbientOcclusion = surfaceDescriptor.AmbientOcclusion
+                      AmbientOcclusionTexture = match GlRenderer3d.tryFindRenderAsset (AssetTag.generalize surfaceDescriptor.AmbientOcclusionImage) renderer with ValueSome (TextureAsset (_, _, texture)) -> texture | _ -> renderer.RenderPhysicallyBasedMaterial.AmbientOcclusionTexture
+                      NormalTexture = match GlRenderer3d.tryFindRenderAsset (AssetTag.generalize surfaceDescriptor.NormalImage) renderer with ValueSome (TextureAsset (_, _, texture)) -> texture | _ -> renderer.RenderPhysicallyBasedMaterial.NormalTexture
+                      TextureMinFilterOpt = surfaceDescriptor.TextureMinFilterOpt
+                      TextureMagFilterOpt = surfaceDescriptor.TextureMagFilterOpt
+                      TwoSided = surfaceDescriptor.TwoSided }
 
-        // assign static model as appropriate render package asset
-        match renderer.RenderPackages.TryGetValue assetTag.PackageName with
-        | (true, package) ->
-            package.Assets.Assign (assetTag.AssetName, StaticModelAsset staticModel)
-        | (false, _) ->
-            let packageState = { TextureMemo = OpenGL.Texture.TextureMemo.make (); CubeMapMemo = OpenGL.CubeMap.CubeMapMemo.make () }
-            let package = { Assets = Dictionary.singleton StringComparer.Ordinal assetTag.AssetName (StaticModelAsset staticModel); PackageState = packageState }
-            renderer.RenderPackages.Assign (assetTag.PackageName, package)
+                // create vertex data, truncating it when required
+                let vertexCount = surfaceDescriptor.Positions.Length
+                let mutable vertexData = Array.zeroCreate (vertexCount * 8)
+                let mutable i = 0
+                try
+                    while i < vertexCount do
+                        let u = i * 8
+                        vertexData.[u] <- surfaceDescriptor.Positions.[i].X
+                        vertexData.[u+1] <- surfaceDescriptor.Positions.[i].Y
+                        vertexData.[u+2] <- surfaceDescriptor.Positions.[i].Z
+                        vertexData.[u+3] <- surfaceDescriptor.TexCoordses.[i].X
+                        vertexData.[u+4] <- surfaceDescriptor.TexCoordses.[i].Y
+                        vertexData.[u+5] <- surfaceDescriptor.Normals.[i].X
+                        vertexData.[u+6] <- surfaceDescriptor.Normals.[i].Y
+                        vertexData.[u+7] <- surfaceDescriptor.Normals.[i].Z
+                        i <- inc i
+                with :? IndexOutOfRangeException ->
+                    vertexData <- Array.take i vertexData
+                    Log.debug "Vertex data truncated due to an inequal count among surface descriptor Positions, TexCoordses, and Normals."
+
+                // crete geometry
+                let geometry = OpenGL.PhysicallyBased.CreatePhysicallyBasedGeometry (true, vertexData, surfaceDescriptor.Indices, surfaceDescriptor.Bounds)
+
+                // create surface
+                let surface = OpenGL.PhysicallyBased.CreatePhysicallyBasedSurface ([||], surfaceDescriptor.AffineMatrix, surfaceDescriptor.Bounds, material, geometry)
+                surfaces.Add surface
+
+            // create static model
+            let surfaces = Seq.toArray surfaces
+            let hierarchy = TreeNode (Array.map OpenGL.PhysicallyBased.PhysicallyBasedSurface surfaces)
+            let staticModel : OpenGL.PhysicallyBased.PhysicallyBasedStaticModel =
+                { Bounds = bounds
+                  Lights = [||]
+                  Surfaces = surfaces
+                  PhysicallyBasedStaticHierarchy = hierarchy }
+
+            // assign static model as appropriate render package asset
+            match renderer.RenderPackages.TryGetValue assetTag.PackageName with
+            | (true, package) ->
+                package.Assets.Assign (assetTag.AssetName, StaticModelAsset (true, staticModel))
+            | (false, _) ->
+                let packageState = { TextureMemo = OpenGL.Texture.TextureMemo.make (); CubeMapMemo = OpenGL.CubeMap.CubeMapMemo.make () }
+                let package = { Assets = Dictionary.singleton StringComparer.Ordinal assetTag.AssetName (StaticModelAsset (true, staticModel)); PackageState = packageState }
+                renderer.RenderPackages.Assign (assetTag.PackageName, package)
+
+        // attempted to replace a loaded asset
+        else Log.debug ("Cannot replace a loaded asset '" + scstring assetTag + "' with a user-created static model.")
 
     static member private handleLoadRenderPackage hintPackageName renderer =
         GlRenderer3d.tryLoadRenderPackage false hintPackageName renderer
@@ -569,7 +604,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
         match GlRenderer3d.tryFindRenderAsset (AssetTag.generalize staticModel) renderer with
         | ValueSome renderAsset ->
             match renderAsset with
-            | StaticModelAsset modelAsset ->
+            | StaticModelAsset (_, modelAsset) ->
                 if surfaceIndex > -1 && surfaceIndex < modelAsset.Surfaces.Length then
                     let surface = modelAsset.Surfaces.[surfaceIndex]
                     GlRenderer3d.categorizeStaticModelSurface (modelAbsolute, &modelMatrix, insetOpt, &renderMaterial, renderType, true, surface, renderer)
@@ -587,7 +622,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
         match GlRenderer3d.tryFindRenderAsset (AssetTag.generalize staticModel) renderer with
         | ValueSome renderAsset ->
             match renderAsset with
-            | StaticModelAsset modelAsset ->
+            | StaticModelAsset (_, modelAsset) ->
                 for light in modelAsset.Lights do
                     let lightMatrix = light.LightMatrix * modelMatrix
                     let light =
@@ -905,9 +940,14 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             OpenGL.Hl.Assert ()
 
             // categorize messages
+            let userDefinedStaticModelsToDestroy = SegmentedList.make ()
             let postPasses = hashSetPlus<RenderPassMessage3d> HashIdentity.Structural []
             for message in renderMessages do
                 match message with
+                | CreateUserDefinedStaticModelMessage (surfaceDescriptors, bounds, assetTag) ->
+                    GlRenderer3d.tryCreateUserDefinedStaticModel surfaceDescriptors bounds assetTag renderer
+                | DestroyUserDefinedStaticModelMessage staticModel ->
+                    SegmentedList.add staticModel userDefinedStaticModelsToDestroy
                 | RenderSkyBoxMessage cubeMap ->
                     SegmentedList.add cubeMap renderer.RenderTasks.RenderSkyBoxes
                 | RenderLightMessage3d (position, color, brightness, intensity, _) ->
@@ -999,10 +1039,12 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                         GlRenderer3d.categorizeStaticModel (absolute, &modelMatrix, insetOpt, &renderMaterial, renderType, staticModel, renderer)
                 | RenderCachedStaticModelMessage d ->
                     GlRenderer3d.categorizeStaticModel (d.CachedStaticModelAbsolute, &d.CachedStaticModelAffineMatrix, d.CachedStaticModelInsetOpt, &d.CachedStaticModelRenderMaterial, d.CachedStaticModelRenderType, d.CachedStaticModel, renderer)
+                | RenderUserDefinedStaticModel (absolute, modelMatrix, insetOpt, renderMaterial, renderType, surfaceDescriptors, bounds, staticModel) ->
+                    GlRenderer3d.tryCreateUserDefinedStaticModel surfaceDescriptors bounds staticModel renderer
+                    GlRenderer3d.categorizeStaticModel (absolute, &modelMatrix, insetOpt, &renderMaterial, renderType, staticModel, renderer)
+                    SegmentedList.add staticModel userDefinedStaticModelsToDestroy
                 | RenderPostPassMessage3d postPass ->
                     postPasses.Add postPass |> ignore<bool>
-                | SetStaticModelMessage (surfaceDescriptors, bounds, assetTag) ->
-                    GlRenderer3d.handleSetStaticModelMessage surfaceDescriptors bounds assetTag renderer
                 | LoadRenderPackageMessage3d hintPackageUse ->
                     GlRenderer3d.handleLoadRenderPackage hintPackageUse renderer
                 | UnloadRenderPackageMessage3d hintPackageDisuse ->
@@ -1207,6 +1249,10 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             renderer.RenderTasks.RenderSurfacesDeferredRelative.Clear ()
             SegmentedList.clear renderer.RenderTasks.RenderSurfacesForwardAbsoluteSorted
             SegmentedList.clear renderer.RenderTasks.RenderSurfacesForwardRelativeSorted
+
+            // destroy user-defined static models
+            for staticModel in userDefinedStaticModelsToDestroy do
+                GlRenderer3d.tryDestroyUserDefinedStaticModel staticModel renderer
 
             // end frame
             if renderer.RenderShouldEndFrame then
