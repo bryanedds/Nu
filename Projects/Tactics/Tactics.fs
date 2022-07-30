@@ -617,7 +617,7 @@ module Field =
             let (traversableSurfaceDescriptor, traversableSize, traversableVertexMap) = createFieldSurfaceDescriptorAndSizeAndVertexMap tileMap.Width tileMap.Height tileSets traversableLayer traversableHeightLayer
             let surfaceDescriptors = [|untraversableSurfaceDescriptor; traversableSurfaceDescriptor|]
             let bounds = let bounds = untraversableSurfaceDescriptor.Bounds in bounds.Combine traversableSurfaceDescriptor.Bounds
-            World.enqueueRenderMessage3d (SetStaticModelMessage (surfaceDescriptors, bounds, fieldModelAssetTag)) world
+            World.enqueueRenderMessage3d (CreateUserDefinedStaticModelMessage (surfaceDescriptors, bounds, fieldModelAssetTag)) world
             CachedDescriptors.Add (fieldModelAssetTag, (traversableSize, traversableVertexMap))
             (fieldModelAssetTag, traversableSize, traversableVertexMap)
         | (true, (traversableSize, traversableVertexMap)) -> (fieldModelAssetTag, traversableSize, traversableVertexMap)
