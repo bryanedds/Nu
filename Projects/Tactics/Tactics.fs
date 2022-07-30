@@ -751,15 +751,17 @@ type TacticsDispatcher () =
                      Entity.Size <== field --|> fun field world -> Triple.snd (Field.getFieldStaticModelAndSizeAndVertexMap field world)
                      Entity.StaticModel <== field --|> fun field world -> Triple.fst (Field.getFieldStaticModelAndSizeAndVertexMap field world)
                      Entity.InsetOpt <== field --> fun field -> Some (box2 (v2 (16.0f * (single (field.UpdateTime / 20UL % 3UL))) 0.0f) v2Zero)
-                     Entity.RenderStyle == Forward 0.0f]
+                     Entity.RenderStyle == Forward (0.0f, 0.0f)]
                  Content.staticModelSurface Gen.name
                     [Entity.SurfaceIndex == 1
                      Entity.Size <== field --|> fun field world -> Triple.snd (Field.getFieldStaticModelAndSizeAndVertexMap field world)
                      Entity.StaticModel <== field --|> fun field world -> Triple.fst (Field.getFieldStaticModelAndSizeAndVertexMap field world)
                      Entity.InsetOpt <== field --> fun field -> Some (box2 (v2 (16.0f * (single (field.UpdateTime / 20UL % 3UL))) 0.0f) v2Zero)
-                     Entity.RenderStyle == Forward -1.0f]
+                     Entity.RenderStyle == Forward (0.0f, -1.0f)]
                  Content.staticModel Gen.name
-                    [Entity.Position <== field --|> fun field world ->
+                    [Entity.StaticModel == Assets.Default.HighlightModel
+                     Entity.RenderStyle == Forward (-1.0f, 0.0f)
+                     Entity.Position <== field --|> fun field world ->
                         match Field.tryGetFieldDataAtMouse field world with
                         | Some (_, _, [|a; b; c; d|]) -> (a + b + c + d) / 4.0f
                         | None -> v3Zero]]]]
