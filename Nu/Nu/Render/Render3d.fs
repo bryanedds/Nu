@@ -397,18 +397,10 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
         if not (renderer.RenderPackages.ContainsKey assetTag.PackageName) then
             GlRenderer3d.tryLoadRenderPackage false assetTag.PackageName renderer
 
-        // free any existing user-created static model, also determining if target asset can be user-created
+        // determine if target asset can be created
         let canCreateUserDefinedStaticModel =
             match renderer.RenderPackages.TryGetValue assetTag.PackageName with
-            | (true, package) ->
-                match package.Assets.TryGetValue assetTag.AssetName with
-                | (true, asset) ->
-                    match asset with
-                    | StaticModelAsset (userDefined, _) when userDefined ->
-                        GlRenderer3d.freeRenderAsset package.PackageState asset renderer
-                        true
-                    | _ -> false
-                | (false, _) -> true
+            | (true, package) -> not (package.Assets.ContainsKey assetTag.AssetName)
             | (false, _) -> true
 
         // ensure the user can create the static model

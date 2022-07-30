@@ -8,6 +8,7 @@
 //
 
 using System;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Numerics;
 
@@ -73,6 +74,17 @@ namespace Nu
                 Math.Max(point.Y, point2.Y),
                 Math.Max(point.Z, point2.Z));
             return new Box3(position, position2 - position);
+        }
+
+        /// <summary>
+        /// Create a bounding box by enclosing multiple points.
+        /// </summary>
+        public static Box3 Enclose(Vector3[] points)
+		{
+            if (points.Length == 0) return default(Box3);
+            var bounds = new Box3(points[0], Vector3.Zero);
+            foreach (var point in points) bounds = bounds.Combine(point);
+            return bounds;
         }
 
         /// <summary>
