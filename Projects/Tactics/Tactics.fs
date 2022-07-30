@@ -813,9 +813,6 @@ type TacticsDispatcher () =
         let fieldTexCoordsOffset = box2 (v2 (16.0f * (single (field.UpdateTime / 20UL % 3UL))) 0.0f) v2Zero
         let fieldUntraversableView = View.Render3d (RenderUserDefinedStaticModel (false, m4Identity, ValueSome fieldTexCoordsOffset, Unchecked.defaultof<_>, ForwardRenderType (0.0f, 0.0f), [|fieldData.FieldUntraversableSurfaceDescriptor|], fieldData.FieldBounds))
         let fieldTraversableView = View.Render3d (RenderUserDefinedStaticModel (false, m4Identity, ValueSome fieldTexCoordsOffset, Unchecked.defaultof<_>, ForwardRenderType (0.0f, -1.0f), [|fieldData.FieldTraversableSurfaceDescriptor|], fieldData.FieldBounds))
-        //for _ in 0 .. dec 100 do
-        //    World.enqueueRenderMessage3d (RenderUserDefinedStaticModel (false, m4Identity, ValueSome fieldTexCoordsOffset, Unchecked.defaultof<_>, ForwardRenderType (0.0f, 0.0f), [|fieldData.FieldUntraversableSurfaceDescriptor|], fieldData.FieldBounds)) world
-        //    World.enqueueRenderMessage3d (RenderUserDefinedStaticModel (false, m4Identity, ValueSome fieldTexCoordsOffset, Unchecked.defaultof<_>, ForwardRenderType (0.0f, -1.0f), [|fieldData.FieldTraversableSurfaceDescriptor|], fieldData.FieldBounds)) world
         let fieldCursorView =
             match Field.tryGetFieldTileDataAtMouse field world with
             | Some (_, _, vertices) ->
