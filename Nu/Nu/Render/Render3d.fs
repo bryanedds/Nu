@@ -391,7 +391,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             | (false, _) -> ()
         | (false, _) -> ()
 
-    static member private tryCreateUserDefinedStaticModel surfaceDescriptors bounds assetTag renderer =
+    static member private tryCreateUserDefinedStaticModel surfaceDescriptors bounds (assetTag : StaticModel AssetTag) renderer =
 
         // ensure target package is loaded if possible
         if not (renderer.RenderPackages.ContainsKey assetTag.PackageName) then
