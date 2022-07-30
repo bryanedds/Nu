@@ -322,7 +322,7 @@ module Character =
 
 type Character = Character.Character
 
-type Occupant =
+type [<StructuralEquality; NoComparison>] Occupant =
     | Character of Character
     | Chest of unit
 
@@ -393,10 +393,16 @@ module CharacterDispatcher =
                     (bounds.Position + bounds.Size * v3 0.0f 0.5f 0.0f)
                     (bounds.Size * v3 1.0f 0.5f 1.0f))
 
+type [<NoEquality; NoComparison>] FieldData =
+    { FieldVertexMap : Map<Vector2i, Vector3 array>
+      FieldUntraversableSurfaceDescriptor : StaticModelSurfaceDescriptor
+      FieldTraversableSurfaceDescriptor : StaticModelSurfaceDescriptor
+      FieldBounds : Box3 }
+
 [<RequireQualifiedAccess>]
 module Field =
 
-    let CachedDescriptors = dictPlus<StaticModel AssetTag, Vector3 * Map<Vector2i, Vector3 array>> HashIdentity.Structural []
+    let CachedFieldData = dictPlus<TileMap AssetTag, FieldData> HashIdentity.Structural []
 
     let createFieldHighlightSurfaceDescriptor (vertices : Vector3 array) =
         let bounds = Box3.Enclose vertices
@@ -430,8 +436,7 @@ module Field =
         let heightScalar = 0.5f
         let heightMax = 16.0f * heightScalar
         let position = v3Zero
-        let size = v3 (single tileMapWidth) (heightMax * 2.0f) (single tileMapHeight)
-        let bounds = box3 position size
+        let bounds = box3 position (v3 (single tileMapWidth) (heightMax * 2.0f) (single tileMapHeight))
 
         // make positions array
         let positions = Array.zeroCreate<Vector3> (tileMapWidth * tileMapHeight * 6)
@@ -612,7 +617,7 @@ module Field =
                   TwoSided = false }
 
             // fin
-            (descriptor, size, vertexMap)
+            (descriptor, vertexMap)
 
         // did not find albedo tile set
         | None -> failwith "Unable to find custom TmxLayer Image property; cannot create tactical map."
@@ -628,9 +633,8 @@ module Field =
 
         member this.UpdateTime = this.FieldTickTime
 
-    let getFieldStaticModelAndSizeAndVertexMap (field : Field) world =
-        let fieldModelAssetTag = asset field.FieldTileMap.PackageName (field.FieldTileMap.AssetName + "Model")
-        match CachedDescriptors.TryGetValue fieldModelAssetTag with
+    let getFieldData (field : Field) world =
+        match CachedFieldData.TryGetValue field.FieldTileMap with
         | (false, _) ->
             let (_, tileSetsAndImages, tileMap) = World.getTileMapMetadata field.FieldTileMap world
             let tileSets = Array.map fst tileSetsAndImages
@@ -638,19 +642,22 @@ module Field =
             let untraversableHeightLayer = tileMap.Layers.["UntraversableHeight"] :?> TmxLayer
             let traversableLayer = tileMap.Layers.["Traversable"] :?> TmxLayer
             let traversableHeightLayer = tileMap.Layers.["TraversableHeight"] :?> TmxLayer
-            let (untraversableSurfaceDescriptor, _, _) = createFieldSurfaceDescriptorAndSizeAndVertexMap tileMap.Width tileMap.Height tileSets untraversableLayer untraversableHeightLayer
+            let (untraversableSurfaceDescriptor, _) = createFieldSurfaceDescriptorAndSizeAndVertexMap tileMap.Width tileMap.Height tileSets untraversableLayer untraversableHeightLayer
             let untraversableSurfaceDescriptor = { untraversableSurfaceDescriptor with Roughness = 0.1f }
-            let (traversableSurfaceDescriptor, traversableSize, traversableVertexMap) = createFieldSurfaceDescriptorAndSizeAndVertexMap tileMap.Width tileMap.Height tileSets traversableLayer traversableHeightLayer
-            let surfaceDescriptors = [|untraversableSurfaceDescriptor; traversableSurfaceDescriptor|]
+            let (traversableSurfaceDescriptor, traversableVertexMap) = createFieldSurfaceDescriptorAndSizeAndVertexMap tileMap.Width tileMap.Height tileSets traversableLayer traversableHeightLayer
             let bounds = let bounds = untraversableSurfaceDescriptor.Bounds in bounds.Combine traversableSurfaceDescriptor.Bounds
-            World.enqueueRenderMessage3d (CreateUserDefinedStaticModelMessage (surfaceDescriptors, bounds, fieldModelAssetTag)) world
-            CachedDescriptors.Add (fieldModelAssetTag, (traversableSize, traversableVertexMap))
-            (fieldModelAssetTag, traversableSize, traversableVertexMap)
-        | (true, (traversableSize, traversableVertexMap)) -> (fieldModelAssetTag, traversableSize, traversableVertexMap)
+            let fieldData =
+                { FieldVertexMap = traversableVertexMap
+                  FieldUntraversableSurfaceDescriptor = untraversableSurfaceDescriptor
+                  FieldTraversableSurfaceDescriptor = traversableSurfaceDescriptor
+                  FieldBounds = bounds }
+            CachedFieldData.Add (field.FieldTileMap, fieldData)
+            fieldData
+        | (true, fieldData) -> fieldData
 
     let tryGetVertices index field world =
-        let (_, _, vertexMap) = getFieldStaticModelAndSizeAndVertexMap field world
-        match Map.tryFind index vertexMap with
+        let fieldData = getFieldData field world
+        match Map.tryFind index fieldData.FieldVertexMap with
         | Some index -> Some index
         | None -> None
 
@@ -659,9 +666,9 @@ module Field =
         | Some vertices -> vertices
         | None -> failwith ("Field vertex index '" + scstring index + "' out of range.")
 
-    let tryGetFieldDataAtMouse field world =
+    let tryGetFieldTileDataAtMouse field world =
         let mouseRay = World.getMouseRay3dWorld false world
-        let (_, _, vertexMap) = getFieldStaticModelAndSizeAndVertexMap field world
+        let fieldData = getFieldData field world
         let indices = [|0; 1; 2; 0; 2; 3|]
         let intersectionMap =
             Map.map (fun _ vertices ->
@@ -669,7 +676,7 @@ module Field =
                 match Seq.tryHead intersections with
                 | Some struct (_, intersection) -> Some (intersection, vertices)
                 | None -> None)
-                vertexMap
+                fieldData.FieldVertexMap
         let intersections =
             intersectionMap |>
             Seq.map (fun (kvp : KeyValuePair<_, _>) -> (kvp.Key, kvp.Value)) |>
@@ -758,7 +765,7 @@ type TacticsDispatcher () =
             just world
 
     // here we describe the content of the game
-    override this.Content (field, _) =
+    override this.Content (_, _) =
         [Content.screen Simulants.Default.Screen.Name Vanilla []
             [Content.group Simulants.Default.Group.Name []
                 [Content.light3d Simulants.Light.Name
@@ -771,19 +778,7 @@ type TacticsDispatcher () =
                  Content.skyBox Gen.name
                     [Entity.CubeMap == Assets.Default.SkyBoxMap]
                  Content.entity<CharacterDispatcher> Gen.name
-                    [Entity.Position == v3 0.0f 2.5f 0.0f]
-                 Content.staticModelSurface Gen.name
-                    [Entity.SurfaceIndex == 0
-                     Entity.Size <== field --|> fun field world -> Triple.snd (Field.getFieldStaticModelAndSizeAndVertexMap field world)
-                     Entity.StaticModel <== field --|> fun field world -> Triple.fst (Field.getFieldStaticModelAndSizeAndVertexMap field world)
-                     Entity.InsetOpt <== field --> fun field -> Some (box2 (v2 (16.0f * (single (field.UpdateTime / 20UL % 3UL))) 0.0f) v2Zero)
-                     Entity.RenderStyle == Forward (0.0f, 0.0f)]
-                 Content.staticModelSurface Gen.name
-                    [Entity.SurfaceIndex == 1
-                     Entity.Size <== field --|> fun field world -> Triple.snd (Field.getFieldStaticModelAndSizeAndVertexMap field world)
-                     Entity.StaticModel <== field --|> fun field world -> Triple.fst (Field.getFieldStaticModelAndSizeAndVertexMap field world)
-                     Entity.InsetOpt <== field --> fun field -> Some (box2 (v2 (16.0f * (single (field.UpdateTime / 20UL % 3UL))) 0.0f) v2Zero)
-                     Entity.RenderStyle == Forward (0.0f, -1.0f)]]]]
+                    [Entity.Position == v3 0.0f 2.5f 0.0f]]]]
 
     override this.Register (game, world) =
         let world = base.Register (game, world)
@@ -814,8 +809,17 @@ type TacticsDispatcher () =
         world
 
     override this.View (field, _, world) =
-        match Field.tryGetFieldDataAtMouse field world with
-        | Some (_, _, vertices) ->
-            let highlightDescriptor = Field.createFieldHighlightSurfaceDescriptor vertices
-            View.Render3d (RenderUserDefinedStaticModel (false, m4Identity, ValueNone, Unchecked.defaultof<_>, ForwardRenderType (-1.0f, 0.0f), [|highlightDescriptor|], highlightDescriptor.Bounds))
-        | None -> View.empty
+        let fieldData = Field.getFieldData field world
+        let fieldTexCoordsOffset = box2 (v2 (16.0f * (single (field.UpdateTime / 20UL % 3UL))) 0.0f) v2Zero
+        let fieldUntraversableView = View.Render3d (RenderUserDefinedStaticModel (false, m4Identity, ValueSome fieldTexCoordsOffset, Unchecked.defaultof<_>, ForwardRenderType (0.0f, 0.0f), [|fieldData.FieldUntraversableSurfaceDescriptor|], fieldData.FieldBounds))
+        let fieldTraversableView = View.Render3d (RenderUserDefinedStaticModel (false, m4Identity, ValueSome fieldTexCoordsOffset, Unchecked.defaultof<_>, ForwardRenderType (0.0f, -1.0f), [|fieldData.FieldTraversableSurfaceDescriptor|], fieldData.FieldBounds))
+        //for i in 0 .. dec 100 do
+        //    World.enqueueRenderMessage3d (RenderUserDefinedStaticModel (false, m4Identity, ValueSome fieldTexCoordsOffset, Unchecked.defaultof<_>, ForwardRenderType (0.0f, 0.0f), [|fieldData.FieldUntraversableSurfaceDescriptor|], fieldData.FieldBounds)) world
+        //    World.enqueueRenderMessage3d (RenderUserDefinedStaticModel (false, m4Identity, ValueSome fieldTexCoordsOffset, Unchecked.defaultof<_>, ForwardRenderType (0.0f, -1.0f), [|fieldData.FieldTraversableSurfaceDescriptor|], fieldData.FieldBounds)) world
+        let fieldCursorView =
+            match Field.tryGetFieldTileDataAtMouse field world with
+            | Some (_, _, vertices) ->
+                let highlightDescriptor = Field.createFieldHighlightSurfaceDescriptor vertices
+                View.Render3d (RenderUserDefinedStaticModel (false, m4Identity, ValueNone, Unchecked.defaultof<_>, ForwardRenderType (-1.0f, 0.0f), [|highlightDescriptor|], highlightDescriptor.Bounds))
+            | None -> View.empty
+        View.Views [|fieldUntraversableView; fieldTraversableView; fieldCursorView|]
