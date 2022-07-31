@@ -17,7 +17,7 @@ type BattleSpeed =
 type BattleState =
     | BattleReady of int64
     | BattleRunning
-    | BattleResults of int64 * bool
+    | BattleResult of int64 * bool
     | BattleQuitting of int64 * bool * Advent Set
 
 type [<ReferenceEquality; NoComparison>] ActionCommand =
