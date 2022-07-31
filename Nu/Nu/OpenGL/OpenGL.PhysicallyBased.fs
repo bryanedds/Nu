@@ -54,16 +54,16 @@ module PhysicallyBased =
           PhysicallyBasedGeometry : PhysicallyBasedGeometry }
 
         static member inline hash surface =
-            hash surface.SurfaceMaterial.TextureMinFilterOpt ^^^
-            hash surface.SurfaceMaterial.TextureMagFilterOpt ^^^
-            int surface.SurfaceMaterial.AlbedoTexture ^^^
-            int surface.SurfaceMaterial.MetalnessTexture ^^^
-            int surface.SurfaceMaterial.RoughnessTexture ^^^
-            int surface.SurfaceMaterial.AmbientOcclusionTexture ^^^
-            int surface.SurfaceMaterial.NormalTexture ^^^
-            hash surface.SurfaceMaterial.TwoSided ^^^
-            int surface.PhysicallyBasedGeometry.PrimitiveType ^^^
-            int surface.PhysicallyBasedGeometry.PhysicallyBasedVao
+            (hash surface.SurfaceMaterial.TextureMinFilterOpt) ^^^
+            (hash surface.SurfaceMaterial.TextureMagFilterOpt <<< 2) ^^^
+            (int surface.SurfaceMaterial.AlbedoTexture <<< 4) ^^^
+            (int surface.SurfaceMaterial.MetalnessTexture <<< 6) ^^^
+            (int surface.SurfaceMaterial.RoughnessTexture <<< 8) ^^^
+            (int surface.SurfaceMaterial.AmbientOcclusionTexture <<< 10) ^^^
+            (int surface.SurfaceMaterial.NormalTexture <<< 12) ^^^
+            (hash surface.SurfaceMaterial.TwoSided <<< 14) ^^^
+            (int surface.PhysicallyBasedGeometry.PrimitiveType <<< 16) ^^^
+            (int surface.PhysicallyBasedGeometry.PhysicallyBasedVao <<< 18)
 
         static member inline equals left right =
             (match (left.SurfaceMaterial.TextureMinFilterOpt, right.SurfaceMaterial.TextureMinFilterOpt) with // TODO: 3D: implement voptEq.
