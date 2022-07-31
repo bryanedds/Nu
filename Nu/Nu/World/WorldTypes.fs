@@ -1133,15 +1133,31 @@ module WorldTypes =
               Simulants : UMap<Simulant, Simulant USet option> // OPTIMIZATION: using None instead of empty USet to descrease number of USet instances.
               WorldExtension : WorldExtension }
 
+        /// Get the world's liveness state.
+        member this.Liveness =
+            AmbientState.getLiveness this.AmbientState
+
+        /// Check that the world is advancing (not halted).
+        member this.Advancing =
+            AmbientState.isAdvancing this.AmbientState
+
+        /// Check that the world is halted (not advancing).
+        member this.Halted =
+            AmbientState.isHalted this.AmbientState
+
+        /// Get the rate at which the world is updating.
         member this.UpdateRate =
             AmbientState.getUpdateRate this.AmbientState
 
+        /// Get the number of updates that have transpired.
         member this.UpdateTime =
             AmbientState.getUpdateTime this.AmbientState
 
+        /// Get the amount of clock time that has transpired between this and the previous frame.
         member this.ClockDelta =
             AmbientState.getClockDelta this.AmbientState
 
+        /// Get the current clock time.
         member this.ClockTime =
             AmbientState.getClockTime this.AmbientState
 
