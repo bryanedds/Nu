@@ -498,7 +498,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
         for packageName in packageNames do
             GlRenderer3d.tryLoadRenderPackage true packageName renderer
 
-    static member inline private categorizeBillboardSurface
+    static member private categorizeBillboardSurface
         (absolute,
          eyeRotation : Quaternion,
          affineMatrix,
@@ -542,7 +542,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                 then SegmentedList.add struct (sort, subsort, billboardMatrix, texCoordsOffset, renderMaterial, billboardSurface) renderer.RenderTasks.RenderSurfacesForwardAbsolute
                 else SegmentedList.add struct (sort, subsort, billboardMatrix, texCoordsOffset, renderMaterial, billboardSurface) renderer.RenderTasks.RenderSurfacesForwardRelative
 
-    static member inline private categorizeStaticModelSurface
+    static member private categorizeStaticModelSurface
         (modelAbsolute,
          modelMatrix : Matrix4x4 inref,
          insetOpt : Box2 voption,
@@ -584,7 +584,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             then SegmentedList.add struct (sort, subsort, surfaceMatrix, texCoordsOffset, renderMaterial, surface) renderer.RenderTasks.RenderSurfacesForwardAbsolute
             else SegmentedList.add struct (sort, subsort, surfaceMatrix, texCoordsOffset, renderMaterial, surface) renderer.RenderTasks.RenderSurfacesForwardRelative
 
-    static member inline private categorizeStaticModelSurfaceByIndex
+    static member private categorizeStaticModelSurfaceByIndex
         (modelAbsolute,
          modelMatrix : Matrix4x4 inref,
          insetOpt : Box2 voption,
