@@ -1133,6 +1133,18 @@ module WorldTypes =
               Simulants : UMap<Simulant, Simulant USet option> // OPTIMIZATION: using None instead of empty USet to descrease number of USet instances.
               WorldExtension : WorldExtension }
 
+        member this.UpdateRate =
+            AmbientState.getUpdateRate this.AmbientState
+
+        member this.UpdateTime =
+            AmbientState.getUpdateTime this.AmbientState
+
+        member this.ClockDelta =
+            AmbientState.getClockDelta this.AmbientState
+
+        member this.ClockTime =
+            AmbientState.getClockTime this.AmbientState
+
         interface World EventSystem with
 
             member this.GetConfig () =
