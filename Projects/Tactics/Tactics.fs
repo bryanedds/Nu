@@ -399,6 +399,25 @@ type [<NoEquality; NoComparison>] FieldData =
       FieldTraversableSurfaceDescriptor : StaticModelSurfaceDescriptor
       FieldBounds : Box3 }
 
+type NarrativeState =
+    | NarrativeState
+
+type BattleState =
+    | BattleReady of int64
+    | BattleCharacterReady of int64 // camera moving to character
+    | BattleCharacterMenu of CharacterIndex // using ring menu or AI
+    | BattleCharacterMoving of CharacterIndex // character moving to destination
+    | BattleCharacterAttacking of CharacterIndex * CharacterIndex
+    | BattleCharacterTeching
+    | BattleCharacterConsuming
+    | BattleResults of int64 * bool
+
+type FieldState =
+    | FieldOpening of int64 // field fades in
+    | NarrativeState of NarrativeState
+    | BattleState of BattleState
+    | FieldClosing of int64 * bool // field fades out
+
 [<RequireQualifiedAccess>]
 module Field =
 
@@ -624,14 +643,12 @@ module Field =
 
     type [<ReferenceEquality; NoComparison>] Field =
         private
-            { FieldTickTime : uint64
+            { FieldState : FieldState
               FieldTileMap : TileMap AssetTag
               OccupantIndices : Map<Vector2i, OccupantIndex list>
               OccupantPositions : Map<OccupantIndex, Vector2i>
               Occupants : Map<OccupantIndex, Occupant>
               SelectedTile : Vector2i }
-
-        member this.UpdateTime = this.FieldTickTime
 
     let getFieldData (field : Field) world =
         match CachedFieldData.TryGetValue field.FieldTileMap with
@@ -687,12 +704,12 @@ module Field =
             Array.tryHead
         intersections
 
-    let advance field =
-        { field with FieldTickTime = inc field.FieldTickTime }
+    let advance (field : Field) =
+        field
 
-    let make tileMap =
-        { FieldTickTime = 0UL
-          FieldTileMap = tileMap
+    let make updateTime tileMap =
+        { FieldTileMap = tileMap
+          FieldState = FieldOpening updateTime
           OccupantIndices = Map.empty
           OccupantPositions = Map.empty
           Occupants = Map.empty
@@ -710,7 +727,7 @@ type Command =
 
 // this is our Elm-style game dispatcher
 type TacticsDispatcher () =
-    inherit GameDispatcher<Field, Message, Command> (Field.make (asset "Field" "Field"))
+    inherit GameDispatcher<Field, Message, Command> (Field.make 0L (asset "Field" "Field"))
 
     // here we channel from events to signals
     override this.Channel (_, game) =
@@ -810,7 +827,7 @@ type TacticsDispatcher () =
 
     override this.View (field, _, world) =
         let fieldData = Field.getFieldData field world
-        let fieldTexCoordsOffset = box2 (v2 (16.0f * (single (field.UpdateTime / 20UL % 3UL))) 0.0f) v2Zero
+        let fieldTexCoordsOffset = box2 (v2 (16.0f * (single (world.UpdateTime / 20L % 3L))) 0.0f) v2Zero
         let fieldUntraversableView = View.Render3d (RenderUserDefinedStaticModel (false, m4Identity, ValueSome fieldTexCoordsOffset, Unchecked.defaultof<_>, ForwardRenderType (0.0f, 0.0f), [|fieldData.FieldUntraversableSurfaceDescriptor|], fieldData.FieldBounds))
         let fieldTraversableView = View.Render3d (RenderUserDefinedStaticModel (false, m4Identity, ValueSome fieldTexCoordsOffset, Unchecked.defaultof<_>, ForwardRenderType (0.0f, -1.0f), [|fieldData.FieldTraversableSurfaceDescriptor|], fieldData.FieldBounds))
         let fieldCursorView =
