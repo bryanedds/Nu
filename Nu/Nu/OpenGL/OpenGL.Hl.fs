@@ -64,23 +64,21 @@ module Hl =
         ()
 #endif
 
-    /// Allocate a vertex array, generating one via OpenGL is no cached vertex array is available.
+    /// Allocate a vertex array, generating one via OpenGL if no cached vertex array is available.
     let AllocVertexArray () =
-        if CachedVertexArrays.Count <> 0 then
-            CachedVertexArrays.Dequeue ()
-        else
-            Gl.GenVertexArray ()
+        if CachedVertexArrays.Count <> 0
+        then CachedVertexArrays.Dequeue ()
+        else Gl.GenVertexArray ()
 
     /// Deallocate a vertex array into the vertex array cache.
     let FreeVertexArray vertexArray =
         CachedVertexArrays.Enqueue vertexArray
 
-    /// Allocate a buffer, generating one via OpenGL is no cached buffer is available.
+    /// Allocate a buffer, generating one via OpenGL if no cached buffer is available.
     let AllocBuffer () =
-        if CachedBuffers.Count <> 0 then
-            CachedBuffers.Dequeue ()
-        else
-            Gl.GenBuffer ()
+        if CachedBuffers.Count <> 0
+        then CachedBuffers.Dequeue ()
+        else Gl.GenBuffer ()
 
     /// Deallocate a buffer into the buffer cache.
     let FreeBuffer buffer =
