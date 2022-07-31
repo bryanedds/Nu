@@ -400,7 +400,7 @@ type [<NoEquality; NoComparison>] FieldData =
       FieldBounds : Box3 }
 
 type NarrativeState =
-    | NarrativeState
+    | NarrativeResult of bool
 
 type BattleState =
     | BattleReady of int64
@@ -410,13 +410,19 @@ type BattleState =
     | BattleCharacterAttacking of CharacterIndex * CharacterIndex
     | BattleCharacterTeching
     | BattleCharacterConsuming
-    | BattleResults of int64 * bool
+    | BattleResult of int64 * bool
 
 type FieldState =
     | FieldOpening of int64 // field fades in
-    | NarrativeState of NarrativeState
     | BattleState of BattleState
+    | NarrativeState of NarrativeState
     | FieldClosing of int64 * bool // field fades out
+
+type FieldScript =
+    | FieldToBattle
+    | FieldToNarrative
+    | FieldCondition of FieldScript * FieldScript
+    | FieldScripts of FieldScript list
 
 [<RequireQualifiedAccess>]
 module Field =
@@ -644,6 +650,7 @@ module Field =
     type [<ReferenceEquality; NoComparison>] Field =
         private
             { FieldState : FieldState
+              FieldScript : FieldScript
               FieldTileMap : TileMap AssetTag
               OccupantIndices : Map<Vector2i, OccupantIndex list>
               OccupantPositions : Map<OccupantIndex, Vector2i>
@@ -704,12 +711,28 @@ module Field =
             Array.tryHead
         intersections
 
-    let advance (field : Field) =
+    let rec advanceFieldScript field (world : World) =
+        match field.FieldState with
+        | BattleState (BattleResult (_, result))
+        | NarrativeState (NarrativeResult result) ->
+            match field.FieldScript with
+            | FieldToBattle -> { field with FieldState = BattleState (BattleReady (world.UpdateTime + 60L)) }
+            | FieldToNarrative -> { field with FieldState = NarrativeState (NarrativeResult false) }
+            | FieldCondition (consequent, alternative) -> advanceFieldScript { field with FieldScript = if result then consequent else alternative } world
+            | FieldScripts scripts ->
+                match scripts with
+                | _ :: scripts -> advanceFieldScript { field with FieldScript = FieldScripts scripts } world
+                | _ -> { field with FieldState = FieldClosing (world.UpdateTime + 60L, result) }
+        | _ -> field
+
+    let advance field world =
+        let field = advanceFieldScript field world
         field
 
-    let make updateTime tileMap =
-        { FieldTileMap = tileMap
-          FieldState = FieldOpening updateTime
+    let make updateTime fieldScript tileMap =
+        { FieldState = FieldOpening updateTime
+          FieldScript = fieldScript
+          FieldTileMap = tileMap
           OccupantIndices = Map.empty
           OccupantPositions = Map.empty
           Occupants = Map.empty
@@ -727,7 +750,7 @@ type Command =
 
 // this is our Elm-style game dispatcher
 type TacticsDispatcher () =
-    inherit GameDispatcher<Field, Message, Command> (Field.make 0L (asset "Field" "Field"))
+    inherit GameDispatcher<Field, Message, Command> (Field.make 0L FieldToBattle (asset "Field" "Field"))
 
     // here we channel from events to signals
     override this.Channel (_, game) =
@@ -735,9 +758,9 @@ type TacticsDispatcher () =
          game.UpdateEvent => cmd UpdateCommand]
 
     // here we handle the Elm-style messages
-    override this.Message (field, message, _, _) =
+    override this.Message (field, message, _, world) =
         match message with
-        | UpdateMessage -> just (Field.advance field)
+        | UpdateMessage -> just (Field.advance field world)
 
     // here we handle the Elm-style commands
     override this.Command (_, command, _, world) =

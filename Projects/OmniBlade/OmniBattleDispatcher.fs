@@ -256,7 +256,7 @@ module BattleDispatcher =
                             List.forall (fun (character : Character) -> character.IsWounded) enemies &&
                             List.hasAtMost 1 enemies then
                             // won battle
-                            let battle = Battle.updateBattleState (constant (BattleResults (time, true))) battle
+                            let battle = Battle.updateBattleState (constant (BattleResult (time, true))) battle
                             let (sigs2, battle) = update time battle
                             (msg (CelebrateCharacters true) :: sigs @ sigs2, battle)
                         else (sigs, battle)
@@ -476,7 +476,7 @@ module BattleDispatcher =
             match battle.BattleState with
             | BattleReady startTime -> updateReady time startTime battle
             | BattleRunning -> updateRunning time battle
-            | BattleResults (startTime, outcome) -> updateResults time startTime outcome battle
+            | BattleResult (startTime, outcome) -> updateResults time startTime outcome battle
             | BattleQuitting (startTime, _, _) -> updateCease time startTime battle
 
     type BattleDispatcher () =
