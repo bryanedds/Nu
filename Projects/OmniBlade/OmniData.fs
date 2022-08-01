@@ -10,32 +10,6 @@ open TiledSharp
 open Prime
 open Nu
 
-type CharacterIndex =
-    | AllyIndex of int
-    | EnemyIndex of int
-
-    member this.IsAlly =
-        match this with
-        | AllyIndex _ -> true
-        | EnemyIndex _ -> false
-
-    member this.IsEnemy =
-        not this.IsAlly
-
-    static member isFriendly index index2 =
-        match (index, index2) with
-        | (AllyIndex _, AllyIndex _) -> true
-        | (EnemyIndex _, EnemyIndex _) -> true
-        | (_, _) -> false
-
-    static member isUnfriendly index index2 =
-        not (CharacterIndex.isFriendly index index2)
-
-    static member toEntityName index =
-        match index with
-        | AllyIndex i -> "Ally+" + scstring i
-        | EnemyIndex i -> "Enemy+" + scstring i
-
 type Direction =
     | Upward
     | Rightward
@@ -75,6 +49,32 @@ type Direction =
         | Rightward -> v3Right
         | Downward -> v3Down
         | Leftward -> v3Left
+
+type CharacterIndex =
+    | AllyIndex of int
+    | EnemyIndex of int
+
+    member this.IsAlly =
+        match this with
+        | AllyIndex _ -> true
+        | EnemyIndex _ -> false
+
+    member this.IsEnemy =
+        not this.IsAlly
+
+    static member isFriendly index index2 =
+        match (index, index2) with
+        | (AllyIndex _, AllyIndex _) -> true
+        | (EnemyIndex _, EnemyIndex _) -> true
+        | (_, _) -> false
+
+    static member isUnfriendly index index2 =
+        not (CharacterIndex.isFriendly index index2)
+
+    static member toEntityName index =
+        match index with
+        | AllyIndex i -> "Ally+" + scstring i
+        | EnemyIndex i -> "Enemy+" + scstring i
 
 type EffectType =
     | Physical

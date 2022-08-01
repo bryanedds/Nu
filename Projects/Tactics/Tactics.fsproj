@@ -68,6 +68,16 @@
     <DisableFastUpToDateCheck>true</DisableFastUpToDateCheck>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="TacticsAssets.fs" />
+    <Compile Include="TacticsConstants.fs" />
+    <Compile Include="TacticsSimulants.fs" />
+    <Compile Include="TacticsData.fs" />
+    <Compile Include="TacticsCharacter.fs" />
+    <Compile Include="TacticsField.fs" />
+    <Compile Include="TacticsAtlas.fs" />
+    <Compile Include="TacticsCharacterDispatcher.fs" />
+    <Compile Include="TacticsFieldDispatcher.fs" />
+    <Compile Include="TacticsAtlasDispatcher.fs" />
     <Compile Include="Tactics.fs" />
     <Compile Include="TacticsPlugin.fs" />
     <Compile Include="Program.fs" />

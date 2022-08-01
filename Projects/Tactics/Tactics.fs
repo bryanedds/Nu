@@ -1,862 +1,190 @@
-﻿namespace Tactics
-open System
-open System.Collections.Generic
-open System.Numerics
+﻿// Nu Game Engine.
+// Copyright (C) Bryan Edds, 2013-2020.
+
+namespace Tactics
+open System.IO
 open Prime
-open TiledSharp
 open Nu
 open Nu.Declarative
-
-[<RequireQualifiedAccess>]
-module Simulants =
-
-    // here we create an entity reference for SkyBox. This is useful for simulants that you want
-    // to refer to from multiple places
-    let Light = Simulants.Default.Group / "Light"
-
-type Direction =
-    | Upward
-    | Rightward
-    | Downward
-    | Leftward
-
-    member this.Opposite =
-        match this with
-        | Upward -> Downward
-        | Rightward -> Leftward
-        | Downward -> Upward
-        | Leftward -> Rightward
-
-    static member ofVector3 (v3 : Vector3) =
-        let angle = double (atan2 v3.Y v3.X)
-        let angle = if angle < 0.0 then angle + Math.PI * 2.0 else angle
-        let direction =
-            if      angle > Math.PI * 1.75 || angle <= Math.PI * 0.25 then  Rightward
-            elif    angle > Math.PI * 0.75 && angle <= Math.PI * 1.25 then  Leftward
-            elif    angle > Math.PI * 0.25 && angle <= Math.PI * 0.75 then  Upward
-            else                                                            Downward
-        direction
-
-    static member ofVector3Biased (v3 : Vector3) =
-        let angle = double (atan2 v3.Y v3.X)
-        let angle = if angle < 0.0 then angle + Math.PI * 2.0 else angle
-        let direction =
-            if      angle > Math.PI * 1.74997 || angle <= Math.PI * 0.25003 then    Rightward
-            elif    angle > Math.PI * 0.74997 && angle <= Math.PI * 1.25003 then    Leftward
-            elif    angle > Math.PI * 0.25 && angle <= Math.PI * 0.75 then          Upward
-            else                                                                    Downward
-        direction
-
-    static member toVector3 direction =
-        match direction with
-        | Upward -> v3Up
-        | Rightward -> v3Right
-        | Downward -> v3Down
-        | Leftward -> v3Left
-
-type CharacterIndex =
-    | AllyIndex of int
-    | EnemyIndex of int
-
-    member this.IsAlly =
-        match this with
-        | AllyIndex _ -> true
-        | EnemyIndex _ -> false
-
-    member this.IsEnemy =
-        not this.IsAlly
-
-    static member isFriendly index index2 =
-        match (index, index2) with
-        | (AllyIndex _, AllyIndex _) -> true
-        | (EnemyIndex _, EnemyIndex _) -> true
-        | (_, _) -> false
-
-    static member isUnfriendly index index2 =
-        not (CharacterIndex.isFriendly index index2)
-
-    static member toEntityName index =
-        match index with
-        | AllyIndex i -> "Ally+" + scstring i
-        | EnemyIndex i -> "Enemy+" + scstring i
-
-type AllyType =
-    | Jinn
-    | Shade
-    | Mael
-    | Riain
-    | Peric
-
-type EnemyType =
-    | DebugGoblin
-
-type CharacterType =
-    | Ally of AllyType
-    | Enemy of EnemyType
-
-    static member getName characterType =
-        match characterType with
-        | Ally ty -> string ty
-        | Enemy ty -> string ty
-
-type AnimationType =
-    | LoopedWithDirection
-    | LoopedWithoutDirection
-    | SaturatedWithDirection
-    | SaturatedWithoutDirection
-
-type PoiseType =
-    | Poising
-    | Defending
-    | Charging
-
-type CharacterAnimationType =
-    | WalkAnimation
-    | CelebrateAnimation
-    | ReadyAnimation
-    | PoiseAnimation of PoiseType
-    | AttackAnimation
-    | WoundAnimation
-    | SpinAnimation
-    | DamageAnimation
-    | IdleAnimation
-    | CastAnimation
-    | Cast2Animation
-    | SlashAnimation
-    | WhirlAnimation
-    | BuryAnimation // TODO: get rid of this
-
-type [<ReferenceEquality; NoComparison>] CharacterAnimationState =
-    { StartTime : int64
-      AnimationSheet : Image AssetTag
-      CharacterAnimationType : CharacterAnimationType
-      Direction : Direction }
-
-    static member face direction state =
-        { state with Direction = direction }
-
-    static member setCharacterAnimationType timeOpt characterAnimationType state =
-        if state.CharacterAnimationType <> characterAnimationType then
-            match timeOpt with
-            | Some time -> { state with StartTime = time; CharacterAnimationType = characterAnimationType }
-            | None -> { state with CharacterAnimationType = characterAnimationType }
-        else state
-
-    static member directionToInt direction =
-        match direction with
-        | Upward -> 0
-        | Rightward -> 1
-        | Downward -> 2
-        | Leftward -> 3
-
-    static member localTime time state =
-        time - state.StartTime
-
-    static member indexCel delay time state =
-        let localTime = CharacterAnimationState.localTime time state
-        int (localTime / delay)
-
-    static member indexLooped run delay time state =
-        CharacterAnimationState.indexCel delay time state % run
-
-    static member indexSaturated run delay time state =
-        let cel = CharacterAnimationState.indexCel delay time state
-        if cel < dec run then cel else dec run
-
-    static member indexLoopedWithDirection run delay offset time state =
-        let position = CharacterAnimationState.directionToInt state.Direction * run
-        let position = Vector2i (CharacterAnimationState.indexLooped run delay time state + position, 0)
-        let position = position + offset
-        position
-
-    static member indexLoopedWithoutDirection run delay offset time state =
-        let position = CharacterAnimationState.indexLooped run delay time state
-        let position = v2i position 0 + offset
-        position
-
-    static member indexSaturatedWithDirection run delay offset time state =
-        let position = CharacterAnimationState.directionToInt state.Direction * run
-        let position = Vector2i (CharacterAnimationState.indexSaturated run delay time state + position, 0)
-        let position = position + offset
-        position
-
-    static member indexSaturatedWithoutDirection run stutter offset time state =
-        let position = CharacterAnimationState.indexSaturated run stutter time state
-        let position = Vector2i (position, 0)
-        let position = position + offset
-        position
-
-    static member index time state =
-        match state.CharacterAnimationType with
-        | WalkAnimation -> CharacterAnimationState.indexLoopedWithDirection 4 15 (v2i 0 0) time state
-        | CelebrateAnimation -> CharacterAnimationState.indexLoopedWithDirection 4 10 (v2i 0 1) time state
-        | ReadyAnimation -> CharacterAnimationState.indexSaturatedWithDirection 3 15 (v2i 0 5) time state
-        | PoiseAnimation poiseType ->
-            match poiseType with
-            | Poising -> CharacterAnimationState.indexLoopedWithDirection 4 15 (v2i 0 3) time state
-            | Defending -> CharacterAnimationState.indexLoopedWithDirection 1 10 (v2i 0 9) time state
-            | Charging -> CharacterAnimationState.indexLoopedWithDirection 4 10 (v2i 0 2) time state
-        | AttackAnimation -> CharacterAnimationState.indexSaturatedWithDirection 3 15 (v2i 0 6) time state
-        | WoundAnimation -> CharacterAnimationState.indexLoopedWithDirection 1 10 (v2i 0 11) time state
-        | SpinAnimation -> CharacterAnimationState.indexLoopedWithDirection 4 10 (v2i 0 10) time state
-        | DamageAnimation -> CharacterAnimationState.indexSaturatedWithDirection 1 10 (v2i 0 8) time state
-        | IdleAnimation -> CharacterAnimationState.indexLoopedWithDirection 1 10 (v2i 0 10) time state
-        | CastAnimation -> CharacterAnimationState.indexLoopedWithDirection 4 5 (v2i 0 2) time state
-        | Cast2Animation -> CharacterAnimationState.indexLoopedWithDirection 2 10 (v2i 0 7) time state
-        | SlashAnimation -> CharacterAnimationState.indexSaturatedWithDirection 3 15 (v2i 0 6) time state
-        | WhirlAnimation -> CharacterAnimationState.indexLoopedWithDirection 4 3 (v2i 0 12) time state
-        | BuryAnimation -> CharacterAnimationState.indexSaturatedWithDirection 4 10 (v2i 0 12) time state
-
-    static member inset time (celSize : Vector2) state =
-        let index = CharacterAnimationState.index time state
-        let offset = v2 (single index.X) (single index.Y) * celSize
-        let inset = box2 offset celSize
-        inset
-
-    static member progressOpt time state =
-        let localTime = CharacterAnimationState.localTime time state
-        let lengthOpt =
-            match state.CharacterAnimationType with
-            | WalkAnimation -> None
-            | CelebrateAnimation -> None
-            | ReadyAnimation -> Some 60
-            | PoiseAnimation poiseType ->
-                match poiseType with
-                | Poising -> None
-                | Defending -> None
-                | Charging -> None
-            | AttackAnimation -> Some 60
-            | WoundAnimation -> Some 60
-            | SpinAnimation -> Some 40
-            | DamageAnimation -> Some 40
-            | IdleAnimation -> None
-            | CastAnimation -> None
-            | Cast2Animation -> None
-            | SlashAnimation -> Some 120
-            | WhirlAnimation -> None
-            | BuryAnimation -> None
-        match lengthOpt with
-        | Some length -> Some (min 1.0f (single localTime / single length))
-        | None -> None
-
-    static member getFinished time state =
-        match CharacterAnimationState.progressOpt time state with
-        | Some progress -> progress = 1.0f
-        | None -> true
-
-    static member empty =
-        { StartTime = 0L
-          AnimationSheet = asset "Field" "Jinn"
-          CharacterAnimationType = IdleAnimation
-          Direction = Downward }
-
-    static member initial =
-        { CharacterAnimationState.empty with Direction = Upward }
-
-[<RequireQualifiedAccess>]
-module Character =
-
-    type [<ReferenceEquality; NoComparison>] Character =
-        private
-            { CharacterIndex_ : CharacterIndex
-              CharacterType_ : CharacterType
-              CharacterState_ : PoiseType
-              CharacterAnimationState_ : CharacterAnimationState
-              CelSize_ : Vector2 }
-
-        (* CharacterState Properties *)
-        member this.Name = CharacterType.getName this.CharacterType_
-        member this.CharacterIndex = this.CharacterIndex_
-        member this.CharacterType = this.CharacterType_
-        member this.PartyIndex = match this.CharacterIndex with AllyIndex index | EnemyIndex index -> index
-        member this.IsAlly = match this.CharacterIndex with AllyIndex _ -> true | EnemyIndex _ -> false
-        member this.IsEnemy = not this.IsAlly
-        member this.CelSize = this.CelSize_
-
-        (* Animation Properties *)
-        member this.TimeStart = this.CharacterAnimationState_.StartTime
-        member this.AnimationSheet = this.CharacterAnimationState_.AnimationSheet
-        member this.CharacterAnimationType = this.CharacterAnimationState_.CharacterAnimationType
-        member this.Direction = this.CharacterAnimationState_.Direction
-
-    let isFriendly (character : Character) (character2 : Character) =
-        CharacterIndex.isFriendly character.CharacterIndex character2.CharacterIndex
-
-    let getPoiseType character =
-        character.CharacterState_
-
-    let getAnimationInset time (character : Character) =
-        CharacterAnimationState.inset time character.CelSize_ character.CharacterAnimationState_
-
-    let getAnimationIndex time character =
-        CharacterAnimationState.index time character.CharacterAnimationState_
-
-    let getAnimationProgressOpt time character =
-        CharacterAnimationState.progressOpt time character.CharacterAnimationState_
-
-    let getAnimationFinished time character =
-        CharacterAnimationState.getFinished time character.CharacterAnimationState_
-
-    let face direction character =
-        { character with CharacterAnimationState_ = CharacterAnimationState.face direction character.CharacterAnimationState_ }
-
-    let animate time characterAnimationType character =
-        { character with CharacterAnimationState_ = CharacterAnimationState.setCharacterAnimationType (Some time) characterAnimationType character.CharacterAnimationState_ }
-
-    let make characterIndex characterType (characterState : PoiseType) animationSheet celSize direction =
-        let animationType = IdleAnimation
-        let animationState = { StartTime = 0L; AnimationSheet = animationSheet; CharacterAnimationType = animationType; Direction = direction }
-        { CharacterIndex_ = characterIndex
-          CharacterType_ = characterType
-          CharacterState_ = characterState
-          CharacterAnimationState_ = animationState
-          CelSize_ = celSize }
-
-    let empty =
-        let characterAnimationState = { StartTime = 0L; AnimationSheet = asset "Field " "Jinn"; CharacterAnimationType = PoiseAnimation Poising; Direction = Downward }
-        { CharacterIndex_ = AllyIndex 0
-          CharacterType_ = Ally Jinn
-          CharacterState_ = Poising
-          CharacterAnimationState_ = characterAnimationState
-          CelSize_ = v2 48.0f 48.0f }
-
-type Character = Character.Character
-
-type [<StructuralEquality; NoComparison>] Occupant =
-    | Character of Character
-    | Chest of unit
-
-type [<StructuralEquality; StructuralComparison>] OccupantIndex =
-    | AllyIndex of int
-    | EnemyIndex of int
-    | ChestIndex of int
-
-// this is a custom entity for performance testing
-type CustomModelDispatcher () =
-    inherit StaticModelDispatcher ()
-
-    override this.Update (entity, world) =
-        entity.SetRotation (entity.GetRotation world * Quaternion.CreateFromAxisAngle (v3Up, 0.01f)) world
+open Tactics
 
 [<AutoOpen>]
-module CharacterDispatcher =
+module TacticsGame =
 
-    type Entity with
-        member this.GetCharacter world = this.GetModelGeneric<Character> world
-        member this.SetCharacter value world = this.SetModelGeneric<Character> value world
-        member this.Character = this.ModelGeneric<Character> ()
+    type Gui =
+        | Splash
+        | Title
+        | Credits
+        | Pick
+        | Intro of SaveSlot
 
-    type CharacterDispatcher () =
-        inherit EntityDispatcher3d<Character, unit, unit> (true, false, Character.empty)
+    type [<NoComparison>] Model =
+        | Gui of Gui
+        | Atlas of Atlas
 
-        static let getSpriteInset (character : Character) world =
-            Character.getAnimationInset (World.getUpdateTime world) character
+    type Message =
+        | ShowTitle
+        | ShowCredits
+        | ShowPick
+        | ShowIntro of SaveSlot
+        | TryLoad of SaveSlot
+        | UpdateMessage
 
-        override this.Initializers (_, _) =
-            [Entity.Presence == Omnipresent]
+    type Command =
+        | UpdateCommand
+        | Exit
 
-        override this.View (character, entity, world) =
-            if entity.GetVisible world then
-                let mutable transform = entity.GetTransform world
-                let renderMaterial =
-                    { AlbedoOpt = ValueSome Color.White
-                      MetalnessOpt = ValueSome 0.0f
-                      RoughnessOpt = ValueSome 1.25f
-                      AmbientOcclusionOpt = ValueSome 1.0f }
-                let albedoImage = asset "Field" "Jinn"
-                let inset = getSpriteInset character world
-                let characterView =
-                    Render3d (
-                        RenderBillboardMessage
-                            (transform.Absolute, transform.AffineMatrix, ValueSome inset, renderMaterial,
-                             albedoImage, Assets.Default.MaterialMetalness, Assets.Default.MaterialRoughness, Assets.Default.MaterialRoughness, albedoImage,
-                             ValueSome OpenGL.TextureMinFilter.NearestMipmapNearest, ValueSome OpenGL.TextureMagFilter.Nearest, DeferredRenderType))
-                characterView
-            else View.empty
+    type Game with
+        member this.GetModel world = this.GetModelGeneric<Model> world
+        member this.SetModel value world = this.SetModelGeneric<Model> value world
+        member this.Model = this.ModelGeneric<Model> ()
+        member this.Atlas =
+            this.Model |>
+            Lens.narrow (fun world -> match this.GetModel world with Atlas _ -> true | _ -> false) |>
+            Lens.bimap (function Atlas field -> field | _ -> failwithumf ()) Atlas
+        member this.Field =
+            this.Model |>
+            Lens.narrow (fun world -> match this.GetModel world with Atlas atlas -> Option.isSome atlas.FieldOpt | _ -> false) |>
+            Lens.bimapWorld
+                (fun model _ -> match model with Atlas atlas when Option.isSome atlas.FieldOpt -> Option.get atlas.FieldOpt | _ -> failwithumf ())
+                (fun field world -> match this.GetModel world with Atlas atlas -> Atlas (Atlas.updateFieldOpt (constant (Some field)) atlas) | _ -> failwithumf ())
 
-        override this.GetQuickSize (_, _) =
-            v3 1.0f 2.0f 1.0f
+    type TacticsDispatcher () =
+        inherit GameDispatcher<Model, Message, Command> (Gui Splash)
 
-        override this.RayCast (ray, entity, world) =
-            // TODO: 3D: intersect against oriented quad rather than box.
-            match this.TryGetHighlightBounds (entity, world) with
-            | Some bounds ->
-                let intersectionOpt = ray.Intersects bounds
-                if intersectionOpt.HasValue then [|intersectionOpt.Value|]
-                else [||]
-            | None -> [||]
+        override this.Initializers (omni, game) =
+            [game.Atlas <=> Simulants.Atlas.Screen.Atlas
+             game.Field <=> Simulants.Field.Screen.Field
+             game.DesiredScreenOpt <== omni --> fun omni ->
+                match omni with
+                | Gui gui ->
+                    match gui with
+                    | Splash -> None
+                    | Title -> Some Simulants.Title.Screen
+                    | Credits -> Some Simulants.Credits.Screen
+                    | Pick -> Some Simulants.Pick.Screen
+                    | Intro _ -> Some Simulants.Intro.Screen
+                | Atlas atlas ->
+                    match atlas.AtlasState with
+                    | Playing ->
+                        match atlas.FieldOpt with
+                        | Some field ->
+                            match field.FieldState with
+                            | FieldQuitting (_, _) -> Some Simulants.Atlas.Screen
+                            | _ -> Some Simulants.Field.Screen
+                        | None -> Some Simulants.Atlas.Screen
+                    | Quitting -> Some Simulants.Title.Screen]
 
-        override this.TryGetHighlightBounds (entity, world) =
-            let bounds = entity.GetBounds world
-            Some
-                (box3
-                    (bounds.Position + bounds.Size * v3 0.0f 0.5f 0.0f)
-                    (bounds.Size * v3 1.0f 0.5f 1.0f))
+        override this.Channel (_, _) =
+            [Simulants.Game.UpdateEvent => msg UpdateMessage
+             Simulants.Game.UpdateEvent => cmd UpdateCommand
+             Simulants.Title.Gui.Play.ClickEvent =|> fun _ -> msg ShowPick
+             Simulants.Title.Gui.Credits.ClickEvent => msg ShowCredits
+             Simulants.Pick.Gui.NewGame1.ClickEvent => msg (ShowIntro Slot1)
+             Simulants.Pick.Gui.NewGame2.ClickEvent => msg (ShowIntro Slot2)
+             Simulants.Pick.Gui.NewGame3.ClickEvent => msg (ShowIntro Slot3)
+             Simulants.Pick.Gui.LoadGame1.ClickEvent => msg (TryLoad Slot1)
+             Simulants.Pick.Gui.LoadGame2.ClickEvent => msg (TryLoad Slot2)
+             Simulants.Pick.Gui.LoadGame3.ClickEvent => msg (TryLoad Slot3)
+             Simulants.Pick.Gui.Back.ClickEvent => msg ShowTitle
+             Simulants.Credits.Gui.Back.ClickEvent => msg ShowTitle
+             Simulants.Title.Gui.Exit.ClickEvent => cmd Exit]
 
-type [<NoEquality; NoComparison>] FieldData =
-    { FieldVertexMap : Map<Vector2i, Vector3 array>
-      FieldUntraversableSurfaceDescriptor : StaticModelSurfaceDescriptor
-      FieldTraversableSurfaceDescriptor : StaticModelSurfaceDescriptor
-      FieldBounds : Box3 }
+        override this.Message (omni, message, _, world) =
 
-type NarrativeState =
-    | NarrativeResult of bool
+            match message with
+            | ShowTitle ->
+                just (Gui Title)
 
-type BattleState =
-    | BattleReady of int64
-    | BattleCharacterReady of int64 // camera moving to character
-    | BattleCharacterMenu of CharacterIndex // using ring menu or AI
-    | BattleCharacterMoving of CharacterIndex // character moving to destination
-    | BattleCharacterAttacking of CharacterIndex * CharacterIndex
-    | BattleCharacterTeching
-    | BattleCharacterConsuming
-    | BattleResult of int64 * bool
+            | ShowCredits ->
+                just (Gui Credits)
 
-type FieldState =
-    | FieldOpening of int64 // field fades in
-    | BattleState of BattleState
-    | NarrativeState of NarrativeState
-    | FieldClosing of int64 * bool // field fades out
+            | ShowPick ->
+                just (Gui Pick)
 
-type FieldScript =
-    | FieldToBattle
-    | FieldToNarrative
-    | FieldCondition of FieldScript * FieldScript
-    | FieldScripts of FieldScript list
+            | ShowIntro slot ->
+                just (Gui (Intro slot))
 
-[<RequireQualifiedAccess>]
-module Field =
+            | TryLoad saveSlot ->
+                match Atlas.tryLoad saveSlot world with
+                | Some loaded -> just (Atlas loaded)
+                | None -> just omni
 
-    let CachedFieldData = dictPlus<TileMap AssetTag, FieldData> HashIdentity.Structural []
+            | UpdateMessage ->
+                match omni with
+                | Gui gui ->
+                    match gui with
+                    | Intro slot ->
+                        match Simulants.Intro5.Screen.GetTransitionState world with
+                        | OutgoingState -> just (Atlas (Atlas.initial slot))
+                        | _ -> just omni
+                    | _ -> just omni
+                | Atlas atlas ->
+                    match atlas.FieldOpt with
+                    | Some field ->
+                        match field.FieldState with
+                        | FieldQuitting (_, outcome) ->
+                            if outcome then
+                                let atlas = Atlas.synchronizeFromField field atlas
+                                just (Atlas (Atlas.updateFieldOpt (constant None) atlas))
+                            else just (Atlas (Atlas.updateAtlasState (constant Quitting) atlas))
+                        | _ -> just omni
+                    | None -> just omni
 
-    let createFieldHighlightSurfaceDescriptor (vertices : Vector3 array) =
-        let bounds = Box3.Enclose vertices
-        let indices = [|0; 1; 2; 0; 2; 3|]
-        let texCoordses = [|v2 0.0f 0.0f; v2 1.0f 0.0f; v2 1.0f 1.0f; v2 0.0f 1.0f|]
-        let normals = Array.init 4 (fun _ -> v3Up)
-        let descriptor =
-            { Positions = vertices
-              TexCoordses = texCoordses
-              Normals = normals
-              Indices = indices
-              AffineMatrix = m4Identity
-              Bounds = bounds
-              Albedo = Color.White
-              AlbedoImage = asset "Default" "HighlightModelAlbedo"
-              Metalness = 0.0f
-              MetalnessImage = Assets.Default.MaterialMetalness
-              Roughness = 1.2f
-              RoughnessImage = Assets.Default.MaterialRoughness
-              AmbientOcclusion = 1.0f
-              AmbientOcclusionImage = Assets.Default.MaterialAmbientOcclusion
-              NormalImage = Assets.Default.MaterialNormal
-              TextureMinFilterOpt = ValueSome OpenGL.TextureMinFilter.NearestMipmapNearest
-              TextureMagFilterOpt = ValueSome OpenGL.TextureMagFilter.Nearest
-              TwoSided = false }
-        descriptor
+        override this.Command (_, command, _, world) =
 
-    let private createFieldSurfaceDescriptorAndSizeAndVertexMap tileMapWidth tileMapHeight (tileSets : TmxTileset array) (tileLayer : TmxLayer) (heightLayer : TmxLayer) =
+            match command with
+            | UpdateCommand ->
 
-        // compute bounds
-        let heightScalar = 0.5f
-        let heightMax = 16.0f * heightScalar
-        let position = v3Zero
-        let bounds = box3 position (v3 (single tileMapWidth) (heightMax * 2.0f) (single tileMapHeight))
+                // update picks
+                let world =
+                    if Simulants.Pick.Screen.IsSelected world then
+                        let world = Simulants.Pick.Gui.NewGame1.SetVisible (not (File.Exists Assets.Global.SaveFilePath1)) world
+                        let world = Simulants.Pick.Gui.NewGame2.SetVisible (not (File.Exists Assets.Global.SaveFilePath2)) world
+                        let world = Simulants.Pick.Gui.NewGame3.SetVisible (not (File.Exists Assets.Global.SaveFilePath3)) world
+                        let world = Simulants.Pick.Gui.LoadGame1.SetVisible (File.Exists Assets.Global.SaveFilePath1) world
+                        let world = Simulants.Pick.Gui.LoadGame2.SetVisible (File.Exists Assets.Global.SaveFilePath2) world
+                        let world = Simulants.Pick.Gui.LoadGame3.SetVisible (File.Exists Assets.Global.SaveFilePath3) world
+                        world
+                    else world
 
-        // make positions array
-        let positions = Array.zeroCreate<Vector3> (tileMapWidth * tileMapHeight * 6)
+                // update full screen toggle
+                let world =
+                    if KeyboardState.isAltDown () && KeyboardState.isKeyDown KeyboardKey.Return then
+                        match World.tryGetWindowFullScreen world with
+                        | Some fullScreen -> World.trySetWindowFullScreen (not fullScreen) world
+                        | None -> world
+                    else world
 
-        // initialize positions flat, centered
-        let offset = v3 (single tileMapWidth * -0.5f) 0.0f (single tileMapHeight * -0.5f)
-        for i in 0 .. dec tileMapWidth do
-            for j in 0 .. dec tileMapHeight do
-                let t = j * tileMapWidth + i
-                let tile = heightLayer.Tiles.[t]
-                let mutable tileSetOpt = None
-                for tileSet in tileSets do
-                    let tileZero = tileSet.FirstGid
-                    let tileCount = let opt = tileSet.TileCount in opt.GetValueOrDefault 0
-                    match tileSetOpt with
-                    | None ->
-                        if  tile.Gid >= tileZero &&
-                            tile.Gid < tileZero + tileCount then
-                            tileSetOpt <- Some tileSet
-                    | Some _ -> ()
-                let height =
-                    match tileSetOpt with
-                    | None -> 0.0f
-                    | Some tileSet -> single (tile.Gid - tileSet.FirstGid) * heightScalar
-                let u = t * 6
-                let position = v3 (single i) height (single j) + offset
-                positions.[u] <- position
-                positions.[u+1] <- position + v3Right
-                positions.[u+2] <- position + v3Right + v3Forward
-                positions.[u+3] <- position
-                positions.[u+4] <- position + v3Right + v3Forward
-                positions.[u+5] <- position + v3Forward
+                // fin
+                just world
 
-        // slope positions horizontal
-        for i in 0 .. dec tileMapWidth do
-            for j in 0 .. dec tileMapHeight do
-                if j % 2 = 0 then
-                    let t = j * tileMapWidth + i
-                    let tNorth = t - tileMapWidth
-                    if tNorth >= 0 then
-                        let u = t * 6
-                        let uNorth = tNorth * 6
-                        positions.[u+5].Y <- positions.[uNorth].Y
-                        positions.[u+2].Y <- positions.[uNorth+1].Y
-                        positions.[u+4].Y <- positions.[uNorth+1].Y
-                    let tSouth = t + tileMapWidth
-                    if tSouth < tileMapWidth * tileMapHeight then
-                        let u = t * 6
-                        let uSouth = tSouth * 6
-                        positions.[u].Y <- positions.[uSouth+5].Y
-                        positions.[u+3].Y <- positions.[uSouth+5].Y
-                        positions.[u+1].Y <- positions.[uSouth+2].Y
+            | Exit ->
+                just (World.exit world)
 
-        // slope positions vertical
-        for i in 0 .. dec tileMapWidth do
-            if i % 2 = 0 then
-                for j in 0 .. dec tileMapHeight do
-                    let t = j * tileMapWidth + i
-                    let tWest = t - 1
-                    if tWest >= 0 then
-                        let u = t * 6
-                        let uWest = tWest * 6
-                        positions.[u].Y <- positions.[uWest+1].Y
-                        positions.[u+3].Y <- positions.[uWest+1].Y
-                        positions.[u+5].Y <- positions.[uWest+2].Y
-                    let tEast = t + 1
-                    if tEast < tileMapWidth * tileMapHeight then
-                        let u = t * 6
-                        let uEast = tEast * 6
-                        positions.[u+1].Y <- positions.[uEast].Y
-                        positions.[u+2].Y <- positions.[uEast+5].Y
-                        positions.[u+4].Y <- positions.[uEast+5].Y
+        override this.Content (_, _) =
 
-        // make vertex map in-place
-        let mutable vertexMap = Map.empty
+            [// splash
+             Content.screen Simulants.Splash.Screen.Name (Nu.Splash (Constants.Gui.Dissolve, Constants.Gui.Splash, None, Simulants.Title.Screen)) [] []
 
-        // populate vertex map
-        for i in 0 .. dec tileMapWidth do
-            for j in 0 .. dec tileMapHeight do
-                let t = j * tileMapWidth + i
-                let u = t * 6
-                let vertices =
-                    [|positions.[u]
-                      positions.[u+1]
-                      positions.[u+2]
-                      positions.[u+5]|]
-                vertexMap <- Map.add (v2i i j) vertices vertexMap
+             // title
+             Content.screenFromGroupFile Simulants.Title.Screen.Name (Dissolve (Constants.Gui.Dissolve, Some Assets.Gui.TitleSong)) Assets.Gui.TitleGroupFilePath
 
-        // make tex coordses array
-        let texCoordses = Array.zeroCreate<Vector2> (tileMapWidth * tileMapHeight * 6)
+             // credits
+             Content.screenFromGroupFile Simulants.Credits.Screen.Name (Dissolve (Constants.Gui.Dissolve, Some Assets.Gui.TitleSong)) Assets.Gui.CreditsGroupFilePath
 
-        // populate tex coordses
-        let mutable albedoTileSetOpt = None
-        for i in 0 .. dec tileMapWidth do
-            for j in 0 .. dec tileMapHeight do
-                let t = j * tileMapWidth + i
-                let tile = tileLayer.Tiles.[t]
-                let mutable tileSetOpt = None
-                for tileSet in tileSets do
-                    let tileZero = tileSet.FirstGid
-                    let tileCount = let opt = tileSet.TileCount in opt.GetValueOrDefault 0
-                    match albedoTileSetOpt with
-                    | None ->
-                        if tile.Gid = 0 then
-                            tileSetOpt <- Some tileSet // just use the first tile set for the empty tile
-                        elif tile.Gid >= tileZero && tile.Gid < tileZero + tileCount then
-                            tileSetOpt <- Some tileSet
-                            albedoTileSetOpt <- tileSetOpt // use tile set that is first to be non-zero
-                    | Some _ -> tileSetOpt <- albedoTileSetOpt
-                match tileSetOpt with
-                | Some tileSet ->
-                    let tileId = tile.Gid - tileSet.FirstGid
-                    let tileImageWidth = let opt = tileSet.Image.Width in opt.Value
-                    let tileImageHeight = let opt = tileSet.Image.Height in opt.Value
-                    let tileWidthNormalized = single tileSet.TileWidth / single tileImageWidth
-                    let tileHeightNormalized = single tileSet.TileHeight / single tileImageHeight
-                    let tileXCount = let opt = tileSet.Columns in opt.Value
-                    let tileX = tileId % tileXCount
-                    let tileY = tileId / tileXCount + 1
-                    let texCoordX = single tileX * tileWidthNormalized
-                    let texCoordY = single tileY * tileHeightNormalized
-                    let texCoordX2 = texCoordX + tileWidthNormalized
-                    let texCoordY2 = texCoordY - tileHeightNormalized
-                    let u = t * 6
-                    texCoordses.[u] <- v2 texCoordX texCoordY
-                    texCoordses.[u+1] <- v2 texCoordX2 texCoordY
-                    texCoordses.[u+2] <- v2 texCoordX2 texCoordY2
-                    texCoordses.[u+3] <- v2 texCoordX texCoordY
-                    texCoordses.[u+4] <- v2 texCoordX2 texCoordY2
-                    texCoordses.[u+5] <- v2 texCoordX texCoordY2
-                | None -> ()
+             // pick
+             Content.screenFromGroupFile Simulants.Pick.Screen.Name (Dissolve ({ Constants.Gui.Dissolve with OutgoingTime = 90L }, Some Assets.Gui.TitleSong)) Assets.Gui.PickGroupFilePath
 
-        // make normals array
-        let normals = Array.zeroCreate<Vector3> (tileMapWidth * tileMapHeight * 6)
+             // atlas
+             Content.screen<AtlasDispatcher> Simulants.Atlas.Screen.Name (Dissolve (Constants.Gui.Dissolve, None)) [] []
 
-        // populate normals
-        for i in 0 .. dec tileMapWidth do
-            for j in 0 .. dec tileMapHeight do
-                let t = j * tileMapWidth + i
-                let u = t * 6
-                let a = positions.[u]
-                let b = positions.[u+1]
-                let c = positions.[u+5]
-                let normal = Vector3.Normalize (Vector3.Cross (b - a, c - a))
-                normals.[u] <- normal
-                normals.[u+1] <- normal
-                normals.[u+2] <- normal
-                normals.[u+3] <- normal
-                normals.[u+4] <- normal
-                normals.[u+5] <- normal
+             // field
+             Content.screen<FieldDispatcher> Simulants.Field.Screen.Name (Dissolve (Constants.Gui.Dissolve, None)) [] []
 
-        // create indices
-        let indices = Array.init (tileMapWidth * tileMapHeight * 6) id;
-
-        // ensure we've found an albedo tile set
-        match albedoTileSetOpt with
-        | Some albedoTileSet ->
-
-            // create static model surface descriptor
-            let descriptor =
-                { Positions = positions
-                  TexCoordses = texCoordses
-                  Normals = normals
-                  Indices = indices
-                  AffineMatrix = m4Identity
-                  Bounds = bounds
-                  Albedo = Color.White
-                  AlbedoImage = albedoTileSet.ImageAsset
-                  Metalness = 0.0f
-                  MetalnessImage = Assets.Default.MaterialMetalness
-                  Roughness = 1.2f
-                  RoughnessImage = Assets.Default.MaterialRoughness
-                  AmbientOcclusion = 1.0f
-                  AmbientOcclusionImage = albedoTileSet.ImageAsset
-                  NormalImage = Assets.Default.MaterialNormal
-                  TextureMinFilterOpt = ValueSome OpenGL.TextureMinFilter.NearestMipmapNearest
-                  TextureMagFilterOpt = ValueSome OpenGL.TextureMagFilter.Nearest
-                  TwoSided = false }
-
-            // fin
-            (descriptor, vertexMap)
-
-        // did not find albedo tile set
-        | None -> failwith "Unable to find custom TmxLayer Image property; cannot create tactical map."
-
-    type [<ReferenceEquality; NoComparison>] Field =
-        private
-            { FieldState : FieldState
-              FieldScript : FieldScript
-              FieldTileMap : TileMap AssetTag
-              OccupantIndices : Map<Vector2i, OccupantIndex list>
-              OccupantPositions : Map<OccupantIndex, Vector2i>
-              Occupants : Map<OccupantIndex, Occupant>
-              SelectedTile : Vector2i }
-
-    let getFieldData (field : Field) world =
-        match CachedFieldData.TryGetValue field.FieldTileMap with
-        | (false, _) ->
-            let (_, tileSetsAndImages, tileMap) = World.getTileMapMetadata field.FieldTileMap world
-            let tileSets = Array.map fst tileSetsAndImages
-            let untraversableLayer = tileMap.Layers.["Untraversable"] :?> TmxLayer
-            let untraversableHeightLayer = tileMap.Layers.["UntraversableHeight"] :?> TmxLayer
-            let traversableLayer = tileMap.Layers.["Traversable"] :?> TmxLayer
-            let traversableHeightLayer = tileMap.Layers.["TraversableHeight"] :?> TmxLayer
-            let (untraversableSurfaceDescriptor, _) = createFieldSurfaceDescriptorAndSizeAndVertexMap tileMap.Width tileMap.Height tileSets untraversableLayer untraversableHeightLayer
-            let untraversableSurfaceDescriptor = { untraversableSurfaceDescriptor with Roughness = 0.1f }
-            let (traversableSurfaceDescriptor, traversableVertexMap) = createFieldSurfaceDescriptorAndSizeAndVertexMap tileMap.Width tileMap.Height tileSets traversableLayer traversableHeightLayer
-            let bounds = let bounds = untraversableSurfaceDescriptor.Bounds in bounds.Combine traversableSurfaceDescriptor.Bounds
-            let fieldData =
-                { FieldVertexMap = traversableVertexMap
-                  FieldUntraversableSurfaceDescriptor = untraversableSurfaceDescriptor
-                  FieldTraversableSurfaceDescriptor = traversableSurfaceDescriptor
-                  FieldBounds = bounds }
-            CachedFieldData.Add (field.FieldTileMap, fieldData)
-            fieldData
-        | (true, fieldData) -> fieldData
-
-    let tryGetVertices index field world =
-        let fieldData = getFieldData field world
-        match Map.tryFind index fieldData.FieldVertexMap with
-        | Some index -> Some index
-        | None -> None
-
-    let getVertices index field world =
-        match tryGetVertices index field world with
-        | Some vertices -> vertices
-        | None -> failwith ("Field vertex index '" + scstring index + "' out of range.")
-
-    let tryGetFieldTileDataAtMouse field world =
-        let mouseRay = World.getMouseRay3dWorld false world
-        let fieldData = getFieldData field world
-        let indices = [|0; 1; 2; 0; 2; 3|]
-        let intersectionMap =
-            Map.map (fun _ vertices ->
-                let intersections = mouseRay.Intersects (indices, vertices)
-                match Seq.tryHead intersections with
-                | Some struct (_, intersection) -> Some (intersection, vertices)
-                | None -> None)
-                fieldData.FieldVertexMap
-        let intersections =
-            intersectionMap |>
-            Seq.map (fun (kvp : KeyValuePair<_, _>) -> (kvp.Key, kvp.Value)) |>
-            Seq.filter (fun (_, opt) -> opt.IsSome) |>
-            Seq.map (fun (key, Some (a, b)) -> (key, a, b)) |>
-            Seq.toArray |>
-            Array.sortBy Triple.snd |>
-            Array.tryHead
-        intersections
-
-    let rec advanceFieldScript field (world : World) =
-        match field.FieldState with
-        | BattleState (BattleResult (_, result))
-        | NarrativeState (NarrativeResult result) ->
-            match field.FieldScript with
-            | FieldToBattle -> { field with FieldState = BattleState (BattleReady (world.UpdateTime + 60L)) }
-            | FieldToNarrative -> { field with FieldState = NarrativeState (NarrativeResult false) }
-            | FieldCondition (consequent, alternative) -> advanceFieldScript { field with FieldScript = if result then consequent else alternative } world
-            | FieldScripts scripts ->
-                match scripts with
-                | _ :: scripts -> advanceFieldScript { field with FieldScript = FieldScripts scripts } world
-                | _ -> { field with FieldState = FieldClosing (world.UpdateTime + 60L, result) }
-        | _ -> field
-
-    let advance field world =
-        let field = advanceFieldScript field world
-        field
-
-    let make updateTime fieldScript tileMap =
-        { FieldState = FieldOpening updateTime
-          FieldScript = fieldScript
-          FieldTileMap = tileMap
-          OccupantIndices = Map.empty
-          OccupantPositions = Map.empty
-          Occupants = Map.empty
-          SelectedTile = v2iZero }
-
-type Field = Field.Field
-
-// this is our Elm-style message type
-type Message =
-    | UpdateMessage
-
-// this is our Elm-style command type
-type Command =
-    | UpdateCommand
-
-// this is our Elm-style game dispatcher
-type TacticsDispatcher () =
-    inherit GameDispatcher<Field, Message, Command> (Field.make 0L FieldToBattle (asset "Field" "Field"))
-
-    // here we channel from events to signals
-    override this.Channel (_, game) =
-        [game.UpdateEvent => msg UpdateMessage
-         game.UpdateEvent => cmd UpdateCommand]
-
-    // here we handle the Elm-style messages
-    override this.Message (field, message, _, world) =
-        match message with
-        | UpdateMessage -> just (Field.advance field world)
-
-    // here we handle the Elm-style commands
-    override this.Command (_, command, _, world) =
-        match command with
-        | UpdateCommand ->
-            let moveSpeed = if KeyboardState.isKeyDown KeyboardKey.Return then 0.5f elif KeyboardState.isShiftDown () then 0.02f else 0.12f
-            let turnSpeed = if KeyboardState.isShiftDown () then 0.025f else 0.05f
-            let position = World.getEyePosition3d world
-            let rotation = World.getEyeRotation3d world
-            let world =
-                if KeyboardState.isKeyDown KeyboardKey.W
-                then World.setEyePosition3d (position + Vector3.Transform (v3Forward, rotation) * moveSpeed) world
-                else world
-            let world =
-                if KeyboardState.isKeyDown KeyboardKey.S
-                then World.setEyePosition3d (position + Vector3.Transform (v3Back, rotation) * moveSpeed) world
-                else world
-            let world =
-                if KeyboardState.isKeyDown KeyboardKey.A
-                then World.setEyePosition3d (position + Vector3.Transform (v3Left, rotation) * moveSpeed) world
-                else world
-            let world =
-                if KeyboardState.isKeyDown KeyboardKey.D
-                then World.setEyePosition3d (position + Vector3.Transform (v3Right, rotation) * moveSpeed) world
-                else world
-            let world =
-                if KeyboardState.isKeyDown KeyboardKey.Up
-                then World.setEyePosition3d (position + Vector3.Transform (v3Up, rotation) * moveSpeed) world
-                else world
-            let world =
-                if KeyboardState.isKeyDown KeyboardKey.Down
-                then World.setEyePosition3d (position + Vector3.Transform (v3Down, rotation) * moveSpeed) world
-                else world
-            let world =
-                if KeyboardState.isKeyDown KeyboardKey.Left
-                then World.setEyeRotation3d (rotation * Quaternion.CreateFromAxisAngle (v3Up, turnSpeed)) world
-                else world
-            let world =
-                if KeyboardState.isKeyDown KeyboardKey.Right
-                then World.setEyeRotation3d (rotation * Quaternion.CreateFromAxisAngle (v3Down, turnSpeed)) world
-                else world
-            just world
-
-    // here we describe the content of the game
-    override this.Content (_, _) =
-        [Content.screen Simulants.Default.Screen.Name Vanilla []
-            [Content.group Simulants.Default.Group.Name []
-                [Content.light3d Simulants.Light.Name
-                    [Entity.Position == v3 0.0f 0.0f 0.0f
-                     Entity.Color == Color.White
-                     Entity.Brightness == 10.0f
-                     Entity.Intensity == 1.0f]
-                 Content.fps Gen.name
-                    [Entity.Position == v3 250.0f -200.0f 0.0f]
-                 Content.skyBox Gen.name
-                    [Entity.CubeMap == Assets.Default.SkyBoxMap]
-                 Content.entity<CharacterDispatcher> Gen.name
-                    [Entity.Position == v3 0.0f 2.5f 0.0f]]]]
-
-    override this.Register (game, world) =
-        let world = base.Register (game, world)
-#if DEBUG
-        let population = 10
-#else
-        let population = 45
-#endif
-        let spread = 22.0f
-        let offset = v3Dup spread * single population * 0.5f
-        let positions = List ()
-        for i in 0 .. population do
-            for j in 0 .. population do
-                for k in 0 .. population do
-                    let random = v3 (Gen.randomf1 spread) (Gen.randomf1 spread) (Gen.randomf1 spread) - v3Dup (spread * 0.5f)
-                    let position = v3 (single i) (single j) (single k) * spread + random - offset
-                    positions.Add position
-        let world =
-            Seq.fold (fun world position ->
-                let (staticModel, world) = World.createEntity<CustomModelDispatcher> None NoOverlay Simulants.Default.Group world
-                staticModel.SetPosition position world)
-                world positions
-        world
-
-    override this.PostUpdate (entity, world) =
-        let world = base.PostUpdate (entity, world)
-        let world = Simulants.Light.SetPosition (World.getEyePosition3d world + v3Up * 3.0f) world
-        world
-
-    override this.View (field, _, world) =
-        let fieldData = Field.getFieldData field world
-        let fieldTexCoordsOffset = box2 (v2 (16.0f * (single (world.UpdateTime / 20L % 3L))) 0.0f) v2Zero
-        let fieldUntraversableView = View.Render3d (RenderUserDefinedStaticModel (false, m4Identity, ValueSome fieldTexCoordsOffset, Unchecked.defaultof<_>, ForwardRenderType (0.0f, 0.0f), [|fieldData.FieldUntraversableSurfaceDescriptor|], fieldData.FieldBounds))
-        let fieldTraversableView = View.Render3d (RenderUserDefinedStaticModel (false, m4Identity, ValueSome fieldTexCoordsOffset, Unchecked.defaultof<_>, ForwardRenderType (0.0f, -1.0f), [|fieldData.FieldTraversableSurfaceDescriptor|], fieldData.FieldBounds))
-        let fieldCursorView =
-            match Field.tryGetFieldTileDataAtMouse field world with
-            | Some (_, _, vertices) ->
-                let highlightDescriptor = Field.createFieldHighlightSurfaceDescriptor vertices
-                View.Render3d (RenderUserDefinedStaticModel (false, m4Identity, ValueNone, Unchecked.defaultof<_>, ForwardRenderType (-1.0f, 0.0f), [|highlightDescriptor|], highlightDescriptor.Bounds))
-            | None -> View.empty
-        View.Views [|fieldUntraversableView; fieldTraversableView; fieldCursorView|]
+             // intros
+             Content.screenFromGroupFile Simulants.Intro.Screen.Name (Nu.Splash (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.Gui.IntroSong, Simulants.Intro2.Screen)) Assets.Gui.IntroGroupFilePath
+             Content.screenFromGroupFile Simulants.Intro2.Screen.Name (Nu.Splash (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.Gui.IntroSong, Simulants.Intro3.Screen)) Assets.Gui.Intro2GroupFilePath
+             Content.screenFromGroupFile Simulants.Intro3.Screen.Name (Nu.Splash (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.Gui.IntroSong, Simulants.Intro4.Screen)) Assets.Gui.Intro3GroupFilePath
+             Content.screenFromGroupFile Simulants.Intro4.Screen.Name (Nu.Splash (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.Gui.IntroSong, Simulants.Intro5.Screen)) Assets.Gui.Intro4GroupFilePath
+             Content.screenFromGroupFile Simulants.Intro5.Screen.Name (Nu.Splash (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.Gui.IntroSong, Simulants.Field.Screen)) Assets.Gui.Intro5GroupFilePath]
