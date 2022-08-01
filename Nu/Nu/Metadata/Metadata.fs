@@ -104,7 +104,10 @@ module Metadata =
             match extension with
             | ".bmp"
             | ".png"
-            | ".tif" -> tryGenerateTextureMetadata asset
+            | ".jpg"
+            | ".jpeg"
+            | ".tif"
+            | ".tiff" -> tryGenerateTextureMetadata asset
             | ".tmx" -> tryGenerateTileMapMetadata asset
             | ".fbx" -> tryGenerateStaticModelMetadata UnitCentimeters asset
             | ".obj" -> tryGenerateStaticModelMetadata UnitMeters asset
