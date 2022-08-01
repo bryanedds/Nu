@@ -41,7 +41,7 @@ module TacticsGame =
         member this.Atlas =
             this.Model |>
             Lens.narrow (fun world -> match this.GetModel world with Atlas _ -> true | _ -> false) |>
-            Lens.bimap (function Atlas field -> field | _ -> failwithumf ()) Atlas
+            Lens.bimap (function Atlas atlas -> atlas | _ -> failwithumf ()) Atlas
         member this.Field =
             this.Model |>
             Lens.narrow (fun world -> match this.GetModel world with Atlas atlas -> Option.isSome atlas.FieldOpt | _ -> false) |>
@@ -52,11 +52,11 @@ module TacticsGame =
     type TacticsDispatcher () =
         inherit GameDispatcher<Model, Message, Command> (Gui Splash)
 
-        override this.Initializers (omni, game) =
+        override this.Initializers (tactics, game) =
             [game.Atlas <=> Simulants.Atlas.Screen.Atlas
              game.Field <=> Simulants.Field.Screen.Field
-             game.DesiredScreenOpt <== omni --> fun omni ->
-                match omni with
+             game.DesiredScreenOpt <== tactics --> fun tactics ->
+                match tactics with
                 | Gui gui ->
                     match gui with
                     | Splash -> None
@@ -90,7 +90,7 @@ module TacticsGame =
              Simulants.Credits.Gui.Back.ClickEvent => msg ShowTitle
              Simulants.Title.Gui.Exit.ClickEvent => cmd Exit]
 
-        override this.Message (omni, message, _, world) =
+        override this.Message (tactics, message, _, world) =
 
             match message with
             | ShowTitle ->
@@ -108,17 +108,17 @@ module TacticsGame =
             | TryLoad saveSlot ->
                 match Atlas.tryLoad saveSlot world with
                 | Some loaded -> just (Atlas loaded)
-                | None -> just omni
+                | None -> just tactics
 
             | UpdateMessage ->
-                match omni with
+                match tactics with
                 | Gui gui ->
                     match gui with
                     | Intro slot ->
                         match Simulants.Intro5.Screen.GetTransitionState world with
                         | OutgoingState -> just (Atlas (Atlas.initial slot))
-                        | _ -> just omni
-                    | _ -> just omni
+                        | _ -> just tactics
+                    | _ -> just tactics
                 | Atlas atlas ->
                     match atlas.FieldOpt with
                     | Some field ->
@@ -128,8 +128,8 @@ module TacticsGame =
                                 let atlas = Atlas.synchronizeFromField field atlas
                                 just (Atlas (Atlas.updateFieldOpt (constant None) atlas))
                             else just (Atlas (Atlas.updateAtlasState (constant Quitting) atlas))
-                        | _ -> just omni
-                    | None -> just omni
+                        | _ -> just tactics
+                    | None -> just tactics
 
         override this.Command (_, command, _, world) =
 
@@ -187,4 +187,4 @@ module TacticsGame =
              Content.screenFromGroupFile Simulants.Intro2.Screen.Name (Nu.Splash (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.Gui.IntroSong, Simulants.Intro3.Screen)) Assets.Gui.Intro2GroupFilePath
              Content.screenFromGroupFile Simulants.Intro3.Screen.Name (Nu.Splash (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.Gui.IntroSong, Simulants.Intro4.Screen)) Assets.Gui.Intro3GroupFilePath
              Content.screenFromGroupFile Simulants.Intro4.Screen.Name (Nu.Splash (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.Gui.IntroSong, Simulants.Intro5.Screen)) Assets.Gui.Intro4GroupFilePath
-             Content.screenFromGroupFile Simulants.Intro5.Screen.Name (Nu.Splash (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.Gui.IntroSong, Simulants.Field.Screen)) Assets.Gui.Intro5GroupFilePath]
+             Content.screenFromGroupFile Simulants.Intro5.Screen.Name (Nu.Splash (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.Gui.IntroSong, Simulants.Atlas.Screen)) Assets.Gui.Intro5GroupFilePath]

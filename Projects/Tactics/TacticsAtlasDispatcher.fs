@@ -20,4 +20,4 @@ module AtlasDispatcher =
         member this.Atlas = this.ModelGeneric<Atlas> ()
 
     type AtlasDispatcher () =
-        inherit ScreenDispatcher<Atlas, AtlasMessage, AtlasCommand> (Atlas.initial Slot1)
+        inherit ScreenDispatcher<Atlas, AtlasMessage, AtlasCommand> (Atlas.empty)

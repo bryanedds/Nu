@@ -48,17 +48,14 @@ module FieldDispatcher =
                   TwoSided = false }
             descriptor
 
-        // here we channel from events to signals
-        override this.Channel (_, game) =
-            [game.UpdateEvent => msg UpdateMessage
-             game.UpdateEvent => cmd UpdateCommand]
+        override this.Channel (_, screen) =
+            [screen.UpdateEvent => msg UpdateMessage
+             screen.UpdateEvent => cmd UpdateCommand]
 
-        // here we handle the Elm-style messages
         override this.Message (field, message, _, world) =
             match message with
             | UpdateMessage -> just (Field.advance field world)
 
-        // here we handle the Elm-style commands
         override this.Command (_, command, _, world) =
             match command with
             | UpdateCommand ->
@@ -101,7 +98,7 @@ module FieldDispatcher =
                 just world
 
         override this.Content (_, _) =
-            [Content.group Simulants.Default.Group.Name []
+            [Content.group Simulants.Field.Scene.Group.Name []
                 [Content.skyBox Gen.name
                     [Entity.CubeMap == Assets.Default.SkyBoxMap]
                  Content.entity<CharacterDispatcher> Gen.name

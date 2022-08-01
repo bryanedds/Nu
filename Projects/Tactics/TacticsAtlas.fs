@@ -14,12 +14,13 @@ type AtlasState =
 [<RequireQualifiedAccess>]
 module Atlas =
 
-    type Atlas =
+    type [<ReferenceEquality; NoComparison>] Atlas =
         private
             { AtlasState_ : AtlasState
               SaveSlot_ : SaveSlot
               FieldOpt_ : Field option }
 
+        (* Local Properties *)
         member this.AtlasState = this.AtlasState_
         member this.SaveSlot = this.SaveSlot_
         member this.FieldOpt = this.FieldOpt_
@@ -35,6 +36,9 @@ module Atlas =
 
     let tryLoad saveSlot world =
         None
+
+    let empty =
+        { AtlasState_ = Quitting; SaveSlot_ = Slot1; FieldOpt_ = None }
 
     let initial saveSlot =
         { AtlasState_ = Playing; SaveSlot_ = saveSlot; FieldOpt_ = None }
