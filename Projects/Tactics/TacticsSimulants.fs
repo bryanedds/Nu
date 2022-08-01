@@ -1,7 +1,7 @@
 ﻿// Nu Game Engine.
 // Copyright (C) Bryan Edds, 2013-2020.
 
-namespace OmniBlade
+namespace Tactics
 open Prime
 open Nu
 
@@ -68,6 +68,18 @@ module Simulants =
             let Back = Group / "Back"
 
     [<RequireQualifiedAccess>]
+    module Atlas =
+
+        let Screen = Screen "Atlas"
+
+        [<RequireQualifiedAccess>]
+        module Scene =
+
+            let Group = Screen / "Scene"
+            let Feeler = Group / "Feeler"
+            let Avatar = Group / "Avatar"
+
+    [<RequireQualifiedAccess>]
     module Field =
 
         let Screen = Screen "Field"
@@ -77,16 +89,3 @@ module Simulants =
 
             let Group = Screen / "Scene"
             let Feeler = Group / "Feeler"
-            let Avatar = Group / "Avatar"
-            let TileMap = Group / "TileMap"
-
-    [<RequireQualifiedAccess>]
-    module Battle =
-
-        let Screen = Screen "Battle"
-
-        [<RequireQualifiedAccess>]
-        module Scene =
-
-            let Group = Screen / "Scene"
-            let Ride = Group / "Ride"
