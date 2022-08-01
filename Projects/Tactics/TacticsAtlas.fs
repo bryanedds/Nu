@@ -43,4 +43,7 @@ module Atlas =
     let initial saveSlot =
         { AtlasState_ = Playing; SaveSlot_ = saveSlot; FieldOpt_ = None }
 
+    let debug (world : World) =
+        { AtlasState_ = Playing; SaveSlot_ = Slot1; FieldOpt_ = Some (Field.make world.UpdateTime FieldScript.empty (asset "Field" "Field")) }
+
 type Atlas = Atlas.Atlas
