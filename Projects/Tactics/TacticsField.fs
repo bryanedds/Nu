@@ -39,6 +39,7 @@ type FieldScript =
     | FieldToNarrative
     | FieldCondition of FieldScript * FieldScript
     | FieldScripts of FieldScript list
+    static member empty = FieldScripts []
 
 type [<NoEquality; NoComparison>] FieldMetadata =
     { FieldVertexMap : Map<Vector2i, Vector3 array>
