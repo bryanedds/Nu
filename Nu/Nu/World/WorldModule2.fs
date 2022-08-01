@@ -798,7 +798,7 @@ module WorldModule2 =
             UpdateEntitiesTimer.Start ()
             let world =
                 Seq.fold (fun world (entity : Entity) ->
-                    if World.isAdvancing world || entity.GetAlwaysUpdate world
+                    if World.getAdvancing world || entity.GetAlwaysUpdate world
                     then World.updateEntity entity world
                     else world)
                     world
@@ -847,7 +847,7 @@ module WorldModule2 =
             PostUpdateEntitiesTimer.Start ()
             let world =
                 Seq.fold (fun world (entity : Entity) ->
-                    if World.isAdvancing world || entity.GetAlwaysUpdate world
+                    if World.getAdvancing world || entity.GetAlwaysUpdate world
                     then World.postUpdateEntity entity world
                     else world)
                     world

@@ -507,7 +507,7 @@ module BattleDispatcher =
 
                 // update
                 let (signals, battle) = 
-                    if World.isAdvancing world
+                    if World.getAdvancing world
                     then Battle.update (World.getUpdateTime world) battle
                     else just battle
 

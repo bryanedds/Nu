@@ -276,11 +276,11 @@ module AmbientState =
         { state with AmbientState.UpdateRate = updateRate }
 
     /// Check that update rate is non-zero.
-    let isAdvancing state =
+    let getAdvancing state =
         getUpdateRate state <> 0L
 
     /// Check that update rate is zero.
-    let isHalted state =
+    let getHalted state =
         getUpdateRate state = 0L
 
     /// Get the update time.

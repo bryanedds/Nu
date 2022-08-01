@@ -165,8 +165,7 @@ module OmniBlade =
                 // fin
                 just world
 
-            | Exit ->
-                just (World.exit world)
+            | Exit -> just (World.exit world)
 
         override this.Content (_, _) =
 

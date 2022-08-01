@@ -209,7 +209,7 @@ module Gaia =
         refreshHierarchyTreeView form world
 
     let private canEditWithMouse (form : GaiaForm) world =
-        World.isAdvancing world &&
+        World.getAdvancing world &&
         not form.editWhileInteractiveCheckBox.Checked
 
     let private tryMousePick mousePosition (form : GaiaForm) world =
@@ -259,7 +259,7 @@ module Gaia =
             (Cascade, world)
 
     let private handleNuMouseRightDown (form : GaiaForm) (_ : Event<MouseButtonData, Game>) world =
-        let handled = if World.isAdvancing world then Cascade else Resolve
+        let handled = if World.getAdvancing world then Cascade else Resolve
         let mousePosition = World.getMousePosition world
         let (_, world) = tryMousePick mousePosition form world
         let world = updateEditorState (fun editorState -> { editorState with RightClickPosition = mousePosition }) world
@@ -267,7 +267,7 @@ module Gaia =
 
     let private handleNuEntityDragBegin (form : GaiaForm) (_ : Event<MouseButtonData, Game>) world =
         if not (canEditWithMouse form world) then
-            let handled = if World.isAdvancing world then Cascade else Resolve
+            let handled = if World.getAdvancing world then Cascade else Resolve
             let mousePosition = World.getMousePosition world
             match tryMousePick mousePosition form world with
             | (Some (_, entity), world) ->
@@ -301,7 +301,7 @@ module Gaia =
     let private handleNuEntityDragEnd (form : GaiaForm) (_ : Event<MouseButtonData, Game>) world =
         if canEditWithMouse form world then (Cascade, world)
         else
-            let handled = if World.isAdvancing world then Cascade else Resolve
+            let handled = if World.getAdvancing world then Cascade else Resolve
             match (getEditorState world).DragEntityState with
             | DragEntityPosition2d _
             | DragEntityRotation2d _
