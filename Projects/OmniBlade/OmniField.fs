@@ -392,11 +392,11 @@ module Field =
           BattleOpt_ = None
           FieldSongTimeOpt_ = None }
 
-    let debug world =
-        make DebugField Slot1 Rand.DefaultSeedState Avatar.empty (Map.singleton 0 (Teammate.make 3 0 Jinn)) Advents.initial Inventory.initial world
-
     let initial saveSlot randSeedState world =
         make TombOuter saveSlot randSeedState Avatar.initial (Map.singleton 0 (Teammate.make 3 0 Jinn)) Advents.initial Inventory.initial world
+
+    let debug world =
+        make DebugField Slot1 Rand.DefaultSeedState Avatar.empty (Map.singleton 0 (Teammate.make 3 0 Jinn)) Advents.initial Inventory.initial world
 
     let save field =
         let saveFilePath =
