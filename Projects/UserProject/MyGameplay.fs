@@ -25,7 +25,7 @@ module MyGameplay =
         | UpdateEye
         | Nop
 
-    // this extends the Screen API to expose the above model.
+    // this extends the Screen API to expose the above Gameplay model.
     type Screen with
         member this.GetGameplay world = this.GetModelGeneric<Gameplay> world
         member this.SetGameplay value world = this.SetModelGeneric<Gameplay> value world
@@ -79,9 +79,9 @@ module MyGameplay =
                     let world = sphereRight.SetRotation (sphereRight.GetRotation world * Quaternion.CreateFromAxisAngle (v3Up, 0.0025f)) world
                     world
                 | UpdateEye ->
-                    if World.getUpdateRate world <> 0L then
+                    if World.getAdvancing world then
                         let characterCenter = Simulants.Gameplay.Player.Character.GetCenter world
-                        Simulants.Game.SetEyePosition2d characterCenter.V2 world
+                        World.setEyePosition2d characterCenter.V2 world
                     else world
                 | Nop -> world
             just world
