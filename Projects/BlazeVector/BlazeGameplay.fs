@@ -18,7 +18,7 @@ module Bullet =
         static let handleBodyCollision evt world =
             let bullet = evt.Subscriber : Entity
             let world =
-                if World.isAdvancing world
+                if World.getAdvancing world
                 then World.destroyEntity bullet world
                 else world
             (Cascade, world)
@@ -76,7 +76,7 @@ module Enemy =
         static let handleBodyCollision evt world =
             let enemy = evt.Subscriber : Entity
             let world =
-                if World.isAdvancing world then
+                if World.getAdvancing world then
                     let collidee = evt.Data.BodyCollidee.Entity
                     let bullet = collidee.Is<BulletDispatcher> world
                     if bullet then
@@ -149,7 +149,7 @@ module Player =
         static let handleSpawnBullet evt world =
             let player = evt.Subscriber : Entity
             let world =
-                if World.isAdvancing world then
+                if World.getAdvancing world then
                     if not (player.HasFallen world) then
                         if World.getUpdateTime world % 5L = 0L
                         then shootBullet player world

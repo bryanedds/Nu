@@ -53,7 +53,7 @@ module WorldBindings =
         "getViewBounds2d getPlayBounds2d isBoundsInView2d getPlayBounds3d " +
         "isBoundsInView3d isBoundsInPlay3d reloadSymbols getImperative " +
         "getStandAlone getCollectionConfig getLiveness getUpdateRate " +
-        "setUpdateRate isAdvancing isHalted getUpdateTime " +
+        "setUpdateRate getAdvancing getHalted getUpdateTime " +
         "getClockDelta exit tryGetTextureSize getTextureSize " +
         "tryGetTextureSizeF getTextureSizeF tryGetWindowFlags tryGetWindowMinimized " +
         "tryGetWindowMaximized tryGetWindowFullScreen trySetWindowFullScreen tryGetWindowSize " +
@@ -2575,26 +2575,26 @@ module WorldBindings =
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'setUpdateRate' due to: " + scstring exn, ValueNone)
             struct (violation, World.choose oldWorld)
 
-    let isAdvancing world =
+    let getAdvancing world =
         let oldWorld = world
         try
-            let result = World.isAdvancing world
+            let result = World.getAdvancing world
             let value = result
             let value = ScriptingSystem.tryImport typeof<Boolean> value world |> Option.get
             struct (value, world)
         with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'isAdvancing' due to: " + scstring exn, ValueNone)
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getAdvancing' due to: " + scstring exn, ValueNone)
             struct (violation, World.choose oldWorld)
 
-    let isHalted world =
+    let getHalted world =
         let oldWorld = world
         try
-            let result = World.isHalted world
+            let result = World.getHalted world
             let value = result
             let value = ScriptingSystem.tryImport typeof<Boolean> value world |> Option.get
             struct (value, world)
         with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'isHalted' due to: " + scstring exn, ValueNone)
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getHalted' due to: " + scstring exn, ValueNone)
             struct (violation, World.choose oldWorld)
 
     let getUpdateTime world =
@@ -4367,7 +4367,7 @@ module WorldBindings =
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [||] -> isAdvancing world
+            | [||] -> getAdvancing world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
                 struct (violation, world)
@@ -4378,7 +4378,7 @@ module WorldBindings =
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [||] -> isHalted world
+            | [||] -> getHalted world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
                 struct (violation, world)
@@ -4721,8 +4721,8 @@ module WorldBindings =
              ("getLiveness", { Fn = evalGetLivenessBinding; Pars = [||]; DocOpt = None })
              ("getUpdateRate", { Fn = evalGetUpdateRateBinding; Pars = [||]; DocOpt = None })
              ("setUpdateRate", { Fn = evalSetUpdateRateBinding; Pars = [|"updateRate"|]; DocOpt = None })
-             ("isAdvancing", { Fn = evalIsAdvancingBinding; Pars = [||]; DocOpt = None })
-             ("isHalted", { Fn = evalIsHaltedBinding; Pars = [||]; DocOpt = None })
+             ("getAdvancing", { Fn = evalIsAdvancingBinding; Pars = [||]; DocOpt = None })
+             ("getHalted", { Fn = evalIsHaltedBinding; Pars = [||]; DocOpt = None })
              ("getUpdateTime", { Fn = evalGetUpdateTimeBinding; Pars = [||]; DocOpt = None })
              ("getClockDelta", { Fn = evalGetClockDeltaBinding; Pars = [||]; DocOpt = None })
              ("exit", { Fn = evalExitBinding; Pars = [||]; DocOpt = None })

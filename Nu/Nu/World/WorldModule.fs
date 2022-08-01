@@ -284,13 +284,13 @@ module WorldModule =
 
         /// Check that the update rate is non-zero.
         [<FunctionBinding>]
-        static member isAdvancing world =
-            World.getAmbientStateBy AmbientState.isAdvancing world
+        static member getAdvancing world =
+            World.getAmbientStateBy AmbientState.getAdvancing world
 
         /// Check that the update rate is zero.
         [<FunctionBinding>]
-        static member isHalted world =
-            World.getAmbientStateBy AmbientState.isHalted world
+        static member getHalted world =
+            World.getAmbientStateBy AmbientState.getHalted world
 
         /// Get the world's update time.
         [<FunctionBinding>]

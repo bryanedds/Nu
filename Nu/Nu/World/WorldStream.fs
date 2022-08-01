@@ -14,23 +14,27 @@ module Stream =
     let [<DebuggerHidden; DebuggerStepThrough>] noMoreThanOncePerUpdate (stream : Stream<'a, World>) =
         World.noMoreThanOncePerUpdate stream
 
-    /// Take events from a stream only while World.isAdvancing evaluates to true.
-    let [<DebuggerHidden; DebuggerStepThrough>] isAdvancing stream =
-        Stream.filterEvent (fun _ -> World.isAdvancing) stream
+    /// Take events from a stream only when World.getAdvancing evaluates to true.
+    let [<DebuggerHidden; DebuggerStepThrough>] whenAdvancing stream =
+        Stream.filterEvent (fun _ -> World.getAdvancing) stream
+
+    /// Take events from a stream only when World.getHalted evaluates to true.
+    let [<DebuggerHidden; DebuggerStepThrough>] whenHalted stream =
+        Stream.filterEvent (fun _ -> World.getHalted) stream
 
     /// Take events from a stream only when the simulant is contained by, or is the same as,
     /// the currently selected screen. Game is always considered 'selected' as well.
-    let [<DebuggerHidden; DebuggerStepThrough>] isSelected simulant stream =
+    let [<DebuggerHidden; DebuggerStepThrough>] whenSelected simulant stream =
         Stream.filterEvent (fun _ -> World.isSelected simulant) stream
 
     /// Take events from a stream only when the currently selected screen is idling (that
     /// is, there is no screen transition in progress).
-    let [<DebuggerHidden; DebuggerStepThrough>] isSelectedScreenIdling stream =
+    let [<DebuggerHidden; DebuggerStepThrough>] whenSelectedScreenIdling stream =
         Stream.filterEvent (fun _ -> World.isSelectedScreenIdling) stream
     
     /// Take events from a stream only when the currently selected screen is transitioning
     /// (that is, there is a screen transition in progress).
-    let [<DebuggerHidden; DebuggerStepThrough>] isSelectedScreenTransitioning stream =
+    let [<DebuggerHidden; DebuggerStepThrough>] whenSelectedScreenTransitioning stream =
         Stream.filterEvent (fun _ -> World.isSelectedScreenTransitioning) stream
 
 [<AutoOpen>]
