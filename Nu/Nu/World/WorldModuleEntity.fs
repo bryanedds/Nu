@@ -554,8 +554,8 @@ module WorldModuleEntity =
                 let affineMatrixLocal = World.getEntityAffineMatrixLocal mounter world
                 let affineMatrix = affineMatrixLocal * affineMatrixWorld
                 let position = affineMatrix.Translation
-                let rotation = affineMatrix.Rotation ()
-                let scale = affineMatrix.Scale ()
+                let rotation = affineMatrix.Rotation
+                let scale = affineMatrix.Scale
                 let mutable transform = mounterState.Transform
                 transform.Position <- position
                 transform.Rotation <- rotation

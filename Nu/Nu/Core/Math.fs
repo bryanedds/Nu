@@ -925,6 +925,17 @@ module Matrix4x4 =
 
     type Matrix4x4 with
 
+        /// The scale extracted from an affine matrix.
+        member inline this.Scale =
+            Vector3
+                (Vector3(this.M11, this.M21, this.M31).Magnitude,
+                 Vector3(this.M12, this.M22, this.M32).Magnitude,
+                 Vector3(this.M13, this.M23, this.M33).Magnitude)
+
+        /// The rotation extracted from an affine matrix.
+        member inline this.Rotation =
+            Quaternion.CreateFromRotationMatrix this
+
         /// Convert a Matrix4x4 to an array.
         member this.ToArray () =
             [|this.M11; this.M12; this.M13; this.M14

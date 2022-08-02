@@ -529,25 +529,6 @@ namespace Nu
         }
 
         /// <summary>
-        /// Extract scale from a matrix.
-        /// </summary>
-        public static Vector3 Scale(in this Matrix4x4 matrix)
-		{
-            return new Vector3(
-                new Vector3(matrix.M11, matrix.M21, matrix.M31).Length(),
-                new Vector3(matrix.M12, matrix.M22, matrix.M32).Length(),
-                new Vector3(matrix.M13, matrix.M23, matrix.M33).Length());
-        }
-
-        /// <summary>
-        /// Extract rotation from a matrix.
-        /// </summary>
-        public static Quaternion Rotation(in this Matrix4x4 matrix)
-        {
-            return Quaternion.CreateFromRotationMatrix(matrix);
-        }
-
-        /// <summary>
         /// Check if this <see cref="Plane3"/> intersects a <see cref="Box3"/>.
         /// </summary>
         /// <param name="box">The <see cref="Box3"/> to test for intersection.</param>
