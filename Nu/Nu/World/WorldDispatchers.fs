@@ -1884,7 +1884,7 @@ module ButtonDispatcherModule =
         override this.Actualize (entity, world) =
             if entity.GetVisible world then
                 let mutable transform = entity.GetTransform world
-                let mutable spriteTransform = Transform.makePerimeter transform.Perimeter transform.Offset transform.Elevation transform.Absolute
+                let mutable spriteTransform = Transform.makePerimeter transform.Perimeter transform.Offset transform.Elevation transform.Absolute false
                 let spriteImage = if entity.GetDown world then entity.GetDownImage world else entity.GetUpImage world
                 World.enqueueRenderLayeredMessage2d
                     { Elevation = spriteTransform.Elevation
@@ -1924,7 +1924,7 @@ module LabelDispatcherModule =
         override this.Actualize (entity, world) =
             if entity.GetVisible world then
                 let mutable transform = entity.GetTransform world
-                let mutable spriteTransform = Transform.makePerimeter transform.Perimeter transform.Offset transform.Elevation transform.Absolute
+                let mutable spriteTransform = Transform.makePerimeter transform.Perimeter transform.Offset transform.Elevation transform.Absolute false
                 let spriteImage = entity.GetLabelImage world
                 World.enqueueRenderLayeredMessage2d
                     { Elevation = spriteTransform.Elevation
@@ -1970,7 +1970,7 @@ module TextDispatcherModule =
                 match entity.GetBackgroundImageOpt world with
                 | Some spriteImage ->
                     let mutable transform = entity.GetTransform world
-                    let mutable spriteTransform = Transform.makePerimeter transform.Perimeter transform.Offset transform.Elevation transform.Absolute
+                    let mutable spriteTransform = Transform.makePerimeter transform.Perimeter transform.Offset transform.Elevation transform.Absolute false
                     World.enqueueRenderLayeredMessage2d
                         { Elevation = spriteTransform.Elevation
                           Horizon = spriteTransform.Position.Y
@@ -2101,7 +2101,7 @@ module ToggleButtonDispatcherModule =
         override this.Actualize (entity, world) =
             if entity.GetVisible world then
                 let mutable transform = entity.GetTransform world
-                let mutable spriteTransform = Transform.makePerimeter transform.Perimeter transform.Offset transform.Elevation transform.Absolute
+                let mutable spriteTransform = Transform.makePerimeter transform.Perimeter transform.Offset transform.Elevation transform.Absolute false
                 let spriteImage =
                     if entity.GetToggled world || entity.GetPressed world
                     then entity.GetToggledImage world
@@ -2227,7 +2227,7 @@ module RadioButtonDispatcherModule =
         override this.Actualize (entity, world) =
             if entity.GetVisible world then
                 let mutable transform = entity.GetTransform world
-                let mutable spriteTransform = Transform.makePerimeter transform.Perimeter transform.Offset transform.Elevation transform.Absolute
+                let mutable spriteTransform = Transform.makePerimeter transform.Perimeter transform.Offset transform.Elevation transform.Absolute false
                 let spriteImage =
                     if entity.GetDialed world || entity.GetPressed world
                     then entity.GetDialedImage world

@@ -304,7 +304,7 @@ type [<NoEquality; NoComparison>] Transform =
         transform
 
     /// Make a transform based on a perimeter.
-    static member makePerimeter (perimeter : Box3) offset elevation absolute =
+    static member makePerimeter (perimeter : Box3) offset elevation absolute centered =
         let mutable transform = Unchecked.defaultof<Transform>
         transform.Flags_ <- FlagsDefault ||| if absolute then AbsoluteMask else 0u
         transform.Position_ <- perimeter.Position
@@ -314,10 +314,10 @@ type [<NoEquality; NoComparison>] Transform =
         transform.Size_ <- perimeter.Size
         transform.Angles_ <- v3Zero
         transform.Elevation_ <- elevation
-        transform.Centered <- false
+        transform.Centered <- centered
         transform
 
-    /// Make a transform based human-intuited values.
+    /// Make a transform based on human-intuited values.
     static member makeIntuitive position scale offset size angles elevation absolute centered =
         let mutable transform = Transform.makeDefault centered
         transform.Flags_ <- FlagsDefault ||| if absolute then AbsoluteMask else 0u
