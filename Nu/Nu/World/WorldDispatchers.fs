@@ -2790,7 +2790,7 @@ module StaticSceneDispatcherModule =
                             let mutable rotation = transform
                             rotation.Translation <- v3Zero
                             let rotation = Quaternion.CreateFromRotationMatrix rotation
-                            let scale = transform.Scale ()
+                            let scale = transform.Scale
                             let world = child.SetPositionLocal position world
                             let world = child.SetRotationLocal rotation world
                             let world = child.SetScaleLocal scale world
@@ -2810,7 +2810,7 @@ module StaticSceneDispatcherModule =
                             let mutable rotation = transform
                             rotation.Translation <- v3Zero
                             let rotation = Quaternion.CreateFromRotationMatrix rotation
-                            let scale = transform.Scale ()
+                            let scale = transform.Scale
                             let world = child.SetPositionLocal position world
                             let world = child.SetRotationLocal rotation world
                             let world = child.SetScaleLocal scale world
