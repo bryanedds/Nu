@@ -165,7 +165,7 @@ module PhysicallyBased =
           PhysicallyBasedDeferred2Shader : uint }
 
     /// Attempt to create physically-based from an assimp mesh.
-    let TryCreatePhysicallyBasedMesh (unitType, mesh : Assimp.Mesh) =
+    let TryCreatePhysicallyBasedMesh (mesh : Assimp.Mesh) =
 
         // ensure required data is available
         if  mesh.HasVertices &&
@@ -176,13 +176,12 @@ module PhysicallyBased =
             if mesh.Vertices.Count = mesh.Normals.Count && mesh.Vertices.Count = mesh.TextureCoordinateChannels.[0].Count then
 
                 // populate vertex data and bounds
-                let scalar = match unitType with UnitMeters -> 1.0f | UnitCentimeters -> 0.01f
                 let vertexData = Array.zeroCreate<single> (mesh.Vertices.Count * 8)
                 let mutable positionMin = v3Zero
                 let mutable positionMax = v3Zero
                 for i in 0 .. dec mesh.Vertices.Count do
                     let v = i * 8
-                    let position = mesh.Vertices.[i] * scalar
+                    let position = mesh.Vertices.[i]
                     let texCoords = mesh.TextureCoordinateChannels.[0].[i]
                     let normal = mesh.Normals.[i]
                     vertexData.[v] <- position.X
@@ -490,13 +489,13 @@ module PhysicallyBased =
         geometry
 
     /// Attempt to create physically-based geometry from an assimp mesh.
-    let TryCreatePhysicallyBasedGeometry (renderable, unitType, mesh : Assimp.Mesh) =
+    let TryCreatePhysicallyBasedGeometry (renderable, mesh : Assimp.Mesh) =
         let meshOpt =
 #if DEBUG_RENDERING_CUBE
             ignore<Assimp.Mesh> mesh
             Right (CreatePhysicallyBasedCubeMesh ())
 #else
-            TryCreatePhysicallyBasedMesh (unitType, mesh)
+            TryCreatePhysicallyBasedMesh mesh
 #endif
         match meshOpt with
         | Right (vertexData, indexData, bounds) -> Right (CreatePhysicallyBasedGeometry (renderable, vertexData, indexData, bounds))
@@ -601,12 +600,12 @@ module PhysicallyBased =
         | None -> Right materials
 
     /// Attempt to create physically-based geometries from an assimp scene.
-    let TryCreatePhysicallyBasedGeometries (renderable, unitType, filePath, scene : Assimp.Scene) =
+    let TryCreatePhysicallyBasedGeometries (renderable, filePath, scene : Assimp.Scene) =
         let mutable errorOpt = None
         let geometries = SegmentedList.make ()
         for mesh in scene.Meshes do
             if Option.isNone errorOpt then
-                match TryCreatePhysicallyBasedGeometry (renderable, unitType, mesh) with
+                match TryCreatePhysicallyBasedGeometry (renderable, mesh) with
                 | Right geometry -> SegmentedList.add geometry geometries
                 | Left error -> errorOpt <- Some ("Could not load geometry for mesh in file name '" + filePath + "' due to: " + error)
         match errorOpt with
@@ -614,14 +613,14 @@ module PhysicallyBased =
         | None -> Right geometries
 
     /// Attempt to create physically-based model from a model file with assimp.
-    let TryCreatePhysicallyBasedStaticModel (renderable, unitType, filePath, defaultMaterial, textureMemo, assimp : Assimp.AssimpContext) =
+    let TryCreatePhysicallyBasedStaticModel (renderable, filePath, defaultMaterial, textureMemo, assimp : Assimp.AssimpContext) =
 
         // attempt to import from assimp scene
         try let scene = assimp.ImportFile (filePath, Constants.Assimp.PostProcessSteps)
             let dirPath = Path.GetDirectoryName filePath
             match TryCreatePhysicallyBasedMaterials (renderable, dirPath, defaultMaterial, textureMemo, scene) with
             | Right materials ->
-                match TryCreatePhysicallyBasedGeometries (renderable, unitType, filePath, scene) with
+                match TryCreatePhysicallyBasedGeometries (renderable, filePath, scene) with
                 | Right geometries ->
 
                     // collect light nodes
@@ -639,7 +638,7 @@ module PhysicallyBased =
                     let surfaces = SegmentedList.make ()
                     let mutable bounds = box3Zero
                     let hierarchy =
-                        scene.RootNode.Map (unitType, [||], m4Identity, fun node names surfaceMatrix ->
+                        scene.RootNode.Map ([||], m4Identity, fun node names surfaceMatrix ->
                             seq {
 
                                 // collect node
@@ -651,7 +650,7 @@ module PhysicallyBased =
                                     let (light, lightNode) = lightNodes.[i]
                                     if lightNode = node then
                                         let names = Array.append names [|"Light" + if i > 0 then string i else ""|]
-                                        let lightMatrix = node.ImportMatrix (unitType, node.TransformWorld)
+                                        let lightMatrix = node.ImportMatrix node.TransformWorld
                                         let color = color light.ColorDiffuse.R light.ColorDiffuse.G light.ColorDiffuse.B 1.0f
                                         match light.LightType with
                                         | _ -> // just use point light for all lights right now
