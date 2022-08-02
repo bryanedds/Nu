@@ -260,17 +260,9 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
 
     static member private tryLoadStaticModelAsset packageState (asset : obj Asset) renderer =
         GlRenderer3d.invalidateCaches renderer
-        let unitTypeOpt =
-            match Path.GetExtension asset.FilePath with
-            | ".fbx" -> Some UnitCentimeters
-            | ".obj" -> Some UnitMeters
-            | _ -> None
-        match unitTypeOpt with
-        | Some unitType ->
-            match OpenGL.PhysicallyBased.TryCreatePhysicallyBasedStaticModel (true, unitType, asset.FilePath, renderer.RenderPhysicallyBasedMaterial, packageState.TextureMemo, renderer.RenderAssimp) with
-            | Right staticModel -> Some staticModel
-            | Left error -> Log.debug ("Could not load static model '" + asset.FilePath + "' due to: " + error); None
-        | None -> None
+        match OpenGL.PhysicallyBased.TryCreatePhysicallyBasedStaticModel (true, asset.FilePath, renderer.RenderPhysicallyBasedMaterial, packageState.TextureMemo, renderer.RenderAssimp) with
+        | Right staticModel -> Some staticModel
+        | Left error -> Log.debug ("Could not load static model '" + asset.FilePath + "' due to: " + error); None
 
     static member private tryLoadRenderAsset packageState (asset : obj Asset) renderer =
         GlRenderer3d.invalidateCaches renderer
