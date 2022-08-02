@@ -7,7 +7,6 @@ open System.Collections.Generic
 open System.IO
 open System.Numerics
 open System.Threading
-open System.Threading.Tasks
 open FSharpx.Collections
 open SDL2
 open Prime
