@@ -1092,15 +1092,6 @@ module GameDispatcherModule =
                 Signal.processSignal dispatcher.Message dispatcher.Command (game.ModelGeneric<'model> ()) signal game world
             | _ -> Log.info "Failed to send signal to game."; world
 
-        /// Send a signal to a simulant.
-        static member signal<'model, 'message, 'command> signal (simulant : Simulant) world =
-            match simulant with
-            | :? Entity as entity -> World.signalEntity<'model, 'message, 'command> signal entity world
-            | :? Group as group -> World.signalGroup<'model, 'message, 'command> signal group world
-            | :? Screen as screen -> World.signalScreen<'model, 'message, 'command> signal screen world
-            | :? Game as game -> World.signalGame<'model, 'message, 'command> signal game world
-            | _ -> failwithumf ()
-
     and Game with
 
         member this.UpdateModel<'model> updater world =
