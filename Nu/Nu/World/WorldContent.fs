@@ -88,14 +88,14 @@ module Content =
         groups lens (fun a ->
             let (key, value) = try (getTag a, a) with _ -> (-1, a)
             Map.singleton key value)
-            (fun _ -> mapper)
+            (constant mapper)
 
     /// Describe one of multiple groups.
     let groupOf lens unwrap mapper =
         groupsPlus lens unwrap (fun a ->
             let (key, value) = try (getTag a, a) with _ -> (-1, a)
             Map.singleton key value)
-            (fun _ -> mapper)
+            (constant mapper)
 
     /// Describe a group to be conditionally instantiated from a lens.
     let groupWhen lens predicate (mapper : Lens<'a, World> -> GroupContent) =
@@ -190,14 +190,14 @@ module Content =
         entities lens (fun a ->
             let (key, value) = try (getTag a, a) with _ -> (-1, a)
             Map.singleton key value)
-            (fun _ -> mapper)
+            (constant mapper)
 
     /// Describe one of multiple entities.
     let entityOf lens unwrap mapper =
         entitiesPlus lens unwrap (fun a ->
             let (key, value) = try (getTag a, a) with _ -> (-1, a)
             Map.singleton key value)
-            (fun _ -> mapper)
+            (constant mapper)
 
     /// Describe an entity to be conditionally instantiated from a lens.
     let entityIf<'d, 'a when 'd :> EntityDispatcher> entityName (lens : Lens<'a, World>) predicate initializers =
