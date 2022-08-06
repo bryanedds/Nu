@@ -310,7 +310,7 @@ module WorldGroupModule =
 
         /// Turn a groups lens into a series of live groups.
         static member expandGroups (lens : Lens<obj, World>) sieve unfold mapper origin screen world =
-            let mapperGeneralized = fun i a w -> mapper i a w :> SimulantContent
+            let mapperGeneralized = fun i a -> mapper i a :> SimulantContent
             World.expandSimulants lens sieve unfold mapperGeneralized origin screen screen world
 
         /// Turn group content into a live group.

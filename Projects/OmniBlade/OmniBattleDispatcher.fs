@@ -1159,11 +1159,11 @@ module BattleDispatcher =
 
                  // characters
                  Content.entities battle
-                    (fun battle _ -> Battle.getCharacters battle)
-                    (fun index character _ -> Content.entity<CharacterDispatcher> (CharacterIndex.toEntityName index) [Entity.Character <== character])]
+                    (fun battle -> Battle.getCharacters battle)
+                    (fun index character -> Content.entity<CharacterDispatcher> (CharacterIndex.toEntityName index) [Entity.Character <== character])]
 
              // input groups
-             Content.groups battle (fun battle _ -> if battle.Running then Battle.getAllies battle else Map.empty) $ fun index ally _ ->
+             Content.groups battle (fun battle -> if battle.Running then Battle.getAllies battle else Map.empty) $ fun index ally ->
 
                 // input group
                 let inputName = CharacterIndex.toEntityName index

@@ -33,36 +33,36 @@ module Content =
     /// Describe groups to be instantiated from a lens, caching what is sieved from the lens for greater efficiency.
     let groupsFast
         (lens : Lens<'a, World>)
-        (sieve : 'a -> World -> 'b)
-        (unfold : 'b -> World -> Map<'k, 'c>)
-        (mapper : 'k -> Lens<'c, World> -> World -> GroupContent) =
+        (sieve : 'a -> 'b)
+        (unfold : 'b -> Map<'k, 'c>)
+        (mapper : 'k -> Lens<'c, World> -> GroupContent) =
         let lens = Lens.map box lens
-        let sieve = fun (a : obj) w -> sieve (a :?> 'a) w :> obj
-        let unfold = fun (b : obj) w -> MapGeneralized.make (unfold (b :?> 'b) w)
-        let mapper = fun (key : obj) (c : obj) world -> mapper (key :?> 'k) (c :?> Lens<obj, World> |> Lens.map cast<'c>) world
+        let sieve = fun (a : obj) -> sieve (a :?> 'a) :> obj
+        let unfold = fun (b : obj) -> MapGeneralized.make (unfold (b :?> 'b))
+        let mapper = fun (key : obj) (c : obj) -> mapper (key :?> 'k) (c :?> Lens<obj, World> |> Lens.map cast<'c>)
         GroupsFromStream (lens, sieve, unfold, mapper)
         
     /// Describe groups to be instantiated from a lens.
     let groups
         (lens : Lens<'a, World>)
-        (unfold : 'a -> World -> Map<'k, 'b>)
-        (mapper : 'k -> Lens<'b, World> -> World -> GroupContent) =
-        groupsFast lens unfold constant mapper
+        (unfold : 'a -> Map<'k, 'b>)
+        (mapper : 'k -> Lens<'b, World> -> GroupContent) =
+        groupsFast lens unfold id mapper
 
     /// Describe a group to be optionally instantiated from a lens.
-    let groupIf lens predicate (mapper : Lens<'a, World> -> World -> GroupContent) =
-        let mapper = fun _ a world -> mapper a world
-        groups lens (fun a _ -> if predicate a then Map.singleton 0 a else Map.empty) mapper
+    let groupIf lens predicate (mapper : Lens<'a, World> -> GroupContent) =
+        let mapper = fun _ a -> mapper a
+        groups lens (fun a -> if predicate a then Map.singleton 0 a else Map.empty) mapper
 
     /// Describe a group to be instantiated when a screen is selected.
-    let groupIfScreenSelected (screen : Screen) (mapper : Lens<unit, World> -> World -> GroupContent) =
-        let mapper = (fun lens world -> mapper (Lens.map (constant ()) lens) world)
+    let groupIfScreenSelected (screen : Screen) (mapper : Lens<unit, World> -> GroupContent) =
+        let mapper = (fun lens -> mapper (Lens.map (constant ()) lens))
         groupIf Simulants.Game.SelectedScreenOpt (fun screenOpt -> screenOpt = Some screen) mapper
 
     /// Describe a group to be optionally instantiated from a lens.
-    let groupOpt (lens : Lens<'a option, World>) (mapper : Lens<'a, World> -> World -> GroupContent) =
-        let (sieve : 'a option -> World -> Map<int, 'a>) = fun aOpt _ -> match aOpt with Some a -> Map.singleton 0 a | None -> Map.empty
-        let mapper = fun _ b w -> mapper b w
+    let groupOpt (lens : Lens<'a option, World>) (mapper : Lens<'a, World> -> GroupContent) =
+        let (sieve : 'a option -> Map<int, 'a>) = fun aOpt -> match aOpt with Some a -> Map.singleton 0 a | None -> Map.empty
+        let mapper = fun _ b -> mapper b
         groups lens sieve mapper
 
     /// Describe groups to be instantiated from a map lens.
@@ -70,19 +70,19 @@ module Content =
     /// to cache map creation where possible.
     let groupMap
         (lens : Lens<Map<'k, 'v>, World>)
-        (mapper : 'k -> Lens<'v, World> -> World -> GroupContent) =
-        groups lens constant mapper
+        (mapper : 'k -> Lens<'v, World> -> GroupContent) =
+        groups lens id mapper
 
     /// Describe groups to be instantiated from a block lens.
     let groupBlock
         (lens : Lens<'a ImmutableArray, World>)
-        (mapper : int -> Lens<'a, World> -> World -> GroupContent) =
+        (mapper : int -> Lens<'a, World> -> GroupContent) =
         groupMap (lens --> fun a -> a |> Seq.indexed |> Map.ofSeq) mapper
 
     /// Describe groups to be instantiated from a partially-populated block lens.
     let groupOptBlock
         (lens : Lens<'a option ImmutableArray, World>)
-        (mapper : int -> Lens<'a, World> -> World -> GroupContent) =
+        (mapper : int -> Lens<'a, World> -> GroupContent) =
         groupMap (lens --> fun a -> a |> Seq.indexed |> Seq.filter (snd >> Option.isSome) |> Seq.map (fun (i, aOpt) -> (i, Option.get aOpt)) |> Map.ofSeq) mapper
 
     /// Describe a group to be loaded from a file.
@@ -96,36 +96,36 @@ module Content =
     /// Describe entities to be instantiated from a lens, caching what is sieved from the lens for greater efficiency.
     let entitiesFast
         (lens : Lens<'a, World>)
-        (sieve : 'a -> World -> 'b)
-        (unfold : 'b -> World -> Map<'k, 'c>)
-        (mapper : 'k -> Lens<'c, World> -> World -> EntityContent) =
+        (sieve : 'a -> 'b)
+        (unfold : 'b -> Map<'k, 'c>)
+        (mapper : 'k -> Lens<'c, World> -> EntityContent) =
         let lens = Lens.map box lens
-        let sieve = fun (a : obj) w -> sieve (a :?> 'a) w :> obj
-        let unfold = fun (b : obj) w -> MapGeneralized.make (unfold (b :?> 'b) w)
-        let mapper = fun (key : obj) (c : obj) world -> mapper (key :?> 'k) (c :?> Lens<obj, World> |> Lens.map cast<'c>) world
+        let sieve = fun (a : obj) -> sieve (a :?> 'a) :> obj
+        let unfold = fun (b : obj) -> MapGeneralized.make (unfold (b :?> 'b))
+        let mapper = fun (key : obj) (c : obj) -> mapper (key :?> 'k) (c :?> Lens<obj, World> |> Lens.map cast<'c>)
         EntitiesFromStream (lens, sieve, unfold, mapper)
 
     /// Describe entities to be instantiated from a lens.
     let entities
         (lens : Lens<'a, World>)
-        (unfold : 'a -> World -> Map<'k, 'b>)
-        (mapper : 'k -> Lens<'b, World> -> World -> EntityContent) =
-        entitiesFast lens unfold constant mapper
+        (unfold : 'a -> Map<'k, 'b>)
+        (mapper : 'k -> Lens<'b, World> -> EntityContent) =
+        entitiesFast lens unfold id mapper
 
     /// Describe an entity to be optionally instantiated from a lens.
     let entityIf lens predicate mapper =
-        let mapper = fun _ a world -> mapper a world
-        entities lens (fun a _ -> if predicate a then Map.singleton 0 a else Map.empty) mapper
+        let mapper = fun _ a -> mapper a
+        entities lens (fun a -> if predicate a then Map.singleton 0 a else Map.empty) mapper
 
     /// Describe an entity to be instantiated when a screen is selected.
-    let entityIfScreenSelected (screen : Screen) (mapper : Lens<unit, World> -> World -> EntityContent) =
-        let mapper = (fun lens world -> mapper (Lens.map (constant ()) lens) world)
+    let entityIfScreenSelected (screen : Screen) (mapper : Lens<unit, World> -> EntityContent) =
+        let mapper = (fun lens -> mapper (Lens.map (constant ()) lens))
         entityIf Simulants.Game.SelectedScreenOpt (fun screenOpt -> screenOpt = Some screen) mapper
 
     /// Describe an entity to be optionally instantiated from a lens.
-    let entityOpt (lens : Lens<'a option, World>) (mapper : Lens<'a, World> -> World -> EntityContent) =
-        let (sieve : 'a option -> World -> Map<int, 'a>) = fun aOpt _ -> match aOpt with Some a -> Map.singleton 0 a | None -> Map.empty
-        let mapper = fun _ b w -> mapper b w
+    let entityOpt (lens : Lens<'a option, World>) (mapper : Lens<'a, World> -> EntityContent) =
+        let (sieve : 'a option -> Map<int, 'a>) = fun aOpt -> match aOpt with Some a -> Map.singleton 0 a | None -> Map.empty
+        let mapper = fun _ b -> mapper b
         entities lens sieve mapper
 
     /// Describe entities to be instantiated from a map lens.
@@ -133,19 +133,19 @@ module Content =
     /// instead to cache map creation where possible.
     let entityMap
         (lens : Lens<Map<'k, 'v>, World>)
-        (mapper : 'k -> Lens<'v, World> -> World -> EntityContent) =
-        entities lens constant mapper
+        (mapper : 'k -> Lens<'v, World> -> EntityContent) =
+        entities lens id mapper
 
     /// Describe entities to be instantiated from a block lens.
     let entityBlock
         (lens : Lens<'a ImmutableArray, World>)
-        (mapper : int -> Lens<'a, World> -> World -> EntityContent) =
+        (mapper : int -> Lens<'a, World> -> EntityContent) =
         entityMap (lens --> fun a -> a |> Seq.indexed |> Map.ofSeq) mapper
 
     /// Describe entities to be instantiated from a block partially-populated lens.
     let entityOptBlock
         (lens : Lens<'a option ImmutableArray, World>)
-        (mapper : int -> Lens<'a, World> -> World -> EntityContent) =
+        (mapper : int -> Lens<'a, World> -> EntityContent) =
         entityMap (lens --> fun a -> a |> Seq.indexed |> Seq.filter (snd >> Option.isSome) |> Seq.map (fun (i, aOpt) -> (i, Option.get aOpt)) |> Map.ofSeq) mapper
 
     /// Describe an entity to be loaded from a file.

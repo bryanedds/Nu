@@ -1053,7 +1053,7 @@ module WorldTypes =
 
     /// Describes a content binding for Nu's optimized Elmish implementation.
     and [<NoEquality; NoComparison>] internal ContentBinding =
-        { CBMapper : IComparable -> Lens<obj, World> -> World -> SimulantContent
+        { CBMapper : IComparable -> Lens<obj, World> -> SimulantContent
           CBSource : Lens<MapGeneralized, World>
           CBOrigin : ContentOrigin
           CBOwner : Simulant

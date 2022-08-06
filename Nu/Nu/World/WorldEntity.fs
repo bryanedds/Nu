@@ -722,7 +722,7 @@ module WorldEntityModule =
 
         /// Turn an entity lens into a series of live entities.
         static member expandEntities (lens : Lens<obj, World>) sieve unfold mapper origin owner group world =
-            let mapperGeneralized = fun i a w -> mapper i a w :> SimulantContent
+            let mapperGeneralized = fun i a -> mapper i a :> SimulantContent
             World.expandSimulants lens sieve unfold mapperGeneralized origin owner group world
 
         /// Turn entity content into a live entity.

@@ -799,7 +799,7 @@ module WorldModule =
                 world removed
 
         static member internal addSynchronizedSimulants
-            (contentMapper : IComparable -> Lens<obj, World> -> World -> SimulantContent)
+            (contentMapper : IComparable -> Lens<obj, World> -> SimulantContent)
             (contentKey : Guid)
             (mapGeneralized : MapGeneralized)
             (added : _ HashSet)
@@ -811,7 +811,7 @@ module WorldModule =
                 let key = lensComparable.LensKey
                 let lens = lensComparable.LensItem
                 if mapGeneralized.ContainsKey key then
-                    let content = contentMapper key lens world
+                    let content = contentMapper key lens
                     let (simulantOpt, world) = expandContent Unchecked.defaultof<_> content origin owner parent world
                     match World.tryGetKeyedValueFast (contentKey, world) with
                     | (false, _) ->

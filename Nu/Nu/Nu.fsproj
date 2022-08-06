@@ -82,6 +82,7 @@
     <Compile Include="Collections\Octree.fs" />
     <Compile Include="Ecs\EcsPrelude.fs" />
     <Compile Include="Ecs\Ecs.fs" />
+    <Compile Include="Transform\Transform.fs" />
     <Compile Include="OpenGL\OpenGL.Hl.fs" />
     <Compile Include="OpenGL\OpenGL.Texture.fs" />
     <Compile Include="OpenGL\OpenGL.CubeMap.fs" />
@@ -94,7 +95,6 @@
     <Compile Include="Sdl\SdlInputBindings.fs" />
     <Compile Include="Sdl\SdlInput.fs" />
     <Compile Include="Sdl\Sdl.fs" />
-    <Compile Include="Transform\Transform.fs" />
     <Compile Include="Reflection\Reflection.fs" />
     <Compile Include="Reflection\Overlayer.fs" />
     <Compile Include="Reflection\OverlayRouter.fs" />
