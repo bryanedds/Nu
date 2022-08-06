@@ -83,147 +83,17 @@ module Content =
     let group<'d when 'd :> GroupDispatcher> groupName initializers entities =
         GroupFromInitializers (typeof<'d>.Name, groupName, initializers, entities)
 
-    /// Describe a group with two instantiation paths.
-    let groupEither lens mapper =
+    /// Describe one of multiple groups.
+    let groupUnion lens mapper =
         groups lens (fun a ->
-            let (key, value) = match a with Right r -> (0, Right r) | Left l -> (1, Left l)
+            let (key, value) = try (getTag a, a) with _ -> (-1, a)
             Map.singleton key value)
             (fun _ -> mapper)
 
-    /// Describe a group with two instantiation paths.
-    let groupOfEither lens split mapper =
-        groupsPlus lens split (fun a ->
-            let (key, value) = match a with Right r -> (0, Right r) | Left l -> (1, Left l)
-            Map.singleton key value)
-            (fun _ -> mapper)
-
-    /// Describe a group with three instantiation paths.
-    let groupChoice3 lens mapper =
-        groups lens (fun a ->
-            let (key, value) =
-                match a with
-                | Choice1Of3 v -> (0, Choice1Of3 v)
-                | Choice2Of3 v -> (1, Choice2Of3 v)
-                | Choice3Of3 v -> (2, Choice3Of3 v)
-            Map.singleton key value)
-            (fun _ -> mapper)
-
-    /// Describe a group with three instantiation paths.
-    let groupOf3 lens split mapper =
-        groupsPlus lens split (fun a ->
-            let (key, value) =
-                match a with
-                | Choice1Of3 v -> (0, Choice1Of3 v)
-                | Choice2Of3 v -> (1, Choice2Of3 v)
-                | Choice3Of3 v -> (2, Choice3Of3 v)
-            Map.singleton key value)
-            (fun _ -> mapper)
-
-    /// Describe a group with four instantiation paths.
-    let groupChoice4 lens mapper =
-        groups lens (fun a ->
-            let (key, value) =
-                match a with
-                | Choice1Of4 v -> (0, Choice1Of4 v)
-                | Choice2Of4 v -> (1, Choice2Of4 v)
-                | Choice3Of4 v -> (2, Choice3Of4 v)
-                | Choice4Of4 v -> (3, Choice4Of4 v)
-            Map.singleton key value)
-            (fun _ -> mapper)
-
-    /// Describe a group with three instantiation paths.
-    let groupOf4 lens split mapper =
-        groupsPlus lens split (fun a ->
-            let (key, value) =
-                match a with
-                | Choice1Of4 v -> (0, Choice1Of4 v)
-                | Choice2Of4 v -> (1, Choice2Of4 v)
-                | Choice3Of4 v -> (2, Choice3Of4 v)
-                | Choice4Of4 v -> (3, Choice4Of4 v)
-            Map.singleton key value)
-            (fun _ -> mapper)
-
-    /// Describe a group with five instantiation paths.
-    let groupChoice5 lens mapper =
-        groups lens (fun a ->
-            let (key, value) =
-                match a with
-                | Choice1Of5 v -> (0, Choice1Of5 v)
-                | Choice2Of5 v -> (1, Choice2Of5 v)
-                | Choice3Of5 v -> (2, Choice3Of5 v)
-                | Choice4Of5 v -> (3, Choice4Of5 v)
-                | Choice5Of5 v -> (4, Choice5Of5 v)
-            Map.singleton key value)
-            (fun _ -> mapper)
-
-    /// Describe a group with five instantiation paths.
-    let groupOf5 lens split mapper =
-        groupsPlus lens split (fun a ->
-            let (key, value) =
-                match a with
-                | Choice1Of5 v -> (0, Choice1Of5 v)
-                | Choice2Of5 v -> (1, Choice2Of5 v)
-                | Choice3Of5 v -> (2, Choice3Of5 v)
-                | Choice4Of5 v -> (3, Choice4Of5 v)
-                | Choice5Of5 v -> (4, Choice5Of5 v)
-            Map.singleton key value)
-            (fun _ -> mapper)
-
-    /// Describe a group with six instantiation paths.
-    let groupChoice6 lens mapper =
-        groups lens (fun a ->
-            let (key, value) =
-                match a with
-                | Choice1Of6 v -> (0, Choice1Of6 v)
-                | Choice2Of6 v -> (1, Choice2Of6 v)
-                | Choice3Of6 v -> (2, Choice3Of6 v)
-                | Choice4Of6 v -> (3, Choice4Of6 v)
-                | Choice5Of6 v -> (4, Choice5Of6 v)
-                | Choice6Of6 v -> (5, Choice6Of6 v)
-            Map.singleton key value)
-            (fun _ -> mapper)
-
-    /// Describe a group with six instantiation paths.
-    let groupOf6 lens split mapper =
-        groupsPlus lens split (fun a ->
-            let (key, value) =
-                match a with
-                | Choice1Of6 v -> (0, Choice1Of6 v)
-                | Choice2Of6 v -> (1, Choice2Of6 v)
-                | Choice3Of6 v -> (2, Choice3Of6 v)
-                | Choice4Of6 v -> (3, Choice4Of6 v)
-                | Choice5Of6 v -> (4, Choice5Of6 v)
-                | Choice6Of6 v -> (5, Choice6Of6 v)
-            Map.singleton key value)
-            (fun _ -> mapper)
-
-    /// Describe a group with seven instantiation paths.
-    let groupChoice7 lens mapper =
-        groups lens (fun a ->
-            let (key, value) =
-                match a with
-                | Choice1Of7 v -> (0, Choice1Of7 v)
-                | Choice2Of7 v -> (1, Choice2Of7 v)
-                | Choice3Of7 v -> (2, Choice3Of7 v)
-                | Choice4Of7 v -> (3, Choice4Of7 v)
-                | Choice5Of7 v -> (4, Choice5Of7 v)
-                | Choice6Of7 v -> (5, Choice6Of7 v)
-                | Choice7Of7 v -> (6, Choice7Of7 v)
-            Map.singleton key value)
-            (fun _ -> mapper)
-
-    /// Describe a group with seven instantiation paths.
-    let groupOf7 lens split mapper =
-        groupsPlus lens split (fun a ->
-            let (key, value) =
-                match a with
-                | Choice1Of7 v -> (0, Choice1Of7 v)
-                | Choice2Of7 v -> (1, Choice2Of7 v)
-                | Choice3Of7 v -> (2, Choice3Of7 v)
-                | Choice4Of7 v -> (3, Choice4Of7 v)
-                | Choice5Of7 v -> (4, Choice5Of7 v)
-                | Choice6Of7 v -> (5, Choice6Of7 v)
-                | Choice7Of7 v -> (6, Choice7Of7 v)
+    /// Describe one of multiple groups.
+    let groupOf lens unwrap mapper =
+        groupsPlus lens unwrap (fun a ->
+            let (key, value) = try (getTag a, a) with _ -> (-1, a)
             Map.singleton key value)
             (fun _ -> mapper)
 
@@ -302,160 +172,30 @@ module Content =
     let entityFromFile<'d when 'd :> EntityDispatcher> entityName filePath =
         EntityFromFile (entityName, filePath)
 
-    /// Describe an entity with the given initializers and content.
-    let entityPlus<'d when 'd :> EntityDispatcher> entityName initializers content =
+    /// Describe a composite entity with the given initializers and content.
+    let composite<'d when 'd :> EntityDispatcher> entityName initializers content =
         EntityFromInitializers (typeof<'d>.Name, entityName, initializers, content)
 
     /// Describe an entity with the given initializers.
     let entity<'d when 'd :> EntityDispatcher> entityName initializers =
-        entityPlus<'d> entityName initializers []
+        composite<'d> entityName initializers []
 
     /// Describe an entity to be conditionally instantiated from a lens.
     let entityWhen lens predicate mapper =
         let mapper = fun _ a -> mapper a
         entities lens (fun a -> if predicate a then Map.singleton 0 a else Map.empty) mapper
 
-    /// Describe an entity with two instantiation paths.
-    let entityEither lens mapper =
+    /// Describe one of multiple entities.
+    let entityUnion lens mapper =
         entities lens (fun a ->
-            let (key, value) = match a with Right r -> (0, Right r) | Left l -> (1, Left l)
+            let (key, value) = try (getTag a, a) with _ -> (-1, a)
             Map.singleton key value)
             (fun _ -> mapper)
 
-    /// Describe an entity with two instantiation paths.
-    let entityOfEither lens split mapper =
-        entitiesPlus lens split (fun a ->
-            let (key, value) = match a with Right r -> (0, Right r) | Left l -> (1, Left l)
-            Map.singleton key value)
-            (fun _ -> mapper)
-
-    /// Describe an entity with three instantiation paths.
-    let entityChoice3 lens mapper =
-        entities lens (fun a ->
-            let (key, value) =
-                match a with
-                | Choice1Of3 v -> (0, Choice1Of3 v)
-                | Choice2Of3 v -> (1, Choice2Of3 v)
-                | Choice3Of3 v -> (2, Choice3Of3 v)
-            Map.singleton key value)
-            (fun _ -> mapper)
-
-    /// Describe an entity with three instantiation paths.
-    let entityOf3 lens split mapper =
-        entitiesPlus lens split (fun a ->
-            let (key, value) =
-                match a with
-                | Choice1Of3 v -> (0, Choice1Of3 v)
-                | Choice2Of3 v -> (1, Choice2Of3 v)
-                | Choice3Of3 v -> (2, Choice3Of3 v)
-            Map.singleton key value)
-            (fun _ -> mapper)
-
-    /// Describe an entity with four instantiation paths.
-    let entityChoice4 lens mapper =
-        entities lens (fun a ->
-            let (key, value) =
-                match a with
-                | Choice1Of4 v -> (0, Choice1Of4 v)
-                | Choice2Of4 v -> (1, Choice2Of4 v)
-                | Choice3Of4 v -> (2, Choice3Of4 v)
-                | Choice4Of4 v -> (3, Choice4Of4 v)
-            Map.singleton key value)
-            (fun _ -> mapper)
-
-    /// Describe an entity with three instantiation paths.
-    let entityOf4 lens split mapper =
-        entitiesPlus lens split (fun a ->
-            let (key, value) =
-                match a with
-                | Choice1Of4 v -> (0, Choice1Of4 v)
-                | Choice2Of4 v -> (1, Choice2Of4 v)
-                | Choice3Of4 v -> (2, Choice3Of4 v)
-                | Choice4Of4 v -> (3, Choice4Of4 v)
-            Map.singleton key value)
-            (fun _ -> mapper)
-
-    /// Describe an entity with five instantiation paths.
-    let entityChoice5 lens mapper =
-        entities lens (fun a ->
-            let (key, value) =
-                match a with
-                | Choice1Of5 v -> (0, Choice1Of5 v)
-                | Choice2Of5 v -> (1, Choice2Of5 v)
-                | Choice3Of5 v -> (2, Choice3Of5 v)
-                | Choice4Of5 v -> (3, Choice4Of5 v)
-                | Choice5Of5 v -> (4, Choice5Of5 v)
-            Map.singleton key value)
-            (fun _ -> mapper)
-
-    /// Describe an entity with five instantiation paths.
-    let entityOf5 lens split mapper =
-        entitiesPlus lens split (fun a ->
-            let (key, value) =
-                match a with
-                | Choice1Of5 v -> (0, Choice1Of5 v)
-                | Choice2Of5 v -> (1, Choice2Of5 v)
-                | Choice3Of5 v -> (2, Choice3Of5 v)
-                | Choice4Of5 v -> (3, Choice4Of5 v)
-                | Choice5Of5 v -> (4, Choice5Of5 v)
-            Map.singleton key value)
-            (fun _ -> mapper)
-
-    /// Describe an entity with six instantiation paths.
-    let entityChoice6 lens mapper =
-        entities lens (fun a ->
-            let (key, value) =
-                match a with
-                | Choice1Of6 v -> (0, Choice1Of6 v)
-                | Choice2Of6 v -> (1, Choice2Of6 v)
-                | Choice3Of6 v -> (2, Choice3Of6 v)
-                | Choice4Of6 v -> (3, Choice4Of6 v)
-                | Choice5Of6 v -> (4, Choice5Of6 v)
-                | Choice6Of6 v -> (5, Choice6Of6 v)
-            Map.singleton key value)
-            (fun _ -> mapper)
-
-    /// Describe an entity with six instantiation paths.
-    let entityOf6 lens split mapper =
-        entitiesPlus lens split (fun a ->
-            let (key, value) =
-                match a with
-                | Choice1Of6 v -> (0, Choice1Of6 v)
-                | Choice2Of6 v -> (1, Choice2Of6 v)
-                | Choice3Of6 v -> (2, Choice3Of6 v)
-                | Choice4Of6 v -> (3, Choice4Of6 v)
-                | Choice5Of6 v -> (4, Choice5Of6 v)
-                | Choice6Of6 v -> (5, Choice6Of6 v)
-            Map.singleton key value)
-            (fun _ -> mapper)
-
-    /// Describe an entity with seven instantiation paths.
-    let entityChoice7 lens mapper =
-        entities lens (fun a ->
-            let (key, value) =
-                match a with
-                | Choice1Of7 v -> (0, Choice1Of7 v)
-                | Choice2Of7 v -> (1, Choice2Of7 v)
-                | Choice3Of7 v -> (2, Choice3Of7 v)
-                | Choice4Of7 v -> (3, Choice4Of7 v)
-                | Choice5Of7 v -> (4, Choice5Of7 v)
-                | Choice6Of7 v -> (5, Choice6Of7 v)
-                | Choice7Of7 v -> (6, Choice7Of7 v)
-            Map.singleton key value)
-            (fun _ -> mapper)
-
-    /// Describe an entity with seven instantiation paths.
-    let entityOf7 lens split mapper =
-        entitiesPlus lens split (fun a ->
-            let (key, value) =
-                match a with
-                | Choice1Of7 v -> (0, Choice1Of7 v)
-                | Choice2Of7 v -> (1, Choice2Of7 v)
-                | Choice3Of7 v -> (2, Choice3Of7 v)
-                | Choice4Of7 v -> (3, Choice4Of7 v)
-                | Choice5Of7 v -> (4, Choice5Of7 v)
-                | Choice6Of7 v -> (5, Choice6Of7 v)
-                | Choice7Of7 v -> (6, Choice7Of7 v)
+    /// Describe one of multiple entities.
+    let entityOf lens unwrap mapper =
+        entitiesPlus lens unwrap (fun a ->
+            let (key, value) = try (getTag a, a) with _ -> (-1, a)
             Map.singleton key value)
             (fun _ -> mapper)
 
@@ -463,13 +203,9 @@ module Content =
     let entityIf<'d, 'a when 'd :> EntityDispatcher> entityName (lens : Lens<'a, World>) predicate initializers =
         entityWhen lens predicate (fun _ -> entity<'d> entityName initializers)
 
-    /// Describe an entity with content to be conditionally instantiated from a lens.
-    let entityPlusWhen<'d, 'a when 'd :> EntityDispatcher> entityName predicate (lens : Lens<'a, World>) initializers content =
-        entityWhen lens predicate (fun _ -> entityPlus<'d> entityName initializers content)
-
-    /// Describe an entity with content to be conditionally instantiated from a lens.
-    let entityPlusIf<'d, 'a when 'd :> EntityDispatcher> entityName (lens : Lens<'a, World>) predicate initializers content =
-        entityWhen lens predicate (fun _ -> entityPlus<'d> entityName initializers content)
+    /// Describe a component entity to be conditionally instantiated from a lens.
+    let compositeIf<'d, 'a when 'd :> EntityDispatcher> entityName (lens : Lens<'a, World>) predicate initializers content =
+        entityWhen lens predicate (fun _ -> composite<'d> entityName initializers content)
 
     /// Describe an entity to be conditionally loaded from a file.
     let entityFromFileIf<'d, 'a when 'd :> EntityDispatcher> entityName (lens : Lens<'a, World>) predicate filePath =
@@ -512,16 +248,16 @@ module Content =
     let fillBar entityName initializers = entity<FillBarDispatcher> entityName initializers
 
     /// Describe an association of gui entities with the given initializers and content.
-    let association entityName initializers content = entityPlus<GuiDispatcher> entityName initializers content
+    let association entityName initializers content = composite<GuiDispatcher> entityName initializers content
 
     /// Describe a conditionally-existent association of gui entities with the given initializers and content.
-    let associationIf entityName (lens : Lens<'a, World>) predicate initializers content = entityPlusIf<GuiDispatcher, 'a> entityName lens predicate initializers content
+    let associationIf entityName (lens : Lens<'a, World>) predicate initializers content = compositeIf<GuiDispatcher, 'a> entityName lens predicate initializers content
 
     /// Describe a panel with the given initializers and content.
-    let panel entityName initializers content = entityPlus<LabelDispatcher> entityName initializers content
+    let panel entityName initializers content = composite<LabelDispatcher> entityName initializers content
 
     /// Describe a conditionally-existent panel with the given initializers and content.
-    let panelIf entityName (lens : Lens<'a, World>) predicate initializers content = entityPlusIf<LabelDispatcher, 'a> entityName lens predicate initializers content
+    let panelIf entityName (lens : Lens<'a, World>) predicate initializers content = compositeIf<LabelDispatcher, 'a> entityName lens predicate initializers content
 
     /// Describe a 2d block with the given initializers.
     let block2d entityName initializers = entity<BlockDispatcher2d> entityName initializers
