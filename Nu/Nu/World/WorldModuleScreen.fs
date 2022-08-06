@@ -70,7 +70,7 @@ module WorldModuleScreen =
         static member internal removeScreenState screen world =
             World.screenStateRemover screen world
 
-        static member private publishScreenChange (propertyName : string) (propertyValue : obj) (screen : Screen) world =
+        static member internal publishScreenChange (propertyName : string) (propertyValue : obj) (screen : Screen) world =
 
             // publish change binding
             let world =

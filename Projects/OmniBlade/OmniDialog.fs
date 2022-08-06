@@ -74,7 +74,7 @@ type [<ReferenceEquality; NoComparison>] Dialog =
         wordWrap [] text |> List.rev |> String.join "\n"
 
     static member content name elevation promptLeft promptRight (detokenizeAndDialogOpt : Lens<(string -> string) * Dialog option, World>) =
-        Content.entityWithContent<TextDispatcher> name
+        Content.entityPlus<TextDispatcher> name
             [Entity.Perimeter <== detokenizeAndDialogOpt --> fun (_, dialogOpt) ->
                 match dialogOpt with
                 | Some dialog ->

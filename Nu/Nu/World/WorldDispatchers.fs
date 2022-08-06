@@ -2899,6 +2899,10 @@ module GroupDispatcherModule =
 
         override this.Register (group, world) =
             let world =
+                World.monitor (fun _ world ->
+                    (Cascade, World.publishGroupChange Property? Model (group.GetModelGeneric world) group world))
+                    group.Screen.SelectEvent group world
+            let world =
                 let property = World.getGroupModelProperty group world
                 if property.DesignerType = typeof<unit> then
                     let model = this.Prepare (initial, world)
@@ -2995,6 +2999,10 @@ module ScreenDispatcherModule =
             lens Property? Model (this.GetModel screen) (flip this.SetModel screen) screen
 
         override this.Register (screen, world) =
+            let world =
+                World.monitor (fun _ world ->
+                    (Cascade, World.publishScreenChange Property? Model (screen.GetModelGeneric world) screen world))
+                    screen.SelectEvent screen world
             let world =
                 let property = World.getScreenModelProperty screen world
                 if property.DesignerType = typeof<unit> then
