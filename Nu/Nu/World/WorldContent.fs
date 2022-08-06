@@ -303,22 +303,17 @@ module Content =
         EntityFromFile (entityName, filePath)
 
     /// Describe an entity with the given initializers and content.
-    let entityWithContent<'d when 'd :> EntityDispatcher> entityName initializers content =
+    let entityPlus<'d when 'd :> EntityDispatcher> entityName initializers content =
         EntityFromInitializers (typeof<'d>.Name, entityName, initializers, content)
 
     /// Describe an entity with the given initializers.
     let entity<'d when 'd :> EntityDispatcher> entityName initializers =
-        entityWithContent<'d> entityName initializers []
+        entityPlus<'d> entityName initializers []
 
     /// Describe an entity to be conditionally instantiated from a lens.
     let entityWhen lens predicate mapper =
         let mapper = fun _ a -> mapper a
         entities lens (fun a -> if predicate a then Map.singleton 0 a else Map.empty) mapper
-
-    /// Describe an entity to be instantiated when a screen is selected.
-    let entityWhenScreenSelected (screen : Screen) (mapper : Lens<unit, World> -> EntityContent) =
-        let mapper = (fun lens -> mapper (Lens.map (constant ()) lens))
-        entityWhen Simulants.Game.SelectedScreenOpt (fun screenOpt -> screenOpt = Some screen) mapper
 
     /// Describe an entity with two instantiation paths.
     let entityEither lens mapper =
@@ -468,33 +463,17 @@ module Content =
     let entityIf<'d, 'a when 'd :> EntityDispatcher> entityName (lens : Lens<'a, World>) predicate initializers =
         entityWhen lens predicate (fun _ -> entity<'d> entityName initializers)
 
-    /// Describe an entity to be instantiated when a screen is selected.
-    let entityIfScreenSelected<'d, 'a when 'd :> EntityDispatcher> entityName screen initializers =
-        entityWhenScreenSelected screen (fun _ -> entity<'d> entityName initializers)
+    /// Describe an entity with content to be conditionally instantiated from a lens.
+    let entityPlusWhen<'d, 'a when 'd :> EntityDispatcher> entityName predicate (lens : Lens<'a, World>) initializers content =
+        entityWhen lens predicate (fun _ -> entityPlus<'d> entityName initializers content)
 
     /// Describe an entity with content to be conditionally instantiated from a lens.
-    let entityWithContentWhen<'d, 'a when 'd :> EntityDispatcher> entityName predicate (lens : Lens<'a, World>) initializers content =
-        entityWhen lens predicate (fun _ -> entityWithContent<'d> entityName initializers content)
-
-    /// Describe an entity with content to be instantiated when a screen is selected.
-    let entityWithContentWhenScreenSelected<'d, 'a when 'd :> EntityDispatcher> entityName screen (_ : Lens<'a, World>) initializers content =
-        entityWhenScreenSelected screen (fun _ -> entityWithContent<'d> entityName initializers content)
-
-    /// Describe an entity with content to be conditionally instantiated from a lens.
-    let entityWithContentIf<'d, 'a when 'd :> EntityDispatcher> entityName (lens : Lens<'a, World>) predicate initializers content =
-        entityWhen lens predicate (fun _ -> entityWithContent<'d> entityName initializers content)
-
-    /// Describe an entity with content to be instantiated when a screen is selected.
-    let entityWithContentIfScreenSelected<'d, 'a when 'd :> EntityDispatcher> entityName screen initializers content =
-        entityWhenScreenSelected screen (fun _ -> entityWithContent<'d> entityName initializers content)
+    let entityPlusIf<'d, 'a when 'd :> EntityDispatcher> entityName (lens : Lens<'a, World>) predicate initializers content =
+        entityWhen lens predicate (fun _ -> entityPlus<'d> entityName initializers content)
 
     /// Describe an entity to be conditionally loaded from a file.
     let entityFromFileIf<'d, 'a when 'd :> EntityDispatcher> entityName (lens : Lens<'a, World>) predicate filePath =
         entityWhen lens predicate (fun _ -> entityFromFile entityName filePath)
-
-    /// Describe an entity to be conditionally loaded from a file when a screen is selected.
-    let entityFromFileIfScreenSelected<'d, 'a when 'd :> EntityDispatcher> entityName screen filePath =
-        entityWhenScreenSelected screen (fun _ -> entityFromFile entityName filePath)
 
     /// Describe a 2d basic emitter with the given initializers.
     let basicEmitter2d entityName initializers = entity<BasicEmitterDispatcher2d> entityName initializers
@@ -533,16 +512,16 @@ module Content =
     let fillBar entityName initializers = entity<FillBarDispatcher> entityName initializers
 
     /// Describe an association of gui entities with the given initializers and content.
-    let association entityName initializers content = entityWithContent<GuiDispatcher> entityName initializers content
+    let association entityName initializers content = entityPlus<GuiDispatcher> entityName initializers content
 
     /// Describe a conditionally-existent association of gui entities with the given initializers and content.
-    let associationIf entityName (lens : Lens<'a, World>) predicate initializers content = entityWithContentIf<GuiDispatcher, 'a> entityName lens predicate initializers content
+    let associationIf entityName (lens : Lens<'a, World>) predicate initializers content = entityPlusIf<GuiDispatcher, 'a> entityName lens predicate initializers content
 
     /// Describe a panel with the given initializers and content.
-    let panel entityName initializers content = entityWithContent<LabelDispatcher> entityName initializers content
+    let panel entityName initializers content = entityPlus<LabelDispatcher> entityName initializers content
 
     /// Describe a conditionally-existent panel with the given initializers and content.
-    let panelIf entityName (lens : Lens<'a, World>) predicate initializers content = entityWithContentIf<LabelDispatcher, 'a> entityName lens predicate initializers content
+    let panelIf entityName (lens : Lens<'a, World>) predicate initializers content = entityPlusIf<LabelDispatcher, 'a> entityName lens predicate initializers content
 
     /// Describe a 2d block with the given initializers.
     let block2d entityName initializers = entity<BlockDispatcher2d> entityName initializers

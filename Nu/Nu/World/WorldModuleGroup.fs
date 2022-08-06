@@ -70,7 +70,7 @@ module WorldModuleGroup =
         static member internal removeGroupState group world =
             World.groupStateRemover group world
 
-        static member private publishGroupChange propertyName (propertyValue : obj) (group : Group) world =
+        static member internal publishGroupChange propertyName (propertyValue : obj) (group : Group) world =
 
             // publish change binding
             let world =
