@@ -326,7 +326,7 @@ module Gameplay =
                       Entity.ClickEvent ==> msg Quit]]
 
              // the scene group
-             Content.groupIfScreenSelected screen $ fun _ _ ->
+             Content.groupIfScreenSelected screen $ fun _ ->
                 Content.group Simulants.Gameplay.Scene.Group.Name []
                     [Content.entity<PlayerDispatcher> Simulants.Gameplay.Scene.Player.Name
                         [Entity.Position == v3 -300.0f -175.6805f 0.0f

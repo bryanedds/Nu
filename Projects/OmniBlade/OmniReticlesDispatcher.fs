@@ -39,7 +39,7 @@ module ReticlesDispatcher =
                  Entity.UpImage == asset Assets.Battle.PackageName "CancelUp"
                  Entity.DownImage == asset Assets.Battle.PackageName "CancelDown"
                  Entity.ClickEvent ==> cmd TargetCancel]
-             Content.entityMap reticles $ fun index center _ ->
+             Content.entityMap reticles $ fun index center ->
                 Content.button (CharacterIndex.toEntityName index)
                     [Entity.Size == v3 96.0f 96.0f 0.0f
                      Entity.Center <== center

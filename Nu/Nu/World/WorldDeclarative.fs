@@ -15,7 +15,7 @@ type [<NoEquality; NoComparison>] ScreenBehavior =
 
 /// Describes the content of an entity.
 type [<NoEquality; NoComparison>] EntityContent =
-    | EntitiesFromStream of Lens<obj, World> * (obj -> World -> obj) * (obj -> World -> MapGeneralized) * (obj -> Lens<obj, World> -> World -> EntityContent)
+    | EntitiesFromStream of Lens<obj, World> * (obj -> obj) * (obj -> MapGeneralized) * (obj -> Lens<obj, World> -> EntityContent)
     | EntityFromInitializers of string * string * PropertyInitializer list * EntityContent list
     | EntityFromFile of string * string
     interface SimulantContent
@@ -33,7 +33,7 @@ type [<NoEquality; NoComparison>] EntityContent =
 
 /// Describes the content of a group.
 type [<NoEquality; NoComparison>] GroupContent =
-    | GroupsFromStream of Lens<obj, World> * (obj -> World -> obj) * (obj -> World -> MapGeneralized) * (obj -> Lens<obj, World> -> World -> GroupContent)
+    | GroupsFromStream of Lens<obj, World> * (obj -> obj) * (obj -> MapGeneralized) * (obj -> Lens<obj, World> -> GroupContent)
     | GroupFromInitializers of string * string * PropertyInitializer list * EntityContent list
     | GroupFromFile of string * string
     interface SimulantContent
@@ -320,9 +320,9 @@ module WorldDeclarative =
         /// Turn a lens into a series of live simulants.
         static member expandSimulants
             (lens : Lens<obj, World>)
-            (sieve : obj -> World -> obj)
-            (unfold : obj -> World -> MapGeneralized)
-            (mapper : IComparable -> Lens<obj, World> -> World -> SimulantContent)
+            (sieve : obj -> obj)
+            (unfold : obj -> MapGeneralized)
+            (mapper : IComparable -> Lens<obj, World> -> SimulantContent)
             (origin : ContentOrigin)
             (owner : Simulant)
             (parent : Simulant)
@@ -333,20 +333,20 @@ module WorldDeclarative =
                 let mutable lensResult = Unchecked.defaultof<obj> // ELMISH_CACHE
                 let mutable sieveResultOpt = ValueNone // ELMISH_CACHE
                 let mutable unfoldResultOpt = ValueNone // ELMISH_CACHE
-                Lens.mapWorld (fun a world ->
+                Lens.map (fun a ->
                     let struct (b, c) =
                         if a === lensResult then
                             match (sieveResultOpt, unfoldResultOpt) with
                             | (ValueSome sieveResult, ValueSome unfoldResult) -> struct (sieveResult, unfoldResult)
-                            | (ValueSome sieveResult, ValueNone) -> struct (sieveResult, unfold sieveResult world)
+                            | (ValueSome sieveResult, ValueNone) -> struct (sieveResult, unfold sieveResult)
                             | (ValueNone, ValueSome _) -> failwithumf ()
-                            | (ValueNone, ValueNone) -> let b = sieve a world in struct (b, unfold b world)
+                            | (ValueNone, ValueNone) -> let b = sieve a in struct (b, unfold b)
                         else
                             match (sieveResultOpt, unfoldResultOpt) with
-                            | (ValueSome sieveResult, ValueSome unfoldResult) -> let b = sieve a world in if b === sieveResult then struct (b, unfoldResult) else struct (b, unfold b world)
-                            | (ValueSome _, ValueNone) -> let b = sieve a world in struct (b, unfold b world)
+                            | (ValueSome sieveResult, ValueSome unfoldResult) -> let b = sieve a in if b === sieveResult then struct (b, unfoldResult) else struct (b, unfold b)
+                            | (ValueSome _, ValueNone) -> let b = sieve a in struct (b, unfold b)
                             | (ValueNone, ValueSome _) -> failwithumf ()
-                            | (ValueNone, ValueNone) -> let b = sieve a world in struct (b, unfold b world)
+                            | (ValueNone, ValueNone) -> let b = sieve a in struct (b, unfold b)
                     lensResult <- a
                     sieveResultOpt <- ValueSome b
                     unfoldResultOpt <- ValueSome c

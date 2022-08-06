@@ -41,7 +41,7 @@ type NelmishDispatcher () =
                     [Entity.Text <== model --> scstring
                      Entity.Position == v3 -128.0f -32.0f 0.0f
                      Entity.Justification == Justified (JustifyCenter, JustifyMiddle)]
-                 Content.entityIf model (fun model -> model <> 0) $ fun _ _ ->
+                 Content.entityIf model (fun model -> model <> 0) $ fun _ ->
                     Content.button "Reset"
                         [Entity.Text == "Reset"
                          Entity.Position == v3 -128.0f -128.0f 0.0f

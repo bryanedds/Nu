@@ -20,9 +20,6 @@ module RingMenuDispatcher =
         | ItemSelect of string
 
     type Entity with
-        member this.GetRadius world : single = this.Get Property? Radius world
-        member this.SetRadius (value : single) world = this.Set Property? Radius value world
-        member this.Radius = lens Property? Radius this.GetRadius this.SetRadius this
         member this.GetRingMenu world = this.GetModelGeneric<RingMenu> world
         member this.SetRingMenu value world = this.SetModelGeneric<RingMenu> value world
         member this.RingMenu = this.ModelGeneric<RingMenu> ()
@@ -32,9 +29,6 @@ module RingMenuDispatcher =
     type RingMenuDispatcher () =
         inherit GuiDispatcher<RingMenu, unit, RingMenuCommand> ({ Items = Map.empty; ItemCancelOpt = None })
 
-        static member Properties =
-            [define Entity.Radius Constants.Battle.RingMenuRadius]
-
         override this.Command (_, command, menu, world) =
             match command with
             | ItemCancel -> just (World.publishPlus () menu.CancelEvent [] menu true false world)
@@ -42,7 +36,7 @@ module RingMenuDispatcher =
 
         override this.Content (ringMenu, menu) =
             [Content.entities ringMenu
-                (fun ringMenu _ ->
+                (fun ringMenu ->
                     let items =
                         let mutable i = -1
                         ringMenu.Items |>
@@ -51,12 +45,12 @@ module RingMenuDispatcher =
                         Map.toSeqBy (fun _ (v, v2) -> (v, (i <- inc i; i, v2))) |>
                         Map.ofSeq
                     Map.map (constant (Triple.insert (Map.count items))) items)
-                (fun itemName itemIndexAndCountAndEnabled world ->
+                (fun itemName itemIndexAndCountAndEnabled ->
                     let buttonSize = v3 48.0f 48.0f 0.0f
                     Content.button (scstring itemName)
                         [Entity.EnabledLocal <== itemIndexAndCountAndEnabled --> Triple.thd
                          Entity.PositionLocal <== itemIndexAndCountAndEnabled --> fun (itemIndex, itemCount, _) ->
-                            let radius = menu.GetRadius world
+                            let radius = Constants.Battle.RingMenuRadius
                             let progress = single itemIndex / single itemCount
                             let rotation = progress * single Math.PI * 2.0f
                             let position = v3 (radius * sin rotation) (radius * cos rotation) 0.0f
@@ -66,14 +60,13 @@ module RingMenuDispatcher =
                          Entity.UpImage == asset Assets.Battle.PackageName (itemName + "Up")
                          Entity.DownImage == asset Assets.Battle.PackageName (itemName + "Down")
                          Entity.ClickEvent ==> cmd (ItemSelect itemName)])
-             Content.entityOpt (ringMenu --> fun ringMenu -> ringMenu.ItemCancelOpt) $ fun itemCancel world ->
-                let itemCancelValue = itemCancel.Get world
-                Content.button itemCancelValue
+             Content.entityOpt (ringMenu --> fun ringMenu -> ringMenu.ItemCancelOpt) $ fun _ ->
+                Content.button "Cancel"
                     [Entity.MountOpt == None
                      Entity.Visible <== menu.Visible
                      Entity.Size == v3 48.0f 48.0f 0.0f
                      Entity.Position == Constants.Battle.CancelPosition
                      Entity.Elevation <== menu.Elevation
-                     Entity.UpImage == asset Assets.Battle.PackageName (itemCancelValue + "Up")
-                     Entity.DownImage == asset Assets.Battle.PackageName (itemCancelValue + "Down")
+                     Entity.UpImage == asset Assets.Battle.PackageName "CancelUp"
+                     Entity.DownImage == asset Assets.Battle.PackageName "CancelDown"
                      Entity.ClickEvent ==> cmd ItemCancel]]
