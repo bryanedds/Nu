@@ -1281,7 +1281,7 @@ module FieldDispatcher =
                     (fun _ prop -> Content.entity<PropDispatcher> Gen.name [Entity.Prop <== prop])
 
                  // spirit orb
-                 Content.entityIf Gen.name field (fun field -> Field.hasEncounters field && Cue.isNil field.Cue)
+                 Content.entityIf Gen.name (field --> fun field -> Field.hasEncounters field && Cue.isNil field.Cue)
                     [Entity.Position == v3 -448.0f 48.0f 0.0f; Entity.Elevation == Constants.Field.SpiritOrbElevation; Entity.Size == v3 192.0f 192.0f 0.0f
                      Entity.SpiritOrb <== field --> fun field -> { AvatarLowerCenter = field.Avatar.LowerCenter; Spirits = field.Spirits; Chests = Field.getChests field; Portals = Field.getNonWarpPortals field }]
 
@@ -1399,7 +1399,7 @@ module FieldDispatcher =
                        (field --> fun field -> (flip detokenize field, field.DialogOpt))
 
                  // team
-                 Content.panelIf "Team" field (fun field -> match field.Menu.MenuState with MenuTeam _ -> true | _ -> false)
+                 Content.panelIf "Team" (field --> fun field -> match field.Menu.MenuState with MenuTeam _ -> true | _ -> false)
                     [Entity.Position == v3 -450.0f -255.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v3 900.0f 510.0f 0.0f
                      Entity.LabelImage == Assets.Gui.DialogXXLImage]
                     [Content.sidebar (v3 24.0f 417.0f 0.0f) 1.0f field
@@ -1485,7 +1485,7 @@ module FieldDispatcher =
                             | _ -> ""]]
 
                  // inventory
-                 Content.panelIf "Inventory" field (fun field -> match field.Menu.MenuState with MenuItem _ -> true | _ -> false)
+                 Content.panelIf "Inventory" (field --> fun field -> match field.Menu.MenuState with MenuItem _ -> true | _ -> false)
                     [Entity.Position == v3 -450.0f -255.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v3 900.0f 510.0f 0.0f
                      Entity.LabelImage == Assets.Gui.DialogXXLImage
                      Entity.Enabled <== field --> fun field -> Option.isNone field.Menu.MenuUseOpt]
@@ -1511,7 +1511,7 @@ module FieldDispatcher =
                         Entity.ClickEvent ==> msg MenuInventoryPageDown]]
 
                  // tech team
-                 Content.panelIf "TechTeam" field (fun field -> match field.Menu.MenuState with MenuTech _ -> true | _ -> false)
+                 Content.panelIf "TechTeam" (field --> fun field -> match field.Menu.MenuState with MenuTech _ -> true | _ -> false)
                     [Entity.Position == v3 -450.0f -255.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v3 900.0f 510.0f 0.0f
                      Entity.LabelImage == Assets.Gui.DialogXXLImage]
                     [Content.sidebar (v3 24.0f 417.0f 0.0f) 1.0f field
@@ -1519,7 +1519,7 @@ module FieldDispatcher =
                      Content.techs (v3 466.0f 429.0f 0.0f) 1.0f field MenuTechSelect]
 
                  // use
-                 Content.panelIf Gen.name field (fun field -> Option.isSome field.Menu.MenuUseOpt)
+                 Content.panelIf Gen.name (field --> fun field -> Option.isSome field.Menu.MenuUseOpt)
                     [Entity.Position == v3 -450.0f -216.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation + 10.0f; Entity.Size == v3 900.0f 432.0f 0.0f
                      Entity.LabelImage == Assets.Gui.DialogXLImage]
                     [Content.team (v3 160.0f 183.0f 0.0f) 1.0f 3 field
@@ -1553,7 +1553,7 @@ module FieldDispatcher =
                              | None -> ""]]
 
                  // options
-                 Content.panelIf "Option" field (fun field -> match field.Menu.MenuState with MenuOptions -> true | _ -> false)
+                 Content.panelIf "Option" (field --> fun field -> match field.Menu.MenuState with MenuOptions -> true | _ -> false)
                     [Entity.Position == v3 -450.0f -255.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v3 900.0f 510.0f 0.0f
                      Entity.LabelImage == Assets.Gui.DialogXXLImage]
                     [Content.sidebar (v3 24.0f 417.0f 0.0f) 1.0f field
@@ -1580,7 +1580,7 @@ module FieldDispatcher =
                          Entity.DialedEvent ==> msg (MenuOptionsSelectBattleSpeed SwiftSpeed)]]
 
                  // shop
-                 Content.panelIf Gen.name field (fun field -> Option.isSome field.ShopOpt)
+                 Content.panelIf Gen.name (field --> fun field -> Option.isSome field.ShopOpt)
                     [Entity.Position == v3 -450.0f -255.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v3 900.0f 510.0f 0.0f
                      Entity.LabelImage == Assets.Gui.DialogXXLImage
                      Entity.Enabled <== field --> fun field -> match field.ShopOpt with Some shop -> Option.isNone shop.ShopConfirmOpt | None -> true]
