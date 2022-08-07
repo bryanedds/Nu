@@ -108,16 +108,16 @@ module Content =
         groupWhen Simulants.Game.SelectedScreenOpt (fun screenOpt -> screenOpt = Some screen) mapper
 
     /// Describe a group to be conditionally instantiated from a lens.
-    let groupIf<'d, 'a when 'd :> GroupDispatcher> groupName (lens : Lens<'a, World>) predicate initializers content =
-        groupWhen lens predicate (fun _ -> group<'d> groupName initializers content)
+    let groupIf<'d, 'a when 'd :> GroupDispatcher> groupName (lens : Lens<bool, World>) initializers content =
+        groupWhen lens id (fun _ -> group<'d> groupName initializers content)
 
     /// Describe a group to be instantiated when a screen is selected.
     let groupIfScreenSelected<'d, 'a when 'd :> GroupDispatcher> groupName screen initializers content =
         groupWhenScreenSelected screen (fun _ -> group<'d> groupName initializers content)
 
     /// Describe a group to be conditionally loaded from a file.
-    let groupFromFileIf<'d, 'a when 'd :> GroupDispatcher> groupName (lens : Lens<'a, World>) predicate filePath =
-        groupWhen lens predicate (fun _ -> groupFromFile groupName filePath)
+    let groupFromFileIf<'d, 'a when 'd :> GroupDispatcher> groupName (lens : Lens<bool, World>) filePath =
+        groupWhen lens id (fun _ -> groupFromFile groupName filePath)
 
     /// Describe a group to be conditionally loaded from a file when a screen is selected.
     let groupFromFileIfScreenSelected<'d, 'a when 'd :> GroupDispatcher> groupName screen filePath =
@@ -200,16 +200,16 @@ module Content =
             (constant mapper)
 
     /// Describe an entity to be conditionally instantiated from a lens.
-    let entityIf<'d, 'a when 'd :> EntityDispatcher> entityName (lens : Lens<'a, World>) predicate initializers =
-        entityWhen lens predicate (fun _ -> entity<'d> entityName initializers)
+    let entityIf<'d when 'd :> EntityDispatcher> entityName (lens : Lens<bool, World>) initializers =
+        entityWhen lens id (fun _ -> entity<'d> entityName initializers)
 
     /// Describe a component entity to be conditionally instantiated from a lens.
-    let compositeIf<'d, 'a when 'd :> EntityDispatcher> entityName (lens : Lens<'a, World>) predicate initializers content =
-        entityWhen lens predicate (fun _ -> composite<'d> entityName initializers content)
+    let compositeIf<'d when 'd :> EntityDispatcher> entityName (lens : Lens<bool, World>) initializers content =
+        entityWhen lens id (fun _ -> composite<'d> entityName initializers content)
 
     /// Describe an entity to be conditionally loaded from a file.
-    let entityFromFileIf<'d, 'a when 'd :> EntityDispatcher> entityName (lens : Lens<'a, World>) predicate filePath =
-        entityWhen lens predicate (fun _ -> entityFromFile entityName filePath)
+    let entityFromFileIf<'d when 'd :> EntityDispatcher> entityName (lens : Lens<bool, World>) filePath =
+        entityWhen lens id (fun _ -> entityFromFile entityName filePath)
 
     /// Describe a 2d basic emitter with the given initializers.
     let basicEmitter2d entityName initializers = entity<BasicEmitterDispatcher2d> entityName initializers
@@ -251,13 +251,13 @@ module Content =
     let association entityName initializers content = composite<GuiDispatcher> entityName initializers content
 
     /// Describe a conditionally-existent association of gui entities with the given initializers and content.
-    let associationIf entityName (lens : Lens<'a, World>) predicate initializers content = compositeIf<GuiDispatcher, 'a> entityName lens predicate initializers content
+    let associationIf entityName (lens : Lens<bool, World>) initializers content = compositeIf<GuiDispatcher> entityName lens initializers content
 
     /// Describe a panel with the given initializers and content.
     let panel entityName initializers content = composite<LabelDispatcher> entityName initializers content
 
     /// Describe a conditionally-existent panel with the given initializers and content.
-    let panelIf entityName (lens : Lens<'a, World>) predicate initializers content = compositeIf<LabelDispatcher, 'a> entityName lens predicate initializers content
+    let panelIf entityName (lens : Lens<bool, World>) initializers content = compositeIf<LabelDispatcher> entityName lens initializers content
 
     /// Describe a 2d block with the given initializers.
     let block2d entityName initializers = entity<BlockDispatcher2d> entityName initializers
