@@ -21,7 +21,7 @@ module TransformMasks =
     let [<Literal>] AlwaysUpdateMask =              0b000000000000001000000000u
     let [<Literal>] PublishUpdatesMask =            0b000000000000010000000000u
     let [<Literal>] PublishPostUpdatesMask =        0b000000000000100000000000u
-    let [<Literal>] PublishActualizesMask =         0b000000000001000000000000u
+    let [<Literal>] PublishRendersMask =            0b000000000001000000000000u
     let [<Literal>] PersistentMask =                0b000000000010000000000000u
     let [<Literal>] IgnorePropertyBindingsMask =    0b000000000100000000000000u
     let [<Literal>] MountedMask =                   0b000000001000000000000000u
@@ -66,7 +66,7 @@ type [<NoEquality; NoComparison>] Transform =
     member this.AlwaysUpdate with get () = this.Flags_ &&& AlwaysUpdateMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| AlwaysUpdateMask else this.Flags_ &&& ~~~AlwaysUpdateMask
     member this.PublishUpdates with get () = this.Flags_ &&& PublishUpdatesMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| PublishUpdatesMask else this.Flags_ &&& ~~~PublishUpdatesMask
     member this.PublishPostUpdates with get () = this.Flags_ &&& PublishPostUpdatesMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| PublishPostUpdatesMask else this.Flags_ &&& ~~~PublishPostUpdatesMask
-    member this.PublishActualizes with get () = this.Flags_ &&& PublishActualizesMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| PublishActualizesMask else this.Flags_ &&& ~~~PublishActualizesMask
+    member this.PublishRenders with get () = this.Flags_ &&& PublishRendersMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| PublishRendersMask else this.Flags_ &&& ~~~PublishRendersMask
     member this.Persistent with get () = this.Flags_ &&& PersistentMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| PersistentMask else this.Flags_ &&& ~~~PersistentMask
     member this.IgnorePropertyBindings with get () = this.Flags_ &&& IgnorePropertyBindingsMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| IgnorePropertyBindingsMask else this.Flags_ &&& ~~~IgnorePropertyBindingsMask
     member this.Mounted with get () = this.Flags_ &&& MountedMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| MountedMask else this.Flags_ &&& ~~~MountedMask

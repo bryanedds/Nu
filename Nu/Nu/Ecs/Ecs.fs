@@ -52,7 +52,7 @@ and [<NoEquality; NoComparison; Struct>] EcsRegistrationData =
 and [<AbstractClass; Sealed>] EcsEvents =
     static member Update = { EcsEventName = "Update"; EcsEventType = GlobalEvent }
     static member PostUpdate = { EcsEventName = "PostUpdate"; EcsEventType = GlobalEvent }
-    static member Actualize = { EcsEventName = "Actualize"; EcsEventType = GlobalEvent }
+    static member Render = { EcsEventName = "Render"; EcsEventType = GlobalEvent }
     static member Register entity compName = { EcsEventName = "Register"; EcsEventType = ComponentEvent (entity, compName) }
     static member Unregistering entity compName = { EcsEventName = "Unregistering"; EcsEventType = ComponentEvent (entity, compName) }
     static member Change entity = { EcsEventName = "Change"; EcsEventType = EntityEvent entity }

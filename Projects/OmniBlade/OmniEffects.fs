@@ -458,12 +458,12 @@ module Effects =
     
     let makeHopEffect start stop =
         { EffectName = "Hop"
-          LifeTimeOpt = Some 20L // +2 due to actualization / update order
+          LifeTimeOpt = Some 20L // +2 due to rendering / update order
           Definitions = Map.empty
           Content = Tag ("Tag", [|Hop (start, stop, 24.0f, 18L)|], Nil) }
 
     let makeCircleEffect radius =
         { EffectName = "Circle"
-          LifeTimeOpt = Some 100L // +2 due to actualization / update order
+          LifeTimeOpt = Some 100L // +2 due to rendering / update order
           Definitions = Map.empty
           Content = Tag ("Tag", [|Circle (radius, 2.0f, 98L)|], Nil) }

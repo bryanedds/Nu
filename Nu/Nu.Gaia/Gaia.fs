@@ -372,7 +372,7 @@ module Gaia =
             (Cascade, world)
         else (Cascade, world)
 
-    let private handleNuActualize (form : GaiaForm) (_ : Event<unit, Game>) world =
+    let private handleNuRender (form : GaiaForm) (_ : Event<unit, Game>) world =
         match form.entityPropertyGrid.SelectedObject with
         | null -> (Cascade, world)
         | :? EntityTypeDescriptorSource as entityTds ->
@@ -1571,7 +1571,7 @@ module Gaia =
                         let world = World.subscribe (handleNuCameraDragBegin form) Events.MouseCenterDown Simulants.Game world
                         let world = World.subscribe (handleNuCameraDragEnd form) Events.MouseCenterUp Simulants.Game world
                         let world = World.subscribe (handleNuUpdate form) Events.Update Simulants.Game world
-                        let world = World.subscribe (handleNuActualize form) Events.Actualize Simulants.Game world
+                        let world = World.subscribe (handleNuRender form) Events.Render Simulants.Game world
                         (defaultGroup, world)
                     | Some _ -> (defaultGroup, world) // NOTE: conclude world is already attached
                 | [] -> failwith ("Cannot attach Gaia to a world with no groups inside the '" + scstring Globals.Screen + "' screen.")

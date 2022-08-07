@@ -54,7 +54,7 @@ module Reflection =
              ("PublishChangeEvents", true)
              ("PublishUpdates", true)
              ("PublishPostUpdates", true)
-             ("PublishActualizes", true)
+             ("PublishRenders", true)
              ("IgnorePropertyBindings", true)
              ("Mounted", true)
              ("Is2d", true)

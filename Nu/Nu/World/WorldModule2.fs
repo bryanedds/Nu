@@ -38,9 +38,8 @@ module WorldModule2 =
     let private PerFrameTimer = Diagnostics.Stopwatch ()
     let private PreFrameTimer = Diagnostics.Stopwatch ()
     let private PostFrameTimer = Diagnostics.Stopwatch ()
-    let private ActualizeTimer = Diagnostics.Stopwatch ()
-    let private ActualizeGatherTimer = Diagnostics.Stopwatch ()
-    let private ActualizeEntitiesTimer = Diagnostics.Stopwatch ()
+    let private RenderGatherTimer = Diagnostics.Stopwatch ()
+    let private RenderEntitiesTimer = Diagnostics.Stopwatch ()
     let private RenderTimer = Diagnostics.Stopwatch ()
     let private AudioTimer = Diagnostics.Stopwatch ()
 
@@ -861,7 +860,7 @@ module WorldModule2 =
             // fin
             world
 
-        static member private actualizeScreenTransition5 (_ : Vector2) (eyeSize : Vector2) (screen : Screen) transition world =
+        static member private renderScreenTransition5 (_ : Vector2) (eyeSize : Vector2) (screen : Screen) transition world =
             match transition.DissolveImageOpt with
             | Some dissolveImage ->
                 let progress = single (screen.GetTransitionUpdates world) / single (inc transition.TransitionLifeTime)
@@ -891,16 +890,16 @@ module WorldModule2 =
             | None -> ()
             world
 
-        static member private actualizeScreenTransition (screen : Screen) world =
+        static member private renderScreenTransition (screen : Screen) world =
             match screen.GetTransitionState world with
-            | IncomingState -> World.actualizeScreenTransition5 (World.getEyePosition2d world) (World.getEyeSize2d world) screen (screen.GetIncoming world) world
-            | OutgoingState -> World.actualizeScreenTransition5 (World.getEyePosition2d world) (World.getEyeSize2d world) screen (screen.GetOutgoing world) world
+            | IncomingState -> World.renderScreenTransition5 (World.getEyePosition2d world) (World.getEyeSize2d world) screen (screen.GetIncoming world) world
+            | OutgoingState -> World.renderScreenTransition5 (World.getEyePosition2d world) (World.getEyeSize2d world) screen (screen.GetOutgoing world) world
             | IdlingState -> world
 
-        static member private actualizeSimulants world =
+        static member private renderSimulants world =
 
             // gather simulants
-            ActualizeGatherTimer.Start ()
+            RenderGatherTimer.Start ()
             let screens = match World.getOmniScreenOpt world with Some omniScreen -> [omniScreen] | None -> []
             let screens = match World.getSelectedScreenOpt world with Some selectedScreen -> selectedScreen :: screens | None -> screens
             let screens = List.rev screens
@@ -908,29 +907,31 @@ module WorldModule2 =
             let (entities3d, world) = World.getEntitiesInView3d CachedHashSet3d world
             let (entities2d, world) = World.getEntitiesInView2d CachedHashSet2d world
             let entities = Seq.append entities3d entities2d
-            ActualizeGatherTimer.Stop ()
+            RenderGatherTimer.Stop ()
 
-            // actualize simulants breadth-first
-            let world = World.actualizeGame world
-            let world = List.fold (fun world screen -> World.actualizeScreen screen world) world screens
-            let world = match World.getSelectedScreenOpt world with Some selectedScreen -> World.actualizeScreenTransition selectedScreen world | None -> world
-            let world = Seq.fold (fun world group -> World.actualizeGroup group world) world groups
+            // render simulants breadth-first
+            let world = World.renderGame world
+            let world = List.fold (fun world screen -> World.renderScreen screen world) world screens
+            let world = match World.getSelectedScreenOpt world with Some selectedScreen -> World.renderScreenTransition selectedScreen world | None -> world
+            let world = Seq.fold (fun world (group : Group) -> if group.GetVisible world then World.renderGroup group world else world) world groups
 
-            // actualize entities
-            ActualizeEntitiesTimer.Start ()
+            // render entities
+            RenderEntitiesTimer.Start ()
             let world =
                 if World.getStandAlone world then
                     Seq.fold (fun world (entity : Entity) ->
-                        World.actualizeEntity entity world)
+                        if entity.GetVisible world
+                        then World.renderEntity entity world
+                        else world)
                         world entities
                 else
                     Seq.fold (fun world (entity : Entity) ->
                         let group = entity.Group
-                        if group.GetVisible world
-                        then World.actualizeEntity entity world
+                        if group.GetVisible world && entity.GetVisible world
+                        then World.renderEntity entity world
                         else world)
                         world entities
-            ActualizeEntitiesTimer.Stop ()
+            RenderEntitiesTimer.Stop ()
 
             // clear cached hash sets
             CachedHashSet3d.Clear ()
@@ -1006,9 +1007,9 @@ module WorldModule2 =
                                             DestructionTimer.Stop ()
                                             match World.getLiveness world with
                                             | Live ->
-                                                ActualizeTimer.Start ()
-                                                let world = World.actualizeSimulants world
-                                                ActualizeTimer.Stop ()
+                                                RenderTimer.Start ()
+                                                let world = World.renderSimulants world
+                                                RenderTimer.Stop ()
                                                 match World.getLiveness world with
                                                 | Live ->
                                                     PerFrameTimer.Start ()
@@ -1146,9 +1147,9 @@ module GameDispatcherModule =
                     WorldModule.bind5 right.This right left world)
                 world initializers
 
-        override this.Actualize (game, world) =
+        override this.Render (game, world) =
             let view = this.View (this.GetModel game world, game, world)
-            World.actualizeView view world
+            World.renderView view world
 
         override this.TrySignal (signalObj, game, world) =
             match signalObj with
