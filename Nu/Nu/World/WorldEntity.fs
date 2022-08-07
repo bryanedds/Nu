@@ -415,17 +415,17 @@ module WorldEntityModule =
             else world
 #endif
 
-        static member internal actualizeEntity (entity : Entity) world =
+        static member internal renderEntity (entity : Entity) world =
             let dispatcher = entity.GetDispatcher world
-            let world = dispatcher.Actualize (entity, world)
+            let world = dispatcher.Render (entity, world)
             let facets = entity.GetFacets world
             let world =
                 if Array.notEmpty facets // OPTIMIZATION: avoid lambda allocation.
-                then Array.fold (fun world (facet : Facet) -> facet.Actualize (entity, world)) world facets
+                then Array.fold (fun world (facet : Facet) -> facet.Render (entity, world)) world facets
                 else world
-            if World.getEntityPublishActualizes entity world then
-                let eventTrace = EventTrace.debug "World" "actualizeEntity" "" EventTrace.empty
-                World.publishPlus () entity.ActualizeEvent eventTrace Simulants.Game false false world
+            if World.getEntityPublishRenders entity world then
+                let eventTrace = EventTrace.debug "World" "renderEntity" "" EventTrace.empty
+                World.publishPlus () entity.RenderEvent eventTrace Simulants.Game false false world
             else world
 
         /// Get all the entities in a group.

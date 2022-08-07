@@ -432,7 +432,7 @@ module WorldModuleEntity =
         static member internal getEntityAlwaysUpdate entity world = (World.getEntityState entity world).AlwaysUpdate
         static member internal getEntityPublishUpdates entity world = (World.getEntityState entity world).PublishUpdates
         static member internal getEntityPublishPostUpdates entity world = (World.getEntityState entity world).PublishPostUpdates
-        static member internal getEntityPublishActualizes entity world = (World.getEntityState entity world).PublishActualizes
+        static member internal getEntityPublishRenders entity world = (World.getEntityState entity world).PublishRenders
         static member internal getEntityPersistent entity world = (World.getEntityState entity world).Persistent
         static member internal getEntityIgnorePropertyBindings entity world = (World.getEntityState entity world).IgnorePropertyBindings
         static member internal getEntityMounted entity world = (World.getEntityState entity world).Mounted
@@ -456,7 +456,7 @@ module WorldModuleEntity =
         static member internal setEntityAlwaysUpdate value entity world = World.updateEntityStatePlus (fun entityState -> if value <> entityState.AlwaysUpdate then (let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState in entityState.AlwaysUpdate <- value; entityState) else Unchecked.defaultof<_>) Property? AlwaysUpdate value entity world
         static member internal setEntityPublishUpdates value entity world = World.updateEntityState (fun entityState -> if value <> entityState.PublishUpdates then (let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState in entityState.PublishUpdates <- value; entityState) else Unchecked.defaultof<_>) Property? PublishUpdates value entity world
         static member internal setEntityPublishPostUpdates value entity world = World.updateEntityState (fun entityState -> if value <> entityState.PublishPostUpdates then (let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState in entityState.PublishPostUpdates <- value; entityState) else Unchecked.defaultof<_>) Property? PublishPostUpdates value entity world
-        static member internal setEntityPublishActualizes value entity world = World.updateEntityState (fun entityState -> if value <> entityState.PublishActualizes then (let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState in entityState.PublishActualizes <- value; entityState) else Unchecked.defaultof<_>) Property? PublishActualizes value entity world
+        static member internal setEntityPublishRenders value entity world = World.updateEntityState (fun entityState -> if value <> entityState.PublishRenders then (let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState in entityState.PublishRenders <- value; entityState) else Unchecked.defaultof<_>) Property? PublishRenders value entity world
         static member internal setEntityPersistent value entity world = World.updateEntityState (fun entityState -> if value <> entityState.Persistent then (let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState in entityState.Persistent <- value; entityState) else Unchecked.defaultof<_>) Property? Persistent value entity world
         static member internal setEntityIgnorePropertyBindings value entity world = World.updateEntityState (fun entityState -> if value <> entityState.IgnorePropertyBindings then (let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState in entityState.IgnorePropertyBindings <- value; entityState) else Unchecked.defaultof<_>) Property? IgnorePropertyBindings value entity world
         static member internal setEntityMounted value entity world = World.updateEntityState (fun entityState -> if value <> entityState.Mounted then (let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState in entityState.Mounted <- value; entityState) else Unchecked.defaultof<_>) Property? Mounted value entity world
@@ -1741,8 +1741,8 @@ module WorldModuleEntity =
             World.updateEntityPublishEventFlag World.setEntityPublishPostUpdates entity (atooa entity.PostUpdateEvent) world
 #endif
 
-        static member internal updateEntityPublishActualizeFlag entity world =
-            World.updateEntityPublishEventFlag World.setEntityPublishActualizes entity (atooa entity.ActualizeEvent) world
+        static member internal updateEntityPublishRenderFlag entity world =
+            World.updateEntityPublishEventFlag World.setEntityPublishRenders entity (atooa entity.RenderEvent) world
 
         static member internal updateEntityPublishFlags entity world =
             let mutable changed = false // bit of funky mutation in the face of #if
@@ -1752,7 +1752,7 @@ module WorldModuleEntity =
             let struct (changed', world) = World.updateEntityPublishPostUpdateFlag entity world
             changed <- changed || changed'
 #else
-            let struct (changed', world) = World.updateEntityPublishActualizeFlag entity world
+            let struct (changed', world) = World.updateEntityPublishRenderFlag entity world
             changed <- changed || changed'
             struct (changed, world)
 #endif
@@ -2296,7 +2296,7 @@ module WorldModuleEntity =
         EntityGetters.Assign ("AlwaysUpdate", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityAlwaysUpdate entity world })
         EntityGetters.Assign ("PublishUpdates", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPublishUpdates entity world })
         EntityGetters.Assign ("PublishPostUpdates", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPublishPostUpdates entity world })
-        EntityGetters.Assign ("PublishActualizes", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPublishActualizes entity world })
+        EntityGetters.Assign ("PublishRenders", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPublishRenders entity world })
         EntityGetters.Assign ("Persistent", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPersistent entity world })
         EntityGetters.Assign ("IgnorePropertyBindings", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityIgnorePropertyBindings entity world })
         EntityGetters.Assign ("Mounted", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityMounted entity world })

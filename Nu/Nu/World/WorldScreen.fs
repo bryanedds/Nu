@@ -53,7 +53,7 @@ module WorldScreenModule =
         member this.ChangeEvent propertyName = Events.Change propertyName --> this
         member this.UpdateEvent = Events.Update --> this
         member this.PostUpdateEvent = Events.PostUpdate --> this
-        member this.ActualizeEvent = Events.Actualize --> this
+        member this.RenderEvent = Events.Render --> this
         member this.SelectEvent = Events.Select --> this
         member this.DeselectEvent = Events.Deselecting --> this
         member this.IncomingStartEvent = Events.IncomingStart --> this
@@ -160,20 +160,20 @@ module WorldScreenModule =
             let eventTrace = EventTrace.debug "World" "postUpdateScreen" "" EventTrace.empty
             World.publishPlus () (Events.PostUpdate --> screen) eventTrace Simulants.Game false false world
 
-        static member internal actualizeScreen (screen : Screen) world =
+        static member internal renderScreen (screen : Screen) world =
 
-            // actualize ecs
+            // render ecs
             let ecs = World.getScreenEcs screen world
-            let world = ecs.Notify Ecs.EcsEvents.Actualize () world
-            let world = ecs.Publish Ecs.EcsEvents.Actualize () world
+            let world = ecs.Notify Ecs.EcsEvents.Render () world
+            let world = ecs.Publish Ecs.EcsEvents.Render () world
 
-            // actualize via dispatcher
+            // render via dispatcher
             let dispatcher = screen.GetDispatcher world
-            let world = dispatcher.Actualize (screen, world)
+            let world = dispatcher.Render (screen, world)
 
-            // publish actualize event
-            let eventTrace = EventTrace.debug "World" "actualizeScreen" "" EventTrace.empty
-            World.publishPlus () (Events.Actualize --> screen) eventTrace Simulants.Game false false world
+            // publish render event
+            let eventTrace = EventTrace.debug "World" "renderScreen" "" EventTrace.empty
+            World.publishPlus () (Events.Render --> screen) eventTrace Simulants.Game false false world
 
         /// Get all the screens in the world.
         [<FunctionBinding>]

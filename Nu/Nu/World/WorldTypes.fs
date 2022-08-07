@@ -115,9 +115,9 @@ module WorldTypes =
         abstract PostUpdate : Game * World -> World
         default this.PostUpdate (_, world) = world
 
-        /// Actualize a game.
-        abstract Actualize : Game * World -> World
-        default this.Actualize (_, world) = world
+        /// Render a game.
+        abstract Render : Game * World -> World
+        default this.Render (_, world) = world
 
         /// Try to send a signal to a game.
         abstract TrySignal : obj * Game * World -> World
@@ -143,9 +143,9 @@ module WorldTypes =
         abstract PostUpdate : Screen * World -> World
         default this.PostUpdate (_, world) = world
 
-        /// Actualize a screen.
-        abstract Actualize : Screen * World -> World
-        default this.Actualize (_, world) = world
+        /// Render a screen.
+        abstract Render : Screen * World -> World
+        default this.Render (_, world) = world
 
         /// Try to send a signal to a screen.
         abstract TrySignal : obj * Screen * World -> World
@@ -171,9 +171,9 @@ module WorldTypes =
         abstract PostUpdate : Group * World -> World
         default this.PostUpdate (_, world) = world
 
-        /// Actualize a group.
-        abstract Actualize : Group * World -> World
-        default this.Actualize (_, world) = world
+        /// Render a group.
+        abstract Render : Group * World -> World
+        default this.Render (_, world) = world
 
         /// Try to send a signal to a group.
         abstract TrySignal : obj * Group * World -> World
@@ -215,7 +215,7 @@ module WorldTypes =
              Define? AlwaysUpdate false
              Define? PublishUpdates false
              Define? PublishPostUpdates false
-             Define? PublishActualizes false
+             Define? PublishRenders false
              Define? Persistent true
              Define? IgnorePropertyBindings false]
 
@@ -237,9 +237,9 @@ module WorldTypes =
         default this.PostUpdate (_, world) = world
 #endif
 
-        /// Actualize an entity.
-        abstract Actualize : Entity * World -> World
-        default this.Actualize (_, world) = world
+        /// Render an entity.
+        abstract Render : Entity * World -> World
+        default this.Render (_, world) = world
 
         /// Apply physics changes to an entity.
         abstract ApplyPhysics : Vector3 * Quaternion * Vector3 * Vector3 * Entity * World -> World
@@ -306,9 +306,9 @@ module WorldTypes =
         default this.PostUpdate (_, world) = world
 #endif
 
-        /// Actualize a facet.
-        abstract Actualize : Entity * World -> World
-        default this.Actualize (_, world) = world
+        /// Render a facet.
+        abstract Render : Entity * World -> World
+        default this.Render (_, world) = world
 
         /// Try to send a signal to a facet.
         abstract TrySignal : obj * Entity * World -> World
@@ -672,7 +672,7 @@ module WorldTypes =
         member this.AlwaysUpdate with get () = this.Transform.AlwaysUpdate and set value = this.Transform.AlwaysUpdate <- value
         member this.PublishUpdates with get () = this.Transform.PublishUpdates and set value = this.Transform.PublishUpdates <- value
         member this.PublishPostUpdates with get () = this.Transform.PublishPostUpdates and set value = this.Transform.PublishPostUpdates <- value
-        member this.PublishActualizes with get () = this.Transform.PublishActualizes and set value = this.Transform.PublishActualizes <- value
+        member this.PublishRenders with get () = this.Transform.PublishRenders and set value = this.Transform.PublishRenders <- value
         member this.Persistent with get () = this.Transform.Persistent and set value = this.Transform.Persistent <- value
         member this.IgnorePropertyBindings with get () = this.Transform.IgnorePropertyBindings and set value = this.Transform.IgnorePropertyBindings <- value
         member this.Mounted with get () = this.Transform.Mounted and set value = this.Transform.Mounted <- value
@@ -959,10 +959,10 @@ module WorldTypes =
             rtoa<unit> (Array.append [|"PostUpdate"; "Event"|] surnames)
 #endif
 
-        /// The entity's actualize event.
-        member this.ActualizeEvent =
+        /// The entity's render event.
+        member this.RenderEvent =
             let surnames = Address.getNames entityAddress
-            rtoa<unit> (Array.append [|"Actualize"; "Event"|] surnames)
+            rtoa<unit> (Array.append [|"Render"; "Event"|] surnames)
 
         /// Get the names of an entity.
         member inline this.Names = Address.getNames this.EntityAddress
