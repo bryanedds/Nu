@@ -794,9 +794,10 @@ module WorldModule2 =
 
             // update entities
             UpdateEntitiesTimer.Start ()
+            let advancing = World.getAdvancing world
             let world =
                 Seq.fold (fun world (entity : Entity) ->
-                    if World.getAdvancing world || entity.GetAlwaysUpdate world
+                    if not (entity.GetStatic world) && (entity.GetAlwaysUpdate world || advancing)
                     then World.updateEntity entity world
                     else world)
                     world
@@ -843,9 +844,10 @@ module WorldModule2 =
 #if !DISABLE_ENTITY_POST_UPDATE
             // post-update entities
             PostUpdateEntitiesTimer.Start ()
+            let advancing = World.getAdvancing world
             let world =
                 Seq.fold (fun world (entity : Entity) ->
-                    if World.getAdvancing world || entity.GetAlwaysUpdate world
+                    if not (entity.GetStatic world) && (entity.GetAlwaysUpdate world || advancing)
                     then World.postUpdateEntity entity world
                     else world)
                     world
