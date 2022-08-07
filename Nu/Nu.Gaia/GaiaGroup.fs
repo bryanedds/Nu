@@ -32,8 +32,7 @@ and GroupPropertyDescriptor (propertyDescriptor, attributes) =
         // HACK: in order to put Scripts as the last category, I start all the other categories with an unprinted
         // \r character as here - https://bytes.com/topic/c-sharp/answers/214456-q-ordering-sorting-category-text-propertygrid
         if propertyName.EndsWith "Script" || propertyName.EndsWith "ScriptOpt" then "Scripts"
-        elif propertyName = "Name" then "\rAmbient Properties"
-        elif propertyName.EndsWith "Model" then "\rScene Properties"
+        elif propertyName = "Name" ||  propertyName.EndsWith "Model" then "\rAmbient Properties"
         elif propertyName = "Persistent" || propertyName = "Elevation" || propertyName = "Visible" then "\rScene Properties"
         else "\rXtension Properties"
 

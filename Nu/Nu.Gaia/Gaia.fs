@@ -158,11 +158,14 @@ module Gaia =
         let entityTds = { DescribedEntity = entity; Form = form }
         let previousGridItem = form.entityPropertyGrid.SelectedGridItem
         form.entityPropertyGrid.SelectedObject <- entityTds
-        let gridItems = form.entityPropertyGrid.SelectedGridItem.Parent.Parent.GridItems.["\rScene Properties"].GridItems
+        let gridItems = dictPlus StringComparer.Ordinal []
+        for gridItem in form.entityPropertyGrid.SelectedGridItem.Parent.Parent.GridItems do
+            for gridItem in gridItem.GridItems do
+                gridItems.Add (gridItem.Label, gridItem)
         if notNull previousGridItem then
-            match Seq.tryFind (fun (gridItem : GridItem) -> gridItem.Label = previousGridItem.Label) (enumerable gridItems) with
-            | Some gridItem -> form.entityPropertyGrid.SelectedGridItem <- gridItem
-            | None -> if entity.GetModelGeneric<obj> world <> box () then form.entityPropertyGrid.SelectedGridItem <- gridItems.["Model"]
+            match gridItems.TryGetValue previousGridItem.Label with
+            | (true, gridItem) -> form.entityPropertyGrid.SelectedGridItem <- gridItem
+            | (false, _) -> if entity.GetModelGeneric<obj> world <> box () then form.entityPropertyGrid.SelectedGridItem <- gridItems.["Model"]
         elif entity.GetModelGeneric<obj> world <> box () then form.entityPropertyGrid.SelectedGridItem <- gridItems.["Model"]
         form.entityIgnorePropertyBindingsCheckBox.Checked <- entityTds.DescribedEntity.GetIgnorePropertyBindings world
         form.propertyTabControl.SelectTab 0 // show entity properties
