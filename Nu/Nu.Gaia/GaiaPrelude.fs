@@ -24,13 +24,15 @@ type DragEyeState =
 
 type EditorState =
     { TargetDir : string
-      RightClickPosition : Vector2
-      DragEntityState : DragEntityState
-      DragEyeState : DragEyeState
-      OtherSnaps : single * single * single
-      SelectedGroup : Group
-      FilePaths : Map<Group Address, string>
-      RefreshHierarchyViewRequested : bool } // HACK: make sure hierarchy view isn't updated more than once per frame.
+      mutable RightClickPosition : Vector2
+      mutable DragEntityState : DragEntityState
+      mutable DragEyeState : DragEyeState
+      mutable OtherSnaps : single * single * single
+      mutable SelectedGroup : Group
+      mutable FilePaths : Map<Group Address, string>
+      mutable RefreshHierarchyViewRequested : bool // HACK: make sure hierarchy view isn't updated more than once per frame.
+      mutable PastWorlds : World list
+      mutable FutureWorlds : World list }
 
 type SavedState =
     { BinaryFilePath : string
@@ -41,16 +43,14 @@ type SavedState =
 [<RequireQualifiedAccess>]
 module Globals =
 
-    let EditorGuid = Gen.id
-    let mutable Form = Unchecked.defaultof<GaiaForm>
-    let mutable World = Unchecked.defaultof<World>
     let mutable Screen = Simulants.Default.Screen
-    let mutable PastWorlds : World list = []
-    let mutable FutureWorlds : World list = []
+    let mutable World = Unchecked.defaultof<World>
+    let mutable EditorState = Unchecked.defaultof<EditorState>
+    let mutable Form = Unchecked.defaultof<GaiaForm>
     let mutable WorldChangers = WorldChangers ()
     let mutable SelectEntity : Entity -> GaiaForm -> World -> unit = Unchecked.defaultof<_>
 
     let pushPastWorld pastWorld =
         let pastWorld = Nu.World.shelve pastWorld
-        PastWorlds <- pastWorld :: PastWorlds
-        FutureWorlds <- []
+        EditorState.PastWorlds <- pastWorld :: EditorState.PastWorlds
+        EditorState.FutureWorlds <- []

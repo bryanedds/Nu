@@ -63,7 +63,7 @@
   <Import Project="$(FSharpTargetsPath)" Condition="Exists('$(FSharpTargetsPath)')" />
   <ItemGroup>
     <Compile Include="GaiaConstants.fs" />
-    <Compile Include="GaiaTypes.fs" />
+    <Compile Include="GaiaPrelude.fs" />
     <Compile Include="GaiaEntity.fs" />
     <Compile Include="GaiaGroup.fs" />
     <Compile Include="Gaia.fs" />
