@@ -966,7 +966,7 @@ module WorldModule2 =
             World.cleanUpSubsystems world |> ignore
 
         /// Run the game engine with threading with the given handlers, but don't clean up at the end, and return the world.
-        static member runWithoutCleanUp runWhile preProcess postProcess (sdlDeps : SdlDeps) liveness firstFrame world =
+        static member runWithoutCleanUp runWhile preProcess perProcess postProcess (sdlDeps : SdlDeps) liveness firstFrame world =
             TotalTimer.Start ()
             if runWhile world then
                 if World.shouldSleep world then Thread.Sleep (1000 / Constants.Engine.FpsDesiredI) // don't let game run too fast while full screen unfocused
@@ -1000,6 +1000,7 @@ module WorldModule2 =
                                     match World.getLiveness world with
                                     | Live ->
                                         TaskletsTimer.Start ()
+                                        WorldModule.TaskletProcessingStarted <- true
                                         let world = World.processTasklets world
                                         TaskletsTimer.Stop ()
                                         match World.getLiveness world with
@@ -1016,6 +1017,7 @@ module WorldModule2 =
                                                 | Live ->
                                                     PerFrameTimer.Start ()
                                                     let world = World.perFrame world
+                                                    let world = perProcess world
                                                     PerFrameTimer.Stop ()
                                                     match World.getLiveness world with
                                                     | Live ->
@@ -1052,7 +1054,8 @@ module WorldModule2 =
                                                             // update counters and recur
                                                             TotalTimer.Stop ()
                                                             let world = World.updateTime world
-                                                            World.runWithoutCleanUp runWhile preProcess postProcess sdlDeps liveness false world
+                                                            WorldModule.TaskletProcessingStarted <- false
+                                                            World.runWithoutCleanUp runWhile preProcess perProcess postProcess sdlDeps liveness false world
 
                                                         | Dead -> world
                                                     | Dead -> world
@@ -1070,7 +1073,7 @@ module WorldModule2 =
         /// Run the game engine with the given handler.
         static member run4 runWhile (sdlDeps : SdlDeps) liveness world =
             let result =
-                try let world = World.runWithoutCleanUp runWhile id id sdlDeps liveness true world
+                try let world = World.runWithoutCleanUp runWhile id id id sdlDeps liveness true world
                     World.cleanUp world
                     Constants.Engine.SuccessExitCode
                 with exn ->

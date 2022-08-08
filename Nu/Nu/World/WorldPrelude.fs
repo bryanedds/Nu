@@ -229,9 +229,6 @@ module AmbientState =
     /// Tracks whether the engine is running stand-alone.
     let mutable private StandAlone = true
 
-    /// Tracks the state of tasklet processing.
-    let mutable private TaskletsProcessing = false
-
     /// The ambient state of the world.
     type [<ReferenceEquality; NoComparison>] 'w AmbientState =
         private
@@ -350,18 +347,11 @@ module AmbientState =
 
     /// Clear the tasklets from future processing.
     let clearTasklets state =
-        TaskletsProcessing <- true
         { state with Tasklets = OMap.makeEmpty HashIdentity.Structural (OMap.getConfig state.Tasklets) }
 
     /// Restore the given tasklets from future processing.
     let restoreTasklets tasklets state =
-        let state = { state with Tasklets = tasklets }
-        TaskletsProcessing <- false
-        state
-
-    /// Get the tasklets processing state.
-    let getTaskletsProcessing (_ : 'w AmbientState) =
-        TaskletsProcessing
+        { state with Tasklets = tasklets }
 
     /// Add a tasklet to be executed at the scheduled time.
     let addTasklet simulant tasklet state =

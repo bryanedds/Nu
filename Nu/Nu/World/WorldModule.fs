@@ -51,6 +51,9 @@ module WorldModuleOperators =
 [<AutoOpen; ModuleBinding>]
 module WorldModule =
 
+    /// Track if we're in the portion of the frame before tasklet processing has started or after.
+    let mutable internal TaskletProcessingStarted = false
+
     /// Declarative lens comparable.
     /// TODO: P1: remove the fake IEquatable and IComparable implementations after upgrading Prime.
     type [<CustomEquality; CustomComparison>] internal LensComparable<'k when 'k : equality> =
@@ -271,7 +274,7 @@ module WorldModule =
 
         static member internal updateTime world =
             World.updateAmbientState AmbientState.updateTime world
-    
+
         /// Get the update rate.
         [<FunctionBinding>]
         static member getUpdateRate world =
@@ -422,9 +425,6 @@ module WorldModule =
         static member internal restoreTasklets tasklets world =
             World.updateAmbientState (AmbientState.restoreTasklets tasklets) world
 
-        static member internal getTaskletsProcessing world =
-            World.getAmbientStateBy AmbientState.getTaskletsProcessing world
-
         /// Add a tasklet to be executed by the engine at the scheduled time.
         static member addTasklet simulant tasklet world =
             World.updateAmbientState (AmbientState.addTasklet simulant tasklet) world
@@ -434,10 +434,9 @@ module WorldModule =
             let tasklet = { ScheduledTime = time; ScheduledOp = fn }
             World.addTasklet simulant tasklet world
 
-        /// Schedule an operation to be executed by the engine at the end of the current frame.
+        /// Schedule an operation to be executed by the engine at the end of the current frame or the next frame if we've already started processing tasklets.
         static member frame fn (simulant : Simulant) world =
-            let taskletsProcessing = World.getTaskletsProcessing world
-            World.schedule fn (World.getUpdateTime world + if taskletsProcessing then 1L else 0L) simulant world
+            World.schedule fn (World.getUpdateTime world + if TaskletProcessingStarted then World.getUpdateRate world else 0L) simulant world
 
         /// Schedule an operation to be executed by the engine with the given delay.
         static member delay fn delay simulant world =
