@@ -45,10 +45,3 @@ Getting Started
 The best way to get started is to clone the repository with a git client, and to take a look at the following document -
 
 https://github.com/bryanedds/Nu/blob/master/Nu/Nu.Documentation/Nu%20Game%20Engine.pdf
-
-No Code of Conduct
-===============
-
-This project adheres to No Code of Conduct. We are all adults. We accept anyone's contributions. Nothing else matters.
-
-For more information please visit the [No Code of Conduct](https://github.com/domgetter/NCoC) homepage.
