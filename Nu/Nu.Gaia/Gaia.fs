@@ -1587,7 +1587,7 @@ module Gaia =
                 runWhile
                 (fun world -> let world = updateEditorWorld form world in (Globals.World <- world; world))
                 (fun world -> Application.DoEvents (); world)
-                sdlDeps Live true Globals.World |>
+                id sdlDeps Live true Globals.World |>
                 ignore
         with exn ->
             match MessageBox.Show
@@ -1906,12 +1906,6 @@ module Gaia =
         match SdlDeps.tryMake sdlConfig with
         | Left msg -> Left msg
         | Right sdlDeps -> Right (sdlConfig, sdlDeps)
-
-    /// Run Gaia from the F# evaluator.
-    let runFromRepl runWhile targetDir sdlDeps form world =
-        Globals.World <- world
-        run3 runWhile targetDir sdlDeps form
-        Globals.World
 
     /// Run Gaia in isolation.
     let run nuConfig =
