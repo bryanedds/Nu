@@ -43,12 +43,12 @@ type SavedState =
 [<RequireQualifiedAccess>]
 module Globals =
 
+    let mutable SelectEntity : Entity -> GaiaForm -> World -> unit = Unchecked.defaultof<_>
+    let mutable WorldChangers = WorldChangers ()
     let mutable Screen = Simulants.Default.Screen
     let mutable World = Unchecked.defaultof<World>
     let mutable EditorState = Unchecked.defaultof<EditorState>
     let mutable Form = Unchecked.defaultof<GaiaForm>
-    let mutable WorldChangers = WorldChangers ()
-    let mutable SelectEntity : Entity -> GaiaForm -> World -> unit = Unchecked.defaultof<_>
 
     let pushPastWorld pastWorld =
         let pastWorld = Nu.World.shelve pastWorld
