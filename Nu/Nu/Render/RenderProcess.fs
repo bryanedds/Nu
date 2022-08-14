@@ -24,7 +24,7 @@ type RendererProcess =
         abstract Terminate : unit -> unit
         end
 
-/// A non-threaded renderer.
+/// A non-threaded render process.
 type RendererInline (createRenderer2d, createRenderer3d) =
 
     let mutable started = false
@@ -87,7 +87,7 @@ type RendererInline (createRenderer2d, createRenderer3d) =
                 terminated <- true
             | None -> raise (InvalidOperationException "Redundant Terminate calls.")
 
-/// A threaded renderer.
+/// A threaded render process.
 type RendererThread (createRenderer2d, createRenderer3d) =
 
     let mutable taskOpt = None
