@@ -402,7 +402,10 @@ module Gaia =
             // load and add group, updating tab and selected group in the process
             let groupDescriptorStr = File.ReadAllText filePath
             let groupDescriptor = scvalue<GroupDescriptor> groupDescriptorStr
-            let groupName = match groupDescriptor.GroupProperties.TryFind "Name" with Some (Atom (name, _)) -> name | _ -> failwithumf ()
+            let groupName =
+                match groupDescriptor.GroupProperties.TryFind Constants.Engine.NamePropertyName with
+                | Some (Atom (name, _)) -> name
+                | _ -> failwithumf ()
             let group = Globals.Screen / groupName
             if not (group.Exists world) then
                 let (group, world) = World.readGroup groupDescriptor None Globals.Screen world
@@ -535,11 +538,11 @@ module Gaia =
                     if ty <> typeof<ComputedProperty> && (notNull selectedGridItem.Value || FSharpType.isNullTrueValue ty) then
                         let (keywords0, keywords1, prettyPrinter) =
                             match selectedGridItem.Label with
-                            | "OverlayNameOpt" ->
+                            | Constants.Engine.OverlayNameOptPropertyName ->
                                 let overlays = World.getOverlays world
                                 let overlayNames = overlays |> Map.toValueList |> List.map (fun overlay -> overlay.OverlayName)
                                 (String.concat " " overlayNames, "", PrettyPrinter.defaultPrinter)
-                            | "FacetNames" ->
+                            | Constants.Engine.FacetNamesPropertyName ->
                                 let facetNames = world |> World.getFacets |> Map.toKeyList
                                 (String.concat " " facetNames, "", PrettyPrinter.defaultPrinter)
                             | _ ->

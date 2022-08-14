@@ -68,7 +68,7 @@ and GroupPropertyDescriptor (propertyDescriptor, attributes) =
             match propertyName with
             
             // change the name property
-            | "Name" ->
+            | Constants.Engine.NamePropertyName ->
                 MessageBox.Show
                     ("Changing the name of a group after it has been created is not yet implemented.",
                      "Cannot change group name in Gaia.",
@@ -80,7 +80,7 @@ and GroupPropertyDescriptor (propertyDescriptor, attributes) =
             | _ ->
                 let world =
                     match propertyName with
-                    | "OverlayNameOpt" ->
+                    | Constants.Engine.OverlayNameOptPropertyName ->
                         MessageBox.Show
                             ("Changing the overlay of a group after it has been created is not yet implemented.",
                              "Cannot change group overlay in Gaia.",

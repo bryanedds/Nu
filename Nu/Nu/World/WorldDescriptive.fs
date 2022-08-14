@@ -55,7 +55,7 @@ module GroupDescriptor =
     /// Derive a name from the dispatcher.
     let getNameOpt dispatcher =
         dispatcher.GroupProperties |>
-        Map.tryFind (Property? Name) |>
+        Map.tryFind Constants.Engine.NamePropertyName |>
         Option.map symbolToValue<string>
 
     /// The empty group descriptor.
@@ -77,7 +77,7 @@ module ScreenDescriptor =
     /// Derive a name from the dispatcher.
     let getNameOpt dispatcher =
         dispatcher.ScreenProperties |>
-        Map.tryFind (Property? Name) |>
+        Map.tryFind Constants.Engine.NamePropertyName |>
         Option.map symbolToValue<string>
 
     /// The empty screen descriptor.

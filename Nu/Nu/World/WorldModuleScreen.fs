@@ -120,21 +120,21 @@ module WorldModuleScreen =
         static member internal getScreenModel<'a> screen world = (World.getScreenState screen world).Model.DesignerValue :?> 'a
         static member internal getScreenEcs screen world = (World.getScreenState screen world).Ecs
         static member internal getScreenTransitionState screen world = (World.getScreenState screen world).TransitionState
-        static member internal setScreenTransitionState value screen world = World.updateScreenState (fun screenState -> if value <> screenState.TransitionState then { screenState with TransitionState = value } else Unchecked.defaultof<_>) Property? TransitionState value screen world
+        static member internal setScreenTransitionState value screen world = World.updateScreenState (fun screenState -> if value <> screenState.TransitionState then { screenState with TransitionState = value } else Unchecked.defaultof<_>) "TransitionState" value screen world
         static member internal getScreenTransitionUpdates screen world = (World.getScreenState screen world).TransitionUpdates
-        static member internal setScreenTransitionUpdates value screen world = World.updateScreenState (fun screenState -> if value <> screenState.TransitionUpdates then { screenState with TransitionUpdates = value } else Unchecked.defaultof<_>) Property? TransitionUpdates value screen world
+        static member internal setScreenTransitionUpdates value screen world = World.updateScreenState (fun screenState -> if value <> screenState.TransitionUpdates then { screenState with TransitionUpdates = value } else Unchecked.defaultof<_>) "TransitionUpdates" value screen world
         static member internal getScreenIncoming screen world = (World.getScreenState screen world).Incoming
-        static member internal setScreenIncoming value screen world = World.updateScreenState (fun screenState -> { screenState with Incoming = value }) Property? Incoming value screen world
+        static member internal setScreenIncoming value screen world = World.updateScreenState (fun screenState -> { screenState with Incoming = value }) "Incoming" value screen world
         static member internal getScreenOutgoing screen world = (World.getScreenState screen world).Outgoing
-        static member internal setScreenOutgoing value screen world = World.updateScreenState (fun screenState -> { screenState with Outgoing = value }) Property? Outgoing value screen world
+        static member internal setScreenOutgoing value screen world = World.updateScreenState (fun screenState -> { screenState with Outgoing = value }) "Outgoing" value screen world
         static member internal getScreenSplashOpt screen world = (World.getScreenState screen world).SplashOpt
-        static member internal setScreenSplashOpt value screen world = World.updateScreenState (fun screenState -> { screenState with SplashOpt = value }) Property? SplashOpt value screen world
+        static member internal setScreenSplashOpt value screen world = World.updateScreenState (fun screenState -> { screenState with SplashOpt = value }) "SplashOpt" value screen world
         static member internal getScreenPersistent screen world = (World.getScreenState screen world).Persistent
-        static member internal setScreenPersistent value screen world = World.updateScreenState (fun screenState -> if value <> screenState.Persistent then { screenState with Persistent = value } else Unchecked.defaultof<_>) Property? Persistent value screen world
+        static member internal setScreenPersistent value screen world = World.updateScreenState (fun screenState -> if value <> screenState.Persistent then { screenState with Persistent = value } else Unchecked.defaultof<_>) "Persistent" value screen world
         static member internal getScreenDestroying (screen : Screen) world = List.exists ((=) (screen :> Simulant)) world.WorldExtension.DestructionListRev
         static member internal getScreenOrder screen world = (World.getScreenState screen world).Order
         static member internal getScreenScriptFrame screen world = (World.getScreenState screen world).ScriptFrame
-        static member internal setScreenScriptFrame value screen world = World.updateScreenState (fun screenState -> if value <> screenState.ScriptFrame then { screenState with ScriptFrame = value } else Unchecked.defaultof<_>) Property? ScriptFrame value screen world
+        static member internal setScreenScriptFrame value screen world = World.updateScreenState (fun screenState -> if value <> screenState.ScriptFrame then { screenState with ScriptFrame = value } else Unchecked.defaultof<_>) "ScriptFrame" value screen world
         static member internal getScreenId screen world = (World.getScreenState screen world).Id
         static member internal getScreenName screen world = (World.getScreenState screen world).Name
 
@@ -144,7 +144,7 @@ module WorldModuleScreen =
                     if value.DesignerValue =/= screenState.Model.DesignerValue
                     then { screenState with Model = { screenState.Model with DesignerValue = value.DesignerValue }}
                     else Unchecked.defaultof<_>)
-                Property? Model value.DesignerValue screen world
+                "Model" value.DesignerValue screen world
 
         static member internal setScreenModel<'a> (value : 'a) screen world =
             World.updateScreenState
@@ -153,7 +153,7 @@ module WorldModuleScreen =
                     if valueObj =/= screenState.Model.DesignerValue
                     then { screenState with Model = { DesignerType = typeof<'a>; DesignerValue = valueObj }}
                     else Unchecked.defaultof<_>)
-                Property? Model value screen world
+                "Model" value screen world
 
         static member internal tryGetScreenXtensionProperty (propertyName, screen, world, property : _ outref) =
             if World.getScreenExists screen world

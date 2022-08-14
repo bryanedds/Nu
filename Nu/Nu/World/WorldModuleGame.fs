@@ -62,7 +62,7 @@ module WorldModuleGame =
         static member internal getGameModelProperty world = (World.getGameState world).Model
         static member internal getGameModel<'a> world = (World.getGameState world).Model.DesignerValue :?> 'a
         static member internal getGameScriptFrame world = (World.getGameState world).ScriptFrame
-        static member internal setGameScriptFrame value world = World.updateGameState (fun gameState -> if value <> gameState.ScriptFrame then { gameState with ScriptFrame = value } else Unchecked.defaultof<_>) Property? ScriptFrame value world
+        static member internal setGameScriptFrame value world = World.updateGameState (fun gameState -> if value <> gameState.ScriptFrame then { gameState with ScriptFrame = value } else Unchecked.defaultof<_>) "ScriptFrame" value world
 
         static member internal setGameModelProperty (value : DesignerProperty) world =
             World.updateGameState
@@ -70,7 +70,7 @@ module WorldModuleGame =
                     if value.DesignerValue =/= gameState.Model.DesignerValue
                     then { gameState with Model = { gameState.Model with DesignerValue = value.DesignerValue }}
                     else Unchecked.defaultof<_>)
-                Property? Model value.DesignerValue world
+                "Model" value.DesignerValue world
 
         static member internal setGameModel<'a> (value : 'a) world =
             World.updateGameState
@@ -79,7 +79,7 @@ module WorldModuleGame =
                     if valueObj =/= gameState.Model.DesignerValue
                     then { gameState with Model = { DesignerType = typeof<'a>; DesignerValue = valueObj }}
                     else Unchecked.defaultof<_>)
-                Property? Model value world
+                "Model" value world
 
         /// Get the current 2d eye position.
         [<FunctionBinding>]
@@ -88,7 +88,7 @@ module WorldModuleGame =
 
         /// Set the current 2d eye position.
         static member internal setEyePosition2dPlus value world =
-            World.updateGameState (fun gameState -> if v2Neq value gameState.EyePosition2d then { gameState with EyePosition2d = value } else Unchecked.defaultof<_>) Property? EyePosition2d value world
+            World.updateGameState (fun gameState -> if v2Neq value gameState.EyePosition2d then { gameState with EyePosition2d = value } else Unchecked.defaultof<_>) "EyePosition2d" value world
 
         /// Set the current 2d eye position.
         [<FunctionBinding>]
@@ -102,7 +102,7 @@ module WorldModuleGame =
 
         /// Set the current 2d eye size.
         static member internal setEyeSize2dPlus value world =
-            World.updateGameState (fun gameState -> if v2Neq value gameState.EyeSize2d then { gameState with EyeSize2d = value } else Unchecked.defaultof<_>) Property? EyeSize2d value world
+            World.updateGameState (fun gameState -> if v2Neq value gameState.EyeSize2d then { gameState with EyeSize2d = value } else Unchecked.defaultof<_>) "EyeSize2d" value world
 
         /// Set the current 2d eye size.
         [<FunctionBinding>]
@@ -131,7 +131,7 @@ module WorldModuleGame =
                         EyeFrustum3dEnclosed = viewport.Frustum (Constants.Render.NearPlaneDistanceEnclosed, Constants.Render.FarPlaneDistanceEnclosed, value, gameState.EyeRotation3d)
                         EyeFrustum3dExposed = viewport.Frustum (Constants.Render.NearPlaneDistanceExposed, Constants.Render.FarPlaneDistanceExposed, value, gameState.EyeRotation3d)
                         EyeFrustum3dImposter = viewport.Frustum (Constants.Render.NearPlaneDistanceImposter, Constants.Render.FarPlaneDistanceImposter, value, gameState.EyeRotation3d) }
-                else Unchecked.defaultof<_>) Property? EyePosition3d value world
+                else Unchecked.defaultof<_>) "EyePosition3d" value world
 
         /// Set the current 3d eye position.
         [<FunctionBinding>]
@@ -153,7 +153,7 @@ module WorldModuleGame =
                         EyeFrustum3dEnclosed = viewport.Frustum (Constants.Render.NearPlaneDistanceEnclosed, Constants.Render.FarPlaneDistanceEnclosed, gameState.EyePosition3d, value)
                         EyeFrustum3dExposed = viewport.Frustum (Constants.Render.NearPlaneDistanceExposed, Constants.Render.FarPlaneDistanceExposed, gameState.EyePosition3d, value)
                         EyeFrustum3dImposter = viewport.Frustum (Constants.Render.NearPlaneDistanceImposter, Constants.Render.FarPlaneDistanceImposter, gameState.EyePosition3d, value) }
-                else Unchecked.defaultof<_>) Property? EyeRotation3d value world
+                else Unchecked.defaultof<_>) "EyeRotation3d" value world
 
         /// Set the current 3d eye rotation.
         [<FunctionBinding>]
@@ -189,7 +189,7 @@ module WorldModuleGame =
         /// Set the omni-screen or None.
         static member internal setOmniScreenOptPlus value world =
             if Option.isSome value && World.getSelectedScreenOpt world = value then failwith "Cannot set OmniScreen to SelectedScreen."
-            World.updateGameState (fun gameState -> if value <> gameState.OmniScreenOpt then { gameState with OmniScreenOpt = value } else Unchecked.defaultof<_>) Property? OmniScreenOpt value world
+            World.updateGameState (fun gameState -> if value <> gameState.OmniScreenOpt then { gameState with OmniScreenOpt = value } else Unchecked.defaultof<_>) "OmniScreenOpt" value world
 
         /// Set the omni-screen or None.
         [<FunctionBinding>]
@@ -240,7 +240,7 @@ module WorldModuleGame =
                 failwith "Cannot set SelectedScreen to OmniScreen."
 
             // raise change event for none selection
-            let struct (_, world) = World.updateGameState id Property? SelectedScreenOpt None world
+            let struct (_, world) = World.updateGameState id "SelectedScreenOpt" None world
 
             // clear out singleton states
             let world =
@@ -275,7 +275,7 @@ module WorldModuleGame =
                 let world = WorldModule.registerScreenPhysics screen world
 
                 // raise change event for some selection
-                let world = World.updateGameState id Property? SelectedScreenOpt (Some screen) world |> snd'
+                let world = World.updateGameState id "SelectedScreenOpt" (Some screen) world |> snd'
                 (true, world)
 
             // fin
@@ -317,7 +317,7 @@ module WorldModuleGame =
                     if screens <> gameState.DesiredScreenOpt
                     then { gameState with DesiredScreenOpt = screens }
                     else Unchecked.defaultof<_>)
-                Property? DesiredScreenOpt
+                "DesiredScreenOpt"
                 screens
                 world
 
@@ -330,7 +330,7 @@ module WorldModuleGame =
                     if destination <> gameState.ScreenTransitionDestinationOpt
                     then { gameState with ScreenTransitionDestinationOpt = destination }
                     else Unchecked.defaultof<_>)
-                Property? ScreenTransitionDestinationOpt
+                "ScreenTransitionDestinationOpt"
                 destination
                 world
 

@@ -47,9 +47,9 @@ module Bullet =
 module Enemy =
 
     type Entity with
-        member this.GetHealth world : int = this.Get Property? Health world
-        member this.SetHealth (value : int) world = this.Set Property? Health value world
-        member this.Health = lens<int> Property? Health this.GetHealth this.SetHealth this
+        member this.GetHealth world : int = this.Get (nameof this.Health) world
+        member this.SetHealth (value : int) world = this.Set (nameof this.Health) value world
+        member this.Health = lens<int> (nameof this.Health) this.GetHealth this.SetHealth this
         member this.IsOnScreen world =
             let viewBounds = World.getViewBounds2d world
             let perimeter = this.GetBounds world
@@ -113,12 +113,12 @@ module Enemy =
 module Player =
 
     type Entity with
-        member this.GetLastTimeOnGround world : int64 = this.Get Property? LastTimeOnGround world
-        member this.SetLastTimeOnGround (value : int64) world = this.Set Property? LastTimeOnGround value world
-        member this.LastTimeOnGround = lens Property? LastTimeOnGround this.GetLastTimeOnGround this.SetLastTimeOnGround this
-        member this.GetLastTimeJump world : int64 = this.Get Property? LastTimeJump world
-        member this.SetLastTimeJump (value : int64) world = this.Set Property? LastTimeJump value world
-        member this.LastTimeJump = lens Property? LastTimeJump this.GetLastTimeJump this.SetLastTimeJump this
+        member this.GetLastTimeOnGround world : int64 = this.Get (nameof this.LastTimeOnGround) world
+        member this.SetLastTimeOnGround (value : int64) world = this.Set (nameof this.LastTimeOnGround) value world
+        member this.LastTimeOnGround = lens (nameof this.LastTimeOnGround) this.GetLastTimeOnGround this.SetLastTimeOnGround this
+        member this.GetLastTimeJump world : int64 = this.Get (nameof this.LastTimeJump) world
+        member this.SetLastTimeJump (value : int64) world = this.Set (nameof this.LastTimeJump) value world
+        member this.LastTimeJump = lens (nameof this.LastTimeJump) this.GetLastTimeJump this.SetLastTimeJump this
         member this.HasFallen world = (this.GetPosition world).Y < -600.0f
 
     type PlayerDispatcher () =

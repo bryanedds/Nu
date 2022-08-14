@@ -283,7 +283,7 @@ module WorldModuleEntity =
                     world properties
             else world
 
-        static member inline internal publishTransformEvents (oldTransform : Transform byref, newTransform : Transform byref, publishChangeBindings, publishChangeEvents, entity, world) =
+        static member inline internal publishTransformEvents (oldTransform : Transform byref, newTransform : Transform byref, publishChangeBindings, publishChangeEvents, entity : Entity, world) =
             if publishChangeEvents || publishChangeBindings then
                 let positionChanged = v3Neq newTransform.Position oldTransform.Position
                 let scaleChanged = v3Neq newTransform.Scale oldTransform.Scale
@@ -295,36 +295,36 @@ module WorldModuleEntity =
                 let centeredChanged = newTransform.Centered <> oldTransform.Centered
                 let perimeterUnscaledChanged = positionChanged || offsetChanged || sizeChanged || centeredChanged
                 // OPTIMIZATION: eliding data for computed change events for speed.
-                let world = World.publishEntityChange Property? Transform () publishChangeBindings publishChangeEvents entity world
+                let world = World.publishEntityChange (nameof Transform) () publishChangeBindings publishChangeEvents entity world
                 let world =
                     if perimeterUnscaledChanged then
-                        let world = World.publishEntityChange Property? Bounds () publishChangeBindings publishChangeEvents entity world
-                        let world = World.publishEntityChange Property? PerimeterOriented () publishChangeBindings publishChangeEvents entity world
-                        let world = World.publishEntityChange Property? Center () publishChangeBindings publishChangeEvents entity world
-                        let world = World.publishEntityChange Property? Bottom () publishChangeBindings publishChangeEvents entity world
-                        let world = World.publishEntityChange Property? Perimeter () publishChangeBindings publishChangeEvents entity world
-                        let world = World.publishEntityChange Property? PerimeterUnscaled () publishChangeBindings publishChangeEvents entity world
-                        let world = if positionChanged || centeredChanged then World.publishEntityChange Property? Position newTransform.Position publishChangeBindings publishChangeEvents entity world else world
-                        let world = if scaleChanged || centeredChanged then World.publishEntityChange Property? Scale newTransform.Scale publishChangeBindings publishChangeEvents entity world else world
-                        let world = if offsetChanged || centeredChanged then World.publishEntityChange Property? Offset newTransform.Offset publishChangeBindings publishChangeEvents entity world else world
-                        let world = if sizeChanged || centeredChanged then World.publishEntityChange Property? Size newTransform.Size publishChangeBindings publishChangeEvents entity world else world
-                        let world = if centeredChanged then World.publishEntityChange Property? Centered newTransform.Centered publishChangeBindings publishChangeEvents entity world else world
+                        let world = World.publishEntityChange (nameof newTransform.Bounds) () publishChangeBindings publishChangeEvents entity world
+                        let world = World.publishEntityChange (nameof newTransform.PerimeterOriented) () publishChangeBindings publishChangeEvents entity world
+                        let world = World.publishEntityChange (nameof newTransform.Center) () publishChangeBindings publishChangeEvents entity world
+                        let world = World.publishEntityChange (nameof newTransform.Bottom) () publishChangeBindings publishChangeEvents entity world
+                        let world = World.publishEntityChange (nameof newTransform.Perimeter) () publishChangeBindings publishChangeEvents entity world
+                        let world = World.publishEntityChange (nameof newTransform.PerimeterUnscaled) () publishChangeBindings publishChangeEvents entity world
+                        let world = if positionChanged || centeredChanged then World.publishEntityChange (nameof newTransform.Position) newTransform.Position publishChangeBindings publishChangeEvents entity world else world
+                        let world = if scaleChanged || centeredChanged then World.publishEntityChange (nameof newTransform.Scale) newTransform.Scale publishChangeBindings publishChangeEvents entity world else world
+                        let world = if offsetChanged || centeredChanged then World.publishEntityChange (nameof newTransform.Offset) newTransform.Offset publishChangeBindings publishChangeEvents entity world else world
+                        let world = if sizeChanged || centeredChanged then World.publishEntityChange (nameof newTransform.Size) newTransform.Size publishChangeBindings publishChangeEvents entity world else world
+                        let world = if centeredChanged then World.publishEntityChange (nameof newTransform.Centered) newTransform.Centered publishChangeBindings publishChangeEvents entity world else world
                         world
                     else world
                 let world =
                     if anglesChanged then
-                        let world = World.publishEntityChange Property? Rotation () publishChangeBindings publishChangeEvents entity world
-                        let world = World.publishEntityChange Property? Angles () publishChangeBindings publishChangeEvents entity world
-                        let world = World.publishEntityChange Property? Degrees () publishChangeBindings publishChangeEvents entity world
+                        let world = World.publishEntityChange (nameof newTransform.Rotation) () publishChangeBindings publishChangeEvents entity world
+                        let world = World.publishEntityChange (nameof newTransform.Angles) () publishChangeBindings publishChangeEvents entity world
+                        let world = World.publishEntityChange (nameof newTransform.Degrees) () publishChangeBindings publishChangeEvents entity world
                         world
                     else world
                 let world =
                     if elevationChanged
-                    then World.publishEntityChange Property? Elevation newTransform.Elevation publishChangeBindings publishChangeEvents entity world
+                    then World.publishEntityChange (nameof newTransform.Elevation) newTransform.Elevation publishChangeBindings publishChangeEvents entity world
                     else world
                 let world =
                     if overflowChanged
-                    then World.publishEntityChange Property? Overflow newTransform.Overflow publishChangeBindings publishChangeEvents entity world
+                    then World.publishEntityChange (nameof newTransform.Overflow) newTransform.Overflow publishChangeBindings publishChangeEvents entity world
                     else world
                 world
             else world
@@ -353,7 +353,7 @@ module WorldModuleEntity =
                             entityState.Imperative <- false
                             entityState
                     else Unchecked.defaultof<_>)
-                Property? Imperative value entity world
+                "Imperative" value entity world
 
         static member internal getEntityModelProperty entity world =
             let entityState = World.getEntityState entity world
@@ -371,7 +371,7 @@ module WorldModuleEntity =
                         entityState.Model <- { DesignerType = value.DesignerType; DesignerValue = value.DesignerValue }
                         entityState
                     else Unchecked.defaultof<_>)
-                Property? Model value.DesignerValue entity world
+                "Model" value.DesignerValue entity world
 
         static member internal setEntityModel<'a> (value : 'a) entity world =
             World.updateEntityState
@@ -382,7 +382,7 @@ module WorldModuleEntity =
                         entityState.Model <- { DesignerType = typeof<'a>; DesignerValue = valueObj }
                         entityState
                     else Unchecked.defaultof<_>)
-                Property? Model value entity world
+                "Model" value entity world
                 
         static member internal getEntityScriptFrame entity world =
             let entityState = World.getEntityState entity world
@@ -401,7 +401,7 @@ module WorldModuleEntity =
                     entityState.ScriptFrameOpt <- value
                     entityState
                 else Unchecked.defaultof<_>)
-                Property? ScriptFrame value entity world
+                "ScriptFrame" value entity world
 
         // NOTE: wouldn't macros be nice?
         static member internal getEntityDispatcher entity world = (World.getEntityState entity world).Dispatcher
@@ -451,18 +451,18 @@ module WorldModuleEntity =
         static member internal getEntityId entity world = (World.getEntityState entity world).IdRef.Value
         static member internal getEntitySurnames entity world = (World.getEntityState entity world).Surnames
         static member internal getEntityName entity world = (World.getEntityState entity world).Surnames |> Array.last
-        static member internal setEntityPublishChangeEvents value entity world = World.updateEntityState (fun entityState -> if value <> entityState.PublishChangeEvents then (let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState in entityState.PublishChangeEvents <- value; entityState) else Unchecked.defaultof<_>) Property? PublishChangeEvents value entity world
-        static member internal setEntityPublishChangeBindings value entity world = World.updateEntityState (fun entityState -> if value <> entityState.PublishChangeBindings then (let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState in entityState.PublishChangeBindings <- value; entityState) else Unchecked.defaultof<_>) Property? PublishChangeBindings value entity world
-        static member internal setEntityAlwaysUpdate value entity world = World.updateEntityStatePlus (fun entityState -> if value <> entityState.AlwaysUpdate then (let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState in entityState.AlwaysUpdate <- value; entityState) else Unchecked.defaultof<_>) Property? AlwaysUpdate value entity world
-        static member internal setEntityPublishUpdates value entity world = World.updateEntityState (fun entityState -> if value <> entityState.PublishUpdates then (let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState in entityState.PublishUpdates <- value; entityState) else Unchecked.defaultof<_>) Property? PublishUpdates value entity world
-        static member internal setEntityPublishPostUpdates value entity world = World.updateEntityState (fun entityState -> if value <> entityState.PublishPostUpdates then (let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState in entityState.PublishPostUpdates <- value; entityState) else Unchecked.defaultof<_>) Property? PublishPostUpdates value entity world
-        static member internal setEntityPublishRenders value entity world = World.updateEntityState (fun entityState -> if value <> entityState.PublishRenders then (let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState in entityState.PublishRenders <- value; entityState) else Unchecked.defaultof<_>) Property? PublishRenders value entity world
-        static member internal setEntityPersistent value entity world = World.updateEntityState (fun entityState -> if value <> entityState.Persistent then (let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState in entityState.Persistent <- value; entityState) else Unchecked.defaultof<_>) Property? Persistent value entity world
-        static member internal setEntityIgnorePropertyBindings value entity world = World.updateEntityState (fun entityState -> if value <> entityState.IgnorePropertyBindings then (let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState in entityState.IgnorePropertyBindings <- value; entityState) else Unchecked.defaultof<_>) Property? IgnorePropertyBindings value entity world
-        static member internal setEntityMounted value entity world = World.updateEntityState (fun entityState -> if value <> entityState.Mounted then (let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState in entityState.Mounted <- value; entityState) else Unchecked.defaultof<_>) Property? Mounted value entity world
-        static member internal setEntityStatic value entity world = World.updateEntityStatePlus (fun entityState -> if value <> entityState.Static then (let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState in entityState.Static <- value; entityState) else Unchecked.defaultof<_>) Property? Static value entity world
-        static member internal setEntityLight value entity world = World.updateEntityStatePlus (fun entityState -> if value <> entityState.Light then (let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState in entityState.Light <- value; entityState) else Unchecked.defaultof<_>) Property? Light value entity world
-        static member internal setEntityOrder value entity world = World.updateEntityStatePlus (fun entityState -> if value <> entityState.Order then (let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState in entityState.Order <- value; entityState) else Unchecked.defaultof<_>) Property? Order value entity world
+        static member internal setEntityPublishChangeEvents value entity world = World.updateEntityState (fun entityState -> if value <> entityState.PublishChangeEvents then (let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState in entityState.PublishChangeEvents <- value; entityState) else Unchecked.defaultof<_>) "PublishChangeEvents" value entity world
+        static member internal setEntityPublishChangeBindings value entity world = World.updateEntityState (fun entityState -> if value <> entityState.PublishChangeBindings then (let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState in entityState.PublishChangeBindings <- value; entityState) else Unchecked.defaultof<_>) "PublishChangeBindings" value entity world
+        static member internal setEntityAlwaysUpdate value entity world = World.updateEntityStatePlus (fun entityState -> if value <> entityState.AlwaysUpdate then (let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState in entityState.AlwaysUpdate <- value; entityState) else Unchecked.defaultof<_>) "AlwaysUpdate" value entity world
+        static member internal setEntityPublishUpdates value entity world = World.updateEntityState (fun entityState -> if value <> entityState.PublishUpdates then (let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState in entityState.PublishUpdates <- value; entityState) else Unchecked.defaultof<_>) "PublishUpdates" value entity world
+        static member internal setEntityPublishPostUpdates value entity world = World.updateEntityState (fun entityState -> if value <> entityState.PublishPostUpdates then (let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState in entityState.PublishPostUpdates <- value; entityState) else Unchecked.defaultof<_>) "PublishPostUpdates" value entity world
+        static member internal setEntityPublishRenders value entity world = World.updateEntityState (fun entityState -> if value <> entityState.PublishRenders then (let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState in entityState.PublishRenders <- value; entityState) else Unchecked.defaultof<_>) "PublishRenders" value entity world
+        static member internal setEntityPersistent value entity world = World.updateEntityState (fun entityState -> if value <> entityState.Persistent then (let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState in entityState.Persistent <- value; entityState) else Unchecked.defaultof<_>) "Persistent" value entity world
+        static member internal setEntityIgnorePropertyBindings value entity world = World.updateEntityState (fun entityState -> if value <> entityState.IgnorePropertyBindings then (let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState in entityState.IgnorePropertyBindings <- value; entityState) else Unchecked.defaultof<_>) "IgnorePropertyBindings" value entity world
+        static member internal setEntityMounted value entity world = World.updateEntityState (fun entityState -> if value <> entityState.Mounted then (let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState in entityState.Mounted <- value; entityState) else Unchecked.defaultof<_>) "Mounted" value entity world
+        static member internal setEntityStatic value entity world = World.updateEntityStatePlus (fun entityState -> if value <> entityState.Static then (let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState in entityState.Static <- value; entityState) else Unchecked.defaultof<_>) "Static" value entity world
+        static member internal setEntityLight value entity world = World.updateEntityStatePlus (fun entityState -> if value <> entityState.Light then (let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState in entityState.Light <- value; entityState) else Unchecked.defaultof<_>) "Light" value entity world
+        static member internal setEntityOrder value entity world = World.updateEntityStatePlus (fun entityState -> if value <> entityState.Order then (let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState in entityState.Order <- value; entityState) else Unchecked.defaultof<_>) "Order" value entity world
 
         static member internal setEntityPresence (value : Presence) entity world =
             World.updateEntityStatePlus (fun entityState ->
@@ -474,7 +474,7 @@ module WorldModuleEntity =
                         entityState
                     else entityState
                 else Unchecked.defaultof<_>)
-                Property? Omnipresent value entity world
+                "Omnipresent" value entity world
 
         static member internal setEntityAbsolute value entity world =
             World.updateEntityStatePlus (fun entityState ->
@@ -484,7 +484,7 @@ module WorldModuleEntity =
                     if value then entityState.Presence <- Omnipresent // setting a transform to Absolute requires that it also be Omnipresent
                     entityState
                 else Unchecked.defaultof<_>)
-                Property? Absolute value entity world
+                "Absolute" value entity world
 
         static member inline internal getEntityRotationMatrix entity world =
             (World.getEntityState entity world).Transform.RotationMatrix
@@ -602,7 +602,7 @@ module WorldModuleEntity =
                     let world = World.propagateEntityProperties3 newMountOpt entity world
 
                     // publish change event unconditionally
-                    let world = World.publishEntityChange Property? MountOpt newMountOpt true true entity world
+                    let world = World.publishEntityChange "MountOpt" newMountOpt true true entity world
 
                     // publish life cycle event unconditionally
                     let eventTrace = EventTrace.debug "World" "lifeCycle" "" EventTrace.empty
@@ -707,7 +707,7 @@ module WorldModuleEntity =
                                 entityState.PositionLocal <- value
                                 entityState
                             else Unchecked.defaultof<_>)
-                            Property? PositionLocal value entity world
+                            "PositionLocal" value entity world
 
                     // make sure we've got the latest entity state
                     let entityState = World.getEntityState entity world
@@ -774,7 +774,7 @@ module WorldModuleEntity =
                                 entityState.AnglesLocal <- anglesLocal
                                 entityState
                             else Unchecked.defaultof<_>)
-                            Property? RotationLocal value entity world
+                            "RotationLocal" value entity world
 
                     // make sure we've got the latest entity state
                     let entityState = World.getEntityState entity world
@@ -784,8 +784,8 @@ module WorldModuleEntity =
                         let publishChangeBindings = entityState.PublishChangeBindings
                         let publishChangeEvents = entityState.PublishChangeEvents
                         if publishChangeBindings || publishChangeEvents then
-                            let world = World.publishEntityChange Property? AnglesLocal anglesLocal publishChangeBindings publishChangeEvents entity world
-                            let world = World.publishEntityChange Property? DegreesLocal (Math.radiansToDegrees3d anglesLocal) publishChangeBindings publishChangeEvents entity world
+                            let world = World.publishEntityChange "AnglesLocal" anglesLocal publishChangeBindings publishChangeEvents entity world
+                            let world = World.publishEntityChange "DegreesLocal" (Math.radiansToDegrees3d anglesLocal) publishChangeBindings publishChangeEvents entity world
                             world
                         else world
 
@@ -851,7 +851,7 @@ module WorldModuleEntity =
                                 entityState.ScaleLocal <- value
                                 entityState
                             else Unchecked.defaultof<_>)
-                            Property? ScaleLocal value entity world
+                            "ScaleLocal" value entity world
 
                     // compute scale
                     let scale =
@@ -941,7 +941,7 @@ module WorldModuleEntity =
                                 entityState.AnglesLocal <- value
                                 entityState
                             else Unchecked.defaultof<_>)
-                            Property? RotationLocal value entity world
+                            "RotationLocal" value entity world
 
                     // make sure we've got the latest entity state
                     let entityState = World.getEntityState entity world
@@ -951,8 +951,8 @@ module WorldModuleEntity =
                         let publishChangeBindings = entityState.PublishChangeBindings
                         let publishChangeEvents = entityState.PublishChangeEvents
                         if publishChangeBindings || publishChangeEvents then
-                            let world = World.publishEntityChange Property? AnglesLocal value publishChangeBindings publishChangeEvents entity world
-                            let world = World.publishEntityChange Property? DegreesLocal (Math.radiansToDegrees3d value) publishChangeBindings publishChangeEvents entity world
+                            let world = World.publishEntityChange "AnglesLocal" value publishChangeBindings publishChangeEvents entity world
+                            let world = World.publishEntityChange "DegreesLocal" (Math.radiansToDegrees3d value) publishChangeBindings publishChangeEvents entity world
                             world
                         else world
 
@@ -1031,7 +1031,7 @@ module WorldModuleEntity =
                                 entityState.ElevationLocal <- value
                                 entityState
                             else Unchecked.defaultof<_>)
-                            Property? ElevationLocal value entity world
+                            "ElevationLocal" value entity world
 
                     // compute mount elevation
                     let elevationMount =
@@ -1064,7 +1064,7 @@ module WorldModuleEntity =
                         entityState.Enabled <- value
                         entityState
                     else Unchecked.defaultof<_>)
-                    Property? Enabled value entity world
+                    "Enabled" value entity world
             let world = if changed && World.getEntityMounted entity world then World.propagateEntityEnabled entity world else world
             struct (true, world)
 
@@ -1076,7 +1076,7 @@ module WorldModuleEntity =
                         entityState.EnabledLocal <- value
                         entityState
                     else Unchecked.defaultof<_>)
-                    Property? EnabledLocal value entity world
+                    "EnabledLocal" value entity world
             let world =
                 if changed then
                     let mountOpt = Option.bind (tryResolve entity) (World.getEntityMountOpt entity world)
@@ -1107,7 +1107,7 @@ module WorldModuleEntity =
                         entityState.Visible <- value
                         entityState
                     else Unchecked.defaultof<_>)
-                    Property? Visible value entity world
+                    "Visible" value entity world
             let world = if changed && World.getEntityMounted entity world then World.propagateEntityVisible entity world else world
             struct (true, world)
 
@@ -1119,7 +1119,7 @@ module WorldModuleEntity =
                         entityState.VisibleLocal <- value
                         entityState
                     else Unchecked.defaultof<_>)
-                    Property? VisibleLocal value entity world
+                    "VisibleLocal" value entity world
             let world =
                 if changed then
                     let mountOpt = Option.bind (tryResolve entity) (World.getEntityMountOpt entity world)

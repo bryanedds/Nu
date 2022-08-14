@@ -572,7 +572,7 @@ module WorldEntityModule =
                 | Some overlayName -> Some (Overlayer.getOverlaySymbols overlayName entityFacetNames overlayer)
                 | None -> None
             let shouldWriteProperty = fun propertyName propertyType (propertyValue : obj) ->
-                if propertyName = "OverlayNameOpt" && propertyType = typeof<string option> then
+                if propertyName = Constants.Engine.OverlayNameOptPropertyName && propertyType = typeof<string option> then
                     let defaultOverlayNameOpt = World.getEntityDefaultOverlayName entityDispatcherName world
                     defaultOverlayNameOpt <> (propertyValue :?> string option)
                 else

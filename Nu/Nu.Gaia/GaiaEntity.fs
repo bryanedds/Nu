@@ -97,7 +97,7 @@ and EntityPropertyDescriptor (propertyDescriptor, attributes) =
                     world
             
             // change the name property
-            | "Name" ->
+            | Constants.Engine.NamePropertyName ->
                 let name = value :?> string
                 if name.IndexOfAny Symbol.IllegalNameCharsArray = -1 then
                     let targetNames =
@@ -118,7 +118,7 @@ and EntityPropertyDescriptor (propertyDescriptor, attributes) =
                     world
 
             // change facet names
-            | "FacetNames" ->
+            | Constants.Engine.FacetNamesPropertyName ->
                 let facetNames = value :?> string Set
                 let world =
                     match World.trySetEntityFacetNames facetNames entity world with
@@ -132,7 +132,7 @@ and EntityPropertyDescriptor (propertyDescriptor, attributes) =
             | _ ->
                 let world =
                     match propertyName with
-                    | "OverlayNameOpt" ->
+                    | Constants.Engine.OverlayNameOptPropertyName ->
                         match World.trySetEntityOverlayNameOpt (value :?> string option) entity world with
                         | (Right (), world) -> world
                         | (Left error, world) -> Log.trace error; world

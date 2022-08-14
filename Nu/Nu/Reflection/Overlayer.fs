@@ -77,7 +77,7 @@ type Overlay =
                             Map.empty
                     let overlayProperties =
                         if requiresFacetNames
-                        then Map.add Property? FacetNames (Symbols ([], ValueNone)) overlayProperties
+                        then Map.add Constants.Engine.FacetNamesPropertyName (Symbols ([], ValueNone)) overlayProperties
                         else overlayProperties
                     { OverlayName = overlayName
                       OverlaysInherited = includeNames
@@ -176,7 +176,7 @@ module Overlayer =
         let targetType = target.GetType ()
         let recordProperties = targetType.GetProperties ()
         for property in recordProperties do
-            if property.Name <> "FacetNames" && property.PropertyType <> typeof<string Set> then
+            if property.Name <> Constants.Engine.FacetNamesPropertyName && property.PropertyType <> typeof<string Set> then
                 match Map.tryFind property.Name newOverlaySymbols with
                 | Some propertySymbol -> tryApplyOverlayToRecordProperty property propertySymbol target oldOverlaySymbols
                 | None -> ()
@@ -224,7 +224,7 @@ module Overlayer =
     let internal applyOverlayToFacetNames4 (copyTarget : 'a -> 'a) target oldOverlaySymbols newOverlaySymbols =
         let target = copyTarget target
         let targetType = target.GetType ()
-        match targetType.GetProperty "FacetNames" with
+        match targetType.GetProperty Constants.Engine.FacetNamesPropertyName with
         | null -> target
         | facetNamesProperty ->
             match Map.tryFind facetNamesProperty.Name newOverlaySymbols with
