@@ -109,7 +109,7 @@ module Reflection =
         | (true, definitions) -> definitions
         | (false, _) ->
             let definitionsPropertyOpt =
-                match targetType.GetProperty (Property? Properties, BindingFlags.Static ||| BindingFlags.Public) with
+                match targetType.GetProperty (Constants.Engine.PropertiesPropertyName, BindingFlags.Static ||| BindingFlags.Public) with
                 | null -> None
                 | definitionsProperty -> Some definitionsProperty
             let definitions =
@@ -154,11 +154,11 @@ module Reflection =
     let getReflectivePropertyContainers (target : 'a) =
         let targetType = target.GetType ()
         let dispatcherOpt =
-            match targetType.GetProperty Property? Dispatcher with
+            match targetType.GetProperty Constants.Engine.DispatcherPropertyName with
             | null -> None
             | dispatcherProperty -> Some (dispatcherProperty.GetValue target)
         let facetsOpt =
-            match targetType.GetProperty Property? Facets with
+            match targetType.GetProperty Constants.Engine.FacetsPropertyName with
             | null -> None
             | facetsProperty ->
                 let facets = facetsProperty.GetValue target :?> IEnumerable |> enumerable<obj> |> List.ofSeq
@@ -211,7 +211,7 @@ module Reflection =
                     else Log.debug ("Cannot convert property '" + scstring propertySymbol + "' to type '" + property.PropertyType.Name + "'.")
                 | _ -> ()
             | None -> ()
-        elif property.Name = Property? Transform &&
+        elif property.Name = Constants.Engine.TransformPropertyName &&
              property.PropertyType = typeof<Transform> then
              () // nothing to do here since the custom .NET properties will take care of this...
         else
@@ -263,7 +263,7 @@ module Reflection =
     let private readXtension (copyTarget : 'a -> 'a) propertyDescriptors target =
         let target = copyTarget target
         let targetType = target.GetType ()
-        match targetType.GetProperty Property? Xtension with
+        match targetType.GetProperty Constants.Engine.XtensionPropertyName with
         | null ->
             Log.debug "Target does not support Xtensions due to missing Xtension property."
             target
@@ -285,7 +285,7 @@ module Reflection =
         let overlayNameOptPropertyOpt =
             Array.tryFind
                 (fun (property : PropertyInfo) ->
-                    property.Name = Property? OverlayNameOpt &&
+                    property.Name = Constants.Engine.OverlayNameOptPropertyName &&
                     property.PropertyType = typeof<string option> &&
                     property.CanWrite)
                 targetProperties
@@ -307,7 +307,7 @@ module Reflection =
         let facetNamesProperty =
             Array.find
                 (fun (property : PropertyInfo) ->
-                    property.Name = Property? FacetNames &&
+                    property.Name = Constants.Engine.FacetNamesPropertyName &&
                     property.PropertyType = typeof<string Set> &&
                     property.CanWrite)
                 targetProperties
@@ -323,8 +323,8 @@ module Reflection =
         let target = copyTarget target
         let properties = (target.GetType ()).GetPropertiesWritable ()
         for property in properties do
-            if  property.Name <> Property? FacetNames &&
-                property.Name <> Property? OverlayNameOpt &&
+            if  property.Name <> Constants.Engine.FacetNamesPropertyName &&
+                property.Name <> Constants.Engine.OverlayNameOptPropertyName &&
                 not (isPropertyNonPersistentByName property.Name) then
                 tryReadMemberProperty propertyDescriptors property target
         target
@@ -353,7 +353,7 @@ module Reflection =
     let private writeMemberProperty (propertyValue : obj) (property : PropertyInfo) shouldWriteProperty propertyDescriptors (target : 'a) =
         if  not (isPropertyNonPersistent property target) &&
             shouldWriteProperty property.Name property.PropertyType propertyValue then // HACK: never write degrees as those are only intended for the editor.
-            if  property.Name = Property? Transform &&
+            if  property.Name = Constants.Engine.TransformPropertyName &&
                 property.PropertyType = typeof<Transform> then
                 propertyDescriptors // nothing to do here since the custom .NET properties will take care of this...
             else
@@ -376,7 +376,7 @@ module Reflection =
     /// Get the intrinsic facet of a target type not considering inheritance.
     let getIntrinsicFacetsNoInherit (targetType : Type) =
         let intrinsicFacetsPropertyOpt =
-            match targetType.GetProperty (Property? Facets, BindingFlags.Static ||| BindingFlags.Public) with
+            match targetType.GetProperty (Constants.Engine.FacetsPropertyName, BindingFlags.Static ||| BindingFlags.Public) with
             | null -> None
             | intrinsicFacetsProperty -> Some intrinsicFacetsProperty
         match intrinsicFacetsPropertyOpt with
@@ -405,7 +405,7 @@ module Reflection =
     let attachPropertiesViaDefinitions (copyTarget : 'a -> 'a) definitions target world =
         let target = copyTarget target
         let targetType = target.GetType ()
-        match targetType.GetPropertyWritable Property? Xtension with
+        match targetType.GetPropertyWritable Constants.Engine.XtensionPropertyName with
         | null -> failwith "Target does not support Xtensions due to missing Xtension property."
         | xtensionProperty ->
             match xtensionProperty.GetValue target with
@@ -426,7 +426,7 @@ module Reflection =
     let detachPropertiesViaNames (copyTarget : 'a -> 'a) propertyNames target =
         let target = copyTarget target
         let targetType = target.GetType ()
-        match targetType.GetPropertyWritable Property? Xtension with
+        match targetType.GetPropertyWritable Constants.Engine.XtensionPropertyName with
         | null -> failwith "Target does not support Xtensions due to missing Xtension property."
         | xtensionProperty ->
             match xtensionProperty.GetValue target with
@@ -456,7 +456,7 @@ module Reflection =
     /// Check for facet compatibility with the target's dispatcher.
     let isFacetTypeCompatibleWithDispatcher dispatcherMap (facetType : Type) (target : 'a) =
         let targetType = target.GetType ()
-        match facetType.GetProperty (Property? RequiredDispatcherName, BindingFlags.Static ||| BindingFlags.Public) with
+        match facetType.GetProperty (Constants.Engine.RequiredDispatcherPropertyName, BindingFlags.Static ||| BindingFlags.Public) with
         | null -> true
         | reqdDispatcherNameProperty ->
             match reqdDispatcherNameProperty.GetValue null with
@@ -464,7 +464,7 @@ module Reflection =
                 match Map.tryFind reqdDispatcherName dispatcherMap with
                 | Some reqdDispatcher ->
                     let reqdDispatcherType = reqdDispatcher.GetType ()
-                    match targetType.GetProperty Property? Dispatcher with
+                    match targetType.GetProperty Constants.Engine.DispatcherPropertyName with
                     | null -> failwith ("Target '" + scstring target + "' does not implement dispatching in a compatible way.")
                     | dispatcherProperty ->
                         let dispatcher = dispatcherProperty.GetValue target
@@ -492,7 +492,7 @@ module Reflection =
                 facetNames |>
             List.toArray
         let targetType = target.GetType ()
-        match targetType.GetPropertyWritable Property? Facets with
+        match targetType.GetPropertyWritable Constants.Engine.FacetsPropertyName with
         | null -> failwith ("Could not attach facet to type '" + targetType.Name + "'.")
         | facetsProperty ->
             Array.iter

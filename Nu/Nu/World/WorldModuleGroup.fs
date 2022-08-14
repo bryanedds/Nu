@@ -124,13 +124,13 @@ module WorldModuleGroup =
         static member internal getGroupModel<'a> group world = (World.getGroupState group world).Model.DesignerValue :?> 'a
         static member internal getGroupDispatcher group world = (World.getGroupState group world).Dispatcher
         static member internal getGroupVisible group world = (World.getGroupState group world).Visible
-        static member internal setGroupVisible value group world = World.updateGroupState (fun groupState -> if value <> groupState.Visible then { groupState with Visible = value } else Unchecked.defaultof<_>) Property? Visible value group world
+        static member internal setGroupVisible value group world = World.updateGroupState (fun groupState -> if value <> groupState.Visible then { groupState with Visible = value } else Unchecked.defaultof<_>) "Visible" value group world
         static member internal getGroupPersistent group world = (World.getGroupState group world).Persistent
-        static member internal setGroupPersistent value group world = World.updateGroupState (fun groupState -> if value <> groupState.Persistent then { groupState with Persistent = value } else Unchecked.defaultof<_>) Property? Persistent value group world
+        static member internal setGroupPersistent value group world = World.updateGroupState (fun groupState -> if value <> groupState.Persistent then { groupState with Persistent = value } else Unchecked.defaultof<_>) "Persistent" value group world
         static member internal getGroupDestroying (group : Group) world = List.exists ((=) (group :> Simulant)) world.WorldExtension.DestructionListRev
         static member internal getGroupOrder group world = (World.getGroupState group world).Order
         static member internal getGroupScriptFrame group world = (World.getGroupState group world).ScriptFrame
-        static member internal setGroupScriptFrame value group world = World.updateGroupState (fun groupState -> if value <> groupState.ScriptFrame then { groupState with ScriptFrame = value } else Unchecked.defaultof<_>) Property? ScriptFrame value group world
+        static member internal setGroupScriptFrame value group world = World.updateGroupState (fun groupState -> if value <> groupState.ScriptFrame then { groupState with ScriptFrame = value } else Unchecked.defaultof<_>) "ScriptFrame" value group world
         static member internal getGroupId group world = (World.getGroupState group world).Id
         static member internal getGroupName group world = (World.getGroupState group world).Name
         
@@ -140,7 +140,7 @@ module WorldModuleGroup =
                     if value.DesignerValue =/= groupState.Model.DesignerValue
                     then { groupState with Model = { groupState.Model with DesignerValue = value.DesignerValue }}
                     else Unchecked.defaultof<_>)
-                Property? Model value.DesignerValue group world
+                "Model" value.DesignerValue group world
 
         static member internal setGroupModel<'a> (value : 'a) group world =
             World.updateGroupState
@@ -149,7 +149,7 @@ module WorldModuleGroup =
                     if valueObj =/= groupState.Model.DesignerValue
                     then { groupState with Model = { DesignerType = typeof<'a>; DesignerValue = valueObj }}
                     else Unchecked.defaultof<_>)
-                Property? Model value group world
+                "Model" value group world
 
         static member internal tryGetGroupXtensionProperty (propertyName, group, world, property : _ outref) =
             if World.getGroupExists group world

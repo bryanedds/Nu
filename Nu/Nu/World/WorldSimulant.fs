@@ -326,9 +326,9 @@ module PropertyDescriptor =
             // OPTIMIZATION: seqs used for speed.
             let properties = typeof<'s>.GetProperties ()
             let typeConverterAttribute = TypeConverterAttribute typeof<SymbolicConverter>
-            let properties = Seq.filter (fun (property : PropertyInfo) -> property.Name <> Property? Xtension) properties
-            let properties = Seq.filter (fun (property : PropertyInfo) -> property.Name <> Property? Transform) properties
-            let properties = Seq.filter (fun (property : PropertyInfo) -> property.Name <> Property? Flags) properties
+            let properties = Seq.filter (fun (property : PropertyInfo) -> property.Name <> Constants.Engine.XtensionPropertyName) properties
+            let properties = Seq.filter (fun (property : PropertyInfo) -> property.Name <> Constants.Engine.TransformPropertyName) properties
+            let properties = Seq.filter (fun (property : PropertyInfo) -> property.Name <> "Flags") properties
             let properties = Seq.filter (fun (property : PropertyInfo) -> Seq.isEmpty (property.GetCustomAttributes<ExtensionAttribute> ())) properties
             let properties =
                 Seq.filter (fun (property : PropertyInfo) ->

@@ -14,26 +14,26 @@ module WorldGroupModule =
     type Group with
     
         member this.GetDispatcher world = World.getGroupDispatcher this world
-        member this.Dispatcher = lensReadOnly Property? Dispatcher this.GetDispatcher this
+        member this.Dispatcher = lensReadOnly (nameof this.Dispatcher) this.GetDispatcher this
         member this.GetModelGeneric<'a> world = World.getGroupModel<'a> this world
         member this.SetModelGeneric<'a> value world = World.setGroupModel<'a> value this world |> snd'
-        member this.ModelGeneric<'a> () = lens Property? Model this.GetModelGeneric<'a> this.SetModelGeneric<'a> this
+        member this.ModelGeneric<'a> () = lens "Model" this.GetModelGeneric<'a> this.SetModelGeneric<'a> this
         member this.GetEcs world = World.getScreenEcs this.Screen world
-        member this.Ecs = lensReadOnly Property? Ecs this.GetEcs this
+        member this.Ecs = lensReadOnly (nameof this.Ecs) this.GetEcs this
         member this.GetVisible world = World.getGroupVisible this world
         member this.SetVisible value world = World.setGroupVisible value this world |> snd'
-        member this.Visible = lens Property? Visible this.GetVisible this.SetVisible this
+        member this.Visible = lens (nameof this.Visible) this.GetVisible this.SetVisible this
         member this.GetPersistent world = World.getGroupPersistent this world
         member this.SetPersistent value world = World.setGroupPersistent value this world |> snd'
-        member this.Persistent = lens Property? Persistent this.GetPersistent this.SetPersistent this
+        member this.Persistent = lens (nameof this.Persistent) this.GetPersistent this.SetPersistent this
         member this.GetDestroying world = World.getGroupDestroying this world
-        member this.Destroying = lensReadOnly Property? Destroying this.GetDestroying this
+        member this.Destroying = lensReadOnly (nameof this.Destroying) this.GetDestroying this
         member this.GetScriptFrame world = World.getGroupScriptFrame this world
-        member this.ScriptFrame = lensReadOnly Property? Script this.GetScriptFrame this
+        member this.ScriptFrame = lensReadOnly (nameof this.ScriptFrame) this.GetScriptFrame this
         member this.GetOrder world = World.getGroupOrder this world
-        member this.Order = lensReadOnly Property? Order this.GetOrder this
+        member this.Order = lensReadOnly (nameof this.Order) this.GetOrder this
         member this.GetId world = World.getGroupId this world
-        member this.Id = lensReadOnly Property? Id this.GetId this
+        member this.Id = lensReadOnly (nameof this.Id) this.GetId this
 
         member this.RegisterEvent = Events.Register --> this
         member this.UnregisteringEvent = Events.Unregistering --> this
@@ -186,7 +186,7 @@ module WorldGroupModule =
                 List.fold (fun world childDescriptor ->
                     let (entity, world) = World.createEntity4 DefaultOverlay childDescriptor group world
                     // quick size entity if a size was not specified by the descriptor properties
-                    if not (List.exists (fun (name, _) -> name = Property? Size) childDescriptor.SimulantProperties) then
+                    if not (List.exists (fun (name, _) -> name = nameof entity.Size) childDescriptor.SimulantProperties) then
                         let quickSize = entity.GetQuickSize world
                         entity.SetSize quickSize world
                     else world)

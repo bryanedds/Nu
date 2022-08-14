@@ -1116,7 +1116,7 @@ module GameDispatcherModule =
             game.SetModelGeneric<'model> model world
 
         member this.Model (game : Game) =
-            lens Property? Model (this.GetModel game) (flip this.SetModel game) game
+            lens (nameof this.Model) (this.GetModel game) (flip this.SetModel game) game
 
         override this.Register (game, world) =
             let world =
