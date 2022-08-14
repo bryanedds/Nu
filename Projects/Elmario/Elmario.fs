@@ -21,7 +21,7 @@ type Command =
 type ElmarioDispatcher () =
     inherit GameDispatcher<unit, unit, Command> (())
 
-    // here we channel from events to signals
+    // here we channel events to signals
     override this.Channel (_, game) =
         [game.KeyboardKeyDownEvent =|> fun evt ->
             if evt.Data.KeyboardKey = KeyboardKey.Up && not evt.Data.Repeated then cmd Jump
