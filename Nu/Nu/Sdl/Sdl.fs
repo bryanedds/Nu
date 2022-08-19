@@ -158,7 +158,7 @@ module SdlDeps =
                 | Right ((), destroy) ->
                     match tryMakeSdlGlobalResource
 #if MIX_INIT_OGG
-                        (fun () -> SDL_mixer.Mix_Init SDL_mixer.MIX_InitFlags.MIX_INIT_OGG) // NOTE: for some reason this line fails on 32-bit builds.. WHY?
+                        (fun () -> SDL_mixer.Mix_Init SDL_mixer.MIX_InitFlags.MIX_INIT_OGG) // NOTE: for some reason this line fails on 32-bit builds... WHY?
 #else
                         (fun () -> SDL_mixer.Mix_Init (enum<SDL_mixer.MIX_InitFlags> 0))
 #endif

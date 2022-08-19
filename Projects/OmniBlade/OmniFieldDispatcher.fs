@@ -1281,7 +1281,7 @@ module FieldDispatcher =
                     (fun _ prop -> Content.entity<PropDispatcher> Gen.name [Entity.Prop <== prop])
 
                  // spirit orb
-                 Content.entityIf Gen.name (field --> fun field -> Field.hasEncounters field && Cue.isNil field.Cue)
+                 Content.entityIf<SpiritOrbDispatcher> Gen.name (field --> fun field -> Field.hasEncounters field && Cue.isNil field.Cue)
                     [Entity.Position == v3 -448.0f 48.0f 0.0f; Entity.Elevation == Constants.Field.SpiritOrbElevation; Entity.Size == v3 192.0f 192.0f 0.0f
                      Entity.SpiritOrb <== field --> fun field -> { AvatarLowerCenter = field.Avatar.LowerCenter; Spirits = field.Spirits; Chests = Field.getChests field; Portals = Field.getNonWarpPortals field }]
 
@@ -1393,10 +1393,9 @@ module FieldDispatcher =
                      Entity.ClickEvent ==> msg Interact]
 
                  // dialog
-                 Content.entityWhen field (fun field -> Option.isSome field.DialogOpt) $ fun field ->
-                    Dialog.content Gen.name
-                       Constants.Field.GuiElevation PromptLeft PromptRight
-                       (field --> fun field -> (flip detokenize field, field.DialogOpt))
+                 Dialog.content Gen.name
+                    Constants.Field.GuiElevation PromptLeft PromptRight
+                    (field --> fun field -> (flip detokenize field, field.DialogOpt))
 
                  // team
                  Content.panelIf "Team" (field --> fun field -> match field.Menu.MenuState with MenuTeam _ -> true | _ -> false)
