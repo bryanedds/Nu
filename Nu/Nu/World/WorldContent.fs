@@ -203,7 +203,7 @@ module Content =
     let entityIf<'d when 'd :> EntityDispatcher> entityName (lens : Lens<bool, World>) initializers =
         entityWhen lens id (fun _ -> entity<'d> entityName initializers)
 
-    /// Describe a component entity to be conditionally instantiated from a lens.
+    /// Describe a composite entity to be conditionally instantiated from a lens.
     let compositeIf<'d when 'd :> EntityDispatcher> entityName (lens : Lens<bool, World>) initializers content =
         entityWhen lens id (fun _ -> composite<'d> entityName initializers content)
 
