@@ -90,7 +90,7 @@ module Content =
             Map.singleton key value)
             (constant mapper)
 
-    /// Describe one of multiple groups.
+    /// Describe one of multiple groups with explicit union unwrapping.
     let groupOf lens unwrap mapper =
         groupsPlus lens unwrap (fun a ->
             let (key, value) = try (getTag a, a) with _ -> (-1, a)
@@ -192,7 +192,7 @@ module Content =
             Map.singleton key value)
             (constant mapper)
 
-    /// Describe one of multiple entities.
+    /// Describe one of multiple entities with explicit union unwrapping.
     let entityOf lens unwrap mapper =
         entitiesPlus lens unwrap (fun a ->
             let (key, value) = try (getTag a, a) with _ -> (-1, a)
