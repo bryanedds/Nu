@@ -691,7 +691,7 @@ module OmniSeedState =
 
 type OmniSeedState = OmniSeedState.OmniSeedState
 
-type WeaponData =
+type [<NoEquality; NoComparison>] WeaponData =
     { WeaponType : WeaponType // key
       WeaponSubtype : WeaponSubtype
       PowerBase : int
@@ -699,7 +699,7 @@ type WeaponData =
       Cost : int
       Description : string }
 
-type ArmorData =
+type [<NoEquality; NoComparison>] ArmorData =
     { ArmorType : ArmorType // key
       ArmorSubtype : ArmorSubtype
       EnduranceBase : int
@@ -709,7 +709,7 @@ type ArmorData =
     member this.EnduranceBaseDisplay = this.EnduranceBase / Constants.Gameplay.ArmorStatBaseDisplayDivisor
     member this.MindBaseDisplay = this.MindBase / Constants.Gameplay.ArmorStatBaseDisplayDivisor
 
-type AccessoryData =
+type [<NoEquality; NoComparison>] AccessoryData =
     { AccessoryType : AccessoryType // key
       ShieldBase : int
       CounterBase : int
@@ -718,7 +718,7 @@ type AccessoryData =
       Cost : int
       Description : string }
 
-type ConsumableData =
+type [<NoEquality; NoComparison>] ConsumableData =
     { ConsumableType : ConsumableType // key
       Scalar : single
       Curative : bool
@@ -730,7 +730,7 @@ type ConsumableData =
       Cost : int
       Description : string }
 
-type TechData =
+type [<NoEquality; NoComparison>] TechData =
     { TechType : TechType // key
       TechCost : int
       EffectType : EffectType
@@ -748,7 +748,7 @@ type TechData =
     member this.AimType =
         TargetType.getAimType this.TargetType
 
-type ArchetypeData =
+type [<NoEquality; NoComparison>] ArchetypeData =
     { ArchetypeType : ArchetypeType // key
       Stamina : single // hit points scalar
       Strength : single // power scalar
@@ -767,7 +767,7 @@ type ArchetypeData =
       Stature : StatureType
       Description : string }
 
-type TechAnimationData =
+type [<NoEquality; NoComparison>] TechAnimationData =
     { TechType : TechType // key
       TechStart : int64
       TechingStart : int64
@@ -776,7 +776,7 @@ type TechAnimationData =
       TechingStop : int64
       TechStop : int64 }
 
-type KeyItemData =
+type [<NoEquality; NoComparison>] KeyItemData =
     { KeyItemData : unit }
 
 type [<NoEquality; NoComparison>] DoorData =

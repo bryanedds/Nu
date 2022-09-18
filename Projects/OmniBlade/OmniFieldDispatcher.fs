@@ -1552,7 +1552,7 @@ module FieldDispatcher =
                              | None -> ""]]
 
                  // options
-                 Content.panelIf "Option" (field --> fun field -> match field.Menu.MenuState with MenuOptions -> true | _ -> false)
+                 Content.panelIf "Options" (field --> fun field -> match field.Menu.MenuState with MenuOptions -> true | _ -> false)
                     [Entity.Position == v3 -450.0f -255.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v3 900.0f 510.0f 0.0f
                      Entity.LabelImage == Assets.Gui.DialogXXLImage]
                     [Content.sidebar (v3 24.0f 417.0f 0.0f) 1.0f field
