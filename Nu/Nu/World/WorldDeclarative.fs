@@ -148,7 +148,7 @@ module DeclarativeOperators =
     let inline (<==) left right =
         bind2 left right
 
-    /// Link the left property with the value of the right (two-way binding).
+    /// Link the left property with the right property (two-way binding).
     /// HACK: link2 allows the use of fake lenses in declarative usage.
     /// NOTE: the downside to using fake lenses is that composed fake lenses do not function.
     let link2 (left : Lens<'a, World>) (right : Lens<'a, World>) =
@@ -156,7 +156,7 @@ module DeclarativeOperators =
         then failwith "link3 expects an authentic right lens (where its This field is not null)."
         else LinkDefinition (left, right)
 
-    /// Link the left property with the value of the right (two-way bind).
+    /// Link the left property with the right property (two-way bind).
     let inline (<=>) left right =
         link2 left right
 
