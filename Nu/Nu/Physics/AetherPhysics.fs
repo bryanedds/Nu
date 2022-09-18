@@ -131,7 +131,7 @@ type [<ReferenceEquality; NoComparison>] AetherPhysicsEngine =
         bodyShape.Tag <-
             { Simulant = sourceSimulant
               BodyId = bodyProperties.BodyId
-              ShapeId = match bodyBox.PropertiesOpt with Some p -> p.BodyShapeId | None -> Gen.idEmpty }
+              ShapeId = match bodyBox.PropertiesOpt with Some p -> p.BodyShapeId | None -> 0UL }
         AetherPhysicsEngine.configureBodyShapeProperties bodyProperties bodyBox.PropertiesOpt bodyShape
 
     static member private attachBodySphere sourceSimulant (bodyProperties : BodyProperties) (bodySphere : BodySphere) (body : Body) =
@@ -143,7 +143,7 @@ type [<ReferenceEquality; NoComparison>] AetherPhysicsEngine =
         bodyShape.Tag <-
             { Simulant = sourceSimulant
               BodyId = bodyProperties.BodyId
-              ShapeId = match bodySphere.PropertiesOpt with Some p -> p.BodyShapeId | None -> Gen.idEmpty }
+              ShapeId = match bodySphere.PropertiesOpt with Some p -> p.BodyShapeId | None -> 0UL }
         AetherPhysicsEngine.configureBodyShapeProperties bodyProperties bodySphere.PropertiesOpt bodyShape
 
     static member private attachBodyCapsule sourceSimulant (bodyProperties : BodyProperties) (bodyCapsule : BodyCapsule) (body : Body) =
@@ -163,7 +163,7 @@ type [<ReferenceEquality; NoComparison>] AetherPhysicsEngine =
             bodyShape.Tag <-
                 { Simulant = sourceSimulant
                   BodyId = bodyProperties.BodyId
-                  ShapeId = match bodyCapsule.PropertiesOpt with Some p -> p.BodyShapeId | None -> Gen.idEmpty }
+                  ShapeId = match bodyCapsule.PropertiesOpt with Some p -> p.BodyShapeId | None -> 0UL }
             AetherPhysicsEngine.configureBodyShapeProperties bodyProperties bodyCapsule.PropertiesOpt bodyShape |> ignore
         Array.ofSeq bodyShapes
 
@@ -193,7 +193,7 @@ type [<ReferenceEquality; NoComparison>] AetherPhysicsEngine =
             bodyShape.Tag <-
                 { Simulant = sourceSimulant
                   BodyId = bodyProperties.BodyId
-                  ShapeId = match bodyBoxRounded.PropertiesOpt with Some p -> p.BodyShapeId | None -> Gen.idEmpty }
+                  ShapeId = match bodyBoxRounded.PropertiesOpt with Some p -> p.BodyShapeId | None -> 0UL }
             AetherPhysicsEngine.configureBodyShapeProperties bodyProperties bodyBoxRounded.PropertiesOpt bodyShape |> ignore
         Array.ofSeq bodyShapes
 
@@ -206,7 +206,7 @@ type [<ReferenceEquality; NoComparison>] AetherPhysicsEngine =
         bodyShape.Tag <-
             { Simulant = sourceSimulant
               BodyId = bodyProperties.BodyId
-              ShapeId = match bodyPolygon.PropertiesOpt with Some p -> p.BodyShapeId | None -> Gen.idEmpty }
+              ShapeId = match bodyPolygon.PropertiesOpt with Some p -> p.BodyShapeId | None -> 0UL }
         AetherPhysicsEngine.configureBodyShapeProperties bodyProperties bodyPolygon.PropertiesOpt bodyShape
 
     static member private attachBodyShapes sourceSimulant bodyProperties bodyShapes (body : Body) =

@@ -963,7 +963,7 @@ module RigidBodyFacetModule =
              define Entity.IgnoreCCD false
              define Entity.Bullet false
              define Entity.Sensor false
-             computed Entity.PhysicsId (fun (entity : Entity) world -> { SourceId = entity.GetId world; CorrelationId = Gen.idEmpty }) None]
+             computed Entity.PhysicsId (fun (entity : Entity) world -> { SourceId = entity.GetId world; CorrelationId = 0UL }) None]
 
         override this.Register (entity, world) =
             let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.Transform)) entity world
@@ -1032,7 +1032,7 @@ module JointFacetModule =
 
         static member Properties =
             [define Entity.JointDevice JointEmpty
-             computed Entity.PhysicsId (fun (entity : Entity) world -> { SourceId = entity.GetId world; CorrelationId = Gen.idEmpty }) None]
+             computed Entity.PhysicsId (fun (entity : Entity) world -> { SourceId = entity.GetId world; CorrelationId = 0UL }) None]
 
         override this.Register (entity, world) =
             let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.Transform)) entity world
@@ -1081,7 +1081,7 @@ module TileMapFacetModule =
              define Entity.TileIndexOffset 0
              define Entity.TileIndexOffsetRange (0, 0)
              define Entity.TileMap Assets.Default.TileMap
-             computed Entity.PhysicsId (fun (entity : Entity) world -> { SourceId = entity.GetId world; CorrelationId = Gen.idEmpty }) None]
+             computed Entity.PhysicsId (fun (entity : Entity) world -> { SourceId = entity.GetId world; CorrelationId = 0UL }) None]
 
         override this.Register (entity, world) =
             let world = entity.SetSize (entity.GetQuickSize world) world
@@ -1178,7 +1178,7 @@ module TmxMapFacetModule =
              define Entity.TileIndexOffset 0
              define Entity.TileIndexOffsetRange (0, 0)
              define Entity.TmxMap (TmxMap.makeDefault ())
-             computed Entity.PhysicsId (fun (entity : Entity) world -> { SourceId = entity.GetId world; CorrelationId = Gen.idEmpty }) None]
+             computed Entity.PhysicsId (fun (entity : Entity) world -> { SourceId = entity.GetId world; CorrelationId = 0UL }) None]
 
         override this.Register (entity, world) =
             let world = entity.SetSize (entity.GetQuickSize world) world

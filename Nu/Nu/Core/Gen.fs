@@ -12,9 +12,6 @@ module Gen =
 
     let private Lock = obj ()
     let private Random = Random ()
-    let private Cids = dictPlus<string, Guid> StringComparer.Ordinal []
-    let private CidBytes = Array.zeroCreate 16 // TODO: P1: use stack-based allocation via NativePtr.stackalloc and Span - https://bartoszsypytkowski.com/writing-high-performance-f-code/
-    let private CnameBytes = Array.zeroCreate 16 // TODO: P1: use stack-based allocation via NativePtr.stackalloc and Span - https://bartoszsypytkowski.com/writing-high-performance-f-code/
     let mutable private IdForEditor = 0UL
     let mutable private Id64 = 0UL
     let mutable private Id32 = 0u
@@ -118,55 +115,19 @@ module Gen =
         /// The separator of a generated name
         static member nameSeparator = "-"
 
-        /// Generate a unique name.
+        /// Generate a unique name based on a 64-bit id.
         static member name =
-            Gen.namePrefix + string Gen.id
+            Gen.namePrefix + string Gen.id64
 
-        /// Check that a name is generated.
+        /// Check that a name is generated from a 64-bit id.
         static member isName (name : string) =
-            name.StartsWith Gen.namePrefix
-
-        /// Generate an empty id.
-        static member idEmpty =
-            Guid.Empty
+            let mutable p = 0UL
+            name.StartsWith Gen.namePrefix &&
+            UInt64.TryParse (String.skip 1 name, &p)
 
         /// Generate a unique id.
         static member id =
             Guid.NewGuid ()
-
-        /// Generate a unique id that is guaranteed to be convertible to a valid UTF-16 string of 8 characters.
-        static member cid =
-            let id = Guid.NewGuid ()
-            let str = id.ToByteArray () |> UnicodeEncoding.Unicode.GetString
-            if str.Length = 8 then
-                let id2 = UnicodeEncoding.Unicode.GetBytes str |> Guid
-                if id.Equals id2 then id else Gen.cid
-            else Gen.cid
-
-        /// Generate a unique name that is byte-convertible to a valid cid if given none.
-        static member cnameIf cnameOpt =
-            match cnameOpt with
-            | Some cname -> cname
-            | None ->
-                let cid = Gen.cid
-                let cname = cid.ToByteArray () |> UnicodeEncoding.Unicode.GetString
-                "@" + cname
-
-        /// Check that a name is directly correlatable.
-        static member isCname (name : string) =
-            name.Length = 9 && name.[0] = '@'
-
-        /// Correlate a name to a cid, caching a unique cid for it if it is not directly correlatable.
-        static member correlate (name : string) =
-            if Gen.isCname name then
-                lock Lock $ fun () ->
-                    Encoding.Unicode.GetBytes (name, 1, 8, CnameBytes, 0) |> ignore<int>
-                    Array.Copy (CnameBytes, 0, CidBytes, 0, 16)
-                    Guid CidBytes
-            else
-                match Cids.TryGetValue name with
-                | (false, _) -> let cid = Gen.cid in Cids.Add (name, cid); cid
-                | (true, cid) -> cid
 
         /// Generate an id from a couple of ints.
         /// It is the user's responsibility to ensure uniqueness when using the resulting ids.
@@ -184,22 +145,38 @@ module Gen =
             Guid arr
 
         /// Derive a unique id and name if given none.
-        static member idAndNameIf nameOpt =
-            let id = Gen.id
-            let name =
+        static member id64AndNameIf nameOpt =
+            let (id, name) =
                 match nameOpt with
-                | Some name -> name
-                | None -> Gen.namePrefix + string id
+                | Some name ->
+                    let id =
+                        if Gen.isName name then
+                            match UInt64.TryParse (String.skip 1 name) with
+                            | (true, id) -> id
+                            | (false, _) -> Gen.id64
+                        else Gen.id64
+                    (id, name)
+                | None -> (Gen.id64, Gen.name)
             (id, name)
 
         /// Derive a unique id and surnames if given none.
-        static member idAndSurnamesIf surnamesOpt =
+        static member id64AndSurnamesIf surnamesOpt =
             match surnamesOpt with
             | Some surnames ->
                 if Array.length surnames = 0 then failwith "Entity must have at least one surname."
-                (Gen.id, surnames)
+                let id =
+                    match surnames with
+                    | [||] -> Gen.id64
+                    | _ ->
+                        let name = Array.last surnames
+                        if Gen.isName name then
+                            match UInt64.TryParse (String.skip 1 name) with
+                            | (true, id) -> id
+                            | (false, _) -> Gen.id64
+                        else Gen.id64
+                (id, surnames)
             | None ->
-                let id = Gen.id
+                let id = Gen.id64
                 let name = Gen.namePrefix + string id
                 (id, [|name|])
 

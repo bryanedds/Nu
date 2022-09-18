@@ -37,7 +37,7 @@ module WorldTypes =
     /// Store origination information about a simulant physics body.
     and [<StructuralEquality; NoComparison>] BodySource =
         { Entity : Entity
-          BodyId : Guid }
+          BodyId : uint64 }
         static member internal fromInternal (internal_ : BodySourceInternal) =
             { Entity = internal_.Simulant :?> Entity
               BodyId = internal_.BodyId }
@@ -45,8 +45,8 @@ module WorldTypes =
     /// Store origination information about a simulant physics shape body.
     and [<StructuralEquality; NoComparison>] BodyShapeSource =
         { Entity : Entity
-          BodyId : Guid
-          BodyShapeId : Guid }
+          BodyId : uint64
+          BodyShapeId : uint64 }
         static member internal fromInternal (internal_ : BodyShapeSourceInternal) =
             { Entity = internal_.Simulant :?> Entity
               BodyId = internal_.BodyId
@@ -429,7 +429,7 @@ module WorldTypes =
           Persistent : bool
           ScriptFrame : Scripting.DeclarationFrame
           Order : int64
-          Id : Guid
+          Id : uint64
           Name : string }
 
         interface SimulantState with
@@ -437,7 +437,7 @@ module WorldTypes =
 
         /// Make a screen state value.
         static member make nameOpt (dispatcher : ScreenDispatcher) ecs =
-            let (id, name) = Gen.idAndNameIf nameOpt
+            let (id, name) = Gen.id64AndNameIf nameOpt
             { Dispatcher = dispatcher
               Xtension = Xtension.makeFunctional ()
               Model = { DesignerType = typeof<unit>; DesignerValue = () }
@@ -493,7 +493,7 @@ module WorldTypes =
           Persistent : bool
           ScriptFrame : Scripting.DeclarationFrame
           Order : int64
-          Id : Guid
+          Id : uint64
           Name : string }
 
         interface SimulantState with
@@ -501,7 +501,7 @@ module WorldTypes =
 
         /// Make a group state value.
         static member make nameOpt (dispatcher : GroupDispatcher) =
-            let (id, name) = Gen.idAndNameIf nameOpt
+            let (id, name) = Gen.id64AndNameIf nameOpt
             { Dispatcher = dispatcher
               Xtension = Xtension.makeFunctional ()
               Model = { DesignerType = typeof<unit>; DesignerValue = () }
@@ -561,7 +561,7 @@ module WorldTypes =
           mutable OverlayNameOpt : string option
           mutable FacetNames : string Set
           mutable Order : int64
-          IdRef : Guid ref
+          Id : uint64
           Surnames : string array }
 
         interface SimulantState with
@@ -571,7 +571,7 @@ module WorldTypes =
         static member make imperative surnamesOpt overlayNameOpt (dispatcher : EntityDispatcher) =
             let mutable transform = Transform.makeDefault dispatcher.Centered
             transform.Imperative <- imperative
-            let (id, surnames) = Gen.idAndSurnamesIf surnamesOpt
+            let (id, surnames) = Gen.id64AndSurnamesIf surnamesOpt
             { Transform = transform
               Dispatcher = dispatcher
               Facets = [||]
@@ -587,7 +587,7 @@ module WorldTypes =
               OverlayNameOpt = overlayNameOpt
               FacetNames = Set.empty
               Order = Core.getUniqueTimeStamp ()
-              IdRef = ref id
+              Id = id
               Surnames = surnames }
 
         /// Copy an entity state.
@@ -897,12 +897,6 @@ module WorldTypes =
         /// The entity's cached state.
         let mutable entityStateOpt = Unchecked.defaultof<EntityState>
 
-        /// Whether cidOpt has been populated with a valid value.
-        let mutable cidPopulated = false
-
-        /// The entity's cached correlation id.
-        let mutable cidOpt = Unchecked.defaultof<Guid> // OPTIMIZATION: faster than Guid.Empty?
-
         // cache the simulant address to avoid allocation
         let simulantAddress = atoa<Entity, Simulant> entityAddress
 
@@ -939,13 +933,6 @@ module WorldTypes =
         member this.EntityStateOpt
             with get () = entityStateOpt
             and set value = entityStateOpt <- value
-
-        /// The entity's correlation id.
-        member this.Cid =
-            if not cidPopulated then
-                cidOpt <- entityAddress |> Address.getName |> Gen.correlate
-                cidPopulated <- true
-            cidOpt
 
         /// The entity's update event.
         member this.UpdateEvent =

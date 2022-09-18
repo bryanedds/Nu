@@ -831,9 +831,9 @@ module WorldBindings =
                 | struct (Scripting.Violation (_, error, _), _) -> failwith error
                 | struct (_, _) -> failwith "Relation must be either a String or Keyword."
             let entityId =
-                match ScriptingSystem.tryExport typeof<Guid> entityId world with
-                | Some value -> value :?> Guid
-                | None -> failwith "Invalid argument type for 'entityId'; expecting a value convertable to Guid."
+                match ScriptingSystem.tryExport typeof<uint64> entityId world with
+                | Some value -> value :?> uint64
+                | None -> failwith "Invalid argument type for 'entityId'; expecting a value convertable to uint64."
             let bodyProperties =
                 match ScriptingSystem.tryExport typeof<BodyProperties> bodyProperties world with
                 | Some value -> value :?> BodyProperties
@@ -858,9 +858,9 @@ module WorldBindings =
                 | struct (Scripting.Violation (_, error, _), _) -> failwith error
                 | struct (_, _) -> failwith "Relation must be either a String or Keyword."
             let entityId =
-                match ScriptingSystem.tryExport typeof<Guid> entityId world with
-                | Some value -> value :?> Guid
-                | None -> failwith "Invalid argument type for 'entityId'; expecting a value convertable to Guid."
+                match ScriptingSystem.tryExport typeof<uint64> entityId world with
+                | Some value -> value :?> uint64
+                | None -> failwith "Invalid argument type for 'entityId'; expecting a value convertable to uint64."
             let struct (bodiesProperties, world) =
                 match World.evalInternal bodiesProperties world with
                 | struct (Scripting.List list, world) ->
@@ -929,9 +929,9 @@ module WorldBindings =
                 | struct (Scripting.Violation (_, error, _), _) -> failwith error
                 | struct (_, _) -> failwith "Relation must be either a String or Keyword."
             let entityId =
-                match ScriptingSystem.tryExport typeof<Guid> entityId world with
-                | Some value -> value :?> Guid
-                | None -> failwith "Invalid argument type for 'entityId'; expecting a value convertable to Guid."
+                match ScriptingSystem.tryExport typeof<uint64> entityId world with
+                | Some value -> value :?> uint64
+                | None -> failwith "Invalid argument type for 'entityId'; expecting a value convertable to uint64."
             let jointProperties =
                 match ScriptingSystem.tryExport typeof<JointProperties> jointProperties world with
                 | Some value -> value :?> JointProperties
@@ -956,9 +956,9 @@ module WorldBindings =
                 | struct (Scripting.Violation (_, error, _), _) -> failwith error
                 | struct (_, _) -> failwith "Relation must be either a String or Keyword."
             let entityId =
-                match ScriptingSystem.tryExport typeof<Guid> entityId world with
-                | Some value -> value :?> Guid
-                | None -> failwith "Invalid argument type for 'entityId'; expecting a value convertable to Guid."
+                match ScriptingSystem.tryExport typeof<uint64> entityId world with
+                | Some value -> value :?> uint64
+                | None -> failwith "Invalid argument type for 'entityId'; expecting a value convertable to uint64."
             let struct (jointsProperties, world) =
                 match World.evalInternal jointsProperties world with
                 | struct (Scripting.List list, world) ->
