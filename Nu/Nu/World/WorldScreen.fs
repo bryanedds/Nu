@@ -3,7 +3,6 @@
 
 namespace Nu
 open System
-open System.Collections.Generic
 open System.IO
 open FSharpx.Collections
 open Prime

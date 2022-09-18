@@ -156,7 +156,10 @@ module Gen =
                             | (false, _) -> Gen.id64
                         else Gen.id64
                     (id, name)
-                | None -> (Gen.id64, Gen.name)
+                | None ->
+                    let id = Gen.id64
+                    let name = Gen.namePrefix + string id
+                    (id, name)
             (id, name)
 
         /// Derive a unique id and surnames if given none.
