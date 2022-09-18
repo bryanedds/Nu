@@ -448,7 +448,7 @@ module WorldModuleEntity =
         static member internal getEntityFacetNames entity world = (World.getEntityState entity world).FacetNames
         static member internal getEntityOverlayNameOpt entity world = (World.getEntityState entity world).OverlayNameOpt
         static member internal getEntityOrder entity world = (World.getEntityState entity world).Order
-        static member internal getEntityId entity world = (World.getEntityState entity world).IdRef.Value
+        static member internal getEntityId entity world = (World.getEntityState entity world).Id
         static member internal getEntitySurnames entity world = (World.getEntityState entity world).Surnames
         static member internal getEntityName entity world = (World.getEntityState entity world).Surnames |> Array.last
         static member internal setEntityPublishChangeEvents value entity world = World.updateEntityState (fun entityState -> if value <> entityState.PublishChangeEvents then (let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState in entityState.PublishChangeEvents <- value; entityState) else Unchecked.defaultof<_>) "PublishChangeEvents" value entity world
@@ -2046,7 +2046,7 @@ module WorldModuleEntity =
             match entityStateOpt :> obj with
             | null -> world
             | _ ->
-                let entityState = { entityStateOpt with Order = Core.getUniqueTimeStamp (); IdRef = ref Gen.id; Surnames = destination.Surnames }
+                let entityState = { entityStateOpt with Order = Core.getUniqueTimeStamp (); Id = Gen.id64; Surnames = destination.Surnames }
                 World.addEntity false entityState destination world
 
         /// Rename an entity. Note that since this destroys the renamed entity immediately, you should not call this
@@ -2057,7 +2057,7 @@ module WorldModuleEntity =
             match entityStateOpt :> obj with
             | null -> world
             | _ ->
-                let entityState = { entityStateOpt with IdRef = ref Gen.id; Surnames = destination.Surnames }
+                let entityState = { entityStateOpt with Id = Gen.id64; Surnames = destination.Surnames }
                 let children = World.getEntityEntities source world
                 let world = World.destroyEntityImmediateInternal false source world
                 let world = World.addEntity false entityState destination world
@@ -2216,8 +2216,8 @@ module WorldModuleEntity =
         static member pasteEntityFromClipboard atMouse rightClickPosition snapsEir surnamesOpt (group : Group) world =
             match Clipboard with
             | Some entityStateObj ->
-                let (id, surnames) = Gen.idAndSurnamesIf surnamesOpt
-                let entityState = { (entityStateObj :?> EntityState) with Order = Core.getUniqueTimeStamp (); IdRef = ref id; Surnames = surnames }
+                let (id, surnames) = Gen.id64AndSurnamesIf surnamesOpt
+                let entityState = { (entityStateObj :?> EntityState) with Order = Core.getUniqueTimeStamp (); Id = id; Surnames = surnames }
                 let (position, snapsOpt) =
                     if entityState.Is2d then
                         let viewport = World.getViewport world

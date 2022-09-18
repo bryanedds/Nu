@@ -9,12 +9,12 @@ open Nu
 
 /// Identifies a target whose body can be found in the physics engine.
 type [<CustomEquality; NoComparison>] PhysicsId =
-    { SourceId : Guid
-      CorrelationId : Guid }
+    { SourceId : uint64
+      CorrelationId : uint64 }
 
     /// The invalid physics id.
     static member InvalidId =
-        { SourceId = Constants.Engine.InvalidId; CorrelationId = Constants.Engine.InvalidId }
+        { SourceId = 0UL; CorrelationId = 0UL }
 
     /// Hash a PhysicsId.
     static member hash pid =
@@ -26,8 +26,8 @@ type [<CustomEquality; NoComparison>] PhysicsId =
         pid.CorrelationId.Equals pid2.CorrelationId
 
     /// Make a PhysicsId for an external source.
-    static member make (sourceId : Guid) =
-        { SourceId = sourceId; CorrelationId = Gen.id }
+    static member make sourceId =
+        { SourceId = sourceId; CorrelationId = Gen.id64 }
 
     interface PhysicsId IEquatable with
         member this.Equals that =
@@ -44,17 +44,17 @@ type [<CustomEquality; NoComparison>] PhysicsId =
 /// Store origination information about a simulant physics body.
 type [<StructuralEquality; NoComparison>] BodySourceInternal =
     { Simulant : Simulant
-      BodyId : Guid }
+      BodyId : uint64 }
 
 /// Store origination information about a simulant physics shape body.
 type [<StructuralEquality; NoComparison>] BodyShapeSourceInternal =
     { Simulant : Simulant
-      BodyId : Guid
-      ShapeId : Guid }
+      BodyId : uint64
+      ShapeId : uint64 }
 
 /// Describes body shape-specific properties.
 type [<StructuralEquality; NoComparison>] BodyShapeProperties =
-    { BodyShapeId : Guid
+    { BodyShapeId : uint64
       FrictionOpt : single option
       RestitutionOpt : single option
       CollisionCategoriesOpt : int option
@@ -65,7 +65,7 @@ type [<StructuralEquality; NoComparison>] BodyShapeProperties =
 module BodyShapeProperties =
 
     let empty =
-        { BodyShapeId = Gen.idEmpty
+        { BodyShapeId = 0UL
           FrictionOpt = None
           RestitutionOpt = None
           CollisionCategoriesOpt = None
@@ -135,7 +135,7 @@ type BodyType =
 
 /// The properties needed to describe the physical part of a body.
 type [<StructuralEquality; NoComparison>] BodyProperties =
-    { BodyId : Guid
+    { BodyId : uint64
       Position : Vector3
       Rotation : Quaternion
       BodyShape : BodyShape
@@ -162,7 +162,7 @@ type [<StructuralEquality; NoComparison>] BodyProperties =
 module BodyProperties =
 
     let empty =
-        { BodyId = Gen.idEmpty
+        { BodyId = 0UL
           Position = v3Zero
           Rotation = quatIdentity
           BodyShape = BodyEmpty
@@ -270,26 +270,26 @@ type JointDevice =
     | JointWheel of JointWheel
 
 type [<StructuralEquality; NoComparison>] JointProperties =
-    { JointId : Guid
+    { JointId : uint64
       JointDevice : JointDevice }
 
 [<RequireQualifiedAccess>]
 module JointProperties =
 
     let empty =
-        { JointId = Gen.idEmpty
+        { JointId = Gen.id64
           JointDevice = JointEmpty }
 
 /// A message to the physics system to create a body.
 type [<StructuralEquality; NoComparison>] CreateBodyMessage =
     { SourceSimulant : Simulant
-      SourceId : Guid
+      SourceId : uint64
       BodyProperties : BodyProperties }
 
 /// A message to the physics system to create multiple bodies.
 type [<StructuralEquality; NoComparison>] CreateBodiesMessage =
     { SourceSimulant : Simulant
-      SourceId : Guid
+      SourceId : uint64
       BodiesProperties : BodyProperties list }
 
 /// A message to the physics system to destroy a body.
@@ -303,13 +303,13 @@ type [<StructuralEquality; NoComparison>] DestroyBodiesMessage =
 /// A message to the physics system to create a joint.
 type [<StructuralEquality; NoComparison>] CreateJointMessage =
     { SourceSimulant : Simulant
-      SourceId : Guid
+      SourceId : uint64
       JointProperties : JointProperties }
 
 /// A message to the physics system to create multiple joints.
 type [<StructuralEquality; NoComparison>] CreateJointsMessage =
     { SourceSimulant : Simulant
-      SourceId : Guid
+      SourceId : uint64
       JointsProperties : JointProperties list }
 
 /// A message to the physics system to destroy a joint.
