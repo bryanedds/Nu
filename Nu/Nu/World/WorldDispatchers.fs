@@ -1615,8 +1615,11 @@ module EntityDispatcherModule =
         member this.Signal<'model, 'message, 'command> signal world =
             World.signalEntity<'model, 'message, 'command> signal this world
 
-    and [<AbstractClass>] EntityDispatcher<'model, 'message, 'command> (is2d, centered, physical, initial : 'model) =
+    and [<AbstractClass>] EntityDispatcher<'model, 'message, 'command> (is2d, centered, physical, makeInitial : unit -> 'model) =
         inherit EntityDispatcher (is2d, centered, physical)
+
+        new (is2d, centered, physical, initial : 'model) =
+            EntityDispatcher<'model, 'message, 'command> (is2d, centered, physical, fun () -> initial)
 
         member this.GetModel (entity : Entity) world : 'model =
             entity.GetModelGeneric<'model> world
@@ -1631,7 +1634,7 @@ module EntityDispatcherModule =
             let world =
                 let property = World.getEntityModelProperty entity world
                 if property.DesignerType = typeof<unit> then
-                    let model = this.Prepare (initial, world)
+                    let model = this.Prepare (makeInitial (), world)
                     entity.SetModelGeneric<'model> model world
                 else world
             let channels = this.Channel (this.Model entity, entity)
@@ -1703,15 +1706,21 @@ module EntityDispatcherModule =
         abstract member View : 'model * Entity * World -> View
         default this.View (_, _, _) = View.empty
 
-    and [<AbstractClass>] EntityDispatcher2d<'model, 'message, 'command> (centered, physical, initial) =
-        inherit EntityDispatcher<'model, 'message, 'command> (true, centered, physical, initial)
+    and [<AbstractClass>] EntityDispatcher2d<'model, 'message, 'command> (centered, physical, makeInitial : unit -> 'model) =
+        inherit EntityDispatcher<'model, 'message, 'command> (true, centered, physical, makeInitial)
+
+        new (centered, physical, initial) =
+            EntityDispatcher2d<'model, 'message, 'command> (centered, physical, fun () -> initial)
 
         static member Properties =
             [define Entity.Centered false
              define Entity.Size Constants.Engine.EntitySize2dDefault]
 
-    and [<AbstractClass>] EntityDispatcher3d<'model, 'message, 'command> (centered, physical, initial) =
-        inherit EntityDispatcher<'model, 'message, 'command> (false, centered, physical, initial)
+    and [<AbstractClass>] EntityDispatcher3d<'model, 'message, 'command> (centered, physical, makeInitial : unit -> 'model) =
+        inherit EntityDispatcher<'model, 'message, 'command> (false, centered, physical, makeInitial)
+
+        new (centered, physical, initial) =
+            EntityDispatcher3d<'model, 'message, 'command> (centered, physical, fun () -> initial)
 
         static member Properties =
             [define Entity.Size Constants.Engine.EntitySize3dDefault]
@@ -1769,8 +1778,11 @@ module GuiDispatcherModule =
              define Entity.Size Constants.Engine.EntitySizeGuiDefault
              define Entity.DisabledColor (Color (0.75f, 0.75f, 0.75f, 0.75f))]
 
-    type [<AbstractClass>] GuiDispatcher<'model, 'message, 'command> (model) =
-        inherit EntityDispatcher2d<'model, 'message, 'command> (false, false, model)
+    type [<AbstractClass>] GuiDispatcher<'model, 'message, 'command> (makeInitial : unit -> 'model) =
+        inherit EntityDispatcher2d<'model, 'message, 'command> (false, false, makeInitial)
+
+        new (initial : 'model) =
+            GuiDispatcher<'model, 'message, 'command> (fun () -> initial)
 
         static member Properties =
             [define Entity.Presence Omnipresent
@@ -2862,8 +2874,11 @@ module GroupDispatcherModule =
         member this.Signal<'model, 'message, 'command> signal world =
             World.signalGroup<'model, 'message, 'command> signal this world
 
-    and [<AbstractClass>] GroupDispatcher<'model, 'message, 'command> (initial : 'model) =
+    and [<AbstractClass>] GroupDispatcher<'model, 'message, 'command> (makeInitial : unit -> 'model) =
         inherit GroupDispatcher ()
+
+        new (initial : 'model) =
+            GroupDispatcher<'model, 'message, 'command> (fun () -> initial)
 
         member this.GetModel (group : Group) world : 'model =
             group.GetModelGeneric<'model> world
@@ -2882,7 +2897,7 @@ module GroupDispatcherModule =
             let world =
                 let property = World.getGroupModelProperty group world
                 if property.DesignerType = typeof<unit> then
-                    let model = this.Prepare (initial, world)
+                    let model = this.Prepare (makeInitial (), world)
                     group.SetModelGeneric<'model> model world
                 else world
             let channels = this.Channel (this.Model group, group)
@@ -2963,8 +2978,11 @@ module ScreenDispatcherModule =
         member this.Signal<'model, 'message, 'command> signal world =
             World.signalScreen<'model, 'message, 'command> signal this world
 
-    and [<AbstractClass>] ScreenDispatcher<'model, 'message, 'command> (initial : 'model) =
+    and [<AbstractClass>] ScreenDispatcher<'model, 'message, 'command> (makeInitial : unit -> 'model) =
         inherit ScreenDispatcher ()
+
+        new (initial : 'model) =
+            ScreenDispatcher<'model, 'message, 'command> (fun () -> initial)
 
         member this.GetModel (screen : Screen) world : 'model =
             screen.GetModelGeneric<'model> world
@@ -2983,7 +3001,7 @@ module ScreenDispatcherModule =
             let world =
                 let property = World.getScreenModelProperty screen world
                 if property.DesignerType = typeof<unit> then
-                    let model = this.Prepare (initial, world)
+                    let model = this.Prepare (makeInitial (), world)
                     screen.SetModelGeneric<'model> model world
                 else world
             let channels = this.Channel (this.Model screen, screen)
