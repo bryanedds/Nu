@@ -183,24 +183,24 @@ type [<ReferenceEquality; NoComparison>] CharacterAnimationState =
 
     static member index time state =
         match state.CharacterAnimationType with
-        | WalkAnimation -> CharacterAnimationState.indexLoopedWithDirection 4 15 (v2i 0 0) time state
-        | CelebrateAnimation -> CharacterAnimationState.indexLoopedWithDirection 4 10 (v2i 0 1) time state
-        | ReadyAnimation -> CharacterAnimationState.indexSaturatedWithDirection 3 15 (v2i 0 5) time state
+        | WalkAnimation -> CharacterAnimationState.indexLoopedWithDirection 4 15L (v2i 0 0) time state
+        | CelebrateAnimation -> CharacterAnimationState.indexLoopedWithDirection 4 10L (v2i 0 1) time state
+        | ReadyAnimation -> CharacterAnimationState.indexSaturatedWithDirection 3 15L (v2i 0 5) time state
         | PoiseAnimation poiseType ->
             match poiseType with
-            | Poising -> CharacterAnimationState.indexLoopedWithDirection 4 15 (v2i 0 3) time state
-            | Defending -> CharacterAnimationState.indexLoopedWithDirection 1 10 (v2i 0 9) time state
-            | Charging -> CharacterAnimationState.indexLoopedWithDirection 4 10 (v2i 0 2) time state
-        | AttackAnimation -> CharacterAnimationState.indexSaturatedWithDirection 3 15 (v2i 0 6) time state
-        | WoundAnimation -> CharacterAnimationState.indexLoopedWithDirection 1 10 (v2i 0 11) time state
-        | SpinAnimation -> CharacterAnimationState.indexLoopedWithDirection 4 10 (v2i 0 10) time state
-        | DamageAnimation -> CharacterAnimationState.indexSaturatedWithDirection 1 10 (v2i 0 8) time state
-        | IdleAnimation -> CharacterAnimationState.indexLoopedWithDirection 1 10 (v2i 0 10) time state
-        | CastAnimation -> CharacterAnimationState.indexLoopedWithDirection 4 5 (v2i 0 2) time state
-        | Cast2Animation -> CharacterAnimationState.indexLoopedWithDirection 2 10 (v2i 0 7) time state
-        | SlashAnimation -> CharacterAnimationState.indexSaturatedWithDirection 3 15 (v2i 0 6) time state
-        | WhirlAnimation -> CharacterAnimationState.indexLoopedWithDirection 4 3 (v2i 0 12) time state
-        | BuryAnimation -> CharacterAnimationState.indexSaturatedWithDirection 4 10 (v2i 0 12) time state
+            | Poising -> CharacterAnimationState.indexLoopedWithDirection 4 15L (v2i 0 3) time state
+            | Defending -> CharacterAnimationState.indexLoopedWithDirection 1 10L (v2i 0 9) time state
+            | Charging -> CharacterAnimationState.indexLoopedWithDirection 4 10L (v2i 0 2) time state
+        | AttackAnimation -> CharacterAnimationState.indexSaturatedWithDirection 3 15L (v2i 0 6) time state
+        | WoundAnimation -> CharacterAnimationState.indexLoopedWithDirection 1 10L (v2i 0 11) time state
+        | SpinAnimation -> CharacterAnimationState.indexLoopedWithDirection 4 10L (v2i 0 10) time state
+        | DamageAnimation -> CharacterAnimationState.indexSaturatedWithDirection 1 10L (v2i 0 8) time state
+        | IdleAnimation -> CharacterAnimationState.indexLoopedWithDirection 1 10L (v2i 0 10) time state
+        | CastAnimation -> CharacterAnimationState.indexLoopedWithDirection 4 5L (v2i 0 2) time state
+        | Cast2Animation -> CharacterAnimationState.indexLoopedWithDirection 2 10L (v2i 0 7) time state
+        | SlashAnimation -> CharacterAnimationState.indexSaturatedWithDirection 3 15L (v2i 0 6) time state
+        | WhirlAnimation -> CharacterAnimationState.indexLoopedWithDirection 4 3L (v2i 0 12) time state
+        | BuryAnimation -> CharacterAnimationState.indexSaturatedWithDirection 4 10L (v2i 0 12) time state
 
     static member inset time (celSize : Vector2) state =
         let index = CharacterAnimationState.index time state
