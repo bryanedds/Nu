@@ -98,10 +98,12 @@ module MyGameplay =
                       Entity.ClickEvent ==> msg Quit]]
 
              // the player group
-             Content.groupIfScreenSelected Simulants.Gameplay.Player.Group.Name screen []
-                [Content.sideViewCharacter Simulants.Gameplay.Player.Character.Name
-                    [Entity.Position == v3 0.0f 0.0f 0.0f
-                     Entity.Size == v3 108.0f 108.0f 0.0f]]
+             Content.groupIfScreenSelected screen $ fun _ ->
+                Content.group Simulants.Gameplay.Player.Group.Name []
+                    [Content.sideViewCharacter Simulants.Gameplay.Player.Character.Name
+                        [Entity.Position == v3 0.0f 0.0f 0.0f
+                         Entity.Size == v3 108.0f 108.0f 0.0f]]
 
              // the scene group
-             Content.groupFromFileIfScreenSelected Simulants.Gameplay.Scene.Group.Name screen "Assets/Gameplay/Scene.nugroup"]
+             Content.groupIfScreenSelected screen $ fun _ ->
+                Content.groupFromFile Simulants.Gameplay.Scene.Group.Name "Assets/Gameplay/Scene.nugroup"]

@@ -4,6 +4,7 @@
 namespace Nu
 open System
 open System.Collections.Immutable
+open FSharp.Reflection
 open Prime
 open Nu
 
@@ -82,46 +83,35 @@ module Content =
     /// Describe a group with the given initializers and contained entities.
     let group<'d when 'd :> GroupDispatcher> groupName initializers entities =
         GroupFromInitializers (typeof<'d>.Name, groupName, initializers, entities)
-
-    /// Describe one of multiple groups.
-    let groupUnion lens mapper =
-        groups lens (fun a ->
-            let (key, value) = try (getTag a, a) with _ -> (-1, a)
-            Map.singleton key value)
-            (constant mapper)
-
-    /// Describe one of multiple groups with explicit union unwrapping.
-    let groupOf lens unwrap mapper =
-        groupsPlus lens unwrap (fun a ->
-            let (key, value) = try (getTag a, a) with _ -> (-1, a)
-            Map.singleton key value)
-            (constant mapper)
+        
+    // NOTE: disabled due to usability issues.
+    ///// Describe one of multiple groups.
+    //let groupMatch<'a> (lens : Lens<'a, World>) mapper =
+    //    let cases = (FSharpType.GetUnionCases typeof<'a>)
+    //    groups lens (fun a ->
+    //        let (key, value) = try (getTag a, a) with _ -> (-1, a)
+    //        Map.singleton key value)
+    //        (fun key value -> mapper cases.[key].Name value)
+    //
+    ///// Describe one of multiple groups with explicit union unwrapping.
+    //let groupOf<'a, 'b> (lens : Lens<'a, World>) (unwrap : 'a -> 'b) mapper =
+    //    let cases = (FSharpType.GetUnionCases typeof<'b>)
+    //    groupsPlus lens unwrap (fun a ->
+    //        let (key, value) = try (getTag a, a) with _ -> (-1, a)
+    //        Map.singleton key value)
+    //        (fun key value -> mapper cases.[key].Name value)
 
     /// Describe a group to be conditionally instantiated from a lens.
-    let groupWhen lens predicate (mapper : Lens<'a, World> -> GroupContent) =
+    let groupIf lens predicate (mapper : Lens<'a, World> -> GroupContent) =
         let mapper = fun _ a -> mapper a
-        groups lens (fun a -> if predicate a then Map.singleton 0 a else Map.empty) mapper
+        groups
+            (Lens.narrow (fun world -> predicate (Lens.get lens world)) lens)
+            (fun a -> if predicate a then Map.singleton 0 a else Map.empty) mapper
 
     /// Describe a group to be instantiated when a screen is selected.
-    let groupWhenScreenSelected (screen : Screen) (mapper : Lens<unit, World> -> GroupContent) =
+    let groupIfScreenSelected (screen : Screen) (mapper : Lens<unit, World> -> GroupContent) =
         let mapper = (fun lens -> mapper (Lens.map (constant ()) lens))
-        groupWhen Simulants.Game.SelectedScreenOpt (fun screenOpt -> screenOpt = Some screen) mapper
-
-    /// Describe a group to be conditionally instantiated from a lens.
-    let groupIf<'d, 'a when 'd :> GroupDispatcher> groupName (lens : Lens<bool, World>) initializers content =
-        groupWhen lens id (fun _ -> group<'d> groupName initializers content)
-
-    /// Describe a group to be instantiated when a screen is selected.
-    let groupIfScreenSelected<'d, 'a when 'd :> GroupDispatcher> groupName screen initializers content =
-        groupWhenScreenSelected screen (fun _ -> group<'d> groupName initializers content)
-
-    /// Describe a group to be conditionally loaded from a file.
-    let groupFromFileIf<'d, 'a when 'd :> GroupDispatcher> groupName (lens : Lens<bool, World>) filePath =
-        groupWhen lens id (fun _ -> groupFromFile groupName filePath)
-
-    /// Describe a group to be conditionally loaded from a file when a screen is selected.
-    let groupFromFileIfScreenSelected<'d, 'a when 'd :> GroupDispatcher> groupName screen filePath =
-        groupWhenScreenSelected screen (fun _ -> groupFromFile groupName filePath)
+        groupIf Simulants.Game.SelectedScreenOpt (fun screenOpt -> screenOpt = Some screen) mapper
 
     /// Describe entities to be instantiated from a lens, caching what is sieved from the lens for greater efficiency.
     let entitiesPlus
@@ -181,35 +171,28 @@ module Content =
         composite<'d> entityName initializers []
 
     /// Describe an entity to be conditionally instantiated from a lens.
-    let entityWhen lens predicate mapper =
+    let entityIf lens predicate mapper =
         let mapper = fun _ a -> mapper a
-        entities lens (fun a -> if predicate a then Map.singleton 0 a else Map.empty) mapper
+        entities
+            (Lens.narrow (fun world -> predicate (Lens.get lens world)) lens)
+            (fun a -> if predicate a then Map.singleton 0 a else Map.empty) mapper
 
-    /// Describe one of multiple entities.
-    let entityUnion lens mapper =
-        entities lens (fun a ->
-            let (key, value) = try (getTag a, a) with _ -> (-1, a)
-            Map.singleton key value)
-            (constant mapper)
-
-    /// Describe one of multiple entities with explicit union unwrapping.
-    let entityOf lens unwrap mapper =
-        entitiesPlus lens unwrap (fun a ->
-            let (key, value) = try (getTag a, a) with _ -> (-1, a)
-            Map.singleton key value)
-            (constant mapper)
-
-    /// Describe an entity to be conditionally instantiated from a lens.
-    let entityIf<'d when 'd :> EntityDispatcher> entityName (lens : Lens<bool, World>) initializers =
-        entityWhen lens id (fun _ -> entity<'d> entityName initializers)
-
-    /// Describe a composite entity to be conditionally instantiated from a lens.
-    let compositeIf<'d when 'd :> EntityDispatcher> entityName (lens : Lens<bool, World>) initializers content =
-        entityWhen lens id (fun _ -> composite<'d> entityName initializers content)
-
-    /// Describe an entity to be conditionally loaded from a file.
-    let entityFromFileIf<'d when 'd :> EntityDispatcher> entityName (lens : Lens<bool, World>) filePath =
-        entityWhen lens id (fun _ -> entityFromFile entityName filePath)
+    // NOTE: disabled due to usability issues.
+    ///// Describe one of multiple entities.
+    //let entityMatch<'a> (lens : Lens<'a, World>) mapper =
+    //    let cases = (FSharpType.GetUnionCases typeof<'a>)
+    //    entities lens (fun a ->
+    //        let (key, value) = try (getTag a, a) with _ -> (-1, a)
+    //        Map.singleton key value)
+    //        (fun key value -> mapper cases.[key].Name value)
+    //
+    ///// Describe one of multiple entities with explicit union unwrapping.
+    //let entityOf<'a, 'b> (lens : Lens<'a, World>) (unwrap : 'a -> 'b) mapper =
+    //    let cases = (FSharpType.GetUnionCases typeof<'b>)
+    //    entitiesPlus lens unwrap (fun a ->
+    //        let (key, value) = try (getTag a, a) with _ -> (-1, a)
+    //        Map.singleton key value)
+    //        (fun key value -> mapper cases.[key].Name value)
 
     /// Describe a 2d basic emitter with the given initializers.
     let basicEmitter2d entityName initializers = entity<BasicEmitterDispatcher2d> entityName initializers
@@ -250,14 +233,8 @@ module Content =
     /// Describe an association of gui entities with the given initializers and content.
     let association entityName initializers content = composite<GuiDispatcher> entityName initializers content
 
-    /// Describe a conditionally-existent association of gui entities with the given initializers and content.
-    let associationIf entityName (lens : Lens<bool, World>) initializers content = compositeIf<GuiDispatcher> entityName lens initializers content
-
     /// Describe a panel with the given initializers and content.
     let panel entityName initializers content = composite<LabelDispatcher> entityName initializers content
-
-    /// Describe a conditionally-existent panel with the given initializers and content.
-    let panelIf entityName (lens : Lens<bool, World>) initializers content = compositeIf<LabelDispatcher> entityName lens initializers content
 
     /// Describe a 2d block with the given initializers.
     let block2d entityName initializers = entity<BlockDispatcher2d> entityName initializers
