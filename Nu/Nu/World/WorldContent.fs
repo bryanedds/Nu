@@ -50,6 +50,12 @@ module Content =
         (mapper : 'k -> Lens<'b, World> -> GroupContent) =
         groupsPlus lens unfold id mapper
 
+    /// Describe a group filtered from a lens.
+    let groupWhere (lens : Lens<'a, World>) (by : 'a -> 'b option) (mapper : Lens<'b, World> -> GroupContent) =
+        let (sieve : 'a -> Map<int, 'b>) = fun a -> match by a with Some a -> Map.singleton 0 a | None -> Map.empty
+        let mapper = fun _ b -> mapper b
+        groups lens sieve mapper
+
     /// Describe a group to be conditionally instantiated from a lens.
     let groupOpt (lens : Lens<'a option, World>) (mapper : Lens<'a, World> -> GroupContent) =
         let (sieve : 'a option -> Map<int, 'a>) = fun aOpt -> match aOpt with Some a -> Map.singleton 0 a | None -> Map.empty
@@ -84,22 +90,21 @@ module Content =
     let group<'d when 'd :> GroupDispatcher> groupName initializers entities =
         GroupFromInitializers (typeof<'d>.Name, groupName, initializers, entities)
         
-    // NOTE: disabled due to usability issues.
-    ///// Describe one of multiple groups.
-    //let groupMatch<'a> (lens : Lens<'a, World>) mapper =
-    //    let cases = (FSharpType.GetUnionCases typeof<'a>)
-    //    groups lens (fun a ->
-    //        let (key, value) = try (getTag a, a) with _ -> (-1, a)
-    //        Map.singleton key value)
-    //        (fun key value -> mapper cases.[key].Name value)
-    //
-    ///// Describe one of multiple groups with explicit union unwrapping.
-    //let groupOf<'a, 'b> (lens : Lens<'a, World>) (unwrap : 'a -> 'b) mapper =
-    //    let cases = (FSharpType.GetUnionCases typeof<'b>)
-    //    groupsPlus lens unwrap (fun a ->
-    //        let (key, value) = try (getTag a, a) with _ -> (-1, a)
-    //        Map.singleton key value)
-    //        (fun key value -> mapper cases.[key].Name value)
+    /// Describe one of multiple groups.
+    let groupUnion<'a> (lens : Lens<'a, World>) mapper =
+        let cases = (FSharpType.GetUnionCases typeof<'a>)
+        groups lens (fun a ->
+            let (key, value) = try (getTag a, a) with _ -> (-1, a)
+            Map.singleton key value)
+            (fun key value -> mapper cases.[key].Name value)
+    
+    /// Describe one of multiple groups with explicit union unwrapping.
+    let groupMatch<'a, 'b> (lens : Lens<'a, World>) (unwrap : 'a -> 'b) mapper =
+        let cases = (FSharpType.GetUnionCases typeof<'b>)
+        groupsPlus lens unwrap (fun a ->
+            let (key, value) = try (getTag a, a) with _ -> (-1, a)
+            Map.singleton key value)
+            (fun key value -> mapper cases.[key].Name value)
 
     /// Describe a group to be conditionally instantiated from a lens.
     let groupIf lens predicate (mapper : Lens<'a, World> -> GroupContent) =
@@ -131,6 +136,12 @@ module Content =
         (unfold : 'a -> Map<'k, 'b>)
         (mapper : 'k -> Lens<'b, World> -> EntityContent) =
         entitiesPlus lens unfold id mapper
+
+    /// Describe an entity filtered from a lens.
+    let entityWhere (lens : Lens<'a, World>) (by : 'a -> 'b option) (mapper : Lens<'b, World> -> EntityContent) =
+        let (sieve : 'a -> Map<int, 'b>) = fun a -> match by a with Some a -> Map.singleton 0 a | None -> Map.empty
+        let mapper = fun _ b -> mapper b
+        entities lens sieve mapper
 
     /// Describe an entity to be conditionally instantiated from a lens.
     let entityOpt (lens : Lens<'a option, World>) (mapper : Lens<'a, World> -> EntityContent) =
@@ -177,22 +188,21 @@ module Content =
             (Lens.narrow (fun world -> predicate (Lens.get lens world)) lens)
             (fun a -> if predicate a then Map.singleton 0 a else Map.empty) mapper
 
-    // NOTE: disabled due to usability issues.
-    ///// Describe one of multiple entities.
-    //let entityMatch<'a> (lens : Lens<'a, World>) mapper =
-    //    let cases = (FSharpType.GetUnionCases typeof<'a>)
-    //    entities lens (fun a ->
-    //        let (key, value) = try (getTag a, a) with _ -> (-1, a)
-    //        Map.singleton key value)
-    //        (fun key value -> mapper cases.[key].Name value)
-    //
-    ///// Describe one of multiple entities with explicit union unwrapping.
-    //let entityOf<'a, 'b> (lens : Lens<'a, World>) (unwrap : 'a -> 'b) mapper =
-    //    let cases = (FSharpType.GetUnionCases typeof<'b>)
-    //    entitiesPlus lens unwrap (fun a ->
-    //        let (key, value) = try (getTag a, a) with _ -> (-1, a)
-    //        Map.singleton key value)
-    //        (fun key value -> mapper cases.[key].Name value)
+    /// Describe one of multiple entities.
+    let entityUnion<'a> (lens : Lens<'a, World>) mapper =
+        let cases = (FSharpType.GetUnionCases typeof<'a>)
+        entities lens (fun a ->
+            let (key, value) = try (getTag a, a) with _ -> (-1, a)
+            Map.singleton key value)
+            (fun key value -> mapper cases.[key].Name value)
+    
+    /// Describe one of multiple entities with explicit union unwrapping.
+    let entityMatch<'a, 'b> (lens : Lens<'a, World>) (unwrap : 'a -> 'b) mapper =
+        let cases = (FSharpType.GetUnionCases typeof<'b>)
+        entitiesPlus lens unwrap (fun a ->
+            let (key, value) = try (getTag a, a) with _ -> (-1, a)
+            Map.singleton key value)
+            (fun key value -> mapper cases.[key].Name value)
 
     /// Describe a 2d basic emitter with the given initializers.
     let basicEmitter2d entityName initializers = entity<BasicEmitterDispatcher2d> entityName initializers
