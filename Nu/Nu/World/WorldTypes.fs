@@ -99,6 +99,10 @@ module WorldTypes =
     and GameDispatcher () =
         inherit SimulantDispatcher ()
 
+        /// Provides a list of modes for setting game state.
+        abstract Modes : Map<string, World -> World>
+        default this.Modes = Map.empty
+
         /// Register a game when adding it to the world.
         abstract Register : Game * World -> World
         default this.Register (_, world) = world
