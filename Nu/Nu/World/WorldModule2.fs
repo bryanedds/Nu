@@ -1126,9 +1126,8 @@ module GameDispatcherModule =
         override this.Register (game, world) =
             let world =
                 let property = World.getGameModelProperty world
-                if property.DesignerType = typeof<unit> then
-                    let model = this.Prepare (makeInitial (), world)
-                    game.SetModelGeneric<'model> model world
+                if property.DesignerType = typeof<unit>
+                then game.SetModelGeneric<'model> (makeInitial ()) world
                 else world
             let channels = this.Channel (this.Model game, game)
             let world = Signal.processChannels this.Message this.Command (this.Model game) channels game world
@@ -1166,9 +1165,6 @@ module GameDispatcherModule =
             | :? Signal<obj, 'command> as signal -> game.Signal<'model, 'message, 'command> (match signal with Command command -> cmd command | _ -> failwithumf ()) world
             | _ -> Log.info "Incorrect signal type returned from event binding."; world
 
-        abstract member Prepare : 'model * World -> 'model
-        default this.Prepare (model, _) = model
-
         abstract member Channel : Lens<'model, World> * Game -> Channel<'message, 'command, Game, World> list
         default this.Channel (_, _) = []
 
@@ -1192,16 +1188,10 @@ module WorldModule2' =
 
     type World with
 
-        /// Send a signal to a simulant.
+        /// Attempt to send a signal to a facet.
         static member trySignalFacet signal facetName (simulant : Simulant) world =
             match simulant with
             | :? Entity as entity -> entity.TrySignalEntityFacet signal facetName world
-            | _ -> failwithumf ()
-
-        /// Send a signal to a simulant.
-        static member signalFacet<'model, 'message, 'command> signal facetName (simulant : Simulant) world =
-            match simulant with
-            | :? Entity as entity -> entity.SignalEntityFacet<'model, 'message, 'command> signal facetName world
             | _ -> failwithumf ()
 
         /// Send a signal to a simulant.
@@ -1211,6 +1201,12 @@ module WorldModule2' =
             | :? Group as group -> group.TrySignal signal world
             | :? Screen as screen -> screen.TrySignal signal world
             | :? Game as game -> game.TrySignal signal world
+            | _ -> failwithumf ()
+
+        /// Send a signal to a facet.
+        static member signalFacet<'model, 'message, 'command> signal facetName (simulant : Simulant) world =
+            match simulant with
+            | :? Entity as entity -> entity.SignalEntityFacet<'model, 'message, 'command> signal facetName world
             | _ -> failwithumf ()
 
         /// Send a signal to a simulant.

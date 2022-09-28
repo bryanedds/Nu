@@ -34,26 +34,7 @@ module DeclarativeOperators2 =
 [<AutoOpen>]
 module FacetModule =
 
-    type World with
-
-        static member internal trySignalEntityFacet (signalObj : obj) facetName (entity : Entity) world =
-            let facets = entity.GetFacets world
-            match Array.tryFind (fun facet -> getTypeName facet = facetName) facets with
-            | Some (:? Facet<'model, 'message, 'command> as facet) ->
-                match signalObj with
-                | :? Signal<'message, 'command> as signal ->
-                    Signal.processSignal facet.Message facet.Command (entity.FacetModelGeneric<'model> facet.ModelName) signal entity world
-                | _ -> Log.info "Incorrect signal type returned from event binding."; world
-            | _ -> Log.info "Failed to send signal to entity facet."; world
-
-        static member internal signalEntityFacet<'model, 'message, 'command> signal facetName (entity : Entity) world =
-            let facets = entity.GetFacets world
-            match Array.tryFind (fun facet -> getTypeName facet = facetName) facets with
-            | Some (:? Facet<'model, 'message, 'command> as facet) ->
-                Signal.processSignal facet.Message facet.Command (entity.FacetModelGeneric<'model> facet.ModelName) signal entity world
-            | _ -> Log.info "Failed to send signal to entity."; world
-
-    and Entity with
+    type Entity with
     
         member this.GetFacetModelGeneric<'model> modelName world =
             this.Get<'model> modelName world
@@ -67,22 +48,36 @@ module FacetModule =
         member this.FacetModelGeneric<'model> modelName =
             lens<'model> modelName (this.GetFacetModelGeneric<'model> modelName) (this.SetFacetModelGeneric<'model> modelName) this
 
-        member this.TrySignalEntityFacet<'model, 'message, 'command> signal facetName world =
-            World.trySignalEntityFacet signal facetName this world
+        member this.TrySignalEntityFacet<'model, 'message, 'command> (signalObj : obj) facetName world =
+            let facets = this.GetFacets world
+            match Array.tryFind (fun facet -> getTypeName facet = facetName) facets with
+            | Some (:? Facet<'model, 'message, 'command> as facet) ->
+                match signalObj with
+                | :? Signal<'message, 'command> as signal ->
+                    Signal.processSignal facet.Message facet.Command (this.FacetModelGeneric<'model> facet.ModelName) signal this world
+                | _ -> Log.info "Incorrect signal type returned from event binding."; world
+            | _ -> Log.info "Failed to send signal to entity facet."; world
 
         member this.SignalEntityFacet<'model, 'message, 'command> signal facetName world =
-            World.signalEntityFacet<'model, 'message, 'command> signal facetName this world
+            let facets = this.GetFacets world
+            match Array.tryFind (fun facet -> getTypeName facet = facetName) facets with
+            | Some (:? Facet<'model, 'message, 'command> as facet) ->
+                Signal.processSignal facet.Message facet.Command (this.FacetModelGeneric<'model> facet.ModelName) signal this world
+            | _ -> Log.info "Failed to send signal to entity."; world
 
-    and [<AbstractClass>] Facet<'model, 'message, 'command> (physical, initial : 'model) =
+    and [<AbstractClass>] Facet<'model, 'message, 'command> (physical, makeInitial : unit -> 'model) =
         inherit Facet (physical)
 
         let mutable modelNameOpt =
             Unchecked.defaultof<string>
 
-        member this.ModelName =
+        new (physical, initial : 'model) =
+            Facet<'model, 'message, 'command> (physical, fun () -> initial)
+
+        member this.ModelName : string =
             if isNull modelNameOpt then modelNameOpt <- getTypeName this + "Model"
             modelNameOpt
-            
+
         member this.GetModel (entity : Entity) world : 'model =
             entity.GetFacetModelGeneric<'model> this.ModelName world
 
@@ -96,8 +91,7 @@ module FacetModule =
             let world =
                 match World.tryGetProperty (this.ModelName, entity, world) with
                 | (false, _) ->
-                    let model = this.Prepare (initial, world)
-                    let property = { DesignerType = typeof<'model>; DesignerValue = model }
+                    let property = { DesignerType = typeof<'model>; DesignerValue = makeInitial () }
                     let property = { PropertyType = typeof<DesignerProperty>; PropertyValue = property }
                     World.attachProperty this.ModelName property entity world
                 | (true, _) -> world
@@ -136,9 +130,6 @@ module FacetModule =
             | :? Signal<'message, obj> as signal -> entity.SignalEntityFacet<'model, 'message, 'command> (match signal with Message message -> msg message | _ -> failwithumf ()) (getTypeName this) world
             | :? Signal<obj, 'command> as signal -> entity.SignalEntityFacet<'model, 'message, 'command> (match signal with Command command -> cmd command | _ -> failwithumf ()) (getTypeName this) world
             | _ -> Log.info "Incorrect signal type returned from event binding."; world
-
-        abstract member Prepare : 'model * World -> 'model
-        default this.Prepare (model, _) = model
 
         abstract member Channel : Lens<'model, World> * Entity -> Channel<'message, 'command, Entity, World> list
         default this.Channel (_, _) = []
@@ -1633,9 +1624,8 @@ module EntityDispatcherModule =
         override this.Register (entity, world) =
             let world =
                 let property = World.getEntityModelProperty entity world
-                if property.DesignerType = typeof<unit> then
-                    let model = this.Prepare (makeInitial (), world)
-                    entity.SetModelGeneric<'model> model world
+                if property.DesignerType = typeof<unit>
+                then entity.SetModelGeneric<'model> (makeInitial ()) world
                 else world
             let channels = this.Channel (this.Model entity, entity)
             let world = Signal.processChannels this.Message this.Command (this.Model entity) channels entity world
@@ -1681,9 +1671,6 @@ module EntityDispatcherModule =
             | :? Signal<'message, obj> as signal -> entity.Signal<'model, 'message, 'command> (match signal with Message message -> msg message | _ -> failwithumf ()) world
             | :? Signal<obj, 'command> as signal -> entity.Signal<'model, 'message, 'command> (match signal with Command command -> cmd command | _ -> failwithumf ()) world
             | _ -> Log.info "Incorrect signal type returned from event binding."; world
-
-        abstract member Prepare : 'model * World -> 'model
-        default this.Prepare (model, _) = model
 
         abstract member Channel : Lens<'model, World> * Entity -> Channel<'message, 'command, Entity, World> list
         default this.Channel (_, _) = []
@@ -2896,9 +2883,8 @@ module GroupDispatcherModule =
                     group.Screen.SelectEvent group world
             let world =
                 let property = World.getGroupModelProperty group world
-                if property.DesignerType = typeof<unit> then
-                    let model = this.Prepare (makeInitial (), world)
-                    group.SetModelGeneric<'model> model world
+                if property.DesignerType = typeof<unit>
+                then group.SetModelGeneric<'model> (makeInitial ()) world
                 else world
             let channels = this.Channel (this.Model group, group)
             let world = Signal.processChannels this.Message this.Command (this.Model group) channels group world
@@ -2935,9 +2921,6 @@ module GroupDispatcherModule =
             | :? Signal<'message, obj> as signal -> group.Signal<'model, 'message, 'command> (match signal with Message message -> msg message | _ -> failwithumf ()) world
             | :? Signal<obj, 'command> as signal -> group.Signal<'model, 'message, 'command> (match signal with Command command -> cmd command | _ -> failwithumf ()) world
             | _ -> Log.info "Incorrect signal type returned from event binding."; world
-
-        abstract member Prepare : 'model * World -> 'model
-        default this.Prepare (model, _) = model
 
         abstract member Channel : Lens<'model, World> * Group -> Channel<'message, 'command, Group, World> list
         default this.Channel (_, _) = []
@@ -3000,9 +2983,8 @@ module ScreenDispatcherModule =
                     screen.SelectEvent screen world
             let world =
                 let property = World.getScreenModelProperty screen world
-                if property.DesignerType = typeof<unit> then
-                    let model = this.Prepare (makeInitial (), world)
-                    screen.SetModelGeneric<'model> model world
+                if property.DesignerType = typeof<unit>
+                then screen.SetModelGeneric<'model> (makeInitial ()) world
                 else world
             let channels = this.Channel (this.Model screen, screen)
             let world = Signal.processChannels this.Message this.Command (this.Model screen) channels screen world
@@ -3039,9 +3021,6 @@ module ScreenDispatcherModule =
             | :? Signal<'message, obj> as signal -> screen.Signal<'model, 'message, 'command> (match signal with Message message -> msg message | _ -> failwithumf ()) world
             | :? Signal<obj, 'command> as signal -> screen.Signal<'model, 'message, 'command> (match signal with Command command -> cmd command | _ -> failwithumf ()) world
             | _ -> Log.info "Incorrect signal type returned from event binding."; world
-
-        abstract member Prepare : 'model * World -> 'model
-        default this.Prepare (model, _) = model
 
         abstract member Channel : Lens<'model, World> * Screen -> Channel<'message, 'command, Screen, World> list
         default this.Channel (_, _) = []
