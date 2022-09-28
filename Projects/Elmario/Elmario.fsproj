@@ -69,7 +69,6 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Elmario.fs" />
-    <Compile Include="ElmarioPlugin.fs" />
     <Compile Include="Program.fs" />
     <None Include="Interactive.fsx" />
     <None Include="App.config" />

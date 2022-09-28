@@ -4,6 +4,16 @@ open Nu
 open Tactics
 module Program =
 
+    // this is a plugin for the Nu game engine that directs the execution of your application and editor
+    type TacticsPlugin () =
+        inherit NuPlugin ()
+
+        override this.Modes =
+            Map.ofSeq
+                ["Title", fun world -> Simulants.Game.SetModel (Gui Title) world
+                 "Credits", fun world -> Simulants.Game.SetModel (Gui Credits) world
+                 "Pick", fun world -> Simulants.Game.SetModel (Gui Pick) world]
+
     // this the entry point for your Nu application
     let [<EntryPoint; STAThread>] main _ =
 

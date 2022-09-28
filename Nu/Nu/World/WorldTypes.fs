@@ -99,10 +99,6 @@ module WorldTypes =
     and GameDispatcher () =
         inherit SimulantDispatcher ()
 
-        /// Provides a list of modes for setting game state.
-        abstract Modes : Map<string, World -> World>
-        default this.Modes = Map.empty
-
         /// Register a game when adding it to the world.
         abstract Register : Game * World -> World
         default this.Register (_, world) = world
@@ -1258,13 +1254,9 @@ module WorldTypes =
     /// specific values and configurations.
     and NuPlugin () =
 
-        /// The game dispatcher that Nu will utilize when running outside the editor.
-        abstract StandAloneConfig : Type
-        default this.StandAloneConfig = typeof<GameDispatcher>
-
-        /// The screen / screen dispatcher that Nu will utilize when running inside the editor.
-        abstract EditorConfig : Screen * Type
-        default this.EditorConfig = (Screen "Screen", typeof<ScreenDispatcher>)
+        /// Provides a list of modes for setting game state via the editor.
+        abstract Modes : Map<string, World -> World>
+        default this.Modes = Map.empty
 
         /// Make a list of keyed values to hook into the engine.
         abstract MakeKeyedValues : World -> ((Guid * obj) list) * World

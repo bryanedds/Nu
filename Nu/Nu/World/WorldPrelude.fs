@@ -145,6 +145,7 @@ type [<NoEquality; NoComparison>] NuConfig =
 type [<NoEquality; NoComparison>] WorldConfig =
     { Imperative : bool
       UpdateRate : int64
+      ModeOpt : string option
       SdlConfig : SdlConfig
       NuConfig : NuConfig }
 
@@ -152,6 +153,7 @@ type [<NoEquality; NoComparison>] WorldConfig =
     static member defaultConfig =
         { Imperative = true
           UpdateRate = 1L
+          ModeOpt = None
           SdlConfig = SdlConfig.defaultConfig
           NuConfig = NuConfig.defaultConfig }
 

@@ -1252,7 +1252,3 @@ module BattleDispatcher =
                                 reticles
                              Entity.TargetSelectEvent ==|> fun evt -> msg (ReticlesSelect (index, evt.Data))
                              Entity.CancelEvent ==> msg (ReticlesCancel index)]]]]
-
-    type DebugBattleDispatcher () =
-        inherit BattleDispatcher ()
-        override this.Prepare (_, _) = Battle.debug

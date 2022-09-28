@@ -43,7 +43,8 @@ module BlazeVector =
 
         // here we channel from gui events to signals
         override this.Channel (_, _) =
-            [Simulants.Title.Gui.Credits.ClickEvent => msg ShowCredits
+            [Simulants.Splash.Screen.DeselectEvent => msg ShowTitle
+             Simulants.Title.Gui.Credits.ClickEvent => msg ShowCredits
              Simulants.Title.Gui.Play.ClickEvent => msg ShowGameplay
              Simulants.Title.Gui.Exit.ClickEvent => cmd Exit
              Simulants.Credits.Gui.Back.ClickEvent => msg ShowTitle]
@@ -54,7 +55,7 @@ module BlazeVector =
             [game.Gameplay <=> Simulants.Gameplay.Screen.Gameplay
              game.DesiredScreenOpt <== model --> fun model ->
                 match model with
-                | Splash -> None
+                | Splash -> Some Simulants.Splash.Screen
                 | Title -> Some Simulants.Title.Screen
                 | Credits -> Some Simulants.Credits.Screen
                 | Gameplay gameplay ->

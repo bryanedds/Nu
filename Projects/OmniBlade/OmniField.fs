@@ -398,6 +398,11 @@ module Field =
     let debug world =
         make DebugField Slot1 Rand.DefaultSeedState Avatar.empty (Map.singleton 0 (Teammate.make 3 0 Jinn)) Advents.initial Inventory.initial world
 
+    let debugBattle world =
+        let field = debug world
+        let battle = Battle.debug
+        updateBattleOpt (constant (Some battle)) field
+
     let save field =
         let saveFilePath =
             match field.SaveSlot_ with

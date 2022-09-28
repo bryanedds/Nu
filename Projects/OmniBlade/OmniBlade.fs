@@ -65,7 +65,7 @@ module OmniBlade =
                 match omni with
                 | Gui gui ->
                     match gui with
-                    | Splash -> None
+                    | Splash -> Some Simulants.Splash.Screen
                     | Title -> Some Simulants.Title.Screen
                     | Credits -> Some Simulants.Credits.Screen
                     | Pick -> Some Simulants.Pick.Screen
@@ -84,6 +84,7 @@ module OmniBlade =
         override this.Channel (_, _) =
             [Simulants.Game.UpdateEvent => msg UpdateMessage
              Simulants.Game.UpdateEvent => cmd UpdateCommand
+             Simulants.Splash.Screen.DeselectEvent => msg ShowTitle
              Simulants.Title.Gui.Play.ClickEvent =|> fun _ -> msg ShowPick
              Simulants.Title.Gui.Credits.ClickEvent => msg ShowCredits
              Simulants.Pick.Gui.NewGame1.ClickEvent => msg (ShowIntro Slot1)

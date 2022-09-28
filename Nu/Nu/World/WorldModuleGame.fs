@@ -306,19 +306,19 @@ module WorldModuleGame =
         static member getScreenTransitionDestinationOpt world =
             (World.getGameState world).ScreenTransitionDestinationOpt
 
-        /// Get the screens desired to which to transition.
+        /// Get the screen desired to which to transition.
         static member getDesiredScreenOpt world =
             (World.getGameState world).DesiredScreenOpt
 
         /// Set the screen desired to which to transition.
-        static member setDesiredScreenOpt screens world =
+        static member setDesiredScreenOpt screenOpt world =
             World.updateGameState
                 (fun gameState ->
-                    if screens <> gameState.DesiredScreenOpt
-                    then { gameState with DesiredScreenOpt = screens }
+                    if screenOpt <> gameState.DesiredScreenOpt
+                    then { gameState with DesiredScreenOpt = screenOpt }
                     else Unchecked.defaultof<_>)
                 "DesiredScreenOpt"
-                screens
+                screenOpt
                 world
 
         /// Set the current destination screen or None. Be careful using this function as calling
