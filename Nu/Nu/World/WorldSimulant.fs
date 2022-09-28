@@ -265,7 +265,7 @@ module WorldSimulantModule =
         /// Bind the left property to the right property.
         static member bind (left : Lens<'a, World>) (right : Lens<'a, World>) world =
             if isNull (left.This :> obj) then failwithumf ()
-            WorldModule.bind5 left.This left right world
+            WorldModule.bind5 true left.This left right world
 
         /// Bind the right property to the left property.
         static member dnib left right world =
@@ -274,8 +274,7 @@ module WorldSimulantModule =
         /// Link the left property with the right and the right property with the left (two-way bind).
         static member link left right world =
             let world = World.bind left right world
-            let world = World.bind right left world
-            world
+            World.bind right left world
 
 [<AutoOpen>]
 module WorldSimulantOperators =

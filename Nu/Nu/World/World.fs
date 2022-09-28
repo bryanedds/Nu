@@ -333,7 +333,7 @@ module Nu =
                     world entities
 
             // init bind5 F# reach-around
-            WorldModule.bind5 <- fun simulant left right world ->
+            WorldModule.bind5 <- fun propagateImmediately simulant left right world ->
                 let leftFixup =
                     if isNull (left.This :> obj) then
                         Lens.make
@@ -349,8 +349,8 @@ module Nu =
                     else Lens.make left.Name left.GetWithoutValidation (Option.get left.SetOpt) simulant
                 let rightFixup = Lens.makePlus right.Name right.ParentOpt right.ValidateOpt right.GetWithoutValidation None right.This
                 let world =
-                    // propagate immediately to start things out synchronized if possible.
-                    if World.getExists rightFixup.This world
+                    // propagate immediately to start things out synchronized if specified.
+                    if propagateImmediately && World.getExists rightFixup.This world
                     then tryPropagateByLens leftFixup rightFixup world
                     else world
                 let propertyBindingKey = Gen.id
@@ -572,9 +572,11 @@ module WorldModule3 =
                       RebuildQuadtree = World.rebuildQuadtree
                       RebuildOctree = World.rebuildOctree }
 
-                // look up the active game dispather
-                let activeGameDispatcherType = if config.NuConfig.StandAlone then plugin.StandAloneConfig else typeof<GameDispatcher>
-                let activeGameDispatcher = Map.find activeGameDispatcherType.Name dispatchers.GameDispatchers
+                // get the first game dispatcher
+                let activeGameDispatcher =
+                    match List.tryHead pluginGameDispatchers with
+                    | Some (_, dispatcher) -> dispatcher
+                    | None -> GameDispatcher ()
 
                 // make the world's subsystems
                 let subsystems =

@@ -1594,50 +1594,75 @@ module Gaia =
             GaiaForm.CallNextHookEx (form.HookId, nCode, wParam, lParam)) |> ignore
         tryRun3 runWhile sdlDeps (form : GaiaForm)
 
-    /// Select a target directory for the desired plugin and its assets from the give file path.
-    let selectTargetDirAndMakeNuPluginFromFilePathOpt filePathOpt =
-        let (dirName, types) =
+    /// Attempt to select a target directory for the desired plugin and its assets from the give file path.
+    let trySelectTargetDirAndMakeNuPluginFromFilePathOpt filePathOpt =
+        let dirNameAndTypesOpt =
             if not (String.IsNullOrWhiteSpace filePathOpt) then
                 let filePath = filePathOpt
                 try let dirName = Path.GetDirectoryName filePath
                     try
                         Directory.SetCurrentDirectory dirName
                         let assembly = Assembly.Load (File.ReadAllBytes filePath)
-                        (dirName, assembly.GetTypes ())
+                        Some (dirName, assembly.GetTypes ())
                     with _ ->
-                        Log.info "Could not load assembly dependencies when utilitzing Assembly.Load (.NET does not look in the assembly's directory for dependencies for some reason). Using non-shadow assemply load instead."
                         let assembly = Assembly.LoadFrom filePath
-                        (dirName, assembly.GetTypes ())
-                with _ ->
-                    Log.info ("Invalid file path '" + filePath + " for NuPlugin assembly.")
-                    (".", [|typeof<NuPlugin>|])
-            else (".", [|typeof<NuPlugin>|])
-        let dispatcherTypeOpt = Array.tryFind (fun (ty : Type) -> ty.IsSubclassOf typeof<NuPlugin>) types
-        match dispatcherTypeOpt with
-        | Some ty -> let plugin = Activator.CreateInstance ty :?> NuPlugin in (dirName, plugin)
-        | None -> (".", NuPlugin ())
+                        Some (dirName, assembly.GetTypes ())
+                with _ -> None
+            else None
+        match dirNameAndTypesOpt with
+        | Some (dirName, types) ->
+            let dispatcherTypeOpt = Array.tryFind (fun (ty : Type) -> ty.IsSubclassOf typeof<NuPlugin>) types
+            match dispatcherTypeOpt with
+            | Some ty -> let plugin = Activator.CreateInstance ty :?> NuPlugin in Some (dirName, plugin)
+            | None -> None
+        | None -> None
 
     /// Select a target directory for the desired plugin and its assets.
     let selectTargetDirAndMakeNuPlugin () =
         let savedState =
-            try
-                if File.Exists Constants.Editor.SavedStateFilePath
+            try if File.Exists Constants.Editor.SavedStateFilePath
                 then scvalue (File.ReadAllText Constants.Editor.SavedStateFilePath)
-                else { BinaryFilePath = ""; UseGameplayScreen = false; UseImperativeExecution = false }
-            with _ -> { BinaryFilePath = ""; UseGameplayScreen = false; UseImperativeExecution = false }
+                else { BinaryFilePath = ""; ModeOpt = None; UseImperativeExecution = false }
+            with _ -> { BinaryFilePath = ""; ModeOpt = None; UseImperativeExecution = false }
+        let savedStateDirectory = Directory.GetCurrentDirectory ()
         use startForm = new StartForm ()
+        startForm.binaryFilePathText.TextChanged.Add (fun _ ->
+            match trySelectTargetDirAndMakeNuPluginFromFilePathOpt startForm.binaryFilePathText.Text with
+            | Some (_, plugin) ->
+                startForm.modesComboBox.Items.Clear ()
+                for kvp in plugin.Modes do
+                   startForm.modesComboBox.Items.Add (kvp.Key) |> ignore
+                if startForm.modesComboBox.Items.Count <> 0 then
+                    startForm.modesComboBox.SelectedIndex <- 0
+                    startForm.modesComboBox.Enabled <- true
+                else startForm.modesComboBox.Enabled <- false
+            | None ->
+                startForm.modesComboBox.Items.Clear ()
+                startForm.modesComboBox.Enabled <- false)
         startForm.binaryFilePathText.Text <- savedState.BinaryFilePath
-        startForm.useGameplayScreenCheckBox.Checked <- savedState.UseGameplayScreen
+        match savedState.ModeOpt with
+        | Some mode ->
+            for i in 0 .. startForm.modesComboBox.Items.Count - 1 do
+                if startForm.modesComboBox.Items.[i] = mode then
+                    startForm.modesComboBox.SelectedIndex <- i
+        | None -> ()
         startForm.useImperativeExecutionCheckBox.Checked <- savedState.UseImperativeExecution
         if  startForm.ShowDialog () = DialogResult.OK then
             let savedState =
                 { BinaryFilePath = startForm.binaryFilePathText.Text
-                  UseGameplayScreen = startForm.useGameplayScreenCheckBox.Checked
+                  ModeOpt = if String.IsNullOrWhiteSpace startForm.modesComboBox.Text then None else Some startForm.modesComboBox.Text
                   UseImperativeExecution = startForm.useImperativeExecutionCheckBox.Checked }
-            try File.WriteAllText (Constants.Editor.SavedStateFilePath, (scstring savedState))
-            with _ -> Log.info "Could not save editor state."
-            let (targetDir, plugIn) = selectTargetDirAndMakeNuPluginFromFilePathOpt startForm.binaryFilePathText.Text
-            (savedState, targetDir, plugIn)
+            let (targetDir, plugin) =
+                match trySelectTargetDirAndMakeNuPluginFromFilePathOpt startForm.binaryFilePathText.Text with
+                | Some (targetDir, plugin) ->
+                    try File.WriteAllText (savedStateDirectory + "/" + Constants.Editor.SavedStateFilePath, scstring savedState)
+                    with _ -> Log.info "Could not save editor state."
+                    (targetDir, plugin)
+                | None ->
+                    if not (String.IsNullOrWhiteSpace startForm.binaryFilePathText.Text) then
+                        Log.trace ("Invalid Nu Assembly: " + startForm.binaryFilePathText.Text)
+                    (".", NuPlugin ())
+            (savedState, targetDir, plugin)
         else (savedState, ".", NuPlugin ())
 
     /// Create a Gaia form.
@@ -1824,22 +1849,25 @@ module Gaia =
     /// Attempt to make a world for use in the Gaia form.
     /// You can make your own world instead and use the Gaia.attachToWorld instead (so long as the world satisfies said
     /// function's various requirements.
-    let tryMakeWorld useGameplayScreen sdlDeps worldConfig (plugin : NuPlugin) =
+    let tryMakeWorld sdlDeps worldConfig (plugin : NuPlugin) =
         match World.tryMake sdlDeps worldConfig plugin with
         | Right world ->
             let world =
                 World.setEventFilter
                     (EventFilter.NotAny [EventFilter.Pattern (Rexpr "Update", []); EventFilter.Pattern (Rexpr "Mouse/Move", [])])
                     world
-            let (screen, screenDispatcher) =
-                if useGameplayScreen
-                then plugin.EditorConfig
-                else (Simulants.Default.Screen, typeof<ScreenDispatcher>)
-            Globals.Screen <- screen
+            let world =
+                match worldConfig.ModeOpt with
+                | Some mode ->
+                    match plugin.Modes.TryGetValue mode with
+                    | (true, modeFn) -> modeFn world
+                    | (false, _) -> world
+                | None -> world
             let (screen, world) =
-                if not (screen.Exists world)
-                then World.createScreen3 screenDispatcher.Name (Some screen.Name) world
-                else (screen, world)
+                match World.getDesiredScreenOpt world with
+                | Some screen -> (screen, world)
+                | None -> World.createScreen (Some "Screen") world
+            Globals.Screen <- screen
             let world =
                 if Seq.isEmpty (World.getGroups screen world)
                 then World.createGroup (Some "Group") screen world |> snd
@@ -1872,9 +1900,10 @@ module Gaia =
             let worldConfig =
                 { Imperative = savedState.UseImperativeExecution
                   UpdateRate = 0L
+                  ModeOpt = savedState.ModeOpt
                   NuConfig = nuConfig
                   SdlConfig = sdlConfig }
-            match tryMakeWorld savedState.UseGameplayScreen sdlDeps worldConfig plugin with
+            match tryMakeWorld sdlDeps worldConfig plugin with
             | Right world ->
                 Globals.World <- world
                 let _ = run3 tautology targetDir sdlDeps form

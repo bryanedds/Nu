@@ -79,7 +79,6 @@
     <Compile Include="TacticsFieldDispatcher.fs" />
     <Compile Include="TacticsAtlasDispatcher.fs" />
     <Compile Include="Tactics.fs" />
-    <Compile Include="TacticsPlugin.fs" />
     <Compile Include="Program.fs" />
     <None Include="Interactive.fsx" />
     <None Include="App.config" />

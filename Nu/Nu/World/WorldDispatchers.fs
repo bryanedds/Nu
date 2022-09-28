@@ -121,10 +121,10 @@ module FacetModule =
                         (Cascade, world))
                         eventAddress (entity :> Simulant) world
                 | BindDefinition (left, right) ->
-                    WorldModule.bind5 entity left right world
+                    WorldModule.bind5 true entity left right world
                 | LinkDefinition (left, right) ->
-                    let world = WorldModule.bind5 entity left right world
-                    WorldModule.bind5 right.This right left world)
+                    let world = WorldModule.bind5 false entity left right world
+                    WorldModule.bind5 false right.This right left world)
                 world initializers
 
         override this.Render (entity, world) =
@@ -1657,10 +1657,10 @@ module EntityDispatcherModule =
                         (Cascade, world))
                         eventAddress (entity :> Simulant) world
                 | BindDefinition (left, right) ->
-                    WorldModule.bind5 entity left right world
+                    WorldModule.bind5 true entity left right world
                 | LinkDefinition (left, right) ->
-                    let world = WorldModule.bind5 entity left right world
-                    WorldModule.bind5 right.This right left world)
+                    let world = WorldModule.bind5 false entity left right world
+                    WorldModule.bind5 false right.This right left world)
                 world initializers
 
         override this.ApplyPhysics (position, rotation, linearVelocity, angularVelocity, entity, world) =
@@ -2920,10 +2920,10 @@ module GroupDispatcherModule =
                         (Cascade, world))
                         eventAddress (group :> Simulant) world
                 | BindDefinition (left, right) ->
-                    WorldModule.bind5 group left right world
+                    WorldModule.bind5 true group left right world
                 | LinkDefinition (left, right) ->
-                    let world = WorldModule.bind5 group left right world
-                    WorldModule.bind5 right.This right left world)
+                    let world = WorldModule.bind5 false group left right world
+                    WorldModule.bind5 false right.This right left world)
                 world initializers
 
         override this.Render (group, world) =
@@ -3024,10 +3024,10 @@ module ScreenDispatcherModule =
                         (Cascade, world))
                         eventAddress (screen :> Simulant) world
                 | BindDefinition (left, right) ->
-                    WorldModule.bind5 screen left right world
+                    WorldModule.bind5 true screen left right world
                 | LinkDefinition (left, right) ->
-                    let world = WorldModule.bind5 screen left right world
-                    WorldModule.bind5 right.This right left world)
+                    let world = WorldModule.bind5 false screen left right world
+                    WorldModule.bind5 false right.This right left world)
                 world initializers
 
         override this.Render (screen, world) =

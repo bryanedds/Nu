@@ -130,7 +130,7 @@ module WorldModule =
     /// F# reach-around for binding properties.
     /// HACK: bind5 allows the use of fake lenses in declarative usage.
     /// NOTE: the downside to using fake lenses is that composed fake lenses do not function.
-    let mutable internal bind5 : Simulant -> World Lens -> World Lens -> World -> World =
+    let mutable internal bind5 : bool -> Simulant -> World Lens -> World Lens -> World -> World =
         Unchecked.defaultof<_>
 
     let mutable internal register : Simulant -> World -> World =

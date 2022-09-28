@@ -129,27 +129,26 @@ module WorldModule2 =
             World.relate address world
 
         /// Select the given screen without transitioning, even if another transition is taking place.
-        static member internal selectScreenOpt transitionState screenOpt world =
+        static member internal selectScreenOpt transitionStateAndScreenOpt world =
             let world =
                 match World.getSelectedScreenOpt world with
                 | Some selectedScreen ->
                     let eventTrace = EventTrace.debug "World" "selectScreen" "Deselecting" EventTrace.empty
                     World.publish () (Events.Deselecting --> selectedScreen) eventTrace selectedScreen world
                 | None -> world
-            let world =
-                match screenOpt with
-                | Some screen ->
-                    let world = World.setScreenTransitionStatePlus transitionState screen world
-                    let world = World.setSelectedScreen screen world
-                    let eventTrace = EventTrace.debug "World" "selectScreen" "Select" EventTrace.empty
-                    World.publish () (Events.Select --> screen) eventTrace screen world
-                | None -> World.setSelectedScreenOpt None world
-            world
+            match transitionStateAndScreenOpt with
+            | Some (transitionState, screen) ->
+                let world = World.setScreenTransitionStatePlus transitionState screen world
+                let world = World.setSelectedScreen screen world
+                let eventTrace = EventTrace.debug "World" "selectScreen" "Select" EventTrace.empty
+                World.publish () (Events.Select --> screen) eventTrace screen world
+            | None ->
+                World.setSelectedScreenOpt None world
 
         /// Select the given screen without transitioning, even if another transition is taking place.
         [<FunctionBinding>]
         static member selectScreen transitionState screen world =
-            World.selectScreenOpt transitionState (Some screen) world
+            World.selectScreenOpt (Some (transitionState, screen)) world
 
         /// Try to check that the selected screen is idling; that is, neither transitioning in or
         /// out via another screen.
@@ -271,7 +270,7 @@ module WorldModule2 =
                             let world = selectedScreen.SetTransitionUpdates 0L world
                             World.setScreenTransitionStatePlus OutgoingState selectedScreen world
                         else world
-                    | None -> world
+                    | None -> World.setScreenTransitionStatePlus OutgoingState selectedScreen world
             | Dead -> world
 
         static member private updateScreenOutgoing (selectedScreen : Screen) world =
@@ -331,7 +330,7 @@ module WorldModule2 =
                             if destination <> selectedScreen
                             then World.selectScreen IncomingState destination world
                             else world
-                        | None -> world
+                        | None -> World.selectScreenOpt None world
                     | Dead -> world
                 | (false, world) -> world
             | Dead -> world
@@ -343,7 +342,10 @@ module WorldModule2 =
                 | IncomingState -> World.updateScreenIncoming selectedScreen world
                 | IdlingState -> World.updateScreenIdling selectedScreen world
                 | OutgoingState -> World.updateScreenOutgoing selectedScreen world
-            | None -> world
+            | None ->
+                match World.getDesiredScreenOpt world with
+                | Some desiredScreen -> World.transitionScreen desiredScreen world
+                | None -> world
 
         /// Try to transition to the given screen if no other transition is in progress.
         [<FunctionBinding>]
@@ -357,8 +359,8 @@ module WorldModule2 =
                     (true, world)
                 else (false, world)
             | None ->
-                let world = World.setScreenTransitionDestinationOpt (Some destination) world |> snd'
                 let world = World.setScreenTransitionStatePlus IncomingState destination world
+                let world = World.setSelectedScreen destination world
                 (true, world)
 
         /// Transition to the given screen.
@@ -1132,9 +1134,8 @@ module GameDispatcherModule =
             let world = Signal.processChannels this.Message this.Command (this.Model game) channels game world
             let content = this.Content (this.Model game, game)
             let world =
-                List.foldi (fun contentIndex world content ->
-                    let (screen, world) = World.expandScreenContent World.setScreenSplash content (SimulantOrigin game) game world
-                    if contentIndex = 0 then World.selectScreen IncomingState screen world else world)
+                List.fold (fun world content ->
+                    World.expandScreenContent World.setScreenSplash content (SimulantOrigin game) game world |> snd)
                     world content
             let initializers = this.Initializers (this.Model game, game)
             List.fold (fun world initializer ->
@@ -1149,10 +1150,10 @@ module GameDispatcherModule =
                         (Cascade, world))
                         eventAddress (game :> Simulant) world
                 | BindDefinition (left, right) ->
-                    WorldModule.bind5 game left right world
+                    WorldModule.bind5 true game left right world
                 | LinkDefinition (left, right) ->
-                    let world = WorldModule.bind5 game left right world
-                    WorldModule.bind5 right.This right left world)
+                    let world = WorldModule.bind5 false game left right world
+                    WorldModule.bind5 false right.This right left world)
                 world initializers
 
         override this.Render (game, world) =

@@ -99,7 +99,6 @@
     <Compile Include="OmniBattleDispatcher.fs" />
     <Compile Include="OmniFieldDispatcher.fs" />
     <Compile Include="OmniBlade.fs" />
-    <Compile Include="OmniPlugin.fs" />
     <Compile Include="Program.fs" />
     <None Include="Interactive.fsx" />
     <None Include="GenerateCharacterAnimationSheets.fsx" />

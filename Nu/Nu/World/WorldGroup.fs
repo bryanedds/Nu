@@ -330,9 +330,9 @@ module WorldGroupModule =
                     let world =
                         List.fold (fun world (simulant, left : World Lens, right, twoWay) ->
                             if twoWay then
-                                let world = WorldModule.bind5 simulant left right world
-                                WorldModule.bind5 simulant right left world
-                            else WorldModule.bind5 simulant left right world)
+                                let world = WorldModule.bind5 false simulant left right world
+                                WorldModule.bind5 false simulant right left world
+                            else WorldModule.bind5 true simulant left right world)
                             world binds
                     let world =
                         List.fold (fun world (handler, address, simulant) ->
