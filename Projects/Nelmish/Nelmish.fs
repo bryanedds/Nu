@@ -38,7 +38,7 @@ type NelmishDispatcher () =
                      Entity.Position == v3 0.0f 64.0f 0.0f
                      Entity.ClickEvent ==> msg Increment]
                  Content.text "Counter"
-                    [Entity.Text <== model --> scstring
+                    [Entity.Text <== model --> string
                      Entity.Position == v3 -128.0f -32.0f 0.0f
                      Entity.Justification == Justified (JustifyCenter, JustifyMiddle)]
                  Content.entityIf model notZero $ fun _ ->
