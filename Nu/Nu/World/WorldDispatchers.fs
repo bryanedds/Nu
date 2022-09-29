@@ -2725,7 +2725,7 @@ module StaticModelSurfaceDispatcherModule =
              define Entity.RenderStyle Deferred]
 
 [<AutoOpen>]
-module StaticSceneDispatcherModule =
+module StaticModelHierarchyDispatcherModule =
 
     type World with
 
@@ -2805,14 +2805,11 @@ module StaticSceneDispatcherModule =
             | None -> world
 
     type Entity with
-        member this.GetStaticScene world : StaticModel AssetTag = this.Get (nameof this.StaticScene) world
-        member this.SetStaticScene (value : StaticModel AssetTag) world = this.Set (nameof this.StaticScene) value world
-        member this.StaticScene = lens (nameof this.StaticScene) this.GetStaticScene this.SetStaticScene this
         member this.GetLoaded world : bool = this.Get (nameof this.Loaded) world
         member this.SetLoaded (value : bool) world = this.Set (nameof this.Loaded) value world
         member this.Loaded = lens (nameof this.Loaded) this.GetLoaded this.SetLoaded this
 
-    type StaticSceneDispatcher () =
+    type StaticModelHierarchyDispatcher () =
         inherit EntityDispatcher3d (true, false)
 
         static let destroyChildren (entity : Entity) world =
@@ -2823,21 +2820,21 @@ module StaticSceneDispatcherModule =
         static let syncChildren evt world =
             let entity = evt.Subscriber : Entity
             let world = destroyChildren entity world
-            let world = World.tryImportScene true (entity.GetStaticScene world) (Right entity) world
+            let world = World.tryImportScene true (entity.GetStaticModel world) (Right entity) world
             (Cascade, world)
 
         static member Properties =
-            [define Entity.StaticScene Assets.Default.StaticModel
+            [define Entity.StaticModel Assets.Default.StaticModel
              define Entity.Loaded false]
 
         override this.Register (entity, world) =
             let world =
                 if not (entity.GetLoaded world) then
-                    let world = World.tryImportScene true (entity.GetStaticScene world) (Right entity) world
+                    let world = World.tryImportScene true (entity.GetStaticModel world) (Right entity) world
                     let world = entity.SetLoaded true world
                     world
                 else world
-            let world = World.monitor syncChildren (entity.ChangeEvent (nameof entity.StaticScene)) entity world
+            let world = World.monitor syncChildren (entity.ChangeEvent (nameof entity.StaticModel)) entity world
             world
 
 [<AutoOpen>]

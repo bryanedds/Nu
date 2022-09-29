@@ -434,7 +434,7 @@ module WorldModule3 =
                  StaticBillboardDispatcher () :> EntityDispatcher
                  StaticModelSurfaceDispatcher () :> EntityDispatcher
                  StaticModelDispatcher () :> EntityDispatcher
-                 StaticSceneDispatcher () :> EntityDispatcher]
+                 StaticModelHierarchyDispatcher () :> EntityDispatcher]
 
         static member private makeDefaultFacets () =
             // TODO: consider if we should reflectively generate these.
