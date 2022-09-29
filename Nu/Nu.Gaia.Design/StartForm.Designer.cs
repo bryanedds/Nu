@@ -45,7 +45,7 @@
 			this.binaryFilePathText.Margin = new System.Windows.Forms.Padding(2);
 			this.binaryFilePathText.Name = "binaryFilePathText";
 			this.binaryFilePathText.Size = new System.Drawing.Size(411, 20);
-			this.binaryFilePathText.TabIndex = 0;
+			this.binaryFilePathText.TabIndex = 1;
 			// 
 			// label1
 			// 
@@ -54,7 +54,7 @@
 			this.label1.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
 			this.label1.Name = "label1";
 			this.label1.Size = new System.Drawing.Size(180, 13);
-			this.label1.TabIndex = 1;
+			this.label1.TabIndex = 0;
 			this.label1.Text = "Select game\'s executable for editing.";
 			// 
 			// selectExecutable
@@ -73,7 +73,7 @@
 			this.customButton.Location = new System.Drawing.Point(262, 141);
 			this.customButton.Name = "customButton";
 			this.customButton.Size = new System.Drawing.Size(96, 23);
-			this.customButton.TabIndex = 3;
+			this.customButton.TabIndex = 6;
 			this.customButton.Text = "Use Settings";
 			this.customButton.UseVisualStyleBackColor = true;
 			this.customButton.Click += new System.EventHandler(this.customButton_Click);
@@ -84,7 +84,7 @@
 			this.defaultButton.Location = new System.Drawing.Point(364, 141);
 			this.defaultButton.Name = "defaultButton";
 			this.defaultButton.Size = new System.Drawing.Size(91, 23);
-			this.defaultButton.TabIndex = 4;
+			this.defaultButton.TabIndex = 7;
 			this.defaultButton.Text = "Use Defaults";
 			this.defaultButton.UseVisualStyleBackColor = true;
 			// 
@@ -98,7 +98,7 @@
 			this.useImperativeExecutionCheckBox.Location = new System.Drawing.Point(14, 109);
 			this.useImperativeExecutionCheckBox.Name = "useImperativeExecutionCheckBox";
 			this.useImperativeExecutionCheckBox.Size = new System.Drawing.Size(284, 17);
-			this.useImperativeExecutionCheckBox.TabIndex = 6;
+			this.useImperativeExecutionCheckBox.TabIndex = 5;
 			this.useImperativeExecutionCheckBox.Text = "Use Imperative Execution (faster, but no Undo / Redo)";
 			this.useImperativeExecutionCheckBox.UseVisualStyleBackColor = true;
 			// 
@@ -110,7 +110,7 @@
 			this.modesComboBox.Location = new System.Drawing.Point(56, 77);
 			this.modesComboBox.Name = "modesComboBox";
 			this.modesComboBox.Size = new System.Drawing.Size(399, 21);
-			this.modesComboBox.TabIndex = 7;
+			this.modesComboBox.TabIndex = 4;
 			// 
 			// label2
 			// 
@@ -118,7 +118,7 @@
 			this.label2.Location = new System.Drawing.Point(13, 81);
 			this.label2.Name = "label2";
 			this.label2.Size = new System.Drawing.Size(37, 13);
-			this.label2.TabIndex = 8;
+			this.label2.TabIndex = 3;
 			this.label2.Text = "Mode:";
 			// 
 			// StartForm
