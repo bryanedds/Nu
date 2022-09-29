@@ -1635,7 +1635,7 @@ module FieldDispatcher =
                              Entity.Text <== field --> (fun field -> string field.Inventory.Gold + "G")]]
 
                  // confirm
-                 Content.entityOpt (field --> fun field -> match field.ShopOpt with Some shop -> shop.ShopConfirmOpt | None -> None) $ fun shopConfirm ->
+                 Content.entityWhere field (fun field -> match field.ShopOpt with Some shop -> shop.ShopConfirmOpt | None -> None) $ fun shopConfirm ->
                     Content.panel Gen.name
                        [Entity.Position == v3 -450.0f -128.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation + 10.0f; Entity.Size == v3 900.0f 252.0f 0.0f
                         Entity.LabelImage == Assets.Gui.DialogFatImage]
