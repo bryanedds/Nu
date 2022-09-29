@@ -276,8 +276,8 @@ module Content =
     /// Describe a static model surface with the given initializers.
     let staticModelSurface entityName initializers = entity<StaticModelSurfaceDispatcher> entityName initializers
 
-    /// Describe a static scene with the given initializers.
-    let staticScene entityName initializers = entity<StaticSceneDispatcher> entityName initializers
+    /// Describe a static model expanded into an entity hierarchy with the given initializers.
+    let staticModelHierarchy entityName initializers = entity<StaticModelHierarchyDispatcher> entityName initializers
 
 [<AutoOpen>]
 module ContentOperators =
