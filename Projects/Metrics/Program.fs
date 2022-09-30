@@ -350,19 +350,6 @@ type PhantomGameDispatcher () =
 
 type MetricsPlugin () =
     inherit NuPlugin ()
-#if ELMISH
-    override this.StandAloneConfig = typeof<ElmishGameDispatcher>
-#else
-  #if PHANTOM
-    override this.StandAloneConfig = typeof<PhantomGameDispatcher>
-  #else
-    #if TESTBED
-    override this.StandAloneConfig = typeof<TestBedGameDispatcher>
-    #else
-    override this.StandAloneConfig = typeof<MyGameDispatcher>
-    #endif
-  #endif
-#endif
 
 /// This program exists to take metrics on Nu's performance.
 module Program =

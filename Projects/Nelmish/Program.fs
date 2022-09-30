@@ -1,12 +1,7 @@
 ﻿namespace Nelmish
 open System
 open Nu
-open Nelmish
 module Program =
-
-    // this is a plugin for the Nu game engine that directs the execution of your application and editor
-    type NelmishPlugin () =
-        inherit NuPlugin ()
 
     // this the entry point for your Nu application
     let [<EntryPoint; STAThread>] main _ =
