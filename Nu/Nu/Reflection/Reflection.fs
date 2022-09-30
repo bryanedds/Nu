@@ -83,7 +83,7 @@ module Reflection =
         isPropertyNonPersistentByName property.Name ||
         (property.Name = Constants.Engine.NamePropertyName &&
          property.PropertyType = typeof<string> &&
-         Gen.isName (property.GetValue target :?> string))
+         Gen.isNameGenerated (property.GetValue target :?> string))
 
     /// Check that the dispatcher has behavior congruent to the given type.
     let dispatchesAs (dispatcherTargetType : Type) (dispatcher : 'a) =

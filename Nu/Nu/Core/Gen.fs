@@ -120,7 +120,7 @@ module Gen =
             Gen.namePrefix + string Gen.id64
 
         /// Check that a name is generated from a 64-bit id.
-        static member isName (name : string) =
+        static member isNameGenerated (name : string) =
             let mutable p = 0UL
             name.StartsWith Gen.namePrefix &&
             UInt64.TryParse (String.skip 1 name, &p)
@@ -150,7 +150,7 @@ module Gen =
                 match nameOpt with
                 | Some name ->
                     let id =
-                        if Gen.isName name then
+                        if Gen.isNameGenerated name then
                             match UInt64.TryParse (String.skip 1 name) with
                             | (true, id) -> id
                             | (false, _) -> Gen.id64
@@ -172,7 +172,7 @@ module Gen =
                     | [||] -> Gen.id64
                     | _ ->
                         let name = Array.last surnames
-                        if Gen.isName name then
+                        if Gen.isNameGenerated name then
                             match UInt64.TryParse (String.skip 1 name) with
                             | (true, id) -> id
                             | (false, _) -> Gen.id64

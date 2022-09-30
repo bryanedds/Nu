@@ -477,7 +477,7 @@ module Gaia =
         let selectedGroup = Globals.EditorState.SelectedGroup
         let surnamesStrs =
             World.getEntitiesFlattened selectedGroup world |>
-            Seq.filter (fun entity -> not (Gen.isName entity.Name)) |>
+            Seq.filter (fun entity -> not (Gen.isNameGenerated entity.Name)) |>
             Seq.map (fun entity -> entity.Surnames |> Address.makeFromArray |> string) |>
             flip Seq.append [Constants.Editor.NonePick] |>
             Seq.toArray

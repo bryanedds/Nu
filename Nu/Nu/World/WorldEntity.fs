@@ -581,7 +581,10 @@ module WorldEntityModule =
                     | None -> true
             let entityProperties = Reflection.writePropertiesFromTarget shouldWriteProperty entityDescriptor.EntityProperties entityState
             let entityDescriptor = { entityDescriptor with EntityProperties = entityProperties }
-            let entityDescriptor = EntityDescriptor.setNameOpt (Some entity.Name) entityDescriptor
+            let entityDescriptor =
+                if not (Gen.isNameGenerated entity.Name)
+                then EntityDescriptor.setNameOpt (Some entity.Name) entityDescriptor
+                else entityDescriptor
             let entities = World.getEntityEntities entity world
             { entityDescriptor with EntityDescriptors = World.writeEntities entities world }
 
