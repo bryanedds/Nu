@@ -1265,7 +1265,7 @@ module FieldDispatcher =
 
                 [// avatar
                  Content.entity<AvatarDispatcher> Simulants.Field.Scene.Avatar.Name
-                    [Entity.Position == v3 144.0f 144.0f 0.0f; Entity.Elevation == Constants.Field.ForegroundElevation; Entity.Size == Constants.Gameplay.CharacterSize
+                    [Entity.Position == v3Zero; Entity.Elevation == Constants.Field.ForegroundElevation; Entity.Size == Constants.Gameplay.CharacterSize
                      Entity.Enabled <== field --> fun field ->
                         field.Menu.MenuState = MenuClosed &&
                         Cue.notInterrupting field.Inventory field.Advents field.Cue &&
