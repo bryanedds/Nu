@@ -3,6 +3,7 @@
 
 namespace OmniBlade
 open System
+open FSharpx.Collections
 open Prime
 open Nu
 open Nu.Declarative
@@ -72,59 +73,3 @@ type [<ReferenceEquality; NoComparison>] Dialog =
                 wordWrap acc right
             else text :: acc
         wordWrap [] text |> List.rev |> String.join "\n"
-
-    static member content name elevation promptLeft promptRight (detokenizeAndDialogOpt : Lens<(string -> string) * Dialog option, World>) =
-        Content.composite<TextDispatcher> name
-            [Entity.Perimeter <== detokenizeAndDialogOpt --> fun (_, dialogOpt) ->
-                match dialogOpt with
-                | Some dialog ->
-                    match dialog.DialogForm with
-                    | DialogThin -> box3 (v3 -432.0f 150.0f 0.0f) (v3 864.0f 90.0f 0.0f)
-                    | DialogThick -> box3 (v3 -432.0f 78.0f 0.0f) (v3 864.0f 174.0f 0.0f)
-                    | DialogNarration -> box3 (v3 -432.0f 78.0f 0.0f) (v3 864.0f 174.0f 0.0f)
-                | None -> box3Zero
-             Entity.Elevation == elevation
-             Entity.BackgroundImageOpt <== detokenizeAndDialogOpt --> fun (_, dialogOpt) ->
-                let image =
-                    match dialogOpt with
-                    | Some dialog ->
-                        match dialog.DialogForm with
-                        | DialogThin -> Assets.Gui.DialogThinImage
-                        | DialogThick -> Assets.Gui.DialogThickImage
-                        | DialogNarration -> Assets.Default.ImageEmpty
-                    | None -> Assets.Gui.DialogThickImage
-                Some image
-             Entity.Text <== detokenizeAndDialogOpt --> fun (detokenize, dialogOpt) ->
-                match dialogOpt with
-                | Some dialog -> Dialog.getText detokenize dialog
-                | None -> ""
-             Entity.Justification <== detokenizeAndDialogOpt --> fun (_, dialogOpt) ->
-                match dialogOpt with
-                | Some dialog ->
-                    match dialog.DialogForm with
-                    | DialogThin | DialogThick -> Unjustified true
-                    | DialogNarration -> Justified (JustifyCenter, JustifyMiddle)
-                | None -> Unjustified true
-             Entity.Margins == v3 30.0f 30.0f 0.0f]
-            [Content.button "Left"
-                [Entity.PositionLocal == v3 186.0f 18.0f 0.0f; Entity.ElevationLocal == 2.0f; Entity.Size == v3 192.0f 48.0f 0.0f
-                 Entity.VisibleLocal <== detokenizeAndDialogOpt --> fun (detokenize, dialogOpt) ->
-                    match dialogOpt with
-                    | Some dialog -> Option.isSome dialog.DialogPromptOpt && Dialog.isExhausted detokenize dialog
-                    | None -> false
-                 Entity.Text <== detokenizeAndDialogOpt --> fun (_, dialogOpt) ->
-                    match dialogOpt with
-                    | Some dialog -> match dialog.DialogPromptOpt with Some ((promptText, _), _) -> promptText | None -> ""
-                    | None -> ""
-                 Entity.ClickEvent ==> msg promptLeft]
-             Content.button "Right"
-                [Entity.PositionLocal == v3 486.0f 18.0f 0.0f; Entity.ElevationLocal == 2.0f; Entity.Size == v3 192.0f 48.0f 0.0f
-                 Entity.VisibleLocal <== detokenizeAndDialogOpt --> fun (detokenize, dialogOpt) ->
-                    match dialogOpt with
-                    | Some dialog -> Option.isSome dialog.DialogPromptOpt && Dialog.isExhausted detokenize dialog
-                    | None -> false
-                 Entity.Text <== detokenizeAndDialogOpt --> fun (_, dialogOpt) ->
-                     match dialogOpt with
-                     | Some dialog -> match dialog.DialogPromptOpt with Some (_, (promptText, _)) -> promptText | None -> ""
-                     | None -> ""
-                 Entity.ClickEvent ==> msg promptRight]]

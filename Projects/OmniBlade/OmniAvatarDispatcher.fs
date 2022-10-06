@@ -64,11 +64,10 @@ module AvatarDispatcher =
             [typeof<RigidBodyFacet>]
 
         override this.Initializers (avatar, entity) =
-            let bodyCenter = v3 -0.015f -0.36f 0.0f
             let bodyShapes =
                 BodyShapes
-                    [BodySphere { Radius = 0.16f; Center = v3 -0.01f -0.36f 0.0f; PropertiesOpt = Some { BodyShapeProperties.empty with BodyShapeId = coreShapeId }}
-                     BodySphere { Radius = 0.325f; Center = bodyCenter; PropertiesOpt = Some { BodyShapeProperties.empty with BodyShapeId = sensorShapeId; SensorOpt = Some true }}]
+                    [BodySphere { Radius = 0.160f; Center = v3 -0.016f -0.3667f 0.0f; PropertiesOpt = Some { BodyShapeProperties.empty with BodyShapeId = coreShapeId }}
+                     BodySphere { Radius = 0.320f; Center = v3 -0.016f -0.3667f 0.0f; PropertiesOpt = Some { BodyShapeProperties.empty with BodyShapeId = sensorShapeId; SensorOpt = Some true }}]
             [entity.Perimeter <== avatar --> fun avatar -> avatar.Perimeter
              Entity.Presence == Omnipresent
              entity.FixedRotation == true

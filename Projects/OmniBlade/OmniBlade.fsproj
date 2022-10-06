@@ -90,6 +90,7 @@
     <Compile Include="OmniBattle.fs" />
     <Compile Include="OmniSpirit.fs" />
     <Compile Include="OmniField.fs" />
+    <Compile Include="OmniContent.fs" />
     <Compile Include="OmniRingMenuDispatcher.fs" />
     <Compile Include="OmniReticlesDispatcher.fs" />
     <Compile Include="OmniCharacterDispatcher.fs" />
