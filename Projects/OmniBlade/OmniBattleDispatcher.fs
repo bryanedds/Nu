@@ -515,7 +515,7 @@ module BattleDispatcher =
                 let battle =
                     match battle.DialogOpt with
                     | Some dialog ->
-                        let dialog = Dialog.update id dialog world // TODO: P1: pass in a real detokenizer!
+                        let dialog = Dialog.update id dialog world
                         Battle.updateDialogOpt (constant (Some dialog)) battle
                     | None -> battle
 
@@ -525,7 +525,7 @@ module BattleDispatcher =
             | InteractDialog ->
                 match battle.DialogOpt with
                 | Some dialog ->
-                    match Dialog.tryAdvance id dialog with // TODO: P1: pass in a real detokenizer!
+                    match Dialog.tryAdvance id dialog with
                     | (true, dialog) ->
                         let battle = Battle.updateDialogOpt (constant (Some dialog)) battle
                         just battle
@@ -1145,15 +1145,15 @@ module BattleDispatcher =
                      Entity.TileIndexOffsetRange <== battle --> fun battle -> battle.TileIndexOffsetRange]
 
                  // dialog
-                 Dialog.content "Dialog"
+                 Content.dialog "Dialog"
                     (Constants.Battle.GuiElevation + 2.0f) Nop Nop
-                    (battle --> fun battle -> (id, battle.DialogOpt)) // TODO: P1: pass in a real detokenizer!
+                    (battle --> fun battle -> match battle.DialogOpt with Some dialog -> Some (id, dialog) | None -> None)
 
                  // dialog interact button
                  Content.button Gen.name
                     [Entity.Position == v3 248.0f -240.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v3 144.0f 48.0f 0.0f
                      Entity.UpImage == Assets.Gui.ButtonShortUpImage; Entity.DownImage == Assets.Gui.ButtonShortDownImage
-                     Entity.Visible <== battle --> fun battle -> match battle.DialogOpt with Some dialog -> Dialog.canAdvance id dialog | None -> false // TODO: P1: pass in a real detokenizer!
+                     Entity.Visible <== battle --> fun battle -> match battle.DialogOpt with Some dialog -> Dialog.canAdvance id dialog | None -> false
                      Entity.Text == "Next"
                      Entity.ClickEvent ==> msg InteractDialog]
 
