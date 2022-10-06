@@ -978,6 +978,12 @@ module Matrix4x4 =
         trs.Translation <- translation
         trs
 
+    /// Compute the inverse of a matrix.
+    let Inverse (m : Matrix4x4) =
+        let mutable inverse = Unchecked.defaultof<Matrix4x4>
+        Matrix4x4.Invert (m, &inverse) |> ignore<bool>
+        inverse
+
 [<AutoOpen>]
 module Color =
 
