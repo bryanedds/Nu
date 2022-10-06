@@ -1866,7 +1866,10 @@ module Gaia =
             let (screen, world) =
                 match World.getDesiredScreenOpt world with
                 | Some screen -> (screen, world)
-                | None -> World.createScreen (Some "Screen") world
+                | None ->
+                    let (screen, world) = World.createScreen (Some "Screen") world
+                    let world = World.setDesiredScreenOpt (Some screen) world |> snd'
+                    (screen, world)
             Globals.Screen <- screen
             let world =
                 if Seq.isEmpty (World.getGroups screen world)
