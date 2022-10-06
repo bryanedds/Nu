@@ -288,6 +288,7 @@ module WorldEntityModule =
         member this.QuickSize world = World.setEntitySize (this.GetQuickSize world) this world |> snd'
 
         /// Set an entity's mount while adjusting its mount properties such that they do not change.
+        /// TODO: P1: account for rotation!
         member this.SetMountOptWithAdjustment (value : Entity Relation option) world =
             let world =
                 match
@@ -295,9 +296,16 @@ module WorldEntityModule =
                      Option.bind (tryResolve this) value) with
                 | (Some mountOld, Some mountNew) ->
                     if mountOld.Exists world && mountNew.Exists world then
-                        let positionLocal = this.GetPosition world - mountNew.GetPosition world
+                        let affineMatrixMount = World.getEntityAffineMatrix mountNew world
+                        let affineMatrixMounter = World.getEntityAffineMatrix this world
+                        let affineMatrixLocal = affineMatrixMounter * Matrix4x4.Inverse affineMatrixMount
+                        let positionLocal = affineMatrixLocal.Translation
+                        let rotationLocal = affineMatrixLocal.Rotation
+                        let scaleLocal = affineMatrixLocal.Scale
                         let elevationLocal = this.GetElevation world - mountNew.GetElevation world
                         let world = this.SetPositionLocal positionLocal world
+                        let world = this.SetRotationLocal rotationLocal world
+                        let world = this.SetScaleLocal scaleLocal world
                         let world = this.SetElevationLocal elevationLocal world
                         let world = this.SetVisible (this.GetVisibleLocal world && mountNew.GetVisible world) world
                         let world = this.SetEnabled (this.GetEnabledLocal world && mountNew.GetEnabled world) world
@@ -306,6 +314,8 @@ module WorldEntityModule =
                 | (Some mountOld, None) ->
                     if mountOld.Exists world then
                         let world = this.SetPositionLocal v3Zero world
+                        let world = this.SetRotationLocal quatIdentity world
+                        let world = this.SetScaleLocal v3Zero world
                         let world = this.SetElevationLocal 0.0f world
                         let world = this.SetVisible (this.GetVisibleLocal world) world
                         let world = this.SetEnabled (this.GetEnabledLocal world) world
@@ -313,9 +323,16 @@ module WorldEntityModule =
                     else world
                 | (None, Some mountNew) ->
                     if mountNew.Exists world then
-                        let positionLocal = this.GetPosition world - mountNew.GetPosition world
+                        let affineMatrixMount = World.getEntityAffineMatrix mountNew world
+                        let affineMatrixMounter = World.getEntityAffineMatrix this world
+                        let affineMatrixLocal = affineMatrixMounter * Matrix4x4.Inverse affineMatrixMount
+                        let positionLocal = affineMatrixLocal.Translation
+                        let rotationLocal = affineMatrixLocal.Rotation
+                        let scaleLocal = affineMatrixLocal.Scale
                         let elevationLocal = this.GetElevation world - mountNew.GetElevation world
                         let world = this.SetPositionLocal positionLocal world
+                        let world = this.SetRotationLocal rotationLocal world
+                        let world = this.SetScaleLocal scaleLocal world
                         let world = this.SetElevationLocal elevationLocal world
                         let world = this.SetVisible (this.GetVisibleLocal world && mountNew.GetVisible world) world
                         let world = this.SetEnabled (this.GetEnabledLocal world && mountNew.GetEnabled world) world
