@@ -1145,7 +1145,7 @@ module BattleDispatcher =
                      Entity.TileIndexOffsetRange <== battle --> fun battle -> battle.TileIndexOffsetRange]
 
                  // dialog
-                 Dialog.content Gen.name
+                 Dialog.content "Dialog"
                     (Constants.Battle.GuiElevation + 2.0f) Nop Nop
                     (battle --> fun battle -> (id, battle.DialogOpt)) // TODO: P1: pass in a real detokenizer!
 
