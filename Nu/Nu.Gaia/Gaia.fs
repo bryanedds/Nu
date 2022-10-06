@@ -1850,12 +1850,18 @@ module Gaia =
     /// You can make your own world instead and use the Gaia.attachToWorld instead (so long as the world satisfies said
     /// function's various requirements.
     let tryMakeWorld sdlDeps worldConfig (plugin : NuPlugin) =
+
+        // attempt to make the world
         match World.tryMake sdlDeps worldConfig plugin with
         | Right world ->
+
+            // initialize event filter as not to flood the log
             let world =
                 World.setEventFilter
                     (EventFilter.NotAny [EventFilter.Pattern (Rexpr "Update", []); EventFilter.Pattern (Rexpr "Mouse/Move", [])])
                     world
+
+            // apply any selected mode
             let world =
                 match worldConfig.ModeOpt with
                 | Some mode ->
@@ -1863,6 +1869,8 @@ module Gaia =
                     | (true, modeFn) -> modeFn world
                     | (false, _) -> world
                 | None -> world
+
+            // figure out which screen to use
             let (screen, world) =
                 match World.getDesiredScreenOpt world with
                 | Some screen -> (screen, world)
@@ -1871,12 +1879,18 @@ module Gaia =
                     let world = World.setDesiredScreenOpt (Some screen) world |> snd'
                     (screen, world)
             Globals.Screen <- screen
+
+            // create default group if no group exists
             let world =
                 if Seq.isEmpty (World.getGroups screen world)
                 then World.createGroup (Some "Group") screen world |> snd
                 else world
+
+            // proceed directly to idle state
             let world = World.selectScreen IdlingState screen world
             Right world
+
+        // error
         | Left error -> Left error
 
     /// Attempt to make Gaia's SDL dependencies.
