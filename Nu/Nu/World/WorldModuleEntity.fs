@@ -560,8 +560,7 @@ module WorldModuleEntity =
                 transform.Position <- position
                 transform.Rotation <- rotation
                 transform.Scale <- scale
-                let world = World.setEntityTransformByRef (&transform, mounterState, mounter, world) |> snd'
-                World.traverseEntityMounters World.propagateEntityAffineMatrix3 mounter world
+                World.setEntityTransformByRef (&transform, mounterState, mounter, world) |> snd'
             else world
 
         static member internal propagateEntityProperties3 mountOpt entity world =
@@ -633,8 +632,12 @@ module WorldModuleEntity =
                         then EntityState.setTransformByRef (&value, entityState)
                         else Unchecked.defaultof<_>)
                     entity world
-            if changed
-            then World.updateEntityInEntityTree oldStatic oldLight oldPresence oldBounds entity oldWorld world
+            let world =
+                if changed
+                then World.updateEntityInEntityTree oldStatic oldLight oldPresence oldBounds entity oldWorld world
+                else world
+            if World.getEntityMounted entity world
+            then World.propagateEntityAffineMatrix entity world
             else world
 
         static member internal setEntityTransformByRef (value : Transform byref, entityState : EntityState, entity : Entity, world) =
@@ -657,6 +660,7 @@ module WorldModuleEntity =
                 let world = World.updateEntityInEntityTree oldStatic oldLight oldPresence oldBounds entity oldWorld world
                 struct (changed, world)
             if changed then
+                let world = if World.getEntityMounted entity world then World.propagateEntityAffineMatrix entity world else world
                 let publishChangeBindings = oldEntityState.PublishChangeBindings
                 let publishChangeEvents = oldEntityState.PublishChangeEvents
                 let world = World.publishTransformEvents (&oldTransform, &value, publishChangeBindings, publishChangeEvents, entity, world)
@@ -674,7 +678,6 @@ module WorldModuleEntity =
                     let mutable transform = entityState.Transform
                     transform.Position <- value
                     let world = World.setEntityTransformByRef (&transform, entityState, entity, world) |> snd'
-                    let world = if World.getEntityMounted entity world then World.propagateEntityAffineMatrix entity world else world
                     struct (true, world)
             else struct (false, world)
 
@@ -732,13 +735,12 @@ module WorldModuleEntity =
             if quatNeq value entityState.Rotation then
                 if entityState.Optimized then
                     entityState.Rotation <- value
-                    let world = if World.getEntityMounted entity world then World.propagateEntityAffineMatrix entity world else world
+                    let world = if entityState.Mounted then World.propagateEntityAffineMatrix entity world else world
                     struct (true, world)
                 else
                     let mutable transform = entityState.Transform
                     transform.Rotation <- value
                     let world = World.setEntityTransformByRef (&transform, entityState, entity, world) |> snd'
-                    let world = if World.getEntityMounted entity world then World.propagateEntityAffineMatrix entity world else world
                     struct (true, world)
             else struct (false, world)
 
@@ -818,7 +820,6 @@ module WorldModuleEntity =
                     let mutable transform = entityState.Transform
                     transform.Scale <- value
                     let world = World.setEntityTransformByRef (&transform, entityState, entity, world) |> snd'
-                    let world = if World.getEntityMounted entity world then World.propagateEntityAffineMatrix entity world else world
                     struct (true, world)
             else struct (false, world)
 
@@ -899,13 +900,12 @@ module WorldModuleEntity =
             if v3Neq value entityState.Angles then
                 if entityState.Optimized then
                     entityState.Angles <- value
-                    let world = if World.getEntityMounted entity world then World.propagateEntityAffineMatrix entity world else world
+                    let world = if entityState.Mounted then World.propagateEntityAffineMatrix entity world else world
                     struct (true, world)
                 else
                     let mutable transform = entityState.Transform
                     transform.Angles <- value
                     let world = World.setEntityTransformByRef (&transform, entityState, entity, world) |> snd'
-                    let world = if World.getEntityMounted entity world then World.propagateEntityAffineMatrix entity world else world
                     struct (true, world)
             else struct (false, world)
 
@@ -1000,7 +1000,6 @@ module WorldModuleEntity =
                     let mutable transform = entityState.Transform
                     transform.Elevation <- value
                     let world = World.setEntityTransformByRef (&transform, entityState, entity, world) |> snd'
-                    let world = if World.getEntityMounted entity world then World.propagateEntityElevation entity world else world
                     struct (true, world)
             else struct (false, world)
 
@@ -1166,6 +1165,7 @@ module WorldModuleEntity =
             if box3Neq value entityState.PerimeterUnscaled then
                 if entityState.Optimized then
                     entityState.PerimeterUnscaled <- value
+                    let world = if entityState.Mounted then World.propagateEntityAffineMatrix entity world else world
                     struct (true, world)
                 else
                     let mutable transform = entityState.Transform
@@ -1182,6 +1182,7 @@ module WorldModuleEntity =
             if box3Neq value entityState.Perimeter then
                 if entityState.Optimized then
                     entityState.Perimeter <- value
+                    let world = if entityState.Mounted then World.propagateEntityAffineMatrix entity world else world
                     struct (true, world)
                 else
                     let mutable transform = entityState.Transform
@@ -1198,6 +1199,7 @@ module WorldModuleEntity =
             if v3Neq value entityState.Center then
                 if entityState.Optimized then
                     entityState.Center <- value
+                    let world = if entityState.Mounted then World.propagateEntityAffineMatrix entity world else world
                     struct (true, world)
                 else
                     let mutable transform = entityState.Transform
@@ -1214,6 +1216,7 @@ module WorldModuleEntity =
             if v3Neq value entityState.Bottom then
                 if entityState.Optimized then
                     entityState.Bottom <- value
+                    let world = if entityState.Mounted then World.propagateEntityAffineMatrix entity world else world
                     struct (true, world)
                 else
                     let mutable transform = entityState.Transform

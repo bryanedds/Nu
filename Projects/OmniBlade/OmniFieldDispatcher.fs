@@ -485,8 +485,8 @@ module FieldDispatcher =
                     | ShopSelling -> pageItems5 rows shop.ShopPage true true field.Inventory.Items
                 | None -> (false, false, Map.empty)
 
-        let sidebar position elevation (field : Lens<Field, World>) =
-            Content.association "Sidebar" []
+        let sidebar name position elevation (field : Lens<Field, World>) =
+            Content.association name []
                 [Content.button "TeamButton"
                     [Entity.PositionLocal == position; Entity.ElevationLocal == elevation; Entity.Size == v3 72.0f 72.0f 0.0f
                      Entity.UpImage == asset "Field" "TeamButtonUp"
@@ -1394,7 +1394,7 @@ module FieldDispatcher =
                      Entity.ClickEvent ==> msg Interact]
 
                  // dialog
-                 Dialog.content Gen.name
+                 Dialog.content "Dialog"
                     Constants.Field.GuiElevation PromptLeft PromptRight
                     (field --> fun field -> (flip detokenize field, field.DialogOpt))
 
@@ -1403,7 +1403,7 @@ module FieldDispatcher =
                     Content.panel "Team"
                         [Entity.Position == v3 -450.0f -255.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v3 900.0f 510.0f 0.0f
                          Entity.LabelImage == Assets.Gui.DialogXXLImage]
-                        [Content.sidebar (v3 24.0f 417.0f 0.0f) 1.0f field
+                        [Content.sidebar "Sidebar" (v3 24.0f 417.0f 0.0f) 1.0f field
                          Content.team (v3 138.0f 417.0f 0.0f) 1.0f Int32.MaxValue field tautology2 MenuTeamAlly
                          Content.label Gen.name
                             [Entity.PositionLocal == v3 438.0f 288.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 192.0f 192.0f 0.0f
@@ -1491,7 +1491,7 @@ module FieldDispatcher =
                         [Entity.Position == v3 -450.0f -255.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v3 900.0f 510.0f 0.0f
                          Entity.LabelImage == Assets.Gui.DialogXXLImage
                          Entity.Enabled <== field --> fun field -> Option.isNone field.Menu.MenuUseOpt]
-                        [Content.sidebar (v3 24.0f 417.0f 0.0f) 1.0f field
+                        [Content.sidebar "Sidebar" (v3 24.0f 417.0f 0.0f) 1.0f field
                          Content.items (v3 138.0f 417.0f 0.0f) 1.0f 10 5 field MenuItemSelect
                          Content.text Gen.name
                             [Entity.PositionLocal == v3 399.0f 24.0f 0.0f; Entity.ElevationLocal == 1.0f
@@ -1517,7 +1517,7 @@ module FieldDispatcher =
                     Content.panel "TechTeam"
                         [Entity.Position == v3 -450.0f -255.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v3 900.0f 510.0f 0.0f
                          Entity.LabelImage == Assets.Gui.DialogXXLImage]
-                        [Content.sidebar (v3 24.0f 417.0f 0.0f) 1.0f field
+                        [Content.sidebar "Sidebar" (v3 24.0f 417.0f 0.0f) 1.0f field
                          Content.team (v3 138.0f 417.0f 0.0f) 1.0f Int32.MaxValue field tautology2 MenuTechAlly
                          Content.techs (v3 466.0f 429.0f 0.0f) 1.0f field MenuTechSelect]
 
@@ -1561,7 +1561,7 @@ module FieldDispatcher =
                     Content.panel "Options"
                         [Entity.Position == v3 -450.0f -255.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v3 900.0f 510.0f 0.0f
                          Entity.LabelImage == Assets.Gui.DialogXXLImage]
-                        [Content.sidebar (v3 24.0f 417.0f 0.0f) 1.0f field
+                        [Content.sidebar "Sidebar" (v3 24.0f 417.0f 0.0f) 1.0f field
                          Content.text Gen.name
                             [Entity.PositionLocal == v3 384.0f 432.0f 0.0f; Entity.ElevationLocal == 1.0f
                              Entity.Text == "Battle Speed"]
