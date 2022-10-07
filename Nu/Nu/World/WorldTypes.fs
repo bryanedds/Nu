@@ -34,7 +34,7 @@ module WorldTypes =
     /// The data required to execute screen splashing.
     and [<StructuralEquality; NoComparison>] Splash =
         { IdlingTime : int64
-          DestinationOpt : Screen option }
+          Destination : Screen }
 
     /// The data for a change in the world's ambient state.
     and [<StructuralEquality; NoComparison>] AmbientChangeData = 
