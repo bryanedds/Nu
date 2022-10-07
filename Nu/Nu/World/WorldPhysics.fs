@@ -46,7 +46,8 @@ module WorldPhysics =
             if  world.Subsystems.PhysicsEngine2d.BodyExists physicsId then
                 world.Subsystems.PhysicsEngine2d.GetBodyContactNormals physicsId
             else
-                failwith ("2d body for '" + scstring physicsId + "' not found and 3d physics not yet implemented")
+                Log.debug ("2d body for '" + scstring physicsId + "' not found and 3d physics not yet implemented.")
+                []
 
         /// Get the linear velocity of the body with the given physics id.
         [<FunctionBinding>]
@@ -54,7 +55,8 @@ module WorldPhysics =
             if  world.Subsystems.PhysicsEngine2d.BodyExists physicsId then
                 world.Subsystems.PhysicsEngine2d.GetBodyLinearVelocity physicsId
             else
-                failwith ("2d body for '" + scstring physicsId + "' not found and 3d physics not yet implemented")
+                Log.debug ("2d body for '" + scstring physicsId + "' not found and 3d physics not yet implemented.")
+                v3Zero
 
         /// Get the contact normals where the body with the given physics id is touching the ground.
         [<FunctionBinding>]
@@ -62,7 +64,8 @@ module WorldPhysics =
             if  world.Subsystems.PhysicsEngine2d.BodyExists physicsId then
                 world.Subsystems.PhysicsEngine2d.GetBodyToGroundContactNormals physicsId
             else
-                failwith ("2d body for '" + scstring physicsId + "' not found and 3d physics not yet implemented")
+                Log.debug ("2d body for '" + scstring physicsId + "' not found and 3d physics not yet implemented.")
+                []
 
         /// Get a contact normal where the body with the given physics id is touching the ground (if one exists).
         [<FunctionBinding>]
@@ -70,7 +73,8 @@ module WorldPhysics =
             if  world.Subsystems.PhysicsEngine2d.BodyExists physicsId then
                 world.Subsystems.PhysicsEngine2d.GetBodyToGroundContactNormalOpt physicsId
             else
-                failwith ("2d body for '" + scstring physicsId + "' not found and 3d physics not yet implemented")
+                Log.debug ("2d body for '" + scstring physicsId + "' not found and 3d physics not yet implemented.")
+                None
 
         /// Get a contact tangent where the body with the given physics id is touching the ground (if one exists).
         [<FunctionBinding>]
@@ -78,7 +82,8 @@ module WorldPhysics =
             if  world.Subsystems.PhysicsEngine2d.BodyExists physicsId then
                 world.Subsystems.PhysicsEngine2d.GetBodyToGroundContactTangentOpt physicsId
             else
-                failwith ("2d body for '" + scstring physicsId + "' not found and 3d physics not yet implemented")
+                Log.debug ("2d body for '" + scstring physicsId + "' not found and 3d physics not yet implemented.")
+                None
 
         /// Check that the body with the given physics id is on the ground.
         [<FunctionBinding>]
@@ -86,7 +91,8 @@ module WorldPhysics =
             if  world.Subsystems.PhysicsEngine2d.BodyExists physicsId then
                 world.Subsystems.PhysicsEngine2d.IsBodyOnGround physicsId
             else
-                failwith ("2d body for '" + scstring physicsId + "' not found and 3d physics not yet implemented")
+                Log.debug ("2d body for '" + scstring physicsId + "' not found and 3d physics not yet implemented.")
+                false
 
         /// Send a message to the physics system to create a physics body.
         [<FunctionBinding>]
