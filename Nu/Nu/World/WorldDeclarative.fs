@@ -10,7 +10,7 @@ open Nu
 type [<NoEquality; NoComparison>] ScreenBehavior =
     | Vanilla
     | Dissolve of DissolveDescriptor * SongDescriptor option
-    | Splash of DissolveDescriptor * SplashDescriptor * SongDescriptor option * Screen
+    | Splash of DissolveDescriptor * SplashDescriptor * SongDescriptor option * Screen option
     | OmniScreen
 
 /// Describes the content of an entity.

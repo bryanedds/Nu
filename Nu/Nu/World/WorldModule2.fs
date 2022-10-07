@@ -283,7 +283,7 @@ module WorldModule2 =
                         | Some playSong ->
                             let destinationOpt =
                                 match selectedScreen.GetSplashOpt world with
-                                | Some splash -> Some splash.Destination
+                                | Some splash -> splash.DestinationOpt
                                 | None ->
                                     match World.getScreenTransitionDestinationOpt world with
                                     | Some destination -> Some destination
@@ -297,7 +297,10 @@ module WorldModule2 =
                                 | (Some song, Some song2) when assetEq song.Song song2.Song -> world // do nothing when song is the same
                                 | (None, None) -> world // do nothing when neither plays a song (allowing manual control)
                                 | (_, _) -> World.fadeOutSong playSong.FadeOutMs world // fade out when song is different
-                            | None -> world
+                            | None ->
+                                match incoming.SongOpt with
+                                | Some _ -> World.fadeOutSong playSong.FadeOutMs world
+                                | None -> world // do nothing when neither plays a song (allowing manual control)
                         | None -> world
                     let eventTrace = EventTrace.debug "World" "updateScreenTransition" "OutgoingStart" EventTrace.empty
                     World.publish () (Events.OutgoingStart --> selectedScreen) eventTrace selectedScreen world
@@ -317,7 +320,7 @@ module WorldModule2 =
                     | Live ->
                         let destinationOpt =
                             match selectedScreen.GetSplashOpt world with
-                            | Some splash -> Some splash.Destination
+                            | Some splash -> splash.DestinationOpt
                             | None ->
                                 match World.getScreenTransitionDestinationOpt world with
                                 | Some destination -> Some destination
@@ -330,7 +333,11 @@ module WorldModule2 =
                             if destination <> selectedScreen
                             then World.selectScreen IncomingState destination world
                             else world
-                        | None -> World.selectScreenOpt None world
+                        | None ->
+                            let world = World.selectScreenOpt None world
+                            match Simulants.Game.GetDesiredScreenOpt world with // handle the possibility that screen deselect event changed destination
+                            | Some destination -> World.selectScreen IncomingState destination world
+                            | None -> world
                     | Dead -> world
                 | (false, world) -> world
             | Dead -> world
@@ -370,12 +377,12 @@ module WorldModule2 =
 
         /// Set the splash aspects of a screen.
         [<FunctionBinding>]
-        static member setScreenSplash (splashDescriptor : SplashDescriptor) destination (screen : Screen) world =
+        static member setScreenSplash (splashDescriptor : SplashDescriptor) destinationOpt (screen : Screen) world =
             let splashGroup = screen / "SplashGroup"
             let splashSprite = splashGroup / "SplashSprite"
             let world = World.destroyGroupImmediate splashGroup world
             let cameraEyeSize = World.getEyeSize2d world
-            let world = screen.SetSplashOpt (Some { IdlingTime = splashDescriptor.IdlingTime; Destination = destination }) world
+            let world = screen.SetSplashOpt (Some { IdlingTime = splashDescriptor.IdlingTime; DestinationOpt = destinationOpt }) world
             let world = World.createGroup<GroupDispatcher> (Some splashGroup.Name) screen world |> snd
             let world = splashGroup.SetPersistent false world
             let world = World.createEntity<StaticSpriteDispatcher> (Some splashSprite.Surnames) DefaultOverlay splashGroup world |> snd
@@ -977,7 +984,7 @@ module WorldModule2 =
                 let world = World.preFrame world
                 PreFrameTimer.Stop ()
                 match liveness with
-                | Live ->                
+                | Live ->
                     let world = World.updateScreenTransition world
                     match World.getLiveness world with
                     | Live ->

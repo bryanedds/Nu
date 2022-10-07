@@ -17,6 +17,10 @@ type Message =
 type NelmishDispatcher () =
     inherit GameDispatcher<Model, Message, unit> (0) // initial model value
 
+    // here we initialize the game's properties
+    override this.Initializers (_, game) =
+        [game.DesiredScreenOpt == Some Simulants.Default.Screen]
+
     // here we handle the Elm-style messages
     override this.Message (model, message, _, _) =
         match message with
