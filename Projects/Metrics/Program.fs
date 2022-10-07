@@ -58,6 +58,9 @@ type MyGameDispatcher () =
 
     let Fps = Simulants.Default.Group / "Fps"
 
+    override this.Initializers (_, game) =
+        [game.DesiredScreenOpt == Some Simulants.Default.Screen]
+
     override this.Register (game, world) =
         let world = base.Register (game, world)
         let (screen, world) = World.createScreen (Some Simulants.Default.Screen.Name) world
@@ -184,6 +187,9 @@ type [<ReferenceEquality>] Intss =
 type ElmishGameDispatcher () =
     inherit GameDispatcher<Intss, int, unit> (Intss.init 86) // 7,396 elmish entities (goal: 60FPS w/o Stalls, current: 60FPS w/o Stalls)
 
+    override this.Initializers (_, game) =
+        [game.DesiredScreenOpt == Some Simulants.Default.Screen]
+
     override this.Channel (_, game) =
         [game.UpdateEvent => msg 0]
 
@@ -266,6 +272,9 @@ type [<ReferenceEquality>] StringsOpt =
 type TestBedGameDispatcher () =
     inherit GameDispatcher<StringsOpt, unit, unit> ({ StringsOpt = None })
 
+    override this.Initializers (_, game) =
+        [game.DesiredScreenOpt == Some Simulants.Default.Screen]
+
     override this.Channel (_, game) =
         [game.UpdateEvent => msg ()]
 
@@ -318,6 +327,9 @@ type [<ReferenceEquality>] Phantoms =
 
 type PhantomGameDispatcher () =
     inherit GameDispatcher<Phantoms, unit, unit> (Phantoms.init 20000)
+
+    override this.Initializers (_, game) =
+        [game.DesiredScreenOpt == Some Simulants.Default.Screen]
 
     override this.Channel (_, game) =
         [game.UpdateEvent => cmd ()]
