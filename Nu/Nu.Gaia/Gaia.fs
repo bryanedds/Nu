@@ -1872,12 +1872,17 @@ module Gaia =
 
             // figure out which screen to use
             let (screen, world) =
-                match World.getDesiredScreenOpt world with
-                | Some screen -> (screen, world)
-                | None ->
+                match World.getDesiredScreen world with
+                | Desire screen -> (screen, world)
+                | DesireNone ->
                     let (screen, world) = World.createScreen (Some "Screen") world
-                    let world = World.setDesiredScreenOpt (Some screen) world |> snd'
+                    let world = World.setDesiredScreen (Desire screen) world |> snd'
                     (screen, world)
+                | DesireIgnore ->
+                    let (screen, world) = World.createScreen (Some "Screen") world
+                    let world = World.setSelectedScreen screen world
+                    (screen, world)
+                    
             Globals.Screen <- screen
 
             // create default group if no group exists

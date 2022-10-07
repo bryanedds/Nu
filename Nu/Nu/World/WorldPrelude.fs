@@ -298,7 +298,7 @@ module AmbientState =
     let updateTime state =
         let now = DateTimeOffset.UtcNow
         let delta = now - state.ClockTime
-        let frameProgress = 1000.0f / Constants.Engine.FpsDesiredF * single state.UpdateRate
+        let frameProgress = 1000.0f / Constants.Engine.DesiredFpsF * single state.UpdateRate
         let clockDelta = single delta.TotalMilliseconds / frameProgress
         let clockDeltaNormalized = if clockDelta < 4.0f then clockDelta else 1.0f // assume timing is unnatural about a 4 frame delay
         { state with

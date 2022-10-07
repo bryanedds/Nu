@@ -61,25 +61,25 @@ module OmniBlade =
         override this.Initializers (omni, game) =
             [game.Field <=> Simulants.Field.Screen.Field
              game.Battle <=> Simulants.Battle.Screen.Battle
-             game.DesiredScreenOpt <== omni --> fun omni ->
+             game.DesiredScreen <== omni --> fun omni ->
                 match omni with
                 | Gui gui ->
                     match gui with
-                    | Splash -> Some Simulants.Splash.Screen
-                    | Title -> Some Simulants.Title.Screen
-                    | Credits -> Some Simulants.Credits.Screen
-                    | Pick -> Some Simulants.Pick.Screen
-                    | Intro _ -> Some Simulants.Intro.Screen
+                    | Splash -> Desire Simulants.Splash.Screen
+                    | Title -> Desire Simulants.Title.Screen
+                    | Credits -> Desire Simulants.Credits.Screen
+                    | Pick -> Desire Simulants.Pick.Screen
+                    | Intro _ -> Desire Simulants.Intro.Screen
                 | Field field ->
                     match field.FieldState with
                     | Playing ->
                         match field.BattleOpt with
                         | Some battle ->
                             match battle.BattleState with
-                            | BattleQuitting (_, _, _) -> Some Simulants.Field.Screen
-                            | _ -> Some Simulants.Battle.Screen
-                        | None -> Some Simulants.Field.Screen
-                    | Quitting -> Some Simulants.Title.Screen]
+                            | BattleQuitting (_, _, _) -> Desire Simulants.Field.Screen
+                            | _ -> Desire Simulants.Battle.Screen
+                        | None -> Desire Simulants.Field.Screen
+                    | Quitting -> Desire Simulants.Title.Screen]
 
         override this.Channel (_, _) =
             [Simulants.Game.UpdateEvent => msg UpdateMessage

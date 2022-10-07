@@ -63,6 +63,6 @@ module CoreOperators =
     let inline ($) f g = f g
 
 /// The desired frame rate.
-type [<StructuralEquality; NoComparison>] FpsDesired =
+type [<StructuralEquality; NoComparison>] DesiredFps =
     | Fps60
     | Fps30

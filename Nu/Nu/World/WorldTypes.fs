@@ -25,8 +25,14 @@ module WorldTypes =
     /// Represents an unsubscription operation for an event.
     type Unsubscription = World -> World
 
-    /// The data required to execution screen splashing.
-    and [<NoEquality; NoComparison>] Splash =
+    /// Specified the desired screen, if any, or whether to ignore screen desire functionality altogether.
+    and [<StructuralEquality; NoComparison>] DesiredScreen =
+        | Desire of Screen
+        | DesireNone
+        | DesireIgnore
+
+    /// The data required to execute screen splashing.
+    and [<StructuralEquality; NoComparison>] Splash =
         { IdlingTime : int64
           DestinationOpt : Screen option }
 
@@ -346,7 +352,7 @@ module WorldTypes =
           OmniScreenOpt : Screen option
           SelectedScreenOpt : Screen option
           ScreenTransitionDestinationOpt : Screen option
-          DesiredScreenOpt : Screen option
+          DesiredScreen : DesiredScreen
           EyePosition2d : Vector2
           EyeSize2d : Vector2
           EyePosition3d : Vector3
@@ -372,7 +378,7 @@ module WorldTypes =
               OmniScreenOpt = None
               SelectedScreenOpt = None
               ScreenTransitionDestinationOpt = None
-              DesiredScreenOpt = None
+              DesiredScreen = DesireNone
               EyePosition2d = v2Zero
               EyeSize2d = v2 (single Constants.Render.VirtualResolutionX) (single Constants.Render.VirtualResolutionY)
               EyePosition3d = eyePosition3d

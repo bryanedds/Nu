@@ -55,25 +55,25 @@ module TacticsGame =
         override this.Initializers (tactics, game) =
             [game.Atlas <=> Simulants.Atlas.Screen.Atlas
              game.Field <=> Simulants.Field.Screen.Field
-             game.DesiredScreenOpt <== tactics --> fun tactics ->
+             game.DesiredScreen <== tactics --> fun tactics ->
                 match tactics with
                 | Gui gui ->
                     match gui with
-                    | Splash -> Some Simulants.Splash.Screen
-                    | Title -> Some Simulants.Title.Screen
-                    | Credits -> Some Simulants.Credits.Screen
-                    | Pick -> Some Simulants.Pick.Screen
-                    | Intro _ -> Some Simulants.Intro.Screen
+                    | Splash -> Desire Simulants.Splash.Screen
+                    | Title -> Desire Simulants.Title.Screen
+                    | Credits -> Desire Simulants.Credits.Screen
+                    | Pick -> Desire Simulants.Pick.Screen
+                    | Intro _ -> Desire Simulants.Intro.Screen
                 | Atlas atlas ->
                     match atlas.AtlasState with
                     | Playing ->
                         match atlas.FieldOpt with
                         | Some field ->
                             match field.FieldState with
-                            | FieldQuitting (_, _) -> Some Simulants.Atlas.Screen
-                            | _ -> Some Simulants.Field.Screen
-                        | None -> Some Simulants.Atlas.Screen
-                    | Quitting -> Some Simulants.Title.Screen]
+                            | FieldQuitting (_, _) -> Desire Simulants.Atlas.Screen
+                            | _ -> Desire Simulants.Field.Screen
+                        | None -> Desire Simulants.Atlas.Screen
+                    | Quitting -> Desire Simulants.Title.Screen]
 
         override this.Channel (_, _) =
             [Simulants.Game.UpdateEvent => msg UpdateMessage

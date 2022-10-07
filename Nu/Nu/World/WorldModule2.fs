@@ -264,13 +264,14 @@ module WorldModule2 =
                     | (true, world) -> World.setScreenTransitionStatePlus OutgoingState selectedScreen world
                     | (false, world) -> world
                 | None ->
-                    match Simulants.Game.GetDesiredScreenOpt world with
-                    | Some desiredScreen ->
+                    match Simulants.Game.GetDesiredScreen world with
+                    | Desire desiredScreen ->
                         if desiredScreen <> selectedScreen then
                             let world = selectedScreen.SetTransitionUpdates 0L world
                             World.setScreenTransitionStatePlus OutgoingState selectedScreen world
                         else world
-                    | None -> World.setScreenTransitionStatePlus OutgoingState selectedScreen world
+                    | DesireNone -> World.setScreenTransitionStatePlus OutgoingState selectedScreen world
+                    | DesireIgnore -> world
             | Dead -> world
 
         static member private updateScreenOutgoing (selectedScreen : Screen) world =
@@ -288,9 +289,10 @@ module WorldModule2 =
                                     match World.getScreenTransitionDestinationOpt world with
                                     | Some destination -> Some destination
                                     | None ->
-                                        match Simulants.Game.GetDesiredScreenOpt world with
-                                        | Some destination -> Some destination
-                                        | None -> None
+                                        match Simulants.Game.GetDesiredScreen world with
+                                        | Desire destination -> Some destination
+                                        | DesireNone -> None
+                                        | DesireIgnore -> None
                             match destinationOpt with
                             | Some destination ->
                                 match (incoming.SongOpt, (destination.GetIncoming world).SongOpt) with
@@ -300,7 +302,7 @@ module WorldModule2 =
                             | None ->
                                 match incoming.SongOpt with
                                 | Some _ -> World.fadeOutSong playSong.FadeOutMs world
-                                | None -> world // do nothing when neither plays a song (allowing manual control)
+                                | None -> world
                         | None -> world
                     let eventTrace = EventTrace.debug "World" "updateScreenTransition" "OutgoingStart" EventTrace.empty
                     World.publish () (Events.OutgoingStart --> selectedScreen) eventTrace selectedScreen world
@@ -325,9 +327,10 @@ module WorldModule2 =
                                 match World.getScreenTransitionDestinationOpt world with
                                 | Some destination -> Some destination
                                 | None ->
-                                    match Simulants.Game.GetDesiredScreenOpt world with
-                                    | Some destination -> Some destination
-                                    | None -> None
+                                    match Simulants.Game.GetDesiredScreen world with
+                                    | Desire destination -> Some destination
+                                    | DesireNone -> None
+                                    | DesireIgnore -> None
                         match destinationOpt with
                         | Some destination ->
                             if destination <> selectedScreen
@@ -335,9 +338,10 @@ module WorldModule2 =
                             else world
                         | None ->
                             let world = World.selectScreenOpt None world
-                            match Simulants.Game.GetDesiredScreenOpt world with // handle the possibility that screen deselect event changed destination
-                            | Some destination -> World.selectScreen IncomingState destination world
-                            | None -> world
+                            match Simulants.Game.GetDesiredScreen world with // handle the possibility that screen deselect event changed destination
+                            | Desire destination -> World.selectScreen IncomingState destination world
+                            | DesireNone -> world
+                            | DesireIgnore -> world
                     | Dead -> world
                 | (false, world) -> world
             | Dead -> world
@@ -350,9 +354,10 @@ module WorldModule2 =
                 | IdlingState -> World.updateScreenIdling selectedScreen world
                 | OutgoingState -> World.updateScreenOutgoing selectedScreen world
             | None ->
-                match World.getDesiredScreenOpt world with
-                | Some desiredScreen -> World.transitionScreen desiredScreen world
-                | None -> world
+                match World.getDesiredScreen world with
+                | Desire desiredScreen -> World.transitionScreen desiredScreen world
+                | DesireNone -> world
+                | DesireIgnore -> world
 
         /// Try to transition to the given screen if no other transition is in progress.
         [<FunctionBinding>]
@@ -978,7 +983,7 @@ module WorldModule2 =
         static member runWithoutCleanUp runWhile preProcess perProcess postProcess (sdlDeps : SdlDeps) liveness firstFrame world =
             TotalTimer.Start ()
             if runWhile world then
-                if World.shouldSleep world then Thread.Sleep (1000 / Constants.Engine.FpsDesiredI) // don't let game run too fast while full screen unfocused
+                if World.shouldSleep world then Thread.Sleep (1000 / Constants.Engine.DesiredFpsI) // don't let game run too fast while full screen unfocused
                 PreFrameTimer.Start ()
                 let world = preProcess world
                 let world = World.preFrame world
@@ -1139,11 +1144,16 @@ module GameDispatcherModule =
             let channels = this.Channel (this.Model game, game)
             let world = Signal.processChannels this.Message this.Command (this.Model game) channels game world
             let content = this.Content (this.Model game, game)
-            let world =
-                List.foldi (fun contentIndex world content ->
+            let (screensRev, world) =
+                List.fold (fun (screensRev, world) content ->
                     let (screen, world) = World.expandScreenContent World.setScreenSplash content (SimulantOrigin game) game world
-                    if contentIndex = 0 then game.SetDesiredScreenOpt (Some screen) world else world)
-                    world content
+                    (screen :: screensRev, world))
+                    ([], world) content
+            let screens = List.rev screensRev
+            let world =
+                match screens with
+                | [] -> game.SetDesiredScreen DesireNone world
+                | screen :: _ -> game.SetDesiredScreen (Desire screen) world
             let initializers = this.Initializers (this.Model game, game)
             List.fold (fun world initializer ->
                 match initializer with

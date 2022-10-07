@@ -11,9 +11,9 @@ open Prime
 [<RequireQualifiedAccess>]
 module Engine =
 
-    let (*Literal*) FpsDesired = Fps60
-    let (*Literal*) FpsDesiredI = match FpsDesired with Fps30 -> 30 | Fps60 -> 60
-    let (*Literal*) FpsDesiredF = match FpsDesired with Fps30 -> 30.0f | Fps60 -> 60.0f
+    let (*Literal*) DesiredFps = Fps60
+    let (*Literal*) DesiredFpsI = match DesiredFps with Fps30 -> 30 | Fps60 -> 60
+    let (*Literal*) DesiredFpsF = match DesiredFps with Fps30 -> 30.0f | Fps60 -> 60.0f
     let [<Literal>] SuccessExitCode = 0
     let [<Literal>] FailureExitCode = 1
     let [<Literal>] NamePropertyName = "Name"
@@ -124,7 +124,7 @@ module Audio =
 [<RequireQualifiedAccess>]
 module Physics =
 
-    let (*Literal*) PhysicsStepRate = 1.0f / match Engine.FpsDesired with Fps30 -> 30.0f | Fps60 -> 60.0f
+    let (*Literal*) PhysicsStepRate = 1.0f / match Engine.DesiredFps with Fps30 -> 30.0f | Fps60 -> 60.0f
     let [<Literal>] PhysicsToPixelRatio = 48.0f // 48 pixels = 1 meter
     let (*Literal*) PixelToPhysicsRatio = 1.0f / PhysicsToPixelRatio
     let [<Literal>] DensityDefault = 1.0f
