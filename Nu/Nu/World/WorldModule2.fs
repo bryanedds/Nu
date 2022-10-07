@@ -284,7 +284,7 @@ module WorldModule2 =
                         | Some playSong ->
                             let destinationOpt =
                                 match selectedScreen.GetSplashOpt world with
-                                | Some splash -> splash.DestinationOpt
+                                | Some splash -> Some splash.Destination
                                 | None ->
                                     match World.getScreenTransitionDestinationOpt world with
                                     | Some destination -> Some destination
@@ -322,7 +322,7 @@ module WorldModule2 =
                     | Live ->
                         let destinationOpt =
                             match selectedScreen.GetSplashOpt world with
-                            | Some splash -> splash.DestinationOpt
+                            | Some splash -> Some splash.Destination
                             | None ->
                                 match World.getScreenTransitionDestinationOpt world with
                                 | Some destination -> Some destination
@@ -382,12 +382,12 @@ module WorldModule2 =
 
         /// Set the splash aspects of a screen.
         [<FunctionBinding>]
-        static member setScreenSplash (splashDescriptor : SplashDescriptor) destinationOpt (screen : Screen) world =
+        static member setScreenSplash (splashDescriptor : SplashDescriptor) destination (screen : Screen) world =
             let splashGroup = screen / "SplashGroup"
             let splashSprite = splashGroup / "SplashSprite"
             let world = World.destroyGroupImmediate splashGroup world
             let cameraEyeSize = World.getEyeSize2d world
-            let world = screen.SetSplashOpt (Some { IdlingTime = splashDescriptor.IdlingTime; DestinationOpt = destinationOpt }) world
+            let world = screen.SetSplashOpt (Some { IdlingTime = splashDescriptor.IdlingTime; Destination = destination }) world
             let world = World.createGroup<GroupDispatcher> (Some splashGroup.Name) screen world |> snd
             let world = splashGroup.SetPersistent false world
             let world = World.createEntity<StaticSpriteDispatcher> (Some splashSprite.Surnames) DefaultOverlay splashGroup world |> snd
@@ -989,7 +989,7 @@ module WorldModule2 =
                 let world = World.preFrame world
                 PreFrameTimer.Stop ()
                 match liveness with
-                | Live ->
+                | Live ->                
                     let world = World.updateScreenTransition world
                     match World.getLiveness world with
                     | Live ->
