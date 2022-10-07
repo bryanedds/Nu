@@ -1140,8 +1140,9 @@ module GameDispatcherModule =
             let world = Signal.processChannels this.Message this.Command (this.Model game) channels game world
             let content = this.Content (this.Model game, game)
             let world =
-                List.fold (fun world content ->
-                    World.expandScreenContent World.setScreenSplash content (SimulantOrigin game) game world |> snd)
+                List.foldi (fun contentIndex world content ->
+                    let (screen, world) = World.expandScreenContent World.setScreenSplash content (SimulantOrigin game) game world
+                    if contentIndex = 0 then game.SetDesiredScreenOpt (Some screen) world else world)
                     world content
             let initializers = this.Initializers (this.Model game, game)
             List.fold (fun world initializer ->
