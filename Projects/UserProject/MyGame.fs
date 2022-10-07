@@ -52,15 +52,15 @@ module MyGame =
         // screen based on the state of the game (or None if splashing),
         override this.Initializers (model, game) =
             [game.Gameplay <=> Simulants.Gameplay.Screen.Gameplay
-             game.DesiredScreenOpt <== model --> fun model ->
+             game.DesiredScreen <== model --> fun model ->
                 match model with
-                | Splash -> Some Simulants.Splash.Screen
-                | Title -> Some Simulants.Title.Screen
-                | Credits -> Some Simulants.Credits.Screen
+                | Splash -> Desire Simulants.Splash.Screen
+                | Title -> Desire Simulants.Title.Screen
+                | Credits -> Desire Simulants.Credits.Screen
                 | Gameplay gameplay ->
                     match gameplay with
-                    | Playing -> Some Simulants.Gameplay.Screen
-                    | Quitting -> Some Simulants.Title.Screen]
+                    | Playing -> Desire Simulants.Gameplay.Screen
+                    | Quitting -> Desire Simulants.Title.Screen]
 
         // here we handle the above messages
         override this.Message (_, message, _, _) =

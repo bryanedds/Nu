@@ -307,18 +307,18 @@ module WorldModuleGame =
             (World.getGameState world).ScreenTransitionDestinationOpt
 
         /// Get the screen desired to which to transition.
-        static member getDesiredScreenOpt world =
-            (World.getGameState world).DesiredScreenOpt
+        static member getDesiredScreen world =
+            (World.getGameState world).DesiredScreen
 
         /// Set the screen desired to which to transition.
-        static member setDesiredScreenOpt screenOpt world =
+        static member setDesiredScreen desiredScreen world =
             World.updateGameState
                 (fun gameState ->
-                    if screenOpt <> gameState.DesiredScreenOpt
-                    then { gameState with DesiredScreenOpt = screenOpt }
+                    if desiredScreen <> gameState.DesiredScreen
+                    then { gameState with DesiredScreen = desiredScreen }
                     else Unchecked.defaultof<_>)
-                "DesiredScreenOpt"
-                screenOpt
+                "DesiredScreen"
+                desiredScreen
                 world
 
         /// Set the current destination screen or None. Be careful using this function as calling
@@ -553,7 +553,7 @@ module WorldModuleGame =
         GameGetters.Add ("Model", fun world -> let designerProperty = World.getGameModelProperty world in { PropertyType = designerProperty.DesignerType; PropertyValue = designerProperty.DesignerValue })
         GameGetters.Add ("OmniScreenOpt", fun world -> { PropertyType = typeof<Screen option>; PropertyValue = World.getOmniScreenOpt world })
         GameGetters.Add ("SelectedScreenOpt", fun world -> { PropertyType = typeof<Screen option>; PropertyValue = World.getSelectedScreenOpt world })
-        GameGetters.Add ("DesiredScreenOpt", fun world -> { PropertyType = typeof<Screen option>; PropertyValue = World.getDesiredScreenOpt world })
+        GameGetters.Add ("DesiredScreen", fun world -> { PropertyType = typeof<DesiredScreen>; PropertyValue = World.getDesiredScreen world })
         GameGetters.Add ("EyePosition2d", fun world -> { PropertyType = typeof<Vector2>; PropertyValue = World.getEyePosition2d world })
         GameGetters.Add ("EyeSize2d", fun world -> { PropertyType = typeof<Vector2>; PropertyValue = World.getEyeSize2d world })
         GameGetters.Add ("EyePosition3d", fun world -> { PropertyType = typeof<Vector3>; PropertyValue = World.getEyePosition3d world })
@@ -566,7 +566,7 @@ module WorldModuleGame =
     let private initSetters () =
         GameSetters.Add ("Model", fun property world -> World.setGameModelProperty { DesignerType = property.PropertyType; DesignerValue = property.PropertyValue } world)
         GameSetters.Add ("OmniScreenOpt", fun property world -> World.setOmniScreenOptPlus (property.PropertyValue :?> Screen option) world)
-        GameSetters.Add ("DesiredScreenOpt", fun property world -> World.setDesiredScreenOpt (property.PropertyValue :?> Screen option) world)
+        GameSetters.Add ("DesiredScreen", fun property world -> World.setDesiredScreen (property.PropertyValue :?> DesiredScreen) world)
         GameSetters.Add ("EyePosition2d", fun property world -> World.setEyePosition2dPlus (property.PropertyValue :?> Vector2) world)
         GameSetters.Add ("EyeSize2d", fun property world -> World.setEyeSize2dPlus (property.PropertyValue :?> Vector2) world)
         GameSetters.Add ("EyePosition3d", fun property world -> World.setEyePosition3dPlus (property.PropertyValue :?> Vector3) world)
