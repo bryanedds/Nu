@@ -81,6 +81,7 @@ module TacticsGame =
              Simulants.Splash.Screen.DeselectEvent => msg ShowTitle
              Simulants.Title.Gui.Play.ClickEvent =|> fun _ -> msg ShowPick
              Simulants.Title.Gui.Credits.ClickEvent => msg ShowCredits
+             Simulants.Title.Gui.Exit.ClickEvent => cmd Exit
              Simulants.Pick.Gui.NewGame1.ClickEvent => msg (ShowIntro Slot1)
              Simulants.Pick.Gui.NewGame2.ClickEvent => msg (ShowIntro Slot2)
              Simulants.Pick.Gui.NewGame3.ClickEvent => msg (ShowIntro Slot3)
@@ -88,8 +89,7 @@ module TacticsGame =
              Simulants.Pick.Gui.LoadGame2.ClickEvent => msg (TryLoad Slot2)
              Simulants.Pick.Gui.LoadGame3.ClickEvent => msg (TryLoad Slot3)
              Simulants.Pick.Gui.Back.ClickEvent => msg ShowTitle
-             Simulants.Credits.Gui.Back.ClickEvent => msg ShowTitle
-             Simulants.Title.Gui.Exit.ClickEvent => cmd Exit]
+             Simulants.Credits.Gui.Back.ClickEvent => msg ShowTitle]
 
         override this.Message (tactics, message, _, world) =
 
