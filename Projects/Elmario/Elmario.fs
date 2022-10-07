@@ -21,10 +21,6 @@ type Command =
 type ElmarioDispatcher () =
     inherit GameDispatcher<unit, unit, Command> (())
 
-    // here we initialize the game's properties
-    override this.Initializers (_, game) =
-        [game.DesiredScreenOpt == Some Simulants.Default.Screen]
-
     // here we channel events to signals
     override this.Channel (_, game) =
         [game.KeyboardKeyDownEvent =|> fun evt ->
