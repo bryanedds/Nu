@@ -51,7 +51,7 @@ module Content =
         groupsPlus lens unfold id mapper
 
     /// Describe a group to be conditionally instantiated from a lens with explicit filtering.
-    let groupWhere (lens : Lens<'a, World>) (by : 'a -> 'b option) (mapper : Lens<'b, World> -> GroupContent) =
+    let groupWhen (lens : Lens<'a, World>) (by : 'a -> 'b option) (mapper : Lens<'b, World> -> GroupContent) =
         let (sieve : 'a -> Map<int, 'b>) = fun a -> match by a with Some a -> Map.singleton 0 a | None -> Map.empty
         let mapper = fun _ b -> mapper b
         groups lens sieve mapper
@@ -138,7 +138,7 @@ module Content =
         entitiesPlus lens unfold id mapper
 
     /// Describe an entity to be conditionally instantiated from a lens with explicit filtering.
-    let entityWhere (lens : Lens<'a, World>) (by : 'a -> 'b option) (mapper : Lens<'b, World> -> EntityContent) =
+    let entityWhen (lens : Lens<'a, World>) (by : 'a -> 'b option) (mapper : Lens<'b, World> -> EntityContent) =
         let (sieve : 'a -> Map<int, 'b>) = fun a -> match by a with Some a -> Map.singleton 0 a | None -> Map.empty
         let mapper = fun _ b -> mapper b
         entities lens sieve mapper
