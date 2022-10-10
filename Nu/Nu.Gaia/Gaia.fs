@@ -1643,7 +1643,7 @@ module Gaia =
         match savedState.ModeOpt with
         | Some mode ->
             for i in 0 .. startForm.modesComboBox.Items.Count - 1 do
-                if startForm.modesComboBox.Items.[i] = mode then
+                if startForm.modesComboBox.Items.[i] = box mode then
                     startForm.modesComboBox.SelectedIndex <- i
         | None -> ()
         startForm.useImperativeExecutionCheckBox.Checked <- savedState.UseImperativeExecution
