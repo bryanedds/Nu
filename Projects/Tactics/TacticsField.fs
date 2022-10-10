@@ -41,8 +41,13 @@ type FieldScript =
     | FieldScripts of FieldScript list
     static member empty = FieldScripts []
 
+type [<NoEquality; NoComparison>] FieldTileVertices =
+    { FieldTileVertices : Vector3 array }
+    member this.Center =
+        (this.FieldTileVertices.[0] + this.FieldTileVertices.[1] + this.FieldTileVertices.[2] + this.FieldTileVertices.[3]) / 4.0f
+
 type [<NoEquality; NoComparison>] FieldMetadata =
-    { FieldVertexMap : Map<Vector2i, Vector3 array>
+    { FieldTileVerticesMap : Map<Vector2i, FieldTileVertices>
       FieldUntraversableSurfaceDescriptor : StaticModelSurfaceDescriptor
       FieldTraversableSurfaceDescriptor : StaticModelSurfaceDescriptor
       FieldBounds : Box3 }
@@ -55,7 +60,7 @@ module Field =
             { FieldState_ : FieldState
               FieldScript : FieldScript
               FieldTileMap : TileMap AssetTag
-              OccupantIndices : Map<Vector2i, OccupantIndex list>
+              OccupantIndices : Map<Vector2i, OccupantIndex>
               OccupantPositions : Map<OccupantIndex, Vector2i>
               Occupants : Map<OccupantIndex, Occupant>
               SelectedTile : Vector2i }
@@ -144,10 +149,10 @@ module Field =
                         positions.[u+2].Y <- positions.[uEast+5].Y
                         positions.[u+4].Y <- positions.[uEast+5].Y
 
-        // make vertex map in-place
-        let mutable vertexMap = Map.empty
+        // make tile vertices map in-place
+        let mutable verticesMap = Map.empty
 
-        // populate vertex map
+        // populate tile vertices map
         for i in 0 .. dec tileMapWidth do
             for j in 0 .. dec tileMapHeight do
                 let t = j * tileMapWidth + i
@@ -157,7 +162,7 @@ module Field =
                       positions.[u+1]
                       positions.[u+2]
                       positions.[u+5]|]
-                vertexMap <- Map.add (v2i i j) vertices vertexMap
+                verticesMap <- Map.add (v2i i j) { FieldTileVertices = vertices } verticesMap
 
         // make tex coordses array
         let texCoordses = Array.zeroCreate<Vector2> (tileMapWidth * tileMapHeight * 6)
@@ -251,7 +256,7 @@ module Field =
                   TwoSided = false }
 
             // fin
-            (descriptor, vertexMap)
+            (descriptor, verticesMap)
 
         // did not find albedo tile set
         | None -> failwith "Unable to find custom TmxLayer Image property; cannot create tactical map."
@@ -267,10 +272,10 @@ module Field =
             let traversableHeightLayer = tileMap.Layers.["TraversableHeight"] :?> TmxLayer
             let (untraversableSurfaceDescriptor, _) = createFieldSurfaceDescriptorAndVertexMap tileMap.Width tileMap.Height tileSets untraversableLayer untraversableHeightLayer
             let untraversableSurfaceDescriptor = { untraversableSurfaceDescriptor with Roughness = 0.1f }
-            let (traversableSurfaceDescriptor, traversableVertexMap) = createFieldSurfaceDescriptorAndVertexMap tileMap.Width tileMap.Height tileSets traversableLayer traversableHeightLayer
+            let (traversableSurfaceDescriptor, traversableTileVerticesMap) = createFieldSurfaceDescriptorAndVertexMap tileMap.Width tileMap.Height tileSets traversableLayer traversableHeightLayer
             let bounds = let bounds = untraversableSurfaceDescriptor.Bounds in bounds.Combine traversableSurfaceDescriptor.Bounds
             let fieldMetadata =
-                { FieldVertexMap = traversableVertexMap
+                { FieldTileVerticesMap = traversableTileVerticesMap
                   FieldUntraversableSurfaceDescriptor = untraversableSurfaceDescriptor
                   FieldTraversableSurfaceDescriptor = traversableSurfaceDescriptor
                   FieldBounds = bounds }
@@ -278,14 +283,14 @@ module Field =
             fieldMetadata
         | (true, fieldMetadata) -> fieldMetadata
 
-    let tryGetVertices index field world =
+    let tryGetFieldTileVertices index field world =
         let fieldMetadata = getFieldMetadata field world
-        match Map.tryFind index fieldMetadata.FieldVertexMap with
+        match Map.tryFind index fieldMetadata.FieldTileVerticesMap with
         | Some index -> Some index
         | None -> None
 
-    let getVertices index field world =
-        match tryGetVertices index field world with
+    let getFieldTileVertices index field world =
+        match tryGetFieldTileVertices index field world with
         | Some vertices -> vertices
         | None -> failwith ("Field vertex index '" + scstring index + "' out of range.")
 
@@ -295,11 +300,11 @@ module Field =
         let indices = [|0; 1; 2; 0; 2; 3|]
         let intersectionMap =
             Map.map (fun _ vertices ->
-                let intersections = mouseRay.Intersects (indices, vertices)
+                let intersections = mouseRay.Intersects (indices, vertices.FieldTileVertices)
                 match Seq.tryHead intersections with
                 | Some struct (_, intersection) -> Some (intersection, vertices)
                 | None -> None)
-                fieldMetadata.FieldVertexMap
+                fieldMetadata.FieldTileVerticesMap
         let intersections =
             intersectionMap |>
             Seq.map (fun (kvp : KeyValuePair<_, _>) -> (kvp.Key, kvp.Value)) |>
@@ -309,6 +314,13 @@ module Field =
             Array.sortBy Triple.snd |>
             Array.tryHead
         intersections
+
+    let getOccupants field world =
+        field.OccupantPositions |>
+        Map.map (fun _ position -> getFieldTileVertices position field world)  |>
+        flip Seq.zip field.Occupants |>
+        Seq.map (fun (kvp, kvp2) -> (kvp.Key, (kvp.Value, kvp2.Value))) |>
+        Map.ofSeq
 
     let rec advanceFieldScript field (world : World) =
         match field.FieldState_ with
@@ -328,13 +340,16 @@ module Field =
         let field = advanceFieldScript field world
         field
 
-    let make updateTime fieldScript tileMap =
+    let make updateTime fieldScript (occupants : (Vector2i * OccupantIndex * Occupant) list) tileMap =
+        let occupantIndices = occupants |> List.map (fun (position, index, _) -> (position, index)) |> Map.ofList
+        let occupantPositions = occupants |> List.map (fun (position, index, _) -> (index, position)) |> Map.ofList
+        let occupants = occupants |> List.map (fun (_, index, occupant) -> (index, occupant)) |> Map.ofList
         { FieldState_ = FieldReady updateTime
           FieldScript = fieldScript
           FieldTileMap = tileMap
-          OccupantIndices = Map.empty
-          OccupantPositions = Map.empty
-          Occupants = Map.empty
+          OccupantIndices = occupantIndices
+          OccupantPositions = occupantPositions
+          Occupants = occupants
           SelectedTile = v2iZero }
 
 type Field = Field.Field

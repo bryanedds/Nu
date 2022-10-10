@@ -22,23 +22,21 @@ module CharacterDispatcher =
             [Entity.Presence == Omnipresent]
 
         override this.View (character, entity, world) =
-            if entity.GetVisible world then
-                let mutable transform = entity.GetTransform world
-                let renderMaterial =
-                    { AlbedoOpt = ValueSome Color.White
-                      MetalnessOpt = ValueSome 0.0f
-                      RoughnessOpt = ValueSome 1.25f
-                      AmbientOcclusionOpt = ValueSome 1.0f }
-                let albedoImage = asset "Field" "Jinn"
-                let inset = getSpriteInset character world
-                let characterView =
-                    Render3d (
-                        RenderBillboardMessage
-                            (transform.Absolute, transform.AffineMatrix, ValueSome inset, renderMaterial,
-                             albedoImage, Assets.Default.MaterialMetalness, Assets.Default.MaterialRoughness, Assets.Default.MaterialRoughness, albedoImage,
-                             ValueSome OpenGL.TextureMinFilter.NearestMipmapNearest, ValueSome OpenGL.TextureMagFilter.Nearest, DeferredRenderType))
-                characterView
-            else View.empty
+            let mutable transform = entity.GetTransform world
+            let renderMaterial =
+                { AlbedoOpt = ValueSome Color.White
+                  MetalnessOpt = ValueSome 0.0f
+                  RoughnessOpt = ValueSome 1.25f
+                  AmbientOcclusionOpt = ValueSome 1.0f }
+            let albedoImage = asset "Field" "Jinn"
+            let inset = getSpriteInset character world
+            let characterView =
+                Render3d (
+                    RenderBillboardMessage
+                        (transform.Absolute, transform.AffineMatrix, ValueSome inset, renderMaterial,
+                         albedoImage, Assets.Default.MaterialMetalness, Assets.Default.MaterialRoughness, Assets.Default.MaterialRoughness, albedoImage,
+                         ValueSome OpenGL.TextureMinFilter.NearestMipmapNearest, ValueSome OpenGL.TextureMagFilter.Nearest, DeferredRenderType))
+            characterView
 
         override this.GetQuickSize (_, _) =
             v3 1.0f 2.0f 1.0f

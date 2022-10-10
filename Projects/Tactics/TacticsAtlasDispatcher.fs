@@ -21,7 +21,3 @@ module AtlasDispatcher =
 
     type AtlasDispatcher () =
         inherit ScreenDispatcher<Atlas, AtlasMessage, AtlasCommand> (Atlas.empty)
-
-        override this.Update (entity, world) =
-            let world = base.Update (entity, world)
-            entity.SetAtlas (Atlas.debug world) world
