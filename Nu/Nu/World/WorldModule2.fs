@@ -902,8 +902,7 @@ module WorldModule2 =
                               Glow = Color.Zero
                               Flip = FlipNone }}
                     world
-            | None -> ()
-            world
+            | None -> world
 
         static member private renderScreenTransition (screen : Screen) world =
             match screen.GetTransitionState world with
