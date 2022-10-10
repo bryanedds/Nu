@@ -51,11 +51,11 @@ module WorldBindings =
         "getOmniScreen setOmniScreen getSelectedScreenOpt constrainEyeBounds2d " +
         "getSelectedScreen setSelectedScreen getViewBounds2dAbsolute getPlayBounds2dAbsolute " +
         "getViewBounds2d getPlayBounds2d isBoundsInView2d getPlayBounds3d " +
-        "isBoundsInView3d isBoundsInPlay3d reloadSymbols getImperative " +
+        "isBoundsInView3d isBoundsInPlay3d reloadSymbols tryGetTextureSize " +
+        "getTextureSize tryGetTextureSizeF getTextureSizeF getImperative " +
         "getStandAlone getCollectionConfig getLiveness getUpdateRate " +
         "setUpdateRate getAdvancing getHalted getUpdateTime " +
-        "getClockDelta exit tryGetTextureSize getTextureSize " +
-        "tryGetTextureSizeF getTextureSizeF tryGetWindowFlags tryGetWindowMinimized " +
+        "getClockDelta exit tryGetWindowFlags tryGetWindowMinimized " +
         "tryGetWindowMaximized tryGetWindowFullScreen trySetWindowFullScreen tryGetWindowSize " +
         "getWindowSize getViewport getViewportOffset shouldSleep"
 
@@ -2482,6 +2482,66 @@ module WorldBindings =
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'reloadSymbols' due to: " + scstring exn, ValueNone)
             struct (violation, World.choose oldWorld)
 
+    let tryGetTextureSize assetTag world =
+        let oldWorld = world
+        try
+            let assetTag =
+                match ScriptingSystem.tryExport typeof<AssetTag<Image>> assetTag world with
+                | Some value -> value :?> AssetTag<Image>
+                | None -> failwith "Invalid argument type for 'assetTag'; expecting a value convertable to AssetTag`1."
+            let result = World.tryGetTextureSizeViaScript assetTag world
+            let value = result
+            let value = ScriptingSystem.tryImport typeof<FSharpOption<Vector2i>> value world |> Option.get
+            struct (value, world)
+        with exn ->
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'tryGetTextureSize' due to: " + scstring exn, ValueNone)
+            struct (violation, World.choose oldWorld)
+
+    let getTextureSize assetTag world =
+        let oldWorld = world
+        try
+            let assetTag =
+                match ScriptingSystem.tryExport typeof<AssetTag<Image>> assetTag world with
+                | Some value -> value :?> AssetTag<Image>
+                | None -> failwith "Invalid argument type for 'assetTag'; expecting a value convertable to AssetTag`1."
+            let result = World.getTextureSizeViaScript assetTag world
+            let value = result
+            let value = ScriptingSystem.tryImport typeof<Vector2i> value world |> Option.get
+            struct (value, world)
+        with exn ->
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getTextureSize' due to: " + scstring exn, ValueNone)
+            struct (violation, World.choose oldWorld)
+
+    let tryGetTextureSizeF assetTag world =
+        let oldWorld = world
+        try
+            let assetTag =
+                match ScriptingSystem.tryExport typeof<AssetTag<Image>> assetTag world with
+                | Some value -> value :?> AssetTag<Image>
+                | None -> failwith "Invalid argument type for 'assetTag'; expecting a value convertable to AssetTag`1."
+            let result = World.tryGetTextureSizeFViaScript assetTag world
+            let value = result
+            let value = ScriptingSystem.tryImport typeof<FSharpOption<Vector2>> value world |> Option.get
+            struct (value, world)
+        with exn ->
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'tryGetTextureSizeF' due to: " + scstring exn, ValueNone)
+            struct (violation, World.choose oldWorld)
+
+    let getTextureSizeF assetTag world =
+        let oldWorld = world
+        try
+            let assetTag =
+                match ScriptingSystem.tryExport typeof<AssetTag<Image>> assetTag world with
+                | Some value -> value :?> AssetTag<Image>
+                | None -> failwith "Invalid argument type for 'assetTag'; expecting a value convertable to AssetTag`1."
+            let result = World.getTextureSizeFViaScript assetTag world
+            let value = result
+            let value = ScriptingSystem.tryImport typeof<Vector2> value world |> Option.get
+            struct (value, world)
+        with exn ->
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getTextureSizeF' due to: " + scstring exn, ValueNone)
+            struct (violation, World.choose oldWorld)
+
     let getImperative world =
         let oldWorld = world
         try
@@ -2601,66 +2661,6 @@ module WorldBindings =
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'exit' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
-
-    let tryGetTextureSize assetTag =
-        let oldWorld = world
-        try
-            let assetTag =
-                match ScriptingSystem.tryExport typeof<AssetTag<Image>> assetTag world with
-                | Some value -> value :?> AssetTag<Image>
-                | None -> failwith "Invalid argument type for 'assetTag'; expecting a value convertable to AssetTag`1."
-            let result = World.tryGetTextureSize assetTag
-            let value = result
-            let value = ScriptingSystem.tryImport typeof<FSharpOption<Vector2i>> value world |> Option.get
-            struct (value, world)
-        with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'tryGetTextureSize' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
-
-    let getTextureSize assetTag =
-        let oldWorld = world
-        try
-            let assetTag =
-                match ScriptingSystem.tryExport typeof<AssetTag<Image>> assetTag world with
-                | Some value -> value :?> AssetTag<Image>
-                | None -> failwith "Invalid argument type for 'assetTag'; expecting a value convertable to AssetTag`1."
-            let result = World.getTextureSize assetTag
-            let value = result
-            let value = ScriptingSystem.tryImport typeof<Vector2i> value world |> Option.get
-            struct (value, world)
-        with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getTextureSize' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
-
-    let tryGetTextureSizeF assetTag =
-        let oldWorld = world
-        try
-            let assetTag =
-                match ScriptingSystem.tryExport typeof<AssetTag<Image>> assetTag world with
-                | Some value -> value :?> AssetTag<Image>
-                | None -> failwith "Invalid argument type for 'assetTag'; expecting a value convertable to AssetTag`1."
-            let result = World.tryGetTextureSizeF assetTag
-            let value = result
-            let value = ScriptingSystem.tryImport typeof<FSharpOption<Vector2>> value world |> Option.get
-            struct (value, world)
-        with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'tryGetTextureSizeF' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
-
-    let getTextureSizeF assetTag =
-        let oldWorld = world
-        try
-            let assetTag =
-                match ScriptingSystem.tryExport typeof<AssetTag<Image>> assetTag world with
-                | Some value -> value :?> AssetTag<Image>
-                | None -> failwith "Invalid argument type for 'assetTag'; expecting a value convertable to AssetTag`1."
-            let result = World.getTextureSizeF assetTag
-            let value = result
-            let value = ScriptingSystem.tryImport typeof<Vector2> value world |> Option.get
-            struct (value, world)
-        with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getTextureSizeF' due to: " + scstring exn, ValueNone)
             struct (violation, World.choose oldWorld)
 
     let tryGetWindowFlags world =
@@ -4282,6 +4282,50 @@ module WorldBindings =
                 struct (violation, world)
         | Some violation -> struct (violation, world)
 
+    let evalTryGetTextureSizeBinding fnName exprs originOpt world =
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|assetTag|] -> tryGetTextureSize assetTag world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
+
+    let evalGetTextureSizeBinding fnName exprs originOpt world =
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|assetTag|] -> getTextureSize assetTag world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
+
+    let evalTryGetTextureSizeFBinding fnName exprs originOpt world =
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|assetTag|] -> tryGetTextureSizeF assetTag world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
+
+    let evalGetTextureSizeFBinding fnName exprs originOpt world =
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|assetTag|] -> getTextureSizeF assetTag world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
+
     let evalGetImperativeBinding fnName exprs originOpt world =
         let struct (evaleds, world) = World.evalManyInternal exprs world
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
@@ -4398,50 +4442,6 @@ module WorldBindings =
         | None ->
             match evaleds with
             | [||] -> exit world
-            | _ ->
-                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
-                struct (violation, world)
-        | Some violation -> struct (violation, world)
-
-    let evalTryGetTextureSizeBinding fnName exprs originOpt world =
-        let struct (evaleds, world) = World.evalManyInternal exprs world
-        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
-        | None ->
-            match evaleds with
-            | [|assetTag|] -> tryGetTextureSize assetTag world
-            | _ ->
-                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
-                struct (violation, world)
-        | Some violation -> struct (violation, world)
-
-    let evalGetTextureSizeBinding fnName exprs originOpt world =
-        let struct (evaleds, world) = World.evalManyInternal exprs world
-        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
-        | None ->
-            match evaleds with
-            | [|assetTag|] -> getTextureSize assetTag world
-            | _ ->
-                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
-                struct (violation, world)
-        | Some violation -> struct (violation, world)
-
-    let evalTryGetTextureSizeFBinding fnName exprs originOpt world =
-        let struct (evaleds, world) = World.evalManyInternal exprs world
-        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
-        | None ->
-            match evaleds with
-            | [|assetTag|] -> tryGetTextureSizeF assetTag world
-            | _ ->
-                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
-                struct (violation, world)
-        | Some violation -> struct (violation, world)
-
-    let evalGetTextureSizeFBinding fnName exprs originOpt world =
-        let struct (evaleds, world) = World.evalManyInternal exprs world
-        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
-        | None ->
-            match evaleds with
-            | [|assetTag|] -> getTextureSizeF assetTag world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
                 struct (violation, world)
@@ -4702,6 +4702,10 @@ module WorldBindings =
              ("isBoundsInView3d", { Fn = evalIsBoundsInView3dBinding; Pars = [|"light"; "presence"; "bounds"|]; DocOpt = None })
              ("isBoundsInPlay3d", { Fn = evalIsBoundsInPlay3dBinding; Pars = [|"bounds"|]; DocOpt = None })
              ("reloadSymbols", { Fn = evalReloadSymbolsBinding; Pars = [||]; DocOpt = None })
+             ("tryGetTextureSize", { Fn = evalTryGetTextureSizeBinding; Pars = [|"assetTag"|]; DocOpt = None })
+             ("getTextureSize", { Fn = evalGetTextureSizeBinding; Pars = [|"assetTag"|]; DocOpt = None })
+             ("tryGetTextureSizeF", { Fn = evalTryGetTextureSizeFBinding; Pars = [|"assetTag"|]; DocOpt = None })
+             ("getTextureSizeF", { Fn = evalGetTextureSizeFBinding; Pars = [|"assetTag"|]; DocOpt = None })
              ("getImperative", { Fn = evalGetImperativeBinding; Pars = [||]; DocOpt = None })
              ("getStandAlone", { Fn = evalGetStandAloneBinding; Pars = [||]; DocOpt = None })
              ("getCollectionConfig", { Fn = evalGetCollectionConfigBinding; Pars = [||]; DocOpt = None })
@@ -4713,10 +4717,6 @@ module WorldBindings =
              ("getUpdateTime", { Fn = evalGetUpdateTimeBinding; Pars = [||]; DocOpt = None })
              ("getClockDelta", { Fn = evalGetClockDeltaBinding; Pars = [||]; DocOpt = None })
              ("exit", { Fn = evalExitBinding; Pars = [||]; DocOpt = None })
-             ("tryGetTextureSize", { Fn = evalTryGetTextureSizeBinding; Pars = [|"assetTag"|]; DocOpt = None })
-             ("getTextureSize", { Fn = evalGetTextureSizeBinding; Pars = [|"assetTag"|]; DocOpt = None })
-             ("tryGetTextureSizeF", { Fn = evalTryGetTextureSizeFBinding; Pars = [|"assetTag"|]; DocOpt = None })
-             ("getTextureSizeF", { Fn = evalGetTextureSizeFBinding; Pars = [|"assetTag"|]; DocOpt = None })
              ("tryGetWindowFlags", { Fn = evalTryGetWindowFlagsBinding; Pars = [||]; DocOpt = None })
              ("tryGetWindowMinimized", { Fn = evalTryGetWindowMinimizedBinding; Pars = [||]; DocOpt = None })
              ("tryGetWindowMaximized", { Fn = evalTryGetWindowMaximizedBinding; Pars = [||]; DocOpt = None })
