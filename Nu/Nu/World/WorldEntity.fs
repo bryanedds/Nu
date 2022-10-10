@@ -543,7 +543,7 @@ module WorldEntityModule =
             Array.tryHead sorted
 
         /// Try to find the entity in the given entity's group with the closest previous order.
-        static member tryFindPreviousEntity (entity : Entity) world =
+        static member tryGetPreviousEntity (entity : Entity) world =
             let order = World.getEntityOrder entity world
             let mutable previousOrderDeltaOpt = ValueNone
             let mutable previousOpt = ValueNone
@@ -573,7 +573,7 @@ module WorldEntityModule =
 
         /// Change an entity's order between that of target and its previous sibling's.
         static member insertEntity target entity world =
-            match World.tryFindPreviousEntity target world with
+            match World.tryGetPreviousEntity target world with
             | Some previous -> World.reorderEntity previous target entity world
             | None -> world
 
