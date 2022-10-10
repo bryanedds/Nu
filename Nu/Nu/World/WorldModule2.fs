@@ -490,7 +490,7 @@ module WorldModule2 =
             let world = World.reloadRenderAssets3d world
             let world = World.reloadAudioAssets world
             let world = World.reloadSymbols world
-            let world = World.regenerateMetadata world
+            World.regenerateMetadata ()
             world
 
         /// Attempt to reload the asset graph.
@@ -510,8 +510,7 @@ module WorldModule2 =
 
                     // build assets reload asset metadata
                     AssetGraph.buildAssets inputDirectory outputDirectory refinementDirectory false assetGraph
-                    let metadata = Metadata.make (World.getImperative world) assetGraph
-                    let world = World.setMetadata metadata world
+                    Metadata.generateMetadata (World.getImperative world)
                     let world = World.reloadExistingAssets world
                     let world = World.publish () Events.AssetsReload (EventTrace.debug "World" "publishAssetsReload" "" EventTrace.empty) Simulants.Game world
                     (Right assetGraph, world)

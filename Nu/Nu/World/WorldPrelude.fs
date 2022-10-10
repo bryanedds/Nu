@@ -240,14 +240,12 @@ module AmbientState =
               UpdateTime : int64
               ClockDelta : single // NOTE: might be better to make this accessible from World to avoid cache misses
               // cache line 2
-              Metadata : Metadata
               KeyValueStore : UMap<Guid, obj>
               ClockTime : DateTimeOffset // moved down here because it's 16 bytes according to - https://stackoverflow.com/a/38731608
               Tasklets : OMap<Simulant, 'w Tasklet UList>
               SdlDepsOpt : SdlDeps option
               Symbolics : Symbolics
               Overlayer : Overlayer
-              // cache line 3 (oof!) - TODO: P1: see if we can reduce the size of this type to fit in 2 cache lines.
               OverlayRouter : OverlayRouter }
 
     /// Get whether the engine is running imperatively.
@@ -310,17 +308,9 @@ module AmbientState =
     let exit state =
         { state with Liveness = Dead }
 
-    /// Get the metadata.
-    let getMetadata state =
-        state.Metadata
-
-    /// Set the metadata.
-    let setMetadata metadata state =
-        { state with Metadata = metadata }
-
     /// Regenerate metadata.
-    let regenerateMetadata imperative state =
-        { state with Metadata = Metadata.regenerateMetadata imperative state.Metadata }
+    let regenerateMetadata () =
+        Metadata.regenerateMetadata ()
 
     /// Get the key-value store with the by map.
     let getKeyValueStoreBy by state =
@@ -444,7 +434,7 @@ module AmbientState =
         { state with OverlayRouter = router }
 
     /// Make an ambient state value.
-    let make imperative standAlone updateRate assetMetadataMap symbolics overlayer overlayRouter sdlDepsOpt =
+    let make imperative standAlone updateRate symbolics overlayer overlayRouter sdlDepsOpt =
         Imperative <- imperative
         StandAlone <- standAlone
         let config = if imperative then TConfig.Imperative else TConfig.Functional
@@ -452,7 +442,6 @@ module AmbientState =
           UpdateRate = updateRate
           UpdateTime = 0L
           ClockDelta = 1.0f
-          Metadata = assetMetadataMap
           KeyValueStore = UMap.makeEmpty HashIdentity.Structural config
           ClockTime = DateTimeOffset.Now
           Tasklets = OMap.makeEmpty HashIdentity.Structural config

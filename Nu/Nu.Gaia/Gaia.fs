@@ -442,7 +442,7 @@ module Gaia =
 
     let private handlePropertyPickAsset (form : GaiaForm) world =
         use assetPicker = new AssetPicker ()
-        let assetMap = World.getAssetMap world
+        let assetMap = World.getAssetMap ()
         for assetTag in assetMap do
             let node = assetPicker.assetTreeView.Nodes.Add assetTag.Key
             for assetName in assetTag.Value do

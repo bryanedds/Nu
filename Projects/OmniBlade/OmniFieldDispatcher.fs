@@ -518,7 +518,7 @@ module FieldDispatcher =
                     if advents.IsSupersetOf requirements then
                         match Map.tryFind fieldType Data.Value.Fields with
                         | Some fieldData ->
-                            match FieldData.tryGetPortal omniSeedState portalIndex fieldData world with
+                            match FieldData.tryGetPortal omniSeedState portalIndex fieldData with
                             | Some portal ->
                                 match portal.PropData with
                                 | Portal (_, _, direction, _, _, extended, _) ->
@@ -1177,10 +1177,10 @@ module FieldDispatcher =
                  // tmx map
                  Content.tmxMap Simulants.Field.Scene.TileMap.Name
                     [Entity.Elevation == Constants.Field.BackgroundElevation
-                     Entity.TmxMap <== field --|> fun field world ->
+                     Entity.TmxMap <== field --> fun field ->
                         match Map.tryFind field.FieldType Data.Value.Fields with
                         | Some fieldData ->
-                            match FieldData.tryGetTileMap field.OmniSeedState fieldData world with
+                            match FieldData.tryGetTileMap field.OmniSeedState fieldData with
                             | Some tileMapChc ->
                                 match tileMapChc with
                                 | Choice1Of3 tileMap
@@ -1205,17 +1205,17 @@ module FieldDispatcher =
                         let progress = 1.0f - (Constants.Field.ConnectorFadeYMax - field.Avatar.Bottom.Y) / Constants.Field.ConnectorFadeYMax
                         let fade = min 1.0f progress
                         Color.One.ScaleA fade
-                     Entity.TmxMap <== field --|> fun field world ->
+                     Entity.TmxMap <== field --> fun field ->
                         match Map.tryFind field.FieldType Data.Value.Fields with
                         | Some fieldData ->
-                            match FieldData.tryGetTileMap field.OmniSeedState fieldData world with
+                            match FieldData.tryGetTileMap field.OmniSeedState fieldData with
                             | Some tileMapChc ->
                                 match tileMapChc with
-                                | Choice1Of3 _ -> World.getTileMapMetadata Assets.Default.TileMapEmpty world |> __c
+                                | Choice1Of3 _ -> World.getTileMapMetadata Assets.Default.TileMapEmpty |> __c
                                 | Choice2Of3 (_, tileMapFade) -> tileMapFade
-                                | Choice3Of3 (_, _) ->  World.getTileMapMetadata Assets.Default.TileMapEmpty world |> __c
-                            | None -> World.getTileMapMetadata Assets.Default.TileMapEmpty world |> __c
-                        | None -> World.getTileMapMetadata Assets.Default.TileMapEmpty world |> __c
+                                | Choice3Of3 (_, _) ->  World.getTileMapMetadata Assets.Default.TileMapEmpty |> __c
+                            | None -> World.getTileMapMetadata Assets.Default.TileMapEmpty |> __c
+                        | None -> World.getTileMapMetadata Assets.Default.TileMapEmpty |> __c
                      Entity.TileLayerClearance == 10.0f]
 
                  // feeler

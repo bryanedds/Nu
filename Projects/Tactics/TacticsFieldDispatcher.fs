@@ -101,13 +101,11 @@ module FieldDispatcher =
             [Content.group Simulants.Field.Scene.Group.Name []
                 [Content.skyBox Gen.name
                     [Entity.CubeMap == Assets.Default.SkyBoxMap]
-                 Content.entity<CharacterDispatcher> Gen.name
-                    [Entity.Position == v3 0.0f 2.5f 0.0f]
-                 Content.entities (field --|> fun field world -> Field.getOccupants field world) id $ fun index occupant ->
+                 Content.entities field Field.getOccupants $ fun index occupant ->
                     Content.entity<CharacterDispatcher> (string index) [Entity.Position <== occupant --> fun (vertices, _) -> vertices.Center]]]
 
         override this.View (field, _, world) =
-            let fieldMetadata = Field.getFieldMetadata field world
+            let fieldMetadata = Field.getFieldMetadata field
             let fieldTexCoordsOffset = box2 (v2 (16.0f * (single (world.UpdateTime / 20L % 3L))) 0.0f) v2Zero
             let fieldUntraversableView = View.Render3d (RenderUserDefinedStaticModel (false, m4Identity, ValueSome fieldTexCoordsOffset, Unchecked.defaultof<_>, ForwardRenderType (0.0f, 0.0f), [|fieldMetadata.FieldUntraversableSurfaceDescriptor|], fieldMetadata.FieldBounds))
             let fieldTraversableView = View.Render3d (RenderUserDefinedStaticModel (false, m4Identity, ValueSome fieldTexCoordsOffset, Unchecked.defaultof<_>, ForwardRenderType (0.0f, -1.0f), [|fieldMetadata.FieldTraversableSurfaceDescriptor|], fieldMetadata.FieldBounds))

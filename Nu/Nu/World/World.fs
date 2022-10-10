@@ -506,7 +506,7 @@ module WorldModule3 =
             let ambientState =
                 let overlayRouter = OverlayRouter.empty
                 let symbolics = Symbolics.makeEmpty ()
-                AmbientState.make config.Imperative config.NuConfig.StandAlone 1L (Metadata.makeEmpty config.Imperative) symbolics Overlayer.empty overlayRouter None
+                AmbientState.make config.Imperative config.NuConfig.StandAlone 1L symbolics Overlayer.empty overlayRouter None
 
             // make the world's quadtree
             let quadtree = World.makeQuadtree ()
@@ -539,6 +539,9 @@ module WorldModule3 =
             // attempt to create asset graph
             match AssetGraph.tryMakeFromFile Assets.Global.AssetGraphFilePath with
             | Right assetGraph ->
+
+                // populate metadata
+                Metadata.generateMetadata config.Imperative assetGraph
 
                 // make the world's event system
                 let eventSystem =
@@ -617,7 +620,6 @@ module WorldModule3 =
 
                     // make the world's ambient state
                     let ambientState =
-                        let assetMetadataMap = Metadata.make config.Imperative assetGraph
                         let overlays = Overlayer.getIntrinsicOverlays overlayer @ Overlayer.getExtrinsicOverlays overlayer
                         let overlayRoutes =
                             overlays |>
@@ -625,7 +627,7 @@ module WorldModule3 =
                             List.concat
                         let overlayRouter = OverlayRouter.make overlayRoutes
                         let symbolics = Symbolics.makeEmpty ()
-                        AmbientState.make config.Imperative config.NuConfig.StandAlone config.UpdateRate assetMetadataMap symbolics overlayer overlayRouter (Some sdlDeps)
+                        AmbientState.make config.Imperative config.NuConfig.StandAlone config.UpdateRate symbolics overlayer overlayRouter (Some sdlDeps)
 
                     // make the world's quadtree
                     let quadtree = World.makeQuadtree ()
