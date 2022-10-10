@@ -20,7 +20,6 @@ module DeclarativeOperators2 =
             | Render2d (elevation, horizon, assetTag, descriptor) ->
                 let message = { Elevation = elevation; Horizon = horizon; AssetTag = AssetTag.generalize assetTag; RenderDescriptor2d = descriptor }
                 World.enqueueRenderLayeredMessage2d message world
-                world
             | Render3d renderMessage -> World.enqueueRenderMessage3d renderMessage world; world
             | PlaySound (volume, assetTag) -> World.playSound volume assetTag world
             | PlaySong (fadeIn, fadeOut, volume, start, assetTag) -> World.playSong fadeIn fadeOut volume start assetTag world
@@ -277,7 +276,6 @@ module StaticSpriteFacetModule =
                           Glow = entity.GetGlow world
                           Flip = entity.GetFlip world }}
                 world
-            world
 
         override this.GetQuickSize (entity, world) =
             match World.tryGetTextureSizeF (entity.GetStaticImage world) with
@@ -350,7 +348,6 @@ module AnimatedSpriteFacetModule =
                           Glow = entity.GetGlow world
                           Flip = entity.GetFlip world }}
                 world
-            world
 
         override this.GetQuickSize (entity, world) =
             (entity.GetCelSize world).V3
@@ -418,7 +415,7 @@ module TextFacetModule =
                               Color = if transform.Enabled then entity.GetTextColor world else entity.GetTextDisabledColor world
                               Justification = entity.GetJustification world }}
                     world
-            world
+            else world
 
 [<AutoOpen>]
 module BasicEmitter2dFacetModule =
@@ -519,7 +516,7 @@ module BasicEmitter2dFacetModule =
 
         static let rec processOutput output entity world =
             match output with
-            | Particles.OutputSound (volume, sound) -> World.enqueueAudioMessage (PlaySoundMessage { Volume = volume; Sound = sound }) world; world
+            | Particles.OutputSound (volume, sound) -> World.enqueueAudioMessage (PlaySoundMessage { Volume = volume; Sound = sound }) world
             | Particles.OutputEmitter (name, emitter) -> updateParticleSystem (fun ps -> { ps with Emitters = Map.add name emitter ps.Emitters }) entity world
             | Particles.Outputs outputs -> SegmentedArray.fold (fun world output -> processOutput output entity world) world outputs
 
@@ -658,7 +655,6 @@ module BasicEmitter2dFacetModule =
                       AssetTag = AssetTag.generalize descriptor.Image
                       RenderDescriptor2d = ParticlesDescriptor descriptor })
             World.enqueueRenderLayeredMessages2d particlesMessages world
-            world
 
 [<AutoOpen>]
 module Effect2dFacetModule =
@@ -719,7 +715,7 @@ module Effect2dFacetModule =
 
         static let rec processOutput output entity world =
             match output with
-            | Particles.OutputSound (volume, sound) -> World.enqueueAudioMessage (PlaySoundMessage { Volume = volume; Sound = sound }) world; world
+            | Particles.OutputSound (volume, sound) -> World.enqueueAudioMessage (PlaySoundMessage { Volume = volume; Sound = sound }) world
             | Particles.OutputEmitter (name, emitter) -> updateParticleSystem (fun ps -> { ps with Emitters = Map.add name emitter ps.Emitters }) entity world
             | Particles.Outputs outputs -> SegmentedArray.fold (fun world output -> processOutput output entity world) world outputs
 
@@ -849,7 +845,7 @@ module Effect2dFacetModule =
                       Horizon = descriptor.Horizon
                       AssetTag = AssetTag.generalize descriptor.Image
                       RenderDescriptor2d = ParticlesDescriptor descriptor })
-            World.enqueueRenderLayeredMessages2d particlesMessages world
+            let world = World.enqueueRenderLayeredMessages2d particlesMessages world
 
             // update effect history in-place
             effectHistory.AddToFront effectSlice
@@ -1137,7 +1133,6 @@ module TileMapFacetModule =
                         (entity.GetTileIndexOffsetRange world)
                         tileMap
                 World.enqueueRenderLayeredMessages2d tileMapMessages world
-                world
             | None -> world
 
         override this.GetQuickSize (entity, world) =
@@ -1231,7 +1226,6 @@ module TmxMapFacetModule =
                     (entity.GetTileIndexOffsetRange world)
                     tmxMap
             World.enqueueRenderLayeredMessages2d tmxMapMessages world
-            world
 
         override this.GetQuickSize (entity, world) =
             let tmxMap = entity.GetTmxMap world
@@ -1882,7 +1876,6 @@ module ButtonDispatcherModule =
                           Glow = Color.Zero
                           Flip = FlipNone }}
                 world
-            world
 
         override this.GetQuickSize (entity, world) =
             match World.tryGetTextureSizeF (entity.GetUpImage world) with
@@ -1921,7 +1914,6 @@ module LabelDispatcherModule =
                           Glow = Color.Zero
                           Flip = FlipNone }}
                 world
-            world
 
         override this.GetQuickSize (entity, world) =
             match World.tryGetTextureSizeF (entity.GetLabelImage world) with
@@ -1965,7 +1957,6 @@ module TextDispatcherModule =
                               Glow = Color.Zero
                               Flip = FlipNone }}
                     world
-                world
             | None -> world
 
         override this.GetQuickSize (entity, world) =
@@ -2099,7 +2090,6 @@ module ToggleButtonDispatcherModule =
                           Glow = Color.Zero
                           Flip = FlipNone }}
                 world
-            world
 
         override this.GetQuickSize (entity, world) =
             match World.tryGetTextureSizeF (entity.GetUntoggledImage world) with
@@ -2224,7 +2214,6 @@ module RadioButtonDispatcherModule =
                           Glow = Color.Zero
                           Flip = FlipNone }}
                 world
-            world
 
         override this.GetQuickSize (entity, world) =
             match World.tryGetTextureSizeF (entity.GetUndialedImage world) with
@@ -2404,20 +2393,21 @@ module FillBarDispatcherModule =
             let disabledColor = entity.GetDisabledColor world
             let borderImageColor = (entity.GetBorderColor world).WithA disabledColor.A
             let borderImage = entity.GetBorderImage world
-            World.enqueueRenderLayeredMessage2d
-                { Elevation = borderTransform.Elevation
-                  Horizon = horizon
-                  AssetTag = AssetTag.generalize borderImage
-                  RenderDescriptor2d =
-                    SpriteDescriptor
-                        { Transform = borderTransform
-                          InsetOpt = ValueNone
-                          Image = borderImage
-                          Color = borderImageColor
-                          Blend = Transparent
-                          Glow = Color.Zero
-                          Flip = FlipNone }}
-                world
+            let world =
+                World.enqueueRenderLayeredMessage2d
+                    { Elevation = borderTransform.Elevation
+                      Horizon = horizon
+                      AssetTag = AssetTag.generalize borderImage
+                      RenderDescriptor2d =
+                        SpriteDescriptor
+                            { Transform = borderTransform
+                              InsetOpt = ValueNone
+                              Image = borderImage
+                              Color = borderImageColor
+                              Blend = Transparent
+                              Glow = Color.Zero
+                              Flip = FlipNone }}
+                    world
 
             // fill sprite
             let fillSize = perimeter.Size
@@ -2434,20 +2424,21 @@ module FillBarDispatcherModule =
             fillTransform.Absolute <- transform.Absolute
             let fillImageColor = (entity.GetFillColor world).WithA disabledColor.A
             let fillImage = entity.GetFillImage world
-            World.enqueueRenderLayeredMessage2d
-                { Elevation = fillTransform.Elevation
-                  Horizon = horizon
-                  AssetTag = AssetTag.generalize fillImage
-                  RenderDescriptor2d =
-                      SpriteDescriptor
-                          { Transform = fillTransform
-                            InsetOpt = ValueNone
-                            Image = fillImage
-                            Color = fillImageColor
-                            Blend = Transparent
-                            Glow = Color.Zero
-                            Flip = FlipNone }}
-                world
+            let world =
+                World.enqueueRenderLayeredMessage2d
+                    { Elevation = fillTransform.Elevation
+                      Horizon = horizon
+                      AssetTag = AssetTag.generalize fillImage
+                      RenderDescriptor2d =
+                          SpriteDescriptor
+                              { Transform = fillTransform
+                                InsetOpt = ValueNone
+                                Image = fillImage
+                                Color = fillImageColor
+                                Blend = Transparent
+                                Glow = Color.Zero
+                                Flip = FlipNone }}
+                    world
 
             // fin
             world
@@ -2596,7 +2587,6 @@ module SideViewCharacterDispatcherModule =
                           Glow = Color.Zero
                           Flip = if facingLeft then FlipH else FlipNone }}
                 world
-            world
 
 [<AutoOpen>]
 module TileMapDispatcherModule =

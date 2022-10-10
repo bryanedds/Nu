@@ -20,20 +20,24 @@ module WorldRender =
         /// Enqueue a rendering message.
         static member enqueueRenderMessage2d (message : RenderMessage2d) world =
             (World.getRendererProcess world).EnqueueMessage2d message
+            world
 
         /// Enqueue multiple rendering messages.
         static member enqueueRenderMessages2d (messages : RenderMessage2d seq) world =
             let rendererProcess = World.getRendererProcess world
             for message in messages do rendererProcess.EnqueueMessage2d message
+            world
             
         /// Enqueue a layered message for rendering.
         static member enqueueRenderLayeredMessage2d message world =
             (World.getRendererProcess world).EnqueueMessage2d (RenderLayeredMessage2d message)
+            world
 
         /// Enqueue multiple layered rendering messages to the world, bypassing enqueueRenderMessage for speed.
         static member enqueueRenderLayeredMessages2d (messages : RenderLayeredMessage2d seq) world =
             let rendererProcess = World.getRendererProcess world
             for message in messages do rendererProcess.EnqueueMessage2d (RenderLayeredMessage2d message)
+            world
             
         /// Load an audio asset package. Should be used to avoid loading assets at inconvenient times (such as in the
         /// middle of game play!)
@@ -41,21 +45,18 @@ module WorldRender =
         static member hintRenderPackageUse2d packageName world =
             let hintRenderPackageUseMessage = LoadRenderPackageMessage2d packageName
             World.enqueueRenderMessage2d hintRenderPackageUseMessage world
-            world
             
         /// Unload an audio package should be unloaded since its assets will not be used again soon.
         [<FunctionBinding>]
         static member unloadRenderPackage2d packageName world =
             let unloadRenderPackageMessage = UnloadRenderPackageMessage2d packageName
             World.enqueueRenderMessage2d unloadRenderPackageMessage world
-            world
 
         /// Send a message to the renderer to reload its rendering assets.
         [<FunctionBinding>]
         static member reloadRenderAssets2d world =
             let reloadRenderAssetsMessage = ReloadRenderAssetsMessage2d
             World.enqueueRenderMessage2d reloadRenderAssetsMessage world
-            world
 
         /// Enqueue a rendering message to the world.
         static member enqueueRenderMessage3d (message : RenderMessage3d) world =
