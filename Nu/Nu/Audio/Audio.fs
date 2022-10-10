@@ -175,7 +175,7 @@ type [<ReferenceEquality; NoComparison>] SdlAudioPlayer =
         | Left error ->
             Log.info ("Audio package load failed due to unloadable asset graph due to: '" + error)
 
-    static member private tryFindAudioAsset (assetTag : obj AssetTag) audioPlayer =
+    static member private tryGetAudioAsset (assetTag : obj AssetTag) audioPlayer =
         match Dictionary.tryFind assetTag.PackageName audioPlayer.AudioPackages with
         | Some package -> Dictionary.tryFind assetTag.AssetName package.Assets
         | None ->
@@ -187,7 +187,7 @@ type [<ReferenceEquality; NoComparison>] SdlAudioPlayer =
 
     static member private playSong playSongMessage audioPlayer =
         let song = playSongMessage.Song
-        match SdlAudioPlayer.tryFindAudioAsset (AssetTag.generalize song) audioPlayer with
+        match SdlAudioPlayer.tryGetAudioAsset (AssetTag.generalize song) audioPlayer with
         | Some audioAsset ->
             match audioAsset with
             | WavAsset _ ->
@@ -228,7 +228,7 @@ type [<ReferenceEquality; NoComparison>] SdlAudioPlayer =
 
     static member private handlePlaySound playSoundMessage audioPlayer =
         let sound = playSoundMessage.Sound
-        match SdlAudioPlayer.tryFindAudioAsset (AssetTag.generalize sound) audioPlayer with
+        match SdlAudioPlayer.tryGetAudioAsset (AssetTag.generalize sound) audioPlayer with
         | Some audioAsset ->
             match audioAsset with
             | WavAsset wavAsset ->

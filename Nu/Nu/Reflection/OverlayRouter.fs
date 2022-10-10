@@ -16,7 +16,7 @@ module OverlayRouter =
             { Routes : Map<string, string> }
 
     /// Try to find an optional overlay name for a given classification.
-    let tryFindOverlayNameOpt dispatcherName overlayRouter =
+    let tryGetOverlayNameOpt dispatcherName overlayRouter =
         Map.tryFind dispatcherName overlayRouter.Routes
 
     /// Make an OverlayRouter.

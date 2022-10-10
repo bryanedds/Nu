@@ -164,7 +164,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
         | Left error ->
             Log.info ("Render package load failed due to unloadable asset graph due to: '" + error)
 
-    static member tryFindRenderAsset (assetTag : obj AssetTag) renderer =
+    static member tryGetRenderAsset (assetTag : obj AssetTag) renderer =
         if  renderer.RenderPackageCachedOpt :> obj |> notNull &&
             fst renderer.RenderPackageCachedOpt = assetTag.PackageName then
             if  renderer.RenderAssetCachedOpt :> obj |> notNull &&
@@ -322,7 +322,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
         let pivot = transform.Pivot.V2 * Constants.Render.VirtualScalar2
         let rotation = transform.Angles.Z
         let image = AssetTag.generalize image
-        match GlRenderer2d.tryFindRenderAsset image renderer with
+        match GlRenderer2d.tryGetRenderAsset image renderer with
         | ValueSome renderAsset ->
             match renderAsset with
             | TextureAsset (_, textureMetadata, texture) ->
@@ -333,7 +333,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
     /// Render particles.
     static member renderParticles (blend : Blend, image : Image AssetTag, particles : Particle SegmentedArray, renderer) =
         let image = AssetTag.generalize image
-        match GlRenderer2d.tryFindRenderAsset image renderer with
+        match GlRenderer2d.tryGetRenderAsset image renderer with
         | ValueSome renderAsset ->
             match renderAsset with
             | TextureAsset (_, textureMetadata, texture) ->
@@ -380,7 +380,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
         let (allFound, tileSetTextures) =
             tileAssets |>
             Array.map (fun (tileSet, tileSetImage) ->
-                match GlRenderer2d.tryFindRenderAsset (AssetTag.generalize tileSetImage) renderer with
+                match GlRenderer2d.tryGetRenderAsset (AssetTag.generalize tileSetImage) renderer with
                 | ValueSome (TextureAsset (_, tileSetTexture, tileSetTextureMetadata)) -> Some (tileSet, tileSetImage, tileSetTexture, tileSetTextureMetadata)
                 | ValueSome _ -> None
                 | ValueNone -> None) |>
@@ -459,7 +459,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
             let viewport = Constants.Render.Viewport
             let viewProjection = viewport.ViewProjection2d (absolute, eyePosition, eyeSize)
             let font = AssetTag.generalize font
-            match GlRenderer2d.tryFindRenderAsset font renderer with
+            match GlRenderer2d.tryGetRenderAsset font renderer with
             | ValueSome renderAsset ->
                 match renderAsset with
                 | FontAsset (_, _, font) ->

@@ -91,12 +91,12 @@ module Gaia =
                         else Seq.empty }
         Array.ofSeq result
 
-    let private tryFindHierarchyTreeNode name (form : GaiaForm) (world : World) =
+    let private tryGetHierarchyTreeNode name (form : GaiaForm) (world : World) =
         let nodes = collectHierarchyTreeNodes form world
         Array.tryFind (fun (node : TreeNode) -> node.Name = name) nodes
 
     let private containsHierarchyTreeNode name (form : GaiaForm) (world : World) =
-        Option.isSome (tryFindHierarchyTreeNode name form world)
+        Option.isSome (tryGetHierarchyTreeNode name form world)
 
     let private refreshHierarchyTreeView (_ : GaiaForm) (_ : World) =
         Globals.EditorState.RefreshHierarchyViewRequested <- true
