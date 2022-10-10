@@ -32,7 +32,8 @@ module Field =
 
     type [<ReferenceEquality; NoComparison>] Field =
         private
-            { FieldType_ : FieldType
+            { FieldTime_ : int64
+              FieldType_ : FieldType
               FieldState_ : FieldState
               SaveSlot_ : SaveSlot
               OmniSeedState_ : OmniSeedState
@@ -55,6 +56,7 @@ module Field =
               FieldSongTimeOpt_ : int64 option }
 
         (* Local Properties *)
+        member this.FieldTime = this.FieldTime_
         member this.FieldType = this.FieldType_
         member this.FieldState = this.FieldState_
         member this.OmniSeedState = this.OmniSeedState_
@@ -222,6 +224,9 @@ module Field =
     let updateReference field =
         { field with FieldType_ = field.FieldType_ }
 
+    let advanceFieldTime field =
+        { field with FieldTime_ = inc field.FieldTime_ }
+
     let updateFieldSongTimeOpt updater field =
         { field with FieldSongTimeOpt_ = updater field.FieldSongTimeOpt_ }
 
@@ -332,6 +337,7 @@ module Field =
 
     let toSymbolizable field =
         { field with
+            FieldTime_ = 0L
             Avatar_ = Avatar.toSymbolizable field.Avatar
             Props_ = Map.empty
             FieldSongTimeOpt_ = None }
@@ -347,7 +353,8 @@ module Field =
             | _ -> (advents, inventory)
         let omniSeedState = OmniSeedState.makeFromSeedState randSeedState
         let props = makeProps fieldType omniSeedState advents avatar.BottomOffset world
-        { FieldType_ = fieldType
+        { FieldTime_ = 0L
+          FieldType_ = fieldType
           FieldState_ = Playing
           SaveSlot_ = saveSlot
           OmniSeedState_ = omniSeedState
@@ -370,7 +377,8 @@ module Field =
           FieldSongTimeOpt_ = None }
 
     let empty =
-        { FieldType_ = EmptyField
+        { FieldTime_ = 0L
+          FieldType_ = EmptyField
           FieldState_ = Quitting
           SaveSlot_ = Slot1
           OmniSeedState_ = OmniSeedState.make ()
