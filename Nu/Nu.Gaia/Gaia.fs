@@ -442,7 +442,7 @@ module Gaia =
 
     let private handlePropertyPickAsset (form : GaiaForm) world =
         use assetPicker = new AssetPicker ()
-        let assets = World.getDiscoveredAssets ()
+        let assets = Metadata.getDiscoveredAssets ()
         for package in assets do
             let node = assetPicker.assetTreeView.Nodes.Add package.Key
             for assetName in package.Value do

@@ -242,50 +242,6 @@ module WorldModule =
             world.WorldExtension.Dispatchers.Facets
 
     type World with // Metadata
-    
-        /// Regerate metadata.
-        static member regenerateMetadata () =
-            AmbientState.regenerateMetadata ()
-
-        /// Try to get the texture metadata of the given asset.
-        static member tryGetTextureSize assetTag =
-            Metadata.tryGetTextureSize assetTag
-
-        /// Forcibly get the texture size metadata of the given asset (throwing on failure).
-        static member getTextureSize assetTag =
-            Metadata.getTextureSize assetTag
-
-        /// Try to get the texture size metadata of the given asset.
-        static member tryGetTextureSizeF assetTag =
-            Metadata.tryGetTextureSizeF assetTag
-
-        /// Forcibly get the texture size metadata of the given asset (throwing on failure).
-        static member getTextureSizeF assetTag =
-            Metadata.getTextureSizeF assetTag
-
-        /// Try to get the tile map metadata of the given asset.
-        static member tryGetTileMapMetadata assetTag =
-            Metadata.tryGetTileMapMetadata assetTag
-
-        /// Forcibly get the tile map metadata of the given asset (throwing on failure).
-        static member getTileMapMetadata assetTag =
-            Metadata.getTileMapMetadata assetTag
-
-        /// Try to get the static model metadata of the given asset.
-        static member tryGetStaticModelMetadata assetTag =
-            Metadata.tryGetStaticModelMetadata assetTag
-
-        /// Forcibly get the static model metadata of the given asset (throwing on failure).
-        static member getStaticModelMetadata assetTag =
-            Metadata.getStaticModelMetadata assetTag
-
-        /// Get a copy of the metadata packages.
-        static member getMetadataPackages () =
-            Metadata.getMetadataPackages ()
-
-        /// Get a map of all metadata's discovered assets.
-        static member getDiscoveredAssets () =
-            Metadata.getDiscoveredAssets ()
 
         /// Try to get the texture metadata of the given asset via script.
         [<FunctionBinding "tryGetTextureSize">]
