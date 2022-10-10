@@ -55,7 +55,7 @@ module TmxExtensions =
 [<RequireQualifiedAccess>]
 module Metadata =
 
-    let mutable private MetadataMap :
+    let mutable private MetadataPackages :
         UMap<string, UMap<string, AssetMetadata>> = UMap.makeEmpty StringComparer.Ordinal Imperative
 
     let private tryGenerateTextureMetadata asset =
@@ -116,11 +116,11 @@ module Metadata =
         | Some metadata -> Some (asset.AssetTag.AssetName, metadata)
         | None -> None
 
-    let private tryGenerateMetadataSubmap config packageName assetGraph =
+    let private tryGenerateMetadataPackage config packageName assetGraph =
         match AssetGraph.tryCollectAssetsFromPackage None packageName assetGraph with
         | Right assets ->
-            let submap = assets |> List.map tryGenerateAssetMetadata |> List.definitize |> UMap.makeFromSeq HashIdentity.Structural config
-            (packageName, submap)
+            let package = assets |> List.map tryGenerateAssetMetadata |> List.definitize |> UMap.makeFromSeq HashIdentity.Structural config
+            (packageName, package)
         | Left error ->
             Log.info ("Could not load asset metadata for package '" + packageName + "' due to: " + error)
             (packageName, UMap.makeEmpty HashIdentity.Structural config)
@@ -130,31 +130,31 @@ module Metadata =
         let config = if imperative then Imperative else Functional
         let packageNames = AssetGraph.getPackageNames assetGraph
         for packageName in packageNames do
-            let (packageName, submap) = tryGenerateMetadataSubmap config packageName assetGraph
-            MetadataMap <- UMap.add packageName submap MetadataMap
+            let (packageName, package) = tryGenerateMetadataPackage config packageName assetGraph
+            MetadataPackages <- UMap.add packageName package MetadataPackages
 
     /// Regenerate metadata.
     let regenerateMetadata () =
-        let packageNames = MetadataMap |> Seq.map fst
-        let config = UMap.getConfig MetadataMap
-        MetadataMap <-
+        let packageNames = MetadataPackages |> Seq.map fst
+        let config = UMap.getConfig MetadataPackages
+        MetadataPackages <-
             Seq.fold
-                (fun metadataMap packageName ->
+                (fun metadataPackages packageName ->
                     match AssetGraph.tryMakeFromFile Assets.Global.AssetGraphFilePath with
                     | Right assetGraph ->
-                        let (packageName, submap) = tryGenerateMetadataSubmap config packageName assetGraph
-                        match UMap.tryFind packageName metadataMap with
-                        | Some submapExisting -> UMap.add packageName (UMap.addMany (seq submap) submapExisting) metadataMap
-                        | None -> UMap.add packageName submap metadataMap
+                        let (packageName, package) = tryGenerateMetadataPackage config packageName assetGraph
+                        match UMap.tryFind packageName metadataPackages with
+                        | Some packageExisting -> UMap.add packageName (UMap.addMany (seq package) packageExisting) metadataPackages
+                        | None -> UMap.add packageName package metadataPackages
                     | Left error ->
-                        Log.info ("Metadata submap regeneration failed due to: '" + error)
-                        metadataMap)
-                MetadataMap
+                        Log.info ("Metadata package regeneration failed due to: '" + error)
+                        metadataPackages)
+                MetadataPackages
                 packageNames
 
     /// Try to get the metadata of the given asset.
     let tryGetMetadata (assetTag : obj AssetTag) =
-        match UMap.tryFind assetTag.PackageName MetadataMap with
+        match UMap.tryFind assetTag.PackageName MetadataPackages with
         | Some package ->
             match UMap.tryFind assetTag.AssetName package with
             | Some _ as asset -> asset
@@ -211,24 +211,24 @@ module Metadata =
     let getStaticModelMetadata assetTag =
         Option.get (tryGetStaticModelMetadata assetTag)
 
-    /// Get a copy of the metadata map.
-    let getMetadataMap () =
+    /// Get a copy of the metadata packages.
+    let getMetadataPackages () =
         let map =
-            MetadataMap |>
+            MetadataPackages |>
             UMap.toSeq |>
             Seq.map (fun (packageName, map) -> (packageName, map |> UMap.toSeq |> Map.ofSeq)) |>
             Map.ofSeq
         map
 
-    /// Attempt to get a copy of a metadata submap with the given package name.
-    let tryGetMetadataSubmap packageName =
-        match MetadataMap.TryGetValue packageName with
-        | (true, submap) -> Some (submap |> UMap.toSeq |> Map.ofSeq)
+    /// Attempt to get a copy of a metadata package with the given package name.
+    let tryGetMetadataPackage packageName =
+        match MetadataPackages.TryGetValue packageName with
+        | (true, package) -> Some (package |> UMap.toSeq |> Map.ofSeq)
         | (false, _) -> None
 
-    /// Get a map of all the discovered assets.
-    let getAssetMap metadata =
-        let assetMap =
-            getMetadataMap metadata |>
+    /// Get a map of all metadata's discovered assets.
+    let getDiscoveredAssets metadata =
+        let sources =
+            getMetadataPackages metadata |>
             Map.map (fun _ metadata -> Map.toKeyList metadata)
-        assetMap
+        sources
