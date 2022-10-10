@@ -1,7 +1,7 @@
 ﻿// Nu Game Engine.
 // Copyright (C) Bryan Edds, 2013-2022.
 
-#I __SOURCE_DIRECTORY__
+#I "C:/Development/Nu/Nu/Nu"
 #load "Interactive.fsx"
 open System
 open System.IO
@@ -337,7 +337,7 @@ let generateBindingSyntax bindings =
     let bindingLists =
         bindings |>
         Array.map (fun binding -> binding.FunctionBindingName) |>
-        (fun arr -> Array.splitInto ((Array.length arr) / 4) arr) |>
+        (fun arr -> Array.splitInto (Array.length arr / 4) arr) |>
         Array.map (fun bindingList -> "        \"" + String.Join (" ", bindingList)) |>
         (fun bindingLists -> String.Join (" \" +\n", bindingLists) + "\"\n")
 
@@ -399,8 +399,9 @@ let types =
 
 let bindings =
     types |>
-    Array.map (fun (ty : Type) -> ty.GetMethods ()) |>
+    Array.map (fun (ty : Type) -> ty.GetMethods (BindingFlags.Instance ||| BindingFlags.Static ||| BindingFlags.Public ||| BindingFlags.NonPublic)) |>
     Array.concat |>
+    Array.filter (fun mi -> mi.IsAssembly || mi.IsPublic) |>
     Array.filter (fun mi -> notNull (mi.GetCustomAttribute<FunctionBindingAttribute> ())) |>
     Array.map tryGenerateBinding |>
     Array.definitize // TODO: error output

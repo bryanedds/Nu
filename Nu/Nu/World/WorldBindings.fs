@@ -66,7 +66,7 @@ module WorldBindings =
                 match ScriptingSystem.tryExport typeof<Relation<Object>> relation world with
                 | Some value -> value :?> Relation<Object>
                 | None -> failwith "Invalid argument type for 'relation'; expecting a value convertable to Relation`1."
-            let result = World.resolveGeneralized relation world
+            let result = World.resolveViaScript relation world
             let value = result
             let value = ScriptingSystem.tryImport typeof<Address<Object>> value world |> Option.get
             struct (value, world)
@@ -87,7 +87,7 @@ module WorldBindings =
                     struct (address, world)
                 | struct (Scripting.Violation (_, error, _), _) -> failwith error
                 | struct (_, _) -> failwith "Address must be either a String or Keyword."
-            let result = World.relateGeneralized address world
+            let result = World.relateViaScript address world
             let value = result
             let value = ScriptingSystem.tryImport typeof<Relation<Object>> value world |> Option.get
             struct (value, world)

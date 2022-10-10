@@ -286,28 +286,28 @@ module WorldModule =
         /// Get a map of all discovered assets.
         static member getAssetMap () =
             Metadata.getAssetMap ()
-    
+
         /// Try to get the texture metadata of the given asset via script.
         [<FunctionBinding "tryGetTextureSize">]
-        static member tryGetTextureSizeViaScript assetTag (world : World) =
+        static member internal tryGetTextureSizeViaScript assetTag (world : World) =
             ignore world
             Metadata.tryGetTextureSize assetTag
-    
+
         /// Forcibly get the texture size metadata of the given asset via script (throwing on failure).
         [<FunctionBinding "getTextureSize">]
-        static member getTextureSizeViaScript assetTag (world : World) =
+        static member internal getTextureSizeViaScript assetTag (world : World) =
             ignore world
             Metadata.getTextureSize assetTag
-    
+
         /// Try to get the texture size metadata of the given asset via script.
         [<FunctionBinding "tryGetTextureSizeF">]
-        static member tryGetTextureSizeFViaScript assetTag (world : World) =
+        static member internal tryGetTextureSizeFViaScript assetTag (world : World) =
             ignore world
             Metadata.tryGetTextureSizeF assetTag
-    
+
         /// Forcibly get the texture size metadata of the given asset via script (throwing on failure).
         [<FunctionBinding "getTextureSizeF">]
-        static member getTextureSizeFViaScript assetTag (world : World) =
+        static member internal getTextureSizeFViaScript assetTag (world : World) =
             ignore world
             Metadata.getTextureSizeF assetTag
 
