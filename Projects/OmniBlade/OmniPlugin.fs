@@ -12,8 +12,8 @@ type OmniPlugin () =
 
     override this.Modes =
         Map.ofSeq
-            ["Title", fun world -> Simulants.Game.SetModel (Gui Title) world
-             "Credits", fun world -> Simulants.Game.SetModel (Gui Credits) world
-             "Pick", fun world -> Simulants.Game.SetModel (Gui Pick) world
-             "Field", fun world -> Simulants.Game.SetModel (Field (Field.debug world)) world
-             "Battle", fun world -> Simulants.Game.SetModel (Field (Field.debugBattle world)) world]
+            [("Title", fun world -> Simulants.Game.SetModel (Gui Title) world)
+             ("Credits", fun world -> Simulants.Game.SetModel (Gui Credits) world)
+             ("Pick", fun world -> Simulants.Game.SetModel (Gui Pick) world)
+             ("Field", fun world -> Simulants.Game.SetModel (Field (Field.debug world)) world)
+             ("Battle", fun world -> Simulants.Game.SetModel (Field (Field.debugBattle world)) world)]

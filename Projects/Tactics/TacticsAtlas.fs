@@ -44,6 +44,11 @@ module Atlas =
         { AtlasState_ = Playing; SaveSlot_ = saveSlot; FieldOpt_ = None }
 
     let debug (world : World) =
-        { AtlasState_ = Playing; SaveSlot_ = Slot1; FieldOpt_ = Some (Field.make world.UpdateTime FieldScript.empty (asset "Field" "Field")) }
+        let occupants =
+            [(v2i 10 10, ChestIndex 0, Chest ())
+             (v2i 12 10, ChestIndex 1, Chest ())
+             (v2i 10 12, ChestIndex 2, Chest ())
+             (v2i 12 12, ChestIndex 3, Chest ())]
+        { AtlasState_ = Playing; SaveSlot_ = Slot1; FieldOpt_ = Some (Field.make world.UpdateTime FieldScript.empty occupants (asset "Field" "Field")) }
 
 type Atlas = Atlas.Atlas

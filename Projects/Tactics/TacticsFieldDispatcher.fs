@@ -20,7 +20,7 @@ module FieldDispatcher =
         member this.Field = this.ModelGeneric<Field> ()
 
     type FieldDispatcher () =
-        inherit ScreenDispatcher<Field, FieldMessage, FieldCommand> (Field.make 0L FieldToBattle (asset "Field" "Field"))
+        inherit ScreenDispatcher<Field, FieldMessage, FieldCommand> (Field.make 0L FieldToBattle [] (asset "Field" "Field"))
 
         static let createFieldHighlightSurfaceDescriptor (vertices : Vector3 array) =
             let bounds = Box3.Enclose vertices
@@ -97,12 +97,14 @@ module FieldDispatcher =
                     else world
                 just world
 
-        override this.Content (_, _) =
+        override this.Content (field, _) =
             [Content.group Simulants.Field.Scene.Group.Name []
                 [Content.skyBox Gen.name
                     [Entity.CubeMap == Assets.Default.SkyBoxMap]
                  Content.entity<CharacterDispatcher> Gen.name
-                    [Entity.Position == v3 0.0f 2.5f 0.0f]]]
+                    [Entity.Position == v3 0.0f 2.5f 0.0f]
+                 Content.entities (field --|> fun field world -> Field.getOccupants field world) id $ fun index occupant ->
+                    Content.entity<CharacterDispatcher> (string index) [Entity.Position <== occupant --> fun (vertices, _) -> vertices.Center]]]
 
         override this.View (field, _, world) =
             let fieldMetadata = Field.getFieldMetadata field world
@@ -112,7 +114,7 @@ module FieldDispatcher =
             let fieldCursorView =
                 match Field.tryGetFieldTileDataAtMouse field world with
                 | Some (_, _, vertices) ->
-                    let highlightDescriptor = createFieldHighlightSurfaceDescriptor vertices
+                    let highlightDescriptor = createFieldHighlightSurfaceDescriptor vertices.FieldTileVertices
                     View.Render3d (RenderUserDefinedStaticModel (false, m4Identity, ValueNone, Unchecked.defaultof<_>, ForwardRenderType (-1.0f, 0.0f), [|highlightDescriptor|], highlightDescriptor.Bounds))
                 | None -> View.empty
             View.Views [|fieldUntraversableView; fieldTraversableView; fieldCursorView|]

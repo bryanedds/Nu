@@ -704,10 +704,10 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             for i in 0 .. dec parameters.Length do
                 let struct (model, texCoordsOffset, renderMaterial) = parameters.[i]
                 model.ToArray (renderer.RenderModelsFields, i * 16)
-                renderer.RenderTexCoordsOffsetsFields.[i * 2] <- texCoordsOffset.Position.X
-                renderer.RenderTexCoordsOffsetsFields.[i * 2 + 1] <- texCoordsOffset.Position.Y
-                renderer.RenderTexCoordsOffsetsFields.[i * 2 + 2] <- texCoordsOffset.Position.X + texCoordsOffset.Size.X
-                renderer.RenderTexCoordsOffsetsFields.[i * 2 + 3] <- texCoordsOffset.Position.Y + texCoordsOffset.Size.Y
+                renderer.RenderTexCoordsOffsetsFields.[i * 4] <- texCoordsOffset.Position.X
+                renderer.RenderTexCoordsOffsetsFields.[i * 4 + 1] <- texCoordsOffset.Position.Y
+                renderer.RenderTexCoordsOffsetsFields.[i * 4 + 2] <- texCoordsOffset.Position.X + texCoordsOffset.Size.X
+                renderer.RenderTexCoordsOffsetsFields.[i * 4 + 3] <- texCoordsOffset.Position.Y + texCoordsOffset.Size.Y
                 let (albedo, metalness, roughness, ambientOcclusion) =
                     ((match renderMaterial.AlbedoOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterial.Albedo),
                      (match renderMaterial.MetalnessOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterial.Metalness),

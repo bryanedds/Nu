@@ -12,6 +12,7 @@ type TacticsPlugin () =
 
     override this.Modes =
         Map.ofSeq
-            ["Title", fun world -> Simulants.Game.SetModel (Gui Title) world
-             "Credits", fun world -> Simulants.Game.SetModel (Gui Credits) world
-             "Pick", fun world -> Simulants.Game.SetModel (Gui Pick) world]
+            [("Title", fun world -> Simulants.Game.SetModel (Gui Title) world)
+             ("Credits", fun world -> Simulants.Game.SetModel (Gui Credits) world)
+             ("Pick", fun world -> Simulants.Game.SetModel (Gui Pick) world)
+             ("Field", fun world -> Simulants.Game.SetModel (Atlas (Atlas.debug world)) world)]
