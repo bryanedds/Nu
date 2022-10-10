@@ -470,7 +470,7 @@ module Battle =
             Array.toList
         enemies
 
-    let makeFromParty offsetCharacters inventory (prizePool : PrizePool) (party : Party) battleSpeed battleData time =
+    let makeFromParty offsetCharacters inventory (prizePool : PrizePool) (party : Party) battleSpeed battleData world =
         let enemies = randomizeEnemies party.Length offsetCharacters (battleSpeed = WaitSpeed) battleData.BattleEnemies
         let characters = party @ enemies |> Map.ofListBy (fun (character : Character) -> (character.CharacterIndex, character))
         let prizePool = { prizePool with Gold = List.fold (fun gold (enemy : Character) -> gold + enemy.GoldPrize) prizePool.Gold enemies }
@@ -480,7 +480,7 @@ module Battle =
         let tileIndexOffset = battleData.BattleTileIndexOffset
         let tileIndexOffsetRange = battleData.BattleTileIndexOffsetRange
         let battle =
-            { BattleState_ = BattleReady time
+            { BattleState_ = BattleReady (World.getUpdateTime world)
               Characters_ = characters
               Inventory_ = inventory
               PrizePool_ = prizePool
@@ -494,7 +494,7 @@ module Battle =
               DialogOpt_ = None }
         battle
 
-    let makeFromTeam inventory prizePool (team : Map<int, Teammate>) battleSpeed battleData time =
+    let makeFromTeam inventory prizePool (team : Map<int, Teammate>) battleSpeed battleData world =
         let party = team |> Map.toList |> List.tryTake 3
         let offsetCharacters = List.hasAtMost 1 party
         let allyPositions =
@@ -521,7 +521,7 @@ module Battle =
                         character
                     | None -> failwith ("Could not find CharacterData for '" + scstring teammate.CharacterType + "'."))
                 party
-        let battle = makeFromParty offsetCharacters inventory prizePool party battleSpeed battleData time
+        let battle = makeFromParty offsetCharacters inventory prizePool party battleSpeed battleData world
         battle
 
     let empty =
@@ -541,7 +541,7 @@ module Battle =
               DialogOpt_ = None }
         | None -> failwith "Expected data for DebugBattle to be available."
 
-    let debug =
+    let debug world =
         match Map.tryFind DebugBattle Data.Value.Battles with
         | Some battle ->
             let level = 50
@@ -549,7 +549,7 @@ module Battle =
                 Map.singleton 0 (Teammate.make level 0 Jinn) |>
                 Map.add 1 (Teammate.make level 1 Peric) |>
                 Map.add 2 (Teammate.make level 2 Mael)
-            makeFromTeam Inventory.initial PrizePool.empty team SwiftSpeed battle 0L
+            makeFromTeam Inventory.initial PrizePool.empty team SwiftSpeed battle world
         | None -> empty
 
 type Battle = Battle.Battle

@@ -1120,7 +1120,7 @@ module BattleDispatcher =
                 displayEffect delay (v3 48.0f 48.0f 0.0f) (Position (v3 0.0f 0.0f 0.0f)) (Effects.makeConjureIfritEffect ()) screen world |> just
 
             | PlaySound (delay, volume, sound) ->
-                let world = World.schedule (World.playSound volume sound) (World.getUpdateTime world + delay) screen world
+                let world = World.delay (World.playSound volume sound) delay screen world
                 just world
 
             | PlaySong (fadeIn, fadeOut, volume, start, assetTag) ->
