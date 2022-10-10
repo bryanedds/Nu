@@ -353,8 +353,7 @@ module WorldModule =
         static member internal updateKeyValueStore updater world =
             World.updateAmbientState (AmbientState.updateKeyValueStore updater) world
 
-        /// Attempt to look up a value from the world's key value store without allocating.
-        static member tryGetKeyedValueFast<'a> (key, world, value : 'a outref) =
+        static member internal tryGetKeyedValueFast<'a> (key, world, value : 'a outref) =
             let ambientState = World.getAmbientState world
             let kvs = AmbientState.getKeyValueStore ambientState
             let mutable valueObj = Unchecked.defaultof<obj>
@@ -485,14 +484,14 @@ module WorldModule =
             World.getSymbolicsBy (Symbolics.unloadSymbolPackage packageName) world
 
         /// Try to find a symbol with the given asset tag.
-        static member tryFindSymbol assetTag metadata world =
+        static member tryGetSymbol assetTag metadata world =
             let symbolics = World.getSymbolics world
-            Symbolics.tryFindSymbol assetTag metadata symbolics
+            Symbolics.tryGetSymbol assetTag metadata symbolics
 
         /// Try to find symbols with the given asset tags.
-        static member tryFindSymbols implicitDelimiters assetTags world =
+        static member tryGetSymbols implicitDelimiters assetTags world =
             let symbolics = World.getSymbolics world
-            Symbolics.tryFindSymbols implicitDelimiters assetTags symbolics
+            Symbolics.tryGetSymbols implicitDelimiters assetTags symbolics
 
         /// Reload all the symbols in symbolics.
         [<FunctionBinding>]
@@ -524,8 +523,8 @@ module WorldModule =
         static member internal setOverlayRouter router world =
             World.updateAmbientState (AmbientState.setOverlayRouter router) world
 
-        static member internal tryFindRoutedOverlayNameOpt dispatcherName state =
-            World.getOverlayRouterBy (OverlayRouter.tryFindOverlayNameOpt dispatcherName) state
+        static member internal tryGetRoutedOverlayNameOpt dispatcherName state =
+            World.getOverlayRouterBy (OverlayRouter.tryGetOverlayNameOpt dispatcherName) state
 
     type World with // Quadtree
 

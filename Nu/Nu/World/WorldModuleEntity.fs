@@ -1662,7 +1662,7 @@ module WorldModuleEntity =
             else failwith ("Cannot detach entity property '" + propertyName + "'; entity '" + scstring entity.Names + "' is not found.")
 
         static member internal getEntityDefaultOverlayName dispatcherName world =
-            match World.tryFindRoutedOverlayNameOpt dispatcherName world with
+            match World.tryGetRoutedOverlayNameOpt dispatcherName world with
             | Some _ as opt -> opt
             | None -> Some dispatcherName
 
@@ -1954,8 +1954,8 @@ module WorldModuleEntity =
             let overlayNameOpt =
                 match overlayDescriptor with
                 | NoOverlay -> None
-                | RoutedOverlay -> World.tryFindRoutedOverlayNameOpt dispatcherName world
-                | DefaultOverlay -> Some (Option.getOrDefault overlayNameDefault (World.tryFindRoutedOverlayNameOpt dispatcherName world))
+                | RoutedOverlay -> World.tryGetRoutedOverlayNameOpt dispatcherName world
+                | DefaultOverlay -> Some (Option.getOrDefault overlayNameDefault (World.tryGetRoutedOverlayNameOpt dispatcherName world))
                 | ExplicitOverlay overlayName -> Some overlayName
 
             // make the bare entity state (with name as id if none is provided)

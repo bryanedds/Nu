@@ -83,14 +83,14 @@ module Symbolics =
         symbolics.SymbolPackages.Remove packageName |> ignore<bool>
 
     /// Try to find a symbol with the given asset tag.
-    let tryFindSymbol assetTag metadata symbolics =
+    let tryGetSymbol assetTag metadata symbolics =
         tryLoadSymbol assetTag metadata symbolics |> Option.map snd
         
     /// Try to find the symbols with the given asset tags.
-    let tryFindSymbols metadata assetTags symbolics =
+    let tryGetSymbols metadata assetTags symbolics =
         List.foldBack
             (fun assetTag symbols ->
-                match tryFindSymbol metadata assetTag symbolics with
+                match tryGetSymbol metadata assetTag symbolics with
                 | Some symbol -> symbol :: symbols
                 | None -> symbols)
             assetTags

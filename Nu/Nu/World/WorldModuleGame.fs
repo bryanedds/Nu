@@ -430,7 +430,7 @@ module WorldModuleGame =
 
         /// Fetch an asset with the given tag and convert it to a value of type 'a.
         static member assetTagToValueOpt<'a> assetTag metadata world =
-            match World.tryFindSymbol assetTag metadata world with
+            match World.tryGetSymbol assetTag metadata world with
             | Some symbol ->
                 try let script = symbolToValue<'a> symbol in Some script
                 with exn -> Log.debug ("Failed to convert symbol '" + scstring symbol + "' to value due to: " + scstring exn); None
