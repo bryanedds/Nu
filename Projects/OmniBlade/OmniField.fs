@@ -408,7 +408,7 @@ module Field =
 
     let debugBattle world =
         let field = debug world
-        let battle = Battle.debug
+        let battle = Battle.debug world
         updateBattleOpt (constant (Some battle)) field
 
     let save field =

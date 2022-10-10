@@ -725,7 +725,7 @@ module FieldDispatcher =
                             let playTime = Option.getOrDefault clockTime field.FieldSongTimeOpt
                             let startTime = clockTime - playTime
                             let prizePool = { Consequents = Set.empty; Items = []; Gold = 0; Exp = 0 }
-                            let battle = Battle.makeFromTeam field.Inventory prizePool field.Team field.Options.BattleSpeed battleData (World.getUpdateTime world)
+                            let battle = Battle.makeFromTeam field.Inventory prizePool field.Team field.Options.BattleSpeed battleData world
                             let field = Field.clearSpirits field
                             let field = Field.updateFieldSongTimeOpt (constant (Some startTime)) field
                             let field = Field.updateBattleOpt (constant (Some battle)) field
@@ -976,12 +976,11 @@ module FieldDispatcher =
             | TryBattle (battleType, consequents) ->
                 match Map.tryFind battleType Data.Value.Battles with
                 | Some battleData ->
-                    let time = field.FieldTime
                     let clockTime = let t = World.getClockTime world in t.ToUnixTimeMilliseconds ()
                     let playTime = Option.getOrDefault clockTime field.FieldSongTimeOpt
                     let startTime = clockTime - playTime
                     let prizePool = { Consequents = consequents; Items = []; Gold = 0; Exp = 0 }
-                    let battle = Battle.makeFromTeam field.Inventory prizePool (Field.getParty field) field.Options.BattleSpeed battleData time
+                    let battle = Battle.makeFromTeam field.Inventory prizePool (Field.getParty field) field.Options.BattleSpeed battleData world
                     let field = Field.clearSpirits field
                     let field = Field.updateFieldSongTimeOpt (constant (Some startTime)) field
                     let field = Field.updateBattleOpt (constant (Some battle)) field
@@ -1108,7 +1107,7 @@ module FieldDispatcher =
                 | (false, _) -> just world
 
             | PlaySound (delay, volume, sound) ->
-                let world = World.schedule (World.playSound volume sound) (World.getUpdateTime world + delay) screen world
+                let world = World.delay (World.playSound volume sound) delay screen world
                 just world
 
             | PlaySong (fadeIn, fadeOut, volume, start, assetTag) ->
