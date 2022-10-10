@@ -65,8 +65,7 @@ module FieldDispatcher =
         let rec run
             (cue : Cue)
             (definitions : CueDefinitions)
-            (field : Field)
-            (world : World) :
+            (field : Field) :
             Cue * CueDefinitions * (Signal<FieldMessage, FieldCommand> list * Field) =
 
             match cue with
@@ -129,14 +128,14 @@ module FieldDispatcher =
                     let field = Field.updateAdvents (Set.add advent) field
                     let field = Field.updateInventory (Inventory.updateGold (fun gold -> gold - fee)) field
                     (Cue.Nil, definitions, withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.PurchaseSound)) field)
-                else run (Parallel [Dialog ("You don't have enough...", false); Cue.PlaySound (Constants.Audio.SoundVolumeDefault, Assets.Gui.MistakeSound)]) definitions field world
+                else run (Parallel [Dialog ("You don't have enough...", false); Cue.PlaySound (Constants.Audio.SoundVolumeDefault, Assets.Gui.MistakeSound)]) definitions field
 
             | Unseal (fee, advent) ->
                 if field.Inventory.Gold >= fee then
                     let field = Field.updateInventory (Inventory.updateGold (fun gold -> gold - fee)) field
                     let field = Field.updateAdvents (Set.remove advent) field
                     (Cue.Nil, definitions, withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.SealedSound)) field) // TODO: P1: rename sound to Unsealed.
-                else run (Parallel [Dialog ("You don't have enough...", false); Cue.PlaySound (Constants.Audio.SoundVolumeDefault, Assets.Gui.MistakeSound)]) definitions field world
+                else run (Parallel [Dialog ("You don't have enough...", false); Cue.PlaySound (Constants.Audio.SoundVolumeDefault, Assets.Gui.MistakeSound)]) definitions field
 
             | AddItem itemType ->
                 (Cue.Nil, definitions, just (Field.updateInventory (Inventory.tryAddItem itemType >> snd) field))
@@ -154,18 +153,18 @@ module FieldDispatcher =
                 (Cue.Nil, definitions, just (Field.updateAdvents (Set.remove remove >> Set.add add) field))
 
             | Wait time ->
-                (WaitState (World.getUpdateTime world + time), definitions, just field)
+                (WaitState (field.FieldTime + time), definitions, just field)
 
             | WaitState time ->
-                if World.getUpdateTime world < time
+                if field.FieldTime < time
                 then (cue, definitions, just field)
                 else (Cue.Nil, definitions, just field)
 
             | Fade (target, length, fadeIn) ->
-                (FadeState (World.getUpdateTime world, target, length, fadeIn), definitions, just field)
+                (FadeState (field.FieldTime, target, length, fadeIn), definitions, just field)
 
             | FadeState (startTime, target, length, fadeIn) ->
-                let time = World.getUpdateTime world
+                let time = field.FieldTime
                 let localTime = time - startTime
                 let progress = single localTime / single length
                 let progress = if fadeIn then progress else 1.0f - progress
@@ -212,10 +211,10 @@ module FieldDispatcher =
             | Animate (target, characterAnimationType, wait) ->
                 match target with
                 | AvatarTarget ->
-                    let field = Field.updateAvatar (Avatar.animate (World.getUpdateTime world) characterAnimationType) field
+                    let field = Field.updateAvatar (Avatar.animate field.FieldTime characterAnimationType) field
                     match wait with
                     | Timed 0L | NoWait -> (Cue.Nil, definitions, just field)
-                    | CueWait.Wait | Timed _ -> (AnimateState (World.getUpdateTime world, wait), definitions, just field)
+                    | CueWait.Wait | Timed _ -> (AnimateState (field.FieldTime, wait), definitions, just field)
                 | CharacterTarget characterType ->
                     let propIdOpt =
                         Field.tryGetPropIdByData
@@ -229,7 +228,7 @@ module FieldDispatcher =
                             Field.updatePropState
                                 (function
                                  | CharacterState (color, animationState) ->
-                                    let animationState = CharacterAnimationState.setCharacterAnimationType (Some (World.getUpdateTime world)) characterAnimationType animationState
+                                    let animationState = CharacterAnimationState.setCharacterAnimationType (Some field.FieldTime) characterAnimationType animationState
                                     CharacterState (color, animationState)
                                  | propState -> propState)
                                 propId
@@ -241,7 +240,7 @@ module FieldDispatcher =
                     (Cue.Nil, definitions, just field)
 
             | AnimateState (startTime, wait) ->
-                let time = World.getUpdateTime world
+                let time = field.FieldTime
                 match wait with
                 | CueWait.Wait ->
                     if Avatar.getAnimationFinished time field.Avatar
@@ -258,7 +257,7 @@ module FieldDispatcher =
             | Move (target, destination, moveType) ->
                 match target with
                 | AvatarTarget ->
-                    let cue = MoveState (World.getUpdateTime world, target, field.Avatar.Bottom, destination, moveType)
+                    let cue = MoveState (field.FieldTime, target, field.Avatar.Bottom, destination, moveType)
                     (cue, definitions, just field)
                 | CharacterTarget characterType ->
                     let propIdOpt =
@@ -270,7 +269,7 @@ module FieldDispatcher =
                     match propIdOpt with
                     | Some propId ->
                         let prop = field.Props.[propId]
-                        let cue = MoveState (World.getUpdateTime world, target, prop.Perimeter.Bottom, destination, moveType)
+                        let cue = MoveState (field.FieldTime, target, prop.Perimeter.Bottom, destination, moveType)
                         (cue, definitions, just field)
                     | None -> (Cue.Nil, definitions, just field)
                 | NpcTarget _ | ShopkeepTarget _ | CharacterIndexTarget _ | SpriteTarget _ ->
@@ -279,7 +278,7 @@ module FieldDispatcher =
             | MoveState (startTime, target, origin, translation, moveType) ->
                 match target with
                 | AvatarTarget ->
-                    let time = World.getUpdateTime world
+                    let time = field.FieldTime
                     let localTime = time - startTime
                     let (step, stepCount) = MoveType.computeStepAndStepCount translation moveType
                     let totalTime = int64 (dec stepCount)
@@ -299,7 +298,7 @@ module FieldDispatcher =
                     match propIdOpt with
                     | Some propId ->
                         let prop = field.Props.[propId]
-                        let time = World.getUpdateTime world
+                        let time = field.FieldTime
                         let localTime = time - startTime
                         let (step, stepCount) = MoveType.computeStepAndStepCount translation moveType
                         let finishTime = int64 (dec stepCount)
@@ -324,7 +323,7 @@ module FieldDispatcher =
                         { FieldType = fieldType
                           FieldDestination = fieldDestination
                           FieldDirection = fieldDirection
-                          FieldTransitionTime = World.getUpdateTime world + Constants.Field.TransitionTime }
+                          FieldTransitionTime = field.FieldTime + Constants.Field.TransitionTime }
                     let field = Field.updateFieldTransitionOpt (constant (Some fieldTransition)) field
                     (WarpState, definitions, just field)
 
@@ -405,7 +404,7 @@ module FieldDispatcher =
             | Expand name ->
                 match Map.tryFind name definitions with
                 | Some body ->
-                    run body definitions field world
+                    run body definitions field
                 | None ->
                     Log.debug ("Cue definition '" + name + "' not found.")
                     (Cue.Nil, definitions, ([], field))
@@ -413,7 +412,7 @@ module FieldDispatcher =
             | Parallel cues ->
                 let (cues, definitions, (signals, field)) =
                     List.fold (fun (cues, definitions, (signals, field)) cue ->
-                        let (cue, definitions, (signals2, field)) = run cue definitions field world
+                        let (cue, definitions, (signals2, field)) = run cue definitions field
                         if Cue.isNil cue
                         then (cues, definitions, (signals @ signals2, field))
                         else (cues @ [cue], definitions, (signals @ signals2, field)))
@@ -429,7 +428,7 @@ module FieldDispatcher =
                         if halted
                         then (halted, haltedCues @ [cue], definitions, (signals, field))
                         else
-                            let (cue, definitions, (signals2, field)) = run cue definitions field world
+                            let (cue, definitions, (signals2, field)) = run cue definitions field
                             if Cue.isNil cue
                             then (false, [], definitions, (signals @ signals2, field))
                             else (true, [cue], definitions, (signals @ signals2, field)))
@@ -654,8 +653,11 @@ module FieldDispatcher =
             match message with
             | Update ->
 
+                // update field time
+                let field = Field.advanceFieldTime field
+
                 // update cue, resetting definitions if finished
-                let (cue, definitions, (signals, field)) = Cue.run field.Cue field.Definitions field world
+                let (cue, definitions, (signals, field)) = Cue.run field.Cue field.Definitions field
                 let field =
                     match cue with
                     | Cue.Nil -> Field.updateDefinitions (constant field.DefinitionsOriginal) field
@@ -681,7 +683,7 @@ module FieldDispatcher =
                                     { FieldType = fieldType
                                       FieldDestination = destination
                                       FieldDirection = direction
-                                      FieldTransitionTime = World.getUpdateTime world + Constants.Field.TransitionTime }
+                                      FieldTransitionTime = field.FieldTime + Constants.Field.TransitionTime }
                                 let field = Field.updateFieldTransitionOpt (constant (Some transition)) field
                                 let playSound =
                                     if isWarp
@@ -747,7 +749,7 @@ module FieldDispatcher =
                 | Some fieldTransition ->
 
                     // handle field transition
-                    let time = World.getUpdateTime world
+                    let time = field.FieldTime
                     let currentSongOpt = world |> World.getCurrentSongOpt |> Option.map (fun song -> song.Song)
                     let (signals, field) =
 
@@ -974,7 +976,7 @@ module FieldDispatcher =
             | TryBattle (battleType, consequents) ->
                 match Map.tryFind battleType Data.Value.Battles with
                 | Some battleData ->
-                    let time = World.getUpdateTime world
+                    let time = field.FieldTime
                     let clockTime = let t = World.getClockTime world in t.ToUnixTimeMilliseconds ()
                     let playTime = Option.getOrDefault clockTime field.FieldSongTimeOpt
                     let startTime = clockTime - playTime
@@ -1161,10 +1163,10 @@ module FieldDispatcher =
                     [Entity.Perimeter <== field --|> (fun _ world -> (World.getViewBounds2dAbsolute world).Box3); Entity.Elevation == Single.MaxValue; Entity.Absolute == true
                      Entity.StaticImage == Assets.Default.Image8
                      Entity.Visible <== field --> fun field -> Option.isSome field.FieldTransitionOpt
-                     Entity.Color <== field --|> fun field world ->
+                     Entity.Color <== field --> fun field ->
                         match field.FieldTransitionOpt with
                         | Some transition ->
-                            let time = World.getUpdateTime world
+                            let time = field.FieldTime
                             let deltaTime = single transition.FieldTransitionTime - single time
                             let halfTransitionTime = single Constants.Field.TransitionTime * 0.5f
                             let progress =
