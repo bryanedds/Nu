@@ -279,13 +279,13 @@ module WorldModule =
         static member getStaticModelMetadata assetTag =
             Metadata.getStaticModelMetadata assetTag
 
-        /// Get a copy of the metadata map.
-        static member getMetadataMap () =
-            Metadata.getMetadataMap ()
+        /// Get a copy of the metadata packages.
+        static member getMetadataPackages () =
+            Metadata.getMetadataPackages ()
 
-        /// Get a map of all discovered assets.
-        static member getAssetMap () =
-            Metadata.getAssetMap ()
+        /// Get a map of all metadata's discovered assets.
+        static member getDiscoveredAssets () =
+            Metadata.getDiscoveredAssets ()
 
         /// Try to get the texture metadata of the given asset via script.
         [<FunctionBinding "tryGetTextureSize">]

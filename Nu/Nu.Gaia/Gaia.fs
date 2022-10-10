@@ -442,19 +442,19 @@ module Gaia =
 
     let private handlePropertyPickAsset (form : GaiaForm) world =
         use assetPicker = new AssetPicker ()
-        let assetMap = World.getAssetMap ()
-        for assetTag in assetMap do
-            let node = assetPicker.assetTreeView.Nodes.Add assetTag.Key
-            for assetName in assetTag.Value do
+        let assets = World.getDiscoveredAssets ()
+        for package in assets do
+            let node = assetPicker.assetTreeView.Nodes.Add package.Key
+            for assetName in package.Value do
                 node.Nodes.Add assetName |> ignore
         assetPicker.assetTreeView.DoubleClick.Add (fun _ -> assetPicker.DialogResult <- DialogResult.OK)
         assetPicker.okButton.Click.Add (fun _ -> assetPicker.DialogResult <- DialogResult.OK)
         assetPicker.cancelButton.Click.Add (fun _ -> assetPicker.Close ())
         assetPicker.searchTextBox.TextChanged.Add(fun _ ->
             assetPicker.assetTreeView.Nodes.Clear ()
-            for assetTag in assetMap do
-                let node = assetPicker.assetTreeView.Nodes.Add assetTag.Key
-                for assetName in assetTag.Value do
+            for package in assets do
+                let node = assetPicker.assetTreeView.Nodes.Add package.Key
+                for assetName in package.Value do
                     if assetName.Contains assetPicker.searchTextBox.Text then
                         node.Nodes.Add assetName |> ignore
             assetPicker.assetTreeView.ExpandAll ())
