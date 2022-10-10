@@ -1005,7 +1005,7 @@ module WorldScripting =
                  ("product_Stream", { Fn = World.evalProductStreamExtrinsic; Pars = [||]; DocOpt = None })
                  ("sum_Stream", { Fn = World.evalSumStreamExtrinsic; Pars = [||]; DocOpt = None })
                  ("monitor", { Fn = World.evalMonitorExtrinsic; Pars = [|"handler"; "event"|]; DocOpt = Some "Subscribe to an event for the lifetime of the simulant." })
-                 ("schedule", { Fn = World.evalSchedule; Pars = [|"time"; "body"; "simulant"|]; DocOpt = None })
+                 ("schedule", { Fn = World.evalSchedule; Pars = [|"delay"; "body"; "simulant"|]; DocOpt = None })
                  ("frame", { Fn = World.evalFrame; Pars = [|"body"; "simulant"|]; DocOpt = None })
                  ("blank", { Fn = World.evalBlank; Pars = [||]; DocOpt = None })
                  ("info_String", { Fn = World.evalInfo; Pars = [||]; DocOpt = None })
