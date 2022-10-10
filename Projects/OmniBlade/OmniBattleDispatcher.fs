@@ -483,7 +483,7 @@ module BattleDispatcher =
         inherit ScreenDispatcher<Battle, BattleMessage, BattleCommand> (Battle.empty)
 
         static let displayEffect delay size positioning effect screen world =
-            World.delay (fun world ->
+            World.schedule (fun world ->
                 let (entity, world) = World.createEntity<EffectDispatcher2d> None DefaultOverlay Simulants.Battle.Scene.Group world
                 let world = entity.SetEffect effect world
                 let world = entity.SetSize size world
@@ -1120,7 +1120,7 @@ module BattleDispatcher =
                 displayEffect delay (v3 48.0f 48.0f 0.0f) (Position (v3 0.0f 0.0f 0.0f)) (Effects.makeConjureIfritEffect ()) screen world |> just
 
             | PlaySound (delay, volume, sound) ->
-                let world = World.delay (World.playSound volume sound) delay screen world
+                let world = World.schedule (World.playSound volume sound) delay screen world
                 just world
 
             | PlaySong (fadeIn, fadeOut, volume, start, assetTag) ->

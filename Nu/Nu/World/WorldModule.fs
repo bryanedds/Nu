@@ -423,19 +423,14 @@ module WorldModule =
         static member addTasklet simulant tasklet world =
             World.updateAmbientState (AmbientState.addTasklet simulant tasklet) world
 
-        /// Schedule an operation to be executed by the engine at the given time.
-        static member schedule fn time (simulant : Simulant) world =
-            let tasklet = { ScheduledTime = time; ScheduledOp = fn }
+        /// Schedule an operation to be executed by the engine with the given delay.
+        static member schedule operation delay (simulant : Simulant) world =
+            let tasklet = { ScheduledTime = World.getUpdateTime world + delay; ScheduledOp = operation }
             World.addTasklet simulant tasklet world
 
         /// Schedule an operation to be executed by the engine at the end of the current frame or the next frame if we've already started processing tasklets.
-        static member frame fn (simulant : Simulant) world =
-            World.schedule fn (World.getUpdateTime world + if TaskletProcessingStarted then World.getUpdateRate world else 0L) simulant world
-
-        /// Schedule an operation to be executed by the engine with the given delay.
-        static member delay fn delay simulant world =
-            let tasklet = { ScheduledTime = World.getUpdateTime world + delay; ScheduledOp = fn }
-            World.addTasklet simulant tasklet world
+        static member frame operation (simulant : Simulant) world =
+            World.schedule operation (if TaskletProcessingStarted then World.getUpdateRate world else 0L) simulant world
 
         /// Attempt to get the window flags.
         [<FunctionBinding>]
