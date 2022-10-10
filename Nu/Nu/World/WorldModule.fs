@@ -315,59 +315,53 @@ module WorldModule =
         static member exit world =
             World.updateAmbientState AmbientState.exit world
 
-        static member internal getMetadata world =
-            AmbientState.getMetadata (World.getAmbientState world)
-
-        static member internal setMetadata assetMetadataMap world =
-            World.updateAmbientState (AmbientState.setMetadata assetMetadataMap) world
-
         /// Regerate metadata.
-        static member regenerateMetadata world =
-            World.updateAmbientState (AmbientState.regenerateMetadata (World.getImperative world)) world
+        static member regenerateMetadata () =
+            AmbientState.regenerateMetadata ()
 
         /// Try to get the texture metadata of the given asset.
         [<FunctionBinding>]
-        static member tryGetTextureSize assetTag world =
-            Metadata.tryGetTextureSize assetTag (World.getMetadata world)
+        static member tryGetTextureSize assetTag =
+            Metadata.tryGetTextureSize assetTag
 
         /// Forcibly get the texture size metadata of the given asset (throwing on failure).
         [<FunctionBinding>]
-        static member getTextureSize assetTag world =
-            Metadata.getTextureSize assetTag (World.getMetadata world)
+        static member getTextureSize assetTag =
+            Metadata.getTextureSize assetTag
 
         /// Try to get the texture size metadata of the given asset.
         [<FunctionBinding>]
-        static member tryGetTextureSizeF assetTag world =
-            Metadata.tryGetTextureSizeF assetTag (World.getMetadata world)
+        static member tryGetTextureSizeF assetTag =
+            Metadata.tryGetTextureSizeF assetTag
 
         /// Forcibly get the texture size metadata of the given asset (throwing on failure).
         [<FunctionBinding>]
-        static member getTextureSizeF assetTag world =
-            Metadata.getTextureSizeF assetTag (World.getMetadata world)
+        static member getTextureSizeF assetTag =
+            Metadata.getTextureSizeF assetTag
 
         /// Try to get the tile map metadata of the given asset.
-        static member tryGetTileMapMetadata assetTag world =
-            Metadata.tryGetTileMapMetadata assetTag (World.getMetadata world)
+        static member tryGetTileMapMetadata assetTag =
+            Metadata.tryGetTileMapMetadata assetTag
 
         /// Forcibly get the tile map metadata of the given asset (throwing on failure).
-        static member getTileMapMetadata assetTag world =
-            Metadata.getTileMapMetadata assetTag (World.getMetadata world)
+        static member getTileMapMetadata assetTag =
+            Metadata.getTileMapMetadata assetTag
 
         /// Try to get the static model metadata of the given asset.
-        static member tryGetStaticModelMetadata assetTag world =
-            Metadata.tryGetStaticModelMetadata assetTag (World.getMetadata world)
+        static member tryGetStaticModelMetadata assetTag =
+            Metadata.tryGetStaticModelMetadata assetTag
 
         /// Forcibly get the static model metadata of the given asset (throwing on failure).
-        static member getStaticModelMetadata assetTag world =
-            Metadata.getStaticModelMetadata assetTag (World.getMetadata world)
+        static member getStaticModelMetadata assetTag =
+            Metadata.getStaticModelMetadata assetTag
 
         /// Get a copy of the metadata map.
-        static member getMetadataMap world =
-            Metadata.getMetadataMap (World.getMetadata world)
+        static member getMetadataMap () =
+            Metadata.getMetadataMap ()
 
         /// Get a map of all discovered assets.
-        static member getAssetMap world =
-            Metadata.getAssetMap (World.getMetadata world)
+        static member getAssetMap () =
+            Metadata.getAssetMap ()
 
         static member internal getKeyValueStoreBy by world =
             World.getAmbientStateBy (AmbientState.getKeyValueStoreBy by) world

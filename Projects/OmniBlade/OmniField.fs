@@ -98,7 +98,7 @@ module Field =
         match Map.tryFind fieldType Data.Value.Fields with
         | Some fieldData ->
             let time = World.getUpdateTime world
-            FieldData.getPropDescriptors omniSeedState fieldData world |>
+            FieldData.getPropDescriptors omniSeedState fieldData |>
             Map.ofListBy (fun propDescriptor ->
                 let propState = makePropState time propDescriptor
                 let prop = Prop.make propDescriptor.PropPerimeter propDescriptor.PropElevation advents pointOfInterest propDescriptor.PropData propState propDescriptor.PropId
@@ -272,7 +272,7 @@ module Field =
                     | (true, fieldData) ->
                         [|0 .. spiritsDeficient - 1|] |>
                         Array.map (fun _ ->
-                            match FieldData.tryGetSpiritType field.OmniSeedState field.Avatar.Bottom fieldData world with
+                            match FieldData.tryGetSpiritType field.OmniSeedState field.Avatar.Bottom fieldData with
                             | Some spiritType ->
                                 let spiritMovement = SpiritPattern.toSpiritMovement (SpiritPattern.generate ())
                                 let spirit = Spirit.spawn (World.getUpdateTime world) field.Avatar.Bottom spiritType spiritMovement

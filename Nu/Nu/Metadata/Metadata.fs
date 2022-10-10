@@ -55,10 +55,8 @@ module TmxExtensions =
 [<RequireQualifiedAccess>]
 module Metadata =
 
-    /// Stores metadata for game assets.
-    type [<NoEquality; NoComparison>] Metadata =
-        private
-            { MetadataMap : UMap<string, UMap<string, AssetMetadata>> }
+    let mutable private MetadataMap :
+        UMap<string, UMap<string, AssetMetadata>> = UMap.makeEmpty StringComparer.Ordinal Imperative
 
     let private tryGenerateTextureMetadata asset =
         if File.Exists asset.FilePath then
@@ -118,48 +116,45 @@ module Metadata =
         | Some metadata -> Some (asset.AssetTag.AssetName, metadata)
         | None -> None
 
-    let private tryGenerateMetadataSubmap imperative packageName assetGraph =
+    let private tryGenerateMetadataSubmap config packageName assetGraph =
         match AssetGraph.tryCollectAssetsFromPackage None packageName assetGraph with
         | Right assets ->
-            let config = if imperative then Imperative else Functional
             let submap = assets |> List.map tryGenerateAssetMetadata |> List.definitize |> UMap.makeFromSeq HashIdentity.Structural config
             (packageName, submap)
         | Left error ->
             Log.info ("Could not load asset metadata for package '" + packageName + "' due to: " + error)
-            let config = if imperative then Imperative else Functional
             (packageName, UMap.makeEmpty HashIdentity.Structural config)
 
-    let private makeMetadataMap imperative packageNames assetGraph =
+    /// Generate metadata from the given asset graph.
+    let generateMetadata imperative assetGraph =
         let config = if imperative then Imperative else Functional
-        List.fold
-            (fun metadata packageName ->
-                let (packageName, submap) = tryGenerateMetadataSubmap imperative packageName assetGraph
-                UMap.add packageName submap metadata)
-            (UMap.makeEmpty HashIdentity.Structural config)
-            packageNames
+        let packageNames = AssetGraph.getPackageNames assetGraph
+        for packageName in packageNames do
+            let (packageName, submap) = tryGenerateMetadataSubmap config packageName assetGraph
+            MetadataMap <- UMap.add packageName submap MetadataMap
 
     /// Regenerate metadata.
-    let regenerateMetadata imperative metadata =
-        let packageNames = metadata.MetadataMap |> Seq.map fst
-        let metadataMap =
+    let regenerateMetadata () =
+        let packageNames = MetadataMap |> Seq.map fst
+        let config = UMap.getConfig MetadataMap
+        MetadataMap <-
             Seq.fold
                 (fun metadataMap packageName ->
                     match AssetGraph.tryMakeFromFile Assets.Global.AssetGraphFilePath with
                     | Right assetGraph ->
-                        let (packageName, submap) = tryGenerateMetadataSubmap imperative packageName assetGraph
+                        let (packageName, submap) = tryGenerateMetadataSubmap config packageName assetGraph
                         match UMap.tryFind packageName metadataMap with
                         | Some submapExisting -> UMap.add packageName (UMap.addMany (seq submap) submapExisting) metadataMap
                         | None -> UMap.add packageName submap metadataMap
                     | Left error ->
                         Log.info ("Metadata submap regeneration failed due to: '" + error)
                         metadataMap)
-                metadata.MetadataMap
+                MetadataMap
                 packageNames
-        { metadata with MetadataMap = metadataMap }
 
     /// Try to get the metadata of the given asset.
-    let tryGetMetadata (assetTag : obj AssetTag) metadata =
-        match UMap.tryFind assetTag.PackageName metadata.MetadataMap with
+    let tryGetMetadata (assetTag : obj AssetTag) =
+        match UMap.tryFind assetTag.PackageName MetadataMap with
         | Some package ->
             match UMap.tryFind assetTag.AssetName package with
             | Some _ as asset -> asset
@@ -167,67 +162,67 @@ module Metadata =
         | None -> None
 
     /// Try to get the texture metadata of the given asset.
-    let tryGetTextureSize (assetTag : Image AssetTag) metadata =
-        match tryGetMetadata (AssetTag.generalize assetTag) metadata with
+    let tryGetTextureSize (assetTag : Image AssetTag) =
+        match tryGetMetadata (AssetTag.generalize assetTag) with
         | Some (TextureMetadata (size, _)) -> Some size
         | None -> None
         | _ -> None
 
     /// Try to get the texture metadata of the given asset.
-    let tryGetTextureFormat (assetTag : Image AssetTag) metadata =
-        match tryGetMetadata (AssetTag.generalize assetTag) metadata with
+    let tryGetTextureFormat (assetTag : Image AssetTag) =
+        match tryGetMetadata (AssetTag.generalize assetTag) with
         | Some (TextureMetadata (_, format)) -> Some format
         | None -> None
         | _ -> None
 
     /// Forcibly get the texture size metadata of the given asset (throwing on failure).
-    let getTextureSize assetTag metadata =
-        Option.get (tryGetTextureSize assetTag metadata)
+    let getTextureSize assetTag =
+        Option.get (tryGetTextureSize assetTag)
 
     /// Try to get the texture size metadata of the given asset.
-    let tryGetTextureSizeF assetTag metadata =
-        match tryGetTextureSize assetTag metadata with
+    let tryGetTextureSizeF assetTag =
+        match tryGetTextureSize assetTag with
         | Some size -> Some (v2 (single size.X) (single size.Y))
         | None -> None
 
     /// Forcibly get the texture size metadata of the given asset (throwing on failure).
-    let getTextureSizeF assetTag metadata =
-        Option.get (tryGetTextureSizeF assetTag metadata)
+    let getTextureSizeF assetTag =
+        Option.get (tryGetTextureSizeF assetTag)
 
     /// Try to get the tile map metadata of the given asset.
-    let tryGetTileMapMetadata (assetTag : TileMap AssetTag) metadata =
-        match tryGetMetadata (AssetTag.generalize assetTag) metadata with
+    let tryGetTileMapMetadata (assetTag : TileMap AssetTag) =
+        match tryGetMetadata (AssetTag.generalize assetTag) with
         | Some (TileMapMetadata (filePath, imageAssets, tmxMap)) -> Some (filePath, imageAssets, tmxMap)
         | None -> None
         | _ -> None
 
     /// Forcibly get the tile map metadata of the given asset (throwing on failure).
-    let getTileMapMetadata assetTag metadata =
-        Option.get (tryGetTileMapMetadata assetTag metadata)
+    let getTileMapMetadata assetTag =
+        Option.get (tryGetTileMapMetadata assetTag)
 
     /// Try to get the static model metadata of the given asset.
-    let tryGetStaticModelMetadata (assetTag : StaticModel AssetTag) metadata =
-        match tryGetMetadata (AssetTag.generalize assetTag) metadata with
+    let tryGetStaticModelMetadata (assetTag : StaticModel AssetTag) =
+        match tryGetMetadata (AssetTag.generalize assetTag) with
         | Some (StaticModelMetadata model) -> Some model
         | None -> None
         | _ -> None
 
     /// Forcibly get the static model metadata of the given asset (throwing on failure).
-    let getStaticModelMetadata assetTag metadata =
-        Option.get (tryGetStaticModelMetadata assetTag metadata)
+    let getStaticModelMetadata assetTag =
+        Option.get (tryGetStaticModelMetadata assetTag)
 
     /// Get a copy of the metadata map.
-    let getMetadataMap metadata =
+    let getMetadataMap () =
         let map =
-            metadata.MetadataMap |>
+            MetadataMap |>
             UMap.toSeq |>
             Seq.map (fun (packageName, map) -> (packageName, map |> UMap.toSeq |> Map.ofSeq)) |>
             Map.ofSeq
         map
 
     /// Attempt to get a copy of a metadata submap with the given package name.
-    let tryGetMetadataSubmap packageName metadata =
-        match metadata.MetadataMap.TryGetValue packageName with
+    let tryGetMetadataSubmap packageName =
+        match MetadataMap.TryGetValue packageName with
         | (true, submap) -> Some (submap |> UMap.toSeq |> Map.ofSeq)
         | (false, _) -> None
 
@@ -237,17 +232,3 @@ module Metadata =
             getMetadataMap metadata |>
             Map.map (fun _ metadata -> Map.toKeyList metadata)
         assetMap
-
-    /// Generate metadata from the given asset graph.
-    let make imperative assetGraph =
-        let packageNames = AssetGraph.getPackageNames assetGraph
-        let metadataMap = makeMetadataMap imperative packageNames assetGraph
-        { MetadataMap = metadataMap }
-
-    /// Make empty metadata.
-    let makeEmpty imperative =
-        let config = if imperative then Imperative else Functional
-        { MetadataMap = UMap.makeEmpty HashIdentity.Structural config }
-
-/// Stores metadata for game assets.
-type Metadata = Metadata.Metadata

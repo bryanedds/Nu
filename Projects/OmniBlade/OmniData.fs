@@ -906,7 +906,7 @@ module FieldData =
             else ({ prop with PropData = EmptyProp }, treasures, rand)
         | _ -> (prop, treasures, rand)
 
-    let tryGetTileMap omniSeedState fieldData world =
+    let tryGetTileMap omniSeedState fieldData =
         let rotatedSeedState = OmniSeedState.rotate false fieldData.FieldType omniSeedState
         let memoKey = (rotatedSeedState, fieldData.FieldType)
         match Map.tryFind memoKey tileMapsMemoized with
@@ -914,11 +914,11 @@ module FieldData =
             let tileMapOpt =
                 match fieldData.FieldTileMap with
                 | FieldStatic fieldAsset ->
-                    match World.tryGetTileMapMetadata fieldAsset world with
+                    match World.tryGetTileMapMetadata fieldAsset with
                     | Some (_, _, tileMap) -> Some (Choice1Of3 tileMap)
                     | None -> None
                 | FieldConnector (fieldAsset, fieldFadeAsset) ->
-                    match (World.tryGetTileMapMetadata fieldAsset world, World.tryGetTileMapMetadata fieldFadeAsset world) with
+                    match (World.tryGetTileMapMetadata fieldAsset, World.tryGetTileMapMetadata fieldFadeAsset) with
                     | (Some (_, _, tileMap), Some (_, _, tileMapFade)) -> Some (Choice2Of3 (tileMap, tileMapFade))
                     | (_, _) -> None
                 | FieldRandom (walkLength, bias, originRand, floor, fieldPath) ->
@@ -934,13 +934,13 @@ module FieldData =
             tileMapOpt
         | tileMapOpt -> tileMapOpt
 
-    let getPropObjects omniSeedState fieldData world =
+    let getPropObjects omniSeedState fieldData =
         let rotatedSeedState = OmniSeedState.rotate false fieldData.FieldType omniSeedState
         let memoKey = (rotatedSeedState, fieldData.FieldType)
         match Map.tryFind memoKey propObjectsMemoized with
         | None ->
             let propObjects =
-                match tryGetTileMap omniSeedState fieldData world with
+                match tryGetTileMap omniSeedState fieldData with
                 | Some tileMapChc ->
                     match tileMapChc with
                     | Choice1Of3 tileMap
@@ -955,13 +955,13 @@ module FieldData =
             propObjects
         | Some propObjects -> propObjects
 
-    let getPropDescriptors omniSeedState fieldData world =
+    let getPropDescriptors omniSeedState fieldData =
         let rotatedSeedState = OmniSeedState.rotate false fieldData.FieldType omniSeedState
         let memoKey = (rotatedSeedState, fieldData.FieldType)
         match Map.tryFind memoKey propDescriptorsMemoized with
         | None ->
             let rand = Rand.makeFromSeedState rotatedSeedState
-            let propObjects = getPropObjects omniSeedState fieldData world
+            let propObjects = getPropObjects omniSeedState fieldData
             let propsUninflated = List.choose (fun (tileMap, group, object) -> objectToPropOpt object group tileMap) propObjects
             let (propsRandomized, rand) = Rand.nextPermutation propsUninflated rand
             let (propDescriptors, _, _) =
@@ -975,16 +975,16 @@ module FieldData =
             propDescriptors
         | Some propDescriptors -> propDescriptors
 
-    let getPortals omniSeedState fieldData world =
-        let propDescriptors = getPropDescriptors omniSeedState fieldData world
+    let getPortals omniSeedState fieldData =
+        let propDescriptors = getPropDescriptors omniSeedState fieldData
         List.filter (fun propDescriptor -> match propDescriptor.PropData with Portal _ -> true | _ -> false) propDescriptors
 
-    let tryGetPortal omniSeedState portalIndex fieldData world =
-        let portals = getPortals omniSeedState fieldData world
+    let tryGetPortal omniSeedState portalIndex fieldData =
+        let portals = getPortals omniSeedState fieldData
         List.tryFind (fun prop -> match prop.PropData with Portal (_, portalIndex2, _, _, _, _, _) -> portalIndex2 = portalIndex | _ -> failwithumf ()) portals
 
-    let tryGetSpiritType omniSeedState avatarBottom fieldData world =
-        match tryGetTileMap omniSeedState fieldData world with
+    let tryGetSpiritType omniSeedState avatarBottom fieldData =
+        match tryGetTileMap omniSeedState fieldData with
         | Some tileMapChc ->
             match tileMapChc with
             | Choice3Of3 (tileMap, origin) ->

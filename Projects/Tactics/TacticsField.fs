@@ -261,10 +261,10 @@ module Field =
         // did not find albedo tile set
         | None -> failwith "Unable to find custom TmxLayer Image property; cannot create tactical map."
 
-    let getFieldMetadata (field : Field) world =
+    let getFieldMetadata (field : Field) =
         match CachedFieldMetadata.TryGetValue field.FieldTileMap with
         | (false, _) ->
-            let (_, tileSetsAndImages, tileMap) = World.getTileMapMetadata field.FieldTileMap world
+            let (_, tileSetsAndImages, tileMap) = World.getTileMapMetadata field.FieldTileMap
             let tileSets = Array.map fst tileSetsAndImages
             let untraversableLayer = tileMap.Layers.["Untraversable"] :?> TmxLayer
             let untraversableHeightLayer = tileMap.Layers.["UntraversableHeight"] :?> TmxLayer
@@ -283,20 +283,20 @@ module Field =
             fieldMetadata
         | (true, fieldMetadata) -> fieldMetadata
 
-    let tryGetFieldTileVertices index field world =
-        let fieldMetadata = getFieldMetadata field world
+    let tryGetFieldTileVertices index field =
+        let fieldMetadata = getFieldMetadata field
         match Map.tryFind index fieldMetadata.FieldTileVerticesMap with
         | Some index -> Some index
         | None -> None
 
-    let getFieldTileVertices index field world =
-        match tryGetFieldTileVertices index field world with
+    let getFieldTileVertices index field =
+        match tryGetFieldTileVertices index field with
         | Some vertices -> vertices
         | None -> failwith ("Field vertex index '" + scstring index + "' out of range.")
 
     let tryGetFieldTileDataAtMouse field world =
         let mouseRay = World.getMouseRay3dWorld false world
-        let fieldMetadata = getFieldMetadata field world
+        let fieldMetadata = getFieldMetadata field
         let indices = [|0; 1; 2; 0; 2; 3|]
         let intersectionMap =
             Map.map (fun _ vertices ->
@@ -315,9 +315,9 @@ module Field =
             Array.tryHead
         intersections
 
-    let getOccupants field world =
+    let getOccupants field =
         field.OccupantPositions |>
-        Map.map (fun _ position -> getFieldTileVertices position field world)  |>
+        Map.map (fun _ position -> getFieldTileVertices position field)  |>
         flip Seq.zip field.Occupants |>
         Seq.map (fun (kvp, kvp2) -> (kvp.Key, (kvp.Value, kvp2.Value))) |>
         Map.ofSeq
