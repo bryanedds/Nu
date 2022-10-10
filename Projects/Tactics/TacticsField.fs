@@ -264,7 +264,7 @@ module Field =
     let getFieldMetadata (field : Field) =
         match CachedFieldMetadata.TryGetValue field.FieldTileMap with
         | (false, _) ->
-            let (_, tileSetsAndImages, tileMap) = Metadata.getTileMapMetadata field.FieldTileMap
+            let (_, tileSetsAndImages, tileMap) = World.getTileMapMetadata field.FieldTileMap
             let tileSets = Array.map fst tileSetsAndImages
             let untraversableLayer = tileMap.Layers.["Untraversable"] :?> TmxLayer
             let untraversableHeightLayer = tileMap.Layers.["UntraversableHeight"] :?> TmxLayer

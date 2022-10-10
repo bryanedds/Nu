@@ -116,7 +116,7 @@ module TmxMap =
           TileMapPosition = tileMapPosition }
 
     let tryGetTileMap (tileMapAsset : TileMap AssetTag) =
-        match Metadata.tryGetTileMapMetadata tileMapAsset with
+        match World.tryGetTileMapMetadata tileMapAsset with
         | Some (_, _, tileMap) -> Some tileMap
         | None -> None
 

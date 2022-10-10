@@ -19,14 +19,14 @@ module WorldBindings =
     let [<Literal>] BindingKeywords =
         "v2 v3 v4 v2i v3i v4i quat color get getAsStream set setAsStream update streamEvent stream bind self game toData monitor " +
         "resolve relate selectScreen tryGetIsSelectedScreenIdling tryGetIsSelectedScreenTransitioning " +
-        "isSelectedScreenIdling isSelectedScreenTransitioning tryTransitionScreen transitionScreen " +
-        "setScreenSplash createDissolveScreenFromGroupFile6 createDissolveScreenFromGroupFile createSplashScreen6 " +
-        "createSplashScreen reloadExistingAssets tryReloadAssets getCurrentSongOpt " +
-        "getCurrentSongPosition getMasterAudioVolume getMasterSoundVolume getMasterSongVolume " +
-        "setMasterAudioVolume setMasterSoundVolume setMasterSongVolume playSong " +
-        "playSong6 playSound playSound3 fadeOutSong " +
-        "stopSong loadAudioPackage unloadAudioPackage reloadAudioAssets " +
-        "hintRenderPackageUse2d unloadRenderPackage2d reloadRenderAssets2d localizeBodyShape " +
+        "isSelectedScreenIdling isSelectedScreenTransitioning tryTransitionScreen transitionScreen setScreenSplash " +
+        "createDissolveScreenFromGroupFile6 createDissolveScreenFromGroupFile createSplashScreen6 createSplashScreen " +
+        "reloadExistingAssets tryReloadAssets getCurrentSongOpt getCurrentSongPosition " +
+        "getMasterAudioVolume getMasterSoundVolume getMasterSongVolume setMasterAudioVolume " +
+        "setMasterSoundVolume setMasterSongVolume playSong playSong6 " +
+        "playSound playSound3 fadeOutSong stopSong " +
+        "loadAudioPackage unloadAudioPackage reloadAudioAssets hintRenderPackageUse2d " +
+        "unloadRenderPackage2d reloadRenderAssets2d reloadRenderAssets3d localizeBodyShape " +
         "bodyExists getBodyContactNormals getBodyLinearVelocity getBodyToGroundContactNormals " +
         "getBodyToGroundContactNormalOpt getBodyToGroundContactTangentOpt isBodyOnGround createBody " +
         "createBodies destroyBody destroyBodies createJoint " +
@@ -359,9 +359,7 @@ module WorldBindings =
         let oldWorld = world
         try
             let result = World.reloadExistingAssets world
-            let value = result
-            let value = ScriptingSystem.tryImport typeof<Void> value world |> Option.get
-            struct (value, world)
+            struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'reloadExistingAssets' due to: " + scstring exn, ValueNone)
             struct (violation, World.choose oldWorld)
@@ -440,9 +438,7 @@ module WorldBindings =
                 | Some value -> value :?> Single
                 | None -> failwith "Invalid argument type for 'volume'; expecting a value convertable to Single."
             let result = World.setMasterAudioVolume volume world
-            let value = result
-            let value = ScriptingSystem.tryImport typeof<Void> value world |> Option.get
-            struct (value, world)
+            struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'setMasterAudioVolume' due to: " + scstring exn, ValueNone)
             struct (violation, World.choose oldWorld)
@@ -455,9 +451,7 @@ module WorldBindings =
                 | Some value -> value :?> Single
                 | None -> failwith "Invalid argument type for 'volume'; expecting a value convertable to Single."
             let result = World.setMasterSoundVolume volume world
-            let value = result
-            let value = ScriptingSystem.tryImport typeof<Void> value world |> Option.get
-            struct (value, world)
+            struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'setMasterSoundVolume' due to: " + scstring exn, ValueNone)
             struct (violation, World.choose oldWorld)
@@ -470,9 +464,7 @@ module WorldBindings =
                 | Some value -> value :?> Single
                 | None -> failwith "Invalid argument type for 'volume'; expecting a value convertable to Single."
             let result = World.setMasterSongVolume volume world
-            let value = result
-            let value = ScriptingSystem.tryImport typeof<Void> value world |> Option.get
-            struct (value, world)
+            struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'setMasterSongVolume' due to: " + scstring exn, ValueNone)
             struct (violation, World.choose oldWorld)
@@ -501,9 +493,7 @@ module WorldBindings =
                 | Some value -> value :?> AssetTag<Song>
                 | None -> failwith "Invalid argument type for 'song'; expecting a value convertable to AssetTag`1."
             let result = World.playSong timeToFadeInSongMs timeToFadeOutSongMs volume start song world
-            let value = result
-            let value = ScriptingSystem.tryImport typeof<Void> value world |> Option.get
-            struct (value, world)
+            struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'playSong' due to: " + scstring exn, ValueNone)
             struct (violation, World.choose oldWorld)
@@ -536,9 +526,7 @@ module WorldBindings =
                 | Some value -> value :?> String
                 | None -> failwith "Invalid argument type for 'songAssetName'; expecting a value convertable to String."
             let result = World.playSong7 timeToFadeInSongMs timeToFadeOutSongMs volume start songPackageName songAssetName world
-            let value = result
-            let value = ScriptingSystem.tryImport typeof<Void> value world |> Option.get
-            struct (value, world)
+            struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'playSong6' due to: " + scstring exn, ValueNone)
             struct (violation, World.choose oldWorld)
@@ -555,9 +543,7 @@ module WorldBindings =
                 | Some value -> value :?> AssetTag<Sound>
                 | None -> failwith "Invalid argument type for 'sound'; expecting a value convertable to AssetTag`1."
             let result = World.playSound volume sound world
-            let value = result
-            let value = ScriptingSystem.tryImport typeof<Void> value world |> Option.get
-            struct (value, world)
+            struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'playSound' due to: " + scstring exn, ValueNone)
             struct (violation, World.choose oldWorld)
@@ -578,9 +564,7 @@ module WorldBindings =
                 | Some value -> value :?> String
                 | None -> failwith "Invalid argument type for 'soundAssetName'; expecting a value convertable to String."
             let result = World.playSound4 volume soundPackageName soundAssetName world
-            let value = result
-            let value = ScriptingSystem.tryImport typeof<Void> value world |> Option.get
-            struct (value, world)
+            struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'playSound3' due to: " + scstring exn, ValueNone)
             struct (violation, World.choose oldWorld)
@@ -593,9 +577,7 @@ module WorldBindings =
                 | Some value -> value :?> Int32
                 | None -> failwith "Invalid argument type for 'timeToFadeOutSongMs'; expecting a value convertable to Int32."
             let result = World.fadeOutSong timeToFadeOutSongMs world
-            let value = result
-            let value = ScriptingSystem.tryImport typeof<Void> value world |> Option.get
-            struct (value, world)
+            struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'fadeOutSong' due to: " + scstring exn, ValueNone)
             struct (violation, World.choose oldWorld)
@@ -604,9 +586,7 @@ module WorldBindings =
         let oldWorld = world
         try
             let result = World.stopSong world
-            let value = result
-            let value = ScriptingSystem.tryImport typeof<Void> value world |> Option.get
-            struct (value, world)
+            struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'stopSong' due to: " + scstring exn, ValueNone)
             struct (violation, World.choose oldWorld)
@@ -619,9 +599,7 @@ module WorldBindings =
                 | Some value -> value :?> String
                 | None -> failwith "Invalid argument type for 'packageName'; expecting a value convertable to String."
             let result = World.loadAudioPackage packageName world
-            let value = result
-            let value = ScriptingSystem.tryImport typeof<Void> value world |> Option.get
-            struct (value, world)
+            struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'loadAudioPackage' due to: " + scstring exn, ValueNone)
             struct (violation, World.choose oldWorld)
@@ -634,9 +612,7 @@ module WorldBindings =
                 | Some value -> value :?> String
                 | None -> failwith "Invalid argument type for 'packageName'; expecting a value convertable to String."
             let result = World.unloadAudioPackage packageName world
-            let value = result
-            let value = ScriptingSystem.tryImport typeof<Void> value world |> Option.get
-            struct (value, world)
+            struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'unloadAudioPackage' due to: " + scstring exn, ValueNone)
             struct (violation, World.choose oldWorld)
@@ -645,9 +621,7 @@ module WorldBindings =
         let oldWorld = world
         try
             let result = World.reloadAudioAssets world
-            let value = result
-            let value = ScriptingSystem.tryImport typeof<Void> value world |> Option.get
-            struct (value, world)
+            struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'reloadAudioAssets' due to: " + scstring exn, ValueNone)
             struct (violation, World.choose oldWorld)
@@ -660,9 +634,7 @@ module WorldBindings =
                 | Some value -> value :?> String
                 | None -> failwith "Invalid argument type for 'packageName'; expecting a value convertable to String."
             let result = World.hintRenderPackageUse2d packageName world
-            let value = result
-            let value = ScriptingSystem.tryImport typeof<Void> value world |> Option.get
-            struct (value, world)
+            struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'hintRenderPackageUse2d' due to: " + scstring exn, ValueNone)
             struct (violation, World.choose oldWorld)
@@ -675,9 +647,7 @@ module WorldBindings =
                 | Some value -> value :?> String
                 | None -> failwith "Invalid argument type for 'packageName'; expecting a value convertable to String."
             let result = World.unloadRenderPackage2d packageName world
-            let value = result
-            let value = ScriptingSystem.tryImport typeof<Void> value world |> Option.get
-            struct (value, world)
+            struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'unloadRenderPackage2d' due to: " + scstring exn, ValueNone)
             struct (violation, World.choose oldWorld)
@@ -686,11 +656,18 @@ module WorldBindings =
         let oldWorld = world
         try
             let result = World.reloadRenderAssets2d world
-            let value = result
-            let value = ScriptingSystem.tryImport typeof<Void> value world |> Option.get
-            struct (value, world)
+            struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'reloadRenderAssets2d' due to: " + scstring exn, ValueNone)
+            struct (violation, World.choose oldWorld)
+
+    let reloadRenderAssets3d world =
+        let oldWorld = world
+        try
+            let result = World.reloadRenderAssets3d world
+            struct (Scripting.Unit, result)
+        with exn ->
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'reloadRenderAssets3d' due to: " + scstring exn, ValueNone)
             struct (violation, World.choose oldWorld)
 
     let localizeBodyShape extent bodyShape world =
@@ -831,9 +808,9 @@ module WorldBindings =
                 | struct (Scripting.Violation (_, error, _), _) -> failwith error
                 | struct (_, _) -> failwith "Relation must be either a String or Keyword."
             let entityId =
-                match ScriptingSystem.tryExport typeof<uint64> entityId world with
-                | Some value -> value :?> uint64
-                | None -> failwith "Invalid argument type for 'entityId'; expecting a value convertable to uint64."
+                match ScriptingSystem.tryExport typeof<UInt64> entityId world with
+                | Some value -> value :?> UInt64
+                | None -> failwith "Invalid argument type for 'entityId'; expecting a value convertable to UInt64."
             let bodyProperties =
                 match ScriptingSystem.tryExport typeof<BodyProperties> bodyProperties world with
                 | Some value -> value :?> BodyProperties
@@ -858,9 +835,9 @@ module WorldBindings =
                 | struct (Scripting.Violation (_, error, _), _) -> failwith error
                 | struct (_, _) -> failwith "Relation must be either a String or Keyword."
             let entityId =
-                match ScriptingSystem.tryExport typeof<uint64> entityId world with
-                | Some value -> value :?> uint64
-                | None -> failwith "Invalid argument type for 'entityId'; expecting a value convertable to uint64."
+                match ScriptingSystem.tryExport typeof<UInt64> entityId world with
+                | Some value -> value :?> UInt64
+                | None -> failwith "Invalid argument type for 'entityId'; expecting a value convertable to UInt64."
             let struct (bodiesProperties, world) =
                 match World.evalInternal bodiesProperties world with
                 | struct (Scripting.List list, world) ->
@@ -929,9 +906,9 @@ module WorldBindings =
                 | struct (Scripting.Violation (_, error, _), _) -> failwith error
                 | struct (_, _) -> failwith "Relation must be either a String or Keyword."
             let entityId =
-                match ScriptingSystem.tryExport typeof<uint64> entityId world with
-                | Some value -> value :?> uint64
-                | None -> failwith "Invalid argument type for 'entityId'; expecting a value convertable to uint64."
+                match ScriptingSystem.tryExport typeof<UInt64> entityId world with
+                | Some value -> value :?> UInt64
+                | None -> failwith "Invalid argument type for 'entityId'; expecting a value convertable to UInt64."
             let jointProperties =
                 match ScriptingSystem.tryExport typeof<JointProperties> jointProperties world with
                 | Some value -> value :?> JointProperties
@@ -956,9 +933,9 @@ module WorldBindings =
                 | struct (Scripting.Violation (_, error, _), _) -> failwith error
                 | struct (_, _) -> failwith "Relation must be either a String or Keyword."
             let entityId =
-                match ScriptingSystem.tryExport typeof<uint64> entityId world with
-                | Some value -> value :?> uint64
-                | None -> failwith "Invalid argument type for 'entityId'; expecting a value convertable to uint64."
+                match ScriptingSystem.tryExport typeof<UInt64> entityId world with
+                | Some value -> value :?> UInt64
+                | None -> failwith "Invalid argument type for 'entityId'; expecting a value convertable to UInt64."
             let struct (jointsProperties, world) =
                 match World.evalInternal jointsProperties world with
                 | struct (Scripting.List list, world) ->
@@ -2500,9 +2477,7 @@ module WorldBindings =
         let oldWorld = world
         try
             let result = World.reloadSymbols world
-            let value = result
-            let value = ScriptingSystem.tryImport typeof<Void> value world |> Option.get
-            struct (value, world)
+            struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'reloadSymbols' due to: " + scstring exn, ValueNone)
             struct (violation, World.choose oldWorld)
@@ -2626,6 +2601,66 @@ module WorldBindings =
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'exit' due to: " + scstring exn, ValueNone)
+            struct (violation, World.choose oldWorld)
+
+    let tryGetTextureSize assetTag =
+        let oldWorld = world
+        try
+            let assetTag =
+                match ScriptingSystem.tryExport typeof<AssetTag<Image>> assetTag world with
+                | Some value -> value :?> AssetTag<Image>
+                | None -> failwith "Invalid argument type for 'assetTag'; expecting a value convertable to AssetTag`1."
+            let result = World.tryGetTextureSize assetTag
+            let value = result
+            let value = ScriptingSystem.tryImport typeof<FSharpOption<Vector2i>> value world |> Option.get
+            struct (value, world)
+        with exn ->
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'tryGetTextureSize' due to: " + scstring exn, ValueNone)
+            struct (violation, World.choose oldWorld)
+
+    let getTextureSize assetTag =
+        let oldWorld = world
+        try
+            let assetTag =
+                match ScriptingSystem.tryExport typeof<AssetTag<Image>> assetTag world with
+                | Some value -> value :?> AssetTag<Image>
+                | None -> failwith "Invalid argument type for 'assetTag'; expecting a value convertable to AssetTag`1."
+            let result = World.getTextureSize assetTag
+            let value = result
+            let value = ScriptingSystem.tryImport typeof<Vector2i> value world |> Option.get
+            struct (value, world)
+        with exn ->
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getTextureSize' due to: " + scstring exn, ValueNone)
+            struct (violation, World.choose oldWorld)
+
+    let tryGetTextureSizeF assetTag =
+        let oldWorld = world
+        try
+            let assetTag =
+                match ScriptingSystem.tryExport typeof<AssetTag<Image>> assetTag world with
+                | Some value -> value :?> AssetTag<Image>
+                | None -> failwith "Invalid argument type for 'assetTag'; expecting a value convertable to AssetTag`1."
+            let result = World.tryGetTextureSizeF assetTag
+            let value = result
+            let value = ScriptingSystem.tryImport typeof<FSharpOption<Vector2>> value world |> Option.get
+            struct (value, world)
+        with exn ->
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'tryGetTextureSizeF' due to: " + scstring exn, ValueNone)
+            struct (violation, World.choose oldWorld)
+
+    let getTextureSizeF assetTag =
+        let oldWorld = world
+        try
+            let assetTag =
+                match ScriptingSystem.tryExport typeof<AssetTag<Image>> assetTag world with
+                | Some value -> value :?> AssetTag<Image>
+                | None -> failwith "Invalid argument type for 'assetTag'; expecting a value convertable to AssetTag`1."
+            let result = World.getTextureSizeF assetTag
+            let value = result
+            let value = ScriptingSystem.tryImport typeof<Vector2> value world |> Option.get
+            struct (value, world)
+        with exn ->
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getTextureSizeF' due to: " + scstring exn, ValueNone)
             struct (violation, World.choose oldWorld)
 
     let tryGetWindowFlags world =
@@ -3103,7 +3138,7 @@ module WorldBindings =
                 struct (violation, world)
         | Some violation -> struct (violation, world)
 
-    let evalLoadRenderPackage2dBinding fnName exprs originOpt world =
+    let evalHintRenderPackageUse2dBinding fnName exprs originOpt world =
         let struct (evaleds, world) = World.evalManyInternal exprs world
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
@@ -3131,6 +3166,17 @@ module WorldBindings =
         | None ->
             match evaleds with
             | [||] -> reloadRenderAssets2d world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
+
+    let evalReloadRenderAssets3dBinding fnName exprs originOpt world =
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [||] -> reloadRenderAssets3d world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
                 struct (violation, world)
@@ -4302,7 +4348,7 @@ module WorldBindings =
                 struct (violation, world)
         | Some violation -> struct (violation, world)
 
-    let evalIsAdvancingBinding fnName exprs originOpt world =
+    let evalGetAdvancingBinding fnName exprs originOpt world =
         let struct (evaleds, world) = World.evalManyInternal exprs world
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
@@ -4313,7 +4359,7 @@ module WorldBindings =
                 struct (violation, world)
         | Some violation -> struct (violation, world)
 
-    let evalIsHaltedBinding fnName exprs originOpt world =
+    let evalGetHaltedBinding fnName exprs originOpt world =
         let struct (evaleds, world) = World.evalManyInternal exprs world
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
@@ -4352,6 +4398,50 @@ module WorldBindings =
         | None ->
             match evaleds with
             | [||] -> exit world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
+
+    let evalTryGetTextureSizeBinding fnName exprs originOpt world =
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|assetTag|] -> tryGetTextureSize assetTag world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
+
+    let evalGetTextureSizeBinding fnName exprs originOpt world =
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|assetTag|] -> getTextureSize assetTag world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
+
+    let evalTryGetTextureSizeFBinding fnName exprs originOpt world =
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|assetTag|] -> tryGetTextureSizeF assetTag world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
+
+    let evalGetTextureSizeFBinding fnName exprs originOpt world =
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|assetTag|] -> getTextureSizeF assetTag world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
                 struct (violation, world)
@@ -4508,9 +4598,10 @@ module WorldBindings =
              ("loadAudioPackage", { Fn = evalLoadAudioPackageBinding; Pars = [|"packageName"|]; DocOpt = None })
              ("unloadAudioPackage", { Fn = evalUnloadAudioPackageBinding; Pars = [|"packageName"|]; DocOpt = None })
              ("reloadAudioAssets", { Fn = evalReloadAudioAssetsBinding; Pars = [||]; DocOpt = None })
-             ("hintRenderPackageUse2d", { Fn = evalLoadRenderPackage2dBinding; Pars = [|"packageName"|]; DocOpt = None })
+             ("hintRenderPackageUse2d", { Fn = evalHintRenderPackageUse2dBinding; Pars = [|"packageName"|]; DocOpt = None })
              ("unloadRenderPackage2d", { Fn = evalUnloadRenderPackage2dBinding; Pars = [|"packageName"|]; DocOpt = None })
              ("reloadRenderAssets2d", { Fn = evalReloadRenderAssets2dBinding; Pars = [||]; DocOpt = None })
+             ("reloadRenderAssets3d", { Fn = evalReloadRenderAssets3dBinding; Pars = [||]; DocOpt = None })
              ("localizeBodyShape", { Fn = evalLocalizeBodyShapeBinding; Pars = [|"extent"; "bodyShape"|]; DocOpt = None })
              ("bodyExists", { Fn = evalBodyExistsBinding; Pars = [|"physicsId"|]; DocOpt = None })
              ("getBodyContactNormals", { Fn = evalGetBodyContactNormalsBinding; Pars = [|"physicsId"|]; DocOpt = None })
@@ -4617,11 +4708,15 @@ module WorldBindings =
              ("getLiveness", { Fn = evalGetLivenessBinding; Pars = [||]; DocOpt = None })
              ("getUpdateRate", { Fn = evalGetUpdateRateBinding; Pars = [||]; DocOpt = None })
              ("setUpdateRate", { Fn = evalSetUpdateRateBinding; Pars = [|"updateRate"|]; DocOpt = None })
-             ("getAdvancing", { Fn = evalIsAdvancingBinding; Pars = [||]; DocOpt = None })
-             ("getHalted", { Fn = evalIsHaltedBinding; Pars = [||]; DocOpt = None })
+             ("getAdvancing", { Fn = evalGetAdvancingBinding; Pars = [||]; DocOpt = None })
+             ("getHalted", { Fn = evalGetHaltedBinding; Pars = [||]; DocOpt = None })
              ("getUpdateTime", { Fn = evalGetUpdateTimeBinding; Pars = [||]; DocOpt = None })
              ("getClockDelta", { Fn = evalGetClockDeltaBinding; Pars = [||]; DocOpt = None })
              ("exit", { Fn = evalExitBinding; Pars = [||]; DocOpt = None })
+             ("tryGetTextureSize", { Fn = evalTryGetTextureSizeBinding; Pars = [|"assetTag"|]; DocOpt = None })
+             ("getTextureSize", { Fn = evalGetTextureSizeBinding; Pars = [|"assetTag"|]; DocOpt = None })
+             ("tryGetTextureSizeF", { Fn = evalTryGetTextureSizeFBinding; Pars = [|"assetTag"|]; DocOpt = None })
+             ("getTextureSizeF", { Fn = evalGetTextureSizeFBinding; Pars = [|"assetTag"|]; DocOpt = None })
              ("tryGetWindowFlags", { Fn = evalTryGetWindowFlagsBinding; Pars = [||]; DocOpt = None })
              ("tryGetWindowMinimized", { Fn = evalTryGetWindowMinimizedBinding; Pars = [||]; DocOpt = None })
              ("tryGetWindowMaximized", { Fn = evalTryGetWindowMaximizedBinding; Pars = [||]; DocOpt = None })

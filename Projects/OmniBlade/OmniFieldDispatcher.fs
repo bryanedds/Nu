@@ -1212,11 +1212,11 @@ module FieldDispatcher =
                             match FieldData.tryGetTileMap field.OmniSeedState fieldData with
                             | Some tileMapChc ->
                                 match tileMapChc with
-                                | Choice1Of3 _ -> Metadata.getTileMapMetadata Assets.Default.TileMapEmpty |> __c
+                                | Choice1Of3 _ -> World.getTileMapMetadata Assets.Default.TileMapEmpty |> __c
                                 | Choice2Of3 (_, tileMapFade) -> tileMapFade
-                                | Choice3Of3 (_, _) ->  Metadata.getTileMapMetadata Assets.Default.TileMapEmpty |> __c
-                            | None -> Metadata.getTileMapMetadata Assets.Default.TileMapEmpty |> __c
-                        | None -> Metadata.getTileMapMetadata Assets.Default.TileMapEmpty |> __c
+                                | Choice3Of3 (_, _) ->  World.getTileMapMetadata Assets.Default.TileMapEmpty |> __c
+                            | None -> World.getTileMapMetadata Assets.Default.TileMapEmpty |> __c
+                        | None -> World.getTileMapMetadata Assets.Default.TileMapEmpty |> __c
                      Entity.TileLayerClearance == 10.0f]
 
                  // feeler
