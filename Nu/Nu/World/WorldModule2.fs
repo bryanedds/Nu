@@ -111,11 +111,6 @@ module WorldModule2 =
             let scriptContext = World.getScriptContext world
             let address = Relation.resolve scriptContext.SimulantAddress relation
             address
-
-        /// Resolve a relation to an address in the current script context.
-        [<FunctionBinding "resolve">]
-        static member resolveGeneralized (relation : obj Relation) world =
-            World.resolve relation world
     
         /// Relate an address to the current script context.
         static member relate<'a> (address : 'a Address) world =
@@ -123,9 +118,14 @@ module WorldModule2 =
             let address = Relation.relate scriptContext.SimulantAddress address
             address
 
-        /// Relate an address to the current script context.
+        /// Resolve a relation to an address in the current script context in script.
+        [<FunctionBinding "resolve">]
+        static member internal resolveViaScript (relation : obj Relation) world =
+            World.resolve relation world
+
+        /// Relate an address to the current script context in script.
         [<FunctionBinding "relate">]
-        static member relateGeneralized (address : obj Address) world =
+        static member internal relateViaScript (address : obj Address) world =
             World.relate address world
 
         /// Select the given screen without transitioning, even if another transition is taking place.

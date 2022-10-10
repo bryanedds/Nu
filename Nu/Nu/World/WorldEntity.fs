@@ -728,8 +728,7 @@ module WorldEntityModule =
             World.readEntity entityDescriptor nameOpt group world
 
         /// Read multiple entities.
-        [<FunctionBinding>]
-        static member internal readEntities (entityDescriptors : EntityDescriptor list) (parent : Simulant) world =
+        static member readEntities (entityDescriptors : EntityDescriptor list) (parent : Simulant) world =
             let (entitiesRev, world) =
                 List.fold
                     (fun (entities, world) entityDescriptor ->
