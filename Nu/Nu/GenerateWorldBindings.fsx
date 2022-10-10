@@ -1,7 +1,7 @@
 ﻿// Nu Game Engine.
 // Copyright (C) Bryan Edds, 2013-2022.
 
-#I __SOURCE_DIRECTORY__
+#I "C:/Development/Nu/Nu/Nu"
 #load "Interactive.fsx"
 open System
 open System.IO

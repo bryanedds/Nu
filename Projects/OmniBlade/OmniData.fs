@@ -914,11 +914,11 @@ module FieldData =
             let tileMapOpt =
                 match fieldData.FieldTileMap with
                 | FieldStatic fieldAsset ->
-                    match Metadata.tryGetTileMapMetadata fieldAsset with
+                    match World.tryGetTileMapMetadata fieldAsset with
                     | Some (_, _, tileMap) -> Some (Choice1Of3 tileMap)
                     | None -> None
                 | FieldConnector (fieldAsset, fieldFadeAsset) ->
-                    match (Metadata.tryGetTileMapMetadata fieldAsset, Metadata.tryGetTileMapMetadata fieldFadeAsset) with
+                    match (World.tryGetTileMapMetadata fieldAsset, World.tryGetTileMapMetadata fieldFadeAsset) with
                     | (Some (_, _, tileMap), Some (_, _, tileMapFade)) -> Some (Choice2Of3 (tileMap, tileMapFade))
                     | (_, _) -> None
                 | FieldRandom (walkLength, bias, originRand, floor, fieldPath) ->

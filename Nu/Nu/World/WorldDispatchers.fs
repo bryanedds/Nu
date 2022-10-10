@@ -280,7 +280,7 @@ module StaticSpriteFacetModule =
             world
 
         override this.GetQuickSize (entity, world) =
-            match Metadata.tryGetTextureSizeF (entity.GetStaticImage world) with
+            match World.tryGetTextureSizeF (entity.GetStaticImage world) with
             | Some size -> size.V3
             | None -> Constants.Engine.EntitySize2dDefault
 
@@ -1453,14 +1453,14 @@ module StaticModelFacetModule =
 
         override this.GetQuickSize (entity, world) =
             let staticModel = entity.GetStaticModel world
-            let staticModelMetadata = Metadata.getStaticModelMetadata staticModel
+            let staticModelMetadata = World.getStaticModelMetadata staticModel
             let bounds = staticModelMetadata.Bounds
             let boundsExtended = bounds.Combine bounds.Mirror
             boundsExtended.Size
 
         override this.RayCast (ray, entity, world) =
             let rayEntity = ray.Transform (Matrix4x4.Invert (entity.GetAffineMatrix world) |> snd)
-            match Metadata.tryGetStaticModelMetadata (entity.GetStaticModel world) with
+            match World.tryGetStaticModelMetadata (entity.GetStaticModel world) with
             | Some staticModel ->
                 let intersectionses =
                     Array.map (fun (surface : OpenGL.PhysicallyBased.PhysicallyBasedSurface) ->
@@ -1478,7 +1478,7 @@ module StaticModelFacetModule =
             | None -> [||]
 
         override this.TryGetHighlightBounds (entity, world) =
-            match Metadata.tryGetStaticModelMetadata (entity.GetStaticModel world) with
+            match World.tryGetStaticModelMetadata (entity.GetStaticModel world) with
             | Some staticModel ->
                 let mutable boundsOpt = None
                 for surface in staticModel.Surfaces do
@@ -1534,7 +1534,7 @@ module StaticModelSurfaceFacetModule =
                 world
 
         override this.GetQuickSize (entity, world) =
-            let staticModel = Metadata.getStaticModelMetadata (entity.GetStaticModel world)
+            let staticModel = World.getStaticModelMetadata (entity.GetStaticModel world)
             let surfaceIndex = entity.GetSurfaceIndex world
             if surfaceIndex > -1 && surfaceIndex < staticModel.Surfaces.Length then
                 let bounds = staticModel.Surfaces.[surfaceIndex].SurfaceBounds
@@ -1544,7 +1544,7 @@ module StaticModelSurfaceFacetModule =
 
         override this.RayCast (ray, entity, world) =
             let rayEntity = ray.Transform (Matrix4x4.Invert (entity.GetAffineMatrix world) |> snd)
-            match Metadata.tryGetStaticModelMetadata (entity.GetStaticModel world) with
+            match World.tryGetStaticModelMetadata (entity.GetStaticModel world) with
             | Some staticModel ->
                 let surfaceIndex = entity.GetSurfaceIndex world
                 if surfaceIndex < staticModel.Surfaces.Length then
@@ -1560,7 +1560,7 @@ module StaticModelSurfaceFacetModule =
             | None -> [||]
 
         override this.TryGetHighlightBounds (entity, world) =
-            match Metadata.tryGetStaticModelMetadata (entity.GetStaticModel world) with
+            match World.tryGetStaticModelMetadata (entity.GetStaticModel world) with
             | Some staticModel ->
                 let surfaceIndex = entity.GetSurfaceIndex world
                 if surfaceIndex < staticModel.Surfaces.Length then
@@ -1885,7 +1885,7 @@ module ButtonDispatcherModule =
             world
 
         override this.GetQuickSize (entity, world) =
-            match Metadata.tryGetTextureSizeF (entity.GetUpImage world) with
+            match World.tryGetTextureSizeF (entity.GetUpImage world) with
             | Some size -> size.V3
             | None -> Constants.Engine.EntitySizeGuiDefault
 
@@ -1924,7 +1924,7 @@ module LabelDispatcherModule =
             world
 
         override this.GetQuickSize (entity, world) =
-            match Metadata.tryGetTextureSizeF (entity.GetLabelImage world) with
+            match World.tryGetTextureSizeF (entity.GetLabelImage world) with
             | Some size -> size.V3
             | None -> Constants.Engine.EntitySizeGuiDefault
 
@@ -1971,7 +1971,7 @@ module TextDispatcherModule =
         override this.GetQuickSize (entity, world) =
             match entity.GetBackgroundImageOpt world with
             | Some image ->
-                match Metadata.tryGetTextureSizeF image with
+                match World.tryGetTextureSizeF image with
                 | Some size -> size.V3
                 | None -> Constants.Engine.EntitySizeGuiDefault
             | None -> Constants.Engine.EntitySizeGuiDefault
@@ -2102,7 +2102,7 @@ module ToggleButtonDispatcherModule =
             world
 
         override this.GetQuickSize (entity, world) =
-            match Metadata.tryGetTextureSizeF (entity.GetUntoggledImage world) with
+            match World.tryGetTextureSizeF (entity.GetUntoggledImage world) with
             | Some size -> size.V3
             | None -> Constants.Engine.EntitySizeGuiDefault
 
@@ -2227,7 +2227,7 @@ module RadioButtonDispatcherModule =
             world
 
         override this.GetQuickSize (entity, world) =
-            match Metadata.tryGetTextureSizeF (entity.GetUndialedImage world) with
+            match World.tryGetTextureSizeF (entity.GetUndialedImage world) with
             | Some size -> size.V3
             | None -> Constants.Engine.EntitySize2dDefault
 
@@ -2453,7 +2453,7 @@ module FillBarDispatcherModule =
             world
 
         override this.GetQuickSize (entity, world) =
-            match Metadata.tryGetTextureSizeF (entity.GetBorderImage world) with
+            match World.tryGetTextureSizeF (entity.GetBorderImage world) with
             | Some size -> size.V3
             | None -> Constants.Engine.EntitySize2dDefault
 
@@ -2731,7 +2731,7 @@ module StaticModelHierarchyDispatcherModule =
 
         /// Attempt to import scene below the target entity.
         static member tryImportScene static_ staticModel (parent : Either<Group, Entity>) world =
-            match Metadata.tryGetStaticModelMetadata staticModel with
+            match World.tryGetStaticModelMetadata staticModel with
             | Some staticModelMetadata ->
                 // Unity Scene Export Instructions:
                 // 1) have FBX Exporter package installed
