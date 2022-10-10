@@ -490,7 +490,7 @@ module WorldModule2 =
             let world = World.reloadRenderAssets3d world
             let world = World.reloadAudioAssets world
             let world = World.reloadSymbols world
-            World.regenerateMetadata ()
+            Metadata.regenerateMetadata ()
             world
 
         /// Attempt to reload the asset graph.
