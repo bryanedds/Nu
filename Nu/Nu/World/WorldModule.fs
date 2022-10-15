@@ -948,14 +948,14 @@ module WorldModule =
         static member tryMakeEmitter time lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax emitterStyle world =
             world.WorldExtension.Plugin.TryMakeEmitter time lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax emitterStyle
 
-        static member internal preFrame world =
-            world.WorldExtension.Plugin.PreFrame world
+        static member internal preProcess world =
+            world.WorldExtension.Plugin.PreProcess world
 
-        static member internal perFrame world =
-            world.WorldExtension.Plugin.PerFrame world
+        static member internal perProcess world =
+            world.WorldExtension.Plugin.PerProcess world
 
-        static member internal postFrame world =
-            world.WorldExtension.Plugin.PostFrame world
+        static member internal postProcess world =
+            world.WorldExtension.Plugin.PostProcess world
 
     type World with // Debugging
 
