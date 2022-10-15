@@ -61,7 +61,7 @@ and EntityPropertyDescriptor (propertyDescriptor, attributes) =
             | None -> null
 
     override this.SetValue (source, value) =
-        Globals.WorldChangers.Add $ fun world ->
+        Globals.PreUpdaters.Add $ fun world ->
 
             // grab the type descriptor and entity
             let entityTds = source :?> EntityTypeDescriptorSource

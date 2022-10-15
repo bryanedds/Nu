@@ -1290,16 +1290,16 @@ module WorldTypes =
         default this.TryConvertSceneryToEntities _ world = (Seq.empty, world) // fail to convert any by default.
 
         /// A call-back at the beginning of each frame.
-        abstract PreFrame : World -> World
-        default this.PreFrame world = world
+        abstract PreProcess : World -> World
+        default this.PreProcess world = world
 
         /// A call-back during each frame.
-        abstract PerFrame : World -> World
-        default this.PerFrame world = world
+        abstract PerProcess : World -> World
+        default this.PerProcess world = world
 
         /// A call-back at the end of each frame.
-        abstract PostFrame : World -> World
-        default this.PostFrame world = world
+        abstract PostProcess : World -> World
+        default this.PostProcess world = world
 
         /// Birth facets / dispatchers of type 'a from plugin.
         member internal this.Birth<'a> () =

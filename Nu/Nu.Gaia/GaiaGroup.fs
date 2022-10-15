@@ -51,7 +51,7 @@ and GroupPropertyDescriptor (propertyDescriptor, attributes) =
         Reflection.isPropertyNonPersistentByName propertyName
 
     override this.SetValue (source, value) =
-        Globals.WorldChangers.Add $ fun world ->
+        Globals.PreUpdaters.Add $ fun world ->
         
             // grab the type descriptor and group
             let groupTds = source :?> GroupTypeDescriptorSource

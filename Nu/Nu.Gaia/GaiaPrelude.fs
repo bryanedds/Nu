@@ -9,8 +9,8 @@ open Prime
 open Nu
 open Nu.Gaia.Design
 
-type WorldChanger = World -> World
-type WorldChangers = WorldChanger List
+type Updater = World -> World
+type Updaters = Updater List
 
 type DragEntityState =
     | DragEntityPosition2d of MousePositionWorldOrig : Vector2 * EntityDragOffset : Vector2 * Entity : Entity
@@ -44,7 +44,7 @@ type SavedState =
 module Globals =
 
     let mutable SelectEntity : Entity -> GaiaForm -> World -> unit = Unchecked.defaultof<_>
-    let mutable WorldChangers = WorldChangers ()
+    let mutable (PreUpdaters, PerUpdaters) = (Updaters (), Updaters ())
     let mutable Screen = Simulants.Default.Screen
     let mutable World = Unchecked.defaultof<World>
     let mutable EditorState = Unchecked.defaultof<EditorState>

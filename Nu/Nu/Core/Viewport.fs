@@ -5,9 +5,9 @@ open Nu
 
 /// Describes the form of an element's presence.
 [<Syntax
-        ("Enclosed Exposed Imposter Prominent Omnipresent", "", "", "", "",
-         Constants.PrettyPrinter.DefaultThresholdMin,
-         Constants.PrettyPrinter.DefaultThresholdMax)>]
+    ("Enclosed Exposed Imposter Prominent Omnipresent", "", "", "", "",
+     Constants.PrettyPrinter.DefaultThresholdMin,
+     Constants.PrettyPrinter.DefaultThresholdMax)>]
 type [<StructuralEquality; NoComparison; Struct>] Presence =
     | Enclosed
     | Exposed
