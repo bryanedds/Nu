@@ -251,7 +251,7 @@ module WorldGroupModule =
         [<FunctionBinding>]
         static member writeGroupToFile (filePath : string) group world =
             let filePathTmp = filePath + ".tmp"
-            let prettyPrinter = (SyntaxAttribute.getOrDefault typeof<GameDescriptor>).PrettyPrinter
+            let prettyPrinter = (SyntaxAttribute.defaultValue typeof<GameDescriptor>).PrettyPrinter
             let groupDescriptor = World.writeGroup group GroupDescriptor.empty world
             let groupDescriptorStr = scstring groupDescriptor
             let groupDescriptorPretty = PrettyPrinter.prettyPrint groupDescriptorStr prettyPrinter

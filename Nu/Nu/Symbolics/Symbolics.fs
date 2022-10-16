@@ -57,11 +57,11 @@ module Symbolics =
                     | Some symbolPackage -> symbolPackage
                     | None ->
                         let symbolPackage = { Assets = dictPlus StringComparer.Ordinal []; PackageState = () }
-                        symbolics.SymbolPackages.Assign (packageName, symbolPackage)
+                        symbolics.SymbolPackages[packageName] <- symbolPackage
                         symbolPackage
                 for asset in assets do
                     match tryLoadSymbol3 metadata packageName (Asset.convert asset) with
-                    | Some symbol -> symbolPackage.Assets.Assign (asset.AssetTag.AssetName, symbol)
+                    | Some symbol -> symbolPackage.Assets[asset.AssetTag.AssetName] <- symbol
                     | None -> ()
             | Left error ->
                 Log.info ("Symbol package load failed due to unloadable assets '" + error + "' for package '" + packageName + "'.")

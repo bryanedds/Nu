@@ -141,7 +141,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
                     | Some renderPackage -> renderPackage
                     | None ->
                         let renderPackage = { Assets = dictPlus StringComparer.Ordinal []; PackageState = () }
-                        renderer.RenderPackages.Assign (packageName, renderPackage)
+                        renderer.RenderPackages[packageName] <- renderPackage
                         renderPackage
 
                 // reload assets if specified
@@ -149,14 +149,14 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
                     for asset in assets do
                         GlRenderer2d.freeRenderAsset renderPackage.Assets.[asset.AssetTag.AssetName] renderer
                         match GlRenderer2d.tryLoadRenderAsset asset renderer with
-                        | Some renderAsset -> renderPackage.Assets.Assign (asset.AssetTag.AssetName, renderAsset)
+                        | Some renderAsset -> renderPackage.Assets[asset.AssetTag.AssetName] <- renderAsset
                         | None -> ()
 
                 // otherwise create assets
                 else
                     for asset in assets do
                         match GlRenderer2d.tryLoadRenderAsset asset renderer with
-                        | Some renderAsset -> renderPackage.Assets.Assign (asset.AssetTag.AssetName, renderAsset)
+                        | Some renderAsset -> renderPackage.Assets[asset.AssetTag.AssetName] <- renderAsset
                         | None -> ()
 
             | Left failedAssetNames ->
