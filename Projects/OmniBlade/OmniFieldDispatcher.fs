@@ -583,7 +583,7 @@ module FieldDispatcher =
             match prop.PropState with
             | DoorState false ->
                 if  field.Advents.IsSupersetOf requirements &&
-                    Option.mapOrDefault (fun keyItemType -> Map.containsKey (KeyItem keyItemType) field.Inventory.Items) true keyItemTypeOpt then
+                    Option.mapOrDefaultValue (fun keyItemType -> Map.containsKey (KeyItem keyItemType) field.Inventory.Items) true keyItemTypeOpt then
                     let field = Field.updateAvatar (Avatar.lookAt prop.Center) field
                     let field = Field.updateCue (constant cue) field
                     let field = Field.updatePropState (constant (DoorState true)) prop.PropId field
@@ -722,7 +722,7 @@ module FieldDispatcher =
                         match Field.updateSpirits field world with
                         | Left (battleData, field) ->
                             let clockTime = let t = World.getClockTime world in t.ToUnixTimeMilliseconds ()
-                            let playTime = Option.getOrDefault clockTime field.FieldSongTimeOpt
+                            let playTime = Option.defaultValue clockTime field.FieldSongTimeOpt
                             let startTime = clockTime - playTime
                             let prizePool = { Consequents = Set.empty; Items = []; Gold = 0; Exp = 0 }
                             let battle = Battle.makeFromTeam field.Inventory prizePool field.Team field.Options.BattleSpeed battleData world
@@ -977,7 +977,7 @@ module FieldDispatcher =
                 match Map.tryFind battleType Data.Value.Battles with
                 | Some battleData ->
                     let clockTime = let t = World.getClockTime world in t.ToUnixTimeMilliseconds ()
-                    let playTime = Option.getOrDefault clockTime field.FieldSongTimeOpt
+                    let playTime = Option.defaultValue clockTime field.FieldSongTimeOpt
                     let startTime = clockTime - playTime
                     let prizePool = { Consequents = consequents; Items = []; Gold = 0; Exp = 0 }
                     let battle = Battle.makeFromTeam field.Inventory prizePool (Field.getParty field) field.Options.BattleSpeed battleData world
@@ -1303,7 +1303,7 @@ module FieldDispatcher =
                                 match field.Menu.MenuState with
                                 | MenuTeam menu ->
                                     match MenuTeam.tryGetTeammate field.Team menu with
-                                    | Some teammate -> "Wpn: " + Option.mapOrDefault string "None" teammate.WeaponOpt
+                                    | Some teammate -> "Wpn: " + Option.mapOrDefaultValue string "None" teammate.WeaponOpt
                                     | None -> ""
                                 | _ -> ""]
                          Content.text Gen.name
@@ -1312,7 +1312,7 @@ module FieldDispatcher =
                                 match field.Menu.MenuState with
                                 | MenuTeam menu ->
                                     match MenuTeam.tryGetTeammate field.Team menu with
-                                    | Some teammate -> "Amr: " + Option.mapOrDefault string "None" teammate.ArmorOpt
+                                    | Some teammate -> "Amr: " + Option.mapOrDefaultValue string "None" teammate.ArmorOpt
                                     | None -> ""
                                 | _ -> ""]
                          Content.text Gen.name
@@ -1321,7 +1321,7 @@ module FieldDispatcher =
                                 match field.Menu.MenuState with
                                 | MenuTeam menu ->
                                     match MenuTeam.tryGetTeammate field.Team menu with
-                                    | Some teammate -> "Acc: " + Option.mapOrDefault string "None" (List.tryHead teammate.Accessories)
+                                    | Some teammate -> "Acc: " + Option.mapOrDefaultValue string "None" (List.tryHead teammate.Accessories)
                                     | None -> ""
                                 | _ -> ""]
                          Content.text Gen.name

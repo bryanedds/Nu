@@ -289,7 +289,7 @@ module WorldScreenModule =
         [<FunctionBinding>]
         static member writeScreenToFile (filePath : string) screen world =
             let filePathTmp = filePath + ".tmp"
-            let prettyPrinter = (SyntaxAttribute.getOrDefault typeof<GameDescriptor>).PrettyPrinter
+            let prettyPrinter = (SyntaxAttribute.defaultValue typeof<GameDescriptor>).PrettyPrinter
             let screenDescriptor = World.writeScreen screen ScreenDescriptor.empty world
             let screenDescriptorStr = scstring screenDescriptor
             let screenDescriptorPretty = PrettyPrinter.prettyPrint screenDescriptorStr prettyPrinter

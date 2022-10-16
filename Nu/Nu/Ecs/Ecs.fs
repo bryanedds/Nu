@@ -113,23 +113,23 @@ and ArchetypeId (terms : Map<string, Term>) =
         ArchetypeId (intraComponents, subterms)
 
     static member make ?subterms =
-        ArchetypeId (([] : (string * Type) list), Option.getOrDefault Map.empty subterms)
+        ArchetypeId (([] : (string * Type) list), Option.defaultValue Map.empty subterms)
 
     static member make<'c when
         'c : struct and 'c :> 'c Component>
         (?compName, ?subterms) =
         ArchetypeId
-            ([(Option.getOrDefault typeof<'c>.Name compName, typeof<'c>)],
-             Option.getOrDefault Map.empty subterms)
+            ([(Option.defaultValue typeof<'c>.Name compName, typeof<'c>)],
+             Option.defaultValue Map.empty subterms)
 
     static member make<'c, 'c2 when
         'c : struct and 'c :> 'c Component and
         'c2 : struct and 'c2 :> 'c2 Component>
         (?compName, ?comp2Name, ?subterms) =
         ArchetypeId
-            ([(Option.getOrDefault typeof<'c>.Name compName, typeof<'c>)
-              (Option.getOrDefault typeof<'c2>.Name comp2Name, typeof<'c2>)],
-             Option.getOrDefault Map.empty subterms)
+            ([(Option.defaultValue typeof<'c>.Name compName, typeof<'c>)
+              (Option.defaultValue typeof<'c2>.Name comp2Name, typeof<'c2>)],
+             Option.defaultValue Map.empty subterms)
 
     static member make<'c, 'c2, 'c3 when
         'c : struct and 'c :> 'c Component and
@@ -137,10 +137,10 @@ and ArchetypeId (terms : Map<string, Term>) =
         'c3 : struct and 'c3 :> 'c3 Component>
         (?compName, ?comp2Name, ?comp3Name, ?subterms) =
         ArchetypeId
-            ([(Option.getOrDefault typeof<'c>.Name compName, typeof<'c>)
-              (Option.getOrDefault typeof<'c2>.Name comp2Name, typeof<'c2>)
-              (Option.getOrDefault typeof<'c3>.Name comp3Name, typeof<'c3>)],
-             Option.getOrDefault Map.empty subterms)
+            ([(Option.defaultValue typeof<'c>.Name compName, typeof<'c>)
+              (Option.defaultValue typeof<'c2>.Name comp2Name, typeof<'c2>)
+              (Option.defaultValue typeof<'c3>.Name comp3Name, typeof<'c3>)],
+             Option.defaultValue Map.empty subterms)
 
     static member make<'c, 'c2, 'c3, 'c4 when
         'c : struct and 'c :> 'c Component and
@@ -149,11 +149,11 @@ and ArchetypeId (terms : Map<string, Term>) =
         'c4 : struct and 'c4 :> 'c4 Component>
         (?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?subterms) =
         ArchetypeId
-            ([(Option.getOrDefault typeof<'c>.Name compName, typeof<'c>)
-              (Option.getOrDefault typeof<'c2>.Name comp2Name, typeof<'c2>)
-              (Option.getOrDefault typeof<'c3>.Name comp3Name, typeof<'c3>)
-              (Option.getOrDefault typeof<'c4>.Name comp4Name, typeof<'c4>)],
-             Option.getOrDefault Map.empty subterms)
+            ([(Option.defaultValue typeof<'c>.Name compName, typeof<'c>)
+              (Option.defaultValue typeof<'c2>.Name comp2Name, typeof<'c2>)
+              (Option.defaultValue typeof<'c3>.Name comp3Name, typeof<'c3>)
+              (Option.defaultValue typeof<'c4>.Name comp4Name, typeof<'c4>)],
+             Option.defaultValue Map.empty subterms)
 
     static member make<'c, 'c2, 'c3, 'c4, 'c5 when
         'c : struct and 'c :> 'c Component and
@@ -163,12 +163,12 @@ and ArchetypeId (terms : Map<string, Term>) =
         'c5 : struct and 'c5 :> 'c5 Component>
         (?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?subterms) =
         ArchetypeId
-            ([(Option.getOrDefault typeof<'c>.Name compName, typeof<'c>)
-              (Option.getOrDefault typeof<'c2>.Name comp2Name, typeof<'c2>)
-              (Option.getOrDefault typeof<'c3>.Name comp3Name, typeof<'c3>)
-              (Option.getOrDefault typeof<'c4>.Name comp4Name, typeof<'c4>)
-              (Option.getOrDefault typeof<'c5>.Name comp5Name, typeof<'c5>)],
-             Option.getOrDefault Map.empty subterms)
+            ([(Option.defaultValue typeof<'c>.Name compName, typeof<'c>)
+              (Option.defaultValue typeof<'c2>.Name comp2Name, typeof<'c2>)
+              (Option.defaultValue typeof<'c3>.Name comp3Name, typeof<'c3>)
+              (Option.defaultValue typeof<'c4>.Name comp4Name, typeof<'c4>)
+              (Option.defaultValue typeof<'c5>.Name comp5Name, typeof<'c5>)],
+             Option.defaultValue Map.empty subterms)
 
     static member make<'c, 'c2, 'c3, 'c4, 'c5, 'c6 when
         'c : struct and 'c :> 'c Component and
@@ -179,13 +179,13 @@ and ArchetypeId (terms : Map<string, Term>) =
         'c6 : struct and 'c6 :> 'c6 Component>
         (?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?comp6Name, ?subterms) =
         ArchetypeId
-            ([(Option.getOrDefault typeof<'c>.Name compName, typeof<'c>)
-              (Option.getOrDefault typeof<'c2>.Name comp2Name, typeof<'c2>)
-              (Option.getOrDefault typeof<'c3>.Name comp3Name, typeof<'c3>)
-              (Option.getOrDefault typeof<'c4>.Name comp4Name, typeof<'c4>)
-              (Option.getOrDefault typeof<'c5>.Name comp5Name, typeof<'c5>)
-              (Option.getOrDefault typeof<'c6>.Name comp6Name, typeof<'c6>)],
-             Option.getOrDefault Map.empty subterms)
+            ([(Option.defaultValue typeof<'c>.Name compName, typeof<'c>)
+              (Option.defaultValue typeof<'c2>.Name comp2Name, typeof<'c2>)
+              (Option.defaultValue typeof<'c3>.Name comp3Name, typeof<'c3>)
+              (Option.defaultValue typeof<'c4>.Name comp4Name, typeof<'c4>)
+              (Option.defaultValue typeof<'c5>.Name comp5Name, typeof<'c5>)
+              (Option.defaultValue typeof<'c6>.Name comp6Name, typeof<'c6>)],
+             Option.defaultValue Map.empty subterms)
 
     static member make<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7 when
         'c : struct and 'c :> 'c Component and
@@ -197,14 +197,14 @@ and ArchetypeId (terms : Map<string, Term>) =
         'c7 : struct and 'c7 :> 'c7 Component>
         (?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?comp6Name, ?comp7Name, ?subterms) =
         ArchetypeId
-            ([(Option.getOrDefault typeof<'c>.Name compName, typeof<'c>)
-              (Option.getOrDefault typeof<'c2>.Name comp2Name, typeof<'c2>)
-              (Option.getOrDefault typeof<'c3>.Name comp3Name, typeof<'c3>)
-              (Option.getOrDefault typeof<'c4>.Name comp4Name, typeof<'c4>)
-              (Option.getOrDefault typeof<'c5>.Name comp5Name, typeof<'c5>)
-              (Option.getOrDefault typeof<'c6>.Name comp6Name, typeof<'c6>)
-              (Option.getOrDefault typeof<'c7>.Name comp7Name, typeof<'c7>)],
-             Option.getOrDefault Map.empty subterms)
+            ([(Option.defaultValue typeof<'c>.Name compName, typeof<'c>)
+              (Option.defaultValue typeof<'c2>.Name comp2Name, typeof<'c2>)
+              (Option.defaultValue typeof<'c3>.Name comp3Name, typeof<'c3>)
+              (Option.defaultValue typeof<'c4>.Name comp4Name, typeof<'c4>)
+              (Option.defaultValue typeof<'c5>.Name comp5Name, typeof<'c5>)
+              (Option.defaultValue typeof<'c6>.Name comp6Name, typeof<'c6>)
+              (Option.defaultValue typeof<'c7>.Name comp7Name, typeof<'c7>)],
+             Option.defaultValue Map.empty subterms)
 
     static member make<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8 when
         'c : struct and 'c :> 'c Component and
@@ -217,15 +217,15 @@ and ArchetypeId (terms : Map<string, Term>) =
         'c8 : struct and 'c8 :> 'c8 Component>
         (?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?comp6Name, ?comp7Name, ?comp8Name, ?subterms) =
         ArchetypeId
-            ([(Option.getOrDefault typeof<'c>.Name compName, typeof<'c>)
-              (Option.getOrDefault typeof<'c2>.Name comp2Name, typeof<'c2>)
-              (Option.getOrDefault typeof<'c3>.Name comp3Name, typeof<'c3>)
-              (Option.getOrDefault typeof<'c4>.Name comp4Name, typeof<'c4>)
-              (Option.getOrDefault typeof<'c5>.Name comp5Name, typeof<'c5>)
-              (Option.getOrDefault typeof<'c6>.Name comp6Name, typeof<'c6>)
-              (Option.getOrDefault typeof<'c7>.Name comp7Name, typeof<'c7>)
-              (Option.getOrDefault typeof<'c8>.Name comp8Name, typeof<'c8>)],
-             Option.getOrDefault Map.empty subterms)
+            ([(Option.defaultValue typeof<'c>.Name compName, typeof<'c>)
+              (Option.defaultValue typeof<'c2>.Name comp2Name, typeof<'c2>)
+              (Option.defaultValue typeof<'c3>.Name comp3Name, typeof<'c3>)
+              (Option.defaultValue typeof<'c4>.Name comp4Name, typeof<'c4>)
+              (Option.defaultValue typeof<'c5>.Name comp5Name, typeof<'c5>)
+              (Option.defaultValue typeof<'c6>.Name comp6Name, typeof<'c6>)
+              (Option.defaultValue typeof<'c7>.Name comp7Name, typeof<'c7>)
+              (Option.defaultValue typeof<'c8>.Name comp8Name, typeof<'c8>)],
+             Option.defaultValue Map.empty subterms)
 
     static member make<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 'c9 when
         'c : struct and 'c :> 'c Component and
@@ -239,16 +239,16 @@ and ArchetypeId (terms : Map<string, Term>) =
         'c9 : struct and 'c9 :> 'c9 Component>
         (?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?comp6Name, ?comp7Name, ?comp8Name, ?comp9Name, ?subterms) =
         ArchetypeId
-            ([(Option.getOrDefault typeof<'c>.Name compName, typeof<'c>)
-              (Option.getOrDefault typeof<'c2>.Name comp2Name, typeof<'c2>)
-              (Option.getOrDefault typeof<'c3>.Name comp3Name, typeof<'c3>)
-              (Option.getOrDefault typeof<'c4>.Name comp4Name, typeof<'c4>)
-              (Option.getOrDefault typeof<'c5>.Name comp5Name, typeof<'c5>)
-              (Option.getOrDefault typeof<'c6>.Name comp6Name, typeof<'c6>)
-              (Option.getOrDefault typeof<'c7>.Name comp7Name, typeof<'c7>)
-              (Option.getOrDefault typeof<'c8>.Name comp8Name, typeof<'c8>)
-              (Option.getOrDefault typeof<'c9>.Name comp9Name, typeof<'c9>)],
-             Option.getOrDefault Map.empty subterms)
+            ([(Option.defaultValue typeof<'c>.Name compName, typeof<'c>)
+              (Option.defaultValue typeof<'c2>.Name comp2Name, typeof<'c2>)
+              (Option.defaultValue typeof<'c3>.Name comp3Name, typeof<'c3>)
+              (Option.defaultValue typeof<'c4>.Name comp4Name, typeof<'c4>)
+              (Option.defaultValue typeof<'c5>.Name comp5Name, typeof<'c5>)
+              (Option.defaultValue typeof<'c6>.Name comp6Name, typeof<'c6>)
+              (Option.defaultValue typeof<'c7>.Name comp7Name, typeof<'c7>)
+              (Option.defaultValue typeof<'c8>.Name comp8Name, typeof<'c8>)
+              (Option.defaultValue typeof<'c9>.Name comp9Name, typeof<'c9>)],
+             Option.defaultValue Map.empty subterms)
 
 /// A collection of component stores.
 and Archetype (archetypeId : ArchetypeId) =
@@ -748,10 +748,10 @@ and [<StructuralEquality; NoComparison; Struct>] EcsEntitySlot =
         let archetype = this.Archetype
         let archetypeId = archetype.Id
         let stores = archetype.Stores
-        let store = this.IndexStore<'c> (Option.getOrDefault typeof<'c>.Name compName) archetypeId stores
+        let store = this.IndexStore<'c> (Option.defaultValue typeof<'c>.Name compName) archetypeId stores
         let i = this.ArchetypeIndex
         if not archetype.EntityIdStore.[i].Active then failwith "Invalid component access."
-        statement.Invoke (&store.[i], Option.getOrDefault Unchecked.defaultof<'s> state)
+        statement.Invoke (&store.[i], Option.defaultValue Unchecked.defaultof<'s> state)
 
     member this.Frame
         (statement : Statement<'c, 'c2, 's>,
@@ -759,13 +759,13 @@ and [<StructuralEquality; NoComparison; Struct>] EcsEntitySlot =
         let archetype = this.Archetype
         let archetypeId = archetype.Id
         let stores = archetype.Stores
-        let store = this.IndexStore<'c> (Option.getOrDefault typeof<'c>.Name compName) archetypeId stores
-        let store2 = this.IndexStore<'c2> (Option.getOrDefault typeof<'c2>.Name comp2Name) archetypeId stores
+        let store = this.IndexStore<'c> (Option.defaultValue typeof<'c>.Name compName) archetypeId stores
+        let store2 = this.IndexStore<'c2> (Option.defaultValue typeof<'c2>.Name comp2Name) archetypeId stores
         let i = this.ArchetypeIndex
         if not archetype.EntityIdStore.[i].Active then failwith "Invalid component access."
         statement.Invoke
             (&store.[i], &store2.[i],
-             Option.getOrDefault Unchecked.defaultof<'s> state)
+             Option.defaultValue Unchecked.defaultof<'s> state)
 
     member this.Frame
         (statement : Statement<'c, 'c2, 'c3, 's>,
@@ -773,14 +773,14 @@ and [<StructuralEquality; NoComparison; Struct>] EcsEntitySlot =
         let archetype = this.Archetype
         let archetypeId = archetype.Id
         let stores = archetype.Stores
-        let store = this.IndexStore<'c> (Option.getOrDefault typeof<'c>.Name compName) archetypeId stores
-        let store2 = this.IndexStore<'c2> (Option.getOrDefault typeof<'c2>.Name comp2Name) archetypeId stores
-        let store3 = this.IndexStore<'c3> (Option.getOrDefault typeof<'c3>.Name comp3Name) archetypeId stores
+        let store = this.IndexStore<'c> (Option.defaultValue typeof<'c>.Name compName) archetypeId stores
+        let store2 = this.IndexStore<'c2> (Option.defaultValue typeof<'c2>.Name comp2Name) archetypeId stores
+        let store3 = this.IndexStore<'c3> (Option.defaultValue typeof<'c3>.Name comp3Name) archetypeId stores
         let i = this.ArchetypeIndex
         if not archetype.EntityIdStore.[i].Active then failwith "Invalid component access."
         statement.Invoke
             (&store.[i], &store2.[i], &store3.[i],
-             Option.getOrDefault Unchecked.defaultof<'s> state)
+             Option.defaultValue Unchecked.defaultof<'s> state)
 
     member this.Frame
         (statement : Statement<'c, 'c2, 'c3, 'c4, 's>,
@@ -788,15 +788,15 @@ and [<StructuralEquality; NoComparison; Struct>] EcsEntitySlot =
         let archetype = this.Archetype
         let archetypeId = archetype.Id
         let stores = archetype.Stores
-        let store = this.IndexStore<'c> (Option.getOrDefault typeof<'c>.Name compName) archetypeId stores
-        let store2 = this.IndexStore<'c2> (Option.getOrDefault typeof<'c2>.Name comp2Name) archetypeId stores
-        let store3 = this.IndexStore<'c3> (Option.getOrDefault typeof<'c3>.Name comp3Name) archetypeId stores
-        let store4 = this.IndexStore<'c4> (Option.getOrDefault typeof<'c4>.Name comp4Name) archetypeId stores
+        let store = this.IndexStore<'c> (Option.defaultValue typeof<'c>.Name compName) archetypeId stores
+        let store2 = this.IndexStore<'c2> (Option.defaultValue typeof<'c2>.Name comp2Name) archetypeId stores
+        let store3 = this.IndexStore<'c3> (Option.defaultValue typeof<'c3>.Name comp3Name) archetypeId stores
+        let store4 = this.IndexStore<'c4> (Option.defaultValue typeof<'c4>.Name comp4Name) archetypeId stores
         let i = this.ArchetypeIndex
         if not archetype.EntityIdStore.[i].Active then failwith "Invalid component access."
         statement.Invoke
             (&store.[i], &store2.[i], &store3.[i], &store4.[i],
-             Option.getOrDefault Unchecked.defaultof<'s> state)
+             Option.defaultValue Unchecked.defaultof<'s> state)
 
     member this.Frame
         (statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 's>,
@@ -804,16 +804,16 @@ and [<StructuralEquality; NoComparison; Struct>] EcsEntitySlot =
         let archetype = this.Archetype
         let archetypeId = archetype.Id
         let stores = archetype.Stores
-        let store = this.IndexStore<'c> (Option.getOrDefault typeof<'c>.Name compName) archetypeId stores
-        let store2 = this.IndexStore<'c2> (Option.getOrDefault typeof<'c2>.Name comp2Name) archetypeId stores
-        let store3 = this.IndexStore<'c3> (Option.getOrDefault typeof<'c3>.Name comp3Name) archetypeId stores
-        let store4 = this.IndexStore<'c4> (Option.getOrDefault typeof<'c4>.Name comp4Name) archetypeId stores
-        let store5 = this.IndexStore<'c5> (Option.getOrDefault typeof<'c5>.Name comp5Name) archetypeId stores
+        let store = this.IndexStore<'c> (Option.defaultValue typeof<'c>.Name compName) archetypeId stores
+        let store2 = this.IndexStore<'c2> (Option.defaultValue typeof<'c2>.Name comp2Name) archetypeId stores
+        let store3 = this.IndexStore<'c3> (Option.defaultValue typeof<'c3>.Name comp3Name) archetypeId stores
+        let store4 = this.IndexStore<'c4> (Option.defaultValue typeof<'c4>.Name comp4Name) archetypeId stores
+        let store5 = this.IndexStore<'c5> (Option.defaultValue typeof<'c5>.Name comp5Name) archetypeId stores
         let i = this.ArchetypeIndex
         if not archetype.EntityIdStore.[i].Active then failwith "Invalid component access."
         statement.Invoke
             (&store.[i], &store2.[i], &store3.[i], &store4.[i], &store5.[i],
-             Option.getOrDefault Unchecked.defaultof<'s> state)
+             Option.defaultValue Unchecked.defaultof<'s> state)
 
     member this.Frame
         (statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 's>,
@@ -821,17 +821,17 @@ and [<StructuralEquality; NoComparison; Struct>] EcsEntitySlot =
         let archetype = this.Archetype
         let archetypeId = archetype.Id
         let stores = archetype.Stores
-        let store = this.IndexStore<'c> (Option.getOrDefault typeof<'c>.Name compName) archetypeId stores
-        let store2 = this.IndexStore<'c2> (Option.getOrDefault typeof<'c2>.Name comp2Name) archetypeId stores
-        let store3 = this.IndexStore<'c3> (Option.getOrDefault typeof<'c3>.Name comp3Name) archetypeId stores
-        let store4 = this.IndexStore<'c4> (Option.getOrDefault typeof<'c4>.Name comp4Name) archetypeId stores
-        let store5 = this.IndexStore<'c5> (Option.getOrDefault typeof<'c5>.Name comp5Name) archetypeId stores
-        let store6 = this.IndexStore<'c6> (Option.getOrDefault typeof<'c6>.Name comp6Name) archetypeId stores
+        let store = this.IndexStore<'c> (Option.defaultValue typeof<'c>.Name compName) archetypeId stores
+        let store2 = this.IndexStore<'c2> (Option.defaultValue typeof<'c2>.Name comp2Name) archetypeId stores
+        let store3 = this.IndexStore<'c3> (Option.defaultValue typeof<'c3>.Name comp3Name) archetypeId stores
+        let store4 = this.IndexStore<'c4> (Option.defaultValue typeof<'c4>.Name comp4Name) archetypeId stores
+        let store5 = this.IndexStore<'c5> (Option.defaultValue typeof<'c5>.Name comp5Name) archetypeId stores
+        let store6 = this.IndexStore<'c6> (Option.defaultValue typeof<'c6>.Name comp6Name) archetypeId stores
         let i = this.ArchetypeIndex
         if not archetype.EntityIdStore.[i].Active then failwith "Invalid component access."
         statement.Invoke
             (&store.[i], &store2.[i], &store3.[i], &store4.[i], &store5.[i], &store6.[i],
-             Option.getOrDefault Unchecked.defaultof<'s> state)
+             Option.defaultValue Unchecked.defaultof<'s> state)
 
     member this.Frame
         (statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 's>,
@@ -839,18 +839,18 @@ and [<StructuralEquality; NoComparison; Struct>] EcsEntitySlot =
         let archetype = this.Archetype
         let archetypeId = archetype.Id
         let stores = archetype.Stores
-        let store = this.IndexStore<'c> (Option.getOrDefault typeof<'c>.Name compName) archetypeId stores
-        let store2 = this.IndexStore<'c2> (Option.getOrDefault typeof<'c2>.Name comp2Name) archetypeId stores
-        let store3 = this.IndexStore<'c3> (Option.getOrDefault typeof<'c3>.Name comp3Name) archetypeId stores
-        let store4 = this.IndexStore<'c4> (Option.getOrDefault typeof<'c4>.Name comp4Name) archetypeId stores
-        let store5 = this.IndexStore<'c5> (Option.getOrDefault typeof<'c5>.Name comp5Name) archetypeId stores
-        let store6 = this.IndexStore<'c6> (Option.getOrDefault typeof<'c6>.Name comp6Name) archetypeId stores
-        let store7 = this.IndexStore<'c7> (Option.getOrDefault typeof<'c7>.Name comp7Name) archetypeId stores
+        let store = this.IndexStore<'c> (Option.defaultValue typeof<'c>.Name compName) archetypeId stores
+        let store2 = this.IndexStore<'c2> (Option.defaultValue typeof<'c2>.Name comp2Name) archetypeId stores
+        let store3 = this.IndexStore<'c3> (Option.defaultValue typeof<'c3>.Name comp3Name) archetypeId stores
+        let store4 = this.IndexStore<'c4> (Option.defaultValue typeof<'c4>.Name comp4Name) archetypeId stores
+        let store5 = this.IndexStore<'c5> (Option.defaultValue typeof<'c5>.Name comp5Name) archetypeId stores
+        let store6 = this.IndexStore<'c6> (Option.defaultValue typeof<'c6>.Name comp6Name) archetypeId stores
+        let store7 = this.IndexStore<'c7> (Option.defaultValue typeof<'c7>.Name comp7Name) archetypeId stores
         let i = this.ArchetypeIndex
         if not archetype.EntityIdStore.[i].Active then failwith "Invalid component access."
         statement.Invoke
             (&store.[i], &store2.[i], &store3.[i], &store4.[i], &store5.[i], &store6.[i], &store7.[i],
-             Option.getOrDefault Unchecked.defaultof<'s> state)
+             Option.defaultValue Unchecked.defaultof<'s> state)
 
     member this.Frame
         (statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 's>,
@@ -858,19 +858,19 @@ and [<StructuralEquality; NoComparison; Struct>] EcsEntitySlot =
         let archetype = this.Archetype
         let archetypeId = archetype.Id
         let stores = archetype.Stores
-        let store = this.IndexStore<'c> (Option.getOrDefault typeof<'c>.Name compName) archetypeId stores
-        let store2 = this.IndexStore<'c2> (Option.getOrDefault typeof<'c2>.Name comp2Name) archetypeId stores
-        let store3 = this.IndexStore<'c3> (Option.getOrDefault typeof<'c3>.Name comp3Name) archetypeId stores
-        let store4 = this.IndexStore<'c4> (Option.getOrDefault typeof<'c4>.Name comp4Name) archetypeId stores
-        let store5 = this.IndexStore<'c5> (Option.getOrDefault typeof<'c5>.Name comp5Name) archetypeId stores
-        let store6 = this.IndexStore<'c6> (Option.getOrDefault typeof<'c6>.Name comp6Name) archetypeId stores
-        let store7 = this.IndexStore<'c7> (Option.getOrDefault typeof<'c7>.Name comp7Name) archetypeId stores
-        let store8 = this.IndexStore<'c8> (Option.getOrDefault typeof<'c8>.Name comp8Name) archetypeId stores
+        let store = this.IndexStore<'c> (Option.defaultValue typeof<'c>.Name compName) archetypeId stores
+        let store2 = this.IndexStore<'c2> (Option.defaultValue typeof<'c2>.Name comp2Name) archetypeId stores
+        let store3 = this.IndexStore<'c3> (Option.defaultValue typeof<'c3>.Name comp3Name) archetypeId stores
+        let store4 = this.IndexStore<'c4> (Option.defaultValue typeof<'c4>.Name comp4Name) archetypeId stores
+        let store5 = this.IndexStore<'c5> (Option.defaultValue typeof<'c5>.Name comp5Name) archetypeId stores
+        let store6 = this.IndexStore<'c6> (Option.defaultValue typeof<'c6>.Name comp6Name) archetypeId stores
+        let store7 = this.IndexStore<'c7> (Option.defaultValue typeof<'c7>.Name comp7Name) archetypeId stores
+        let store8 = this.IndexStore<'c8> (Option.defaultValue typeof<'c8>.Name comp8Name) archetypeId stores
         let i = this.ArchetypeIndex
         if not archetype.EntityIdStore.[i].Active then failwith "Invalid component access."
         statement.Invoke
             (&store.[i], &store2.[i], &store3.[i], &store4.[i], &store5.[i], &store6.[i], &store7.[i], &store8.[i],
-             Option.getOrDefault Unchecked.defaultof<'s> state)
+             Option.defaultValue Unchecked.defaultof<'s> state)
 
     member this.Frame
         (statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 'c9, 's>,
@@ -878,20 +878,20 @@ and [<StructuralEquality; NoComparison; Struct>] EcsEntitySlot =
         let archetype = this.Archetype
         let archetypeId = archetype.Id
         let stores = archetype.Stores
-        let store = this.IndexStore<'c> (Option.getOrDefault typeof<'c>.Name compName) archetypeId stores
-        let store2 = this.IndexStore<'c2> (Option.getOrDefault typeof<'c2>.Name comp2Name) archetypeId stores
-        let store3 = this.IndexStore<'c3> (Option.getOrDefault typeof<'c3>.Name comp3Name) archetypeId stores
-        let store4 = this.IndexStore<'c4> (Option.getOrDefault typeof<'c4>.Name comp4Name) archetypeId stores
-        let store5 = this.IndexStore<'c5> (Option.getOrDefault typeof<'c5>.Name comp5Name) archetypeId stores
-        let store6 = this.IndexStore<'c6> (Option.getOrDefault typeof<'c6>.Name comp6Name) archetypeId stores
-        let store7 = this.IndexStore<'c7> (Option.getOrDefault typeof<'c7>.Name comp7Name) archetypeId stores
-        let store8 = this.IndexStore<'c8> (Option.getOrDefault typeof<'c8>.Name comp8Name) archetypeId stores
-        let store9 = this.IndexStore<'c9> (Option.getOrDefault typeof<'c9>.Name comp9Name) archetypeId stores
+        let store = this.IndexStore<'c> (Option.defaultValue typeof<'c>.Name compName) archetypeId stores
+        let store2 = this.IndexStore<'c2> (Option.defaultValue typeof<'c2>.Name comp2Name) archetypeId stores
+        let store3 = this.IndexStore<'c3> (Option.defaultValue typeof<'c3>.Name comp3Name) archetypeId stores
+        let store4 = this.IndexStore<'c4> (Option.defaultValue typeof<'c4>.Name comp4Name) archetypeId stores
+        let store5 = this.IndexStore<'c5> (Option.defaultValue typeof<'c5>.Name comp5Name) archetypeId stores
+        let store6 = this.IndexStore<'c6> (Option.defaultValue typeof<'c6>.Name comp6Name) archetypeId stores
+        let store7 = this.IndexStore<'c7> (Option.defaultValue typeof<'c7>.Name comp7Name) archetypeId stores
+        let store8 = this.IndexStore<'c8> (Option.defaultValue typeof<'c8>.Name comp8Name) archetypeId stores
+        let store9 = this.IndexStore<'c9> (Option.defaultValue typeof<'c9>.Name comp9Name) archetypeId stores
         let i = this.ArchetypeIndex
         if not archetype.EntityIdStore.[i].Active then failwith "Invalid component access."
         statement.Invoke
             (&store.[i], &store2.[i], &store3.[i], &store4.[i], &store5.[i], &store6.[i], &store7.[i], &store8.[i], &store9.[i],
-             Option.getOrDefault Unchecked.defaultof<'s> state)
+             Option.defaultValue Unchecked.defaultof<'s> state)
 
 and [<StructuralEquality; NoComparison; Struct>] EcsEntity =
     { EntityId : uint64
@@ -979,8 +979,8 @@ and [<StructuralEquality; NoComparison; Struct>] EcsEntity =
         let entitySlot = this.Ecs.IndexEntitySlot this
         entitySlot.Frame
             (statement,
-             Option.getOrDefault null compName,
-             Option.getOrDefault null state)
+             Option.defaultValue null compName,
+             Option.defaultValue null state)
 
     member this.Frame
         (statement : Statement<'c, 'c2, 's>,
@@ -988,9 +988,9 @@ and [<StructuralEquality; NoComparison; Struct>] EcsEntity =
         let entitySlot = this.Ecs.IndexEntitySlot this
         entitySlot.Frame
             (statement,
-             Option.getOrDefault null compName,
-             Option.getOrDefault null comp2Name,
-             Option.getOrDefault null state)
+             Option.defaultValue null compName,
+             Option.defaultValue null comp2Name,
+             Option.defaultValue null state)
 
     member this.Frame
         (statement : Statement<'c, 'c2, 'c3, 's>,
@@ -998,10 +998,10 @@ and [<StructuralEquality; NoComparison; Struct>] EcsEntity =
         let entitySlot = this.Ecs.IndexEntitySlot this
         entitySlot.Frame
             (statement,
-             Option.getOrDefault null compName,
-             Option.getOrDefault null comp2Name,
-             Option.getOrDefault null comp3Name,
-             Option.getOrDefault null state)
+             Option.defaultValue null compName,
+             Option.defaultValue null comp2Name,
+             Option.defaultValue null comp3Name,
+             Option.defaultValue null state)
 
     member this.Frame
         (statement : Statement<'c, 'c2, 'c3, 'c4, 's>,
@@ -1009,11 +1009,11 @@ and [<StructuralEquality; NoComparison; Struct>] EcsEntity =
         let entitySlot = this.Ecs.IndexEntitySlot this
         entitySlot.Frame
             (statement,
-             Option.getOrDefault null compName,
-             Option.getOrDefault null comp2Name,
-             Option.getOrDefault null comp3Name,
-             Option.getOrDefault null comp4Name,
-             Option.getOrDefault null state)
+             Option.defaultValue null compName,
+             Option.defaultValue null comp2Name,
+             Option.defaultValue null comp3Name,
+             Option.defaultValue null comp4Name,
+             Option.defaultValue null state)
 
     member this.Frame
         (statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 's>,
@@ -1021,12 +1021,12 @@ and [<StructuralEquality; NoComparison; Struct>] EcsEntity =
         let entitySlot = this.Ecs.IndexEntitySlot this
         entitySlot.Frame
             (statement,
-             Option.getOrDefault null compName,
-             Option.getOrDefault null comp2Name,
-             Option.getOrDefault null comp3Name,
-             Option.getOrDefault null comp4Name,
-             Option.getOrDefault null comp5Name,
-             Option.getOrDefault null state)
+             Option.defaultValue null compName,
+             Option.defaultValue null comp2Name,
+             Option.defaultValue null comp3Name,
+             Option.defaultValue null comp4Name,
+             Option.defaultValue null comp5Name,
+             Option.defaultValue null state)
 
     member this.Frame
         (statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 's>,
@@ -1034,13 +1034,13 @@ and [<StructuralEquality; NoComparison; Struct>] EcsEntity =
         let entitySlot = this.Ecs.IndexEntitySlot this
         entitySlot.Frame
             (statement,
-             Option.getOrDefault null compName,
-             Option.getOrDefault null comp2Name,
-             Option.getOrDefault null comp3Name,
-             Option.getOrDefault null comp4Name,
-             Option.getOrDefault null comp5Name,
-             Option.getOrDefault null comp6Name,
-             Option.getOrDefault null state)
+             Option.defaultValue null compName,
+             Option.defaultValue null comp2Name,
+             Option.defaultValue null comp3Name,
+             Option.defaultValue null comp4Name,
+             Option.defaultValue null comp5Name,
+             Option.defaultValue null comp6Name,
+             Option.defaultValue null state)
 
     member this.Frame
         (statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 's>,
@@ -1048,14 +1048,14 @@ and [<StructuralEquality; NoComparison; Struct>] EcsEntity =
         let entitySlot = this.Ecs.IndexEntitySlot this
         entitySlot.Frame
             (statement,
-             Option.getOrDefault null compName,
-             Option.getOrDefault null comp2Name,
-             Option.getOrDefault null comp3Name,
-             Option.getOrDefault null comp4Name,
-             Option.getOrDefault null comp5Name,
-             Option.getOrDefault null comp6Name,
-             Option.getOrDefault null comp7Name,
-             Option.getOrDefault null state)
+             Option.defaultValue null compName,
+             Option.defaultValue null comp2Name,
+             Option.defaultValue null comp3Name,
+             Option.defaultValue null comp4Name,
+             Option.defaultValue null comp5Name,
+             Option.defaultValue null comp6Name,
+             Option.defaultValue null comp7Name,
+             Option.defaultValue null state)
 
     member this.Frame
         (statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 's>,
@@ -1063,15 +1063,15 @@ and [<StructuralEquality; NoComparison; Struct>] EcsEntity =
         let entitySlot = this.Ecs.IndexEntitySlot this
         entitySlot.Frame
             (statement,
-             Option.getOrDefault null compName,
-             Option.getOrDefault null comp2Name,
-             Option.getOrDefault null comp3Name,
-             Option.getOrDefault null comp4Name,
-             Option.getOrDefault null comp5Name,
-             Option.getOrDefault null comp6Name,
-             Option.getOrDefault null comp7Name,
-             Option.getOrDefault null comp8Name,
-             Option.getOrDefault null state)
+             Option.defaultValue null compName,
+             Option.defaultValue null comp2Name,
+             Option.defaultValue null comp3Name,
+             Option.defaultValue null comp4Name,
+             Option.defaultValue null comp5Name,
+             Option.defaultValue null comp6Name,
+             Option.defaultValue null comp7Name,
+             Option.defaultValue null comp8Name,
+             Option.defaultValue null state)
 
     member this.Frame
         (statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 'c9, 's>,
@@ -1079,16 +1079,16 @@ and [<StructuralEquality; NoComparison; Struct>] EcsEntity =
         let entitySlot = this.Ecs.IndexEntitySlot this
         entitySlot.Frame
             (statement,
-             Option.getOrDefault null compName,
-             Option.getOrDefault null comp2Name,
-             Option.getOrDefault null comp3Name,
-             Option.getOrDefault null comp4Name,
-             Option.getOrDefault null comp5Name,
-             Option.getOrDefault null comp6Name,
-             Option.getOrDefault null comp7Name,
-             Option.getOrDefault null comp8Name,
-             Option.getOrDefault null comp9Name,
-             Option.getOrDefault null state)
+             Option.defaultValue null compName,
+             Option.defaultValue null comp2Name,
+             Option.defaultValue null comp3Name,
+             Option.defaultValue null comp4Name,
+             Option.defaultValue null comp5Name,
+             Option.defaultValue null comp6Name,
+             Option.defaultValue null comp7Name,
+             Option.defaultValue null comp8Name,
+             Option.defaultValue null comp9Name,
+             Option.defaultValue null state)
 
 and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as this =
 
@@ -1144,14 +1144,14 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
         entities
 
     member this.Iterate (statement : Statement<'c, 's>, ?compName, ?state : 's) : 's =
-        let mutable state = Option.getOrDefault Unchecked.defaultof<'s> state
+        let mutable state = Option.defaultValue Unchecked.defaultof<'s> state
         for archetypeEntry in archetypes do
             let archetype = archetypeEntry.Value
             let archetypeId = archetype.Id
             let length = archetype.Length
             let entityIdStore = archetype.EntityIdStore
             let stores = archetype.Stores
-            let store = this.IndexStore<'c> (Option.getOrDefault typeof<'c>.Name compName) archetypeId stores
+            let store = this.IndexStore<'c> (Option.defaultValue typeof<'c>.Name compName) archetypeId stores
             let mutable i = 0
             while i < store.Length && i < length do
                 if entityIdStore.[i].Active then
@@ -1162,15 +1162,15 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
     member this.Iterate
         (statement : Statement<'c, 'c2, 's>,
          ?compName, ?comp2Name, ?state : 's) : 's =
-        let mutable state = Option.getOrDefault Unchecked.defaultof<'s> state
+        let mutable state = Option.defaultValue Unchecked.defaultof<'s> state
         for archetypeEntry in archetypes do
             let archetype = archetypeEntry.Value
             let archetypeId = archetype.Id
             let length = archetype.Length
             let entityIdStore = archetype.EntityIdStore
             let stores = archetype.Stores
-            let store = this.IndexStore<'c> (Option.getOrDefault typeof<'c>.Name compName) archetypeId stores
-            let store2 = this.IndexStore<'c2> (Option.getOrDefault typeof<'c2>.Name comp2Name) archetypeId stores
+            let store = this.IndexStore<'c> (Option.defaultValue typeof<'c>.Name compName) archetypeId stores
+            let store2 = this.IndexStore<'c2> (Option.defaultValue typeof<'c2>.Name comp2Name) archetypeId stores
             let mutable i = 0
             while i < store.Length && i < length do
                 if entityIdStore.[i].Active then
@@ -1181,16 +1181,16 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
     member this.Iterate
         (statement : Statement<'c, 'c2, 'c3, 's>,
          ?compName, ?comp2Name, ?comp3Name, ?state : 's) : 's =
-        let mutable state = Option.getOrDefault Unchecked.defaultof<'s> state
+        let mutable state = Option.defaultValue Unchecked.defaultof<'s> state
         for archetypeEntry in archetypes do
             let archetype = archetypeEntry.Value
             let archetypeId = archetype.Id
             let length = archetype.Length
             let entityIdStore = archetype.EntityIdStore
             let stores = archetype.Stores
-            let store = this.IndexStore<'c> (Option.getOrDefault typeof<'c>.Name compName) archetypeId stores
-            let store2 = this.IndexStore<'c2> (Option.getOrDefault typeof<'c2>.Name comp2Name) archetypeId stores
-            let store3 = this.IndexStore<'c3> (Option.getOrDefault typeof<'c3>.Name comp3Name) archetypeId stores
+            let store = this.IndexStore<'c> (Option.defaultValue typeof<'c>.Name compName) archetypeId stores
+            let store2 = this.IndexStore<'c2> (Option.defaultValue typeof<'c2>.Name comp2Name) archetypeId stores
+            let store3 = this.IndexStore<'c3> (Option.defaultValue typeof<'c3>.Name comp3Name) archetypeId stores
             let mutable i = 0
             while i < store.Length && i < length do
                 if entityIdStore.[i].Active then
@@ -1201,17 +1201,17 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
     member this.Iterate
         (statement : Statement<'c, 'c2, 'c3, 'c4, 's>,
          ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?state : 's) : 's =
-        let mutable state = Option.getOrDefault Unchecked.defaultof<'s> state
+        let mutable state = Option.defaultValue Unchecked.defaultof<'s> state
         for archetypeEntry in archetypes do
             let archetype = archetypeEntry.Value
             let archetypeId = archetype.Id
             let length = archetype.Length
             let entityIdStore = archetype.EntityIdStore
             let stores = archetype.Stores
-            let store = this.IndexStore<'c> (Option.getOrDefault typeof<'c>.Name compName) archetypeId stores
-            let store2 = this.IndexStore<'c2> (Option.getOrDefault typeof<'c2>.Name comp2Name) archetypeId stores
-            let store3 = this.IndexStore<'c3> (Option.getOrDefault typeof<'c3>.Name comp3Name) archetypeId stores
-            let store4 = this.IndexStore<'c4> (Option.getOrDefault typeof<'c4>.Name comp4Name) archetypeId stores
+            let store = this.IndexStore<'c> (Option.defaultValue typeof<'c>.Name compName) archetypeId stores
+            let store2 = this.IndexStore<'c2> (Option.defaultValue typeof<'c2>.Name comp2Name) archetypeId stores
+            let store3 = this.IndexStore<'c3> (Option.defaultValue typeof<'c3>.Name comp3Name) archetypeId stores
+            let store4 = this.IndexStore<'c4> (Option.defaultValue typeof<'c4>.Name comp4Name) archetypeId stores
             let mutable i = 0
             while i < store.Length && i < length do
                 if entityIdStore.[i].Active then
@@ -1222,18 +1222,18 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
     member this.Iterate
         (statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 's>,
          ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?state : 's) : 's =
-        let mutable state = Option.getOrDefault Unchecked.defaultof<'s> state
+        let mutable state = Option.defaultValue Unchecked.defaultof<'s> state
         for archetypeEntry in archetypes do
             let archetype = archetypeEntry.Value
             let archetypeId = archetype.Id
             let length = archetype.Length
             let entityIdStore = archetype.EntityIdStore
             let stores = archetype.Stores
-            let store = this.IndexStore<'c> (Option.getOrDefault typeof<'c>.Name compName) archetypeId stores
-            let store2 = this.IndexStore<'c2> (Option.getOrDefault typeof<'c2>.Name comp2Name) archetypeId stores
-            let store3 = this.IndexStore<'c3> (Option.getOrDefault typeof<'c3>.Name comp3Name) archetypeId stores
-            let store4 = this.IndexStore<'c4> (Option.getOrDefault typeof<'c4>.Name comp4Name) archetypeId stores
-            let store5 = this.IndexStore<'c5> (Option.getOrDefault typeof<'c5>.Name comp5Name) archetypeId stores
+            let store = this.IndexStore<'c> (Option.defaultValue typeof<'c>.Name compName) archetypeId stores
+            let store2 = this.IndexStore<'c2> (Option.defaultValue typeof<'c2>.Name comp2Name) archetypeId stores
+            let store3 = this.IndexStore<'c3> (Option.defaultValue typeof<'c3>.Name comp3Name) archetypeId stores
+            let store4 = this.IndexStore<'c4> (Option.defaultValue typeof<'c4>.Name comp4Name) archetypeId stores
+            let store5 = this.IndexStore<'c5> (Option.defaultValue typeof<'c5>.Name comp5Name) archetypeId stores
             let mutable i = 0
             while i < store.Length && i < length do
                 if entityIdStore.[i].Active then
@@ -1244,19 +1244,19 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
     member this.Iterate
         (statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 's>,
          ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?comp6Name, ?state : 's) : 's =
-        let mutable state = Option.getOrDefault Unchecked.defaultof<'s> state
+        let mutable state = Option.defaultValue Unchecked.defaultof<'s> state
         for archetypeEntry in archetypes do
             let archetype = archetypeEntry.Value
             let archetypeId = archetype.Id
             let length = archetype.Length
             let entityIdStore = archetype.EntityIdStore
             let stores = archetype.Stores
-            let store = this.IndexStore<'c> (Option.getOrDefault typeof<'c>.Name compName) archetypeId stores
-            let store2 = this.IndexStore<'c2> (Option.getOrDefault typeof<'c2>.Name comp2Name) archetypeId stores
-            let store3 = this.IndexStore<'c3> (Option.getOrDefault typeof<'c3>.Name comp3Name) archetypeId stores
-            let store4 = this.IndexStore<'c4> (Option.getOrDefault typeof<'c4>.Name comp4Name) archetypeId stores
-            let store5 = this.IndexStore<'c5> (Option.getOrDefault typeof<'c5>.Name comp5Name) archetypeId stores
-            let store6 = this.IndexStore<'c6> (Option.getOrDefault typeof<'c6>.Name comp6Name) archetypeId stores
+            let store = this.IndexStore<'c> (Option.defaultValue typeof<'c>.Name compName) archetypeId stores
+            let store2 = this.IndexStore<'c2> (Option.defaultValue typeof<'c2>.Name comp2Name) archetypeId stores
+            let store3 = this.IndexStore<'c3> (Option.defaultValue typeof<'c3>.Name comp3Name) archetypeId stores
+            let store4 = this.IndexStore<'c4> (Option.defaultValue typeof<'c4>.Name comp4Name) archetypeId stores
+            let store5 = this.IndexStore<'c5> (Option.defaultValue typeof<'c5>.Name comp5Name) archetypeId stores
+            let store6 = this.IndexStore<'c6> (Option.defaultValue typeof<'c6>.Name comp6Name) archetypeId stores
             let mutable i = 0
             while i < store.Length && i < length do
                 if entityIdStore.[i].Active then
@@ -1267,20 +1267,20 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
     member this.Iterate
         (statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 's>,
          ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?comp6Name, ?comp7Name, ?state : 's) : 's =
-        let mutable state = Option.getOrDefault Unchecked.defaultof<'s> state
+        let mutable state = Option.defaultValue Unchecked.defaultof<'s> state
         for archetypeEntry in archetypes do
             let archetype = archetypeEntry.Value
             let archetypeId = archetype.Id
             let length = archetype.Length
             let entityIdStore = archetype.EntityIdStore
             let stores = archetype.Stores
-            let store = this.IndexStore<'c> (Option.getOrDefault typeof<'c>.Name compName) archetypeId stores
-            let store2 = this.IndexStore<'c2> (Option.getOrDefault typeof<'c2>.Name comp2Name) archetypeId stores
-            let store3 = this.IndexStore<'c3> (Option.getOrDefault typeof<'c3>.Name comp3Name) archetypeId stores
-            let store4 = this.IndexStore<'c4> (Option.getOrDefault typeof<'c4>.Name comp4Name) archetypeId stores
-            let store5 = this.IndexStore<'c5> (Option.getOrDefault typeof<'c5>.Name comp5Name) archetypeId stores
-            let store6 = this.IndexStore<'c6> (Option.getOrDefault typeof<'c6>.Name comp6Name) archetypeId stores
-            let store7 = this.IndexStore<'c7> (Option.getOrDefault typeof<'c7>.Name comp7Name) archetypeId stores
+            let store = this.IndexStore<'c> (Option.defaultValue typeof<'c>.Name compName) archetypeId stores
+            let store2 = this.IndexStore<'c2> (Option.defaultValue typeof<'c2>.Name comp2Name) archetypeId stores
+            let store3 = this.IndexStore<'c3> (Option.defaultValue typeof<'c3>.Name comp3Name) archetypeId stores
+            let store4 = this.IndexStore<'c4> (Option.defaultValue typeof<'c4>.Name comp4Name) archetypeId stores
+            let store5 = this.IndexStore<'c5> (Option.defaultValue typeof<'c5>.Name comp5Name) archetypeId stores
+            let store6 = this.IndexStore<'c6> (Option.defaultValue typeof<'c6>.Name comp6Name) archetypeId stores
+            let store7 = this.IndexStore<'c7> (Option.defaultValue typeof<'c7>.Name comp7Name) archetypeId stores
             let mutable i = 0
             while i < store.Length && i < length do
                 if entityIdStore.[i].Active then
@@ -1291,21 +1291,21 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
     member this.Iterate
         (statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 's>,
          ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?comp6Name, ?comp7Name, ?comp8Name, ?state : 's) : 's =
-        let mutable state = Option.getOrDefault Unchecked.defaultof<'s> state
+        let mutable state = Option.defaultValue Unchecked.defaultof<'s> state
         for archetypeEntry in archetypes do
             let archetype = archetypeEntry.Value
             let archetypeId = archetype.Id
             let length = archetype.Length
             let entityIdStore = archetype.EntityIdStore
             let stores = archetype.Stores
-            let store = this.IndexStore<'c> (Option.getOrDefault typeof<'c>.Name compName) archetypeId stores
-            let store2 = this.IndexStore<'c2> (Option.getOrDefault typeof<'c2>.Name comp2Name) archetypeId stores
-            let store3 = this.IndexStore<'c3> (Option.getOrDefault typeof<'c3>.Name comp3Name) archetypeId stores
-            let store4 = this.IndexStore<'c4> (Option.getOrDefault typeof<'c4>.Name comp4Name) archetypeId stores
-            let store5 = this.IndexStore<'c5> (Option.getOrDefault typeof<'c5>.Name comp5Name) archetypeId stores
-            let store6 = this.IndexStore<'c6> (Option.getOrDefault typeof<'c6>.Name comp6Name) archetypeId stores
-            let store7 = this.IndexStore<'c7> (Option.getOrDefault typeof<'c7>.Name comp7Name) archetypeId stores
-            let store8 = this.IndexStore<'c8> (Option.getOrDefault typeof<'c8>.Name comp8Name) archetypeId stores
+            let store = this.IndexStore<'c> (Option.defaultValue typeof<'c>.Name compName) archetypeId stores
+            let store2 = this.IndexStore<'c2> (Option.defaultValue typeof<'c2>.Name comp2Name) archetypeId stores
+            let store3 = this.IndexStore<'c3> (Option.defaultValue typeof<'c3>.Name comp3Name) archetypeId stores
+            let store4 = this.IndexStore<'c4> (Option.defaultValue typeof<'c4>.Name comp4Name) archetypeId stores
+            let store5 = this.IndexStore<'c5> (Option.defaultValue typeof<'c5>.Name comp5Name) archetypeId stores
+            let store6 = this.IndexStore<'c6> (Option.defaultValue typeof<'c6>.Name comp6Name) archetypeId stores
+            let store7 = this.IndexStore<'c7> (Option.defaultValue typeof<'c7>.Name comp7Name) archetypeId stores
+            let store8 = this.IndexStore<'c8> (Option.defaultValue typeof<'c8>.Name comp8Name) archetypeId stores
             let mutable i = 0
             while i < store.Length && i < length do
                 if entityIdStore.[i].Active then
@@ -1316,22 +1316,22 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
     member this.Iterate
         (statement : Statement<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 'c9, 's>,
          ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?comp6Name, ?comp7Name, ?comp8Name, ?comp9Name, ?state : 's) : 's =
-        let mutable state = Option.getOrDefault Unchecked.defaultof<'s> state
+        let mutable state = Option.defaultValue Unchecked.defaultof<'s> state
         for archetypeEntry in archetypes do
             let archetype = archetypeEntry.Value
             let archetypeId = archetype.Id
             let length = archetype.Length
             let entityIdStore = archetype.EntityIdStore
             let stores = archetype.Stores
-            let store = this.IndexStore<'c> (Option.getOrDefault typeof<'c>.Name compName) archetypeId stores
-            let store2 = this.IndexStore<'c2> (Option.getOrDefault typeof<'c2>.Name comp2Name) archetypeId stores
-            let store3 = this.IndexStore<'c3> (Option.getOrDefault typeof<'c3>.Name comp3Name) archetypeId stores
-            let store4 = this.IndexStore<'c4> (Option.getOrDefault typeof<'c4>.Name comp4Name) archetypeId stores
-            let store5 = this.IndexStore<'c5> (Option.getOrDefault typeof<'c5>.Name comp5Name) archetypeId stores
-            let store6 = this.IndexStore<'c6> (Option.getOrDefault typeof<'c6>.Name comp6Name) archetypeId stores
-            let store7 = this.IndexStore<'c7> (Option.getOrDefault typeof<'c7>.Name comp7Name) archetypeId stores
-            let store8 = this.IndexStore<'c8> (Option.getOrDefault typeof<'c8>.Name comp8Name) archetypeId stores
-            let store9 = this.IndexStore<'c9> (Option.getOrDefault typeof<'c9>.Name comp9Name) archetypeId stores
+            let store = this.IndexStore<'c> (Option.defaultValue typeof<'c>.Name compName) archetypeId stores
+            let store2 = this.IndexStore<'c2> (Option.defaultValue typeof<'c2>.Name comp2Name) archetypeId stores
+            let store3 = this.IndexStore<'c3> (Option.defaultValue typeof<'c3>.Name comp3Name) archetypeId stores
+            let store4 = this.IndexStore<'c4> (Option.defaultValue typeof<'c4>.Name comp4Name) archetypeId stores
+            let store5 = this.IndexStore<'c5> (Option.defaultValue typeof<'c5>.Name comp5Name) archetypeId stores
+            let store6 = this.IndexStore<'c6> (Option.defaultValue typeof<'c6>.Name comp6Name) archetypeId stores
+            let store7 = this.IndexStore<'c7> (Option.defaultValue typeof<'c7>.Name comp7Name) archetypeId stores
+            let store8 = this.IndexStore<'c8> (Option.defaultValue typeof<'c8>.Name comp8Name) archetypeId stores
+            let store9 = this.IndexStore<'c9> (Option.defaultValue typeof<'c9>.Name comp9Name) archetypeId stores
             let mutable i = 0
             while i < store.Length && i < length do
                 if entityIdStore.[i].Active then
@@ -1342,7 +1342,7 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
     member this.IterateParallel
         (statement : StatementPlus<'c, 's>,
          ?compName, ?state : 's) =
-        let state = Option.getOrDefault Unchecked.defaultof<'s> state
+        let state = Option.defaultValue Unchecked.defaultof<'s> state
         let tasks = List ()
         for archetypeEntry in archetypes do
             let archetype = archetypeEntry.Value
@@ -1350,7 +1350,7 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
             let length = archetype.Length
             let entityIdStore = archetype.EntityIdStore
             let stores = archetype.Stores
-            let store = this.IndexStore<'c> (Option.getOrDefault typeof<'c>.Name compName) archetypeId stores
+            let store = this.IndexStore<'c> (Option.defaultValue typeof<'c>.Name compName) archetypeId stores
             tasks.Add (Pair.make entityIdStore.Length (fun () ->
                 lock archetype $ fun () ->
                     let mutable i = 0
@@ -1363,7 +1363,7 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
     member this.IterateParallel
         (statement : StatementPlus<'c, 'c2, 's>,
          ?compName, ?comp2Name, ?state : 's) =
-        let state = Option.getOrDefault Unchecked.defaultof<'s> state
+        let state = Option.defaultValue Unchecked.defaultof<'s> state
         let tasks = List ()
         for archetypeEntry in archetypes do
             let archetype = archetypeEntry.Value
@@ -1371,8 +1371,8 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
             let length = archetype.Length
             let entityIdStore = archetype.EntityIdStore
             let stores = archetype.Stores
-            let store = this.IndexStore<'c> (Option.getOrDefault typeof<'c>.Name compName) archetypeId stores
-            let store2 = this.IndexStore<'c2> (Option.getOrDefault typeof<'c2>.Name comp2Name) archetypeId stores
+            let store = this.IndexStore<'c> (Option.defaultValue typeof<'c>.Name compName) archetypeId stores
+            let store2 = this.IndexStore<'c2> (Option.defaultValue typeof<'c2>.Name comp2Name) archetypeId stores
             tasks.Add (Pair.make entityIdStore.Length (fun () ->
                 lock archetype $ fun () ->
                     let mutable i = 0
@@ -1385,7 +1385,7 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
     member this.IterateParallel
         (statement : StatementPlus<'c, 'c2, 'c3, 's>,
          ?compName, ?comp2Name, ?comp3Name, ?state : 's) =
-        let state = Option.getOrDefault Unchecked.defaultof<'s> state
+        let state = Option.defaultValue Unchecked.defaultof<'s> state
         let tasks = List ()
         for archetypeEntry in archetypes do
             let archetype = archetypeEntry.Value
@@ -1393,9 +1393,9 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
             let length = archetype.Length
             let entityIdStore = archetype.EntityIdStore
             let stores = archetype.Stores
-            let store = this.IndexStore<'c> (Option.getOrDefault typeof<'c>.Name compName) archetypeId stores
-            let store2 = this.IndexStore<'c2> (Option.getOrDefault typeof<'c2>.Name comp2Name) archetypeId stores
-            let store3 = this.IndexStore<'c3> (Option.getOrDefault typeof<'c3>.Name comp3Name) archetypeId stores
+            let store = this.IndexStore<'c> (Option.defaultValue typeof<'c>.Name compName) archetypeId stores
+            let store2 = this.IndexStore<'c2> (Option.defaultValue typeof<'c2>.Name comp2Name) archetypeId stores
+            let store3 = this.IndexStore<'c3> (Option.defaultValue typeof<'c3>.Name comp3Name) archetypeId stores
             tasks.Add (Pair.make entityIdStore.Length (fun () ->
                 lock archetype $ fun () ->
                     let mutable i = 0
@@ -1408,7 +1408,7 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
     member this.IterateParallel
         (statement : StatementPlus<'c, 'c2, 'c3, 'c4, 's>,
          ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?state : 's) =
-        let state = Option.getOrDefault Unchecked.defaultof<'s> state
+        let state = Option.defaultValue Unchecked.defaultof<'s> state
         let tasks = List ()
         for archetypeEntry in archetypes do
             let archetype = archetypeEntry.Value
@@ -1416,10 +1416,10 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
             let length = archetype.Length
             let entityIdStore = archetype.EntityIdStore
             let stores = archetype.Stores
-            let store = this.IndexStore<'c> (Option.getOrDefault typeof<'c>.Name compName) archetypeId stores
-            let store2 = this.IndexStore<'c2> (Option.getOrDefault typeof<'c2>.Name comp2Name) archetypeId stores
-            let store3 = this.IndexStore<'c3> (Option.getOrDefault typeof<'c3>.Name comp3Name) archetypeId stores
-            let store4 = this.IndexStore<'c4> (Option.getOrDefault typeof<'c4>.Name comp4Name) archetypeId stores
+            let store = this.IndexStore<'c> (Option.defaultValue typeof<'c>.Name compName) archetypeId stores
+            let store2 = this.IndexStore<'c2> (Option.defaultValue typeof<'c2>.Name comp2Name) archetypeId stores
+            let store3 = this.IndexStore<'c3> (Option.defaultValue typeof<'c3>.Name comp3Name) archetypeId stores
+            let store4 = this.IndexStore<'c4> (Option.defaultValue typeof<'c4>.Name comp4Name) archetypeId stores
             tasks.Add (Pair.make entityIdStore.Length (fun () ->
                 lock archetype $ fun () ->
                     let mutable i = 0
@@ -1432,7 +1432,7 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
     member this.IterateParallel
         (statement : StatementPlus<'c, 'c2, 'c3, 'c4, 'c5, 's>,
          ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?state : 's) =
-        let state = Option.getOrDefault Unchecked.defaultof<'s> state
+        let state = Option.defaultValue Unchecked.defaultof<'s> state
         let tasks = List ()
         for archetypeEntry in archetypes do
             let archetype = archetypeEntry.Value
@@ -1440,11 +1440,11 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
             let length = archetype.Length
             let entityIdStore = archetype.EntityIdStore
             let stores = archetype.Stores
-            let store = this.IndexStore<'c> (Option.getOrDefault typeof<'c>.Name compName) archetypeId stores
-            let store2 = this.IndexStore<'c2> (Option.getOrDefault typeof<'c2>.Name comp2Name) archetypeId stores
-            let store3 = this.IndexStore<'c3> (Option.getOrDefault typeof<'c3>.Name comp3Name) archetypeId stores
-            let store4 = this.IndexStore<'c4> (Option.getOrDefault typeof<'c4>.Name comp4Name) archetypeId stores
-            let store5 = this.IndexStore<'c5> (Option.getOrDefault typeof<'c5>.Name comp5Name) archetypeId stores
+            let store = this.IndexStore<'c> (Option.defaultValue typeof<'c>.Name compName) archetypeId stores
+            let store2 = this.IndexStore<'c2> (Option.defaultValue typeof<'c2>.Name comp2Name) archetypeId stores
+            let store3 = this.IndexStore<'c3> (Option.defaultValue typeof<'c3>.Name comp3Name) archetypeId stores
+            let store4 = this.IndexStore<'c4> (Option.defaultValue typeof<'c4>.Name comp4Name) archetypeId stores
+            let store5 = this.IndexStore<'c5> (Option.defaultValue typeof<'c5>.Name comp5Name) archetypeId stores
             tasks.Add (Pair.make entityIdStore.Length (fun () ->
                 lock archetype $ fun () ->
                     let mutable i = 0
@@ -1457,7 +1457,7 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
     member this.IterateParallel
         (statement : StatementPlus<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 's>,
          ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?comp6Name, ?state : 's) =
-        let state = Option.getOrDefault Unchecked.defaultof<'s> state
+        let state = Option.defaultValue Unchecked.defaultof<'s> state
         let tasks = List ()
         for archetypeEntry in archetypes do
             let archetype = archetypeEntry.Value
@@ -1465,12 +1465,12 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
             let length = archetype.Length
             let entityIdStore = archetype.EntityIdStore
             let stores = archetype.Stores
-            let store = this.IndexStore<'c> (Option.getOrDefault typeof<'c>.Name compName) archetypeId stores
-            let store2 = this.IndexStore<'c2> (Option.getOrDefault typeof<'c2>.Name comp2Name) archetypeId stores
-            let store3 = this.IndexStore<'c3> (Option.getOrDefault typeof<'c3>.Name comp3Name) archetypeId stores
-            let store4 = this.IndexStore<'c4> (Option.getOrDefault typeof<'c4>.Name comp4Name) archetypeId stores
-            let store5 = this.IndexStore<'c5> (Option.getOrDefault typeof<'c5>.Name comp5Name) archetypeId stores
-            let store6 = this.IndexStore<'c6> (Option.getOrDefault typeof<'c6>.Name comp6Name) archetypeId stores
+            let store = this.IndexStore<'c> (Option.defaultValue typeof<'c>.Name compName) archetypeId stores
+            let store2 = this.IndexStore<'c2> (Option.defaultValue typeof<'c2>.Name comp2Name) archetypeId stores
+            let store3 = this.IndexStore<'c3> (Option.defaultValue typeof<'c3>.Name comp3Name) archetypeId stores
+            let store4 = this.IndexStore<'c4> (Option.defaultValue typeof<'c4>.Name comp4Name) archetypeId stores
+            let store5 = this.IndexStore<'c5> (Option.defaultValue typeof<'c5>.Name comp5Name) archetypeId stores
+            let store6 = this.IndexStore<'c6> (Option.defaultValue typeof<'c6>.Name comp6Name) archetypeId stores
             tasks.Add (Pair.make entityIdStore.Length (fun () ->
                 lock archetype $ fun () ->
                     let mutable i = 0
@@ -1483,7 +1483,7 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
     member this.IterateParallel
         (statement : StatementPlus<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 's>,
          ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?comp6Name, ?comp7Name, ?state : 's) =
-        let state = Option.getOrDefault Unchecked.defaultof<'s> state
+        let state = Option.defaultValue Unchecked.defaultof<'s> state
         let tasks = List ()
         for archetypeEntry in archetypes do
             let archetype = archetypeEntry.Value
@@ -1491,13 +1491,13 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
             let length = archetype.Length
             let entityIdStore = archetype.EntityIdStore
             let stores = archetype.Stores
-            let store = this.IndexStore<'c> (Option.getOrDefault typeof<'c>.Name compName) archetypeId stores
-            let store2 = this.IndexStore<'c2> (Option.getOrDefault typeof<'c2>.Name comp2Name) archetypeId stores
-            let store3 = this.IndexStore<'c3> (Option.getOrDefault typeof<'c3>.Name comp3Name) archetypeId stores
-            let store4 = this.IndexStore<'c4> (Option.getOrDefault typeof<'c4>.Name comp4Name) archetypeId stores
-            let store5 = this.IndexStore<'c5> (Option.getOrDefault typeof<'c5>.Name comp5Name) archetypeId stores
-            let store6 = this.IndexStore<'c6> (Option.getOrDefault typeof<'c6>.Name comp6Name) archetypeId stores
-            let store7 = this.IndexStore<'c7> (Option.getOrDefault typeof<'c7>.Name comp7Name) archetypeId stores
+            let store = this.IndexStore<'c> (Option.defaultValue typeof<'c>.Name compName) archetypeId stores
+            let store2 = this.IndexStore<'c2> (Option.defaultValue typeof<'c2>.Name comp2Name) archetypeId stores
+            let store3 = this.IndexStore<'c3> (Option.defaultValue typeof<'c3>.Name comp3Name) archetypeId stores
+            let store4 = this.IndexStore<'c4> (Option.defaultValue typeof<'c4>.Name comp4Name) archetypeId stores
+            let store5 = this.IndexStore<'c5> (Option.defaultValue typeof<'c5>.Name comp5Name) archetypeId stores
+            let store6 = this.IndexStore<'c6> (Option.defaultValue typeof<'c6>.Name comp6Name) archetypeId stores
+            let store7 = this.IndexStore<'c7> (Option.defaultValue typeof<'c7>.Name comp7Name) archetypeId stores
             tasks.Add (Pair.make entityIdStore.Length (fun () ->
                 lock archetype $ fun () ->
                     let mutable i = 0
@@ -1510,7 +1510,7 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
     member this.IterateParallel
         (statement : StatementPlus<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 's>,
          ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?comp6Name, ?comp7Name, ?comp8Name, ?state : 's) =
-        let state = Option.getOrDefault Unchecked.defaultof<'s> state
+        let state = Option.defaultValue Unchecked.defaultof<'s> state
         let tasks = List ()
         for archetypeEntry in archetypes do
             let archetype = archetypeEntry.Value
@@ -1518,14 +1518,14 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
             let length = archetype.Length
             let entityIdStore = archetype.EntityIdStore
             let stores = archetype.Stores
-            let store = this.IndexStore<'c> (Option.getOrDefault typeof<'c>.Name compName) archetypeId stores
-            let store2 = this.IndexStore<'c2> (Option.getOrDefault typeof<'c2>.Name comp2Name) archetypeId stores
-            let store3 = this.IndexStore<'c3> (Option.getOrDefault typeof<'c3>.Name comp3Name) archetypeId stores
-            let store4 = this.IndexStore<'c4> (Option.getOrDefault typeof<'c4>.Name comp4Name) archetypeId stores
-            let store5 = this.IndexStore<'c5> (Option.getOrDefault typeof<'c5>.Name comp5Name) archetypeId stores
-            let store6 = this.IndexStore<'c6> (Option.getOrDefault typeof<'c6>.Name comp6Name) archetypeId stores
-            let store7 = this.IndexStore<'c7> (Option.getOrDefault typeof<'c7>.Name comp7Name) archetypeId stores
-            let store8 = this.IndexStore<'c8> (Option.getOrDefault typeof<'c8>.Name comp8Name) archetypeId stores
+            let store = this.IndexStore<'c> (Option.defaultValue typeof<'c>.Name compName) archetypeId stores
+            let store2 = this.IndexStore<'c2> (Option.defaultValue typeof<'c2>.Name comp2Name) archetypeId stores
+            let store3 = this.IndexStore<'c3> (Option.defaultValue typeof<'c3>.Name comp3Name) archetypeId stores
+            let store4 = this.IndexStore<'c4> (Option.defaultValue typeof<'c4>.Name comp4Name) archetypeId stores
+            let store5 = this.IndexStore<'c5> (Option.defaultValue typeof<'c5>.Name comp5Name) archetypeId stores
+            let store6 = this.IndexStore<'c6> (Option.defaultValue typeof<'c6>.Name comp6Name) archetypeId stores
+            let store7 = this.IndexStore<'c7> (Option.defaultValue typeof<'c7>.Name comp7Name) archetypeId stores
+            let store8 = this.IndexStore<'c8> (Option.defaultValue typeof<'c8>.Name comp8Name) archetypeId stores
             tasks.Add (Pair.make entityIdStore.Length (fun () ->
                 lock archetype $ fun () ->
                     let mutable i = 0
@@ -1538,7 +1538,7 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
     member this.IterateParallel
         (statement : StatementPlus<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 'c9, 's>,
          ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?comp6Name, ?comp7Name, ?comp8Name, ?comp9Name, ?state : 's) =
-        let state = Option.getOrDefault Unchecked.defaultof<'s> state
+        let state = Option.defaultValue Unchecked.defaultof<'s> state
         let tasks = List ()
         for archetypeEntry in archetypes do
             let archetype = archetypeEntry.Value
@@ -1546,15 +1546,15 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
             let length = archetype.Length
             let entityIdStore = archetype.EntityIdStore
             let stores = archetype.Stores
-            let store = this.IndexStore<'c> (Option.getOrDefault typeof<'c>.Name compName) archetypeId stores
-            let store2 = this.IndexStore<'c2> (Option.getOrDefault typeof<'c2>.Name comp2Name) archetypeId stores
-            let store3 = this.IndexStore<'c3> (Option.getOrDefault typeof<'c3>.Name comp3Name) archetypeId stores
-            let store4 = this.IndexStore<'c4> (Option.getOrDefault typeof<'c4>.Name comp4Name) archetypeId stores
-            let store5 = this.IndexStore<'c5> (Option.getOrDefault typeof<'c5>.Name comp5Name) archetypeId stores
-            let store6 = this.IndexStore<'c6> (Option.getOrDefault typeof<'c6>.Name comp6Name) archetypeId stores
-            let store7 = this.IndexStore<'c7> (Option.getOrDefault typeof<'c7>.Name comp7Name) archetypeId stores
-            let store8 = this.IndexStore<'c8> (Option.getOrDefault typeof<'c8>.Name comp8Name) archetypeId stores
-            let store9 = this.IndexStore<'c9> (Option.getOrDefault typeof<'c9>.Name comp9Name) archetypeId stores
+            let store = this.IndexStore<'c> (Option.defaultValue typeof<'c>.Name compName) archetypeId stores
+            let store2 = this.IndexStore<'c2> (Option.defaultValue typeof<'c2>.Name comp2Name) archetypeId stores
+            let store3 = this.IndexStore<'c3> (Option.defaultValue typeof<'c3>.Name comp3Name) archetypeId stores
+            let store4 = this.IndexStore<'c4> (Option.defaultValue typeof<'c4>.Name comp4Name) archetypeId stores
+            let store5 = this.IndexStore<'c5> (Option.defaultValue typeof<'c5>.Name comp5Name) archetypeId stores
+            let store6 = this.IndexStore<'c6> (Option.defaultValue typeof<'c6>.Name comp6Name) archetypeId stores
+            let store7 = this.IndexStore<'c7> (Option.defaultValue typeof<'c7>.Name comp7Name) archetypeId stores
+            let store8 = this.IndexStore<'c8> (Option.defaultValue typeof<'c8>.Name comp8Name) archetypeId stores
+            let store9 = this.IndexStore<'c9> (Option.defaultValue typeof<'c9>.Name comp9Name) archetypeId stores
             tasks.Add (Pair.make entityIdStore.Length (fun () ->
                 lock archetype $ fun () ->
                     let mutable i = 0
@@ -1572,7 +1572,7 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
             fun _ _ world ->
                 this.Iterate
                     (statement,
-                     Option.getOrDefault typeof<'c>.Name compName,
+                     Option.defaultValue typeof<'c>.Name compName,
                      world)
         ecs.Subscribe event callback
 
@@ -1584,8 +1584,8 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
             fun _ _ world ->
                 this.Iterate
                     (statement,
-                     Option.getOrDefault typeof<'c>.Name compName,
-                     Option.getOrDefault typeof<'c2>.Name comp2Name,
+                     Option.defaultValue typeof<'c>.Name compName,
+                     Option.defaultValue typeof<'c2>.Name comp2Name,
                      world)
         ecs.Subscribe event callback
 
@@ -1597,9 +1597,9 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
             fun _ _ world ->
                 this.Iterate
                     (statement,
-                     Option.getOrDefault typeof<'c>.Name compName,
-                     Option.getOrDefault typeof<'c2>.Name comp2Name,
-                     Option.getOrDefault typeof<'c3>.Name comp3Name,
+                     Option.defaultValue typeof<'c>.Name compName,
+                     Option.defaultValue typeof<'c2>.Name comp2Name,
+                     Option.defaultValue typeof<'c3>.Name comp3Name,
                      world)
         ecs.Subscribe event callback
 
@@ -1611,10 +1611,10 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
             fun _ _ world ->
                 this.Iterate
                     (statement,
-                     Option.getOrDefault typeof<'c>.Name compName,
-                     Option.getOrDefault typeof<'c2>.Name comp2Name,
-                     Option.getOrDefault typeof<'c3>.Name comp3Name,
-                     Option.getOrDefault typeof<'c4>.Name comp4Name,
+                     Option.defaultValue typeof<'c>.Name compName,
+                     Option.defaultValue typeof<'c2>.Name comp2Name,
+                     Option.defaultValue typeof<'c3>.Name comp3Name,
+                     Option.defaultValue typeof<'c4>.Name comp4Name,
                      world)
         ecs.Subscribe event callback
 
@@ -1626,11 +1626,11 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
             fun _ _ world ->
                 this.Iterate
                     (statement,
-                     Option.getOrDefault typeof<'c>.Name compName,
-                     Option.getOrDefault typeof<'c2>.Name comp2Name,
-                     Option.getOrDefault typeof<'c3>.Name comp3Name,
-                     Option.getOrDefault typeof<'c4>.Name comp4Name,
-                     Option.getOrDefault typeof<'c5>.Name comp5Name,
+                     Option.defaultValue typeof<'c>.Name compName,
+                     Option.defaultValue typeof<'c2>.Name comp2Name,
+                     Option.defaultValue typeof<'c3>.Name comp3Name,
+                     Option.defaultValue typeof<'c4>.Name comp4Name,
+                     Option.defaultValue typeof<'c5>.Name comp5Name,
                      world)
         ecs.Subscribe event callback
 
@@ -1642,12 +1642,12 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
             fun _ _ world ->
                 this.Iterate
                     (statement,
-                     Option.getOrDefault typeof<'c>.Name compName,
-                     Option.getOrDefault typeof<'c2>.Name comp2Name,
-                     Option.getOrDefault typeof<'c3>.Name comp3Name,
-                     Option.getOrDefault typeof<'c4>.Name comp4Name,
-                     Option.getOrDefault typeof<'c5>.Name comp5Name,
-                     Option.getOrDefault typeof<'c6>.Name comp6Name,
+                     Option.defaultValue typeof<'c>.Name compName,
+                     Option.defaultValue typeof<'c2>.Name comp2Name,
+                     Option.defaultValue typeof<'c3>.Name comp3Name,
+                     Option.defaultValue typeof<'c4>.Name comp4Name,
+                     Option.defaultValue typeof<'c5>.Name comp5Name,
+                     Option.defaultValue typeof<'c6>.Name comp6Name,
                      world)
         ecs.Subscribe event callback
 
@@ -1659,13 +1659,13 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
             fun _ _ world ->
                 this.Iterate
                     (statement,
-                     Option.getOrDefault typeof<'c>.Name compName,
-                     Option.getOrDefault typeof<'c2>.Name comp2Name,
-                     Option.getOrDefault typeof<'c3>.Name comp3Name,
-                     Option.getOrDefault typeof<'c4>.Name comp4Name,
-                     Option.getOrDefault typeof<'c5>.Name comp5Name,
-                     Option.getOrDefault typeof<'c6>.Name comp6Name,
-                     Option.getOrDefault typeof<'c7>.Name comp7Name,
+                     Option.defaultValue typeof<'c>.Name compName,
+                     Option.defaultValue typeof<'c2>.Name comp2Name,
+                     Option.defaultValue typeof<'c3>.Name comp3Name,
+                     Option.defaultValue typeof<'c4>.Name comp4Name,
+                     Option.defaultValue typeof<'c5>.Name comp5Name,
+                     Option.defaultValue typeof<'c6>.Name comp6Name,
+                     Option.defaultValue typeof<'c7>.Name comp7Name,
                      world)
         ecs.Subscribe event callback
 
@@ -1677,14 +1677,14 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
             fun _ _ world ->
                 this.Iterate
                     (statement,
-                     Option.getOrDefault typeof<'c>.Name compName,
-                     Option.getOrDefault typeof<'c2>.Name comp2Name,
-                     Option.getOrDefault typeof<'c3>.Name comp3Name,
-                     Option.getOrDefault typeof<'c4>.Name comp4Name,
-                     Option.getOrDefault typeof<'c5>.Name comp5Name,
-                     Option.getOrDefault typeof<'c6>.Name comp6Name,
-                     Option.getOrDefault typeof<'c7>.Name comp7Name,
-                     Option.getOrDefault typeof<'c8>.Name comp8Name,
+                     Option.defaultValue typeof<'c>.Name compName,
+                     Option.defaultValue typeof<'c2>.Name comp2Name,
+                     Option.defaultValue typeof<'c3>.Name comp3Name,
+                     Option.defaultValue typeof<'c4>.Name comp4Name,
+                     Option.defaultValue typeof<'c5>.Name comp5Name,
+                     Option.defaultValue typeof<'c6>.Name comp6Name,
+                     Option.defaultValue typeof<'c7>.Name comp7Name,
+                     Option.defaultValue typeof<'c8>.Name comp8Name,
                      world)
         ecs.Subscribe event callback
 
@@ -1696,15 +1696,15 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
             fun _ _ world ->
                 this.Iterate
                     (statement,
-                     Option.getOrDefault typeof<'c>.Name compName,
-                     Option.getOrDefault typeof<'c2>.Name comp2Name,
-                     Option.getOrDefault typeof<'c3>.Name comp3Name,
-                     Option.getOrDefault typeof<'c4>.Name comp4Name,
-                     Option.getOrDefault typeof<'c5>.Name comp5Name,
-                     Option.getOrDefault typeof<'c6>.Name comp6Name,
-                     Option.getOrDefault typeof<'c7>.Name comp7Name,
-                     Option.getOrDefault typeof<'c8>.Name comp8Name,
-                     Option.getOrDefault typeof<'c9>.Name comp9Name,
+                     Option.defaultValue typeof<'c>.Name compName,
+                     Option.defaultValue typeof<'c2>.Name comp2Name,
+                     Option.defaultValue typeof<'c3>.Name comp3Name,
+                     Option.defaultValue typeof<'c4>.Name comp4Name,
+                     Option.defaultValue typeof<'c5>.Name comp5Name,
+                     Option.defaultValue typeof<'c6>.Name comp6Name,
+                     Option.defaultValue typeof<'c7>.Name comp7Name,
+                     Option.defaultValue typeof<'c8>.Name comp8Name,
+                     Option.defaultValue typeof<'c9>.Name comp9Name,
                      world)
         ecs.Subscribe event callback
 
@@ -1717,7 +1717,7 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
             fun _ _ (world : 'w) ->
                 this.IterateParallel
                     (statement,
-                     Option.getOrDefault typeof<'c>.Name compName,
+                     Option.defaultValue typeof<'c>.Name compName,
                      world)
         ecs.Schedule event { EcsQuery = this; EcsDependencies = dependencies; EcsCallback = callback }
 
@@ -1730,8 +1730,8 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
             fun _ _ world ->
                 this.IterateParallel
                     (statement,
-                     Option.getOrDefault typeof<'c>.Name compName,
-                     Option.getOrDefault typeof<'c2>.Name comp2Name,
+                     Option.defaultValue typeof<'c>.Name compName,
+                     Option.defaultValue typeof<'c2>.Name comp2Name,
                      world)
         ecs.Schedule event { EcsQuery = this; EcsDependencies = dependencies; EcsCallback = callback }
 
@@ -1744,9 +1744,9 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
             fun _ _ world ->
                 this.IterateParallel
                     (statement,
-                     Option.getOrDefault typeof<'c>.Name compName,
-                     Option.getOrDefault typeof<'c2>.Name comp2Name,
-                     Option.getOrDefault typeof<'c3>.Name comp3Name,
+                     Option.defaultValue typeof<'c>.Name compName,
+                     Option.defaultValue typeof<'c2>.Name comp2Name,
+                     Option.defaultValue typeof<'c3>.Name comp3Name,
                      world)
         ecs.Schedule event { EcsQuery = this; EcsDependencies = dependencies; EcsCallback = callback }
 
@@ -1759,10 +1759,10 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
             fun _ _ world ->
                 this.IterateParallel
                     (statement,
-                     Option.getOrDefault typeof<'c>.Name compName,
-                     Option.getOrDefault typeof<'c2>.Name comp2Name,
-                     Option.getOrDefault typeof<'c3>.Name comp3Name,
-                     Option.getOrDefault typeof<'c4>.Name comp4Name,
+                     Option.defaultValue typeof<'c>.Name compName,
+                     Option.defaultValue typeof<'c2>.Name comp2Name,
+                     Option.defaultValue typeof<'c3>.Name comp3Name,
+                     Option.defaultValue typeof<'c4>.Name comp4Name,
                      world)
         ecs.Schedule event { EcsQuery = this; EcsDependencies = dependencies; EcsCallback = callback }
 
@@ -1775,11 +1775,11 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
             fun _ _ world ->
                 this.IterateParallel
                     (statement,
-                     Option.getOrDefault typeof<'c>.Name compName,
-                     Option.getOrDefault typeof<'c2>.Name comp2Name,
-                     Option.getOrDefault typeof<'c3>.Name comp3Name,
-                     Option.getOrDefault typeof<'c4>.Name comp4Name,
-                     Option.getOrDefault typeof<'c5>.Name comp5Name,
+                     Option.defaultValue typeof<'c>.Name compName,
+                     Option.defaultValue typeof<'c2>.Name comp2Name,
+                     Option.defaultValue typeof<'c3>.Name comp3Name,
+                     Option.defaultValue typeof<'c4>.Name comp4Name,
+                     Option.defaultValue typeof<'c5>.Name comp5Name,
                      world)
         ecs.Schedule event { EcsQuery = this; EcsDependencies = dependencies; EcsCallback = callback }
 
@@ -1792,12 +1792,12 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
             fun _ _ world ->
                 this.IterateParallel
                     (statement,
-                     Option.getOrDefault typeof<'c>.Name compName,
-                     Option.getOrDefault typeof<'c2>.Name comp2Name,
-                     Option.getOrDefault typeof<'c3>.Name comp3Name,
-                     Option.getOrDefault typeof<'c4>.Name comp4Name,
-                     Option.getOrDefault typeof<'c5>.Name comp5Name,
-                     Option.getOrDefault typeof<'c6>.Name comp6Name,
+                     Option.defaultValue typeof<'c>.Name compName,
+                     Option.defaultValue typeof<'c2>.Name comp2Name,
+                     Option.defaultValue typeof<'c3>.Name comp3Name,
+                     Option.defaultValue typeof<'c4>.Name comp4Name,
+                     Option.defaultValue typeof<'c5>.Name comp5Name,
+                     Option.defaultValue typeof<'c6>.Name comp6Name,
                      world)
         ecs.Schedule event { EcsQuery = this; EcsDependencies = dependencies; EcsCallback = callback }
 
@@ -1810,13 +1810,13 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
             fun _ _ world ->
                 this.IterateParallel
                     (statement,
-                     Option.getOrDefault typeof<'c>.Name compName,
-                     Option.getOrDefault typeof<'c2>.Name comp2Name,
-                     Option.getOrDefault typeof<'c3>.Name comp3Name,
-                     Option.getOrDefault typeof<'c4>.Name comp4Name,
-                     Option.getOrDefault typeof<'c5>.Name comp5Name,
-                     Option.getOrDefault typeof<'c6>.Name comp6Name,
-                     Option.getOrDefault typeof<'c7>.Name comp7Name,
+                     Option.defaultValue typeof<'c>.Name compName,
+                     Option.defaultValue typeof<'c2>.Name comp2Name,
+                     Option.defaultValue typeof<'c3>.Name comp3Name,
+                     Option.defaultValue typeof<'c4>.Name comp4Name,
+                     Option.defaultValue typeof<'c5>.Name comp5Name,
+                     Option.defaultValue typeof<'c6>.Name comp6Name,
+                     Option.defaultValue typeof<'c7>.Name comp7Name,
                      world)
         ecs.Schedule event { EcsQuery = this; EcsDependencies = dependencies; EcsCallback = callback }
 
@@ -1829,14 +1829,14 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
             fun _ _ world ->
                 this.IterateParallel
                     (statement,
-                     Option.getOrDefault typeof<'c>.Name compName,
-                     Option.getOrDefault typeof<'c2>.Name comp2Name,
-                     Option.getOrDefault typeof<'c3>.Name comp3Name,
-                     Option.getOrDefault typeof<'c4>.Name comp4Name,
-                     Option.getOrDefault typeof<'c5>.Name comp5Name,
-                     Option.getOrDefault typeof<'c6>.Name comp6Name,
-                     Option.getOrDefault typeof<'c7>.Name comp7Name,
-                     Option.getOrDefault typeof<'c8>.Name comp8Name,
+                     Option.defaultValue typeof<'c>.Name compName,
+                     Option.defaultValue typeof<'c2>.Name comp2Name,
+                     Option.defaultValue typeof<'c3>.Name comp3Name,
+                     Option.defaultValue typeof<'c4>.Name comp4Name,
+                     Option.defaultValue typeof<'c5>.Name comp5Name,
+                     Option.defaultValue typeof<'c6>.Name comp6Name,
+                     Option.defaultValue typeof<'c7>.Name comp7Name,
+                     Option.defaultValue typeof<'c8>.Name comp8Name,
                      world)
         ecs.Schedule event { EcsQuery = this; EcsDependencies = dependencies; EcsCallback = callback }
 
@@ -1849,15 +1849,15 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
             fun _ _ world ->
                 this.IterateParallel
                     (statement,
-                     Option.getOrDefault typeof<'c>.Name compName,
-                     Option.getOrDefault typeof<'c2>.Name comp2Name,
-                     Option.getOrDefault typeof<'c3>.Name comp3Name,
-                     Option.getOrDefault typeof<'c4>.Name comp4Name,
-                     Option.getOrDefault typeof<'c5>.Name comp5Name,
-                     Option.getOrDefault typeof<'c6>.Name comp6Name,
-                     Option.getOrDefault typeof<'c7>.Name comp7Name,
-                     Option.getOrDefault typeof<'c8>.Name comp8Name,
-                     Option.getOrDefault typeof<'c9>.Name comp9Name,
+                     Option.defaultValue typeof<'c>.Name compName,
+                     Option.defaultValue typeof<'c2>.Name comp2Name,
+                     Option.defaultValue typeof<'c3>.Name comp3Name,
+                     Option.defaultValue typeof<'c4>.Name comp4Name,
+                     Option.defaultValue typeof<'c5>.Name comp5Name,
+                     Option.defaultValue typeof<'c6>.Name comp6Name,
+                     Option.defaultValue typeof<'c7>.Name comp7Name,
+                     Option.defaultValue typeof<'c8>.Name comp8Name,
+                     Option.defaultValue typeof<'c9>.Name comp9Name,
                      world)
         ecs.Schedule event { EcsQuery = this; EcsDependencies = dependencies; EcsCallback = callback }
 
@@ -1865,7 +1865,7 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
         (ecs, ?subqueries) =
         Query
             (hashSetPlus HashIdentity.Structural [],
-             Option.getOrDefault [] subqueries,
+             Option.defaultValue [] subqueries,
              ecs)
 
     static member make<'c when
@@ -1873,8 +1873,8 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
         (ecs, ?compName, ?subqueries) =
         Query
             (hashSetPlus HashIdentity.Structural
-                [Option.getOrDefault typeof<'c>.Name compName],
-             Option.getOrDefault [] subqueries,
+                [Option.defaultValue typeof<'c>.Name compName],
+             Option.defaultValue [] subqueries,
              ecs)
 
     static member make<'c, 'c2 when
@@ -1883,9 +1883,9 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
         (ecs, ?compName, ?comp2Name, ?subqueries) =
         Query
             (hashSetPlus HashIdentity.Structural
-                [Option.getOrDefault typeof<'c>.Name compName
-                 Option.getOrDefault typeof<'c2>.Name comp2Name],
-             Option.getOrDefault [] subqueries,
+                [Option.defaultValue typeof<'c>.Name compName
+                 Option.defaultValue typeof<'c2>.Name comp2Name],
+             Option.defaultValue [] subqueries,
              ecs)
 
     static member make<'c, 'c2, 'c3 when
@@ -1895,10 +1895,10 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
         (ecs, ?compName, ?comp2Name, ?comp3Name, ?subqueries) =
         Query
             (hashSetPlus HashIdentity.Structural
-                [Option.getOrDefault typeof<'c>.Name compName
-                 Option.getOrDefault typeof<'c2>.Name comp2Name
-                 Option.getOrDefault typeof<'c3>.Name comp3Name],
-             Option.getOrDefault [] subqueries,
+                [Option.defaultValue typeof<'c>.Name compName
+                 Option.defaultValue typeof<'c2>.Name comp2Name
+                 Option.defaultValue typeof<'c3>.Name comp3Name],
+             Option.defaultValue [] subqueries,
              ecs)
 
     static member make<'c, 'c2, 'c3, 'c4 when
@@ -1909,11 +1909,11 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
         (ecs, ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?subqueries) =
         Query
             (hashSetPlus HashIdentity.Structural
-                [Option.getOrDefault typeof<'c>.Name compName
-                 Option.getOrDefault typeof<'c2>.Name comp2Name
-                 Option.getOrDefault typeof<'c3>.Name comp3Name
-                 Option.getOrDefault typeof<'c4>.Name comp4Name],
-             Option.getOrDefault [] subqueries,
+                [Option.defaultValue typeof<'c>.Name compName
+                 Option.defaultValue typeof<'c2>.Name comp2Name
+                 Option.defaultValue typeof<'c3>.Name comp3Name
+                 Option.defaultValue typeof<'c4>.Name comp4Name],
+             Option.defaultValue [] subqueries,
              ecs)
 
     static member make<'c, 'c2, 'c3, 'c4, 'c5 when
@@ -1925,12 +1925,12 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
         (ecs, ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?subqueries) =
         Query
             (hashSetPlus HashIdentity.Structural
-                [Option.getOrDefault typeof<'c>.Name compName
-                 Option.getOrDefault typeof<'c2>.Name comp2Name
-                 Option.getOrDefault typeof<'c3>.Name comp3Name
-                 Option.getOrDefault typeof<'c4>.Name comp4Name
-                 Option.getOrDefault typeof<'c5>.Name comp5Name],
-             Option.getOrDefault [] subqueries,
+                [Option.defaultValue typeof<'c>.Name compName
+                 Option.defaultValue typeof<'c2>.Name comp2Name
+                 Option.defaultValue typeof<'c3>.Name comp3Name
+                 Option.defaultValue typeof<'c4>.Name comp4Name
+                 Option.defaultValue typeof<'c5>.Name comp5Name],
+             Option.defaultValue [] subqueries,
              ecs)
 
     static member make<'c, 'c2, 'c3, 'c4, 'c5, 'c6 when
@@ -1943,13 +1943,13 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
         (ecs, ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?comp6Name, ?subqueries) =
         Query
             (hashSetPlus HashIdentity.Structural
-                [Option.getOrDefault typeof<'c>.Name compName
-                 Option.getOrDefault typeof<'c2>.Name comp2Name
-                 Option.getOrDefault typeof<'c3>.Name comp3Name
-                 Option.getOrDefault typeof<'c4>.Name comp4Name
-                 Option.getOrDefault typeof<'c5>.Name comp5Name
-                 Option.getOrDefault typeof<'c6>.Name comp6Name],
-             Option.getOrDefault [] subqueries,
+                [Option.defaultValue typeof<'c>.Name compName
+                 Option.defaultValue typeof<'c2>.Name comp2Name
+                 Option.defaultValue typeof<'c3>.Name comp3Name
+                 Option.defaultValue typeof<'c4>.Name comp4Name
+                 Option.defaultValue typeof<'c5>.Name comp5Name
+                 Option.defaultValue typeof<'c6>.Name comp6Name],
+             Option.defaultValue [] subqueries,
              ecs)
 
     static member make<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7 when
@@ -1963,14 +1963,14 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
         (ecs, ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?comp6Name, ?comp7Name, ?subqueries) =
         Query
             (hashSetPlus HashIdentity.Structural
-                [Option.getOrDefault typeof<'c>.Name compName
-                 Option.getOrDefault typeof<'c2>.Name comp2Name
-                 Option.getOrDefault typeof<'c3>.Name comp3Name
-                 Option.getOrDefault typeof<'c4>.Name comp4Name
-                 Option.getOrDefault typeof<'c5>.Name comp5Name
-                 Option.getOrDefault typeof<'c6>.Name comp6Name
-                 Option.getOrDefault typeof<'c7>.Name comp7Name],
-             Option.getOrDefault [] subqueries,
+                [Option.defaultValue typeof<'c>.Name compName
+                 Option.defaultValue typeof<'c2>.Name comp2Name
+                 Option.defaultValue typeof<'c3>.Name comp3Name
+                 Option.defaultValue typeof<'c4>.Name comp4Name
+                 Option.defaultValue typeof<'c5>.Name comp5Name
+                 Option.defaultValue typeof<'c6>.Name comp6Name
+                 Option.defaultValue typeof<'c7>.Name comp7Name],
+             Option.defaultValue [] subqueries,
              ecs)
 
     static member make<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8 when
@@ -1985,15 +1985,15 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
         (ecs, ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?comp6Name, ?comp7Name, ?comp8Name, ?subqueries) =
         Query
             (hashSetPlus HashIdentity.Structural
-                [Option.getOrDefault typeof<'c>.Name compName
-                 Option.getOrDefault typeof<'c2>.Name comp2Name
-                 Option.getOrDefault typeof<'c3>.Name comp3Name
-                 Option.getOrDefault typeof<'c4>.Name comp4Name
-                 Option.getOrDefault typeof<'c5>.Name comp5Name
-                 Option.getOrDefault typeof<'c6>.Name comp6Name
-                 Option.getOrDefault typeof<'c7>.Name comp7Name
-                 Option.getOrDefault typeof<'c8>.Name comp8Name],
-             Option.getOrDefault [] subqueries,
+                [Option.defaultValue typeof<'c>.Name compName
+                 Option.defaultValue typeof<'c2>.Name comp2Name
+                 Option.defaultValue typeof<'c3>.Name comp3Name
+                 Option.defaultValue typeof<'c4>.Name comp4Name
+                 Option.defaultValue typeof<'c5>.Name comp5Name
+                 Option.defaultValue typeof<'c6>.Name comp6Name
+                 Option.defaultValue typeof<'c7>.Name comp7Name
+                 Option.defaultValue typeof<'c8>.Name comp8Name],
+             Option.defaultValue [] subqueries,
              ecs)
 
     static member make<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 'c9 when
@@ -2009,16 +2009,16 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
         (ecs, ?compName, ?comp2Name, ?comp3Name, ?comp4Name, ?comp5Name, ?comp6Name, ?comp7Name, ?comp8Name, ?comp9Name, ?subqueries) =
         Query
             (hashSetPlus HashIdentity.Structural
-                [Option.getOrDefault typeof<'c>.Name compName
-                 Option.getOrDefault typeof<'c2>.Name comp2Name
-                 Option.getOrDefault typeof<'c3>.Name comp3Name
-                 Option.getOrDefault typeof<'c4>.Name comp4Name
-                 Option.getOrDefault typeof<'c5>.Name comp5Name
-                 Option.getOrDefault typeof<'c6>.Name comp6Name
-                 Option.getOrDefault typeof<'c7>.Name comp7Name
-                 Option.getOrDefault typeof<'c8>.Name comp8Name
-                 Option.getOrDefault typeof<'c9>.Name comp9Name],
-             Option.getOrDefault [] subqueries,
+                [Option.defaultValue typeof<'c>.Name compName
+                 Option.defaultValue typeof<'c2>.Name comp2Name
+                 Option.defaultValue typeof<'c3>.Name comp3Name
+                 Option.defaultValue typeof<'c4>.Name comp4Name
+                 Option.defaultValue typeof<'c5>.Name comp5Name
+                 Option.defaultValue typeof<'c6>.Name comp6Name
+                 Option.defaultValue typeof<'c7>.Name comp7Name
+                 Option.defaultValue typeof<'c8>.Name comp8Name
+                 Option.defaultValue typeof<'c9>.Name comp9Name],
+             Option.defaultValue [] subqueries,
              ecs)
 
 [<AutoOpen>]

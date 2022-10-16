@@ -605,7 +605,7 @@ module Character =
             match source.ChargeTechOpt with
             | Some (_, chargeAmount, chargeTech) when chargeAmount >= Constants.Battle.ChargeMax -> (Some chargeTech, true)
             | Some _ | None ->
-                if  Gen.randomf < Option.getOrDefault 0.0f source.CharacterState_.TechProbabilityOpt &&
+                if  Gen.randomf < Option.defaultValue 0.0f source.CharacterState_.TechProbabilityOpt &&
                     not (Map.containsKey Silence source.Statuses) then // silence only blocks non-charge techs
                     let techOpt = CharacterState.tryGetTechRandom source.CharacterState_
                     (techOpt, false)

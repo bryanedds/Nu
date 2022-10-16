@@ -785,7 +785,7 @@ module EffectSystem =
             try let effectSystem = evalContent effect.Content slice history effectSystem
                 release effectSystem
             with exn ->
-                let prettyPrinter = (SyntaxAttribute.getOrDefault typeof<Effect>).PrettyPrinter
+                let prettyPrinter = (SyntaxAttribute.defaultValue typeof<Effect>).PrettyPrinter
                 let effectStr = PrettyPrinter.prettyPrint (scstring effect) prettyPrinter
                 Log.debug ("Error in effect:\n" + effectStr + "\n due to: " + scstring exn)
                 release effectSystem

@@ -853,7 +853,7 @@ module Effect2dFacetModule =
             world
 
         override this.Register (entity, world) =
-            let effectStartTime = Option.getOrDefault (World.getUpdateTime world) (entity.GetEffectStartTimeOpt world)
+            let effectStartTime = Option.defaultValue (World.getUpdateTime world) (entity.GetEffectStartTimeOpt world)
             let world = entity.SetEffectStartTimeOpt (Some effectStartTime) world
             let world = World.monitor handleEffectsChanged (entity.GetChangeEvent (nameof entity.EffectSymbolOpt)) entity world
             World.monitor handleAssetsReload Events.AssetsReload entity world

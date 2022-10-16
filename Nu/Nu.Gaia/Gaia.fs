@@ -549,7 +549,7 @@ module Gaia =
                                 let facetNames = world |> World.getFacets |> Map.toKeyList
                                 (String.concat " " facetNames, "", PrettyPrinter.defaultPrinter)
                             | _ ->
-                                let syntax = SyntaxAttribute.getOrDefault ty
+                                let syntax = SyntaxAttribute.defaultValue ty
                                 let keywords0 =
                                     if ty = typeof<Scripting.Expr>
                                     then syntax.Keywords0 + " " + WorldBindings.BindingKeywords
@@ -598,7 +598,7 @@ module Gaia =
                     form.propertyDescriptionTextBox.Text <- selectedGridItem.PropertyDescriptor.Description
                     if ty <> typeof<ComputedProperty> && (notNull selectedGridItem.Value || FSharpType.isNullTrueValue ty) then
                         let (keywords0, keywords1, prettyPrinter) =
-                            let syntax = SyntaxAttribute.getOrDefault ty
+                            let syntax = SyntaxAttribute.defaultValue ty
                             let keywords0 =
                                 if ty = typeof<Scripting.Expr>
                                 then syntax.Keywords0 + " " + WorldBindings.BindingKeywords
@@ -719,7 +719,7 @@ module Gaia =
         | (Right assetGraph, world) ->
             let selectionStart = form.assetGraphTextBox.SelectionStart
             let packageDescriptorsStr = scstring (AssetGraph.getPackageDescriptors assetGraph)
-            let prettyPrinter = (SyntaxAttribute.getOrDefault typeof<AssetGraph>).PrettyPrinter
+            let prettyPrinter = (SyntaxAttribute.defaultValue typeof<AssetGraph>).PrettyPrinter
             form.assetGraphTextBox.Text <- PrettyPrinter.prettyPrint packageDescriptorsStr prettyPrinter + "\n"
             form.assetGraphTextBox.SelectionStart <- selectionStart
             form.assetGraphTextBox.ScrollCaret ()
@@ -733,7 +733,7 @@ module Gaia =
         let assetSourceDir = Globals.EditorState.TargetDir + "/../.."
         let assetGraphFilePath = assetSourceDir + "/" + Assets.Global.AssetGraphFilePath
         try let packageDescriptorsStr = form.assetGraphTextBox.Text.TrimEnd () |> scvalue<Map<string, PackageDescriptor>> |> scstring
-            let prettyPrinter = (SyntaxAttribute.getOrDefault typeof<AssetGraph>).PrettyPrinter
+            let prettyPrinter = (SyntaxAttribute.defaultValue typeof<AssetGraph>).PrettyPrinter
             File.WriteAllText (assetGraphFilePath, PrettyPrinter.prettyPrint packageDescriptorsStr prettyPrinter)
             (true, world)
         with exn ->
@@ -754,7 +754,7 @@ module Gaia =
         | (Right overlayer, world) ->
             let selectionStart = form.overlayerTextBox.SelectionStart
             let extrinsicOverlaysStr = scstring (Overlayer.getExtrinsicOverlays overlayer)
-            let prettyPrinter = (SyntaxAttribute.getOrDefault typeof<Overlay>).PrettyPrinter
+            let prettyPrinter = (SyntaxAttribute.defaultValue typeof<Overlay>).PrettyPrinter
             form.overlayerTextBox.Text <- PrettyPrinter.prettyPrint extrinsicOverlaysStr prettyPrinter + "\n"
             form.overlayerTextBox.SelectionStart <- selectionStart
             form.overlayerTextBox.ScrollCaret ()
@@ -768,7 +768,7 @@ module Gaia =
         let overlayerSourceDir = Globals.EditorState.TargetDir + "/../.."
         let overlayerFilePath = overlayerSourceDir + "/" + Assets.Global.OverlayerFilePath
         try let overlays = scvalue<Overlay list> (form.overlayerTextBox.Text.TrimEnd ())
-            let prettyPrinter = (SyntaxAttribute.getOrDefault typeof<Overlay>).PrettyPrinter
+            let prettyPrinter = (SyntaxAttribute.defaultValue typeof<Overlay>).PrettyPrinter
             File.WriteAllText (overlayerFilePath, PrettyPrinter.prettyPrint (scstring overlays) prettyPrinter)
             (true, world)
         with exn ->
@@ -1126,7 +1126,7 @@ module Gaia =
         addPreUpdater $ fun world ->
             match tryReloadAssetGraph form world with
             | (Right assetGraph, world) ->
-                let prettyPrinter = (SyntaxAttribute.getOrDefault typeof<AssetGraph>).PrettyPrinter
+                let prettyPrinter = (SyntaxAttribute.defaultValue typeof<AssetGraph>).PrettyPrinter
                 form.assetGraphTextBox.Text <- PrettyPrinter.prettyPrint (scstring assetGraph) prettyPrinter + "\n"
                 world
             | (Left error, world) ->
@@ -1165,7 +1165,7 @@ module Gaia =
             let oldWorld = world
             try let eventFilter = scvalue<EventFilter.Filter> form.eventFilterTextBox.Text
                 let world = World.setEventFilter eventFilter world
-                let prettyPrinter = (SyntaxAttribute.getOrDefault typeof<EventFilter.Filter>).PrettyPrinter
+                let prettyPrinter = (SyntaxAttribute.defaultValue typeof<EventFilter.Filter>).PrettyPrinter
                 form.eventFilterTextBox.Text <- PrettyPrinter.prettyPrint (scstring eventFilter) prettyPrinter + "\n"
                 world
             with exn ->
@@ -1177,7 +1177,7 @@ module Gaia =
         addPreUpdater $ fun world ->
             let eventFilter = World.getEventFilter world
             let eventFilterStr = scstring eventFilter
-            let prettyPrinter = (SyntaxAttribute.getOrDefault typeof<EventFilter.Filter>).PrettyPrinter
+            let prettyPrinter = (SyntaxAttribute.defaultValue typeof<EventFilter.Filter>).PrettyPrinter
             let eventFilterPretty = PrettyPrinter.prettyPrint eventFilterStr prettyPrinter
             form.eventFilterTextBox.Text <- eventFilterPretty + "\n"
             world
@@ -1244,7 +1244,7 @@ module Gaia =
                         let entity = entityTds.DescribedEntity
                         (entity :> Simulant, entity.GetScriptFrame world)
                     | _ -> (group :> Simulant, group.GetScriptFrame world)
-                let prettyPrinter = (SyntaxAttribute.getOrDefault typeof<Scripting.Expr>).PrettyPrinter
+                let prettyPrinter = (SyntaxAttribute.defaultValue typeof<Scripting.Expr>).PrettyPrinter
                 let struct (evaleds, world) = World.evalManyWithLogging exprs localFrame selectedSimulant world
                 let evaledStrs = Array.map (fun evaled -> PrettyPrinter.prettyPrint (scstring evaled) prettyPrinter) evaleds
                 let evaledsStr = String.concat "\n" evaledStrs

@@ -221,7 +221,7 @@ module WorldGameModule =
         [<FunctionBinding>]
         static member writeGameToFile (filePath : string) world =
             let filePathTmp = filePath + ".tmp"
-            let prettyPrinter = (SyntaxAttribute.getOrDefault typeof<GameDescriptor>).PrettyPrinter
+            let prettyPrinter = (SyntaxAttribute.defaultValue typeof<GameDescriptor>).PrettyPrinter
             let gameDescriptor = World.writeGame GameDescriptor.empty world
             let gameDescriptorStr = scstring gameDescriptor
             let gameDescriptorPretty = PrettyPrinter.prettyPrint gameDescriptorStr prettyPrinter

@@ -295,7 +295,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                     | None ->
                         let renderPackageState = { TextureMemo = OpenGL.Texture.TextureMemo.make (); CubeMapMemo = OpenGL.CubeMap.CubeMapMemo.make () }
                         let renderPackage = { Assets = dictPlus StringComparer.Ordinal []; PackageState = renderPackageState }
-                        renderer.RenderPackages.Assign (packageName, renderPackage)
+                        renderer.RenderPackages[packageName] <- renderPackage
                         renderPackage
 
                 // reload assets if specified
@@ -315,7 +315,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                                 OpenGL.PhysicallyBased.DestroyPhysicallyBasedStaticModel staticModel
                                 OpenGL.Hl.Assert ()
                                 match GlRenderer3d.tryLoadStaticModelAsset renderPackage.PackageState asset renderer with
-                                | Some staticModel -> renderPackage.Assets.Assign (asset.AssetTag.AssetName, StaticModelAsset (userDefined, staticModel))
+                                | Some staticModel -> renderPackage.Assets[asset.AssetTag.AssetName] <- StaticModelAsset (userDefined, staticModel)
                                 | None -> ()
                         | (false, _) -> ()
 
@@ -323,7 +323,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                 else
                     for asset in assets do
                         match GlRenderer3d.tryLoadRenderAsset renderPackage.PackageState asset renderer with
-                        | Some renderAsset -> renderPackage.Assets.Assign (asset.AssetTag.AssetName, renderAsset)
+                        | Some renderAsset -> renderPackage.Assets[asset.AssetTag.AssetName] <- renderAsset
                         | None -> ()
 
             | Left failedAssetNames ->
@@ -463,11 +463,11 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             // assign static model as appropriate render package asset
             match renderer.RenderPackages.TryGetValue assetTag.PackageName with
             | (true, package) ->
-                package.Assets.Assign (assetTag.AssetName, StaticModelAsset (true, staticModel))
+                package.Assets[assetTag.AssetName] <- StaticModelAsset (true, staticModel)
             | (false, _) ->
                 let packageState = { TextureMemo = OpenGL.Texture.TextureMemo.make (); CubeMapMemo = OpenGL.CubeMap.CubeMapMemo.make () }
                 let package = { Assets = Dictionary.singleton StringComparer.Ordinal assetTag.AssetName (StaticModelAsset (true, staticModel)); PackageState = packageState }
-                renderer.RenderPackages.Assign (assetTag.PackageName, package)
+                renderer.RenderPackages[assetTag.PackageName] <- package
 
         // attempted to replace a loaded asset
         else Log.debug ("Cannot replace a loaded asset '" + scstring assetTag + "' with a user-created static model.")
