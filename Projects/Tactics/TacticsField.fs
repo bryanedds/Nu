@@ -60,8 +60,8 @@ module Field =
             { FieldState_ : FieldState
               FieldScript : FieldScript
               FieldTileMap : TileMap AssetTag
-              OccupantIndices : Map<Vector2i, OccupantIndex>
               OccupantPositions : Map<OccupantIndex, Vector2i>
+              OccupantIndices : Map<Vector2i, OccupantIndex>
               Occupants : Map<OccupantIndex, Occupant>
               SelectedTile : Vector2i }
 
@@ -315,10 +315,13 @@ module Field =
             Array.tryHead
         intersections
 
-    let getOccupants field =
-        field.OccupantPositions |>
+    let getOccupantsData field =
+        (field.OccupantPositions, field.Occupants, field)
+
+    let getOccupants (occupantPositions, occupants : Map<_, _>, field) =
+        occupantPositions |>
         Map.map (fun _ position -> getFieldTileVertices position field)  |>
-        flip Seq.zip field.Occupants |>
+        flip Seq.zip occupants |>
         Seq.map (fun (kvp, kvp2) -> (kvp.Key, (kvp.Value, kvp2.Value))) |>
         Map.ofSeq
 
