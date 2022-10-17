@@ -101,7 +101,7 @@ module FieldDispatcher =
             [Content.group Simulants.Field.Scene.Group.Name []
                 [Content.skyBox Gen.name
                     [Entity.CubeMap == Assets.Default.SkyBoxMap]
-                 Content.entities field Field.getOccupants $ fun index occupant ->
+                 Content.entitiesPlus field Field.getOccupantsData Field.getOccupants $ fun index occupant ->
                     Content.entity<CharacterDispatcher> (string index) [Entity.Position <== occupant --> fun (vertices, _) -> vertices.Center]]]
 
         override this.View (field, _, world) =
