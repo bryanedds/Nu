@@ -22,7 +22,7 @@ type BattleState =
     | BattleReady of int64
     | BattleCharacterReady of int64 // camera moving to character
     | BattleCharacterMenu of CharacterIndex // using ring menu or AI
-    | BattleCharacterMoving of CharacterIndex // character moving to destination
+    | BattleCharacterMoving of int64 * int * Vector2i array * CharacterIndex // character moving to destination
     | BattleCharacterAttacking of CharacterIndex * CharacterIndex
     | BattleCharacterTeching
     | BattleCharacterConsuming
@@ -261,10 +261,10 @@ module Field =
         // did not find albedo tile set
         | None -> failwith "Unable to find custom TmxLayer Image property; cannot create tactical map."
 
-    let getFieldMetadata (field : Field) =
-        match CachedFieldMetadata.TryGetValue field.FieldTileMap with
+    let private getFieldMetadataInternal fieldTileMap =
+        match CachedFieldMetadata.TryGetValue fieldTileMap with
         | (false, _) ->
-            let (_, tileSetsAndImages, tileMap) = Metadata.getTileMapMetadata field.FieldTileMap
+            let (_, tileSetsAndImages, tileMap) = Metadata.getTileMapMetadata fieldTileMap
             let tileSets = Array.map fst tileSetsAndImages
             let untraversableLayer = tileMap.Layers.["Untraversable"] :?> TmxLayer
             let untraversableHeightLayer = tileMap.Layers.["UntraversableHeight"] :?> TmxLayer
@@ -279,20 +279,29 @@ module Field =
                   FieldUntraversableSurfaceDescriptor = untraversableSurfaceDescriptor
                   FieldTraversableSurfaceDescriptor = traversableSurfaceDescriptor
                   FieldBounds = bounds }
-            CachedFieldMetadata.Add (field.FieldTileMap, fieldMetadata)
+            CachedFieldMetadata.Add (fieldTileMap, fieldMetadata)
             fieldMetadata
         | (true, fieldMetadata) -> fieldMetadata
 
-    let tryGetFieldTileVertices index field =
-        let fieldMetadata = getFieldMetadata field
+    let private tryGetFieldTileVerticesInternal index fieldTileMap =
+        let fieldMetadata = getFieldMetadataInternal fieldTileMap
         match Map.tryFind index fieldMetadata.FieldTileVerticesMap with
         | Some index -> Some index
         | None -> None
 
-    let getFieldTileVertices index field =
-        match tryGetFieldTileVertices index field with
+    let private getFieldTileVerticesInternal index fieldTileMap =
+        match tryGetFieldTileVerticesInternal index fieldTileMap with
         | Some vertices -> vertices
         | None -> failwith ("Field vertex index '" + scstring index + "' out of range.")
+
+    let getFieldMetadata field =
+        getFieldMetadataInternal field.FieldTileMap
+
+    let tryGetFieldTileVertices index field =
+        tryGetFieldTileVerticesInternal index field.FieldTileMap
+
+    let getFieldTileVertices index field =
+        getFieldTileVerticesInternal index field.FieldTileMap
 
     let tryGetFieldTileDataAtMouse field world =
         let mouseRay = World.getMouseRay3dWorld false world
@@ -315,15 +324,20 @@ module Field =
             Array.tryHead
         intersections
 
-    let getOccupantsData field =
-        (field.OccupantPositions, field.Occupants, field)
+    let sieveOccupants field =
+        (field.OccupantPositions, field.Occupants, field.FieldTileMap)
 
-    let getOccupants (occupantPositions, occupants : Map<_, _>, field) =
+    let unfoldOccupants (occupantPositions, occupants : Map<_, _>, fieldTileMap) =
         occupantPositions |>
-        Map.map (fun _ position -> getFieldTileVertices position field)  |>
+        Map.map (fun _ position -> getFieldTileVerticesInternal position fieldTileMap)  |>
         flip Seq.zip occupants |>
         Seq.map (fun (kvp, kvp2) -> (kvp.Key, (kvp.Value, kvp2.Value))) |>
         Map.ofSeq
+
+    let getOccupants field =
+        field |>
+        sieveOccupants |>
+        unfoldOccupants
 
     let rec advanceFieldScript field (world : World) =
         match field.FieldState_ with
