@@ -44,13 +44,13 @@ module Nu =
 
             // process loading assemblies
             AppDomain.CurrentDomain.AssemblyLoad.Add (fun args ->
-                Reflection.AssembliesLoaded[args.LoadedAssembly.FullName] <- args.LoadedAssembly)
+                Reflection.AssembliesLoaded.[args.LoadedAssembly.FullName] <- args.LoadedAssembly)
             AppDomain.CurrentDomain.add_AssemblyResolve (ResolveEventHandler (fun _ args ->
                 snd (Reflection.AssembliesLoaded.TryGetValue args.Name)))
 
             // process existing assemblies
             for assembly in AppDomain.CurrentDomain.GetAssemblies () do
-                Reflection.AssembliesLoaded[assembly.FullName] <- assembly
+                Reflection.AssembliesLoaded.[assembly.FullName] <- assembly
 
             // ensure the current culture is invariate
             Thread.CurrentThread.CurrentCulture <- Globalization.CultureInfo.InvariantCulture

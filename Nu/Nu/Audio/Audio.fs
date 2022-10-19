@@ -152,7 +152,7 @@ type [<ReferenceEquality; NoComparison>] SdlAudioPlayer =
                     | Some audioPackage -> audioPackage
                     | None ->
                         let audioPackage = { Assets = dictPlus StringComparer.Ordinal []; PackageState = () }
-                        audioPlayer.AudioPackages[packageName] <- audioPackage
+                        audioPlayer.AudioPackages.[packageName] <- audioPackage
                         audioPackage
 
                 // reload assets if specified
@@ -160,14 +160,14 @@ type [<ReferenceEquality; NoComparison>] SdlAudioPlayer =
                     for asset in assets do
                         if SdlAudioPlayer.tryFreeAudioAsset audioPackage.Assets.[asset.AssetTag.AssetName] audioPlayer then
                             match SdlAudioPlayer.tryLoadAudioAsset asset with
-                            | Some audioAsset -> audioPackage.Assets[asset.AssetTag.AssetName] <- audioAsset
+                            | Some audioAsset -> audioPackage.Assets.[asset.AssetTag.AssetName] <- audioAsset
                             | None -> ()
 
                 // otherwise create assets
                 else
                     for asset in assets do
                         match SdlAudioPlayer.tryLoadAudioAsset asset with
-                        | Some audioAsset -> audioPackage.Assets[asset.AssetTag.AssetName] <- audioAsset
+                        | Some audioAsset -> audioPackage.Assets.[asset.AssetTag.AssetName] <- audioAsset
                         | None -> ()
 
             | Left error ->
