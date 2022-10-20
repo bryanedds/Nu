@@ -1124,6 +1124,7 @@ module WorldTypes =
               AmbientState : World AmbientState
               Subsystems : Subsystems
               Simulants : UMap<Simulant, Simulant USet option> // OPTIMIZATION: using None instead of empty USet to descrease number of USet instances.
+              // cache line 3
               WorldExtension : WorldExtension }
 
         /// Check that the world is advancing (not halted).
