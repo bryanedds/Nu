@@ -48,19 +48,19 @@ module Content =
         (lens : Lens<'a, World>)
         (unfold : 'a -> Map<'k, 'b>)
         (mapper : 'k -> Lens<'b, World> -> GroupContent) =
-        groupsPlus lens unfold id mapper
+        groupsPlus lens id unfold mapper
 
     /// Describe a group to be conditionally instantiated from a lens with explicit filtering.
     let groupWhen (lens : Lens<'a, World>) (by : 'a -> 'b option) (mapper : Lens<'b, World> -> GroupContent) =
-        let (sieve : 'a -> Map<int, 'b>) = fun a -> match by a with Some a -> Map.singleton 0 a | None -> Map.empty
+        let (unfold : 'a -> Map<int, 'b>) = fun a -> match by a with Some a -> Map.singleton 0 a | None -> Map.empty
         let mapper = fun _ b -> mapper b
-        groups lens sieve mapper
+        groups lens unfold mapper
 
     /// Describe a group to be conditionally instantiated from a lens.
     let groupOpt (lens : Lens<'a option, World>) (mapper : Lens<'a, World> -> GroupContent) =
-        let (sieve : 'a option -> Map<int, 'a>) = fun aOpt -> match aOpt with Some a -> Map.singleton 0 a | None -> Map.empty
+        let (unfold : 'a option -> Map<int, 'a>) = fun aOpt -> match aOpt with Some a -> Map.singleton 0 a | None -> Map.empty
         let mapper = fun _ b -> mapper b
-        groups lens sieve mapper
+        groups lens unfold mapper
 
     /// Describe groups to be instantiated from a map lens.
     /// Unless the lens is very efficiently producing the map, you may want to use the Content.groups function instead
@@ -135,19 +135,19 @@ module Content =
         (lens : Lens<'a, World>)
         (unfold : 'a -> Map<'k, 'b>)
         (mapper : 'k -> Lens<'b, World> -> EntityContent) =
-        entitiesPlus lens unfold id mapper
+        entitiesPlus lens id unfold mapper
 
     /// Describe an entity to be conditionally instantiated from a lens with explicit filtering.
     let entityWhen (lens : Lens<'a, World>) (by : 'a -> 'b option) (mapper : Lens<'b, World> -> EntityContent) =
-        let (sieve : 'a -> Map<int, 'b>) = fun a -> match by a with Some a -> Map.singleton 0 a | None -> Map.empty
+        let (unfold : 'a -> Map<int, 'b>) = fun a -> match by a with Some a -> Map.singleton 0 a | None -> Map.empty
         let mapper = fun _ b -> mapper b
-        entities lens sieve mapper
+        entities lens unfold mapper
 
     /// Describe an entity to be conditionally instantiated from a lens.
     let entityOpt (lens : Lens<'a option, World>) (mapper : Lens<'a, World> -> EntityContent) =
-        let (sieve : 'a option -> Map<int, 'a>) = fun aOpt -> match aOpt with Some a -> Map.singleton 0 a | None -> Map.empty
+        let (unfold : 'a option -> Map<int, 'a>) = fun aOpt -> match aOpt with Some a -> Map.singleton 0 a | None -> Map.empty
         let mapper = fun _ b -> mapper b
-        entities lens sieve mapper
+        entities lens unfold mapper
 
     /// Describe entities to be instantiated from a map lens.
     /// Unless the lens is very efficiently producing the map, you may want to use the Content.entities function

@@ -9,17 +9,15 @@
 
 using System;
 using System.Diagnostics.Contracts;
-using System.Globalization;
-using System.Numerics;
 using System.Runtime.InteropServices;
 
 namespace Nu
 {
     /// <summary>
-    /// Represents a 2D vector using three 32-bit integer numbers.
+    /// Represents a 2D vector using two 32-bit integer numbers.
     /// </summary>
     /// <remarks>
-    /// The Vector2i structure is suitable for interoperation with unmanaged code requiring three consecutive integers.
+    /// The Vector2i structure is suitable for interoperation with unmanaged code requiring two consecutive integers.
     /// </remarks>
     [Serializable]
     [StructLayout(LayoutKind.Sequential)]

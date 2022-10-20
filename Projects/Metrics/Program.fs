@@ -53,6 +53,7 @@ type MetricsEntityDispatcher () =
   #endif
 #endif
 
+#if !ELMISH
 type MyGameDispatcher () =
     inherit GameDispatcher<unit, unit, unit> (())
 
@@ -151,19 +152,18 @@ type MyGameDispatcher () =
 #endif
         let world = World.selectScreen IdlingState screen world
         world
-
-#if ELMISH
+#else
 type ElmishEntityDispatcher () =
     inherit EntityDispatcher3d<StaticModel AssetTag, unit, unit> (true, false, Assets.Default.StaticModel)
 
     override this.View (staticModel, entity, world) =
         let mutable transform = entity.GetTransform world
         let staticModelMatrix = transform.AffineMatrix
-        View.Render3d (RenderStaticModelDescriptor (false, staticModelMatrix, DeferredRenderType, staticModel))
+        View.Render3d (RenderStaticModelMessage (false, staticModelMatrix, ValueNone, Unchecked.defaultof<_>, DeferredRenderType, staticModel))
 
     override this.GetQuickSize (entity, world) =
-        let staticModel = entity.GetStaticModel world
-        let bounds = (World.getStaticModelMetadata staticModel world).Bounds
+        let staticModel = entity.GetModelGeneric world
+        let bounds = (Metadata.getStaticModelMetadata staticModel).Bounds
         let boundsExtended = bounds.Combine bounds.Mirror
         boundsExtended.Size
 
@@ -182,7 +182,7 @@ type [<ReferenceEquality>] Intss =
         { Intss = intss.Intss |> Map.map (fun k v -> if k % 1 = 0 then Ints.inc v else v) }
 
 type ElmishGameDispatcher () =
-    inherit GameDispatcher<Intss, int, unit> (Intss.init 86) // 7,396 elmish entities (goal: 60FPS w/o Stalls, current: 60FPS w/o Stalls)
+    inherit GameDispatcher<Intss, int, unit> (Intss.init 100) // 10,000 elmish entities (goal: steady 60FPS, current: 53FPS)
 
     override this.Channel (_, game) =
         [game.UpdateEvent => msg 0]
@@ -194,9 +194,9 @@ type ElmishGameDispatcher () =
 
     override this.Content (intss, _) =
         [Content.screen Simulants.Default.Screen.Name Vanilla []
-            [Content.groups intss (fun intss _ -> intss.Intss) $ fun i intss _ ->
+            [Content.groups intss (fun intss -> intss.Intss) $ fun i intss ->
                 Content.group (string i) []
-                    [Content.entities intss (fun ints _ -> ints.Ints) $ fun j int _ ->
+                    [Content.entities intss (fun ints -> ints.Ints) $ fun j int ->
                         Content.entity<ElmishEntityDispatcher> (string j)
                             [Entity.Presence == Omnipresent
                              Entity.Position == v3 (single i * 5.0f - 200.0f) (single j * 2.5f - 100.0f) -250.0f
