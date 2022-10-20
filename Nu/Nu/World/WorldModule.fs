@@ -835,24 +835,24 @@ module WorldModule =
 
         static member private publishPropertyBindingGroup bindings world =
             let parentChanged =
-                match bindings.PBSParentPrevious with
+                match bindings.PBGParentPrevious with
                 | ValueSome parentPrevious ->
-                    let parent = bindings.PBSParent
+                    let parent = bindings.PBGParent
                     if parent.Validate world then
                         let parentValue = parent.GetWithoutValidation world
                         if parentValue =/= parentPrevious
-                        then bindings.PBSParentPrevious <- ValueSome parentValue; true
+                        then bindings.PBGParentPrevious <- ValueSome parentValue; true
                         else false
                     else true
                 | ValueNone ->
-                    let parent = bindings.PBSParent
+                    let parent = bindings.PBGParent
                     if parent.Validate world then
                         let parentValue = parent.GetWithoutValidation world
-                        bindings.PBSParentPrevious <- ValueSome parentValue
+                        bindings.PBGParentPrevious <- ValueSome parentValue
                         true
                     else true
             if parentChanged
-            then OMap.foldv (flip World.publishPropertyBinding) world bindings.PBSPropertyBindings
+            then OMap.foldv (flip World.publishPropertyBinding) world bindings.PBGPropertyBindings
             else world
 
         static member private publishContentBinding binding world =

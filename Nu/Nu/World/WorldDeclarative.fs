@@ -231,11 +231,11 @@ module WorldDeclarative =
                                 match elmishBindings.EBSBindings.TryGetValue (Right parent) with
                                 | (true, PropertyBindingGroup propertyBindingGroup) ->
                                     let propertyBinding = { PBLeft = left; PBRight = right; PBPrevious = ValueNone }
-                                    let propertyBindingGroup = { propertyBindingGroup with PBSParentPrevious = ValueNone; PBSPropertyBindings = OMap.add propertyBindingKey propertyBinding propertyBindingGroup.PBSPropertyBindings }
+                                    let propertyBindingGroup = { propertyBindingGroup with PBGParentPrevious = ValueNone; PBGPropertyBindings = OMap.add propertyBindingKey propertyBinding propertyBindingGroup.PBGPropertyBindings }
                                     OMap.add (Right parent) (PropertyBindingGroup propertyBindingGroup) elmishBindings.EBSBindings
                                 | (_, _) ->
                                     let propertyBinding = { PBLeft = left; PBRight = right; PBPrevious = ValueNone }
-                                    let propertyBindingGroup = { PBSParentPrevious = ValueNone; PBSParent = parent; PBSPropertyBindings = OMap.singleton HashIdentity.Structural config propertyBindingKey propertyBinding }
+                                    let propertyBindingGroup = { PBGParentPrevious = ValueNone; PBGParent = parent; PBGPropertyBindings = OMap.singleton HashIdentity.Structural config propertyBindingKey propertyBinding }
                                     OMap.add (Right parent) (PropertyBindingGroup propertyBindingGroup) elmishBindings.EBSBindings }
                     let elmishBindingsMap = UMap.add propertyAddress elmishBindings world.ElmishBindingsMap
                     World.choose { world with ElmishBindingsMap = elmishBindingsMap }
@@ -271,8 +271,8 @@ module WorldDeclarative =
                             EBSBindings =
                                 match elmishBindings.EBSBindings.TryGetValue (Right parent) with
                                 | (true, PropertyBindingGroup propertyBindingGroup) ->
-                                    let propertyBindingGroup = { propertyBindingGroup with PBSPropertyBindings = OMap.remove propertyBindingKey propertyBindingGroup.PBSPropertyBindings }
-                                    if OMap.isEmpty propertyBindingGroup.PBSPropertyBindings
+                                    let propertyBindingGroup = { propertyBindingGroup with PBGPropertyBindings = OMap.remove propertyBindingKey propertyBindingGroup.PBGPropertyBindings }
+                                    if OMap.isEmpty propertyBindingGroup.PBGPropertyBindings
                                     then OMap.remove (Right parent) elmishBindings.EBSBindings
                                     else OMap.add (Right parent) (PropertyBindingGroup propertyBindingGroup) elmishBindings.EBSBindings
                                 | (_, _) -> elmishBindings.EBSBindings }
