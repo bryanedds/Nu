@@ -1056,9 +1056,9 @@ module WorldTypes =
 
     /// Describes a group of property bindings.
     and [<NoEquality; NoComparison>] internal PropertyBindingGroup =
-        { mutable PBSParentPrevious : obj ValueOption // ELMISH_CACHE
-          PBSParent : World Lens
-          PBSPropertyBindings : OMap<Guid, PropertyBinding> }
+        { mutable PBGParentPrevious : obj ValueOption // ELMISH_CACHE
+          PBGParent : World Lens
+          PBGPropertyBindings : OMap<Guid, PropertyBinding> }
 
     /// Describe an elmish binding.
     and [<NoEquality; NoComparison>] internal ElmishBinding =
@@ -1066,7 +1066,7 @@ module WorldTypes =
         | PropertyBindingGroup of PropertyBindingGroup
         | ContentBinding of ContentBinding
 
-    /// Describe an map of elmish bindings.
+    /// Describe a map of elmish bindings.
     and [<NoEquality; NoComparison>] internal ElmishBindings =
         { EBSParents : UMap<Guid, World Lens>
           EBSBindings : OMap<Either<Guid, World Lens>, ElmishBinding> }
