@@ -62,6 +62,15 @@ module Content =
         let mapper = fun _ b -> mapper b
         groups lens unfold mapper
 
+    /// Describe a group to be conditionally instantiated from a lens.
+    let groupIf lens predicate (mapper : Lens<'a, World> -> GroupContent) =
+        groupWhen lens (fun a -> if predicate a then Some a else None) mapper
+
+    /// Describe a group to be instantiated when a screen is selected.
+    let groupIfScreenSelected (screen : Screen) (mapper : Lens<unit, World> -> GroupContent) =
+        let mapper = (fun lens -> mapper (Lens.map (constant ()) lens))
+        groupIf Simulants.Game.SelectedScreenOpt (fun screenOpt -> screenOpt = Some screen) mapper
+
     /// Describe groups to be instantiated from a map lens.
     /// Unless the lens is very efficiently producing the map, you may want to use the Content.groups function instead
     /// to cache map creation where possible.
@@ -106,18 +115,6 @@ module Content =
             Map.singleton key value)
             (fun key value -> mapper cases.[key].Name value)
 
-    /// Describe a group to be conditionally instantiated from a lens.
-    let groupIf lens predicate (mapper : Lens<'a, World> -> GroupContent) =
-        let mapper = fun _ a -> mapper a
-        groups
-            (Lens.narrow (fun world -> predicate (Lens.get lens world)) lens)
-            (fun a -> if predicate a then Map.singleton 0 a else Map.empty) mapper
-
-    /// Describe a group to be instantiated when a screen is selected.
-    let groupIfScreenSelected (screen : Screen) (mapper : Lens<unit, World> -> GroupContent) =
-        let mapper = (fun lens -> mapper (Lens.map (constant ()) lens))
-        groupIf Simulants.Game.SelectedScreenOpt (fun screenOpt -> screenOpt = Some screen) mapper
-
     /// Describe entities to be instantiated from a lens, caching what is sieved from the lens for greater efficiency.
     let entitiesPlus
         (lens : Lens<'a, World>)
@@ -148,6 +145,10 @@ module Content =
         let (unfold : 'a option -> Map<int, 'a>) = fun aOpt -> match aOpt with Some a -> Map.singleton 0 a | None -> Map.empty
         let mapper = fun _ b -> mapper b
         entities lens unfold mapper
+
+    /// Describe an entity to be conditionally instantiated from a lens.
+    let entityIf lens predicate mapper =
+        entityWhen lens (fun a -> if predicate a then Some a else None) mapper
 
     /// Describe entities to be instantiated from a map lens.
     /// Unless the lens is very efficiently producing the map, you may want to use the Content.entities function
@@ -180,13 +181,6 @@ module Content =
     /// Describe an entity with the given initializers.
     let entity<'d when 'd :> EntityDispatcher> entityName initializers =
         composite<'d> entityName initializers []
-
-    /// Describe an entity to be conditionally instantiated from a lens.
-    let entityIf lens predicate mapper =
-        let mapper = fun _ a -> mapper a
-        entities
-            (Lens.narrow (fun world -> predicate (Lens.get lens world)) lens)
-            (fun a -> if predicate a then Map.singleton 0 a else Map.empty) mapper
 
     /// Describe one of multiple entities.
     let entityUnion<'a> (lens : Lens<'a, World>) mapper =
