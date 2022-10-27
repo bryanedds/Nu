@@ -64,7 +64,7 @@ module Content =
 
     /// Describe a group to be conditionally instantiated from a lens.
     let groupIf lens predicate (mapper : Lens<'a, World> -> GroupContent) =
-        groupWhen lens (fun a -> if predicate a then Some () else None) mapper
+        groupWhen lens (fun a -> if predicate a then Some a else None) mapper
 
     /// Describe a group to be instantiated when a screen is selected.
     let groupIfScreenSelected (screen : Screen) (mapper : Lens<unit, World> -> GroupContent) =
@@ -148,7 +148,7 @@ module Content =
 
     /// Describe an entity to be conditionally instantiated from a lens.
     let entityIf lens predicate mapper =
-        entityWhen lens (fun a -> if predicate a then Some () else None) mapper
+        entityWhen lens (fun a -> if predicate a then Some a else None) mapper
 
     /// Describe entities to be instantiated from a map lens.
     /// Unless the lens is very efficiently producing the map, you may want to use the Content.entities function
