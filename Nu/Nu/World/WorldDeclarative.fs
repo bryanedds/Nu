@@ -306,6 +306,9 @@ module WorldDeclarative =
             World.choose { world with ElmishBindingsMap = bindingsMap }
 
         static member internal removeContentBinding contentBinding world =
+            let world = World.removeKeyedValue contentBinding.CBContentKey world // ELMISH_CACHE
+            let world = World.removeKeyedValue (Gen.idDeterministic 1 contentBinding.CBContentKey) world // ELMISH_CACHE
+            let world = World.removeKeyedValue (Gen.idDeterministic 2 contentBinding.CBContentKey) world // ELMISH_CACHE
             let propertyAddress = PropertyAddress.make contentBinding.CBSource.Name contentBinding.CBSource.This
             let bindingsMap =
                 match world.ElmishBindingsMap.TryGetValue propertyAddress with

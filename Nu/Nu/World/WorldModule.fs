@@ -744,10 +744,7 @@ module WorldModule =
                     match simulantMap.TryGetValue key with
                     | (true, simulant) ->
                         let simulantMap = Map.remove key simulantMap
-                        let world =
-                            if Map.isEmpty simulantMap
-                            then World.removeKeyedValue contentKey world
-                            else World.addKeyedValue contentKey simulantMap world
+                        let world = World.addKeyedValue contentKey simulantMap world
                         destroy simulant world
                     | (false, _) -> world
                 | (false, _) -> world)
@@ -793,7 +790,6 @@ module WorldModule =
             let changed = added.Count <> 0 || removed.Count <> 0
             if changed then
                 // HACK: we need to use content key for an additional purpose, so we add 2 (key with add 1 may already be used in invoking function).
-                // TODO: make sure our removal of this key's entry is comprehensive or has some way of not creating too many dead entries.
                 let contentKeyPlus2 = Gen.idDeterministic 2 contentKey // ELMISH_CACHE
                 let world = World.removeSynchronizedSimulants contentKeyPlus2 removed world
                 let world = World.addSynchronizedSimulants contentMapper contentKeyPlus2 mapGeneralized added origin owner parent world
@@ -853,7 +849,6 @@ module WorldModule =
 
         static member private publishContentBinding binding world =
             // HACK: we need to use content key for an additional purpose, so we add 1.
-            // TODO: make sure our removal of this key's entry is comprehensive or has some way of not creating too many dead entries.
             let contentKeyPlus1 = Gen.idDeterministic 1 binding.CBContentKey // ELMISH_CACHE
             if Lens.validate binding.CBSource world then
                 let mapGeneralized = Lens.getWithoutValidation binding.CBSource world
