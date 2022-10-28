@@ -1374,18 +1374,18 @@ module FieldDispatcher =
                                 | None -> false)
                             MenuItemUse
                          Content.button Gen.name
-                            [Entity.PositionLocal == v3 810.0f 342.0f 0.0f; Entity.ElevationLocal == 2.0f; Entity.Size == v3 72.0f 72.0f 0.0f
+                            [Entity.PositionLocal == v3 810.0f 342.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 72.0f 72.0f 0.0f
                              Entity.UpImage == asset "Field" "CloseButtonUp"
                              Entity.DownImage == asset "Field" "CloseButtonDown"
                              Entity.ClickEvent ==> msg MenuItemCancel]
                          Content.text Gen.name
-                            [Entity.PositionLocal == v3 36.0f 354.0f 0.0f; Entity.ElevationLocal == 2.0f
+                            [Entity.PositionLocal == v3 36.0f 354.0f 0.0f; Entity.ElevationLocal == 1.0f
                              Entity.Text <== fieldAndMenuUse --> fun (_, menuUse) -> menuUse.MenuUseLine1]
                          Content.text Gen.name
-                            [Entity.PositionLocal == v3 66.0f 312.0f 0.0f; Entity.ElevationLocal == 2.0f
+                            [Entity.PositionLocal == v3 66.0f 312.0f 0.0f; Entity.ElevationLocal == 1.0f
                              Entity.Text <== fieldAndMenuUse --> fun (_, menuUse) -> menuUse.MenuUseLine2]
                          Content.text Gen.name
-                            [Entity.PositionLocal == v3 66.0f 270.0f 0.0f; Entity.ElevationLocal == 2.0f
+                            [Entity.PositionLocal == v3 66.0f 270.0f 0.0f; Entity.ElevationLocal == 1.0f
                              Entity.Text <== fieldAndMenuUse --> fun (_, menuUse) -> menuUse.MenuUseLine3]]
 
                  // options
@@ -1424,7 +1424,7 @@ module FieldDispatcher =
                          Entity.Enabled <== fieldAndShop --> fun (_, shop) -> Option.isNone shop.ShopConfirmOpt]
                         [Content.items (v3 96.0f 347.0f 0.0f) 1.0f 8 4 (fieldAndShop --> fst) ShopSelect
                          Content.button Gen.name
-                            [Entity.PositionLocal == v3 24.0f 438.0f 0.0f; Entity.ElevationLocal == 2.0f; Entity.Size == v3 192.0f 48.0f 0.0f
+                            [Entity.PositionLocal == v3 24.0f 438.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 192.0f 48.0f 0.0f
                              Entity.Text == "Buy"
                              Entity.VisibleLocal <== fieldAndShop --> fun (_, shop) -> shop.ShopState = ShopSelling
                              Entity.ClickEvent ==> msg ShopBuy]
@@ -1434,7 +1434,7 @@ module FieldDispatcher =
                              Entity.Text == "Buy what?"
                              Entity.VisibleLocal <== fieldAndShop --> fun (_, shop) -> shop.ShopState = ShopBuying]
                          Content.button Gen.name
-                            [Entity.PositionLocal == v3 352.0f 438.0f 0.0f; Entity.ElevationLocal == 2.0f; Entity.Size == v3 192.0f 48.0f 0.0f
+                            [Entity.PositionLocal == v3 352.0f 438.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 192.0f 48.0f 0.0f
                              Entity.Text == "Sell"
                              Entity.VisibleLocal <== fieldAndShop --> fun (_, shop) -> shop.ShopState = ShopBuying
                              Entity.ClickEvent ==> msg ShopSell]
@@ -1444,7 +1444,7 @@ module FieldDispatcher =
                              Entity.Text == "Sell what?"
                              Entity.VisibleLocal <== fieldAndShop --> fun (_, shop) -> shop.ShopState = ShopSelling]
                          Content.button Gen.name
-                            [Entity.PositionLocal == v3 678.0f 438.0f 0.0f; Entity.ElevationLocal == 2.0f; Entity.Size == v3 192.0f 48.0f 0.0f
+                            [Entity.PositionLocal == v3 678.0f 438.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 192.0f 48.0f 0.0f
                              Entity.Text == "Leave"
                              Entity.ClickEvent ==> msg ShopLeave]
                          Content.button Gen.name
@@ -1472,19 +1472,19 @@ module FieldDispatcher =
                        [Entity.Position == v3 -450.0f -128.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation + 10.0f; Entity.Size == v3 900.0f 252.0f 0.0f
                         Entity.LabelImage == Assets.Gui.DialogFatImage]
                        [Content.button Gen.name
-                           [Entity.PositionLocal == v3 198.0f 36.0f 0.0f; Entity.ElevationLocal == 2.0f; Entity.Size == v3 192.0f 48.0f 0.0f
+                           [Entity.PositionLocal == v3 198.0f 36.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 192.0f 48.0f 0.0f
                             Entity.Text == "Accept"
                             Entity.ClickEvent ==> msg ShopConfirmAccept]
                         Content.button Gen.name
-                           [Entity.PositionLocal == v3 498.0f 36.0f 0.0f; Entity.ElevationLocal == 2.0f; Entity.Size == v3 192.0f 48.0f 0.0f
+                           [Entity.PositionLocal == v3 498.0f 36.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 192.0f 48.0f 0.0f
                             Entity.Text == "Decline"
                             Entity.ClickEvent ==> msg ShopConfirmDecline]
                         Content.text Gen.name
-                           [Entity.PositionLocal == v3 30.0f 180.0f 0.0f; Entity.ElevationLocal == 2.0f
+                           [Entity.PositionLocal == v3 30.0f 180.0f 0.0f; Entity.ElevationLocal == 1.0f
                             Entity.Text <== shopConfirm --> fun shopConfirm -> shopConfirm.ShopConfirmOffer]
                         Content.text Gen.name
-                           [Entity.PositionLocal == v3 60.0f 138.0f 0.0f; Entity.ElevationLocal == 2.0f
+                           [Entity.PositionLocal == v3 60.0f 138.0f 0.0f; Entity.ElevationLocal == 1.0f
                             Entity.Text <== shopConfirm --> fun shopConfirm -> shopConfirm.ShopConfirmLine1]
                         Content.text Gen.name
-                           [Entity.PositionLocal == v3 60.0f 96.0f 0.0f; Entity.ElevationLocal == 2.0f
+                           [Entity.PositionLocal == v3 60.0f 96.0f 0.0f; Entity.ElevationLocal == 1.0f
                             Entity.Text <== shopConfirm --> fun shopConfirm -> shopConfirm.ShopConfirmLine2]]]]
