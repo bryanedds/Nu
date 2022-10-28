@@ -805,11 +805,3 @@ module WorldEntityModule =
                     let world = World.setEntityMountOpt mountOpt entity world |> snd'
                     (Some entity, world)
             else (None, world)
-
-namespace Debug
-open Nu
-type Entity =
-
-    /// Provides a full view of all the properties of an entity. Useful for debugging such
-    /// as with the Watch feature in Visual Studio.
-    static member view entity world = World.viewEntityProperties entity world

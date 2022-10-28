@@ -268,7 +268,7 @@ module Gaia =
             let mousePosition = World.getMousePosition world
             match tryMousePick mousePosition form world with
             | (Some (_, entity), world) ->
-                Globals.pushPastWorld world
+                let world = Globals.pushPastWorld world
                 if entity.GetIs2d world then
                     let viewport = World.getViewport world
                     let eyePosition = World.getEyePosition2d world
@@ -820,7 +820,7 @@ module Gaia =
             else containsNode source target.Parent
 
         addPreUpdater $ fun world ->
-            Globals.pushPastWorld world
+            let world = Globals.pushPastWorld world
             let targetPoint = form.hierarchyTreeView.PointToClient (Point (e.X, e.Y))
             let targetNodeOpt = form.hierarchyTreeView.GetNodeAt targetPoint
             let draggedNode = e.Data.GetData typeof<TreeNode> :?> TreeNode
@@ -864,7 +864,7 @@ module Gaia =
     let private handleFormCreateEntity atMouse inHierarchy (dispatcherNameOpt : string option) (form : GaiaForm) (_ : EventArgs) =
         addPreUpdater $ fun world ->
             let oldWorld = world
-            try Globals.pushPastWorld world
+            try let world = Globals.pushPastWorld world
                 let selectedGroup = Globals.EditorState.SelectedGroup
                 let dispatcherName =
                     match dispatcherNameOpt with
@@ -932,7 +932,7 @@ module Gaia =
 
     let private handleFormDeleteEntity (form : GaiaForm) (_ : EventArgs) =
         addPreUpdater $ fun world ->
-            Globals.pushPastWorld world
+            let world = Globals.pushPastWorld world
             match form.entityPropertyGrid.SelectedObject with
             | :? EntityTypeDescriptorSource as entityTds ->
                 let world = World.destroyEntity entityTds.DescribedEntity world
@@ -947,7 +947,7 @@ module Gaia =
         groupCreationForm.okButton.Click.Add $ fun _ ->
             addPreUpdater $ fun world ->
                 let oldWorld = world
-                Globals.pushPastWorld world
+                let world = Globals.pushPastWorld world
                 let groupName = groupCreationForm.nameTextBox.Text
                 let groupDispatcherName = groupCreationForm.dispatcherTextBox.Text
                 try if String.length groupName = 0 then failwith "Group name cannot be empty in Gaia due to WinForms limitations."
@@ -987,7 +987,7 @@ module Gaia =
             form.openFileDialog.FileName <- String.Empty
             match form.openFileDialog.ShowDialog form with
             | DialogResult.OK ->
-                Globals.pushPastWorld world
+                let world = Globals.pushPastWorld world
                 let filePath = form.openFileDialog.FileName
                 match tryLoadSelectedGroup form filePath world with
                 | (Some group, world) ->
@@ -1004,7 +1004,7 @@ module Gaia =
                 MessageBox.Show ("Cannot close the only remaining group.", "Group close error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
                 world
             | _ ->
-                Globals.pushPastWorld world
+                let world = Globals.pushPastWorld world
                 let group = Globals.EditorState.SelectedGroup
                 let world = World.destroyGroupImmediate group world
                 deselectEntity form world
@@ -1047,12 +1047,14 @@ module Gaia =
 
     let private handleFormAdvancingChanged (form : GaiaForm) (_ : EventArgs) =
         addPreUpdater $ fun world ->
+            let world = World.setUpdateRate 0L world
             let updateRate = if form.advancingButton.Checked then 1L else 0L
-            let (pastWorld, world) = (world, World.setUpdateRate updateRate world)
-            if updateRate <> 0L then
-                form.displayPanel.Focus () |> ignore
-                Globals.pushPastWorld pastWorld
-            world
+            let world =
+                if updateRate <> 0L then
+                    form.displayPanel.Focus () |> ignore
+                    Globals.pushPastWorld world
+                else world
+            World.setUpdateRate updateRate world
 
     let private handleFormSongPlayback (form : GaiaForm) (_ : EventArgs) =
         addPreUpdater $ fun world ->
@@ -1072,7 +1074,7 @@ module Gaia =
             match form.entityPropertyGrid.SelectedObject with
             | null -> world
             | :? EntityTypeDescriptorSource as entityTds ->
-                Globals.pushPastWorld world
+                let world = Globals.pushPastWorld world
                 let world = World.cutEntityToClipboard entityTds.DescribedEntity world
                 deselectEntity form world
                 world
@@ -1080,7 +1082,7 @@ module Gaia =
 
     let private handleFormPaste atMouse (form : GaiaForm) (_ : EventArgs) =
         addPreUpdater $ fun world ->
-            Globals.pushPastWorld world
+            let world = Globals.pushPastWorld world
             let selectedGroup = Globals.EditorState.SelectedGroup
             let surnamesOpt = World.tryGetEntityDispatcherNameOnClipboard world |> Option.map (flip generateEntityName world) |> Option.map Array.singleton
             let snapsEir = getSnaps form |> if form.snap3dButton.Checked then Right else Left
@@ -1095,7 +1097,7 @@ module Gaia =
             | null -> world
             | :? EntityTypeDescriptorSource as entityTds ->
                 let entity = entityTds.DescribedEntity
-                Globals.pushPastWorld world
+                let world = Globals.pushPastWorld world
                 let world = entity.SetSize (entity.GetQuickSize world) world
                 Globals.World <- world // must be set for property grid
                 form.entityPropertyGrid.Refresh ()

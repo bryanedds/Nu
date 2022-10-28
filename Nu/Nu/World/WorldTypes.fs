@@ -4,9 +4,7 @@
 namespace Nu
 open System
 open System.Collections.Generic
-#if DEBUG
 open System.Diagnostics
-#endif
 open System.Numerics
 open FSharpx.Collections
 open Prime
@@ -14,6 +12,15 @@ open Nu
 
 [<AutoOpen>]
 module WorldTypes =
+
+    // Debugging variables.
+    let mutable internal Chosen = obj ()
+
+    // Debugging reach-arounds.
+    let mutable internal viewGame = fun (_ : obj) -> Array.create 0 (String.Empty, obj ())
+    let mutable internal viewScreen = fun (_ : obj) (_ : obj) -> Array.create 0 (String.Empty, obj ())
+    let mutable internal viewGroup = fun (_ : obj) (_ : obj) -> Array.create 0 (String.Empty, obj ())
+    let mutable internal viewEntity = fun (_ : obj) (_ : obj) -> Array.create 0 (String.Empty, obj ())
 
     // EventSystem reach-arounds.
     let mutable internal handleUserDefinedCallback : obj -> obj -> obj -> Handling * obj = Unchecked.defaultof<_>
@@ -712,11 +719,9 @@ module WorldTypes =
         /// The address of the game.
         member this.GameAddress = gameAddress
 
-#if DEBUG
         /// Get the latest value of a game's properties.
         [<DebuggerBrowsable (DebuggerBrowsableState.RootHidden)>]
-        member private this.View = Debug.World.viewGame Debug.World.Chosen
-#endif
+        member private this.View = viewGame Chosen
         
         /// Helper for accessing game lenses.
         static member Lens = Unchecked.defaultof<Game>
@@ -774,11 +779,9 @@ module WorldTypes =
         /// Get the name of a screen.
         member inline this.Name = Address.getName this.ScreenAddress
 
-#if DEBUG
         /// Get the latest value of a screen's properties.
         [<DebuggerBrowsable (DebuggerBrowsableState.RootHidden)>]
-        member private this.View = Debug.World.viewScreen (this :> obj) Debug.World.Chosen
-#endif
+        member private this.View = viewScreen (this :> obj) Chosen
 
         /// Helper for accessing screen lenses.
         static member Lens = Unchecked.defaultof<Screen>
@@ -850,11 +853,9 @@ module WorldTypes =
         /// Get the name of a group.
         member inline this.Name = Address.getName this.GroupAddress
 
-#if DEBUG
         /// Get the latest value of a group's properties.
         [<DebuggerBrowsable (DebuggerBrowsableState.RootHidden)>]
-        member private this.View = Debug.World.viewGroup (this :> obj) Debug.World.Chosen
-#endif
+        member private this.View = viewGroup (this :> obj) Chosen
 
         /// Derive an entity from its group.
         static member (/) (group : Group, entityName) = Entity (atoa<Group, Entity> group.GroupAddress --> ntoa entityName)
@@ -966,11 +967,9 @@ module WorldTypes =
         /// Get the last name of an entity.
         member inline this.Name = Address.getNames this.EntityAddress |> Array.last
 
-#if DEBUG
         /// Get the latest value of an entity's properties.
         [<DebuggerBrowsable (DebuggerBrowsableState.RootHidden)>]
-        member private this.View = Debug.World.viewEntity (this :> obj) Debug.World.Chosen
-#endif
+        member private this.View = viewEntity (this :> obj) Chosen
 
         /// Derive an entity from its parent entity.
         static member (/) (parentEntity : Entity, entityName) = Entity (parentEntity.EntityAddress --> ntoa entityName)
@@ -1042,7 +1041,8 @@ module WorldTypes =
     and [<NoEquality; NoComparison>] internal PropertyBinding =
         { PBLeft : World Lens
           PBRight : World Lens
-          mutable PBPrevious : obj ValueOption } // ELMISH_CACHE
+          mutable PBPrevious : obj ValueOption // ELMISH_CACHE
+          mutable PBDivergenceId : uint }
 
     /// Describes a content binding for Nu's optimized Elmish implementation.
     and [<NoEquality; NoComparison>] internal ContentBinding =
@@ -1057,6 +1057,7 @@ module WorldTypes =
     /// Describes a group of property bindings.
     and [<NoEquality; NoComparison>] internal PropertyBindingGroup =
         { mutable PBGParentPrevious : obj ValueOption // ELMISH_CACHE
+          mutable PBGDivergenceId : uint
           PBGParent : World Lens
           PBGPropertyBindings : OMap<Guid, PropertyBinding> }
 
@@ -1125,6 +1126,8 @@ module WorldTypes =
               Subsystems : Subsystems
               Simulants : UMap<Simulant, Simulant USet option> // OPTIMIZATION: using None instead of empty USet to descrease number of USet instances.
               // cache line 3
+              mutable SequenceId : uint // mutated upon choose
+              mutable DivergenceId : uint // mutated upon divergence
               WorldExtension : WorldExtension }
 
         /// Check that the world is advancing (not halted).
@@ -1150,6 +1153,25 @@ module WorldTypes =
         /// Get the current clock time.
         member this.ClockTime =
             AmbientState.getClockTime this.AmbientState
+
+#if DEBUG
+        member internal this.Choose () =
+#else
+        member inline internal this.Choose () =
+#endif
+            let sequenceId = Gen.idForWorldSequence
+            if sequenceId - 1u <> this.SequenceId then this.DivergenceId <- Gen.idForWorldDivergence
+            this.SequenceId <- sequenceId
+            Chosen <- this :> obj
+            this
+
+#if DEBUG
+        member internal this.AssertChosen () =
+#else
+        member inline internal this.AssertChosen () =
+#endif
+            if refNeq (this :> obj) Chosen then
+                Console.WriteLine "Fault"
 
         interface World EventSystem with
 
@@ -1183,10 +1205,7 @@ module WorldTypes =
 
             member this.UpdateEventSystemDelegate updater =
                 let this = { this with EventSystemDelegate = updater this.EventSystemDelegate }
-#if DEBUG
-                Debug.World.Chosen <- this
-#endif
-                this
+                this.Choose ()
 
             member this.HandleUserDefinedCallback userDefined data world =
                 let (handling, worldObj) = handleUserDefinedCallback userDefined data (world :> obj)
@@ -1201,10 +1220,7 @@ module WorldTypes =
                     | :? Game -> EventSystem.publishEvent<'a, 'p, Game, World> subscriber publisher eventData eventAddress eventTrace subscription world
                     | :? GlobalSimulantGeneralized -> EventSystem.publishEvent<'a, 'p, Simulant, World> subscriber publisher eventData eventAddress eventTrace subscription world
                     | _ -> failwithumf ()
-#if DEBUG
-                Debug.World.Chosen <- world
-#endif
-                (handling, world)
+                (handling, world.Choose ())
 
             member this.SubscribeEventHook eventAddress subscriber world =
                 handleSubscribeAndUnsubscribeEventHook true eventAddress subscriber world :?> World

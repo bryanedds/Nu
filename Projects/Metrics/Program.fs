@@ -199,7 +199,7 @@ type ElmishGameDispatcher () =
                     [Content.entities intss (fun ints -> ints.Ints) $ fun j int ->
                         Content.entity<ElmishEntityDispatcher> (string j)
                             [Entity.Presence == Omnipresent
-                             Entity.Position == v3 (single i * 5.0f - 200.0f) (single j * 2.5f - 100.0f) -250.0f
+                             Entity.Position == v3 (single i * 5.0f - 250.0f) (single j * 2.5f - 125.0f) -250.0f
                              Entity.Scale <== int --> fun int -> v3Dup (single (int % 10)) * 0.5f]]
              Content.group Gen.name []
                 [Content.fps "Fps" [Entity.Position == v3 200.0f -250.0f 0.0f]]]]

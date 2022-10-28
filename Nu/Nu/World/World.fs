@@ -75,6 +75,12 @@ module Nu =
             WorldModuleGroup.init ()
             WorldModuleEntity.init ()
 
+            // init debug view F# reach-arounds
+            WorldTypes.viewGame <- fun world -> World.viewGameProperties (world :?> World)
+            WorldTypes.viewScreen <- fun screen world -> World.viewScreenProperties (screen :?> Screen) (world :?> World)
+            WorldTypes.viewGroup <- fun group world -> World.viewGroupProperties (group :?> Group) (world :?> World)
+            WorldTypes.viewEntity <- fun entity world -> World.viewEntityProperties (entity :?> Entity) (world :?> World)
+
             // init handleUserDefinedCallback F# reach-around
             WorldTypes.handleUserDefinedCallback <- fun userDefined _ worldObj ->
                 let world = worldObj :?> World
@@ -368,12 +374,6 @@ module Nu =
             WorldModule.destroy <- fun simulant world -> World.destroy simulant world
             WorldModule.trySignalFacet <- fun signalObj facetName simulant world -> World.trySignalFacet signalObj facetName simulant world
             WorldModule.trySignal <- fun signalObj simulant world -> World.trySignal signalObj simulant world
-
-            // init debug view F# reach-arounds
-            Debug.World.viewGame <- fun world -> Debug.Game.view (world :?> World)
-            Debug.World.viewScreen <- fun screen world -> Debug.Screen.view (screen :?> Screen) (world :?> World)
-            Debug.World.viewGroup <- fun group world -> Debug.Group.view (group :?> Group) (world :?> World)
-            Debug.World.viewEntity <- fun entity world -> Debug.Entity.view (entity :?> Entity) (world :?> World)
 
             // init scripting
             World.initScripting ()

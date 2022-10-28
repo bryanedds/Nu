@@ -543,7 +543,7 @@ module WorldModuleGame =
             world
 
         /// View all of the properties of a game.
-        static member internal viewGameProperties world =
+        static member viewGameProperties world =
             let state = World.getGameState world
             World.viewProperties state
 

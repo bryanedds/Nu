@@ -1,18 +1,6 @@
 ﻿// Nu Game Engine.
 // Copyright (C) Bryan Edds, 2013-2020.
 
-namespace Debug
-open System
-module internal World =
-
-#if DEBUG
-    let mutable internal Chosen = obj ()
-#endif
-    let mutable internal viewGame = fun (_ : obj) -> Array.create 0 (String.Empty, obj ())
-    let mutable internal viewScreen = fun (_ : obj) (_ : obj) -> Array.create 0 (String.Empty, obj ())
-    let mutable internal viewGroup = fun (_ : obj) (_ : obj) -> Array.create 0 (String.Empty, obj ())
-    let mutable internal viewEntity = fun (_ : obj) (_ : obj) -> Array.create 0 (String.Empty, obj ())
-
 namespace Nu
 open System
 open System.Collections.Generic

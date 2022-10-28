@@ -308,7 +308,7 @@ module WorldModuleGroup =
             else world
 
         /// View all of the properties of a group.
-        static member internal viewGroupProperties group world =
+        static member viewGroupProperties group world =
             let state = World.getGroupState group world
             World.viewProperties state
 

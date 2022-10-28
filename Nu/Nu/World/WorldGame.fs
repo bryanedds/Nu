@@ -144,8 +144,7 @@ module WorldGameModule =
             let eventTrace = EventTrace.debug "World" "registerGame" "Register" EventTrace.empty
             let world = World.publishPlus () Events.Register eventTrace game true false world
             let eventTrace = EventTrace.debug "World" "registerGame" "LifeCycle" EventTrace.empty
-            let world = World.publishPlus (RegisterData game) (Events.LifeCycle (nameof Game)) eventTrace game true false world
-            World.choose world
+            World.publishPlus (RegisterData game) (Events.LifeCycle (nameof Game)) eventTrace game true false world
 
         static member internal unregisterGame world =
             let game = Simulants.Game
@@ -154,8 +153,7 @@ module WorldGameModule =
             let world = World.publishPlus () Events.Unregistering eventTrace game true false world
             let eventTrace = EventTrace.debug "World" "unregisteringGame" "" EventTrace.empty
             let world = World.publishPlus (UnregisteringData game) (Events.LifeCycle (nameof Game)) eventTrace game true false world
-            let world = dispatcher.Unregister (game, world)
-            World.choose world
+            dispatcher.Unregister (game, world)
 
         static member internal updateGame world =
 
@@ -166,8 +164,7 @@ module WorldGameModule =
 
             // publish update event
             let eventTrace = EventTrace.debug "World" "updateGame" "" EventTrace.empty
-            let world = World.publishPlus () Events.Update eventTrace game false false world
-            World.choose world
+            World.publishPlus () Events.Update eventTrace game false false world
 
         static member internal postUpdateGame world =
                 
@@ -178,8 +175,7 @@ module WorldGameModule =
 
             // publish post-update event
             let eventTrace = EventTrace.debug "World" "postUpdateGame" "" EventTrace.empty
-            let world = World.publishPlus () Events.PostUpdate eventTrace game false false world
-            World.choose world
+            World.publishPlus () Events.PostUpdate eventTrace game false false world
 
         static member internal renderGame world =
 
@@ -190,8 +186,7 @@ module WorldGameModule =
 
             // publish render event
             let eventTrace = EventTrace.debug "World" "renderGame" "" EventTrace.empty
-            let world = World.publishPlus () Events.Render eventTrace game false false world
-            World.choose world
+            World.publishPlus () Events.Render eventTrace game false false world
 
         /// Get all the entities in the world.
         [<FunctionBinding "getEntities0">]
@@ -249,10 +244,7 @@ module WorldGameModule =
             let world = World.setGameState gameState world
 
             // read the game's screens
-            let world = World.readScreens gameDescriptor.ScreenDescriptors world |> snd
-
-            // choose the world
-            World.choose world
+            World.readScreens gameDescriptor.ScreenDescriptors world |> snd
 
         /// Read a game from a file.
         [<FunctionBinding>]
@@ -260,11 +252,3 @@ module WorldGameModule =
             let gameDescriptorStr = File.ReadAllText filePath
             let gameDescriptor = scvalue<GameDescriptor> gameDescriptorStr
             World.readGame gameDescriptor world
-
-namespace Debug
-open Nu
-type Game =
-
-    /// Provides a full view of all the properties of a game. Useful for debugging such as with the
-    /// Watch feature in Visual Studio.
-    static member view world = World.viewGameProperties world

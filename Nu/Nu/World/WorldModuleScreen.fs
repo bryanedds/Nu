@@ -312,7 +312,7 @@ module WorldModuleScreen =
             else world
 
         /// View all of the properties of a screen.
-        static member internal viewScreenProperties screen world =
+        static member viewScreenProperties screen world =
             let state = World.getScreenState screen world
             World.viewProperties state
 

@@ -12,6 +12,8 @@ module Gen =
 
     let private Lock = obj ()
     let private Random = Random ()
+    let mutable private IdForWorldSequence = 0u
+    let mutable private IdForWorldDivergence = 0u
     let mutable private IdForEditor = 0UL
     let mutable private Id64 = 0UL
     let mutable private Id32 = 0u
@@ -182,6 +184,14 @@ module Gen =
                 let id = Gen.id64
                 let name = Gen.namePrefix + string id
                 (id, [|name|])
+
+        /// Generate a unique non-zero 64-bit id for use in world sequentialization.
+        static member internal idForWorldSequence =
+            lock Lock (fun () -> IdForWorldSequence <- inc IdForWorldSequence; IdForWorldSequence)
+
+        /// Generate a unique non-zero 64-bit id for use in world divergence.
+        static member internal idForWorldDivergence =
+            lock Lock (fun () -> IdForWorldDivergence <- inc IdForWorldDivergence; IdForWorldDivergence)
 
         /// Generate a unique non-zero 64-bit id for use in editor naming.
         static member idForEditor =

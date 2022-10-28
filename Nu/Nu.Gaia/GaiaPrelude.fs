@@ -54,3 +54,4 @@ module Globals =
         let pastWorld = Nu.World.shelve pastWorld
         EditorState.PastWorlds <- pastWorld :: EditorState.PastWorlds
         EditorState.FutureWorlds <- []
+        pastWorld
