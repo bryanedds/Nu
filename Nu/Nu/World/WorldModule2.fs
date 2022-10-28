@@ -587,14 +587,9 @@ module WorldModule2 =
             World.restoreTasklets taskletsNotRun world
 
         static member private destroySimulants world =
-            let world =
-                List.foldBack (fun simulant world ->
-                    World.destroyImmediate simulant world)
-                    world.WorldExtension.DestructionListRev
-                    world
-            if List.notEmpty world.WorldExtension.DestructionListRev
-            then World.destroySimulants world
-            else world
+            let destructionListRev = World.getDestructionListRev world
+            let world = List.foldBack (fun simulant world -> World.destroyImmediate simulant world) destructionListRev world
+            if List.notEmpty (World.getDestructionListRev world) then World.destroySimulants world else world
 
         /// Process an input event from SDL and ultimately publish any related game events.
         static member private processInput2 (evt : SDL.SDL_Event) world =
