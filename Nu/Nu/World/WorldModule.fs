@@ -179,7 +179,9 @@ module WorldModule =
             let simulants = UMap.singleton HashIdentity.Structural config (Simulants.Game :> Simulant) None
             let worldExtension = { DestructionListRev = []; Dispatchers = dispatchers; Plugin = plugin; ScriptingEnv = scriptingEnv; ScriptingContext = Game () }
             let world =
-                { EventSystemDelegate = eventDelegate
+                { SequenceId = Gen.idForWorldSequence
+                  DivergenceId = Gen.idForWorldDivergence
+                  EventSystemDelegate = eventDelegate
                   EntityCachedOpt = KeyedCache.make (KeyValuePair (Unchecked.defaultof<Entity>, entityStates)) Unchecked.defaultof<EntityState>
                   EntityStates = entityStates
                   GroupStates = groupStates
@@ -193,8 +195,6 @@ module WorldModule =
                   AmbientState = ambientState
                   Subsystems = subsystems
                   Simulants = simulants
-                  SequenceId = Gen.idForWorldSequence
-                  DivergenceId = Gen.idForWorldDivergence
                   WorldExtension = worldExtension }
             let world = { world with GameState = Reflection.attachProperties GameState.copy gameState.Dispatcher gameState world }
             World.choose world
