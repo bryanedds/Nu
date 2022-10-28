@@ -1104,30 +1104,27 @@ module WorldTypes =
     /// The world, in a functional programming sense. Hosts the game object, the dependencies needed
     /// to implement a game, messages to by consumed by the various engine sub-systems, and general
     /// configuration data.
-    ///
-    /// NOTE: this would be better as private, but there is just too much code to fit in this file
-    /// for that.
     and [<ReferenceEquality; NoComparison>] World =
         internal
             { // cache line 1 (assuming 16 byte header)
+              mutable SequenceId : uint // mutated upon choose
+              mutable DivergenceId : uint // mutated upon divergence
               EventSystemDelegate : World EventSystemDelegate
               EntityCachedOpt : KeyedCache<KeyValuePair<Entity, UMap<Entity, EntityState>>, EntityState>
               EntityStates : UMap<Entity, EntityState>
               GroupStates : UMap<Group, GroupState>
+              // cache line 2
               ScreenStates : UMap<Screen, ScreenState>
               GameState : GameState
-              // cache line 2
               EntityMounts : UMap<Entity, Entity USet>
               mutable Quadtree : Entity Quadtree MutantCache // mutated when Imperative
               mutable Octree : Entity Octree MutantCache // mutated when Imperative
               mutable SelectedEcsOpt : Ecs.Ecs option // mutated when Imperative
               ElmishBindingsMap : UMap<PropertyAddress, ElmishBindings> // TODO: consider making this mutable when Imperative to avoid rebuilding the world value when adding an Elmish binding.
               AmbientState : World AmbientState
+              // cache line 3
               Subsystems : Subsystems
               Simulants : UMap<Simulant, Simulant USet option> // OPTIMIZATION: using None instead of empty USet to descrease number of USet instances.
-              // cache line 3
-              mutable SequenceId : uint // mutated upon choose
-              mutable DivergenceId : uint // mutated upon divergence
               WorldExtension : WorldExtension }
 
         /// Check that the world is advancing (not halted).
