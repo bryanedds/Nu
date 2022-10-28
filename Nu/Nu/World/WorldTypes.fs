@@ -1041,8 +1041,8 @@ module WorldTypes =
     and [<NoEquality; NoComparison>] internal PropertyBinding =
         { PBLeft : World Lens
           PBRight : World Lens
-          mutable PBPrevious : obj ValueOption // ELMISH_CACHE
-          mutable PBDivergenceId : uint }
+          mutable PBDivergenceId : uint // ELMISH_CACHE
+          mutable PBPrevious : obj ValueOption }
 
     /// Describes a content binding for Nu's optimized Elmish implementation.
     and [<NoEquality; NoComparison>] internal ContentBinding =
@@ -1056,8 +1056,8 @@ module WorldTypes =
 
     /// Describes a group of property bindings.
     and [<NoEquality; NoComparison>] internal PropertyBindingGroup =
-        { mutable PBGParentPrevious : obj ValueOption // ELMISH_CACHE
-          mutable PBGDivergenceId : uint
+        { mutable PBGDivergenceId : uint // ELMISH_CACHE
+          mutable PBGParentPrevious : obj ValueOption
           PBGParent : World Lens
           PBGPropertyBindings : OMap<Guid, PropertyBinding> }
 
@@ -1331,6 +1331,9 @@ module WorldTypes =
 
 /// Represents an unsubscription operation for an event.
 type Unsubscription = WorldTypes.Unsubscription
+
+/// Specified the desired screen, if any, or whether to ignore screen desire functionality altogether.
+type DesiredScreen = WorldTypes.DesiredScreen
 
 /// The data for a change in the world's ambient state.
 type AmbientChangeData = WorldTypes.AmbientChangeData
