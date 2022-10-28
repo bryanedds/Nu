@@ -230,12 +230,12 @@ module WorldDeclarative =
                                 let config = World.getCollectionConfig world
                                 match elmishBindings.EBSBindings.TryGetValue (Right parent) with
                                 | (true, PropertyBindingGroup propertyBindingGroup) ->
-                                    let propertyBinding = { PBLeft = left; PBRight = right; PBPrevious = ValueNone; PBDivergenceId = world.DivergenceId }
+                                    let propertyBinding = { PBLeft = left; PBRight = right; PBDivergenceId = world.DivergenceId; PBPrevious = ValueNone }
                                     let propertyBindingGroup = { propertyBindingGroup with PBGParentPrevious = ValueNone; PBGPropertyBindings = OMap.add propertyBindingKey propertyBinding propertyBindingGroup.PBGPropertyBindings }
                                     OMap.add (Right parent) (PropertyBindingGroup propertyBindingGroup) elmishBindings.EBSBindings
                                 | (_, _) ->
-                                    let propertyBinding = { PBLeft = left; PBRight = right; PBPrevious = ValueNone; PBDivergenceId = world.DivergenceId }
-                                    let propertyBindingGroup = { PBGParentPrevious = ValueNone; PBGParent = parent; PBGPropertyBindings = OMap.singleton HashIdentity.Structural config propertyBindingKey propertyBinding; PBGDivergenceId = world.DivergenceId }
+                                    let propertyBinding = { PBLeft = left; PBRight = right; PBDivergenceId = world.DivergenceId; PBPrevious = ValueNone }
+                                    let propertyBindingGroup = { PBGDivergenceId = world.DivergenceId; PBGParentPrevious = ValueNone; PBGParent = parent; PBGPropertyBindings = OMap.singleton HashIdentity.Structural config propertyBindingKey propertyBinding }
                                     OMap.add (Right parent) (PropertyBindingGroup propertyBindingGroup) elmishBindings.EBSBindings }
                     let elmishBindingsMap = UMap.add propertyAddress elmishBindings world.ElmishBindingsMap
                     World.choose { world with ElmishBindingsMap = elmishBindingsMap }
@@ -243,20 +243,20 @@ module WorldDeclarative =
                     let config = World.getCollectionConfig world
                     let elmishBindings =
                         { EBSParents = UMap.singleton HashIdentity.Structural config propertyBindingKey parent
-                          EBSBindings = OMap.singleton HashIdentity.Structural config (Right parent) (PropertyBinding { PBLeft = left; PBRight = right; PBPrevious = ValueNone; PBDivergenceId = world.DivergenceId }) }
+                          EBSBindings = OMap.singleton HashIdentity.Structural config (Right parent) (PropertyBinding { PBLeft = left; PBRight = right; PBDivergenceId = world.DivergenceId; PBPrevious = ValueNone }) }
                     let elmishBindingsMap = UMap.add propertyAddress elmishBindings world.ElmishBindingsMap
                     World.choose { world with ElmishBindingsMap = elmishBindingsMap }
             | None ->
                 match world.ElmishBindingsMap.TryGetValue propertyAddress with
                 | (true, elmishBindings) ->
-                    let elmishBindings = { elmishBindings with EBSBindings = OMap.add (Left propertyBindingKey) (PropertyBinding { PBLeft = left; PBRight = right; PBPrevious = ValueNone; PBDivergenceId = world.DivergenceId }) elmishBindings.EBSBindings }
+                    let elmishBindings = { elmishBindings with EBSBindings = OMap.add (Left propertyBindingKey) (PropertyBinding { PBLeft = left; PBRight = right; PBDivergenceId = world.DivergenceId; PBPrevious = ValueNone }) elmishBindings.EBSBindings }
                     let elmishBindingsMap = UMap.add propertyAddress elmishBindings world.ElmishBindingsMap
                     World.choose { world with ElmishBindingsMap = elmishBindingsMap }
                 | (false, _) ->
                     let config = World.getCollectionConfig world
                     let elmishBindings =
                         { EBSParents = UMap.makeEmpty HashIdentity.Structural config
-                          EBSBindings = OMap.singleton HashIdentity.Structural config (Left propertyBindingKey) (PropertyBinding { PBLeft = left; PBRight = right; PBPrevious = ValueNone; PBDivergenceId = world.DivergenceId }) }
+                          EBSBindings = OMap.singleton HashIdentity.Structural config (Left propertyBindingKey) (PropertyBinding { PBLeft = left; PBRight = right; PBDivergenceId = world.DivergenceId; PBPrevious = ValueNone }) }
                     let elmishBindingsMap = UMap.add propertyAddress elmishBindings world.ElmishBindingsMap
                     World.choose { world with ElmishBindingsMap = elmishBindingsMap }
 
@@ -354,8 +354,7 @@ module WorldDeclarative =
                     lens
 
             // add content binding
-            let contentKey = Gen.id
-            let contentBinding = { CBMapper = mapper; CBSource = lensGeneralized; CBOrigin = origin; CBOwner = owner; CBParent = parent; CBSimulantKey = Gen.id; CBContentKey = contentKey }
+            let contentBinding = { CBMapper = mapper; CBSource = lensGeneralized; CBOrigin = origin; CBOwner = owner; CBParent = parent; CBSimulantKey = Gen.id; CBContentKey = Gen.id }
             let world = World.increaseBindingCount lensGeneralized.This world
             let world = World.addContentBinding contentBinding world
 
@@ -377,7 +376,7 @@ module WorldDeclarative =
                 else
                     let config = World.getCollectionConfig world
                     let lensesCurrent = USet.makeEmpty (LensComparer ()) config
-                    World.synchronizeSimulants mapper contentKey (MapGeneralized.make Map.empty) lensesCurrent origin owner parent world
+                    World.synchronizeSimulants mapper contentBinding.CBContentKey (MapGeneralized.make Map.empty) lensesCurrent origin owner parent world
 
             // fin
             world

@@ -55,15 +55,10 @@ module WorldModule =
     let mutable internal TaskletProcessingStarted = false
 
     /// Declarative lens comparable.
-    /// TODO: P1: remove the fake IEquatable and IComparable implementations after upgrading Prime.
-    type [<CustomEquality; CustomComparison>] internal LensComparable<'k when 'k : equality> =
+    type [<NoEquality; NoComparison>] internal LensComparable<'k when 'k : equality> =
         { LensHash : int
           LensKey : 'k
           LensItem : Lens<obj, World> }
-        override this.Equals _ = failwithnie ()
-        override this.GetHashCode () = failwithnie ()
-        interface IEquatable<'k LensComparable> with member this.Equals _ = failwithnie ()
-        interface IComparable<'k LensComparable> with member this.CompareTo _ = failwithnie ()
 
     /// Declarative lens comparer.
     type internal LensComparer<'k when 'k : equality> () =
@@ -838,7 +833,8 @@ module WorldModule =
                     let parent = bindings.PBGParent
                     if parent.Validate world then
                         let parentValue = parent.GetWithoutValidation world
-                        if parentValue =/= parentPrevious || bindings.PBGDivergenceId <> world.DivergenceId then
+                        if  parentValue =/= parentPrevious ||
+                            bindings.PBGDivergenceId <> world.DivergenceId then
                             bindings.PBGParentPrevious <- ValueSome parentValue
                             bindings.PBGDivergenceId <- world.DivergenceId
                             true
