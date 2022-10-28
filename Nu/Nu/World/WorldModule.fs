@@ -211,6 +211,21 @@ module WorldModule =
 
     type World with // Dispatchers
 
+        static member internal getDestructionListRev world =
+            world.WorldExtension.DestructionListRev
+
+        static member internal addSimulantToDestruction simulant world =
+            { world with
+                WorldExtension =
+                    { world.WorldExtension with
+                        DestructionListRev = simulant :: world.WorldExtension.DestructionListRev }}
+
+        static member internal tryRemoveSimulantFromDestruction simulant world =
+            { world with
+                WorldExtension =
+                    { world.WorldExtension with
+                        DestructionListRev = List.remove ((=) simulant) world.WorldExtension.DestructionListRev }}
+
         /// Get the game dispatchers of the world.
         static member getGameDispatchers world =
             world.WorldExtension.Dispatchers.GameDispatchers
@@ -918,20 +933,6 @@ module WorldModule =
         /// Attempt to evaluate a script.
         static member tryEvalScript scriptFilePath world =
             ScriptingSystem.tryEvalScript World.choose scriptFilePath world
-
-    type World with // Destruction
-
-        static member internal addSimulantToDestruction simulant world =
-            { world with
-                WorldExtension =
-                    { world.WorldExtension with
-                        DestructionListRev = simulant :: world.WorldExtension.DestructionListRev }}
-
-        static member internal tryRemoveSimulantFromDestruction simulant world =
-            { world with
-                WorldExtension =
-                    { world.WorldExtension with
-                        DestructionListRev = List.remove ((=) simulant) world.WorldExtension.DestructionListRev }}
 
     type World with // Plugin
 
