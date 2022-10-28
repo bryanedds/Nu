@@ -419,11 +419,3 @@ module WorldScreenModule =
                 let (screen, world) = World.readScreenFromFile filePath (Some name) world
                 let world = World.applyScreenBehavior setScreenSplash behavior screen world
                 (screen, world)
-
-namespace Debug
-open Nu
-type Screen =
-
-    /// Provides a full view of all the member properties of a screen. Useful for debugging such
-    /// as with the Watch feature in Visual Studio.
-    static member view screen world = World.viewScreenProperties screen world

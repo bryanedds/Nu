@@ -358,11 +358,3 @@ module WorldGroupModule =
                     let (group, world) = World.readGroupFromFile filePath (Some groupName) screen world
                     (Some group, world)
             else (None, world)
-
-namespace Debug
-open Nu
-type Group =
-
-    /// Provides a full view of all the properties of a group. Useful for debugging such
-    /// as with the Watch feature in Visual Studio.
-    static member view group world = World.viewGroupProperties group world

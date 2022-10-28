@@ -164,21 +164,14 @@ module WorldModule =
 
     type World with // Construction
 
-        /// Choose a world to be used for debugging. Call this whenever the most recently constructed
-        /// world value is to be discarded in favor of the given world value.
+        /// Choose a world to be used as the active world. Call this whenever the most recently constructed world value
+        /// is to be discarded in favor of the given world value, such as in an exception handler.
         static member choose (world : World) =
-#if DEBUG
-            Debug.World.Chosen <- world :> obj
-#endif
-            world
+            world.Choose ()
 
         /// Assert that the current world is the chosen world (used for debugging).
         static member assertChosen (world : World) =
-#if DEBUG
-            if world :> obj <> Debug.World.Chosen then
-                Console.WriteLine "Fault"
-#endif
-            ignore world
+            world.AssertChosen ()
 
         /// Make the world.
         static member internal make plugin eventDelegate dispatchers subsystems scriptingEnv ambientState quadtree octree activeGameDispatcher =
@@ -205,6 +198,8 @@ module WorldModule =
                   AmbientState = ambientState
                   Subsystems = subsystems
                   Simulants = simulants
+                  SequenceId = Gen.idForWorldSequence
+                  DivergenceId = Gen.idForWorldDivergence
                   WorldExtension = worldExtension }
             let world = { world with GameState = Reflection.attachProperties GameState.copy gameState.Dispatcher gameState world }
             World.choose world
@@ -817,8 +812,11 @@ module WorldModule =
                 let changed =
                     match binding.PBPrevious with
                     | ValueSome previous ->
-                        if value =/= previous
-                        then binding.PBPrevious <- ValueSome value; true
+                        if  value =/= previous ||
+                            binding.PBDivergenceId <> world.DivergenceId then
+                            binding.PBPrevious <- ValueSome value
+                            binding.PBDivergenceId <- world.DivergenceId
+                            true
                         else false
                     | ValueNone -> binding.PBPrevious <- ValueSome value; true
                 let allowPropertyBinding =
@@ -840,8 +838,10 @@ module WorldModule =
                     let parent = bindings.PBGParent
                     if parent.Validate world then
                         let parentValue = parent.GetWithoutValidation world
-                        if parentValue =/= parentPrevious
-                        then bindings.PBGParentPrevious <- ValueSome parentValue; true
+                        if parentValue =/= parentPrevious || bindings.PBGDivergenceId <> world.DivergenceId then
+                            bindings.PBGParentPrevious <- ValueSome parentValue
+                            bindings.PBGDivergenceId <- world.DivergenceId
+                            true
                         else false
                     else true
                 | ValueNone ->

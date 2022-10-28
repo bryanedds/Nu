@@ -64,7 +64,7 @@ and GroupPropertyDescriptor (propertyDescriptor, attributes) =
                 | _ -> value
 
             // make property change undo-able
-            Globals.pushPastWorld world
+            let world = Globals.pushPastWorld world
             match propertyName with
             
             // change the name property

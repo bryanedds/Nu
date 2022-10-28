@@ -1327,7 +1327,7 @@ module WorldModuleEntity =
                     let world = World.updateEntityInEntityTree oldStatic oldLight oldPresence oldBounds entity oldWorld world
                     Right (World.getEntityState entity world, world)
                 | None -> Right (entityState, world)
-            | None -> let _ = World.choose world in Left ("Failure to remove facet '" + facetName + "' from entity.")
+            | None -> Left ("Failure to remove facet '" + facetName + "' from entity.")
 
         static member private tryAddFacet facetName (entityState : EntityState) entityOpt world =
             match World.tryGetFacet facetName world with
@@ -1359,7 +1359,7 @@ module WorldModuleEntity =
                             else world
                         Right (World.getEntityState entity world, world)
                     | None -> Right (entityState, world)
-                else let _ = World.choose world in Left ("Facet '" + getTypeName facet + "' is incompatible with entity '" + scstring entityState.Surnames + "'.")
+                else Left ("Facet '" + getTypeName facet + "' is incompatible with entity '" + scstring entityState.Surnames + "'.")
             | Left error -> Left error
 
         static member private tryRemoveFacets facetNamesToRemove entityState entityOpt world =
@@ -2141,7 +2141,7 @@ module WorldModuleEntity =
             | (Left _, world) -> world
 
         /// View all of the properties of an entity.
-        static member internal viewEntityProperties entity world =
+        static member viewEntityProperties entity world =
             let state = World.getEntityState entity world
             World.viewProperties state
 
