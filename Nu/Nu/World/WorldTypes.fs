@@ -1041,8 +1041,8 @@ module WorldTypes =
     and [<NoEquality; NoComparison>] internal PropertyBinding =
         { PBLeft : World Lens
           PBRight : World Lens
-          mutable PBDivergenceId : uint // ELMISH_CACHE
-          mutable PBPrevious : obj ValueOption }
+          mutable PBPrevious : obj ValueOption // ELMISH_CACHE
+          mutable PBDivergenceId : uint }
 
     /// Describes a content binding for Nu's optimized Elmish implementation.
     and [<NoEquality; NoComparison>] internal ContentBinding =
@@ -1056,8 +1056,8 @@ module WorldTypes =
 
     /// Describes a group of property bindings.
     and [<NoEquality; NoComparison>] internal PropertyBindingGroup =
-        { mutable PBGDivergenceId : uint // ELMISH_CACHE
-          mutable PBGParentPrevious : obj ValueOption
+        { mutable PBGParentPrevious : obj ValueOption // ELMISH_CACHE
+          mutable PBGDivergenceId : uint
           PBGParent : World Lens
           PBGPropertyBindings : OMap<Guid, PropertyBinding> }
 
