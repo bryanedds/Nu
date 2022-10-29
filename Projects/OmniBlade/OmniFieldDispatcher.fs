@@ -1339,19 +1339,19 @@ module FieldDispatcher =
                              Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
                              Entity.Text <== field --> (fun field -> string field.Inventory.Gold + "G")]
                          Content.button Gen.name
-                           [Entity.PositionLocal == v3 138.0f 12.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 72.0f 72.0f 0.0f
-                            Entity.Text == "<"
-                            Entity.VisibleLocal <== field --> fun field -> Content.pageItems 10 field |> a__
-                            Entity.UpImage == Assets.Gui.ButtonSmallUpImage
-                            Entity.DownImage == Assets.Gui.ButtonSmallDownImage
-                            Entity.ClickEvent ==> msg MenuItemsPageUp]
+                            [Entity.PositionLocal == v3 138.0f 12.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 72.0f 72.0f 0.0f
+                             Entity.Text == "<"
+                             Entity.VisibleLocal <== field --> fun field -> Content.pageItems 10 field |> a__
+                             Entity.UpImage == Assets.Gui.ButtonSmallUpImage
+                             Entity.DownImage == Assets.Gui.ButtonSmallDownImage
+                             Entity.ClickEvent ==> msg MenuItemsPageUp]
                          Content.button Gen.name
-                           [Entity.PositionLocal == v3 777.0f 12.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 72.0f 72.0f 0.0f
-                            Entity.Text == ">"
-                            Entity.VisibleLocal <== field --> fun field -> Content.pageItems 10 field |> _b_
-                            Entity.UpImage == Assets.Gui.ButtonSmallUpImage
-                            Entity.DownImage == Assets.Gui.ButtonSmallDownImage
-                            Entity.ClickEvent ==> msg MenuInventoryPageDown]]
+                            [Entity.PositionLocal == v3 777.0f 12.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 72.0f 72.0f 0.0f
+                             Entity.Text == ">"
+                             Entity.VisibleLocal <== field --> fun field -> Content.pageItems 10 field |> _b_
+                             Entity.UpImage == Assets.Gui.ButtonSmallUpImage
+                             Entity.DownImage == Assets.Gui.ButtonSmallDownImage
+                             Entity.ClickEvent ==> msg MenuInventoryPageDown]]
 
                  // tech team
                  Content.entityWhen field (fun field -> match field.Menu.MenuState with MenuTech _ -> Some field | _ -> None) $ fun field ->
