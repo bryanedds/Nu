@@ -109,6 +109,7 @@ module Constants =
         let AllyActionTimeDelta = 4.0f
         let AllyActionTimeSpacing = 1000.0f / 3.0f
         let EnemyActionTimeDelta = 3.0f
+        let SwiftSpeedScalar = 0.9f
         let PacedSpeedScalar = 0.75f
         let DefendingScalar = 0.5f
         let PoisonDrainRate = 0.05f
