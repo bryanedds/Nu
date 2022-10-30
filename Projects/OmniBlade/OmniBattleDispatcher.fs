@@ -375,7 +375,7 @@ module BattleDispatcher =
                         else actionTimeDelta
                     let actionTimeDelta =
                         match battle.BattleSpeed with
-                        | SwiftSpeed -> actionTimeDelta
+                        | SwiftSpeed -> actionTimeDelta * Constants.Battle.SwiftSpeedScalar
                         | PacedSpeed -> actionTimeDelta * Constants.Battle.PacedSpeedScalar
                         | WaitSpeed ->
                             let anyAlliesInputting = Battle.getAlliesHealthy battle |> Map.toValueList |> List.exists (fun ally -> ally.InputState <> CharacterInputState.NoInput)
