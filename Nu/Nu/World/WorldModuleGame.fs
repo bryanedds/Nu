@@ -17,7 +17,7 @@ module WorldModuleGame =
 
     type World with
 
-        static member private publishGameChange propertyName (propertyValue : obj) world =
+        static member private publishGameChange propertyName (propertyValue : obj) (previousValue : obj) world =
 
             // the game reference
             let game = Game ()
@@ -28,7 +28,7 @@ module WorldModuleGame =
 
             // publish change event
             let world =
-                let changeData = { Name = propertyName; Value = propertyValue }
+                let changeData = { Name = propertyName; Value = propertyValue; Previous = previousValue }
                 let changeEventAddress = rtoa<ChangeData> [|"Change"; propertyName; "Event"|]
                 let eventTrace = EventTrace.debug "World" "publishGameChange" "" EventTrace.empty
                 World.publishPlus changeData changeEventAddress eventTrace game false false world
@@ -48,11 +48,11 @@ module WorldModuleGame =
             | null -> struct (false, world)
             | _ -> struct (true, World.setGameState gameStateOpt world)
 
-        static member private updateGameState updater propertyName propertyValue world =
+        static member private updateGameState updater propertyName propertyValue previousValue world =
             let struct (changed, world) = World.updateGameStateWithoutEvent updater world
             let world =
                 if changed
-                then World.publishGameChange propertyName propertyValue world
+                then World.publishGameChange propertyName propertyValue previousValue world
                 else world
             struct (changed, world)
 
@@ -88,7 +88,11 @@ module WorldModuleGame =
 
         /// Set the current 2d eye position.
         static member internal setEyePosition2dPlus value world =
-            World.updateGameState (fun gameState -> if v2Neq value gameState.EyePosition2d then { gameState with EyePosition2d = value } else Unchecked.defaultof<_>) "EyePosition2d" value world
+            let gameState = World.getGameState world
+            let previous = gameState.EyePosition2d
+            if v2Neq value previous
+            then struct (true, world |> World.setGameState { gameState with EyePosition2d = value } |> World.publishGameChange (nameof gameState.EyePosition2d) value previous)
+            else struct (false, world)
 
         /// Set the current 2d eye position.
         [<FunctionBinding>]
@@ -102,7 +106,11 @@ module WorldModuleGame =
 
         /// Set the current 2d eye size.
         static member internal setEyeSize2dPlus value world =
-            World.updateGameState (fun gameState -> if v2Neq value gameState.EyeSize2d then { gameState with EyeSize2d = value } else Unchecked.defaultof<_>) "EyeSize2d" value world
+            let gameState = World.getGameState world
+            let previous = gameState.EyeSize2d
+            if v2Neq value previous
+            then struct (true, world |> World.setGameState { gameState with EyeSize2d = value } |> World.publishGameChange (nameof gameState.EyeSize2d) value previous)
+            else struct (false, world)
 
         /// Set the current 2d eye size.
         [<FunctionBinding>]
