@@ -655,12 +655,6 @@ module WorldTypes =
             entityState.Xtension <- xtension // redundant if xtension is imperative
             entityState
 
-        /// Set an entity state's transform.
-        static member setTransformByRef (valueInRef : Transform inref, entityState : EntityState) =
-            let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState
-            Transform.assignByRef (&valueInRef, &entityState.Transform)
-            entityState
-
         member this.Position with get () = this.Transform.Position and set value = this.Transform.Position <- value
         member this.Rotation with get () = this.Transform.Rotation and set value = this.Transform.Rotation <- value
         member this.Scale with get () = this.Transform.Scale and set value = this.Transform.Scale <- value
