@@ -66,3 +66,9 @@ module CoreOperators =
 type [<StructuralEquality; NoComparison>] DesiredFps =
     | Fps60
     | Fps30
+
+/// The data for a change in a simulant.
+type [<StructuralEquality; NoComparison>] ChangeData =
+    { Name : string
+      Value : obj
+      Previous : obj }

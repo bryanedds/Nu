@@ -646,7 +646,8 @@ module FieldDispatcher =
              field.UpdateEvent => msg Update
              field.PostUpdateEvent => msg UpdateFieldTransition
              field.PostUpdateEvent => cmd UpdateEye
-             field.SelectEvent => cmd PlayFieldSong]
+             field.SelectEvent => cmd PlayFieldSong
+             field.Field.ChangeEvent =|> fun event -> event.Data.Value]
 
         override this.Message (field, message, _, world) =
 
