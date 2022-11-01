@@ -42,44 +42,42 @@ module WorldModuleGame =
         static member internal setGameState gameState world =
             World.choose { world with GameState = gameState }
 
-        static member private updateGameStateWithoutEvent updater world =
-            let gameStateOpt = updater (World.getGameState world)
-            match gameStateOpt :> obj with
-            | null -> struct (false, world)
-            | _ -> struct (true, World.setGameState gameStateOpt world)
-
-        static member private updateGameState updater propertyName propertyValue previousValue world =
-            let struct (changed, world) = World.updateGameStateWithoutEvent updater world
-            let world =
-                if changed
-                then World.publishGameChange propertyName propertyValue previousValue world
-                else world
-            struct (changed, world)
-
         static member internal getGameId world = (World.getGameState world).Id
         static member internal getGameOrder world = (World.getGameState world).Order
         static member internal getGameDispatcher world = (World.getGameState world).Dispatcher
         static member internal getGameModelProperty world = (World.getGameState world).Model
         static member internal getGameModel<'a> world = (World.getGameState world).Model.DesignerValue :?> 'a
         static member internal getGameScriptFrame world = (World.getGameState world).ScriptFrame
-        static member internal setGameScriptFrame value world = World.updateGameState (fun gameState -> if value <> gameState.ScriptFrame then { gameState with ScriptFrame = value } else Unchecked.defaultof<_>) "ScriptFrame" value world
 
         static member internal setGameModelProperty (value : DesignerProperty) world =
-            World.updateGameState
-                (fun gameState ->
-                    if value.DesignerValue =/= gameState.Model.DesignerValue
-                    then { gameState with Model = { gameState.Model with DesignerValue = value.DesignerValue }}
-                    else Unchecked.defaultof<_>)
-                "Model" value.DesignerValue world
+            let gameState = World.getGameState world
+            let previous = gameState.Model
+            if value.DesignerValue =/= previous.DesignerValue then
+                let struct (gameState, world) =
+                    let gameState = { gameState with Model = { DesignerType = value.DesignerType; DesignerValue = value.DesignerValue }}
+                    struct (gameState, World.setGameState gameState world)
+                let world = World.publishGameChange (nameof gameState.Model) value previous world
+                struct (true, world)
+            else struct (false, world)
 
         static member internal setGameModel<'a> (value : 'a) world =
-            World.updateGameState
-                (fun gameState ->
-                    let valueObj = value :> obj
-                    if valueObj =/= gameState.Model.DesignerValue
-                    then { gameState with Model = { DesignerType = typeof<'a>; DesignerValue = valueObj }}
-                    else Unchecked.defaultof<_>)
-                "Model" value world
+            let gameState = World.getGameState world
+            let valueObj = value :> obj
+            let previous = gameState.Model
+            if valueObj =/= previous.DesignerValue then
+                let struct (gameState, world) =
+                    let gameState = { gameState with Model = { DesignerType = typeof<'a>; DesignerValue = valueObj }}
+                    struct (gameState, World.setGameState gameState world)
+                let world = World.publishGameChange (nameof gameState.Model) value previous world
+                struct (true, world)
+            else struct (false, world)
+
+        static member internal setGameScriptFrame value world =
+            let gameState = World.getGameState world
+            let previous = gameState.ScriptFrame
+            if value <> previous
+            then struct (true, world |> World.setGameState { gameState with ScriptFrame = value } |> World.publishGameChange (nameof gameState.ScriptFrame) value previous)
+            else struct (false, world)
 
         /// Get the current 2d eye position.
         [<FunctionBinding>]
@@ -131,15 +129,18 @@ module WorldModuleGame =
 
         /// Set the current 3d eye position.
         static member internal setEyePosition3dPlus (value : Vector3) world =
-            World.updateGameState (fun gameState ->
-                if v3Neq value gameState.EyePosition3d then
-                    let viewport = Constants.Render.Viewport
+            let gameState = World.getGameState world
+            let previous = gameState.EyePosition3d
+            if v3Neq value previous then
+                let viewport = Constants.Render.Viewport
+                let gameState =
                     { gameState with
                         EyePosition3d = value
                         EyeFrustum3dEnclosed = viewport.Frustum (Constants.Render.NearPlaneDistanceEnclosed, Constants.Render.FarPlaneDistanceEnclosed, value, gameState.EyeRotation3d)
                         EyeFrustum3dExposed = viewport.Frustum (Constants.Render.NearPlaneDistanceExposed, Constants.Render.FarPlaneDistanceExposed, value, gameState.EyeRotation3d)
                         EyeFrustum3dImposter = viewport.Frustum (Constants.Render.NearPlaneDistanceImposter, Constants.Render.FarPlaneDistanceImposter, value, gameState.EyeRotation3d) }
-                else Unchecked.defaultof<_>) "EyePosition3d" value world
+                struct (true, world |> World.setGameState gameState |> World.publishGameChange (nameof gameState.EyePosition3d) value previous)
+            else struct (false, world)
 
         /// Set the current 3d eye position.
         [<FunctionBinding>]
@@ -153,15 +154,18 @@ module WorldModuleGame =
 
         /// Set the current 3d eye rotation.
         static member internal setEyeRotation3dPlus value world =
-            World.updateGameState (fun gameState ->
-                if quatNeq value gameState.EyeRotation3d then
-                    let viewport = Constants.Render.Viewport
+            let gameState = World.getGameState world
+            let previous = gameState.EyeRotation3d
+            if quatNeq value previous then
+                let viewport = Constants.Render.Viewport
+                let gameState =
                     { gameState with
                         EyeRotation3d = value
                         EyeFrustum3dEnclosed = viewport.Frustum (Constants.Render.NearPlaneDistanceEnclosed, Constants.Render.FarPlaneDistanceEnclosed, gameState.EyePosition3d, value)
                         EyeFrustum3dExposed = viewport.Frustum (Constants.Render.NearPlaneDistanceExposed, Constants.Render.FarPlaneDistanceExposed, gameState.EyePosition3d, value)
                         EyeFrustum3dImposter = viewport.Frustum (Constants.Render.NearPlaneDistanceImposter, Constants.Render.FarPlaneDistanceImposter, gameState.EyePosition3d, value) }
-                else Unchecked.defaultof<_>) "EyeRotation3d" value world
+                struct (true, world |> World.setGameState gameState |> World.publishGameChange (nameof gameState.EyeRotation3d) value previous)
+            else struct (false, world)
 
         /// Set the current 3d eye rotation.
         [<FunctionBinding>]
@@ -196,8 +200,12 @@ module WorldModuleGame =
         
         /// Set the omni-screen or None.
         static member internal setOmniScreenOptPlus value world =
-            if Option.isSome value && World.getSelectedScreenOpt world = value then failwith "Cannot set OmniScreen to SelectedScreen."
-            World.updateGameState (fun gameState -> if value <> gameState.OmniScreenOpt then { gameState with OmniScreenOpt = value } else Unchecked.defaultof<_>) "OmniScreenOpt" value world
+            if Option.isSome value && World.getSelectedScreenOpt world = value then failwith "Cannot set OmniScreenOpt to [Some SelectedScreen]."
+            let gameState = World.getGameState world
+            let previous = gameState.OmniScreenOpt
+            if value <> previous
+            then struct (true, world |> World.setGameState { gameState with OmniScreenOpt = value } |> World.publishGameChange (nameof gameState.OmniScreenOpt) value previous)
+            else struct (false, world)
 
         /// Set the omni-screen or None.
         [<FunctionBinding>]
@@ -247,47 +255,52 @@ module WorldModuleGame =
                 World.getOmniScreenOpt world = value then
                 failwith "Cannot set SelectedScreen to OmniScreen."
 
-            // raise change event for none selection
-            let struct (_, world) = World.updateGameState id "SelectedScreenOpt" None world
+            // update game state if changed
+            let gameState = World.getGameState world
+            let previous = gameState.SelectedScreenOpt
+            if value <> previous then
 
-            // clear out singleton states
-            let world =
-                match (World.getGameState world).SelectedScreenOpt with
-                | Some screen ->
-                    let world = WorldModule.unregisterScreenPhysics screen world
-                    let world = WorldModule.evictScreenElements screen world
-                    world
-                | None -> world
+                // raise change event for None case
+                let world =
+                    match value with
+                    | None -> World.publishGameChange (nameof gameState.SelectedScreenOpt) None previous world
+                    | _ -> world
+
+                // clear out singleton states
+                let world =
+                    match (World.getGameState world).SelectedScreenOpt with
+                    | Some screen ->
+                        let world = WorldModule.unregisterScreenPhysics screen world
+                        let world = WorldModule.evictScreenElements screen world
+                        world
+                    | None -> world
                 
-            // actually set selected screen (no events)
-            let struct (_, world) =
-                World.updateGameStateWithoutEvent
-                    (fun gameState ->
-                        if value <> gameState.SelectedScreenOpt
-                        then { gameState with SelectedScreenOpt = value }
-                        else Unchecked.defaultof<_>)
-                    world
+                // actually set selected screen (no events)
+                let gameState = World.getGameState world
+                let gameState = { gameState with SelectedScreenOpt = value }
+                let world = World.setGameState gameState world
 
-            // set selected ecs opt
-            let world =
+                // set selected ecs opt
+                let world =
+                    match value with
+                    | Some screen -> World.setSelectedEcsOpt (Some (WorldModule.getScreenEcs screen world)) world
+                    | None -> World.setSelectedEcsOpt None world
+
+                // raise change event for Some case
                 match value with
-                | Some screen -> World.setSelectedEcsOpt (Some (WorldModule.getScreenEcs screen world)) world
-                | None -> World.setSelectedEcsOpt None world
+                | Some screen ->
 
-            // handle some case
-            match value with
-            | Some screen ->
+                    // populate singleton states
+                    let world = WorldModule.admitScreenElements screen world
+                    let world = WorldModule.registerScreenPhysics screen world
 
-                // populate singleton states
-                let world = WorldModule.admitScreenElements screen world
-                let world = WorldModule.registerScreenPhysics screen world
+                    // raise change event for some selection
+                    let world = World.publishGameChange (nameof gameState.SelectedScreenOpt) value previous world
+                    (true, world)
 
-                // raise change event for some selection
-                let world = World.updateGameState id "SelectedScreenOpt" (Some screen) world |> snd'
-                (true, world)
-
-            // fin
-            | None -> (true, world)
+                // fin
+                | None -> (true, world)
+            else (false, world)
 
         /// Set the currently selected screen or None. Be careful using this function directly as
         /// you may be wanting to use the higher-level World.transitionScreen function instead.
@@ -319,28 +332,22 @@ module WorldModuleGame =
             (World.getGameState world).DesiredScreen
 
         /// Set the screen desired to which to transition.
-        static member setDesiredScreen desiredScreen world =
-            World.updateGameState
-                (fun gameState ->
-                    if desiredScreen <> gameState.DesiredScreen
-                    then { gameState with DesiredScreen = desiredScreen }
-                    else Unchecked.defaultof<_>)
-                "DesiredScreen"
-                desiredScreen
-                world
+        static member setDesiredScreen value world =
+            let gameState = World.getGameState world
+            let previous = gameState.DesiredScreen
+            if value <> previous
+            then struct (true, world |> World.setGameState { gameState with DesiredScreen = value } |> World.publishGameChange (nameof gameState.DesiredScreen) value previous)
+            else struct (false, world)
 
         /// Set the current destination screen or None. Be careful using this function as calling
         /// it is predicated that no screen transition is currently underway.
         /// TODO: consider asserting such predication here.
-        static member internal setScreenTransitionDestinationOpt destination world =
-            World.updateGameState
-                (fun gameState ->
-                    if destination <> gameState.ScreenTransitionDestinationOpt
-                    then { gameState with ScreenTransitionDestinationOpt = destination }
-                    else Unchecked.defaultof<_>)
-                "ScreenTransitionDestinationOpt"
-                destination
-                world
+        static member internal setScreenTransitionDestinationOpt value world =
+            let gameState = World.getGameState world
+            let previous = gameState.ScreenTransitionDestinationOpt
+            if value <> previous
+            then struct (true, world |> World.setGameState { gameState with ScreenTransitionDestinationOpt = value } |> World.publishGameChange (nameof gameState.ScreenTransitionDestinationOpt) value previous)
+            else struct (false, world)
 
         /// Get the bounds of the 2d eye's sight irrespective of its position.
         [<FunctionBinding>]
@@ -476,47 +483,37 @@ module WorldModuleGame =
             | (false, _) -> World.getGameXtensionProperty propertyName world
 
         static member internal trySetGameXtensionPropertyFast propertyName property world =
-            let mutable success = false // bit of a hack to get additional state out of the lambda
-            let struct (_, world) =
-                World.updateGameState
-                    (fun gameState ->
-                        let mutable propertyOld = Unchecked.defaultof<_>
-                        match GameState.tryGetProperty (propertyName, gameState, &propertyOld) with
-                        | true ->
-                            if property.PropertyValue =/= propertyOld.PropertyValue then
-                                let struct (successInner, gameState) = GameState.trySetProperty propertyName property gameState
-                                success <- successInner
-                                gameState
-                            else Unchecked.defaultof<_>
-                        | false -> Unchecked.defaultof<_>)
-                    propertyName property.PropertyValue world
-            world
+            let gameState = World.getGameState world
+            match GameState.tryGetProperty (propertyName, gameState) with
+            | (true, propertyOld) ->
+                if property.PropertyValue =/= propertyOld.PropertyValue then
+                    let struct (success, gameState) = GameState.trySetProperty propertyName property gameState
+                    let world = World.setGameState gameState world
+                    if success then World.publishGameChange propertyName property.PropertyValue propertyOld.PropertyValue world else world
+                else world
+            | (false, _) -> world
 
         static member internal trySetGameXtensionProperty propertyName property world =
-            let mutable success = false // bit of a hack to get additional state out of the lambda
-            let struct (changed, world) =
-                World.updateGameState
-                    (fun gameState ->
-                        let mutable propertyOld = Unchecked.defaultof<_>
-                        match GameState.tryGetProperty (propertyName, gameState, &propertyOld) with
-                        | true ->
-                            if property.PropertyValue =/= propertyOld.PropertyValue then
-                                let struct (successInner, gameState) = GameState.trySetProperty propertyName property gameState
-                                success <- successInner
-                                gameState
-                            else Unchecked.defaultof<_>
-                        | false -> Unchecked.defaultof<_>)
-                    propertyName property.PropertyValue world
-            struct (success, changed, world)
+            let gameState = World.getGameState world
+            match GameState.tryGetProperty (propertyName, gameState) with
+            | (true, propertyOld) ->
+                if property.PropertyValue =/= propertyOld.PropertyValue then
+                    let struct (success, gameState) = GameState.trySetProperty propertyName property gameState
+                    let world = World.setGameState gameState world
+                    if success
+                    then struct (success, true, World.publishGameChange propertyName property.PropertyValue propertyOld.PropertyValue world)
+                    else struct (false, true, world)
+                else struct (false, false, world)
+            | (false, _) -> struct (false, false, world)
 
         static member internal setGameXtensionProperty propertyName property world =
-            World.updateGameState
-                (fun gameState ->
-                    let propertyOld = GameState.getProperty propertyName gameState
-                    if property.PropertyValue =/= propertyOld.PropertyValue
-                    then GameState.setProperty propertyName property gameState
-                    else Unchecked.defaultof<_>)
-                propertyName property.PropertyValue world
+            let gameState = World.getGameState world
+            let propertyOld = GameState.getProperty propertyName gameState
+            if property.PropertyValue =/= propertyOld.PropertyValue then
+                let gameState = GameState.setProperty propertyName property gameState
+                let world = World.setGameState gameState world
+                struct (true, World.publishGameChange propertyName property.PropertyValue propertyOld.PropertyValue world)
+            else struct (false, world)
 
         static member internal trySetGamePropertyFast propertyName property world =
             match GameSetters.TryGetValue propertyName with
@@ -537,18 +534,15 @@ module WorldModuleGame =
             | (false, _) -> World.setGameXtensionProperty propertyName property world
 
         static member internal attachGameProperty propertyName property world =
-            let struct (_, world) =
-                World.updateGameState
-                    (fun gameState -> GameState.attachProperty propertyName property gameState)
-                    propertyName property.PropertyValue world
-            world
+            let gameState = World.getGameState world
+            let gameState = GameState.attachProperty propertyName property gameState
+            let world = World.setGameState gameState world
+            World.publishGameChange propertyName property.PropertyValue property.PropertyValue world
 
         static member internal detachGameProperty propertyName world =
-            let struct (_, world) =
-                World.updateGameStateWithoutEvent
-                    (fun gameState -> GameState.detachProperty propertyName gameState)
-                    world
-            world
+            let gameState = World.getGameState world
+            let gameState = GameState.detachProperty propertyName gameState
+            World.setGameState gameState world
 
         /// View all of the properties of a game.
         static member viewGameProperties world =
