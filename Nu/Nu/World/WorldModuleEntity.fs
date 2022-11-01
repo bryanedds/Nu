@@ -1871,20 +1871,17 @@ module WorldModuleEntity =
 
         static member internal attachEntityProperty propertyName property entity world =
             if World.getEntityExists entity world then
-                let struct (_, world) =
-                    World.updateEntityState
-                        (fun entityState -> EntityState.attachProperty propertyName property entityState)
-                        propertyName property.PropertyValue entity world
-                world
+                let entityState = World.getEntityState entity world
+                let entityState = EntityState.attachProperty propertyName property entityState
+                let world = World.setEntityState entityState entity world
+                World.publishEntityChange propertyName property.PropertyValue property.PropertyValue entityState.PublishChangeBindings entityState.PublishChangeEvents entity world
             else failwith ("Cannot attach entity property '" + propertyName + "'; entity '" + scstring entity.Names + "' is not found.")
 
         static member internal detachEntityProperty propertyName entity world =
             if World.getEntityExists entity world then
-                let struct (_, world) =
-                    World.updateEntityStateWithoutEvent
-                        (fun entityState -> EntityState.detachProperty propertyName entityState)
-                        entity world
-                world
+                let entityState = World.getEntityState entity world
+                let entityState = EntityState.detachProperty propertyName entityState
+                World.setEntityState entityState entity world
             else failwith ("Cannot detach entity property '" + propertyName + "'; entity '" + scstring entity.Names + "' is not found.")
 
         static member internal getEntityDefaultOverlayName dispatcherName world =
@@ -2474,12 +2471,10 @@ module WorldModuleEntity =
                         match snapsEir with
                         | Right (positionSnap, degreesSnap, scaleSnap) -> (position, Some (positionSnap, degreesSnap, scaleSnap))
                         | Left _ -> (position, None)
-                let mutable transform = entityState.Transform
-                transform.Position <- position
+                entityState.Transform.Position <- position
                 match snapsOpt with
-                | Some (positionSnap, degreesSnap, scaleSnap) -> transform.Snap (positionSnap, degreesSnap, scaleSnap)
+                | Some (positionSnap, degreesSnap, scaleSnap) -> entityState.Transform.Snap (positionSnap, degreesSnap, scaleSnap)
                 | None -> ()
-                let entityState = EntityState.setTransformByRef (&transform, entityState)
                 let entity = Entity (group.GroupAddress <-- rtoa<Entity> surnames)
                 let world = World.addEntity false entityState entity world
                 (Some entity, world)
