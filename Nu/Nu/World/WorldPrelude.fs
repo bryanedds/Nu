@@ -49,7 +49,7 @@ type [<StructuralEquality; NoComparison; Struct>] TransitionState =
 
 /// Describes one of a screen's transition processes.
 /// TODO: figure out if this really needs to be CLIMutable.
-type [<NoEquality; NoComparison; CLIMutable>] Transition =
+type [<StructuralEquality; NoComparison; CLIMutable>] Transition =
     { TransitionType : TransitionType
       TransitionLifeTime : int64
       DissolveImageOpt : Image AssetTag option
