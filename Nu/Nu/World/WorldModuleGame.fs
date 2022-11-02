@@ -17,7 +17,7 @@ module WorldModuleGame =
 
     type World with
 
-        static member private publishGameChange propertyName (propertyValue : obj) (previousValue : obj) world =
+        static member private publishGameChange propertyName (propertyPrevious : obj) (propertyValue : obj) world =
 
             // the game reference
             let game = Game ()
@@ -28,7 +28,7 @@ module WorldModuleGame =
 
             // publish change event
             let world =
-                let changeData = { Name = propertyName; Value = propertyValue; Previous = previousValue }
+                let changeData = { Name = propertyName; Previous = propertyPrevious; Value = propertyValue }
                 let changeEventAddress = rtoa<ChangeData> [|"Change"; propertyName; "Event"|]
                 let eventTrace = EventTrace.debug "World" "publishGameChange" "" EventTrace.empty
                 World.publishPlus changeData changeEventAddress eventTrace game false false world
@@ -56,7 +56,7 @@ module WorldModuleGame =
                 let struct (gameState, world) =
                     let gameState = { gameState with Model = { DesignerType = value.DesignerType; DesignerValue = value.DesignerValue }}
                     struct (gameState, World.setGameState gameState world)
-                let world = World.publishGameChange (nameof gameState.Model) value previous world
+                let world = World.publishGameChange (nameof gameState.Model) previous value world
                 struct (true, world)
             else struct (false, world)
 
@@ -68,7 +68,7 @@ module WorldModuleGame =
                 let struct (gameState, world) =
                     let gameState = { gameState with Model = { DesignerType = typeof<'a>; DesignerValue = valueObj }}
                     struct (gameState, World.setGameState gameState world)
-                let world = World.publishGameChange (nameof gameState.Model) value previous world
+                let world = World.publishGameChange (nameof gameState.Model) previous value world
                 struct (true, world)
             else struct (false, world)
 
@@ -76,7 +76,7 @@ module WorldModuleGame =
             let gameState = World.getGameState world
             let previous = gameState.ScriptFrame
             if value <> previous
-            then struct (true, world |> World.setGameState { gameState with ScriptFrame = value } |> World.publishGameChange (nameof gameState.ScriptFrame) value previous)
+            then struct (true, world |> World.setGameState { gameState with ScriptFrame = value } |> World.publishGameChange (nameof gameState.ScriptFrame) previous value)
             else struct (false, world)
 
         /// Get the current 2d eye position.
@@ -88,8 +88,8 @@ module WorldModuleGame =
         static member internal setEyePosition2dPlus value world =
             let gameState = World.getGameState world
             let previous = gameState.EyePosition2d
-            if v2Neq value previous
-            then struct (true, world |> World.setGameState { gameState with EyePosition2d = value } |> World.publishGameChange (nameof gameState.EyePosition2d) value previous)
+            if v2Neq previous value
+            then struct (true, world |> World.setGameState { gameState with EyePosition2d = value } |> World.publishGameChange (nameof gameState.EyePosition2d) previous value)
             else struct (false, world)
 
         /// Set the current 2d eye position.
@@ -106,8 +106,8 @@ module WorldModuleGame =
         static member internal setEyeSize2dPlus value world =
             let gameState = World.getGameState world
             let previous = gameState.EyeSize2d
-            if v2Neq value previous
-            then struct (true, world |> World.setGameState { gameState with EyeSize2d = value } |> World.publishGameChange (nameof gameState.EyeSize2d) value previous)
+            if v2Neq previous value
+            then struct (true, world |> World.setGameState { gameState with EyeSize2d = value } |> World.publishGameChange (nameof gameState.EyeSize2d) previous value)
             else struct (false, world)
 
         /// Set the current 2d eye size.
@@ -131,7 +131,7 @@ module WorldModuleGame =
         static member internal setEyePosition3dPlus (value : Vector3) world =
             let gameState = World.getGameState world
             let previous = gameState.EyePosition3d
-            if v3Neq value previous then
+            if v3Neq previous value then
                 let viewport = Constants.Render.Viewport
                 let gameState =
                     { gameState with
@@ -139,7 +139,7 @@ module WorldModuleGame =
                         EyeFrustum3dEnclosed = viewport.Frustum (Constants.Render.NearPlaneDistanceEnclosed, Constants.Render.FarPlaneDistanceEnclosed, value, gameState.EyeRotation3d)
                         EyeFrustum3dExposed = viewport.Frustum (Constants.Render.NearPlaneDistanceExposed, Constants.Render.FarPlaneDistanceExposed, value, gameState.EyeRotation3d)
                         EyeFrustum3dImposter = viewport.Frustum (Constants.Render.NearPlaneDistanceImposter, Constants.Render.FarPlaneDistanceImposter, value, gameState.EyeRotation3d) }
-                struct (true, world |> World.setGameState gameState |> World.publishGameChange (nameof gameState.EyePosition3d) value previous)
+                struct (true, world |> World.setGameState gameState |> World.publishGameChange (nameof gameState.EyePosition3d) previous value)
             else struct (false, world)
 
         /// Set the current 3d eye position.
@@ -156,7 +156,7 @@ module WorldModuleGame =
         static member internal setEyeRotation3dPlus value world =
             let gameState = World.getGameState world
             let previous = gameState.EyeRotation3d
-            if quatNeq value previous then
+            if quatNeq previous value then
                 let viewport = Constants.Render.Viewport
                 let gameState =
                     { gameState with
@@ -164,7 +164,7 @@ module WorldModuleGame =
                         EyeFrustum3dEnclosed = viewport.Frustum (Constants.Render.NearPlaneDistanceEnclosed, Constants.Render.FarPlaneDistanceEnclosed, gameState.EyePosition3d, value)
                         EyeFrustum3dExposed = viewport.Frustum (Constants.Render.NearPlaneDistanceExposed, Constants.Render.FarPlaneDistanceExposed, gameState.EyePosition3d, value)
                         EyeFrustum3dImposter = viewport.Frustum (Constants.Render.NearPlaneDistanceImposter, Constants.Render.FarPlaneDistanceImposter, gameState.EyePosition3d, value) }
-                struct (true, world |> World.setGameState gameState |> World.publishGameChange (nameof gameState.EyeRotation3d) value previous)
+                struct (true, world |> World.setGameState gameState |> World.publishGameChange (nameof gameState.EyeRotation3d) previous value)
             else struct (false, world)
 
         /// Set the current 3d eye rotation.
@@ -204,7 +204,7 @@ module WorldModuleGame =
             let gameState = World.getGameState world
             let previous = gameState.OmniScreenOpt
             if value <> previous
-            then struct (true, world |> World.setGameState { gameState with OmniScreenOpt = value } |> World.publishGameChange (nameof gameState.OmniScreenOpt) value previous)
+            then struct (true, world |> World.setGameState { gameState with OmniScreenOpt = value } |> World.publishGameChange (nameof gameState.OmniScreenOpt) previous value)
             else struct (false, world)
 
         /// Set the omni-screen or None.
@@ -263,7 +263,7 @@ module WorldModuleGame =
                 // raise change event for None case
                 let world =
                     match value with
-                    | None -> World.publishGameChange (nameof gameState.SelectedScreenOpt) None previous world
+                    | None -> World.publishGameChange (nameof gameState.SelectedScreenOpt) previous None world
                     | _ -> world
 
                 // clear out singleton states
@@ -295,7 +295,7 @@ module WorldModuleGame =
                     let world = WorldModule.registerScreenPhysics screen world
 
                     // raise change event for some selection
-                    let world = World.publishGameChange (nameof gameState.SelectedScreenOpt) value previous world
+                    let world = World.publishGameChange (nameof gameState.SelectedScreenOpt) previous value world
                     (true, world)
 
                 // fin
@@ -336,7 +336,7 @@ module WorldModuleGame =
             let gameState = World.getGameState world
             let previous = gameState.DesiredScreen
             if value <> previous
-            then struct (true, world |> World.setGameState { gameState with DesiredScreen = value } |> World.publishGameChange (nameof gameState.DesiredScreen) value previous)
+            then struct (true, world |> World.setGameState { gameState with DesiredScreen = value } |> World.publishGameChange (nameof gameState.DesiredScreen) previous value)
             else struct (false, world)
 
         /// Set the current destination screen or None. Be careful using this function as calling
@@ -346,7 +346,7 @@ module WorldModuleGame =
             let gameState = World.getGameState world
             let previous = gameState.ScreenTransitionDestinationOpt
             if value <> previous
-            then struct (true, world |> World.setGameState { gameState with ScreenTransitionDestinationOpt = value } |> World.publishGameChange (nameof gameState.ScreenTransitionDestinationOpt) value previous)
+            then struct (true, world |> World.setGameState { gameState with ScreenTransitionDestinationOpt = value } |> World.publishGameChange (nameof gameState.ScreenTransitionDestinationOpt) previous value)
             else struct (false, world)
 
         /// Get the bounds of the 2d eye's sight irrespective of its position.
@@ -489,7 +489,7 @@ module WorldModuleGame =
                 if property.PropertyValue =/= propertyOld.PropertyValue then
                     let struct (success, gameState) = GameState.trySetProperty propertyName property gameState
                     let world = World.setGameState gameState world
-                    if success then World.publishGameChange propertyName property.PropertyValue propertyOld.PropertyValue world else world
+                    if success then World.publishGameChange propertyName propertyOld.PropertyValue property.PropertyValue world else world
                 else world
             | (false, _) -> world
 
@@ -501,7 +501,7 @@ module WorldModuleGame =
                     let struct (success, gameState) = GameState.trySetProperty propertyName property gameState
                     let world = World.setGameState gameState world
                     if success
-                    then struct (success, true, World.publishGameChange propertyName property.PropertyValue propertyOld.PropertyValue world)
+                    then struct (success, true, World.publishGameChange propertyName propertyOld.PropertyValue property.PropertyValue world)
                     else struct (false, true, world)
                 else struct (false, false, world)
             | (false, _) -> struct (false, false, world)
@@ -512,7 +512,7 @@ module WorldModuleGame =
             if property.PropertyValue =/= propertyOld.PropertyValue then
                 let gameState = GameState.setProperty propertyName property gameState
                 let world = World.setGameState gameState world
-                struct (true, World.publishGameChange propertyName property.PropertyValue propertyOld.PropertyValue world)
+                struct (true, World.publishGameChange propertyName propertyOld.PropertyValue property.PropertyValue world)
             else struct (false, world)
 
         static member internal trySetGamePropertyFast propertyName property world =

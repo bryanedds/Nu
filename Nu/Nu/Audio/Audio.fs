@@ -16,7 +16,7 @@ type Song = private { __ : unit }
 type Sound = private { __ : unit }
 
 /// Descrides a song.
-type [<NoEquality; NoComparison>] SongDescriptor =
+type [<StructuralEquality; NoComparison>] SongDescriptor =
     { FadeInMs: int
       FadeOutMs : int
       Volume : single
@@ -24,7 +24,7 @@ type [<NoEquality; NoComparison>] SongDescriptor =
       Song : Song AssetTag }
 
 /// Describes a sound.
-type [<NoEquality; NoComparison>] SoundDescriptor =
+type [<StructuralEquality; NoComparison>] SoundDescriptor =
     { Volume : single
       Sound : Sound AssetTag }
 

@@ -70,7 +70,7 @@ module WorldModuleGroup =
         static member internal removeGroupState group world =
             World.groupStateRemover group world
 
-        static member internal publishGroupChange propertyName (propertyValue : obj) (group : Group) world =
+        static member internal publishGroupChange propertyName (propertyPrevious : obj) (propertyValue : obj) (group : Group) world =
 
             // publish change binding
             let world =
@@ -78,7 +78,7 @@ module WorldModuleGroup =
 
             // publish event binding
             let world =
-                let changeData = { Name = propertyName; Value = propertyValue }
+                let changeData = { Name = propertyName; Previous = propertyPrevious; Value = propertyValue }
                 let groupNames = Address.getNames group.GroupAddress
                 let changeEventAddress = rtoa<ChangeData> [|"Change"; propertyName; "Event"; groupNames.[0]; groupNames.[1]|]
                 let eventTrace = EventTrace.debug "World" "publishGroupChange" "" EventTrace.empty
@@ -102,20 +102,6 @@ module WorldModuleGroup =
         static member private setGroupState groupState group world =
             World.groupStateSetter groupState group world
 
-        static member private updateGroupStateWithoutEvent updater group world =
-            let groupStateOpt = updater (World.getGroupState group world)
-            match groupStateOpt :> obj with
-            | null -> struct (false, world)
-            | _ -> struct (true, World.setGroupState groupStateOpt group world)
-
-        static member private updateGroupState updater propertyName propertyValue group world =
-            let struct (changed, world) = World.updateGroupStateWithoutEvent updater group world
-            let world =
-                if changed
-                then World.publishGroupChange propertyName propertyValue group world
-                else world
-            struct (changed, world)
-
         /// Check that a group exists in the world.
         static member internal getGroupExists group world =
             Option.isSome (World.getGroupStateOpt group world)
@@ -124,32 +110,56 @@ module WorldModuleGroup =
         static member internal getGroupModel<'a> group world = (World.getGroupState group world).Model.DesignerValue :?> 'a
         static member internal getGroupDispatcher group world = (World.getGroupState group world).Dispatcher
         static member internal getGroupVisible group world = (World.getGroupState group world).Visible
-        static member internal setGroupVisible value group world = World.updateGroupState (fun groupState -> if value <> groupState.Visible then { groupState with Visible = value } else Unchecked.defaultof<_>) "Visible" value group world
         static member internal getGroupPersistent group world = (World.getGroupState group world).Persistent
-        static member internal setGroupPersistent value group world = World.updateGroupState (fun groupState -> if value <> groupState.Persistent then { groupState with Persistent = value } else Unchecked.defaultof<_>) "Persistent" value group world
         static member internal getGroupDestroying (group : Group) world = List.exists ((=) (group :> Simulant)) (World.getDestructionListRev world)
         static member internal getGroupOrder group world = (World.getGroupState group world).Order
         static member internal getGroupScriptFrame group world = (World.getGroupState group world).ScriptFrame
-        static member internal setGroupScriptFrame value group world = World.updateGroupState (fun groupState -> if value <> groupState.ScriptFrame then { groupState with ScriptFrame = value } else Unchecked.defaultof<_>) "ScriptFrame" value group world
         static member internal getGroupId group world = (World.getGroupState group world).Id
         static member internal getGroupName group world = (World.getGroupState group world).Name
-        
+
         static member internal setGroupModelProperty (value : DesignerProperty) group world =
-            World.updateGroupState
-                (fun groupState ->
-                    if value.DesignerValue =/= groupState.Model.DesignerValue
-                    then { groupState with Model = { groupState.Model with DesignerValue = value.DesignerValue }}
-                    else Unchecked.defaultof<_>)
-                "Model" value.DesignerValue group world
+            let groupState = World.getGroupState group world
+            let previous = groupState.Model
+            if value.DesignerValue =/= previous.DesignerValue then
+                let struct (groupState, world) =
+                    let groupState = { groupState with Model = { DesignerType = value.DesignerType; DesignerValue = value.DesignerValue }}
+                    struct (groupState, World.setGroupState groupState group world)
+                let world = World.publishGroupChange (nameof groupState.Model) previous value group world
+                struct (true, world)
+            else struct (false, world)
 
         static member internal setGroupModel<'a> (value : 'a) group world =
-            World.updateGroupState
-                (fun groupState ->
-                    let valueObj = value :> obj
-                    if valueObj =/= groupState.Model.DesignerValue
-                    then { groupState with Model = { DesignerType = typeof<'a>; DesignerValue = valueObj }}
-                    else Unchecked.defaultof<_>)
-                "Model" value group world
+            let groupState = World.getGroupState group world
+            let valueObj = value :> obj
+            let previous = groupState.Model
+            if valueObj =/= previous.DesignerValue then
+                let struct (groupState, world) =
+                    let groupState = { groupState with Model = { DesignerType = typeof<'a>; DesignerValue = valueObj }}
+                    struct (groupState, World.setGroupState groupState group world)
+                let world = World.publishGroupChange (nameof groupState.Model) previous value group world
+                struct (true, world)
+            else struct (false, world)
+
+        static member internal setGroupVisible value group world =
+            let groupState = World.getGroupState group world
+            let previous = groupState.Visible
+            if value <> previous
+            then struct (true, world |> World.setGroupState { groupState with Visible = value } group |> World.publishGroupChange (nameof groupState.Visible) previous value group)
+            else struct (false, world)
+
+        static member internal setGroupPersistent value group world =
+            let groupState = World.getGroupState group world
+            let previous = groupState.Persistent
+            if value <> previous
+            then struct (true, world |> World.setGroupState { groupState with Persistent = value } group |> World.publishGroupChange (nameof groupState.Persistent) previous value group)
+            else struct (false, world)
+
+        static member internal setGroupScriptFrame value group world =
+            let groupState = World.getGroupState group world
+            let previous = groupState.ScriptFrame
+            if value <> previous
+            then struct (true, world |> World.setGroupState { groupState with ScriptFrame = value } group |> World.publishGroupChange (nameof groupState.ScriptFrame) previous value group)
+            else struct (false, world)
 
         static member internal tryGetGroupXtensionProperty (propertyName, group, world, property : _ outref) =
             if World.getGroupExists group world
@@ -183,52 +193,36 @@ module WorldModuleGroup =
             | (false, _) -> World.getGroupXtensionProperty propertyName group world
 
         static member internal trySetGroupXtensionPropertyFast propertyName property group world =
-            if World.getGroupExists group world then
-                let mutable success = false // bit of a hack to get additional state out of the lambda
-                let struct (_, world) =
-                    World.updateGroupState
-                        (fun groupState ->
-                            let mutable propertyOld = Unchecked.defaultof<_>
-                            match GroupState.tryGetProperty (propertyName, groupState, &propertyOld) with
-                            | true ->
-                                if property.PropertyValue =/= propertyOld.PropertyValue then
-                                    let struct (successInner, groupState) = GroupState.trySetProperty propertyName property groupState
-                                    success <- successInner
-                                    groupState
-                                else Unchecked.defaultof<_>
-                            | false -> Unchecked.defaultof<_>)
-                        propertyName property.PropertyValue group world
-                world
-            else world
+            let groupState = World.getGroupState group world
+            match GroupState.tryGetProperty (propertyName, groupState) with
+            | (true, propertyOld) ->
+                if property.PropertyValue =/= propertyOld.PropertyValue then
+                    let struct (success, groupState) = GroupState.trySetProperty propertyName property groupState
+                    let world = World.setGroupState groupState group world
+                    if success then World.publishGroupChange propertyName propertyOld.PropertyValue property.PropertyValue group world else world
+                else world
+            | (false, _) -> world
 
         static member internal trySetGroupXtensionProperty propertyName property group world =
-            if World.getGroupExists group world then
-                let mutable success = false // bit of a hack to get additional state out of the lambda
-                let struct (changed, world) =
-                    World.updateGroupState
-                        (fun groupState ->
-                            let mutable propertyOld = Unchecked.defaultof<_>
-                            match GroupState.tryGetProperty (propertyName, groupState, &propertyOld) with
-                            | true ->
-                                if property.PropertyValue =/= propertyOld.PropertyValue then
-                                    let struct (successInner, groupState) = GroupState.trySetProperty propertyName property groupState
-                                    success <- successInner
-                                    groupState
-                                else Unchecked.defaultof<_>
-                            | false -> Unchecked.defaultof<_>)
-                        propertyName property.PropertyValue group world
-                struct (success, changed, world)
-            else (false, false, world)
+            let groupState = World.getGroupState group world
+            match GroupState.tryGetProperty (propertyName, groupState) with
+            | (true, propertyOld) ->
+                if property.PropertyValue =/= propertyOld.PropertyValue then
+                    let struct (success, groupState) = GroupState.trySetProperty propertyName property groupState
+                    let world = World.setGroupState groupState group world
+                    if success
+                    then struct (success, true, World.publishGroupChange propertyName propertyOld.PropertyValue property.PropertyValue group world)
+                    else struct (false, true, world)
+                else struct (false, false, world)
+            | (false, _) -> struct (false, false, world)
 
         static member internal setGroupXtensionProperty propertyName property group world =
-            if World.getGroupExists group world then
-                World.updateGroupState
-                    (fun groupState ->
-                        let propertyOld = GroupState.getProperty propertyName groupState
-                        if property.PropertyValue =/= propertyOld.PropertyValue
-                        then GroupState.setProperty propertyName property groupState
-                        else Unchecked.defaultof<_>)
-                    propertyName property.PropertyValue group world
+            let groupState = World.getGroupState group world
+            let propertyOld = GroupState.getProperty propertyName groupState
+            if property.PropertyValue =/= propertyOld.PropertyValue then
+                let groupState = GroupState.setProperty propertyName property groupState
+                let world = World.setGroupState groupState group world
+                struct (true, World.publishGroupChange propertyName propertyOld.PropertyValue property.PropertyValue group world)
             else struct (false, world)
 
         static member internal trySetGroupPropertyFast propertyName property group world =
@@ -261,21 +255,18 @@ module WorldModuleGroup =
 
         static member internal attachGroupProperty propertyName property group world =
             if World.getGroupExists group world then
-                let struct (_, world) =
-                    World.updateGroupState
-                        (fun groupState -> GroupState.attachProperty propertyName property groupState)
-                        propertyName property.PropertyValue group world
-                world
-            else failwith ("Cannot attach group property '" + propertyName + "'; group '" + group.Name + "' is not found.")
+                let groupState = World.getGroupState group world
+                let groupState = GroupState.attachProperty propertyName property groupState
+                let world = World.setGroupState groupState group world
+                World.publishGroupChange propertyName property.PropertyValue property.PropertyValue group world
+            else failwith ("Cannot attach group property '" + propertyName + "'; group '" + scstring group + "' is not found.")
 
         static member internal detachGroupProperty propertyName group world =
             if World.getGroupExists group world then
-                let struct (_, world) =
-                    World.updateGroupStateWithoutEvent
-                        (fun groupState -> GroupState.detachProperty propertyName groupState)
-                        group world
-                world
-            else failwith ("Cannot detach group property '" + propertyName + "'; group '" + group.Name + "' is not found.")
+                let groupState = World.getGroupState group world
+                let groupState = GroupState.detachProperty propertyName groupState
+                World.setGroupState groupState group world
+            else failwith ("Cannot detach group property '" + propertyName + "'; group '" + scstring group + "' is not found.")
 
         static member internal registerGroup group world =
             let dispatcher = World.getGroupDispatcher group world
