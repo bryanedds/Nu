@@ -124,7 +124,7 @@ module WorldModuleGroup =
                 let struct (groupState, world) =
                     let groupState = { groupState with Model = { DesignerType = value.DesignerType; DesignerValue = value.DesignerValue }}
                     struct (groupState, World.setGroupState groupState group world)
-                let world = World.publishGroupChange (nameof groupState.Model) previous value group world
+                let world = World.publishGroupChange (nameof groupState.Model) previous.DesignerValue value.DesignerValue group world
                 struct (true, world)
             else struct (false, world)
 
@@ -136,7 +136,7 @@ module WorldModuleGroup =
                 let struct (groupState, world) =
                     let groupState = { groupState with Model = { DesignerType = typeof<'a>; DesignerValue = valueObj }}
                     struct (groupState, World.setGroupState groupState group world)
-                let world = World.publishGroupChange (nameof groupState.Model) previous value group world
+                let world = World.publishGroupChange (nameof groupState.Model) previous.DesignerValue value group world
                 struct (true, world)
             else struct (false, world)
 

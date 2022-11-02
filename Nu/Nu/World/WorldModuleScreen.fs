@@ -124,7 +124,7 @@ module WorldModuleScreen =
                 let struct (screenState, world) =
                     let screenState = { screenState with Model = { DesignerType = value.DesignerType; DesignerValue = value.DesignerValue }}
                     struct (screenState, World.setScreenState screenState screen world)
-                let world = World.publishScreenChange (nameof screenState.Model) previous value screen world
+                let world = World.publishScreenChange (nameof screenState.Model) previous.DesignerValue value.DesignerValue screen world
                 struct (true, world)
             else struct (false, world)
 
@@ -136,7 +136,7 @@ module WorldModuleScreen =
                 let struct (screenState, world) =
                     let screenState = { screenState with Model = { DesignerType = typeof<'a>; DesignerValue = valueObj }}
                     struct (screenState, World.setScreenState screenState screen world)
-                let world = World.publishScreenChange (nameof screenState.Model) previous value screen world
+                let world = World.publishScreenChange (nameof screenState.Model) previous.DesignerValue value screen world
                 struct (true, world)
             else struct (false, world)
 

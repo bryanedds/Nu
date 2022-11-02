@@ -324,7 +324,7 @@ module WorldModuleEntity =
                     else
                         let entityState = { entityState with Model = { DesignerType = value.DesignerType; DesignerValue = value.DesignerValue }}
                         struct (entityState, World.setEntityState entityState entity world)
-                let world = World.publishEntityChange (nameof entityState.Model) previous value entityState.PublishChangeBindings entityState.PublishChangeEvents entity world
+                let world = World.publishEntityChange (nameof entityState.Model) previous.DesignerValue value.DesignerValue entityState.PublishChangeBindings entityState.PublishChangeEvents entity world
                 struct (true, world)
             else struct (false, world)
 
@@ -340,7 +340,7 @@ module WorldModuleEntity =
                     else
                         let entityState = { entityState with Model = { DesignerType = typeof<'a>; DesignerValue = valueObj }}
                         struct (entityState, World.setEntityState entityState entity world)
-                let world = World.publishEntityChange (nameof entityState.Model) previous value entityState.PublishChangeBindings entityState.PublishChangeEvents entity world
+                let world = World.publishEntityChange (nameof entityState.Model) previous.DesignerValue value entityState.PublishChangeBindings entityState.PublishChangeEvents entity world
                 struct (true, world)
             else struct (false, world)
 
