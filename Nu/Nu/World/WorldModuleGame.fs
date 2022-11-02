@@ -56,7 +56,7 @@ module WorldModuleGame =
                 let struct (gameState, world) =
                     let gameState = { gameState with Model = { DesignerType = value.DesignerType; DesignerValue = value.DesignerValue }}
                     struct (gameState, World.setGameState gameState world)
-                let world = World.publishGameChange (nameof gameState.Model) previous value world
+                let world = World.publishGameChange (nameof gameState.Model) previous.DesignerValue value.DesignerValue world
                 struct (true, world)
             else struct (false, world)
 
@@ -68,7 +68,7 @@ module WorldModuleGame =
                 let struct (gameState, world) =
                     let gameState = { gameState with Model = { DesignerType = typeof<'a>; DesignerValue = valueObj }}
                     struct (gameState, World.setGameState gameState world)
-                let world = World.publishGameChange (nameof gameState.Model) previous value world
+                let world = World.publishGameChange (nameof gameState.Model) previous.DesignerValue value world
                 struct (true, world)
             else struct (false, world)
 
