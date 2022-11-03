@@ -1109,11 +1109,11 @@ module GameDispatcherModule =
         member this.Signal<'model, 'message, 'command> signal world =
             World.signalGame<'model, 'message, 'command> signal this world
 
-    and [<AbstractClass>] GameDispatcher<'model, 'message, 'command> (makeInitial : unit -> 'model) =
+    and [<AbstractClass>] GameDispatcher<'model, 'message, 'command> (makeInitial : World -> 'model) =
         inherit GameDispatcher ()
 
         new (initial : 'model) =
-            GameDispatcher<'model, 'message, 'command> (fun () -> initial)
+            GameDispatcher<'model, 'message, 'command> (fun _ -> initial)
 
         member this.GetModel (game : Game) world : 'model =
             game.GetModelGeneric<'model> world
@@ -1128,7 +1128,7 @@ module GameDispatcherModule =
             let world =
                 let property = World.getGameModelProperty world
                 if property.DesignerType = typeof<unit>
-                then game.SetModelGeneric<'model> (makeInitial ()) world
+                then game.SetModelGeneric<'model> (makeInitial world) world
                 else world
             let channels = this.Channel (this.Model game, game)
             let world = Signal.processChannels this.Message this.Command (this.Model game) channels game world
