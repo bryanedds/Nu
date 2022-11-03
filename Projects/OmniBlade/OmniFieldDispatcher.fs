@@ -1150,7 +1150,7 @@ module FieldDispatcher =
 
                  // backdrop sprite
                  Content.staticSprite Gen.name
-                    [Entity.Perimeter <== field --|> (fun _ world -> (World.getViewBounds2dAbsolute world).Box3); Entity.Elevation == Single.MinValue; Entity.Absolute == true
+                    [Entity.Perimeter <== field --> (fun field -> field.ViewBoundsAbsolute.Box3); Entity.Elevation == Single.MinValue; Entity.Absolute == true
                      Entity.StaticImage == Assets.Default.Image9
                      Entity.Color <== field --> fun field ->
                         match Data.Value.Fields.TryGetValue field.FieldType with
@@ -1159,7 +1159,7 @@ module FieldDispatcher =
 
                  // transition fade sprite
                  Content.staticSprite Gen.name
-                    [Entity.Perimeter <== field --|> (fun _ world -> (World.getViewBounds2dAbsolute world).Box3); Entity.Elevation == Single.MaxValue; Entity.Absolute == true
+                    [Entity.Perimeter <== field --> (fun field -> field.ViewBoundsAbsolute.Box3); Entity.Elevation == Single.MaxValue; Entity.Absolute == true
                      Entity.StaticImage == Assets.Default.Image8
                      Entity.Visible <== field --> fun field -> Option.isSome field.FieldTransitionOpt
                      Entity.Color <== field --> fun field ->
