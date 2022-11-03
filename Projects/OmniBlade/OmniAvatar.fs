@@ -15,9 +15,9 @@ module Avatar =
               Perimeter_ : Box3
               CharacterAnimationState_ : CharacterAnimationState
               CelSize_ : Vector2
-              CollidedBodyShapes_ : BodyShapeSource list
-              SeparatedBodyShapes_ : BodyShapeSource list
-              IntersectedBodyShapes_ : BodyShapeSource list }
+              CollidedPropIds_ : int list
+              SeparatedPropIds_ : int list
+              IntersectedPropIds_ : int list }
 
         (* Perimeter Original Properties *)
         member this.PerimeterOriginal = this.PerimeterOriginal_
@@ -45,9 +45,9 @@ module Avatar =
         member this.CelSize = this.CelSize_
 
         (* Local Properties *)
-        member this.CollidedBodyShapes = this.CollidedBodyShapes_
-        member this.SeparatedBodyShapes = this.SeparatedBodyShapes_
-        member this.IntersectedBodyShapes = this.IntersectedBodyShapes_
+        member this.CollidedPropIds = this.CollidedPropIds_
+        member this.SeparatedPropIds = this.SeparatedPropIds_
+        member this.IntersectedPropIds = this.IntersectedPropIds_
 
     let getAnimationInset time (avatar : Avatar) =
         CharacterAnimationState.inset time avatar.CelSize_ avatar.CharacterAnimationState_
@@ -58,22 +58,22 @@ module Avatar =
     let getAnimationFinished time avatar =
         CharacterAnimationState.getFinished time avatar.CharacterAnimationState_
 
-    let updateCollidedBodyShapes updater (avatar : Avatar) =
-        let bodyShapes = updater avatar.CollidedBodyShapes_
-        if bodyShapes <> avatar.CollidedBodyShapes_
-        then { avatar with CollidedBodyShapes_ = bodyShapes }
+    let updateCollidedPropIds updater (avatar : Avatar) =
+        let propIds = updater avatar.CollidedPropIds_
+        if propIds <> avatar.CollidedPropIds_
+        then { avatar with CollidedPropIds_ = propIds }
         else avatar
 
-    let updateSeparatedBodyShapes updater (avatar : Avatar) =
-        let bodyShapes = updater avatar.SeparatedBodyShapes_
-        if bodyShapes <> avatar.SeparatedBodyShapes_
-        then { avatar with SeparatedBodyShapes_ = bodyShapes }
+    let updateSeparatedPropIds updater (avatar : Avatar) =
+        let propIds = updater avatar.SeparatedPropIds_
+        if propIds <> avatar.SeparatedPropIds_
+        then { avatar with SeparatedPropIds_ = propIds }
         else avatar
 
-    let updateIntersectedBodyShapes updater (avatar : Avatar) =
-        let bodyShapes = updater avatar.IntersectedBodyShapes_
-        if bodyShapes <> avatar.IntersectedBodyShapes_
-        then { avatar with IntersectedBodyShapes_ = bodyShapes }
+    let updateIntersectedPropIds updater (avatar : Avatar) =
+        let propIds = updater avatar.IntersectedPropIds_
+        if propIds <> avatar.IntersectedPropIds_
+        then { avatar with IntersectedPropIds_ = propIds }
         else avatar
 
     let updatePerimeter updater (avatar : Avatar) =
@@ -110,9 +110,9 @@ module Avatar =
 
     let toSymbolizable avatar =
         { avatar with
-            CollidedBodyShapes_ = []
-            SeparatedBodyShapes_ = []
-            IntersectedBodyShapes_ = [] }
+            CollidedPropIds_ = []
+            SeparatedPropIds_ = []
+            IntersectedPropIds_ = [] }
 
     let make bounds animationSheet direction =
         let characterAnimationState = { StartTime = 0L; AnimationSheet = animationSheet; CharacterAnimationType = IdleAnimation; Direction = direction }
@@ -120,9 +120,9 @@ module Avatar =
           Perimeter_ = bounds
           CharacterAnimationState_ = characterAnimationState
           CelSize_ = Constants.Gameplay.CharacterCelSize
-          CollidedBodyShapes_ = []
-          SeparatedBodyShapes_ = []
-          IntersectedBodyShapes_ = [] }
+          CollidedPropIds_ = []
+          SeparatedPropIds_ = []
+          IntersectedPropIds_ = [] }
 
     let empty =
         let bounds = box3 v3Zero Constants.Gameplay.CharacterSize
@@ -130,9 +130,9 @@ module Avatar =
           Perimeter_ = bounds
           CharacterAnimationState_ = CharacterAnimationState.empty
           CelSize_ = Constants.Gameplay.CharacterCelSize
-          CollidedBodyShapes_ = []
-          SeparatedBodyShapes_ = []
-          IntersectedBodyShapes_ = [] }
+          CollidedPropIds_ = []
+          SeparatedPropIds_ = []
+          IntersectedPropIds_ = [] }
 
     let initial =
         let position = v3 2064.0f 48.0f 0.0f - Constants.Gameplay.CharacterSize.WithY 0.0f * 0.5f

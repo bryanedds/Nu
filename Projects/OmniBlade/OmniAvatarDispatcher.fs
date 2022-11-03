@@ -41,7 +41,7 @@ module AvatarDispatcher =
             let inset = Avatar.getAnimationInset (World.getUpdateTime world) avatar
             inset
 
-        static let isIntersectedBodyShape collider collidee world =
+        static let isIntersectedProp collider collidee world =
             if (collider.BodyShapeId = coreShapeId &&
                 collidee.Entity.Exists world &&
                 collidee.Entity.Is<PropDispatcher> world &&
@@ -102,8 +102,8 @@ module AvatarDispatcher =
             | PostUpdate ->
 
                 // clear all temporary body shapes
-                let avatar = Avatar.updateCollidedBodyShapes (constant []) avatar
-                let avatar = Avatar.updateSeparatedBodyShapes (constant []) avatar
+                let avatar = Avatar.updateCollidedPropIds (constant []) avatar
+                let avatar = Avatar.updateSeparatedPropIds (constant []) avatar
                 just avatar
 
             | TryFace direction ->
@@ -120,24 +120,24 @@ module AvatarDispatcher =
                     else avatar
                 just avatar
 
-            | BodySeparation separation ->
-
-                // add separated body shape
-                let avatar =
-                    if isIntersectedBodyShape separation.BodySeparator separation.BodySeparatee world then
-                        let avatar = Avatar.updateSeparatedBodyShapes (fun shapes -> separation.BodySeparatee :: shapes) avatar
-                        let avatar = Avatar.updateIntersectedBodyShapes (List.remove ((=) separation.BodySeparatee)) avatar
-                        avatar
-                    else avatar
-                just avatar
-
             | BodyCollision collision ->
 
                 // add collided body shape
                 let avatar =
-                    if isIntersectedBodyShape collision.BodyCollider collision.BodyCollidee world then
-                        let avatar = Avatar.updateCollidedBodyShapes (fun shapes -> collision.BodyCollidee :: shapes) avatar
-                        let avatar = Avatar.updateIntersectedBodyShapes (fun shapes -> collision.BodyCollidee :: shapes) avatar
+                    if isIntersectedProp collision.BodyCollider collision.BodyCollidee world then
+                        let avatar = Avatar.updateCollidedPropIds (List.cons (collision.BodyCollidee.Entity.GetProp world).PropId) avatar
+                        let avatar = Avatar.updateIntersectedPropIds (List.cons (collision.BodyCollidee.Entity.GetProp world).PropId) avatar
+                        avatar
+                    else avatar
+                just avatar
+
+            | BodySeparation separation ->
+
+                // add separated body shape
+                let avatar =
+                    if isIntersectedProp separation.BodySeparator separation.BodySeparatee world then
+                        let avatar = Avatar.updateSeparatedPropIds (List.cons (separation.BodySeparatee.Entity.GetProp world).PropId) avatar
+                        let avatar = Avatar.updateIntersectedPropIds (List.remove ((=) (separation.BodySeparatee.Entity.GetProp world).PropId)) avatar
                         avatar
                     else avatar
                 just avatar
@@ -145,11 +145,20 @@ module AvatarDispatcher =
             | BodyRemoving physicsId ->
                 
                 // unfortunately, due to the fact that physics events like separation don't fire until the next frame,
-                // we need to handle this Nu-generated event in order to remove the associated shape manually.
-                let (separatedBodyShapes, intersectedBodyShapes) = List.split (fun shape -> shape.Entity.GetPhysicsId world = physicsId) avatar.IntersectedBodyShapes
-                let avatar = Avatar.updateIntersectedBodyShapes (constant intersectedBodyShapes) avatar
-                let avatar = Avatar.updateSeparatedBodyShapes ((@) separatedBodyShapes) avatar
-                just avatar
+                // we need to handle this Nu-generated event in order to remove the associated prop id manually.
+                let entityOpt =
+                    world |>
+                    World.getEntities Simulants.Field.Scene.Group |>
+                    Seq.filter (fun entity -> entity.Is<PropDispatcher> world && entity.GetPhysicsId world = physicsId) |>
+                    Seq.tryHead
+                match entityOpt with
+                | Some entity ->
+                    let prop = entity.GetProp world
+                    let (separatedPropIds, intersectedPropIds) = List.split ((=) prop.PropId) avatar.IntersectedPropIds
+                    let avatar = Avatar.updateIntersectedPropIds (constant intersectedPropIds) avatar
+                    let avatar = Avatar.updateSeparatedPropIds ((@) separatedPropIds) avatar
+                    just avatar
+                | None -> just avatar
 
             | Nil ->
 

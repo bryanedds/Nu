@@ -446,29 +446,30 @@ module FieldDispatcher =
                 .Replace("$FEE", scstring (Field.getRecruitmentFee field))
                 .Replace("$GOLD", scstring field.Inventory.Gold)
 
-        static let isFacingBodyShape bodyShape (avatar : Avatar) world =
-            if bodyShape.Entity.Is<PropDispatcher> world then
-                let v = bodyShape.Entity.GetBottom world - avatar.Bottom
+        static let isFacingProp propId (avatar : Avatar) (props : Map<int, Prop>) =
+            match props.TryGetValue propId with
+            | (true, prop) ->
+                let v = prop.Bottom - avatar.Bottom
                 let direction = Direction.ofVector3 v
                 direction <> avatar.Direction.Opposite
-            else false
+            | (false, _) -> false
 
-        static let getFacingBodyShapes (avatar : Avatar) world =
+        static let getFacingProps (avatar : Avatar) props =
             List.filter
-                (fun bodyShape -> isFacingBodyShape bodyShape avatar world)
-                avatar.IntersectedBodyShapes
+                (fun propId -> isFacingProp propId avatar props)
+                avatar.IntersectedPropIds
 
-        static let tryGetFacingProp (avatar : Avatar) world =
-            match getFacingBodyShapes avatar world with
-            | head :: _ -> Some head.Entity
+        static let tryGetFacingProp (avatar : Avatar) props =
+            match getFacingProps avatar props with
+            | head :: _ -> Some (props.[head])
             | [] -> None
 
-        static let isTouchingSavePoint (avatar : Avatar) world =
-            List.exists (fun shape ->
-                match (shape.Entity.GetProp world).PropData with
-                | SavePoint -> true
-                | _ -> false)
-                avatar.IntersectedBodyShapes
+        static let isTouchingSavePoint (avatar : Avatar) (props : Map<int, Prop>) =
+            List.exists (fun propId ->
+                match props.TryGetValue propId with
+                | (true, prop) -> prop.PropData = SavePoint
+                | (false, _) -> false)
+                avatar.IntersectedPropIds
 
         static let tryGetFacingInteraction avatarPositionY advents (prop : Prop) =
             match prop.PropData with
@@ -492,63 +493,73 @@ module FieldDispatcher =
             | ChestSpawn -> None
             | EmptyProp -> None
 
-        static let tryGetInteraction dialogOpt advents (avatar : Avatar) (field : Field) world =
+        static let tryGetInteraction dialogOpt advents (avatar : Avatar) (props : Map<int, Prop>) detokenize =
             match dialogOpt with
             | Some dialog ->
-                if  Dialog.canAdvance (flip detokenize field) dialog &&
+                if  Dialog.canAdvance detokenize dialog &&
                     not
-                        (Dialog.isExhausted (flip detokenize field) dialog &&
+                        (Dialog.isExhausted detokenize dialog &&
                          Option.isSome dialog.DialogPromptOpt)
                 then Some "Next"
                 else None
             | None ->
-                if isTouchingSavePoint avatar world then
+                if isTouchingSavePoint avatar props then
                     Some "Save"
                 else
-                    match tryGetFacingProp avatar world with
-                    | Some prop -> tryGetFacingInteraction avatar.Position.Y advents (prop.GetProp world)
+                    match tryGetFacingProp avatar props with
+                    | Some prop -> tryGetFacingInteraction avatar.Position.Y advents prop
                     | None -> None
 
-        static let tryGetTouchingPortal omniSeedState (advents : Advent Set) (avatar : Avatar) world =
-            avatar.IntersectedBodyShapes |>
-            List.choose (fun shape ->
-                match (shape.Entity.GetProp world).PropData with
-                | Portal (portalType, _, _, fieldType, portalIndex, _, requirements) ->
-                    if advents.IsSupersetOf requirements then
-                        match Map.tryFind fieldType Data.Value.Fields with
-                        | Some fieldData ->
-                            match FieldData.tryGetPortal omniSeedState portalIndex fieldData with
-                            | Some portal ->
-                                match portal.PropData with
-                                | Portal (_, _, direction, _, _, extended, _) ->
-                                    let destination =
-                                        match direction with
-                                        | Upward -> portal.PropPerimeter.Top + v3 0.0f 8.0f 0.0f + if extended then v3 0.0f 48.0f 0.0f else v3Zero
-                                        | Rightward -> portal.PropPerimeter.Right + v3 32.0f 0.0f 0.0f + if extended then v3 48.0f 0.0f 0.0f else v3Zero
-                                        | Downward -> portal.PropPerimeter.Bottom + v3 0.0f -54.0f 0.0f - if extended then v3 0.0f 48.0f 0.0f else v3Zero
-                                        | Leftward -> portal.PropPerimeter.Left + v3 -32.0f 0.0f 0.0f - if extended then v3 48.0f 0.0f 0.0f else v3Zero
-                                    let isWarp = match portalType with AirPortal | StairsPortal _ -> false | WarpPortal -> true
-                                    Some (fieldType, destination, direction, isWarp)
-                                | _ -> None
+        static let tryGetTouchingPortal omniSeedState (advents : Advent Set) (avatar : Avatar) (props : Map<int, Prop>) =
+            avatar.IntersectedPropIds |>
+            List.choose (fun propId ->
+                match props.TryGetValue propId with
+                | (true, prop) ->
+                    match prop.PropData with
+                    | Portal (portalType, _, _, fieldType, portalIndex, _, requirements) ->
+                        if advents.IsSupersetOf requirements then
+                            match Map.tryFind fieldType Data.Value.Fields with
+                            | Some fieldData ->
+                                match FieldData.tryGetPortal omniSeedState portalIndex fieldData with
+                                | Some portal ->
+                                    match portal.PropData with
+                                    | Portal (_, _, direction, _, _, extended, _) ->
+                                        let destination =
+                                            match direction with
+                                            | Upward -> portal.PropPerimeter.Top + v3 0.0f 8.0f 0.0f + if extended then v3 0.0f 48.0f 0.0f else v3Zero
+                                            | Rightward -> portal.PropPerimeter.Right + v3 32.0f 0.0f 0.0f + if extended then v3 48.0f 0.0f 0.0f else v3Zero
+                                            | Downward -> portal.PropPerimeter.Bottom + v3 0.0f -54.0f 0.0f - if extended then v3 0.0f 48.0f 0.0f else v3Zero
+                                            | Leftward -> portal.PropPerimeter.Left + v3 -32.0f 0.0f 0.0f - if extended then v3 48.0f 0.0f 0.0f else v3Zero
+                                        let isWarp = match portalType with AirPortal | StairsPortal _ -> false | WarpPortal -> true
+                                        Some (fieldType, destination, direction, isWarp)
+                                    | _ -> None
+                                | None -> None
                             | None -> None
-                        | None -> None
-                    else None
+                        else None
+                    | _ -> None
                 | _ -> None) |>
             List.tryHead
 
-        static let getTouchedSensors (avatar : Avatar) world =
-            List.choose (fun shape ->
-                match (shape.Entity.GetProp world).PropData with
-                | Sensor (sensorType, _, cue, _, requirements) -> Some (sensorType, cue, requirements)
-                | _ -> None)
-                avatar.CollidedBodyShapes
+        static let getTouchedSensors (avatar : Avatar) (props : Map<int, Prop>) =
+            List.choose (fun propId ->
+                match props.TryGetValue propId with
+                | (true, prop) ->
+                    match prop.PropData with
+                    | Sensor (sensorType, _, cue, _, requirements) -> Some (sensorType, cue, requirements)
+                    | _ -> None
+                | (false, _) -> None)
+                avatar.CollidedPropIds
 
-        static let getUntouchedSensors (avatar : Avatar) world =
-            List.choose (fun shape ->
-                match (shape.Entity.GetProp world).PropData with
-                | Sensor (sensorType, _, _, cue, requirements) -> Some (sensorType, cue, requirements)
-                | _ -> None)
-                avatar.SeparatedBodyShapes
+        static let getUntouchedSensors (avatar : Avatar) (field : Field) =
+            List.choose (fun propId ->
+                match field.Props.TryGetValue propId with
+                | (true, prop) ->
+                    match prop.PropData with
+                    | Sensor (sensorType, _, cue, _, requirements) -> Some (sensorType, cue, requirements)
+                    | _ -> None
+                | (false, _) -> None)
+                avatar.SeparatedPropIds
+
         do ignore getUntouchedSensors // NOTE: suppressing warning.
 
         static let interactDialog dialog field =
@@ -676,7 +687,7 @@ module FieldDispatcher =
                 let (signals, field) =
                     match field.FieldTransitionOpt with
                     | None ->
-                        match tryGetTouchingPortal field.OmniSeedState field.Advents field.Avatar world with
+                        match tryGetTouchingPortal field.OmniSeedState field.Advents field.Avatar field.Props with
                         | Some (fieldType, destination, direction, isWarp) ->
                             if Option.isNone field.BattleOpt then // make sure we don't teleport if a battle is started earlier in the frame
                                 let transition =
@@ -698,7 +709,7 @@ module FieldDispatcher =
                 let (signals, field) =
                     match field.FieldTransitionOpt with
                     | None ->
-                        let sensors = getTouchedSensors field.Avatar world
+                        let sensors = getTouchedSensors field.Avatar field.Props
                         let results =
                             List.fold (fun (signals : Signal<FieldMessage, FieldCommand> list, field : Field) (sensorType, cue, requirements) ->
                                 if field.Advents.IsSupersetOf requirements then
@@ -768,7 +779,7 @@ module FieldDispatcher =
                             let field =
                                 Field.updateAvatar (fun avatar ->
                                     let avatar = Avatar.updateDirection (constant fieldTransition.FieldDirection) avatar
-                                    let avatar = Avatar.updateIntersectedBodyShapes (constant []) avatar
+                                    let avatar = Avatar.updateIntersectedPropIds (constant []) avatar
                                     let avatar = Avatar.updateBottom (constant fieldTransition.FieldDestination) avatar
                                     avatar)
                                     field
@@ -990,12 +1001,11 @@ module FieldDispatcher =
             | Interact ->
                 match field.DialogOpt with
                 | None ->
-                    if isTouchingSavePoint field.Avatar world then
+                    if isTouchingSavePoint field.Avatar field.Props then
                         interactSavePoint field
                     else
-                        match tryGetFacingProp field.Avatar world with
+                        match tryGetFacingProp field.Avatar field.Props with
                         | Some prop ->
-                            let prop = prop.GetProp world
                             match prop.PropData with
                             | Sprite _ -> just field
                             | Portal _ -> just field
@@ -1241,15 +1251,15 @@ module FieldDispatcher =
                  Content.button Gen.name
                     [Entity.Position == v3 306.0f -246.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v3 144.0f 48.0f 0.0f
                      Entity.UpImage == Assets.Gui.ButtonShortUpImage; Entity.DownImage == Assets.Gui.ButtonShortDownImage
-                     Entity.Visible <== field --|> fun field world ->
+                     Entity.Visible <== field --> fun field ->
                         field.Menu.MenuState = MenuClosed &&
                         (Cue.notInterrupting field.Inventory field.Advents field.Cue || Option.isSome field.DialogOpt) &&
                         Option.isNone field.BattleOpt &&
                         Option.isNone field.ShopOpt &&
                         Option.isNone field.FieldTransitionOpt &&
-                        Option.isSome (tryGetInteraction field.DialogOpt field.Advents field.Avatar field world)
-                     Entity.Text <== field --|> fun field world ->
-                        match tryGetInteraction field.DialogOpt field.Advents field.Avatar field world with
+                        Option.isSome (tryGetInteraction field.DialogOpt field.Advents field.Avatar field.Props (flip detokenize field))
+                     Entity.Text <== field --> fun field ->
+                        match tryGetInteraction field.DialogOpt field.Advents field.Avatar field.Props (flip detokenize field) with
                         | Some interaction -> interaction
                         | None -> ""
                      Entity.ClickSoundOpt == None
