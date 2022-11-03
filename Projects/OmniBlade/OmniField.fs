@@ -53,7 +53,8 @@ module Field =
               FieldTransitionOpt_ : FieldTransition option
               DialogOpt_ : Dialog option
               BattleOpt_ : Battle option
-              FieldSongTimeOpt_ : int64 option }
+              FieldSongTimeOpt_ : int64 option
+              ViewBoundsAbsolute_ : Box2 }
 
         (* Local Properties *)
         member this.UpdateTime = this.UpdateTime_
@@ -77,6 +78,7 @@ module Field =
         member this.DialogOpt = this.DialogOpt_
         member this.BattleOpt = this.BattleOpt_
         member this.FieldSongTimeOpt = this.FieldSongTimeOpt_
+        member this.ViewBoundsAbsolute = this.ViewBoundsAbsolute_
 
     let private makePropState time propDescriptor =
         match propDescriptor.PropData with
@@ -374,9 +376,10 @@ module Field =
           FieldTransitionOpt_ = None
           DialogOpt_ = None
           BattleOpt_ = None
-          FieldSongTimeOpt_ = None }
+          FieldSongTimeOpt_ = None
+          ViewBoundsAbsolute_ = World.getViewBounds2dAbsolute world }
 
-    let empty =
+    let empty world =
         { UpdateTime_ = 0L
           FieldType_ = EmptyField
           FieldState_ = Quitting
@@ -398,7 +401,8 @@ module Field =
           FieldTransitionOpt_ = None
           DialogOpt_ = None
           BattleOpt_ = None
-          FieldSongTimeOpt_ = None }
+          FieldSongTimeOpt_ = None
+          ViewBoundsAbsolute_ = World.getViewBounds2dAbsolute world }
 
     let initial saveSlot randSeedState world =
         make TombOuter saveSlot randSeedState Avatar.initial (Map.singleton 0 (Teammate.make 3 0 Jinn)) Advents.initial Inventory.initial world
