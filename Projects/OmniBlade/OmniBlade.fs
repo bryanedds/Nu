@@ -38,16 +38,11 @@ module OmniBlade =
         member this.GetModel world = this.GetModelGeneric<Model> world
         member this.SetModel value world = this.SetModelGeneric<Model> value world
         member this.Model = this.ModelGeneric<Model> ()
-        member this.Field =
-            this.Model |>
-            Lens.narrow (fun world -> match this.GetModel world with Field _ -> true | _ -> false) |>
-            Lens.bimap (function Field field -> field | _ -> failwithumf ()) Field
+        member this.Field = this.Model.Bimap (function Field field -> Some field | _ -> None) (constant Field)
         member this.Battle =
-            this.Model |>
-            Lens.narrow (fun world -> match this.GetModel world with Field field -> Option.isSome field.BattleOpt | _ -> false) |>
-            Lens.bimapWorld
-                (fun model _ -> match model with Field field when Option.isSome field.BattleOpt -> Option.get field.BattleOpt | _ -> failwithumf ())
-                (fun battle world -> match this.GetModel world with Field field -> Field (Field.updateBattleOpt (constant (Some battle)) field) | _ -> failwithumf ())
+            this.Model.Bimap
+                (function Field field -> field.BattleOpt | _ -> None)
+                (fun model battle -> match model with Field field -> Field (Field.updateBattleOpt (constant (Some battle)) field) | _ -> failwithumf ())
 
     type OmniBladeDispatcher () =
         inherit GameDispatcher<Model, Message, Command> (Gui Splash)
