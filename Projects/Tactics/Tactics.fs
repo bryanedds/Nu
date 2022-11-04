@@ -38,16 +38,11 @@ module TacticsGame =
         member this.GetModel world = this.GetModelGeneric<Model> world
         member this.SetModel value world = this.SetModelGeneric<Model> value world
         member this.Model = this.ModelGeneric<Model> ()
-        member this.Atlas =
-            this.Model |>
-            Lens.narrow (fun world -> match this.GetModel world with Atlas _ -> true | _ -> false) |>
-            Lens.bimap (function Atlas atlas -> atlas | _ -> failwithumf ()) Atlas
+        member this.Atlas = this.Model.Bimap (function Atlas atlas -> Some atlas | _ -> None) (constant Atlas) 
         member this.Field =
-            this.Model |>
-            Lens.narrow (fun world -> match this.GetModel world with Atlas atlas -> Option.isSome atlas.FieldOpt | _ -> false) |>
-            Lens.bimapWorld
-                (fun model _ -> match model with Atlas atlas when Option.isSome atlas.FieldOpt -> Option.get atlas.FieldOpt | _ -> failwithumf ())
-                (fun field world -> match this.GetModel world with Atlas atlas -> Atlas (Atlas.updateFieldOpt (constant (Some field)) atlas) | _ -> failwithumf ())
+            this.Model.Bimap
+                (function Atlas atlas -> atlas.FieldOpt | _ -> None)
+                (fun model field -> match model with Atlas atlas -> Atlas (Atlas.updateFieldOpt (constant (Some field)) atlas) | _ -> failwithumf ())
 
     type TacticsDispatcher () =
         inherit GameDispatcher<Model, Message, Command> (Gui Splash)
