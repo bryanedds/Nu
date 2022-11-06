@@ -1186,10 +1186,10 @@ module BattleDispatcher =
                              Entity.FillColor == Color (byte 74, byte 91, byte 169, byte 255)
                              Entity.Fill <== ally --> fun ally -> single ally.TechPoints / single ally.TechPointsMax]]]
 
-             // inputs group
+             // inputs condition
              Content.groupIf battle (fun battle -> battle.Running) $ fun battle ->
 
-                // actual group
+                // inputs group
                 Content.group Simulants.Battle.Inputs.Group.Name []
 
                     [// inputs
