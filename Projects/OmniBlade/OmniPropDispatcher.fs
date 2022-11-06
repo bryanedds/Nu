@@ -197,8 +197,11 @@ module PropDispatcher =
                                 match directionOpt with
                                 | Some direction -> direction
                                 | None ->
-                                    let direction = Direction.ofVector3 (prop.PointOfInterest - prop.Bottom)
-                                    if direction = Upward then Downward else direction
+                                    let delta = prop.PointOfInterest - prop.Bottom
+                                    let direction = Direction.ofVector3 delta
+                                    if direction <> Upward && delta.Length () <= 384.0f // TODO: make constant.
+                                    then direction
+                                    else Downward
                             let column = column + CharacterAnimationState.directionToInt direction
                             let celSize = (size / 3.0f).V2
                             let insetPosition = v2 (single column) (single row) * celSize
@@ -213,8 +216,11 @@ module PropDispatcher =
                                 match directionOpt with
                                 | Some direction -> direction
                                 | None ->
-                                    let direction = Direction.ofVector3 (prop.PointOfInterest - prop.Bottom)
-                                    if direction = Upward then Downward else direction
+                                    let delta = prop.PointOfInterest - prop.Bottom
+                                    let direction = Direction.ofVector3 delta
+                                    if direction <> Upward && delta.Length () <= 384.0f // TODO: make constant.
+                                    then direction
+                                    else Downward
                             let column = CharacterAnimationState.directionToInt direction
                             let insetPosition = v2 (single column) (single row) * Constants.Gameplay.CharacterCelSize
                             let inset = box2 insetPosition Constants.Gameplay.CharacterCelSize

@@ -156,9 +156,9 @@ module Field =
 
     let updateAvatar updater field =
         let avatar = field.Avatar_
-        let pointOfInterest = avatar.BottomOffset
+        let pointOfInterest = avatar.Bottom
         let avatar = updater avatar : Avatar
-        let pointOfInterest' = avatar.BottomOffset
+        let pointOfInterest' = avatar.Bottom
         let props =
             if pointOfInterest <> pointOfInterest'
             then Map.map (constant (Prop.updatePointOfInterest (constant pointOfInterest'))) field.Props_
