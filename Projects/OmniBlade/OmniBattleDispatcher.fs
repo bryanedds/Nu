@@ -374,12 +374,13 @@ module BattleDispatcher =
                         elif Map.containsKey (Time true) character.Statuses then actionTimeDelta * Constants.Battle.ActionTimeHasteScalar
                         else actionTimeDelta
                     let actionTimeDelta =
-                        match battle.BattleSpeed with
-                        | SwiftSpeed -> actionTimeDelta * Constants.Battle.SwiftSpeedScalar
-                        | PacedSpeed -> actionTimeDelta * Constants.Battle.PacedSpeedScalar
-                        | WaitSpeed ->
-                            let anyAlliesInputting = Battle.getAlliesHealthy battle |> Map.toValueList |> List.exists (fun ally -> ally.InputState <> CharacterInputState.NoInput)
-                            if anyAlliesInputting then 0.0f else actionTimeDelta
+                        let anyAlliesInputting = Battle.getAlliesHealthy battle |> Map.toValueList |> List.exists (fun ally -> ally.InputState <> CharacterInputState.NoInput)
+                        if anyAlliesInputting then
+                            match battle.BattleSpeed with
+                            | SwiftSpeed -> actionTimeDelta * Constants.Battle.SwiftSpeedScalar
+                            | PacedSpeed -> actionTimeDelta * Constants.Battle.PacedSpeedScalar
+                            | WaitSpeed -> 0.0f
+                        else actionTimeDelta * 1.0f
                     let poisoned =
                         let actionTime = character.ActionTime + actionTimeDelta
                         Map.containsKey Poison character.Statuses &&

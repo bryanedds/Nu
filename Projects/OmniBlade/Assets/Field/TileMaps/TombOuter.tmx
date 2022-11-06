@@ -3,24 +3,24 @@
  <tileset firstgid="1" source="TombOuter.tsx"/>
  <tileset firstgid="513" source="Tent.tsx"/>
  <tileset firstgid="927" source="TombInner.tsx"/>
- <layer id="8" name="Basement" width="80" height="80" visible="0">
+ <layer id="8" name="Basement" width="80" height="80">
   <data encoding="base64" compression="zlib">
    eJztwTEBAAAAwqD1T20Hb6AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACA1wBkAAAB
   </data>
  </layer>
- <layer id="2" name="Ground" width="80" height="80" visible="0">
+ <layer id="2" name="Ground" width="80" height="80">
   <data encoding="base64" compression="zlib">
-   eJzt2tFNwzAQANB8BWbgrz/AJA0rMAojsUlXYQtckUioapySS2ubvo+nSlXknK9X30XKruu6HQAAAHfrOXlJXiuIpUX7ZEjeKogFAABYz7NRjGcjALgOM0qMGeV21GqMWoX29clD8lhBLC3a6hzs/QYhx36ul8vfFtb8F4/ngFnoh1qSP/lrl7MM/gfPFTF6ifzJX7vkL8YsCG0y+8XoHfInf+0yu1A7PTrGGZm3VF/yl7eUHz0mlj/yWq6vp+S9cAxfG61T4n3hGvK3lRLvC3+MSuw3MtfVMBN+jobx89b3j/SNls/Mv+Zo7kzaou8eZr6f3hmelK7VtXJn0jVraLrvkLn/Pdmit9ZYk6cx5eLqL7hmqZ4idZSryXP7iOZ5bs3f653GlNvj/oJrSjm3j2isc2vWtncAmHwDIG9EaQ==
+   eJzt2tFNwzAQANB8BWbgrz/AJA0rMAojsQmrsAWulAhUNU7bM7Wtvo+nSlXknE8X30XKbhiGHQAAAHfrOXlJXhuIpUf7ZEreGogFAAC4nnejGO9GAEBrzHcx5rvbUasxapXWjMlD8thALD2KPtOj3IccepJ+JH+lXPo8Hp5//fyXepI/+euX8wz6570iRh+RP/nrl/zFmAOhT2a/GL1D/uSvX2YXWqdHxzgj87bqS/7ytvKjx8TyR17P9fWUvFeO4bvQOjW+eW0hf6XU+Ob1Y1Zjv5G5roWZ8HM2zb+3vn+kb/R8Zl6ao7UzqUTf/Vr5f/lWeFG7Vq+VO5P+s4aW+06Z+9+TEr21xZo8jikX13jGNVv1FKmjXE2e2kc0z2tr/l3vOKbcHvdnXFPLqX1EY11bs7W9A8DiB9hhRGk=
   </data>
  </layer>
- <layer id="7" name="Flooring" width="80" height="80" visible="0">
+ <layer id="7" name="Flooring" width="80" height="80">
   <data encoding="base64" compression="zlib">
    eJztwTEBAAAAwqD1T20Hb6AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACA1wBkAAAB
   </data>
  </layer>
- <layer id="1" name="Furnishing" width="80" height="80">
+ <layer id="1" name="Furnishing" width="80" height="80" visible="0">
   <data encoding="base64" compression="zlib">
-   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
+   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
   </data>
  </layer>
  <layer id="6" name="Ceiling" width="80" height="80">
@@ -28,7 +28,7 @@
    eJzt3FdOw1AQhWFnKbQ9AG80BQQsghb6G1kAvS+C3jdBEUWwJ45FJJIoIWRuyvX1/0lHfrEt+2osZRx5ogjNMJ6JogllMmM/R1bHjipjDudIqmXd84qyarz3nI6bVxaURWUp8DUsr5VDbY+UY+N97+i4XWVP2VcOlA6lU+lSupWeQNa0Uq3cKffKg/EeL3XclXKt3Ci3yoAyqAwpw8pIIOtXqVZin9p+VbnHWrUUr9+r8qa8Kx/KlDKtzCizylwg61epVmqx1NK69tlQNpUtZTuQ9YuV10otllo60T6nyplyrlwEtH71stbSo/Z7Up6VlxSvH7XkjlpCuzWiz0sz1z4v7Vz7vLRz7fPwd58HAEiONP/v4Cpt/zs0WrV3yfgfy7tklKr3XTIAAAAAAAAAAAAAAAAAAAAAJBnfkNjxDYmb0L8hsTxb9cwp8O0bkryyVtjmHc9lfbbqnVPg0zckvUpfIf2O57I+W8wp+GF9tphT8Mv6bDGnoD1CnRvZKqHOjWwV17mR8e+tbOH3lq/9TDP7LZe5kblM6bX5uH7N7rdcZv0loRdsRb9lnfWXhF7Qt36rmM/XVsynfqucz9cGIL2+AeOyllM=
   </data>
  </layer>
- <objectgroup id="4" name="Props" visible="0">
+ <objectgroup id="4" name="Props">
   <object id="4" gid="443" x="2016" y="3168" width="96" height="48">
    <properties>
     <property name="I" value="[Portal AirPortal South Downward TombGround South]"/>
@@ -44,7 +44,7 @@
     <property name="I" value="[Shopkeep RobehnShopkeep None Armory]"/>
    </properties>
   </object>
-  <object id="8" gid="443" x="3120" y="1536" width="144" height="144">
+  <object id="8" gid="443" x="3072" y="1584" width="144" height="144">
    <properties>
     <property name="I" value="[Npc MaelNpc None [Prompt &quot;If it is my dark power you desire, I can make your acquaintence... at a price. $FEE gold.&quot; [&quot;Yes&quot; [Recruit Mael]] [&quot;No&quot; Nil]]]"/>
    </properties>
@@ -54,7 +54,7 @@
     <property name="I" value="[Npc PericNpc None [Prompt &quot;I am here to provide aid, but I cannot protect you for free... Perhaps a donation of $FEE gold?&quot; [&quot;Yes&quot; [Recruit Peric]] [&quot;No&quot; Nil]]]"/>
    </properties>
   </object>
-  <object id="11" gid="443" x="2592" y="1440" width="144" height="144">
+  <object id="11" gid="443" x="2544" y="1440" width="144" height="144">
    <properties>
     <property name="I">[Npc RiainNpc None [Prompt &quot;Another world... I can touch...
 Travel together... $FEE gold...?&quot; [&quot;Yes&quot; [Recruit Riain]] [&quot;No&quot; Nil]]]</property>
@@ -67,7 +67,7 @@ Travel together... $FEE gold...?&quot; [&quot;Yes&quot; [Recruit Riain]] [&quot;
   </object>
   <object id="13" gid="443" x="3168" y="3408" width="144" height="144">
    <properties>
-    <property name="I" value="[Npc NostrusNpc None [Sequence [[Dialog &quot;Heheheh... Welcome to the Tomb of the Nine Demons... or so it is rumored. If you wish to delve into its depths, I can offer some guidance to help you make it out alive...^From what has been gathered, the first area beyond the vestibule is a large maze. Since you arrived so ill-prepared, do not expect to clear it your first time in. Have an exit strategy for when your resources get low.^Oh, but I see you have a Spirit Orb! With this, you can see enemies as they approach you. The further you go into an area, the tougher they become. Tougher enemies will appear redder in the Spirit Orb than the others.^Every warrior learns special techniques, or Techs, for use in battle. To use a Tech, that warrior must have enough Tech Points, or TP, to expend for it.^When an enemy is glowing, it's about to use a Tech of its own. This can be devastating! Use your Critical Tech to cancel the enemy's technique and keep yourself out of harm's way.^As a Fighter, the Tech that you learn after Critical will be called Slash. This is a potentially very powerful Tech as it hits all enemies on a line.^One last bit of advice... Don't consider anyone here your friend. However, for the right price, some may be willing to join your party, while others will sell you goods that can save your life.^Good luck...&quot;] [RemoveAdvent TombSealed]]]]"/>
+    <property name="I" value="[Npc NostrusNpc None [Sequence [[Dialog &quot;Heheheh... Welcome to the Tomb of the Nine Demons... or so it is rumored. If you wish to delve into its depths, I can offer some guidance to help you make it out alive...^From what has been gathered, the first area beyond the vestibule is a large maze. Since you arrived so ill-prepared, do not expect to clear it your first time in. Have an exit strategy for when your resources get low.^Oh, but I see you have a Spirit Orb! With this, you can see enemies as they approach you. The further you go into an area, the tougher they become. Tougher enemies will appear redder in the Spirit Orb than the others.^Every warrior learns special techniques, or Techs, for use in battle. To use a Tech, that warrior must have enough Tech Points, or TP, to expend for it.^When an enemy is glowing, it's about to use a Tech of its own. This can be devastating! Use your Critical Tech to cancel the enemy's technique and keep yourself out of harm's way.^As a Fighter, the Tech that you learn after Critical will be called Slash. This is a potentially very powerful Tech as it hits all enemies on a line.^If you prefer slower or even turn-based battles, you can change the Battle Speed option in the Menu. Items, gear, character stats, and other features are also available from the Menu.^One last bit of advice... Don't consider anyone here your friend. However, for the right price, some may be willing to join your party, while others will sell you goods that can save your life.^Good luck...&quot;] [RemoveAdvent TombSealed]]]]"/>
    </properties>
   </object>
   <object id="14" gid="1161" x="2016" y="3264" width="96" height="96">
