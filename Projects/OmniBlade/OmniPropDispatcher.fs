@@ -199,7 +199,7 @@ module PropDispatcher =
                                 | None ->
                                     let delta = prop.PointOfInterest - prop.Bottom
                                     let direction = Direction.ofVector3 delta
-                                    if direction <> Upward && delta.Length () <= 384.0f // TODO: make constant.
+                                    if direction <> Upward && delta.Length () <= 360.0f // TODO: make constant.
                                     then direction
                                     else Downward
                             let column = column + CharacterAnimationState.directionToInt direction
@@ -218,7 +218,7 @@ module PropDispatcher =
                                 | None ->
                                     let delta = prop.PointOfInterest - prop.Bottom
                                     let direction = Direction.ofVector3 delta
-                                    if direction <> Upward && delta.Length () <= 384.0f // TODO: make constant.
+                                    if direction <> Upward && delta.Length () <= 360.0f // TODO: make constant.
                                     then direction
                                     else Downward
                             let column = CharacterAnimationState.directionToInt direction
