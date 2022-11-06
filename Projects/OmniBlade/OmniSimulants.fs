@@ -90,3 +90,8 @@ module Simulants =
 
             let Group = Screen / "Scene"
             let Ride = Group / "Ride"
+
+        [<RequireQualifiedAccess>]
+        module Inputs =
+
+            let Group = Screen / "Inputs"
