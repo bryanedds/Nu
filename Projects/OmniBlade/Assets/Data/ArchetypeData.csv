@@ -19,7 +19,7 @@ Scorpion,0.5,1,1,1,1,1,0.5,0.5,Melee,Pelt,[],[],[Poison],[Some Insect],SmallStat
 Plant,0.4,1,1,1,1,1,0.5,0.5,Melee,Pelt,[],[],[Poison],[Some Earth],SmallStature,Weak physical attacks with Debuff effects.
 Ghost,0.5,0.9,1.1,1,1,1,0.5,0.5,Melee,Pelt,[[1 DispelCut]],[],[Poison Silence Sleep],[Some Dark],NormalStature,Physical attacks with Debuff magic.
 Goblin,1,1.4,1.4,1,1,1,1,1,Melee,Pelt,[[1 Fire]],[],[],None,NormalStature,Normal physical attacks with normal Elemental magic.
-Soldier,1,1.4,1.4,1,1,1,1,1,Melee,Pelt,[[2 Empower] [2 PowerCut]],[],[],None,NormalStature,Physical attacks with ???.
+Soldier,1,1.4,1.3,1,1,1,1,1,Melee,Pelt,[[2 Empower] [2 PowerCut]],[],[],None,NormalStature,Physical attacks with ???.
 Knight,1,1.4,1.4,1,1,1,1,1,Melee,Pelt,[[2 PowerCut]],[],[],None,NormalStature,Physical attacks with ???.
 Imp,1,1.3,1.5,1,1,1,1,1,Melee,Pelt,[],[],[],None,NormalStature,Physical attacks with Debuff effects.
 Zombie,1,1.4,1.4,1,1,1,1,1,Melee,Pelt,[],[],[Poison Silence Sleep],[Some Dark],NormalStature,Physical attacks with Status effects.
