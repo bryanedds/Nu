@@ -1,20 +1,20 @@
-Type,ArchetypeType,LevelBase,AnimationSheet,PortraitOpt,WeaponOpt,ArmorOpt,Accessories,TechProbabilityOpt,GoldScalar,ExpScalar,Description
-[Ally Jinn],Fighter,1,[Field Jinn],[Some [Field JinnPortrait]],[Some ShortSword],[Some TinMail],[],None,1,1,The main protagonist.
-[Ally Shade],Ninja,1,[Field Shade],[Some [Field ShadePortrait]],[Some Dagger],[Some CottonVest],[],None,1,1,A ninja from an unknown land.
-[Ally Mael],Wizard,1,[Field Mael],[Some [Field MaelPortrait]],[Some OakRod],[Some CottonRobe],[],None,1,1,A dark wizard from the Caelia.
-[Ally Riain],Conjuror,1,[Field Riain],[Some [Field RiainPortrait]],[Some OakRod],[Some CottonRobe],[],None,1,1,A conjuror whose origin eludes all.
-[Ally Peric],Cleric,1,[Field Peric],[Some [Field PericPortrait]],[Some OakBow],[Some CottonVest],[],None,1,1,A cleric exiled from the Kingdom of Vorpa.
-[Enemy DebugGoblin],Goblin,4,[Field DebugGoblin],None,None,[Some StoneHide],[],[Some 0.5],1,1,An enemy for battle debugging.
-[Enemy DarkBat],Bat,1,[Castle DarkBat],None,[Some Paws],None,[],[Some 0.4],1,1,A bat from the darkest parts of the tomb.
-[Enemy BlueGoblin],Goblin,2,[Castle BlueGoblin],None,[Some Paws],[Some MicroFur],[],[Some 0.5],1,1.25,A minor goblin from the Golobogos Islands.
-[Enemy MadMinotaur],Minotaur,2,[Castle MadMinotaur],None,[Some Paws],None,[],[Some 0.5],1,1.25,A minotaur gone mad with vengeance.
-[Enemy MadTrixter],Trixter,4,[Castle MadTrixter],None,[Some Paws],[Some ThickFur],[],[Some 0.5],10,5,???
-[Enemy LowerGorgon],Gorgon,4,[Castle LowerGorgon],None,[Some Paws],None,[],[Some 0.4],1,1,A gorgon of the Lower Order.
-[Enemy FacelessSoldier],Soldier,5,[Castle FacelessSoldier],None,[Some Paws],None,[],[Some 0.4],1,1,A soldier whose face is long forgotten.
-[Enemy Hawk],Avian,5,[Castle Hawk],None,[Some Paws],None,[],[Some 0.4],1,1,An angry avian.
-[Enemy HeavyArmoros],Armoros,6,[Castle HeavyArmoros],None,[Some Paws],[Some ToughHide],[],[Some 0.5],10,5,The heaviest armoros you’ve ever seen!
-[Enemy PitViper],Snake,6,[Castle PitViper],None,[Some Paws],None,[],[Some 1],1,1,A poisonous pit viper.
-[Enemy Cloak],Shaman,6,[Castle Cloak],None,[Some Paws],None,[],[Some 0.4],1,1,A conjurer of the darkness and malice.
-[Enemy BloodArmoros],Armoros,6,[Castle BloodArmoros],None,[Some Paws],None,[],[Some 0.4],1,1,A long-dead warrior shadow that lives off of blood.
-[Enemy AraneaImplicitum],Arachnos,8,[Castle AraneaImplicitum],None,[Some Paws],[Some StoneHide],[],[Some 0.5],10,5,Demon of Entanglement.
-[Enemy Kyla],Apprentice,1,[Castle Kyla],None,None,None,[],None,1,1,Kyla NPC.
+Type,ArchetypeType,LevelBase,AbsorbCreep,AnimationSheet,PortraitOpt,WeaponOpt,ArmorOpt,Accessories,TechProbabilityOpt,GoldScalar,ExpScalar,Description
+[Ally Jinn],Fighter,1,1,[Field Jinn],[Some [Field JinnPortrait]],[Some ShortSword],[Some TinMail],[],None,1,1,The main protagonist.
+[Ally Shade],Ninja,1,1,[Field Shade],[Some [Field ShadePortrait]],[Some Dagger],[Some CottonVest],[],None,1,1,A ninja from an unknown land.
+[Ally Mael],Wizard,1,1,[Field Mael],[Some [Field MaelPortrait]],[Some OakRod],[Some CottonRobe],[],None,1,1,A dark wizard from the Caelia.
+[Ally Riain],Conjuror,1,1,[Field Riain],[Some [Field RiainPortrait]],[Some OakRod],[Some CottonRobe],[],None,1,1,A conjuror whose origin eludes all.
+[Ally Peric],Cleric,1,1,[Field Peric],[Some [Field PericPortrait]],[Some OakBow],[Some CottonVest],[],None,1,1,A cleric exiled from the Kingdom of Vorpa.
+[Enemy DebugGoblin],Goblin,4,1,[Field DebugGoblin],None,None,[Some StoneHide],[],[Some 0.5],1,1,An enemy for battle debugging.
+[Enemy DarkBat],Bat,1,1,[Castle DarkBat],None,[Some Paws],None,[],[Some 0.4],1,1,A bat from the darkest parts of the tomb.
+[Enemy BlueGoblin],Goblin,2,1,[Castle BlueGoblin],None,[Some Paws],[Some MicroFur],[],[Some 0.5],1,1.25,A minor goblin from the Golobogos Islands.
+[Enemy MadMinotaur],Minotaur,2,1,[Castle MadMinotaur],None,[Some Paws],None,[],[Some 0.5],1,1.25,A minotaur gone mad with vengeance.
+[Enemy MadTrixter],Trixter,4,1,[Castle MadTrixter],None,[Some Paws],[Some ThickFur],[],[Some 0.5],10,5,???
+[Enemy LowerGorgon],Gorgon,4,1,[Castle LowerGorgon],None,[Some Paws],None,[],[Some 0.4],1,1,A gorgon of the Lower Order.
+[Enemy FacelessSoldier],Soldier,5,1,[Castle FacelessSoldier],None,[Some Paws],None,[],[Some 0.4],1,1,A soldier whose face is long forgotten.
+[Enemy Hawk],Avian,5,1,[Castle Hawk],None,[Some Paws],None,[],[Some 0.4],1,1,An angry avian.
+[Enemy HeavyArmoros],Armoros,6,1,[Castle HeavyArmoros],None,[Some Paws],[Some ToughHide],[],[Some 0.5],10,5,The heaviest armoros you’ve ever seen!
+[Enemy PitViper],Snake,6,1,[Castle PitViper],None,[Some Paws],None,[],[Some 1],1,1,A poisonous pit viper.
+[Enemy Cloak],Shaman,6,1,[Castle Cloak],None,[Some Paws],None,[],[Some 0.4],1,1,A conjurer of the darkness and malice.
+[Enemy BloodArmoros],Armoros,6,1,[Castle BloodArmoros],None,[Some Paws],None,[],[Some 0.4],1,1,A long-dead warrior shadow that lives off of blood.
+[Enemy AraneaImplicitum],Arachnos,8,1,[Castle AraneaImplicitum],None,[Some Paws],[Some StoneHide],[],[Some 0.5],10,5,Demon of Entanglement.
+[Enemy Kyla],Apprentice,1,1,[Castle Kyla],None,None,None,[],None,1,1,Kyla NPC.
