@@ -665,23 +665,21 @@ module OmniSeedState =
         private
             { RandSeedState : uint64 }
 
-    let rotate isFade fieldType state =
-        if not isFade then
-            match fieldType with
-            | EmptyField | DebugField | TombOuter | TombGround | TombBasement
-            | CastleConnector | ForestConnector | FactoryConnector | MountainConnector | DeadSeaConnector
-            | RuinsConnector | Castle2Connector | DesertConnector | SeasonsConnector | VolcanoConnector -> state.RandSeedState
-            | Castle n -> state.RandSeedState <<< n
-            | Forest n -> state.RandSeedState <<< n + 6
-            | Factory n -> state.RandSeedState <<< n + 12
-            | Mountain n -> state.RandSeedState <<< n + 18
-            | DeadSea n -> state.RandSeedState <<< n + 24
-            | Ruins n -> state.RandSeedState <<< n + 30
-            | Castle2 n -> state.RandSeedState <<< n + 36
-            | Desert n -> state.RandSeedState <<< n + 42
-            | Seasons n -> state.RandSeedState <<< n + 48
-            | Volcano n -> state.RandSeedState <<< n + 54
-        else state.RandSeedState <<< 60
+    let rotate fieldType state =
+        match fieldType with
+        | EmptyField | DebugField | TombOuter | TombGround | TombBasement
+        | CastleConnector | ForestConnector | FactoryConnector | MountainConnector | DeadSeaConnector
+        | RuinsConnector | Castle2Connector | DesertConnector | SeasonsConnector | VolcanoConnector -> state.RandSeedState
+        | Castle n -> state.RandSeedState <<< n
+        | Forest n -> state.RandSeedState <<< n + 6
+        | Factory n -> state.RandSeedState <<< n + 12
+        | Mountain n -> state.RandSeedState <<< n + 18
+        | DeadSea n -> state.RandSeedState <<< n + 24
+        | Ruins n -> state.RandSeedState <<< n + 30
+        | Castle2 n -> state.RandSeedState <<< n + 36
+        | Desert n -> state.RandSeedState <<< n + 42
+        | Seasons n -> state.RandSeedState <<< n + 48
+        | Volcano n -> state.RandSeedState <<< n + 54
 
     let makeFromSeedState randSeedState =
         { RandSeedState = randSeedState }
@@ -908,7 +906,7 @@ module FieldData =
         | _ -> (prop, treasures, rand)
 
     let tryGetTileMap omniSeedState fieldData =
-        let rotatedSeedState = OmniSeedState.rotate false fieldData.FieldType omniSeedState
+        let rotatedSeedState = OmniSeedState.rotate fieldData.FieldType omniSeedState
         let memoKey = (rotatedSeedState, fieldData.FieldType)
         match Map.tryFind memoKey tileMapsMemoized with
         | None ->
@@ -936,7 +934,7 @@ module FieldData =
         | tileMapOpt -> tileMapOpt
 
     let getPropObjects omniSeedState fieldData =
-        let rotatedSeedState = OmniSeedState.rotate false fieldData.FieldType omniSeedState
+        let rotatedSeedState = OmniSeedState.rotate fieldData.FieldType omniSeedState
         let memoKey = (rotatedSeedState, fieldData.FieldType)
         match Map.tryFind memoKey propObjectsMemoized with
         | None ->
@@ -957,7 +955,7 @@ module FieldData =
         | Some propObjects -> propObjects
 
     let getPropDescriptors omniSeedState fieldData =
-        let rotatedSeedState = OmniSeedState.rotate false fieldData.FieldType omniSeedState
+        let rotatedSeedState = OmniSeedState.rotate fieldData.FieldType omniSeedState
         let memoKey = (rotatedSeedState, fieldData.FieldType)
         match Map.tryFind memoKey propDescriptorsMemoized with
         | None ->
