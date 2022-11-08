@@ -12,9 +12,10 @@ type [<ReferenceEquality; NoComparison>] Teammate =
       PartyIndexOpt : int option
       ArchetypeType : ArchetypeType
       CharacterType : CharacterType
+      ExpPoints : int
+      AbsorbCreep : single
       HitPoints : int
       TechPoints : int
-      ExpPoints : int
       WeaponOpt : WeaponType option
       ArmorOpt : ArmorType option
       Accessories : AccessoryType list }
@@ -27,9 +28,9 @@ type [<ReferenceEquality; NoComparison>] Teammate =
     member this.TechPointsMax = Algorithms.techPointsMax this.ArmorOpt this.ArchetypeType this.Level
     member this.Power = Algorithms.power this.WeaponOpt Map.empty this.ArchetypeType this.Level // no statuses outside battle
     member this.Magic = Algorithms.magic this.WeaponOpt Map.empty this.ArchetypeType this.Level // no statuses outside battle
-    member this.Shield effectType = Algorithms.shield effectType this.Accessories Map.empty this.ArchetypeType this.Level // no statuses outside battle
+    member this.Shield effectType absordCreep = Algorithms.shield effectType absordCreep this.Accessories Map.empty this.ArchetypeType this.Level // no statuses outside battle
     member this.Defense = Algorithms.defense this.Accessories Map.empty this.ArchetypeType this.Level // no statuses outside battle
-    member this.Absorb = Algorithms.absorb this.Accessories Map.empty this.ArchetypeType this.Level // no statuses outside battle
+    member this.Absorb = Algorithms.absorb this.AbsorbCreep this.Accessories Map.empty this.ArchetypeType this.Level // no statuses outside battle
     member this.Techs = Algorithms.techs this.ArchetypeType this.Level
 
     static member equipWeaponOpt weaponTypeOpt (teammate : Teammate) =
@@ -113,9 +114,10 @@ type [<ReferenceEquality; NoComparison>] Teammate =
           TeamIndex = index
           PartyIndexOpt = Some index
           CharacterType = characterType
+          ExpPoints = expPoints
+          AbsorbCreep = character.AbsorbCreep
           HitPoints = Algorithms.hitPointsMax armorOpt archetypeType level
           TechPoints = Algorithms.techPointsMax armorOpt archetypeType level
-          ExpPoints = expPoints
           WeaponOpt = weaponOpt
           ArmorOpt = armorOpt
           Accessories = accessories }

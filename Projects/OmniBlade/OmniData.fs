@@ -810,6 +810,7 @@ type [<NoEquality; NoComparison>] CharacterData =
     { CharacterType : CharacterType // key
       ArchetypeType : ArchetypeType
       LevelBase : int
+      AbsorbCreep : single
       AnimationSheet : Image AssetTag
       PortraitOpt : Image AssetTag option
       WeaponOpt : WeaponType option

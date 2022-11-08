@@ -12,6 +12,7 @@ open Nu
 type [<ReferenceEquality; NoComparison>] CharacterState =
     { ArchetypeType : ArchetypeType
       ExpPoints : int
+      AbsorbCreep : single
       WeaponOpt : WeaponType option
       ArmorOpt : ArmorType option
       Accessories : AccessoryType list
@@ -32,9 +33,9 @@ type [<ReferenceEquality; NoComparison>] CharacterState =
     member this.TechPointsMax = Algorithms.techPointsMax this.ArmorOpt this.ArchetypeType this.Level
     member this.Power = Algorithms.power this.WeaponOpt this.Statuses this.ArchetypeType this.Level
     member this.Magic = Algorithms.magic this.WeaponOpt this.Statuses this.ArchetypeType this.Level
-    member this.Shield effectType = Algorithms.shield effectType this.Accessories this.Statuses this.ArchetypeType this.Level
+    member this.Shield effectType = Algorithms.shield effectType this.AbsorbCreep this.Accessories this.Statuses this.ArchetypeType this.Level
     member this.Defense = Algorithms.defense this.Accessories this.Statuses this.ArchetypeType this.Level
-    member this.Absorb = Algorithms.absorb this.Accessories this.Statuses this.ArchetypeType this.Level
+    member this.Absorb = Algorithms.absorb this.AbsorbCreep this.Accessories this.Statuses this.ArchetypeType this.Level
     member this.AffinityOpt = Algorithms.affinityOpt this.Accessories this.ArchetypeType this.Level
     member this.Immunities = Algorithms.immunities this.Accessories this.ArchetypeType this.Level
     member this.Techs = Algorithms.techs this.ArchetypeType this.Level
@@ -88,10 +89,12 @@ type [<ReferenceEquality; NoComparison>] CharacterState =
 
     static member make (characterData : CharacterData) hitPoints techPoints expPoints weaponOpt armorOpt accessories =
         let archetypeType = characterData.ArchetypeType
+        let absorbCreep = characterData.AbsorbCreep
         let level = Algorithms.expPointsToLevel expPoints
         let characterState =
             { ArchetypeType = archetypeType
               ExpPoints = expPoints
+              AbsorbCreep = absorbCreep
               WeaponOpt = weaponOpt
               ArmorOpt = armorOpt
               Accessories = accessories
@@ -110,6 +113,7 @@ type [<ReferenceEquality; NoComparison>] CharacterState =
         let characterState =
             { ArchetypeType = Apprentice
               ExpPoints = 0
+              AbsorbCreep = 1.0f
               WeaponOpt = None
               ArmorOpt = None
               Accessories = []
@@ -429,8 +433,7 @@ module Character =
             // TODO: pull this from TechData.EnemyScalarOpt.
             if source.IsEnemy then
                 match techData.TechType with
-                | Critical -> 1.25f
-                | Slash -> 1.25f
+                | Slash -> 1.333f
                 | TechType.Flame -> 1.45f
                 | Snowball -> 1.125f
                 | Cure -> 1.5f
