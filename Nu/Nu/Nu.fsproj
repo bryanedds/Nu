@@ -137,6 +137,7 @@
     <Compile Include="World\WorldTmxMap.fs" />
     <Compile Include="World\WorldDispatchers.fs" />
     <Compile Include="World\WorldContent.fs" />
+    <Compile Include="World\WorldForge.fs" />
     <Compile Include="World\WorldScripting.fs" />
     <Compile Include="World\WorldModule2.fs" />
     <Compile Include="World\WorldConsole.fs" />

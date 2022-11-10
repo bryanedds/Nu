@@ -1190,6 +1190,61 @@ module GameDispatcherModule =
         abstract member View : 'model * Game * World -> View
         default this.View (_, _, _) = View.empty
 
+    and [<AbstractClass>] GameDispatcher'<'model, 'message, 'command> (makeInitial : World -> 'model) =
+        inherit GameDispatcher ()
+
+        new (initial : 'model) =
+            GameDispatcher'<'model, 'message, 'command> (fun _ -> initial)
+
+        member this.GetModel (game : Game) world : 'model =
+            game.GetModelGeneric<'model> world
+
+        member this.SetModel (model : 'model) (game : Game) world =
+            game.SetModelGeneric<'model> model world
+
+        member this.Model (game : Game) =
+            lens (nameof this.Model) (this.GetModel game) (flip this.SetModel game) game
+
+        override this.Register (game, world) =
+            let world =
+                let property = World.getGameModelProperty world
+                if property.DesignerType = typeof<unit>
+                then game.SetModelGeneric<'model> (makeInitial world) world
+                else world
+            let channels = this.Channel (this.Model game, game)
+            let world = Signal.processChannels this.Message this.Command (this.Model game) channels game world
+            let forgeOld = match World.getGameForgeOpt world with ValueSome forge -> forge | ValueNone -> GameForge.empty
+            let forge = this.Forge (this.Model game, game)
+            let (screenInitialOpt, world) = Forge.synchronizeGame forgeOld forge game world
+            match screenInitialOpt with
+            | Some screen -> game.SetDesiredScreen (Desire screen) world
+            | None -> game.SetDesiredScreen DesireNone world
+
+        override this.Render (game, world) =
+            let view = this.View (this.GetModel game world, game, world)
+            World.renderView view world
+
+        override this.TrySignal (signalObj, game, world) =
+            match signalObj with
+            | :? Signal<'message, obj> as signal -> game.Signal<'model, 'message, 'command> (match signal with Message message -> msg message | _ -> failwithumf ()) world
+            | :? Signal<obj, 'command> as signal -> game.Signal<'model, 'message, 'command> (match signal with Command command -> cmd command | _ -> failwithumf ()) world
+            | _ -> Log.info "Incorrect signal type returned from event binding."; world
+
+        abstract member Channel : Lens<'model, World> * Game -> Channel<'message, 'command, Game, World> list
+        default this.Channel (_, _) = []
+
+        abstract member Message : 'model * 'message * Game * World -> Signal<'message, 'command> list * 'model
+        default this.Message (model, _, _, _) = just model
+
+        abstract member Command : 'model * 'command * Game * World -> Signal<'message, 'command> list * World
+        default this.Command (_, _, _, world) = just world
+
+        abstract member Forge : Lens<'model, World> * Game -> GameForge
+        default this.Forge (_, world) = GameForge.empty
+
+        abstract member View : 'model * Game * World -> View
+        default this.View (_, _, _) = View.empty
+
 [<AutoOpen>]
 module WorldModule2' =
 

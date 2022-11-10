@@ -108,6 +108,7 @@ module WorldModuleGroup =
 
         static member internal getGroupModelProperty group world = (World.getGroupState group world).Model
         static member internal getGroupModel<'a> group world = (World.getGroupState group world).Model.DesignerValue :?> 'a
+        static member internal getGroupForge group world = (World.getGroupState group world).Forge
         static member internal getGroupDispatcher group world = (World.getGroupState group world).Dispatcher
         static member internal getGroupVisible group world = (World.getGroupState group world).Visible
         static member internal getGroupPersistent group world = (World.getGroupState group world).Persistent
@@ -139,6 +140,11 @@ module WorldModuleGroup =
                 let world = World.publishGroupChange (nameof groupState.Model) previous.DesignerValue value group world
                 struct (true, world)
             else struct (false, world)
+
+        static member internal setGroupForgeOpt (value : GroupForge) group world =
+            let screenState = World.getGroupState group world
+            let screenState = { screenState with Forge = value }
+            World.setGroupState screenState group world
 
         static member internal setGroupVisible value group world =
             let groupState = World.getGroupState group world
