@@ -1127,63 +1127,6 @@ module Gaia =
 
     let private handleFormReloadAssets (form : GaiaForm) (_ : EventArgs) =
         addPreUpdater $ fun world ->
-
-            use errorStream = new StringWriter ()
-            let world =
-                try
-                    let workingDirPath = Globals.EditorState.TargetDir + "/../.."
-                    let fsprojFilePaths = Array.ofSeq (Directory.EnumerateFiles (workingDirPath, "*.fsproj"))
-                    match fsprojFilePaths with
-                    | [||] -> Log.trace ("Unable to find fsproj file in '" + workingDirPath + "'."); world
-                    | _ ->
-                        let fsprojFilePath = fsprojFilePaths.[0]
-                        Log.info ("Updating code from " + fsprojFilePath + "...")
-                        let fsprojFileLines = File.ReadAllLines fsprojFilePath
-                        let fsprojDllFilePaths =
-                            // imagine manually parsing an xml file...
-                            fsprojFileLines |>
-                            Array.map (fun line -> line.Trim ()) |>
-                            Array.filter (fun line -> line.Contains "HintPath" && (line.Contains ".dll" || line.Contains ".exe")) |>
-                            Array.map (fun line -> line.Replace ("<HintPath>", "")) |>
-                            Array.map (fun line -> line.Replace ("</HintPath>", "")) |>
-                            Array.map (fun line -> line.Replace ("=", "")) |>
-                            Array.map (fun line -> line.Replace ("\"", "")) |>
-                            Array.map (fun line -> line.Replace ("\\", "/")) |>
-                            Array.map (fun line -> line.Trim ())
-                        let fsprojFsFilePaths =
-                            // what kind of idiot would do that?
-                            fsprojFileLines |>
-                            Array.map (fun line -> line.Trim ()) |>
-                            Array.filter (fun line -> line.Contains "Compile Include" && line.Contains ".fs") |>
-                            Array.filter (fun line -> not (line.Contains "Program.fs")) |>
-                            Array.map (fun line -> line.Replace ("<Compile Include", "")) |>
-                            Array.map (fun line -> line.Replace ("/>", "")) |>
-                            Array.map (fun line -> line.Replace ("=", "")) |>
-                            Array.map (fun line -> line.Replace ("\"", "")) |>
-                            Array.map (fun line -> line.Replace ("\\", "/")) |>
-                            Array.map (fun line -> line.Trim ())
-                        let fsxFileString =
-                            // better check git blame to see who is responsible for this foolishness
-                            String.Join ("\n", Array.map (fun (filePath : string) -> "#r \"../../" + filePath + "\"") fsprojDllFilePaths) + "\n" +
-                            "#r \"../../../../Nu/Nu.Math/bin/x64/Debug/Nu.Math.dll\"\n" +
-                            "#r \"../../../../Nu/Nu.Pipe/bin/Debug/Nu.Pipe.exe\"\n" +
-                            "#r \"../../../../Nu/Nu/bin/Debug/Nu.exe\"\n" +
-                            "\n" +
-                            String.Join ("\n", Array.map (fun (filePath : string) -> "#load \"../../" + filePath + "\"") fsprojFsFilePaths)
-                        let defaultArgs = [|"fsi.exe"; "--debug"; "--noninteractive"; "--nologo"; "--multiemit"; "--gui-"|]
-                        use inStream = new StringReader ""
-                        use outStream = new StringWriter ()
-                        let fsiConfig = Shell.FsiEvaluationSession.GetDefaultConfiguration ()
-                        use session = Shell.FsiEvaluationSession.Create (fsiConfig, defaultArgs, inStream, outStream, errorStream, true)
-                        session.EvalInteraction fsxFileString 
-                        let world = World.updateLateBindings2 session.DynamicAssemblies world
-                        Log.info "Code updated."
-                        world
-                with exn ->
-                    let error = scstring errorStream
-                    Log.trace ("Failed to update code due to: " + if error.Length <> 0 then scstring error else scstring exn)
-                    world
-
             match tryReloadAssetGraph form world with
             | (Right assetGraph, world) ->
                 let prettyPrinter = (SyntaxAttribute.defaultValue typeof<AssetGraph>).PrettyPrinter
@@ -1191,6 +1134,63 @@ module Gaia =
                 world
             | (Left error, world) ->
                 MessageBox.Show ("Asset reload error due to: " + error + "'.", "Asset reload error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+                world
+
+    let private handleFormReloadCode (_ : GaiaForm) (_ : EventArgs) =
+        addPreUpdater $ fun world ->
+            use errorStream = new StringWriter ()
+            try
+                let workingDirPath = Globals.EditorState.TargetDir + "/../.."
+                let fsprojFilePaths = Array.ofSeq (Directory.EnumerateFiles (workingDirPath, "*.fsproj"))
+                match fsprojFilePaths with
+                | [||] -> Log.trace ("Unable to find fsproj file in '" + workingDirPath + "'."); world
+                | _ ->
+                    let fsprojFilePath = fsprojFilePaths.[0]
+                    Log.info ("Updating code from " + fsprojFilePath + "...")
+                    let fsprojFileLines = File.ReadAllLines fsprojFilePath
+                    let fsprojDllFilePaths =
+                        // imagine manually parsing an xml file...
+                        fsprojFileLines |>
+                        Array.map (fun line -> line.Trim ()) |>
+                        Array.filter (fun line -> line.Contains "HintPath" && (line.Contains ".dll" || line.Contains ".exe")) |>
+                        Array.map (fun line -> line.Replace ("<HintPath>", "")) |>
+                        Array.map (fun line -> line.Replace ("</HintPath>", "")) |>
+                        Array.map (fun line -> line.Replace ("=", "")) |>
+                        Array.map (fun line -> line.Replace ("\"", "")) |>
+                        Array.map (fun line -> line.Replace ("\\", "/")) |>
+                        Array.map (fun line -> line.Trim ())
+                    let fsprojFsFilePaths =
+                        // what kind of idiot would do that?
+                        fsprojFileLines |>
+                        Array.map (fun line -> line.Trim ()) |>
+                        Array.filter (fun line -> line.Contains "Compile Include" && line.Contains ".fs") |>
+                        Array.filter (fun line -> not (line.Contains "Program.fs")) |>
+                        Array.map (fun line -> line.Replace ("<Compile Include", "")) |>
+                        Array.map (fun line -> line.Replace ("/>", "")) |>
+                        Array.map (fun line -> line.Replace ("=", "")) |>
+                        Array.map (fun line -> line.Replace ("\"", "")) |>
+                        Array.map (fun line -> line.Replace ("\\", "/")) |>
+                        Array.map (fun line -> line.Trim ())
+                    let fsxFileString =
+                        // better check git blame to see who is responsible for this foolishness
+                        String.Join ("\n", Array.map (fun (filePath : string) -> "#r \"../../" + filePath + "\"") fsprojDllFilePaths) + "\n" +
+                        "#r \"../../../../Nu/Nu.Math/bin/x64/Debug/Nu.Math.dll\"\n" +
+                        "#r \"../../../../Nu/Nu.Pipe/bin/Debug/Nu.Pipe.exe\"\n" +
+                        "#r \"../../../../Nu/Nu/bin/Debug/Nu.exe\"\n" +
+                        "\n" +
+                        String.Join ("\n", Array.map (fun (filePath : string) -> "#load \"../../" + filePath + "\"") fsprojFsFilePaths)
+                    let defaultArgs = [|"fsi.exe"; "--debug"; "--noninteractive"; "--nologo"; "--multiemit"; "--gui-"|]
+                    use inStream = new StringReader ""
+                    use outStream = new StringWriter ()
+                    let fsiConfig = Shell.FsiEvaluationSession.GetDefaultConfiguration ()
+                    use session = Shell.FsiEvaluationSession.Create (fsiConfig, defaultArgs, inStream, outStream, errorStream, true)
+                    session.EvalInteraction fsxFileString 
+                    let world = World.updateLateBindings2 session.DynamicAssemblies world
+                    Log.info "Code updated."
+                    world
+            with exn ->
+                let error = scstring errorStream
+                Log.trace ("Failed to update code due to: " + if error.Length <> 0 then scstring error else scstring exn)
                 world
 
     let private handleFormGroupTabDeselected (form : GaiaForm) (_ : EventArgs) =
