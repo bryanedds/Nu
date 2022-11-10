@@ -1166,17 +1166,17 @@ module Gaia =
                             // better check git blame to see who is responsible for this foolishness
                             String.Join ("\n", Array.map (fun (filePath : string) -> "#r \"../../" + filePath + "\"") fsprojDllFilePaths) + "\n" +
                             "#r \"../../../../Nu/Nu.Math/bin/x64/Debug/Nu.Math.dll\"\n" +
-                            "#r \"../../../../Nu/Nu.Pipe/bin/Debug/Nu.Pipe.dll\"\n" +
+                            "#r \"../../../../Nu/Nu.Pipe/bin/Debug/Nu.Pipe.exe\"\n" +
                             "#r \"../../../../Nu/Nu/bin/Debug/Nu.exe\"\n" +
                             "\n" +
                             String.Join ("\n", Array.map (fun (filePath : string) -> "#load \"../../" + filePath + "\"") fsprojFsFilePaths)
-                        let defaultArgs = [|"fsi.exe"; "--debug"; "--multiemit"; "--noninteractive"; "--nologo"; "--gui-"|]
+                        let defaultArgs = [|"fsi.exe"; "--debug"; "--noninteractive"; "--nologo"; "--multiemit"; "--gui-"|]
                         use inStream = new StringReader ""
                         use outStream = new StringWriter ()
                         let fsiConfig = Shell.FsiEvaluationSession.GetDefaultConfiguration ()
                         use session = Shell.FsiEvaluationSession.Create (fsiConfig, defaultArgs, inStream, outStream, errorStream, true)
                         session.EvalInteraction fsxFileString 
-                        let world = World.updateInternalReferences session.DynamicAssemblies world
+                        let world = World.updateLateBindings2 session.DynamicAssemblies world
                         Log.info "Code updated."
                         world
                 with exn ->
