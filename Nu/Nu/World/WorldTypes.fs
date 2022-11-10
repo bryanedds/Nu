@@ -102,8 +102,11 @@ module WorldTypes =
                 | :? SortPriority as that -> (this :> SortPriority IComparable).CompareTo that
                 | _ -> failwithumf ()
 
+    /// Generalized interface tag for late-bound objects.
+    and LateBindings = interface end
+
     /// Generalized interface tag for dispatchers.
-    and Dispatcher = interface end
+    and Dispatcher = inherit LateBindings
 
     /// Generalized interface tag for simulant dispatchers.
     and SimulantDispatcher () = interface Dispatcher
@@ -345,6 +348,8 @@ module WorldTypes =
         /// Whether a facet participates in a physics system.
         member this.Physical = physical
 
+        interface LateBindings
+
     /// Generalized interface for simulant state.
     and SimulantState =
         interface
@@ -370,9 +375,6 @@ module WorldTypes =
           ScriptFrame : Scripting.DeclarationFrame
           Order : int64
           Id : Guid }
-
-        interface SimulantState with
-            member this.GetXtension () = this.Xtension
 
         /// Make a game state value.
         static member make (dispatcher : GameDispatcher) =
@@ -428,6 +430,9 @@ module WorldTypes =
         static member copy this =
             { this with GameState.Dispatcher = this.Dispatcher }
 
+        interface SimulantState with
+            member this.GetXtension () = this.Xtension
+
     /// Hosts the ongoing state of a screen.
     and [<NoEquality; NoComparison; CLIMutable>] ScreenState =
         { Dispatcher : ScreenDispatcher
@@ -444,9 +449,6 @@ module WorldTypes =
           Order : int64
           Id : uint64
           Name : string }
-
-        interface SimulantState with
-            member this.GetXtension () = this.Xtension
 
         /// Make a screen state value.
         static member make nameOpt (dispatcher : ScreenDispatcher) ecs =
@@ -497,6 +499,9 @@ module WorldTypes =
         static member copy this =
             { this with ScreenState.Dispatcher = this.Dispatcher }
 
+        interface SimulantState with
+            member this.GetXtension () = this.Xtension
+
     /// Hosts the ongoing state of a group.
     and [<NoEquality; NoComparison; CLIMutable>] GroupState =
         { Dispatcher : GroupDispatcher
@@ -508,9 +513,6 @@ module WorldTypes =
           Order : int64
           Id : uint64
           Name : string }
-
-        interface SimulantState with
-            member this.GetXtension () = this.Xtension
 
         /// Make a group state value.
         static member make nameOpt (dispatcher : GroupDispatcher) =
@@ -556,6 +558,9 @@ module WorldTypes =
         static member copy this =
             { this with GroupState.Dispatcher = this.Dispatcher }
 
+        interface SimulantState with
+            member this.GetXtension () = this.Xtension
+
     /// Hosts the ongoing state of an entity.
     /// OPTIMIZATION: ScriptFrameOpt is instantiated only when needed.
     and [<NoEquality; NoComparison; CLIMutable>] EntityState =
@@ -576,9 +581,6 @@ module WorldTypes =
           mutable Order : int64
           Id : uint64
           Surnames : string array }
-
-        interface SimulantState with
-            member this.GetXtension () = this.Xtension
 
         /// Make an entity state value.
         static member make imperative surnamesOpt overlayNameOpt (dispatcher : EntityDispatcher) =
@@ -697,6 +699,9 @@ module WorldTypes =
         member this.Bottom with get () = this.Transform.Bottom and set value = this.Transform.Bottom <- value
         member this.PerimeterOriented with get () = this.Transform.PerimeterOriented
         member this.Bounds with get () = this.Transform.Bounds
+
+        interface SimulantState with
+            member this.GetXtension () = this.Xtension
 
     /// The game type that hosts the various screens used to navigate through a game.
     and Game (gameAddress) =
@@ -1071,11 +1076,11 @@ module WorldTypes =
     /// I would prefer this type to be inlined in World, but it has been extracted to its own white-box
     /// type for efficiency reasons.
     and [<ReferenceEquality; NoComparison>] internal Dispatchers =
-        { GameDispatchers : Map<string, GameDispatcher>
-          ScreenDispatchers : Map<string, ScreenDispatcher>
-          GroupDispatchers : Map<string, GroupDispatcher>
+        { Facets : Map<string, Facet>
           EntityDispatchers : Map<string, EntityDispatcher>
-          Facets : Map<string, Facet>
+          GroupDispatchers : Map<string, GroupDispatcher>
+          ScreenDispatchers : Map<string, ScreenDispatcher>
+          GameDispatchers : Map<string, GameDispatcher>
           TryGetExtrinsic : string -> World ScriptingTrinsic option
           UpdateEntityInEntityTree : bool -> bool -> Presence -> Box3 -> Entity -> World -> World -> World
           RebuildQuadtree : World -> Entity Quadtree
@@ -1320,6 +1325,8 @@ module WorldTypes =
             let instances = types |> Array.map (fun ty -> (ty.Name, Activator.CreateInstance ty :?> 'a)) 
             Array.toList instances
 
+        interface LateBindings
+
 /// Represents an unsubscription operation for an event.
 type Unsubscription = WorldTypes.Unsubscription
 
@@ -1331,6 +1338,9 @@ type AmbientChangeData = WorldTypes.AmbientChangeData
 
 /// The data required to execution screen splashing.
 type Splash = WorldTypes.Splash
+
+/// Generalized interface tag for late-bound objects.
+type LateBindings = WorldTypes.LateBindings
 
 /// Generalized interface tag for dispatchers.
 type Dispatcher = WorldTypes.Dispatcher

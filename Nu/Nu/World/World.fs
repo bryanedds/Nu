@@ -3,6 +3,7 @@
 
 namespace Nu
 open System
+open System.Reflection
 open System.Threading
 open SDL2
 open Prime
@@ -480,11 +481,11 @@ module WorldModule3 =
 
             // make the world's dispatchers
             let dispatchers =
-                { GameDispatchers = Map.ofList [defaultGameDispatcher]
-                  ScreenDispatchers = World.makeDefaultScreenDispatchers ()
-                  GroupDispatchers = World.makeDefaultGroupDispatchers ()
+                { Facets = World.makeDefaultFacets ()
                   EntityDispatchers = World.makeDefaultEntityDispatchers ()
-                  Facets = World.makeDefaultFacets ()
+                  GroupDispatchers = World.makeDefaultGroupDispatchers ()
+                  ScreenDispatchers = World.makeDefaultScreenDispatchers ()
+                  GameDispatchers = Map.ofList [defaultGameDispatcher]
                   TryGetExtrinsic = World.tryGetExtrinsic
                   UpdateEntityInEntityTree = World.updateEntityInEntityTree
                   RebuildQuadtree = World.rebuildQuadtree
@@ -555,21 +556,21 @@ module WorldModule3 =
                     
                 // make plug-in facets and dispatchers
                 let pluginFacets = plugin.Birth<Facet> ()
-                let pluginGameDispatchers = plugin.Birth<GameDispatcher> ()
-                let pluginScreenDispatchers = plugin.Birth<ScreenDispatcher> ()
-                let pluginGroupDispatchers = plugin.Birth<GroupDispatcher> ()
                 let pluginEntityDispatchers = plugin.Birth<EntityDispatcher> ()
+                let pluginGroupDispatchers = plugin.Birth<GroupDispatcher> ()
+                let pluginScreenDispatchers = plugin.Birth<ScreenDispatcher> ()
+                let pluginGameDispatchers = plugin.Birth<GameDispatcher> ()
 
                 // make the default game dispatcher
                 let defaultGameDispatcher = World.makeDefaultGameDispatcher ()
 
                 // make the world's dispatchers
                 let dispatchers =
-                    { GameDispatchers = Map.addMany pluginGameDispatchers (Map.ofList [defaultGameDispatcher])
-                      ScreenDispatchers = Map.addMany pluginScreenDispatchers (World.makeDefaultScreenDispatchers ())
-                      GroupDispatchers = Map.addMany pluginGroupDispatchers (World.makeDefaultGroupDispatchers ())
+                    { Facets = Map.addMany pluginFacets (World.makeDefaultFacets ())
                       EntityDispatchers = Map.addMany pluginEntityDispatchers (World.makeDefaultEntityDispatchers ())
-                      Facets = Map.addMany pluginFacets (World.makeDefaultFacets ())
+                      GroupDispatchers = Map.addMany pluginGroupDispatchers (World.makeDefaultGroupDispatchers ())
+                      ScreenDispatchers = Map.addMany pluginScreenDispatchers (World.makeDefaultScreenDispatchers ())
+                      GameDispatchers = Map.addMany pluginGameDispatchers (Map.ofList [defaultGameDispatcher])
                       TryGetExtrinsic = World.tryGetExtrinsic
                       UpdateEntityInEntityTree = World.updateEntityInEntityTree
                       RebuildQuadtree = World.rebuildQuadtree
@@ -671,3 +672,54 @@ module WorldModule3 =
                 | Right world -> World.run4 tautology sdlDeps Live world
                 | Left error -> Log.trace error; Constants.Engine.FailureExitCode
             | Left error -> Log.trace error; Constants.Engine.FailureExitCode
+
+        /// Update internal references using the given assemblies.
+        static member updateInternalReferences (assemblies : Assembly array) world =
+            let pluginType =
+                assemblies |>
+                Array.map (fun assembly -> assembly.GetTypes ()) |>
+                Array.concat |>
+                Array.filter (fun ty -> ty.IsSubclassOf typeof<NuPlugin>) |>
+                Array.filter (fun ty -> not ty.IsAbstract) |>
+                Array.filter (fun ty -> ty.GetConstructors () |> Seq.exists (fun ctor -> ctor.GetParameters().Length = 0)) |>
+                Array.head
+            let plugin = Activator.CreateInstance pluginType :?> NuPlugin
+            let pluginFacets = plugin.Birth<Facet> ()
+            let pluginEntityDispatchers = plugin.Birth<EntityDispatcher> ()
+            let pluginGroupDispatchers = plugin.Birth<GroupDispatcher> ()
+            let pluginScreenDispatchers = plugin.Birth<ScreenDispatcher> ()
+            let pluginGameDispatchers = plugin.Birth<GameDispatcher> ()
+            let world =
+                { world with WorldExtension = { world.WorldExtension with Plugin = plugin }}
+            let world =
+                List.fold (fun world (facetName, facet) ->
+                    { world with WorldExtension = { world.WorldExtension with Dispatchers = { world.WorldExtension.Dispatchers with Facets = Map.add facetName facet world.WorldExtension.Dispatchers.Facets }}})
+                    world pluginFacets
+            let world =
+                List.fold (fun world (entityDispatcherName, entityDispatcher) ->
+                    { world with WorldExtension = { world.WorldExtension with Dispatchers = { world.WorldExtension.Dispatchers with EntityDispatchers = Map.add entityDispatcherName entityDispatcher world.WorldExtension.Dispatchers.EntityDispatchers }}})
+                    world pluginEntityDispatchers
+            let world =
+                List.fold (fun world (groupDispatcherName, groupDispatcher) ->
+                    { world with WorldExtension = { world.WorldExtension with Dispatchers = { world.WorldExtension.Dispatchers with GroupDispatchers = Map.add groupDispatcherName groupDispatcher world.WorldExtension.Dispatchers.GroupDispatchers }}})
+                    world pluginGroupDispatchers
+            let world =
+                List.fold (fun world (screenDispatcherName, screenDispatcher) ->
+                    { world with WorldExtension = { world.WorldExtension with Dispatchers = { world.WorldExtension.Dispatchers with ScreenDispatchers = Map.add screenDispatcherName screenDispatcher world.WorldExtension.Dispatchers.ScreenDispatchers }}})
+                    world pluginScreenDispatchers
+            let world =
+                List.fold (fun world (gameDispatcherName, gameDispatcher) ->
+                    { world with WorldExtension = { world.WorldExtension with Dispatchers = { world.WorldExtension.Dispatchers with GameDispatchers = Map.add gameDispatcherName gameDispatcher world.WorldExtension.Dispatchers.GameDispatchers }}})
+                    world pluginGameDispatchers
+            let lateBindingses =
+                [|List.map (snd >> cast<LateBindings>) pluginFacets
+                  List.map (snd >> cast<LateBindings>) pluginEntityDispatchers
+                  List.map (snd >> cast<LateBindings>) pluginGroupDispatchers
+                  List.map (snd >> cast<LateBindings>) pluginScreenDispatchers
+                  List.map (snd >> cast<LateBindings>) pluginGameDispatchers|] |>
+                List.concat
+            let world =
+                UMap.fold (fun world simulant _ ->
+                    List.fold (fun world lateBindings -> World.updateLateBindings lateBindings simulant world) world lateBindingses)
+                    world (World.getSimulants world)
+            world

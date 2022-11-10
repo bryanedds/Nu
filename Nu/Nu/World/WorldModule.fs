@@ -226,25 +226,25 @@ module WorldModule =
                     { world.WorldExtension with
                         DestructionListRev = List.remove ((=) simulant) world.WorldExtension.DestructionListRev }}
 
-        /// Get the game dispatchers of the world.
-        static member getGameDispatchers world =
-            world.WorldExtension.Dispatchers.GameDispatchers
-
-        /// Get the screen dispatchers of the world.
-        static member getScreenDispatchers world =
-            world.WorldExtension.Dispatchers.ScreenDispatchers
-
-        /// Get the group dispatchers of the world.
-        static member getGroupDispatchers world =
-            world.WorldExtension.Dispatchers.GroupDispatchers
+        /// Get the facets of the world.
+        static member getFacets world =
+            world.WorldExtension.Dispatchers.Facets
 
         /// Get the entity dispatchers of the world.
         static member getEntityDispatchers world =
             world.WorldExtension.Dispatchers.EntityDispatchers
 
-        /// Get the facets of the world.
-        static member getFacets world =
-            world.WorldExtension.Dispatchers.Facets
+        /// Get the group dispatchers of the world.
+        static member getGroupDispatchers world =
+            world.WorldExtension.Dispatchers.GroupDispatchers
+
+        /// Get the screen dispatchers of the world.
+        static member getScreenDispatchers world =
+            world.WorldExtension.Dispatchers.ScreenDispatchers
+
+        /// Get the game dispatchers of the world.
+        static member getGameDispatchers world =
+            world.WorldExtension.Dispatchers.GameDispatchers
 
     type World with // Metadata
 

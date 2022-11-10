@@ -262,6 +262,50 @@ module WorldSimulantModule =
                 id (Unchecked.defaultof<'a>, DateTimeOffset.MinValue) |>
             Stream.first
 
+        static member internal updateLateBindings (latebindings : LateBindings) (simulant : Simulant) world =
+            match simulant with
+            | :? Entity as entity ->
+                let entityState = World.getEntityState entity world
+                match latebindings with
+                | :? Facet as facet ->
+                    match Array.tryFindIndex (fun (facet2 : Facet) -> getTypeName facet2 = getTypeName facet) entityState.Facets with
+                    | Some index ->
+                        let facets = entityState.Facets.Clone () :?> Facet array
+                        facets.[index] <- facet
+                        let entityState = { entityState with Facets = Array.ofSeq entityState.Facets }
+                        World.setEntityState entityState entity world
+                    | None -> world
+                | :? EntityDispatcher as entityDispatcher ->
+                    if getTypeName entityState.Dispatcher = getTypeName entityDispatcher
+                    then World.setEntityState { entityState with Dispatcher = entityDispatcher } entity world
+                    else world
+                | _ -> world
+            | :? Group as group ->
+                let groupState = World.getGroupState group world
+                match latebindings with
+                | :? GroupDispatcher as groupDispatcher ->
+                    if getTypeName groupState.Dispatcher = getTypeName groupDispatcher
+                    then World.setGroupState { groupState with Dispatcher = groupDispatcher } group world
+                    else world
+                | _ -> world
+            | :? Screen as screen ->
+                let screenState = World.getScreenState screen world
+                match latebindings with
+                | :? ScreenDispatcher as screenDispatcher ->
+                    if getTypeName screenState.Dispatcher = getTypeName screenDispatcher
+                    then World.setScreenState { screenState with Dispatcher = screenDispatcher } screen world
+                    else world
+                | _ -> world
+            | :? Game ->
+                let gameState = World.getGameState world
+                match latebindings with
+                | :? GameDispatcher as gameDispatcher ->
+                    if getTypeName gameState.Dispatcher = getTypeName gameDispatcher
+                    then World.setGameState { gameState with Dispatcher = gameDispatcher } world
+                    else world
+                | _ -> world
+            | _ -> failwithumf ()
+
         /// Bind the left property to the right property.
         static member bind (left : Lens<'a, World>) (right : Lens<'a, World>) world =
             if isNull (left.This :> obj) then failwithumf ()
