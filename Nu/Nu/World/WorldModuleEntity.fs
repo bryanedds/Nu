@@ -77,7 +77,7 @@ module WorldModuleEntity =
             | _ ->
                 if entityStateOpt.Imperative then entity.EntityStateOpt <- entityStateOpt
                 entityStateOpt
-    
+
         static member private entityStateFinder (entity : Entity) world =
             let entityStateOpt = entity.EntityStateOpt
             if isNull (entityStateOpt :> obj) || entityStateOpt.Invalidated
@@ -739,7 +739,7 @@ module WorldModuleEntity =
                 let world = World.publishEntityChange (nameof entityState.Static) previous value entityState.PublishChangeBindings entityState.PublishChangeEvents entity world
                 struct (true, world)
             else struct (false, world)
-        
+
         static member internal setEntityAlwaysUpdate value entity world =
 
             // cache old values

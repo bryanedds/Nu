@@ -6,6 +6,7 @@ open System
 open System.Collections.Generic
 open System.Diagnostics
 open System.Numerics
+open System.Reflection
 open FSharpx.Collections
 open Prime
 open Nu
@@ -1315,15 +1316,16 @@ module WorldTypes =
         default this.PostProcess world = world
 
         /// Birth facets / dispatchers of type 'a from plugin.
-        member internal this.Birth<'a> () =
-            let assembly = (this.GetType ()).Assembly;
-            let types =
-                assembly.GetTypes () |>
-                Array.filter (fun ty -> ty.IsSubclassOf typeof<'a>) |>
-                Array.filter (fun ty -> not ty.IsAbstract) |>
-                Array.filter (fun ty -> ty.GetConstructors () |> Seq.exists (fun ctor -> ctor.GetParameters().Length = 0))
-            let instances = types |> Array.map (fun ty -> (ty.Name, Activator.CreateInstance ty :?> 'a)) 
-            Array.toList instances
+        member internal this.Birth<'a> assemblies =
+            Array.map (fun (assembly : Assembly) ->
+                let types =
+                    assembly.GetTypes () |>
+                    Array.filter (fun ty -> ty.IsSubclassOf typeof<'a>) |>
+                    Array.filter (fun ty -> not ty.IsAbstract) |>
+                    Array.filter (fun ty -> ty.GetConstructors () |> Seq.exists (fun ctor -> ctor.GetParameters().Length = 0))
+                Array.map (fun (ty : Type) -> (ty.Name, Activator.CreateInstance ty :?> 'a)) types)
+                assemblies |>
+            Array.concat
 
         interface LateBindings
 
