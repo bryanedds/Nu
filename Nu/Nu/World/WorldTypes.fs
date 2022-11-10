@@ -351,6 +351,54 @@ module WorldTypes =
 
         interface LateBindings
 
+    and [<StructuralEquality; NoComparison>] internal PropertyForge =
+        | PropertyForge of string * Type * obj
+        | EventHandlerForge of obj Address * obj
+
+    and [<ReferenceEquality; NoComparison>] internal GameForge =
+        { PropertyForges : USet<string * Type * obj>
+          EventHandlerForges : UMap<obj Address * obj, Guid>
+          ScreenForges : UMap<string, ScreenForge>
+          InitialScreenNameOpt : string option }
+        static member internal empty =
+            { PropertyForges = USet.makeEmpty HashIdentity.Structural Imperative
+              EventHandlerForges = UMap.makeEmpty HashIdentity.Structural Imperative
+              ScreenForges = UMap.makeEmpty StringComparer.Ordinal Imperative
+              InitialScreenNameOpt = None }
+
+    and [<ReferenceEquality; NoComparison>] internal ScreenForge =
+        { PropertyForges : USet<string * Type * obj>
+          EventHandlerForges : UMap<obj Address * obj, Guid>
+          ScreenDispatcherName : string
+          GroupForges : UMap<string, GroupForge> }
+        static member internal empty =
+            { PropertyForges = USet.makeEmpty HashIdentity.Structural Imperative
+              EventHandlerForges = UMap.makeEmpty HashIdentity.Structural Imperative
+              ScreenDispatcherName = nameof ScreenDispatcher
+              GroupForges = UMap.makeEmpty HashIdentity.Structural Imperative }
+
+    and [<ReferenceEquality; NoComparison>] internal GroupForge =
+        { PropertyForges : USet<string * Type * obj>
+          EventHandlerForges : UMap<obj Address * obj, Guid>
+          GroupDispatcherName : string
+          EntityForges : UMap<string, EntityForge> }
+        static member internal empty =
+            { PropertyForges = USet.makeEmpty HashIdentity.Structural Imperative
+              EventHandlerForges = UMap.makeEmpty HashIdentity.Structural Imperative
+              GroupDispatcherName = nameof GroupDispatcher
+              EntityForges = UMap.makeEmpty HashIdentity.Structural Imperative }
+
+    and [<ReferenceEquality; NoComparison>] internal EntityForge =
+        { PropertyForges : USet<string * Type * obj>
+          EventHandlerForges : UMap<obj Address * obj, Guid>
+          EntityDispatcherName : string
+          EntityForges : UMap<string, EntityForge> }
+        static member internal empty =
+            { PropertyForges = USet.makeEmpty HashIdentity.Structural Imperative
+              EventHandlerForges = UMap.makeEmpty HashIdentity.Structural Imperative
+              EntityDispatcherName = nameof EntityDispatcher
+              EntityForges = UMap.makeEmpty HashIdentity.Structural Imperative }
+
     /// Generalized interface for simulant state.
     and SimulantState =
         interface
@@ -362,6 +410,7 @@ module WorldTypes =
         { Dispatcher : GameDispatcher
           Xtension : Xtension
           Model : DesignerProperty
+          Forge : GameForge
           OmniScreenOpt : Screen option
           SelectedScreenOpt : Screen option
           ScreenTransitionDestinationOpt : Screen option
@@ -386,6 +435,7 @@ module WorldTypes =
               Xtension = Xtension.makeFunctional ()
               Model = { DesignerType = typeof<unit>; DesignerValue = () }
               OmniScreenOpt = None
+              Forge = GameForge.empty
               SelectedScreenOpt = None
               ScreenTransitionDestinationOpt = None
               DesiredScreen = DesireIgnore
@@ -439,6 +489,7 @@ module WorldTypes =
         { Dispatcher : ScreenDispatcher
           Xtension : Xtension
           Model : DesignerProperty
+          Forge : ScreenForge
           Ecs : Ecs.Ecs
           TransitionState : TransitionState
           TransitionUpdates : int64
@@ -457,6 +508,7 @@ module WorldTypes =
             { Dispatcher = dispatcher
               Xtension = Xtension.makeFunctional ()
               Model = { DesignerType = typeof<unit>; DesignerValue = () }
+              Forge = ScreenForge.empty
               Ecs = ecs
               TransitionState = IdlingState
               TransitionUpdates = 0L // TODO: roll this field into Incoming/OutgoingState values
@@ -508,6 +560,7 @@ module WorldTypes =
         { Dispatcher : GroupDispatcher
           Xtension : Xtension
           Model : DesignerProperty
+          Forge : GroupForge
           Visible : bool
           Persistent : bool
           ScriptFrame : Scripting.DeclarationFrame
@@ -521,6 +574,7 @@ module WorldTypes =
             { Dispatcher = dispatcher
               Xtension = Xtension.makeFunctional ()
               Model = { DesignerType = typeof<unit>; DesignerValue = () }
+              Forge = GroupForge.empty
               Visible = true
               Persistent = true
               ScriptFrame = Scripting.DeclarationFrame StringComparer.Ordinal
@@ -570,6 +624,7 @@ module WorldTypes =
           mutable Facets : Facet array
           mutable Xtension : Xtension
           mutable Model : DesignerProperty
+          mutable Forge : EntityForge
           mutable PositionLocal : Vector3
           mutable RotationLocal : Quaternion
           mutable ScaleLocal : Vector3
@@ -593,6 +648,7 @@ module WorldTypes =
               Facets = [||]
               Xtension = Xtension.makeEmpty imperative
               Model = { DesignerType = typeof<unit>; DesignerValue = () }
+              Forge = EntityForge.empty
               PositionLocal = Vector3.Zero
               RotationLocal = Quaternion.Identity
               ScaleLocal = Vector3.One

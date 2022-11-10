@@ -344,6 +344,10 @@ module WorldModuleEntity =
                 struct (true, world)
             else struct (false, world)
 
+        static member internal getEntityForge entity world =
+            let entityState = World.getEntityState entity world
+            entityState.Forge
+
         static member internal getEntityScriptFrame entity world =
             let entityState = World.getEntityState entity world
             match entityState.ScriptFrameOpt with
@@ -2163,7 +2167,7 @@ module WorldModuleEntity =
 
         /// Create an entity and add it to the world.
         [<FunctionBinding "createEntity">]
-        static member createEntity5 dispatcherName names overlayDescriptor (group : Group) world =
+        static member createEntity5 dispatcherName surnames overlayDescriptor (group : Group) world =
 
             // find the entity's dispatcher
             let dispatchers = World.getEntityDispatchers world
@@ -2182,7 +2186,7 @@ module WorldModuleEntity =
                 | ExplicitOverlay overlayName -> Some overlayName
 
             // make the bare entity state (with name as id if none is provided)
-            let entityState = EntityState.make (World.getImperative world) names overlayNameOpt dispatcher
+            let entityState = EntityState.make (World.getImperative world) surnames overlayNameOpt dispatcher
 
             // attach the entity state's intrinsic facets and their properties
             let entityState = World.attachIntrinsicFacetsViaNames entityState world

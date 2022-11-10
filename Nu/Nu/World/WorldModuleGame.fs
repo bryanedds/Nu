@@ -47,6 +47,7 @@ module WorldModuleGame =
         static member internal getGameDispatcher world = (World.getGameState world).Dispatcher
         static member internal getGameModelProperty world = (World.getGameState world).Model
         static member internal getGameModel<'a> world = (World.getGameState world).Model.DesignerValue :?> 'a
+        static member internal getGameForge world = (World.getGameState world).Forge
         static member internal getGameScriptFrame world = (World.getGameState world).ScriptFrame
 
         static member internal setGameModelProperty (value : DesignerProperty) world =
@@ -71,6 +72,11 @@ module WorldModuleGame =
                 let world = World.publishGameChange (nameof gameState.Model) previous.DesignerValue value world
                 struct (true, world)
             else struct (false, world)
+
+        static member internal setGameForgeOpt (value : GameForge) world =
+            let gameState = World.getGameState world
+            let gameState = { gameState with Forge = value}
+            World.setGameState gameState world
 
         static member internal setGameScriptFrame value world =
             let gameState = World.getGameState world

@@ -104,6 +104,7 @@ module WorldModuleScreen =
         static member internal getScreenDispatcher screen world = (World.getScreenState screen world).Dispatcher
         static member internal getScreenModelProperty screen world = (World.getScreenState screen world).Model
         static member internal getScreenModel<'a> screen world = (World.getScreenState screen world).Model.DesignerValue :?> 'a
+        static member internal getScreenForge screen world = (World.getScreenState screen world).Forge
         static member internal getScreenEcs screen world = (World.getScreenState screen world).Ecs
         static member internal getScreenTransitionState screen world = (World.getScreenState screen world).TransitionState
         static member internal getScreenTransitionUpdates screen world = (World.getScreenState screen world).TransitionUpdates
@@ -139,6 +140,11 @@ module WorldModuleScreen =
                 let world = World.publishScreenChange (nameof screenState.Model) previous.DesignerValue value screen world
                 struct (true, world)
             else struct (false, world)
+
+        static member internal setScreenForgeOpt (value : ScreenForge) screen world =
+            let screenState = World.getScreenState screen world
+            let screenState = { screenState with Forge = value }
+            World.setScreenState screenState screen world
 
         static member internal setScreenTransitionState value screen world =
             let screenState = World.getScreenState screen world
