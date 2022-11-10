@@ -95,12 +95,12 @@ module WorldModuleGroup =
             | Some groupState -> groupState
             | None -> failwith ("Could not find group '" + scstring group + "'.")
 
+        static member internal setGroupState groupState group world =
+            World.groupStateSetter groupState group world
+
         static member internal getGroupXtensionProperties group world =
             let groupState = World.getGroupState group world
             groupState.Xtension |> Xtension.toSeq |> Seq.toList
-
-        static member private setGroupState groupState group world =
-            World.groupStateSetter groupState group world
 
         /// Check that a group exists in the world.
         static member internal getGroupExists group world =

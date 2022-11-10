@@ -214,7 +214,7 @@ module WorldModuleEntity =
             // apply mounted state
             entityState.Mounted <- UMap.containsKey entity world.EntityMounts
 
-        static member inline private setEntityState entityState entity world =
+        static member inline internal setEntityState entityState entity world =
             World.entityStateSetter entityState entity world
 
         static member private publishEntityChanges entity world =
