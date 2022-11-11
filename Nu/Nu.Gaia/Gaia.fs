@@ -1125,7 +1125,7 @@ module Gaia =
             let world = World.setEyeRotation3d quatIdentity world
             world
 
-    let private handleFormReloadCode (_ : GaiaForm) (_ : EventArgs) =
+    let private handleFormReloadScripts (_ : GaiaForm) (_ : EventArgs) =
         addPreUpdater $ fun world ->
             use errorStream = new StringWriter ()
             try
@@ -1841,7 +1841,7 @@ module Gaia =
         form.quickSizeToolStripButton.Click.Add (handleFormQuickSize form)
         form.snap3dButton.Click.Add (handleFormSnap3d form)
         form.resetEyeButton.Click.Add (handleFormResetEye form)
-        form.reloadCodeButton.Click.Add (handleFormReloadCode form)
+        form.reloadScriptsButton.Click.Add (handleFormReloadScripts form)
         form.reloadAssetsButton.Click.Add (handleFormReloadAssets form)
         form.groupTabControl.Deselected.Add (handleFormGroupTabDeselected form)
         form.groupTabControl.Selected.Add (handleFormGroupTabSelected form)
