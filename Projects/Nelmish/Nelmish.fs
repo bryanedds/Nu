@@ -16,7 +16,7 @@ type Message =
 
 // this is our Elm-style game dispatcher
 type NelmishDispatcher () =
-    inherit GameDispatcher'<Model, Message, unit> (0) // initial model value
+    inherit GameForger<Model, Message, unit> (0) // initial model value
 
     // here we handle the Elm-style messages
     override this.Message (model, message, _, _) =

@@ -141,7 +141,7 @@ module WorldModuleScreen =
                 struct (true, world)
             else struct (false, world)
 
-        static member internal setScreenForgeOpt (value : ScreenForge) screen world =
+        static member internal setScreenForge (value : ScreenForge) screen world =
             let screenState = World.getScreenState screen world
             let screenState = { screenState with Forge = value }
             World.setScreenState screenState screen world

@@ -348,6 +348,15 @@ module WorldModuleEntity =
             let entityState = World.getEntityState entity world
             entityState.Forge
 
+        static member internal setEntityForge value entity world =
+            let entityState = World.getEntityState entity world
+            if entityState.Imperative then
+                entityState.Forge <- value
+                world
+            else
+                let entityState = { entityState with Forge = value }
+                World.setEntityState entityState entity world
+
         static member internal getEntityScriptFrame entity world =
             let entityState = World.getEntityState entity world
             match entityState.ScriptFrameOpt with
