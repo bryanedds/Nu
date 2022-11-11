@@ -147,6 +147,10 @@ module WorldTypes =
         abstract TrySignal : obj * Game * World -> World
         default this.TrySignal (_, _, world) = world
 
+        /// Attempt to reforge a game.
+        abstract TryReforge : Game * World -> World
+        default this.TryReforge (_, world) = world
+
     /// The default dispatcher for screens.
     and ScreenDispatcher () =
         inherit SimulantDispatcher ()
@@ -175,6 +179,10 @@ module WorldTypes =
         abstract TrySignal : obj * Screen * World -> World
         default this.TrySignal (_, _, world) = world
 
+        /// Attempt to reforge a screen.
+        abstract TryReforge : Screen * World -> World
+        default this.TryReforge (_, world) = world
+
     /// The default dispatcher for groups.
     and GroupDispatcher () =
         inherit SimulantDispatcher ()
@@ -202,6 +210,10 @@ module WorldTypes =
         /// Try to send a signal to a group.
         abstract TrySignal : obj * Group * World -> World
         default this.TrySignal (_, _, world) = world
+
+        /// Attempt to reforge a group.
+        abstract TryReforge : Group * World -> World
+        default this.TryReforge (_, world) = world
 
     /// The default dispatcher for entities.
     and EntityDispatcher (is2d, centered, physical) =
@@ -276,6 +288,10 @@ module WorldTypes =
         /// Try to send a signal to an entity.
         abstract TrySignal : obj * Entity * World -> World
         default this.TrySignal (_, _, world) = world
+
+        /// Attempt to reforge an entity.
+        abstract TryReforge : Entity * World -> World
+        default this.TryReforge (_, world) = world
 
         /// Get the default size of an entity.
         abstract GetQuickSize : Entity * World -> Vector3

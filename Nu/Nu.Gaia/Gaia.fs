@@ -1171,7 +1171,7 @@ module Gaia =
                     use inStream = new StringReader ""
                     use outStream = new StringWriter ()
                     let fsiConfig = Shell.FsiEvaluationSession.GetDefaultConfiguration ()
-                    use session = Shell.FsiEvaluationSession.Create (fsiConfig, defaultArgs, inStream, outStream, errorStream, true)
+                    use session = Shell.FsiEvaluationSession.Create (fsiConfig, defaultArgs, inStream, outStream, errorStream)
                     session.EvalInteraction fsxFileString 
                     let world = World.updateLateBindings2 session.DynamicAssemblies world
                     Log.info "Code updated."

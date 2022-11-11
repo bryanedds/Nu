@@ -723,4 +723,8 @@ module WorldModule3 =
                 UMap.fold (fun world simulant _ ->
                     Array.fold (fun world lateBindings -> World.updateLateBindings lateBindings simulant world) world lateBindingses)
                     world (World.getSimulants world)
+            let world =
+                UMap.fold
+                    (fun world simulant _ -> World.tryReforge simulant world)
+                    world (World.getSimulants world)
             world

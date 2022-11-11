@@ -13,35 +13,35 @@ module Forge =
         
         if forgeOld <> forge then
 
-            let propertiesAdded = HashSet (forge.PropertyForges, forge.PropertyForges.Comparer)
-            propertiesAdded.ExceptWith forgeOld.PropertyForges
-
-            let world =
-                Seq.fold (fun world (propertyName, propertyType, propertyValue) ->
-                    let property = { PropertyType = propertyType; PropertyValue = propertyValue }
-                    World.setEntityProperty propertyName property entity world |> snd')
-                    world
-                    propertiesAdded
-
+            let eventHandlerForgesOld =
+                forgeOld.EventHandlerForges |>
+                Seq.map (fun entry -> ((if Address.last (fst entry.Key) = "Event" then (fst entry.Key --> entity, snd entry.Key) else entry.Key), entry.Value)) |>
+                dictPlus HashIdentity.Structural
+            let eventHandlerForges =
+                forge.EventHandlerForges |>
+                Seq.map (fun entry -> ((if Address.last (fst entry.Key) = "Event" then (fst entry.Key --> entity, snd entry.Key) else entry.Key), entry.Value)) |>
+                dictPlus HashIdentity.Structural
             let eventHandlersAdded = List ()
-            for eventHandlerEntry in forge.EventHandlerForges do
-                match forgeOld.EventHandlerForges.TryGetValue eventHandlerEntry.Key with
+            for eventHandlerEntry in eventHandlerForges do
+                match eventHandlerForgesOld.TryGetValue eventHandlerEntry.Key with
                 | (true, _) -> ()
                 | (false, _) -> eventHandlersAdded.Add (eventHandlerEntry.Key, eventHandlerEntry.Value)
-
             let eventHandlersRemoved = List ()
-            for eventHandlerEntry in forgeOld.EventHandlerForges do
-                match forge.EventHandlerForges.TryGetValue eventHandlerEntry.Key with
+            for eventHandlerEntry in eventHandlerForgesOld do
+                match eventHandlerForges.TryGetValue eventHandlerEntry.Key with
                 | (true, _) -> ()
                 | (false, _) -> eventHandlersRemoved.Add eventHandlerEntry.Value
-
+            let world =
+                Seq.fold
+                    (fun world subscriptionId -> World.unsubscribe subscriptionId world)
+                    world eventHandlersRemoved
             let world =
                 Seq.fold (fun world ((eventAddress, signalObj), subscriptionId) ->
                     let (unsubscribe, world) =
                         World.subscribePlus subscriptionId (fun (_ : Event) world ->
                             let world = WorldModule.trySignal signalObj origin world
                             (Cascade, world))
-                            (eventAddress --> entity) origin world
+                            eventAddress origin world
                     let world =
                         World.monitor
                             (fun _ world -> (Cascade, unsubscribe world))
@@ -51,19 +51,21 @@ module Forge =
                     world)
                     world eventHandlersAdded
 
+            let propertiesAdded = HashSet (forge.PropertyForges, forge.PropertyForges.Comparer)
+            propertiesAdded.ExceptWith forgeOld.PropertyForges
             let world =
-                Seq.fold
-                    (fun world subscriptionId -> World.unsubscribe subscriptionId world)
-                    world eventHandlersRemoved
+                Seq.fold (fun world (propertyName, propertyType, propertyValue) ->
+                    let property = { PropertyType = propertyType; PropertyValue = propertyValue }
+                    World.setEntityProperty propertyName property entity world |> snd')
+                    world
+                    propertiesAdded
 
             let entitiesPotentiallyAltered = Dictionary ()
-
             let entitiesAdded = List ()
             for entityEntry in forge.EntityForges do
                 match forgeOld.EntityForges.TryGetValue entityEntry.Key with
                 | (true, _) -> entitiesPotentiallyAltered.Add (entity / entityEntry.Key, entityEntry.Value)
                 | (false, _) -> entitiesAdded.Add (entity / entityEntry.Key, entityEntry.Value)
-
             let entitiesRemoved = List ()
             for entityEntry in forgeOld.EntityForges do
                 match forge.EntityForges.TryGetValue entityEntry.Key with
@@ -71,61 +73,58 @@ module Forge =
                 | (false, _) ->
                     entitiesRemoved.Add (entity / entityEntry.Key)
                     entitiesPotentiallyAltered.Remove (entity / entityEntry.Key) |> ignore
-
             let world =
                 Seq.fold
                     (fun world entity -> World.destroyEntity entity world)
                     world entitiesRemoved
-
             let world =
                 Seq.fold (fun world (kvp : KeyValuePair<_, _>) ->
                     let (entity : Entity, entityForge) = (kvp.Key, kvp.Value)
                     let entityForgeOld = forgeOld.EntityForges.[entity.Name]
                     synchronizeEntity entityForgeOld entityForge origin entity world)
                     world entitiesPotentiallyAltered
-
             let world =
                 Seq.fold (fun world (entity : Entity, entityForge : EntityForge) ->
                     let (entity, world) = World.createEntity5 entityForge.EntityDispatcherName (Some entity.Surnames) DefaultOverlay entity.Group world
                     synchronizeEntity EntityForge.empty entityForge origin entity world)
                     world entitiesAdded
-
             world
+
         else world
 
     let internal synchronizeGroup (forgeOld : GroupForge) (forge : GroupForge) (origin : Simulant) (group : Group) world =
         
         if forgeOld <> forge then
 
-            let propertiesAdded = HashSet (forge.PropertyForges, forge.PropertyForges.Comparer)
-            propertiesAdded.ExceptWith forgeOld.PropertyForges
-
-            let world =
-                Seq.fold (fun world (propertyName, propertyType, propertyValue) ->
-                    let property = { PropertyType = propertyType; PropertyValue = propertyValue }
-                    World.setGroupProperty propertyName property group world |> snd')
-                    world
-                    propertiesAdded
-
+            let eventHandlerForgesOld =
+                forgeOld.EventHandlerForges |>
+                Seq.map (fun entry -> ((if Address.last (fst entry.Key) = "Event" then (fst entry.Key --> group, snd entry.Key) else entry.Key), entry.Value)) |>
+                dictPlus HashIdentity.Structural
+            let eventHandlerForges =
+                forge.EventHandlerForges |>
+                Seq.map (fun entry -> ((if Address.last (fst entry.Key) = "Event" then (fst entry.Key --> group, snd entry.Key) else entry.Key), entry.Value)) |>
+                dictPlus HashIdentity.Structural
             let eventHandlersAdded = List ()
-            for eventHandlerEntry in forge.EventHandlerForges do
-                match forgeOld.EventHandlerForges.TryGetValue eventHandlerEntry.Key with
+            for eventHandlerEntry in eventHandlerForges do
+                match eventHandlerForgesOld.TryGetValue eventHandlerEntry.Key with
                 | (true, _) -> ()
                 | (false, _) -> eventHandlersAdded.Add (eventHandlerEntry.Key, eventHandlerEntry.Value)
-
             let eventHandlersRemoved = List ()
-            for eventHandlerEntry in forgeOld.EventHandlerForges do
-                match forge.EventHandlerForges.TryGetValue eventHandlerEntry.Key with
+            for eventHandlerEntry in eventHandlerForgesOld do
+                match eventHandlerForges.TryGetValue eventHandlerEntry.Key with
                 | (true, _) -> ()
                 | (false, _) -> eventHandlersRemoved.Add eventHandlerEntry.Value
-
+            let world =
+                Seq.fold
+                    (fun world subscriptionId -> World.unsubscribe subscriptionId world)
+                    world eventHandlersRemoved
             let world =
                 Seq.fold (fun world ((eventAddress, signalObj), subscriptionId) ->
                     let (unsubscribe, world) =
                         World.subscribePlus subscriptionId (fun (_ : Event) world ->
                             let world = WorldModule.trySignal signalObj origin world
                             (Cascade, world))
-                            (eventAddress --> group) origin world
+                            eventAddress origin world
                     let world =
                         World.monitor
                             (fun _ world -> (Cascade, unsubscribe world))
@@ -135,19 +134,21 @@ module Forge =
                     world)
                     world eventHandlersAdded
 
+            let propertiesAdded = HashSet (forge.PropertyForges, forge.PropertyForges.Comparer)
+            propertiesAdded.ExceptWith forgeOld.PropertyForges
             let world =
-                Seq.fold
-                    (fun world subscriptionId -> World.unsubscribe subscriptionId world)
-                    world eventHandlersRemoved
+                Seq.fold (fun world (propertyName, propertyType, propertyValue) ->
+                    let property = { PropertyType = propertyType; PropertyValue = propertyValue }
+                    World.setGroupProperty propertyName property group world |> snd')
+                    world
+                    propertiesAdded
 
             let entitiesPotentiallyAltered = Dictionary ()
-
             let entitiesAdded = List ()
             for entityEntry in forge.EntityForges do
                 match forgeOld.EntityForges.TryGetValue entityEntry.Key with
                 | (true, _) -> entitiesPotentiallyAltered.Add (group / entityEntry.Key, entityEntry.Value)
                 | (false, _) -> entitiesAdded.Add (group / entityEntry.Key, entityEntry.Value)
-
             let entitiesRemoved = List ()
             for entityEntry in forgeOld.EntityForges do
                 match forge.EntityForges.TryGetValue entityEntry.Key with
@@ -155,61 +156,58 @@ module Forge =
                 | (false, _) ->
                     entitiesRemoved.Add (group / entityEntry.Key)
                     entitiesPotentiallyAltered.Remove (group / entityEntry.Key) |> ignore
-
             let world =
                 Seq.fold
                     (fun world entity -> World.destroyEntity entity world)
                     world entitiesRemoved
-
             let world =
                 Seq.fold (fun world (kvp : KeyValuePair<_, _>) ->
                     let (entity : Entity, entityForge) = (kvp.Key, kvp.Value)
                     let entityForgeOld = forgeOld.EntityForges.[entity.Name]
                     synchronizeEntity entityForgeOld entityForge origin entity world)
                     world entitiesPotentiallyAltered
-
             let world =
                 Seq.fold (fun world (entity : Entity, entityForge : EntityForge) ->
                     let (entity, world) = World.createEntity5 entityForge.EntityDispatcherName (Some entity.Surnames) DefaultOverlay entity.Group world
                     synchronizeEntity EntityForge.empty entityForge origin entity world)
                     world entitiesAdded
-
             world
+
         else world
 
     let internal synchronizeScreen (forgeOld : ScreenForge) (forge : ScreenForge) (origin : Simulant) (screen : Screen) world =
         
         if forgeOld <> forge then
 
-            let propertiesAdded = HashSet (forge.PropertyForges, forge.PropertyForges.Comparer)
-            propertiesAdded.ExceptWith forgeOld.PropertyForges
-
-            let world =
-                Seq.fold (fun world (propertyName, propertyType, propertyValue) ->
-                    let property = { PropertyType = propertyType; PropertyValue = propertyValue }
-                    World.setScreenProperty propertyName property screen world |> snd')
-                    world
-                    propertiesAdded
-
+            let eventHandlerForgesOld =
+                forgeOld.EventHandlerForges |>
+                Seq.map (fun entry -> ((if Address.last (fst entry.Key) = "Event" then (fst entry.Key --> screen, snd entry.Key) else entry.Key), entry.Value)) |>
+                dictPlus HashIdentity.Structural
+            let eventHandlerForges =
+                forge.EventHandlerForges |>
+                Seq.map (fun entry -> ((if Address.last (fst entry.Key) = "Event" then (fst entry.Key --> screen, snd entry.Key) else entry.Key), entry.Value)) |>
+                dictPlus HashIdentity.Structural
             let eventHandlersAdded = List ()
-            for eventHandlerEntry in forge.EventHandlerForges do
-                match forgeOld.EventHandlerForges.TryGetValue eventHandlerEntry.Key with
+            for eventHandlerEntry in eventHandlerForges do
+                match eventHandlerForgesOld.TryGetValue eventHandlerEntry.Key with
                 | (true, _) -> ()
                 | (false, _) -> eventHandlersAdded.Add (eventHandlerEntry.Key, eventHandlerEntry.Value)
-
             let eventHandlersRemoved = List ()
-            for eventHandlerEntry in forgeOld.EventHandlerForges do
-                match forge.EventHandlerForges.TryGetValue eventHandlerEntry.Key with
+            for eventHandlerEntry in eventHandlerForgesOld do
+                match eventHandlerForges.TryGetValue eventHandlerEntry.Key with
                 | (true, _) -> ()
                 | (false, _) -> eventHandlersRemoved.Add eventHandlerEntry.Value
-
+            let world =
+                Seq.fold
+                    (fun world subscriptionId -> World.unsubscribe subscriptionId world)
+                    world eventHandlersRemoved
             let world =
                 Seq.fold (fun world ((eventAddress, signalObj), subscriptionId) ->
                     let (unsubscribe, world) =
                         World.subscribePlus subscriptionId (fun (_ : Event) world ->
                             let world = WorldModule.trySignal signalObj origin world
                             (Cascade, world))
-                            (eventAddress --> screen) origin world
+                            eventAddress origin world
                     let world =
                         World.monitor
                             (fun _ world -> (Cascade, unsubscribe world))
@@ -219,19 +217,21 @@ module Forge =
                     world)
                     world eventHandlersAdded
 
+            let propertiesAdded = HashSet (forge.PropertyForges, forge.PropertyForges.Comparer)
+            propertiesAdded.ExceptWith forgeOld.PropertyForges
             let world =
-                Seq.fold
-                    (fun world subscriptionId -> World.unsubscribe subscriptionId world)
-                    world eventHandlersRemoved
+                Seq.fold (fun world (propertyName, propertyType, propertyValue) ->
+                    let property = { PropertyType = propertyType; PropertyValue = propertyValue }
+                    World.setScreenProperty propertyName property screen world |> snd')
+                    world
+                    propertiesAdded
 
             let groupsPotentiallyAltered = Dictionary ()
-
             let groupsAdded = List ()
             for groupEntry in forge.GroupForges do
                 match forgeOld.GroupForges.TryGetValue groupEntry.Key with
                 | (true, _) -> groupsPotentiallyAltered.Add (screen / groupEntry.Key, groupEntry.Value)
                 | (false, _) -> groupsAdded.Add (screen / groupEntry.Key, groupEntry.Value)
-
             let groupsRemoved = List ()
             for groupEntry in forgeOld.GroupForges do
                 match forge.GroupForges.TryGetValue groupEntry.Key with
@@ -239,25 +239,21 @@ module Forge =
                 | (false, _) ->
                     groupsRemoved.Add (screen / groupEntry.Key)
                     groupsPotentiallyAltered.Remove (screen / groupEntry.Key) |> ignore
-
             let world =
                 Seq.fold
                     (fun world group -> World.destroyGroup group world)
                     world groupsRemoved
-
             let world =
                 Seq.fold (fun world (kvp : KeyValuePair<_, _>) ->
                     let (group : Group, groupForge) = (kvp.Key, kvp.Value)
                     let groupForgeOld = forgeOld.GroupForges.[group.Name]
                     synchronizeGroup groupForgeOld groupForge origin group world)
                     world groupsPotentiallyAltered
-
             let world =
                 Seq.fold (fun world (group : Group, groupForge : GroupForge) ->
                     let (group, world) = World.createGroup4 groupForge.GroupDispatcherName (Some group.Name) screen world
                     synchronizeGroup GroupForge.empty groupForge origin group world)
                     world groupsAdded
-
             world
         else world
 
@@ -265,35 +261,29 @@ module Forge =
 
         if forgeOld <> forge then
 
-            let propertiesAdded = HashSet (forge.PropertyForges, forge.PropertyForges.Comparer)
-            propertiesAdded.ExceptWith forgeOld.PropertyForges
-
-            let world =
-                Seq.fold (fun world (propertyName, propertyType, propertyValue) ->
-                    let property = { PropertyType = propertyType; PropertyValue = propertyValue }
-                    World.setGameProperty propertyName property world |> snd')
-                    world
-                    propertiesAdded
-
+            let eventHandlerForgesOld = forgeOld.EventHandlerForges
+            let eventHandlerForges = forge.EventHandlerForges
             let eventHandlersAdded = List ()
-            for eventHandlerEntry in forge.EventHandlerForges do
-                match forgeOld.EventHandlerForges.TryGetValue eventHandlerEntry.Key with
+            for eventHandlerEntry in eventHandlerForges do
+                match eventHandlerForgesOld.TryGetValue eventHandlerEntry.Key with
                 | (true, _) -> ()
                 | (false, _) -> eventHandlersAdded.Add (eventHandlerEntry.Key, eventHandlerEntry.Value)
-
             let eventHandlersRemoved = List ()
-            for eventHandlerEntry in forgeOld.EventHandlerForges do
-                match forge.EventHandlerForges.TryGetValue eventHandlerEntry.Key with
+            for eventHandlerEntry in eventHandlerForgesOld do
+                match eventHandlerForges.TryGetValue eventHandlerEntry.Key with
                 | (true, _) -> ()
                 | (false, _) -> eventHandlersRemoved.Add eventHandlerEntry.Value
-
+            let world =
+                Seq.fold
+                    (fun world subscriptionId -> World.unsubscribe subscriptionId world)
+                    world eventHandlersRemoved
             let world =
                 Seq.fold (fun world ((eventAddress, signalObj), subscriptionId) ->
                     let (unsubscribe, world) =
                         World.subscribePlus subscriptionId (fun (_ : Event) world ->
                             let world = WorldModule.trySignal signalObj origin world
                             (Cascade, world))
-                            (eventAddress --> game) origin world
+                            eventAddress origin world
                     let world =
                         World.monitor
                             (fun _ world -> (Cascade, unsubscribe world))
@@ -303,19 +293,21 @@ module Forge =
                     world)
                     world eventHandlersAdded
 
+            let propertiesAdded = HashSet (forge.PropertyForges, forge.PropertyForges.Comparer)
+            propertiesAdded.ExceptWith forgeOld.PropertyForges
             let world =
-                Seq.fold
-                    (fun world subscriptionId -> World.unsubscribe subscriptionId world)
-                    world eventHandlersRemoved
+                Seq.fold (fun world (propertyName, propertyType, propertyValue) ->
+                    let property = { PropertyType = propertyType; PropertyValue = propertyValue }
+                    World.setGameProperty propertyName property world |> snd')
+                    world
+                    propertiesAdded
 
             let screensPotentiallyAltered = Dictionary ()
-
             let screensAdded = List ()
             for screenEntry in forge.ScreenForges do
                 match forgeOld.ScreenForges.TryGetValue screenEntry.Key with
                 | (true, _) -> screensPotentiallyAltered.Add (Screen screenEntry.Key, screenEntry.Value)
                 | (false, _) -> screensAdded.Add (Screen screenEntry.Key, screenEntry.Value)
-
             let screensRemoved = List ()
             for screenEntry in forgeOld.ScreenForges do
                 match forge.ScreenForges.TryGetValue screenEntry.Key with
@@ -323,27 +315,24 @@ module Forge =
                 | (false, _) ->
                     screensRemoved.Add (Screen screenEntry.Key)
                     screensPotentiallyAltered.Remove (Screen screenEntry.Key) |> ignore
-
             let world =
                 Seq.fold
                     (fun world screen -> World.destroyScreen screen world)
                     world screensRemoved
-
             let world =
                 Seq.fold (fun world (kvp : KeyValuePair<_, _>) ->
                     let (screen : Screen, screenForge) = (kvp.Key, kvp.Value)
                     let screenForgeOld = forgeOld.ScreenForges.[screen.Name]
                     synchronizeScreen screenForgeOld screenForge origin screen world)
                     world screensPotentiallyAltered
-
             let world =
                 Seq.fold (fun world (screen : Screen, screenForge : ScreenForge) ->
                     let (screen, world) = World.createScreen3 screenForge.ScreenDispatcherName (Some screen.Name) world
                     let world = World.applyScreenBehavior setScreenSplash screenForge.ScreenBehavior screen world
                     synchronizeScreen ScreenForge.empty screenForge origin screen world)
                     world screensAdded
-
             (forge.InitialScreenNameOpt |> Option.map Screen, world)
+
         else (forge.InitialScreenNameOpt |> Option.map Screen, world)
 
     let composite<'entityDispatcher when 'entityDispatcher :> EntityDispatcher> entityName properties entities =
@@ -445,7 +434,7 @@ module Forge =
           EventHandlerForges = properties |> List.choose (function EventHandlerForge (addr, value) -> Some ((addr, value), makeGuid ()) | _ -> None) |> dictPlus HashIdentity.Structural
           ScreenForges = screens |> List.map (fun screenForge -> (screenForge.ScreenName, screenForge)) |> dictPlus HashIdentity.Structural
           InitialScreenNameOpt = match screens with [] -> None | screen :: _ -> Some screen.ScreenName }
-        
+
 module ForgeOperators =
 
     /// Initialize a forge property.
