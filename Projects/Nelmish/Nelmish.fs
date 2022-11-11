@@ -2,6 +2,7 @@
 open Prime
 open Nu
 open Nu.Declarative
+open Nu.ForgeOperators
 
 // this is our Elm-style model type
 type Model =
@@ -31,14 +32,21 @@ type NelmishDispatcher () =
             [Forge.screen Simulants.Default.Screen.Name []
                 [Forge.group Simulants.Default.Screen.Name []
                     [Forge.button "Decrement"
-                        [Entity.Text === "-"
-                         Entity.Position === v3 -256.0f 64.0f 0.0f
-                         Entity.ClickEvent ===> msg Decrement]
+                        [Entity.Text == "-"
+                         Entity.Position == v3 -256.0f 64.0f 0.0f
+                         Entity.ClickEvent ==> msg Decrement]
                      Forge.button "Increment"
-                        [Entity.Text === "+"
-                         Entity.Position === v3 0.0f 64.0f 0.0f
-                         Entity.ClickEvent ===> msg Increment]
+                        [Entity.Text == "+"
+                         Entity.Position == v3 0.0f 64.0f 0.0f
+                         Entity.ClickEvent ==> msg Increment]
                      Forge.text "Counter"
-                        [Entity.Text === string model
-                         Entity.Position === v3 -128.0f -32.0f 0.0f
-                         Entity.Justification === Justified (JustifyCenter, JustifyMiddle)]]]]
+                        [Entity.Text == string model
+                         Entity.Position == v3 -128.0f -32.0f 0.0f
+                         Entity.Justification == Justified (JustifyCenter, JustifyMiddle)]
+                     if model = 0 then
+                        Forge.noEntity
+                     else
+                        Forge.button "Reset"
+                            [Entity.Text == "Reset"
+                             Entity.Position == v3 -128.0f -128.0f 0.0f
+                             Entity.ClickEvent ==> msg Reset]]]]

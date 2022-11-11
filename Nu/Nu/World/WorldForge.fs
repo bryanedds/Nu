@@ -62,7 +62,9 @@ module Forge =
             for entityEntry in forge.EntityForges do
                 match forgeOld.EntityForges.TryGetValue entityEntry.Key with
                 | (true, _) -> entitiesPotentiallyAltered.Add (entity / entityEntry.Key, entityEntry.Value)
-                | (false, _) -> entitiesAdded.Add (entity / entityEntry.Key, entityEntry.Value)
+                | (false, _) ->
+                    if  entityEntry.Value.EntityName <> "" then
+                        entitiesAdded.Add (entity / entityEntry.Key, entityEntry.Value)
 
             let entitiesRemoved = List ()
             for entityEntry in forgeOld.EntityForges do
@@ -74,7 +76,7 @@ module Forge =
 
             let world =
                 Seq.fold
-                    (fun world entity -> World.destroyEntityImmediate entity world)
+                    (fun world entity -> World.destroyEntity entity world)
                     world entitiesRemoved
 
             let world =
@@ -146,7 +148,9 @@ module Forge =
             for entityEntry in forge.EntityForges do
                 match forgeOld.EntityForges.TryGetValue entityEntry.Key with
                 | (true, _) -> entitiesPotentiallyAltered.Add (group / entityEntry.Key, entityEntry.Value)
-                | (false, _) -> entitiesAdded.Add (group / entityEntry.Key, entityEntry.Value)
+                | (false, _) ->
+                    if  entityEntry.Value.EntityName <> "" then
+                        entitiesAdded.Add (group / entityEntry.Key, entityEntry.Value)
 
             let entitiesRemoved = List ()
             for entityEntry in forgeOld.EntityForges do
@@ -158,7 +162,7 @@ module Forge =
 
             let world =
                 Seq.fold
-                    (fun world entity -> World.destroyEntityImmediate entity world)
+                    (fun world entity -> World.destroyEntity entity world)
                     world entitiesRemoved
 
             let world =
@@ -230,7 +234,9 @@ module Forge =
             for groupEntry in forge.GroupForges do
                 match forgeOld.GroupForges.TryGetValue groupEntry.Key with
                 | (true, _) -> groupsPotentiallyAltered.Add (screen / groupEntry.Key, groupEntry.Value)
-                | (false, _) -> groupsAdded.Add (screen / groupEntry.Key, groupEntry.Value)
+                | (false, _) ->
+                    if  groupEntry.Value.GroupName <> "" then
+                        groupsAdded.Add (screen / groupEntry.Key, groupEntry.Value)
 
             let groupsRemoved = List ()
             for groupEntry in forgeOld.GroupForges do
@@ -242,7 +248,7 @@ module Forge =
 
             let world =
                 Seq.fold
-                    (fun world group -> World.destroyGroupImmediate group world)
+                    (fun world group -> World.destroyGroup group world)
                     world groupsRemoved
 
             let world =
@@ -314,7 +320,9 @@ module Forge =
             for screenEntry in forge.ScreenForges do
                 match forgeOld.ScreenForges.TryGetValue screenEntry.Key with
                 | (true, _) -> screensPotentiallyAltered.Add (Screen screenEntry.Key, screenEntry.Value)
-                | (false, _) -> screensAdded.Add (Screen screenEntry.Key, screenEntry.Value)
+                | (false, _) ->
+                    if  screenEntry.Value.ScreenName <> "" then
+                        screensAdded.Add (Screen screenEntry.Key, screenEntry.Value)
 
             let screensRemoved = List ()
             for screenEntry in forgeOld.ScreenForges do
@@ -326,7 +334,7 @@ module Forge =
 
             let world =
                 Seq.fold
-                    (fun world screen -> World.destroyScreenImmediate screen world)
+                    (fun world screen -> World.destroyScreen screen world)
                     world screensRemoved
 
             let world =
@@ -352,6 +360,7 @@ module Forge =
           EventHandlerForges = properties |> List.choose (function EventHandlerForge (addr, value) -> Some ((addr, value), makeGuid ()) | _ -> None) |> dictPlus HashIdentity.Structural
           EntityForges = entities |> List.map (fun entityForge -> (entityForge.EntityName, entityForge)) |> dictPlus HashIdentity.Structural }
 
+    let noEntity = entity<EntityDispatcher> "" [] []
     let button entityName properties = entity<ButtonDispatcher> entityName properties []
     let text entityName properties = entity<TextDispatcher> entityName properties []
 
@@ -362,6 +371,8 @@ module Forge =
           EventHandlerForges = properties |> List.choose (function EventHandlerForge (addr, value) -> Some ((addr, value), makeGuid ()) | _ -> None) |> dictPlus HashIdentity.Structural
           EntityForges = entities |> List.map (fun entityForge -> (entityForge.EntityName, entityForge)) |> dictPlus HashIdentity.Structural }
 
+    let noGroup = group<GroupDispatcher> "" [] []
+
     let screen<'screenDispatcher when 'screenDispatcher :> ScreenDispatcher> screenName properties groups =
         { ScreenDispatcherName = typeof<'screenDispatcher>.Name
           ScreenName = screenName
@@ -369,19 +380,20 @@ module Forge =
           EventHandlerForges = properties |> List.choose (function EventHandlerForge (addr, value) -> Some ((addr, value), makeGuid ()) | _ -> None) |> dictPlus HashIdentity.Structural
           GroupForges = groups |> List.map (fun groupForge -> (groupForge.GroupName, groupForge)) |> dictPlus HashIdentity.Structural }
 
+    let noScreen = screen<ScreenDispatcher> "" [] []
+
     let game properties screens =
         { PropertyForges = properties |> List.choose (function PropertyForge (name, ty, value) -> Some (name, ty, value) | _ -> None) |> hashSetPlus HashIdentity.Structural
           EventHandlerForges = properties |> List.choose (function EventHandlerForge (addr, value) -> Some ((addr, value), makeGuid ()) | _ -> None) |> dictPlus HashIdentity.Structural
           ScreenForges = screens |> List.map (fun screenForge -> (screenForge.ScreenName, screenForge)) |> dictPlus HashIdentity.Structural
           InitialScreenNameOpt = match screens with [] -> None | screen :: _ -> Some screen.ScreenName }
         
-[<AutoOpen>]
 module ForgeOperators =
 
     /// Initialize a forge property.
-    let inline (===) (lens : Lens<'a, World>) (value : 'a) : PropertyForge =
+    let inline (==) (lens : Lens<'a, World>) (value : 'a) : PropertyForge =
         PropertyForge (lens.Name, lens.Type, value)
 
     /// Bind an event to a signal.
-    let inline (===>) (eventAddress : 'a Address) (signal : Signal<'message, 'command>) : PropertyForge =
+    let inline (==>) (eventAddress : 'a Address) (signal : Signal<'message, 'command>) : PropertyForge =
         EventHandlerForge (Address.generalize eventAddress, signal)
