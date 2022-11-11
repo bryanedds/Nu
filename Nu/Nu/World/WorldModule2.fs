@@ -1242,17 +1242,7 @@ module EntityDispatcherModule2 =
             let forgeOld = World.getEntityForge entity world
             let forge = this.Forge (this.GetModel entity world, entity)
             let world = Forge.synchronizeEntity forgeOld forge entity entity world
-            let world = World.setEntityForge forge entity world
-            World.monitor
-                (fun evt world ->
-                    let model = evt.Data.Value :?> 'model
-                    let forge = this.Forge (model, entity)
-                    let world = Forge.synchronizeEntity (World.getEntityForge entity world) forge entity entity world
-                    let world = World.setEntityForge forge entity world
-                    (Cascade, world))
-                    (this.Model entity).ChangeEvent
-                    entity
-                    world
+            World.setEntityForge forge entity world
 
         override this.ApplyPhysics (position, rotation, linearVelocity, angularVelocity, entity, world) =
             let model = this.GetModel entity world
@@ -1462,17 +1452,7 @@ module GroupDispatcherModule =
             let forgeOld = World.getGroupForge group world
             let forge = this.Forge (this.GetModel group world, group)
             let world = Forge.synchronizeGroup forgeOld forge group group world
-            let world = World.setGroupForge forge group world
-            World.monitor
-                (fun evt world ->
-                    let model = evt.Data.Value :?> 'model
-                    let forge = this.Forge (model, group)
-                    let world = Forge.synchronizeGroup (World.getGroupForge group world) forge group group world
-                    let world = World.setGroupForge forge group world
-                    (Cascade, world))
-                    (this.Model group).ChangeEvent
-                    group
-                    world
+            World.setGroupForge forge group world
 
         override this.Render (group, world) =
             let view = this.View (this.GetModel group world, group, world)
@@ -1622,17 +1602,7 @@ module ScreenDispatcherModule =
             let forgeOld = World.getScreenForge screen world
             let forge = this.Forge (this.GetModel screen world, screen)
             let world = Forge.synchronizeScreen forgeOld forge screen screen world
-            let world = World.setScreenForge forge screen world
-            World.monitor
-                (fun evt world ->
-                    let model = evt.Data.Value :?> 'model
-                    let forge = this.Forge (model, screen)
-                    let world = Forge.synchronizeScreen (World.getScreenForge screen world) forge screen screen world
-                    let world = World.setScreenForge forge screen world
-                    (Cascade, world))
-                    (this.Model screen).ChangeEvent
-                    screen
-                    world
+            World.setScreenForge forge screen world
 
         override this.Render (screen, world) =
             let view = this.View (this.GetModel screen world, screen, world)
@@ -1789,20 +1759,9 @@ module GameDispatcherModule =
             let forge = this.Forge (this.GetModel game world, game)
             let (screenInitialOpt, world) = Forge.synchronizeGame World.setScreenSplash forgeOld forge game game world
             let world = World.setGameForge forge world
-            let world =
-                match screenInitialOpt with
-                | Some screen -> game.SetDesiredScreen (Desire screen) world
-                | None -> game.SetDesiredScreen DesireNone world
-            World.monitor
-                (fun evt world ->
-                    let model = evt.Data.Value :?> 'model
-                    let forge = this.Forge (model, game)
-                    let (_, world) = Forge.synchronizeGame World.setScreenSplash (World.getGameForge world) forge game game world
-                    let world = World.setGameForge forge world
-                    (Cascade, world))
-                    (this.Model game).ChangeEvent
-                    game
-                    world
+            match screenInitialOpt with
+            | Some screen -> game.SetDesiredScreen (Desire screen) world
+            | None -> game.SetDesiredScreen DesireNone world
 
         override this.Render (game, world) =
             let view = this.View (this.GetModel game world, game, world)

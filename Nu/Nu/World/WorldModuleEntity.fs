@@ -309,10 +309,6 @@ module WorldModuleEntity =
             let entityState = World.getEntityState entity world
             entityState.Model
 
-        static member internal getEntityModel<'a> entity world =
-            let entityState = World.getEntityState entity world
-            entityState.Model.DesignerValue :?> 'a
-
         static member internal setEntityModelProperty (value : DesignerProperty) entity world =
             let entityState = World.getEntityState entity world
             let previous = entityState.Model
@@ -325,8 +321,15 @@ module WorldModuleEntity =
                         let entityState = { entityState with Model = { DesignerType = value.DesignerType; DesignerValue = value.DesignerValue }}
                         struct (entityState, World.setEntityState entityState entity world)
                 let world = World.publishEntityChange (nameof entityState.Model) previous.DesignerValue value.DesignerValue entityState.PublishChangeBindings entityState.PublishChangeEvents entity world
+                let world = (World.getEntityDispatcher entity world : EntityDispatcher).TryReforge (entity, world)
                 struct (true, world)
             else struct (false, world)
+
+        static member internal getEntityModel<'a> entity world =
+            match (World.getEntityState entity world).Model.DesignerValue with
+            | :? 'a as model -> model
+            | null -> null :> obj :?> 'a
+            | modelObj -> modelObj |> valueToSymbol |> symbolToValue
 
         static member internal setEntityModel<'a> (value : 'a) entity world =
             let entityState = World.getEntityState entity world
@@ -341,6 +344,7 @@ module WorldModuleEntity =
                         let entityState = { entityState with Model = { DesignerType = typeof<'a>; DesignerValue = valueObj }}
                         struct (entityState, World.setEntityState entityState entity world)
                 let world = World.publishEntityChange (nameof entityState.Model) previous.DesignerValue value entityState.PublishChangeBindings entityState.PublishChangeEvents entity world
+                let world = (World.getEntityDispatcher entity world : EntityDispatcher).TryReforge (entity, world)
                 struct (true, world)
             else struct (false, world)
 

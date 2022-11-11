@@ -46,7 +46,6 @@ module WorldModuleGame =
         static member internal getGameOrder world = (World.getGameState world).Order
         static member internal getGameDispatcher world = (World.getGameState world).Dispatcher
         static member internal getGameModelProperty world = (World.getGameState world).Model
-        static member internal getGameModel<'a> world = (World.getGameState world).Model.DesignerValue :?> 'a
         static member internal getGameForge world = (World.getGameState world).Forge
         static member internal getGameScriptFrame world = (World.getGameState world).ScriptFrame
 
@@ -58,8 +57,15 @@ module WorldModuleGame =
                     let gameState = { gameState with Model = { DesignerType = value.DesignerType; DesignerValue = value.DesignerValue }}
                     struct (gameState, World.setGameState gameState world)
                 let world = World.publishGameChange (nameof gameState.Model) previous.DesignerValue value.DesignerValue world
+                let world = (World.getGameDispatcher world).TryReforge (Simulants.Game, world)
                 struct (true, world)
             else struct (false, world)
+
+        static member internal getGameModel<'a> world =
+            match (World.getGameState world).Model.DesignerValue with
+            | :? 'a as model -> model
+            | null -> null :> obj :?> 'a
+            | modelObj -> modelObj |> valueToSymbol |> symbolToValue
 
         static member internal setGameModel<'a> (value : 'a) world =
             let gameState = World.getGameState world
@@ -70,6 +76,7 @@ module WorldModuleGame =
                     let gameState = { gameState with Model = { DesignerType = typeof<'a>; DesignerValue = valueObj }}
                     struct (gameState, World.setGameState gameState world)
                 let world = World.publishGameChange (nameof gameState.Model) previous.DesignerValue value world
+                let world = (World.getGameDispatcher world).TryReforge (Simulants.Game, world)
                 struct (true, world)
             else struct (false, world)
 

@@ -6,7 +6,7 @@ open Nu.ForgeOperators
 
 // this is our Elm-style model type
 type Model =
-    int
+    Model of int
 
 // this is our Elm-style message type
 type Message =
@@ -16,18 +16,18 @@ type Message =
 
 // this is our Elm-style game dispatcher
 type NelmishDispatcher () =
-    inherit GameForger<Model, Message, unit> (0) // initial model value
+    inherit GameForger<Model, Message, unit> (Model 0) // initial model value
 
     // here we handle the Elm-style messages
-    override this.Message (model, message, _, _) =
+    override this.Message (Model model, message, _, _) =
         match message with
-        | Decrement -> just (model - 1)
-        | Increment -> just (model + 2)
-        | Reset -> just 0
+        | Decrement -> just (Model (model - 1))
+        | Increment -> just (Model (model + 1))
+        | Reset -> just (Model 0)
 
     // here we describe the forge of the game including its one screen, one group, three
     // button entities, and one text control.
-    override this.Forge (model, _) =
+    override this.Forge (Model model, _) =
         Forge.game []
             [Forge.screen Simulants.Default.Screen.Name Vanilla []
                 [Forge.group Simulants.Default.Screen.Name []
