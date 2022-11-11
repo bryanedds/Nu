@@ -423,12 +423,14 @@ module WorldTypes =
           EntityName : string
           PropertyForges : HashSet<Simulant ValueOption * string * Type * obj>
           EventSignalForges : Dictionary<obj Address * obj, Guid>
+          EventHandlerForges : Dictionary<int * obj Address * obj, Guid>
           EntityForges : Dictionary<string, EntityForge> }
         static member internal empty =
             { EntityDispatcherName = nameof EntityDispatcher
               EntityName = nameof Entity
               PropertyForges = hashSetPlus HashIdentity.Structural []
               EventSignalForges = dictPlus HashIdentity.Structural []
+              EventHandlerForges = dictPlus HashIdentity.Structural []
               EntityForges = dictPlus StringComparer.Ordinal [] }
 
     /// Generalized interface for simulant state.

@@ -396,6 +396,7 @@ module Forge =
           EntityName = entityName
           PropertyForges = properties |> List.choose (function PropertyForge (simOpt, name, ty, value) -> Some (simOpt, name, ty, value) | _ -> None) |> hashSetPlus HashIdentity.Structural
           EventSignalForges = properties |> List.choose (function EventSignalForge (addr, value) -> Some ((addr, value), makeGuid ()) | _ -> None) |> dictPlus HashIdentity.Structural
+          EventHandlerForges = dictPlus HashIdentity.Structural [] // TODO: populate.
           EntityForges = entities |> List.map (fun entityForge -> (entityForge.EntityName, entityForge)) |> dictPlus HashIdentity.Structural }
 
     let entity<'entityDispatcher when 'entityDispatcher :> EntityDispatcher> entityName properties =

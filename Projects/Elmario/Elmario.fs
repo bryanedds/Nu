@@ -13,6 +13,7 @@ module Simulants =
 
 // this is our Elm-style command type
 type Command =
+    | Update
     | Jump
     | MoveLeft
     | MoveRight
@@ -24,37 +25,39 @@ type ElmarioDispatcher () =
 
     // here we handle the Elm-style commands
     override this.Command (_, command, _, world) =
-        let world =
-            match command with
-            | Jump ->
-                let physicsId = Simulants.Elmario.GetPhysicsId world
-                if World.isBodyOnGround physicsId world then
-                    let world = World.playSound Constants.Audio.SoundVolumeDefault (asset "Gameplay" "Jump") world
-                    World.applyBodyForce (v3 0.0f 140000.0f 0.0f) physicsId world
-                else world
-            | MoveLeft ->
-                let physicsId = Simulants.Elmario.GetPhysicsId world
+        match command with
+        | Update ->
+            if World.isKeyboardKeyDown KeyboardKey.Left world then withCmd MoveLeft world
+            elif World.isKeyboardKeyDown KeyboardKey.Right world then withCmd MoveRight world
+            else just world
+        | Jump ->
+            let physicsId = Simulants.Elmario.GetPhysicsId world
+            if World.isBodyOnGround physicsId world then
+                let world = World.playSound Constants.Audio.SoundVolumeDefault (asset "Gameplay" "Jump") world
+                let world = World.applyBodyForce (v3 0.0f 140000.0f 0.0f) physicsId world
+                just world
+            else just world
+        | MoveLeft ->
+            let physicsId = Simulants.Elmario.GetPhysicsId world
+            let world =
                 if World.isBodyOnGround physicsId world
                 then World.applyBodyForce (v3 -2500.0f 0.0f 0.0f) physicsId world
                 else World.applyBodyForce (v3 -750.0f 0.0f 0.0f) physicsId world
-            | MoveRight ->
-                let physicsId = Simulants.Elmario.GetPhysicsId world
+            just world
+        | MoveRight ->
+            let physicsId = Simulants.Elmario.GetPhysicsId world
+            let world =
                 if World.isBodyOnGround physicsId world
                 then World.applyBodyForce (v3 2500.0f 0.0f 0.0f) physicsId world
                 else World.applyBodyForce (v3 750.0f 0.0f 0.0f) physicsId world
-            | Nop -> world
-        just world
+            just world
+        | Nop -> just world
 
     // here we describe the forge of the game including elmario, the ground he walks on, and a rock.
     override this.Forge (_, _) =
         Forge.game
-            [Game.KeyboardKeyDownEvent ==|> fun evt ->
-                if evt.Data.KeyboardKey = KeyboardKey.Up && not evt.Data.Repeated then cmd Jump
-                else cmd Nop
-             Game.UpdateEvent ==|> fun _ ->
-                if KeyboardState.isKeyDown KeyboardKey.Left then cmd MoveLeft
-                elif KeyboardState.isKeyDown KeyboardKey.Right then cmd MoveRight
-                else cmd MoveLeft]
+            [Game.UpdateEvent ==> cmd Update
+             Game.KeyboardKeyDownEvent ==|> fun evt -> if evt.Data.KeyboardKey = KeyboardKey.Up && not evt.Data.Repeated then cmd Jump else cmd Nop]
             [Forge.screen Simulants.Default.Screen.Name Vanilla []
                 [Forge.group Simulants.Default.Group.Name []
                     [Forge.sideViewCharacter Simulants.Elmario.Name
