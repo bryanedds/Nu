@@ -141,6 +141,16 @@ module WorldSimulantModule =
             | ((:? ScreenContent as screenContent), (:? Game as game)) -> World.expandScreenContent setScreenSplash screenContent origin game world |> mapFst (Some << cast<Simulant>)
             | _ -> failwithumf ()
 
+        /// Attempt to the given simulant.
+        [<FunctionBinding>]
+        static member tryReforge (simulant : Simulant) (world : World) =
+            match simulant with
+            | :? Entity as entity -> (World.getEntityDispatcher entity world).TryReforge (entity, world)
+            | :? Group as group -> (World.getGroupDispatcher group world).TryReforge (group, world)
+            | :? Screen as screen -> (World.getScreenDispatcher screen world).TryReforge (screen, world)
+            | :? Game as game -> (World.getGameDispatcher world).TryReforge (game, world)
+            | _ -> failwithumf ()
+
         /// Destroy the given simulant.
         [<FunctionBinding>]
         static member destroyImmediate (simulant : Simulant) (world : World) =

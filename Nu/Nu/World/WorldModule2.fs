@@ -1239,8 +1239,6 @@ module EntityDispatcherModule2 =
                 if property.DesignerType = typeof<unit>
                 then entity.SetModelGeneric<'model> (makeInitial world) world
                 else world
-            let channels = this.Channel entity
-            let world = Signal.processChannels this.Message this.Command (this.Model entity) channels entity world
             let forgeOld = World.getEntityForge entity world
             let forge = this.Forge (this.GetModel entity world, entity)
             let world = Forge.synchronizeEntity forgeOld forge entity entity world
@@ -1273,17 +1271,13 @@ module EntityDispatcherModule2 =
             match signalObj with
             | :? Signal<'message, obj> as signal -> entity.Signal<'model, 'message, 'command> (match signal with Message message -> msg message | _ -> failwithumf ()) world
             | :? Signal<obj, 'command> as signal -> entity.Signal<'model, 'message, 'command> (match signal with Command command -> cmd command | _ -> failwithumf ()) world
-            | _ ->
-                let entityForger = World.getEntityDispatcher entity world :?> EntityForger<'model, 'message, 'command>
-                let forgeOld = World.getEntityForge entity world
-                let forge = entityForger.Forge (entity.GetModelGeneric<'model> world, entity)
-                let world = Forge.synchronizeEntity forgeOld forge entity entity world
-                let world = World.setEntityForge forge entity world
-                Log.info "Incorrect signal type returned from event binding. Reforged simulant."
-                world
+            | _ -> Log.info "Incorrect signal type returned from event binding"; world
 
-        abstract member Channel : Entity -> Channel<'message, 'command, Entity, World> list
-        default this.Channel _ = []
+        override this.TryReforge (entity, world) =
+            let model = this.GetModel entity world
+            let forge = this.Forge (model, entity)
+            let world = Forge.synchronizeEntity (World.getEntityForge entity world) forge entity entity world
+            World.setEntityForge forge entity world
 
         abstract member Physics : Vector3 * Quaternion * Vector3 * Vector3 * 'model * Entity * World -> Signal<'message, 'command> list * 'model
         default this.Physics (_, _, _, _, model, _, _) = just model
@@ -1465,8 +1459,6 @@ module GroupDispatcherModule =
                 if property.DesignerType = typeof<unit>
                 then group.SetModelGeneric<'model> (makeInitial world) world
                 else world
-            let channels = this.Channel group
-            let world = Signal.processChannels this.Message this.Command (this.Model group) channels group world
             let forgeOld = World.getGroupForge group world
             let forge = this.Forge (this.GetModel group world, group)
             let world = Forge.synchronizeGroup forgeOld forge group group world
@@ -1490,17 +1482,13 @@ module GroupDispatcherModule =
             match signalObj with
             | :? Signal<'message, obj> as signal -> group.Signal<'model, 'message, 'command> (match signal with Message message -> msg message | _ -> failwithumf ()) world
             | :? Signal<obj, 'command> as signal -> group.Signal<'model, 'message, 'command> (match signal with Command command -> cmd command | _ -> failwithumf ()) world
-            | _ ->
-                let groupForger = World.getGroupDispatcher group world :?> GroupForger<'model, 'message, 'command>
-                let forgeOld = World.getGroupForge group world
-                let forge = groupForger.Forge (group.GetModelGeneric<'model> world, group)
-                let world = Forge.synchronizeGroup forgeOld forge group group world
-                let world = World.setGroupForge forge group world
-                Log.info "Incorrect signal type returned from event binding. Reforged simulant."
-                world
+            | _ -> Log.info "Incorrect signal type returned from event binding."; world
 
-        abstract member Channel : Group -> Channel<'message, 'command, Group, World> list
-        default this.Channel _ = []
+        override this.TryReforge (group, world) =
+            let model = this.GetModel group world
+            let forge = this.Forge (model, group)
+            let world = Forge.synchronizeGroup (World.getGroupForge group world) forge group group world
+            World.setGroupForge forge group world
 
         abstract member Message : 'model * 'message * Group * World -> Signal<'message, 'command> list * 'model
         default this.Message (model, _, _, _) = just model
@@ -1631,8 +1619,6 @@ module ScreenDispatcherModule =
                 if property.DesignerType = typeof<unit>
                 then screen.SetModelGeneric<'model> (makeInitial world) world
                 else world
-            let channels = this.Channel screen
-            let world = Signal.processChannels this.Message this.Command (this.Model screen) channels screen world
             let forgeOld = World.getScreenForge screen world
             let forge = this.Forge (this.GetModel screen world, screen)
             let world = Forge.synchronizeScreen forgeOld forge screen screen world
@@ -1656,17 +1642,13 @@ module ScreenDispatcherModule =
             match signalObj with
             | :? Signal<'message, obj> as signal -> screen.Signal<'model, 'message, 'command> (match signal with Message message -> msg message | _ -> failwithumf ()) world
             | :? Signal<obj, 'command> as signal -> screen.Signal<'model, 'message, 'command> (match signal with Command command -> cmd command | _ -> failwithumf ()) world
-            | _ ->
-                let screenForger = World.getScreenDispatcher screen world :?> ScreenForger<'model, 'message, 'command>
-                let forgeOld = World.getScreenForge screen world
-                let forge = screenForger.Forge (screen.GetModelGeneric<'model> world, screen)
-                let world = Forge.synchronizeScreen forgeOld forge screen screen world
-                let world = World.setScreenForge forge screen world
-                Log.info "Incorrect signal type returned from event binding. Reforged simulant."
-                world
+            | _ -> Log.info "Incorrect signal type returned from event binding."; world
 
-        abstract member Channel : Screen -> Channel<'message, 'command, Screen, World> list
-        default this.Channel _ = []
+        override this.TryReforge (screen, world) =
+            let model = this.GetModel screen world
+            let forge = this.Forge (model, screen)
+            let world = Forge.synchronizeScreen (World.getScreenForge screen world) forge screen screen world
+            World.setScreenForge forge screen world
 
         abstract member Message : 'model * 'message * Screen * World -> Signal<'message, 'command> list * 'model
         default this.Message (model, _, _, _) = just model
@@ -1803,8 +1785,6 @@ module GameDispatcherModule =
                 if property.DesignerType = typeof<unit>
                 then game.SetModelGeneric<'model> (makeInitial world) world
                 else world
-            let channels = this.Channel game
-            let world = Signal.processChannels this.Message this.Command (this.Model game) channels game world
             let forgeOld = World.getGameForge world
             let forge = this.Forge (this.GetModel game world, game)
             let (screenInitialOpt, world) = Forge.synchronizeGame World.setScreenSplash forgeOld forge game game world
@@ -1832,18 +1812,13 @@ module GameDispatcherModule =
             match signalObj with
             | :? Signal<'message, obj> as signal -> game.Signal<'model, 'message, 'command> (match signal with Message message -> msg message | _ -> failwithumf ()) world
             | :? Signal<obj, 'command> as signal -> game.Signal<'model, 'message, 'command> (match signal with Command command -> cmd command | _ -> failwithumf ()) world
-            | _ ->
-                let gameForger = World.getGameDispatcher world :?> GameForger<'model, 'message, 'command>
-                let forgeOld = World.getGameForge world
-                let forge = gameForger.Forge (game.GetModelGeneric<'model> world, game)
-                let (_, world) = Forge.synchronizeGame World.setScreenSplash forgeOld GameForge.empty game game world
-                let (_, world) = Forge.synchronizeGame World.setScreenSplash GameForge.empty forge game game world
-                let world = World.setGameForge forge world
-                Log.info "Incorrect signal type returned from event binding. Reforged simulant."
-                world
+            | _ -> Log.info "Incorrect signal type returned from event binding."; world
 
-        abstract member Channel : Game -> Channel<'message, 'command, Game, World> list
-        default this.Channel _ = []
+        override this.TryReforge (game, world) =
+            let model = this.GetModel game world
+            let forge = this.Forge (model, game)
+            let (_, world) = Forge.synchronizeGame World.setScreenSplash (World.getGameForge world) forge game game world
+            World.setGameForge forge world
 
         abstract member Message : 'model * 'message * Game * World -> Signal<'message, 'command> list * 'model
         default this.Message (model, _, _, _) = just model
@@ -1906,32 +1881,36 @@ module WorldModule2' =
                         World.setEntityState entityState entity world
                     | None -> world
                 | :? EntityDispatcher as entityDispatcher ->
-                    if getTypeName entityState.Dispatcher = getTypeName entityDispatcher
-                    then World.setEntityState { entityState with Dispatcher = entityDispatcher } entity world
+                    if getTypeName entityState.Dispatcher = getTypeName entityDispatcher then
+                        let world = World.setEntityState { entityState with Dispatcher = entityDispatcher } entity world
+                        entityDispatcher.TryReforge (entity, world)
                     else world
                 | _ -> world
             | :? Group as group ->
                 let groupState = World.getGroupState group world
                 match latebindings with
                 | :? GroupDispatcher as groupDispatcher ->
-                    if getTypeName groupState.Dispatcher = getTypeName groupDispatcher
-                    then World.setGroupState { groupState with Dispatcher = groupDispatcher } group world
+                    if getTypeName groupState.Dispatcher = getTypeName groupDispatcher then
+                        let world = World.setGroupState { groupState with Dispatcher = groupDispatcher } group world
+                        groupDispatcher.TryReforge (group, world)
                     else world
                 | _ -> world
             | :? Screen as screen ->
                 let screenState = World.getScreenState screen world
                 match latebindings with
                 | :? ScreenDispatcher as screenDispatcher ->
-                    if getTypeName screenState.Dispatcher = getTypeName screenDispatcher
-                    then World.setScreenState { screenState with Dispatcher = screenDispatcher } screen world
+                    if getTypeName screenState.Dispatcher = getTypeName screenDispatcher then
+                        let world = World.setScreenState { screenState with Dispatcher = screenDispatcher } screen world
+                        screenDispatcher.TryReforge (screen, world)
                     else world
                 | _ -> world
-            | :? Game ->
+            | :? Game as game ->
                 let gameState = World.getGameState world
                 match latebindings with
                 | :? GameDispatcher as gameDispatcher ->
-                    if getTypeName gameState.Dispatcher = getTypeName gameDispatcher
-                    then World.setGameState { gameState with Dispatcher = gameDispatcher } world
+                    if getTypeName gameState.Dispatcher = getTypeName gameDispatcher then
+                        let world = World.setGameState { gameState with Dispatcher = gameDispatcher } world
+                        gameDispatcher.TryReforge (game, world)
                     else world
                 | _ -> world
             | _ -> failwithumf ()
