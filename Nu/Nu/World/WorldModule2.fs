@@ -1213,9 +1213,10 @@ module GameDispatcherModule =
                 else world
             let channels = this.Channel (this.Model game, game)
             let world = Signal.processChannels this.Message this.Command (this.Model game) channels game world
-            let forgeOld = match World.getGameForgeOpt world with ValueSome forge -> forge | ValueNone -> GameForge.empty
+            let forgeOld = World.getGameForge world
             let forge = this.Forge (this.Model game, game)
             let (screenInitialOpt, world) = Forge.synchronizeGame forgeOld forge game world
+            let world = World.setGameForge forge world
             match screenInitialOpt with
             | Some screen -> game.SetDesiredScreen (Desire screen) world
             | None -> game.SetDesiredScreen DesireNone world

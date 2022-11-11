@@ -73,7 +73,7 @@ module WorldModuleGame =
                 struct (true, world)
             else struct (false, world)
 
-        static member internal setGameForgeOpt (value : GameForge) world =
+        static member internal setGameForge (value : GameForge) world =
             let gameState = World.getGameState world
             let gameState = { gameState with Forge = value}
             World.setGameState gameState world
