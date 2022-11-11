@@ -351,11 +351,11 @@ module WorldTypes =
 
         interface LateBindings
 
-    and [<StructuralEquality; NoComparison>] internal PropertyForge =
+    and [<StructuralEquality; NoComparison>] PropertyForge =
         | PropertyForge of string * Type * obj
         | EventHandlerForge of obj Address * obj
 
-    and [<ReferenceEquality; NoComparison>] internal GameForge =
+    and [<ReferenceEquality; NoComparison>] GameForge =
         { PropertyForges : USet<string * Type * obj>
           EventHandlerForges : UMap<obj Address * obj, Guid>
           ScreenForges : UMap<string, ScreenForge>
@@ -366,36 +366,42 @@ module WorldTypes =
               ScreenForges = UMap.makeEmpty StringComparer.Ordinal Imperative
               InitialScreenNameOpt = None }
 
-    and [<ReferenceEquality; NoComparison>] internal ScreenForge =
+    and [<ReferenceEquality; NoComparison>] ScreenForge =
         { PropertyForges : USet<string * Type * obj>
           EventHandlerForges : UMap<obj Address * obj, Guid>
+          ScreenName : string
           ScreenDispatcherName : string
           GroupForges : UMap<string, GroupForge> }
         static member internal empty =
             { PropertyForges = USet.makeEmpty HashIdentity.Structural Imperative
               EventHandlerForges = UMap.makeEmpty HashIdentity.Structural Imperative
+              ScreenName = nameof Screen
               ScreenDispatcherName = nameof ScreenDispatcher
               GroupForges = UMap.makeEmpty HashIdentity.Structural Imperative }
 
-    and [<ReferenceEquality; NoComparison>] internal GroupForge =
+    and [<ReferenceEquality; NoComparison>] GroupForge =
         { PropertyForges : USet<string * Type * obj>
           EventHandlerForges : UMap<obj Address * obj, Guid>
+          GroupName : string
           GroupDispatcherName : string
           EntityForges : UMap<string, EntityForge> }
         static member internal empty =
             { PropertyForges = USet.makeEmpty HashIdentity.Structural Imperative
               EventHandlerForges = UMap.makeEmpty HashIdentity.Structural Imperative
+              GroupName = nameof Group
               GroupDispatcherName = nameof GroupDispatcher
               EntityForges = UMap.makeEmpty HashIdentity.Structural Imperative }
 
-    and [<ReferenceEquality; NoComparison>] internal EntityForge =
+    and [<ReferenceEquality; NoComparison>] EntityForge =
         { PropertyForges : USet<string * Type * obj>
           EventHandlerForges : UMap<obj Address * obj, Guid>
+          EntityName : string
           EntityDispatcherName : string
           EntityForges : UMap<string, EntityForge> }
         static member internal empty =
             { PropertyForges = USet.makeEmpty HashIdentity.Structural Imperative
               EventHandlerForges = UMap.makeEmpty HashIdentity.Structural Imperative
+              EntityName = nameof Entity
               EntityDispatcherName = nameof EntityDispatcher
               EntityForges = UMap.makeEmpty HashIdentity.Structural Imperative }
 
