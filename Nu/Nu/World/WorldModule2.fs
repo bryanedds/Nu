@@ -1786,7 +1786,7 @@ module GameDispatcherModule =
             let world = Signal.processChannels this.Message this.Command (this.Model game) channels game world
             let forgeOld = World.getGameForge world
             let forge = this.Forge (this.GetModel game world, game)
-            let (screenInitialOpt, world) = Forge.synchronizeGame forgeOld forge game game world
+            let (screenInitialOpt, world) = Forge.synchronizeGame World.setScreenSplash forgeOld forge game game world
             let world = World.setGameForge forge world
             let world =
                 match screenInitialOpt with
@@ -1796,7 +1796,7 @@ module GameDispatcherModule =
                 (fun evt world ->
                     let model = evt.Data.Value :?> 'model
                     let forge = this.Forge (model, game)
-                    let (_, world) = Forge.synchronizeGame (World.getGameForge world) forge game game world
+                    let (_, world) = Forge.synchronizeGame World.setScreenSplash (World.getGameForge world) forge game game world
                     let world = World.setGameForge forge world
                     (Cascade, world))
                     (this.Model game).ChangeEvent

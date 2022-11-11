@@ -2,6 +2,7 @@
 open Prime
 open Nu
 open Nu.Declarative
+open Nu.ForgeOperators
 
 [<RequireQualifiedAccess>]
 module Simulants =
@@ -19,10 +20,10 @@ type Command =
 
 // this is our Elm-style game dispatcher
 type ElmarioDispatcher () =
-    inherit GameDispatcher<unit, unit, Command> (())
+    inherit GameForger<unit, unit, Command> (())
 
     // here we channel events to signals
-    override this.Channel (_, game) =
+    override this.Channel game =
         [game.KeyboardKeyDownEvent =|> fun evt ->
             if evt.Data.KeyboardKey = KeyboardKey.Up && not evt.Data.Repeated then cmd Jump
             else cmd Nop
@@ -54,18 +55,19 @@ type ElmarioDispatcher () =
             | Nop -> world
         just world
 
-    // here we describe the content of the game including elmario, the ground he walks on, and a rock.
-    override this.Content (_, _) =
-        [Content.screen Simulants.Default.Screen.Name Vanilla []
-            [Content.group Simulants.Default.Group.Name []
-                [Content.sideViewCharacter Simulants.Elmario.Name
-                    [Entity.Position == v3 0.0f 0.0f 0.0f
-                     Entity.Size == v3 108.0f 108.0f 0.0f]
-                 Content.block2d "Ground"
-                    [Entity.Position == v3 -384.0f -256.0f 0.0f
-                     Entity.Size == v3 768.0f 64.0f 0.0f
-                     Entity.StaticImage == asset "Gameplay" "TreeTop"]
-                 Content.block2d "Rock"
-                    [Entity.Position == v3 320.0f -192.0f 0.0f
-                     Entity.Size == v3 64.0f 64.0f 0.0f
-                     Entity.StaticImage == asset "Gameplay" "Rock"]]]]
+    // here we describe the forge of the game including elmario, the ground he walks on, and a rock.
+    override this.Forge (_, _) =
+        Forge.game []
+            [Forge.screen Simulants.Default.Screen.Name Vanilla []
+                [Forge.group Simulants.Default.Group.Name []
+                    [Forge.sideViewCharacter Simulants.Elmario.Name
+                        [Entity.Position == v3 0.0f 0.0f 0.0f
+                         Entity.Size == v3 108.0f 108.0f 0.0f]
+                     Forge.block2d "Ground"
+                        [Entity.Position == v3 -384.0f -256.0f 0.0f
+                         Entity.Size == v3 768.0f 64.0f 0.0f
+                         Entity.StaticImage == asset "Gameplay" "TreeTop"]
+                     Forge.block2d "Rock"
+                        [Entity.Position == v3 320.0f -192.0f 0.0f
+                         Entity.Size == v3 64.0f 64.0f 0.0f
+                         Entity.StaticImage == asset "Gameplay" "Rock"]]]]

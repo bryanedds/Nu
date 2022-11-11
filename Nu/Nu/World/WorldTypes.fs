@@ -44,6 +44,13 @@ module WorldTypes =
         { IdlingTime : int64
           Destination : Screen }
 
+    /// Describes the behavior of a screen.
+    and [<NoEquality; NoComparison>] ScreenBehavior =
+        | Vanilla
+        | Dissolve of DissolveDescriptor * SongDescriptor option
+        | Splash of DissolveDescriptor * SplashDescriptor * SongDescriptor option * Screen
+        | OmniScreen
+
     /// The data for a change in the world's ambient state.
     and [<StructuralEquality; NoComparison>] AmbientChangeData = 
         { OldWorldWithOldState : World }
@@ -369,12 +376,14 @@ module WorldTypes =
     and [<ReferenceEquality; NoComparison>] ScreenForge =
         { ScreenDispatcherName : string
           ScreenName : string
+          ScreenBehavior : ScreenBehavior
           PropertyForges : HashSet<string * Type * obj>
           EventHandlerForges : Dictionary<obj Address * obj, Guid>
           GroupForges : Dictionary<string, GroupForge> }
         static member internal empty =
             { ScreenDispatcherName = nameof ScreenDispatcher
               ScreenName = nameof Screen
+              ScreenBehavior = Vanilla
               PropertyForges = hashSetPlus HashIdentity.Structural []
               EventHandlerForges = dictPlus HashIdentity.Structural []
               GroupForges = dictPlus StringComparer.Ordinal [] }
@@ -1402,6 +1411,9 @@ type AmbientChangeData = WorldTypes.AmbientChangeData
 
 /// The data required to execution screen splashing.
 type Splash = WorldTypes.Splash
+
+/// Describes the behavior of a screen.
+type ScreenBehavior = WorldTypes.ScreenBehavior
 
 /// Generalized interface tag for late-bound objects.
 type LateBindings = WorldTypes.LateBindings

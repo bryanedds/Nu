@@ -6,13 +6,6 @@ open System
 open Prime
 open Nu
 
-/// Describes the behavior of a screen.
-type [<NoEquality; NoComparison>] ScreenBehavior =
-    | Vanilla
-    | Dissolve of DissolveDescriptor * SongDescriptor option
-    | Splash of DissolveDescriptor * SplashDescriptor * SongDescriptor option * Screen
-    | OmniScreen
-
 /// Describes the content of an entity.
 type [<NoEquality; NoComparison>] EntityContent =
     | EntitiesFromStream of Lens<obj, World> * (obj -> obj) * (obj -> MapGeneralized) * (obj -> Lens<obj, World> -> EntityContent)
