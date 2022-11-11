@@ -68,8 +68,8 @@
     <DisableFastUpToDateCheck>true</DisableFastUpToDateCheck>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="Nelmish.fsx" />
-    <Compile Include="NelmishPlugin.fsx" />
+    <Compile Include="Nelmish.fs" />
+    <Compile Include="NelmishPlugin.fs" />
     <Compile Include="Program.fs" />
     <None Include="App.config" />
     <Content Include="AssetGraph.nuag">

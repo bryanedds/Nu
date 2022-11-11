@@ -22,7 +22,7 @@ type NelmishDispatcher () =
     override this.Message (model, message, _, _) =
         match message with
         | Decrement -> just (model - 1)
-        | Increment -> just (model + 1)
+        | Increment -> just (model + 2)
         | Reset -> just 0
 
     // here we describe the forge of the game including its one screen, one group, three
