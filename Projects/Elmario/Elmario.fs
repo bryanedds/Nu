@@ -22,16 +22,6 @@ type Command =
 type ElmarioDispatcher () =
     inherit GameForger<unit, unit, Command> (())
 
-    // here we channel events to signals
-    override this.Channel game =
-        [game.KeyboardKeyDownEvent =|> fun evt ->
-            if evt.Data.KeyboardKey = KeyboardKey.Up && not evt.Data.Repeated then cmd Jump
-            else cmd Nop
-         game.UpdateEvent =|> fun _ ->
-            if KeyboardState.isKeyDown KeyboardKey.Left then cmd MoveLeft
-            elif KeyboardState.isKeyDown KeyboardKey.Right then cmd MoveRight
-            else cmd Nop]
-
     // here we handle the Elm-style commands
     override this.Command (_, command, _, world) =
         let world =
@@ -57,7 +47,14 @@ type ElmarioDispatcher () =
 
     // here we describe the forge of the game including elmario, the ground he walks on, and a rock.
     override this.Forge (_, _) =
-        Forge.game []
+        Forge.game
+            [Game.KeyboardKeyDownEvent ==|> fun evt ->
+                if evt.Data.KeyboardKey = KeyboardKey.Up && not evt.Data.Repeated then cmd Jump
+                else cmd Nop
+             Game.UpdateEvent ==|> fun _ ->
+                if KeyboardState.isKeyDown KeyboardKey.Left then cmd MoveLeft
+                elif KeyboardState.isKeyDown KeyboardKey.Right then cmd MoveRight
+                else cmd MoveLeft]
             [Forge.screen Simulants.Default.Screen.Name Vanilla []
                 [Forge.group Simulants.Default.Group.Name []
                     [Forge.sideViewCharacter Simulants.Elmario.Name
