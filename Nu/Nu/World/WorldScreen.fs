@@ -267,7 +267,7 @@ module WorldScreenModule =
             World.createDissolveScreen5 typeof<'d>.Name nameOpt dissolveDescriptor songOpt world
 
         /// Write a screen to a screen descriptor.
-        static member writeScreen screen screenDescriptor world =
+        static member writeScreen screen (screenDescriptor : ScreenDescriptor) world =
             let screenState = World.getScreenState screen world
             let screenDispatcherName = getTypeName screenState.Dispatcher
             let screenDescriptor = { screenDescriptor with ScreenDispatcherName = screenDispatcherName }

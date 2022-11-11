@@ -1099,6 +1099,8 @@ module GameDispatcherModule =
             match game.GetDispatcher world with
             | :? GameDispatcher<'model, 'message, 'command> as dispatcher ->
                 Signal.processSignal dispatcher.Message dispatcher.Command (game.ModelGeneric<'model> ()) signal game world
+            | :? GameDispatcher'<'model, 'message, 'command> as dispatcher ->
+                Signal.processSignal dispatcher.Message dispatcher.Command (game.ModelGeneric<'model> ()) signal game world
             | _ -> Log.info "Failed to send signal to game."; world
 
     and Game with
@@ -1215,11 +1217,22 @@ module GameDispatcherModule =
             let world = Signal.processChannels this.Message this.Command (this.Model game) channels game world
             let forgeOld = World.getGameForge world
             let forge = this.Forge (this.GetModel game world, game)
-            let (screenInitialOpt, world) = Forge.synchronizeGame forgeOld forge game world
+            let (screenInitialOpt, world) = Forge.synchronizeGame forgeOld forge game game world
             let world = World.setGameForge forge world
-            match screenInitialOpt with
-            | Some screen -> game.SetDesiredScreen (Desire screen) world
-            | None -> game.SetDesiredScreen DesireNone world
+            let world =
+                match screenInitialOpt with
+                | Some screen -> game.SetDesiredScreen (Desire screen) world
+                | None -> game.SetDesiredScreen DesireNone world
+            World.monitor
+                (fun evt world ->
+                    let model = evt.Data.Value :?> 'model
+                    let forge = this.Forge (model, game)
+                    let (_, world) = Forge.synchronizeGame (World.getGameForge world) forge game game world
+                    let world = World.setGameForge forge world
+                    (Cascade, world))
+                    (this.Model game).ChangeEvent
+                    game
+                    world
 
         override this.Render (game, world) =
             let view = this.View (this.GetModel game world, game, world)
