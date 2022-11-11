@@ -41,7 +41,7 @@ type [<StructuralEquality; StructuralComparison>] GamepadButton =
     | ButtonStart
 
 [<RequireQualifiedAccess>]
-module MouseState =
+module internal MouseState =
 
     /// Convert a MouseButton to SDL's representation.
     let toSdlButton mouseButton =
@@ -62,57 +62,57 @@ module MouseState =
         | SDL.SDL_BUTTON_X2 -> MouseX2
         | _ -> failwith "Invalid SDL mouse button."
 
+    /// Get the position of the mouse.
+    let internal getPosition () =
+        let (_, x, y) = SDL.SDL_GetMouseState ()
+        v2 (single x) (single y)
+
     /// Check that the given mouse button is down.
-    let isButtonDown mouseButton =
+    let internal isButtonDown mouseButton =
         let sdlMouseButton = toSdlButton mouseButton
         let sdlMouseButtonMask = SDL.SDL_BUTTON sdlMouseButton
         let (sdlMouseButtonState, _, _) = SDL.SDL_GetMouseState ()
         sdlMouseButtonState &&& sdlMouseButtonMask <> 0u
 
-    /// Get the position of the mouse.
-    let getPosition () =
-        let (_, x, y) = SDL.SDL_GetMouseState ()
-        v2 (single x) (single y)
-
 [<RequireQualifiedAccess>]
 module KeyboardState =
 
     /// Check that the given keyboard key is down.
-    let isKeyDown (key : KeyboardKey) =
+    let internal isKeyDown (key : KeyboardKey) =
         let keyboardStatePtr = fst (SDL.SDL_GetKeyboardState ())
         let keyboardStatePtr = NativeInterop.NativePtr.ofNativeInt keyboardStatePtr
         let state = NativeInterop.NativePtr.get<byte> keyboardStatePtr (int key)
         state = byte 1
 
     /// Check that the given keyboard key is up.
-    let isKeyUp (key : KeyboardKey) =
+    let internal isKeyUp (key : KeyboardKey) =
         not (isKeyDown key)
 
     /// Check that either ctrl key is down.
-    let isCtrlDown () =
+    let internal isCtrlDown () =
         isKeyDown KeyboardKey.Lctrl ||
         isKeyDown KeyboardKey.Rctrl
 
     /// Check that both ctrl keys are up.
-    let isCtrlUp () =
+    let internal isCtrlUp () =
         not (isCtrlDown ())
 
     /// Check that either alt key is down.
-    let isAltDown () =
+    let internal isAltDown () =
         isKeyDown KeyboardKey.Lalt ||
         isKeyDown KeyboardKey.Ralt
 
     /// Check that both alt keys are up.
-    let isAltUp () =
+    let internal isAltUp () =
         not (isAltDown ())
 
     /// Check that either shift key is down.
-    let isShiftDown () =
+    let internal isShiftDown () =
         isKeyDown KeyboardKey.Lshift ||
         isKeyDown KeyboardKey.Rshift
 
     /// Check that both shift keys are up.
-    let isShiftUp () =
+    let internal isShiftUp () =
         not (isShiftDown ())
 
 [<RequireQualifiedAccess>]        
@@ -189,7 +189,7 @@ module GamepadState =
         | SDL.SDL_HAT_CENTERED -> DirectionCentered
         | _ -> failwith "Invalid SDL hat direction."
 
-    /// Check that the given gamepad button is down.
+    /// Get the given gamepad's current direction.
     let getDirection index =
         match Array.tryItem index Joysticks with
         | Some joystick ->
@@ -197,7 +197,7 @@ module GamepadState =
             toNuDirection hat
         | None -> DirectionCentered
 
-    /// Check that the given gamepad button is down.
+    /// Check that the given gamepad's button is down.
     let isButtonDown index button =
         let sdlButton = toSdlButton button
         match Array.tryItem index Joysticks with
