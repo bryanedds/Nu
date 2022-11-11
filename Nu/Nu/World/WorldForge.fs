@@ -261,7 +261,7 @@ module Forge =
             world
         else world
 
-    let internal synchronizeGame (forgeOld : GameForge) (forge : GameForge) (origin : Simulant) (game : Game) world =
+    let internal synchronizeGame setScreenSplash (forgeOld : GameForge) (forge : GameForge) (origin : Simulant) (game : Game) world =
 
         if forgeOld <> forge then
 
@@ -339,21 +339,91 @@ module Forge =
             let world =
                 Seq.fold (fun world (screen : Screen, screenForge : ScreenForge) ->
                     let (screen, world) = World.createScreen3 screenForge.ScreenDispatcherName (Some screen.Name) world
+                    let world = World.applyScreenBehavior setScreenSplash screenForge.ScreenBehavior screen world
                     synchronizeScreen ScreenForge.empty screenForge origin screen world)
                     world screensAdded
 
             (forge.InitialScreenNameOpt |> Option.map Screen, world)
         else (forge.InitialScreenNameOpt |> Option.map Screen, world)
 
-    let entity<'entityDispatcher when 'entityDispatcher :> EntityDispatcher> entityName properties entities =
+    let composite<'entityDispatcher when 'entityDispatcher :> EntityDispatcher> entityName properties entities =
         { EntityDispatcherName = typeof<'entityDispatcher>.Name
           EntityName = entityName
           PropertyForges = properties |> List.choose (function PropertyForge (name, ty, value) -> Some (name, ty, value) | _ -> None) |> hashSetPlus HashIdentity.Structural
           EventHandlerForges = properties |> List.choose (function EventHandlerForge (addr, value) -> Some ((addr, value), makeGuid ()) | _ -> None) |> dictPlus HashIdentity.Structural
           EntityForges = entities |> List.map (fun entityForge -> (entityForge.EntityName, entityForge)) |> dictPlus HashIdentity.Structural }
 
-    let button entityName properties = entity<ButtonDispatcher> entityName properties []
-    let text entityName properties = entity<TextDispatcher> entityName properties []
+    let entity<'entityDispatcher when 'entityDispatcher :> EntityDispatcher> entityName properties =
+        composite<'entityDispatcher> entityName properties []
+
+    /// Describe a 2d basic emitter with the given initializers.
+    let basicEmitter2d entityName initializers = entity<BasicEmitterDispatcher2d> entityName initializers
+
+    /// Describe a 2d effect with the given initializers.
+    let effect2d entityName initializers = entity<EffectDispatcher2d> entityName initializers
+
+    /// Describe a static sprite with the given initializers.
+    let staticSprite entityName initializers = entity<StaticSpriteDispatcher> entityName initializers
+
+    /// Describe an animated sprite with the given initializers.
+    let animatedSprite entityName initializers = entity<AnimatedSpriteDispatcher> entityName initializers
+
+    /// Describe a button with the given initializers.
+    let button entityName initializers = entity<ButtonDispatcher> entityName initializers
+
+    /// Describe a label with the given initializers.
+    let label entityName initializers = entity<LabelDispatcher> entityName initializers
+
+    /// Describe a text with the given initializers.
+    let text entityName initializers = entity<TextDispatcher> entityName initializers
+
+    /// Describe a toggle button with the given initializers.
+    let toggleButton entityName initializers = entity<ToggleButtonDispatcher> entityName initializers
+
+    /// Describe a radio button with the given initializers.
+    let radioButton entityName initializers = entity<RadioButtonDispatcher> entityName initializers
+
+    /// Describe an fps gui with the given initializers.
+    let fps entityName initializers = entity<FpsDispatcher> entityName initializers
+
+    /// Describe a feeler with the given initializers.
+    let feeler entityName initializers = entity<FeelerDispatcher> entityName initializers
+
+    /// Describe a fill bar with the given initializers.
+    let fillBar entityName initializers = entity<FillBarDispatcher> entityName initializers
+
+    /// Describe a 2d block with the given initializers.
+    let block2d entityName initializers = entity<BlockDispatcher2d> entityName initializers
+
+    /// Describe a 2d box with the given initializers.
+    let box2d entityName initializers = entity<BoxDispatcher2d> entityName initializers
+
+    /// Describe a side-view character with the given initializers.
+    let sideViewCharacter entityName initializers = entity<SideViewCharacterDispatcher> entityName initializers
+
+    /// Describe a tile map with the given initializers.
+    let tileMap entityName initializers = entity<TileMapDispatcher> entityName initializers
+
+    /// Describe a tmx map with the given initializers.
+    let tmxMap entityName initializers = entity<TmxMapDispatcher> entityName initializers
+
+    /// Describe a 3d light with the given initializers.
+    let light3d entityName initializers = entity<LightDispatcher3d> entityName initializers
+
+    /// Describe a sky box with the given initializers.
+    let skyBox entityName initializers = entity<SkyBoxDispatcher> entityName initializers
+
+    /// Describe a static billboard with the given initializers.
+    let staticBillboard entityName initializers = entity<StaticBillboardDispatcher> entityName initializers
+
+    /// Describe a static model with the given initializers.
+    let staticModel entityName initializers = entity<StaticModelDispatcher> entityName initializers
+
+    /// Describe a static model surface with the given initializers.
+    let staticModelSurface entityName initializers = entity<StaticModelSurfaceDispatcher> entityName initializers
+
+    /// Describe a static model expanded into an entity hierarchy with the given initializers.
+    let staticModelHierarchy entityName initializers = entity<StaticModelHierarchyDispatcher> entityName initializers
 
     let group<'groupDispatcher when 'groupDispatcher :> GroupDispatcher> groupName properties entities =
         { GroupDispatcherName = typeof<'groupDispatcher>.Name
@@ -362,9 +432,10 @@ module Forge =
           EventHandlerForges = properties |> List.choose (function EventHandlerForge (addr, value) -> Some ((addr, value), makeGuid ()) | _ -> None) |> dictPlus HashIdentity.Structural
           EntityForges = entities |> List.map (fun entityForge -> (entityForge.EntityName, entityForge)) |> dictPlus HashIdentity.Structural }
 
-    let screen<'screenDispatcher when 'screenDispatcher :> ScreenDispatcher> screenName properties groups =
+    let screen<'screenDispatcher when 'screenDispatcher :> ScreenDispatcher> screenName screenBehavior properties groups =
         { ScreenDispatcherName = typeof<'screenDispatcher>.Name
           ScreenName = screenName
+          ScreenBehavior = screenBehavior
           PropertyForges = properties |> List.choose (function PropertyForge (name, ty, value) -> Some (name, ty, value) | _ -> None) |> hashSetPlus HashIdentity.Structural
           EventHandlerForges = properties |> List.choose (function EventHandlerForge (addr, value) -> Some ((addr, value), makeGuid ()) | _ -> None) |> dictPlus HashIdentity.Structural
           GroupForges = groups |> List.map (fun groupForge -> (groupForge.GroupName, groupForge)) |> dictPlus HashIdentity.Structural }
