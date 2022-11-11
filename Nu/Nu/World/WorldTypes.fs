@@ -375,17 +375,18 @@ module WorldTypes =
         interface LateBindings
 
     and [<StructuralEquality; NoComparison>] PropertyForge =
-        | PropertyForge of string * Type * obj
-        | EventHandlerForge of obj Address * obj
+        | PropertyForge of Simulant ValueOption * string * Type * obj
+        | EventSignalForge of obj Address * obj
+        | EventHandlerForge of PartialEquatable<obj Address, Event -> obj>
 
     and [<ReferenceEquality; NoComparison>] GameForge =
-        { PropertyForges : HashSet<string * Type * obj>
-          EventHandlerForges : Dictionary<obj Address * obj, Guid>
+        { PropertyForges : HashSet<Simulant ValueOption * string * Type * obj>
+          EventSignalForges : Dictionary<obj Address * obj, Guid>
           ScreenForges : Dictionary<string, ScreenForge>
           InitialScreenNameOpt : string option }
         static member internal empty =
             { PropertyForges = hashSetPlus HashIdentity.Structural []
-              EventHandlerForges = dictPlus HashIdentity.Structural []
+              EventSignalForges = dictPlus HashIdentity.Structural []
               ScreenForges = dictPlus StringComparer.Ordinal []
               InitialScreenNameOpt = None }
 
@@ -393,41 +394,41 @@ module WorldTypes =
         { ScreenDispatcherName : string
           ScreenName : string
           ScreenBehavior : ScreenBehavior
-          PropertyForges : HashSet<string * Type * obj>
-          EventHandlerForges : Dictionary<obj Address * obj, Guid>
+          PropertyForges : HashSet<Simulant ValueOption * string * Type * obj>
+          EventSignalForges : Dictionary<obj Address * obj, Guid>
           GroupForges : Dictionary<string, GroupForge> }
         static member internal empty =
             { ScreenDispatcherName = nameof ScreenDispatcher
               ScreenName = nameof Screen
               ScreenBehavior = Vanilla
               PropertyForges = hashSetPlus HashIdentity.Structural []
-              EventHandlerForges = dictPlus HashIdentity.Structural []
+              EventSignalForges = dictPlus HashIdentity.Structural []
               GroupForges = dictPlus StringComparer.Ordinal [] }
 
     and [<ReferenceEquality; NoComparison>] GroupForge =
         { GroupDispatcherName : string
           GroupName : string
-          PropertyForges : HashSet<string * Type * obj>
-          EventHandlerForges : Dictionary<obj Address * obj, Guid>
+          PropertyForges : HashSet<Simulant ValueOption * string * Type * obj>
+          EventSignalForges : Dictionary<obj Address * obj, Guid>
           EntityForges : Dictionary<string, EntityForge> }
         static member internal empty =
             { GroupDispatcherName = nameof GroupDispatcher
               GroupName = nameof Group
               PropertyForges = hashSetPlus HashIdentity.Structural []
-              EventHandlerForges = dictPlus HashIdentity.Structural []
+              EventSignalForges = dictPlus HashIdentity.Structural []
               EntityForges = dictPlus StringComparer.Ordinal [] }
 
     and [<ReferenceEquality; NoComparison>] EntityForge =
         { EntityDispatcherName : string
           EntityName : string
-          PropertyForges : HashSet<string * Type * obj>
-          EventHandlerForges : Dictionary<obj Address * obj, Guid>
+          PropertyForges : HashSet<Simulant ValueOption * string * Type * obj>
+          EventSignalForges : Dictionary<obj Address * obj, Guid>
           EntityForges : Dictionary<string, EntityForge> }
         static member internal empty =
             { EntityDispatcherName = nameof EntityDispatcher
               EntityName = nameof Entity
               PropertyForges = hashSetPlus HashIdentity.Structural []
-              EventHandlerForges = dictPlus HashIdentity.Structural []
+              EventSignalForges = dictPlus HashIdentity.Structural []
               EntityForges = dictPlus StringComparer.Ordinal [] }
 
     /// Generalized interface for simulant state.
