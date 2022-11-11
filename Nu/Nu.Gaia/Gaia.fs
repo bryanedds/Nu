@@ -1152,7 +1152,8 @@ module Gaia =
                         // what kind of idiot would do that?
                         fsprojFileLines |>
                         Array.map (fun line -> line.Trim ()) |>
-                        Array.filter (fun line -> line.Contains "Compile Include" && line.Contains ".fsx") |>
+                        Array.filter (fun line -> line.Contains "Compile Include" && line.Contains ".fs") |>
+                        Array.filter (fun line -> line.Contains "Compile Include" && not (line.Contains "Program.fs")) |>
                         Array.map (fun line -> line.Replace ("<Compile Include", "")) |>
                         Array.map (fun line -> line.Replace ("/>", "")) |>
                         Array.map (fun line -> line.Replace ("=", "")) |>
