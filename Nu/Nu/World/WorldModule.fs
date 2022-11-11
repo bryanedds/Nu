@@ -20,13 +20,13 @@ module Simulants =
     module Default =
 
         /// The default screen - may or may not exist.
-        let Screen = Screen "Screen"
+        let Screen = Screen (nameof Screen)
 
         /// The default group - may or may not exist.
-        let Group = Screen / "Group"
+        let Group = Screen / nameof Group
 
         /// The default entity - may or may not exist.
-        let Entity = Group / "Entity"
+        let Entity = Group / nameof Entity
 
 [<AutoOpen>]
 module WorldModuleOperators =

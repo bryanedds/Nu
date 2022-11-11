@@ -9,7 +9,7 @@ open Prime
 [<RequireQualifiedAccess>]
 module Forge =
 
-    let rec synchronizeEntity (forgeOld : EntityForge) (forge : EntityForge) (entity : Entity) world =
+    let rec internal synchronizeEntity (forgeOld : EntityForge) (forge : EntityForge) (entity : Entity) world =
         
         if forgeOld <> forge then
 
@@ -94,7 +94,7 @@ module Forge =
             world
         else world
 
-    let synchronizeGroup (forgeOld : GroupForge) (forge : GroupForge) (group : Group) world =
+    let internal synchronizeGroup (forgeOld : GroupForge) (forge : GroupForge) (group : Group) world =
         
         if forgeOld <> forge then
 
@@ -178,7 +178,7 @@ module Forge =
             world
         else world
 
-    let synchronizeScreen (forgeOld : ScreenForge) (forge : ScreenForge) (screen : Screen) world =
+    let internal synchronizeScreen (forgeOld : ScreenForge) (forge : ScreenForge) (screen : Screen) world =
         
         if forgeOld <> forge then
 
@@ -262,7 +262,7 @@ module Forge =
             world
         else world
 
-    let synchronizeGame (forgeOld : GameForge) (forge : GameForge) (game : Game) world =
+    let internal synchronizeGame (forgeOld : GameForge) (forge : GameForge) (game : Game) world =
 
         if forgeOld <> forge then
 
@@ -345,3 +345,44 @@ module Forge =
 
             (forge.InitialScreenNameOpt |> Option.map Screen, world)
         else (forge.InitialScreenNameOpt |> Option.map Screen, world)
+
+    let entity<'entityDispatcher when 'entityDispatcher :> EntityDispatcher> entityName properties entities =
+        { PropertyForges = properties |> List.choose (function PropertyForge (name, ty, value) -> Some (name, ty, value) | _ -> None) |> USet.ofSeq HashIdentity.Structural Imperative
+          EventHandlerForges = properties |> List.choose (function EventHandlerForge (addr, value) -> Some ((addr, value), makeGuid ()) | _ -> None) |> UMap.ofSeq HashIdentity.Structural Imperative
+          EntityName = entityName
+          EntityDispatcherName = typeof<'entityDispatcher>.Name
+          EntityForges = entities |> List.map (fun entityForge -> (entityForge.EntityName, entityForge)) |> UMap.ofSeq HashIdentity.Structural Imperative }
+
+    let button entityName properties = entity<ButtonDispatcher> entityName properties []
+    let text entityName properties = entity<TextDispatcher> entityName properties []
+
+    let group<'groupDispatcher when 'groupDispatcher :> GroupDispatcher> groupName properties entities =
+        { PropertyForges = properties |> List.choose (function PropertyForge (name, ty, value) -> Some (name, ty, value) | _ -> None) |> USet.ofSeq HashIdentity.Structural Imperative
+          EventHandlerForges = properties |> List.choose (function EventHandlerForge (addr, value) -> Some ((addr, value), makeGuid ()) | _ -> None) |> UMap.ofSeq HashIdentity.Structural Imperative
+          GroupName = groupName
+          GroupDispatcherName = typeof<'groupDispatcher>.Name
+          EntityForges = entities |> List.map (fun entityForge -> (entityForge.EntityName, entityForge)) |> UMap.ofSeq HashIdentity.Structural Imperative }
+
+    let screen<'screenDispatcher when 'screenDispatcher :> ScreenDispatcher> screenName properties groups =
+        { PropertyForges = properties |> List.choose (function PropertyForge (name, ty, value) -> Some (name, ty, value) | _ -> None) |> USet.ofSeq HashIdentity.Structural Imperative
+          EventHandlerForges = properties |> List.choose (function EventHandlerForge (addr, value) -> Some ((addr, value), makeGuid ()) | _ -> None) |> UMap.ofSeq HashIdentity.Structural Imperative
+          ScreenName = screenName
+          ScreenDispatcherName = typeof<'screenDispatcher>.Name
+          GroupForges = groups |> List.map (fun groupForge -> (groupForge.GroupName, groupForge)) |> UMap.ofSeq HashIdentity.Structural Imperative }
+
+    let game properties screens =
+        { PropertyForges = properties |> List.choose (function PropertyForge (name, ty, value) -> Some (name, ty, value) | _ -> None) |> USet.ofSeq HashIdentity.Structural Imperative
+          EventHandlerForges = properties |> List.choose (function EventHandlerForge (addr, value) -> Some ((addr, value), makeGuid ()) | _ -> None) |> UMap.ofSeq HashIdentity.Structural Imperative
+          ScreenForges = screens |> List.map (fun screenForge -> (screenForge.ScreenName, screenForge)) |> UMap.ofSeq HashIdentity.Structural Imperative
+          InitialScreenNameOpt = match screens with [] -> None | screen :: _ -> Some screen.ScreenName }
+        
+[<AutoOpen>]
+module ForgeOperators =
+
+    /// Initialize a forge property.
+    let inline (===) (lens : Lens<'a, World>) (value : 'a) : PropertyForge =
+        PropertyForge (lens.Name, lens.Type, value)
+
+    /// Bind an event to a signal.
+    let inline (===>) (eventAddress : 'a Address) (signal : Signal<'message, 'command>) : PropertyForge =
+        EventHandlerForge (Address.generalize eventAddress, signal)

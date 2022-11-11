@@ -1214,7 +1214,7 @@ module GameDispatcherModule =
             let channels = this.Channel (this.Model game, game)
             let world = Signal.processChannels this.Message this.Command (this.Model game) channels game world
             let forgeOld = World.getGameForge world
-            let forge = this.Forge (this.Model game, game)
+            let forge = this.Forge (this.GetModel game world, game)
             let (screenInitialOpt, world) = Forge.synchronizeGame forgeOld forge game world
             let world = World.setGameForge forge world
             match screenInitialOpt with
@@ -1240,8 +1240,8 @@ module GameDispatcherModule =
         abstract member Command : 'model * 'command * Game * World -> Signal<'message, 'command> list * World
         default this.Command (_, _, _, world) = just world
 
-        abstract member Forge : Lens<'model, World> * Game -> GameForge
-        default this.Forge (_, world) = GameForge.empty
+        abstract member Forge : 'model * Game -> GameForge
+        default this.Forge (_, _) = GameForge.empty
 
         abstract member View : 'model * Game * World -> View
         default this.View (_, _, _) = View.empty
