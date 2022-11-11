@@ -107,7 +107,6 @@ module WorldModuleGroup =
             Option.isSome (World.getGroupStateOpt group world)
 
         static member internal getGroupModelProperty group world = (World.getGroupState group world).Model
-        static member internal getGroupModel<'a> group world = (World.getGroupState group world).Model.DesignerValue :?> 'a
         static member internal getGroupForge group world = (World.getGroupState group world).Forge
         static member internal getGroupDispatcher group world = (World.getGroupState group world).Dispatcher
         static member internal getGroupVisible group world = (World.getGroupState group world).Visible
@@ -126,8 +125,15 @@ module WorldModuleGroup =
                     let groupState = { groupState with Model = { DesignerType = value.DesignerType; DesignerValue = value.DesignerValue }}
                     struct (groupState, World.setGroupState groupState group world)
                 let world = World.publishGroupChange (nameof groupState.Model) previous.DesignerValue value.DesignerValue group world
+                let world = (World.getGroupDispatcher group world).TryReforge (group, world)
                 struct (true, world)
             else struct (false, world)
+
+        static member internal getGroupModel<'a> group world =
+            match (World.getGroupState group world).Model.DesignerValue with
+            | :? 'a as model -> model
+            | null -> null :> obj :?> 'a
+            | modelObj -> modelObj |> valueToSymbol |> symbolToValue
 
         static member internal setGroupModel<'a> (value : 'a) group world =
             let groupState = World.getGroupState group world
@@ -138,6 +144,7 @@ module WorldModuleGroup =
                     let groupState = { groupState with Model = { DesignerType = typeof<'a>; DesignerValue = valueObj }}
                     struct (groupState, World.setGroupState groupState group world)
                 let world = World.publishGroupChange (nameof groupState.Model) previous.DesignerValue value group world
+                let world = (World.getGroupDispatcher group world).TryReforge (group, world)
                 struct (true, world)
             else struct (false, world)
 

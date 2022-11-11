@@ -103,7 +103,6 @@ module WorldModuleScreen =
 
         static member internal getScreenDispatcher screen world = (World.getScreenState screen world).Dispatcher
         static member internal getScreenModelProperty screen world = (World.getScreenState screen world).Model
-        static member internal getScreenModel<'a> screen world = (World.getScreenState screen world).Model.DesignerValue :?> 'a
         static member internal getScreenForge screen world = (World.getScreenState screen world).Forge
         static member internal getScreenEcs screen world = (World.getScreenState screen world).Ecs
         static member internal getScreenTransitionState screen world = (World.getScreenState screen world).TransitionState
@@ -126,8 +125,15 @@ module WorldModuleScreen =
                     let screenState = { screenState with Model = { DesignerType = value.DesignerType; DesignerValue = value.DesignerValue }}
                     struct (screenState, World.setScreenState screenState screen world)
                 let world = World.publishScreenChange (nameof screenState.Model) previous.DesignerValue value.DesignerValue screen world
+                let world = (World.getScreenDispatcher screen world).TryReforge (screen, world)
                 struct (true, world)
             else struct (false, world)
+
+        static member internal getScreenModel<'a> screen world =
+            match (World.getScreenState screen world).Model.DesignerValue with
+            | :? 'a as model -> model
+            | null -> null :> obj :?> 'a
+            | modelObj -> modelObj |> valueToSymbol |> symbolToValue
 
         static member internal setScreenModel<'a> (value : 'a) screen world =
             let screenState = World.getScreenState screen world
@@ -138,6 +144,7 @@ module WorldModuleScreen =
                     let screenState = { screenState with Model = { DesignerType = typeof<'a>; DesignerValue = valueObj }}
                     struct (screenState, World.setScreenState screenState screen world)
                 let world = World.publishScreenChange (nameof screenState.Model) previous.DesignerValue value screen world
+                let world = (World.getScreenDispatcher screen world).TryReforge (screen, world)
                 struct (true, world)
             else struct (false, world)
 
