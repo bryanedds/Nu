@@ -1273,7 +1273,14 @@ module EntityDispatcherModule2 =
             match signalObj with
             | :? Signal<'message, obj> as signal -> entity.Signal<'model, 'message, 'command> (match signal with Message message -> msg message | _ -> failwithumf ()) world
             | :? Signal<obj, 'command> as signal -> entity.Signal<'model, 'message, 'command> (match signal with Command command -> cmd command | _ -> failwithumf ()) world
-            | _ -> Log.info "Incorrect signal type returned from event binding."; world
+            | _ ->
+                let entityForger = World.getEntityDispatcher entity world :?> EntityForger<'model, 'message, 'command>
+                let forgeOld = World.getEntityForge entity world
+                let forge = entityForger.Forge (entity.GetModelGeneric<'model> world, entity)
+                let world = Forge.synchronizeEntity forgeOld forge entity entity world
+                let world = World.setEntityForge forge entity world
+                Log.info "Incorrect signal type returned from event binding. Reforged simulant."
+                world
 
         abstract member Channel : Entity -> Channel<'message, 'command, Entity, World> list
         default this.Channel _ = []
@@ -1483,7 +1490,14 @@ module GroupDispatcherModule =
             match signalObj with
             | :? Signal<'message, obj> as signal -> group.Signal<'model, 'message, 'command> (match signal with Message message -> msg message | _ -> failwithumf ()) world
             | :? Signal<obj, 'command> as signal -> group.Signal<'model, 'message, 'command> (match signal with Command command -> cmd command | _ -> failwithumf ()) world
-            | _ -> Log.info "Incorrect signal type returned from event binding."; world
+            | _ ->
+                let groupForger = World.getGroupDispatcher group world :?> GroupForger<'model, 'message, 'command>
+                let forgeOld = World.getGroupForge group world
+                let forge = groupForger.Forge (group.GetModelGeneric<'model> world, group)
+                let world = Forge.synchronizeGroup forgeOld forge group group world
+                let world = World.setGroupForge forge group world
+                Log.info "Incorrect signal type returned from event binding. Reforged simulant."
+                world
 
         abstract member Channel : Group -> Channel<'message, 'command, Group, World> list
         default this.Channel _ = []
@@ -1642,7 +1656,14 @@ module ScreenDispatcherModule =
             match signalObj with
             | :? Signal<'message, obj> as signal -> screen.Signal<'model, 'message, 'command> (match signal with Message message -> msg message | _ -> failwithumf ()) world
             | :? Signal<obj, 'command> as signal -> screen.Signal<'model, 'message, 'command> (match signal with Command command -> cmd command | _ -> failwithumf ()) world
-            | _ -> Log.info "Incorrect signal type returned from event binding."; world
+            | _ ->
+                let screenForger = World.getScreenDispatcher screen world :?> ScreenForger<'model, 'message, 'command>
+                let forgeOld = World.getScreenForge screen world
+                let forge = screenForger.Forge (screen.GetModelGeneric<'model> world, screen)
+                let world = Forge.synchronizeScreen forgeOld forge screen screen world
+                let world = World.setScreenForge forge screen world
+                Log.info "Incorrect signal type returned from event binding. Reforged simulant."
+                world
 
         abstract member Channel : Screen -> Channel<'message, 'command, Screen, World> list
         default this.Channel _ = []
@@ -1811,7 +1832,15 @@ module GameDispatcherModule =
             match signalObj with
             | :? Signal<'message, obj> as signal -> game.Signal<'model, 'message, 'command> (match signal with Message message -> msg message | _ -> failwithumf ()) world
             | :? Signal<obj, 'command> as signal -> game.Signal<'model, 'message, 'command> (match signal with Command command -> cmd command | _ -> failwithumf ()) world
-            | _ -> Log.info "Incorrect signal type returned from event binding."; world
+            | _ ->
+                let gameForger = World.getGameDispatcher world :?> GameForger<'model, 'message, 'command>
+                let forgeOld = World.getGameForge world
+                let forge = gameForger.Forge (game.GetModelGeneric<'model> world, game)
+                let (_, world) = Forge.synchronizeGame World.setScreenSplash forgeOld GameForge.empty game game world
+                let (_, world) = Forge.synchronizeGame World.setScreenSplash GameForge.empty forge game game world
+                let world = World.setGameForge forge world
+                Log.info "Incorrect signal type returned from event binding. Reforged simulant."
+                world
 
         abstract member Channel : Game -> Channel<'message, 'command, Game, World> list
         default this.Channel _ = []
@@ -1861,4 +1890,48 @@ module WorldModule2' =
             | :? Group as group -> group.Signal<'model, 'message, 'command> signal world
             | :? Screen as screen -> screen.Signal<'model, 'message, 'command> signal world
             | :? Game as game -> game.Signal<'model, 'message, 'command> signal world
+            | _ -> failwithumf ()
+
+        static member internal updateLateBindings (latebindings : LateBindings) (simulant : Simulant) world =
+            match simulant with
+            | :? Entity as entity ->
+                let entityState = World.getEntityState entity world
+                match latebindings with
+                | :? Facet as facet ->
+                    match Array.tryFindIndex (fun (facet2 : Facet) -> getTypeName facet2 = getTypeName facet) entityState.Facets with
+                    | Some index ->
+                        let facets = entityState.Facets.Clone () :?> Facet array
+                        facets.[index] <- facet
+                        let entityState = { entityState with Facets = Array.ofSeq entityState.Facets }
+                        World.setEntityState entityState entity world
+                    | None -> world
+                | :? EntityDispatcher as entityDispatcher ->
+                    if getTypeName entityState.Dispatcher = getTypeName entityDispatcher
+                    then World.setEntityState { entityState with Dispatcher = entityDispatcher } entity world
+                    else world
+                | _ -> world
+            | :? Group as group ->
+                let groupState = World.getGroupState group world
+                match latebindings with
+                | :? GroupDispatcher as groupDispatcher ->
+                    if getTypeName groupState.Dispatcher = getTypeName groupDispatcher
+                    then World.setGroupState { groupState with Dispatcher = groupDispatcher } group world
+                    else world
+                | _ -> world
+            | :? Screen as screen ->
+                let screenState = World.getScreenState screen world
+                match latebindings with
+                | :? ScreenDispatcher as screenDispatcher ->
+                    if getTypeName screenState.Dispatcher = getTypeName screenDispatcher
+                    then World.setScreenState { screenState with Dispatcher = screenDispatcher } screen world
+                    else world
+                | _ -> world
+            | :? Game ->
+                let gameState = World.getGameState world
+                match latebindings with
+                | :? GameDispatcher as gameDispatcher ->
+                    if getTypeName gameState.Dispatcher = getTypeName gameDispatcher
+                    then World.setGameState { gameState with Dispatcher = gameDispatcher } world
+                    else world
+                | _ -> world
             | _ -> failwithumf ()

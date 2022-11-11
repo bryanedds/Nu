@@ -31,7 +31,7 @@ module WorldModuleScreen =
                     | None ->
                         let screens = USet.singleton HashIdentity.Structural (World.getCollectionConfig world) (screen :> Simulant)
                         UMap.add (game :> Simulant) (Some screens) world.Simulants
-                | (false, _) -> failwith ("Cannot add screen '" + scstring screen + "' to non-existent screen.")
+                | (false, _) -> failwith ("Cannot add screen '" + scstring screen + "' to non-existent game.")
             let simulants =
                 if not (UMap.containsKey (screen :> Simulant) simulants)
                 then UMap.add (screen :> Simulant) None simulants
@@ -46,13 +46,13 @@ module WorldModuleScreen =
                 | (true, screensOpt) ->
                     match screensOpt with
                     | Some screens ->
-                        let screens = USet.remove (game :> Simulant) screens
+                        let screens = USet.remove (screen :> Simulant) screens
                         if USet.isEmpty screens
-                        then UMap.add (screen :> Simulant) None world.Simulants
-                        else UMap.add (screen :> Simulant) (Some screens) world.Simulants
+                        then UMap.add (game :> Simulant) None world.Simulants
+                        else UMap.add (game :> Simulant) (Some screens) world.Simulants
                     | None -> world.Simulants
                 | (false, _) -> world.Simulants
-            let simulants = UMap.remove (game :> Simulant) simulants
+            let simulants = UMap.remove (screen :> Simulant) simulants
             let screenStates = UMap.remove screen world.ScreenStates
             World.choose { world with Simulants = simulants; ScreenStates = screenStates }
 
