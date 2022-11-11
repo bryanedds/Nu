@@ -578,7 +578,7 @@ module WorldEntityModule =
             | None -> world
 
         /// Write an entity to an entity descriptor.
-        static member writeEntity (entity : Entity) entityDescriptor world =
+        static member writeEntity (entity : Entity) (entityDescriptor : EntityDescriptor) world =
             let overlayer = World.getOverlayer world
             let entityState = World.getEntityState entity world
             let entityDispatcherName = getTypeName entityState.Dispatcher

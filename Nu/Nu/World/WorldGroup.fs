@@ -229,7 +229,7 @@ module WorldGroupModule =
             World.frame (World.destroyGroupsImmediate groups) Simulants.Game world
 
         /// Write a group to a group descriptor.
-        static member writeGroup group groupDescriptor world =
+        static member writeGroup group (groupDescriptor : GroupDescriptor) world =
             let groupState = World.getGroupState group world
             let groupDispatcherName = getTypeName groupState.Dispatcher
             let groupDescriptor = { groupDescriptor with GroupDispatcherName = groupDispatcherName }

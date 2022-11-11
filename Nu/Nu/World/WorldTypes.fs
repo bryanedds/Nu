@@ -356,54 +356,54 @@ module WorldTypes =
         | EventHandlerForge of obj Address * obj
 
     and [<ReferenceEquality; NoComparison>] GameForge =
-        { PropertyForges : USet<string * Type * obj>
-          EventHandlerForges : UMap<obj Address * obj, Guid>
-          ScreenForges : UMap<string, ScreenForge>
+        { PropertyForges : HashSet<string * Type * obj>
+          EventHandlerForges : Dictionary<obj Address * obj, Guid>
+          ScreenForges : Dictionary<string, ScreenForge>
           InitialScreenNameOpt : string option }
         static member internal empty =
-            { PropertyForges = USet.makeEmpty HashIdentity.Structural Imperative
-              EventHandlerForges = UMap.makeEmpty HashIdentity.Structural Imperative
-              ScreenForges = UMap.makeEmpty StringComparer.Ordinal Imperative
+            { PropertyForges = hashSetPlus HashIdentity.Structural []
+              EventHandlerForges = dictPlus HashIdentity.Structural []
+              ScreenForges = dictPlus StringComparer.Ordinal []
               InitialScreenNameOpt = None }
 
     and [<ReferenceEquality; NoComparison>] ScreenForge =
-        { PropertyForges : USet<string * Type * obj>
-          EventHandlerForges : UMap<obj Address * obj, Guid>
+        { ScreenDispatcherName : string
           ScreenName : string
-          ScreenDispatcherName : string
-          GroupForges : UMap<string, GroupForge> }
+          PropertyForges : HashSet<string * Type * obj>
+          EventHandlerForges : Dictionary<obj Address * obj, Guid>
+          GroupForges : Dictionary<string, GroupForge> }
         static member internal empty =
-            { PropertyForges = USet.makeEmpty HashIdentity.Structural Imperative
-              EventHandlerForges = UMap.makeEmpty HashIdentity.Structural Imperative
+            { ScreenDispatcherName = nameof ScreenDispatcher
               ScreenName = nameof Screen
-              ScreenDispatcherName = nameof ScreenDispatcher
-              GroupForges = UMap.makeEmpty HashIdentity.Structural Imperative }
+              PropertyForges = hashSetPlus HashIdentity.Structural []
+              EventHandlerForges = dictPlus HashIdentity.Structural []
+              GroupForges = dictPlus StringComparer.Ordinal [] }
 
     and [<ReferenceEquality; NoComparison>] GroupForge =
-        { PropertyForges : USet<string * Type * obj>
-          EventHandlerForges : UMap<obj Address * obj, Guid>
+        { GroupDispatcherName : string
           GroupName : string
-          GroupDispatcherName : string
-          EntityForges : UMap<string, EntityForge> }
+          PropertyForges : HashSet<string * Type * obj>
+          EventHandlerForges : Dictionary<obj Address * obj, Guid>
+          EntityForges : Dictionary<string, EntityForge> }
         static member internal empty =
-            { PropertyForges = USet.makeEmpty HashIdentity.Structural Imperative
-              EventHandlerForges = UMap.makeEmpty HashIdentity.Structural Imperative
+            { GroupDispatcherName = nameof GroupDispatcher
               GroupName = nameof Group
-              GroupDispatcherName = nameof GroupDispatcher
-              EntityForges = UMap.makeEmpty HashIdentity.Structural Imperative }
+              PropertyForges = hashSetPlus HashIdentity.Structural []
+              EventHandlerForges = dictPlus HashIdentity.Structural []
+              EntityForges = dictPlus StringComparer.Ordinal [] }
 
     and [<ReferenceEquality; NoComparison>] EntityForge =
-        { PropertyForges : USet<string * Type * obj>
-          EventHandlerForges : UMap<obj Address * obj, Guid>
+        { EntityDispatcherName : string
           EntityName : string
-          EntityDispatcherName : string
-          EntityForges : UMap<string, EntityForge> }
+          PropertyForges : HashSet<string * Type * obj>
+          EventHandlerForges : Dictionary<obj Address * obj, Guid>
+          EntityForges : Dictionary<string, EntityForge> }
         static member internal empty =
-            { PropertyForges = USet.makeEmpty HashIdentity.Structural Imperative
-              EventHandlerForges = UMap.makeEmpty HashIdentity.Structural Imperative
+            { EntityDispatcherName = nameof EntityDispatcher
               EntityName = nameof Entity
-              EntityDispatcherName = nameof EntityDispatcher
-              EntityForges = UMap.makeEmpty HashIdentity.Structural Imperative }
+              PropertyForges = hashSetPlus HashIdentity.Structural []
+              EventHandlerForges = dictPlus HashIdentity.Structural []
+              EntityForges = dictPlus StringComparer.Ordinal [] }
 
     /// Generalized interface for simulant state.
     and SimulantState =
