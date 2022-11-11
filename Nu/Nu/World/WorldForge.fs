@@ -80,7 +80,8 @@ module Forge =
             let world =
                 Seq.fold (fun world (kvp : KeyValuePair<_, _>) ->
                     let (entity, entityForge) = (kvp.Key, kvp.Value)
-                    let entityForgeOld = World.getEntityForge entity world
+                    let (entity : Entity, entityForge) = (kvp.Key, kvp.Value)
+                    let entityForgeOld = forgeOld.EntityForges.[entity.Name]
                     synchronizeEntity entityForgeOld entityForge entity world)
                     world entitiesPotentiallyAltered
 
@@ -163,8 +164,8 @@ module Forge =
 
             let world =
                 Seq.fold (fun world (kvp : KeyValuePair<_, _>) ->
-                    let (entity, entityForge) = (kvp.Key, kvp.Value)
-                    let entityForgeOld = World.getEntityForge entity world
+                    let (entity : Entity, entityForge) = (kvp.Key, kvp.Value)
+                    let entityForgeOld = forgeOld.EntityForges.[entity.Name]
                     synchronizeEntity entityForgeOld entityForge entity world)
                     world entitiesPotentiallyAltered
 
@@ -247,8 +248,8 @@ module Forge =
 
             let world =
                 Seq.fold (fun world (kvp : KeyValuePair<_, _>) ->
-                    let (group, groupForge) = (kvp.Key, kvp.Value)
-                    let groupForgeOld = World.getGroupForge group world
+                    let (group : Group, groupForge) = (kvp.Key, kvp.Value)
+                    let groupForgeOld = forgeOld.GroupForges.[group.Name]
                     synchronizeGroup groupForgeOld groupForge group world)
                     world groupsPotentiallyAltered
 
@@ -331,8 +332,8 @@ module Forge =
 
             let world =
                 Seq.fold (fun world (kvp : KeyValuePair<_, _>) ->
-                    let (screen, screenForge) = (kvp.Key, kvp.Value)
-                    let screenForgeOld = World.getScreenForge screen world
+                    let (screen : Screen, screenForge) = (kvp.Key, kvp.Value)
+                    let screenForgeOld = forgeOld.ScreenForges.[screen.Name]
                     synchronizeScreen screenForgeOld screenForge screen world)
                     world screensPotentiallyAltered
 
