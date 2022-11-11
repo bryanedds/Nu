@@ -174,10 +174,10 @@
             this.constrainYButton = new System.Windows.Forms.ToolStripButton();
             this.constrainZButton = new System.Windows.Forms.ToolStripButton();
             this.toolStripLabel2 = new System.Windows.Forms.ToolStripLabel();
+            this.toolStripLabel6 = new System.Windows.Forms.ToolStripLabel();
+            this.reloadScriptsButton = new System.Windows.Forms.ToolStripButton();
             this.toolStripSeparator2 = new System.Windows.Forms.ToolStripSeparator();
             this.songPlaybackButton = new System.Windows.Forms.ToolStripButton();
-            this.toolStripLabel6 = new System.Windows.Forms.ToolStripLabel();
-            this.reloadCodeButton = new System.Windows.Forms.ToolStripButton();
             this.contextMenuStrip.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
             this.splitContainer1.Panel1.SuspendLayout();
@@ -326,7 +326,7 @@
             // 
             this.splitContainer1.Panel2.Controls.Add(this.propertyTabControl);
             this.splitContainer1.Size = new System.Drawing.Size(1276, 669);
-            this.splitContainer1.SplitterDistance = 971;
+            this.splitContainer1.SplitterDistance = 972;
             this.splitContainer1.SplitterWidth = 3;
             this.splitContainer1.TabIndex = 3;
             // 
@@ -344,7 +344,7 @@
             // splitContainer4.Panel2
             // 
             this.splitContainer4.Panel2.Controls.Add(this.rolloutTabControl);
-            this.splitContainer4.Size = new System.Drawing.Size(971, 669);
+            this.splitContainer4.Size = new System.Drawing.Size(972, 669);
             this.splitContainer4.SplitterDistance = 454;
             this.splitContainer4.TabIndex = 1;
             // 
@@ -362,7 +362,7 @@
             // splitContainer8.Panel2
             // 
             this.splitContainer8.Panel2.Controls.Add(this.splitContainer9);
-            this.splitContainer8.Size = new System.Drawing.Size(971, 454);
+            this.splitContainer8.Size = new System.Drawing.Size(972, 454);
             this.splitContainer8.SplitterDistance = 265;
             this.splitContainer8.TabIndex = 5;
             // 
@@ -493,7 +493,7 @@
             // splitContainer9.Panel2
             // 
             this.splitContainer9.Panel2.Controls.Add(this.displayPanel);
-            this.splitContainer9.Size = new System.Drawing.Size(702, 454);
+            this.splitContainer9.Size = new System.Drawing.Size(703, 454);
             this.splitContainer9.SplitterDistance = 25;
             this.splitContainer9.TabIndex = 0;
             // 
@@ -504,7 +504,7 @@
             this.groupTabControl.Location = new System.Drawing.Point(0, 0);
             this.groupTabControl.Name = "groupTabControl";
             this.groupTabControl.SelectedIndex = 0;
-            this.groupTabControl.Size = new System.Drawing.Size(702, 25);
+            this.groupTabControl.Size = new System.Drawing.Size(703, 25);
             this.groupTabControl.TabIndex = 4;
             // 
             // tabPage
@@ -512,7 +512,7 @@
             this.tabPage.Location = new System.Drawing.Point(4, 22);
             this.tabPage.Name = "tabPage";
             this.tabPage.Padding = new System.Windows.Forms.Padding(3);
-            this.tabPage.Size = new System.Drawing.Size(694, 0);
+            this.tabPage.Size = new System.Drawing.Size(695, 0);
             this.tabPage.TabIndex = 0;
             this.tabPage.UseVisualStyleBackColor = true;
             // 
@@ -527,7 +527,7 @@
             this.displayPanel.Margin = new System.Windows.Forms.Padding(2);
             this.displayPanel.MultisampleBits = ((uint)(0u));
             this.displayPanel.Name = "displayPanel";
-            this.displayPanel.Size = new System.Drawing.Size(702, 425);
+            this.displayPanel.Size = new System.Drawing.Size(703, 425);
             this.displayPanel.StencilBits = ((uint)(8u));
             this.displayPanel.TabIndex = 0;
             // 
@@ -543,7 +543,7 @@
             this.rolloutTabControl.Location = new System.Drawing.Point(0, 0);
             this.rolloutTabControl.Name = "rolloutTabControl";
             this.rolloutTabControl.SelectedIndex = 0;
-            this.rolloutTabControl.Size = new System.Drawing.Size(971, 211);
+            this.rolloutTabControl.Size = new System.Drawing.Size(972, 211);
             this.rolloutTabControl.TabIndex = 0;
             // 
             // propertyEditorTabPage
@@ -552,7 +552,7 @@
             this.propertyEditorTabPage.Location = new System.Drawing.Point(4, 22);
             this.propertyEditorTabPage.Name = "propertyEditorTabPage";
             this.propertyEditorTabPage.Padding = new System.Windows.Forms.Padding(3);
-            this.propertyEditorTabPage.Size = new System.Drawing.Size(963, 185);
+            this.propertyEditorTabPage.Size = new System.Drawing.Size(964, 185);
             this.propertyEditorTabPage.TabIndex = 0;
             this.propertyEditorTabPage.Text = "[P]roperty Editor";
             this.propertyEditorTabPage.UseVisualStyleBackColor = true;
@@ -573,7 +573,7 @@
             // propertyEditor.Panel2
             // 
             this.propertyEditor.Panel2.Controls.Add(this.propertyValueTextBox);
-            this.propertyEditor.Size = new System.Drawing.Size(957, 179);
+            this.propertyEditor.Size = new System.Drawing.Size(958, 179);
             this.propertyEditor.SplitterDistance = 176;
             this.propertyEditor.TabIndex = 0;
             // 
@@ -656,7 +656,7 @@
             this.propertyValueTextBox.Lexer = ScintillaNET.Lexer.Lisp;
             this.propertyValueTextBox.Location = new System.Drawing.Point(0, 0);
             this.propertyValueTextBox.Name = "propertyValueTextBox";
-            this.propertyValueTextBox.Size = new System.Drawing.Size(777, 179);
+            this.propertyValueTextBox.Size = new System.Drawing.Size(778, 179);
             this.propertyValueTextBox.TabIndex = 0;
             // 
             // assetGraphTabPage
@@ -665,7 +665,7 @@
             this.assetGraphTabPage.Location = new System.Drawing.Point(4, 22);
             this.assetGraphTabPage.Name = "assetGraphTabPage";
             this.assetGraphTabPage.Padding = new System.Windows.Forms.Padding(3);
-            this.assetGraphTabPage.Size = new System.Drawing.Size(963, 185);
+            this.assetGraphTabPage.Size = new System.Drawing.Size(964, 185);
             this.assetGraphTabPage.TabIndex = 3;
             this.assetGraphTabPage.Text = "Asset Graph";
             this.assetGraphTabPage.UseVisualStyleBackColor = true;
@@ -686,7 +686,7 @@
             // assetGraph.Panel2
             // 
             this.assetGraph.Panel2.Controls.Add(this.assetGraphTextBox);
-            this.assetGraph.Size = new System.Drawing.Size(957, 179);
+            this.assetGraph.Size = new System.Drawing.Size(958, 179);
             this.assetGraph.SplitterDistance = 176;
             this.assetGraph.TabIndex = 2;
             // 
@@ -718,7 +718,7 @@
             this.assetGraphTextBox.Lexer = ScintillaNET.Lexer.Lisp;
             this.assetGraphTextBox.Location = new System.Drawing.Point(0, 0);
             this.assetGraphTextBox.Name = "assetGraphTextBox";
-            this.assetGraphTextBox.Size = new System.Drawing.Size(777, 179);
+            this.assetGraphTextBox.Size = new System.Drawing.Size(778, 179);
             this.assetGraphTextBox.TabIndex = 0;
             // 
             // overlayTabPage
@@ -727,7 +727,7 @@
             this.overlayTabPage.Location = new System.Drawing.Point(4, 22);
             this.overlayTabPage.Name = "overlayTabPage";
             this.overlayTabPage.Padding = new System.Windows.Forms.Padding(3);
-            this.overlayTabPage.Size = new System.Drawing.Size(963, 185);
+            this.overlayTabPage.Size = new System.Drawing.Size(964, 185);
             this.overlayTabPage.TabIndex = 2;
             this.overlayTabPage.Text = "Overlay";
             this.overlayTabPage.UseVisualStyleBackColor = true;
@@ -748,7 +748,7 @@
             // overlayer.Panel2
             // 
             this.overlayer.Panel2.Controls.Add(this.overlayerTextBox);
-            this.overlayer.Size = new System.Drawing.Size(957, 179);
+            this.overlayer.Size = new System.Drawing.Size(958, 179);
             this.overlayer.SplitterDistance = 176;
             this.overlayer.TabIndex = 1;
             // 
@@ -780,7 +780,7 @@
             this.overlayerTextBox.Lexer = ScintillaNET.Lexer.Lisp;
             this.overlayerTextBox.Location = new System.Drawing.Point(0, 0);
             this.overlayerTextBox.Name = "overlayerTextBox";
-            this.overlayerTextBox.Size = new System.Drawing.Size(777, 179);
+            this.overlayerTextBox.Size = new System.Drawing.Size(778, 179);
             this.overlayerTextBox.TabIndex = 0;
             // 
             // evaluatorTabPage
@@ -788,7 +788,7 @@
             this.evaluatorTabPage.Controls.Add(this.terminal);
             this.evaluatorTabPage.Location = new System.Drawing.Point(4, 22);
             this.evaluatorTabPage.Name = "evaluatorTabPage";
-            this.evaluatorTabPage.Size = new System.Drawing.Size(963, 185);
+            this.evaluatorTabPage.Size = new System.Drawing.Size(964, 185);
             this.evaluatorTabPage.TabIndex = 4;
             this.evaluatorTabPage.Text = "[E]valuator";
             this.evaluatorTabPage.UseVisualStyleBackColor = true;
@@ -807,8 +807,8 @@
             // terminal.Panel2
             // 
             this.terminal.Panel2.Controls.Add(this.splitContainer10);
-            this.terminal.Size = new System.Drawing.Size(963, 185);
-            this.terminal.SplitterDistance = 534;
+            this.terminal.Size = new System.Drawing.Size(964, 185);
+            this.terminal.SplitterDistance = 535;
             this.terminal.TabIndex = 0;
             // 
             // evalInputTextBox
@@ -821,7 +821,7 @@
             this.evalInputTextBox.Lexer = ScintillaNET.Lexer.Lisp;
             this.evalInputTextBox.Location = new System.Drawing.Point(0, 0);
             this.evalInputTextBox.Name = "evalInputTextBox";
-            this.evalInputTextBox.Size = new System.Drawing.Size(534, 185);
+            this.evalInputTextBox.Size = new System.Drawing.Size(535, 185);
             this.evalInputTextBox.TabIndex = 0;
             this.evalInputTextBox.Text = "; Evaluate script expressions here!\n[+ 2 2]\n";
             // 
@@ -894,7 +894,7 @@
             this.preludeTabPage.Location = new System.Drawing.Point(4, 22);
             this.preludeTabPage.Name = "preludeTabPage";
             this.preludeTabPage.Padding = new System.Windows.Forms.Padding(3);
-            this.preludeTabPage.Size = new System.Drawing.Size(963, 185);
+            this.preludeTabPage.Size = new System.Drawing.Size(964, 185);
             this.preludeTabPage.TabIndex = 5;
             this.preludeTabPage.Text = "Prelude";
             this.preludeTabPage.UseVisualStyleBackColor = true;
@@ -915,7 +915,7 @@
             // splitContainer6.Panel2
             // 
             this.splitContainer6.Panel2.Controls.Add(this.preludeTextBox);
-            this.splitContainer6.Size = new System.Drawing.Size(957, 179);
+            this.splitContainer6.Size = new System.Drawing.Size(958, 179);
             this.splitContainer6.SplitterDistance = 176;
             this.splitContainer6.TabIndex = 3;
             // 
@@ -947,7 +947,7 @@
             this.preludeTextBox.Lexer = ScintillaNET.Lexer.Lisp;
             this.preludeTextBox.Location = new System.Drawing.Point(0, 0);
             this.preludeTextBox.Name = "preludeTextBox";
-            this.preludeTextBox.Size = new System.Drawing.Size(777, 179);
+            this.preludeTextBox.Size = new System.Drawing.Size(778, 179);
             this.preludeTextBox.TabIndex = 0;
             // 
             // eventTracingTabPage
@@ -956,7 +956,7 @@
             this.eventTracingTabPage.Location = new System.Drawing.Point(4, 22);
             this.eventTracingTabPage.Name = "eventTracingTabPage";
             this.eventTracingTabPage.Padding = new System.Windows.Forms.Padding(3);
-            this.eventTracingTabPage.Size = new System.Drawing.Size(963, 185);
+            this.eventTracingTabPage.Size = new System.Drawing.Size(964, 185);
             this.eventTracingTabPage.TabIndex = 1;
             this.eventTracingTabPage.Text = "Event Tracing";
             this.eventTracingTabPage.UseVisualStyleBackColor = true;
@@ -978,7 +978,7 @@
             // eventTracing.Panel2
             // 
             this.eventTracing.Panel2.Controls.Add(this.eventFilterTextBox);
-            this.eventTracing.Size = new System.Drawing.Size(957, 179);
+            this.eventTracing.Size = new System.Drawing.Size(958, 179);
             this.eventTracing.SplitterDistance = 176;
             this.eventTracing.TabIndex = 0;
             // 
@@ -1020,7 +1020,7 @@
             this.eventFilterTextBox.Lexer = ScintillaNET.Lexer.Lisp;
             this.eventFilterTextBox.Location = new System.Drawing.Point(0, 0);
             this.eventFilterTextBox.Name = "eventFilterTextBox";
-            this.eventFilterTextBox.Size = new System.Drawing.Size(777, 179);
+            this.eventFilterTextBox.Size = new System.Drawing.Size(778, 179);
             this.eventFilterTextBox.TabIndex = 0;
             // 
             // propertyTabControl
@@ -1031,7 +1031,7 @@
             this.propertyTabControl.Location = new System.Drawing.Point(0, 0);
             this.propertyTabControl.Name = "propertyTabControl";
             this.propertyTabControl.SelectedIndex = 0;
-            this.propertyTabControl.Size = new System.Drawing.Size(302, 669);
+            this.propertyTabControl.Size = new System.Drawing.Size(301, 669);
             this.propertyTabControl.TabIndex = 1;
             // 
             // entityTabPage
@@ -1040,7 +1040,7 @@
             this.entityTabPage.Location = new System.Drawing.Point(4, 22);
             this.entityTabPage.Name = "entityTabPage";
             this.entityTabPage.Padding = new System.Windows.Forms.Padding(3);
-            this.entityTabPage.Size = new System.Drawing.Size(294, 643);
+            this.entityTabPage.Size = new System.Drawing.Size(293, 643);
             this.entityTabPage.TabIndex = 0;
             this.entityTabPage.Text = "Entity Properties";
             this.entityTabPage.UseVisualStyleBackColor = true;
@@ -1061,7 +1061,7 @@
             // splitContainer7.Panel2
             // 
             this.splitContainer7.Panel2.Controls.Add(this.panel1);
-            this.splitContainer7.Size = new System.Drawing.Size(288, 637);
+            this.splitContainer7.Size = new System.Drawing.Size(287, 637);
             this.splitContainer7.SplitterDistance = 84;
             this.splitContainer7.TabIndex = 1;
             // 
@@ -1078,7 +1078,7 @@
             this.entityPropertyDesigner.Dock = System.Windows.Forms.DockStyle.Fill;
             this.entityPropertyDesigner.Location = new System.Drawing.Point(0, 0);
             this.entityPropertyDesigner.Name = "entityPropertyDesigner";
-            this.entityPropertyDesigner.Size = new System.Drawing.Size(288, 84);
+            this.entityPropertyDesigner.Size = new System.Drawing.Size(287, 84);
             this.entityPropertyDesigner.TabIndex = 0;
             this.entityPropertyDesigner.TabStop = false;
             // 
@@ -1162,7 +1162,7 @@
             this.panel1.Dock = System.Windows.Forms.DockStyle.Fill;
             this.panel1.Location = new System.Drawing.Point(0, 0);
             this.panel1.Name = "panel1";
-            this.panel1.Size = new System.Drawing.Size(288, 549);
+            this.panel1.Size = new System.Drawing.Size(287, 549);
             this.panel1.TabIndex = 2;
             // 
             // entityPropertyGrid
@@ -1173,7 +1173,7 @@
             this.entityPropertyGrid.Location = new System.Drawing.Point(0, 0);
             this.entityPropertyGrid.Margin = new System.Windows.Forms.Padding(2);
             this.entityPropertyGrid.Name = "entityPropertyGrid";
-            this.entityPropertyGrid.Size = new System.Drawing.Size(288, 549);
+            this.entityPropertyGrid.Size = new System.Drawing.Size(287, 549);
             this.entityPropertyGrid.TabIndex = 0;
             this.entityPropertyGrid.ToolbarVisible = false;
             // 
@@ -1183,7 +1183,7 @@
             this.groupTabPage.Location = new System.Drawing.Point(4, 22);
             this.groupTabPage.Name = "groupTabPage";
             this.groupTabPage.Padding = new System.Windows.Forms.Padding(3);
-            this.groupTabPage.Size = new System.Drawing.Size(294, 643);
+            this.groupTabPage.Size = new System.Drawing.Size(293, 643);
             this.groupTabPage.TabIndex = 1;
             this.groupTabPage.Text = "Group Properties";
             this.groupTabPage.UseVisualStyleBackColor = true;
@@ -1194,7 +1194,7 @@
             this.groupPropertyGrid.LineColor = System.Drawing.SystemColors.ControlDark;
             this.groupPropertyGrid.Location = new System.Drawing.Point(3, 3);
             this.groupPropertyGrid.Name = "groupPropertyGrid";
-            this.groupPropertyGrid.Size = new System.Drawing.Size(288, 637);
+            this.groupPropertyGrid.Size = new System.Drawing.Size(287, 637);
             this.groupPropertyGrid.TabIndex = 0;
             this.groupPropertyGrid.ToolbarVisible = false;
             // 
@@ -1406,14 +1406,14 @@
             this.toolStripLabel2,
             this.resetEyeButton,
             this.toolStripSeparator8,
+            this.reloadScriptsButton,
             this.toolStripLabel6,
-            this.reloadCodeButton,
             this.reloadAssetsButton,
             this.toolStripSeparator2,
             this.songPlaybackButton});
             this.toolStrip.Location = new System.Drawing.Point(0, 0);
             this.toolStrip.Name = "toolStrip";
-            this.toolStrip.Size = new System.Drawing.Size(1401, 25);
+            this.toolStrip.Size = new System.Drawing.Size(1416, 25);
             this.toolStrip.TabIndex = 1;
             this.toolStrip.Text = "toolStrip1";
             // 
@@ -1676,6 +1676,21 @@
             this.toolStripLabel2.Size = new System.Drawing.Size(25, 22);
             this.toolStripLabel2.Text = "Eye";
             // 
+            // toolStripLabel6
+            // 
+            this.toolStripLabel6.Name = "toolStripLabel6";
+            this.toolStripLabel6.Size = new System.Drawing.Size(12, 22);
+            this.toolStripLabel6.Text = "/";
+            // 
+            // reloadScriptsButton
+            // 
+            this.reloadScriptsButton.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
+            this.reloadScriptsButton.Image = ((System.Drawing.Image)(resources.GetObject("reloadScriptsButton.Image")));
+            this.reloadScriptsButton.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.reloadScriptsButton.Name = "reloadScriptsButton";
+            this.reloadScriptsButton.Size = new System.Drawing.Size(85, 22);
+            this.reloadScriptsButton.Text = "Reload Scripts";
+            // 
             // toolStripSeparator2
             // 
             this.toolStripSeparator2.Name = "toolStripSeparator2";
@@ -1691,21 +1706,6 @@
             this.songPlaybackButton.Size = new System.Drawing.Size(23, 22);
             this.songPlaybackButton.Text = "toolStripButton1";
             this.songPlaybackButton.ToolTipText = "Toggle Song Playback";
-            // 
-            // toolStripLabel6
-            // 
-            this.toolStripLabel6.Name = "toolStripLabel6";
-            this.toolStripLabel6.Size = new System.Drawing.Size(43, 22);
-            this.toolStripLabel6.Text = "Reload";
-            // 
-            // reloadCodeButton
-            // 
-            this.reloadCodeButton.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
-            this.reloadCodeButton.Image = ((System.Drawing.Image)(resources.GetObject("reloadCodeButton.Image")));
-            this.reloadCodeButton.ImageTransparentColor = System.Drawing.Color.Magenta;
-            this.reloadCodeButton.Name = "reloadCodeButton";
-            this.reloadCodeButton.Size = new System.Drawing.Size(39, 22);
-            this.reloadCodeButton.Text = "Code";
             // 
             // GaiaForm
             // 
@@ -1954,7 +1954,7 @@
 		private System.Windows.Forms.ToolStrip toolStrip1;
 		public System.Windows.Forms.ToolStripButton hierarchyShowSelectedButton;
         private System.Windows.Forms.ToolStripLabel toolStripLabel6;
-        public System.Windows.Forms.ToolStripButton reloadCodeButton;
+        public System.Windows.Forms.ToolStripButton reloadScriptsButton;
     }
 }
 
