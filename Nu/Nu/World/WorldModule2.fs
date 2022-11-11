@@ -11,6 +11,7 @@ open FSharpx.Collections
 open SDL2
 open Prime
 open Nu
+open Nu.Declarative
 
 [<AutoOpen; ModuleBinding>]
 module WorldModule2 =
@@ -1091,6 +1092,574 @@ module WorldModule2 =
             result
 
 [<AutoOpen>]
+module EntityDispatcherModule2 =
+
+    type World with
+
+        static member internal signalEntity<'model, 'message, 'command> signal (entity : Entity) world =
+            match entity.GetDispatcher world with
+            | :? EntityDispatcher<'model, 'message, 'command> as dispatcher ->
+                Signal.processSignal dispatcher.Message dispatcher.Command (entity.ModelGeneric<'model> ()) signal entity world
+            | _ ->
+                Log.info "Failed to send signal to entity."
+                world
+
+    and Entity with
+
+        member this.UpdateModel<'model> updater world =
+            this.SetModelGeneric<'model> (updater (this.GetModelGeneric<'model> world)) world
+
+        member this.Signal<'model, 'message, 'command> signal world =
+            World.signalEntity<'model, 'message, 'command> signal this world
+
+    and [<AbstractClass>] EntityDispatcher<'model, 'message, 'command> (is2d, centered, physical, makeInitial : World -> 'model) =
+        inherit EntityDispatcher (is2d, centered, physical)
+
+        new (is2d, centered, physical, initial : 'model) =
+            EntityDispatcher<'model, 'message, 'command> (is2d, centered, physical, fun _ -> initial)
+
+        member this.GetModel (entity : Entity) world : 'model =
+            entity.GetModelGeneric<'model> world
+
+        member this.SetModel (model : 'model) (entity : Entity) world =
+            entity.SetModelGeneric<'model> model world
+
+        member this.Model (entity : Entity) =
+            lens (nameof this.Model) (this.GetModel entity) (flip this.SetModel entity) entity
+
+        override this.Register (entity, world) =
+            let world =
+                let property = World.getEntityModelProperty entity world
+                if property.DesignerType = typeof<unit>
+                then entity.SetModelGeneric<'model> (makeInitial world) world
+                else world
+            let channels = this.Channel (this.Model entity, entity)
+            let world = Signal.processChannels this.Message this.Command (this.Model entity) channels entity world
+            let content = this.Content (this.Model entity, entity)
+            let world =
+                List.fold (fun world content ->
+                    World.expandEntityContent content (SimulantOrigin entity) entity entity.Group world |> snd)
+                    world content
+            let initializers = this.Initializers (this.Model entity, entity)
+            List.fold (fun world initializer ->
+                match initializer with
+                | PropertyDefinition def ->
+                    let property = { PropertyType = def.PropertyType; PropertyValue = PropertyExpr.eval def.PropertyExpr world }
+                    World.setProperty def.PropertyName property entity world |> snd'
+                | EventHandlerDefinition (handler, partialAddress) ->
+                    let eventAddress = partialAddress --> entity
+                    World.monitor (fun (evt : Event) world ->
+                        let world = WorldModule.trySignal (handler evt) entity world
+                        (Cascade, world))
+                        eventAddress (entity :> Simulant) world
+                | BindDefinition (left, right) ->
+                    WorldModule.bind5 true entity left right world
+                | LinkDefinition (left, right) ->
+                    let world = WorldModule.bind5 false entity left right world
+                    WorldModule.bind5 false right.This right left world)
+                world initializers
+
+        override this.ApplyPhysics (position, rotation, linearVelocity, angularVelocity, entity, world) =
+            let model = this.GetModel entity world
+            let (signals, model) = this.Physics (position, rotation, linearVelocity, angularVelocity, model, entity, world)
+            let world = this.SetModel model entity world
+            Signal.processSignals this.Message this.Command (this.Model entity) signals entity world
+
+        override this.Render (entity, world) =
+            let view = this.View (this.GetModel entity world, entity, world)
+            World.renderView view world
+
+        override this.TrySignalFacet (signalObj : obj, facetName : string, entity : Entity, world : World) : World =
+            entity.TrySignalFacet signalObj facetName world
+
+        override this.TrySignal (signalObj, entity, world) =
+            match signalObj with
+            | :? Signal<'message, obj> as signal -> entity.Signal<'model, 'message, 'command> (match signal with Message message -> msg message | _ -> failwithumf ()) world
+            | :? Signal<obj, 'command> as signal -> entity.Signal<'model, 'message, 'command> (match signal with Command command -> cmd command | _ -> failwithumf ()) world
+            | _ -> Log.info "Incorrect signal type returned from event binding."; world
+
+        abstract member Channel : Lens<'model, World> * Entity -> Channel<'message, 'command, Entity, World> list
+        default this.Channel (_, _) = []
+
+        abstract member Initializers : Lens<'model, World> * Entity -> PropertyInitializer list
+        default this.Initializers (_, _) = []
+
+        abstract member Physics : Vector3 * Quaternion * Vector3 * Vector3 * 'model * Entity * World -> Signal<'message, 'command> list * 'model
+        default this.Physics (_, _, _, _, model, _, _) = just model
+
+        abstract member Message : 'model * 'message * Entity * World -> Signal<'message, 'command> list * 'model
+        default this.Message (model, _, _, _) = just model
+
+        abstract member Command : 'model * 'command * Entity * World -> Signal<'message, 'command> list * World
+        default this.Command (_, _, _, world) = just world
+
+        abstract member Content : Lens<'model, World> * Entity -> EntityContent list
+        default this.Content (_, _) = []
+
+        abstract member View : 'model * Entity * World -> View
+        default this.View (_, _, _) = View.empty
+
+    and [<AbstractClass>] EntityDispatcher2d<'model, 'message, 'command> (centered, physical, makeInitial : World -> 'model) =
+        inherit EntityDispatcher<'model, 'message, 'command> (true, centered, physical, makeInitial)
+
+        new (centered, physical, initial) =
+            EntityDispatcher2d<'model, 'message, 'command> (centered, physical, fun _ -> initial)
+
+        static member Properties =
+            [define Entity.Centered false
+             define Entity.Size Constants.Engine.EntitySize2dDefault]
+
+    and [<AbstractClass>] EntityDispatcher3d<'model, 'message, 'command> (centered, physical, makeInitial : World -> 'model) =
+        inherit EntityDispatcher<'model, 'message, 'command> (false, centered, physical, makeInitial)
+
+        new (centered, physical, initial) =
+            EntityDispatcher3d<'model, 'message, 'command> (centered, physical, fun _ -> initial)
+
+        static member Properties =
+            [define Entity.Size Constants.Engine.EntitySize3dDefault]
+
+    and [<AbstractClass>] EntityForger<'model, 'message, 'command> (is2d, centered, physical, makeInitial : World -> 'model) =
+        inherit EntityDispatcher (is2d, centered, physical)
+
+        new (is2d, centered, physical, initial : 'model) =
+            EntityForger<'model, 'message, 'command> (is2d, centered, physical, fun _ -> initial)
+
+        member this.GetModel (entity : Entity) world : 'model =
+            entity.GetModelGeneric<'model> world
+
+        member this.SetModel (model : 'model) (entity : Entity) world =
+            entity.SetModelGeneric<'model> model world
+
+        member this.Model (entity : Entity) =
+            lens (nameof this.Model) (this.GetModel entity) (flip this.SetModel entity) entity
+
+        override this.Register (entity, world) =
+            let world =
+                let property = World.getEntityModelProperty entity world
+                if property.DesignerType = typeof<unit>
+                then entity.SetModelGeneric<'model> (makeInitial world) world
+                else world
+            let channels = this.Channel entity
+            let world = Signal.processChannels this.Message this.Command (this.Model entity) channels entity world
+            let forgeOld = World.getEntityForge entity world
+            let forge = this.Forge (this.GetModel entity world, entity)
+            let world = Forge.synchronizeEntity forgeOld forge entity entity world
+            let world = World.setEntityForge forge entity world
+            World.monitor
+                (fun evt world ->
+                    let model = evt.Data.Value :?> 'model
+                    let forge = this.Forge (model, entity)
+                    let world = Forge.synchronizeEntity (World.getEntityForge entity world) forge entity entity world
+                    let world = World.setEntityForge forge entity world
+                    (Cascade, world))
+                    (this.Model entity).ChangeEvent
+                    entity
+                    world
+
+        override this.ApplyPhysics (position, rotation, linearVelocity, angularVelocity, entity, world) =
+            let model = this.GetModel entity world
+            let (signals, model) = this.Physics (position, rotation, linearVelocity, angularVelocity, model, entity, world)
+            let world = this.SetModel model entity world
+            Signal.processSignals this.Message this.Command (this.Model entity) signals entity world
+
+        override this.Render (entity, world) =
+            let view = this.View (this.GetModel entity world, entity, world)
+            World.renderView view world
+
+        override this.TrySignalFacet (signalObj : obj, facetName : string, entity : Entity, world : World) : World =
+            entity.TrySignalFacet signalObj facetName world
+
+        override this.TrySignal (signalObj, entity, world) =
+            match signalObj with
+            | :? Signal<'message, obj> as signal -> entity.Signal<'model, 'message, 'command> (match signal with Message message -> msg message | _ -> failwithumf ()) world
+            | :? Signal<obj, 'command> as signal -> entity.Signal<'model, 'message, 'command> (match signal with Command command -> cmd command | _ -> failwithumf ()) world
+            | _ -> Log.info "Incorrect signal type returned from event binding."; world
+
+        abstract member Channel : Entity -> Channel<'message, 'command, Entity, World> list
+        default this.Channel _ = []
+
+        abstract member Physics : Vector3 * Quaternion * Vector3 * Vector3 * 'model * Entity * World -> Signal<'message, 'command> list * 'model
+        default this.Physics (_, _, _, _, model, _, _) = just model
+
+        abstract member Message : 'model * 'message * Entity * World -> Signal<'message, 'command> list * 'model
+        default this.Message (model, _, _, _) = just model
+
+        abstract member Command : 'model * 'command * Entity * World -> Signal<'message, 'command> list * World
+        default this.Command (_, _, _, world) = just world
+
+        abstract member Forge : 'model * Entity -> EntityForge
+        default this.Forge (_, _) = EntityForge.empty
+
+        abstract member View : 'model * Entity * World -> View
+        default this.View (_, _, _) = View.empty
+
+    and [<AbstractClass>] EntityForger2d<'model, 'message, 'command> (centered, physical, makeInitial : World -> 'model) =
+        inherit EntityForger<'model, 'message, 'command> (true, centered, physical, makeInitial)
+
+        new (centered, physical, initial) =
+            EntityForger2d<'model, 'message, 'command> (centered, physical, fun _ -> initial)
+
+        static member Properties =
+            [define Entity.Centered false
+             define Entity.Size Constants.Engine.EntitySize2dDefault]
+
+    and [<AbstractClass>] EntityForger3d<'model, 'message, 'command> (centered, physical, makeInitial : World -> 'model) =
+        inherit EntityForger<'model, 'message, 'command> (false, centered, physical, makeInitial)
+
+        new (centered, physical, initial) =
+            EntityForger3d<'model, 'message, 'command> (centered, physical, fun _ -> initial)
+
+        static member Properties =
+            [define Entity.Size Constants.Engine.EntitySize3dDefault]
+
+[<AutoOpen>]
+module GuiDispatcherModule2 =
+
+    type [<AbstractClass>] GuiDispatcher<'model, 'message, 'command> (makeInitial : World -> 'model) =
+        inherit EntityDispatcher2d<'model, 'message, 'command> (false, false, makeInitial)
+
+        new (initial : 'model) =
+            GuiDispatcher<'model, 'message, 'command> (fun _ -> initial)
+
+        static member Properties =
+            [define Entity.Presence Omnipresent
+             define Entity.Absolute true
+             define Entity.AlwaysUpdate true
+             define Entity.Size Constants.Engine.EntitySizeGuiDefault
+             define Entity.DisabledColor (Color (0.75f, 0.75f, 0.75f, 0.75f))]
+
+    type [<AbstractClass>] GuiForger<'model, 'message, 'command> (makeInitial : World -> 'model) =
+        inherit EntityForger2d<'model, 'message, 'command> (false, false, makeInitial)
+
+        new (initial : 'model) =
+            GuiForger<'model, 'message, 'command> (fun _ -> initial)
+
+        static member Properties =
+            [define Entity.Presence Omnipresent
+             define Entity.Absolute true
+             define Entity.AlwaysUpdate true
+             define Entity.Size Constants.Engine.EntitySizeGuiDefault
+             define Entity.DisabledColor (Color (0.75f, 0.75f, 0.75f, 0.75f))]
+
+[<AutoOpen>]
+module GroupDispatcherModule =
+
+    type World with
+
+        static member internal signalGroup<'model, 'message, 'command> signal (group : Group) world =
+            match group.GetDispatcher world with
+            | :? GroupDispatcher<'model, 'message, 'command> as dispatcher ->
+                Signal.processSignal dispatcher.Message dispatcher.Command (group.ModelGeneric<'model> ()) signal group world
+            | _ ->
+                Log.info "Failed to send signal to group."
+                world
+
+    and Group with
+
+        member this.UpdateModel<'model> updater world =
+            this.SetModelGeneric<'model> (updater (this.GetModelGeneric<'model> world)) world
+
+        member this.Signal<'model, 'message, 'command> signal world =
+            World.signalGroup<'model, 'message, 'command> signal this world
+
+    and [<AbstractClass>] GroupDispatcher<'model, 'message, 'command> (makeInitial : World -> 'model) =
+        inherit GroupDispatcher ()
+
+        new (initial : 'model) =
+            GroupDispatcher<'model, 'message, 'command> (fun _ -> initial)
+
+        member this.GetModel (group : Group) world : 'model =
+            group.GetModelGeneric<'model> world
+
+        member this.SetModel (model : 'model) (group : Group) world =
+            group.SetModelGeneric<'model> model world
+
+        member this.Model (group : Group) =
+            lens (nameof this.Model) (this.GetModel group) (flip this.SetModel group) group
+
+        override this.Register (group, world) =
+            let world =
+                let property = World.getGroupModelProperty group world
+                if property.DesignerType = typeof<unit>
+                then group.SetModelGeneric<'model> (makeInitial world) world
+                else world
+            let channels = this.Channel (this.Model group, group)
+            let world = Signal.processChannels this.Message this.Command (this.Model group) channels group world
+            let content = this.Content (this.Model group, group)
+            let world =
+                List.fold (fun world content ->
+                    World.expandEntityContent content (SimulantOrigin group) group group world |> snd)
+                    world content
+            let initializers = this.Initializers (this.Model group, group)
+            List.fold (fun world initializer ->
+                match initializer with
+                | PropertyDefinition def ->
+                    let property = { PropertyType = def.PropertyType; PropertyValue = PropertyExpr.eval def.PropertyExpr world }
+                    World.setProperty def.PropertyName property group world |> snd'
+                | EventHandlerDefinition (handler, partialAddress) ->
+                    let eventAddress = partialAddress --> group
+                    World.monitor (fun (evt : Event) world ->
+                        let world = WorldModule.trySignal (handler evt) group world
+                        (Cascade, world))
+                        eventAddress (group :> Simulant) world
+                | BindDefinition (left, right) ->
+                    WorldModule.bind5 true group left right world
+                | LinkDefinition (left, right) ->
+                    let world = WorldModule.bind5 false group left right world
+                    WorldModule.bind5 false right.This right left world)
+                world initializers
+
+        override this.Render (group, world) =
+            let view = this.View (this.GetModel group world, group, world)
+            World.renderView view world
+
+        override this.TrySignal (signalObj, group, world) =
+            match signalObj with
+            | :? Signal<'message, obj> as signal -> group.Signal<'model, 'message, 'command> (match signal with Message message -> msg message | _ -> failwithumf ()) world
+            | :? Signal<obj, 'command> as signal -> group.Signal<'model, 'message, 'command> (match signal with Command command -> cmd command | _ -> failwithumf ()) world
+            | _ -> Log.info "Incorrect signal type returned from event binding."; world
+
+        abstract member Channel : Lens<'model, World> * Group -> Channel<'message, 'command, Group, World> list
+        default this.Channel (_, _) = []
+
+        abstract member Initializers : Lens<'model, World> * Group -> PropertyInitializer list
+        default this.Initializers (_, _) = []
+
+        abstract member Message : 'model * 'message * Group * World -> Signal<'message, 'command> list * 'model
+        default this.Message (model, _, _, _) = just model
+
+        abstract member Command : 'model * 'command * Group * World -> Signal<'message, 'command> list * World
+        default this.Command (_, _, _, world) = just world
+
+        abstract member Content : Lens<'model, World> * Group -> EntityContent list
+        default this.Content (_, _) = []
+
+        abstract member View : 'model * Group * World -> View
+        default this.View (_, _, _) = View.empty
+
+    and [<AbstractClass>] GroupForger<'model, 'message, 'command> (makeInitial : World -> 'model) =
+        inherit GroupDispatcher ()
+
+        new (initial : 'model) =
+            GroupForger<'model, 'message, 'command> (fun _ -> initial)
+
+        member this.GetModel (group : Group) world : 'model =
+            group.GetModelGeneric<'model> world
+
+        member this.SetModel (model : 'model) (group : Group) world =
+            group.SetModelGeneric<'model> model world
+
+        member this.Model (group : Group) =
+            lens (nameof this.Model) (this.GetModel group) (flip this.SetModel group) group
+
+        override this.Register (group, world) =
+            let world =
+                let property = World.getGroupModelProperty group world
+                if property.DesignerType = typeof<unit>
+                then group.SetModelGeneric<'model> (makeInitial world) world
+                else world
+            let channels = this.Channel group
+            let world = Signal.processChannels this.Message this.Command (this.Model group) channels group world
+            let forgeOld = World.getGroupForge group world
+            let forge = this.Forge (this.GetModel group world, group)
+            let world = Forge.synchronizeGroup forgeOld forge group group world
+            let world = World.setGroupForge forge group world
+            World.monitor
+                (fun evt world ->
+                    let model = evt.Data.Value :?> 'model
+                    let forge = this.Forge (model, group)
+                    let world = Forge.synchronizeGroup (World.getGroupForge group world) forge group group world
+                    let world = World.setGroupForge forge group world
+                    (Cascade, world))
+                    (this.Model group).ChangeEvent
+                    group
+                    world
+
+        override this.Render (group, world) =
+            let view = this.View (this.GetModel group world, group, world)
+            World.renderView view world
+
+        override this.TrySignal (signalObj, group, world) =
+            match signalObj with
+            | :? Signal<'message, obj> as signal -> group.Signal<'model, 'message, 'command> (match signal with Message message -> msg message | _ -> failwithumf ()) world
+            | :? Signal<obj, 'command> as signal -> group.Signal<'model, 'message, 'command> (match signal with Command command -> cmd command | _ -> failwithumf ()) world
+            | _ -> Log.info "Incorrect signal type returned from event binding."; world
+
+        abstract member Channel : Group -> Channel<'message, 'command, Group, World> list
+        default this.Channel _ = []
+
+        abstract member Message : 'model * 'message * Group * World -> Signal<'message, 'command> list * 'model
+        default this.Message (model, _, _, _) = just model
+
+        abstract member Command : 'model * 'command * Group * World -> Signal<'message, 'command> list * World
+        default this.Command (_, _, _, world) = just world
+
+        abstract member Forge : 'model * Group -> GroupForge
+        default this.Forge (_, _) = GroupForge.empty
+
+        abstract member View : 'model * Group * World -> View
+        default this.View (_, _, _) = View.empty
+
+[<AutoOpen>]
+module ScreenDispatcherModule =
+
+    type World with
+
+        static member internal signalScreen<'model, 'message, 'command> signal (screen : Screen) world =
+            match screen.GetDispatcher world with
+            | :? ScreenDispatcher<'model, 'message, 'command> as dispatcher ->
+                Signal.processSignal dispatcher.Message dispatcher.Command (screen.ModelGeneric<'model> ()) signal screen world
+            | _ ->
+                Log.info "Failed to send signal to screen."
+                world
+
+    and Screen with
+
+        member this.UpdateModel<'model> updater world =
+            this.SetModelGeneric<'model> (updater (this.GetModelGeneric<'model> world)) world
+
+        member this.Signal<'model, 'message, 'command> signal world =
+            World.signalScreen<'model, 'message, 'command> signal this world
+
+    and [<AbstractClass>] ScreenDispatcher<'model, 'message, 'command> (makeInitial : World -> 'model) =
+        inherit ScreenDispatcher ()
+
+        new (initial : 'model) =
+            ScreenDispatcher<'model, 'message, 'command> (fun _ -> initial)
+
+        member this.GetModel (screen : Screen) world : 'model =
+            screen.GetModelGeneric<'model> world
+
+        member this.SetModel (model : 'model) (screen : Screen) world =
+            screen.SetModelGeneric<'model> model world
+
+        member this.Model (screen : Screen) =
+            lens (nameof this.Model) (this.GetModel screen) (flip this.SetModel screen) screen
+
+        override this.Register (screen, world) =
+            let world =
+                let property = World.getScreenModelProperty screen world
+                if property.DesignerType = typeof<unit>
+                then screen.SetModelGeneric<'model> (makeInitial world) world
+                else world
+            let channels = this.Channel (this.Model screen, screen)
+            let world = Signal.processChannels this.Message this.Command (this.Model screen) channels screen world
+            let content = this.Content (this.Model screen, screen)
+            let world =
+                List.fold (fun world content ->
+                    World.expandGroupContent content (SimulantOrigin screen) screen world |> snd)
+                    world content
+            let initializers = this.Initializers (this.Model screen, screen)
+            List.fold (fun world initializer ->
+                match initializer with
+                | PropertyDefinition def ->
+                    let property = { PropertyType = def.PropertyType; PropertyValue = PropertyExpr.eval def.PropertyExpr world }
+                    World.setProperty def.PropertyName property screen world |> snd'
+                | EventHandlerDefinition (handler, partialAddress) ->
+                    let eventAddress = partialAddress --> screen
+                    World.monitor (fun (evt : Event) world ->
+                        let world = WorldModule.trySignal (handler evt) screen world
+                        (Cascade, world))
+                        eventAddress (screen :> Simulant) world
+                | BindDefinition (left, right) ->
+                    WorldModule.bind5 true screen left right world
+                | LinkDefinition (left, right) ->
+                    let world = WorldModule.bind5 false screen left right world
+                    WorldModule.bind5 false right.This right left world)
+                world initializers
+
+        override this.Render (screen, world) =
+            let view = this.View (this.GetModel screen world, screen, world)
+            World.renderView view world
+
+        override this.TrySignal (signalObj, screen, world) =
+            match signalObj with
+            | :? Signal<'message, obj> as signal -> screen.Signal<'model, 'message, 'command> (match signal with Message message -> msg message | _ -> failwithumf ()) world
+            | :? Signal<obj, 'command> as signal -> screen.Signal<'model, 'message, 'command> (match signal with Command command -> cmd command | _ -> failwithumf ()) world
+            | _ -> Log.info "Incorrect signal type returned from event binding."; world
+
+        abstract member Channel : Lens<'model, World> * Screen -> Channel<'message, 'command, Screen, World> list
+        default this.Channel (_, _) = []
+
+        abstract member Initializers : Lens<'model, World> * Screen -> PropertyInitializer list
+        default this.Initializers (_, _) = []
+
+        abstract member Message : 'model * 'message * Screen * World -> Signal<'message, 'command> list * 'model
+        default this.Message (model, _, _, _) = just model
+
+        abstract member Command : 'model * 'command * Screen * World -> Signal<'message, 'command> list * World
+        default this.Command (_, _, _, world) = just world
+
+        abstract member Content : Lens<'model, World> * Screen -> GroupContent list
+        default this.Content (_, _) = []
+
+        abstract member View : 'model * Screen * World -> View
+        default this.View (_, _, _) = View.empty
+
+    and [<AbstractClass>] ScreenForger<'model, 'message, 'command> (makeInitial : World -> 'model) =
+        inherit ScreenDispatcher ()
+
+        new (initial : 'model) =
+            ScreenForger<'model, 'message, 'command> (fun _ -> initial)
+
+        member this.GetModel (screen : Screen) world : 'model =
+            screen.GetModelGeneric<'model> world
+
+        member this.SetModel (model : 'model) (screen : Screen) world =
+            screen.SetModelGeneric<'model> model world
+
+        member this.Model (screen : Screen) =
+            lens (nameof this.Model) (this.GetModel screen) (flip this.SetModel screen) screen
+
+        override this.Register (screen, world) =
+            let world =
+                let property = World.getScreenModelProperty screen world
+                if property.DesignerType = typeof<unit>
+                then screen.SetModelGeneric<'model> (makeInitial world) world
+                else world
+            let channels = this.Channel screen
+            let world = Signal.processChannels this.Message this.Command (this.Model screen) channels screen world
+            let forgeOld = World.getScreenForge screen world
+            let forge = this.Forge (this.GetModel screen world, screen)
+            let world = Forge.synchronizeScreen forgeOld forge screen screen world
+            let world = World.setScreenForge forge screen world
+            World.monitor
+                (fun evt world ->
+                    let model = evt.Data.Value :?> 'model
+                    let forge = this.Forge (model, screen)
+                    let world = Forge.synchronizeScreen (World.getScreenForge screen world) forge screen screen world
+                    let world = World.setScreenForge forge screen world
+                    (Cascade, world))
+                    (this.Model screen).ChangeEvent
+                    screen
+                    world
+
+        override this.Render (screen, world) =
+            let view = this.View (this.GetModel screen world, screen, world)
+            World.renderView view world
+
+        override this.TrySignal (signalObj, screen, world) =
+            match signalObj with
+            | :? Signal<'message, obj> as signal -> screen.Signal<'model, 'message, 'command> (match signal with Message message -> msg message | _ -> failwithumf ()) world
+            | :? Signal<obj, 'command> as signal -> screen.Signal<'model, 'message, 'command> (match signal with Command command -> cmd command | _ -> failwithumf ()) world
+            | _ -> Log.info "Incorrect signal type returned from event binding."; world
+
+        abstract member Channel : Screen -> Channel<'message, 'command, Screen, World> list
+        default this.Channel _ = []
+
+        abstract member Message : 'model * 'message * Screen * World -> Signal<'message, 'command> list * 'model
+        default this.Message (model, _, _, _) = just model
+
+        abstract member Command : 'model * 'command * Screen * World -> Signal<'message, 'command> list * World
+        default this.Command (_, _, _, world) = just world
+
+        abstract member Forge : 'model * Screen -> ScreenForge
+        default this.Forge (_, _) = ScreenForge.empty
+
+        abstract member View : 'model * Screen * World -> View
+        default this.View (_, _, _) = View.empty
+
+[<AutoOpen>]
 module GameDispatcherModule =
 
     type World with
@@ -1099,7 +1668,7 @@ module GameDispatcherModule =
             match game.GetDispatcher world with
             | :? GameDispatcher<'model, 'message, 'command> as dispatcher ->
                 Signal.processSignal dispatcher.Message dispatcher.Command (game.ModelGeneric<'model> ()) signal game world
-            | :? GameDispatcher'<'model, 'message, 'command> as dispatcher ->
+            | :? GameForger<'model, 'message, 'command> as dispatcher ->
                 Signal.processSignal dispatcher.Message dispatcher.Command (game.ModelGeneric<'model> ()) signal game world
             | _ -> Log.info "Failed to send signal to game."; world
 
@@ -1192,11 +1761,11 @@ module GameDispatcherModule =
         abstract member View : 'model * Game * World -> View
         default this.View (_, _, _) = View.empty
 
-    and [<AbstractClass>] GameDispatcher'<'model, 'message, 'command> (makeInitial : World -> 'model) =
+    and [<AbstractClass>] GameForger<'model, 'message, 'command> (makeInitial : World -> 'model) =
         inherit GameDispatcher ()
 
         new (initial : 'model) =
-            GameDispatcher'<'model, 'message, 'command> (fun _ -> initial)
+            GameForger<'model, 'message, 'command> (fun _ -> initial)
 
         member this.GetModel (game : Game) world : 'model =
             game.GetModelGeneric<'model> world
@@ -1213,7 +1782,7 @@ module GameDispatcherModule =
                 if property.DesignerType = typeof<unit>
                 then game.SetModelGeneric<'model> (makeInitial world) world
                 else world
-            let channels = this.Channel (this.Model game, game)
+            let channels = this.Channel game
             let world = Signal.processChannels this.Message this.Command (this.Model game) channels game world
             let forgeOld = World.getGameForge world
             let forge = this.Forge (this.GetModel game world, game)
@@ -1244,8 +1813,8 @@ module GameDispatcherModule =
             | :? Signal<obj, 'command> as signal -> game.Signal<'model, 'message, 'command> (match signal with Command command -> cmd command | _ -> failwithumf ()) world
             | _ -> Log.info "Incorrect signal type returned from event binding."; world
 
-        abstract member Channel : Lens<'model, World> * Game -> Channel<'message, 'command, Game, World> list
-        default this.Channel (_, _) = []
+        abstract member Channel : Game -> Channel<'message, 'command, Game, World> list
+        default this.Channel _ = []
 
         abstract member Message : 'model * 'message * Game * World -> Signal<'message, 'command> list * 'model
         default this.Message (model, _, _, _) = just model

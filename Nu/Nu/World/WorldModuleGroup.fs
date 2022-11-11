@@ -141,7 +141,7 @@ module WorldModuleGroup =
                 struct (true, world)
             else struct (false, world)
 
-        static member internal setGroupForgeOpt (value : GroupForge) group world =
+        static member internal setGroupForge (value : GroupForge) group world =
             let screenState = World.getGroupState group world
             let screenState = { screenState with Forge = value }
             World.setGroupState screenState group world
