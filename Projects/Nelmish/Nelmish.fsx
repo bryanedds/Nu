@@ -29,7 +29,7 @@ type NelmishDispatcher () =
     // button entities, and one text control.
     override this.Forge (model, _) =
         Forge.game []
-            [Forge.screen Simulants.Default.Screen.Name []
+            [Forge.screen Simulants.Default.Screen.Name Vanilla []
                 [Forge.group Simulants.Default.Screen.Name []
                     [yield Forge.button "Decrement"
                         [Entity.Text == "-"

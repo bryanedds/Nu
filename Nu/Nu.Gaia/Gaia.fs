@@ -1125,17 +1125,6 @@ module Gaia =
             let world = World.setEyeRotation3d quatIdentity world
             world
 
-    let private handleFormReloadAssets (form : GaiaForm) (_ : EventArgs) =
-        addPreUpdater $ fun world ->
-            match tryReloadAssetGraph form world with
-            | (Right assetGraph, world) ->
-                let prettyPrinter = (SyntaxAttribute.defaultValue typeof<AssetGraph>).PrettyPrinter
-                form.assetGraphTextBox.Text <- PrettyPrinter.prettyPrint (scstring assetGraph) prettyPrinter + "\n"
-                world
-            | (Left error, world) ->
-                MessageBox.Show ("Asset reload error due to: " + error + "'.", "Asset reload error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
-                world
-
     let private handleFormReloadCode (_ : GaiaForm) (_ : EventArgs) =
         addPreUpdater $ fun world ->
             use errorStream = new StringWriter ()
@@ -1163,8 +1152,7 @@ module Gaia =
                         // what kind of idiot would do that?
                         fsprojFileLines |>
                         Array.map (fun line -> line.Trim ()) |>
-                        Array.filter (fun line -> line.Contains "Compile Include" && line.Contains ".fs") |>
-                        Array.filter (fun line -> not (line.Contains "Program.fs")) |>
+                        Array.filter (fun line -> line.Contains "Compile Include" && line.Contains ".fsx") |>
                         Array.map (fun line -> line.Replace ("<Compile Include", "")) |>
                         Array.map (fun line -> line.Replace ("/>", "")) |>
                         Array.map (fun line -> line.Replace ("=", "")) |>
@@ -1179,7 +1167,7 @@ module Gaia =
                         "#r \"../../../../Nu/Nu/bin/Debug/Nu.exe\"\n" +
                         "\n" +
                         String.Join ("\n", Array.map (fun (filePath : string) -> "#load \"../../" + filePath + "\"") fsprojFsFilePaths)
-                    let defaultArgs = [|"fsi.exe"; "--debug"; "--noninteractive"; "--nologo"; "--multiemit"; "--gui-"|]
+                    let defaultArgs = [|"fsi.exe"; "--debug+"; "--debug:full"; "--optimize-"; "--tailcalls-"; "--multiemit+"; "--gui-"|]
                     use inStream = new StringReader ""
                     use outStream = new StringWriter ()
                     let fsiConfig = Shell.FsiEvaluationSession.GetDefaultConfiguration ()
@@ -1191,6 +1179,17 @@ module Gaia =
             with exn ->
                 let error = scstring errorStream
                 Log.trace ("Failed to update code due to: " + if error.Length <> 0 then scstring error else scstring exn)
+                world
+
+    let private handleFormReloadAssets (form : GaiaForm) (_ : EventArgs) =
+        addPreUpdater $ fun world ->
+            match tryReloadAssetGraph form world with
+            | (Right assetGraph, world) ->
+                let prettyPrinter = (SyntaxAttribute.defaultValue typeof<AssetGraph>).PrettyPrinter
+                form.assetGraphTextBox.Text <- PrettyPrinter.prettyPrint (scstring assetGraph) prettyPrinter + "\n"
+                world
+            | (Left error, world) ->
+                MessageBox.Show ("Asset reload error due to: " + error + "'.", "Asset reload error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
                 world
 
     let private handleFormGroupTabDeselected (form : GaiaForm) (_ : EventArgs) =
@@ -1842,6 +1841,7 @@ module Gaia =
         form.quickSizeToolStripButton.Click.Add (handleFormQuickSize form)
         form.snap3dButton.Click.Add (handleFormSnap3d form)
         form.resetEyeButton.Click.Add (handleFormResetEye form)
+        form.reloadCodeButton.Click.Add (handleFormReloadCode form)
         form.reloadAssetsButton.Click.Add (handleFormReloadAssets form)
         form.groupTabControl.Deselected.Add (handleFormGroupTabDeselected form)
         form.groupTabControl.Selected.Add (handleFormGroupTabSelected form)
