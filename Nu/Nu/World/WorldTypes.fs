@@ -382,98 +382,98 @@ module WorldTypes =
     and SimulantForge =
         abstract DispatcherNameOpt : string option
         abstract SimulantNameOpt : string option
-        abstract EventSignalForges : Dictionary<obj Address * obj, Guid>
-        abstract EventHandlerForges : Dictionary<int * obj Address, Guid * (Event -> obj)>
-        abstract PropertyForges : HashSet<Simulant ValueOption * string * Type * obj>
-        abstract GetChildForges<'v when 'v :> SimulantForge> : unit -> Dictionary<string, 'v>
+        abstract EventSignalForges : OrderedDictionary<obj Address * obj, Guid>
+        abstract EventHandlerForges : OrderedDictionary<int * obj Address, Guid * (Event -> obj)>
+        abstract PropertyForges : OrderedDictionary<Simulant ValueOption * string * Type * obj, unit>
+        abstract GetChildForges<'v when 'v :> SimulantForge> : unit -> OrderedDictionary<string, 'v>
 
     and [<ReferenceEquality; NoComparison>] GameForge =
         { InitialScreenNameOpt : string option
-          EventSignalForges : Dictionary<obj Address * obj, Guid>
-          EventHandlerForges : Dictionary<int * obj Address, Guid * (Event -> obj)>
-          PropertyForges : HashSet<Simulant ValueOption * string * Type * obj>
-          ScreenForges : Dictionary<string, ScreenForge> }
+          EventSignalForges : OrderedDictionary<obj Address * obj, Guid>
+          EventHandlerForges : OrderedDictionary<int * obj Address, Guid * (Event -> obj)>
+          PropertyForges : OrderedDictionary<Simulant ValueOption * string * Type * obj, unit>
+          ScreenForges : OrderedDictionary<string, ScreenForge> }
         static member empty =
             { InitialScreenNameOpt = None
-              EventSignalForges = dictPlus HashIdentity.Structural []
-              EventHandlerForges = dictPlus HashIdentity.Structural []
-              PropertyForges = hashSetPlus HashIdentity.Structural []
-              ScreenForges = dictPlus StringComparer.Ordinal [] }
+              EventSignalForges = OrderedDictionary HashIdentity.Structural
+              EventHandlerForges = OrderedDictionary HashIdentity.Structural
+              PropertyForges = OrderedDictionary HashIdentity.Structural
+              ScreenForges = OrderedDictionary StringComparer.Ordinal }
         interface SimulantForge with
             member this.DispatcherNameOpt = None
             member this.SimulantNameOpt = None
             member this.EventSignalForges = this.EventSignalForges
             member this.EventHandlerForges = this.EventHandlerForges
             member this.PropertyForges = this.PropertyForges
-            member this.GetChildForges<'v when 'v :> SimulantForge> () = this.ScreenForges :> obj :?> Dictionary<string, 'v>
+            member this.GetChildForges<'v when 'v :> SimulantForge> () = this.ScreenForges :> obj :?> OrderedDictionary<string, 'v>
 
     and [<ReferenceEquality; NoComparison>] ScreenForge =
         { ScreenDispatcherName : string
           ScreenName : string
           ScreenBehavior : ScreenBehavior
-          EventSignalForges : Dictionary<obj Address * obj, Guid>
-          EventHandlerForges : Dictionary<int * obj Address, Guid * (Event -> obj)>
-          PropertyForges : HashSet<Simulant ValueOption * string * Type * obj>
-          GroupForges : Dictionary<string, GroupForge> }
+          EventSignalForges : OrderedDictionary<obj Address * obj, Guid>
+          EventHandlerForges : OrderedDictionary<int * obj Address, Guid * (Event -> obj)>
+          PropertyForges : OrderedDictionary<Simulant ValueOption * string * Type * obj, unit>
+          GroupForges : OrderedDictionary<string, GroupForge> }
         static member empty =
             { ScreenDispatcherName = nameof ScreenDispatcher
               ScreenName = nameof Screen
               ScreenBehavior = Vanilla
-              EventSignalForges = dictPlus HashIdentity.Structural []
-              EventHandlerForges = dictPlus HashIdentity.Structural []
-              PropertyForges = hashSetPlus HashIdentity.Structural []
-              GroupForges = dictPlus StringComparer.Ordinal [] }
+              EventSignalForges = OrderedDictionary HashIdentity.Structural
+              EventHandlerForges = OrderedDictionary HashIdentity.Structural
+              PropertyForges = OrderedDictionary HashIdentity.Structural
+              GroupForges = OrderedDictionary StringComparer.Ordinal }
         interface SimulantForge with
             member this.DispatcherNameOpt = Some this.ScreenDispatcherName
             member this.SimulantNameOpt = Some this.ScreenName
             member this.EventSignalForges = this.EventSignalForges
             member this.EventHandlerForges = this.EventHandlerForges
             member this.PropertyForges = this.PropertyForges
-            member this.GetChildForges<'v when 'v :> SimulantForge> () = this.GroupForges :> obj :?> Dictionary<string, 'v>
+            member this.GetChildForges<'v when 'v :> SimulantForge> () = this.GroupForges :> obj :?> OrderedDictionary<string, 'v>
 
     and [<ReferenceEquality; NoComparison>] GroupForge =
         { GroupDispatcherName : string
           GroupName : string
-          EventSignalForges : Dictionary<obj Address * obj, Guid>
-          EventHandlerForges : Dictionary<int * obj Address, Guid * (Event -> obj)>
-          PropertyForges : HashSet<Simulant ValueOption * string * Type * obj>
-          EntityForges : Dictionary<string, EntityForge> }
+          EventSignalForges : OrderedDictionary<obj Address * obj, Guid>
+          EventHandlerForges : OrderedDictionary<int * obj Address, Guid * (Event -> obj)>
+          PropertyForges : OrderedDictionary<Simulant ValueOption * string * Type * obj, unit>
+          EntityForges : OrderedDictionary<string, EntityForge> }
         static member empty =
             { GroupDispatcherName = nameof GroupDispatcher
               GroupName = nameof Group
-              EventSignalForges = dictPlus HashIdentity.Structural []
-              EventHandlerForges = dictPlus HashIdentity.Structural []
-              PropertyForges = hashSetPlus HashIdentity.Structural []
-              EntityForges = dictPlus StringComparer.Ordinal [] }
+              EventSignalForges = OrderedDictionary HashIdentity.Structural
+              EventHandlerForges = OrderedDictionary HashIdentity.Structural
+              PropertyForges = OrderedDictionary HashIdentity.Structural
+              EntityForges = OrderedDictionary StringComparer.Ordinal }
         interface SimulantForge with
             member this.DispatcherNameOpt = Some this.GroupDispatcherName
             member this.SimulantNameOpt = Some this.GroupName
             member this.EventSignalForges = this.EventSignalForges
             member this.EventHandlerForges = this.EventHandlerForges
             member this.PropertyForges = this.PropertyForges
-            member this.GetChildForges<'v when 'v :> SimulantForge> () = this.EntityForges :> obj :?> Dictionary<string, 'v>
+            member this.GetChildForges<'v when 'v :> SimulantForge> () = this.EntityForges :> obj :?> OrderedDictionary<string, 'v>
 
     and [<ReferenceEquality; NoComparison>] EntityForge =
         { EntityDispatcherName : string
           EntityName : string
-          EventSignalForges : Dictionary<obj Address * obj, Guid>
-          EventHandlerForges : Dictionary<int * obj Address, Guid * (Event -> obj)>
-          PropertyForges : HashSet<Simulant ValueOption * string * Type * obj>
-          EntityForges : Dictionary<string, EntityForge> }
+          EventSignalForges : OrderedDictionary<obj Address * obj, Guid>
+          EventHandlerForges : OrderedDictionary<int * obj Address, Guid * (Event -> obj)>
+          PropertyForges : OrderedDictionary<Simulant ValueOption * string * Type * obj, unit>
+          EntityForges : OrderedDictionary<string, EntityForge> }
         static member empty =
             { EntityDispatcherName = nameof EntityDispatcher
               EntityName = nameof Entity
-              EventSignalForges = dictPlus HashIdentity.Structural []
-              EventHandlerForges = dictPlus HashIdentity.Structural []
-              PropertyForges = hashSetPlus HashIdentity.Structural []
-              EntityForges = dictPlus StringComparer.Ordinal [] }
+              EventSignalForges = OrderedDictionary HashIdentity.Structural
+              EventHandlerForges = OrderedDictionary HashIdentity.Structural
+              PropertyForges = OrderedDictionary HashIdentity.Structural
+              EntityForges = OrderedDictionary StringComparer.Ordinal }
         interface SimulantForge with
             member this.DispatcherNameOpt = Some this.EntityDispatcherName
             member this.SimulantNameOpt = Some this.EntityName
             member this.EventSignalForges = this.EventSignalForges
             member this.EventHandlerForges = this.EventHandlerForges
             member this.PropertyForges = this.PropertyForges
-            member this.GetChildForges<'v when 'v :> SimulantForge> () = this.EntityForges :> obj :?> Dictionary<string, 'v>
+            member this.GetChildForges<'v when 'v :> SimulantForge> () = this.EntityForges :> obj :?> OrderedDictionary<string, 'v>
 
     /// Generalized interface for simulant state.
     and SimulantState =
