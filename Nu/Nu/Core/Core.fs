@@ -71,6 +71,26 @@ type [<StructuralEquality; NoComparison>] DesiredFps =
 namespace Prime
 open System
 
+[<AutoOpen>]
+module MapExtensions =
+
+    /// Map extension methods.
+    type Map<'k, 'v when 'k : comparison> with
+
+        /// Convert entries to struct pairs.
+        member this.Pairs =
+            this |> Seq.map (fun entry -> struct (entry.Key, entry.Value))
+
+[<AutoOpen>]
+module DictionaryExtension =
+
+    /// Dictionary extension methods.
+    type System.Collections.Generic.Dictionary<'k, 'v> with
+
+        /// Convert entries to struct pairs.
+        member this.Pairs =
+            this |> Seq.map (fun entry -> struct (entry.Key, entry.Value))
+
 /// Allow for a pair of values to be partially-equated.
 type [<CustomEquality; NoComparison>] PartialEquatable<'a, 'b when 'a : equality> =
     { Equatable : 'a

@@ -5,6 +5,7 @@ open System.Numerics
 open Prime
 open Nu
 open Nu.Declarative
+open Nu.ForgeOperators
 open Nu.Ecs
 
 type [<NoEquality; NoComparison; Struct>] StaticSpriteComponent =
@@ -182,27 +183,26 @@ type [<ReferenceEquality>] Intss =
         { Intss = intss.Intss |> Map.map (fun k v -> if k % 1 = 0 then Ints.inc v else v) }
 
 type ElmishGameDispatcher () =
-    inherit GameDispatcher<Intss, int, unit> (Intss.init 100) // 10,000 elmish entities (goal: steady 60FPS, current: 53FPS)
-
-    override this.Channel (_, game) =
-        [game.UpdateEvent => msg 0]
+    inherit GameForger<Intss, int, unit> (Intss.init 100) // 10,000 elmish entities (goal: steady 60FPS, current: 53FPS)
 
     override this.Message (intss, message, _, _) =
         match message with
         | 0 -> just (Intss.inc intss)
         | _ -> just intss
 
-    override this.Content (intss, _) =
-        [Content.screen Simulants.Default.Screen.Name Vanilla []
-            [Content.groups intss (fun intss -> intss.Intss) $ fun i intss ->
-                Content.group (string i) []
-                    [Content.entities intss (fun ints -> ints.Ints) $ fun j int ->
-                        Content.entity<ElmishEntityDispatcher> (string j)
-                            [Entity.Presence == Omnipresent
-                             Entity.Position == v3 (single i * 5.0f - 250.0f) (single j * 2.5f - 125.0f) -250.0f
-                             Entity.Scale <== int --> fun int -> v3Dup (single (int % 10)) * 0.5f]]
-             Content.group Gen.name []
-                [Content.fps "Fps" [Entity.Position == v3 200.0f -250.0f 0.0f]]]]
+    override this.Forge (intss, _) =
+        Forge.game
+            [Game.UpdateEvent ==> msg 0]
+            [Forge.screen Simulants.Default.Screen.Name Vanilla []
+                [for (i, ints) in intss.Intss.Pairs do
+                    yield Forge.group (string i) []
+                        [for (j, int) in ints.Ints.Pairs do
+                            yield Forge.entity<ElmishEntityDispatcher> (string j)
+                                [Entity.Presence == Omnipresent
+                                 Entity.Position == v3 (single i * 5.0f - 250.0f) (single j * 2.5f - 125.0f) -250.0f
+                                 Entity.Scale == v3Dup (single (int % 10)) * 0.5f]]
+                 yield Forge.group "Fps" []
+                    [Forge.fps "Fps" [Entity.Position == v3 200.0f -250.0f 0.0f]]]]
 
 #if ELMISH_AND_ECS
     override this.Register (game, world) =
