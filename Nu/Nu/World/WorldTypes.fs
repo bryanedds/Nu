@@ -388,17 +388,17 @@ module WorldTypes =
         abstract GetChildForges<'v when 'v :> SimulantForge> : unit -> Dictionary<string, 'v>
 
     and [<ReferenceEquality; NoComparison>] GameForge =
-        { EventSignalForges : Dictionary<obj Address * obj, Guid>
+        { InitialScreenNameOpt : string option
+          EventSignalForges : Dictionary<obj Address * obj, Guid>
           EventHandlerForges : Dictionary<int * obj Address, Guid * (Event -> obj)>
           PropertyForges : HashSet<Simulant ValueOption * string * Type * obj>
-          ScreenForges : Dictionary<string, ScreenForge>
-          InitialScreenNameOpt : string option }
+          ScreenForges : Dictionary<string, ScreenForge> }
         static member empty =
-            { EventSignalForges = dictPlus HashIdentity.Structural []
+            { InitialScreenNameOpt = None
+              EventSignalForges = dictPlus HashIdentity.Structural []
               EventHandlerForges = dictPlus HashIdentity.Structural []
               PropertyForges = hashSetPlus HashIdentity.Structural []
-              ScreenForges = dictPlus StringComparer.Ordinal []
-              InitialScreenNameOpt = None }
+              ScreenForges = dictPlus StringComparer.Ordinal [] }
         interface SimulantForge with
             member this.DispatcherNameOpt = None
             member this.SimulantNameOpt = None
