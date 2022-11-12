@@ -15,8 +15,6 @@ module Simulants =
 type Command =
     | Update
     | Jump
-    | MoveLeft
-    | MoveRight
     | Nop
 
 // this is our Elm-style game dispatcher
@@ -27,8 +25,19 @@ type ElmarioDispatcher () =
     override this.Command (_, command, _, world) =
         match command with
         | Update ->
-            if World.isKeyboardKeyDown KeyboardKey.Left world then withCmd MoveLeft world
-            elif World.isKeyboardKeyDown KeyboardKey.Right world then withCmd MoveRight world
+            let physicsId = Simulants.Elmario.GetPhysicsId world
+            if World.isKeyboardKeyDown KeyboardKey.Left world then
+                let world =
+                    if World.isBodyOnGround physicsId world
+                    then World.applyBodyForce (v3 -2500.0f 0.0f 0.0f) physicsId world
+                    else World.applyBodyForce (v3 -750.0f 0.0f 0.0f) physicsId world
+                just world
+            elif World.isKeyboardKeyDown KeyboardKey.Right world then
+                let world =
+                    if World.isBodyOnGround physicsId world
+                    then World.applyBodyForce (v3 2500.0f 0.0f 0.0f) physicsId world
+                    else World.applyBodyForce (v3 750.0f 0.0f 0.0f) physicsId world
+                just world
             else just world
         | Jump ->
             let physicsId = Simulants.Elmario.GetPhysicsId world
@@ -38,19 +47,6 @@ type ElmarioDispatcher () =
                 just world
             else just world
         | MoveLeft ->
-            let physicsId = Simulants.Elmario.GetPhysicsId world
-            let world =
-                if World.isBodyOnGround physicsId world
-                then World.applyBodyForce (v3 -2500.0f 0.0f 0.0f) physicsId world
-                else World.applyBodyForce (v3 -750.0f 0.0f 0.0f) physicsId world
-            just world
-        | MoveRight ->
-            let physicsId = Simulants.Elmario.GetPhysicsId world
-            let world =
-                if World.isBodyOnGround physicsId world
-                then World.applyBodyForce (v3 2500.0f 0.0f 0.0f) physicsId world
-                else World.applyBodyForce (v3 750.0f 0.0f 0.0f) physicsId world
-            just world
         | Nop -> just world
 
     // here we describe the forge of the game including elmario, the ground he walks on, and a rock.
