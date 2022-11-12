@@ -172,6 +172,19 @@ module Forge =
             let world = synchronizeEventSignals forgeOld forge origin screen world
             let world = synchronizeEventHandlers forgeOld forge origin screen world
             let world = synchronizeProperties forgeOld forge screen world
+            let world =
+                if forgeOld.GroupFilePathOpt <> forge.GroupFilePathOpt then
+                    let groupFromFile = screen / "GroupFromFile"
+                    let world =
+                        match forgeOld.GroupFilePathOpt with
+                        | Some _ -> World.destroyGroup groupFromFile world
+                        | None -> world
+                    let world =
+                        match forge.GroupFilePathOpt with
+                        | Some groupFilePath -> World.readGroupFromFile groupFilePath (Some groupFromFile.Name) screen world |> snd
+                        | None -> world
+                    world
+                else world
             match tryDifferentiateChildren<Group, GroupForge> forgeOld forge screen with
             | Some (groupsAdded, groupsRemoved, groupsPotentiallyAltered) ->
                 let world = Seq.fold (fun world group -> World.destroyGroup group world) world groupsRemoved
@@ -326,7 +339,7 @@ module Forge =
           EventSignalForges = eventSignalForges; EventHandlerForges = eventHandlerForges; PropertyForges = propertyForges; EntityForges = entityForges }
 
     ///
-    let screen<'screenDispatcher when 'screenDispatcher :> ScreenDispatcher> screenName screenBehavior initializers groups =
+    let private screen5<'screenDispatcher when 'screenDispatcher :> ScreenDispatcher> screenName screenBehavior groupFilePathOpt initializers groups =
         let eventSignalForges = OrderedDictionary HashIdentity.Structural
         let eventHandlerForges = OrderedDictionary HashIdentity.Structural
         let propertyForges = OrderedDictionary HashIdentity.Structural
@@ -340,8 +353,14 @@ module Forge =
             i <- inc i
         for group in groups do
             groupForges.Add (group.GroupName, group)
-        { ScreenDispatcherName = typeof<'screenDispatcher>.Name; ScreenName = screenName; ScreenBehavior = screenBehavior
+        { ScreenDispatcherName = typeof<'screenDispatcher>.Name; ScreenName = screenName; ScreenBehavior = screenBehavior; GroupFilePathOpt = groupFilePathOpt
           EventSignalForges = eventSignalForges; EventHandlerForges = eventHandlerForges; PropertyForges = propertyForges; GroupForges = groupForges }
+
+    let screen<'screenDispatcher when 'screenDispatcher :> ScreenDispatcher> screenName screenBehavior initializers groups =
+        screen5<'screenDispatcher> screenName screenBehavior None initializers groups
+
+    let screenWithGroupFromFile screenName screenBehavior groupFilePath initializers groups =
+        screen5<'screenDispatcher> screenName screenBehavior (Some groupFilePath) initializers groups
 
     ///
     let game initializers screens =
