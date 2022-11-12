@@ -450,6 +450,7 @@ module WorldTypes =
         { ScreenDispatcherName : string
           ScreenName : string
           ScreenBehavior : ScreenBehavior
+          GroupFilePathOpt : string option
           EventSignalForges : OrderedDictionary<obj Address * obj, Guid>
           EventHandlerForges : OrderedDictionary<int * obj Address, Guid * (Event -> obj)>
           PropertyForges : OrderedDictionary<PropertyForge, unit>
@@ -458,6 +459,7 @@ module WorldTypes =
             { ScreenDispatcherName = nameof ScreenDispatcher
               ScreenName = nameof Screen
               ScreenBehavior = Vanilla
+              GroupFilePathOpt = None
               EventSignalForges = OrderedDictionary HashIdentity.Structural
               EventHandlerForges = OrderedDictionary HashIdentity.Structural
               PropertyForges = OrderedDictionary HashIdentity.Structural
