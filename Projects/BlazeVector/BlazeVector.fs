@@ -45,8 +45,8 @@ module BlazeVector =
             match message with
             | ShowTitle -> just Title
             | ShowCredits -> just Credits
-            | ShowGameplay -> just (Gameplay GamePlaying)
-            | GameplayChanged gameplay -> match gameplay with GamePlaying | GameQuitting -> just (Gameplay gameplay) | GameQuit -> just model
+            | ShowGameplay -> just (Gameplay Playing)
+            | GameplayChanged gameplay -> match gameplay with Playing | Quitting -> just (Gameplay gameplay) | Quit -> just model
 
         // here we handle the above commands
         override this.Command (model, command, _, world) =
@@ -67,8 +67,8 @@ module BlazeVector =
                     | Credits -> Desire Simulants.Credits.Screen
                     | Gameplay gameplay ->
                         match gameplay with
-                        | GamePlaying -> Desire Simulants.Gameplay.Screen
-                        | GameQuitting | GameQuit -> Desire Simulants.Title.Screen
+                        | Playing -> Desire Simulants.Gameplay.Screen
+                        | Quitting | Quit -> Desire Simulants.Title.Screen
                  Game.Model.ChangeEvent ==> cmd ModelChanged
                  Simulants.Splash.Screen.DeselectingEvent ==> msg ShowTitle
                  Simulants.Title.Gui.Credits.ClickEvent ==> msg ShowCredits

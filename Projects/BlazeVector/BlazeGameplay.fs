@@ -227,13 +227,13 @@ module Player =
 module Gameplay =
 
     type Gameplay =
-        | GamePlaying
-        | GameQuitting
-        | GameQuit
-
-    type GameplayMessage =
+        | Playing
         | Quitting
         | Quit
+
+    type GameplayMessage =
+        | StartQutting
+        | FinishQuitting
 
     type GameplayCommand =
         | CreateSections
@@ -246,7 +246,7 @@ module Gameplay =
         member this.Gameplay = this.ModelGeneric<Gameplay> ()
 
     type GameplayDispatcher () =
-        inherit ScreenForger<Gameplay, GameplayMessage, GameplayCommand> (GameQuit)
+        inherit ScreenForger<Gameplay, GameplayMessage, GameplayCommand> (Quit)
 
         static let [<Literal>] SectionName = "Section"
         static let [<Literal>] SectionCount = 16
@@ -264,8 +264,8 @@ module Gameplay =
 
         override this.Message (_, message, _, _) =
             match message with
-            | Quitting -> just GameQuitting
-            | Quit -> just GameQuit
+            | StartQutting -> just Quitting
+            | FinishQuitting -> just Quit
 
         override this.Command (model, command, gameplay, world) =
 
@@ -290,7 +290,7 @@ module Gameplay =
                 let groupNames = Simulants.Gameplay.Scene.Group.Name :: sectionNames
                 let groups = List.map (fun groupName -> gameplay / groupName) groupNames
                 let world = World.destroyGroups groups world
-                withMsg Quit world
+                withMsg FinishQuitting world
 
             | Update ->
 
@@ -306,9 +306,9 @@ module Gameplay =
                     else world
 
                 // update player fall
-                if Simulants.Gameplay.Scene.Player.HasFallen world && World.isSelectedScreenIdling world && model = GamePlaying then
+                if Simulants.Gameplay.Scene.Player.HasFallen world && World.isSelectedScreenIdling world && model = Playing then
                     let world = World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.DeathSound world
-                    withMsg Quitting world
+                    withMsg StartQutting world
                 else just world
 
         override this.Forge (gameplay, _) =
@@ -318,7 +318,7 @@ module Gameplay =
                 [Screen.SelectEvent ==> cmd CreateSections
                  Screen.DeselectingEvent ==> cmd DestroySections
                  Screen.UpdateEvent ==> cmd Update
-                 Simulants.Gameplay.Gui.Quit.ClickEvent ==> msg Quitting]
+                 Simulants.Gameplay.Gui.Quit.ClickEvent ==> msg StartQutting]
 
                 [// the gui group
                  yield Forge.group Simulants.Gameplay.Gui.Group.Name []
@@ -326,13 +326,13 @@ module Gameplay =
                          [Entity.Text == "Quit"
                           Entity.Position == v3 260.0f -260.0f 0.0f
                           Entity.Elevation == 10.0f
-                          Entity.ClickEvent ==> msg Quitting]]
+                          Entity.ClickEvent ==> msg StartQutting]]
 
                  // the scene group while playing
                  match gameplay with
-                 | GamePlaying | GameQuitting ->
+                 | Playing | Quitting ->
                     yield Forge.group Simulants.Gameplay.Scene.Group.Name []
                         [Forge.entity<PlayerDispatcher> Simulants.Gameplay.Scene.Player.Name
                             [Entity.Position == v3 -300.0f -175.6805f 0.0f
                              Entity.Elevation == 1.0f]]
-                 | GameQuit -> ()]
+                 | Quit -> ()]
