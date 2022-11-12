@@ -104,8 +104,10 @@ module Forge =
                 | ValueSome simulant -> (simulant, propertyName, propertyType, propertyValue)
                 | ValueNone -> (simulant, propertyName, propertyType, propertyValue)) |>
             hashSetPlus HashIdentity.Structural
-        let propertiesAdded = HashSet (propertyForges, propertyForges.Comparer)
-        propertiesAdded.ExceptWith propertyForgesOld
+        let propertiesAdded = HashSet ()
+        for property in propertyForges do
+            if not (propertyForgesOld.Contains property) then
+                propertiesAdded.Add property |> ignore
         let world =
             Seq.fold (fun world (simulant, propertyName, propertyType, propertyValue) ->
                 let property = { PropertyType = propertyType; PropertyValue = propertyValue }
@@ -227,12 +229,19 @@ module Forge =
 
     ///
     let composite<'entityDispatcher when 'entityDispatcher :> EntityDispatcher> entityName properties entities =
-        { EntityDispatcherName = typeof<'entityDispatcher>.Name
-          EntityName = entityName
-          EventSignalForges = properties |> List.choose (function EventSignalForge (addr, value) -> Some ((addr, value), makeGuid ()) | _ -> None) |> dictPlus HashIdentity.Structural
-          EventHandlerForges = properties |> List.mapi (fun i property -> match property with EventHandlerForge pe -> Some ((i, pe.Equatable), (makeGuid (), pe.Nonequatable)) | _ -> None) |> List.definitize |> dictPlus HashIdentity.Structural
-          PropertyForges = properties |> List.choose (function PropertyForge (simOpt, name, ty, value) -> Some (simOpt, name, ty, value) | _ -> None) |> hashSetPlus HashIdentity.Structural
-          EntityForges = entities |> List.map (fun entityForge -> (entityForge.EntityName, entityForge)) |> dictPlus HashIdentity.Structural }
+        let eventSignalForges = Dictionary HashIdentity.Structural
+        let eventHandlerForges = Dictionary HashIdentity.Structural
+        let propertyForges = HashSet HashIdentity.Structural
+        let mutable i = 0
+        for property in properties do
+            match property with
+            | EventSignalForge (addr, value) -> eventSignalForges.Add ((addr, value), makeGuid ())
+            | EventHandlerForge pe -> eventHandlerForges.Add ((i, pe.Equatable), (makeGuid (), pe.Nonequatable))
+            | PropertyForge (simOpt, name, ty, value) -> propertyForges.Add (simOpt, name, ty, value) |> ignore
+            i <- inc i
+        let entityForges = entities |> Seq.map (fun entityForge -> (entityForge.EntityName, entityForge)) |> dictPlus HashIdentity.Structural
+        { EntityDispatcherName = typeof<'entityDispatcher>.Name; EntityName = entityName
+          EventSignalForges = eventSignalForges; EventHandlerForges = eventHandlerForges; PropertyForges = propertyForges; EntityForges = entityForges }
 
     ///
     let entity<'entityDispatcher when 'entityDispatcher :> EntityDispatcher> entityName properties =
@@ -309,30 +318,52 @@ module Forge =
 
     ///
     let group<'groupDispatcher when 'groupDispatcher :> GroupDispatcher> groupName properties entities =
-        { GroupDispatcherName = typeof<'groupDispatcher>.Name
-          GroupName = groupName
-          EventSignalForges = properties |> List.choose (function EventSignalForge (addr, value) -> Some ((addr, value), makeGuid ()) | _ -> None) |> dictPlus HashIdentity.Structural
-          EventHandlerForges = properties |> List.mapi (fun i property -> match property with EventHandlerForge pe -> Some ((i, pe.Equatable), (makeGuid (), pe.Nonequatable)) | _ -> None) |> List.definitize |> dictPlus HashIdentity.Structural
-          PropertyForges = properties |> List.choose (function PropertyForge (simOpt, name, ty, value) -> Some (simOpt, name, ty, value) | _ -> None) |> hashSetPlus HashIdentity.Structural
-          EntityForges = entities |> List.map (fun entityForge -> (entityForge.EntityName, entityForge)) |> dictPlus HashIdentity.Structural }
+        let eventSignalForges = Dictionary HashIdentity.Structural
+        let eventHandlerForges = Dictionary HashIdentity.Structural
+        let propertyForges = HashSet HashIdentity.Structural
+        let mutable i = 0
+        for property in properties do
+            match property with
+            | EventSignalForge (addr, value) -> eventSignalForges.Add ((addr, value), makeGuid ())
+            | EventHandlerForge pe -> eventHandlerForges.Add ((i, pe.Equatable), (makeGuid (), pe.Nonequatable))
+            | PropertyForge (simOpt, name, ty, value) -> propertyForges.Add (simOpt, name, ty, value) |> ignore
+            i <- inc i
+        let entityForges = entities |> Seq.map (fun entityForge -> (entityForge.EntityName, entityForge)) |> dictPlus HashIdentity.Structural
+        { GroupDispatcherName = typeof<'groupDispatcher>.Name; GroupName = groupName
+          EventSignalForges = eventSignalForges; EventHandlerForges = eventHandlerForges; PropertyForges = propertyForges; EntityForges = entityForges }
 
     ///
     let screen<'screenDispatcher when 'screenDispatcher :> ScreenDispatcher> screenName screenBehavior properties groups =
-        { ScreenDispatcherName = typeof<'screenDispatcher>.Name
-          ScreenName = screenName
-          ScreenBehavior = screenBehavior
-          EventSignalForges = properties |> List.choose (function EventSignalForge (addr, value) -> Some ((addr, value), makeGuid ()) | _ -> None) |> dictPlus HashIdentity.Structural
-          EventHandlerForges = properties |> List.mapi (fun i property -> match property with EventHandlerForge pe -> Some ((i, pe.Equatable), (makeGuid (), pe.Nonequatable)) | _ -> None) |> List.definitize |> dictPlus HashIdentity.Structural
-          PropertyForges = properties |> List.choose (function PropertyForge (simOpt, name, ty, value) -> Some (simOpt, name, ty, value) | _ -> None) |> hashSetPlus HashIdentity.Structural
-          GroupForges = groups |> List.map (fun groupForge -> (groupForge.GroupName, groupForge)) |> dictPlus HashIdentity.Structural }
+        let eventSignalForges = Dictionary HashIdentity.Structural
+        let eventHandlerForges = Dictionary HashIdentity.Structural
+        let propertyForges = HashSet HashIdentity.Structural
+        let mutable i = 0
+        for property in properties do
+            match property with
+            | EventSignalForge (addr, value) -> eventSignalForges.Add ((addr, value), makeGuid ())
+            | EventHandlerForge pe -> eventHandlerForges.Add ((i, pe.Equatable), (makeGuid (), pe.Nonequatable))
+            | PropertyForge (simOpt, name, ty, value) -> propertyForges.Add (simOpt, name, ty, value) |> ignore
+            i <- inc i
+        let groupForges = groups |> Seq.map (fun groupForge -> (groupForge.GroupName, groupForge)) |> dictPlus HashIdentity.Structural
+        { ScreenDispatcherName = typeof<'screenDispatcher>.Name; ScreenName = screenName; ScreenBehavior = screenBehavior
+          EventSignalForges = eventSignalForges; EventHandlerForges = eventHandlerForges; PropertyForges = propertyForges; GroupForges = groupForges }
 
     ///
     let game properties screens =
-        { EventSignalForges = properties |> List.choose (function EventSignalForge (addr, value) -> Some ((addr, value), makeGuid ()) | _ -> None) |> dictPlus HashIdentity.Structural
-          EventHandlerForges = properties |> List.mapi (fun i property -> match property with EventHandlerForge pe -> Some ((i, pe.Equatable), (makeGuid (), pe.Nonequatable)) | _ -> None) |> List.definitize |> dictPlus HashIdentity.Structural
-          PropertyForges = properties |> List.choose (function PropertyForge (simOpt, name, ty, value) -> Some (simOpt, name, ty, value) | _ -> None) |> hashSetPlus HashIdentity.Structural
-          ScreenForges = screens |> List.map (fun screenForge -> (screenForge.ScreenName, screenForge)) |> dictPlus HashIdentity.Structural
-          InitialScreenNameOpt = match screens with [] -> None | screen :: _ -> Some screen.ScreenName }
+        let initialScreenNameOpt = match Seq.tryHead screens with Some screen -> Some screen.ScreenName | None -> None
+        let eventSignalForges = Dictionary HashIdentity.Structural
+        let eventHandlerForges = Dictionary HashIdentity.Structural
+        let propertyForges = HashSet HashIdentity.Structural
+        let mutable i = 0
+        for property in properties do
+            match property with
+            | EventSignalForge (addr, value) -> eventSignalForges.Add ((addr, value), makeGuid ())
+            | EventHandlerForge pe -> eventHandlerForges.Add ((i, pe.Equatable), (makeGuid (), pe.Nonequatable))
+            | PropertyForge (simOpt, name, ty, value) -> propertyForges.Add (simOpt, name, ty, value) |> ignore
+            i <- inc i
+        let screenForges = screens |> Seq.map (fun screenForge -> (screenForge.ScreenName, screenForge)) |> dictPlus HashIdentity.Structural
+        { InitialScreenNameOpt = initialScreenNameOpt
+          EventSignalForges = eventSignalForges; EventHandlerForges = eventHandlerForges; PropertyForges = propertyForges; ScreenForges = screenForges }
 
 module ForgeOperators =
 
