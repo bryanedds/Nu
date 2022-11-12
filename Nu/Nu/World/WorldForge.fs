@@ -10,7 +10,7 @@ open Prime
 [<RequireQualifiedAccess>]
 module Forge =
 
-    let inline private synchronizeEventSignals (forgeOld : SimulantForge) (forge : SimulantForge) (origin : Simulant) (simulant : Simulant) world =
+    let (*inline*) private synchronizeEventSignals (forgeOld : SimulantForge) (forge : SimulantForge) (origin : Simulant) (simulant : Simulant) world =
         if forgeOld.EventSignalForges.Count > 0 || forge.EventSignalForges.Count > 0 then
             let eventSignalsAdded = List ()
             for eventSignalEntry in forge.EventSignalForges do
@@ -46,7 +46,7 @@ module Forge =
             world
         else world
 
-    let inline private synchronizeEventHandlers (forgeOld : SimulantForge) (forge : SimulantForge) (origin : Simulant) (simulant : Simulant) world =
+    let (*inline*) private synchronizeEventHandlers (forgeOld : SimulantForge) (forge : SimulantForge) (origin : Simulant) (simulant : Simulant) world =
         if forgeOld.EventHandlerForges.Count > 0 || forge.EventHandlerForges.Count > 0 then
             let eventHandlersAdded = List ()
             for eventHandlerEntry in forge.EventHandlerForges do
@@ -82,7 +82,7 @@ module Forge =
             world
         else world
 
-    let inline private synchronizeProperties (forgeOld : SimulantForge) (forge : SimulantForge) (simulant : Simulant) world =
+    let (*inline*) private synchronizeProperties (forgeOld : SimulantForge) (forge : SimulantForge) (simulant : Simulant) world =
         if forgeOld.PropertyForges.Count > 0 || forge.PropertyForges.Count > 0 then
             let simulant = if notNull (forgeOld.SimulantCachedOpt :> obj) then forgeOld.SimulantCachedOpt else simulant
             forge.SimulantCachedOpt <- simulant
@@ -96,7 +96,7 @@ module Forge =
                 world forge.PropertyForges
         else world
 
-    let inline private tryDifferentiateChildren<'child, 'childForge when 'child : equality and 'child :> Simulant and 'childForge :> SimulantForge>
+    let (*inline*) private tryDifferentiateChildren<'child, 'childForge when 'child : equality and 'child :> Simulant and 'childForge :> SimulantForge>
         (forgeOld : SimulantForge) (forge : SimulantForge) (simulant : Simulant) =
         let childForgesOld = forgeOld.GetChildForges<'childForge> ()
         let childForges = forge.GetChildForges<'childForge> ()
