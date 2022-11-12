@@ -310,8 +310,9 @@ module Gameplay =
                     else just world
                 else just world
 
-        override this.Forge (_, screen) =
+        override this.Forge (gameplay, _) =
 
+            // the gameplay screen
             Forge.screen Simulants.Gameplay.Screen.Name Vanilla
                 [Screen.SelectEvent ==> cmd CreateSections
                  Screen.DeselectEvent ==> cmd DestroySections
@@ -319,16 +320,18 @@ module Gameplay =
                  Simulants.Gameplay.Gui.Quit.ClickEvent ==> msg Quit]
 
                 [// the gui group
-                 Forge.group Simulants.Gameplay.Gui.Group.Name []
+                 yield Forge.group Simulants.Gameplay.Gui.Group.Name []
                      [Forge.button Simulants.Gameplay.Gui.Quit.Name
                          [Entity.Text == "Quit"
                           Entity.Position == v3 260.0f -260.0f 0.0f
                           Entity.Elevation == 10.0f
                           Entity.ClickEvent ==> msg Quit]]
 
-                 // the scene group
-                 Forge.groupIfScreenSelected screen $ fun _ ->
-                    Content.group Simulants.Gameplay.Scene.Group.Name []
-                        [Content.entity<PlayerDispatcher> Simulants.Gameplay.Scene.Player.Name
+                 // the scene group while playing
+                 match gameplay with
+                 | Playing ->
+                    yield Forge.group Simulants.Gameplay.Scene.Group.Name []
+                        [Forge.entity<PlayerDispatcher> Simulants.Gameplay.Scene.Player.Name
                             [Entity.Position == v3 -300.0f -175.6805f 0.0f
-                             Entity.Elevation == 1.0f]]]
+                             Entity.Elevation == 1.0f]]
+                 | Quitting -> ()]

@@ -4,6 +4,7 @@
 namespace Nu
 open System
 open System.Collections.Generic
+open System.IO
 open Prime
 
 [<RequireQualifiedAccess>]
@@ -174,14 +175,22 @@ module Forge =
             let world = synchronizeProperties forgeOld forge screen world
             let world =
                 if forgeOld.GroupFilePathOpt <> forge.GroupFilePathOpt then
-                    let groupFromFile = screen / "GroupFromFile"
                     let world =
                         match forgeOld.GroupFilePathOpt with
-                        | Some _ -> World.destroyGroup groupFromFile world
+                        | Some groupFilePath ->
+                            // NOTE: have to load the group file just get the name of the group to destroy...
+                            let groupDescriptorStr = File.ReadAllText groupFilePath
+                            let groupDescriptor = scvalue<GroupDescriptor> groupDescriptorStr
+                            let groupName =
+                                Constants.Engine.NamePropertyName |>
+                                groupDescriptor.GroupProperties.TryFind |>
+                                Option.mapOrDefaultValue symbolToValue Simulants.Default.Group.Name
+                            let group = screen / groupName
+                            World.destroyGroup group world
                         | None -> world
                     let world =
                         match forge.GroupFilePathOpt with
-                        | Some groupFilePath -> World.readGroupFromFile groupFilePath (Some groupFromFile.Name) screen world |> snd
+                        | Some groupFilePath -> World.readGroupFromFile groupFilePath None screen world |> snd
                         | None -> world
                     world
                 else world
@@ -359,7 +368,7 @@ module Forge =
     let screen<'screenDispatcher when 'screenDispatcher :> ScreenDispatcher> screenName screenBehavior initializers groups =
         screen5<'screenDispatcher> screenName screenBehavior None initializers groups
 
-    let screenWithGroupFromFile screenName screenBehavior groupFilePath initializers groups =
+    let screenWithGroupFromFile<'screenDispatcher when 'screenDispatcher :> ScreenDispatcher> screenName screenBehavior groupFilePath initializers groups =
         screen5<'screenDispatcher> screenName screenBehavior (Some groupFilePath) initializers groups
 
     ///

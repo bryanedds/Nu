@@ -41,12 +41,12 @@ module BlazeVector =
         inherit GameForger<Model, Message, Command> (Splash)
 
         // here we handle the above messages
-        override this.Message (_, message, _, _) =
+        override this.Message (model, message, _, _) =
             match message with
             | ShowTitle -> just Title
             | ShowCredits -> just Credits
             | ShowGameplay -> just (Gameplay Playing)
-            | GameplayChanged gameplay -> just (Gameplay gameplay)
+            | GameplayChanged gameplay -> match gameplay with Playing -> just (Gameplay gameplay) | Quitting -> just model
 
         // here we handle the above commands
         override this.Command (model, command, _, world) =
@@ -55,7 +55,6 @@ module BlazeVector =
                 match model with
                 | Gameplay gameplay -> just (Simulants.Gameplay.Screen.SetGameplay gameplay world)
                 | _ -> just world
-                
             | Exit -> just (World.exit world)
 
         // here we describe the content of the game, including all of its screens.
@@ -75,10 +74,9 @@ module BlazeVector =
                  Simulants.Title.Gui.Credits.ClickEvent ==> msg ShowCredits
                  Simulants.Title.Gui.Play.ClickEvent ==> msg ShowGameplay
                  Simulants.Title.Gui.Exit.ClickEvent ==> cmd Exit
-                 Simulants.Credits.Gui.Back.ClickEvent ==> msg ShowTitle]
+                 Simulants.Credits.Gui.Back.ClickEvent ==> msg ShowTitle
+                 Simulants.Gameplay.Screen.Gameplay.ChangeEvent ==|> fun event -> cmd (GameplayChanged (event.Data.Value :?> Gameplay))]
                 [Forge.screen Simulants.Splash.Screen.Name (WorldTypes.Splash (Constants.Dissolve.Default, Constants.Splash.Default, None, Simulants.Title.Screen)) [] []
                  Forge.screenWithGroupFromFile Simulants.Title.Screen.Name (Dissolve (Constants.Dissolve.Default, Some Assets.Gui.MachinerySong)) Assets.Gui.TitleGroupFilePath [] []
                  Forge.screenWithGroupFromFile Simulants.Credits.Screen.Name (Dissolve (Constants.Dissolve.Default, Some Assets.Gui.MachinerySong)) Assets.Gui.CreditsGroupFilePath [] []
-                 Forge.screen<GameplayDispatcher> Simulants.Gameplay.Screen.Name (Dissolve (Constants.Dissolve.Default, Some Assets.Gameplay.DeadBlazeSong))
-                    [Screen.Gameplay.ChangeEvent ==|> fun event -> cmd (GameplayChanged (event.Data.Value :?> Gameplay))]
-                    []]
+                 Forge.screen<GameplayDispatcher> Simulants.Gameplay.Screen.Name (Dissolve (Constants.Dissolve.Default, Some Assets.Gameplay.DeadBlazeSong)) [] []]
