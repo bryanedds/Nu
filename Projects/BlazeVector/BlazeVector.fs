@@ -26,8 +26,8 @@ module BlazeVector =
     // this is our Elm-style command type. Commands are used instead of messages when explicitly
     // updating the world is involved.
     type Command =
-        | Exit
         | ModelChanged
+        | Exit
 
     // this extends the Game API to expose the above model as well as the model bimapped to Gameplay,
     type Game with
@@ -51,11 +51,11 @@ module BlazeVector =
         // here we handle the above commands
         override this.Command (model, command, _, world) =
             match command with
-            | Exit -> just (World.exit world)
             | ModelChanged ->
                 match model with
                 | Gameplay gameplay -> just (Simulants.Gameplay.Screen.SetGameplay gameplay world)
                 | _ -> just world
+            | Exit -> just (World.exit world)
 
         // here we describe the content of the game, including all of its screens.
         override this.Forge (model, _) =

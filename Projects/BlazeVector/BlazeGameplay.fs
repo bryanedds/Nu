@@ -5,7 +5,6 @@ open Prime
 open Nu
 open Nu.Declarative
 open Nu.ForgeOperators
-open BlazeVector
 
 [<AutoOpen>]
 module Bullet =
