@@ -95,7 +95,7 @@ module Forge =
                 world forge.PropertyForges
         else world
 
-    let private differentiateChildren<'child, 'childForge when 'child : equality and 'child :> Simulant and 'childForge :> SimulantForge>
+    let private tryDifferentiateChildren<'child, 'childForge when 'child : equality and 'child :> Simulant and 'childForge :> SimulantForge>
         (forgeOld : SimulantForge) (forge : SimulantForge) (simulant : Simulant) =
         let childForgesOld = forgeOld.GetChildForges<'childForge> ()
         let childForges = forge.GetChildForges<'childForge> ()
@@ -115,8 +115,8 @@ module Forge =
                     let childSimulant = World.derive (Address.makeFromArray (Array.add childEntry.Key simulant.SimulantAddress.Names)) :?> 'child
                     childrenRemoved.Add childSimulant
                     childrenPotentiallyAltered.Remove childSimulant |> ignore
-            (childrenAdded, childrenRemoved, childrenPotentiallyAltered)
-        else (List (), List (), OrderedDictionary ())
+            Some (childrenAdded, childrenRemoved, childrenPotentiallyAltered)
+        else None
 
     ///
     let rec synchronizeEntity (forgeOld : EntityForge) (forge : EntityForge) (origin : Simulant) (entity : Entity) world =
@@ -124,20 +124,22 @@ module Forge =
             let world = synchronizeEventSignals forgeOld forge origin entity world
             let world = synchronizeEventHandlers forgeOld forge origin entity world
             let world = synchronizeProperties forgeOld forge entity world
-            let (entitiesAdded, entitiesRemoved, entitiesPotentiallyAltered) = differentiateChildren<Entity, EntityForge> forgeOld forge entity
-            let world = Seq.fold (fun world entity -> World.destroyEntity entity world) world entitiesRemoved
-            let world =
-                Seq.fold (fun world (kvp : KeyValuePair<Entity, _>) ->
-                    let (entity, entityForge) = (kvp.Key, kvp.Value)
-                    let entityForgeOld = forgeOld.EntityForges.[entity.Name]
-                    synchronizeEntity entityForgeOld entityForge origin entity world)
-                    world entitiesPotentiallyAltered
-            let world =
-                Seq.fold (fun world (entity : Entity, entityForge : EntityForge) ->
-                    let (entity, world) = World.createEntity5 entityForge.EntityDispatcherName (Some entity.Surnames) DefaultOverlay entity.Group world
-                    synchronizeEntity EntityForge.empty entityForge origin entity world)
-                    world entitiesAdded
-            world
+            match tryDifferentiateChildren<Entity, EntityForge> forgeOld forge entity with
+            | Some (entitiesAdded, entitiesRemoved, entitiesPotentiallyAltered) ->
+                let world = Seq.fold (fun world entity -> World.destroyEntity entity world) world entitiesRemoved
+                let world =
+                    Seq.fold (fun world (kvp : KeyValuePair<Entity, _>) ->
+                        let (entity, entityForge) = (kvp.Key, kvp.Value)
+                        let entityForgeOld = forgeOld.EntityForges.[entity.Name]
+                        synchronizeEntity entityForgeOld entityForge origin entity world)
+                        world entitiesPotentiallyAltered
+                let world =
+                    Seq.fold (fun world (entity : Entity, entityForge : EntityForge) ->
+                        let (entity, world) = World.createEntity5 entityForge.EntityDispatcherName (Some entity.Surnames) DefaultOverlay entity.Group world
+                        synchronizeEntity EntityForge.empty entityForge origin entity world)
+                        world entitiesAdded
+                world
+            | None -> world
         else world
 
     ///
@@ -146,20 +148,22 @@ module Forge =
             let world = synchronizeEventSignals forgeOld forge origin group world
             let world = synchronizeEventHandlers forgeOld forge origin group world
             let world = synchronizeProperties forgeOld forge group world
-            let (entitiesAdded, entitiesRemoved, entitiesPotentiallyAltered) = differentiateChildren<Entity, EntityForge> forgeOld forge group
-            let world = Seq.fold (fun world entity -> World.destroyEntity entity world) world entitiesRemoved
-            let world =
-                Seq.fold (fun world (kvp : KeyValuePair<Entity, _>) ->
-                    let (entity, entityForge) = (kvp.Key, kvp.Value)
-                    let entityForgeOld = forgeOld.EntityForges.[entity.Name]
-                    synchronizeEntity entityForgeOld entityForge origin entity world)
-                    world entitiesPotentiallyAltered
-            let world =
-                Seq.fold (fun world (entity : Entity, entityForge : EntityForge) ->
-                    let (entity, world) = World.createEntity5 entityForge.EntityDispatcherName (Some entity.Surnames) DefaultOverlay entity.Group world
-                    synchronizeEntity EntityForge.empty entityForge origin entity world)
-                    world entitiesAdded
-            world
+            match tryDifferentiateChildren<Entity, EntityForge> forgeOld forge group with
+            | Some (entitiesAdded, entitiesRemoved, entitiesPotentiallyAltered) ->
+                let world = Seq.fold (fun world entity -> World.destroyEntity entity world) world entitiesRemoved
+                let world =
+                    Seq.fold (fun world (kvp : KeyValuePair<Entity, _>) ->
+                        let (entity, entityForge) = (kvp.Key, kvp.Value)
+                        let entityForgeOld = forgeOld.EntityForges.[entity.Name]
+                        synchronizeEntity entityForgeOld entityForge origin entity world)
+                        world entitiesPotentiallyAltered
+                let world =
+                    Seq.fold (fun world (entity : Entity, entityForge : EntityForge) ->
+                        let (entity, world) = World.createEntity5 entityForge.EntityDispatcherName (Some entity.Surnames) DefaultOverlay entity.Group world
+                        synchronizeEntity EntityForge.empty entityForge origin entity world)
+                        world entitiesAdded
+                world
+            | None -> world
         else world
 
     ///
@@ -168,20 +172,22 @@ module Forge =
             let world = synchronizeEventSignals forgeOld forge origin screen world
             let world = synchronizeEventHandlers forgeOld forge origin screen world
             let world = synchronizeProperties forgeOld forge screen world
-            let (groupsAdded, groupsRemoved, groupsPotentiallyAltered) = differentiateChildren<Group, GroupForge> forgeOld forge screen
-            let world = Seq.fold (fun world group -> World.destroyGroup group world) world groupsRemoved
-            let world =
-                Seq.fold (fun world (kvp : KeyValuePair<Group, _>) ->
-                    let (group, groupForge) = (kvp.Key, kvp.Value)
-                    let groupForgeOld = forgeOld.GroupForges.[group.Name]
-                    synchronizeGroup groupForgeOld groupForge origin group world)
-                    world groupsPotentiallyAltered
-            let world =
-                Seq.fold (fun world (group : Group, groupForge : GroupForge) ->
-                    let (group, world) = World.createGroup4 groupForge.GroupDispatcherName (Some group.Name) group.Screen world
-                    synchronizeGroup GroupForge.empty groupForge origin group world)
-                    world groupsAdded
-            world
+            match tryDifferentiateChildren<Group, GroupForge> forgeOld forge screen with
+            | Some (groupsAdded, groupsRemoved, groupsPotentiallyAltered) ->
+                let world = Seq.fold (fun world group -> World.destroyGroup group world) world groupsRemoved
+                let world =
+                    Seq.fold (fun world (kvp : KeyValuePair<Group, _>) ->
+                        let (group, groupForge) = (kvp.Key, kvp.Value)
+                        let groupForgeOld = forgeOld.GroupForges.[group.Name]
+                        synchronizeGroup groupForgeOld groupForge origin group world)
+                        world groupsPotentiallyAltered
+                let world =
+                    Seq.fold (fun world (group : Group, groupForge : GroupForge) ->
+                        let (group, world) = World.createGroup4 groupForge.GroupDispatcherName (Some group.Name) group.Screen world
+                        synchronizeGroup GroupForge.empty groupForge origin group world)
+                        world groupsAdded
+                world
+            | None -> world
         else world
 
     ///
@@ -191,21 +197,23 @@ module Forge =
             let world = synchronizeEventSignals forgeOld forge origin game world
             let world = synchronizeEventHandlers forgeOld forge origin game world
             let world = synchronizeProperties forgeOld forge game world
-            let (screensAdded, screensRemoved, screensPotentiallyAltered) = differentiateChildren<Screen, ScreenForge> forgeOld forge game
-            let world = Seq.fold (fun world screen -> World.destroyScreen screen world) world screensRemoved
-            let world =
-                Seq.fold (fun world (kvp : KeyValuePair<Screen, _>) ->
-                    let (screen, screenForge) = (kvp.Key, kvp.Value)
-                    let screenForgeOld = forgeOld.ScreenForges.[screen.Name]
-                    synchronizeScreen screenForgeOld screenForge origin screen world)
-                    world screensPotentiallyAltered
-            let world =
-                Seq.fold (fun world (screen : Screen, screenForge : ScreenForge) ->
-                    let (screen, world) = World.createScreen3 screenForge.ScreenDispatcherName (Some screen.Name) world
-                    let world = World.applyScreenBehavior setScreenSplash screenForge.ScreenBehavior screen world
-                    synchronizeScreen ScreenForge.empty screenForge origin screen world)
-                    world screensAdded
-            (forge.InitialScreenNameOpt |> Option.map Screen, world)
+            match tryDifferentiateChildren<Screen, ScreenForge> forgeOld forge game with
+            | Some (screensAdded, screensRemoved, screensPotentiallyAltered) ->
+                let world = Seq.fold (fun world screen -> World.destroyScreen screen world) world screensRemoved
+                let world =
+                    Seq.fold (fun world (kvp : KeyValuePair<Screen, _>) ->
+                        let (screen, screenForge) = (kvp.Key, kvp.Value)
+                        let screenForgeOld = forgeOld.ScreenForges.[screen.Name]
+                        synchronizeScreen screenForgeOld screenForge origin screen world)
+                        world screensPotentiallyAltered
+                let world =
+                    Seq.fold (fun world (screen : Screen, screenForge : ScreenForge) ->
+                        let (screen, world) = World.createScreen3 screenForge.ScreenDispatcherName (Some screen.Name) world
+                        let world = World.applyScreenBehavior setScreenSplash screenForge.ScreenBehavior screen world
+                        synchronizeScreen ScreenForge.empty screenForge origin screen world)
+                        world screensAdded
+                (forge.InitialScreenNameOpt |> Option.map Screen, world)
+            | None -> (forge.InitialScreenNameOpt |> Option.map Screen, world)
         else (forge.InitialScreenNameOpt |> Option.map Screen, world)
 
     ///
