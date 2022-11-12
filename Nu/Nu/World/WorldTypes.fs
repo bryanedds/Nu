@@ -374,8 +374,45 @@ module WorldTypes =
 
         interface LateBindings
 
-    and [<StructuralEquality; NoComparison>] PropertyForge =
-        | PropertyForge of Simulant ValueOption * string * Type * obj
+    and [<CustomEquality; NoComparison>] PropertyForge =
+        { SimulantOpt : Simulant // OPTIMIZATION: may be null.
+          PropertyName : string
+          PropertyType : Type
+          PropertyValue : obj
+          HashCode : int }
+
+        static member equals left right =
+            left.HashCode = right.HashCode &&
+            left.SimulantOpt = right.SimulantOpt &&
+            strEq left.PropertyName right.PropertyName &&
+            left.PropertyValue === right.PropertyValue
+
+        static member make (simulantOpt : Simulant voption) propertyName propertyType propertyValue =
+            let simulantOpt = match simulantOpt with ValueSome simulant -> simulant | ValueNone -> Unchecked.defaultof<_>
+            let hashCode =
+                hash simulantOpt ^^^
+                hash propertyName ^^^
+                hash propertyValue
+            { SimulantOpt = simulantOpt
+              PropertyName = propertyName
+              PropertyType = propertyType
+              PropertyValue = propertyValue
+              HashCode = hashCode }
+
+        interface PropertyForge IEquatable with
+            member this.Equals that =
+                PropertyForge.equals this that
+
+        override this.Equals that =
+            match that with
+            | :? PropertyForge as that -> PropertyForge.equals this that
+            | _ -> false
+
+        override this.GetHashCode () =
+            this.HashCode
+
+    and [<StructuralEquality; NoComparison>] InitializerForge =
+        | PropertyForge of PropertyForge
         | EventSignalForge of obj Address * obj
         | EventHandlerForge of PartialEquatable<obj Address, Event -> obj>
 
@@ -384,14 +421,14 @@ module WorldTypes =
         abstract SimulantNameOpt : string option
         abstract EventSignalForges : OrderedDictionary<obj Address * obj, Guid>
         abstract EventHandlerForges : OrderedDictionary<int * obj Address, Guid * (Event -> obj)>
-        abstract PropertyForges : OrderedDictionary<Simulant ValueOption * string * Type * obj, unit>
+        abstract PropertyForges : OrderedDictionary<PropertyForge, unit>
         abstract GetChildForges<'v when 'v :> SimulantForge> : unit -> OrderedDictionary<string, 'v>
 
     and [<ReferenceEquality; NoComparison>] GameForge =
         { InitialScreenNameOpt : string option
           EventSignalForges : OrderedDictionary<obj Address * obj, Guid>
           EventHandlerForges : OrderedDictionary<int * obj Address, Guid * (Event -> obj)>
-          PropertyForges : OrderedDictionary<Simulant ValueOption * string * Type * obj, unit>
+          PropertyForges : OrderedDictionary<PropertyForge, unit>
           ScreenForges : OrderedDictionary<string, ScreenForge> }
         static member empty =
             { InitialScreenNameOpt = None
@@ -413,7 +450,7 @@ module WorldTypes =
           ScreenBehavior : ScreenBehavior
           EventSignalForges : OrderedDictionary<obj Address * obj, Guid>
           EventHandlerForges : OrderedDictionary<int * obj Address, Guid * (Event -> obj)>
-          PropertyForges : OrderedDictionary<Simulant ValueOption * string * Type * obj, unit>
+          PropertyForges : OrderedDictionary<PropertyForge, unit>
           GroupForges : OrderedDictionary<string, GroupForge> }
         static member empty =
             { ScreenDispatcherName = nameof ScreenDispatcher
@@ -436,7 +473,7 @@ module WorldTypes =
           GroupName : string
           EventSignalForges : OrderedDictionary<obj Address * obj, Guid>
           EventHandlerForges : OrderedDictionary<int * obj Address, Guid * (Event -> obj)>
-          PropertyForges : OrderedDictionary<Simulant ValueOption * string * Type * obj, unit>
+          PropertyForges : OrderedDictionary<PropertyForge, unit>
           EntityForges : OrderedDictionary<string, EntityForge> }
         static member empty =
             { GroupDispatcherName = nameof GroupDispatcher
@@ -458,7 +495,7 @@ module WorldTypes =
           EntityName : string
           EventSignalForges : OrderedDictionary<obj Address * obj, Guid>
           EventHandlerForges : OrderedDictionary<int * obj Address, Guid * (Event -> obj)>
-          PropertyForges : OrderedDictionary<Simulant ValueOption * string * Type * obj, unit>
+          PropertyForges : OrderedDictionary<PropertyForge, unit>
           EntityForges : OrderedDictionary<string, EntityForge> }
         static member empty =
             { EntityDispatcherName = nameof EntityDispatcher
@@ -869,7 +906,7 @@ module WorldTypes =
 
         override this.Equals that =
             match that with
-            | :? Game as that -> this.GameAddress === that.GameAddress
+            | :? Game as that -> this.GameAddress = that.GameAddress
             | _ -> false
 
         override this.GetHashCode () =
@@ -932,7 +969,7 @@ module WorldTypes =
 
         override this.Equals that =
             match that with
-            | :? Screen as that -> this.ScreenAddress === that.ScreenAddress
+            | :? Screen as that -> this.ScreenAddress = that.ScreenAddress
             | _ -> false
 
         override this.GetHashCode () =
@@ -1006,7 +1043,7 @@ module WorldTypes =
 
         override this.Equals that =
             match that with
-            | :? Group as that -> this.GroupAddress === that.GroupAddress
+            | :? Group as that -> this.GroupAddress = that.GroupAddress
             | _ -> false
 
         override this.GetHashCode () =
@@ -1120,7 +1157,7 @@ module WorldTypes =
 
         override this.Equals that =
             match that with
-            | :? Entity as that -> this.EntityAddress === that.EntityAddress
+            | :? Entity as that -> this.EntityAddress = that.EntityAddress
             | _ -> false
 
         override this.GetHashCode () =

@@ -495,7 +495,7 @@ module WorldModuleGame =
             | (true, getter) -> getter world
             | (false, _) -> World.getGameXtensionProperty propertyName world
 
-        static member internal trySetGameXtensionPropertyFast propertyName property world =
+        static member internal trySetGameXtensionPropertyFast propertyName (property : Property) world =
             let gameState = World.getGameState world
             match GameState.tryGetProperty (propertyName, gameState) with
             | (true, propertyOld) ->
@@ -506,7 +506,7 @@ module WorldModuleGame =
                 else world
             | (false, _) -> world
 
-        static member internal trySetGameXtensionProperty propertyName property world =
+        static member internal trySetGameXtensionProperty propertyName (property : Property) world =
             let gameState = World.getGameState world
             match GameState.tryGetProperty (propertyName, gameState) with
             | (true, propertyOld) ->
@@ -519,7 +519,7 @@ module WorldModuleGame =
                 else struct (false, false, world)
             | (false, _) -> struct (false, false, world)
 
-        static member internal setGameXtensionProperty propertyName property world =
+        static member internal setGameXtensionProperty propertyName (property : Property) world =
             let gameState = World.getGameState world
             let propertyOld = GameState.getProperty propertyName gameState
             if property.PropertyValue =/= propertyOld.PropertyValue then

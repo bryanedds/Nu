@@ -1724,7 +1724,7 @@ module WorldModuleEntity =
             | true -> property
             | false -> failwithf "Could not find property '%s'." propertyName
 
-        static member internal trySetEntityXtensionPropertyWithoutEvent propertyName property entityState entity world =
+        static member internal trySetEntityXtensionPropertyWithoutEvent propertyName (property : Property) entityState entity world =
             let mutable propertyOld = Unchecked.defaultof<_>
             match EntityState.tryGetProperty (propertyName, entityState, &propertyOld) with
             | true ->
