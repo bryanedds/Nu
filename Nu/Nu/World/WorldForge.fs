@@ -95,6 +95,7 @@ module Forge =
                 childrenPotentiallyAltered.Remove childSimulant |> ignore
         (childrenAdded, childrenRemoved, childrenPotentiallyAltered)
 
+    ///
     let rec synchronizeEntity (forgeOld : EntityForge) (forge : EntityForge) (origin : Simulant) (entity : Entity) world =
         if forgeOld <> forge then
             let world = synchronizeEventSignals forgeOld forge origin entity world
@@ -115,6 +116,7 @@ module Forge =
             world
         else world
 
+    ///
     let synchronizeGroup (forgeOld : GroupForge) (forge : GroupForge) (origin : Simulant) (group : Group) world =
         if forgeOld <> forge then
             let world = synchronizeEventSignals forgeOld forge origin group world
@@ -135,6 +137,7 @@ module Forge =
             world
         else world
 
+    ///
     let synchronizeScreen (forgeOld : ScreenForge) (forge : ScreenForge) (origin : Simulant) (screen : Screen) world =
         if forgeOld <> forge then
             let world = synchronizeEventSignals forgeOld forge origin screen world
@@ -155,6 +158,7 @@ module Forge =
             world
         else world
 
+    ///
     let synchronizeGame setScreenSplash (forgeOld : GameForge) (forge : GameForge) (origin : Simulant) world =
         if forgeOld <> forge then
             let game = Simulants.Game
@@ -177,6 +181,7 @@ module Forge =
             (forge.InitialScreenNameOpt |> Option.map Screen, world)
         else (forge.InitialScreenNameOpt |> Option.map Screen, world)
 
+    ///
     let composite<'entityDispatcher when 'entityDispatcher :> EntityDispatcher> entityName properties entities =
         { EntityDispatcherName = typeof<'entityDispatcher>.Name
           EntityName = entityName
@@ -185,6 +190,7 @@ module Forge =
           EventHandlerForges = dictPlus HashIdentity.Structural [] // TODO: populate.
           EntityForges = entities |> List.map (fun entityForge -> (entityForge.EntityName, entityForge)) |> dictPlus HashIdentity.Structural }
 
+    ///
     let entity<'entityDispatcher when 'entityDispatcher :> EntityDispatcher> entityName properties =
         composite<'entityDispatcher> entityName properties []
 
@@ -257,25 +263,31 @@ module Forge =
     /// Describe a static model expanded into an entity hierarchy with the given initializers.
     let staticModelHierarchy entityName initializers = entity<StaticModelHierarchyDispatcher> entityName initializers
 
+    ///
     let group<'groupDispatcher when 'groupDispatcher :> GroupDispatcher> groupName properties entities =
         { GroupDispatcherName = typeof<'groupDispatcher>.Name
           GroupName = groupName
           PropertyForges = properties |> List.choose (function PropertyForge (simOpt, name, ty, value) -> Some (simOpt, name, ty, value) | _ -> None) |> hashSetPlus HashIdentity.Structural
           EventSignalForges = properties |> List.choose (function EventSignalForge (addr, value) -> Some ((addr, value), makeGuid ()) | _ -> None) |> dictPlus HashIdentity.Structural
+          EventHandlerForges = dictPlus HashIdentity.Structural [] // TODO: populate.
           EntityForges = entities |> List.map (fun entityForge -> (entityForge.EntityName, entityForge)) |> dictPlus HashIdentity.Structural }
 
+    ///
     let screen<'screenDispatcher when 'screenDispatcher :> ScreenDispatcher> screenName screenBehavior properties groups =
         { ScreenDispatcherName = typeof<'screenDispatcher>.Name
           ScreenName = screenName
           ScreenBehavior = screenBehavior
           PropertyForges = properties |> List.choose (function PropertyForge (simOpt, name, ty, value) -> Some (simOpt, name, ty, value) | _ -> None) |> hashSetPlus HashIdentity.Structural
           EventSignalForges = properties |> List.choose (function EventSignalForge (addr, value) -> Some ((addr, value), makeGuid ()) | _ -> None) |> dictPlus HashIdentity.Structural
+          EventHandlerForges = dictPlus HashIdentity.Structural [] // TODO: populate.
           GroupForges = groups |> List.map (fun groupForge -> (groupForge.GroupName, groupForge)) |> dictPlus HashIdentity.Structural }
 
+    ///
     let game properties screens =
         { PropertyForges = properties |> List.choose (function PropertyForge (simOpt, name, ty, value) -> Some (simOpt, name, ty, value) | _ -> None) |> hashSetPlus HashIdentity.Structural
           EventSignalForges = properties |> List.choose (function EventSignalForge (addr, value) -> Some ((addr, value), makeGuid ()) | _ -> None) |> dictPlus HashIdentity.Structural
           ScreenForges = screens |> List.map (fun screenForge -> (screenForge.ScreenName, screenForge)) |> dictPlus HashIdentity.Structural
+          EventHandlerForges = dictPlus HashIdentity.Structural [] // TODO: populate.
           InitialScreenNameOpt = match screens with [] -> None | screen :: _ -> Some screen.ScreenName }
 
 module ForgeOperators =
