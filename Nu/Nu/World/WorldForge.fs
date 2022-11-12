@@ -18,25 +18,65 @@ module Forge =
             forge.EventSignalForges |>
             Seq.map (fun entry -> ((if Address.last (fst entry.Key) = "Event" then (fst entry.Key --> simulant.SimulantAddress, snd entry.Key) else entry.Key), entry.Value)) |>
             dictPlus HashIdentity.Structural
-        let eventHandlersAdded = List ()
-        for eventHandlerEntry in eventSignalForges do
-            match eventSignalForgesOld.TryGetValue eventHandlerEntry.Key with
+        let eventSignalsAdded = List ()
+        for eventSignalEntry in eventSignalForges do
+            match eventSignalForgesOld.TryGetValue eventSignalEntry.Key with
             | (true, _) -> ()
-            | (false, _) -> eventHandlersAdded.Add (eventHandlerEntry.Key, eventHandlerEntry.Value)
-        let eventHandlersRemoved = List ()
-        for eventHandlerEntry in eventSignalForgesOld do
-            match eventSignalForges.TryGetValue eventHandlerEntry.Key with
+            | (false, _) -> eventSignalsAdded.Add (eventSignalEntry.Key, eventSignalEntry.Value)
+        let eventSignalsRemoved = List ()
+        for eventSignalEntry in eventSignalForgesOld do
+            match eventSignalForges.TryGetValue eventSignalEntry.Key with
             | (true, _) -> ()
-            | (false, _) -> eventHandlersRemoved.Add eventHandlerEntry.Value
+            | (false, _) -> eventSignalsRemoved.Add eventSignalEntry.Value
         let world =
             Seq.fold
                 (fun world subscriptionId -> World.unsubscribe subscriptionId world)
-                world eventHandlersRemoved
+                world eventSignalsRemoved
         let world =
             Seq.fold (fun world ((eventAddress, signalObj), subscriptionId) ->
                 let (unsubscribe, world) =
                     World.subscribePlus subscriptionId (fun (_ : Event) world ->
                         let world = WorldModule.trySignal signalObj origin world
+                        (Cascade, world))
+                        eventAddress origin world
+                let world =
+                    World.monitor
+                        (fun _ world -> (Cascade, unsubscribe world))
+                        (Events.Unregistering --> simulant.SimulantAddress)
+                        simulant
+                        world
+                world)
+                world eventSignalsAdded
+        world
+
+    let private synchronizeEventHandlers (forgeOld : SimulantForge) (forge : SimulantForge) (origin : Simulant) (simulant : Simulant) world =
+        let eventHandlerForgesOld =
+            forgeOld.EventHandlerForges |>
+            Seq.map (fun entry -> ((if Address.last (snd entry.Key) = "Event" then (fst entry.Key, snd entry.Key --> simulant.SimulantAddress) else entry.Key), entry.Value)) |>
+            dictPlus HashIdentity.Structural
+        let eventHandlerForges =
+            forge.EventHandlerForges |>
+            Seq.map (fun entry -> ((if Address.last (snd entry.Key) = "Event" then (fst entry.Key, snd entry.Key --> simulant.SimulantAddress) else entry.Key), entry.Value)) |>
+            dictPlus HashIdentity.Structural
+        let eventHandlersAdded = List ()
+        for eventHandlerEntry in eventHandlerForges do
+            match eventHandlerForgesOld.TryGetValue eventHandlerEntry.Key with
+            | (true, _) -> ()
+            | (false, _) -> eventHandlersAdded.Add (eventHandlerEntry.Key, eventHandlerEntry.Value)
+        let eventHandlersRemoved = List ()
+        for eventHandlerEntry in eventHandlerForgesOld do
+            match eventHandlerForges.TryGetValue eventHandlerEntry.Key with
+            | (true, _) -> ()
+            | (false, _) -> eventHandlersRemoved.Add eventHandlerEntry.Value
+        let world =
+            Seq.fold
+                (fun world (subscriptionId, _) -> World.unsubscribe subscriptionId world)
+                world eventHandlersRemoved
+        let world =
+            Seq.fold (fun world ((_, eventAddress), (subscriptionId, handler)) ->
+                let (unsubscribe, world) =
+                    World.subscribePlus subscriptionId (fun event world ->
+                        let world = WorldModule.trySignal (handler event) origin world
                         (Cascade, world))
                         eventAddress origin world
                 let world =
@@ -99,6 +139,7 @@ module Forge =
     let rec synchronizeEntity (forgeOld : EntityForge) (forge : EntityForge) (origin : Simulant) (entity : Entity) world =
         if forgeOld <> forge then
             let world = synchronizeEventSignals forgeOld forge origin entity world
+            let world = synchronizeEventHandlers forgeOld forge origin entity world
             let world = synchronizeProperties forgeOld forge entity world
             let (entitiesAdded, entitiesRemoved, entitiesPotentiallyAltered) = differentiateChildren<Entity, EntityForge> forgeOld forge entity
             let world = Seq.fold (fun world entity -> World.destroyEntity entity world) world entitiesRemoved
@@ -120,6 +161,7 @@ module Forge =
     let synchronizeGroup (forgeOld : GroupForge) (forge : GroupForge) (origin : Simulant) (group : Group) world =
         if forgeOld <> forge then
             let world = synchronizeEventSignals forgeOld forge origin group world
+            let world = synchronizeEventHandlers forgeOld forge origin group world
             let world = synchronizeProperties forgeOld forge group world
             let (entitiesAdded, entitiesRemoved, entitiesPotentiallyAltered) = differentiateChildren<Entity, EntityForge> forgeOld forge group
             let world = Seq.fold (fun world entity -> World.destroyEntity entity world) world entitiesRemoved
@@ -141,6 +183,7 @@ module Forge =
     let synchronizeScreen (forgeOld : ScreenForge) (forge : ScreenForge) (origin : Simulant) (screen : Screen) world =
         if forgeOld <> forge then
             let world = synchronizeEventSignals forgeOld forge origin screen world
+            let world = synchronizeEventHandlers forgeOld forge origin screen world
             let world = synchronizeProperties forgeOld forge screen world
             let (groupsAdded, groupsRemoved, groupsPotentiallyAltered) = differentiateChildren<Group, GroupForge> forgeOld forge screen
             let world = Seq.fold (fun world group -> World.destroyGroup group world) world groupsRemoved
@@ -163,6 +206,7 @@ module Forge =
         if forgeOld <> forge then
             let game = Simulants.Game
             let world = synchronizeEventSignals forgeOld forge origin game world
+            let world = synchronizeEventHandlers forgeOld forge origin game world
             let world = synchronizeProperties forgeOld forge game world
             let (screensAdded, screensRemoved, screensPotentiallyAltered) = differentiateChildren<Screen, ScreenForge> forgeOld forge game
             let world = Seq.fold (fun world screen -> World.destroyScreen screen world) world screensRemoved
@@ -185,9 +229,9 @@ module Forge =
     let composite<'entityDispatcher when 'entityDispatcher :> EntityDispatcher> entityName properties entities =
         { EntityDispatcherName = typeof<'entityDispatcher>.Name
           EntityName = entityName
-          PropertyForges = properties |> List.choose (function PropertyForge (simOpt, name, ty, value) -> Some (simOpt, name, ty, value) | _ -> None) |> hashSetPlus HashIdentity.Structural
           EventSignalForges = properties |> List.choose (function EventSignalForge (addr, value) -> Some ((addr, value), makeGuid ()) | _ -> None) |> dictPlus HashIdentity.Structural
-          EventHandlerForges = dictPlus HashIdentity.Structural [] // TODO: populate.
+          EventHandlerForges = properties |> List.mapi (fun i property -> match property with EventHandlerForge pe -> Some ((i, pe.Equatable), (makeGuid (), pe.Nonequatable)) | _ -> None) |> List.definitize |> dictPlus HashIdentity.Structural
+          PropertyForges = properties |> List.choose (function PropertyForge (simOpt, name, ty, value) -> Some (simOpt, name, ty, value) | _ -> None) |> hashSetPlus HashIdentity.Structural
           EntityForges = entities |> List.map (fun entityForge -> (entityForge.EntityName, entityForge)) |> dictPlus HashIdentity.Structural }
 
     ///
@@ -267,9 +311,9 @@ module Forge =
     let group<'groupDispatcher when 'groupDispatcher :> GroupDispatcher> groupName properties entities =
         { GroupDispatcherName = typeof<'groupDispatcher>.Name
           GroupName = groupName
-          PropertyForges = properties |> List.choose (function PropertyForge (simOpt, name, ty, value) -> Some (simOpt, name, ty, value) | _ -> None) |> hashSetPlus HashIdentity.Structural
           EventSignalForges = properties |> List.choose (function EventSignalForge (addr, value) -> Some ((addr, value), makeGuid ()) | _ -> None) |> dictPlus HashIdentity.Structural
-          EventHandlerForges = dictPlus HashIdentity.Structural [] // TODO: populate.
+          EventHandlerForges = properties |> List.mapi (fun i property -> match property with EventHandlerForge pe -> Some ((i, pe.Equatable), (makeGuid (), pe.Nonequatable)) | _ -> None) |> List.definitize |> dictPlus HashIdentity.Structural
+          PropertyForges = properties |> List.choose (function PropertyForge (simOpt, name, ty, value) -> Some (simOpt, name, ty, value) | _ -> None) |> hashSetPlus HashIdentity.Structural
           EntityForges = entities |> List.map (fun entityForge -> (entityForge.EntityName, entityForge)) |> dictPlus HashIdentity.Structural }
 
     ///
@@ -277,17 +321,17 @@ module Forge =
         { ScreenDispatcherName = typeof<'screenDispatcher>.Name
           ScreenName = screenName
           ScreenBehavior = screenBehavior
-          PropertyForges = properties |> List.choose (function PropertyForge (simOpt, name, ty, value) -> Some (simOpt, name, ty, value) | _ -> None) |> hashSetPlus HashIdentity.Structural
           EventSignalForges = properties |> List.choose (function EventSignalForge (addr, value) -> Some ((addr, value), makeGuid ()) | _ -> None) |> dictPlus HashIdentity.Structural
-          EventHandlerForges = dictPlus HashIdentity.Structural [] // TODO: populate.
+          EventHandlerForges = properties |> List.mapi (fun i property -> match property with EventHandlerForge pe -> Some ((i, pe.Equatable), (makeGuid (), pe.Nonequatable)) | _ -> None) |> List.definitize |> dictPlus HashIdentity.Structural
+          PropertyForges = properties |> List.choose (function PropertyForge (simOpt, name, ty, value) -> Some (simOpt, name, ty, value) | _ -> None) |> hashSetPlus HashIdentity.Structural
           GroupForges = groups |> List.map (fun groupForge -> (groupForge.GroupName, groupForge)) |> dictPlus HashIdentity.Structural }
 
     ///
     let game properties screens =
-        { PropertyForges = properties |> List.choose (function PropertyForge (simOpt, name, ty, value) -> Some (simOpt, name, ty, value) | _ -> None) |> hashSetPlus HashIdentity.Structural
-          EventSignalForges = properties |> List.choose (function EventSignalForge (addr, value) -> Some ((addr, value), makeGuid ()) | _ -> None) |> dictPlus HashIdentity.Structural
+        { EventSignalForges = properties |> List.choose (function EventSignalForge (addr, value) -> Some ((addr, value), makeGuid ()) | _ -> None) |> dictPlus HashIdentity.Structural
+          EventHandlerForges = properties |> List.mapi (fun i property -> match property with EventHandlerForge pe -> Some ((i, pe.Equatable), (makeGuid (), pe.Nonequatable)) | _ -> None) |> List.definitize |> dictPlus HashIdentity.Structural
+          PropertyForges = properties |> List.choose (function PropertyForge (simOpt, name, ty, value) -> Some (simOpt, name, ty, value) | _ -> None) |> hashSetPlus HashIdentity.Structural
           ScreenForges = screens |> List.map (fun screenForge -> (screenForge.ScreenName, screenForge)) |> dictPlus HashIdentity.Structural
-          EventHandlerForges = dictPlus HashIdentity.Structural [] // TODO: populate.
           InitialScreenNameOpt = match screens with [] -> None | screen :: _ -> Some screen.ScreenName }
 
 module ForgeOperators =
