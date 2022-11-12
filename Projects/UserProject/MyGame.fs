@@ -39,7 +39,7 @@ module MyGame =
 
         // here we channel from gui events to signals
         override this.Channel (_, _) =
-            [Simulants.Splash.Screen.DeselectEvent => msg ShowTitle
+            [Simulants.Splash.Screen.DeselectingEvent => msg ShowTitle
              Simulants.Title.Gui.Credits.ClickEvent => msg ShowCredits
              Simulants.Title.Gui.Play.ClickEvent => msg ShowGameplay
              Simulants.Title.Gui.Exit.ClickEvent => cmd Exit

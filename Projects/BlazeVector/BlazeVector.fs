@@ -26,8 +26,8 @@ module BlazeVector =
     // this is our Elm-style command type. Commands are used instead of messages when explicitly
     // updating the world is involved.
     type Command =
-        | ModelChanged
         | Exit
+        | ModelChanged
 
     // this extends the Game API to expose the above model as well as the model bimapped to Gameplay,
     type Game with
@@ -45,17 +45,17 @@ module BlazeVector =
             match message with
             | ShowTitle -> just Title
             | ShowCredits -> just Credits
-            | ShowGameplay -> just (Gameplay Playing)
-            | GameplayChanged gameplay -> match gameplay with Playing -> just (Gameplay gameplay) | Quitting -> just model
+            | ShowGameplay -> just (Gameplay GamePlaying)
+            | GameplayChanged gameplay -> match gameplay with GamePlaying | GameQuitting -> just (Gameplay gameplay) | GameQuit -> just model
 
         // here we handle the above commands
         override this.Command (model, command, _, world) =
             match command with
+            | Exit -> just (World.exit world)
             | ModelChanged ->
                 match model with
                 | Gameplay gameplay -> just (Simulants.Gameplay.Screen.SetGameplay gameplay world)
                 | _ -> just world
-            | Exit -> just (World.exit world)
 
         // here we describe the content of the game, including all of its screens.
         override this.Forge (model, _) =
@@ -67,15 +67,15 @@ module BlazeVector =
                     | Credits -> Desire Simulants.Credits.Screen
                     | Gameplay gameplay ->
                         match gameplay with
-                        | Playing -> Desire Simulants.Gameplay.Screen
-                        | Quitting -> Desire Simulants.Title.Screen
+                        | GamePlaying -> Desire Simulants.Gameplay.Screen
+                        | GameQuitting | GameQuit -> Desire Simulants.Title.Screen
                  Game.Model.ChangeEvent ==> cmd ModelChanged
-                 Simulants.Splash.Screen.DeselectEvent ==> msg ShowTitle
+                 Simulants.Splash.Screen.DeselectingEvent ==> msg ShowTitle
                  Simulants.Title.Gui.Credits.ClickEvent ==> msg ShowCredits
                  Simulants.Title.Gui.Play.ClickEvent ==> msg ShowGameplay
                  Simulants.Title.Gui.Exit.ClickEvent ==> cmd Exit
                  Simulants.Credits.Gui.Back.ClickEvent ==> msg ShowTitle
-                 Simulants.Gameplay.Screen.Gameplay.ChangeEvent ==|> fun event -> cmd (GameplayChanged (event.Data.Value :?> Gameplay))]
+                 Simulants.Gameplay.Screen.Gameplay.ChangeEvent ==|> fun event -> msg (GameplayChanged (event.Data.Value :?> Gameplay))]
                 [Forge.screen Simulants.Splash.Screen.Name (WorldTypes.Splash (Constants.Dissolve.Default, Constants.Splash.Default, None, Simulants.Title.Screen)) [] []
                  Forge.screenWithGroupFromFile Simulants.Title.Screen.Name (Dissolve (Constants.Dissolve.Default, Some Assets.Gui.MachinerySong)) Assets.Gui.TitleGroupFilePath [] []
                  Forge.screenWithGroupFromFile Simulants.Credits.Screen.Name (Dissolve (Constants.Dissolve.Default, Some Assets.Gui.MachinerySong)) Assets.Gui.CreditsGroupFilePath [] []
