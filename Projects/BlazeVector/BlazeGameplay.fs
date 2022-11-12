@@ -4,6 +4,7 @@ open System.Numerics
 open Prime
 open Nu
 open Nu.Declarative
+open Nu.ForgeOperators
 open BlazeVector
 
 [<AutoOpen>]
@@ -243,7 +244,7 @@ module Gameplay =
         member this.Gameplay = this.ModelGeneric<Gameplay> ()
 
     type GameplayDispatcher () =
-        inherit ScreenDispatcher<Gameplay, GameplayMessage, GameplayCommand> (Quitting)
+        inherit ScreenForger<Gameplay, GameplayMessage, GameplayCommand> (Quitting)
 
         static let [<Literal>] SectionName = "Section"
         static let [<Literal>] SectionCount = 16
@@ -258,12 +259,6 @@ module Gameplay =
             let (section, world) = World.readGroupFromFile filePath (Some sectionName) gameplay world
             let sectionEntities = World.getEntities section world
             shiftEntities xShift sectionEntities world
-
-        override this.Channel (_, gameplay) =
-            [gameplay.SelectEvent => cmd CreateSections
-             gameplay.DeselectEvent => cmd DestroySections
-             gameplay.UpdateEvent => cmd Update
-             Simulants.Gameplay.Gui.Quit.ClickEvent => msg Quit]
 
         override this.Message (_, message, _, _) =
             match message with
@@ -315,19 +310,25 @@ module Gameplay =
                     else just world
                 else just world
 
-        override this.Content (_, screen) =
+        override this.Forge (_, screen) =
 
-            [// the gui group
-             Content.group Simulants.Gameplay.Gui.Group.Name []
-                 [Content.button Simulants.Gameplay.Gui.Quit.Name
-                     [Entity.Text == "Quit"
-                      Entity.Position == v3 260.0f -260.0f 0.0f
-                      Entity.Elevation == 10.0f
-                      Entity.ClickEvent ==> msg Quit]]
+            Forge.screen Simulants.Gameplay.Screen.Name Vanilla
+                [Screen.SelectEvent ==> cmd CreateSections
+                 Screen.DeselectEvent ==> cmd DestroySections
+                 Screen.UpdateEvent ==> cmd Update
+                 Simulants.Gameplay.Gui.Quit.ClickEvent ==> msg Quit]
 
-             // the scene group
-             Content.groupIfScreenSelected screen $ fun _ ->
-                Content.group Simulants.Gameplay.Scene.Group.Name []
-                    [Content.entity<PlayerDispatcher> Simulants.Gameplay.Scene.Player.Name
-                        [Entity.Position == v3 -300.0f -175.6805f 0.0f
-                         Entity.Elevation == 1.0f]]]
+                [// the gui group
+                 Forge.group Simulants.Gameplay.Gui.Group.Name []
+                     [Forge.button Simulants.Gameplay.Gui.Quit.Name
+                         [Entity.Text == "Quit"
+                          Entity.Position == v3 260.0f -260.0f 0.0f
+                          Entity.Elevation == 10.0f
+                          Entity.ClickEvent ==> msg Quit]]
+
+                 // the scene group
+                 Forge.groupIfScreenSelected screen $ fun _ ->
+                    Content.group Simulants.Gameplay.Scene.Group.Name []
+                        [Content.entity<PlayerDispatcher> Simulants.Gameplay.Scene.Player.Name
+                            [Entity.Position == v3 -300.0f -175.6805f 0.0f
+                             Entity.Elevation == 1.0f]]]
