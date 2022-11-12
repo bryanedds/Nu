@@ -233,7 +233,7 @@ module WorldModuleScreen =
             | (true, getter) -> getter screen world
             | (false, _) -> World.getScreenXtensionProperty propertyName screen world
 
-        static member internal trySetScreenXtensionPropertyFast propertyName property screen world =
+        static member internal trySetScreenXtensionPropertyFast propertyName (property : Property) screen world =
             let screenState = World.getScreenState screen world
             match ScreenState.tryGetProperty (propertyName, screenState) with
             | (true, propertyOld) ->
@@ -244,7 +244,7 @@ module WorldModuleScreen =
                 else world
             | (false, _) -> world
 
-        static member internal trySetScreenXtensionProperty propertyName property screen world =
+        static member internal trySetScreenXtensionProperty propertyName (property : Property) screen world =
             let screenState = World.getScreenState screen world
             match ScreenState.tryGetProperty (propertyName, screenState) with
             | (true, propertyOld) ->
@@ -257,7 +257,7 @@ module WorldModuleScreen =
                 else struct (false, false, world)
             | (false, _) -> struct (false, false, world)
 
-        static member internal setScreenXtensionProperty propertyName property screen world =
+        static member internal setScreenXtensionProperty propertyName (property : Property) screen world =
             let screenState = World.getScreenState screen world
             let propertyOld = ScreenState.getProperty propertyName screenState
             if property.PropertyValue =/= propertyOld.PropertyValue then

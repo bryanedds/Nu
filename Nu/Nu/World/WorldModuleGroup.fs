@@ -205,7 +205,7 @@ module WorldModuleGroup =
             | (true, getter) -> getter group world
             | (false, _) -> World.getGroupXtensionProperty propertyName group world
 
-        static member internal trySetGroupXtensionPropertyFast propertyName property group world =
+        static member internal trySetGroupXtensionPropertyFast propertyName (property : Property) group world =
             let groupState = World.getGroupState group world
             match GroupState.tryGetProperty (propertyName, groupState) with
             | (true, propertyOld) ->
@@ -216,7 +216,7 @@ module WorldModuleGroup =
                 else world
             | (false, _) -> world
 
-        static member internal trySetGroupXtensionProperty propertyName property group world =
+        static member internal trySetGroupXtensionProperty propertyName (property : Property) group world =
             let groupState = World.getGroupState group world
             match GroupState.tryGetProperty (propertyName, groupState) with
             | (true, propertyOld) ->
@@ -229,7 +229,7 @@ module WorldModuleGroup =
                 else struct (false, false, world)
             | (false, _) -> struct (false, false, world)
 
-        static member internal setGroupXtensionProperty propertyName property group world =
+        static member internal setGroupXtensionProperty propertyName (property : Property) group world =
             let groupState = World.getGroupState group world
             let propertyOld = GroupState.getProperty propertyName groupState
             if property.PropertyValue =/= propertyOld.PropertyValue then
