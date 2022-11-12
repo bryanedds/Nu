@@ -83,10 +83,12 @@ module Forge =
 
     let private synchronizeProperties (forgeOld : SimulantForge) (forge : SimulantForge) (simulant : Simulant) world =
         if forgeOld.PropertyForges.Count > 0 || forge.PropertyForges.Count > 0 then
+            let simulant = if notNull (forgeOld.SimulantCachedOpt :> obj) then forgeOld.SimulantCachedOpt else simulant
+            forge.SimulantCachedOpt <- simulant
             Seq.fold (fun world (propertyEntry : KeyValuePair<_, _>) ->
                 let propertyForge = propertyEntry.Key
                 if not (forgeOld.PropertyForges.ContainsKey propertyForge) then
-                    let simulant = if isNull (propertyForge.SimulantOpt :> obj) then simulant else propertyForge.SimulantOpt
+                    let simulant = if notNull (propertyForge.SimulantOpt :> obj) then propertyForge.SimulantOpt else simulant
                     let property = { PropertyType = propertyForge.PropertyType; PropertyValue = propertyForge.PropertyValue }
                     World.setProperty propertyForge.PropertyName property simulant world |> snd'
                 else world)
@@ -221,7 +223,7 @@ module Forge =
             i <- inc i
         for entity in entities do
             entityForges.Add (entity.EntityName, entity)
-        { EntityDispatcherName = typeof<'entityDispatcher>.Name; EntityName = entityName
+        { EntityDispatcherName = typeof<'entityDispatcher>.Name; EntityName = entityName; SimulantCachedOpt = Unchecked.defaultof<_>
           EventSignalForges = eventSignalForges; EventHandlerForges = eventHandlerForges; PropertyForges = propertyForges; EntityForges = entityForges }
 
     ///
