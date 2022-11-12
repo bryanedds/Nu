@@ -10,107 +10,111 @@ open Prime
 module Forge =
 
     let private synchronizeEventSignals (forgeOld : SimulantForge) (forge : SimulantForge) (origin : Simulant) (simulant : Simulant) world =
-        let eventSignalsAdded = List ()
-        for eventSignalEntry in forge.EventSignalForges do
-            if not (forgeOld.EventSignalForges.ContainsKey eventSignalEntry.Key) then
-                eventSignalsAdded.Add (eventSignalEntry.Key, eventSignalEntry.Value)
-        let eventSignalsRemoved = List ()
-        for eventSignalEntry in forgeOld.EventSignalForges do
-            if not (forge.EventSignalForges.ContainsKey eventSignalEntry.Key) then
-                eventSignalsRemoved.Add eventSignalEntry.Value
-        let world =
-            Seq.fold
-                (fun world subscriptionId -> World.unsubscribe subscriptionId world)
-                world eventSignalsRemoved
-        let world =
-            Seq.fold (fun world ((eventAddress, signalObj), subscriptionId) ->
-                let eventAddress =
-                    if simulant.Names.Length <> 0 && Array.last eventAddress.Names = "Event"
-                    then eventAddress --> simulant.SimulantAddress
-                    else eventAddress
-                let (unsubscribe, world) =
-                    World.subscribePlus subscriptionId (fun (_ : Event) world ->
-                        let world = WorldModule.trySignal signalObj origin world
-                        (Cascade, world))
-                        eventAddress origin world
-                let world =
-                    World.monitor
-                        (fun _ world -> (Cascade, unsubscribe world))
-                        (Events.Unregistering --> simulant.SimulantAddress)
-                        simulant
-                        world
-                world)
-                world eventSignalsAdded
-        world
+        if forgeOld.EventSignalForges.Count > 0 || forge.EventSignalForges.Count > 0 then
+            let eventSignalsAdded = List ()
+            for eventSignalEntry in forge.EventSignalForges do
+                if not (forgeOld.EventSignalForges.ContainsKey eventSignalEntry.Key) then
+                    eventSignalsAdded.Add (eventSignalEntry.Key, eventSignalEntry.Value)
+            let eventSignalsRemoved = List ()
+            for eventSignalEntry in forgeOld.EventSignalForges do
+                if not (forge.EventSignalForges.ContainsKey eventSignalEntry.Key) then
+                    eventSignalsRemoved.Add eventSignalEntry.Value
+            let world =
+                Seq.fold
+                    (fun world subscriptionId -> World.unsubscribe subscriptionId world)
+                    world eventSignalsRemoved
+            let world =
+                Seq.fold (fun world ((eventAddress, signalObj), subscriptionId) ->
+                    let eventAddress =
+                        if simulant.Names.Length <> 0 && Array.last eventAddress.Names = "Event"
+                        then eventAddress --> simulant.SimulantAddress
+                        else eventAddress
+                    let (unsubscribe, world) =
+                        World.subscribePlus subscriptionId (fun (_ : Event) world ->
+                            let world = WorldModule.trySignal signalObj origin world
+                            (Cascade, world))
+                            eventAddress origin world
+                    let world =
+                        World.monitor
+                            (fun _ world -> (Cascade, unsubscribe world))
+                            (Events.Unregistering --> simulant.SimulantAddress)
+                            simulant
+                            world
+                    world)
+                    world eventSignalsAdded
+            world
+        else world
 
     let private synchronizeEventHandlers (forgeOld : SimulantForge) (forge : SimulantForge) (origin : Simulant) (simulant : Simulant) world =
-        let eventHandlersAdded = List ()
-        for eventHandlerEntry in forge.EventHandlerForges do
-            if not (forgeOld.EventHandlerForges.ContainsKey eventHandlerEntry.Key) then
-                eventHandlersAdded.Add (eventHandlerEntry.Key, eventHandlerEntry.Value)
-        let eventHandlersRemoved = List ()
-        for eventHandlerEntry in forgeOld.EventHandlerForges do
-            if not (forge.EventHandlerForges.ContainsKey eventHandlerEntry.Key) then
-                eventHandlersRemoved.Add eventHandlerEntry.Value
-        let world =
-            Seq.fold
-                (fun world (subscriptionId, _) -> World.unsubscribe subscriptionId world)
-                world eventHandlersRemoved
-        let world =
-            Seq.fold (fun world ((_, eventAddress), (subscriptionId, handler)) ->
-                let eventAddress =
-                    if simulant.Names.Length <> 0 && Array.last eventAddress.Names = "Event"
-                    then eventAddress --> simulant.SimulantAddress
-                    else eventAddress
-                let (unsubscribe, world) =
-                    World.subscribePlus subscriptionId (fun event world ->
-                        let world = WorldModule.trySignal (handler event) origin world
-                        (Cascade, world))
-                        eventAddress origin world
-                let world =
-                    World.monitor
-                        (fun _ world -> (Cascade, unsubscribe world))
-                        (Events.Unregistering --> simulant.SimulantAddress)
-                        simulant
-                        world
-                world)
-                world eventHandlersAdded
-        world
+        if forgeOld.EventHandlerForges.Count > 0 || forge.EventHandlerForges.Count > 0 then
+            let eventHandlersAdded = List ()
+            for eventHandlerEntry in forge.EventHandlerForges do
+                if not (forgeOld.EventHandlerForges.ContainsKey eventHandlerEntry.Key) then
+                    eventHandlersAdded.Add (eventHandlerEntry.Key, eventHandlerEntry.Value)
+            let eventHandlersRemoved = List ()
+            for eventHandlerEntry in forgeOld.EventHandlerForges do
+                if not (forge.EventHandlerForges.ContainsKey eventHandlerEntry.Key) then
+                    eventHandlersRemoved.Add eventHandlerEntry.Value
+            let world =
+                Seq.fold
+                    (fun world (subscriptionId, _) -> World.unsubscribe subscriptionId world)
+                    world eventHandlersRemoved
+            let world =
+                Seq.fold (fun world ((_, eventAddress), (subscriptionId, handler)) ->
+                    let eventAddress =
+                        if simulant.Names.Length <> 0 && Array.last eventAddress.Names = "Event"
+                        then eventAddress --> simulant.SimulantAddress
+                        else eventAddress
+                    let (unsubscribe, world) =
+                        World.subscribePlus subscriptionId (fun event world ->
+                            let world = WorldModule.trySignal (handler event) origin world
+                            (Cascade, world))
+                            eventAddress origin world
+                    let world =
+                        World.monitor
+                            (fun _ world -> (Cascade, unsubscribe world))
+                            (Events.Unregistering --> simulant.SimulantAddress)
+                            simulant
+                            world
+                    world)
+                    world eventHandlersAdded
+            world
+        else world
 
     let private synchronizeProperties (forgeOld : SimulantForge) (forge : SimulantForge) (simulant : Simulant) world =
-        let propertiesAdded = List ()
-        for propertyEntry in forge.PropertyForges do
-            if not (forgeOld.PropertyForges.ContainsKey propertyEntry.Key) then
-                propertiesAdded.Add propertyEntry.Key
-        let world =
-            propertiesAdded |>
-            Seq.fold (fun world propertyForge ->
-                let simulant = if isNull (propertyForge.SimulantOpt :> obj) then simulant else propertyForge.SimulantOpt
-                let property = { PropertyType = propertyForge.PropertyType; PropertyValue = propertyForge.PropertyValue }
-                World.setProperty propertyForge.PropertyName property simulant world |> snd')
-                world
-        world
+        if forgeOld.PropertyForges.Count > 0 || forge.PropertyForges.Count > 0 then
+            Seq.fold (fun world (propertyEntry : KeyValuePair<_, _>) ->
+                let propertyForge = propertyEntry.Key
+                if not (forgeOld.PropertyForges.ContainsKey propertyForge) then
+                    let simulant = if isNull (propertyForge.SimulantOpt :> obj) then simulant else propertyForge.SimulantOpt
+                    let property = { PropertyType = propertyForge.PropertyType; PropertyValue = propertyForge.PropertyValue }
+                    World.setProperty propertyForge.PropertyName property simulant world |> snd'
+                else world)
+                world forge.PropertyForges
+        else world
 
     let private differentiateChildren<'child, 'childForge when 'child : equality and 'child :> Simulant and 'childForge :> SimulantForge>
         (forgeOld : SimulantForge) (forge : SimulantForge) (simulant : Simulant) =
-        let childrenPotentiallyAltered = Dictionary ()
-        let childrenAdded = List ()
         let childForgesOld = forgeOld.GetChildForges<'childForge> ()
         let childForges = forge.GetChildForges<'childForge> ()
-        for childEntry in childForges do
-            let childSimulant = World.derive (Address.makeFromArray (Array.add childEntry.Key simulant.SimulantAddress.Names)) :?> 'child
-            match childForgesOld.TryGetValue childEntry.Key with
-            | (true, _) -> childrenPotentiallyAltered.Add (childSimulant, childEntry.Value)
-            | (false, _) -> childrenAdded.Add (childSimulant, childEntry.Value)
-        let childrenRemoved = List ()
-        for childEntry in childForgesOld do
-            match childForges.TryGetValue childEntry.Key with
-            | (true, _) -> ()
-            | (false, _) ->
+        if childForgesOld.Count > 0 || childForges.Count > 0 then
+            let childrenPotentiallyAltered = OrderedDictionary ()
+            let childrenAdded = List ()
+            for childEntry in childForges do
                 let childSimulant = World.derive (Address.makeFromArray (Array.add childEntry.Key simulant.SimulantAddress.Names)) :?> 'child
-                childrenRemoved.Add childSimulant
-                childrenPotentiallyAltered.Remove childSimulant |> ignore
-        (childrenAdded, childrenRemoved, childrenPotentiallyAltered)
+                match childForgesOld.TryGetValue childEntry.Key with
+                | (true, _) -> childrenPotentiallyAltered.Add (childSimulant, childEntry.Value)
+                | (false, _) -> childrenAdded.Add (childSimulant, childEntry.Value)
+            let childrenRemoved = List ()
+            for childEntry in childForgesOld do
+                match childForges.TryGetValue childEntry.Key with
+                | (true, _) -> ()
+                | (false, _) ->
+                    let childSimulant = World.derive (Address.makeFromArray (Array.add childEntry.Key simulant.SimulantAddress.Names)) :?> 'child
+                    childrenRemoved.Add childSimulant
+                    childrenPotentiallyAltered.Remove childSimulant |> ignore
+            (childrenAdded, childrenRemoved, childrenPotentiallyAltered)
+        else (List (), List (), OrderedDictionary ())
 
     ///
     let rec synchronizeEntity (forgeOld : EntityForge) (forge : EntityForge) (origin : Simulant) (entity : Entity) world =
