@@ -379,16 +379,29 @@ module WorldTypes =
         | EventSignalForge of obj Address * obj
         | EventHandlerForge of PartialEquatable<obj Address, Event -> obj>
 
+    and SimulantForge =
+        abstract DispatcherNameOpt : string option
+        abstract SimulantNameOpt : string option
+        abstract PropertyForges : HashSet<Simulant ValueOption * string * Type * obj>
+        abstract EventSignalForges : Dictionary<obj Address * obj, Guid>
+        abstract GetChildForges<'v when 'v :> SimulantForge> : unit -> Dictionary<string, 'v>
+
     and [<ReferenceEquality; NoComparison>] GameForge =
         { PropertyForges : HashSet<Simulant ValueOption * string * Type * obj>
           EventSignalForges : Dictionary<obj Address * obj, Guid>
           ScreenForges : Dictionary<string, ScreenForge>
           InitialScreenNameOpt : string option }
-        static member internal empty =
+        static member empty =
             { PropertyForges = hashSetPlus HashIdentity.Structural []
               EventSignalForges = dictPlus HashIdentity.Structural []
               ScreenForges = dictPlus StringComparer.Ordinal []
               InitialScreenNameOpt = None }
+        interface SimulantForge with
+            member this.DispatcherNameOpt = None
+            member this.SimulantNameOpt = None
+            member this.PropertyForges = this.PropertyForges
+            member this.EventSignalForges = this.EventSignalForges
+            member this.GetChildForges<'v when 'v :> SimulantForge> () = this.ScreenForges :> obj :?> Dictionary<string, 'v>
 
     and [<ReferenceEquality; NoComparison>] ScreenForge =
         { ScreenDispatcherName : string
@@ -397,13 +410,19 @@ module WorldTypes =
           PropertyForges : HashSet<Simulant ValueOption * string * Type * obj>
           EventSignalForges : Dictionary<obj Address * obj, Guid>
           GroupForges : Dictionary<string, GroupForge> }
-        static member internal empty =
+        static member empty =
             { ScreenDispatcherName = nameof ScreenDispatcher
               ScreenName = nameof Screen
               ScreenBehavior = Vanilla
               PropertyForges = hashSetPlus HashIdentity.Structural []
               EventSignalForges = dictPlus HashIdentity.Structural []
               GroupForges = dictPlus StringComparer.Ordinal [] }
+        interface SimulantForge with
+            member this.DispatcherNameOpt = Some this.ScreenDispatcherName
+            member this.SimulantNameOpt = Some this.ScreenName
+            member this.PropertyForges = this.PropertyForges
+            member this.EventSignalForges = this.EventSignalForges
+            member this.GetChildForges<'v when 'v :> SimulantForge> () = this.GroupForges :> obj :?> Dictionary<string, 'v>
 
     and [<ReferenceEquality; NoComparison>] GroupForge =
         { GroupDispatcherName : string
@@ -411,12 +430,18 @@ module WorldTypes =
           PropertyForges : HashSet<Simulant ValueOption * string * Type * obj>
           EventSignalForges : Dictionary<obj Address * obj, Guid>
           EntityForges : Dictionary<string, EntityForge> }
-        static member internal empty =
+        static member empty =
             { GroupDispatcherName = nameof GroupDispatcher
               GroupName = nameof Group
               PropertyForges = hashSetPlus HashIdentity.Structural []
               EventSignalForges = dictPlus HashIdentity.Structural []
               EntityForges = dictPlus StringComparer.Ordinal [] }
+        interface SimulantForge with
+            member this.DispatcherNameOpt = Some this.GroupDispatcherName
+            member this.SimulantNameOpt = Some this.GroupName
+            member this.PropertyForges = this.PropertyForges
+            member this.EventSignalForges = this.EventSignalForges
+            member this.GetChildForges<'v when 'v :> SimulantForge> () = this.EntityForges :> obj :?> Dictionary<string, 'v>
 
     and [<ReferenceEquality; NoComparison>] EntityForge =
         { EntityDispatcherName : string
@@ -425,13 +450,19 @@ module WorldTypes =
           EventSignalForges : Dictionary<obj Address * obj, Guid>
           EventHandlerForges : Dictionary<int * obj Address * obj, Guid>
           EntityForges : Dictionary<string, EntityForge> }
-        static member internal empty =
+        static member empty =
             { EntityDispatcherName = nameof EntityDispatcher
               EntityName = nameof Entity
               PropertyForges = hashSetPlus HashIdentity.Structural []
               EventSignalForges = dictPlus HashIdentity.Structural []
               EventHandlerForges = dictPlus HashIdentity.Structural []
               EntityForges = dictPlus StringComparer.Ordinal [] }
+        interface SimulantForge with
+            member this.DispatcherNameOpt = Some this.EntityDispatcherName
+            member this.SimulantNameOpt = Some this.EntityName
+            member this.PropertyForges = this.PropertyForges
+            member this.EventSignalForges = this.EventSignalForges
+            member this.GetChildForges<'v when 'v :> SimulantForge> () = this.EntityForges :> obj :?> Dictionary<string, 'v>
 
     /// Generalized interface for simulant state.
     and SimulantState =

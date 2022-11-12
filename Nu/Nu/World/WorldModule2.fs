@@ -1757,7 +1757,7 @@ module GameDispatcherModule =
                 else world
             let forgeOld = World.getGameForge world
             let forge = this.Forge (this.GetModel game world, game)
-            let (screenInitialOpt, world) = Forge.synchronizeGame World.setScreenSplash forgeOld forge game game world
+            let (screenInitialOpt, world) = Forge.synchronizeGame World.setScreenSplash forgeOld forge game world
             let world = World.setGameForge forge world
             match screenInitialOpt with
             | Some screen -> game.SetDesiredScreen (Desire screen) world
@@ -1776,7 +1776,7 @@ module GameDispatcherModule =
         override this.TryReforge (game, world) =
             let model = this.GetModel game world
             let forge = this.Forge (model, game)
-            let (_, world) = Forge.synchronizeGame World.setScreenSplash (World.getGameForge world) forge game game world
+            let (_, world) = Forge.synchronizeGame World.setScreenSplash (World.getGameForge world) forge game world
             World.setGameForge forge world
 
         abstract member Message : 'model * 'message * Game * World -> Signal<'message, 'command> list * 'model
