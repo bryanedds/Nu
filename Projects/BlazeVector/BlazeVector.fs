@@ -51,10 +51,7 @@ module BlazeVector =
         // here we handle the above commands
         override this.Command (model, command, _, world) =
             match command with
-            | ModelChanged ->
-                match model with
-                | Gameplay gameplay -> just (Simulants.Gameplay.Screen.SetGameplay gameplay world)
-                | _ -> just world
+            | ModelChanged -> match model with Gameplay gameplay -> just (Simulants.Gameplay.Screen.SetGameplay gameplay world) | _ -> just world
             | Exit -> just (World.exit world)
 
         // here we describe the content of the game, including all of its screens.
@@ -65,10 +62,7 @@ module BlazeVector =
                     | Splash -> Desire Simulants.Splash.Screen
                     | Title -> Desire Simulants.Title.Screen
                     | Credits -> Desire Simulants.Credits.Screen
-                    | Gameplay gameplay ->
-                        match gameplay with
-                        | Playing -> Desire Simulants.Gameplay.Screen
-                        | Quitting | Quit -> Desire Simulants.Title.Screen
+                    | Gameplay gameplay -> match gameplay with Playing -> Desire Simulants.Gameplay.Screen | Quitting | Quit -> Desire Simulants.Title.Screen
                  game.Model.ChangeEvent ==> cmd ModelChanged
                  Simulants.Splash.Screen.DeselectingEvent ==> msg ShowTitle
                  Simulants.Title.Gui.Credits.ClickEvent ==> msg ShowCredits
