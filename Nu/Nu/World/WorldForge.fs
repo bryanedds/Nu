@@ -26,10 +26,17 @@ module Forge =
                     world eventSignalsRemoved
             let world =
                 Seq.fold (fun world ((eventAddress, signalObj), subscriptionId) ->
+                    let conversionResultOpt =
+                        match Array.last eventAddress.Names with
+                        | Constants.Engine.EntityEventTruncatedName -> ValueSome (simulant.Names.Length >= 3)
+                        | Constants.Engine.GroupEventTruncatedName -> ValueSome (simulant.Names.Length = 2)
+                        | Constants.Engine.ScreenEventTruncatedName -> ValueSome (simulant.Names.Length = 1)
+                        | _ -> ValueNone
                     let eventAddress =
-                        if simulant.Names.Length <> 0 && Array.last eventAddress.Names = Constants.Engine.EventTruncatedName
-                        then rtoa (Array.append (Array.allButLast eventAddress.Names) simulant.SimulantAddress.Names)
-                        else eventAddress
+                        match conversionResultOpt with
+                        | ValueSome true -> rtoa (Array.append (Array.allButLast eventAddress.Names) simulant.SimulantAddress.Names)
+                        | ValueSome false -> failwith "Could not infer simulant address due to anonymous simulant event being passed in the wrong context."
+                        | ValueNone -> eventAddress
                     let (unsubscribe, world) =
                         World.subscribePlus subscriptionId (fun (_ : Event) world ->
                             let world = WorldModule.trySignal signalObj origin world
@@ -62,10 +69,17 @@ module Forge =
                     world eventHandlersRemoved
             let world =
                 Seq.fold (fun world ((_, eventAddress), (subscriptionId, handler)) ->
+                    let conversionResultOpt =
+                        match Array.last eventAddress.Names with
+                        | Constants.Engine.EntityEventTruncatedName -> ValueSome (simulant.Names.Length >= 3)
+                        | Constants.Engine.GroupEventTruncatedName -> ValueSome (simulant.Names.Length = 2)
+                        | Constants.Engine.ScreenEventTruncatedName -> ValueSome (simulant.Names.Length = 1)
+                        | _ -> ValueNone
                     let eventAddress =
-                        if simulant.Names.Length <> 0 && Array.last eventAddress.Names = Constants.Engine.EventTruncatedName
-                        then rtoa (Array.append (Array.allButLast eventAddress.Names) simulant.SimulantAddress.Names)
-                        else eventAddress
+                        match conversionResultOpt with
+                        | ValueSome true -> rtoa (Array.append (Array.allButLast eventAddress.Names) simulant.SimulantAddress.Names)
+                        | ValueSome false -> failwith "Could not infer simulant address due to anonymous simulant event being passed in the wrong context."
+                        | ValueNone -> eventAddress
                     let (unsubscribe, world) =
                         World.subscribePlus subscriptionId (fun event world ->
                             let world = WorldModule.trySignal (handler event) origin world

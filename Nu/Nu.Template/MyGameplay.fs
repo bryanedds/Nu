@@ -81,7 +81,7 @@ module MyGameplay =
                 [screen.UpdateEvent ==> cmd Update
                  screen.PostUpdateEvent ==> cmd PostUpdateEye
                  screen.DeselectingEvent ==> msg FinishQuitting
-                 Game.KeyboardKeyDownEvent ==|> fun evt -> if evt.Data.KeyboardKey = KeyboardKey.Up && not evt.Data.Repeated then cmd Jump else cmd Nop
+                 Simulants.Game.KeyboardKeyDownEvent ==|> fun evt -> if evt.Data.KeyboardKey = KeyboardKey.Up && not evt.Data.Repeated then cmd Jump else cmd Nop
                  Simulants.Gameplay.Gui.Quit.ClickEvent ==> msg StartQutting]
 
                 [// the gui group
