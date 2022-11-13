@@ -144,16 +144,28 @@ module Forge =
                 let childrenPotentiallyAltered = OrderedDictionary HashIdentity.Structural
                 let childrenAdded = List ()
                 for childEntry in childForges do
-                    let childSimulant = World.derive (rtoa (Array.add childEntry.Key simulant.SimulantAddress.Names)) :?> 'child
                     match childForgesOld.TryGetValue childEntry.Key with
-                    | (true, _) -> childrenPotentiallyAltered.Add (childSimulant, childEntry.Value)
-                    | (false, _) -> childrenAdded.Add (childSimulant, childEntry.Value)
-                let childrenRemoved = List<'child> ()
-                for childEntry in childForgesOld do
-                    match childForges.TryGetValue childEntry.Key with
-                    | (true, _) -> ()
+                    | (true, childForgeOld) ->
+                        let childSimulant = // OPTIMIZATION: attempt to get child simulant from old forge rather than deriving it, and store it for future use.
+                            if isNull (childForgeOld.SimulantCachedOpt :> obj) then
+                                let derived = World.derive (rtoa (Array.add childEntry.Key simulant.SimulantAddress.Names)) :?> 'child
+                                childEntry.Value.SimulantCachedOpt <- derived
+                                derived
+                            else
+                                let found = childForgeOld.SimulantCachedOpt :?> 'child
+                                childEntry.Value.SimulantCachedOpt <- found
+                                found
+                        childrenPotentiallyAltered.Add (childSimulant, childEntry.Value)
                     | (false, _) ->
                         let childSimulant = World.derive (rtoa (Array.add childEntry.Key simulant.SimulantAddress.Names)) :?> 'child
+                        childEntry.Value.SimulantCachedOpt <- childSimulant
+                        childrenAdded.Add (childSimulant, childEntry.Value)
+                let childrenRemoved = List<'child> ()
+                for childEntryOld in childForgesOld do
+                    match childForges.TryGetValue childEntryOld.Key with
+                    | (true, _) -> ()
+                    | (false, _) ->
+                        let childSimulant = childEntryOld.Value.SimulantCachedOpt :?> 'child // OPTIMIZATION: because of above optimization, should be guaranteed to exist.
                         childrenRemoved.Add childSimulant
                         childrenPotentiallyAltered.Remove childSimulant |> ignore
                 Some (childrenAdded, childrenRemoved, childrenPotentiallyAltered)
@@ -398,7 +410,7 @@ module Forge =
         for entity in entities do
             if isNull entityForgesOpt then entityForgesOpt <- OrderedDictionary StringComparer.Ordinal
             entityForgesOpt.Add (entity.EntityName, entity)
-        { GroupDispatcherName = typeof<'groupDispatcher>.Name; GroupName = groupName; GroupFilePathOpt = groupFilePathOpt
+        { GroupDispatcherName = typeof<'groupDispatcher>.Name; GroupName = groupName; GroupFilePathOpt = groupFilePathOpt; SimulantCachedOpt = Unchecked.defaultof<_>
           EventSignalForgesOpt = eventSignalForgesOpt; EventHandlerForgesOpt = eventHandlerForgesOpt; PropertyForgesOpt = propertyForgesOpt; EntityForgesOpt = entityForgesOpt }
 
     ///
@@ -424,7 +436,7 @@ module Forge =
             i <- inc i
         for group in groups do
             groupForges.Add (group.GroupName, group)
-        { ScreenDispatcherName = typeof<'screenDispatcher>.Name; ScreenName = screenName; ScreenBehavior = screenBehavior; GroupFilePathOpt = groupFilePathOpt
+        { ScreenDispatcherName = typeof<'screenDispatcher>.Name; ScreenName = screenName; ScreenBehavior = screenBehavior; GroupFilePathOpt = groupFilePathOpt; SimulantCachedOpt = Unchecked.defaultof<_>
           EventSignalForgesOpt = eventSignalForgesOpt; EventHandlerForgesOpt = eventHandlerForgesOpt; PropertyForgesOpt = propertyForgesOpt; GroupForges = groupForges }
 
     let screen<'screenDispatcher when 'screenDispatcher :> ScreenDispatcher> screenName screenBehavior initializers groups =
@@ -449,7 +461,7 @@ module Forge =
             i <- inc i
         for screen in screens do
             screenForges.Add (screen.ScreenName, screen)
-        { InitialScreenNameOpt = initialScreenNameOpt
+        { InitialScreenNameOpt = initialScreenNameOpt; SimulantCachedOpt = Unchecked.defaultof<_>
           EventSignalForgesOpt = eventSignalForgesOpt; EventHandlerForgesOpt = eventHandlerForgesOpt; PropertyForgesOpt = propertyForgesOpt; ScreenForges = screenForges }
 
 module ForgeOperators =

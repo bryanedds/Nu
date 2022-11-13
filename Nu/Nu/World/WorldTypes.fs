@@ -391,12 +391,14 @@ module WorldTypes =
 
     and [<ReferenceEquality; NoComparison>] GameForge =
         { InitialScreenNameOpt : string option
+          mutable SimulantCachedOpt : Simulant
           mutable EventSignalForgesOpt : OrderedDictionary<obj Address * obj, Guid> // OPTIMIZATION: lazily created.
           mutable EventHandlerForgesOpt : OrderedDictionary<int * obj Address, Guid * (Event -> obj)> // OPTIMIZATION: lazily created.
           mutable PropertyForgesOpt : List<World Lens * obj> // OPTIMIZATION: lazily created.
           ScreenForges : OrderedDictionary<string, ScreenForge> }
         static member empty =
             { InitialScreenNameOpt = None
+              SimulantCachedOpt = Unchecked.defaultof<_>
               EventSignalForgesOpt = null
               EventHandlerForgesOpt = null
               PropertyForgesOpt = null
@@ -404,7 +406,7 @@ module WorldTypes =
         interface SimulantForge with
             member this.DispatcherNameOpt = None
             member this.SimulantNameOpt = None
-            member this.SimulantCachedOpt with get () = Unchecked.defaultof<_> and set _ = ()
+            member this.SimulantCachedOpt with get () = this.SimulantCachedOpt and set value = this.SimulantCachedOpt <- value
             member this.EventSignalForgesOpt = this.EventSignalForgesOpt
             member this.EventHandlerForgesOpt = this.EventHandlerForgesOpt
             member this.PropertyForgesOpt = this.PropertyForgesOpt
@@ -415,6 +417,7 @@ module WorldTypes =
           ScreenName : string
           ScreenBehavior : ScreenBehavior
           GroupFilePathOpt : string option
+          mutable SimulantCachedOpt : Simulant
           mutable EventSignalForgesOpt : OrderedDictionary<obj Address * obj, Guid> // OPTIMIZATION: lazily created.
           mutable EventHandlerForgesOpt : OrderedDictionary<int * obj Address, Guid * (Event -> obj)> // OPTIMIZATION: lazily created.
           mutable PropertyForgesOpt : List<World Lens * obj> // OPTIMIZATION: lazily created.
@@ -424,6 +427,7 @@ module WorldTypes =
               ScreenName = nameof Screen
               ScreenBehavior = Vanilla
               GroupFilePathOpt = None
+              SimulantCachedOpt = Unchecked.defaultof<_>
               EventSignalForgesOpt = null
               EventHandlerForgesOpt = null
               PropertyForgesOpt = null
@@ -431,7 +435,7 @@ module WorldTypes =
         interface SimulantForge with
             member this.DispatcherNameOpt = Some this.ScreenDispatcherName
             member this.SimulantNameOpt = Some this.ScreenName
-            member this.SimulantCachedOpt with get () = Unchecked.defaultof<_> and set _ = ()
+            member this.SimulantCachedOpt with get () = this.SimulantCachedOpt and set value = this.SimulantCachedOpt <- value
             member this.EventSignalForgesOpt = this.EventSignalForgesOpt
             member this.EventHandlerForgesOpt = this.EventHandlerForgesOpt
             member this.PropertyForgesOpt = this.PropertyForgesOpt
@@ -441,6 +445,7 @@ module WorldTypes =
         { GroupDispatcherName : string
           GroupName : string
           GroupFilePathOpt : string option
+          mutable SimulantCachedOpt : Simulant
           mutable EventSignalForgesOpt : OrderedDictionary<obj Address * obj, Guid> // OPTIMIZATION: lazily created.
           mutable EventHandlerForgesOpt : OrderedDictionary<int * obj Address, Guid * (Event -> obj)> // OPTIMIZATION: lazily created.
           mutable PropertyForgesOpt : List<World Lens * obj> // OPTIMIZATION: lazily created.
@@ -449,6 +454,7 @@ module WorldTypes =
             { GroupDispatcherName = nameof GroupDispatcher
               GroupName = nameof Group
               GroupFilePathOpt = None
+              SimulantCachedOpt = Unchecked.defaultof<_>
               EventSignalForgesOpt = null
               EventHandlerForgesOpt = null
               PropertyForgesOpt = null
@@ -456,7 +462,7 @@ module WorldTypes =
         interface SimulantForge with
             member this.DispatcherNameOpt = Some this.GroupDispatcherName
             member this.SimulantNameOpt = Some this.GroupName
-            member this.SimulantCachedOpt with get () = Unchecked.defaultof<_> and set _ = ()
+            member this.SimulantCachedOpt with get () = this.SimulantCachedOpt and set value = this.SimulantCachedOpt <- value
             member this.EventSignalForgesOpt = this.EventSignalForgesOpt
             member this.EventHandlerForgesOpt = this.EventHandlerForgesOpt
             member this.PropertyForgesOpt = this.PropertyForgesOpt
