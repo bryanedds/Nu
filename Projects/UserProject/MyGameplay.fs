@@ -44,11 +44,8 @@ module MyGameplay =
 
         // here we handle the above commands
         override this.Command (_, command, _, world) =
-
             match command with
             | Update ->
-
-                // update input
                 let physicsId = Simulants.Gameplay.Player.Character.GetPhysicsId world
                 let world =
                     if World.isKeyboardKeyDown KeyboardKey.Left world then
@@ -60,14 +57,7 @@ module MyGameplay =
                         then World.applyBodyForce (v3 2500.0f 0.0f 0.0f) physicsId world
                         else World.applyBodyForce (v3 750.0f 0.0f 0.0f) physicsId world
                     else world
-
-                // rotate spheres
-                let sphereLeft = Simulants.Gameplay.Scene.SphereLeft
-                let sphereRight = Simulants.Gameplay.Scene.SphereRight
-                let world = sphereLeft.SetRotation (sphereLeft.GetRotation world * Quaternion.CreateFromAxisAngle (v3Up, 0.0025f)) world
-                let world = sphereRight.SetRotation (sphereRight.GetRotation world * Quaternion.CreateFromAxisAngle (v3Up, 0.0025f)) world
                 just world
-
             | Jump ->
                 let physicsId = Simulants.Gameplay.Player.Character.GetPhysicsId world
                 if World.isBodyOnGround physicsId world then
@@ -75,14 +65,12 @@ module MyGameplay =
                     let world = World.applyBodyForce (v3 0.0f 140000.0f 0.0f) physicsId world
                     just world
                 else just world
-
             | PostUpdateEye ->
                 if World.getAdvancing world then
                     let characterCenter = Simulants.Gameplay.Player.Character.GetCenter world
                     let world = World.setEyePosition2d characterCenter.V2 world
                     just world
                 else just world
-
             | Nop -> just world
 
         // here we describe the content of the game including the level, the hud, and the player
@@ -104,13 +92,12 @@ module MyGameplay =
                           Entity.Elevation == 10.0f
                           Entity.ClickEvent ==> msg Quit]]
 
-                 // the scene group while playing
+                 // the player and scene groups while playing
                  match gameplay with
                  | Playing | Quitting ->
                     yield Forge.group Simulants.Gameplay.Player.Group.Name []
                         [Forge.sideViewCharacter Simulants.Gameplay.Player.Character.Name
                             [Entity.Position == v3 0.0f 0.0f 0.0f
                              Entity.Size == v3 108.0f 108.0f 0.0f]]
-
                     yield Forge.groupFromFile Simulants.Gameplay.Scene.Group.Name "Assets/Gameplay/Scene.nugroup" [] []
                  | Quit -> ()]
