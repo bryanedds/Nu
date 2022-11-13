@@ -310,13 +310,13 @@ module Gameplay =
                     withMsg StartQutting world
                 else just world
 
-        override this.Forge (gameplay, _) =
+        override this.Forge (gameplay, screen) =
 
             // the gameplay screen
             Forge.screen Simulants.Gameplay.Screen.Name Vanilla
-                [Screen.SelectEvent ==> cmd CreateSections
-                 Screen.DeselectingEvent ==> cmd DestroySections
-                 Screen.UpdateEvent ==> cmd Update
+                [screen.SelectEvent ==> cmd CreateSections
+                 screen.DeselectingEvent ==> cmd DestroySections
+                 screen.UpdateEvent ==> cmd Update
                  Simulants.Gameplay.Gui.Quit.ClickEvent ==> msg StartQutting]
 
                 [// the gui group

@@ -58,9 +58,9 @@ module BlazeVector =
             | Exit -> just (World.exit world)
 
         // here we describe the content of the game, including all of its screens.
-        override this.Forge (model, _) =
+        override this.Forge (model, game) =
             Forge.game
-                [Game.DesiredScreen ==
+                [game.DesiredScreen ==
                     match model with
                     | Splash -> Desire Simulants.Splash.Screen
                     | Title -> Desire Simulants.Title.Screen
@@ -69,7 +69,7 @@ module BlazeVector =
                         match gameplay with
                         | Playing -> Desire Simulants.Gameplay.Screen
                         | Quitting | Quit -> Desire Simulants.Title.Screen
-                 Game.Model.ChangeEvent ==> cmd ModelChanged
+                 game.Model.ChangeEvent ==> cmd ModelChanged
                  Simulants.Splash.Screen.DeselectingEvent ==> msg ShowTitle
                  Simulants.Title.Gui.Credits.ClickEvent ==> msg ShowCredits
                  Simulants.Title.Gui.Play.ClickEvent ==> msg ShowGameplay
