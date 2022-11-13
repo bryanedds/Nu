@@ -374,44 +374,20 @@ module WorldTypes =
 
         interface LateBindings
 
-    and [<CustomEquality; NoComparison>] PropertyForge =
+    and [<NoEquality; NoComparison>] PropertyForge =
         { SimulantOpt : Simulant // OPTIMIZATION: may be null.
           PropertyName : string
           PropertyType : Type
-          PropertyValue : obj
-          HashCode : int }
-
-        static member equals left right =
-            left.HashCode = right.HashCode &&
-            left.SimulantOpt = right.SimulantOpt &&
-            strEq left.PropertyName right.PropertyName &&
-            left.PropertyValue === right.PropertyValue
+          PropertyValue : obj }
 
         static member make (simulantOpt : Simulant voption) propertyName propertyType propertyValue =
             let simulantOpt = match simulantOpt with ValueSome simulant -> simulant | ValueNone -> Unchecked.defaultof<_>
-            let hashCode =
-                hash simulantOpt ^^^
-                hash propertyName ^^^
-                hash propertyValue
             { SimulantOpt = simulantOpt
               PropertyName = propertyName
               PropertyType = propertyType
-              PropertyValue = propertyValue
-              HashCode = hashCode }
+              PropertyValue = propertyValue }
 
-        interface PropertyForge IEquatable with
-            member this.Equals that =
-                PropertyForge.equals this that
-
-        override this.Equals that =
-            match that with
-            | :? PropertyForge as that -> PropertyForge.equals this that
-            | _ -> false
-
-        override this.GetHashCode () =
-            this.HashCode
-
-    and [<StructuralEquality; NoComparison>] InitializerForge =
+    and [<NoEquality; NoComparison>] InitializerForge =
         | PropertyForge of PropertyForge
         | EventSignalForge of obj Address * obj
         | EventHandlerForge of PartialEquatable<obj Address, Event -> obj>
@@ -422,20 +398,20 @@ module WorldTypes =
         abstract SimulantCachedOpt : Simulant with get, set
         abstract EventSignalForges : OrderedDictionary<obj Address * obj, Guid>
         abstract EventHandlerForges : OrderedDictionary<int * obj Address, Guid * (Event -> obj)>
-        abstract PropertyForges : OrderedDictionary<PropertyForge, unit>
+        abstract PropertyForges : List<PropertyForge>
         abstract GetChildForges<'v when 'v :> SimulantForge> : unit -> OrderedDictionary<string, 'v>
 
     and [<ReferenceEquality; NoComparison>] GameForge =
         { InitialScreenNameOpt : string option
           EventSignalForges : OrderedDictionary<obj Address * obj, Guid>
           EventHandlerForges : OrderedDictionary<int * obj Address, Guid * (Event -> obj)>
-          PropertyForges : OrderedDictionary<PropertyForge, unit>
+          PropertyForges : List<PropertyForge>
           ScreenForges : OrderedDictionary<string, ScreenForge> }
         static member empty =
             { InitialScreenNameOpt = None
               EventSignalForges = OrderedDictionary HashIdentity.Structural
               EventHandlerForges = OrderedDictionary HashIdentity.Structural
-              PropertyForges = OrderedDictionary HashIdentity.Structural
+              PropertyForges = List ()
               ScreenForges = OrderedDictionary StringComparer.Ordinal }
         interface SimulantForge with
             member this.DispatcherNameOpt = None
@@ -453,7 +429,7 @@ module WorldTypes =
           GroupFilePathOpt : string option
           EventSignalForges : OrderedDictionary<obj Address * obj, Guid>
           EventHandlerForges : OrderedDictionary<int * obj Address, Guid * (Event -> obj)>
-          PropertyForges : OrderedDictionary<PropertyForge, unit>
+          PropertyForges : List<PropertyForge>
           GroupForges : OrderedDictionary<string, GroupForge> }
         static member empty =
             { ScreenDispatcherName = nameof ScreenDispatcher
@@ -462,7 +438,7 @@ module WorldTypes =
               GroupFilePathOpt = None
               EventSignalForges = OrderedDictionary HashIdentity.Structural
               EventHandlerForges = OrderedDictionary HashIdentity.Structural
-              PropertyForges = OrderedDictionary HashIdentity.Structural
+              PropertyForges = List ()
               GroupForges = OrderedDictionary StringComparer.Ordinal }
         interface SimulantForge with
             member this.DispatcherNameOpt = Some this.ScreenDispatcherName
@@ -479,7 +455,7 @@ module WorldTypes =
           GroupFilePathOpt : string option
           EventSignalForges : OrderedDictionary<obj Address * obj, Guid>
           EventHandlerForges : OrderedDictionary<int * obj Address, Guid * (Event -> obj)>
-          PropertyForges : OrderedDictionary<PropertyForge, unit>
+          PropertyForges : List<PropertyForge>
           EntityForges : OrderedDictionary<string, EntityForge> }
         static member empty =
             { GroupDispatcherName = nameof GroupDispatcher
@@ -487,7 +463,7 @@ module WorldTypes =
               GroupFilePathOpt = None
               EventSignalForges = OrderedDictionary HashIdentity.Structural
               EventHandlerForges = OrderedDictionary HashIdentity.Structural
-              PropertyForges = OrderedDictionary HashIdentity.Structural
+              PropertyForges = List ()
               EntityForges = OrderedDictionary StringComparer.Ordinal }
         interface SimulantForge with
             member this.DispatcherNameOpt = Some this.GroupDispatcherName
@@ -504,7 +480,7 @@ module WorldTypes =
           mutable SimulantCachedOpt : Simulant // OPTIMIZATION: allows us to more often hit the EntityStateOpt cache. May be null.
           EventSignalForges : OrderedDictionary<obj Address * obj, Guid>
           EventHandlerForges : OrderedDictionary<int * obj Address, Guid * (Event -> obj)>
-          PropertyForges : OrderedDictionary<PropertyForge, unit>
+          PropertyForges : List<PropertyForge>
           EntityForges : OrderedDictionary<string, EntityForge> }
         static member empty =
             { EntityDispatcherName = nameof EntityDispatcher
@@ -512,7 +488,7 @@ module WorldTypes =
               SimulantCachedOpt = Unchecked.defaultof<_>
               EventSignalForges = OrderedDictionary HashIdentity.Structural
               EventHandlerForges = OrderedDictionary HashIdentity.Structural
-              PropertyForges = OrderedDictionary HashIdentity.Structural
+              PropertyForges = List ()
               EntityForges = OrderedDictionary StringComparer.Ordinal }
         interface SimulantForge with
             member this.DispatcherNameOpt = Some this.EntityDispatcherName
