@@ -1305,22 +1305,22 @@ module WorldTypes =
         member this.ClockTime =
             AmbientState.getClockTime this.AmbientState
 
-#if DEBUG
-        member internal this.Choose () =
-#else
-        member inline internal this.Choose () =
+        member
+#if !DEBUG
+            inline
 #endif
+            internal this.Choose () =
             let sequenceId = Gen.idForWorldSequence
             if sequenceId - 1u <> this.SequenceId then this.DivergenceId <- Gen.idForWorldDivergence
             this.SequenceId <- sequenceId
             Chosen <- this :> obj
             this
 
-#if DEBUG
-        member internal this.AssertChosen () =
-#else
-        member inline internal this.AssertChosen () =
+        member
+#if !DEBUG
+            inline
 #endif
+            internal this.AssertChosen () =
             if refNeq (this :> obj) Chosen then
                 Console.WriteLine "Fault"
 

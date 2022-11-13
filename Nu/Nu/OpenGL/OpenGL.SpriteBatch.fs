@@ -209,7 +209,11 @@ module SpriteBatch =
         Hl.Assert (fn ())
         BeginSpriteBatch state env
 
-    let inline private PopulateSpriteBatchVertex (perimeter : Box2) (pivot : Vector2) (rotation : single) (texCoords : Box2) (color : Color) env =
+    let
+#if !DEBUG
+        inline
+#endif
+        private PopulateSpriteBatchVertex (perimeter : Box2) (pivot : Vector2) (rotation : single) (texCoords : Box2) (color : Color) env =
         let perimeterOffset = env.SpriteIndex * 4
         env.Perimeters.[perimeterOffset] <- perimeter.Position.X
         env.Perimeters.[perimeterOffset + 1] <- perimeter.Position.Y

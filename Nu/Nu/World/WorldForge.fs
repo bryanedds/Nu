@@ -10,7 +10,11 @@ open Prime
 [<RequireQualifiedAccess>]
 module Forge =
 
-    let (*inline*) private synchronizeEventSignals (forgeOld : SimulantForge) (forge : SimulantForge) (origin : Simulant) (simulant : Simulant) world =
+    let
+#if !DEBUG
+        inline
+#endif
+        private synchronizeEventSignals (forgeOld : SimulantForge) (forge : SimulantForge) (origin : Simulant) (simulant : Simulant) world =
         if notNull forgeOld.EventSignalForgesOpt || notNull forge.EventSignalForgesOpt then
             let eventSignalForgesOld = if isNull forgeOld.EventSignalForgesOpt then OrderedDictionary HashIdentity.Structural else forgeOld.EventSignalForgesOpt
             let eventSignalForges = if isNull forge.EventSignalForgesOpt then OrderedDictionary HashIdentity.Structural else forge.EventSignalForgesOpt
@@ -57,7 +61,11 @@ module Forge =
             else world
         else world
 
-    let (*inline*) private synchronizeEventHandlers (forgeOld : SimulantForge) (forge : SimulantForge) (origin : Simulant) (simulant : Simulant) world =
+    let
+#if !DEBUG
+        inline
+#endif
+        private synchronizeEventHandlers (forgeOld : SimulantForge) (forge : SimulantForge) (origin : Simulant) (simulant : Simulant) world =
         if notNull forgeOld.EventHandlerForgesOpt || notNull forge.EventHandlerForgesOpt then
             let eventHandlerForgesOld = if isNull forgeOld.EventHandlerForgesOpt then OrderedDictionary HashIdentity.Structural else forgeOld.EventHandlerForgesOpt
             let eventHandlerForges = if isNull forge.EventHandlerForgesOpt then OrderedDictionary HashIdentity.Structural else forge.EventHandlerForgesOpt
@@ -104,7 +112,11 @@ module Forge =
             else world
         else world
 
-    let (*inline*) private synchronizeProperties (forgeOld : SimulantForge) (forge : SimulantForge) (simulant : Simulant) world =
+    let
+#if !DEBUG
+        inline
+#endif
+        private synchronizeProperties (forgeOld : SimulantForge) (forge : SimulantForge) (simulant : Simulant) world =
         if notNull forgeOld.PropertyForgesOpt || notNull forge.PropertyForgesOpt then
             let propertyForgesOld = if isNull forgeOld.PropertyForgesOpt then List () else forgeOld.PropertyForgesOpt
             let propertyForges = if isNull forge.PropertyForgesOpt then List () else forge.PropertyForgesOpt
@@ -119,7 +131,11 @@ module Forge =
             else world
         else world
 
-    let (*inline*) private tryDifferentiateChildren<'child, 'childForge when 'child : equality and 'child :> Simulant and 'childForge :> SimulantForge>
+    let
+#if !DEBUG
+        inline
+#endif
+        private tryDifferentiateChildren<'child, 'childForge when 'child : equality and 'child :> Simulant and 'childForge :> SimulantForge>
         (forgeOld : SimulantForge) (forge : SimulantForge) (simulant : Simulant) =
         if notNull (forgeOld.GetChildForgesOpt<'childForge> ()) || notNull (forge.GetChildForgesOpt<'childForge> ()) then
             let childForgesOld = if isNull (forgeOld.GetChildForgesOpt<'childForge> ()) then OrderedDictionary HashIdentity.Structural else forgeOld.GetChildForgesOpt<'childForge> ()

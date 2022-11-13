@@ -588,7 +588,11 @@ module WorldModuleEntity =
             let entityState = World.getEntityState entity world
             Matrix4x4.CreateFromTrs (entityState.PositionLocal, entityState.RotationLocal, entityState.ScaleLocal)
 
-        static member inline internal getEntityTransform entity world =
+        static member
+#if !DEBUG
+            inline
+#endif
+            internal getEntityTransform entity world =
             let entityState = World.getEntityState entity world
             let transform = &entityState.Transform
             transform.CleanRotationMatrix () // OPTIMIZATION: ensure rotation matrix is clean so that redundant cleans don't happen when transform is handed out.

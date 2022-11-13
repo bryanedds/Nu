@@ -242,7 +242,11 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
     static member getTextQuad renderer =
         renderer.RenderTextQuad
 
-    static member inline private batchSprite
+    static member
+#if !DEBUG
+        inline
+#endif
+        private batchSprite
         absolute
         position
         size
@@ -548,7 +552,11 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
             | _ -> Log.info ("TextDescriptor failed due to unloadable assets for '" + scstring font + "'.")
         OpenGL.Hl.Assert ()
 
-    static member inline private renderCallback callback eyePosition eyeSize renderer =
+    static member
+#if !DEBUG
+        inline
+#endif
+        private renderCallback callback eyePosition eyeSize renderer =
         flip OpenGL.SpriteBatch.InterruptSpriteBatchFrame renderer.RenderSpriteBatchEnv $ fun () -> callback (eyePosition, eyeSize, renderer)
         OpenGL.Hl.Assert ()
 
