@@ -13,7 +13,7 @@ module SegmentedHashSet =
     type [<ReferenceEquality; NoComparison>] SegmentedHashSet<'a when 'a : equality> =
         private
             { HashSets : 'a HashSet array
-              Comparer : 'a EqualityComparer }
+              Comparer : 'a IEqualityComparer }
 
         member this.Length =
             let mutable length = 0
@@ -28,7 +28,7 @@ module SegmentedHashSet =
             member this.GetEnumerator () = (Seq.concat this.HashSets).GetEnumerator ()
             member this.GetEnumerator () = (Seq.concat this.HashSets).GetEnumerator () :> IEnumerator
 
-    let make (comparer : 'a EqualityComparer) =
+    let make (comparer : 'a IEqualityComparer) =
         let hashSets = Array.init 32 (fun _ -> HashSet<'a> comparer)
         { HashSets = hashSets
           Comparer = comparer }
@@ -44,17 +44,17 @@ module SegmentedHashSet =
 
     let contains item sset =
         let hashCode = hash item
-        let index = hashCode % 32
+        let index = Math.Abs (hashCode % 32)
         sset.HashSets.[index].Contains item
 
     let add item sset =
         let hashCode = hash item
-        let index = hashCode % 32
+        let index = Math.Abs (hashCode % 32)
         sset.HashSets.[index].Add item
 
     let remove item sset =
         let hashCode = hash item
-        let index = hashCode % 32
+        let index = Math.Abs (hashCode % 32)
         sset.HashSets.[index].Remove item
 
     let clear sset =

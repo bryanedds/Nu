@@ -100,13 +100,10 @@ module Forge =
         if forgeOld.PropertyForges.Count > 0 || forge.PropertyForges.Count > 0 then
             let simulant = if notNull (forgeOld.SimulantCachedOpt :> obj) then forgeOld.SimulantCachedOpt else simulant
             forge.SimulantCachedOpt <- simulant
-            Seq.fold (fun world (propertyEntry : KeyValuePair<_, _>) ->
-                let propertyForge = propertyEntry.Key
-                if not (forgeOld.PropertyForges.ContainsKey propertyForge) then
-                    let simulant = if notNull (propertyForge.SimulantOpt :> obj) then propertyForge.SimulantOpt else simulant
-                    let property = { PropertyType = propertyForge.PropertyType; PropertyValue = propertyForge.PropertyValue }
-                    World.setProperty propertyForge.PropertyName property simulant world |> snd'
-                else world)
+            Seq.fold (fun world (propertyForge : PropertyForge) ->
+                let simulant = if notNull (propertyForge.SimulantOpt :> obj) then propertyForge.SimulantOpt else simulant
+                let property = { PropertyType = propertyForge.PropertyType; PropertyValue = propertyForge.PropertyValue }
+                World.setProperty propertyForge.PropertyName property simulant world |> snd')
                 world forge.PropertyForges
         else world
 
@@ -263,14 +260,14 @@ module Forge =
     let composite<'entityDispatcher when 'entityDispatcher :> EntityDispatcher> entityName initializers entities =
         let eventSignalForges = OrderedDictionary HashIdentity.Structural
         let eventHandlerForges = OrderedDictionary HashIdentity.Structural
-        let propertyForges = OrderedDictionary HashIdentity.Structural
+        let propertyForges = List ()
         let entityForges = OrderedDictionary StringComparer.Ordinal
         let mutable i = 0
         for property in initializers do
             match property with
             | EventSignalForge (addr, value) -> eventSignalForges.Add ((addr, value), makeGuid ())
             | EventHandlerForge pe -> eventHandlerForges.Add ((i, pe.Equatable), (makeGuid (), pe.Nonequatable))
-            | PropertyForge propertyForge -> propertyForges.Add (propertyForge, ())
+            | PropertyForge propertyForge -> propertyForges.Add propertyForge
             i <- inc i
         for entity in entities do
             entityForges.Add (entity.EntityName, entity)
@@ -354,14 +351,14 @@ module Forge =
     let group4<'groupDispatcher when 'groupDispatcher :> GroupDispatcher> groupName groupFilePathOpt initializers entities =
         let eventSignalForges = OrderedDictionary HashIdentity.Structural
         let eventHandlerForges = OrderedDictionary HashIdentity.Structural
-        let propertyForges = OrderedDictionary HashIdentity.Structural
+        let propertyForges = List ()
         let entityForges = OrderedDictionary StringComparer.Ordinal
         let mutable i = 0
         for initializer in initializers do
             match initializer with
             | EventSignalForge (addr, value) -> eventSignalForges.Add ((addr, value), makeGuid ())
             | EventHandlerForge pe -> eventHandlerForges.Add ((i, pe.Equatable), (makeGuid (), pe.Nonequatable))
-            | PropertyForge propertyForge -> propertyForges.Add (propertyForge, ())
+            | PropertyForge propertyForge -> propertyForges.Add propertyForge
             i <- inc i
         for entity in entities do
             entityForges.Add (entity.EntityName, entity)
@@ -380,14 +377,14 @@ module Forge =
     let private screen5<'screenDispatcher when 'screenDispatcher :> ScreenDispatcher> screenName screenBehavior groupFilePathOpt initializers groups =
         let eventSignalForges = OrderedDictionary HashIdentity.Structural
         let eventHandlerForges = OrderedDictionary HashIdentity.Structural
-        let propertyForges = OrderedDictionary HashIdentity.Structural
+        let propertyForges = List ()
         let groupForges = OrderedDictionary StringComparer.Ordinal
         let mutable i = 0
         for initializer in initializers do
             match initializer with
             | EventSignalForge (addr, value) -> eventSignalForges.Add ((addr, value), makeGuid ())
             | EventHandlerForge pe -> eventHandlerForges.Add ((i, pe.Equatable), (makeGuid (), pe.Nonequatable))
-            | PropertyForge propertyForge -> propertyForges.Add (propertyForge, ())
+            | PropertyForge propertyForge -> propertyForges.Add propertyForge
             i <- inc i
         for group in groups do
             groupForges.Add (group.GroupName, group)
@@ -405,14 +402,14 @@ module Forge =
         let initialScreenNameOpt = match Seq.tryHead screens with Some screen -> Some screen.ScreenName | None -> None
         let eventSignalForges = OrderedDictionary HashIdentity.Structural
         let eventHandlerForges = OrderedDictionary HashIdentity.Structural
-        let propertyForges = OrderedDictionary HashIdentity.Structural
+        let propertyForges = List ()
         let screenForges = OrderedDictionary StringComparer.Ordinal
         let mutable i = 0
         for initializer in initializers do
             match initializer with
             | EventSignalForge (addr, value) -> eventSignalForges.Add ((addr, value), makeGuid ())
             | EventHandlerForge pe -> eventHandlerForges.Add ((i, pe.Equatable), (makeGuid (), pe.Nonequatable))
-            | PropertyForge propertyForge -> propertyForges.Add (propertyForge, ())
+            | PropertyForge propertyForge -> propertyForges.Add propertyForge
             i <- inc i
         for screen in screens do
             screenForges.Add (screen.ScreenName, screen)

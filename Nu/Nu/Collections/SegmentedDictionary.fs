@@ -13,7 +13,7 @@ module SegmentedDictionary =
     type [<ReferenceEquality; NoComparison>] SegmentedDictionary<'k, 'v when 'k : equality> =
         private
             { Dictionaries : Dictionary<'k, 'v> array
-              Comparer : 'k EqualityComparer }
+              Comparer : 'k IEqualityComparer }
 
         member this.Length =
             let mutable length = 0
@@ -23,8 +23,13 @@ module SegmentedDictionary =
 
         member this.Item (key : 'k) : 'v =
             let hashCode = this.Comparer.GetHashCode key
-            let index = hashCode % 32
+            let index = Math.Abs (hashCode % 32)
             this.Dictionaries.[index].[key]
+
+        member this.TryGetValue (key, valueRef : _ outref) =
+            let hashCode = this.Comparer.GetHashCode key
+            let index = Math.Abs (hashCode % 32)
+            this.Dictionaries.[index].TryGetValue (key, &valueRef)
 
         member this.GetEnumerator () =
             (Seq.concat this.Dictionaries).GetEnumerator ()
@@ -33,7 +38,7 @@ module SegmentedDictionary =
             member this.GetEnumerator () = (Seq.concat this.Dictionaries).GetEnumerator ()
             member this.GetEnumerator () = (Seq.concat this.Dictionaries).GetEnumerator () :> IEnumerator
 
-    let make (comparer : 'k EqualityComparer) =
+    let make (comparer : 'k IEqualityComparer) =
         let hashSets = Array.init 32 (fun _ -> Dictionary<'k, 'v> comparer)
         { Dictionaries = hashSets
           Comparer = comparer }
@@ -49,29 +54,29 @@ module SegmentedDictionary =
 
     let containsKey key sdict =
         let hashCode = sdict.Comparer.GetHashCode key
-        let index = hashCode % 32
+        let index = Math.Abs (hashCode % 32)
         sdict.Dictionaries.[index].ContainsKey key
 
     let tryFind (key, sdict) =
         let hashCode = sdict.Comparer.GetHashCode key
-        let index = hashCode % 32
+        let index = Math.Abs (hashCode % 32)
         match sdict.Dictionaries.[index].TryGetValue key with
         | (true, value) -> Some value
         | (false, _) -> None
 
     let tryGetValue (key, sdict, valueRef : _ outref) =
         let hashCode = sdict.Comparer.GetHashCode key
-        let index = hashCode % 32
+        let index = Math.Abs (hashCode % 32)
         sdict.Dictionaries.[index].TryGetValue (key, &valueRef)
 
     let add key value sdict =
         let hashCode = sdict.Comparer.GetHashCode key
-        let index = hashCode % 32
+        let index = Math.Abs (hashCode % 32)
         sdict.Dictionaries.[index].Add (key, value)
 
     let remove key sdict =
         let hashCode = sdict.Comparer.GetHashCode key
-        let index = hashCode % 32
+        let index = Math.Abs (hashCode % 32)
         sdict.Dictionaries.[index].Remove key
 
     let clear sdict =
