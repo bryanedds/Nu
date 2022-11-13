@@ -11,127 +11,137 @@ open Prime
 module Forge =
 
     let (*inline*) private synchronizeEventSignals (forgeOld : SimulantForge) (forge : SimulantForge) (origin : Simulant) (simulant : Simulant) world =
-        let eventSignalForges = forge.EventSignalForges
-        let eventSignalForgesOld = forgeOld.EventSignalForges
-        if eventSignalForgesOld.Count > 0 || eventSignalForges.Count > 0 then
-            let eventSignalsAdded = List ()
-            for eventSignalEntry in eventSignalForges do
-                if not (eventSignalForgesOld.ContainsKey eventSignalEntry.Key) then
-                    eventSignalsAdded.Add (eventSignalEntry.Key, eventSignalEntry.Value)
-            let eventSignalsRemoved = List ()
-            for eventSignalEntry in eventSignalForgesOld do
-                if not (eventSignalForges.ContainsKey eventSignalEntry.Key) then
-                    eventSignalsRemoved.Add eventSignalEntry.Value
-            let world =
-                Seq.fold
-                    (fun world subscriptionId -> World.unsubscribe subscriptionId world)
-                    world eventSignalsRemoved
-            let world =
-                Seq.fold (fun world ((eventAddress, signalObj), subscriptionId) ->
-                    let conversionResultOpt =
-                        match Array.last eventAddress.Names with
-                        | Constants.Engine.EntityEventTruncatedName -> ValueSome (simulant.Names.Length >= 3)
-                        | Constants.Engine.GroupEventTruncatedName -> ValueSome (simulant.Names.Length = 2)
-                        | Constants.Engine.ScreenEventTruncatedName -> ValueSome (simulant.Names.Length = 1)
-                        | _ -> ValueNone
-                    let eventAddress =
-                        match conversionResultOpt with
-                        | ValueSome true -> rtoa (Array.append (Array.allButLast eventAddress.Names) simulant.SimulantAddress.Names)
-                        | ValueSome false -> failwith "Could not infer simulant address due to anonymous simulant event being passed in the wrong context."
-                        | ValueNone -> eventAddress
-                    let (unsubscribe, world) =
-                        World.subscribePlus subscriptionId (fun (_ : Event) world ->
-                            let world = WorldModule.trySignal signalObj origin world
-                            (Cascade, world))
-                            eventAddress origin world
-                    let world =
-                        World.monitor
-                            (fun _ world -> (Cascade, unsubscribe world))
-                            (Events.Unregistering --> simulant.SimulantAddress)
-                            simulant
-                            world
-                    world)
-                    world eventSignalsAdded
-            world
+        if notNull forgeOld.EventSignalForgesOpt || notNull forge.EventSignalForgesOpt then
+            let eventSignalForgesOld = if isNull forgeOld.EventSignalForgesOpt then OrderedDictionary HashIdentity.Structural else forgeOld.EventSignalForgesOpt
+            let eventSignalForges = if isNull forge.EventSignalForgesOpt then OrderedDictionary HashIdentity.Structural else forge.EventSignalForgesOpt
+            if eventSignalForgesOld.Count > 0 || eventSignalForges.Count > 0 then
+                let eventSignalsAdded = List ()
+                for eventSignalEntry in eventSignalForges do
+                    if not (eventSignalForgesOld.ContainsKey eventSignalEntry.Key) then
+                        eventSignalsAdded.Add (eventSignalEntry.Key, eventSignalEntry.Value)
+                let eventSignalsRemoved = List ()
+                for eventSignalEntry in eventSignalForgesOld do
+                    if not (eventSignalForges.ContainsKey eventSignalEntry.Key) then
+                        eventSignalsRemoved.Add eventSignalEntry.Value
+                let world =
+                    Seq.fold
+                        (fun world subscriptionId -> World.unsubscribe subscriptionId world)
+                        world eventSignalsRemoved
+                let world =
+                    Seq.fold (fun world ((eventAddress, signalObj), subscriptionId) ->
+                        let conversionResultOpt =
+                            match Array.last eventAddress.Names with
+                            | Constants.Engine.EntityEventTruncatedName -> ValueSome (simulant.Names.Length >= 3)
+                            | Constants.Engine.GroupEventTruncatedName -> ValueSome (simulant.Names.Length = 2)
+                            | Constants.Engine.ScreenEventTruncatedName -> ValueSome (simulant.Names.Length = 1)
+                            | _ -> ValueNone
+                        let eventAddress =
+                            match conversionResultOpt with
+                            | ValueSome true -> rtoa (Array.append (Array.allButLast eventAddress.Names) simulant.SimulantAddress.Names)
+                            | ValueSome false -> failwith "Could not infer simulant address due to anonymous simulant event being passed in the wrong context."
+                            | ValueNone -> eventAddress
+                        let (unsubscribe, world) =
+                            World.subscribePlus subscriptionId (fun (_ : Event) world ->
+                                let world = WorldModule.trySignal signalObj origin world
+                                (Cascade, world))
+                                eventAddress origin world
+                        let world =
+                            World.monitor
+                                (fun _ world -> (Cascade, unsubscribe world))
+                                (Events.Unregistering --> simulant.SimulantAddress)
+                                simulant
+                                world
+                        world)
+                        world eventSignalsAdded
+                world
+            else world
         else world
 
     let (*inline*) private synchronizeEventHandlers (forgeOld : SimulantForge) (forge : SimulantForge) (origin : Simulant) (simulant : Simulant) world =
-        let eventHandlerForges = forge.EventHandlerForges
-        let eventHandlerForgesOld = forgeOld.EventHandlerForges
-        if eventHandlerForgesOld.Count > 0 || eventHandlerForges.Count > 0 then
-            let eventHandlersAdded = List ()
-            for eventHandlerEntry in eventHandlerForges do
-                if not (eventHandlerForgesOld.ContainsKey eventHandlerEntry.Key) then
-                    eventHandlersAdded.Add (eventHandlerEntry.Key, eventHandlerEntry.Value)
-            let eventHandlersRemoved = List ()
-            for eventHandlerEntry in eventHandlerForgesOld do
-                if not (eventHandlerForges.ContainsKey eventHandlerEntry.Key) then
-                    eventHandlersRemoved.Add eventHandlerEntry.Value
-            let world =
-                Seq.fold
-                    (fun world (subscriptionId, _) -> World.unsubscribe subscriptionId world)
-                    world eventHandlersRemoved
-            let world =
-                Seq.fold (fun world ((_, eventAddress), (subscriptionId, handler)) ->
-                    let conversionResultOpt =
-                        match Array.last eventAddress.Names with
-                        | Constants.Engine.EntityEventTruncatedName -> ValueSome (simulant.Names.Length >= 3)
-                        | Constants.Engine.GroupEventTruncatedName -> ValueSome (simulant.Names.Length = 2)
-                        | Constants.Engine.ScreenEventTruncatedName -> ValueSome (simulant.Names.Length = 1)
-                        | _ -> ValueNone
-                    let eventAddress =
-                        match conversionResultOpt with
-                        | ValueSome true -> rtoa (Array.append (Array.allButLast eventAddress.Names) simulant.SimulantAddress.Names)
-                        | ValueSome false -> failwith "Could not infer simulant address due to anonymous simulant event being passed in the wrong context."
-                        | ValueNone -> eventAddress
-                    let (unsubscribe, world) =
-                        World.subscribePlus subscriptionId (fun event world ->
-                            let world = WorldModule.trySignal (handler event) origin world
-                            (Cascade, world))
-                            eventAddress origin world
-                    let world =
-                        World.monitor
-                            (fun _ world -> (Cascade, unsubscribe world))
-                            (Events.Unregistering --> simulant.SimulantAddress)
-                            simulant
-                            world
-                    world)
-                    world eventHandlersAdded
-            world
+        if notNull forgeOld.EventHandlerForgesOpt || notNull forge.EventHandlerForgesOpt then
+            let eventHandlerForgesOld = if isNull forgeOld.EventHandlerForgesOpt then OrderedDictionary HashIdentity.Structural else forgeOld.EventHandlerForgesOpt
+            let eventHandlerForges = if isNull forge.EventHandlerForgesOpt then OrderedDictionary HashIdentity.Structural else forge.EventHandlerForgesOpt
+            if eventHandlerForgesOld.Count > 0 || eventHandlerForges.Count > 0 then
+                let eventHandlersAdded = List ()
+                for eventHandlerEntry in eventHandlerForges do
+                    if not (eventHandlerForgesOld.ContainsKey eventHandlerEntry.Key) then
+                        eventHandlersAdded.Add (eventHandlerEntry.Key, eventHandlerEntry.Value)
+                let eventHandlersRemoved = List ()
+                for eventHandlerEntry in eventHandlerForgesOld do
+                    if not (eventHandlerForges.ContainsKey eventHandlerEntry.Key) then
+                        eventHandlersRemoved.Add eventHandlerEntry.Value
+                let world =
+                    Seq.fold
+                        (fun world (subscriptionId, _) -> World.unsubscribe subscriptionId world)
+                        world eventHandlersRemoved
+                let world =
+                    Seq.fold (fun world ((_, eventAddress), (subscriptionId, handler)) ->
+                        let conversionResultOpt =
+                            match Array.last eventAddress.Names with
+                            | Constants.Engine.EntityEventTruncatedName -> ValueSome (simulant.Names.Length >= 3)
+                            | Constants.Engine.GroupEventTruncatedName -> ValueSome (simulant.Names.Length = 2)
+                            | Constants.Engine.ScreenEventTruncatedName -> ValueSome (simulant.Names.Length = 1)
+                            | _ -> ValueNone
+                        let eventAddress =
+                            match conversionResultOpt with
+                            | ValueSome true -> rtoa (Array.append (Array.allButLast eventAddress.Names) simulant.SimulantAddress.Names)
+                            | ValueSome false -> failwith "Could not infer simulant address due to anonymous simulant event being passed in the wrong context."
+                            | ValueNone -> eventAddress
+                        let (unsubscribe, world) =
+                            World.subscribePlus subscriptionId (fun event world ->
+                                let world = WorldModule.trySignal (handler event) origin world
+                                (Cascade, world))
+                                eventAddress origin world
+                        let world =
+                            World.monitor
+                                (fun _ world -> (Cascade, unsubscribe world))
+                                (Events.Unregistering --> simulant.SimulantAddress)
+                                simulant
+                                world
+                        world)
+                        world eventHandlersAdded
+                world
+            else world
         else world
 
     let (*inline*) private synchronizeProperties (forgeOld : SimulantForge) (forge : SimulantForge) (simulant : Simulant) world =
-        if forgeOld.PropertyForges.Count > 0 || forge.PropertyForges.Count > 0 then
-            let simulant = if notNull (forgeOld.SimulantCachedOpt :> obj) then forgeOld.SimulantCachedOpt else simulant
-            forge.SimulantCachedOpt <- simulant
-            Seq.fold (fun world (propertyForge : PropertyForge) ->
-                let simulant = if notNull (propertyForge.SimulantOpt :> obj) then propertyForge.SimulantOpt else simulant
-                let property = { PropertyType = propertyForge.PropertyType; PropertyValue = propertyForge.PropertyValue }
-                World.setProperty propertyForge.PropertyName property simulant world |> snd')
-                world forge.PropertyForges
+        if notNull forgeOld.PropertyForgesOpt || notNull forge.PropertyForgesOpt then
+            let propertyForgesOld = if isNull forgeOld.PropertyForgesOpt then List () else forgeOld.PropertyForgesOpt
+            let propertyForges = if isNull forge.PropertyForgesOpt then List () else forge.PropertyForgesOpt
+            if propertyForgesOld.Count > 0 || propertyForges.Count > 0 then
+                let simulant = if notNull (forgeOld.SimulantCachedOpt :> obj) then forgeOld.SimulantCachedOpt else simulant
+                forge.SimulantCachedOpt <- simulant
+                Seq.fold (fun world (propertyForge : PropertyForge) ->
+                    let simulant = if notNull (propertyForge.SimulantOpt :> obj) then propertyForge.SimulantOpt else simulant
+                    let property = { PropertyType = propertyForge.PropertyType; PropertyValue = propertyForge.PropertyValue }
+                    World.setProperty propertyForge.PropertyName property simulant world |> snd')
+                    world propertyForges
+            else world
         else world
 
     let (*inline*) private tryDifferentiateChildren<'child, 'childForge when 'child : equality and 'child :> Simulant and 'childForge :> SimulantForge>
         (forgeOld : SimulantForge) (forge : SimulantForge) (simulant : Simulant) =
-        let childForgesOld = forgeOld.GetChildForges<'childForge> ()
-        let childForges = forge.GetChildForges<'childForge> ()
-        if childForgesOld.Count > 0 || childForges.Count > 0 then
-            let childrenPotentiallyAltered = OrderedDictionary ()
-            let childrenAdded = List ()
-            for childEntry in childForges do
-                let childSimulant = World.derive (rtoa (Array.add childEntry.Key simulant.SimulantAddress.Names)) :?> 'child
-                match childForgesOld.TryGetValue childEntry.Key with
-                | (true, _) -> childrenPotentiallyAltered.Add (childSimulant, childEntry.Value)
-                | (false, _) -> childrenAdded.Add (childSimulant, childEntry.Value)
-            let childrenRemoved = List ()
-            for childEntry in childForgesOld do
-                match childForges.TryGetValue childEntry.Key with
-                | (true, _) -> ()
-                | (false, _) ->
+        if notNull (forgeOld.GetChildForgesOpt<'childForge> ()) || notNull (forge.GetChildForgesOpt<'childForge> ()) then
+            let childForgesOld = if isNull (forgeOld.GetChildForgesOpt<'childForge> ()) then OrderedDictionary HashIdentity.Structural else forgeOld.GetChildForgesOpt<'childForge> ()
+            let childForges = if isNull (forge.GetChildForgesOpt<'childForge> ()) then OrderedDictionary HashIdentity.Structural else forge.GetChildForgesOpt<'childForge> ()
+            if childForgesOld.Count > 0 || childForges.Count > 0 then
+                let childrenPotentiallyAltered = OrderedDictionary HashIdentity.Structural
+                let childrenAdded = List ()
+                for childEntry in childForges do
                     let childSimulant = World.derive (rtoa (Array.add childEntry.Key simulant.SimulantAddress.Names)) :?> 'child
-                    childrenRemoved.Add childSimulant
-                    childrenPotentiallyAltered.Remove childSimulant |> ignore
-            Some (childrenAdded, childrenRemoved, childrenPotentiallyAltered)
+                    match childForgesOld.TryGetValue childEntry.Key with
+                    | (true, _) -> childrenPotentiallyAltered.Add (childSimulant, childEntry.Value)
+                    | (false, _) -> childrenAdded.Add (childSimulant, childEntry.Value)
+                let childrenRemoved = List<'child> ()
+                for childEntry in childForgesOld do
+                    match childForges.TryGetValue childEntry.Key with
+                    | (true, _) -> ()
+                    | (false, _) ->
+                        let childSimulant = World.derive (rtoa (Array.add childEntry.Key simulant.SimulantAddress.Names)) :?> 'child
+                        childrenRemoved.Add childSimulant
+                        childrenPotentiallyAltered.Remove childSimulant |> ignore
+                Some (childrenAdded, childrenRemoved, childrenPotentiallyAltered)
+            else None
         else None
 
     ///

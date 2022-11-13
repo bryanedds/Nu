@@ -396,10 +396,10 @@ module WorldTypes =
         abstract DispatcherNameOpt : string option
         abstract SimulantNameOpt : string option
         abstract SimulantCachedOpt : Simulant with get, set
-        abstract EventSignalForges : OrderedDictionary<obj Address * obj, Guid>
-        abstract EventHandlerForges : OrderedDictionary<int * obj Address, Guid * (Event -> obj)>
-        abstract PropertyForges : List<PropertyForge>
-        abstract GetChildForges<'v when 'v :> SimulantForge> : unit -> OrderedDictionary<string, 'v>
+        abstract EventSignalForgesOpt : OrderedDictionary<obj Address * obj, Guid>
+        abstract EventHandlerForgesOpt : OrderedDictionary<int * obj Address, Guid * (Event -> obj)>
+        abstract PropertyForgesOpt : List<PropertyForge>
+        abstract GetChildForgesOpt<'v when 'v :> SimulantForge> : unit -> OrderedDictionary<string, 'v>
 
     and [<ReferenceEquality; NoComparison>] GameForge =
         { InitialScreenNameOpt : string option
@@ -417,10 +417,10 @@ module WorldTypes =
             member this.DispatcherNameOpt = None
             member this.SimulantNameOpt = None
             member this.SimulantCachedOpt with get () = Unchecked.defaultof<_> and set _ = ()
-            member this.EventSignalForges = (if isNull this.EventSignalForgesOpt then this.EventSignalForgesOpt <- OrderedDictionary HashIdentity.Structural); this.EventSignalForgesOpt
-            member this.EventHandlerForges = (if isNull this.EventHandlerForgesOpt then this.EventHandlerForgesOpt <- OrderedDictionary HashIdentity.Structural); this.EventHandlerForgesOpt
-            member this.PropertyForges = (if isNull this.PropertyForgesOpt then this.PropertyForgesOpt <- List ()); this.PropertyForgesOpt
-            member this.GetChildForges<'v when 'v :> SimulantForge> () = this.ScreenForges :> obj :?> OrderedDictionary<string, 'v>
+            member this.EventSignalForgesOpt = this.EventSignalForgesOpt
+            member this.EventHandlerForgesOpt = this.EventHandlerForgesOpt
+            member this.PropertyForgesOpt = this.PropertyForgesOpt
+            member this.GetChildForgesOpt<'v when 'v :> SimulantForge> () = this.ScreenForges :> obj :?> OrderedDictionary<string, 'v>
 
     and [<ReferenceEquality; NoComparison>] ScreenForge =
         { ScreenDispatcherName : string
@@ -444,10 +444,10 @@ module WorldTypes =
             member this.DispatcherNameOpt = Some this.ScreenDispatcherName
             member this.SimulantNameOpt = Some this.ScreenName
             member this.SimulantCachedOpt with get () = Unchecked.defaultof<_> and set _ = ()
-            member this.EventSignalForges = (if isNull this.EventSignalForgesOpt then this.EventSignalForgesOpt <- OrderedDictionary HashIdentity.Structural); this.EventSignalForgesOpt
-            member this.EventHandlerForges = (if isNull this.EventHandlerForgesOpt then this.EventHandlerForgesOpt <- OrderedDictionary HashIdentity.Structural); this.EventHandlerForgesOpt
-            member this.PropertyForges = (if isNull this.PropertyForgesOpt then this.PropertyForgesOpt <- List ()); this.PropertyForgesOpt
-            member this.GetChildForges<'v when 'v :> SimulantForge> () = this.GroupForges :> obj :?> OrderedDictionary<string, 'v>
+            member this.EventSignalForgesOpt = this.EventSignalForgesOpt
+            member this.EventHandlerForgesOpt = this.EventHandlerForgesOpt
+            member this.PropertyForgesOpt = this.PropertyForgesOpt
+            member this.GetChildForgesOpt<'v when 'v :> SimulantForge> () = this.GroupForges :> obj :?> OrderedDictionary<string, 'v>
 
     and [<ReferenceEquality; NoComparison>] GroupForge =
         { GroupDispatcherName : string
@@ -469,10 +469,10 @@ module WorldTypes =
             member this.DispatcherNameOpt = Some this.GroupDispatcherName
             member this.SimulantNameOpt = Some this.GroupName
             member this.SimulantCachedOpt with get () = Unchecked.defaultof<_> and set _ = ()
-            member this.EventSignalForges = (if isNull this.EventSignalForgesOpt then this.EventSignalForgesOpt <- OrderedDictionary HashIdentity.Structural); this.EventSignalForgesOpt
-            member this.EventHandlerForges = (if isNull this.EventHandlerForgesOpt then this.EventHandlerForgesOpt <- OrderedDictionary HashIdentity.Structural); this.EventHandlerForgesOpt
-            member this.PropertyForges = (if isNull this.PropertyForgesOpt then this.PropertyForgesOpt <- List ()); this.PropertyForgesOpt
-            member this.GetChildForges<'v when 'v :> SimulantForge> () = (if isNull this.EntityForgesOpt then this.EntityForgesOpt <- OrderedDictionary StringComparer.Ordinal); this.EntityForgesOpt :> obj :?> OrderedDictionary<string, 'v>
+            member this.EventSignalForgesOpt = this.EventSignalForgesOpt
+            member this.EventHandlerForgesOpt = this.EventHandlerForgesOpt
+            member this.PropertyForgesOpt = this.PropertyForgesOpt
+            member this.GetChildForgesOpt<'v when 'v :> SimulantForge> () = this.EntityForgesOpt :> obj :?> OrderedDictionary<string, 'v>
 
     and [<ReferenceEquality; NoComparison>] EntityForge =
         { EntityDispatcherName : string
@@ -494,10 +494,10 @@ module WorldTypes =
             member this.DispatcherNameOpt = Some this.EntityDispatcherName
             member this.SimulantNameOpt = Some this.EntityName
             member this.SimulantCachedOpt with get () = this.SimulantCachedOpt and set value = this.SimulantCachedOpt <- value
-            member this.EventSignalForges = (if isNull this.EventSignalForgesOpt then this.EventSignalForgesOpt <- OrderedDictionary HashIdentity.Structural); this.EventSignalForgesOpt
-            member this.EventHandlerForges = (if isNull this.EventHandlerForgesOpt then this.EventHandlerForgesOpt <- OrderedDictionary HashIdentity.Structural); this.EventHandlerForgesOpt
-            member this.PropertyForges = (if isNull this.PropertyForgesOpt then this.PropertyForgesOpt <- List ()); this.PropertyForgesOpt
-            member this.GetChildForges<'v when 'v :> SimulantForge> () = (if isNull this.EntityForgesOpt then this.EntityForgesOpt <- OrderedDictionary StringComparer.Ordinal); this.EntityForgesOpt :> obj :?> OrderedDictionary<string, 'v>
+            member this.EventSignalForgesOpt = this.EventSignalForgesOpt
+            member this.EventHandlerForgesOpt = this.EventHandlerForgesOpt
+            member this.PropertyForgesOpt = this.PropertyForgesOpt
+            member this.GetChildForgesOpt<'v when 'v :> SimulantForge> () = this.EntityForgesOpt :> obj :?> OrderedDictionary<string, 'v>
 
     /// Generalized interface for simulant state.
     and SimulantState =
