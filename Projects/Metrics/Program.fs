@@ -183,16 +183,16 @@ type [<ReferenceEquality>] Intss =
         { Intss = intss.Intss |> Map.map (fun k v -> if k % 1 = 0 then Ints.inc v else v) }
 
 type ElmishGameDispatcher () =
-    inherit GameForger<Intss, int, unit> (Intss.init 100) // 10,000 elmish entities (goal: steady 60FPS, current: unsteady 30FPS)
+    inherit GameForger<Intss, int, unit> (Intss.init 70) // 4,900 elmish entities (goal: steady 60FPS, current: unsteady 60FPS)
 
     override this.Message (intss, message, _, _) =
         match message with
         | 0 -> just (Intss.inc intss)
         | _ -> just intss
 
-    override this.Forge (intss, _) =
+    override this.Forge (intss, game) =
         Forge.game
-            [Game.UpdateEvent ==> msg 0]
+            [game.UpdateEvent ==> msg 0]
             [Forge.screen Simulants.Default.Screen.Name Vanilla []
                 [for (i, ints) in intss.Intss.Pairs do
                     yield Forge.group (string i) []
