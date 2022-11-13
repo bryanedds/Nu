@@ -403,23 +403,23 @@ module WorldTypes =
 
     and [<ReferenceEquality; NoComparison>] GameForge =
         { InitialScreenNameOpt : string option
-          EventSignalForges : OrderedDictionary<obj Address * obj, Guid>
-          EventHandlerForges : OrderedDictionary<int * obj Address, Guid * (Event -> obj)>
-          PropertyForges : List<PropertyForge>
+          mutable EventSignalForgesOpt : OrderedDictionary<obj Address * obj, Guid> // OPTIMIZATION: lazily created.
+          mutable EventHandlerForgesOpt : OrderedDictionary<int * obj Address, Guid * (Event -> obj)> // OPTIMIZATION: lazily created.
+          mutable PropertyForgesOpt : List<PropertyForge> // OPTIMIZATION: lazily created.
           ScreenForges : OrderedDictionary<string, ScreenForge> }
         static member empty =
             { InitialScreenNameOpt = None
-              EventSignalForges = OrderedDictionary HashIdentity.Structural
-              EventHandlerForges = OrderedDictionary HashIdentity.Structural
-              PropertyForges = List ()
+              EventSignalForgesOpt = null
+              EventHandlerForgesOpt = null
+              PropertyForgesOpt = null
               ScreenForges = OrderedDictionary StringComparer.Ordinal }
         interface SimulantForge with
             member this.DispatcherNameOpt = None
             member this.SimulantNameOpt = None
             member this.SimulantCachedOpt with get () = Unchecked.defaultof<_> and set _ = ()
-            member this.EventSignalForges = this.EventSignalForges
-            member this.EventHandlerForges = this.EventHandlerForges
-            member this.PropertyForges = this.PropertyForges
+            member this.EventSignalForges = (if isNull this.EventSignalForgesOpt then this.EventSignalForgesOpt <- OrderedDictionary HashIdentity.Structural); this.EventSignalForgesOpt
+            member this.EventHandlerForges = (if isNull this.EventHandlerForgesOpt then this.EventHandlerForgesOpt <- OrderedDictionary HashIdentity.Structural); this.EventHandlerForgesOpt
+            member this.PropertyForges = (if isNull this.PropertyForgesOpt then this.PropertyForgesOpt <- List ()); this.PropertyForgesOpt
             member this.GetChildForges<'v when 'v :> SimulantForge> () = this.ScreenForges :> obj :?> OrderedDictionary<string, 'v>
 
     and [<ReferenceEquality; NoComparison>] ScreenForge =
@@ -427,77 +427,77 @@ module WorldTypes =
           ScreenName : string
           ScreenBehavior : ScreenBehavior
           GroupFilePathOpt : string option
-          EventSignalForges : OrderedDictionary<obj Address * obj, Guid>
-          EventHandlerForges : OrderedDictionary<int * obj Address, Guid * (Event -> obj)>
-          PropertyForges : List<PropertyForge>
+          mutable EventSignalForgesOpt : OrderedDictionary<obj Address * obj, Guid> // OPTIMIZATION: lazily created.
+          mutable EventHandlerForgesOpt : OrderedDictionary<int * obj Address, Guid * (Event -> obj)> // OPTIMIZATION: lazily created.
+          mutable PropertyForgesOpt : List<PropertyForge> // OPTIMIZATION: lazily created.
           GroupForges : OrderedDictionary<string, GroupForge> }
         static member empty =
             { ScreenDispatcherName = nameof ScreenDispatcher
               ScreenName = nameof Screen
               ScreenBehavior = Vanilla
               GroupFilePathOpt = None
-              EventSignalForges = OrderedDictionary HashIdentity.Structural
-              EventHandlerForges = OrderedDictionary HashIdentity.Structural
-              PropertyForges = List ()
+              EventSignalForgesOpt = null
+              EventHandlerForgesOpt = null
+              PropertyForgesOpt = null
               GroupForges = OrderedDictionary StringComparer.Ordinal }
         interface SimulantForge with
             member this.DispatcherNameOpt = Some this.ScreenDispatcherName
             member this.SimulantNameOpt = Some this.ScreenName
             member this.SimulantCachedOpt with get () = Unchecked.defaultof<_> and set _ = ()
-            member this.EventSignalForges = this.EventSignalForges
-            member this.EventHandlerForges = this.EventHandlerForges
-            member this.PropertyForges = this.PropertyForges
+            member this.EventSignalForges = (if isNull this.EventSignalForgesOpt then this.EventSignalForgesOpt <- OrderedDictionary HashIdentity.Structural); this.EventSignalForgesOpt
+            member this.EventHandlerForges = (if isNull this.EventHandlerForgesOpt then this.EventHandlerForgesOpt <- OrderedDictionary HashIdentity.Structural); this.EventHandlerForgesOpt
+            member this.PropertyForges = (if isNull this.PropertyForgesOpt then this.PropertyForgesOpt <- List ()); this.PropertyForgesOpt
             member this.GetChildForges<'v when 'v :> SimulantForge> () = this.GroupForges :> obj :?> OrderedDictionary<string, 'v>
 
     and [<ReferenceEquality; NoComparison>] GroupForge =
         { GroupDispatcherName : string
           GroupName : string
           GroupFilePathOpt : string option
-          EventSignalForges : OrderedDictionary<obj Address * obj, Guid>
-          EventHandlerForges : OrderedDictionary<int * obj Address, Guid * (Event -> obj)>
-          PropertyForges : List<PropertyForge>
-          EntityForges : OrderedDictionary<string, EntityForge> }
+          mutable EventSignalForgesOpt : OrderedDictionary<obj Address * obj, Guid> // OPTIMIZATION: lazily created.
+          mutable EventHandlerForgesOpt : OrderedDictionary<int * obj Address, Guid * (Event -> obj)> // OPTIMIZATION: lazily created.
+          mutable PropertyForgesOpt : List<PropertyForge> // OPTIMIZATION: lazily created.
+          mutable EntityForgesOpt : OrderedDictionary<string, EntityForge> } // OPTIMIZATION: lazily created.
         static member empty =
             { GroupDispatcherName = nameof GroupDispatcher
               GroupName = nameof Group
               GroupFilePathOpt = None
-              EventSignalForges = OrderedDictionary HashIdentity.Structural
-              EventHandlerForges = OrderedDictionary HashIdentity.Structural
-              PropertyForges = List ()
-              EntityForges = OrderedDictionary StringComparer.Ordinal }
+              EventSignalForgesOpt = null
+              EventHandlerForgesOpt = null
+              PropertyForgesOpt = null
+              EntityForgesOpt = null }
         interface SimulantForge with
             member this.DispatcherNameOpt = Some this.GroupDispatcherName
             member this.SimulantNameOpt = Some this.GroupName
             member this.SimulantCachedOpt with get () = Unchecked.defaultof<_> and set _ = ()
-            member this.EventSignalForges = this.EventSignalForges
-            member this.EventHandlerForges = this.EventHandlerForges
-            member this.PropertyForges = this.PropertyForges
-            member this.GetChildForges<'v when 'v :> SimulantForge> () = this.EntityForges :> obj :?> OrderedDictionary<string, 'v>
+            member this.EventSignalForges = (if isNull this.EventSignalForgesOpt then this.EventSignalForgesOpt <- OrderedDictionary HashIdentity.Structural); this.EventSignalForgesOpt
+            member this.EventHandlerForges = (if isNull this.EventHandlerForgesOpt then this.EventHandlerForgesOpt <- OrderedDictionary HashIdentity.Structural); this.EventHandlerForgesOpt
+            member this.PropertyForges = (if isNull this.PropertyForgesOpt then this.PropertyForgesOpt <- List ()); this.PropertyForgesOpt
+            member this.GetChildForges<'v when 'v :> SimulantForge> () = (if isNull this.EntityForgesOpt then this.EntityForgesOpt <- OrderedDictionary StringComparer.Ordinal); this.EntityForgesOpt :> obj :?> OrderedDictionary<string, 'v>
 
     and [<ReferenceEquality; NoComparison>] EntityForge =
         { EntityDispatcherName : string
           EntityName : string
           mutable SimulantCachedOpt : Simulant // OPTIMIZATION: allows us to more often hit the EntityStateOpt cache. May be null.
-          EventSignalForges : OrderedDictionary<obj Address * obj, Guid>
-          EventHandlerForges : OrderedDictionary<int * obj Address, Guid * (Event -> obj)>
-          PropertyForges : List<PropertyForge>
-          EntityForges : OrderedDictionary<string, EntityForge> }
+          mutable EventSignalForgesOpt : OrderedDictionary<obj Address * obj, Guid> // OPTIMIZATION: lazily created.
+          mutable EventHandlerForgesOpt : OrderedDictionary<int * obj Address, Guid * (Event -> obj)> // OPTIMIZATION: lazily created.
+          mutable PropertyForgesOpt : List<PropertyForge> // OPTIMIZATION: lazily created.
+          mutable EntityForgesOpt : OrderedDictionary<string, EntityForge> } // OPTIMIZATION: lazily created.
         static member empty =
             { EntityDispatcherName = nameof EntityDispatcher
               EntityName = nameof Entity
               SimulantCachedOpt = Unchecked.defaultof<_>
-              EventSignalForges = OrderedDictionary HashIdentity.Structural
-              EventHandlerForges = OrderedDictionary HashIdentity.Structural
-              PropertyForges = List ()
-              EntityForges = OrderedDictionary StringComparer.Ordinal }
+              EventSignalForgesOpt = null
+              EventHandlerForgesOpt = null
+              PropertyForgesOpt = null
+              EntityForgesOpt = null }
         interface SimulantForge with
             member this.DispatcherNameOpt = Some this.EntityDispatcherName
             member this.SimulantNameOpt = Some this.EntityName
             member this.SimulantCachedOpt with get () = this.SimulantCachedOpt and set value = this.SimulantCachedOpt <- value
-            member this.EventSignalForges = this.EventSignalForges
-            member this.EventHandlerForges = this.EventHandlerForges
-            member this.PropertyForges = this.PropertyForges
-            member this.GetChildForges<'v when 'v :> SimulantForge> () = this.EntityForges :> obj :?> OrderedDictionary<string, 'v>
+            member this.EventSignalForges = (if isNull this.EventSignalForgesOpt then this.EventSignalForgesOpt <- OrderedDictionary HashIdentity.Structural); this.EventSignalForgesOpt
+            member this.EventHandlerForges = (if isNull this.EventHandlerForgesOpt then this.EventHandlerForgesOpt <- OrderedDictionary HashIdentity.Structural); this.EventHandlerForgesOpt
+            member this.PropertyForges = (if isNull this.PropertyForgesOpt then this.PropertyForgesOpt <- List ()); this.PropertyForgesOpt
+            member this.GetChildForges<'v when 'v :> SimulantForge> () = (if isNull this.EntityForgesOpt then this.EntityForgesOpt <- OrderedDictionary StringComparer.Ordinal); this.EntityForgesOpt :> obj :?> OrderedDictionary<string, 'v>
 
     /// Generalized interface for simulant state.
     and SimulantState =

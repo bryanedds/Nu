@@ -11,14 +11,16 @@ open Prime
 module Forge =
 
     let (*inline*) private synchronizeEventSignals (forgeOld : SimulantForge) (forge : SimulantForge) (origin : Simulant) (simulant : Simulant) world =
-        if forgeOld.EventSignalForges.Count > 0 || forge.EventSignalForges.Count > 0 then
+        let eventSignalForges = forge.EventSignalForges
+        let eventSignalForgesOld = forgeOld.EventSignalForges
+        if eventSignalForgesOld.Count > 0 || eventSignalForges.Count > 0 then
             let eventSignalsAdded = List ()
-            for eventSignalEntry in forge.EventSignalForges do
-                if not (forgeOld.EventSignalForges.ContainsKey eventSignalEntry.Key) then
+            for eventSignalEntry in eventSignalForges do
+                if not (eventSignalForgesOld.ContainsKey eventSignalEntry.Key) then
                     eventSignalsAdded.Add (eventSignalEntry.Key, eventSignalEntry.Value)
             let eventSignalsRemoved = List ()
-            for eventSignalEntry in forgeOld.EventSignalForges do
-                if not (forge.EventSignalForges.ContainsKey eventSignalEntry.Key) then
+            for eventSignalEntry in eventSignalForgesOld do
+                if not (eventSignalForges.ContainsKey eventSignalEntry.Key) then
                     eventSignalsRemoved.Add eventSignalEntry.Value
             let world =
                 Seq.fold
@@ -54,14 +56,16 @@ module Forge =
         else world
 
     let (*inline*) private synchronizeEventHandlers (forgeOld : SimulantForge) (forge : SimulantForge) (origin : Simulant) (simulant : Simulant) world =
-        if forgeOld.EventHandlerForges.Count > 0 || forge.EventHandlerForges.Count > 0 then
+        let eventHandlerForges = forge.EventHandlerForges
+        let eventHandlerForgesOld = forgeOld.EventHandlerForges
+        if eventHandlerForgesOld.Count > 0 || eventHandlerForges.Count > 0 then
             let eventHandlersAdded = List ()
-            for eventHandlerEntry in forge.EventHandlerForges do
-                if not (forgeOld.EventHandlerForges.ContainsKey eventHandlerEntry.Key) then
+            for eventHandlerEntry in eventHandlerForges do
+                if not (eventHandlerForgesOld.ContainsKey eventHandlerEntry.Key) then
                     eventHandlersAdded.Add (eventHandlerEntry.Key, eventHandlerEntry.Value)
             let eventHandlersRemoved = List ()
-            for eventHandlerEntry in forgeOld.EventHandlerForges do
-                if not (forge.EventHandlerForges.ContainsKey eventHandlerEntry.Key) then
+            for eventHandlerEntry in eventHandlerForgesOld do
+                if not (eventHandlerForges.ContainsKey eventHandlerEntry.Key) then
                     eventHandlersRemoved.Add eventHandlerEntry.Value
             let world =
                 Seq.fold
@@ -141,11 +145,13 @@ module Forge =
                 let world =
                     Seq.fold (fun world entity -> World.destroyEntity entity world) world entitiesRemoved
                 let world =
-                    Seq.fold (fun world (kvp : KeyValuePair<Entity, _>) ->
-                        let (entity, entityForge) = (kvp.Key, kvp.Value)
-                        let entityForgeOld = forgeOld.EntityForges.[entity.Name]
-                        synchronizeEntity entityForgeOld entityForge origin entity world)
-                        world entitiesPotentiallyAltered
+                    if notNull forgeOld.EntityForgesOpt then
+                        Seq.fold (fun world (kvp : KeyValuePair<Entity, _>) ->
+                            let (entity, entityForge) = (kvp.Key, kvp.Value)
+                            let entityForgeOld = forgeOld.EntityForgesOpt.[entity.Name]
+                            synchronizeEntity entityForgeOld entityForge origin entity world)
+                            world entitiesPotentiallyAltered
+                    else world
                 let world =
                     Seq.fold (fun world (entity : Entity, entityForge : EntityForge) ->
                         let (entity, world) = World.createEntity5 entityForge.EntityDispatcherName (Some entity.Surnames) DefaultOverlay entity.Group world
@@ -166,11 +172,13 @@ module Forge =
                 let world =
                     Seq.fold (fun world entity -> World.destroyEntity entity world) world entitiesRemoved
                 let world =
-                    Seq.fold (fun world (kvp : KeyValuePair<Entity, _>) ->
-                        let (entity, entityForge) = (kvp.Key, kvp.Value)
-                        let entityForgeOld = forgeOld.EntityForges.[entity.Name]
-                        synchronizeEntity entityForgeOld entityForge origin entity world)
-                        world entitiesPotentiallyAltered
+                    if notNull forgeOld.EntityForgesOpt then
+                        Seq.fold (fun world (kvp : KeyValuePair<Entity, _>) ->
+                            let (entity, entityForge) = (kvp.Key, kvp.Value)
+                            let entityForgeOld = forgeOld.EntityForgesOpt.[entity.Name]
+                            synchronizeEntity entityForgeOld entityForge origin entity world)
+                            world entitiesPotentiallyAltered
+                    else world
                 let world =
                     Seq.fold (fun world (entity : Entity, entityForge : EntityForge) ->
                         let (entity, world) = World.createEntity5 entityForge.EntityDispatcherName (Some entity.Surnames) DefaultOverlay entity.Group world
@@ -258,21 +266,22 @@ module Forge =
 
     ///
     let composite<'entityDispatcher when 'entityDispatcher :> EntityDispatcher> entityName initializers entities =
-        let eventSignalForges = OrderedDictionary HashIdentity.Structural
-        let eventHandlerForges = OrderedDictionary HashIdentity.Structural
-        let propertyForges = List ()
-        let entityForges = OrderedDictionary StringComparer.Ordinal
+        let mutable eventSignalForgesOpt = null
+        let mutable eventHandlerForgesOpt = null
+        let mutable propertyForgesOpt = null
+        let mutable entityForgesOpt = null
         let mutable i = 0
         for property in initializers do
             match property with
-            | EventSignalForge (addr, value) -> eventSignalForges.Add ((addr, value), makeGuid ())
-            | EventHandlerForge pe -> eventHandlerForges.Add ((i, pe.Equatable), (makeGuid (), pe.Nonequatable))
-            | PropertyForge propertyForge -> propertyForges.Add propertyForge
+            | EventSignalForge (addr, value) -> (if isNull eventSignalForgesOpt then eventSignalForgesOpt <- OrderedDictionary HashIdentity.Structural); eventSignalForgesOpt.Add ((addr, value), makeGuid ())
+            | EventHandlerForge pe -> (if isNull eventHandlerForgesOpt then eventHandlerForgesOpt <- OrderedDictionary HashIdentity.Structural); eventHandlerForgesOpt.Add ((i, pe.Equatable), (makeGuid (), pe.Nonequatable))
+            | PropertyForge propertyForge -> (if isNull propertyForgesOpt then propertyForgesOpt <- List ()); propertyForgesOpt.Add propertyForge
             i <- inc i
         for entity in entities do
-            entityForges.Add (entity.EntityName, entity)
+            if isNull entityForgesOpt then entityForgesOpt <- OrderedDictionary StringComparer.Ordinal
+            entityForgesOpt.Add (entity.EntityName, entity)
         { EntityDispatcherName = typeof<'entityDispatcher>.Name; EntityName = entityName; SimulantCachedOpt = Unchecked.defaultof<_>
-          EventSignalForges = eventSignalForges; EventHandlerForges = eventHandlerForges; PropertyForges = propertyForges; EntityForges = entityForges }
+          EventSignalForgesOpt = eventSignalForgesOpt; EventHandlerForgesOpt = eventHandlerForgesOpt; PropertyForgesOpt = propertyForgesOpt; EntityForgesOpt = entityForgesOpt }
 
     ///
     let entity<'entityDispatcher when 'entityDispatcher :> EntityDispatcher> entityName initializers =
@@ -349,21 +358,22 @@ module Forge =
 
     ///
     let group4<'groupDispatcher when 'groupDispatcher :> GroupDispatcher> groupName groupFilePathOpt initializers entities =
-        let eventSignalForges = OrderedDictionary HashIdentity.Structural
-        let eventHandlerForges = OrderedDictionary HashIdentity.Structural
-        let propertyForges = List ()
-        let entityForges = OrderedDictionary StringComparer.Ordinal
+        let mutable eventSignalForgesOpt = null
+        let mutable eventHandlerForgesOpt = null
+        let mutable propertyForgesOpt = null
+        let mutable entityForgesOpt = null
         let mutable i = 0
         for initializer in initializers do
             match initializer with
-            | EventSignalForge (addr, value) -> eventSignalForges.Add ((addr, value), makeGuid ())
-            | EventHandlerForge pe -> eventHandlerForges.Add ((i, pe.Equatable), (makeGuid (), pe.Nonequatable))
-            | PropertyForge propertyForge -> propertyForges.Add propertyForge
+            | EventSignalForge (addr, value) -> (if isNull eventSignalForgesOpt then eventSignalForgesOpt <- OrderedDictionary HashIdentity.Structural); eventSignalForgesOpt.Add ((addr, value), makeGuid ())
+            | EventHandlerForge pe -> (if isNull eventHandlerForgesOpt then eventHandlerForgesOpt <- OrderedDictionary HashIdentity.Structural); eventHandlerForgesOpt.Add ((i, pe.Equatable), (makeGuid (), pe.Nonequatable))
+            | PropertyForge propertyForge -> (if isNull propertyForgesOpt then propertyForgesOpt <- List ()); propertyForgesOpt.Add propertyForge
             i <- inc i
         for entity in entities do
-            entityForges.Add (entity.EntityName, entity)
+            if isNull entityForgesOpt then entityForgesOpt <- OrderedDictionary StringComparer.Ordinal
+            entityForgesOpt.Add (entity.EntityName, entity)
         { GroupDispatcherName = typeof<'groupDispatcher>.Name; GroupName = groupName; GroupFilePathOpt = groupFilePathOpt
-          EventSignalForges = eventSignalForges; EventHandlerForges = eventHandlerForges; PropertyForges = propertyForges; EntityForges = entityForges }
+          EventSignalForgesOpt = eventSignalForgesOpt; EventHandlerForgesOpt = eventHandlerForgesOpt; PropertyForgesOpt = propertyForgesOpt; EntityForgesOpt = entityForgesOpt }
 
     ///
     let group<'groupDispatcher when 'groupDispatcher :> GroupDispatcher> groupName initializers entities =
@@ -375,21 +385,21 @@ module Forge =
 
     ///
     let private screen5<'screenDispatcher when 'screenDispatcher :> ScreenDispatcher> screenName screenBehavior groupFilePathOpt initializers groups =
-        let eventSignalForges = OrderedDictionary HashIdentity.Structural
-        let eventHandlerForges = OrderedDictionary HashIdentity.Structural
-        let propertyForges = List ()
+        let mutable eventSignalForgesOpt = null
+        let mutable eventHandlerForgesOpt = null
+        let mutable propertyForgesOpt = null
         let groupForges = OrderedDictionary StringComparer.Ordinal
         let mutable i = 0
         for initializer in initializers do
             match initializer with
-            | EventSignalForge (addr, value) -> eventSignalForges.Add ((addr, value), makeGuid ())
-            | EventHandlerForge pe -> eventHandlerForges.Add ((i, pe.Equatable), (makeGuid (), pe.Nonequatable))
-            | PropertyForge propertyForge -> propertyForges.Add propertyForge
+            | EventSignalForge (addr, value) -> (if isNull eventSignalForgesOpt then eventSignalForgesOpt <- OrderedDictionary HashIdentity.Structural); eventSignalForgesOpt.Add ((addr, value), makeGuid ())
+            | EventHandlerForge pe -> (if isNull eventHandlerForgesOpt then eventHandlerForgesOpt <- OrderedDictionary HashIdentity.Structural); eventHandlerForgesOpt.Add ((i, pe.Equatable), (makeGuid (), pe.Nonequatable))
+            | PropertyForge propertyForge -> (if isNull propertyForgesOpt then propertyForgesOpt <- List ()); propertyForgesOpt.Add propertyForge
             i <- inc i
         for group in groups do
             groupForges.Add (group.GroupName, group)
         { ScreenDispatcherName = typeof<'screenDispatcher>.Name; ScreenName = screenName; ScreenBehavior = screenBehavior; GroupFilePathOpt = groupFilePathOpt
-          EventSignalForges = eventSignalForges; EventHandlerForges = eventHandlerForges; PropertyForges = propertyForges; GroupForges = groupForges }
+          EventSignalForgesOpt = eventSignalForgesOpt; EventHandlerForgesOpt = eventHandlerForgesOpt; PropertyForgesOpt = propertyForgesOpt; GroupForges = groupForges }
 
     let screen<'screenDispatcher when 'screenDispatcher :> ScreenDispatcher> screenName screenBehavior initializers groups =
         screen5<'screenDispatcher> screenName screenBehavior None initializers groups
@@ -400,21 +410,21 @@ module Forge =
     ///
     let game initializers screens =
         let initialScreenNameOpt = match Seq.tryHead screens with Some screen -> Some screen.ScreenName | None -> None
-        let eventSignalForges = OrderedDictionary HashIdentity.Structural
-        let eventHandlerForges = OrderedDictionary HashIdentity.Structural
-        let propertyForges = List ()
+        let mutable eventSignalForgesOpt = null
+        let mutable eventHandlerForgesOpt = null
+        let mutable propertyForgesOpt = null
         let screenForges = OrderedDictionary StringComparer.Ordinal
         let mutable i = 0
         for initializer in initializers do
             match initializer with
-            | EventSignalForge (addr, value) -> eventSignalForges.Add ((addr, value), makeGuid ())
-            | EventHandlerForge pe -> eventHandlerForges.Add ((i, pe.Equatable), (makeGuid (), pe.Nonequatable))
-            | PropertyForge propertyForge -> propertyForges.Add propertyForge
+            | EventSignalForge (addr, value) -> (if isNull eventSignalForgesOpt then eventSignalForgesOpt <- OrderedDictionary HashIdentity.Structural); eventSignalForgesOpt.Add ((addr, value), makeGuid ())
+            | EventHandlerForge pe -> (if isNull eventHandlerForgesOpt then eventHandlerForgesOpt <- OrderedDictionary HashIdentity.Structural); eventHandlerForgesOpt.Add ((i, pe.Equatable), (makeGuid (), pe.Nonequatable))
+            | PropertyForge propertyForge -> (if isNull propertyForgesOpt then propertyForgesOpt <- List ()); propertyForgesOpt.Add propertyForge
             i <- inc i
         for screen in screens do
             screenForges.Add (screen.ScreenName, screen)
         { InitialScreenNameOpt = initialScreenNameOpt
-          EventSignalForges = eventSignalForges; EventHandlerForges = eventHandlerForges; PropertyForges = propertyForges; ScreenForges = screenForges }
+          EventSignalForgesOpt = eventSignalForgesOpt; EventHandlerForgesOpt = eventHandlerForgesOpt; PropertyForgesOpt = propertyForgesOpt; ScreenForges = screenForges }
 
 module ForgeOperators =
 
