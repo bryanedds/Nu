@@ -121,9 +121,9 @@ module Forge =
             let simulant = if notNull (forgeOld.SimulantCachedOpt :> obj) then forgeOld.SimulantCachedOpt else simulant
             forge.SimulantCachedOpt <- simulant
             Seq.fold (fun world (propertyLens : World Lens, propertyValue) ->
-                let simulant = if notNull (propertyLens.This :> obj) then propertyLens.This else simulant
-                let property = { PropertyType = propertyLens.Type; PropertyValue = propertyValue }
-                World.setProperty propertyLens.Name property simulant world |> snd')
+                if isNull (propertyLens.This :> obj)
+                then World.setProperty propertyLens.Name { PropertyType = propertyLens.Type; PropertyValue = propertyValue } simulant world |> snd'
+                else propertyLens.TrySet propertyValue world)
                 world forge.PropertyForgesOpt
         else world
 
