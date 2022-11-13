@@ -123,10 +123,10 @@ module Forge =
             if propertyForgesOld.Count > 0 || propertyForges.Count > 0 then
                 let simulant = if notNull (forgeOld.SimulantCachedOpt :> obj) then forgeOld.SimulantCachedOpt else simulant
                 forge.SimulantCachedOpt <- simulant
-                Seq.fold (fun world (propertyForge : PropertyForge) ->
-                    let simulant = if notNull (propertyForge.SimulantOpt :> obj) then propertyForge.SimulantOpt else simulant
-                    let property = { PropertyType = propertyForge.PropertyType; PropertyValue = propertyForge.PropertyValue }
-                    World.setProperty propertyForge.PropertyName property simulant world |> snd')
+                Seq.fold (fun world (propertyLens : World Lens, propertyValue) ->
+                    let simulant = if notNull (propertyLens.This :> obj) then propertyLens.This else simulant
+                    let property = { PropertyType = propertyLens.Type; PropertyValue = propertyValue }
+                    World.setProperty propertyLens.Name property simulant world |> snd')
                     world propertyForges
             else world
         else world
@@ -301,7 +301,7 @@ module Forge =
             match property with
             | EventSignalForge (addr, value) -> (if isNull eventSignalForgesOpt then eventSignalForgesOpt <- OrderedDictionary HashIdentity.Structural); eventSignalForgesOpt.Add ((addr, value), makeGuid ())
             | EventHandlerForge pe -> (if isNull eventHandlerForgesOpt then eventHandlerForgesOpt <- OrderedDictionary HashIdentity.Structural); eventHandlerForgesOpt.Add ((i, pe.Equatable), (makeGuid (), pe.Nonequatable))
-            | PropertyForge propertyForge -> (if isNull propertyForgesOpt then propertyForgesOpt <- List ()); propertyForgesOpt.Add propertyForge
+            | PropertyForge (lens, value) -> (if isNull propertyForgesOpt then propertyForgesOpt <- List ()); propertyForgesOpt.Add (lens, value)
             i <- inc i
         for entity in entities do
             if isNull entityForgesOpt then entityForgesOpt <- OrderedDictionary StringComparer.Ordinal
@@ -393,7 +393,7 @@ module Forge =
             match initializer with
             | EventSignalForge (addr, value) -> (if isNull eventSignalForgesOpt then eventSignalForgesOpt <- OrderedDictionary HashIdentity.Structural); eventSignalForgesOpt.Add ((addr, value), makeGuid ())
             | EventHandlerForge pe -> (if isNull eventHandlerForgesOpt then eventHandlerForgesOpt <- OrderedDictionary HashIdentity.Structural); eventHandlerForgesOpt.Add ((i, pe.Equatable), (makeGuid (), pe.Nonequatable))
-            | PropertyForge propertyForge -> (if isNull propertyForgesOpt then propertyForgesOpt <- List ()); propertyForgesOpt.Add propertyForge
+            | PropertyForge (lens, value) -> (if isNull propertyForgesOpt then propertyForgesOpt <- List ()); propertyForgesOpt.Add (lens, value)
             i <- inc i
         for entity in entities do
             if isNull entityForgesOpt then entityForgesOpt <- OrderedDictionary StringComparer.Ordinal
@@ -420,7 +420,7 @@ module Forge =
             match initializer with
             | EventSignalForge (addr, value) -> (if isNull eventSignalForgesOpt then eventSignalForgesOpt <- OrderedDictionary HashIdentity.Structural); eventSignalForgesOpt.Add ((addr, value), makeGuid ())
             | EventHandlerForge pe -> (if isNull eventHandlerForgesOpt then eventHandlerForgesOpt <- OrderedDictionary HashIdentity.Structural); eventHandlerForgesOpt.Add ((i, pe.Equatable), (makeGuid (), pe.Nonequatable))
-            | PropertyForge propertyForge -> (if isNull propertyForgesOpt then propertyForgesOpt <- List ()); propertyForgesOpt.Add propertyForge
+            | PropertyForge (lens, value) -> (if isNull propertyForgesOpt then propertyForgesOpt <- List ()); propertyForgesOpt.Add (lens, value)
             i <- inc i
         for group in groups do
             groupForges.Add (group.GroupName, group)
@@ -445,7 +445,7 @@ module Forge =
             match initializer with
             | EventSignalForge (addr, value) -> (if isNull eventSignalForgesOpt then eventSignalForgesOpt <- OrderedDictionary HashIdentity.Structural); eventSignalForgesOpt.Add ((addr, value), makeGuid ())
             | EventHandlerForge pe -> (if isNull eventHandlerForgesOpt then eventHandlerForgesOpt <- OrderedDictionary HashIdentity.Structural); eventHandlerForgesOpt.Add ((i, pe.Equatable), (makeGuid (), pe.Nonequatable))
-            | PropertyForge propertyForge -> (if isNull propertyForgesOpt then propertyForgesOpt <- List ()); propertyForgesOpt.Add propertyForge
+            | PropertyForge (lens, value) -> (if isNull propertyForgesOpt then propertyForgesOpt <- List ()); propertyForgesOpt.Add (lens, value)
             i <- inc i
         for screen in screens do
             screenForges.Add (screen.ScreenName, screen)
@@ -456,8 +456,7 @@ module ForgeOperators =
 
     /// Initialize a property forge.
     let inline (==) (lens : Lens<'a, World>) (value : 'a) : InitializerForge =
-        let simulantOpt = match lens.This :> obj with null -> ValueNone | _ -> ValueSome lens.This
-        PropertyForge (PropertyForge.make simulantOpt lens.Name lens.Type value)
+        PropertyForge (lens, value :> obj)
 
     /// Initialize a signal forge.
     let inline (==>) (eventAddress : 'a Address) (signal : Signal<'message, 'command>) : InitializerForge =
