@@ -27,8 +27,8 @@ module Forge =
             let world =
                 Seq.fold (fun world ((eventAddress, signalObj), subscriptionId) ->
                     let eventAddress =
-                        if simulant.Names.Length <> 0 && Array.last eventAddress.Names = "Event"
-                        then eventAddress --> simulant.SimulantAddress
+                        if simulant.Names.Length <> 0 && Array.last eventAddress.Names = Constants.Engine.EventTruncatedName
+                        then rtoa (Array.append (Array.allButLast eventAddress.Names) simulant.SimulantAddress.Names)
                         else eventAddress
                     let (unsubscribe, world) =
                         World.subscribePlus subscriptionId (fun (_ : Event) world ->
@@ -63,8 +63,8 @@ module Forge =
             let world =
                 Seq.fold (fun world ((_, eventAddress), (subscriptionId, handler)) ->
                     let eventAddress =
-                        if simulant.Names.Length <> 0 && Array.last eventAddress.Names = "Event"
-                        then eventAddress --> simulant.SimulantAddress
+                        if simulant.Names.Length <> 0 && Array.last eventAddress.Names = Constants.Engine.EventTruncatedName
+                        then rtoa (Array.append (Array.allButLast eventAddress.Names) simulant.SimulantAddress.Names)
                         else eventAddress
                     let (unsubscribe, world) =
                         World.subscribePlus subscriptionId (fun event world ->
@@ -104,7 +104,7 @@ module Forge =
             let childrenPotentiallyAltered = OrderedDictionary ()
             let childrenAdded = List ()
             for childEntry in childForges do
-                let childSimulant = World.derive (Address.makeFromArray (Array.add childEntry.Key simulant.SimulantAddress.Names)) :?> 'child
+                let childSimulant = World.derive (rtoa (Array.add childEntry.Key simulant.SimulantAddress.Names)) :?> 'child
                 match childForgesOld.TryGetValue childEntry.Key with
                 | (true, _) -> childrenPotentiallyAltered.Add (childSimulant, childEntry.Value)
                 | (false, _) -> childrenAdded.Add (childSimulant, childEntry.Value)
@@ -113,7 +113,7 @@ module Forge =
                 match childForges.TryGetValue childEntry.Key with
                 | (true, _) -> ()
                 | (false, _) ->
-                    let childSimulant = World.derive (Address.makeFromArray (Array.add childEntry.Key simulant.SimulantAddress.Names)) :?> 'child
+                    let childSimulant = World.derive (rtoa (Array.add childEntry.Key simulant.SimulantAddress.Names)) :?> 'child
                     childrenRemoved.Add childSimulant
                     childrenPotentiallyAltered.Remove childSimulant |> ignore
             Some (childrenAdded, childrenRemoved, childrenPotentiallyAltered)

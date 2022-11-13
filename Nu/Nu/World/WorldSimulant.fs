@@ -257,7 +257,7 @@ module WorldSimulantModule =
             let eventAddressNames = Address.getNames event
             let eventTargetIndex = Array.findIndex (fun name -> name = "Event") eventAddressNames + 1
             if eventTargetIndex < Array.length eventAddressNames then
-                let eventTarget = eventAddressNames |> Array.skip eventTargetIndex |> Address.makeFromArray
+                let eventTarget = eventAddressNames |> Array.skip eventTargetIndex |> rtoa
                 World.derive eventTarget
             else failwithumf ()
 

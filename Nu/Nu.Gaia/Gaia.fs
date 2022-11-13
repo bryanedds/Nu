@@ -482,7 +482,7 @@ module Gaia =
         let surnamesStrs =
             World.getEntitiesFlattened selectedGroup world |>
             Seq.filter (fun entity -> not (Gen.isNameGenerated entity.Name)) |>
-            Seq.map (fun entity -> entity.Surnames |> Address.makeFromArray |> string) |>
+            Seq.map (fun entity -> entity.Surnames |> rtoa |> string) |>
             flip Seq.append [Constants.Editor.NonePick] |>
             Seq.toArray
         entityPicker.entityListBox.Items.AddRange (Array.map box surnamesStrs)
