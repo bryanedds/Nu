@@ -48,7 +48,9 @@ module Engine =
     let (*Literal*) OctreeSize = Vector3 (single (Math.Pow (2.0, 10.0)))
     let (*Literal*) OctreeBounds = Box3 (-OctreeSize * 0.5f, OctreeSize)
     let (*Literal*) GravityDefault = Vector3 (0.0f, -9.80665f, 0.0f)
-    let [<Literal>] EventTruncatedName = "POI$ON"
+    let [<Literal>] ScreenEventTruncatedName = "$Screen$"
+    let [<Literal>] GroupEventTruncatedName = "$Group$"
+    let [<Literal>] EntityEventTruncatedName = "$Entity$"
     let (*Literal*) EventTracing = match ConfigurationManager.AppSettings.["EventTracing"] with null -> false | eventTracing -> scvalue<bool> eventTracing
     let (*Literal*) EventFilter = match ConfigurationManager.AppSettings.["EventFilter"] with null -> EventFilter.Empty | eventFilter -> scvalue<EventFilter.Filter> eventFilter
 

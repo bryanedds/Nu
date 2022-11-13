@@ -970,7 +970,7 @@ module WorldTypes =
         /// Concatenate an address with a screen's address, forcing the type of first address.
         static member (-->) (address : 'a Address, screen : Screen) =
             match box screen with
-            | null -> rtoa (Array.add Constants.Engine.EventTruncatedName address.Names) // HACK: this case is a hack to be able to insert events into the elmish event system.
+            | null -> rtoa (Array.add Constants.Engine.ScreenEventTruncatedName address.Names) // HACK: this case is a hack to be able to insert events into the elmish event system.
             | _ -> acatff address screen.ScreenAddress
 
         override this.ToString () =
@@ -1041,7 +1041,7 @@ module WorldTypes =
         /// Concatenate an address with a group's address, forcing the type of first address.
         static member (-->) (address : 'a Address, group : Group) =
             match box group with
-            | null -> rtoa (Array.add Constants.Engine.EventTruncatedName address.Names) // HACK: this case is a hack to be able to insert events into the elmish event system.
+            | null -> rtoa (Array.add Constants.Engine.GroupEventTruncatedName address.Names) // HACK: this case is a hack to be able to insert events into the elmish event system.
             | _ -> acatff address group.GroupAddress
 
         /// Helper for accessing group lenses.
@@ -1158,7 +1158,7 @@ module WorldTypes =
         /// Concatenate an address with an entity, forcing the type of first address.
         static member (-->) (address : 'a Address, entity : Entity) =
             match box entity with
-            | null -> rtoa (Array.add Constants.Engine.EventTruncatedName address.Names) // HACK: this case is a hack to be able to insert events into the elmish event system.
+            | null -> rtoa (Array.add Constants.Engine.EntityEventTruncatedName address.Names) // HACK: this case is a hack to be able to insert events into the elmish event system.
             | _ -> acatff address entity.EntityAddress
 
         override this.ToString () =
