@@ -706,18 +706,14 @@ module WorldModuleEntity =
             else struct (false, world)
 
         static member internal setEntityAbsolute value entity world =
-
-            // cache old values
             let entityState = World.getEntityState entity world
-            let oldWorld = world
-            let oldStatic = entityState.Static
-            let oldLight = entityState.Light
-            let oldPresence = entityState.Presence
-            let oldBounds = entityState.Bounds
-
-            // update entity, updating in entity tree also if changed
             let previous = entityState.Absolute
             if value <> previous then
+                let oldWorld = world
+                let oldStatic = entityState.Static
+                let oldLight = entityState.Light
+                let oldPresence = entityState.Presence
+                let oldBounds = entityState.Bounds
                 let struct (entityState, world) =
                     if entityState.Imperative then
                         entityState.Absolute <- value
@@ -732,18 +728,14 @@ module WorldModuleEntity =
             else struct (false, world)
 
         static member internal setEntityStatic value entity world =
-
-            // cache old values
             let entityState = World.getEntityState entity world
-            let oldWorld = world
-            let oldStatic = entityState.Static
-            let oldLight = entityState.Light
-            let oldPresence = entityState.Presence
-            let oldBounds = entityState.Bounds
-
-            // update entity, updating in entity tree also if changed
             let previous = entityState.Static
             if value <> previous then
+                let oldWorld = world
+                let oldStatic = entityState.Static
+                let oldLight = entityState.Light
+                let oldPresence = entityState.Presence
+                let oldBounds = entityState.Bounds
                 let struct (entityState, world) =
                     if entityState.Imperative then
                         entityState.Static <- value
@@ -758,18 +750,14 @@ module WorldModuleEntity =
             else struct (false, world)
 
         static member internal setEntityAlwaysUpdate value entity world =
-
-            // cache old values
             let entityState = World.getEntityState entity world
-            let oldWorld = world
-            let oldStatic = entityState.Static
-            let oldLight = entityState.Light
-            let oldPresence = entityState.Presence
-            let oldBounds = entityState.Bounds
-
-            // update entity, updating in entity tree also if changed
             let previous = entityState.AlwaysUpdate
             if value <> previous then
+                let oldWorld = world
+                let oldStatic = entityState.Static
+                let oldLight = entityState.Light
+                let oldPresence = entityState.Presence
+                let oldBounds = entityState.Bounds
                 let struct (entityState, world) =
                     if entityState.Imperative then
                         entityState.AlwaysUpdate <- value
@@ -784,18 +772,14 @@ module WorldModuleEntity =
             else struct (false, world)
 
         static member internal setEntityLight value entity world =
-
-            // cache old values
             let entityState = World.getEntityState entity world
-            let oldWorld = world
-            let oldStatic = entityState.Static
-            let oldLight = entityState.Light
-            let oldPresence = entityState.Presence
-            let oldBounds = entityState.Bounds
-
-            // update entity, updating in entity tree also if changed
             let previous = entityState.Light
             if value <> previous then
+                let oldWorld = world
+                let oldStatic = entityState.Static
+                let oldLight = entityState.Light
+                let oldPresence = entityState.Presence
+                let oldBounds = entityState.Bounds
                 let struct (entityState, world) =
                     if entityState.Imperative then
                         entityState.Light <- value
@@ -810,18 +794,14 @@ module WorldModuleEntity =
             else struct (false, world)
 
         static member internal setEntityPresence (value : Presence) entity world =
-
-            // cache old values
             let entityState = World.getEntityState entity world
-            let oldWorld = world
-            let oldStatic = entityState.Static
-            let oldLight = entityState.Light
-            let oldPresence = entityState.Presence
-            let oldBounds = entityState.Bounds
-
-            // update entity, updating in entity tree also if changed
             let previous = entityState.Presence
             if presenceNeq value previous && (value.OmnipresentType || not entityState.Absolute) then // a transform that is Absolute must remain Omnipresent then
+                let oldWorld = world
+                let oldStatic = entityState.Static
+                let oldLight = entityState.Light
+                let oldPresence = entityState.Presence
+                let oldBounds = entityState.Bounds
                 let struct (entityState, world) =
                     if entityState.Imperative then
                         entityState.Presence <- value
@@ -836,16 +816,12 @@ module WorldModuleEntity =
             else struct (false, world)
 
         static member internal setEntityTransformByRefWithoutEvent (value : Transform inref, entityState : EntityState, entity : Entity, world) =
-
-            // cache old values
-            let oldWorld = world
-            let oldStatic = entityState.Static
-            let oldLight = entityState.Light
-            let oldPresence = entityState.Presence
-            let oldBounds = entityState.Bounds
-
-            // update entity, updating in entity tree also if changed
             if not (Transform.equalsByRef (&value, &entityState.Transform)) then
+                let oldWorld = world
+                let oldStatic = entityState.Static
+                let oldLight = entityState.Light
+                let oldPresence = entityState.Presence
+                let oldBounds = entityState.Bounds
                 let world =
                     if entityState.Imperative then
                         entityState.Transform <- value
@@ -858,17 +834,13 @@ module WorldModuleEntity =
             else world
 
         static member internal setEntityTransformByRef (value : Transform byref, entityState : EntityState, entity : Entity, world) =
-
-            // cache old values
-            let oldWorld = world
-            let oldStatic = entityState.Static
-            let oldLight = entityState.Light
-            let oldPresence = entityState.Presence
-            let oldBounds = entityState.Bounds
-
-            // update entity, updating in entity tree also if changed
             let mutable previous = entityState.Transform
             if not (Transform.equalsByRef (&value, &previous)) then
+                let oldWorld = world
+                let oldStatic = entityState.Static
+                let oldLight = entityState.Light
+                let oldPresence = entityState.Presence
+                let oldBounds = entityState.Bounds
                 let struct (entityState, world) =
                     if entityState.Imperative then
                         entityState.Transform <- value
