@@ -117,18 +117,14 @@ module Forge =
         inline
 #endif
         private synchronizeProperties (forgeOld : SimulantForge) (forge : SimulantForge) (simulant : Simulant) world =
-        if notNull forgeOld.PropertyForgesOpt || notNull forge.PropertyForgesOpt then
-            let propertyForgesOld = if isNull forgeOld.PropertyForgesOpt then List () else forgeOld.PropertyForgesOpt
-            let propertyForges = if isNull forge.PropertyForgesOpt then List () else forge.PropertyForgesOpt
-            if propertyForgesOld.Count > 0 || propertyForges.Count > 0 then
-                let simulant = if notNull (forgeOld.SimulantCachedOpt :> obj) then forgeOld.SimulantCachedOpt else simulant
-                forge.SimulantCachedOpt <- simulant
-                Seq.fold (fun world (propertyLens : World Lens, propertyValue) ->
-                    let simulant = if notNull (propertyLens.This :> obj) then propertyLens.This else simulant
-                    let property = { PropertyType = propertyLens.Type; PropertyValue = propertyValue }
-                    World.setProperty propertyLens.Name property simulant world |> snd')
-                    world propertyForges
-            else world
+        if notNull forge.PropertyForgesOpt && forge.PropertyForgesOpt.Count > 0 then
+            let simulant = if notNull (forgeOld.SimulantCachedOpt :> obj) then forgeOld.SimulantCachedOpt else simulant
+            forge.SimulantCachedOpt <- simulant
+            Seq.fold (fun world (propertyLens : World Lens, propertyValue) ->
+                let simulant = if notNull (propertyLens.This :> obj) then propertyLens.This else simulant
+                let property = { PropertyType = propertyLens.Type; PropertyValue = propertyValue }
+                World.setProperty propertyLens.Name property simulant world |> snd')
+                world forge.PropertyForgesOpt
         else world
 
     let
