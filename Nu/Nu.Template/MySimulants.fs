@@ -57,6 +57,5 @@ module Simulants =
         module Scene =
 
             let Group = Screen / "Scene"
-            let Player = Group / "Player"
             let SphereLeft = Group / "SphereLeft"
             let SphereRight = Group / "SphereRight"

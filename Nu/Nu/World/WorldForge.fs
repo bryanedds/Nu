@@ -127,7 +127,8 @@ module Forge =
             let world = synchronizeProperties forgeOld forge entity world
             match tryDifferentiateChildren<Entity, EntityForge> forgeOld forge entity with
             | Some (entitiesAdded, entitiesRemoved, entitiesPotentiallyAltered) ->
-                let world = Seq.fold (fun world entity -> World.destroyEntity entity world) world entitiesRemoved
+                let world =
+                    Seq.fold (fun world entity -> World.destroyEntity entity world) world entitiesRemoved
                 let world =
                     Seq.fold (fun world (kvp : KeyValuePair<Entity, _>) ->
                         let (entity, entityForge) = (kvp.Key, kvp.Value)
@@ -151,7 +152,8 @@ module Forge =
             let world = synchronizeProperties forgeOld forge group world
             match tryDifferentiateChildren<Entity, EntityForge> forgeOld forge group with
             | Some (entitiesAdded, entitiesRemoved, entitiesPotentiallyAltered) ->
-                let world = Seq.fold (fun world entity -> World.destroyEntity entity world) world entitiesRemoved
+                let world =
+                    Seq.fold (fun world entity -> World.destroyEntity entity world) world entitiesRemoved
                 let world =
                     Seq.fold (fun world (kvp : KeyValuePair<Entity, _>) ->
                         let (entity, entityForge) = (kvp.Key, kvp.Value)
@@ -196,7 +198,8 @@ module Forge =
                 else world
             match tryDifferentiateChildren<Group, GroupForge> forgeOld forge screen with
             | Some (groupsAdded, groupsRemoved, groupsPotentiallyAltered) ->
-                let world = Seq.fold (fun world group -> World.destroyGroup group world) world groupsRemoved
+                let world =
+                    Seq.fold (fun world group -> World.destroyGroup group world) world groupsRemoved
                 let world =
                     Seq.fold (fun world (kvp : KeyValuePair<Group, _>) ->
                         let (group, groupForge) = (kvp.Key, kvp.Value)
@@ -205,7 +208,10 @@ module Forge =
                         world groupsPotentiallyAltered
                 let world =
                     Seq.fold (fun world (group : Group, groupForge : GroupForge) ->
-                        let (group, world) = World.createGroup4 groupForge.GroupDispatcherName (Some group.Name) group.Screen world
+                        let (group, world) =
+                            match groupForge.GroupFilePathOpt with
+                            | Some groupFilePath -> World.readGroupFromFile groupFilePath None screen world
+                            | None -> World.createGroup4 groupForge.GroupDispatcherName (Some group.Name) group.Screen world
                         synchronizeGroup GroupForge.empty groupForge origin group world)
                         world groupsAdded
                 world
@@ -221,7 +227,8 @@ module Forge =
             let world = synchronizeProperties forgeOld forge game world
             match tryDifferentiateChildren<Screen, ScreenForge> forgeOld forge game with
             | Some (screensAdded, screensRemoved, screensPotentiallyAltered) ->
-                let world = Seq.fold (fun world screen -> World.destroyScreen screen world) world screensRemoved
+                let world =
+                    Seq.fold (fun world screen -> World.destroyScreen screen world) world screensRemoved
                 let world =
                     Seq.fold (fun world (kvp : KeyValuePair<Screen, _>) ->
                         let (screen, screenForge) = (kvp.Key, kvp.Value)
@@ -330,7 +337,7 @@ module Forge =
     let staticModelHierarchy entityName initializers = entity<StaticModelHierarchyDispatcher> entityName initializers
 
     ///
-    let group<'groupDispatcher when 'groupDispatcher :> GroupDispatcher> groupName initializers entities =
+    let group4<'groupDispatcher when 'groupDispatcher :> GroupDispatcher> groupName groupFilePathOpt initializers entities =
         let eventSignalForges = OrderedDictionary HashIdentity.Structural
         let eventHandlerForges = OrderedDictionary HashIdentity.Structural
         let propertyForges = OrderedDictionary HashIdentity.Structural
@@ -344,8 +351,16 @@ module Forge =
             i <- inc i
         for entity in entities do
             entityForges.Add (entity.EntityName, entity)
-        { GroupDispatcherName = typeof<'groupDispatcher>.Name; GroupName = groupName
+        { GroupDispatcherName = typeof<'groupDispatcher>.Name; GroupName = groupName; GroupFilePathOpt = groupFilePathOpt
           EventSignalForges = eventSignalForges; EventHandlerForges = eventHandlerForges; PropertyForges = propertyForges; EntityForges = entityForges }
+
+    ///
+    let group<'groupDispatcher when 'groupDispatcher :> GroupDispatcher> groupName initializers entities =
+        group4<'groupDispatcher> groupName None initializers entities
+
+    ///
+    let groupFromFile<'groupDispatcher when 'groupDispatcher :> GroupDispatcher> groupName filePath initializers entities =
+        group4<'groupDispatcher> groupName (Some filePath) initializers entities
 
     ///
     let private screen5<'screenDispatcher when 'screenDispatcher :> ScreenDispatcher> screenName screenBehavior groupFilePathOpt initializers groups =

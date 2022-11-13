@@ -476,6 +476,7 @@ module WorldTypes =
     and [<ReferenceEquality; NoComparison>] GroupForge =
         { GroupDispatcherName : string
           GroupName : string
+          GroupFilePathOpt : string option
           EventSignalForges : OrderedDictionary<obj Address * obj, Guid>
           EventHandlerForges : OrderedDictionary<int * obj Address, Guid * (Event -> obj)>
           PropertyForges : OrderedDictionary<PropertyForge, unit>
@@ -483,6 +484,7 @@ module WorldTypes =
         static member empty =
             { GroupDispatcherName = nameof GroupDispatcher
               GroupName = nameof Group
+              GroupFilePathOpt = None
               EventSignalForges = OrderedDictionary HashIdentity.Structural
               EventHandlerForges = OrderedDictionary HashIdentity.Structural
               PropertyForges = OrderedDictionary HashIdentity.Structural
@@ -907,7 +909,7 @@ module WorldTypes =
         /// Concatenate an address with a game's address, forcing the type of first address.
         static member (-->) (address : 'a Address, game : Game) =
             match box game with
-            | null -> address // HACK: this case is a hack to be able to insert events into the elmish event handler
+            | null -> address // HACK: this case is a hack to be able to insert events into the elmish event system.
             | _ -> acatff address game.GameAddress
 
         override this.ToString () =

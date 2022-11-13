@@ -50,10 +50,10 @@ type ElmarioDispatcher () =
         | Nop -> just world
 
     // here we describe the forge of the game including elmario, the ground he walks on, and a rock.
-    override this.Forge (_, _) =
+    override this.Forge (_, game) =
         Forge.game
-            [Game.UpdateEvent ==> cmd Update
-             Game.KeyboardKeyDownEvent ==|> fun evt -> if evt.Data.KeyboardKey = KeyboardKey.Up && not evt.Data.Repeated then cmd Jump else cmd Nop]
+            [game.UpdateEvent ==> cmd Update
+             game.KeyboardKeyDownEvent ==|> fun evt -> if evt.Data.KeyboardKey = KeyboardKey.Up && not evt.Data.Repeated then cmd Jump else cmd Nop]
             [Forge.screen Simulants.Default.Screen.Name Vanilla []
                 [Forge.group Simulants.Default.Group.Name []
                     [Forge.sideViewCharacter Simulants.Elmario.Name
