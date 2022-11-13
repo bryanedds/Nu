@@ -41,7 +41,7 @@ module Forge =
                             | _ -> ValueNone
                         let eventAddress =
                             match conversionResultOpt with
-                            | ValueSome true -> rtoa (Array.append (Array.allButLast eventAddress.Names) simulant.SimulantAddress.Names)
+                            | ValueSome true -> eventAddress.Names.[dec eventAddress.Names.Length] <- "Event"; eventAddress --> simulant.SimulantAddress // HACK: fixup anonymous event.
                             | ValueSome false -> failwith "Could not infer simulant address due to anonymous simulant event being passed in the wrong context."
                             | ValueNone -> eventAddress
                         let (unsubscribe, world) =
@@ -92,7 +92,7 @@ module Forge =
                             | _ -> ValueNone
                         let eventAddress =
                             match conversionResultOpt with
-                            | ValueSome true -> rtoa (Array.append (Array.allButLast eventAddress.Names) simulant.SimulantAddress.Names)
+                            | ValueSome true -> eventAddress.Names.[dec eventAddress.Names.Length] <- "Event"; eventAddress --> simulant.SimulantAddress // HACK: fixup anonymous event.
                             | ValueSome false -> failwith "Could not infer simulant address due to anonymous simulant event being passed in the wrong context."
                             | ValueNone -> eventAddress
                         let (unsubscribe, world) =

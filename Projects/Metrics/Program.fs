@@ -183,7 +183,7 @@ type [<ReferenceEquality>] Intss =
         { Intss = intss.Intss |> Map.map (fun k v -> if k % 1 = 0 then Ints.inc v else v) }
 
 type ElmishGameDispatcher () =
-    inherit GameForger<Intss, int, unit> (Intss.init 100) // 10,000 elmish entities (goal: steady 60FPS, current: unsteady 38FPS)
+    inherit GameForger<Intss, int, unit> (Intss.init 100) // 10,000 elmish entities (goal: steady 60FPS, current: unsteady 39FPS)
 
     override this.Message (intss, message, _, _) =
         match message with
@@ -196,11 +196,11 @@ type ElmishGameDispatcher () =
             [Forge.screen Simulants.Default.Screen.Name Vanilla []
                 [for (i, ints) in intss.Intss.Pairs do
                     yield Forge.group (string i) []
-                        [for (j, int) in ints.Ints.Pairs do
+                        [|for (j, int) in ints.Ints.Pairs do
                             yield Forge.entity<ElmishEntityDispatcher> (string j)
                                 [Entity.Presence == Omnipresent
                                  Entity.Position == v3 (single i * 5.0f - 250.0f) (single j * 2.5f - 125.0f) -250.0f
-                                 Entity.Scale == v3Dup (single (int % 10)) * 0.5f]]
+                                 Entity.Scale == v3Dup (single (int % 10)) * 0.5f]|]
                  yield Forge.group "Fps" []
                     [Forge.fps "Fps" [Entity.Position == v3 200.0f -250.0f 0.0f]]]]
 
