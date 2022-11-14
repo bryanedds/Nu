@@ -34,7 +34,7 @@ module WorldModuleGame =
         static member internal getGameOrder world = (World.getGameState world).Order
         static member internal getGameDispatcher world = (World.getGameState world).Dispatcher
         static member internal getGameModelProperty world = (World.getGameState world).Model
-        static member internal getGameForge world = (World.getGameState world).Forge
+        static member internal getGameContent world = (World.getGameState world).Content
         static member internal getGameScriptFrame world = (World.getGameState world).ScriptFrame
 
         static member internal setGameModelProperty (value : DesignerProperty) world =
@@ -45,7 +45,7 @@ module WorldModuleGame =
                     let gameState = { gameState with Model = { DesignerType = value.DesignerType; DesignerValue = value.DesignerValue }}
                     struct (gameState, World.setGameState gameState world)
                 let world = World.publishGameChange (nameof gameState.Model) previous.DesignerValue value.DesignerValue world
-                let world = (World.getGameDispatcher world).TryReforge (Simulants.Game, world)
+                let world = (World.getGameDispatcher world).TrySynchronize (Simulants.Game, world)
                 struct (true, world)
             else struct (false, world)
 
@@ -64,13 +64,13 @@ module WorldModuleGame =
                     let gameState = { gameState with Model = { DesignerType = typeof<'a>; DesignerValue = valueObj }}
                     struct (gameState, World.setGameState gameState world)
                 let world = World.publishGameChange (nameof gameState.Model) previous.DesignerValue value world
-                let world = (World.getGameDispatcher world).TryReforge (Simulants.Game, world)
+                let world = (World.getGameDispatcher world).TrySynchronize (Simulants.Game, world)
                 struct (true, world)
             else struct (false, world)
 
-        static member internal setGameForge (value : GameForge) world =
+        static member internal setGameContent (value : GameContent) world =
             let gameState = World.getGameState world
-            let gameState = { gameState with Forge = value}
+            let gameState = { gameState with Content = value}
             World.setGameState gameState world
 
         static member internal setGameScriptFrame value world =

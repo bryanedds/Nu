@@ -1097,7 +1097,7 @@ module EntityDispatcherModule2 =
 
         static member internal signalEntity<'model, 'message, 'command> signal (entity : Entity) world =
             match entity.GetDispatcher world with
-            | :? EntityForger<'model, 'message, 'command> as dispatcher ->
+            | :? EntityDispatcher<'model, 'message, 'command> as dispatcher ->
                 Signal.processSignal dispatcher.Message dispatcher.Command (Entity.ModelGeneric<'model> ()) signal entity world
             | _ ->
                 Log.info "Failed to send signal to entity."
@@ -1111,11 +1111,11 @@ module EntityDispatcherModule2 =
         member this.Signal<'model, 'message, 'command> signal world =
             World.signalEntity<'model, 'message, 'command> signal this world
 
-    and [<AbstractClass>] EntityForger<'model, 'message, 'command> (is2d, centered, physical, makeInitial : World -> 'model) =
+    and [<AbstractClass>] EntityDispatcher<'model, 'message, 'command> (is2d, centered, physical, makeInitial : World -> 'model) =
         inherit EntityDispatcher (is2d, centered, physical)
 
         new (is2d, centered, physical, initial : 'model) =
-            EntityForger<'model, 'message, 'command> (is2d, centered, physical, fun _ -> initial)
+            EntityDispatcher<'model, 'message, 'command> (is2d, centered, physical, fun _ -> initial)
 
         member this.GetModel (entity : Entity) world : 'model =
             entity.GetModelGeneric<'model> world
@@ -1132,10 +1132,10 @@ module EntityDispatcherModule2 =
                 if property.DesignerType = typeof<unit>
                 then entity.SetModelGeneric<'model> (makeInitial world) world
                 else world
-            let forgeOld = World.getEntityForge entity world
-            let forge = this.Forge (this.GetModel entity world, entity)
-            let world = Forge.synchronizeEntity forgeOld forge entity entity world
-            World.setEntityForge forge entity world
+            let contentOld = World.getEntityContent entity world
+            let content = this.Content (this.GetModel entity world, entity)
+            let world = Content.synchronizeEntity contentOld content entity entity world
+            World.setEntityContent content entity world
 
         override this.ApplyPhysics (position, rotation, linearVelocity, angularVelocity, entity, world) =
             let model = this.GetModel entity world
@@ -1156,11 +1156,11 @@ module EntityDispatcherModule2 =
             | :? Signal<obj, 'command> as signal -> entity.Signal<'model, 'message, 'command> (match signal with Command command -> cmd command | _ -> failwithumf ()) world
             | _ -> Log.info "Incorrect signal type returned from event binding"; world
 
-        override this.TryReforge (entity, world) =
+        override this.TrySynchronize (entity, world) =
             let model = this.GetModel entity world
-            let forge = this.Forge (model, entity)
-            let world = Forge.synchronizeEntity (World.getEntityForge entity world) forge entity entity world
-            World.setEntityForge forge entity world
+            let content = this.Content (model, entity)
+            let world = Content.synchronizeEntity (World.getEntityContent entity world) content entity entity world
+            World.setEntityContent content entity world
 
         abstract member Physics : Vector3 * Quaternion * Vector3 * Vector3 * 'model * Entity * World -> Signal<'message, 'command> list * 'model
         default this.Physics (_, _, _, _, model, _, _) = just model
@@ -1171,27 +1171,27 @@ module EntityDispatcherModule2 =
         abstract member Command : 'model * 'command * Entity * World -> Signal<'message, 'command> list * World
         default this.Command (_, _, _, world) = just world
 
-        abstract member Forge : 'model * Entity -> EntityForge
-        default this.Forge (_, _) = EntityForge.empty
+        abstract member Content : 'model * Entity -> EntityContent
+        default this.Content (_, _) = EntityContent.empty
 
         abstract member View : 'model * Entity * World -> View
         default this.View (_, _, _) = View.empty
 
-    and [<AbstractClass>] EntityForger2d<'model, 'message, 'command> (centered, physical, makeInitial : World -> 'model) =
-        inherit EntityForger<'model, 'message, 'command> (true, centered, physical, makeInitial)
+    and [<AbstractClass>] EntityDispatcher2d<'model, 'message, 'command> (centered, physical, makeInitial : World -> 'model) =
+        inherit EntityDispatcher<'model, 'message, 'command> (true, centered, physical, makeInitial)
 
         new (centered, physical, initial) =
-            EntityForger2d<'model, 'message, 'command> (centered, physical, fun _ -> initial)
+            EntityDispatcher2d<'model, 'message, 'command> (centered, physical, fun _ -> initial)
 
         static member Properties =
             [define Entity.Centered false
              define Entity.Size Constants.Engine.EntitySize2dDefault]
 
-    and [<AbstractClass>] EntityForger3d<'model, 'message, 'command> (centered, physical, makeInitial : World -> 'model) =
-        inherit EntityForger<'model, 'message, 'command> (false, centered, physical, makeInitial)
+    and [<AbstractClass>] EntityDispatcher3d<'model, 'message, 'command> (centered, physical, makeInitial : World -> 'model) =
+        inherit EntityDispatcher<'model, 'message, 'command> (false, centered, physical, makeInitial)
 
         new (centered, physical, initial) =
-            EntityForger3d<'model, 'message, 'command> (centered, physical, fun _ -> initial)
+            EntityDispatcher3d<'model, 'message, 'command> (centered, physical, fun _ -> initial)
 
         static member Properties =
             [define Entity.Size Constants.Engine.EntitySize3dDefault]
@@ -1199,11 +1199,11 @@ module EntityDispatcherModule2 =
 [<AutoOpen>]
 module GuiDispatcherModule2 =
 
-    type [<AbstractClass>] GuiForger<'model, 'message, 'command> (makeInitial : World -> 'model) =
-        inherit EntityForger2d<'model, 'message, 'command> (false, false, makeInitial)
+    type [<AbstractClass>] GuiDispatcher<'model, 'message, 'command> (makeInitial : World -> 'model) =
+        inherit EntityDispatcher2d<'model, 'message, 'command> (false, false, makeInitial)
 
         new (initial : 'model) =
-            GuiForger<'model, 'message, 'command> (fun _ -> initial)
+            GuiDispatcher<'model, 'message, 'command> (fun _ -> initial)
 
         static member Properties =
             [define Entity.Presence Omnipresent
@@ -1219,7 +1219,7 @@ module GroupDispatcherModule =
 
         static member internal signalGroup<'model, 'message, 'command> signal (group : Group) world =
             match group.GetDispatcher world with
-            | :? GroupForger<'model, 'message, 'command> as dispatcher ->
+            | :? GroupDispatcher<'model, 'message, 'command> as dispatcher ->
                 Signal.processSignal dispatcher.Message dispatcher.Command (Group.ModelGeneric<'model> ()) signal group world
             | _ ->
                 Log.info "Failed to send signal to group."
@@ -1233,11 +1233,11 @@ module GroupDispatcherModule =
         member this.Signal<'model, 'message, 'command> signal world =
             World.signalGroup<'model, 'message, 'command> signal this world
 
-    and [<AbstractClass>] GroupForger<'model, 'message, 'command> (makeInitial : World -> 'model) =
+    and [<AbstractClass>] GroupDispatcher<'model, 'message, 'command> (makeInitial : World -> 'model) =
         inherit GroupDispatcher ()
 
         new (initial : 'model) =
-            GroupForger<'model, 'message, 'command> (fun _ -> initial)
+            GroupDispatcher<'model, 'message, 'command> (fun _ -> initial)
 
         member this.GetModel (group : Group) world : 'model =
             group.GetModelGeneric<'model> world
@@ -1254,10 +1254,10 @@ module GroupDispatcherModule =
                 if property.DesignerType = typeof<unit>
                 then group.SetModelGeneric<'model> (makeInitial world) world
                 else world
-            let forgeOld = World.getGroupForge group world
-            let forge = this.Forge (this.GetModel group world, group)
-            let world = Forge.synchronizeGroup forgeOld forge group group world
-            World.setGroupForge forge group world
+            let contentOld = World.getGroupContent group world
+            let content = this.Content (this.GetModel group world, group)
+            let world = Content.synchronizeGroup contentOld content group group world
+            World.setGroupContent content group world
 
         override this.Render (group, world) =
             let view = this.View (this.GetModel group world, group, world)
@@ -1269,11 +1269,11 @@ module GroupDispatcherModule =
             | :? Signal<obj, 'command> as signal -> group.Signal<'model, 'message, 'command> (match signal with Command command -> cmd command | _ -> failwithumf ()) world
             | _ -> Log.info "Incorrect signal type returned from event binding."; world
 
-        override this.TryReforge (group, world) =
+        override this.TrySynchronize (group, world) =
             let model = this.GetModel group world
-            let forge = this.Forge (model, group)
-            let world = Forge.synchronizeGroup (World.getGroupForge group world) forge group group world
-            World.setGroupForge forge group world
+            let content = this.Content (model, group)
+            let world = Content.synchronizeGroup (World.getGroupContent group world) content group group world
+            World.setGroupContent content group world
 
         abstract member Message : 'model * 'message * Group * World -> Signal<'message, 'command> list * 'model
         default this.Message (model, _, _, _) = just model
@@ -1281,8 +1281,8 @@ module GroupDispatcherModule =
         abstract member Command : 'model * 'command * Group * World -> Signal<'message, 'command> list * World
         default this.Command (_, _, _, world) = just world
 
-        abstract member Forge : 'model * Group -> GroupForge
-        default this.Forge (_, _) = GroupForge.empty
+        abstract member Content : 'model * Group -> GroupContent
+        default this.Content (_, _) = GroupContent.empty
 
         abstract member View : 'model * Group * World -> View
         default this.View (_, _, _) = View.empty
@@ -1294,7 +1294,7 @@ module ScreenDispatcherModule =
 
         static member internal signalScreen<'model, 'message, 'command> signal (screen : Screen) world =
             match screen.GetDispatcher world with
-            | :? ScreenForger<'model, 'message, 'command> as dispatcher ->
+            | :? ScreenDispatcher<'model, 'message, 'command> as dispatcher ->
                 Signal.processSignal dispatcher.Message dispatcher.Command (Screen.ModelGeneric<'model> ()) signal screen world
             | _ ->
                 Log.info "Failed to send signal to screen."
@@ -1308,11 +1308,11 @@ module ScreenDispatcherModule =
         member this.Signal<'model, 'message, 'command> signal world =
             World.signalScreen<'model, 'message, 'command> signal this world
 
-    and [<AbstractClass>] ScreenForger<'model, 'message, 'command> (makeInitial : World -> 'model) =
+    and [<AbstractClass>] ScreenDispatcher<'model, 'message, 'command> (makeInitial : World -> 'model) =
         inherit ScreenDispatcher ()
 
         new (initial : 'model) =
-            ScreenForger<'model, 'message, 'command> (fun _ -> initial)
+            ScreenDispatcher<'model, 'message, 'command> (fun _ -> initial)
 
         member this.GetModel (screen : Screen) world : 'model =
             screen.GetModelGeneric<'model> world
@@ -1329,10 +1329,10 @@ module ScreenDispatcherModule =
                 if property.DesignerType = typeof<unit>
                 then screen.SetModelGeneric<'model> (makeInitial world) world
                 else world
-            let forgeOld = World.getScreenForge screen world
-            let forge = this.Forge (this.GetModel screen world, screen)
-            let world = Forge.synchronizeScreen forgeOld forge screen screen world
-            World.setScreenForge forge screen world
+            let contentOld = World.getScreenContent screen world
+            let content = this.Content (this.GetModel screen world, screen)
+            let world = Content.synchronizeScreen contentOld content screen screen world
+            World.setScreenContent content screen world
 
         override this.Render (screen, world) =
             let view = this.View (this.GetModel screen world, screen, world)
@@ -1344,11 +1344,11 @@ module ScreenDispatcherModule =
             | :? Signal<obj, 'command> as signal -> screen.Signal<'model, 'message, 'command> (match signal with Command command -> cmd command | _ -> failwithumf ()) world
             | _ -> Log.info "Incorrect signal type returned from event binding."; world
 
-        override this.TryReforge (screen, world) =
+        override this.TrySynchronize (screen, world) =
             let model = this.GetModel screen world
-            let forge = this.Forge (model, screen)
-            let world = Forge.synchronizeScreen (World.getScreenForge screen world) forge screen screen world
-            World.setScreenForge forge screen world
+            let content = this.Content (model, screen)
+            let world = Content.synchronizeScreen (World.getScreenContent screen world) content screen screen world
+            World.setScreenContent content screen world
 
         abstract member Message : 'model * 'message * Screen * World -> Signal<'message, 'command> list * 'model
         default this.Message (model, _, _, _) = just model
@@ -1356,8 +1356,8 @@ module ScreenDispatcherModule =
         abstract member Command : 'model * 'command * Screen * World -> Signal<'message, 'command> list * World
         default this.Command (_, _, _, world) = just world
 
-        abstract member Forge : 'model * Screen -> ScreenForge
-        default this.Forge (_, _) = ScreenForge.empty
+        abstract member Content : 'model * Screen -> ScreenContent
+        default this.Content (_, _) = ScreenContent.empty
 
         abstract member View : 'model * Screen * World -> View
         default this.View (_, _, _) = View.empty
@@ -1369,7 +1369,7 @@ module GameDispatcherModule =
 
         static member internal signalGame<'model, 'message, 'command> signal (game : Game) world =
             match game.GetDispatcher world with
-            | :? GameForger<'model, 'message, 'command> as dispatcher ->
+            | :? GameDispatcher<'model, 'message, 'command> as dispatcher ->
                 Signal.processSignal dispatcher.Message dispatcher.Command (Game.ModelGeneric<'model> ()) signal game world
             | _ -> Log.info "Failed to send signal to game."; world
 
@@ -1381,11 +1381,11 @@ module GameDispatcherModule =
         member this.Signal<'model, 'message, 'command> signal world =
             World.signalGame<'model, 'message, 'command> signal this world
 
-    and [<AbstractClass>] GameForger<'model, 'message, 'command> (makeInitial : World -> 'model) =
+    and [<AbstractClass>] GameDispatcher<'model, 'message, 'command> (makeInitial : World -> 'model) =
         inherit GameDispatcher ()
 
         new (initial : 'model) =
-            GameForger<'model, 'message, 'command> (fun _ -> initial)
+            GameDispatcher<'model, 'message, 'command> (fun _ -> initial)
 
         member this.GetModel (game : Game) world : 'model =
             game.GetModelGeneric<'model> world
@@ -1402,10 +1402,10 @@ module GameDispatcherModule =
                 if property.DesignerType = typeof<unit>
                 then game.SetModelGeneric<'model> (makeInitial world) world
                 else world
-            let forgeOld = World.getGameForge world
-            let forge = this.Forge (this.GetModel game world, game)
-            let (screenInitialOpt, world) = Forge.synchronizeGame World.setScreenSplash forgeOld forge game world
-            let world = World.setGameForge forge world
+            let contentOld = World.getGameContent world
+            let content = this.Content (this.GetModel game world, game)
+            let (screenInitialOpt, world) = Content.synchronizeGame World.setScreenSplash contentOld content game world
+            let world = World.setGameContent content world
             match screenInitialOpt with
             | Some screen -> game.SetDesiredScreen (Desire screen) world
             | None -> game.SetDesiredScreen DesireNone world
@@ -1420,11 +1420,11 @@ module GameDispatcherModule =
             | :? Signal<obj, 'command> as signal -> game.Signal<'model, 'message, 'command> (match signal with Command command -> cmd command | _ -> failwithumf ()) world
             | _ -> Log.info "Incorrect signal type returned from event binding."; world
 
-        override this.TryReforge (game, world) =
+        override this.TrySynchronize (game, world) =
             let model = this.GetModel game world
-            let forge = this.Forge (model, game)
-            let (_, world) = Forge.synchronizeGame World.setScreenSplash (World.getGameForge world) forge game world
-            World.setGameForge forge world
+            let content = this.Content (model, game)
+            let (_, world) = Content.synchronizeGame World.setScreenSplash (World.getGameContent world) content game world
+            World.setGameContent content world
 
         abstract member Message : 'model * 'message * Game * World -> Signal<'message, 'command> list * 'model
         default this.Message (model, _, _, _) = just model
@@ -1432,8 +1432,8 @@ module GameDispatcherModule =
         abstract member Command : 'model * 'command * Game * World -> Signal<'message, 'command> list * World
         default this.Command (_, _, _, world) = just world
 
-        abstract member Forge : 'model * Game -> GameForge
-        default this.Forge (_, _) = GameForge.empty
+        abstract member Content : 'model * Game -> GameContent
+        default this.Content (_, _) = GameContent.empty
 
         abstract member View : 'model * Game * World -> View
         default this.View (_, _, _) = View.empty
@@ -1477,7 +1477,7 @@ module WorldModule2' =
                 | :? EntityDispatcher as entityDispatcher ->
                     if getTypeName entityState.Dispatcher = getTypeName entityDispatcher then
                         let world = World.setEntityState { entityState with Dispatcher = entityDispatcher } entity world
-                        entityDispatcher.TryReforge (entity, world)
+                        entityDispatcher.TrySynchronize (entity, world)
                     else world
                 | _ -> world
             | :? Group as group ->
@@ -1486,7 +1486,7 @@ module WorldModule2' =
                 | :? GroupDispatcher as groupDispatcher ->
                     if getTypeName groupState.Dispatcher = getTypeName groupDispatcher then
                         let world = World.setGroupState { groupState with Dispatcher = groupDispatcher } group world
-                        groupDispatcher.TryReforge (group, world)
+                        groupDispatcher.TrySynchronize (group, world)
                     else world
                 | _ -> world
             | :? Screen as screen ->
@@ -1495,7 +1495,7 @@ module WorldModule2' =
                 | :? ScreenDispatcher as screenDispatcher ->
                     if getTypeName screenState.Dispatcher = getTypeName screenDispatcher then
                         let world = World.setScreenState { screenState with Dispatcher = screenDispatcher } screen world
-                        screenDispatcher.TryReforge (screen, world)
+                        screenDispatcher.TrySynchronize (screen, world)
                     else world
                 | _ -> world
             | :? Game as game ->
@@ -1504,7 +1504,7 @@ module WorldModule2' =
                 | :? GameDispatcher as gameDispatcher ->
                     if getTypeName gameState.Dispatcher = getTypeName gameDispatcher then
                         let world = World.setGameState { gameState with Dispatcher = gameDispatcher } world
-                        gameDispatcher.TryReforge (game, world)
+                        gameDispatcher.TrySynchronize (game, world)
                     else world
                 | _ -> world
             | _ -> failwithumf ()

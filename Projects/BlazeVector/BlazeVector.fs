@@ -36,7 +36,7 @@ module BlazeVector =
     // this is the game dispatcher that is customized for our game. In here, we create screens as
     // content and bind them up with events and properties.
     type BlazeVectorDispatcher () =
-        inherit GameForger<Model, Message, Command> (Splash)
+        inherit GameDispatcher<Model, Message, Command> (Splash)
 
         // here we handle the above messages
         override this.Message (model, message, _, _) =
@@ -53,8 +53,8 @@ module BlazeVector =
             | Exit -> just (World.exit world)
 
         // here we describe the content of the game, including all of its screens.
-        override this.Forge (model, _) =
-            Forge.game
+        override this.Content (model, _) =
+            Content.game
                 [Game.DesiredScreen <==
                     match model with
                     | Splash -> Desire Simulants.Splash.Screen
@@ -68,7 +68,7 @@ module BlazeVector =
                  Simulants.Title.Gui.Exit.ClickEvent ==> cmd Exit
                  Simulants.Credits.Gui.Back.ClickEvent ==> msg ShowTitle
                  Simulants.Gameplay.Screen.ChangeEvent Screen.Gameplay.Name ==|> fun event -> msg (GameplayChanged (event.Data.Value :?> Gameplay))]
-                [Forge.screen Simulants.Splash.Screen.Name (WorldTypes.Splash (Constants.Dissolve.Default, Constants.Splash.Default, None, Simulants.Title.Screen)) [] []
-                 Forge.screenWithGroupFromFile Simulants.Title.Screen.Name (Dissolve (Constants.Dissolve.Default, Some Assets.Gui.MachinerySong)) Assets.Gui.TitleGroupFilePath [] []
-                 Forge.screenWithGroupFromFile Simulants.Credits.Screen.Name (Dissolve (Constants.Dissolve.Default, Some Assets.Gui.MachinerySong)) Assets.Gui.CreditsGroupFilePath [] []
-                 Forge.screen<GameplayDispatcher> Simulants.Gameplay.Screen.Name (Dissolve (Constants.Dissolve.Default, Some Assets.Gameplay.DeadBlazeSong)) [] []]
+                [Content.screen Simulants.Splash.Screen.Name (WorldTypes.Splash (Constants.Dissolve.Default, Constants.Splash.Default, None, Simulants.Title.Screen)) [] []
+                 Content.screenWithGroupFromFile Simulants.Title.Screen.Name (Dissolve (Constants.Dissolve.Default, Some Assets.Gui.MachinerySong)) Assets.Gui.TitleGroupFilePath [] []
+                 Content.screenWithGroupFromFile Simulants.Credits.Screen.Name (Dissolve (Constants.Dissolve.Default, Some Assets.Gui.MachinerySong)) Assets.Gui.CreditsGroupFilePath [] []
+                 Content.screen<GameplayDispatcher> Simulants.Gameplay.Screen.Name (Dissolve (Constants.Dissolve.Default, Some Assets.Gameplay.DeadBlazeSong)) [] []]

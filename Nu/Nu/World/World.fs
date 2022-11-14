@@ -658,6 +658,6 @@ module WorldModule3 =
                     world (World.getSimulants world)
             let world =
                 UMap.fold
-                    (fun world simulant _ -> World.tryReforge simulant world)
+                    (fun world simulant _ -> World.trySynchronize simulant world)
                     world (World.getSimulants world)
             world

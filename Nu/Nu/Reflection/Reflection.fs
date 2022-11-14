@@ -21,7 +21,7 @@ module Reflection =
             StringComparer.Ordinal
             [// simulant properties
              ("Dispatcher", true)
-             ("Forge", true)
+             ("Content", true)
              ("Order", true)
              ("Id", true)
              ("IdRef", true)
