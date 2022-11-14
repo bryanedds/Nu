@@ -4,8 +4,6 @@ open System.Collections.Generic
 open System.Numerics
 open Prime
 open Nu
-open Nu.Declarative
-open Nu.ForgeOperators
 open Nu.Ecs
 
 type [<NoEquality; NoComparison; Struct>] StaticSpriteComponent =
@@ -155,7 +153,7 @@ type MyGameDispatcher () =
         world
 #else
 type ElmishEntityDispatcher () =
-    inherit EntityDispatcher3d<StaticModel AssetTag, unit, unit> (true, false, Assets.Default.StaticModel)
+    inherit EntityForger3d<StaticModel AssetTag, unit, unit> (true, false, Assets.Default.StaticModel)
 
     override this.View (staticModel, entity, world) =
         let mutable transform = entity.GetTransform world
@@ -190,9 +188,9 @@ type ElmishGameDispatcher () =
         | 0 -> just (Intss.inc intss)
         | _ -> just intss
 
-    override this.Forge (intss, game) =
+    override this.Forge (intss, _) =
         Forge.game
-            [game.UpdateEvent ==> msg 0]
+            [Game.UpdateEvent ==> msg 0]
             [Forge.screen Simulants.Default.Screen.Name Vanilla []
                 [for (i, ints) in intss.Intss.Pairs do
                     yield Forge.group (string i) []

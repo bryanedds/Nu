@@ -101,7 +101,8 @@ module Forge =
             let simulant = if notNull (forgeOld.SimulantCachedOpt :> obj) then forgeOld.SimulantCachedOpt else simulant
             forge.SimulantCachedOpt <- simulant
             Seq.fold (fun world (simulantOpt, propertyLens : World Lens, propertyValue) ->
-                propertyLens.TrySet propertyValue (match simulantOpt with ValueSome simulant -> simulant | ValueNone -> simulant) world)
+                let simulant = match simulantOpt with ValueSome simulant -> simulant | ValueNone -> simulant
+                propertyLens.TrySet propertyValue simulant world)
                 world forge.PropertyForgesOpt
         else world
 
