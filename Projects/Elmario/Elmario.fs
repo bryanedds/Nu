@@ -1,8 +1,6 @@
 ﻿namespace Elmario
 open Prime
 open Nu
-open Nu.Declarative
-open Nu.ForgeOperators
 
 [<RequireQualifiedAccess>]
 module Simulants =
