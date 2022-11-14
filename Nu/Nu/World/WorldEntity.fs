@@ -149,7 +149,6 @@ module WorldEntityModule =
         member this.GetId world = World.getEntityId this world
         static member Id = lensReadOnly (nameof Entity.Id) (fun (this : Entity) -> this.GetId)
 
-        static member Event = Unchecked.defaultof<Entity>
         member this.RegisterEvent = Events.Register --> this
         member this.UnregisteringEvent = Events.Unregistering --> this
         member this.ChangeEvent propertyName = Events.Change propertyName --> this
@@ -157,6 +156,7 @@ module WorldEntityModule =
 #if !DISABLE_ENTITY_POST_UPDATE
         member this.PostUpdateEvent = Events.PostUpdate --> this
 #endif
+        member this.RenderEvent = Events.Render --> this // TODO: P1: figure out if entities actually raise render events...
 
         /// The state of an entity.
         /// The only place this accessor should be used is in performance-sensitive code.
@@ -736,3 +736,15 @@ module WorldEntityModule =
                         ([], world)
                         entityDescriptors
             (List.rev entitiesRev, world)
+
+    [<RequireQualifiedAccess>]
+    module Entity =
+
+        let RegisterEvent = Address.anonymize Events.Register
+        let UnregisteringEvent = Address.anonymize Events.Unregistering
+        let ChangeEvent propertyName = Address.anonymize (Events.Change propertyName)
+        let UpdateEvent = Address.anonymize Events.Update
+#if !DISABLE_ENTITY_POST_UPDATE
+        let PostUpdateEvent = Address.anonymize Events.PostUpdate)
+#endif
+        let RenderEvent = Address.anonymize Events.Render // TODO: P1: figure out if entities actually raise render events...

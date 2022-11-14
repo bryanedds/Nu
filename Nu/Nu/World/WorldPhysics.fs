@@ -99,8 +99,8 @@ module WorldPhysics =
         static member createBody (entity : Entity) entityId (bodyProperties : BodyProperties) world =
             if entity.GetIs2d world then
                 let physicsId = { SourceId = entityId; CorrelationId = bodyProperties.BodyId }
-                let eventTrace = EventTrace.debug "World" "addBody" "" EventTrace.empty
-                let world = World.publish physicsId Simulants.Game.BodyAddingEvent eventTrace Simulants.Game world
+                let eventTrace = EventTrace.debug "World" "createBody" "" EventTrace.empty
+                let world = World.publish physicsId Events.BodyAdding eventTrace Simulants.Game world
                 let createBodyMessage = CreateBodyMessage { SourceSimulant = entity; SourceId = entityId; BodyProperties = bodyProperties }
                 World.enqueuePhysicsMessage2d createBodyMessage world
             else
@@ -110,11 +110,11 @@ module WorldPhysics =
         [<FunctionBinding>]
         static member createBodies (entity : Entity) entityId bodiesProperties world =
             if entity.GetIs2d world then
-                let eventTrace = EventTrace.debug "World" "addBody" "" EventTrace.empty
+                let eventTrace = EventTrace.debug "World" "createBodies" "" EventTrace.empty
                 let world =
                     List.fold (fun world (bodyProperties : BodyProperties) ->
                         let physicsId = { SourceId = entityId; CorrelationId = bodyProperties.BodyId }
-                        World.publish physicsId Simulants.Game.BodyAddingEvent eventTrace Simulants.Game world)
+                        World.publish physicsId Events.BodyAdding eventTrace Simulants.Game world)
                         world bodiesProperties
                 let createBodiesMessage = CreateBodiesMessage { SourceSimulant = entity; SourceId = entityId; BodiesProperties = bodiesProperties }
                 World.enqueuePhysicsMessage2d createBodiesMessage world
@@ -125,7 +125,7 @@ module WorldPhysics =
         [<FunctionBinding>]
         static member destroyBody physicsId world =
             let eventTrace = EventTrace.debug "World" "destroyBody" "" EventTrace.empty
-            let world = World.publish physicsId Simulants.Game.BodyRemovingEvent eventTrace Simulants.Game world
+            let world = World.publish physicsId Events.BodyRemoving eventTrace Simulants.Game world
             let destroyBodyMessage = DestroyBodyMessage { PhysicsId = physicsId }
             World.enqueuePhysicsMessage2d destroyBodyMessage world
 
@@ -136,7 +136,7 @@ module WorldPhysics =
             let eventTrace = EventTrace.debug "World" "destroyBodies" "" EventTrace.empty
             let world =
                 List.fold (fun world physicsId ->
-                    World.publish physicsId Simulants.Game.BodyRemovingEvent eventTrace Simulants.Game world)
+                    World.publish physicsId Events.BodyRemoving eventTrace Simulants.Game world)
                     world physicsIds
             let destroyBodiesMessage = DestroyBodiesMessage { PhysicsIds = physicsIds }
             World.enqueuePhysicsMessage2d destroyBodiesMessage world

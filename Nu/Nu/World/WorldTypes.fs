@@ -373,7 +373,7 @@ module WorldTypes =
 
     // TODO: P1: expose in Nu namespace along with related types.
     and [<NoEquality; NoComparison>] InitializerForge =
-        | PropertyForge of World Lens * obj
+        | PropertyForge of Simulant voption * World Lens * obj
         | EventSignalForge of obj Address * obj
         | EventHandlerForge of PartialEquatable<obj Address, Event -> obj>
 
@@ -383,7 +383,7 @@ module WorldTypes =
         abstract SimulantCachedOpt : Simulant with get, set
         abstract EventSignalForgesOpt : OrderedDictionary<obj Address * obj, Guid>
         abstract EventHandlerForgesOpt : OrderedDictionary<int * obj Address, Guid * (Event -> obj)>
-        abstract PropertyForgesOpt : List<World Lens * obj>
+        abstract PropertyForgesOpt : List<Simulant voption * World Lens * obj>
         abstract GetChildForgesOpt<'v when 'v :> SimulantForge> : unit -> OrderedDictionary<string, 'v>
 
     and [<ReferenceEquality; NoComparison>] GameForge =
@@ -391,7 +391,7 @@ module WorldTypes =
           mutable SimulantCachedOpt : Simulant
           mutable EventSignalForgesOpt : OrderedDictionary<obj Address * obj, Guid> // OPTIMIZATION: lazily created.
           mutable EventHandlerForgesOpt : OrderedDictionary<int * obj Address, Guid * (Event -> obj)> // OPTIMIZATION: lazily created.
-          mutable PropertyForgesOpt : List<World Lens * obj> // OPTIMIZATION: lazily created.
+          mutable PropertyForgesOpt : List<Simulant voption * World Lens * obj> // OPTIMIZATION: lazily created.
           ScreenForges : OrderedDictionary<string, ScreenForge> }
         static member empty =
             { InitialScreenNameOpt = None
@@ -417,7 +417,7 @@ module WorldTypes =
           mutable SimulantCachedOpt : Simulant
           mutable EventSignalForgesOpt : OrderedDictionary<obj Address * obj, Guid> // OPTIMIZATION: lazily created.
           mutable EventHandlerForgesOpt : OrderedDictionary<int * obj Address, Guid * (Event -> obj)> // OPTIMIZATION: lazily created.
-          mutable PropertyForgesOpt : List<World Lens * obj> // OPTIMIZATION: lazily created.
+          mutable PropertyForgesOpt : List<Simulant voption * World Lens * obj> // OPTIMIZATION: lazily created.
           GroupForges : OrderedDictionary<string, GroupForge> }
         static member empty =
             { ScreenDispatcherName = nameof ScreenDispatcher
@@ -445,7 +445,7 @@ module WorldTypes =
           mutable SimulantCachedOpt : Simulant
           mutable EventSignalForgesOpt : OrderedDictionary<obj Address * obj, Guid> // OPTIMIZATION: lazily created.
           mutable EventHandlerForgesOpt : OrderedDictionary<int * obj Address, Guid * (Event -> obj)> // OPTIMIZATION: lazily created.
-          mutable PropertyForgesOpt : List<World Lens * obj> // OPTIMIZATION: lazily created.
+          mutable PropertyForgesOpt : List<Simulant voption * World Lens * obj> // OPTIMIZATION: lazily created.
           mutable EntityForgesOpt : OrderedDictionary<string, EntityForge> } // OPTIMIZATION: lazily created.
         static member empty =
             { GroupDispatcherName = nameof GroupDispatcher
@@ -471,7 +471,7 @@ module WorldTypes =
           mutable SimulantCachedOpt : Simulant // OPTIMIZATION: allows us to more often hit the EntityStateOpt cache. May be null.
           mutable EventSignalForgesOpt : OrderedDictionary<obj Address * obj, Guid> // OPTIMIZATION: lazily created.
           mutable EventHandlerForgesOpt : OrderedDictionary<int * obj Address, Guid * (Event -> obj)> // OPTIMIZATION: lazily created.
-          mutable PropertyForgesOpt : List<World Lens * obj> // OPTIMIZATION: lazily created.
+          mutable PropertyForgesOpt : List<Simulant voption * World Lens * obj> // OPTIMIZATION: lazily created.
           mutable EntityForgesOpt : OrderedDictionary<string, EntityForge> } // OPTIMIZATION: lazily created.
         static member empty =
             { EntityDispatcherName = nameof EntityDispatcher
@@ -928,9 +928,7 @@ module WorldTypes =
 
         /// Concatenate an address with a screen's address, forcing the type of first address.
         static member (-->) (address : 'a Address, screen : Screen) =
-            match box screen with
-            | null -> address.Names.[dec address.Names.Length] <- Constants.Engine.ScreenEventTruncatedName; address // HACK: this case is a hack to be able to insert events into the elmish event system.
-            | _ -> acatff address screen.ScreenAddress
+            acatff address screen.ScreenAddress
 
         override this.ToString () =
             scstring this.ScreenAddress
@@ -999,9 +997,7 @@ module WorldTypes =
 
         /// Concatenate an address with a group's address, forcing the type of first address.
         static member (-->) (address : 'a Address, group : Group) =
-            match box group with
-            | null -> address.Names.[dec address.Names.Length] <- Constants.Engine.GroupEventTruncatedName; address // HACK: this case is a hack to be able to insert events into the elmish event system.
-            | _ -> acatff address group.GroupAddress
+            acatff address group.GroupAddress
 
         override this.ToString () =
             scstring this.GroupAddress
@@ -1110,9 +1106,7 @@ module WorldTypes =
 
         /// Concatenate an address with an entity, forcing the type of first address.
         static member (-->) (address : 'a Address, entity : Entity) =
-            match box entity with
-            | null -> address.Names.[dec address.Names.Length] <- Constants.Engine.EntityEventTruncatedName; address // HACK: this case is a hack to be able to insert events into the elmish event system.
-            | _ -> acatff address entity.EntityAddress
+            acatff address entity.EntityAddress
 
         override this.ToString () =
             scstring this.EntityAddress

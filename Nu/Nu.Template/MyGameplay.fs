@@ -72,14 +72,14 @@ module MyGameplay =
             | Nop -> just world
 
         // here we describe the content of the game including the level, the hud, and the player
-        override this.Forge (gameplay, screen) =
+        override this.Forge (gameplay, _) =
 
             // the gameplay screen
             Forge.screen Simulants.Gameplay.Screen.Name Vanilla
-                [screen.UpdateEvent ==> cmd Update
-                 screen.PostUpdateEvent ==> cmd PostUpdateEye
-                 screen.DeselectingEvent ==> msg FinishQuitting
-                 Simulants.Game.KeyboardKeyDownEvent ==|> fun evt -> if evt.Data.KeyboardKey = KeyboardKey.Up && not evt.Data.Repeated then cmd Jump else cmd Nop
+                [Screen.UpdateEvent ==> cmd Update
+                 Screen.PostUpdateEvent ==> cmd PostUpdateEye
+                 Screen.DeselectingEvent ==> msg FinishQuitting
+                 Game.KeyboardKeyDownEvent ==|> fun evt -> if evt.Data.KeyboardKey = KeyboardKey.Up && not evt.Data.Repeated then cmd Jump else cmd Nop
                  Simulants.Gameplay.Gui.Quit.ClickEvent ==> msg StartQutting]
 
                 [// the gui group
@@ -88,7 +88,7 @@ module MyGameplay =
                          [Entity.Text == "Quit"
                           Entity.Position == v3 260.0f -260.0f 0.0f
                           Entity.Elevation == 10.0f
-                          Entity.Event.ClickEvent ==> msg Quit]]
+                          Entity.ClickEvent ==> msg Quit]]
 
                  // the player and scene groups while playing
                  match gameplay with
