@@ -46,14 +46,13 @@ type ElmarioDispatcher () =
                 let world = World.applyBodyForce (v3 0.0f 140000.0f 0.0f) physicsId world
                 just world
             else just world
-        | MoveLeft ->
         | Nop -> just world
 
     // here we describe the forge of the game including elmario, the ground he walks on, and a rock.
-    override this.Forge (_, game) =
+    override this.Forge (_, _) =
         Forge.game
-            [game.UpdateEvent ==> cmd Update
-             game.KeyboardKeyDownEvent ==|> fun evt -> if evt.Data.KeyboardKey = KeyboardKey.Up && not evt.Data.Repeated then cmd Jump else cmd Nop]
+            [Game.UpdateEvent ==> cmd Update
+             Game.KeyboardKeyDownEvent ==|> fun evt -> if evt.Data.KeyboardKey = KeyboardKey.Up && not evt.Data.Repeated then cmd Jump else cmd Nop]
             [Forge.screen Simulants.Default.Screen.Name Vanilla []
                 [Forge.group Simulants.Default.Group.Name []
                     [Forge.sideViewCharacter Simulants.Elmario.Name
