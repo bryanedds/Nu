@@ -132,14 +132,13 @@ module WorldSimulantModule =
             | :? Game -> World.registerGame world
             | _ -> failwithumf ()
 
-        /// Attempt to the given simulant.
-        [<FunctionBinding>]
-        static member tryReforge (simulant : Simulant) (world : World) =
+        /// Attempt to synchronize the content of the given simulant.
+        static member trySynchronize (simulant : Simulant) (world : World) =
             match simulant with
-            | :? Entity as entity -> (World.getEntityDispatcher entity world).TryReforge (entity, world)
-            | :? Group as group -> (World.getGroupDispatcher group world).TryReforge (group, world)
-            | :? Screen as screen -> (World.getScreenDispatcher screen world).TryReforge (screen, world)
-            | :? Game as game -> (World.getGameDispatcher world).TryReforge (game, world)
+            | :? Entity as entity -> (World.getEntityDispatcher entity world).TrySynchronize (entity, world)
+            | :? Group as group -> (World.getGroupDispatcher group world).TrySynchronize (group, world)
+            | :? Screen as screen -> (World.getScreenDispatcher screen world).TrySynchronize (screen, world)
+            | :? Game as game -> (World.getGameDispatcher world).TrySynchronize (game, world)
             | _ -> failwithumf ()
 
         /// Destroy the given simulant.

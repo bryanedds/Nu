@@ -146,9 +146,9 @@ module WorldTypes =
         abstract TrySignal : obj * Game * World -> World
         default this.TrySignal (_, _, world) = world
 
-        /// Attempt to reforge a game.
-        abstract TryReforge : Game * World -> World
-        default this.TryReforge (_, world) = world
+        /// Attempt to synchronize the content of a game.
+        abstract TrySynchronize : Game * World -> World
+        default this.TrySynchronize (_, world) = world
 
     /// The default dispatcher for screens.
     and ScreenDispatcher () =
@@ -178,9 +178,9 @@ module WorldTypes =
         abstract TrySignal : obj * Screen * World -> World
         default this.TrySignal (_, _, world) = world
 
-        /// Attempt to reforge a screen.
-        abstract TryReforge : Screen * World -> World
-        default this.TryReforge (_, world) = world
+        /// Attempt to synchronize the content of a screen.
+        abstract TrySynchronize : Screen * World -> World
+        default this.TrySynchronize (_, world) = world
 
     /// The default dispatcher for groups.
     and GroupDispatcher () =
@@ -210,9 +210,9 @@ module WorldTypes =
         abstract TrySignal : obj * Group * World -> World
         default this.TrySignal (_, _, world) = world
 
-        /// Attempt to reforge a group.
-        abstract TryReforge : Group * World -> World
-        default this.TryReforge (_, world) = world
+        /// Attempt to synchronize the content of a group.
+        abstract TrySynchronize : Group * World -> World
+        default this.TrySynchronize (_, world) = world
 
     /// The default dispatcher for entities.
     and EntityDispatcher (is2d, centered, physical) =
@@ -286,9 +286,9 @@ module WorldTypes =
         abstract TrySignal : obj * Entity * World -> World
         default this.TrySignal (_, _, world) = world
 
-        /// Attempt to reforge an entity.
-        abstract TryReforge : Entity * World -> World
-        default this.TryReforge (_, world) = world
+        /// Attempt to synchronize content of an entity.
+        abstract TrySynchronize : Entity * World -> World
+        default this.TrySynchronize (_, world) = world
 
         /// Get the default size of an entity.
         abstract GetQuickSize : Entity * World -> Vector3
@@ -372,7 +372,7 @@ module WorldTypes =
         interface LateBindings
 
     // TODO: P1: expose in Nu namespace along with related types.
-    and [<NoEquality; NoComparison>] PropertyForge =
+    and [<NoEquality; NoComparison>] PropertyContent =
         { PropertySimulantOpt : Simulant option
           PropertyLens : World Lens
           PropertyValue : obj }
@@ -381,123 +381,123 @@ module WorldTypes =
               PropertyLens = lens
               PropertyValue = value }
 
-    and [<NoEquality; NoComparison>] InitializerForge =
-        | PropertyForge of PropertyForge
-        | EventSignalForge of obj Address * obj
-        | EventHandlerForge of PartialEquatable<obj Address, Event -> obj>
+    and [<NoEquality; NoComparison>] ContentInitializer =
+        | PropertyContent of PropertyContent
+        | EventSignalContent of obj Address * obj
+        | EventHandlerContent of PartialEquatable<obj Address, Event -> obj>
 
-    and SimulantForge =
+    and SimulantContent =
         abstract DispatcherNameOpt : string option
         abstract SimulantNameOpt : string option
         abstract SimulantCachedOpt : Simulant with get, set
-        abstract EventSignalForgesOpt : OrderedDictionary<obj Address * obj, Guid>
-        abstract EventHandlerForgesOpt : OrderedDictionary<int * obj Address, Guid * (Event -> obj)>
-        abstract PropertyForgesOpt : List<PropertyForge>
-        abstract GetChildForgesOpt<'v when 'v :> SimulantForge> : unit -> OrderedDictionary<string, 'v>
+        abstract EventSignalContentsOpt : OrderedDictionary<obj Address * obj, Guid>
+        abstract EventHandlerContentsOpt : OrderedDictionary<int * obj Address, Guid * (Event -> obj)>
+        abstract PropertyContentsOpt : List<PropertyContent>
+        abstract GetChildContentsOpt<'v when 'v :> SimulantContent> : unit -> OrderedDictionary<string, 'v>
 
-    and [<ReferenceEquality; NoComparison>] GameForge =
+    and [<ReferenceEquality; NoComparison>] GameContent =
         { InitialScreenNameOpt : string option
           mutable SimulantCachedOpt : Simulant
-          mutable EventSignalForgesOpt : OrderedDictionary<obj Address * obj, Guid> // OPTIMIZATION: lazily created.
-          mutable EventHandlerForgesOpt : OrderedDictionary<int * obj Address, Guid * (Event -> obj)> // OPTIMIZATION: lazily created.
-          mutable PropertyForgesOpt : List<PropertyForge> // OPTIMIZATION: lazily created.
-          ScreenForges : OrderedDictionary<string, ScreenForge> }
+          mutable EventSignalContentsOpt : OrderedDictionary<obj Address * obj, Guid> // OPTIMIZATION: lazily created.
+          mutable EventHandlerContentsOpt : OrderedDictionary<int * obj Address, Guid * (Event -> obj)> // OPTIMIZATION: lazily created.
+          mutable PropertyContentsOpt : List<PropertyContent> // OPTIMIZATION: lazily created.
+          ScreenContents : OrderedDictionary<string, ScreenContent> }
         static member empty =
             { InitialScreenNameOpt = None
               SimulantCachedOpt = Unchecked.defaultof<_>
-              EventSignalForgesOpt = null
-              EventHandlerForgesOpt = null
-              PropertyForgesOpt = null
-              ScreenForges = OrderedDictionary StringComparer.Ordinal }
-        interface SimulantForge with
+              EventSignalContentsOpt = null
+              EventHandlerContentsOpt = null
+              PropertyContentsOpt = null
+              ScreenContents = OrderedDictionary StringComparer.Ordinal }
+        interface SimulantContent with
             member this.DispatcherNameOpt = None
             member this.SimulantNameOpt = None
             member this.SimulantCachedOpt with get () = this.SimulantCachedOpt and set value = this.SimulantCachedOpt <- value
-            member this.EventSignalForgesOpt = this.EventSignalForgesOpt
-            member this.EventHandlerForgesOpt = this.EventHandlerForgesOpt
-            member this.PropertyForgesOpt = this.PropertyForgesOpt
-            member this.GetChildForgesOpt<'v when 'v :> SimulantForge> () = this.ScreenForges :> obj :?> OrderedDictionary<string, 'v>
+            member this.EventSignalContentsOpt = this.EventSignalContentsOpt
+            member this.EventHandlerContentsOpt = this.EventHandlerContentsOpt
+            member this.PropertyContentsOpt = this.PropertyContentsOpt
+            member this.GetChildContentsOpt<'v when 'v :> SimulantContent> () = this.ScreenContents :> obj :?> OrderedDictionary<string, 'v>
 
-    and [<ReferenceEquality; NoComparison>] ScreenForge =
+    and [<ReferenceEquality; NoComparison>] ScreenContent =
         { ScreenDispatcherName : string
           ScreenName : string
           ScreenBehavior : ScreenBehavior
           GroupFilePathOpt : string option
           mutable SimulantCachedOpt : Simulant
-          mutable EventSignalForgesOpt : OrderedDictionary<obj Address * obj, Guid> // OPTIMIZATION: lazily created.
-          mutable EventHandlerForgesOpt : OrderedDictionary<int * obj Address, Guid * (Event -> obj)> // OPTIMIZATION: lazily created.
-          mutable PropertyForgesOpt : List<PropertyForge> // OPTIMIZATION: lazily created.
-          GroupForges : OrderedDictionary<string, GroupForge> }
+          mutable EventSignalContentsOpt : OrderedDictionary<obj Address * obj, Guid> // OPTIMIZATION: lazily created.
+          mutable EventHandlerContentsOpt : OrderedDictionary<int * obj Address, Guid * (Event -> obj)> // OPTIMIZATION: lazily created.
+          mutable PropertyContentsOpt : List<PropertyContent> // OPTIMIZATION: lazily created.
+          GroupContents : OrderedDictionary<string, GroupContent> }
         static member empty =
             { ScreenDispatcherName = nameof ScreenDispatcher
               ScreenName = nameof Screen
               ScreenBehavior = Vanilla
               GroupFilePathOpt = None
               SimulantCachedOpt = Unchecked.defaultof<_>
-              EventSignalForgesOpt = null
-              EventHandlerForgesOpt = null
-              PropertyForgesOpt = null
-              GroupForges = OrderedDictionary StringComparer.Ordinal }
-        interface SimulantForge with
+              EventSignalContentsOpt = null
+              EventHandlerContentsOpt = null
+              PropertyContentsOpt = null
+              GroupContents = OrderedDictionary StringComparer.Ordinal }
+        interface SimulantContent with
             member this.DispatcherNameOpt = Some this.ScreenDispatcherName
             member this.SimulantNameOpt = Some this.ScreenName
             member this.SimulantCachedOpt with get () = this.SimulantCachedOpt and set value = this.SimulantCachedOpt <- value
-            member this.EventSignalForgesOpt = this.EventSignalForgesOpt
-            member this.EventHandlerForgesOpt = this.EventHandlerForgesOpt
-            member this.PropertyForgesOpt = this.PropertyForgesOpt
-            member this.GetChildForgesOpt<'v when 'v :> SimulantForge> () = this.GroupForges :> obj :?> OrderedDictionary<string, 'v>
+            member this.EventSignalContentsOpt = this.EventSignalContentsOpt
+            member this.EventHandlerContentsOpt = this.EventHandlerContentsOpt
+            member this.PropertyContentsOpt = this.PropertyContentsOpt
+            member this.GetChildContentsOpt<'v when 'v :> SimulantContent> () = this.GroupContents :> obj :?> OrderedDictionary<string, 'v>
 
-    and [<ReferenceEquality; NoComparison>] GroupForge =
+    and [<ReferenceEquality; NoComparison>] GroupContent =
         { GroupDispatcherName : string
           GroupName : string
           GroupFilePathOpt : string option
           mutable SimulantCachedOpt : Simulant
-          mutable EventSignalForgesOpt : OrderedDictionary<obj Address * obj, Guid> // OPTIMIZATION: lazily created.
-          mutable EventHandlerForgesOpt : OrderedDictionary<int * obj Address, Guid * (Event -> obj)> // OPTIMIZATION: lazily created.
-          mutable PropertyForgesOpt : List<PropertyForge> // OPTIMIZATION: lazily created.
-          mutable EntityForgesOpt : OrderedDictionary<string, EntityForge> } // OPTIMIZATION: lazily created.
+          mutable EventSignalContentsOpt : OrderedDictionary<obj Address * obj, Guid> // OPTIMIZATION: lazily created.
+          mutable EventHandlerContentsOpt : OrderedDictionary<int * obj Address, Guid * (Event -> obj)> // OPTIMIZATION: lazily created.
+          mutable PropertyContentsOpt : List<PropertyContent> // OPTIMIZATION: lazily created.
+          mutable EntityContentsOpt : OrderedDictionary<string, EntityContent> } // OPTIMIZATION: lazily created.
         static member empty =
             { GroupDispatcherName = nameof GroupDispatcher
               GroupName = nameof Group
               GroupFilePathOpt = None
               SimulantCachedOpt = Unchecked.defaultof<_>
-              EventSignalForgesOpt = null
-              EventHandlerForgesOpt = null
-              PropertyForgesOpt = null
-              EntityForgesOpt = null }
-        interface SimulantForge with
+              EventSignalContentsOpt = null
+              EventHandlerContentsOpt = null
+              PropertyContentsOpt = null
+              EntityContentsOpt = null }
+        interface SimulantContent with
             member this.DispatcherNameOpt = Some this.GroupDispatcherName
             member this.SimulantNameOpt = Some this.GroupName
             member this.SimulantCachedOpt with get () = this.SimulantCachedOpt and set value = this.SimulantCachedOpt <- value
-            member this.EventSignalForgesOpt = this.EventSignalForgesOpt
-            member this.EventHandlerForgesOpt = this.EventHandlerForgesOpt
-            member this.PropertyForgesOpt = this.PropertyForgesOpt
-            member this.GetChildForgesOpt<'v when 'v :> SimulantForge> () = this.EntityForgesOpt :> obj :?> OrderedDictionary<string, 'v>
+            member this.EventSignalContentsOpt = this.EventSignalContentsOpt
+            member this.EventHandlerContentsOpt = this.EventHandlerContentsOpt
+            member this.PropertyContentsOpt = this.PropertyContentsOpt
+            member this.GetChildContentsOpt<'v when 'v :> SimulantContent> () = this.EntityContentsOpt :> obj :?> OrderedDictionary<string, 'v>
 
-    and [<ReferenceEquality; NoComparison>] EntityForge =
+    and [<ReferenceEquality; NoComparison>] EntityContent =
         { EntityDispatcherName : string
           EntityName : string
           mutable EntityCachedOpt : Entity // OPTIMIZATION: allows us to more often hit the EntityStateOpt cache. May be null.
-          mutable EventSignalForgesOpt : OrderedDictionary<obj Address * obj, Guid> // OPTIMIZATION: lazily created.
-          mutable EventHandlerForgesOpt : OrderedDictionary<int * obj Address, Guid * (Event -> obj)> // OPTIMIZATION: lazily created.
-          mutable PropertyForgesOpt : List<PropertyForge> // OPTIMIZATION: lazily created.
-          mutable EntityForgesOpt : OrderedDictionary<string, EntityForge> } // OPTIMIZATION: lazily created.
+          mutable EventSignalContentsOpt : OrderedDictionary<obj Address * obj, Guid> // OPTIMIZATION: lazily created.
+          mutable EventHandlerContentsOpt : OrderedDictionary<int * obj Address, Guid * (Event -> obj)> // OPTIMIZATION: lazily created.
+          mutable PropertyContentsOpt : List<PropertyContent> // OPTIMIZATION: lazily created.
+          mutable EntityContentsOpt : OrderedDictionary<string, EntityContent> } // OPTIMIZATION: lazily created.
         static member empty =
             { EntityDispatcherName = nameof EntityDispatcher
               EntityName = nameof Entity
               EntityCachedOpt = Unchecked.defaultof<_>
-              EventSignalForgesOpt = null
-              EventHandlerForgesOpt = null
-              PropertyForgesOpt = null
-              EntityForgesOpt = null }
-        interface SimulantForge with
+              EventSignalContentsOpt = null
+              EventHandlerContentsOpt = null
+              PropertyContentsOpt = null
+              EntityContentsOpt = null }
+        interface SimulantContent with
             member this.DispatcherNameOpt = Some this.EntityDispatcherName
             member this.SimulantNameOpt = Some this.EntityName
             member this.SimulantCachedOpt with get () = this.EntityCachedOpt and set value = this.EntityCachedOpt <- value :?> Entity
-            member this.EventSignalForgesOpt = this.EventSignalForgesOpt
-            member this.EventHandlerForgesOpt = this.EventHandlerForgesOpt
-            member this.PropertyForgesOpt = this.PropertyForgesOpt
-            member this.GetChildForgesOpt<'v when 'v :> SimulantForge> () = this.EntityForgesOpt :> obj :?> OrderedDictionary<string, 'v>
+            member this.EventSignalContentsOpt = this.EventSignalContentsOpt
+            member this.EventHandlerContentsOpt = this.EventHandlerContentsOpt
+            member this.PropertyContentsOpt = this.PropertyContentsOpt
+            member this.GetChildContentsOpt<'v when 'v :> SimulantContent> () = this.EntityContentsOpt :> obj :?> OrderedDictionary<string, 'v>
 
     /// Generalized interface for simulant state.
     and SimulantState =
@@ -510,7 +510,7 @@ module WorldTypes =
         { Dispatcher : GameDispatcher
           Xtension : Xtension
           Model : DesignerProperty
-          Forge : GameForge
+          Content : GameContent
           OmniScreenOpt : Screen option
           SelectedScreenOpt : Screen option
           ScreenTransitionDestinationOpt : Screen option
@@ -535,7 +535,7 @@ module WorldTypes =
               Xtension = Xtension.makeFunctional ()
               Model = { DesignerType = typeof<unit>; DesignerValue = () }
               OmniScreenOpt = None
-              Forge = GameForge.empty
+              Content = GameContent.empty
               SelectedScreenOpt = None
               ScreenTransitionDestinationOpt = None
               DesiredScreen = DesireIgnore
@@ -589,7 +589,7 @@ module WorldTypes =
         { Dispatcher : ScreenDispatcher
           Xtension : Xtension
           Model : DesignerProperty
-          Forge : ScreenForge
+          Content : ScreenContent
           Ecs : Ecs.Ecs
           TransitionState : TransitionState
           TransitionUpdates : int64
@@ -608,7 +608,7 @@ module WorldTypes =
             { Dispatcher = dispatcher
               Xtension = Xtension.makeFunctional ()
               Model = { DesignerType = typeof<unit>; DesignerValue = () }
-              Forge = ScreenForge.empty
+              Content = ScreenContent.empty
               Ecs = ecs
               TransitionState = IdlingState
               TransitionUpdates = 0L // TODO: roll this field into Incoming/OutgoingState values
@@ -660,7 +660,7 @@ module WorldTypes =
         { Dispatcher : GroupDispatcher
           Xtension : Xtension
           Model : DesignerProperty
-          Forge : GroupForge
+          Content : GroupContent
           Visible : bool
           Persistent : bool
           ScriptFrame : Scripting.DeclarationFrame
@@ -674,7 +674,7 @@ module WorldTypes =
             { Dispatcher = dispatcher
               Xtension = Xtension.makeFunctional ()
               Model = { DesignerType = typeof<unit>; DesignerValue = () }
-              Forge = GroupForge.empty
+              Content = GroupContent.empty
               Visible = true
               Persistent = true
               ScriptFrame = Scripting.DeclarationFrame StringComparer.Ordinal
@@ -724,7 +724,7 @@ module WorldTypes =
           mutable Facets : Facet array
           mutable Xtension : Xtension
           mutable Model : DesignerProperty
-          mutable Forge : EntityForge
+          mutable Content : EntityContent
           mutable PositionLocal : Vector3
           mutable RotationLocal : Quaternion
           mutable ScaleLocal : Vector3
@@ -748,7 +748,7 @@ module WorldTypes =
               Facets = [||]
               Xtension = Xtension.makeEmpty imperative
               Model = { DesignerType = typeof<unit>; DesignerValue = () }
-              Forge = EntityForge.empty
+              Content = EntityContent.empty
               PositionLocal = Vector3.Zero
               RotationLocal = Quaternion.Identity
               ScaleLocal = Vector3.One

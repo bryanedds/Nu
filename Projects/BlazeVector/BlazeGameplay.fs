@@ -243,7 +243,7 @@ module Gameplay =
         static member Gameplay = Screen.ModelGeneric<Gameplay> ()
 
     type GameplayDispatcher () =
-        inherit ScreenForger<Gameplay, GameplayMessage, GameplayCommand> (Quit)
+        inherit ScreenDispatcher<Gameplay, GameplayMessage, GameplayCommand> (Quit)
 
         static let [<Literal>] SectionName = "Section"
         static let [<Literal>] SectionCount = 16
@@ -308,18 +308,18 @@ module Gameplay =
                     withMsg StartQutting world
                 else just world
 
-        override this.Forge (gameplay, screen) =
+        override this.Content (gameplay, screen) =
 
             // the gameplay screen
-            Forge.screen Simulants.Gameplay.Screen.Name Vanilla
+            Content.screen Simulants.Gameplay.Screen.Name Vanilla
                 [screen.SelectEvent ==> cmd CreateSections
                  screen.DeselectingEvent ==> cmd DestroySections
                  screen.UpdateEvent ==> cmd Update
                  Simulants.Gameplay.Gui.Quit.ClickEvent ==> msg StartQutting]
 
                 [// the gui group
-                 yield Forge.group Simulants.Gameplay.Gui.Group.Name []
-                     [Forge.button Simulants.Gameplay.Gui.Quit.Name
+                 yield Content.group Simulants.Gameplay.Gui.Group.Name []
+                     [Content.button Simulants.Gameplay.Gui.Quit.Name
                          [Entity.Text <== "Quit"
                           Entity.Position <== v3 260.0f -260.0f 0.0f
                           Entity.Elevation <== 10.0f
@@ -328,8 +328,8 @@ module Gameplay =
                  // the scene group while playing
                  match gameplay with
                  | Playing | Quitting ->
-                    yield Forge.group Simulants.Gameplay.Scene.Group.Name []
-                        [Forge.entity<PlayerDispatcher> Simulants.Gameplay.Scene.Player.Name
+                    yield Content.group Simulants.Gameplay.Scene.Group.Name []
+                        [Content.entity<PlayerDispatcher> Simulants.Gameplay.Scene.Player.Name
                             [Entity.Position <== v3 -300.0f -175.6805f 0.0f
                              Entity.Elevation <== 1.0f]]
                  | Quit -> ()]

@@ -32,7 +32,7 @@ module MyGameplay =
 
     // this is the screen dispatcher that defines the screen where gameplay takes place
     type MyGameplayDispatcher () =
-        inherit ScreenForger<Gameplay, GameplayMessage, GameplayCommand> (Quit)
+        inherit ScreenDispatcher<Gameplay, GameplayMessage, GameplayCommand> (Quit)
 
         // here we handle the above messages
         override this.Message (_, message, _, _) =
@@ -72,10 +72,10 @@ module MyGameplay =
             | Nop -> just world
 
         // here we describe the content of the game including the level, the hud, and the player
-        override this.Forge (gameplay, _) =
+        override this.Content (gameplay, _) =
 
             // the gameplay screen
-            Forge.screen Simulants.Gameplay.Screen.Name Vanilla
+            Content.screen Simulants.Gameplay.Screen.Name Vanilla
                 [Screen.UpdateEvent ==> cmd Update
                  Screen.PostUpdateEvent ==> cmd PostUpdateEye
                  Screen.DeselectingEvent ==> msg FinishQuitting
@@ -83,8 +83,8 @@ module MyGameplay =
                  Simulants.Gameplay.Gui.Quit.ClickEvent ==> msg StartQutting]
 
                 [// the gui group
-                 yield Forge.group Simulants.Gameplay.Gui.Group.Name []
-                     [Forge.button Simulants.Gameplay.Gui.Quit.Name
+                 yield Content.group Simulants.Gameplay.Gui.Group.Name []
+                     [Content.button Simulants.Gameplay.Gui.Quit.Name
                          [Entity.Text <== "Quit"
                           Entity.Position <== v3 260.0f -260.0f 0.0f
                           Entity.Elevation <== 10.0f
@@ -93,9 +93,9 @@ module MyGameplay =
                  // the player and scene groups while playing
                  match gameplay with
                  | Playing | Quitting ->
-                    yield Forge.group Simulants.Gameplay.Player.Group.Name []
-                        [Forge.sideViewCharacter Simulants.Gameplay.Player.Character.Name
+                    yield Content.group Simulants.Gameplay.Player.Group.Name []
+                        [Content.sideViewCharacter Simulants.Gameplay.Player.Character.Name
                             [Entity.Position <== v3 0.0f 0.0f 0.0f
                              Entity.Size <== v3 108.0f 108.0f 0.0f]]
-                    yield Forge.groupFromFile Simulants.Gameplay.Scene.Group.Name "Assets/Gameplay/Scene.nugroup" [] []
+                    yield Content.groupFromFile Simulants.Gameplay.Scene.Group.Name "Assets/Gameplay/Scene.nugroup" [] []
                  | Quit -> ()]

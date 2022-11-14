@@ -302,7 +302,7 @@ module WorldModuleEntity =
                         let entityState = { entityState with Model = { DesignerType = value.DesignerType; DesignerValue = value.DesignerValue }}
                         struct (entityState, World.setEntityState entityState entity world)
                 let world = World.publishEntityChange (nameof entityState.Model) previous.DesignerValue value.DesignerValue entityState.PublishChangeEvents entity world
-                let world = (World.getEntityDispatcher entity world : EntityDispatcher).TryReforge (entity, world)
+                let world = (World.getEntityDispatcher entity world : EntityDispatcher).TrySynchronize (entity, world)
                 struct (true, world)
             else struct (false, world)
 
@@ -325,21 +325,21 @@ module WorldModuleEntity =
                         let entityState = { entityState with Model = { DesignerType = typeof<'a>; DesignerValue = valueObj }}
                         struct (entityState, World.setEntityState entityState entity world)
                 let world = World.publishEntityChange (nameof entityState.Model) previous.DesignerValue value entityState.PublishChangeEvents entity world
-                let world = (World.getEntityDispatcher entity world : EntityDispatcher).TryReforge (entity, world)
+                let world = (World.getEntityDispatcher entity world : EntityDispatcher).TrySynchronize (entity, world)
                 struct (true, world)
             else struct (false, world)
 
-        static member internal getEntityForge entity world =
+        static member internal getEntityContent entity world =
             let entityState = World.getEntityState entity world
-            entityState.Forge
+            entityState.Content
 
-        static member internal setEntityForge value entity world =
+        static member internal setEntityContent value entity world =
             let entityState = World.getEntityState entity world
             if entityState.Imperative then
-                entityState.Forge <- value
+                entityState.Content <- value
                 world
             else
-                let entityState = { entityState with Forge = value }
+                let entityState = { entityState with Content = value }
                 World.setEntityState entityState entity world
 
         static member internal getEntityScriptFrame entity world =

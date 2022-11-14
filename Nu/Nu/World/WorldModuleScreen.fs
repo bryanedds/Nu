@@ -93,7 +93,7 @@ module WorldModuleScreen =
 
         static member internal getScreenDispatcher screen world = (World.getScreenState screen world).Dispatcher
         static member internal getScreenModelProperty screen world = (World.getScreenState screen world).Model
-        static member internal getScreenForge screen world = (World.getScreenState screen world).Forge
+        static member internal getScreenContent screen world = (World.getScreenState screen world).Content
         static member internal getScreenEcs screen world = (World.getScreenState screen world).Ecs
         static member internal getScreenTransitionState screen world = (World.getScreenState screen world).TransitionState
         static member internal getScreenTransitionUpdates screen world = (World.getScreenState screen world).TransitionUpdates
@@ -115,7 +115,7 @@ module WorldModuleScreen =
                     let screenState = { screenState with Model = { DesignerType = value.DesignerType; DesignerValue = value.DesignerValue }}
                     struct (screenState, World.setScreenState screenState screen world)
                 let world = World.publishScreenChange (nameof screenState.Model) previous.DesignerValue value.DesignerValue screen world
-                let world = (World.getScreenDispatcher screen world).TryReforge (screen, world)
+                let world = (World.getScreenDispatcher screen world).TrySynchronize (screen, world)
                 struct (true, world)
             else struct (false, world)
 
@@ -134,13 +134,13 @@ module WorldModuleScreen =
                     let screenState = { screenState with Model = { DesignerType = typeof<'a>; DesignerValue = valueObj }}
                     struct (screenState, World.setScreenState screenState screen world)
                 let world = World.publishScreenChange (nameof screenState.Model) previous.DesignerValue value screen world
-                let world = (World.getScreenDispatcher screen world).TryReforge (screen, world)
+                let world = (World.getScreenDispatcher screen world).TrySynchronize (screen, world)
                 struct (true, world)
             else struct (false, world)
 
-        static member internal setScreenForge (value : ScreenForge) screen world =
+        static member internal setScreenContent (value : ScreenContent) screen world =
             let screenState = World.getScreenState screen world
-            let screenState = { screenState with Forge = value }
+            let screenState = { screenState with Content = value }
             World.setScreenState screenState screen world
 
         static member internal setScreenTransitionState value screen world =

@@ -97,7 +97,7 @@ module WorldModuleGroup =
             Option.isSome (World.getGroupStateOpt group world)
 
         static member internal getGroupModelProperty group world = (World.getGroupState group world).Model
-        static member internal getGroupForge group world = (World.getGroupState group world).Forge
+        static member internal getGroupContent group world = (World.getGroupState group world).Content
         static member internal getGroupDispatcher group world = (World.getGroupState group world).Dispatcher
         static member internal getGroupVisible group world = (World.getGroupState group world).Visible
         static member internal getGroupPersistent group world = (World.getGroupState group world).Persistent
@@ -115,7 +115,7 @@ module WorldModuleGroup =
                     let groupState = { groupState with Model = { DesignerType = value.DesignerType; DesignerValue = value.DesignerValue }}
                     struct (groupState, World.setGroupState groupState group world)
                 let world = World.publishGroupChange (nameof groupState.Model) previous.DesignerValue value.DesignerValue group world
-                let world = (World.getGroupDispatcher group world).TryReforge (group, world)
+                let world = (World.getGroupDispatcher group world).TrySynchronize (group, world)
                 struct (true, world)
             else struct (false, world)
 
@@ -134,13 +134,13 @@ module WorldModuleGroup =
                     let groupState = { groupState with Model = { DesignerType = typeof<'a>; DesignerValue = valueObj }}
                     struct (groupState, World.setGroupState groupState group world)
                 let world = World.publishGroupChange (nameof groupState.Model) previous.DesignerValue value group world
-                let world = (World.getGroupDispatcher group world).TryReforge (group, world)
+                let world = (World.getGroupDispatcher group world).TrySynchronize (group, world)
                 struct (true, world)
             else struct (false, world)
 
-        static member internal setGroupForge (value : GroupForge) group world =
+        static member internal setGroupContent (value : GroupContent) group world =
             let screenState = World.getGroupState group world
-            let screenState = { screenState with Forge = value }
+            let screenState = { screenState with Content = value }
             World.setGroupState screenState group world
 
         static member internal setGroupVisible value group world =

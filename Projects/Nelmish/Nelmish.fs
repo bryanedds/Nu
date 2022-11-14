@@ -14,7 +14,7 @@ type Message =
 
 // this is our Elm-style game dispatcher
 type NelmishDispatcher () =
-    inherit GameForger<Model, Message, unit> (0) // initial model value
+    inherit GameDispatcher<Model, Message, unit> (0) // initial model value
 
     // here we handle the Elm-style messages
     override this.Message (model, message, _, _) =
@@ -23,26 +23,26 @@ type NelmishDispatcher () =
         | Increment -> just (model + 1)
         | Reset -> just 0
 
-    // here we describe the forge of the game including its one screen, one group, three
+    // here we describe the content of the game including its one screen, one group, three
     // button entities, and one text control.
-    override this.Forge (model, _) =
-        Forge.game []
-            [Forge.screen Simulants.Default.Screen.Name Vanilla []
-                [Forge.group Simulants.Default.Screen.Name []
-                    [yield Forge.button "Decrement"
+    override this.Content (model, _) =
+        Content.game []
+            [Content.screen Simulants.Default.Screen.Name Vanilla []
+                [Content.group Simulants.Default.Screen.Name []
+                    [yield Content.button "Decrement"
                         [Entity.Text <== "-"
                          Entity.Position <== v3 -256.0f 64.0f 0.0f
                          Entity.ClickEvent ==> msg Decrement]
-                     yield Forge.button "Increment"
+                     yield Content.button "Increment"
                         [Entity.Text <== "+"
                          Entity.Position <== v3 0.0f 64.0f 0.0f
                          Entity.ClickEvent ==> msg Increment]
-                     yield Forge.text "Counter"
+                     yield Content.text "Counter"
                         [Entity.Text <== string model
                          Entity.Position <== v3 -128.0f -32.0f 0.0f
                          Entity.Justification <== Justified (JustifyCenter, JustifyMiddle)]
                      if model <> 0 then
-                        yield Forge.button "Reset"
+                        yield Content.button "Reset"
                            [Entity.Text <== "Reset"
                             Entity.Position <== v3 -128.0f -128.0f 0.0f
                             Entity.ClickEvent ==> msg Reset]]]]

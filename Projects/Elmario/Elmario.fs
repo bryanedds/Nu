@@ -17,7 +17,7 @@ type Command =
 
 // this is our Elm-style game dispatcher
 type ElmarioDispatcher () =
-    inherit GameForger<unit, unit, Command> (())
+    inherit GameDispatcher<unit, unit, Command> (())
 
     // here we handle the Elm-style commands
     override this.Command (_, command, _, world) =
@@ -46,21 +46,21 @@ type ElmarioDispatcher () =
             else just world
         | Nop -> just world
 
-    // here we describe the forge of the game including elmario, the ground he walks on, and a rock.
-    override this.Forge (_, _) =
-        Forge.game
+    // here we describe the content of the game including elmario, the ground he walks on, and a rock.
+    override this.Content (_, _) =
+        Content.game
             [Game.UpdateEvent ==> cmd Update
              Game.KeyboardKeyDownEvent ==|> fun evt -> if evt.Data.KeyboardKey = KeyboardKey.Up && not evt.Data.Repeated then cmd Jump else cmd Nop]
-            [Forge.screen Simulants.Default.Screen.Name Vanilla []
-                [Forge.group Simulants.Default.Group.Name []
-                    [Forge.sideViewCharacter Simulants.Elmario.Name
+            [Content.screen Simulants.Default.Screen.Name Vanilla []
+                [Content.group Simulants.Default.Group.Name []
+                    [Content.sideViewCharacter Simulants.Elmario.Name
                         [Entity.Position <== v3 0.0f 0.0f 0.0f
                          Entity.Size <== v3 108.0f 108.0f 0.0f]
-                     Forge.block2d "Ground"
+                     Content.block2d "Ground"
                         [Entity.Position <== v3 -384.0f -256.0f 0.0f
                          Entity.Size <== v3 768.0f 64.0f 0.0f
                          Entity.StaticImage <== asset "Gameplay" "TreeTop"]
-                     Forge.block2d "Rock"
+                     Content.block2d "Rock"
                         [Entity.Position <== v3 320.0f -192.0f 0.0f
                          Entity.Size <== v3 64.0f 64.0f 0.0f
                          Entity.StaticImage <== asset "Gameplay" "Rock"]]]]
