@@ -9,31 +9,29 @@ open Nu
 /// Masks for Transform flags.
 module TransformMasks =
 
-    let [<Literal>] ActiveMask =                    0b000000000000000000000001u
-    let [<Literal>] DirtyMask =                     0b000000000000000000000010u
-    let [<Literal>] InvalidatedMask =               0b000000000000000000000100u
-    let [<Literal>] AbsoluteMask =                  0b000000000000000000001000u
-    let [<Literal>] ImperativeMask =                0b000000000000000000010000u
-    let [<Literal>] PublishChangeBindingsMask =     0b000000000000000000100000u
-    let [<Literal>] PublishChangeEventsMask =       0b000000000000000001000000u
-    let [<Literal>] EnabledMask =                   0b000000000000000010000000u
-    let [<Literal>] VisibleMask =                   0b000000000000000100000000u
-    let [<Literal>] AlwaysUpdateMask =              0b000000000000001000000000u
-    let [<Literal>] PublishUpdatesMask =            0b000000000000010000000000u
-    let [<Literal>] PublishPostUpdatesMask =        0b000000000000100000000000u
-    let [<Literal>] PublishRendersMask =            0b000000000001000000000000u
-    let [<Literal>] PersistentMask =                0b000000000010000000000000u
-    let [<Literal>] IgnorePropertyBindingsMask =    0b000000000100000000000000u
-    let [<Literal>] MountedMask =                   0b000000001000000000000000u
-    let [<Literal>] EnabledLocalMask =              0b000000010000000000000000u
-    let [<Literal>] VisibleLocalMask =              0b000000100000000000000000u
-    let [<Literal>] CenteredMask =                  0b000001000000000000000000u
-    let [<Literal>] StaticMask =                    0b000010000000000000000000u
-    let [<Literal>] LightMask =                     0b000100000000000000000000u
-    let [<Literal>] RotationMatrixDirtyMask =       0b001000000000000000000000u
-    let [<Literal>] PerimeterOrientedDirtyMask =    0b010000000000000000000000u
-    let [<Literal>] AnglesDirtyMask =               0b100000000000000000000000u
-    let [<Literal>] FlagsDefault =                  0b011001110010000110010001u
+    let [<Literal>] ActiveMask =                    0b0000000000000000000001u
+    let [<Literal>] DirtyMask =                     0b0000000000000000000010u
+    let [<Literal>] InvalidatedMask =               0b0000000000000000000100u
+    let [<Literal>] AbsoluteMask =                  0b0000000000000000001000u
+    let [<Literal>] ImperativeMask =                0b0000000000000000010000u
+    let [<Literal>] PublishChangeEventsMask =       0b0000000000000000100000u
+    let [<Literal>] EnabledMask =                   0b0000000000000001000000u
+    let [<Literal>] VisibleMask =                   0b0000000000000010000000u
+    let [<Literal>] AlwaysUpdateMask =              0b0000000000000100000000u
+    let [<Literal>] PublishUpdatesMask =            0b0000000000001000000000u
+    let [<Literal>] PublishPostUpdatesMask =        0b0000000000010000000000u
+    let [<Literal>] PublishRendersMask =            0b0000000000100000000000u
+    let [<Literal>] PersistentMask =                0b0000000001000000000000u
+    let [<Literal>] MountedMask =                   0b0000000010000000000000u
+    let [<Literal>] EnabledLocalMask =              0b0000000100000000000000u
+    let [<Literal>] VisibleLocalMask =              0b0000001000000000000000u
+    let [<Literal>] CenteredMask =                  0b0000010000000000000000u
+    let [<Literal>] StaticMask =                    0b0000100000000000000000u
+    let [<Literal>] LightMask =                     0b0001000000000000000000u
+    let [<Literal>] RotationMatrixDirtyMask =       0b0010000000000000000000u
+    let [<Literal>] PerimeterOrientedDirtyMask =    0b0100000000000000000000u
+    let [<Literal>] AnglesDirtyMask =               0b1000000000000000000000u
+    let [<Literal>] FlagsDefault =                  0b0110011101000011010001u
 
 // NOTE: opening masks for succintness.
 open TransformMasks
@@ -59,7 +57,6 @@ type [<NoEquality; NoComparison>] Transform =
     member this.Dirty with get () = this.Flags_ &&& DirtyMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| DirtyMask else this.Flags_ &&& ~~~DirtyMask
     member this.Invalidated with get () = this.Flags_ &&& InvalidatedMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| InvalidatedMask else this.Flags_ &&& ~~~InvalidatedMask
     member this.Imperative with get () = this.Flags_ &&& ImperativeMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| ImperativeMask else this.Flags_ &&& ~~~ImperativeMask
-    member this.PublishChangeBindings with get () = this.Flags_ &&& PublishChangeBindingsMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| PublishChangeBindingsMask else this.Flags_ &&& ~~~PublishChangeBindingsMask
     member this.PublishChangeEvents with get () = this.Flags_ &&& PublishChangeEventsMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| PublishChangeEventsMask else this.Flags_ &&& ~~~PublishChangeEventsMask
     member this.Enabled with get () = this.Flags_ &&& EnabledMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| EnabledMask else this.Flags_ &&& ~~~EnabledMask
     member this.Visible with get () = this.Flags_ &&& VisibleMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| VisibleMask else this.Flags_ &&& ~~~VisibleMask
@@ -68,7 +65,6 @@ type [<NoEquality; NoComparison>] Transform =
     member this.PublishPostUpdates with get () = this.Flags_ &&& PublishPostUpdatesMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| PublishPostUpdatesMask else this.Flags_ &&& ~~~PublishPostUpdatesMask
     member this.PublishRenders with get () = this.Flags_ &&& PublishRendersMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| PublishRendersMask else this.Flags_ &&& ~~~PublishRendersMask
     member this.Persistent with get () = this.Flags_ &&& PersistentMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| PersistentMask else this.Flags_ &&& ~~~PersistentMask
-    member this.IgnorePropertyBindings with get () = this.Flags_ &&& IgnorePropertyBindingsMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| IgnorePropertyBindingsMask else this.Flags_ &&& ~~~IgnorePropertyBindingsMask
     member this.Mounted with get () = this.Flags_ &&& MountedMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| MountedMask else this.Flags_ &&& ~~~MountedMask
     member this.EnabledLocal with get () = this.Flags_ &&& EnabledLocalMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| EnabledLocalMask else this.Flags_ &&& ~~~EnabledLocalMask
     member this.VisibleLocal with get () = this.Flags_ &&& VisibleLocalMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| VisibleLocalMask else this.Flags_ &&& ~~~VisibleLocalMask
@@ -78,7 +74,7 @@ type [<NoEquality; NoComparison>] Transform =
     member this.RotationMatrixDirty with get () = this.Flags_ &&& RotationMatrixDirtyMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| RotationMatrixDirtyMask else this.Flags_ &&& ~~~RotationMatrixDirtyMask
     member this.PerimeterOrientedDirty with get () = this.Flags_ &&& PerimeterOrientedDirtyMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| PerimeterOrientedDirtyMask else this.Flags_ &&& ~~~PerimeterOrientedDirtyMask
     member this.AnglesDirty with get () = this.Flags_ &&& AnglesDirtyMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| AnglesDirtyMask else this.Flags_ &&& ~~~AnglesDirtyMask
-    member this.Optimized with get () = this.Imperative && this.Presence_.OmnipresentType && not this.PublishChangeBindings && not this.PublishChangeEvents
+    member this.Optimized with get () = this.Imperative && this.Presence_.OmnipresentType && not this.PublishChangeEvents
 
     member this.Position with get () = this.Position_ and set value = this.Position_ <- value; this.PerimeterOrientedDirty <- true
     member this.Scale with get () = this.Scale_ and set value = this.Scale_ <- value; this.PerimeterOrientedDirty <- true

@@ -24,7 +24,6 @@ module WorldTypes =
     let mutable internal viewEntity = fun (_ : obj) (_ : obj) -> Array.create 0 (String.Empty, obj ())
 
     // EventSystem reach-arounds.
-    let mutable internal handleUserDefinedCallback : obj -> obj -> obj -> Handling * obj = Unchecked.defaultof<_>
     let mutable internal handleSubscribeAndUnsubscribeEventHook : bool -> obj Address -> Simulant -> obj -> obj = Unchecked.defaultof<_>
 
     // Entity reach-arounds.
@@ -239,7 +238,6 @@ module WorldTypes =
              Define? Absolute false
              Define? Model { DesignerType = typeof<unit>; DesignerValue = () }
              Define? MountOpt Option<Entity Relation>.None
-             Define? PublishChangeBindings false
              Define? PublishChangeEvents false
              Define? Enabled true
              Define? EnabledLocal true
@@ -252,8 +250,7 @@ module WorldTypes =
              Define? PublishUpdates false
              Define? PublishPostUpdates false
              Define? PublishRenders false
-             Define? Persistent true
-             Define? IgnorePropertyBindings false]
+             Define? Persistent true]
 
         /// Register an entity when adding it to a group.
         abstract Register : Entity * World -> World
@@ -823,7 +820,6 @@ module WorldTypes =
         member internal this.Invalidated with get () = this.Transform.Invalidated and set value = this.Transform.Invalidated <- value
         member this.Absolute with get () = this.Transform.Absolute and set value = this.Transform.Absolute <- value
         member this.Imperative with get () = this.Transform.Imperative and set value = this.Transform.Imperative <- value
-        member this.PublishChangeBindings with get () = this.Transform.PublishChangeBindings and set value = this.Transform.PublishChangeBindings <- value
         member this.PublishChangeEvents with get () = this.Transform.PublishChangeEvents and set value = this.Transform.PublishChangeEvents <- value
         member this.Enabled with get () = this.Transform.Enabled and set value = this.Transform.Enabled <- value
         member this.EnabledLocal with get () = this.Transform.EnabledLocal and set value = this.Transform.EnabledLocal <- value
@@ -834,7 +830,6 @@ module WorldTypes =
         member this.PublishPostUpdates with get () = this.Transform.PublishPostUpdates and set value = this.Transform.PublishPostUpdates <- value
         member this.PublishRenders with get () = this.Transform.PublishRenders and set value = this.Transform.PublishRenders <- value
         member this.Persistent with get () = this.Transform.Persistent and set value = this.Transform.Persistent <- value
-        member this.IgnorePropertyBindings with get () = this.Transform.IgnorePropertyBindings and set value = this.Transform.IgnorePropertyBindings <- value
         member this.Mounted with get () = this.Transform.Mounted and set value = this.Transform.Mounted <- value
         member this.Is2d with get () = this.Dispatcher.Is2d
         member this.Physical with get () = this.Dispatcher.Physical || Array.exists (fun (facet : Facet) -> facet.Physical) this.Facets // TODO: P1: consider using a cache flag to keep from recomputing this.
@@ -872,9 +867,6 @@ module WorldTypes =
         /// Get the latest value of a game's properties.
         [<DebuggerBrowsable (DebuggerBrowsableState.RootHidden)>]
         member private this.View = viewGame Chosen
-        
-        /// Helper for accessing game lenses.
-        static member Lens = Unchecked.defaultof<Game>
 
         /// Concatenate an address with a game's address, forcing the type of first address.
         static member (-->) (address : 'a Address, _ : Game) =
@@ -930,9 +922,6 @@ module WorldTypes =
         /// Get the latest value of a screen's properties.
         [<DebuggerBrowsable (DebuggerBrowsableState.RootHidden)>]
         member private this.View = viewScreen (this :> obj) Chosen
-
-        /// Helper for accessing screen lenses.
-        static member Lens = Unchecked.defaultof<Screen>
 
         /// Derive a group from its screen.
         static member (/) (screen : Screen, groupName) = Group (atoa<Screen, Group> screen.ScreenAddress --> ntoa groupName)
@@ -1013,9 +1002,6 @@ module WorldTypes =
             match box group with
             | null -> address.Names.[dec address.Names.Length] <- Constants.Engine.GroupEventTruncatedName; address // HACK: this case is a hack to be able to insert events into the elmish event system.
             | _ -> acatff address group.GroupAddress
-
-        /// Helper for accessing group lenses.
-        static member Lens = Unchecked.defaultof<Group>
 
         override this.ToString () =
             scstring this.GroupAddress
@@ -1122,9 +1108,6 @@ module WorldTypes =
         /// Derive an entity from its parent entity.
         static member (/) (parentEntity : Entity, entityName) = Entity (parentEntity.EntityAddress --> ntoa entityName)
 
-        /// Helper for accessing entity lenses.
-        static member Lens = Unchecked.defaultof<Entity>
-
         /// Concatenate an address with an entity, forcing the type of first address.
         static member (-->) (address : 'a Address, entity : Entity) =
             match box entity with
@@ -1155,70 +1138,6 @@ module WorldTypes =
                 match that with
                 | :? Entity as that -> (this :> Entity IComparable).CompareTo that
                 | _ -> failwith "Invalid Entity comparison (comparee not of type Entity)."
-
-    /// Describes a property's location in Nu's optimized Elmish implementation.
-    and [<CustomEquality; NoComparison>] internal PropertyAddress =
-        { PAName : string
-          PASimulant : Simulant
-          PAHash : int }
-
-        static member equals left right =
-            left.PAHash = right.PAHash &&
-            left.PAName = right.PAName &&
-            Address.equals left.PASimulant.SimulantAddress right.PASimulant.SimulantAddress
-
-        static member make name (simulant : Simulant) =
-            let hash = hash name ^^^ hash simulant.SimulantAddress
-            { PAName = name
-              PASimulant = simulant
-              PAHash = hash }
-
-        interface PropertyAddress IEquatable with
-            member this.Equals that =
-                PropertyAddress.equals this that
-
-        override this.GetHashCode () =
-            this.PAHash
-
-        override this.Equals that =
-            match that with
-            | :? PropertyAddress as that -> PropertyAddress.equals this that
-            | _ -> failwithumf ()
-
-    /// Describes a property binding for Nu's optimized Elmish implementation.
-    and [<NoEquality; NoComparison>] internal PropertyBinding =
-        { PBLeft : World Lens
-          PBRight : World Lens
-          mutable PBPrevious : obj ValueOption // ELMISH_CACHE
-          mutable PBDivergenceId : uint }
-
-    /// Describes a content binding for Nu's optimized Elmish implementation.
-    and [<NoEquality; NoComparison>] internal ContentBinding =
-        { CBMapper : IComparable -> Lens<obj, World> -> SimulantContent
-          CBSource : Lens<MapGeneralized, World>
-          CBOrigin : ContentOrigin
-          CBOwner : Simulant
-          CBParent : Simulant
-          CBSimulantKey : Guid
-          CBContentKey : Guid }
-
-    /// Describes a group of property bindings.
-    and [<NoEquality; NoComparison>] internal PropertyBindingGroup =
-        { mutable PBGParentPrevious : obj ValueOption // ELMISH_CACHE
-          mutable PBGDivergenceId : uint
-          PBGParent : World Lens
-          PBGPropertyBindings : OMap<Guid, PropertyBinding> }
-
-    /// Describe an elmish binding.
-    and [<NoEquality; NoComparison>] internal ElmishBinding =
-        | PropertyBinding of PropertyBinding
-        | PropertyBindingGroup of PropertyBindingGroup
-        | ContentBinding of ContentBinding
-
-    /// Describe a map of elmish bindings.
-    and [<NoEquality; NoComparison>] internal ElmishBindings =
-        { EBSParents : UMap<Guid, World Lens>
-          EBSBindings : OMap<Either<Guid, World Lens>, ElmishBinding> }
 
     /// The world's dispatchers (including facets).
     /// 
@@ -1268,10 +1187,9 @@ module WorldTypes =
               mutable Quadtree : Entity Quadtree MutantCache // mutated when Imperative
               mutable Octree : Entity Octree MutantCache // mutated when Imperative
               mutable SelectedEcsOpt : Ecs.Ecs option // mutated when Imperative
-              ElmishBindingsMap : UMap<PropertyAddress, ElmishBindings> // TODO: consider making this mutable when Imperative to avoid rebuilding the world value when adding an Elmish binding.
               AmbientState : World AmbientState
-              // cache line 3
               Subsystems : Subsystems // TODO: move this to WorldExtension.
+              // cache line 3
               Simulants : UMap<Simulant, Simulant USet option> // OPTIMIZATION: using None instead of empty USet to descrease number of USet instances. TODO: move this to WorldExtension.
               WorldExtension : WorldExtension }
 
@@ -1351,10 +1269,6 @@ module WorldTypes =
             member this.UpdateEventSystemDelegate updater =
                 let this = { this with EventSystemDelegate = updater this.EventSystemDelegate }
                 this.Choose ()
-
-            member this.HandleUserDefinedCallback userDefined data world =
-                let (handling, worldObj) = handleUserDefinedCallback userDefined data (world :> obj)
-                (handling, worldObj :?> World)
 
             member this.PublishEventHook (subscriber : Simulant) publisher eventData eventAddress eventTrace subscription world =
                 let (handling, world) =

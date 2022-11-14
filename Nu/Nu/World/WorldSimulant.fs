@@ -132,15 +132,6 @@ module WorldSimulantModule =
             | :? Game -> World.registerGame world
             | _ -> failwithumf ()
 
-        /// Expand the given simulant content.
-        [<FunctionBinding>]
-        static member expandContent setScreenSplash (content : SimulantContent) origin owner (parent : Simulant) (world : World) =
-            match (content, parent) with
-            | ((:? EntityContent as entityContent), (:? Group as group)) -> World.expandEntityContent entityContent origin owner group world |> mapFst (Option.map cast<Simulant>)
-            | ((:? GroupContent as groupContent), (:? Screen as screen)) -> World.expandGroupContent groupContent origin screen world |> mapFst (Option.map cast<Simulant>)
-            | ((:? ScreenContent as screenContent), (:? Game as game)) -> World.expandScreenContent setScreenSplash screenContent origin game world |> mapFst (Some << cast<Simulant>)
-            | _ -> failwithumf ()
-
         /// Attempt to the given simulant.
         [<FunctionBinding>]
         static member tryReforge (simulant : Simulant) (world : World) =
@@ -230,16 +221,6 @@ module WorldSimulantModule =
                     | Some screen when screen.Name = screenName -> true
                     | _ -> false
 
-        /// Check that a simulant is ignoring bindings.
-        [<FunctionBinding>]
-        static member ignorePropertyBindings (simulant : Simulant) (world : World) =
-            match simulant with
-            | :? Entity as entity -> entity.GetIgnorePropertyBindings world
-            | :? Group -> false
-            | :? Screen -> false
-            | :? Game -> false
-            | _ -> failwithumf ()
-
         /// Convert an address to a concrete simulant reference.
         static member derive address =
             let namesLength = address |> Address.getNames |> Array.length
@@ -271,41 +252,6 @@ module WorldSimulantModule =
                     ((a, current), previous < current))
                 id (Unchecked.defaultof<'a>, DateTimeOffset.MinValue) |>
             Stream.first
-
-        /// Bind the left property to the right property.
-        static member bind (left : Lens<'a, World>) (right : Lens<'a, World>) world =
-            if isNull (left.This :> obj) then failwithumf ()
-            WorldModule.bind5 true left.This left right world
-
-        /// Bind the right property to the left property.
-        static member dnib left right world =
-            World.bind right left world
-
-        /// Link the left property with the right and the right property with the left (two-way bind).
-        static member link left right world =
-            let world = World.bind left right world
-            World.bind right left world
-
-[<AutoOpen>]
-module WorldSimulantOperators =
-
-    /// Bind the left property to the right property.
-    let bind<'a> (left : Lens<'a, World>) right world = World.bind left right world
-
-    /// Bind the right property to the left property.
-    let dnib<'a> (left : Lens<'a, World>) right world = World.dnib left right world
-
-    /// Link the left property with the right and the right property (two-way bind).
-    let link<'a> (left : Lens<'a, World>) right world = World.link left right world
-
-    /// Bind the left property to the right property.
-    let inline (<=<) left right = bind left right
-
-    /// Bind the right property to the left property.
-    let inline (>=>) left right = bind right left
-
-    /// Link the left property with the right property (two-way bind).
-    let inline (>=<) left right = link left right
 
 [<RequireQualifiedAccess>]
 module PropertyDescriptor =

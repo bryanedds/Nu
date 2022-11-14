@@ -142,41 +142,29 @@ module WorldModuleEntity =
         static member private removeEntityState (entity : Entity) world =
             World.entityStateRemover entity world
 
-        static member private publishEntityChange propertyName (previousValue : obj) (propertyValue : obj) publishChangeBindings publishChangeEvents (entity : Entity) world =
-
-            // publish change binding
-            let world =
-                if publishChangeBindings
-                then World.publishChangeBinding propertyName entity world
-                else world
-
-            // publish change event
-            let world =
-                if publishChangeEvents then
-                    let changeData = { Name = propertyName; Previous = previousValue; Value = propertyValue }
-                    let entityNames = Address.getNames entity.EntityAddress
-                    let mutable changeEventNamesUtilized = false
-                    let changeEventAddress =
-                        // OPTIMIZATION: this optimization should be hit >= 90% of the time. The 10% of cases where
-                        // it isn't should be acceptable.
-                        if  Array.length entityNames = 3 &&
-                            changeEventNamesFree then
-                            changeEventNamesFree <- false
-                            changeEventNamesUtilized <- true
-                            changeEventNamesCached.[1] <- propertyName
-                            changeEventNamesCached.[3] <- entityNames.[0]
-                            changeEventNamesCached.[4] <- entityNames.[1]
-                            changeEventNamesCached.[5] <- entityNames.[2]
-                            rtoa<ChangeData> changeEventNamesCached
-                        else rtoa<ChangeData> (Array.append [|"Change"; propertyName; "Event"|] entityNames)
-                    let eventTrace = EventTrace.debug "World" "publishEntityChange" "" EventTrace.empty
-                    let world = World.publishPlus changeData changeEventAddress eventTrace entity false false world
-                    if changeEventNamesUtilized then changeEventNamesFree <- true
-                    world
-                else world
-
-            // fin
-            world
+        static member private publishEntityChange propertyName (previousValue : obj) (propertyValue : obj) publishChangeEvents (entity : Entity) world =
+            if publishChangeEvents then
+                let changeData = { Name = propertyName; Previous = previousValue; Value = propertyValue }
+                let entityNames = Address.getNames entity.EntityAddress
+                let mutable changeEventNamesUtilized = false
+                let changeEventAddress =
+                    // OPTIMIZATION: this optimization should be hit >= 90% of the time. The 10% of cases where
+                    // it isn't should be acceptable.
+                    if  Array.length entityNames = 3 &&
+                        changeEventNamesFree then
+                        changeEventNamesFree <- false
+                        changeEventNamesUtilized <- true
+                        changeEventNamesCached.[1] <- propertyName
+                        changeEventNamesCached.[3] <- entityNames.[0]
+                        changeEventNamesCached.[4] <- entityNames.[1]
+                        changeEventNamesCached.[5] <- entityNames.[2]
+                        rtoa<ChangeData> changeEventNamesCached
+                    else rtoa<ChangeData> (Array.append [|"Change"; propertyName; "Event"|] entityNames)
+                let eventTrace = EventTrace.debug "World" "publishEntityChange" "" EventTrace.empty
+                let world = World.publishPlus changeData changeEventAddress eventTrace entity false false world
+                if changeEventNamesUtilized then changeEventNamesFree <- true
+                world
+            else world
 
         static member inline private getEntityStateOpt entity world =
             World.entityStateFinder entity world
@@ -200,11 +188,6 @@ module WorldModuleEntity =
 
             // grab address
             let entityAddress = entity.EntityAddress
-
-            // apply publish bindings state
-            match World.tryGetKeyedValueFast<UMap<Entity Address, int>> (EntityBindingCountsId, world) with
-            | (true, entityBindingCounts) -> if UMap.containsKey entityAddress entityBindingCounts then entityState.PublishChangeBindings <- true
-            | (false, _) -> ()
             
             // apply publish changes state
             match World.tryGetKeyedValueFast<UMap<Entity Address, int>> (EntityChangeCountsId, world) with
@@ -220,19 +203,17 @@ module WorldModuleEntity =
         static member private publishEntityChanges entity world =
             let entityState = World.getEntityState entity world
             let properties = World.getProperties entityState
-            let publishChangeBindings = entityState.PublishChangeBindings
             let publishChangeEvents = entityState.PublishChangeEvents
-            if publishChangeEvents || publishChangeBindings then
+            if publishChangeEvents then
                 List.fold (fun world (propertyName, _, propertyValue) ->
                     let entityState = World.getEntityState entity world
-                    let publishChangeBindings = entityState.PublishChangeBindings
                     let publishChangeEvents = entityState.PublishChangeEvents
-                    World.publishEntityChange propertyName propertyValue propertyValue publishChangeBindings publishChangeEvents entity world)
+                    World.publishEntityChange propertyName propertyValue propertyValue publishChangeEvents entity world)
                     world properties
             else world
 
-        static member inline internal publishTransformEvents (oldTransform : Transform byref, newTransform : Transform byref, publishChangeBindings, publishChangeEvents, entity : Entity, world) =
-            if publishChangeEvents || publishChangeBindings then
+        static member inline internal publishTransformEvents (oldTransform : Transform byref, newTransform : Transform byref, publishChangeEvents, entity : Entity, world) =
+            if publishChangeEvents then
                 let positionChanged = v3Neq newTransform.Position oldTransform.Position
                 let scaleChanged = v3Neq newTransform.Scale oldTransform.Scale
                 let offsetChanged = v3Neq newTransform.Offset oldTransform.Offset
@@ -243,36 +224,36 @@ module WorldModuleEntity =
                 let centeredChanged = newTransform.Centered <> oldTransform.Centered
                 let perimeterUnscaledChanged = positionChanged || offsetChanged || sizeChanged || centeredChanged
                 // OPTIMIZATION: eliding data for computed change events for speed.
-                let world = World.publishEntityChange (nameof Transform) () () publishChangeBindings publishChangeEvents entity world
+                let world = World.publishEntityChange (nameof Transform) () () publishChangeEvents entity world
                 let world =
                     if perimeterUnscaledChanged then
-                        let world = World.publishEntityChange (nameof newTransform.Bounds) () () publishChangeBindings publishChangeEvents entity world
-                        let world = World.publishEntityChange (nameof newTransform.PerimeterOriented) () () publishChangeBindings publishChangeEvents entity world
-                        let world = World.publishEntityChange (nameof newTransform.Center) () () publishChangeBindings publishChangeEvents entity world
-                        let world = World.publishEntityChange (nameof newTransform.Bottom) () () publishChangeBindings publishChangeEvents entity world
-                        let world = World.publishEntityChange (nameof newTransform.Perimeter) () () publishChangeBindings publishChangeEvents entity world
-                        let world = World.publishEntityChange (nameof newTransform.PerimeterUnscaled) () () publishChangeBindings publishChangeEvents entity world
-                        let world = if positionChanged || centeredChanged then World.publishEntityChange (nameof newTransform.Position) oldTransform.Position newTransform.Position publishChangeBindings publishChangeEvents entity world else world
-                        let world = if scaleChanged || centeredChanged then World.publishEntityChange (nameof newTransform.Scale) oldTransform.Scale newTransform.Scale publishChangeBindings publishChangeEvents entity world else world
-                        let world = if offsetChanged || centeredChanged then World.publishEntityChange (nameof newTransform.Offset) oldTransform.Offset newTransform.Offset publishChangeBindings publishChangeEvents entity world else world
-                        let world = if sizeChanged || centeredChanged then World.publishEntityChange (nameof newTransform.Size) oldTransform.Size newTransform.Size publishChangeBindings publishChangeEvents entity world else world
-                        let world = if centeredChanged then World.publishEntityChange (nameof newTransform.Centered) oldTransform.Centered newTransform.Centered publishChangeBindings publishChangeEvents entity world else world
+                        let world = World.publishEntityChange (nameof newTransform.Bounds) () () publishChangeEvents entity world
+                        let world = World.publishEntityChange (nameof newTransform.PerimeterOriented) () () publishChangeEvents entity world
+                        let world = World.publishEntityChange (nameof newTransform.Center) () () publishChangeEvents entity world
+                        let world = World.publishEntityChange (nameof newTransform.Bottom) () () publishChangeEvents entity world
+                        let world = World.publishEntityChange (nameof newTransform.Perimeter) () () publishChangeEvents entity world
+                        let world = World.publishEntityChange (nameof newTransform.PerimeterUnscaled) () () publishChangeEvents entity world
+                        let world = if positionChanged || centeredChanged then World.publishEntityChange (nameof newTransform.Position) oldTransform.Position newTransform.Position publishChangeEvents entity world else world
+                        let world = if scaleChanged || centeredChanged then World.publishEntityChange (nameof newTransform.Scale) oldTransform.Scale newTransform.Scale publishChangeEvents entity world else world
+                        let world = if offsetChanged || centeredChanged then World.publishEntityChange (nameof newTransform.Offset) oldTransform.Offset newTransform.Offset publishChangeEvents entity world else world
+                        let world = if sizeChanged || centeredChanged then World.publishEntityChange (nameof newTransform.Size) oldTransform.Size newTransform.Size publishChangeEvents entity world else world
+                        let world = if centeredChanged then World.publishEntityChange (nameof newTransform.Centered) oldTransform.Centered newTransform.Centered publishChangeEvents entity world else world
                         world
                     else world
                 let world =
                     if anglesChanged then
-                        let world = World.publishEntityChange (nameof newTransform.Rotation) () () publishChangeBindings publishChangeEvents entity world
-                        let world = World.publishEntityChange (nameof newTransform.Angles) () () publishChangeBindings publishChangeEvents entity world
-                        let world = World.publishEntityChange (nameof newTransform.Degrees) () () publishChangeBindings publishChangeEvents entity world
+                        let world = World.publishEntityChange (nameof newTransform.Rotation) () () publishChangeEvents entity world
+                        let world = World.publishEntityChange (nameof newTransform.Angles) () () publishChangeEvents entity world
+                        let world = World.publishEntityChange (nameof newTransform.Degrees) () () publishChangeEvents entity world
                         world
                     else world
                 let world =
                     if elevationChanged
-                    then World.publishEntityChange (nameof newTransform.Elevation) oldTransform.Elevation newTransform.Elevation publishChangeBindings publishChangeEvents entity world
+                    then World.publishEntityChange (nameof newTransform.Elevation) oldTransform.Elevation newTransform.Elevation publishChangeEvents entity world
                     else world
                 let world =
                     if overflowChanged
-                    then World.publishEntityChange (nameof newTransform.Overflow) oldTransform.Overflow newTransform.Overflow publishChangeBindings publishChangeEvents entity world
+                    then World.publishEntityChange (nameof newTransform.Overflow) oldTransform.Overflow newTransform.Overflow publishChangeEvents entity world
                     else world
                 world
             else world
@@ -301,7 +282,7 @@ module WorldModuleEntity =
                         entityState.Xtension <- xtension
                         entityState.Imperative <- false
                         struct (entityState, World.setEntityState entityState entity world)
-                let world = World.publishEntityChange (nameof entityState.Imperative) previous value entityState.PublishChangeBindings entityState.PublishChangeEvents entity world
+                let world = World.publishEntityChange (nameof entityState.Imperative) previous value entityState.PublishChangeEvents entity world
                 struct (true, world)
             else struct (false, world)
 
@@ -320,7 +301,7 @@ module WorldModuleEntity =
                     else
                         let entityState = { entityState with Model = { DesignerType = value.DesignerType; DesignerValue = value.DesignerValue }}
                         struct (entityState, World.setEntityState entityState entity world)
-                let world = World.publishEntityChange (nameof entityState.Model) previous.DesignerValue value.DesignerValue entityState.PublishChangeBindings entityState.PublishChangeEvents entity world
+                let world = World.publishEntityChange (nameof entityState.Model) previous.DesignerValue value.DesignerValue entityState.PublishChangeEvents entity world
                 let world = (World.getEntityDispatcher entity world : EntityDispatcher).TryReforge (entity, world)
                 struct (true, world)
             else struct (false, world)
@@ -343,7 +324,7 @@ module WorldModuleEntity =
                     else
                         let entityState = { entityState with Model = { DesignerType = typeof<'a>; DesignerValue = valueObj }}
                         struct (entityState, World.setEntityState entityState entity world)
-                let world = World.publishEntityChange (nameof entityState.Model) previous.DesignerValue value entityState.PublishChangeBindings entityState.PublishChangeEvents entity world
+                let world = World.publishEntityChange (nameof entityState.Model) previous.DesignerValue value entityState.PublishChangeEvents entity world
                 let world = (World.getEntityDispatcher entity world : EntityDispatcher).TryReforge (entity, world)
                 struct (true, world)
             else struct (false, world)
@@ -382,7 +363,7 @@ module WorldModuleEntity =
                     else
                         let entityState = { entityState with ScriptFrameOpt = value }
                         struct (entityState, World.setEntityState entityState entity world)
-                let world = World.publishEntityChange (nameof entityState.ScriptFrameOpt) previous value entityState.PublishChangeBindings entityState.PublishChangeEvents entity world
+                let world = World.publishEntityChange (nameof entityState.ScriptFrameOpt) previous value entityState.PublishChangeEvents entity world
                 struct (true, world)
             else struct (false, world)
 
@@ -406,7 +387,6 @@ module WorldModuleEntity =
         static member internal getEntityOverflow entity world = (World.getEntityState entity world).Transform.Overflow
         static member internal getEntityPresence entity world = (World.getEntityState entity world).Presence
         static member internal getEntityAbsolute entity world = (World.getEntityState entity world).Absolute
-        static member internal getEntityPublishChangeBindings entity world = (World.getEntityState entity world).PublishChangeBindings
         static member internal getEntityPublishChangeEvents entity world = (World.getEntityState entity world).PublishChangeEvents
         static member internal getEntityEnabled entity world = (World.getEntityState entity world).Enabled
         static member internal getEntityEnabledLocal entity world = (World.getEntityState entity world).EnabledLocal
@@ -417,7 +397,6 @@ module WorldModuleEntity =
         static member internal getEntityPublishPostUpdates entity world = (World.getEntityState entity world).PublishPostUpdates
         static member internal getEntityPublishRenders entity world = (World.getEntityState entity world).PublishRenders
         static member internal getEntityPersistent entity world = (World.getEntityState entity world).Persistent
-        static member internal getEntityIgnorePropertyBindings entity world = (World.getEntityState entity world).IgnorePropertyBindings
         static member internal getEntityMounted entity world = (World.getEntityState entity world).Mounted
         static member internal getEntityIs2d entity world = (World.getEntityState entity world).Is2d
         static member internal getEntityCentered entity world = (World.getEntityState entity world).Centered
@@ -447,23 +426,7 @@ module WorldModuleEntity =
                         let entityState = EntityState.diverge entityState
                         entityState.PublishChangeEvents <- value
                         struct (entityState, World.setEntityState entityState entity world)
-                let world = World.publishEntityChange (nameof entityState.PublishChangeEvents) previous value entityState.PublishChangeBindings entityState.PublishChangeEvents entity world
-                struct (true, world)
-            else struct (false, world)
-        
-        static member internal setEntityPublishChangeBindings value entity world =
-            let entityState = World.getEntityState entity world
-            let previous = entityState.PublishChangeBindings
-            if value <> previous then
-                let struct (entityState, world) =
-                    if entityState.Imperative then
-                        entityState.PublishChangeBindings <- value
-                        struct (entityState, world)
-                    else
-                        let entityState = EntityState.diverge entityState
-                        entityState.PublishChangeBindings <- value
-                        struct (entityState, World.setEntityState entityState entity world)
-                let world = World.publishEntityChange (nameof entityState.PublishChangeBindings) previous value entityState.PublishChangeBindings entityState.PublishChangeEvents entity world
+                let world = World.publishEntityChange (nameof entityState.PublishChangeEvents) previous value entityState.PublishChangeEvents entity world
                 struct (true, world)
             else struct (false, world)
         
@@ -479,7 +442,7 @@ module WorldModuleEntity =
                         let entityState = EntityState.diverge entityState
                         entityState.PublishUpdates <- value
                         struct (entityState, World.setEntityState entityState entity world)
-                let world = World.publishEntityChange (nameof entityState.PublishUpdates) previous value entityState.PublishChangeBindings entityState.PublishChangeEvents entity world
+                let world = World.publishEntityChange (nameof entityState.PublishUpdates) previous value entityState.PublishChangeEvents entity world
                 struct (true, world)
             else struct (false, world)
         
@@ -495,7 +458,7 @@ module WorldModuleEntity =
                         let entityState = EntityState.diverge entityState
                         entityState.PublishPostUpdates <- value
                         struct (entityState, World.setEntityState entityState entity world)
-                let world = World.publishEntityChange (nameof entityState.PublishPostUpdates) previous value entityState.PublishChangeBindings entityState.PublishChangeEvents entity world
+                let world = World.publishEntityChange (nameof entityState.PublishPostUpdates) previous value entityState.PublishChangeEvents entity world
                 struct (true, world)
             else struct (false, world)
         
@@ -511,7 +474,7 @@ module WorldModuleEntity =
                         let entityState = EntityState.diverge entityState
                         entityState.PublishRenders <- value
                         struct (entityState, World.setEntityState entityState entity world)
-                let world = World.publishEntityChange (nameof entityState.PublishRenders) previous value entityState.PublishChangeBindings entityState.PublishChangeEvents entity world
+                let world = World.publishEntityChange (nameof entityState.PublishRenders) previous value entityState.PublishChangeEvents entity world
                 struct (true, world)
             else struct (false, world)
         
@@ -527,23 +490,7 @@ module WorldModuleEntity =
                         let entityState = EntityState.diverge entityState
                         entityState.Persistent <- value
                         struct (entityState, World.setEntityState entityState entity world)
-                let world = World.publishEntityChange (nameof entityState.Persistent) previous value entityState.PublishChangeBindings entityState.PublishChangeEvents entity world
-                struct (true, world)
-            else struct (false, world)
-        
-        static member internal setEntityIgnorePropertyBindings value entity world =
-            let entityState = World.getEntityState entity world
-            let previous = entityState.IgnorePropertyBindings
-            if value <> previous then
-                let struct (entityState, world) =
-                    if entityState.Imperative then
-                        entityState.IgnorePropertyBindings <- value
-                        struct (entityState, world)
-                    else
-                        let entityState = EntityState.diverge entityState
-                        entityState.IgnorePropertyBindings <- value
-                        struct (entityState, World.setEntityState entityState entity world)
-                let world = World.publishEntityChange (nameof entityState.IgnorePropertyBindings) previous value entityState.PublishChangeBindings entityState.PublishChangeEvents entity world
+                let world = World.publishEntityChange (nameof entityState.Persistent) previous value entityState.PublishChangeEvents entity world
                 struct (true, world)
             else struct (false, world)
         
@@ -559,7 +506,7 @@ module WorldModuleEntity =
                         let entityState = EntityState.diverge entityState
                         entityState.Mounted <- value
                         struct (entityState, World.setEntityState entityState entity world)
-                let world = World.publishEntityChange (nameof entityState.Mounted) previous value entityState.PublishChangeBindings entityState.PublishChangeEvents entity world
+                let world = World.publishEntityChange (nameof entityState.Mounted) previous value entityState.PublishChangeEvents entity world
                 struct (true, world)
             else struct (false, world)
         
@@ -574,7 +521,7 @@ module WorldModuleEntity =
                     else
                         let entityState = { entityState with Order = value }
                         (entityState, World.setEntityState entityState entity world)
-                let world = World.publishEntityChange (nameof entityState.Order) previous value entityState.PublishChangeBindings entityState.PublishChangeEvents entity world
+                let world = World.publishEntityChange (nameof entityState.Order) previous value entityState.PublishChangeEvents entity world
                 struct (true, world)
             else struct (false, world)
 
@@ -700,7 +647,7 @@ module WorldModuleEntity =
                 let world = World.propagateEntityProperties3 value entity world
 
                 // publish change event unconditionally
-                let world = World.publishEntityChange (nameof entityState.MountOpt) previous value true true entity world
+                let world = World.publishEntityChange (nameof entityState.MountOpt) previous value true entity world
 
                 // publish life cycle event unconditionally
                 let eventTrace = EventTrace.debug "World" "setEntityMount" "" EventTrace.empty
@@ -727,7 +674,7 @@ module WorldModuleEntity =
                         entityState.Absolute <- value
                         struct (entityState, World.setEntityState entityState entity world)
                 let world = World.updateEntityInEntityTree oldStatic oldLight oldPresence oldBounds entity oldWorld world
-                let world = World.publishEntityChange (nameof entityState.Absolute) previous value entityState.PublishChangeBindings entityState.PublishChangeEvents entity world
+                let world = World.publishEntityChange (nameof entityState.Absolute) previous value entityState.PublishChangeEvents entity world
                 struct (true, world)
             else struct (false, world)
 
@@ -749,7 +696,7 @@ module WorldModuleEntity =
                         entityState.Static <- value
                         struct (entityState, World.setEntityState entityState entity world)
                 let world = World.updateEntityInEntityTree oldStatic oldLight oldPresence oldBounds entity oldWorld world
-                let world = World.publishEntityChange (nameof entityState.Static) previous value entityState.PublishChangeBindings entityState.PublishChangeEvents entity world
+                let world = World.publishEntityChange (nameof entityState.Static) previous value entityState.PublishChangeEvents entity world
                 struct (true, world)
             else struct (false, world)
 
@@ -771,7 +718,7 @@ module WorldModuleEntity =
                         entityState.AlwaysUpdate <- value
                         struct (entityState, World.setEntityState entityState entity world)
                 let world = World.updateEntityInEntityTree oldStatic oldLight oldPresence oldBounds entity oldWorld world
-                let world = World.publishEntityChange (nameof entityState.AlwaysUpdate) previous value entityState.PublishChangeBindings entityState.PublishChangeEvents entity world
+                let world = World.publishEntityChange (nameof entityState.AlwaysUpdate) previous value entityState.PublishChangeEvents entity world
                 struct (true, world)
             else struct (false, world)
 
@@ -793,7 +740,7 @@ module WorldModuleEntity =
                         entityState.Light <- value
                         struct (entityState, World.setEntityState entityState entity world)
                 let world = World.updateEntityInEntityTree oldStatic oldLight oldPresence oldBounds entity oldWorld world
-                let world = World.publishEntityChange (nameof entityState.Light) previous value entityState.PublishChangeBindings entityState.PublishChangeEvents entity world
+                let world = World.publishEntityChange (nameof entityState.Light) previous value entityState.PublishChangeEvents entity world
                 struct (true, world)
             else struct (false, world)
 
@@ -815,7 +762,7 @@ module WorldModuleEntity =
                         entityState.Presence <- value
                         struct (entityState, World.setEntityState entityState entity world)
                 let world = World.updateEntityInEntityTree oldStatic oldLight oldPresence oldBounds entity oldWorld world
-                let world = World.publishEntityChange (nameof entityState.Presence) previous value entityState.PublishChangeBindings entityState.PublishChangeEvents entity world
+                let world = World.publishEntityChange (nameof entityState.Presence) previous value entityState.PublishChangeEvents entity world
                 struct (true, world)
             else struct (false, world)
 
@@ -854,7 +801,7 @@ module WorldModuleEntity =
                         struct (entityState, World.setEntityState entityState entity world)
                 let world = World.updateEntityInEntityTree oldStatic oldLight oldPresence oldBounds entity oldWorld world
                 let world = if World.getEntityMounted entity world then World.propagateEntityAffineMatrix entity world else world
-                let world = World.publishTransformEvents (&previous, &value, entityState.PublishChangeBindings, entityState.PublishChangeEvents, entity, world)
+                let world = World.publishTransformEvents (&previous, &value, entityState.PublishChangeEvents, entity, world)
                 struct (true, world)
             else struct (false, world)
 
@@ -904,7 +851,7 @@ module WorldModuleEntity =
                                 else
                                     let entityState = { entityState with PositionLocal = value }
                                     struct (entityState, World.setEntityState entityState entity world)
-                            let world = World.publishEntityChange (nameof entityState.PositionLocal) previous value entityState.PublishChangeBindings entityState.PublishChangeEvents entity world
+                            let world = World.publishEntityChange (nameof entityState.PositionLocal) previous value entityState.PublishChangeEvents entity world
                             struct (entityState, world)
                         else struct (entityState, world)
 
@@ -974,11 +921,10 @@ module WorldModuleEntity =
                                 else
                                     let entityState = { entityState with RotationLocal = value }
                                     struct (entityState, World.setEntityState entityState entity world)
-                            let publishChangeBindings = entityState.PublishChangeBindings
                             let publishChangeEvents = entityState.PublishChangeEvents
-                            let world = World.publishEntityChange (nameof entityState.RotationLocal) previous value publishChangeBindings publishChangeEvents entity world
-                            let world = World.publishEntityChange (nameof entityState.AnglesLocal) previousAnglesLocal anglesLocal publishChangeBindings publishChangeEvents entity world
-                            let world = World.publishEntityChange (nameof entityState.DegreesLocal) previousDegreesLocal (Math.radiansToDegrees3d anglesLocal) publishChangeBindings publishChangeEvents entity world
+                            let world = World.publishEntityChange (nameof entityState.RotationLocal) previous value publishChangeEvents entity world
+                            let world = World.publishEntityChange (nameof entityState.AnglesLocal) previousAnglesLocal anglesLocal publishChangeEvents entity world
+                            let world = World.publishEntityChange (nameof entityState.DegreesLocal) previousDegreesLocal (Math.radiansToDegrees3d anglesLocal) publishChangeEvents entity world
                             struct (entityState, world)
                         else struct (entityState, world)
 
@@ -1043,7 +989,7 @@ module WorldModuleEntity =
                                 else
                                     let entityState = { entityState with ScaleLocal = value }
                                     struct (entityState, World.setEntityState entityState entity world)
-                            let world = World.publishEntityChange (nameof entityState.ScaleLocal) previous value entityState.PublishChangeBindings entityState.PublishChangeEvents entity world
+                            let world = World.publishEntityChange (nameof entityState.ScaleLocal) previous value entityState.PublishChangeEvents entity world
                             struct (entityState, world)
                         else struct (entityState, world)
 
@@ -1139,11 +1085,10 @@ module WorldModuleEntity =
                                 else
                                     let entityState = { entityState with AnglesLocal = value }
                                     struct (entityState, World.setEntityState entityState entity world)
-                            let publishChangeBindings = entityState.PublishChangeBindings
                             let publishChangeEvents = entityState.PublishChangeEvents
-                            let world = World.publishEntityChange (nameof entityState.RotationLocal) previousRotationLocal rotationLocal publishChangeBindings publishChangeEvents entity world
-                            let world = World.publishEntityChange (nameof entityState.AnglesLocal) previous value publishChangeBindings publishChangeEvents entity world
-                            let world = World.publishEntityChange (nameof entityState.DegreesLocal) previousDegreesLocal (Math.radiansToDegrees3d value) publishChangeBindings publishChangeEvents entity world
+                            let world = World.publishEntityChange (nameof entityState.RotationLocal) previousRotationLocal rotationLocal publishChangeEvents entity world
+                            let world = World.publishEntityChange (nameof entityState.AnglesLocal) previous value publishChangeEvents entity world
+                            let world = World.publishEntityChange (nameof entityState.DegreesLocal) previousDegreesLocal (Math.radiansToDegrees3d value) publishChangeEvents entity world
                             struct (entityState, world)
                         else struct (entityState, world)
 
@@ -1221,7 +1166,7 @@ module WorldModuleEntity =
                                 else
                                     let entityState = { entityState with ElevationLocal = value }
                                     struct (entityState, World.setEntityState entityState entity world)
-                            World.publishEntityChange (nameof entityState.ElevationLocal) previous value entityState.PublishChangeBindings entityState.PublishChangeEvents entity world
+                            World.publishEntityChange (nameof entityState.ElevationLocal) previous value entityState.PublishChangeEvents entity world
                         else world
 
                     // compute mount elevation
@@ -1260,7 +1205,7 @@ module WorldModuleEntity =
                         entityState.Enabled <- value
                         let world = World.setEntityState entityState entity world
                         struct (entityState, world)
-                let world = World.publishEntityChange (nameof entityState.Enabled) previous value entityState.PublishChangeBindings entityState.PublishChangeEvents entity world
+                let world = World.publishEntityChange (nameof entityState.Enabled) previous value entityState.PublishChangeEvents entity world
                 let world = if World.getEntityMounted entity world then World.propagateEntityEnabled entity world else world
                 struct (true, world)
             else struct (false, world)
@@ -1278,7 +1223,7 @@ module WorldModuleEntity =
                         entityState.EnabledLocal <- value
                         let world = World.setEntityState entityState entity world
                         struct (entityState, world)
-                let world = World.publishEntityChange (nameof entityState.EnabledLocal) previous value entityState.PublishChangeBindings entityState.PublishChangeEvents entity world
+                let world = World.publishEntityChange (nameof entityState.EnabledLocal) previous value entityState.PublishChangeEvents entity world
                 let mountOpt = Option.bind (tryResolve entity) (World.getEntityMountOpt entity world)
                 let enabledMount =
                     match mountOpt with
@@ -1312,7 +1257,7 @@ module WorldModuleEntity =
                         entityState.Visible <- value
                         let world = World.setEntityState entityState entity world
                         struct (entityState, world)
-                let world = World.publishEntityChange (nameof entityState.Visible) previous value entityState.PublishChangeBindings entityState.PublishChangeEvents entity world
+                let world = World.publishEntityChange (nameof entityState.Visible) previous value entityState.PublishChangeEvents entity world
                 let world = if World.getEntityMounted entity world then World.propagateEntityVisible entity world else world
                 struct (true, world)
             else struct (false, world)
@@ -1330,7 +1275,7 @@ module WorldModuleEntity =
                         entityState.VisibleLocal <- value
                         let world = World.setEntityState entityState entity world
                         struct (entityState, world)
-                let world = World.publishEntityChange (nameof entityState.VisibleLocal) previous value entityState.PublishChangeBindings entityState.PublishChangeEvents entity world
+                let world = World.publishEntityChange (nameof entityState.VisibleLocal) previous value entityState.PublishChangeEvents entity world
                 let mountOpt = Option.bind (tryResolve entity) (World.getEntityMountOpt entity world)
                 let enabledMount =
                     match mountOpt with
@@ -1753,10 +1698,8 @@ module WorldModuleEntity =
             if notNull (entityStateOpt :> obj) then
                 match World.trySetEntityXtensionPropertyWithoutEvent propertyName property entityStateOpt entity world with
                 | struct (true, changed, previous, world) ->
-                    if changed then
-                        let publishChangeBindings = entityStateOpt.PublishChangeBindings
-                        let publishChangeEvents = entityStateOpt.PublishChangeEvents
-                        World.publishEntityChange propertyName previous property.PropertyValue publishChangeBindings publishChangeEvents entity world
+                    if changed
+                    then World.publishEntityChange propertyName previous property.PropertyValue entityStateOpt.PublishChangeEvents entity world
                     else world
                 | struct (false, _, _, world) -> world
             else world
@@ -1767,10 +1710,8 @@ module WorldModuleEntity =
                 match World.trySetEntityXtensionPropertyWithoutEvent propertyName property entityStateOpt entity world with
                 | struct (true, changed, previous, world) ->
                     let world =
-                        if changed then
-                            let publishChangeBindings = entityStateOpt.PublishChangeBindings
-                            let publishChangeEvents = entityStateOpt.PublishChangeEvents
-                            World.publishEntityChange propertyName previous property.PropertyValue publishChangeBindings publishChangeEvents entity world
+                        if changed
+                        then World.publishEntityChange propertyName previous property.PropertyValue entityStateOpt.PublishChangeEvents entity world
                         else world
                     struct (true, changed, world)
                 | struct (false, changed, _, world) -> struct (false, changed, world)
@@ -1835,10 +1776,8 @@ module WorldModuleEntity =
                                 let entityState = EntityState.setProperty propertyName property entityState
                                 if entityState.Imperative then world else World.setEntityState entityState entity world
                         else world
-                if changed then
-                    let publishChangeBindings = entityStateOpt.PublishChangeBindings
-                    let publishChangeEvents = entityStateOpt.PublishChangeEvents
-                    World.publishEntityChange propertyName previous propertyOld.PropertyValue publishChangeBindings publishChangeEvents entity world
+                if changed
+                then World.publishEntityChange propertyName previous propertyOld.PropertyValue entityStateOpt.PublishChangeEvents entity world
                 else world
             else failwithf "Could not find entity '%s'." (scstring entity)
 
@@ -1867,7 +1806,7 @@ module WorldModuleEntity =
                 let entityState = World.getEntityState entity world
                 let entityState = EntityState.attachProperty propertyName property entityState
                 let world = World.setEntityState entityState entity world
-                World.publishEntityChange propertyName property.PropertyValue property.PropertyValue entityState.PublishChangeBindings entityState.PublishChangeEvents entity world
+                World.publishEntityChange propertyName property.PropertyValue property.PropertyValue entityState.PublishChangeEvents entity world
             else failwith ("Cannot attach entity property '" + propertyName + "'; entity '" + scstring entity + "' is not found.")
 
         static member internal detachEntityProperty propertyName entity world =
@@ -2504,7 +2443,6 @@ module WorldModuleEntity =
         EntityGetters.["Model"] <- fun entity world -> let designerProperty = World.getEntityModelProperty entity world in { PropertyType = designerProperty.DesignerType; PropertyValue = designerProperty.DesignerValue }
         EntityGetters.["MountOpt"] <- fun entity world -> { PropertyType = typeof<Entity Relation option>; PropertyValue = World.getEntityMountOpt entity world }
         EntityGetters.["Imperative"] <- fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityImperative entity world }
-        EntityGetters.["PublishChangeBindings"] <- fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPublishChangeBindings entity world }
         EntityGetters.["PublishChangeEvents"] <- fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPublishChangeEvents entity world }
         EntityGetters.["Enabled"] <- fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityEnabled entity world }
         EntityGetters.["EnabledLocal"] <- fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityEnabledLocal entity world }
@@ -2515,7 +2453,6 @@ module WorldModuleEntity =
         EntityGetters.["PublishPostUpdates"] <- fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPublishPostUpdates entity world }
         EntityGetters.["PublishRenders"] <- fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPublishRenders entity world }
         EntityGetters.["Persistent"] <- fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPersistent entity world }
-        EntityGetters.["IgnorePropertyBindings"] <- fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityIgnorePropertyBindings entity world }
         EntityGetters.["Mounted"] <- fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityMounted entity world }
         EntityGetters.["Is2d"] <- fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityIs2d entity world }
         EntityGetters.["Centered"] <- fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityCentered entity world }
@@ -2567,7 +2504,6 @@ module WorldModuleEntity =
         EntitySetters.["Light"] <- fun property entity world -> World.setEntityLight (property.PropertyValue :?> bool) entity world
         EntitySetters.["AlwaysUpdate"] <- fun property entity world -> World.setEntityAlwaysUpdate (property.PropertyValue :?> bool) entity world
         EntitySetters.["Persistent"] <- fun property entity world -> World.setEntityPersistent (property.PropertyValue :?> bool) entity world
-        EntitySetters.["IgnorePropertyBindings"] <- fun property entity world -> World.setEntityIgnorePropertyBindings (property.PropertyValue :?> bool) entity world
 
     /// Initialize getters and setters
     let internal init () =

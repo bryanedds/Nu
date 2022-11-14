@@ -36,20 +36,3 @@ module Stream =
     /// (that is, there is a screen transition in progress).
     let [<DebuggerHidden; DebuggerStepThrough>] whenSelectedScreenTransitioning stream =
         Stream.filterEvent (fun _ -> World.isSelectedScreenTransitioning) stream
-
-[<AutoOpen>]
-module StreamOperators =
-
-    /// Stream sequencing operator.
-    let [<DebuggerHidden; DebuggerStepThrough>] (---) = (|>)
-
-    /// Make a stream of the subscriber's change events.
-    let [<DebuggerHidden; DebuggerStepThrough>] (!--) (lens : Lens<'b, World>) = !-- lens
-
-    /// Propagate the event data of a stream to a value in the observing simulant when the
-    /// subscriber exists (doing nothing otherwise).
-    let [<DebuggerHidden; DebuggerStepThrough>] (-|>) stream (lens : Lens<'b, World>) = stream -|> lens
-
-    // Propagate a value from the given source simulant to a value in the given destination
-    // simulant, but with update-based cycle-breaking.
-    let [<DebuggerHidden; DebuggerStepThrough>] (-/>) stream lens = Stream.noMoreThanOncePerUpdate stream -|> lens

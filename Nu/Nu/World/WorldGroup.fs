@@ -14,27 +14,28 @@ module WorldGroupModule =
     type Group with
     
         member this.GetDispatcher world = World.getGroupDispatcher this world
-        member this.Dispatcher = lensReadOnly (nameof this.Dispatcher) this.GetDispatcher this
-        member this.GetModelGeneric<'a> world = World.getGroupModel<'a> this world
-        member this.SetModelGeneric<'a> value world = World.setGroupModel<'a> value this world |> snd'
-        member this.ModelGeneric<'a> () = lens "Model" this.GetModelGeneric<'a> this.SetModelGeneric<'a> this
+        static member Dispatcher = lensReadOnly (nameof Group.Dispatcher) (fun (this : Group) -> this.GetDispatcher)
+        member this.GetModelGeneric<'model> world = World.getGroupModel<'model> this world
+        member this.SetModelGeneric<'model> value world = World.setGroupModel<'model> value this world |> snd'
+        static member ModelGeneric<'model> () = lens "Model" (fun (this : Group) -> this.GetModelGeneric<'model>) (fun value this -> this.SetModelGeneric<'model> value)
         member this.GetEcs world = World.getScreenEcs this.Screen world
-        member this.Ecs = lensReadOnly (nameof this.Ecs) this.GetEcs this
+        static member Ecs = lensReadOnly (nameof Group.Ecs) (fun (this : Group) -> this.GetEcs)
         member this.GetVisible world = World.getGroupVisible this world
         member this.SetVisible value world = World.setGroupVisible value this world |> snd'
-        member this.Visible = lens (nameof this.Visible) this.GetVisible this.SetVisible this
+        static member Visible = lens (nameof Group.Visible) (fun (this : Group) -> this.GetVisible) (fun value this -> this.SetVisible value)
         member this.GetPersistent world = World.getGroupPersistent this world
         member this.SetPersistent value world = World.setGroupPersistent value this world |> snd'
-        member this.Persistent = lens (nameof this.Persistent) this.GetPersistent this.SetPersistent this
+        static member Persistent = lens (nameof Group.Persistent) (fun (this : Group) -> this.GetPersistent) (fun value this -> this.SetPersistent value)
         member this.GetDestroying world = World.getGroupDestroying this world
-        member this.Destroying = lensReadOnly (nameof this.Destroying) this.GetDestroying this
+        static member Destroying = lensReadOnly (nameof Group.Destroying) (fun (this : Group) -> this.GetDestroying)
         member this.GetScriptFrame world = World.getGroupScriptFrame this world
-        member this.ScriptFrame = lensReadOnly (nameof this.ScriptFrame) this.GetScriptFrame this
+        static member ScriptFrame = lensReadOnly (nameof Group.ScriptFrame) (fun (this : Group) -> this.GetScriptFrame)
         member this.GetOrder world = World.getGroupOrder this world
-        member this.Order = lensReadOnly (nameof this.Order) this.GetOrder this
+        static member Order = lensReadOnly (nameof Group.Order) (fun (this : Group) -> this.GetOrder)
         member this.GetId world = World.getGroupId this world
-        member this.Id = lensReadOnly (nameof this.Id) this.GetId this
+        static member Id = lensReadOnly (nameof Group.Id) (fun (this : Group) -> this.GetId)
 
+        static member Event = Unchecked.defaultof<Entity>
         member this.RegisterEvent = Events.Register --> this
         member this.UnregisteringEvent = Events.Unregistering --> this
         member this.ChangeEvent propertyName = Events.Change propertyName --> this
@@ -186,7 +187,7 @@ module WorldGroupModule =
                 List.fold (fun world childDescriptor ->
                     let (entity, world) = World.createEntity4 DefaultOverlay childDescriptor group world
                     // quick size entity if a size was not specified by the descriptor properties
-                    if not (List.exists (fun (name, _) -> name = nameof entity.Size) childDescriptor.SimulantProperties) then
+                    if not (List.exists (fun (name, _) -> name = nameof Entity.Size) childDescriptor.SimulantProperties) then
                         let quickSize = entity.GetQuickSize world
                         entity.SetSize quickSize world
                     else world)
@@ -307,54 +308,3 @@ module WorldGroupModule =
             let groupDescriptorStr = File.ReadAllText filePath
             let groupDescriptor = scvalue<GroupDescriptor> groupDescriptorStr
             World.readGroup groupDescriptor nameOpt screen world
-
-        /// Turn a groups lens into a series of live groups.
-        static member expandGroups (lens : Lens<obj, World>) sieve unfold mapper origin screen world =
-            let mapperGeneralized = fun i a -> mapper i a :> SimulantContent
-            World.expandSimulants lens sieve unfold mapperGeneralized origin screen screen world
-
-        /// Turn group content into a live group.
-        static member expandGroupContent content origin screen world =
-            if World.getScreenExists screen world then
-                match GroupContent.expand content screen world with
-                | Choice1Of3 (lens, sieve, unfold, mapper) ->
-                    let world = World.expandGroups lens sieve unfold mapper origin screen world
-                    (None, world)
-                | Choice2Of3 (_, descriptor, handlers, binds, streams, entityFilePaths, entityContents) ->
-                    let (group, world) =
-                        World.createGroup3 descriptor screen world
-                    let world =
-                        List.fold (fun world (_, entityName, filePath) ->
-                            World.readEntityFromFile filePath (Some entityName) group world |> snd)
-                            world entityFilePaths
-                    let world =
-                        List.fold (fun world (simulant, left : World Lens, right, twoWay) ->
-                            if twoWay then
-                                let world = WorldModule.bind5 false simulant left right world
-                                WorldModule.bind5 false simulant right left world
-                            else WorldModule.bind5 true simulant left right world)
-                            world binds
-                    let world =
-                        List.fold (fun world (handler, address, simulant) ->
-                            World.monitor (fun (evt : Event) world ->
-                                let signal = handler evt
-                                let owner = match origin with SimulantOrigin simulant -> simulant | FacetOrigin (simulant, _) -> simulant
-                                let world = WorldModule.trySignal signal owner world
-                                (Cascade, world))
-                                address simulant world)
-                            world handlers
-                    let world =
-                        List.fold (fun world (group, lens, sieve, unfold, mapper) ->
-                            World.expandEntities lens sieve unfold mapper origin group group world)
-                            world streams
-                    let world =
-                        List.fold (fun world (owner, entityContents) ->
-                            List.fold (fun world entityContent ->
-                                World.expandEntityContent entityContent origin owner group world |> snd)
-                                world entityContents)
-                            world entityContents
-                    (Some group, world)
-                | Choice3Of3 (groupName, filePath) ->
-                    let (group, world) = World.readGroupFromFile filePath (Some groupName) screen world
-                    (Some group, world)
-            else (None, world)

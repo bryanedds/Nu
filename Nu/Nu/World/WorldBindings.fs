@@ -34,9 +34,9 @@ module WorldBindings =
         "setBodyPosition setBodyRotation setBodyLinearVelocity applyBodyLinearImpulse " +
         "setBodyAngularVelocity applyBodyAngularImpulse applyBodyForce isMouseButtonDown " +
         "getMousePosition getMousePosition2dScreen getMousePostion2dWorld getMousePosition3dScreen " +
-        "getMouseRay3dWorld isKeyboardKeyDown expandContent destroyImmediate " +
+        "getMouseRay3dWorld isKeyboardKeyDown destroyImmediate " +
         "destroy tryGetParent getParent getChildren " +
-        "getExists isSelected ignorePropertyBindings getEntities0 " +
+        "getExists isSelected getEntities0 " +
         "getGroups0 writeGameToFile readGameFromFile getScreens " +
         "setScreenDissolve destroyScreen createScreen createDissolveScreen " +
         "writeScreenToFile readScreenFromFile getGroups createGroup " +
@@ -1219,49 +1219,6 @@ module WorldBindings =
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'isKeyboardKeyDown' due to: " + scstring exn, ValueNone)
             struct (violation, World.choose oldWorld)
 
-    let expandContent setScreenSplash content origin owner parent world =
-        let oldWorld = world
-        try
-            let setScreenSplash =
-                match ScriptingSystem.tryExport typeof<FSharpFunc<SplashDescriptor, FSharpFunc<Screen, FSharpFunc<Screen, FSharpFunc<World, World>>>>> setScreenSplash world with
-                | Some value -> value :?> FSharpFunc<SplashDescriptor, FSharpFunc<Screen, FSharpFunc<Screen, FSharpFunc<World, World>>>>
-                | None -> failwith "Invalid argument type for 'setScreenSplash'; expecting a value convertable to FSharpFunc`2."
-            let content =
-                match ScriptingSystem.tryExport typeof<SimulantContent> content world with
-                | Some value -> value :?> SimulantContent
-                | None -> failwith "Invalid argument type for 'content'; expecting a value convertable to SimulantContent."
-            let origin =
-                match ScriptingSystem.tryExport typeof<ContentOrigin> origin world with
-                | Some value -> value :?> ContentOrigin
-                | None -> failwith "Invalid argument type for 'origin'; expecting a value convertable to ContentOrigin."
-            let struct (owner, world) =
-                let context = World.getScriptContext world
-                match World.evalInternal owner world with
-                | struct (Scripting.String str, world)
-                | struct (Scripting.Keyword str, world) ->
-                    let relation = Relation.makeFromString str
-                    let address = Relation.resolve context.SimulantAddress relation
-                    struct (World.derive address, world)
-                | struct (Scripting.Violation (_, error, _), _) -> failwith error
-                | struct (_, _) -> failwith "Relation must be either a String or Keyword."
-            let struct (parent, world) =
-                let context = World.getScriptContext world
-                match World.evalInternal parent world with
-                | struct (Scripting.String str, world)
-                | struct (Scripting.Keyword str, world) ->
-                    let relation = Relation.makeFromString str
-                    let address = Relation.resolve context.SimulantAddress relation
-                    struct (World.derive address, world)
-                | struct (Scripting.Violation (_, error, _), _) -> failwith error
-                | struct (_, _) -> failwith "Relation must be either a String or Keyword."
-            let result = World.expandContent setScreenSplash content origin owner parent world
-            let (value, world) = result
-            let value = ScriptingSystem.tryImport typeof<FSharpOption<Simulant>> value world |> Option.get
-            struct (value, world)
-        with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'expandContent' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
-
     let destroyImmediate simulant world =
         let oldWorld = world
         try
@@ -1403,27 +1360,6 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'isSelected' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
-
-    let ignorePropertyBindings simulant world =
-        let oldWorld = world
-        try
-            let struct (simulant, world) =
-                let context = World.getScriptContext world
-                match World.evalInternal simulant world with
-                | struct (Scripting.String str, world)
-                | struct (Scripting.Keyword str, world) ->
-                    let relation = Relation.makeFromString str
-                    let address = Relation.resolve context.SimulantAddress relation
-                    struct (World.derive address, world)
-                | struct (Scripting.Violation (_, error, _), _) -> failwith error
-                | struct (_, _) -> failwith "Relation must be either a String or Keyword."
-            let result = World.ignorePropertyBindings simulant world
-            let value = result
-            let value = ScriptingSystem.tryImport typeof<Boolean> value world |> Option.get
-            struct (value, world)
-        with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'ignorePropertyBindings' due to: " + scstring exn, ValueNone)
             struct (violation, World.choose oldWorld)
 
     let getEntities0 world =
@@ -3523,17 +3459,6 @@ module WorldBindings =
                 struct (violation, world)
         | Some violation -> struct (violation, world)
 
-    let evalExpandContentBinding fnName exprs originOpt world =
-        let struct (evaleds, world) = World.evalManyInternal exprs world
-        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
-        | None ->
-            match evaleds with
-            | [|setScreenSplash; content; origin; owner; parent|] -> expandContent setScreenSplash content origin owner parent world
-            | _ ->
-                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
-                struct (violation, world)
-        | Some violation -> struct (violation, world)
-
     let evalDestroyImmediateBinding fnName exprs originOpt world =
         let struct (evaleds, world) = World.evalManyInternal exprs world
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
@@ -3606,17 +3531,6 @@ module WorldBindings =
         | None ->
             match evaleds with
             | [|simulant|] -> isSelected simulant world
-            | _ ->
-                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
-                struct (violation, world)
-        | Some violation -> struct (violation, world)
-
-    let evalIgnorePropertyBindingsBinding fnName exprs originOpt world =
-        let struct (evaleds, world) = World.evalManyInternal exprs world
-        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
-        | None ->
-            match evaleds with
-            | [|simulant|] -> ignorePropertyBindings simulant world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
                 struct (violation, world)
@@ -4633,7 +4547,6 @@ module WorldBindings =
              ("getMousePosition3dScreen", { Fn = evalGetMousePosition3dScreenBinding; Pars = [||]; DocOpt = None })
              ("getMouseRay3dWorld", { Fn = evalGetMouseRay3dWorldBinding; Pars = [|"absolute"|]; DocOpt = None })
              ("isKeyboardKeyDown", { Fn = evalIsKeyboardKeyDownBinding; Pars = [|"key"|]; DocOpt = None })
-             ("expandContent", { Fn = evalExpandContentBinding; Pars = [|"setScreenSplash"; "content"; "origin"; "owner"; "parent"|]; DocOpt = None })
              ("destroyImmediate", { Fn = evalDestroyImmediateBinding; Pars = [|"simulant"|]; DocOpt = None })
              ("destroy", { Fn = evalDestroyBinding; Pars = [|"simulant"|]; DocOpt = None })
              ("tryGetParent", { Fn = evalTryGetParentBinding; Pars = [|"simulant"|]; DocOpt = None })
@@ -4641,7 +4554,6 @@ module WorldBindings =
              ("getChildren", { Fn = evalGetChildrenBinding; Pars = [|"simulant"|]; DocOpt = None })
              ("getExists", { Fn = evalGetExistsBinding; Pars = [|"simulant"|]; DocOpt = None })
              ("isSelected", { Fn = evalIsSelectedBinding; Pars = [|"simulant"|]; DocOpt = None })
-             ("ignorePropertyBindings", { Fn = evalIgnorePropertyBindingsBinding; Pars = [|"simulant"|]; DocOpt = None })
              ("getEntities0", { Fn = evalGetEntities0Binding; Pars = [||]; DocOpt = None })
              ("getGroups0", { Fn = evalGetGroups0Binding; Pars = [||]; DocOpt = None })
              ("writeGameToFile", { Fn = evalWriteGameToFileBinding; Pars = [|"filePath"|]; DocOpt = None })

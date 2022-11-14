@@ -1,8 +1,6 @@
 ﻿namespace MyGame
 open Prime
 open Nu
-open Nu.Declarative
-open Nu.ForgeOperators
 
 [<AutoOpen>]
 module MyGame =
@@ -32,7 +30,7 @@ module MyGame =
     type Game with
         member this.GetModel world = this.GetModelGeneric<Model> world
         member this.SetModel value world = this.SetModelGeneric<Model> value world
-        member this.Model = this.ModelGeneric<Model> ()
+        static member Model = Game.ModelGeneric<Model> ()
 
     // this is the game dispatcher that is customized for our game. In here, we create screens as
     // content and bind them up with events and properties.
@@ -56,19 +54,19 @@ module MyGame =
         // here we describe the content of the game, including all of its screens.
         override this.Forge (model, game) =
             Forge.game
-                [game.DesiredScreen ==
+                [Game.DesiredScreen ==
                     match model with
                     | Splash -> Desire Simulants.Splash.Screen
                     | Title -> Desire Simulants.Title.Screen
                     | Credits -> Desire Simulants.Credits.Screen
                     | Gameplay gameplay -> match gameplay with | Playing -> Desire Simulants.Gameplay.Screen | Quitting | Quit -> Desire Simulants.Title.Screen
-                 game.Model.ChangeEvent ==> cmd ModelChanged
+                 Game.Event.ChangeEvent "Model" ==> cmd ModelChanged
                  Simulants.Splash.Screen.DeselectingEvent ==> msg ShowTitle
                  Simulants.Title.Gui.Credits.ClickEvent ==> msg ShowCredits
                  Simulants.Title.Gui.Play.ClickEvent ==> msg ShowGameplay
                  Simulants.Title.Gui.Exit.ClickEvent ==> cmd Exit
                  Simulants.Credits.Gui.Back.ClickEvent ==> msg ShowTitle
-                 Simulants.Gameplay.Screen.Gameplay.ChangeEvent ==|> fun event -> msg (GameplayChanged (event.Data.Value :?> Gameplay))]
+                 Simulants.Gameplay.Screen.ChangeEvent "Gameplay" ==|> fun event -> msg (GameplayChanged (event.Data.Value :?> Gameplay))]
                 [Forge.screen Simulants.Splash.Screen.Name (WorldTypes.Splash (Constants.Dissolve.Default, Constants.Splash.Default, None, Simulants.Title.Screen)) [] []
                  Forge.screenWithGroupFromFile Simulants.Title.Screen.Name (Dissolve (Constants.Dissolve.Default, None)) "Assets/Gui/Title.nugroup" [] []
                  Forge.screenWithGroupFromFile Simulants.Credits.Screen.Name (Dissolve (Constants.Dissolve.Default, None)) "Assets/Gui/Credits.nugroup" [] []

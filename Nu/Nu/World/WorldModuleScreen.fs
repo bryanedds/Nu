@@ -71,20 +71,10 @@ module WorldModuleScreen =
             World.screenStateRemover screen world
 
         static member internal publishScreenChange (propertyName : string) (propertyPrevious : obj) (propertyValue : obj) (screen : Screen) world =
-
-            // publish change binding
-            let world =
-                World.publishChangeBinding propertyName screen world
-
-            // publish change event
-            let world =
-                let changeData = { Name = propertyName; Previous = propertyPrevious; Value = propertyValue }
-                let changeEventAddress = rtoa<ChangeData> [|"Change"; propertyName; "Event"; screen.Name|]
-                let eventTrace = EventTrace.debug "World" "publishScreenChange" "" EventTrace.empty
-                World.publishPlus changeData changeEventAddress eventTrace screen false false world
-
-            // fin
-            world
+            let changeData = { Name = propertyName; Previous = propertyPrevious; Value = propertyValue }
+            let changeEventAddress = rtoa<ChangeData> [|"Change"; propertyName; "Event"; screen.Name|]
+            let eventTrace = EventTrace.debug "World" "publishScreenChange" "" EventTrace.empty
+            World.publishPlus changeData changeEventAddress eventTrace screen false false world
 
         static member private getScreenStateOpt screen world =
              World.screenStateFinder screen world

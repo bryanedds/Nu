@@ -51,12 +51,10 @@ module Reflection =
              ("Degrees", true)
              ("DegreesLocal", true)
              ("Imperative", true)
-             ("PublishChangeBindings", true)
              ("PublishChangeEvents", true)
              ("PublishUpdates", true)
              ("PublishPostUpdates", true)
              ("PublishRenders", true)
-             ("IgnorePropertyBindings", true)
              ("Mounted", true)
              ("Is2d", true)
              ("Physical", true)
@@ -535,6 +533,6 @@ module ReflectionSyntax =
 module LensOperators =
 
     /// Define a property along with its initial value, also initializing its global attributes as non-persistent.
-    let nonPersistent (lens : Lens<'a, 'w>) (value : 'a) =
+    let nonPersistent (lens : Lens<'a, 's, 'w>) (value : 'a) =
         Reflection.initPropertyNonPersistent true lens.Name
         define lens value
