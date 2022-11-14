@@ -15,143 +15,141 @@ module WorldEntityModule =
     type Entity with
 
         member this.GetDispatcher world = World.getEntityDispatcher this world
-        member this.Dispatcher = lensReadOnly (nameof this.Dispatcher) this.GetDispatcher this
-        member this.GetModelGeneric<'a> world = World.getEntityModel<'a> this world
-        member this.SetModelGeneric<'a> value world = World.setEntityModel<'a> value this world |> snd'
-        member this.ModelGeneric<'a> () = lens "Model" this.GetModelGeneric<'a> this.SetModelGeneric<'a> this
+        static member Dispatcher = lensReadOnly (nameof Entity.Dispatcher) (fun (this : Entity) -> this.GetDispatcher)
+        member this.GetModelGeneric<'model> world = World.getEntityModel<'model> this world
+        member this.SetModelGeneric<'model> value world = World.setEntityModel<'model> value this world |> snd'
+        static member ModelGeneric<'model> () = lens "Model" (fun (this : Entity) -> this.GetModelGeneric<'model>) (fun value this -> this.SetModelGeneric<'model> value)
         member this.GetEcs world = World.getScreenEcs this.Screen world
-        member this.Ecs = lensReadOnly (nameof this.Ecs) this.GetEcs this
+        static member Ecs = lensReadOnly (nameof Entity.Ecs) (fun (this : Entity) -> this.GetEcs)
         member this.GetFacets world = World.getEntityFacets this world
-        member this.Facets = lensReadOnly (nameof this.Facets) this.GetFacets this
+        static member Facets = lensReadOnly (nameof Entity.Facets) (fun (this : Entity) -> this.GetFacets)
         member this.GetTransform world = World.getEntityTransform this world
         member this.SetTransform value world = let mutable value = value in World.setEntityTransformByRef (&value, World.getEntityState this world, this, world) |> snd'
-        member this.Transform = lens (nameof this.Transform) this.GetTransform this.SetTransform this
+        static member Transform = lens (nameof Entity.Transform) (fun (this : Entity) -> this.GetTransform) (fun value this -> this.SetTransform value)
         member this.SetPerimeterUnscaled value world = World.setEntityPerimeterUnscaled value this world |> snd'
         member this.GetPerimeterUnscaled world = World.getEntityPerimeterUnscaled this world
-        member this.PerimeterUnscaled = lens (nameof this.PerimeterUnscaled) this.GetPerimeterUnscaled this.SetPerimeterUnscaled this
+        static member PerimeterUnscaled = lens (nameof Entity.PerimeterUnscaled) (fun (this : Entity) -> this.GetPerimeterUnscaled) (fun value this -> this.SetPerimeterUnscaled value)
         member this.SetPerimeter value world = World.setEntityPerimeter value this world |> snd'
         member this.GetPerimeter world = World.getEntityPerimeter this world
-        member this.Perimeter = lens (nameof this.Perimeter) this.GetPerimeter this.SetPerimeter this
+        static member Perimeter = lens (nameof Entity.Perimeter) (fun (this : Entity) -> this.GetPerimeter) (fun value this -> this.SetPerimeter value)
         member this.SetCenter value world = World.setEntityCenter value this world |> snd'
         member this.GetCenter world = World.getEntityCenter this world
-        member this.Center = lens (nameof this.Center) this.GetCenter this.SetCenter this
+        static member Center = lens (nameof Entity.Center) (fun (this : Entity) -> this.GetCenter) (fun value this -> this.SetCenter value)
         member this.SetBottom value world = World.setEntityBottom value this world |> snd'
         member this.GetBottom world = World.getEntityBottom this world
-        member this.Bottom = lens (nameof this.Bottom) this.GetBottom this.SetBottom this
+        static member Bottom = lens (nameof Entity.Bottom) (fun (this : Entity) -> this.GetBottom) (fun value this -> this.SetBottom value)
         member this.GetPerimeterOriented world = World.getEntityPerimeterOriented this world
-        member this.PerimeterOriented = lensReadOnly (nameof this.PerimeterOriented) this.GetPerimeterOriented this
+        static member PerimeterOriented = lensReadOnly (nameof Entity.PerimeterOriented) (fun (this : Entity) -> this.GetPerimeterOriented)
         member this.GetBounds world = World.getEntityBounds this world
-        member this.Bounds = lensReadOnly (nameof this.Bounds) this.GetBounds this
+        static member Bounds = lensReadOnly (nameof Entity.Bounds) (fun (this : Entity) -> this.GetBounds)
         member this.GetPosition world = World.getEntityPosition this world
         member this.SetPosition value world = World.setEntityPosition value this world |> snd'
-        member this.Position = lens (nameof this.Position) this.GetPosition this.SetPosition this
+        static member Position = lens (nameof Entity.Position) (fun (this : Entity) -> this.GetPosition) (fun value this -> this.SetPosition value)
         member this.GetPositionLocal world = World.getEntityPositionLocal this world
         member this.SetPositionLocal value world = World.setEntityPositionLocal value this world |> snd'
-        member this.PositionLocal = lens (nameof this.PositionLocal) this.GetPositionLocal this.SetPositionLocal this
+        static member PositionLocal = lens (nameof Entity.PositionLocal) (fun (this : Entity) -> this.GetPositionLocal) (fun value this -> this.SetPositionLocal value)
         member this.GetRotation world = World.getEntityRotation this world
         member this.SetRotation value world = World.setEntityRotation value this world |> snd'
-        member this.Rotation = lens (nameof this.Rotation) this.GetRotation this.SetRotation this
+        static member Rotation = lens (nameof Entity.Rotation) (fun (this : Entity) -> this.GetRotation) (fun value this -> this.SetRotation value)
         member this.GetRotationLocal world = World.getEntityRotationLocal this world
         member this.SetRotationLocal value world = World.setEntityRotationLocal value this world |> snd'
-        member this.RotationLocal = lens (nameof this.RotationLocal) this.GetRotationLocal this.SetRotationLocal this
+        static member RotationLocal = lens (nameof Entity.RotationLocal) (fun (this : Entity) -> this.GetRotationLocal) (fun value this -> this.SetRotationLocal value)
         member this.GetScale world = World.getEntityScale this world
         member this.SetScale value world = World.setEntityScale value this world |> snd'
-        member this.Scale = lens (nameof this.Scale) this.GetScale this.SetScale this
+        static member Scale = lens (nameof Entity.Scale) (fun (this : Entity) -> this.GetScale) (fun value this -> this.SetScale value)
         member this.GetScaleLocal world = World.getEntityScaleLocal this world
         member this.SetScaleLocal value world = World.setEntityScaleLocal value this world |> snd'
-        member this.ScaleLocal = lens (nameof this.ScaleLocal) this.GetScaleLocal this.SetScaleLocal this
+        static member ScaleLocal = lens (nameof Entity.ScaleLocal) (fun (this : Entity) -> this.GetScaleLocal) (fun value this -> this.SetScaleLocal value)
         member this.GetOffset world = World.getEntityOffset this world
         member this.SetOffset value world = World.setEntityOffset value this world |> snd'
-        member this.Offset = lens (nameof this.Offset) this.GetOffset this.SetOffset this
+        static member Offset = lens (nameof Entity.Offset) (fun (this : Entity) -> this.GetOffset) (fun value this -> this.SetOffset value)
         member this.GetAngles world = World.getEntityAngles this world
         member this.SetAngles value world = World.setEntityAngles value this world |> snd'
-        member this.Angles = lens (nameof this.Angles) this.GetAngles this.SetAngles this
+        static member Angles = lens (nameof Entity.Angles) (fun (this : Entity) -> this.GetAngles) (fun value this -> this.SetAngles value)
         member this.GetAnglesLocal world = World.getEntityAnglesLocal this world
         member this.SetAnglesLocal value world = World.setEntityAnglesLocal value this world |> snd'
-        member this.AnglesLocal = lens (nameof this.AnglesLocal) this.GetAnglesLocal this.SetAnglesLocal this
+        static member AnglesLocal = lens (nameof Entity.AnglesLocal) (fun (this : Entity) -> this.GetAnglesLocal) (fun value this -> this.SetAnglesLocal value)
         member this.GetDegrees world = World.getEntityDegrees this world
         member this.SetDegrees value world = World.setEntityDegrees value this world |> snd'
-        member this.Degrees = lens (nameof this.Degrees) this.GetDegrees this.SetDegrees this
+        static member Degrees = lens (nameof Entity.Degrees) (fun (this : Entity) -> this.GetDegrees) (fun value this -> this.SetDegrees value)
         member this.GetDegreesLocal world = World.getEntityDegreesLocal this world
         member this.SetDegreesLocal value world = World.setEntityDegreesLocal value this world |> snd'
-        member this.DegreesLocal = lens (nameof this.DegreesLocal) this.GetDegreesLocal this.SetDegreesLocal this
+        static member DegreesLocal = lens (nameof Entity.DegreesLocal) (fun (this : Entity) -> this.GetDegreesLocal) (fun value this -> this.SetDegreesLocal value)
         member this.GetSize world = World.getEntitySize this world
         member this.SetSize value world = World.setEntitySize value this world |> snd'
-        member this.Size = lens (nameof this.Size) this.GetSize this.SetSize this
+        static member Size = lens (nameof Entity.Size) (fun (this : Entity) -> this.GetSize) (fun value this -> this.SetSize value)
         member this.GetElevation world = World.getEntityElevation this world
         member this.SetElevation value world = World.setEntityElevation value this world |> snd'
-        member this.Elevation = lens (nameof this.Elevation) this.GetElevation this.SetElevation this
+        static member Elevation = lens (nameof Entity.Elevation) (fun (this : Entity) -> this.GetElevation) (fun value this -> this.SetElevation value)
         member this.GetElevationLocal world = World.getEntityElevationLocal this world
         member this.SetElevationLocal value world = World.setEntityElevationLocal value this world |> snd'
-        member this.ElevationLocal = lens (nameof this.ElevationLocal) this.GetElevationLocal this.SetElevationLocal this
+        static member ElevationLocal = lens (nameof Entity.ElevationLocal) (fun (this : Entity) -> this.GetElevationLocal) (fun value this -> this.SetElevationLocal value)
         member this.GetOverflow world = World.getEntityOverflow this world
         member this.SetOverflow value world = World.setEntityOverflow value this world |> snd'
-        member this.Overflow = lens (nameof this.Overflow) this.GetOverflow this.SetOverflow this
+        static member Overflow = lens (nameof Entity.Overflow) (fun (this : Entity) -> this.GetOverflow) (fun value this -> this.SetOverflow value)
         member this.GetAffineMatrix world = World.getEntityAffineMatrix this world
-        member this.AffineMatrix = lensReadOnly (nameof this.AffineMatrix) this.GetAffineMatrix this
+        static member AffineMatrix = lensReadOnly (nameof Entity.AffineMatrix) (fun (this : Entity) -> this.GetAffineMatrix)
         member this.GetAffineMatrixLocal world = World.getEntityAffineMatrixLocal this world
-        member this.AffineMatrixLocal = lensReadOnly (nameof this.AffineMatrixLocal) this.GetAffineMatrixLocal this
+        static member AffineMatrixLocal = lensReadOnly (nameof Entity.AffineMatrixLocal) (fun (this : Entity) -> this.GetAffineMatrixLocal)
         member this.GetPresence world = World.getEntityPresence this world
         member this.SetPresence value world = World.setEntityPresence value this world |> snd'
-        member this.Presence = lens (nameof this.Presence) this.GetPresence this.SetPresence this
+        static member Presence = lens (nameof Entity.Presence) (fun (this : Entity) -> this.GetPresence) (fun value this -> this.SetPresence value)
         member this.GetAbsolute world = World.getEntityAbsolute this world
         member this.SetAbsolute value world = World.setEntityAbsolute value this world |> snd'
-        member this.Absolute = lens (nameof this.Absolute) this.GetAbsolute this.SetAbsolute this
+        static member Absolute = lens (nameof Entity.Absolute) (fun (this : Entity) -> this.GetAbsolute) (fun value this -> this.SetAbsolute value)
         member this.GetMountOpt world = World.getEntityMountOpt this world
         member this.SetMountOpt value world = World.setEntityMountOpt value this world |> snd'
-        member this.MountOpt = lens (nameof this.MountOpt) this.GetMountOpt this.SetMountOpt this
+        static member MountOpt = lens (nameof Entity.MountOpt) (fun (this : Entity) -> this.GetMountOpt) (fun value this -> this.SetMountOpt value)
         member this.GetImperative world = World.getEntityImperative this world
         member this.SetImperative value world = World.setEntityImperative value this world |> snd'
-        member this.Imperative = lens (nameof this.Imperative) this.GetImperative this.SetImperative this
+        static member Imperative = lens (nameof Entity.Imperative) (fun (this : Entity) -> this.GetImperative) (fun value this -> this.SetImperative value)
         member this.GetEnabled world = World.getEntityEnabled this world
         member this.SetEnabled value world = World.setEntityEnabled value this world |> snd'
-        member this.Enabled = lens (nameof this.Enabled) this.GetEnabled this.SetEnabled this
+        static member Enabled = lens (nameof Entity.Enabled) (fun (this : Entity) -> this.GetEnabled) (fun value this -> this.SetEnabled value)
         member this.GetEnabledLocal world = World.getEntityEnabledLocal this world
         member this.SetEnabledLocal value world = World.setEntityEnabledLocal value this world |> snd'
-        member this.EnabledLocal = lens (nameof this.EnabledLocal) this.GetEnabledLocal this.SetEnabledLocal this
+        static member EnabledLocal = lens (nameof Entity.EnabledLocal) (fun (this : Entity) -> this.GetEnabledLocal) (fun value this -> this.SetEnabledLocal value)
         member this.GetVisible world = World.getEntityVisible this world
         member this.SetVisible value world = World.setEntityVisible value this world |> snd'
-        member this.Visible = lens (nameof this.Visible) this.GetVisible this.SetVisible this
+        static member Visible = lens (nameof Entity.Visible) (fun (this : Entity) -> this.GetVisible) (fun value this -> this.SetVisible value)
         member this.GetVisibleLocal world = World.getEntityVisibleLocal this world
         member this.SetVisibleLocal value world = World.setEntityVisibleLocal value this world |> snd'
-        member this.VisibleLocal = lens (nameof this.VisibleLocal) this.GetVisibleLocal this.SetVisibleLocal this
+        static member VisibleLocal = lens (nameof Entity.VisibleLocal) (fun (this : Entity) -> this.GetVisibleLocal) (fun value this -> this.SetVisibleLocal value)
         member this.GetAlwaysUpdate world = World.getEntityAlwaysUpdate this world
         member this.SetAlwaysUpdate value world = World.setEntityAlwaysUpdate value this world |> snd'
-        member this.AlwaysUpdate = lens (nameof this.AlwaysUpdate) this.GetAlwaysUpdate this.SetAlwaysUpdate this
+        static member AlwaysUpdate = lens (nameof Entity.AlwaysUpdate) (fun (this : Entity) -> this.GetAlwaysUpdate) (fun value this -> this.SetAlwaysUpdate value)
         member this.GetPersistent world = World.getEntityPersistent this world
         member this.SetPersistent value world = World.setEntityPersistent value this world |> snd'
-        member this.Persistent = lens (nameof this.Persistent) this.GetPersistent this.SetPersistent this
-        member this.GetIgnorePropertyBindings world = World.getEntityIgnorePropertyBindings this world
-        member this.SetIgnorePropertyBindings value world = World.setEntityIgnorePropertyBindings value this world |> snd'
-        member this.IgnorePropertyBindings = lens (nameof this.IgnorePropertyBindings) this.GetIgnorePropertyBindings this.SetIgnorePropertyBindings this
+        static member Persistent = lens (nameof Entity.Persistent) (fun (this : Entity) -> this.GetPersistent) (fun value this -> this.SetPersistent value)
         member this.GetIs2d world = World.getEntityIs2d this world
-        member this.Is2d = lensReadOnly (nameof this.Is2d) this.GetIs2d this
+        static member Is2d = lensReadOnly (nameof Entity.Is2d) (fun (this : Entity) -> this.GetIs2d)
         member this.GetCentered world = World.getEntityCentered this world
         member this.SetCentered value world = World.setEntityCentered value this world |> snd'
-        member this.Centered = lens (nameof this.Centered) this.GetCentered this.SetCentered this
+        static member Centered = lens (nameof Entity.Centered) (fun (this : Entity) -> this.GetCentered) (fun value this -> this.SetCentered value)
         member this.GetStatic world = World.getEntityStatic this world
         member this.SetStatic value world = World.setEntityStatic value this world |> snd'
-        member this.Static = lens (nameof this.Static) this.GetStatic this.SetStatic this
+        static member Static = lens (nameof Entity.Static) (fun (this : Entity) -> this.GetStatic) (fun value this -> this.SetStatic value)
         member this.GetLight world = World.getEntityLight this world
         member this.SetLight value world = World.setEntityLight value this world |> snd'
-        member this.Light = lens (nameof this.Light) this.GetLight this.SetLight this
+        static member Light = lens (nameof Entity.Light) (fun (this : Entity) -> this.GetLight) (fun value this -> this.SetLight value)
         member this.GetPhysical world = World.getEntityPhysical this world
-        member this.Physical = lensReadOnly (nameof this.Physical) this.GetPhysical this
+        static member Physical = lensReadOnly (nameof Entity.Physical) (fun (this : Entity) -> this.GetPhysical)
         member this.GetOptimized world = World.getEntityOptimized this world
-        member this.Optimized = lensReadOnly (nameof this.Optimized) this.GetOptimized this
+        static member Optimized = lensReadOnly (nameof Entity.Optimized) (fun (this : Entity) -> this.GetOptimized)
         member this.GetDestroying world = World.getEntityDestroying this world
-        member this.Destroying = lensReadOnly (nameof this.Destroying) this.GetDestroying this
+        static member Destroying = lensReadOnly (nameof Entity.Destroying) (fun (this : Entity) -> this.GetDestroying)
         member this.GetScriptFrame world = World.getEntityScriptFrame this world
-        member this.ScriptFrame = lensReadOnly (nameof this.ScriptFrame) this.GetScriptFrame this
+        static member ScriptFrame = lensReadOnly (nameof Entity.ScriptFrame) (fun (this : Entity) -> this.GetScriptFrame)
         member this.GetOverlayNameOpt world = World.getEntityOverlayNameOpt this world
-        member this.OverlayNameOpt = lensReadOnly (nameof this.OverlayNameOpt) this.GetOverlayNameOpt this
+        static member OverlayNameOpt = lensReadOnly (nameof Entity.OverlayNameOpt) (fun (this : Entity) -> this.GetOverlayNameOpt)
         member this.GetFacetNames world = World.getEntityFacetNames this world
-        member this.FacetNames = lensReadOnly (nameof this.FacetNames) this.GetFacetNames this
+        static member FacetNames = lensReadOnly (nameof Entity.FacetNames) (fun (this : Entity) -> this.GetFacetNames)
         member this.GetOrder world = World.getEntityOrder this world
-        member this.Order = lensReadOnly (nameof this.Order) this.GetOrder this
+        static member Order = lensReadOnly (nameof Entity.Order) (fun (this : Entity) -> this.GetOrder)
         member this.GetId world = World.getEntityId this world
-        member this.Id = lensReadOnly (nameof this.Id) this.GetId this
+        static member Id = lensReadOnly (nameof Entity.Id) (fun (this : Entity) -> this.GetId)
 
+        static member Event = Unchecked.defaultof<Entity>
         member this.RegisterEvent = Events.Register --> this
         member this.UnregisteringEvent = Events.Unregistering --> this
         member this.ChangeEvent propertyName = Events.Change propertyName --> this
@@ -738,70 +736,3 @@ module WorldEntityModule =
                         ([], world)
                         entityDescriptors
             (List.rev entitiesRev, world)
-
-        /// Turn an entity lens into a series of live entities.
-        static member expandEntities (lens : Lens<obj, World>) sieve unfold mapper origin owner group world =
-            let mapperGeneralized = fun i a -> mapper i a :> SimulantContent
-            World.expandSimulants lens sieve unfold mapperGeneralized origin owner group world
-
-        /// Turn entity content into a live entity.
-        static member expandEntityContent content origin (owner : Simulant) group world =
-            if World.getGroupExists group world then
-                match EntityContent.expand content group world with
-                | Choice1Of3 (lens, sieve, unfold, mapper) ->
-                    let world = World.expandEntities lens sieve unfold mapper origin owner group world
-                    (None, world)
-                | Choice2Of3 (entityName, descriptor, handlers, binds, content) ->
-                    let surnames =
-                        match owner with
-                        | :? Entity as ownerEntity -> Array.add entityName ownerEntity.Surnames
-                        | _ -> [|entityName|]
-                    let descriptor = { descriptor with SimulantSurnamesOpt = Some surnames }
-                    let (entity, world) = World.createEntity4 DefaultOverlay descriptor group world
-                    let handlers =
-                        List.map (fun (handler, eventAddress, _) ->
-                            let eventNameIndex = Address.findIndex (fun name -> name = "Event") eventAddress
-                            let partialAddress = Address.take (inc eventNameIndex) eventAddress
-                            (handler, partialAddress --> entity, entity :> Simulant)) handlers
-                    let binds = List.map (fun (_, left, right, twoWay) -> (entity :> Simulant, left, right, twoWay)) binds
-                    let world =
-                        // quick size entity if a size was not specified by the descriptor properties
-                        if not (List.exists (fun (name, _) -> name = (nameof entity.Size)) descriptor.SimulantProperties) then
-                            let size = entity.GetQuickSize world
-                            entity.SetSize size world
-                        else world
-                    let world =
-                        // set mount if one was not specified by the descriptor properties
-                        if not (List.exists (fun (name, _) -> name = (nameof entity.MountOpt)) descriptor.SimulantProperties) then
-                            let mountOpt = if owner :? Entity then Some (Relation.makeParent ()) else None
-                            World.setEntityMountOpt mountOpt entity world |> snd'
-                        else world
-                    let world =
-                        List.fold (fun world (simulant, left : World Lens, right, twoWay) ->
-                            if twoWay then
-                                let world = WorldModule.bind5 false simulant left right world
-                                WorldModule.bind5 false simulant right left world
-                            else WorldModule.bind5 true simulant left right world)
-                            world binds
-                    let world =
-                        List.fold (fun world (handler, address, simulant) ->
-                            World.monitor (fun (evt : Event) world ->
-                                let signal = handler evt
-                                let world =
-                                    match origin with
-                                    | SimulantOrigin simulant -> WorldModule.trySignal signal simulant world
-                                    | FacetOrigin (simulant, facetName) -> WorldModule.trySignalFacet signal facetName simulant world
-                                (Cascade, world))
-                                address simulant world)
-                            world handlers
-                    let world =
-                        List.fold (fun world content ->
-                            World.expandEntityContent content origin entity group world |> snd)
-                            world (snd content)
-                    (Some entity, world)
-                | Choice3Of3 (entityName, filePath) ->
-                    let (entity, world) = World.readEntityFromFile filePath (Some entityName) group world
-                    let mountOpt = if owner :? Entity then Some (Relation.makeParent ()) else None
-                    let world = World.setEntityMountOpt mountOpt entity world |> snd'
-                    (Some entity, world)
-            else (None, world)

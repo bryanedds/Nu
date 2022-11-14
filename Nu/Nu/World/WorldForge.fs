@@ -121,9 +121,7 @@ module Forge =
             let simulant = if notNull (forgeOld.SimulantCachedOpt :> obj) then forgeOld.SimulantCachedOpt else simulant
             forge.SimulantCachedOpt <- simulant
             Seq.fold (fun world (propertyLens : World Lens, propertyValue) ->
-                if isNull (propertyLens.This :> obj)
-                then World.setProperty propertyLens.Name { PropertyType = propertyLens.Type; PropertyValue = propertyValue } simulant world |> snd'
-                else propertyLens.TrySet propertyValue world)
+                propertyLens.TrySet propertyValue simulant world)
                 world forge.PropertyForgesOpt
         else world
 
@@ -460,10 +458,11 @@ module Forge =
         { InitialScreenNameOpt = initialScreenNameOpt; SimulantCachedOpt = Unchecked.defaultof<_>
           EventSignalForgesOpt = eventSignalForgesOpt; EventHandlerForgesOpt = eventHandlerForgesOpt; PropertyForgesOpt = propertyForgesOpt; ScreenForges = screenForges }
 
+[<AutoOpen>]
 module ForgeOperators =
 
     /// Initialize a property forge.
-    let inline (==) (lens : Lens<'a, World>) (value : 'a) : InitializerForge =
+    let inline (==) (lens : Lens<'a, 's, World>) (value : 'a) : InitializerForge =
         PropertyForge (lens, value :> obj)
 
     /// Initialize a signal forge.

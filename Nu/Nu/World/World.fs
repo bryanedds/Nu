@@ -14,29 +14,6 @@ module Nu =
 
     let mutable private Initialized = false
 
-    let private tryPropagateByLens (left : World Lens) (right : World Lens) world =
-        if right.Validate world then
-            let value = right.GetWithoutValidation world
-            left.TrySet value world
-        else world
-
-    let private tryPropagateByName simulant leftName (right : World Lens) world =
-        if right.Validate world then
-            let value = right.GetWithoutValidation world
-            let property = { PropertyType = right.Type; PropertyValue = value }
-            World.trySetPropertyFast leftName property simulant world
-        else world
-
-    let private tryPropagate simulant (left : World Lens) (right : World Lens) world =
-        if notNull (left.This :> obj)
-        then tryPropagateByLens left right world
-        else tryPropagateByName simulant left.Name right world
-
-    let internal unbind propertyBindingKey propertyAddress world =
-        let world = World.removePropertyBinding propertyBindingKey propertyAddress world
-        let world = World.decreaseBindingCount propertyAddress.PASimulant world
-        world
-
     /// Initialize the Nu game engine.
     let init nuConfig =
 
@@ -81,16 +58,6 @@ module Nu =
             WorldTypes.viewScreen <- fun screen world -> World.viewScreenProperties (screen :?> Screen) (world :?> World)
             WorldTypes.viewGroup <- fun group world -> World.viewGroupProperties (group :?> Group) (world :?> World)
             WorldTypes.viewEntity <- fun entity world -> World.viewEntityProperties (entity :?> Entity) (world :?> World)
-
-            // init handleUserDefinedCallback F# reach-around
-            WorldTypes.handleUserDefinedCallback <- fun userDefined _ worldObj ->
-                let world = worldObj :?> World
-                let (simulant, left, right) = userDefined :?> Simulant * World Lens * World Lens
-                let world =
-                    if notNull (left.This :> obj)
-                    then tryPropagateByLens left right world
-                    else tryPropagateByName simulant left.Name right world
-                (Cascade, world :> obj)
 
             // init handleSubscribeAndUnsubscribeEventHook F# reach-around
             WorldTypes.handleSubscribeAndUnsubscribeEventHook <- fun subscribing eventAddress _ worldObj ->
@@ -239,10 +206,6 @@ module Nu =
             WorldModule.isSelected <- fun simulant world ->
                 World.isSelected simulant world
 
-            // init ignorePropertyBindings F# reach-around
-            WorldModule.ignorePropertyBindings <- fun simulant world ->
-                World.ignorePropertyBindings simulant world
-
             // init getScreenEcs F# reach-around
             WorldModule.getScreenEcs <- 
                 World.getScreenEcs
@@ -339,41 +302,11 @@ module Nu =
                     World.unregisterEntityPhysics entity world)
                     world entities
 
-            // init bind5 F# reach-around
-            WorldModule.bind5 <- fun propagateImmediately simulant left right world ->
-                let leftFixup =
-                    if isNull (left.This :> obj) then
-                        Lens.make
-                            left.Name
-                            (fun world ->
-                                match World.tryGetProperty (left.Name, simulant, world) with
-                                | (true, property) -> property.PropertyValue
-                                | (false, _) -> failwithumf ())
-                            (fun propertyValue world ->
-                                let property = { PropertyType = left.Type; PropertyValue = propertyValue }
-                                World.trySetPropertyFast left.Name property simulant world)
-                            simulant
-                    else Lens.make left.Name left.GetWithoutValidation (Option.get left.SetOpt) simulant
-                let rightFixup = Lens.makePlus right.Name right.ParentOpt right.ValidateOpt right.GetWithoutValidation None right.This
-                let world =
-                    // propagate immediately to start things out synchronized if specified.
-                    if propagateImmediately && World.getExists rightFixup.This world
-                    then tryPropagateByLens leftFixup rightFixup world
-                    else world
-                let propertyBindingKey = Gen.id
-                let propertyAddress = PropertyAddress.make rightFixup.Name rightFixup.This
-                let world = World.monitor (fun _ world -> (Cascade, unbind propertyBindingKey propertyAddress world)) (Events.Unregistering --> simulant.SimulantAddress) simulant world
-                let world = World.monitor (fun _ world -> (Cascade, if not (World.ignorePropertyBindings leftFixup.This world) then tryPropagate simulant leftFixup rightFixup world else world)) (Events.Register --> right.This.SimulantAddress) simulant world
-                let world = World.increaseBindingCount right.This world
-                World.addPropertyBinding propertyBindingKey propertyAddress leftFixup rightFixup world
-
             // init miscellaneous reach-arounds
             WorldModule.register <- fun simulant world -> World.register simulant world
             WorldModule.unregister <- fun simulant world -> World.unregister simulant world
-            WorldModule.expandContent <- fun setScreenSplash content origin owner parent world -> World.expandContent setScreenSplash content origin owner parent world
             WorldModule.destroyImmediate <- fun simulant world -> World.destroyImmediate simulant world
             WorldModule.destroy <- fun simulant world -> World.destroy simulant world
-            WorldModule.trySignalFacet <- fun signalObj facetName simulant world -> World.trySignalFacet signalObj facetName simulant world
             WorldModule.trySignal <- fun signalObj simulant world -> World.trySignal signalObj simulant world
 
             // init scripting

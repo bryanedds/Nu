@@ -2,8 +2,6 @@
 open System.Numerics
 open Prime
 open Nu
-open Nu.Declarative
-open Nu.ForgeOperators
 
 [<AutoOpen>]
 module MyGameplay =
@@ -30,7 +28,7 @@ module MyGameplay =
     type Screen with
         member this.GetGameplay world = this.GetModelGeneric<Gameplay> world
         member this.SetGameplay value world = this.SetModelGeneric<Gameplay> value world
-        member this.Gameplay = this.ModelGeneric<Gameplay> ()
+        static member Gameplay = Screen.ModelGeneric<Gameplay> ()
 
     // this is the screen dispatcher that defines the screen where gameplay takes place
     type MyGameplayDispatcher () =
@@ -90,7 +88,7 @@ module MyGameplay =
                          [Entity.Text == "Quit"
                           Entity.Position == v3 260.0f -260.0f 0.0f
                           Entity.Elevation == 10.0f
-                          Entity.ClickEvent ==> msg Quit]]
+                          Entity.Event.ClickEvent ==> msg Quit]]
 
                  // the player and scene groups while playing
                  match gameplay with

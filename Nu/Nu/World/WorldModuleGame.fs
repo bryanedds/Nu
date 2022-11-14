@@ -18,23 +18,11 @@ module WorldModuleGame =
     type World with
 
         static member private publishGameChange propertyName (propertyPrevious : obj) (propertyValue : obj) world =
-
-            // the game reference
             let game = Game ()
-
-            // publish change binding
-            let world =
-                World.publishChangeBinding propertyName game world
-
-            // publish change event
-            let world =
-                let changeData = { Name = propertyName; Previous = propertyPrevious; Value = propertyValue }
-                let changeEventAddress = rtoa<ChangeData> [|"Change"; propertyName; "Event"|]
-                let eventTrace = EventTrace.debug "World" "publishGameChange" "" EventTrace.empty
-                World.publishPlus changeData changeEventAddress eventTrace game false false world
-
-            // fin
-            world
+            let changeData = { Name = propertyName; Previous = propertyPrevious; Value = propertyValue }
+            let changeEventAddress = rtoa<ChangeData> [|"Change"; propertyName; "Event"|]
+            let eventTrace = EventTrace.debug "World" "publishGameChange" "" EventTrace.empty
+            World.publishPlus changeData changeEventAddress eventTrace game false false world
 
         static member internal getGameState world =
             world.GameState

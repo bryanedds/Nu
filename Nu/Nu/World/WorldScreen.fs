@@ -14,39 +14,40 @@ module WorldScreenModule =
     type Screen with
     
         member this.GetDispatcher world = World.getScreenDispatcher this world
-        member this.Dispatcher = lensReadOnly (nameof this.Dispatcher) this.GetDispatcher this
-        member this.GetModelGeneric<'a> world = World.getScreenModel<'a> this world
-        member this.SetModelGeneric<'a> value world = World.setScreenModel<'a> value this world |> snd'
-        member this.ModelGeneric<'a> () = lens "Model" this.GetModelGeneric<'a> this.SetModelGeneric<'a> this
+        static member Dispatcher = lensReadOnly (nameof Screen.Dispatcher) (fun (this : Screen) -> this.GetDispatcher)
+        member this.GetModelGeneric<'model> world = World.getScreenModel<'model> this world
+        member this.SetModelGeneric<'model> value world = World.setScreenModel<'model> value this world |> snd'
+        static member ModelGeneric<'model> () = lens "Model" (fun (this : Screen) -> this.GetModelGeneric<'model>) (fun value this -> this.SetModelGeneric<'model> value)
         member this.GetEcs world = World.getScreenEcs this world
-        member this.Ecs = lensReadOnly (nameof this.Ecs) this.GetEcs this
+        static member Ecs = lensReadOnly (nameof Screen.Ecs) (fun (this : Screen) -> this.GetEcs)
         member this.GetTransitionState world = World.getScreenTransitionState this world
         member this.SetTransitionState value world = World.setScreenTransitionState value this world |> snd'
-        member this.TransitionState = lens (nameof this.TransitionState) this.GetTransitionState this.SetTransitionState this
+        static member TransitionState = lens (nameof Screen.TransitionState) (fun (this : Screen) -> this.GetTransitionState) (fun value this -> this.SetTransitionState value)
         member this.GetTransitionUpdates world = World.getScreenTransitionUpdates this world
         member this.SetTransitionUpdates value world = World.setScreenTransitionUpdates value this world |> snd'
-        member this.TransitionUpdates = lens (nameof this.TransitionUpdates) this.GetTransitionUpdates this.SetTransitionUpdates this
+        static member TransitionUpdates = lens (nameof Screen.TransitionUpdates) (fun (this : Screen) -> this.GetTransitionUpdates) (fun value this -> this.SetTransitionUpdates value)
         member this.GetIncoming world = World.getScreenIncoming this world
         member this.SetIncoming value world = World.setScreenIncoming value this world |> snd'
-        member this.Incoming = lens (nameof this.Incoming) this.GetIncoming this.SetIncoming this
+        static member Incoming = lens (nameof Screen.Incoming) (fun (this : Screen) -> this.GetIncoming) (fun value this -> this.SetIncoming value)
         member this.GetOutgoing world = World.getScreenOutgoing this world
         member this.SetOutgoing value world = World.setScreenOutgoing value this world |> snd'
-        member this.Outgoing = lens (nameof this.Outgoing) this.GetOutgoing this.SetOutgoing this
+        static member Outgoin = lens (nameof Screen.Outgoin) (fun (this : Screen) -> this.GetOutgoing) (fun value this -> this.SetOutgoing value)
         member this.GetSplashOpt world = World.getScreenSplashOpt this world
         member this.SetSplashOpt value world = World.setScreenSplashOpt value this world |> snd'
-        member this.SplashOpt = lens (nameof this.SplashOpt) this.GetSplashOpt this.SetSplashOpt this
+        static member SplashOpt = lens (nameof Screen.SplashOpt) (fun (this : Screen) -> this.GetSplashOpt) (fun value this -> this.SetSplashOpt value)
         member this.GetPersistent world = World.getScreenPersistent this world
         member this.SetPersistent value world = World.setScreenPersistent value this world |> snd'
-        member this.Persistent = lens (nameof this.Persistent) this.GetPersistent this.SetPersistent this
+        static member Persistent = lens (nameof Screen.Persistent) (fun (this : Screen) -> this.GetPersistent) (fun value this -> this.SetPersistent value)
         member this.GetDestroying world = World.getScreenDestroying this world
-        member this.Destroying = lensReadOnly (nameof this.Destroying) this.GetDestroying this
+        static member Destroying = lensReadOnly (nameof Screen.Destroying) (fun (this : Screen) -> this.GetDestroying)
         member this.GetScriptFrame world = World.getScreenScriptFrame this world
-        member this.ScriptFrame = lensReadOnly (nameof this.ScriptFrame) this.GetScriptFrame this
+        static member ScriptFrame = lensReadOnly (nameof Screen.ScriptFrame) (fun (this : Screen) -> this.GetScriptFrame)
         member this.GetOrder world = World.getScreenOrder this world
-        member this.Order = lensReadOnly (nameof this.Order) this.GetOrder this
+        static member Order = lensReadOnly (nameof Screen.Order) (fun (this : Screen) -> this.GetOrder)
         member this.GetId world = World.getScreenId this world
-        member this.Id = lensReadOnly (nameof this.Id) this.GetId this
+        static member Id = lensReadOnly (nameof Screen.Id) (fun (this : Screen) -> this.GetId)
 
+        static member Event = Unchecked.defaultof<Entity>
         member this.RegisterEvent = Events.Register --> this
         member this.UnregisteringEvent = Events.Unregistering --> this
         member this.ChangeEvent propertyName = Events.Change propertyName --> this
@@ -361,61 +362,3 @@ module WorldScreenModule =
                 setScreenSplash splashDescriptor destination screen world
             | OmniScreen ->
                 World.setOmniScreen screen world
-
-        /// Turn screen content into a live screen.
-        static member expandScreenContent setScreenSplash content origin game world =
-            match ScreenContent.expand content game world with
-            | Left (_, descriptor, handlers, binds, behavior, groupStreams, entityStreams, groupFilePaths, entityFilePaths, entityContents) ->
-                let (screen, world) =
-                    World.createScreen2 descriptor world
-                let world =
-                    List.fold (fun world (_ : string, groupName, filePath) ->
-                        World.readGroupFromFile filePath (Some groupName) screen world |> snd)
-                        world groupFilePaths
-                let world =
-                    List.fold (fun world (_ : string, groupName, entityName, filePath) ->
-                        World.readEntityFromFile filePath (Some entityName) (screen / groupName) world |> snd)
-                        world entityFilePaths
-                let world =
-                    List.fold (fun world (simulant, left : World Lens, right, twoWay) ->
-                        if twoWay then
-                            let world = WorldModule.bind5 false simulant left right world
-                            WorldModule.bind5 false simulant right left world
-                        else WorldModule.bind5 true simulant left right world)
-                        world binds
-                let world =
-                    List.fold (fun world (handler, address, simulant) ->
-                        World.monitor (fun (evt : Event) world ->
-                            let signal = handler evt
-                            let simulant = match origin with SimulantOrigin simulant -> simulant | FacetOrigin (simulant, _) -> simulant
-                            let world = WorldModule.trySignal signal simulant world
-                            (Cascade, world))
-                            address simulant world)
-                        world handlers
-                let world =
-                    List.fold (fun world (screen, lens, sieve, unfold, mapper) ->
-                        World.expandGroups lens sieve unfold mapper origin screen world)
-                        world groupStreams
-                let world =
-                    List.fold (fun world (group, lens, sieve, unfold, mapper) ->
-                        World.expandEntities lens sieve unfold mapper origin group group world)
-                        world entityStreams
-                let world =
-                    List.fold (fun world (owner : Entity, entityContents) ->
-                        let group = owner.Group
-                        List.fold (fun world entityContent ->
-                            World.expandEntityContent entityContent origin owner group world |> snd)
-                            world entityContents)
-                        world entityContents
-                let world =
-                    World.applyScreenBehavior setScreenSplash behavior screen world
-                (screen, world)
-            | Right (name, behavior, Some dispatcherType, groupFilePath) ->
-                let (screen, world) = World.createScreen3 dispatcherType.Name (Some name) world
-                let world = World.readGroupFromFile groupFilePath None screen world |> snd
-                let world = World.applyScreenBehavior setScreenSplash behavior screen world
-                (screen, world)
-            | Right (name, behavior, None, filePath) ->
-                let (screen, world) = World.readScreenFromFile filePath (Some name) world
-                let world = World.applyScreenBehavior setScreenSplash behavior screen world
-                (screen, world)

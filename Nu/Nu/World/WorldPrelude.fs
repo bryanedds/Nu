@@ -145,53 +145,6 @@ type [<NoEquality; NoComparison>] WorldConfig =
           SdlConfig = SdlConfig.defaultConfig
           NuConfig = NuConfig.defaultConfig }
 
-/// Efficiently emulates root type casting of a Map.
-type [<CustomEquality; NoComparison>] MapGeneralized =
-    { MapObj : obj
-      Keys : IComparable List
-      Equality : MapGeneralized -> obj -> bool
-      ContainsKey : IComparable -> bool
-      GetValue : IComparable -> obj
-      TryGetValue : IComparable -> struct (bool * obj) }
-
-    override this.GetHashCode () =
-        this.MapObj.GetHashCode ()
-
-    override this.Equals (that : obj) =
-        this.Equality this that
-
-    /// Make a generalized map.
-    static member make (map : Map<'k, 'v>) =
-        { MapObj =
-            map
-          Keys =
-            let list = List ()
-            for entry in map do list.Add (entry.Key :> IComparable)
-            list
-          Equality = fun this (that : obj) ->
-            match that with
-            | :? MapGeneralized as that ->
-                if this.MapObj = that.MapObj then
-#if ELMISH_MAP_GENERALIZED_DEEP_EQUALITY
-                    match that.MapObj with
-                    | :? Map<'k, 'v> as map2 -> System.Linq.Enumerable.SequenceEqual (map, map2)
-                    | _ -> false
-#else
-                    true
-#endif
-                else false
-            | _ -> false
-          ContainsKey = fun (key : IComparable) ->
-            Map.containsKey (key :?> 'k) map
-          GetValue = fun (key : IComparable) ->
-            match map.TryGetValue (key :?> 'k) with
-            | (true, value) -> value :> obj
-            | (false, _) -> failwithumf ()
-          TryGetValue = fun (key : IComparable) ->
-            match map.TryGetValue (key :?> 'k) with
-            | (true, value) -> struct (true, value :> obj)
-            | (false, _) -> struct (false, null) }
-
 [<RequireQualifiedAccess>]
 module EventTrace =
 

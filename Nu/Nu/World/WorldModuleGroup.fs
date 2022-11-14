@@ -71,21 +71,11 @@ module WorldModuleGroup =
             World.groupStateRemover group world
 
         static member internal publishGroupChange propertyName (propertyPrevious : obj) (propertyValue : obj) (group : Group) world =
-
-            // publish change binding
-            let world =
-                World.publishChangeBinding propertyName group world
-
-            // publish event binding
-            let world =
-                let changeData = { Name = propertyName; Previous = propertyPrevious; Value = propertyValue }
-                let groupNames = Address.getNames group.GroupAddress
-                let changeEventAddress = rtoa<ChangeData> [|"Change"; propertyName; "Event"; groupNames.[0]; groupNames.[1]|]
-                let eventTrace = EventTrace.debug "World" "publishGroupChange" "" EventTrace.empty
-                World.publishPlus changeData changeEventAddress eventTrace group false false world
-
-            // fin
-            world
+            let changeData = { Name = propertyName; Previous = propertyPrevious; Value = propertyValue }
+            let groupNames = Address.getNames group.GroupAddress
+            let changeEventAddress = rtoa<ChangeData> [|"Change"; propertyName; "Event"; groupNames.[0]; groupNames.[1]|]
+            let eventTrace = EventTrace.debug "World" "publishGroupChange" "" EventTrace.empty
+            World.publishPlus changeData changeEventAddress eventTrace group false false world
 
         static member private getGroupStateOpt group world =
             World.groupStateFinder group world
