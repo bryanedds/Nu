@@ -372,8 +372,17 @@ module WorldTypes =
         interface LateBindings
 
     // TODO: P1: expose in Nu namespace along with related types.
+    and [<NoEquality; NoComparison>] PropertyForge =
+        { PropertySimulantOpt : Simulant voption
+          PropertyLens : World Lens
+          PropertyValue : obj }
+        static member inline make simulantOpt lens value =
+            { PropertySimulantOpt = simulantOpt
+              PropertyLens = lens
+              PropertyValue = value }
+
     and [<NoEquality; NoComparison>] InitializerForge =
-        | PropertyForge of Simulant voption * World Lens * obj
+        | PropertyForge of PropertyForge
         | EventSignalForge of obj Address * obj
         | EventHandlerForge of PartialEquatable<obj Address, Event -> obj>
 
@@ -383,7 +392,7 @@ module WorldTypes =
         abstract SimulantCachedOpt : Simulant with get, set
         abstract EventSignalForgesOpt : OrderedDictionary<obj Address * obj, Guid>
         abstract EventHandlerForgesOpt : OrderedDictionary<int * obj Address, Guid * (Event -> obj)>
-        abstract PropertyForgesOpt : List<Simulant voption * World Lens * obj>
+        abstract PropertyForgesOpt : List<PropertyForge>
         abstract GetChildForgesOpt<'v when 'v :> SimulantForge> : unit -> OrderedDictionary<string, 'v>
 
     and [<ReferenceEquality; NoComparison>] GameForge =
@@ -391,7 +400,7 @@ module WorldTypes =
           mutable SimulantCachedOpt : Simulant
           mutable EventSignalForgesOpt : OrderedDictionary<obj Address * obj, Guid> // OPTIMIZATION: lazily created.
           mutable EventHandlerForgesOpt : OrderedDictionary<int * obj Address, Guid * (Event -> obj)> // OPTIMIZATION: lazily created.
-          mutable PropertyForgesOpt : List<Simulant voption * World Lens * obj> // OPTIMIZATION: lazily created.
+          mutable PropertyForgesOpt : List<PropertyForge> // OPTIMIZATION: lazily created.
           ScreenForges : OrderedDictionary<string, ScreenForge> }
         static member empty =
             { InitialScreenNameOpt = None
@@ -417,7 +426,7 @@ module WorldTypes =
           mutable SimulantCachedOpt : Simulant
           mutable EventSignalForgesOpt : OrderedDictionary<obj Address * obj, Guid> // OPTIMIZATION: lazily created.
           mutable EventHandlerForgesOpt : OrderedDictionary<int * obj Address, Guid * (Event -> obj)> // OPTIMIZATION: lazily created.
-          mutable PropertyForgesOpt : List<Simulant voption * World Lens * obj> // OPTIMIZATION: lazily created.
+          mutable PropertyForgesOpt : List<PropertyForge> // OPTIMIZATION: lazily created.
           GroupForges : OrderedDictionary<string, GroupForge> }
         static member empty =
             { ScreenDispatcherName = nameof ScreenDispatcher
@@ -445,7 +454,7 @@ module WorldTypes =
           mutable SimulantCachedOpt : Simulant
           mutable EventSignalForgesOpt : OrderedDictionary<obj Address * obj, Guid> // OPTIMIZATION: lazily created.
           mutable EventHandlerForgesOpt : OrderedDictionary<int * obj Address, Guid * (Event -> obj)> // OPTIMIZATION: lazily created.
-          mutable PropertyForgesOpt : List<Simulant voption * World Lens * obj> // OPTIMIZATION: lazily created.
+          mutable PropertyForgesOpt : List<PropertyForge> // OPTIMIZATION: lazily created.
           mutable EntityForgesOpt : OrderedDictionary<string, EntityForge> } // OPTIMIZATION: lazily created.
         static member empty =
             { GroupDispatcherName = nameof GroupDispatcher
@@ -471,7 +480,7 @@ module WorldTypes =
           mutable SimulantCachedOpt : Simulant // OPTIMIZATION: allows us to more often hit the EntityStateOpt cache. May be null.
           mutable EventSignalForgesOpt : OrderedDictionary<obj Address * obj, Guid> // OPTIMIZATION: lazily created.
           mutable EventHandlerForgesOpt : OrderedDictionary<int * obj Address, Guid * (Event -> obj)> // OPTIMIZATION: lazily created.
-          mutable PropertyForgesOpt : List<Simulant voption * World Lens * obj> // OPTIMIZATION: lazily created.
+          mutable PropertyForgesOpt : List<PropertyForge> // OPTIMIZATION: lazily created.
           mutable EntityForgesOpt : OrderedDictionary<string, EntityForge> } // OPTIMIZATION: lazily created.
         static member empty =
             { EntityDispatcherName = nameof EntityDispatcher

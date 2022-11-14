@@ -497,7 +497,7 @@ module BasicEmitter2dFacetModule =
             let particleSystem = entity.GetParticleSystem world
             let particleSystem = { particleSystem with Emitters = Map.add typeof<Particles.BasicEmitter>.Name (emitter :> Particles.Emitter) particleSystem.Emitters }
             let world = entity.SetParticleSystem particleSystem world
-            let world = World.monitor handlePositionChanged (entity.GetChangeEvent (nameof Nu.Entity.Position)) entity world
+            let world = World.monitor handlePositionChanged (entity.GetChangeEvent (nameof Entity.Position)) entity world
             let world = World.monitor handleRotationChanged (entity.GetChangeEvent (nameof Entity.Rotation)) entity world
             let world = World.monitor handleEmitterBlendChanged (entity.GetChangeEvent (nameof Entity.EmitterBlend)) entity world
             let world = World.monitor handleEmitterImageChanged (entity.GetChangeEvent (nameof Entity.EmitterImage)) entity world
