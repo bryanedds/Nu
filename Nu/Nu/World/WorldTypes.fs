@@ -477,7 +477,7 @@ module WorldTypes =
     and [<ReferenceEquality; NoComparison>] EntityForge =
         { EntityDispatcherName : string
           EntityName : string
-          mutable SimulantCachedOpt : Simulant // OPTIMIZATION: allows us to more often hit the EntityStateOpt cache. May be null.
+          mutable EntityCachedOpt : Entity // OPTIMIZATION: allows us to more often hit the EntityStateOpt cache. May be null.
           mutable EventSignalForgesOpt : OrderedDictionary<obj Address * obj, Guid> // OPTIMIZATION: lazily created.
           mutable EventHandlerForgesOpt : OrderedDictionary<int * obj Address, Guid * (Event -> obj)> // OPTIMIZATION: lazily created.
           mutable PropertyForgesOpt : List<PropertyForge> // OPTIMIZATION: lazily created.
@@ -485,7 +485,7 @@ module WorldTypes =
         static member empty =
             { EntityDispatcherName = nameof EntityDispatcher
               EntityName = nameof Entity
-              SimulantCachedOpt = Unchecked.defaultof<_>
+              EntityCachedOpt = Unchecked.defaultof<_>
               EventSignalForgesOpt = null
               EventHandlerForgesOpt = null
               PropertyForgesOpt = null
@@ -493,7 +493,7 @@ module WorldTypes =
         interface SimulantForge with
             member this.DispatcherNameOpt = Some this.EntityDispatcherName
             member this.SimulantNameOpt = Some this.EntityName
-            member this.SimulantCachedOpt with get () = this.SimulantCachedOpt and set value = this.SimulantCachedOpt <- value
+            member this.SimulantCachedOpt with get () = this.EntityCachedOpt and set value = this.EntityCachedOpt <- value :?> Entity
             member this.EventSignalForgesOpt = this.EventSignalForgesOpt
             member this.EventHandlerForgesOpt = this.EventHandlerForgesOpt
             member this.PropertyForgesOpt = this.PropertyForgesOpt
