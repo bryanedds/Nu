@@ -1796,6 +1796,9 @@ module WorldModuleEntity =
             | (true, setter) -> let struct (changed, world) = setter property entity world in struct (true, changed, world)
             | (false, _) -> World.trySetEntityXtensionProperty propertyName property entity world
 
+        static member internal setEntityPropertyFast propertyName property entity world =
+            World.trySetEntityPropertyFast propertyName property entity world
+
         static member internal setEntityProperty propertyName property entity world =
             match World.trySetEntityProperty propertyName property entity world with
             | struct (true, changed, world) -> struct (changed, world)

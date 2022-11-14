@@ -101,8 +101,36 @@ module Forge =
             let simulant = if notNull (forgeOld.SimulantCachedOpt :> obj) then forgeOld.SimulantCachedOpt else simulant
             forge.SimulantCachedOpt <- simulant
             Seq.fold (fun world propertyForge ->
+                let lens = propertyForge.PropertyLens
                 let simulant = match propertyForge.PropertySimulantOpt with Some simulant -> simulant | None -> simulant
-                propertyForge.PropertyLens.TrySet propertyForge.PropertyValue simulant world)
+                let world =
+#if LENS_SETTER_IS_FASTER
+                    propertyForge.PropertyLens.TrySet propertyForge.PropertyValue simulant world
+#else
+                    World.setProperty lens.Name { PropertyType = lens.Type; PropertyValue = propertyForge.PropertyValue } simulant world |> snd'
+#endif
+                world)
+                world forge.PropertyForgesOpt
+        else world
+
+    let
+#if !DEBUG
+        inline
+#endif
+        private synchronizeEntityPropertiesFast (forgeOld : EntityForge) (forge : EntityForge) (entity : Entity) world =
+        if notNull forge.PropertyForgesOpt && forge.PropertyForgesOpt.Count > 0 then
+            let entity = if notNull (forgeOld.EntityCachedOpt :> obj) then forgeOld.EntityCachedOpt else entity
+            forge.EntityCachedOpt <- entity
+            Seq.fold (fun world propertyForge ->
+                let lens = propertyForge.PropertyLens
+                let entity = match propertyForge.PropertySimulantOpt with Some simulant -> simulant :?> Entity | None -> entity
+                let world =
+#if LENS_SETTER_IS_FASTER
+                    propertyForge.PropertyLens.TrySet propertyForge.PropertyValue entity world
+#else
+                    World.setEntityPropertyFast lens.Name { PropertyType = lens.Type; PropertyValue = propertyForge.PropertyValue } entity world
+#endif
+                world)
                 world forge.PropertyForgesOpt
         else world
 
@@ -152,7 +180,7 @@ module Forge =
         if forgeOld <> forge then
             let world = synchronizeEventSignals forgeOld forge origin entity world
             let world = synchronizeEventHandlers forgeOld forge origin entity world
-            let world = synchronizeProperties forgeOld forge entity world
+            let world = synchronizeEntityPropertiesFast forgeOld forge entity world
             match tryDifferentiateChildren<Entity, EntityForge> forgeOld forge entity with
             | Some (entitiesAdded, entitiesRemoved, entitiesPotentiallyAltered) ->
                 let world =
@@ -293,7 +321,7 @@ module Forge =
         for entity in entities do
             if isNull entityForgesOpt then entityForgesOpt <- OrderedDictionary StringComparer.Ordinal
             entityForgesOpt.Add (entity.EntityName, entity)
-        { EntityDispatcherName = typeof<'entityDispatcher>.Name; EntityName = entityName; SimulantCachedOpt = Unchecked.defaultof<_>
+        { EntityDispatcherName = typeof<'entityDispatcher>.Name; EntityName = entityName; EntityCachedOpt = Unchecked.defaultof<_>
           EventSignalForgesOpt = eventSignalForgesOpt; EventHandlerForgesOpt = eventHandlerForgesOpt; PropertyForgesOpt = propertyForgesOpt; EntityForgesOpt = entityForgesOpt }
 
     ///
