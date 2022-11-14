@@ -470,14 +470,18 @@ module Forge =
 [<AutoOpen>]
 module ForgeOperators =
 
-    /// Initialize a property forge.
-    let inline (==) (lens : Lens<'a, 's, World>) (value : 'a) : InitializerForge =
+    /// Define an implicit property forge.
+    let inline (<==) (lens : Lens<'a, 's, World>) (value : 'a) : InitializerForge =
         PropertyForge (PropertyForge.make None lens value)
 
-    /// Initialize a signal forge.
+    /// Define an explicit property forge.
+    let inline (<|==) (simulant : #Simulant, lens : Lens<'a, 's, World>) (value : 'a) : InitializerForge =
+        PropertyForge (PropertyForge.make (Some (simulant :> Simulant)) lens value)
+
+    /// Define a signal forge.
     let inline (==>) (eventAddress : 'a Address) (signal : Signal<'message, 'command>) : InitializerForge =
         EventSignalForge (Address.generalize eventAddress, signal)
 
-    /// Initialize a signal handler forge.
+    /// Define a signal handler forge.
     let inline (==|>) (eventAddress : 'a Address) (callback : Event<'a, 's> -> Signal<'message, 'command>) : InitializerForge =
         EventHandlerForge (PartialEquatable.make (Address.generalize eventAddress) (fun (evt : Event) -> callback (Event.specialize evt) :> obj))
