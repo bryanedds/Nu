@@ -373,7 +373,7 @@ module WorldTypes =
 
     // TODO: P1: expose in Nu namespace along with related types.
     and [<NoEquality; NoComparison>] PropertyForge =
-        { PropertySimulantOpt : Simulant voption
+        { PropertySimulantOpt : Simulant option
           PropertyLens : World Lens
           PropertyValue : obj }
         static member inline make simulantOpt lens value =
