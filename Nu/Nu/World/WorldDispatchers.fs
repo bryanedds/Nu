@@ -805,6 +805,11 @@ module RigidBodyFacetModule =
         member this.BodyCollisionEvent = Events.BodyCollision --> this
         member this.BodySeparationEvent = Events.BodySeparation --> this
 
+    [<RequireQualifiedAccess>]
+    module Entity =
+        let BodyCollisionEvent = Address.anonymize Events.BodyCollision
+        let BodySeparationEvent = Address.anonymize Events.BodySeparation
+
     type RigidBodyFacet () =
         inherit Facet (true)
 
@@ -1542,6 +1547,12 @@ module ButtonDispatcherModule =
         member this.DownEvent = Events.Down --> this
         member this.ClickEvent = Events.Click --> this
 
+    [<RequireQualifiedAccess>]
+    module Entity =
+        let UpEvent = Address.anonymize Events.Up
+        let DownEvent = Address.anonymize Events.Down
+        let ClickEvent = Address.anonymize Events.Click
+
     type ButtonDispatcher () =
         inherit GuiDispatcher ()
 
@@ -1743,6 +1754,12 @@ module ToggleButtonDispatcherModule =
         member this.ToggledEvent = Events.Toggled --> this
         member this.UntoggledEvent = Events.Untoggled --> this
 
+    [<RequireQualifiedAccess>]
+    module Entity =
+        let ToggleEvent = Address.anonymize Events.Toggle
+        let ToggledEvent = Address.anonymize Events.Toggled
+        let UntoggledEvent = Address.anonymize Events.Untoggled
+
     type ToggleButtonDispatcher () =
         inherit GuiDispatcher ()
         
@@ -1865,6 +1882,12 @@ module RadioButtonDispatcherModule =
         member this.DialEvent = Events.Dial --> this
         member this.DialedEvent = Events.Dialed --> this
         member this.UndialedEvent = Events.Undialed --> this
+
+    [<RequireQualifiedAccess>]
+    module Entity =
+        let DialEvent = Address.anonymize Events.Dial
+        let DialedEvent = Address.anonymize Events.Dialed
+        let UndialedEvent = Address.anonymize Events.Undialed
 
     type RadioButtonDispatcher () =
         inherit GuiDispatcher ()
@@ -2015,6 +2038,12 @@ module FeelerDispatcherModule =
         member this.TouchEvent = Events.Touch --> this
         member this.TouchingEvent = Events.Touching --> this
         member this.UntouchEvent = Events.Untouch --> this
+
+    [<RequireQualifiedAccess>]
+    module Entity =
+        let TouchEvent = Address.anonymize Events.Touch
+        let TouchingEvent = Address.anonymize Events.Touching
+        let UntouchEvent = Address.anonymize Events.Untouch
 
     type FeelerDispatcher () =
         inherit GuiDispatcher ()

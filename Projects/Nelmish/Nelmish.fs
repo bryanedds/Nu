@@ -1,8 +1,6 @@
 ﻿namespace Nelmish
 open Prime
 open Nu
-open Nu.Declarative
-open Nu.ForgeOperators
 
 // this is our Elm-style model type
 type Model =

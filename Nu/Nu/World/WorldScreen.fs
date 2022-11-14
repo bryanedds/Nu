@@ -31,7 +31,7 @@ module WorldScreenModule =
         static member Incoming = lens (nameof Screen.Incoming) (fun (this : Screen) -> this.GetIncoming) (fun value this -> this.SetIncoming value)
         member this.GetOutgoing world = World.getScreenOutgoing this world
         member this.SetOutgoing value world = World.setScreenOutgoing value this world |> snd'
-        static member Outgoin = lens (nameof Screen.Outgoin) (fun (this : Screen) -> this.GetOutgoing) (fun value this -> this.SetOutgoing value)
+        static member Outgoing = lens (nameof Screen.Outgoing) (fun (this : Screen) -> this.GetOutgoing) (fun value this -> this.SetOutgoing value)
         member this.GetSplashOpt world = World.getScreenSplashOpt this world
         member this.SetSplashOpt value world = World.setScreenSplashOpt value this world |> snd'
         static member SplashOpt = lens (nameof Screen.SplashOpt) (fun (this : Screen) -> this.GetSplashOpt) (fun value this -> this.SetSplashOpt value)
@@ -47,7 +47,6 @@ module WorldScreenModule =
         member this.GetId world = World.getScreenId this world
         static member Id = lensReadOnly (nameof Screen.Id) (fun (this : Screen) -> this.GetId)
 
-        static member Event = Unchecked.defaultof<Entity>
         member this.RegisterEvent = Events.Register --> this
         member this.UnregisteringEvent = Events.Unregistering --> this
         member this.ChangeEvent propertyName = Events.Change propertyName --> this
@@ -362,3 +361,19 @@ module WorldScreenModule =
                 setScreenSplash splashDescriptor destination screen world
             | OmniScreen ->
                 World.setOmniScreen screen world
+
+    [<RequireQualifiedAccess>]
+    module Screen =
+
+        let RegisterEvent = Address.anonymize Events.Register
+        let UnregisteringEvent = Address.anonymize Events.Unregistering
+        let ChangeEvent propertyName = Address.anonymize (Events.Change propertyName)
+        let UpdateEvent = Address.anonymize Events.Update
+        let PostUpdateEvent = Address.anonymize Events.PostUpdate
+        let RenderEvent = Address.anonymize Events.Render
+        let SelectEvent = Address.anonymize Events.Select
+        let DeselectingEvent = Address.anonymize Events.Deselecting
+        let IncomingStartEvent = Address.anonymize Events.IncomingStart
+        let IncomingFinishEvent = Address.anonymize Events.IncomingFinish
+        let OutgoingStartEvent = Address.anonymize Events.OutgoingStart
+        let OutgoingFinishEvent = Address.anonymize Events.OutgoingFinish

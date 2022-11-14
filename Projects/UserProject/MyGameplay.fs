@@ -2,8 +2,6 @@
 open System.Numerics
 open Prime
 open Nu
-open Nu.Declarative
-open Nu.ForgeOperators
 
 [<AutoOpen>]
 module MyGameplay =
@@ -30,7 +28,7 @@ module MyGameplay =
     type Screen with
         member this.GetGameplay world = this.GetModelGeneric<Gameplay> world
         member this.SetGameplay value world = this.SetModelGeneric<Gameplay> value world
-        member this.Gameplay = this.ModelGeneric<Gameplay> ()
+        static member Gameplay = Screen.ModelGeneric<Gameplay> ()
 
     // this is the screen dispatcher that defines the screen where gameplay takes place
     type MyGameplayDispatcher () =
@@ -74,13 +72,13 @@ module MyGameplay =
             | Nop -> just world
 
         // here we describe the content of the game including the level, the hud, and the player
-        override this.Forge (gameplay, screen) =
+        override this.Forge (gameplay, _) =
 
             // the gameplay screen
             Forge.screen Simulants.Gameplay.Screen.Name Vanilla
-                [screen.UpdateEvent ==> cmd Update
-                 screen.PostUpdateEvent ==> cmd PostUpdateEye
-                 screen.DeselectingEvent ==> msg FinishQuitting
+                [Screen.UpdateEvent ==> cmd Update
+                 Screen.PostUpdateEvent ==> cmd PostUpdateEye
+                 Screen.DeselectingEvent ==> msg FinishQuitting
                  Simulants.Game.KeyboardKeyDownEvent ==|> fun evt -> if evt.Data.KeyboardKey = KeyboardKey.Up && not evt.Data.Repeated then cmd Jump else cmd Nop
                  Simulants.Gameplay.Gui.Quit.ClickEvent ==> msg StartQutting]
 

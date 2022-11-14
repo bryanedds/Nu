@@ -35,7 +35,6 @@ module WorldGroupModule =
         member this.GetId world = World.getGroupId this world
         static member Id = lensReadOnly (nameof Group.Id) (fun (this : Group) -> this.GetId)
 
-        static member Event = Unchecked.defaultof<Entity>
         member this.RegisterEvent = Events.Register --> this
         member this.UnregisteringEvent = Events.Unregistering --> this
         member this.ChangeEvent propertyName = Events.Change propertyName --> this
@@ -308,3 +307,12 @@ module WorldGroupModule =
             let groupDescriptorStr = File.ReadAllText filePath
             let groupDescriptor = scvalue<GroupDescriptor> groupDescriptorStr
             World.readGroup groupDescriptor nameOpt screen world
+
+    [<RequireQualifiedAccess>]
+    module Group =
+        let RegisterEvent = Address.anonymize Events.Register
+        let UnregisteringEvent = Address.anonymize Events.Unregistering
+        let ChangeEvent propertyName = Address.anonymize (Events.Change propertyName)
+        let UpdateEvent = Address.anonymize Events.Update
+        let PostUpdateEvent = Address.anonymize Events.PostUpdate
+        let RenderEvent = Address.anonymize Events.Render

@@ -32,18 +32,8 @@ module Forge =
                         (fun world subscriptionId -> World.unsubscribe subscriptionId world)
                         world eventSignalsRemoved
                 let world =
-                    Seq.fold (fun world ((eventAddress, signalObj), subscriptionId) ->
-                        let conversionResultOpt =
-                            match Array.last eventAddress.Names with
-                            | Constants.Engine.EntityEventTruncatedName -> ValueSome (simulant.Names.Length >= 3)
-                            | Constants.Engine.GroupEventTruncatedName -> ValueSome (simulant.Names.Length = 2)
-                            | Constants.Engine.ScreenEventTruncatedName -> ValueSome (simulant.Names.Length = 1)
-                            | _ -> ValueNone
-                        let eventAddress =
-                            match conversionResultOpt with
-                            | ValueSome true -> eventAddress.Names.[dec eventAddress.Names.Length] <- "Event"; eventAddress --> simulant.SimulantAddress // HACK: fixup anonymous event.
-                            | ValueSome false -> failwith "Could not infer simulant address due to anonymous simulant event being passed in the wrong context."
-                            | ValueNone -> eventAddress
+                    Seq.fold (fun world ((eventAddress : obj Address, signalObj), subscriptionId) ->
+                        let eventAddress = if eventAddress.Anonymous then eventAddress --> simulant.SimulantAddress else eventAddress
                         let (unsubscribe, world) =
                             World.subscribePlus subscriptionId (fun (_ : Event) world ->
                                 let world = WorldModule.trySignal signalObj origin world
@@ -83,18 +73,8 @@ module Forge =
                         (fun world (subscriptionId, _) -> World.unsubscribe subscriptionId world)
                         world eventHandlersRemoved
                 let world =
-                    Seq.fold (fun world ((_, eventAddress), (subscriptionId, handler)) ->
-                        let conversionResultOpt =
-                            match Array.last eventAddress.Names with
-                            | Constants.Engine.EntityEventTruncatedName -> ValueSome (simulant.Names.Length >= 3)
-                            | Constants.Engine.GroupEventTruncatedName -> ValueSome (simulant.Names.Length = 2)
-                            | Constants.Engine.ScreenEventTruncatedName -> ValueSome (simulant.Names.Length = 1)
-                            | _ -> ValueNone
-                        let eventAddress =
-                            match conversionResultOpt with
-                            | ValueSome true -> eventAddress.Names.[dec eventAddress.Names.Length] <- "Event"; eventAddress --> simulant.SimulantAddress // HACK: fixup anonymous event.
-                            | ValueSome false -> failwith "Could not infer simulant address due to anonymous simulant event being passed in the wrong context."
-                            | ValueNone -> eventAddress
+                    Seq.fold (fun world ((_, eventAddress : obj Address), (subscriptionId, handler)) ->
+                        let eventAddress = if eventAddress.Anonymous then eventAddress --> simulant.SimulantAddress else eventAddress
                         let (unsubscribe, world) =
                             World.subscribePlus subscriptionId (fun event world ->
                                 let world = WorldModule.trySignal (handler event) origin world
@@ -120,8 +100,8 @@ module Forge =
         if notNull forge.PropertyForgesOpt && forge.PropertyForgesOpt.Count > 0 then
             let simulant = if notNull (forgeOld.SimulantCachedOpt :> obj) then forgeOld.SimulantCachedOpt else simulant
             forge.SimulantCachedOpt <- simulant
-            Seq.fold (fun world (propertyLens : World Lens, propertyValue) ->
-                propertyLens.TrySet propertyValue simulant world)
+            Seq.fold (fun world (simulantOpt, propertyLens : World Lens, propertyValue) ->
+                propertyLens.TrySet propertyValue (match simulantOpt with ValueSome simulant -> simulant | ValueNone -> simulant) world)
                 world forge.PropertyForgesOpt
         else world
 
@@ -307,7 +287,7 @@ module Forge =
             match property with
             | EventSignalForge (addr, value) -> (if isNull eventSignalForgesOpt then eventSignalForgesOpt <- OrderedDictionary HashIdentity.Structural); eventSignalForgesOpt.Add ((addr, value), makeGuid ())
             | EventHandlerForge pe -> (if isNull eventHandlerForgesOpt then eventHandlerForgesOpt <- OrderedDictionary HashIdentity.Structural); eventHandlerForgesOpt.Add ((i, pe.Equatable), (makeGuid (), pe.Nonequatable))
-            | PropertyForge (lens, value) -> (if isNull propertyForgesOpt then propertyForgesOpt <- List ()); propertyForgesOpt.Add (lens, value)
+            | PropertyForge (simulantOpt, lens, value) -> (if isNull propertyForgesOpt then propertyForgesOpt <- List ()); propertyForgesOpt.Add (simulantOpt, lens, value)
             i <- inc i
         for entity in entities do
             if isNull entityForgesOpt then entityForgesOpt <- OrderedDictionary StringComparer.Ordinal
@@ -399,7 +379,7 @@ module Forge =
             match initializer with
             | EventSignalForge (addr, value) -> (if isNull eventSignalForgesOpt then eventSignalForgesOpt <- OrderedDictionary HashIdentity.Structural); eventSignalForgesOpt.Add ((addr, value), makeGuid ())
             | EventHandlerForge pe -> (if isNull eventHandlerForgesOpt then eventHandlerForgesOpt <- OrderedDictionary HashIdentity.Structural); eventHandlerForgesOpt.Add ((i, pe.Equatable), (makeGuid (), pe.Nonequatable))
-            | PropertyForge (lens, value) -> (if isNull propertyForgesOpt then propertyForgesOpt <- List ()); propertyForgesOpt.Add (lens, value)
+            | PropertyForge (simulantOpt, lens, value) -> (if isNull propertyForgesOpt then propertyForgesOpt <- List ()); propertyForgesOpt.Add (simulantOpt, lens, value)
             i <- inc i
         for entity in entities do
             if isNull entityForgesOpt then entityForgesOpt <- OrderedDictionary StringComparer.Ordinal
@@ -426,7 +406,7 @@ module Forge =
             match initializer with
             | EventSignalForge (addr, value) -> (if isNull eventSignalForgesOpt then eventSignalForgesOpt <- OrderedDictionary HashIdentity.Structural); eventSignalForgesOpt.Add ((addr, value), makeGuid ())
             | EventHandlerForge pe -> (if isNull eventHandlerForgesOpt then eventHandlerForgesOpt <- OrderedDictionary HashIdentity.Structural); eventHandlerForgesOpt.Add ((i, pe.Equatable), (makeGuid (), pe.Nonequatable))
-            | PropertyForge (lens, value) -> (if isNull propertyForgesOpt then propertyForgesOpt <- List ()); propertyForgesOpt.Add (lens, value)
+            | PropertyForge (simulantOpt, lens, value) -> (if isNull propertyForgesOpt then propertyForgesOpt <- List ()); propertyForgesOpt.Add (simulantOpt, lens, value)
             i <- inc i
         for group in groups do
             groupForges.Add (group.GroupName, group)
@@ -451,7 +431,7 @@ module Forge =
             match initializer with
             | EventSignalForge (addr, value) -> (if isNull eventSignalForgesOpt then eventSignalForgesOpt <- OrderedDictionary HashIdentity.Structural); eventSignalForgesOpt.Add ((addr, value), makeGuid ())
             | EventHandlerForge pe -> (if isNull eventHandlerForgesOpt then eventHandlerForgesOpt <- OrderedDictionary HashIdentity.Structural); eventHandlerForgesOpt.Add ((i, pe.Equatable), (makeGuid (), pe.Nonequatable))
-            | PropertyForge (lens, value) -> (if isNull propertyForgesOpt then propertyForgesOpt <- List ()); propertyForgesOpt.Add (lens, value)
+            | PropertyForge (simulantOpt, lens, value) -> (if isNull propertyForgesOpt then propertyForgesOpt <- List ()); propertyForgesOpt.Add (simulantOpt, lens, value)
             i <- inc i
         for screen in screens do
             screenForges.Add (screen.ScreenName, screen)
@@ -463,7 +443,7 @@ module ForgeOperators =
 
     /// Initialize a property forge.
     let inline (==) (lens : Lens<'a, 's, World>) (value : 'a) : InitializerForge =
-        PropertyForge (lens, value :> obj)
+        PropertyForge (ValueNone, lens, value :> obj)
 
     /// Initialize a signal forge.
     let inline (==>) (eventAddress : 'a Address) (signal : Signal<'message, 'command>) : InitializerForge =

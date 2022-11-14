@@ -52,7 +52,7 @@ module MyGame =
             | Exit -> just (World.exit world)
 
         // here we describe the content of the game, including all of its screens.
-        override this.Forge (model, game) =
+        override this.Forge (model, _) =
             Forge.game
                 [Game.DesiredScreen ==
                     match model with
@@ -60,13 +60,13 @@ module MyGame =
                     | Title -> Desire Simulants.Title.Screen
                     | Credits -> Desire Simulants.Credits.Screen
                     | Gameplay gameplay -> match gameplay with | Playing -> Desire Simulants.Gameplay.Screen | Quitting | Quit -> Desire Simulants.Title.Screen
-                 Game.Event.ChangeEvent "Model" ==> cmd ModelChanged
+                 Game.Model.ChangeEvent ==> cmd ModelChanged
                  Simulants.Splash.Screen.DeselectingEvent ==> msg ShowTitle
                  Simulants.Title.Gui.Credits.ClickEvent ==> msg ShowCredits
                  Simulants.Title.Gui.Play.ClickEvent ==> msg ShowGameplay
                  Simulants.Title.Gui.Exit.ClickEvent ==> cmd Exit
                  Simulants.Credits.Gui.Back.ClickEvent ==> msg ShowTitle
-                 Simulants.Gameplay.Screen.ChangeEvent "Gameplay" ==|> fun event -> msg (GameplayChanged (event.Data.Value :?> Gameplay))]
+                 Simulants.Gameplay.Screen.ChangeEvent Screen.Gameplay.Name ==|> fun event -> msg (GameplayChanged (event.Data.Value :?> Gameplay))]
                 [Forge.screen Simulants.Splash.Screen.Name (WorldTypes.Splash (Constants.Dissolve.Default, Constants.Splash.Default, None, Simulants.Title.Screen)) [] []
                  Forge.screenWithGroupFromFile Simulants.Title.Screen.Name (Dissolve (Constants.Dissolve.Default, None)) "Assets/Gui/Title.nugroup" [] []
                  Forge.screenWithGroupFromFile Simulants.Credits.Screen.Name (Dissolve (Constants.Dissolve.Default, None)) "Assets/Gui/Credits.nugroup" [] []
