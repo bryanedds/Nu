@@ -55,7 +55,7 @@ module BlazeVector =
         // here we describe the content of the game, including all of its screens.
         override this.Forge (model, _) =
             Forge.game
-                [Game.DesiredScreen ==
+                [Game.DesiredScreen <==
                     match model with
                     | Splash -> Desire Simulants.Splash.Screen
                     | Title -> Desire Simulants.Title.Screen

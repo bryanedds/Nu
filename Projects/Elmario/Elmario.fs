@@ -57,13 +57,13 @@ type ElmarioDispatcher () =
             [Forge.screen Simulants.Default.Screen.Name Vanilla []
                 [Forge.group Simulants.Default.Group.Name []
                     [Forge.sideViewCharacter Simulants.Elmario.Name
-                        [Entity.Position == v3 0.0f 0.0f 0.0f
-                         Entity.Size == v3 108.0f 108.0f 0.0f]
+                        [Entity.Position <== v3 0.0f 0.0f 0.0f
+                         Entity.Size <== v3 108.0f 108.0f 0.0f]
                      Forge.block2d "Ground"
-                        [Entity.Position == v3 -384.0f -256.0f 0.0f
-                         Entity.Size == v3 768.0f 64.0f 0.0f
-                         Entity.StaticImage == asset "Gameplay" "TreeTop"]
+                        [Entity.Position <== v3 -384.0f -256.0f 0.0f
+                         Entity.Size <== v3 768.0f 64.0f 0.0f
+                         Entity.StaticImage <== asset "Gameplay" "TreeTop"]
                      Forge.block2d "Rock"
-                        [Entity.Position == v3 320.0f -192.0f 0.0f
-                         Entity.Size == v3 64.0f 64.0f 0.0f
-                         Entity.StaticImage == asset "Gameplay" "Rock"]]]]
+                        [Entity.Position <== v3 320.0f -192.0f 0.0f
+                         Entity.Size <== v3 64.0f 64.0f 0.0f
+                         Entity.StaticImage <== asset "Gameplay" "Rock"]]]]
