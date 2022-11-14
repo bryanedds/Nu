@@ -101,7 +101,7 @@ module Forge =
             let simulant = if notNull (forgeOld.SimulantCachedOpt :> obj) then forgeOld.SimulantCachedOpt else simulant
             forge.SimulantCachedOpt <- simulant
             Seq.fold (fun world propertyForge ->
-                let simulant = match propertyForge.PropertySimulantOpt with ValueSome simulant -> simulant | ValueNone -> simulant
+                let simulant = match propertyForge.PropertySimulantOpt with Some simulant -> simulant | None -> simulant
                 propertyForge.PropertyLens.TrySet propertyForge.PropertyValue simulant world)
                 world forge.PropertyForgesOpt
         else world
@@ -370,7 +370,7 @@ module Forge =
     let staticModelHierarchy entityName initializers = entity<StaticModelHierarchyDispatcher> entityName initializers
 
     ///
-    let group4<'groupDispatcher when 'groupDispatcher :> GroupDispatcher> groupName groupFilePathOpt initializers entities =
+    let private group4<'groupDispatcher when 'groupDispatcher :> GroupDispatcher> groupName groupFilePathOpt initializers entities =
         let mutable eventSignalForgesOpt = null
         let mutable eventHandlerForgesOpt = null
         let mutable propertyForgesOpt = null
@@ -444,7 +444,7 @@ module ForgeOperators =
 
     /// Initialize a property forge.
     let inline (==) (lens : Lens<'a, 's, World>) (value : 'a) : InitializerForge =
-        PropertyForge (PropertyForge.make ValueNone lens value)
+        PropertyForge (PropertyForge.make None lens value)
 
     /// Initialize a signal forge.
     let inline (==>) (eventAddress : 'a Address) (signal : Signal<'message, 'command>) : InitializerForge =
