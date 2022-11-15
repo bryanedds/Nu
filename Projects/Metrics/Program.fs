@@ -182,7 +182,7 @@ type [<ReferenceEquality>] Intss =
         { Intss = intss.Intss |> Map.map (fun k v -> if k % 1 = 0 then Ints.inc v else v) }
 
 type ElmishGameDispatcher () =
-    inherit GameDispatcher<Intss, int, unit> (Intss.init 100) // 10,000 elmish entities (goal: steady 60FPS, current: unsteady 51FPS)
+    inherit GameDispatcher<Intss, int, unit> (Intss.init 100) // 10,000 elmish entities (goal: steady 60FPS, current: unsteady 49FPS)
 
     override this.Message (intss, message, _, _) =
         match message with
