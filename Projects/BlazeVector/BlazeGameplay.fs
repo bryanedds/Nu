@@ -313,24 +313,24 @@ module Gameplay =
 
             // the gameplay screen
             Content.screen Simulants.Gameplay.Screen.Name Vanilla
-                [screen.SelectEvent ==> cmd CreateSections
-                 screen.DeselectingEvent ==> cmd DestroySections
-                 screen.UpdateEvent ==> cmd Update
-                 Simulants.Gameplay.Gui.Quit.ClickEvent ==> msg StartQutting]
+                [screen.SelectEvent --> cmd CreateSections
+                 screen.DeselectingEvent --> cmd DestroySections
+                 screen.UpdateEvent --> cmd Update
+                 Simulants.Gameplay.Gui.Quit.ClickEvent --> msg StartQutting]
 
                 [// the gui group
                  yield Content.group Simulants.Gameplay.Gui.Group.Name []
                      [Content.button Simulants.Gameplay.Gui.Quit.Name
-                         [Entity.Text <== "Quit"
-                          Entity.Position <== v3 260.0f -260.0f 0.0f
-                          Entity.Elevation <== 10.0f
-                          Entity.ClickEvent ==> msg StartQutting]]
+                         [Entity.Text <-- "Quit"
+                          Entity.Position <-- v3 260.0f -260.0f 0.0f
+                          Entity.Elevation <-- 10.0f
+                          Entity.ClickEvent --> msg StartQutting]]
 
                  // the scene group while playing
                  match gameplay with
                  | Playing | Quitting ->
                     yield Content.group Simulants.Gameplay.Scene.Group.Name []
                         [Content.entity<PlayerDispatcher> Simulants.Gameplay.Scene.Player.Name
-                            [Entity.Position <== v3 -300.0f -175.6805f 0.0f
-                             Entity.Elevation <== 1.0f]]
+                            [Entity.Position <-- v3 -300.0f -175.6805f 0.0f
+                             Entity.Elevation <-- 1.0f]]
                  | Quit -> ()]

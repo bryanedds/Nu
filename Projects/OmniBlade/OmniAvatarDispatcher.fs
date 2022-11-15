@@ -68,7 +68,7 @@ module AvatarDispatcher =
                 BodyShapes
                     [BodySphere { Radius = 0.160f; Center = v3 -0.016f -0.3667f 0.0f; PropertiesOpt = Some { BodyShapeProperties.empty with BodyShapeId = coreShapeId }}
                      BodySphere { Radius = 0.320f; Center = v3 -0.016f -0.3667f 0.0f; PropertiesOpt = Some { BodyShapeProperties.empty with BodyShapeId = sensorShapeId; SensorOpt = Some true }}]
-            [entity.Perimeter <== avatar --> fun avatar -> avatar.Perimeter
+            [entity.Perimeter <-- avatar ==> fun avatar -> avatar.Perimeter
              entity.Presence == Omnipresent
              entity.FixedRotation == true
              entity.GravityScale == 0.0f

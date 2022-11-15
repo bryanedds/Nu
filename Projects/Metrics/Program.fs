@@ -191,17 +191,17 @@ type ElmishGameDispatcher () =
 
     override this.Content (intss, _) =
         Content.game
-            [Game.UpdateEvent ==> msg 0]
+            [Game.UpdateEvent --> msg 0]
             [Content.screen Simulants.Default.Screen.Name Vanilla []
                 [|for (i, ints) in intss.Intss.Pairs do
                     yield Content.group (string i) []
                         [|for (j, int) in ints.Ints.Pairs do
                             yield Content.entity<ElmishEntityDispatcher> (string j)
-                                [Entity.Presence <== Omnipresent
-                                 Entity.Position <== v3 (single i * 5.0f - 250.0f) (single j * 2.5f - 125.0f) -250.0f
-                                 Entity.Scale <== v3Dup (single (int % 10)) * 0.5f]|]
+                                [Entity.Presence <-- Omnipresent
+                                 Entity.Position <-- v3 (single i * 5.0f - 250.0f) (single j * 2.5f - 125.0f) -250.0f
+                                 Entity.Scale <-- v3Dup (single (int % 10)) * 0.5f]|]
                   yield Content.group "Fps" []
-                    [Content.fps "Fps" [Entity.Position <== v3 200.0f -250.0f 0.0f]]|]]
+                    [Content.fps "Fps" [Entity.Position <-- v3 200.0f -250.0f 0.0f]]|]]
 
 #if ELMISH_AND_ECS
     override this.Register (game, world) =
@@ -286,7 +286,7 @@ type TestBedGameDispatcher () =
                         [Content.entities strings constant constant $ fun i str _ ->
                             Content.text Gen.name
                                 [Entity.Position == v2 (single i * 120.0f - 180.0f) 0.0f
-                                 Entity.Text <== str]]]]]
+                                 Entity.Text <-- str]]]]]
 #endif
 
 #if PHANTOM

@@ -811,8 +811,8 @@ module RigidBodyFacetModule =
         member this.Sensor = lens (nameof this.Sensor) this this.GetSensor this.SetSensor
         member this.GetPhysicsId world : PhysicsId = this.Get (nameof this.PhysicsId) world
         member this.PhysicsId = lensReadOnly (nameof this.PhysicsId) this this.GetPhysicsId
-        member this.BodyCollisionEvent = Events.BodyCollision --> this
-        member this.BodySeparationEvent = Events.BodySeparation --> this
+        member this.BodyCollisionEvent = Events.BodyCollision ==> this
+        member this.BodySeparationEvent = Events.BodySeparation ==> this
 
     type RigidBodyFacet () =
         inherit Facet (true)
@@ -1547,9 +1547,9 @@ module ButtonDispatcherModule =
         member this.GetClickSoundVolume world : single = this.Get (nameof this.ClickSoundVolume) world
         member this.SetClickSoundVolume (value : single) world = this.Set (nameof this.ClickSoundVolume) value world
         member this.ClickSoundVolume = lens (nameof this.ClickSoundVolume) this this.GetClickSoundVolume this.SetClickSoundVolume
-        member this.UpEvent = Events.Up --> this
-        member this.DownEvent = Events.Down --> this
-        member this.ClickEvent = Events.Click --> this
+        member this.UpEvent = Events.Up ==> this
+        member this.DownEvent = Events.Down ==> this
+        member this.ClickEvent = Events.Click ==> this
 
     type ButtonDispatcher () =
         inherit GuiDispatcher ()
@@ -1565,7 +1565,7 @@ module ButtonDispatcherModule =
                         let world = entity.SetDown true world
                         let world = entity.SetTextOffset (entity.GetDownTextOffset world) world
                         let eventTrace = EventTrace.debug "ButtonDispatcher" "handleMouseLeftDown" "" EventTrace.empty
-                        let world = World.publishPlus () (Events.Down --> entity) eventTrace entity true false world
+                        let world = World.publishPlus () (Events.Down ==> entity) eventTrace entity true false world
                         (Resolve, world)
                     else (Resolve, world)
                 else (Cascade, world)
@@ -1583,9 +1583,9 @@ module ButtonDispatcherModule =
                 if perimeter.Intersects mousePositionWorld then // gui currently ignores rotation
                     if transform.Enabled && wasDown then
                         let eventTrace = EventTrace.debug "ButtonDispatcher" "handleMouseLeftUp" "Up" EventTrace.empty
-                        let world = World.publishPlus () (Events.Up --> entity) eventTrace entity true false world
+                        let world = World.publishPlus () (Events.Up ==> entity) eventTrace entity true false world
                         let eventTrace = EventTrace.debug "ButtonDispatcher" "handleMouseLeftUp" "Click" EventTrace.empty
-                        let world = World.publishPlus () (Events.Click --> entity) eventTrace entity true false world
+                        let world = World.publishPlus () (Events.Click ==> entity) eventTrace entity true false world
                         let world =
                             match entity.GetClickSoundOpt world with
                             | Some clickSound -> World.playSound (entity.GetClickSoundVolume world) clickSound world
@@ -1748,9 +1748,9 @@ module ToggleButtonDispatcherModule =
         member this.GetToggleSoundVolume world : single = this.Get (nameof this.ToggleSoundVolume) world
         member this.SetToggleSoundVolume (value : single) world = this.Set (nameof this.ToggleSoundVolume) value world
         member this.ToggleSoundVolume = lens (nameof this.ToggleSoundVolume) this this.GetToggleSoundVolume this.SetToggleSoundVolume
-        member this.ToggleEvent = Events.Toggle --> this
-        member this.ToggledEvent = Events.Toggled --> this
-        member this.UntoggledEvent = Events.Untoggled --> this
+        member this.ToggleEvent = Events.Toggle ==> this
+        member this.ToggledEvent = Events.Toggled ==> this
+        member this.UntoggledEvent = Events.Untoggled ==> this
 
     type ToggleButtonDispatcher () =
         inherit GuiDispatcher ()
@@ -1783,9 +1783,9 @@ module ToggleButtonDispatcherModule =
                         let toggled = entity.GetToggled world
                         let eventAddress = if toggled then Events.Toggled else Events.Untoggled
                         let eventTrace = EventTrace.debug "ToggleDispatcher" "handleMouseLeftUp" "" EventTrace.empty
-                        let world = World.publishPlus () (eventAddress --> entity) eventTrace entity true false world
+                        let world = World.publishPlus () (eventAddress ==> entity) eventTrace entity true false world
                         let eventTrace = EventTrace.debug "ToggleDispatcher" "handleMouseLeftUp" "Toggle" EventTrace.empty
-                        let world = World.publishPlus toggled (Events.Toggle --> entity) eventTrace entity true false world
+                        let world = World.publishPlus toggled (Events.Toggle ==> entity) eventTrace entity true false world
                         let world =
                             match entity.GetToggleSoundOpt world with
                             | Some toggleSound -> World.playSound (entity.GetToggleSoundVolume world) toggleSound world
@@ -1871,9 +1871,9 @@ module RadioButtonDispatcherModule =
         member this.GetDialSoundVolume world : single = this.Get (nameof this.DialSoundVolume) world
         member this.SetDialSoundVolume (value : single) world = this.Set (nameof this.DialSoundVolume) value world
         member this.DialSoundVolume = lens (nameof this.DialSoundVolume) this this.GetDialSoundVolume this.SetDialSoundVolume
-        member this.DialEvent = Events.Dial --> this
-        member this.DialedEvent = Events.Dialed --> this
-        member this.UndialedEvent = Events.Undialed --> this
+        member this.DialEvent = Events.Dial ==> this
+        member this.DialedEvent = Events.Dialed ==> this
+        member this.UndialedEvent = Events.Undialed ==> this
 
     type RadioButtonDispatcher () =
         inherit GuiDispatcher ()
@@ -1907,9 +1907,9 @@ module RadioButtonDispatcherModule =
                         let dialed = entity.GetDialed world
                         let eventAddress = if dialed then Events.Dialed else Events.Undialed
                         let eventTrace = EventTrace.debug "RadioButtonDispatcher" "handleMouseLeftUp" "" EventTrace.empty
-                        let world = World.publishPlus () (eventAddress --> entity) eventTrace entity true false world
+                        let world = World.publishPlus () (eventAddress ==> entity) eventTrace entity true false world
                         let eventTrace = EventTrace.debug "RadioButtonDispatcher" "handleMouseLeftUp" "Dial" EventTrace.empty
-                        let world = World.publishPlus dialed (Events.Dial --> entity) eventTrace entity true false world
+                        let world = World.publishPlus dialed (Events.Dial ==> entity) eventTrace entity true false world
                         let world =
                             match entity.GetDialSoundOpt world with
                             | Some dialSound -> World.playSound (entity.GetDialSoundVolume world) dialSound world
@@ -2021,9 +2021,9 @@ module FeelerDispatcherModule =
         member this.GetTouched world : bool = this.Get (nameof this.Touched) world
         member this.SetTouched (value : bool) world = this.Set (nameof this.Touched) value world
         member this.Touched = lens (nameof this.Touched) this this.GetTouched this.SetTouched
-        member this.TouchEvent = Events.Touch --> this
-        member this.TouchingEvent = Events.Touching --> this
-        member this.UntouchEvent = Events.Untouch --> this
+        member this.TouchEvent = Events.Touch ==> this
+        member this.TouchingEvent = Events.Touching ==> this
+        member this.UntouchEvent = Events.Untouch ==> this
 
     type FeelerDispatcher () =
         inherit GuiDispatcher ()
@@ -2039,7 +2039,7 @@ module FeelerDispatcherModule =
                     if transform.Enabled then
                         let world = entity.SetTouched true world
                         let eventTrace = EventTrace.debug "FeelerDispatcher" "handleMouseLeftDown" "" EventTrace.empty
-                        let world = World.publishPlus data.Position (Events.Touch --> entity) eventTrace entity true false world
+                        let world = World.publishPlus data.Position (Events.Touch ==> entity) eventTrace entity true false world
                         (Resolve, world)
                     else (Resolve, world)
                 else (Cascade, world)
@@ -2053,7 +2053,7 @@ module FeelerDispatcherModule =
             if entity.GetVisible world then
                 if entity.GetEnabled world && wasTouched then
                     let eventTrace = EventTrace.debug "FeelerDispatcher" "handleMouseLeftDown" "" EventTrace.empty
-                    let world = World.publishPlus data.Position (Events.Untouch --> entity) eventTrace entity true false world
+                    let world = World.publishPlus data.Position (Events.Untouch ==> entity) eventTrace entity true false world
                     (Resolve, world)
                 else (Cascade, world)
             else (Cascade, world)
@@ -2066,7 +2066,7 @@ module FeelerDispatcherModule =
                 let mousePosition = MouseState.getPosition ()
                 let world = entity.SetTouched true world
                 let eventTrace = EventTrace.debug "FeelerDispatcher" "handleIncoming" "" EventTrace.empty
-                let world = World.publishPlus mousePosition (Events.Touch --> entity) eventTrace entity true false world
+                let world = World.publishPlus mousePosition (Events.Touch ==> entity) eventTrace entity true false world
                 (Resolve, world)
             else (Cascade, world)
 
@@ -2080,8 +2080,8 @@ module FeelerDispatcherModule =
         override this.Register (entity, world) =
             let world = World.monitor handleMouseLeftDown Events.MouseLeftDown entity world
             let world = World.monitor handleMouseLeftUp Events.MouseLeftUp entity world
-            let world = World.monitor handleIncoming (Events.IncomingFinish --> entity.Screen) entity world
-            let world = World.monitor handleOutgoing (Events.OutgoingStart --> entity.Screen) entity world
+            let world = World.monitor handleIncoming (Events.IncomingFinish ==> entity.Screen) entity world
+            let world = World.monitor handleOutgoing (Events.OutgoingStart ==> entity.Screen) entity world
             world
 
         override this.Update (entity, world) =
@@ -2089,7 +2089,7 @@ module FeelerDispatcherModule =
                 if entity.GetTouched world then
                     let mousePosition = World.getMousePosition world
                     let eventTrace = EventTrace.debug "FeelerDispatcher" "Update" "" EventTrace.empty
-                    let world = World.publishPlus mousePosition (Events.Touching --> entity) eventTrace entity true false world
+                    let world = World.publishPlus mousePosition (Events.Touching ==> entity) eventTrace entity true false world
                     world
                 else world
             else world
@@ -2560,7 +2560,7 @@ module StaticModelHierarchyDispatcherModule =
                 World.destroyEntity child world)
                 world (entity.GetChildren world)
 
-        static let syncChildren evt world =
+        static let synchronizeChildren evt world =
             let entity = evt.Subscriber : Entity
             let world = destroyChildren entity world
             let world = World.tryImportScene true (entity.GetStaticModel world) (Right entity) world
@@ -2577,5 +2577,5 @@ module StaticModelHierarchyDispatcherModule =
                     let world = entity.SetLoaded true world
                     world
                 else world
-            let world = World.monitor syncChildren (entity.ChangeEvent (nameof entity.StaticModel)) entity world
+            let world = World.monitor synchronizeChildren (entity.ChangeEvent (nameof entity.StaticModel)) entity world
             world
