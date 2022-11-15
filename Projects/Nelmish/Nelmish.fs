@@ -1,6 +1,7 @@
 ﻿namespace Nelmish
 open Prime
 open Nu
+open Nu.Declarative
 
 // this is our Elm-style model type
 type Model =

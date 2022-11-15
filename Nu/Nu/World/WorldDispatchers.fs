@@ -9,6 +9,15 @@ open TiledSharp
 open Prime
 open Nu
 
+module Declarative =
+
+    let Game = Unchecked.defaultof<Game>
+    let Screen = Unchecked.defaultof<Screen>
+    let Group = Unchecked.defaultof<Group>
+    let Entity = Unchecked.defaultof<Entity>
+
+open Declarative
+
 [<AutoOpen>]
 module DeclarativeOperators2 =
 
@@ -33,30 +42,30 @@ module DeclarativeOperators2 =
 module ScriptFacetModule =
 
     type Entity with
-        member this.GetScriptOpt world : Symbol AssetTag option = this.Get (nameof Entity.ScriptOpt) world
-        member this.SetScriptOpt (value : Symbol AssetTag option) world = this.Set (nameof Entity.ScriptOpt) value world
-        static member ScriptOpt = lens (nameof Entity.ScriptOpt) (fun (this : Entity) -> this.GetScriptOpt) (fun value this -> this.SetScriptOpt value)
-        member this.GetScript world : Scripting.Expr array = this.Get (nameof Entity.Script) world
-        member this.SetScript (value : Scripting.Expr array) world = this.Set (nameof Entity.Script) value world
-        static member Script = lens (nameof Entity.Script) (fun (this : Entity) -> this.GetScript) (fun value this -> this.SetScript value)
-        member internal this.GetScriptUnsubscriptions world : Unsubscription list = this.Get (nameof Entity.ScriptUnsubscriptions) world
-        member internal this.SetScriptUnsubscriptions (value : Unsubscription list) world = this.Set (nameof Entity.ScriptUnsubscriptions) value world
-        static member ScriptUnsubscriptions = lens (nameof Entity.ScriptUnsubscriptions) (fun (this : Entity) -> this.GetScriptUnsubscriptions) (fun value this -> this.SetScriptUnsubscriptions value)
-        member this.GetRegisterScript world : Scripting.Expr = this.Get (nameof Entity.RegisterScript) world
-        member this.SetRegisterScript (value : Scripting.Expr) world = this.Set (nameof Entity.RegisterScript) value world
-        static member RegisterScript = lens (nameof Entity.RegisterScript) (fun (this : Entity) -> this.GetRegisterScript) (fun value this -> this.SetRegisterScript value)
-        member this.GetUnregisterScript world : Scripting.Expr = this.Get (nameof Entity.UnregisterScript) world
-        member this.SetUnregisterScript (value : Scripting.Expr) world = this.Set (nameof Entity.UnregisterScript) value world
-        static member UnregisterScript = lens (nameof Entity.UnregisterScript) (fun (this : Entity) -> this.GetUnregisterScript) (fun value this -> this.SetUnregisterScript value)
-        member this.GetUpdateScript world : Scripting.Expr = this.Get (nameof Entity.UpdateScript) world
-        member this.SetUpdateScript (value : Scripting.Expr) world = this.Set (nameof Entity.UpdateScript) value world
-        static member UpdateScript = lens (nameof Entity.UpdateScript) (fun (this : Entity) -> this.GetUpdateScript) (fun value this -> this.SetUpdateScript value)
-        member this.GetPostUpdateScript world : Scripting.Expr = this.Get (nameof Entity.PostUpdateScript) world
-        member this.SetPostUpdateScript (value : Scripting.Expr) world = this.Set (nameof Entity.PostUpdateScript) value world
-        static member PostUpdateScript = lens (nameof Entity.PostUpdateScript) (fun (this : Entity) -> this.GetPostUpdateScript) (fun value this -> this.SetPostUpdateScript value)
-        member this.GetRenderScript world : Scripting.Expr = this.Get (nameof Entity.RenderScript) world
-        member this.SetRenderScript (value : Scripting.Expr) world = this.Set (nameof Entity.RenderScript) value world
-        static member RenderScript = lens (nameof Entity.RenderScript) (fun (this : Entity) -> this.GetRenderScript) (fun value this -> this.SetRenderScript value)
+        member this.GetScriptOpt world : Symbol AssetTag option = this.Get (nameof this.ScriptOpt) world
+        member this.SetScriptOpt (value : Symbol AssetTag option) world = this.Set (nameof this.ScriptOpt) value world
+        member this.ScriptOpt = lens (nameof this.ScriptOpt) this this.GetScriptOpt this.SetScriptOpt
+        member this.GetScript world : Scripting.Expr array = this.Get (nameof this.Script) world
+        member this.SetScript (value : Scripting.Expr array) world = this.Set (nameof this.Script) value world
+        member this.Script = lens (nameof this.Script) this this.GetScript this.SetScript
+        member internal this.GetScriptUnsubscriptions world : Unsubscription list = this.Get (nameof this.ScriptUnsubscriptions) world
+        member internal this.SetScriptUnsubscriptions (value : Unsubscription list) world = this.Set (nameof this.ScriptUnsubscriptions) value world
+        member internal this.ScriptUnsubscriptions = lens (nameof this.ScriptUnsubscriptions) this this.GetScriptUnsubscriptions this.SetScriptUnsubscriptions
+        member this.GetRegisterScript world : Scripting.Expr = this.Get (nameof this.RegisterScript) world
+        member this.SetRegisterScript (value : Scripting.Expr) world = this.Set (nameof this.RegisterScript) value world
+        member this.RegisterScript = lens (nameof this.RegisterScript) this this.GetRegisterScript this.SetRegisterScript
+        member this.GetUnregisterScript world : Scripting.Expr = this.Get (nameof this.UnregisterScript) world
+        member this.SetUnregisterScript (value : Scripting.Expr) world = this.Set (nameof this.UnregisterScript) value world
+        member this.UnregisterScript = lens (nameof this.UnregisterScript) this this.GetUnregisterScript this.SetUnregisterScript
+        member this.GetUpdateScript world : Scripting.Expr = this.Get (nameof this.UpdateScript) world
+        member this.SetUpdateScript (value : Scripting.Expr) world = this.Set (nameof this.UpdateScript) value world
+        member this.UpdateScript = lens (nameof this.UpdateScript) this this.GetUpdateScript this.SetUpdateScript
+        member this.GetPostUpdateScript world : Scripting.Expr = this.Get (nameof this.PostUpdateScript) world
+        member this.SetPostUpdateScript (value : Scripting.Expr) world = this.Set (nameof this.PostUpdateScript) value world
+        member this.PostUpdateScript = lens (nameof this.PostUpdateScript) this this.GetPostUpdateScript this.SetPostUpdateScript
+        member this.GetRenderScript world : Scripting.Expr = this.Get (nameof this.RenderScript) world
+        member this.SetRenderScript (value : Scripting.Expr) world = this.Set (nameof this.RenderScript) value world
+        member this.RenderScript = lens (nameof this.RenderScript) this this.GetRenderScript this.SetRenderScript
 
     type ScriptFacet () =
         inherit Facet (false)
@@ -87,8 +96,8 @@ module ScriptFacetModule =
 
         override this.Register (entity, world) =
             let world = World.evalWithLogging (entity.GetRegisterScript world) (entity.GetScriptFrame world) entity world |> snd'
-            let world = World.monitor handleScriptChanged (entity.GetChangeEvent (nameof Entity.ScriptFrame)) entity world
-            let world = World.monitor handleRegisterScriptChanged (entity.GetChangeEvent (nameof Entity.RegisterScript)) entity world
+            let world = World.monitor handleScriptChanged (entity.GetChangeEvent (nameof entity.ScriptFrame)) entity world
+            let world = World.monitor handleRegisterScriptChanged (entity.GetChangeEvent (nameof entity.RegisterScript)) entity world
             world
 
         override this.Unregister (entity, world) =
@@ -109,24 +118,24 @@ module ScriptFacetModule =
 module StaticSpriteFacetModule =
 
     type Entity with
-        member this.GetStaticImage world : Image AssetTag = this.Get (nameof Entity.StaticImage) world
-        member this.SetStaticImage (value : Image AssetTag) world = this.Set (nameof Entity.StaticImage) value world
-        static member StaticImage = lens (nameof Entity.StaticImage) (fun (this : Entity) -> this.GetStaticImage) (fun value this -> this.SetStaticImage value)
-        member this.GetInsetOpt world : Box2 option = this.Get (nameof Entity.InsetOpt) world
-        member this.SetInsetOpt (value : Box2 option) world = this.Set (nameof Entity.InsetOpt) value world
-        static member InsetOpt = lens (nameof Entity.InsetOpt) (fun (this : Entity) -> this.GetInsetOpt) (fun value this -> this.SetInsetOpt value)
-        member this.GetColor world : Color = this.Get (nameof Entity.Color) world
-        member this.SetColor (value : Color) world = this.Set (nameof Entity.Color) value world
-        static member Color = lens (nameof Entity.Color) (fun (this : Entity) -> this.GetColor) (fun value this -> this.SetColor value)
-        member this.GetBlend world : Blend = this.Get (nameof Entity.Blend) world
-        member this.SetBlend (value : Blend) world = this.Set (nameof Entity.Blend) value world
-        static member Blend = lens (nameof Entity.Blend) (fun (this : Entity) -> this.GetBlend) (fun value this -> this.SetBlend value)
-        member this.GetGlow world : Color = this.Get (nameof Entity.Glow) world
-        member this.SetGlow (value : Color) world = this.Set (nameof Entity.Glow) value world
-        static member Glow = lens (nameof Entity.Glow) (fun (this : Entity) -> this.GetGlow) (fun value this -> this.SetGlow value)
-        member this.GetFlip world : Flip = this.Get (nameof Entity.Flip) world
-        member this.SetFlip (value : Flip) world = this.Set (nameof Entity.Flip) value world
-        static member Flip = lens (nameof Entity.Flip) (fun (this : Entity) -> this.GetFlip) (fun value this -> this.SetFlip value)
+        member this.GetStaticImage world : Image AssetTag = this.Get (nameof this.StaticImage) world
+        member this.SetStaticImage (value : Image AssetTag) world = this.Set (nameof this.StaticImage) value world
+        member this.StaticImage = lens (nameof this.StaticImage) this this.GetStaticImage this.SetStaticImage
+        member this.GetInsetOpt world : Box2 option = this.Get (nameof this.InsetOpt) world
+        member this.SetInsetOpt (value : Box2 option) world = this.Set (nameof this.InsetOpt) value world
+        member this.InsetOpt = lens (nameof this.InsetOpt) this this.GetInsetOpt this.SetInsetOpt
+        member this.GetColor world : Color = this.Get (nameof this.Color) world
+        member this.SetColor (value : Color) world = this.Set (nameof this.Color) value world
+        member this.Color = lens (nameof this.Color) this this.GetColor this.SetColor
+        member this.GetBlend world : Blend = this.Get (nameof this.Blend) world
+        member this.SetBlend (value : Blend) world = this.Set (nameof this.Blend) value world
+        member this.Blend = lens (nameof this.Blend) this this.GetBlend this.SetBlend
+        member this.GetGlow world : Color = this.Get (nameof this.Glow) world
+        member this.SetGlow (value : Color) world = this.Set (nameof this.Glow) value world
+        member this.Glow = lens (nameof this.Glow) this this.GetGlow this.SetGlow
+        member this.GetFlip world : Flip = this.Get (nameof this.Flip) world
+        member this.SetFlip (value : Flip) world = this.Set (nameof this.Flip) value world
+        member this.Flip = lens (nameof this.Flip) this this.GetFlip this.SetFlip
 
     type StaticSpriteFacet () =
         inherit Facet (false)
@@ -167,21 +176,21 @@ module StaticSpriteFacetModule =
 module AnimatedSpriteFacetModule =
 
     type Entity with
-        member this.GetCelSize world : Vector2 = this.Get (nameof Entity.CelSize) world
-        member this.SetCelSize (value : Vector2) world = this.Set (nameof Entity.CelSize) value world
-        static member CelSize = lens (nameof Entity.CelSize) (fun (this : Entity) -> this.GetCelSize) (fun value this -> this.SetCelSize value)
-        member this.GetCelRun world : int = this.Get (nameof Entity.CelRun) world
-        member this.SetCelRun (value : int) world = this.Set (nameof Entity.CelRun) value world
-        static member CelRun = lens (nameof Entity.CelRun) (fun (this : Entity) -> this.GetCelRun) (fun value this -> this.SetCelRun value)
-        member this.GetCelCount world : int = this.Get (nameof Entity.CelCount) world
-        member this.SetCelCount (value : int) world = this.Set (nameof Entity.CelCount) value world
-        static member CelCount = lens (nameof Entity.CelCount) (fun (this : Entity) -> this.GetCelCount) (fun value this -> this.SetCelCount value)
-        member this.GetAnimationDelay world : int64 = this.Get (nameof Entity.AnimationDelay) world
-        member this.SetAnimationDelay (value : int64) world = this.Set (nameof Entity.AnimationDelay) value world
-        static member AnimationDelay = lens (nameof Entity.AnimationDelay) (fun (this : Entity) -> this.GetAnimationDelay) (fun value this -> this.SetAnimationDelay value)
-        member this.GetAnimationSheet world : Image AssetTag = this.Get (nameof Entity.AnimationSheet) world
-        member this.SetAnimationSheet (value : Image AssetTag) world = this.Set (nameof Entity.AnimationSheet) value world
-        static member AnimationSheet = lens (nameof Entity.AnimationSheet) (fun (this : Entity) -> this.GetAnimationSheet) (fun value this -> this.SetAnimationSheet value)
+        member this.GetCelSize world : Vector2 = this.Get (nameof this.CelSize) world
+        member this.SetCelSize (value : Vector2) world = this.Set (nameof this.CelSize) value world
+        member this.CelSize = lens (nameof this.CelSize) this this.GetCelSize this.SetCelSize
+        member this.GetCelRun world : int = this.Get (nameof this.CelRun) world
+        member this.SetCelRun (value : int) world = this.Set (nameof this.CelRun) value world
+        member this.CelRun = lens (nameof this.CelRun) this this.GetCelRun this.SetCelRun
+        member this.GetCelCount world : int = this.Get (nameof this.CelCount) world
+        member this.SetCelCount (value : int) world = this.Set (nameof this.CelCount) value world
+        member this.CelCount = lens (nameof this.CelCount) this this.GetCelCount this.SetCelCount
+        member this.GetAnimationDelay world : int64 = this.Get (nameof this.AnimationDelay) world
+        member this.SetAnimationDelay (value : int64) world = this.Set (nameof this.AnimationDelay) value world
+        member this.AnimationDelay = lens (nameof this.AnimationDelay) this this.GetAnimationDelay this.SetAnimationDelay
+        member this.GetAnimationSheet world : Image AssetTag = this.Get (nameof this.AnimationSheet) world
+        member this.SetAnimationSheet (value : Image AssetTag) world = this.Set (nameof this.AnimationSheet) value world
+        member this.AnimationSheet = lens (nameof this.AnimationSheet) this this.GetAnimationSheet this.SetAnimationSheet
 
     type AnimatedSpriteFacet () =
         inherit Facet (false)
@@ -237,27 +246,27 @@ module AnimatedSpriteFacetModule =
 module TextFacetModule =
 
     type Entity with
-        member this.GetText world : string = this.Get (nameof Entity.Text) world
-        member this.SetText (value : string) world = this.Set (nameof Entity.Text) value world
-        static member Text = lens (nameof Entity.Text) (fun (this : Entity) -> this.GetText) (fun value this -> this.SetText value)
-        member this.GetFont world : Font AssetTag = this.Get (nameof Entity.Font) world
-        member this.SetFont (value : Font AssetTag) world = this.Set (nameof Entity.Font) value world
-        static member Font = lens (nameof Entity.Font) (fun (this : Entity) -> this.GetFont) (fun value this -> this.SetFont value)
-        member this.GetMargins world : Vector3 = this.Get (nameof Entity.Margins) world
-        member this.SetMargins (value : Vector3) world = this.Set (nameof Entity.Margins) value world
-        static member Margins = lens (nameof Entity.Margins) (fun (this : Entity) -> this.GetMargins) (fun value this -> this.SetMargins value)
-        member this.GetJustification world : Justification = this.Get (nameof Entity.Justification) world
-        member this.SetJustification (value : Justification) world = this.Set (nameof Entity.Justification) value world
-        static member Justification = lens (nameof Entity.Justification) (fun (this : Entity) -> this.GetJustification) (fun value this -> this.SetJustification value)
-        member this.GetTextColor world : Color = this.Get (nameof Entity.TextColor) world
-        member this.SetTextColor (value : Color) world = this.Set (nameof Entity.TextColor) value world
-        static member TextColor = lens (nameof Entity.TextColor) (fun (this : Entity) -> this.GetTextColor) (fun value this -> this.SetTextColor value)
-        member this.GetTextDisabledColor world : Color = this.Get (nameof Entity.TextDisabledColor) world
-        member this.SetTextDisabledColor (value : Color) world = this.Set (nameof Entity.TextDisabledColor) value world
-        static member TextDisabledColor = lens (nameof Entity.TextDisabledColor) (fun (this : Entity) -> this.GetTextDisabledColor) (fun value this -> this.SetTextDisabledColor value)
-        member this.GetTextOffset world : Vector3 = this.Get (nameof Entity.TextOffset) world
-        member this.SetTextOffset (value : Vector3) world = this.Set (nameof Entity.TextOffset) value world
-        static member TextOffset = lens (nameof Entity.TextOffset) (fun (this : Entity) -> this.GetTextOffset) (fun value this -> this.SetTextOffset value)
+        member this.GetText world : string = this.Get (nameof this.Text) world
+        member this.SetText (value : string) world = this.Set (nameof this.Text) value world
+        member this.Text = lens (nameof this.Text) this this.GetText this.SetText
+        member this.GetFont world : Font AssetTag = this.Get (nameof this.Font) world
+        member this.SetFont (value : Font AssetTag) world = this.Set (nameof this.Font) value world
+        member this.Font = lens (nameof this.Font) this this.GetFont this.SetFont
+        member this.GetMargins world : Vector3 = this.Get (nameof this.Margins) world
+        member this.SetMargins (value : Vector3) world = this.Set (nameof this.Margins) value world
+        member this.Margins = lens (nameof this.Margins) this this.GetMargins this.SetMargins
+        member this.GetJustification world : Justification = this.Get (nameof this.Justification) world
+        member this.SetJustification (value : Justification) world = this.Set (nameof this.Justification) value world
+        member this.Justification = lens (nameof this.Justification) this this.GetJustification this.SetJustification
+        member this.GetTextColor world : Color = this.Get (nameof this.TextColor) world
+        member this.SetTextColor (value : Color) world = this.Set (nameof this.TextColor) value world
+        member this.TextColor = lens (nameof this.TextColor) this this.GetTextColor this.SetTextColor
+        member this.GetTextDisabledColor world : Color = this.Get (nameof this.TextDisabledColor) world
+        member this.SetTextDisabledColor (value : Color) world = this.Set (nameof this.TextDisabledColor) value world
+        member this.TextDisabledColor = lens (nameof this.TextDisabledColor) this this.GetTextDisabledColor this.SetTextDisabledColor
+        member this.GetTextOffset world : Vector3 = this.Get (nameof this.TextOffset) world
+        member this.SetTextOffset (value : Vector3) world = this.Set (nameof this.TextOffset) value world
+        member this.TextOffset = lens (nameof this.TextOffset) this this.GetTextOffset this.SetTextOffset
 
     type TextFacet () =
         inherit Facet (false)
@@ -303,42 +312,42 @@ module BasicEmitter2dFacetModule =
 
     type Entity with
 
-        member this.GetSelfDestruct world : bool = this.Get (nameof Entity.SelfDestruct) world
-        member this.SetSelfDestruct (value : bool) world = this.Set (nameof Entity.SelfDestruct) value world
-        static member SelfDestruct = lens (nameof Entity.SelfDestruct) (fun (this : Entity) -> this.GetSelfDestruct) (fun value this -> this.SetSelfDestruct value)
-        member this.GetEmitterGravity world : Vector3 = this.Get (nameof Entity.EmitterGravity) world
-        member this.SetEmitterGravity (value : Vector3) world = this.Set (nameof Entity.EmitterGravity) value world
-        static member EmitterGravity = lens (nameof Entity.EmitterGravity) (fun (this : Entity) -> this.GetEmitterGravity) (fun value this -> this.SetEmitterGravity value)
-        member this.GetEmitterImage world : Image AssetTag = this.Get (nameof Entity.EmitterImage) world
-        member this.SetEmitterImage (value : Image AssetTag) world = this.Set (nameof Entity.EmitterImage) value world
-        static member EmitterImage = lens (nameof Entity.EmitterImage) (fun (this : Entity) -> this.GetEmitterImage) (fun value this -> this.SetEmitterImage value)
-        member this.GetEmitterBlend world : Blend = this.Get (nameof Entity.EmitterBlend) world
-        member this.SetEmitterBlend (value : Blend) world = this.Set (nameof Entity.EmitterBlend) value world
-        static member EmitterBlend = lens (nameof Entity.EmitterBlend) (fun (this : Entity) -> this.GetEmitterBlend) (fun value this -> this.SetEmitterBlend value)
-        member this.GetEmitterLifeTimeOpt world : int64 = this.Get (nameof Entity.EmitterLifeTimeOpt) world
-        member this.SetEmitterLifeTimeOpt (value : int64) world = this.Set (nameof Entity.EmitterLifeTimeOpt) value world
-        static member EmitterLifeTimeOpt = lens (nameof Entity.EmitterLifeTimeOpt) (fun (this : Entity) -> this.GetEmitterLifeTimeOpt) (fun value this -> this.SetEmitterLifeTimeOpt value)
-        member this.GetEmitterConstraint world : Particles.Constraint = this.Get (nameof Entity.EmitterConstraint) world
-        member this.SetEmitterConstraint (value : Particles.Constraint) world = this.Set (nameof Entity.EmitterConstraint) value world
-        static member EmitterConstraint = lens (nameof Entity.EmitterConstraint) (fun (this : Entity) -> this.GetEmitterConstraint) (fun value this -> this.SetEmitterConstraint value)
-        member this.GetEmitterStyle world : string = this.Get (nameof Entity.EmitterStyle) world
-        member this.SetEmitterStyle (value : string) world = this.Set (nameof Entity.EmitterStyle) value world
-        static member EmitterStyle = lens (nameof Entity.EmitterStyle) (fun (this : Entity) -> this.GetEmitterStyle) (fun value this -> this.SetEmitterStyle value)
-        member this.GetParticleLifeTimeMaxOpt world : int64 = this.Get (nameof Entity.ParticleLifeTimeMaxOpt) world
-        member this.SetParticleLifeTimeMaxOpt (value : int64) world = this.Set (nameof Entity.ParticleLifeTimeMaxOpt) value world
-        static member ParticleLifeTimeMaxOpt = lens (nameof Entity.ParticleLifeTimeMaxOpt) (fun (this : Entity) -> this.GetParticleLifeTimeMaxOpt) (fun value this -> this.SetParticleLifeTimeMaxOpt value)
-        member this.GetParticleRate world : single = this.Get (nameof Entity.ParticleRate) world
-        member this.SetParticleRate (value : single) world = this.Set (nameof Entity.ParticleRate) value world
-        static member ParticleRate = lens (nameof Entity.ParticleRate) (fun (this : Entity) -> this.GetParticleRate) (fun value this -> this.SetParticleRate value)
-        member this.GetParticleMax world : int = this.Get (nameof Entity.ParticleMax) world
-        member this.SetParticleMax (value : int) world = this.Set (nameof Entity.ParticleMax) value world
-        static member ParticleMax = lens (nameof Entity.ParticleMax) (fun (this : Entity) -> this.GetParticleMax) (fun value this -> this.SetParticleMax value)
-        member this.GetBasicParticleSeed world : Particles.BasicParticle = this.Get (nameof Entity.BasicParticleSeed) world
-        member this.SetBasicParticleSeed (value : Particles.BasicParticle) world = this.Set (nameof Entity.BasicParticleSeed) value world
-        static member BasicParticleSeed = lens (nameof Entity.BasicParticleSeed) (fun (this : Entity) -> this.GetBasicParticleSeed) (fun value this -> this.SetBasicParticleSeed value)
-        member this.GetParticleSystem world : ParticleSystem = this.Get (nameof Entity.ParticleSystem) world
-        member this.SetParticleSystem (value : ParticleSystem) world = this.Set (nameof Entity.ParticleSystem) value world
-        static member ParticleSystem = lens (nameof Entity.ParticleSystem) (fun (this : Entity) -> this.GetParticleSystem) (fun value this -> this.SetParticleSystem value)
+        member this.GetSelfDestruct world : bool = this.Get (nameof this.SelfDestruct) world
+        member this.SetSelfDestruct (value : bool) world = this.Set (nameof this.SelfDestruct) value world
+        member this.SelfDestruct = lens (nameof this.SelfDestruct) this this.GetSelfDestruct this.SetSelfDestruct
+        member this.GetEmitterGravity world : Vector3 = this.Get (nameof this.EmitterGravity) world
+        member this.SetEmitterGravity (value : Vector3) world = this.Set (nameof this.EmitterGravity) value world
+        member this.EmitterGravity = lens (nameof this.EmitterGravity) this this.GetEmitterGravity this.SetEmitterGravity
+        member this.GetEmitterImage world : Image AssetTag = this.Get (nameof this.EmitterImage) world
+        member this.SetEmitterImage (value : Image AssetTag) world = this.Set (nameof this.EmitterImage) value world
+        member this.EmitterImage = lens (nameof this.EmitterImage) this this.GetEmitterImage this.SetEmitterImage
+        member this.GetEmitterBlend world : Blend = this.Get (nameof this.EmitterBlend) world
+        member this.SetEmitterBlend (value : Blend) world = this.Set (nameof this.EmitterBlend) value world
+        member this.EmitterBlend = lens (nameof this.EmitterBlend) this this.GetEmitterBlend this.SetEmitterBlend
+        member this.GetEmitterLifeTimeOpt world : int64 = this.Get (nameof this.EmitterLifeTimeOpt) world
+        member this.SetEmitterLifeTimeOpt (value : int64) world = this.Set (nameof this.EmitterLifeTimeOpt) value world
+        member this.EmitterLifeTimeOpt = lens (nameof this.EmitterLifeTimeOpt) this this.GetEmitterLifeTimeOpt this.SetEmitterLifeTimeOpt
+        member this.GetParticleLifeTimeMaxOpt world : int64 = this.Get (nameof this.ParticleLifeTimeMaxOpt) world
+        member this.SetParticleLifeTimeMaxOpt (value : int64) world = this.Set (nameof this.ParticleLifeTimeMaxOpt) value world
+        member this.ParticleLifeTimeMaxOpt = lens (nameof this.ParticleLifeTimeMaxOpt) this this.GetParticleLifeTimeMaxOpt this.SetParticleLifeTimeMaxOpt
+        member this.GetParticleRate world : single = this.Get (nameof this.ParticleRate) world
+        member this.SetParticleRate (value : single) world = this.Set (nameof this.ParticleRate) value world
+        member this.ParticleRate = lens (nameof this.ParticleRate) this this.GetParticleRate this.SetParticleRate
+        member this.GetParticleMax world : int = this.Get (nameof this.ParticleMax) world
+        member this.SetParticleMax (value : int) world = this.Set (nameof this.ParticleMax) value world
+        member this.ParticleMax = lens (nameof this.ParticleMax) this this.GetParticleMax this.SetParticleMax
+        member this.GetBasicParticleSeed world : Particles.BasicParticle = this.Get (nameof this.BasicParticleSeed) world
+        member this.SetBasicParticleSeed (value : Particles.BasicParticle) world = this.Set (nameof this.BasicParticleSeed) value world
+        member this.BasicParticleSeed = lens (nameof this.BasicParticleSeed) this this.GetBasicParticleSeed this.SetBasicParticleSeed
+        member this.GetEmitterConstraint world : Particles.Constraint = this.Get (nameof this.EmitterConstraint) world
+        member this.SetEmitterConstraint (value : Particles.Constraint) world = this.Set (nameof this.EmitterConstraint) value world
+        member this.EmitterConstraint = lens (nameof this.EmitterConstraint) this this.GetEmitterConstraint this.SetEmitterConstraint
+        member this.GetEmitterStyle world : string = this.Get (nameof this.EmitterStyle) world
+        member this.SetEmitterStyle (value : string) world = this.Set (nameof this.EmitterStyle) value world
+        member this.EmitterStyle = lens (nameof this.EmitterStyle) this this.GetEmitterStyle this.SetEmitterStyle
+        member this.GetParticleSystem world : ParticleSystem = this.Get (nameof this.ParticleSystem) world
+        member this.SetParticleSystem (value : ParticleSystem) world = this.Set (nameof this.ParticleSystem) value world
+        member this.ParticleSystem = lens (nameof this.ParticleSystem) this this.GetParticleSystem this.SetParticleSystem
 
     type BasicEmitter2dFacet () =
         inherit Facet (false)
@@ -416,17 +425,6 @@ module BasicEmitter2dFacetModule =
             let world = updateEmitter (fun emitter -> if emitter.Life.LifeTimeOpt <> emitterLifeTimeOpt then { emitter with Life = { emitter.Life with LifeTimeOpt = emitterLifeTimeOpt }} else emitter) evt.Subscriber world
             (Cascade, world)
 
-        static let handleEmitterConstraintChanged evt world =
-            let emitterConstraint = evt.Data.Value :?> Particles.Constraint
-            let world = updateEmitter (fun emitter -> if emitter.Constraint <> emitterConstraint then { emitter with Constraint = emitterConstraint } else emitter) evt.Subscriber world
-            (Cascade, world)
-
-        static let handleEmitterStyleChanged evt world =
-            let entity = evt.Subscriber
-            let emitter = makeEmitter entity world
-            let world = updateEmitter (constant emitter) entity world
-            (Cascade, world)
-
         static let handleParticleLifeTimeMaxOptChanged evt world =
             let particleLifeTimeMaxOpt = evt.Data.Value :?> int64
             let world = updateEmitter (fun emitter -> if emitter.ParticleLifeTimeMaxOpt <> particleLifeTimeMaxOpt then { emitter with ParticleLifeTimeMaxOpt = particleLifeTimeMaxOpt } else emitter) evt.Subscriber world
@@ -445,6 +443,17 @@ module BasicEmitter2dFacetModule =
         static let handleBasicParticleSeedChanged evt world =
             let particleSeed = evt.Data.Value :?> Particles.BasicParticle
             let world = updateEmitter (fun emitter -> if emitter.ParticleSeed <> particleSeed then { emitter with ParticleSeed = particleSeed } else emitter) evt.Subscriber world
+            (Cascade, world)
+
+        static let handleEmitterConstraintChanged evt world =
+            let emitterConstraint = evt.Data.Value :?> Particles.Constraint
+            let world = updateEmitter (fun emitter -> if emitter.Constraint <> emitterConstraint then { emitter with Constraint = emitterConstraint } else emitter) evt.Subscriber world
+            (Cascade, world)
+
+        static let handleEmitterStyleChanged evt world =
+            let entity = evt.Subscriber
+            let emitter = makeEmitter entity world
+            let world = updateEmitter (constant emitter) entity world
             (Cascade, world)
 
         static let handlePositionChanged evt world =
@@ -484,12 +493,12 @@ module BasicEmitter2dFacetModule =
              define Entity.EmitterBlend Transparent
              define Entity.EmitterImage Assets.Default.Image
              define Entity.EmitterLifeTimeOpt 0L
-             define Entity.EmitterConstraint Particles.Constraint.empty
-             define Entity.EmitterStyle "BasicEmitter2d"
              define Entity.ParticleLifeTimeMaxOpt 60L
              define Entity.ParticleRate 1.0f
              define Entity.ParticleMax 60
              define Entity.BasicParticleSeed { Life = Particles.Life.make 0L 60L; Body = Particles.Body.defaultBody2d; Size = Constants.Engine.ParticleSize2dDefault; Offset = v3Zero; Inset = box2Zero; Color = Color.One; Glow = Color.Zero; Flip = FlipNone }
+             define Entity.EmitterConstraint Particles.Constraint.empty
+             define Entity.EmitterStyle "BasicEmitter2d"
              nonPersistent Entity.ParticleSystem ParticleSystem.empty]
 
         override this.Register (entity, world) =
@@ -497,17 +506,17 @@ module BasicEmitter2dFacetModule =
             let particleSystem = entity.GetParticleSystem world
             let particleSystem = { particleSystem with Emitters = Map.add typeof<Particles.BasicEmitter>.Name (emitter :> Particles.Emitter) particleSystem.Emitters }
             let world = entity.SetParticleSystem particleSystem world
-            let world = World.monitor handlePositionChanged (entity.GetChangeEvent (nameof Entity.Position)) entity world
-            let world = World.monitor handleRotationChanged (entity.GetChangeEvent (nameof Entity.Rotation)) entity world
-            let world = World.monitor handleEmitterBlendChanged (entity.GetChangeEvent (nameof Entity.EmitterBlend)) entity world
-            let world = World.monitor handleEmitterImageChanged (entity.GetChangeEvent (nameof Entity.EmitterImage)) entity world
-            let world = World.monitor handleEmitterLifeTimeOptChanged (entity.GetChangeEvent (nameof Entity.EmitterLifeTimeOpt)) entity world
-            let world = World.monitor handleEmitterConstraintChanged (entity.GetChangeEvent (nameof Entity.EmitterConstraint)) entity world
-            let world = World.monitor handleEmitterStyleChanged (entity.GetChangeEvent (nameof Entity.EmitterStyle)) entity world
-            let world = World.monitor handleParticleLifeTimeMaxOptChanged (entity.GetChangeEvent (nameof Entity.ParticleLifeTimeMaxOpt)) entity world
-            let world = World.monitor handleParticleRateChanged (entity.GetChangeEvent (nameof Entity.ParticleRate)) entity world
-            let world = World.monitor handleParticleMaxChanged (entity.GetChangeEvent (nameof Entity.ParticleMax)) entity world
-            let world = World.monitor handleBasicParticleSeedChanged (entity.GetChangeEvent (nameof Entity.BasicParticleSeed)) entity world
+            let world = World.monitor handlePositionChanged (entity.GetChangeEvent (nameof entity.Position)) entity world
+            let world = World.monitor handleRotationChanged (entity.GetChangeEvent (nameof entity.Rotation)) entity world
+            let world = World.monitor handleEmitterBlendChanged (entity.GetChangeEvent (nameof entity.EmitterBlend)) entity world
+            let world = World.monitor handleEmitterImageChanged (entity.GetChangeEvent (nameof entity.EmitterImage)) entity world
+            let world = World.monitor handleEmitterLifeTimeOptChanged (entity.GetChangeEvent (nameof entity.EmitterLifeTimeOpt)) entity world
+            let world = World.monitor handleParticleLifeTimeMaxOptChanged (entity.GetChangeEvent (nameof entity.ParticleLifeTimeMaxOpt)) entity world
+            let world = World.monitor handleParticleRateChanged (entity.GetChangeEvent (nameof entity.ParticleRate)) entity world
+            let world = World.monitor handleParticleMaxChanged (entity.GetChangeEvent (nameof entity.ParticleMax)) entity world
+            let world = World.monitor handleBasicParticleSeedChanged (entity.GetChangeEvent (nameof entity.BasicParticleSeed)) entity world
+            let world = World.monitor handleEmitterConstraintChanged (entity.GetChangeEvent (nameof entity.EmitterConstraint)) entity world
+            let world = World.monitor handleEmitterStyleChanged (entity.GetChangeEvent (nameof entity.EmitterStyle)) entity world
             world
 
         override this.Unregister (entity, world) =
@@ -545,33 +554,33 @@ module Effect2dFacetModule =
 
     type Entity with
 
-        member this.GetEffectSymbolOpt world : Symbol AssetTag option = this.Get (nameof Entity.EffectSymbolOpt) world
-        member this.SetEffectSymbolOpt (value : Symbol AssetTag option) world = this.Set (nameof Entity.EffectSymbolOpt) value world
-        static member EffectSymbolOpt = lens (nameof Entity.EffectSymbolOpt) (fun (this : Entity) -> this.GetEffectSymbolOpt) (fun value this -> this.SetEffectSymbolOpt value)
-        member this.GetEffectStartTimeOpt world : int64 option = this.Get (nameof Entity.EffectStartTimeOpt) world
-        member this.SetEffectStartTimeOpt (value : int64 option) world = this.Set (nameof Entity.EffectStartTimeOpt) value world
-        static member EffectStartTimeOpt = lens (nameof Entity.EffectStartTimeOpt) (fun (this : Entity) -> this.GetEffectStartTimeOpt) (fun value this -> this.SetEffectStartTimeOpt value)
-        member this.GetEffectDefinitions world : Effects.Definitions = this.Get (nameof Entity.EffectDefinitions) world
-        member this.SetEffectDefinitions (value : Effects.Definitions) world = this.Set (nameof Entity.EffectDefinitions) value world
-        static member EffectDefinitions = lens (nameof Entity.EffectDefinitions) (fun (this : Entity) -> this.GetEffectDefinitions) (fun value this -> this.SetEffectDefinitions value)
-        member this.GetEffect world : Effect = this.Get (nameof Entity.Effect) world
-        member this.SetEffect (value : Effect) world = this.Set (nameof Entity.Effect) value world
-        static member Effect = lens (nameof Entity.Effect) (fun (this : Entity) -> this.GetEffect) (fun value this -> this.SetEffect value)
-        member this.GetEffectOffset world : Vector3 = this.Get (nameof Entity.EffectOffset) world
-        member this.SetEffectOffset (value : Vector3) world = this.Set (nameof Entity.EffectOffset) value world
-        static member EffectOffset = lens (nameof Entity.EffectOffset) (fun (this : Entity) -> this.GetEffectOffset) (fun value this -> this.SetEffectOffset value)
-        member this.GetEffectCentered world : bool = this.Get (nameof Entity.EffectCentered) world
-        member this.SetEffectCentered (value : bool) world = this.Set (nameof Entity.EffectCentered) value world
-        static member EffectCentered = lens (nameof Entity.EffectCentered) (fun (this : Entity) -> this.GetEffectCentered) (fun value this -> this.SetEffectCentered value)
-        member this.GetEffectTags world : EffectTags = this.Get (nameof Entity.EffectTags) world
-        member private this.SetEffectTags (value : EffectTags) world = this.Set (nameof Entity.EffectTags) value world
-        static member EffectTags = lensReadOnly (nameof Entity.EffectTags) (fun (this : Entity) -> this.GetEffectTags)
-        member this.GetEffectHistoryMax world : int = this.Get (nameof Entity.EffectHistoryMax) world
-        member this.SetEffectHistoryMax (value : int) world = this.Set (nameof Entity.EffectHistoryMax) value world
-        static member EffectHistoryMax = lens (nameof Entity.EffectHistoryMax) (fun (this : Entity) -> this.GetEffectHistoryMax) (fun value this -> this.SetEffectHistoryMax value)
-        member this.GetEffectHistory world : Effects.Slice Deque = this.Get (nameof Entity.EffectHistory) world
-        member private this.SetEffectHistory (value : Effects.Slice Deque) world = this.Set (nameof Entity.EffectHistory) value world
-        static member EffectHistory = lensReadOnly (nameof Entity.EffectHistory) (fun (this : Entity) -> this.GetEffectHistory)
+        member this.GetEffectSymbolOpt world : Symbol AssetTag option = this.Get (nameof this.EffectSymbolOpt) world
+        member this.SetEffectSymbolOpt (value : Symbol AssetTag option) world = this.Set (nameof this.EffectSymbolOpt) value world
+        member this.EffectSymbolOpt = lens (nameof this.EffectSymbolOpt) this this.GetEffectSymbolOpt this.SetEffectSymbolOpt
+        member this.GetEffectStartTimeOpt world : int64 option = this.Get (nameof this.EffectStartTimeOpt) world
+        member this.SetEffectStartTimeOpt (value : int64 option) world = this.Set (nameof this.EffectStartTimeOpt) value world
+        member this.EffectStartTimeOpt = lens (nameof this.EffectStartTimeOpt) this this.GetEffectStartTimeOpt this.SetEffectStartTimeOpt
+        member this.GetEffectDefinitions world : Effects.Definitions = this.Get (nameof this.EffectDefinitions) world
+        member this.SetEffectDefinitions (value : Effects.Definitions) world = this.Set (nameof this.EffectDefinitions) value world
+        member this.EffectDefinitions = lens (nameof this.EffectDefinitions) this this.GetEffectDefinitions this.SetEffectDefinitions
+        member this.GetEffect world : Effect = this.Get (nameof this.Effect) world
+        member this.SetEffect (value : Effect) world = this.Set (nameof this.Effect) value world
+        member this.Effect = lens (nameof this.Effect) this this.GetEffect this.SetEffect
+        member this.GetEffectOffset world : Vector3 = this.Get (nameof this.EffectOffset) world
+        member this.SetEffectOffset (value : Vector3) world = this.Set (nameof this.EffectOffset) value world
+        member this.EffectOffset = lens (nameof this.EffectOffset) this this.GetEffectOffset this.SetEffectOffset
+        member this.GetEffectCentered world : bool = this.Get (nameof this.EffectCentered) world
+        member this.SetEffectCentered (value : bool) world = this.Set (nameof this.EffectCentered) value world
+        member this.EffectCentered = lens (nameof this.EffectCentered) this this.GetEffectCentered this.SetEffectCentered
+        member this.GetEffectTags world : EffectTags = this.Get (nameof this.EffectTags) world
+        member private this.SetEffectTags (value : EffectTags) world = this.Set (nameof this.EffectTags) value world
+        member this.EffectTags = lensReadOnly (nameof this.EffectTags) this this.GetEffectTags
+        member this.GetEffectHistoryMax world : int = this.Get (nameof this.EffectHistoryMax) world
+        member this.SetEffectHistoryMax (value : int) world = this.Set (nameof this.EffectHistoryMax) value world
+        member this.EffectHistoryMax = lens (nameof this.EffectHistoryMax) this this.GetEffectHistoryMax this.SetEffectHistoryMax
+        member this.GetEffectHistory world : Effects.Slice Deque = this.Get (nameof this.EffectHistory) world
+        member private this.SetEffectHistory (value : Effects.Slice Deque) world = this.Set (nameof this.EffectHistory) value world
+        member this.EffectHistory = lensReadOnly (nameof this.EffectHistory) this this.GetEffectHistory
 
         /// The start time of the effect, or zero if none.
         member this.GetEffectStartTime world =
@@ -736,79 +745,74 @@ module Effect2dFacetModule =
         override this.Register (entity, world) =
             let effectStartTime = Option.defaultValue (World.getUpdateTime world) (entity.GetEffectStartTimeOpt world)
             let world = entity.SetEffectStartTimeOpt (Some effectStartTime) world
-            let world = World.monitor handleEffectsChanged (entity.GetChangeEvent (nameof Entity.EffectSymbolOpt)) entity world
+            let world = World.monitor handleEffectsChanged (entity.GetChangeEvent (nameof entity.EffectSymbolOpt)) entity world
             World.monitor handleAssetsReload Events.AssetsReload entity world
 
 [<AutoOpen>]
 module RigidBodyFacetModule =
 
     type Entity with
-        member this.GetBodyEnabled world : bool = this.Get (nameof Entity.BodyEnabled) world
-        member this.SetBodyEnabled (value : bool) world = this.Set (nameof Entity.BodyEnabled) value world
-        static member BodyEnabled = lens (nameof Entity.BodyEnabled) (fun (this : Entity) -> this.GetBodyEnabled) (fun value this -> this.SetBodyEnabled value)
-        member this.GetBodyType world : BodyType = this.Get (nameof Entity.BodyType) world
-        member this.SetBodyType (value : BodyType) world = this.Set (nameof Entity.BodyType) value world
-        static member BodyType = lens (nameof Entity.BodyType) (fun (this : Entity) -> this.GetBodyType) (fun value this -> this.SetBodyType value)
-        member this.GetAwake world : bool = this.Get (nameof Entity.Awake) world
-        member this.SetAwake (value : bool) world = this.Set (nameof Entity.Awake) value world
-        static member Awake = lens (nameof Entity.Awake) (fun (this : Entity) -> this.GetAwake) (fun value this -> this.SetAwake value)
-        member this.GetDensity world : single = this.Get (nameof Entity.Density) world
-        member this.SetDensity (value : single) world = this.Set (nameof Entity.Density) value world
-        static member Density = lens (nameof Entity.Density) (fun (this : Entity) -> this.GetDensity) (fun value this -> this.SetDensity value)
-        member this.GetFriction world : single = this.Get (nameof Entity.Friction) world
-        member this.SetFriction (value : single) world = this.Set (nameof Entity.Friction) value world
-        static member Friction = lens (nameof Entity.Friction) (fun (this : Entity) -> this.GetFriction) (fun value this -> this.SetFriction value)
-        member this.GetRestitution world : single = this.Get (nameof Entity.Restitution) world
-        member this.SetRestitution (value : single) world = this.Set (nameof Entity.Restitution) value world
-        static member Restitution = lens (nameof Entity.Restitution) (fun (this : Entity) -> this.GetRestitution) (fun value this -> this.SetRestitution value)
-        member this.GetLinearVelocity world : Vector3 = this.Get (nameof Entity.LinearVelocity) world
-        member this.SetLinearVelocity (value : Vector3) world = this.Set (nameof Entity.LinearVelocity) value world
-        static member LinearVelocity = lens (nameof Entity.LinearVelocity) (fun (this : Entity) -> this.GetLinearVelocity) (fun value this -> this.SetLinearVelocity value)
-        member this.GetLinearDamping world : single = this.Get (nameof Entity.LinearDamping) world
-        member this.SetLinearDamping (value : single) world = this.Set (nameof Entity.LinearDamping) value world
-        static member LinearDamping = lens (nameof Entity.LinearDamping) (fun (this : Entity) -> this.GetLinearDamping) (fun value this -> this.SetLinearDamping value)
-        member this.GetAngularVelocity world : Vector3 = this.Get (nameof Entity.AngularVelocity) world
-        member this.SetAngularVelocity (value : Vector3) world = this.Set (nameof Entity.AngularVelocity) value world
-        static member AngularVelocity = lens (nameof Entity.AngularVelocity) (fun (this : Entity) -> this.GetAngularVelocity) (fun value this -> this.SetAngularVelocity value)
-        member this.GetAngularDamping world : single = this.Get (nameof Entity.AngularDamping) world
-        member this.SetAngularDamping (value : single) world = this.Set (nameof Entity.AngularDamping) value world
-        static member AngularDamping = lens (nameof Entity.AngularDamping) (fun (this : Entity) -> this.GetAngularDamping) (fun value this -> this.SetAngularDamping value)
-        member this.GetFixedRotation world : bool = this.Get (nameof Entity.FixedRotation) world
-        member this.SetFixedRotation (value : bool) world = this.Set (nameof Entity.FixedRotation) value world
-        static member FixedRotation = lens (nameof Entity.FixedRotation) (fun (this : Entity) -> this.GetFixedRotation) (fun value this -> this.SetFixedRotation value)
-        member this.GetInertia world : single = this.Get (nameof Entity.Inertia) world
-        member this.SetInertia (value : single) world = this.Set (nameof Entity.Inertia) value world
-        static member Inertia = lens (nameof Entity.Inertia) (fun (this : Entity) -> this.GetInertia) (fun value this -> this.SetInertia value)
-        member this.GetGravityScale world : single = this.Get (nameof Entity.GravityScale) world
-        member this.SetGravityScale (value : single) world = this.Set (nameof Entity.GravityScale) value world
-        static member GravityScale = lens (nameof Entity.GravityScale) (fun (this : Entity) -> this.GetGravityScale) (fun value this -> this.SetGravityScale value)
-        member this.GetCollisionCategories world : string = this.Get (nameof Entity.CollisionCategories) world
-        member this.SetCollisionCategories (value : string) world = this.Set (nameof Entity.CollisionCategories) value world
-        static member CollisionCategories = lens (nameof Entity.CollisionCategories) (fun (this : Entity) -> this.GetCollisionCategories) (fun value this -> this.SetCollisionCategories value)
-        member this.GetCollisionMask world : string = this.Get (nameof Entity.CollisionMask) world
-        member this.SetCollisionMask (value : string) world = this.Set (nameof Entity.CollisionMask) value world
-        static member CollisionMask = lens (nameof Entity.CollisionMask) (fun (this : Entity) -> this.GetCollisionMask) (fun value this -> this.SetCollisionMask value)
-        member this.GetBodyShape world : BodyShape = this.Get (nameof Entity.BodyShape) world
-        member this.SetBodyShape (value : BodyShape) world = this.Set (nameof Entity.BodyShape) value world
-        static member BodyShape = lens (nameof Entity.BodyShape) (fun (this : Entity) -> this.GetBodyShape) (fun value this -> this.SetBodyShape value)
-        member this.GetIgnoreCCD world : bool = this.Get (nameof Entity.IgnoreCCD) world
-        member this.SetIgnoreCCD (value : bool) world = this.Set (nameof Entity.IgnoreCCD) value world
-        static member IgnoreCCD = lens (nameof Entity.IgnoreCCD) (fun (this : Entity) -> this.GetIgnoreCCD) (fun value this -> this.SetIgnoreCCD value)
-        member this.GetBullet world : bool = this.Get (nameof Entity.Bullet) world
-        member this.SetBullet (value : bool) world = this.Set (nameof Entity.Bullet) value world
-        static member Bullet = lens (nameof Entity.Bullet) (fun (this : Entity) -> this.GetBullet) (fun value this -> this.SetBullet value)
-        member this.GetSensor world : bool = this.Get (nameof Entity.Sensor) world
-        member this.SetSensor (value : bool) world = this.Set (nameof Entity.Sensor) value world
-        static member Sensor = lens (nameof Entity.Sensor) (fun (this : Entity) -> this.GetSensor) (fun value this -> this.SetSensor value)
-        member this.GetPhysicsId world : PhysicsId = this.Get (nameof Entity.PhysicsId) world
-        static member PhysicsId = lensReadOnly (nameof Entity.PhysicsId) (fun (this : Entity) -> this.GetPhysicsId)
+        member this.GetBodyEnabled world : bool = this.Get (nameof this.BodyEnabled) world
+        member this.SetBodyEnabled (value : bool) world = this.Set (nameof this.BodyEnabled) value world
+        member this.BodyEnabled = lens (nameof this.BodyEnabled) this this.GetBodyEnabled this.SetBodyEnabled
+        member this.GetBodyType world : BodyType = this.Get (nameof this.BodyType) world
+        member this.SetBodyType (value : BodyType) world = this.Set (nameof this.BodyType) value world
+        member this.BodyType = lens (nameof this.BodyType) this this.GetBodyType this.SetBodyType
+        member this.GetAwake world : bool = this.Get (nameof this.Awake) world
+        member this.SetAwake (value : bool) world = this.Set (nameof this.Awake) value world
+        member this.Awake = lens (nameof this.Awake) this this.GetAwake this.SetAwake
+        member this.GetDensity world : single = this.Get (nameof this.Density) world
+        member this.SetDensity (value : single) world = this.Set (nameof this.Density) value world
+        member this.Density = lens (nameof this.Density) this this.GetDensity this.SetDensity
+        member this.GetFriction world : single = this.Get (nameof this.Friction) world
+        member this.SetFriction (value : single) world = this.Set (nameof this.Friction) value world
+        member this.Friction = lens (nameof this.Friction) this this.GetFriction this.SetFriction
+        member this.GetRestitution world : single = this.Get (nameof this.Restitution) world
+        member this.SetRestitution (value : single) world = this.Set (nameof this.Restitution) value world
+        member this.Restitution = lens (nameof this.Restitution) this this.GetRestitution this.SetRestitution
+        member this.GetLinearVelocity world : Vector3 = this.Get (nameof this.LinearVelocity) world
+        member this.SetLinearVelocity (value : Vector3) world = this.Set (nameof this.LinearVelocity) value world
+        member this.LinearVelocity = lens (nameof this.LinearVelocity) this this.GetLinearVelocity this.SetLinearVelocity
+        member this.GetLinearDamping world : single = this.Get (nameof this.LinearDamping) world
+        member this.SetLinearDamping (value : single) world = this.Set (nameof this.LinearDamping) value world
+        member this.LinearDamping = lens (nameof this.LinearDamping) this this.GetLinearDamping this.SetLinearDamping
+        member this.GetAngularVelocity world : Vector3 = this.Get (nameof this.AngularVelocity) world
+        member this.SetAngularVelocity (value : Vector3) world = this.Set (nameof this.AngularVelocity) value world
+        member this.AngularVelocity = lens (nameof this.AngularVelocity) this this.GetAngularVelocity this.SetAngularVelocity
+        member this.GetAngularDamping world : single = this.Get (nameof this.AngularDamping) world
+        member this.SetAngularDamping (value : single) world = this.Set (nameof this.AngularDamping) value world
+        member this.AngularDamping = lens (nameof this.AngularDamping) this this.GetAngularDamping this.SetAngularDamping
+        member this.GetFixedRotation world : bool = this.Get (nameof this.FixedRotation) world
+        member this.SetFixedRotation (value : bool) world = this.Set (nameof this.FixedRotation) value world
+        member this.FixedRotation = lens (nameof this.FixedRotation) this this.GetFixedRotation this.SetFixedRotation
+        member this.GetInertia world : single = this.Get (nameof this.Inertia) world
+        member this.SetInertia (value : single) world = this.Set (nameof this.Inertia) value world
+        member this.Inertia = lens (nameof this.Inertia) this this.GetInertia this.SetInertia
+        member this.GetGravityScale world : single = this.Get (nameof this.GravityScale) world
+        member this.SetGravityScale (value : single) world = this.Set (nameof this.GravityScale) value world
+        member this.GravityScale = lens (nameof this.GravityScale) this this.GetGravityScale this.SetGravityScale
+        member this.GetCollisionCategories world : string = this.Get (nameof this.CollisionCategories) world
+        member this.SetCollisionCategories (value : string) world = this.Set (nameof this.CollisionCategories) value world
+        member this.CollisionCategories = lens (nameof this.CollisionCategories) this this.GetCollisionCategories this.SetCollisionCategories
+        member this.GetCollisionMask world : string = this.Get (nameof this.CollisionMask) world
+        member this.SetCollisionMask (value : string) world = this.Set (nameof this.CollisionMask) value world
+        member this.CollisionMask = lens (nameof this.CollisionMask) this this.GetCollisionMask this.SetCollisionMask
+        member this.GetBodyShape world : BodyShape = this.Get (nameof this.BodyShape) world
+        member this.SetBodyShape (value : BodyShape) world = this.Set (nameof this.BodyShape) value world
+        member this.BodyShape = lens (nameof this.BodyShape) this this.GetBodyShape this.SetBodyShape
+        member this.GetIgnoreCCD world : bool = this.Get (nameof this.IgnoreCCD) world
+        member this.SetIgnoreCCD (value : bool) world = this.Set (nameof this.IgnoreCCD) value world
+        member this.IgnoreCCD = lens (nameof this.IgnoreCCD) this this.GetIgnoreCCD this.SetIgnoreCCD
+        member this.GetBullet world : bool = this.Get (nameof this.Bullet) world
+        member this.SetBullet (value : bool) world = this.Set (nameof this.Bullet) value world
+        member this.Bullet = lens (nameof this.Bullet) this this.GetBullet this.SetBullet
+        member this.GetSensor world : bool = this.Get (nameof this.Sensor) world
+        member this.SetSensor (value : bool) world = this.Set (nameof this.Sensor) value world
+        member this.Sensor = lens (nameof this.Sensor) this this.GetSensor this.SetSensor
+        member this.GetPhysicsId world : PhysicsId = this.Get (nameof this.PhysicsId) world
+        member this.PhysicsId = lensReadOnly (nameof this.PhysicsId) this this.GetPhysicsId
         member this.BodyCollisionEvent = Events.BodyCollision --> this
         member this.BodySeparationEvent = Events.BodySeparation --> this
-
-    [<RequireQualifiedAccess>]
-    module Entity =
-        let BodyCollisionEvent = Address.anonymize Events.BodyCollision
-        let BodySeparationEvent = Address.anonymize Events.BodySeparation
 
     type RigidBodyFacet () =
         inherit Facet (true)
@@ -839,26 +843,26 @@ module RigidBodyFacetModule =
              computed Entity.PhysicsId (fun (entity : Entity) world -> { SourceId = entity.GetId world; CorrelationId = 0UL }) None]
 
         override this.Register (entity, world) =
-            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof Entity.Transform)) entity world
-            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof Entity.BodyEnabled)) entity world
-            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof Entity.BodyType)) entity world
-            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof Entity.Awake)) entity world
-            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof Entity.Density)) entity world
-            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof Entity.Friction)) entity world
-            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof Entity.Restitution)) entity world
-            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof Entity.LinearVelocity)) entity world
-            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof Entity.LinearDamping)) entity world
-            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof Entity.AngularVelocity)) entity world
-            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof Entity.AngularDamping)) entity world
-            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof Entity.FixedRotation)) entity world
-            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof Entity.Inertia)) entity world
-            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof Entity.GravityScale)) entity world
-            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof Entity.CollisionCategories)) entity world
-            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof Entity.CollisionMask)) entity world
-            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof Entity.BodyShape)) entity world
-            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof Entity.IgnoreCCD)) entity world
-            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof Entity.Bullet)) entity world
-            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof Entity.Sensor)) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.Transform)) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.BodyEnabled)) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.BodyType)) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.Awake)) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.Density)) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.Friction)) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.Restitution)) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.LinearVelocity)) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.LinearDamping)) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.AngularVelocity)) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.AngularDamping)) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.FixedRotation)) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.Inertia)) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.GravityScale)) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.CollisionCategories)) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.CollisionMask)) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.BodyShape)) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.IgnoreCCD)) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.Bullet)) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.Sensor)) entity world
             world
 
         override this.RegisterPhysics (entity, world) =
@@ -896,9 +900,9 @@ module RigidBodyFacetModule =
 module JointFacetModule =
 
     type Entity with
-        member this.GetJointDevice world : JointDevice = this.Get (nameof Entity.JointDevice) world
-        member this.SetJointDevice (value : JointDevice) world = this.Set (nameof Entity.JointDevice) value world
-        static member JointDevice = lens (nameof Entity.JointDevice) (fun (this : Entity) -> this.GetJointDevice) (fun value this -> this.SetJointDevice value)
+        member this.GetJointDevice world : JointDevice = this.Get (nameof this.JointDevice) world
+        member this.SetJointDevice (value : JointDevice) world = this.Set (nameof this.JointDevice) value world
+        member this.JointDevice = lens (nameof this.JointDevice) this this.GetJointDevice this.SetJointDevice
 
     type JointFacet () =
         inherit Facet (true)
@@ -908,8 +912,8 @@ module JointFacetModule =
              computed Entity.PhysicsId (fun (entity : Entity) world -> { SourceId = entity.GetId world; CorrelationId = 0UL }) None]
 
         override this.Register (entity, world) =
-            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof Entity.Transform)) entity world
-            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof Entity.JointDevice)) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.Transform)) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.JointDevice)) entity world
             world
 
         override this.RegisterPhysics (entity, world) =
@@ -925,18 +929,18 @@ module JointFacetModule =
 module TileMapFacetModule =
 
     type Entity with
-        member this.GetTileLayerClearance world : single = this.Get (nameof Entity.TileLayerClearance) world
-        member this.SetTileLayerClearance (value : single) world = this.Set (nameof Entity.TileLayerClearance) value world
-        static member TileLayerClearance = lens (nameof Entity.TileLayerClearance) (fun (this : Entity) -> this.GetTileLayerClearance) (fun value this -> this.SetTileLayerClearance value)
-        member this.GetTileIndexOffset world : int = this.Get (nameof Entity.TileIndexOffset) world
-        member this.SetTileIndexOffset (value : int) world = this.Set (nameof Entity.TileIndexOffset) value world
-        static member TileIndexOffset = lens (nameof Entity.TileIndexOffset) (fun (this : Entity) -> this.GetTileIndexOffset) (fun value this -> this.SetTileIndexOffset value)
-        member this.GetTileIndexOffsetRange world : int * int = this.Get (nameof Entity.TileIndexOffsetRange) world
-        member this.SetTileIndexOffsetRange (value : int * int) world = this.Set (nameof Entity.TileIndexOffsetRange) value world
-        static member TileIndexOffsetRange = lens (nameof Entity.TileIndexOffsetRange) (fun (this : Entity) -> this.GetTileIndexOffsetRange) (fun value this -> this.SetTileIndexOffsetRange value)
-        member this.GetTileMap world : TileMap AssetTag = this.Get (nameof Entity.TileMap) world
-        member this.SetTileMap (value : TileMap AssetTag) world = this.Set (nameof Entity.TileMap) value world
-        static member TileMap = lens (nameof Entity.TileMap) (fun (this : Entity) -> this.GetTileMap) (fun value this -> this.SetTileMap value)
+        member this.GetTileLayerClearance world : single = this.Get (nameof this.TileLayerClearance) world
+        member this.SetTileLayerClearance (value : single) world = this.Set (nameof this.TileLayerClearance) value world
+        member this.TileLayerClearance = lens (nameof this.TileLayerClearance) this this.GetTileLayerClearance this.SetTileLayerClearance
+        member this.GetTileIndexOffset world : int = this.Get (nameof this.TileIndexOffset) world
+        member this.SetTileIndexOffset (value : int) world = this.Set (nameof this.TileIndexOffset) value world
+        member this.TileIndexOffset = lens (nameof this.TileIndexOffset) this this.GetTileIndexOffset this.SetTileIndexOffset
+        member this.GetTileIndexOffsetRange world : int * int = this.Get (nameof this.TileIndexOffsetRange) world
+        member this.SetTileIndexOffsetRange (value : int * int) world = this.Set (nameof this.TileIndexOffsetRange) value world
+        member this.TileIndexOffsetRange = lens (nameof this.TileIndexOffsetRange) this this.GetTileIndexOffsetRange this.SetTileIndexOffsetRange
+        member this.GetTileMap world : TileMap AssetTag = this.Get (nameof this.TileMap) world
+        member this.SetTileMap (value : TileMap AssetTag) world = this.Set (nameof this.TileMap) value world
+        member this.TileMap = lens (nameof this.TileMap) this this.GetTileMap this.SetTileMap
 
     type TileMapFacet () =
         inherit Facet (true)
@@ -958,13 +962,13 @@ module TileMapFacetModule =
 
         override this.Register (entity, world) =
             let world = entity.SetSize (entity.GetQuickSize world) world
-            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof Entity.BodyEnabled)) entity world
-            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof Entity.Transform)) entity world
-            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof Entity.Friction)) entity world
-            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof Entity.Restitution)) entity world
-            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof Entity.CollisionCategories)) entity world
-            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof Entity.CollisionMask)) entity world
-            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof Entity.TileMap)) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.BodyEnabled)) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.Transform)) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.Friction)) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.Restitution)) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.CollisionCategories)) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.CollisionMask)) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.TileMap)) entity world
             let world =
                 World.monitor (fun _ world ->
                     let quickSize = entity.GetQuickSize world
@@ -972,7 +976,7 @@ module TileMapFacetModule =
                     transform.Size <- quickSize
                     let world = entity.SetTransformWithoutEvent transform world
                     (Cascade, entity.PropagatePhysics world))
-                    (entity.ChangeEvent (nameof Entity.TileMap))
+                    (entity.ChangeEvent (nameof entity.TileMap))
                     entity
                     world
             world
@@ -1030,9 +1034,9 @@ module TileMapFacetModule =
 module TmxMapFacetModule =
 
     type Entity with
-        member this.GetTmxMap world : TmxMap = this.Get (nameof Entity.TmxMap) world
-        member this.SetTmxMap (value : TmxMap) world = this.Set (nameof Entity.TmxMap) value world
-        static member TmxMap = lens (nameof Entity.TmxMap) (fun (this : Entity) -> this.GetTmxMap) (fun value this -> this.SetTmxMap value)
+        member this.GetTmxMap world : TmxMap = this.Get (nameof this.TmxMap) world
+        member this.SetTmxMap (value : TmxMap) world = this.Set (nameof this.TmxMap) value world
+        member this.TmxMap = lens (nameof this.TmxMap) this this.GetTmxMap this.SetTmxMap
 
     type TmxMapFacet () =
         inherit Facet (true)
@@ -1054,13 +1058,13 @@ module TmxMapFacetModule =
 
         override this.Register (entity, world) =
             let world = entity.SetSize (entity.GetQuickSize world) world
-            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof Entity.BodyEnabled)) entity world
-            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof Entity.Transform)) entity world
-            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof Entity.Friction)) entity world
-            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof Entity.Restitution)) entity world
-            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof Entity.CollisionCategories)) entity world
-            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof Entity.CollisionMask)) entity world
-            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof Entity.TmxMap)) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.BodyEnabled)) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.Transform)) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.Friction)) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.Restitution)) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.CollisionCategories)) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.CollisionMask)) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.TmxMap)) entity world
             let world =
                 World.monitor (fun _ world ->
                     let quickSize = entity.GetQuickSize world
@@ -1068,7 +1072,7 @@ module TmxMapFacetModule =
                     transform.Size <- quickSize
                     let world = entity.SetTransformWithoutEvent transform world
                     (Cascade, entity.PropagatePhysics world))
-                    (entity.ChangeEvent (nameof Entity.TmxMap))
+                    (entity.ChangeEvent (nameof entity.TmxMap))
                     entity
                     world
             world
@@ -1121,9 +1125,9 @@ module TmxMapFacetModule =
 module SkyBoxFacetModule =
 
     type Entity with
-        member this.GetCubeMap world : CubeMap AssetTag = this.Get (nameof Entity.CubeMap) world
-        member this.SetCubeMap (value : CubeMap AssetTag) world = this.Set (nameof Entity.CubeMap) value world
-        static member CubeMap = lens (nameof Entity.CubeMap) (fun (this : Entity) -> this.GetCubeMap) (fun value this -> this.SetCubeMap value)
+        member this.GetCubeMap world : CubeMap AssetTag = this.Get (nameof this.CubeMap) world
+        member this.SetCubeMap (value : CubeMap AssetTag) world = this.Set (nameof this.CubeMap) value world
+        member this.CubeMap = lens (nameof this.CubeMap) this this.GetCubeMap this.SetCubeMap
 
     type SkyBoxFacet () =
         inherit Facet (false)
@@ -1142,15 +1146,15 @@ module SkyBoxFacetModule =
 module LightFacet3dModule =
 
     type Entity with
-        member this.GetBrightness world : single = this.Get (nameof Entity.Brightness) world
-        member this.SetBrightness (value : single) world = this.Set (nameof Entity.Brightness) value world
-        static member Brightness = lens (nameof Entity.Brightness) (fun (this : Entity) -> this.GetBrightness) (fun value this -> this.SetBrightness value)
-        member this.GetIntensity world : single = this.Get (nameof Entity.Intensity) world
-        member this.SetIntensity (value : single) world = this.Set (nameof Entity.Intensity) value world
-        static member Intensity = lens (nameof Entity.Intensity) (fun (this : Entity) -> this.GetIntensity) (fun value this -> this.SetIntensity value)
-        member this.GetLightType world : LightType = this.Get (nameof Entity.LightType) world
-        member this.SetLightType (value : LightType) world = this.Set (nameof Entity.LightType) value world
-        static member LightType = lens (nameof Entity.LightType) (fun (this : Entity) -> this.GetLightType) (fun value this -> this.SetLightType value)
+        member this.GetBrightness world : single = this.Get (nameof this.Brightness) world
+        member this.SetBrightness (value : single) world = this.Set (nameof this.Brightness) value world
+        member this.Brightness = lens (nameof this.Brightness) this this.GetBrightness this.SetBrightness
+        member this.GetIntensity world : single = this.Get (nameof this.Intensity) world
+        member this.SetIntensity (value : single) world = this.Set (nameof this.Intensity) value world
+        member this.Intensity = lens (nameof this.Intensity) this this.GetIntensity this.SetIntensity
+        member this.GetLightType world : LightType = this.Get (nameof this.LightType) world
+        member this.SetLightType (value : LightType) world = this.Set (nameof this.LightType) value world
+        member this.LightType = lens (nameof this.LightType) this this.GetLightType this.SetLightType
 
     type LightFacet3d () =
         inherit Facet (false)
@@ -1190,42 +1194,42 @@ module StaticBillboardFacetModule =
         | Forward of single * single
 
     type Entity with
-        member this.GetAlbedoOpt world : Color option = this.Get (nameof Entity.AlbedoOpt) world
-        member this.SetAlbedoOpt (value : Color option) world = this.Set (nameof Entity.AlbedoOpt) value world
-        static member AlbedoOpt = lens (nameof Entity.AlbedoOpt) (fun (this : Entity) -> this.GetAlbedoOpt) (fun value this -> this.SetAlbedoOpt value)
-        member this.GetAlbedoImage world : Image AssetTag = this.Get (nameof Entity.AlbedoImage) world
-        member this.SetAlbedoImage (value : Image AssetTag) world = this.Set (nameof Entity.AlbedoImage) value world
-        static member AlbedoImage = lens (nameof Entity.AlbedoImage) (fun (this : Entity) -> this.GetAlbedoImage) (fun value this -> this.SetAlbedoImage value)
-        member this.GetMetalnessOpt world : single option = this.Get (nameof Entity.MetalnessOpt) world
-        member this.SetMetalnessOpt (value : single option) world = this.Set (nameof Entity.MetalnessOpt) value world
-        static member MetalnessOpt = lens (nameof Entity.MetalnessOpt) (fun (this : Entity) -> this.GetMetalnessOpt) (fun value this -> this.SetMetalnessOpt value)
-        member this.GetMetalnessImage world : Image AssetTag = this.Get (nameof Entity.MetalnessImage) world
-        member this.SetMetalnessImage (value : Image AssetTag) world = this.Set (nameof Entity.MetalnessImage) value world
-        static member MetalnessImage = lens (nameof Entity.MetalnessImage) (fun (this : Entity) -> this.GetMetalnessImage) (fun value this -> this.SetMetalnessImage value)
-        member this.GetRoughnessOpt world : single option = this.Get (nameof Entity.RoughnessOpt) world
-        member this.SetRoughnessOpt (value : single option) world = this.Set (nameof Entity.RoughnessOpt) value world
-        static member RoughnessOpt = lens (nameof Entity.RoughnessOpt) (fun (this : Entity) -> this.GetRoughnessOpt) (fun value this -> this.SetRoughnessOpt value)
-        member this.GetRoughnessImage world : Image AssetTag = this.Get (nameof Entity.RoughnessImage) world
-        member this.SetRoughnessImage (value : Image AssetTag) world = this.Set (nameof Entity.RoughnessImage) value world
-        static member RoughnessImage = lens (nameof Entity.RoughnessImage) (fun (this : Entity) -> this.GetRoughnessImage) (fun value this -> this.SetRoughnessImage value)
-        member this.GetAmbientOcclusionImage world : Image AssetTag = this.Get (nameof Entity.AmbientOcclusionImage) world
-        member this.SetAmbientOcclusionImage (value : Image AssetTag) world = this.Set (nameof Entity.AmbientOcclusionImage) value world
-        static member AmbientOcclusionOpt = lens (nameof Entity.AmbientOcclusionOpt) (fun (this : Entity) -> this.GetAmbientOcclusionOpt) (fun value this -> this.SetAmbientOcclusionOpt value)
-        member this.GetAmbientOcclusionOpt world : single option = this.Get (nameof Entity.AmbientOcclusionOpt) world
-        member this.SetAmbientOcclusionOpt (value : single option) world = this.Set (nameof Entity.AmbientOcclusionOpt) value world
-        static member AmbientOcclusionImage = lens (nameof Entity.AmbientOcclusionImage) (fun (this : Entity) -> this.GetAmbientOcclusionImage) (fun value this -> this.SetAmbientOcclusionImage value)
-        member this.GetNormalImage world : Image AssetTag = this.Get (nameof Entity.NormalImage) world
-        member this.SetNormalImage (value : Image AssetTag) world = this.Set (nameof Entity.NormalImage) value world
-        static member NormalImage = lens (nameof Entity.NormalImage) (fun (this : Entity) -> this.GetNormalImage) (fun value this -> this.SetNormalImage value)
-        member this.GetTextureMinFilterOpt world : OpenGL.TextureMinFilter option = this.Get (nameof Entity.TextureMinFilterOpt) world
-        member this.SetTextureMinFilterOpt (value : OpenGL.TextureMinFilter option) world = this.Set (nameof Entity.TextureMinFilterOpt) value world
-        static member TextureMinFilterOpt = lens (nameof Entity.TextureMinFilterOpt) (fun (this : Entity) -> this.GetTextureMinFilterOpt) (fun value this -> this.SetTextureMinFilterOpt value)
-        member this.GetTextureMagFilterOpt world : OpenGL.TextureMagFilter option = this.Get (nameof Entity.TextureMagFilterOpt) world
-        member this.SetTextureMagFilterOpt (value : OpenGL.TextureMagFilter option) world = this.Set (nameof Entity.TextureMagFilterOpt) value world
-        static member TextureMagFilterOpt = lens (nameof Entity.TextureMagFilterOpt) (fun (this : Entity) -> this.GetTextureMagFilterOpt) (fun value this -> this.SetTextureMagFilterOpt value)
-        member this.GetRenderStyle world : RenderStyle = this.Get (nameof Entity.RenderStyle) world
-        member this.SetRenderStyle (value : RenderStyle) world = this.Set (nameof Entity.RenderStyle) value world
-        static member RenderStyle = lens (nameof Entity.RenderStyle) (fun (this : Entity) -> this.GetRenderStyle) (fun value this -> this.SetRenderStyle value)
+        member this.GetAlbedoOpt world : Color option = this.Get (nameof this.AlbedoOpt) world
+        member this.SetAlbedoOpt (value : Color option) world = this.Set (nameof this.AlbedoOpt) value world
+        member this.AlbedoOpt = lens (nameof this.AlbedoOpt) this this.GetAlbedoOpt this.SetAlbedoOpt
+        member this.GetAlbedoImage world : Image AssetTag = this.Get (nameof this.AlbedoImage) world
+        member this.SetAlbedoImage (value : Image AssetTag) world = this.Set (nameof this.AlbedoImage) value world
+        member this.AlbedoImage = lens (nameof this.AlbedoImage) this this.GetAlbedoImage this.SetAlbedoImage
+        member this.GetMetalnessOpt world : single option = this.Get (nameof this.MetalnessOpt) world
+        member this.SetMetalnessOpt (value : single option) world = this.Set (nameof this.MetalnessOpt) value world
+        member this.MetalnessOpt = lens (nameof this.MetalnessOpt) this this.GetMetalnessOpt this.SetMetalnessOpt
+        member this.GetMetalnessImage world : Image AssetTag = this.Get (nameof this.MetalnessImage) world
+        member this.SetMetalnessImage (value : Image AssetTag) world = this.Set (nameof this.MetalnessImage) value world
+        member this.MetalnessImage = lens (nameof this.MetalnessImage) this this.GetMetalnessImage this.SetMetalnessImage
+        member this.GetRoughnessOpt world : single option = this.Get (nameof this.RoughnessOpt) world
+        member this.SetRoughnessOpt (value : single option) world = this.Set (nameof this.RoughnessOpt) value world
+        member this.RoughnessOpt = lens (nameof this.RoughnessOpt) this this.GetRoughnessOpt this.SetRoughnessOpt
+        member this.GetRoughnessImage world : Image AssetTag = this.Get (nameof this.RoughnessImage) world
+        member this.SetRoughnessImage (value : Image AssetTag) world = this.Set (nameof this.RoughnessImage) value world
+        member this.RoughnessImage = lens (nameof this.RoughnessImage) this this.GetRoughnessImage this.SetRoughnessImage
+        member this.GetAmbientOcclusionImage world : Image AssetTag = this.Get (nameof this.AmbientOcclusionImage) world
+        member this.SetAmbientOcclusionImage (value : Image AssetTag) world = this.Set (nameof this.AmbientOcclusionImage) value world
+        member this.AmbientOcclusionImage = lens (nameof this.AmbientOcclusionImage) this this.GetAmbientOcclusionImage this.SetAmbientOcclusionImage
+        member this.GetAmbientOcclusionOpt world : single option = this.Get (nameof this.AmbientOcclusionOpt) world
+        member this.SetAmbientOcclusionOpt (value : single option) world = this.Set (nameof this.AmbientOcclusionOpt) value world
+        member this.AmbientOcclusionOpt = lens (nameof this.AmbientOcclusionOpt) this this.GetAmbientOcclusionOpt this.SetAmbientOcclusionOpt
+        member this.GetNormalImage world : Image AssetTag = this.Get (nameof this.NormalImage) world
+        member this.SetNormalImage (value : Image AssetTag) world = this.Set (nameof this.NormalImage) value world
+        member this.NormalImage = lens (nameof this.NormalImage) this this.GetNormalImage this.SetNormalImage
+        member this.GetTextureMinFilterOpt world : OpenGL.TextureMinFilter option = this.Get (nameof this.TextureMinFilterOpt) world
+        member this.SetTextureMinFilterOpt (value : OpenGL.TextureMinFilter option) world = this.Set (nameof this.TextureMinFilterOpt) value world
+        member this.TextureMinFilterOpt = lens (nameof this.TextureMinFilterOpt) this this.GetTextureMinFilterOpt this.SetTextureMinFilterOpt
+        member this.GetTextureMagFilterOpt world : OpenGL.TextureMagFilter option = this.Get (nameof this.TextureMagFilterOpt) world
+        member this.SetTextureMagFilterOpt (value : OpenGL.TextureMagFilter option) world = this.Set (nameof this.TextureMagFilterOpt) value world
+        member this.TextureMagFilterOpt = lens (nameof this.TextureMagFilterOpt) this this.GetTextureMagFilterOpt this.SetTextureMagFilterOpt
+        member this.GetRenderStyle world : RenderStyle = this.Get (nameof this.RenderStyle) world
+        member this.SetRenderStyle (value : RenderStyle) world = this.Set (nameof this.RenderStyle) value world
+        member this.RenderStyle = lens (nameof this.RenderStyle) this this.GetRenderStyle this.SetRenderStyle
 
     type StaticBillboardFacet () =
         inherit Facet (false)
@@ -1297,9 +1301,9 @@ module StaticBillboardFacetModule =
 module StaticModelFacetModule =
 
     type Entity with
-        member this.GetStaticModel world : StaticModel AssetTag = this.Get (nameof Entity.StaticModel) world
-        member this.SetStaticModel (value : StaticModel AssetTag) world = this.Set (nameof Entity.StaticModel) value world
-        static member StaticModel = lens (nameof Entity.StaticModel) (fun (this : Entity) -> this.GetStaticModel) (fun value this -> this.SetStaticModel value)
+        member this.GetStaticModel world : StaticModel AssetTag = this.Get (nameof this.StaticModel) world
+        member this.SetStaticModel (value : StaticModel AssetTag) world = this.Set (nameof this.StaticModel) value world
+        member this.StaticModel = lens (nameof this.StaticModel) this this.GetStaticModel this.SetStaticModel
 
     type StaticModelFacet () =
         inherit Facet (false)
@@ -1375,9 +1379,9 @@ module StaticModelFacetModule =
 module StaticModelSurfaceFacetModule =
 
     type Entity with
-        member this.GetSurfaceIndex world : int = this.Get (nameof Entity.SurfaceIndex) world
-        member this.SetSurfaceIndex (value : int) world = this.Set (nameof Entity.SurfaceIndex) value world
-        static member SurfaceIndex = lens (nameof Entity.SurfaceIndex) (fun (this : Entity) -> this.GetSurfaceIndex) (fun value this -> this.SetSurfaceIndex value)
+        member this.GetSurfaceIndex world : int = this.Get (nameof this.SurfaceIndex) world
+        member this.SetSurfaceIndex (value : int) world = this.Set (nameof this.SurfaceIndex) value world
+        member this.SurfaceIndex = lens (nameof this.SurfaceIndex) this this.GetSurfaceIndex this.SetSurfaceIndex
 
     type StaticModelSurfaceFacet () =
         inherit Facet (false)
@@ -1507,9 +1511,9 @@ module AnimatedSpriteDispatcherModule =
 module GuiDispatcherModule =
 
     type Entity with
-        member this.GetDisabledColor world : Color = this.Get (nameof Entity.DisabledColor) world
-        member this.SetDisabledColor (value : Color) world = this.Set (nameof Entity.DisabledColor) value world
-        static member DisabledColor = lens (nameof Entity.DisabledColor) (fun (this : Entity) -> this.GetDisabledColor) (fun value this -> this.SetDisabledColor value)
+        member this.GetDisabledColor world : Color = this.Get (nameof this.DisabledColor) world
+        member this.SetDisabledColor (value : Color) world = this.Set (nameof this.DisabledColor) value world
+        member this.DisabledColor = lens (nameof this.DisabledColor) this this.GetDisabledColor this.SetDisabledColor
 
     type GuiDispatcher () =
         inherit EntityDispatcher2d (false, false)
@@ -1525,33 +1529,27 @@ module GuiDispatcherModule =
 module ButtonDispatcherModule =
 
     type Entity with
-        member this.GetDown world : bool = this.Get (nameof Entity.Down) world
-        member this.SetDown (value : bool) world = this.Set (nameof Entity.Down) value world
-        static member Down = lens (nameof Entity.Down) (fun (this : Entity) -> this.GetDown) (fun value this -> this.SetDown value)
-        member this.GetDownTextOffset world : Vector3 = this.Get (nameof Entity.DownTextOffset) world
-        member this.SetDownTextOffset (value : Vector3) world = this.Set (nameof Entity.DownTextOffset) value world
-        static member DownTextOffset = lens (nameof Entity.DownTextOffset) (fun (this : Entity) -> this.GetDownTextOffset) (fun value this -> this.SetDownTextOffset value)
-        member this.GetUpImage world : Image AssetTag = this.Get (nameof Entity.UpImage) world
-        member this.SetUpImage (value : Image AssetTag) world = this.Set (nameof Entity.UpImage) value world
-        static member UpImage = lens (nameof Entity.UpImage) (fun (this : Entity) -> this.GetUpImage) (fun value this -> this.SetUpImage value)
-        member this.GetDownImage world : Image AssetTag = this.Get (nameof Entity.DownImage) world
-        member this.SetDownImage (value : Image AssetTag) world = this.Set (nameof Entity.DownImage) value world
-        static member DownImage = lens (nameof Entity.DownImage) (fun (this : Entity) -> this.GetDownImage) (fun value this -> this.SetDownImage value)
-        member this.GetClickSoundOpt world : Sound AssetTag option = this.Get (nameof Entity.ClickSoundOpt) world
-        member this.SetClickSoundOpt (value : Sound AssetTag option) world = this.Set (nameof Entity.ClickSoundOpt) value world
-        static member ClickSoundOpt = lens (nameof Entity.ClickSoundOpt) (fun (this : Entity) -> this.GetClickSoundOpt) (fun value this -> this.SetClickSoundOpt value)
-        member this.GetClickSoundVolume world : single = this.Get (nameof Entity.ClickSoundVolume) world
-        member this.SetClickSoundVolume (value : single) world = this.Set (nameof Entity.ClickSoundVolume) value world
-        static member ClickSoundVolume = lens (nameof Entity.ClickSoundVolume) (fun (this : Entity) -> this.GetClickSoundVolume) (fun value this -> this.SetClickSoundVolume value)
+        member this.GetDown world : bool = this.Get (nameof this.Down) world
+        member this.SetDown (value : bool) world = this.Set (nameof this.Down) value world
+        member this.Down = lens (nameof this.Down) this this.GetDown this.SetDown
+        member this.GetDownTextOffset world : Vector3 = this.Get (nameof this.DownTextOffset) world
+        member this.SetDownTextOffset (value : Vector3) world = this.Set (nameof this.DownTextOffset) value world
+        member this.DownTextOffset = lens (nameof this.DownTextOffset) this this.GetDownTextOffset this.SetDownTextOffset
+        member this.GetUpImage world : Image AssetTag = this.Get (nameof this.UpImage) world
+        member this.SetUpImage (value : Image AssetTag) world = this.Set (nameof this.UpImage) value world
+        member this.UpImage = lens (nameof this.UpImage) this this.GetUpImage this.SetUpImage
+        member this.GetDownImage world : Image AssetTag = this.Get (nameof this.DownImage) world
+        member this.SetDownImage (value : Image AssetTag) world = this.Set (nameof this.DownImage) value world
+        member this.DownImage = lens (nameof this.DownImage) this this.GetDownImage this.SetDownImage
+        member this.GetClickSoundOpt world : Sound AssetTag option = this.Get (nameof this.ClickSoundOpt) world
+        member this.SetClickSoundOpt (value : Sound AssetTag option) world = this.Set (nameof this.ClickSoundOpt) value world
+        member this.ClickSoundOpt = lens (nameof this.ClickSoundOpt) this this.GetClickSoundOpt this.SetClickSoundOpt
+        member this.GetClickSoundVolume world : single = this.Get (nameof this.ClickSoundVolume) world
+        member this.SetClickSoundVolume (value : single) world = this.Set (nameof this.ClickSoundVolume) value world
+        member this.ClickSoundVolume = lens (nameof this.ClickSoundVolume) this this.GetClickSoundVolume this.SetClickSoundVolume
         member this.UpEvent = Events.Up --> this
         member this.DownEvent = Events.Down --> this
         member this.ClickEvent = Events.Click --> this
-
-    [<RequireQualifiedAccess>]
-    module Entity =
-        let UpEvent = Address.anonymize Events.Up
-        let DownEvent = Address.anonymize Events.Down
-        let ClickEvent = Address.anonymize Events.Click
 
     type ButtonDispatcher () =
         inherit GuiDispatcher ()
@@ -1641,9 +1639,9 @@ module ButtonDispatcherModule =
 module LabelDispatcherModule =
 
     type Entity with
-        member this.GetLabelImage world : Image AssetTag = this.Get (nameof Entity.LabelImage) world
-        member this.SetLabelImage (value : Image AssetTag) world = this.Set (nameof Entity.LabelImage) value world
-        static member LabelImage = lens (nameof Entity.LabelImage) (fun (this : Entity) -> this.GetLabelImage) (fun value this -> this.SetLabelImage value)
+        member this.GetLabelImage world : Image AssetTag = this.Get (nameof this.LabelImage) world
+        member this.SetLabelImage (value : Image AssetTag) world = this.Set (nameof this.LabelImage) value world
+        member this.LabelImage = lens (nameof this.LabelImage) this this.GetLabelImage this.SetLabelImage
 
     type LabelDispatcher () =
         inherit GuiDispatcher ()
@@ -1679,9 +1677,9 @@ module LabelDispatcherModule =
 module TextDispatcherModule =
 
     type Entity with
-        member this.GetBackgroundImageOpt world : Image AssetTag option = this.Get (nameof Entity.BackgroundImageOpt) world
-        member this.SetBackgroundImageOpt (value : Image AssetTag option) world = this.Set (nameof Entity.BackgroundImageOpt) value world
-        static member BackgroundImageOpt = lens (nameof Entity.BackgroundImageOpt) (fun (this : Entity) -> this.GetBackgroundImageOpt) (fun value this -> this.SetBackgroundImageOpt value)
+        member this.GetBackgroundImageOpt world : Image AssetTag option = this.Get (nameof this.BackgroundImageOpt) world
+        member this.SetBackgroundImageOpt (value : Image AssetTag option) world = this.Set (nameof this.BackgroundImageOpt) value world
+        member this.BackgroundImageOpt = lens (nameof this.BackgroundImageOpt) this this.GetBackgroundImageOpt this.SetBackgroundImageOpt
 
     type TextDispatcher () =
         inherit GuiDispatcher ()
@@ -1726,39 +1724,33 @@ module TextDispatcherModule =
 module ToggleButtonDispatcherModule =
 
     type Entity with
-        member this.GetToggled world : bool = this.Get (nameof Entity.Toggled) world
-        member this.SetToggled (value : bool) world = this.Set (nameof Entity.Toggled) value world
-        static member Toggled = lens (nameof Entity.Toggled) (fun (this : Entity) -> this.GetToggled) (fun value this -> this.SetToggled value)
-        member this.GetToggledTextOffset world : Vector3 = this.Get (nameof Entity.ToggledTextOffset) world
-        member this.SetToggledTextOffset (value : Vector3) world = this.Set (nameof Entity.ToggledTextOffset) value world
-        static member ToggledTextOffset = lens (nameof Entity.ToggledTextOffset) (fun (this : Entity) -> this.GetToggledTextOffset) (fun value this -> this.SetToggledTextOffset value)
-        member this.GetPressed world : bool = this.Get (nameof Entity.Pressed) world
-        member this.SetPressed (value : bool) world = this.Set (nameof Entity.Pressed) value world
-        static member Pressed = lens (nameof Entity.Pressed) (fun (this : Entity) -> this.GetPressed) (fun value this -> this.SetPressed value)
-        member this.GetPressedTextOffset world : Vector3 = this.Get (nameof Entity.PressedTextOffset) world
-        member this.SetPressedTextOffset (value : Vector3) world = this.Set (nameof Entity.PressedTextOffset) value world
-        static member PressedTextOffset = lens (nameof Entity.PressedTextOffset) (fun (this : Entity) -> this.GetPressedTextOffset) (fun value this -> this.SetPressedTextOffset value)
-        member this.GetUntoggledImage world : Image AssetTag = this.Get (nameof Entity.UntoggledImage) world
-        member this.SetUntoggledImage (value : Image AssetTag) world = this.Set (nameof Entity.UntoggledImage) value world
-        static member UntoggledImage = lens (nameof Entity.UntoggledImage) (fun (this : Entity) -> this.GetUntoggledImage) (fun value this -> this.SetUntoggledImage value)
-        member this.GetToggledImage world : Image AssetTag = this.Get (nameof Entity.ToggledImage) world
-        member this.SetToggledImage (value : Image AssetTag) world = this.Set (nameof Entity.ToggledImage) value world
-        static member ToggledImage = lens (nameof Entity.ToggledImage) (fun (this : Entity) -> this.GetToggledImage) (fun value this -> this.SetToggledImage value)
-        member this.GetToggleSoundOpt world : Sound AssetTag option = this.Get (nameof Entity.ToggleSoundOpt) world
-        member this.SetToggleSoundOpt (value : Sound AssetTag option) world = this.Set (nameof Entity.ToggleSoundOpt) value world
-        static member ToggleSoundOpt = lens (nameof Entity.ToggleSoundOpt) (fun (this : Entity) -> this.GetToggleSoundOpt) (fun value this -> this.SetToggleSoundOpt value)
-        member this.GetToggleSoundVolume world : single = this.Get (nameof Entity.ToggleSoundVolume) world
-        member this.SetToggleSoundVolume (value : single) world = this.Set (nameof Entity.ToggleSoundVolume) value world
-        static member ToggleSoundVolume = lens (nameof Entity.ToggleSoundVolume) (fun (this : Entity) -> this.GetToggleSoundVolume) (fun value this -> this.SetToggleSoundVolume value)
+        member this.GetToggled world : bool = this.Get (nameof this.Toggled) world
+        member this.SetToggled (value : bool) world = this.Set (nameof this.Toggled) value world
+        member this.Toggled = lens (nameof this.Toggled) this this.GetToggled this.SetToggled
+        member this.GetToggledTextOffset world : Vector3 = this.Get (nameof this.ToggledTextOffset) world
+        member this.SetToggledTextOffset (value : Vector3) world = this.Set (nameof this.ToggledTextOffset) value world
+        member this.ToggledTextOffset = lens (nameof this.ToggledTextOffset) this this.GetToggledTextOffset this.SetToggledTextOffset
+        member this.GetPressed world : bool = this.Get (nameof this.Pressed) world
+        member this.SetPressed (value : bool) world = this.Set (nameof this.Pressed) value world
+        member this.Pressed = lens (nameof this.Pressed) this this.GetPressed this.SetPressed
+        member this.GetPressedTextOffset world : Vector3 = this.Get (nameof this.PressedTextOffset) world
+        member this.SetPressedTextOffset (value : Vector3) world = this.Set (nameof this.PressedTextOffset) value world
+        member this.PressedTextOffset = lens (nameof this.PressedTextOffset) this this.GetPressedTextOffset this.SetPressedTextOffset
+        member this.GetUntoggledImage world : Image AssetTag = this.Get (nameof this.UntoggledImage) world
+        member this.SetUntoggledImage (value : Image AssetTag) world = this.Set (nameof this.UntoggledImage) value world
+        member this.UntoggledImage = lens (nameof this.UntoggledImage) this this.GetUntoggledImage this.SetUntoggledImage
+        member this.GetToggledImage world : Image AssetTag = this.Get (nameof this.ToggledImage) world
+        member this.SetToggledImage (value : Image AssetTag) world = this.Set (nameof this.ToggledImage) value world
+        member this.ToggledImage = lens (nameof this.ToggledImage) this this.GetToggledImage this.SetToggledImage
+        member this.GetToggleSoundOpt world : Sound AssetTag option = this.Get (nameof this.ToggleSoundOpt) world
+        member this.SetToggleSoundOpt (value : Sound AssetTag option) world = this.Set (nameof this.ToggleSoundOpt) value world
+        member this.ToggleSoundOpt = lens (nameof this.ToggleSoundOpt) this this.GetToggleSoundOpt this.SetToggleSoundOpt
+        member this.GetToggleSoundVolume world : single = this.Get (nameof this.ToggleSoundVolume) world
+        member this.SetToggleSoundVolume (value : single) world = this.Set (nameof this.ToggleSoundVolume) value world
+        member this.ToggleSoundVolume = lens (nameof this.ToggleSoundVolume) this this.GetToggleSoundVolume this.SetToggleSoundVolume
         member this.ToggleEvent = Events.Toggle --> this
         member this.ToggledEvent = Events.Toggled --> this
         member this.UntoggledEvent = Events.Untoggled --> this
-
-    [<RequireQualifiedAccess>]
-    module Entity =
-        let ToggleEvent = Address.anonymize Events.Toggle
-        let ToggledEvent = Address.anonymize Events.Toggled
-        let UntoggledEvent = Address.anonymize Events.Untoggled
 
     type ToggleButtonDispatcher () =
         inherit GuiDispatcher ()
@@ -1861,33 +1853,27 @@ module ToggleButtonDispatcherModule =
 module RadioButtonDispatcherModule =
 
     type Entity with
-        member this.GetDialed world : bool = this.Get (nameof Entity.Dialed) world
-        member this.SetDialed (value : bool) world = this.Set (nameof Entity.Dialed) value world
-        static member Dialed = lens (nameof Entity.Dialed) (fun (this : Entity) -> this.GetDialed) (fun value this -> this.SetDialed value)
-        member this.GetDialedTextOffset world : Vector3 = this.Get (nameof Entity.DialedTextOffset) world
-        member this.SetDialedTextOffset (value : Vector3) world = this.Set (nameof Entity.DialedTextOffset) value world
-        static member DialedTextOffset = lens (nameof Entity.DialedTextOffset) (fun (this : Entity) -> this.GetDialedTextOffset) (fun value this -> this.SetDialedTextOffset value)
-        member this.GetUndialedImage world : Image AssetTag = this.Get (nameof Entity.UndialedImage) world
-        member this.SetUndialedImage (value : Image AssetTag) world = this.Set (nameof Entity.UndialedImage) value world
-        static member UndialedImage = lens (nameof Entity.UndialedImage) (fun (this : Entity) -> this.GetUndialedImage) (fun value this -> this.SetUndialedImage value)
-        member this.GetDialedImage world : Image AssetTag = this.Get (nameof Entity.DialedImage) world
-        member this.SetDialedImage (value : Image AssetTag) world = this.Set (nameof Entity.DialedImage) value world
-        static member DialedImage = lens (nameof Entity.DialedImage) (fun (this : Entity) -> this.GetDialedImage) (fun value this -> this.SetDialedImage value)
-        member this.GetDialSoundOpt world : Sound AssetTag option = this.Get (nameof Entity.DialSoundOpt) world
-        member this.SetDialSoundOpt (value : Sound AssetTag option) world = this.Set (nameof Entity.DialSoundOpt) value world
-        static member DialSoundOpt = lens (nameof Entity.DialSoundOpt) (fun (this : Entity) -> this.GetDialSoundOpt) (fun value this -> this.SetDialSoundOpt value)
-        member this.GetDialSoundVolume world : single = this.Get (nameof Entity.DialSoundVolume) world
-        member this.SetDialSoundVolume (value : single) world = this.Set (nameof Entity.DialSoundVolume) value world
-        static member DialSoundVolume = lens (nameof Entity.DialSoundVolume) (fun (this : Entity) -> this.GetDialSoundVolume) (fun value this -> this.SetDialSoundVolume value)
+        member this.GetDialed world : bool = this.Get (nameof this.Dialed) world
+        member this.SetDialed (value : bool) world = this.Set (nameof this.Dialed) value world
+        member this.Dialed = lens (nameof this.Dialed) this this.GetDialed this.SetDialed
+        member this.GetDialedTextOffset world : Vector3 = this.Get (nameof this.DialedTextOffset) world
+        member this.SetDialedTextOffset (value : Vector3) world = this.Set (nameof this.DialedTextOffset) value world
+        member this.DialedTextOffset = lens (nameof this.DialedTextOffset) this this.GetDialedTextOffset this.SetDialedTextOffset
+        member this.GetUndialedImage world : Image AssetTag = this.Get (nameof this.UndialedImage) world
+        member this.SetUndialedImage (value : Image AssetTag) world = this.Set (nameof this.UndialedImage) value world
+        member this.UndialedImage = lens (nameof this.UndialedImage) this this.GetUndialedImage this.SetUndialedImage
+        member this.GetDialedImage world : Image AssetTag = this.Get (nameof this.DialedImage) world
+        member this.SetDialedImage (value : Image AssetTag) world = this.Set (nameof this.DialedImage) value world
+        member this.DialedImage = lens (nameof this.DialedImage) this this.GetDialedImage this.SetDialedImage
+        member this.GetDialSoundOpt world : Sound AssetTag option = this.Get (nameof this.DialSoundOpt) world
+        member this.SetDialSoundOpt (value : Sound AssetTag option) world = this.Set (nameof this.DialSoundOpt) value world
+        member this.DialSoundOpt = lens (nameof this.DialSoundOpt) this this.GetDialSoundOpt this.SetDialSoundOpt
+        member this.GetDialSoundVolume world : single = this.Get (nameof this.DialSoundVolume) world
+        member this.SetDialSoundVolume (value : single) world = this.Set (nameof this.DialSoundVolume) value world
+        member this.DialSoundVolume = lens (nameof this.DialSoundVolume) this this.GetDialSoundVolume this.SetDialSoundVolume
         member this.DialEvent = Events.Dial --> this
         member this.DialedEvent = Events.Dialed --> this
         member this.UndialedEvent = Events.Undialed --> this
-
-    [<RequireQualifiedAccess>]
-    module Entity =
-        let DialEvent = Address.anonymize Events.Dial
-        let DialedEvent = Address.anonymize Events.Dialed
-        let UndialedEvent = Address.anonymize Events.Undialed
 
     type RadioButtonDispatcher () =
         inherit GuiDispatcher ()
@@ -1991,12 +1977,12 @@ module RadioButtonDispatcherModule =
 module FpsDispatcherModule =
 
     type Entity with
-        member this.GetStartTime world : int64 = this.Get (nameof Entity.StartTime) world
-        member this.SetStartTime (value : int64) world = this.Set (nameof Entity.StartTime) value world
-        static member StartTime = lens (nameof Entity.StartTime) (fun (this : Entity) -> this.GetStartTime) (fun value this -> this.SetStartTime value)
-        member this.GetStartDateTime world : DateTime = this.Get (nameof Entity.StartDateTime) world
-        member this.SetStartDateTime (value : DateTime) world = this.Set (nameof Entity.StartDateTime) value world
-        static member StartDateTime = lens (nameof Entity.StartDateTime) (fun (this : Entity) -> this.GetStartDateTime) (fun value this -> this.SetStartDateTime value)
+        member this.GetStartTime world : int64 = this.Get (nameof this.StartTime) world
+        member this.SetStartTime (value : int64) world = this.Set (nameof this.StartTime) value world
+        member this.StartTime = lens (nameof this.StartTime) this this.GetStartTime this.SetStartTime
+        member this.GetStartDateTime world : DateTime = this.Get (nameof this.StartDateTime) world
+        member this.SetStartDateTime (value : DateTime) world = this.Set (nameof this.StartDateTime) value world
+        member this.StartDateTime = lens (nameof this.StartDateTime) this this.GetStartDateTime this.SetStartDateTime
 
     type FpsDispatcher () =
         inherit TextDispatcher ()
@@ -2032,18 +2018,12 @@ module FpsDispatcherModule =
 module FeelerDispatcherModule =
 
     type Entity with
-        member this.GetTouched world : bool = this.Get (nameof Entity.Touched) world
-        member this.SetTouched (value : bool) world = this.Set (nameof Entity.Touched) value world
-        static member Touched = lens (nameof Entity.Touched) (fun (this : Entity) -> this.GetTouched) (fun value this -> this.SetTouched value)
+        member this.GetTouched world : bool = this.Get (nameof this.Touched) world
+        member this.SetTouched (value : bool) world = this.Set (nameof this.Touched) value world
+        member this.Touched = lens (nameof this.Touched) this this.GetTouched this.SetTouched
         member this.TouchEvent = Events.Touch --> this
         member this.TouchingEvent = Events.Touching --> this
         member this.UntouchEvent = Events.Untouch --> this
-
-    [<RequireQualifiedAccess>]
-    module Entity =
-        let TouchEvent = Address.anonymize Events.Touch
-        let TouchingEvent = Address.anonymize Events.Touching
-        let UntouchEvent = Address.anonymize Events.Untouch
 
     type FeelerDispatcher () =
         inherit GuiDispatcher ()
@@ -2121,24 +2101,24 @@ module FeelerDispatcherModule =
 module FillBarDispatcherModule =
 
     type Entity with
-        member this.GetFill world : single = this.Get (nameof Entity.Fill) world
-        member this.SetFill (value : single) world = this.Set (nameof Entity.Fill) value world
-        static member Fill = lens (nameof Entity.Fill) (fun (this : Entity) -> this.GetFill) (fun value this -> this.SetFill value)
-        member this.GetFillInset world : single = this.Get (nameof Entity.FillInset) world
-        member this.SetFillInset (value : single) world = this.Set (nameof Entity.FillInset) value world
-        static member FillInset = lens (nameof Entity.FillInset) (fun (this : Entity) -> this.GetFillInset) (fun value this -> this.SetFillInset value)
-        member this.GetFillColor world : Color = this.Get (nameof Entity.FillColor) world
-        member this.SetFillColor (value : Color) world = this.Set (nameof Entity.FillColor) value world
-        static member FillColor = lens (nameof Entity.FillColor) (fun (this : Entity) -> this.GetFillColor) (fun value this -> this.SetFillColor value)
-        member this.GetFillImage world : Image AssetTag = this.Get (nameof Entity.FillImage) world
-        member this.SetFillImage (value : Image AssetTag) world = this.Set (nameof Entity.FillImage) value world
-        static member FillImage = lens (nameof Entity.FillImage) (fun (this : Entity) -> this.GetFillImage) (fun value this -> this.SetFillImage value)
-        member this.GetBorderColor world : Color = this.Get (nameof Entity.BorderColor) world
-        member this.SetBorderColor (value : Color) world = this.Set (nameof Entity.BorderColor) value world
-        static member BorderColor = lens (nameof Entity.BorderColor) (fun (this : Entity) -> this.GetBorderColor) (fun value this -> this.SetBorderColor value)
-        member this.GetBorderImage world : Image AssetTag = this.Get (nameof Entity.BorderImage) world
-        member this.SetBorderImage (value : Image AssetTag) world = this.Set (nameof Entity.BorderImage) value world
-        static member BorderImage = lens (nameof Entity.BorderImage) (fun (this : Entity) -> this.GetBorderImage) (fun value this -> this.SetBorderImage value)
+        member this.GetFill world : single = this.Get (nameof this.Fill) world
+        member this.SetFill (value : single) world = this.Set (nameof this.Fill) value world
+        member this.Fill = lens (nameof this.Fill) this this.GetFill this.SetFill
+        member this.GetFillInset world : single = this.Get (nameof this.FillInset) world
+        member this.SetFillInset (value : single) world = this.Set (nameof this.FillInset) value world
+        member this.FillInset = lens (nameof this.FillInset) this this.GetFillInset this.SetFillInset
+        member this.GetFillColor world : Color = this.Get (nameof this.FillColor) world
+        member this.SetFillColor (value : Color) world = this.Set (nameof this.FillColor) value world
+        member this.FillColor = lens (nameof this.FillColor) this this.GetFillColor this.SetFillColor
+        member this.GetFillImage world : Image AssetTag = this.Get (nameof this.FillImage) world
+        member this.SetFillImage (value : Image AssetTag) world = this.Set (nameof this.FillImage) value world
+        member this.FillImage = lens (nameof this.FillImage) this this.GetFillImage this.SetFillImage
+        member this.GetBorderColor world : Color = this.Get (nameof this.BorderColor) world
+        member this.SetBorderColor (value : Color) world = this.Set (nameof this.BorderColor) value world
+        member this.BorderColor = lens (nameof this.BorderColor) this this.GetBorderColor this.SetBorderColor
+        member this.GetBorderImage world : Image AssetTag = this.Get (nameof this.BorderImage) world
+        member this.SetBorderImage (value : Image AssetTag) world = this.Set (nameof this.BorderImage) value world
+        member this.BorderImage = lens (nameof this.BorderImage) this this.GetBorderImage this.SetBorderImage
 
     type FillBarDispatcher () =
         inherit GuiDispatcher ()
@@ -2277,18 +2257,18 @@ module BoxDispatcher2dModule =
 module SideViewCharacterDispatcherModule =
 
     type Entity with
-        member this.GetSideViewCharacterIdleImage world : Image AssetTag = this.Get (nameof Entity.SideViewCharacterIdleImage) world
-        member this.SetSideViewCharacterIdleImage (value : Image AssetTag) world = this.Set (nameof Entity.SideViewCharacterIdleImage) value world
-        static member SideViewCharacterIdleImage = lens (nameof Entity.SideViewCharacterIdleImage) (fun (this : Entity) -> this.GetSideViewCharacterIdleImage) (fun value this -> this.SetSideViewCharacterIdleImage value)
-        member this.GetSideViewCharacterJumpImage world : Image AssetTag = this.Get (nameof Entity.SideViewCharacterJumpImage) world
-        member this.SetSideViewCharacterJumpImage (value : Image AssetTag) world = this.Set (nameof Entity.SideViewCharacterJumpImage) value world
-        static member SideViewCharacterJumpImage = lens (nameof Entity.SideViewCharacterJumpImage) (fun (this : Entity) -> this.GetSideViewCharacterJumpImage) (fun value this -> this.SetSideViewCharacterJumpImage value)
-        member this.GetSideViewCharacterWalkSheet world : Image AssetTag = this.Get (nameof Entity.SideViewCharacterWalkSheet) world
-        member this.SetSideViewCharacterWalkSheet (value : Image AssetTag) world = this.Set (nameof Entity.SideViewCharacterWalkSheet) value world
-        static member SideViewCharacterWalkSheet = lens (nameof Entity.SideViewCharacterWalkSheet) (fun (this : Entity) -> this.GetSideViewCharacterWalkSheet) (fun value this -> this.SetSideViewCharacterWalkSheet value)
-        member this.GetSideViewCharacterFacingLeft world : bool = this.Get (nameof Entity.SideViewCharacterFacingLeft) world
-        member this.SetSideViewCharacterFacingLeft (value : bool) world = this.Set (nameof Entity.SideViewCharacterFacingLeft) value world
-        static member SideViewCharacterFacingLeft = lens (nameof Entity.SideViewCharacterFacingLeft) (fun (this : Entity) -> this.GetSideViewCharacterFacingLeft) (fun value this -> this.SetSideViewCharacterFacingLeft value)
+        member this.GetSideViewCharacterIdleImage world : Image AssetTag = this.Get (nameof this.SideViewCharacterIdleImage) world
+        member this.SetSideViewCharacterIdleImage (value : Image AssetTag) world = this.Set (nameof this.SideViewCharacterIdleImage) value world
+        member this.SideViewCharacterIdleImage = lens (nameof this.SideViewCharacterIdleImage) this this.GetSideViewCharacterIdleImage this.SetSideViewCharacterIdleImage
+        member this.GetSideViewCharacterJumpImage world : Image AssetTag = this.Get (nameof this.SideViewCharacterJumpImage) world
+        member this.SetSideViewCharacterJumpImage (value : Image AssetTag) world = this.Set (nameof this.SideViewCharacterJumpImage) value world
+        member this.SideViewCharacterJumpImage = lens (nameof this.SideViewCharacterJumpImage) this this.GetSideViewCharacterJumpImage this.SetSideViewCharacterJumpImage
+        member this.GetSideViewCharacterWalkSheet world : Image AssetTag = this.Get (nameof this.SideViewCharacterWalkSheet) world
+        member this.SetSideViewCharacterWalkSheet (value : Image AssetTag) world = this.Set (nameof this.SideViewCharacterWalkSheet) value world
+        member this.SideViewCharacterWalkSheet = lens (nameof this.SideViewCharacterWalkSheet) this this.GetSideViewCharacterWalkSheet this.SetSideViewCharacterWalkSheet
+        member this.GetSideViewCharacterFacingLeft world : bool = this.Get (nameof this.SideViewCharacterFacingLeft) world
+        member this.SetSideViewCharacterFacingLeft (value : bool) world = this.Set (nameof this.SideViewCharacterFacingLeft) value world
+        member this.SideViewCharacterFacingLeft = lens (nameof this.SideViewCharacterFacingLeft) this this.GetSideViewCharacterFacingLeft this.SetSideViewCharacterFacingLeft
 
     type SideViewCharacterDispatcher () =
         inherit EntityDispatcher2d (false, true)
@@ -2568,9 +2548,9 @@ module StaticModelHierarchyDispatcherModule =
             | None -> world
 
     type Entity with
-        member this.GetLoaded world : bool = this.Get (nameof Entity.Loaded) world
-        member this.SetLoaded (value : bool) world = this.Set (nameof Entity.Loaded) value world
-        static member Loaded = lens (nameof Entity.Loaded) (fun (this : Entity) -> this.GetLoaded) (fun value this -> this.SetLoaded value)
+        member this.GetLoaded world : bool = this.Get (nameof this.Loaded) world
+        member this.SetLoaded (value : bool) world = this.Set (nameof this.Loaded) value world
+        member this.Loaded = lens (nameof this.Loaded) this this.GetLoaded this.SetLoaded
 
     type StaticModelHierarchyDispatcher () =
         inherit EntityDispatcher3d (true, false)
@@ -2597,5 +2577,5 @@ module StaticModelHierarchyDispatcherModule =
                     let world = entity.SetLoaded true world
                     world
                 else world
-            let world = World.monitor syncChildren (entity.ChangeEvent (nameof Entity.StaticModel)) entity world
+            let world = World.monitor syncChildren (entity.ChangeEvent (nameof entity.StaticModel)) entity world
             world

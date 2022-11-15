@@ -1,7 +1,7 @@
 ﻿namespace BlazeVector
 open Prime
 open Nu
-open BlazeVector
+open Nu.Declarative
 
 [<AutoOpen>]
 module BlazeVector =
@@ -31,7 +31,7 @@ module BlazeVector =
     type Game with
         member this.GetModel world = this.GetModelGeneric<Model> world
         member this.SetModel value world = this.SetModelGeneric<Model> value world
-        static member Model = Game.ModelGeneric<Model> ()
+        member this.Model = this.ModelGeneric<Model> ()
 
     // this is the game dispatcher that is customized for our game. In here, we create screens as
     // content and bind them up with events and properties.

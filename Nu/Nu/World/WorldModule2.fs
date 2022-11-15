@@ -11,6 +11,7 @@ open FSharpx.Collections
 open SDL2
 open Prime
 open Nu
+open Nu.Declarative
 
 [<AutoOpen; ModuleBinding>]
 module WorldModule2 =
@@ -1098,7 +1099,7 @@ module EntityDispatcherModule2 =
         static member internal signalEntity<'model, 'message, 'command> signal (entity : Entity) world =
             match entity.GetDispatcher world with
             | :? EntityDispatcher<'model, 'message, 'command> as dispatcher ->
-                Signal.processSignal dispatcher.Message dispatcher.Command (Entity.ModelGeneric<'model> ()) signal entity world
+                Signal.processSignal dispatcher.Message dispatcher.Command (entity.ModelGeneric<'model> ()) signal entity world
             | _ ->
                 Log.info "Failed to send signal to entity."
                 world
@@ -1123,8 +1124,8 @@ module EntityDispatcherModule2 =
         member this.SetModel (model : 'model) (entity : Entity) world =
             entity.SetModelGeneric<'model> model world
 
-        static member Model () =
-            Entity.ModelGeneric<'model> ()
+        member this.Model (entity : Entity) =
+            lens (nameof this.Model) entity (this.GetModel entity) (flip this.SetModel entity)
 
         override this.Register (entity, world) =
             let world =
@@ -1141,7 +1142,7 @@ module EntityDispatcherModule2 =
             let model = this.GetModel entity world
             let (signals, model) = this.Physics (position, rotation, linearVelocity, angularVelocity, model, entity, world)
             let world = this.SetModel model entity world
-            Signal.processSignals this.Message this.Command (Entity.ModelGeneric<'model> ()) signals entity world
+            Signal.processSignals this.Message this.Command (this.Model entity) signals entity world
 
         override this.Render (entity, world) =
             let view = this.View (this.GetModel entity world, entity, world)
@@ -1220,7 +1221,7 @@ module GroupDispatcherModule =
         static member internal signalGroup<'model, 'message, 'command> signal (group : Group) world =
             match group.GetDispatcher world with
             | :? GroupDispatcher<'model, 'message, 'command> as dispatcher ->
-                Signal.processSignal dispatcher.Message dispatcher.Command (Group.ModelGeneric<'model> ()) signal group world
+                Signal.processSignal dispatcher.Message dispatcher.Command (group.ModelGeneric<'model> ()) signal group world
             | _ ->
                 Log.info "Failed to send signal to group."
                 world
@@ -1245,8 +1246,8 @@ module GroupDispatcherModule =
         member this.SetModel (model : 'model) (group : Group) world =
             group.SetModelGeneric<'model> model world
 
-        static member Model () =
-            Group.ModelGeneric<'model> ()
+        member this.Model (group : Group) =
+            lens (nameof this.Model) group (this.GetModel group) (flip this.SetModel group)
 
         override this.Register (group, world) =
             let world =
@@ -1295,7 +1296,7 @@ module ScreenDispatcherModule =
         static member internal signalScreen<'model, 'message, 'command> signal (screen : Screen) world =
             match screen.GetDispatcher world with
             | :? ScreenDispatcher<'model, 'message, 'command> as dispatcher ->
-                Signal.processSignal dispatcher.Message dispatcher.Command (Screen.ModelGeneric<'model> ()) signal screen world
+                Signal.processSignal dispatcher.Message dispatcher.Command (screen.ModelGeneric<'model> ()) signal screen world
             | _ ->
                 Log.info "Failed to send signal to screen."
                 world
@@ -1320,8 +1321,8 @@ module ScreenDispatcherModule =
         member this.SetModel (model : 'model) (screen : Screen) world =
             screen.SetModelGeneric<'model> model world
 
-        static member Model () =
-            Screen.ModelGeneric<'model> ()
+        member this.Model (screen : Screen) =
+            lens (nameof this.Model) screen (this.GetModel screen) (flip this.SetModel screen)
 
         override this.Register (screen, world) =
             let world =
@@ -1370,7 +1371,7 @@ module GameDispatcherModule =
         static member internal signalGame<'model, 'message, 'command> signal (game : Game) world =
             match game.GetDispatcher world with
             | :? GameDispatcher<'model, 'message, 'command> as dispatcher ->
-                Signal.processSignal dispatcher.Message dispatcher.Command (Game.ModelGeneric<'model> ()) signal game world
+                Signal.processSignal dispatcher.Message dispatcher.Command (game.ModelGeneric<'model> ()) signal game world
             | _ -> Log.info "Failed to send signal to game."; world
 
     and Game with
@@ -1393,8 +1394,8 @@ module GameDispatcherModule =
         member this.SetModel (model : 'model) (game : Game) world =
             game.SetModelGeneric<'model> model world
 
-        static member Model () =
-            Game.ModelGeneric<'model> ()
+        member this.Model (game : Game) =
+            lens (nameof this.Model) game (this.GetModel game) (flip this.SetModel game)
 
         override this.Register (game, world) =
             let world =

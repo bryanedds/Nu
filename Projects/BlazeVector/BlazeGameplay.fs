@@ -3,6 +3,7 @@ open System
 open System.Numerics
 open Prime
 open Nu
+open Nu.Declarative
 
 [<AutoOpen>]
 module Bullet =
@@ -47,7 +48,7 @@ module Enemy =
     type Entity with
         member this.GetHealth world : int = this.Get (nameof Entity.Health) world
         member this.SetHealth (value : int) world = this.Set (nameof Entity.Health) value world
-        static member Health = lens (nameof Entity.Health) (fun (this : Entity) -> this.GetHealth) (fun value this -> this.SetHealth value)
+        member this.Health = lens (nameof this.Health) this this.GetHealth this.SetHealth
         member this.IsOnScreen world =
             let viewBounds = World.getViewBounds2d world
             let perimeter = this.GetBounds world
@@ -113,10 +114,10 @@ module Player =
     type Entity with
         member this.GetLastTimeOnGround world : int64 = this.Get (nameof Entity.LastTimeOnGround) world
         member this.SetLastTimeOnGround (value : int64) world = this.Set (nameof Entity.LastTimeOnGround) value world
-        static member LastTimeOnGround = lens (nameof Entity.LastTimeOnGround) (fun (this : Entity) -> this.GetLastTimeOnGround) (fun value this -> this.SetLastTimeOnGround value)
+        member this.LastTimeOnGround = lens (nameof this.LastTimeOnGround) this this.GetLastTimeOnGround this.SetLastTimeOnGround
         member this.GetLastTimeJump world : int64 = this.Get (nameof Entity.LastTimeJump) world
         member this.SetLastTimeJump (value : int64) world = this.Set (nameof Entity.LastTimeJump) value world
-        static member LastTimeJump = lens (nameof Entity.LastTimeJump) (fun (this : Entity) -> this.GetLastTimeJump) (fun value this -> this.SetLastTimeJump value)
+        member this.LastTimeJump = lens (nameof this.LastTimeJump) this this.GetLastTimeJump this.SetLastTimeJump
         member this.HasFallen world = (this.GetPosition world).Y < -600.0f
 
     type PlayerDispatcher () =
@@ -240,7 +241,7 @@ module Gameplay =
     type Screen with
         member this.GetGameplay world = this.GetModelGeneric<Gameplay> world
         member this.SetGameplay value world = this.SetModelGeneric<Gameplay> value world
-        static member Gameplay = Screen.ModelGeneric<Gameplay> ()
+        member this.Gameplay = this.ModelGeneric<Gameplay> ()
 
     type GameplayDispatcher () =
         inherit ScreenDispatcher<Gameplay, GameplayMessage, GameplayCommand> (Quit)

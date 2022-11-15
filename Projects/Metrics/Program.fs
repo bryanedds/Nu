@@ -4,6 +4,7 @@ open System.Collections.Generic
 open System.Numerics
 open Prime
 open Nu
+open Nu.Declarative
 open Nu.Ecs
 
 type [<NoEquality; NoComparison; Struct>] StaticSpriteComponent =
