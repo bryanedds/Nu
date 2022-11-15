@@ -53,6 +53,9 @@ module Nu =
             WorldModuleGroup.init ()
             WorldModuleEntity.init ()
 
+            // init simulant types
+            Entity.init ()
+
             // init debug view F# reach-arounds
             WorldTypes.viewGame <- fun world -> World.viewGameProperties (world :?> World)
             WorldTypes.viewScreen <- fun screen world -> World.viewScreenProperties (screen :?> Screen) (world :?> World)
