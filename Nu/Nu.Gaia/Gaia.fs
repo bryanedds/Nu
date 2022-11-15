@@ -56,10 +56,10 @@ module Gaia =
     let private generateEntityName dispatcherName world =
         let selectedGroup = Globals.EditorState.SelectedGroup
         let name = Gen.nameForEditor dispatcherName
-        let mutable entity = Entity (selectedGroup.GroupAddress <-- ntoa name)
+        let mutable entity = Entity (selectedGroup.GroupAddress <== ntoa name)
         while entity.Exists world do
             let name = Gen.nameForEditor dispatcherName
-            entity <- Entity (selectedGroup.GroupAddress <-- ntoa name)
+            entity <- Entity (selectedGroup.GroupAddress <== ntoa name)
         entity.Name
 
     let private refreshOverlayComboBox (form : GaiaForm) world =
@@ -827,11 +827,11 @@ module Gaia =
             let draggedNode = e.Data.GetData typeof<TreeNode> :?> TreeNode
             if draggedNode <> targetNodeOpt && notNull targetNodeOpt && not (containsNode draggedNode targetNodeOpt) then
                 let selectedGroup = Globals.EditorState.SelectedGroup
-                let source = Entity (selectedGroup.GroupAddress <-- Address.makeFromString draggedNode.Name)
+                let source = Entity (selectedGroup.GroupAddress <== Address.makeFromString draggedNode.Name)
                 let (mountToParent, target) =
                     if targetNodeOpt.Name = Constants.Editor.GroupNodeKey
                     then (false, Group selectedGroup.GroupAddress / source.Name)
-                    else (true, Entity (selectedGroup.GroupAddress <-- Address.makeFromString targetNodeOpt.Name) / source.Name)
+                    else (true, Entity (selectedGroup.GroupAddress <== Address.makeFromString targetNodeOpt.Name) / source.Name)
                 let mountOpt = if mountToParent then Some (Relation.makeParent ()) else None
                 let world = World.renameEntityImmediate source target world
                 target.SetMountOptWithAdjustment mountOpt world
@@ -856,7 +856,7 @@ module Gaia =
                 let nodeKey = form.hierarchyTreeView.SelectedNode.Name
                 if nodeKey <> Constants.Editor.GroupNodeKey then
                     let address = Address.makeFromString nodeKey
-                    let entity = Entity (Globals.EditorState.SelectedGroup.GroupAddress <-- atoa address)
+                    let entity = Entity (Globals.EditorState.SelectedGroup.GroupAddress <== atoa address)
                     if entity.Exists world then selectEntity entity form world
                     world
                 else world
@@ -1784,7 +1784,7 @@ module Gaia =
                 let nodeKey = e.Node.Name
                 if nodeKey <> Constants.Editor.GroupNodeKey then
                     let address = Address.makeFromString nodeKey
-                    let entity = Entity (Globals.EditorState.SelectedGroup.GroupAddress <-- atoa address)
+                    let entity = Entity (Globals.EditorState.SelectedGroup.GroupAddress <== atoa address)
                     if entity.Exists world then selectEntity entity form world
                     if e.Button = MouseButtons.Right then
                         form.hierarchyContextMenuStrip.Show ()

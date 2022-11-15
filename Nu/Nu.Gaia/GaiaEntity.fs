@@ -83,7 +83,7 @@ and EntityPropertyDescriptor (propertyDescriptor, attributes) =
             | "Surnames" ->
                 let surnames = value :?> string array
                 if Array.forall (fun (name : string) -> name.IndexOfAny Symbol.IllegalNameCharsArray = -1) surnames then
-                    let target = Entity (entity.Group.GroupAddress <-- rtoa surnames)
+                    let target = Entity (entity.Group.GroupAddress <== rtoa surnames)
                     let world = World.renameEntityImmediate entity target world
                     Globals.World <- world // must be set for property grid
                     Globals.SelectEntity target Globals.Form world

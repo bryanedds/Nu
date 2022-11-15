@@ -61,26 +61,26 @@ module Content =
                 [Entity.PositionLocal == position; Entity.ElevationLocal == elevation; Entity.Size == v3 72.0f 72.0f 0.0f
                  Entity.UpImage == asset "Field" "TeamButtonUp"
                  Entity.DownImage == asset "Field" "TeamButtonDown"
-                 Entity.EnabledLocal <== field --> fun field -> match field.Menu.MenuState with MenuTeam _ -> false | _ -> true
-                 Entity.ClickEvent ==> msg (menuTeamOpen ())]
+                 Entity.EnabledLocal <-- field ==> fun field -> match field.Menu.MenuState with MenuTeam _ -> false | _ -> true
+                 Entity.ClickEvent --> msg (menuTeamOpen ())]
              Content.button "InventoryButton"
                 [Entity.PositionLocal == position - v3 0.0f 81.0f 0.0f; Entity.ElevationLocal == elevation; Entity.Size == v3 72.0f 72.0f 0.0f
                  Entity.UpImage == asset "Field" "InventoryButtonUp"
                  Entity.DownImage == asset "Field" "InventoryButtonDown"
-                 Entity.EnabledLocal <== field --> fun field -> match field.Menu.MenuState with MenuItem _ -> false | _ -> true
-                 Entity.ClickEvent ==> msg (menuItemsOpen ())]
+                 Entity.EnabledLocal <-- field ==> fun field -> match field.Menu.MenuState with MenuItem _ -> false | _ -> true
+                 Entity.ClickEvent --> msg (menuItemsOpen ())]
              Content.button "TechButton"
                 [Entity.PositionLocal == position - v3 0.0f 162.0f 0.0f; Entity.ElevationLocal == elevation; Entity.Size == v3 72.0f 72.0f 0.0f
                  Entity.UpImage == asset "Field" "TechButtonUp"
                  Entity.DownImage == asset "Field" "TechButtonDown"
-                 Entity.EnabledLocal <== field --> fun field -> match field.Menu.MenuState with MenuTech _ -> false | _ -> true
-                 Entity.ClickEvent ==> msg (menuTechOpen ())]
+                 Entity.EnabledLocal <-- field ==> fun field -> match field.Menu.MenuState with MenuTech _ -> false | _ -> true
+                 Entity.ClickEvent --> msg (menuTechOpen ())]
              Content.button "OptionsButton"
                 [Entity.PositionLocal == position - v3 0.0f 243.0f 0.0f; Entity.ElevationLocal == elevation; Entity.Size == v3 72.0f 72.0f 0.0f
                  Entity.UpImage == asset "Field" "OptionsButtonUp"
                  Entity.DownImage == asset "Field" "OptionsButtonDown"
-                 Entity.EnabledLocal <== field --> fun field -> match field.Menu.MenuState with MenuOptions -> false | _ -> true
-                 Entity.ClickEvent ==> msg (menuOptionsOpen ())]
+                 Entity.EnabledLocal <-- field ==> fun field -> match field.Menu.MenuState with MenuOptions -> false | _ -> true
+                 Entity.ClickEvent --> msg (menuOptionsOpen ())]
              Content.button "HelpButton"
                 [Entity.PositionLocal == position - v3 0.0f 324.0f 0.0f; Entity.ElevationLocal == elevation; Entity.Size == v3 72.0f 72.0f 0.0f
                  Entity.UpImage == asset "Field" "HelpButtonUp"
@@ -89,7 +89,7 @@ module Content =
                 [Entity.PositionLocal == position - v3 0.0f 405.0f 0.0f; Entity.ElevationLocal == elevation; Entity.Size == v3 72.0f 72.0f 0.0f
                  Entity.UpImage == asset "Field" "CloseButtonUp"
                  Entity.DownImage == asset "Field" "CloseButtonDown"
-                 Entity.ClickEvent ==> msg (menuClose ())]]
+                 Entity.ClickEvent --> msg (menuClose ())]]
 
     let team (position : Vector3) elevation rows (field : Lens<Field, World>) filter fieldMsg =
         Content.entities field
@@ -99,11 +99,11 @@ module Content =
                 let y = position.Y - single (index % rows) * 81.0f
                 Content.button Gen.name
                     [Entity.PositionLocal == v3 x y 0.0f; Entity.ElevationLocal == elevation; Entity.Size == v3 252.0f 72.0f 0.0f
-                     Entity.EnabledLocal <== teammateAndMenu --> fun (teammate, menu) -> filter teammate menu
-                     Entity.Text <== teammateAndMenu --> fun (teammate, _) -> CharacterType.getName teammate.CharacterType
+                     Entity.EnabledLocal <-- teammateAndMenu ==> fun (teammate, menu) -> filter teammate menu
+                     Entity.Text <-- teammateAndMenu ==> fun (teammate, _) -> CharacterType.getName teammate.CharacterType
                      Entity.UpImage == Assets.Gui.ButtonBigUpImage
                      Entity.DownImage == Assets.Gui.ButtonBigDownImage
-                     Entity.ClickEvent ==> msg (fieldMsg index)])
+                     Entity.ClickEvent --> msg (fieldMsg index)])
 
     let items (position : Vector3) elevation rows columns field fieldMsg =
         Content.entities field
@@ -114,18 +114,18 @@ module Content =
                 Content.button Gen.name
                     [Entity.PositionLocal == v3 x y 0.0f; Entity.ElevationLocal == elevation; Entity.Size == v3 336.0f 72.0f 0.0f
                      Entity.Justification == Justified (JustifyLeft, JustifyMiddle); Entity.Margins == v3 16.0f 0.0f 0.0f
-                     Entity.Text <== selectionLens --> fun (_, (itemType, countOpt)) ->
+                     Entity.Text <-- selectionLens ==> fun (_, (itemType, countOpt)) ->
                         let itemName = ItemType.getName itemType
                         match countOpt with
                         | Some count when count > 1 -> itemName + String (Array.create (17 - itemName.Length) ' ') + "x" + string count
                         | _ -> itemName
-                     Entity.EnabledLocal <== selectionLens --> fun (_, (itemType, _)) ->
+                     Entity.EnabledLocal <-- selectionLens ==> fun (_, (itemType, _)) ->
                         match itemType with
                         | Consumable _ | Equipment _ -> true
                         | KeyItem _ | Stash _ -> false
                      Entity.UpImage == Assets.Gui.ButtonLongUpImage
                      Entity.DownImage == Assets.Gui.ButtonLongDownImage
-                     Entity.ClickEvent ==> msg (fieldMsg selectionLens)])
+                     Entity.ClickEvent --> msg (fieldMsg selectionLens)])
 
     let techs (position : Vector3) elevation field fieldMsg =
         Content.entities field
@@ -142,40 +142,40 @@ module Content =
                 Content.button Gen.name
                     [Entity.PositionLocal == v3 x y 0.0f; Entity.ElevationLocal == elevation; Entity.Size == v3 336.0f 60.0f 0.0f
                      Entity.Justification == Justified (JustifyLeft, JustifyMiddle); Entity.Margins == v3 16.0f 0.0f 0.0f
-                     Entity.Text <== techLens --> scstringm
+                     Entity.Text <-- techLens ==> scstringm
                      Entity.EnabledLocal == false
                      Entity.UpImage == Assets.Gui.ButtonSquishedUpImage
                      Entity.DownImage == Assets.Gui.ButtonSquishedDownImage
-                     Entity.ClickEvent ==> msg (fieldMsg i)])
+                     Entity.ClickEvent --> msg (fieldMsg i)])
 
     let dialog name elevation promptLeft promptRight (detokenizeAndDialogOpt : Lens<((string -> string) * Dialog) option, World>) =
         Content.entityOpt detokenizeAndDialogOpt $ fun detokenizeAndDialog ->
             Content.composite<TextDispatcher> name
-                [Entity.Perimeter <== detokenizeAndDialog --> fun (_, dialog) ->
+                [Entity.Perimeter <-- detokenizeAndDialog ==> fun (_, dialog) ->
                     match dialog.DialogForm with
                     | DialogThin -> box3 (v3 -432.0f 150.0f 0.0f) (v3 864.0f 90.0f 0.0f)
                     | DialogThick -> box3 (v3 -432.0f 78.0f 0.0f) (v3 864.0f 174.0f 0.0f)
                     | DialogNarration -> box3 (v3 -432.0f 78.0f 0.0f) (v3 864.0f 174.0f 0.0f)
                  Entity.Elevation == elevation
-                 Entity.BackgroundImageOpt <== detokenizeAndDialog --> fun (_, dialog) ->
+                 Entity.BackgroundImageOpt <-- detokenizeAndDialog ==> fun (_, dialog) ->
                     match dialog.DialogForm with
                     | DialogThin -> Some Assets.Gui.DialogThinImage
                     | DialogThick -> Some Assets.Gui.DialogThickImage
                     | DialogNarration -> Some Assets.Default.ImageEmpty
-                 Entity.Text <== detokenizeAndDialog --> fun (detokenize, dialog) ->
+                 Entity.Text <-- detokenizeAndDialog ==> fun (detokenize, dialog) ->
                     Dialog.getText detokenize dialog
-                 Entity.Justification <== detokenizeAndDialog --> fun (_, dialog) ->
+                 Entity.Justification <-- detokenizeAndDialog ==> fun (_, dialog) ->
                     match dialog.DialogForm with
                     | DialogThin | DialogThick -> Unjustified true
                     | DialogNarration -> Justified (JustifyCenter, JustifyMiddle)
                  Entity.Margins == v3 30.0f 30.0f 0.0f]
                 [Content.button "Left"
                     [Entity.PositionLocal == v3 186.0f 18.0f 0.0f; Entity.ElevationLocal == 2.0f; Entity.Size == v3 192.0f 48.0f 0.0f
-                     Entity.VisibleLocal <== detokenizeAndDialog --> fun (detokenize, dialog) -> Option.isSome dialog.DialogPromptOpt && Dialog.isExhausted detokenize dialog
-                     Entity.Text <== detokenizeAndDialog --> fun (_, dialog) -> match dialog.DialogPromptOpt with Some ((promptText, _), _) -> promptText | None -> ""
-                     Entity.ClickEvent ==> msg promptLeft]
+                     Entity.VisibleLocal <-- detokenizeAndDialog ==> fun (detokenize, dialog) -> Option.isSome dialog.DialogPromptOpt && Dialog.isExhausted detokenize dialog
+                     Entity.Text <-- detokenizeAndDialog ==> fun (_, dialog) -> match dialog.DialogPromptOpt with Some ((promptText, _), _) -> promptText | None -> ""
+                     Entity.ClickEvent --> msg promptLeft]
                  Content.button "Right"
                     [Entity.PositionLocal == v3 486.0f 18.0f 0.0f; Entity.ElevationLocal == 2.0f; Entity.Size == v3 192.0f 48.0f 0.0f
-                     Entity.VisibleLocal <== detokenizeAndDialog --> fun (detokenize, dialog) -> Option.isSome dialog.DialogPromptOpt && Dialog.isExhausted detokenize dialog
-                     Entity.Text <== detokenizeAndDialog --> fun (_, dialog) -> match dialog.DialogPromptOpt with Some (_, (promptText, _)) -> promptText | None -> ""
-                     Entity.ClickEvent ==> msg promptRight]]
+                     Entity.VisibleLocal <-- detokenizeAndDialog ==> fun (detokenize, dialog) -> Option.isSome dialog.DialogPromptOpt && Dialog.isExhausted detokenize dialog
+                     Entity.Text <-- detokenizeAndDialog ==> fun (_, dialog) -> match dialog.DialogPromptOpt with Some (_, (promptText, _)) -> promptText | None -> ""
+                     Entity.ClickEvent --> msg promptRight]]

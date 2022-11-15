@@ -29,12 +29,12 @@ module PropDispatcher =
              entity.FixedRotation == true
              entity.GravityScale == 0.0f
              entity.BodyType == Static
-             entity.Perimeter <== prop --> fun prop -> prop.Perimeter
-             entity.Sensor <== prop --> fun prop ->
+             entity.Perimeter <-- prop ==> fun prop -> prop.Perimeter
+             entity.Sensor <-- prop ==> fun prop ->
                 match prop.PropData with
                 | Portal _ | Sensor _ | SavePoint -> true
                 | _ -> false
-             entity.BodyShape <== prop --> fun prop ->
+             entity.BodyShape <-- prop ==> fun prop ->
                 match prop.PropData with
                 | Sprite _ ->
                     BodyEmpty

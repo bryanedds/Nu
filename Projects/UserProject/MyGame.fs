@@ -1,6 +1,7 @@
 ﻿namespace MyGame
 open Prime
 open Nu
+open Nu.Declarative
 
 [<AutoOpen>]
 module MyGame =
@@ -30,7 +31,7 @@ module MyGame =
     type Game with
         member this.GetModel world = this.GetModelGeneric<Model> world
         member this.SetModel value world = this.SetModelGeneric<Model> value world
-        static member Model = Game.ModelGeneric<Model> ()
+        member this.Model = this.ModelGeneric<Model> ()
 
     // this is the game dispatcher that is customized for our game. In here, we create screens as
     // content and bind them up with events and properties.
@@ -54,19 +55,19 @@ module MyGame =
         // here we describe the content of the game, including all of its screens.
         override this.Content (model, _) =
             Content.game
-                [Game.DesiredScreen <==
+                [Game.DesiredScreen <--
                     match model with
                     | Splash -> Desire Simulants.Splash.Screen
                     | Title -> Desire Simulants.Title.Screen
                     | Credits -> Desire Simulants.Credits.Screen
                     | Gameplay gameplay -> match gameplay with | Playing -> Desire Simulants.Gameplay.Screen | Quitting | Quit -> Desire Simulants.Title.Screen
-                 Game.Model.ChangeEvent ==> cmd ModelChanged
-                 Simulants.Splash.Screen.DeselectingEvent ==> msg ShowTitle
-                 Simulants.Title.Gui.Credits.ClickEvent ==> msg ShowCredits
-                 Simulants.Title.Gui.Play.ClickEvent ==> msg ShowGameplay
-                 Simulants.Title.Gui.Exit.ClickEvent ==> cmd Exit
-                 Simulants.Credits.Gui.Back.ClickEvent ==> msg ShowTitle
-                 Simulants.Gameplay.Screen.ChangeEvent Screen.Gameplay.Name ==|> fun event -> msg (GameplayChanged (event.Data.Value :?> Gameplay))]
+                 Game.Model.ChangeEvent --> cmd ModelChanged
+                 Simulants.Splash.Screen.DeselectingEvent --> msg ShowTitle
+                 Simulants.Title.Gui.Credits.ClickEvent --> msg ShowCredits
+                 Simulants.Title.Gui.Play.ClickEvent --> msg ShowGameplay
+                 Simulants.Title.Gui.Exit.ClickEvent --> cmd Exit
+                 Simulants.Credits.Gui.Back.ClickEvent --> msg ShowTitle
+                 Simulants.Gameplay.Screen.ChangeEvent Screen.Gameplay.Name --|> fun event -> msg (GameplayChanged (event.Data.Value :?> Gameplay))]
                 [Content.screen Simulants.Splash.Screen.Name (WorldTypes.Splash (Constants.Dissolve.Default, Constants.Splash.Default, None, Simulants.Title.Screen)) [] []
                  Content.screenWithGroupFromFile Simulants.Title.Screen.Name (Dissolve (Constants.Dissolve.Default, None)) "Assets/Gui/Title.nugroup" [] []
                  Content.screenWithGroupFromFile Simulants.Credits.Screen.Name (Dissolve (Constants.Dissolve.Default, None)) "Assets/Gui/Credits.nugroup" [] []

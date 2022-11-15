@@ -250,14 +250,14 @@ module WorldEntityModule =
             Cached.Order <- lensReadOnly (nameof Cached.Order) Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.Id <- lensReadOnly (nameof Cached.Id) Unchecked.defaultof<_> Unchecked.defaultof<_>
 
-        member this.RegisterEvent = Events.Register --> this
-        member this.UnregisteringEvent = Events.Unregistering --> this
-        member this.ChangeEvent propertyName = Events.Change propertyName --> this
-        member this.UpdateEvent = Events.Update --> this
+        member this.RegisterEvent = Events.Register ==> this
+        member this.UnregisteringEvent = Events.Unregistering ==> this
+        member this.ChangeEvent propertyName = Events.Change propertyName ==> this
+        member this.UpdateEvent = Events.Update ==> this
 #if !DISABLE_ENTITY_POST_UPDATE
-        member this.PostUpdateEvent = Events.PostUpdate --> this
+        member this.PostUpdateEvent = Events.PostUpdate ==> this
 #endif
-        member this.RenderEvent = Events.Render --> this
+        member this.RenderEvent = Events.Render ==> this
 
         /// The state of an entity.
         /// The only place this accessor should be used is in performance-sensitive code.
@@ -493,7 +493,7 @@ module WorldEntityModule =
         member this.Is<'a> world = this.Is (typeof<'a>, world)
 
         /// Get an entity's change event address.
-        member this.GetChangeEvent propertyName = Events.Change propertyName --> this.EntityAddress
+        member this.GetChangeEvent propertyName = Events.Change propertyName ==> this.EntityAddress
 
         /// Try to signal an entity's facet.
         member this.TrySignalFacet (signalObj : obj) facetName world = (this.GetDispatcher world).TrySignalFacet (signalObj, facetName, this, world)

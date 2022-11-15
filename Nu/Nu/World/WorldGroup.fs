@@ -35,12 +35,12 @@ module WorldGroupModule =
         member this.GetId world = World.getGroupId this world
         member this.Id = lensReadOnly (nameof this.Id) this this.GetId
 
-        member this.RegisterEvent = Events.Register --> this
-        member this.UnregisteringEvent = Events.Unregistering --> this
-        member this.ChangeEvent propertyName = Events.Change propertyName --> this
-        member this.UpdateEvent = Events.Update --> this
-        member this.PostUpdateEvent = Events.PostUpdate --> this
-        member this.RenderEvent = Events.Render --> this
+        member this.RegisterEvent = Events.Register ==> this
+        member this.UnregisteringEvent = Events.Unregistering ==> this
+        member this.ChangeEvent propertyName = Events.Change propertyName ==> this
+        member this.UpdateEvent = Events.Update ==> this
+        member this.PostUpdateEvent = Events.PostUpdate ==> this
+        member this.RenderEvent = Events.Render ==> this
 
         /// Try to get a property value and type.
         member this.TryGetProperty propertyName world =
@@ -101,7 +101,7 @@ module WorldGroupModule =
         member this.Is<'a> world = this.Is (typeof<'a>, world)
 
         /// Get a group's change event address.
-        member this.GetChangeEvent propertyName = Events.Change propertyName --> this.GroupAddress
+        member this.GetChangeEvent propertyName = Events.Change propertyName ==> this.GroupAddress
 
         /// Try to signal a group.
         member this.TrySignal signal world = (this.GetDispatcher world).TrySignal (signal, this, world)
@@ -116,7 +116,7 @@ module WorldGroupModule =
 
             // publish update event
             let eventTrace = EventTrace.debug "World" "updateGroup" "" EventTrace.empty
-            World.publishPlus () (Events.Update --> group) eventTrace Simulants.Game false false world
+            World.publishPlus () (Events.Update ==> group) eventTrace Simulants.Game false false world
 
         static member internal postUpdateGroup (group : Group) world =
 
@@ -126,7 +126,7 @@ module WorldGroupModule =
 
             // publish post-update event
             let eventTrace = EventTrace.debug "World" "postUpdateGroup" "" EventTrace.empty
-            World.publishPlus () (Events.PostUpdate --> group) eventTrace Simulants.Game false false world
+            World.publishPlus () (Events.PostUpdate ==> group) eventTrace Simulants.Game false false world
 
         static member internal renderGroup (group : Group) world =
 
@@ -136,7 +136,7 @@ module WorldGroupModule =
 
             // publish render event
             let eventTrace = EventTrace.debug "World" "renderGroup" "" EventTrace.empty
-            World.publishPlus () (Events.Render --> group) eventTrace Simulants.Game false false world
+            World.publishPlus () (Events.Render ==> group) eventTrace Simulants.Game false false world
 
         /// Get all the groups in a screen.
         [<FunctionBinding>]
@@ -159,7 +159,7 @@ module WorldGroupModule =
                 | None -> failwith ("Could not find a GroupDispatcher named '" + dispatcherName + "'.")
             let groupState = GroupState.make nameOpt dispatcher
             let groupState = Reflection.attachProperties GroupState.copy groupState.Dispatcher groupState world
-            let group = Group (screen.ScreenAddress <-- ntoa<Group> groupState.Name)
+            let group = Group (screen.ScreenAddress <== ntoa<Group> groupState.Name)
             let world =
                 if World.getGroupExists group world then
                     if group.GetDestroying world
@@ -282,7 +282,7 @@ module WorldGroupModule =
                 | None -> groupState
 
             // add the group's state to the world
-            let group = Group (screen.ScreenAddress <-- ntoa<Group> groupState.Name)
+            let group = Group (screen.ScreenAddress <== ntoa<Group> groupState.Name)
             let world = World.addGroup true groupState group world
 
             // read the group's entities

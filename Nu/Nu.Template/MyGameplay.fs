@@ -2,6 +2,7 @@
 open System.Numerics
 open Prime
 open Nu
+open Nu.Declarative
 
 [<AutoOpen>]
 module MyGameplay =
@@ -28,7 +29,7 @@ module MyGameplay =
     type Screen with
         member this.GetGameplay world = this.GetModelGeneric<Gameplay> world
         member this.SetGameplay value world = this.SetModelGeneric<Gameplay> value world
-        static member Gameplay = Screen.ModelGeneric<Gameplay> ()
+        member this.Gameplay = this.ModelGeneric<Gameplay> ()
 
     // this is the screen dispatcher that defines the screen where gameplay takes place
     type MyGameplayDispatcher () =
@@ -76,26 +77,26 @@ module MyGameplay =
 
             // the gameplay screen
             Content.screen Simulants.Gameplay.Screen.Name Vanilla
-                [Screen.UpdateEvent ==> cmd Update
-                 Screen.PostUpdateEvent ==> cmd PostUpdateEye
-                 Screen.DeselectingEvent ==> msg FinishQuitting
-                 Game.KeyboardKeyDownEvent ==|> fun evt -> if evt.Data.KeyboardKey = KeyboardKey.Up && not evt.Data.Repeated then cmd Jump else cmd Nop
-                 Simulants.Gameplay.Gui.Quit.ClickEvent ==> msg StartQutting]
+                [Screen.UpdateEvent --> cmd Update
+                 Screen.PostUpdateEvent --> cmd PostUpdateEye
+                 Screen.DeselectingEvent --> msg FinishQuitting
+                 Game.KeyboardKeyDownEvent --|> fun evt -> if evt.Data.KeyboardKey = KeyboardKey.Up && not evt.Data.Repeated then cmd Jump else cmd Nop
+                 Simulants.Gameplay.Gui.Quit.ClickEvent --> msg StartQutting]
 
                 [// the gui group
                  yield Content.group Simulants.Gameplay.Gui.Group.Name []
                      [Content.button Simulants.Gameplay.Gui.Quit.Name
-                         [Entity.Text <== "Quit"
-                          Entity.Position <== v3 260.0f -260.0f 0.0f
-                          Entity.Elevation <== 10.0f
-                          Entity.ClickEvent ==> msg Quit]]
+                         [Entity.Text <-- "Quit"
+                          Entity.Position <-- v3 260.0f -260.0f 0.0f
+                          Entity.Elevation <-- 10.0f
+                          Entity.ClickEvent --> msg Quit]]
 
                  // the player and scene groups while playing
                  match gameplay with
                  | Playing | Quitting ->
                     yield Content.group Simulants.Gameplay.Player.Group.Name []
                         [Content.sideViewCharacter Simulants.Gameplay.Player.Character.Name
-                            [Entity.Position <== v3 0.0f 0.0f 0.0f
-                             Entity.Size <== v3 108.0f 108.0f 0.0f]]
+                            [Entity.Position <-- v3 0.0f 0.0f 0.0f
+                             Entity.Size <-- v3 108.0f 108.0f 0.0f]]
                     yield Content.groupFromFile Simulants.Gameplay.Scene.Group.Name "Assets/Gameplay/Scene.nugroup" [] []
                  | Quit -> ()]

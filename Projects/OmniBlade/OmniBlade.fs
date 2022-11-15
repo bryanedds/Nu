@@ -56,7 +56,7 @@ module OmniBlade =
         override this.Initializers (omni, game) =
             [game.Field <=> Simulants.Field.Screen.Field
              game.Battle <=> Simulants.Battle.Screen.Battle
-             game.DesiredScreen <== omni --> fun omni ->
+             game.DesiredScreen <-- omni ==> fun omni ->
                 match omni with
                 | Gui gui ->
                     match gui with

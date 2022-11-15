@@ -11,9 +11,9 @@ open Prime
 module Content =
 
     let
-//#if !DEBUG
+#if !DEBUG
         inline
-//#endif
+#endif
         private synchronizeEventSignals (contentOld : SimulantContent) (content : SimulantContent) (origin : Simulant) (simulant : Simulant) world =
         if notNull contentOld.EventSignalContentsOpt || notNull content.EventSignalContentsOpt then
             let eventSignalContentsOld = if isNull contentOld.EventSignalContentsOpt then OrderedDictionary HashIdentity.Structural else contentOld.EventSignalContentsOpt
@@ -33,7 +33,7 @@ module Content =
                         world eventSignalsRemoved
                 let world =
                     Seq.fold (fun world ((eventAddress : obj Address, signalObj), subscriptionId) ->
-                        let eventAddress = if eventAddress.Anonymous then eventAddress --> simulant.SimulantAddress else eventAddress
+                        let eventAddress = if eventAddress.Anonymous then eventAddress ==> simulant.SimulantAddress else eventAddress
                         let (unsubscribe, world) =
                             World.subscribePlus subscriptionId (fun (_ : Event) world ->
                                 let world = WorldModule.trySignal signalObj origin world
@@ -42,7 +42,7 @@ module Content =
                         let world =
                             World.monitor
                                 (fun _ world -> (Cascade, unsubscribe world))
-                                (Events.Unregistering --> simulant.SimulantAddress)
+                                (Events.Unregistering ==> simulant.SimulantAddress)
                                 simulant
                                 world
                         world)
@@ -52,9 +52,9 @@ module Content =
         else world
 
     let
-//#if !DEBUG
+#if !DEBUG
         inline
-//#endif
+#endif
         private synchronizeEventHandlers (contentOld : SimulantContent) (content : SimulantContent) (origin : Simulant) (simulant : Simulant) world =
         if notNull contentOld.EventHandlerContentsOpt || notNull content.EventHandlerContentsOpt then
             let eventHandlerContentsOld = if isNull contentOld.EventHandlerContentsOpt then OrderedDictionary HashIdentity.Structural else contentOld.EventHandlerContentsOpt
@@ -74,7 +74,7 @@ module Content =
                         world eventHandlersRemoved
                 let world =
                     Seq.fold (fun world ((_, eventAddress : obj Address), (subscriptionId, handler)) ->
-                        let eventAddress = if eventAddress.Anonymous then eventAddress --> simulant.SimulantAddress else eventAddress
+                        let eventAddress = if eventAddress.Anonymous then eventAddress ==> simulant.SimulantAddress else eventAddress
                         let (unsubscribe, world) =
                             World.subscribePlus subscriptionId (fun event world ->
                                 let world = WorldModule.trySignal (handler event) origin world
@@ -83,7 +83,7 @@ module Content =
                         let world =
                             World.monitor
                                 (fun _ world -> (Cascade, unsubscribe world))
-                                (Events.Unregistering --> simulant.SimulantAddress)
+                                (Events.Unregistering ==> simulant.SimulantAddress)
                                 simulant
                                 world
                         world)
@@ -93,9 +93,9 @@ module Content =
         else world
 
     let
-//#if !DEBUG
+#if !DEBUG
         inline
-//#endif
+#endif
         private synchronizeProperties (contentOld : SimulantContent) (content : SimulantContent) (simulant : Simulant) world =
         if notNull content.PropertyContentsOpt && content.PropertyContentsOpt.Count > 0 then
             let simulant = if notNull (contentOld.SimulantCachedOpt :> obj) then contentOld.SimulantCachedOpt else simulant
@@ -110,9 +110,9 @@ module Content =
         else world
 
     let
-//#if !DEBUG
+#if !DEBUG
         inline
-//#endif
+#endif
         private synchronizeEntityPropertiesFast (contentOld : EntityContent) (content : EntityContent) (entity : Entity) world =
         if notNull content.PropertyContentsOpt && content.PropertyContentsOpt.Count > 0 then
             let entity = if notNull (contentOld.EntityCachedOpt :> obj) then contentOld.EntityCachedOpt else entity
@@ -124,15 +124,14 @@ module Content =
                 let lens = propertyContent.PropertyLens
                 let entity = match lens.This :> obj with null -> entity | _ -> lens.This :?> Entity
                 world <- World.setEntityPropertyFast lens.Name { PropertyType = lens.Type; PropertyValue = propertyContent.PropertyValue } entity world
-                propertyContents.[i] <- Unchecked.defaultof<_> // OPTIMIZATION: blank out property content to avoid GC promotion.
             content.PropertyContentsOpt <- null // OPTIMIZATION: blank out property contents to avoid GC promotion.
             world
         else world
 
     let
-//#if !DEBUG
+#if !DEBUG
         inline
-//#endif
+#endif
         private tryDifferentiateChildren<'child, 'childContent when 'child : equality and 'child :> Simulant and 'childContent :> SimulantContent>
         (contentOld : SimulantContent) (content : SimulantContent) (simulant : Simulant) =
         if notNull (contentOld.GetChildContentsOpt<'childContent> ()) || notNull (content.GetChildContentsOpt<'childContent> ()) then
@@ -466,13 +465,13 @@ module Content =
 module ContentOperators =
 
     /// Define an implicit property content.
-    let inline (<==) (lens : Lens<'a, 's, World>) (value : 'a) : ContentInitializer =
+    let inline (<--) (lens : Lens<'a, 's, World>) (value : 'a) : ContentInitializer =
         PropertyContent (PropertyContent.make lens value)
 
     /// Define a signal content.
-    let inline (==>) (eventAddress : 'a Address) (signal : Signal<'message, 'command>) : ContentInitializer =
+    let inline (-->) (eventAddress : 'a Address) (signal : Signal<'message, 'command>) : ContentInitializer =
         EventSignalContent (Address.generalize eventAddress, signal)
 
     /// Define a signal handler content.
-    let inline (==|>) (eventAddress : 'a Address) (callback : Event<'a, 's> -> Signal<'message, 'command>) : ContentInitializer =
+    let inline (--|>) (eventAddress : 'a Address) (callback : Event<'a, 's> -> Signal<'message, 'command>) : ContentInitializer =
         EventHandlerContent (PartialEquatable.make (Address.generalize eventAddress) (fun (evt : Event) -> callback (Event.specialize evt) :> obj))

@@ -102,7 +102,7 @@ module FieldDispatcher =
                 [Content.skyBox Gen.name
                     [Entity.CubeMap == Assets.Default.SkyBoxMap]
                  Content.entitiesPlus field Field.sieveOccupants Field.unfoldOccupants $ fun index occupant ->
-                    Content.entity<CharacterDispatcher> (string index) [Entity.Position <== occupant --> fun (vertices, _) -> vertices.Center]]]
+                    Content.entity<CharacterDispatcher> (string index) [Entity.Position <-- occupant ==> fun (vertices, _) -> vertices.Center]]]
 
         override this.View (field, _, world) =
             let fieldMetadata = Field.getFieldMetadata field
