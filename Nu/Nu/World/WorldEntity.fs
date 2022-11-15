@@ -14,9 +14,55 @@ module WorldEntityModule =
 
     [<RequireQualifiedAccess>]
     module private Cached =
+        let mutable Dispatcher = Unchecked.defaultof<Lens<EntityDispatcher, Entity, World>>
+        let mutable Ecs = Unchecked.defaultof<Lens<Ecs.Ecs, Entity, World>>
+        let mutable Facets = Unchecked.defaultof<Lens<Facet array, Entity, World>>
+        let mutable Transform = Unchecked.defaultof<Lens<Transform, Entity, World>>
+        let mutable PerimeterUnscaled = Unchecked.defaultof<Lens<Box3, Entity, World>>
+        let mutable Perimeter = Unchecked.defaultof<Lens<Box3, Entity, World>>
+        let mutable Center = Unchecked.defaultof<Lens<Vector3, Entity, World>>
+        let mutable Bottom = Unchecked.defaultof<Lens<Vector3, Entity, World>>
+        let mutable PerimeterOriented = Unchecked.defaultof<Lens<Box3, Entity, World>>
+        let mutable Bounds = Unchecked.defaultof<Lens<Box3, Entity, World>>
         let mutable Position = Unchecked.defaultof<Lens<Vector3, Entity, World>>
+        let mutable PositionLocal = Unchecked.defaultof<Lens<Vector3, Entity, World>>
+        let mutable Rotation = Unchecked.defaultof<Lens<Quaternion, Entity, World>>
+        let mutable RotationLocal = Unchecked.defaultof<Lens<Quaternion, Entity, World>>
         let mutable Scale = Unchecked.defaultof<Lens<Vector3, Entity, World>>
+        let mutable ScaleLocal = Unchecked.defaultof<Lens<Vector3, Entity, World>>
+        let mutable Offset = Unchecked.defaultof<Lens<Vector, Entity, World>>
+        let mutable Angles = Unchecked.defaultof<Lens<Vector3, Entity, World>>
+        let mutable AnglesLocal = Unchecked.defaultof<Lens<Vector3, Entity, World>>
+        let mutable Degrees = Unchecked.defaultof<Lens<Vector3, Entity, World>>
+        let mutable DegreesLocal = Unchecked.defaultof<Lens<Vector3, Entity, World>>
+        let mutable Size = Unchecked.defaultof<Lens<Vector3, Entity, World>>
+        let mutable Elevation = Unchecked.defaultof<Lens<single, Entity, World>>
+        let mutable ElevationLocal = Unchecked.defaultof<Lens<single, Entity, World>>
+        let mutable Overflow = Unchecked.defaultof<Lens<single, Entity, World>>
+        let mutable AffineMatrix = Unchecked.defaultof<Lens<Matrix4x4, Entity, World>>
+        let mutable AffineMatrixLocal = Unchecked.defaultof<Lens<Matrix4x4, Entity, World>>
         let mutable Presence = Unchecked.defaultof<Lens<Presence, Entity, World>>
+        let mutable Absolute = Unchecked.defaultof<Lens<bool, Entity, World>>
+        let mutable Imperative = Unchecked.defaultof<Lens<bool, Entity, World>>
+        let mutable MountOpt = Unchecked.defaultof<Lens<Entity Relation option, Entity, World>>
+        let mutable Enabled = Unchecked.defaultof<Lens<bool, Entity, World>>
+        let mutable EnabledLocal = Unchecked.defaultof<Lens<bool, Entity, World>>
+        let mutable Visible = Unchecked.defaultof<Lens<bool, Entity, World>>
+        let mutable VisibleLocal = Unchecked.defaultof<Lens<bool, Entity, World>>
+        let mutable AlwaysUpdate = Unchecked.defaultof<Lens<bool, Entity, World>>
+        let mutable Persistent = Unchecked.defaultof<Lens<bool, Entity, World>>
+        let mutable Is2d = Unchecked.defaultof<Lens<bool, Entity, World>>
+        let mutable Centered = Unchecked.defaultof<Lens<bool, Entity, World>>
+        let mutable Static = Unchecked.defaultof<Lens<bool, Entity, World>>
+        let mutable Light = Unchecked.defaultof<Lens<bool, Entity, World>>
+        let mutable Physical = Unchecked.defaultof<Lens<bool, Entity, World>>
+        let mutable Optimized = Unchecked.defaultof<Lens<bool, Entity, World>>
+        let mutable Destroying = Unchecked.defaultof<Lens<bool, Entity, World>>
+        let mutable ScriptFrame = Unchecked.defaultof<Lens<Scripting.DeclarationFrame, Entity, World>>
+        let mutable OverlayNameOpt = Unchecked.defaultof<Lens<string option, Entity, World>>
+        let mutable FacetNames = Unchecked.defaultof<Lens<string Set, Entity, World>>
+        let mutable Order = Unchecked.defaultof<Lens<int64, Entity, World>>
+        let mutable Id = Unchecked.defaultof<Lens<uint64, Entity, World>>
 
     type Entity with
         member this.GetDispatcher world = World.getEntityDispatcher this world
@@ -102,12 +148,12 @@ module WorldEntityModule =
         member this.GetAbsolute world = World.getEntityAbsolute this world
         member this.SetAbsolute value world = World.setEntityAbsolute value this world |> snd'
         member this.Absolute = lens (nameof this.Absolute) this this.GetAbsolute this.SetAbsolute
-        member this.GetMountOpt world = World.getEntityMountOpt this world
-        member this.SetMountOpt value world = World.setEntityMountOpt value this world |> snd'
-        member this.MountOpt = lens (nameof this.MountOpt) this this.GetMountOpt this.SetMountOpt
         member this.GetImperative world = World.getEntityImperative this world
         member this.SetImperative value world = World.setEntityImperative value this world |> snd'
         member this.Imperative = lens (nameof this.Imperative) this this.GetImperative this.SetImperative
+        member this.GetMountOpt world = World.getEntityMountOpt this world
+        member this.SetMountOpt value world = World.setEntityMountOpt value this world |> snd'
+        member this.MountOpt = lens (nameof this.MountOpt) this this.GetMountOpt this.SetMountOpt
         member this.GetEnabled world = World.getEntityEnabled this world
         member this.SetEnabled value world = World.setEntityEnabled value this world |> snd'
         member this.Enabled = lens (nameof this.Enabled) this this.GetEnabled this.SetEnabled
@@ -154,9 +200,55 @@ module WorldEntityModule =
         member this.GetId world = World.getEntityId this world
         member this.Id = lensReadOnly (nameof this.Id) this this.GetId
         static member internal init () =
+            Cached.Dispatcher <- lensReadOnly (nameof Cached.Dispatcher) Unchecked.defaultof<_> Unchecked.defaultof<_>
+            Cached.Ecs <- lensReadOnly (nameof Cached.Ecs) Unchecked.defaultof<_> Unchecked.defaultof<_>
+            Cached.Facets <- lensReadOnly (nameof Cached.Facets) Unchecked.defaultof<_> Unchecked.defaultof<_>
+            Cached.Transform <- lens (nameof Cached.Transform) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
+            Cached.PerimeterUnscaled <- lens (nameof Cached.PerimeterUnscaled) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
+            Cached.Perimeter <- lens (nameof Cached.Perimeter) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
+            Cached.Center <- lens (nameof Cached.Center) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
+            Cached.Bottom <- lens (nameof Cached.Bottom) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
+            Cached.PerimeterOriented <- lensReadOnly (nameof Cached.PerimeterOriented) Unchecked.defaultof<_> Unchecked.defaultof<_>
+            Cached.Bounds <- lensReadOnly (nameof Cached.Bounds) Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.Position <- lens (nameof Cached.Position) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
+            Cached.PositionLocal <- lens (nameof Cached.PositionLocal) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
+            Cached.Rotation <- lens (nameof Cached.Rotation) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
+            Cached.RotationLocal <- lens (nameof Cached.RotationLocal) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.Scale <- lens (nameof Cached.Scale) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
+            Cached.ScaleLocal <- lens (nameof Cached.ScaleLocal) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
+            Cached.Offset <- lens (nameof Cached.Offset) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
+            Cached.Angles <- lens (nameof Cached.Angles) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
+            Cached.AnglesLocal <- lens (nameof Cached.AnglesLocal) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
+            Cached.Degrees <- lens (nameof Cached.Degrees) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
+            Cached.DegreesLocal <- lens (nameof Cached.DegreesLocal) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
+            Cached.Size <- lens (nameof Cached.Size) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
+            Cached.Elevation <- lens (nameof Cached.Elevation) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
+            Cached.ElevationLocal <- lens (nameof Cached.ElevationLocal) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
+            Cached.Overflow <- lens (nameof Cached.Overflow) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
+            Cached.AffineMatrix <- lensReadOnly (nameof Cached.AffineMatrix) Unchecked.defaultof<_> Unchecked.defaultof<_>
+            Cached.AffineMatrixLocal <- lensReadOnly (nameof Cached.AffineMatrixLocal) Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.Presence <- lens (nameof Cached.Presence) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
+            Cached.Absolute <- lens (nameof Cached.Absolute) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
+            Cached.Imperative <- lens (nameof Cached.Imperative) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
+            Cached.MountOpt <- lens (nameof Cached.MountOpt) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
+            Cached.Enabled <- lens (nameof Cached.Enabled) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
+            Cached.EnabledLocal <- lens (nameof Cached.EnabledLocal) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
+            Cached.Visible <- lens (nameof Cached.Visible) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
+            Cached.VisibleLocal <- lens (nameof Cached.VisibleLocal) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
+            Cached.AlwaysUpdate <- lens (nameof Cached.AlwaysUpdate) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
+            Cached.Persistent <- lens (nameof Cached.Persistent) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
+            Cached.Is2d <- lensReadOnly (nameof Cached.Is2d) Unchecked.defaultof<_> Unchecked.defaultof<_>
+            Cached.Centered <- lens (nameof Cached.Centered) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
+            Cached.Static <- lens (nameof Cached.Static) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
+            Cached.Light <- lens (nameof Cached.Light) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
+            Cached.Physical <- lensReadOnly (nameof Cached.Physical) Unchecked.defaultof<_> Unchecked.defaultof<_>
+            Cached.Optimized <- lensReadOnly (nameof Cached.Optimized) Unchecked.defaultof<_> Unchecked.defaultof<_>
+            Cached.Destroying <- lensReadOnly (nameof Cached.Destroying) Unchecked.defaultof<_> Unchecked.defaultof<_>
+            Cached.ScriptFrame <- lensReadOnly (nameof Cached.ScriptFrame) Unchecked.defaultof<_> Unchecked.defaultof<_>
+            Cached.OverlayNameOpt <- lensReadOnly (nameof Cached.OverlayNameOpt) Unchecked.defaultof<_> Unchecked.defaultof<_>
+            Cached.FacetNames <- lensReadOnly (nameof Cached.FacetNames) Unchecked.defaultof<_> Unchecked.defaultof<_>
+            Cached.Order <- lensReadOnly (nameof Cached.Order) Unchecked.defaultof<_> Unchecked.defaultof<_>
+            Cached.Id <- lensReadOnly (nameof Cached.Id) Unchecked.defaultof<_> Unchecked.defaultof<_>
 
         member this.RegisterEvent = Events.Register --> this
         member this.UnregisteringEvent = Events.Unregistering --> this
