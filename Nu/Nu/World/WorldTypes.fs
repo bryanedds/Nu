@@ -877,6 +877,7 @@ module WorldTypes =
 
         /// Concatenate an address with a game's address, forcing the type of first address.
         static member (-->) (address : 'a Address, _ : Game) =
+            // NOTE: nothing to do since game address is always [||].
             address
 
         override this.ToString () =
@@ -935,6 +936,7 @@ module WorldTypes =
 
         /// Concatenate an address with a screen's address, forcing the type of first address.
         static member (-->) (address : 'a Address, screen : Screen) =
+            // HACK: anonymizes address when entity is null due to internal engine trickery.
             if isNull (screen :> obj) then Address.anonymize address else acatff address screen.ScreenAddress
 
         override this.ToString () =
@@ -1004,6 +1006,7 @@ module WorldTypes =
 
         /// Concatenate an address with a group's address, forcing the type of first address.
         static member (-->) (address : 'a Address, group : Group) =
+            // HACK: anonymizes address when entity is null due to internal engine trickery.
             if isNull (group :> obj) then Address.anonymize address else acatff address group.GroupAddress
 
         override this.ToString () =
@@ -1113,6 +1116,7 @@ module WorldTypes =
 
         /// Concatenate an address with an entity, forcing the type of first address.
         static member (-->) (address : 'a Address, entity : Entity) =
+            // HACK: anonymizes address when entity is null due to internal engine trickery.
             if isNull (entity :> obj) then Address.anonymize address else acatff address entity.EntityAddress
 
         override this.ToString () =
