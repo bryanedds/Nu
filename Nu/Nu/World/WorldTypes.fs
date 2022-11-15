@@ -373,12 +373,10 @@ module WorldTypes =
 
     // TODO: P1: expose in Nu namespace along with related types.
     and [<NoEquality; NoComparison>] PropertyContent =
-        { PropertySimulantOpt : Simulant option
-          PropertyLens : World Lens
+        { PropertyLens : World Lens
           PropertyValue : obj }
-        static member inline make simulantOpt lens value =
-            { PropertySimulantOpt = simulantOpt
-              PropertyLens = lens
+        static member inline make lens value =
+            { PropertyLens = lens
               PropertyValue = value }
 
     and [<NoEquality; NoComparison>] ContentInitializer =

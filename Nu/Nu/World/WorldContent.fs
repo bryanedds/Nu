@@ -11,9 +11,9 @@ open Prime
 module Content =
 
     let
-#if !DEBUG
+//#if !DEBUG
         inline
-#endif
+//#endif
         private synchronizeEventSignals (contentOld : SimulantContent) (content : SimulantContent) (origin : Simulant) (simulant : Simulant) world =
         if notNull contentOld.EventSignalContentsOpt || notNull content.EventSignalContentsOpt then
             let eventSignalContentsOld = if isNull contentOld.EventSignalContentsOpt then OrderedDictionary HashIdentity.Structural else contentOld.EventSignalContentsOpt
@@ -52,9 +52,9 @@ module Content =
         else world
 
     let
-#if !DEBUG
+//#if !DEBUG
         inline
-#endif
+//#endif
         private synchronizeEventHandlers (contentOld : SimulantContent) (content : SimulantContent) (origin : Simulant) (simulant : Simulant) world =
         if notNull contentOld.EventHandlerContentsOpt || notNull content.EventHandlerContentsOpt then
             let eventHandlerContentsOld = if isNull contentOld.EventHandlerContentsOpt then OrderedDictionary HashIdentity.Structural else contentOld.EventHandlerContentsOpt
@@ -93,9 +93,9 @@ module Content =
         else world
 
     let
-#if !DEBUG
+//#if !DEBUG
         inline
-#endif
+//#endif
         private synchronizeProperties (contentOld : SimulantContent) (content : SimulantContent) (simulant : Simulant) world =
         if notNull content.PropertyContentsOpt && content.PropertyContentsOpt.Count > 0 then
             let simulant = if notNull (contentOld.SimulantCachedOpt :> obj) then contentOld.SimulantCachedOpt else simulant
@@ -103,33 +103,36 @@ module Content =
             Seq.fold (fun world propertyContent ->
                 let world =
                     let lens = propertyContent.PropertyLens
-                    let simulant = match propertyContent.PropertySimulantOpt with Some simulant -> simulant | None -> simulant
+                    let simulant = match lens.This :> obj with null -> simulant | _ -> lens.This
                     World.setProperty lens.Name { PropertyType = lens.Type; PropertyValue = propertyContent.PropertyValue } simulant world |> snd'
                 world)
                 world content.PropertyContentsOpt
         else world
 
     let
-#if !DEBUG
+//#if !DEBUG
         inline
-#endif
+//#endif
         private synchronizeEntityPropertiesFast (contentOld : EntityContent) (content : EntityContent) (entity : Entity) world =
         if notNull content.PropertyContentsOpt && content.PropertyContentsOpt.Count > 0 then
             let entity = if notNull (contentOld.EntityCachedOpt :> obj) then contentOld.EntityCachedOpt else entity
             content.EntityCachedOpt <- entity
-            Seq.fold (fun world propertyContent ->
-                let world =
-                    let lens = propertyContent.PropertyLens
-                    let entity = match propertyContent.PropertySimulantOpt with Some simulant -> simulant :?> Entity | None -> entity
-                    World.setEntityPropertyFast lens.Name { PropertyType = lens.Type; PropertyValue = propertyContent.PropertyValue } entity world
-                world)
-                world content.PropertyContentsOpt
+            let mutable world = world // OPTIMIZATION: manual fold for speed.
+            let propertyContents = content.PropertyContentsOpt
+            for i in 0 .. dec propertyContents.Count do
+                let propertyContent = propertyContents.[i]
+                let lens = propertyContent.PropertyLens
+                let entity = match lens.This :> obj with null -> entity | _ -> lens.This :?> Entity
+                world <- World.setEntityPropertyFast lens.Name { PropertyType = lens.Type; PropertyValue = propertyContent.PropertyValue } entity world
+                propertyContents.[i] <- Unchecked.defaultof<_> // OPTIMIZATION: blank out property content to avoid GC promotion.
+            content.PropertyContentsOpt <- null // OPTIMIZATION: blank out property contents to avoid GC promotion.
+            world
         else world
 
     let
-#if !DEBUG
+//#if !DEBUG
         inline
-#endif
+//#endif
         private tryDifferentiateChildren<'child, 'childContent when 'child : equality and 'child :> Simulant and 'childContent :> SimulantContent>
         (contentOld : SimulantContent) (content : SimulantContent) (simulant : Simulant) =
         if notNull (contentOld.GetChildContentsOpt<'childContent> ()) || notNull (content.GetChildContentsOpt<'childContent> ()) then
@@ -464,7 +467,7 @@ module ContentOperators =
 
     /// Define an implicit property content.
     let inline (<==) (lens : Lens<'a, 's, World>) (value : 'a) : ContentInitializer =
-        PropertyContent (PropertyContent.make (if notNull (lens.This :> obj) then Some (lens.This :> Simulant) else None) lens value)
+        PropertyContent (PropertyContent.make lens value)
 
     /// Define a signal content.
     let inline (==>) (eventAddress : 'a Address) (signal : Signal<'message, 'command>) : ContentInitializer =
