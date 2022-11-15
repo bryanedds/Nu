@@ -13,8 +13,10 @@ open Nu
 module WorldEntityModule =
 
     [<RequireQualifiedAccess>]
-    module internal Cached =
-        let Lenses : World Lens array = Array.zeroCreate 100
+    module private Cached =
+        let mutable Position = Unchecked.defaultof<Lens<Vector3, Entity, World>>
+        let mutable Scale = Unchecked.defaultof<Lens<Vector3, Entity, World>>
+        let mutable Presence = Unchecked.defaultof<Lens<Presence, Entity, World>>
 
     type Entity with
         member this.GetDispatcher world = World.getEntityDispatcher this world
@@ -47,7 +49,7 @@ module WorldEntityModule =
         member this.Bounds = lensReadOnly (nameof this.Bounds) this this.GetBounds
         member this.GetPosition world = World.getEntityPosition this world
         member this.SetPosition value world = World.setEntityPosition value this world |> snd'
-        member this.Position = if notNull (this :> obj) then lens (nameof this.Position) this this.GetPosition this.SetPosition else Cached.Lenses.[0] :?> _
+        member this.Position = if notNull (this :> obj) then lens (nameof this.Position) this this.GetPosition this.SetPosition else Cached.Position
         member this.GetPositionLocal world = World.getEntityPositionLocal this world
         member this.SetPositionLocal value world = World.setEntityPositionLocal value this world |> snd'
         member this.PositionLocal = lens (nameof this.PositionLocal) this this.GetPositionLocal this.SetPositionLocal
@@ -59,7 +61,7 @@ module WorldEntityModule =
         member this.RotationLocal = lens (nameof this.RotationLocal) this this.GetRotationLocal this.SetRotationLocal
         member this.GetScale world = World.getEntityScale this world
         member this.SetScale value world = World.setEntityScale value this world |> snd'
-        member this.Scale = if notNull (this :> obj) then lens (nameof this.Scale) this this.GetScale this.SetScale else Cached.Lenses.[1] :?> _
+        member this.Scale = if notNull (this :> obj) then lens (nameof this.Scale) this this.GetScale this.SetScale else Cached.Scale
         member this.GetScaleLocal world = World.getEntityScaleLocal this world
         member this.SetScaleLocal value world = World.setEntityScaleLocal value this world |> snd'
         member this.ScaleLocal = lens (nameof this.ScaleLocal) this this.GetScaleLocal this.SetScaleLocal
@@ -96,7 +98,7 @@ module WorldEntityModule =
         member this.AffineMatrixLocal = lensReadOnly (nameof this.AffineMatrixLocal) this this.GetAffineMatrixLocal
         member this.GetPresence world = World.getEntityPresence this world
         member this.SetPresence value world = World.setEntityPresence value this world |> snd'
-        member this.Presence = if notNull (this :> obj) then lens (nameof this.Presence) this this.GetPresence this.SetPresence else Cached.Lenses.[2] :?> _
+        member this.Presence = if notNull (this :> obj) then lens (nameof this.Presence) this this.GetPresence this.SetPresence else Cached.Presence
         member this.GetAbsolute world = World.getEntityAbsolute this world
         member this.SetAbsolute value world = World.setEntityAbsolute value this world |> snd'
         member this.Absolute = lens (nameof this.Absolute) this this.GetAbsolute this.SetAbsolute
@@ -152,9 +154,9 @@ module WorldEntityModule =
         member this.GetId world = World.getEntityId this world
         member this.Id = lensReadOnly (nameof this.Id) this this.GetId
         static member internal init () =
-            Cached.Lenses.[0] <- lens<Vector3, Entity, World> (nameof Unchecked.defaultof<Entity>.Position) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
-            Cached.Lenses.[1] <- lens<Vector3, Entity, World> (nameof Unchecked.defaultof<Entity>.Scale) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
-            Cached.Lenses.[2] <- lens<Presence, Entity, World> (nameof Unchecked.defaultof<Entity>.Presence) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
+            Cached.Position <- lens (nameof Cached.Position) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
+            Cached.Scale <- lens (nameof Cached.Scale) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
+            Cached.Presence <- lens (nameof Cached.Presence) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
 
         member this.RegisterEvent = Events.Register --> this
         member this.UnregisteringEvent = Events.Unregistering --> this
