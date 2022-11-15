@@ -937,7 +937,7 @@ module WorldTypes =
 
         /// Concatenate an address with a screen's address, forcing the type of first address.
         static member (-->) (address : 'a Address, screen : Screen) =
-            acatff address screen.ScreenAddress
+            if isNull (screen :> obj) then Address.anonymize address else acatff address screen.ScreenAddress
 
         override this.ToString () =
             scstring this.ScreenAddress
@@ -1006,7 +1006,7 @@ module WorldTypes =
 
         /// Concatenate an address with a group's address, forcing the type of first address.
         static member (-->) (address : 'a Address, group : Group) =
-            acatff address group.GroupAddress
+            if isNull (group :> obj) then Address.anonymize address else acatff address group.GroupAddress
 
         override this.ToString () =
             scstring this.GroupAddress
@@ -1115,7 +1115,7 @@ module WorldTypes =
 
         /// Concatenate an address with an entity, forcing the type of first address.
         static member (-->) (address : 'a Address, entity : Entity) =
-            acatff address entity.EntityAddress
+            if isNull (entity :> obj) then Address.anonymize address else acatff address entity.EntityAddress
 
         override this.ToString () =
             scstring this.EntityAddress

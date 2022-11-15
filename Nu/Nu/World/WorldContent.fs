@@ -100,15 +100,11 @@ module Content =
         if notNull content.PropertyContentsOpt && content.PropertyContentsOpt.Count > 0 then
             let simulant = if notNull (contentOld.SimulantCachedOpt :> obj) then contentOld.SimulantCachedOpt else simulant
             content.SimulantCachedOpt <- simulant
-            Seq.fold (fun world propertContent ->
-                let lens = propertContent.PropertyLens
-                let simulant = match propertContent.PropertySimulantOpt with Some simulant -> simulant | None -> simulant
+            Seq.fold (fun world propertyContent ->
                 let world =
-#if LENS_SETTER_IS_FASTER
-                    propertContent.PropertyLens.TrySet propertContent.PropertyValue simulant world
-#else
-                    World.setProperty lens.Name { PropertyType = lens.Type; PropertyValue = propertContent.PropertyValue } simulant world |> snd'
-#endif
+                    let lens = propertyContent.PropertyLens
+                    let simulant = match propertyContent.PropertySimulantOpt with Some simulant -> simulant | None -> simulant
+                    World.setProperty lens.Name { PropertyType = lens.Type; PropertyValue = propertyContent.PropertyValue } simulant world |> snd'
                 world)
                 world content.PropertyContentsOpt
         else world
@@ -121,15 +117,11 @@ module Content =
         if notNull content.PropertyContentsOpt && content.PropertyContentsOpt.Count > 0 then
             let entity = if notNull (contentOld.EntityCachedOpt :> obj) then contentOld.EntityCachedOpt else entity
             content.EntityCachedOpt <- entity
-            Seq.fold (fun world propertContent ->
-                let lens = propertContent.PropertyLens
-                let entity = match propertContent.PropertySimulantOpt with Some simulant -> simulant :?> Entity | None -> entity
+            Seq.fold (fun world propertyContent ->
                 let world =
-#if LENS_SETTER_IS_FASTER
-                    propertContent.PropertyLens.TrySet propertContent.PropertyValue entity world
-#else
-                    World.setEntityPropertyFast lens.Name { PropertyType = lens.Type; PropertyValue = propertContent.PropertyValue } entity world
-#endif
+                    let lens = propertyContent.PropertyLens
+                    let entity = match propertyContent.PropertySimulantOpt with Some simulant -> simulant :?> Entity | None -> entity
+                    World.setEntityPropertyFast lens.Name { PropertyType = lens.Type; PropertyValue = propertyContent.PropertyValue } entity world
                 world)
                 world content.PropertyContentsOpt
         else world
@@ -472,11 +464,7 @@ module ContentOperators =
 
     /// Define an implicit property content.
     let inline (<==) (lens : Lens<'a, 's, World>) (value : 'a) : ContentInitializer =
-        PropertyContent (PropertyContent.make None lens value)
-
-    /// Define an explicit property content.
-    let inline (<|==) (simulant : #Simulant, lens : Lens<'a, 's, World>) (value : 'a) : ContentInitializer =
-        PropertyContent (PropertyContent.make (Some (simulant :> Simulant)) lens value)
+        PropertyContent (PropertyContent.make (if notNull (lens.This :> obj) then Some (lens.This :> Simulant) else None) lens value)
 
     /// Define a signal content.
     let inline (==>) (eventAddress : 'a Address) (signal : Signal<'message, 'command>) : ContentInitializer =

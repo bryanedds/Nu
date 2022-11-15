@@ -14,26 +14,26 @@ module WorldGroupModule =
     type Group with
     
         member this.GetDispatcher world = World.getGroupDispatcher this world
-        static member Dispatcher = lensReadOnly (nameof Group.Dispatcher) (fun (this : Group) -> this.GetDispatcher)
-        member this.GetModelGeneric<'model> world = World.getGroupModel<'model> this world
-        member this.SetModelGeneric<'model> value world = World.setGroupModel<'model> value this world |> snd'
-        static member ModelGeneric<'model> () = lens "Model" (fun (this : Group) -> this.GetModelGeneric<'model>) (fun value this -> this.SetModelGeneric<'model> value)
+        member this.Dispatcher = lensReadOnly (nameof this.Dispatcher) this this.GetDispatcher
+        member this.GetModelGeneric<'a> world = World.getGroupModel<'a> this world
+        member this.SetModelGeneric<'a> value world = World.setGroupModel<'a> value this world |> snd'
+        member this.ModelGeneric<'a> () = lens "Model" this this.GetModelGeneric<'a> this.SetModelGeneric<'a>
         member this.GetEcs world = World.getScreenEcs this.Screen world
-        static member Ecs = lensReadOnly (nameof Group.Ecs) (fun (this : Group) -> this.GetEcs)
+        member this.Ecs = lensReadOnly (nameof this.Ecs) this this.GetEcs
         member this.GetVisible world = World.getGroupVisible this world
         member this.SetVisible value world = World.setGroupVisible value this world |> snd'
-        static member Visible = lens (nameof Group.Visible) (fun (this : Group) -> this.GetVisible) (fun value this -> this.SetVisible value)
+        member this.Visible = lens (nameof this.Visible) this this.GetVisible this.SetVisible
         member this.GetPersistent world = World.getGroupPersistent this world
         member this.SetPersistent value world = World.setGroupPersistent value this world |> snd'
-        static member Persistent = lens (nameof Group.Persistent) (fun (this : Group) -> this.GetPersistent) (fun value this -> this.SetPersistent value)
+        member this.Persistent = lens (nameof this.Persistent) this this.GetPersistent this.SetPersistent
         member this.GetDestroying world = World.getGroupDestroying this world
-        static member Destroying = lensReadOnly (nameof Group.Destroying) (fun (this : Group) -> this.GetDestroying)
+        member this.Destroying = lensReadOnly (nameof this.Destroying) this this.GetDestroying
         member this.GetScriptFrame world = World.getGroupScriptFrame this world
-        static member ScriptFrame = lensReadOnly (nameof Group.ScriptFrame) (fun (this : Group) -> this.GetScriptFrame)
+        member this.ScriptFrame = lensReadOnly (nameof this.ScriptFrame) this this.GetScriptFrame
         member this.GetOrder world = World.getGroupOrder this world
-        static member Order = lensReadOnly (nameof Group.Order) (fun (this : Group) -> this.GetOrder)
+        member this.Order = lensReadOnly (nameof this.Order) this this.GetOrder
         member this.GetId world = World.getGroupId this world
-        static member Id = lensReadOnly (nameof Group.Id) (fun (this : Group) -> this.GetId)
+        member this.Id = lensReadOnly (nameof this.Id) this this.GetId
 
         member this.RegisterEvent = Events.Register --> this
         member this.UnregisteringEvent = Events.Unregistering --> this
@@ -186,7 +186,7 @@ module WorldGroupModule =
                 List.fold (fun world childDescriptor ->
                     let (entity, world) = World.createEntity4 DefaultOverlay childDescriptor group world
                     // quick size entity if a size was not specified by the descriptor properties
-                    if not (List.exists (fun (name, _) -> name = nameof Entity.Size) childDescriptor.SimulantProperties) then
+                    if not (List.exists (fun (name, _) -> name = nameof entity.Size) childDescriptor.SimulantProperties) then
                         let quickSize = entity.GetQuickSize world
                         entity.SetSize quickSize world
                     else world)
@@ -307,12 +307,3 @@ module WorldGroupModule =
             let groupDescriptorStr = File.ReadAllText filePath
             let groupDescriptor = scvalue<GroupDescriptor> groupDescriptorStr
             World.readGroup groupDescriptor nameOpt screen world
-
-    [<RequireQualifiedAccess>]
-    module Group =
-        let RegisterEvent = Address.anonymize Events.Register
-        let UnregisteringEvent = Address.anonymize Events.Unregistering
-        let ChangeEvent propertyName = Address.anonymize (Events.Change propertyName)
-        let UpdateEvent = Address.anonymize Events.Update
-        let PostUpdateEvent = Address.anonymize Events.PostUpdate
-        let RenderEvent = Address.anonymize Events.Render

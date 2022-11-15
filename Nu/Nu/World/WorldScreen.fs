@@ -14,38 +14,38 @@ module WorldScreenModule =
     type Screen with
     
         member this.GetDispatcher world = World.getScreenDispatcher this world
-        static member Dispatcher = lensReadOnly (nameof Screen.Dispatcher) (fun (this : Screen) -> this.GetDispatcher)
-        member this.GetModelGeneric<'model> world = World.getScreenModel<'model> this world
-        member this.SetModelGeneric<'model> value world = World.setScreenModel<'model> value this world |> snd'
-        static member ModelGeneric<'model> () = lens "Model" (fun (this : Screen) -> this.GetModelGeneric<'model>) (fun value this -> this.SetModelGeneric<'model> value)
+        member this.Dispatcher = lensReadOnly (nameof this.Dispatcher) this this.GetDispatcher
+        member this.GetModelGeneric<'a> world = World.getScreenModel<'a> this world
+        member this.SetModelGeneric<'a> value world = World.setScreenModel<'a> value this world |> snd'
+        member this.ModelGeneric<'a> () = lens "Model" this this.GetModelGeneric<'a> this.SetModelGeneric<'a>
         member this.GetEcs world = World.getScreenEcs this world
-        static member Ecs = lensReadOnly (nameof Screen.Ecs) (fun (this : Screen) -> this.GetEcs)
+        member this.Ecs = lensReadOnly (nameof this.Ecs) this this.GetEcs
         member this.GetTransitionState world = World.getScreenTransitionState this world
         member this.SetTransitionState value world = World.setScreenTransitionState value this world |> snd'
-        static member TransitionState = lens (nameof Screen.TransitionState) (fun (this : Screen) -> this.GetTransitionState) (fun value this -> this.SetTransitionState value)
+        member this.TransitionState = lens (nameof this.TransitionState) this this.GetTransitionState this.SetTransitionState
         member this.GetTransitionUpdates world = World.getScreenTransitionUpdates this world
         member this.SetTransitionUpdates value world = World.setScreenTransitionUpdates value this world |> snd'
-        static member TransitionUpdates = lens (nameof Screen.TransitionUpdates) (fun (this : Screen) -> this.GetTransitionUpdates) (fun value this -> this.SetTransitionUpdates value)
+        member this.TransitionUpdates = lens (nameof this.TransitionUpdates) this this.GetTransitionUpdates this.SetTransitionUpdates
         member this.GetIncoming world = World.getScreenIncoming this world
         member this.SetIncoming value world = World.setScreenIncoming value this world |> snd'
-        static member Incoming = lens (nameof Screen.Incoming) (fun (this : Screen) -> this.GetIncoming) (fun value this -> this.SetIncoming value)
+        member this.Incoming = lens (nameof this.Incoming) this this.GetIncoming this.SetIncoming
         member this.GetOutgoing world = World.getScreenOutgoing this world
         member this.SetOutgoing value world = World.setScreenOutgoing value this world |> snd'
-        static member Outgoing = lens (nameof Screen.Outgoing) (fun (this : Screen) -> this.GetOutgoing) (fun value this -> this.SetOutgoing value)
+        member this.Outgoing = lens (nameof this.Outgoing) this this.GetOutgoing this.SetOutgoing
         member this.GetSplashOpt world = World.getScreenSplashOpt this world
         member this.SetSplashOpt value world = World.setScreenSplashOpt value this world |> snd'
-        static member SplashOpt = lens (nameof Screen.SplashOpt) (fun (this : Screen) -> this.GetSplashOpt) (fun value this -> this.SetSplashOpt value)
+        member this.SplashOpt = lens (nameof this.SplashOpt) this this.GetSplashOpt this.SetSplashOpt
         member this.GetPersistent world = World.getScreenPersistent this world
         member this.SetPersistent value world = World.setScreenPersistent value this world |> snd'
-        static member Persistent = lens (nameof Screen.Persistent) (fun (this : Screen) -> this.GetPersistent) (fun value this -> this.SetPersistent value)
+        member this.Persistent = lens (nameof this.Persistent) this this.GetPersistent this.SetPersistent
         member this.GetDestroying world = World.getScreenDestroying this world
-        static member Destroying = lensReadOnly (nameof Screen.Destroying) (fun (this : Screen) -> this.GetDestroying)
+        member this.Destroying = lensReadOnly (nameof this.Destroying) this this.GetDestroying
         member this.GetScriptFrame world = World.getScreenScriptFrame this world
-        static member ScriptFrame = lensReadOnly (nameof Screen.ScriptFrame) (fun (this : Screen) -> this.GetScriptFrame)
+        member this.ScriptFrame = lensReadOnly (nameof this.ScriptFrame) this this.GetScriptFrame
         member this.GetOrder world = World.getScreenOrder this world
-        static member Order = lensReadOnly (nameof Screen.Order) (fun (this : Screen) -> this.GetOrder)
+        member this.Order = lensReadOnly (nameof this.Order) this this.GetOrder
         member this.GetId world = World.getScreenId this world
-        static member Id = lensReadOnly (nameof Screen.Id) (fun (this : Screen) -> this.GetId)
+        member this.Id = lensReadOnly (nameof this.Id) this this.GetId
 
         member this.RegisterEvent = Events.Register --> this
         member this.UnregisteringEvent = Events.Unregistering --> this
@@ -361,19 +361,3 @@ module WorldScreenModule =
                 setScreenSplash splashDescriptor destination screen world
             | OmniScreen ->
                 World.setOmniScreen screen world
-
-    [<RequireQualifiedAccess>]
-    module Screen =
-
-        let RegisterEvent = Address.anonymize Events.Register
-        let UnregisteringEvent = Address.anonymize Events.Unregistering
-        let ChangeEvent propertyName = Address.anonymize (Events.Change propertyName)
-        let UpdateEvent = Address.anonymize Events.Update
-        let PostUpdateEvent = Address.anonymize Events.PostUpdate
-        let RenderEvent = Address.anonymize Events.Render
-        let SelectEvent = Address.anonymize Events.Select
-        let DeselectingEvent = Address.anonymize Events.Deselecting
-        let IncomingStartEvent = Address.anonymize Events.IncomingStart
-        let IncomingFinishEvent = Address.anonymize Events.IncomingFinish
-        let OutgoingStartEvent = Address.anonymize Events.OutgoingStart
-        let OutgoingFinishEvent = Address.anonymize Events.OutgoingFinish
