@@ -22,7 +22,7 @@ module FieldDispatcher =
         | MenuItemsOpen
         | MenuItemsPageUp
         | MenuInventoryPageDown
-        | MenuItemSelect of Lens<int * (ItemType * int Option), World>
+        | MenuItemSelect of int * (ItemType * int Option)
         | MenuItemUse of int
         | MenuItemCancel
         | MenuTechOpen
@@ -35,7 +35,7 @@ module FieldDispatcher =
         | ShopSell
         | ShopPageUp
         | ShopPageDown
-        | ShopSelect of Lens<int * (ItemType * int Option), World>
+        | ShopSelect of int * (ItemType * int Option)
         | ShopConfirmAccept
         | ShopConfirmDecline
         | ShopLeave
@@ -648,13 +648,13 @@ module FieldDispatcher =
             Field.save field
             withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Gui.SlotSound)) field
 
-        override this.Channel (_, field) =
-            [Simulants.Field.Scene.Avatar.Avatar.ChangeEvent =|> fun evt -> msg (UpdateAvatar (evt.Data.Value :?> Avatar))
-             field.UpdateEvent => cmd ProcessKeyInput
-             field.UpdateEvent => msg Update
-             field.PostUpdateEvent => msg UpdateFieldTransition
-             field.PostUpdateEvent => cmd UpdateEye
-             field.SelectEvent => cmd PlayFieldSong]
+        override this.Initialize (_, _) =
+            [Simulants.Field.Scene.Avatar.Avatar.ChangeEvent --|> fun evt -> msg (UpdateAvatar (evt.Data.Value :?> Avatar))
+             Screen.UpdateEvent --> cmd ProcessKeyInput
+             Screen.UpdateEvent --> msg Update
+             Screen.PostUpdateEvent --> msg UpdateFieldTransition
+             Screen.PostUpdateEvent --> cmd UpdateEye
+             Screen.SelectEvent --> cmd PlayFieldSong]
 
         override this.Message (field, message, _, world) =
 
@@ -845,10 +845,8 @@ module FieldDispatcher =
                         field
                 just field
 
-            | MenuItemSelect selectionLens ->
-                let selection = Lens.get selectionLens world
-                let selection = (fst selection, fst (snd selection))
-                let field = Field.updateMenu (fun menu -> { menu with MenuUseOpt = MenuUse.tryMakeFromSelection selection }) field
+            | MenuItemSelect (index, (itemType, _)) ->
+                let field = Field.updateMenu (fun menu -> { menu with MenuUseOpt = MenuUse.tryMakeFromSelection (index, itemType) }) field
                 just field
 
             | MenuItemUse index ->
@@ -919,13 +917,11 @@ module FieldDispatcher =
                 let field = Field.updateShopOpt (Option.map (fun shop -> { shop with ShopPage = inc shop.ShopPage })) field
                 just field
 
-            | ShopSelect selectionLens ->
-                let selection = Lens.get selectionLens world
-                let selection = (fst selection, fst (snd selection))
+            | ShopSelect (index, (itemType, _)) ->
                 let field =
                     Field.updateShopOpt (Option.map (fun shop ->
                         let buying = match shop.ShopState with ShopBuying -> true | ShopSelling -> false
-                        let shopConfirmOpt = ShopConfirm.tryMakeFromSelection buying field.Inventory selection
+                        let shopConfirmOpt = ShopConfirm.tryMakeFromSelection buying field.Inventory (index, itemType)
                         { shop with ShopConfirmOpt = shopConfirmOpt }))
                         field
                 just field
@@ -1030,26 +1026,26 @@ module FieldDispatcher =
                 if not (Simulants.Field.Scene.Feeler.GetTouched world) then
                     let avatar = Simulants.Field.Scene.Avatar
                     let force = v3Zero
-                    let force = if KeyboardState.isKeyDown KeyboardKey.Right || KeyboardState.isKeyDown KeyboardKey.D then v3 Constants.Field.AvatarWalkForce 0.0f 0.0f + force else force
-                    let force = if KeyboardState.isKeyDown KeyboardKey.Left || KeyboardState.isKeyDown KeyboardKey.A  then v3 -Constants.Field.AvatarWalkForce 0.0f 0.0f + force else force
-                    let force = if KeyboardState.isKeyDown KeyboardKey.Up || KeyboardState.isKeyDown KeyboardKey.W then v3 0.0f Constants.Field.AvatarWalkForce 0.0f + force else force
-                    let force = if KeyboardState.isKeyDown KeyboardKey.Down || KeyboardState.isKeyDown KeyboardKey.S then v3 0.0f -Constants.Field.AvatarWalkForce 0.0f + force else force
+                    let force = if World.isKeyboardKeyDown KeyboardKey.Right world || World.isKeyboardKeyDown KeyboardKey.D world then v3 Constants.Field.AvatarWalkForce 0.0f 0.0f + force else force
+                    let force = if World.isKeyboardKeyDown KeyboardKey.Left world || World.isKeyboardKeyDown KeyboardKey.A world then v3 -Constants.Field.AvatarWalkForce 0.0f 0.0f + force else force
+                    let force = if World.isKeyboardKeyDown KeyboardKey.Up world || World.isKeyboardKeyDown KeyboardKey.W world then v3 0.0f Constants.Field.AvatarWalkForce 0.0f + force else force
+                    let force = if World.isKeyboardKeyDown KeyboardKey.Down world || World.isKeyboardKeyDown KeyboardKey.S world then v3 0.0f -Constants.Field.AvatarWalkForce 0.0f + force else force
                     let world = avatar.Signal<Avatar, AvatarMessage, AvatarCommand> (cmd (TryTravel force)) world
                     let signal =
-                        if KeyboardState.isKeyDown KeyboardKey.Right || KeyboardState.isKeyDown KeyboardKey.D then msg (TryFace Rightward)
-                        elif KeyboardState.isKeyDown KeyboardKey.Left || KeyboardState.isKeyDown KeyboardKey.A then msg (TryFace Leftward)
-                        elif KeyboardState.isKeyDown KeyboardKey.Up || KeyboardState.isKeyDown KeyboardKey.W then msg (TryFace Upward)
-                        elif KeyboardState.isKeyDown KeyboardKey.Down || KeyboardState.isKeyDown KeyboardKey.S then msg (TryFace Downward)
+                        if World.isKeyboardKeyDown KeyboardKey.Right world || World.isKeyboardKeyDown KeyboardKey.D world then msg (TryFace Rightward)
+                        elif World.isKeyboardKeyDown KeyboardKey.Left world || World.isKeyboardKeyDown KeyboardKey.A world then msg (TryFace Leftward)
+                        elif World.isKeyboardKeyDown KeyboardKey.Up world || World.isKeyboardKeyDown KeyboardKey.W world then msg (TryFace Upward)
+                        elif World.isKeyboardKeyDown KeyboardKey.Down world || World.isKeyboardKeyDown KeyboardKey.S world then msg (TryFace Downward)
                         else msg Nil
                     let world = avatar.Signal<Avatar, AvatarMessage, AvatarCommand> signal world
                     just world
                 else just world
 
             | ProcessTouchInput position ->
-                if  KeyboardState.isKeyUp KeyboardKey.Right && KeyboardState.isKeyUp KeyboardKey.D &&
-                    KeyboardState.isKeyUp KeyboardKey.Left && KeyboardState.isKeyUp KeyboardKey.A &&
-                    KeyboardState.isKeyUp KeyboardKey.Up && KeyboardState.isKeyUp KeyboardKey.W &&
-                    KeyboardState.isKeyUp KeyboardKey.Down && KeyboardState.isKeyUp KeyboardKey.S then
+                if  World.isKeyboardKeyUp KeyboardKey.Right world && World.isKeyboardKeyUp KeyboardKey.D world &&
+                    World.isKeyboardKeyUp KeyboardKey.Left world && World.isKeyboardKeyUp KeyboardKey.A world &&
+                    World.isKeyboardKeyUp KeyboardKey.Up world && World.isKeyboardKeyUp KeyboardKey.W world &&
+                    World.isKeyboardKeyUp KeyboardKey.Down world && World.isKeyboardKeyUp KeyboardKey.S world then
                     let avatar = Simulants.Field.Scene.Avatar
                     let lowerCenter = field.Avatar.LowerCenter
                     let viewport = World.getViewport world
@@ -1133,43 +1129,44 @@ module FieldDispatcher =
              Content.group Simulants.Field.Scene.Group.Name []
 
                 [// avatar
-                 Content.entity<AvatarDispatcher> Simulants.Field.Scene.Avatar.Name
-                    [Entity.Position == v3Zero; Entity.Elevation == Constants.Field.ForegroundElevation; Entity.Size == Constants.Gameplay.CharacterSize
-                     Entity.Enabled <-- field ==> fun field ->
-                        field.Menu.MenuState = MenuClosed &&
-                        Cue.notInterrupting field.Inventory field.Advents field.Cue &&
-                        Option.isNone field.DialogOpt &&
-                        Option.isNone field.ShopOpt &&
-                        Option.isNone field.FieldTransitionOpt
-                     Entity.LinearDamping == Constants.Field.LinearDamping
-                     Entity.Avatar <-- field ==> fun field -> field.Avatar]
+                 yield Content.entity<AvatarDispatcher> Simulants.Field.Scene.Avatar.Name
+                    [Entity.Position <-- v3Zero; Entity.Elevation <-- Constants.Field.ForegroundElevation; Entity.Size <-- Constants.Gameplay.CharacterSize
+                     Entity.Enabled <--
+                        (field.Menu.MenuState = MenuClosed &&
+                         Cue.notInterrupting field.Inventory field.Advents field.Cue &&
+                         Option.isNone field.DialogOpt &&
+                         Option.isNone field.ShopOpt &&
+                         Option.isNone field.FieldTransitionOpt)
+                     Entity.LinearDamping <-- Constants.Field.LinearDamping
+                     Entity.Avatar <-- field.Avatar]
 
                  // props
-                 Content.entities field
-                    (fun field -> field.Props)
-                    (fun _ prop -> Content.entity<PropDispatcher> Gen.name [Entity.Prop <-- prop])
+                 for (index, prop) in field.Props.Pairs do // TODO: DIFF: memoize?
+                 
+                    // prop
+                    yield Content.entity<PropDispatcher> (scstringm index) [Entity.Prop <-- prop]
 
                  // spirit orb
-                 Content.entityWhen field (fun field -> if Field.hasEncounters field && Cue.isNil field.Cue then Some field else None) $ fun field ->
-                    Content.entity<SpiritOrbDispatcher> "SpiritOrb"
-                        [Entity.Position == v3 -448.0f 48.0f 0.0f; Entity.Elevation == Constants.Field.SpiritOrbElevation; Entity.Size == v3 192.0f 192.0f 0.0f
-                         Entity.SpiritOrb <-- field ==> fun field -> { AvatarLowerCenter = field.Avatar.LowerCenter; Spirits = field.Spirits; Chests = Field.getChests field; Portals = Field.getNonWarpPortals field }]
+                 if Field.hasEncounters field && Cue.isNil field.Cue then
+                    yield Content.entity<SpiritOrbDispatcher> "SpiritOrb"
+                        [Entity.Position <-- v3 -448.0f 48.0f 0.0f; Entity.Elevation <-- Constants.Field.SpiritOrbElevation; Entity.Size <-- v3 192.0f 192.0f 0.0f
+                         Entity.SpiritOrb <-- { AvatarLowerCenter = field.Avatar.LowerCenter; Spirits = field.Spirits; Chests = Field.getChests field; Portals = Field.getNonWarpPortals field }]
 
                  // backdrop sprite
-                 Content.staticSprite Gen.name
-                    [Entity.Perimeter <-- field ==> (fun field -> field.ViewBoundsAbsolute.Box3); Entity.Elevation == Single.MinValue; Entity.Absolute == true
-                     Entity.StaticImage == Assets.Default.Image9
-                     Entity.Color <-- field ==> fun field ->
+                 yield Content.staticSprite "Backdrop"
+                    [Entity.Perimeter <-- field.ViewBoundsAbsolute.Box3; Entity.Elevation <-- Single.MinValue; Entity.Absolute <-- true
+                     Entity.StaticImage <-- Assets.Default.Image9
+                     Entity.Color <--
                         match Data.Value.Fields.TryGetValue field.FieldType with
                         | (true, fieldData) -> fieldData.FieldBackgroundColor
                         | (false, _) -> Color.Black]
 
                  // transition fade sprite
-                 Content.staticSprite Gen.name
-                    [Entity.Perimeter <-- field ==> (fun field -> field.ViewBoundsAbsolute.Box3); Entity.Elevation == Single.MaxValue; Entity.Absolute == true
-                     Entity.StaticImage == Assets.Default.Image8
-                     Entity.Visible <-- field ==> fun field -> Option.isSome field.FieldTransitionOpt
-                     Entity.Color <-- field ==> fun field ->
+                 yield Content.staticSprite "Fade"
+                    [Entity.Perimeter <-- field.ViewBoundsAbsolute.Box3; Entity.Elevation <-- Single.MaxValue; Entity.Absolute <-- true
+                     Entity.StaticImage <-- Assets.Default.Image8
+                     Entity.Visible <-- Option.isSome field.FieldTransitionOpt
+                     Entity.Color <--
                         match field.FieldTransitionOpt with
                         | Some transition ->
                             let time = field.UpdateTime
@@ -1183,9 +1180,9 @@ module FieldDispatcher =
                         | None -> Color.Zero]
 
                  // tmx map
-                 Content.tmxMap Simulants.Field.Scene.TileMap.Name
-                    [Entity.Elevation == Constants.Field.BackgroundElevation
-                     Entity.TmxMap <-- field ==> fun field ->
+                 yield Content.tmxMap Simulants.Field.Scene.TileMap.Name
+                    [Entity.Elevation <-- Constants.Field.BackgroundElevation
+                     Entity.TmxMap <--
                         match Map.tryFind field.FieldType Data.Value.Fields with
                         | Some fieldData ->
                             match FieldData.tryGetTileMap field.OmniSeedState fieldData with
@@ -1196,26 +1193,26 @@ module FieldDispatcher =
                                 | Choice3Of3 (tileMap, _) -> tileMap
                             | None -> failwithumf ()
                         | None -> failwithumf ()
-                     Entity.TileIndexOffset <-- field ==> fun field ->
+                     Entity.TileIndexOffset <--
                          match Map.tryFind field.FieldType Data.Value.Fields with
                          | Some fieldData -> fieldData.FieldTileIndexOffset
                          | None -> failwithumf ()
-                     Entity.TileIndexOffsetRange <-- field ==> fun field ->
+                     Entity.TileIndexOffsetRange <--
                          match Map.tryFind field.FieldType Data.Value.Fields with
                          | Some fieldData -> fieldData.FieldTileIndexOffsetRange
                          | None -> failwithumf ()
-                     Entity.TileLayerClearance == 10.0f]
+                     Entity.TileLayerClearance <-- 10.0f]
 
                  // tmx map fade
-                 Content.tmxMap Gen.name
-                    [Entity.Elevation == Constants.Field.BackgroundElevation + 0.5f
-                     Entity.Color <-- field ==> fun field ->
-                        let progress = 1.0f - (Constants.Field.ConnectorFadeYMax - field.Avatar.Bottom.Y) / Constants.Field.ConnectorFadeYMax
-                        let fade = min 1.0f progress
-                        Color.One.ScaleA fade
-                     Entity.TmxMap <-- field ==> fun field ->
-                        match Map.tryFind field.FieldType Data.Value.Fields with
-                        | Some fieldData ->
+                 yield Content.tmxMap "TileMapFade"
+                    [Entity.Elevation <-- Constants.Field.BackgroundElevation + 0.5f
+                     Entity.Color <--
+                        (let progress = 1.0f - (Constants.Field.ConnectorFadeYMax - field.Avatar.Bottom.Y) / Constants.Field.ConnectorFadeYMax
+                         let fade = min 1.0f progress
+                         Color.One.ScaleA fade)
+                     Entity.TmxMap <--
+                        (match Map.tryFind field.FieldType Data.Value.Fields with
+                         | Some fieldData ->
                             match FieldData.tryGetTileMap field.OmniSeedState fieldData with
                             | Some tileMapChc ->
                                 match tileMapChc with
@@ -1223,100 +1220,103 @@ module FieldDispatcher =
                                 | Choice2Of3 (_, tileMapFade) -> tileMapFade
                                 | Choice3Of3 (_, _) ->  Metadata.getTileMapMetadata Assets.Default.TileMapEmpty |> __c
                             | None -> Metadata.getTileMapMetadata Assets.Default.TileMapEmpty |> __c
-                        | None -> Metadata.getTileMapMetadata Assets.Default.TileMapEmpty |> __c
-                     Entity.TileLayerClearance == 10.0f]
+                         | None -> Metadata.getTileMapMetadata Assets.Default.TileMapEmpty |> __c)
+                     Entity.TileLayerClearance <-- 10.0f]
 
                  // feeler
-                 Content.feeler Simulants.Field.Scene.Feeler.Name
-                    [Entity.Position == -Constants.Render.ResolutionF.V3 * 0.5f; Entity.Elevation == Constants.Field.FeelerElevation; Entity.Size == Constants.Render.ResolutionF.V3
+                 yield Content.feeler Simulants.Field.Scene.Feeler.Name
+                    [Entity.Position <-- -Constants.Render.ResolutionF.V3 * 0.5f; Entity.Elevation <-- Constants.Field.FeelerElevation; Entity.Size <-- Constants.Render.ResolutionF.V3
                      Entity.TouchingEvent --|> fun evt -> cmd (ProcessTouchInput evt.Data)]
 
                  // menu button
-                 Content.button Gen.name
-                    [Entity.Position == v3 -456.0f -246.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v3 144.0f 48.0f 0.0f
-                     Entity.UpImage == Assets.Gui.ButtonShortUpImage; Entity.DownImage == Assets.Gui.ButtonShortDownImage
-                     Entity.Text == "Menu"
-                     Entity.Visible <-- field ==> fun field ->
-                        field.Menu.MenuState = MenuClosed &&
-                        Cue.notInterrupting field.Inventory field.Advents field.Cue &&
-                        Option.isNone field.DialogOpt &&
-                        Option.isNone field.ShopOpt &&
-                        Option.isNone field.FieldTransitionOpt
+                 yield Content.button "Menu"
+                    [Entity.Position <-- v3 -456.0f -246.0f 0.0f; Entity.Elevation <-- Constants.Field.GuiElevation; Entity.Size <-- v3 144.0f 48.0f 0.0f
+                     Entity.UpImage <-- Assets.Gui.ButtonShortUpImage; Entity.DownImage <-- Assets.Gui.ButtonShortDownImage
+                     Entity.Text <-- "Menu"
+                     Entity.Visible <--
+                        (field.Menu.MenuState = MenuClosed &&
+                         Cue.notInterrupting field.Inventory field.Advents field.Cue &&
+                         Option.isNone field.DialogOpt &&
+                         Option.isNone field.ShopOpt &&
+                         Option.isNone field.FieldTransitionOpt)
                      Entity.ClickEvent --> msg MenuTeamOpen]
 
                  // interact button
-                 Content.button Gen.name
-                    [Entity.Position == v3 306.0f -246.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v3 144.0f 48.0f 0.0f
-                     Entity.UpImage == Assets.Gui.ButtonShortUpImage; Entity.DownImage == Assets.Gui.ButtonShortDownImage
-                     Entity.Visible <-- field ==> fun field ->
-                        field.Menu.MenuState = MenuClosed &&
-                        (Cue.notInterrupting field.Inventory field.Advents field.Cue || Option.isSome field.DialogOpt) &&
-                        Option.isNone field.BattleOpt &&
-                        Option.isNone field.ShopOpt &&
-                        Option.isNone field.FieldTransitionOpt &&
-                        Option.isSome (tryGetInteraction field.DialogOpt field.Advents field.Avatar field.Props (flip detokenize field))
-                     Entity.Text <-- field ==> fun field ->
+                 yield Content.button "Interact"
+                    [Entity.Position <-- v3 306.0f -246.0f 0.0f; Entity.Elevation <-- Constants.Field.GuiElevation; Entity.Size <-- v3 144.0f 48.0f 0.0f
+                     Entity.UpImage <-- Assets.Gui.ButtonShortUpImage; Entity.DownImage <-- Assets.Gui.ButtonShortDownImage
+                     Entity.Visible <--
+                        (field.Menu.MenuState = MenuClosed &&
+                         (Cue.notInterrupting field.Inventory field.Advents field.Cue || Option.isSome field.DialogOpt) &&
+                         Option.isNone field.BattleOpt &&
+                         Option.isNone field.ShopOpt &&
+                         Option.isNone field.FieldTransitionOpt &&
+                         Option.isSome (tryGetInteraction field.DialogOpt field.Advents field.Avatar field.Props (flip detokenize field)))
+                     Entity.Text <--
                         match tryGetInteraction field.DialogOpt field.Advents field.Avatar field.Props (flip detokenize field) with
                         | Some interaction -> interaction
                         | None -> ""
-                     Entity.ClickSoundOpt == None
+                     Entity.ClickSoundOpt <-- None
                      Entity.ClickEvent --> msg Interact]
 
                  // dialog
-                 Content.dialog "Dialog"
-                    Constants.Field.GuiElevation PromptLeft PromptRight
-                    (field ==> fun field -> match field.DialogOpt with Some dialog -> Some (flip detokenize field, dialog) | None -> None)
+                 yield! Content.dialog "Dialog"
+                    Constants.Field.GuiElevation PromptLeft PromptRight (flip detokenize field)
+                    (match field.DialogOpt with Some dialog -> Some dialog | None -> None)
 
-                 // team
-                 Content.entityWhen field (fun field -> match field.Menu.MenuState with MenuTeam menuTeam -> Some (field, menuTeam) | _ -> None) $ fun fieldAndMenuTeam ->
-                    Content.panel "Team"
-                        [Entity.Position == v3 -450.0f -255.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v3 900.0f 510.0f 0.0f
-                         Entity.LabelImage == Assets.Gui.DialogXXLImage]
-                        [Content.sidebar "Sidebar" (v3 24.0f 417.0f 0.0f) 1.0f (fieldAndMenuTeam ==> fst) (fun () -> MenuTeamOpen) (fun () -> MenuItemsOpen) (fun () -> MenuTechOpen) (fun () -> MenuOptionsOpen) (fun () -> MenuClose)
-                         Content.team (v3 138.0f 417.0f 0.0f) 1.0f Int32.MaxValue (fieldAndMenuTeam ==> fst) tautology2 MenuTeamAlly
-                         Content.label Gen.name
-                            [Entity.PositionLocal == v3 438.0f 288.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 192.0f 192.0f 0.0f
-                             Entity.LabelImage <-- fieldAndMenuTeam ==> fun (field, menuTeam) ->
+                 // menu
+                 match field.Menu.MenuState with // TODO: DIFF: memoize?
+                 | MenuTeam menuTeam ->
+
+                    // team
+                    yield Content.panel "Team"
+                        [Entity.Position <-- v3 -450.0f -255.0f 0.0f; Entity.Elevation <-- Constants.Field.GuiElevation; Entity.Size <-- v3 900.0f 510.0f 0.0f
+                         Entity.LabelImage <-- Assets.Gui.DialogXXLImage]
+                        [yield Content.sidebar "Sidebar" (v3 24.0f 417.0f 0.0f) 1.0f field (fun () -> MenuTeamOpen) (fun () -> MenuItemsOpen) (fun () -> MenuTechOpen) (fun () -> MenuOptionsOpen) (fun () -> MenuClose)
+                         yield! Content.team (v3 138.0f 417.0f 0.0f) 1.0f Int32.MaxValue field tautology2 MenuTeamAlly
+                         yield Content.label "Portrait"
+                            [Entity.PositionLocal <-- v3 438.0f 288.0f 0.0f; Entity.ElevationLocal <-- 1.0f; Entity.Size <-- v3 192.0f 192.0f 0.0f
+                             Entity.LabelImage <--
                                 match MenuTeam.tryGetTeamData field.Team menuTeam with
                                 | Some characterData ->
                                     match characterData.PortraitOpt with
                                     | Some portrait -> portrait
                                     | None -> Assets.Default.ImageEmpty
                                 | None -> Assets.Default.ImageEmpty]
-                         Content.text Gen.name
-                            [Entity.PositionLocal == v3 650.0f 372.0f 0.0f; Entity.ElevationLocal == 1.0f
-                             Entity.Text <-- fieldAndMenuTeam ==> fun (field, menuTeam) ->
+                         yield Content.text "CharacterType"
+                            [Entity.PositionLocal <-- v3 650.0f 372.0f 0.0f; Entity.ElevationLocal <-- 1.0f
+                             Entity.Text <--
                                 match MenuTeam.tryGetTeamData field.Team menuTeam with
                                 | Some characterData -> CharacterType.getName characterData.CharacterType
                                 | None -> ""]
-                         Content.text Gen.name
-                            [Entity.PositionLocal == v3 650.0f 336.0f 0.0f; Entity.ElevationLocal == 1.0f
-                             Entity.Text <-- fieldAndMenuTeam ==> fun (field, menuTeam) ->
+                         yield Content.text "ArchetypeType"
+                            [Entity.PositionLocal <-- v3 650.0f 336.0f 0.0f; Entity.ElevationLocal <-- 1.0f
+                             Entity.Text <--
                                 match MenuTeam.tryGetTeammate field.Team menuTeam with
                                 | Some teammate -> string teammate.ArchetypeType + " Lv." + string (Algorithms.expPointsToLevel teammate.ExpPoints)
                                 | None -> ""]
-                         Content.text Gen.name
-                            [Entity.PositionLocal == v3 444.0f 234.0f 0.0f; Entity.ElevationLocal == 1.0f
-                             Entity.Text <-- fieldAndMenuTeam ==> fun (field, menuTeam) ->
+                         yield Content.text "Weapon"
+                            [Entity.PositionLocal <-- v3 444.0f 234.0f 0.0f; Entity.ElevationLocal <-- 1.0f
+                             Entity.Text <--
                                 match MenuTeam.tryGetTeammate field.Team menuTeam with
                                 | Some teammate -> "Wpn: " + Option.mapOrDefaultValue string "None" teammate.WeaponOpt
                                 | None -> ""]
-                         Content.text Gen.name
-                            [Entity.PositionLocal == v3 444.0f 204.0f 0.0f; Entity.ElevationLocal == 1.0f
-                             Entity.Text <-- fieldAndMenuTeam ==> fun (field, menuTeam) ->
+                         yield Content.text "Armor"
+                            [Entity.PositionLocal <-- v3 444.0f 204.0f 0.0f; Entity.ElevationLocal <-- 1.0f
+                             Entity.Text <--
                                 match MenuTeam.tryGetTeammate field.Team menuTeam with
                                 | Some teammate -> "Amr: " + Option.mapOrDefaultValue string "None" teammate.ArmorOpt
                                 | None -> ""]
-                         Content.text Gen.name
-                            [Entity.PositionLocal == v3 444.0f 174.0f 0.0f; Entity.ElevationLocal == 1.0f
-                             Entity.Text <-- fieldAndMenuTeam ==> fun (field, menuTeam) ->
+                         yield Content.text "Accessory"
+                            [Entity.PositionLocal <-- v3 444.0f 174.0f 0.0f; Entity.ElevationLocal <-- 1.0f
+                             Entity.Text <--
                                 match MenuTeam.tryGetTeammate field.Team menuTeam with
                                 | Some teammate -> "Acc: " + Option.mapOrDefaultValue string "None" (List.tryHead teammate.Accessories)
                                 | None -> ""]
-                         Content.text Gen.name
-                            [Entity.PositionLocal == v3 444.0f -84.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 512.0f 256.0f 0.0f
-                             Entity.Justification == Unjustified true
-                             Entity.Text <-- fieldAndMenuTeam ==> fun (field, menuTeam) ->
+                         yield Content.text "Stats"
+                            [Entity.PositionLocal <-- v3 444.0f -84.0f 0.0f; Entity.ElevationLocal <-- 1.0f; Entity.Size <-- v3 512.0f 256.0f 0.0f
+                             Entity.Justification <-- Unjustified true
+                             Entity.Text <--
                                 match MenuTeam.tryGetTeammateAndTeamData field.Team menuTeam with
                                 | Some (teammate, characterData) ->
                                     let level = Algorithms.expPointsToLevel teammate.ExpPoints
@@ -1334,164 +1334,176 @@ module FieldDispatcher =
                                 | None -> ""]]
 
                  // inventory
-                 Content.entityWhen field (fun field -> match field.Menu.MenuState with MenuItem _ -> Some field | _ -> None) $ fun field ->
-                    Content.panel "Inventory"
-                        [Entity.Position == v3 -450.0f -255.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v3 900.0f 510.0f 0.0f
-                         Entity.LabelImage == Assets.Gui.DialogXXLImage
-                         Entity.Enabled <-- field ==> fun field -> Option.isNone field.Menu.MenuUseOpt]
-                        [Content.sidebar "Sidebar" (v3 24.0f 417.0f 0.0f) 1.0f field (fun () -> MenuTeamOpen) (fun () -> MenuItemsOpen) (fun () -> MenuTechOpen) (fun () -> MenuOptionsOpen) (fun () -> MenuClose)
-                         Content.items (v3 138.0f 417.0f 0.0f) 1.0f 10 5 field MenuItemSelect
-                         Content.text Gen.name
-                            [Entity.PositionLocal == v3 399.0f 24.0f 0.0f; Entity.ElevationLocal == 1.0f
-                             Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
-                             Entity.Text <-- field ==> (fun field -> string field.Inventory.Gold + "G")]
-                         Content.button Gen.name
-                            [Entity.PositionLocal == v3 138.0f 12.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 72.0f 72.0f 0.0f
-                             Entity.Text == "<"
-                             Entity.VisibleLocal <-- field ==> fun field -> Content.pageItems 10 field |> a__
-                             Entity.UpImage == Assets.Gui.ButtonSmallUpImage
-                             Entity.DownImage == Assets.Gui.ButtonSmallDownImage
+                 | MenuItem menuItem ->
+                    yield Content.panel "Inventory"
+                        [Entity.Position <-- v3 -450.0f -255.0f 0.0f; Entity.Elevation <-- Constants.Field.GuiElevation; Entity.Size <-- v3 900.0f 510.0f 0.0f
+                         Entity.LabelImage <-- Assets.Gui.DialogXXLImage
+                         Entity.Enabled <-- Option.isNone field.Menu.MenuUseOpt]
+                        [yield Content.sidebar "Sidebar" (v3 24.0f 417.0f 0.0f) 1.0f field (fun () -> MenuTeamOpen) (fun () -> MenuItemsOpen) (fun () -> MenuTechOpen) (fun () -> MenuOptionsOpen) (fun () -> MenuClose)
+                         yield! Content.items (v3 138.0f 417.0f 0.0f) 1.0f 10 5 field MenuItemSelect
+                         yield Content.text "Gold"
+                            [Entity.PositionLocal <-- v3 399.0f 24.0f 0.0f; Entity.ElevationLocal <-- 1.0f
+                             Entity.Justification <-- Justified (JustifyCenter, JustifyMiddle)
+                             Entity.Text <-- string field.Inventory.Gold + "G"]
+                         yield Content.button "PageUp"
+                            [Entity.PositionLocal <-- v3 138.0f 12.0f 0.0f; Entity.ElevationLocal <-- 1.0f; Entity.Size <-- v3 72.0f 72.0f 0.0f
+                             Entity.Text <-- "<"
+                             Entity.VisibleLocal <-- (Content.pageItems 10 field |> a__)
+                             Entity.UpImage <-- Assets.Gui.ButtonSmallUpImage
+                             Entity.DownImage <-- Assets.Gui.ButtonSmallDownImage
                              Entity.ClickEvent --> msg MenuItemsPageUp]
-                         Content.button Gen.name
-                            [Entity.PositionLocal == v3 777.0f 12.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 72.0f 72.0f 0.0f
-                             Entity.Text == ">"
-                             Entity.VisibleLocal <-- field ==> fun field -> Content.pageItems 10 field |> _b_
-                             Entity.UpImage == Assets.Gui.ButtonSmallUpImage
-                             Entity.DownImage == Assets.Gui.ButtonSmallDownImage
+                         yield Content.button "PageDown"
+                            [Entity.PositionLocal <-- v3 777.0f 12.0f 0.0f; Entity.ElevationLocal <-- 1.0f; Entity.Size <-- v3 72.0f 72.0f 0.0f
+                             Entity.Text <-- ">"
+                             Entity.VisibleLocal <-- (Content.pageItems 10 field |> _b_)
+                             Entity.UpImage <-- Assets.Gui.ButtonSmallUpImage
+                             Entity.DownImage <-- Assets.Gui.ButtonSmallDownImage
                              Entity.ClickEvent --> msg MenuInventoryPageDown]]
 
                  // tech team
-                 Content.entityWhen field (fun field -> match field.Menu.MenuState with MenuTech _ -> Some field | _ -> None) $ fun field ->
-                    Content.panel "TechTeam"
-                        [Entity.Position == v3 -450.0f -255.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v3 900.0f 510.0f 0.0f
-                         Entity.LabelImage == Assets.Gui.DialogXXLImage]
+                 | MenuTech menuTech ->
+                    yield Content.panel "TechTeam"
+                        [Entity.Position <-- v3 -450.0f -255.0f 0.0f; Entity.Elevation <-- Constants.Field.GuiElevation; Entity.Size <-- v3 900.0f 510.0f 0.0f
+                         Entity.LabelImage <-- Assets.Gui.DialogXXLImage]
+                        [yield Content.sidebar "Sidebar" (v3 24.0f 417.0f 0.0f) 1.0f field (fun () -> MenuTeamOpen) (fun () -> MenuItemsOpen) (fun () -> MenuTechOpen) (fun () -> MenuOptionsOpen) (fun () -> MenuClose)
+                         yield! Content.team (v3 138.0f 417.0f 0.0f) 1.0f Int32.MaxValue field tautology2 MenuTechAlly
+                         yield! Content.techs (v3 466.0f 429.0f 0.0f) 1.0f field MenuTechSelect]
+
+                 // options
+                 | MenuOptions ->
+                    yield Content.panel "Options"
+                        [Entity.Position <-- v3 -450.0f -255.0f 0.0f; Entity.Elevation <-- Constants.Field.GuiElevation; Entity.Size <-- v3 900.0f 510.0f 0.0f
+                         Entity.LabelImage <-- Assets.Gui.DialogXXLImage]
                         [Content.sidebar "Sidebar" (v3 24.0f 417.0f 0.0f) 1.0f field (fun () -> MenuTeamOpen) (fun () -> MenuItemsOpen) (fun () -> MenuTechOpen) (fun () -> MenuOptionsOpen) (fun () -> MenuClose)
-                         Content.team (v3 138.0f 417.0f 0.0f) 1.0f Int32.MaxValue field tautology2 MenuTechAlly
-                         Content.techs (v3 466.0f 429.0f 0.0f) 1.0f field MenuTechSelect]
+                         Content.text "BattleSpeed"
+                            [Entity.PositionLocal <-- v3 384.0f 432.0f 0.0f; Entity.ElevationLocal <-- 1.0f
+                             Entity.Text <-- "Battle Speed"]
+                         Content.radioButton "Wait"
+                            [Entity.PositionLocal <-- v3 180.0f 372.0f 0.0f; Entity.ElevationLocal <-- 1.0f; Entity.Size <-- v3 144.0f 48.0f 0.0f
+                             Entity.UndialedImage <-- Assets.Gui.ButtonShortUpImage; Entity.DialedImage <-- Assets.Gui.ButtonShortDownImage
+                             Entity.Text <-- "Wait"
+                             Entity.Dialed <-- match field.Options.BattleSpeed with WaitSpeed -> true | _ -> false
+                             Entity.DialedEvent --> msg (MenuOptionsSelectBattleSpeed WaitSpeed)]
+                         Content.radioButton "Paced"
+                            [Entity.PositionLocal <-- v3 408.0f 372.0f 0.0f; Entity.ElevationLocal <-- 1.0f; Entity.Size <-- v3 144.0f 48.0f 0.0f
+                             Entity.UndialedImage <-- Assets.Gui.ButtonShortUpImage; Entity.DialedImage <-- Assets.Gui.ButtonShortDownImage
+                             Entity.Text <-- "Paced"
+                             Entity.Dialed <-- match field.Options.BattleSpeed with PacedSpeed -> true | _ -> false
+                             Entity.DialedEvent --> msg (MenuOptionsSelectBattleSpeed PacedSpeed)]
+                         Content.radioButton "Swift"
+                            [Entity.PositionLocal <-- v3 636.0f 372.0f 0.0f; Entity.ElevationLocal <-- 1.0f; Entity.Size <-- v3 144.0f 48.0f 0.0f
+                             Entity.UndialedImage <-- Assets.Gui.ButtonShortUpImage; Entity.DialedImage <-- Assets.Gui.ButtonShortDownImage
+                             Entity.Text <-- "Swift"
+                             Entity.Dialed <-- match field.Options.BattleSpeed with SwiftSpeed -> true | _ -> false
+                             Entity.DialedEvent --> msg (MenuOptionsSelectBattleSpeed SwiftSpeed)]]
+
+                 // closed
+                 | MenuClosed -> ()
 
                  // use
-                 Content.entityWhen field (fun field -> match field.Menu.MenuUseOpt with Some menuUse -> Some (field, menuUse) | None -> None) $ fun fieldAndMenuUse ->
-                    Content.panel "Use"
-                        [Entity.Position == v3 -450.0f -216.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation + 10.0f; Entity.Size == v3 900.0f 432.0f 0.0f
-                         Entity.LabelImage == Assets.Gui.DialogXLImage]
-                        [Content.team (v3 160.0f 183.0f 0.0f) 1.0f 3 (fieldAndMenuUse ==> fst)
+                 match field.Menu.MenuUseOpt with
+                 | Some menuUse ->
+                    yield Content.panel "Use"
+                        [Entity.Position <-- v3 -450.0f -216.0f 0.0f; Entity.Elevation <-- Constants.Field.GuiElevation + 10.0f; Entity.Size <-- v3 900.0f 432.0f 0.0f
+                         Entity.LabelImage <-- Assets.Gui.DialogXLImage]
+                        [yield! Content.team (v3 160.0f 183.0f 0.0f) 1.0f 3 field
                             (fun teammate menu ->
                                 match menu.MenuUseOpt with
                                 | Some menuUse -> Teammate.canUseItem (snd menuUse.MenuUseSelection) teammate
                                 | None -> false)
                             MenuItemUse
-                         Content.button Gen.name
-                            [Entity.PositionLocal == v3 810.0f 342.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 72.0f 72.0f 0.0f
-                             Entity.UpImage == asset "Field" "CloseButtonUp"
-                             Entity.DownImage == asset "Field" "CloseButtonDown"
+                         yield Content.button "Close"
+                            [Entity.PositionLocal <-- v3 810.0f 342.0f 0.0f; Entity.ElevationLocal <-- 1.0f; Entity.Size <-- v3 72.0f 72.0f 0.0f
+                             Entity.UpImage <-- asset "Field" "CloseButtonUp"
+                             Entity.DownImage <-- asset "Field" "CloseButtonDown"
                              Entity.ClickEvent --> msg MenuItemCancel]
-                         Content.text Gen.name
-                            [Entity.PositionLocal == v3 36.0f 354.0f 0.0f; Entity.ElevationLocal == 1.0f
-                             Entity.Text <-- fieldAndMenuUse ==> fun (_, menuUse) -> menuUse.MenuUseLine1]
-                         Content.text Gen.name
-                            [Entity.PositionLocal == v3 66.0f 312.0f 0.0f; Entity.ElevationLocal == 1.0f
-                             Entity.Text <-- fieldAndMenuUse ==> fun (_, menuUse) -> menuUse.MenuUseLine2]
-                         Content.text Gen.name
-                            [Entity.PositionLocal == v3 66.0f 270.0f 0.0f; Entity.ElevationLocal == 1.0f
-                             Entity.Text <-- fieldAndMenuUse ==> fun (_, menuUse) -> menuUse.MenuUseLine3]]
-
-                 // options
-                 Content.entityWhen field (fun field -> match field.Menu.MenuState with MenuOptions -> Some field | _ -> None) $ fun field ->
-                    Content.panel "Options"
-                        [Entity.Position == v3 -450.0f -255.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v3 900.0f 510.0f 0.0f
-                         Entity.LabelImage == Assets.Gui.DialogXXLImage]
-                        [Content.sidebar "Sidebar" (v3 24.0f 417.0f 0.0f) 1.0f field (fun () -> MenuTeamOpen) (fun () -> MenuItemsOpen) (fun () -> MenuTechOpen) (fun () -> MenuOptionsOpen) (fun () -> MenuClose)
-                         Content.text Gen.name
-                            [Entity.PositionLocal == v3 384.0f 432.0f 0.0f; Entity.ElevationLocal == 1.0f
-                             Entity.Text == "Battle Speed"]
-                         Content.radioButton Gen.name
-                            [Entity.PositionLocal == v3 180.0f 372.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 144.0f 48.0f 0.0f
-                             Entity.UndialedImage == Assets.Gui.ButtonShortUpImage; Entity.DialedImage == Assets.Gui.ButtonShortDownImage
-                             Entity.Text == "Wait"
-                             Entity.Dialed <-- field ==> fun field -> match field.Options.BattleSpeed with WaitSpeed -> true | _ -> false
-                             Entity.DialedEvent --> msg (MenuOptionsSelectBattleSpeed WaitSpeed)]
-                         Content.radioButton Gen.name
-                            [Entity.PositionLocal == v3 408.0f 372.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 144.0f 48.0f 0.0f
-                             Entity.UndialedImage == Assets.Gui.ButtonShortUpImage; Entity.DialedImage == Assets.Gui.ButtonShortDownImage
-                             Entity.Text == "Paced"
-                             Entity.Dialed <-- field ==> fun field -> match field.Options.BattleSpeed with PacedSpeed -> true | _ -> false
-                             Entity.DialedEvent --> msg (MenuOptionsSelectBattleSpeed PacedSpeed)]
-                         Content.radioButton Gen.name
-                            [Entity.PositionLocal == v3 636.0f 372.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 144.0f 48.0f 0.0f
-                             Entity.UndialedImage == Assets.Gui.ButtonShortUpImage; Entity.DialedImage == Assets.Gui.ButtonShortDownImage
-                             Entity.Text == "Swift"
-                             Entity.Dialed <-- field ==> fun field -> match field.Options.BattleSpeed with SwiftSpeed -> true | _ -> false
-                             Entity.DialedEvent --> msg (MenuOptionsSelectBattleSpeed SwiftSpeed)]]
+                         yield Content.text "Line1"
+                            [Entity.PositionLocal <-- v3 36.0f 354.0f 0.0f; Entity.ElevationLocal <-- 1.0f
+                             Entity.Text <-- menuUse.MenuUseLine1]
+                         yield Content.text "Line2"
+                            [Entity.PositionLocal <-- v3 66.0f 312.0f 0.0f; Entity.ElevationLocal <-- 1.0f
+                             Entity.Text <-- menuUse.MenuUseLine2]
+                         yield Content.text "Line3"
+                            [Entity.PositionLocal <-- v3 66.0f 270.0f 0.0f; Entity.ElevationLocal <-- 1.0f
+                             Entity.Text <-- menuUse.MenuUseLine3]]
+                 | None -> ()
 
                  // shop
-                 Content.entityWhen field (fun field -> match field.ShopOpt with Some shop -> Some (field, shop) | None -> None) $ fun fieldAndShop ->
-                    Content.panel "Shop"
-                        [Entity.Position == v3 -450.0f -255.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v3 900.0f 510.0f 0.0f
-                         Entity.LabelImage == Assets.Gui.DialogXXLImage
-                         Entity.Enabled <-- fieldAndShop ==> fun (_, shop) -> Option.isNone shop.ShopConfirmOpt]
-                        [Content.items (v3 96.0f 347.0f 0.0f) 1.0f 8 4 (fieldAndShop ==> fst) ShopSelect
-                         Content.button Gen.name
-                            [Entity.PositionLocal == v3 24.0f 438.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 192.0f 48.0f 0.0f
-                             Entity.Text == "Buy"
-                             Entity.VisibleLocal <-- fieldAndShop ==> fun (_, shop) -> shop.ShopState = ShopSelling
+                 match field.ShopOpt with // TODO: DIFF: memoize?
+                 | Some shop ->
+                    let items = Content.pageItems 8 field
+                    yield Content.panel "Shop"
+                        [Entity.Position <-- v3 -450.0f -255.0f 0.0f; Entity.Elevation <-- Constants.Field.GuiElevation; Entity.Size <-- v3 900.0f 510.0f 0.0f
+                         Entity.LabelImage <-- Assets.Gui.DialogXXLImage
+                         Entity.Enabled <-- Option.isNone shop.ShopConfirmOpt]
+                        [yield! Content.items (v3 96.0f 347.0f 0.0f) 1.0f 8 4 field ShopSelect
+                         yield Content.button "Buy"
+                            [Entity.PositionLocal <-- v3 24.0f 438.0f 0.0f; Entity.ElevationLocal <-- 1.0f; Entity.Size <-- v3 192.0f 48.0f 0.0f
+                             Entity.Text <-- "Buy"
+                             Entity.VisibleLocal <-- (shop.ShopState = ShopSelling)
                              Entity.ClickEvent --> msg ShopBuy]
-                         Content.text Gen.name
-                            [Entity.PositionLocal == v3 24.0f 438.0f 0.0f; Entity.ElevationLocal == 1.0f
-                             Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
-                             Entity.Text == "Buy what?"
-                             Entity.VisibleLocal <-- fieldAndShop ==> fun (_, shop) -> shop.ShopState = ShopBuying]
-                         Content.button Gen.name
-                            [Entity.PositionLocal == v3 352.0f 438.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 192.0f 48.0f 0.0f
-                             Entity.Text == "Sell"
-                             Entity.VisibleLocal <-- fieldAndShop ==> fun (_, shop) -> shop.ShopState = ShopBuying
+                         yield Content.text "BuyWhat"
+                            [Entity.PositionLocal <-- v3 24.0f 438.0f 0.0f; Entity.ElevationLocal <-- 1.0f
+                             Entity.Justification <-- Justified (JustifyCenter, JustifyMiddle)
+                             Entity.Text <-- "Buy what?"
+                             Entity.VisibleLocal <-- (shop.ShopState = ShopBuying)]
+                         yield Content.button "Sell"
+                            [Entity.PositionLocal <-- v3 352.0f 438.0f 0.0f; Entity.ElevationLocal <-- 1.0f; Entity.Size <-- v3 192.0f 48.0f 0.0f
+                             Entity.Text <-- "Sell"
+                             Entity.VisibleLocal <-- (shop.ShopState = ShopBuying)
                              Entity.ClickEvent --> msg ShopSell]
-                         Content.text Gen.name
-                            [Entity.PositionLocal == v3 352.0f 438.0f 0.0f; Entity.ElevationLocal == 1.0f
-                             Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
-                             Entity.Text == "Sell what?"
-                             Entity.VisibleLocal <-- fieldAndShop ==> fun (_, shop) -> shop.ShopState = ShopSelling]
-                         Content.button Gen.name
-                            [Entity.PositionLocal == v3 678.0f 438.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 192.0f 48.0f 0.0f
-                             Entity.Text == "Leave"
+                         yield Content.text "SellWhat"
+                            [Entity.PositionLocal <-- v3 352.0f 438.0f 0.0f; Entity.ElevationLocal <-- 1.0f
+                             Entity.Justification <-- Justified (JustifyCenter, JustifyMiddle)
+                             Entity.Text <-- "Sell what?"
+                             Entity.VisibleLocal <-- (shop.ShopState = ShopSelling)]
+                         yield Content.button "Leave"
+                            [Entity.PositionLocal <-- v3 678.0f 438.0f 0.0f; Entity.ElevationLocal <-- 1.0f; Entity.Size <-- v3 192.0f 48.0f 0.0f
+                             Entity.Text <-- "Leave"
                              Entity.ClickEvent --> msg ShopLeave]
-                         Content.button Gen.name
-                            [Entity.PositionLocal == v3 24.0f 15.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 72.0f 72.0f 0.0f
-                             Entity.Text == "<"
-                             Entity.VisibleLocal <-- fieldAndShop ==> fun (field, _) -> Content.pageItems 8 field |> a__
-                             Entity.UpImage == Assets.Gui.ButtonSmallUpImage
-                             Entity.DownImage == Assets.Gui.ButtonSmallDownImage
+                         yield Content.button "PageUp"
+                            [Entity.PositionLocal <-- v3 24.0f 15.0f 0.0f; Entity.ElevationLocal <-- 1.0f; Entity.Size <-- v3 72.0f 72.0f 0.0f
+                             Entity.Text <-- "<"
+                             Entity.VisibleLocal <-- a__ items
+                             Entity.UpImage <-- Assets.Gui.ButtonSmallUpImage
+                             Entity.DownImage <-- Assets.Gui.ButtonSmallDownImage
                              Entity.ClickEvent --> msg ShopPageUp]
-                         Content.button Gen.name
-                            [Entity.PositionLocal == v3 804.0f 15.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 72.0f 72.0f 0.0f
-                             Entity.Text == ">"
-                             Entity.VisibleLocal <-- fieldAndShop ==> fun (field, _) -> Content.pageItems 8 field |> _b_
-                             Entity.UpImage == Assets.Gui.ButtonSmallUpImage
-                             Entity.DownImage == Assets.Gui.ButtonSmallDownImage
+                         yield Content.button "PageDown"
+                            [Entity.PositionLocal <-- v3 804.0f 15.0f 0.0f; Entity.ElevationLocal <-- 1.0f; Entity.Size <-- v3 72.0f 72.0f 0.0f
+                             Entity.Text <-- ">"
+                             Entity.VisibleLocal <-- _b_ items
+                             Entity.UpImage <-- Assets.Gui.ButtonSmallUpImage
+                             Entity.DownImage <-- Assets.Gui.ButtonSmallDownImage
                              Entity.ClickEvent --> msg ShopPageDown]
-                         Content.text Gen.name
-                            [Entity.PositionLocal == v3 352.0f 3.0f 0.0f; Entity.ElevationLocal == 1.0f
-                             Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
-                             Entity.Text <-- fieldAndShop ==> fun (field, _) -> string field.Inventory.Gold + "G"]]
+                         yield Content.text "Gold"
+                            [Entity.PositionLocal <-- v3 352.0f 3.0f 0.0f; Entity.ElevationLocal <-- 1.0f
+                             Entity.Justification <-- Justified (JustifyCenter, JustifyMiddle)
+                             Entity.Text <-- string field.Inventory.Gold + "G"]]
 
                  // confirm
-                 Content.entityWhen field (fun field -> match field.ShopOpt with Some shop -> shop.ShopConfirmOpt | None -> None) $ fun shopConfirm ->
-                    Content.panel Gen.name
-                       [Entity.Position == v3 -450.0f -128.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation + 10.0f; Entity.Size == v3 900.0f 252.0f 0.0f
-                        Entity.LabelImage == Assets.Gui.DialogFatImage]
-                       [Content.button Gen.name
-                           [Entity.PositionLocal == v3 198.0f 36.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 192.0f 48.0f 0.0f
-                            Entity.Text == "Accept"
-                            Entity.ClickEvent --> msg ShopConfirmAccept]
-                        Content.button Gen.name
-                           [Entity.PositionLocal == v3 498.0f 36.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 192.0f 48.0f 0.0f
-                            Entity.Text == "Decline"
-                            Entity.ClickEvent --> msg ShopConfirmDecline]
-                        Content.text Gen.name
-                           [Entity.PositionLocal == v3 30.0f 180.0f 0.0f; Entity.ElevationLocal == 1.0f
-                            Entity.Text <-- shopConfirm ==> fun shopConfirm -> shopConfirm.ShopConfirmOffer]
-                        Content.text Gen.name
-                           [Entity.PositionLocal == v3 60.0f 138.0f 0.0f; Entity.ElevationLocal == 1.0f
-                            Entity.Text <-- shopConfirm ==> fun shopConfirm -> shopConfirm.ShopConfirmLine1]
-                        Content.text Gen.name
-                           [Entity.PositionLocal == v3 60.0f 96.0f 0.0f; Entity.ElevationLocal == 1.0f
-                            Entity.Text <-- shopConfirm ==> fun shopConfirm -> shopConfirm.ShopConfirmLine2]]]]
+                 match field.ShopOpt with
+                 | Some shop ->
+                    match shop.ShopConfirmOpt with
+                    | Some shopConfirm ->
+                        yield Content.panel "Dialog"
+                           [Entity.Position <-- v3 -450.0f -128.0f 0.0f; Entity.Elevation <-- Constants.Field.GuiElevation + 10.0f; Entity.Size <-- v3 900.0f 252.0f 0.0f
+                            Entity.LabelImage <-- Assets.Gui.DialogFatImage]
+                           [Content.button "Accept"
+                               [Entity.PositionLocal <-- v3 198.0f 36.0f 0.0f; Entity.ElevationLocal <-- 1.0f; Entity.Size <-- v3 192.0f 48.0f 0.0f
+                                Entity.Text <-- "Accept"
+                                Entity.ClickEvent --> msg ShopConfirmAccept]
+                            Content.button "Decline"
+                               [Entity.PositionLocal <-- v3 498.0f 36.0f 0.0f; Entity.ElevationLocal <-- 1.0f; Entity.Size <-- v3 192.0f 48.0f 0.0f
+                                Entity.Text <-- "Decline"
+                                Entity.ClickEvent --> msg ShopConfirmDecline]
+                            Content.text "Offer"
+                               [Entity.PositionLocal <-- v3 30.0f 180.0f 0.0f; Entity.ElevationLocal <-- 1.0f
+                                Entity.Text <-- shopConfirm.ShopConfirmOffer]
+                            Content.text "Line1"
+                               [Entity.PositionLocal <-- v3 60.0f 138.0f 0.0f; Entity.ElevationLocal <-- 1.0f
+                                Entity.Text <-- shopConfirm.ShopConfirmLine1]
+                            Content.text "Line2"
+                               [Entity.PositionLocal <-- v3 60.0f 96.0f 0.0f; Entity.ElevationLocal <-- 1.0f
+                                Entity.Text <-- shopConfirm.ShopConfirmLine2]]
+                    | None -> ()
+                 | None -> ()]]
