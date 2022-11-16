@@ -63,23 +63,21 @@ module AvatarDispatcher =
         static member Facets =
             [typeof<RigidBodyFacet>]
 
-        override this.Initializers (avatar, entity) =
+        override this.Initialize (avatar, entity) =
             let bodyShapes =
                 BodyShapes
                     [BodySphere { Radius = 0.160f; Center = v3 -0.016f -0.3667f 0.0f; PropertiesOpt = Some { BodyShapeProperties.empty with BodyShapeId = coreShapeId }}
                      BodySphere { Radius = 0.320f; Center = v3 -0.016f -0.3667f 0.0f; PropertiesOpt = Some { BodyShapeProperties.empty with BodyShapeId = sensorShapeId; SensorOpt = Some true }}]
-            [entity.Perimeter <-- avatar ==> fun avatar -> avatar.Perimeter
-             entity.Presence == Omnipresent
-             entity.FixedRotation == true
-             entity.GravityScale == 0.0f
-             entity.BodyShape == bodyShapes]
-
-        override this.Channel (_, entity) =
-            [entity.UpdateEvent => msg Update
-             entity.Group.PostUpdateEvent => msg PostUpdate
-             entity.BodyCollisionEvent =|> fun evt -> msg (BodyCollision evt.Data)
-             entity.BodySeparationEvent =|> fun evt -> msg (BodySeparation evt.Data)
-             Simulants.Game.BodyRemovingEvent =|> fun evt -> msg (BodyRemoving evt.Data)]
+            [entity.Perimeter <-- avatar.Perimeter
+             entity.Presence <-- Omnipresent
+             entity.FixedRotation <-- true
+             entity.GravityScale <-- 0.0f
+             entity.BodyShape <-- bodyShapes
+             entity.UpdateEvent --> msg Update
+             entity.Group.PostUpdateEvent --> msg PostUpdate
+             entity.BodyCollisionEvent --|> fun evt -> msg (BodyCollision evt.Data)
+             entity.BodySeparationEvent --|> fun evt -> msg (BodySeparation evt.Data)
+             Simulants.Game.BodyRemovingEvent --|> fun evt -> msg (BodyRemoving evt.Data)]
 
         override this.Message (avatar, message, entity, world) =
             let time = World.getUpdateTime world
