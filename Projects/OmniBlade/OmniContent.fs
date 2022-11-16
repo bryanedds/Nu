@@ -106,7 +106,9 @@ module Content =
 
     let items (position : Vector3) elevation rows columns field fieldMsg =
         let items = pageItems rows field |> __c // TOOD: DIFF: consider memoizing.
-        [for (index, (_, (itemType, itemCountOpt)) as page) in items.Pairs do
+        [for entry in items do
+            let index = entry.Key
+            let (_, (itemType, itemCountOpt)) as page = entry.Value
             let itemName = ItemType.getName itemType
             let x = if index < columns then position.X else position.X + 375.0f
             let y = position.Y - single (index % columns) * 81.0f

@@ -71,4 +71,10 @@ module WorldInputModule =
             ignore (world : World)
             KeyboardState.isKeyDown key
 
+        /// Check that the given keyboard key is up.
+        [<FunctionBinding>]
+        static member isKeyboardKeyUp key world =
+            ignore (world : World)
+            KeyboardState.isKeyUp key
+
         // TODO: implement isKeyboardModifierActive.
