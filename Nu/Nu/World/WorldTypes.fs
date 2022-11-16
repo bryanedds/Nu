@@ -898,7 +898,7 @@ module WorldTypes =
         member private this.View = viewGame Chosen
 
         /// Concatenate an address with a game's address, forcing the type of first address.
-        static member (==>) (address : 'a Address, _ : Game) =
+        static member (-->) (address : 'a Address, _ : Game) =
             // NOTE: nothing to do since game address is always [||].
             address
 
@@ -954,10 +954,10 @@ module WorldTypes =
         member private this.View = viewScreen (this :> obj) Chosen
 
         /// Derive a group from its screen.
-        static member (/) (screen : Screen, groupName) = Group (atoa<Screen, Group> screen.ScreenAddress ==> ntoa groupName)
+        static member (/) (screen : Screen, groupName) = Group (atoa<Screen, Group> screen.ScreenAddress --> ntoa groupName)
 
         /// Concatenate an address with a screen's address, forcing the type of first address.
-        static member (==>) (address : 'a Address, screen : Screen) =
+        static member (-->) (address : 'a Address, screen : Screen) =
             // HACK: anonymizes address when entity is null due to internal engine trickery.
             if isNull (screen :> obj) then Address.anonymize address else acatff address screen.ScreenAddress
 
@@ -1024,10 +1024,10 @@ module WorldTypes =
         member private this.View = viewGroup (this :> obj) Chosen
 
         /// Derive an entity from its group.
-        static member (/) (group : Group, entityName) = Entity (atoa<Group, Entity> group.GroupAddress ==> ntoa entityName)
+        static member (/) (group : Group, entityName) = Entity (atoa<Group, Entity> group.GroupAddress --> ntoa entityName)
 
         /// Concatenate an address with a group's address, forcing the type of first address.
-        static member (==>) (address : 'a Address, group : Group) =
+        static member (-->) (address : 'a Address, group : Group) =
             // HACK: anonymizes address when entity is null due to internal engine trickery.
             if isNull (group :> obj) then Address.anonymize address else acatff address group.GroupAddress
 
@@ -1134,10 +1134,10 @@ module WorldTypes =
         member private this.View = viewEntity (this :> obj) Chosen
 
         /// Derive an entity from its parent entity.
-        static member (/) (parentEntity : Entity, entityName) = Entity (parentEntity.EntityAddress ==> ntoa entityName)
+        static member (/) (parentEntity : Entity, entityName) = Entity (parentEntity.EntityAddress --> ntoa entityName)
 
         /// Concatenate an address with an entity, forcing the type of first address.
-        static member (==>) (address : 'a Address, entity : Entity) =
+        static member (-->) (address : 'a Address, entity : Entity) =
             // HACK: anonymizes address when entity is null due to internal engine trickery.
             if isNull (entity :> obj) then Address.anonymize address else acatff address entity.EntityAddress
 

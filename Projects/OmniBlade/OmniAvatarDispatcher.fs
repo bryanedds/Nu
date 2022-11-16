@@ -68,16 +68,16 @@ module AvatarDispatcher =
                 BodyShapes
                     [BodySphere { Radius = 0.160f; Center = v3 -0.016f -0.3667f 0.0f; PropertiesOpt = Some { BodyShapeProperties.empty with BodyShapeId = CoreShapeId }}
                      BodySphere { Radius = 0.320f; Center = v3 -0.016f -0.3667f 0.0f; PropertiesOpt = Some { BodyShapeProperties.empty with BodyShapeId = SensorShapeId; SensorOpt = Some true }}]
-            [entity.Perimeter <-- avatar.Perimeter
-             entity.Presence := Omnipresent
-             entity.FixedRotation := true
-             entity.GravityScale := 0.0f
-             entity.BodyShape := bodyShape
-             entity.UpdateEvent --> msg Update
-             entity.Group.PostUpdateEvent --> msg PostUpdate
-             entity.BodyCollisionEvent --|> fun evt -> msg (BodyCollision evt.Data)
-             entity.BodySeparationEvent --|> fun evt -> msg (BodySeparation evt.Data)
-             Simulants.Game.BodyRemovingEvent --|> fun evt -> msg (BodyRemoving evt.Data)]
+            [entity.Perimeter := avatar.Perimeter
+             entity.Presence == Omnipresent
+             entity.FixedRotation == true
+             entity.GravityScale == 0.0f
+             entity.BodyShape == bodyShape
+             entity.UpdateEvent => msg Update
+             entity.Group.PostUpdateEvent => msg PostUpdate
+             entity.BodyCollisionEvent =|> fun evt -> msg (BodyCollision evt.Data)
+             entity.BodySeparationEvent =|> fun evt -> msg (BodySeparation evt.Data)
+             Simulants.Game.BodyRemovingEvent =|> fun evt -> msg (BodyRemoving evt.Data)]
 
         override this.Message (avatar, message, entity, world) =
             let time = World.getUpdateTime world

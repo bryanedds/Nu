@@ -56,7 +56,7 @@ module OmniBlade =
         override this.Initialize (omni, _) =
             [Game.Field <-> Simulants.Field.Screen.Field
              Game.Battle <-> Simulants.Battle.Screen.Battle
-             Game.DesiredScreen <--
+             Game.DesiredScreen :=
                 match omni with
                 | Gui gui ->
                     match gui with
@@ -75,20 +75,20 @@ module OmniBlade =
                             | _ -> Desire Simulants.Battle.Screen
                         | None -> Desire Simulants.Field.Screen
                     | Quitting -> Desire Simulants.Title.Screen
-             Simulants.Game.UpdateEvent --> msg UpdateMessage
-             Simulants.Game.UpdateEvent --> cmd UpdateCommand
-             Simulants.Splash.Screen.DeselectingEvent --> msg ShowTitle
-             Simulants.Title.Gui.Play.ClickEvent --> msg ShowPick
-             Simulants.Title.Gui.Credits.ClickEvent --> msg ShowCredits
-             Simulants.Title.Gui.Exit.ClickEvent --> cmd Exit
-             Simulants.Pick.Gui.NewGame1.ClickEvent --> msg (ShowIntro Slot1)
-             Simulants.Pick.Gui.NewGame2.ClickEvent --> msg (ShowIntro Slot2)
-             Simulants.Pick.Gui.NewGame3.ClickEvent --> msg (ShowIntro Slot3)
-             Simulants.Pick.Gui.LoadGame1.ClickEvent --> msg (TryLoad Slot1)
-             Simulants.Pick.Gui.LoadGame2.ClickEvent --> msg (TryLoad Slot2)
-             Simulants.Pick.Gui.LoadGame3.ClickEvent --> msg (TryLoad Slot3)
-             Simulants.Pick.Gui.Back.ClickEvent --> msg ShowTitle
-             Simulants.Credits.Gui.Back.ClickEvent --> msg ShowTitle]
+             Simulants.Game.UpdateEvent => msg UpdateMessage
+             Simulants.Game.UpdateEvent => cmd UpdateCommand
+             Simulants.Splash.Screen.DeselectingEvent => msg ShowTitle
+             Simulants.Title.Gui.Play.ClickEvent => msg ShowPick
+             Simulants.Title.Gui.Credits.ClickEvent => msg ShowCredits
+             Simulants.Title.Gui.Exit.ClickEvent => cmd Exit
+             Simulants.Pick.Gui.NewGame1.ClickEvent => msg (ShowIntro Slot1)
+             Simulants.Pick.Gui.NewGame2.ClickEvent => msg (ShowIntro Slot2)
+             Simulants.Pick.Gui.NewGame3.ClickEvent => msg (ShowIntro Slot3)
+             Simulants.Pick.Gui.LoadGame1.ClickEvent => msg (TryLoad Slot1)
+             Simulants.Pick.Gui.LoadGame2.ClickEvent => msg (TryLoad Slot2)
+             Simulants.Pick.Gui.LoadGame3.ClickEvent => msg (TryLoad Slot3)
+             Simulants.Pick.Gui.Back.ClickEvent => msg ShowTitle
+             Simulants.Credits.Gui.Back.ClickEvent => msg ShowTitle]
 
         override this.Message (omni, message, _, world) =
 

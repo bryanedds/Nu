@@ -33,7 +33,7 @@ module Content =
                         world eventSignalsRemoved
                 let world =
                     Seq.fold (fun world ((eventAddress : obj Address, signalObj), subscriptionId) ->
-                        let eventAddress = if eventAddress.Anonymous then eventAddress ==> simulant.SimulantAddress else eventAddress
+                        let eventAddress = if eventAddress.Anonymous then eventAddress --> simulant.SimulantAddress else eventAddress
                         let (unsubscribe, world) =
                             World.subscribePlus subscriptionId (fun (_ : Event) world ->
                                 let world = WorldModule.trySignal signalObj origin world
@@ -42,7 +42,7 @@ module Content =
                         let world =
                             World.monitor
                                 (fun _ world -> (Cascade, unsubscribe world))
-                                (Events.Unregistering ==> simulant.SimulantAddress)
+                                (Events.Unregistering --> simulant.SimulantAddress)
                                 simulant
                                 world
                         world)
@@ -74,7 +74,7 @@ module Content =
                         world eventHandlersRemoved
                 let world =
                     Seq.fold (fun world ((_, eventAddress : obj Address), (subscriptionId, handler)) ->
-                        let eventAddress = if eventAddress.Anonymous then eventAddress ==> simulant.SimulantAddress else eventAddress
+                        let eventAddress = if eventAddress.Anonymous then eventAddress --> simulant.SimulantAddress else eventAddress
                         let (unsubscribe, world) =
                             World.subscribePlus subscriptionId (fun event world ->
                                 let world = WorldModule.trySignal (handler event) origin world
@@ -83,7 +83,7 @@ module Content =
                         let world =
                             World.monitor
                                 (fun _ world -> (Cascade, unsubscribe world))
-                                (Events.Unregistering ==> simulant.SimulantAddress)
+                                (Events.Unregistering --> simulant.SimulantAddress)
                                 simulant
                                 world
                         world)
@@ -523,17 +523,17 @@ module Content =
 module ContentOperators =
 
     /// Define a property initializer.
-    let inline (:=) (lens : Lens<'a, 's, World>) (value : 'a) : InitializerContent =
+    let inline (==) (lens : Lens<'a, 's, World>) (value : 'a) : InitializerContent =
         PropertyInitializer (PropertyInitializer.make lens value)
 
     /// Define a property synchronizer.
-    let inline (<--) (lens : Lens<'a, 's, World>) (value : 'a) : InitializerContent =
+    let inline (:=) (lens : Lens<'a, 's, World>) (value : 'a) : InitializerContent =
         PropertySynchronizer (PropertySynchronizer.make lens value)
 
     /// Define a signal content.
-    let inline (-->) (eventAddress : 'a Address) (signal : Signal<'message, 'command>) : InitializerContent =
+    let inline (=>) (eventAddress : 'a Address) (signal : Signal<'message, 'command>) : InitializerContent =
         EventSignalContent (Address.generalize eventAddress, signal)
 
     /// Define a signal handler content.
-    let inline (--|>) (eventAddress : 'a Address) (callback : Event<'a, 's> -> Signal<'message, 'command>) : InitializerContent =
+    let inline (=|>) (eventAddress : 'a Address) (callback : Event<'a, 's> -> Signal<'message, 'command>) : InitializerContent =
         EventHandlerContent (PartialEquatable.make (Address.generalize eventAddress) (fun (evt : Event) -> callback (Event.specialize evt) :> obj))
