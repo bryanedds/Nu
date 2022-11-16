@@ -24,12 +24,11 @@ module PropDispatcher =
             [typeof<RigidBodyFacet>]
 
         override this.Initialize (prop, entity) =
-            [entity.BodyType <-- Static
-             entity.LinearDamping <-- 0.0f
-             entity.FixedRotation <-- true
-             entity.GravityScale <-- 0.0f
-             entity.BodyType <-- Static
-             entity.Perimeter <-- prop.Perimeter
+            [entity.Perimeter <-- prop.Perimeter
+             entity.BodyType := Static
+             entity.LinearDamping := 0.0f
+             entity.FixedRotation := true
+             entity.GravityScale := 0.0f
              entity.Sensor <--
                 match prop.PropData with
                 | Portal _ | Sensor _ | SavePoint -> true

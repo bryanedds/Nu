@@ -33,8 +33,8 @@ module AvatarDispatcher =
         inherit EntityDispatcher2d<Avatar, AvatarMessage, AvatarCommand>
             (false, true, Avatar.make (box3 v3Zero Constants.Gameplay.CharacterSize) Assets.Field.JinnAnimationSheet Downward)
 
-        static let coreShapeId = Gen.id64
-        static let sensorShapeId = Gen.id64
+        static let CoreShapeId = Gen.id64 // TODO: DIFF: hotload won't work with this!
+        static let SensorShapeId = Gen.id64
 
         static let getSpriteInset (entity : Entity) world =
             let avatar = entity.GetAvatar world
@@ -42,7 +42,7 @@ module AvatarDispatcher =
             inset
 
         static let isIntersectedProp collider collidee world =
-            if (collider.BodyShapeId = coreShapeId &&
+            if (collider.BodyShapeId = CoreShapeId &&
                 collidee.Entity.Exists world &&
                 collidee.Entity.Is<PropDispatcher> world &&
                 match (collidee.Entity.GetProp world).PropData with
@@ -50,7 +50,7 @@ module AvatarDispatcher =
                 | Sensor _ -> true
                 | _ -> false) then
                 true
-            elif (collider.BodyShapeId = sensorShapeId &&
+            elif (collider.BodyShapeId = SensorShapeId &&
                   collidee.Entity.Exists world &&
                   collidee.Entity.Is<PropDispatcher> world &&
                   match (collidee.Entity.GetProp world).PropData with
@@ -64,15 +64,15 @@ module AvatarDispatcher =
             [typeof<RigidBodyFacet>]
 
         override this.Initialize (avatar, entity) =
-            let bodyShapes =
+            let bodyShape =
                 BodyShapes
-                    [BodySphere { Radius = 0.160f; Center = v3 -0.016f -0.3667f 0.0f; PropertiesOpt = Some { BodyShapeProperties.empty with BodyShapeId = coreShapeId }}
-                     BodySphere { Radius = 0.320f; Center = v3 -0.016f -0.3667f 0.0f; PropertiesOpt = Some { BodyShapeProperties.empty with BodyShapeId = sensorShapeId; SensorOpt = Some true }}]
+                    [BodySphere { Radius = 0.160f; Center = v3 -0.016f -0.3667f 0.0f; PropertiesOpt = Some { BodyShapeProperties.empty with BodyShapeId = CoreShapeId }}
+                     BodySphere { Radius = 0.320f; Center = v3 -0.016f -0.3667f 0.0f; PropertiesOpt = Some { BodyShapeProperties.empty with BodyShapeId = SensorShapeId; SensorOpt = Some true }}]
             [entity.Perimeter <-- avatar.Perimeter
-             entity.Presence <-- Omnipresent
-             entity.FixedRotation <-- true
-             entity.GravityScale <-- 0.0f
-             entity.BodyShape <-- bodyShapes
+             entity.Presence := Omnipresent
+             entity.FixedRotation := true
+             entity.GravityScale := 0.0f
+             entity.BodyShape := bodyShape
              entity.UpdateEvent --> msg Update
              entity.Group.PostUpdateEvent --> msg PostUpdate
              entity.BodyCollisionEvent --|> fun evt -> msg (BodyCollision evt.Data)

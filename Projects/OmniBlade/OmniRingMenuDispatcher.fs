@@ -34,7 +34,7 @@ module RingMenuDispatcher =
             | ItemCancel -> just (World.publishPlus () menu.CancelEvent [] menu true false world)
             | ItemSelect item -> just (World.publishPlus item menu.ItemSelectEvent [] menu true false world)
 
-        override this.Content (ringMenu, menu) =
+        override this.Content (ringMenu, _) =
             let mutable i = -1
             let items =
                 ringMenu.Items |>
@@ -53,16 +53,16 @@ module RingMenuDispatcher =
                          let rotation = progress * single Math.PI * 2.0f
                          let position = v3 (radius * sin rotation) (radius * cos rotation) 0.0f
                          position - buttonSize * 0.5f)
-                     Entity.Size <-- buttonSize
-                     Entity.ElevationLocal <-- 1.0f
+                     Entity.Size := buttonSize
+                     Entity.ElevationLocal := 1.0f
                      Entity.UpImage <-- asset Assets.Battle.PackageName (itemName + "Up")
                      Entity.DownImage <-- asset Assets.Battle.PackageName (itemName + "Down")
                      Entity.ClickEvent --> cmd (ItemSelect itemName)]
              yield Content.button "Cancel"
-                [Entity.MountOpt <-- None // TODO: DIFF: make sure this is implemented and content mounting generally.
-                 Entity.Size <-- v3 48.0f 48.0f 0.0f
-                 Entity.Position <-- Constants.Battle.CancelPosition
-                 Entity.ElevationLocal <-- 1.0f
-                 Entity.UpImage <-- asset Assets.Battle.PackageName "CancelUp"
-                 Entity.DownImage <-- asset Assets.Battle.PackageName "CancelDown"
+                [Entity.MountOpt := None // TODO: DIFF: make sure this is implemented and content mounting generally.
+                 Entity.Size := v3 48.0f 48.0f 0.0f
+                 Entity.Position := Constants.Battle.CancelPosition
+                 Entity.ElevationLocal := 1.0f
+                 Entity.UpImage := asset Assets.Battle.PackageName "CancelUp"
+                 Entity.DownImage := asset Assets.Battle.PackageName "CancelDown"
                  Entity.ClickEvent --> cmd ItemCancel]]

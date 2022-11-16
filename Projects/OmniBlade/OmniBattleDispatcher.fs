@@ -1139,8 +1139,8 @@ module BattleDispatcher =
 
                 [// tile map
                  yield Content.tileMap "TileMap"
-                    [Entity.Position <-- v3 -480.0f -270.0f 0.0f
-                     Entity.Elevation <-- Constants.Battle.BackgroundElevation
+                    [Entity.Position := v3 -480.0f -270.0f 0.0f
+                     Entity.Elevation := Constants.Battle.BackgroundElevation
                      Entity.TileMap <-- battle.TileMap
                      Entity.TileIndexOffset <-- battle.TileIndexOffset
                      Entity.TileIndexOffsetRange <-- battle.TileIndexOffsetRange]
@@ -1152,10 +1152,10 @@ module BattleDispatcher =
 
                  // dialog interact button
                  yield Content.button "DialogInteract"
-                    [Entity.Position <-- v3 248.0f -240.0f 0.0f; Entity.Elevation <-- Constants.Field.GuiElevation; Entity.Size <-- v3 144.0f 48.0f 0.0f
-                     Entity.UpImage <-- Assets.Gui.ButtonShortUpImage; Entity.DownImage <-- Assets.Gui.ButtonShortDownImage
+                    [Entity.Position := v3 248.0f -240.0f 0.0f; Entity.Elevation := Constants.Field.GuiElevation; Entity.Size := v3 144.0f 48.0f 0.0f
+                     Entity.UpImage := Assets.Gui.ButtonShortUpImage; Entity.DownImage := Assets.Gui.ButtonShortDownImage
                      Entity.Visible <-- match battle.DialogOpt with Some dialog -> Dialog.canAdvance id dialog | None -> false
-                     Entity.Text <-- "Next"
+                     Entity.Text := "Next"
                      Entity.ClickEvent --> msg InteractDialog]
 
                  // characters
@@ -1173,17 +1173,17 @@ module BattleDispatcher =
                         
                         [// health bar
                          Content.fillBar "HealthBar" 
-                            [Entity.Size <-- v3 48.0f 6.0f 0.0f
+                            [Entity.Size := v3 48.0f 6.0f 0.0f
                              Entity.Center <-- ally.BottomOffset
-                             Entity.Elevation <-- Constants.Battle.GuiElevation
+                             Entity.Elevation := Constants.Battle.GuiElevation
                              Entity.Fill <-- single ally.HitPoints / single ally.HitPointsMax]
                             
                          // tech bar
                          Content.fillBar "TechBar" 
-                            [Entity.Size <-- v3 48.0f 6.0f 0.0f
+                            [Entity.Size := v3 48.0f 6.0f 0.0f
                              Entity.Center <-- ally.BottomOffset2
-                             Entity.Elevation <-- Constants.Battle.GuiElevation
-                             Entity.FillColor <-- Color (byte 74, byte 91, byte 169, byte 255)
+                             Entity.Elevation := Constants.Battle.GuiElevation
+                             Entity.FillColor := Color (byte 74, byte 91, byte 169, byte 255)
                              Entity.Fill <-- single ally.TechPoints / single ally.TechPointsMax]]]
 
              // inputs condition
@@ -1202,7 +1202,7 @@ module BattleDispatcher =
                             [// regular menu
                              Content.entity<RingMenuDispatcher> "RegularMenu"
                                 [Entity.Position <-- ally.CenterOffset
-                                 Entity.Elevation <-- Constants.Battle.GuiElevation
+                                 Entity.Elevation := Constants.Battle.GuiElevation
                                  Entity.Visible <-- (ally.InputState = RegularMenu)
                                  Entity.Enabled <--
                                     (let allies = battle |> Battle.getAllies |> Map.toValueList
@@ -1211,14 +1211,14 @@ module BattleDispatcher =
                                             match ally.InputState with NoInput | RegularMenu -> false | _ -> true)
                                             allies
                                      alliesPastRegularMenu)
-                                 Entity.RingMenu <-- { Items = Map.ofList [("Attack", (0, true)); ("Tech", (1, true)); ("Consumable", (2, true)); ("Defend", (3, true))]; ItemCancelOpt = None }
+                                 Entity.RingMenu := { Items = Map.ofList [("Attack", (0, true)); ("Tech", (1, true)); ("Consumable", (2, true)); ("Defend", (3, true))]; ItemCancelOpt = None }
                                  Entity.ItemSelectEvent --|> fun evt -> msg (RegularItemSelect (index, evt.Data))
                                  Entity.CancelEvent --> msg (RegularItemCancel index)]
 
                              // consumable menu
                              Content.entity<RingMenuDispatcher> "ConsumableMenu"
                                 [Entity.Position <-- ally.CenterOffset
-                                 Entity.Elevation <-- Constants.Battle.GuiElevation
+                                 Entity.Elevation := Constants.Battle.GuiElevation
                                  Entity.Visible <-- (ally.InputState = ItemMenu)
                                  Entity.RingMenu <--
                                     (let consumables =
@@ -1232,7 +1232,7 @@ module BattleDispatcher =
                              // tech menu
                              Content.entity<RingMenuDispatcher> "TechMenu"
                                 [Entity.Position <-- ally.CenterOffset
-                                 Entity.Elevation <-- Constants.Battle.GuiElevation
+                                 Entity.Elevation := Constants.Battle.GuiElevation
                                  Entity.Visible <-- (ally.InputState = TechMenu)
                                  Entity.RingMenu <--
                                     (let techs =
@@ -1249,7 +1249,7 @@ module BattleDispatcher =
 
                              // reticles
                              Content.entity<ReticlesDispatcher> "Reticles"
-                                [Entity.Elevation <-- Constants.Battle.GuiElevation
+                                [Entity.Elevation := Constants.Battle.GuiElevation
                                  Entity.Visible <-- match ally.InputState with AimReticles _ -> true | _ -> false
                                  Entity.Reticles <--
                                     (let aimType =
