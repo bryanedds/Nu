@@ -110,7 +110,7 @@ module WorldModuleScreen =
         static member internal setScreenModelProperty initializing (value : DesignerProperty) screen world =
             let screenState = World.getScreenState screen world
             let previous = screenState.Model
-            if value.DesignerValue =/= previous.DesignerValue then
+            if value.DesignerValue =/= previous.DesignerValue || initializing then
                 let struct (screenState, world) =
                     let screenState = { screenState with Model = { DesignerType = value.DesignerType; DesignerValue = value.DesignerValue }}
                     struct (screenState, World.setScreenState screenState screen world)
@@ -129,7 +129,7 @@ module WorldModuleScreen =
             let screenState = World.getScreenState screen world
             let valueObj = value :> obj
             let previous = screenState.Model
-            if valueObj =/= previous.DesignerValue then
+            if valueObj =/= previous.DesignerValue || initializing then
                 let struct (screenState, world) =
                     let screenState = { screenState with Model = { DesignerType = typeof<'a>; DesignerValue = valueObj }}
                     struct (screenState, World.setScreenState screenState screen world)

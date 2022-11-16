@@ -293,7 +293,7 @@ module WorldModuleEntity =
         static member internal setEntityModelProperty initializing (value : DesignerProperty) entity world =
             let entityState = World.getEntityState entity world
             let previous = entityState.Model
-            if value.DesignerValue =/= previous.DesignerValue then
+            if value.DesignerValue =/= previous.DesignerValue || initializing then
                 let struct (entityState, world) =
                     if entityState.Imperative then
                         entityState.Model <- { DesignerType = value.DesignerType; DesignerValue = value.DesignerValue }
@@ -316,7 +316,7 @@ module WorldModuleEntity =
             let entityState = World.getEntityState entity world
             let valueObj = value :> obj
             let previous = entityState.Model
-            if valueObj =/= previous.DesignerValue then
+            if valueObj =/= previous.DesignerValue || initializing then
                 let struct (entityState, world) =
                     if entityState.Imperative then
                         entityState.Model <- { DesignerType = typeof<'a>; DesignerValue = valueObj }

@@ -110,7 +110,7 @@ module WorldModuleGroup =
         static member internal setGroupModelProperty initializing (value : DesignerProperty) group world =
             let groupState = World.getGroupState group world
             let previous = groupState.Model
-            if value.DesignerValue =/= previous.DesignerValue then
+            if value.DesignerValue =/= previous.DesignerValue || initializing then
                 let struct (groupState, world) =
                     let groupState = { groupState with Model = { DesignerType = value.DesignerType; DesignerValue = value.DesignerValue }}
                     struct (groupState, World.setGroupState groupState group world)
@@ -129,7 +129,7 @@ module WorldModuleGroup =
             let groupState = World.getGroupState group world
             let valueObj = value :> obj
             let previous = groupState.Model
-            if valueObj =/= previous.DesignerValue then
+            if valueObj =/= previous.DesignerValue || initializing then
                 let struct (groupState, world) =
                     let groupState = { groupState with Model = { DesignerType = typeof<'a>; DesignerValue = valueObj }}
                     struct (groupState, World.setGroupState groupState group world)
