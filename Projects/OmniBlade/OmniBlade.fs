@@ -53,9 +53,9 @@ module OmniBlade =
 #endif
             base.Register (game, world)
 
-        override this.Initializers (omni, _) =
-            [Game.Field <--> Simulants.Field.Screen.Field
-             Game.Battle <--> Simulants.Battle.Screen.Battle
+        override this.Initialize (omni, _) =
+            [Game.Field <-> Simulants.Field.Screen.Field
+             Game.Battle <-> Simulants.Battle.Screen.Battle
              Game.DesiredScreen <--
                 match omni with
                 | Gui gui ->
