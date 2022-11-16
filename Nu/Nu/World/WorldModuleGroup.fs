@@ -107,15 +107,15 @@ module WorldModuleGroup =
         static member internal getGroupId group world = (World.getGroupState group world).Id
         static member internal getGroupName group world = (World.getGroupState group world).Name
 
-        static member internal setGroupModelProperty (value : DesignerProperty) group world =
+        static member internal setGroupModelProperty initializing (value : DesignerProperty) group world =
             let groupState = World.getGroupState group world
             let previous = groupState.Model
             if value.DesignerValue =/= previous.DesignerValue then
                 let struct (groupState, world) =
                     let groupState = { groupState with Model = { DesignerType = value.DesignerType; DesignerValue = value.DesignerValue }}
                     struct (groupState, World.setGroupState groupState group world)
-                let world = World.publishGroupChange (nameof groupState.Model) previous.DesignerValue value.DesignerValue group world
-                let world = (World.getGroupDispatcher group world).TrySynchronize (group, world)
+                let world = groupState.Dispatcher.TrySynchronize (initializing, group, world)
+                let world = World.publishGroupChange "Model" previous.DesignerValue value.DesignerValue group world
                 struct (true, world)
             else struct (false, world)
 
@@ -125,7 +125,7 @@ module WorldModuleGroup =
             | null -> null :> obj :?> 'a
             | modelObj -> modelObj |> valueToSymbol |> symbolToValue
 
-        static member internal setGroupModel<'a> (value : 'a) group world =
+        static member internal setGroupModel<'a> initializing (value : 'a) group world =
             let groupState = World.getGroupState group world
             let valueObj = value :> obj
             let previous = groupState.Model
@@ -133,8 +133,8 @@ module WorldModuleGroup =
                 let struct (groupState, world) =
                     let groupState = { groupState with Model = { DesignerType = typeof<'a>; DesignerValue = valueObj }}
                     struct (groupState, World.setGroupState groupState group world)
-                let world = World.publishGroupChange (nameof groupState.Model) previous.DesignerValue value group world
-                let world = (World.getGroupDispatcher group world).TrySynchronize (group, world)
+                let world = groupState.Dispatcher.TrySynchronize (initializing, group, world)
+                let world = World.publishGroupChange "Model" previous.DesignerValue value group world
                 struct (true, world)
             else struct (false, world)
 
@@ -320,7 +320,7 @@ module WorldModuleGroup =
 
     /// Initialize property setters.
     let private initSetters () =
-        GroupSetters.Add ("Model", fun property group world -> World.setGroupModelProperty { DesignerType = property.PropertyType; DesignerValue = property.PropertyValue } group world)
+        GroupSetters.Add ("Model", fun property group world -> World.setGroupModelProperty false { DesignerType = property.PropertyType; DesignerValue = property.PropertyValue } group world)
         GroupSetters.Add ("Visible", fun property group world -> World.setGroupVisible (property.PropertyValue :?> bool) group world)
         GroupSetters.Add ("Persistent", fun property group world -> World.setGroupPersistent (property.PropertyValue :?> bool) group world)
 

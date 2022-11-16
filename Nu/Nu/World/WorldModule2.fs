@@ -1128,12 +1128,10 @@ module EntityDispatcherModule2 =
             lens (nameof this.Model) entity (this.GetModel entity) (flip this.SetModel entity)
 
         override this.Register (entity, world) =
-            let world =
-                let property = World.getEntityModelProperty entity world
-                if property.DesignerType = typeof<unit>
-                then entity.SetModelGeneric<'model> (makeInitial world) world
-                else world
-            this.TrySynchronize (entity, world)
+            let property = World.getEntityModelProperty entity world
+            if property.DesignerType = typeof<unit>
+            then World.setEntityModel<'model> true (makeInitial world) entity world |> snd'
+            else world
 
         override this.ApplyPhysics (position, rotation, linearVelocity, angularVelocity, entity, world) =
             let model = this.GetModel entity world
@@ -1154,16 +1152,16 @@ module EntityDispatcherModule2 =
             | :? Signal<obj, 'command> as signal -> entity.Signal<'model, 'message, 'command> (match signal with Command command -> cmd command | _ -> failwithumf ()) world
             | _ -> Log.info "Incorrect signal type returned from event binding"; world
 
-        override this.TrySynchronize (entity, world) =
+        override this.TrySynchronize (initializing, entity, world) =
             let contentOld = World.getEntityContent entity world
             let model = this.GetModel entity world
             let initializers = this.Initialize (model, entity)
             let entities = this.Content (model, entity)
             let content = Content.composite entity.Name initializers entities
-            let world = Content.synchronizeEntity contentOld content entity entity world
+            let world = Content.synchronizeEntity initializing contentOld content entity entity world
             World.setEntityContent content entity world
 
-        abstract member Initialize : 'model * Entity -> ContentInitializer seq
+        abstract member Initialize : 'model * Entity -> InitializerContent seq
         default this.Initialize (_, _) = Seq.empty
 
         abstract member Physics : Vector3 * Quaternion * Vector3 * Vector3 * 'model * Entity * World -> Signal<'message, 'command> list * 'model
@@ -1253,12 +1251,10 @@ module GroupDispatcherModule =
             lens (nameof this.Model) group (this.GetModel group) (flip this.SetModel group)
 
         override this.Register (group, world) =
-            let world =
-                let property = World.getGroupModelProperty group world
-                if property.DesignerType = typeof<unit>
-                then group.SetModelGeneric<'model> (makeInitial world) world
-                else world
-            this.TrySynchronize (group, world)
+            let property = World.getGroupModelProperty group world
+            if property.DesignerType = typeof<unit>
+            then World.setGroupModel<'model> true (makeInitial world) group world |> snd'
+            else world
 
         override this.Render (group, world) =
             let view = this.View (this.GetModel group world, group, world)
@@ -1270,16 +1266,16 @@ module GroupDispatcherModule =
             | :? Signal<obj, 'command> as signal -> group.Signal<'model, 'message, 'command> (match signal with Command command -> cmd command | _ -> failwithumf ()) world
             | _ -> Log.info "Incorrect signal type returned from event binding."; world
 
-        override this.TrySynchronize (group, world) =
+        override this.TrySynchronize (initializing, group, world) =
             let contentOld = World.getGroupContent group world
             let model = this.GetModel group world
             let initializers = this.Initialize (model, group)
             let entities = this.Content (model, group)
             let content = Content.group group.Name initializers entities
-            let world = Content.synchronizeGroup contentOld content group group world
+            let world = Content.synchronizeGroup initializing contentOld content group group world
             World.setGroupContent content group world
 
-        abstract member Initialize : 'model * Group -> ContentInitializer seq
+        abstract member Initialize : 'model * Group -> InitializerContent seq
         default this.Initialize (_, _) = Seq.empty
 
         abstract member Message : 'model * 'message * Group * World -> Signal<'message, 'command> list * 'model
@@ -1331,12 +1327,10 @@ module ScreenDispatcherModule =
             lens (nameof this.Model) screen (this.GetModel screen) (flip this.SetModel screen)
 
         override this.Register (screen, world) =
-            let world =
-                let property = World.getScreenModelProperty screen world
-                if property.DesignerType = typeof<unit>
-                then screen.SetModelGeneric<'model> (makeInitial world) world
-                else world
-            this.TrySynchronize (screen, world)
+            let property = World.getScreenModelProperty screen world
+            if property.DesignerType = typeof<unit>
+            then World.setScreenModel<'model> true (makeInitial world) screen world |> snd'
+            else world
 
         override this.Render (screen, world) =
             let view = this.View (this.GetModel screen world, screen, world)
@@ -1348,16 +1342,16 @@ module ScreenDispatcherModule =
             | :? Signal<obj, 'command> as signal -> screen.Signal<'model, 'message, 'command> (match signal with Command command -> cmd command | _ -> failwithumf ()) world
             | _ -> Log.info "Incorrect signal type returned from event binding."; world
 
-        override this.TrySynchronize (screen, world) =
+        override this.TrySynchronize (initializing, screen, world) =
             let contentOld = World.getScreenContent screen world
             let model = this.GetModel screen world
             let initializers = this.Initialize (model, screen)
             let group = this.Content (model, screen)
             let content = Content.screen screen.Name Vanilla initializers group
-            let world = Content.synchronizeScreen contentOld content screen screen world
+            let world = Content.synchronizeScreen initializing contentOld content screen screen world
             World.setScreenContent content screen world
 
-        abstract member Initialize : 'model * Screen -> ContentInitializer seq
+        abstract member Initialize : 'model * Screen -> InitializerContent seq
         default this.Initialize (_, _) = Seq.empty
 
         abstract member Message : 'model * 'message * Screen * World -> Signal<'message, 'command> list * 'model
@@ -1406,16 +1400,11 @@ module GameDispatcherModule =
         member this.Model (game : Game) =
             lens (nameof this.Model) game (this.GetModel game) (flip this.SetModel game)
 
-        override this.Register (game, world) =
-            let world =
-                let property = World.getGameModelProperty world
-                if property.DesignerType = typeof<unit>
-                then game.SetModelGeneric<'model> (makeInitial world) world
-                else world
-            let (screenInitialOpt, world) = this.Synchronize (game, world)
-            match screenInitialOpt with
-            | Some screen -> game.SetDesiredScreen (Desire screen) world
-            | None -> game.SetDesiredScreen DesireNone world
+        override this.Register (_, world) =
+            let property = World.getGameModelProperty world
+            if property.DesignerType = typeof<unit>
+            then World.setGameModel<'model> true (makeInitial world) world |> snd'
+            else world
 
         override this.Render (game, world) =
             let view = this.View (this.GetModel game world, game, world)
@@ -1427,10 +1416,10 @@ module GameDispatcherModule =
             | :? Signal<obj, 'command> as signal -> game.Signal<'model, 'message, 'command> (match signal with Command command -> cmd command | _ -> failwithumf ()) world
             | _ -> Log.info "Incorrect signal type returned from event binding."; world
 
-        override this.TrySynchronize (game, world) =
-            this.Synchronize (game, world) |> snd
+        override this.TrySynchronize (initializing, game, world) =
+            this.Synchronize (initializing, game, world) |> snd
 
-        abstract member Initialize : 'model * Game -> ContentInitializer seq
+        abstract member Initialize : 'model * Game -> InitializerContent seq
         default this.Initialize (_, _) = Seq.empty
 
         abstract member Message : 'model * 'message * Game * World -> Signal<'message, 'command> list * 'model
@@ -1445,13 +1434,13 @@ module GameDispatcherModule =
         abstract member View : 'model * Game * World -> View
         default this.View (_, _, _) = View.empty
 
-        member private this.Synchronize (game, world) =
+        member private this.Synchronize (initializing, game, world) =
             let contentOld = World.getGameContent world
             let model = this.GetModel game world
             let initializers = this.Initialize (model, game)
             let screens = this.Content (model, game)
             let content = Content.game initializers screens
-            let (initialScreen, world) = Content.synchronizeGame World.setScreenSplash contentOld content game world
+            let (initialScreen, world) = Content.synchronizeGame World.setScreenSplash initializing contentOld content game world
             (initialScreen, World.setGameContent content world)
 
 [<AutoOpen>]
@@ -1491,36 +1480,32 @@ module WorldModule2' =
                         World.setEntityState entityState entity world
                     | None -> world
                 | :? EntityDispatcher as entityDispatcher ->
-                    if getTypeName entityState.Dispatcher = getTypeName entityDispatcher then
-                        let world = World.setEntityState { entityState with Dispatcher = entityDispatcher } entity world
-                        entityDispatcher.TrySynchronize (entity, world)
+                    if getTypeName entityState.Dispatcher = getTypeName entityDispatcher
+                    then World.setEntityState { entityState with Dispatcher = entityDispatcher } entity world
                     else world
                 | _ -> world
             | :? Group as group ->
                 let groupState = World.getGroupState group world
                 match latebindings with
                 | :? GroupDispatcher as groupDispatcher ->
-                    if getTypeName groupState.Dispatcher = getTypeName groupDispatcher then
-                        let world = World.setGroupState { groupState with Dispatcher = groupDispatcher } group world
-                        groupDispatcher.TrySynchronize (group, world)
+                    if getTypeName groupState.Dispatcher = getTypeName groupDispatcher
+                    then World.setGroupState { groupState with Dispatcher = groupDispatcher } group world
                     else world
                 | _ -> world
             | :? Screen as screen ->
                 let screenState = World.getScreenState screen world
                 match latebindings with
                 | :? ScreenDispatcher as screenDispatcher ->
-                    if getTypeName screenState.Dispatcher = getTypeName screenDispatcher then
-                        let world = World.setScreenState { screenState with Dispatcher = screenDispatcher } screen world
-                        screenDispatcher.TrySynchronize (screen, world)
+                    if getTypeName screenState.Dispatcher = getTypeName screenDispatcher
+                    then World.setScreenState { screenState with Dispatcher = screenDispatcher } screen world
                     else world
                 | _ -> world
-            | :? Game as game ->
+            | :? Game ->
                 let gameState = World.getGameState world
                 match latebindings with
                 | :? GameDispatcher as gameDispatcher ->
-                    if getTypeName gameState.Dispatcher = getTypeName gameDispatcher then
-                        let world = World.setGameState { gameState with Dispatcher = gameDispatcher } world
-                        gameDispatcher.TrySynchronize (game, world)
+                    if getTypeName gameState.Dispatcher = getTypeName gameDispatcher
+                    then World.setGameState { gameState with Dispatcher = gameDispatcher } world
                     else world
                 | _ -> world
             | _ -> failwithumf ()

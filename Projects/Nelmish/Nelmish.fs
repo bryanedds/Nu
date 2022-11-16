@@ -30,19 +30,19 @@ type NelmishDispatcher () =
         [Content.screen Simulants.Default.Screen.Name Vanilla []
             [Content.group Simulants.Default.Screen.Name []
                 [yield Content.button "Decrement"
-                    [Entity.Text <-- "-"
-                     Entity.Position <-- v3 -256.0f 64.0f 0.0f
+                    [Entity.Position := v3 -256.0f 64.0f 0.0f
+                     Entity.Text := "-"
                      Entity.ClickEvent --> msg Decrement]
                  yield Content.button "Increment"
-                    [Entity.Text <-- "+"
-                     Entity.Position <-- v3 0.0f 64.0f 0.0f
+                    [Entity.Position := v3 0.0f 64.0f 0.0f
+                     Entity.Text := "+"
                      Entity.ClickEvent --> msg Increment]
                  yield Content.text "Counter"
-                    [Entity.Text <-- string model
-                     Entity.Position <-- v3 -128.0f -32.0f 0.0f
-                     Entity.Justification <-- Justified (JustifyCenter, JustifyMiddle)]
+                    [Entity.Position := v3 -128.0f -32.0f 0.0f
+                     Entity.Justification := Justified (JustifyCenter, JustifyMiddle)
+                     Entity.Text <-- string model]
                  if model <> 0 then
                     yield Content.button "Reset"
-                       [Entity.Text <-- "Reset"
-                        Entity.Position <-- v3 -128.0f -128.0f 0.0f
+                       [Entity.Position := v3 -128.0f -128.0f 0.0f
+                        Entity.Text := "Reset"
                         Entity.ClickEvent --> msg Reset]]]]

@@ -290,7 +290,7 @@ module WorldModuleEntity =
             let entityState = World.getEntityState entity world
             entityState.Model
 
-        static member internal setEntityModelProperty (value : DesignerProperty) entity world =
+        static member internal setEntityModelProperty initializing (value : DesignerProperty) entity world =
             let entityState = World.getEntityState entity world
             let previous = entityState.Model
             if value.DesignerValue =/= previous.DesignerValue then
@@ -301,8 +301,8 @@ module WorldModuleEntity =
                     else
                         let entityState = { entityState with Model = { DesignerType = value.DesignerType; DesignerValue = value.DesignerValue }}
                         struct (entityState, World.setEntityState entityState entity world)
-                let world = World.publishEntityChange (nameof entityState.Model) previous.DesignerValue value.DesignerValue entityState.PublishChangeEvents entity world
-                let world = (World.getEntityDispatcher entity world : EntityDispatcher).TrySynchronize (entity, world)
+                let world = entityState.Dispatcher.TrySynchronize (initializing, entity, world)
+                let world = World.publishEntityChange "Model" previous.DesignerValue value.DesignerValue entityState.PublishChangeEvents entity world
                 struct (true, world)
             else struct (false, world)
 
@@ -312,7 +312,7 @@ module WorldModuleEntity =
             | null -> null :> obj :?> 'a
             | modelObj -> modelObj |> valueToSymbol |> symbolToValue
 
-        static member internal setEntityModel<'a> (value : 'a) entity world =
+        static member internal setEntityModel<'a> initializing (value : 'a) entity world =
             let entityState = World.getEntityState entity world
             let valueObj = value :> obj
             let previous = entityState.Model
@@ -324,8 +324,8 @@ module WorldModuleEntity =
                     else
                         let entityState = { entityState with Model = { DesignerType = typeof<'a>; DesignerValue = valueObj }}
                         struct (entityState, World.setEntityState entityState entity world)
-                let world = World.publishEntityChange (nameof entityState.Model) previous.DesignerValue value entityState.PublishChangeEvents entity world
-                let world = (World.getEntityDispatcher entity world : EntityDispatcher).TrySynchronize (entity, world)
+                let world = entityState.Dispatcher.TrySynchronize (initializing, entity, world)
+                let world = World.publishEntityChange "Model" previous.DesignerValue value entityState.PublishChangeEvents entity world
                 struct (true, world)
             else struct (false, world)
 
@@ -2495,7 +2495,7 @@ module WorldModuleEntity =
         EntitySetters.["Overflow"] <- fun property entity world -> World.setEntityOverflow (property.PropertyValue :?> single) entity world
         EntitySetters.["Presence"] <- fun property entity world -> World.setEntityPresence (property.PropertyValue :?> Presence) entity world
         EntitySetters.["Absolute"] <- fun property entity world -> World.setEntityAbsolute (property.PropertyValue :?> bool) entity world
-        EntitySetters.["Model"] <- fun property entity world -> World.setEntityModelProperty { DesignerType = property.PropertyType; DesignerValue = property.PropertyValue } entity world
+        EntitySetters.["Model"] <- fun property entity world -> World.setEntityModelProperty false { DesignerType = property.PropertyType; DesignerValue = property.PropertyValue } entity world
         EntitySetters.["MountOpt"] <- fun property entity world -> World.setEntityMountOpt (property.PropertyValue :?> Entity Relation option) entity world
         EntitySetters.["Imperative"] <- fun property entity world -> World.setEntityImperative (property.PropertyValue :?> bool) entity world
         EntitySetters.["Enabled"] <- fun property entity world -> World.setEntityEnabled (property.PropertyValue :?> bool) entity world
