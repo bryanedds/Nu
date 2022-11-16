@@ -334,6 +334,12 @@ module Content =
     /// Describe an animated sprite with the given initializers.
     let animatedSprite entityName initializers = entity<AnimatedSpriteDispatcher> entityName initializers
 
+    /// Describe an association of gui entities with the given initializers and content.
+    let association entityName initializers content = composite<GuiDispatcher> entityName initializers content
+
+    /// Describe a panel with the given initializers and content.
+    let panel entityName initializers content = composite<LabelDispatcher> entityName initializers content
+
     /// Describe a button with the given initializers.
     let button entityName initializers = entity<ButtonDispatcher> entityName initializers
 
