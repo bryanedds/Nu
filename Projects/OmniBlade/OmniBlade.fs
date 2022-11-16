@@ -53,10 +53,10 @@ module OmniBlade =
 #endif
             base.Register (game, world)
 
-        override this.Initializers (omni, game) =
-            [game.Field <=> Simulants.Field.Screen.Field
-             game.Battle <=> Simulants.Battle.Screen.Battle
-             game.DesiredScreen <-- omni ==> fun omni ->
+        override this.Initializers (omni, _) =
+            [Game.Field <--> Simulants.Field.Screen.Field
+             Game.Battle <--> Simulants.Battle.Screen.Battle
+             Game.DesiredScreen <--
                 match omni with
                 | Gui gui ->
                     match gui with
@@ -74,23 +74,21 @@ module OmniBlade =
                             | BattleQuitting (_, _, _) -> Desire Simulants.Field.Screen
                             | _ -> Desire Simulants.Battle.Screen
                         | None -> Desire Simulants.Field.Screen
-                    | Quitting -> Desire Simulants.Title.Screen]
-
-        override this.Channel (_, _) =
-            [Simulants.Game.UpdateEvent => msg UpdateMessage
-             Simulants.Game.UpdateEvent => cmd UpdateCommand
-             Simulants.Splash.Screen.DeselectingEvent => msg ShowTitle
-             Simulants.Title.Gui.Play.ClickEvent =|> fun _ -> msg ShowPick
-             Simulants.Title.Gui.Credits.ClickEvent => msg ShowCredits
-             Simulants.Title.Gui.Exit.ClickEvent => cmd Exit
-             Simulants.Pick.Gui.NewGame1.ClickEvent => msg (ShowIntro Slot1)
-             Simulants.Pick.Gui.NewGame2.ClickEvent => msg (ShowIntro Slot2)
-             Simulants.Pick.Gui.NewGame3.ClickEvent => msg (ShowIntro Slot3)
-             Simulants.Pick.Gui.LoadGame1.ClickEvent => msg (TryLoad Slot1)
-             Simulants.Pick.Gui.LoadGame2.ClickEvent => msg (TryLoad Slot2)
-             Simulants.Pick.Gui.LoadGame3.ClickEvent => msg (TryLoad Slot3)
-             Simulants.Pick.Gui.Back.ClickEvent => msg ShowTitle
-             Simulants.Credits.Gui.Back.ClickEvent => msg ShowTitle]
+                    | Quitting -> Desire Simulants.Title.Screen
+             Simulants.Game.UpdateEvent --> msg UpdateMessage
+             Simulants.Game.UpdateEvent --> cmd UpdateCommand
+             Simulants.Splash.Screen.DeselectingEvent --> msg ShowTitle
+             Simulants.Title.Gui.Play.ClickEvent --> msg ShowPick
+             Simulants.Title.Gui.Credits.ClickEvent --> msg ShowCredits
+             Simulants.Title.Gui.Exit.ClickEvent --> cmd Exit
+             Simulants.Pick.Gui.NewGame1.ClickEvent --> msg (ShowIntro Slot1)
+             Simulants.Pick.Gui.NewGame2.ClickEvent --> msg (ShowIntro Slot2)
+             Simulants.Pick.Gui.NewGame3.ClickEvent --> msg (ShowIntro Slot3)
+             Simulants.Pick.Gui.LoadGame1.ClickEvent --> msg (TryLoad Slot1)
+             Simulants.Pick.Gui.LoadGame2.ClickEvent --> msg (TryLoad Slot2)
+             Simulants.Pick.Gui.LoadGame3.ClickEvent --> msg (TryLoad Slot3)
+             Simulants.Pick.Gui.Back.ClickEvent --> msg ShowTitle
+             Simulants.Credits.Gui.Back.ClickEvent --> msg ShowTitle]
 
         override this.Message (omni, message, _, world) =
 
@@ -152,7 +150,7 @@ module OmniBlade =
 
                 // update full screen toggle
                 let world =
-                    if KeyboardState.isAltDown () && KeyboardState.isKeyDown KeyboardKey.Return then
+                    if World.isKeyboardAltDown world && World.isKeyboardKeyDown KeyboardKey.Return world then
                         match World.tryGetWindowFullScreen world with
                         | Some fullScreen -> World.trySetWindowFullScreen (not fullScreen) world
                         | None -> world
@@ -169,13 +167,13 @@ module OmniBlade =
              Content.screen Simulants.Splash.Screen.Name (WorldTypes.Splash (Constants.Gui.Dissolve, Constants.Gui.Splash, None, Simulants.Title.Screen)) [] []
 
              // title
-             Content.screenFromGroupFile Simulants.Title.Screen.Name (Dissolve (Constants.Gui.Dissolve, Some Assets.Gui.TitleSong)) Assets.Gui.TitleGroupFilePath
+             Content.screenWithGroupFromFile Simulants.Title.Screen.Name (Dissolve (Constants.Gui.Dissolve, Some Assets.Gui.TitleSong)) Assets.Gui.TitleGroupFilePath [] []
 
              // credits
-             Content.screenFromGroupFile Simulants.Credits.Screen.Name (Dissolve (Constants.Gui.Dissolve, Some Assets.Gui.TitleSong)) Assets.Gui.CreditsGroupFilePath
+             Content.screenWithGroupFromFile Simulants.Credits.Screen.Name (Dissolve (Constants.Gui.Dissolve, Some Assets.Gui.TitleSong)) Assets.Gui.CreditsGroupFilePath [] []
 
              // pick
-             Content.screenFromGroupFile Simulants.Pick.Screen.Name (Dissolve ({ Constants.Gui.Dissolve with OutgoingTime = 90L }, Some Assets.Gui.TitleSong)) Assets.Gui.PickGroupFilePath
+             Content.screenWithGroupFromFile Simulants.Pick.Screen.Name (Dissolve ({ Constants.Gui.Dissolve with OutgoingTime = 90L }, Some Assets.Gui.TitleSong)) Assets.Gui.PickGroupFilePath [] []
 
              // field
              Content.screen<FieldDispatcher> Simulants.Field.Screen.Name (Dissolve (Constants.Gui.Dissolve, None)) [] []
@@ -184,8 +182,8 @@ module OmniBlade =
              Content.screen<BattleDispatcher> Simulants.Battle.Screen.Name (Dissolve (Constants.Gui.Dissolve, None)) [] []
 
              // intros
-             Content.screenFromGroupFile Simulants.Intro.Screen.Name (WorldTypes.Splash (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.Gui.IntroSong, Simulants.Intro2.Screen)) Assets.Gui.IntroGroupFilePath
-             Content.screenFromGroupFile Simulants.Intro2.Screen.Name (WorldTypes.Splash (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.Gui.IntroSong, Simulants.Intro3.Screen)) Assets.Gui.Intro2GroupFilePath
-             Content.screenFromGroupFile Simulants.Intro3.Screen.Name (WorldTypes.Splash (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.Gui.IntroSong, Simulants.Intro4.Screen)) Assets.Gui.Intro3GroupFilePath
-             Content.screenFromGroupFile Simulants.Intro4.Screen.Name (WorldTypes.Splash (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.Gui.IntroSong, Simulants.Intro5.Screen)) Assets.Gui.Intro4GroupFilePath
-             Content.screenFromGroupFile Simulants.Intro5.Screen.Name (WorldTypes.Splash (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.Gui.IntroSong, Simulants.Field.Screen)) Assets.Gui.Intro5GroupFilePath]
+             Content.screenWithGroupFromFile Simulants.Intro.Screen.Name (WorldTypes.Splash (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.Gui.IntroSong, Simulants.Intro2.Screen)) Assets.Gui.IntroGroupFilePath [] []
+             Content.screenWithGroupFromFile Simulants.Intro2.Screen.Name (WorldTypes.Splash (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.Gui.IntroSong, Simulants.Intro3.Screen)) Assets.Gui.Intro2GroupFilePath [] []
+             Content.screenWithGroupFromFile Simulants.Intro3.Screen.Name (WorldTypes.Splash (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.Gui.IntroSong, Simulants.Intro4.Screen)) Assets.Gui.Intro3GroupFilePath [] []
+             Content.screenWithGroupFromFile Simulants.Intro4.Screen.Name (WorldTypes.Splash (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.Gui.IntroSong, Simulants.Intro5.Screen)) Assets.Gui.Intro4GroupFilePath [] []
+             Content.screenWithGroupFromFile Simulants.Intro5.Screen.Name (WorldTypes.Splash (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.Gui.IntroSong, Simulants.Field.Screen)) Assets.Gui.Intro5GroupFilePath [] []]

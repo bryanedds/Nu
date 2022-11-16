@@ -77,4 +77,40 @@ module WorldInputModule =
             ignore (world : World)
             KeyboardState.isKeyUp key
 
+        /// Check that a keyboard alt key is down.
+        [<FunctionBinding>]
+        static member isKeyboardAltDown world =
+            ignore (world : World)
+            KeyboardState.isAltDown ()
+
+        /// Check that a keyboard alt key is up.
+        [<FunctionBinding>]
+        static member isKeyboardAltUp world =
+            ignore (world : World)
+            KeyboardState.isAltUp ()
+
+        /// Check that a keyboard ctrl key is down.
+        [<FunctionBinding>]
+        static member isKeyboardCtrlDown world =
+            ignore (world : World)
+            KeyboardState.isCtrlDown ()
+
+        /// Check that a keyboard ctrl key is up.
+        [<FunctionBinding>]
+        static member isKeyboardCtrlUp world =
+            ignore (world : World)
+            KeyboardState.isCtrlUp ()
+
+        /// Check that a keyboard shift key is down.
+        [<FunctionBinding>]
+        static member isKeyboardShiftDown world =
+            ignore (world : World)
+            KeyboardState.isShiftDown ()
+
+        /// Check that a keyboard shift key is up.
+        [<FunctionBinding>]
+        static member isKeyboardShiftUp world =
+            ignore (world : World)
+            KeyboardState.isShiftUp ()
+
         // TODO: implement isKeyboardModifierActive.
