@@ -40,7 +40,7 @@ module WorldModuleGame =
         static member internal setGameModelProperty initializing (value : DesignerProperty) world =
             let gameState = World.getGameState world
             let previous = gameState.Model
-            if value.DesignerValue =/= previous.DesignerValue then
+            if value.DesignerValue =/= previous.DesignerValue || initializing then
                 let struct (gameState, world) =
                     let gameState = { gameState with Model = { DesignerType = value.DesignerType; DesignerValue = value.DesignerValue }}
                     struct (gameState, World.setGameState gameState world)
@@ -68,7 +68,7 @@ module WorldModuleGame =
             let gameState = World.getGameState world
             let valueObj = value :> obj
             let previous = gameState.Model
-            if valueObj =/= previous.DesignerValue then
+            if valueObj =/= previous.DesignerValue || initializing then
                 let struct (gameState, world) =
                     let gameState = { gameState with Model = { DesignerType = typeof<'a>; DesignerValue = valueObj }}
                     struct (gameState, World.setGameState gameState world)
