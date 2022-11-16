@@ -35,6 +35,14 @@ module MyGameplay =
     type MyGameplayDispatcher () =
         inherit ScreenDispatcher<Gameplay, GameplayMessage, GameplayCommand> (Quit)
 
+        // here we define the screen's properties and event handling
+        override this.Initialize (_, _) =
+            [Screen.UpdateEvent --> cmd Update
+             Screen.PostUpdateEvent --> cmd PostUpdateEye
+             Screen.DeselectingEvent --> msg FinishQuitting
+             Game.KeyboardKeyDownEvent --|> fun evt -> if evt.Data.KeyboardKey = KeyboardKey.Up && not evt.Data.Repeated then cmd Jump else cmd Nop
+             Simulants.Gameplay.Gui.Quit.ClickEvent --> msg StartQutting]
+
         // here we handle the above messages
         override this.Message (_, message, _, _) =
             match message with
@@ -75,28 +83,20 @@ module MyGameplay =
         // here we describe the content of the game including the level, the hud, and the player
         override this.Content (gameplay, _) =
 
-            // the gameplay screen
-            Content.screen Simulants.Gameplay.Screen.Name Vanilla
-                [Screen.UpdateEvent --> cmd Update
-                 Screen.PostUpdateEvent --> cmd PostUpdateEye
-                 Screen.DeselectingEvent --> msg FinishQuitting
-                 Game.KeyboardKeyDownEvent --|> fun evt -> if evt.Data.KeyboardKey = KeyboardKey.Up && not evt.Data.Repeated then cmd Jump else cmd Nop
-                 Simulants.Gameplay.Gui.Quit.ClickEvent --> msg StartQutting]
+            [// the gui group
+             yield Content.group Simulants.Gameplay.Gui.Group.Name []
+                 [Content.button Simulants.Gameplay.Gui.Quit.Name
+                     [Entity.Text <-- "Quit"
+                      Entity.Position <-- v3 260.0f -260.0f 0.0f
+                      Entity.Elevation <-- 10.0f
+                      Entity.ClickEvent --> msg Quit]]
 
-                [// the gui group
-                 yield Content.group Simulants.Gameplay.Gui.Group.Name []
-                     [Content.button Simulants.Gameplay.Gui.Quit.Name
-                         [Entity.Text <-- "Quit"
-                          Entity.Position <-- v3 260.0f -260.0f 0.0f
-                          Entity.Elevation <-- 10.0f
-                          Entity.ClickEvent --> msg Quit]]
-
-                 // the player and scene groups while playing
-                 match gameplay with
-                 | Playing | Quitting ->
-                    yield Content.group Simulants.Gameplay.Player.Group.Name []
-                        [Content.sideViewCharacter Simulants.Gameplay.Player.Character.Name
-                            [Entity.Position <-- v3 0.0f 0.0f 0.0f
-                             Entity.Size <-- v3 108.0f 108.0f 0.0f]]
-                    yield Content.groupFromFile Simulants.Gameplay.Scene.Group.Name "Assets/Gameplay/Scene.nugroup" [] []
-                 | Quit -> ()]
+             // the player and scene groups while playing
+             match gameplay with
+             | Playing | Quitting ->
+                yield Content.group Simulants.Gameplay.Player.Group.Name []
+                    [Content.sideViewCharacter Simulants.Gameplay.Player.Character.Name
+                        [Entity.Position <-- v3 0.0f 0.0f 0.0f
+                         Entity.Size <-- v3 108.0f 108.0f 0.0f]]
+                yield Content.groupFromFile Simulants.Gameplay.Scene.Group.Name "Assets/Gameplay/Scene.nugroup" [] []
+             | Quit -> ()]

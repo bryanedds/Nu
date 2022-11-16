@@ -35,38 +35,34 @@ module RingMenuDispatcher =
             | ItemSelect item -> just (World.publishPlus item menu.ItemSelectEvent [] menu true false world)
 
         override this.Content (ringMenu, menu) =
-            [Content.entities ringMenu
-                (fun ringMenu ->
-                    let items =
-                        let mutable i = -1
-                        ringMenu.Items |>
-                        Map.toSeq |>
-                        Map.ofSeqBy (fun (k, (v, v2)) -> (v, (k, v2))) |>
-                        Map.toSeqBy (fun _ (v, v2) -> (v, (i <- inc i; i, v2))) |>
-                        Map.ofSeq
-                    Map.map (constant (Triple.insert (Map.count items))) items)
-                (fun itemName itemIndexAndCountAndEnabled ->
-                    let buttonSize = v3 48.0f 48.0f 0.0f
-                    Content.button (scstring itemName)
-                        [Entity.EnabledLocal <-- itemIndexAndCountAndEnabled ==> Triple.thd
-                         Entity.PositionLocal <-- itemIndexAndCountAndEnabled ==> fun (itemIndex, itemCount, _) ->
-                            let radius = Constants.Battle.RingMenuRadius
-                            let progress = single itemIndex / single itemCount
-                            let rotation = progress * single Math.PI * 2.0f
-                            let position = v3 (radius * sin rotation) (radius * cos rotation) 0.0f
-                            position - buttonSize * 0.5f
-                         Entity.Size == buttonSize
-                         Entity.Elevation <-- menu.Elevation
-                         Entity.UpImage == asset Assets.Battle.PackageName (itemName + "Up")
-                         Entity.DownImage == asset Assets.Battle.PackageName (itemName + "Down")
-                         Entity.ClickEvent --> cmd (ItemSelect itemName)])
-             Content.entityOpt (ringMenu ==> fun ringMenu -> ringMenu.ItemCancelOpt) $ fun _ ->
-                Content.button "Cancel"
-                    [Entity.MountOpt == None
-                     Entity.Visible <-- menu.Visible
-                     Entity.Size == v3 48.0f 48.0f 0.0f
-                     Entity.Position == Constants.Battle.CancelPosition
-                     Entity.Elevation <-- menu.Elevation
-                     Entity.UpImage == asset Assets.Battle.PackageName "CancelUp"
-                     Entity.DownImage == asset Assets.Battle.PackageName "CancelDown"
-                     Entity.ClickEvent --> cmd ItemCancel]]
+            let mutable i = -1
+            let items =
+                ringMenu.Items |>
+                Map.toSeq |>
+                Map.ofSeqBy (fun (k, (v, v2)) -> (v, (k, v2))) |>
+                Map.toSeqBy (fun _ (v, v2) -> (v, (i <- inc i; i, v2))) |>
+                Map.ofSeq
+            let items = Map.map (constant (Triple.insert (Map.count items))) items // TODO: DIFF: memoize?
+            [for (itemName, (itemIndex, itemCount, itemEnabled)) in items.Pairs do
+                let buttonSize = v3 48.0f 48.0f 0.0f
+                yield Content.button (scstring itemName)
+                    [Entity.EnabledLocal <-- itemEnabled
+                     Entity.PositionLocal <--
+                        (let radius = Constants.Battle.RingMenuRadius
+                         let progress = single itemIndex / single itemCount
+                         let rotation = progress * single Math.PI * 2.0f
+                         let position = v3 (radius * sin rotation) (radius * cos rotation) 0.0f
+                         position - buttonSize * 0.5f)
+                     Entity.Size <-- buttonSize
+                     Entity.ElevationLocal <-- 1.0f
+                     Entity.UpImage <-- asset Assets.Battle.PackageName (itemName + "Up")
+                     Entity.DownImage <-- asset Assets.Battle.PackageName (itemName + "Down")
+                     Entity.ClickEvent --> cmd (ItemSelect itemName)]
+             yield Content.button "Cancel"
+                [Entity.MountOpt <-- None // TODO: DIFF: make sure this is implemented and content mounting generally.
+                 Entity.Size <-- v3 48.0f 48.0f 0.0f
+                 Entity.Position <-- Constants.Battle.CancelPosition
+                 Entity.ElevationLocal <-- 1.0f
+                 Entity.UpImage <-- asset Assets.Battle.PackageName "CancelUp"
+                 Entity.DownImage <-- asset Assets.Battle.PackageName "CancelDown"
+                 Entity.ClickEvent --> cmd ItemCancel]]

@@ -791,7 +791,7 @@ module WorldEntityModule =
                     match entityNameOpt with
                     | Some entityName -> (entityName, Array.add entityName parent.SimulantAddress.Names)
                     | None ->
-                        let name = Gen.name
+                        let name = Gen.name_
                         let surnames = Array.add name parent.SimulantAddress.Names
                         (name, surnames)
             let entityState = { entityState with Surnames = surnames }
