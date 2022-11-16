@@ -1348,14 +1348,14 @@ module FieldDispatcher =
                          yield Content.button "PageUp"
                             [Entity.PositionLocal == v3 138.0f 12.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 72.0f 72.0f 0.0f
                              Entity.Text == "<"
-                             Entity.VisibleLocal := (Content.pageItems 10 field |> a__)
+                             Entity.VisibleLocal := Content.pageItems 10 field |> a__
                              Entity.UpImage == Assets.Gui.ButtonSmallUpImage
                              Entity.DownImage == Assets.Gui.ButtonSmallDownImage
                              Entity.ClickEvent => msg MenuItemsPageUp]
                          yield Content.button "PageDown"
                             [Entity.PositionLocal == v3 777.0f 12.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 72.0f 72.0f 0.0f
                              Entity.Text == ">"
-                             Entity.VisibleLocal := (Content.pageItems 10 field |> _b_)
+                             Entity.VisibleLocal := Content.pageItems 10 field |> _b_
                              Entity.UpImage == Assets.Gui.ButtonSmallUpImage
                              Entity.DownImage == Assets.Gui.ButtonSmallDownImage
                              Entity.ClickEvent => msg MenuInventoryPageDown]]
@@ -1440,23 +1440,23 @@ module FieldDispatcher =
                          yield Content.button "Buy"
                             [Entity.PositionLocal == v3 24.0f 438.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 192.0f 48.0f 0.0f
                              Entity.Text == "Buy"
-                             Entity.VisibleLocal := (shop.ShopState = ShopSelling)
+                             Entity.VisibleLocal := shop.ShopState = ShopSelling
                              Entity.ClickEvent => msg ShopBuy]
                          yield Content.text "BuyWhat"
                             [Entity.PositionLocal == v3 24.0f 438.0f 0.0f; Entity.ElevationLocal == 1.0f
                              Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
                              Entity.Text == "Buy what?"
-                             Entity.VisibleLocal := (shop.ShopState = ShopBuying)]
+                             Entity.VisibleLocal := shop.ShopState = ShopBuying]
                          yield Content.button "Sell"
                             [Entity.PositionLocal == v3 352.0f 438.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 192.0f 48.0f 0.0f
                              Entity.Text == "Sell"
-                             Entity.VisibleLocal := (shop.ShopState = ShopBuying)
+                             Entity.VisibleLocal := shop.ShopState = ShopBuying
                              Entity.ClickEvent => msg ShopSell]
                          yield Content.text "SellWhat"
                             [Entity.PositionLocal == v3 352.0f 438.0f 0.0f; Entity.ElevationLocal == 1.0f
                              Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
                              Entity.Text == "Sell what?"
-                             Entity.VisibleLocal := (shop.ShopState = ShopSelling)]
+                             Entity.VisibleLocal := shop.ShopState = ShopSelling]
                          yield Content.button "Leave"
                             [Entity.PositionLocal == v3 678.0f 438.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 192.0f 48.0f 0.0f
                              Entity.Text == "Leave"
