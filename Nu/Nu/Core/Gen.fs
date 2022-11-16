@@ -118,7 +118,7 @@ module Gen =
         static member nameSeparator = "-"
 
         /// Generate a unique name based on a 64-bit id.
-        static member name =
+        static member name_ =
             Gen.namePrefix + string Gen.id64
 
         /// Check that a name is generated from a 64-bit id.
