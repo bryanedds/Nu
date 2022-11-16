@@ -86,9 +86,9 @@ module MyGameplay =
             [// the gui group
              yield Content.group Simulants.Gameplay.Gui.Group.Name []
                  [Content.button Simulants.Gameplay.Gui.Quit.Name
-                     [Entity.Text <-- "Quit"
-                      Entity.Position <-- v3 260.0f -260.0f 0.0f
-                      Entity.Elevation <-- 10.0f
+                     [Entity.Text := "Quit"
+                      Entity.Position := v3 260.0f -260.0f 0.0f
+                      Entity.Elevation := 10.0f
                       Entity.ClickEvent --> msg Quit]]
 
              // the player and scene groups while playing
@@ -96,7 +96,7 @@ module MyGameplay =
              | Playing | Quitting ->
                 yield Content.group Simulants.Gameplay.Player.Group.Name []
                     [Content.sideViewCharacter Simulants.Gameplay.Player.Character.Name
-                        [Entity.Position <-- v3 0.0f 0.0f 0.0f
-                         Entity.Size <-- v3 108.0f 108.0f 0.0f]]
+                        [Entity.Position := v3 0.0f 0.0f 0.0f
+                         Entity.Size := v3 108.0f 108.0f 0.0f]]
                 yield Content.groupFromFile Simulants.Gameplay.Scene.Group.Name "Assets/Gameplay/Scene.nugroup" [] []
              | Quit -> ()]

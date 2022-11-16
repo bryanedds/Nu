@@ -37,15 +37,24 @@ module WorldModuleGame =
         static member internal getGameContent world = (World.getGameState world).Content
         static member internal getGameScriptFrame world = (World.getGameState world).ScriptFrame
 
-        static member internal setGameModelProperty (value : DesignerProperty) world =
+        static member internal setGameModelProperty initializing (value : DesignerProperty) world =
             let gameState = World.getGameState world
             let previous = gameState.Model
             if value.DesignerValue =/= previous.DesignerValue then
                 let struct (gameState, world) =
                     let gameState = { gameState with Model = { DesignerType = value.DesignerType; DesignerValue = value.DesignerValue }}
                     struct (gameState, World.setGameState gameState world)
-                let world = World.publishGameChange (nameof gameState.Model) previous.DesignerValue value.DesignerValue world
-                let world = (World.getGameDispatcher world).TrySynchronize (Simulants.Game, world)
+                let world = gameState.Dispatcher.TrySynchronize (initializing, Simulants.Game, world)
+                let world =
+                    if initializing then
+                        let content = World.getGameContent world
+                        let desiredScreen =
+                            match Seq.tryHead content.ScreenContents with
+                            | Some screen -> Desire (Nu.Screen screen.Key)
+                            | None -> DesireNone
+                        World.setDesiredScreen desiredScreen world |> snd'
+                    else world
+                let world = World.publishGameChange "Model" previous.DesignerValue value.DesignerValue world
                 struct (true, world)
             else struct (false, world)
 
@@ -55,7 +64,7 @@ module WorldModuleGame =
             | null -> null :> obj :?> 'a
             | modelObj -> modelObj |> valueToSymbol |> symbolToValue
 
-        static member internal setGameModel<'a> (value : 'a) world =
+        static member internal setGameModel<'a> initializing (value : 'a) world =
             let gameState = World.getGameState world
             let valueObj = value :> obj
             let previous = gameState.Model
@@ -63,8 +72,17 @@ module WorldModuleGame =
                 let struct (gameState, world) =
                     let gameState = { gameState with Model = { DesignerType = typeof<'a>; DesignerValue = valueObj }}
                     struct (gameState, World.setGameState gameState world)
-                let world = World.publishGameChange (nameof gameState.Model) previous.DesignerValue value world
-                let world = (World.getGameDispatcher world).TrySynchronize (Simulants.Game, world)
+                let world = gameState.Dispatcher.TrySynchronize (initializing, Simulants.Game, world)
+                let world =
+                    if initializing then
+                        let content = World.getGameContent world
+                        let desiredScreen =
+                            match Seq.tryHead content.ScreenContents with
+                            | Some screen -> Desire (Nu.Screen screen.Key)
+                            | None -> DesireNone
+                        World.setDesiredScreen desiredScreen world |> snd'
+                    else world
+                let world = World.publishGameChange "Model" previous.DesignerValue value world
                 struct (true, world)
             else struct (false, world)
 
@@ -567,7 +585,7 @@ module WorldModuleGame =
 
     /// Initialize property setters.
     let private initSetters () =
-        GameSetters.Add ("Model", fun property world -> World.setGameModelProperty { DesignerType = property.PropertyType; DesignerValue = property.PropertyValue } world)
+        GameSetters.Add ("Model", fun property world -> World.setGameModelProperty false { DesignerType = property.PropertyType; DesignerValue = property.PropertyValue } world)
         GameSetters.Add ("OmniScreenOpt", fun property world -> World.setOmniScreenOptPlus (property.PropertyValue :?> Screen option) world)
         GameSetters.Add ("DesiredScreen", fun property world -> World.setDesiredScreen (property.PropertyValue :?> DesiredScreen) world)
         GameSetters.Add ("EyePosition2d", fun property world -> World.setEyePosition2dPlus (property.PropertyValue :?> Vector2) world)

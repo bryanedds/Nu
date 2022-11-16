@@ -96,17 +96,53 @@ module Content =
 #if !DEBUG
         inline
 #endif
-        private synchronizeProperties (contentOld : SimulantContent) (content : SimulantContent) (simulant : Simulant) world =
-        if notNull content.PropertyContentsOpt && content.PropertyContentsOpt.Count > 0 then
+        private initializeProperties (contentOld : SimulantContent) (content : SimulantContent) (simulant : Simulant) world =
+        if notNull content.PropertyInitializersOpt && content.PropertyInitializersOpt.Count > 0 then
             let simulant = if notNull (contentOld.SimulantCachedOpt :> obj) then contentOld.SimulantCachedOpt else simulant
             content.SimulantCachedOpt <- simulant
-            Seq.fold (fun world propertyContent ->
+            Seq.fold (fun world (propertyInitializer : PropertyInitializer) ->
                 let world =
-                    let lens = propertyContent.PropertyLens
+                    let lens = propertyInitializer.PropertyLens
                     let simulant = match lens.This :> obj with null -> simulant | _ -> lens.This
-                    World.setProperty lens.Name { PropertyType = lens.Type; PropertyValue = propertyContent.PropertyValue } simulant world |> snd'
+                    World.setProperty lens.Name { PropertyType = lens.Type; PropertyValue = propertyInitializer.PropertyValue } simulant world |> snd'
                 world)
-                world content.PropertyContentsOpt
+                world content.PropertyInitializersOpt
+        else world
+
+    let
+#if !DEBUG
+        inline
+#endif
+        private synchronizeProperties (contentOld : SimulantContent) (content : SimulantContent) (simulant : Simulant) world =
+        if notNull content.PropertySynchronizersOpt && content.PropertySynchronizersOpt.Count > 0 then
+            let simulant = if notNull (contentOld.SimulantCachedOpt :> obj) then contentOld.SimulantCachedOpt else simulant
+            content.SimulantCachedOpt <- simulant
+            Seq.fold (fun world propertySynchronizer ->
+                let world =
+                    let lens = propertySynchronizer.PropertyLens
+                    let simulant = match lens.This :> obj with null -> simulant | _ -> lens.This
+                    World.setProperty lens.Name { PropertyType = lens.Type; PropertyValue = propertySynchronizer.PropertyValue } simulant world |> snd'
+                world)
+                world content.PropertySynchronizersOpt
+        else world
+
+    let
+#if !DEBUG
+        inline
+#endif
+        private initializeEntityPropertiesFast (contentOld : EntityContent) (content : EntityContent) (entity : Entity) world =
+        if notNull content.PropertyInitializersOpt && content.PropertyInitializersOpt.Count > 0 then
+            let entity = if notNull (contentOld.EntityCachedOpt :> obj) then contentOld.EntityCachedOpt else entity
+            content.EntityCachedOpt <- entity
+            let mutable world = world // OPTIMIZATION: manual fold for speed.
+            let propertyInitializers = content.PropertyInitializersOpt
+            for i in 0 .. dec propertyInitializers.Count do
+                let propertyInitializer = propertyInitializers.[i]
+                let lens = propertyInitializer.PropertyLens
+                let entity = match lens.This :> obj with null -> entity | _ -> lens.This :?> Entity
+                world <- World.setEntityPropertyFast lens.Name { PropertyType = lens.Type; PropertyValue = propertyInitializer.PropertyValue } entity world
+            content.PropertyInitializersOpt <- null // OPTIMIZATION: blank out property contents to avoid GC promotion.
+            world
         else world
 
     let
@@ -114,17 +150,17 @@ module Content =
         inline
 #endif
         private synchronizeEntityPropertiesFast (contentOld : EntityContent) (content : EntityContent) (entity : Entity) world =
-        if notNull content.PropertyContentsOpt && content.PropertyContentsOpt.Count > 0 then
+        if notNull content.PropertySynchronizersOpt && content.PropertySynchronizersOpt.Count > 0 then
             let entity = if notNull (contentOld.EntityCachedOpt :> obj) then contentOld.EntityCachedOpt else entity
             content.EntityCachedOpt <- entity
             let mutable world = world // OPTIMIZATION: manual fold for speed.
-            let propertyContents = content.PropertyContentsOpt
-            for i in 0 .. dec propertyContents.Count do
-                let propertyContent = propertyContents.[i]
-                let lens = propertyContent.PropertyLens
+            let propertySynchronizers = content.PropertySynchronizersOpt
+            for i in 0 .. dec propertySynchronizers.Count do
+                let propertySynchronizer = propertySynchronizers.[i]
+                let lens = propertySynchronizer.PropertyLens
                 let entity = match lens.This :> obj with null -> entity | _ -> lens.This :?> Entity
-                world <- World.setEntityPropertyFast lens.Name { PropertyType = lens.Type; PropertyValue = propertyContent.PropertyValue } entity world
-            content.PropertyContentsOpt <- null // OPTIMIZATION: blank out property contents to avoid GC promotion.
+                world <- World.setEntityPropertyFast lens.Name { PropertyType = lens.Type; PropertyValue = propertySynchronizer.PropertyValue } entity world
+            content.PropertySynchronizersOpt <- null // OPTIMIZATION: blank out property contents to avoid GC promotion.
             world
         else world
 
@@ -170,10 +206,11 @@ module Content =
         else None
 
     ///
-    let rec synchronizeEntity (contentOld : EntityContent) (content : EntityContent) (origin : Simulant) (entity : Entity) world =
+    let rec synchronizeEntity initializing (contentOld : EntityContent) (content : EntityContent) (origin : Simulant) (entity : Entity) world =
         if contentOld <> content then
             let world = synchronizeEventSignals contentOld content origin entity world
             let world = synchronizeEventHandlers contentOld content origin entity world
+            let world = if initializing then initializeEntityPropertiesFast contentOld content entity world else world
             let world = synchronizeEntityPropertiesFast contentOld content entity world
             match tryDifferentiateChildren<Entity, EntityContent> contentOld content entity with
             | Some (entitiesAdded, entitiesRemoved, entitiesPotentiallyAltered) ->
@@ -184,23 +221,24 @@ module Content =
                         Seq.fold (fun world (kvp : KeyValuePair<Entity, _>) ->
                             let (entity, entityContent) = (kvp.Key, kvp.Value)
                             let entityContentOld = contentOld.EntityContentsOpt.[entity.Name]
-                            synchronizeEntity entityContentOld entityContent origin entity world)
+                            synchronizeEntity initializing entityContentOld entityContent origin entity world)
                             world entitiesPotentiallyAltered
                     else world
                 let world =
                     Seq.fold (fun world (entity : Entity, entityContent : EntityContent) ->
                         let (entity, world) = World.createEntity5 entityContent.EntityDispatcherName (Some entity.Surnames) DefaultOverlay entity.Group world
-                        synchronizeEntity EntityContent.empty entityContent origin entity world)
+                        synchronizeEntity true EntityContent.empty entityContent origin entity world)
                         world entitiesAdded
                 world
             | None -> world
         else world
 
     ///
-    let synchronizeGroup (contentOld : GroupContent) (content : GroupContent) (origin : Simulant) (group : Group) world =
+    let synchronizeGroup initializing (contentOld : GroupContent) (content : GroupContent) (origin : Simulant) (group : Group) world =
         if contentOld <> content then
             let world = synchronizeEventSignals contentOld content origin group world
             let world = synchronizeEventHandlers contentOld content origin group world
+            let world = if initializing then initializeProperties contentOld content group world else world
             let world = synchronizeProperties contentOld content group world
             match tryDifferentiateChildren<Entity, EntityContent> contentOld content group with
             | Some (entitiesAdded, entitiesRemoved, entitiesPotentiallyAltered) ->
@@ -211,23 +249,24 @@ module Content =
                         Seq.fold (fun world (kvp : KeyValuePair<Entity, _>) ->
                             let (entity, entityContent) = (kvp.Key, kvp.Value)
                             let entityContentOld = contentOld.EntityContentsOpt.[entity.Name]
-                            synchronizeEntity entityContentOld entityContent origin entity world)
+                            synchronizeEntity initializing entityContentOld entityContent origin entity world)
                             world entitiesPotentiallyAltered
                     else world
                 let world =
                     Seq.fold (fun world (entity : Entity, entityContent : EntityContent) ->
                         let (entity, world) = World.createEntity5 entityContent.EntityDispatcherName (Some entity.Surnames) DefaultOverlay entity.Group world
-                        synchronizeEntity EntityContent.empty entityContent origin entity world)
+                        synchronizeEntity true EntityContent.empty entityContent origin entity world)
                         world entitiesAdded
                 world
             | None -> world
         else world
 
     ///
-    let synchronizeScreen (contentOld : ScreenContent) (content : ScreenContent) (origin : Simulant) (screen : Screen) world =
+    let synchronizeScreen initializing (contentOld : ScreenContent) (content : ScreenContent) (origin : Simulant) (screen : Screen) world =
         if contentOld <> content then
             let world = synchronizeEventSignals contentOld content origin screen world
             let world = synchronizeEventHandlers contentOld content origin screen world
+            let world = if initializing then initializeProperties contentOld content screen world else world
             let world = synchronizeProperties contentOld content screen world
             let world =
                 if contentOld.GroupFilePathOpt <> content.GroupFilePathOpt then
@@ -258,7 +297,7 @@ module Content =
                     Seq.fold (fun world (kvp : KeyValuePair<Group, _>) ->
                         let (group, groupContent) = (kvp.Key, kvp.Value)
                         let groupContentOld = contentOld.GroupContents.[group.Name]
-                        synchronizeGroup groupContentOld groupContent origin group world)
+                        synchronizeGroup initializing groupContentOld groupContent origin group world)
                         world groupsPotentiallyAltered
                 let world =
                     Seq.fold (fun world (group : Group, groupContent : GroupContent) ->
@@ -266,18 +305,19 @@ module Content =
                             match groupContent.GroupFilePathOpt with
                             | Some groupFilePath -> World.readGroupFromFile groupFilePath None screen world
                             | None -> World.createGroup4 groupContent.GroupDispatcherName (Some group.Name) group.Screen world
-                        synchronizeGroup GroupContent.empty groupContent origin group world)
+                        synchronizeGroup true GroupContent.empty groupContent origin group world)
                         world groupsAdded
                 world
             | None -> world
         else world
 
     ///
-    let synchronizeGame setScreenSplash (contentOld : GameContent) (content : GameContent) (origin : Simulant) world =
+    let synchronizeGame setScreenSplash initializing (contentOld : GameContent) (content : GameContent) (origin : Simulant) world =
         if contentOld <> content then
             let game = Simulants.Game
             let world = synchronizeEventSignals contentOld content origin game world
             let world = synchronizeEventHandlers contentOld content origin game world
+            let world = if initializing then initializeProperties contentOld content game world else world
             let world = synchronizeProperties contentOld content game world
             match tryDifferentiateChildren<Screen, ScreenContent> contentOld content game with
             | Some (screensAdded, screensRemoved, screensPotentiallyAltered) ->
@@ -287,13 +327,13 @@ module Content =
                     Seq.fold (fun world (kvp : KeyValuePair<Screen, _>) ->
                         let (screen, screenContent) = (kvp.Key, kvp.Value)
                         let screenContentOld = contentOld.ScreenContents.[screen.Name]
-                        synchronizeScreen screenContentOld screenContent origin screen world)
+                        synchronizeScreen initializing screenContentOld screenContent origin screen world)
                         world screensPotentiallyAltered
                 let world =
                     Seq.fold (fun world (screen : Screen, screenContent : ScreenContent) ->
                         let (screen, world) = World.createScreen3 screenContent.ScreenDispatcherName (Some screen.Name) world
                         let world = World.applyScreenBehavior setScreenSplash screenContent.ScreenBehavior screen world
-                        synchronizeScreen ScreenContent.empty screenContent origin screen world)
+                        synchronizeScreen true ScreenContent.empty screenContent origin screen world)
                         world screensAdded
                 (content.InitialScreenNameOpt |> Option.map Screen, world)
             | None -> (content.InitialScreenNameOpt |> Option.map Screen, world)
@@ -303,20 +343,23 @@ module Content =
     let composite<'entityDispatcher when 'entityDispatcher :> EntityDispatcher> entityName initializers entities =
         let mutable eventSignalContentsOpt = null
         let mutable eventHandlerContentsOpt = null
-        let mutable propertyContentsOpt = null
+        let mutable propertyInitializersOpt = null
+        let mutable propertySynchronizersOpt = null
         let mutable entityContentsOpt = null
         let mutable i = 0
         for property in initializers do
             match property with
             | EventSignalContent (addr, value) -> (if isNull eventSignalContentsOpt then eventSignalContentsOpt <- OrderedDictionary HashIdentity.Structural); eventSignalContentsOpt.Add ((addr, value), makeGuid ())
             | EventHandlerContent ehf -> (if isNull eventHandlerContentsOpt then eventHandlerContentsOpt <- OrderedDictionary HashIdentity.Structural); eventHandlerContentsOpt.Add ((i, ehf.Equatable), (makeGuid (), ehf.Nonequatable))
-            | PropertyContent pf -> (if isNull propertyContentsOpt then propertyContentsOpt <- List ()); propertyContentsOpt.Add pf
+            | PropertyInitializer pi -> (if isNull propertyInitializersOpt then propertyInitializersOpt <- List ()); propertyInitializersOpt.Add pi
+            | PropertySynchronizer ps -> (if isNull propertySynchronizersOpt then propertySynchronizersOpt <- List ()); propertySynchronizersOpt.Add ps
             i <- inc i
         for entity in entities do
             if isNull entityContentsOpt then entityContentsOpt <- OrderedDictionary StringComparer.Ordinal
             entityContentsOpt.Add (entity.EntityName, entity)
         { EntityDispatcherName = typeof<'entityDispatcher>.Name; EntityName = entityName; EntityCachedOpt = Unchecked.defaultof<_>
-          EventSignalContentsOpt = eventSignalContentsOpt; EventHandlerContentsOpt = eventHandlerContentsOpt; PropertyContentsOpt = propertyContentsOpt; EntityContentsOpt = entityContentsOpt }
+          EventSignalContentsOpt = eventSignalContentsOpt; EventHandlerContentsOpt = eventHandlerContentsOpt; PropertyInitializersOpt = propertyInitializersOpt; PropertySynchronizersOpt = propertySynchronizersOpt
+          EntityContentsOpt = entityContentsOpt }
 
     ///
     let entity<'entityDispatcher when 'entityDispatcher :> EntityDispatcher> entityName initializers =
@@ -401,20 +444,23 @@ module Content =
     let private group4<'groupDispatcher when 'groupDispatcher :> GroupDispatcher> groupName groupFilePathOpt initializers entities =
         let mutable eventSignalContentsOpt = null
         let mutable eventHandlerContentsOpt = null
-        let mutable propertyContentsOpt = null
+        let mutable propertyInitializersOpt = null
+        let mutable propertySynchronizersOpt = null
         let mutable entityContentsOpt = null
         let mutable i = 0
         for initializer in initializers do
             match initializer with
             | EventSignalContent (addr, value) -> (if isNull eventSignalContentsOpt then eventSignalContentsOpt <- OrderedDictionary HashIdentity.Structural); eventSignalContentsOpt.Add ((addr, value), makeGuid ())
             | EventHandlerContent ehf -> (if isNull eventHandlerContentsOpt then eventHandlerContentsOpt <- OrderedDictionary HashIdentity.Structural); eventHandlerContentsOpt.Add ((i, ehf.Equatable), (makeGuid (), ehf.Nonequatable))
-            | PropertyContent pf -> (if isNull propertyContentsOpt then propertyContentsOpt <- List ()); propertyContentsOpt.Add pf
+            | PropertyInitializer pi -> (if isNull propertyInitializersOpt then propertyInitializersOpt <- List ()); propertyInitializersOpt.Add pi
+            | PropertySynchronizer ps -> (if isNull propertySynchronizersOpt then propertySynchronizersOpt <- List ()); propertySynchronizersOpt.Add ps
             i <- inc i
         for entity in entities do
             if isNull entityContentsOpt then entityContentsOpt <- OrderedDictionary StringComparer.Ordinal
             entityContentsOpt.Add (entity.EntityName, entity)
         { GroupDispatcherName = typeof<'groupDispatcher>.Name; GroupName = groupName; GroupFilePathOpt = groupFilePathOpt; SimulantCachedOpt = Unchecked.defaultof<_>
-          EventSignalContentsOpt = eventSignalContentsOpt; EventHandlerContentsOpt = eventHandlerContentsOpt; PropertyContentsOpt = propertyContentsOpt; EntityContentsOpt = entityContentsOpt }
+          EventSignalContentsOpt = eventSignalContentsOpt; EventHandlerContentsOpt = eventHandlerContentsOpt; PropertyInitializersOpt = propertyInitializersOpt; PropertySynchronizersOpt = propertySynchronizersOpt
+          EntityContentsOpt = entityContentsOpt }
 
     ///
     let group<'groupDispatcher when 'groupDispatcher :> GroupDispatcher> groupName initializers entities =
@@ -428,19 +474,22 @@ module Content =
     let private screen5<'screenDispatcher when 'screenDispatcher :> ScreenDispatcher> screenName screenBehavior groupFilePathOpt initializers groups =
         let mutable eventSignalContentsOpt = null
         let mutable eventHandlerContentsOpt = null
-        let mutable propertyContentsOpt = null
+        let mutable propertyInitializersOpt = null
+        let mutable propertySynchronizersOpt = null
         let groupContents = OrderedDictionary StringComparer.Ordinal
         let mutable i = 0
         for initializer in initializers do
             match initializer with
             | EventSignalContent (addr, value) -> (if isNull eventSignalContentsOpt then eventSignalContentsOpt <- OrderedDictionary HashIdentity.Structural); eventSignalContentsOpt.Add ((addr, value), makeGuid ())
             | EventHandlerContent ehf -> (if isNull eventHandlerContentsOpt then eventHandlerContentsOpt <- OrderedDictionary HashIdentity.Structural); eventHandlerContentsOpt.Add ((i, ehf.Equatable), (makeGuid (), ehf.Nonequatable))
-            | PropertyContent pf -> (if isNull propertyContentsOpt then propertyContentsOpt <- List ()); propertyContentsOpt.Add pf
+            | PropertyInitializer pi -> (if isNull propertyInitializersOpt then propertyInitializersOpt <- List ()); propertyInitializersOpt.Add pi
+            | PropertySynchronizer ps -> (if isNull propertySynchronizersOpt then propertySynchronizersOpt <- List ()); propertySynchronizersOpt.Add ps
             i <- inc i
         for group in groups do
             groupContents.Add (group.GroupName, group)
         { ScreenDispatcherName = typeof<'screenDispatcher>.Name; ScreenName = screenName; ScreenBehavior = screenBehavior; GroupFilePathOpt = groupFilePathOpt; SimulantCachedOpt = Unchecked.defaultof<_>
-          EventSignalContentsOpt = eventSignalContentsOpt; EventHandlerContentsOpt = eventHandlerContentsOpt; PropertyContentsOpt = propertyContentsOpt; GroupContents = groupContents }
+          EventSignalContentsOpt = eventSignalContentsOpt; EventHandlerContentsOpt = eventHandlerContentsOpt; PropertyInitializersOpt = propertyInitializersOpt; PropertySynchronizersOpt = propertySynchronizersOpt
+          GroupContents = groupContents }
 
     let screen<'screenDispatcher when 'screenDispatcher :> ScreenDispatcher> screenName screenBehavior initializers groups =
         screen5<'screenDispatcher> screenName screenBehavior None initializers groups
@@ -453,31 +502,38 @@ module Content =
         let initialScreenNameOpt = match Seq.tryHead screens with Some screen -> Some screen.ScreenName | None -> None
         let mutable eventSignalContentsOpt = null
         let mutable eventHandlerContentsOpt = null
-        let mutable propertyContentsOpt = null
+        let mutable propertyInitializersOpt = null
+        let mutable propertySynchronizersOpt = null
         let screenContents = OrderedDictionary StringComparer.Ordinal
         let mutable i = 0
         for initializer in initializers do
             match initializer with
             | EventSignalContent (addr, value) -> (if isNull eventSignalContentsOpt then eventSignalContentsOpt <- OrderedDictionary HashIdentity.Structural); eventSignalContentsOpt.Add ((addr, value), makeGuid ())
             | EventHandlerContent ehf -> (if isNull eventHandlerContentsOpt then eventHandlerContentsOpt <- OrderedDictionary HashIdentity.Structural); eventHandlerContentsOpt.Add ((i, ehf.Equatable), (makeGuid (), ehf.Nonequatable))
-            | PropertyContent pf -> (if isNull propertyContentsOpt then propertyContentsOpt <- List ()); propertyContentsOpt.Add pf
+            | PropertyInitializer pi -> (if isNull propertyInitializersOpt then propertyInitializersOpt <- List ()); propertyInitializersOpt.Add pi
+            | PropertySynchronizer ps -> (if isNull propertySynchronizersOpt then propertySynchronizersOpt <- List ()); propertySynchronizersOpt.Add ps
             i <- inc i
         for screen in screens do
             screenContents.Add (screen.ScreenName, screen)
         { InitialScreenNameOpt = initialScreenNameOpt; SimulantCachedOpt = Unchecked.defaultof<_>
-          EventSignalContentsOpt = eventSignalContentsOpt; EventHandlerContentsOpt = eventHandlerContentsOpt; PropertyContentsOpt = propertyContentsOpt; ScreenContents = screenContents }
+          EventSignalContentsOpt = eventSignalContentsOpt; EventHandlerContentsOpt = eventHandlerContentsOpt; PropertyInitializersOpt = propertyInitializersOpt; PropertySynchronizersOpt = propertySynchronizersOpt
+          ScreenContents = screenContents }
 
 [<AutoOpen>]
 module ContentOperators =
 
-    /// Define an implicit property content.
-    let inline (<--) (lens : Lens<'a, 's, World>) (value : 'a) : ContentInitializer =
-        PropertyContent (PropertyContent.make lens value)
+    /// Define a property initializer.
+    let inline (:=) (lens : Lens<'a, 's, World>) (value : 'a) : InitializerContent =
+        PropertyInitializer (PropertyInitializer.make lens value)
+
+    /// Define a property synchronizer.
+    let inline (<--) (lens : Lens<'a, 's, World>) (value : 'a) : InitializerContent =
+        PropertySynchronizer (PropertySynchronizer.make lens value)
 
     /// Define a signal content.
-    let inline (-->) (eventAddress : 'a Address) (signal : Signal<'message, 'command>) : ContentInitializer =
+    let inline (-->) (eventAddress : 'a Address) (signal : Signal<'message, 'command>) : InitializerContent =
         EventSignalContent (Address.generalize eventAddress, signal)
 
     /// Define a signal handler content.
-    let inline (--|>) (eventAddress : 'a Address) (callback : Event<'a, 's> -> Signal<'message, 'command>) : ContentInitializer =
+    let inline (--|>) (eventAddress : 'a Address) (callback : Event<'a, 's> -> Signal<'message, 'command>) : InitializerContent =
         EventHandlerContent (PartialEquatable.make (Address.generalize eventAddress) (fun (evt : Event) -> callback (Event.specialize evt) :> obj))

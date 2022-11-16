@@ -107,15 +107,15 @@ module WorldModuleScreen =
         static member internal getScreenId screen world = (World.getScreenState screen world).Id
         static member internal getScreenName screen world = (World.getScreenState screen world).Name
 
-        static member internal setScreenModelProperty (value : DesignerProperty) screen world =
+        static member internal setScreenModelProperty initializing (value : DesignerProperty) screen world =
             let screenState = World.getScreenState screen world
             let previous = screenState.Model
             if value.DesignerValue =/= previous.DesignerValue then
                 let struct (screenState, world) =
                     let screenState = { screenState with Model = { DesignerType = value.DesignerType; DesignerValue = value.DesignerValue }}
                     struct (screenState, World.setScreenState screenState screen world)
-                let world = World.publishScreenChange (nameof screenState.Model) previous.DesignerValue value.DesignerValue screen world
-                let world = (World.getScreenDispatcher screen world).TrySynchronize (screen, world)
+                let world = screenState.Dispatcher.TrySynchronize (initializing, screen, world)
+                let world = World.publishScreenChange "Model" previous.DesignerValue value.DesignerValue screen world
                 struct (true, world)
             else struct (false, world)
 
@@ -125,7 +125,7 @@ module WorldModuleScreen =
             | null -> null :> obj :?> 'a
             | modelObj -> modelObj |> valueToSymbol |> symbolToValue
 
-        static member internal setScreenModel<'a> (value : 'a) screen world =
+        static member internal setScreenModel<'a> initializing (value : 'a) screen world =
             let screenState = World.getScreenState screen world
             let valueObj = value :> obj
             let previous = screenState.Model
@@ -133,8 +133,8 @@ module WorldModuleScreen =
                 let struct (screenState, world) =
                     let screenState = { screenState with Model = { DesignerType = typeof<'a>; DesignerValue = valueObj }}
                     struct (screenState, World.setScreenState screenState screen world)
-                let world = World.publishScreenChange (nameof screenState.Model) previous.DesignerValue value screen world
-                let world = (World.getScreenDispatcher screen world).TrySynchronize (screen, world)
+                let world = screenState.Dispatcher.TrySynchronize (initializing, screen, world)
+                let world = World.publishScreenChange "Model" previous.DesignerValue value screen world
                 struct (true, world)
             else struct (false, world)
 
@@ -352,7 +352,7 @@ module WorldModuleScreen =
 
     /// Initialize property setters.
     let private initSetters () =
-        ScreenSetters.Add ("Model", fun property screen world -> World.setScreenModelProperty { DesignerType = property.PropertyType; DesignerValue = property.PropertyValue } screen world)
+        ScreenSetters.Add ("Model", fun property screen world -> World.setScreenModelProperty false { DesignerType = property.PropertyType; DesignerValue = property.PropertyValue } screen world)
         ScreenSetters.Add ("TransitionState", fun property screen world -> World.setScreenTransitionState (property.PropertyValue :?> TransitionState) screen world)
         ScreenSetters.Add ("TransitionUpdates", fun property screen world -> World.setScreenTransitionUpdates (property.PropertyValue :?> int64) screen world)
         ScreenSetters.Add ("Incoming", fun property screen world -> World.setScreenIncoming (property.PropertyValue :?> Transition) screen world)
