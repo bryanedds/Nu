@@ -56,10 +56,10 @@ module Gaia =
     let private generateEntityName dispatcherName world =
         let selectedGroup = Globals.EditorState.SelectedGroup
         let name = Gen.nameForEditor dispatcherName
-        let mutable entity = Entity (selectedGroup.GroupAddress <== ntoa name)
+        let mutable entity = Entity (selectedGroup.GroupAddress <-- ntoa name)
         while entity.Exists world do
             let name = Gen.nameForEditor dispatcherName
-            entity <- Entity (selectedGroup.GroupAddress <== ntoa name)
+            entity <- Entity (selectedGroup.GroupAddress <-- ntoa name)
         entity.Name
 
     let private refreshOverlayComboBox (form : GaiaForm) world =
@@ -162,21 +162,18 @@ module Gaia =
             | (true, gridItem) -> form.entityPropertyGrid.SelectedGridItem <- gridItem
             | (false, _) -> if entity.GetModelGeneric<obj> world <> box () then form.entityPropertyGrid.SelectedGridItem <- gridItems.["Model"]
         elif entity.GetModelGeneric<obj> world <> box () then form.entityPropertyGrid.SelectedGridItem <- gridItems.["Model"]
-        form.entityIgnorePropertyBindingsCheckBox.Checked <- entityTds.DescribedEntity.GetIgnorePropertyBindings world
         form.propertyTabControl.SelectTab 0 // show entity properties
 
     let private deselectEntity (form : GaiaForm) world =
         Globals.World <- world // must be set for property grid
-        form.entityIgnorePropertyBindingsCheckBox.Checked <- false
         form.entityPropertyGrid.SelectedObject <- null
 
     let private refreshEntityPropertyGrid (form : GaiaForm) world =
         match form.entityPropertyGrid.SelectedObject with
         | :? EntityTypeDescriptorSource as entityTds ->
             Globals.World <- world // must be set for property grid
-            if entityTds.DescribedEntity.Exists world then
-                form.entityPropertyGrid.Refresh ()
-                form.entityIgnorePropertyBindingsCheckBox.Checked <- entityTds.DescribedEntity.GetIgnorePropertyBindings world
+            if entityTds.DescribedEntity.Exists world
+            then form.entityPropertyGrid.Refresh ()
             else deselectEntity form world
         | _ -> ()
 
@@ -321,46 +318,46 @@ module Gaia =
     let private handleNuUpdate (form : GaiaForm) (_ : Event<unit, Game>) world =
         if not form.advancingButton.Checked then
             let moveSpeed =
-                if KeyboardState.isCtrlDown () then 0.0f // ignore movement while ctrl pressed
-                elif KeyboardState.isKeyDown KeyboardKey.Return then 0.5f
-                elif KeyboardState.isShiftDown () then 0.02f
+                if World.isKeyboardCtrlDown world then 0.0f // ignore movement while ctrl pressed
+                elif World.isKeyboardKeyDown KeyboardKey.Return world then 0.5f
+                elif World.isKeyboardShiftDown world then 0.02f
                 else 0.12f
             let turnSpeed =
-                if KeyboardState.isCtrlDown () then 0.0f // ignore turning while ctrl pressed
-                elif KeyboardState.isShiftDown () then 0.025f
+                if World.isKeyboardCtrlDown world then 0.0f // ignore turning while ctrl pressed
+                elif World.isKeyboardShiftDown world then 0.025f
                 else 0.05f
             let position = World.getEyePosition3d world
             let rotation = World.getEyeRotation3d world
             let world =
-                if KeyboardState.isKeyDown KeyboardKey.W
+                if World.isKeyboardKeyDown KeyboardKey.W world
                 then World.setEyePosition3d (position + Vector3.Transform (v3Forward, rotation) * moveSpeed) world
                 else world
             let world =
-                if KeyboardState.isKeyDown KeyboardKey.S
+                if World.isKeyboardKeyDown KeyboardKey.S world
                 then World.setEyePosition3d (position + Vector3.Transform (v3Back, rotation) * moveSpeed) world
                 else world
             let world =
-                if KeyboardState.isKeyDown KeyboardKey.A
+                if World.isKeyboardKeyDown KeyboardKey.A world
                 then World.setEyePosition3d (position + Vector3.Transform (v3Left, rotation) * moveSpeed) world
                 else world
             let world =
-                if KeyboardState.isKeyDown KeyboardKey.D
+                if World.isKeyboardKeyDown KeyboardKey.D world
                 then World.setEyePosition3d (position + Vector3.Transform (v3Right, rotation) * moveSpeed) world
                 else world
             let world =
-                if KeyboardState.isKeyDown KeyboardKey.Up
+                if World.isKeyboardKeyDown KeyboardKey.Up world
                 then World.setEyePosition3d (position + Vector3.Transform (v3Up, rotation) * moveSpeed) world
                 else world
             let world =
-                if KeyboardState.isKeyDown KeyboardKey.Down
+                if World.isKeyboardKeyDown KeyboardKey.Down world
                 then World.setEyePosition3d (position + Vector3.Transform (v3Down, rotation) * moveSpeed) world
                 else world
             let world =
-                if KeyboardState.isKeyDown KeyboardKey.Left
+                if World.isKeyboardKeyDown KeyboardKey.Left world
                 then World.setEyeRotation3d (rotation * Quaternion.CreateFromAxisAngle (v3Up, turnSpeed)) world
                 else world
             let world =
-                if KeyboardState.isKeyDown KeyboardKey.Right
+                if World.isKeyboardKeyDown KeyboardKey.Right world
                 then World.setEyeRotation3d (rotation * Quaternion.CreateFromAxisAngle (v3Down, turnSpeed)) world
                 else world
             (Cascade, world)
@@ -827,11 +824,11 @@ module Gaia =
             let draggedNode = e.Data.GetData typeof<TreeNode> :?> TreeNode
             if draggedNode <> targetNodeOpt && notNull targetNodeOpt && not (containsNode draggedNode targetNodeOpt) then
                 let selectedGroup = Globals.EditorState.SelectedGroup
-                let source = Entity (selectedGroup.GroupAddress <== Address.makeFromString draggedNode.Name)
+                let source = Entity (selectedGroup.GroupAddress <-- Address.makeFromString draggedNode.Name)
                 let (mountToParent, target) =
                     if targetNodeOpt.Name = Constants.Editor.GroupNodeKey
                     then (false, Group selectedGroup.GroupAddress / source.Name)
-                    else (true, Entity (selectedGroup.GroupAddress <== Address.makeFromString targetNodeOpt.Name) / source.Name)
+                    else (true, Entity (selectedGroup.GroupAddress <-- Address.makeFromString targetNodeOpt.Name) / source.Name)
                 let mountOpt = if mountToParent then Some (Relation.makeParent ()) else None
                 let world = World.renameEntityImmediate source target world
                 target.SetMountOptWithAdjustment mountOpt world
@@ -856,7 +853,7 @@ module Gaia =
                 let nodeKey = form.hierarchyTreeView.SelectedNode.Name
                 if nodeKey <> Constants.Editor.GroupNodeKey then
                     let address = Address.makeFromString nodeKey
-                    let entity = Entity (Globals.EditorState.SelectedGroup.GroupAddress <== atoa address)
+                    let entity = Entity (Globals.EditorState.SelectedGroup.GroupAddress <-- atoa address)
                     if entity.Exists world then selectEntity entity form world
                     world
                 else world
@@ -1396,18 +1393,6 @@ module Gaia =
                 world
             | _ -> world
 
-    let private handleEntityIgnorePropertyBindingsChanged (form : GaiaForm) (_ : EventArgs) =
-        addPreUpdater $ fun world ->
-            match form.entityPropertyGrid.SelectedObject with
-            | null -> world
-            | :? EntityTypeDescriptorSource as entityTds ->
-                let entity = entityTds.DescribedEntity
-                let world = entity.SetIgnorePropertyBindings form.entityIgnorePropertyBindingsCheckBox.Checked world
-                Globals.World <- world // must be set for property grid
-                form.entityPropertyGrid.Refresh ()
-                world
-            | _ -> world
-
     let private handleKeyboardInput key isKeyFromKeyableControl (form : GaiaForm) world =
         if Form.ActiveForm = (form :> Form) then
             if Keys.F5 = key then form.advancingButton.PerformClick ()
@@ -1784,7 +1769,7 @@ module Gaia =
                 let nodeKey = e.Node.Name
                 if nodeKey <> Constants.Editor.GroupNodeKey then
                     let address = Address.makeFromString nodeKey
-                    let entity = Entity (Globals.EditorState.SelectedGroup.GroupAddress <== atoa address)
+                    let entity = Entity (Globals.EditorState.SelectedGroup.GroupAddress <-- atoa address)
                     if entity.Exists world then selectEntity entity form world
                     if e.Button = MouseButtons.Right then
                         form.hierarchyContextMenuStrip.Show ()
@@ -1852,7 +1837,6 @@ module Gaia =
         form.entityDesignerPropertyAddButton.Click.Add (handleEntityDesignerPropertyAddClick false form)
         form.entityDesignerPropertyDefaultButton.Click.Add (handleEntityDesignerPropertyAddClick true form)
         form.entityDesignerPropertyRemoveButton.Click.Add (handleEntityDesignerPropertyRemoveClick form)
-        form.entityIgnorePropertyBindingsCheckBox.CheckedChanged.Add (handleEntityIgnorePropertyBindingsChanged form)
         form.Closing.Add (handleFormClosing form)
 
         // populate event filter keywords
@@ -1915,11 +1899,6 @@ module Gaia =
         form.entityDesignerPropertyTypeComboBox.Items.Add ("[table [0 \"\"]] : Map<int, string>") |> ignore
         form.entityDesignerPropertyTypeComboBox.Items.Add ("[tuple 0 0] : int * int") |> ignore
         form.entityDesignerPropertyTypeComboBox.Items.Add ("[record AssetTag [PackageName \"Default\"] [AssetName \"Image\"]] : AssetTag") |> ignore
-
-#if !DEBUG
-        // disable entity ignore property bindings in non-DEBUG mode.
-        form.entityIgnorePropertyBindingsCheckBox.Enabled <- false
-#endif
 
         // clear undo buffers
         form.eventFilterTextBox.EmptyUndoBuffer ()

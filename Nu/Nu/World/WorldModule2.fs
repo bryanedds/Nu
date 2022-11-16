@@ -135,14 +135,14 @@ module WorldModule2 =
                 match World.getSelectedScreenOpt world with
                 | Some selectedScreen ->
                     let eventTrace = EventTrace.debug "World" "selectScreen" "Deselecting" EventTrace.empty
-                    World.publish () (Events.Deselecting ==> selectedScreen) eventTrace selectedScreen world
+                    World.publish () (Events.Deselecting --> selectedScreen) eventTrace selectedScreen world
                 | None -> world
             match transitionStateAndScreenOpt with
             | Some (transitionState, screen) ->
                 let world = World.setScreenTransitionStatePlus transitionState screen world
                 let world = World.setSelectedScreen screen world
                 let eventTrace = EventTrace.debug "World" "selectScreen" "Select" EventTrace.empty
-                World.publish () (Events.Select ==> screen) eventTrace screen world
+                World.publish () (Events.Select --> screen) eventTrace screen world
             | None ->
                 World.setSelectedScreenOpt None world
 
@@ -243,7 +243,7 @@ module WorldModule2 =
                                 | _ -> World.playSong playSong.FadeInMs playSong.FadeOutMs playSong.Volume 0.0 playSong.Song world // play song when song is different
                             | None -> world
                         let eventTrace = EventTrace.debug "World" "updateScreenIncoming" "IncomingStart" EventTrace.empty
-                        World.publish () (Events.IncomingStart ==> selectedScreen) eventTrace selectedScreen world
+                        World.publish () (Events.IncomingStart --> selectedScreen) eventTrace selectedScreen world
                     else world
                 match World.getLiveness world with
                 | Live ->
@@ -251,7 +251,7 @@ module WorldModule2 =
                     | (true, world) ->
                         let eventTrace = EventTrace.debug "World" "updateScreenIncoming" "IncomingFinish" EventTrace.empty
                         let world = World.setScreenTransitionStatePlus IdlingState selectedScreen world
-                        World.publish () (Events.IncomingFinish ==> selectedScreen) eventTrace selectedScreen world
+                        World.publish () (Events.IncomingFinish --> selectedScreen) eventTrace selectedScreen world
                     | (false, world) -> world
                 | Dead -> world
             | Dead -> world
@@ -306,7 +306,7 @@ module WorldModule2 =
                                 | None -> world
                         | None -> world
                     let eventTrace = EventTrace.debug "World" "updateScreenTransition" "OutgoingStart" EventTrace.empty
-                    World.publish () (Events.OutgoingStart ==> selectedScreen) eventTrace selectedScreen world
+                    World.publish () (Events.OutgoingStart --> selectedScreen) eventTrace selectedScreen world
                 else world
             match World.getLiveness world with
             | Live ->
@@ -317,7 +317,7 @@ module WorldModule2 =
                         match World.getLiveness world with
                         | Live ->
                             let eventTrace = EventTrace.debug "World" "updateScreenOutgoing" "OutgoingFinish" EventTrace.empty
-                            World.publish () (Events.OutgoingFinish ==> selectedScreen) eventTrace selectedScreen world
+                            World.publish () (Events.OutgoingFinish --> selectedScreen) eventTrace selectedScreen world
                         | Dead -> world
                     match World.getLiveness world with
                     | Live ->
@@ -679,7 +679,7 @@ module WorldModule2 =
                 | BodyCollisionMessage bodyCollisionMessage ->
                     let entity = bodyCollisionMessage.BodyShapeSource.Simulant :?> Entity
                     if entity.Exists world then
-                        let collisionAddress = Events.BodyCollision ==> entity.EntityAddress
+                        let collisionAddress = Events.BodyCollision --> entity.EntityAddress
                         let collisionData =
                             { BodyCollider = BodyShapeSource.fromInternal bodyCollisionMessage.BodyShapeSource
                               BodyCollidee = BodyShapeSource.fromInternal bodyCollisionMessage.BodyShapeSource2
@@ -691,7 +691,7 @@ module WorldModule2 =
                 | BodySeparationMessage bodySeparationMessage ->
                     let entity = bodySeparationMessage.BodyShapeSource.Simulant :?> Entity
                     if entity.Exists world then
-                        let separationAddress = Events.BodySeparation ==> entity.EntityAddress
+                        let separationAddress = Events.BodySeparation --> entity.EntityAddress
                         let separationData =
                             { BodySeparator = BodyShapeSource.fromInternal bodySeparationMessage.BodyShapeSource
                               BodySeparatee = BodyShapeSource.fromInternal bodySeparationMessage.BodyShapeSource2  }

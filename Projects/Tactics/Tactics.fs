@@ -50,7 +50,7 @@ module TacticsGame =
         override this.Initializers (tactics, game) =
             [game.Atlas <=> Simulants.Atlas.Screen.Atlas
              game.Field <=> Simulants.Field.Screen.Field
-             game.DesiredScreen <-- tactics ==> fun tactics ->
+             game.DesiredScreen := tactics --> fun tactics ->
                 match tactics with
                 | Gui gui ->
                     match gui with

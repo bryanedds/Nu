@@ -47,18 +47,18 @@ module WorldScreenModule =
         member this.GetId world = World.getScreenId this world
         member this.Id = lensReadOnly (nameof this.Id) this this.GetId
 
-        member this.RegisterEvent = Events.Register ==> this
-        member this.UnregisteringEvent = Events.Unregistering ==> this
-        member this.ChangeEvent propertyName = Events.Change propertyName ==> this
-        member this.UpdateEvent = Events.Update ==> this
-        member this.PostUpdateEvent = Events.PostUpdate ==> this
-        member this.RenderEvent = Events.Render ==> this
-        member this.SelectEvent = Events.Select ==> this
-        member this.DeselectingEvent = Events.Deselecting ==> this
-        member this.IncomingStartEvent = Events.IncomingStart ==> this
-        member this.IncomingFinishEvent = Events.IncomingFinish ==> this
-        member this.OutgoingStartEvent = Events.OutgoingStart ==> this
-        member this.OutgoingFinishEvent = Events.OutgoingFinish ==> this
+        member this.RegisterEvent = Events.Register --> this
+        member this.UnregisteringEvent = Events.Unregistering --> this
+        member this.ChangeEvent propertyName = Events.Change propertyName --> this
+        member this.UpdateEvent = Events.Update --> this
+        member this.PostUpdateEvent = Events.PostUpdate --> this
+        member this.RenderEvent = Events.Render --> this
+        member this.SelectEvent = Events.Select --> this
+        member this.DeselectingEvent = Events.Deselecting --> this
+        member this.IncomingStartEvent = Events.IncomingStart --> this
+        member this.IncomingFinishEvent = Events.IncomingFinish --> this
+        member this.OutgoingStartEvent = Events.OutgoingStart --> this
+        member this.OutgoingFinishEvent = Events.OutgoingFinish --> this
 
         /// Try to get a property value and type.
         member this.TryGetProperty propertyName world =
@@ -122,7 +122,7 @@ module WorldScreenModule =
         member this.Is<'a> world = this.Is (typeof<'a>, world)
 
         /// Get a screen's change event address.
-        member this.GetChangeEvent propertyName = Events.Change propertyName ==> this.ScreenAddress
+        member this.GetChangeEvent propertyName = Events.Change propertyName --> this.ScreenAddress
 
         /// Try to signal a screen.
         member this.TrySignal signal world = (this.GetDispatcher world).TrySignal (signal, this, world)
@@ -142,7 +142,7 @@ module WorldScreenModule =
 
             // publish update event
             let eventTrace = EventTrace.debug "World" "updateScreen" "" EventTrace.empty
-            World.publishPlus () (Events.Update ==> screen) eventTrace Simulants.Game false false world
+            World.publishPlus () (Events.Update --> screen) eventTrace Simulants.Game false false world
 
         static member internal postUpdateScreen (screen : Screen) world =
 
@@ -157,7 +157,7 @@ module WorldScreenModule =
 
             // publish post-update event
             let eventTrace = EventTrace.debug "World" "postUpdateScreen" "" EventTrace.empty
-            World.publishPlus () (Events.PostUpdate ==> screen) eventTrace Simulants.Game false false world
+            World.publishPlus () (Events.PostUpdate --> screen) eventTrace Simulants.Game false false world
 
         static member internal renderScreen (screen : Screen) world =
 
@@ -172,7 +172,7 @@ module WorldScreenModule =
 
             // publish render event
             let eventTrace = EventTrace.debug "World" "renderScreen" "" EventTrace.empty
-            World.publishPlus () (Events.Render ==> screen) eventTrace Simulants.Game false false world
+            World.publishPlus () (Events.Render --> screen) eventTrace Simulants.Game false false world
 
         /// Get all the screens in the world.
         [<FunctionBinding>]

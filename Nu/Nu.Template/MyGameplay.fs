@@ -36,11 +36,11 @@ module MyGameplay =
 
         // here we define the screen's properties and event handling
         override this.Initialize (_, _) =
-            [Screen.UpdateEvent --> cmd Update
-             Screen.PostUpdateEvent --> cmd PostUpdateEye
-             Screen.DeselectingEvent --> msg FinishQuitting
-             Game.KeyboardKeyDownEvent --|> fun evt -> if evt.Data.KeyboardKey = KeyboardKey.Up && not evt.Data.Repeated then cmd Jump else cmd Nop
-             Simulants.Gameplay.Gui.Quit.ClickEvent --> msg StartQutting]
+            [Screen.UpdateEvent => cmd Update
+             Screen.PostUpdateEvent => cmd PostUpdateEye
+             Screen.DeselectingEvent => msg FinishQuitting
+             Game.KeyboardKeyDownEvent =|> fun evt -> if evt.Data.KeyboardKey = KeyboardKey.Up && not evt.Data.Repeated then cmd Jump else cmd Nop
+             Simulants.Gameplay.Gui.Quit.ClickEvent => msg StartQutting]
 
         // here we handle the above messages
         override this.Message (_, message, _, _) =
@@ -85,17 +85,17 @@ module MyGameplay =
             [// the gui group
              yield Content.group Simulants.Gameplay.Gui.Group.Name []
                  [Content.button Simulants.Gameplay.Gui.Quit.Name
-                     [Entity.Text := "Quit"
-                      Entity.Position := v3 260.0f -260.0f 0.0f
-                      Entity.Elevation := 10.0f
-                      Entity.ClickEvent --> msg Quit]]
+                     [Entity.Text == "Quit"
+                      Entity.Position == v3 260.0f -260.0f 0.0f
+                      Entity.Elevation == 10.0f
+                      Entity.ClickEvent => msg Quit]]
 
              // the player and scene groups while playing
              match gameplay with
              | Playing | Quitting ->
                 yield Content.group Simulants.Gameplay.Player.Group.Name []
                     [Content.sideViewCharacter Simulants.Gameplay.Player.Character.Name
-                        [Entity.Position := v3 0.0f 0.0f 0.0f
-                         Entity.Size := v3 108.0f 108.0f 0.0f]]
+                        [Entity.Position == v3 0.0f 0.0f 0.0f
+                         Entity.Size == v3 108.0f 108.0f 0.0f]]
                 yield Content.groupFromFile Simulants.Gameplay.Scene.Group.Name "Assets/Gameplay/Scene.nugroup" [] []
              | Quit -> ()]

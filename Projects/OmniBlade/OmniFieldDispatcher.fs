@@ -649,12 +649,12 @@ module FieldDispatcher =
             withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Gui.SlotSound)) field
 
         override this.Initialize (_, _) =
-            [Simulants.Field.Scene.Avatar.Avatar.ChangeEvent --|> fun evt -> msg (UpdateAvatar (evt.Data.Value :?> Avatar))
-             Screen.UpdateEvent --> cmd ProcessKeyInput
-             Screen.UpdateEvent --> msg Update
-             Screen.PostUpdateEvent --> msg UpdateFieldTransition
-             Screen.PostUpdateEvent --> cmd UpdateEye
-             Screen.SelectEvent --> cmd PlayFieldSong]
+            [Simulants.Field.Scene.Avatar.Avatar.ChangeEvent =|> fun evt -> msg (UpdateAvatar (evt.Data.Value :?> Avatar))
+             Screen.UpdateEvent => cmd ProcessKeyInput
+             Screen.UpdateEvent => msg Update
+             Screen.PostUpdateEvent => msg UpdateFieldTransition
+             Screen.PostUpdateEvent => cmd UpdateEye
+             Screen.SelectEvent => cmd PlayFieldSong]
 
         override this.Message (field, message, _, world) =
 
@@ -1130,43 +1130,43 @@ module FieldDispatcher =
 
                 [// avatar
                  yield Content.entity<AvatarDispatcher> Simulants.Field.Scene.Avatar.Name
-                    [Entity.Position := v3Zero; Entity.Elevation := Constants.Field.ForegroundElevation; Entity.Size := Constants.Gameplay.CharacterSize
-                     Entity.Enabled <--
+                    [Entity.Position == v3Zero; Entity.Elevation == Constants.Field.ForegroundElevation; Entity.Size == Constants.Gameplay.CharacterSize
+                     Entity.Enabled :=
                         (field.Menu.MenuState = MenuClosed &&
                          Cue.notInterrupting field.Inventory field.Advents field.Cue &&
                          Option.isNone field.DialogOpt &&
                          Option.isNone field.ShopOpt &&
                          Option.isNone field.FieldTransitionOpt)
-                     Entity.LinearDamping := Constants.Field.LinearDamping
-                     Entity.Avatar <-- field.Avatar]
+                     Entity.LinearDamping == Constants.Field.LinearDamping
+                     Entity.Avatar := field.Avatar]
 
                  // props
                  for (index, prop) in field.Props.Pairs do // TODO: DIFF: memoize?
                  
                     // prop
-                    yield Content.entity<PropDispatcher> (scstringm index) [Entity.Prop <-- prop]
+                    yield Content.entity<PropDispatcher> (scstringm index) [Entity.Prop := prop]
 
                  // spirit orb
                  if Field.hasEncounters field && Cue.isNil field.Cue then
                     yield Content.entity<SpiritOrbDispatcher> "SpiritOrb"
-                        [Entity.Position := v3 -448.0f 48.0f 0.0f; Entity.Elevation := Constants.Field.SpiritOrbElevation; Entity.Size := v3 192.0f 192.0f 0.0f
-                         Entity.SpiritOrb <-- { AvatarLowerCenter = field.Avatar.LowerCenter; Spirits = field.Spirits; Chests = Field.getChests field; Portals = Field.getNonWarpPortals field }]
+                        [Entity.Position == v3 -448.0f 48.0f 0.0f; Entity.Elevation == Constants.Field.SpiritOrbElevation; Entity.Size == v3 192.0f 192.0f 0.0f
+                         Entity.SpiritOrb := { AvatarLowerCenter = field.Avatar.LowerCenter; Spirits = field.Spirits; Chests = Field.getChests field; Portals = Field.getNonWarpPortals field }]
 
                  // backdrop sprite
                  yield Content.staticSprite "Backdrop"
-                    [Entity.Perimeter <-- field.ViewBoundsAbsolute.Box3; Entity.Elevation := Single.MinValue; Entity.Absolute := true
-                     Entity.StaticImage := Assets.Default.Image9
-                     Entity.Color <--
+                    [Entity.Perimeter := field.ViewBoundsAbsolute.Box3; Entity.Elevation == Single.MinValue; Entity.Absolute == true
+                     Entity.StaticImage == Assets.Default.Image9
+                     Entity.Color :=
                         match Data.Value.Fields.TryGetValue field.FieldType with
                         | (true, fieldData) -> fieldData.FieldBackgroundColor
                         | (false, _) -> Color.Black]
 
                  // transition fade sprite
                  yield Content.staticSprite "Fade"
-                    [Entity.Perimeter <-- field.ViewBoundsAbsolute.Box3; Entity.Elevation := Single.MaxValue; Entity.Absolute := true
-                     Entity.StaticImage := Assets.Default.Image8
-                     Entity.Visible <-- Option.isSome field.FieldTransitionOpt
-                     Entity.Color <--
+                    [Entity.Perimeter := field.ViewBoundsAbsolute.Box3; Entity.Elevation == Single.MaxValue; Entity.Absolute == true
+                     Entity.StaticImage == Assets.Default.Image8
+                     Entity.Visible := Option.isSome field.FieldTransitionOpt
+                     Entity.Color :=
                         match field.FieldTransitionOpt with
                         | Some transition ->
                             let time = field.UpdateTime
@@ -1181,8 +1181,8 @@ module FieldDispatcher =
 
                  // tmx map
                  yield Content.tmxMap Simulants.Field.Scene.TileMap.Name
-                    [Entity.Elevation := Constants.Field.BackgroundElevation
-                     Entity.TmxMap <--
+                    [Entity.Elevation == Constants.Field.BackgroundElevation
+                     Entity.TmxMap :=
                         match Map.tryFind field.FieldType Data.Value.Fields with
                         | Some fieldData ->
                             match FieldData.tryGetTileMap field.OmniSeedState fieldData with
@@ -1193,24 +1193,24 @@ module FieldDispatcher =
                                 | Choice3Of3 (tileMap, _) -> tileMap
                             | None -> failwithumf ()
                         | None -> failwithumf ()
-                     Entity.TileIndexOffset <--
+                     Entity.TileIndexOffset :=
                          match Map.tryFind field.FieldType Data.Value.Fields with
                          | Some fieldData -> fieldData.FieldTileIndexOffset
                          | None -> failwithumf ()
-                     Entity.TileIndexOffsetRange <--
+                     Entity.TileIndexOffsetRange :=
                          match Map.tryFind field.FieldType Data.Value.Fields with
                          | Some fieldData -> fieldData.FieldTileIndexOffsetRange
                          | None -> failwithumf ()
-                     Entity.TileLayerClearance := 10.0f]
+                     Entity.TileLayerClearance == 10.0f]
 
                  // tmx map fade
                  yield Content.tmxMap "TileMapFade"
-                    [Entity.Elevation := Constants.Field.BackgroundElevation + 0.5f
-                     Entity.Color <--
+                    [Entity.Elevation == Constants.Field.BackgroundElevation + 0.5f
+                     Entity.Color :=
                         (let progress = 1.0f - (Constants.Field.ConnectorFadeYMax - field.Avatar.Bottom.Y) / Constants.Field.ConnectorFadeYMax
                          let fade = min 1.0f progress
                          Color.One.ScaleA fade)
-                     Entity.TmxMap <--
+                     Entity.TmxMap :=
                         (match Map.tryFind field.FieldType Data.Value.Fields with
                          | Some fieldData ->
                             match FieldData.tryGetTileMap field.OmniSeedState fieldData with
@@ -1221,43 +1221,43 @@ module FieldDispatcher =
                                 | Choice3Of3 (_, _) ->  Metadata.getTileMapMetadata Assets.Default.TileMapEmpty |> __c
                             | None -> Metadata.getTileMapMetadata Assets.Default.TileMapEmpty |> __c
                          | None -> Metadata.getTileMapMetadata Assets.Default.TileMapEmpty |> __c)
-                     Entity.TileLayerClearance := 10.0f]
+                     Entity.TileLayerClearance == 10.0f]
 
                  // feeler
                  yield Content.feeler Simulants.Field.Scene.Feeler.Name
-                    [Entity.Position := -Constants.Render.ResolutionF.V3 * 0.5f; Entity.Elevation := Constants.Field.FeelerElevation; Entity.Size := Constants.Render.ResolutionF.V3
-                     Entity.TouchingEvent --|> fun evt -> cmd (ProcessTouchInput evt.Data)]
+                    [Entity.Position == -Constants.Render.ResolutionF.V3 * 0.5f; Entity.Elevation == Constants.Field.FeelerElevation; Entity.Size == Constants.Render.ResolutionF.V3
+                     Entity.TouchingEvent =|> fun evt -> cmd (ProcessTouchInput evt.Data)]
 
                  // menu button
                  yield Content.button "Menu"
-                    [Entity.Position := v3 -456.0f -246.0f 0.0f; Entity.Elevation := Constants.Field.GuiElevation; Entity.Size := v3 144.0f 48.0f 0.0f
-                     Entity.UpImage := Assets.Gui.ButtonShortUpImage; Entity.DownImage := Assets.Gui.ButtonShortDownImage
-                     Entity.Text := "Menu"
-                     Entity.Visible <--
+                    [Entity.Position == v3 -456.0f -246.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v3 144.0f 48.0f 0.0f
+                     Entity.UpImage == Assets.Gui.ButtonShortUpImage; Entity.DownImage == Assets.Gui.ButtonShortDownImage
+                     Entity.Text == "Menu"
+                     Entity.Visible :=
                         (field.Menu.MenuState = MenuClosed &&
                          Cue.notInterrupting field.Inventory field.Advents field.Cue &&
                          Option.isNone field.DialogOpt &&
                          Option.isNone field.ShopOpt &&
                          Option.isNone field.FieldTransitionOpt)
-                     Entity.ClickEvent --> msg MenuTeamOpen]
+                     Entity.ClickEvent => msg MenuTeamOpen]
 
                  // interact button
                  yield Content.button "Interact"
-                    [Entity.Position := v3 306.0f -246.0f 0.0f; Entity.Elevation := Constants.Field.GuiElevation; Entity.Size := v3 144.0f 48.0f 0.0f
-                     Entity.UpImage := Assets.Gui.ButtonShortUpImage; Entity.DownImage := Assets.Gui.ButtonShortDownImage
-                     Entity.Visible <--
+                    [Entity.Position == v3 306.0f -246.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v3 144.0f 48.0f 0.0f
+                     Entity.UpImage == Assets.Gui.ButtonShortUpImage; Entity.DownImage == Assets.Gui.ButtonShortDownImage
+                     Entity.Visible :=
                         (field.Menu.MenuState = MenuClosed &&
                          (Cue.notInterrupting field.Inventory field.Advents field.Cue || Option.isSome field.DialogOpt) &&
                          Option.isNone field.BattleOpt &&
                          Option.isNone field.ShopOpt &&
                          Option.isNone field.FieldTransitionOpt &&
                          Option.isSome (tryGetInteraction field.DialogOpt field.Advents field.Avatar field.Props (flip detokenize field)))
-                     Entity.Text <--
+                     Entity.Text :=
                         match tryGetInteraction field.DialogOpt field.Advents field.Avatar field.Props (flip detokenize field) with
                         | Some interaction -> interaction
                         | None -> ""
-                     Entity.ClickSoundOpt := None
-                     Entity.ClickEvent --> msg Interact]
+                     Entity.ClickSoundOpt == None
+                     Entity.ClickEvent => msg Interact]
 
                  // dialog
                  yield! Content.dialog "Dialog"
@@ -1270,13 +1270,13 @@ module FieldDispatcher =
 
                     // team
                     yield Content.panel "Team"
-                        [Entity.Position := v3 -450.0f -255.0f 0.0f; Entity.Elevation := Constants.Field.GuiElevation; Entity.Size := v3 900.0f 510.0f 0.0f
-                         Entity.LabelImage := Assets.Gui.DialogXXLImage]
+                        [Entity.Position == v3 -450.0f -255.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v3 900.0f 510.0f 0.0f
+                         Entity.LabelImage == Assets.Gui.DialogXXLImage]
                         [yield Content.sidebar "Sidebar" (v3 24.0f 417.0f 0.0f) field (fun () -> MenuTeamOpen) (fun () -> MenuItemsOpen) (fun () -> MenuTechOpen) (fun () -> MenuOptionsOpen) (fun () -> MenuClose)
                          yield! Content.team (v3 138.0f 417.0f 0.0f) Int32.MaxValue field tautology2 MenuTeamAlly
                          yield Content.label "Portrait"
-                            [Entity.PositionLocal := v3 438.0f 288.0f 0.0f; Entity.ElevationLocal := 1.0f; Entity.Size := v3 192.0f 192.0f 0.0f
-                             Entity.LabelImage <--
+                            [Entity.PositionLocal == v3 438.0f 288.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 192.0f 192.0f 0.0f
+                             Entity.LabelImage :=
                                 match MenuTeam.tryGetTeamData field.Team menuTeam with
                                 | Some characterData ->
                                     match characterData.PortraitOpt with
@@ -1284,39 +1284,39 @@ module FieldDispatcher =
                                     | None -> Assets.Default.ImageEmpty
                                 | None -> Assets.Default.ImageEmpty]
                          yield Content.text "CharacterType"
-                            [Entity.PositionLocal := v3 650.0f 372.0f 0.0f; Entity.ElevationLocal := 1.0f
-                             Entity.Text <--
+                            [Entity.PositionLocal == v3 650.0f 372.0f 0.0f; Entity.ElevationLocal == 1.0f
+                             Entity.Text :=
                                 match MenuTeam.tryGetTeamData field.Team menuTeam with
                                 | Some characterData -> CharacterType.getName characterData.CharacterType
                                 | None -> ""]
                          yield Content.text "ArchetypeType"
-                            [Entity.PositionLocal := v3 650.0f 336.0f 0.0f; Entity.ElevationLocal := 1.0f
-                             Entity.Text <--
+                            [Entity.PositionLocal == v3 650.0f 336.0f 0.0f; Entity.ElevationLocal == 1.0f
+                             Entity.Text :=
                                 match MenuTeam.tryGetTeammate field.Team menuTeam with
                                 | Some teammate -> string teammate.ArchetypeType + " Lv." + string (Algorithms.expPointsToLevel teammate.ExpPoints)
                                 | None -> ""]
                          yield Content.text "Weapon"
-                            [Entity.PositionLocal := v3 444.0f 234.0f 0.0f; Entity.ElevationLocal := 1.0f
-                             Entity.Text <--
+                            [Entity.PositionLocal == v3 444.0f 234.0f 0.0f; Entity.ElevationLocal == 1.0f
+                             Entity.Text :=
                                 match MenuTeam.tryGetTeammate field.Team menuTeam with
                                 | Some teammate -> "Wpn: " + Option.mapOrDefaultValue string "None" teammate.WeaponOpt
                                 | None -> ""]
                          yield Content.text "Armor"
-                            [Entity.PositionLocal := v3 444.0f 204.0f 0.0f; Entity.ElevationLocal := 1.0f
-                             Entity.Text <--
+                            [Entity.PositionLocal == v3 444.0f 204.0f 0.0f; Entity.ElevationLocal == 1.0f
+                             Entity.Text :=
                                 match MenuTeam.tryGetTeammate field.Team menuTeam with
                                 | Some teammate -> "Amr: " + Option.mapOrDefaultValue string "None" teammate.ArmorOpt
                                 | None -> ""]
                          yield Content.text "Accessory"
-                            [Entity.PositionLocal := v3 444.0f 174.0f 0.0f; Entity.ElevationLocal := 1.0f
-                             Entity.Text <--
+                            [Entity.PositionLocal == v3 444.0f 174.0f 0.0f; Entity.ElevationLocal == 1.0f
+                             Entity.Text :=
                                 match MenuTeam.tryGetTeammate field.Team menuTeam with
                                 | Some teammate -> "Acc: " + Option.mapOrDefaultValue string "None" (List.tryHead teammate.Accessories)
                                 | None -> ""]
                          yield Content.text "Stats"
-                            [Entity.PositionLocal := v3 444.0f -84.0f 0.0f; Entity.ElevationLocal := 1.0f; Entity.Size := v3 512.0f 256.0f 0.0f
-                             Entity.Justification := Unjustified true
-                             Entity.Text <--
+                            [Entity.PositionLocal == v3 444.0f -84.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 512.0f 256.0f 0.0f
+                             Entity.Justification == Unjustified true
+                             Entity.Text :=
                                 match MenuTeam.tryGetTeammateAndTeamData field.Team menuTeam with
                                 | Some (teammate, characterData) ->
                                     let level = Algorithms.expPointsToLevel teammate.ExpPoints
@@ -1336,35 +1336,35 @@ module FieldDispatcher =
                  // inventory
                  | MenuItem _ ->
                     yield Content.panel "Inventory"
-                        [Entity.Position := v3 -450.0f -255.0f 0.0f; Entity.Elevation := Constants.Field.GuiElevation; Entity.Size := v3 900.0f 510.0f 0.0f
-                         Entity.LabelImage := Assets.Gui.DialogXXLImage
-                         Entity.Enabled <-- Option.isNone field.Menu.MenuUseOpt]
+                        [Entity.Position == v3 -450.0f -255.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v3 900.0f 510.0f 0.0f
+                         Entity.LabelImage == Assets.Gui.DialogXXLImage
+                         Entity.Enabled := Option.isNone field.Menu.MenuUseOpt]
                         [yield Content.sidebar "Sidebar" (v3 24.0f 417.0f 0.0f) field (fun () -> MenuTeamOpen) (fun () -> MenuItemsOpen) (fun () -> MenuTechOpen) (fun () -> MenuOptionsOpen) (fun () -> MenuClose)
                          yield! Content.items (v3 138.0f 417.0f 0.0f) 10 5 field MenuItemSelect
                          yield Content.text "Gold"
-                            [Entity.PositionLocal := v3 399.0f 24.0f 0.0f; Entity.ElevationLocal := 1.0f
-                             Entity.Justification := Justified (JustifyCenter, JustifyMiddle)
-                             Entity.Text <-- string field.Inventory.Gold + "G"]
+                            [Entity.PositionLocal == v3 399.0f 24.0f 0.0f; Entity.ElevationLocal == 1.0f
+                             Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
+                             Entity.Text := string field.Inventory.Gold + "G"]
                          yield Content.button "PageUp"
-                            [Entity.PositionLocal := v3 138.0f 12.0f 0.0f; Entity.ElevationLocal := 1.0f; Entity.Size := v3 72.0f 72.0f 0.0f
-                             Entity.Text := "<"
-                             Entity.VisibleLocal <-- (Content.pageItems 10 field |> a__)
-                             Entity.UpImage := Assets.Gui.ButtonSmallUpImage
-                             Entity.DownImage := Assets.Gui.ButtonSmallDownImage
-                             Entity.ClickEvent --> msg MenuItemsPageUp]
+                            [Entity.PositionLocal == v3 138.0f 12.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 72.0f 72.0f 0.0f
+                             Entity.Text == "<"
+                             Entity.VisibleLocal := (Content.pageItems 10 field |> a__)
+                             Entity.UpImage == Assets.Gui.ButtonSmallUpImage
+                             Entity.DownImage == Assets.Gui.ButtonSmallDownImage
+                             Entity.ClickEvent => msg MenuItemsPageUp]
                          yield Content.button "PageDown"
-                            [Entity.PositionLocal := v3 777.0f 12.0f 0.0f; Entity.ElevationLocal := 1.0f; Entity.Size := v3 72.0f 72.0f 0.0f
-                             Entity.Text := ">"
-                             Entity.VisibleLocal <-- (Content.pageItems 10 field |> _b_)
-                             Entity.UpImage := Assets.Gui.ButtonSmallUpImage
-                             Entity.DownImage := Assets.Gui.ButtonSmallDownImage
-                             Entity.ClickEvent --> msg MenuInventoryPageDown]]
+                            [Entity.PositionLocal == v3 777.0f 12.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 72.0f 72.0f 0.0f
+                             Entity.Text == ">"
+                             Entity.VisibleLocal := (Content.pageItems 10 field |> _b_)
+                             Entity.UpImage == Assets.Gui.ButtonSmallUpImage
+                             Entity.DownImage == Assets.Gui.ButtonSmallDownImage
+                             Entity.ClickEvent => msg MenuInventoryPageDown]]
 
                  // tech team
                  | MenuTech _ ->
                     yield Content.panel "TechTeam"
-                        [Entity.Position := v3 -450.0f -255.0f 0.0f; Entity.Elevation := Constants.Field.GuiElevation; Entity.Size := v3 900.0f 510.0f 0.0f
-                         Entity.LabelImage := Assets.Gui.DialogXXLImage]
+                        [Entity.Position == v3 -450.0f -255.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v3 900.0f 510.0f 0.0f
+                         Entity.LabelImage == Assets.Gui.DialogXXLImage]
                         [yield Content.sidebar "Sidebar" (v3 24.0f 417.0f 0.0f) field (fun () -> MenuTeamOpen) (fun () -> MenuItemsOpen) (fun () -> MenuTechOpen) (fun () -> MenuOptionsOpen) (fun () -> MenuClose)
                          yield! Content.team (v3 138.0f 417.0f 0.0f) Int32.MaxValue field tautology2 MenuTechAlly
                          yield! Content.techs (v3 466.0f 429.0f 0.0f) field MenuTechSelect]
@@ -1372,30 +1372,30 @@ module FieldDispatcher =
                  // options
                  | MenuOptions ->
                     yield Content.panel "Options"
-                        [Entity.Position := v3 -450.0f -255.0f 0.0f; Entity.Elevation := Constants.Field.GuiElevation; Entity.Size := v3 900.0f 510.0f 0.0f
-                         Entity.LabelImage := Assets.Gui.DialogXXLImage]
+                        [Entity.Position == v3 -450.0f -255.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v3 900.0f 510.0f 0.0f
+                         Entity.LabelImage == Assets.Gui.DialogXXLImage]
                         [Content.sidebar "Sidebar" (v3 24.0f 417.0f 0.0f) field (fun () -> MenuTeamOpen) (fun () -> MenuItemsOpen) (fun () -> MenuTechOpen) (fun () -> MenuOptionsOpen) (fun () -> MenuClose)
                          Content.text "BattleSpeed"
-                            [Entity.PositionLocal := v3 384.0f 432.0f 0.0f; Entity.ElevationLocal := 1.0f
-                             Entity.Text := "Battle Speed"]
+                            [Entity.PositionLocal == v3 384.0f 432.0f 0.0f; Entity.ElevationLocal == 1.0f
+                             Entity.Text == "Battle Speed"]
                          Content.radioButton "Wait"
-                            [Entity.PositionLocal := v3 180.0f 372.0f 0.0f; Entity.ElevationLocal := 1.0f; Entity.Size := v3 144.0f 48.0f 0.0f
-                             Entity.UndialedImage := Assets.Gui.ButtonShortUpImage; Entity.DialedImage := Assets.Gui.ButtonShortDownImage
-                             Entity.Text := "Wait"
-                             Entity.Dialed <-- match field.Options.BattleSpeed with WaitSpeed -> true | _ -> false
-                             Entity.DialedEvent --> msg (MenuOptionsSelectBattleSpeed WaitSpeed)]
+                            [Entity.PositionLocal == v3 180.0f 372.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 144.0f 48.0f 0.0f
+                             Entity.UndialedImage == Assets.Gui.ButtonShortUpImage; Entity.DialedImage == Assets.Gui.ButtonShortDownImage
+                             Entity.Text == "Wait"
+                             Entity.Dialed := match field.Options.BattleSpeed with WaitSpeed -> true | _ -> false
+                             Entity.DialedEvent => msg (MenuOptionsSelectBattleSpeed WaitSpeed)]
                          Content.radioButton "Paced"
-                            [Entity.PositionLocal := v3 408.0f 372.0f 0.0f; Entity.ElevationLocal := 1.0f; Entity.Size := v3 144.0f 48.0f 0.0f
-                             Entity.UndialedImage := Assets.Gui.ButtonShortUpImage; Entity.DialedImage := Assets.Gui.ButtonShortDownImage
-                             Entity.Text := "Paced"
-                             Entity.Dialed <-- match field.Options.BattleSpeed with PacedSpeed -> true | _ -> false
-                             Entity.DialedEvent --> msg (MenuOptionsSelectBattleSpeed PacedSpeed)]
+                            [Entity.PositionLocal == v3 408.0f 372.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 144.0f 48.0f 0.0f
+                             Entity.UndialedImage == Assets.Gui.ButtonShortUpImage; Entity.DialedImage == Assets.Gui.ButtonShortDownImage
+                             Entity.Text == "Paced"
+                             Entity.Dialed := match field.Options.BattleSpeed with PacedSpeed -> true | _ -> false
+                             Entity.DialedEvent => msg (MenuOptionsSelectBattleSpeed PacedSpeed)]
                          Content.radioButton "Swift"
-                            [Entity.PositionLocal := v3 636.0f 372.0f 0.0f; Entity.ElevationLocal := 1.0f; Entity.Size := v3 144.0f 48.0f 0.0f
-                             Entity.UndialedImage := Assets.Gui.ButtonShortUpImage; Entity.DialedImage := Assets.Gui.ButtonShortDownImage
-                             Entity.Text := "Swift"
-                             Entity.Dialed <-- match field.Options.BattleSpeed with SwiftSpeed -> true | _ -> false
-                             Entity.DialedEvent --> msg (MenuOptionsSelectBattleSpeed SwiftSpeed)]]
+                            [Entity.PositionLocal == v3 636.0f 372.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 144.0f 48.0f 0.0f
+                             Entity.UndialedImage == Assets.Gui.ButtonShortUpImage; Entity.DialedImage == Assets.Gui.ButtonShortDownImage
+                             Entity.Text == "Swift"
+                             Entity.Dialed := match field.Options.BattleSpeed with SwiftSpeed -> true | _ -> false
+                             Entity.DialedEvent => msg (MenuOptionsSelectBattleSpeed SwiftSpeed)]]
 
                  // closed
                  | MenuClosed -> ()
@@ -1404,8 +1404,8 @@ module FieldDispatcher =
                  match field.Menu.MenuUseOpt with
                  | Some menuUse ->
                     yield Content.panel "Use"
-                        [Entity.Position := v3 -450.0f -216.0f 0.0f; Entity.Elevation := Constants.Field.GuiElevation + 10.0f; Entity.Size := v3 900.0f 432.0f 0.0f
-                         Entity.LabelImage := Assets.Gui.DialogXLImage]
+                        [Entity.Position == v3 -450.0f -216.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation + 10.0f; Entity.Size == v3 900.0f 432.0f 0.0f
+                         Entity.LabelImage == Assets.Gui.DialogXLImage]
                         [yield! Content.team (v3 160.0f 183.0f 0.0f) 3 field
                             (fun teammate menu ->
                                 match menu.MenuUseOpt with
@@ -1413,19 +1413,19 @@ module FieldDispatcher =
                                 | None -> false)
                             MenuItemUse
                          yield Content.button "Close"
-                            [Entity.PositionLocal := v3 810.0f 342.0f 0.0f; Entity.ElevationLocal := 1.0f; Entity.Size := v3 72.0f 72.0f 0.0f
-                             Entity.UpImage := asset "Field" "CloseButtonUp"
-                             Entity.DownImage := asset "Field" "CloseButtonDown"
-                             Entity.ClickEvent --> msg MenuItemCancel]
+                            [Entity.PositionLocal == v3 810.0f 342.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 72.0f 72.0f 0.0f
+                             Entity.UpImage == asset "Field" "CloseButtonUp"
+                             Entity.DownImage == asset "Field" "CloseButtonDown"
+                             Entity.ClickEvent => msg MenuItemCancel]
                          yield Content.text "Line1"
-                            [Entity.PositionLocal := v3 36.0f 354.0f 0.0f; Entity.ElevationLocal := 1.0f
-                             Entity.Text <-- menuUse.MenuUseLine1]
+                            [Entity.PositionLocal == v3 36.0f 354.0f 0.0f; Entity.ElevationLocal == 1.0f
+                             Entity.Text := menuUse.MenuUseLine1]
                          yield Content.text "Line2"
-                            [Entity.PositionLocal := v3 66.0f 312.0f 0.0f; Entity.ElevationLocal := 1.0f
-                             Entity.Text <-- menuUse.MenuUseLine2]
+                            [Entity.PositionLocal == v3 66.0f 312.0f 0.0f; Entity.ElevationLocal == 1.0f
+                             Entity.Text := menuUse.MenuUseLine2]
                          yield Content.text "Line3"
-                            [Entity.PositionLocal := v3 66.0f 270.0f 0.0f; Entity.ElevationLocal := 1.0f
-                             Entity.Text <-- menuUse.MenuUseLine3]]
+                            [Entity.PositionLocal == v3 66.0f 270.0f 0.0f; Entity.ElevationLocal == 1.0f
+                             Entity.Text := menuUse.MenuUseLine3]]
                  | None -> ()
 
                  // shop
@@ -1433,52 +1433,52 @@ module FieldDispatcher =
                  | Some shop ->
                     let items = Content.pageItems 8 field
                     yield Content.panel "Shop"
-                        [Entity.Position := v3 -450.0f -255.0f 0.0f; Entity.Elevation := Constants.Field.GuiElevation; Entity.Size := v3 900.0f 510.0f 0.0f
-                         Entity.LabelImage := Assets.Gui.DialogXXLImage
-                         Entity.Enabled := Option.isNone shop.ShopConfirmOpt]
+                        [Entity.Position == v3 -450.0f -255.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v3 900.0f 510.0f 0.0f
+                         Entity.LabelImage == Assets.Gui.DialogXXLImage
+                         Entity.Enabled == Option.isNone shop.ShopConfirmOpt]
                         [yield! Content.items (v3 96.0f 347.0f 0.0f) 8 4 field ShopSelect
                          yield Content.button "Buy"
-                            [Entity.PositionLocal := v3 24.0f 438.0f 0.0f; Entity.ElevationLocal := 1.0f; Entity.Size := v3 192.0f 48.0f 0.0f
-                             Entity.Text := "Buy"
-                             Entity.VisibleLocal <-- (shop.ShopState = ShopSelling)
-                             Entity.ClickEvent --> msg ShopBuy]
+                            [Entity.PositionLocal == v3 24.0f 438.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 192.0f 48.0f 0.0f
+                             Entity.Text == "Buy"
+                             Entity.VisibleLocal := (shop.ShopState = ShopSelling)
+                             Entity.ClickEvent => msg ShopBuy]
                          yield Content.text "BuyWhat"
-                            [Entity.PositionLocal := v3 24.0f 438.0f 0.0f; Entity.ElevationLocal := 1.0f
-                             Entity.Justification := Justified (JustifyCenter, JustifyMiddle)
-                             Entity.Text := "Buy what?"
-                             Entity.VisibleLocal <-- (shop.ShopState = ShopBuying)]
+                            [Entity.PositionLocal == v3 24.0f 438.0f 0.0f; Entity.ElevationLocal == 1.0f
+                             Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
+                             Entity.Text == "Buy what?"
+                             Entity.VisibleLocal := (shop.ShopState = ShopBuying)]
                          yield Content.button "Sell"
-                            [Entity.PositionLocal := v3 352.0f 438.0f 0.0f; Entity.ElevationLocal := 1.0f; Entity.Size := v3 192.0f 48.0f 0.0f
-                             Entity.Text := "Sell"
-                             Entity.VisibleLocal <-- (shop.ShopState = ShopBuying)
-                             Entity.ClickEvent --> msg ShopSell]
+                            [Entity.PositionLocal == v3 352.0f 438.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 192.0f 48.0f 0.0f
+                             Entity.Text == "Sell"
+                             Entity.VisibleLocal := (shop.ShopState = ShopBuying)
+                             Entity.ClickEvent => msg ShopSell]
                          yield Content.text "SellWhat"
-                            [Entity.PositionLocal := v3 352.0f 438.0f 0.0f; Entity.ElevationLocal := 1.0f
-                             Entity.Justification := Justified (JustifyCenter, JustifyMiddle)
-                             Entity.Text := "Sell what?"
-                             Entity.VisibleLocal <-- (shop.ShopState = ShopSelling)]
+                            [Entity.PositionLocal == v3 352.0f 438.0f 0.0f; Entity.ElevationLocal == 1.0f
+                             Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
+                             Entity.Text == "Sell what?"
+                             Entity.VisibleLocal := (shop.ShopState = ShopSelling)]
                          yield Content.button "Leave"
-                            [Entity.PositionLocal := v3 678.0f 438.0f 0.0f; Entity.ElevationLocal := 1.0f; Entity.Size := v3 192.0f 48.0f 0.0f
-                             Entity.Text := "Leave"
-                             Entity.ClickEvent --> msg ShopLeave]
+                            [Entity.PositionLocal == v3 678.0f 438.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 192.0f 48.0f 0.0f
+                             Entity.Text == "Leave"
+                             Entity.ClickEvent => msg ShopLeave]
                          yield Content.button "PageUp"
-                            [Entity.PositionLocal := v3 24.0f 15.0f 0.0f; Entity.ElevationLocal := 1.0f; Entity.Size := v3 72.0f 72.0f 0.0f
-                             Entity.Text := "<"
-                             Entity.VisibleLocal <-- a__ items
-                             Entity.UpImage := Assets.Gui.ButtonSmallUpImage
-                             Entity.DownImage := Assets.Gui.ButtonSmallDownImage
-                             Entity.ClickEvent --> msg ShopPageUp]
+                            [Entity.PositionLocal == v3 24.0f 15.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 72.0f 72.0f 0.0f
+                             Entity.Text == "<"
+                             Entity.VisibleLocal := a__ items
+                             Entity.UpImage == Assets.Gui.ButtonSmallUpImage
+                             Entity.DownImage == Assets.Gui.ButtonSmallDownImage
+                             Entity.ClickEvent => msg ShopPageUp]
                          yield Content.button "PageDown"
-                            [Entity.PositionLocal := v3 804.0f 15.0f 0.0f; Entity.ElevationLocal := 1.0f; Entity.Size := v3 72.0f 72.0f 0.0f
-                             Entity.Text := ">"
-                             Entity.VisibleLocal <-- _b_ items
-                             Entity.UpImage := Assets.Gui.ButtonSmallUpImage
-                             Entity.DownImage := Assets.Gui.ButtonSmallDownImage
-                             Entity.ClickEvent --> msg ShopPageDown]
+                            [Entity.PositionLocal == v3 804.0f 15.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 72.0f 72.0f 0.0f
+                             Entity.Text == ">"
+                             Entity.VisibleLocal := _b_ items
+                             Entity.UpImage == Assets.Gui.ButtonSmallUpImage
+                             Entity.DownImage == Assets.Gui.ButtonSmallDownImage
+                             Entity.ClickEvent => msg ShopPageDown]
                          yield Content.text "Gold"
-                            [Entity.PositionLocal := v3 352.0f 3.0f 0.0f; Entity.ElevationLocal := 1.0f
-                             Entity.Justification := Justified (JustifyCenter, JustifyMiddle)
-                             Entity.Text <-- string field.Inventory.Gold + "G"]]
+                            [Entity.PositionLocal == v3 352.0f 3.0f 0.0f; Entity.ElevationLocal == 1.0f
+                             Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
+                             Entity.Text := string field.Inventory.Gold + "G"]]
                  | None -> ()
 
                  // confirm
@@ -1487,24 +1487,24 @@ module FieldDispatcher =
                     match shop.ShopConfirmOpt with
                     | Some shopConfirm ->
                         yield Content.panel "Dialog"
-                           [Entity.Position := v3 -450.0f -128.0f 0.0f; Entity.Elevation := Constants.Field.GuiElevation + 10.0f; Entity.Size := v3 900.0f 252.0f 0.0f
-                            Entity.LabelImage := Assets.Gui.DialogFatImage]
+                           [Entity.Position == v3 -450.0f -128.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation + 10.0f; Entity.Size == v3 900.0f 252.0f 0.0f
+                            Entity.LabelImage == Assets.Gui.DialogFatImage]
                            [Content.button "Accept"
-                               [Entity.PositionLocal := v3 198.0f 36.0f 0.0f; Entity.ElevationLocal := 1.0f; Entity.Size := v3 192.0f 48.0f 0.0f
-                                Entity.Text := "Accept"
-                                Entity.ClickEvent --> msg ShopConfirmAccept]
+                               [Entity.PositionLocal == v3 198.0f 36.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 192.0f 48.0f 0.0f
+                                Entity.Text == "Accept"
+                                Entity.ClickEvent => msg ShopConfirmAccept]
                             Content.button "Decline"
-                               [Entity.PositionLocal := v3 498.0f 36.0f 0.0f; Entity.ElevationLocal := 1.0f; Entity.Size := v3 192.0f 48.0f 0.0f
-                                Entity.Text := "Decline"
-                                Entity.ClickEvent --> msg ShopConfirmDecline]
+                               [Entity.PositionLocal == v3 498.0f 36.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 192.0f 48.0f 0.0f
+                                Entity.Text == "Decline"
+                                Entity.ClickEvent => msg ShopConfirmDecline]
                             Content.text "Offer"
-                               [Entity.PositionLocal := v3 30.0f 180.0f 0.0f; Entity.ElevationLocal := 1.0f
-                                Entity.Text <-- shopConfirm.ShopConfirmOffer]
+                               [Entity.PositionLocal == v3 30.0f 180.0f 0.0f; Entity.ElevationLocal == 1.0f
+                                Entity.Text := shopConfirm.ShopConfirmOffer]
                             Content.text "Line1"
-                               [Entity.PositionLocal := v3 60.0f 138.0f 0.0f; Entity.ElevationLocal := 1.0f
-                                Entity.Text <-- shopConfirm.ShopConfirmLine1]
+                               [Entity.PositionLocal == v3 60.0f 138.0f 0.0f; Entity.ElevationLocal == 1.0f
+                                Entity.Text := shopConfirm.ShopConfirmLine1]
                             Content.text "Line2"
-                               [Entity.PositionLocal := v3 60.0f 96.0f 0.0f; Entity.ElevationLocal := 1.0f
-                                Entity.Text <-- shopConfirm.ShopConfirmLine2]]
+                               [Entity.PositionLocal == v3 60.0f 96.0f 0.0f; Entity.ElevationLocal == 1.0f
+                                Entity.Text := shopConfirm.ShopConfirmLine2]]
                     | None -> ()
                  | None -> ()]]

@@ -185,7 +185,7 @@ type ElmishGameDispatcher () =
     inherit GameDispatcher<Intss, int, unit> (Intss.init 100) // 10,000 elmish entities (goal: steady 60FPS, current: unsteady 50FPS)
 
     override this.Initialize (_, _) =
-        [Game.UpdateEvent --> msg 0]
+        [Game.UpdateEvent => msg 0]
 
     override this.Message (intss, message, _, _) =
         match message with
@@ -198,11 +198,11 @@ type ElmishGameDispatcher () =
                 yield Content.group (string i) []
                     [|for (j, int) in ints.Ints.Pairs do
                         yield Content.entity<ElmishEntityDispatcher> (string j)
-                            [Entity.Position := v3 (single i * 5.0f - 250.0f) (single j * 2.5f - 125.0f) -250.0f
-                             Entity.Scale <-- v3Dup (single (int % 10)) * 0.5f
-                             Entity.Presence := Omnipresent]|]
+                            [Entity.Position == v3 (single i * 5.0f - 250.0f) (single j * 2.5f - 125.0f) -250.0f
+                             Entity.Scale := v3Dup (single (int % 10)) * 0.5f
+                             Entity.Presence == Omnipresent]|]
               yield Content.group "Fps" []
-                [Content.fps "Fps" [Entity.Position <-- v3 200.0f -250.0f 0.0f]]|]]
+                [Content.fps "Fps" [Entity.Position := v3 200.0f -250.0f 0.0f]]|]]
 
 #if ELMISH_AND_ECS
     override this.Register (game, world) =

@@ -23,8 +23,8 @@ module RingMenuDispatcher =
         member this.GetRingMenu world = this.GetModelGeneric<RingMenu> world
         member this.SetRingMenu value world = this.SetModelGeneric<RingMenu> value world
         member this.RingMenu = this.ModelGeneric<RingMenu> ()
-        member this.ItemSelectEvent = Events.ItemSelect ==> this
-        member this.CancelEvent = Events.Cancel ==> this
+        member this.ItemSelectEvent = Events.ItemSelect --> this
+        member this.CancelEvent = Events.Cancel --> this
 
     type RingMenuDispatcher () =
         inherit GuiDispatcher<RingMenu, unit, RingMenuCommand> ({ Items = Map.empty; ItemCancelOpt = None })
@@ -46,23 +46,23 @@ module RingMenuDispatcher =
             [for (itemName, (itemIndex, itemCount, itemEnabled)) in items.Pairs do
                 let buttonSize = v3 48.0f 48.0f 0.0f
                 yield Content.button (scstring itemName)
-                    [Entity.EnabledLocal <-- itemEnabled
-                     Entity.PositionLocal <--
+                    [Entity.EnabledLocal := itemEnabled
+                     Entity.PositionLocal :=
                         (let radius = Constants.Battle.RingMenuRadius
                          let progress = single itemIndex / single itemCount
                          let rotation = progress * single Math.PI * 2.0f
                          let position = v3 (radius * sin rotation) (radius * cos rotation) 0.0f
                          position - buttonSize * 0.5f)
-                     Entity.Size := buttonSize
-                     Entity.ElevationLocal := 1.0f
-                     Entity.UpImage <-- asset Assets.Battle.PackageName (itemName + "Up")
-                     Entity.DownImage <-- asset Assets.Battle.PackageName (itemName + "Down")
-                     Entity.ClickEvent --> cmd (ItemSelect itemName)]
+                     Entity.Size == buttonSize
+                     Entity.ElevationLocal == 1.0f
+                     Entity.UpImage := asset Assets.Battle.PackageName (itemName + "Up")
+                     Entity.DownImage := asset Assets.Battle.PackageName (itemName + "Down")
+                     Entity.ClickEvent => cmd (ItemSelect itemName)]
              yield Content.button "Cancel"
-                [Entity.MountOpt := None // TODO: DIFF: make sure this is implemented and content mounting generally.
-                 Entity.Size := v3 48.0f 48.0f 0.0f
-                 Entity.Position := Constants.Battle.CancelPosition
-                 Entity.ElevationLocal := 1.0f
-                 Entity.UpImage := asset Assets.Battle.PackageName "CancelUp"
-                 Entity.DownImage := asset Assets.Battle.PackageName "CancelDown"
-                 Entity.ClickEvent --> cmd ItemCancel]]
+                [Entity.MountOpt == None // TODO: DIFF: make sure this is implemented and content mounting generally.
+                 Entity.Size == v3 48.0f 48.0f 0.0f
+                 Entity.Position == Constants.Battle.CancelPosition
+                 Entity.ElevationLocal == 1.0f
+                 Entity.UpImage == asset Assets.Battle.PackageName "CancelUp"
+                 Entity.DownImage == asset Assets.Battle.PackageName "CancelDown"
+                 Entity.ClickEvent => cmd ItemCancel]]
