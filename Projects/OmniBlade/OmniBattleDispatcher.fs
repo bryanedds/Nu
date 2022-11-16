@@ -1203,7 +1203,7 @@ module BattleDispatcher =
                              Content.entity<RingMenuDispatcher> "RegularMenu"
                                 [Entity.Position := ally.CenterOffset
                                  Entity.Elevation == Constants.Battle.GuiElevation
-                                 Entity.Visible := (ally.InputState = RegularMenu)
+                                 Entity.Visible := ally.InputState = RegularMenu
                                  Entity.Enabled :=
                                     (let allies = battle |> Battle.getAllies |> Map.toValueList
                                      let alliesPastRegularMenu =
@@ -1219,7 +1219,7 @@ module BattleDispatcher =
                              Content.entity<RingMenuDispatcher> "ConsumableMenu"
                                 [Entity.Position := ally.CenterOffset
                                  Entity.Elevation == Constants.Battle.GuiElevation
-                                 Entity.Visible := (ally.InputState = ItemMenu)
+                                 Entity.Visible := ally.InputState = ItemMenu
                                  Entity.RingMenu :=
                                     (let consumables =
                                         battle.Inventory |>
@@ -1233,7 +1233,7 @@ module BattleDispatcher =
                              Content.entity<RingMenuDispatcher> "TechMenu"
                                 [Entity.Position := ally.CenterOffset
                                  Entity.Elevation == Constants.Battle.GuiElevation
-                                 Entity.Visible := (ally.InputState = TechMenu)
+                                 Entity.Visible := ally.InputState = TechMenu
                                  Entity.RingMenu :=
                                     (let techs =
                                         ally.Techs |>
