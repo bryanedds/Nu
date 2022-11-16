@@ -497,9 +497,9 @@ module BattleDispatcher =
                 entity.SetSelfDestruct true world)
                 delay screen world
 
-        override this.Channel (_, battle) =
-            [battle.UpdateEvent => msg Update
-             battle.PostUpdateEvent => cmd UpdateEye]
+        override this.Initialize (_, _) =
+            [Screen.UpdateEvent --> msg Update
+             Screen.PostUpdateEvent --> cmd UpdateEye]
 
         override this.Message (battle, message, _, world) =
 
@@ -1135,107 +1135,107 @@ module BattleDispatcher =
         override this.Content (battle, _) =
 
             [// scene group
-             Content.group Simulants.Battle.Scene.Group.Name []
+             yield Content.group Simulants.Battle.Scene.Group.Name []
 
                 [// tile map
-                 Content.tileMap Gen.name
-                    [Entity.Position == v3 -480.0f -270.0f 0.0f
-                     Entity.Elevation == Constants.Battle.BackgroundElevation
-                     Entity.TileMap <-- battle ==> fun battle -> battle.TileMap
-                     Entity.TileIndexOffset <-- battle ==> fun battle -> battle.TileIndexOffset
-                     Entity.TileIndexOffsetRange <-- battle ==> fun battle -> battle.TileIndexOffsetRange]
+                 yield Content.tileMap "TileMap"
+                    [Entity.Position <-- v3 -480.0f -270.0f 0.0f
+                     Entity.Elevation <-- Constants.Battle.BackgroundElevation
+                     Entity.TileMap <-- battle.TileMap
+                     Entity.TileIndexOffset <-- battle.TileIndexOffset
+                     Entity.TileIndexOffsetRange <-- battle.TileIndexOffsetRange]
 
                  // dialog
-                 Content.dialog "Dialog"
-                    (Constants.Battle.GuiElevation + 2.0f) Nop Nop
-                    (battle ==> fun battle -> match battle.DialogOpt with Some dialog -> Some (id, dialog) | None -> None)
+                 yield! Content.dialog "Dialog"
+                    (Constants.Battle.GuiElevation + 2.0f) Nop Nop id
+                    (match battle.DialogOpt with Some dialog -> Some dialog | None -> None)
 
                  // dialog interact button
-                 Content.button Gen.name
-                    [Entity.Position == v3 248.0f -240.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v3 144.0f 48.0f 0.0f
-                     Entity.UpImage == Assets.Gui.ButtonShortUpImage; Entity.DownImage == Assets.Gui.ButtonShortDownImage
-                     Entity.Visible <-- battle ==> fun battle -> match battle.DialogOpt with Some dialog -> Dialog.canAdvance id dialog | None -> false
-                     Entity.Text == "Next"
+                 yield Content.button "DialogInteract"
+                    [Entity.Position <-- v3 248.0f -240.0f 0.0f; Entity.Elevation <-- Constants.Field.GuiElevation; Entity.Size <-- v3 144.0f 48.0f 0.0f
+                     Entity.UpImage <-- Assets.Gui.ButtonShortUpImage; Entity.DownImage <-- Assets.Gui.ButtonShortDownImage
+                     Entity.Visible <-- match battle.DialogOpt with Some dialog -> Dialog.canAdvance id dialog | None -> false
+                     Entity.Text <-- "Next"
                      Entity.ClickEvent --> msg InteractDialog]
 
                  // characters
-                 Content.entities battle Battle.getCharacters $ fun index character ->
+                 for (index, character) in (Battle.getCharacters battle).Pairs do
 
                     // character
-                    Content.entity<CharacterDispatcher> (CharacterIndex.toEntityName index) [Entity.Character <-- character]
+                    yield Content.entity<CharacterDispatcher> (CharacterIndex.toEntityName index) [Entity.Character <-- character]
 
                  // hud
-                 Content.entities battle Battle.getAllies $ fun index ally ->
+                 for (index, ally) in (Battle.getAllies battle).Pairs do
 
                     // bars
-                    Content.composite (CharacterIndex.toEntityName index + "+Hud")
-                        [Entity.Visible <-- ally ==> fun ally -> ally.IsHealthy]
+                    yield Content.composite (CharacterIndex.toEntityName index + "+Hud")
+                        [Entity.Visible <-- ally.IsHealthy]
                         
                         [// health bar
                          Content.fillBar "HealthBar" 
-                            [Entity.Size == v3 48.0f 6.0f 0.0f
-                             Entity.Center <-- ally ==> fun ally -> ally.BottomOffset
-                             Entity.Elevation == Constants.Battle.GuiElevation
-                             Entity.Fill <-- ally ==> fun ally -> single ally.HitPoints / single ally.HitPointsMax]
+                            [Entity.Size <-- v3 48.0f 6.0f 0.0f
+                             Entity.Center <-- ally.BottomOffset
+                             Entity.Elevation <-- Constants.Battle.GuiElevation
+                             Entity.Fill <-- single ally.HitPoints / single ally.HitPointsMax]
                             
                          // tech bar
                          Content.fillBar "TechBar" 
-                            [Entity.Size == v3 48.0f 6.0f 0.0f
-                             Entity.Center <-- ally ==> fun ally -> ally.BottomOffset2
-                             Entity.Elevation == Constants.Battle.GuiElevation
-                             Entity.FillColor == Color (byte 74, byte 91, byte 169, byte 255)
-                             Entity.Fill <-- ally ==> fun ally -> single ally.TechPoints / single ally.TechPointsMax]]]
+                            [Entity.Size <-- v3 48.0f 6.0f 0.0f
+                             Entity.Center <-- ally.BottomOffset2
+                             Entity.Elevation <-- Constants.Battle.GuiElevation
+                             Entity.FillColor <-- Color (byte 74, byte 91, byte 169, byte 255)
+                             Entity.Fill <-- single ally.TechPoints / single ally.TechPointsMax]]]
 
              // inputs condition
-             Content.groupIf battle (fun battle -> battle.Running) $ fun battle ->
+             if battle.Running then
 
                 // inputs group
-                Content.group Simulants.Battle.Inputs.Group.Name []
+                yield Content.group Simulants.Battle.Inputs.Group.Name []
 
                     [// inputs
-                     Content.entities battle Battle.getAllies $ fun index ally ->
+                     for (index, ally) in (Battle.getAllies battle).Pairs do
 
                         // input
-                        Content.composite (CharacterIndex.toEntityName index + "+Input")
-                            [Entity.Visible <-- ally ==> fun ally -> ally.IsHealthy]
+                        yield Content.composite (CharacterIndex.toEntityName index + "+Input")
+                            [Entity.Visible <-- ally.IsHealthy]
 
                             [// regular menu
                              Content.entity<RingMenuDispatcher> "RegularMenu"
-                                [Entity.Position <-- ally ==> fun ally -> ally.CenterOffset
-                                 Entity.Elevation == Constants.Battle.GuiElevation
-                                 Entity.Visible <-- ally ==> fun ally -> ally.InputState = RegularMenu
-                                 Entity.Enabled <-- battle ==> fun battle ->
-                                    let allies = battle |> Battle.getAllies |> Map.toValueList
-                                    let alliesPastRegularMenu =
+                                [Entity.Position <-- ally.CenterOffset
+                                 Entity.Elevation <-- Constants.Battle.GuiElevation
+                                 Entity.Visible <-- (ally.InputState = RegularMenu)
+                                 Entity.Enabled <--
+                                    (let allies = battle |> Battle.getAllies |> Map.toValueList
+                                     let alliesPastRegularMenu =
                                         Seq.notExists (fun (ally : Character) ->
                                             match ally.InputState with NoInput | RegularMenu -> false | _ -> true)
                                             allies
-                                    alliesPastRegularMenu
-                                 Entity.RingMenu == { Items = Map.ofList [("Attack", (0, true)); ("Tech", (1, true)); ("Consumable", (2, true)); ("Defend", (3, true))]; ItemCancelOpt = None }
+                                     alliesPastRegularMenu)
+                                 Entity.RingMenu <-- { Items = Map.ofList [("Attack", (0, true)); ("Tech", (1, true)); ("Consumable", (2, true)); ("Defend", (3, true))]; ItemCancelOpt = None }
                                  Entity.ItemSelectEvent --|> fun evt -> msg (RegularItemSelect (index, evt.Data))
                                  Entity.CancelEvent --> msg (RegularItemCancel index)]
 
                              // consumable menu
                              Content.entity<RingMenuDispatcher> "ConsumableMenu"
-                                [Entity.Position <-- ally ==> fun ally -> ally.CenterOffset
-                                 Entity.Elevation == Constants.Battle.GuiElevation
-                                 Entity.Visible <-- ally ==> fun ally -> ally.InputState = ItemMenu
-                                 Entity.RingMenu <-- battle ==> fun battle ->
-                                    let consumables =
+                                [Entity.Position <-- ally.CenterOffset
+                                 Entity.Elevation <-- Constants.Battle.GuiElevation
+                                 Entity.Visible <-- (ally.InputState = ItemMenu)
+                                 Entity.RingMenu <--
+                                    (let consumables =
                                         battle.Inventory |>
                                         Inventory.getConsumables |>
                                         Map.ofSeqBy (fun kvp -> (scstringm kvp.Key, (getTag kvp.Key, true)))
-                                    { Items = consumables; ItemCancelOpt = Some "Cancel" }
+                                     { Items = consumables; ItemCancelOpt = Some "Cancel" })
                                  Entity.ItemSelectEvent --|> fun evt -> msg (ConsumableItemSelect (index, evt.Data))
                                  Entity.CancelEvent --> msg (ConsumableItemCancel index)]
 
                              // tech menu
                              Content.entity<RingMenuDispatcher> "TechMenu"
-                                [Entity.Position <-- ally ==> fun ally -> ally.CenterOffset
-                                 Entity.Elevation == Constants.Battle.GuiElevation
-                                 Entity.Visible <-- ally ==> fun ally -> ally.InputState = TechMenu
-                                 Entity.RingMenu <-- ally ==> fun ally ->
-                                    let techs =
+                                [Entity.Position <-- ally.CenterOffset
+                                 Entity.Elevation <-- Constants.Battle.GuiElevation
+                                 Entity.Visible <-- (ally.InputState = TechMenu)
+                                 Entity.RingMenu <--
+                                    (let techs =
                                         ally.Techs |>
                                         Map.ofSeqBy (fun tech ->
                                             let techUsable =
@@ -1243,26 +1243,26 @@ module BattleDispatcher =
                                                 | Some techData -> techData.TechCost <= ally.TechPoints && not (Map.containsKey Silence ally.Statuses)
                                                 | None -> false
                                             (scstringm tech, (getTag tech, techUsable)))
-                                    { Items = techs; ItemCancelOpt = Some "Cancel" }
+                                     { Items = techs; ItemCancelOpt = Some "Cancel" })
                                  Entity.ItemSelectEvent --|> fun evt -> msg (TechItemSelect (index, evt.Data))
                                  Entity.CancelEvent --> msg (TechItemCancel index)]
 
                              // reticles
                              Content.entity<ReticlesDispatcher> "Reticles"
-                                [Entity.Elevation == Constants.Battle.GuiElevation
-                                 Entity.Visible <-- ally ==> fun ally -> match ally.InputState with AimReticles _ -> true | _ -> false
-                                 Entity.Reticles <-- battle ==> fun battle ->
-                                    let aimType =
+                                [Entity.Elevation <-- Constants.Battle.GuiElevation
+                                 Entity.Visible <-- match ally.InputState with AimReticles _ -> true | _ -> false
+                                 Entity.Reticles <--
+                                    (let aimType =
                                         match Battle.tryGetCharacter index battle with
                                         | Some character -> character.InputState.AimType
                                         | None -> NoAim
-                                    let characters = Battle.getTargets aimType battle
-                                    let reticles =
+                                     let characters = Battle.getTargets aimType battle
+                                     let reticles =
                                         Map.map (fun _ (c : Character) ->
                                             match c.Stature with
                                             | BossStature -> c.CenterOffset2
                                             | _ -> c.CenterOffset)
                                             characters
-                                    reticles
+                                     reticles)
                                  Entity.TargetSelectEvent --|> fun evt -> msg (ReticlesSelect (index, evt.Data))
                                  Entity.CancelEvent --> msg (ReticlesCancel index)]]]]
