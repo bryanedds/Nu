@@ -1038,7 +1038,6 @@ module Data =
           Fields : Map<FieldType, FieldData> }
 
     let private readSheet<'d, 'k when 'k : comparison> filePath (getKey : 'd -> 'k) =
-        Math.init () // HACK: initializing Math type converters for required type converters in fsx script.
         let text = File.ReadAllText filePath
         let symbol = Symbol.ofStringCsv true text (Some filePath)
         let value = symbolToValue<'d list> symbol
