@@ -27,23 +27,22 @@ type NelmishDispatcher () =
     // here we describe the content of the game including its one screen, one group, three
     // button entities, and one text control.
     override this.Content (model, _) =
-        Content.game []
-            [Content.screen Simulants.Default.Screen.Name Vanilla []
-                [Content.group Simulants.Default.Screen.Name []
-                    [yield Content.button "Decrement"
-                        [Entity.Text <-- "-"
-                         Entity.Position <-- v3 -256.0f 64.0f 0.0f
-                         Entity.ClickEvent --> msg Decrement]
-                     yield Content.button "Increment"
-                        [Entity.Text <-- "+"
-                         Entity.Position <-- v3 0.0f 64.0f 0.0f
-                         Entity.ClickEvent --> msg Increment]
-                     yield Content.text "Counter"
-                        [Entity.Text <-- string model
-                         Entity.Position <-- v3 -128.0f -32.0f 0.0f
-                         Entity.Justification <-- Justified (JustifyCenter, JustifyMiddle)]
-                     if model <> 0 then
-                        yield Content.button "Reset"
-                           [Entity.Text <-- "Reset"
-                            Entity.Position <-- v3 -128.0f -128.0f 0.0f
-                            Entity.ClickEvent --> msg Reset]]]]
+        [Content.screen Simulants.Default.Screen.Name Vanilla []
+            [Content.group Simulants.Default.Screen.Name []
+                [yield Content.button "Decrement"
+                    [Entity.Text <-- "-"
+                     Entity.Position <-- v3 -256.0f 64.0f 0.0f
+                     Entity.ClickEvent --> msg Decrement]
+                 yield Content.button "Increment"
+                    [Entity.Text <-- "+"
+                     Entity.Position <-- v3 0.0f 64.0f 0.0f
+                     Entity.ClickEvent --> msg Increment]
+                 yield Content.text "Counter"
+                    [Entity.Text <-- string model
+                     Entity.Position <-- v3 -128.0f -32.0f 0.0f
+                     Entity.Justification <-- Justified (JustifyCenter, JustifyMiddle)]
+                 if model <> 0 then
+                    yield Content.button "Reset"
+                       [Entity.Text <-- "Reset"
+                        Entity.Position <-- v3 -128.0f -128.0f 0.0f
+                        Entity.ClickEvent --> msg Reset]]]]

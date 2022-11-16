@@ -184,24 +184,25 @@ type [<ReferenceEquality>] Intss =
 type ElmishGameDispatcher () =
     inherit GameDispatcher<Intss, int, unit> (Intss.init 100) // 10,000 elmish entities (goal: steady 60FPS, current: unsteady 49FPS)
 
+    override this.Initialize (_, _) =
+        [Game.UpdateEvent --> msg 0]
+
     override this.Message (intss, message, _, _) =
         match message with
         | 0 -> just (Intss.inc intss)
         | _ -> just intss
 
     override this.Content (intss, _) =
-        Content.game
-            [Game.UpdateEvent --> msg 0]
-            [Content.screen Simulants.Default.Screen.Name Vanilla []
-                [|for (i, ints) in intss.Intss.Pairs do
-                    yield Content.group (string i) []
-                        [|for (j, int) in ints.Ints.Pairs do
-                            yield Content.entity<ElmishEntityDispatcher> (string j)
-                                [Entity.Presence <-- Omnipresent
-                                 Entity.Position <-- v3 (single i * 5.0f - 250.0f) (single j * 2.5f - 125.0f) -250.0f
-                                 Entity.Scale <-- v3Dup (single (int % 10)) * 0.5f]|]
-                  yield Content.group "Fps" []
-                    [Content.fps "Fps" [Entity.Position <-- v3 200.0f -250.0f 0.0f]]|]]
+        [Content.screen Simulants.Default.Screen.Name Vanilla []
+            [|for (i, ints) in intss.Intss.Pairs do
+                yield Content.group (string i) []
+                    [|for (j, int) in ints.Ints.Pairs do
+                        yield Content.entity<ElmishEntityDispatcher> (string j)
+                            [Entity.Presence <-- Omnipresent
+                             Entity.Position <-- v3 (single i * 5.0f - 250.0f) (single j * 2.5f - 125.0f) -250.0f
+                             Entity.Scale <-- v3Dup (single (int % 10)) * 0.5f]|]
+              yield Content.group "Fps" []
+                [Content.fps "Fps" [Entity.Position <-- v3 200.0f -250.0f 0.0f]]|]]
 
 #if ELMISH_AND_ECS
     override this.Register (game, world) =

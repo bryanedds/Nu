@@ -38,6 +38,22 @@ module BlazeVector =
     type BlazeVectorDispatcher () =
         inherit GameDispatcher<Model, Message, Command> (Splash)
 
+        // here we define the game's properties and event handling
+        override this.Initialize (model, _) =
+            [Game.DesiredScreen <--
+                match model with
+                | Splash -> Desire Simulants.Splash.Screen
+                | Title -> Desire Simulants.Title.Screen
+                | Credits -> Desire Simulants.Credits.Screen
+                | Gameplay gameplay -> match gameplay with Playing -> Desire Simulants.Gameplay.Screen | Quitting | Quit -> Desire Simulants.Title.Screen
+             Game.Model.ChangeEvent --> cmd ModelChanged
+             Simulants.Splash.Screen.DeselectingEvent --> msg ShowTitle
+             Simulants.Title.Gui.Credits.ClickEvent --> msg ShowCredits
+             Simulants.Title.Gui.Play.ClickEvent --> msg ShowGameplay
+             Simulants.Title.Gui.Exit.ClickEvent --> cmd Exit
+             Simulants.Credits.Gui.Back.ClickEvent --> msg ShowTitle
+             Simulants.Gameplay.Screen.ChangeEvent Screen.Gameplay.Name --|> fun event -> msg (GameplayChanged (event.Data.Value :?> Gameplay))]
+
         // here we handle the above messages
         override this.Message (model, message, _, _) =
             match message with
@@ -53,22 +69,8 @@ module BlazeVector =
             | Exit -> just (World.exit world)
 
         // here we describe the content of the game, including all of its screens.
-        override this.Content (model, _) =
-            Content.game
-                [Game.DesiredScreen <--
-                    match model with
-                    | Splash -> Desire Simulants.Splash.Screen
-                    | Title -> Desire Simulants.Title.Screen
-                    | Credits -> Desire Simulants.Credits.Screen
-                    | Gameplay gameplay -> match gameplay with Playing -> Desire Simulants.Gameplay.Screen | Quitting | Quit -> Desire Simulants.Title.Screen
-                 Game.Model.ChangeEvent --> cmd ModelChanged
-                 Simulants.Splash.Screen.DeselectingEvent --> msg ShowTitle
-                 Simulants.Title.Gui.Credits.ClickEvent --> msg ShowCredits
-                 Simulants.Title.Gui.Play.ClickEvent --> msg ShowGameplay
-                 Simulants.Title.Gui.Exit.ClickEvent --> cmd Exit
-                 Simulants.Credits.Gui.Back.ClickEvent --> msg ShowTitle
-                 Simulants.Gameplay.Screen.ChangeEvent Screen.Gameplay.Name --|> fun event -> msg (GameplayChanged (event.Data.Value :?> Gameplay))]
-                [Content.screen Simulants.Splash.Screen.Name (WorldTypes.Splash (Constants.Dissolve.Default, Constants.Splash.Default, None, Simulants.Title.Screen)) [] []
-                 Content.screenWithGroupFromFile Simulants.Title.Screen.Name (Dissolve (Constants.Dissolve.Default, Some Assets.Gui.MachinerySong)) Assets.Gui.TitleGroupFilePath [] []
-                 Content.screenWithGroupFromFile Simulants.Credits.Screen.Name (Dissolve (Constants.Dissolve.Default, Some Assets.Gui.MachinerySong)) Assets.Gui.CreditsGroupFilePath [] []
-                 Content.screen<GameplayDispatcher> Simulants.Gameplay.Screen.Name (Dissolve (Constants.Dissolve.Default, Some Assets.Gameplay.DeadBlazeSong)) [] []]
+        override this.Content (_, _) =
+            [Content.screen Simulants.Splash.Screen.Name (WorldTypes.Splash (Constants.Dissolve.Default, Constants.Splash.Default, None, Simulants.Title.Screen)) [] []
+             Content.screenWithGroupFromFile Simulants.Title.Screen.Name (Dissolve (Constants.Dissolve.Default, Some Assets.Gui.MachinerySong)) Assets.Gui.TitleGroupFilePath [] []
+             Content.screenWithGroupFromFile Simulants.Credits.Screen.Name (Dissolve (Constants.Dissolve.Default, Some Assets.Gui.MachinerySong)) Assets.Gui.CreditsGroupFilePath [] []
+             Content.screen<GameplayDispatcher> Simulants.Gameplay.Screen.Name (Dissolve (Constants.Dissolve.Default, Some Assets.Gameplay.DeadBlazeSong)) [] []]

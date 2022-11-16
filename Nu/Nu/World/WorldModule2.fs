@@ -1133,10 +1133,7 @@ module EntityDispatcherModule2 =
                 if property.DesignerType = typeof<unit>
                 then entity.SetModelGeneric<'model> (makeInitial world) world
                 else world
-            let contentOld = World.getEntityContent entity world
-            let content = this.Content (this.GetModel entity world, entity)
-            let world = Content.synchronizeEntity contentOld content entity entity world
-            World.setEntityContent content entity world
+            this.TrySynchronize (entity, world)
 
         override this.ApplyPhysics (position, rotation, linearVelocity, angularVelocity, entity, world) =
             let model = this.GetModel entity world
@@ -1158,10 +1155,16 @@ module EntityDispatcherModule2 =
             | _ -> Log.info "Incorrect signal type returned from event binding"; world
 
         override this.TrySynchronize (entity, world) =
+            let contentOld = World.getEntityContent entity world
             let model = this.GetModel entity world
-            let content = this.Content (model, entity)
-            let world = Content.synchronizeEntity (World.getEntityContent entity world) content entity entity world
+            let initializers = this.Initialize (model, entity)
+            let entities = this.Content (model, entity)
+            let content = Content.composite entity.Name initializers entities
+            let world = Content.synchronizeEntity contentOld content entity entity world
             World.setEntityContent content entity world
+
+        abstract member Initialize : 'model * Entity -> ContentInitializer seq
+        default this.Initialize (_, _) = Seq.empty
 
         abstract member Physics : Vector3 * Quaternion * Vector3 * Vector3 * 'model * Entity * World -> Signal<'message, 'command> list * 'model
         default this.Physics (_, _, _, _, model, _, _) = just model
@@ -1172,8 +1175,8 @@ module EntityDispatcherModule2 =
         abstract member Command : 'model * 'command * Entity * World -> Signal<'message, 'command> list * World
         default this.Command (_, _, _, world) = just world
 
-        abstract member Content : 'model * Entity -> EntityContent
-        default this.Content (_, _) = EntityContent.empty
+        abstract member Content : 'model * Entity -> EntityContent seq
+        default this.Content (_, _) = Seq.empty
 
         abstract member View : 'model * Entity * World -> View
         default this.View (_, _, _) = View.empty
@@ -1255,10 +1258,7 @@ module GroupDispatcherModule =
                 if property.DesignerType = typeof<unit>
                 then group.SetModelGeneric<'model> (makeInitial world) world
                 else world
-            let contentOld = World.getGroupContent group world
-            let content = this.Content (this.GetModel group world, group)
-            let world = Content.synchronizeGroup contentOld content group group world
-            World.setGroupContent content group world
+            this.TrySynchronize (group, world)
 
         override this.Render (group, world) =
             let view = this.View (this.GetModel group world, group, world)
@@ -1271,10 +1271,16 @@ module GroupDispatcherModule =
             | _ -> Log.info "Incorrect signal type returned from event binding."; world
 
         override this.TrySynchronize (group, world) =
+            let contentOld = World.getGroupContent group world
             let model = this.GetModel group world
-            let content = this.Content (model, group)
-            let world = Content.synchronizeGroup (World.getGroupContent group world) content group group world
+            let initializers = this.Initialize (model, group)
+            let entities = this.Content (model, group)
+            let content = Content.group group.Name initializers entities
+            let world = Content.synchronizeGroup contentOld content group group world
             World.setGroupContent content group world
+
+        abstract member Initialize : 'model * Group -> ContentInitializer seq
+        default this.Initialize (_, _) = Seq.empty
 
         abstract member Message : 'model * 'message * Group * World -> Signal<'message, 'command> list * 'model
         default this.Message (model, _, _, _) = just model
@@ -1282,8 +1288,8 @@ module GroupDispatcherModule =
         abstract member Command : 'model * 'command * Group * World -> Signal<'message, 'command> list * World
         default this.Command (_, _, _, world) = just world
 
-        abstract member Content : 'model * Group -> GroupContent
-        default this.Content (_, _) = GroupContent.empty
+        abstract member Content : 'model * Group -> EntityContent seq
+        default this.Content (_, _) = Seq.empty
 
         abstract member View : 'model * Group * World -> View
         default this.View (_, _, _) = View.empty
@@ -1330,10 +1336,7 @@ module ScreenDispatcherModule =
                 if property.DesignerType = typeof<unit>
                 then screen.SetModelGeneric<'model> (makeInitial world) world
                 else world
-            let contentOld = World.getScreenContent screen world
-            let content = this.Content (this.GetModel screen world, screen)
-            let world = Content.synchronizeScreen contentOld content screen screen world
-            World.setScreenContent content screen world
+            this.TrySynchronize (screen, world)
 
         override this.Render (screen, world) =
             let view = this.View (this.GetModel screen world, screen, world)
@@ -1346,10 +1349,16 @@ module ScreenDispatcherModule =
             | _ -> Log.info "Incorrect signal type returned from event binding."; world
 
         override this.TrySynchronize (screen, world) =
+            let contentOld = World.getScreenContent screen world
             let model = this.GetModel screen world
-            let content = this.Content (model, screen)
-            let world = Content.synchronizeScreen (World.getScreenContent screen world) content screen screen world
+            let initializers = this.Initialize (model, screen)
+            let group = this.Content (model, screen)
+            let content = Content.screen screen.Name Vanilla initializers group
+            let world = Content.synchronizeScreen contentOld content screen screen world
             World.setScreenContent content screen world
+
+        abstract member Initialize : 'model * Screen -> ContentInitializer seq
+        default this.Initialize (_, _) = Seq.empty
 
         abstract member Message : 'model * 'message * Screen * World -> Signal<'message, 'command> list * 'model
         default this.Message (model, _, _, _) = just model
@@ -1357,8 +1366,8 @@ module ScreenDispatcherModule =
         abstract member Command : 'model * 'command * Screen * World -> Signal<'message, 'command> list * World
         default this.Command (_, _, _, world) = just world
 
-        abstract member Content : 'model * Screen -> ScreenContent
-        default this.Content (_, _) = ScreenContent.empty
+        abstract member Content : 'model * Screen -> GroupContent seq
+        default this.Content (_, _) = Seq.empty
 
         abstract member View : 'model * Screen * World -> View
         default this.View (_, _, _) = View.empty
@@ -1403,10 +1412,7 @@ module GameDispatcherModule =
                 if property.DesignerType = typeof<unit>
                 then game.SetModelGeneric<'model> (makeInitial world) world
                 else world
-            let contentOld = World.getGameContent world
-            let content = this.Content (this.GetModel game world, game)
-            let (screenInitialOpt, world) = Content.synchronizeGame World.setScreenSplash contentOld content game world
-            let world = World.setGameContent content world
+            let (screenInitialOpt, world) = this.Synchronize (game, world)
             match screenInitialOpt with
             | Some screen -> game.SetDesiredScreen (Desire screen) world
             | None -> game.SetDesiredScreen DesireNone world
@@ -1422,10 +1428,10 @@ module GameDispatcherModule =
             | _ -> Log.info "Incorrect signal type returned from event binding."; world
 
         override this.TrySynchronize (game, world) =
-            let model = this.GetModel game world
-            let content = this.Content (model, game)
-            let (_, world) = Content.synchronizeGame World.setScreenSplash (World.getGameContent world) content game world
-            World.setGameContent content world
+            this.Synchronize (game, world) |> snd
+
+        abstract member Initialize : 'model * Game -> ContentInitializer seq
+        default this.Initialize (_, _) = Seq.empty
 
         abstract member Message : 'model * 'message * Game * World -> Signal<'message, 'command> list * 'model
         default this.Message (model, _, _, _) = just model
@@ -1433,11 +1439,20 @@ module GameDispatcherModule =
         abstract member Command : 'model * 'command * Game * World -> Signal<'message, 'command> list * World
         default this.Command (_, _, _, world) = just world
 
-        abstract member Content : 'model * Game -> GameContent
-        default this.Content (_, _) = GameContent.empty
+        abstract member Content : 'model * Game -> ScreenContent seq
+        default this.Content (_, _) = Seq.empty
 
         abstract member View : 'model * Game * World -> View
         default this.View (_, _, _) = View.empty
+
+        member private this.Synchronize (game, world) =
+            let contentOld = World.getGameContent world
+            let model = this.GetModel game world
+            let initializers = this.Initialize (model, game)
+            let screens = this.Content (model, game)
+            let content = Content.game initializers screens
+            let (initialScreen, world) = Content.synchronizeGame World.setScreenSplash contentOld content game world
+            (initialScreen, World.setGameContent content world)
 
 [<AutoOpen>]
 module WorldModule2' =

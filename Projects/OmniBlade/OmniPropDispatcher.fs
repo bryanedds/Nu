@@ -23,7 +23,7 @@ module PropDispatcher =
         static member Facets =
             [typeof<RigidBodyFacet>]
 
-        override this.Initializers (prop, entity) =
+        override this.Initialize (prop, entity) =
             [entity.BodyType == Static
              entity.LinearDamping == 0.0f
              entity.FixedRotation == true
