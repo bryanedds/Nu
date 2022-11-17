@@ -59,7 +59,7 @@ module RingMenuDispatcher =
                      Entity.DownImage := asset Assets.Battle.PackageName (itemName + "Down")
                      Entity.ClickEvent => cmd (ItemSelect itemName)]
              yield Content.button "Cancel"
-                [Entity.MountOpt == None // TODO: DIFF: make sure this is implemented and content mounting generally.
+                [Entity.MountOpt == None
                  Entity.Size == v3 48.0f 48.0f 0.0f
                  Entity.Position == Constants.Battle.CancelPosition
                  Entity.ElevationLocal == 1.0f

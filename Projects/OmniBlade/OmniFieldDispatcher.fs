@@ -15,7 +15,6 @@ module FieldDispatcher =
 
     type [<NoEquality; NoComparison>] FieldMessage =
         | Update
-        | UpdateAvatar of Avatar
         | UpdateFieldTransition
         | MenuTeamOpen
         | MenuTeamAlly of int
@@ -653,8 +652,7 @@ module FieldDispatcher =
              Screen.UpdateEvent => msg Update
              Screen.PostUpdateEvent => msg UpdateFieldTransition
              Screen.PostUpdateEvent => cmd UpdateEye
-             Screen.SelectEvent => cmd PlayFieldSong
-             Simulants.Field.Scene.Avatar.Avatar.ChangeEvent =|> fun evt -> msg (UpdateAvatar (evt.Data.Value :?> Avatar))]
+             Screen.SelectEvent => cmd PlayFieldSong]
 
         override this.Message (field, message, _, world) =
 
@@ -743,12 +741,12 @@ module FieldDispatcher =
                         | Right field -> (signals, field)
                     else (signals, field)
 
+                // update avatar
+                let avatar = Simulants.Field.Scene.Avatar.GetAvatar world
+                let field = Field.updateAvatar (constant avatar) field
+
                 // fin
                 (signals, field)
-
-            | UpdateAvatar avatar ->
-                let field = Field.updateAvatar (constant avatar) field
-                just field
 
             | UpdateFieldTransition ->
 
@@ -1132,11 +1130,11 @@ module FieldDispatcher =
                  yield Content.entity<AvatarDispatcher> Simulants.Field.Scene.Avatar.Name
                     [Entity.Position == v3Zero; Entity.Elevation == Constants.Field.ForegroundElevation; Entity.Size == Constants.Gameplay.CharacterSize
                      Entity.Enabled :=
-                        (field.Menu.MenuState = MenuClosed &&
-                         Cue.notInterrupting field.Inventory field.Advents field.Cue &&
-                         Option.isNone field.DialogOpt &&
-                         Option.isNone field.ShopOpt &&
-                         Option.isNone field.FieldTransitionOpt)
+                        field.Menu.MenuState = MenuClosed &&
+                        Cue.notInterrupting field.Inventory field.Advents field.Cue &&
+                        Option.isNone field.DialogOpt &&
+                        Option.isNone field.ShopOpt &&
+                        Option.isNone field.FieldTransitionOpt
                      Entity.LinearDamping == Constants.Field.LinearDamping
                      Entity.Avatar := field.Avatar]
 
@@ -1211,16 +1209,16 @@ module FieldDispatcher =
                          let fade = min 1.0f progress
                          Color.One.ScaleA fade)
                      Entity.TmxMap :=
-                        (match Map.tryFind field.FieldType Data.Value.Fields with
-                         | Some fieldData ->
-                            match FieldData.tryGetTileMap field.OmniSeedState fieldData with
-                            | Some tileMapChc ->
-                                match tileMapChc with
-                                | Choice1Of3 _ -> Metadata.getTileMapMetadata Assets.Default.TileMapEmpty |> __c
-                                | Choice2Of3 (_, tileMapFade) -> tileMapFade
-                                | Choice3Of3 (_, _) ->  Metadata.getTileMapMetadata Assets.Default.TileMapEmpty |> __c
-                            | None -> Metadata.getTileMapMetadata Assets.Default.TileMapEmpty |> __c
-                         | None -> Metadata.getTileMapMetadata Assets.Default.TileMapEmpty |> __c)
+                        match Map.tryFind field.FieldType Data.Value.Fields with
+                        | Some fieldData ->
+                           match FieldData.tryGetTileMap field.OmniSeedState fieldData with
+                           | Some tileMapChc ->
+                               match tileMapChc with
+                               | Choice1Of3 _ -> Metadata.getTileMapMetadata Assets.Default.TileMapEmpty |> __c
+                               | Choice2Of3 (_, tileMapFade) -> tileMapFade
+                               | Choice3Of3 (_, _) ->  Metadata.getTileMapMetadata Assets.Default.TileMapEmpty |> __c
+                           | None -> Metadata.getTileMapMetadata Assets.Default.TileMapEmpty |> __c
+                        | None -> Metadata.getTileMapMetadata Assets.Default.TileMapEmpty |> __c
                      Entity.TileLayerClearance == 10.0f]
 
                  // feeler
@@ -1234,11 +1232,11 @@ module FieldDispatcher =
                      Entity.UpImage == Assets.Gui.ButtonShortUpImage; Entity.DownImage == Assets.Gui.ButtonShortDownImage
                      Entity.Text == "Menu"
                      Entity.Visible :=
-                        (field.Menu.MenuState = MenuClosed &&
-                         Cue.notInterrupting field.Inventory field.Advents field.Cue &&
-                         Option.isNone field.DialogOpt &&
-                         Option.isNone field.ShopOpt &&
-                         Option.isNone field.FieldTransitionOpt)
+                        field.Menu.MenuState = MenuClosed &&
+                        Cue.notInterrupting field.Inventory field.Advents field.Cue &&
+                        Option.isNone field.DialogOpt &&
+                        Option.isNone field.ShopOpt &&
+                        Option.isNone field.FieldTransitionOpt
                      Entity.ClickEvent => msg MenuTeamOpen]
 
                  // interact button
@@ -1246,12 +1244,12 @@ module FieldDispatcher =
                     [Entity.Position == v3 306.0f -246.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v3 144.0f 48.0f 0.0f
                      Entity.UpImage == Assets.Gui.ButtonShortUpImage; Entity.DownImage == Assets.Gui.ButtonShortDownImage
                      Entity.Visible :=
-                        (field.Menu.MenuState = MenuClosed &&
-                         (Cue.notInterrupting field.Inventory field.Advents field.Cue || Option.isSome field.DialogOpt) &&
-                         Option.isNone field.BattleOpt &&
-                         Option.isNone field.ShopOpt &&
-                         Option.isNone field.FieldTransitionOpt &&
-                         Option.isSome (tryGetInteraction field.DialogOpt field.Advents field.Avatar field.Props (flip detokenize field)))
+                        field.Menu.MenuState = MenuClosed &&
+                        (Cue.notInterrupting field.Inventory field.Advents field.Cue || Option.isSome field.DialogOpt) &&
+                        Option.isNone field.BattleOpt &&
+                        Option.isNone field.ShopOpt &&
+                        Option.isNone field.FieldTransitionOpt &&
+                        Option.isSome (tryGetInteraction field.DialogOpt field.Advents field.Avatar field.Props (flip detokenize field))
                      Entity.Text :=
                         match tryGetInteraction field.DialogOpt field.Advents field.Avatar field.Props (flip detokenize field) with
                         | Some interaction -> interaction

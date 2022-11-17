@@ -71,6 +71,7 @@ module OmniBlade =
                             | _ -> Desire Simulants.Battle.Screen
                         | None -> Desire Simulants.Field.Screen
                     | Quitting | Quit -> Desire Simulants.Title.Screen
+             Game.Model.ChangeEvent => cmd ModelChanged
              Simulants.Game.UpdateEvent => msg UpdateMessage
              Simulants.Game.UpdateEvent => cmd UpdateCommand
              Simulants.Splash.Screen.DeselectingEvent => msg ShowTitle

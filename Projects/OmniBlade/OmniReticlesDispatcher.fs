@@ -41,7 +41,8 @@ module ReticlesDispatcher =
                  Entity.ClickEvent => cmd TargetCancel]
              for (index, center) in reticles.Pairs do
                 yield Content.button (CharacterIndex.toEntityName index)
-                    [Entity.Size == v3 96.0f 96.0f 0.0f
+                    [Entity.MountOpt == None
+                     Entity.Size == v3 96.0f 96.0f 0.0f
                      Entity.Center := center
                      Entity.UpImage == asset Assets.Battle.PackageName "ReticleUp"
                      Entity.DownImage == asset Assets.Battle.PackageName "ReticleDown"
