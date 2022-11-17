@@ -649,12 +649,12 @@ module FieldDispatcher =
             withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Gui.SlotSound)) field
 
         override this.Initialize (_, _) =
-            [Simulants.Field.Scene.Avatar.Avatar.ChangeEvent =|> fun evt -> msg (UpdateAvatar (evt.Data.Value :?> Avatar))
-             Screen.UpdateEvent => cmd ProcessKeyInput
+            [Screen.UpdateEvent => cmd ProcessKeyInput
              Screen.UpdateEvent => msg Update
              Screen.PostUpdateEvent => msg UpdateFieldTransition
              Screen.PostUpdateEvent => cmd UpdateEye
-             Screen.SelectEvent => cmd PlayFieldSong]
+             Screen.SelectEvent => cmd PlayFieldSong
+             Simulants.Field.Scene.Avatar.Avatar.ChangeEvent =|> fun evt -> msg (UpdateAvatar (evt.Data.Value :?> Avatar))]
 
         override this.Message (field, message, _, world) =
 

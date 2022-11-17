@@ -134,6 +134,14 @@ module OmniBlade =
                 | Playing | Quitting -> just (Field field)
                 | Quit -> just model
 
+            | BattleChanged battle ->
+                match battle.BattleState with
+                | BattleReady _ | BattleRunning _ | BattleResult _ | BattleQuitting _ ->
+                    match model with
+                    | Gui _ -> just model
+                    | Field field -> Field.updateBattleOpt (constant (Some battle)) field |> Field |> just
+                | BattleQuit -> just model
+
         override this.Command (model, command, _, world) =
 
             match command with
