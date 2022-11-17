@@ -148,7 +148,7 @@ module Content =
     let dialog name elevation promptLeft promptRight (detokenize : string -> string) (dialogOpt : Dialog option) =
         [match dialogOpt with
          | Some dialog ->
-            yield Content.composite<TextDispatcher> name
+            Content.composite<TextDispatcher> name
                 [Entity.Perimeter :=
                     match dialog.DialogForm with
                     | DialogThin -> box3 (v3 -432.0f 150.0f 0.0f) (v3 864.0f 90.0f 0.0f)
