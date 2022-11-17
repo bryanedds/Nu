@@ -113,7 +113,7 @@ module Content =
 #if !DEBUG
         inline
 #endif
-        private synchronizeEntityPropertiesFast (initializing, contentOld : EntityContent, content : EntityContent, entity : Entity, world, sizeFound : bool outref, mountOptFound : bool outref) =
+        private synchronizeEntityPropertiesFast (initializing, contentOld : EntityContent, content : EntityContent, entity : Entity, world, mountOptFound : bool outref) =
         if notNull content.PropertyContentsOpt && content.PropertyContentsOpt.Count > 0 then
             let entity = if notNull (contentOld.EntityCachedOpt :> obj) then contentOld.EntityCachedOpt else entity
             content.EntityCachedOpt <- entity
@@ -124,7 +124,6 @@ module Content =
                 if not propertyContent.PropertyInitializer || initializing then
                     let lens = propertyContent.PropertyLens
                     match lens.Name with
-                    | "Size" -> sizeFound <- true
                     | "MountOpt" -> mountOptFound <- true
                     | _ -> ()
                     let entity = match lens.This :> obj with null -> entity | _ -> lens.This :?> Entity
@@ -177,22 +176,15 @@ module Content =
     ///
     let rec synchronizeEntity initializing relating (contentOld : EntityContent) (content : EntityContent) (origin : Simulant) (entity : Entity) world =
         if contentOld <> content then
-            let mutable sizeFound = false
             let mutable mountOptFound = false
             let world = synchronizeEventSignals contentOld content origin entity world
             let world = synchronizeEventHandlers contentOld content origin entity world
-            let world = synchronizeEntityPropertiesFast (initializing, contentOld, content, entity, world, &sizeFound, &mountOptFound)
+            let world = synchronizeEntityPropertiesFast (initializing, contentOld, content, entity, world, &mountOptFound)
             let world =
                 if initializing then
-                    let world =
-                        if not sizeFound
-                        then World.setEntitySize (World.getEntityQuickSize entity world) entity world |> snd'
-                        else world
-                    let world =
-                        if not mountOptFound && relating
-                        then World.setEntityMountOpt (Some (Relation.makeParent ())) entity world |> snd'
-                        else world
-                    world
+                    if not mountOptFound && relating
+                    then World.setEntityMountOpt (Some (Relation.makeParent ())) entity world |> snd'
+                    else world
                 else world
             match tryDifferentiateChildren<Entity, EntityContent> contentOld content entity with
             | Some (entitiesAdded, entitiesRemoved, entitiesPotentiallyAltered) ->
