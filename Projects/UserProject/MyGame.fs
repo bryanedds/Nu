@@ -24,8 +24,8 @@ module MyGame =
     // this is our Elm-style command type. Commands are used instead of messages when explicitly
     // updating the world is involved.
     type Command =
-        | ModelChanged
         | Exit
+        | ModelChanged
 
     // this extends the Game API to expose the above model as well as the model bimapped to Gameplay,
     type Game with
@@ -65,8 +65,8 @@ module MyGame =
         // here we handle the above commands
         override this.Command (model, command, _, world) =
             match command with
-            | ModelChanged -> match model with Gameplay gameplay -> just (Simulants.Gameplay.Screen.SetGameplay gameplay world) | _ -> just world
             | Exit -> just (World.exit world)
+            | ModelChanged -> match model with Gameplay gameplay -> just (Simulants.Gameplay.Screen.SetGameplay gameplay world) | _ -> just world
 
         // here we describe the content of the game, including all of its screens.
         override this.Content (_, _) =

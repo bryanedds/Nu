@@ -9,10 +9,10 @@ module MyGame =
     // this is our Elm-style model type. It determines what state the game is in. To learn about the
     // Elm-style in Nu, see here - https://vsyncronicity.com/2020/03/01/a-game-engine-in-the-elm-style/
     type Model =
+        | Gameplay of Gameplay
         | Splash
         | Title
         | Credits
-        | Gameplay of Gameplay
 
     // this is our Elm-style message type. It provides a signal to show the various screens.
     type Message =
@@ -24,8 +24,8 @@ module MyGame =
     // this is our Elm-style command type. Commands are used instead of messages when explicitly
     // updating the world is involved.
     type Command =
-        | ModelChanged
         | Exit
+        | ModelChanged
 
     // this extends the Game API to expose the above model as well as the model bimapped to Gameplay,
     type Game with
@@ -65,8 +65,8 @@ module MyGame =
         // here we handle the above commands
         override this.Command (model, command, _, world) =
             match command with
-            | ModelChanged -> match model with Gameplay gameplay -> just (Simulants.Gameplay.Screen.SetGameplay gameplay world) | _ -> just world
             | Exit -> just (World.exit world)
+            | ModelChanged -> match model with Gameplay gameplay -> just (Simulants.Gameplay.Screen.SetGameplay gameplay world) | _ -> just world
 
         // here we describe the content of the game, including all of its screens.
         override this.Content (_, _) =
