@@ -20,6 +20,7 @@ type [<ReferenceEquality; NoComparison>] Options =
 type FieldState =
     | Playing
     | Quitting
+    | Quit
 
 type [<ReferenceEquality; NoComparison>] FieldTransition =
     { FieldType : FieldType
@@ -382,7 +383,7 @@ module Field =
     let empty world =
         { UpdateTime_ = 0L
           FieldType_ = EmptyField
-          FieldState_ = Quitting
+          FieldState_ = Quit
           SaveSlot_ = Slot1
           OmniSeedState_ = OmniSeedState.make ()
           Avatar_ = Avatar.empty

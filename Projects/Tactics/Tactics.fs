@@ -130,6 +130,9 @@ module TacticsGame =
         override this.Command (_, command, _, world) =
 
             match command with
+            | Exit ->
+                just (World.exit world)
+
             | UpdateCommand ->
 
                 // update picks
@@ -154,8 +157,6 @@ module TacticsGame =
 
                 // fin
                 just world
-
-            | Exit -> just (World.exit world)
 
         override this.Content (_, _) =
 
