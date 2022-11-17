@@ -372,24 +372,17 @@ module WorldTypes =
         interface LateBindings
 
     // TODO: P1: expose in Nu namespace along with related types.
-    and [<NoEquality; NoComparison>] PropertyInitializer =
-        { PropertyLens : World Lens
+    and [<NoEquality; NoComparison>] PropertyContent =
+        { PropertyInitializer : bool
+          PropertyLens : World Lens
           PropertyValue : obj }
-        static member inline make lens value =
-            { PropertyLens = lens
-              PropertyValue = value }
-
-    // TODO: P1: expose in Nu namespace along with related types.
-    and [<NoEquality; NoComparison>] PropertySynchronizer =
-        { PropertyLens : World Lens
-          PropertyValue : obj }
-        static member inline make lens value =
-            { PropertyLens = lens
+        static member inline make initializer lens value =
+            { PropertyInitializer = initializer
+              PropertyLens = lens
               PropertyValue = value }
 
     and [<NoEquality; NoComparison>] InitializerContent =
-        | PropertyInitializer of PropertyInitializer
-        | PropertySynchronizer of PropertySynchronizer
+        | PropertyContent of PropertyContent
         | EventSignalContent of obj Address * obj
         | EventHandlerContent of PartialEquatable<obj Address, Event -> obj>
 
@@ -399,8 +392,7 @@ module WorldTypes =
         abstract SimulantCachedOpt : Simulant with get, set
         abstract EventSignalContentsOpt : OrderedDictionary<obj Address * obj, Guid>
         abstract EventHandlerContentsOpt : OrderedDictionary<int * obj Address, Guid * (Event -> obj)>
-        abstract PropertyInitializersOpt : List<PropertyInitializer>
-        abstract PropertySynchronizersOpt : List<PropertySynchronizer>
+        abstract PropertyContentsOpt : List<PropertyContent>
         abstract GetChildContentsOpt<'v when 'v :> SimulantContent> : unit -> OrderedDictionary<string, 'v>
 
     and [<ReferenceEquality; NoComparison>] GameContent =
@@ -408,16 +400,14 @@ module WorldTypes =
           mutable SimulantCachedOpt : Simulant
           mutable EventSignalContentsOpt : OrderedDictionary<obj Address * obj, Guid> // OPTIMIZATION: lazily created.
           mutable EventHandlerContentsOpt : OrderedDictionary<int * obj Address, Guid * (Event -> obj)> // OPTIMIZATION: lazily created.
-          mutable PropertyInitializersOpt : List<PropertyInitializer> // OPTIMIZATION: lazily created.
-          mutable PropertySynchronizersOpt : List<PropertySynchronizer> // OPTIMIZATION: lazily created.
+          mutable PropertyContentsOpt : List<PropertyContent> // OPTIMIZATION: lazily created.
           ScreenContents : OrderedDictionary<string, ScreenContent> }
         static member empty =
             { InitialScreenNameOpt = None
               SimulantCachedOpt = Unchecked.defaultof<_>
               EventSignalContentsOpt = null
               EventHandlerContentsOpt = null
-              PropertyInitializersOpt = null
-              PropertySynchronizersOpt = null
+              PropertyContentsOpt = null
               ScreenContents = OrderedDictionary StringComparer.Ordinal }
         interface SimulantContent with
             member this.DispatcherNameOpt = None
@@ -425,8 +415,7 @@ module WorldTypes =
             member this.SimulantCachedOpt with get () = this.SimulantCachedOpt and set value = this.SimulantCachedOpt <- value
             member this.EventSignalContentsOpt = this.EventSignalContentsOpt
             member this.EventHandlerContentsOpt = this.EventHandlerContentsOpt
-            member this.PropertyInitializersOpt = this.PropertyInitializersOpt
-            member this.PropertySynchronizersOpt = this.PropertySynchronizersOpt
+            member this.PropertyContentsOpt = this.PropertyContentsOpt
             member this.GetChildContentsOpt<'v when 'v :> SimulantContent> () = this.ScreenContents :> obj :?> OrderedDictionary<string, 'v>
 
     and [<ReferenceEquality; NoComparison>] ScreenContent =
@@ -437,8 +426,7 @@ module WorldTypes =
           mutable SimulantCachedOpt : Simulant
           mutable EventSignalContentsOpt : OrderedDictionary<obj Address * obj, Guid> // OPTIMIZATION: lazily created.
           mutable EventHandlerContentsOpt : OrderedDictionary<int * obj Address, Guid * (Event -> obj)> // OPTIMIZATION: lazily created.
-          mutable PropertyInitializersOpt : List<PropertyInitializer> // OPTIMIZATION: lazily created.
-          mutable PropertySynchronizersOpt : List<PropertySynchronizer> // OPTIMIZATION: lazily created.
+          mutable PropertyContentsOpt : List<PropertyContent> // OPTIMIZATION: lazily created.
           GroupContents : OrderedDictionary<string, GroupContent> }
         static member empty =
             { ScreenDispatcherName = nameof ScreenDispatcher
@@ -448,8 +436,7 @@ module WorldTypes =
               SimulantCachedOpt = Unchecked.defaultof<_>
               EventSignalContentsOpt = null
               EventHandlerContentsOpt = null
-              PropertyInitializersOpt = null
-              PropertySynchronizersOpt = null
+              PropertyContentsOpt = null
               GroupContents = OrderedDictionary StringComparer.Ordinal }
         interface SimulantContent with
             member this.DispatcherNameOpt = Some this.ScreenDispatcherName
@@ -457,8 +444,7 @@ module WorldTypes =
             member this.SimulantCachedOpt with get () = this.SimulantCachedOpt and set value = this.SimulantCachedOpt <- value
             member this.EventSignalContentsOpt = this.EventSignalContentsOpt
             member this.EventHandlerContentsOpt = this.EventHandlerContentsOpt
-            member this.PropertyInitializersOpt = this.PropertyInitializersOpt
-            member this.PropertySynchronizersOpt = this.PropertySynchronizersOpt
+            member this.PropertyContentsOpt = this.PropertyContentsOpt
             member this.GetChildContentsOpt<'v when 'v :> SimulantContent> () = this.GroupContents :> obj :?> OrderedDictionary<string, 'v>
 
     and [<ReferenceEquality; NoComparison>] GroupContent =
@@ -468,8 +454,7 @@ module WorldTypes =
           mutable SimulantCachedOpt : Simulant
           mutable EventSignalContentsOpt : OrderedDictionary<obj Address * obj, Guid> // OPTIMIZATION: lazily created.
           mutable EventHandlerContentsOpt : OrderedDictionary<int * obj Address, Guid * (Event -> obj)> // OPTIMIZATION: lazily created.
-          mutable PropertyInitializersOpt : List<PropertyInitializer> // OPTIMIZATION: lazily created.
-          mutable PropertySynchronizersOpt : List<PropertySynchronizer> // OPTIMIZATION: lazily created.
+          mutable PropertyContentsOpt : List<PropertyContent> // OPTIMIZATION: lazily created.
           mutable EntityContentsOpt : OrderedDictionary<string, EntityContent> } // OPTIMIZATION: lazily created.
         static member empty =
             { GroupDispatcherName = nameof GroupDispatcher
@@ -478,8 +463,7 @@ module WorldTypes =
               SimulantCachedOpt = Unchecked.defaultof<_>
               EventSignalContentsOpt = null
               EventHandlerContentsOpt = null
-              PropertyInitializersOpt = null
-              PropertySynchronizersOpt = null
+              PropertyContentsOpt = null
               EntityContentsOpt = null }
         interface SimulantContent with
             member this.DispatcherNameOpt = Some this.GroupDispatcherName
@@ -487,8 +471,7 @@ module WorldTypes =
             member this.SimulantCachedOpt with get () = this.SimulantCachedOpt and set value = this.SimulantCachedOpt <- value
             member this.EventSignalContentsOpt = this.EventSignalContentsOpt
             member this.EventHandlerContentsOpt = this.EventHandlerContentsOpt
-            member this.PropertyInitializersOpt = this.PropertyInitializersOpt
-            member this.PropertySynchronizersOpt = this.PropertySynchronizersOpt
+            member this.PropertyContentsOpt = this.PropertyContentsOpt
             member this.GetChildContentsOpt<'v when 'v :> SimulantContent> () = this.EntityContentsOpt :> obj :?> OrderedDictionary<string, 'v>
 
     and [<ReferenceEquality; NoComparison>] EntityContent =
@@ -497,8 +480,7 @@ module WorldTypes =
           mutable EntityCachedOpt : Entity // OPTIMIZATION: allows us to more often hit the EntityStateOpt cache. May be null.
           mutable EventSignalContentsOpt : OrderedDictionary<obj Address * obj, Guid> // OPTIMIZATION: lazily created.
           mutable EventHandlerContentsOpt : OrderedDictionary<int * obj Address, Guid * (Event -> obj)> // OPTIMIZATION: lazily created.
-          mutable PropertyInitializersOpt : List<PropertyInitializer> // OPTIMIZATION: lazily created.
-          mutable PropertySynchronizersOpt : List<PropertySynchronizer> // OPTIMIZATION: lazily created.
+          mutable PropertyContentsOpt : List<PropertyContent> // OPTIMIZATION: lazily created.
           mutable EntityContentsOpt : OrderedDictionary<string, EntityContent> } // OPTIMIZATION: lazily created.
         static member empty =
             { EntityDispatcherName = nameof EntityDispatcher
@@ -506,17 +488,15 @@ module WorldTypes =
               EntityCachedOpt = Unchecked.defaultof<_>
               EventSignalContentsOpt = null
               EventHandlerContentsOpt = null
-              PropertyInitializersOpt = null
-              PropertySynchronizersOpt = null
+              PropertyContentsOpt = null
               EntityContentsOpt = null }
         interface SimulantContent with
             member this.DispatcherNameOpt = Some this.EntityDispatcherName
             member this.SimulantNameOpt = Some this.EntityName
-            member this.SimulantCachedOpt with get () = this.EntityCachedOpt and set value = this.EntityCachedOpt <- value :?> Entity
+            member this.SimulantCachedOpt with get () = this.EntityCachedOpt :> Simulant and set value = this.EntityCachedOpt <- value :?> Entity
             member this.EventSignalContentsOpt = this.EventSignalContentsOpt
             member this.EventHandlerContentsOpt = this.EventHandlerContentsOpt
-            member this.PropertyInitializersOpt = this.PropertyInitializersOpt
-            member this.PropertySynchronizersOpt = this.PropertySynchronizersOpt
+            member this.PropertyContentsOpt = this.PropertyContentsOpt
             member this.GetChildContentsOpt<'v when 'v :> SimulantContent> () = this.EntityContentsOpt :> obj :?> OrderedDictionary<string, 'v>
 
     /// Generalized interface for simulant state.
