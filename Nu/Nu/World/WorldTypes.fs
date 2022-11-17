@@ -17,16 +17,22 @@ module WorldTypes =
     // Debugging variables.
     let mutable internal Chosen = obj ()
 
-    // Debugging reach-arounds.
+    // Empty content variables.
+    let mutable internal EmptyGameContent = Unchecked.defaultof<obj>
+    let mutable internal EmptyScreenContent = Unchecked.defaultof<obj>
+    let mutable internal EmptyGroupContent = Unchecked.defaultof<obj>
+    let mutable internal EmptyEntityContent = Unchecked.defaultof<obj>
+
+    // Debugging F# reach-arounds.
     let mutable internal viewGame = fun (_ : obj) -> Array.create 0 (String.Empty, obj ())
     let mutable internal viewScreen = fun (_ : obj) (_ : obj) -> Array.create 0 (String.Empty, obj ())
     let mutable internal viewGroup = fun (_ : obj) (_ : obj) -> Array.create 0 (String.Empty, obj ())
     let mutable internal viewEntity = fun (_ : obj) (_ : obj) -> Array.create 0 (String.Empty, obj ())
 
-    // EventSystem reach-arounds.
+    // EventSystem F# reach-arounds.
     let mutable internal handleSubscribeAndUnsubscribeEventHook : bool -> obj Address -> Simulant -> obj -> obj = Unchecked.defaultof<_>
 
-    // Entity reach-arounds.
+    // Entity F# reach-arounds.
     let mutable internal getEntityIs2d : obj -> obj -> bool = Unchecked.defaultof<_>
 
     /// Represents an unsubscription operation for an event.
@@ -371,7 +377,7 @@ module WorldTypes =
 
         interface LateBindings
 
-    // TODO: DIFF: expose in Nu namespace along with related types.
+    /// Describes a property to the Elmish content system.
     and [<NoEquality; NoComparison>] PropertyContent =
         { PropertyInitializer : bool
           PropertyLens : World Lens
@@ -381,11 +387,13 @@ module WorldTypes =
               PropertyLens = lens
               PropertyValue = value }
 
+    /// Describes an initializer to the Elmish content system.
     and [<NoEquality; NoComparison>] InitializerContent =
         | PropertyContent of PropertyContent
         | EventSignalContent of obj Address * obj
         | EventHandlerContent of PartialEquatable<obj Address, Event -> obj>
 
+    /// Describes a simulant to the Elmish content system.
     and SimulantContent =
         abstract DispatcherNameOpt : string option
         abstract SimulantNameOpt : string option
@@ -395,6 +403,7 @@ module WorldTypes =
         abstract PropertyContentsOpt : List<PropertyContent>
         abstract GetChildContentsOpt<'v when 'v :> SimulantContent> : unit -> OrderedDictionary<string, 'v>
 
+    /// Describes a game to the Elmish content system.
     and [<ReferenceEquality; NoComparison>] GameContent =
         { InitialScreenNameOpt : string option
           mutable SimulantCachedOpt : Simulant
@@ -402,13 +411,6 @@ module WorldTypes =
           mutable EventHandlerContentsOpt : OrderedDictionary<int * obj Address, Guid * (Event -> obj)> // OPTIMIZATION: lazily created.
           mutable PropertyContentsOpt : List<PropertyContent> // OPTIMIZATION: lazily created.
           ScreenContents : OrderedDictionary<string, ScreenContent> }
-        static member empty =
-            { InitialScreenNameOpt = None
-              SimulantCachedOpt = Unchecked.defaultof<_>
-              EventSignalContentsOpt = null
-              EventHandlerContentsOpt = null
-              PropertyContentsOpt = null
-              ScreenContents = OrderedDictionary StringComparer.Ordinal }
         interface SimulantContent with
             member this.DispatcherNameOpt = None
             member this.SimulantNameOpt = None
@@ -418,6 +420,7 @@ module WorldTypes =
             member this.PropertyContentsOpt = this.PropertyContentsOpt
             member this.GetChildContentsOpt<'v when 'v :> SimulantContent> () = this.ScreenContents :> obj :?> OrderedDictionary<string, 'v>
 
+    /// Describes a screen to the Elmish content system.
     and [<ReferenceEquality; NoComparison>] ScreenContent =
         { ScreenDispatcherName : string
           ScreenName : string
@@ -428,16 +431,6 @@ module WorldTypes =
           mutable EventHandlerContentsOpt : OrderedDictionary<int * obj Address, Guid * (Event -> obj)> // OPTIMIZATION: lazily created.
           mutable PropertyContentsOpt : List<PropertyContent> // OPTIMIZATION: lazily created.
           GroupContents : OrderedDictionary<string, GroupContent> }
-        static member empty =
-            { ScreenDispatcherName = nameof ScreenDispatcher
-              ScreenName = nameof Screen
-              ScreenBehavior = Vanilla
-              GroupFilePathOpt = None
-              SimulantCachedOpt = Unchecked.defaultof<_>
-              EventSignalContentsOpt = null
-              EventHandlerContentsOpt = null
-              PropertyContentsOpt = null
-              GroupContents = OrderedDictionary StringComparer.Ordinal }
         interface SimulantContent with
             member this.DispatcherNameOpt = Some this.ScreenDispatcherName
             member this.SimulantNameOpt = Some this.ScreenName
@@ -447,6 +440,7 @@ module WorldTypes =
             member this.PropertyContentsOpt = this.PropertyContentsOpt
             member this.GetChildContentsOpt<'v when 'v :> SimulantContent> () = this.GroupContents :> obj :?> OrderedDictionary<string, 'v>
 
+    /// Describes a group to the Elmish content system.
     and [<ReferenceEquality; NoComparison>] GroupContent =
         { GroupDispatcherName : string
           GroupName : string
@@ -456,15 +450,6 @@ module WorldTypes =
           mutable EventHandlerContentsOpt : OrderedDictionary<int * obj Address, Guid * (Event -> obj)> // OPTIMIZATION: lazily created.
           mutable PropertyContentsOpt : List<PropertyContent> // OPTIMIZATION: lazily created.
           mutable EntityContentsOpt : OrderedDictionary<string, EntityContent> } // OPTIMIZATION: lazily created.
-        static member empty =
-            { GroupDispatcherName = nameof GroupDispatcher
-              GroupName = nameof Group
-              GroupFilePathOpt = None
-              SimulantCachedOpt = Unchecked.defaultof<_>
-              EventSignalContentsOpt = null
-              EventHandlerContentsOpt = null
-              PropertyContentsOpt = null
-              EntityContentsOpt = null }
         interface SimulantContent with
             member this.DispatcherNameOpt = Some this.GroupDispatcherName
             member this.SimulantNameOpt = Some this.GroupName
@@ -474,6 +459,7 @@ module WorldTypes =
             member this.PropertyContentsOpt = this.PropertyContentsOpt
             member this.GetChildContentsOpt<'v when 'v :> SimulantContent> () = this.EntityContentsOpt :> obj :?> OrderedDictionary<string, 'v>
 
+    /// Describes an entity to the Elmish content system.
     and [<ReferenceEquality; NoComparison>] EntityContent =
         { EntityDispatcherName : string
           EntityName : string
@@ -482,14 +468,6 @@ module WorldTypes =
           mutable EventHandlerContentsOpt : OrderedDictionary<int * obj Address, Guid * (Event -> obj)> // OPTIMIZATION: lazily created.
           mutable PropertyContentsOpt : List<PropertyContent> // OPTIMIZATION: lazily created.
           mutable EntityContentsOpt : OrderedDictionary<string, EntityContent> } // OPTIMIZATION: lazily created.
-        static member empty =
-            { EntityDispatcherName = nameof EntityDispatcher
-              EntityName = nameof Entity
-              EntityCachedOpt = Unchecked.defaultof<_>
-              EventSignalContentsOpt = null
-              EventHandlerContentsOpt = null
-              PropertyContentsOpt = null
-              EntityContentsOpt = null }
         interface SimulantContent with
             member this.DispatcherNameOpt = Some this.EntityDispatcherName
             member this.SimulantNameOpt = Some this.EntityName
@@ -535,7 +513,7 @@ module WorldTypes =
               Xtension = Xtension.makeFunctional ()
               Model = { DesignerType = typeof<unit>; DesignerValue = () }
               OmniScreenOpt = None
-              Content = GameContent.empty
+              Content = EmptyGameContent :?> GameContent
               SelectedScreenOpt = None
               ScreenTransitionDestinationOpt = None
               DesiredScreen = DesireIgnore
@@ -608,7 +586,7 @@ module WorldTypes =
             { Dispatcher = dispatcher
               Xtension = Xtension.makeFunctional ()
               Model = { DesignerType = typeof<unit>; DesignerValue = () }
-              Content = ScreenContent.empty
+              Content = EmptyScreenContent :?> ScreenContent
               Ecs = ecs
               TransitionState = IdlingState
               TransitionUpdates = 0L // TODO: roll this field into Incoming/OutgoingState values
@@ -674,7 +652,7 @@ module WorldTypes =
             { Dispatcher = dispatcher
               Xtension = Xtension.makeFunctional ()
               Model = { DesignerType = typeof<unit>; DesignerValue = () }
-              Content = GroupContent.empty
+              Content = EmptyGroupContent :?> GroupContent
               Visible = true
               Persistent = true
               ScriptFrame = Scripting.DeclarationFrame StringComparer.Ordinal
@@ -748,7 +726,7 @@ module WorldTypes =
               Facets = [||]
               Xtension = Xtension.makeEmpty imperative
               Model = { DesignerType = typeof<unit>; DesignerValue = () }
-              Content = EntityContent.empty
+              Content = EmptyEntityContent :?> EntityContent
               PositionLocal = Vector3.Zero
               RotationLocal = Quaternion.Identity
               ScaleLocal = Vector3.One
@@ -1437,6 +1415,27 @@ type EntityDispatcher = WorldTypes.EntityDispatcher
 /// Dynamically augments an entity's behavior in a composable way.
 type Facet = WorldTypes.Facet
 
+/// Describes a property to the Elmish content system.
+type PropertyContent = WorldTypes.PropertyContent
+
+/// Describes an initializer to the Elmish content system.
+type InitializerContent = WorldTypes.InitializerContent
+
+/// Describes a simulant to the Elmish content system.
+type SimulantContent = WorldTypes.SimulantContent
+
+/// Describes a game to the Elmish content system.
+type GameContent = WorldTypes.GameContent
+
+/// Describes a screen to the Elmish content system.
+type ScreenContent = WorldTypes.ScreenContent
+
+/// Describes a group to the Elmish content system.
+type GroupContent = WorldTypes.GroupContent
+
+/// Describes an entity to the Elmish content system.
+type EntityContent = WorldTypes.EntityContent
+
 /// The game type that hosts the various screens used to navigate through a game.
 type Game = WorldTypes.Game
 
@@ -1464,3 +1463,53 @@ type World = WorldTypes.World
 /// Provides a way to make user-defined dispatchers, facets, and various other sorts of game-
 /// specific values.
 type NuPlugin = WorldTypes.NuPlugin
+
+[<RequireQualifiedAccess>]
+module GameContent =
+
+    let empty =
+        { InitialScreenNameOpt = None
+          SimulantCachedOpt = Unchecked.defaultof<_>
+          EventSignalContentsOpt = null
+          EventHandlerContentsOpt = null
+          PropertyContentsOpt = null
+          ScreenContents = OrderedDictionary StringComparer.Ordinal }
+
+[<RequireQualifiedAccess>]
+module ScreenContent =
+    
+    let empty =
+        { ScreenDispatcherName = nameof ScreenDispatcher
+          ScreenName = nameof Screen
+          ScreenBehavior = Vanilla
+          GroupFilePathOpt = None
+          SimulantCachedOpt = Unchecked.defaultof<_>
+          EventSignalContentsOpt = null
+          EventHandlerContentsOpt = null
+          PropertyContentsOpt = null
+          GroupContents = OrderedDictionary StringComparer.Ordinal }
+
+[<RequireQualifiedAccess>]
+module GroupContent =
+    
+    let empty =
+        { GroupDispatcherName = nameof GroupDispatcher
+          GroupName = nameof Group
+          GroupFilePathOpt = None
+          SimulantCachedOpt = Unchecked.defaultof<_>
+          EventSignalContentsOpt = null
+          EventHandlerContentsOpt = null
+          PropertyContentsOpt = null
+          EntityContentsOpt = null }
+
+[<RequireQualifiedAccess>]
+module EntityContent =
+    
+    let empty =
+        { EntityDispatcherName = nameof EntityDispatcher
+          EntityName = nameof Entity
+          EntityCachedOpt = Unchecked.defaultof<_>
+          EventSignalContentsOpt = null
+          EventHandlerContentsOpt = null
+          PropertyContentsOpt = null
+          EntityContentsOpt = null }

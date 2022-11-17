@@ -3,9 +3,7 @@
 
 namespace Nu
 open System
-open System.Collections.Generic
 open System.Numerics
-open FSharpx.Collections
 open SDL2
 open TiledSharp
 open Prime
@@ -80,21 +78,6 @@ type [<StructuralEquality; NoComparison>] OverlayNameDescriptor =
     | RoutedOverlay
     | DefaultOverlay
     | ExplicitOverlay of string
-
-/// Describes the origin of a piece of simulant content.
-type [<StructuralEquality; NoComparison>] ContentOrigin =
-    | SimulantOrigin of Simulant
-    | FacetOrigin of Simulant * string
-
-    /// Get the originating simulant.
-    static member getSimulant origin =
-        match origin with
-        | SimulantOrigin simulant
-        | FacetOrigin (simulant, _) -> simulant
-
-/// Describes the content of a simulant.
-type SimulantContent =
-    interface end
 
 /// A tasklet to be completed at the scheduled update time.
 type [<NoEquality; NoComparison>] 'w Tasklet =
