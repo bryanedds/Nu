@@ -52,7 +52,7 @@ module MyGame =
              Simulants.Title.Gui.Play.ClickEvent => msg ShowGameplay
              Simulants.Title.Gui.Exit.ClickEvent => cmd Exit
              Simulants.Credits.Gui.Back.ClickEvent => msg ShowTitle
-             Simulants.Gameplay.Screen.ChangeEvent Screen.Gameplay.Name =|> fun event -> msg (GameplayChanged (event.Data.Value :?> Gameplay))]
+             Simulants.Gameplay.Screen.Gameplay.ChangeEvent =|> fun event -> msg (GameplayChanged (event.Data.Value :?> Gameplay))]
 
         // here we handle the above messages
         override this.Message (model, message, _, _) =

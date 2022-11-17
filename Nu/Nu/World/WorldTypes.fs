@@ -371,7 +371,7 @@ module WorldTypes =
 
         interface LateBindings
 
-    // TODO: P1: expose in Nu namespace along with related types.
+    // TODO: DIFF: expose in Nu namespace along with related types.
     and [<NoEquality; NoComparison>] PropertyContent =
         { PropertyInitializer : bool
           PropertyLens : World Lens

@@ -479,6 +479,7 @@ module BattleDispatcher =
             | BattleRunning -> updateRunning time battle
             | BattleResult (startTime, outcome) -> updateResults time startTime outcome battle
             | BattleQuitting (startTime, _, _) -> updateCease time startTime battle
+            | BattleQuit -> just battle
 
     type BattleDispatcher () =
         inherit ScreenDispatcher<Battle, BattleMessage, BattleCommand> (Battle.empty)

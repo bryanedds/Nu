@@ -22,27 +22,25 @@ module OmniBlade =
         | Gui of Gui
         | Field of Field
 
-    type Message =
+    type [<NoComparison>] Message =
         | ShowTitle
         | ShowCredits
         | ShowPick
         | ShowIntro of SaveSlot
         | TryLoad of SaveSlot
         | UpdateMessage
+        | FieldChanged of Field
+        | BattleChanged of Battle
 
     type Command =
-        | UpdateCommand
         | Exit
+        | UpdateCommand
+        | ModelChanged
 
     type Game with
         member this.GetModel world = this.GetModelGeneric<Model> world
         member this.SetModel value world = this.SetModelGeneric<Model> value world
         member this.Model = this.ModelGeneric<Model> ()
-        member this.Field = this.Model.Bimap (function Field field -> Some field | _ -> None) (constant Field)
-        member this.Battle =
-            this.Model.Bimap
-                (function Field field -> field.BattleOpt | _ -> None)
-                (fun model battle -> match model with Field field -> Field (Field.updateBattleOpt (constant (Some battle)) field) | _ -> failwithumf ())
 
     type OmniBladeDispatcher () =
         inherit GameDispatcher<Model, Message, Command> (Gui Splash)
@@ -54,9 +52,7 @@ module OmniBlade =
             base.Register (game, world)
 
         override this.Initialize (omni, _) =
-            [Game.Field <-> Simulants.Field.Screen.Field
-             Game.Battle <-> Simulants.Battle.Screen.Battle
-             Game.DesiredScreen :=
+            [Game.DesiredScreen :=
                 match omni with
                 | Gui gui ->
                     match gui with
@@ -71,10 +67,10 @@ module OmniBlade =
                         match field.BattleOpt with
                         | Some battle ->
                             match battle.BattleState with
-                            | BattleQuitting (_, _, _) -> Desire Simulants.Field.Screen
+                            | BattleQuitting (_, _, _) | BattleQuit -> Desire Simulants.Field.Screen
                             | _ -> Desire Simulants.Battle.Screen
                         | None -> Desire Simulants.Field.Screen
-                    | Quitting -> Desire Simulants.Title.Screen
+                    | Quitting | Quit -> Desire Simulants.Title.Screen
              Simulants.Game.UpdateEvent => msg UpdateMessage
              Simulants.Game.UpdateEvent => cmd UpdateCommand
              Simulants.Splash.Screen.DeselectingEvent => msg ShowTitle
@@ -88,9 +84,11 @@ module OmniBlade =
              Simulants.Pick.Gui.LoadGame2.ClickEvent => msg (TryLoad Slot2)
              Simulants.Pick.Gui.LoadGame3.ClickEvent => msg (TryLoad Slot3)
              Simulants.Pick.Gui.Back.ClickEvent => msg ShowTitle
-             Simulants.Credits.Gui.Back.ClickEvent => msg ShowTitle]
+             Simulants.Credits.Gui.Back.ClickEvent => msg ShowTitle
+             Simulants.Field.Screen.Field.ChangeEvent =|> fun event -> msg (FieldChanged (event.Data.Value :?> Field))
+             Simulants.Battle.Screen.Battle.ChangeEvent =|> fun event -> msg (BattleChanged (event.Data.Value :?> Battle))]
 
-        override this.Message (omni, message, _, world) =
+        override this.Message (model, message, _, world) =
 
             match message with
             | ShowTitle ->
@@ -108,17 +106,17 @@ module OmniBlade =
             | TryLoad saveSlot ->
                 match Field.tryLoad saveSlot world with
                 | Some loaded -> just (Field loaded)
-                | None -> just omni
+                | None -> just model
 
             | UpdateMessage ->
-                match omni with
+                match model with
                 | Gui gui ->
                     match gui with
                     | Intro slot ->
                         match Simulants.Intro5.Screen.GetTransitionState world with
                         | OutgoingState -> just (Field (Field.initial slot (max 1UL Gen.randomul) world))
-                        | _ -> just omni
-                    | _ -> just omni
+                        | _ -> just model
+                    | _ -> just model
                 | Field field ->
                     match field.BattleOpt with
                     | Some battle ->
@@ -128,12 +126,20 @@ module OmniBlade =
                                 let field = Field.synchronizeFromBattle consequents battle field
                                 just (Field (Field.updateBattleOpt (constant None) field))
                             else just (Field (Field.updateFieldState (constant Quitting) field))
-                        | _ -> just omni
-                    | None -> just omni
+                        | _ -> just model
+                    | None -> just model
 
-        override this.Command (_, command, _, world) =
+            | FieldChanged field ->
+                match field.FieldState with
+                | Playing | Quitting -> just (Field field)
+                | Quit -> just model
+
+        override this.Command (model, command, _, world) =
 
             match command with
+            | Exit ->
+                just (World.exit world)
+
             | UpdateCommand ->
 
                 // update picks
@@ -159,7 +165,16 @@ module OmniBlade =
                 // fin
                 just world
 
-            | Exit -> just (World.exit world)
+            | ModelChanged ->
+                match model with
+                | Field field ->
+                    let world = Simulants.Field.Screen.SetField field world
+                    let world =
+                        match field.BattleOpt with
+                        | Some battle -> Simulants.Battle.Screen.SetBattle battle world
+                        | None -> world
+                    just world
+                | _ -> just world
 
         override this.Content (_, _) =
 
