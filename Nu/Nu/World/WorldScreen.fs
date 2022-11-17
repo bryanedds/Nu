@@ -227,7 +227,7 @@ module WorldScreenModule =
                 if World.getScreenExists screen world then
                     if screen.GetDestroying world
                     then World.destroyScreenImmediate screen world
-                    else failwith ("Screen '" + scstring screen + " already exists and cannot be created."); world
+                    else failwith ("Screen '" + scstring screen + "' already exists and cannot be created."); world
                 else world
             let world = World.addScreen false screenState screen world
             (screen, world)

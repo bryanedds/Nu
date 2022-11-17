@@ -1154,12 +1154,14 @@ module EntityDispatcherModule2 =
 
         override this.TrySynchronize (initializing, entity, world) =
             let contentOld = World.getEntityContent entity world
-            let model = this.GetModel entity world
-            let initializers = this.Initialize (model, entity)
-            let entities = this.Content (model, entity)
-            let content = Content.composite entity.Name initializers entities
-            let world = Content.synchronizeEntity initializing contentOld content entity entity world
-            World.setEntityContent content entity world
+            if initializing || contentOld <> EntityContent.empty then // block premature reentry
+                let model = this.GetModel entity world
+                let initializers = this.Initialize (model, entity)
+                let entities = this.Content (model, entity)
+                let content = Content.composite entity.Name initializers entities
+                let world = Content.synchronizeEntity initializing contentOld content entity entity world
+                World.setEntityContent content entity world
+            else world
 
         abstract member Initialize : 'model * Entity -> InitializerContent seq
         default this.Initialize (_, _) = Seq.empty
@@ -1268,12 +1270,14 @@ module GroupDispatcherModule =
 
         override this.TrySynchronize (initializing, group, world) =
             let contentOld = World.getGroupContent group world
-            let model = this.GetModel group world
-            let initializers = this.Initialize (model, group)
-            let entities = this.Content (model, group)
-            let content = Content.group group.Name initializers entities
-            let world = Content.synchronizeGroup initializing contentOld content group group world
-            World.setGroupContent content group world
+            if initializing || contentOld <> GroupContent.empty then // block premature reentry
+                let model = this.GetModel group world
+                let initializers = this.Initialize (model, group)
+                let entities = this.Content (model, group)
+                let content = Content.group group.Name initializers entities
+                let world = Content.synchronizeGroup initializing contentOld content group group world
+                World.setGroupContent content group world
+            else world
 
         abstract member Initialize : 'model * Group -> InitializerContent seq
         default this.Initialize (_, _) = Seq.empty
@@ -1344,12 +1348,14 @@ module ScreenDispatcherModule =
 
         override this.TrySynchronize (initializing, screen, world) =
             let contentOld = World.getScreenContent screen world
-            let model = this.GetModel screen world
-            let initializers = this.Initialize (model, screen)
-            let group = this.Content (model, screen)
-            let content = Content.screen screen.Name Vanilla initializers group
-            let world = Content.synchronizeScreen initializing contentOld content screen screen world
-            World.setScreenContent content screen world
+            if initializing || contentOld <> ScreenContent.empty then // block premature reentry
+                let model = this.GetModel screen world
+                let initializers = this.Initialize (model, screen)
+                let group = this.Content (model, screen)
+                let content = Content.screen screen.Name Vanilla initializers group
+                let world = Content.synchronizeScreen initializing contentOld content screen screen world
+                World.setScreenContent content screen world
+            else world
 
         abstract member Initialize : 'model * Screen -> InitializerContent seq
         default this.Initialize (_, _) = Seq.empty
@@ -1388,6 +1394,17 @@ module GameDispatcherModule =
     and [<AbstractClass>] GameDispatcher<'model, 'message, 'command> (makeInitial : World -> 'model) =
         inherit GameDispatcher ()
 
+        static let synchronize initializing game world (this : GameDispatcher<'model, 'message, 'command>) =
+            let contentOld = World.getGameContent world
+            if initializing || contentOld <> GameContent.empty then // block premature reentry
+                let model = this.GetModel game world
+                let initializers = this.Initialize (model, game)
+                let screens = this.Content (model, game)
+                let content = Content.game initializers screens
+                let (initialScreenOpt, world) = Content.synchronizeGame World.setScreenSplash initializing contentOld content game world
+                (initialScreenOpt, World.setGameContent content world)
+            else (None, world)
+
         new (initial : 'model) =
             GameDispatcher<'model, 'message, 'command> (fun _ -> initial)
 
@@ -1417,7 +1434,7 @@ module GameDispatcherModule =
             | _ -> Log.info "Incorrect signal type returned from event binding."; world
 
         override this.TrySynchronize (initializing, game, world) =
-            this.Synchronize (initializing, game, world) |> snd
+            synchronize initializing game world this |> snd
 
         abstract member Initialize : 'model * Game -> InitializerContent seq
         default this.Initialize (_, _) = Seq.empty
@@ -1433,15 +1450,6 @@ module GameDispatcherModule =
 
         abstract member View : 'model * Game * World -> View
         default this.View (_, _, _) = View.empty
-
-        member private this.Synchronize (initializing, game, world) =
-            let contentOld = World.getGameContent world
-            let model = this.GetModel game world
-            let initializers = this.Initialize (model, game)
-            let screens = this.Content (model, game)
-            let content = Content.game initializers screens
-            let (initialScreen, world) = Content.synchronizeGame World.setScreenSplash initializing contentOld content game world
-            (initialScreen, World.setGameContent content world)
 
 [<AutoOpen>]
 module WorldModule2' =

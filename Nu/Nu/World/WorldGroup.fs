@@ -164,7 +164,7 @@ module WorldGroupModule =
                 if World.getGroupExists group world then
                     if group.GetDestroying world
                     then World.destroyGroupImmediate group world
-                    else failwith ("Group '" + scstring group + " already exists and cannot be created."); world
+                    else failwith ("Group '" + scstring group + "' already exists and cannot be created."); world
                 else world
             let world = World.addGroup false groupState group world
             (group, world)

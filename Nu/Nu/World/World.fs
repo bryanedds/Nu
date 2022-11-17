@@ -56,6 +56,12 @@ module Nu =
             // init simulant types
             Entity.init ()
 
+            // init content variables
+            WorldTypes.EmptyGameContent <- GameContent.empty
+            WorldTypes.EmptyScreenContent <- ScreenContent.empty
+            WorldTypes.EmptyGroupContent <- GroupContent.empty
+            WorldTypes.EmptyEntityContent <- EntityContent.empty
+
             // init debug view F# reach-arounds
             WorldTypes.viewGame <- fun world -> World.viewGameProperties (world :?> World)
             WorldTypes.viewScreen <- fun screen world -> World.viewScreenProperties (screen :?> Screen) (world :?> World)
@@ -305,7 +311,7 @@ module Nu =
                     World.unregisterEntityPhysics entity world)
                     world entities
 
-            // init miscellaneous reach-arounds
+            // init miscellaneous F# reach-arounds
             WorldModule.register <- fun simulant world -> World.register simulant world
             WorldModule.unregister <- fun simulant world -> World.unregister simulant world
             WorldModule.destroyImmediate <- fun simulant world -> World.destroyImmediate simulant world

@@ -2162,7 +2162,7 @@ module WorldModuleEntity =
                 if World.getEntityExists entity world then
                     if World.getEntityDestroying entity world
                     then World.destroyEntityImmediate entity world
-                    else failwith ("Entity '" + scstring entity + " already exists and cannot be created."); world
+                    else failwith ("Entity '" + scstring entity + "' already exists and cannot be created."); world
                 else world
             let world = World.addEntity false entityState entity world
 
