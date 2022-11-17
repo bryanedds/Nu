@@ -33,14 +33,14 @@ module ReticlesDispatcher =
             | TargetSelect index -> just (World.publishPlus index rets.TargetSelectEvent [] rets true false world)
 
         override this.Content (reticles, _) =
-            [yield Content.button "Cancel"
+            [Content.button "Cancel"
                 [Entity.PositionLocal == Constants.Battle.CancelPosition
                  Entity.Size == v3 48.0f 48.0f 0.0f
                  Entity.UpImage == asset Assets.Battle.PackageName "CancelUp"
                  Entity.DownImage == asset Assets.Battle.PackageName "CancelDown"
                  Entity.ClickEvent => cmd TargetCancel]
              for (index, center) in reticles.Pairs do
-                yield Content.button (CharacterIndex.toEntityName index)
+                Content.button (CharacterIndex.toEntityName index)
                     [Entity.MountOpt == None
                      Entity.Size == v3 96.0f 96.0f 0.0f
                      Entity.Center := center

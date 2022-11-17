@@ -318,7 +318,7 @@ module Gameplay =
         override this.Content (gameplay, _) =
 
             [// the gui group
-             yield Content.group Simulants.Gameplay.Gui.Group.Name []
+             Content.group Simulants.Gameplay.Gui.Group.Name []
                  [Content.button Simulants.Gameplay.Gui.Quit.Name
                      [Entity.Text == "Quit"
                       Entity.Position == v3 260.0f -260.0f 0.0f
@@ -328,7 +328,7 @@ module Gameplay =
              // the scene group while playing
              match gameplay with
              | Playing | Quitting ->
-                yield Content.group Simulants.Gameplay.Scene.Group.Name []
+                Content.group Simulants.Gameplay.Scene.Group.Name []
                     [Content.entity<PlayerDispatcher> Simulants.Gameplay.Scene.Player.Name
                         [Entity.Position == v3 -300.0f -175.6805f 0.0f
                          Entity.Elevation == 1.0f]]

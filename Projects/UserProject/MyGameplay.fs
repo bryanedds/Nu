@@ -84,7 +84,7 @@ module MyGameplay =
         override this.Content (gameplay, _) =
 
             [// the gui group
-             yield Content.group Simulants.Gameplay.Gui.Group.Name []
+             Content.group Simulants.Gameplay.Gui.Group.Name []
                  [Content.button Simulants.Gameplay.Gui.Quit.Name
                      [Entity.Text == "Quit"
                       Entity.Position == v3 260.0f -260.0f 0.0f
@@ -94,9 +94,9 @@ module MyGameplay =
              // the player and scene groups while playing
              match gameplay with
              | Playing | Quitting ->
-                yield Content.group Simulants.Gameplay.Player.Group.Name []
+                Content.group Simulants.Gameplay.Player.Group.Name []
                     [Content.sideViewCharacter Simulants.Gameplay.Player.Character.Name
                         [Entity.Position == v3 0.0f 0.0f 0.0f
                          Entity.Size == v3 108.0f 108.0f 0.0f]]
-                yield Content.groupFromFile Simulants.Gameplay.Scene.Group.Name "Assets/Gameplay/Scene.nugroup" [] []
+                Content.groupFromFile Simulants.Gameplay.Scene.Group.Name "Assets/Gameplay/Scene.nugroup" [] []
              | Quit -> ()]

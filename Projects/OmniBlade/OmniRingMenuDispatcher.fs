@@ -45,7 +45,7 @@ module RingMenuDispatcher =
             let items = Map.map (constant (Triple.insert (Map.count items))) items // TODO: DIFF: memoize?
             [for (itemName, (itemIndex, itemCount, itemEnabled)) in items.Pairs do
                 let buttonSize = v3 48.0f 48.0f 0.0f
-                yield Content.button (scstring itemName)
+                Content.button (scstring itemName)
                     [Entity.EnabledLocal := itemEnabled
                      Entity.PositionLocal :=
                         (let radius = Constants.Battle.RingMenuRadius
@@ -58,7 +58,7 @@ module RingMenuDispatcher =
                      Entity.UpImage := asset Assets.Battle.PackageName (itemName + "Up")
                      Entity.DownImage := asset Assets.Battle.PackageName (itemName + "Down")
                      Entity.ClickEvent => cmd (ItemSelect itemName)]
-             yield Content.button "Cancel"
+             Content.button "Cancel"
                 [Entity.MountOpt == None
                  Entity.Size == v3 48.0f 48.0f 0.0f
                  Entity.Position == Constants.Battle.CancelPosition
