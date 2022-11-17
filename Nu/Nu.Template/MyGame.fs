@@ -9,23 +9,22 @@ module MyGame =
     // this is our Elm-style model type. It determines what state the game is in. To learn about the
     // Elm-style in Nu, see here - https://vsyncronicity.com/2020/03/01/a-game-engine-in-the-elm-style/
     type Model =
-        | Gameplay of Gameplay
         | Splash
         | Title
         | Credits
+        | Gameplay of Gameplay
 
     // this is our Elm-style message type. It provides a signal to show the various screens.
     type Message =
         | ShowTitle
         | ShowCredits
         | ShowGameplay
-        | GameplayChanged of Gameplay
+        | Update
 
     // this is our Elm-style command type. Commands are used instead of messages when explicitly
     // updating the world is involved.
     type Command =
         | Exit
-        | ModelChanged
 
     // this extends the Game API to expose the above model as well as the model bimapped to Gameplay,
     type Game with
@@ -45,32 +44,35 @@ module MyGame =
                 | Splash -> Desire Simulants.Splash.Screen
                 | Title -> Desire Simulants.Title.Screen
                 | Credits -> Desire Simulants.Credits.Screen
-                | Gameplay gameplay -> match gameplay with | Playing -> Desire Simulants.Gameplay.Screen | Quitting | Quit -> Desire Simulants.Title.Screen
-             Game.Model.ChangeEvent => cmd ModelChanged
+                | Gameplay gameplay -> match gameplay with Playing -> Desire Simulants.Gameplay.Screen | Quitting | Quit -> Desire Simulants.Title.Screen
+             Game.UpdateEvent => msg Update
              Simulants.Splash.Screen.DeselectingEvent => msg ShowTitle
              Simulants.Title.Gui.Credits.ClickEvent => msg ShowCredits
              Simulants.Title.Gui.Play.ClickEvent => msg ShowGameplay
              Simulants.Title.Gui.Exit.ClickEvent => cmd Exit
-             Simulants.Credits.Gui.Back.ClickEvent => msg ShowTitle
-             Simulants.Gameplay.Screen.Gameplay.ChangeEvent =|> fun event -> msg (GameplayChanged (event.Data.Value :?> Gameplay))]
+             Simulants.Credits.Gui.Back.ClickEvent => msg ShowTitle]
 
         // here we handle the above messages
-        override this.Message (model, message, _, _) =
+        override this.Message (model, message, _, world) =
             match message with
             | ShowTitle -> just Title
             | ShowCredits -> just Credits
             | ShowGameplay -> just (Gameplay Playing)
-            | GameplayChanged gameplay -> match gameplay with Playing | Quitting -> just (Gameplay gameplay) | Quit -> just model
+            | Update ->
+                match model with
+                | Gameplay _ -> just (Gameplay (Simulants.Gameplay.Screen.GetGameplay world))
+                | _ -> just model
 
         // here we handle the above commands
-        override this.Command (model, command, _, world) =
+        override this.Command (_, command, _, world) =
             match command with
             | Exit -> just (World.exit world)
-            | ModelChanged -> match model with Gameplay gameplay -> just (Simulants.Gameplay.Screen.SetGameplay gameplay world) | _ -> just world
 
         // here we describe the content of the game, including all of its screens.
-        override this.Content (_, _) =
+        override this.Content (model, _) =
             [Content.screen Simulants.Splash.Screen.Name (WorldTypes.Splash (Constants.Dissolve.Default, Constants.Splash.Default, None, Simulants.Title.Screen)) [] []
              Content.screenWithGroupFromFile Simulants.Title.Screen.Name (Dissolve (Constants.Dissolve.Default, None)) "Assets/Gui/Title.nugroup" [] []
              Content.screenWithGroupFromFile Simulants.Credits.Screen.Name (Dissolve (Constants.Dissolve.Default, None)) "Assets/Gui/Credits.nugroup" [] []
-             Content.screen<MyGameplayDispatcher> Simulants.Gameplay.Screen.Name (Dissolve (Constants.Dissolve.Default, None)) [] []]
+             Content.screen<MyGameplayDispatcher> Simulants.Gameplay.Screen.Name (Dissolve (Constants.Dissolve.Default, None))
+                [match model with Gameplay gameplay -> Screen.Gameplay := gameplay | _ -> ()]
+                []]
