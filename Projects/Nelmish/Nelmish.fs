@@ -29,20 +29,20 @@ type NelmishDispatcher () =
     override this.Content (model, _) =
         [Content.screen Simulants.Default.Screen.Name Vanilla []
             [Content.group Simulants.Default.Screen.Name []
-                [yield Content.button "Decrement"
+                [Content.button "Decrement"
                     [Entity.Position == v3 -256.0f 64.0f 0.0f
                      Entity.Text == "-"
                      Entity.ClickEvent => msg Decrement]
-                 yield Content.button "Increment"
+                 Content.button "Increment"
                     [Entity.Position == v3 0.0f 64.0f 0.0f
                      Entity.Text == "+"
                      Entity.ClickEvent => msg Increment]
-                 yield Content.text "Counter"
+                 Content.text "Counter"
                     [Entity.Position == v3 -128.0f -32.0f 0.0f
                      Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
                      Entity.Text := string model]
                  if model <> 0 then
-                    yield Content.button "Reset"
+                    Content.button "Reset"
                        [Entity.Position == v3 -128.0f -128.0f 0.0f
                         Entity.Text == "Reset"
                         Entity.ClickEvent => msg Reset]]]]

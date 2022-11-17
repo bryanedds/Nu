@@ -96,7 +96,7 @@ module Content =
             let teammateName = scstringm teammate.TeamIndex
             let x = position.X + if index < rows then 0.0f else 252.0f + 48.0f
             let y = position.Y - single (index % rows) * 81.0f
-            yield Content.button teammateName
+            Content.button teammateName
                 [Entity.PositionLocal == v3 x y 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 252.0f 72.0f 0.0f
                  Entity.EnabledLocal := filter teammate field.Menu
                  Entity.Text := CharacterType.getName teammate.CharacterType
@@ -112,7 +112,7 @@ module Content =
             let itemName = ItemType.getName itemType
             let x = if index < columns then position.X else position.X + 375.0f
             let y = position.Y - single (index % columns) * 81.0f
-            yield Content.button itemName
+            Content.button itemName
                 [Entity.PositionLocal == v3 x y 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 336.0f 72.0f 0.0f
                  Entity.Justification == Justified (JustifyLeft, JustifyMiddle); Entity.Margins == v3 16.0f 0.0f 0.0f
                  Entity.Text :=
@@ -136,7 +136,7 @@ module Content =
             let techName = scstringm tech
             let x = position.X
             let y = position.Y - single index * 60.0f
-            yield Content.button techName
+            Content.button techName
                 [Entity.PositionLocal == v3 x y 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 336.0f 60.0f 0.0f
                  Entity.Justification == Justified (JustifyLeft, JustifyMiddle); Entity.Margins == v3 16.0f 0.0f 0.0f
                  Entity.Text := techName

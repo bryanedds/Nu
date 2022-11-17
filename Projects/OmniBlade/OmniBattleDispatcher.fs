@@ -1136,7 +1136,7 @@ module BattleDispatcher =
         override this.Content (battle, _) =
 
             [// scene group
-             yield Content.group Simulants.Battle.Scene.Group.Name []
+             Content.group Simulants.Battle.Scene.Group.Name []
 
                 [// tile map
                  yield Content.tileMap "TileMap"
@@ -1191,7 +1191,7 @@ module BattleDispatcher =
              if battle.Running then
 
                 // inputs group
-                yield Content.group Simulants.Battle.Inputs.Group.Name []
+                Content.group Simulants.Battle.Inputs.Group.Name []
 
                     [// inputs
                      for (index, ally) in (Battle.getAllies battle).Pairs do

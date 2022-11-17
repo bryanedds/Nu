@@ -48,9 +48,9 @@ module OmniBlade =
 #endif
             base.Register (game, world)
 
-        override this.Initialize (omni, _) =
+        override this.Initialize (model, _) =
             [Game.DesiredScreen :=
-                match omni with
+                match model with
                 | Gui gui ->
                     match gui with
                     | Splash -> Desire Simulants.Splash.Screen
@@ -81,7 +81,13 @@ module OmniBlade =
              Simulants.Pick.Gui.LoadGame2.ClickEvent => msg (TryLoad Slot2)
              Simulants.Pick.Gui.LoadGame3.ClickEvent => msg (TryLoad Slot3)
              Simulants.Pick.Gui.Back.ClickEvent => msg ShowTitle
-             Simulants.Credits.Gui.Back.ClickEvent => msg ShowTitle]
+             Simulants.Credits.Gui.Back.ClickEvent => msg ShowTitle
+             match model with
+             | Field field ->
+                 match field.BattleOpt with
+                 | None -> Simulants.Field.Screen.Field := field
+                 | Some battle -> Simulants.Battle.Screen.Battle := battle
+             | _ -> ()]
 
         override this.Message (model, message, _, world) =
 
@@ -104,36 +110,27 @@ module OmniBlade =
                 | None -> just model
 
             | UpdateMessage ->
-
-                // sync model from field and battle screens
                 let model =
                     match model with
+                    | Gui gui ->
+                        match gui with
+                        | Intro slot ->
+                            match Simulants.Intro5.Screen.GetTransitionState world with
+                            | OutgoingState -> Field (Field.initial slot (max 1UL Gen.randomul) world)
+                            | _ -> model
+                        | _ -> model
                     | Field field ->
                         match field.BattleOpt with
-                        | Some _ -> Field (Field.updateBattleOpt (constant (Some (Simulants.Battle.Screen.GetBattle world))) field)
-                        | None -> Field (Simulants.Field.Screen.GetField world)
-                    | _ -> model
-
-                // update model
-                match model with
-                | Gui gui ->
-                    match gui with
-                    | Intro slot ->
-                        match Simulants.Intro5.Screen.GetTransitionState world with
-                        | OutgoingState -> just (Field (Field.initial slot (max 1UL Gen.randomul) world))
-                        | _ -> just model
-                    | _ -> just model
-                | Field field ->
-                    match field.BattleOpt with
-                    | Some battle ->
-                        match battle.BattleState with
-                        | BattleQuitting (_, outcome, consequents) ->
-                            if outcome then
-                                let field = Field.synchronizeFromBattle consequents battle field
-                                just (Field (Field.updateBattleOpt (constant None) field))
-                            else just (Field (Field.updateFieldState (constant Quitting) field))
-                        | _ -> just model
-                    | None -> just model
+                        | Some battle ->
+                            match battle.BattleState with
+                            | BattleQuitting (_, outcome, consequents) ->
+                                if outcome then
+                                    let field = Field.synchronizeFromBattle consequents battle field
+                                    Field (Field.updateBattleOpt (constant None) field)
+                                else Field (Field.updateFieldState (constant Quitting) field)
+                            | _ -> model
+                        | None -> model
+                just model
 
         override this.Command (_, command, _, world) =
 

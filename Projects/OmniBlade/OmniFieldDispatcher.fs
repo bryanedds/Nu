@@ -1127,7 +1127,7 @@ module FieldDispatcher =
              Content.group Simulants.Field.Scene.Group.Name []
 
                 [// avatar
-                 yield Content.entity<AvatarDispatcher> Simulants.Field.Scene.Avatar.Name
+                 Content.entity<AvatarDispatcher> Simulants.Field.Scene.Avatar.Name
                     [Entity.Position == v3Zero; Entity.Elevation == Constants.Field.ForegroundElevation; Entity.Size == Constants.Gameplay.CharacterSize
                      Entity.Enabled :=
                         field.Menu.MenuState = MenuClosed &&
@@ -1142,16 +1142,16 @@ module FieldDispatcher =
                  for (index, prop) in field.Props.Pairs do // TODO: DIFF: memoize?
                  
                     // prop
-                    yield Content.entity<PropDispatcher> (scstringm index) [Entity.Prop := prop]
+                    Content.entity<PropDispatcher> (scstringm index) [Entity.Prop := prop]
 
                  // spirit orb
                  if Field.hasEncounters field && Cue.isNil field.Cue then
-                    yield Content.entity<SpiritOrbDispatcher> "SpiritOrb"
+                    Content.entity<SpiritOrbDispatcher> "SpiritOrb"
                         [Entity.Position == v3 -448.0f 48.0f 0.0f; Entity.Elevation == Constants.Field.SpiritOrbElevation; Entity.Size == v3 192.0f 192.0f 0.0f
                          Entity.SpiritOrb := { AvatarLowerCenter = field.Avatar.LowerCenter; Spirits = field.Spirits; Chests = Field.getChests field; Portals = Field.getNonWarpPortals field }]
 
                  // backdrop sprite
-                 yield Content.staticSprite "Backdrop"
+                 Content.staticSprite "Backdrop"
                     [Entity.Perimeter := field.ViewBoundsAbsolute.Box3; Entity.Elevation == Single.MinValue; Entity.Absolute == true
                      Entity.StaticImage == Assets.Default.Image9
                      Entity.Color :=
@@ -1160,7 +1160,7 @@ module FieldDispatcher =
                         | (false, _) -> Color.Black]
 
                  // transition fade sprite
-                 yield Content.staticSprite "Fade"
+                 Content.staticSprite "Fade"
                     [Entity.Perimeter := field.ViewBoundsAbsolute.Box3; Entity.Elevation == Single.MaxValue; Entity.Absolute == true
                      Entity.StaticImage == Assets.Default.Image8
                      Entity.Visible := Option.isSome field.FieldTransitionOpt
@@ -1178,7 +1178,7 @@ module FieldDispatcher =
                         | None -> Color.Zero]
 
                  // tmx map
-                 yield Content.tmxMap Simulants.Field.Scene.TileMap.Name
+                 Content.tmxMap Simulants.Field.Scene.TileMap.Name
                     [Entity.Elevation == Constants.Field.BackgroundElevation
                      Entity.TmxMap :=
                         match Map.tryFind field.FieldType Data.Value.Fields with
@@ -1202,7 +1202,7 @@ module FieldDispatcher =
                      Entity.TileLayerClearance == 10.0f]
 
                  // tmx map fade
-                 yield Content.tmxMap "TileMapFade"
+                 Content.tmxMap "TileMapFade"
                     [Entity.Elevation == Constants.Field.BackgroundElevation + 0.5f
                      Entity.Color :=
                         (let progress = 1.0f - (Constants.Field.ConnectorFadeYMax - field.Avatar.Bottom.Y) / Constants.Field.ConnectorFadeYMax
@@ -1222,12 +1222,12 @@ module FieldDispatcher =
                      Entity.TileLayerClearance == 10.0f]
 
                  // feeler
-                 yield Content.feeler Simulants.Field.Scene.Feeler.Name
+                 Content.feeler Simulants.Field.Scene.Feeler.Name
                     [Entity.Position == -Constants.Render.ResolutionF.V3 * 0.5f; Entity.Elevation == Constants.Field.FeelerElevation; Entity.Size == Constants.Render.ResolutionF.V3
                      Entity.TouchingEvent =|> fun evt -> cmd (ProcessTouchInput evt.Data)]
 
                  // menu button
-                 yield Content.button "Menu"
+                 Content.button "Menu"
                     [Entity.Position == v3 -456.0f -246.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v3 144.0f 48.0f 0.0f
                      Entity.UpImage == Assets.Gui.ButtonShortUpImage; Entity.DownImage == Assets.Gui.ButtonShortDownImage
                      Entity.Text == "Menu"
@@ -1240,7 +1240,7 @@ module FieldDispatcher =
                      Entity.ClickEvent => msg MenuTeamOpen]
 
                  // interact button
-                 yield Content.button "Interact"
+                 Content.button "Interact"
                     [Entity.Position == v3 306.0f -246.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v3 144.0f 48.0f 0.0f
                      Entity.UpImage == Assets.Gui.ButtonShortUpImage; Entity.DownImage == Assets.Gui.ButtonShortDownImage
                      Entity.Visible :=
@@ -1267,7 +1267,7 @@ module FieldDispatcher =
                  | MenuTeam menuTeam ->
 
                     // team
-                    yield Content.panel "Team"
+                    Content.panel "Team"
                         [Entity.Position == v3 -450.0f -255.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v3 900.0f 510.0f 0.0f
                          Entity.LabelImage == Assets.Gui.DialogXXLImage]
                         [yield Content.sidebar "Sidebar" (v3 24.0f 417.0f 0.0f) field (fun () -> MenuTeamOpen) (fun () -> MenuItemsOpen) (fun () -> MenuTechOpen) (fun () -> MenuOptionsOpen) (fun () -> MenuClose)
@@ -1333,7 +1333,7 @@ module FieldDispatcher =
 
                  // inventory
                  | MenuItem _ ->
-                    yield Content.panel "Inventory"
+                    Content.panel "Inventory"
                         [Entity.Position == v3 -450.0f -255.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v3 900.0f 510.0f 0.0f
                          Entity.LabelImage == Assets.Gui.DialogXXLImage
                          Entity.Enabled := Option.isNone field.Menu.MenuUseOpt]
@@ -1360,7 +1360,7 @@ module FieldDispatcher =
 
                  // tech team
                  | MenuTech _ ->
-                    yield Content.panel "TechTeam"
+                    Content.panel "TechTeam"
                         [Entity.Position == v3 -450.0f -255.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v3 900.0f 510.0f 0.0f
                          Entity.LabelImage == Assets.Gui.DialogXXLImage]
                         [yield Content.sidebar "Sidebar" (v3 24.0f 417.0f 0.0f) field (fun () -> MenuTeamOpen) (fun () -> MenuItemsOpen) (fun () -> MenuTechOpen) (fun () -> MenuOptionsOpen) (fun () -> MenuClose)
@@ -1369,7 +1369,7 @@ module FieldDispatcher =
 
                  // options
                  | MenuOptions ->
-                    yield Content.panel "Options"
+                    Content.panel "Options"
                         [Entity.Position == v3 -450.0f -255.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v3 900.0f 510.0f 0.0f
                          Entity.LabelImage == Assets.Gui.DialogXXLImage]
                         [Content.sidebar "Sidebar" (v3 24.0f 417.0f 0.0f) field (fun () -> MenuTeamOpen) (fun () -> MenuItemsOpen) (fun () -> MenuTechOpen) (fun () -> MenuOptionsOpen) (fun () -> MenuClose)
@@ -1401,7 +1401,7 @@ module FieldDispatcher =
                  // use
                  match field.Menu.MenuUseOpt with
                  | Some menuUse ->
-                    yield Content.panel "Use"
+                    Content.panel "Use"
                         [Entity.Position == v3 -450.0f -216.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation + 10.0f; Entity.Size == v3 900.0f 432.0f 0.0f
                          Entity.LabelImage == Assets.Gui.DialogXLImage]
                         [yield! Content.team (v3 160.0f 183.0f 0.0f) 3 field
@@ -1430,7 +1430,7 @@ module FieldDispatcher =
                  match field.ShopOpt with // TODO: DIFF: memoize?
                  | Some shop ->
                     let items = Content.pageItems 8 field
-                    yield Content.panel "Shop"
+                    Content.panel "Shop"
                         [Entity.Position == v3 -450.0f -255.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v3 900.0f 510.0f 0.0f
                          Entity.LabelImage == Assets.Gui.DialogXXLImage
                          Entity.Enabled == Option.isNone shop.ShopConfirmOpt]
@@ -1484,7 +1484,7 @@ module FieldDispatcher =
                  | Some shop ->
                     match shop.ShopConfirmOpt with
                     | Some shopConfirm ->
-                        yield Content.panel "Dialog"
+                        Content.panel "Dialog"
                            [Entity.Position == v3 -450.0f -128.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation + 10.0f; Entity.Size == v3 900.0f 252.0f 0.0f
                             Entity.LabelImage == Assets.Gui.DialogFatImage]
                            [Content.button "Accept"
