@@ -113,7 +113,7 @@ module Content =
 #if !DEBUG
         inline
 #endif
-        private synchronizeEntityPropertiesFast initializing (contentOld : EntityContent) (content : EntityContent) (entity : Entity) world =
+        private synchronizeEntityPropertiesFast (initializing, contentOld : EntityContent, content : EntityContent, entity : Entity, world, sizeFound : bool outref, mountOptFound : bool outref) =
         if notNull content.PropertyContentsOpt && content.PropertyContentsOpt.Count > 0 then
             let entity = if notNull (contentOld.EntityCachedOpt :> obj) then contentOld.EntityCachedOpt else entity
             content.EntityCachedOpt <- entity
@@ -123,6 +123,10 @@ module Content =
                 let propertyContent = propertyContents.[i]
                 if not propertyContent.PropertyInitializer || initializing then
                     let lens = propertyContent.PropertyLens
+                    match lens.Name with
+                    | "Size" -> sizeFound <- true
+                    | "MountOpt" -> mountOptFound <- true
+                    | _ -> ()
                     let entity = match lens.This :> obj with null -> entity | _ -> lens.This :?> Entity
                     world <- World.setEntityPropertyFast lens.Name { PropertyType = lens.Type; PropertyValue = propertyContent.PropertyValue } entity world
             content.PropertyContentsOpt <- null // OPTIMIZATION: blank out property contents to avoid GC promotion.
@@ -171,11 +175,25 @@ module Content =
         else None
 
     ///
-    let rec synchronizeEntity initializing (contentOld : EntityContent) (content : EntityContent) (origin : Simulant) (entity : Entity) world =
+    let rec synchronizeEntity initializing relating (contentOld : EntityContent) (content : EntityContent) (origin : Simulant) (entity : Entity) world =
         if contentOld <> content then
+            let mutable sizeFound = false
+            let mutable mountOptFound = false
             let world = synchronizeEventSignals contentOld content origin entity world
             let world = synchronizeEventHandlers contentOld content origin entity world
-            let world = synchronizeEntityPropertiesFast initializing contentOld content entity world
+            let world = synchronizeEntityPropertiesFast (initializing, contentOld, content, entity, world, &sizeFound, &mountOptFound)
+            let world =
+                if initializing then
+                    let world =
+                        if not sizeFound
+                        then World.setEntitySize (World.getEntityQuickSize entity world) entity world |> snd'
+                        else world
+                    let world =
+                        if not mountOptFound && relating
+                        then World.setEntityMountOpt (Some (Relation.makeParent ())) entity world |> snd'
+                        else world
+                    world
+                else world
             match tryDifferentiateChildren<Entity, EntityContent> contentOld content entity with
             | Some (entitiesAdded, entitiesRemoved, entitiesPotentiallyAltered) ->
                 let world =
@@ -185,13 +203,13 @@ module Content =
                         Seq.fold (fun world (kvp : KeyValuePair<Entity, _>) ->
                             let (entity, entityContent) = (kvp.Key, kvp.Value)
                             let entityContentOld = contentOld.EntityContentsOpt.[entity.Name]
-                            synchronizeEntity initializing entityContentOld entityContent origin entity world)
+                            synchronizeEntity initializing true entityContentOld entityContent origin entity world)
                             world entitiesPotentiallyAltered
                     else world
                 let world =
                     Seq.fold (fun world (entity : Entity, entityContent : EntityContent) ->
                         let (entity, world) = World.createEntity5 entityContent.EntityDispatcherName (Some entity.Surnames) DefaultOverlay entity.Group world
-                        synchronizeEntity true EntityContent.empty entityContent origin entity world)
+                        synchronizeEntity true true EntityContent.empty entityContent origin entity world)
                         world entitiesAdded
                 world
             | None -> world
@@ -212,13 +230,13 @@ module Content =
                         Seq.fold (fun world (kvp : KeyValuePair<Entity, _>) ->
                             let (entity, entityContent) = (kvp.Key, kvp.Value)
                             let entityContentOld = contentOld.EntityContentsOpt.[entity.Name]
-                            synchronizeEntity initializing entityContentOld entityContent origin entity world)
+                            synchronizeEntity initializing false entityContentOld entityContent origin entity world)
                             world entitiesPotentiallyAltered
                     else world
                 let world =
                     Seq.fold (fun world (entity : Entity, entityContent : EntityContent) ->
                         let (entity, world) = World.createEntity5 entityContent.EntityDispatcherName (Some entity.Surnames) DefaultOverlay entity.Group world
-                        synchronizeEntity true EntityContent.empty entityContent origin entity world)
+                        synchronizeEntity true false EntityContent.empty entityContent origin entity world)
                         world entitiesAdded
                 world
             | None -> world
