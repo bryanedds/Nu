@@ -24,7 +24,7 @@ type [<StructuralEquality; NoComparison; Struct>] TileAnimationDescriptor =
       TileAnimationDelay : int64 }
 
 /// Describes a Tiled tile map.
-type [<StructuralEquality; NoComparison>] TileMapDescriptor =
+type [<NoComparison>] TileMapDescriptor =
     { TileMap : TmxMap
       TileSizeI : Vector2i
       TileSizeF : Vector2
@@ -61,19 +61,19 @@ type [<StructuralEquality; NoComparison; CLIMutable>] Transition =
           SongOpt = None }
 
 /// Describes the behavior of the screen dissolving algorithm.
-type [<StructuralEquality; NoComparison>] DissolveDescriptor =
+type [<NoComparison>] DissolveDescriptor =
     { IncomingTime : int64
       OutgoingTime : int64
       DissolveImage : Image AssetTag }
 
 /// Describes the behavior of the screen splash algorithm.
-type [<StructuralEquality; NoComparison>] SplashDescriptor =
+type [<NoComparison>] SplashDescriptor =
     { DissolveDescriptor : DissolveDescriptor
       IdlingTime : int64
       SplashImageOpt : Image AssetTag option }
 
 /// Describes the shape of a desired overlay.
-type [<StructuralEquality; NoComparison>] OverlayNameDescriptor =
+type [<NoComparison>] OverlayNameDescriptor =
     | NoOverlay
     | RoutedOverlay
     | DefaultOverlay
@@ -97,7 +97,7 @@ type [<AttributeUsage (AttributeTargets.Method); AllowNullLiteral>]
     new () = FunctionBindingAttribute ""
 
 /// Configuration parameters for Nu.
-type [<StructuralEquality; NoComparison>] NuConfig =
+type [<NoComparison>] NuConfig =
     { RunSynchronously : bool
       StandAlone : bool }
 

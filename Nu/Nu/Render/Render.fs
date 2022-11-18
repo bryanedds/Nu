@@ -24,7 +24,7 @@ type CubeMap = private { __ : unit }
 type StaticModel = private { __ : unit }
 
 /// An asset that is used for rendering.
-type [<StructuralEquality; NoComparison>] RenderAsset =
+type [<NoComparison>] RenderAsset =
     | TextureAsset of string * OpenGL.Texture.TextureMetadata * uint
     | FontAsset of string * int * nativeint
     | CubeMapAsset of OpenGL.CubeMap.CubeMapMemoKey * uint * (uint * uint) option ref
@@ -65,7 +65,7 @@ type [<StructuralEquality; NoComparison; Struct>] JustificationV =
     ("Justified Unjustified", "", "", "", "",
      Constants.PrettyPrinter.DefaultThresholdMin,
      Constants.PrettyPrinter.DefaultThresholdMax)>]
-type [<StructuralEquality; NoComparison>] Justification =
+type [<NoComparison>] Justification =
     | Justified of JustificationH * JustificationV
     | Unjustified of bool
 
@@ -141,7 +141,7 @@ type [<NoEquality; NoComparison>] ParticlesDescriptor =
 and Renderer = interface end
 
 /// Configures a renderer.
-type [<StructuralEquality; NoComparison>] RendererConfig =
+type [<NoComparison>] RendererConfig =
     { ShouldInitializeContext : bool
       ShouldBeginFrame : bool
       ShouldEndFrame : bool }

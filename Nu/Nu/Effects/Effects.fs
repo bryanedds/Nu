@@ -36,7 +36,7 @@ module Effects =
         | Ratio
         | Set
 
-    type [<StructuralEquality; NoComparison>] Slice =
+    type [<NoComparison>] Slice =
         { Position : Vector3
           Scale : Vector3
           Offset : Vector3
@@ -55,55 +55,55 @@ module Effects =
     type KeyFrame =
         abstract KeyFrameLength : int64
 
-    type [<StructuralEquality; NoComparison>] LogicKeyFrame =
+    type [<NoComparison>] LogicKeyFrame =
         { LogicValue : bool
           LogicLength : int64 }
         interface KeyFrame with
             member this.KeyFrameLength = this.LogicLength
 
-    type [<StructuralEquality; NoComparison>] TweenKeyFrame =
+    type [<NoComparison>] TweenKeyFrame =
         { TweenValue : single
           TweenLength : int64 }
         interface KeyFrame with
             member this.KeyFrameLength = this.TweenLength
 
-    type [<StructuralEquality; NoComparison>] Tween2KeyFrame =
+    type [<NoComparison>] Tween2KeyFrame =
         { TweenValue : Vector2
           TweenLength : int64 }
         interface KeyFrame with
             member this.KeyFrameLength = this.TweenLength
 
-    type [<StructuralEquality; NoComparison>] Tween3KeyFrame =
+    type [<NoComparison>] Tween3KeyFrame =
         { TweenValue : Vector3
           TweenLength : int64 }
         interface KeyFrame with
             member this.KeyFrameLength = this.TweenLength
 
-    type [<StructuralEquality; NoComparison>] Tween4KeyFrame =
+    type [<NoComparison>] Tween4KeyFrame =
         { TweenValue : Vector4
           TweenLength : int64 }
         interface KeyFrame with
             member this.KeyFrameLength = this.TweenLength
 
-    type [<StructuralEquality; NoComparison>] TweenBox2KeyFrame =
+    type [<NoComparison>] TweenBox2KeyFrame =
         { TweenValue : Box2
           TweenLength : int64 }
         interface KeyFrame with
             member this.KeyFrameLength = this.TweenLength
 
-    type [<StructuralEquality; NoComparison>] TweenCKeyFrame =
+    type [<NoComparison>] TweenCKeyFrame =
         { TweenValue : Color
           TweenLength : int64 }
         interface KeyFrame with
             member this.KeyFrameLength = this.TweenLength
 
-    type [<StructuralEquality; NoComparison>] TweenIKeyFrame =
+    type [<NoComparison>] TweenIKeyFrame =
         { TweenValue : int
           TweenLength : int64 }
         interface KeyFrame with
             member this.KeyFrameLength = this.TweenLength
 
-    type [<StructuralEquality; NoComparison>] Tween2IKeyFrame =
+    type [<NoComparison>] Tween2IKeyFrame =
         { TweenValue : Vector2i
           TweenLength : int64 }
         interface KeyFrame with
@@ -124,11 +124,11 @@ module Effects =
     type [<StructuralEquality; StructuralComparison>] Shift =
         Shift of single
 
-    type [<StructuralEquality; NoComparison>] Resource =
+    type [<NoComparison>] Resource =
         | Resource of string * string
         | Expand of string * Argument array
 
-    and [<StructuralEquality; NoComparison>] Aspect =
+    and [<NoComparison>] Aspect =
         | Enabled of bool
         | PositionAbsolute of Vector3
         | PositionRelative of Vector3
@@ -161,7 +161,7 @@ module Effects =
         | Expand of string * Argument array
         | Aspects of Aspect array
 
-    and [<StructuralEquality; NoComparison>] Content =
+    and [<NoComparison>] Content =
         | Nil // first to make default value when missing
         | StaticSprite of Resource * Aspect array * Content
         | AnimatedSprite of Resource * Vector2i * int * int * int64 * Playback * Aspect array * Content
@@ -179,7 +179,7 @@ module Effects =
     and Argument =
         SymbolicCompression<Resource, SymbolicCompression<Aspect, Content>>
 
-    type [<StructuralEquality; NoComparison>] Definition =
+    type [<NoComparison>] Definition =
         { DefinitionParams : string array
           DefinitionBody : SymbolicCompression<Resource, SymbolicCompression<Aspect, Content>> }
 
@@ -203,7 +203,7 @@ module Effects =
             "", "", "", "",
             Constants.PrettyPrinter.DefaultThresholdMin,
             Constants.PrettyPrinter.CompositionalThresholdMax)>]
-type [<StructuralEquality; NoComparison>] Effect =
+type [<NoComparison>] Effect =
     { EffectName : string
       LifeTimeOpt : int64 option
       Definitions : Effects.Definitions
