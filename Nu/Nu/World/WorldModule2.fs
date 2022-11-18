@@ -672,30 +672,30 @@ module WorldModule2 =
                 | _ -> world
             (World.getLiveness world, world)
 
-        static member private processIntegrationMessage2d integrationMessage world =
+        static member private processIntegrationMessage integrationMessage world =
             match World.getLiveness world with
             | Live ->
                 match integrationMessage with
                 | BodyCollisionMessage bodyCollisionMessage ->
                     let entity = bodyCollisionMessage.BodyShapeSource.Simulant :?> Entity
                     if entity.Exists world then
-                        let collisionAddress = Events.BodyCollision --> entity.EntityAddress
                         let collisionData =
                             { BodyCollider = BodyShapeSource.fromInternal bodyCollisionMessage.BodyShapeSource
                               BodyCollidee = BodyShapeSource.fromInternal bodyCollisionMessage.BodyShapeSource2
                               Normal = bodyCollisionMessage.Normal
                               Speed = bodyCollisionMessage.Speed }
-                        let eventTrace = EventTrace.debug "World" "handleIntegrationMessage" "" EventTrace.empty
+                        let collisionAddress = Events.BodyCollision --> entity.EntityAddress
+                        let eventTrace = EventTrace.debug "World" "processIntegrationMessage" "" EventTrace.empty
                         World.publish collisionData collisionAddress eventTrace Simulants.Game world
                     else world
                 | BodySeparationMessage bodySeparationMessage ->
                     let entity = bodySeparationMessage.BodyShapeSource.Simulant :?> Entity
                     if entity.Exists world then
-                        let separationAddress = Events.BodySeparation --> entity.EntityAddress
                         let separationData =
                             { BodySeparator = BodyShapeSource.fromInternal bodySeparationMessage.BodyShapeSource
-                              BodySeparatee = BodyShapeSource.fromInternal bodySeparationMessage.BodyShapeSource2  }
-                        let eventTrace = EventTrace.debug "World" "handleIntegrationMessage" "" EventTrace.empty
+                              BodySeparatee = BodyShapeSource.fromInternal bodySeparationMessage.BodyShapeSource2 }
+                        let separationAddress = Events.BodySeparation --> entity.EntityAddress
+                        let eventTrace = EventTrace.debug "World" "processIntegrationMessage" "" EventTrace.empty
                         World.publish separationData separationAddress eventTrace Simulants.Game world
                     else world
                 | BodyTransformMessage bodyTransformMessage ->
@@ -706,9 +706,19 @@ module WorldModule2 =
                     let rotation = bodyTransformMessage.Rotation
                     let linearVelocity = bodyTransformMessage.LinearVelocity
                     let angularVelocity = bodyTransformMessage.AngularVelocity
-                    if bodySource.BodyId = 0UL
-                    then entity.ApplyPhysics position rotation linearVelocity angularVelocity world
-                    else world
+                    let world =
+                        if bodySource.BodyId = 0UL
+                        then entity.ApplyPhysics position rotation linearVelocity angularVelocity world
+                        else world
+                    // TODO: don't publish if PublishBodyTransformEvent is false.
+                    let transformData =
+                        { BodyPosition = bodyTransformMessage.Position
+                          BodyRotation = bodyTransformMessage.Rotation
+                          BodyLinearVelocity = bodyTransformMessage.LinearVelocity
+                          BodyAngularVelocity = bodyTransformMessage.AngularVelocity }
+                    let transformAddress = Events.BodyTransform --> entity.EntityAddress
+                    let eventTrace = EventTrace.debug "World" "processIntegrationMessage" "" EventTrace.empty
+                    World.publish transformData transformAddress eventTrace Simulants.Game world
             | Dead -> world
 
         static member private getEntities2dBy getElementsFromQuadtree world =
@@ -966,7 +976,7 @@ module WorldModule2 =
             let (physicsMessages, physicsEngine) = physicsEngine.PopMessages ()
             let world = World.setPhysicsEngine2d physicsEngine world
             let integrationMessages = physicsEngine.Integrate (World.getUpdateRate world) physicsMessages
-            let world = Seq.fold (flip World.processIntegrationMessage2d) world integrationMessages
+            let world = Seq.fold (flip World.processIntegrationMessage) world integrationMessages
             world
 
         static member private cleanUp world =
