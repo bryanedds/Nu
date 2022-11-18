@@ -15,6 +15,8 @@ module Avatar =
               Perimeter_ : Box3
               CharacterAnimationState_ : CharacterAnimationState
               CelSize_ : Vector2
+              CoreShapeId_ : uint64
+              SensorShapeId_ : uint64
               CollidedPropIds_ : int list
               SeparatedPropIds_ : int list
               IntersectedPropIds_ : int list }
@@ -45,6 +47,8 @@ module Avatar =
         member this.CelSize = this.CelSize_
 
         (* Local Properties *)
+        member this.CoreShapeId = this.CoreShapeId_
+        member this.SensorShapeId = this.SensorShapeId_
         member this.CollidedPropIds = this.CollidedPropIds_
         member this.SeparatedPropIds = this.SeparatedPropIds_
         member this.IntersectedPropIds = this.IntersectedPropIds_
@@ -120,25 +124,29 @@ module Avatar =
           Perimeter_ = bounds
           CharacterAnimationState_ = characterAnimationState
           CelSize_ = Constants.Gameplay.CharacterCelSize
+          CoreShapeId_ = Gen.id64
+          SensorShapeId_ = Gen.id64
           CollidedPropIds_ = []
           SeparatedPropIds_ = []
           IntersectedPropIds_ = [] }
 
-    let empty =
+    let empty () =
         let bounds = box3 v3Zero Constants.Gameplay.CharacterSize
         { PerimeterOriginal_ = bounds
           Perimeter_ = bounds
           CharacterAnimationState_ = CharacterAnimationState.empty
           CelSize_ = Constants.Gameplay.CharacterCelSize
+          CoreShapeId_ = Gen.id64
+          SensorShapeId_ = Gen.id64
           CollidedPropIds_ = []
           SeparatedPropIds_ = []
           IntersectedPropIds_ = [] }
 
-    let initial =
+    let initial () =
         let position = v3 2064.0f 48.0f 0.0f - Constants.Gameplay.CharacterSize.WithY 0.0f * 0.5f
         let bounds = box3 position Constants.Gameplay.CharacterSize
         let characterAnimationState = CharacterAnimationState.initial
-        { empty with
+        { empty () with
             PerimeterOriginal_ = bounds
             Perimeter_ = bounds
             CharacterAnimationState_ = characterAnimationState }

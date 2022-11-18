@@ -386,7 +386,7 @@ module Field =
           FieldState_ = Quit
           SaveSlot_ = Slot1
           OmniSeedState_ = OmniSeedState.make ()
-          Avatar_ = Avatar.empty
+          Avatar_ = Avatar.empty ()
           SpiritActivity_ = 0.0f
           Spirits_ = [||]
           Team_ = Map.empty
@@ -406,10 +406,10 @@ module Field =
           ViewBoundsAbsolute_ = World.getViewBounds2dAbsolute world }
 
     let initial saveSlot randSeedState world =
-        make TombOuter saveSlot randSeedState Avatar.initial (Map.singleton 0 (Teammate.make 3 0 Jinn)) Advents.initial Inventory.initial world
+        make TombOuter saveSlot randSeedState (Avatar.initial ()) (Map.singleton 0 (Teammate.make 3 0 Jinn)) Advents.initial Inventory.initial world
 
     let debug world =
-        make DebugField Slot1 Rand.DefaultSeedState Avatar.empty (Map.singleton 0 (Teammate.make 3 0 Jinn)) Advents.initial Inventory.initial world
+        make DebugField Slot1 Rand.DefaultSeedState (Avatar.empty ()) (Map.singleton 0 (Teammate.make 3 0 Jinn)) Advents.initial Inventory.initial world
 
     let debugBattle world =
         let field = debug world

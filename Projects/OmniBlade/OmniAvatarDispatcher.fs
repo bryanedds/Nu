@@ -32,17 +32,13 @@ module AvatarDispatcher =
         inherit EntityDispatcher2d<Avatar, AvatarMessage, AvatarCommand>
             (false, true, Avatar.make (box3 v3Zero Constants.Gameplay.CharacterSize) Assets.Field.JinnAnimationSheet Downward)
 
-        // HACK: making ids static for hot-reloading.
-        static let CoreShapeId = 0UL <<< 56
-        static let SensorShapeId = 1UL <<< 56
-
         static let getSpriteInset (entity : Entity) world =
             let avatar = entity.GetAvatar world
             let inset = Avatar.getAnimationInset (World.getUpdateTime world) avatar
             inset
 
-        static let isIntersectedProp collider collidee world =
-            if (collider.BodyShapeId = CoreShapeId &&
+        static let isIntersectedProp collider collidee (avatar : Avatar) world =
+            if (collider.BodyShapeId = avatar.CoreShapeId &&
                 collidee.Entity.Exists world &&
                 collidee.Entity.Is<PropDispatcher> world &&
                 match (collidee.Entity.GetProp world).PropData with
@@ -50,7 +46,7 @@ module AvatarDispatcher =
                 | Sensor _ -> true
                 | _ -> false) then
                 true
-            elif (collider.BodyShapeId = SensorShapeId &&
+            elif (collider.BodyShapeId = avatar.SensorShapeId &&
                   collidee.Entity.Exists world &&
                   collidee.Entity.Is<PropDispatcher> world &&
                   match (collidee.Entity.GetProp world).PropData with
@@ -66,13 +62,13 @@ module AvatarDispatcher =
         override this.Initialize (avatar, entity) =
             let bodyShape =
                 BodyShapes
-                    [BodySphere { Radius = 0.160f; Center = v3 -0.016f -0.3667f 0.0f; PropertiesOpt = Some { BodyShapeProperties.empty with BodyShapeId = CoreShapeId }}
-                     BodySphere { Radius = 0.320f; Center = v3 -0.016f -0.3667f 0.0f; PropertiesOpt = Some { BodyShapeProperties.empty with BodyShapeId = SensorShapeId; SensorOpt = Some true }}]
+                    [BodySphere { Radius = 0.160f; Center = v3 -0.016f -0.3667f 0.0f; PropertiesOpt = Some { BodyShapeProperties.empty with BodyShapeId = avatar.CoreShapeId }}
+                     BodySphere { Radius = 0.320f; Center = v3 -0.016f -0.3667f 0.0f; PropertiesOpt = Some { BodyShapeProperties.empty with BodyShapeId = avatar.SensorShapeId; SensorOpt = Some true }}]
             [Entity.Perimeter := avatar.Perimeter
              Entity.Presence == Omnipresent
              Entity.FixedRotation == true
              Entity.GravityScale == 0.0f
-             Entity.BodyShape == bodyShape
+             Entity.BodyShape := bodyShape
              Entity.UpdateEvent => msg Update
              Entity.BodyCollisionEvent =|> fun evt -> msg (BodyCollision evt.Data)
              Entity.BodySeparationEvent =|> fun evt -> msg (BodySeparation evt.Data)
@@ -122,7 +118,7 @@ module AvatarDispatcher =
 
                 // add collided body shape
                 let avatar =
-                    if isIntersectedProp collision.BodyCollider collision.BodyCollidee world then
+                    if isIntersectedProp collision.BodyCollider collision.BodyCollidee avatar world then
                         let avatar = Avatar.updateCollidedPropIds (List.cons (collision.BodyCollidee.Entity.GetProp world).PropId) avatar
                         let avatar = Avatar.updateIntersectedPropIds (List.cons (collision.BodyCollidee.Entity.GetProp world).PropId) avatar
                         avatar
@@ -133,7 +129,7 @@ module AvatarDispatcher =
 
                 // add separated body shape
                 let avatar =
-                    if isIntersectedProp separation.BodySeparator separation.BodySeparatee world then
+                    if isIntersectedProp separation.BodySeparator separation.BodySeparatee avatar world then
                         let avatar = Avatar.updateSeparatedPropIds (List.cons (separation.BodySeparatee.Entity.GetProp world).PropId) avatar
                         let avatar = Avatar.updateIntersectedPropIds (List.remove ((=) (separation.BodySeparatee.Entity.GetProp world).PropId)) avatar
                         avatar
