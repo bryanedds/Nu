@@ -12,7 +12,7 @@ open Nu.Declarative
 [<AutoOpen>]
 module FieldDispatcher =
 
-    type [<NoEquality; NoComparison>] FieldMessage =
+    type FieldMessage =
         | Update
         | UpdateFieldTransition
         | MenuTeamOpen
@@ -42,7 +42,7 @@ module FieldDispatcher =
         | TryBattle of BattleType * Advent Set
         | Interact
 
-    type [<NoEquality; NoComparison>] FieldCommand =
+    type [<StructuralEquality; NoComparison>] FieldCommand =
         | ProcessKeyInput
         | ProcessTouchInput of Vector2
         | UpdateEye

@@ -17,7 +17,7 @@ module BattleDispatcher =
         | Center of Vector3
         | Bottom of Vector3
 
-    type [<ReferenceEquality; NoComparison>] Hop =
+    type [<StructuralEquality; NoComparison>] Hop =
         { HopStart : Vector3
           HopStop : Vector3 }
 
@@ -54,7 +54,7 @@ module BattleDispatcher =
         | DestroyCharacter of CharacterIndex
         | Nop
 
-    type [<NoEquality; NoComparison>] BattleCommand =
+    type [<StructuralEquality; NoComparison>] BattleCommand =
         | UpdateEye
         | DisplayCancel of CharacterIndex
         | DisplayHitPointsChange of CharacterIndex * int
