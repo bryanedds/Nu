@@ -22,7 +22,7 @@ module SkyBox =
           SkyBoxVao : uint }
 
     /// Describes a renderable sky box surface.
-    type [<NoEquality; NoComparison; Struct>] SkyBoxSurface =
+    type [<StructuralEquality; NoComparison; Struct>] SkyBoxSurface =
         { CubeMap : uint
           SkyBoxGeometry : SkyBoxGeometry }
 

@@ -50,7 +50,7 @@ module WorldTypes =
           Destination : Screen }
 
     /// Describes the behavior of a screen.
-    and [<NoEquality; NoComparison>] ScreenBehavior =
+    and [<StructuralEquality; NoComparison>] ScreenBehavior =
         | Vanilla
         | Dissolve of DissolveDescriptor * SongDescriptor option
         | Splash of DissolveDescriptor * SplashDescriptor * SongDescriptor option * Screen
@@ -378,7 +378,7 @@ module WorldTypes =
         interface LateBindings
 
     /// Describes a property to the Elmish content system.
-    and [<NoEquality; NoComparison>] PropertyContent =
+    and [<ReferenceEquality; NoComparison>] PropertyContent =
         { PropertyInitializer : bool
           PropertyLens : World Lens
           PropertyValue : obj }
@@ -388,7 +388,7 @@ module WorldTypes =
               PropertyValue = value }
 
     /// Describes an initializer to the Elmish content system.
-    and [<NoEquality; NoComparison>] InitializerContent =
+    and [<ReferenceEquality; NoComparison>] InitializerContent =
         | PropertyContent of PropertyContent
         | EventSignalContent of obj Address * obj
         | EventHandlerContent of PartialEquatable<obj Address, Event -> obj>
@@ -484,7 +484,7 @@ module WorldTypes =
             end
 
     /// Hosts the ongoing state of a game.
-    and [<NoEquality; NoComparison; CLIMutable>] GameState =
+    and [<ReferenceEquality; NoComparison; CLIMutable>] GameState =
         { Dispatcher : GameDispatcher
           Xtension : Xtension
           Model : DesignerProperty
@@ -563,7 +563,7 @@ module WorldTypes =
             member this.GetXtension () = this.Xtension
 
     /// Hosts the ongoing state of a screen.
-    and [<NoEquality; NoComparison; CLIMutable>] ScreenState =
+    and [<ReferenceEquality; NoComparison; CLIMutable>] ScreenState =
         { Dispatcher : ScreenDispatcher
           Xtension : Xtension
           Model : DesignerProperty
@@ -634,7 +634,7 @@ module WorldTypes =
             member this.GetXtension () = this.Xtension
 
     /// Hosts the ongoing state of a group.
-    and [<NoEquality; NoComparison; CLIMutable>] GroupState =
+    and [<ReferenceEquality; NoComparison; CLIMutable>] GroupState =
         { Dispatcher : GroupDispatcher
           Xtension : Xtension
           Model : DesignerProperty
@@ -696,7 +696,7 @@ module WorldTypes =
 
     /// Hosts the ongoing state of an entity.
     /// OPTIMIZATION: ScriptFrameOpt is instantiated only when needed.
-    and [<NoEquality; NoComparison; CLIMutable>] EntityState =
+    and [<ReferenceEquality; NoComparison; CLIMutable>] EntityState =
         { mutable Transform : Transform
           Dispatcher : EntityDispatcher
           mutable Facets : Facet array

@@ -8,16 +8,16 @@ open Prime
 open Nu
 
 /// A window for rendering in SDL OpenGL.
-type [<NoEquality; NoComparison>] SglWindow =
+type [<ReferenceEquality; NoComparison>] SglWindow =
     { SglWindow : nativeint }
 
 /// A window for rendering in Windows Forms.
-type [<NoEquality; NoComparison>] WfglWindow =
+type [<ReferenceEquality; NoComparison>] WfglWindow =
     { WfglSwapWindow : unit -> unit
       WfglWindow : nativeint }
 
 /// A window for rendering.
-type [<NoEquality; NoComparison>] Window =
+type [<ReferenceEquality; NoComparison>] Window =
     | SglWindow of SglWindow
     | WfglWindow of WfglWindow
 
@@ -36,12 +36,12 @@ type [<StructuralEquality; NoComparison>] SdlWindowConfig =
           WindowFlags = SDL.SDL_WindowFlags.SDL_WINDOW_SHOWN ||| SDL.SDL_WindowFlags.SDL_WINDOW_OPENGL }
 
 /// Describes the view that SDL will use to render.
-type [<NoEquality; NoComparison>] SdlViewConfig =
+type [<ReferenceEquality; NoComparison>] SdlViewConfig =
     | NewWindow of SdlWindowConfig
     | ExistingWindow of WfglWindow
 
 /// Describes the general configuration of SDL.
-type [<NoEquality; NoComparison>] SdlConfig =
+type [<ReferenceEquality; NoComparison>] SdlConfig =
     { ViewConfig : SdlViewConfig
       ViewW : int
       ViewH : int

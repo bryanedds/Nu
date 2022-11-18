@@ -61,13 +61,13 @@ type [<StructuralEquality; NoComparison; CLIMutable>] Transition =
           SongOpt = None }
 
 /// Describes the behavior of the screen dissolving algorithm.
-type [<NoEquality; NoComparison>] DissolveDescriptor =
+type [<StructuralEquality; NoComparison>] DissolveDescriptor =
     { IncomingTime : int64
       OutgoingTime : int64
       DissolveImage : Image AssetTag }
 
 /// Describes the behavior of the screen splash algorithm.
-type [<NoEquality; NoComparison>] SplashDescriptor =
+type [<StructuralEquality; NoComparison>] SplashDescriptor =
     { DissolveDescriptor : DissolveDescriptor
       IdlingTime : int64
       SplashImageOpt : Image AssetTag option }
@@ -80,7 +80,7 @@ type [<StructuralEquality; NoComparison>] OverlayNameDescriptor =
     | ExplicitOverlay of string
 
 /// A tasklet to be completed at the scheduled update time.
-type [<NoEquality; NoComparison>] 'w Tasklet =
+type [<ReferenceEquality; NoComparison>] 'w Tasklet =
     { ScheduledTime : int64
       ScheduledOp : 'w -> 'w }
 
@@ -97,7 +97,7 @@ type [<AttributeUsage (AttributeTargets.Method); AllowNullLiteral>]
     new () = FunctionBindingAttribute ""
 
 /// Configuration parameters for Nu.
-type [<NoEquality; NoComparison>] NuConfig =
+type [<StructuralEquality; NoComparison>] NuConfig =
     { RunSynchronously : bool
       StandAlone : bool }
 
@@ -113,7 +113,7 @@ type [<NoEquality; NoComparison>] NuConfig =
           StandAlone = true }
 
 /// Configuration parameters for the world.
-type [<NoEquality; NoComparison>] WorldConfig =
+type [<ReferenceEquality; NoComparison>] WorldConfig =
     { Imperative : bool
       UpdateRate : int64
       ModeOpt : string option

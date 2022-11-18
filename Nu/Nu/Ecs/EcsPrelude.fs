@@ -26,7 +26,7 @@ type Component<'c when 'c : struct and 'c :> 'c Component> =
         end
 
 /// The component that holds an entity's id.
-type [<NoEquality; NoComparison; Struct>] EntityId =
+type [<StructuralEquality; NoComparison; Struct>] EntityId =
     { mutable Active : bool
       mutable EntityId : uint64 }
     interface EntityId Component with
@@ -273,6 +273,7 @@ and [<StructuralEquality; NoComparison>] Term =
         else false
 
 /// Exposes a Construct-Inspect-Compare mini-language for subqueries.
+/// NOTE: Is no eq and no comp because I didn't feel like building a hash function. Could be tho.
 and [<NoEquality; NoComparison>] Subquery =
     | V3Ctor of Subquery * Subquery * Subquery
     | Box3Ctor of Subquery * Subquery

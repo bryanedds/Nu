@@ -525,7 +525,7 @@ type CharacterType =
         | Ally ty -> string ty
         | Enemy ty -> string ty
 
-type [<NoEquality; NoComparison>] SpiritType =
+type [<StructuralEquality; NoComparison>] SpiritType =
     | WeakSpirit
     | NormalSpirit
     | StrongSpirit
@@ -536,7 +536,7 @@ type [<NoEquality; NoComparison>] SpiritType =
         | NormalSpirit -> Color (byte 255, byte 191, byte 191, byte 127)
         | StrongSpirit -> Color (byte 255, byte 127, byte 127, byte 127)
 
-type [<NoEquality; NoComparison>] CueTarget =
+type [<StructuralEquality; NoComparison>] CueTarget =
     | AvatarTarget // (field only)
     | CharacterTarget of CharacterType // (field only)
     | NpcTarget of NpcType // (field only)
@@ -544,19 +544,19 @@ type [<NoEquality; NoComparison>] CueTarget =
     | CharacterIndexTarget of CharacterIndex // (battle only)
     | SpriteTarget of string
 
-type [<NoEquality; NoComparison>] CuePredicate =
+type [<StructuralEquality; NoComparison>] CuePredicate =
     | Gold of int
     | Item of ItemType
     | Items of ItemType list
     | Advent of Advent
     | Advents of Advent Set
 
-type [<NoEquality; NoComparison>] CueWait =
+type [<StructuralEquality; NoComparison>] CueWait =
     | Wait
     | Timed of int64
     | NoWait
 
-type [<NoEquality; NoComparison>] MoveType =
+type [<StructuralEquality; NoComparison>] MoveType =
     | Walk
     | Run
     | Mosey
@@ -586,7 +586,7 @@ type [<NoEquality; NoComparison>] MoveType =
             "", "", "", "",
             Constants.PrettyPrinter.DefaultThresholdMin,
             Constants.PrettyPrinter.DetailedThresholdMax)>]
-type [<NoEquality; NoComparison>] Cue =
+type [<StructuralEquality; NoComparison>] Cue =
     | Nil
     | PlaySound of single * Sound AssetTag
     | PlaySong of int * int * single * double * Song AssetTag
@@ -654,7 +654,7 @@ type [<NoEquality; NoComparison>] Cue =
 type CueDefinitions =
     Map<string, Cue>
 
-type [<NoEquality; NoComparison>] Branch =
+type [<StructuralEquality; NoComparison>] Branch =
     { Cue : Cue
       Requirements : Advent Set }
 
@@ -689,7 +689,7 @@ module OmniSeedState =
 
 type OmniSeedState = OmniSeedState.OmniSeedState
 
-type [<NoEquality; NoComparison>] WeaponData =
+type [<StructuralEquality; NoComparison>] WeaponData =
     { WeaponType : WeaponType // key
       WeaponSubtype : WeaponSubtype
       PowerBase : int
@@ -697,7 +697,7 @@ type [<NoEquality; NoComparison>] WeaponData =
       Cost : int
       Description : string }
 
-type [<NoEquality; NoComparison>] ArmorData =
+type [<StructuralEquality; NoComparison>] ArmorData =
     { ArmorType : ArmorType // key
       ArmorSubtype : ArmorSubtype
       EnduranceBase : int
@@ -707,7 +707,7 @@ type [<NoEquality; NoComparison>] ArmorData =
     member this.EnduranceBaseDisplay = this.EnduranceBase / Constants.Gameplay.ArmorStatBaseDisplayDivisor
     member this.MindBaseDisplay = this.MindBase / Constants.Gameplay.ArmorStatBaseDisplayDivisor
 
-type [<NoEquality; NoComparison>] AccessoryData =
+type [<StructuralEquality; NoComparison>] AccessoryData =
     { AccessoryType : AccessoryType // key
       ShieldBase : int
       CounterBase : int
@@ -716,7 +716,7 @@ type [<NoEquality; NoComparison>] AccessoryData =
       Cost : int
       Description : string }
 
-type [<NoEquality; NoComparison>] ConsumableData =
+type [<StructuralEquality; NoComparison>] ConsumableData =
     { ConsumableType : ConsumableType // key
       Scalar : single
       Curative : bool
@@ -728,7 +728,7 @@ type [<NoEquality; NoComparison>] ConsumableData =
       Cost : int
       Description : string }
 
-type [<NoEquality; NoComparison>] TechData =
+type [<StructuralEquality; NoComparison>] TechData =
     { TechType : TechType // key
       TechCost : int
       EffectType : EffectType
@@ -746,7 +746,7 @@ type [<NoEquality; NoComparison>] TechData =
     member this.AimType =
         TargetType.getAimType this.TargetType
 
-type [<NoEquality; NoComparison>] ArchetypeData =
+type [<StructuralEquality; NoComparison>] ArchetypeData =
     { ArchetypeType : ArchetypeType // key
       Stamina : single // hit points scalar
       Strength : single // power scalar
@@ -765,7 +765,7 @@ type [<NoEquality; NoComparison>] ArchetypeData =
       Stature : StatureType
       Description : string }
 
-type [<NoEquality; NoComparison>] TechAnimationData =
+type [<StructuralEquality; NoComparison>] TechAnimationData =
     { TechType : TechType // key
       TechStart : int64
       TechingStart : int64
@@ -774,24 +774,24 @@ type [<NoEquality; NoComparison>] TechAnimationData =
       TechingStop : int64
       TechStop : int64 }
 
-type [<NoEquality; NoComparison>] KeyItemData =
+type [<StructuralEquality; NoComparison>] KeyItemData =
     { KeyItemData : unit }
 
-type [<NoEquality; NoComparison>] DoorData =
+type [<StructuralEquality; NoComparison>] DoorData =
     { DoorType : DoorType // key
       DoorKeyOpt : string option
       OpenImage : Image AssetTag
       ClosedImage : Image AssetTag }
 
-type [<NoEquality; NoComparison>] ShopData =
+type [<StructuralEquality; NoComparison>] ShopData =
     { ShopType : ShopType // key
       ShopItems : ItemType list }
 
-type [<NoEquality; NoComparison>] EnemyDescriptor =
+type [<StructuralEquality; NoComparison>] EnemyDescriptor =
     { EnemyType : EnemyType
       EnemyPosition : Vector3 }
 
-type [<NoEquality; NoComparison>] BattleData =
+type [<StructuralEquality; NoComparison>] BattleData =
     { BattleType : BattleType // key
       BattleAllyPositions : Vector3 list
       BattleEnemies : EnemyType list
@@ -800,11 +800,11 @@ type [<NoEquality; NoComparison>] BattleData =
       BattleTileIndexOffsetRange : int * int
       BattleSongOpt : Song AssetTag option }
 
-type [<NoEquality; NoComparison>] EncounterData =
+type [<StructuralEquality; NoComparison>] EncounterData =
     { EncounterType : EncounterType // key
       BattleTypes : BattleType list }
 
-type [<NoEquality; NoComparison>] CharacterData =
+type [<StructuralEquality; NoComparison>] CharacterData =
     { CharacterType : CharacterType // key
       ArchetypeType : ArchetypeType
       LevelBase : int
@@ -819,7 +819,7 @@ type [<NoEquality; NoComparison>] CharacterData =
       ExpScalar : single
       Description : string }
 
-type [<NoEquality; NoComparison>] CharacterAnimationData =
+type [<StructuralEquality; NoComparison>] CharacterAnimationData =
     { CharacterAnimationType : CharacterAnimationType // key
       AnimationType : AnimationType
       LengthOpt : int64 option
@@ -844,18 +844,18 @@ type [<ReferenceEquality; NoComparison>] PropData =
     | ChestSpawn
     | EmptyProp
 
-type [<NoEquality; NoComparison>] PropDescriptor =
+type [<StructuralEquality; NoComparison>] PropDescriptor =
     { PropPerimeter : Box3
       PropElevation : single
       PropData : PropData
       PropId : int }
 
-type [<NoEquality; NoComparison>] FieldTileMap =
+type [<StructuralEquality; NoComparison>] FieldTileMap =
     | FieldStatic of TileMap AssetTag
     | FieldConnector of TileMap AssetTag * TileMap AssetTag
     | FieldRandom of int * single * OriginRand * int * string
 
-type [<NoEquality; NoComparison>] FieldData =
+type [<StructuralEquality; NoComparison>] FieldData =
     { FieldType : FieldType // key
       FieldTileMap : FieldTileMap
       FieldTileIndexOffset : int
@@ -1022,7 +1022,7 @@ module FieldData =
 [<RequireQualifiedAccess>]
 module Data =
 
-    type [<NoEquality; NoComparison>] OmniData =
+    type [<ReferenceEquality; NoComparison>] OmniData =
         { Weapons : Map<WeaponType, WeaponData>
           Armors : Map<ArmorType, ArmorData>
           Accessories : Map<AccessoryType, AccessoryData>

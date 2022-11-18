@@ -24,7 +24,7 @@ type CubeMap = private { __ : unit }
 type StaticModel = private { __ : unit }
 
 /// An asset that is used for rendering.
-type [<NoEquality; NoComparison>] RenderAsset =
+type [<StructuralEquality; NoComparison>] RenderAsset =
     | TextureAsset of string * OpenGL.Texture.TextureMetadata * uint
     | FontAsset of string * int * nativeint
     | CubeMapAsset of OpenGL.CubeMap.CubeMapMemoKey * uint * (uint * uint) option ref

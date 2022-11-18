@@ -7,26 +7,26 @@ open Nu
 open Nu.Declarative
 open Nu.Ecs
 
-type [<NoEquality; NoComparison; Struct>] StaticSpriteComponent =
+type [<StructuralEquality; NoComparison; Struct>] StaticSpriteComponent =
     { mutable Active : bool
       mutable Entity : Entity
       mutable Sprite : Image AssetTag }
     interface StaticSpriteComponent Component with
         member this.Active with get () = this.Active and set value = this.Active <- value
 
-type [<NoEquality; NoComparison; Struct>] Position =
+type [<StructuralEquality; NoComparison; Struct>] Position =
     { mutable Active : bool
       mutable Position : Vector2 }
     interface Position Component with
         member this.Active with get () = this.Active and set value = this.Active <- value
 
-type [<NoEquality; NoComparison; Struct>] Velocity =
+type [<StructuralEquality; NoComparison; Struct>] Velocity =
     { mutable Active : bool
       mutable Velocity : Vector2 }
     interface Velocity Component with
         member this.Active with get () = this.Active and set value = this.Active <- value
 
-type [<NoEquality; NoComparison; Struct>] Shake =
+type [<StructuralEquality; NoComparison; Struct>] Shake =
     { mutable Active : bool
       mutable Origin : Vector2
       mutable Offset : Vector2 }
