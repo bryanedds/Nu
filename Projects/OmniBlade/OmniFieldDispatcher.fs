@@ -660,7 +660,7 @@ module FieldDispatcher =
 
                 // pull field state from avatar
                 let avatar = Simulants.Field.Scene.Avatar.GetAvatar world
-                let field = Field.updateAvatar (constant avatar) field
+                let field = if avatar <> field.Avatar then Field.updateAvatar (constant avatar) field else field
 
                 // update field time
                 let field = Field.advanceUpdateTime field
