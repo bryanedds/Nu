@@ -16,7 +16,7 @@ type Song = private { __ : unit }
 type Sound = private { __ : unit }
 
 /// Descrides a song.
-type [<StructuralEquality; NoComparison>] SongDescriptor =
+type [<NoComparison>] SongDescriptor =
     { FadeInMs: int
       FadeOutMs : int
       Volume : single
@@ -24,12 +24,12 @@ type [<StructuralEquality; NoComparison>] SongDescriptor =
       Song : Song AssetTag }
 
 /// Describes a sound.
-type [<StructuralEquality; NoComparison>] SoundDescriptor =
+type [<NoComparison>] SoundDescriptor =
     { Volume : single
       Sound : Sound AssetTag }
 
 /// A message to the audio system.
-type [<StructuralEquality; NoComparison>] AudioMessage =
+type [<NoComparison>] AudioMessage =
     | LoadAudioPackageMessage of string
     | UnloadAudioPackageMessage of string
     | PlaySoundMessage of SoundDescriptor
@@ -39,7 +39,7 @@ type [<StructuralEquality; NoComparison>] AudioMessage =
     | ReloadAudioAssetsMessage
 
 /// An audio asset used by the audio system.
-type [<StructuralEquality; NoComparison>] AudioAsset =
+type [<NoComparison>] AudioAsset =
     | WavAsset of nativeint
     | OggAsset of nativeint
 

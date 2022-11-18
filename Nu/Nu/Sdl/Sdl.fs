@@ -22,7 +22,7 @@ type [<ReferenceEquality; NoComparison>] Window =
     | WfglWindow of WfglWindow
 
 /// Describes the initial configuration of a window created via SDL.
-type [<StructuralEquality; NoComparison>] SdlWindowConfig =
+type [<NoComparison>] SdlWindowConfig =
     { WindowTitle : string
       WindowX : int
       WindowY : int

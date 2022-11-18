@@ -44,7 +44,7 @@ module Particles =
               ProgressScalar = 1.0f / single lifeTimeOpt }
 
     /// A spatial constraint.
-    type [<StructuralEquality; NoComparison>] Constraint =
+    type [<NoComparison>] Constraint =
         | Box of Box3
         | Sphere of single * Vector3
         | Constraints of Constraint SegmentedArray
@@ -80,12 +80,12 @@ module Particles =
         | Equal of bool
 
     /// Describes logic of behavior over a section of a target's life time.
-    type [<StructuralEquality; NoComparison>] Logic =
+    type [<NoComparison>] Logic =
         { LogicLife : Life
           LogicType : LogicType }
 
     /// The type of range.
-    type [<StructuralEquality; NoComparison>] 'a RangeType =
+    type [<NoComparison>] 'a RangeType =
         | Constant of 'a
         | Linear of 'a * 'a
         | Random of 'a * 'a
@@ -99,7 +99,7 @@ module Particles =
         | CosScaled of single * 'a * 'a
 
     /// How a range is to be applied.
-    type [<StructuralEquality; NoComparison>] RangeApplicator =
+    type [<NoComparison>] RangeApplicator =
         | Sum
         | Delta
         | Scale
@@ -107,13 +107,13 @@ module Particles =
         | Set
 
     /// Describes range of behavior over a section of a target's life time.
-    type [<StructuralEquality; NoComparison>] 'a Range =
+    type [<NoComparison>] 'a Range =
         { RangeLife : Life
           RangeType : 'a RangeType
           RangeApplicator : RangeApplicator }
 
     /// The forces that may operate on a target.
-    type [<StructuralEquality; NoComparison>] Force =
+    type [<NoComparison>] Force =
         | Gravity of Vector3
         | Attractor of Vector3 * single * single
         | Drag of single * single

@@ -8,56 +8,56 @@ open Prime
 open Nu
 
 /// The data for a mouse move event.
-type [<StructuralEquality; NoComparison>] MouseMoveData =
+type [<NoComparison>] MouseMoveData =
     { Position : Vector2 }
 
 /// The data for a mouse button event.
-type [<StructuralEquality; NoComparison>] MouseButtonData =
+type [<NoComparison>] MouseButtonData =
     { Position : Vector2
       Button : MouseButton
       Down : bool }
 
 /// The data for a keyboard key event.
-type [<StructuralEquality; NoComparison>] KeyboardKeyData =
+type [<NoComparison>] KeyboardKeyData =
     { KeyboardKey : KeyboardKey
       Repeated : bool
       Down : bool }
 
 /// The data for a gamepad button event.
-type [<StructuralEquality; NoComparison>] GamepadDirectionData =
+type [<NoComparison>] GamepadDirectionData =
     { GamepadDirection : GamepadDirection }
 
 /// The data for a gamepad button event.
-type [<StructuralEquality; NoComparison>] GamepadButtonData =
+type [<NoComparison>] GamepadButtonData =
     { GamepadButton : GamepadButton
       Down : bool }
 
 /// The data of a body transform event.
-type [<StructuralEquality; NoComparison>] TransformData =
+type [<NoComparison>] TransformData =
     { BodySource : BodySource
       Position : Vector3
       Rotation : Quaternion }
 
 /// The data for a collision event.
-type [<StructuralEquality; NoComparison>] BodyCollisionData =
+type [<NoComparison>] BodyCollisionData =
     { BodyCollider : BodyShapeSource
       BodyCollidee : BodyShapeSource
       Normal : Vector3
       Speed : single }
 
 /// The data for a separation event.
-type [<StructuralEquality; NoComparison>] BodySeparationData =
+type [<NoComparison>] BodySeparationData =
     { BodySeparator : BodyShapeSource
       BodySeparatee : BodyShapeSource }
 
-type [<StructuralEquality; NoComparison>] BodyTransformData =
+type [<NoComparison>] BodyTransformData =
     { BodyPosition : Vector3
       BodyRotation : Quaternion
       BodyLinearVelocity : Vector3
       BodyAngularVelocity : Vector3 }
 
 /// The data for a life cycle event.
-type [<StructuralEquality; NoComparison>] LifeCycleData =
+type [<NoComparison>] LifeCycleData =
     | RegisterData of Simulant
     | UnregisteringData of Simulant
     | MountOptChangeData of Entity Relation option * Entity Relation option * Entity

@@ -35,7 +35,7 @@ and [<StructuralEquality; NoComparison; Struct>] EcsEvent =
       EcsEventType : EcsEventType }
 
 /// An Ecs event.
-and [<StructuralEquality; NoComparison>] EcsEvent<'d, 'w when 'w : not struct> =
+and [<NoComparison>] EcsEvent<'d, 'w when 'w : not struct> =
     { EcsEventData : 'd }
 
 /// Data for an Ecs registration event.

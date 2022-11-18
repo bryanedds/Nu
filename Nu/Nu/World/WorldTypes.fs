@@ -39,29 +39,29 @@ module WorldTypes =
     type Unsubscription = World -> World
 
     /// Specified the desired screen, if any, or whether to ignore screen desire functionality altogether.
-    and [<StructuralEquality; NoComparison>] DesiredScreen =
+    and [<NoComparison>] DesiredScreen =
         | Desire of Screen
         | DesireNone
         | DesireIgnore
 
     /// The data required to execute screen splashing.
-    and [<StructuralEquality; NoComparison>] Splash =
+    and [<NoComparison>] Splash =
         { IdlingTime : int64
           Destination : Screen }
 
     /// Describes the behavior of a screen.
-    and [<StructuralEquality; NoComparison>] ScreenBehavior =
+    and [<NoComparison>] ScreenBehavior =
         | Vanilla
         | Dissolve of DissolveDescriptor * SongDescriptor option
         | Splash of DissolveDescriptor * SplashDescriptor * SongDescriptor option * Screen
         | OmniScreen
 
     /// The data for a change in the world's ambient state.
-    and [<StructuralEquality; NoComparison>] AmbientChangeData = 
+    and [<NoComparison>] AmbientChangeData = 
         { OldWorldWithOldState : World }
 
     /// Store origination information about a simulant physics body.
-    and [<StructuralEquality; NoComparison>] BodySource =
+    and [<NoComparison>] BodySource =
         { Entity : Entity
           BodyId : uint64 }
         static member internal fromInternal (internal_ : BodySourceInternal) =
@@ -69,7 +69,7 @@ module WorldTypes =
               BodyId = internal_.BodyId }
     
     /// Store origination information about a simulant physics shape body.
-    and [<StructuralEquality; NoComparison>] BodyShapeSource =
+    and [<NoComparison>] BodyShapeSource =
         { Entity : Entity
           BodyId : uint64
           BodyShapeId : uint64 }
