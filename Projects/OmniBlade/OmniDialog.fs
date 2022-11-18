@@ -8,12 +8,12 @@ open Prime
 open Nu
 open Nu.Declarative
 
-type [<StructuralEquality; NoComparison>] DialogForm =
+type [<NoComparison>] DialogForm =
     | DialogThin
     | DialogThick
     | DialogNarration
 
-type [<ReferenceEquality; NoComparison>] Dialog =
+type [<NoComparison>] Dialog =
     { DialogForm : DialogForm
       DialogTokenized : string
       DialogProgress : int

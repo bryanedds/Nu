@@ -8,11 +8,11 @@ open FSharpx.Collections
 open Prime
 open Nu
 
-type [<StructuralEquality; NoComparison>] ShopState =
+type [<NoComparison>] ShopState =
     | ShopBuying
     | ShopSelling
 
-type [<ReferenceEquality; NoComparison>] ShopConfirm =
+type [<NoComparison>] ShopConfirm =
     { ShopConfirmSelection : int * ItemType
       ShopConfirmPrice : int
       ShopConfirmOffer : string
@@ -84,7 +84,7 @@ type [<ReferenceEquality; NoComparison>] ShopConfirm =
                 | None -> None
         | KeyItem _ | Stash _ -> None
 
-type [<ReferenceEquality; NoComparison>] Shop =
+type [<NoComparison>] Shop =
     { ShopType : ShopType
       ShopState : ShopState
       ShopPage : int

@@ -14,7 +14,7 @@ type SaveSlot =
     | Slot2
     | Slot3
 
-type [<ReferenceEquality; NoComparison>] Options =
+type [<NoComparison>] Options =
     { BattleSpeed : BattleSpeed }
 
 type FieldState =
@@ -22,7 +22,7 @@ type FieldState =
     | Quitting
     | Quit
 
-type [<ReferenceEquality; NoComparison>] FieldTransition =
+type [<NoComparison>] FieldTransition =
     { FieldType : FieldType
       FieldDestination : Vector3
       FieldDirection : Direction
@@ -31,7 +31,7 @@ type [<ReferenceEquality; NoComparison>] FieldTransition =
 [<RequireQualifiedAccess>]
 module Field =
 
-    type [<ReferenceEquality; NoComparison>] Field =
+    type [<NoComparison>] Field =
         private
             { UpdateTime_ : int64
               FieldType_ : FieldType

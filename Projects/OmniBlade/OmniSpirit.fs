@@ -8,13 +8,13 @@ open FSharpx.Collections
 open Prime
 open Nu
 
-type [<StructuralEquality; NoComparison>] SpiritMovement =
+type [<NoComparison>] SpiritMovement =
     | Creep
     | Chase
     | Scatter
     | Wander
 
-type [<StructuralEquality; NoComparison>] SpiritPattern =
+type [<NoComparison>] SpiritPattern =
     | Disinterested
     | Confused
     | Steadfast
@@ -43,7 +43,7 @@ type [<StructuralEquality; NoComparison>] SpiritPattern =
         | Stalking ->       [|Creep;     Chase; Chase; Creep;    Chase; Chase; Creep;    Chase; Chase; Creep;    Chase; Chase; Creep;    Chase; Chase; Creep|]
         | Ambushing ->      [|Creep;     Chase; Chase; Chase;    Chase; Chase; Chase;    Chase; Chase; Chase;    Chase; Chase; Chase;    Chase; Chase; Chase|]
 
-type [<ReferenceEquality; NoComparison>] SpiritState =
+type [<NoComparison>] SpiritState =
     { SpiritMovements : SpiritMovement array
       SpiritMovementIndex : int
       SpiritMovementStart : int64
@@ -92,7 +92,7 @@ type [<ReferenceEquality; NoComparison>] SpiritState =
 [<RequireQualifiedAccess>]
 module Spirit =
 
-    type [<StructuralEquality; NoComparison>] Spirit =
+    type [<NoComparison>] Spirit =
         private
             { Perimeter_ : Box3
               SpiritType_ : SpiritType

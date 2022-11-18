@@ -42,7 +42,7 @@ module FieldDispatcher =
         | TryBattle of BattleType * Advent Set
         | Interact
 
-    type [<StructuralEquality; NoComparison>] FieldCommand =
+    type [<NoComparison>] FieldCommand =
         | ProcessKeyInput
         | ProcessTouchInput of Vector2
         | UpdateEye

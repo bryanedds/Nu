@@ -97,7 +97,7 @@ type SpecialSegment =
     | NarrativeSegment
     | BossSegment
 
-type [<StructuralEquality; NoComparison>] Segments =
+type [<NoComparison>] Segments =
     { Segment0 : TmxMap
       Segment1N : TmxMap
       Segment1E : TmxMap

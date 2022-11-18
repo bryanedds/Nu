@@ -9,7 +9,7 @@ open Nu
 [<RequireQualifiedAccess>]
 module Avatar =
 
-    type [<ReferenceEquality; NoComparison>] Avatar =
+    type [<NoComparison>] Avatar =
         private
             { PerimeterOriginal_ : Box3
               Perimeter_ : Box3

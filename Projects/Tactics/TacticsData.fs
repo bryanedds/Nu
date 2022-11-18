@@ -121,7 +121,7 @@ type CharacterAnimationType =
     | WhirlAnimation
     | BuryAnimation // TODO: get rid of this
 
-type [<ReferenceEquality; NoComparison>] CharacterAnimationState =
+type [<NoComparison>] CharacterAnimationState =
     { StartTime : int64
       AnimationSheet : Image AssetTag
       CharacterAnimationType : CharacterAnimationType

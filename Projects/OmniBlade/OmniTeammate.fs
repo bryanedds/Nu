@@ -7,7 +7,7 @@ open FSharpx.Collections
 open Prime
 open Nu
 
-type [<ReferenceEquality; NoComparison>] Teammate =
+type [<NoComparison>] Teammate =
     { TeamIndex : int // key
       PartyIndexOpt : int option
       ArchetypeType : ArchetypeType

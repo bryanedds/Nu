@@ -10,11 +10,11 @@ open Nu.Declarative
 [<AutoOpen>]
 module RingMenuDispatcher =
 
-    type [<StructuralEquality; NoComparison>] RingMenu =
+    type [<NoComparison>] RingMenu =
         { Items : Map<string, int * bool>
           ItemCancelOpt : string option }
 
-    type [<StructuralEquality; NoComparison>] RingMenuCommand =
+    type [<NoComparison>] RingMenuCommand =
         | ItemCancel
         | ItemSelect of string
 

@@ -17,11 +17,11 @@ module OmniBlade =
         | Pick
         | Intro of SaveSlot
 
-    type [<StructuralEquality; NoComparison>] Model =
+    type [<NoComparison>] Model =
         | Gui of Gui
         | Field of Field
 
-    type [<StructuralEquality; NoComparison>] Message =
+    type [<NoComparison>] Message =
         | ShowTitle
         | ShowCredits
         | ShowPick

@@ -10,7 +10,7 @@ open Nu
 [<RequireQualifiedAccess>]
 module Portal =
 
-    type [<StructuralEquality; NoComparison>] Portal =
+    type [<NoComparison>] Portal =
         private
             { Perimeter_ : Box3
               Active_ : bool }

@@ -9,7 +9,7 @@ open FSharp.Reflection
 open Prime
 open Nu
 
-type [<ReferenceEquality; NoComparison>] CharacterState =
+type [<NoComparison>] CharacterState =
     { ArchetypeType : ArchetypeType
       ExpPoints : int
       AbsorbCreep : single
@@ -128,7 +128,7 @@ type [<ReferenceEquality; NoComparison>] CharacterState =
               ItemPrizeOpt = None }
         characterState
 
-type [<ReferenceEquality; NoComparison>] CharacterAnimationState =
+type [<NoComparison>] CharacterAnimationState =
     { StartTime : int64
       AnimationSheet : Image AssetTag
       CharacterAnimationType : CharacterAnimationType
@@ -239,7 +239,7 @@ type CharacterInputState =
         | NoInput | RegularMenu | TechMenu | ItemMenu -> NoAim
         | AimReticles (_, aimType) -> aimType
 
-type [<ReferenceEquality; NoComparison>] AutoBattle =
+type [<NoComparison>] AutoBattle =
     { AutoTarget : CharacterIndex
       AutoTechOpt : TechType option
       IsChargeTech : bool }
@@ -247,7 +247,7 @@ type [<ReferenceEquality; NoComparison>] AutoBattle =
 [<RequireQualifiedAccess>]
 module Character =
 
-    type [<ReferenceEquality; NoComparison>] Character =
+    type [<NoComparison>] Character =
         private
             { PerimeterOriginal_ : Box3
               Perimeter_ : Box3
