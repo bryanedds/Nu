@@ -12,12 +12,12 @@ open Nu.Declarative
 [<AutoOpen>]
 module BattleDispatcher =
 
-    type [<StructuralEquality; NoComparison>] Positioning =
+    type [<NoComparison>] Positioning =
         | Position of Vector3
         | Center of Vector3
         | Bottom of Vector3
 
-    type [<StructuralEquality; NoComparison>] Hop =
+    type [<NoComparison>] Hop =
         { HopStart : Vector3
           HopStop : Vector3 }
 
@@ -54,7 +54,7 @@ module BattleDispatcher =
         | DestroyCharacter of CharacterIndex
         | Nop
 
-    type [<StructuralEquality; NoComparison>] BattleCommand =
+    type [<NoComparison>] BattleCommand =
         | UpdateEye
         | DisplayCancel of CharacterIndex
         | DisplayHitPointsChange of CharacterIndex * int

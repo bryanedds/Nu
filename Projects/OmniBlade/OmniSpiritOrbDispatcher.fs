@@ -11,13 +11,13 @@ open Nu.Declarative
 [<AutoOpen>]
 module SpiritOrbDispatcher =
 
-    type [<ReferenceEquality; NoComparison>] SpiritOrb =
+    type [<NoComparison>] SpiritOrb =
         { AvatarLowerCenter : Vector3
           Spirits : Spirit array
           Chests : Chest array
           Portals : Portal array }
 
-    type [<StructuralEquality; NoComparison>] SpiritOrbInhabitant =
+    type [<NoComparison>] SpiritOrbInhabitant =
         | SpiritInhabitant of Spirit
         | ChestInhabitant of Chest
         | PortalInhabitant of Portal

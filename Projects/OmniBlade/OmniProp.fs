@@ -7,7 +7,7 @@ open System.Numerics
 open Prime
 open Nu
 
-type [<ReferenceEquality; NoComparison>] PropState =
+type [<NoComparison>] PropState =
     | DoorState of bool
     | SwitchState of bool
     | CharacterState of Color * CharacterAnimationState
@@ -20,7 +20,7 @@ module Prop =
     [<Syntax   ("", "", "", "", "",
                 Constants.PrettyPrinter.DefaultThresholdMin,
                 Constants.PrettyPrinter.DetailedThresholdMax)>]
-    type [<ReferenceEquality; NoComparison>] Prop =
+    type [<NoComparison>] Prop =
         private
             { Perimeter_ : Box3
               Elevation_ : single

@@ -7,7 +7,7 @@ open Nu
 [<RequireQualifiedAccess>]
 module Character =
 
-    type [<ReferenceEquality; NoComparison>] Character =
+    type [<NoComparison>] Character =
         private
             { CharacterIndex_ : CharacterIndex
               CharacterType_ : CharacterType

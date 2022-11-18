@@ -8,7 +8,7 @@ open FSharpx.Collections
 open Prime
 open Nu
 
-type [<ReferenceEquality; NoComparison>] MenuUse =
+type [<NoComparison>] MenuUse =
     { MenuUseSelection : int * ItemType
       MenuUseLine1 : string
       MenuUseLine2 : string
@@ -64,7 +64,7 @@ type [<ReferenceEquality; NoComparison>] MenuUse =
                 | None -> None
         | KeyItem _ | Stash _ -> None
 
-type [<ReferenceEquality; NoComparison>] MenuTeam =
+type [<NoComparison>] MenuTeam =
     { TeamIndex : int
       TeamIndices : int list }
       
@@ -83,19 +83,19 @@ type [<ReferenceEquality; NoComparison>] MenuTeam =
         let lacdOpt = MenuTeam.tryGetTeammateAndTeamData team menuTeam
         Option.map snd lacdOpt
 
-type [<ReferenceEquality; NoComparison>] MenuItem =
+type [<NoComparison>] MenuItem =
     { ItemPage : int }
 
-type [<ReferenceEquality; NoComparison>] MenuTech =
+type [<NoComparison>] MenuTech =
     { TeammateIndex : int }
 
-type [<StructuralEquality; NoComparison>] MenuState =
+type [<NoComparison>] MenuState =
     | MenuTeam of MenuTeam
     | MenuItem of MenuItem
     | MenuTech of MenuTech
     | MenuOptions
     | MenuClosed
 
-type [<ReferenceEquality; NoComparison>] Menu =
+type [<NoComparison>] Menu =
     { MenuState : MenuState
       MenuUseOpt : MenuUse option }

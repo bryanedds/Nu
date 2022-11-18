@@ -20,7 +20,7 @@ type BattleState =
     | BattleQuitting of int64 * bool * Advent Set
     | BattleQuit
 
-type [<ReferenceEquality; NoComparison>] ActionCommand =
+type [<NoComparison>] ActionCommand =
     { Action : ActionType
       Source : CharacterIndex
       TargetOpt : CharacterIndex option }
@@ -30,7 +30,7 @@ type [<ReferenceEquality; NoComparison>] ActionCommand =
           Source = source
           TargetOpt = targetOpt }
 
-type [<ReferenceEquality; NoComparison>] CurrentCommand =
+type [<NoComparison>] CurrentCommand =
     { StartTime : int64
       ActionCommand : ActionCommand }
 
@@ -40,7 +40,7 @@ type [<ReferenceEquality; NoComparison>] CurrentCommand =
 [<RequireQualifiedAccess>]
 module Battle =
 
-    type [<ReferenceEquality; NoComparison>] Battle =
+    type [<NoComparison>] Battle =
         private
             { BattleState_ : BattleState
               Characters_ : Map<CharacterIndex, Character>

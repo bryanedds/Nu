@@ -6,7 +6,7 @@ open Prime
 open TiledSharp
 open Nu
 
-type [<StructuralEquality; NoComparison>] Occupant =
+type [<NoComparison>] Occupant =
     | Character of Character
     | Chest of unit
 
@@ -41,12 +41,12 @@ type FieldScript =
     | FieldScripts of FieldScript list
     static member empty = FieldScripts []
 
-type [<ReferenceEquality; NoComparison>] FieldTileVertices =
+type [<NoComparison>] FieldTileVertices =
     { FieldTileVertices : Vector3 array }
     member this.Center =
         (this.FieldTileVertices.[0] + this.FieldTileVertices.[1] + this.FieldTileVertices.[2] + this.FieldTileVertices.[3]) / 4.0f
 
-type [<ReferenceEquality; NoComparison>] FieldMetadata =
+type [<NoComparison>] FieldMetadata =
     { FieldTileVerticesMap : Map<Vector2i, FieldTileVertices>
       FieldUntraversableSurfaceDescriptor : StaticModelSurfaceDescriptor
       FieldTraversableSurfaceDescriptor : StaticModelSurfaceDescriptor
@@ -55,7 +55,7 @@ type [<ReferenceEquality; NoComparison>] FieldMetadata =
 [<RequireQualifiedAccess>]
 module Field =
 
-    type [<ReferenceEquality; NoComparison>] Field =
+    type [<NoComparison>] Field =
         private
             { FieldState_ : FieldState
               FieldScript : FieldScript

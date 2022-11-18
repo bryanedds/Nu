@@ -11,7 +11,7 @@ open Nu.Declarative
 [<AutoOpen>]
 module AvatarDispatcher =
 
-    type [<StructuralEquality; NoComparison>] AvatarMessage =
+    type [<NoComparison>] AvatarMessage =
         | Update
         | PostUpdate
         | BodyCollision of BodyCollisionData
@@ -20,7 +20,7 @@ module AvatarDispatcher =
         | TryFace of Direction
         | Nil
 
-    type [<StructuralEquality; NoComparison>] AvatarCommand =
+    type [<NoComparison>] AvatarCommand =
         | TryTravel of Vector3
 
     type Entity with

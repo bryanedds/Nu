@@ -14,7 +14,7 @@ type AtlasState =
 [<RequireQualifiedAccess>]
 module Atlas =
 
-    type [<ReferenceEquality; NoComparison>] Atlas =
+    type [<NoComparison>] Atlas =
         private
             { AtlasState_ : AtlasState
               SaveSlot_ : SaveSlot
