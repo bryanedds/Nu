@@ -124,11 +124,11 @@ module Effects =
     type [<StructuralEquality; StructuralComparison>] Shift =
         Shift of single
 
-    type [<NoEquality; NoComparison>] Resource =
+    type [<StructuralEquality; NoComparison>] Resource =
         | Resource of string * string
         | Expand of string * Argument array
 
-    and [<NoEquality; NoComparison>] Aspect =
+    and [<StructuralEquality; NoComparison>] Aspect =
         | Enabled of bool
         | PositionAbsolute of Vector3
         | PositionRelative of Vector3
@@ -161,7 +161,7 @@ module Effects =
         | Expand of string * Argument array
         | Aspects of Aspect array
 
-    and [<NoEquality; NoComparison>] Content =
+    and [<StructuralEquality; NoComparison>] Content =
         | Nil // first to make default value when missing
         | StaticSprite of Resource * Aspect array * Content
         | AnimatedSprite of Resource * Vector2i * int * int * int64 * Playback * Aspect array * Content
@@ -179,7 +179,7 @@ module Effects =
     and Argument =
         SymbolicCompression<Resource, SymbolicCompression<Aspect, Content>>
 
-    type [<NoEquality; NoComparison>] Definition =
+    type [<StructuralEquality; NoComparison>] Definition =
         { DefinitionParams : string array
           DefinitionBody : SymbolicCompression<Resource, SymbolicCompression<Aspect, Content>> }
 
@@ -203,7 +203,7 @@ module Effects =
             "", "", "", "",
             Constants.PrettyPrinter.DefaultThresholdMin,
             Constants.PrettyPrinter.CompositionalThresholdMax)>]
-type [<NoEquality; NoComparison>] Effect =
+type [<StructuralEquality; NoComparison>] Effect =
     { EffectName : string
       LifeTimeOpt : int64 option
       Definitions : Effects.Definitions
@@ -226,7 +226,7 @@ module EffectSystem =
     open Effects
 
     /// An abstract data type for executing effects.
-    type [<NoEquality; NoComparison>] EffectSystem =
+    type [<ReferenceEquality; NoComparison>] EffectSystem =
         private
             { Absolute : bool
               Views : View List

@@ -107,7 +107,7 @@ module PhysicallyBased =
             this.HashCode
 
     /// A light inside a physically-based static model.
-    type [<NoEquality; NoComparison>] PhysicallyBasedLight =
+    type [<StructuralEquality; NoComparison>] PhysicallyBasedLight =
         { LightNames : string array
           LightMatrixIsIdentity : bool
           LightMatrix : Matrix4x4
@@ -117,13 +117,13 @@ module PhysicallyBased =
           PhysicallyBasedLightType : LightType }
 
     /// A part of a physically-based hierarchy.
-    type [<NoEquality; NoComparison>] PhysicallyBasedPart =
+    type [<StructuralEquality; NoComparison>] PhysicallyBasedPart =
         | PhysicallyBasedNode of string array
         | PhysicallyBasedLight of PhysicallyBasedLight
         | PhysicallyBasedSurface of PhysicallyBasedSurface
 
     /// A physically-based static model.
-    type [<ReferenceEquality; NoComparison>] PhysicallyBasedStaticModel =
+    type [<StructuralEquality; NoComparison>] PhysicallyBasedStaticModel =
         { Bounds : Box3
           Lights : PhysicallyBasedLight array
           Surfaces : PhysicallyBasedSurface array

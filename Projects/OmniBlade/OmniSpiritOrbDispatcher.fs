@@ -17,7 +17,7 @@ module SpiritOrbDispatcher =
           Chests : Chest array
           Portals : Portal array }
 
-    type [<NoEquality; NoComparison>] SpiritOrbInhabitant =
+    type [<StructuralEquality; NoComparison>] SpiritOrbInhabitant =
         | SpiritInhabitant of Spirit
         | ChestInhabitant of Chest
         | PortalInhabitant of Portal

@@ -13,7 +13,7 @@ open Prime
 open Nu
 
 /// Describes what to render.
-type [<NoEquality; NoComparison>] RenderDescriptor2d =
+type [<ReferenceEquality; NoComparison>] RenderDescriptor2d =
     | SpriteDescriptor of SpriteDescriptor
     | SpritesDescriptor of SpritesDescriptor
     | SpritesSegmentedDescriptor of SegmentedSpritesDescriptor
@@ -25,14 +25,14 @@ type [<NoEquality; NoComparison>] RenderDescriptor2d =
 
 /// A layered message to the 2d rendering system.
 /// NOTE: mutation is used only for internal sprite descriptor caching.
-and [<NoEquality; NoComparison>] RenderLayeredMessage2d =
+and [<ReferenceEquality; NoComparison>] RenderLayeredMessage2d =
     { mutable Elevation : single
       mutable Horizon : single
       mutable AssetTag : obj AssetTag
       mutable RenderDescriptor2d : RenderDescriptor2d }
 
 /// A message to the 2d rendering system.
-and [<NoEquality; NoComparison>] RenderMessage2d =
+and [<ReferenceEquality; NoComparison>] RenderMessage2d =
     | RenderLayeredMessage2d of RenderLayeredMessage2d
     | LoadRenderPackageMessage2d of string
     | UnloadRenderPackageMessage2d of string

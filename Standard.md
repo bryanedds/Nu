@@ -32,6 +32,8 @@ Correctness, Consistency, Simplicity
 
 12) Try to use unique names for public fields and discriminated union cases to avoid ambiguating type inference. For example, `Id` is not a good public field name, but `ProductId` might be.
 
+13) Avoid use of NoEquality attribute except where unavoidable. It's better to force yourself to make a decision on equality semantics rather than just punting on it.
+
 **B) Consistency**
 
 1) Use 4 spaces for indentation, not 2, nor 3. [*5 is right out.*](https://www.youtube.com/watch?v=xOrgLj9lOwk&t=1m48s)

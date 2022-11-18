@@ -12,13 +12,13 @@ type private EcsCallbackUnscheduled<'d, 'w when 'w : not struct> =
     EcsEvent<'d, 'w> -> Ecs -> 'w -> 'w
 
 /// A scheduled Ecs event callback.
-and [<NoEquality; NoComparison>] EcsCallbackScheduled<'d, 'w when 'w : not struct> =
+and [<ReferenceEquality; NoComparison>] EcsCallbackScheduled<'d, 'w when 'w : not struct> =
     { EcsQuery : Query
       EcsDependencies : Query list
       EcsCallback : EcsEvent<'d, 'w> -> Ecs -> 'w -> unit }
 
 /// A scheduled Ecs event callback.
-and [<NoEquality; NoComparison>] private EcsCallbackScheduledObj =
+and [<ReferenceEquality; NoComparison>] private EcsCallbackScheduledObj =
     { EcsQuery : Query
       EcsDependencies : Query list
       EcsCallbackObj : obj }
@@ -35,16 +35,16 @@ and [<StructuralEquality; NoComparison; Struct>] EcsEvent =
       EcsEventType : EcsEventType }
 
 /// An Ecs event.
-and [<NoEquality; NoComparison>] EcsEvent<'d, 'w when 'w : not struct> =
+and [<StructuralEquality; NoComparison>] EcsEvent<'d, 'w when 'w : not struct> =
     { EcsEventData : 'd }
 
 /// Data for an Ecs registration event.
-and [<NoEquality; NoComparison; Struct>] EcsChangeData =
+and [<StructuralEquality; NoComparison; Struct>] EcsChangeData =
     { EcsEntity : EcsEntity
       ComponentName : string }
 
 /// Data for an Ecs registration event.
-and [<NoEquality; NoComparison; Struct>] EcsRegistrationData =
+and [<StructuralEquality; NoComparison; Struct>] EcsRegistrationData =
     { EcsEntity : EcsEntity
       ComponentName : string }
 

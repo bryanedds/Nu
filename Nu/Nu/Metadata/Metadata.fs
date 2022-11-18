@@ -16,7 +16,7 @@ exception TileSetPropertyNotFoundException of string
 
 /// Metadata for an asset. Useful to describe various attributes of an asset without having the
 /// full asset loaded into memory.
-type [<NoEquality; NoComparison>] AssetMetadata =
+type [<StructuralEquality; NoComparison>] AssetMetadata =
     | TextureMetadata of Vector2i * PixelFormat
     | TileMapMetadata of string * (TmxTileset * Image AssetTag) array * TmxMap
     | StaticModelMetadata of OpenGL.PhysicallyBased.PhysicallyBasedStaticModel

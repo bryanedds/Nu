@@ -14,7 +14,7 @@ module RingMenuDispatcher =
         { Items : Map<string, int * bool>
           ItemCancelOpt : string option }
 
-    type [<NoEquality; NoComparison>] RingMenuCommand =
+    type [<StructuralEquality; NoComparison>] RingMenuCommand =
         | ItemCancel
         | ItemSelect of string
 

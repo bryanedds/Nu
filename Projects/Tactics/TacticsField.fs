@@ -41,12 +41,12 @@ type FieldScript =
     | FieldScripts of FieldScript list
     static member empty = FieldScripts []
 
-type [<NoEquality; NoComparison>] FieldTileVertices =
+type [<ReferenceEquality; NoComparison>] FieldTileVertices =
     { FieldTileVertices : Vector3 array }
     member this.Center =
         (this.FieldTileVertices.[0] + this.FieldTileVertices.[1] + this.FieldTileVertices.[2] + this.FieldTileVertices.[3]) / 4.0f
 
-type [<NoEquality; NoComparison>] FieldMetadata =
+type [<ReferenceEquality; NoComparison>] FieldMetadata =
     { FieldTileVerticesMap : Map<Vector2i, FieldTileVertices>
       FieldUntraversableSurfaceDescriptor : StaticModelSurfaceDescriptor
       FieldTraversableSurfaceDescriptor : StaticModelSurfaceDescriptor

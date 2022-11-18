@@ -36,7 +36,7 @@ type Refinement =
 ///
 /// Finally, the use of AssetPackages could enforce assets to be loaded in order of size and will
 /// avoid unnecessary Large Object Heap fragmentation.
-type [<NoEquality; NoComparison>] 'a Asset =
+type [<ReferenceEquality; NoComparison>] 'a Asset =
     { AssetTag : 'a AssetTag
       FilePath : string
       Refinements : Refinement list
@@ -65,7 +65,7 @@ module Asset =
         convert<obj, 'a> asset
 
 /// An asset package with additional user-defined state.
-type [<NoEquality; NoComparison>] Package<'a, 's> =
+type [<ReferenceEquality; NoComparison>] Package<'a, 's> =
     { Assets : Dictionary<string, 'a>
       PackageState : 's }
 

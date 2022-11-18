@@ -15,7 +15,7 @@ open Nu
 /////////////////////////////////////////////////////////////////////////
 
 /// The type of rendering used on a surface.
-type [<NoEquality; NoComparison; Struct>] RenderType =
+type [<StructuralEquality; NoComparison; Struct>] RenderType =
     | DeferredRenderType
     | ForwardRenderType of single * single
 
@@ -28,7 +28,7 @@ and [<StructuralEquality; NoComparison; Struct>] RenderMaterial =
       AmbientOcclusionOpt : single voption }
 
 /// A collection of render tasks in a pass.
-and [<NoEquality; NoComparison>] RenderTasks =
+and [<ReferenceEquality; NoComparison>] RenderTasks =
     { mutable RenderSkyBoxes : CubeMap AssetTag SegmentedList
       mutable RenderLights : SortableLight SegmentedList
       RenderSurfacesDeferredAbsolute : Dictionary<OpenGL.PhysicallyBased.PhysicallyBasedSurface, struct (Matrix4x4 * Box2 * RenderMaterial) SegmentedList>
@@ -39,7 +39,7 @@ and [<NoEquality; NoComparison>] RenderTasks =
       mutable RenderSurfacesForwardRelativeSorted : struct (Matrix4x4 * Box2 * RenderMaterial * OpenGL.PhysicallyBased.PhysicallyBasedSurface) SegmentedList }
 
 /// The parameters for completing a render pass.
-and [<NoEquality; NoComparison>] RenderPassParameters3d =
+and [<ReferenceEquality; NoComparison>] RenderPassParameters3d =
     { EyePosition : Vector3
       EyeRotation : Quaternion
       ViewAbsolute : Matrix4x4
@@ -66,7 +66,7 @@ and [<CustomEquality; CustomComparison>] RenderPassMessage3d =
     override this.GetHashCode () = hash this.RenderPassOrder
 
 /// An internally cached static model used to avoid GC promotion of static model messages.
-and [<NoEquality; NoComparison>] CachedStaticModelMessage =
+and [<ReferenceEquality; NoComparison>] CachedStaticModelMessage =
     { mutable CachedStaticModelAbsolute : bool
       mutable CachedStaticModelAffineMatrix : Matrix4x4
       mutable CachedStaticModelInsetOpt : Box2 voption
@@ -75,7 +75,7 @@ and [<NoEquality; NoComparison>] CachedStaticModelMessage =
       mutable CachedStaticModel : StaticModel AssetTag }
 
 /// Describes a user-defined static model surface.
-and [<NoEquality; NoComparison>] StaticModelSurfaceDescriptor =
+and [<ReferenceEquality; NoComparison>] StaticModelSurfaceDescriptor =
     { Positions : Vector3 array
       TexCoordses : Vector2 array
       Normals : Vector3 array
@@ -96,7 +96,7 @@ and [<NoEquality; NoComparison>] StaticModelSurfaceDescriptor =
       TwoSided : bool }
 
 /// A message to the 3d renderer.
-and [<NoEquality; NoComparison>] RenderMessage3d =
+and [<ReferenceEquality; NoComparison>] RenderMessage3d =
     | CreateUserDefinedStaticModelMessage of StaticModelSurfaceDescriptor array * Box3 * StaticModel AssetTag
     | DestroyUserDefinedStaticModelMessage of StaticModel AssetTag
     | RenderSkyBoxMessage of CubeMap AssetTag
@@ -114,7 +114,8 @@ and [<NoEquality; NoComparison>] RenderMessage3d =
     | ReloadRenderAssetsMessage3d
 
 /// A sortable light.
-and [<NoEquality; NoComparison>] SortableLight =
+/// OPTIMIZATION: mutable field for caching distance squared.
+and [<ReferenceEquality; NoComparison>] SortableLight =
     { SortableLightPosition : Vector3
       SortableLightColor : Color
       SortableLightBrightness : single
@@ -176,7 +177,7 @@ type [<ReferenceEquality; NoComparison>] MockRenderer3d =
         { MockRenderer3d = () }
 
 /// The internally used package state for the 3d OpenGL renderer.
-type [<NoEquality; NoComparison>] private GlPackageState3d =
+type [<ReferenceEquality; NoComparison>] private GlPackageState3d =
     { TextureMemo : OpenGL.Texture.TextureMemo
       CubeMapMemo : OpenGL.CubeMap.CubeMapMemo }
 

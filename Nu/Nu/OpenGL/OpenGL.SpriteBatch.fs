@@ -10,7 +10,7 @@ open Nu
 [<RequireQualifiedAccess>]
 module SpriteBatch =
 
-    type [<NoEquality; NoComparison; Struct>] private SpriteBatchState =
+    type [<StructuralEquality; NoComparison; Struct>] private SpriteBatchState =
         { Absolute : bool
           BlendingFactorSrc : BlendingFactor
           BlendingFactorDst : BlendingFactor
@@ -30,7 +30,7 @@ module SpriteBatch =
         static member defaultState =
             SpriteBatchState.make false BlendingFactor.SrcAlpha BlendingFactor.OneMinusSrcAlpha BlendEquationMode.FuncAdd 0u
 
-    type [<NoEquality; NoComparison>] SpriteBatchEnv =
+    type [<ReferenceEquality; NoComparison>] SpriteBatchEnv =
         private
             { mutable SpriteIndex : int
               mutable ViewProjectionAbsolute : Matrix4x4

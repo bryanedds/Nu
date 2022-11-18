@@ -10,7 +10,7 @@ open Nu
 [<RequireQualifiedAccess>]
 module Chest =
 
-    type [<ReferenceEquality; NoComparison>] Chest =
+    type [<StructuralEquality; NoComparison>] Chest =
         private
             { Perimeter_ : Box3
               Opened_ : bool }

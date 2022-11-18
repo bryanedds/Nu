@@ -153,7 +153,7 @@ module Particles =
         abstract Life : Life with get, set
 
     /// The output of a behavior.
-    type [<NoEquality; NoComparison>] Output =
+    type [<ReferenceEquality; NoComparison>] Output =
         | OutputEmitter of string * Emitter
         | OutputSound of single * Sound AssetTag
         | Outputs of Output SegmentedArray
@@ -515,7 +515,7 @@ module Particles =
         let rangeColor time range = rangeSrtp Color.Multiply Color.Divide Color.op_Multiply time range
 
     /// Scopes transformable values.
-    type [<NoEquality; NoComparison>] Scope<'a, 'b when 'a : struct> =
+    type [<ReferenceEquality; NoComparison>] Scope<'a, 'b when 'a : struct> =
         { In : 'a SegmentedArray -> 'b SegmentedArray
           Out : Output -> 'b SegmentedArray -> 'a SegmentedArray -> Output }
 
@@ -555,7 +555,7 @@ module Particles =
         abstract RunMany : int64 -> Constraint -> obj -> Output
 
     /// Defines a generic behavior.
-    type [<NoEquality; NoComparison>] Behavior<'a, 'b when 'a : struct> =
+    type [<ReferenceEquality; NoComparison>] Behavior<'a, 'b when 'a : struct> =
         { Scope : Scope<'a, 'b>
           Transformers : 'b Transformer FStack }
 
@@ -593,7 +593,7 @@ module Particles =
                 Behavior<'a, 'b>.runMany time constrain this (targetsObj :?> 'a SegmentedArray)
 
     /// A composition of behaviors.
-    type [<NoEquality; NoComparison>] Behaviors =
+    type [<ReferenceEquality; NoComparison>] Behaviors =
         { Behaviors : Behavior FStack }
 
         /// The empty behaviors.
@@ -636,7 +636,7 @@ module Particles =
             outputs
 
     /// Describes an emitter.
-    and [<NoEquality; NoComparison>] EmitterDescriptor<'a when 'a :> Particle and 'a : struct> =
+    and [<ReferenceEquality; NoComparison>] EmitterDescriptor<'a when 'a :> Particle and 'a : struct> =
         { Body : Body
           Blend : Blend
           Image : Image AssetTag
@@ -657,7 +657,7 @@ module Particles =
     /// NOTE: ideally, this would be an abstract data type, but I feel that would discourage users from making their
     /// own emitters - it would looks like making an emitter would require a lot of additional boilerplate as well as
     /// making it harder to use this existing emitter as an example.
-    and [<NoEquality; NoComparison>] Emitter<'a when 'a :> Particle and 'a : equality and 'a : struct> =
+    and [<ReferenceEquality; NoComparison>] Emitter<'a when 'a :> Particle and 'a : equality and 'a : struct> =
         { mutable Body : Body // mutable for animation
           Elevation : single
           Absolute : bool
@@ -937,7 +937,7 @@ module Particles =
 
     /// A particle system.
     /// TODO: consider making this an abstract data type?
-    type [<NoEquality; NoComparison>] ParticleSystem =
+    type [<ReferenceEquality; NoComparison>] ParticleSystem =
         { Emitters : Map<string, Emitter> }
     
         /// Get the liveness of the particle system.
