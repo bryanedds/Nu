@@ -7,7 +7,6 @@ open System.Numerics
 open FSharpx.Collections
 open Prime
 open Nu
-open OmniBlade
 
 type BattleSpeed =
     | SwiftSpeed

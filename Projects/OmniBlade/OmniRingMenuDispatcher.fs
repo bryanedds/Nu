@@ -6,7 +6,6 @@ open System
 open Prime
 open Nu
 open Nu.Declarative
-open OmniBlade
 
 [<AutoOpen>]
 module RingMenuDispatcher =

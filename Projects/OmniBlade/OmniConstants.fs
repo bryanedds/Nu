@@ -4,7 +4,6 @@
 namespace OmniBlade
 open Prime
 open Nu
-open OmniBlade
 
 [<RequireQualifiedAccess>]
 module Constants =

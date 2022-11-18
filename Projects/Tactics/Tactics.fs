@@ -6,7 +6,6 @@ open System.IO
 open Prime
 open Nu
 open Nu.Declarative
-open Tactics
 
 [<AutoOpen>]
 module TacticsGame =

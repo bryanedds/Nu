@@ -4,7 +4,6 @@
 namespace Tactics
 open System
 open Nu
-open Tactics
 module Program =
 
     // this the entry point for your Nu application
