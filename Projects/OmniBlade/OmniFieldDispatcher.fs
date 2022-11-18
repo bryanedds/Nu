@@ -16,6 +16,7 @@ module FieldDispatcher =
     type [<NoEquality; NoComparison>] FieldMessage =
         | Update
         | UpdateFieldTransition
+        | UpdateAvatarBodyTransform of BodyTransformData
         | MenuTeamOpen
         | MenuTeamAlly of int
         | MenuItemsOpen
@@ -659,10 +660,6 @@ module FieldDispatcher =
             match message with
             | Update ->
 
-                // sync avatar
-                let avatar = Simulants.Field.Scene.Avatar.GetAvatar world
-                let field = if field.Avatar <> avatar then Field.updateAvatar (constant avatar) field else field
-
                 // update field time
                 let field = Field.advanceUpdateTime field
 
@@ -803,6 +800,10 @@ module FieldDispatcher =
 
                 // no transition
                 | None -> just field
+
+            | UpdateAvatarBodyTransform transformData ->
+                let field = Field.updateAvatar (Avatar.updateCenter (constant transformData.BodyPosition)) field
+                just field
 
             | MenuTeamOpen ->
                 let state = MenuTeam { TeamIndex = 0; TeamIndices = Map.toKeyList field.Team }
@@ -1136,6 +1137,7 @@ module FieldDispatcher =
                         Option.isNone field.ShopOpt &&
                         Option.isNone field.FieldTransitionOpt
                      Entity.LinearDamping == Constants.Field.LinearDamping
+                     Entity.BodyTransformEvent =|> fun evt -> msg (UpdateAvatarBodyTransform evt.Data)
                      Entity.Avatar := field.Avatar]
 
                  // props

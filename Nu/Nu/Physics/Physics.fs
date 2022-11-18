@@ -382,9 +382,9 @@ type [<NoEquality; NoComparison>] BodyTransformMessage =
 
 /// A message from the physics system.
 type [<NoEquality; NoComparison>] IntegrationMessage =
-    | BodyCollisionMessage of BodyCollisionMessage : BodyCollisionMessage
-    | BodySeparationMessage of BodySeparationMessage : BodySeparationMessage
-    | BodyTransformMessage of BodyTransformMessage : BodyTransformMessage
+    | BodyCollisionMessage of BodyCollisionMessage
+    | BodySeparationMessage of BodySeparationMessage
+    | BodyTransformMessage of BodyTransformMessage
 
 /// A message to the physics system.
 type [<StructuralEquality; NoComparison>] PhysicsMessage =

@@ -212,7 +212,7 @@ module WorldModuleEntity =
                     world properties
             else world
 
-        static member inline internal publishTransformEvents (oldTransform : Transform byref, newTransform : Transform byref, publishChangeEvents, entity : Entity, world) =
+        static member internal publishTransformEvents (oldTransform : Transform byref, newTransform : Transform byref, publishChangeEvents, entity : Entity, world) =
             if publishChangeEvents then
                 let positionChanged = v3Neq newTransform.Position oldTransform.Position
                 let scaleChanged = v3Neq newTransform.Scale oldTransform.Scale

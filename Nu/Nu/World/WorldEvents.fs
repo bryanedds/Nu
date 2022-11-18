@@ -50,6 +50,12 @@ type [<StructuralEquality; NoComparison>] BodySeparationData =
     { BodySeparator : BodyShapeSource
       BodySeparatee : BodyShapeSource }
 
+type [<StructuralEquality; NoComparison>] BodyTransformData =
+    { BodyPosition : Vector3
+      BodyRotation : Quaternion
+      BodyLinearVelocity : Vector3
+      BodyAngularVelocity : Vector3 }
+
 /// The data for a life cycle event.
 type [<StructuralEquality; NoComparison>] LifeCycleData =
     | RegisterData of Simulant
@@ -73,6 +79,7 @@ module Events =
     let BodyRemoving = stoa<PhysicsId> "Body/Removing/Event"
     let BodyCollision = stoa<BodyCollisionData> "BodyCollision/Event"
     let BodySeparation = stoa<BodySeparationData> "BodySeparation/Event"
+    let BodyTransform = stoa<BodyTransformData> "BodyTransform/Event"
     let Click = stoa<unit> "Click/Event"
     let Down = stoa<unit> "Down/Event"
     let Up = stoa<unit> "Up/Event"

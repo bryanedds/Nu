@@ -813,6 +813,7 @@ module RigidBodyFacetModule =
         member this.PhysicsId = lensReadOnly (nameof this.PhysicsId) this this.GetPhysicsId
         member this.BodyCollisionEvent = Events.BodyCollision --> this
         member this.BodySeparationEvent = Events.BodySeparation --> this
+        member this.BodyTransformEvent = Events.BodyTransform --> this
 
     type RigidBodyFacet () =
         inherit Facet (true)
