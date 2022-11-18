@@ -266,7 +266,7 @@ module BattleDispatcher =
 
         and private updateReady time startTime (battle : Battle) =
             let localTime = time - startTime
-            if localTime = inc 62L then // first frame after transitioning in
+            if localTime = inc 63L then // first frame after transitioning in
                 match battle.BattleSongOpt with
                 | Some battleSong -> withCmd (PlaySong (0, Constants.Audio.FadeOutMsDefault, Constants.Audio.SongVolumeDefault, 0.0, battleSong)) battle
                 | None -> just battle
