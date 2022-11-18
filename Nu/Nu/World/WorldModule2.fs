@@ -1158,7 +1158,7 @@ module EntityDispatcherModule2 =
             let initializers = this.Initialize (model, entity)
             let entities = this.Content (model, entity)
             let content = Content.composite entity.Name initializers entities
-            let world = Content.synchronizeEntity initializing false contentOld content entity entity world
+            let world = Content.synchronizeEntity initializing contentOld content entity entity world
             World.setEntityContent content entity world
 
         abstract member Initialize : 'model * Entity -> InitializerContent seq

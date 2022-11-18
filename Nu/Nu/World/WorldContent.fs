@@ -174,7 +174,7 @@ module Content =
         else None
 
     ///
-    let rec synchronizeEntity initializing relating (contentOld : EntityContent) (content : EntityContent) (origin : Simulant) (entity : Entity) world =
+    let rec synchronizeEntity initializing (contentOld : EntityContent) (content : EntityContent) (origin : Simulant) (entity : Entity) world =
         if contentOld <> content then
             let mutable mountOptFound = false
             let world = synchronizeEventSignals contentOld content origin entity world
@@ -182,7 +182,7 @@ module Content =
             let world = synchronizeEntityPropertiesFast (initializing, contentOld, content, entity, world, &mountOptFound)
             let world =
                 if initializing then
-                    if not mountOptFound && relating
+                    if not mountOptFound && entity.Surnames.Length > 1
                     then World.setEntityMountOpt (Some (Relation.makeParent ())) entity world |> snd'
                     else world
                 else world
@@ -195,13 +195,13 @@ module Content =
                         Seq.fold (fun world (kvp : KeyValuePair<Entity, _>) ->
                             let (entity, entityContent) = (kvp.Key, kvp.Value)
                             let entityContentOld = contentOld.EntityContentsOpt.[entity.Name]
-                            synchronizeEntity initializing true entityContentOld entityContent origin entity world)
+                            synchronizeEntity initializing entityContentOld entityContent origin entity world)
                             world entitiesPotentiallyAltered
                     else world
                 let world =
                     Seq.fold (fun world (entity : Entity, entityContent : EntityContent) ->
                         let (entity, world) = World.createEntity5 entityContent.EntityDispatcherName (Some entity.Surnames) DefaultOverlay entity.Group world
-                        synchronizeEntity true true EntityContent.empty entityContent origin entity world)
+                        synchronizeEntity true EntityContent.empty entityContent origin entity world)
                         world entitiesAdded
                 world
             | None -> world
@@ -222,13 +222,13 @@ module Content =
                         Seq.fold (fun world (kvp : KeyValuePair<Entity, _>) ->
                             let (entity, entityContent) = (kvp.Key, kvp.Value)
                             let entityContentOld = contentOld.EntityContentsOpt.[entity.Name]
-                            synchronizeEntity initializing false entityContentOld entityContent origin entity world)
+                            synchronizeEntity initializing entityContentOld entityContent origin entity world)
                             world entitiesPotentiallyAltered
                     else world
                 let world =
                     Seq.fold (fun world (entity : Entity, entityContent : EntityContent) ->
                         let (entity, world) = World.createEntity5 entityContent.EntityDispatcherName (Some entity.Surnames) DefaultOverlay entity.Group world
-                        synchronizeEntity true false EntityContent.empty entityContent origin entity world)
+                        synchronizeEntity true EntityContent.empty entityContent origin entity world)
                         world entitiesAdded
                 world
             | None -> world
