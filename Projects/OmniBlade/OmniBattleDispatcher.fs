@@ -1139,7 +1139,7 @@ module BattleDispatcher =
              Content.group Simulants.Battle.Scene.Group.Name []
 
                 [// tile map
-                 yield Content.tileMap "TileMap"
+                 Content.tileMap "TileMap"
                     [Entity.Position == v3 -480.0f -270.0f 0.0f
                      Entity.Elevation == Constants.Battle.BackgroundElevation
                      Entity.TileMap := battle.TileMap
@@ -1152,7 +1152,7 @@ module BattleDispatcher =
                     (match battle.DialogOpt with Some dialog -> Some dialog | None -> None)
 
                  // dialog interact button
-                 yield Content.button "DialogInteract"
+                 Content.button "DialogInteract"
                     [Entity.Position == v3 248.0f -240.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v3 144.0f 48.0f 0.0f
                      Entity.UpImage == Assets.Gui.ButtonShortUpImage; Entity.DownImage == Assets.Gui.ButtonShortDownImage
                      Entity.Visible := match battle.DialogOpt with Some dialog -> Dialog.canAdvance id dialog | None -> false
@@ -1163,13 +1163,13 @@ module BattleDispatcher =
                  for (index, character) in (Battle.getCharacters battle).Pairs do
 
                     // character
-                    yield Content.entity<CharacterDispatcher> (CharacterIndex.toEntityName index) [Entity.Character := character]
+                    Content.entity<CharacterDispatcher> (CharacterIndex.toEntityName index) [Entity.Character := character]
 
                  // hud
                  for (index, ally) in (Battle.getAllies battle).Pairs do
 
                     // bars
-                    yield Content.composite (CharacterIndex.toEntityName index + "+Hud")
+                    Content.composite (CharacterIndex.toEntityName index + "+Hud")
                         [Entity.Visible := ally.IsHealthy]
                         
                         [// health bar
@@ -1194,11 +1194,10 @@ module BattleDispatcher =
                 Content.group Simulants.Battle.Inputs.Group.Name []
 
                     [// inputs
-                     for (index, ally) in (Battle.getAllies battle).Pairs do
+                     for (index, ally) in (Battle.getAlliesHealthy battle).Pairs do
 
                         // input
-                        yield Content.composite (CharacterIndex.toEntityName index + "+Input")
-                            [Entity.Visible := ally.IsHealthy]
+                        Content.composite (CharacterIndex.toEntityName index + "+Input") []
                             [match ally.InputState with
                              | RegularMenu ->
                                 Content.entity<RingMenuDispatcher> "RegularMenu"
