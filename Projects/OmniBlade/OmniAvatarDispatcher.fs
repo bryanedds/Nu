@@ -33,8 +33,9 @@ module AvatarDispatcher =
         inherit EntityDispatcher2d<Avatar, AvatarMessage, AvatarCommand>
             (false, true, Avatar.make (box3 v3Zero Constants.Gameplay.CharacterSize) Assets.Field.JinnAnimationSheet Downward)
 
-        static let CoreShapeId = Gen.id64 // TODO: DIFF: hotload won't work with this!
-        static let SensorShapeId = Gen.id64
+        // HACK: making ids static for hot-reloading.
+        static let CoreShapeId = 0UL <<< 56
+        static let SensorShapeId = 1UL <<< 56
 
         static let getSpriteInset (entity : Entity) world =
             let avatar = entity.GetAvatar world
@@ -68,15 +69,15 @@ module AvatarDispatcher =
                 BodyShapes
                     [BodySphere { Radius = 0.160f; Center = v3 -0.016f -0.3667f 0.0f; PropertiesOpt = Some { BodyShapeProperties.empty with BodyShapeId = CoreShapeId }}
                      BodySphere { Radius = 0.320f; Center = v3 -0.016f -0.3667f 0.0f; PropertiesOpt = Some { BodyShapeProperties.empty with BodyShapeId = SensorShapeId; SensorOpt = Some true }}]
-            [entity.Perimeter := avatar.Perimeter
-             entity.Presence == Omnipresent
-             entity.FixedRotation == true
-             entity.GravityScale == 0.0f
-             entity.BodyShape == bodyShape
-             entity.UpdateEvent => msg Update
+            [Entity.Perimeter := avatar.Perimeter
+             Entity.Presence == Omnipresent
+             Entity.FixedRotation == true
+             Entity.GravityScale == 0.0f
+             Entity.BodyShape == bodyShape
+             Entity.UpdateEvent => msg Update
+             Entity.BodyCollisionEvent =|> fun evt -> msg (BodyCollision evt.Data)
+             Entity.BodySeparationEvent =|> fun evt -> msg (BodySeparation evt.Data)
              entity.Group.PostUpdateEvent => msg PostUpdate
-             entity.BodyCollisionEvent =|> fun evt -> msg (BodyCollision evt.Data)
-             entity.BodySeparationEvent =|> fun evt -> msg (BodySeparation evt.Data)
              Simulants.Game.BodyRemovingEvent =|> fun evt -> msg (BodyRemoving evt.Data)]
 
         override this.Message (avatar, message, entity, world) =
@@ -175,7 +176,7 @@ module AvatarDispatcher =
                 else just world
 
         override this.Physics (position, _, _, _, avatar, _, _) =
-            let avatar = Avatar.updateCenter (constant position) avatar
+            let avatar = Avatar.updatePosition (constant position) avatar
             just avatar
 
         override this.View (avatar, entity, world) =

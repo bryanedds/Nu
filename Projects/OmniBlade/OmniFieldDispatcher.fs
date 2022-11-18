@@ -16,7 +16,6 @@ module FieldDispatcher =
     type [<NoEquality; NoComparison>] FieldMessage =
         | Update
         | UpdateFieldTransition
-        | UpdateAvatarBodyTransform of BodyTransformData
         | MenuTeamOpen
         | MenuTeamAlly of int
         | MenuItemsOpen
@@ -660,6 +659,10 @@ module FieldDispatcher =
             match message with
             | Update ->
 
+                // pull field state from avatar
+                let avatar = Simulants.Field.Scene.Avatar.GetAvatar world
+                let field = Field.updateAvatar (constant avatar) field
+
                 // update field time
                 let field = Field.advanceUpdateTime field
 
@@ -800,10 +803,6 @@ module FieldDispatcher =
 
                 // no transition
                 | None -> just field
-
-            | UpdateAvatarBodyTransform transformData ->
-                let field = Field.updateAvatar (Avatar.updateCenter (constant transformData.BodyPosition)) field
-                just field
 
             | MenuTeamOpen ->
                 let state = MenuTeam { TeamIndex = 0; TeamIndices = Map.toKeyList field.Team }
@@ -1137,14 +1136,13 @@ module FieldDispatcher =
                         Option.isNone field.ShopOpt &&
                         Option.isNone field.FieldTransitionOpt
                      Entity.LinearDamping == Constants.Field.LinearDamping
-                     Entity.BodyTransformEvent =|> fun evt -> msg (UpdateAvatarBodyTransform evt.Data)
                      Entity.Avatar := field.Avatar]
 
                  // props
                  for (index, prop) in field.Props.Pairs do // TODO: DIFF: memoize?
-                 
+
                     // prop
-                    Content.entity<PropDispatcher> (scstringm index) [Entity.Prop := prop]
+                    Content.entity<PropDispatcher> ("Prop+" + string index) [Entity.Prop := prop]
 
                  // spirit orb
                  if Field.hasEncounters field && Cue.isNil field.Cue then
