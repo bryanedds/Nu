@@ -868,10 +868,9 @@ module RigidBodyFacetModule =
 
         override this.RegisterPhysics (entity, world) =
             let mutable transform = entity.GetTransform world
-            let perimeter = transform.Perimeter
             let bodyProperties =
                 { BodyId = (entity.GetPhysicsId world).CorrelationId
-                  Position = perimeter.Center
+                  Position = transform.Center
                   Rotation = transform.Rotation
                   BodyShape = getBodyShape entity world
                   BodyType = entity.GetBodyType world

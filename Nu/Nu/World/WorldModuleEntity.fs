@@ -1895,15 +1895,15 @@ module WorldModuleEntity =
             | None -> box3 (v3Dup -0.5f) v3One
 
         static member internal updateEntityPublishUpdateFlag entity world =
-            World.updateEntityPublishEventFlag World.setEntityPublishUpdates entity (atooa entity.UpdateEvent) world
+            World.updateEntityPublishEventFlag World.setEntityPublishUpdates entity (atooa (Events.Update --> entity)) world
 
 #if !DISABLE_ENTITY_POST_UPDATE
         static member internal updateEntityPublishPostUpdateFlag entity world =
-            World.updateEntityPublishEventFlag World.setEntityPublishPostUpdates entity (atooa entity.PostUpdateEvent) world
+            World.updateEntityPublishEventFlag World.setEntityPublishPostUpdates entity (atooa (Events.PostUpdate --> entity)) world
 #endif
 
         static member internal updateEntityPublishRenderFlag entity world =
-            World.updateEntityPublishEventFlag World.setEntityPublishRenders entity (atooa entity.RenderEvent) world
+            World.updateEntityPublishEventFlag World.setEntityPublishRenders entity (atooa (Events.Render --> entity)) world
 
         static member internal updateEntityPublishFlags entity world =
             let mutable changed = false // bit of funky mutation in the face of #if

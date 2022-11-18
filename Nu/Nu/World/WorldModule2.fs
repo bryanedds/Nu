@@ -701,8 +701,9 @@ module WorldModule2 =
                 | BodyTransformMessage bodyTransformMessage ->
                     let bodySource = bodyTransformMessage.BodySource
                     let entity = bodySource.Simulant :?> Entity
-                    let size = entity.GetSize world
-                    let position = bodyTransformMessage.Position - size * v3UncenteredOffset
+                    let entityState = World.getEntityState entity world // OPTIMIZATION: invoke entity state directly.
+                    let centerOffset = if entityState.Centered then v3Zero else entityState.Size * v3UncenteredOffset
+                    let position = bodyTransformMessage.Position - centerOffset
                     let rotation = bodyTransformMessage.Rotation
                     let linearVelocity = bodyTransformMessage.LinearVelocity
                     let angularVelocity = bodyTransformMessage.AngularVelocity
@@ -712,10 +713,10 @@ module WorldModule2 =
                         else world
                     // TODO: don't publish if PublishBodyTransformEvent is false.
                     let transformData =
-                        { BodyPosition = bodyTransformMessage.Position
-                          BodyRotation = bodyTransformMessage.Rotation
-                          BodyLinearVelocity = bodyTransformMessage.LinearVelocity
-                          BodyAngularVelocity = bodyTransformMessage.AngularVelocity }
+                        { BodyPosition = position
+                          BodyRotation = rotation
+                          BodyLinearVelocity = linearVelocity
+                          BodyAngularVelocity = angularVelocity }
                     let transformAddress = Events.BodyTransform --> entity.EntityAddress
                     let eventTrace = EventTrace.debug "World" "processIntegrationMessage" "" EventTrace.empty
                     World.publish transformData transformAddress eventTrace Simulants.Game world

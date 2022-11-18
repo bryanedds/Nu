@@ -1061,23 +1061,6 @@ module WorldTypes =
             with get () = entityStateOpt
             and set value = entityStateOpt <- value
 
-        /// The entity's update event.
-        member this.UpdateEvent =
-            let surnames = Address.getNames entityAddress
-            rtoa<unit> (Array.append [|"Update"; "Event"|] surnames)
-
-#if !DISABLE_ENTITY_POST_UPDATE
-        /// The entity's post update event.
-        member this.PostUpdateEvent =
-            let surnames = Address.getNames entityAddress
-            rtoa<unit> (Array.append [|"PostUpdate"; "Event"|] surnames)
-#endif
-
-        /// The entity's render event.
-        member this.RenderEvent =
-            let surnames = Address.getNames entityAddress
-            rtoa<unit> (Array.append [|"Render"; "Event"|] surnames)
-
         /// Get the names of an entity.
         member inline this.Names = Address.getNames this.EntityAddress
 
