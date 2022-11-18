@@ -1173,14 +1173,16 @@ module BattleDispatcher =
                         
                         [// health bar
                          Content.fillBar "HealthBar" 
-                            [Entity.Size == v3 48.0f 6.0f 0.0f
+                            [Entity.MountOpt == None
+                             Entity.Size == v3 48.0f 6.0f 0.0f
                              Entity.Center := ally.BottomOffset
                              Entity.Elevation == Constants.Battle.GuiElevation
                              Entity.Fill := single ally.HitPoints / single ally.HitPointsMax]
                             
                          // tech bar
                          Content.fillBar "TechBar" 
-                            [Entity.Size == v3 48.0f 6.0f 0.0f
+                            [Entity.MountOpt == None
+                             Entity.Size == v3 48.0f 6.0f 0.0f
                              Entity.Center := ally.BottomOffset2
                              Entity.Elevation == Constants.Battle.GuiElevation
                              Entity.FillColor == Color (byte 74, byte 91, byte 169, byte 255)
