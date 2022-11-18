@@ -68,6 +68,12 @@ module OmniBlade =
                             | _ -> Desire Simulants.Battle.Screen
                         | None -> Desire Simulants.Field.Screen
                     | Quitting | Quit -> Desire Simulants.Title.Screen
+             match model with
+             | Gui _ -> ()
+             | Field field ->
+                 match field.BattleOpt with
+                 | None -> Simulants.Field.Screen.Field := field
+                 | Some battle -> Simulants.Battle.Screen.Battle := battle
              Simulants.Game.UpdateEvent => msg UpdateMessage
              Simulants.Game.UpdateEvent => cmd UpdateCommand
              Simulants.Splash.Screen.DeselectingEvent => msg ShowTitle
@@ -81,13 +87,7 @@ module OmniBlade =
              Simulants.Pick.Gui.LoadGame2.ClickEvent => msg (TryLoad Slot2)
              Simulants.Pick.Gui.LoadGame3.ClickEvent => msg (TryLoad Slot3)
              Simulants.Pick.Gui.Back.ClickEvent => msg ShowTitle
-             Simulants.Credits.Gui.Back.ClickEvent => msg ShowTitle
-             match model with
-             | Field field ->
-                 match field.BattleOpt with
-                 | None -> Simulants.Field.Screen.Field := field
-                 | Some battle -> Simulants.Battle.Screen.Battle := battle
-             | _ -> ()]
+             Simulants.Credits.Gui.Back.ClickEvent => msg ShowTitle]
 
         override this.Message (model, message, _, world) =
 
@@ -110,6 +110,21 @@ module OmniBlade =
                 | None -> just model
 
             | UpdateMessage ->
+
+                // pull model state from field and battle screens
+                let model =
+                    match model with
+                    | Gui _ -> model
+                    | Field field ->
+                        match field.BattleOpt with
+                        | None ->
+                            let field' = Simulants.Field.Screen.GetField world
+                            if field <> field' then Field field' else model
+                        | Some battle ->
+                            let battle' = Simulants.Battle.Screen.GetBattle world
+                            if battle <> battle' then Field (Field.updateBattleOpt (constant (Some battle')) field) else model
+
+                // update model
                 let model =
                     match model with
                     | Gui gui ->
@@ -130,6 +145,8 @@ module OmniBlade =
                                 else Field (Field.updateFieldState (constant Quitting) field)
                             | _ -> model
                         | None -> model
+
+                // fin
                 just model
 
         override this.Command (_, command, _, world) =
@@ -163,7 +180,7 @@ module OmniBlade =
                 // fin
                 just world
 
-        override this.Content (model, _) =
+        override this.Content (_, _) =
 
             [// splash
              Content.screen Simulants.Splash.Screen.Name (WorldTypes.Splash (Constants.Gui.Dissolve, Constants.Gui.Splash, None, Simulants.Title.Screen)) [] []
@@ -178,19 +195,10 @@ module OmniBlade =
              Content.screenWithGroupFromFile Simulants.Pick.Screen.Name (Dissolve ({ Constants.Gui.Dissolve with OutgoingTime = 90L }, Some Assets.Gui.TitleSong)) Assets.Gui.PickGroupFilePath [] []
 
              // field
-             Content.screen<FieldDispatcher> Simulants.Field.Screen.Name (Dissolve (Constants.Gui.Dissolve, None))
-                [match model with Field field -> Screen.Field := field | _ -> ()]
-                []
+             Content.screen<FieldDispatcher> Simulants.Field.Screen.Name (Dissolve (Constants.Gui.Dissolve, None)) [] []
 
              // battle
-             Content.screen<BattleDispatcher> Simulants.Battle.Screen.Name (Dissolve (Constants.Gui.Dissolve, None))
-                [match model with
-                 | Field field ->
-                     match field.BattleOpt with
-                     | Some battle -> Screen.Battle := battle
-                     | _ -> ()
-                 | _ -> ()]
-                []
+             Content.screen<BattleDispatcher> Simulants.Battle.Screen.Name (Dissolve (Constants.Gui.Dissolve, None)) [] []
 
              // intros
              Content.screenWithGroupFromFile Simulants.Intro.Screen.Name (WorldTypes.Splash (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.Gui.IntroSong, Simulants.Intro2.Screen)) Assets.Gui.IntroGroupFilePath [] []

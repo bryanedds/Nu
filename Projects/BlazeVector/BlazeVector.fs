@@ -46,6 +46,7 @@ module BlazeVector =
                 | Credits -> Desire Simulants.Credits.Screen
                 | Gameplay gameplay -> match gameplay with Playing -> Desire Simulants.Gameplay.Screen | Quitting | Quit -> Desire Simulants.Title.Screen
              Game.UpdateEvent => msg Update
+             match model with Gameplay gameplay -> Simulants.Gameplay.Screen.Gameplay := gameplay | _ -> ()
              Simulants.Splash.Screen.DeselectingEvent => msg ShowTitle
              Simulants.Title.Gui.Credits.ClickEvent => msg ShowCredits
              Simulants.Title.Gui.Play.ClickEvent => msg ShowGameplay
@@ -60,7 +61,9 @@ module BlazeVector =
             | ShowGameplay -> just (Gameplay Playing)
             | Update ->
                 match model with
-                | Gameplay _ -> just (Gameplay (Simulants.Gameplay.Screen.GetGameplay world))
+                | Gameplay gameplay ->
+                    let gameplay' = Simulants.Gameplay.Screen.GetGameplay world
+                    if gameplay <> gameplay' then just (Gameplay gameplay') else just model
                 | _ -> just model
 
         // here we handle the above commands
@@ -73,6 +76,4 @@ module BlazeVector =
             [Content.screen Simulants.Splash.Screen.Name (WorldTypes.Splash (Constants.Dissolve.Default, Constants.Splash.Default, None, Simulants.Title.Screen)) [] []
              Content.screenWithGroupFromFile Simulants.Title.Screen.Name (Dissolve (Constants.Dissolve.Default, Some Assets.Gui.MachinerySong)) Assets.Gui.TitleGroupFilePath [] []
              Content.screenWithGroupFromFile Simulants.Credits.Screen.Name (Dissolve (Constants.Dissolve.Default, Some Assets.Gui.MachinerySong)) Assets.Gui.CreditsGroupFilePath [] []
-             Content.screen<GameplayDispatcher> Simulants.Gameplay.Screen.Name (Dissolve (Constants.Dissolve.Default, Some Assets.Gameplay.DeadBlazeSong))
-                [match model with Gameplay gameplay -> Screen.Gameplay := gameplay | _ -> ()]
-                []]
+             Content.screen<GameplayDispatcher> Simulants.Gameplay.Screen.Name (Dissolve (Constants.Dissolve.Default, Some Assets.Gameplay.DeadBlazeSong)) [] []]

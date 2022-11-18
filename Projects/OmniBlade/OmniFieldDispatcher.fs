@@ -659,6 +659,10 @@ module FieldDispatcher =
             match message with
             | Update ->
 
+                // sync avatar
+                let avatar = Simulants.Field.Scene.Avatar.GetAvatar world
+                let field = if field.Avatar <> avatar then Field.updateAvatar (constant avatar) field else field
+
                 // update field time
                 let field = Field.advanceUpdateTime field
 
@@ -740,10 +744,6 @@ module FieldDispatcher =
                             (fade :: beastGrowl :: signals, field)
                         | Right field -> (signals, field)
                     else (signals, field)
-
-                // update avatar
-                let avatar = Simulants.Field.Scene.Avatar.GetAvatar world
-                let field = Field.updateAvatar (constant avatar) field
 
                 // fin
                 (signals, field)
@@ -1270,9 +1270,9 @@ module FieldDispatcher =
                     Content.panel "Team"
                         [Entity.Position == v3 -450.0f -255.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v3 900.0f 510.0f 0.0f
                          Entity.LabelImage == Assets.Gui.DialogXXLImage]
-                        [yield Content.sidebar "Sidebar" (v3 24.0f 417.0f 0.0f) field (fun () -> MenuTeamOpen) (fun () -> MenuItemsOpen) (fun () -> MenuTechOpen) (fun () -> MenuOptionsOpen) (fun () -> MenuClose)
+                        [Content.sidebar "Sidebar" (v3 24.0f 417.0f 0.0f) field (fun () -> MenuTeamOpen) (fun () -> MenuItemsOpen) (fun () -> MenuTechOpen) (fun () -> MenuOptionsOpen) (fun () -> MenuClose)
                          yield! Content.team (v3 138.0f 417.0f 0.0f) Int32.MaxValue field tautology2 MenuTeamAlly
-                         yield Content.label "Portrait"
+                         Content.label "Portrait"
                             [Entity.PositionLocal == v3 438.0f 288.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 192.0f 192.0f 0.0f
                              Entity.LabelImage :=
                                 match MenuTeam.tryGetTeamData field.Team menuTeam with
@@ -1281,37 +1281,37 @@ module FieldDispatcher =
                                     | Some portrait -> portrait
                                     | None -> Assets.Default.ImageEmpty
                                 | None -> Assets.Default.ImageEmpty]
-                         yield Content.text "CharacterType"
+                         Content.text "CharacterType"
                             [Entity.PositionLocal == v3 650.0f 372.0f 0.0f; Entity.ElevationLocal == 1.0f
                              Entity.Text :=
                                 match MenuTeam.tryGetTeamData field.Team menuTeam with
                                 | Some characterData -> CharacterType.getName characterData.CharacterType
                                 | None -> ""]
-                         yield Content.text "ArchetypeType"
+                         Content.text "ArchetypeType"
                             [Entity.PositionLocal == v3 650.0f 336.0f 0.0f; Entity.ElevationLocal == 1.0f
                              Entity.Text :=
                                 match MenuTeam.tryGetTeammate field.Team menuTeam with
                                 | Some teammate -> string teammate.ArchetypeType + " Lv." + string (Algorithms.expPointsToLevel teammate.ExpPoints)
                                 | None -> ""]
-                         yield Content.text "Weapon"
+                         Content.text "Weapon"
                             [Entity.PositionLocal == v3 444.0f 234.0f 0.0f; Entity.ElevationLocal == 1.0f
                              Entity.Text :=
                                 match MenuTeam.tryGetTeammate field.Team menuTeam with
                                 | Some teammate -> "Wpn: " + Option.mapOrDefaultValue string "None" teammate.WeaponOpt
                                 | None -> ""]
-                         yield Content.text "Armor"
+                         Content.text "Armor"
                             [Entity.PositionLocal == v3 444.0f 204.0f 0.0f; Entity.ElevationLocal == 1.0f
                              Entity.Text :=
                                 match MenuTeam.tryGetTeammate field.Team menuTeam with
                                 | Some teammate -> "Amr: " + Option.mapOrDefaultValue string "None" teammate.ArmorOpt
                                 | None -> ""]
-                         yield Content.text "Accessory"
+                         Content.text "Accessory"
                             [Entity.PositionLocal == v3 444.0f 174.0f 0.0f; Entity.ElevationLocal == 1.0f
                              Entity.Text :=
                                 match MenuTeam.tryGetTeammate field.Team menuTeam with
                                 | Some teammate -> "Acc: " + Option.mapOrDefaultValue string "None" (List.tryHead teammate.Accessories)
                                 | None -> ""]
-                         yield Content.text "Stats"
+                         Content.text "Stats"
                             [Entity.PositionLocal == v3 444.0f -84.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 512.0f 256.0f 0.0f
                              Entity.Justification == Unjustified true
                              Entity.Text :=
@@ -1337,20 +1337,20 @@ module FieldDispatcher =
                         [Entity.Position == v3 -450.0f -255.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v3 900.0f 510.0f 0.0f
                          Entity.LabelImage == Assets.Gui.DialogXXLImage
                          Entity.Enabled := Option.isNone field.Menu.MenuUseOpt]
-                        [yield Content.sidebar "Sidebar" (v3 24.0f 417.0f 0.0f) field (fun () -> MenuTeamOpen) (fun () -> MenuItemsOpen) (fun () -> MenuTechOpen) (fun () -> MenuOptionsOpen) (fun () -> MenuClose)
+                        [Content.sidebar "Sidebar" (v3 24.0f 417.0f 0.0f) field (fun () -> MenuTeamOpen) (fun () -> MenuItemsOpen) (fun () -> MenuTechOpen) (fun () -> MenuOptionsOpen) (fun () -> MenuClose)
                          yield! Content.items (v3 138.0f 417.0f 0.0f) 10 5 field MenuItemSelect
-                         yield Content.text "Gold"
+                         Content.text "Gold"
                             [Entity.PositionLocal == v3 399.0f 24.0f 0.0f; Entity.ElevationLocal == 1.0f
                              Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
                              Entity.Text := string field.Inventory.Gold + "G"]
-                         yield Content.button "PageUp"
+                         Content.button "PageUp"
                             [Entity.PositionLocal == v3 138.0f 12.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 72.0f 72.0f 0.0f
                              Entity.Text == "<"
                              Entity.VisibleLocal := Content.pageItems 10 field |> a__
                              Entity.UpImage == Assets.Gui.ButtonSmallUpImage
                              Entity.DownImage == Assets.Gui.ButtonSmallDownImage
                              Entity.ClickEvent => msg MenuItemsPageUp]
-                         yield Content.button "PageDown"
+                         Content.button "PageDown"
                             [Entity.PositionLocal == v3 777.0f 12.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 72.0f 72.0f 0.0f
                              Entity.Text == ">"
                              Entity.VisibleLocal := Content.pageItems 10 field |> _b_
@@ -1363,7 +1363,7 @@ module FieldDispatcher =
                     Content.panel "TechTeam"
                         [Entity.Position == v3 -450.0f -255.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v3 900.0f 510.0f 0.0f
                          Entity.LabelImage == Assets.Gui.DialogXXLImage]
-                        [yield Content.sidebar "Sidebar" (v3 24.0f 417.0f 0.0f) field (fun () -> MenuTeamOpen) (fun () -> MenuItemsOpen) (fun () -> MenuTechOpen) (fun () -> MenuOptionsOpen) (fun () -> MenuClose)
+                        [Content.sidebar "Sidebar" (v3 24.0f 417.0f 0.0f) field (fun () -> MenuTeamOpen) (fun () -> MenuItemsOpen) (fun () -> MenuTechOpen) (fun () -> MenuOptionsOpen) (fun () -> MenuClose)
                          yield! Content.team (v3 138.0f 417.0f 0.0f) Int32.MaxValue field tautology2 MenuTechAlly
                          yield! Content.techs (v3 466.0f 429.0f 0.0f) field MenuTechSelect]
 
@@ -1410,18 +1410,18 @@ module FieldDispatcher =
                                 | Some menuUse -> Teammate.canUseItem (snd menuUse.MenuUseSelection) teammate
                                 | None -> false)
                             MenuItemUse
-                         yield Content.button "Close"
+                         Content.button "Close"
                             [Entity.PositionLocal == v3 810.0f 342.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 72.0f 72.0f 0.0f
                              Entity.UpImage == asset "Field" "CloseButtonUp"
                              Entity.DownImage == asset "Field" "CloseButtonDown"
                              Entity.ClickEvent => msg MenuItemCancel]
-                         yield Content.text "Line1"
+                         Content.text "Line1"
                             [Entity.PositionLocal == v3 36.0f 354.0f 0.0f; Entity.ElevationLocal == 1.0f
                              Entity.Text := menuUse.MenuUseLine1]
-                         yield Content.text "Line2"
+                         Content.text "Line2"
                             [Entity.PositionLocal == v3 66.0f 312.0f 0.0f; Entity.ElevationLocal == 1.0f
                              Entity.Text := menuUse.MenuUseLine2]
-                         yield Content.text "Line3"
+                         Content.text "Line3"
                             [Entity.PositionLocal == v3 66.0f 270.0f 0.0f; Entity.ElevationLocal == 1.0f
                              Entity.Text := menuUse.MenuUseLine3]]
                  | None -> ()
@@ -1435,45 +1435,45 @@ module FieldDispatcher =
                          Entity.LabelImage == Assets.Gui.DialogXXLImage
                          Entity.Enabled == Option.isNone shop.ShopConfirmOpt]
                         [yield! Content.items (v3 96.0f 347.0f 0.0f) 8 4 field ShopSelect
-                         yield Content.button "Buy"
+                         Content.button "Buy"
                             [Entity.PositionLocal == v3 24.0f 438.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 192.0f 48.0f 0.0f
                              Entity.Text == "Buy"
                              Entity.VisibleLocal := shop.ShopState = ShopSelling
                              Entity.ClickEvent => msg ShopBuy]
-                         yield Content.text "BuyWhat"
+                         Content.text "BuyWhat"
                             [Entity.PositionLocal == v3 24.0f 438.0f 0.0f; Entity.ElevationLocal == 1.0f
                              Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
                              Entity.Text == "Buy what?"
                              Entity.VisibleLocal := shop.ShopState = ShopBuying]
-                         yield Content.button "Sell"
+                         Content.button "Sell"
                             [Entity.PositionLocal == v3 352.0f 438.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 192.0f 48.0f 0.0f
                              Entity.Text == "Sell"
                              Entity.VisibleLocal := shop.ShopState = ShopBuying
                              Entity.ClickEvent => msg ShopSell]
-                         yield Content.text "SellWhat"
+                         Content.text "SellWhat"
                             [Entity.PositionLocal == v3 352.0f 438.0f 0.0f; Entity.ElevationLocal == 1.0f
                              Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
                              Entity.Text == "Sell what?"
                              Entity.VisibleLocal := shop.ShopState = ShopSelling]
-                         yield Content.button "Leave"
+                         Content.button "Leave"
                             [Entity.PositionLocal == v3 678.0f 438.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 192.0f 48.0f 0.0f
                              Entity.Text == "Leave"
                              Entity.ClickEvent => msg ShopLeave]
-                         yield Content.button "PageUp"
+                         Content.button "PageUp"
                             [Entity.PositionLocal == v3 24.0f 15.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 72.0f 72.0f 0.0f
                              Entity.Text == "<"
                              Entity.VisibleLocal := a__ items
                              Entity.UpImage == Assets.Gui.ButtonSmallUpImage
                              Entity.DownImage == Assets.Gui.ButtonSmallDownImage
                              Entity.ClickEvent => msg ShopPageUp]
-                         yield Content.button "PageDown"
+                         Content.button "PageDown"
                             [Entity.PositionLocal == v3 804.0f 15.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 72.0f 72.0f 0.0f
                              Entity.Text == ">"
                              Entity.VisibleLocal := _b_ items
                              Entity.UpImage == Assets.Gui.ButtonSmallUpImage
                              Entity.DownImage == Assets.Gui.ButtonSmallDownImage
                              Entity.ClickEvent => msg ShopPageDown]
-                         yield Content.text "Gold"
+                         Content.text "Gold"
                             [Entity.PositionLocal == v3 352.0f 3.0f 0.0f; Entity.ElevationLocal == 1.0f
                              Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
                              Entity.Text := string field.Inventory.Gold + "G"]]
