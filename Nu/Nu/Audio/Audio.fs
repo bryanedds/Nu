@@ -29,7 +29,7 @@ type [<StructuralEquality; NoComparison>] SoundDescriptor =
       Sound : Sound AssetTag }
 
 /// A message to the audio system.
-type [<NoEquality; NoComparison>] AudioMessage =
+type [<StructuralEquality; NoComparison>] AudioMessage =
     | LoadAudioPackageMessage of string
     | UnloadAudioPackageMessage of string
     | PlaySoundMessage of SoundDescriptor
@@ -39,7 +39,7 @@ type [<NoEquality; NoComparison>] AudioMessage =
     | ReloadAudioAssetsMessage
 
 /// An audio asset used by the audio system.
-type [<NoEquality; NoComparison>] AudioAsset =
+type [<StructuralEquality; NoComparison>] AudioAsset =
     | WavAsset of nativeint
     | OggAsset of nativeint
 

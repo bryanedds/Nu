@@ -1024,7 +1024,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                 | RenderCachedStaticModelMessage d ->
                     GlRenderer3d.categorizeStaticModel (d.CachedStaticModelAbsolute, &d.CachedStaticModelAffineMatrix, d.CachedStaticModelInsetOpt, &d.CachedStaticModelRenderMaterial, d.CachedStaticModelRenderType, d.CachedStaticModel, renderer)
                 | RenderUserDefinedStaticModel (absolute, modelMatrix, insetOpt, renderMaterial, renderType, surfaceDescriptors, bounds) ->
-                    let assetTag = asset Assets.Default.PackageName Gen.name_ // TODO: see if we should instead use a specialized package for temporary assets like these.
+                    let assetTag = asset Assets.Default.PackageName Gen.name // TODO: see if we should instead use a specialized package for temporary assets like these.
                     GlRenderer3d.tryCreateUserDefinedStaticModel surfaceDescriptors bounds assetTag renderer
                     GlRenderer3d.categorizeStaticModel (absolute, &modelMatrix, insetOpt, &renderMaterial, renderType, assetTag, renderer)
                     SegmentedList.add assetTag userDefinedStaticModelsToDestroy
