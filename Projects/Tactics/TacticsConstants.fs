@@ -4,7 +4,6 @@
 namespace Tactics
 open Prime
 open Nu
-open Tactics
 
 [<RequireQualifiedAccess>]
 module Constants =
