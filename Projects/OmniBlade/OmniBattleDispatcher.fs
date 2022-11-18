@@ -1166,11 +1166,10 @@ module BattleDispatcher =
                     Content.entity<CharacterDispatcher> (CharacterIndex.toEntityName index) [Entity.Character := character]
 
                  // hud
-                 for (index, ally) in (Battle.getAllies battle).Pairs do
+                 for (index, ally) in (Battle.getAlliesHealthy battle).Pairs do
 
                     // bars
-                    Content.composite (CharacterIndex.toEntityName index + "+Hud")
-                        [Entity.Visible := ally.IsHealthy]
+                    Content.composite (CharacterIndex.toEntityName index + "+Hud") []
                         
                         [// health bar
                          Content.fillBar "HealthBar" 
