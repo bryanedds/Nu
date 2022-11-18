@@ -29,6 +29,27 @@ module WorldPhysics =
 
         /// Enqueue a 2d physics message in the world.
         static member enqueuePhysicsMessage2d (message : PhysicsMessage) world =
+            let world =
+                match message with
+                | CreateBodyMessage message ->
+                    let physicsId = { SourceId = message.SourceId; CorrelationId = message.BodyProperties.BodyId }
+                    let eventTrace = EventTrace.debug "World" "enqueuePhysicsMessage2d" "" EventTrace.empty
+                    World.publish physicsId Events.BodyAdding eventTrace Simulants.Game world
+                | CreateBodiesMessage message ->
+                    let eventTrace = EventTrace.debug "World" "enqueuePhysicsMessage2d" "" EventTrace.empty
+                    List.fold (fun world (bodyProperties : BodyProperties) ->
+                        let physicsId = { SourceId = message.SourceId; CorrelationId = bodyProperties.BodyId }
+                        World.publish physicsId Events.BodyAdding eventTrace Simulants.Game world)
+                        world message.BodiesProperties
+                | DestroyBodyMessage message ->
+                    let eventTrace = EventTrace.debug "World" "enqueuePhysicsMessage2d" "" EventTrace.empty
+                    World.publish message.PhysicsId Events.BodyRemoving eventTrace Simulants.Game world
+                | DestroyBodiesMessage message ->
+                    let eventTrace = EventTrace.debug "World" "enqueuePhysicsMessage2d" "" EventTrace.empty
+                    List.fold (fun world (physicsId : PhysicsId) ->
+                        World.publish physicsId Events.BodyRemoving eventTrace Simulants.Game world)
+                        world message.PhysicsIds
+                | _ -> world
             World.updatePhysicsEngine2d (fun physicsEngine -> physicsEngine.EnqueueMessage message) world
 
         /// Enqueue multiple 2d physics messages to the world.
@@ -98,9 +119,6 @@ module WorldPhysics =
         [<FunctionBinding>]
         static member createBody (entity : Entity) entityId (bodyProperties : BodyProperties) world =
             if entity.GetIs2d world then
-                let physicsId = { SourceId = entityId; CorrelationId = bodyProperties.BodyId }
-                let eventTrace = EventTrace.debug "World" "createBody" "" EventTrace.empty
-                let world = World.publish physicsId Events.BodyAdding eventTrace Simulants.Game world
                 let createBodyMessage = CreateBodyMessage { SourceSimulant = entity; SourceId = entityId; BodyProperties = bodyProperties }
                 World.enqueuePhysicsMessage2d createBodyMessage world
             else
@@ -110,12 +128,6 @@ module WorldPhysics =
         [<FunctionBinding>]
         static member createBodies (entity : Entity) entityId bodiesProperties world =
             if entity.GetIs2d world then
-                let eventTrace = EventTrace.debug "World" "createBodies" "" EventTrace.empty
-                let world =
-                    List.fold (fun world (bodyProperties : BodyProperties) ->
-                        let physicsId = { SourceId = entityId; CorrelationId = bodyProperties.BodyId }
-                        World.publish physicsId Events.BodyAdding eventTrace Simulants.Game world)
-                        world bodiesProperties
                 let createBodiesMessage = CreateBodiesMessage { SourceSimulant = entity; SourceId = entityId; BodiesProperties = bodiesProperties }
                 World.enqueuePhysicsMessage2d createBodiesMessage world
             else
@@ -124,8 +136,6 @@ module WorldPhysics =
         /// Send a message to the physics system to destroy a physics body.
         [<FunctionBinding>]
         static member destroyBody physicsId world =
-            let eventTrace = EventTrace.debug "World" "destroyBody" "" EventTrace.empty
-            let world = World.publish physicsId Events.BodyRemoving eventTrace Simulants.Game world
             let destroyBodyMessage = DestroyBodyMessage { PhysicsId = physicsId }
             World.enqueuePhysicsMessage2d destroyBodyMessage world
 
