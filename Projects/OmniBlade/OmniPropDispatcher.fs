@@ -95,7 +95,7 @@ module PropDispatcher =
                                 let localTime = time / 10L
                                 let celSize = Constants.Gameplay.TileCelSize
                                 let celColumn = single (localTime % 4L)
-                                let inset = box2 (v2 (celSize.X * celColumn) 0.0f) celSize // TODO: P1: turn this into a general animation function if one doesn't already exist...
+                                let inset = box2 (v2 (celSize.X * celColumn) 0.0f) celSize // TODO: turn this into a general animation function if one doesn't already exist...
                                 let image = Assets.Field.WarpAnimationSheet
                                 (true, image, Color.One, Transparent, Color.Zero, ValueSome inset, FlipNone)
                             | StairsPortal descending ->
@@ -147,9 +147,9 @@ module PropDispatcher =
                         if prop.Advents.IsSupersetOf requirements then
                             let time = World.getUpdateTime world
                             let localTime = time / 20L
-                            let celSize = v2 32.0f 32.0f // TODO: P1: put this in Constants.
+                            let celSize = v2 32.0f 32.0f // TODO: put this in Constants.
                             let celColumn = single (localTime % 4L)
-                            let inset = box2 (v2 (celSize.X * celColumn) 0.0f) celSize // TODO: P1: turn this into a general animation function if one doesn't already exist...
+                            let inset = box2 (v2 (celSize.X * celColumn) 0.0f) celSize // TODO: turn this into a general animation function if one doesn't already exist...
                             let image = Assets.Field.SealAnimationSheet
                             (false, image, color, Transparent, Color.Zero, ValueSome inset, FlipNone)
                         else (false, Assets.Default.ImageEmpty, Color.One, Transparent, Color.Zero, ValueNone, FlipNone)
@@ -228,9 +228,9 @@ module PropDispatcher =
                         let image = Assets.Field.FlameImage
                         let column = match flameType with FatFlame -> 0 | SkinnyFlame -> 3 | SmallFlame -> 1 | LargeFlame -> 2
                         let row = if mirror then 4 else 0
-                        let cel = int (World.getUpdateTime world / 10L % 4L) // TODO: P1: put this in Constants.
+                        let cel = int (World.getUpdateTime world / 10L % 4L) // TODO: put this in Constants.
                         let inset =
-                            box2 // TODO: P1: put the following hard-coded values in Constants.
+                            box2 // TODO: put the following hard-coded values in Constants.
                                 (v2 (single column * 16.0f) (single (row + cel) * 16.0f))
                                 (v2 16.0f 16.0f)
                         (false, image, Color.One, Transparent, Color.Zero, ValueSome inset, FlipNone)

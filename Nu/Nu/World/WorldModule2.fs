@@ -711,7 +711,7 @@ module WorldModule2 =
                         if bodySource.BodyId = 0UL
                         then entity.ApplyPhysics position rotation linearVelocity angularVelocity world
                         else world
-                    // TODO: don't publish if PublishBodyTransformEvent is false.
+                    // TODO: P1: don't publish if PublishBodyTransformEvent is false.
                     let transformData =
                         { BodyPosition = position
                           BodyRotation = rotation
