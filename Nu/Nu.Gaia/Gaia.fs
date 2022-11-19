@@ -1700,7 +1700,7 @@ module Gaia =
             match trySelectTargetDirAndMakeNuPluginFromFilePathOpt startForm.binaryFilePathText.Text with
             | Some (_, plugin) ->
                 startForm.modesComboBox.Items.Clear ()
-                for kvp in plugin.Modes do
+                for kvp in plugin.EditModes do
                    startForm.modesComboBox.Items.Add (kvp.Key) |> ignore
                 if startForm.modesComboBox.Items.Count <> 0 then
                     startForm.modesComboBox.SelectedIndex <- 0
@@ -1930,7 +1930,7 @@ module Gaia =
             let world =
                 match worldConfig.ModeOpt with
                 | Some mode ->
-                    match plugin.Modes.TryGetValue mode with
+                    match plugin.EditModes.TryGetValue mode with
                     | (true, modeFn) -> modeFn world
                     | (false, _) -> world
                 | None -> world
