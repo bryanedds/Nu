@@ -8,44 +8,6 @@ open System.IO
 open Prime
 module Program =
 
-    (* DISCUSSION - On Nu's authoring story...
-
-    Instead of using a single, general purpose scripting language for authoring tasks in Nu, we use a small set of
-    domain-specific languages. For example, the simulant system uses s-expression-based DSLs, as does the overlay,
-    asset graph, and effect system. The simulation interactions are defined with an Elm-style Model-View-Update form
-    factor directly in F#.
-
-    What follows is a matrix of engine systems and the authoring language they provide to the user -
-
-    system          | language                  | editor
-    -----------------------------------------------------------
-    simulant defns  | s-expr DSL                | Gaia
-    event filtering | s-expr DSL                | Gaia
-    collision bodies| s-expr DSL                | Gaia
-    overlay         | s-expr DSL                | Visual Studio & Gaia
-    asset graph     | s-expr DSL                | Visual Studio & Gaia
-    console script  | s-expr DSL                | Visual Studio & Gaia
-    effect system   | s-expr DSL                | Gaia & Aether (TBA)
-    mind (TBA)      | s-expr DSL                | Gaia & Pheobe (TBA) - http://www.cs.uu.nl/research/techreps/repo/CS-2013/2013-003.pdf
-    particles       | F#                        | Visual Studio
-    subsystems      | F#                        | Visual Studio
-    ECS             | F#                        | Visual Studio
-    EC components   | F# (facets / dispatchers) | Visual Studio
-    elmish / MVU    | F# (facets / dispatchers) | Visual Studio
-    interactions    | F# (chains)               | Visual Studio (deprecated, but still usable)
-
-    The advantages and limitations that fall out of this are as such -
-
-    The systems that provide an s-expr DSL have their DSLs interpreted at run-time and, unlike code in F#, allow for
-    hot-reloading for optimal authoring experiences. For these systems, however, no static checking is in place,
-    allowing for trivial errors.
-
-    For the systems that aren't interpreted, a strong type system is in place to make sure complex data-flow
-    dependencies are made explicit and checked with good error messages. For this system, however, no hot-reloading
-    is possible, negatively affecting the authoring experience.
-
-    The trade-offs for each given domain does seem to be approxiately appropriate. *)
-
     (* WISDOM - Dealing with different device resolutions - Instead of rendering each component scaled to a back-buffer
     of a varying size, render each component unscaled to an off-screen buffer of a static size and then blit that with
     scaling to the back-buffer. NOTE: this only applies to 2d (for obvious reasons). *)
