@@ -197,7 +197,7 @@ module Gaia =
         | _ -> ()
 
     let private refreshFormOnUndoRedo (form : GaiaForm) world =
-        form.advancingButton.Checked <- false
+        form.runButton.Checked <- false
         refreshEntityPropertyGrid form world
         refreshGroupPropertyGrid form world
         refreshGroupTabs form world
@@ -316,7 +316,7 @@ module Gaia =
         | DragEyeInactive -> (Resolve, world)
 
     let private handleNuUpdate (form : GaiaForm) (_ : Event<unit, Game>) world =
-        if not form.advancingButton.Checked then
+        if not form.runButton.Checked then
             let moveSpeed =
                 if World.isKeyboardCtrlDown world then 0.0f // ignore movement while ctrl pressed
                 elif World.isKeyboardKeyDown KeyboardKey.Return world then 0.5f
@@ -1043,10 +1043,10 @@ module Gaia =
                 | [] -> world
             else world
 
-    let private handleFormAdvancingChanged (form : GaiaForm) (_ : EventArgs) =
+    let private handleFormRunChanged (form : GaiaForm) (_ : EventArgs) =
         addPreUpdater $ fun world ->
             let world = World.setUpdateRate 0L world
-            let updateRate = if form.advancingButton.Checked then 1L else 0L
+            let updateRate = if form.runButton.Checked then 1L else 0L
             let world =
                 if updateRate <> 0L then
                     form.displayPanel.Focus () |> ignore
@@ -1122,7 +1122,7 @@ module Gaia =
             let world = World.setEyeRotation3d quatIdentity world
             world
 
-    let private handleFormReloadScripts (_ : GaiaForm) (_ : EventArgs) =
+    let private handleFormReloadCode (_ : GaiaForm) (_ : EventArgs) =
         addPreUpdater $ fun world ->
             use errorStream = new StringWriter ()
             try
@@ -1189,6 +1189,10 @@ module Gaia =
             | (Left error, world) ->
                 MessageBox.Show ("Asset reload error due to: " + error + "'.", "Asset reload error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
                 world
+
+    let private handleFormReloadAll (form : GaiaForm) (args : EventArgs) =
+        handleFormReloadAssets form args
+        handleFormReloadCode form args
 
     let private handleFormGroupTabDeselected (form : GaiaForm) (_ : EventArgs) =
         addPreUpdater $ fun world ->
@@ -1395,7 +1399,7 @@ module Gaia =
 
     let private handleKeyboardInput key isKeyFromKeyableControl (form : GaiaForm) world =
         if Form.ActiveForm = (form :> Form) then
-            if Keys.F5 = key then form.advancingButton.PerformClick ()
+            if Keys.F5 = key then form.runButton.PerformClick ()
             if Keys.D3 = key && Keys.None = Control.ModifierKeys then form.snap3dButton.Checked <- form.snap3dButton.Checked
             if Keys.X = key && Keys.None = Control.ModifierKeys then form.constrainXButton.Checked <- not form.constrainXButton.Checked
             if Keys.Y = key && Keys.None = Control.ModifierKeys then form.constrainYButton.Checked <- not form.constrainYButton.Checked
@@ -1647,7 +1651,7 @@ module Gaia =
         refreshGroupTabs form Globals.World
         refreshHierarchyTreeView form Globals.World
         selectGroup Globals.EditorState.SelectedGroup form Globals.World
-        form.advancingButton.CheckState <- CheckState.Unchecked
+        form.runButton.CheckState <- CheckState.Unchecked
         form.songPlaybackButton.CheckState <- if World.getMasterSongVolume Globals.World = 0.0f then CheckState.Unchecked else CheckState.Checked
         form.displayPanel.Focus () |> ignore // keeps user from having to manually click on displayPanel to interact
         form.add_LowLevelKeyboardHook (fun nCode wParam lParam ->
@@ -1805,7 +1809,7 @@ module Gaia =
         form.createEntityButton.Click.Add (handleFormCreateEntity false false None form)
         form.createToolStripMenuItem.Click.Add (handleFormCreateEntity false false None form)
         form.quickSizeToolStripMenuItem.Click.Add (handleFormQuickSize form)
-        form.startStopAdvancingToolStripMenuItem.Click.Add (fun _ -> form.advancingButton.PerformClick ())
+        form.startStopAdvancingToolStripMenuItem.Click.Add (fun _ -> form.runButton.PerformClick ())
         form.deleteContextMenuItem.Click.Add (handleFormDeleteEntity form)
         form.deleteToolStripMenuItem.Click.Add (handleFormDeleteEntity form)
         form.deleteInHierachyContextMenuItem.Click.Add (handleFormDeleteEntity form)
@@ -1816,7 +1820,7 @@ module Gaia =
         form.closeGroupToolStripMenuItem.Click.Add (handleFormClose form)
         form.undoToolStripMenuItem.Click.Add (handleFormUndo form)
         form.redoToolStripMenuItem.Click.Add (handleFormRedo form)
-        form.advancingButton.CheckedChanged.Add (handleFormAdvancingChanged form)
+        form.runButton.CheckedChanged.Add (handleFormRunChanged form)
         form.songPlaybackButton.Click.Add (handleFormSongPlayback form)
         form.cutToolStripMenuItem.Click.Add (handleFormCut form)
         form.cutContextMenuItem.Click.Add (handleFormCut form)
@@ -1827,7 +1831,8 @@ module Gaia =
         form.quickSizeToolStripButton.Click.Add (handleFormQuickSize form)
         form.snap3dButton.Click.Add (handleFormSnap3d form)
         form.resetEyeButton.Click.Add (handleFormResetEye form)
-        form.reloadScriptsButton.Click.Add (handleFormReloadScripts form)
+        form.reloadAllButton.Click.Add (handleFormReloadAll form)
+        form.reloadCodeButton.Click.Add (handleFormReloadCode form)
         form.reloadAssetsButton.Click.Add (handleFormReloadAssets form)
         form.groupTabControl.Deselected.Add (handleFormGroupTabDeselected form)
         form.groupTabControl.Selected.Add (handleFormGroupTabSelected form)
