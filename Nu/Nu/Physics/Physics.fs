@@ -75,7 +75,7 @@ module BodyShapeProperties =
 /// The shape of a physics body box.
 type [<NoComparison>] BodyBox =
     { Extent : Vector3
-      Center : Vector3 // TODO: P1: consider if these Center fields should be called Offset instead?
+      Center : Vector3
       PropertiesOpt : BodyShapeProperties option }
     static member toBox bodyBox =
         box3 (bodyBox.Center - bodyBox.Extent) (bodyBox.Extent * 2.0f)

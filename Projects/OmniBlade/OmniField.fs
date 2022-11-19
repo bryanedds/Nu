@@ -299,7 +299,7 @@ module Field =
                         match Data.Value.Encounters.TryGetValue encounterType with
                         | (true, encounterData) ->
                             let battleType =
-                                // TODO: P1: toughen up this code.
+                                // TODO: toughen up this code.
                                 match spirit.SpiritType with
                                 | WeakSpirit -> encounterData.BattleTypes.[Gen.random2 0 3]
                                 | NormalSpirit -> encounterData.BattleTypes.[Gen.random2 3 6]

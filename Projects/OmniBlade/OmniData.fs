@@ -594,7 +594,6 @@ type [<NoComparison>] Cue =
     | Face of CueTarget * Direction
     | ClearSpirits
     | Recruit of AllyType
-    | Unseal of int * Advent
     | AddItem of ItemType
     | RemoveItem of ItemType
     | AddAdvent of Advent
@@ -627,7 +626,7 @@ type [<NoComparison>] Cue =
     static member notNil cue = match cue with Nil -> false | _ -> true
     static member isInterrupting (inventory : Inventory) (advents : Advent Set) cue =
         match cue with
-        | Nil | PlaySound _ | PlaySong _ | FadeOutSong _ | Face _ | ClearSpirits | Recruit _ | Unseal _ -> false
+        | Nil | PlaySound _ | PlaySong _ | FadeOutSong _ | Face _ | ClearSpirits | Recruit _ -> false
         | AddItem _ | RemoveItem _ | AddAdvent _ | RemoveAdvent _ | ReplaceAdvent _ -> false
         | Wait _ | WaitState _ | Fade _ | FadeState _ | Move _ | MoveState _ | Warp _ | WarpState _ | Battle _ | BattleState _ | Dialog _ | DialogState _ | Prompt _ | PromptState _ -> true
         | Animate (_, _, wait) | AnimateState (_, wait) -> match wait with Timed 0L | NoWait -> false | _ -> true

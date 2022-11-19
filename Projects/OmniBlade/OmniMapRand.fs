@@ -347,7 +347,7 @@ type MapRand =
                  MapRand.tryAddSpecialRoomSouthFromNorthEast BossSegment
                  MapRand.tryAddSpecialRoomSouthFromNorthWest BossSegment]
                 rand
-        // TODO: P1: try to add more narrative segment placement variety while keeping each coming from opposite directions.
+        // TODO: try to add more narrative segment placement variety while keeping each coming from opposite directions.
         let isMapValid =
             MapRand.tryAddSpecialRoomSouthFromNorthWest NarrativeSegment map &&
             MapRand.tryAddSpecialRoomNorthFromSouthEast NarrativeSegment map &&
