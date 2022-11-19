@@ -1013,7 +1013,8 @@ module FieldDispatcher =
 
             match command with
             | ProcessKeyInput ->
-                if not (Simulants.Field.Scene.Feeler.GetTouched world) then
+                if  Option.isNone field.FieldTransitionOpt &&
+                    Simulants.Field.Scene.Feeler.GetTouched world |> not then
                     let avatar = Simulants.Field.Scene.Avatar
                     let force = v3Zero
                     let force = if World.isKeyboardKeyDown KeyboardKey.Right world || World.isKeyboardKeyDown KeyboardKey.D world then v3 Constants.Field.AvatarWalkForce 0.0f 0.0f + force else force
@@ -1032,7 +1033,8 @@ module FieldDispatcher =
                 else just world
 
             | ProcessTouchInput position ->
-                if  World.isKeyboardKeyUp KeyboardKey.Right world && World.isKeyboardKeyUp KeyboardKey.D world &&
+                if  Option.isNone field.FieldTransitionOpt && 
+                    World.isKeyboardKeyUp KeyboardKey.Right world && World.isKeyboardKeyUp KeyboardKey.D world &&
                     World.isKeyboardKeyUp KeyboardKey.Left world && World.isKeyboardKeyUp KeyboardKey.A world &&
                     World.isKeyboardKeyUp KeyboardKey.Up world && World.isKeyboardKeyUp KeyboardKey.W world &&
                     World.isKeyboardKeyUp KeyboardKey.Down world && World.isKeyboardKeyUp KeyboardKey.S world then
@@ -1125,8 +1127,7 @@ module FieldDispatcher =
                         field.Menu.MenuState = MenuClosed &&
                         Cue.notInterrupting field.Inventory field.Advents field.Cue &&
                         Option.isNone field.DialogOpt &&
-                        Option.isNone field.ShopOpt &&
-                        Option.isNone field.FieldTransitionOpt
+                        Option.isNone field.ShopOpt
                      Entity.LinearDamping == Constants.Field.LinearDamping
                      Entity.Avatar := field.Avatar]
 
