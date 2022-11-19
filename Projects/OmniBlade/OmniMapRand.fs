@@ -393,7 +393,7 @@ type MapRand =
             objects.[0] <- object
         else
             let (stairsX, stairsY, stairsWidth, stairsHeight) = (16 * mapTmx.TileWidth, 16 * mapTmx.TileHeight, mapTmx.TileWidth, mapTmx.TileHeight)
-            let stairsInfo = "[Portal [StairsPortal true] [IX 1] Upward [" + fieldName + " " + scstring (dec floor) + "] [IX 2]]"
+            let stairsInfo = "[Portal [StairsPortal true] [IX 1] Upward [" + fieldName + " " + string (dec floor) + "] [IX 2]]"
             let stairsXX = stairsX + cursor.X * mapTmx.TileWidth * 32
             let stairsYY = stairsY + cursor.Y * mapTmx.TileHeight * 32
             let object = TmxMap.makeObject entryId 0 (double stairsXX) (double stairsYY) (double stairsWidth) (double stairsHeight)
