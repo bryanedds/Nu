@@ -44,7 +44,7 @@ module SegmentedHashSet =
 
     let contains item sset =
         let hashCode = hash item
-        let index = Math.Abs (hashCode % 32)
+        let index = Math.Abs (hashCode % 32) // TODO: use Prime's `modulus` operator instead?
         sset.HashSets.[index].Contains item
 
     let add item sset =

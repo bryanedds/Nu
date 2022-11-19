@@ -72,7 +72,7 @@ module WorldModuleScreen =
 
         static member internal publishScreenChange (propertyName : string) (propertyPrevious : obj) (propertyValue : obj) (screen : Screen) world =
             let changeData = { Name = propertyName; Previous = propertyPrevious; Value = propertyValue }
-            let changeEventAddress = rtoa<ChangeData> [|"Change"; propertyName; "Event"; screen.Name|]
+            let changeEventAddress = rtoa<ChangeData> [|Constants.Lens.ChangeName; propertyName; Constants.Lens.EventName; screen.Name|]
             let eventTrace = EventTrace.debug "World" "publishScreenChange" "" EventTrace.empty
             World.publishPlus changeData changeEventAddress eventTrace screen false false world
 
@@ -115,7 +115,7 @@ module WorldModuleScreen =
                     let screenState = { screenState with Model = { DesignerType = value.DesignerType; DesignerValue = value.DesignerValue }}
                     struct (screenState, World.setScreenState screenState screen world)
                 let world = screenState.Dispatcher.TrySynchronize (initializing, screen, world)
-                let world = World.publishScreenChange "Model" previous.DesignerValue value.DesignerValue screen world
+                let world = World.publishScreenChange Constants.Engine.ModelPropertyName previous.DesignerValue value.DesignerValue screen world
                 struct (true, world)
             else struct (false, world)
 
@@ -134,7 +134,7 @@ module WorldModuleScreen =
                     let screenState = { screenState with Model = { DesignerType = typeof<'a>; DesignerValue = valueObj }}
                     struct (screenState, World.setScreenState screenState screen world)
                 let world = screenState.Dispatcher.TrySynchronize (initializing, screen, world)
-                let world = World.publishScreenChange "Model" previous.DesignerValue value screen world
+                let world = World.publishScreenChange Constants.Engine.ModelPropertyName previous.DesignerValue value screen world
                 struct (true, world)
             else struct (false, world)
 
