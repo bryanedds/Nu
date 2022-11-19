@@ -45,10 +45,17 @@ type [<NoComparison>] BodyCollisionData =
       Normal : Vector3
       Speed : single }
 
-/// The data for a separation event.
-type [<NoComparison>] BodySeparationData =
+/// The explicit data for a separation event.
+type [<NoComparison>] BodySeparationExplicit =
     { BodySeparator : BodyShapeSource
       BodySeparatee : BodyShapeSource }
+
+/// The data for a separation event.
+/// Unfortunately, due to the fact that physics system itself does not raise separation events until the following
+/// frame, we need both an implicit and explicit body separation representation.
+type [<NoComparison>] BodySeparationData =
+    | BodySeparationImplicit of PhysicsId
+    | BodySeparationExplicit of BodySeparationExplicit
 
 type [<NoComparison>] BodyTransformData =
     { BodyPosition : Vector3

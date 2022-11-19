@@ -16,7 +16,6 @@ module AvatarDispatcher =
         | PostUpdate
         | BodyCollision of BodyCollisionData
         | BodySeparation of BodySeparationData
-        | BodyRemoving of PhysicsId
         | TryFace of Direction
         | Nil
 
@@ -72,8 +71,7 @@ module AvatarDispatcher =
              Entity.UpdateEvent => msg Update
              Entity.BodyCollisionEvent =|> fun evt -> msg (BodyCollision evt.Data)
              Entity.BodySeparationEvent =|> fun evt -> msg (BodySeparation evt.Data)
-             entity.Group.PostUpdateEvent => msg PostUpdate
-             Simulants.Game.BodyRemovingEvent =|> fun evt -> msg (BodyRemoving evt.Data)]
+             entity.Group.PostUpdateEvent => msg PostUpdate]
 
         override this.Message (avatar, message, entity, world) =
             let time = World.getUpdateTime world
@@ -128,31 +126,27 @@ module AvatarDispatcher =
             | BodySeparation separation ->
 
                 // add separated body shape
-                let avatar =
-                    if isIntersectedProp separation.BodySeparator separation.BodySeparatee avatar world then
-                        let avatar = Avatar.updateSeparatedPropIds (List.cons (separation.BodySeparatee.Entity.GetProp world).PropId) avatar
-                        let avatar = Avatar.updateIntersectedPropIds (List.remove ((=) (separation.BodySeparatee.Entity.GetProp world).PropId)) avatar
-                        avatar
-                    else avatar
-                just avatar
-
-            | BodyRemoving physicsId ->
-                
-                // unfortunately, due to the fact that physics events like separation don't fire until the next frame,
-                // we need to handle this Nu-generated event in order to remove the associated prop id manually.
-                let entityOpt =
-                    world |>
-                    World.getEntities Simulants.Field.Scene.Group |>
-                    Seq.filter (fun entity -> entity.Is<PropDispatcher> world && entity.GetPhysicsId world = physicsId) |>
-                    Seq.tryHead
-                match entityOpt with
-                | Some entity ->
-                    let prop = entity.GetProp world
-                    let (separatedPropIds, intersectedPropIds) = List.split ((=) prop.PropId) avatar.IntersectedPropIds
-                    let avatar = Avatar.updateIntersectedPropIds (constant intersectedPropIds) avatar
-                    let avatar = Avatar.updateSeparatedPropIds ((@) separatedPropIds) avatar
-                    just avatar
-                | None -> just avatar
+                match separation with
+                | BodySeparationImplicit physicsId ->
+                    let entityOpt =
+                        world |>
+                        World.getEntities Simulants.Field.Scene.Group |>
+                        Seq.filter (fun entity -> entity.Is<PropDispatcher> world && entity.GetPhysicsId world = physicsId) |>
+                        Seq.tryHead
+                    match entityOpt with
+                    | Some entity ->
+                        let prop = entity.GetProp world
+                        let (separatedPropIds, intersectedPropIds) = List.split ((=) prop.PropId) avatar.IntersectedPropIds
+                        let avatar = Avatar.updateIntersectedPropIds (constant intersectedPropIds) avatar
+                        let avatar = Avatar.updateSeparatedPropIds ((@) separatedPropIds) avatar
+                        just avatar
+                    | None -> just avatar
+                | BodySeparationExplicit explicit ->
+                    if isIntersectedProp explicit.BodySeparator explicit.BodySeparatee avatar world then
+                        let avatar = Avatar.updateSeparatedPropIds (List.cons (explicit.BodySeparatee.Entity.GetProp world).PropId) avatar
+                        let avatar = Avatar.updateIntersectedPropIds (List.remove ((=) (explicit.BodySeparatee.Entity.GetProp world).PropId)) avatar
+                        just avatar
+                    else just avatar
 
             | Nil ->
 

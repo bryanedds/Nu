@@ -691,12 +691,12 @@ module WorldModule2 =
                 | BodySeparationMessage bodySeparationMessage ->
                     let entity = bodySeparationMessage.BodyShapeSource.Simulant :?> Entity
                     if entity.Exists world then
-                        let separationData =
+                        let explicit =
                             { BodySeparator = BodyShapeSource.fromInternal bodySeparationMessage.BodyShapeSource
                               BodySeparatee = BodyShapeSource.fromInternal bodySeparationMessage.BodyShapeSource2 }
                         let separationAddress = Events.BodySeparation --> entity.EntityAddress
                         let eventTrace = EventTrace.debug "World" "processIntegrationMessage" "" EventTrace.empty
-                        World.publish separationData separationAddress eventTrace Simulants.Game world
+                        World.publish (BodySeparationExplicit explicit) separationAddress eventTrace Simulants.Game world
                     else world
                 | BodyTransformMessage bodyTransformMessage ->
                     let bodySource = bodyTransformMessage.BodySource
