@@ -282,7 +282,7 @@ module Gameplay =
                                 if i = 0
                                 then Assets.Gameplay.SectionFilePaths.[0]
                                 else Gen.randomItem Assets.Gameplay.SectionFilePaths
-                            let sectionName = SectionName + scstring i
+                            let sectionName = SectionName + string i
                             let sectionXShift = 2048.0f * single i
                             createSectionFromFile sectionFilePath sectionName sectionXShift gameplay world)
                         world
@@ -290,7 +290,7 @@ module Gameplay =
                 just world
 
             | DestroySections ->
-                let sectionNames = [for i in 0 .. SectionCount - 1 do yield SectionName + scstring i]
+                let sectionNames = [for i in 0 .. SectionCount - 1 do yield SectionName + string i]
                 let groupNames = Simulants.Gameplay.Scene.Group.Name :: sectionNames
                 let groups = List.map (fun groupName -> gameplay / groupName) groupNames
                 let world = World.destroyGroups groups world
