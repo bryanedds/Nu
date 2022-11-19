@@ -55,7 +55,7 @@ module WorldModuleEntity =
 
     // OPTIMIZATION: cache one entity change address to reduce allocation where possible.
     let mutable changeEventNamesFree = true
-    let changeEventNamesCached = [|"Change"; ""; "Event"; ""; ""; ""|]
+    let changeEventNamesCached = [|Constants.Lens.ChangeName; ""; Constants.Lens.EventName; ""; ""; ""|]
 
     type World with
 
@@ -159,7 +159,7 @@ module WorldModuleEntity =
                         changeEventNamesCached.[4] <- entityNames.[1]
                         changeEventNamesCached.[5] <- entityNames.[2]
                         rtoa<ChangeData> changeEventNamesCached
-                    else rtoa<ChangeData> (Array.append [|"Change"; propertyName; "Event"|] entityNames)
+                    else rtoa<ChangeData> (Array.append [|Constants.Lens.ChangeName; propertyName; Constants.Lens.EventName|] entityNames)
                 let eventTrace = EventTrace.debug "World" "publishEntityChange" "" EventTrace.empty
                 let world = World.publishPlus changeData changeEventAddress eventTrace entity false false world
                 if changeEventNamesUtilized then changeEventNamesFree <- true
@@ -302,7 +302,7 @@ module WorldModuleEntity =
                         let entityState = { entityState with Model = { DesignerType = value.DesignerType; DesignerValue = value.DesignerValue }}
                         struct (entityState, World.setEntityState entityState entity world)
                 let world = entityState.Dispatcher.TrySynchronize (initializing, entity, world)
-                let world = World.publishEntityChange "Model" previous.DesignerValue value.DesignerValue entityState.PublishChangeEvents entity world
+                let world = World.publishEntityChange Constants.Engine.ModelPropertyName previous.DesignerValue value.DesignerValue entityState.PublishChangeEvents entity world
                 struct (true, world)
             else struct (false, world)
 
@@ -325,7 +325,7 @@ module WorldModuleEntity =
                         let entityState = { entityState with Model = { DesignerType = typeof<'a>; DesignerValue = valueObj }}
                         struct (entityState, World.setEntityState entityState entity world)
                 let world = entityState.Dispatcher.TrySynchronize (initializing, entity, world)
-                let world = World.publishEntityChange "Model" previous.DesignerValue value entityState.PublishChangeEvents entity world
+                let world = World.publishEntityChange Constants.Engine.ModelPropertyName previous.DesignerValue value entityState.PublishChangeEvents entity world
                 struct (true, world)
             else struct (false, world)
 

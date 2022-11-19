@@ -20,7 +20,7 @@ module WorldModuleGame =
         static member private publishGameChange propertyName (propertyPrevious : obj) (propertyValue : obj) world =
             let game = Game ()
             let changeData = { Name = propertyName; Previous = propertyPrevious; Value = propertyValue }
-            let changeEventAddress = rtoa<ChangeData> [|"Change"; propertyName; "Event"|]
+            let changeEventAddress = rtoa<ChangeData> [|Constants.Lens.ChangeName; propertyName; Constants.Lens.EventName|]
             let eventTrace = EventTrace.debug "World" "publishGameChange" "" EventTrace.empty
             World.publishPlus changeData changeEventAddress eventTrace game false false world
 
@@ -54,7 +54,7 @@ module WorldModuleGame =
                             | None -> DesireNone
                         World.setDesiredScreen desiredScreen world |> snd'
                     else world
-                let world = World.publishGameChange "Model" previous.DesignerValue value.DesignerValue world
+                let world = World.publishGameChange Constants.Engine.ModelPropertyName previous.DesignerValue value.DesignerValue world
                 struct (true, world)
             else struct (false, world)
 
@@ -82,7 +82,7 @@ module WorldModuleGame =
                             | None -> DesireNone
                         World.setDesiredScreen desiredScreen world |> snd'
                     else world
-                let world = World.publishGameChange "Model" previous.DesignerValue value world
+                let world = World.publishGameChange Constants.Engine.ModelPropertyName previous.DesignerValue value world
                 struct (true, world)
             else struct (false, world)
 

@@ -24,6 +24,7 @@ module Engine =
     let [<Literal>] FacetsPropertyName = "Facets"
     let [<Literal>] XtensionPropertyName = "Xtension"
     let [<Literal>] TransformPropertyName = "Transform"
+    let [<Literal>] ModelPropertyName = "Model"
     let [<Literal>] SurnamesPropertyName = "Surnames"
     let [<Literal>] OverlayNameOptPropertyName = "OverlayNameOpt"
     let [<Literal>] EffectNameDefault = "Effect"

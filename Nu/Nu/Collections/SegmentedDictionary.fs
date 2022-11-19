@@ -54,7 +54,7 @@ module SegmentedDictionary =
 
     let containsKey key sdict =
         let hashCode = sdict.Comparer.GetHashCode key
-        let index = Math.Abs (hashCode % 32)
+        let index = Math.Abs (hashCode % 32) // TODO: use Prime's `modulus` operator instead?
         sdict.Dictionaries.[index].ContainsKey key
 
     let tryFind (key, sdict) =

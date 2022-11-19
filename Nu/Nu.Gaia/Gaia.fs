@@ -160,8 +160,8 @@ module Gaia =
         if notNull previousGridItem then
             match gridItems.TryGetValue previousGridItem.Label with
             | (true, gridItem) -> form.entityPropertyGrid.SelectedGridItem <- gridItem
-            | (false, _) -> if entity.GetModelGeneric<obj> world <> box () then form.entityPropertyGrid.SelectedGridItem <- gridItems.["Model"]
-        elif entity.GetModelGeneric<obj> world <> box () then form.entityPropertyGrid.SelectedGridItem <- gridItems.["Model"]
+            | (false, _) -> if entity.GetModelGeneric<obj> world <> box () then form.entityPropertyGrid.SelectedGridItem <- gridItems.[Constants.Engine.ModelPropertyName]
+        elif entity.GetModelGeneric<obj> world <> box () then form.entityPropertyGrid.SelectedGridItem <- gridItems.[Constants.Engine.ModelPropertyName]
         form.propertyTabControl.SelectTab 0 // show entity properties
 
     let private deselectEntity (form : GaiaForm) world =
@@ -190,9 +190,8 @@ module Gaia =
         match form.groupPropertyGrid.SelectedObject with
         | :? GroupTypeDescriptorSource as groupTds ->
             Globals.World <- world // must be set for property grid
-            if groupTds.DescribedGroup.Exists world then
-                //form.groupIgnorePropertyBindingsCheckBox.Checked <- groupTds.DescribedGroup.GetIgnorePropertyBindings world
-                form.groupPropertyGrid.Refresh ()
+            if groupTds.DescribedGroup.Exists world
+            then form.groupPropertyGrid.Refresh ()
             else deselectGroup form world
         | _ -> ()
 

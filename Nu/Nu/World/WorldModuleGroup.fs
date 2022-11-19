@@ -73,7 +73,7 @@ module WorldModuleGroup =
         static member internal publishGroupChange propertyName (propertyPrevious : obj) (propertyValue : obj) (group : Group) world =
             let changeData = { Name = propertyName; Previous = propertyPrevious; Value = propertyValue }
             let groupNames = Address.getNames group.GroupAddress
-            let changeEventAddress = rtoa<ChangeData> [|"Change"; propertyName; "Event"; groupNames.[0]; groupNames.[1]|]
+            let changeEventAddress = rtoa<ChangeData> [|Constants.Lens.ChangeName; propertyName; Constants.Lens.EventName; groupNames.[0]; groupNames.[1]|]
             let eventTrace = EventTrace.debug "World" "publishGroupChange" "" EventTrace.empty
             World.publishPlus changeData changeEventAddress eventTrace group false false world
 
@@ -115,7 +115,7 @@ module WorldModuleGroup =
                     let groupState = { groupState with Model = { DesignerType = value.DesignerType; DesignerValue = value.DesignerValue }}
                     struct (groupState, World.setGroupState groupState group world)
                 let world = groupState.Dispatcher.TrySynchronize (initializing, group, world)
-                let world = World.publishGroupChange "Model" previous.DesignerValue value.DesignerValue group world
+                let world = World.publishGroupChange Constants.Engine.ModelPropertyName previous.DesignerValue value.DesignerValue group world
                 struct (true, world)
             else struct (false, world)
 
@@ -134,7 +134,7 @@ module WorldModuleGroup =
                     let groupState = { groupState with Model = { DesignerType = typeof<'a>; DesignerValue = valueObj }}
                     struct (groupState, World.setGroupState groupState group world)
                 let world = groupState.Dispatcher.TrySynchronize (initializing, group, world)
-                let world = World.publishGroupChange "Model" previous.DesignerValue value group world
+                let world = World.publishGroupChange Constants.Engine.ModelPropertyName previous.DesignerValue value group world
                 struct (true, world)
             else struct (false, world)
 
