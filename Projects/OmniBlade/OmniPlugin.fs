@@ -9,7 +9,7 @@ open Nu
 type OmniPlugin () =
     inherit NuPlugin ()
 
-    override this.Modes =
+    override this.EditModes =
         Map.ofSeq
             [("Title", fun world -> Simulants.Game.SetModel (Gui Title) world)
              ("Credits", fun world -> Simulants.Game.SetModel (Gui Credits) world)

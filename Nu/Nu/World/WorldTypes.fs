@@ -1305,8 +1305,8 @@ module WorldTypes =
     and NuPlugin () =
 
         /// Provides a list of modes for setting game state via the editor.
-        abstract Modes : Map<string, World -> World>
-        default this.Modes = Map.empty
+        abstract EditModes : Map<string, World -> World>
+        default this.EditModes = Map.empty
 
         /// Make a list of keyed values to hook into the engine.
         abstract MakeKeyedValues : World -> ((Guid * obj) list) * World

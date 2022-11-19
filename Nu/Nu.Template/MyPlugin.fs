@@ -7,7 +7,7 @@ type MyPlugin () =
     inherit NuPlugin ()
 
     // this exposes different editing modes in the editor
-    override this.Modes =
+    override this.EditModes =
         Map.ofSeq
             [("Title", fun world -> Simulants.Game.SetModel Title world)
              ("Credits", fun world -> Simulants.Game.SetModel Credits world)
