@@ -79,6 +79,7 @@
     <Compile Include="Collections\SegmentedDictionary.fs" />
     <Compile Include="Ecs\EcsPrelude.fs" />
     <Compile Include="Ecs\Ecs.fs" />
+    <Compile Include="Transform\Presence.fs" />
     <Compile Include="Transform\Viewport.fs" />
     <Compile Include="Transform\Quadtree.fs" />
     <Compile Include="Transform\Octree.fs" />
