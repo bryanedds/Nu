@@ -33,25 +33,24 @@ type [<StructuralEquality; NoComparison; Struct>] Shake =
     interface Shake Component with
         member this.Active with get () = this.Active and set value = this.Active <- value
 
-#if FACETED
 type MetricsEntityDispatcher () =
-    inherit EntityDispatcher2d (false, false)
+    inherit EntityDispatcher3d<StaticModel AssetTag, unit, unit> (true, false, Assets.Default.StaticModel)
 
-  #if !ECS
-    static member Facets =
-        [typeof<StaticSpriteFacet>]
-
-    override this.Update (entity, world) =
-        entity.SetRotation (entity.GetRotation world + 0.03f) world
-  #endif
-#else
-type MetricsEntityDispatcher () =
-    inherit StaticModelDispatcher ()
-  #if !ECS
+#if !ELMISH
     override this.Update (entity, world) =
         entity.SetAngles (v3 0.0f 0.0f ((entity.GetAngles world).Z + 0.05f)) world
-  #endif
 #endif
+
+    override this.View (staticModel, entity, world) =
+        let mutable transform = entity.GetTransform world
+        let staticModelMatrix = transform.AffineMatrix
+        View.Render3d (RenderStaticModelMessage (false, staticModelMatrix, ValueNone, Unchecked.defaultof<_>, DeferredRenderType, staticModel))
+
+    override this.GetQuickSize (entity, world) =
+        let staticModel = entity.GetModelGeneric world
+        let bounds = (Metadata.getStaticModelMetadata staticModel).Bounds
+        let boundsExtended = bounds.Combine bounds.Mirror
+        boundsExtended.Size
 
 #if !ELMISH
 type MyGameDispatcher () =
@@ -156,19 +155,6 @@ type MyGameDispatcher () =
         let world = World.selectScreen IdlingState screen world
         world
 #else
-type ElmishEntityDispatcher () =
-    inherit EntityDispatcher3d<StaticModel AssetTag, unit, unit> (true, false, Assets.Default.StaticModel)
-
-    override this.View (staticModel, entity, world) =
-        let mutable transform = entity.GetTransform world
-        let staticModelMatrix = transform.AffineMatrix
-        View.Render3d (RenderStaticModelMessage (false, staticModelMatrix, ValueNone, Unchecked.defaultof<_>, DeferredRenderType, staticModel))
-
-    override this.GetQuickSize (entity, world) =
-        let staticModel = entity.GetModelGeneric world
-        let bounds = (Metadata.getStaticModelMetadata staticModel).Bounds
-        let boundsExtended = bounds.Combine bounds.Mirror
-        boundsExtended.Size
 
 type [<ReferenceEquality>] Ints =
     { Ints : Map<int, int> }
@@ -200,7 +186,7 @@ type ElmishGameDispatcher () =
             [|for (i, ints) in intss.Intss.Pairs' do
                 Content.group (string i) []
                     [|for (j, int) in ints.Ints.Pairs' do
-                        Content.entity<ElmishEntityDispatcher> (string j)
+                        Content.entity<MetricsEntityDispatcher> (string j)
                             [Entity.Position == v3 (single i * 5.0f - 250.0f) (single j * 2.5f - 125.0f) -250.0f
                              Entity.Scale := v3Dup (single (int % 10)) * 0.5f
                              Entity.Presence == Omnipresent]|]
