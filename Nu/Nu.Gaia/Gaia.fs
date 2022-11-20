@@ -1123,15 +1123,13 @@ module Gaia =
 
     let private handleFormReloadCode (_ : GaiaForm) (_ : EventArgs) =
         addPreUpdater $ fun world ->
-            use errorStream = new StringWriter ()
-            try
-                let workingDirPath = Globals.EditorState.TargetDir + "/../.."
-                let fsprojFilePaths = Array.ofSeq (Directory.EnumerateFiles (workingDirPath, "*.fsproj"))
-                match fsprojFilePaths with
+            let workingDirPath = Globals.EditorState.TargetDir + "/../.."
+            Log.info ("Inspecting directory " + workingDirPath + " for F# code...")
+            try match Array.ofSeq (Directory.EnumerateFiles (workingDirPath, "*.fsproj")) with
                 | [||] -> Log.trace ("Unable to find fsproj file in '" + workingDirPath + "'."); world
-                | _ ->
+                | fsprojFilePaths ->
                     let fsprojFilePath = fsprojFilePaths.[0]
-                    Log.info ("Updating code from " + fsprojFilePath + "...")
+                    Log.info ("Inspecting code for F# project '" + fsprojFilePath + "'...")
                     let fsprojFileLines = File.ReadAllLines fsprojFilePath
                     let fsprojDllFilePaths =
                         // imagine manually parsing an xml file...
@@ -1164,19 +1162,26 @@ module Gaia =
                         "#r \"../../../../Nu/Nu/bin/Debug/Nu.exe\"\n" +
                         "\n" +
                         String.Join ("\n", Array.map (fun (filePath : string) -> "#load \"../../" + filePath + "\"") fsprojFsFilePaths)
+                    Log.info ("Compiling code via generated F# script:\n" + fsxFileString)
                     let defaultArgs = [|"fsi.exe"; "--debug+"; "--debug:full"; "--optimize-"; "--tailcalls-"; "--multiemit+"; "--gui-"|]
+                    use errorStream = new StringWriter ()
                     use inStream = new StringReader ""
                     use outStream = new StringWriter ()
                     let fsiConfig = Shell.FsiEvaluationSession.GetDefaultConfiguration ()
                     use session = Shell.FsiEvaluationSession.Create (fsiConfig, defaultArgs, inStream, outStream, errorStream)
-                    session.EvalInteraction fsxFileString 
-                    let world = World.updateLateBindings2 session.DynamicAssemblies world
-                    Log.info "Code updated."
+                    let world =
+                        try session.EvalInteraction fsxFileString
+                            Log.info "Code compiled."
+                            try Log.info "Updating code..."
+                                let world = World.updateLateBindings2 session.DynamicAssemblies world
+                                Log.info "Code updated."
+                                World.choose world
+                            with exn -> Log.trace ("Failed to update code due to: " + scstring exn); world
+                        with exn -> Log.trace ("Failed to compile code due to: " + scstring exn); world
+                    let error = string errorStream
+                    if error.Length > 0 then Log.info ("with error stream containing:" + error)
                     world
-            with exn ->
-                let error = scstring errorStream
-                Log.trace ("Failed to update code due to: " + if error.Length <> 0 then scstring error else scstring exn)
-                world
+            with exn -> Log.trace ("Failed to inspect for F# code due to: " + scstring exn); world
 
     let private handleFormReloadAssets (form : GaiaForm) (_ : EventArgs) =
         addPreUpdater $ fun world ->
