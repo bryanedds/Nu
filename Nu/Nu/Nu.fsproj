@@ -71,7 +71,6 @@
     <Compile Include="Core\Assimp.fs" />
     <Compile Include="Core\Assets.fs" />
     <Compile Include="Core\Constants.fs" />
-    <Compile Include="Core\Viewport.fs" />
     <Compile Include="Collections\ListTree.fs" />
     <Compile Include="Collections\KeyedArray.fs" />
     <Compile Include="Collections\SegmentedArray.fs" />
@@ -80,6 +79,7 @@
     <Compile Include="Collections\SegmentedDictionary.fs" />
     <Compile Include="Ecs\EcsPrelude.fs" />
     <Compile Include="Ecs\Ecs.fs" />
+    <Compile Include="Transform\Viewport.fs" />
     <Compile Include="Transform\Quadtree.fs" />
     <Compile Include="Transform\Octree.fs" />
     <Compile Include="Transform\Transform.fs" />
