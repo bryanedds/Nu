@@ -52,7 +52,7 @@ module WorldModuleGame =
                             match Seq.tryHead content.ScreenContents with
                             | Some screen -> Desire (Nu.Screen screen.Key)
                             | None -> DesireNone
-                        World.setDesiredScreen desiredScreen world |> snd'
+                        World.setDesiredScreenPlus desiredScreen world |> snd'
                     else world
                 let world = World.publishGameChange Constants.Engine.ModelPropertyName previous.DesignerValue value.DesignerValue world
                 struct (true, world)
@@ -80,7 +80,7 @@ module WorldModuleGame =
                             match Seq.tryHead content.ScreenContents with
                             | Some screen -> Desire (Nu.Screen screen.Key)
                             | None -> DesireNone
-                        World.setDesiredScreen desiredScreen world |> snd'
+                        World.setDesiredScreenPlus desiredScreen world |> snd'
                     else world
                 let world = World.publishGameChange Constants.Engine.ModelPropertyName previous.DesignerValue value world
                 struct (true, world)
@@ -245,11 +245,6 @@ module WorldModuleGame =
         static member setOmniScreen value world =
             World.setOmniScreenPlus value world |> snd'
 
-        /// Get the currently selected screen, if any.
-        [<FunctionBinding>]
-        static member getSelectedScreenOpt world =
-            (World.getGameState world).SelectedScreenOpt
-
         /// Constrain the eye to the given 2d bounds.
         [<FunctionBinding>]
         static member constrainEyeBounds2d (bounds : Box2) world =
@@ -265,8 +260,7 @@ module WorldModuleGame =
             let eyePosition = eyeBounds.Center
             World.setEyePosition2d eyePosition world
 
-        /// Set the currently selected screen or None. Be careful using this function directly as
-        /// you may be wanting to use the higher-level World.transitionScreen function instead.
+        /// Set the currently selected screen or None.
         static member internal setSelectedScreenOptPlus value world =
 
             // disallow omni-screen selection
@@ -320,48 +314,54 @@ module WorldModuleGame =
                 // fin
                 | None -> (true, world)
             else (false, world)
+            
+        static member internal setSelectedScreenPlus value world =
+            World.setSelectedScreenOptPlus (Some value) world
 
-        /// Set the currently selected screen or None. Be careful using this function directly as
-        /// you may be wanting to use the higher-level World.transitionScreen function instead.
-        static member internal setSelectedScreenOpt value world =
+        /// Get the currently selected screen, if any.
+        [<FunctionBinding>]
+        static member getSelectedScreenOpt world =
+            (World.getGameState world).SelectedScreenOpt
+
+        /// Set the currently selected screen, if any.
+        static member setSelectedScreenOpt value world =
             World.setSelectedScreenOptPlus value world |> snd
 
         /// Get the currently selected screen (failing with an exception if there isn't one).
         [<FunctionBinding>]
         static member getSelectedScreen world =
             Option.get (World.getSelectedScreenOpt world)
-            
-        /// Set the currently selected screen. Be careful using this function directly as you may
-        /// be wanting to use the higher-level World.transitionScreen function instead.
-        static member internal setSelectedScreenPlus value world =
-            World.setSelectedScreenOptPlus (Some value) world
         
-        /// Set the currently selected screen. Be careful using this function directly as you may
-        /// be wanting to use the higher-level World.transitionScreen function instead.
+        /// Set the currently selected screen.
         [<FunctionBinding>]
         static member setSelectedScreen value world =
             World.setSelectedScreenPlus value world |> snd
 
-        /// Get the current destination screen if a screen transition is currently underway.
-        static member getScreenTransitionDestinationOpt world =
-            (World.getGameState world).ScreenTransitionDestinationOpt
-
-        /// Get the screen desired to which to transition.
-        static member getDesiredScreen world =
-            (World.getGameState world).DesiredScreen
-
-        /// Set the screen desired to which to transition.
-        static member setDesiredScreen value world =
+        static member internal setDesiredScreenPlus value world =
             let gameState = World.getGameState world
             let previous = gameState.DesiredScreen
             if value <> previous
             then struct (true, world |> World.setGameState { gameState with DesiredScreen = value } |> World.publishGameChange (nameof gameState.DesiredScreen) previous value)
             else struct (false, world)
 
-        /// Set the current destination screen or None. Be careful using this function as calling
-        /// it is predicated that no screen transition is currently underway.
-        /// TODO: consider asserting such predication here.
-        static member internal setScreenTransitionDestinationOpt value world =
+        /// Get the screen desired to which to transition.
+        [<FunctionBinding>]
+        static member getDesiredScreen world =
+            (World.getGameState world).DesiredScreen
+
+        /// Set the screen desired to which to transition.
+        [<FunctionBinding>]
+        static member setDesiredScreen value world =
+            World.setDesiredScreenPlus value world |> snd'
+
+        /// Get the current destination screen if a screen transition is currently underway.
+        [<FunctionBinding>]
+        static member getScreenTransitionDestinationOpt world =
+            (World.getGameState world).ScreenTransitionDestinationOpt
+
+        /// Set the current destination screen or None.
+        [<FunctionBinding>]
+        static member setScreenTransitionDestinationOpt value world =
             let gameState = World.getGameState world
             let previous = gameState.ScreenTransitionDestinationOpt
             if value <> previous
@@ -587,7 +587,7 @@ module WorldModuleGame =
     let private initSetters () =
         GameSetters.Add ("Model", fun property world -> World.setGameModelProperty false { DesignerType = property.PropertyType; DesignerValue = property.PropertyValue } world)
         GameSetters.Add ("OmniScreenOpt", fun property world -> World.setOmniScreenOptPlus (property.PropertyValue :?> Screen option) world)
-        GameSetters.Add ("DesiredScreen", fun property world -> World.setDesiredScreen (property.PropertyValue :?> DesiredScreen) world)
+        GameSetters.Add ("DesiredScreen", fun property world -> World.setDesiredScreenPlus (property.PropertyValue :?> DesiredScreen) world)
         GameSetters.Add ("EyePosition2d", fun property world -> World.setEyePosition2dPlus (property.PropertyValue :?> Vector2) world)
         GameSetters.Add ("EyeSize2d", fun property world -> World.setEyeSize2dPlus (property.PropertyValue :?> Vector2) world)
         GameSetters.Add ("EyePosition3d", fun property world -> World.setEyePosition3dPlus (property.PropertyValue :?> Vector3) world)

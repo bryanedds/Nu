@@ -134,6 +134,7 @@ type MyGameDispatcher () =
 #endif
         let world = World.createGroup (Some Simulants.Default.Group.Name) Simulants.Default.Screen world |> snd
         let world = World.createEntity<FpsDispatcher> (Some Fps.Surnames) DefaultOverlay Simulants.Default.Group world |> snd
+        let world = World.createEntity<SkyBoxDispatcher> None DefaultOverlay Simulants.Default.Group world |> snd
         let world = Fps.SetPosition (v3 200.0f -250.0f 0.0f) world
 #if !ECS
         let positions = // 19,663 entity positions (goal: 60FPS, current: 54FPS)
@@ -145,11 +146,13 @@ type MyGameDispatcher () =
         let world =
             Seq.foldi (fun i world position ->
                 let (entity, world) = World.createEntity<MetricsEntityDispatcher> (Some [|string Gen.id64|]) NoOverlay Simulants.Default.Group world
-                let world = entity.SetPresence Omnipresent world
                 let world = entity.SetPosition (position + v3 -118.0f -118.0f 0.0f) world
+                let world = entity.SetScale (v3Dup 2.0f) world
+                let world = entity.SetPresence Omnipresent world
                 world)
                 world positions
 #endif
+        let world = World.setDesiredScreen DesireIgnore world
         let world = World.selectScreen IdlingState screen world
         world
 #else
