@@ -78,10 +78,10 @@
     <Compile Include="Collections\SegmentedList.fs" />
     <Compile Include="Collections\SegmentedHashSet.fs" />
     <Compile Include="Collections\SegmentedDictionary.fs" />
-    <Compile Include="Collections\Quadtree.fs" />
-    <Compile Include="Collections\Octree.fs" />
     <Compile Include="Ecs\EcsPrelude.fs" />
     <Compile Include="Ecs\Ecs.fs" />
+    <Compile Include="Transform\Quadtree.fs" />
+    <Compile Include="Transform\Octree.fs" />
     <Compile Include="Transform\Transform.fs" />
     <Compile Include="OpenGL\OpenGL.Hl.fs" />
     <Compile Include="OpenGL\OpenGL.Texture.fs" />

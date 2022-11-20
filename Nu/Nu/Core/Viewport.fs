@@ -9,11 +9,16 @@ open Nu
      Constants.PrettyPrinter.DefaultThresholdMin,
      Constants.PrettyPrinter.DefaultThresholdMax)>]
 type [<StructuralEquality; NoComparison; Struct>] Presence =
+    /// Inside an enclosed structure so you have to be close to see them.
     | Enclosed
+    /// Outside an enclosed structure so visible from a distance.
     | Exposed
+    /// Visible for miles but invisible once as close as Exposed or Enclosed.
     | Imposter
-    | Prominent // both exposed and imposter
-    | Omnipresent
+    /// Both Exposed and Imposter.
+    | Prominent
+    /// Always visible.
+    | Omnipresent 
     member this.EnclosedType with get () = match this with Enclosed -> true | _ -> false
     member this.ExposedType with get () = match this with Exposed -> true | _ -> false
     member this.ImposterType with get () = match this with Imposter -> true | _ -> false
