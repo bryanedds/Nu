@@ -54,7 +54,7 @@ type MetricsEntityDispatcher () =
 
 #if !ELMISH
 type MyGameDispatcher () =
-    inherit GameDispatcher<unit, unit, unit> (())
+    inherit GameDispatcher ()
 
     let Fps = Simulants.Default.Group / "Fps"
 
@@ -151,7 +151,6 @@ type MyGameDispatcher () =
                 world)
                 world positions
 #endif
-        let world = World.setDesiredScreen DesireIgnore world
         let world = World.selectScreen IdlingState screen world
         world
 #else
