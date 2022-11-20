@@ -1945,7 +1945,7 @@ module Gaia =
                 | Desire screen -> (screen, world)
                 | DesireNone ->
                     let (screen, world) = World.createScreen (Some "Screen") world
-                    let world = World.setDesiredScreen (Desire screen) world |> snd'
+                    let world = World.setDesiredScreen (Desire screen) world
                     (screen, world)
                 | DesireIgnore ->
                     let (screen, world) = World.createScreen (Some "Screen") world
