@@ -1193,8 +1193,8 @@ module EntityDispatcherModule2 =
             let world = Content.synchronizeEntity initializing contentOld content entity entity world
             World.setEntityContent content entity world
 
-        abstract member Initialize : 'model * Entity -> InitializerContent seq
-        default this.Initialize (_, _) = Seq.empty
+        abstract member Initialize : 'model * Entity -> InitializerContent list
+        default this.Initialize (_, _) = []
 
         abstract member Physics : Vector3 * Quaternion * Vector3 * Vector3 * 'model * Entity * World -> Signal<'message, 'command> list * 'model
         default this.Physics (_, _, _, _, model, _, _) = just model
@@ -1205,8 +1205,8 @@ module EntityDispatcherModule2 =
         abstract member Command : 'model * 'command * Entity * World -> Signal<'message, 'command> list * World
         default this.Command (_, _, _, world) = just world
 
-        abstract member Content : 'model * Entity -> EntityContent seq
-        default this.Content (_, _) = Seq.empty
+        abstract member Content : 'model * Entity -> EntityContent list
+        default this.Content (_, _) = []
 
         abstract member View : 'model * Entity * World -> View
         default this.View (_, _, _) = View.empty
@@ -1329,8 +1329,8 @@ module GroupDispatcherModule =
             let world = Content.synchronizeGroup initializing contentOld content group group world
             World.setGroupContent content group world
 
-        abstract member Initialize : 'model * Group -> InitializerContent seq
-        default this.Initialize (_, _) = Seq.empty
+        abstract member Initialize : 'model * Group -> InitializerContent list
+        default this.Initialize (_, _) = []
 
         abstract member Message : 'model * 'message * Group * World -> Signal<'message, 'command> list * 'model
         default this.Message (model, _, _, _) = just model
@@ -1338,8 +1338,8 @@ module GroupDispatcherModule =
         abstract member Command : 'model * 'command * Group * World -> Signal<'message, 'command> list * World
         default this.Command (_, _, _, world) = just world
 
-        abstract member Content : 'model * Group -> EntityContent seq
-        default this.Content (_, _) = Seq.empty
+        abstract member Content : 'model * Group -> EntityContent list
+        default this.Content (_, _) = []
 
         abstract member View : 'model * Group * World -> View
         default this.View (_, _, _) = View.empty
@@ -1427,8 +1427,8 @@ module ScreenDispatcherModule =
             let world = Content.synchronizeScreen initializing contentOld content screen screen world
             World.setScreenContent content screen world
 
-        abstract member Initialize : 'model * Screen -> InitializerContent seq
-        default this.Initialize (_, _) = Seq.empty
+        abstract member Initialize : 'model * Screen -> InitializerContent list
+        default this.Initialize (_, _) = []
 
         abstract member Message : 'model * 'message * Screen * World -> Signal<'message, 'command> list * 'model
         default this.Message (model, _, _, _) = just model
@@ -1436,8 +1436,8 @@ module ScreenDispatcherModule =
         abstract member Command : 'model * 'command * Screen * World -> Signal<'message, 'command> list * World
         default this.Command (_, _, _, world) = just world
 
-        abstract member Content : 'model * Screen -> GroupContent seq
-        default this.Content (_, _) = Seq.empty
+        abstract member Content : 'model * Screen -> GroupContent list
+        default this.Content (_, _) = []
 
         abstract member View : 'model * Screen * World -> View
         default this.View (_, _, _) = View.empty
@@ -1526,8 +1526,8 @@ module GameDispatcherModule =
         override this.TrySynchronize (initializing, game, world) =
             synchronize initializing game world this |> snd
 
-        abstract member Initialize : 'model * Game -> InitializerContent seq
-        default this.Initialize (_, _) = Seq.empty
+        abstract member Initialize : 'model * Game -> InitializerContent list
+        default this.Initialize (_, _) = []
 
         abstract member Message : 'model * 'message * Game * World -> Signal<'message, 'command> list * 'model
         default this.Message (model, _, _, _) = just model
@@ -1535,8 +1535,8 @@ module GameDispatcherModule =
         abstract member Command : 'model * 'command * Game * World -> Signal<'message, 'command> list * World
         default this.Command (_, _, _, world) = just world
 
-        abstract member Content : 'model * Game -> ScreenContent seq
-        default this.Content (_, _) = Seq.empty
+        abstract member Content : 'model * Game -> ScreenContent list
+        default this.Content (_, _) = []
 
         abstract member View : 'model * Game * World -> View
         default this.View (_, _, _) = View.empty
