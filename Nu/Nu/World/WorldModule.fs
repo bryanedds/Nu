@@ -6,7 +6,6 @@ open System
 open System.Collections.Generic
 open System.Linq
 open System.Reflection
-open FSharpx.Collections
 open Prime
 open Nu
 

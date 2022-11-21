@@ -1167,7 +1167,7 @@ module Math =
 
     let Epsilon = 1.1920929E-07f
 
-    /// Initializes the type converters found in NuMathModule.
+    /// Initializes the type converters found in Math.fs.
     let init () =
         if not Initialized then
             assignTypeConverter<Vector2, Vector2Converter> ()

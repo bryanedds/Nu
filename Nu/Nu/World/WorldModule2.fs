@@ -7,7 +7,6 @@ open System.Collections.Generic
 open System.IO
 open System.Numerics
 open System.Threading
-open FSharpx.Collections
 open SDL2
 open Prime
 open Nu
@@ -1485,14 +1484,19 @@ module WorldModule2' =
                 | :? Facet as facet ->
                     match Array.tryFindIndex (fun (facet2 : Facet) -> getTypeName facet2 = getTypeName facet) entityState.Facets with
                     | Some index ->
-                        let facets = entityState.Facets.Clone () :?> Facet array
-                        facets.[index] <- facet
-                        let entityState = { entityState with Facets = Array.ofSeq entityState.Facets }
-                        World.setEntityState entityState entity world
+                        if entityState.Imperative
+                        then entityState.Facets.[index] <- facet; world
+                        else
+                            let facets = entityState.Facets.Clone () :?> Facet array
+                            facets.[index] <- facet
+                            let entityState = { entityState with Facets = Array.ofSeq entityState.Facets }
+                            World.setEntityState entityState entity world
                     | None -> world
                 | :? EntityDispatcher as entityDispatcher ->
-                    if getTypeName entityState.Dispatcher = getTypeName entityDispatcher
-                    then World.setEntityState { entityState with Dispatcher = entityDispatcher } entity world
+                    if getTypeName entityState.Dispatcher = getTypeName entityDispatcher then
+                        if entityState.Imperative
+                        then entityState.Dispatcher <- entityDispatcher; world
+                        else World.setEntityState { entityState with Dispatcher = entityDispatcher } entity world
                     else world
                 | _ -> world
             | :? Group as group ->

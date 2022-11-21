@@ -19,6 +19,8 @@ module Content =
             let eventSignalContentsOld = if isNull contentOld.EventSignalContentsOpt then OrderedDictionary HashIdentity.Structural else contentOld.EventSignalContentsOpt
             let eventSignalContents = if isNull content.EventSignalContentsOpt then OrderedDictionary HashIdentity.Structural else content.EventSignalContentsOpt
             if eventSignalContentsOld.Count > 0 || eventSignalContents.Count > 0 then
+
+                // compute deltas
                 let eventSignalsAdded = List ()
                 for eventSignalEntry in eventSignalContents do
                     if not (eventSignalContentsOld.ContainsKey eventSignalEntry.Key) then
@@ -27,10 +29,14 @@ module Content =
                 for eventSignalEntry in eventSignalContentsOld do
                     if not (eventSignalContents.ContainsKey eventSignalEntry.Key) then
                         eventSignalsRemoved.Add eventSignalEntry.Value
+
+                // unsubscribe to removed events
                 let world =
                     Seq.fold
                         (fun world subscriptionId -> World.unsubscribe subscriptionId world)
                         world eventSignalsRemoved
+
+                // subscribe to added events
                 let world =
                     Seq.fold (fun world ((eventAddress : obj Address, signalObj), subscriptionId) ->
                         let eventAddress = if eventAddress.Anonymous then eventAddress --> simulant.SimulantAddress else eventAddress
@@ -47,6 +53,13 @@ module Content =
                                 world
                         world)
                         world eventSignalsAdded
+
+                /// drag event signals with existing subscription ids forward in time
+                for eventSignalEntry in eventSignalContentsOld do
+                    if eventSignalContents.ContainsKey eventSignalEntry.Key then
+                        eventSignalContents.[eventSignalEntry.Key] <- eventSignalEntry.Value
+
+                // fin
                 world
             else world
         else world
@@ -60,6 +73,8 @@ module Content =
             let eventHandlerContentsOld = if isNull contentOld.EventHandlerContentsOpt then OrderedDictionary HashIdentity.Structural else contentOld.EventHandlerContentsOpt
             let eventHandlerContents = if isNull content.EventHandlerContentsOpt then OrderedDictionary HashIdentity.Structural else content.EventHandlerContentsOpt
             if eventHandlerContentsOld.Count > 0 || eventHandlerContents.Count > 0 then
+
+                // compute event handler deltas
                 let eventHandlersAdded = List ()
                 for eventHandlerEntry in eventHandlerContents do
                     if not (eventHandlerContentsOld.ContainsKey eventHandlerEntry.Key) then
@@ -68,10 +83,14 @@ module Content =
                 for eventHandlerEntry in eventHandlerContentsOld do
                     if not (eventHandlerContents.ContainsKey eventHandlerEntry.Key) then
                         eventHandlersRemoved.Add eventHandlerEntry.Value
+
+                // unsubscribe from removed handlers
                 let world =
                     Seq.fold
                         (fun world (subscriptionId, _) -> World.unsubscribe subscriptionId world)
                         world eventHandlersRemoved
+
+                // subscribe to added handlers
                 let world =
                     Seq.fold (fun world ((_, eventAddress : obj Address), (subscriptionId, handler)) ->
                         let eventAddress = if eventAddress.Anonymous then eventAddress --> simulant.SimulantAddress else eventAddress
@@ -88,6 +107,13 @@ module Content =
                                 world
                         world)
                         world eventHandlersAdded
+
+                /// drag event signals with existing subscription ids forward in time
+                for eventHandlerEntry in eventHandlerContentsOld do
+                    if eventHandlerContents.ContainsKey eventHandlerEntry.Key then
+                        eventHandlerContents.[eventHandlerEntry.Key] <- eventHandlerEntry.Value
+
+                // fin
                 world
             else world
         else world

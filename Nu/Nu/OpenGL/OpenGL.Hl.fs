@@ -22,10 +22,10 @@ module Hl =
         false
 
     /// Cached buffers.
-    let private CachedBuffers = Queue ()
+    let private CachedBuffers = System.Collections.Generic.Queue ()
 
     /// Cached vertex arrays.
-    let private CachedVertexArrays = Queue ()
+    let private CachedVertexArrays = System.Collections.Generic.Queue ()
 
     /// Initialize OpenGL.Hl.
     let InitAssert assertEnabled =

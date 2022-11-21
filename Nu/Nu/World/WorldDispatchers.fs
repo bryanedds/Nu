@@ -578,8 +578,8 @@ module Effect2dFacetModule =
         member this.GetEffectHistoryMax world : int = this.Get (nameof this.EffectHistoryMax) world
         member this.SetEffectHistoryMax (value : int) world = this.Set (nameof this.EffectHistoryMax) value world
         member this.EffectHistoryMax = lens (nameof this.EffectHistoryMax) this this.GetEffectHistoryMax this.SetEffectHistoryMax
-        member this.GetEffectHistory world : Effects.Slice Deque = this.Get (nameof this.EffectHistory) world
-        member private this.SetEffectHistory (value : Effects.Slice Deque) world = this.Set (nameof this.EffectHistory) value world
+        member this.GetEffectHistory world : Effects.Slice Nito.Collections.Deque = this.Get (nameof this.EffectHistory) world
+        member private this.SetEffectHistory (value : Effects.Slice Nito.Collections.Deque) world = this.Set (nameof this.EffectHistory) value world
         member this.EffectHistory = lensReadOnly (nameof this.EffectHistory) this this.GetEffectHistory
 
         /// The start time of the effect, or zero if none.
@@ -639,7 +639,7 @@ module Effect2dFacetModule =
              nonPersistent Entity.EffectTags Map.empty
              define Entity.EffectHistoryMax Constants.Effects.EffectHistoryMaxDefault
              define Entity.ParticleSystem ParticleSystem.empty
-             variable Entity.EffectHistory (fun _ -> Deque<Effects.Slice> (inc Constants.Effects.EffectHistoryMaxDefault))]
+             variable Entity.EffectHistory (fun _ -> Nito.Collections.Deque<Effects.Slice> (inc Constants.Effects.EffectHistoryMaxDefault))]
 
         override this.Update (entity, world) =
             if entity.GetEnabled world then

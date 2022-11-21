@@ -1176,7 +1176,7 @@ module Gaia =
                                 let world = World.updateLateBindings2 session.DynamicAssemblies world
                                 Log.info "Code updated."
                                 World.choose world
-                            with exn -> Log.trace ("Failed to update code due to: " + scstring exn); world
+                            with exn -> Log.trace ("Failed to update code due to: " + scstring exn + ". This is likely due to the inability of symbolic converter to automatically convert one of your MMCC models to the newly loaded type."); world
                         with exn -> Log.trace ("Failed to compile code due to: " + scstring exn); world
                     let error = string errorStream
                     if error.Length > 0 then Log.info ("with error stream containing:" + error)

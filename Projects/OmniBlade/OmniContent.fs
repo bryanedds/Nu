@@ -4,7 +4,6 @@
 namespace OmniBlade
 open System
 open System.Numerics
-open FSharpx.Collections
 open Prime
 open Nu
 open Nu.Declarative
@@ -20,7 +19,7 @@ module Content =
             (fun items -> if sort then ItemType.sortItems items else items)
         let itemsPaged =
             items |>
-            Seq.index |>
+            Seq.indexed |>
             Seq.chunkBySize pageSize |>
             Seq.trySkip pageIndex |>
             Seq.map List.ofArray |>
@@ -129,7 +128,7 @@ module Content =
             match field.Menu.MenuState with
             | MenuTech menuTech ->
                 match Map.tryFind menuTech.TeammateIndex field.Team with
-                | Some teammate -> teammate.Techs |> Seq.index |> Map.ofSeq
+                | Some teammate -> teammate.Techs |> Seq.indexed |> Map.ofSeq
                 | None -> Map.empty
             | _ -> Map.empty
         [for (index, tech) in techs.Pairs do
