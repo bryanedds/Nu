@@ -99,10 +99,10 @@ type RendererThread (createRenderer2d, createRenderer3d) =
     let messageBuffers3d = [|List (); List ()|]
     let messageBuffers2d = [|List (); List ()|]
     let cachedSpriteMessagesLock = obj ()
-    let cachedSpriteMessages = Queue ()
+    let cachedSpriteMessages = System.Collections.Generic.Queue ()
     let mutable cachedSpriteMessagesCapacity = Constants.Render.SpriteMessagesPrealloc
     let cachedStaticModelMessagesLock = obj ()
-    let cachedStaticModelMessages = Queue ()
+    let cachedStaticModelMessages = System.Collections.Generic.Queue ()
     let mutable cachedStaticModelMessagesCapacity = Constants.Render.StaticModelMessagesPrealloc
 
     let allocStaticModelMessage () =

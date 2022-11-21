@@ -7,7 +7,6 @@ open System.Collections.Generic
 open System.Diagnostics
 open System.Numerics
 open System.Reflection
-open FSharpx.Collections
 open Prime
 open Nu
 
@@ -698,7 +697,7 @@ module WorldTypes =
     /// OPTIMIZATION: ScriptFrameOpt is instantiated only when needed.
     and [<ReferenceEquality; NoComparison; CLIMutable>] EntityState =
         { mutable Transform : Transform
-          Dispatcher : EntityDispatcher
+          mutable Dispatcher : EntityDispatcher
           mutable Facets : Facet array
           mutable Xtension : Xtension
           mutable Model : DesignerProperty
@@ -1062,13 +1061,13 @@ module WorldTypes =
             and set value = entityStateOpt <- value
 
         /// Get the names of an entity.
-        member inline this.Names = Address.getNames this.EntityAddress
+        member this.Names = Address.getNames this.EntityAddress
 
         /// Get the surnames of an entity (the names of an entity not including group or screen).
-        member inline this.Surnames = Address.getNames this.EntityAddress |> Array.skip 2
+        member this.Surnames = Address.getNames this.EntityAddress |> Array.skip 2
 
         /// Get the last name of an entity.
-        member inline this.Name = Address.getNames this.EntityAddress |> Array.last
+        member this.Name = Address.getNames this.EntityAddress |> Array.last
 
         /// Get the latest value of an entity's properties.
         [<DebuggerBrowsable (DebuggerBrowsableState.RootHidden)>]

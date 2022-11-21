@@ -3,7 +3,6 @@
 
 namespace OmniBlade
 open System
-open FSharpx.Collections
 open Prime
 open Nu
 open Nu.Declarative

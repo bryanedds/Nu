@@ -3,7 +3,6 @@
 
 namespace OmniBlade
 open System
-open FSharpx.Collections
 open Prime
 open Nu
 
@@ -229,7 +228,7 @@ type [<NoComparison>] Inventory =
         Map.toSeq |>
         Seq.map (fun (ty, ct) -> List.init ct (fun _ -> ty)) |>
         Seq.concat |>
-        Seq.index
+        Seq.indexed
 
     static member tryIndexItem index inventory =
         let items = Inventory.indexItems inventory

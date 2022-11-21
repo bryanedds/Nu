@@ -5,7 +5,6 @@ namespace OmniBlade
 open System
 open System.Numerics
 open System.IO
-open FSharpx.Collections
 open TiledSharp
 open Prime
 open Nu
