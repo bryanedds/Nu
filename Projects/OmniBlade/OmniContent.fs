@@ -92,7 +92,7 @@ module Content =
 
     let team (position : Vector3) rows (field : Field) filter fieldMsg =
         [for (index, teammate) in field.Team.Pairs do
-            let teammateName = scstringm teammate.TeamIndex
+            let teammateName = "Teammate+" + string teammate.TeamIndex
             let x = position.X + if index < rows then 0.0f else 252.0f + 48.0f
             let y = position.Y - single (index % rows) * 81.0f
             Content.button teammateName
