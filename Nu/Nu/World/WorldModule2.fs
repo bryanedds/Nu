@@ -1160,31 +1160,29 @@ module EntityDispatcherModule2 =
             match signalObj with
             | :? Signal<'message, obj> as signal -> entity.Signal<'model, 'message, 'command> (match signal with Message message -> msg message | _ -> failwithumf ()) world
             | :? Signal<obj, 'command> as signal -> entity.Signal<'model, 'message, 'command> (match signal with Command command -> cmd command | _ -> failwithumf ()) world
-            | _ ->
-                match signalObj with
-                | :? Signal<string, obj> as signalWithMsgStr ->
-                    match signalWithMsgStr with
-                    | Message msgStr ->
-                        try let signal = scvalue<'message> msgStr in this.TrySignal (signal, entity, world)
-                        with exn ->
-                            Log.info ("Incorrect signal type received by entity (signal = '" + scstring signalObj + "'; entity = '" + scstring entity + "').")
-                            World.choose world
-                    | _ ->
-                        Log.info ("Incorrect signal type received by entity (signal = '" + scstring signalObj + "'; entity = '" + scstring entity + "').")
-                        World.choose world
-                | :? Signal<obj, string> as signalWithCmdStr ->
-                    match signalWithCmdStr with
-                    | Command cmdStr ->
-                        try let signal = scvalue<'command> cmdStr in this.TrySignal (signal, entity, world)
-                        with exn ->
-                            Log.info ("Incorrect signal type received by entity (signal = '" + scstring signalObj + "'; entity = '" + scstring entity + "').")
-                            World.choose world
-                    | _ ->
+            | :? Signal<string, obj> as signalWithMsgStr ->
+                match signalWithMsgStr with
+                | Message msgStr ->
+                    try let msg = scvalue<'message> msgStr in this.TrySignal (Message msg, entity, world)
+                    with exn ->
                         Log.info ("Incorrect signal type received by entity (signal = '" + scstring signalObj + "'; entity = '" + scstring entity + "').")
                         World.choose world
                 | _ ->
                     Log.info ("Incorrect signal type received by entity (signal = '" + scstring signalObj + "'; entity = '" + scstring entity + "').")
-                    world
+                    World.choose world
+            | :? Signal<obj, string> as signalWithCmdStr ->
+                match signalWithCmdStr with
+                | Command cmdStr ->
+                    try let cmd = scvalue<'command> cmdStr in this.TrySignal (Command cmd, entity, world)
+                    with exn ->
+                        Log.info ("Incorrect signal type received by entity (signal = '" + scstring signalObj + "'; entity = '" + scstring entity + "').")
+                        World.choose world
+                | _ ->
+                    Log.info ("Incorrect signal type received by entity (signal = '" + scstring signalObj + "'; entity = '" + scstring entity + "').")
+                    World.choose world
+            | _ ->
+                Log.info ("Incorrect signal type received by entity (signal = '" + scstring signalObj + "'; entity = '" + scstring entity + "').")
+                world
 
         override this.TrySynchronize (initializing, entity, world) =
             let contentOld = World.getEntityContent entity world
@@ -1298,31 +1296,29 @@ module GroupDispatcherModule =
             match signalObj with
             | :? Signal<'message, obj> as signal -> group.Signal<'model, 'message, 'command> (match signal with Message message -> msg message | _ -> failwithumf ()) world
             | :? Signal<obj, 'command> as signal -> group.Signal<'model, 'message, 'command> (match signal with Command command -> cmd command | _ -> failwithumf ()) world
-            | _ ->
-                match signalObj with
-                | :? Signal<string, obj> as signalWithMsgStr ->
-                    match signalWithMsgStr with
-                    | Message msgStr ->
-                        try let signal = scvalue<'message> msgStr in this.TrySignal (signal, group, world)
-                        with exn ->
-                            Log.info ("Incorrect signal type received by group (signal = '" + scstring signalObj + "'; group = '" + scstring group + "').")
-                            World.choose world
-                    | _ ->
-                        Log.info ("Incorrect signal type received by group (signal = '" + scstring signalObj + "'; group = '" + scstring group + "').")
-                        World.choose world
-                | :? Signal<obj, string> as signalWithCmdStr ->
-                    match signalWithCmdStr with
-                    | Command cmdStr ->
-                        try let signal = scvalue<'command> cmdStr in this.TrySignal (signal, group, world)
-                        with exn ->
-                            Log.info ("Incorrect signal type received by group (signal = '" + scstring signalObj + "'; group = '" + scstring group + "').")
-                            World.choose world
-                    | _ ->
+            | :? Signal<string, obj> as signalWithMsgStr ->
+                match signalWithMsgStr with
+                | Message msgStr ->
+                    try let msg = scvalue<'message> msgStr in this.TrySignal (Message msg, group, world)
+                    with exn ->
                         Log.info ("Incorrect signal type received by group (signal = '" + scstring signalObj + "'; group = '" + scstring group + "').")
                         World.choose world
                 | _ ->
                     Log.info ("Incorrect signal type received by group (signal = '" + scstring signalObj + "'; group = '" + scstring group + "').")
-                    world
+                    World.choose world
+            | :? Signal<obj, string> as signalWithCmdStr ->
+                match signalWithCmdStr with
+                | Command cmdStr ->
+                    try let cmd = scvalue<'command> cmdStr in this.TrySignal (Command cmd, group, world)
+                    with exn ->
+                        Log.info ("Incorrect signal type received by group (signal = '" + scstring signalObj + "'; group = '" + scstring group + "').")
+                        World.choose world
+                | _ ->
+                    Log.info ("Incorrect signal type received by group (signal = '" + scstring signalObj + "'; group = '" + scstring group + "').")
+                    World.choose world
+            | _ ->
+                Log.info ("Incorrect signal type received by group (signal = '" + scstring signalObj + "'; group = '" + scstring group + "').")
+                world
 
         override this.TrySynchronize (initializing, group, world) =
             let contentOld = World.getGroupContent group world
@@ -1398,31 +1394,29 @@ module ScreenDispatcherModule =
             match signalObj with
             | :? Signal<'message, obj> as signal -> screen.Signal<'model, 'message, 'command> (match signal with Message message -> msg message | _ -> failwithumf ()) world
             | :? Signal<obj, 'command> as signal -> screen.Signal<'model, 'message, 'command> (match signal with Command command -> cmd command | _ -> failwithumf ()) world
-            | _ ->
-                match signalObj with
-                | :? Signal<string, obj> as signalWithMsgStr ->
-                    match signalWithMsgStr with
-                    | Message msgStr ->
-                        try let signal = scvalue<'message> msgStr in this.TrySignal (signal, screen, world)
-                        with exn ->
-                            Log.info ("Incorrect signal type received by screen (signal = '" + scstring signalObj + "'; screen = '" + scstring screen + "').")
-                            World.choose world
-                    | _ ->
-                        Log.info ("Incorrect signal type received by screen (signal = '" + scstring signalObj + "'; screen = '" + scstring screen + "').")
-                        World.choose world
-                | :? Signal<obj, string> as signalWithCmdStr ->
-                    match signalWithCmdStr with
-                    | Command cmdStr ->
-                        try let signal = scvalue<'command> cmdStr in this.TrySignal (signal, screen, world)
-                        with exn ->
-                            Log.info ("Incorrect signal type received by screen (signal = '" + scstring signalObj + "'; screen = '" + scstring screen + "').")
-                            World.choose world
-                    | _ ->
+            | :? Signal<string, obj> as signalWithMsgStr ->
+                match signalWithMsgStr with
+                | Message msgStr ->
+                    try let msg = scvalue<'message> msgStr in this.TrySignal (Message msg, screen, world)
+                    with exn ->
                         Log.info ("Incorrect signal type received by screen (signal = '" + scstring signalObj + "'; screen = '" + scstring screen + "').")
                         World.choose world
                 | _ ->
                     Log.info ("Incorrect signal type received by screen (signal = '" + scstring signalObj + "'; screen = '" + scstring screen + "').")
-                    world
+                    World.choose world
+            | :? Signal<obj, string> as signalWithCmdStr ->
+                match signalWithCmdStr with
+                | Command cmdStr ->
+                    try let cmd = scvalue<'command> cmdStr in this.TrySignal (Command cmd, screen, world)
+                    with exn ->
+                        Log.info ("Incorrect signal type received by screen (signal = '" + scstring signalObj + "'; screen = '" + scstring screen + "').")
+                        World.choose world
+                | _ ->
+                    Log.info ("Incorrect signal type received by screen (signal = '" + scstring signalObj + "'; screen = '" + scstring screen + "').")
+                    World.choose world
+            | _ ->
+                Log.info ("Incorrect signal type received by screen (signal = '" + scstring signalObj + "'; screen = '" + scstring screen + "').")
+                world
 
         override this.TrySynchronize (initializing, screen, world) =
             let contentOld = World.getScreenContent screen world
@@ -1505,31 +1499,32 @@ module GameDispatcherModule =
             match signalObj with
             | :? Signal<'message, obj> as signal -> game.Signal<'model, 'message, 'command> (match signal with Message message -> msg message | _ -> failwithumf ()) world
             | :? Signal<obj, 'command> as signal -> game.Signal<'model, 'message, 'command> (match signal with Command command -> cmd command | _ -> failwithumf ()) world
-            | _ ->
-                match signalObj with
-                | :? Signal<string, obj> as signalWithMsgStr ->
-                    match signalWithMsgStr with
-                    | Message msgStr ->
-                        try let signal = scvalue<'message> msgStr in this.TrySignal (signal, game, world)
-                        with exn ->
-                            Log.info ("Incorrect signal type received by game (signal = '" + scstring signalObj + "'; game = '" + scstring game + "').")
-                            World.choose world
-                    | _ ->
-                        Log.info ("Incorrect signal type received by game (signal = '" + scstring signalObj + "'; game = '" + scstring game + "').")
-                        World.choose world
-                | :? Signal<obj, string> as signalWithCmdStr ->
-                    match signalWithCmdStr with
-                    | Command cmdStr ->
-                        try let signal = scvalue<'command> cmdStr in this.TrySignal (signal, game, world)
-                        with exn ->
-                            Log.info ("Incorrect signal type received by game (signal = '" + scstring signalObj + "'; game = '" + scstring game + "').")
-                            World.choose world
-                    | _ ->
+            | :? Signal<string, obj> as signalWithMsgStr ->
+                match signalWithMsgStr with
+                | Message msgStr ->
+                    try let msg = scvalue<'message> msgStr in this.TrySignal (Message msg, game, world)
+                    with exn ->
                         Log.info ("Incorrect signal type received by game (signal = '" + scstring signalObj + "'; game = '" + scstring game + "').")
                         World.choose world
                 | _ ->
                     Log.info ("Incorrect signal type received by game (signal = '" + scstring signalObj + "'; game = '" + scstring game + "').")
-                    world
+                    World.choose world
+            | :? Signal<obj, string> as signalWithCmdStr ->
+                match signalWithCmdStr with
+                | Command cmdStr ->
+                    try let cmd = scvalue<'command> cmdStr in this.TrySignal (Command cmd, game, world)
+                    with exn ->
+                        Log.info ("Incorrect signal type received by game (signal = '" + scstring signalObj + "'; game = '" + scstring game + "').")
+                        World.choose world
+                | _ ->
+                    Log.info ("Incorrect signal type received by game (signal = '" + scstring signalObj + "'; game = '" + scstring game + "').")
+                    World.choose world
+            | _ ->
+                Log.info ("Incorrect signal type received by game (signal = '" + scstring signalObj + "'; game = '" + scstring game + "').")
+                world
+
+        override this.TrySynchronize (initializing, game, world) =
+            synchronize initializing game world this |> snd
 
         abstract member Initialize : 'model * Game -> InitializerContent seq
         default this.Initialize (_, _) = Seq.empty
