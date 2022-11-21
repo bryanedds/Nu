@@ -1497,8 +1497,6 @@ module GameDispatcherModule =
             World.renderView view world
 
         override this.TrySignal (signalObj, game, world) =
-            let str = scstring signalObj
-            Console.WriteLine str
             match signalObj with
             | :? Signal<'message, obj> as signal -> game.Signal<'model, 'message, 'command> (match signal with Message message -> msg message | _ -> failwithumf ()) world
             | :? Signal<obj, 'command> as signal -> game.Signal<'model, 'message, 'command> (match signal with Command command -> cmd command | _ -> failwithumf ()) world
