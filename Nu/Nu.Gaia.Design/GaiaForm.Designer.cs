@@ -127,7 +127,7 @@
             this.reloadAssetsButton = new System.Windows.Forms.ToolStripButton();
             this.toolStripSeparator9 = new System.Windows.Forms.ToolStripSeparator();
             this.runButton = new System.Windows.Forms.ToolStripButton();
-            this.editWhileInteractiveCheckBox = new System.Windows.Forms.ToolStripButton();
+            this.liveEditCheckBox = new System.Windows.Forms.ToolStripButton();
             this.toolStrip = new System.Windows.Forms.ToolStrip();
             this.fileDropDownButton = new System.Windows.Forms.ToolStripDropDownButton();
             this.newGroupToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -1132,7 +1132,7 @@
             this.createEntityComboBox.DropDownWidth = 10;
             this.createEntityComboBox.Font = new System.Drawing.Font("Tahoma", 8.25F);
             this.createEntityComboBox.Name = "createEntityComboBox";
-            this.createEntityComboBox.Size = new System.Drawing.Size(180, 25);
+            this.createEntityComboBox.Size = new System.Drawing.Size(170, 25);
             // 
             // toolStripLabel1
             // 
@@ -1145,7 +1145,7 @@
             this.overlayComboBox.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.overlayComboBox.Font = new System.Drawing.Font("Tahoma", 8.25F);
             this.overlayComboBox.Name = "overlayComboBox";
-            this.overlayComboBox.Size = new System.Drawing.Size(180, 25);
+            this.overlayComboBox.Size = new System.Drawing.Size(170, 25);
             // 
             // creationElevationLabel
             // 
@@ -1222,6 +1222,7 @@
             this.reloadAssetsButton.Name = "reloadAssetsButton";
             this.reloadAssetsButton.Size = new System.Drawing.Size(52, 22);
             this.reloadAssetsButton.Text = "[Assets]";
+            this.reloadAssetsButton.ToolTipText = "Attempt to reload the program\'s assets.";
             // 
             // toolStripSeparator9
             // 
@@ -1236,19 +1237,20 @@
             this.runButton.Image = ((System.Drawing.Image)(resources.GetObject("runButton.Image")));
             this.runButton.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.runButton.Name = "runButton";
-            this.runButton.Size = new System.Drawing.Size(57, 22);
-            this.runButton.Text = "Run (F5)";
-            this.runButton.ToolTipText = "Run (F5)";
+            this.runButton.Size = new System.Drawing.Size(65, 22);
+            this.runButton.Text = "[Run (F5)]";
+            this.runButton.ToolTipText = "Put the program in Advancing mode.";
             // 
-            // editWhileInteractiveCheckBox
+            // liveEditCheckBox
             // 
-            this.editWhileInteractiveCheckBox.CheckOnClick = true;
-            this.editWhileInteractiveCheckBox.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
-            this.editWhileInteractiveCheckBox.Image = ((System.Drawing.Image)(resources.GetObject("editWhileInteractiveCheckBox.Image")));
-            this.editWhileInteractiveCheckBox.ImageTransparentColor = System.Drawing.Color.Magenta;
-            this.editWhileInteractiveCheckBox.Name = "editWhileInteractiveCheckBox";
-            this.editWhileInteractiveCheckBox.Size = new System.Drawing.Size(64, 22);
-            this.editWhileInteractiveCheckBox.Text = "Edit While";
+            this.liveEditCheckBox.CheckOnClick = true;
+            this.liveEditCheckBox.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
+            this.liveEditCheckBox.Image = ((System.Drawing.Image)(resources.GetObject("liveEditCheckBox.Image")));
+            this.liveEditCheckBox.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.liveEditCheckBox.Name = "liveEditCheckBox";
+            this.liveEditCheckBox.Size = new System.Drawing.Size(55, 22);
+            this.liveEditCheckBox.Text = "Live Edit";
+            this.liveEditCheckBox.ToolTipText = "Allow mouse manipulation of entities while the program is running.";
             // 
             // toolStrip
             // 
@@ -1269,7 +1271,7 @@
             this.quickSizeToolStripButton,
             this.toolStripSeparator4,
             this.runButton,
-            this.editWhileInteractiveCheckBox,
+            this.liveEditCheckBox,
             this.toolStripSeparator9,
             this.toolStripLabel3,
             this.snap3dButton,
@@ -1295,7 +1297,7 @@
             this.songPlaybackButton});
             this.toolStrip.Location = new System.Drawing.Point(0, 0);
             this.toolStrip.Name = "toolStrip";
-            this.toolStrip.Size = new System.Drawing.Size(1492, 25);
+            this.toolStrip.Size = new System.Drawing.Size(1471, 25);
             this.toolStrip.TabIndex = 1;
             this.toolStrip.Text = "toolStrip1";
             // 
@@ -1566,6 +1568,7 @@
             this.reloadCodeButton.Name = "reloadCodeButton";
             this.reloadCodeButton.Size = new System.Drawing.Size(86, 22);
             this.reloadCodeButton.Text = "[Reload Code]";
+            this.reloadCodeButton.ToolTipText = "Attempt to reload program\'s F# code.";
             // 
             // reloadAllButton
             // 
@@ -1575,6 +1578,7 @@
             this.reloadAllButton.Name = "reloadAllButton";
             this.reloadAllButton.Size = new System.Drawing.Size(33, 22);
             this.reloadAllButton.Text = "[All]";
+            this.reloadAllButton.ToolTipText = "Attempt to reload both program asset and code (in that order).";
             // 
             // toolStripSeparator2
             // 
@@ -1891,7 +1895,7 @@
         public System.Windows.Forms.ToolStripButton reloadAssetsButton;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator9;
         public System.Windows.Forms.ToolStripButton runButton;
-        public System.Windows.Forms.ToolStripButton editWhileInteractiveCheckBox;
+        public System.Windows.Forms.ToolStripButton liveEditCheckBox;
         public System.Windows.Forms.ToolStrip toolStrip;
         public System.Windows.Forms.ToolStripDropDownButton fileDropDownButton;
         private System.Windows.Forms.ToolStripSeparator toolStripMenuItem7;

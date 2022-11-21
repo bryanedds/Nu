@@ -196,7 +196,6 @@ module Gaia =
         | _ -> ()
 
     let private refreshFormOnUndoRedo (form : GaiaForm) world =
-        form.runButton.Checked <- false
         refreshEntityPropertyGrid form world
         refreshGroupPropertyGrid form world
         refreshGroupTabs form world
@@ -204,7 +203,7 @@ module Gaia =
 
     let private canEditWithMouse (form : GaiaForm) world =
         World.getAdvancing world &&
-        not form.editWhileInteractiveCheckBox.Checked
+        not form.liveEditCheckBox.Checked
 
     let private tryMousePick mousePosition (form : GaiaForm) world =
         let (entities2d, world) = getPickableEntities2d world
@@ -1021,7 +1020,6 @@ module Gaia =
                     let world = World.unshelve pastWorld
                     Globals.EditorState.PastWorlds <- pastWorlds
                     Globals.EditorState.FutureWorlds <- futureWorld :: Globals.EditorState.FutureWorlds
-                    let world = World.setUpdateRate 0L world
                     refreshFormOnUndoRedo form world
                     world
                 | [] -> world
@@ -1036,7 +1034,6 @@ module Gaia =
                     let world = World.unshelve futureWorld
                     Globals.EditorState.PastWorlds <- pastWorld :: Globals.EditorState.PastWorlds
                     Globals.EditorState.FutureWorlds <- futureWorlds
-                    let world = World.setUpdateRate 0L world
                     refreshFormOnUndoRedo form world
                     world
                 | [] -> world
@@ -1044,7 +1041,6 @@ module Gaia =
 
     let private handleFormRunChanged (form : GaiaForm) (_ : EventArgs) =
         addPreUpdater $ fun world ->
-            let world = World.setUpdateRate 0L world
             let updateRate = if form.runButton.Checked then 1L else 0L
             let world =
                 if updateRate <> 0L then
@@ -1068,6 +1064,7 @@ module Gaia =
 
     let private handleFormCut (form : GaiaForm) (_ : EventArgs) =
         addPreUpdater $ fun world ->
+            let world = Globals.pushPastWorld world
             match form.entityPropertyGrid.SelectedObject with
             | null -> world
             | :? EntityTypeDescriptorSource as entityTds ->
@@ -1090,6 +1087,7 @@ module Gaia =
 
     let private handleFormQuickSize (form : GaiaForm) (_ : EventArgs) =
         addPreUpdater $ fun world ->
+            let world = Globals.pushPastWorld world
             match form.entityPropertyGrid.SelectedObject with
             | null -> world
             | :? EntityTypeDescriptorSource as entityTds ->
@@ -1116,6 +1114,7 @@ module Gaia =
 
     let private handleFormResetEye (_ : GaiaForm) (_ : EventArgs) =
         addPreUpdater $ fun world ->
+            let world = Globals.pushPastWorld world
             let world = World.setEyePosition2d v2Zero world
             let world = World.setEyePosition3d Constants.Engine.EyePosition3dDefault world
             let world = World.setEyeRotation3d quatIdentity world
@@ -1123,6 +1122,7 @@ module Gaia =
 
     let private handleFormReloadCode (_ : GaiaForm) (_ : EventArgs) =
         addPreUpdater $ fun world ->
+            let world = Globals.pushPastWorld world
             let workingDirPath = Globals.EditorState.TargetDir + "/../.."
             Log.info ("Inspecting directory " + workingDirPath + " for F# code...")
             try match Array.ofSeq (Directory.EnumerateFiles (workingDirPath, "*.fsproj")) with
