@@ -1160,6 +1160,7 @@ module EntityDispatcherModule2 =
             match signalObj with
             | :? Signal<'message, obj> as signal -> entity.Signal<'model, 'message, 'command> (match signal with Message message -> msg message | _ -> failwithumf ()) world
             | :? Signal<obj, 'command> as signal -> entity.Signal<'model, 'message, 'command> (match signal with Command command -> cmd command | _ -> failwithumf ()) world
+#if ALLOW_SIGNAL_STRINGS
             | :? Signal<string, obj> as signalWithMsgStr ->
                 match signalWithMsgStr with
                 | Message msgStr ->
@@ -1180,6 +1181,7 @@ module EntityDispatcherModule2 =
                 | _ ->
                     Log.info ("Incorrect signal type received by entity (signal = '" + scstring signalObj + "'; entity = '" + scstring entity + "').")
                     World.choose world
+#endif
             | _ ->
                 Log.info ("Incorrect signal type received by entity (signal = '" + scstring signalObj + "'; entity = '" + scstring entity + "').")
                 world
@@ -1296,6 +1298,7 @@ module GroupDispatcherModule =
             match signalObj with
             | :? Signal<'message, obj> as signal -> group.Signal<'model, 'message, 'command> (match signal with Message message -> msg message | _ -> failwithumf ()) world
             | :? Signal<obj, 'command> as signal -> group.Signal<'model, 'message, 'command> (match signal with Command command -> cmd command | _ -> failwithumf ()) world
+#if ALLOW_SIGNAL_STRINGS
             | :? Signal<string, obj> as signalWithMsgStr ->
                 match signalWithMsgStr with
                 | Message msgStr ->
@@ -1316,6 +1319,7 @@ module GroupDispatcherModule =
                 | _ ->
                     Log.info ("Incorrect signal type received by group (signal = '" + scstring signalObj + "'; group = '" + scstring group + "').")
                     World.choose world
+#endif
             | _ ->
                 Log.info ("Incorrect signal type received by group (signal = '" + scstring signalObj + "'; group = '" + scstring group + "').")
                 world
@@ -1394,6 +1398,7 @@ module ScreenDispatcherModule =
             match signalObj with
             | :? Signal<'message, obj> as signal -> screen.Signal<'model, 'message, 'command> (match signal with Message message -> msg message | _ -> failwithumf ()) world
             | :? Signal<obj, 'command> as signal -> screen.Signal<'model, 'message, 'command> (match signal with Command command -> cmd command | _ -> failwithumf ()) world
+#if ALLOW_SIGNAL_STRINGS
             | :? Signal<string, obj> as signalWithMsgStr ->
                 match signalWithMsgStr with
                 | Message msgStr ->
@@ -1414,6 +1419,7 @@ module ScreenDispatcherModule =
                 | _ ->
                     Log.info ("Incorrect signal type received by screen (signal = '" + scstring signalObj + "'; screen = '" + scstring screen + "').")
                     World.choose world
+#endif
             | _ ->
                 Log.info ("Incorrect signal type received by screen (signal = '" + scstring signalObj + "'; screen = '" + scstring screen + "').")
                 world
@@ -1499,6 +1505,7 @@ module GameDispatcherModule =
             match signalObj with
             | :? Signal<'message, obj> as signal -> game.Signal<'model, 'message, 'command> (match signal with Message message -> msg message | _ -> failwithumf ()) world
             | :? Signal<obj, 'command> as signal -> game.Signal<'model, 'message, 'command> (match signal with Command command -> cmd command | _ -> failwithumf ()) world
+#if ALLOW_SIGNAL_STRINGS
             | :? Signal<string, obj> as signalWithMsgStr ->
                 match signalWithMsgStr with
                 | Message msgStr ->
@@ -1519,6 +1526,7 @@ module GameDispatcherModule =
                 | _ ->
                     Log.info ("Incorrect signal type received by game (signal = '" + scstring signalObj + "'; game = '" + scstring game + "').")
                     World.choose world
+#endif
             | _ ->
                 Log.info ("Incorrect signal type received by game (signal = '" + scstring signalObj + "'; game = '" + scstring game + "').")
                 world
