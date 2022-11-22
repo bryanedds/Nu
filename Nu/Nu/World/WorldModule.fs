@@ -69,6 +69,14 @@ module WorldModule =
     let mutable internal evalManyWithLogging : Scripting.Expr array -> Scripting.DeclarationFrame -> Simulant -> World -> struct (Scripting.Expr array * World) =
         Unchecked.defaultof<_>
 
+    /// F# reach-around for adding script unsubscriptions to simulants.
+    let mutable internal addSimulantScriptUnsubscription : Unsubscription -> Simulant -> World -> World =
+        Unchecked.defaultof<_>
+
+    /// F# reach-around for unsubscribing script subscriptions of simulants.
+    let mutable internal unsubscribeSimulantScripts : Simulant -> World -> World =
+        Unchecked.defaultof<_>
+
     /// F# reach-around for checking that a simulant is selected.
     let mutable internal isSelected : Simulant -> World -> bool =
         Unchecked.defaultof<_>
@@ -100,13 +108,8 @@ module WorldModule =
     /// F# reach-around for unregistering physics entities of an entire screen.
     let mutable internal unregisterScreenPhysics : Screen -> World -> World =
         Unchecked.defaultof<_>
-
-    /// F# reach-around for adding script unsubscriptions to simulants.
-    let mutable internal addSimulantScriptUnsubscription : Unsubscription -> Simulant -> World -> World =
-        Unchecked.defaultof<_>
-
-    /// F# reach-around for unsubscribing script subscriptions of simulants.
-    let mutable internal unsubscribeSimulantScripts : Simulant -> World -> World =
+        
+    let mutable internal trySignal : obj -> Simulant -> World -> World =
         Unchecked.defaultof<_>
 
     let mutable internal register : Simulant -> World -> World =
@@ -119,12 +122,6 @@ module WorldModule =
         Unchecked.defaultof<_>
 
     let mutable internal destroy : Simulant -> World -> World =
-        Unchecked.defaultof<_>
-
-    let mutable internal trySignalFacet : obj -> string -> Simulant -> World -> World =
-        Unchecked.defaultof<_>
-
-    let mutable internal trySignal : obj -> Simulant -> World -> World =
         Unchecked.defaultof<_>
 
     type World with // Construction

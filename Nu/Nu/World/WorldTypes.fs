@@ -283,10 +283,6 @@ module WorldTypes =
         abstract ApplyPhysics : Vector3 * Quaternion * Vector3 * Vector3 * Entity * World -> World
         default this.ApplyPhysics (_, _, _, _, _, world) = world
 
-        /// Try to send a signal to an entity's facet.
-        abstract TrySignalFacet : obj * string * Entity * World -> World
-        default this.TrySignalFacet (_, _, _, world) = world
-
         /// Try to send a signal to an entity.
         abstract TrySignal : obj * Entity * World -> World
         default this.TrySignal (_, _, world) = world
@@ -351,10 +347,6 @@ module WorldTypes =
         /// Render a facet.
         abstract Render : Entity * World -> World
         default this.Render (_, world) = world
-
-        /// Try to send a signal to a facet.
-        abstract TrySignal : obj * Entity * World -> World
-        default this.TrySignal (_, _, world) = world
 
         /// Participate in attempting to pick an entity with a ray.
         abstract RayCast : Ray3 * Entity * World -> single array
