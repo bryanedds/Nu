@@ -1153,9 +1153,6 @@ module EntityDispatcherModule2 =
             let view = this.View (this.GetModel entity world, entity, world)
             World.renderView view world
 
-        override this.TrySignalFacet (signalObj : obj, facetName : string, entity : Entity, world : World) : World =
-            entity.TrySignalFacet signalObj facetName world
-
         override this.TrySignal (signalObj, entity, world) =
             match signalObj with
             | :? Signal<'message, obj> as signal -> entity.Signal<'model, 'message, 'command> (match signal with Message message -> msg message | _ -> failwithumf ()) world
@@ -1294,7 +1291,7 @@ module GroupDispatcherModule =
             let view = this.View (this.GetModel group world, group, world)
             World.renderView view world
 
-        override this.TrySignal (signalObj, group, world) =
+        override this.TrySignal (signalObj : obj, group, world) =
             match signalObj with
             | :? Signal<'message, obj> as signal -> group.Signal<'model, 'message, 'command> (match signal with Message message -> msg message | _ -> failwithumf ()) world
             | :? Signal<obj, 'command> as signal -> group.Signal<'model, 'message, 'command> (match signal with Command command -> cmd command | _ -> failwithumf ()) world
@@ -1394,7 +1391,7 @@ module ScreenDispatcherModule =
             let view = this.View (this.GetModel screen world, screen, world)
             World.renderView view world
 
-        override this.TrySignal (signalObj, screen, world) =
+        override this.TrySignal (signalObj : obj, screen, world) =
             match signalObj with
             | :? Signal<'message, obj> as signal -> screen.Signal<'model, 'message, 'command> (match signal with Message message -> msg message | _ -> failwithumf ()) world
             | :? Signal<obj, 'command> as signal -> screen.Signal<'model, 'message, 'command> (match signal with Command command -> cmd command | _ -> failwithumf ()) world
@@ -1501,7 +1498,7 @@ module GameDispatcherModule =
             let view = this.View (this.GetModel game world, game, world)
             World.renderView view world
 
-        override this.TrySignal (signalObj, game, world) =
+        override this.TrySignal (signalObj : obj, game, world) =
             match signalObj with
             | :? Signal<'message, obj> as signal -> game.Signal<'model, 'message, 'command> (match signal with Message message -> msg message | _ -> failwithumf ()) world
             | :? Signal<obj, 'command> as signal -> game.Signal<'model, 'message, 'command> (match signal with Command command -> cmd command | _ -> failwithumf ()) world
@@ -1555,7 +1552,7 @@ module WorldModule2' =
     type World with
 
         /// Send a signal to a simulant.
-        static member trySignal signal (simulant : Simulant) world =
+        static member trySignal (signal : Signal<'message, 'command>) (simulant : Simulant) world =
             match simulant with
             | :? Entity as entity -> entity.TrySignal signal world
             | :? Group as group -> group.TrySignal signal world

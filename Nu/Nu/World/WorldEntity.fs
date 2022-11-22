@@ -493,11 +493,9 @@ module WorldEntityModule =
         /// Get an entity's change event address.
         member this.GetChangeEvent propertyName = Events.Change propertyName --> this.EntityAddress
 
-        /// Try to signal an entity's facet.
-        member this.TrySignalFacet (signalObj : obj) facetName world = (this.GetDispatcher world).TrySignalFacet (signalObj, facetName, this, world)
-
         /// Try to signal an entity.
-        member this.TrySignal signal world = (this.GetDispatcher world).TrySignal (signal, this, world)
+        member this.TrySignal<'message, 'command> (signal : Signal<'message, 'command>) world =
+            (this.GetDispatcher world).TrySignal (signal, this, world)
 
     type World with
 

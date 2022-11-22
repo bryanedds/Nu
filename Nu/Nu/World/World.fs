@@ -211,6 +211,12 @@ module Nu =
                 World.setLocalFrame oldLocalFrame world
                 struct (evaleds, world)
 
+            // TODO: P1: implement!
+            WorldModule.addSimulantScriptUnsubscription <- fun _ _ _ -> failwithnie ()
+
+            // TODO: P1: implement!
+            WorldModule.unsubscribeSimulantScripts <- fun _ _ -> failwithnie ()
+
             // init isSelected F# reach-around
             WorldModule.isSelected <- fun simulant world ->
                 World.isSelected simulant world
@@ -311,12 +317,20 @@ module Nu =
                     World.unregisterEntityPhysics entity world)
                     world entities
 
+            // init trySignal F# reach-around
+            WorldModule.trySignal <- fun signalObj simulant world ->
+                match simulant with
+                | :? Entity as entity -> (entity.GetDispatcher world).TrySignal (signalObj, entity, world)
+                | :? Group as group -> (group.GetDispatcher world).TrySignal (signalObj, group, world)
+                | :? Screen as screen -> (screen.GetDispatcher world).TrySignal (signalObj, screen, world)
+                | :? Game as game -> (game.GetDispatcher world).TrySignal (signalObj, game, world)
+                | _ -> failwithumf ()
+
             // init miscellaneous F# reach-arounds
             WorldModule.register <- fun simulant world -> World.register simulant world
             WorldModule.unregister <- fun simulant world -> World.unregister simulant world
             WorldModule.destroyImmediate <- fun simulant world -> World.destroyImmediate simulant world
             WorldModule.destroy <- fun simulant world -> World.destroy simulant world
-            WorldModule.trySignal <- fun signalObj simulant world -> World.trySignal signalObj simulant world
 
             // init scripting
             World.initScripting ()
