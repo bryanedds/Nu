@@ -102,6 +102,7 @@
     <Compile Include="OmniBattleDispatcher.fs" />
     <Compile Include="OmniFieldSignals.fs" />
     <Compile Include="OmniFieldCue.fs" />
+    <Compile Include="OmniFieldExtensions.fs" />
     <Compile Include="OmniFieldDispatcher.fs" />
     <Compile Include="OmniBlade.fs" />
     <Compile Include="OmniPlugin.fs" />
