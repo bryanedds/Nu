@@ -7,6 +7,7 @@ open System.Numerics
 open Prime
 open Nu
 open Nu.Declarative
+open OmniBlade
 
 [<RequireQualifiedAccess>]
 module FieldCue =
@@ -22,13 +23,13 @@ module FieldCue =
             (cue, definitions, just field)
 
         | Cue.PlaySound (volume, sound) ->
-            (Cue.Nil, definitions, withCmd (FieldCommand.PlaySound (0L, volume, sound)) field)
+            (Cue.Nil, definitions, withCmd (PlaySound (0L, volume, sound)) field)
 
         | Cue.PlaySong (fadeIn, fadeOut, volume, start, song) ->
-            (Cue.Nil, definitions, withCmd (FieldCommand.PlaySong (fadeIn, fadeOut, volume, start, song)) field)
+            (Cue.Nil, definitions, withCmd (PlaySong (fadeIn, fadeOut, volume, start, song)) field)
 
         | Cue.FadeOutSong fade ->
-            (Cue.Nil, definitions, withCmd (FieldCommand.FadeOutSong fade) field)
+            (Cue.Nil, definitions, withCmd (FadeOutSong fade) field)
 
         | Cue.Face (target, direction) ->
             match target with
@@ -76,7 +77,7 @@ module FieldCue =
                 let field = Field.recruit allyType field
                 let field = Field.updateAdvents (Set.add advent) field
                 let field = Field.updateInventory (Inventory.updateGold (fun gold -> gold - fee)) field
-                (Cue.Nil, definitions, withCmd (FieldCommand.PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.PurchaseSound)) field)
+                (Cue.Nil, definitions, withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.PurchaseSound)) field)
             else run (Parallel [Dialog ("You don't have enough...", false); Cue.PlaySound (Constants.Audio.SoundVolumeDefault, Assets.Gui.MistakeSound)]) definitions field
 
         | AddItem itemType ->

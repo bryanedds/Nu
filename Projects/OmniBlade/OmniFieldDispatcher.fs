@@ -7,6 +7,7 @@ open System.Numerics
 open Prime
 open Nu
 open Nu.Declarative
+open OmniBlade
 
 [<AutoOpen>]
 module FieldDispatcher =
@@ -69,8 +70,8 @@ module FieldDispatcher =
                                 let field = Field.updateFieldTransitionOpt (constant (Some transition)) field
                                 let playSound =
                                     if isWarp
-                                    then FieldCommand.PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.StepWarpSound)
-                                    else FieldCommand.PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.StepStairSound)
+                                    then PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.StepWarpSound)
+                                    else PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.StepStairSound)
                                 (cmd playSound :: signals, field)
                             else (signals, field)
                         | None -> (signals, field)
@@ -87,7 +88,7 @@ module FieldDispatcher =
                                     let field = Field.updateCue (constant cue) field
                                     match sensorType with
                                     | AirSensor -> (signals, field)
-                                    | HiddenSensor | StepPlateSensor -> (Command (FieldCommand.PlaySound (0L,  Constants.Audio.SoundVolumeDefault, Assets.Field.StepPlateSound)) :: signals, field)
+                                    | HiddenSensor | StepPlateSensor -> (Command (PlaySound (0L,  Constants.Audio.SoundVolumeDefault, Assets.Field.StepPlateSound)) :: signals, field)
                                 else (signals, field))
                                 (signals, field) sensors
                         results
@@ -111,8 +112,8 @@ module FieldDispatcher =
                             let field = Field.clearSpirits field
                             let field = Field.updateFieldSongTimeOpt (constant (Some startTime)) field
                             let field = Field.updateBattleOpt (constant (Some battle)) field
-                            let fade = cmd (FieldCommand.FadeOutSong 1000)
-                            let beastGrowl = cmd (FieldCommand.PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.BeastGrowlSound))
+                            let fade = cmd (FadeOutSong 1000)
+                            let beastGrowl = cmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.BeastGrowlSound))
                             (fade :: beastGrowl :: signals, field)
                         | Right field -> (signals, field)
                     else (signals, field)
@@ -137,7 +138,7 @@ module FieldDispatcher =
                             | (true, fieldData) ->
                                 match (currentSongOpt, fieldData.FieldSongOpt) with
                                 | (Some song, Some song2) when assetEq song song2 -> just field
-                                | (_, _) -> withCmd (FieldCommand.FadeOutSong Constants.Audio.FadeOutMsDefault) field
+                                | (_, _) -> withCmd (FadeOutSong Constants.Audio.FadeOutMsDefault) field
                             | (false, _) -> just field
 
                         // just past half-way point of transition
@@ -155,7 +156,7 @@ module FieldDispatcher =
                                 | Some fieldSong ->
                                     match currentSongOpt with
                                     | Some song when assetEq song fieldSong -> Nop
-                                    | _ -> FieldCommand.PlaySong (0, Constants.Audio.FadeOutMsDefault, Constants.Audio.SongVolumeDefault, 0.0, fieldSong)
+                                    | _ -> PlaySong (0, Constants.Audio.FadeOutMsDefault, Constants.Audio.SongVolumeDefault, 0.0, fieldSong)
                                 | None -> Nop
                             withCmd songCmd field
 
@@ -230,7 +231,7 @@ module FieldDispatcher =
                         let field = match displacedOpt with Some displaced -> Field.updateInventory (Inventory.tryAddItem displaced >> snd) field | None -> field
                         let field = Field.updateTeam (Map.add index teammate) field
                         let field = Field.updateMenu (constant { field.Menu with MenuUseOpt = None }) field
-                        if result then withCmd (FieldCommand.PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.HealSound)) field
+                        if result then withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.HealSound)) field
                         else just field
                     | None -> just field
                 | None -> just field
@@ -312,8 +313,8 @@ module FieldDispatcher =
                             let field = Field.updateInventory (match shop.ShopState with ShopBuying -> Inventory.tryAddItem itemType >> snd | ShopSelling -> Inventory.tryRemoveItem itemType >> snd) field
                             let field = Field.updateInventory (match shop.ShopState with ShopBuying -> Inventory.updateGold (fun gold -> gold - shopConfirm.ShopConfirmPrice) | ShopSelling -> Inventory.updateGold (fun gold -> gold + shopConfirm.ShopConfirmPrice)) field
                             let field = Field.updateShopOpt (Option.map (fun shop -> { shop with ShopConfirmOpt = None })) field
-                            withCmd (FieldCommand.PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.PurchaseSound)) field
-                        else withCmd (FieldCommand.PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Gui.MistakeSound)) field
+                            withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.PurchaseSound)) field
+                        else withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Gui.MistakeSound)) field
                     | None -> just field
                 | None -> just field
 
@@ -358,7 +359,7 @@ module FieldDispatcher =
                     let field = Field.clearSpirits field
                     let field = Field.updateFieldSongTimeOpt (constant (Some startTime)) field
                     let field = Field.updateBattleOpt (constant (Some battle)) field
-                    withCmd (FieldCommand.PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.BeastGrowlSound)) field
+                    withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.BeastGrowlSound)) field
                 | None -> just field
 
             | Interact ->
@@ -462,7 +463,7 @@ module FieldDispatcher =
                             let fadeIn = if playTime <> 0L then Constants.Field.FieldSongFadeInMs else 0
                             let field = Field.updateFieldSongTimeOpt (constant (Some startTime)) field
                             let world = screen.SetField field world
-                            withCmd (FieldCommand.PlaySong (fadeIn, Constants.Audio.FadeOutMsDefault, Constants.Audio.SongVolumeDefault, double playTime / 1000.0, fieldSong)) world
+                            withCmd (PlaySong (fadeIn, Constants.Audio.FadeOutMsDefault, Constants.Audio.SongVolumeDefault, double playTime / 1000.0, fieldSong)) world
                         else just world
                     | (Some fieldSong, None) ->
                         let (playTime, startTime) =
@@ -477,19 +478,19 @@ module FieldDispatcher =
                         let fadeIn = if playTime <> 0L then Constants.Field.FieldSongFadeInMs else 0
                         let field = Field.updateFieldSongTimeOpt (constant (Some startTime)) field
                         let world = screen.SetField field world
-                        withCmd (FieldCommand.PlaySong (fadeIn, Constants.Audio.FadeOutMsDefault, Constants.Audio.SongVolumeDefault, double playTime / 1000.0, fieldSong)) world
+                        withCmd (PlaySong (fadeIn, Constants.Audio.FadeOutMsDefault, Constants.Audio.SongVolumeDefault, double playTime / 1000.0, fieldSong)) world
                     | (None, _) -> just world
                 | (false, _) -> just world
 
-            | FieldCommand.PlaySound (delay, volume, sound) ->
+            | PlaySound (delay, volume, sound) ->
                 let world = World.schedule (World.playSound volume sound) delay screen world
                 just world
 
-            | FieldCommand.PlaySong (fadeIn, fadeOut, volume, start, assetTag) ->
+            | PlaySong (fadeIn, fadeOut, volume, start, assetTag) ->
                 let world = World.playSong fadeIn fadeOut volume start assetTag world
                 just world
 
-            | FieldCommand.FadeOutSong fade ->
+            | FadeOutSong fade ->
                 let world = World.fadeOutSong fade world
                 just world
 

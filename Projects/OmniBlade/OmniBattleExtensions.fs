@@ -7,6 +7,7 @@ open System.Numerics
 open Prime
 open Nu
 open Nu.Declarative
+open OmniBlade
 
 [<AutoOpen>]
 module BattleExtensions =
@@ -156,7 +157,7 @@ module BattleExtensions =
                         | DamageAnimation ->
                             if Character.getAnimationFinished time character then
                                 let woundCharacter = WoundCharacter targetIndex
-                                let playDeathSound = BattleCommand.PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.BeastDeathSound)
+                                let playDeathSound = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.BeastDeathSound)
                                 ([Message woundCharacter; Command playDeathSound], battle)
                             else ([], battle)
                         | WoundAnimation ->
@@ -189,7 +190,7 @@ module BattleExtensions =
             let localTime = time - startTime
             if localTime = inc 63L then // first frame after transitioning in
                 match battle.BattleSongOpt with
-                | Some battleSong -> withCmd (BattleCommand.PlaySong (0, Constants.Audio.FadeOutMsDefault, Constants.Audio.SongVolumeDefault, 0.0, battleSong)) battle
+                | Some battleSong -> withCmd (PlaySong (0, Constants.Audio.FadeOutMsDefault, Constants.Audio.SongVolumeDefault, 0.0, battleSong)) battle
                 | None -> just battle
             elif localTime >= 90L && localTime < 160L then
                 let localTimeReady = localTime - 90L
@@ -263,7 +264,7 @@ module BattleExtensions =
                     if  ally.ActionTime >= Constants.Battle.ActionTime &&
                         ally.InputState = NoInput then
                         let battle = Battle.updateCharacterInputState (constant RegularMenu) allyIndex battle
-                        let playReadySound = BattleCommand.PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.ReadySound)
+                        let playReadySound = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.ReadySound)
                         (Command playReadySound :: signals, battle)
                     else (signals, battle))
                     ([], battle)
@@ -379,10 +380,10 @@ module BattleExtensions =
                         let battle = Battle.updateInventory (fun inv -> { inv with Gold = inv.Gold + battle.PrizePool.Gold }) battle
                         let battle = Battle.updateInventory (Inventory.tryAddItems battle.PrizePool.Items >> snd) battle
                         if List.notEmpty alliesLevelingUp
-                        then ([cmd (BattleCommand.PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.GrowthSound))], battle)
+                        then ([cmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.GrowthSound))], battle)
                         else ([], battle)
                     else ([], battle)
-                (cmd (BattleCommand.FadeOutSong 6000) :: sigs, battle)
+                (cmd (FadeOutSong 6000) :: sigs, battle)
             else
                 match battle.DialogOpt with
                 | None -> just (Battle.updateBattleState (constant (BattleQuitting (time, outcome, battle.PrizePool.Consequents))) battle)
@@ -391,7 +392,7 @@ module BattleExtensions =
         and private updateCease time startTime battle =
             let localTime = time - startTime
             if localTime = 0L
-            then withCmd (BattleCommand.FadeOutSong Constants.Audio.FadeOutMsDefault) battle
+            then withCmd (FadeOutSong Constants.Audio.FadeOutMsDefault) battle
             else just battle
 
         and update time (battle : Battle) =
