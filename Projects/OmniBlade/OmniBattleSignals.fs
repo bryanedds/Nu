@@ -6,6 +6,7 @@ open System
 open System.Numerics
 open Nu
 open Nu.Declarative
+open OmniBlade
 
 type [<NoComparison>] Hop =
     { HopStart : Vector3
