@@ -59,7 +59,7 @@ module FieldDispatcher =
                 let (signals, field) =
                     match field.FieldTransitionOpt with
                     | None ->
-                        match Field.tryGetTouchingPortal field.Avatar field with
+                        match Field.tryGetTouchingPortal field with
                         | Some (fieldType, destination, direction, isWarp) ->
                             if Option.isNone field.BattleOpt then // make sure we don't teleport if a battle is started earlier in the frame
                                 let transition =
@@ -81,7 +81,7 @@ module FieldDispatcher =
                 let (signals, field) =
                     match field.FieldTransitionOpt with
                     | None ->
-                        let sensors = Field.getTouchedSensors field.Avatar field
+                        let sensors = Field.getTouchedSensors field
                         let results =
                             List.fold (fun (signals : Signal<FieldMessage, FieldCommand> list, field : Field) (sensorType, cue, requirements) ->
                                 if field.Advents.IsSupersetOf requirements then
@@ -365,10 +365,10 @@ module FieldDispatcher =
             | Interact ->
                 match field.DialogOpt with
                 | None ->
-                    if Field.isTouchingSavePoint field.Avatar field then
+                    if Field.isTouchingSavePoint field then
                         Field.interactSavePoint field
                     else
-                        match Field.tryGetFacingProp field.Avatar field with
+                        match Field.tryGetFacingProp field with
                         | Some prop ->
                             match prop.PropData with
                             | Sprite _ -> just field
@@ -623,9 +623,9 @@ module FieldDispatcher =
                         Option.isNone field.BattleOpt &&
                         Option.isNone field.ShopOpt &&
                         Option.isNone field.FieldTransitionOpt &&
-                        Option.isSome (Field.tryGetInteraction field.Avatar field)
+                        Option.isSome (Field.tryGetInteraction field)
                      Entity.Text :=
-                        match Field.tryGetInteraction field.Avatar field with
+                        match Field.tryGetInteraction field with
                         | Some interaction -> interaction
                         | None -> ""
                      Entity.ClickSoundOpt == None
