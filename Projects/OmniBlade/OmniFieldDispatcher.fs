@@ -12,6 +12,46 @@ open OmniBlade
 [<AutoOpen>]
 module FieldDispatcher =
 
+    type FieldMessage =
+        | Update
+        | UpdateFieldTransition
+        | MenuTeamOpen
+        | MenuTeamAlly of int
+        | MenuItemsOpen
+        | MenuItemsPageUp
+        | MenuInventoryPageDown
+        | MenuItemSelect of int * (ItemType * int Option)
+        | MenuItemUse of int
+        | MenuItemCancel
+        | MenuTechOpen
+        | MenuTechAlly of int
+        | MenuTechSelect of int
+        | MenuOptionsOpen
+        | MenuOptionsSelectBattleSpeed of BattleSpeed
+        | MenuClose
+        | ShopBuy
+        | ShopSell
+        | ShopPageUp
+        | ShopPageDown
+        | ShopSelect of int * (ItemType * int Option)
+        | ShopConfirmAccept
+        | ShopConfirmDecline
+        | ShopLeave
+        | PromptLeft
+        | PromptRight
+        | TryBattle of BattleType * Advent Set
+        | Interact
+
+    type [<NoComparison>] FieldCommand =
+        | ProcessKeyInput
+        | ProcessTouchInput of Vector2
+        | UpdateEye
+        | PlayFieldSong
+        | PlaySound of int64 * single * Sound AssetTag
+        | PlaySong of int * int * single * double * Song AssetTag
+        | FadeOutSong of int
+        | Nop
+
     type Screen with
         member this.GetField world = this.GetModelGeneric<Field> world
         member this.SetField value world = this.SetModelGeneric<Field> value world
@@ -122,18 +162,26 @@ module FieldDispatcher =
                 let avatar = Simulants.Field.Scene.Avatar.GetAvatar world
                 let field = if avatar <> field.Avatar then Field.updateAvatar (constant avatar) field else field
 
-                // update field time
+                // advance field time
                 let field = Field.advanceUpdateTime field
 
-                // update cue, resetting definitions if finished
-                let (cue, definitions, (signals, field)) = FieldCue.run field.Cue field.Definitions field
+                // advance cue, reset cue definitions if finished, and convert its signals
+                let (cue, definitions, (cueSignals, field)) = FieldCue.advance field.Cue field.Definitions field
                 let field =
                     match cue with
                     | Cue.Nil -> Field.updateDefinitions (constant field.DefinitionsOriginal) field
                     | _ -> Field.updateDefinitions (constant definitions) field
                 let field = Field.updateCue (constant cue) field
+                let signals =
+                    List.map (fun fieldCueSignal ->
+                        match fieldCueSignal with
+                        | Message (FieldCueMessage.TryBattle (battleType, consequents)) -> msg (TryBattle (battleType, consequents))
+                        | Command (FieldCueCommand.PlaySound (delay, volume, sound)) -> cmd (PlaySound (delay, volume, sound))
+                        | Command (FieldCueCommand.PlaySong (fadeInMs, fadeOutMs, volume, songTime, song)) -> cmd (PlaySong (fadeInMs, fadeOutMs, volume, songTime, song))
+                        | Command (FieldCueCommand.FadeOutSong a) -> cmd (FadeOutSong a))
+                        cueSignals
 
-                // update dialog
+                // advance dialog
                 let field =
                     match field.DialogOpt with
                     | Some dialog ->
@@ -141,7 +189,7 @@ module FieldDispatcher =
                         Field.updateDialogOpt (constant (Some dialog)) field
                     | None -> field
 
-                // update portal
+                // advance portal
                 let (signals, field) =
                     match field.FieldTransitionOpt with
                     | None ->
@@ -163,7 +211,7 @@ module FieldDispatcher =
                         | None -> (signals, field)
                     | Some _ -> (signals, field)
 
-                // update sensor
+                // advance sensor
                 let (signals, field) =
                     match field.FieldTransitionOpt with
                     | None ->
@@ -180,7 +228,7 @@ module FieldDispatcher =
                         results
                     | Some _ -> (signals, field)
 
-                // update spirits
+                // advance spirits
                 let (signals, field) =
                     if  field.Menu.MenuState = MenuClosed &&
                         Cue.notInterrupting field.Inventory field.Advents field.Cue &&

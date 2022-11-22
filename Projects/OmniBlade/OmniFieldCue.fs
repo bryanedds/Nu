@@ -8,14 +8,22 @@ open Nu
 open Nu.Declarative
 open OmniBlade
 
+type FieldCueMessage =
+    | TryBattle of BattleType * Advent Set
+
+type FieldCueCommand =
+    | PlaySound of int64 * single * Sound AssetTag
+    | PlaySong of int * int * single * double * Song AssetTag
+    | FadeOutSong of int
+
 [<RequireQualifiedAccess>]
 module FieldCue =
 
-    let rec run
+    let rec advance
         (cue : Cue)
         (definitions : CueDefinitions)
         (field : Field) :
-        Cue * CueDefinitions * (Signal<FieldMessage, FieldCommand> list * Field) =
+        Cue * CueDefinitions * (Signal<FieldCueMessage, FieldCueCommand> list * Field) =
 
         match cue with
         | Cue.Nil ->
@@ -77,7 +85,7 @@ module FieldCue =
                 let field = Field.updateAdvents (Set.add advent) field
                 let field = Field.updateInventory (Inventory.updateGold (fun gold -> gold - fee)) field
                 (Cue.Nil, definitions, withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.PurchaseSound)) field)
-            else run (Parallel [Dialog ("You don't have enough...", false); Cue.PlaySound (Constants.Audio.SoundVolumeDefault, Assets.Gui.MistakeSound)]) definitions field
+            else advance (Parallel [Dialog ("You don't have enough...", false); Cue.PlaySound (Constants.Audio.SoundVolumeDefault, Assets.Gui.MistakeSound)]) definitions field
 
         | AddItem itemType ->
             (Cue.Nil, definitions, just (Field.updateInventory (Inventory.tryAddItem itemType >> snd) field))
@@ -346,7 +354,7 @@ module FieldCue =
         | Expand name ->
             match Map.tryFind name definitions with
             | Some body ->
-                run body definitions field
+                advance body definitions field
             | None ->
                 Log.debug ("Cue definition '" + name + "' not found.")
                 (Cue.Nil, definitions, ([], field))
@@ -354,7 +362,7 @@ module FieldCue =
         | Parallel cues ->
             let (cues, definitions, (signals, field)) =
                 List.fold (fun (cues, definitions, (signals, field)) cue ->
-                    let (cue, definitions, (signals2, field)) = run cue definitions field
+                    let (cue, definitions, (signals2, field)) = advance cue definitions field
                     if Cue.isNil cue
                     then (cues, definitions, (signals @ signals2, field))
                     else (cues @ [cue], definitions, (signals @ signals2, field)))
@@ -370,7 +378,7 @@ module FieldCue =
                     if halted
                     then (halted, haltedCues @ [cue], definitions, (signals, field))
                     else
-                        let (cue, definitions, (signals2, field)) = run cue definitions field
+                        let (cue, definitions, (signals2, field)) = advance cue definitions field
                         if Cue.isNil cue
                         then (false, [], definitions, (signals @ signals2, field))
                         else (true, [cue], definitions, (signals @ signals2, field)))
