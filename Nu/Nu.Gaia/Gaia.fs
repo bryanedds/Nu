@@ -1143,7 +1143,6 @@ module Gaia =
                         Array.map (fun line -> line.Replace ("\\", "/")) |>
                         Array.map (fun line -> line.Trim ())
                     let fsprojFsFilePaths =
-                        // what kind of idiot would do that?
                         fsprojFileLines |>
                         Array.map (fun line -> line.Trim ()) |>
                         Array.filter (fun line -> line.Contains "Compile Include" && line.Contains ".fs") |>
@@ -1154,12 +1153,17 @@ module Gaia =
                         Array.map (fun line -> line.Replace ("\"", "")) |>
                         Array.map (fun line -> line.Replace ("\\", "/")) |>
                         Array.map (fun line -> line.Trim ())
+                    let buildName =
+#if DEBUG
+                        "Debug"
+#else
+                        "Release"
+#endif
                     let fsxFileString =
-                        // better check git blame to see who is responsible for this foolishness
                         String.Join ("\n", Array.map (fun (filePath : string) -> "#r \"../../" + filePath + "\"") fsprojDllFilePaths) + "\n" +
-                        "#r \"../../../../Nu/Nu.Math/bin/x64/Debug/Nu.Math.dll\"\n" +
-                        "#r \"../../../../Nu/Nu.Pipe/bin/Debug/Nu.Pipe.exe\"\n" +
-                        "#r \"../../../../Nu/Nu/bin/Debug/Nu.exe\"\n" +
+                        "#r \"../../../../Nu/Nu.Math/bin/x64/" + buildName + "/Nu.Math.dll\"\n" +
+                        "#r \"../../../../Nu/Nu.Pipe/bin/" + buildName + "/Nu.Pipe.exe\"\n" +
+                        "#r \"../../../../Nu/Nu/bin/" + buildName + "/Nu.exe\"\n" +
                         String.Join ("\n", Array.map (fun (filePath : string) -> "#load \"../../" + filePath + "\"") fsprojFsFilePaths)
                     Log.info ("Compiling code via generated F# script:\n" + fsxFileString)
                     let defaultArgs = [|"fsi.exe"; "--debug+"; "--debug:full"; "--optimize-"; "--tailcalls-"; "--multiemit+"; "--gui-"|]
