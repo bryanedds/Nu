@@ -96,7 +96,7 @@ type [<NoComparison>] Teammate =
             | Stash _ -> (false, None, teammate)
         else (false, None, teammate)
 
-    static member restore teammate =
+    static member restore (teammate : Teammate) =
         { teammate with
             HitPoints = teammate.HitPointsMax
             TechPoints = teammate.TechPointsMax }

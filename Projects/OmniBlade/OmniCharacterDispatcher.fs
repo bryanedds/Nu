@@ -3,10 +3,10 @@
 
 namespace OmniBlade
 open System
-open System.Numerics
 open Prime
 open Nu
 open Nu.Declarative
+open OmniBlade
 
 [<AutoOpen>]
 module CharacterDispatcher =

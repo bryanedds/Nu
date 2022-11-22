@@ -6,6 +6,7 @@ open System
 open Prime
 open Nu
 open SDL2
+open OmniBlade
 module Program =
 
     let [<EntryPoint; STAThread>] main _ =

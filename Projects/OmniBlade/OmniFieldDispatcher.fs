@@ -20,6 +20,92 @@ module FieldDispatcher =
     type FieldDispatcher () =
         inherit ScreenDispatcher<Field, FieldMessage, FieldCommand> (Field.empty)
 
+        static let interactDialog dialog field =
+            match Dialog.tryAdvance (Field.detokenize field) dialog with
+            | (true, dialog) ->
+                let field = Field.updateDialogOpt (constant (Some dialog)) field
+                just field
+            | (false, dialog) ->
+                let field = Field.updateDialogOpt (constant None) field
+                match dialog.DialogBattleOpt with
+                | Some (battleType, consequence) -> withMsg (TryBattle (battleType, consequence)) field
+                | None -> just field
+
+        static let interactChest itemType chestId battleTypeOpt cue requirements (prop : Prop) (field : Field) =
+            if field.Advents.IsSupersetOf requirements then
+                let field = Field.updateAvatar (Avatar.lookAt prop.Center) field
+                let field = Field.updateAdvents (Set.add (Opened chestId)) field
+                let field = Field.updateInventory (Inventory.tryAddItem itemType >> snd) field
+                let field =
+                    match battleTypeOpt with
+                    | Some battleType -> Field.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogTokenized = "Found " + ItemType.getName itemType + "!^But something approaches!"; DialogProgress = 0; DialogPage = 0; DialogPromptOpt = None; DialogBattleOpt = Some (battleType, Set.empty) })) field
+                    | None -> Field.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogTokenized = "Found " + ItemType.getName itemType + "!"; DialogProgress = 0; DialogPage = 0; DialogPromptOpt = None; DialogBattleOpt = None })) field
+                let field = Field.updateCue (constant cue) field
+                withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.ChestOpenSound)) field
+            else
+                let field = Field.updateAvatar (Avatar.lookAt prop.Center) field
+                let field = Field.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogTokenized = "Locked!"; DialogProgress = 0; DialogPage = 0; DialogPromptOpt = None; DialogBattleOpt = None })) field
+                withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.ChestLockedSound)) field
+
+        static let interactDoor keyItemTypeOpt cue requirements (prop : Prop) (field : Field) =
+            match prop.PropState with
+            | DoorState false ->
+                if  field.Advents.IsSupersetOf requirements &&
+                    Option.mapOrDefaultValue (fun keyItemType -> Map.containsKey (KeyItem keyItemType) field.Inventory.Items) true keyItemTypeOpt then
+                    let field = Field.updateAvatar (Avatar.lookAt prop.Center) field
+                    let field = Field.updateCue (constant cue) field
+                    let field = Field.updatePropState (constant (DoorState true)) prop.PropId field
+                    withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.DoorOpenSound)) field
+                else
+                    let field = Field.updateAvatar (Avatar.lookAt prop.Center) field
+                    let field = Field.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogTokenized = "Locked!"; DialogProgress = 0; DialogPage = 0; DialogPromptOpt = None; DialogBattleOpt = None })) field
+                    withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.DoorLockedSound)) field
+            | _ -> failwithumf ()
+
+        static let interactSwitch cue cue2 requirements (prop : Prop) (field : Field) =
+            match prop.PropState with
+            | SwitchState on ->
+                if field.Advents.IsSupersetOf requirements then
+                    let on = not on
+                    let field = Field.updateAvatar (Avatar.lookAt prop.Center) field
+                    let field = Field.updatePropState (constant (SwitchState on)) prop.PropId field
+                    let field = Field.updateCue (constant (if on then cue else cue2)) field
+                    withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.SwitchUseSound)) field
+                else
+                    let field = Field.updateAvatar (Avatar.lookAt prop.Center) field
+                    let field = Field.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogTokenized = "Won't budge!"; DialogProgress = 0; DialogPage = 0; DialogPromptOpt = None; DialogBattleOpt = None })) field
+                    withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.SwitchStuckSound)) field
+            | _ -> failwithumf ()
+
+        static let interactCharacter cue (prop : Prop) (field : Field) =
+            let field = Field.updateAvatar (Avatar.lookAt prop.BottomInset) field
+            let field = Field.updateCue (constant cue) field
+            withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Gui.AffirmSound)) field
+        
+        static let interactNpc branches requirements (prop : Prop) (field : Field) =
+            if field.Advents.IsSupersetOf requirements then
+                let field = Field.updateAvatar (Avatar.lookAt prop.BottomInset) field
+                let branchesFiltered = branches |> List.choose (fun branch -> if field.Advents.IsSupersetOf branch.Requirements then Some branch.Cue else None) |> List.rev
+                let branchCue = match List.tryHead branchesFiltered with Some cue -> cue | None -> Dialog ("...", false)
+                let field = Field.updateCue (constant branchCue) field
+                withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Gui.AffirmSound)) field
+            else just field
+
+        static let interactShopkeep shopType (prop : Prop) (field : Field) =
+            let field = Field.updateAvatar (Avatar.lookAt prop.BottomInset) field
+            let shop = { ShopType = shopType; ShopState = ShopBuying; ShopPage = 0; ShopConfirmOpt = None }
+            let field = Field.updateShopOpt (constant (Some shop)) field
+            withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Gui.AffirmSound)) field
+
+        static let interactSeal cue (field : Field) =
+            let field = Field.updateCue (constant cue) field
+            withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.SealedSound)) field
+
+        static let interactSavePoint (field : Field) =
+            let field = Field.restoreTeam field
+            Field.save field
+            withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Gui.SlotSound)) field
+
         override this.Initialize (_, _) =
             [Screen.UpdateEvent => cmd ProcessKeyInput
              Screen.UpdateEvent => msg Update
@@ -51,7 +137,7 @@ module FieldDispatcher =
                 let field =
                     match field.DialogOpt with
                     | Some dialog ->
-                        let dialog = Dialog.update (Field.detokenize field) dialog world
+                        let dialog = Dialog.advance (Field.detokenize field) dialog world
                         Field.updateDialogOpt (constant (Some dialog)) field
                     | None -> field
 
@@ -102,7 +188,7 @@ module FieldDispatcher =
                         Option.isNone field.BattleOpt &&
                         Option.isNone field.ShopOpt &&
                         Option.isNone field.FieldTransitionOpt then
-                        match Field.updateSpirits field world with
+                        match Field.advanceSpirits field world with
                         | Left (battleData, field) ->
                             let clockTime = let t = World.getClockTime world in t.ToUnixTimeMilliseconds ()
                             let playTime = Option.defaultValue clockTime field.FieldSongTimeOpt
@@ -366,29 +452,29 @@ module FieldDispatcher =
                 match field.DialogOpt with
                 | None ->
                     if Field.isTouchingSavePoint field then
-                        Field.interactSavePoint field
+                        interactSavePoint field
                     else
                         match Field.tryGetFacingProp field with
                         | Some prop ->
                             match prop.PropData with
                             | Sprite _ -> just field
                             | Portal _ -> just field
-                            | Door (_, keyItemTypeOpt, cue, _, requirements) -> Field.interactDoor keyItemTypeOpt cue requirements prop field
-                            | Chest (_, itemType, chestId, battleTypeOpt, cue, requirements) -> Field.interactChest itemType chestId battleTypeOpt cue requirements prop field
-                            | Switch (_, cue, cue2, requirements) -> Field.interactSwitch cue cue2 requirements prop field
+                            | Door (_, keyItemTypeOpt, cue, _, requirements) -> interactDoor keyItemTypeOpt cue requirements prop field
+                            | Chest (_, itemType, chestId, battleTypeOpt, cue, requirements) -> interactChest itemType chestId battleTypeOpt cue requirements prop field
+                            | Switch (_, cue, cue2, requirements) -> interactSwitch cue cue2 requirements prop field
                             | Sensor _ -> just field
-                            | Character (_, _, _, _, cue, _) -> Field.interactCharacter cue prop field
-                            | Npc (_, _, cue, requirements) -> Field.interactNpc [{ Cue = cue; Requirements = Set.empty }] requirements prop field
-                            | NpcBranching (_, _, branches, requirements) -> Field.interactNpc branches requirements prop field
-                            | Shopkeep (_, _, shopType, _) -> Field.interactShopkeep shopType prop field
-                            | Seal (_, cue, _) -> Field.interactSeal cue field
+                            | Character (_, _, _, _, cue, _) -> interactCharacter cue prop field
+                            | Npc (_, _, cue, requirements) -> interactNpc [{ Cue = cue; Requirements = Set.empty }] requirements prop field
+                            | NpcBranching (_, _, branches, requirements) -> interactNpc branches requirements prop field
+                            | Shopkeep (_, _, shopType, _) -> interactShopkeep shopType prop field
+                            | Seal (_, cue, _) -> interactSeal cue field
                             | Flame _ -> just field
                             | SavePoint -> just field
                             | ChestSpawn -> just field
                             | EmptyProp -> just field
                         | None -> just field
                 | Some dialog ->
-                    Field.interactDialog dialog field
+                    interactDialog dialog field
 
         override this.Command (field, command, screen, world) =
 
