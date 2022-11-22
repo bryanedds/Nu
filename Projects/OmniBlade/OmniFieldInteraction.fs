@@ -10,7 +10,7 @@ open Nu.Declarative
 open OmniBlade
 
 [<AutoOpen>]
-module FieldExtensions =
+module FieldInteraction =
 
     [<RequireQualifiedAccess>]
     module Field =

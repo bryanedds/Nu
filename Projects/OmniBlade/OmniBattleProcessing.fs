@@ -10,12 +10,12 @@ open Nu.Declarative
 open OmniBlade
 
 [<AutoOpen>]
-module BattleExtensions =
+module BattleProcessing =
 
     [<RequireQualifiedAccess>]
     module Battle =
 
-        let private updateAttack sourceIndex (targetIndexOpt : CharacterIndex option) time localTime battle =
+        let updateAttack sourceIndex (targetIndexOpt : CharacterIndex option) time localTime battle =
             match Battle.tryGetCharacter sourceIndex battle with
             | Some source when source.IsHealthy ->
                 match targetIndexOpt with
@@ -56,7 +56,7 @@ module BattleExtensions =
                 let battle = Battle.updateCurrentCommandOpt (constant None) battle
                 just battle
 
-        let private updateDefend sourceIndex time localTime battle =
+        let updateDefend sourceIndex time localTime battle =
             match Battle.tryGetCharacter sourceIndex battle with
             | Some source when source.IsHealthy ->
                 match localTime with
@@ -74,7 +74,7 @@ module BattleExtensions =
                 let battle = Battle.updateCurrentCommandOpt (constant None) battle
                 just battle
 
-        let private updateConsume consumable sourceIndex (targetIndexOpt : CharacterIndex option) time localTime battle =
+        let updateConsume consumable sourceIndex (targetIndexOpt : CharacterIndex option) time localTime battle =
             match Battle.tryGetCharacter sourceIndex battle with
             | Some source when source.IsHealthy ->
                 match targetIndexOpt with
@@ -104,7 +104,7 @@ module BattleExtensions =
                 let battle = Battle.updateCurrentCommandOpt (constant None) battle
                 just battle
 
-        let private updateTech techType sourceIndex (targetIndexOpt : CharacterIndex option) (_ : int64) localTime battle =
+        let updateTech techType sourceIndex (targetIndexOpt : CharacterIndex option) (_ : int64) localTime battle =
             match targetIndexOpt with
             | Some targetIndex ->
                 match Battle.tryGetCharacter targetIndex battle with
@@ -136,7 +136,7 @@ module BattleExtensions =
                 let battle = Battle.updateCurrentCommandOpt (constant None) battle
                 withMsgs [ResetCharacter sourceIndex; PoiseCharacter sourceIndex] battle
 
-        let rec private updateWound targetIndexOpt time battle =
+        let rec updateWound targetIndexOpt time battle =
             match targetIndexOpt with
             | Some targetIndex ->
                 let character = Battle.getCharacter targetIndex battle

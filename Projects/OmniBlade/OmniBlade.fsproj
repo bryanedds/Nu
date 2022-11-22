@@ -98,11 +98,11 @@
     <Compile Include="OmniPropDispatcher.fs" />
     <Compile Include="OmniAvatarDispatcher.fs" />
     <Compile Include="OmniBattleSignals.fs" />
-    <Compile Include="OmniBattleExtensions.fs" />
+    <Compile Include="OmniBattleProcessing.fs" />
     <Compile Include="OmniBattleDispatcher.fs" />
     <Compile Include="OmniFieldSignals.fs" />
     <Compile Include="OmniFieldCue.fs" />
-    <Compile Include="OmniFieldExtensions.fs" />
+    <Compile Include="OmniFieldInteraction.fs" />
     <Compile Include="OmniFieldDispatcher.fs" />
     <Compile Include="OmniBlade.fs" />
     <Compile Include="OmniPlugin.fs" />
