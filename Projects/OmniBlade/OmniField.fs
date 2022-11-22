@@ -108,8 +108,13 @@ module Field =
                 let prop = Prop.make propDescriptor.PropPerimeter propDescriptor.PropElevation advents pointOfInterest propDescriptor.PropData propState propDescriptor.PropId
                 (propDescriptor.PropId, prop))
         | None -> Map.empty
+        
+    let rec detokenize (field : Field) (text : string) =
+        text
+            .Replace("$FEE", scstring (getRecruitmentFee field))
+            .Replace("$GOLD", scstring field.Inventory.Gold)
 
-    let getRecruitmentFee (field : Field) =
+    and getRecruitmentFee (field : Field) =
         let advents = Set.ofArray [|ShadeRecruited; MaelRecruited; RiainRecruited; PericRecruited|]
         let recruiteds = Set.intersect advents field.Advents
         let recruited = Set.count recruiteds
@@ -144,6 +149,120 @@ module Field =
             match prop.PropData with
             | Portal (portalType, _, _, _, _, _, requirements) when portalType <> WarpPortal -> Some (Portal.make prop.Perimeter (field.Advents.IsSupersetOf requirements))
             | _ -> None)
+
+    let tryGetFacingInteraction (prop : Prop) (field : Field) =
+        match prop.PropData with
+        | Sprite _ -> None
+        | Portal (_, _, _, _, _, _, _) -> None
+        | Door _ -> Some "Open"
+        | Chest (_, _, chestId, _, _, _) -> if Set.contains (Opened chestId) field.Advents then None else Some "Open"
+        | Switch (_, _, _, _) -> Some "Use"
+        | Sensor (_, _, _, _, _) -> None
+        | Character (_, _, _, isRising, _, _) ->
+            if isRising then
+                if prop.Bottom.Y - field.Avatar.Position.Y > 40.0f // NOTE: just a bit of hard-coding to ensure player is interacting with the character from the south.
+                then Some "Talk"
+                else None
+            else Some "Talk"
+        | Npc _ | NpcBranching _ -> Some "Talk"
+        | Shopkeep _ -> Some "Shop"
+        | Seal _ -> Some "Touch"
+        | Flame _ -> None
+        | SavePoint -> None
+        | ChestSpawn -> None
+        | EmptyProp -> None
+
+    let isFacingProp propId (field : Field) =
+        match field.Props.TryGetValue propId with
+        | (true, prop) ->
+            let v = prop.Bottom - field.Avatar.Bottom
+            let direction = Direction.ofVector3 v
+            direction <> field.Avatar.Direction.Opposite
+        | (false, _) -> false
+
+    let getFacingProps (field : Field) =
+        List.filter
+            (fun propId -> isFacingProp propId field)
+            field.Avatar.IntersectedPropIds
+
+    let tryGetFacingProp (field : Field) =
+        match getFacingProps field with
+        | head :: _ -> Some (field.Props.[head])
+        | [] -> None
+
+    let isTouchingSavePoint (field : Field) =
+        List.exists (fun propId ->
+            match field.Props.TryGetValue propId with
+            | (true, prop) -> prop.PropData = SavePoint
+            | (false, _) -> false)
+            field.Avatar.IntersectedPropIds
+
+    let tryGetInteraction (field : Field) =
+        match field.DialogOpt with
+        | Some dialog ->
+            if  Dialog.canAdvance (detokenize field) dialog &&
+                not
+                    (Dialog.isExhausted (detokenize field) dialog &&
+                        Option.isSome dialog.DialogPromptOpt)
+            then Some "Next"
+            else None
+        | None ->
+            if isTouchingSavePoint field then
+                Some "Save"
+            else
+                match tryGetFacingProp field with
+                | Some prop -> tryGetFacingInteraction prop field
+                | None -> None
+
+    let tryGetTouchingPortal (field : Field) =
+        field.Avatar.IntersectedPropIds |>
+        List.choose (fun propId ->
+            match field.Props.TryGetValue propId with
+            | (true, prop) ->
+                match prop.PropData with
+                | Portal (portalType, _, _, fieldType, portalIndex, _, requirements) ->
+                    if field.Advents.IsSupersetOf requirements then
+                        match Map.tryFind fieldType Data.Value.Fields with
+                        | Some fieldData ->
+                            match FieldData.tryGetPortal field.OmniSeedState portalIndex fieldData with
+                            | Some portal ->
+                                match portal.PropData with
+                                | Portal (_, _, direction, _, _, extended, _) ->
+                                    let destination =
+                                        match direction with
+                                        | Upward -> portal.PropPerimeter.Top + v3 0.0f 8.0f 0.0f + if extended then v3 0.0f 48.0f 0.0f else v3Zero
+                                        | Rightward -> portal.PropPerimeter.Right + v3 32.0f 0.0f 0.0f + if extended then v3 48.0f 0.0f 0.0f else v3Zero
+                                        | Downward -> portal.PropPerimeter.Bottom + v3 0.0f -54.0f 0.0f - if extended then v3 0.0f 48.0f 0.0f else v3Zero
+                                        | Leftward -> portal.PropPerimeter.Left + v3 -32.0f 0.0f 0.0f - if extended then v3 48.0f 0.0f 0.0f else v3Zero
+                                    let isWarp = match portalType with AirPortal | StairsPortal _ -> false | WarpPortal -> true
+                                    Some (fieldType, destination, direction, isWarp)
+                                | _ -> None
+                            | None -> None
+                        | None -> None
+                    else None
+                | _ -> None
+            | _ -> None) |>
+        List.tryHead
+
+    let getTouchedSensors (field : Field) =
+        List.choose (fun propId ->
+            match field.Props.TryGetValue propId with
+            | (true, prop) ->
+                match prop.PropData with
+                | Sensor (sensorType, _, cue, _, requirements) -> Some (sensorType, cue, requirements)
+                | _ -> None
+            | (false, _) -> None)
+            field.Avatar.CollidedPropIds
+
+    let getUntouchedSensors (field : Field) =
+        List.choose (fun propId ->
+            match field.Props.TryGetValue propId with
+            | (true, prop) ->
+                match prop.PropData with
+                | Sensor (sensorType, _, cue, _, requirements) -> Some (sensorType, cue, requirements)
+                | _ -> None
+            | (false, _) -> None)
+            field.Avatar.SeparatedPropIds
 
     let updateFieldType updater field world =
         let fieldType = updater field.FieldType_
