@@ -97,6 +97,8 @@
     <Compile Include="OmniSpiritOrbDispatcher.fs" />
     <Compile Include="OmniPropDispatcher.fs" />
     <Compile Include="OmniAvatarDispatcher.fs" />
+    <Compile Include="OmniBattleSignals.fs" />
+    <Compile Include="OmniBattleExtensions.fs" />
     <Compile Include="OmniBattleDispatcher.fs" />
     <Compile Include="OmniFieldSignals.fs" />
     <Compile Include="OmniFieldCue.fs" />
