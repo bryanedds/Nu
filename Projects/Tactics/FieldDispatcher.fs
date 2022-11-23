@@ -20,7 +20,7 @@ module FieldDispatcher =
         member this.Field = this.ModelGeneric<Field> ()
 
     type FieldDispatcher () =
-        inherit ScreenDispatcher<Field, FieldMessage, FieldCommand> (Field.make 0L FieldToBattle [] (asset "Field" "Field"))
+        inherit ScreenDispatcher<Field, FieldMessage, FieldCommand> (Field.debug)
 
         static let createFieldHighlightSurfaceDescriptor (vertices : Vector3 array) =
             let bounds = Box3.Enclose vertices
@@ -48,9 +48,9 @@ module FieldDispatcher =
                   TwoSided = false }
             descriptor
 
-        override this.Channel (_, screen) =
-            [screen.UpdateEvent => msg UpdateMessage
-             screen.UpdateEvent => cmd UpdateCommand]
+        override this.Initialize (_, _) =
+            [Screen.UpdateEvent => msg UpdateMessage
+             Screen.UpdateEvent => cmd UpdateCommand]
 
         override this.Message (field, message, _, world) =
             match message with
@@ -59,40 +59,40 @@ module FieldDispatcher =
         override this.Command (_, command, _, world) =
             match command with
             | UpdateCommand ->
-                let moveSpeed = if KeyboardState.isKeyDown KeyboardKey.Return then 0.5f elif KeyboardState.isShiftDown () then 0.02f else 0.12f
-                let turnSpeed = if KeyboardState.isShiftDown () then 0.025f else 0.05f
+                let moveSpeed = if World.isKeyboardKeyDown KeyboardKey.Return world then 0.5f elif World.isKeyboardShiftDown world then 0.02f else 0.12f
+                let turnSpeed = if World.isKeyboardShiftDown world then 0.025f else 0.05f
                 let position = World.getEyePosition3d world
                 let rotation = World.getEyeRotation3d world
                 let world =
-                    if KeyboardState.isKeyDown KeyboardKey.W
+                    if World.isKeyboardKeyDown KeyboardKey.W world
                     then World.setEyePosition3d (position + Vector3.Transform (v3Forward, rotation) * moveSpeed) world
                     else world
                 let world =
-                    if KeyboardState.isKeyDown KeyboardKey.S
+                    if World.isKeyboardKeyDown KeyboardKey.S world
                     then World.setEyePosition3d (position + Vector3.Transform (v3Back, rotation) * moveSpeed) world
                     else world
                 let world =
-                    if KeyboardState.isKeyDown KeyboardKey.A
+                    if World.isKeyboardKeyDown KeyboardKey.A world
                     then World.setEyePosition3d (position + Vector3.Transform (v3Left, rotation) * moveSpeed) world
                     else world
                 let world =
-                    if KeyboardState.isKeyDown KeyboardKey.D
+                    if World.isKeyboardKeyDown KeyboardKey.D world
                     then World.setEyePosition3d (position + Vector3.Transform (v3Right, rotation) * moveSpeed) world
                     else world
                 let world =
-                    if KeyboardState.isKeyDown KeyboardKey.Up
+                    if World.isKeyboardKeyDown KeyboardKey.Up world
                     then World.setEyePosition3d (position + Vector3.Transform (v3Up, rotation) * moveSpeed) world
                     else world
                 let world =
-                    if KeyboardState.isKeyDown KeyboardKey.Down
+                    if World.isKeyboardKeyDown KeyboardKey.Down world
                     then World.setEyePosition3d (position + Vector3.Transform (v3Down, rotation) * moveSpeed) world
                     else world
                 let world =
-                    if KeyboardState.isKeyDown KeyboardKey.Left
+                    if World.isKeyboardKeyDown KeyboardKey.Left world
                     then World.setEyeRotation3d (rotation * Quaternion.CreateFromAxisAngle (v3Up, turnSpeed)) world
                     else world
                 let world =
-                    if KeyboardState.isKeyDown KeyboardKey.Right
+                    if World.isKeyboardKeyDown KeyboardKey.Right world
                     then World.setEyeRotation3d (rotation * Quaternion.CreateFromAxisAngle (v3Down, turnSpeed)) world
                     else world
                 just world
@@ -101,8 +101,9 @@ module FieldDispatcher =
             [Content.group Simulants.Field.Scene.Group.Name []
                 [Content.skyBox Gen.name
                     [Entity.CubeMap == Assets.Default.SkyBoxMap]
-                 Content.entitiesPlus field Field.sieveOccupants Field.unfoldOccupants $ fun index occupant ->
-                    Content.entity<CharacterDispatcher> (string index) [Entity.Position := occupant --> fun (vertices, _) -> vertices.Center]]]
+                 for (index, (vertices, _)) in (Field.getOccupants field).Pairs do
+                    Content.entity<CharacterDispatcher> ("Occupant+" + string index)
+                        [Entity.Position := vertices.Center]]]
 
         override this.View (field, _, world) =
             let fieldMetadata = Field.getFieldMetadata field

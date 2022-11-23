@@ -68,7 +68,7 @@ module MyGame =
                 match model with
                 | Gameplay gameplay ->
                     let gameplay' = Simulants.Gameplay.Screen.GetGameplay world
-                    if gameplay <> gameplay' then just (Gameplay gameplay') else just model
+                    if gameplay =/= gameplay' then just (Gameplay gameplay') else just model
                 | _ -> just model
 
         // here we handle the above commands

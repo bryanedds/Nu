@@ -33,6 +33,7 @@ type FieldState =
     | NarrativeState of NarrativeState
     | BattleState of BattleState
     | FieldQuitting of int64 * bool // field fades out
+    | FieldQuit
 
 type FieldScript =
     | FieldToBattle
@@ -324,20 +325,12 @@ module Field =
             Array.tryHead
         intersections
 
-    let sieveOccupants field =
-        (field.OccupantPositions, field.Occupants, field.FieldTileMap)
-
-    let unfoldOccupants (occupantPositions, occupants : Map<_, _>, fieldTileMap) =
-        occupantPositions |>
-        Map.map (fun _ position -> getFieldTileVerticesInternal position fieldTileMap)  |>
-        flip Seq.zip occupants |>
+    let getOccupants field =
+        field.OccupantPositions |>
+        Map.map (fun _ position -> getFieldTileVerticesInternal position field.FieldTileMap)  |>
+        flip Seq.zip field.Occupants |>
         Seq.map (fun (kvp, kvp2) -> (kvp.Key, (kvp.Value, kvp2.Value))) |>
         Map.ofSeq
-
-    let getOccupants field =
-        field |>
-        sieveOccupants |>
-        unfoldOccupants
 
     let rec advanceFieldScript field (world : World) =
         match field.FieldState_ with
@@ -368,5 +361,13 @@ module Field =
           OccupantPositions = occupantPositions
           Occupants = occupants
           SelectedTile = v2iZero }
+
+    let debug (world : World) =
+        let occupants =
+            [(v2i 10 10, ChestIndex 0, Chest ())
+             (v2i 12 10, ChestIndex 1, Chest ())
+             (v2i 10 12, ChestIndex 2, Chest ())
+             (v2i 12 12, ChestIndex 3, Chest ())]
+        make world.UpdateTime FieldScript.empty occupants (asset "Field" "Field")
 
 type Field = Field.Field

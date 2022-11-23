@@ -22,7 +22,7 @@
     <Optimize>false</Optimize>
     <Tailcalls>false</Tailcalls>
     <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DefineConstants>TRACE;DEBUG;DEV</DefineConstants>
     <WarningLevel>5</WarningLevel>
     <DocumentationFile>bin\Debug\Tactics.xml</DocumentationFile>
     <Prefer32Bit>false</Prefer32Bit>
@@ -68,16 +68,16 @@
     <DisableFastUpToDateCheck>true</DisableFastUpToDateCheck>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="TacticsAssets.fs" />
-    <Compile Include="TacticsConstants.fs" />
-    <Compile Include="TacticsSimulants.fs" />
-    <Compile Include="TacticsData.fs" />
-    <Compile Include="TacticsCharacter.fs" />
-    <Compile Include="TacticsField.fs" />
-    <Compile Include="TacticsAtlas.fs" />
-    <Compile Include="TacticsCharacterDispatcher.fs" />
-    <Compile Include="TacticsFieldDispatcher.fs" />
-    <Compile Include="TacticsAtlasDispatcher.fs" />
+    <Compile Include="Assets.fs" />
+    <Compile Include="Constants.fs" />
+    <Compile Include="Simulants.fs" />
+    <Compile Include="Data.fs" />
+    <Compile Include="Character.fs" />
+    <Compile Include="CharacterDispatcher.fs" />
+    <Compile Include="Field.fs" />
+    <Compile Include="FieldDispatcher.fs" />
+    <Compile Include="Atlas.fs" />
+    <Compile Include="AtlasDispatcher.fs" />
     <Compile Include="Tactics.fs" />
     <Compile Include="TacticsPlugin.fs" />
     <Compile Include="Program.fs" />
