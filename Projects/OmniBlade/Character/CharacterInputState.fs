@@ -6,7 +6,7 @@ open System
 open Prime
 open Nu
 
-type CharacterInputState =
+type [<NoComparison>] CharacterInputState =
     | NoInput
     | RegularMenu
     | TechMenu
