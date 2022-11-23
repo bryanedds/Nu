@@ -21,4 +21,4 @@ module Program =
         let sdlConfig = { SdlConfig.defaultConfig with ViewConfig = NewWindow sdlWindowConfig }
         let worldConfig = { WorldConfig.defaultConfig with SdlConfig = sdlConfig }
         Nu.init worldConfig.NuConfig
-        World.run worldConfig (OmniPlugin ())
+        World.run worldConfig (OmniBladePlugin ())

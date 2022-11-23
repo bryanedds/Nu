@@ -852,7 +852,7 @@ type [<NoComparison>] PropDescriptor =
 type [<NoComparison>] FieldTileMap =
     | FieldStatic of TileMap AssetTag
     | FieldConnector of TileMap AssetTag * TileMap AssetTag
-    | FieldRandom of int * single * OriginRand * int * string
+    | FieldRandom of int * single * Origin * int * string
 
 type [<NoComparison>] FieldData =
     { FieldType : FieldType // key
@@ -870,7 +870,7 @@ type [<NoComparison>] FieldData =
 [<RequireQualifiedAccess>]
 module FieldData =
 
-    let mutable tileMapsMemoized = Map.empty<uint64 * FieldType, Choice<TmxMap, TmxMap * TmxMap, TmxMap * Origin>>
+    let mutable tileMapsMemoized = Map.empty<uint64 * FieldType, Choice<TmxMap, TmxMap * TmxMap, TmxMap * OriginStatic>>
     let mutable propObjectsMemoized = Map.empty<uint64 * FieldType, (TmxMap * TmxObjectGroup * TmxObject) list>
     let mutable propDescriptorsMemoized = Map.empty<uint64 * FieldType, PropDescriptor list>
 
@@ -921,10 +921,10 @@ module FieldData =
                     | (_, _) -> None
                 | FieldRandom (walkLength, bias, originRand, floor, fieldPath) ->
                     let rand = Rand.makeFromSeedState rotatedSeedState
-                    let (origin, rand) = OriginRand.toOrigin originRand rand
-                    let (cursor, mapRand, _) = MapRand.makeFromRand walkLength bias Constants.Field.MapRandSize origin floor rand
+                    let (origin, rand) = Origin.toOrigin originRand rand
+                    let (cursor, randMap, _) = RandMap.makeFromRand walkLength bias Constants.Field.RandMapSize origin floor rand
                     let fieldName = FieldType.toFieldName fieldData.FieldType
-                    let mapTmx = MapRand.toTmx fieldName fieldPath origin cursor floor mapRand
+                    let mapTmx = RandMap.toTmx fieldName fieldPath origin cursor floor randMap
                     Some (Choice3Of3 (mapTmx, origin))
             match tileMapOpt with
             | Some tileMapChc -> tileMapsMemoized <- Map.add memoKey tileMapChc tileMapsMemoized

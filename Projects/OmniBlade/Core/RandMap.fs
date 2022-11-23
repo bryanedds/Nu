@@ -7,7 +7,7 @@ open Prime
 open Nu
 open TiledSharp
 
-type Origin =
+type OriginStatic =
     | OriginC
     | OriginN
     | OriginE
@@ -18,8 +18,8 @@ type Origin =
     | OriginSE
     | OriginSW
 
-type OriginRand =
-    | OriginStatic of Origin
+type Origin =
+    | OriginStatic of OriginStatic
     | OriginNorthern
     | OriginEastern
     | OriginSouthern
@@ -140,33 +140,33 @@ type [<NoComparison>] Segments =
         SegmentBN = TmxMap (filePath + "+BN+" + string floor + ".tmx")
         SegmentBS = TmxMap (filePath + "+BS+" + string floor + ".tmx") }
 
-type MapRand =
-    { MapSegments : Segment array array
-      MapSize : Vector2i
-      MapOriginOpt : Vector2i option }
+type RandMap =
+    { RandSegments : Segment array array
+      RandOriginOpt : Vector2i option
+      RandSize : Vector2i }
 
     static member printn map =
-        match map.MapOriginOpt with
+        match map.RandOriginOpt with
         | Some start ->
             printfn "Start: %s" (scstring start)
-            for i in 0 .. map.MapSize.Y - 1 do
-                for j in 0 .. map.MapSize.X - 1 do
-                    printf "%s\t" (scstring map.MapSegments.[i].[j])
+            for i in 0 .. map.RandSize.Y - 1 do
+                for j in 0 .. map.RandSize.X - 1 do
+                    printf "%s\t" (scstring map.RandSegments.[i].[j])
                 printfn ""
         | None -> ()
 
     static member clone map =
-        { MapSegments = Seq.toArray (Array.map Seq.toArray map.MapSegments)
-          MapOriginOpt = map.MapOriginOpt
-          MapSize = map.MapSize }
+        { RandSegments = Seq.toArray (Array.map Seq.toArray map.RandSegments)
+          RandOriginOpt = map.RandOriginOpt
+          RandSize = map.RandSize }
 
     static member concat left right =
-        if left.MapOriginOpt = right.MapOriginOpt then
-            if left.MapSize = right.MapSize then
-                let map = MapRand.clone left
-                for i in 0 .. map.MapSize.X - 1 do
-                    for j in 0 .. map.MapSize.Y - 1 do
-                        map.MapSegments.[i].[j] <- left.MapSegments.[i].[j] ||| right.MapSegments.[i].[j]
+        if left.RandOriginOpt = right.RandOriginOpt then
+            if left.RandSize = right.RandSize then
+                let map = RandMap.clone left
+                for i in 0 .. map.RandSize.X - 1 do
+                    for j in 0 .. map.RandSize.Y - 1 do
+                        map.RandSegments.[i].[j] <- left.RandSegments.[i].[j] ||| right.RandSegments.[i].[j]
                 map
             else failwith "Cannot concat two RandMaps of differing sizes."
         else failwith "Cannot concat two RandMaps of differing origins."
@@ -196,7 +196,7 @@ type MapRand =
         | _ -> failwithumf ()
 
     static member private walk biasChance bias (cursor : Vector2i) map rand =
-        let bounds = box2i v2iZero map.MapSize
+        let bounds = box2i v2iZero map.RandSize
         let mutable cursor = cursor
         let (i, rand) = Rand.nextIntUnder 4 rand
         let (chance, rand) = Rand.nextSingleUnder 1.0f rand
@@ -205,27 +205,27 @@ type MapRand =
         | 0 ->
             // try go north (negative y)
             if  cursor.Y > 1 then
-                map.MapSegments.[cursor.Y].[cursor.X] <- map.MapSegments.[cursor.Y].[cursor.X] ||| Segment.Segment1N
+                map.RandSegments.[cursor.Y].[cursor.X] <- map.RandSegments.[cursor.Y].[cursor.X] ||| Segment.Segment1N
                 cursor.Y <- dec cursor.Y
-                map.MapSegments.[cursor.Y].[cursor.X] <- map.MapSegments.[cursor.Y].[cursor.X] ||| Segment.Segment1S
+                map.RandSegments.[cursor.Y].[cursor.X] <- map.RandSegments.[cursor.Y].[cursor.X] ||| Segment.Segment1S
         | 1 ->
             // try go east (positive x)
             if  cursor.X < dec bounds.Size.X then
-                map.MapSegments.[cursor.Y].[cursor.X] <- map.MapSegments.[cursor.Y].[cursor.X] ||| Segment.Segment1E
+                map.RandSegments.[cursor.Y].[cursor.X] <- map.RandSegments.[cursor.Y].[cursor.X] ||| Segment.Segment1E
                 cursor.X <- inc cursor.X
-                map.MapSegments.[cursor.Y].[cursor.X] <- map.MapSegments.[cursor.Y].[cursor.X] ||| Segment.Segment1W
+                map.RandSegments.[cursor.Y].[cursor.X] <- map.RandSegments.[cursor.Y].[cursor.X] ||| Segment.Segment1W
         | 2 ->
             // try go south (positive y)
             if  cursor.Y < dec bounds.Size.Y then
-                map.MapSegments.[cursor.Y].[cursor.X] <- map.MapSegments.[cursor.Y].[cursor.X] ||| Segment.Segment1S
+                map.RandSegments.[cursor.Y].[cursor.X] <- map.RandSegments.[cursor.Y].[cursor.X] ||| Segment.Segment1S
                 cursor.Y <- inc cursor.Y
-                map.MapSegments.[cursor.Y].[cursor.X] <- map.MapSegments.[cursor.Y].[cursor.X] ||| Segment.Segment1N
+                map.RandSegments.[cursor.Y].[cursor.X] <- map.RandSegments.[cursor.Y].[cursor.X] ||| Segment.Segment1N
         | 3 ->
             // try go west (negative x)
             if  cursor.X > 1 then
-                map.MapSegments.[cursor.Y].[cursor.X] <- map.MapSegments.[cursor.Y].[cursor.X] ||| Segment.Segment1W
+                map.RandSegments.[cursor.Y].[cursor.X] <- map.RandSegments.[cursor.Y].[cursor.X] ||| Segment.Segment1W
                 cursor.X <- dec cursor.X
-                map.MapSegments.[cursor.Y].[cursor.X] <- map.MapSegments.[cursor.Y].[cursor.X] ||| Segment.Segment1E
+                map.RandSegments.[cursor.Y].[cursor.X] <- map.RandSegments.[cursor.Y].[cursor.X] ||| Segment.Segment1E
         | _ -> failwithumf ()
         (cursor, rand)
 
@@ -236,11 +236,11 @@ type MapRand =
                 for j in 0 .. 7 - 1 do // travel east
                     if not bossRoomAdded then
                         if  i > 0 &&
-                            map.MapSegments.[i].[j] |> Segment.notEmpty &&
-                            map.MapSegments.[i].[j] |> Segment.notSpecial &&
-                            map.MapSegments.[dec i].[j] |> Segment.isEmpty then
-                            map.MapSegments.[i].[j] <- map.MapSegments.[i].[j] ||| Segment.Segment1N
-                            map.MapSegments.[dec i].[j] <-
+                            map.RandSegments.[i].[j] |> Segment.notEmpty &&
+                            map.RandSegments.[i].[j] |> Segment.notSpecial &&
+                            map.RandSegments.[dec i].[j] |> Segment.isEmpty then
+                            map.RandSegments.[i].[j] <- map.RandSegments.[i].[j] ||| Segment.Segment1N
+                            map.RandSegments.[dec i].[j] <-
                                 match specialSegment with
                                 | NarrativeSegment -> Segment.SegmentNS
                                 | BossSegment -> Segment.SegmentBS
@@ -254,11 +254,11 @@ type MapRand =
                 for j in 7 - 1 .. - 1 .. 0 do // travel west
                     if not bossRoomAdded then
                         if  i > 0 &&
-                            map.MapSegments.[i].[j] |> Segment.notEmpty &&
-                            map.MapSegments.[i].[j] |> Segment.notSpecial &&
-                            map.MapSegments.[dec i].[j] |> Segment.isEmpty then
-                            map.MapSegments.[i].[j] <- map.MapSegments.[i].[j] ||| Segment.Segment1N
-                            map.MapSegments.[dec i].[j] <-
+                            map.RandSegments.[i].[j] |> Segment.notEmpty &&
+                            map.RandSegments.[i].[j] |> Segment.notSpecial &&
+                            map.RandSegments.[dec i].[j] |> Segment.isEmpty then
+                            map.RandSegments.[i].[j] <- map.RandSegments.[i].[j] ||| Segment.Segment1N
+                            map.RandSegments.[dec i].[j] <-
                                 match specialSegment with
                                 | NarrativeSegment -> Segment.SegmentNS
                                 | BossSegment -> Segment.SegmentBS
@@ -272,11 +272,11 @@ type MapRand =
                 for j in 0 .. 7 - 1 do // travel east
                     if not bossRoomAdded then
                         if  i < dec 7 &&
-                            map.MapSegments.[i].[j] |> Segment.notEmpty &&
-                            map.MapSegments.[i].[j] |> Segment.notSpecial &&
-                            map.MapSegments.[inc i].[j] |> Segment.isEmpty then
-                            map.MapSegments.[i].[j] <- map.MapSegments.[i].[j] ||| Segment.Segment1S
-                            map.MapSegments.[inc i].[j] <-
+                            map.RandSegments.[i].[j] |> Segment.notEmpty &&
+                            map.RandSegments.[i].[j] |> Segment.notSpecial &&
+                            map.RandSegments.[inc i].[j] |> Segment.isEmpty then
+                            map.RandSegments.[i].[j] <- map.RandSegments.[i].[j] ||| Segment.Segment1S
+                            map.RandSegments.[inc i].[j] <-
                                 match specialSegment with
                                 | NarrativeSegment -> Segment.SegmentNN
                                 | BossSegment -> Segment.SegmentBN
@@ -290,11 +290,11 @@ type MapRand =
                 for j in 7 - 1 .. - 1 .. 0 do // travel west
                     if not bossRoomAdded then
                         if  i < dec 7 &&
-                            map.MapSegments.[i].[j] |> Segment.notEmpty &&
-                            map.MapSegments.[i].[j] |> Segment.notSpecial &&
-                            map.MapSegments.[inc i].[j] |> Segment.isEmpty then
-                            map.MapSegments.[i].[j] <- map.MapSegments.[i].[j] ||| Segment.Segment1S
-                            map.MapSegments.[inc i].[j] <-
+                            map.RandSegments.[i].[j] |> Segment.notEmpty &&
+                            map.RandSegments.[i].[j] |> Segment.notSpecial &&
+                            map.RandSegments.[inc i].[j] |> Segment.isEmpty then
+                            map.RandSegments.[i].[j] <- map.RandSegments.[i].[j] ||| Segment.Segment1S
+                            map.RandSegments.[inc i].[j] <-
                                 match specialSegment with
                                 | NarrativeSegment -> Segment.SegmentNN
                                 | BossSegment -> Segment.SegmentBN
@@ -302,7 +302,7 @@ type MapRand =
         bossRoomAdded
 
     static member makeFromRand walkLength biasChance (size : Vector2i) origin floor rand =
-        if size.X < 4 || size.Y < 4 then failwith "Invalid MapRand size."
+        if size.X < 4 || size.Y < 4 then failwith "Invalid RandMap size."
         let bounds = box2i v2iZero size
         let (cursor, biases) =
             match origin with
@@ -317,14 +317,14 @@ type MapRand =
             | OriginSW ->       (v2i bounds.Position.X (dec bounds.Size.Y),     [0; 0; 1; 1])
         let (maps, rand) =
             List.fold (fun (maps, rand) bias ->
-                let map = { MapRand.make size with MapOriginOpt = Some cursor }
-                let (_, rand) = List.fold (fun (cursor, rand) _ -> MapRand.walk biasChance bias cursor map rand) (cursor, rand) [0 .. dec walkLength]
+                let map = { RandMap.make size with RandOriginOpt = Some cursor }
+                let (_, rand) = List.fold (fun (cursor, rand) _ -> RandMap.walk biasChance bias cursor map rand) (cursor, rand) [0 .. dec walkLength]
                 (map :: maps, rand))
                 ([], rand)
                 biases
         let (maps, rand) = Rand.nextPermutation maps rand
         let maps = List.take 3 maps
-        let map = List.reduce MapRand.concat maps
+        let map = List.reduce RandMap.concat maps
         let opening =
             if floor = 0 then
                 match origin with
@@ -338,31 +338,31 @@ type MapRand =
                 | OriginSE ->   Segment.Segment1S
                 | OriginSW ->   Segment.Segment1S
             else Segment.Segment0
-        map.MapSegments.[cursor.Y].[cursor.X] <- map.MapSegments.[cursor.Y].[cursor.X] ||| opening
+        map.RandSegments.[cursor.Y].[cursor.X] <- map.RandSegments.[cursor.Y].[cursor.X] ||| opening
         let (tryAddBoss, rand) =
             Rand.nextItem
-                [MapRand.tryAddSpecialRoomNorthFromSouthEast BossSegment
-                 MapRand.tryAddSpecialRoomNorthFromSouthWest BossSegment
-                 MapRand.tryAddSpecialRoomSouthFromNorthEast BossSegment
-                 MapRand.tryAddSpecialRoomSouthFromNorthWest BossSegment]
+                [RandMap.tryAddSpecialRoomNorthFromSouthEast BossSegment
+                 RandMap.tryAddSpecialRoomNorthFromSouthWest BossSegment
+                 RandMap.tryAddSpecialRoomSouthFromNorthEast BossSegment
+                 RandMap.tryAddSpecialRoomSouthFromNorthWest BossSegment]
                 rand
         // TODO: try to add more narrative segment placement variety while keeping each coming from opposite directions.
         let isMapValid =
-            MapRand.tryAddSpecialRoomSouthFromNorthWest NarrativeSegment map &&
-            MapRand.tryAddSpecialRoomNorthFromSouthEast NarrativeSegment map &&
+            RandMap.tryAddSpecialRoomSouthFromNorthWest NarrativeSegment map &&
+            RandMap.tryAddSpecialRoomNorthFromSouthEast NarrativeSegment map &&
             tryAddBoss map
 #if DEV
-        MapRand.printn map
+        RandRand.printn map
 #endif
         if not isMapValid // make another if no valid map could be created
-        then MapRand.makeFromRand walkLength biasChance size origin floor rand
+        then RandMap.makeFromRand walkLength biasChance size origin floor rand
         else (cursor, map, rand)
 
     static member make (size : Vector2i) =
-        if size.X < 4 || size.Y < 4 then failwith "Invalid MapRand size."
-        { MapSegments = Array.init size.X (fun _ -> Array.init size.Y (constant Segment.Segment0))
-          MapOriginOpt = None
-          MapSize = size }
+        if size.X < 4 || size.Y < 4 then failwith "Invalid RandMap size."
+        { RandSegments = Array.init size.X (fun _ -> Array.init size.Y (constant Segment.Segment0))
+          RandOriginOpt = None
+          RandSize = size }
 
     static member toTmx fieldName abstractPath origin (cursor : Vector2i) floor map =
 
@@ -403,7 +403,7 @@ type MapRand =
         let mutable propId = inc entryId
         for i in 0 .. 7 - 1 do
             for j in 0 .. 7 - 1 do
-                match MapRand.getSegmentOpt map.MapSegments.[j].[i] segments with
+                match RandMap.getSegmentOpt map.RandSegments.[j].[i] segments with
                 | Some segment ->
                     if segment.ObjectGroups.Count <> 0 then
                         for objectRef in segment.ObjectGroups.[0].Objects do
@@ -425,7 +425,7 @@ type MapRand =
                             let x = i * 32 + ii
                             let y = j * 32 + jj
                             let tileFromSegment =
-                                match MapRand.getSegmentOpt map.MapSegments.[j].[i] segments with
+                                match RandMap.getSegmentOpt map.RandSegments.[j].[i] segments with
                                 | Some segment ->
                                     match Seq.tryFind (fun (segmentLayer : TmxLayer) -> segmentLayer.Name = layer.Name) segment.TileLayers with
                                     | Some segmentLayer -> segmentLayer.Tiles.[ii + jj * 32]

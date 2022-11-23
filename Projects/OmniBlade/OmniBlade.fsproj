@@ -72,11 +72,11 @@
     <Compile Include="Core\Assets.fs" />
     <Compile Include="Core\Constants.fs" />
     <Compile Include="Core\Simulants.fs" />
-    <Compile Include="Core\MapRand.fs" />
+    <Compile Include="Core\RandMap.fs" />
     <Compile Include="Core\Inventory.fs" />
     <Compile Include="Core\Data.fs" />
-    <Compile Include="Core\Events.fs" />
     <Compile Include="Core\Algorithms.fs" />
+    <Compile Include="Core\Events.fs" />
     <Compile Include="Effects\Effects.fs" />
     <Compile Include="RingMenu\RingMenu.fs" />
     <Compile Include="Reticles\Reticles.fs" />
@@ -104,7 +104,7 @@
     <Compile Include="Field\FieldContent.fs" />
     <Compile Include="Field\FieldDispatcher.fs" />
     <Compile Include="OmniBlade\OmniBlade.fs" />
-    <Compile Include="OmniPlugin\OmniPlugin.fs" />
+    <Compile Include="OmniBlade\OmniBladePlugin.fs" />
     <Compile Include="Program.fs" />
     <None Include="GenerateCharacterAnimationSheets.fsx" />
     <None Include="App.config" />

@@ -56,7 +56,7 @@ module Constants =
         let LinearDamping = 19.0f
         let PropsGroupName = "Props"
         let TransitionTime = 60L
-        let MapRandSize = v2iDup 7
+        let RandMapSize = v2iDup 7
 #if DEV
         let AvatarWalkForce = 60000.0f
         let AvatarWalkForceMouse = 66000.0f
