@@ -68,18 +68,18 @@
     <DisableFastUpToDateCheck>true</DisableFastUpToDateCheck>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="Assets.fs" />
-    <Compile Include="Constants.fs" />
-    <Compile Include="Simulants.fs" />
-    <Compile Include="Data.fs" />
-    <Compile Include="Character.fs" />
-    <Compile Include="CharacterDispatcher.fs" />
-    <Compile Include="Field.fs" />
-    <Compile Include="FieldDispatcher.fs" />
-    <Compile Include="Atlas.fs" />
-    <Compile Include="AtlasDispatcher.fs" />
-    <Compile Include="Tactics.fs" />
-    <Compile Include="TacticsPlugin.fs" />
+    <Compile Include="Core\Assets.fs" />
+    <Compile Include="Core\Constants.fs" />
+    <Compile Include="Core\Simulants.fs" />
+    <Compile Include="Core\Data.fs" />
+    <Compile Include="Character\Character.fs" />
+    <Compile Include="Character\CharacterDispatcher.fs" />
+    <Compile Include="Field\Field.fs" />
+    <Compile Include="Field\FieldDispatcher.fs" />
+    <Compile Include="Atlas\Atlas.fs" />
+    <Compile Include="Atlas\AtlasDispatcher.fs" />
+    <Compile Include="Tactics\Tactics.fs" />
+    <Compile Include="Tactics\TacticsPlugin.fs" />
     <Compile Include="Program.fs" />
     <None Include="App.config" />
     <Content Include="AssetGraph.nuag">
