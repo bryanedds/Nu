@@ -91,6 +91,7 @@
     <Compile Include="OmniBattle.fs" />
     <Compile Include="OmniField.fs" />
     <Compile Include="OmniFieldCue.fs" />
+    <Compile Include="OmniFieldContent.fs" />
     <Compile Include="OmniRingMenuDispatcher.fs" />
     <Compile Include="OmniReticlesDispatcher.fs" />
     <Compile Include="OmniCharacterDispatcher.fs" />
