@@ -1,4 +1,6 @@
 ﻿namespace MyGame
+open System
+open Prime
 open Nu
 
 // this module provides global handles to the game's key simulants.

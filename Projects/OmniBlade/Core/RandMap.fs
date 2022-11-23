@@ -6,6 +6,7 @@ open System
 open Prime
 open Nu
 open TiledSharp
+open OmniBlade
 
 type OriginStatic =
     | OriginC

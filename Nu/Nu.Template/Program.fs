@@ -1,6 +1,8 @@
 ﻿namespace MyGame
 open System
+open Prime
 open Nu
+open MyGame
 module Program =
 
     // this the entry point for your Nu application
