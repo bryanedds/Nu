@@ -215,6 +215,9 @@ module Battle =
         let character = updater character
         { battle with Characters_ = Map.add characterIndex character battle.Characters_ }
 
+    let updateCharacterInputState updater characterIndex battle =
+        updateCharacter (Character.updateCharacterInputState updater) characterIndex battle
+
     let updateCharacterActionTime updater characterIndex battle =
         updateCharacter (Character.updateActionTime updater) characterIndex battle
 
@@ -223,9 +226,6 @@ module Battle =
 
     let updateCharacterAutoBattleOpt updater characterIndex battle =
         updateCharacter (Character.updateAutoBattleOpt updater) characterIndex battle
-
-    let updateCharacterInputState updater characterIndex battle =
-        updateCharacter (Character.updateInputState updater) characterIndex battle
 
     let updateCharacterBottom updater characterIndex battle =
         updateCharacter (Character.updateBottom updater) characterIndex battle
@@ -266,7 +266,7 @@ module Battle =
         updateCharacter (fun character ->
             let character =
                 if character.IsAlly
-                then Character.updateInputState (constant NoInput) character
+                then Character.updateCharacterInputState (constant NoInput) character
                 else character
             let character = Character.animate time WoundAnimation character
             character)
@@ -374,7 +374,7 @@ module Battle =
                     | Tech _ -> TechMenu
                     | Consume _ -> ItemMenu
                     | Wound -> failwithumf ()
-                Character.updateInputState (constant inputState) character
+                Character.updateCharacterInputState (constant inputState) character
             | None -> character)
             characterIndex
             battle
