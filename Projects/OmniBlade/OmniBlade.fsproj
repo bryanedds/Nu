@@ -86,6 +86,7 @@
     <Compile Include="Character\Character.fs" />
     <Compile Include="Character\CharacterDispatcher.fs" />
     <Compile Include="Battle\Dialog.fs" />
+    <Compile Include="Battle\DialogContent.fs" />
     <Compile Include="Battle\Battle.fs" />
     <Compile Include="Battle\BattleDispatcher.fs" />
     <Compile Include="SpiritOrb\Chest.fs" />
