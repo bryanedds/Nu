@@ -13,14 +13,14 @@ module SpiritOrbDispatcher =
 
     type [<NoComparison>] SpiritOrb =
         { AvatarLowerCenter : Vector3
-          Spirits : Spirit array
           Chests : Chest array
-          Portals : Portal array }
+          Portals : Portal array
+          Spirits : Spirit array }
 
     type [<NoComparison>] SpiritOrbInhabitant =
-        | SpiritInhabitant of Spirit
         | ChestInhabitant of Chest
         | PortalInhabitant of Portal
+        | SpiritInhabitant of Spirit
 
     type Entity with
         member this.GetSpiritOrb world = this.GetModelGeneric<SpiritOrb> world
@@ -35,9 +35,6 @@ module SpiritOrbDispatcher =
             Array.fold (fun views inhabitant ->
                 let (position, image, color) =
                     match inhabitant with
-                    | SpiritInhabitant spirit ->
-                        let color = SpiritType.getColor spirit.SpiritType
-                        (spirit.Position, Assets.Field.SpiritImage, color)
                     | ChestInhabitant chest ->
                         let image = if chest.Opened then Assets.Field.SpiritChestOpenedImage else Assets.Field.SpiritChestClosedImage
                         let color = Color.One.WithA 0.5f
@@ -46,6 +43,9 @@ module SpiritOrbDispatcher =
                         let image = if portal.Active then Assets.Field.SpiritPortalImage else Assets.Default.ImageEmpty
                         let color = Color.One.WithA 0.5f
                         (portal.Center, image, color)
+                    | SpiritInhabitant spirit ->
+                        let color = SpiritType.getColor spirit.SpiritType
+                        (spirit.Position, Assets.Field.SpiritImage, color)
                 let delta = position - avatarLowerCenter
                 let distance = delta.Magnitude
                 if distance < Constants.Field.SpiritRadius then
@@ -77,8 +77,8 @@ module SpiritOrbDispatcher =
             let avatarImage = Assets.Field.SpiritAvatarImage
             let avatarDescriptor = { Transform = avatarTransform; InsetOpt = ValueNone; Image = avatarImage; Color = Color.One; Blend = Transparent; Glow = Color.Zero; Flip = FlipNone }
             let avatarView = Render2d (avatarTransform.Elevation, avatarTransform.Perimeter.Position.Y, AssetTag.generalize avatarImage, SpriteDescriptor avatarDescriptor)
-            let spiritViews = makeViews spiritOrb.AvatarLowerCenter orbTransform (Array.map SpiritInhabitant spiritOrb.Spirits)
             let chestViews = makeViews spiritOrb.AvatarLowerCenter orbTransform (Array.map ChestInhabitant spiritOrb.Chests)
             let portalViews = makeViews spiritOrb.AvatarLowerCenter orbTransform (Array.map PortalInhabitant spiritOrb.Portals)
-            let views = orbView :: avatarView :: spiritViews @ chestViews @ portalViews
+            let spiritViews = makeViews spiritOrb.AvatarLowerCenter orbTransform (Array.map SpiritInhabitant spiritOrb.Spirits)
+            let views = orbView :: avatarView :: chestViews @ portalViews @ spiritViews
             Views (List.toArray views)

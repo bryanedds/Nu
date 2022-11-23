@@ -576,15 +576,16 @@ type [<NoComparison>] MoveType =
             (step, int (ceil stepCount))
         | None -> (translation, 1)
 
-[<Syntax   ("Gold Item Items Advent Advents " +
-            "Wait Timed NoWait " +
-            "Nil PlaySound PlaySong FadeOutSong Face Glow Recruit Unseal " +
-            "AddItem RemoveItem AddAdvent RemoveAdvent " +
-            "Wait Animate Fade Warp Battle Dialog Prompt " +
-            "If Not Define Assign Parallel Sequence",
-            "", "", "", "",
-            Constants.PrettyPrinter.DefaultThresholdMin,
-            Constants.PrettyPrinter.DetailedThresholdMax)>]
+[<Syntax
+    ("Gold Item Items Advent Advents " +
+     "Wait Timed NoWait " +
+     "Nil PlaySound PlaySong FadeOutSong Face Glow Recruit Unseal " +
+     "AddItem RemoveItem AddAdvent RemoveAdvent " +
+     "Wait Animate Fade Warp Battle Dialog Prompt " +
+     "If Not Define Assign Parallel Sequence",
+     "", "", "", "",
+     Constants.PrettyPrinter.DefaultThresholdMin,
+     Constants.PrettyPrinter.DetailedThresholdMax)>]
 type [<NoComparison>] Cue =
     | Nil
     | PlaySound of single * Sound AssetTag

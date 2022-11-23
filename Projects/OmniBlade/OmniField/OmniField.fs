@@ -110,6 +110,36 @@ module Field =
                 let prop = Prop.make propDescriptor.PropPerimeter propDescriptor.PropElevation advents pointOfInterest propDescriptor.PropData propState propDescriptor.PropId
                 (propDescriptor.PropId, prop))
         | None -> Map.empty
+
+    let private makeBattleFromTeam inventory prizePool (team : Map<int, Teammate>) battleSpeed battleData world =
+        let party = team |> Map.toList |> List.tryTake 3
+        let offsetCharacters = List.hasAtMost 1 party
+        let allyPositions =
+            if List.length party < 3
+            then List.take 2 battleData.BattleAllyPositions
+            else List.take 1 battleData.BattleAllyPositions @ List.skip 2 battleData.BattleAllyPositions
+        let party =
+            List.mapi
+                (fun index (teamIndex, teammate) ->
+                    match Map.tryFind teammate.CharacterType Data.Value.Characters with
+                    | Some characterData ->
+                        // TODO: bounds checking
+                        let size = Constants.Gameplay.CharacterSize
+                        let celSize = Constants.Gameplay.CharacterCelSize
+                        let position = if offsetCharacters then allyPositions.[teamIndex] + Constants.Battle.CharacterOffset else allyPositions.[teamIndex]
+                        let bounds = box3 position size
+                        let characterIndex = AllyIndex teamIndex
+                        let characterType = characterData.CharacterType
+                        let characterState = CharacterState.make characterData teammate.HitPoints teammate.TechPoints teammate.ExpPoints teammate.WeaponOpt teammate.ArmorOpt teammate.Accessories
+                        let animationSheet = characterData.AnimationSheet
+                        let direction = Direction.ofVector3 -bounds.Bottom
+                        let actionTime = 1000.0f - Constants.Battle.AllyActionTimeSpacing * single index
+                        let character = Character.make bounds characterIndex characterType characterState animationSheet celSize direction None actionTime
+                        character
+                    | None -> failwith ("Could not find CharacterData for '" + scstring teammate.CharacterType + "'."))
+                party
+        let battle = Battle.makeFromParty offsetCharacters inventory prizePool party battleSpeed battleData world
+        battle
         
     let rec detokenize (field : Field) (text : string) =
         text
@@ -355,6 +385,9 @@ module Field =
     let updateFieldSongTimeOpt updater field =
         { field with FieldSongTimeOpt_ = updater field.FieldSongTimeOpt_ }
 
+    let clearSpirits field =
+        { field with SpiritActivity_ = 0.0f; Spirits_ = [||] }
+
     let recruit allyType (field : Field) =
         let lowestLevelTeammate = field.Team |> Map.toValueList |> Seq.sortBy (fun teammate -> teammate.Level) |> Seq.head
         let level = max 1 (dec lowestLevelTeammate.Level)
@@ -362,13 +395,14 @@ module Field =
         let teammate = Teammate.make level index allyType
         updateTeam (Map.add index teammate) field
 
+    let enterBattle songTime prizePool battleData (field : Field) world =
+        let battle = makeBattleFromTeam field.Inventory prizePool field.Team field.Options.BattleSpeed battleData world
+        let field = clearSpirits field
+        let field = updateFieldSongTimeOpt (constant (Some songTime)) field
+        updateBattleOpt (constant (Some battle)) field
+
     let restoreTeam field =
         { field with Team_ = Map.map (fun _ -> Teammate.restore) field.Team_ }
-
-    let clearSpirits field =
-        { field with
-            SpiritActivity_ = 0.0f
-            Spirits_ = [||] }
 
     let advanceUpdateTime field =
         { field with UpdateTime_ = inc field.UpdateTime_ }
@@ -533,7 +567,16 @@ module Field =
 
     let debugBattle world =
         let field = debug world
-        let battle = Battle.debug world
+        let battle =
+            match Map.tryFind DebugBattle Data.Value.Battles with
+            | Some battle ->
+                let level = 50
+                let team =
+                    Map.singleton 0 (Teammate.make level 0 Jinn) |>
+                    Map.add 1 (Teammate.make level 1 Peric) |>
+                    Map.add 2 (Teammate.make level 2 Mael)
+                makeBattleFromTeam Inventory.initial PrizePool.empty team SwiftSpeed battle world
+            | None -> Battle.empty
         updateBattleOpt (constant (Some battle)) field
 
     let save field =

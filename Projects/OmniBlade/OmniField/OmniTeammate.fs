@@ -7,7 +7,7 @@ open Prime
 open Nu
 
 type [<NoComparison>] Teammate =
-    { TeamIndex : int // key
+    { TeamIndex : int
       PartyIndexOpt : int option
       ArchetypeType : ArchetypeType
       CharacterType : CharacterType

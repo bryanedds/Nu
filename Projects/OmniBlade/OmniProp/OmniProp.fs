@@ -7,19 +7,13 @@ open System.Numerics
 open Prime
 open Nu
 
-type [<NoComparison>] PropState =
-    | DoorState of bool
-    | SwitchState of bool
-    | CharacterState of Color * CharacterAnimationState
-    | SpriteState of Image AssetTag * Color * Blend * Color * Flip * bool
-    | NilState
-
 [<RequireQualifiedAccess>]
 module Prop =
 
-    [<Syntax   ("", "", "", "", "",
-                Constants.PrettyPrinter.DefaultThresholdMin,
-                Constants.PrettyPrinter.DetailedThresholdMax)>]
+    [<Syntax
+        ("", "", "", "", "",
+         Constants.PrettyPrinter.DefaultThresholdMin,
+         Constants.PrettyPrinter.DetailedThresholdMax)>]
     type [<NoComparison>] Prop =
         private
             { Perimeter_ : Box3
