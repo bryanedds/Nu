@@ -62,9 +62,9 @@
   </Choose>
   <Import Project="$(FSharpTargetsPath)" Condition="Exists('$(FSharpTargetsPath)')" />
   <ItemGroup>
-    <Compile Include="BlazeAssets.fs" />
-    <Compile Include="BlazeSimulants.fs" />
-    <Compile Include="BlazeGameplay.fs" />
+    <Compile Include="Assets.fs" />
+    <Compile Include="Simulants.fs" />
+    <Compile Include="Gameplay.fs" />
     <Compile Include="BlazeVector.fs" />
     <Compile Include="BlazePlugin.fs" />
     <Compile Include="Program.fs" />

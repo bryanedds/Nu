@@ -18,7 +18,7 @@ module MyGame =
     type Message =
         | ShowTitle
         | ShowCredits
-        | ShowGameplay
+        | ShowMyGameplay
         | Update
 
     // this is our Elm-style command type. Commands are used instead of messages when explicitly
@@ -52,7 +52,7 @@ module MyGame =
              match model with Gameplay gameplay -> Simulants.Gameplay.Screen.Gameplay := gameplay | _ -> ()
              Simulants.Splash.Screen.DeselectingEvent => msg ShowTitle
              Simulants.Title.Gui.Credits.ClickEvent => msg ShowCredits
-             Simulants.Title.Gui.Play.ClickEvent => msg ShowGameplay
+             Simulants.Title.Gui.Play.ClickEvent => msg ShowMyGameplay
              Simulants.Title.Gui.Exit.ClickEvent => cmd Exit
              Simulants.Credits.Gui.Back.ClickEvent => msg ShowTitle]
 
@@ -61,7 +61,7 @@ module MyGame =
             match message with
             | ShowTitle -> just Title
             | ShowCredits -> just Credits
-            | ShowGameplay -> just (Gameplay Playing)
+            | ShowMyGameplay -> just (Gameplay Playing)
             | Update ->
                 match model with
                 | Gameplay gameplay ->
@@ -79,4 +79,4 @@ module MyGame =
             [Content.screen Simulants.Splash.Screen.Name (WorldTypes.Splash (Constants.Dissolve.Default, Constants.Splash.Default, None, Simulants.Title.Screen)) [] []
              Content.screenWithGroupFromFile Simulants.Title.Screen.Name (Dissolve (Constants.Dissolve.Default, None)) "Assets/Gui/Title.nugroup" [] []
              Content.screenWithGroupFromFile Simulants.Credits.Screen.Name (Dissolve (Constants.Dissolve.Default, None)) "Assets/Gui/Credits.nugroup" [] []
-             Content.screen<MyGameplayDispatcher> Simulants.Gameplay.Screen.Name (Dissolve (Constants.Dissolve.Default, None)) [] []]
+             Content.screen<GameplayDispatcher> Simulants.Gameplay.Screen.Name (Dissolve (Constants.Dissolve.Default, None)) [] []]
