@@ -25,7 +25,7 @@ module WorldBindings =
         "getMasterAudioVolume getMasterSoundVolume getMasterSongVolume setMasterAudioVolume " +
         "setMasterSoundVolume setMasterSongVolume playSong playSong6 " +
         "playSound playSound3 fadeOutSong stopSong " +
-        "loadAudioPackage unloadAudioPackage reloadAudioAssets hintRenderPackageUse2d " +
+        "loadAudioPackage unloadAudioPackage reloadAudioAssets loadRenderPackageUse2d " +
         "unloadRenderPackage2d reloadRenderAssets2d reloadRenderAssets3d localizeBodyShape " +
         "bodyExists getBodyContactNormals getBodyLinearVelocity getBodyToGroundContactNormals " +
         "getBodyToGroundContactNormalOpt getBodyToGroundContactTangentOpt isBodyOnGround createBody " +
@@ -626,17 +626,17 @@ module WorldBindings =
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'reloadAudioAssets' due to: " + scstring exn, ValueNone)
             struct (violation, World.choose oldWorld)
 
-    let hintRenderPackageUse2d packageName world =
+    let loadRenderPackageUse2d packageName world =
         let oldWorld = world
         try
             let packageName =
                 match ScriptingSystem.tryExport typeof<String> packageName world with
                 | Some value -> value :?> String
                 | None -> failwith "Invalid argument type for 'packageName'; expecting a value convertable to String."
-            let result = World.hintRenderPackageUse2d packageName world
+            let result = World.loadRenderPackageUse2d packageName world
             struct (Scripting.Unit, result)
         with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'hintRenderPackageUse2d' due to: " + scstring exn, ValueNone)
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'loadRenderPackageUse2d' due to: " + scstring exn, ValueNone)
             struct (violation, World.choose oldWorld)
 
     let unloadRenderPackage2d packageName world =
@@ -3074,12 +3074,12 @@ module WorldBindings =
                 struct (violation, world)
         | Some violation -> struct (violation, world)
 
-    let evalHintRenderPackageUse2dBinding fnName exprs originOpt world =
+    let evalLoadRenderPackageUse2dBinding fnName exprs originOpt world =
         let struct (evaleds, world) = World.evalManyInternal exprs world
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [|packageName|] -> hintRenderPackageUse2d packageName world
+            | [|packageName|] -> loadRenderPackageUse2d packageName world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
                 struct (violation, world)
@@ -4512,7 +4512,7 @@ module WorldBindings =
              ("loadAudioPackage", { Fn = evalLoadAudioPackageBinding; Pars = [|"packageName"|]; DocOpt = None })
              ("unloadAudioPackage", { Fn = evalUnloadAudioPackageBinding; Pars = [|"packageName"|]; DocOpt = None })
              ("reloadAudioAssets", { Fn = evalReloadAudioAssetsBinding; Pars = [||]; DocOpt = None })
-             ("hintRenderPackageUse2d", { Fn = evalHintRenderPackageUse2dBinding; Pars = [|"packageName"|]; DocOpt = None })
+             ("loadRenderPackageUse2d", { Fn = evalLoadRenderPackageUse2dBinding; Pars = [|"packageName"|]; DocOpt = None })
              ("unloadRenderPackage2d", { Fn = evalUnloadRenderPackage2dBinding; Pars = [|"packageName"|]; DocOpt = None })
              ("reloadRenderAssets2d", { Fn = evalReloadRenderAssets2dBinding; Pars = [||]; DocOpt = None })
              ("reloadRenderAssets3d", { Fn = evalReloadRenderAssets3dBinding; Pars = [||]; DocOpt = None })
