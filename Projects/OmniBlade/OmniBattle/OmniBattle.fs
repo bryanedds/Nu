@@ -492,36 +492,6 @@ module Battle =
               DialogOpt_ = None }
         battle
 
-    let makeFromTeam inventory prizePool (team : Map<int, Teammate>) battleSpeed battleData world =
-        let party = team |> Map.toList |> List.tryTake 3
-        let offsetCharacters = List.hasAtMost 1 party
-        let allyPositions =
-            if List.length party < 3
-            then List.take 2 battleData.BattleAllyPositions
-            else List.take 1 battleData.BattleAllyPositions @ List.skip 2 battleData.BattleAllyPositions
-        let party =
-            List.mapi
-                (fun index (teamIndex, teammate) ->
-                    match Map.tryFind teammate.CharacterType Data.Value.Characters with
-                    | Some characterData ->
-                        // TODO: bounds checking
-                        let size = Constants.Gameplay.CharacterSize
-                        let celSize = Constants.Gameplay.CharacterCelSize
-                        let position = if offsetCharacters then allyPositions.[teamIndex] + Constants.Battle.CharacterOffset else allyPositions.[teamIndex]
-                        let bounds = box3 position size
-                        let characterIndex = AllyIndex teamIndex
-                        let characterType = characterData.CharacterType
-                        let characterState = CharacterState.make characterData teammate.HitPoints teammate.TechPoints teammate.ExpPoints teammate.WeaponOpt teammate.ArmorOpt teammate.Accessories
-                        let animationSheet = characterData.AnimationSheet
-                        let direction = Direction.ofVector3 -bounds.Bottom
-                        let actionTime = 1000.0f - Constants.Battle.AllyActionTimeSpacing * single index
-                        let character = Character.make bounds characterIndex characterType characterState animationSheet celSize direction None actionTime
-                        character
-                    | None -> failwith ("Could not find CharacterData for '" + scstring teammate.CharacterType + "'."))
-                party
-        let battle = makeFromParty offsetCharacters inventory prizePool party battleSpeed battleData world
-        battle
-
     let empty =
         match Map.tryFind EmptyBattle Data.Value.Battles with
         | Some battle ->
@@ -538,16 +508,5 @@ module Battle =
               ActionCommands_ = Queue.empty
               DialogOpt_ = None }
         | None -> failwith "Expected data for DebugBattle to be available."
-
-    let debug world =
-        match Map.tryFind DebugBattle Data.Value.Battles with
-        | Some battle ->
-            let level = 50
-            let team =
-                Map.singleton 0 (Teammate.make level 0 Jinn) |>
-                Map.add 1 (Teammate.make level 1 Peric) |>
-                Map.add 2 (Teammate.make level 2 Mael)
-            makeFromTeam Inventory.initial PrizePool.empty team SwiftSpeed battle world
-        | None -> empty
 
 type Battle = Battle.Battle

@@ -242,10 +242,7 @@ module FieldDispatcher =
                             let playTime = Option.defaultValue clockTime field.FieldSongTimeOpt
                             let startTime = clockTime - playTime
                             let prizePool = { Consequents = Set.empty; Items = []; Gold = 0; Exp = 0 }
-                            let battle = Battle.makeFromTeam field.Inventory prizePool field.Team field.Options.BattleSpeed battleData world
-                            let field = Field.clearSpirits field
-                            let field = Field.updateFieldSongTimeOpt (constant (Some startTime)) field
-                            let field = Field.updateBattleOpt (constant (Some battle)) field
+                            let field = Field.enterBattle startTime prizePool battleData field world
                             let fade = cmd (FadeOutSong 1000)
                             let beastGrowl = cmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.BeastGrowlSound))
                             (fade :: beastGrowl :: signals, field)
@@ -489,10 +486,7 @@ module FieldDispatcher =
                     let playTime = Option.defaultValue clockTime field.FieldSongTimeOpt
                     let startTime = clockTime - playTime
                     let prizePool = { Consequents = consequents; Items = []; Gold = 0; Exp = 0 }
-                    let battle = Battle.makeFromTeam field.Inventory prizePool (Field.getParty field) field.Options.BattleSpeed battleData world
-                    let field = Field.clearSpirits field
-                    let field = Field.updateFieldSongTimeOpt (constant (Some startTime)) field
-                    let field = Field.updateBattleOpt (constant (Some battle)) field
+                    let field = Field.enterBattle startTime prizePool battleData field world
                     withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.BeastGrowlSound)) field
                 | None -> just field
 

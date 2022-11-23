@@ -187,22 +187,23 @@ module Effects =
         Map<string, Definition>
 
 /// Describes an effect in a compositional manner.
-[<Syntax   ("Constant Linear Random Chaos Ease EaseIn EaseOut Sin SinScaled Cos CosScaled " +
-            "Or Nor Xor And Nand Equal " +
-            "Sum Delta Scale Ratio Set " +
-            "Once Loop Bounce " +
-            "Cycle Iterate " +
-            "Rate " +
-            "Shift " +
-            "Resource Expand " +
-            "Enabled PositionAbsolute PositionRelative Translation Scale Offset Angles Degrees Size Elevation Inset Color Glow Volume " +
-            "Enableds Positions Translations Scales Offsets Angleses Degreeses Sizes Elevations Insets Colors Glows Volumes Aspects " +
-            "Expand " +
-            "StaticSprite AnimatedSprite TextSprite SoundEffect Mount Repeat Emit Delay Segment Composite Tag Nil " +
-            "View",
-            "", "", "", "",
-            Constants.PrettyPrinter.DefaultThresholdMin,
-            Constants.PrettyPrinter.CompositionalThresholdMax)>]
+[<Syntax
+    ("Constant Linear Random Chaos Ease EaseIn EaseOut Sin SinScaled Cos CosScaled " +
+     "Or Nor Xor And Nand Equal " +
+     "Sum Delta Scale Ratio Set " +
+     "Once Loop Bounce " +
+     "Cycle Iterate " +
+     "Rate " +
+     "Shift " +
+     "Resource Expand " +
+     "Enabled PositionAbsolute PositionRelative Translation Scale Offset Angles Degrees Size Elevation Inset Color Glow Volume " +
+     "Enableds Positions Translations Scales Offsets Angleses Degreeses Sizes Elevations Insets Colors Glows Volumes Aspects " +
+     "Expand " +
+     "StaticSprite AnimatedSprite TextSprite SoundEffect Mount Repeat Emit Delay Segment Composite Tag Nil " +
+     "View",
+     "", "", "", "",
+     Constants.PrettyPrinter.DefaultThresholdMin,
+     Constants.PrettyPrinter.CompositionalThresholdMax)>]
 type [<NoComparison>] Effect =
     { EffectName : string
       LifeTimeOpt : int64 option
