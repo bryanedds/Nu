@@ -136,11 +136,11 @@ type MyGameDispatcher () =
         let world = World.createEntity<SkyBoxDispatcher> None DefaultOverlay Simulants.Default.Group world |> snd
         let world = Fps.SetPosition (v3 200.0f -250.0f 0.0f) world
 #if !ECS
-        let positions = // 19,663 entity positions (goal: 60FPS, current: 54FPS)
+        let positions = // 25,000 entity positions (goal: 60FPS, current: 59FPS)
             seq {
-                for i in 0 .. 52 do
-                    for j in 0 .. 52 do
-                        for k in 0 .. 6 do
+                for i in 0 .. dec 50 do
+                    for j in 0 .. dec 50 do
+                        for k in 0 .. dec 10 do
                             yield v3 (single i * 4.5f + single k * 0.5f) (single j * 4.5f + single k * 0.5f) -205.0f }
         let world =
             Seq.foldi (fun i world position ->
