@@ -580,7 +580,7 @@ type [<NoComparison>] MoveType =
 [<Syntax
     ("Gold Item Items Advent Advents " +
      "Wait Timed NoWait " +
-     "Nil PlaySound PlaySong FadeOutSong Face Glow Recruit Unseal " +
+     "Fin PlaySound PlaySong FadeOutSong Face Glow Recruit Unseal " +
      "AddItem RemoveItem AddAdvent RemoveAdvent " +
      "Wait Animate Fade Warp Battle Dialog Prompt " +
      "If Not Define Assign Parallel Sequence",
@@ -588,7 +588,7 @@ type [<NoComparison>] MoveType =
      Constants.PrettyPrinter.DefaultThresholdMin,
      Constants.PrettyPrinter.DetailedThresholdMax)>]
 type [<NoComparison>] Cue =
-    | Nil
+    | Fin
     | PlaySound of single * Sound AssetTag
     | PlaySong of int * int * single * double * Song AssetTag
     | FadeOutSong of int
@@ -623,11 +623,11 @@ type [<NoComparison>] Cue =
     | Expand of string
     | Parallel of Cue list
     | Sequence of Cue list
-    static member isNil cue = match cue with Nil -> true | _ -> false
-    static member notNil cue = match cue with Nil -> false | _ -> true
+    static member isNil cue = match cue with Fin -> true | _ -> false
+    static member notNil cue = match cue with Fin -> false | _ -> true
     static member isInterrupting (inventory : Inventory) (advents : Advent Set) cue =
         match cue with
-        | Nil | PlaySound _ | PlaySong _ | FadeOutSong _ | Face _ | ClearSpirits | Recruit _ -> false
+        | Fin | PlaySound _ | PlaySong _ | FadeOutSong _ | Face _ | ClearSpirits | Recruit _ -> false
         | AddItem _ | RemoveItem _ | AddAdvent _ | RemoveAdvent _ | ReplaceAdvent _ -> false
         | Wait _ | WaitState _ | Fade _ | FadeState _ | Move _ | MoveState _ | Warp _ | WarpState _ | Battle _ | BattleState _ | Dialog _ | DialogState _ | Prompt _ | PromptState _ -> true
         | Animate (_, _, wait) | AnimateState (_, wait) -> match wait with Timed 0L | NoWait -> false | _ -> true
@@ -900,7 +900,7 @@ module FieldData =
                         (FStack.index index treasures, FStack.removeAt index treasures, rand)
                     else (Consumable GreenHerb, treasures, rand)
                 let (id, rand) = let (i, rand) = Rand.nextInt rand in let (j, rand) = Rand.nextInt rand in (Gen.idFromInts i j, rand)
-                let prop = { prop with PropData = Chest (WoodenChest, treasure, id, None, Cue.Nil, Set.empty) }
+                let prop = { prop with PropData = Chest (WoodenChest, treasure, id, None, Cue.Fin, Set.empty) }
                 (prop, treasures, rand)
             else ({ prop with PropData = EmptyProp }, treasures, rand)
         | _ -> (prop, treasures, rand)

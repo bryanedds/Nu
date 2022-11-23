@@ -75,7 +75,7 @@
   </object>
   <object id="5" gid="235" x="480" y="960" width="48" height="48">
    <properties>
-    <property name="I" value="[Chest WoodenChest [KeyItem PewterKey] a0e6030b-897b-483c-9e70-ff360f03e4e8 None Nil [[KylaAdvent 5]]]"/>
+    <property name="I" value="[Chest WoodenChest [KeyItem PewterKey] a0e6030b-897b-483c-9e70-ff360f03e4e8 None Fin [[KylaAdvent 5]]]"/>
    </properties>
   </object>
  </objectgroup>

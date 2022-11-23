@@ -42,7 +42,7 @@
   </object>
   <object id="4" gid="235" x="528" y="1152" width="48" height="48">
    <properties>
-    <property name="I" value="[Chest WoodenChest [KeyItem IronKey] 12fc8134-30c9-4105-b22b-34ee2cb501f6 None Nil [[KylaAdvent 2]]]"/>
+    <property name="I" value="[Chest WoodenChest [KeyItem IronKey] 12fc8134-30c9-4105-b22b-34ee2cb501f6 None Fin [[KylaAdvent 2]]]"/>
    </properties>
   </object>
   <object id="5" gid="235" x="816" y="1104" width="144" height="144">
