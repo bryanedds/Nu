@@ -72,8 +72,8 @@
     <Compile Include="Core\Assets.fs" />
     <Compile Include="Core\Constants.fs" />
     <Compile Include="Core\Simulants.fs" />
-    <Compile Include="Core\RandMap.fs" />
     <Compile Include="Core\Inventory.fs" />
+    <Compile Include="Core\RandMap.fs" />
     <Compile Include="Core\Data.fs" />
     <Compile Include="Core\Algorithms.fs" />
     <Compile Include="Core\Events.fs" />
@@ -90,8 +90,6 @@
     <Compile Include="SpiritOrb\Portal.fs" />
     <Compile Include="SpiritOrb\Spirit.fs" />
     <Compile Include="SpiritOrb\SpiritOrb.fs" />
-    <Compile Include="SpiritOrb\SpiritOrbDispatcher.fs" />
-    <Compile Include="Prop\PropState.fs" />
     <Compile Include="Prop\Prop.fs" />
     <Compile Include="Prop\PropDispatcher.fs" />
     <Compile Include="Avatar\Avatar.fs" />
