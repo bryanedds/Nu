@@ -19,4 +19,4 @@ module Program =
         Nu.init worldConfig.NuConfig
 
         // run the engine with the given config and plugin
-        World.run worldConfig (MyPlugin ())
+        World.run worldConfig (MyGamePlugin ())

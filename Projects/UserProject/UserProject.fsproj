@@ -71,7 +71,7 @@
     <Compile Include="Simulants.fs" />
     <Compile Include="Gameplay.fs" />
     <Compile Include="MyGame.fs" />
-    <Compile Include="MyPlugin.fs" />
+    <Compile Include="MyGamePlugin.fs" />
     <Compile Include="Program.fs" />
     <None Include="App.config" />
     <Content Include="AssetGraph.nuag">
