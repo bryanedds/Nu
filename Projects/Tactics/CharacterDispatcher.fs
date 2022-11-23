@@ -18,7 +18,7 @@ module CharacterDispatcher =
         static let getSpriteInset (character : Character) world =
             Character.getAnimationInset (World.getUpdateTime world) character
 
-        override this.Initializers (_, _) =
+        override this.Initialize (_, _) =
             [Entity.Presence == Omnipresent]
 
         override this.View (character, entity, world) =

@@ -1,15 +1,13 @@
 ﻿namespace Tactics
 open System
-open System.Collections.Generic
-open System.Numerics
 open Prime
-open TiledSharp
 open Nu
 open Nu.Declarative
 
 type AtlasState =
     | Playing
     | Quitting
+    | Quit
 
 [<RequireQualifiedAccess>]
 module Atlas =
@@ -38,17 +36,13 @@ module Atlas =
         None
 
     let empty =
-        { AtlasState_ = Quitting; SaveSlot_ = Slot1; FieldOpt_ = None }
+        { AtlasState_ = Quit; SaveSlot_ = Slot1; FieldOpt_ = None }
 
     let initial saveSlot =
         { AtlasState_ = Playing; SaveSlot_ = saveSlot; FieldOpt_ = None }
 
     let debug (world : World) =
-        let occupants =
-            [(v2i 10 10, ChestIndex 0, Chest ())
-             (v2i 12 10, ChestIndex 1, Chest ())
-             (v2i 10 12, ChestIndex 2, Chest ())
-             (v2i 12 12, ChestIndex 3, Chest ())]
-        { AtlasState_ = Playing; SaveSlot_ = Slot1; FieldOpt_ = Some (Field.make world.UpdateTime FieldScript.empty occupants (asset "Field" "Field")) }
+        let field = Field.debug world
+        { AtlasState_ = Playing; SaveSlot_ = Slot1; FieldOpt_ = Some field }
 
 type Atlas = Atlas.Atlas

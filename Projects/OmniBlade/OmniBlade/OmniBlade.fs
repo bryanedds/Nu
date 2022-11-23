@@ -23,7 +23,7 @@ module OmniBlade =
         | Gui of Gui
         | Field of Field
 
-    type [<NoComparison>] Message =
+    type Message =
         | ShowTitle
         | ShowCredits
         | ShowPick
@@ -120,10 +120,10 @@ module OmniBlade =
                         match field.BattleOpt with
                         | None ->
                             let field' = Simulants.Field.Screen.GetField world
-                            if field <> field' then Field field' else model
+                            if field =/= field' then Field field' else model
                         | Some battle ->
                             let battle' = Simulants.Battle.Screen.GetBattle world
-                            if battle <> battle' then Field (Field.updateBattleOpt (constant (Some battle')) field) else model
+                            if battle =/= battle' then Field (Field.updateBattleOpt (constant (Some battle')) field) else model
 
                 // update model
                 let model =

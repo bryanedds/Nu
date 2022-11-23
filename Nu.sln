@@ -1,6 +1,6 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.32510.428
+# Visual Studio Version 17
+VisualStudioVersion = 17.2.32616.157
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Nu", "Nu\Nu\Nu.fsproj", "{A7A6F758-E122-4C2C-9525-1F29802D007C}"
 EndProject
@@ -41,6 +41,8 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Nu", "Nu", "{56988FA5-8358-442A-B027-A9767FF41FA8}"
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "UserProject", "Projects\UserProject\UserProject.fsproj", "{8533224E-E08B-4EA2-89DF-9D6D72C1374E}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Tactics", "Projects\Tactics\Tactics.fsproj", "{3892B965-B3A4-4F67-A085-E23B123A0CDA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -96,6 +98,10 @@ Global
 		{8533224E-E08B-4EA2-89DF-9D6D72C1374E}.Debug|x64.Build.0 = Debug|x64
 		{8533224E-E08B-4EA2-89DF-9D6D72C1374E}.Release|x64.ActiveCfg = Release|x64
 		{8533224E-E08B-4EA2-89DF-9D6D72C1374E}.Release|x64.Build.0 = Release|x64
+		{3892B965-B3A4-4F67-A085-E23B123A0CDA}.Debug|x64.ActiveCfg = Debug|x64
+		{3892B965-B3A4-4F67-A085-E23B123A0CDA}.Debug|x64.Build.0 = Debug|x64
+		{3892B965-B3A4-4F67-A085-E23B123A0CDA}.Release|x64.ActiveCfg = Release|x64
+		{3892B965-B3A4-4F67-A085-E23B123A0CDA}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -113,6 +119,7 @@ Global
 		{A1751207-AFF8-4CBB-9B7D-94B40E5B60B9} = {E3C4D6E1-0572-4D80-84A9-8001C21372D3}
 		{EDB2D29D-E63B-4C58-8DD1-C7FC356F726E} = {E3C4D6E1-0572-4D80-84A9-8001C21372D3}
 		{8533224E-E08B-4EA2-89DF-9D6D72C1374E} = {E3C4D6E1-0572-4D80-84A9-8001C21372D3}
+		{3892B965-B3A4-4F67-A085-E23B123A0CDA} = {E3C4D6E1-0572-4D80-84A9-8001C21372D3}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {ED68D660-D910-44E3-9438-9F91D738C947}
