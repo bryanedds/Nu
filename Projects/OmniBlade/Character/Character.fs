@@ -17,12 +17,12 @@ module Character =
               Perimeter_ : Box3
               CharacterIndex_ : CharacterIndex
               CharacterType_ : CharacterType
-              CharacterState_ : CharacterState
               CharacterAnimationState_ : CharacterAnimationState
+              CharacterInputState_ : CharacterInputState
+              CharacterState_ : CharacterState
               ChargeTechOpt_ : (int * int * TechType) option
               AutoBattleOpt_ : AutoBattle option
               ActionTime_ : single
-              InputState_ : CharacterInputState
               CelSize_ : Vector2 }
 
         (* Perimeter Original Properties *)
@@ -94,9 +94,9 @@ module Character =
         member this.Direction = this.CharacterAnimationState_.Direction
 
         (* Local Properties *)
+        member this.CharacterInputState = this.CharacterInputState_
         member this.ChargeTechOpt = this.ChargeTechOpt_
         member this.AutoBattleOpt = this.AutoBattleOpt_
-        member this.InputState = this.InputState_
 
     let isFriendly (character : Character) (character2 : Character) =
         CharacterIndex.isFriendly character.CharacterIndex character2.CharacterIndex
@@ -259,11 +259,11 @@ module Character =
     let getAnimationFinished time character =
         CharacterAnimationState.getFinished time character.CharacterAnimationState_
 
-    let getInputState character =
-        character.InputState_
+    let getCharacterInputState character =
+        character.CharacterInputState_
 
     let getActionTypeOpt character =
-        match character.InputState_ with
+        match character.CharacterInputState_ with
         | AimReticles (item, _) ->
             let actionType =
                 if typeof<ConsumableType> |> FSharpType.GetUnionCases |> Array.exists (fun case -> case.Name = item) then Consume (scvalue item)
@@ -275,8 +275,8 @@ module Character =
     let burndownStatuses burndownTime character =
         { character with CharacterState_ = CharacterState.burndownStatuses burndownTime character.CharacterState_ }
 
-    let updateActionTime updater character =
-        { character with ActionTime_ = updater character.ActionTime_ }
+    let updateCharacterInputState updater character =
+        { character with CharacterInputState_ = updater character.CharacterInputState_ }
 
     let updateStatuses updater character =
         let characterState = { character.CharacterState_ with Statuses = updater character.CharacterState_.Statuses }
@@ -307,14 +307,14 @@ module Character =
     let updateExpPoints updater character =
         { character with CharacterState_ = CharacterState.updateExpPoints updater character.CharacterState_ }
 
-    let updateInputState updater character =
-        { character with InputState_ = updater character.InputState_ }
-
     let updateChargeTechOpt updater character =
         { character with ChargeTechOpt_ = updater character.ChargeTechOpt_ }
 
     let updateAutoBattleOpt updater character =
         { character with AutoBattleOpt_ = updater character.AutoBattleOpt_ }
+
+    let updateActionTime updater character =
+        { character with ActionTime_ = updater character.ActionTime_ }
 
     let updatePerimeter updater (character : Character) =
         { character with Perimeter_ = updater character.Perimeter_ }
@@ -428,13 +428,13 @@ module Character =
           Perimeter_ = bounds
           CharacterIndex_ = characterIndex
           CharacterType_ = characterType
-          CharacterState_ = characterState
           CharacterAnimationState_ = animationState
+          CharacterInputState_ = NoInput
+          CharacterState_ = characterState
           ChargeTechOpt_ = chargeTechOpt
           AutoBattleOpt_ = None
           ActionTime_ = actionTime
-          CelSize_ = celSize
-          InputState_ = NoInput }
+          CelSize_ = celSize }
 
     let tryMakeEnemy allyCount index offsetCharacters waitSpeed enemyData =
         match Map.tryFind (Enemy enemyData.EnemyType) Data.Value.Characters with
@@ -471,12 +471,12 @@ module Character =
           Perimeter_ = bounds
           CharacterIndex_ = AllyIndex 0
           CharacterType_ = Ally Jinn
-          CharacterState_ = CharacterState.empty
           CharacterAnimationState_ = characterAnimationState
+          CharacterInputState_ = NoInput
+          CharacterState_ = CharacterState.empty
           ChargeTechOpt_ = None
           AutoBattleOpt_ = None
           ActionTime_ = 0.0f
-          InputState_ = NoInput
           CelSize_ = Constants.Gameplay.CharacterSize.V2 }
 
 type Character = Character.Character

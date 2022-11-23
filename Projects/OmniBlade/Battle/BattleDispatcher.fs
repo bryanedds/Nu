@@ -351,7 +351,7 @@ module BattleDispatcher =
             let (allySignalsRev, battle) =
                 Map.fold (fun (signals, battle) allyIndex (ally : Character) ->
                     if  ally.ActionTime >= Constants.Battle.ActionTime &&
-                        ally.InputState = NoInput then
+                        ally.CharacterInputState = NoInput then
                         let battle = Battle.updateCharacterInputState (constant RegularMenu) allyIndex battle
                         let playReadySound = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.ReadySound)
                         (Command playReadySound :: signals, battle)
@@ -385,7 +385,7 @@ module BattleDispatcher =
                         elif Map.containsKey (Time true) character.Statuses then actionTimeDelta * Constants.Battle.ActionTimeHasteScalar
                         else actionTimeDelta
                     let actionTimeDelta =
-                        let anyAlliesInputting = Battle.getAlliesHealthy battle |> Map.toValueList |> List.exists (fun ally -> ally.InputState <> CharacterInputState.NoInput)
+                        let anyAlliesInputting = Battle.getAlliesHealthy battle |> Map.toValueList |> List.exists (fun ally -> ally.CharacterInputState <> CharacterInputState.NoInput)
                         if anyAlliesInputting then
                             match battle.BattleSpeed with
                             | SwiftSpeed -> actionTimeDelta * Constants.Battle.SwiftSpeedScalar
@@ -1193,7 +1193,7 @@ module BattleDispatcher =
 
                         // input
                         Content.composite (CharacterIndex.toEntityName index + "+Input") []
-                            [match ally.InputState with
+                            [match ally.CharacterInputState with
                              | RegularMenu ->
                                 Content.entity<RingMenuDispatcher> "RegularMenu"
                                     [Entity.Position := ally.CenterOffset
@@ -1202,7 +1202,7 @@ module BattleDispatcher =
                                         (let allies = battle |> Battle.getAllies |> Map.toValueList
                                          let alliesPastRegularMenu =
                                             Seq.notExists (fun (ally : Character) ->
-                                                match ally.InputState with NoInput | RegularMenu -> false | _ -> true)
+                                                match ally.CharacterInputState with NoInput | RegularMenu -> false | _ -> true)
                                                 allies
                                          alliesPastRegularMenu)
                                      Entity.RingMenu == { Items = Map.ofList [("Attack", (0, true)); ("Tech", (1, true)); ("Consumable", (2, true)); ("Defend", (3, true))]; ItemCancelOpt = None }
@@ -1242,7 +1242,7 @@ module BattleDispatcher =
                                      Entity.Reticles :=
                                         (let aimType =
                                             match Battle.tryGetCharacter index battle with
-                                            | Some character -> character.InputState.AimType
+                                            | Some character -> character.CharacterInputState.AimType
                                             | None -> NoAim
                                          let characters = Battle.getTargets aimType battle
                                          let reticles =
