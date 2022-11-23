@@ -1,8 +1,9 @@
 ﻿namespace MyGame
-open System.Numerics
+open System
 open Prime
 open Nu
 open Nu.Declarative
+open MyGame
 
 [<AutoOpen>]
 module Gameplay =

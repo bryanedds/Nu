@@ -1,7 +1,9 @@
 ﻿namespace MyGame
+open System
 open Prime
 open Nu
 open Nu.Declarative
+open MyGame
 
 [<AutoOpen>]
 module MyGame =

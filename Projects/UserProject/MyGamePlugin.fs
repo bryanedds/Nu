@@ -1,6 +1,8 @@
 ﻿namespace MyGame
 open System
+open Prime
 open Nu
+open MyGame
 
 // this is a plugin for the Nu game engine that directs the execution of your application and editor
 type MyGamePlugin () =

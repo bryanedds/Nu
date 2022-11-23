@@ -5,6 +5,7 @@ namespace OmniBlade
 open System
 open Prime
 open Nu
+open OmniBlade
 
 type [<NoComparison>] CharacterInputState =
     | NoInput

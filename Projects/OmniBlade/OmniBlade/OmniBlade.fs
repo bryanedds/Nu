@@ -2,6 +2,7 @@
 // Copyright (C) Bryan Edds, 2013-2020.
 
 namespace OmniBlade
+open System
 open System.IO
 open Prime
 open Nu

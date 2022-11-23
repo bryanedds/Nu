@@ -6,6 +6,7 @@ open System
 open System.Numerics
 open Prime
 open Nu
+open OmniBlade
 
 type [<NoComparison>] PropState =
     | DoorState of bool
