@@ -26,23 +26,23 @@ module FieldCue =
         Cue * CueDefinitions * (Signal<FieldCueMessage, FieldCueCommand> list * Field) =
 
         match cue with
-        | Cue.Nil ->
+        | Cue.Fin ->
             (cue, definitions, just field)
 
         | Cue.PlaySound (volume, sound) ->
-            (Cue.Nil, definitions, withCmd (PlaySound (0L, volume, sound)) field)
+            (Cue.Fin, definitions, withCmd (PlaySound (0L, volume, sound)) field)
 
         | Cue.PlaySong (fadeIn, fadeOut, volume, start, song) ->
-            (Cue.Nil, definitions, withCmd (PlaySong (fadeIn, fadeOut, volume, start, song)) field)
+            (Cue.Fin, definitions, withCmd (PlaySong (fadeIn, fadeOut, volume, start, song)) field)
 
         | Cue.FadeOutSong fade ->
-            (Cue.Nil, definitions, withCmd (FadeOutSong fade) field)
+            (Cue.Fin, definitions, withCmd (FadeOutSong fade) field)
 
         | Cue.Face (target, direction) ->
             match target with
             | AvatarTarget ->
                 let field = Field.updateAvatar (Avatar.updateDirection (constant direction)) field
-                (Cue.Nil, definitions, just field)
+                (Cue.Fin, definitions, just field)
             | CharacterTarget characterType ->
                 let propIdOpt =
                     Field.tryGetPropIdByData
@@ -61,15 +61,15 @@ module FieldCue =
                              | propState -> propState)
                             propId
                             field
-                    (Cue.Nil, definitions, just field)
+                    (Cue.Fin, definitions, just field)
                 | None ->
-                    (Cue.Nil, definitions, just field)
+                    (Cue.Fin, definitions, just field)
             | NpcTarget _ | ShopkeepTarget _ | CharacterIndexTarget _ | SpriteTarget _ ->
-                (Cue.Nil, definitions, just field)
+                (Cue.Fin, definitions, just field)
 
         | Cue.ClearSpirits ->
             let field = Field.clearSpirits field
-            (Cue.Nil, definitions, just field)
+            (Cue.Fin, definitions, just field)
 
         | Recruit allyType ->
             let fee = Field.getRecruitmentFee field
@@ -84,23 +84,23 @@ module FieldCue =
                 let field = Field.recruit allyType field
                 let field = Field.updateAdvents (Set.add advent) field
                 let field = Field.updateInventory (Inventory.updateGold (fun gold -> gold - fee)) field
-                (Cue.Nil, definitions, withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.PurchaseSound)) field)
+                (Cue.Fin, definitions, withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.PurchaseSound)) field)
             else advance (Parallel [Dialog ("You don't have enough...", false); Cue.PlaySound (Constants.Audio.SoundVolumeDefault, Assets.Gui.MistakeSound)]) definitions field
 
         | AddItem itemType ->
-            (Cue.Nil, definitions, just (Field.updateInventory (Inventory.tryAddItem itemType >> snd) field))
+            (Cue.Fin, definitions, just (Field.updateInventory (Inventory.tryAddItem itemType >> snd) field))
 
         | RemoveItem itemType ->
-            (Cue.Nil, definitions, just (Field.updateInventory (Inventory.tryRemoveItem itemType >> snd) field))
+            (Cue.Fin, definitions, just (Field.updateInventory (Inventory.tryRemoveItem itemType >> snd) field))
 
         | AddAdvent advent ->
-            (Cue.Nil, definitions, just (Field.updateAdvents (Set.add advent) field))
+            (Cue.Fin, definitions, just (Field.updateAdvents (Set.add advent) field))
 
         | RemoveAdvent advent ->
-            (Cue.Nil, definitions, just (Field.updateAdvents (Set.remove advent) field))
+            (Cue.Fin, definitions, just (Field.updateAdvents (Set.remove advent) field))
 
         | ReplaceAdvent (remove, add) ->
-            (Cue.Nil, definitions, just (Field.updateAdvents (Set.remove remove >> Set.add add) field))
+            (Cue.Fin, definitions, just (Field.updateAdvents (Set.remove remove >> Set.add add) field))
 
         | Wait time ->
             (WaitState (field.UpdateTime + time), definitions, just field)
@@ -108,7 +108,7 @@ module FieldCue =
         | WaitState time ->
             if field.UpdateTime < time
             then (cue, definitions, just field)
-            else (Cue.Nil, definitions, just field)
+            else (Cue.Fin, definitions, just field)
 
         | Fade (target, length, fadeIn) ->
             (FadeState (field.UpdateTime, target, length, fadeIn), definitions, just field)
@@ -155,7 +155,7 @@ module FieldCue =
                 | _ -> field
             if  fadeIn && progress >= 1.0f ||
                 not fadeIn && progress <= 0.0f then
-                (Cue.Nil, definitions, just field)
+                (Cue.Fin, definitions, just field)
             else (cue, definitions, just field)
 
         | Animate (target, characterAnimationType, wait) ->
@@ -163,7 +163,7 @@ module FieldCue =
             | AvatarTarget ->
                 let field = Field.updateAvatar (Avatar.animate field.UpdateTime characterAnimationType) field
                 match wait with
-                | Timed 0L | NoWait -> (Cue.Nil, definitions, just field)
+                | Timed 0L | NoWait -> (Cue.Fin, definitions, just field)
                 | CueWait.Wait | Timed _ -> (AnimateState (field.UpdateTime, wait), definitions, just field)
             | CharacterTarget characterType ->
                 let propIdOpt =
@@ -183,26 +183,26 @@ module FieldCue =
                              | propState -> propState)
                             propId
                             field
-                    (Cue.Nil, definitions, just field)
+                    (Cue.Fin, definitions, just field)
                 | None ->
-                    (Cue.Nil, definitions, just field)
+                    (Cue.Fin, definitions, just field)
             | NpcTarget _ | ShopkeepTarget _ | CharacterIndexTarget _ | SpriteTarget _ ->
-                (Cue.Nil, definitions, just field)
+                (Cue.Fin, definitions, just field)
 
         | AnimateState (startTime, wait) ->
             let time = field.UpdateTime
             match wait with
             | CueWait.Wait ->
                 if Avatar.getAnimationFinished time field.Avatar
-                then (Cue.Nil, definitions, just field)
+                then (Cue.Fin, definitions, just field)
                 else (cue, definitions, just field)
             | Timed waitTime ->
                 let localTime = time - startTime
                 if localTime < waitTime
                 then (cue, definitions, just field)
-                else (Cue.Nil, definitions, just field)
+                else (Cue.Fin, definitions, just field)
             | NoWait ->
-                (Cue.Nil, definitions, just field)
+                (Cue.Fin, definitions, just field)
 
         | Move (target, destination, moveType) ->
             match target with
@@ -221,9 +221,9 @@ module FieldCue =
                     let prop = field.Props.[propId]
                     let cue = MoveState (field.UpdateTime, target, prop.Perimeter.Bottom, destination, moveType)
                     (cue, definitions, just field)
-                | None -> (Cue.Nil, definitions, just field)
+                | None -> (Cue.Fin, definitions, just field)
             | NpcTarget _ | ShopkeepTarget _ | CharacterIndexTarget _ | SpriteTarget _ ->
-                (Cue.Nil, definitions, just field)
+                (Cue.Fin, definitions, just field)
 
         | MoveState (startTime, target, origin, translation, moveType) ->
             match target with
@@ -237,7 +237,7 @@ module FieldCue =
                     (cue, definitions, just field)
                 else
                     let field = Field.updateAvatar (Avatar.updateBottom (constant (origin + translation))) field
-                    (Cue.Nil, definitions, just field)
+                    (Cue.Fin, definitions, just field)
             | CharacterTarget characterType ->
                 let propIdOpt =
                     Field.tryGetPropIdByData
@@ -259,10 +259,10 @@ module FieldCue =
                     else
                         let bounds = prop.Perimeter.WithBottom (origin + translation)
                         let field = Field.updateProp (Prop.updatePerimeter (constant bounds)) propId field
-                        (Cue.Nil, definitions, just field)
-                | None -> (Cue.Nil, definitions, just field)
+                        (Cue.Fin, definitions, just field)
+                | None -> (Cue.Fin, definitions, just field)
             | NpcTarget _ | ShopkeepTarget _ | CharacterIndexTarget _ | SpriteTarget _ ->
-                (Cue.Nil, definitions, just field)
+                (Cue.Fin, definitions, just field)
 
         | Warp (fieldType, fieldDestination, fieldDirection) ->
             match field.FieldTransitionOpt with
@@ -280,7 +280,7 @@ module FieldCue =
         | WarpState ->
             match field.FieldTransitionOpt with
             | Some _ -> (cue, definitions, just field)
-            | None -> (Cue.Nil, definitions, just field)
+            | None -> (Cue.Fin, definitions, just field)
 
         | Battle (battleType, consequents) ->
             match field.BattleOpt with
@@ -290,7 +290,7 @@ module FieldCue =
         | BattleState ->
             match field.BattleOpt with
             | Some _ -> (cue, definitions, just field)
-            | None -> (Cue.Nil, definitions, just field)
+            | None -> (Cue.Fin, definitions, just field)
 
         | Dialog (text, isNarration) ->
             match field.DialogOpt with
@@ -304,7 +304,7 @@ module FieldCue =
 
         | DialogState ->
             match field.DialogOpt with
-            | None -> (Cue.Nil, definitions, just field)
+            | None -> (Cue.Fin, definitions, just field)
             | Some _ -> (cue, definitions, just field)
 
         | Prompt (text, leftPrompt, rightPrompt) ->
@@ -318,7 +318,7 @@ module FieldCue =
 
         | PromptState ->
             match field.DialogOpt with
-            | None -> (Cue.Nil, definitions, just field)
+            | None -> (Cue.Fin, definitions, just field)
             | Some _ -> (cue, definitions, just field)
 
         | If (p, c, a) ->
@@ -339,17 +339,17 @@ module FieldCue =
 
         | Define (name, body) ->
             if not (Map.containsKey name definitions) then
-                (Cue.Nil, Map.add name body definitions, just field)
+                (Cue.Fin, Map.add name body definitions, just field)
             else
                 Log.debug ("Cue definition '" + name + "' already found.")
-                (Cue.Nil, definitions, just field)
+                (Cue.Fin, definitions, just field)
 
         | Assign (name, body) ->
             if Map.containsKey name definitions then
-                (Cue.Nil, Map.add name body definitions, just field)
+                (Cue.Fin, Map.add name body definitions, just field)
             else
                 Log.debug ("Cue definition '" + name + "' not found.")
-                (Cue.Nil, definitions, just field)
+                (Cue.Fin, definitions, just field)
 
         | Expand name ->
             match Map.tryFind name definitions with
@@ -357,7 +357,7 @@ module FieldCue =
                 advance body definitions field
             | None ->
                 Log.debug ("Cue definition '" + name + "' not found.")
-                (Cue.Nil, definitions, ([], field))
+                (Cue.Fin, definitions, ([], field))
 
         | Parallel cues ->
             let (cues, definitions, (signals, field)) =
@@ -370,7 +370,7 @@ module FieldCue =
                     cues
             match cues with
             | _ :: _ -> (Parallel cues, definitions, (signals, field))
-            | [] -> (Cue.Nil, definitions, (signals, field))
+            | [] -> (Cue.Fin, definitions, (signals, field))
 
         | Sequence cues ->
             let (_, haltedCues, definitions, (signals, field)) =
@@ -386,4 +386,4 @@ module FieldCue =
                     cues
             match haltedCues with
             | _ :: _ -> (Sequence haltedCues, definitions, (signals, field))
-            | [] -> (Cue.Nil, definitions, (signals, field))
+            | [] -> (Cue.Fin, definitions, (signals, field))

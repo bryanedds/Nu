@@ -46,23 +46,23 @@
   </object>
   <object id="8" gid="443" x="3072" y="1584" width="144" height="144">
    <properties>
-    <property name="I" value="[Npc MaelNpc None [Prompt &quot;If it is my dark power you desire, I can make your acquaintence... at a price. $FEE gold.&quot; [&quot;Yes&quot; [Recruit Mael]] [&quot;No&quot; Nil]]]"/>
+    <property name="I" value="[Npc MaelNpc None [Prompt &quot;If it is my dark power you desire, I can make your acquaintence... at a price. $FEE gold.&quot; [&quot;Yes&quot; [Recruit Mael]] [&quot;No&quot; Fin]]]"/>
    </properties>
   </object>
   <object id="10" gid="443" x="2928" y="1104" width="144" height="144">
    <properties>
-    <property name="I" value="[Npc PericNpc None [Prompt &quot;I am here to provide aid, but I cannot protect you for free... Perhaps a donation of $FEE gold?&quot; [&quot;Yes&quot; [Recruit Peric]] [&quot;No&quot; Nil]]]"/>
+    <property name="I" value="[Npc PericNpc None [Prompt &quot;I am here to provide aid, but I cannot protect you for free... Perhaps a donation of $FEE gold?&quot; [&quot;Yes&quot; [Recruit Peric]] [&quot;No&quot; Fin]]]"/>
    </properties>
   </object>
   <object id="11" gid="443" x="2544" y="1440" width="144" height="144">
    <properties>
     <property name="I">[Npc RiainNpc None [Prompt &quot;Another world... I can touch...
-Travel together... $FEE gold...?&quot; [&quot;Yes&quot; [Recruit Riain]] [&quot;No&quot; Nil]]]</property>
+Travel together... $FEE gold...?&quot; [&quot;Yes&quot; [Recruit Riain]] [&quot;No&quot; Fin]]]</property>
    </properties>
   </object>
   <object id="12" gid="443" x="1056" y="624" width="144" height="144">
    <properties>
-    <property name="I" value="[Npc ShadeNpc None [Prompt &quot;We can combine our efforts... for $FEE gold...?&quot; [&quot;Yes&quot; [Recruit Shade]] [&quot;No&quot; Nil]]]"/>
+    <property name="I" value="[Npc ShadeNpc None [Prompt &quot;We can combine our efforts... for $FEE gold...?&quot; [&quot;Yes&quot; [Recruit Shade]] [&quot;No&quot; Fin]]]"/>
    </properties>
   </object>
   <object id="13" gid="443" x="3168" y="3408" width="144" height="144">

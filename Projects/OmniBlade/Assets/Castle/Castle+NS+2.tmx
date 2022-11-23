@@ -99,7 +99,7 @@
   </object>
   <object id="5" gid="235" x="576" y="480" width="48" height="48">
    <properties>
-    <property name="I" value="[Chest WoodenChest [KeyItem SteelKey] 80cb2e1b-f155-48d6-972a-d8430e8de642 None Nil [[KylaAdvent 6]]]"/>
+    <property name="I" value="[Chest WoodenChest [KeyItem SteelKey] 80cb2e1b-f155-48d6-972a-d8430e8de642 None Fin [[KylaAdvent 6]]]"/>
    </properties>
   </object>
  </objectgroup>

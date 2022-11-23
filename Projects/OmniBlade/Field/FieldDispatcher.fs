@@ -169,7 +169,7 @@ module FieldDispatcher =
                 let (cue, definitions, (cueSignals, field)) = FieldCue.advance field.Cue field.Definitions field
                 let field =
                     match cue with
-                    | Cue.Nil -> Field.updateDefinitions (constant field.DefinitionsOriginal) field
+                    | Cue.Fin -> Field.updateDefinitions (constant field.DefinitionsOriginal) field
                     | _ -> Field.updateDefinitions (constant definitions) field
                 let field = Field.updateCue (constant cue) field
                 let signals =

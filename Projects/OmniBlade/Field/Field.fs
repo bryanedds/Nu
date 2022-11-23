@@ -525,7 +525,7 @@ module Field =
           Menu_ = { MenuState = MenuClosed; MenuUseOpt = None }
           Definitions_ = definitions
           DefinitionsOriginal_ = definitions
-          Cue_ = Cue.Nil
+          Cue_ = Cue.Fin
           ShopOpt_ = None
           FieldTransitionOpt_ = None
           DialogOpt_ = None
@@ -550,7 +550,7 @@ module Field =
           Menu_ = { MenuState = MenuClosed; MenuUseOpt = None }
           Definitions_ = Map.empty
           DefinitionsOriginal_ = Map.empty
-          Cue_ = Cue.Nil
+          Cue_ = Cue.Fin
           ShopOpt_ = None
           FieldTransitionOpt_ = None
           DialogOpt_ = None
