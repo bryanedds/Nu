@@ -42,9 +42,9 @@ module WorldRender =
         /// Load an 2d render asset package. Should be used to avoid loading assets at inconvenient times (such as in the
         /// middle of game play!)
         [<FunctionBinding>]
-        static member hintRenderPackageUse2d packageName world =
-            let hintRenderPackageUseMessage = LoadRenderPackageMessage2d packageName
-            World.enqueueRenderMessage2d hintRenderPackageUseMessage world
+        static member loadRenderPackageUse2d packageName world =
+            let loadRenderPackageUseMessage = LoadRenderPackageMessage2d packageName
+            World.enqueueRenderMessage2d loadRenderPackageUseMessage world
             
         /// Unload a 2d render package should be unloaded since its assets will not be used again soon.
         [<FunctionBinding>]
