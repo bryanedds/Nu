@@ -68,8 +68,8 @@
     <DisableFastUpToDateCheck>true</DisableFastUpToDateCheck>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="MySimulants.fs" />
-    <Compile Include="MyGameplay.fs" />
+    <Compile Include="Simulants.fs" />
+    <Compile Include="Gameplay.fs" />
     <Compile Include="MyGame.fs" />
     <Compile Include="MyPlugin.fs" />
     <Compile Include="Program.fs" />

@@ -3,24 +3,12 @@
 
 namespace OmniBlade
 open System
-open System.Numerics
 open Prime
 open Nu
 open OmniBlade
 
 [<AutoOpen>]
 module SpiritOrbDispatcher =
-
-    type [<NoComparison>] SpiritOrb =
-        { AvatarLowerCenter : Vector3
-          Chests : Chest array
-          Portals : Portal array
-          Spirits : Spirit array }
-
-    type [<NoComparison>] SpiritOrbInhabitant =
-        | ChestInhabitant of Chest
-        | PortalInhabitant of Portal
-        | SpiritInhabitant of Spirit
 
     type Entity with
         member this.GetSpiritOrb world = this.GetModelGeneric<SpiritOrb> world

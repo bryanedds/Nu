@@ -5,9 +5,9 @@ open Nu
 open Nu.Declarative
 
 [<AutoOpen>]
-module MyGameplay =
+module Gameplay =
 
-    // this is our Elm-style model type. Either we're playing or we're quitting back to the title screen.
+    // this is our Elm-style model type representing gameplay.
     type Gameplay =
         | Playing
         | Quitting
@@ -32,7 +32,7 @@ module MyGameplay =
         member this.Gameplay = this.ModelGeneric<Gameplay> ()
 
     // this is the screen dispatcher that defines the screen where gameplay takes place
-    type MyGameplayDispatcher () =
+    type GameplayDispatcher () =
         inherit ScreenDispatcher<Gameplay, GameplayMessage, GameplayCommand> (Quit)
 
         // here we define the screen's properties and event handling
