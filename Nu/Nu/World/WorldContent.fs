@@ -203,7 +203,7 @@ module Content =
 
     ///
     let rec synchronizeEntity initializing (contentOld : EntityContent) (content : EntityContent) (origin : Simulant) (entity : Entity) world =
-        if contentOld <> content then
+        if contentOld =/= content then
             let mutable mountOptFound = false
             let world = synchronizeEventSignals contentOld content origin entity world
             let world = synchronizeEventHandlers contentOld content origin entity world
@@ -237,7 +237,7 @@ module Content =
 
     ///
     let synchronizeGroup initializing (contentOld : GroupContent) (content : GroupContent) (origin : Simulant) (group : Group) world =
-        if contentOld <> content then
+        if contentOld =/= content then
             let world = synchronizeEventSignals contentOld content origin group world
             let world = synchronizeEventHandlers contentOld content origin group world
             let world = synchronizeProperties initializing contentOld content group world
@@ -264,12 +264,12 @@ module Content =
 
     ///
     let synchronizeScreen initializing (contentOld : ScreenContent) (content : ScreenContent) (origin : Simulant) (screen : Screen) world =
-        if contentOld <> content then
+        if contentOld =/= content then
             let world = synchronizeEventSignals contentOld content origin screen world
             let world = synchronizeEventHandlers contentOld content origin screen world
             let world = synchronizeProperties initializing contentOld content screen world
             let world =
-                if contentOld.GroupFilePathOpt <> content.GroupFilePathOpt then
+                if contentOld.GroupFilePathOpt =/= content.GroupFilePathOpt then
                     let world =
                         match contentOld.GroupFilePathOpt with
                         | Some groupFilePath ->
@@ -313,7 +313,7 @@ module Content =
 
     ///
     let synchronizeGame setScreenSplash initializing (contentOld : GameContent) (content : GameContent) (origin : Simulant) world =
-        if contentOld <> content then
+        if contentOld =/= content then
             let game = Simulants.Game
             let world = synchronizeEventSignals contentOld content origin game world
             let world = synchronizeEventHandlers contentOld content origin game world
