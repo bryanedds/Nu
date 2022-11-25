@@ -4,14 +4,13 @@
 namespace Nu
 open System
 open System.Numerics
-open Nito.Collections
 open TiledSharp
 open Prime
 open Nu
 
 module Declarative =
 
-    let Game = Game ()
+    let Game = Unchecked.defaultof<Game>
     let Screen = Unchecked.defaultof<Screen>
     let Group = Unchecked.defaultof<Group>
     let Entity = Unchecked.defaultof<Entity>

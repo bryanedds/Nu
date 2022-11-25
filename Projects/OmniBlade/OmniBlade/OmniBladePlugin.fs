@@ -5,7 +5,6 @@ namespace OmniBlade
 open System
 open Prime
 open Nu
-open Nu.Declarative
 open OmniBlade
 
 type OmniBladePlugin () =
@@ -13,8 +12,8 @@ type OmniBladePlugin () =
 
     override this.EditModes =
         Map.ofSeq
-            [("Title", fun world -> Game.SetModel (Gui Title) world)
-             ("Credits", fun world -> Game.SetModel (Gui Credits) world)
-             ("Pick", fun world -> Game.SetModel (Gui Pick) world)
-             ("Field", fun world -> Game.SetModel (Field (Field.debug world)) world)
-             ("Battle", fun world -> Game.SetModel (Field (Field.debugBattle world)) world)]
+            [("Title", fun world -> Simulants.Game.SetModel (Gui Title) world)
+             ("Credits", fun world -> Simulants.Game.SetModel (Gui Credits) world)
+             ("Pick", fun world -> Simulants.Game.SetModel (Gui Pick) world)
+             ("Field", fun world -> Simulants.Game.SetModel (Field (Field.debug world)) world)
+             ("Battle", fun world -> Simulants.Game.SetModel (Field (Field.debugBattle world)) world)]
