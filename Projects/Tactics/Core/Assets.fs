@@ -2,6 +2,8 @@
 // Copyright (C) Bryan Edds, 2013-2020.
 
 namespace Tactics
+open System
+open Prime
 open Nu
 
 [<RequireQualifiedAccess>]

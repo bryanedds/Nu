@@ -6,6 +6,7 @@ open System.IO
 open Prime
 open Nu
 open Nu.Declarative
+open Tactics
 
 [<AutoOpen>]
 module TacticsGame =
@@ -73,8 +74,8 @@ module TacticsGame =
                  match atlas.FieldOpt with
                  | None -> Simulants.Atlas.Screen.Atlas := atlas
                  | Some field -> Simulants.Field.Screen.Field := field
-             Simulants.Game.UpdateEvent => msg UpdateMessage
-             Simulants.Game.UpdateEvent => cmd UpdateCommand
+             Game.UpdateEvent => msg UpdateMessage
+             Game.UpdateEvent => cmd UpdateCommand
              Simulants.Splash.Screen.DeselectingEvent => msg ShowTitle
              Simulants.Title.Gui.Play.ClickEvent => msg ShowPick
              Simulants.Title.Gui.Credits.ClickEvent => msg ShowCredits

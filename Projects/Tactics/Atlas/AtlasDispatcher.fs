@@ -1,9 +1,8 @@
 ﻿namespace Tactics
 open System
-open System.Numerics
 open Prime
 open Nu
-open Nu.Declarative
+open Tactics
 
 [<AutoOpen>]
 module AtlasDispatcher =

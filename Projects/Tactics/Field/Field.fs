@@ -5,6 +5,7 @@ open System.Numerics
 open Prime
 open TiledSharp
 open Nu
+open Tactics
 
 type [<NoComparison>] Occupant =
     | Character of Character

@@ -2,7 +2,7 @@
 open System
 open Prime
 open Nu
-open Nu.Declarative
+open Tactics
 
 type AtlasState =
     | Playing
