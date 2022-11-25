@@ -925,6 +925,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             OpenGL.Hl.Assert ()
 
             // categorize messages
+            // TODO: consider implementing some exception safety for the stateful operations in this function.
             let userDefinedStaticModelsToDestroy = SegmentedList.make ()
             let postPasses = hashSetPlus<RenderPassMessage3d> HashIdentity.Structural []
             for message in renderMessages do
