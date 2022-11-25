@@ -26,7 +26,7 @@ module BlazeVector =
     type Command =
         | Exit
 
-    // this extends the Game API to expose the above model as well as the model bimapped to Gameplay,
+    // this extends the Game API to expose the above model.
     type Game with
         member this.GetModel world = this.GetModelGeneric<Model> world
         member this.SetModel value world = this.SetModelGeneric<Model> value world
