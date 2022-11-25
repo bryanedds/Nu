@@ -11,7 +11,7 @@ open Nu
 
 module Declarative =
 
-    let Game = Unchecked.defaultof<Game>
+    let Game = Game ()
     let Screen = Unchecked.defaultof<Screen>
     let Group = Unchecked.defaultof<Group>
     let Entity = Unchecked.defaultof<Entity>

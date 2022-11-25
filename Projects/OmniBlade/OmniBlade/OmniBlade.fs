@@ -75,8 +75,8 @@ module OmniBlade =
                  match field.BattleOpt with
                  | None -> Simulants.Field.Screen.Field := field
                  | Some battle -> Simulants.Battle.Screen.Battle := battle
-             Simulants.Game.UpdateEvent => msg UpdateMessage
-             Simulants.Game.UpdateEvent => cmd UpdateCommand
+             Game.UpdateEvent => msg UpdateMessage
+             Game.UpdateEvent => cmd UpdateCommand
              Simulants.Splash.Screen.DeselectingEvent => msg ShowTitle
              Simulants.Title.Gui.Play.ClickEvent => msg ShowPick
              Simulants.Title.Gui.Credits.ClickEvent => msg ShowCredits

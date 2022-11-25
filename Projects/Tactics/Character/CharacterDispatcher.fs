@@ -3,6 +3,7 @@ open System
 open Prime
 open Nu
 open Nu.Declarative
+open Tactics
 
 [<AutoOpen>]
 module CharacterDispatcher =
