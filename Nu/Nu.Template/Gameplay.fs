@@ -41,8 +41,7 @@ module Gameplay =
             [Screen.UpdateEvent => cmd Update
              Screen.PostUpdateEvent => cmd PostUpdateEye
              Screen.DeselectingEvent => msg FinishQuitting
-             Game.KeyboardKeyDownEvent =|> fun evt -> if evt.Data.KeyboardKey = KeyboardKey.Up && not evt.Data.Repeated then cmd Jump else cmd Nop
-             Simulants.Gameplay.Gui.Quit.ClickEvent => msg StartQutting]
+             Game.KeyboardKeyDownEvent =|> fun evt -> if evt.Data.KeyboardKey = KeyboardKey.Up && not evt.Data.Repeated then cmd Jump else cmd Nop]
 
         // here we handle the above messages
         override this.Message (_, message, _, _) =
@@ -90,7 +89,7 @@ module Gameplay =
                      [Entity.Text == "Quit"
                       Entity.Position == v3 260.0f -260.0f 0.0f
                       Entity.Elevation == 10.0f
-                      Entity.ClickEvent => msg Quit]]
+                      Entity.ClickEvent => msg StartQutting]]
 
              // the player and scene groups while playing
              match gameplay with

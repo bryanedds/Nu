@@ -18,7 +18,7 @@ void main()
 const float PI = 3.141592654;
 const float REFLECTION_LOD_MAX = 5.0;
 const float GAMMA = 2.2;
-const int LIGHTS_MAX = 32;
+const int LIGHTS_MAX = 8;
 
 uniform vec3 eyePosition;
 uniform sampler2D positionTexture;
