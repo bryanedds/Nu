@@ -11,7 +11,7 @@ What is the **Nu Game Engine**?
 This repository hosts several projects, including -
 
 - the sample game **BlazeVector**.
-- the Chrono Trigger-like game, **OmniBlade** available free for Windows (https://github.com/bryanedds/Nu/releases/download/v9.4.0/OmniBlade.Windows.zip) and Linux (https://github.com/bryanedds/Nu/releases/download/v9.4.0/OmniBlade.Linux.zip)
+- the Chrono Trigger-like game, **OmniBlade** available free for Windows (https://github.com/bryanedds/Nu/releases/download/v9.13.0/OmniBlade.Windows.zip) and Linux (https://github.com/bryanedds/Nu/releases/download/v9.13.0/OmniBlade.Linux.zip)
 
 Here is some media on the Nu Game Engine -
 
