@@ -51,7 +51,32 @@ module FieldDispatcher =
 
         override this.Initialize (_, _) =
             [Screen.UpdateEvent => msg UpdateMessage
-             Screen.UpdateEvent => cmd UpdateCommand]
+             Screen.UpdateEvent => cmd UpdateCommand]    // NOTE: performance goal: 60fps, current: 37fps.
+
+#if false
+        override this.Register (game, world) =
+            let world = base.Register (game, world)
+#if DEBUG
+            let population = 30
+#else
+            let population = 60
+#endif
+            let spread = 15.0f
+            let offset = v3Dup spread * single population * 0.5f
+            let positions = Collections.Generic.List ()
+            for i in 0 .. population do
+                for j in 0 .. population do
+                    for k in 0 .. population do
+                        let random = v3 (Gen.randomf1 spread) (Gen.randomf1 spread) (Gen.randomf1 spread) - v3Dup (spread * 0.5f)
+                        let position = v3 (single i) (single j) (single k) * spread + random - offset
+                        positions.Add position
+            let world =
+                Seq.fold (fun world position ->
+                    let (staticModel, world) = World.createEntity<StaticModelDispatcher> None NoOverlay Simulants.Field.Scene.Group world
+                    staticModel.SetPosition position world)
+                    world positions
+            world
+#endif
 
         override this.Message (field, message, _, world) =
             match message with
@@ -100,8 +125,8 @@ module FieldDispatcher =
 
         override this.Content (field, _) =
             [Content.group Simulants.Field.Scene.Group.Name []
-                [Content.skyBox Gen.name
-                    [Entity.CubeMap == Assets.Default.SkyBoxMap]
+                [Content.fps "Fps" [Entity.Position == v3 200.0f -250.0f 0.0f]
+                 Content.skyBox "SkyBox" []
                  for (index, (vertices, _)) in (Field.getOccupants field).Pairs do
                     Content.entity<CharacterDispatcher> ("Occupant+" + string index)
                         [Entity.Position := vertices.Center]]]
