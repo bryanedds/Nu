@@ -77,6 +77,11 @@ battle archetypes -
 leader style
 double leader no / small mob
 leaderless mob
+enemies can't be hit until torch in room lit with fire
+enemy can douse torch with ice
+hitting a room object changes what you can do in battle (attack only -> tech only -> items only)
+enemy can also hit said object
+hitting a room object changes placement of character (conveyer belt / warp thing / whatever)
 
 character enablers
 
