@@ -312,7 +312,7 @@ module Content =
         else world
 
     ///
-    let synchronizeGame setScreenSplash initializing (contentOld : GameContent) (content : GameContent) (origin : Simulant) world =
+    let synchronizeGame setScreenSlide initializing (contentOld : GameContent) (content : GameContent) (origin : Simulant) world =
         if contentOld =/= content then
             let game = Simulants.Game
             let world = synchronizeEventSignals contentOld content origin game world
@@ -331,7 +331,7 @@ module Content =
                 let world =
                     Seq.fold (fun world (screen : Screen, screenContent : ScreenContent) ->
                         let (screen, world) = World.createScreen3 screenContent.ScreenDispatcherName (Some screen.Name) world
-                        let world = World.applyScreenBehavior setScreenSplash screenContent.ScreenBehavior screen world
+                        let world = World.applyScreenBehavior setScreenSlide screenContent.ScreenBehavior screen world
                         synchronizeScreen true ScreenContent.empty screenContent origin screen world)
                         world screensAdded
                 (content.InitialScreenNameOpt |> Option.map Screen, world)

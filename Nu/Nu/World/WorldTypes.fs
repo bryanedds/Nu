@@ -43,8 +43,8 @@ module WorldTypes =
         | DesireNone
         | DesireIgnore
 
-    /// The data required to execute screen splashing.
-    and [<NoComparison>] Splash =
+    /// The data required to execute slide screen presentation.
+    and [<NoComparison>] Slide =
         { IdlingTime : int64
           Destination : Screen }
 
@@ -52,7 +52,7 @@ module WorldTypes =
     and [<NoComparison>] ScreenBehavior =
         | Vanilla
         | Dissolve of DissolveDescriptor * SongDescriptor option
-        | Splash of DissolveDescriptor * SplashDescriptor * SongDescriptor option * Screen
+        | Slide of DissolveDescriptor * SlideDescriptor * SongDescriptor option * Screen
         | OmniScreen
 
     /// The data for a change in the world's ambient state.
@@ -564,7 +564,7 @@ module WorldTypes =
           TransitionUpdates : int64
           Incoming : Transition
           Outgoing : Transition
-          SplashOpt : Splash option
+          SlideOpt : Slide option
           Persistent : bool
           ScriptFrame : Scripting.DeclarationFrame
           Order : int64
@@ -583,7 +583,7 @@ module WorldTypes =
               TransitionUpdates = 0L // TODO: roll this field into Incoming/OutgoingState values
               Incoming = Transition.make Incoming
               Outgoing = Transition.make Outgoing
-              SplashOpt = None
+              SlideOpt = None
               Persistent = true
               ScriptFrame = Scripting.DeclarationFrame StringComparer.Ordinal
               Order = Core.getUniqueTimeStamp ()
@@ -1359,8 +1359,8 @@ type DesiredScreen = WorldTypes.DesiredScreen
 /// The data for a change in the world's ambient state.
 type AmbientChangeData = WorldTypes.AmbientChangeData
 
-/// The data required to execution screen splashing.
-type Splash = WorldTypes.Splash
+/// The data required to present a slide screen.
+type Slide = Slide
 
 /// Describes the behavior of a screen.
 type ScreenBehavior = WorldTypes.ScreenBehavior

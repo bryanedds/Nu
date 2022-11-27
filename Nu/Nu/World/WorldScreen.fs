@@ -31,9 +31,9 @@ module WorldScreenModule =
         member this.GetOutgoing world = World.getScreenOutgoing this world
         member this.SetOutgoing value world = World.setScreenOutgoing value this world |> snd'
         member this.Outgoing = lens (nameof this.Outgoing) this this.GetOutgoing this.SetOutgoing
-        member this.GetSplashOpt world = World.getScreenSplashOpt this world
-        member this.SetSplashOpt value world = World.setScreenSplashOpt value this world |> snd'
-        member this.SplashOpt = lens (nameof this.SplashOpt) this this.GetSplashOpt this.SetSplashOpt
+        member this.GetSlideOpt world = World.getScreenSlideOpt this world
+        member this.SetSlideOpt value world = World.setScreenSlideOpt value this world |> snd'
+        member this.SlideOpt = lens (nameof this.SlideOpt) this this.GetSlideOpt this.SetSlideOpt
         member this.GetPersistent world = World.getScreenPersistent this world
         member this.SetPersistent value world = World.setScreenPersistent value this world |> snd'
         member this.Persistent = lens (nameof this.Persistent) this this.GetPersistent this.SetPersistent
@@ -349,14 +349,14 @@ module WorldScreenModule =
             World.readScreen screenDescriptor nameOpt world
 
         /// Apply a screen behavior to a screen.
-        static member applyScreenBehavior setScreenSplash behavior (screen : Screen) world =
+        static member applyScreenBehavior setScreenSlide behavior (screen : Screen) world =
             match behavior with
             | Vanilla ->
                 world
             | Dissolve (dissolveDescriptor, songOpt) ->
                 World.setScreenDissolve dissolveDescriptor songOpt screen world
-            | Splash (dissolveDescriptor, splashDescriptor, songOpt, destination) ->
+            | Slide (dissolveDescriptor, slideDescriptor, songOpt, destination) ->
                 let world = World.setScreenDissolve dissolveDescriptor songOpt screen world
-                setScreenSplash splashDescriptor destination screen world
+                setScreenSlide slideDescriptor destination screen world
             | OmniScreen ->
                 World.setOmniScreen screen world

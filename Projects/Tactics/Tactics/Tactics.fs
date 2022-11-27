@@ -185,7 +185,7 @@ module TacticsGame =
         override this.Content (_, _) =
 
             [// splash
-             Content.screen Simulants.Splash.Screen.Name (WorldTypes.Splash (Constants.Gui.Dissolve, Constants.Gui.Splash, None, Simulants.Title.Screen)) [] []
+             Content.screen Simulants.Splash.Screen.Name (Slide (Constants.Gui.Dissolve, Constants.Gui.Splash, None, Simulants.Title.Screen)) [] []
 
              // title
              Content.screenWithGroupFromFile Simulants.Title.Screen.Name (Dissolve (Constants.Gui.Dissolve, Some Assets.Gui.TitleSong)) Assets.Gui.TitleGroupFilePath [] []
@@ -203,8 +203,8 @@ module TacticsGame =
              Content.screen<FieldDispatcher> Simulants.Field.Screen.Name (Dissolve (Constants.Gui.Dissolve, None)) [] []
 
              // intros
-             Content.screenWithGroupFromFile Simulants.Intro.Screen.Name (WorldTypes.Splash (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.Gui.IntroSong, Simulants.Intro2.Screen)) Assets.Gui.IntroGroupFilePath [] []
-             Content.screenWithGroupFromFile Simulants.Intro2.Screen.Name (WorldTypes.Splash (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.Gui.IntroSong, Simulants.Intro3.Screen)) Assets.Gui.Intro2GroupFilePath [] []
-             Content.screenWithGroupFromFile Simulants.Intro3.Screen.Name (WorldTypes.Splash (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.Gui.IntroSong, Simulants.Intro4.Screen)) Assets.Gui.Intro3GroupFilePath [] []
-             Content.screenWithGroupFromFile Simulants.Intro4.Screen.Name (WorldTypes.Splash (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.Gui.IntroSong, Simulants.Intro5.Screen)) Assets.Gui.Intro4GroupFilePath [] []
-             Content.screenWithGroupFromFile Simulants.Intro5.Screen.Name (WorldTypes.Splash (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.Gui.IntroSong, Simulants.Atlas.Screen)) Assets.Gui.Intro5GroupFilePath [] []]
+             Content.screenWithGroupFromFile Simulants.Intro.Screen.Name (Slide (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.Gui.IntroSong, Simulants.Intro2.Screen)) Assets.Gui.IntroGroupFilePath [] []
+             Content.screenWithGroupFromFile Simulants.Intro2.Screen.Name (Slide (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.Gui.IntroSong, Simulants.Intro3.Screen)) Assets.Gui.Intro2GroupFilePath [] []
+             Content.screenWithGroupFromFile Simulants.Intro3.Screen.Name (Slide (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.Gui.IntroSong, Simulants.Intro4.Screen)) Assets.Gui.Intro3GroupFilePath [] []
+             Content.screenWithGroupFromFile Simulants.Intro4.Screen.Name (Slide (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.Gui.IntroSong, Simulants.Intro5.Screen)) Assets.Gui.Intro4GroupFilePath [] []
+             Content.screenWithGroupFromFile Simulants.Intro5.Screen.Name (Slide (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.Gui.IntroSong, Simulants.Atlas.Screen)) Assets.Gui.Intro5GroupFilePath [] []]

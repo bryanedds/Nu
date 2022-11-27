@@ -19,8 +19,8 @@ module WorldBindings =
     let [<Literal>] BindingKeywords =
         "v2 v3 v4 v2i v3i v4i quat color get getAsStream set setAsStream update streamEvent stream bind self game toData monitor " +
         "resolve relate selectScreen tryGetIsSelectedScreenIdling tryGetIsSelectedScreenTransitioning " +
-        "isSelectedScreenIdling isSelectedScreenTransitioning tryTransitionScreen transitionScreen setScreenSplash " +
-        "createDissolveScreenFromGroupFile6 createDissolveScreenFromGroupFile createSplashScreen6 createSplashScreen " +
+        "isSelectedScreenIdling isSelectedScreenTransitioning tryTransitionScreen transitionScreen setScreenSlide " +
+        "createDissolveScreenFromGroupFile6 createDissolveScreenFromGroupFile createSlideScreen6 createSlideScreen " +
         "reloadExistingAssets tryReloadAssets getCurrentSongOpt getCurrentSongPosition " +
         "getMasterAudioVolume getMasterSoundVolume getMasterSongVolume setMasterAudioVolume " +
         "setMasterSoundVolume setMasterSongVolume playSong playSong6 " +
@@ -202,13 +202,13 @@ module WorldBindings =
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'transitionScreen' due to: " + scstring exn, ValueNone)
             struct (violation, World.choose oldWorld)
 
-    let setScreenSplash splashDescriptor destination screen world =
+    let setScreenSlide slideDescriptor destination screen world =
         let oldWorld = world
         try
-            let splashDescriptor =
-                match ScriptingSystem.tryExport typeof<SplashDescriptor> splashDescriptor world with
-                | Some value -> value :?> SplashDescriptor
-                | None -> failwith "Invalid argument type for 'splashDescriptor'; expecting a value convertable to SplashDescriptor."
+            let slideDescriptor =
+                match ScriptingSystem.tryExport typeof<SlideDescriptor> slideDescriptor world with
+                | Some value -> value :?> SlideDescriptor
+                | None -> failwith "Invalid argument type for 'slideDescriptor'; expecting a value convertable to SlideDescriptor."
             let struct (destination, world) =
                 let context = World.getScriptContext world
                 match World.evalInternal destination world with
@@ -229,10 +229,10 @@ module WorldBindings =
                     struct (Screen address, world)
                 | struct (Scripting.Violation (_, error, _), _) -> failwith error
                 | struct (_, _) -> failwith "Relation must be either a String or Keyword."
-            let result = World.setScreenSplash splashDescriptor destination screen world
+            let result = World.setScreenSlide slideDescriptor destination screen world
             struct (Scripting.Unit, result)
         with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'setScreenSplash' due to: " + scstring exn, ValueNone)
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'setScreenSlide' due to: " + scstring exn, ValueNone)
             struct (violation, World.choose oldWorld)
 
     let createDissolveScreenFromGroupFile6 dispatcherName nameOpt dissolveDescriptor songOpt groupFilePath world =
@@ -293,7 +293,7 @@ module WorldBindings =
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'createDissolveScreenFromGroupFile' due to: " + scstring exn, ValueNone)
             struct (violation, World.choose oldWorld)
 
-    let createSplashScreen6 dispatcherName nameOpt splashDescriptor destination world =
+    let createSlideScreen6 dispatcherName nameOpt slideDescriptor destination world =
         let oldWorld = world
         try
             let dispatcherName =
@@ -304,10 +304,10 @@ module WorldBindings =
                 match ScriptingSystem.tryExport typeof<FSharpOption<String>> nameOpt world with
                 | Some value -> value :?> FSharpOption<String>
                 | None -> failwith "Invalid argument type for 'nameOpt'; expecting a value convertable to FSharpOption`1."
-            let splashDescriptor =
-                match ScriptingSystem.tryExport typeof<SplashDescriptor> splashDescriptor world with
-                | Some value -> value :?> SplashDescriptor
-                | None -> failwith "Invalid argument type for 'splashDescriptor'; expecting a value convertable to SplashDescriptor."
+            let slideDescriptor =
+                match ScriptingSystem.tryExport typeof<SlideDescriptor> slideDescriptor world with
+                | Some value -> value :?> SlideDescriptor
+                | None -> failwith "Invalid argument type for 'slideDescriptor'; expecting a value convertable to SlideDescriptor."
             let struct (destination, world) =
                 let context = World.getScriptContext world
                 match World.evalInternal destination world with
@@ -318,25 +318,25 @@ module WorldBindings =
                     struct (Screen address, world)
                 | struct (Scripting.Violation (_, error, _), _) -> failwith error
                 | struct (_, _) -> failwith "Relation must be either a String or Keyword."
-            let result = World.createSplashScreen6 dispatcherName nameOpt splashDescriptor destination world
+            let result = World.createSlideScreen6 dispatcherName nameOpt slideDescriptor destination world
             let (value, world) = result
             let value = let str = scstring value in if Symbol.shouldBeExplicit str then Scripting.String str else Scripting.Keyword str
             struct (value, world)
         with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'createSplashScreen6' due to: " + scstring exn, ValueNone)
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'createSlideScreen6' due to: " + scstring exn, ValueNone)
             struct (violation, World.choose oldWorld)
 
-    let createSplashScreen nameOpt splashDescriptor destination world =
+    let createSlideScreen nameOpt slideDescriptor destination world =
         let oldWorld = world
         try
             let nameOpt =
                 match ScriptingSystem.tryExport typeof<FSharpOption<String>> nameOpt world with
                 | Some value -> value :?> FSharpOption<String>
                 | None -> failwith "Invalid argument type for 'nameOpt'; expecting a value convertable to FSharpOption`1."
-            let splashDescriptor =
-                match ScriptingSystem.tryExport typeof<SplashDescriptor> splashDescriptor world with
-                | Some value -> value :?> SplashDescriptor
-                | None -> failwith "Invalid argument type for 'splashDescriptor'; expecting a value convertable to SplashDescriptor."
+            let slideDescriptor =
+                match ScriptingSystem.tryExport typeof<SlideDescriptor> slideDescriptor world with
+                | Some value -> value :?> SlideDescriptor
+                | None -> failwith "Invalid argument type for 'slideDescriptor'; expecting a value convertable to SlideDescriptor."
             let struct (destination, world) =
                 let context = World.getScriptContext world
                 match World.evalInternal destination world with
@@ -347,12 +347,12 @@ module WorldBindings =
                     struct (Screen address, world)
                 | struct (Scripting.Violation (_, error, _), _) -> failwith error
                 | struct (_, _) -> failwith "Relation must be either a String or Keyword."
-            let result = World.createSplashScreen nameOpt splashDescriptor destination world
+            let result = World.createSlideScreen nameOpt slideDescriptor destination world
             let (value, world) = result
             let value = let str = scstring value in if Symbol.shouldBeExplicit str then Scripting.String str else Scripting.Keyword str
             struct (value, world)
         with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'createSplashScreen' due to: " + scstring exn, ValueNone)
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'createSlideScreen' due to: " + scstring exn, ValueNone)
             struct (violation, World.choose oldWorld)
 
     let reloadExistingAssets world =
@@ -2810,12 +2810,12 @@ module WorldBindings =
                 struct (violation, world)
         | Some violation -> struct (violation, world)
 
-    let evalSetScreenSplashBinding fnName exprs originOpt world =
+    let evalSetScreenSlideBinding fnName exprs originOpt world =
         let struct (evaleds, world) = World.evalManyInternal exprs world
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [|splashDescriptor; destination; screen|] -> setScreenSplash splashDescriptor destination screen world
+            | [|slideDescriptor; destination; screen|] -> setScreenSlide slideDescriptor destination screen world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
                 struct (violation, world)
@@ -2843,23 +2843,23 @@ module WorldBindings =
                 struct (violation, world)
         | Some violation -> struct (violation, world)
 
-    let evalCreateSplashScreen6Binding fnName exprs originOpt world =
+    let evalCreateSlideScreen6Binding fnName exprs originOpt world =
         let struct (evaleds, world) = World.evalManyInternal exprs world
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [|dispatcherName; nameOpt; splashDescriptor; destination|] -> createSplashScreen6 dispatcherName nameOpt splashDescriptor destination world
+            | [|dispatcherName; nameOpt; slideDescriptor; destination|] -> createSlideScreen6 dispatcherName nameOpt slideDescriptor destination world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
                 struct (violation, world)
         | Some violation -> struct (violation, world)
 
-    let evalCreateSplashScreenBinding fnName exprs originOpt world =
+    let evalCreateSlideScreenBinding fnName exprs originOpt world =
         let struct (evaleds, world) = World.evalManyInternal exprs world
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [|nameOpt; splashDescriptor; destination|] -> createSplashScreen nameOpt splashDescriptor destination world
+            | [|nameOpt; slideDescriptor; destination|] -> createSlideScreen nameOpt slideDescriptor destination world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
                 struct (violation, world)
@@ -4488,11 +4488,11 @@ module WorldBindings =
              ("isSelectedScreenTransitioning", { Fn = evalIsSelectedScreenTransitioningBinding; Pars = [||]; DocOpt = None })
              ("tryTransitionScreen", { Fn = evalTryTransitionScreenBinding; Pars = [|"destination"|]; DocOpt = None })
              ("transitionScreen", { Fn = evalTransitionScreenBinding; Pars = [|"destination"|]; DocOpt = None })
-             ("setScreenSplash", { Fn = evalSetScreenSplashBinding; Pars = [|"splashDescriptor"; "destination"; "screen"|]; DocOpt = None })
+             ("setScreenSlide", { Fn = evalSetScreenSlideBinding; Pars = [|"slideDescriptor"; "destination"; "screen"|]; DocOpt = None })
              ("createDissolveScreenFromGroupFile6", { Fn = evalCreateDissolveScreenFromGroupFile6Binding; Pars = [|"dispatcherName"; "nameOpt"; "dissolveDescriptor"; "songOpt"; "groupFilePath"|]; DocOpt = None })
              ("createDissolveScreenFromGroupFile", { Fn = evalCreateDissolveScreenFromGroupFileBinding; Pars = [|"nameOpt"; "dissolveDescriptor"; "songOpt"; "groupFilePath"|]; DocOpt = None })
-             ("createSplashScreen6", { Fn = evalCreateSplashScreen6Binding; Pars = [|"dispatcherName"; "nameOpt"; "splashDescriptor"; "destination"|]; DocOpt = None })
-             ("createSplashScreen", { Fn = evalCreateSplashScreenBinding; Pars = [|"nameOpt"; "splashDescriptor"; "destination"|]; DocOpt = None })
+             ("createSlideScreen6", { Fn = evalCreateSlideScreen6Binding; Pars = [|"dispatcherName"; "nameOpt"; "slideDescriptor"; "destination"|]; DocOpt = None })
+             ("createSlideScreen", { Fn = evalCreateSlideScreenBinding; Pars = [|"nameOpt"; "slideDescriptor"; "destination"|]; DocOpt = None })
              ("reloadExistingAssets", { Fn = evalReloadExistingAssetsBinding; Pars = [||]; DocOpt = None })
              ("tryReloadAssets", { Fn = evalTryReloadAssetsBinding; Pars = [||]; DocOpt = None })
              ("getCurrentSongOpt", { Fn = evalGetCurrentSongOptBinding; Pars = [||]; DocOpt = None })

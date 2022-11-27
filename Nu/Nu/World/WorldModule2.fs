@@ -216,15 +216,15 @@ module WorldModule2 =
                 (true, selectedScreen.SetTransitionUpdates 0L world)
             else (false, selectedScreen.SetTransitionUpdates (transitionUpdates + World.getUpdateRate world) world)
 
-        static member private updateScreenIdling3 splash (selectedScreen : Screen) world =
+        static member private updateScreenIdling3 slide (selectedScreen : Screen) world =
             // NOTE: we do not immediately transition when transition time is zero because we only want screen
             // transitions to happen outside the update loop!
             // NOTE: transitions always take one additional frame because it needs to render frame 0 and frame MAX + 1 for
             // full opacity if fading and and an extra frame for the render messages to actually get processed.
             let transitionUpdates = selectedScreen.GetTransitionUpdates world
-            if transitionUpdates = splash.IdlingTime + 1L then
+            if transitionUpdates = slide.IdlingTime + 1L then
                 (true, selectedScreen.SetTransitionUpdates 0L world)
-            elif transitionUpdates > splash.IdlingTime then
+            elif transitionUpdates > slide.IdlingTime then
                 Log.debug ("IdlingTimeOpt for screen '" + scstring selectedScreen.ScreenAddress + "' must be Some consistent multiple of UpdateRate or None.")
                 (true, selectedScreen.SetTransitionUpdates 0L world)
             else (false, selectedScreen.SetTransitionUpdates (transitionUpdates + World.getUpdateRate world) world)
@@ -258,9 +258,9 @@ module WorldModule2 =
         static member private updateScreenIdling (selectedScreen : Screen) world =
             match World.getLiveness world with
             | Live ->
-                match selectedScreen.GetSplashOpt world with
-                | Some splash ->
-                    match World.updateScreenIdling3 splash selectedScreen world with
+                match selectedScreen.GetSlideOpt world with
+                | Some slide ->
+                    match World.updateScreenIdling3 slide selectedScreen world with
                     | (true, world) -> World.setScreenTransitionStatePlus OutgoingState selectedScreen world
                     | (false, world) -> world
                 | None ->
@@ -283,8 +283,8 @@ module WorldModule2 =
                         match outgoing.SongOpt with
                         | Some playSong ->
                             let destinationOpt =
-                                match selectedScreen.GetSplashOpt world with
-                                | Some splash -> Some splash.Destination
+                                match selectedScreen.GetSlideOpt world with
+                                | Some slide -> Some slide.Destination
                                 | None ->
                                     match World.getScreenTransitionDestinationOpt world with
                                     | Some destination -> Some destination
@@ -321,8 +321,8 @@ module WorldModule2 =
                     match World.getLiveness world with
                     | Live ->
                         let destinationOpt =
-                            match selectedScreen.GetSplashOpt world with
-                            | Some splash -> Some splash.Destination
+                            match selectedScreen.GetSlideOpt world with
+                            | Some slide -> Some slide.Destination
                             | None ->
                                 match World.getScreenTransitionDestinationOpt world with
                                 | Some destination -> Some destination
@@ -380,29 +380,29 @@ module WorldModule2 =
         static member transitionScreen destination world =
             World.tryTransitionScreen destination world |> snd
 
-        /// Set the splash aspects of a screen.
+        /// Set the slide aspects of a screen.
         [<FunctionBinding>]
-        static member setScreenSplash (splashDescriptor : SplashDescriptor) destination (screen : Screen) world =
-            let splashGroup = screen / "SplashGroup"
-            let splashSprite = splashGroup / "SplashSprite"
-            let world = World.destroyGroupImmediate splashGroup world
+        static member setScreenSlide (slideDescriptor : SlideDescriptor) destination (screen : Screen) world =
+            let slideGroup = screen / "SlideGroup"
+            let slideSprite = slideGroup / "SlideSprite"
+            let world = World.destroyGroupImmediate slideGroup world
             let cameraEyeSize = World.getEyeSize2d world
-            let world = screen.SetSplashOpt (Some { IdlingTime = splashDescriptor.IdlingTime; Destination = destination }) world
-            let world = World.createGroup<GroupDispatcher> (Some splashGroup.Name) screen world |> snd
-            let world = splashGroup.SetPersistent false world
-            let world = World.createEntity<StaticSpriteDispatcher> (Some splashSprite.Surnames) DefaultOverlay splashGroup world |> snd
-            let world = splashSprite.SetPersistent false world
-            let world = splashSprite.SetSize cameraEyeSize.V3 world
-            let world = splashSprite.SetPosition (-cameraEyeSize.V3 * 0.5f) world
+            let world = screen.SetSlideOpt (Some { IdlingTime = slideDescriptor.IdlingTime; Destination = destination }) world
+            let world = World.createGroup<GroupDispatcher> (Some slideGroup.Name) screen world |> snd
+            let world = slideGroup.SetPersistent false world
+            let world = World.createEntity<StaticSpriteDispatcher> (Some slideSprite.Surnames) DefaultOverlay slideGroup world |> snd
+            let world = slideSprite.SetPersistent false world
+            let world = slideSprite.SetSize cameraEyeSize.V3 world
+            let world = slideSprite.SetPosition (-cameraEyeSize.V3 * 0.5f) world
             let world =
-                match splashDescriptor.SplashImageOpt with
-                | Some splashImage ->
-                    let world = splashSprite.SetStaticImage splashImage world
-                    let world = splashSprite.SetVisible true world
+                match slideDescriptor.SlideImageOpt with
+                | Some slideImage ->
+                    let world = slideSprite.SetStaticImage slideImage world
+                    let world = slideSprite.SetVisible true world
                     world
                 | None ->
-                    let world = splashSprite.SetStaticImage Assets.Default.Image5 world
-                    let world = splashSprite.SetVisible false world
+                    let world = slideSprite.SetStaticImage Assets.Default.Image5 world
+                    let world = slideSprite.SetVisible false world
                     world
             world
 
@@ -418,17 +418,17 @@ module WorldModule2 =
         static member createDissolveScreenFromGroupFile<'d when 'd :> ScreenDispatcher> nameOpt dissolveDescriptor songOpt groupFilePath world =
             World.createDissolveScreenFromGroupFile6 typeof<'d>.Name nameOpt dissolveDescriptor groupFilePath songOpt world
 
-        /// Create a splash screen that transitions to the given destination upon completion.
+        /// Create a slide screen that transitions to the given destination upon completion.
         [<FunctionBinding>]
-        static member createSplashScreen6 dispatcherName nameOpt splashDescriptor destination world =
-            let (splashScreen, world) = World.createDissolveScreen5 dispatcherName nameOpt splashDescriptor.DissolveDescriptor None world
-            let world = World.setScreenSplash splashDescriptor destination splashScreen world
-            (splashScreen, world)
+        static member createSlideScreen6 dispatcherName nameOpt slideDescriptor destination world =
+            let (slideScreen, world) = World.createDissolveScreen5 dispatcherName nameOpt slideDescriptor.DissolveDescriptor None world
+            let world = World.setScreenSlide slideDescriptor destination slideScreen world
+            (slideScreen, world)
 
-        /// Create a splash screen that transitions to the given destination upon completion.
+        /// Create a slide screen that transitions to the given destination upon completion.
         [<FunctionBinding>]
-        static member createSplashScreen<'d when 'd :> ScreenDispatcher> nameOpt splashDescriptor destination world =
-            World.createSplashScreen6 typeof<'d>.Name nameOpt splashDescriptor destination world
+        static member createSlideScreen<'d when 'd :> ScreenDispatcher> nameOpt slideDescriptor destination world =
+            World.createSlideScreen6 typeof<'d>.Name nameOpt slideDescriptor destination world
 
         static member internal makeIntrinsicOverlays facets entityDispatchers =
             let requiresFacetNames = fun sourceType -> sourceType = typeof<EntityDispatcher>
@@ -1402,7 +1402,7 @@ module GameDispatcherModule =
             let initializers = this.Initialize (model, game)
             let screens = this.Content (model, game)
             let content = Content.game initializers screens
-            let (initialScreenOpt, world) = Content.synchronizeGame World.setScreenSplash initializing contentOld content game world
+            let (initialScreenOpt, world) = Content.synchronizeGame World.setScreenSlide initializing contentOld content game world
             (initialScreenOpt, World.setGameContent content world)
 
         new (initial : 'model) =
