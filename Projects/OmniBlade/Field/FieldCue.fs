@@ -8,13 +8,12 @@ open Nu
 open Nu.Declarative
 open OmniBlade
 
-type FieldCueMessage =
+type FieldCueSignal =
     | TryBattle of BattleType * Advent Set
-
-type FieldCueCommand =
     | PlaySound of int64 * single * Sound AssetTag
     | PlaySong of int * int * single * double * Song AssetTag
     | FadeOutSong of int
+    interface Signal
 
 [<RequireQualifiedAccess>]
 module FieldCue =
@@ -23,20 +22,20 @@ module FieldCue =
         (cue : Cue)
         (definitions : CueDefinitions)
         (field : Field) :
-        Cue * CueDefinitions * (Signal<FieldCueMessage, FieldCueCommand> list * Field) =
+        Cue * CueDefinitions * (Signal list * Field) =
 
         match cue with
         | Cue.Fin ->
             (cue, definitions, just field)
 
         | Cue.PlaySound (volume, sound) ->
-            (Cue.Fin, definitions, withCmd (PlaySound (0L, volume, sound)) field)
+            (Cue.Fin, definitions, withSig (PlaySound (0L, volume, sound)) field)
 
         | Cue.PlaySong (fadeIn, fadeOut, volume, start, song) ->
-            (Cue.Fin, definitions, withCmd (PlaySong (fadeIn, fadeOut, volume, start, song)) field)
+            (Cue.Fin, definitions, withSig (PlaySong (fadeIn, fadeOut, volume, start, song)) field)
 
         | Cue.FadeOutSong fade ->
-            (Cue.Fin, definitions, withCmd (FadeOutSong fade) field)
+            (Cue.Fin, definitions, withSig (FadeOutSong fade) field)
 
         | Cue.Face (target, direction) ->
             match target with
@@ -84,7 +83,7 @@ module FieldCue =
                 let field = Field.recruit allyType field
                 let field = Field.updateAdvents (Set.add advent) field
                 let field = Field.updateInventory (Inventory.updateGold (fun gold -> gold - fee)) field
-                (Cue.Fin, definitions, withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.PurchaseSound)) field)
+                (Cue.Fin, definitions, withSig (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.PurchaseSound)) field)
             else advance (Parallel [Dialog ("You don't have enough...", false); Cue.PlaySound (Constants.Audio.SoundVolumeDefault, Assets.Gui.MistakeSound)]) definitions field
 
         | AddItem itemType ->
@@ -285,7 +284,7 @@ module FieldCue =
         | Battle (battleType, consequents) ->
             match field.BattleOpt with
             | Some _ -> (cue, definitions, just field)
-            | None -> (BattleState, definitions, withMsg (TryBattle (battleType, consequents)) field)
+            | None -> (BattleState, definitions, withSig (TryBattle (battleType, consequents)) field)
 
         | BattleState ->
             match field.BattleOpt with

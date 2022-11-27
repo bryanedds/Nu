@@ -494,7 +494,7 @@ module WorldEntityModule =
         member this.GetChangeEvent propertyName = Events.Change propertyName --> this.EntityAddress
 
         /// Try to signal an entity.
-        member this.TrySignal<'message, 'command> (signal : Signal<'message, 'command>) world =
+        member this.TrySignal<'message, 'command> (signal : Signal) world =
             (this.GetDispatcher world).TrySignal (signal, this, world)
 
     type World with

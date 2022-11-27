@@ -18,6 +18,7 @@ module ReticlesDispatcher =
     type ReticlesCommand =
         | TargetCancel
         | TargetSelect of CharacterIndex
+        interface Command
 
     type Entity with
         member this.GetReticles world = this.GetModelGeneric<Reticles> world
@@ -26,7 +27,7 @@ module ReticlesDispatcher =
         member this.TargetSelectEvent = Events.TargetSelect --> this
 
     type ReticlesDispatcher () =
-        inherit GuiDispatcher<Reticles, unit, ReticlesCommand> (Map.empty)
+        inherit GuiDispatcher<Reticles, Message, ReticlesCommand> (Map.empty)
 
         override this.Command (_, command, rets, world) =
             match command with
@@ -39,7 +40,7 @@ module ReticlesDispatcher =
                  Entity.Size == v3 48.0f 48.0f 0.0f
                  Entity.UpImage == asset Assets.Battle.PackageName "CancelUp"
                  Entity.DownImage == asset Assets.Battle.PackageName "CancelDown"
-                 Entity.ClickEvent => cmd TargetCancel]
+                 Entity.ClickEvent => TargetCancel]
              for (index, center) in reticles.Pairs do
                 Content.button (CharacterIndex.toEntityName index)
                     [Entity.MountOpt == None
@@ -47,4 +48,4 @@ module ReticlesDispatcher =
                      Entity.Center := center
                      Entity.UpImage == asset Assets.Battle.PackageName "ReticleUp"
                      Entity.DownImage == asset Assets.Battle.PackageName "ReticleDown"
-                     Entity.ClickEvent => cmd (TargetSelect index)]]
+                     Entity.ClickEvent => TargetSelect index]]

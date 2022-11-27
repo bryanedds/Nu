@@ -65,25 +65,25 @@ module FieldContent =
                      Entity.UpImage == asset "Field" "TeamButtonUp"
                      Entity.DownImage == asset "Field" "TeamButtonDown"
                      Entity.EnabledLocal := match field.Menu.MenuState with MenuTeam _ -> false | _ -> true
-                     Entity.ClickEvent => msg (menuTeamOpen ())]
+                     Entity.ClickEvent => menuTeamOpen ()]
                  Content.button "InventoryButton"
                     [Entity.PositionLocal == position - v3 0.0f 81.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 72.0f 72.0f 0.0f
                      Entity.UpImage == asset "Field" "InventoryButtonUp"
                      Entity.DownImage == asset "Field" "InventoryButtonDown"
                      Entity.EnabledLocal := match field.Menu.MenuState with MenuItem _ -> false | _ -> true
-                     Entity.ClickEvent => msg (menuItemsOpen ())]
+                     Entity.ClickEvent => menuItemsOpen ()]
                  Content.button "TechButton"
                     [Entity.PositionLocal == position - v3 0.0f 162.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 72.0f 72.0f 0.0f
                      Entity.UpImage == asset "Field" "TechButtonUp"
                      Entity.DownImage == asset "Field" "TechButtonDown"
                      Entity.EnabledLocal := match field.Menu.MenuState with MenuTech _ -> false | _ -> true
-                     Entity.ClickEvent => msg (menuTechOpen ())]
+                     Entity.ClickEvent => menuTechOpen ()]
                  Content.button "OptionsButton"
                     [Entity.PositionLocal == position - v3 0.0f 243.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 72.0f 72.0f 0.0f
                      Entity.UpImage == asset "Field" "OptionsButtonUp"
                      Entity.DownImage == asset "Field" "OptionsButtonDown"
                      Entity.EnabledLocal := match field.Menu.MenuState with MenuOptions -> false | _ -> true
-                     Entity.ClickEvent => msg (menuOptionsOpen ())]
+                     Entity.ClickEvent => menuOptionsOpen ()]
                  Content.button "HelpButton"
                     [Entity.PositionLocal == position - v3 0.0f 324.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 72.0f 72.0f 0.0f
                      Entity.UpImage == asset "Field" "HelpButtonUp"
@@ -92,7 +92,7 @@ module FieldContent =
                     [Entity.PositionLocal == position - v3 0.0f 405.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 72.0f 72.0f 0.0f
                      Entity.UpImage == asset "Field" "CloseButtonUp"
                      Entity.DownImage == asset "Field" "CloseButtonDown"
-                     Entity.ClickEvent => msg (menuClose ())]]
+                     Entity.ClickEvent => menuClose ()]]
 
         let team (position : Vector3) rows (field : Field) filter fieldMsg =
             [for (index, teammate) in field.Team.Pairs do
@@ -105,7 +105,7 @@ module FieldContent =
                      Entity.Text := CharacterType.getName teammate.CharacterType
                      Entity.UpImage == Assets.Gui.ButtonBigUpImage
                      Entity.DownImage == Assets.Gui.ButtonBigDownImage
-                     Entity.ClickEvent => msg (fieldMsg index)]]
+                     Entity.ClickEvent => fieldMsg index]]
 
         let items (position : Vector3) rows columns field fieldMsg =
             let items = pageItems rows field |> __c // TOOD: DIFF: consider memoizing.
@@ -125,7 +125,7 @@ module FieldContent =
                      Entity.EnabledLocal := match itemType with Consumable _ | Equipment _ -> true | KeyItem _ | Stash _ -> false
                      Entity.UpImage == Assets.Gui.ButtonLongUpImage
                      Entity.DownImage == Assets.Gui.ButtonLongDownImage
-                     Entity.ClickEvent => msg (fieldMsg page)]]
+                     Entity.ClickEvent => fieldMsg page]]
 
         let techs (position : Vector3) (field : Field) fieldMsg =
             let techs =
@@ -146,4 +146,4 @@ module FieldContent =
                      Entity.EnabledLocal == false
                      Entity.UpImage == Assets.Gui.ButtonSquishedUpImage
                      Entity.DownImage == Assets.Gui.ButtonSquishedDownImage
-                     Entity.ClickEvent => msg (fieldMsg index)]]
+                     Entity.ClickEvent => fieldMsg index]]

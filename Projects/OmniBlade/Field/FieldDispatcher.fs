@@ -41,6 +41,7 @@ module FieldDispatcher =
         | PromptRight
         | TryBattle of BattleType * Advent Set
         | Interact
+        interface Message
 
     type [<NoComparison>] FieldCommand =
         | ProcessKeyInput
@@ -51,6 +52,7 @@ module FieldDispatcher =
         | PlaySong of int * int * single * double * Song AssetTag
         | FadeOutSong of int
         | Nop
+        interface Command
 
     type Screen with
         member this.GetField world = this.GetModelGeneric<Field> world
@@ -68,7 +70,7 @@ module FieldDispatcher =
             | (false, dialog) ->
                 let field = Field.updateDialogOpt (constant None) field
                 match dialog.DialogBattleOpt with
-                | Some (battleType, consequence) -> withMsg (TryBattle (battleType, consequence)) field
+                | Some (battleType, consequence) -> withSig (TryBattle (battleType, consequence)) field
                 | None -> just field
 
         static let interactChest itemType chestId battleTypeOpt cue requirements (prop : Prop) (field : Field) =
@@ -81,11 +83,11 @@ module FieldDispatcher =
                     | Some battleType -> Field.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogTokenized = "Found " + ItemType.getName itemType + "!^But something approaches!"; DialogProgress = 0; DialogPage = 0; DialogPromptOpt = None; DialogBattleOpt = Some (battleType, Set.empty) })) field
                     | None -> Field.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogTokenized = "Found " + ItemType.getName itemType + "!"; DialogProgress = 0; DialogPage = 0; DialogPromptOpt = None; DialogBattleOpt = None })) field
                 let field = Field.updateCue (constant cue) field
-                withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.ChestOpenSound)) field
+                withSig (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.ChestOpenSound)) field
             else
                 let field = Field.updateAvatar (Avatar.lookAt prop.Center) field
                 let field = Field.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogTokenized = "Locked!"; DialogProgress = 0; DialogPage = 0; DialogPromptOpt = None; DialogBattleOpt = None })) field
-                withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.ChestLockedSound)) field
+                withSig (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.ChestLockedSound)) field
 
         static let interactDoor keyItemTypeOpt cue requirements (prop : Prop) (field : Field) =
             match prop.PropState with
@@ -95,11 +97,11 @@ module FieldDispatcher =
                     let field = Field.updateAvatar (Avatar.lookAt prop.Center) field
                     let field = Field.updateCue (constant cue) field
                     let field = Field.updatePropState (constant (DoorState true)) prop.PropId field
-                    withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.DoorOpenSound)) field
+                    withSig (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.DoorOpenSound)) field
                 else
                     let field = Field.updateAvatar (Avatar.lookAt prop.Center) field
                     let field = Field.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogTokenized = "Locked!"; DialogProgress = 0; DialogPage = 0; DialogPromptOpt = None; DialogBattleOpt = None })) field
-                    withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.DoorLockedSound)) field
+                    withSig (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.DoorLockedSound)) field
             | _ -> failwithumf ()
 
         static let interactSwitch cue cue2 requirements (prop : Prop) (field : Field) =
@@ -110,17 +112,17 @@ module FieldDispatcher =
                     let field = Field.updateAvatar (Avatar.lookAt prop.Center) field
                     let field = Field.updatePropState (constant (SwitchState on)) prop.PropId field
                     let field = Field.updateCue (constant (if on then cue else cue2)) field
-                    withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.SwitchUseSound)) field
+                    withSig (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.SwitchUseSound)) field
                 else
                     let field = Field.updateAvatar (Avatar.lookAt prop.Center) field
                     let field = Field.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogTokenized = "Won't budge!"; DialogProgress = 0; DialogPage = 0; DialogPromptOpt = None; DialogBattleOpt = None })) field
-                    withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.SwitchStuckSound)) field
+                    withSig (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.SwitchStuckSound)) field
             | _ -> failwithumf ()
 
         static let interactCharacter cue (prop : Prop) (field : Field) =
             let field = Field.updateAvatar (Avatar.lookAt prop.BottomInset) field
             let field = Field.updateCue (constant cue) field
-            withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Gui.AffirmSound)) field
+            withSig (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Gui.AffirmSound)) field
         
         static let interactNpc branches requirements (prop : Prop) (field : Field) =
             if field.Advents.IsSupersetOf requirements then
@@ -128,30 +130,30 @@ module FieldDispatcher =
                 let branchesFiltered = branches |> List.choose (fun branch -> if field.Advents.IsSupersetOf branch.Requirements then Some branch.Cue else None) |> List.rev
                 let branchCue = match List.tryHead branchesFiltered with Some cue -> cue | None -> Dialog ("...", false)
                 let field = Field.updateCue (constant branchCue) field
-                withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Gui.AffirmSound)) field
+                withSig (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Gui.AffirmSound)) field
             else just field
 
         static let interactShopkeep shopType (prop : Prop) (field : Field) =
             let field = Field.updateAvatar (Avatar.lookAt prop.BottomInset) field
             let shop = { ShopType = shopType; ShopState = ShopBuying; ShopPage = 0; ShopConfirmOpt = None }
             let field = Field.updateShopOpt (constant (Some shop)) field
-            withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Gui.AffirmSound)) field
+            withSig (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Gui.AffirmSound)) field
 
         static let interactSeal cue (field : Field) =
             let field = Field.updateCue (constant cue) field
-            withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.SealedSound)) field
+            withSig (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.SealedSound)) field
 
         static let interactSavePoint (field : Field) =
             let field = Field.restoreTeam field
             Field.save field
-            withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Gui.SlotSound)) field
+            withSig (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Gui.SlotSound)) field
 
         override this.Initialize (_, _) =
-            [Screen.UpdateEvent => cmd ProcessKeyInput
-             Screen.UpdateEvent => msg Update
-             Screen.PostUpdateEvent => msg UpdateFieldTransition
-             Screen.PostUpdateEvent => cmd UpdateEye
-             Screen.SelectEvent => cmd PlayFieldSong]
+            [Screen.UpdateEvent => ProcessKeyInput
+             Screen.UpdateEvent => Update
+             Screen.PostUpdateEvent => UpdateFieldTransition
+             Screen.PostUpdateEvent => UpdateEye
+             Screen.SelectEvent => PlayFieldSong]
 
         override this.Message (field, message, _, world) =
 
@@ -167,6 +169,7 @@ module FieldDispatcher =
 
                 // advance cue, reset cue definitions if finished, and convert its signals
                 let (cue, definitions, (cueSignals, field)) = FieldCue.advance field.Cue field.Definitions field
+                let fieldCueSignals = List.map cast cueSignals
                 let field =
                     match cue with
                     | Cue.Fin -> Field.updateDefinitions (constant field.DefinitionsOriginal) field
@@ -175,11 +178,11 @@ module FieldDispatcher =
                 let signals =
                     List.map (fun fieldCueSignal ->
                         match fieldCueSignal with
-                        | Message (FieldCueMessage.TryBattle (battleType, consequents)) -> msg (TryBattle (battleType, consequents))
-                        | Command (FieldCueCommand.PlaySound (delay, volume, sound)) -> cmd (PlaySound (delay, volume, sound))
-                        | Command (FieldCueCommand.PlaySong (fadeInMs, fadeOutMs, volume, songTime, song)) -> cmd (PlaySong (fadeInMs, fadeOutMs, volume, songTime, song))
-                        | Command (FieldCueCommand.FadeOutSong a) -> cmd (FadeOutSong a))
-                        cueSignals
+                        | FieldCueSignal.TryBattle (battleType, consequents) -> TryBattle (battleType, consequents) :> Signal
+                        | FieldCueSignal.PlaySound (delay, volume, sound) -> PlaySound (delay, volume, sound)
+                        | FieldCueSignal.PlaySong (fadeInMs, fadeOutMs, volume, songTime, song) -> PlaySong (fadeInMs, fadeOutMs, volume, songTime, song)
+                        | FieldCueSignal.FadeOutSong a -> FadeOutSong a)
+                        fieldCueSignals
 
                 // advance dialog
                 let field =
@@ -206,7 +209,7 @@ module FieldDispatcher =
                                     if isWarp
                                     then PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.StepWarpSound)
                                     else PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.StepStairSound)
-                                (cmd playSound :: signals, field)
+                                (playSound :> Signal :: signals, field)
                             else (signals, field)
                         | None -> (signals, field)
                     | Some _ -> (signals, field)
@@ -217,19 +220,19 @@ module FieldDispatcher =
                     | None ->
                         let sensors = Field.getTouchedSensors field
                         let results =
-                            List.fold (fun (signals : Signal<FieldMessage, FieldCommand> list, field : Field) (sensorType, cue, requirements) ->
+                            List.fold (fun (signals : Signal list, field : Field) (sensorType, cue, requirements) ->
                                 if field.Advents.IsSupersetOf requirements then
                                     let field = Field.updateCue (constant cue) field
                                     match sensorType with
                                     | AirSensor -> (signals, field)
-                                    | HiddenSensor | StepPlateSensor -> (Command (PlaySound (0L,  Constants.Audio.SoundVolumeDefault, Assets.Field.StepPlateSound)) :: signals, field)
+                                    | HiddenSensor | StepPlateSensor -> (PlaySound (0L,  Constants.Audio.SoundVolumeDefault, Assets.Field.StepPlateSound) :: signals, field)
                                 else (signals, field))
                                 (signals, field) sensors
                         results
                     | Some _ -> (signals, field)
 
                 // advance spirits
-                let (signals, field) =
+                let (signals : Signal list, field) =
                     if  field.Menu.MenuState = MenuClosed &&
                         Cue.notInterrupting field.Inventory field.Advents field.Cue &&
                         Option.isNone field.DialogOpt &&
@@ -243,8 +246,8 @@ module FieldDispatcher =
                             let startTime = clockTime - playTime
                             let prizePool = { Consequents = Set.empty; Items = []; Gold = 0; Exp = 0 }
                             let field = Field.enterBattle startTime prizePool battleData field world
-                            let fade = cmd (FadeOutSong 1000)
-                            let beastGrowl = cmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.BeastGrowlSound))
+                            let fade = FadeOutSong 1000
+                            let beastGrowl = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.BeastGrowlSound)
                             (fade :: beastGrowl :: signals, field)
                         | Right field -> (signals, field)
                     else (signals, field)
@@ -269,7 +272,7 @@ module FieldDispatcher =
                             | (true, fieldData) ->
                                 match (currentSongOpt, fieldData.FieldSongOpt) with
                                 | (Some song, Some song2) when assetEq song song2 -> just field
-                                | (_, _) -> withCmd (FadeOutSong Constants.Audio.FadeOutMsDefault) field
+                                | (_, _) -> withSig (FadeOutSong Constants.Audio.FadeOutMsDefault) field
                             | (false, _) -> just field
 
                         // just past half-way point of transition
@@ -289,7 +292,7 @@ module FieldDispatcher =
                                     | Some song when assetEq song fieldSong -> Nop
                                     | _ -> PlaySong (0, Constants.Audio.FadeOutMsDefault, Constants.Audio.SongVolumeDefault, 0.0, fieldSong)
                                 | None -> Nop
-                            withCmd songCmd field
+                            withSig songCmd field
 
                         // finish transition
                         elif time = fieldTransition.FieldTransitionTime then
@@ -362,7 +365,7 @@ module FieldDispatcher =
                         let field = match displacedOpt with Some displaced -> Field.updateInventory (Inventory.tryAddItem displaced >> snd) field | None -> field
                         let field = Field.updateTeam (Map.add index teammate) field
                         let field = Field.updateMenu (constant { field.Menu with MenuUseOpt = None }) field
-                        if result then withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.HealSound)) field
+                        if result then withSig (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.HealSound)) field
                         else just field
                     | None -> just field
                 | None -> just field
@@ -444,8 +447,8 @@ module FieldDispatcher =
                             let field = Field.updateInventory (match shop.ShopState with ShopBuying -> Inventory.tryAddItem itemType >> snd | ShopSelling -> Inventory.tryRemoveItem itemType >> snd) field
                             let field = Field.updateInventory (match shop.ShopState with ShopBuying -> Inventory.updateGold (fun gold -> gold - shopConfirm.ShopConfirmPrice) | ShopSelling -> Inventory.updateGold (fun gold -> gold + shopConfirm.ShopConfirmPrice)) field
                             let field = Field.updateShopOpt (Option.map (fun shop -> { shop with ShopConfirmOpt = None })) field
-                            withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.PurchaseSound)) field
-                        else withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Gui.MistakeSound)) field
+                            withSig (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.PurchaseSound)) field
+                        else withSig (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Gui.MistakeSound)) field
                     | None -> just field
                 | None -> just field
 
@@ -487,7 +490,7 @@ module FieldDispatcher =
                     let startTime = clockTime - playTime
                     let prizePool = { Consequents = consequents; Items = []; Gold = 0; Exp = 0 }
                     let field = Field.enterBattle startTime prizePool battleData field world
-                    withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.BeastGrowlSound)) field
+                    withSig (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.BeastGrowlSound)) field
                 | None -> just field
 
             | Interact ->
@@ -530,13 +533,13 @@ module FieldDispatcher =
                     let force = if World.isKeyboardKeyDown KeyboardKey.Left world || World.isKeyboardKeyDown KeyboardKey.A world then v3 -Constants.Field.AvatarWalkForce 0.0f 0.0f + force else force
                     let force = if World.isKeyboardKeyDown KeyboardKey.Up world || World.isKeyboardKeyDown KeyboardKey.W world then v3 0.0f Constants.Field.AvatarWalkForce 0.0f + force else force
                     let force = if World.isKeyboardKeyDown KeyboardKey.Down world || World.isKeyboardKeyDown KeyboardKey.S world then v3 0.0f -Constants.Field.AvatarWalkForce 0.0f + force else force
-                    let world = avatar.Signal<Avatar, AvatarMessage, AvatarCommand> (cmd (TryTravel force)) world
+                    let world = avatar.Signal<Avatar, AvatarMessage, AvatarCommand> (TryTravel force) world
                     let signal =
-                        if World.isKeyboardKeyDown KeyboardKey.Right world || World.isKeyboardKeyDown KeyboardKey.D world then msg (TryFace Rightward)
-                        elif World.isKeyboardKeyDown KeyboardKey.Left world || World.isKeyboardKeyDown KeyboardKey.A world then msg (TryFace Leftward)
-                        elif World.isKeyboardKeyDown KeyboardKey.Up world || World.isKeyboardKeyDown KeyboardKey.W world then msg (TryFace Upward)
-                        elif World.isKeyboardKeyDown KeyboardKey.Down world || World.isKeyboardKeyDown KeyboardKey.S world then msg (TryFace Downward)
-                        else msg Nil
+                        if World.isKeyboardKeyDown KeyboardKey.Right world || World.isKeyboardKeyDown KeyboardKey.D world then TryFace Rightward
+                        elif World.isKeyboardKeyDown KeyboardKey.Left world || World.isKeyboardKeyDown KeyboardKey.A world then TryFace Leftward
+                        elif World.isKeyboardKeyDown KeyboardKey.Up world || World.isKeyboardKeyDown KeyboardKey.W world then TryFace Upward
+                        elif World.isKeyboardKeyDown KeyboardKey.Down world || World.isKeyboardKeyDown KeyboardKey.S world then TryFace Downward
+                        else Nil
                     let world = avatar.Signal<Avatar, AvatarMessage, AvatarCommand> signal world
                     just world
                 else just world
@@ -557,8 +560,8 @@ module FieldDispatcher =
                     if heading.Magnitude >= 6.0f then // TODO: make constant DeadZoneRadius.
                         let goalNormalized = Vector3.Normalize heading
                         let force = goalNormalized * Constants.Field.AvatarWalkForceMouse
-                        let world = avatar.Signal<Avatar, AvatarMessage, AvatarCommand> (cmd (TryTravel force)) world
-                        let world = avatar.Signal<Avatar, AvatarMessage, AvatarCommand> (msg (TryFace (Direction.ofVector3 heading))) world
+                        let world = avatar.Signal<Avatar, AvatarMessage, AvatarCommand> (TryTravel force) world
+                        let world = avatar.Signal<Avatar, AvatarMessage, AvatarCommand> (TryFace (Direction.ofVector3 heading)) world
                         just world
                     else just world
                 else just world
@@ -591,7 +594,7 @@ module FieldDispatcher =
                             let fadeIn = if playTime <> 0L then Constants.Field.FieldSongFadeInMs else 0
                             let field = Field.updateFieldSongTimeOpt (constant (Some startTime)) field
                             let world = screen.SetField field world
-                            withCmd (PlaySong (fadeIn, Constants.Audio.FadeOutMsDefault, Constants.Audio.SongVolumeDefault, double playTime / 1000.0, fieldSong)) world
+                            withSig (PlaySong (fadeIn, Constants.Audio.FadeOutMsDefault, Constants.Audio.SongVolumeDefault, double playTime / 1000.0, fieldSong)) world
                         else just world
                     | (Some fieldSong, None) ->
                         let (playTime, startTime) =
@@ -606,7 +609,7 @@ module FieldDispatcher =
                         let fadeIn = if playTime <> 0L then Constants.Field.FieldSongFadeInMs else 0
                         let field = Field.updateFieldSongTimeOpt (constant (Some startTime)) field
                         let world = screen.SetField field world
-                        withCmd (PlaySong (fadeIn, Constants.Audio.FadeOutMsDefault, Constants.Audio.SongVolumeDefault, double playTime / 1000.0, fieldSong)) world
+                        withSig (PlaySong (fadeIn, Constants.Audio.FadeOutMsDefault, Constants.Audio.SongVolumeDefault, double playTime / 1000.0, fieldSong)) world
                     | (None, _) -> just world
                 | (false, _) -> just world
 
@@ -726,7 +729,7 @@ module FieldDispatcher =
                  // feeler
                  Content.feeler Simulants.Field.Scene.Feeler.Name
                     [Entity.Position == -Constants.Render.ResolutionF.V3 * 0.5f; Entity.Elevation == Constants.Field.FeelerElevation; Entity.Size == Constants.Render.ResolutionF.V3
-                     Entity.TouchingEvent =|> fun evt -> cmd (ProcessTouchInput evt.Data)]
+                     Entity.TouchingEvent =|> fun evt -> ProcessTouchInput evt.Data]
 
                  // menu button
                  Content.button "Menu"
@@ -739,7 +742,7 @@ module FieldDispatcher =
                         Option.isNone field.DialogOpt &&
                         Option.isNone field.ShopOpt &&
                         Option.isNone field.FieldTransitionOpt
-                     Entity.ClickEvent => msg MenuTeamOpen]
+                     Entity.ClickEvent => MenuTeamOpen]
 
                  // interact button
                  Content.button "Interact"
@@ -757,7 +760,7 @@ module FieldDispatcher =
                         | Some interaction -> interaction
                         | None -> ""
                      Entity.ClickSoundOpt == None
-                     Entity.ClickEvent => msg Interact]
+                     Entity.ClickEvent => Interact]
 
                  // dialog
                  yield! Content.dialog "Dialog"
@@ -851,14 +854,14 @@ module FieldDispatcher =
                              Entity.VisibleLocal := Content.pageItems 10 field |> a__
                              Entity.UpImage == Assets.Gui.ButtonSmallUpImage
                              Entity.DownImage == Assets.Gui.ButtonSmallDownImage
-                             Entity.ClickEvent => msg MenuItemsPageUp]
+                             Entity.ClickEvent => MenuItemsPageUp]
                          Content.button "PageDown"
                             [Entity.PositionLocal == v3 777.0f 12.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 72.0f 72.0f 0.0f
                              Entity.Text == ">"
                              Entity.VisibleLocal := Content.pageItems 10 field |> _b_
                              Entity.UpImage == Assets.Gui.ButtonSmallUpImage
                              Entity.DownImage == Assets.Gui.ButtonSmallDownImage
-                             Entity.ClickEvent => msg MenuInventoryPageDown]]
+                             Entity.ClickEvent => MenuInventoryPageDown]]
 
                  // tech team
                  | MenuTech _ ->
@@ -883,19 +886,19 @@ module FieldDispatcher =
                              Entity.UndialedImage == Assets.Gui.ButtonShortUpImage; Entity.DialedImage == Assets.Gui.ButtonShortDownImage
                              Entity.Text == "Wait"
                              Entity.Dialed := match field.Options.BattleSpeed with WaitSpeed -> true | _ -> false
-                             Entity.DialedEvent => msg (MenuOptionsSelectBattleSpeed WaitSpeed)]
+                             Entity.DialedEvent => MenuOptionsSelectBattleSpeed WaitSpeed]
                          Content.radioButton "Paced"
                             [Entity.PositionLocal == v3 408.0f 372.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 144.0f 48.0f 0.0f
                              Entity.UndialedImage == Assets.Gui.ButtonShortUpImage; Entity.DialedImage == Assets.Gui.ButtonShortDownImage
                              Entity.Text == "Paced"
                              Entity.Dialed := match field.Options.BattleSpeed with PacedSpeed -> true | _ -> false
-                             Entity.DialedEvent => msg (MenuOptionsSelectBattleSpeed PacedSpeed)]
+                             Entity.DialedEvent => MenuOptionsSelectBattleSpeed PacedSpeed]
                          Content.radioButton "Swift"
                             [Entity.PositionLocal == v3 636.0f 372.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 144.0f 48.0f 0.0f
                              Entity.UndialedImage == Assets.Gui.ButtonShortUpImage; Entity.DialedImage == Assets.Gui.ButtonShortDownImage
                              Entity.Text == "Swift"
                              Entity.Dialed := match field.Options.BattleSpeed with SwiftSpeed -> true | _ -> false
-                             Entity.DialedEvent => msg (MenuOptionsSelectBattleSpeed SwiftSpeed)]]
+                             Entity.DialedEvent => MenuOptionsSelectBattleSpeed SwiftSpeed]]
 
                  // closed
                  | MenuClosed -> ()
@@ -916,7 +919,7 @@ module FieldDispatcher =
                             [Entity.PositionLocal == v3 810.0f 342.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 72.0f 72.0f 0.0f
                              Entity.UpImage == asset "Field" "CloseButtonUp"
                              Entity.DownImage == asset "Field" "CloseButtonDown"
-                             Entity.ClickEvent => msg MenuItemCancel]
+                             Entity.ClickEvent => MenuItemCancel]
                          Content.text "Line1"
                             [Entity.PositionLocal == v3 36.0f 354.0f 0.0f; Entity.ElevationLocal == 1.0f
                              Entity.Text := menuUse.MenuUseLine1]
@@ -941,7 +944,7 @@ module FieldDispatcher =
                             [Entity.PositionLocal == v3 24.0f 438.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 192.0f 48.0f 0.0f
                              Entity.Text == "Buy"
                              Entity.VisibleLocal := shop.ShopState = ShopSelling
-                             Entity.ClickEvent => msg ShopBuy]
+                             Entity.ClickEvent => ShopBuy]
                          Content.text "BuyWhat"
                             [Entity.PositionLocal == v3 24.0f 438.0f 0.0f; Entity.ElevationLocal == 1.0f
                              Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
@@ -951,7 +954,7 @@ module FieldDispatcher =
                             [Entity.PositionLocal == v3 352.0f 438.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 192.0f 48.0f 0.0f
                              Entity.Text == "Sell"
                              Entity.VisibleLocal := shop.ShopState = ShopBuying
-                             Entity.ClickEvent => msg ShopSell]
+                             Entity.ClickEvent => ShopSell]
                          Content.text "SellWhat"
                             [Entity.PositionLocal == v3 352.0f 438.0f 0.0f; Entity.ElevationLocal == 1.0f
                              Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
@@ -960,21 +963,21 @@ module FieldDispatcher =
                          Content.button "Leave"
                             [Entity.PositionLocal == v3 678.0f 438.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 192.0f 48.0f 0.0f
                              Entity.Text == "Leave"
-                             Entity.ClickEvent => msg ShopLeave]
+                             Entity.ClickEvent => ShopLeave]
                          Content.button "PageUp"
                             [Entity.PositionLocal == v3 24.0f 15.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 72.0f 72.0f 0.0f
                              Entity.Text == "<"
                              Entity.VisibleLocal := a__ items
                              Entity.UpImage == Assets.Gui.ButtonSmallUpImage
                              Entity.DownImage == Assets.Gui.ButtonSmallDownImage
-                             Entity.ClickEvent => msg ShopPageUp]
+                             Entity.ClickEvent => ShopPageUp]
                          Content.button "PageDown"
                             [Entity.PositionLocal == v3 804.0f 15.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 72.0f 72.0f 0.0f
                              Entity.Text == ">"
                              Entity.VisibleLocal := _b_ items
                              Entity.UpImage == Assets.Gui.ButtonSmallUpImage
                              Entity.DownImage == Assets.Gui.ButtonSmallDownImage
-                             Entity.ClickEvent => msg ShopPageDown]
+                             Entity.ClickEvent => ShopPageDown]
                          Content.text "Gold"
                             [Entity.PositionLocal == v3 352.0f 3.0f 0.0f; Entity.ElevationLocal == 1.0f
                              Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
@@ -992,11 +995,11 @@ module FieldDispatcher =
                            [Content.button "Accept"
                                [Entity.PositionLocal == v3 198.0f 36.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 192.0f 48.0f 0.0f
                                 Entity.Text == "Accept"
-                                Entity.ClickEvent => msg ShopConfirmAccept]
+                                Entity.ClickEvent => ShopConfirmAccept]
                             Content.button "Decline"
                                [Entity.PositionLocal == v3 498.0f 36.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 192.0f 48.0f 0.0f
                                 Entity.Text == "Decline"
-                                Entity.ClickEvent => msg ShopConfirmDecline]
+                                Entity.ClickEvent => ShopConfirmDecline]
                             Content.text "Offer"
                                [Entity.PositionLocal == v3 30.0f 180.0f 0.0f; Entity.ElevationLocal == 1.0f
                                 Entity.Text := shopConfirm.ShopConfirmOffer]

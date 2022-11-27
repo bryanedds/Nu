@@ -12,10 +12,11 @@ type Message =
     | Decrement
     | Increment
     | Reset
+    interface Prime.Message
 
 // this is our Elm-style game dispatcher
 type NelmishDispatcher () =
-    inherit GameDispatcher<Model, Message, unit> (0) // initial model value
+    inherit GameDispatcher<Model, Message, Command> (0) // initial model value
 
     // here we handle the Elm-style messages
     override this.Message (model, message, _, _) =
@@ -32,11 +33,11 @@ type NelmishDispatcher () =
                 [Content.button "Decrement"
                     [Entity.Position == v3 -256.0f 64.0f 0.0f
                      Entity.Text == "-"
-                     Entity.ClickEvent => msg Decrement]
+                     Entity.ClickEvent => Decrement]
                  Content.button "Increment"
                     [Entity.Position == v3 0.0f 64.0f 0.0f
                      Entity.Text == "+"
-                     Entity.ClickEvent => msg Increment]
+                     Entity.ClickEvent => Increment]
                  Content.text "Counter"
                     [Entity.Position == v3 -128.0f -32.0f 0.0f
                      Entity.Text := string model
@@ -45,4 +46,4 @@ type NelmishDispatcher () =
                     Content.button "Reset"
                        [Entity.Position == v3 -128.0f -128.0f 0.0f
                         Entity.Text == "Reset"
-                        Entity.ClickEvent => msg Reset]]]]
+                        Entity.ClickEvent => Reset]]]]

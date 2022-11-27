@@ -514,9 +514,9 @@ module ContentOperators =
         PropertyContent (PropertyContent.make false lens value)
 
     /// Define a signal content.
-    let inline (=>) (eventAddress : 'a Address) (signal : Signal<'message, 'command>) : InitializerContent =
+    let inline (=>) (eventAddress : 'a Address) (signal : Signal) : InitializerContent =
         EventSignalContent (Address.generalize eventAddress, signal)
 
     /// Define a signal handler content.
-    let inline (=|>) (eventAddress : 'a Address) (callback : Event<'a, 's> -> Signal<'message, 'command>) : InitializerContent =
+    let inline (=|>) (eventAddress : 'a Address) (callback : Event<'a, 's> -> Signal) : InitializerContent =
         EventHandlerContent (PartialEquatable.make (Address.generalize eventAddress) (fun (evt : Event) -> callback (Event.specialize evt) :> obj))

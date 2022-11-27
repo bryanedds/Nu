@@ -11,9 +11,11 @@ module FieldDispatcher =
 
     type FieldMessage =
         | UpdateMessage
+        interface Message
 
     type FieldCommand =
         | UpdateCommand
+        interface Command
 
     type Screen with
         member this.GetField world = this.GetModelGeneric<Field> world
@@ -50,8 +52,8 @@ module FieldDispatcher =
             descriptor
 
         override this.Initialize (_, _) =
-            [Screen.UpdateEvent => msg UpdateMessage
-             Screen.UpdateEvent => cmd UpdateCommand]
+            [Screen.UpdateEvent => UpdateMessage
+             Screen.UpdateEvent => UpdateCommand]
 
 #if false
         override this.Register (game, world) =

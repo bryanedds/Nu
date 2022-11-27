@@ -30,10 +30,12 @@ module OmniBlade =
         | ShowIntro of SaveSlot
         | TryLoad of SaveSlot
         | UpdateMessage
+        interface Prime.Message
 
     type Command =
         | Exit
         | UpdateCommand
+        interface Prime.Command
 
     type Game with
         member this.GetModel world = this.GetModelGeneric<Model> world
@@ -75,20 +77,20 @@ module OmniBlade =
                  match field.BattleOpt with
                  | None -> Simulants.Field.Screen.Field := field
                  | Some battle -> Simulants.Battle.Screen.Battle := battle
-             Simulants.Game.UpdateEvent => msg UpdateMessage
-             Simulants.Game.UpdateEvent => cmd UpdateCommand
-             Simulants.Splash.Screen.DeselectingEvent => msg ShowTitle
-             Simulants.Title.Gui.Play.ClickEvent => msg ShowPick
-             Simulants.Title.Gui.Credits.ClickEvent => msg ShowCredits
-             Simulants.Title.Gui.Exit.ClickEvent => cmd Exit
-             Simulants.Pick.Gui.NewGame1.ClickEvent => msg (ShowIntro Slot1)
-             Simulants.Pick.Gui.NewGame2.ClickEvent => msg (ShowIntro Slot2)
-             Simulants.Pick.Gui.NewGame3.ClickEvent => msg (ShowIntro Slot3)
-             Simulants.Pick.Gui.LoadGame1.ClickEvent => msg (TryLoad Slot1)
-             Simulants.Pick.Gui.LoadGame2.ClickEvent => msg (TryLoad Slot2)
-             Simulants.Pick.Gui.LoadGame3.ClickEvent => msg (TryLoad Slot3)
-             Simulants.Pick.Gui.Back.ClickEvent => msg ShowTitle
-             Simulants.Credits.Gui.Back.ClickEvent => msg ShowTitle]
+             Simulants.Game.UpdateEvent => UpdateMessage
+             Simulants.Game.UpdateEvent => UpdateCommand
+             Simulants.Splash.Screen.DeselectingEvent => ShowTitle
+             Simulants.Title.Gui.Play.ClickEvent => ShowPick
+             Simulants.Title.Gui.Credits.ClickEvent => ShowCredits
+             Simulants.Title.Gui.Exit.ClickEvent => Exit
+             Simulants.Pick.Gui.NewGame1.ClickEvent => ShowIntro Slot1
+             Simulants.Pick.Gui.NewGame2.ClickEvent => ShowIntro Slot2
+             Simulants.Pick.Gui.NewGame3.ClickEvent => ShowIntro Slot3
+             Simulants.Pick.Gui.LoadGame1.ClickEvent => TryLoad Slot1
+             Simulants.Pick.Gui.LoadGame2.ClickEvent => TryLoad Slot2
+             Simulants.Pick.Gui.LoadGame3.ClickEvent => TryLoad Slot3
+             Simulants.Pick.Gui.Back.ClickEvent => ShowTitle
+             Simulants.Credits.Gui.Back.ClickEvent => ShowTitle]
 
         override this.Message (model, message, _, world) =
 

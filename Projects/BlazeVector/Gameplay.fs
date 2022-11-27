@@ -232,11 +232,13 @@ module Gameplay =
     type GameplayMessage =
         | StartQutting
         | FinishQuitting
+        interface Message
 
     type GameplayCommand =
         | CreateSections
         | DestroySections
         | Update
+        interface Command
 
     type Screen with
         member this.GetGameplay world = this.GetModelGeneric<Gameplay> world
@@ -261,10 +263,10 @@ module Gameplay =
             shiftEntities xShift sectionEntities world
 
         override this.Initialize (_, _) =
-            [Screen.SelectEvent => cmd CreateSections
-             Screen.DeselectingEvent => cmd DestroySections
-             Screen.UpdateEvent => cmd Update
-             Simulants.Gameplay.Gui.Quit.ClickEvent => msg StartQutting]
+            [Screen.SelectEvent => CreateSections
+             Screen.DeselectingEvent => DestroySections
+             Screen.UpdateEvent => Update
+             Simulants.Gameplay.Gui.Quit.ClickEvent => StartQutting]
 
         override this.Message (_, message, _, _) =
             match message with
@@ -294,7 +296,7 @@ module Gameplay =
                 let groupNames = Simulants.Gameplay.Scene.Group.Name :: sectionNames
                 let groups = List.map (fun groupName -> gameplay / groupName) groupNames
                 let world = World.destroyGroups groups world
-                withMsg FinishQuitting world
+                withSig FinishQuitting world
 
             | Update ->
 
@@ -312,7 +314,7 @@ module Gameplay =
                 // update player fall
                 if Simulants.Gameplay.Scene.Player.HasFallen world && World.isSelectedScreenIdling world && model = Playing then
                     let world = World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.DeathSound world
-                    withMsg StartQutting world
+                    withSig StartQutting world
                 else just world
 
         override this.Content (gameplay, _) =
@@ -323,7 +325,7 @@ module Gameplay =
                      [Entity.Text == "Quit"
                       Entity.Position == v3 260.0f -260.0f 0.0f
                       Entity.Elevation == 10.0f
-                      Entity.ClickEvent => msg StartQutting]]
+                      Entity.ClickEvent => StartQutting]]
 
              // the scene group while playing
              match gameplay with
