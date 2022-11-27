@@ -29,13 +29,13 @@ module FieldCue =
             (cue, definitions, just field)
 
         | Cue.PlaySound (volume, sound) ->
-            (Cue.Fin, definitions, withSig (PlaySound (0L, volume, sound)) field)
+            (Cue.Fin, definitions, withSignal (PlaySound (0L, volume, sound)) field)
 
         | Cue.PlaySong (fadeIn, fadeOut, volume, start, song) ->
-            (Cue.Fin, definitions, withSig (PlaySong (fadeIn, fadeOut, volume, start, song)) field)
+            (Cue.Fin, definitions, withSignal (PlaySong (fadeIn, fadeOut, volume, start, song)) field)
 
         | Cue.FadeOutSong fade ->
-            (Cue.Fin, definitions, withSig (FadeOutSong fade) field)
+            (Cue.Fin, definitions, withSignal (FadeOutSong fade) field)
 
         | Cue.Face (target, direction) ->
             match target with
@@ -83,7 +83,7 @@ module FieldCue =
                 let field = Field.recruit allyType field
                 let field = Field.updateAdvents (Set.add advent) field
                 let field = Field.updateInventory (Inventory.updateGold (fun gold -> gold - fee)) field
-                (Cue.Fin, definitions, withSig (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.PurchaseSound)) field)
+                (Cue.Fin, definitions, withSignal (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.PurchaseSound)) field)
             else advance (Parallel [Dialog ("You don't have enough...", false); Cue.PlaySound (Constants.Audio.SoundVolumeDefault, Assets.Gui.MistakeSound)]) definitions field
 
         | AddItem itemType ->
@@ -284,7 +284,7 @@ module FieldCue =
         | Battle (battleType, consequents) ->
             match field.BattleOpt with
             | Some _ -> (cue, definitions, just field)
-            | None -> (BattleState, definitions, withSig (TryBattle (battleType, consequents)) field)
+            | None -> (BattleState, definitions, withSignal (TryBattle (battleType, consequents)) field)
 
         | BattleState ->
             match field.BattleOpt with

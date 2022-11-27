@@ -296,7 +296,7 @@ module Gameplay =
                 let groupNames = Simulants.Gameplay.Scene.Group.Name :: sectionNames
                 let groups = List.map (fun groupName -> gameplay / groupName) groupNames
                 let world = World.destroyGroups groups world
-                withSig FinishQuitting world
+                withSignal FinishQuitting world
 
             | Update ->
 
@@ -314,7 +314,7 @@ module Gameplay =
                 // update player fall
                 if Simulants.Gameplay.Scene.Player.HasFallen world && World.isSelectedScreenIdling world && model = Playing then
                     let world = World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.DeathSound world
-                    withSig StartQutting world
+                    withSignal StartQutting world
                 else just world
 
         override this.Content (gameplay, _) =
