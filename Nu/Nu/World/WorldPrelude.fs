@@ -66,11 +66,11 @@ type [<NoComparison>] DissolveDescriptor =
       OutgoingTime : int64
       DissolveImage : Image AssetTag }
 
-/// Describes the behavior of the screen splash algorithm.
-type [<NoComparison>] SplashDescriptor =
+/// Describes the behavior of the screen slide algorithm.
+type [<NoComparison>] SlideDescriptor =
     { DissolveDescriptor : DissolveDescriptor
       IdlingTime : int64
-      SplashImageOpt : Image AssetTag option }
+      SlideImageOpt : Image AssetTag option }
 
 /// Describes the shape of a desired overlay.
 type [<NoComparison>] OverlayNameDescriptor =

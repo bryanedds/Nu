@@ -15,10 +15,10 @@ module Dissolve =
           DissolveImage = Assets.Default.Image8 }
 
 [<RequireQualifiedAccess>]
-module Splash =
+module Slide =
 
-    /// The default 'splashing' behavior of splash screens.
+    /// The default 'slide shot' behavior of slide screens.
     let Default =
         { DissolveDescriptor = Dissolve.Default
           IdlingTime = 60L
-          SplashImageOpt = Some Assets.Default.Image5 }
+          SlideImageOpt = Some Assets.Default.Image5 }

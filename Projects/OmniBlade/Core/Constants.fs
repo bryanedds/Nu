@@ -21,7 +21,7 @@ module Constants =
         let Splash =
             { DissolveDescriptor = Constants.Dissolve.Default
               IdlingTime = 60L
-              SplashImageOpt = Some Assets.Gui.Splash }
+              SlideImageOpt = Some Assets.Gui.Splash }
 
     [<RequireQualifiedAccess>]
     module Intro =
@@ -34,7 +34,7 @@ module Constants =
         let Splash =
             { DissolveDescriptor = Constants.Dissolve.Default
               IdlingTime = 160L
-              SplashImageOpt = None }
+              SlideImageOpt = None }
 
     [<RequireQualifiedAccess>]
     module Gameplay =

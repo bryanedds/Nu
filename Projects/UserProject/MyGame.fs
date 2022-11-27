@@ -80,7 +80,7 @@ module MyGame =
 
         // here we describe the content of the game, including all of its screens.
         override this.Content (_, _) =
-            [Content.screen Simulants.Splash.Screen.Name (WorldTypes.Splash (Constants.Dissolve.Default, Constants.Splash.Default, None, Simulants.Title.Screen)) [] []
+            [Content.screen Simulants.Splash.Screen.Name (Slide (Constants.Dissolve.Default, Constants.Slide.Default, None, Simulants.Title.Screen)) [] []
              Content.screenWithGroupFromFile Simulants.Title.Screen.Name (Dissolve (Constants.Dissolve.Default, None)) "Assets/Gui/Title.nugroup" [] []
              Content.screenWithGroupFromFile Simulants.Credits.Screen.Name (Dissolve (Constants.Dissolve.Default, None)) "Assets/Gui/Credits.nugroup" [] []
              Content.screen<GameplayDispatcher> Simulants.Gameplay.Screen.Name (Dissolve (Constants.Dissolve.Default, None)) [] []]

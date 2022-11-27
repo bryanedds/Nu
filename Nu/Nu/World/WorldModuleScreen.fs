@@ -99,7 +99,7 @@ module WorldModuleScreen =
         static member internal getScreenTransitionUpdates screen world = (World.getScreenState screen world).TransitionUpdates
         static member internal getScreenIncoming screen world = (World.getScreenState screen world).Incoming
         static member internal getScreenOutgoing screen world = (World.getScreenState screen world).Outgoing
-        static member internal getScreenSplashOpt screen world = (World.getScreenState screen world).SplashOpt
+        static member internal getScreenSlideOpt screen world = (World.getScreenState screen world).SlideOpt
         static member internal getScreenPersistent screen world = (World.getScreenState screen world).Persistent
         static member internal getScreenDestroying (screen : Screen) world = List.exists ((=) (screen :> Simulant)) (World.getDestructionListRev world)
         static member internal getScreenOrder screen world = (World.getScreenState screen world).Order
@@ -171,11 +171,11 @@ module WorldModuleScreen =
             then struct (true, world |> World.setScreenState { screenState with Outgoing = value } screen |> World.publishScreenChange (nameof screenState.Outgoing) previous value screen)
             else struct (false, world)
 
-        static member internal setScreenSplashOpt value screen world =
+        static member internal setScreenSlideOpt value screen world =
             let screenState = World.getScreenState screen world
-            let previous = screenState.SplashOpt
+            let previous = screenState.SlideOpt
             if value <> previous
-            then struct (true, world |> World.setScreenState { screenState with SplashOpt = value } screen |> World.publishScreenChange (nameof screenState.SplashOpt) previous value screen)
+            then struct (true, world |> World.setScreenState { screenState with SlideOpt = value } screen |> World.publishScreenChange (nameof screenState.SlideOpt) previous value screen)
             else struct (false, world)
 
         static member internal setScreenPersistent value screen world =
@@ -343,7 +343,7 @@ module WorldModuleScreen =
         ScreenGetters.Add ("TransitionUpdates", fun screen world -> { PropertyType = typeof<int64>; PropertyValue = World.getScreenTransitionUpdates screen world })
         ScreenGetters.Add ("Incoming", fun screen world -> { PropertyType = typeof<Transition>; PropertyValue = World.getScreenIncoming screen world })
         ScreenGetters.Add ("Outgoing", fun screen world -> { PropertyType = typeof<Transition>; PropertyValue = World.getScreenOutgoing screen world })
-        ScreenGetters.Add ("SplashOpt", fun screen world -> { PropertyType = typeof<Splash option>; PropertyValue = World.getScreenSplashOpt screen world })
+        ScreenGetters.Add ("SlideOpt", fun screen world -> { PropertyType = typeof<Slide option>; PropertyValue = World.getScreenSlideOpt screen world })
         ScreenGetters.Add ("Persistent", fun screen world -> { PropertyType = typeof<bool>; PropertyValue = World.getScreenPersistent screen world })
         ScreenGetters.Add ("ScriptFrame", fun screen world -> { PropertyType = typeof<Scripting.ProceduralFrame list>; PropertyValue = World.getScreenScriptFrame screen world })
         ScreenGetters.Add ("Order", fun screen world -> { PropertyType = typeof<int64>; PropertyValue = World.getScreenOrder screen world })
@@ -357,7 +357,7 @@ module WorldModuleScreen =
         ScreenSetters.Add ("TransitionUpdates", fun property screen world -> World.setScreenTransitionUpdates (property.PropertyValue :?> int64) screen world)
         ScreenSetters.Add ("Incoming", fun property screen world -> World.setScreenIncoming (property.PropertyValue :?> Transition) screen world)
         ScreenSetters.Add ("Outgoing", fun property screen world -> World.setScreenOutgoing (property.PropertyValue :?> Transition) screen world)
-        ScreenSetters.Add ("SplashOpt", fun property screen world -> World.setScreenSplashOpt (property.PropertyValue :?> Splash option) screen world)
+        ScreenSetters.Add ("SlideOpt", fun property screen world -> World.setScreenSlideOpt (property.PropertyValue :?> Slide option) screen world)
         ScreenSetters.Add ("Persistent", fun property screen world -> World.setScreenPersistent (property.PropertyValue :?> bool) screen world)
 
     /// Initialize getters and setters
