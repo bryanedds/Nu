@@ -18,6 +18,7 @@ module Gameplay =
     type GameplayMessage =
         | StartQutting
         | FinishQuitting
+        interface Message
 
     // this is our Elm-style command type. Commands are used instead of messages when things like physics are involved.
     type GameplayCommand =
@@ -25,6 +26,7 @@ module Gameplay =
         | PostUpdateEye
         | Jump
         | Nop
+        interface Command
 
     // this extends the Screen API to expose the above Gameplay model.
     type Screen with
@@ -38,10 +40,10 @@ module Gameplay =
 
         // here we define the screen's properties and event handling
         override this.Initialize (_, _) =
-            [Screen.UpdateEvent => cmd Update
-             Screen.PostUpdateEvent => cmd PostUpdateEye
-             Screen.DeselectingEvent => msg FinishQuitting
-             Game.KeyboardKeyDownEvent =|> fun evt -> if evt.Data.KeyboardKey = KeyboardKey.Up && not evt.Data.Repeated then cmd Jump else cmd Nop]
+            [Screen.UpdateEvent => Update
+             Screen.PostUpdateEvent => PostUpdateEye
+             Screen.DeselectingEvent => FinishQuitting
+             Game.KeyboardKeyDownEvent =|> fun evt -> if evt.Data.KeyboardKey = KeyboardKey.Up && not evt.Data.Repeated then Jump else Nop]
 
         // here we handle the above messages
         override this.Message (_, message, _, _) =
@@ -89,7 +91,7 @@ module Gameplay =
                      [Entity.Text == "Quit"
                       Entity.Position == v3 260.0f -260.0f 0.0f
                       Entity.Elevation == 10.0f
-                      Entity.ClickEvent => msg StartQutting]]
+                      Entity.ClickEvent => StartQutting]]
 
              // the player and scene groups while playing
              match gameplay with

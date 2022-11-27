@@ -9,9 +9,11 @@ module AtlasDispatcher =
 
     type AtlasMessage =
         | UpdateMessage
+        interface Message
 
     type AtlasCommand =
         | UpdateCommand
+        interface Command
 
     type Screen with
         member this.GetAtlas world = this.GetModelGeneric<Atlas> world

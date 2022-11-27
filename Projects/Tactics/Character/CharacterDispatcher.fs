@@ -14,7 +14,7 @@ module CharacterDispatcher =
         member this.Character = this.ModelGeneric<Character> ()
 
     type CharacterDispatcher () =
-        inherit EntityDispatcher3d<Character, unit, unit> (true, false, Character.empty)
+        inherit EntityDispatcher3d<Character, Message, Command> (true, false, Character.empty)
 
         static let getSpriteInset (character : Character) world =
             Character.getAnimationInset (World.getUpdateTime world) character

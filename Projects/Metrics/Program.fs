@@ -34,7 +34,7 @@ type [<StructuralEquality; NoComparison; Struct>] Shake =
         member this.Active with get () = this.Active and set value = this.Active <- value
 
 type MetricsEntityDispatcher () =
-    inherit EntityDispatcher3d<StaticModel AssetTag, unit, unit> (true, false, Assets.Default.StaticModel)
+    inherit EntityDispatcher3d<StaticModel AssetTag, Message, Command> (true, false, Assets.Default.StaticModel)
 
 #if !ELMISH
     override this.Update (entity, world) =

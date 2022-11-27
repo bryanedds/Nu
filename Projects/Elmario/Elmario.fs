@@ -9,15 +9,16 @@ type Command =
     | Update
     | Jump
     | Nop
+    interface Prime.Command
 
 // this is our Elm-style game dispatcher
 type ElmarioDispatcher () =
-    inherit GameDispatcher<unit, unit, Command> (())
+    inherit GameDispatcher<unit, Message, Command> (())
 
     // here we define the game's properties and event handling
     override this.Initialize (_, _) =
-        [Game.UpdateEvent => cmd Update
-         Game.KeyboardKeyDownEvent =|> fun evt -> if evt.Data.KeyboardKey = KeyboardKey.Up && not evt.Data.Repeated then cmd Jump else cmd Nop]
+        [Game.UpdateEvent => Update
+         Game.KeyboardKeyDownEvent =|> fun evt -> if evt.Data.KeyboardKey = KeyboardKey.Up && not evt.Data.Repeated then Jump else Nop]
 
     // here we handle the Elm-style commands
     override this.Command (_, command, _, world) =

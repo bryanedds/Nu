@@ -19,9 +19,11 @@ module AvatarDispatcher =
         | BodySeparation of BodySeparationData
         | TryFace of Direction
         | Nil
+        interface Message
 
     type [<NoComparison>] AvatarCommand =
         | TryTravel of Vector3
+        interface Command
 
     type Entity with
         member this.GetAvatar world = this.GetModelGeneric<Avatar> world
@@ -69,10 +71,10 @@ module AvatarDispatcher =
              Entity.FixedRotation == true
              Entity.GravityScale == 0.0f
              Entity.BodyShape := bodyShape
-             Entity.UpdateEvent => msg Update
-             Entity.BodyCollisionEvent =|> fun evt -> msg (BodyCollision evt.Data)
-             Entity.BodySeparationEvent =|> fun evt -> msg (BodySeparation evt.Data)
-             entity.Group.PostUpdateEvent => msg PostUpdate]
+             Entity.UpdateEvent => Update
+             Entity.BodyCollisionEvent =|> fun evt -> BodyCollision evt.Data
+             Entity.BodySeparationEvent =|> fun evt -> BodySeparation evt.Data
+             entity.Group.PostUpdateEvent => PostUpdate]
 
         override this.Message (avatar, message, entity, world) =
             let time = World.getUpdateTime world

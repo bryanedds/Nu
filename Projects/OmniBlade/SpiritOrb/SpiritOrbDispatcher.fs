@@ -28,7 +28,7 @@ module SpiritOrbDispatcher =
         member this.SpiritOrb = this.ModelGeneric<SpiritOrb> ()
 
     type SpiritOrbDispatcher () =
-        inherit GuiDispatcher<SpiritOrb, unit, unit> ({ AvatarLowerCenter = v3Zero; Spirits = [||]; Chests = [||]; Portals = [||] })
+        inherit GuiDispatcher<SpiritOrb, Message, Command> ({ AvatarLowerCenter = v3Zero; Spirits = [||]; Chests = [||]; Portals = [||] })
 
         static let makeViews avatarLowerCenter (orbTransform : Transform) inhabitants =
             let mutable orbTransform = orbTransform

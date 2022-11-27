@@ -22,11 +22,13 @@ module MyGame =
         | ShowCredits
         | ShowMyGameplay
         | Update
+        interface Prime.Message
 
     // this is our Elm-style command type. Commands are used instead of messages when explicitly
     // updating the world is involved.
     type Command =
         | Exit
+        interface Prime.Command
 
     // this extends the Game API to expose the above model.
     type Game with
@@ -50,13 +52,13 @@ module MyGame =
                     match gameplay with
                     | Playing -> Desire Simulants.Gameplay.Screen
                     | Quitting | Quit -> Desire Simulants.Title.Screen
-             Game.UpdateEvent => msg Update
+             Game.UpdateEvent => Update
              match model with Gameplay gameplay -> Simulants.Gameplay.Screen.Gameplay := gameplay | _ -> ()
-             Simulants.Splash.Screen.DeselectingEvent => msg ShowTitle
-             Simulants.Title.Gui.Credits.ClickEvent => msg ShowCredits
-             Simulants.Title.Gui.Play.ClickEvent => msg ShowMyGameplay
-             Simulants.Title.Gui.Exit.ClickEvent => cmd Exit
-             Simulants.Credits.Gui.Back.ClickEvent => msg ShowTitle]
+             Simulants.Splash.Screen.DeselectingEvent => ShowTitle
+             Simulants.Title.Gui.Credits.ClickEvent => ShowCredits
+             Simulants.Title.Gui.Play.ClickEvent => ShowMyGameplay
+             Simulants.Title.Gui.Exit.ClickEvent => Exit
+             Simulants.Credits.Gui.Back.ClickEvent => ShowTitle]
 
         // here we handle the above messages
         override this.Message (model, message, _, world) =

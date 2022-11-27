@@ -1106,7 +1106,7 @@ module EntityDispatcherModule2 =
 
     type World with
 
-        static member internal signalEntity<'model, 'message, 'command> signal (entity : Entity) world =
+        static member internal signalEntity<'model, 'message, 'command when 'message :> Message and 'command :> Command> (signal : Signal) (entity : Entity) world =
             match entity.GetDispatcher world with
             | :? EntityDispatcher<'model, 'message, 'command> as dispatcher ->
                 Signal.processSignal dispatcher.Message dispatcher.Command (entity.ModelGeneric<'model> ()) signal entity world
@@ -1119,10 +1119,11 @@ module EntityDispatcherModule2 =
         member this.UpdateModel<'model> updater world =
             this.SetModelGeneric<'model> (updater (this.GetModelGeneric<'model> world)) world
 
-        member this.Signal<'model, 'message, 'command> signal world =
+        member this.Signal<'model, 'message, 'command when 'message :> Message and 'command :> Command> signal world =
             World.signalEntity<'model, 'message, 'command> signal this world
 
-    and [<AbstractClass>] EntityDispatcher<'model, 'message, 'command> (is2d, centered, physical, makeInitial : World -> 'model) =
+    and [<AbstractClass>] EntityDispatcher<'model, 'message, 'command when 'message :> Message and 'command :> Command>
+        (is2d, centered, physical, makeInitial : World -> 'model) =
         inherit EntityDispatcher (is2d, centered, physical)
 
         new (is2d, centered, physical, initial : 'model) =
@@ -1155,33 +1156,9 @@ module EntityDispatcherModule2 =
 
         override this.TrySignal (signalObj, entity, world) =
             match signalObj with
-            | :? Signal<'message, obj> as signal -> entity.Signal<'model, 'message, 'command> (match signal with Message message -> msg message | _ -> failwithumf ()) world
-            | :? Signal<obj, 'command> as signal -> entity.Signal<'model, 'message, 'command> (match signal with Command command -> cmd command | _ -> failwithumf ()) world
-#if ALLOW_SIGNAL_STRINGS
-            | :? Signal<string, obj> as signalWithMsgStr ->
-                match signalWithMsgStr with
-                | Message msgStr ->
-                    try let msg = scvalue<'message> msgStr in this.TrySignal (Message msg, entity, world)
-                    with exn ->
-                        Log.info ("Incorrect signal type received by entity (signal = '" + scstring signalObj + "'; entity = '" + scstring entity + "').")
-                        World.choose world
-                | _ ->
-                    Log.info ("Incorrect signal type received by entity (signal = '" + scstring signalObj + "'; entity = '" + scstring entity + "').")
-                    World.choose world
-            | :? Signal<obj, string> as signalWithCmdStr ->
-                match signalWithCmdStr with
-                | Command cmdStr ->
-                    try let cmd = scvalue<'command> cmdStr in this.TrySignal (Command cmd, entity, world)
-                    with exn ->
-                        Log.info ("Incorrect signal type received by entity (signal = '" + scstring signalObj + "'; entity = '" + scstring entity + "').")
-                        World.choose world
-                | _ ->
-                    Log.info ("Incorrect signal type received by entity (signal = '" + scstring signalObj + "'; entity = '" + scstring entity + "').")
-                    World.choose world
-#endif
-            | _ ->
-                Log.info ("Incorrect signal type received by entity (signal = '" + scstring signalObj + "'; entity = '" + scstring entity + "').")
-                world
+            | :? 'message as message -> entity.Signal<'model, 'message, 'command> message world
+            | :? 'command as command -> entity.Signal<'model, 'message, 'command> command world
+            | _ -> Log.info ("Incorrect signal type received by entity (signal = '" + scstring signalObj + "'; entity = '" + scstring entity + "')."); world
 
         override this.TrySynchronize (initializing, entity, world) =
             let contentOld = World.getEntityContent entity world
@@ -1195,13 +1172,13 @@ module EntityDispatcherModule2 =
         abstract member Initialize : 'model * Entity -> InitializerContent list
         default this.Initialize (_, _) = []
 
-        abstract member Physics : Vector3 * Quaternion * Vector3 * Vector3 * 'model * Entity * World -> Signal<'message, 'command> list * 'model
+        abstract member Physics : Vector3 * Quaternion * Vector3 * Vector3 * 'model * Entity * World -> Signal list * 'model
         default this.Physics (_, _, _, _, model, _, _) = just model
 
-        abstract member Message : 'model * 'message * Entity * World -> Signal<'message, 'command> list * 'model
+        abstract member Message : 'model * 'message * Entity * World -> Signal list * 'model
         default this.Message (model, _, _, _) = just model
 
-        abstract member Command : 'model * 'command * Entity * World -> Signal<'message, 'command> list * World
+        abstract member Command : 'model * 'command * Entity * World -> Signal list * World
         default this.Command (_, _, _, world) = just world
 
         abstract member Content : 'model * Entity -> EntityContent list
@@ -1210,7 +1187,7 @@ module EntityDispatcherModule2 =
         abstract member View : 'model * Entity * World -> View
         default this.View (_, _, _) = View.empty
 
-    and [<AbstractClass>] EntityDispatcher2d<'model, 'message, 'command> (centered, physical, makeInitial : World -> 'model) =
+    and [<AbstractClass>] EntityDispatcher2d<'model, 'message, 'command when 'message :> Message and 'command :> Command> (centered, physical, makeInitial : World -> 'model) =
         inherit EntityDispatcher<'model, 'message, 'command> (true, centered, physical, makeInitial)
 
         new (centered, physical, initial) =
@@ -1220,7 +1197,7 @@ module EntityDispatcherModule2 =
             [define Entity.Centered false
              define Entity.Size Constants.Engine.EntitySize2dDefault]
 
-    and [<AbstractClass>] EntityDispatcher3d<'model, 'message, 'command> (centered, physical, makeInitial : World -> 'model) =
+    and [<AbstractClass>] EntityDispatcher3d<'model, 'message, 'command when 'message :> Message and 'command :> Command> (centered, physical, makeInitial : World -> 'model) =
         inherit EntityDispatcher<'model, 'message, 'command> (false, centered, physical, makeInitial)
 
         new (centered, physical, initial) =
@@ -1232,7 +1209,7 @@ module EntityDispatcherModule2 =
 [<AutoOpen>]
 module GuiDispatcherModule2 =
 
-    type [<AbstractClass>] GuiDispatcher<'model, 'message, 'command> (makeInitial : World -> 'model) =
+    type [<AbstractClass>] GuiDispatcher<'model, 'message, 'command when 'message :> Message and 'command :> Command> (makeInitial : World -> 'model) =
         inherit EntityDispatcher2d<'model, 'message, 'command> (false, false, makeInitial)
 
         new (initial : 'model) =
@@ -1250,7 +1227,7 @@ module GroupDispatcherModule =
 
     type World with
 
-        static member internal signalGroup<'model, 'message, 'command> signal (group : Group) world =
+        static member internal signalGroup<'model, 'message, 'command when 'message :> Message and 'command :> Command> signal (group : Group) world =
             match group.GetDispatcher world with
             | :? GroupDispatcher<'model, 'message, 'command> as dispatcher ->
                 Signal.processSignal dispatcher.Message dispatcher.Command (group.ModelGeneric<'model> ()) signal group world
@@ -1263,10 +1240,10 @@ module GroupDispatcherModule =
         member this.UpdateModel<'model> updater world =
             this.SetModelGeneric<'model> (updater (this.GetModelGeneric<'model> world)) world
 
-        member this.Signal<'model, 'message, 'command> signal world =
+        member this.Signal<'model, 'message, 'command when 'message :> Message and 'command :> Command> signal world =
             World.signalGroup<'model, 'message, 'command> signal this world
 
-    and [<AbstractClass>] GroupDispatcher<'model, 'message, 'command> (makeInitial : World -> 'model) =
+    and [<AbstractClass>] GroupDispatcher<'model, 'message, 'command when 'message :> Message and 'command :> Command> (makeInitial : World -> 'model) =
         inherit GroupDispatcher ()
 
         new (initial : 'model) =
@@ -1293,33 +1270,9 @@ module GroupDispatcherModule =
 
         override this.TrySignal (signalObj : obj, group, world) =
             match signalObj with
-            | :? Signal<'message, obj> as signal -> group.Signal<'model, 'message, 'command> (match signal with Message message -> msg message | _ -> failwithumf ()) world
-            | :? Signal<obj, 'command> as signal -> group.Signal<'model, 'message, 'command> (match signal with Command command -> cmd command | _ -> failwithumf ()) world
-#if ALLOW_SIGNAL_STRINGS
-            | :? Signal<string, obj> as signalWithMsgStr ->
-                match signalWithMsgStr with
-                | Message msgStr ->
-                    try let msg = scvalue<'message> msgStr in this.TrySignal (Message msg, group, world)
-                    with exn ->
-                        Log.info ("Incorrect signal type received by group (signal = '" + scstring signalObj + "'; group = '" + scstring group + "').")
-                        World.choose world
-                | _ ->
-                    Log.info ("Incorrect signal type received by group (signal = '" + scstring signalObj + "'; group = '" + scstring group + "').")
-                    World.choose world
-            | :? Signal<obj, string> as signalWithCmdStr ->
-                match signalWithCmdStr with
-                | Command cmdStr ->
-                    try let cmd = scvalue<'command> cmdStr in this.TrySignal (Command cmd, group, world)
-                    with exn ->
-                        Log.info ("Incorrect signal type received by group (signal = '" + scstring signalObj + "'; group = '" + scstring group + "').")
-                        World.choose world
-                | _ ->
-                    Log.info ("Incorrect signal type received by group (signal = '" + scstring signalObj + "'; group = '" + scstring group + "').")
-                    World.choose world
-#endif
-            | _ ->
-                Log.info ("Incorrect signal type received by group (signal = '" + scstring signalObj + "'; group = '" + scstring group + "').")
-                world
+            | :? 'message as message -> group.Signal<'model, 'message, 'command> message world
+            | :? 'command as command -> group.Signal<'model, 'message, 'command> command world
+            | _ -> Log.info ("Incorrect signal type received by group (signal = '" + scstring signalObj + "'; group = '" + scstring group + "')."); world
 
         override this.TrySynchronize (initializing, group, world) =
             let contentOld = World.getGroupContent group world
@@ -1333,10 +1286,10 @@ module GroupDispatcherModule =
         abstract member Initialize : 'model * Group -> InitializerContent list
         default this.Initialize (_, _) = []
 
-        abstract member Message : 'model * 'message * Group * World -> Signal<'message, 'command> list * 'model
+        abstract member Message : 'model * 'message * Group * World -> Signal list * 'model
         default this.Message (model, _, _, _) = just model
 
-        abstract member Command : 'model * 'command * Group * World -> Signal<'message, 'command> list * World
+        abstract member Command : 'model * 'command * Group * World -> Signal list * World
         default this.Command (_, _, _, world) = just world
 
         abstract member Content : 'model * Group -> EntityContent list
@@ -1350,7 +1303,7 @@ module ScreenDispatcherModule =
 
     type World with
 
-        static member internal signalScreen<'model, 'message, 'command> signal (screen : Screen) world =
+        static member internal signalScreen<'model, 'message, 'command when 'message :> Message and 'command :> Command> signal (screen : Screen) world =
             match screen.GetDispatcher world with
             | :? ScreenDispatcher<'model, 'message, 'command> as dispatcher ->
                 Signal.processSignal dispatcher.Message dispatcher.Command (screen.ModelGeneric<'model> ()) signal screen world
@@ -1363,10 +1316,10 @@ module ScreenDispatcherModule =
         member this.UpdateModel<'model> updater world =
             this.SetModelGeneric<'model> (updater (this.GetModelGeneric<'model> world)) world
 
-        member this.Signal<'model, 'message, 'command> signal world =
+        member this.Signal<'model, 'message, 'command when 'message :> Message and 'command :> Command> signal world =
             World.signalScreen<'model, 'message, 'command> signal this world
 
-    and [<AbstractClass>] ScreenDispatcher<'model, 'message, 'command> (makeInitial : World -> 'model) =
+    and [<AbstractClass>] ScreenDispatcher<'model, 'message, 'command when 'message :> Message and 'command :> Command> (makeInitial : World -> 'model) =
         inherit ScreenDispatcher ()
 
         new (initial : 'model) =
@@ -1393,33 +1346,9 @@ module ScreenDispatcherModule =
 
         override this.TrySignal (signalObj : obj, screen, world) =
             match signalObj with
-            | :? Signal<'message, obj> as signal -> screen.Signal<'model, 'message, 'command> (match signal with Message message -> msg message | _ -> failwithumf ()) world
-            | :? Signal<obj, 'command> as signal -> screen.Signal<'model, 'message, 'command> (match signal with Command command -> cmd command | _ -> failwithumf ()) world
-#if ALLOW_SIGNAL_STRINGS
-            | :? Signal<string, obj> as signalWithMsgStr ->
-                match signalWithMsgStr with
-                | Message msgStr ->
-                    try let msg = scvalue<'message> msgStr in this.TrySignal (Message msg, screen, world)
-                    with exn ->
-                        Log.info ("Incorrect signal type received by screen (signal = '" + scstring signalObj + "'; screen = '" + scstring screen + "').")
-                        World.choose world
-                | _ ->
-                    Log.info ("Incorrect signal type received by screen (signal = '" + scstring signalObj + "'; screen = '" + scstring screen + "').")
-                    World.choose world
-            | :? Signal<obj, string> as signalWithCmdStr ->
-                match signalWithCmdStr with
-                | Command cmdStr ->
-                    try let cmd = scvalue<'command> cmdStr in this.TrySignal (Command cmd, screen, world)
-                    with exn ->
-                        Log.info ("Incorrect signal type received by screen (signal = '" + scstring signalObj + "'; screen = '" + scstring screen + "').")
-                        World.choose world
-                | _ ->
-                    Log.info ("Incorrect signal type received by screen (signal = '" + scstring signalObj + "'; screen = '" + scstring screen + "').")
-                    World.choose world
-#endif
-            | _ ->
-                Log.info ("Incorrect signal type received by screen (signal = '" + scstring signalObj + "'; screen = '" + scstring screen + "').")
-                world
+            | :? 'message as message -> screen.Signal<'model, 'message, 'command> message world
+            | :? 'command as command -> screen.Signal<'model, 'message, 'command> command world
+            | _ -> Log.info ("Incorrect signal type received by screen (signal = '" + scstring signalObj + "'; screen = '" + scstring screen + "')."); world
 
         override this.TrySynchronize (initializing, screen, world) =
             let contentOld = World.getScreenContent screen world
@@ -1433,10 +1362,10 @@ module ScreenDispatcherModule =
         abstract member Initialize : 'model * Screen -> InitializerContent list
         default this.Initialize (_, _) = []
 
-        abstract member Message : 'model * 'message * Screen * World -> Signal<'message, 'command> list * 'model
+        abstract member Message : 'model * 'message * Screen * World -> Signal list * 'model
         default this.Message (model, _, _, _) = just model
 
-        abstract member Command : 'model * 'command * Screen * World -> Signal<'message, 'command> list * World
+        abstract member Command : 'model * 'command * Screen * World -> Signal list * World
         default this.Command (_, _, _, world) = just world
 
         abstract member Content : 'model * Screen -> GroupContent list
@@ -1450,7 +1379,7 @@ module GameDispatcherModule =
 
     type World with
 
-        static member internal signalGame<'model, 'message, 'command> signal (game : Game) world =
+        static member internal signalGame<'model, 'message, 'command when 'message :> Message and 'command :> Command> signal (game : Game) world =
             match game.GetDispatcher world with
             | :? GameDispatcher<'model, 'message, 'command> as dispatcher ->
                 Signal.processSignal dispatcher.Message dispatcher.Command (game.ModelGeneric<'model> ()) signal game world
@@ -1461,10 +1390,10 @@ module GameDispatcherModule =
         member this.UpdateModel<'model> updater world =
             this.SetModelGeneric<'model> (updater (this.GetModelGeneric<'model> world)) world
 
-        member this.Signal<'model, 'message, 'command> signal world =
+        member this.Signal<'model, 'message, 'command when 'message :> Message and 'command :> Command> signal world =
             World.signalGame<'model, 'message, 'command> signal this world
 
-    and [<AbstractClass>] GameDispatcher<'model, 'message, 'command> (makeInitial : World -> 'model) =
+    and [<AbstractClass>] GameDispatcher<'model, 'message, 'command when 'message :> Message and 'command :> Command> (makeInitial : World -> 'model) =
         inherit GameDispatcher ()
 
         static let synchronize initializing game world (this : GameDispatcher<'model, 'message, 'command>) =
@@ -1500,33 +1429,9 @@ module GameDispatcherModule =
 
         override this.TrySignal (signalObj : obj, game, world) =
             match signalObj with
-            | :? Signal<'message, obj> as signal -> game.Signal<'model, 'message, 'command> (match signal with Message message -> msg message | _ -> failwithumf ()) world
-            | :? Signal<obj, 'command> as signal -> game.Signal<'model, 'message, 'command> (match signal with Command command -> cmd command | _ -> failwithumf ()) world
-#if ALLOW_SIGNAL_STRINGS
-            | :? Signal<string, obj> as signalWithMsgStr ->
-                match signalWithMsgStr with
-                | Message msgStr ->
-                    try let msg = scvalue<'message> msgStr in this.TrySignal (Message msg, game, world)
-                    with exn ->
-                        Log.info ("Incorrect signal type received by game (signal = '" + scstring signalObj + "'; game = '" + scstring game + "').")
-                        World.choose world
-                | _ ->
-                    Log.info ("Incorrect signal type received by game (signal = '" + scstring signalObj + "'; game = '" + scstring game + "').")
-                    World.choose world
-            | :? Signal<obj, string> as signalWithCmdStr ->
-                match signalWithCmdStr with
-                | Command cmdStr ->
-                    try let cmd = scvalue<'command> cmdStr in this.TrySignal (Command cmd, game, world)
-                    with exn ->
-                        Log.info ("Incorrect signal type received by game (signal = '" + scstring signalObj + "'; game = '" + scstring game + "').")
-                        World.choose world
-                | _ ->
-                    Log.info ("Incorrect signal type received by game (signal = '" + scstring signalObj + "'; game = '" + scstring game + "').")
-                    World.choose world
-#endif
-            | _ ->
-                Log.info ("Incorrect signal type received by game (signal = '" + scstring signalObj + "'; game = '" + scstring game + "').")
-                world
+            | :? 'message as message -> game.Signal<'model, 'message, 'command> message world
+            | :? 'command as command -> game.Signal<'model, 'message, 'command> command world
+            | _ -> Log.info ("Incorrect signal type received by game (signal = '" + scstring signalObj + "'; game = '" + scstring game + "')."); world
 
         override this.TrySynchronize (initializing, game, world) =
             synchronize initializing game world this |> snd
@@ -1534,10 +1439,10 @@ module GameDispatcherModule =
         abstract member Initialize : 'model * Game -> InitializerContent list
         default this.Initialize (_, _) = []
 
-        abstract member Message : 'model * 'message * Game * World -> Signal<'message, 'command> list * 'model
+        abstract member Message : 'model * 'message * Game * World -> Signal list * 'model
         default this.Message (model, _, _, _) = just model
 
-        abstract member Command : 'model * 'command * Game * World -> Signal<'message, 'command> list * World
+        abstract member Command : 'model * 'command * Game * World -> Signal list * World
         default this.Command (_, _, _, world) = just world
 
         abstract member Content : 'model * Game -> ScreenContent list
@@ -1552,7 +1457,7 @@ module WorldModule2' =
     type World with
 
         /// Send a signal to a simulant.
-        static member trySignal (signal : Signal<'message, 'command>) (simulant : Simulant) world =
+        static member trySignal (signal : Signal) (simulant : Simulant) world =
             match simulant with
             | :? Entity as entity -> entity.TrySignal signal world
             | :? Group as group -> group.TrySignal signal world
@@ -1561,7 +1466,7 @@ module WorldModule2' =
             | _ -> failwithumf ()
 
         /// Send a signal to a simulant.
-        static member signal<'model, 'message, 'command> signal (simulant : Simulant) world =
+        static member signal<'model, 'message, 'command when 'message :> Message and 'command :> Command> signal (simulant : Simulant) world =
             match simulant with
             | :? Entity as entity -> entity.Signal<'model, 'message, 'command> signal world
             | :? Group as group -> group.Signal<'model, 'message, 'command> signal world
