@@ -126,7 +126,7 @@
       <HintPath>..\..\Nu\Nu.Dependencies\OpenGL.NET.0.8.4\lib\net461\OpenGL.Net.dll</HintPath>
     </Reference>
     <Reference Include="Prime">
-      <HintPath>..\..\packages\Prime.8.1.0\lib\net472\Prime.dll</HintPath>
+      <HintPath>..\..\packages\Prime.8.2.0\lib\net472\Prime.dll</HintPath>
     </Reference>
     <Reference Include="Prime.Scripting">
       <HintPath>..\..\packages\Prime.Scripting.8.0.0\lib\net472\Prime.Scripting.exe</HintPath>
