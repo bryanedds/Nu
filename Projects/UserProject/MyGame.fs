@@ -16,7 +16,7 @@ module MyGame =
         | Credits
         | Gameplay of Gameplay
 
-    // this is our Elm-style message type. It provides a signal to show the various screens.
+    // this is our Elm-style message type.
     type Message =
         | ShowTitle
         | ShowCredits
