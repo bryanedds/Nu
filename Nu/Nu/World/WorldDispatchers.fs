@@ -59,9 +59,11 @@ module ScriptFacetModule =
         member this.GetUpdateScript world : Scripting.Expr = this.Get (nameof this.UpdateScript) world
         member this.SetUpdateScript (value : Scripting.Expr) world = this.Set (nameof this.UpdateScript) value world
         member this.UpdateScript = lens (nameof this.UpdateScript) this this.GetUpdateScript this.SetUpdateScript
+#if !DISABLE_ENTITY_POST_UPDATE
         member this.GetPostUpdateScript world : Scripting.Expr = this.Get (nameof this.PostUpdateScript) world
         member this.SetPostUpdateScript (value : Scripting.Expr) world = this.Set (nameof this.PostUpdateScript) value world
         member this.PostUpdateScript = lens (nameof this.PostUpdateScript) this this.GetPostUpdateScript this.SetPostUpdateScript
+#endif
         member this.GetRenderScript world : Scripting.Expr = this.Get (nameof this.RenderScript) world
         member this.SetRenderScript (value : Scripting.Expr) world = this.Set (nameof this.RenderScript) value world
         member this.RenderScript = lens (nameof this.RenderScript) this this.GetRenderScript this.SetRenderScript
@@ -90,7 +92,9 @@ module ScriptFacetModule =
              define Entity.RegisterScript Scripting.Unit
              define Entity.UnregisterScript Scripting.Unit
              define Entity.UpdateScript Scripting.Unit
+#if !DISABLE_ENTITY_POST_UPDATE
              define Entity.PostUpdateScript Scripting.Unit
+#endif
              define Entity.RenderScript Scripting.Unit]
 
         override this.Register (entity, world) =
