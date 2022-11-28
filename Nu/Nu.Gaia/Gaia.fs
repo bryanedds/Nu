@@ -1935,7 +1935,10 @@ module Gaia =
             // initialize event filter as not to flood the log
             let world =
                 World.setEventFilter
-                    (EventFilter.NotAny [EventFilter.Pattern (Rexpr "Update", []); EventFilter.Pattern (Rexpr "Mouse/Move", [])])
+                    (EventFilter.NotAny
+                        [EventFilter.Pattern (Rexpr "Update", [])
+                         EventFilter.Pattern (Rexpr "Render", [])
+                         EventFilter.Pattern (Rexpr "Mouse/Move", [])])
                     world
 
             // apply any selected mode
