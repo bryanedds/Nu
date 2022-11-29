@@ -2,7 +2,16 @@
 open Prime
 open Nu
 open Nu.Declarative
-open Elmario
+
+// this module provides global handles to the game's key simulants.
+// having a Simulants module for your game is optional, but can be nice to avoid duplicating string literals across
+// the code base.
+[<RequireQualifiedAccess>]
+module Simulants =
+
+    let Screen = Nu.Screen "Screen"
+    let Group = Screen / "Group"
+    let Elmario = Group / "Elmario"
 
 // this is our Elm-style command type
 type Command =
@@ -24,7 +33,7 @@ type ElmarioDispatcher () =
     override this.Command (_, command, _, world) =
         match command with
         | Update ->
-            let physicsId = Simulants.Screen.Group.Elmario.GetPhysicsId world
+            let physicsId = Simulants.Elmario.GetPhysicsId world
             if World.isKeyboardKeyDown KeyboardKey.Left world then
                 let world =
                     if World.isBodyOnGround physicsId world
@@ -39,7 +48,7 @@ type ElmarioDispatcher () =
                 just world
             else just world
         | Jump ->
-            let physicsId = Simulants.Screen.Group.Elmario.GetPhysicsId world
+            let physicsId = Simulants.Elmario.GetPhysicsId world
             if World.isBodyOnGround physicsId world then
                 let world = World.playSound Constants.Audio.SoundVolumeDefault (asset "Gameplay" "Jump") world
                 let world = World.applyBodyForce (v3 0.0f 140000.0f 0.0f) physicsId world
@@ -49,9 +58,9 @@ type ElmarioDispatcher () =
 
     // here we describe the content of the game including elmario, the ground he walks on, and a rock.
     override this.Content (_, _) =
-        [Content.screen Simulants.Screen.Screen.Name Vanilla []
-            [Content.group Simulants.Screen.Group.Group.Name []
-                [Content.sideViewCharacter Simulants.Screen.Group.Elmario.Name
+        [Content.screen Simulants.Screen.Name Vanilla []
+            [Content.group Simulants.Group.Name []
+                [Content.sideViewCharacter Simulants.Elmario.Name
                     [Entity.Position == v3 0.0f 0.0f 0.0f
                      Entity.Size == v3 108.0f 108.0f 0.0f]
                  Content.block2d "Ground"

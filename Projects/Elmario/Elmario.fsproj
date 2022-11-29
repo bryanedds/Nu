@@ -68,7 +68,6 @@
     <DisableFastUpToDateCheck>true</DisableFastUpToDateCheck>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="Simulants.fs" />
     <Compile Include="Elmario.fs" />
     <Compile Include="ElmarioPlugin.fs" />
     <Compile Include="Program.fs" />
