@@ -1,4 +1,6 @@
 ﻿namespace BlazeVector
+open System
+open Prime
 open Nu
 
 // this module contains asset constants that are used by the game.
