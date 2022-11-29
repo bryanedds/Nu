@@ -29,7 +29,7 @@ type NelmishDispatcher () =
     // button entities, and one text control.
     override this.Content (model, _) =
         [Content.screen Simulants.Default.Screen.Name Vanilla []
-            [Content.group Simulants.Default.Screen.Name []
+            [Content.group Simulants.Default.Group.Name []
                 [Content.button "Decrement"
                     [Entity.Position == v3 -256.0f 64.0f 0.0f
                      Entity.Text == "-"
