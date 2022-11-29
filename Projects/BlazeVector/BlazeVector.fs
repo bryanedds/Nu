@@ -1,7 +1,9 @@
 ﻿namespace BlazeVector
+open System
 open Prime
 open Nu
 open Nu.Declarative
+open BlazeVector
 
 [<AutoOpen>]
 module BlazeVector =
@@ -47,8 +49,8 @@ module BlazeVector =
                 | Title -> Desire Simulants.Title
                 | Credits -> Desire Simulants.Credits
                 | Gameplay gameplay -> match gameplay with Playing -> Desire Simulants.Gameplay | Quitting | Quit -> Desire Simulants.Title
-             Game.UpdateEvent => Update
              match model with Gameplay gameplay -> Simulants.Gameplay.Gameplay := gameplay | _ -> ()
+             Game.UpdateEvent => Update
              Simulants.Splash.DeselectingEvent => ShowTitle
              Simulants.TitleGuiCredits.ClickEvent => ShowCredits
              Simulants.TitleGuiPlay.ClickEvent => ShowGameplay

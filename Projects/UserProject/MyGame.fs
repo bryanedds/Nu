@@ -52,8 +52,8 @@ module MyGame =
                     match gameplay with
                     | Playing -> Desire Simulants.Gameplay
                     | Quitting | Quit -> Desire Simulants.Title
-             Game.UpdateEvent => Update
              match model with Gameplay gameplay -> Simulants.Gameplay.Gameplay := gameplay | _ -> ()
+             Game.UpdateEvent => Update
              Simulants.Splash.DeselectingEvent => ShowTitle
              Simulants.TitleGuiCredits.ClickEvent => ShowCredits
              Simulants.TitleGuiPlay.ClickEvent => ShowMyGameplay
