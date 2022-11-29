@@ -56,41 +56,41 @@ module OmniBlade =
                 match model with
                 | Gui gui ->
                     match gui with
-                    | Splash -> Desire Simulants.Splash.Screen
-                    | Title -> Desire Simulants.Title.Screen
-                    | Credits -> Desire Simulants.Credits.Screen
-                    | Pick -> Desire Simulants.Pick.Screen
-                    | Intro _ -> Desire Simulants.Intro.Screen
+                    | Splash -> Desire Simulants.Splash
+                    | Title -> Desire Simulants.Title
+                    | Credits -> Desire Simulants.Credits
+                    | Pick -> Desire Simulants.Pick
+                    | Intro _ -> Desire Simulants.Intro
                 | Field field ->
                     match field.FieldState with
                     | Playing ->
                         match field.BattleOpt with
                         | Some battle ->
                             match battle.BattleState with
-                            | BattleQuitting (_, _, _) | BattleQuit -> Desire Simulants.Field.Screen
-                            | _ -> Desire Simulants.Battle.Screen
-                        | None -> Desire Simulants.Field.Screen
-                    | Quitting | Quit -> Desire Simulants.Title.Screen
+                            | BattleQuitting (_, _, _) | BattleQuit -> Desire Simulants.Field
+                            | _ -> Desire Simulants.Battle
+                        | None -> Desire Simulants.Field
+                    | Quitting | Quit -> Desire Simulants.Title
              match model with
              | Gui _ -> ()
              | Field field ->
                  match field.BattleOpt with
-                 | None -> Simulants.Field.Screen.Field := field
-                 | Some battle -> Simulants.Battle.Screen.Battle := battle
+                 | None -> Simulants.Field.Field := field
+                 | Some battle -> Simulants.Battle.Battle := battle
              Simulants.Game.UpdateEvent => UpdateMessage
              Simulants.Game.UpdateEvent => UpdateCommand
-             Simulants.Splash.Screen.DeselectingEvent => ShowTitle
-             Simulants.Title.Gui.Play.ClickEvent => ShowPick
-             Simulants.Title.Gui.Credits.ClickEvent => ShowCredits
-             Simulants.Title.Gui.Exit.ClickEvent => Exit
-             Simulants.Pick.Gui.NewGame1.ClickEvent => ShowIntro Slot1
-             Simulants.Pick.Gui.NewGame2.ClickEvent => ShowIntro Slot2
-             Simulants.Pick.Gui.NewGame3.ClickEvent => ShowIntro Slot3
-             Simulants.Pick.Gui.LoadGame1.ClickEvent => TryLoad Slot1
-             Simulants.Pick.Gui.LoadGame2.ClickEvent => TryLoad Slot2
-             Simulants.Pick.Gui.LoadGame3.ClickEvent => TryLoad Slot3
-             Simulants.Pick.Gui.Back.ClickEvent => ShowTitle
-             Simulants.Credits.Gui.Back.ClickEvent => ShowTitle]
+             Simulants.Splash.DeselectingEvent => ShowTitle
+             Simulants.TitleGuiPlay.ClickEvent => ShowPick
+             Simulants.TitleGuiCredits.ClickEvent => ShowCredits
+             Simulants.TitleGuiExit.ClickEvent => Exit
+             Simulants.PickGuiNewGame1.ClickEvent => ShowIntro Slot1
+             Simulants.PickGuiNewGame2.ClickEvent => ShowIntro Slot2
+             Simulants.PickGuiNewGame3.ClickEvent => ShowIntro Slot3
+             Simulants.PickGuiLoadGame1.ClickEvent => TryLoad Slot1
+             Simulants.PickGuiLoadGame2.ClickEvent => TryLoad Slot2
+             Simulants.PickGuiLoadGame3.ClickEvent => TryLoad Slot3
+             Simulants.PickGuiBack.ClickEvent => ShowTitle
+             Simulants.CreditsGuiBack.ClickEvent => ShowTitle]
 
         override this.Message (model, message, _, world) =
 
@@ -121,10 +121,10 @@ module OmniBlade =
                     | Field field ->
                         match field.BattleOpt with
                         | None ->
-                            let field' = Simulants.Field.Screen.GetField world
+                            let field' = Simulants.Field.GetField world
                             if field =/= field' then Field field' else model
                         | Some battle ->
-                            let battle' = Simulants.Battle.Screen.GetBattle world
+                            let battle' = Simulants.Battle.GetBattle world
                             if battle =/= battle' then Field (Field.updateBattleOpt (constant (Some battle')) field) else model
 
                 // update model
@@ -133,7 +133,7 @@ module OmniBlade =
                     | Gui gui ->
                         match gui with
                         | Intro slot ->
-                            match Simulants.Intro5.Screen.GetTransitionState world with
+                            match Simulants.Intro5.GetTransitionState world with
                             | OutgoingState -> Field (Field.initial slot (max 1UL Gen.randomul) world)
                             | _ -> model
                         | _ -> model
@@ -162,13 +162,13 @@ module OmniBlade =
 
                 // update picks
                 let world =
-                    if Simulants.Pick.Screen.IsSelected world then
-                        let world = Simulants.Pick.Gui.NewGame1.SetVisible (not (File.Exists Assets.Global.SaveFilePath1)) world
-                        let world = Simulants.Pick.Gui.NewGame2.SetVisible (not (File.Exists Assets.Global.SaveFilePath2)) world
-                        let world = Simulants.Pick.Gui.NewGame3.SetVisible (not (File.Exists Assets.Global.SaveFilePath3)) world
-                        let world = Simulants.Pick.Gui.LoadGame1.SetVisible (File.Exists Assets.Global.SaveFilePath1) world
-                        let world = Simulants.Pick.Gui.LoadGame2.SetVisible (File.Exists Assets.Global.SaveFilePath2) world
-                        let world = Simulants.Pick.Gui.LoadGame3.SetVisible (File.Exists Assets.Global.SaveFilePath3) world
+                    if Simulants.Pick.IsSelected world then
+                        let world = Simulants.PickGuiNewGame1.SetVisible (not (File.Exists Assets.Global.SaveFilePath1)) world
+                        let world = Simulants.PickGuiNewGame2.SetVisible (not (File.Exists Assets.Global.SaveFilePath2)) world
+                        let world = Simulants.PickGuiNewGame3.SetVisible (not (File.Exists Assets.Global.SaveFilePath3)) world
+                        let world = Simulants.PickGuiLoadGame1.SetVisible (File.Exists Assets.Global.SaveFilePath1) world
+                        let world = Simulants.PickGuiLoadGame2.SetVisible (File.Exists Assets.Global.SaveFilePath2) world
+                        let world = Simulants.PickGuiLoadGame3.SetVisible (File.Exists Assets.Global.SaveFilePath3) world
                         world
                     else world
 
@@ -186,26 +186,26 @@ module OmniBlade =
         override this.Content (_, _) =
 
             [// splash
-             Content.screen Simulants.Splash.Screen.Name (Slide (Constants.Gui.Dissolve, Constants.Gui.Splash, None, Simulants.Title.Screen)) [] []
+             Content.screen Simulants.Splash.Name (Slide (Constants.Gui.Dissolve, Constants.Gui.Splash, None, Simulants.Title)) [] []
 
              // title
-             Content.screenWithGroupFromFile Simulants.Title.Screen.Name (Dissolve (Constants.Gui.Dissolve, Some Assets.Gui.TitleSong)) Assets.Gui.TitleGroupFilePath [] []
+             Content.screenWithGroupFromFile Simulants.Title.Name (Dissolve (Constants.Gui.Dissolve, Some Assets.Gui.TitleSong)) Assets.Gui.TitleGroupFilePath [] []
 
              // credits
-             Content.screenWithGroupFromFile Simulants.Credits.Screen.Name (Dissolve (Constants.Gui.Dissolve, Some Assets.Gui.TitleSong)) Assets.Gui.CreditsGroupFilePath [] []
+             Content.screenWithGroupFromFile Simulants.Credits.Name (Dissolve (Constants.Gui.Dissolve, Some Assets.Gui.TitleSong)) Assets.Gui.CreditsGroupFilePath [] []
 
              // pick
-             Content.screenWithGroupFromFile Simulants.Pick.Screen.Name (Dissolve ({ Constants.Gui.Dissolve with OutgoingTime = 90L }, Some Assets.Gui.TitleSong)) Assets.Gui.PickGroupFilePath [] []
+             Content.screenWithGroupFromFile Simulants.Pick.Name (Dissolve ({ Constants.Gui.Dissolve with OutgoingTime = 90L }, Some Assets.Gui.TitleSong)) Assets.Gui.PickGroupFilePath [] []
 
              // field
-             Content.screen<FieldDispatcher> Simulants.Field.Screen.Name (Dissolve (Constants.Gui.Dissolve, None)) [] []
+             Content.screen<FieldDispatcher> Simulants.Field.Name (Dissolve (Constants.Gui.Dissolve, None)) [] []
 
              // battle
-             Content.screen<BattleDispatcher> Simulants.Battle.Screen.Name (Dissolve (Constants.Gui.Dissolve, None)) [] []
+             Content.screen<BattleDispatcher> Simulants.Battle.Name (Dissolve (Constants.Gui.Dissolve, None)) [] []
 
              // intros
-             Content.screenWithGroupFromFile Simulants.Intro.Screen.Name (Slide (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.Gui.IntroSong, Simulants.Intro2.Screen)) Assets.Gui.IntroGroupFilePath [] []
-             Content.screenWithGroupFromFile Simulants.Intro2.Screen.Name (Slide (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.Gui.IntroSong, Simulants.Intro3.Screen)) Assets.Gui.Intro2GroupFilePath [] []
-             Content.screenWithGroupFromFile Simulants.Intro3.Screen.Name (Slide (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.Gui.IntroSong, Simulants.Intro4.Screen)) Assets.Gui.Intro3GroupFilePath [] []
-             Content.screenWithGroupFromFile Simulants.Intro4.Screen.Name (Slide (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.Gui.IntroSong, Simulants.Intro5.Screen)) Assets.Gui.Intro4GroupFilePath [] []
-             Content.screenWithGroupFromFile Simulants.Intro5.Screen.Name (Slide (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.Gui.IntroSong, Simulants.Field.Screen)) Assets.Gui.Intro5GroupFilePath [] []]
+             Content.screenWithGroupFromFile Simulants.Intro.Name (Slide (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.Gui.IntroSong, Simulants.Intro2)) Assets.Gui.IntroGroupFilePath [] []
+             Content.screenWithGroupFromFile Simulants.Intro2.Name (Slide (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.Gui.IntroSong, Simulants.Intro3)) Assets.Gui.Intro2GroupFilePath [] []
+             Content.screenWithGroupFromFile Simulants.Intro3.Name (Slide (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.Gui.IntroSong, Simulants.Intro4)) Assets.Gui.Intro3GroupFilePath [] []
+             Content.screenWithGroupFromFile Simulants.Intro4.Name (Slide (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.Gui.IntroSong, Simulants.Intro5)) Assets.Gui.Intro4GroupFilePath [] []
+             Content.screenWithGroupFromFile Simulants.Intro5.Name (Slide (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.Gui.IntroSong, Simulants.Field)) Assets.Gui.Intro5GroupFilePath [] []]

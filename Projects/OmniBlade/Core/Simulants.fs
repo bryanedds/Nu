@@ -10,90 +10,48 @@ open OmniBlade
 [<RequireQualifiedAccess>]
 module Simulants =
 
-    [<RequireQualifiedAccess>]
-    module Splash = let Screen = Screen "Splash"
+    // splash screen
+    let Splash = Screen "Splash"
 
-    [<RequireQualifiedAccess>]
-    module Intro = let Screen = Screen "Intro"
-    
-    [<RequireQualifiedAccess>]
-    module Intro2 = let Screen = Screen "Intro2"
-    
-    [<RequireQualifiedAccess>]
-    module Intro3 = let Screen = Screen "Intro3"
-    
-    [<RequireQualifiedAccess>]
-    module Intro4 = let Screen = Screen "Intro4"
-    
-    [<RequireQualifiedAccess>]
-    module Intro5 = let Screen = Screen "Intro5"
+    // intro screens
+    let Intro = Screen "Intro"
+    let Intro2 = Screen "Intro2"
+    let Intro3 = Screen "Intro3"
+    let Intro4 = Screen "Intro4"
+    let Intro5 = Screen "Intro5"
 
-    [<RequireQualifiedAccess>]
-    module Title =
+    // title screen
+    let Title = Screen "Title"
+    let TitleGui = Title / "Gui"
+    let TitleGuiPlay = TitleGui / "Play"
+    let TitleGuiCredits = TitleGui / "Credits"
+    let TitleGuiExit = TitleGui / "Exit"
 
-        let Screen = Screen "Title"
-    
-        [<RequireQualifiedAccess>]
-        module Gui =
+    // pick screen
+    let Pick = Screen "Pick"
+    let PickGui = Pick / "Gui"
+    let PickGuiNewGame1 = PickGui / "NewGame1"
+    let PickGuiNewGame2 = PickGui / "NewGame2"
+    let PickGuiNewGame3 = PickGui / "NewGame3"
+    let PickGuiLoadGame1 = PickGui / "LoadGame1"
+    let PickGuiLoadGame2 = PickGui / "LoadGame2"
+    let PickGuiLoadGame3 = PickGui / "LoadGame3"
+    let PickGuiBack = PickGui / "Back"
 
-            let Group = Screen / "Gui"
-            let Play = Group / "Play"
-            let Credits = Group / "Credits"
-            let Exit = Group / "Exit"
+    // credits screen
+    let Credits = Screen "Credits"
+    let CreditsGui = Credits / "Gui"
+    let CreditsGuiBack = CreditsGui / "Back"
 
-    [<RequireQualifiedAccess>]
-    module Pick =
+    // field screen
+    let Field = Screen "Field"
+    let FieldScene = Field / "Scene"
+    let FieldSceneFeeler = FieldScene / "Feeler"
+    let FieldSceneAvatar = FieldScene / "Avatar"
+    let FieldSceneTileMap = FieldScene / "TileMap"
 
-        let Screen = Screen "Pick"
-
-        [<RequireQualifiedAccess>]
-        module Gui =
-
-            let Group = Screen / "Gui"
-            let NewGame1 = Group / "NewGame1"
-            let NewGame2 = Group / "NewGame2"
-            let NewGame3 = Group / "NewGame3"
-            let LoadGame1 = Group / "LoadGame1"
-            let LoadGame2 = Group / "LoadGame2"
-            let LoadGame3 = Group / "LoadGame3"
-            let Back = Group / "Back"
-    
-    [<RequireQualifiedAccess>]
-    module Credits =
-
-        let Screen = Screen "Credits"
-    
-        [<RequireQualifiedAccess>]
-        module Gui =
-    
-            let Group = Screen / "Gui"
-            let Back = Group / "Back"
-
-    [<RequireQualifiedAccess>]
-    module Field =
-
-        let Screen = Screen "Field"
-
-        [<RequireQualifiedAccess>]
-        module Scene =
-
-            let Group = Screen / "Scene"
-            let Feeler = Group / "Feeler"
-            let Avatar = Group / "Avatar"
-            let TileMap = Group / "TileMap"
-
-    [<RequireQualifiedAccess>]
-    module Battle =
-
-        let Screen = Screen "Battle"
-
-        [<RequireQualifiedAccess>]
-        module Scene =
-
-            let Group = Screen / "Scene"
-            let Ride = Group / "Ride"
-
-        [<RequireQualifiedAccess>]
-        module Inputs =
-
-            let Group = Screen / "Inputs"
+    // battle screen
+    let Battle = Screen "Battle"
+    let BattleScene = Battle / "Scene"
+    let BattleSceneRide = BattleScene / "Ride"
+    let BattleInputs = Battle / "Inputs"

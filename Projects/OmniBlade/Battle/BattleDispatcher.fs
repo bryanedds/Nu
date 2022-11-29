@@ -94,7 +94,7 @@ module BattleDispatcher =
 
         static let displayEffect delay size positioning effect screen world =
             World.schedule (fun world ->
-                let (entity, world) = World.createEntity<EffectDispatcher2d> DefaultOverlay None Simulants.Battle.Scene.Group world
+                let (entity, world) = World.createEntity<EffectDispatcher2d> DefaultOverlay None Simulants.BattleScene world
                 let world = entity.SetEffect effect world
                 let world = entity.SetSize size world
                 let world =
@@ -924,9 +924,9 @@ module BattleDispatcher =
                 withSignals sigs battle
 
             | TechCharacterAmbient (sourceIndex, _, _) ->
-                if Simulants.Battle.Scene.Ride.Exists world then
+                if Simulants.BattleSceneRide.Exists world then
                     let battle =
-                        let tags = Simulants.Battle.Scene.Ride.GetEffectTags world
+                        let tags = Simulants.BattleSceneRide.GetEffectTags world
                         match Map.tryFind "Tag" tags with
                         | Some tag -> Battle.updateCharacterBottom (constant tag.Position) sourceIndex battle
                         | None -> battle
@@ -975,7 +975,7 @@ module BattleDispatcher =
             
             | DisplayHop hop ->
                 let effect = Effects.makeHopEffect hop.HopStart hop.HopStop
-                let (entity, world) = World.createEntity<EffectDispatcher2d> DefaultOverlay (Some Simulants.Battle.Scene.Ride.Surnames) Simulants.Battle.Scene.Group world
+                let (entity, world) = World.createEntity<EffectDispatcher2d> DefaultOverlay (Some Simulants.BattleSceneRide.Surnames) Simulants.BattleScene world
                 let world = entity.SetEffect effect world
                 let world = entity.SetEffectOffset v3Zero world
                 let world = entity.SetSelfDestruct true world
@@ -983,7 +983,7 @@ module BattleDispatcher =
 
             | DisplayCircle (position, radius) ->
                 let effect = Effects.makeCircleEffect radius
-                let (entity, world) = World.createEntity<EffectDispatcher2d> DefaultOverlay (Some Simulants.Battle.Scene.Ride.Surnames) Simulants.Battle.Scene.Group world
+                let (entity, world) = World.createEntity<EffectDispatcher2d> DefaultOverlay (Some Simulants.BattleSceneRide.Surnames) Simulants.BattleScene world
                 let world = entity.SetPosition position world
                 let world = entity.SetEffect effect world
                 let world = entity.SetSelfDestruct true world
@@ -993,7 +993,7 @@ module BattleDispatcher =
                 match Battle.tryGetCharacter targetIndex battle with
                 | Some target ->
                     let effect = Effects.makeCancelEffect ()
-                    let (entity, world) = World.createEntity<EffectDispatcher2d> DefaultOverlay None Simulants.Battle.Scene.Group world
+                    let (entity, world) = World.createEntity<EffectDispatcher2d> DefaultOverlay None Simulants.BattleScene world
                     let world = entity.SetPosition target.CenterOffset4 world
                     let world = entity.SetEffect effect world
                     let world = entity.SetElevation (Constants.Battle.GuiEffectElevation + 1.0f) world
@@ -1005,7 +1005,7 @@ module BattleDispatcher =
                 match Battle.tryGetCharacter targetIndex battle with
                 | Some target ->
                     let effect = Effects.makeHitPointsChangeEffect delta
-                    let (entity, world) = World.createEntity<EffectDispatcher2d> DefaultOverlay None Simulants.Battle.Scene.Group world
+                    let (entity, world) = World.createEntity<EffectDispatcher2d> DefaultOverlay None Simulants.BattleScene world
                     let world = entity.SetPosition target.CenterOffset3 world
                     let world = entity.SetEffect effect world
                     let world = entity.SetElevation Constants.Battle.GuiEffectElevation world
@@ -1132,7 +1132,7 @@ module BattleDispatcher =
         override this.Content (battle, _) =
 
             [// scene group
-             Content.group Simulants.Battle.Scene.Group.Name []
+             Content.group Simulants.BattleScene.Name []
 
                 [// tile map
                  Content.tileMap "TileMap"
@@ -1174,7 +1174,7 @@ module BattleDispatcher =
                              Entity.Center := ally.BottomOffset
                              Entity.Elevation == Constants.Battle.GuiElevation
                              Entity.Fill := single ally.HitPoints / single ally.HitPointsMax]
-                            
+
                          // tech bar
                          Content.fillBar "TechBar" 
                             [Entity.MountOpt == None
@@ -1188,7 +1188,7 @@ module BattleDispatcher =
              if battle.Running then
 
                 // inputs group
-                Content.group Simulants.Battle.Inputs.Group.Name []
+                Content.group Simulants.BattleInputs.Name []
 
                     [// inputs
                      for (index, ally) in (Battle.getAlliesHealthy battle).Pairs do
