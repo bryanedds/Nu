@@ -2098,7 +2098,7 @@ module WorldModuleEntity =
 
         /// Create an entity and add it to the world.
         [<FunctionBinding "createEntity">]
-        static member createEntity5 dispatcherName surnames overlayDescriptor (group : Group) world =
+        static member createEntity5 dispatcherName overlayDescriptor surnames (group : Group) world =
 
             // find the entity's dispatcher
             let dispatchers = World.getEntityDispatchers world
@@ -2186,7 +2186,7 @@ module WorldModuleEntity =
         /// Create an entity from a simulant descriptor.
         static member createEntity4 overlayDescriptor descriptor group world =
             let (entity, world) =
-                World.createEntity5 descriptor.SimulantDispatcherName descriptor.SimulantSurnamesOpt overlayDescriptor group world
+                World.createEntity5 descriptor.SimulantDispatcherName overlayDescriptor descriptor.SimulantSurnamesOpt group world
             let world =
                 List.fold (fun world (propertyName, property) ->
                     World.setEntityProperty propertyName property entity world |> snd')
@@ -2198,8 +2198,8 @@ module WorldModuleEntity =
             (entity, world)
 
         /// Create an entity and add it to the world.
-        static member createEntity<'d when 'd :> EntityDispatcher> surnamesOpt overlayNameDescriptor group world =
-            World.createEntity5 typeof<'d>.Name surnamesOpt overlayNameDescriptor group world
+        static member createEntity<'d when 'd :> EntityDispatcher> overlayNameDescriptor surnamesOpt group world =
+            World.createEntity5 typeof<'d>.Name overlayNameDescriptor surnamesOpt group world
 
         /// Duplicate an entity.
         static member duplicateEntity source (destination : Entity) world =

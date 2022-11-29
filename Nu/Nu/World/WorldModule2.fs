@@ -390,7 +390,7 @@ module WorldModule2 =
             let world = screen.SetSlideOpt (Some { IdlingTime = slideDescriptor.IdlingTime; Destination = destination }) world
             let world = World.createGroup<GroupDispatcher> (Some slideGroup.Name) screen world |> snd
             let world = slideGroup.SetPersistent false world
-            let world = World.createEntity<StaticSpriteDispatcher> (Some slideSprite.Surnames) DefaultOverlay slideGroup world |> snd
+            let world = World.createEntity<StaticSpriteDispatcher> DefaultOverlay (Some slideSprite.Surnames) slideGroup world |> snd
             let world = slideSprite.SetPersistent false world
             let world = slideSprite.SetSize cameraEyeSize.V3 world
             let world = slideSprite.SetPosition (-cameraEyeSize.V3 * 0.5f) world

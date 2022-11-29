@@ -881,7 +881,7 @@ module Gaia =
                         let parent = entityTds.DescribedEntity
                         Array.add name parent.Surnames
                     | _ -> [|name|]
-                let (entity, world) = World.createEntity5 dispatcherName (Some surnames) overlayNameDescriptor selectedGroup world
+                let (entity, world) = World.createEntity5 dispatcherName overlayNameDescriptor (Some surnames) selectedGroup world
                 let (positionSnap, degreesSnap, scaleSnap) = getSnaps form
                 let viewport = World.getViewport world
                 let mousePosition = World.getMousePosition world

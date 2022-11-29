@@ -74,7 +74,7 @@ module FieldDispatcher =
                         positions.Add position
             let world =
                 Seq.fold (fun world position ->
-                    let (staticModel, world) = World.createEntity<StaticModelDispatcher> None NoOverlay Simulants.Field.Scene.Group world
+                    let (staticModel, world) = World.createEntity<StaticModelDispatcher> NoOverlay None Simulants.Field.Scene.Group world
                     staticModel.SetPosition position world)
                     world positions
             world

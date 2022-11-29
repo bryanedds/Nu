@@ -1934,21 +1934,21 @@ module WorldBindings =
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'readEntityFromFile' due to: " + scstring exn, ValueNone)
             struct (violation, World.choose oldWorld)
 
-    let createEntity dispatcherName names overlayDescriptor group world =
+    let createEntity dispatcherName overlayDescriptor names group world =
         let oldWorld = world
         try
             let dispatcherName =
                 match ScriptingSystem.tryExport typeof<String> dispatcherName world with
                 | Some value -> value :?> String
                 | None -> failwith "Invalid argument type for 'dispatcherName'; expecting a value convertable to String."
-            let names =
-                match ScriptingSystem.tryExport typeof<FSharpOption<String[]>> names world with
-                | Some value -> value :?> FSharpOption<String[]>
-                | None -> failwith "Invalid argument type for 'names'; expecting a value convertable to FSharpOption`1."
             let overlayDescriptor =
                 match ScriptingSystem.tryExport typeof<OverlayNameDescriptor> overlayDescriptor world with
                 | Some value -> value :?> OverlayNameDescriptor
                 | None -> failwith "Invalid argument type for 'overlayDescriptor'; expecting a value convertable to OverlayNameDescriptor."
+            let names =
+                match ScriptingSystem.tryExport typeof<FSharpOption<String[]>> names world with
+                | Some value -> value :?> FSharpOption<String[]>
+                | None -> failwith "Invalid argument type for 'names'; expecting a value convertable to FSharpOption`1."
             let struct (group, world) =
                 let context = World.getScriptContext world
                 match World.evalInternal group world with
@@ -1959,7 +1959,7 @@ module WorldBindings =
                     struct (Group address, world)
                 | struct (Scripting.Violation (_, error, _), _) -> failwith error
                 | struct (_, _) -> failwith "Relation must be either a String or Keyword."
-            let result = World.createEntity5 dispatcherName names overlayDescriptor group world
+            let result = World.createEntity5 dispatcherName overlayDescriptor names group world
             let (value, world) = result
             let value = let str = scstring value in if Symbol.shouldBeExplicit str then Scripting.String str else Scripting.Keyword str
             struct (value, world)
@@ -3827,7 +3827,7 @@ module WorldBindings =
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [|dispatcherName; names; overlayDescriptor; group|] -> createEntity dispatcherName names overlayDescriptor group world
+            | [|dispatcherName; overlayDescriptor; names; group|] -> createEntity dispatcherName overlayDescriptor names group world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
                 struct (violation, world)
@@ -4580,7 +4580,7 @@ module WorldBindings =
              ("tryPickEntity3d", { Fn = evalTryPickEntity3dBinding; Pars = [|"position"; "entities"|]; DocOpt = None })
              ("writeEntityToFile", { Fn = evalWriteEntityToFileBinding; Pars = [|"filePath"; "enity"|]; DocOpt = None })
              ("readEntityFromFile", { Fn = evalReadEntityFromFileBinding; Pars = [|"filePath"; "nameOpt"; "group"|]; DocOpt = None })
-             ("createEntity", { Fn = evalCreateEntityBinding; Pars = [|"dispatcherName"; "names"; "overlayDescriptor"; "group"|]; DocOpt = None })
+             ("createEntity", { Fn = evalCreateEntityBinding; Pars = [|"dispatcherName"; "overlayDescriptor"; "names"; "group"|]; DocOpt = None })
              ("renameEntity", { Fn = evalRenameEntityBinding; Pars = [|"source"; "destination"|]; DocOpt = None })
              ("trySetEntityOverlayNameOpt", { Fn = evalTrySetEntityOverlayNameOptBinding; Pars = [|"overlayNameOpt"; "entity"|]; DocOpt = None })
              ("trySetEntityFacetNames", { Fn = evalTrySetEntityFacetNamesBinding; Pars = [|"facetNames"; "entity"|]; DocOpt = None })
