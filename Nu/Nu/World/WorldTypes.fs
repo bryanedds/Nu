@@ -1438,6 +1438,15 @@ type World = WorldTypes.World
 /// specific values.
 type NuPlugin = WorldTypes.NuPlugin
 
+/// A model-message-command-content (MMCC) signal tag type.
+type Signal = Prime.Signal
+
+/// A model-message-command-content (MMCC) message tag type.
+type Message = Prime.Message
+
+/// A model-message-command-content (MMCC) command tag type.
+type Command = Prime.Command
+
 [<RequireQualifiedAccess>]
 module GameContent =
 

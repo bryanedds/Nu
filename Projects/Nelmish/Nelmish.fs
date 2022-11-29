@@ -12,7 +12,7 @@ type Message =
     | Decrement
     | Increment
     | Reset
-    interface Prime.Message
+    interface Nu.Message
 
 // this is our Elm-style game dispatcher
 type NelmishDispatcher () =

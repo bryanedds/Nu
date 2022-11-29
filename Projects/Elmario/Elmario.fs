@@ -18,7 +18,7 @@ type Command =
     | Update
     | Jump
     | Nop
-    interface Prime.Command
+    interface Nu.Command
 
 // this is our Elm-style game dispatcher
 type ElmarioDispatcher () =
