@@ -1,4 +1,6 @@
 ﻿namespace BlazeVector
+open System
+open Prime
 open Nu
 
 // this module provides global handles to the game's key simulants.
@@ -7,48 +9,26 @@ open Nu
 [<RequireQualifiedAccess>]
 module Simulants =
 
-    [<RequireQualifiedAccess>]
-    module Splash =
+    // splash screen
+    let Splash = Screen "Splash"
 
-        let Screen = Screen "Splash"
+    // title screen
+    let Title = Screen "Title"
+    let TitleGui = Title / "Gui"
+    let TitleGuiPlay = TitleGui / "Play"
+    let TitleGuiCredits = TitleGui / "Credits"
+    let TitleGuiExit = TitleGui / "Exit"
 
-    [<RequireQualifiedAccess>]
-    module Title =
+    // credits screen
+    let Credits = Screen "Credits"
+    let CreditsGui = Credits / "Gui"
+    let CreditsGuiBack = CreditsGui / "Back"
 
-        let Screen = Screen "Title"
-
-        [<RequireQualifiedAccess>]
-        module Gui =
-
-            let Group = Screen / "Gui"
-            let Play = Group / "Play"
-            let Credits = Group / "Credits"
-            let Exit = Group / "Exit"
-
-    [<RequireQualifiedAccess>]
-    module Credits =
-        
-        let Screen = Screen "Credits"
-
-        [<RequireQualifiedAccess>]
-        module Gui =
-
-            let Group = Screen / "Gui"
-            let Back = Group / "Back"
-
-    [<RequireQualifiedAccess>]
-    module Gameplay =
-
-        let Screen = Screen "Gameplay"
-
-        [<RequireQualifiedAccess>]
-        module Gui =
-
-            let Group = Screen / "Gui"
-            let Quit = Group / "Quit"
-
-        [<RequireQualifiedAccess>]
-        module Scene =
-
-            let Group = Screen / "Scene"
-            let Player = Group / "Player"
+    // gameplay screen
+    let Gameplay = Screen "Gameplay"
+    let GameplayGui = Gameplay / "Gui"
+    let GameplayGuiQuit = GameplayGui / "Quit"
+    let GameplayScene = Gameplay / "Scene"
+    let GameplayScenePlayer = GameplayScene / "Player"
+    let GameplaySceneSphereLeft = GameplayScene / "SphereLeft"
+    let GameplaySceneSphereRight = GameplayScene / "SphereLeft"
