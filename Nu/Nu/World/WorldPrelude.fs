@@ -9,6 +9,15 @@ open TiledSharp
 open Prime
 open Nu
 
+/// A model-message-command-content (MMCC) signal tag type.
+type Signal = Prime.Signal
+
+/// A model-message-command-content (MMCC) message tag type.
+type Message = Prime.Message
+
+/// A model-message-command-content (MMCC) command tag type.
+type Command = Prime.Command
+
 /// Describes a Tiled tile.
 type [<StructuralEquality; NoComparison; Struct>] TileDescriptor =
     { mutable Tile : TmxLayerTile
