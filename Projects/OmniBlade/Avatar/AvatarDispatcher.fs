@@ -133,7 +133,7 @@ module AvatarDispatcher =
                 | BodySeparationImplicit physicsId ->
                     let entityOpt =
                         world |>
-                        World.getEntities Simulants.Field.Scene.Group |>
+                        World.getEntities Simulants.FieldScene |>
                         Seq.filter (fun entity -> entity.Is<PropDispatcher> world && entity.GetPhysicsId world = physicsId) |>
                         Seq.tryHead
                     match entityOpt with
@@ -162,7 +162,7 @@ module AvatarDispatcher =
                 if  not (World.isSelectedScreenTransitioning world) &&
                     force <> v3Zero &&
                     entity.GetEnabled world then
-                    let physicsId = Simulants.Field.Scene.Avatar.GetPhysicsId world
+                    let physicsId = Simulants.FieldSceneAvatar.GetPhysicsId world
                     let world = World.applyBodyForce force physicsId world
                     just world
                 else just world

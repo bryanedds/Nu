@@ -126,7 +126,7 @@ module FieldDispatcher =
                 just world
 
         override this.Content (field, _) =
-            [Content.group Simulants.Field.Scene.Group.Name []
+            [Content.group Simulants.FieldScene.Name []
                 [Content.fps "Fps" [Entity.Position == v3 200.0f -250.0f 0.0f]
                  Content.skyBox "SkyBox" []
                  for (index, (vertices, _)) in (Field.getOccupants field).Pairs do

@@ -161,7 +161,7 @@ module FieldDispatcher =
             | Update ->
 
                 // pull field state from avatar
-                let avatar = Simulants.Field.Scene.Avatar.GetAvatar world
+                let avatar = Simulants.FieldSceneAvatar.GetAvatar world
                 let field = if avatar <> field.Avatar then Field.updateAvatar (constant avatar) field else field
 
                 // advance field time
@@ -526,8 +526,8 @@ module FieldDispatcher =
             match command with
             | ProcessKeyInput ->
                 if  Option.isNone field.FieldTransitionOpt &&
-                    Simulants.Field.Scene.Feeler.GetTouched world |> not then
-                    let avatar = Simulants.Field.Scene.Avatar
+                    Simulants.FieldSceneFeeler.GetTouched world |> not then
+                    let avatar = Simulants.FieldSceneAvatar
                     let force = v3Zero
                     let force = if World.isKeyboardKeyDown KeyboardKey.Right world || World.isKeyboardKeyDown KeyboardKey.D world then v3 Constants.Field.AvatarWalkForce 0.0f 0.0f + force else force
                     let force = if World.isKeyboardKeyDown KeyboardKey.Left world || World.isKeyboardKeyDown KeyboardKey.A world then v3 -Constants.Field.AvatarWalkForce 0.0f 0.0f + force else force
@@ -550,7 +550,7 @@ module FieldDispatcher =
                     World.isKeyboardKeyUp KeyboardKey.Left world && World.isKeyboardKeyUp KeyboardKey.A world &&
                     World.isKeyboardKeyUp KeyboardKey.Up world && World.isKeyboardKeyUp KeyboardKey.W world &&
                     World.isKeyboardKeyUp KeyboardKey.Down world && World.isKeyboardKeyUp KeyboardKey.S world then
-                    let avatar = Simulants.Field.Scene.Avatar
+                    let avatar = Simulants.FieldSceneAvatar
                     let lowerCenter = field.Avatar.LowerCenter
                     let viewport = World.getViewport world
                     let eyePosition = World.getEyePosition2d world
@@ -569,7 +569,7 @@ module FieldDispatcher =
             | UpdateEye ->
                 if World.getUpdateRate world <> 0L then
                     let world = World.setEyePosition2d field.Avatar.Center.V2 world
-                    let tileMapPerimeter2d = (Simulants.Field.Scene.TileMap.GetPerimeter world).Box2
+                    let tileMapPerimeter2d = (Simulants.FieldSceneTileMap.GetPerimeter world).Box2
                     let eyeBounds = tileMapPerimeter2d.WithPosition (tileMapPerimeter2d.Position + v2 48.0f 48.0f)
                     let eyeBounds = eyeBounds.WithSize (tileMapPerimeter2d.Size - v2 96.0f 96.0f)
                     let world = World.constrainEyeBounds2d eyeBounds world
@@ -630,10 +630,10 @@ module FieldDispatcher =
         override this.Content (field, _) =
 
             [// scene group
-             Content.group Simulants.Field.Scene.Group.Name []
+             Content.group Simulants.FieldScene.Name []
 
                 [// avatar
-                 Content.entity<AvatarDispatcher> Simulants.Field.Scene.Avatar.Name
+                 Content.entity<AvatarDispatcher> Simulants.FieldSceneAvatar.Name
                     [Entity.Position == v3Zero; Entity.Elevation == Constants.Field.ForegroundElevation; Entity.Size == Constants.Gameplay.CharacterSize
                      Entity.Enabled :=
                         field.Menu.MenuState = MenuClosed &&
@@ -683,7 +683,7 @@ module FieldDispatcher =
                         | None -> Color.Zero]
 
                  // tmx map
-                 Content.tmxMap Simulants.Field.Scene.TileMap.Name
+                 Content.tmxMap Simulants.FieldSceneTileMap.Name
                     [Entity.Elevation == Constants.Field.BackgroundElevation
                      Entity.TmxMap :=
                         match Map.tryFind field.FieldType Data.Value.Fields with
@@ -727,7 +727,7 @@ module FieldDispatcher =
                      Entity.TileLayerClearance == 10.0f]
 
                  // feeler
-                 Content.feeler Simulants.Field.Scene.Feeler.Name
+                 Content.feeler Simulants.FieldSceneFeeler.Name
                     [Entity.Position == -Constants.Render.ResolutionF.V3 * 0.5f; Entity.Elevation == Constants.Field.FeelerElevation; Entity.Size == Constants.Render.ResolutionF.V3
                      Entity.TouchingEvent =|> fun evt -> ProcessTouchInput evt.Data]
 
