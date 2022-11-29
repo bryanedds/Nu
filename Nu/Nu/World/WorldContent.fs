@@ -228,7 +228,7 @@ module Content =
                     else world
                 let world =
                     Seq.fold (fun world (entity : Entity, entityContent : EntityContent) ->
-                        let (entity, world) = World.createEntity5 entityContent.EntityDispatcherName (Some entity.Surnames) DefaultOverlay entity.Group world
+                        let (entity, world) = World.createEntity5 entityContent.EntityDispatcherName DefaultOverlay (Some entity.Surnames) entity.Group world
                         synchronizeEntity true EntityContent.empty entityContent origin entity world)
                         world entitiesAdded
                 world
@@ -255,7 +255,7 @@ module Content =
                     else world
                 let world =
                     Seq.fold (fun world (entity : Entity, entityContent : EntityContent) ->
-                        let (entity, world) = World.createEntity5 entityContent.EntityDispatcherName (Some entity.Surnames) DefaultOverlay entity.Group world
+                        let (entity, world) = World.createEntity5 entityContent.EntityDispatcherName DefaultOverlay (Some entity.Surnames) entity.Group world
                         synchronizeEntity true EntityContent.empty entityContent origin entity world)
                         world entitiesAdded
                 world
@@ -279,7 +279,7 @@ module Content =
                             let groupName =
                                 Constants.Engine.NamePropertyName |>
                                 groupDescriptor.GroupProperties.TryFind |>
-                                Option.mapOrDefaultValue symbolToValue Simulants.Default.Group.Name
+                                Option.mapOrDefaultValue symbolToValue "GroupFromFile" // TODO: make constant?
                             let group = screen / groupName
                             World.destroyGroup group world
                         | None -> world

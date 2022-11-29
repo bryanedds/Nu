@@ -481,9 +481,9 @@ module WorldModule3 =
         static member makeDefault () =
             let worldConfig = WorldConfig.defaultConfig
             let world = World.makeEmpty worldConfig
-            let world = World.createScreen (Some Simulants.Default.Screen.Name) world |> snd
-            let world = World.createGroup (Some Simulants.Default.Group.Name) Simulants.Default.Screen world |> snd
-            let world = World.createEntity (Some Simulants.Default.Entity.Surnames) DefaultOverlay Simulants.Default.Group world |> snd
+            let (screen, world) = World.createScreen (Some (nameof Screen)) world
+            let (group, world) = World.createGroup (Some (nameof Group)) screen world
+            let world = World.createEntity DefaultOverlay (Some [|nameof Entity|]) group world |> snd
             world
 
         /// Attempt to make the world, returning either a Right World on success, or a Left string

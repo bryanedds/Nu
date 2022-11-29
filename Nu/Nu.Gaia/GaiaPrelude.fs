@@ -45,7 +45,7 @@ module Globals =
 
     let mutable SelectEntity : Entity -> GaiaForm -> World -> unit = Unchecked.defaultof<_>
     let mutable (PreUpdaters, PerUpdaters) = (Updaters (), Updaters ())
-    let mutable Screen = Simulants.Default.Screen
+    let mutable Screen = Screen (nameof Screen)
     let mutable World = Unchecked.defaultof<World>
     let mutable EditorState = Unchecked.defaultof<EditorState>
     let mutable Form = Unchecked.defaultof<GaiaForm>

@@ -14,18 +14,6 @@ module Simulants =
 
     /// The game. Always exists.
     let Game = Game ()
-    
-    [<RequireQualifiedAccess>]
-    module Default =
-
-        /// The default screen - may or may not exist.
-        let Screen = Screen (nameof Screen)
-
-        /// The default group - may or may not exist.
-        let Group = Screen / nameof Group
-
-        /// The default entity - may or may not exist.
-        let Entity = Group / nameof Entity
 
 [<AutoOpen>]
 module WorldModuleOperators =

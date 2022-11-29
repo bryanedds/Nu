@@ -94,7 +94,7 @@ module BattleDispatcher =
 
         static let displayEffect delay size positioning effect screen world =
             World.schedule (fun world ->
-                let (entity, world) = World.createEntity<EffectDispatcher2d> None DefaultOverlay Simulants.Battle.Scene.Group world
+                let (entity, world) = World.createEntity<EffectDispatcher2d> DefaultOverlay None Simulants.Battle.Scene.Group world
                 let world = entity.SetEffect effect world
                 let world = entity.SetSize size world
                 let world =
@@ -975,7 +975,7 @@ module BattleDispatcher =
             
             | DisplayHop hop ->
                 let effect = Effects.makeHopEffect hop.HopStart hop.HopStop
-                let (entity, world) = World.createEntity<EffectDispatcher2d> (Some Simulants.Battle.Scene.Ride.Surnames) DefaultOverlay Simulants.Battle.Scene.Group world
+                let (entity, world) = World.createEntity<EffectDispatcher2d> DefaultOverlay (Some Simulants.Battle.Scene.Ride.Surnames) Simulants.Battle.Scene.Group world
                 let world = entity.SetEffect effect world
                 let world = entity.SetEffectOffset v3Zero world
                 let world = entity.SetSelfDestruct true world
@@ -983,7 +983,7 @@ module BattleDispatcher =
 
             | DisplayCircle (position, radius) ->
                 let effect = Effects.makeCircleEffect radius
-                let (entity, world) = World.createEntity<EffectDispatcher2d> (Some Simulants.Battle.Scene.Ride.Surnames) DefaultOverlay Simulants.Battle.Scene.Group world
+                let (entity, world) = World.createEntity<EffectDispatcher2d> DefaultOverlay (Some Simulants.Battle.Scene.Ride.Surnames) Simulants.Battle.Scene.Group world
                 let world = entity.SetPosition position world
                 let world = entity.SetEffect effect world
                 let world = entity.SetSelfDestruct true world
@@ -993,7 +993,7 @@ module BattleDispatcher =
                 match Battle.tryGetCharacter targetIndex battle with
                 | Some target ->
                     let effect = Effects.makeCancelEffect ()
-                    let (entity, world) = World.createEntity<EffectDispatcher2d> None DefaultOverlay Simulants.Battle.Scene.Group world
+                    let (entity, world) = World.createEntity<EffectDispatcher2d> DefaultOverlay None Simulants.Battle.Scene.Group world
                     let world = entity.SetPosition target.CenterOffset4 world
                     let world = entity.SetEffect effect world
                     let world = entity.SetElevation (Constants.Battle.GuiEffectElevation + 1.0f) world
@@ -1005,7 +1005,7 @@ module BattleDispatcher =
                 match Battle.tryGetCharacter targetIndex battle with
                 | Some target ->
                     let effect = Effects.makeHitPointsChangeEffect delta
-                    let (entity, world) = World.createEntity<EffectDispatcher2d> None DefaultOverlay Simulants.Battle.Scene.Group world
+                    let (entity, world) = World.createEntity<EffectDispatcher2d> DefaultOverlay None Simulants.Battle.Scene.Group world
                     let world = entity.SetPosition target.CenterOffset3 world
                     let world = entity.SetEffect effect world
                     let world = entity.SetElevation Constants.Battle.GuiEffectElevation world

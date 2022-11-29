@@ -131,7 +131,7 @@ module Player =
 
         static let createBullet (player : Entity) world =
             let mutable playerTransform = player.GetTransform world
-            let (bullet, world) = World.createEntity<BulletDispatcher> None NoOverlay player.Group world // OPTIMIZATION: NoOverlay to avoid reflection.
+            let (bullet, world) = World.createEntity<BulletDispatcher> NoOverlay None player.Group world // OPTIMIZATION: NoOverlay to avoid reflection.
             let bulletPosition = playerTransform.Position + v3 (playerTransform.Size.X * 0.95f) (playerTransform.Size.Y * 0.4f) 0.0f
             let world = bullet.SetPosition bulletPosition world
             let world = bullet.SetElevation playerTransform.Elevation world

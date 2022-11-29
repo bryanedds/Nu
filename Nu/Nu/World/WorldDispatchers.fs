@@ -2495,7 +2495,7 @@ module StaticModelHierarchyDispatcherModule =
                                 match parent with
                                 | Left group -> (names.Length > 0, names, group)
                                 | Right entity -> (true, Array.append entity.Surnames names, entity.Group)
-                            let (child, world) = World.createEntity<EntityDispatcher3d> (Some surnames) DefaultOverlay group world
+                            let (child, world) = World.createEntity<EntityDispatcher3d> DefaultOverlay (Some surnames) group world
                             let world = child.SetStatic static_ world
                             let world = if mountToParent then child.SetMountOpt (Some (Relation.makeParent ())) world else world
                             let world = child.QuickSize world
@@ -2506,7 +2506,7 @@ module StaticModelHierarchyDispatcherModule =
                                 match parent with
                                 | Left group -> (light.LightNames.Length > 0, light.LightNames, group)
                                 | Right entity -> (true, Array.append entity.Surnames light.LightNames, entity.Group)
-                            let (child, world) = World.createEntity<LightDispatcher3d> (Some surnames) DefaultOverlay group world
+                            let (child, world) = World.createEntity<LightDispatcher3d> DefaultOverlay (Some surnames) group world
                             let transform = light.LightMatrix
                             let position = transform.Translation
                             let mutable rotation = transform
@@ -2526,7 +2526,7 @@ module StaticModelHierarchyDispatcherModule =
                                 match parent with
                                 | Left group -> (surface.SurfaceNames.Length > 0, surface.SurfaceNames, group)
                                 | Right entity -> (true, Array.append entity.Surnames surface.SurfaceNames, entity.Group)
-                            let (child, world) = World.createEntity<StaticModelSurfaceDispatcher> (Some surnames) DefaultOverlay group world
+                            let (child, world) = World.createEntity<StaticModelSurfaceDispatcher> DefaultOverlay (Some surnames) group world
                             let transform = surface.SurfaceMatrix
                             let position = transform.Translation
                             let mutable rotation = transform
