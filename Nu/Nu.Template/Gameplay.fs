@@ -55,7 +55,7 @@ module Gameplay =
         override this.Command (_, command, _, world) =
             match command with
             | Update ->
-                let physicsId = Simulants.Gameplay.Player.Character.GetPhysicsId world
+                let physicsId = Simulants.GameplayPlayerCharacter.GetPhysicsId world
                 let world =
                     if World.isKeyboardKeyDown KeyboardKey.Left world then
                         if World.isBodyOnGround physicsId world
@@ -68,7 +68,7 @@ module Gameplay =
                     else world
                 just world
             | Jump ->
-                let physicsId = Simulants.Gameplay.Player.Character.GetPhysicsId world
+                let physicsId = Simulants.GameplayPlayerCharacter.GetPhysicsId world
                 if World.isBodyOnGround physicsId world then
                     let world = World.playSound Constants.Audio.SoundVolumeDefault (asset "Gameplay" "Jump") world
                     let world = World.applyBodyForce (v3 0.0f 140000.0f 0.0f) physicsId world
@@ -76,7 +76,7 @@ module Gameplay =
                 else just world
             | PostUpdateEye ->
                 if World.getAdvancing world then
-                    let characterCenter = Simulants.Gameplay.Player.Character.GetCenter world
+                    let characterCenter = Simulants.GameplayPlayerCharacter.GetCenter world
                     let world = World.setEyePosition2d characterCenter.V2 world
                     just world
                 else just world
@@ -86,8 +86,8 @@ module Gameplay =
         override this.Content (gameplay, _) =
 
             [// the gui group
-             Content.group Simulants.Gameplay.Gui.Group.Name []
-                 [Content.button Simulants.Gameplay.Gui.Quit.Name
+             Content.group Simulants.GameplayGui.Name []
+                 [Content.button Simulants.GameplayGuiQuit.Name
                      [Entity.Text == "Quit"
                       Entity.Position == v3 260.0f -260.0f 0.0f
                       Entity.Elevation == 10.0f
@@ -96,9 +96,9 @@ module Gameplay =
              // the player and scene groups while playing
              match gameplay with
              | Playing | Quitting ->
-                Content.group Simulants.Gameplay.Player.Group.Name []
-                    [Content.sideViewCharacter Simulants.Gameplay.Player.Character.Name
+                Content.group Simulants.GameplayPlayer.Name []
+                    [Content.sideViewCharacter Simulants.GameplayPlayerCharacter.Name
                         [Entity.Position == v3 0.0f 0.0f 0.0f
                          Entity.Size == v3 108.0f 108.0f 0.0f]]
-                Content.groupFromFile Simulants.Gameplay.Scene.Group.Name "Assets/Gameplay/Scene.nugroup" [] []
+                Content.groupFromFile Simulants.GameplayScene.Name "Assets/Gameplay/Scene.nugroup" [] []
              | Quit -> ()]

@@ -45,20 +45,20 @@ module MyGame =
         override this.Initialize (model, _) =
             [Game.DesiredScreen :=
                 match model with
-                | Splash -> Desire Simulants.Splash.Screen
-                | Title -> Desire Simulants.Title.Screen
-                | Credits -> Desire Simulants.Credits.Screen
+                | Splash -> Desire Simulants.Splash
+                | Title -> Desire Simulants.Title
+                | Credits -> Desire Simulants.Credits
                 | Gameplay gameplay ->
                     match gameplay with
-                    | Playing -> Desire Simulants.Gameplay.Screen
-                    | Quitting | Quit -> Desire Simulants.Title.Screen
+                    | Playing -> Desire Simulants.Gameplay
+                    | Quitting | Quit -> Desire Simulants.Title
              Game.UpdateEvent => Update
-             match model with Gameplay gameplay -> Simulants.Gameplay.Screen.Gameplay := gameplay | _ -> ()
-             Simulants.Splash.Screen.DeselectingEvent => ShowTitle
-             Simulants.Title.Gui.Credits.ClickEvent => ShowCredits
-             Simulants.Title.Gui.Play.ClickEvent => ShowMyGameplay
-             Simulants.Title.Gui.Exit.ClickEvent => Exit
-             Simulants.Credits.Gui.Back.ClickEvent => ShowTitle]
+             match model with Gameplay gameplay -> Simulants.Gameplay.Gameplay := gameplay | _ -> ()
+             Simulants.Splash.DeselectingEvent => ShowTitle
+             Simulants.TitleGuiCredits.ClickEvent => ShowCredits
+             Simulants.TitleGuiPlay.ClickEvent => ShowMyGameplay
+             Simulants.TitleGuiExit.ClickEvent => Exit
+             Simulants.CreditsGuiBack.ClickEvent => ShowTitle]
 
         // here we handle the above messages
         override this.Message (model, message, _, world) =
@@ -69,7 +69,7 @@ module MyGame =
             | Update ->
                 match model with
                 | Gameplay gameplay ->
-                    let gameplay' = Simulants.Gameplay.Screen.GetGameplay world
+                    let gameplay' = Simulants.Gameplay.GetGameplay world
                     if gameplay =/= gameplay' then just (Gameplay gameplay') else just model
                 | _ -> just model
 
@@ -80,7 +80,7 @@ module MyGame =
 
         // here we describe the content of the game, including all of its screens.
         override this.Content (_, _) =
-            [Content.screen Simulants.Splash.Screen.Name (Slide (Constants.Dissolve.Default, Constants.Slide.Default, None, Simulants.Title.Screen)) [] []
-             Content.screenWithGroupFromFile Simulants.Title.Screen.Name (Dissolve (Constants.Dissolve.Default, None)) "Assets/Gui/Title.nugroup" [] []
-             Content.screenWithGroupFromFile Simulants.Credits.Screen.Name (Dissolve (Constants.Dissolve.Default, None)) "Assets/Gui/Credits.nugroup" [] []
-             Content.screen<GameplayDispatcher> Simulants.Gameplay.Screen.Name (Dissolve (Constants.Dissolve.Default, None)) [] []]
+            [Content.screen Simulants.Splash.Name (Slide (Constants.Dissolve.Default, Constants.Slide.Default, None, Simulants.Title)) [] []
+             Content.screenWithGroupFromFile Simulants.Title.Name (Dissolve (Constants.Dissolve.Default, None)) "Assets/Gui/Title.nugroup" [] []
+             Content.screenWithGroupFromFile Simulants.Credits.Name (Dissolve (Constants.Dissolve.Default, None)) "Assets/Gui/Credits.nugroup" [] []
+             Content.screen<GameplayDispatcher> Simulants.Gameplay.Name (Dissolve (Constants.Dissolve.Default, None)) [] []]

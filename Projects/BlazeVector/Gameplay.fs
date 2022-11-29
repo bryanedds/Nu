@@ -4,6 +4,7 @@ open System.Numerics
 open Prime
 open Nu
 open Nu.Declarative
+open BlazeVector
 
 [<AutoOpen>]
 module Bullet =
@@ -266,7 +267,7 @@ module Gameplay =
             [Screen.SelectEvent => CreateSections
              Screen.DeselectingEvent => DestroySections
              Screen.UpdateEvent => Update
-             Simulants.Gameplay.Gui.Quit.ClickEvent => StartQutting]
+             Simulants.GameplayGuiQuit.ClickEvent => StartQutting]
 
         override this.Message (_, message, _, _) =
             match message with
@@ -293,7 +294,7 @@ module Gameplay =
 
             | DestroySections ->
                 let sectionNames = [for i in 0 .. SectionCount - 1 do yield SectionName + string i]
-                let groupNames = Simulants.Gameplay.Scene.Group.Name :: sectionNames
+                let groupNames = Simulants.GameplayScene.Name :: sectionNames
                 let groups = List.map (fun groupName -> gameplay / groupName) groupNames
                 let world = World.destroyGroups groups world
                 withSignal FinishQuitting world
@@ -303,8 +304,8 @@ module Gameplay =
                 // update eye
                 let world =
                     if World.getAdvancing world then
-                        let playerPosition = Simulants.Gameplay.Scene.Player.GetPosition world
-                        let playerSize = Simulants.Gameplay.Scene.Player.GetSize world
+                        let playerPosition = Simulants.GameplayScenePlayer.GetPosition world
+                        let playerSize = Simulants.GameplayScenePlayer.GetSize world
                         let eyePosition = World.getEyePosition2d world
                         let eyeSize = World.getEyeSize2d world
                         let eyePosition = v2 (playerPosition.X + playerSize.X * 0.5f + eyeSize.X * 0.33f) eyePosition.Y
@@ -312,7 +313,7 @@ module Gameplay =
                     else world
 
                 // update player fall
-                if Simulants.Gameplay.Scene.Player.HasFallen world && World.isSelectedScreenIdling world && model = Playing then
+                if Simulants.GameplayScenePlayer.HasFallen world && World.isSelectedScreenIdling world && model = Playing then
                     let world = World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.DeathSound world
                     withSignal StartQutting world
                 else just world
@@ -320,8 +321,8 @@ module Gameplay =
         override this.Content (gameplay, _) =
 
             [// the gui group
-             Content.group Simulants.Gameplay.Gui.Group.Name []
-                 [Content.button Simulants.Gameplay.Gui.Quit.Name
+             Content.group Simulants.GameplayGui.Name []
+                 [Content.button Simulants.GameplayGuiQuit.Name
                      [Entity.Text == "Quit"
                       Entity.Position == v3 260.0f -260.0f 0.0f
                       Entity.Elevation == 10.0f
@@ -330,8 +331,8 @@ module Gameplay =
              // the scene group while playing
              match gameplay with
              | Playing | Quitting ->
-                Content.group Simulants.Gameplay.Scene.Group.Name []
-                    [Content.entity<PlayerDispatcher> Simulants.Gameplay.Scene.Player.Name
+                Content.group Simulants.GameplayScene.Name []
+                    [Content.entity<PlayerDispatcher> Simulants.GameplayScenePlayer.Name
                         [Entity.Position == v3 -300.0f -175.6805f 0.0f
                          Entity.Elevation == 1.0f]]
              | Quit -> ()]
