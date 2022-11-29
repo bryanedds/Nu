@@ -22,13 +22,13 @@ module MyGame =
         | ShowCredits
         | ShowMyGameplay
         | Update
-        interface Prime.Message
+        interface Nu.Message
 
     // this is our Elm-style command type. Commands are used instead of messages when explicitly
     // updating the world is involved.
     type Command =
         | Exit
-        interface Prime.Command
+        interface Nu.Command
 
     // this extends the Game API to expose the above model.
     type Game with

@@ -30,12 +30,12 @@ module OmniBlade =
         | ShowIntro of SaveSlot
         | TryLoad of SaveSlot
         | UpdateMessage
-        interface Prime.Message
+        interface Nu.Message
 
     type Command =
         | Exit
         | UpdateCommand
-        interface Prime.Command
+        interface Nu.Command
 
     type Game with
         member this.GetModel world = this.GetModelGeneric<Model> world

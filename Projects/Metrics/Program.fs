@@ -169,7 +169,7 @@ type [<ReferenceEquality>] Intss =
 type Message =
     | Inc
     | Nop
-    interface Prime.Message
+    interface Nu.Message
 
 type ElmishGameDispatcher () =
     inherit GameDispatcher<Intss, Message, Command> (Intss.init 100) // 10,000 elmish entities (goal: steady 60FPS, current: unsteady 50FPS)
