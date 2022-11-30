@@ -31,5 +31,3 @@ module Simulants =
     let GameplayPlayer = Gameplay / "Player"
     let GameplayPlayerCharacter = GameplayPlayer / "Character"
     let GameplayScene = Gameplay / "Scene"
-    let GameplaySceneSphereLeft = GameplayScene / "SphereLeft"
-    let GameplaySceneSphereRight = GameplayScene / "SphereLeft"
