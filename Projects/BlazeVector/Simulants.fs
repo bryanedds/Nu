@@ -31,5 +31,3 @@ module Simulants =
     let GameplayGuiQuit = GameplayGui / "Quit"
     let GameplayScene = Gameplay / "Scene"
     let GameplayScenePlayer = GameplayScene / "Player"
-    let GameplaySceneSphereLeft = GameplayScene / "SphereLeft"
-    let GameplaySceneSphereRight = GameplayScene / "SphereLeft"
