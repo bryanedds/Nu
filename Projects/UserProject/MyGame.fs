@@ -20,7 +20,7 @@ module MyGame =
     type Message =
         | ShowTitle
         | ShowCredits
-        | ShowMyGameplay
+        | ShowGameplay
         | Update
         interface Nu.Message
 
@@ -56,7 +56,7 @@ module MyGame =
              Game.UpdateEvent => Update
              Simulants.Splash.DeselectingEvent => ShowTitle
              Simulants.TitleGuiCredits.ClickEvent => ShowCredits
-             Simulants.TitleGuiPlay.ClickEvent => ShowMyGameplay
+             Simulants.TitleGuiPlay.ClickEvent => ShowGameplay
              Simulants.TitleGuiExit.ClickEvent => Exit
              Simulants.CreditsGuiBack.ClickEvent => ShowTitle]
 
@@ -65,7 +65,7 @@ module MyGame =
             match message with
             | ShowTitle -> just Title
             | ShowCredits -> just Credits
-            | ShowMyGameplay -> just (Gameplay Playing)
+            | ShowGameplay -> just (Gameplay Playing)
             | Update ->
                 match model with
                 | Gameplay gameplay ->
