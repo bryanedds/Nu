@@ -22,7 +22,7 @@
     <Optimize>false</Optimize>
     <Tailcalls>false</Tailcalls>
     <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>TRACE;DEBUG;PLATFORM_AGNOSTIC_TIMESTAMPING; ECS_BUFFERED; DISABLE_ENTITY_POST_UPDATE; ALLOW_SIGNAL_STRINGS</DefineConstants>
+    <DefineConstants>TRACE;DEBUG;PLATFORM_AGNOSTIC_TIMESTAMPING; DISABLE_ENTITY_POST_UPDATE; INLINE_PHYSICS_MESSAGES</DefineConstants>
     <WarningLevel>5</WarningLevel>
     <DocumentationFile>bin\Debug\Nu.xml</DocumentationFile>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
@@ -37,7 +37,7 @@
     <Optimize>true</Optimize>
     <Tailcalls>false</Tailcalls>
     <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE;PLATFORM_AGNOSTIC_TIMESTAMPING; ECS_BUFFERED; DISABLE_ENTITY_POST_UPDATE; ALLOW_SIGNAL_STRINGS</DefineConstants>
+    <DefineConstants>TRACE;PLATFORM_AGNOSTIC_TIMESTAMPING; DISABLE_ENTITY_POST_UPDATE</DefineConstants>
     <WarningLevel>5</WarningLevel>
     <DocumentationFile>bin\Release\Nu.xml</DocumentationFile>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
