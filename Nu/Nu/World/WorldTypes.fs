@@ -147,9 +147,13 @@ module WorldTypes =
         abstract Render : Game * World -> World
         default this.Render (_, world) = world
 
-        /// Try to send a signal to a game.
+        /// Attempt to send a signal to a game.
         abstract TrySignal : obj * Game * World -> World
         default this.TrySignal (_, _, world) = world
+
+        /// Attempt to get the initial model value if the dispatcher defines one.
+        abstract TryGetInitialModelValue<'a> : World -> 'a option
+        default this.TryGetInitialModelValue _ = None
 
         /// Attempt to synchronize the content of a game.
         abstract TrySynchronize : bool * Game * World -> World
@@ -179,9 +183,13 @@ module WorldTypes =
         abstract Render : Screen * World -> World
         default this.Render (_, world) = world
 
-        /// Try to send a signal to a screen.
+        /// Attempt to send a signal to a screen.
         abstract TrySignal : obj * Screen * World -> World
         default this.TrySignal (_, _, world) = world
+
+        /// Attempt to get the initial model value if the dispatcher defines one.
+        abstract TryGetInitialModelValue<'a> : World -> 'a option
+        default this.TryGetInitialModelValue _ = None
 
         /// Attempt to synchronize the content of a screen.
         abstract TrySynchronize : bool * Screen * World -> World
@@ -211,9 +219,13 @@ module WorldTypes =
         abstract Render : Group * World -> World
         default this.Render (_, world) = world
 
-        /// Try to send a signal to a group.
+        /// Attempt to send a signal to a group.
         abstract TrySignal : obj * Group * World -> World
         default this.TrySignal (_, _, world) = world
+
+        /// Attempt to get the initial model value if the dispatcher defines one.
+        abstract TryGetInitialModelValue<'a> : World -> 'a option
+        default this.TryGetInitialModelValue _ = None
 
         /// Attempt to synchronize the content of a group.
         abstract TrySynchronize : bool * Group * World -> World
@@ -283,9 +295,13 @@ module WorldTypes =
         abstract ApplyPhysics : Vector3 * Quaternion * Vector3 * Vector3 * Entity * World -> World
         default this.ApplyPhysics (_, _, _, _, _, world) = world
 
-        /// Try to send a signal to an entity.
+        /// Attempt to send a signal to an entity.
         abstract TrySignal : obj * Entity * World -> World
         default this.TrySignal (_, _, world) = world
+
+        /// Attempt to get the initial model value if the dispatcher defines one.
+        abstract TryGetInitialModelValue<'a> : World -> 'a option
+        default this.TryGetInitialModelValue _ = None
 
         /// Attempt to synchronize content of an entity.
         abstract TrySynchronize : bool * Entity * World -> World
