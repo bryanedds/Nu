@@ -477,6 +477,16 @@ module WorldModuleGame =
         static member internal tryGetGameXtensionProperty (propertyName, world, property : _ outref) =
             GameState.tryGetProperty (propertyName, World.getGameState world, &property)
 
+        static member internal tryGetGameXtensionValue<'a> propertyName world =
+            let gameState = World.getGameState world
+            let mutable property = Unchecked.defaultof<Property>
+            if GameState.tryGetProperty (propertyName, gameState, &property) then
+                match property.PropertyValue with
+                | :? 'a as value -> value
+                | null -> null :> obj :?> 'a
+                | value -> value |> valueToSymbol |> symbolToValue
+            else Unchecked.defaultof<'a>
+
         static member internal getGameXtensionProperty propertyName world =
             let mutable property = Unchecked.defaultof<_>
             match GameState.tryGetProperty (propertyName, World.getGameState world, &property) with
@@ -486,7 +496,10 @@ module WorldModuleGame =
         static member internal getGameXtensionValue<'a> propertyName world =
             let gameState = World.getGameState world
             let property = GameState.getProperty propertyName gameState
-            property.PropertyValue :?> 'a
+            match property.PropertyValue with
+            | :? 'a as value -> value
+            | null -> null :> obj :?> 'a
+            | value -> value |> valueToSymbol |> symbolToValue
 
         static member internal tryGetGameProperty (propertyName, world, property : _ outref) =
             match GameGetters.TryGetValue propertyName with

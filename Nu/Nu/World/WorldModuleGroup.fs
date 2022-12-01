@@ -169,6 +169,19 @@ module WorldModuleGroup =
             then GroupState.tryGetProperty (propertyName, World.getGroupState group world, &property)
             else false
 
+        static member internal tryGetGroupXtensionValue<'a> propertyName group world =
+            let groupStateOpt = World.getGroupStateOpt group world
+            match groupStateOpt :> obj with
+            | null -> failwithf "Could not find group '%s'." (scstring group)
+            | _ ->
+                let mutable property = Unchecked.defaultof<Property>
+                if World.tryGetGroupProperty (propertyName, group, world, &property) then
+                    match property.PropertyValue with
+                    | :? 'a as value -> value
+                    | null -> null :> obj :?> 'a
+                    | value -> value |> valueToSymbol |> symbolToValue
+                else Unchecked.defaultof<'a>
+
         static member internal getGroupXtensionProperty propertyName group world =
             let mutable property = Unchecked.defaultof<_>
             match GroupState.tryGetProperty (propertyName, World.getGroupState group world, &property) with
@@ -178,7 +191,10 @@ module WorldModuleGroup =
         static member internal getGroupXtensionValue<'a> propertyName group world =
             let groupState = World.getGroupState group world
             let property = GroupState.getProperty propertyName groupState
-            property.PropertyValue :?> 'a
+            match property.PropertyValue with
+            | :? 'a as value -> value
+            | null -> null :> obj :?> 'a
+            | value -> value |> valueToSymbol |> symbolToValue
 
         static member internal tryGetGroupProperty (propertyName, group, world, property : _ outref) =
             match GroupGetters.TryGetValue propertyName with

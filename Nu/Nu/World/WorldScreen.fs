@@ -71,10 +71,7 @@ module WorldScreenModule =
 
         /// Get an xtension property value.
         member this.TryGet<'a> propertyName world : 'a =
-            let mutable property = Unchecked.defaultof<Property>
-            if World.tryGetScreenXtensionProperty (propertyName, this, world, &property)
-            then property.PropertyValue :?> 'a
-            else Unchecked.defaultof<'a>
+            World.tryGetScreenXtensionValue<'a> propertyName this world
 
         /// Get an xtension property value.
         member this.Get<'a> propertyName world : 'a =

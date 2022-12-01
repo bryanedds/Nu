@@ -197,6 +197,19 @@ module WorldModuleScreen =
             then ScreenState.tryGetProperty (propertyName, World.getScreenState screen world, &property)
             else false
 
+        static member internal tryGetScreenXtensionValue<'a> propertyName screen world =
+            let screenStateOpt = World.getScreenStateOpt screen world
+            match screenStateOpt :> obj with
+            | null -> failwithf "Could not find screen '%s'." (scstring screen)
+            | _ ->
+                let mutable property = Unchecked.defaultof<Property>
+                if World.tryGetScreenProperty (propertyName, screen, world, &property) then
+                    match property.PropertyValue with
+                    | :? 'a as value -> value
+                    | null -> null :> obj :?> 'a
+                    | value -> value |> valueToSymbol |> symbolToValue
+                else Unchecked.defaultof<'a>
+
         static member internal getScreenXtensionProperty propertyName screen world =
             let mutable property = Unchecked.defaultof<_>
             match ScreenState.tryGetProperty (propertyName, World.getScreenState screen world, &property) with
@@ -206,7 +219,10 @@ module WorldModuleScreen =
         static member internal getScreenXtensionValue<'a> propertyName screen world =
             let screenState = World.getScreenState screen world
             let property = ScreenState.getProperty propertyName screenState
-            property.PropertyValue :?> 'a
+            match property.PropertyValue with
+            | :? 'a as value -> value
+            | null -> null :> obj :?> 'a
+            | value -> value |> valueToSymbol |> symbolToValue
 
         static member internal tryGetScreenProperty (propertyName, screen, world, property : _ outref) =
             match ScreenGetters.TryGetValue propertyName with
