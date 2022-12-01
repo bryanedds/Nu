@@ -478,9 +478,14 @@ type [<ReferenceEquality; NoComparison>] AetherPhysicsEngine =
             physicsEngine :> PhysicsEngine
 
         member physicsEngine.EnqueueMessage physicsMessage =
+#if INLINE_PHYSICS_MESSAGES
+            AetherPhysicsEngine.handlePhysicsMessage physicsEngine physicsMessage
+            physicsEngine
+#else
             let physicsMessages = UList.add physicsMessage physicsEngine.PhysicsMessages
             let physicsEngine = { physicsEngine with PhysicsMessages = physicsMessages }
             physicsEngine :> PhysicsEngine
+#endif
 
         member physicsEngine.Integrate updateRate physicsMessages =
             AetherPhysicsEngine.handlePhysicsMessages physicsMessages physicsEngine
