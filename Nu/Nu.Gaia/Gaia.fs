@@ -1173,7 +1173,10 @@ module Gaia =
                     let fsiConfig = Shell.FsiEvaluationSession.GetDefaultConfiguration ()
                     use session = Shell.FsiEvaluationSession.Create (fsiConfig, defaultArgs, inStream, outStream, errorStream)
                     try session.EvalInteraction fsxFileString
-                        Log.info "Code compiled."
+                        let error = string errorStream
+                        if error.Length > 0
+                        then Log.info ("Code compiled with the following warnings (these may disable debugging of reloaded code):\n" + error)
+                        else Log.info "Code compiled with no warnings."
                         Log.info "Updating code..."
                         let world = World.updateLateBindings2 session.DynamicAssemblies world
                         Log.info "Code updated."
