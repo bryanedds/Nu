@@ -1593,16 +1593,25 @@ module WorldModuleEntity =
             let entityStateOpt = World.getEntityStateOpt entity world
             match entityStateOpt :> obj with
             | null -> false
+            | _ -> EntityState.tryGetProperty (propertyName, entityStateOpt, &property)
+
+        static member internal tryGetEntityXtensionValue<'a> propertyName entity world =
+            let entityStateOpt = World.getEntityStateOpt entity world
+            match entityStateOpt :> obj with
+            | null -> failwithf "Could not find entity '%s'." (scstring entity)
             | _ ->
-                match EntityState.tryGetProperty (propertyName, entityStateOpt, &property) with
-                | true ->
-                    if EntityState.containsRuntimeProperties entityStateOpt then
+                let mutable property = Unchecked.defaultof<Property>
+                if World.tryGetEntityProperty (propertyName, entity, world, &property) then
+                    let value =
                         match property.PropertyValue with
-                        | :? DesignerProperty as dp -> property <- { PropertyType = dp.DesignerType; PropertyValue = dp.DesignerValue }; true
-                        | :? ComputedProperty as cp -> property <- { PropertyType = cp.ComputedType; PropertyValue = cp.ComputedGet (entity :> obj) (world :> obj) }; true
-                        | _ -> true
-                    else true
-                | false -> false
+                        | :? DesignerProperty as dp -> dp.DesignerValue
+                        | :? ComputedProperty as cp -> cp.ComputedGet (entity :> obj) (world :> obj)
+                        | _ -> property.PropertyValue
+                    match value with
+                    | :? 'a as value -> value
+                    | null -> null :> obj :?> 'a
+                    | value -> value |> valueToSymbol |> symbolToValue
+                else Unchecked.defaultof<'a>
 
         static member internal tryGetEntityProperty (propertyName, entity, world, property : _ outref) =
             let entityStateOpt = World.getEntityStateOpt entity world
@@ -1612,21 +1621,14 @@ module WorldModuleEntity =
                 match EntityGetters.TryGetValue propertyName with
                 | (true, getter) -> property <- getter entity world; true
                 | (false, _) ->
-                    match EntityState.tryGetProperty (propertyName, entityStateOpt, &property) with
-                    | true ->
+                    if EntityState.tryGetProperty (propertyName, entityStateOpt, &property) then
                         if EntityState.containsRuntimeProperties entityStateOpt then
                             match property.PropertyValue with
                             | :? DesignerProperty as dp -> property <- { PropertyType = dp.DesignerType; PropertyValue = dp.DesignerValue }; true
                             | :? ComputedProperty as cp -> property <- { PropertyType = cp.ComputedType; PropertyValue = cp.ComputedGet (entity :> obj) (world :> obj) }; true
                             | _ -> true
                         else true
-                    | false -> false
-
-        static member internal getEntityXtensionProperty propertyName entity world =
-            let mutable property = Unchecked.defaultof<_>
-            match World.tryGetEntityXtensionProperty (propertyName, entity, world, &property) with
-            | true -> property
-            | false -> failwithf "Could not find xtension property '%s'." propertyName
+                    else false
 
         static member internal getEntityXtensionValue<'a> propertyName entity world =
             let entityStateOpt = World.getEntityStateOpt entity world
@@ -1634,10 +1636,15 @@ module WorldModuleEntity =
             | null -> failwithf "Could not find entity '%s'." (scstring entity)
             | _ ->
                 let property = EntityState.getProperty propertyName entityStateOpt
-                match property.PropertyValue with
-                | :? DesignerProperty as dp -> dp.DesignerValue :?> 'a
-                | :? ComputedProperty as cp -> cp.ComputedGet (entity :> obj) (world :> obj) :?> 'a
-                | _ -> property.PropertyValue :?> 'a
+                let value =
+                    match property.PropertyValue with
+                    | :? DesignerProperty as dp -> dp.DesignerValue
+                    | :? ComputedProperty as cp -> cp.ComputedGet (entity :> obj) (world :> obj)
+                    | _ -> property.PropertyValue
+                match value with
+                | :? 'a as value -> value
+                | null -> null :> obj :?> 'a
+                | value -> value |> valueToSymbol |> symbolToValue
 
         static member internal getEntityProperty propertyName entity world =
             let mutable property = Unchecked.defaultof<_>

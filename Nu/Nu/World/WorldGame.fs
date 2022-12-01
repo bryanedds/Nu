@@ -96,10 +96,7 @@ module WorldGameModule =
 
         /// Get an xtension property value.
         member this.TryGet<'a> propertyName world : 'a =
-            let mutable property = Unchecked.defaultof<Property>
-            if World.tryGetGameXtensionProperty (propertyName, world, &property)
-            then property.PropertyValue :?> 'a
-            else Unchecked.defaultof<'a>
+            World.tryGetGameXtensionValue<'a> propertyName world
 
         /// Get an xtension property value.
         member this.Get<'a> propertyName world : 'a =
