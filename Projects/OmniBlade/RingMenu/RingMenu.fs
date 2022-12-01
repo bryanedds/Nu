@@ -18,7 +18,7 @@ module RingMenuDispatcher =
     type [<NoComparison>] RingMenuCommand =
         | ItemCancel
         | ItemSelect of string
-        interface Commandx
+        interface Command
 
     type Entity with
         member this.GetRingMenu world = this.GetModelGeneric<RingMenu> world
