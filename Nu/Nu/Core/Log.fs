@@ -2,31 +2,50 @@
 // Copyright (C) Bryan Edds, 2013-2020.
 
 namespace Nu
+open Prime
 open System
 open System.Diagnostics
 
 [<RequireQualifiedAccess>]
 module Log =
 
-    let mutable private Initialized =
-        false
+    let mutable private Initialized = false
+    let mutable private InfoOnceMessages = hashSetPlus StringComparer.Ordinal []
+    let mutable private DebugOnceMessages = hashSetPlus StringComparer.Ordinal []
+    let mutable private TraceOnceMessages = hashSetPlus StringComparer.Ordinal []
 
     let private getUtcNowStr () =
         let now = DateTime.UtcNow
         now.ToString "yyyy-MM-dd HH\:mm\:ss.ffff"
 
-    /// Log a remark with a custom header using Trace.WriteLine.
+    /// Log a remark with a custom header with Trace.WriteLine.
     let remark header message =
         Trace.WriteLine (getUtcNowStr () + "|" + header + "|" + message)
 
-    /// Log a purely informational message using Trace.WriteLine.
+    /// Log a purely informational message with Trace.WriteLine.
     let info message =
         remark "Info" message
+
+    /// Log a purely informational message once with Trace.WriteLine.
+    let infoOnce (message : string) =
+#if DEBUG
+        if InfoOnceMessages.Add message then info message
+#else
+        ignore message
+#endif
 
     /// Log a debug message with Debug.Fail and call to info.
     let debug (message : string) =
 #if DEBUG
         Debug.Fail (getUtcNowStr () + "|Debug|" + message)
+#else
+        ignore message
+#endif
+
+    /// Log a debug message once with Debug.Fail and call to info.
+    let debugOnce (message : string) =
+#if DEBUG
+        if DebugOnceMessages.Add message then debug message
 #else
         ignore message
 #endif
@@ -42,6 +61,10 @@ module Log =
     /// Log a trace message using Trace.Fail and call to info.
     let trace message =
         Trace.Fail (getUtcNowStr () + "|Trace|" + message)
+
+    /// Log a trace message once with Trace.Fail and call to info.
+    let traceOnce (message : string) =
+        if TraceOnceMessages.Add message then trace message
 
     /// Conditional trace message call where condition is eagerly evaluted.
     let traceIf bl message =

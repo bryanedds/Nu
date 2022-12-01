@@ -120,10 +120,17 @@ module WorldModuleScreen =
             else struct (false, world)
 
         static member internal getScreenModel<'a> screen world =
-            match (World.getScreenState screen world).Model.DesignerValue with
+            let screenState = World.getScreenState screen world
+            match screenState.Model.DesignerValue with
             | :? 'a as model -> model
             | null -> null :> obj :?> 'a
-            | modelObj -> modelObj |> valueToSymbol |> symbolToValue
+            | modelObj ->
+                try modelObj |> valueToSymbol |> symbolToValue
+                with _ ->
+                    Log.debugOnce "Could not convert existing model to new type. Falling back on default model value."
+                    match screenState.Dispatcher.TryGetInitialModelValue<'a> world with
+                    | None -> failwithnie ()
+                    | Some value -> value
 
         static member internal setScreenModel<'a> initializing (value : 'a) screen world =
             let screenState = World.getScreenState screen world
@@ -207,7 +214,7 @@ module WorldModuleScreen =
                     match property.PropertyValue with
                     | :? 'a as value -> value
                     | null -> null :> obj :?> 'a
-                    | value -> value |> valueToSymbol |> symbolToValue
+                    | valueObj -> valueObj |> valueToSymbol |> symbolToValue
                 else Unchecked.defaultof<'a>
 
         static member internal getScreenXtensionProperty propertyName screen world =
@@ -222,7 +229,7 @@ module WorldModuleScreen =
             match property.PropertyValue with
             | :? 'a as value -> value
             | null -> null :> obj :?> 'a
-            | value -> value |> valueToSymbol |> symbolToValue
+            | valueObj -> valueObj |> valueToSymbol |> symbolToValue
 
         static member internal tryGetScreenProperty (propertyName, screen, world, property : _ outref) =
             match ScreenGetters.TryGetValue propertyName with

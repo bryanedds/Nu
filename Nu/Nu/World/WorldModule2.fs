@@ -1160,6 +1160,9 @@ module EntityDispatcherModule2 =
             | :? 'command as command -> entity.Signal<'model, 'message, 'command> command world
             | _ -> Log.info ("Incorrect signal type received by entity (signal = '" + scstring signalObj + "'; entity = '" + scstring entity + "')."); world
 
+        override this.TryGetInitialModelValue<'a> world =
+            makeInitial world :> obj :?> 'a |> Some
+
         override this.TrySynchronize (initializing, entity, world) =
             let contentOld = World.getEntityContent entity world
             let model = this.GetModel entity world
@@ -1274,6 +1277,9 @@ module GroupDispatcherModule =
             | :? 'command as command -> group.Signal<'model, 'message, 'command> command world
             | _ -> Log.info ("Incorrect signal type received by group (signal = '" + scstring signalObj + "'; group = '" + scstring group + "')."); world
 
+        override this.TryGetInitialModelValue<'a> world =
+            makeInitial world :> obj :?> 'a |> Some
+
         override this.TrySynchronize (initializing, group, world) =
             let contentOld = World.getGroupContent group world
             let model = this.GetModel group world
@@ -1349,6 +1355,9 @@ module ScreenDispatcherModule =
             | :? 'message as message -> screen.Signal<'model, 'message, 'command> message world
             | :? 'command as command -> screen.Signal<'model, 'message, 'command> command world
             | _ -> Log.info ("Incorrect signal type received by screen (signal = '" + scstring signalObj + "'; screen = '" + scstring screen + "')."); world
+
+        override this.TryGetInitialModelValue<'a> world =
+            makeInitial world :> obj :?> 'a |> Some
 
         override this.TrySynchronize (initializing, screen, world) =
             let contentOld = World.getScreenContent screen world
@@ -1432,6 +1441,9 @@ module GameDispatcherModule =
             | :? 'message as message -> game.Signal<'model, 'message, 'command> message world
             | :? 'command as command -> game.Signal<'model, 'message, 'command> command world
             | _ -> Log.info ("Incorrect signal type received by game (signal = '" + scstring signalObj + "'; game = '" + scstring game + "')."); world
+
+        override this.TryGetInitialModelValue<'a> world =
+            makeInitial world :> obj :?> 'a |> Some
 
         override this.TrySynchronize (initializing, game, world) =
             synchronize initializing game world this |> snd

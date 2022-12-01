@@ -59,10 +59,17 @@ module WorldModuleGame =
             else struct (false, world)
 
         static member internal getGameModel<'a> world =
-            match (World.getGameState world).Model.DesignerValue with
+            let gameState = World.getGameState world
+            match gameState.Model.DesignerValue with
             | :? 'a as model -> model
             | null -> null :> obj :?> 'a
-            | modelObj -> modelObj |> valueToSymbol |> symbolToValue
+            | modelObj ->
+                try modelObj |> valueToSymbol |> symbolToValue
+                with _ ->
+                    Log.debugOnce "Could not convert existing model to new type. Falling back on default model value."
+                    match gameState.Dispatcher.TryGetInitialModelValue<'a> world with
+                    | None -> failwithnie ()
+                    | Some value -> value
 
         static member internal setGameModel<'a> initializing (value : 'a) world =
             let gameState = World.getGameState world
@@ -484,7 +491,7 @@ module WorldModuleGame =
                 match property.PropertyValue with
                 | :? 'a as value -> value
                 | null -> null :> obj :?> 'a
-                | value -> value |> valueToSymbol |> symbolToValue
+                | valueObj -> valueObj |> valueToSymbol |> symbolToValue
             else Unchecked.defaultof<'a>
 
         static member internal getGameXtensionProperty propertyName world =
@@ -499,7 +506,7 @@ module WorldModuleGame =
             match property.PropertyValue with
             | :? 'a as value -> value
             | null -> null :> obj :?> 'a
-            | value -> value |> valueToSymbol |> symbolToValue
+            | valueObj -> valueObj |> valueToSymbol |> symbolToValue
 
         static member internal tryGetGameProperty (propertyName, world, property : _ outref) =
             match GameGetters.TryGetValue propertyName with

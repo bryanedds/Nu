@@ -120,10 +120,17 @@ module WorldModuleGroup =
             else struct (false, world)
 
         static member internal getGroupModel<'a> group world =
-            match (World.getGroupState group world).Model.DesignerValue with
+            let groupState = World.getGroupState group world
+            match groupState.Model.DesignerValue with
             | :? 'a as model -> model
             | null -> null :> obj :?> 'a
-            | modelObj -> modelObj |> valueToSymbol |> symbolToValue
+            | modelObj ->
+                try modelObj |> valueToSymbol |> symbolToValue
+                with _ ->
+                    Log.debugOnce "Could not convert existing model to new type. Falling back on default model value."
+                    match groupState.Dispatcher.TryGetInitialModelValue<'a> world with
+                    | None -> failwithnie ()
+                    | Some value -> value
 
         static member internal setGroupModel<'a> initializing (value : 'a) group world =
             let groupState = World.getGroupState group world
@@ -179,7 +186,7 @@ module WorldModuleGroup =
                     match property.PropertyValue with
                     | :? 'a as value -> value
                     | null -> null :> obj :?> 'a
-                    | value -> value |> valueToSymbol |> symbolToValue
+                    | valueObj -> valueObj |> valueToSymbol |> symbolToValue
                 else Unchecked.defaultof<'a>
 
         static member internal getGroupXtensionProperty propertyName group world =
@@ -194,7 +201,7 @@ module WorldModuleGroup =
             match property.PropertyValue with
             | :? 'a as value -> value
             | null -> null :> obj :?> 'a
-            | value -> value |> valueToSymbol |> symbolToValue
+            | valueObj -> valueObj |> valueToSymbol |> symbolToValue
 
         static member internal tryGetGroupProperty (propertyName, group, world, property : _ outref) =
             match GroupGetters.TryGetValue propertyName with

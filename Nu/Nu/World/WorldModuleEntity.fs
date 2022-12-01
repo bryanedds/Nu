@@ -307,10 +307,17 @@ module WorldModuleEntity =
             else struct (false, world)
 
         static member internal getEntityModel<'a> entity world =
-            match (World.getEntityState entity world).Model.DesignerValue with
+            let entityState = World.getEntityState entity world
+            match entityState.Model.DesignerValue with
             | :? 'a as model -> model
             | null -> null :> obj :?> 'a
-            | modelObj -> modelObj |> valueToSymbol |> symbolToValue
+            | modelObj ->
+                try modelObj |> valueToSymbol |> symbolToValue
+                with _ ->
+                    Log.debugOnce "Could not convert existing model to new type. Falling back on default model value."
+                    match entityState.Dispatcher.TryGetInitialModelValue<'a> world with
+                    | None -> failwithnie ()
+                    | Some value -> value
 
         static member internal setEntityModel<'a> initializing (value : 'a) entity world =
             let entityState = World.getEntityState entity world
@@ -1602,12 +1609,12 @@ module WorldModuleEntity =
             | _ ->
                 let mutable property = Unchecked.defaultof<Property>
                 if World.tryGetEntityProperty (propertyName, entity, world, &property) then
-                    let value =
+                    let valueObj =
                         match property.PropertyValue with
                         | :? DesignerProperty as dp -> dp.DesignerValue
                         | :? ComputedProperty as cp -> cp.ComputedGet (entity :> obj) (world :> obj)
                         | _ -> property.PropertyValue
-                    match value with
+                    match valueObj with
                     | :? 'a as value -> value
                     | null -> null :> obj :?> 'a
                     | value -> value |> valueToSymbol |> symbolToValue
@@ -1636,12 +1643,12 @@ module WorldModuleEntity =
             | null -> failwithf "Could not find entity '%s'." (scstring entity)
             | _ ->
                 let property = EntityState.getProperty propertyName entityStateOpt
-                let value =
+                let valueObj =
                     match property.PropertyValue with
                     | :? DesignerProperty as dp -> dp.DesignerValue
                     | :? ComputedProperty as cp -> cp.ComputedGet (entity :> obj) (world :> obj)
                     | _ -> property.PropertyValue
-                match value with
+                match valueObj with
                 | :? 'a as value -> value
                 | null -> null :> obj :?> 'a
                 | value -> value |> valueToSymbol |> symbolToValue
