@@ -478,7 +478,7 @@ type [<ReferenceEquality; NoComparison>] AetherPhysicsEngine =
             physicsEngine :> PhysicsEngine
 
         member physicsEngine.EnqueueMessage physicsMessage =
-#if INLINE_PHYSICS_MESSAGES
+#if HANDLE_PHYSICS_MESSAGES_IMMEDIATE
             AetherPhysicsEngine.handlePhysicsMessage physicsEngine physicsMessage
             physicsEngine
 #else
