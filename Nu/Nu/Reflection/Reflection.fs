@@ -536,3 +536,13 @@ module LensOperators =
     let nonPersistent (lens : Lens<'a, 's, 'w>) (value : 'a) =
         Reflection.initPropertyNonPersistent true lens.Name
         define lens value
+        
+    /// Define a variable property.
+    let variable (lens : Lens<'a, 's, 'w>) (var : 'w -> 'a) =
+        Reflection.initPropertyNonPersistent true lens.Name
+        variable lens var
+        
+    /// Define a computed property.
+    let computed (lens : Lens<'a, 's, 'w>) (get : 't -> 'w -> 'a) (setOpt : ('a -> 't -> 'w -> 'w) option) =
+        Reflection.initPropertyNonPersistent true lens.Name
+        computed lens get setOpt
