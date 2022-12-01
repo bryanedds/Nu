@@ -537,9 +537,7 @@ module WorldModule2 =
 
         /// Shelve the a world for background storage.
         static member shelve world =
-
-            // not sure if we really want to also clear physics messages here - we didn't used to
-            World.clearMessages world
+            world // nothing to do
 
         /// Unshelve the state of a world.
         static member unshelve world =
