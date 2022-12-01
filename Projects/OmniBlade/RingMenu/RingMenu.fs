@@ -13,12 +13,12 @@ module RingMenuDispatcher =
 
     type [<NoComparison>] RingMenu =
         { Items : Map<string, int * bool>
-          ItemCancelOpt : string option }
+          Cancellable : bool }
 
     type [<NoComparison>] RingMenuCommand =
         | ItemCancel
         | ItemSelect of string
-        interface Command
+        interface Commandx
 
     type Entity with
         member this.GetRingMenu world = this.GetModelGeneric<RingMenu> world
@@ -28,7 +28,7 @@ module RingMenuDispatcher =
         member this.CancelEvent = Events.Cancel --> this
 
     type RingMenuDispatcher () =
-        inherit GuiDispatcher<RingMenu, Message, RingMenuCommand> ({ Items = Map.empty; ItemCancelOpt = None })
+        inherit GuiDispatcher<RingMenu, Message, RingMenuCommand> ({ Items = Map.empty; Cancellable = false })
 
         override this.Command (_, command, menu, world) =
             match command with
@@ -59,11 +59,12 @@ module RingMenuDispatcher =
                      Entity.UpImage := asset Assets.Battle.PackageName (itemName + "Up")
                      Entity.DownImage := asset Assets.Battle.PackageName (itemName + "Down")
                      Entity.ClickEvent => ItemSelect itemName]
-             Content.button "Cancel"
-                [Entity.MountOpt == None
-                 Entity.Size == v3 48.0f 48.0f 0.0f
-                 Entity.Position == Constants.Battle.CancelPosition
-                 Entity.ElevationLocal == 1.0f
-                 Entity.UpImage == asset Assets.Battle.PackageName "CancelUp"
-                 Entity.DownImage == asset Assets.Battle.PackageName "CancelDown"
-                 Entity.ClickEvent => ItemCancel]]
+             if ringMenu.Cancellable then
+                Content.button "Cancel"
+                    [Entity.MountOpt == None
+                     Entity.Size == v3 48.0f 48.0f 0.0f
+                     Entity.Position == Constants.Battle.CancelPosition
+                     Entity.ElevationLocal == 1.0f
+                     Entity.UpImage == asset Assets.Battle.PackageName "CancelUp"
+                     Entity.DownImage == asset Assets.Battle.PackageName "CancelDown"
+                     Entity.ClickEvent => ItemCancel]]

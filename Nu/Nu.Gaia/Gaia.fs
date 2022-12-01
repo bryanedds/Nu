@@ -1172,19 +1172,19 @@ module Gaia =
                     use outStream = new StringWriter ()
                     let fsiConfig = Shell.FsiEvaluationSession.GetDefaultConfiguration ()
                     use session = Shell.FsiEvaluationSession.Create (fsiConfig, defaultArgs, inStream, outStream, errorStream)
-                    let world =
-                        try session.EvalInteraction fsxFileString
-                            Log.info "Code compiled."
-                            try Log.info "Updating code..."
-                                let world = World.updateLateBindings2 session.DynamicAssemblies world
-                                Log.info "Code updated."
-                                World.choose world
-                            with exn -> Log.trace ("Failed to update code due to: " + scstring exn + ". This is likely due to the inability of symbolic converter to automatically convert one of your MMCC models to the newly loaded type."); world
-                        with exn -> Log.trace ("Failed to compile code due to: " + scstring exn); world
-                    let error = string errorStream
-                    if error.Length > 0 then Log.info ("...with error stream containing:" + error)
-                    world
-            with exn -> Log.trace ("Failed to inspect for F# code due to: " + scstring exn); world
+                    try session.EvalInteraction fsxFileString
+                        Log.info "Code compiled."
+                        Log.info "Updating code..."
+                        let world = World.updateLateBindings2 session.DynamicAssemblies world
+                        Log.info "Code updated."
+                        world
+                    with exn ->
+                        let error = string errorStream
+                        Log.trace ("Failed to compile code due to (see full output in the console):\n" + error)
+                        World.choose world
+            with exn ->
+                Log.trace ("Failed to inspect for F# code due to: " + scstring exn)
+                World.choose world
 
     let private handleFormReloadAssets (form : GaiaForm) (_ : EventArgs) =
         addPreUpdater $ fun world ->

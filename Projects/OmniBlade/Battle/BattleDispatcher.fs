@@ -1207,7 +1207,7 @@ module BattleDispatcher =
                                                 match ally.CharacterInputState with NoInput | RegularMenu -> false | _ -> true)
                                                 allies
                                          alliesPastRegularMenu)
-                                     Entity.RingMenu == { Items = Map.ofList [("Attack", (0, true)); ("Tech", (1, true)); ("Consumable", (2, true)); ("Defend", (3, true))]; ItemCancelOpt = None }
+                                     Entity.RingMenu == { Items = Map.ofList [("Attack", (0, true)); ("Tech", (1, true)); ("Consumable", (2, true)); ("Defend", (3, true))]; Cancellable = false }
                                      Entity.ItemSelectEvent =|> fun evt -> RegularItemSelect (index, evt.Data)
                                      Entity.CancelEvent => RegularItemCancel index]
                              | ItemMenu ->
@@ -1219,7 +1219,7 @@ module BattleDispatcher =
                                             battle.Inventory |>
                                             Inventory.getConsumables |>
                                             Map.ofSeqBy (fun kvp -> (scstringm kvp.Key, (getTag kvp.Key, true)))
-                                         { Items = consumables; ItemCancelOpt = Some "Cancel" })
+                                         { Items = consumables; Cancellable = true })
                                      Entity.ItemSelectEvent =|> fun evt -> ConsumableItemSelect (index, evt.Data)
                                      Entity.CancelEvent => ConsumableItemCancel index]
                              | TechMenu ->
@@ -1235,7 +1235,7 @@ module BattleDispatcher =
                                                     | Some techData -> techData.TechCost <= ally.TechPoints && not (Map.containsKey Silence ally.Statuses)
                                                     | None -> false
                                                 (scstringm tech, (getTag tech, techUsable)))
-                                         { Items = techs; ItemCancelOpt = Some "Cancel" })
+                                         { Items = techs; Cancellable = true })
                                      Entity.ItemSelectEvent =|> fun evt -> TechItemSelect (index, evt.Data)
                                      Entity.CancelEvent => TechItemCancel index]
                              | AimReticles _ ->

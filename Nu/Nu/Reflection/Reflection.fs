@@ -66,7 +66,7 @@ module Reflection =
 
     /// Configure a property to be non-persistent.
     let internal initPropertyNonPersistent nonPersistent propertyName =
-        NonPersistentPropertyNames.Add (propertyName, nonPersistent)
+        NonPersistentPropertyNames.[propertyName] <- nonPersistent
 
     /// Is a property with the given name not persistent?
     let isPropertyNonPersistentByName (propertyName : string) =
@@ -74,7 +74,7 @@ module Reflection =
         | (true, result) -> result
         | (false, _) ->
             let result = false
-            NonPersistentPropertyNames.Add (propertyName, result)
+            NonPersistentPropertyNames.[propertyName] <- result
             result
 
     /// Is the property of the given target not persistent?
