@@ -383,17 +383,26 @@ module WorldModule2 =
         /// Set the slide aspects of a screen.
         [<FunctionBinding>]
         static member setScreenSlide (slideDescriptor : SlideDescriptor) destination (screen : Screen) world =
+
+            // destroy existing slide group if any
             let slideGroup = screen / "SlideGroup"
             let slideSprite = slideGroup / "SlideSprite"
             let world = World.destroyGroupImmediate slideGroup world
+
+            // create slide group
             let cameraEyeSize = World.getEyeSize2d world
             let world = screen.SetSlideOpt (Some { IdlingTime = slideDescriptor.IdlingTime; Destination = destination }) world
             let world = World.createGroup<GroupDispatcher> (Some slideGroup.Name) screen world |> snd
+            let world = World.setGroupProtected true slideGroup world |> snd'
             let world = slideGroup.SetPersistent false world
+
+            // create slide sprite
             let world = World.createEntity<StaticSpriteDispatcher> DefaultOverlay (Some slideSprite.Surnames) slideGroup world |> snd
-            let world = slideSprite.SetPersistent false world
+            let world = World.setEntityProtected true slideSprite world |> snd'
             let world = slideSprite.SetSize cameraEyeSize.V3 world
             let world = slideSprite.SetPosition (-cameraEyeSize.V3 * 0.5f) world
+            let world = slideSprite.SetAbsolute true world
+            let world = slideSprite.SetPersistent false world
             let world =
                 match slideDescriptor.SlideImageOpt with
                 | Some slideImage ->
