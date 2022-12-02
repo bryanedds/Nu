@@ -85,7 +85,7 @@ type AffinityType =
     | Ice
     | Lightning
     | Water
-    //| Wind - maybe in a sequal...
+    //| Wind - maybe in a sequel...
     | Dark
     | Light
     | Earth
@@ -117,13 +117,13 @@ type [<CustomEquality; CustomComparison>] StatusType =
     | Silence
     | Sleep
     | Confuse
-    //| Blind - maybe in the sequal
+    //| Blind - maybe in the sequel
     | Time of bool // true = Haste, false = Slow
     | Power of bool * bool // true = Up, false = Down; true = 2, false = 1
     | Magic of bool * bool // true = Up, false = Down; true = 2, false = 1
     | Shield of bool * bool // true = Up, false = Down; true = 2, false = 1
-    //| Counter of bool * bool // true = Up, false = Down; true = 2, false = 1 - maybe in the sequal
-    //| Provoke of CharacterIndex - maybe in the sequal
+    //| Counter of bool * bool // true = Up, false = Down; true = 2, false = 1 - maybe in the sequel
+    //| Provoke of CharacterIndex - maybe in the sequel
 
     static member randomizeWeak this =
         match this with
