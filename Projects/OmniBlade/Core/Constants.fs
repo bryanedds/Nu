@@ -131,6 +131,7 @@ module Constants =
         let CharacterBottomOffset2 = v3 0.0f -12.0f 0.0f
         let CharacterBottomOffset3 = v3 0.0f -48.0f 0.0f
         let CharacterBottomOffset4 = v3 0.0f 48.0f 0.0f
+        let CharacterBottomOffset5 = v3 0.0f 30.0f 0.0f
         let CharacterOffset = v3 -96.0f 0.0f 0.0f
         let CharacterPulseLength = 60L
         let RingMenuRadius = 84.0f

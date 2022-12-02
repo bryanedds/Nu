@@ -200,6 +200,7 @@ module Gaia =
         refreshGroupPropertyGrid form world
         refreshGroupTabs form world
         refreshHierarchyTreeView form world
+        form.runButton.Checked <- World.getAdvancing world
 
     let private canEditWithMouse (form : GaiaForm) world =
         World.getAdvancing world &&
