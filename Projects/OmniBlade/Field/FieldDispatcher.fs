@@ -179,9 +179,9 @@ module FieldDispatcher =
                     List.map (fun fieldCueSignal ->
                         match fieldCueSignal with
                         | FieldCueSignal.TryBattle (battleType, consequents) -> TryBattle (battleType, consequents) |> signal
-                        | FieldCueSignal.PlaySound (delay, volume, sound) -> PlaySound (delay, volume, sound)
-                        | FieldCueSignal.PlaySong (fadeInMs, fadeOutMs, volume, songTime, song) -> PlaySong (fadeInMs, fadeOutMs, volume, songTime, song)
-                        | FieldCueSignal.FadeOutSong a -> FadeOutSong a)
+                        | FieldCueSignal.PlaySound (delay, volume, sound) -> PlaySound (delay, volume, sound) |> signal
+                        | FieldCueSignal.PlaySong (fadeInMs, fadeOutMs, volume, songTime, song) -> PlaySong (fadeInMs, fadeOutMs, volume, songTime, song) |> signal
+                        | FieldCueSignal.FadeOutSong a -> FadeOutSong a |> signal)
                         fieldCueSignals
 
                 // advance dialog
@@ -225,7 +225,7 @@ module FieldDispatcher =
                                     let field = Field.updateCue (constant cue) field
                                     match sensorType with
                                     | AirSensor -> (signals, field)
-                                    | HiddenSensor | StepPlateSensor -> (PlaySound (0L,  Constants.Audio.SoundVolumeDefault, Assets.Field.StepPlateSound) :: signals, field)
+                                    | HiddenSensor | StepPlateSensor -> (signal (PlaySound (0L,  Constants.Audio.SoundVolumeDefault, Assets.Field.StepPlateSound)) :: signals, field)
                                 else (signals, field))
                                 (signals, field) sensors
                         results
@@ -248,7 +248,7 @@ module FieldDispatcher =
                             let field = Field.enterBattle startTime prizePool battleData field world
                             let fade = FadeOutSong 1000
                             let beastGrowl = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.BeastGrowlSound)
-                            (fade :: beastGrowl :: signals, field)
+                            (signal fade :: signal beastGrowl :: signals, field)
                         | Right field -> (signals, field)
                     else (signals, field)
 
@@ -729,7 +729,7 @@ module FieldDispatcher =
                  // feeler
                  Content.feeler Simulants.FieldSceneFeeler.Name
                     [Entity.Position == -Constants.Render.ResolutionF.V3 * 0.5f; Entity.Elevation == Constants.Field.FeelerElevation; Entity.Size == Constants.Render.ResolutionF.V3
-                     Entity.TouchingEvent =|> fun evt -> ProcessTouchInput evt.Data]
+                     Entity.TouchingEvent =|> fun evt -> ProcessTouchInput evt.Data |> signal]
 
                  // menu button
                  Content.button "Menu"
