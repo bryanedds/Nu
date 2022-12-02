@@ -49,6 +49,7 @@ module Character =
         member this.BottomOffset2 = this.Bottom + Constants.Battle.CharacterBottomOffset2
         member this.BottomOffset3 = this.Bottom + Constants.Battle.CharacterBottomOffset3
         member this.BottomOffset4 = this.Bottom + Constants.Battle.CharacterBottomOffset4
+        member this.BottomOffset5 = this.Bottom + Constants.Battle.CharacterBottomOffset5
 
         (* CharacterState Properties *)
         member this.Name = CharacterType.getName this.CharacterType_
