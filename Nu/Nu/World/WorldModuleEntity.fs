@@ -2226,8 +2226,8 @@ module WorldModuleEntity =
             (entity, world)
 
         /// Create an entity and add it to the world.
-        static member createEntity<'d when 'd :> EntityDispatcher> overlayNameDescriptor surnamesOpt group world =
-            World.createEntity5 typeof<'d>.Name overlayNameDescriptor surnamesOpt group world
+        static member createEntity<'d when 'd :> EntityDispatcher> overlayDescriptor surnamesOpt group world =
+            World.createEntity5 typeof<'d>.Name overlayDescriptor surnamesOpt group world
 
         /// Duplicate an entity.
         static member duplicateEntity source (destination : Entity) world =
@@ -2397,7 +2397,7 @@ module WorldModuleEntity =
             Clipboard <- Some (entityState :> obj)
 
         /// Cut an entity to the world's clipboard.
-        static member cutEntityToClipboard entity world =
+        static member cutEntityToClipboard (entity : Entity) world =
             World.copyEntityToClipboard entity world
             World.destroyEntityImmediate entity world
 
