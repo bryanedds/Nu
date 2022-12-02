@@ -72,8 +72,8 @@ module AvatarDispatcher =
              Entity.GravityScale == 0.0f
              Entity.BodyShape := bodyShape
              Entity.UpdateEvent => Update
-             Entity.BodyCollisionEvent =|> fun evt -> BodyCollision evt.Data
-             Entity.BodySeparationEvent =|> fun evt -> BodySeparation evt.Data
+             Entity.BodyCollisionEvent =|> fun evt -> BodyCollision evt.Data |> signal
+             Entity.BodySeparationEvent =|> fun evt -> BodySeparation evt.Data |> signal
              entity.Group.PostUpdateEvent => PostUpdate]
 
         override this.Message (avatar, message, entity, world) =

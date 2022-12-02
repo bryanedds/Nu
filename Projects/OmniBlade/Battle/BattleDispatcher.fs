@@ -271,7 +271,7 @@ module BattleDispatcher =
                             // won battle
                             let battle = Battle.updateBattleState (constant (BattleResult (time, true))) battle
                             let (sigs2, battle) = advanceBattle time battle
-                            (CelebrateCharacters true :: sigs @ sigs2, battle)
+                            (signal (CelebrateCharacters true) :: sigs @ sigs2, battle)
                         else (sigs, battle)
                     | Some _ -> (sigs, battle)
                 withSignals sigs battle
@@ -356,7 +356,7 @@ module BattleDispatcher =
                         ally.CharacterInputState = NoInput then
                         let battle = Battle.updateCharacterInputState (constant RegularMenu) allyIndex battle
                         let playReadySound = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.ReadySound)
-                        (playReadySound :: signals, battle)
+                        (signal playReadySound :: signals, battle)
                     else (signals, battle))
                     (just battle)
                     (Battle.getAllies battle)
@@ -371,8 +371,8 @@ module BattleDispatcher =
                                 | Some tech -> { Action = Tech tech; Source = enemyIndex; TargetOpt = Some autoBattle.AutoTarget }
                                 | None -> { Action = Attack; Source = enemyIndex; TargetOpt = Some autoBattle.AutoTarget }
                             let battle = Battle.appendActionCommand actionCommand battle
-                            (ResetCharacter enemyIndex :: signals, battle)
-                        | None -> (ResetCharacter enemyIndex :: signals, battle)
+                            (signal (ResetCharacter enemyIndex) :: signals, battle)
+                        | None -> (signal (ResetCharacter enemyIndex) :: signals, battle)
                     else (signals, battle))
                     (just battle)
                     (Battle.getEnemies battle)
@@ -627,7 +627,7 @@ module BattleDispatcher =
                 let battle = Battle.updateCharacterHitPoints false false -damage targetIndex battle
                 let battle = Battle.animateCharacter time DamageAnimation targetIndex battle
                 let sigs = if Battle.isCharacterWounded targetIndex battle then [signal (ResetCharacter targetIndex)] else []
-                withSignals (DisplayHitPointsChange (targetIndex, -damage) :: sigs) battle
+                withSignals (signal (DisplayHitPointsChange (targetIndex, -damage)) :: sigs) battle
 
             | ConsumeCharacter1 (consumable, sourceIndex) ->
                 let time = World.getUpdateTime world
@@ -665,13 +665,13 @@ module BattleDispatcher =
                         let hopStop = targetPerimeter.Bottom - Direction.toVector3 hopDirection * Constants.Battle.StrikingDistance
                         Left (DisplayHop { HopStart = sourcePerimeter.Bottom; HopStop = hopStop } |> signal)
                     | Cyclone ->
-                        Left (DisplayHop { HopStart = sourcePerimeter.Bottom; HopStop = targetPerimeter.Bottom + Constants.Battle.CharacterBottomOffset3 })
+                        Left (DisplayHop { HopStart = sourcePerimeter.Bottom; HopStop = targetPerimeter.Bottom + Constants.Battle.CharacterBottomOffset3 } |> signal)
                     | _ ->
                         match Battle.getCharacterArchetypeType sourceIndex battle with
                         | Cleric ->
                             let playCharge = PlaySound (0L, Constants.Audio.SongVolumeDefault, Assets.Field.ChargeHolySound)
                             let displayCast = DisplayHolyCast (0L, sourceIndex)
-                            Right [signal playCharge; displayCast]
+                            Right [signal playCharge; signal displayCast]
                         | Wizard ->
                             let playCharge = PlaySound (0L, Constants.Audio.SongVolumeDefault, Assets.Field.ChargeDimensionSound)
                             let displayCast = DisplayArcaneCast (0L, sourceIndex)
@@ -687,7 +687,7 @@ module BattleDispatcher =
                     if Battle.isCharacterWounded targetIndex battle then
                         let battle = Battle.updateCurrentCommandOpt (constant None) battle
                         withSignals [ResetCharacter sourceIndex; PoiseCharacter sourceIndex] battle
-                    else withSignals (ChargeCharacter sourceIndex :: chargeEffects) battle
+                    else withSignals (signal (ChargeCharacter sourceIndex) :: chargeEffects) battle
 
             | TechCharacter2 (sourceIndex, targetIndex, techType) ->
                 match techType with
@@ -704,11 +704,12 @@ module BattleDispatcher =
                     let position = perimeter.Bottom
                     let playHits =
                         [PlaySound (20L, Constants.Audio.SoundVolumeDefault, Assets.Field.HitSound) |> signal
-                         PlaySound (40L, Constants.Audio.SoundVolumeDefault, Assets.Field.HitSound)
-                         PlaySound (60L, Constants.Audio.SoundVolumeDefault, Assets.Field.HitSound)
-                         PlaySound (80L, Constants.Audio.SoundVolumeDefault, Assets.Field.HitSound)]
+                         PlaySound (40L, Constants.Audio.SoundVolumeDefault, Assets.Field.HitSound) |> signal
+                         PlaySound (60L, Constants.Audio.SoundVolumeDefault, Assets.Field.HitSound) |> signal
+                         PlaySound (80L, Constants.Audio.SoundVolumeDefault, Assets.Field.HitSound) |> signal]
                     let battle = Battle.animateCharacter time WhirlAnimation sourceIndex battle
-                    withSignals (DisplayCircle (position, radius) :: DisplayCycloneBlur (0L, sourceIndex, radius) :: playHits) battle
+                    let sigs = signal (DisplayCircle (position, radius)) :: signal (DisplayCycloneBlur (0L, sourceIndex, radius)) :: playHits
+                    withSignals sigs battle
                 | DarkCritical ->
                     let time = World.getUpdateTime world
                     let playHit = PlaySound (10L, Constants.Audio.SoundVolumeDefault, Assets.Field.HitSound)
@@ -723,7 +724,7 @@ module BattleDispatcher =
                     let slashSpike = DisplaySlashSpike (10L, perimeter.Bottom, targetIndex)
                     let impactSplashes = Battle.evalTechMove sourceIndex targetIndex techType battle |> snd |> Map.toKeyList |> List.map (fun targetIndex -> DisplayImpactSplash (70L, targetIndex) |> signal)
                     let battle = Battle.animateCharacter time SlashAnimation sourceIndex battle
-                    withSignals (playSlash :: playHit :: slashSpike :: impactSplashes) battle
+                    withSignals (signal playSlash :: signal playHit :: signal slashSpike :: impactSplashes) battle
                 | PowerCut ->
                     let time = World.getUpdateTime world
                     let playHit = PlaySound (10L, Constants.Audio.SoundVolumeDefault, Assets.Field.HitSound)
@@ -793,7 +794,7 @@ module BattleDispatcher =
                     let battle = Battle.animateCharacter time Cast2Animation sourceIndex battle
                     let playCure = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.CureSound)
                     let displayCures = Battle.evalTechMove sourceIndex targetIndex techType battle |> snd |> Map.toKeyList |> List.map (fun targetIndex -> DisplayCure (0L, targetIndex) |> signal)
-                    withSignals (playCure :: displayCures) battle
+                    withSignals (signal playCure :: displayCures) battle
                 | Empower ->
                     let time = World.getUpdateTime world
                     let battle = Battle.animateCharacter time Cast2Animation sourceIndex battle
@@ -805,7 +806,7 @@ module BattleDispatcher =
                     let battle = Battle.animateCharacter time Cast2Animation sourceIndex battle
                     let playCure = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.CureSound)
                     let displayCures = Battle.evalTechMove sourceIndex targetIndex techType battle |> snd |> Map.toKeyList |> List.map (fun targetIndex -> DisplayCure (0L, targetIndex) |> signal)
-                    withSignals (playCure :: displayCures) battle
+                    withSignals (signal playCure :: displayCures) battle
                 | Enlighten ->
                     let time = World.getUpdateTime world
                     let battle = Battle.animateCharacter time Cast2Animation sourceIndex battle
@@ -1208,7 +1209,7 @@ module BattleDispatcher =
                                                 allies
                                          alliesPastRegularMenu)
                                      Entity.RingMenu == { Items = Map.ofList [("Attack", (0, true)); ("Tech", (1, true)); ("Consumable", (2, true)); ("Defend", (3, true))]; Cancellable = false }
-                                     Entity.ItemSelectEvent =|> fun evt -> RegularItemSelect (index, evt.Data)
+                                     Entity.ItemSelectEvent =|> fun evt -> RegularItemSelect (index, evt.Data) |> signal
                                      Entity.CancelEvent => RegularItemCancel index]
                              | ItemMenu ->
                                 Content.entity<RingMenuDispatcher> "ConsumableMenu"
@@ -1220,7 +1221,7 @@ module BattleDispatcher =
                                             Inventory.getConsumables |>
                                             Map.ofSeqBy (fun kvp -> (scstringm kvp.Key, (getTag kvp.Key, true)))
                                          { Items = consumables; Cancellable = true })
-                                     Entity.ItemSelectEvent =|> fun evt -> ConsumableItemSelect (index, evt.Data)
+                                     Entity.ItemSelectEvent =|> fun evt -> ConsumableItemSelect (index, evt.Data) |> signal
                                      Entity.CancelEvent => ConsumableItemCancel index]
                              | TechMenu ->
                                 Content.entity<RingMenuDispatcher> "TechMenu"
@@ -1236,7 +1237,7 @@ module BattleDispatcher =
                                                     | None -> false
                                                 (scstringm tech, (getTag tech, techUsable)))
                                          { Items = techs; Cancellable = true })
-                                     Entity.ItemSelectEvent =|> fun evt -> TechItemSelect (index, evt.Data)
+                                     Entity.ItemSelectEvent =|> fun evt -> TechItemSelect (index, evt.Data) |> signal
                                      Entity.CancelEvent => TechItemCancel index]
                              | AimReticles _ ->
                                 Content.entity<ReticlesDispatcher> "Reticles"
@@ -1254,6 +1255,6 @@ module BattleDispatcher =
                                                 | _ -> c.CenterOffset)
                                                 characters
                                          reticles)
-                                     Entity.TargetSelectEvent =|> fun evt -> ReticlesSelect (index, evt.Data)
+                                     Entity.TargetSelectEvent =|> fun evt -> ReticlesSelect (index, evt.Data) |> signal
                                      Entity.CancelEvent => ReticlesCancel index]
                              | NoInput -> ()]]]
