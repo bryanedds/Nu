@@ -867,7 +867,7 @@ module Gaia =
                     match dispatcherNameOpt with
                     | Some dispatcherName -> dispatcherName
                     | None -> form.createEntityComboBox.Text
-                let overlayNameDescriptor =
+                let overlayDescriptor =
                     match form.overlayComboBox.Text with
                     | "(Default Overlay)" -> DefaultOverlay
                     | "(Routed Overlay)" -> RoutedOverlay
@@ -882,7 +882,7 @@ module Gaia =
                         let parent = entityTds.DescribedEntity
                         Array.add name parent.Surnames
                     | _ -> [|name|]
-                let (entity, world) = World.createEntity5 dispatcherName overlayNameDescriptor (Some surnames) selectedGroup world
+                let (entity, world) = World.createEntity5 dispatcherName overlayDescriptor (Some surnames) selectedGroup world
                 let (positionSnap, degreesSnap, scaleSnap) = getSnaps form
                 let viewport = World.getViewport world
                 let mousePosition = World.getMousePosition world
@@ -1077,10 +1077,12 @@ module Gaia =
             match form.entityPropertyGrid.SelectedObject with
             | null -> world
             | :? EntityTypeDescriptorSource as entityTds ->
-                let world = Globals.pushPastWorld world
-                let world = World.cutEntityToClipboard entityTds.DescribedEntity world
-                deselectEntity form world
-                world
+                if not (entityTds.DescribedEntity.GetProtected world) then
+                    let world = Globals.pushPastWorld world
+                    let world = World.cutEntityToClipboard entityTds.DescribedEntity world
+                    deselectEntity form world
+                    world
+                else Log.traceOnce "Cannot cut a protected simulant (such as an entity created by the Elmish API)."; world
             | _ -> failwithumf ()
 
     let private handleFormPaste atMouse (form : GaiaForm) (_ : EventArgs) =
