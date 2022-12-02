@@ -10,8 +10,8 @@ BronzeKatana,Knife,2,2,50,Bronze katana for Ninjas only.
 BronzeRod,Rod,2,2,50,Bronze rod for Wizards and Conjurors.
 LightBow,Bow,1,2,50,Light bow for Clerics only.
 Claws,Melee,2,2,50,
-IronSword,Sword,4,2,100,A heavy iron sword.
-IronKatana,Knife,3,3,100,A heavy iron katana.
-SightedBow,Bow,3,3,100,A bow with a sight for aiming.
-IvoryRod,Rod,2,4,100,A rod made of ivory.
+IronSword,Sword,4,3,100,A heavy iron sword.
+IronKatana,Knife,4,3,100,A heavy iron katana.
+SightedBow,Bow,4,3,100,A bow with a sight for aiming.
+IvoryRod,Rod,3,4,100,A rod made of ivory.
 Fangs,Melee,3,3,100,
