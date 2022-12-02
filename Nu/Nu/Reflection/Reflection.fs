@@ -22,6 +22,7 @@ module Reflection =
             [// simulant properties
              ("Dispatcher", true)
              ("Content", true)
+             ("Protected", true)
              ("Order", true)
              ("Id", true)
              ("IdRef", true)

@@ -932,9 +932,13 @@ module Gaia =
             let world = Globals.pushPastWorld world
             match form.entityPropertyGrid.SelectedObject with
             | :? EntityTypeDescriptorSource as entityTds ->
-                let world = World.destroyEntity entityTds.DescribedEntity world
-                deselectEntity form world
-                world
+                if not (entityTds.DescribedEntity.GetProtected world) then
+                    let world = World.destroyEntity entityTds.DescribedEntity world
+                    deselectEntity form world
+                    world
+                else
+                    Log.traceOnce "Cannot destroy a protected simulant (such as an entity created by the Elmish API)."
+                    world
             | _ -> world
 
     let private handleFormNew (form : GaiaForm) (_ : EventArgs) =
@@ -1003,14 +1007,18 @@ module Gaia =
             | _ ->
                 let world = Globals.pushPastWorld world
                 let group = Globals.EditorState.SelectedGroup
-                let world = World.destroyGroupImmediate group world
-                deselectEntity form world
-                form.groupTabControl.TabPages.RemoveByKey group.Name
-                let groupTabControl = form.groupTabControl
-                let groupTab = groupTabControl.SelectedTab
-                Globals.EditorState.SelectedGroup <- Globals.Screen / groupTab.Text
-                Globals.EditorState.FilePaths <- Map.remove group.GroupAddress Globals.EditorState.FilePaths
-                world
+                if not (group.GetProtected world) then
+                    let world = World.destroyGroupImmediate group world
+                    deselectEntity form world
+                    form.groupTabControl.TabPages.RemoveByKey group.Name
+                    let groupTabControl = form.groupTabControl
+                    let groupTab = groupTabControl.SelectedTab
+                    Globals.EditorState.SelectedGroup <- Globals.Screen / groupTab.Text
+                    Globals.EditorState.FilePaths <- Map.remove group.GroupAddress Globals.EditorState.FilePaths
+                    world
+                else
+                    Log.traceOnce "Cannot close a protected group (such as one created by the Elmish API)."
+                    world
 
     let private handleFormUndo (form : GaiaForm) (_ : EventArgs) =
         addPerUpdater $ fun world ->
