@@ -399,10 +399,10 @@ module WorldModule2 =
             // create slide sprite
             let world = World.createEntity<StaticSpriteDispatcher> DefaultOverlay (Some slideSprite.Surnames) slideGroup world |> snd
             let world = World.setEntityProtected true slideSprite world |> snd'
+            let world = slideSprite.SetPersistent false world
             let world = slideSprite.SetSize cameraEyeSize.V3 world
             let world = slideSprite.SetPosition (-cameraEyeSize.V3 * 0.5f) world
             let world = slideSprite.SetAbsolute true world
-            let world = slideSprite.SetPersistent false world
             let world =
                 match slideDescriptor.SlideImageOpt with
                 | Some slideImage ->
