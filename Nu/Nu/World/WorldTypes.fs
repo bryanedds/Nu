@@ -581,6 +581,7 @@ module WorldTypes =
           Incoming : Transition
           Outgoing : Transition
           SlideOpt : Slide option
+          Protected : bool
           Persistent : bool
           ScriptFrame : Scripting.DeclarationFrame
           Order : int64
@@ -600,6 +601,7 @@ module WorldTypes =
               Incoming = Transition.make Incoming
               Outgoing = Transition.make Outgoing
               SlideOpt = None
+              Protected = false
               Persistent = true
               ScriptFrame = Scripting.DeclarationFrame StringComparer.Ordinal
               Order = Core.getUniqueTimeStamp ()
@@ -647,6 +649,7 @@ module WorldTypes =
           Model : DesignerProperty
           Content : GroupContent
           Visible : bool
+          Protected : bool
           Persistent : bool
           ScriptFrame : Scripting.DeclarationFrame
           Order : int64
@@ -661,6 +664,7 @@ module WorldTypes =
               Model = { DesignerType = typeof<unit>; DesignerValue = () }
               Content = EmptyGroupContent :?> GroupContent
               Visible = true
+              Protected = false
               Persistent = true
               ScriptFrame = Scripting.DeclarationFrame StringComparer.Ordinal
               Order = Core.getUniqueTimeStamp ()
@@ -823,6 +827,7 @@ module WorldTypes =
         member this.PublishUpdates with get () = this.Transform.PublishUpdates and set value = this.Transform.PublishUpdates <- value
         member this.PublishPostUpdates with get () = this.Transform.PublishPostUpdates and set value = this.Transform.PublishPostUpdates <- value
         member this.PublishRenders with get () = this.Transform.PublishRenders and set value = this.Transform.PublishRenders <- value
+        member this.Protected with get () = this.Transform.Protected and set value = this.Transform.Protected <- value
         member this.Persistent with get () = this.Transform.Persistent and set value = this.Transform.Persistent <- value
         member this.Mounted with get () = this.Transform.Mounted and set value = this.Transform.Mounted <- value
         member this.Is2d with get () = this.Dispatcher.Is2d

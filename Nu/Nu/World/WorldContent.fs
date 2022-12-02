@@ -229,6 +229,7 @@ module Content =
                 let world =
                     Seq.fold (fun world (entity : Entity, entityContent : EntityContent) ->
                         let (entity, world) = World.createEntity5 entityContent.EntityDispatcherName DefaultOverlay (Some entity.Surnames) entity.Group world
+                        let world = World.setEntityProtected true entity world |> snd'
                         synchronizeEntity true EntityContent.empty entityContent origin entity world)
                         world entitiesAdded
                 world
@@ -256,6 +257,7 @@ module Content =
                 let world =
                     Seq.fold (fun world (entity : Entity, entityContent : EntityContent) ->
                         let (entity, world) = World.createEntity5 entityContent.EntityDispatcherName DefaultOverlay (Some entity.Surnames) entity.Group world
+                        let world = World.setEntityProtected true entity world |> snd'
                         synchronizeEntity true EntityContent.empty entityContent origin entity world)
                         world entitiesAdded
                 world
@@ -305,6 +307,7 @@ module Content =
                             match groupContent.GroupFilePathOpt with
                             | Some groupFilePath -> World.readGroupFromFile groupFilePath None screen world
                             | None -> World.createGroup4 groupContent.GroupDispatcherName (Some group.Name) group.Screen world
+                        let world = World.setGroupProtected true group world |> snd'
                         synchronizeGroup true GroupContent.empty groupContent origin group world)
                         world groupsAdded
                 world
@@ -331,6 +334,7 @@ module Content =
                 let world =
                     Seq.fold (fun world (screen : Screen, screenContent : ScreenContent) ->
                         let (screen, world) = World.createScreen3 screenContent.ScreenDispatcherName (Some screen.Name) world
+                        let world = World.setScreenProtected true screen world |> snd'
                         let world = World.applyScreenBehavior setScreenSlide screenContent.ScreenBehavior screen world
                         synchronizeScreen true ScreenContent.empty screenContent origin screen world)
                         world screensAdded

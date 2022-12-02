@@ -100,6 +100,7 @@ module WorldModuleGroup =
         static member internal getGroupContent group world = (World.getGroupState group world).Content
         static member internal getGroupDispatcher group world = (World.getGroupState group world).Dispatcher
         static member internal getGroupVisible group world = (World.getGroupState group world).Visible
+        static member internal getGroupProtected group world = (World.getGroupState group world).Protected
         static member internal getGroupPersistent group world = (World.getGroupState group world).Persistent
         static member internal getGroupDestroying (group : Group) world = List.exists ((=) (group :> Simulant)) (World.getDestructionListRev world)
         static member internal getGroupOrder group world = (World.getGroupState group world).Order
@@ -155,6 +156,13 @@ module WorldModuleGroup =
             let previous = groupState.Visible
             if value <> previous
             then struct (true, world |> World.setGroupState { groupState with Visible = value } group |> World.publishGroupChange (nameof groupState.Visible) previous value group)
+            else struct (false, world)
+
+        static member internal setGroupProtected value group world =
+            let groupState = World.getGroupState group world
+            let previous = groupState.Protected
+            if value <> previous
+            then struct (true, world |> World.setGroupState { groupState with Protected = value } group)
             else struct (false, world)
 
         static member internal setGroupPersistent value group world =
@@ -334,6 +342,7 @@ module WorldModuleGroup =
         GroupGetters.Add ("Dispatcher", fun group world -> { PropertyType = typeof<GroupDispatcher>; PropertyValue = World.getGroupDispatcher group world })
         GroupGetters.Add ("Model", fun group world -> let designerProperty = World.getGroupModelProperty group world in { PropertyType = designerProperty.DesignerType; PropertyValue = designerProperty.DesignerValue })
         GroupGetters.Add ("Visible", fun group world -> { PropertyType = typeof<bool>; PropertyValue = World.getGroupVisible group world })
+        GroupGetters.Add ("Protected", fun group world -> { PropertyType = typeof<bool>; PropertyValue = World.getGroupProtected group world })
         GroupGetters.Add ("Persistent", fun group world -> { PropertyType = typeof<bool>; PropertyValue = World.getGroupPersistent group world })
         GroupGetters.Add ("Destroying", fun group world -> { PropertyType = typeof<bool>; PropertyValue = World.getGroupDestroying group world })
         GroupGetters.Add ("ScriptFrame", fun group world -> { PropertyType = typeof<Scripting.ProceduralFrame list>; PropertyValue = World.getGroupScriptFrame group world })

@@ -9,29 +9,30 @@ open Nu
 /// Masks for Transform flags.
 module TransformMasks =
 
-    let [<Literal>] ActiveMask =                    0b0000000000000000000001u
-    let [<Literal>] DirtyMask =                     0b0000000000000000000010u
-    let [<Literal>] InvalidatedMask =               0b0000000000000000000100u
-    let [<Literal>] AbsoluteMask =                  0b0000000000000000001000u
-    let [<Literal>] ImperativeMask =                0b0000000000000000010000u
-    let [<Literal>] PublishChangeEventsMask =       0b0000000000000000100000u
-    let [<Literal>] EnabledMask =                   0b0000000000000001000000u
-    let [<Literal>] VisibleMask =                   0b0000000000000010000000u
-    let [<Literal>] AlwaysUpdateMask =              0b0000000000000100000000u
-    let [<Literal>] PublishUpdatesMask =            0b0000000000001000000000u
-    let [<Literal>] PublishPostUpdatesMask =        0b0000000000010000000000u
-    let [<Literal>] PublishRendersMask =            0b0000000000100000000000u
-    let [<Literal>] PersistentMask =                0b0000000001000000000000u
-    let [<Literal>] MountedMask =                   0b0000000010000000000000u
-    let [<Literal>] EnabledLocalMask =              0b0000000100000000000000u
-    let [<Literal>] VisibleLocalMask =              0b0000001000000000000000u
-    let [<Literal>] CenteredMask =                  0b0000010000000000000000u
-    let [<Literal>] StaticMask =                    0b0000100000000000000000u
-    let [<Literal>] LightMask =                     0b0001000000000000000000u
-    let [<Literal>] RotationMatrixDirtyMask =       0b0010000000000000000000u
-    let [<Literal>] PerimeterOrientedDirtyMask =    0b0100000000000000000000u
-    let [<Literal>] AnglesDirtyMask =               0b1000000000000000000000u
-    let [<Literal>] FlagsDefault =                  0b0110011101000011010001u
+    let [<Literal>] ActiveMask =                    0b00000000000000000000001u
+    let [<Literal>] DirtyMask =                     0b00000000000000000000010u
+    let [<Literal>] InvalidatedMask =               0b00000000000000000000100u
+    let [<Literal>] AbsoluteMask =                  0b00000000000000000001000u
+    let [<Literal>] ImperativeMask =                0b00000000000000000010000u
+    let [<Literal>] PublishChangeEventsMask =       0b00000000000000000100000u
+    let [<Literal>] EnabledMask =                   0b00000000000000001000000u
+    let [<Literal>] VisibleMask =                   0b00000000000000010000000u
+    let [<Literal>] AlwaysUpdateMask =              0b00000000000000100000000u
+    let [<Literal>] PublishUpdatesMask =            0b00000000000001000000000u
+    let [<Literal>] PublishPostUpdatesMask =        0b00000000000010000000000u
+    let [<Literal>] PublishRendersMask =            0b00000000000100000000000u
+    let [<Literal>] ProtectedMask =                 0b00000000001000000000000u
+    let [<Literal>] PersistentMask =                0b00000000010000000000000u
+    let [<Literal>] MountedMask =                   0b00000000100000000000000u
+    let [<Literal>] EnabledLocalMask =              0b00000001000000000000000u
+    let [<Literal>] VisibleLocalMask =              0b00000010000000000000000u
+    let [<Literal>] CenteredMask =                  0b00000100000000000000000u
+    let [<Literal>] StaticMask =                    0b00001000000000000000000u
+    let [<Literal>] LightMask =                     0b00010000000000000000000u
+    let [<Literal>] RotationMatrixDirtyMask =       0b00100000000000000000000u
+    let [<Literal>] PerimeterOrientedDirtyMask =    0b01000000000000000000000u
+    let [<Literal>] AnglesDirtyMask =               0b10000000000000000000000u
+    let [<Literal>] FlagsDefault =                  0b01100111010000011010001u
 
 // NOTE: opening masks for succintness.
 open TransformMasks
@@ -64,6 +65,7 @@ type [<NoEquality; NoComparison>] Transform =
     member this.PublishUpdates with get () = this.Flags_ &&& PublishUpdatesMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| PublishUpdatesMask else this.Flags_ &&& ~~~PublishUpdatesMask
     member this.PublishPostUpdates with get () = this.Flags_ &&& PublishPostUpdatesMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| PublishPostUpdatesMask else this.Flags_ &&& ~~~PublishPostUpdatesMask
     member this.PublishRenders with get () = this.Flags_ &&& PublishRendersMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| PublishRendersMask else this.Flags_ &&& ~~~PublishRendersMask
+    member this.Protected with get () = this.Flags_ &&& ProtectedMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| ProtectedMask else this.Flags_ &&& ~~~ProtectedMask
     member this.Persistent with get () = this.Flags_ &&& PersistentMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| PersistentMask else this.Flags_ &&& ~~~PersistentMask
     member this.Mounted with get () = this.Flags_ &&& MountedMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| MountedMask else this.Flags_ &&& ~~~MountedMask
     member this.EnabledLocal with get () = this.Flags_ &&& EnabledLocalMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| EnabledLocalMask else this.Flags_ &&& ~~~EnabledLocalMask
