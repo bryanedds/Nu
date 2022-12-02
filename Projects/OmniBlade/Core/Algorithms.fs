@@ -68,28 +68,28 @@ module Algorithms =
             match Map.tryFind archetypeType Data.Value.Archetypes with
             | Some archetypeData -> archetypeData.Stamina
             | None -> 1.0f
-        let intermediate =
+        let enduaranceBase =
             match armorOpt with
             | Some armor ->
                 match Map.tryFind armor Data.Value.Armors with
                 | Some armorData -> single armorData.EnduranceBase
                 | None -> single level * 1.5f
             | None -> single level * 1.5f
-        (intermediate + single level) * stamina |> int |> max 1
+        (enduaranceBase + single level) * stamina |> int |> max 1
 
     let techPointsMax armorOpt archetypeType level =
         let focus = 
             match Map.tryFind archetypeType Data.Value.Archetypes with
             | Some archetypeData -> archetypeData.Focus
             | None -> 1.0f
-        let intermediate =
+        let mindBase =
             match armorOpt with
             | Some armor ->
                 match Map.tryFind armor Data.Value.Armors with
                 | Some armorData -> single armorData.MindBase
                 | None -> single level
             | None -> single level
-        (intermediate + single level) * focus |> int |> max 0
+        (mindBase + single level) * focus |> int |> max 0
 
     let immunities accessories archetypeType (level : int) =
         ignore level
@@ -128,14 +128,14 @@ module Algorithms =
             match Map.tryFind archetypeType Data.Value.Archetypes with
             | Some archetypeData -> archetypeData.Strength
             | None -> 1.0f
-        let intermediate =
+        let powerBase =
             match weaponOpt with
             | Some weapon ->
                 match Map.tryFind weapon Data.Value.Weapons with
                 | Some weaponData -> single weaponData.PowerBase
                 | None -> 1.0f
             | None -> 1.0f
-        (intermediate + single level) * powerBuff * strength |> int |> max 1
+        (powerBase + single level) * powerBuff * strength |> int |> max 1
 
     let magic weaponOpt statuses archetypeType level =
         let magicBuff =
@@ -146,14 +146,14 @@ module Algorithms =
             match Map.tryFind archetypeType Data.Value.Archetypes with
             | Some archetypeData -> archetypeData.Intelligence
             | None -> 1.0f
-        let intermediate =
+        let magicBase =
             match weaponOpt with
             | Some weapon ->
                 match Map.tryFind weapon Data.Value.Weapons with
                 | Some weaponData -> single weaponData.MagicBase
                 | None -> 1.0f
             | None -> 1.0f
-        (intermediate + single level) * magicBuff * intelligence |> int |> max 1
+        (magicBase + single level) * magicBuff * intelligence |> int |> max 1
 
     let shield effectType absorbCreep accessories statuses archetypeType level =
         let shieldBuff =
@@ -165,7 +165,7 @@ module Algorithms =
             | Some archetypeData -> (archetypeData.Defense, archetypeData.Absorb)
             | None -> (1.0f, 1.0f)
         let absorb = absorbUncrept * absorbCreep
-        let intermediate =
+        let shieldBase =
             List.fold
                 (fun shieldBase accessoryType ->
                     match Map.tryFind accessoryType Data.Value.Accessories with
@@ -174,7 +174,7 @@ module Algorithms =
                 0.0f
                 accessories
         let scalar = match effectType with Physical -> defense * 0.5f | Magical -> absorb * 0.5f
-        (intermediate + single level) * shieldBuff * scalar |> int |> max 0
+        (shieldBase + single level) * shieldBuff * scalar |> int |> max 0
 
     let defense accessories statuses archetypeType level =
         shield Physical 1.0f accessories statuses archetypeType level
