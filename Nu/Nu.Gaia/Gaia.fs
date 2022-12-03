@@ -3,11 +3,11 @@
 
 namespace Nu.Gaia
 open System
-open System.IO
 open System.Collections
 open System.Collections.Generic
 open System.ComponentModel
 open System.Drawing
+open System.IO
 open System.Linq
 open System.Numerics
 open System.Reflection
@@ -824,13 +824,15 @@ module Gaia =
             if draggedNode <> targetNodeOpt && notNull targetNodeOpt && not (containsNode draggedNode targetNodeOpt) then
                 let selectedGroup = Globals.EditorState.SelectedGroup
                 let source = Entity (selectedGroup.GroupAddress <-- Address.makeFromString draggedNode.Name)
-                let (mountToParent, target) =
-                    if targetNodeOpt.Name = Constants.Editor.GroupNodeKey
-                    then (false, Group selectedGroup.GroupAddress / source.Name)
-                    else (true, Entity (selectedGroup.GroupAddress <-- Address.makeFromString targetNodeOpt.Name) / source.Name)
-                let mountOpt = if mountToParent then Some (Relation.makeParent ()) else None
-                let world = World.renameEntityImmediate source target world
-                target.SetMountOptWithAdjustment mountOpt world
+                if not (source.GetProtected world) then
+                    let (mountToParent, target) =
+                        if targetNodeOpt.Name = Constants.Editor.GroupNodeKey
+                        then (false, Group selectedGroup.GroupAddress / source.Name)
+                        else (true, Entity (selectedGroup.GroupAddress <-- Address.makeFromString targetNodeOpt.Name) / source.Name)
+                    let mountOpt = if mountToParent then Some (Relation.makeParent ()) else None
+                    let world = World.renameEntityImmediate source target world
+                    target.SetMountOptWithAdjustment mountOpt world
+                else Log.traceOnce "Cannot relocate a protected simulant (such as an entity created by the Elmish API)."; world
             else world
 
     let private handleFormHierarchyShowSelected (form : GaiaForm) (_ : EventArgs) =
