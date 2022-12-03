@@ -1954,6 +1954,8 @@ module Gaia =
                     (EventFilter.NotAny
                         [EventFilter.Pattern (Rexpr "Update", [])
                          EventFilter.Pattern (Rexpr "Render", [])
+                         EventFilter.Pattern (Rexpr "Change", [])
+                         EventFilter.Pattern (Rexpr "BodyTransform", [])
                          EventFilter.Pattern (Rexpr "Mouse/Move", [])])
                     world
 
