@@ -2407,6 +2407,7 @@ module WorldModuleEntity =
             | Some entityStateObj ->
                 let (id, surnames) = Gen.id64AndSurnamesIf surnamesOpt
                 let entityState = { (entityStateObj :?> EntityState) with Order = Core.getUniqueTimeStamp (); Id = id; Surnames = surnames }
+                entityState.Protected <- false // ensure pasted entity is not protected
                 let (position, snapsOpt) =
                     if entityState.Is2d then
                         let viewport = World.getViewport world
