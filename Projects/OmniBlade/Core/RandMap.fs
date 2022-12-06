@@ -120,7 +120,7 @@ type [<NoComparison>] Segments =
       SegmentBS : TmxMap }
 
     static member load (floor : int) (filePath : string) =
-      { Segment0 = TmxMap (filePath + "+0.tmx")
+      { Segment0 = TmxMap (filePath + "+0A.tmx")
         Segment1N = TmxMap (filePath + "+1N.tmx")
         Segment1E = TmxMap (filePath + "+1E.tmx")
         Segment1S = TmxMap (filePath + "+1S.tmx")
