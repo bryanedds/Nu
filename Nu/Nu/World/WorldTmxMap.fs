@@ -297,11 +297,11 @@ module TmxMap =
               Sensor = false }
         bodyProperties
 
-    let getLayeredMessages2d time absolute (viewBounds : Box2) (tileMapPosition : Vector2) tileMapElevation tileMapColor tileMapGlow tileLayerClearance tileIndexOffset tileIndexOffsetRange (tileMap : TmxMap) =
+    let getLayeredMessages2d time absolute (viewBounds : Box2) (tileMapPosition : Vector2) tileMapElevation tileMapColor tileMapGlow tileLayerClearance tileIndexOffset tileIndexOffsetRange tileMapPackage (tileMap : TmxMap) =
         let layers = List.ofSeq tileMap.TileLayers
         let tileSourceSize = v2i tileMap.TileWidth tileMap.TileHeight
         let tileSize = v2 (single tileMap.TileWidth) (single tileMap.TileHeight)
-        let tileAssets = tileMap.ImageAssets
+        let tileAssets = tileMap.GetImageAssets tileMapPackage
         let tileGidCount = Array.fold (fun count (tileSet : TmxTileset, _) -> let count2 = tileSet.TileCount in count + count2.GetValueOrDefault 0) 0 tileAssets // TODO: make this a public function!
         let tileMapDescriptor = getDescriptor tileMapPosition tileMap
         let descriptorLists =

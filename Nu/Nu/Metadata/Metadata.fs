@@ -31,26 +31,31 @@ module TmxExtensions =
     let ImageAssetsMemo = dictPlus<TmxTileset, Image AssetTag> HashIdentity.Structural []
 
     type TmxTileset with
-        member this.ImageAsset =
+        member this.GetImageAsset tileMapPackage =
             match ImageAssetsMemo.TryGetValue this with
             | (false, _) ->
                 let imageAsset =
-                    try scvalue<Image AssetTag> this.Properties.["Image"]
-                    with :? KeyNotFoundException ->
-                        let errorMessage =
-                            "Tileset '" + this.Name + "' missing Image property.\n" +
-                            "You must add a Custom Property to the tile set called 'Image' and give it an asset value like '[PackageName AssetName]'.\n" +
-                            "This will specify where the engine can find the tile set's associated image asset."
-                        raise (TileSetPropertyNotFoundException errorMessage)
+                    match this.Properties.TryGetValue "Image" with
+                    | (true, imageAssetTagString) ->
+                        try scvalue<Image AssetTag> imageAssetTagString
+                        with :? KeyNotFoundException ->
+                            let errorMessage =
+                                "Tileset '" + this.Name + "' missing Image property.\n" +
+                                "You must add a Custom Property to the tile set called 'Image' and give it an asset value like '[PackageName AssetName]'.\n" +
+                                "This will specify where the engine can find the tile set's associated image asset."
+                            raise (TileSetPropertyNotFoundException errorMessage)
+                    | (false, _) ->
+                        let name = Path.GetFileNameWithoutExtension this.Image.Source
+                        asset tileMapPackage name // infer asset tag
                 ImageAssetsMemo.Add (this, imageAsset)
                 imageAsset
             | (true, imageAssets) -> imageAssets
 
     type TmxMap with
-        member this.ImageAssets =
+        member this.GetImageAssets tileMapPackage =
             this.Tilesets |>
             Array.ofSeq |>
-            Array.map (fun (tileSet : TmxTileset) -> (tileSet, tileSet.ImageAsset))
+            Array.map (fun (tileSet : TmxTileset) -> (tileSet, tileSet.GetImageAsset tileMapPackage))
 
 [<RequireQualifiedAccess>]
 module Metadata =
@@ -74,7 +79,7 @@ module Metadata =
 
     let private tryGenerateTileMapMetadata asset =
         try let tmxMap = TmxMap asset.FilePath
-            let imageAssets = tmxMap.ImageAssets
+            let imageAssets = tmxMap.GetImageAssets asset.AssetTag.PackageName
             Some (TileMapMetadata (asset.FilePath, imageAssets, tmxMap))
         with _ as exn ->
             let errorMessage = "Failed to load TmxMap '" + asset.FilePath + "' due to: " + scstring exn
