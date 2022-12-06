@@ -601,4 +601,9 @@ module Field =
             Some { field with Props_ = props }
         with _ -> None
 
+    let loadOrInitial saveSlot world =
+        match tryLoad saveSlot world with
+        | Some field -> field
+        | None -> initial Slot1 (max 1UL Gen.randomul) world
+
 type Field = Field.Field
