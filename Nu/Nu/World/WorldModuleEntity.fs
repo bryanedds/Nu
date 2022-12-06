@@ -217,7 +217,7 @@ module WorldModuleEntity =
                 let positionChanged = v3Neq newTransform.Position oldTransform.Position
                 let scaleChanged = v3Neq newTransform.Scale oldTransform.Scale
                 let offsetChanged = v3Neq newTransform.Offset oldTransform.Offset
-                let anglesChanged = v3Neq newTransform.Angles oldTransform.Angles
+                let rotationChanged = quatNeq newTransform.Rotation oldTransform.Rotation
                 let sizeChanged = v3Neq newTransform.Size oldTransform.Size
                 let elevationChanged = newTransform.Elevation <> oldTransform.Elevation
                 let overflowChanged = newTransform.Overflow <> oldTransform.Overflow
@@ -241,7 +241,7 @@ module WorldModuleEntity =
                         world
                     else world
                 let world =
-                    if anglesChanged then
+                    if rotationChanged then
                         let world = World.publishEntityChange (nameof newTransform.Rotation) () () publishChangeEvents entity world
                         let world = World.publishEntityChange (nameof newTransform.Angles) () () publishChangeEvents entity world
                         let world = World.publishEntityChange (nameof newTransform.Degrees) () () publishChangeEvents entity world
