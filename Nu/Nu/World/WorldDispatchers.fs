@@ -3,6 +3,7 @@
 
 namespace Nu
 open System
+open System.IO
 open System.Numerics
 open TiledSharp
 open Prime
@@ -1012,7 +1013,8 @@ module TileMapFacetModule =
             World.destroyBody (entity.GetPhysicsId world) world
 
         override this.Render (entity, world) =
-            match TmxMap.tryGetTileMap (entity.GetTileMap world) with
+            let tileMapAsset = entity.GetTileMap world
+            match TmxMap.tryGetTileMap tileMapAsset with
             | Some tileMap ->
                 let mutable transform = entity.GetTransform world
                 let perimeterUnscaled = transform.PerimeterUnscaled // tile map currently ignores rotation and scale
@@ -1029,6 +1031,7 @@ module TileMapFacetModule =
                         (entity.GetTileLayerClearance world)
                         (entity.GetTileIndexOffset world)
                         (entity.GetTileIndexOffsetRange world)
+                        tileMapAsset.PackageName
                         tileMap
                 World.enqueueRenderLayeredMessages2d tileMapMessages world
             | None -> world
@@ -1122,6 +1125,7 @@ module TmxMapFacetModule =
                     (entity.GetTileLayerClearance world)
                     (entity.GetTileIndexOffset world)
                     (entity.GetTileIndexOffsetRange world)
+                    (Path.GetDirectoryName tmxMap.TmxDirectory)
                     tmxMap
             World.enqueueRenderLayeredMessages2d tmxMapMessages world
 
