@@ -242,16 +242,18 @@ module TmxMap =
         for boxes in tileBoxes.Values do
             let mutable box = boxes.[0]
             let epsilon = box.Size.X * 0.001f
-            for i in 1 .. dec boxes.Count do
-                let box2 = boxes.[i]
-                let distance = abs (box2.Left.X - box.Right.X)
-                if distance < epsilon then
-                    box.Size <- v3 (box.Size.X + box2.Size.X) box.Size.Y 0.0f
-                else
-                    strips.Add box
-                    box <- box2
-                if i = dec boxes.Count then
-                    strips.Add box
+            if boxes.Count > 1 then
+                for i in 1 .. dec boxes.Count do
+                    let box2 = boxes.[i]
+                    let distance = abs (box2.Left.X - box.Right.X)
+                    if distance < epsilon then
+                        box.Size <- v3 (box.Size.X + box2.Size.X) box.Size.Y 0.0f
+                    else
+                        strips.Add box
+                        box <- box2
+                    if i = dec boxes.Count then
+                        strips.Add box
+            else strips.Add box
 
         // convert strips into BodyShapes and add to the resulting list
         for strip in strips do
