@@ -154,17 +154,17 @@ module PropDispatcher =
                         else (false, Assets.Default.ImageEmpty, Color.One, Transparent, Color.Zero, ValueNone, FlipNone)
                     | Character (_, _, isEcho, _, _, requirements) ->
                         match prop.PropState with
-                        | CharacterState (color, animationState) when prop.Advents.IsSupersetOf requirements->
+                        | CharacterState (characterColor, animationState) when prop.Advents.IsSupersetOf requirements->
                             let time = World.getUpdateTime world
                             let inset = CharacterAnimationState.inset time Constants.Gameplay.CharacterCelSize animationState
                             let (color, glow) =
                                 if isEcho then
-                                    let color = color.MapA ((/) 2.5f)
+                                    let color = characterColor.MapA ((*) 0.4f)
                                     let glowAmount = single (time % 120L) / 120.0f
                                     let glowAmount = if glowAmount > 0.5f then 1.0f - glowAmount else glowAmount
-                                    let glow = color.MapA ((*) glowAmount)
+                                    let glow = characterColor.MapA ((*) glowAmount)
                                     (color, glow)
-                                else (color, Color.Zero)
+                                else (characterColor, Color.Zero)
                             (false, animationState.AnimationSheet, color, Transparent, glow, ValueSome inset, FlipNone)
                         | _ -> (false, Assets.Default.ImageEmpty, Color.One, Transparent, Color.Zero, ValueNone, FlipNone)
                     | Npc (npcType, directionOpt, _, requirements) | NpcBranching (npcType, directionOpt, _, requirements) ->
