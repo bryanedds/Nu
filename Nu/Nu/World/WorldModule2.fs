@@ -684,7 +684,7 @@ module WorldModule2 =
                 match integrationMessage with
                 | BodyCollisionMessage bodyCollisionMessage ->
                     let entity = bodyCollisionMessage.BodyShapeSource.Simulant :?> Entity
-                    if entity.Exists world then
+                    if entity.Exists world && entity.IsSelected world then
                         let collisionData =
                             { BodyCollider = BodyShapeSource.fromInternal bodyCollisionMessage.BodyShapeSource
                               BodyCollidee = BodyShapeSource.fromInternal bodyCollisionMessage.BodyShapeSource2
@@ -696,7 +696,7 @@ module WorldModule2 =
                     else world
                 | BodySeparationMessage bodySeparationMessage ->
                     let entity = bodySeparationMessage.BodyShapeSource.Simulant :?> Entity
-                    if entity.Exists world then
+                    if entity.Exists world && entity.IsSelected world then
                         let explicit =
                             { BodySeparator = BodyShapeSource.fromInternal bodySeparationMessage.BodyShapeSource
                               BodySeparatee = BodyShapeSource.fromInternal bodySeparationMessage.BodyShapeSource2 }
@@ -707,7 +707,7 @@ module WorldModule2 =
                 | BodyTransformMessage bodyTransformMessage ->
                     let bodySource = bodyTransformMessage.BodySource
                     let entity = bodySource.Simulant :?> Entity
-                    if entity.Exists world then
+                    if entity.Exists world && entity.IsSelected world then
                         let entityState = World.getEntityState entity world // OPTIMIZATION: invoke entity state directly.
                         let centerOffset = if entityState.Centered then v3Zero else entityState.Size * v3UncenteredOffset
                         let position = bodyTransformMessage.Position - centerOffset
