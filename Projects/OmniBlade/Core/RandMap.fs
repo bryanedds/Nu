@@ -353,7 +353,7 @@ type RandMap =
             RandMap.tryAddSpecialRoomNorthFromSouthEast NarrativeSegment map &&
             tryAddBoss map
 #if DEV
-        RandRand.printn map
+        RandMap.printn map
 #endif
         if not isMapValid // make another if no valid map could be created
         then RandMap.makeFromRand walkLength biasChance size origin floor rand
