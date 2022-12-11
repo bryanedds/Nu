@@ -489,6 +489,7 @@ module Field =
         let field = synchronizeTeamFromAllies allies field
         let field = updateInventory (constant battle.Inventory) field
         let field = updateAdvents (Set.union consequents) field
+        let field = updateAvatar (Avatar.updateIntersectedPropIds (constant [])) field
         field
 
     let toSymbolizable field =
