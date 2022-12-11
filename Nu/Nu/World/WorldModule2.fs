@@ -684,7 +684,7 @@ module WorldModule2 =
                 match integrationMessage with
                 | BodyCollisionMessage bodyCollisionMessage ->
                     let entity = bodyCollisionMessage.BodyShapeSource.Simulant :?> Entity
-                    if entity.Exists world then
+                    if entity.Exists world && entity.IsSelected world then
                         let collisionData =
                             { BodyCollider = BodyShapeSource.fromInternal bodyCollisionMessage.BodyShapeSource
                               BodyCollidee = BodyShapeSource.fromInternal bodyCollisionMessage.BodyShapeSource2
@@ -696,7 +696,7 @@ module WorldModule2 =
                     else world
                 | BodySeparationMessage bodySeparationMessage ->
                     let entity = bodySeparationMessage.BodyShapeSource.Simulant :?> Entity
-                    if entity.Exists world then
+                    if entity.Exists world && entity.IsSelected world then
                         let explicit =
                             { BodySeparator = BodyShapeSource.fromInternal bodySeparationMessage.BodyShapeSource
                               BodySeparatee = BodyShapeSource.fromInternal bodySeparationMessage.BodyShapeSource2 }
@@ -707,25 +707,27 @@ module WorldModule2 =
                 | BodyTransformMessage bodyTransformMessage ->
                     let bodySource = bodyTransformMessage.BodySource
                     let entity = bodySource.Simulant :?> Entity
-                    let entityState = World.getEntityState entity world // OPTIMIZATION: invoke entity state directly.
-                    let centerOffset = if entityState.Centered then v3Zero else entityState.Size * v3UncenteredOffset
-                    let position = bodyTransformMessage.Position - centerOffset
-                    let rotation = bodyTransformMessage.Rotation
-                    let linearVelocity = bodyTransformMessage.LinearVelocity
-                    let angularVelocity = bodyTransformMessage.AngularVelocity
-                    let world =
-                        if bodySource.BodyId = 0UL
-                        then entity.ApplyPhysics position rotation linearVelocity angularVelocity world
-                        else world
-                    // TODO: P1: don't publish if PublishBodyTransformEvent is false.
-                    let transformData =
-                        { BodyPosition = position
-                          BodyRotation = rotation
-                          BodyLinearVelocity = linearVelocity
-                          BodyAngularVelocity = angularVelocity }
-                    let transformAddress = Events.BodyTransform --> entity.EntityAddress
-                    let eventTrace = EventTrace.debug "World" "processIntegrationMessage" "" EventTrace.empty
-                    World.publish transformData transformAddress eventTrace Simulants.Game world
+                    if entity.Exists world && entity.IsSelected world then
+                        let entityState = World.getEntityState entity world // OPTIMIZATION: invoke entity state directly.
+                        let centerOffset = if entityState.Centered then v3Zero else entityState.Size * v3UncenteredOffset
+                        let position = bodyTransformMessage.Position - centerOffset
+                        let rotation = bodyTransformMessage.Rotation
+                        let linearVelocity = bodyTransformMessage.LinearVelocity
+                        let angularVelocity = bodyTransformMessage.AngularVelocity
+                        let world =
+                            if bodySource.BodyId = 0UL
+                            then entity.ApplyPhysics position rotation linearVelocity angularVelocity world
+                            else world
+                        // TODO: P1: don't publish if PublishBodyTransformEvent is false.
+                        let transformData =
+                            { BodyPosition = position
+                              BodyRotation = rotation
+                              BodyLinearVelocity = linearVelocity
+                              BodyAngularVelocity = angularVelocity }
+                        let transformAddress = Events.BodyTransform --> entity.EntityAddress
+                        let eventTrace = EventTrace.debug "World" "processIntegrationMessage" "" EventTrace.empty
+                        World.publish transformData transformAddress eventTrace Simulants.Game world
+                    else world
             | Dead -> world
 
         static member private getEntities2dBy getElementsFromQuadtree world =
