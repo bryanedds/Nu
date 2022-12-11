@@ -116,7 +116,7 @@ module FieldContent =
                 let x = if index < columns then position.X else position.X + 375.0f
                 let y = position.Y - single (index % columns) * 81.0f
                 Content.button itemName
-                    [Entity.PositionLocal == v3 x y 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 336.0f 72.0f 0.0f
+                    [Entity.PositionLocal := v3 x y 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 336.0f 72.0f 0.0f
                      Entity.Justification == Justified (JustifyLeft, JustifyMiddle); Entity.Margins == v3 16.0f 0.0f 0.0f
                      Entity.Text :=
                         match itemCountOpt with
