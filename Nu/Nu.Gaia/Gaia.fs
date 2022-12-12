@@ -162,7 +162,7 @@ module Gaia =
             | (true, gridItem) -> form.entityPropertyGrid.SelectedGridItem <- gridItem
             | (false, _) -> if entity.GetModelGeneric<obj> world <> box () then form.entityPropertyGrid.SelectedGridItem <- gridItems.[Constants.Engine.ModelPropertyName]
         elif entity.GetModelGeneric<obj> world <> box () then form.entityPropertyGrid.SelectedGridItem <- gridItems.[Constants.Engine.ModelPropertyName]
-        form.propertyTabControl.SelectTab 0 // show entity properties
+        form.propertyTabControl.SelectTab 3
 
     let private deselectEntity (form : GaiaForm) world =
         Globals.World <- world // must be set for property grid
@@ -1753,6 +1753,7 @@ module Gaia =
         form.degreesSnapTextBox.Text <- scstring Constants.Editor.Degrees2dSnapDefault
         form.scaleSnapTextBox.Text <- scstring Constants.Editor.Scale2dSnapDefault
         form.createElevationTextBox.Text <- scstring Constants.Editor.CreationElevationDefault
+        form.propertyTabControl.SelectTab 3
 
         // build tree view sorter
         let treeViewSorter =
