@@ -195,9 +195,26 @@ module Gaia =
             else deselectGroup form world
         | _ -> ()
 
+    let private refreshScreenPropertyGrid (form : GaiaForm) world =
+        match form.screenPropertyGrid.SelectedObject with
+        | :? ScreenTypeDescriptorSource as screenTds ->
+            Globals.World <- world // must be set for property grid
+            if screenTds.DescribedScreen.Exists world then
+                form.screenPropertyGrid.Refresh ()
+        | _ -> ()
+
+    let private refreshGamePropertyGrid (form : GaiaForm) world =
+        match form.gamePropertyGrid.SelectedObject with
+        | :? GameTypeDescriptorSource ->
+            Globals.World <- world // must be set for property grid
+            form.screenPropertyGrid.Refresh ()
+        | _ -> ()
+
     let private refreshFormOnUndoRedo (form : GaiaForm) world =
         refreshEntityPropertyGrid form world
         refreshGroupPropertyGrid form world
+        refreshScreenPropertyGrid form world
+        refreshGamePropertyGrid form world
         refreshGroupTabs form world
         refreshHierarchyTreeView form world
         form.runButton.Checked <- World.getAdvancing world
@@ -515,171 +532,116 @@ module Gaia =
         elif propertyDescriptor.PropertyType = typeof<Entity Relation option> then handlePropertyPickParentNode propertyDescriptor entityTds form world
         else world
 
-    // TODO: factor away some of the code duplication in this function!
-    let private refreshPropertyEditor (form : GaiaForm) =
-        let world = Globals.World // handle re-entry
-        if form.propertyTabControl.SelectedIndex = 0 then
-            match (form.entityPropertyGrid.SelectedObject, form.entityPropertyGrid.SelectedGridItem) with
-            | (null, _) | (_, null) ->
-                form.propertyEditor.Enabled <- false
-                form.propertyNameLabel.Text <- String.Empty
-                form.propertyDescriptionTextBox.Text <- String.Empty
-                form.propertyValueTextBoxText <- String.Empty
-                form.propertyValueTextBox.EmptyUndoBuffer ()
-            | (selectedEntityTds, selectedGridItem) ->
-                let selectedEntityTds = selectedEntityTds :?> EntityTypeDescriptorSource // unbox manually
-                match selectedGridItem.GridItemType with
-                | GridItemType.Property ->
-                    let ty = selectedGridItem.PropertyDescriptor.PropertyType
-                    let typeConverter = SymbolicConverter (false, None, ty)
-                    form.propertyEditor.Enabled <- not selectedGridItem.PropertyDescriptor.IsReadOnly
-                    form.propertyNameLabel.Text <- selectedGridItem.Label
-                    form.propertyDescriptionTextBox.Text <- selectedGridItem.PropertyDescriptor.Description
-                    if ty <> typeof<ComputedProperty> && (notNull selectedGridItem.Value || FSharpType.isNullTrueValue ty) then
-                        let (keywords0, keywords1, prettyPrinter) =
-                            match selectedGridItem.Label with
-                            | Constants.Engine.OverlayNameOptPropertyName ->
-                                let overlays = World.getOverlays world
-                                let overlayNames = overlays |> Map.toValueList |> List.map (fun overlay -> overlay.OverlayName)
-                                (String.concat " " overlayNames, "", PrettyPrinter.defaultPrinter)
-                            | Constants.Engine.FacetNamesPropertyName ->
-                                let facetNames = world |> World.getFacets |> Map.toKeyList
-                                (String.concat " " facetNames, "", PrettyPrinter.defaultPrinter)
-                            | _ ->
-                                let syntax = SyntaxAttribute.defaultValue ty
-                                let keywords0 =
-                                    if ty = typeof<Scripting.Expr>
-                                    then syntax.Keywords0 + " " + WorldBindings.BindingKeywords
-                                    else syntax.Keywords0
-                                (keywords0, syntax.Keywords1, syntax.PrettyPrinter)
-                        let selectionStart = form.propertyValueTextBox.SelectionStart
-                        let strUnescaped = typeConverter.ConvertToString selectedGridItem.Value
-                        let strEscaped = String.escape strUnescaped
-                        let strPretty = PrettyPrinter.prettyPrint strEscaped prettyPrinter
-                        form.propertyValueTextBoxText <- strPretty + "\n"
-                        form.propertyValueTextBox.EmptyUndoBuffer ()
-                        form.propertyValueTextBox.Keywords0 <- keywords0
-                        form.propertyValueTextBox.Keywords1 <- keywords1
-                        form.propertyValueTextBox.SelectionStart <- selectionStart
-                        form.propertyValueTextBox.ScrollCaret ()
-                        form.pickPropertyButton.Visible <-
-                            selectedGridItem.PropertyDescriptor.PropertyType = typeof<Entity Relation option> ||
-                            (selectedGridItem.PropertyDescriptor.PropertyType.IsGenericType &&
-                             selectedGridItem.PropertyDescriptor.PropertyType.GetGenericTypeDefinition () = typedefof<_ AssetTag>)
-                        form.pickPropertyButton.Click.RemoveHandler propertyPickButtonClickHandler
-                        propertyPickButtonClickHandler <- EventHandler (fun _ _ -> addPreUpdater $ handlePropertyPickButton selectedGridItem.PropertyDescriptor selectedEntityTds form)
-                        form.pickPropertyButton.Click.AddHandler propertyPickButtonClickHandler
-                | _ ->
-                    form.propertyEditor.Enabled <- false
-                    form.propertyNameLabel.Text <- String.Empty
-                    form.propertyDescriptionTextBox.Text <- String.Empty
-                    form.propertyValueTextBoxText <- String.Empty
-                    form.propertyValueTextBox.EmptyUndoBuffer ()
-                    form.pickPropertyButton.Visible <- false
-                    form.pickPropertyButton.Click.RemoveHandler propertyPickButtonClickHandler
-        else // assume group
-            match (form.groupPropertyGrid.SelectedObject, form.groupPropertyGrid.SelectedGridItem) with
-            | (null, _) | (_, null) ->
-                form.propertyEditor.Enabled <- false
-                form.propertyNameLabel.Text <- String.Empty
-                form.propertyDescriptionTextBox.Text <- String.Empty
-                form.propertyValueTextBoxText <- String.Empty
-                form.propertyValueTextBox.EmptyUndoBuffer ()
-            | (_, selectedGridItem) ->
-                match selectedGridItem.GridItemType with
-                | GridItemType.Property ->
-                    let ty = selectedGridItem.PropertyDescriptor.PropertyType
-                    let typeConverter = SymbolicConverter (false, None, ty)
-                    form.propertyEditor.Enabled <- true
-                    form.propertyNameLabel.Text <- selectedGridItem.Label
-                    form.propertyDescriptionTextBox.Text <- selectedGridItem.PropertyDescriptor.Description
-                    if ty <> typeof<ComputedProperty> && (notNull selectedGridItem.Value || FSharpType.isNullTrueValue ty) then
-                        let (keywords0, keywords1, prettyPrinter) =
+    let private refreshPropertyEditor4 isEntity (propertyGrid : PropertyGrid) (form : GaiaForm) world =
+        match (propertyGrid.SelectedObject, propertyGrid.SelectedGridItem) with
+        | (null, _) | (_, null) ->
+            form.propertyEditor.Enabled <- false
+            form.propertyNameLabel.Text <- String.Empty
+            form.propertyDescriptionTextBox.Text <- String.Empty
+            form.propertyValueTextBoxText <- String.Empty
+            form.propertyValueTextBox.EmptyUndoBuffer ()
+        | (selectedObject, selectedGridItem) ->
+            match selectedGridItem.GridItemType with
+            | GridItemType.Property ->
+                let ty = selectedGridItem.PropertyDescriptor.PropertyType
+                let typeConverter = SymbolicConverter (false, None, ty)
+                form.propertyEditor.Enabled <- not selectedGridItem.PropertyDescriptor.IsReadOnly
+                form.propertyNameLabel.Text <- selectedGridItem.Label
+                form.propertyDescriptionTextBox.Text <- selectedGridItem.PropertyDescriptor.Description
+                if ty <> typeof<ComputedProperty> && (notNull selectedGridItem.Value || FSharpType.isNullTrueValue ty) then
+                    let (keywords0, keywords1, prettyPrinter) =
+                        match (isEntity, selectedGridItem.Label) with
+                        | (true, Constants.Engine.OverlayNameOptPropertyName) ->
+                            let overlays = World.getOverlays world
+                            let overlayNames = overlays |> Map.toValueList |> List.map (fun overlay -> overlay.OverlayName)
+                            (String.concat " " overlayNames, "", PrettyPrinter.defaultPrinter)
+                        | (true, Constants.Engine.FacetNamesPropertyName) ->
+                            let facetNames = world |> World.getFacets |> Map.toKeyList
+                            (String.concat " " facetNames, "", PrettyPrinter.defaultPrinter)
+                        | (_, _) ->
                             let syntax = SyntaxAttribute.defaultValue ty
                             let keywords0 =
                                 if ty = typeof<Scripting.Expr>
                                 then syntax.Keywords0 + " " + WorldBindings.BindingKeywords
                                 else syntax.Keywords0
                             (keywords0, syntax.Keywords1, syntax.PrettyPrinter)
-                        let selectionStart = form.propertyValueTextBox.SelectionStart
-                        let strUnescaped = typeConverter.ConvertToString selectedGridItem.Value
-                        let strEscaped = String.escape strUnescaped
-                        let strPretty = PrettyPrinter.prettyPrint strEscaped prettyPrinter
-                        form.propertyValueTextBoxText <- strPretty + "\n"
-                        form.propertyValueTextBox.EmptyUndoBuffer ()
-                        form.propertyValueTextBox.Keywords0 <- keywords0
-                        form.propertyValueTextBox.Keywords1 <- keywords1
-                        form.propertyValueTextBox.SelectionStart <- selectionStart
-                        form.propertyValueTextBox.ScrollCaret ()
-                        form.pickPropertyButton.Visible <- false
-                | _ ->
-                    form.propertyEditor.Enabled <- false
-                    form.propertyNameLabel.Text <- String.Empty
-                    form.propertyDescriptionTextBox.Text <- String.Empty
-                    form.propertyValueTextBoxText <- String.Empty
+                    let selectionStart = form.propertyValueTextBox.SelectionStart
+                    let strUnescaped = typeConverter.ConvertToString selectedGridItem.Value
+                    let strEscaped = String.escape strUnescaped
+                    let strPretty = PrettyPrinter.prettyPrint strEscaped prettyPrinter
+                    form.propertyValueTextBoxText <- strPretty + "\n"
                     form.propertyValueTextBox.EmptyUndoBuffer ()
-                    form.pickPropertyButton.Visible <- false
+                    form.propertyValueTextBox.Keywords0 <- keywords0
+                    form.propertyValueTextBox.Keywords1 <- keywords1
+                    form.propertyValueTextBox.SelectionStart <- selectionStart
+                    form.propertyValueTextBox.ScrollCaret ()
+                    form.pickPropertyButton.Visible <-
+                        selectedGridItem.PropertyDescriptor.PropertyType = typeof<Entity Relation option> ||
+                        (selectedGridItem.PropertyDescriptor.PropertyType.IsGenericType &&
+                         selectedGridItem.PropertyDescriptor.PropertyType.GetGenericTypeDefinition () = typedefof<_ AssetTag>)
+                    form.pickPropertyButton.Click.RemoveHandler propertyPickButtonClickHandler
+                    propertyPickButtonClickHandler <- EventHandler (fun _ _ ->
+                        if isEntity then
+                            let selectedEntityTds = selectedObject :?> EntityTypeDescriptorSource
+                            let handler = handlePropertyPickButton selectedGridItem.PropertyDescriptor selectedEntityTds form
+                            addPreUpdater handler)
+                    form.pickPropertyButton.Click.AddHandler propertyPickButtonClickHandler
+            | _ ->
+                form.propertyEditor.Enabled <- false
+                form.propertyNameLabel.Text <- String.Empty
+                form.propertyDescriptionTextBox.Text <- String.Empty
+                form.propertyValueTextBoxText <- String.Empty
+                form.propertyValueTextBox.EmptyUndoBuffer ()
+                form.pickPropertyButton.Visible <- false
+                form.pickPropertyButton.Click.RemoveHandler propertyPickButtonClickHandler
+
+    let private applyPropertyEditor2 (propertyGrid : PropertyGrid) (form : GaiaForm) =
+        match (propertyGrid.SelectedObject, propertyGrid.SelectedGridItem) with
+        | (null, _) -> ()
+        | (_, null) -> failwithumf ()
+        | (selectedObject, selectedGridItem) ->
+            match selectedGridItem.GridItemType with
+            | GridItemType.Property when form.propertyNameLabel.Text = selectedGridItem.Label ->
+                let propertyDescriptor = selectedGridItem.PropertyDescriptor
+                let typeConverter = SymbolicConverter (false, None, propertyDescriptor.PropertyType)
+                try form.propertyValueTextBox.EndUndoAction ()
+                    let strEscaped = form.propertyValueTextBox.Text.TrimEnd ()
+                    let strUnescaped = String.unescape strEscaped
+                    let propertyValue = typeConverter.ConvertFromString strUnescaped
+                    propertyDescriptor.SetValue (selectedObject, propertyValue)
+                with
+                | :? ConversionException as exn ->
+                    match exn.SymbolOpt with
+                    | Some symbol ->
+                        match Symbol.getOriginOpt symbol with
+                        | ValueSome origin ->
+                            form.propertyValueTextBox.SelectionStart <- int origin.Start.Index
+                            form.propertyValueTextBox.SelectionEnd <- int origin.Stop.Index
+                        | ValueNone -> ()
+                    | None -> ()
+                    Log.info ("Invalid apply property operation due to: " + scstring exn)
+                | exn -> Log.info ("Invalid apply property operation due to: " + scstring exn)
+            | _ -> Log.trace "Invalid apply property operation (likely a code issue in Gaia)."
+
+    let private refreshPropertyEditor (form : GaiaForm) =
+        let world = Globals.World // handle re-entry
+        match form.propertyTabControl.SelectedIndex with
+        | 0 -> refreshPropertyEditor4 false form.gamePropertyGrid form world
+        | 1 -> refreshPropertyEditor4 false form.screenPropertyGrid form world
+        | 2 -> refreshPropertyEditor4 false form.groupPropertyGrid form world
+        | 3 -> refreshPropertyEditor4 true form.entityPropertyGrid form world
+        | _ -> failwithumf ()
 
     let private refreshEntityPropertyDesigner (form : GaiaForm) =
         form.entityPropertyDesigner.Enabled <- notNull form.entityPropertyGrid.SelectedObject
 
-    // TODO: factor away some of the code duplication in this function!
     let private applyPropertyEditor (form : GaiaForm) =
-        match form.entityPropertyGrid.SelectedObject with
-        | null -> ()
-        | :? EntityTypeDescriptorSource as entityTds ->
-            match form.entityPropertyGrid.SelectedGridItem with
-            | null -> failwithumf ()
-            | selectedGridItem ->
-                match selectedGridItem.GridItemType with
-                | GridItemType.Property when form.propertyNameLabel.Text = selectedGridItem.Label ->
-                    let propertyDescriptor = selectedGridItem.PropertyDescriptor :?> EntityPropertyDescriptor
-                    let typeConverter = SymbolicConverter (false, None, propertyDescriptor.PropertyType)
-                    try form.propertyValueTextBox.EndUndoAction ()
-                        let strEscaped = form.propertyValueTextBox.Text.TrimEnd ()
-                        let strUnescaped = String.unescape strEscaped
-                        let propertyValue = typeConverter.ConvertFromString strUnescaped
-                        propertyDescriptor.SetValue (entityTds, propertyValue)
-                    with
-                    | :? ConversionException as exn ->
-                        match exn.SymbolOpt with
-                        | Some symbol ->
-                            match Symbol.getOriginOpt symbol with
-                            | ValueSome origin ->
-                                form.propertyValueTextBox.SelectionStart <- int origin.Start.Index
-                                form.propertyValueTextBox.SelectionEnd <- int origin.Stop.Index
-                            | ValueNone -> ()
-                        | None -> ()
-                        Log.info ("Invalid apply property operation due to: " + scstring exn)
-                    | exn -> Log.info ("Invalid apply property operation due to: " + scstring exn)
-                | _ -> Log.trace "Invalid apply property operation (likely a code issue in Gaia)."
-        | :? GroupTypeDescriptorSource as groupTds ->
-            match form.groupPropertyGrid.SelectedGridItem with
-            | null -> Log.trace "Invalid apply property operation (likely a code issue in Gaia)."
-            | selectedGridItem ->
-                match selectedGridItem.GridItemType with
-                | GridItemType.Property when form.propertyNameLabel.Text = selectedGridItem.Label ->
-                    let propertyDescriptor = selectedGridItem.PropertyDescriptor :?> GroupPropertyDescriptor
-                    let typeConverter = SymbolicConverter (false, None, selectedGridItem.PropertyDescriptor.PropertyType)
-                    try form.propertyValueTextBox.EndUndoAction ()
-                        let strEscaped = form.propertyValueTextBox.Text.TrimEnd ()
-                        let strUnescaped = String.unescape strEscaped
-                        let propertyValue = typeConverter.ConvertFromString strUnescaped
-                        propertyDescriptor.SetValue (groupTds, propertyValue)
-                    with
-                    | :? ConversionException as exn ->
-                        match exn.SymbolOpt with
-                        | Some symbol ->
-                            match Symbol.getOriginOpt symbol with
-                            | ValueSome origin ->
-                                form.propertyValueTextBox.SelectionStart <- int origin.Start.Index
-                                form.propertyValueTextBox.SelectionEnd <- int origin.Stop.Index
-                            | ValueNone -> ()
-                        | None -> ()
-                        Log.info ("Invalid apply property operation due to: " + scstring exn)
-                    | exn -> Log.info ("Invalid apply property operation due to: " + scstring exn)
-                | _ -> Log.trace "Invalid apply property operation (likely a code issue in Gaia)."
-        | _ -> Log.trace "Invalid apply property operation (likely a code issue in Gaia)."
+        match form.propertyTabControl.SelectedIndex with
+        | 0 -> applyPropertyEditor2 form.gamePropertyGrid form
+        | 1 -> applyPropertyEditor2 form.screenPropertyGrid form
+        | 2 -> applyPropertyEditor2 form.groupPropertyGrid form
+        | 3 -> applyPropertyEditor2 form.entityPropertyGrid form
+        | _ -> failwithumf ()
 
     let private tryReloadPrelude (_ : GaiaForm) world =
         let targetDir = Globals.EditorState.TargetDir
@@ -785,11 +747,26 @@ module Gaia =
     let private handleFormGroupPropertyGridSelectedGridItemChanged (form : GaiaForm) (_ : EventArgs) =
         refreshPropertyEditor form
 
+    let private handleFormScreenPropertyGridSelectedObjectsChanged (form : GaiaForm) (_ : EventArgs) =
+        refreshPropertyEditor form
+
+    let private handleFormScreenPropertyGridSelectedGridItemChanged (form : GaiaForm) (_ : EventArgs) =
+        refreshPropertyEditor form
+
+    let private handleFormGamePropertyGridSelectedObjectsChanged (form : GaiaForm) (_ : EventArgs) =
+        refreshPropertyEditor form
+
+    let private handleFormGamePropertyGridSelectedGridItemChanged (form : GaiaForm) (_ : EventArgs) =
+        refreshPropertyEditor form
+
     let private handlePropertyTabControlSelectedIndexChanged (form : GaiaForm) (_ : EventArgs) =
         let world = Globals.World // handle re-entry
-        if form.propertyTabControl.SelectedIndex = 0
-        then refreshEntityPropertyGrid form world
-        else refreshGroupPropertyGrid form world
+        match form.propertyTabControl.SelectedIndex with
+        | 0 -> refreshGamePropertyGrid form world
+        | 1 -> refreshScreenPropertyGrid form world
+        | 2 -> refreshGroupPropertyGrid form world
+        | 3 -> refreshEntityPropertyGrid form world
+        | _ -> failwithumf ()
 
     let private handleFormPropertyRefreshClick (form : GaiaForm) (_ : EventArgs) =
         refreshPropertyEditor form
@@ -1674,6 +1651,8 @@ module Gaia =
         refreshGroupTabs form Globals.World
         refreshHierarchyTreeView form Globals.World
         selectGroup Globals.EditorState.SelectedGroup form Globals.World
+        form.screenPropertyGrid.SelectedObject <- { DescribedScreen = Globals.Screen; Form = form }
+        form.gamePropertyGrid.SelectedObject <- { DescribedGame = Simulants.Game; Form = form }
         form.runButton.CheckState <- CheckState.Unchecked
         form.songPlaybackButton.CheckState <- if World.getMasterSongVolume Globals.World = 0.0f then CheckState.Unchecked else CheckState.Checked
         form.displayPanel.Focus () |> ignore // keeps user from having to manually click on displayPanel to interact
@@ -1811,6 +1790,10 @@ module Gaia =
         form.entityPropertyGrid.SelectedGridItemChanged.Add (handleFormEntityPropertyGridSelectedGridItemChanged form)
         form.groupPropertyGrid.SelectedObjectsChanged.Add (handleFormGroupPropertyGridSelectedObjectsChanged form)
         form.groupPropertyGrid.SelectedGridItemChanged.Add (handleFormGroupPropertyGridSelectedGridItemChanged form)
+        form.screenPropertyGrid.SelectedObjectsChanged.Add (handleFormScreenPropertyGridSelectedObjectsChanged form)
+        form.screenPropertyGrid.SelectedGridItemChanged.Add (handleFormScreenPropertyGridSelectedGridItemChanged form)
+        form.gamePropertyGrid.SelectedObjectsChanged.Add (handleFormGamePropertyGridSelectedObjectsChanged form)
+        form.gamePropertyGrid.SelectedGridItemChanged.Add (handleFormGamePropertyGridSelectedGridItemChanged form)
         form.propertyTabControl.SelectedIndexChanged.Add (handlePropertyTabControlSelectedIndexChanged form)
         form.discardPropertyButton.Click.Add (handleFormPropertyRefreshClick form)
         form.applyPropertyButton.Click.Add (handleFormPropertyApplyClick form)
@@ -1980,7 +1963,6 @@ module Gaia =
                     let (screen, world) = World.createScreen (Some "Screen") world
                     let world = World.setSelectedScreen screen world
                     (screen, world)
-                    
             Globals.Screen <- screen
 
             // create default group if no group exists

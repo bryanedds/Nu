@@ -12,11 +12,11 @@ open Nu.Gaia.Design
 
 // TODO: consider getting rid of the duplication of code from GaiaEntity.fs.
 
-type [<TypeDescriptionProvider (typeof<GroupTypeDescriptorProvider>)>] GroupTypeDescriptorSource =
-    { DescribedGroup : Group
+type [<TypeDescriptionProvider (typeof<ScreenTypeDescriptorProvider>)>] ScreenTypeDescriptorSource =
+    { DescribedScreen : Screen
       Form : GaiaForm }
 
-and GroupPropertyDescriptor (propertyDescriptor, attributes) =
+and ScreenPropertyDescriptor (propertyDescriptor, attributes) =
     inherit System.ComponentModel.PropertyDescriptor (propertyDescriptor.PropertyName, attributes)
 
     let propertyName =
@@ -53,9 +53,9 @@ and GroupPropertyDescriptor (propertyDescriptor, attributes) =
     override this.SetValue (source, value) =
         Globals.PreUpdaters.Add $ fun world ->
         
-            // grab the type descriptor and group
-            let groupTds = source :?> GroupTypeDescriptorSource
-            let group = groupTds.DescribedGroup
+            // grab the type descriptor and screen
+            let screenTds = source :?> ScreenTypeDescriptorSource
+            let screen = screenTds.DescribedScreen
 
             // pull string quotes out of string
             let value =
@@ -70,41 +70,41 @@ and GroupPropertyDescriptor (propertyDescriptor, attributes) =
             // change the name property
             | Constants.Engine.NamePropertyName ->
                 MessageBox.Show
-                    ("Changing the name of a group after it has been created is not yet implemented.",
-                     "Cannot change group name in Gaia.",
+                    ("Changing the name of a screen is not yet implemented.",
+                     "Cannot change screen name in Gaia.",
                      MessageBoxButtons.OK) |>
                     ignore
                 world
 
             // change the property dynamically
             | _ ->
-                let struct (_, _, world) = PropertyDescriptor.trySetValue propertyDescriptor value group world
+                let struct (_, _, world) = PropertyDescriptor.trySetValue propertyDescriptor value screen world
                 Globals.World <- world // must be set for property grid
-                groupTds.Form.groupPropertyGrid.Refresh ()
+                screenTds.Form.screenPropertyGrid.Refresh ()
                 world
 
     override this.GetValue source =
         match source with
         | null -> null // WHY THE FUCK IS THIS EVER null???
         | source ->
-            let groupTds = source :?> GroupTypeDescriptorSource
-            PropertyDescriptor.tryGetValue propertyDescriptor groupTds.DescribedGroup Globals.World |> Option.get
+            let screenTds = source :?> ScreenTypeDescriptorSource
+            PropertyDescriptor.tryGetValue propertyDescriptor screenTds.DescribedScreen Globals.World |> Option.get
 
-and GroupTypeDescriptor (sourceOpt : obj) =
+and ScreenTypeDescriptor (sourceOpt : obj) =
     inherit CustomTypeDescriptor ()
 
     override this.GetProperties () =
         let contextOpt =
             match sourceOpt with
-            | :? GroupTypeDescriptorSource as source -> Some (source.DescribedGroup :> Simulant, Globals.World)
+            | :? ScreenTypeDescriptorSource as source -> Some (source.DescribedScreen :> Simulant, Globals.World)
             | _ -> None
-        let makePropertyDescriptor = fun (epv, tcas) -> (GroupPropertyDescriptor (epv, Array.map (fun attr -> attr :> Attribute) tcas)) :> System.ComponentModel.PropertyDescriptor
-        let propertyDescriptors = PropertyDescriptor.getPropertyDescriptors<GroupState> makePropertyDescriptor contextOpt
+        let makePropertyDescriptor = fun (epv, tcas) -> (ScreenPropertyDescriptor (epv, Array.map (fun attr -> attr :> Attribute) tcas)) :> System.ComponentModel.PropertyDescriptor
+        let propertyDescriptors = PropertyDescriptor.getPropertyDescriptors<ScreenState> makePropertyDescriptor contextOpt
         PropertyDescriptorCollection (Array.ofList propertyDescriptors)
 
     override this.GetProperties _ =
         this.GetProperties ()
 
-and GroupTypeDescriptorProvider () =
+and ScreenTypeDescriptorProvider () =
     inherit TypeDescriptionProvider ()
-    override this.GetTypeDescriptor (_, sourceOpt) = GroupTypeDescriptor sourceOpt :> ICustomTypeDescriptor
+    override this.GetTypeDescriptor (_, sourceOpt) = ScreenTypeDescriptor sourceOpt :> ICustomTypeDescriptor
