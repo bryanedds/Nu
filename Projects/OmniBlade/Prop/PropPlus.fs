@@ -9,16 +9,16 @@ open Nu
 open OmniBlade
 
 type [<NoComparison>] PropPlus =
-    { PropValue : Prop
+    { Prop : Prop
       Advents : Advent Set
       PointOfInterest : Vector3 }
 
     static member make prop advents pointOfInterest =
-        { PropValue = prop
+        { Prop = prop
           Advents = advents
           PointOfInterest = pointOfInterest }
 
     static member empty =
-        { PropValue = Prop.empty
+        { Prop = Prop.empty
           Advents = Set.empty
           PointOfInterest = v3Zero }
