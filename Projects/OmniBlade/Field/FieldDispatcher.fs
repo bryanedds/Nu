@@ -644,10 +644,10 @@ module FieldDispatcher =
                      Entity.Avatar := field.Avatar]
 
                  // props
-                 for (index, prop) in field.Props.Pairs do // TODO: DIFF: memoize?
+                 for (index, propPlus) in (Field.getPropsPlus field).Pairs do // TODO: DIFF: memoize?
 
                     // prop
-                    Content.entity<PropDispatcher> ("Prop+" + string index) [Entity.Prop := prop]
+                    Content.entity<PropDispatcher> ("Prop+" + string index) [Entity.PropPlus := propPlus]
 
                  // spirit orb
                  if Field.hasEncounters field && Cue.isNil field.Cue then

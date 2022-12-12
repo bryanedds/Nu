@@ -66,25 +66,25 @@ module Avatar =
 
     let updateCollidedPropIds updater (avatar : Avatar) =
         let propIds = updater avatar.CollidedPropIds_
-        if propIds <> avatar.CollidedPropIds_
+        if propIds =/= avatar.CollidedPropIds_
         then { avatar with CollidedPropIds_ = propIds }
         else avatar
 
     let updateSeparatedPropIds updater (avatar : Avatar) =
         let propIds = updater avatar.SeparatedPropIds_
-        if propIds <> avatar.SeparatedPropIds_
+        if propIds =/= avatar.SeparatedPropIds_
         then { avatar with SeparatedPropIds_ = propIds }
         else avatar
 
     let updateIntersectedPropIds updater (avatar : Avatar) =
         let propIds = updater avatar.IntersectedPropIds_
-        if propIds <> avatar.IntersectedPropIds_
+        if propIds =/= avatar.IntersectedPropIds_
         then { avatar with IntersectedPropIds_ = propIds }
         else avatar
 
     let updatePerimeter updater (avatar : Avatar) =
         let bounds = updater avatar.Perimeter_
-        if bounds <> avatar.Perimeter
+        if bounds =/= avatar.Perimeter
         then { avatar with Perimeter_ = bounds }
         else avatar
 
@@ -99,7 +99,7 @@ module Avatar =
 
     let updateCharacterAnimationState updater (avatar : Avatar) =
         let characterAnimationState = updater avatar.CharacterAnimationState_
-        if characterAnimationState <> avatar.CharacterAnimationState_
+        if characterAnimationState =/= avatar.CharacterAnimationState_
         then { avatar with CharacterAnimationState_ = characterAnimationState }
         else avatar
 
