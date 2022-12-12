@@ -99,14 +99,14 @@ module Field =
             CharacterState (Color.One, characterAnimationState)
         | Portal _ | Chest _ | Sensor _ | Npc _ | NpcBranching _ | Shopkeep _ | Seal _ | Flame _ | SavePoint | ChestSpawn | EmptyProp -> NilState
 
-    let private makeProps fieldType omniSeedState advents pointOfInterest world =
+    let private makeProps fieldType omniSeedState world =
         match Map.tryFind fieldType Data.Value.Fields with
         | Some fieldData ->
             let time = World.getUpdateTime world
             FieldData.getPropDescriptors omniSeedState fieldData |>
             Map.ofListBy (fun propDescriptor ->
                 let propState = makePropState time propDescriptor
-                let prop = Prop.make propDescriptor.PropPerimeter propDescriptor.PropElevation advents pointOfInterest propDescriptor.PropData propState propDescriptor.PropId
+                let prop = Prop.make propDescriptor.PropPerimeter propDescriptor.PropElevation propDescriptor.PropData propState propDescriptor.PropId
                 (propDescriptor.PropId, prop))
         | None -> Map.empty
 
@@ -165,6 +165,17 @@ module Field =
         | (true, fieldData) -> fieldData.FieldSongOpt
         | (false, _) -> None
 
+    let getProp propId field =
+        field.Props_.[propId]
+
+    let getPropsPlus field =
+        Map.map (fun _ v ->
+            PropPlus.make v field.Advents_ field.Avatar_.Bottom)
+            field.Props_
+
+    let getPropPlus propId field =
+        PropPlus.make field.Props_.[propId] field.Advents_ field.Avatar_.Bottom
+
     let getChests field =
         field.Props_ |>
         Map.toValueArray |>
@@ -204,7 +215,7 @@ module Field =
         | EmptyProp -> None
 
     let isFacingProp propId (field : Field) =
-        match field.Props.TryGetValue propId with
+        match field.Props_.TryGetValue propId with
         | (true, prop) ->
             let v = prop.Bottom - field.Avatar.Bottom
             let direction = Direction.ofVector3 v
@@ -218,7 +229,7 @@ module Field =
 
     let tryGetFacingProp (field : Field) =
         match getFacingProps field with
-        | head :: _ -> Some (field.Props.[head])
+        | head :: _ -> Some (field.Props_.[head])
         | [] -> None
 
     // NOTE: I really don't like the need to do these inefficient reverse map look-ups as a matter of course. Perhaps
@@ -230,7 +241,7 @@ module Field =
 
     let isTouchingSavePoint (field : Field) =
         List.exists (fun propId ->
-            match field.Props.TryGetValue propId with
+            match field.Props_.TryGetValue propId with
             | (true, prop) -> prop.PropData = SavePoint
             | (false, _) -> false)
             field.Avatar.IntersectedPropIds
@@ -241,7 +252,7 @@ module Field =
             if  Dialog.canAdvance (detokenize field) dialog &&
                 not
                     (Dialog.isExhausted (detokenize field) dialog &&
-                        Option.isSome dialog.DialogPromptOpt)
+                     Option.isSome dialog.DialogPromptOpt)
             then Some "Next"
             else None
         | None ->
@@ -255,7 +266,7 @@ module Field =
     let tryGetTouchingPortal (field : Field) =
         field.Avatar.IntersectedPropIds |>
         List.choose (fun propId ->
-            match field.Props.TryGetValue propId with
+            match field.Props_.TryGetValue propId with
             | (true, prop) ->
                 match prop.PropData with
                 | Portal (portalType, _, _, fieldType, portalIndex, _, requirements) ->
@@ -284,7 +295,7 @@ module Field =
 
     let getTouchedSensors (field : Field) =
         List.choose (fun propId ->
-            match field.Props.TryGetValue propId with
+            match field.Props_.TryGetValue propId with
             | (true, prop) ->
                 match prop.PropData with
                 | Sensor (sensorType, _, cue, _, requirements) -> Some (sensorType, cue, requirements)
@@ -294,7 +305,7 @@ module Field =
 
     let getUntouchedSensors (field : Field) =
         List.choose (fun propId ->
-            match field.Props.TryGetValue propId with
+            match field.Props_.TryGetValue propId with
             | (true, prop) ->
                 match prop.PropData with
                 | Sensor (sensorType, _, cue, _, requirements) -> Some (sensorType, cue, requirements)
@@ -310,7 +321,7 @@ module Field =
     let updateFieldType updater field world =
         let fieldType = updater field.FieldType_
         let spiritActivity = 0.0f
-        let props = makeProps fieldType field.OmniSeedState_ field.Advents_ field.Avatar_.BottomOffset world
+        let props = makeProps fieldType field.OmniSeedState_ world
         { field with FieldType_ = fieldType; SpiritActivity_ = spiritActivity; Spirits_ = [||]; Props_ = props }
 
     let updateFieldState updater field =
@@ -318,25 +329,16 @@ module Field =
 
     let updateAvatar updater field =
         let avatar = field.Avatar_
-        let pointOfInterest = avatar.Bottom
-        let avatar = updater avatar : Avatar
-        let pointOfInterest' = avatar.Bottom
-        let props =
-            if pointOfInterest <> pointOfInterest'
-            then Map.map (constant (Prop.updatePointOfInterest (constant pointOfInterest'))) field.Props_
-            else field.Props_
-        { field with
-            Avatar_ = avatar
-            Props_ = props }
+        let avatar = updater avatar
+        if avatar =/= field.Avatar_ then { field with Avatar_ = avatar }
+        else field
 
     let updateTeam updater field =
         { field with Team_ = updater field.Team_ }
 
     let updateAdvents updater field =
         let advents = updater field.Advents_
-        if advents <> field.Advents_ then
-            let props = Map.map (fun _ prop -> Prop.updateAdvents (constant advents) prop) field.Props_
-            { field with Advents_ = advents; Props_ = props }
+        if advents =/= field.Advents_ then { field with Advents_ = advents }
         else field
 
     let private updateProps updater field =
@@ -509,7 +511,7 @@ module Field =
             | DebugField -> (debugAdvents, snd (Inventory.tryAddItems (List.map KeyItem debugKeyItems) inventory))
             | _ -> (advents, inventory)
         let omniSeedState = OmniSeedState.makeFromSeedState randSeedState
-        let props = makeProps fieldType omniSeedState advents avatar.BottomOffset world
+        let props = makeProps fieldType omniSeedState world
         { UpdateTime_ = 0L
           FieldType_ = fieldType
           FieldState_ = Playing
@@ -598,7 +600,7 @@ module Field =
                 | Slot3 -> Assets.Global.SaveFilePath3
             let fieldStr = File.ReadAllText saveFilePath
             let field = scvalue<Field> fieldStr
-            let props = makeProps field.FieldType_ field.OmniSeedState_ field.Advents_ field.Avatar_.BottomOffset world
+            let props = makeProps field.FieldType_ field.OmniSeedState_ world
             Some { field with Props_ = props }
         with _ -> None
 

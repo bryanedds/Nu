@@ -95,6 +95,7 @@
     <Compile Include="SpiritOrb\SpiritOrb.fs" />
     <Compile Include="SpiritOrb\SpiritOrbDispatcher.fs" />
     <Compile Include="Prop\Prop.fs" />
+    <Compile Include="Prop\PropPlus.fs" />
     <Compile Include="Prop\PropDispatcher.fs" />
     <Compile Include="Avatar\Avatar.fs" />
     <Compile Include="Avatar\AvatarDispatcher.fs" />

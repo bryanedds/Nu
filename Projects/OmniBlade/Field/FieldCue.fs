@@ -217,7 +217,7 @@ module FieldCue =
                         field
                 match propIdOpt with
                 | Some propId ->
-                    let prop = field.Props.[propId]
+                    let prop = Field.getProp propId field
                     let cue = MoveState (field.UpdateTime, target, prop.Perimeter.Bottom, destination, moveType)
                     (cue, definitions, just field)
                 | None -> (Cue.Fin, definitions, just field)
@@ -246,8 +246,8 @@ module FieldCue =
                         field
                 match propIdOpt with
                 | Some propId ->
-                    let prop = field.Props.[propId]
                     let time = field.UpdateTime
+                    let prop = Field.getProp propId field
                     let localTime = time - startTime
                     let (step, stepCount) = MoveType.computeStepAndStepCount translation moveType
                     let finishTime = int64 (dec stepCount)
