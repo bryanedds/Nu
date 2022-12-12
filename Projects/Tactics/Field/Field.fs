@@ -71,7 +71,7 @@ module Field =
 
     let private CachedFieldMetadata = dictPlus<TileMap AssetTag, FieldMetadata> HashIdentity.Structural []
 
-    let private createFieldSurfaceDescriptorAndVertexMap tileMapWidth tileMapHeight (tileSets : TmxTileset array) (tileLayer : TmxLayer) (heightLayer : TmxLayer) =
+    let private createFieldSurfaceDescriptorAndVertexMap tileMapWidth tileMapHeight (tileSets : TmxTileset array) (tileLayer : TmxLayer) (heightLayer : TmxLayer) tileMapPackageName =
 
         // compute bounds
         let heightScalar = 0.5f
@@ -245,13 +245,13 @@ module Field =
                   AffineMatrix = m4Identity
                   Bounds = bounds
                   Albedo = Color.White
-                  AlbedoImage = albedoTileSet.ImageAsset
+                  AlbedoImage = albedoTileSet.GetImageAsset tileMapPackageName
                   Metalness = 0.0f
                   MetalnessImage = Assets.Default.MaterialMetalness
                   Roughness = 1.2f
                   RoughnessImage = Assets.Default.MaterialRoughness
                   AmbientOcclusion = 1.0f
-                  AmbientOcclusionImage = albedoTileSet.ImageAsset
+                  AmbientOcclusionImage = albedoTileSet.GetImageAsset tileMapPackageName
                   NormalImage = Assets.Default.MaterialNormal
                   TextureMinFilterOpt = ValueSome OpenGL.TextureMinFilter.NearestMipmapNearest
                   TextureMagFilterOpt = ValueSome OpenGL.TextureMagFilter.Nearest
@@ -266,15 +266,16 @@ module Field =
     let private getFieldMetadataInternal fieldTileMap =
         match CachedFieldMetadata.TryGetValue fieldTileMap with
         | (false, _) ->
+            let tileMapPackageName = fieldTileMap.PackageName
             let (_, tileSetsAndImages, tileMap) = Metadata.getTileMapMetadata fieldTileMap
             let tileSets = Array.map fst tileSetsAndImages
             let untraversableLayer = tileMap.Layers.["Untraversable"] :?> TmxLayer
             let untraversableHeightLayer = tileMap.Layers.["UntraversableHeight"] :?> TmxLayer
             let traversableLayer = tileMap.Layers.["Traversable"] :?> TmxLayer
             let traversableHeightLayer = tileMap.Layers.["TraversableHeight"] :?> TmxLayer
-            let (untraversableSurfaceDescriptor, _) = createFieldSurfaceDescriptorAndVertexMap tileMap.Width tileMap.Height tileSets untraversableLayer untraversableHeightLayer
+            let (untraversableSurfaceDescriptor, _) = createFieldSurfaceDescriptorAndVertexMap tileMap.Width tileMap.Height tileSets untraversableLayer untraversableHeightLayer tileMapPackageName
             let untraversableSurfaceDescriptor = { untraversableSurfaceDescriptor with Roughness = 0.1f }
-            let (traversableSurfaceDescriptor, traversableTileVerticesMap) = createFieldSurfaceDescriptorAndVertexMap tileMap.Width tileMap.Height tileSets traversableLayer traversableHeightLayer
+            let (traversableSurfaceDescriptor, traversableTileVerticesMap) = createFieldSurfaceDescriptorAndVertexMap tileMap.Width tileMap.Height tileSets traversableLayer traversableHeightLayer tileMapPackageName
             let bounds = let bounds = untraversableSurfaceDescriptor.Bounds in bounds.Combine traversableSurfaceDescriptor.Bounds
             let fieldMetadata =
                 { FieldTileVerticesMap = traversableTileVerticesMap
