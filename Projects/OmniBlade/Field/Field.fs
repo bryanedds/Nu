@@ -168,14 +168,6 @@ module Field =
     let getProp propId field =
         field.Props_.[propId]
 
-    let getPropsPlus field =
-        Map.map (fun _ v ->
-            PropPlus.make v field.Advents_ field.Avatar_.Bottom)
-            field.Props_
-
-    let getPropPlus propId field =
-        PropPlus.make field.Props_.[propId] field.Advents_ field.Avatar_.Bottom
-
     let getChests field =
         field.Props_ |>
         Map.toValueArray |>
