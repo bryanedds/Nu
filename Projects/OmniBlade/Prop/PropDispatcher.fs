@@ -22,17 +22,17 @@ module PropDispatcher =
             [typeof<RigidBodyFacet>]
 
         override this.Initialize (prop, entity) =
-            [entity.Perimeter := prop.PropValue.Perimeter
+            [entity.Perimeter := prop.Prop.Perimeter
              entity.BodyType == Static
              entity.LinearDamping == 0.0f
              entity.FixedRotation == true
              entity.GravityScale == 0.0f
              entity.Sensor :=
-                match prop.PropValue.PropData with
+                match prop.Prop.PropData with
                 | Portal _ | Sensor _ | SavePoint -> true
                 | _ -> false
              entity.BodyShape :=
-                match prop.PropValue.PropData with
+                match prop.Prop.PropData with
                 | Sprite _ ->
                     BodyEmpty
                 | Portal _ | Switch _ ->
@@ -40,7 +40,7 @@ module PropDispatcher =
                 | SavePoint _ ->
                     BodySphere { Radius = 0.1f; Center = v3Zero; PropertiesOpt = None }
                 | Door _ ->
-                    match prop.PropValue.PropState with
+                    match prop.Prop.PropState with
                     | DoorState true -> BodyEmpty
                     | _ -> BodyBox { Extent = v3 0.5f 0.5f 0.0f; Center = v3Zero; PropertiesOpt = None }
                 | Chest _ ->
@@ -76,9 +76,9 @@ module PropDispatcher =
             if entity.GetVisible world then
                 let mutable transform = entity.GetTransform world
                 let (background, image, color, blend, glow, insetOpt, flip) =
-                    match prop.PropValue.PropData with
+                    match prop.Prop.PropData with
                     | Sprite _ ->
-                        match prop.PropValue.PropState with
+                        match prop.Prop.PropState with
                         | SpriteState (image, color, blend, glow, flip, visible) ->
                             let image = if visible then image else Assets.Default.ImageEmpty
                             (false, image, color, blend, glow, ValueNone, flip)
@@ -112,7 +112,7 @@ module PropDispatcher =
                         let image =
                             match doorType with
                             | WoodenDoor ->
-                                match prop.PropValue.PropState with
+                                match prop.Prop.PropState with
                                 | DoorState opened -> if opened then Assets.Field.WoodenDoorOpenedImage else Assets.Field.WoodenDoorClosedImage
                                 | _ -> failwithumf ()
                         (false, image, Color.One, Transparent, Color.Zero, ValueNone, FlipNone)
@@ -133,7 +133,7 @@ module PropDispatcher =
                         let image =
                             match switchType with
                             | ThrowSwitch ->
-                                match prop.PropValue.PropState with
+                                match prop.Prop.PropState with
                                 | SwitchState on -> if on then Assets.Field.ThrowSwitchOnImage else Assets.Field.ThrowSwitchOffImage
                                 | _ -> failwithumf ()
                         (false, image, Color.One, Transparent, Color.Zero, ValueNone, FlipNone)
@@ -153,7 +153,7 @@ module PropDispatcher =
                             (false, image, color, Transparent, Color.Zero, ValueSome inset, FlipNone)
                         else (false, Assets.Default.ImageEmpty, Color.One, Transparent, Color.Zero, ValueNone, FlipNone)
                     | Character (_, _, isEcho, _, _, requirements) ->
-                        match prop.PropValue.PropState with
+                        match prop.Prop.PropState with
                         | CharacterState (characterColor, animationState) when prop.Advents.IsSupersetOf requirements->
                             let time = World.getUpdateTime world
                             let inset = CharacterAnimationState.inset time Constants.Gameplay.CharacterCelSize animationState
@@ -194,7 +194,7 @@ module PropDispatcher =
                                 match directionOpt with
                                 | Some direction -> direction
                                 | None ->
-                                    let delta = prop.PointOfInterest - prop.PropValue.Bottom
+                                    let delta = prop.PointOfInterest - prop.Prop.Bottom
                                     let direction = Direction.ofVector3 delta
                                     if direction <> Upward && delta.Length () <= 360.0f // TODO: make constant.
                                     then direction
@@ -213,7 +213,7 @@ module PropDispatcher =
                                 match directionOpt with
                                 | Some direction -> direction
                                 | None ->
-                                    let delta = prop.PointOfInterest - prop.PropValue.Bottom
+                                    let delta = prop.PointOfInterest - prop.Prop.Bottom
                                     let direction = Direction.ofVector3 delta
                                     if direction <> Upward && delta.Length () <= 360.0f // TODO: make constant.
                                     then direction

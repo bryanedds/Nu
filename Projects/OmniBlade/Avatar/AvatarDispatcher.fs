@@ -43,7 +43,7 @@ module AvatarDispatcher =
             if (collider.BodyShapeId = avatar.CoreShapeId &&
                 collidee.Entity.Exists world &&
                 collidee.Entity.Is<PropDispatcher> world &&
-                match (collidee.Entity.GetPropPlus world).PropValue.PropData with
+                match (collidee.Entity.GetPropPlus world).Prop.PropData with
                 | Portal _ -> true
                 | Sensor _ -> true
                 | _ -> false) then
@@ -51,7 +51,7 @@ module AvatarDispatcher =
             elif (collider.BodyShapeId = avatar.SensorShapeId &&
                   collidee.Entity.Exists world &&
                   collidee.Entity.Is<PropDispatcher> world &&
-                  match (collidee.Entity.GetPropPlus world).PropValue.PropData with
+                  match (collidee.Entity.GetPropPlus world).Prop.PropData with
                   | Portal _ -> false
                   | Sensor _ -> false
                   | _ -> true) then
@@ -120,8 +120,8 @@ module AvatarDispatcher =
                 // add collided body shape
                 let avatar =
                     if isIntersectedProp collision.BodyCollider collision.BodyCollidee avatar world then
-                        let avatar = Avatar.updateCollidedPropIds (List.cons (collision.BodyCollidee.Entity.GetPropPlus world).PropValue.PropId) avatar
-                        let avatar = Avatar.updateIntersectedPropIds (List.cons (collision.BodyCollidee.Entity.GetPropPlus world).PropValue.PropId) avatar
+                        let avatar = Avatar.updateCollidedPropIds (List.cons (collision.BodyCollidee.Entity.GetPropPlus world).Prop.PropId) avatar
+                        let avatar = Avatar.updateIntersectedPropIds (List.cons (collision.BodyCollidee.Entity.GetPropPlus world).Prop.PropId) avatar
                         avatar
                     else avatar
                 just avatar
@@ -139,15 +139,15 @@ module AvatarDispatcher =
                     match entityOpt with
                     | Some entity ->
                         let prop = entity.GetPropPlus world
-                        let (separatedPropIds, intersectedPropIds) = List.split ((=) prop.PropValue.PropId) avatar.IntersectedPropIds
+                        let (separatedPropIds, intersectedPropIds) = List.split ((=) prop.Prop.PropId) avatar.IntersectedPropIds
                         let avatar = Avatar.updateIntersectedPropIds (constant intersectedPropIds) avatar
                         let avatar = Avatar.updateSeparatedPropIds ((@) separatedPropIds) avatar
                         just avatar
                     | None -> just avatar
                 | BodySeparationExplicit explicit ->
                     if isIntersectedProp explicit.BodySeparator explicit.BodySeparatee avatar world then
-                        let avatar = Avatar.updateSeparatedPropIds (List.cons (explicit.BodySeparatee.Entity.GetPropPlus world).PropValue.PropId) avatar
-                        let avatar = Avatar.updateIntersectedPropIds (List.remove ((=) (explicit.BodySeparatee.Entity.GetPropPlus world).PropValue.PropId)) avatar
+                        let avatar = Avatar.updateSeparatedPropIds (List.cons (explicit.BodySeparatee.Entity.GetPropPlus world).Prop.PropId) avatar
+                        let avatar = Avatar.updateIntersectedPropIds (List.remove ((=) (explicit.BodySeparatee.Entity.GetPropPlus world).Prop.PropId)) avatar
                         just avatar
                     else just avatar
 
