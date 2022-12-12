@@ -138,8 +138,8 @@ module AvatarDispatcher =
                         Seq.tryHead
                     match entityOpt with
                     | Some entity ->
-                        let prop = entity.GetPropPlus world
-                        let (separatedPropIds, intersectedPropIds) = List.split ((=) prop.Prop.PropId) avatar.IntersectedPropIds
+                        let propId = (entity.GetPropPlus world).Prop.PropId
+                        let (separatedPropIds, intersectedPropIds) = List.split ((=) propId) avatar.IntersectedPropIds
                         let avatar = Avatar.updateIntersectedPropIds (constant intersectedPropIds) avatar
                         let avatar = Avatar.updateSeparatedPropIds ((@) separatedPropIds) avatar
                         just avatar
