@@ -532,6 +532,12 @@ module Gaia =
         elif propertyDescriptor.PropertyType = typeof<Entity Relation option> then handlePropertyPickParentNode propertyDescriptor entityTds form world
         else world
 
+    let private clearLateBindingViews (form : GaiaForm) =
+        form.entityPropertyGrid.SelectedObject <- null
+        form.propertyTabControl.SelectedIndex <- 3
+        form.propertyEditor.Enabled <- false
+        form.propertyNameLabel.Text <- String.Empty
+
     let private refreshPropertyEditor4 isEntity (propertyGrid : PropertyGrid) (form : GaiaForm) world =
         match (propertyGrid.SelectedObject, propertyGrid.SelectedGridItem) with
         | (null, _) | (_, null) ->
@@ -1110,9 +1116,10 @@ module Gaia =
             let world = World.setEyeRotation3d quatIdentity world
             world
 
-    let private handleFormReloadCode (_ : GaiaForm) (_ : EventArgs) =
+    let private handleFormReloadCode form (_ : EventArgs) =
         addPreUpdater $ fun world ->
             let world = Globals.pushPastWorld world
+            clearLateBindingViews form // keep old type information from sticking around in painting property editors
             let workingDirPath = Globals.EditorState.TargetDir + "/../.."
             Log.info ("Inspecting directory " + workingDirPath + " for F# code...")
             try match Array.ofSeq (Directory.EnumerateFiles (workingDirPath, "*.fsproj")) with
@@ -1171,7 +1178,7 @@ module Gaia =
                         let world = World.updateLateBindings2 session.DynamicAssemblies world
                         Log.info "Code updated."
                         world
-                    with exn ->
+                    with _ ->
                         let error = string errorStream
                         Log.trace ("Failed to compile code due to (see full output in the console):\n" + error)
                         World.choose world
