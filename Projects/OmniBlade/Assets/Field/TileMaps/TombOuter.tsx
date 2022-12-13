@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<tileset version="1.2" tiledversion="1.3.4" name="TombOuter" tilewidth="48" tileheight="48" tilecount="512" columns="32">
+<tileset version="1.5" tiledversion="1.7.2" name="TombOuter" tilewidth="48" tileheight="48" tilecount="512" columns="32">
  <properties>
   <property name="Image" value="[Field TombOuter]"/>
  </properties>
- <image source="TombOuter.png" width="1536" height="768"/>
+ <image source="../../../../../../OmniBlade/Projects/OmniBlade/Assets/Field/TileMaps/TombOuter.png" width="1536" height="768"/>
  <tile id="18">
   <properties>
    <property name="C" value=""/>
@@ -366,7 +366,7 @@
  </tile>
  <tile id="486">
   <properties>
-   <property name="C" value=""/>
+   <property name="C" value="Right"/>
   </properties>
  </tile>
  <tile id="487">
@@ -376,7 +376,7 @@
  </tile>
  <tile id="488">
   <properties>
-   <property name="C" value=""/>
+   <property name="C" value="Left"/>
   </properties>
  </tile>
  <tile id="489">
