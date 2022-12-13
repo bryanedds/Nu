@@ -10,7 +10,7 @@
  </layer>
  <layer id="2" name="Ground" width="80" height="80">
   <data encoding="base64" compression="zlib">
-   eJzt2tFNwzAQANB8BWbgrz/AJA0rMAojsQmrsAWulAhUNU7bM7Wtvo+nSlXknE8X30XKbhiGHQAAAHfrOXlJXhuIpUf7ZEreGogFAAC4nnejGO9GAEBrzHcx5rvbUasxapXWjMlD8thALD2KPtOj3IccepJ+JH+lXPo8Hp5//fyXepI/+euX8wz6570iRh+RP/nrl/zFmAOhT2a/GL1D/uSvX2YXWqdHxzgj87bqS/7ytvKjx8TyR17P9fWUvFeO4bvQOjW+eW0hf6XU+Ob1Y1Zjv5G5roWZ8HM2zb+3vn+kb/R8Zl6ao7UzqUTf/Vr5f/lWeFG7Vq+VO5P+s4aW+06Z+9+TEr21xZo8jikX13jGNVv1FKmjXE2e2kc0z2tr/l3vOKbcHvdnXFPLqX1EY11bs7W9A8DiB9hhRGk=
+   eJzt2tFNwzAQANB8BWbgrz/AJA0rMAojsUlXYQtcKRGoapy2Z7Ctvo+nSlXknE9nnyN5NwzDDgAAgLv1nLwkrw3E0qN9MiVvDcQCAADczrdRjG8jACjP+STG+YReWOsx1jqtGZOH5LGBWHoUXdOj3Icce5J+JH+lXLsej+tfP/+hnuRP/vplP4P++a6I0UfkT/76JX8xzoHQJ2e/GL1D/uSvX84utE6PjrFH5m3Vl/zlbeVHj4nlj7ye6+spea8cw1ehcWrceW0hf6XUuPP6Masx38i5roUz4edsmn//+/2RvtHznnltjtb2pBJ997Dy/3JXeFG7Vm+V25P+soaW906Z99+TEr21xZo8jSkX13jBM1v1FKmjXE2em0c0z2tj/h7vNKbcHPcXPFPLuXlEY10bs7W5A8DiG31wRGk=
   </data>
  </layer>
  <layer id="7" name="Flooring" width="80" height="80">
@@ -28,7 +28,7 @@
    eJzt3FdOw1AQhWFnKbQ9AG80BQQsghb6G1kAvS+C3jdBEUWwJ45FJJIoIWRuyvX1/0lHfrEt+2osZRx5ogjNMJ6JogllMmM/R1bHjipjDudIqmXd84qyarz3nI6bVxaURWUp8DUsr5VDbY+UY+N97+i4XWVP2VcOlA6lU+lSupWeQNa0Uq3cKffKg/EeL3XclXKt3Ci3yoAyqAwpw8pIIOtXqVZin9p+VbnHWrUUr9+r8qa8Kx/KlDKtzCizylwg61epVmqx1NK69tlQNpUtZTuQ9YuV10otllo60T6nyplyrlwEtH71stbSo/Z7Up6VlxSvH7XkjlpCuzWiz0sz1z4v7Vz7vLRz7fPwd58HAEiONP/v4Cpt/zs0WrV3yfgfy7tklKr3XTIAAAAAAAAAAAAAAAAAAAAAJBnfkNjxDYmb0L8hsTxb9cwp8O0bkryyVtjmHc9lfbbqnVPg0zckvUpfIf2O57I+W8wp+GF9tphT8Mv6bDGnoD1CnRvZKqHOjWwV17mR8e+tbOH3lq/9TDP7LZe5kblM6bX5uH7N7rdcZv0loRdsRb9lnfWXhF7Qt36rmM/XVsynfqucz9cGIL2+AeOyllM=
   </data>
  </layer>
- <objectgroup id="4" name="Props">
+ <objectgroup id="4" name="Props" opacity="0.97">
   <object id="4" gid="443" x="2016" y="3168" width="96" height="48">
    <properties>
     <property name="I" value="[Portal AirPortal South Downward TombGround South]"/>
