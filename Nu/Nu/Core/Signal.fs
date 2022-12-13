@@ -42,21 +42,26 @@ module Signal =
         (simulant : 's)
         (world : 'w) :
         'w =
-        match signal :> obj with
-        | :? 'message as message ->
-            let model = Lens.get modelLens world
-            let (signals, model) = processMessage (model, message, simulant, world)
-            let world = Lens.set model modelLens world
-            match signals with
-            | _ :: _ -> processSignals processMessage processCommand modelLens signals simulant world
-            | [] -> world
-        | :? 'command as command ->
-            let model = Lens.get modelLens world
-            let (signals, world) = processCommand (model, command, simulant, world)
-            match signals with
-            | _ :: _ -> processSignals processMessage processCommand modelLens signals simulant world
-            | [] -> world
-        | _ -> failwithumf ()
+        let perm = System.Security.Permissions.SecurityPermission (System.Security.Permissions.PermissionState.Unrestricted)
+        perm.Assert ()
+        let result =
+            match signal :> obj with
+            | :? 'message as message ->
+                let model = Lens.get modelLens world
+                let (signals, model) = processMessage (model, message, simulant, world)
+                let world = Lens.set model modelLens world
+                match signals with
+                | _ :: _ -> processSignals processMessage processCommand modelLens signals simulant world
+                | [] -> world
+            | :? 'command as command ->
+                let model = Lens.get modelLens world
+                let (signals, world) = processCommand (model, command, simulant, world)
+                match signals with
+                | _ :: _ -> processSignals processMessage processCommand modelLens signals simulant world
+                | [] -> world
+            | _ -> failwithumf ()
+        System.Security.CodeAccessPermission.RevertAssert ()
+        result
 
     and processSignals processMessage processCommand modelLens signals simulant world =
         List.fold
