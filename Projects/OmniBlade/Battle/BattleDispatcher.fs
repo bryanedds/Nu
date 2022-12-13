@@ -660,7 +660,7 @@ module BattleDispatcher =
                 let targetPerimeter = Battle.getCharacterPerimeter targetIndex battle
                 let effectOpt =
                     match techType with
-                    | Critical | DarkCritical | PoisonCut | PowerCut | DispelCut | DoubleCut ->
+                    | Critical | HeavyCritical | PoisonCut | PowerCut | DispelCut | DoubleCut ->
                         let hopDirection = Direction.ofVector3 (v3 (targetPerimeter.Bottom.X - sourcePerimeter.Bottom.X) 0.0f 0.0f)
                         let hopStop = targetPerimeter.Bottom - Direction.toVector3 hopDirection * Constants.Battle.StrikingDistance
                         Left (DisplayHop { HopStart = sourcePerimeter.Bottom; HopStop = hopStop } |> signal)
@@ -710,7 +710,7 @@ module BattleDispatcher =
                     let battle = Battle.animateCharacter time WhirlAnimation sourceIndex battle
                     let sigs = signal (DisplayCircle (position, radius)) :: signal (DisplayCycloneBlur (0L, sourceIndex, radius)) :: playHits
                     withSignals sigs battle
-                | DarkCritical ->
+                | HeavyCritical ->
                     let time = World.getUpdateTime world
                     let playHit = PlaySound (10L, Constants.Audio.SoundVolumeDefault, Assets.Field.HitSound)
                     let impactSplash = DisplayImpactSplash (30L, targetIndex) // TODO: darker impact splash to represent element.
@@ -877,7 +877,7 @@ module BattleDispatcher =
                 let targetPerimeter = Battle.getCharacterPerimeter targetIndex battle
                 let hopOpt =
                     match techType with
-                    | Critical | DarkCritical | PoisonCut | PowerCut | DispelCut | DoubleCut ->
+                    | Critical | HeavyCritical | PoisonCut | PowerCut | DispelCut | DoubleCut ->
                         let hopDirection = Direction.ofVector3 (targetPerimeter.Bottom - sourcePerimeterOriginal.Bottom)
                         let hopStart = targetPerimeter.Bottom - Direction.toVector3 hopDirection * Constants.Battle.StrikingDistance
                         Some
