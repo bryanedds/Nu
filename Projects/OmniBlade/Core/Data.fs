@@ -85,12 +85,12 @@ type AffinityType =
     | Ice
     | Lightning
     | Water
-    //| Wind - maybe in a sequel...
+    | Wind
     | Dark
     | Light
-    | Earth
-    | Metal
-    | Insect
+    | Earth // nothing is weak to
+    | Metal // weak to self
+    | Insect // weak to self
 
     static member getScalar source target =
         match (source, target) with
@@ -98,18 +98,22 @@ type AffinityType =
         | (Ice, Ice) -> Constants.Battle.AffinityResistanceScalar
         | (Lightning, Lightning) -> Constants.Battle.AffinityResistanceScalar
         | (Water, Water) -> Constants.Battle.AffinityResistanceScalar
+        | (Wind, Wind) -> Constants.Battle.AffinityResistanceScalar
         | (Dark, Dark) -> Constants.Battle.AffinityResistanceScalar
         | (Light, Light) -> Constants.Battle.AffinityResistanceScalar
         | (Earth, Earth) -> Constants.Battle.AffinityResistanceScalar
+        | (Metal, Metal) -> Constants.Battle.AffinityVulnerabilityScalar
+        | (Insect, Insect) -> Constants.Battle.AffinityVulnerabilityScalar
         | (Fire, Ice) -> Constants.Battle.AffinityVulnerabilityScalar
         | (Ice, Fire) -> Constants.Battle.AffinityVulnerabilityScalar
         | (Ice, Insect) -> Constants.Battle.AffinityVulnerabilityScalar
         | (Lightning, Water) -> Constants.Battle.AffinityVulnerabilityScalar
         | (Lightning, Metal) -> Constants.Battle.AffinityVulnerabilityScalar
         | (Water, Lightning) -> Constants.Battle.AffinityVulnerabilityScalar
+        | (Wind, Water) -> Constants.Battle.AffinityVulnerabilityScalar
         | (Dark, Light) -> Constants.Battle.AffinityVulnerabilityScalar
         | (Light, Dark) -> Constants.Battle.AffinityVulnerabilityScalar
-        | (Earth, Lightning) -> Constants.Battle.AffinityVulnerabilityScalar
+        | (Metal, Earth) -> Constants.Battle.AffinityVulnerabilityScalar
         | (_, _) -> 1.0f
 
 type [<CustomEquality; CustomComparison>] StatusType =
@@ -207,7 +211,7 @@ type TargetType =
 type TechType =
     | Critical
     | Slash
-    | DarkCritical
+    | HeavyCritical
     | Cyclone
     | PoisonCut
     | PowerCut

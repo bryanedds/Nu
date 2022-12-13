@@ -1,6 +1,6 @@
 Type,Stamina,Strength,Intelligence,Defense,Absorb,Focus,Wealth,Mythos,WeaponSubtype,ArmorSubtype,Techs,ChargeTechs,Immunities,AffinityOpt,Stature,Description
 Apprentice,1,1,1,1,1,1.2,1,1,Sword,Vest,[],[],[],None,SmallStature,Generic character.
-Fighter,1.2,1.1,0.8,1,1,1.1,1,1,Sword,Mail,[[2 Critical] [4 Slash] [6 DarkCritical] [8 Cyclone]],[],[],None,SmallStature,
+Fighter,1.2,1.1,0.8,1,1,1.1,1,1,Sword,Mail,[[2 Critical] [4 Slash] [6 HeavyCritical] [8 Cyclone]],[],[],None,SmallStature,
 Ninja,1.1,1,0.9,1,1,1.2,1,1,Knife,Vest,[[2 PoisonCut] [4 PowerCut] [6 DispelCut] [8 DoubleCut]],[],[],None,SmallStature,
 Wizard,0.9,0.8,1.1,1,1,1.4,1,1,Rod,Robe,[[2 Fire] [4 Flame] [6 Ice] [8 Snowball]],[],[],None,SmallStature,
 Conjuror,0.9,0.8,1.1,1,1,1.4,1,1,Rod,Robe,[[2 Weaken] [4 Muddle] [6 Slow] [8 ConjureIfrit]],[],[],None,SmallStature,
@@ -61,7 +61,7 @@ Minotaur,1.8,1.7,1.7,1,1,1,2,2,Melee,Pelt,[[1 Critical] [2 Slash]],[],[],None,La
 Dragon,1.9,1.8,1.8,1,1,1,2,2,Melee,Pelt,[],[],[],None,LargeStature,Physical attacks and Elemental magic.
 Ogre,1.8,1.8,1.6,1,1,1,2,2,Melee,Pelt,[],[],[],None,LargeStature,Strong physical attacks with Curative magic.
 HydraBig,1.8,1.7,1.7,1,1,1,2,2,Melee,Pelt,[],[],[],None,LargeStature,Physical attack with Status effects.
-Armoros,1.8,1.7,1.7,1,1,1,2,2,Melee,Pelt,[[2 Slash]],[[3 DarkCritical]],[Poison Sleep],[Some Metal],LargeStature,Strong physical attacks with Buff magic.
+Armoros,1.8,1.7,1.7,1,1,1,2,2,Melee,Pelt,[[2 Slash]],[[3 HeavyCritical]],[Poison Sleep],[Some Metal],LargeStature,Strong physical attacks with Buff magic.
 Golem,1.8,1.7,1.7,1,1,1,2,2,Melee,Pelt,[],[],[],[Some Earth],LargeStature,Physical attack and Earth magic.
 RobotBig,1.8,1.7,1.7,1,1,1,2,2,Melee,Pelt,[],[],[Poison Sleep],[Some Metal],LargeStature,Physical attack and Lightning magic.
 Dinoman,1.8,1.8,1.6,1,1,1,2,2,Melee,Pelt,[],[],[],None,LargeStature,Strong physical attacks with Buff magic.
