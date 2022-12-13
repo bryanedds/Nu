@@ -62,6 +62,18 @@ module Gaia =
             entity <- Entity (selectedGroup.GroupAddress <-- ntoa name)
         entity.Name
 
+    let private clearSelections (form : GaiaForm) =
+        form.entityPropertyGrid.SelectedObject <- null
+        form.propertyTabControl.SelectedIndex <- 3
+        form.propertyEditor.Enabled <- false
+        form.propertyNameLabel.Text <- String.Empty
+
+    let private refreshSelections (form : GaiaForm) world =
+        clearSelections form
+        form.groupPropertyGrid.SelectedObject <- { DescribedGroup = Seq.head (World.getGroups Globals.Screen world); Form = form }
+        form.screenPropertyGrid.SelectedObject <- { DescribedScreen = Globals.Screen; Form = form }
+        form.gamePropertyGrid.SelectedObject <- { DescribedGame = Simulants.Game; Form = form }
+
     let private refreshOverlayComboBox (form : GaiaForm) world =
         form.overlayComboBox.Items.Clear ()
         form.overlayComboBox.Items.Add "(Default Overlay)" |> ignore
@@ -239,13 +251,7 @@ module Gaia =
                 (Some (intersection, entity), world)
             | None -> (None, world)
 
-    let private handleNuGroupLifeCycle (form : GaiaForm) (_ : Event<LifeCycleData, Screen>) world =
-        Globals.World <- world // handle re-entry
-        refreshGroupTabs form world
-        refreshHierarchyTreeView form world
-        (Cascade, world)
-
-    let private handleNuEntityLifeCycle (form : GaiaForm) (evt : Event<LifeCycleData, Screen>) world =
+    let private handleNuEntityLifeCycle (form : GaiaForm) (evt : Event<LifeCycleData, Game>) world =
         Globals.World <- world // handle re-entry
         match evt.Data with
         | RegisterData _ ->
@@ -267,6 +273,31 @@ module Gaia =
             | _ -> failwithumf ()
         | MountOptChangeData _ ->
             refreshHierarchyTreeView form world
+            (Cascade, world)
+
+    let private handleNuGroupLifeCycle (form : GaiaForm) (_ : Event<LifeCycleData, Game>) world =
+        Globals.World <- world // handle re-entry
+        refreshGroupTabs form world
+        refreshHierarchyTreeView form world
+        (Cascade, world)
+
+    let private handleNuSelectedScreenOptChange (form : GaiaForm) (evt : Event<ChangeData, Game>) world =
+        Globals.World <- world // handle re-entry
+        match evt.Data.Value :?> Screen option with
+        | Some screen ->
+            let groups = World.getGroups screen world
+            let (group, world) =
+                match Seq.tryHead groups with
+                | None -> World.createGroup (Some "Group") screen world
+                | Some group -> (group, world)
+            Globals.EditorState.SelectedGroup <- group
+            Globals.Screen <- screen
+            refreshGroupTabs form world
+            refreshHierarchyTreeView form world
+            refreshSelections form world
+            (Cascade, world)
+        | None ->
+            // just keep current group selection and screen if no screen selected
             (Cascade, world)
 
     let private handleNuMouseRightDown (form : GaiaForm) (_ : Event<MouseButtonData, Game>) world =
@@ -531,12 +562,6 @@ module Gaia =
         if propertyDescriptor.PropertyType.GetGenericTypeDefinition () = typedefof<_ AssetTag> then handlePropertyPickAsset form world
         elif propertyDescriptor.PropertyType = typeof<Entity Relation option> then handlePropertyPickParentNode propertyDescriptor entityTds form world
         else world
-
-    let private clearLateBindingViews (form : GaiaForm) =
-        form.entityPropertyGrid.SelectedObject <- null
-        form.propertyTabControl.SelectedIndex <- 3
-        form.propertyEditor.Enabled <- false
-        form.propertyNameLabel.Text <- String.Empty
 
     let private refreshPropertyEditor4 isEntity (propertyGrid : PropertyGrid) (form : GaiaForm) world =
         match (propertyGrid.SelectedObject, propertyGrid.SelectedGridItem) with
@@ -1119,7 +1144,7 @@ module Gaia =
     let private handleFormReloadCode form (_ : EventArgs) =
         addPreUpdater $ fun world ->
             let world = Globals.pushPastWorld world
-            clearLateBindingViews form // keep old type information from sticking around in painting property editors
+            clearSelections form // keep old type information from sticking around in re-painting property editors
             let workingDirPath = Globals.EditorState.TargetDir + "/../.."
             Log.info ("Inspecting directory " + workingDirPath + " for F# code...")
             try match Array.ofSeq (Directory.EnumerateFiles (workingDirPath, "*.fsproj")) with
@@ -1648,8 +1673,9 @@ module Gaia =
         Globals.World <- World.subscribe (handleNuCameraDragEnd form) Events.MouseCenterUp Simulants.Game Globals.World
         Globals.World <- World.subscribe (handleNuUpdate form) Events.Update Simulants.Game Globals.World
         Globals.World <- World.subscribe (handleNuRender form) Events.Render Simulants.Game Globals.World
-        Globals.World <- World.subscribe (handleNuEntityLifeCycle form) (Events.LifeCycle (nameof Entity)) Globals.Screen Globals.World
-        Globals.World <- World.subscribe (handleNuGroupLifeCycle form) (Events.LifeCycle (nameof Group)) Globals.Screen Globals.World
+        Globals.World <- World.subscribe (handleNuEntityLifeCycle form) (Events.LifeCycle (nameof Entity)) Simulants.Game Globals.World
+        Globals.World <- World.subscribe (handleNuGroupLifeCycle form) (Events.LifeCycle (nameof Group)) Simulants.Game Globals.World
+        Globals.World <- World.subscribe (handleNuSelectedScreenOptChange form) Simulants.Game.SelectedScreenOpt.ChangeEvent Simulants.Game Globals.World
         Globals.World <- World.setMasterSongVolume 0.0f Globals.World // no song playback in editor by default
         refreshOverlayComboBox form Globals.World
         refreshCreateComboBox form Globals.World
