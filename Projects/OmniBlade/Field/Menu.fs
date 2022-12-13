@@ -70,7 +70,7 @@ type [<NoComparison>] MenuTeam =
     static member tryGetTeammate (team : Map<int, Teammate>) menuTeam =
         Map.tryFind menuTeam.TeamIndex team
 
-    static member tryGetTeammateAndTeamData team menuTeam =
+    static member tryGetTeammateAndCharacterData team menuTeam =
         match MenuTeam.tryGetTeammate team menuTeam with
         | Some teammate ->
             match Map.tryFind teammate.CharacterType Data.Value.Characters with
@@ -78,9 +78,9 @@ type [<NoComparison>] MenuTeam =
             | None -> None
         | None -> None
 
-    static member tryGetTeamData team menuTeam =
-        let lacdOpt = MenuTeam.tryGetTeammateAndTeamData team menuTeam
-        Option.map snd lacdOpt
+    static member tryGetCharacterData team menuTeam =
+        let tacdOpt = MenuTeam.tryGetTeammateAndCharacterData team menuTeam
+        Option.map snd tacdOpt
 
 type [<NoComparison>] MenuItem =
     { ItemPage : int }

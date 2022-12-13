@@ -189,7 +189,7 @@ module Character =
         let efficacy =
             match techData.EffectType with
             | Physical -> source.CharacterState_.Power
-            | Magical -> source.CharacterState_.Magic
+            | Magical -> source.CharacterState_.Magic (techData.AffinityOpt = Some Metal)
         let affinityScalar =
             match (source.AffinityOpt, techData.AffinityOpt) with
             | (Some affinitySource, Some affinityTarget) -> AffinityType.getScalar affinitySource affinityTarget

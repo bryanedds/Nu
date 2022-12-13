@@ -137,11 +137,16 @@ module Algorithms =
             | None -> 1.0f
         (powerBase + single level) * powerBuff * strength |> int |> max 1
 
-    let magic weaponOpt statuses archetypeType level =
+    let magic isMetal weaponOpt statuses archetypeType level =
         let magicBuff =
-            statuses |>
-            Map.tryFindKey (function Magic (_, _) -> constant true | _ -> constant false) |>
-            Option.mapOrDefaultValue (function Magic (false, false) -> 0.667f | Magic (false, true) -> 0.333f | Magic (true, false) -> 1.333f | Magic (true, true) -> 2.0f | _ -> 1.0f) 1.0f
+            if isMetal then
+                statuses |>
+                Map.tryFindKey (function Power (_, _) -> constant true | _ -> constant false) |>
+                Option.mapOrDefaultValue (function Power (false, false) -> 0.667f | Power (false, true) -> 0.333f | Power (true, false) -> 1.333f | Power (true, true) -> 2.0f | _ -> 1.0f) 1.0f
+            else
+                statuses |>
+                Map.tryFindKey (function Magic (_, _) -> constant true | _ -> constant false) |>
+                Option.mapOrDefaultValue (function Magic (false, false) -> 0.667f | Magic (false, true) -> 0.333f | Magic (true, false) -> 1.333f | Magic (true, true) -> 2.0f | _ -> 1.0f) 1.0f
         let intelligence = 
             match Map.tryFind archetypeType Data.Value.Archetypes with
             | Some archetypeData -> archetypeData.Intelligence

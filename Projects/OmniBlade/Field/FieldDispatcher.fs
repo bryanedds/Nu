@@ -779,7 +779,7 @@ module FieldDispatcher =
                          Content.label "Portrait"
                             [Entity.PositionLocal == v3 438.0f 288.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 192.0f 192.0f 0.0f
                              Entity.LabelImage :=
-                                match MenuTeam.tryGetTeamData field.Team menuTeam with
+                                match MenuTeam.tryGetCharacterData field.Team menuTeam with
                                 | Some characterData ->
                                     match characterData.PortraitOpt with
                                     | Some portrait -> portrait
@@ -788,7 +788,7 @@ module FieldDispatcher =
                          Content.text "CharacterType"
                             [Entity.PositionLocal == v3 650.0f 372.0f 0.0f; Entity.ElevationLocal == 1.0f
                              Entity.Text :=
-                                match MenuTeam.tryGetTeamData field.Team menuTeam with
+                                match MenuTeam.tryGetCharacterData field.Team menuTeam with
                                 | Some characterData -> CharacterType.getName characterData.CharacterType
                                 | None -> ""]
                          Content.text "ArchetypeType"
@@ -819,20 +819,13 @@ module FieldDispatcher =
                             [Entity.PositionLocal == v3 444.0f -84.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 512.0f 256.0f 0.0f
                              Entity.Justification == Unjustified true
                              Entity.Text :=
-                                match MenuTeam.tryGetTeammateAndTeamData field.Team menuTeam with
-                                | Some (teammate, characterData) ->
-                                    let level = Algorithms.expPointsToLevel teammate.ExpPoints
-                                    let hpm = Algorithms.hitPointsMax teammate.ArmorOpt characterData.ArchetypeType level
-                                    let tpm = Algorithms.techPointsMax teammate.ArmorOpt characterData.ArchetypeType level
-                                    let pow = Algorithms.power teammate.WeaponOpt Map.empty characterData.ArchetypeType level // no statuses outside battle
-                                    let mag = Algorithms.magic teammate.WeaponOpt Map.empty characterData.ArchetypeType level // no statuses outside battle
-                                    let def = Algorithms.defense teammate.Accessories Map.empty characterData.ArchetypeType level // no statuses outside battle
-                                    let abs = Algorithms.absorb characterData.AbsorbCreep teammate.Accessories Map.empty characterData.ArchetypeType level // no statuses outside battle
-                                    "HP  "   + (string teammate.HitPoints).PadLeft 3 + " /" + (string hpm).PadLeft 3 +
-                                    "\nTP  " + (string teammate.TechPoints).PadLeft 3 + " /" + (string tpm).PadLeft 3 +
-                                    "\nPow " + (string pow).PadLeft 3 + "    Mag " + (string mag).PadLeft 3 +
-                                    "\nDef " + (string def).PadLeft 3 + "    Abs " + (string abs).PadLeft 3 +
-                                    "\nExp " + (string teammate.ExpPoints).PadLeft 3 + " /" + (string (Algorithms.expPointsForNextLevel teammate.ExpPoints)).PadLeft 3
+                                match MenuTeam.tryGetTeammate field.Team menuTeam with
+                                | Some teammate ->
+                                    "HP  "   + (string teammate.HitPoints).PadLeft 3 +  " /" + (string teammate.HitPointsMax).PadLeft 3 +
+                                    "\nTP  " + (string teammate.TechPoints).PadLeft 3 + " /" + (string teammate.TechPointsMax).PadLeft 3 +
+                                    "\nPow " + (string teammate.Power).PadLeft 3 +      "   Mag " + (string $ teammate.Magic false).PadLeft 3 +
+                                    "\nDef " + (string teammate.Defense).PadLeft 3 +    "   Abs " + (string teammate.Absorb).PadLeft 3 +
+                                    "\nExp " + (string teammate.ExpPoints).PadLeft 3 +  " /" + (string (Algorithms.expPointsForNextLevel teammate.ExpPoints)).PadLeft 3
                                 | None -> ""]]
 
                  // inventory
