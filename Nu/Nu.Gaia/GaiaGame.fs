@@ -33,7 +33,12 @@ and GamePropertyDescriptor (propertyDescriptor, attributes) =
         // \r character as here - https://bytes.com/topic/c-sharp/answers/214456-q-ordering-sorting-category-text-propertygrid
         if propertyName.EndsWith "Script" || propertyName.EndsWith "ScriptOpt" then "Scripts"
         elif propertyName = "Name" ||  propertyName.EndsWith "Model" then "\rAmbient Properties"
-        elif propertyName = "Persistent" || propertyName = "Elevation" || propertyName = "Visible" then "\rScene Properties"
+        elif
+            propertyName = "DesiredScreen" ||
+            propertyName = "EyePosition2d" || propertyName = "EyePosition3d" || propertyName = "EyeRotation3d" || propertyName = "EyeSize2d" ||
+            propertyName = "EyeFrustum3dEnclosed" || propertyName = "EyeFrustum3dExposed" || propertyName = "EyeFrustum3dImposter" ||
+            propertyName = "OmniScreenOpt" || propertyName = "ScreenTransitionDestinationOpt" || propertyName = "SelectedScreenOpt" then
+            "\rBuilt-In Properties"
         else "\rXtension Properties"
 
     override this.Description =
