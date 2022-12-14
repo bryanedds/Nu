@@ -127,30 +127,34 @@ module Gaia =
         Globals.EditorState.RefreshHierarchyViewRequested <- true
 
     let private refreshHierarchyTreeViewImpl (form : GaiaForm) world =
-        // TODO: this code causes severe performance issues. To unfuck performance, we will probably have to find
-        // a way to update the hierarchy tree without a complete rebuild of it - IE, updating it in-place and
+        // TODO: this code can cause severe performance issues. To unfuck performance, we will probably have to find a
+        // way to update the hierarchy tree without a complete rebuild of it - IE, updating it in-place and
         // imperatively.
         let treeNodesState = form.hierarchyTreeView.GetExpandedNodesState ()
         form.hierarchyTreeView.Nodes.Clear ()
-        let selectedGroup = Globals.EditorState.SelectedGroup
-        let groupNode = TreeNode selectedGroup.Name
-        groupNode.Name <- Constants.Editor.GroupNodeKey
-        form.hierarchyTreeView.Nodes.Add groupNode |> ignore
-        let entities = World.getEntitiesFlattened selectedGroup world
+        let entities = World.getEntitiesFlattened Globals.EditorState.SelectedGroup world
         for entity in entities do
             let mutable namesUsed = [||]
-            let mutable parentNode = groupNode
+            let mutable parentNodeOpt = Option<TreeNode>.None
             for name in entity.Surnames do
                 namesUsed <- Array.add name namesUsed
                 let childNodeKey = namesUsed |> rtoa |> string
-                if not (parentNode.Nodes.ContainsKey childNodeKey) then
-                    let childNode = TreeNode name
-                    childNode.Name <- childNodeKey
-                    parentNode.Nodes.Add childNode |> ignore
-                    parentNode <- childNode
-                else parentNode <- parentNode.Nodes.[childNodeKey]
+                match parentNodeOpt with
+                | None ->
+                    if not (form.hierarchyTreeView.Nodes.ContainsKey childNodeKey) then
+                        let childNode = TreeNode name
+                        childNode.Name <- childNodeKey
+                        form.hierarchyTreeView.Nodes.Add childNode |> ignore
+                        parentNodeOpt <- Some childNode
+                    else parentNodeOpt <- Some form.hierarchyTreeView.Nodes.[childNodeKey]
+                | Some parentNode ->
+                    if not (parentNode.Nodes.ContainsKey childNodeKey) then
+                        let childNode = TreeNode name
+                        childNode.Name <- childNodeKey
+                        parentNode.Nodes.Add childNode |> ignore
+                        parentNodeOpt <- Some childNode
+                    else parentNodeOpt <- Some parentNode.Nodes.[childNodeKey]
         form.hierarchyTreeView.RestoreExpandedNodesState treeNodesState
-        groupNode.Expand () // root node is always expanded
         Globals.EditorState.RefreshHierarchyViewRequested <- false
         world
 
@@ -852,7 +856,7 @@ module Gaia =
         let pathOpt =
             match form.entityPropertyGrid.SelectedObject with
             | null -> None
-            | :? EntityTypeDescriptorSource as entityTds -> entityTds.DescribedEntity.EntityAddress.Names |> Array.skip 1 |> String.join "/" |> Some
+            | :? EntityTypeDescriptorSource as entityTds -> entityTds.DescribedEntity.Surnames |> String.join Constants.Address.SeparatorStr |> Some
             | _ -> None
         match pathOpt with
         | Some path ->
