@@ -36,7 +36,7 @@ type EditorState =
 
 type SavedState =
     { BinaryFilePath : string
-      ModeOpt : string option
+      EditModeOpt : string option
       UseImperativeExecution : bool }
 
 /// Globals needed to sync Nu with WinForms.
