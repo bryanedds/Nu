@@ -74,6 +74,15 @@ module Gaia =
         form.screenPropertyGrid.SelectedObject <- { DescribedScreen = Globals.Screen; Form = form }
         form.gamePropertyGrid.SelectedObject <- { DescribedGame = Simulants.Game; Form = form }
 
+    let private refreshEditModes (form : GaiaForm) world =
+        let editModes = World.getEditModes world
+        form.editModeComboBox.Items.Clear ()
+        for (modeName, _) in editModes.Pairs do
+            form.editModeComboBox.Items.Add modeName |> ignore
+        if form.editModeComboBox.Items.Count <> 0 then
+            form.editModeComboBox.Enabled <- true
+        else form.editModeComboBox.Enabled <- false
+
     let private refreshOverlayComboBox (form : GaiaForm) world =
         form.overlayComboBox.Items.Clear ()
         form.overlayComboBox.Items.Add "(Default Overlay)" |> ignore
@@ -1058,7 +1067,7 @@ module Gaia =
                 | [] -> world
             else world
 
-    let private handleFormRunChanged (form : GaiaForm) (_ : EventArgs) =
+    let private handleFormRunButtonClick (form : GaiaForm) (_ : EventArgs) =
         addPreUpdater $ fun world ->
             let updateRate = if form.runButton.Checked then 1L else 0L
             let world =
@@ -1140,6 +1149,16 @@ module Gaia =
             let world = World.setEyePosition3d Constants.Engine.EyePosition3dDefault world
             let world = World.setEyeRotation3d quatIdentity world
             world
+
+    let private handleFormSelectEditMode (form : GaiaForm) (_ : EventArgs) =
+        addPreUpdater $ fun world ->
+            let editModes = World.getEditModes world
+            match editModes.TryGetValue (form.editModeComboBox.SelectedItem :?> string) with
+            | (true, callback) ->
+                form.displayPanel.Focus () |> ignore
+                let world = Globals.pushPastWorld world
+                callback world
+            | (false, _) -> world
 
     let private handleFormReloadCode form (_ : EventArgs) =
         addPreUpdater $ fun world ->
@@ -1654,7 +1673,7 @@ module Gaia =
             let item = createContextMenuItem.DropDownItems.Add dispatcherName
             item.Click.Add (handleFormCreateEntity atMouse inHierarchy (Some dispatcherName) form)
 
-    let private run3 runWhile targetDir sdlDeps (form : GaiaForm) =
+    let private run3 runWhile targetDir editModeOpt sdlDeps (form : GaiaForm) =
         Globals.EditorState <-
             { TargetDir = targetDir
               RightClickPosition = Vector2.Zero
@@ -1677,6 +1696,7 @@ module Gaia =
         Globals.World <- World.subscribe (handleNuGroupLifeCycle form) (Events.LifeCycle (nameof Group)) Simulants.Game Globals.World
         Globals.World <- World.subscribe (handleNuSelectedScreenOptChange form) Simulants.Game.SelectedScreenOpt.ChangeEvent Simulants.Game Globals.World
         Globals.World <- World.setMasterSongVolume 0.0f Globals.World // no song playback in editor by default
+        refreshEditModes form Globals.World
         refreshOverlayComboBox form Globals.World
         refreshCreateComboBox form Globals.World
         refreshCreateContextMenuItemChildren true false form.createContextMenuItem form Globals.World
@@ -1684,10 +1704,12 @@ module Gaia =
         refreshGroupTabs form Globals.World
         refreshHierarchyTreeView form Globals.World
         selectGroup Globals.EditorState.SelectedGroup form Globals.World
+        match editModeOpt with Some editMode -> form.editModeComboBox.SelectedItem <- editMode | None -> ()
         form.screenPropertyGrid.SelectedObject <- { DescribedScreen = Globals.Screen; Form = form }
         form.gamePropertyGrid.SelectedObject <- { DescribedGame = Simulants.Game; Form = form }
         form.runButton.CheckState <- CheckState.Unchecked
         form.songPlaybackButton.CheckState <- if World.getMasterSongVolume Globals.World = 0.0f then CheckState.Unchecked else CheckState.Checked
+        form.editModeComboBox.SelectedIndexChanged.Add (handleFormSelectEditMode form) // this event is hooked up later than normal to avoid invocation when edit mode is initially selected
         form.displayPanel.Focus () |> ignore // keeps user from having to manually click on displayPanel to interact
         form.add_LowLevelKeyboardHook (fun nCode wParam lParam ->
             let WM_KEYDOWN = 0x0100
@@ -1731,35 +1753,35 @@ module Gaia =
         let savedState =
             try if File.Exists Constants.Editor.SavedStateFilePath
                 then scvalue (File.ReadAllText Constants.Editor.SavedStateFilePath)
-                else { BinaryFilePath = ""; ModeOpt = None; UseImperativeExecution = false }
-            with _ -> { BinaryFilePath = ""; ModeOpt = None; UseImperativeExecution = false }
+                else { BinaryFilePath = ""; EditModeOpt = None; UseImperativeExecution = false }
+            with _ -> { BinaryFilePath = ""; EditModeOpt = None; UseImperativeExecution = false }
         let savedStateDirectory = Directory.GetCurrentDirectory ()
         use startForm = new StartForm ()
         startForm.binaryFilePathText.TextChanged.Add (fun _ ->
             match trySelectTargetDirAndMakeNuPluginFromFilePathOpt startForm.binaryFilePathText.Text with
             | Some (_, plugin) ->
-                startForm.modesComboBox.Items.Clear ()
+                startForm.modeComboBox.Items.Clear ()
                 for kvp in plugin.EditModes do
-                   startForm.modesComboBox.Items.Add (kvp.Key) |> ignore
-                if startForm.modesComboBox.Items.Count <> 0 then
-                    startForm.modesComboBox.SelectedIndex <- 0
-                    startForm.modesComboBox.Enabled <- true
-                else startForm.modesComboBox.Enabled <- false
+                   startForm.modeComboBox.Items.Add (kvp.Key) |> ignore
+                if startForm.modeComboBox.Items.Count <> 0 then
+                    startForm.modeComboBox.SelectedIndex <- 0
+                    startForm.modeComboBox.Enabled <- true
+                else startForm.modeComboBox.Enabled <- false
             | None ->
-                startForm.modesComboBox.Items.Clear ()
-                startForm.modesComboBox.Enabled <- false)
+                startForm.modeComboBox.Items.Clear ()
+                startForm.modeComboBox.Enabled <- false)
         startForm.binaryFilePathText.Text <- savedState.BinaryFilePath
-        match savedState.ModeOpt with
+        match savedState.EditModeOpt with
         | Some mode ->
-            for i in 0 .. startForm.modesComboBox.Items.Count - 1 do
-                if startForm.modesComboBox.Items.[i] = box mode then
-                    startForm.modesComboBox.SelectedIndex <- i
+            for i in 0 .. startForm.modeComboBox.Items.Count - 1 do
+                if startForm.modeComboBox.Items.[i] = box mode then
+                    startForm.modeComboBox.SelectedIndex <- i
         | None -> ()
         startForm.useImperativeExecutionCheckBox.Checked <- savedState.UseImperativeExecution
         if  startForm.ShowDialog () = DialogResult.OK then
             let savedState =
                 { BinaryFilePath = startForm.binaryFilePathText.Text
-                  ModeOpt = if String.IsNullOrWhiteSpace startForm.modesComboBox.Text then None else Some startForm.modesComboBox.Text
+                  EditModeOpt = if String.IsNullOrWhiteSpace startForm.modeComboBox.Text then None else Some startForm.modeComboBox.Text
                   UseImperativeExecution = startForm.useImperativeExecutionCheckBox.Checked }
             let (targetDir, plugin) =
                 match trySelectTargetDirAndMakeNuPluginFromFilePathOpt startForm.binaryFilePathText.Text with
@@ -1860,7 +1882,7 @@ module Gaia =
         form.closeGroupToolStripMenuItem.Click.Add (handleFormClose form)
         form.undoToolStripMenuItem.Click.Add (handleFormUndo form)
         form.redoToolStripMenuItem.Click.Add (handleFormRedo form)
-        form.runButton.CheckedChanged.Add (handleFormRunChanged form)
+        form.runButton.Click.Add (handleFormRunButtonClick form)
         form.songPlaybackButton.Click.Add (handleFormSongPlayback form)
         form.cutToolStripMenuItem.Click.Add (handleFormCut form)
         form.cutContextMenuItem.Click.Add (handleFormCut form)
@@ -1871,6 +1893,7 @@ module Gaia =
         form.quickSizeToolStripButton.Click.Add (handleFormQuickSize form)
         form.snap3dButton.Click.Add (handleFormSnap3d form)
         form.resetEyeButton.Click.Add (handleFormResetEye form)
+        form.editModeComboBox.KeyDown.Add (fun evt -> evt.Handled <- true) // disable key events for edit mode combo box
         form.reloadAllButton.Click.Add (handleFormReloadAll form)
         form.reloadCodeButton.Click.Add (handleFormReloadCode form)
         form.reloadAssetsButton.Click.Add (handleFormReloadAssets form)
@@ -2036,13 +2059,13 @@ module Gaia =
             let worldConfig =
                 { Imperative = savedState.UseImperativeExecution
                   UpdateRate = 0L
-                  ModeOpt = savedState.ModeOpt
+                  ModeOpt = savedState.EditModeOpt
                   NuConfig = nuConfig
                   SdlConfig = sdlConfig }
             match tryMakeWorld sdlDeps worldConfig plugin with
             | Right world ->
                 Globals.World <- world
-                let _ = run3 tautology targetDir sdlDeps form
+                let _ = run3 tautology targetDir savedState.EditModeOpt sdlDeps form
                 Constants.Engine.SuccessExitCode
             | Left error -> failwith error
         | Left error -> failwith error

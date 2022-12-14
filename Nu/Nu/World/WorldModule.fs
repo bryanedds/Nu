@@ -705,6 +705,10 @@ module WorldModule =
 
     type World with // Plugin
 
+        /// Get the user-defined edit modes.
+        static member getEditModes world =
+            world.WorldExtension.Plugin.EditModes
+
         /// Attempt to make an emitter with the given parameters.
         static member tryMakeEmitter time lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax emitterStyle world =
             world.WorldExtension.Plugin.TryMakeEmitter time lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax emitterStyle
