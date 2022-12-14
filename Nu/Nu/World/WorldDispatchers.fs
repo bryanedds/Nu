@@ -1566,7 +1566,7 @@ module ButtonDispatcherModule =
     type ButtonDispatcher () =
         inherit GuiDispatcher ()
 
-        let handleMouseLeftDown evt world =
+        static let handleMouseLeftDown evt world =
             let entity = evt.Subscriber : Entity
             if entity.GetVisible world then
                 let mutable transform = entity.GetTransform world
@@ -1583,7 +1583,7 @@ module ButtonDispatcherModule =
                 else (Cascade, world)
             else (Cascade, world)
 
-        let handleMouseLeftUp evt world =
+        static let handleMouseLeftUp evt world =
             let entity = evt.Subscriber : Entity
             let wasDown = entity.GetDown world
             let world = entity.SetDown false world
@@ -1767,7 +1767,7 @@ module ToggleButtonDispatcherModule =
     type ToggleButtonDispatcher () =
         inherit GuiDispatcher ()
         
-        let handleMouseLeftDown evt world =
+        static let handleMouseLeftDown evt world =
             let entity = evt.Subscriber : Entity
             if entity.GetVisible world then
                 let mutable transform = entity.GetTransform world
@@ -1781,7 +1781,7 @@ module ToggleButtonDispatcherModule =
                 else (Cascade, world)
             else (Cascade, world)
 
-        let handleMouseLeftUp evt world =
+        static let handleMouseLeftUp evt world =
             let entity = evt.Subscriber : Entity
             let wasPressed = entity.GetPressed world
             let world = if wasPressed then entity.SetPressed false world else world
@@ -1890,7 +1890,7 @@ module RadioButtonDispatcherModule =
     type RadioButtonDispatcher () =
         inherit GuiDispatcher ()
 
-        let handleMouseLeftDown evt world =
+        static let handleMouseLeftDown evt world =
             let entity = evt.Subscriber : Entity
             if entity.GetVisible world then
                 let mutable transform = entity.GetTransform world
@@ -1904,7 +1904,7 @@ module RadioButtonDispatcherModule =
                 else (Cascade, world)
             else (Cascade, world)
 
-        let handleMouseLeftUp evt world =
+        static let handleMouseLeftUp evt world =
             let entity = evt.Subscriber : Entity
             let wasPressed = entity.GetPressed world
             let world = if wasPressed then entity.SetPressed false world else world
@@ -2040,7 +2040,7 @@ module FeelerDispatcherModule =
     type FeelerDispatcher () =
         inherit GuiDispatcher ()
 
-        let handleMouseLeftDown evt world =
+        static let handleMouseLeftDown evt world =
             let entity = evt.Subscriber : Entity
             let data = evt.Data : MouseButtonData
             if entity.GetVisible world then
@@ -2057,7 +2057,7 @@ module FeelerDispatcherModule =
                 else (Cascade, world)
             else (Cascade, world)
 
-        let handleMouseLeftUp evt world =
+        static let handleMouseLeftUp evt world =
             let entity = evt.Subscriber : Entity
             let data = evt.Data : MouseButtonData
             let wasTouched = entity.GetTouched world
@@ -2070,7 +2070,7 @@ module FeelerDispatcherModule =
                 else (Cascade, world)
             else (Cascade, world)
 
-        let handleIncoming evt world =
+        static let handleIncoming evt world =
             let entity = evt.Subscriber : Entity
             if  MouseState.isButtonDown MouseLeft &&
                 entity.GetVisible world &&
@@ -2082,7 +2082,7 @@ module FeelerDispatcherModule =
                 (Resolve, world)
             else (Cascade, world)
 
-        let handleOutgoing evt world =
+        static let handleOutgoing evt world =
             let entity = evt.Subscriber : Entity
             (Cascade, entity.SetTouched false world)
 
