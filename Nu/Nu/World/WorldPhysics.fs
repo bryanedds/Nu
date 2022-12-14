@@ -227,3 +227,9 @@ module WorldPhysics =
         static member applyBodyForce force physicsId world =
             let applyBodyForceMessage = ApplyBodyForceMessage { PhysicsId = physicsId; Force = force }
             World.enqueuePhysicsMessage2d applyBodyForceMessage world
+
+        /// Send a message to the physics system to apply torque to a body with the given physics id.
+        [<FunctionBinding>]
+        static member applyBodyTorque torque physicsId world =
+            let applyBodyTorqueMessage = ApplyBodyTorqueMessage { PhysicsId = physicsId; Torque = torque }
+            World.enqueuePhysicsMessage2d applyBodyTorqueMessage world

@@ -361,10 +361,15 @@ type [<ReferenceEquality; NoComparison>] AetherPhysicsEngine =
         | (true, (_, body)) -> body.ApplyAngularImpulse (applyBodyAngularImpulseMessage.AngularImpulse.X)
         | (false, _) -> Log.debug ("Could not apply angular impulse to non-existent body with PhysicsId = " + scstring applyBodyAngularImpulseMessage.PhysicsId + "'.")
 
-    static member private applyBodyForce applyBodyForceMessage physicsEngine =
+    static member private applyBodyForce (applyBodyForceMessage : ApplyBodyForceMessage) physicsEngine =
         match physicsEngine.Bodies.TryGetValue applyBodyForceMessage.PhysicsId with
         | (true, (_, body)) -> body.ApplyForce (AetherPhysicsEngine.toPhysicsV2 applyBodyForceMessage.Force)
         | (false, _) -> Log.debug ("Could not apply force to non-existent body with PhysicsId = " + scstring applyBodyForceMessage.PhysicsId + "'.")
+
+    static member private applyBodyTorque (applyBodyTorqueMessage : ApplyBodyTorqueMessage) physicsEngine =
+        match physicsEngine.Bodies.TryGetValue applyBodyTorqueMessage.PhysicsId with
+        | (true, (_, body)) -> body.ApplyTorque (applyBodyTorqueMessage.Torque.X)
+        | (false, _) -> Log.debug ("Could not apply torque to non-existent body with PhysicsId = " + scstring applyBodyTorqueMessage.PhysicsId + "'.")
 
     static member private handlePhysicsMessage physicsEngine physicsMessage =
         match physicsMessage with
@@ -384,6 +389,7 @@ type [<ReferenceEquality; NoComparison>] AetherPhysicsEngine =
         | SetBodyLinearVelocityMessage setBodyLinearVelocityMessage -> AetherPhysicsEngine.setBodyLinearVelocity setBodyLinearVelocityMessage physicsEngine
         | ApplyBodyLinearImpulseMessage applyBodyLinearImpulseMessage -> AetherPhysicsEngine.applyBodyLinearImpulse applyBodyLinearImpulseMessage physicsEngine
         | ApplyBodyForceMessage applyBodyForceMessage -> AetherPhysicsEngine.applyBodyForce applyBodyForceMessage physicsEngine
+        | ApplyBodyTorqueMessage applyBodyTorqueMessage -> AetherPhysicsEngine.applyBodyTorque applyBodyTorqueMessage physicsEngine
         | SetGravityMessage gravity -> physicsEngine.PhysicsContext.Gravity <- AetherPhysicsEngine.toPhysicsV2 gravity
         | RebuildPhysicsHackMessage ->
             physicsEngine.RebuildingHack <- true
