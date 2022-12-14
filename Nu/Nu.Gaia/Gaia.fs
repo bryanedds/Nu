@@ -70,8 +70,8 @@ module Gaia =
 
     let private refreshSelections (form : GaiaForm) world =
         clearSelections form
-        form.groupPropertyGrid.SelectedObject <- { DescribedGroup = Seq.head (World.getGroups Globals.Screen world); Form = form }
-        form.screenPropertyGrid.SelectedObject <- { DescribedScreen = Globals.Screen; Form = form }
+        form.groupPropertyGrid.SelectedObject <- { DescribedGroup = Seq.head (World.getGroups Globals.EditorState.SelectedScreen world); Form = form }
+        form.screenPropertyGrid.SelectedObject <- { DescribedScreen = Globals.EditorState.SelectedScreen; Form = form }
         form.gamePropertyGrid.SelectedObject <- { DescribedGame = Simulants.Game; Form = form }
 
     let private refreshEditModes (form : GaiaForm) world =
@@ -161,7 +161,7 @@ module Gaia =
     let private refreshGroupTabs (form : GaiaForm) world =
 
         // add groups imperatively to preserve existing group tabs
-        let groups = World.getGroups Globals.Screen world
+        let groups = World.getGroups Globals.EditorState.SelectedScreen world
         let groupTabPages = form.groupTabControl.TabPages
         for group in groups do
             let groupName = group.Name
@@ -304,7 +304,7 @@ module Gaia =
                 | None -> World.createGroup (Some "Group") screen world
                 | Some group -> (group, world)
             Globals.EditorState.SelectedGroup <- group
-            Globals.Screen <- screen
+            Globals.EditorState.SelectedScreen <- screen
             refreshGroupTabs form world
             refreshHierarchyTreeView form world
             refreshSelections form world
@@ -467,9 +467,9 @@ module Gaia =
                 match groupDescriptor.GroupProperties.TryFind Constants.Engine.NamePropertyName with
                 | Some (Atom (name, _)) -> name
                 | _ -> failwithumf ()
-            let group = Globals.Screen / groupName
+            let group = Globals.EditorState.SelectedScreen / groupName
             if not (group.Exists world) then
-                let (group, world) = World.readGroup groupDescriptor None Globals.Screen world
+                let (group, world) = World.readGroup groupDescriptor None Globals.EditorState.SelectedScreen world
                 form.groupTabControl.SelectedTab.Text <- group.Name
                 form.groupTabControl.SelectedTab.Name <- group.Name
                 Globals.EditorState.SelectedGroup <- group
@@ -971,7 +971,7 @@ module Gaia =
                 let groupName = groupCreationForm.nameTextBox.Text
                 let groupDispatcherName = groupCreationForm.dispatcherTextBox.Text
                 try if String.length groupName = 0 then failwith "Group name cannot be empty in Gaia due to WinForms limitations."
-                    let world = World.createGroup4 groupDispatcherName (Some groupName) Globals.Screen world |> snd
+                    let world = World.createGroup4 groupDispatcherName (Some groupName) Globals.EditorState.SelectedScreen world |> snd
                     refreshGroupTabs form world
                     refreshHierarchyTreeView form world
                     deselectEntity form world
@@ -1032,7 +1032,7 @@ module Gaia =
                     form.groupTabControl.TabPages.RemoveByKey group.Name
                     let groupTabControl = form.groupTabControl
                     let groupTab = groupTabControl.SelectedTab
-                    Globals.EditorState.SelectedGroup <- Globals.Screen / groupTab.Text
+                    Globals.EditorState.SelectedGroup <- Globals.EditorState.SelectedScreen / groupTab.Text
                     Globals.EditorState.FilePaths <- Map.remove group.GroupAddress Globals.EditorState.FilePaths
                     world
                 else
@@ -1257,7 +1257,7 @@ module Gaia =
             let selectedGroup =
                 let groupTabControl = form.groupTabControl
                 let groupTab = groupTabControl.SelectedTab
-                Globals.Screen / groupTab.Text
+                Globals.EditorState.SelectedScreen / groupTab.Text
             Globals.EditorState.SelectedGroup <- selectedGroup
             refreshEntityPropertyGrid form world
             refreshHierarchyTreeView form world
@@ -1601,14 +1601,15 @@ module Gaia =
             let item = createContextMenuItem.DropDownItems.Add dispatcherName
             item.Click.Add (handleFormCreateEntity atMouse inHierarchy (Some dispatcherName) form)
 
-    let private run3 runWhile targetDir editModeOpt sdlDeps (form : GaiaForm) =
+    let private run3 runWhile targetDir editModeOpt sdlDeps screen (form : GaiaForm) =
         Globals.EditorState <-
             { TargetDir = targetDir
               RightClickPosition = Vector2.Zero
               DragEntityState = DragEntityInactive
               DragEyeState = DragEyeInactive
               OtherSnaps = (Constants.Editor.Position3dSnapDefault, Constants.Editor.Degrees3dSnapDefault, Constants.Editor.Scale3dSnapDefault)
-              SelectedGroup = World.getGroups Globals.Screen Globals.World |> Seq.head
+              SelectedScreen = screen
+              SelectedGroup = World.getGroups screen Globals.World |> Seq.head
               FilePaths = Map.empty
               RefreshHierarchyViewRequested = false
               PastWorlds = []
@@ -1633,7 +1634,7 @@ module Gaia =
         refreshHierarchyTreeView form Globals.World
         selectGroup Globals.EditorState.SelectedGroup form Globals.World
         match editModeOpt with Some editMode -> form.editModeComboBox.SelectedItem <- editMode | None -> ()
-        form.screenPropertyGrid.SelectedObject <- { DescribedScreen = Globals.Screen; Form = form }
+        form.screenPropertyGrid.SelectedObject <- { DescribedScreen = screen; Form = form }
         form.gamePropertyGrid.SelectedObject <- { DescribedGame = Simulants.Game; Form = form }
         form.runButton.CheckState <- CheckState.Unchecked
         form.songPlaybackButton.CheckState <- if World.getMasterSongVolume Globals.World = 0.0f then CheckState.Unchecked else CheckState.Checked
@@ -1922,7 +1923,6 @@ module Gaia =
                     let (screen, world) = World.createScreen (Some "Screen") world
                     let world = World.setSelectedScreen screen world
                     (screen, world)
-            Globals.Screen <- screen
 
             // create default group if no group exists
             let world =
@@ -1932,7 +1932,7 @@ module Gaia =
 
             // proceed directly to idle state
             let world = World.selectScreen IdlingState screen world
-            Right world
+            Right (screen, world)
 
         // error
         | Left error -> Left error
@@ -1965,9 +1965,9 @@ module Gaia =
                   NuConfig = nuConfig
                   SdlConfig = sdlConfig }
             match tryMakeWorld sdlDeps worldConfig plugin with
-            | Right world ->
+            | Right (screen, world) ->
                 Globals.World <- world
-                let _ = run3 tautology targetDir savedState.EditModeOpt sdlDeps form
+                let _ = run3 tautology targetDir savedState.EditModeOpt sdlDeps screen form
                 Constants.Engine.SuccessExitCode
             | Left error -> failwith error
         | Left error -> failwith error
