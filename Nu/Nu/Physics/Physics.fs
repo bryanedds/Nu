@@ -350,7 +350,7 @@ type [<NoComparison>] SetBodyAngularVelocityMessage =
     { PhysicsId : PhysicsId
       AngularVelocity : Vector3 }
 
-/// A message to the physics system to apply a angular impulse to a body.
+/// A message to the physics system to apply an angular impulse to a body.
 type [<NoComparison>] ApplyBodyAngularImpulseMessage =
     { PhysicsId : PhysicsId
       AngularImpulse : Vector3 }
@@ -359,6 +359,11 @@ type [<NoComparison>] ApplyBodyAngularImpulseMessage =
 type [<NoComparison>] ApplyBodyForceMessage =
     { PhysicsId : PhysicsId
       Force : Vector3 }
+
+/// A message to the physics system to apply torque to a body.
+type [<NoComparison>] ApplyBodyTorqueMessage =
+    { PhysicsId : PhysicsId
+      Torque : Vector3 }
 
 /// A message from the physics system describing a body collision that took place.
 type [<NoComparison>] BodyCollisionMessage =
@@ -404,6 +409,7 @@ type [<NoComparison>] PhysicsMessage =
     | SetBodyLinearVelocityMessage of SetBodyLinearVelocityMessage
     | ApplyBodyLinearImpulseMessage of ApplyBodyLinearImpulseMessage
     | ApplyBodyForceMessage of ApplyBodyForceMessage
+    | ApplyBodyTorqueMessage of ApplyBodyTorqueMessage
     | SetGravityMessage of Vector3
     | RebuildPhysicsHackMessage
 
