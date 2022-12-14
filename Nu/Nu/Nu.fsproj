@@ -136,6 +136,7 @@
     <Compile Include="World\WorldRender.fs" />
     <Compile Include="World\WorldAudio.fs" />
     <Compile Include="World\WorldTmxMap.fs" />
+    <Compile Include="World\WorldFacets.fs" />
     <Compile Include="World\WorldDispatchers.fs" />
     <Compile Include="World\WorldContent.fs" />
     <Compile Include="World\WorldScripting.fs" />

@@ -672,9 +672,6 @@ module Gaia =
         | 3 -> refreshPropertyEditor4 true form.entityPropertyGrid form world
         | _ -> failwithumf ()
 
-    let private refreshEntityPropertyDesigner (form : GaiaForm) =
-        form.entityPropertyDesigner.Enabled <- notNull form.entityPropertyGrid.SelectedObject
-
     let private applyPropertyEditor (form : GaiaForm) =
         match form.propertyTabControl.SelectedIndex with
         | 0 -> applyPropertyEditor2 form.gamePropertyGrid form
@@ -776,7 +773,6 @@ module Gaia =
 
     let private handleFormEntityPropertyGridSelectedObjectsChanged (form : GaiaForm) (_ : EventArgs) =
         refreshPropertyEditor form
-        refreshEntityPropertyDesigner form
 
     let private handleFormEntityPropertyGridSelectedGridItemChanged (form : GaiaForm) (_ : EventArgs) =
         refreshPropertyEditor form
@@ -1376,78 +1372,6 @@ module Gaia =
     let private handleCreateEntityComboBoxSelectedIndexChanged (form : GaiaForm) (_ : EventArgs) =
         form.overlayComboBox.SelectedIndex <- 0
 
-    let private handleEntityDesignerPropertyAddClick defaulting (form : GaiaForm) (_ : EventArgs) =
-        addPreUpdater $ fun world ->
-            let propertyTypeText = form.entityDesignerPropertyTypeComboBox.Text
-            match form.entityPropertyGrid.SelectedObject with
-            | null -> world
-            | :? EntityTypeDescriptorSource as entityTds ->
-                let entity = entityTds.DescribedEntity
-                match Array.toList (propertyTypeText.Split ([|" : "|], StringSplitOptions.None)) with
-                | [] ->
-                    MessageBox.Show
-                        ("Could not add designer property '" + propertyTypeText + "'. Please provide an evaluatable expression or choose one from the list.",
-                         "Invalid Designer Property",
-                         MessageBoxButtons.OK) |>
-                        ignore
-                    world
-                | exprStr :: _ ->
-                    try let expr = scvalue<Scripting.Expr> exprStr
-                        let selectedGroup = Globals.EditorState.SelectedGroup
-                        let localFrame = selectedGroup.GetScriptFrame world
-                        let struct (evaled, world) = World.evalWithLogging expr localFrame selectedGroup world
-                        match Scripting.Expr.toFSharpTypeOpt evaled with
-                        | Some dt ->
-                            let dvOpt =
-                                if defaulting
-                                then dt.TryGetDefaultValue ()
-                                else ScriptingSystem.tryExport dt evaled world
-                            match dvOpt with
-                            | Some dv ->
-                                let propertyName = form.entityDesignerPropertyNameTextBox.Text
-                                let dp = { DesignerType = dt; DesignerValue = dv }
-                                let property = { PropertyType = typeof<DesignerProperty>; PropertyValue = dp }
-                                let world = entity.AttachProperty propertyName property world
-                                Globals.World <- world // must be set for property grid
-                                form.entityPropertyGrid.Refresh ()
-                                world
-                            | None ->
-                                MessageBox.Show
-                                    ("Could not add default value for designer property '" + propertyTypeText + "'. ",
-                                     "Invalid Designer Property",
-                                     MessageBoxButtons.OK) |>
-                                    ignore
-                                world
-                        | None ->
-                            MessageBox.Show
-                                ("Could not add designer property '" + propertyTypeText + "'. " +
-                                 "Expression does not articulate enough information to infer a static F# type. " +
-                                 "Please provide a fully articulated expression or choose one from the list.",
-                                 "Invalid Designer Property",
-                                 MessageBoxButtons.OK) |>
-                                ignore
-                            world
-                    with _ ->
-                        MessageBox.Show
-                            ("Could not add designer property '" + propertyTypeText + "'. Please provide an evaluatable expression or choose one from the list.",
-                             "Invalid Designer Property",
-                             MessageBoxButtons.OK) |>
-                            ignore
-                        world
-            | _ -> world
-
-    let private handleEntityDesignerPropertyRemoveClick (form : GaiaForm) (_ : EventArgs) =
-        addPreUpdater $ fun world ->
-            match form.entityPropertyGrid.SelectedObject with
-            | null -> world
-            | :? EntityTypeDescriptorSource as entityTds ->
-                let entity = entityTds.DescribedEntity
-                let world = entity.DetachProperty form.entityDesignerPropertyNameTextBox.Text world
-                Globals.World <- world // must be set for property grid
-                form.entityPropertyGrid.Refresh ()
-                world
-            | _ -> world
-
     let private handleKeyboardInput key isKeyFromKeyableControl (form : GaiaForm) world =
         if Form.ActiveForm = (form :> Form) then
             if Keys.F5 = key then form.runButton.PerformClick ()
@@ -1902,9 +1826,6 @@ module Gaia =
         form.evalButton.Click.Add (handleEvalClick form)
         form.clearOutputButton.Click.Add (handleClearOutputClick form)
         form.createEntityComboBox.SelectedIndexChanged.Add (handleCreateEntityComboBoxSelectedIndexChanged form)
-        form.entityDesignerPropertyAddButton.Click.Add (handleEntityDesignerPropertyAddClick false form)
-        form.entityDesignerPropertyDefaultButton.Click.Add (handleEntityDesignerPropertyAddClick true form)
-        form.entityDesignerPropertyRemoveButton.Click.Add (handleEntityDesignerPropertyRemoveClick form)
         form.Closing.Add (handleFormClosing form)
 
         // populate event filter keywords
@@ -1944,29 +1865,6 @@ module Gaia =
         handleLoadPreludeClick form (EventArgs ())
         handleLoadAssetGraphClick form (EventArgs ())
         handleLoadOverlayerClick form (EventArgs ())
-
-        // populate entity designer property types
-        form.entityDesignerPropertyTypeComboBox.Items.Add ("false : bool") |> ignore
-        form.entityDesignerPropertyTypeComboBox.Items.Add ("true : bool") |> ignore
-        form.entityDesignerPropertyTypeComboBox.Items.Add ("0 : int") |> ignore
-        form.entityDesignerPropertyTypeComboBox.Items.Add ("0L : int64") |> ignore
-        form.entityDesignerPropertyTypeComboBox.Items.Add ("0f : single") |> ignore
-        form.entityDesignerPropertyTypeComboBox.Items.Add ("0d : double") |> ignore
-        form.entityDesignerPropertyTypeComboBox.Items.Add ("\"\" : string") |> ignore
-        form.entityDesignerPropertyTypeComboBox.Items.Add ("[v2 0f 0f] : Vector2") |> ignore
-        form.entityDesignerPropertyTypeComboBox.Items.Add ("[v3 0f 0f] : Vector3") |> ignore
-        form.entityDesignerPropertyTypeComboBox.Items.Add ("[v4 0f 0f 0f 0f] : Vector4") |> ignore
-        form.entityDesignerPropertyTypeComboBox.Items.Add ("[v2i 0 0] : Vector2i") |> ignore
-        form.entityDesignerPropertyTypeComboBox.Items.Add ("[v3i 0 0] : Vector3i") |> ignore
-        form.entityDesignerPropertyTypeComboBox.Items.Add ("[v4i 0 0 0 0] : Vector4i") |> ignore
-        form.entityDesignerPropertyTypeComboBox.Items.Add ("[quat 0 0 0 1] : Quaternion") |> ignore
-        form.entityDesignerPropertyTypeComboBox.Items.Add ("[some 0] : int option") |> ignore
-        form.entityDesignerPropertyTypeComboBox.Items.Add ("[right 0] : Either<int, obj>") |> ignore
-        form.entityDesignerPropertyTypeComboBox.Items.Add ("[list 0] : int list") |> ignore
-        form.entityDesignerPropertyTypeComboBox.Items.Add ("[ring 0] : int Set") |> ignore
-        form.entityDesignerPropertyTypeComboBox.Items.Add ("[table [0 \"\"]] : Map<int, string>") |> ignore
-        form.entityDesignerPropertyTypeComboBox.Items.Add ("[tuple 0 0] : int * int") |> ignore
-        form.entityDesignerPropertyTypeComboBox.Items.Add ("[record AssetTag [PackageName \"Default\"] [AssetName \"Image\"]] : AssetTag") |> ignore
 
         // clear undo buffers
         form.eventFilterTextBox.EmptyUndoBuffer ()
