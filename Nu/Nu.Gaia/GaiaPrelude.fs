@@ -28,6 +28,7 @@ type EditorState =
       mutable DragEntityState : DragEntityState
       mutable DragEyeState : DragEyeState
       mutable OtherSnaps : single * single * single
+      mutable SelectedScreen : Screen // TODO: see if this is necessary or if we can just use World.getSelectedScreen.
       mutable SelectedGroup : Group
       mutable FilePaths : Map<Group Address, string>
       mutable RefreshHierarchyViewRequested : bool // HACK: make sure hierarchy view isn't updated more than once per frame.
@@ -45,7 +46,6 @@ module Globals =
 
     let mutable SelectEntity : Entity -> GaiaForm -> World -> unit = Unchecked.defaultof<_>
     let mutable (PreUpdaters, PerUpdaters) = (Updaters (), Updaters ())
-    let mutable Screen = Screen (nameof Screen)
     let mutable World = Unchecked.defaultof<World>
     let mutable EditorState = Unchecked.defaultof<EditorState>
     let mutable Form = Unchecked.defaultof<GaiaForm>
