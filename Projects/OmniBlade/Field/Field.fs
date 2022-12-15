@@ -516,7 +516,7 @@ module Field =
           Advents_ = advents
           Props_ = props
           Inventory_ = inventory
-          Options_ = { BattleSpeed = SwiftSpeed }
+          Options_ = { BattleSpeed = PacedSpeed }
           Menu_ = { MenuState = MenuClosed; MenuUseOpt = None }
           Definitions_ = definitions
           DefinitionsOriginal_ = definitions
@@ -541,7 +541,7 @@ module Field =
           Advents_ = Advents.empty
           Props_ = Map.empty
           Inventory_ = Inventory.initial
-          Options_ = { BattleSpeed = SwiftSpeed }
+          Options_ = { BattleSpeed = PacedSpeed }
           Menu_ = { MenuState = MenuClosed; MenuUseOpt = None }
           Definitions_ = Map.empty
           DefinitionsOriginal_ = Map.empty
@@ -569,7 +569,7 @@ module Field =
                     Map.singleton 0 (Teammate.make level 0 Jinn) |>
                     Map.add 1 (Teammate.make level 1 Peric) |>
                     Map.add 2 (Teammate.make level 2 Mael)
-                makeBattleFromTeam Inventory.initial PrizePool.empty team SwiftSpeed battle world
+                makeBattleFromTeam Inventory.initial PrizePool.empty team PacedSpeed battle world
             | None -> Battle.empty
         updateBattleOpt (constant (Some battle)) field
 
