@@ -1,5 +1,5 @@
 ﻿// Nu Game Engine.
-// Copyright (C) Bryan Edds, 2013-2022.
+// Copyright (C) Bryan Edds, 2013-2020.
 
 #I __SOURCE_DIRECTORY__
 #r "../../packages/Magick.NET-Q8-x64.7.5.0.1/lib/net40/Magick.NET-Q8-x64.dll"
