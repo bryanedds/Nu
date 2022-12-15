@@ -61,18 +61,19 @@ module WorldRender =
         /// Enqueue a rendering message to the world.
         static member enqueueRenderMessage3d (message : RenderMessage3d) world =
             (World.getRendererProcess world).EnqueueMessage3d message
+            world
 
         /// Enqueue multiple 3d rendering messages to the world.
         static member enqueueRenderMessages3d (messages : RenderMessage3d seq) world =
             let rendererProcess = World.getRendererProcess world
             for message in messages do rendererProcess.EnqueueMessage3d message
+            world
 
         /// Send a message to the 3d renderer to reload its rendering assets.
         [<FunctionBinding>]
         static member reloadRenderAssets3d world =
             let reloadRenderAssetsMessage = ReloadRenderAssetsMessage3d
             World.enqueueRenderMessage3d reloadRenderAssetsMessage world
-            world
 
         /// Send a message to the render to create the given user-defined static model.
         /// NOTE: this is available as a side-effect to allow use from inside a binding.

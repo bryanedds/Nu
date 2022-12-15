@@ -633,6 +633,7 @@ module WorldModule3 =
         /// Update late bindings internally stored by the engine from types found in the given assemblies.
         static member updateLateBindings2 (assemblies : Assembly array) world =
             Content.UpdateLateBindingsCount <- inc Content.UpdateLateBindingsCount
+            World.clearClipboard world // HACK: clear what's on the clipboard rather than changing its dispatcher instance.
             let pluginType =
                 assemblies |>
                 Array.map (fun assembly -> assembly.GetTypes ()) |>
