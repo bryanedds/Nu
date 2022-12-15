@@ -1,5 +1,5 @@
 ﻿// Nu Game Engine.
-// Copyright (C) Bryan Edds, 2013-2022.
+// Copyright (C) Bryan Edds, 2013-2020.
 
 #I __SOURCE_DIRECTORY__
 #load "Interactive.fsx"
@@ -57,7 +57,7 @@ let enumEntriesToCode entries =
 
 let generateBindingsCode codesStr =
     "// Nu Game Engine.\n" +
-    "// Copyright (C) Bryan Edds, 2013-2022.\n" +
+    "// Copyright (C) Bryan Edds, 2013-2020.\n" +
     "\n" +
     "//*********************************************************************************************//\n" +
     "//                                                                                             //\n" +

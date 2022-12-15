@@ -1,5 +1,5 @@
 ﻿// Nu Game Engine.
-// Copyright (C) Bryan Edds, 2013-2022.
+// Copyright (C) Bryan Edds, 2013-2020.
 
 #I __SOURCE_DIRECTORY__
 #load "Interactive.fsx"
@@ -347,7 +347,7 @@ let generateBindingsCode bindings =
 
     let header =
         "// Nu Game Engine.\n" +
-        "// Copyright (C) Bryan Edds, 2013-2022.\n" +
+        "// Copyright (C) Bryan Edds, 2013-2020.\n" +
         "\n" +
         "//*********************************************************************************************//\n" +
         "//                                                                                             //\n" +
