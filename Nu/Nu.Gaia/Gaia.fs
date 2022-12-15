@@ -186,6 +186,17 @@ module Gaia =
                 form.hierarchyTreeView.SelectedNode <- nodeOpt
         | None -> ()
 
+    let private tryShowSelectedEntityInDisplay (form : GaiaForm) world =
+        match form.entityPropertyGrid.SelectedObject with
+        | :? EntityTypeDescriptorSource as entityTds ->
+            let entity = entityTds.DescribedEntity
+            let world =
+                if entity.GetIs2d world
+                then World.setEyePosition2d (entity.GetCenter world).V2 world
+                else World.setEyePosition3d (entity.GetPosition world + Constants.Engine.EyePosition3dOffset) world
+            world
+        | _ -> world
+
     let private selectEntity entity (form : GaiaForm) world =
         Globals.World <- world // must be set for property grid
         match form.entityPropertyGrid.SelectedObject with
@@ -888,17 +899,8 @@ module Gaia =
                 else Log.traceOnce "Cannot relocate a protected simulant (such as an entity created by the Elmish API)."; world
             else world
 
-    let private handleFormHierarchyShowSelected (form : GaiaForm) (_ : EventArgs) =
-        addPreUpdater $ fun world ->
-            match form.entityPropertyGrid.SelectedObject with
-            | :? EntityTypeDescriptorSource as entityTds ->
-                let entity = entityTds.DescribedEntity
-                let world =
-                    if entity.GetIs2d world
-                    then World.setEyePosition2d (entity.GetCenter world).V2 world
-                    else World.setEyePosition3d (entity.GetPosition world + Constants.Engine.EyePosition3dOffset) world
-                world
-            | _ -> world
+    let private handleFormHierarchyTreeViewCollapseAllClick (form : GaiaForm) (_ : EventArgs) =
+        form.hierarchyTreeView.CollapseAll ()
 
     let private handleFormHierarchyTreeViewNodeSelect (form : GaiaForm) (args : TreeViewEventArgs) =
         addPreUpdater $ fun world ->
@@ -911,6 +913,10 @@ module Gaia =
                     world
                 else world
             else world
+
+    let private handleFormHierarchyTreeViewDoubleClick (form : GaiaForm) (args : EventArgs) =
+        addPreUpdater $ fun world ->
+            tryShowSelectedEntityInDisplay form world
 
     let private handleFormCreateEntity atMouse inHierarchy (dispatcherNameOpt : string option) (form : GaiaForm) (_ : EventArgs) =
         addPreUpdater $ fun world ->
@@ -1827,8 +1833,9 @@ module Gaia =
         form.discardAssetGraphButton.Click.Add (handleLoadAssetGraphClick form)
         form.applyOverlayerButton.Click.Add (handleSaveOverlayerClick form)
         form.discardOverlayerButton.Click.Add (handleLoadOverlayerClick form)
-        form.hierarchyShowSelectedButton.Click.Add (handleFormHierarchyShowSelected form)
+        form.hierarchyCollapseAllButton.Click.Add (handleFormHierarchyTreeViewCollapseAllClick form)
         form.hierarchyTreeView.AfterSelect.Add (handleFormHierarchyTreeViewNodeSelect form)
+        form.hierarchyTreeView.DoubleClick.Add (handleFormHierarchyTreeViewDoubleClick form)
         form.hierarchyTreeView.ItemDrag.Add (handleFormHierarchyTreeViewItemDrag form)
         form.hierarchyTreeView.DragEnter.Add (handleFormHierarchyTreeViewDragEnter form)
         form.hierarchyTreeView.DragOver.Add (handleFormHierarchyTreeViewDragOver form)
