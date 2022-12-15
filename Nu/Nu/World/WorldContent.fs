@@ -6,6 +6,7 @@ open System
 open System.Collections.Generic
 open System.IO
 open Prime
+open Nu
 
 [<RequireQualifiedAccess>]
 module Content =

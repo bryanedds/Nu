@@ -69,7 +69,6 @@
     <Compile Include="Core\Gen.fs" />
     <Compile Include="Core\Math.fs" />
     <Compile Include="Core\Assimp.fs" />
-    <Compile Include="Core\Signal.fs" />
     <Compile Include="Core\Assets.fs" />
     <Compile Include="Core\Constants.fs" />
     <Compile Include="Collections\ListTree.fs" />
@@ -98,6 +97,8 @@
     <Compile Include="Sdl\SdlInput.fs" />
     <Compile Include="Sdl\Sdl.fs" />
     <Compile Include="Reflection\Reflection.fs" />
+    <Compile Include="Reflection\Lens.fs" />
+    <Compile Include="Reflection\Signal.fs" />
     <Compile Include="Reflection\Overlayer.fs" />
     <Compile Include="Reflection\OverlayRouter.fs" />
     <Compile Include="AssetGraph\AssetTag.fs" />
@@ -273,7 +274,7 @@
       <HintPath>..\Nu.Dependencies\OpenGL.NET.0.8.4\lib\net461\OpenGL.Net.dll</HintPath>
     </Reference>
     <Reference Include="Prime">
-      <HintPath>..\..\packages\Prime.8.3.0\lib\net472\Prime.dll</HintPath>
+      <HintPath>..\..\packages\Prime.8.4.0\lib\net472\Prime.dll</HintPath>
     </Reference>
     <Reference Include="Prime.Scripting">
       <HintPath>..\..\packages\Prime.Scripting.8.0.0\lib\net472\Prime.Scripting.exe</HintPath>
