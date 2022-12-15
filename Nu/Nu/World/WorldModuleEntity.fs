@@ -1919,7 +1919,7 @@ module WorldModuleEntity =
             | (None, None) -> ()
             match boundsOpt with
             | Some bounds -> bounds
-            | None -> box3 (v3Dup -0.5f) v3One
+            | None -> World.getEntityBounds entity world
 
         static member internal updateEntityPublishUpdateFlag entity world =
             World.updateEntityPublishEventFlag World.setEntityPublishUpdates entity (atooa (Events.Update --> entity)) world
@@ -2383,6 +2383,10 @@ module WorldModuleEntity =
 
             // fin
             else world
+
+        /// Clear the content of the clipboard.
+        static member clearClipboard (_ : World) =
+            Clipboard <- None
 
         /// Attempt to get the dispatcher name for an entity currently on the world's clipboard.
         static member tryGetEntityDispatcherNameOnClipboard (_ : World) =

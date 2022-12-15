@@ -428,18 +428,36 @@ module Gaia =
         | null -> (Cascade, world)
         | :? EntityTypeDescriptorSource as entityTds ->
             let entity = entityTds.DescribedEntity
+            let absolute = entity.GetAbsolute world
+            let bounds = entity.GetHighlightBounds world
             if entity.GetIs2d world then
-                // TODO: 3D: 2d selection render.
+                let elevation = Single.MaxValue
+                let transform = Transform.makePerimeter bounds v3Zero elevation absolute false
+                let image = Assets.Default.HighlightImage
+                let world =
+                    World.enqueueRenderMessage2d
+                        (RenderLayeredMessage2d
+                            { Elevation = elevation
+                              Horizon = bounds.Bottom.Y
+                              AssetTag = AssetTag.generalize image
+                              RenderDescriptor2d =
+                                SpriteDescriptor
+                                    { Transform = transform
+                                      InsetOpt = ValueNone
+                                      Image = image
+                                      Color = Color.One
+                                      Blend = Transparent
+                                      Glow = Color.Zero
+                                      Flip = FlipNone }})
+                        world
                 (Cascade, world)
             else
-                let absolute = entity.GetAbsolute world
-                let bounds = entity.GetHighlightBounds world
                 let mutable boundsMatrix = Matrix4x4.CreateScale bounds.Size
                 boundsMatrix.Translation <- bounds.Center - Vector3.Transform (v3Forward * 0.01f, World.getEyeRotation3d world) // slightly closer to eye to prevent z-fighting with selected entity
                 let renderMaterial = Unchecked.defaultof<_>
                 let renderType = ForwardRenderType (0.0f, Single.MinValue)
                 let staticModel = Assets.Default.HighlightModel
-                World.enqueueRenderMessage3d (RenderStaticModelMessage (absolute, boundsMatrix, ValueNone, renderMaterial, renderType, staticModel)) world
+                let world = World.enqueueRenderMessage3d (RenderStaticModelMessage (absolute, boundsMatrix, ValueNone, renderMaterial, renderType, staticModel)) world
                 (Cascade, world)
         | _ -> (Cascade, world)
 

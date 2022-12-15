@@ -28,7 +28,7 @@ module DeclarativeOperators2 =
             | Render2d (elevation, horizon, assetTag, descriptor) ->
                 let message = { Elevation = elevation; Horizon = horizon; AssetTag = AssetTag.generalize assetTag; RenderDescriptor2d = descriptor }
                 World.enqueueRenderLayeredMessage2d message world
-            | Render3d renderMessage -> World.enqueueRenderMessage3d renderMessage world; world
+            | Render3d renderMessage -> World.enqueueRenderMessage3d renderMessage world
             | PlaySound (volume, assetTag) -> World.playSound volume assetTag world
             | PlaySong (fadeIn, fadeOut, volume, start, assetTag) -> World.playSong fadeIn fadeOut volume start assetTag world
             | FadeOutSong fade -> World.fadeOutSong fade world
@@ -1152,7 +1152,6 @@ module SkyBoxFacetModule =
         override this.Render (entity, world) =
             let cubeMap = entity.GetCubeMap world
             World.enqueueRenderMessage3d (RenderSkyBoxMessage cubeMap) world
-            world
 
 [<AutoOpen>]
 module LightFacet3dModule =
@@ -1185,7 +1184,6 @@ module LightFacet3dModule =
             let intensity = entity.GetIntensity world
             let lightType = entity.GetLightType world
             World.enqueueRenderMessage3d (RenderLightMessage3d (position, color, brightness, intensity, lightType)) world
-            world
 
         override this.RayCast (ray, entity, world) =
             let intersectionOpt = ray.Intersects (entity.GetBounds world)
@@ -1288,7 +1286,6 @@ module StaticBillboardFacetModule =
                      albedoImage, metalnessImage, roughnessImage, ambientOcclusionImage, normalImage,
                      minFilterOpt, magFilterOpt, renderType))
                 world
-            world
 
         override this.GetQuickSize (_, _) =
             v3 1.0f 2.0f 1.0f
@@ -1345,7 +1342,6 @@ module StaticModelFacetModule =
                 | Deferred -> DeferredRenderType
                 | Forward (sort, subsort) -> ForwardRenderType (sort, subsort)
             World.enqueueRenderMessage3d (RenderStaticModelMessage (absolute, affineMatrix, insetOpt, renderMaterial, renderType, staticModel)) world
-            world
 
         override this.GetQuickSize (entity, world) =
             let staticModel = entity.GetStaticModel world
@@ -1427,7 +1423,6 @@ module StaticModelSurfaceFacetModule =
                     | Deferred -> DeferredRenderType
                     | Forward (sort, subsort) -> ForwardRenderType (sort, subsort)
                 World.enqueueRenderMessage3d (RenderStaticModelSurfaceMessage (absolute, affineMatrix, insetOpt, renderMaterial, renderType, staticModel, surfaceIndex)) world
-                world
 
         override this.GetQuickSize (entity, world) =
             let staticModel = Metadata.getStaticModelMetadata (entity.GetStaticModel world)
