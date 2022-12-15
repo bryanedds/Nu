@@ -8,8 +8,8 @@ open System.Text.RegularExpressions
 open System.Linq
 open System.IO
 open Prime
-open Nu
 open SDL2
+open Nu
 
 // this function was stolen and converted from - https://stackoverflow.com/a/46095771
 let upperCaseToPascalCase (original : string) =
