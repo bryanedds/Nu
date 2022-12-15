@@ -267,8 +267,10 @@ module WorldModule2 =
                     match Simulants.Game.GetDesiredScreen world with
                     | Desire desiredScreen ->
                         if desiredScreen <> selectedScreen then
-                            let world = selectedScreen.SetTransitionUpdates 0L world
-                            World.setScreenTransitionStatePlus OutgoingState selectedScreen world
+                            if World.getStandAlone world || World.getAdvancing world then
+                                let world = selectedScreen.SetTransitionUpdates 0L world
+                                World.setScreenTransitionStatePlus OutgoingState selectedScreen world
+                            else World.setSelectedScreenOpt (Some desiredScreen) world // quick cut such as when halted in editor
                         else world
                     | DesireNone -> World.setScreenTransitionStatePlus OutgoingState selectedScreen world
                     | DesireIgnore -> world
