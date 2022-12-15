@@ -192,6 +192,7 @@ module Gaia =
     let private deselectEntity (form : GaiaForm) world =
         Globals.World <- world // must be set for property grid
         form.entityPropertyGrid.SelectedObject <- null
+        form.hierarchyTreeView.SelectedNode <- null
 
     let private refreshEntityPropertyGrid (form : GaiaForm) world =
         match form.entityPropertyGrid.SelectedObject with
