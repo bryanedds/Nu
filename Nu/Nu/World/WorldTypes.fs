@@ -1193,7 +1193,7 @@ module WorldTypes =
         member this.ClockDelta =
             AmbientState.getClockDelta this.AmbientState
 
-        /// Get the current clock time.
+        /// Get the clock time as of when the current frame began.
         member this.ClockTime =
             AmbientState.getClockTime this.AmbientState
 

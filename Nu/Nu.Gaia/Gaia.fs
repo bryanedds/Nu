@@ -333,7 +333,7 @@ module Gaia =
                     let eyeSize = World.getEyeSize2d world
                     let mousePositionWorld = viewport.MouseToWorld2d (entity.GetAbsolute world, mousePosition, eyePosition, eyeSize)
                     let entityPosition = if entity.MountExists world then entity.GetPositionLocal world else entity.GetPosition world
-                    Globals.EditorState.DragEntityState <- DragEntityPosition2d (mousePositionWorld, entityPosition.V2 + mousePositionWorld, entity)
+                    Globals.EditorState.DragEntityState <- DragEntityPosition2d (world.ClockTime, mousePositionWorld, entityPosition.V2 + mousePositionWorld, entity)
                 else
                     let viewport = World.getViewport world
                     let eyePosition = World.getEyePosition3d world
@@ -344,7 +344,7 @@ module Gaia =
                     let intersectionOpt = mouseRayWorld.Intersection entityPlane
                     if intersectionOpt.HasValue then
                         let entityDragOffset = intersectionOpt.Value - entityPosition
-                        Globals.EditorState.DragEntityState <- DragEntityPosition3d (entityDragOffset, entityPlane, entity)
+                        Globals.EditorState.DragEntityState <- DragEntityPosition3d (world.ClockTime, entityDragOffset, entityPlane, entity)
                 (handled, world)
             | (None, world) -> (handled, world)
         else (Cascade, world)
@@ -1451,8 +1451,9 @@ module Gaia =
     let private updateEntityDrag (form : GaiaForm) world =
         if not (canEditWithMouse form world) then
             match Globals.EditorState.DragEntityState with
-            | DragEntityPosition2d (mousePositionWorldOriginal, entityDragOffset, entity) ->
-                if entity.Exists world then
+            | DragEntityPosition2d (time, mousePositionWorldOriginal, entityDragOffset, entity) ->
+                let localTime = world.ClockTime - time
+                if entity.Exists world && localTime.TotalSeconds >= Constants.Editor.DragMinimumSeconds then
                     let mousePositionWorld = World.getMousePostion2dWorld (entity.GetAbsolute world) world
                     let entityPosition = (entityDragOffset - mousePositionWorldOriginal) + (mousePositionWorld - mousePositionWorldOriginal)
                     let entityPositionSnapped =
@@ -1480,8 +1481,9 @@ module Gaia =
                     // form.entityPropertyGrid.Refresh ()
                     world
                 else world
-            | DragEntityPosition3d (entityDragOffset, entityPlane, entity) ->
-                if entity.Exists world then
+            | DragEntityPosition3d (time, entityDragOffset, entityPlane, entity) ->
+                let localTime = world.ClockTime - time
+                if entity.Exists world && localTime.TotalSeconds >= Constants.Editor.DragMinimumSeconds then
                     let mouseRayWorld = World.getMouseRay3dWorld (entity.GetAbsolute world) world
                     let intersectionOpt = mouseRayWorld.Intersection entityPlane
                     if intersectionOpt.HasValue then
