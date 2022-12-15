@@ -1113,6 +1113,7 @@ module TmxMapFacetModule =
             let perimeterUnscaled = transform.PerimeterUnscaled // tile map currently ignores rotation and scale
             let viewBounds = World.getViewBounds2d world
             let tmxMap = entity.GetTmxMap world
+            let tmxPackage = if tmxMap.TmxDirectory = "" then Assets.Default.PackageName else Path.GetDirectoryName tmxMap.TmxDirectory
             let tmxMapMessages =
                 TmxMap.getLayeredMessages2d
                     (World.getUpdateTime world)
@@ -1125,7 +1126,7 @@ module TmxMapFacetModule =
                     (entity.GetTileLayerClearance world)
                     (entity.GetTileIndexOffset world)
                     (entity.GetTileIndexOffsetRange world)
-                    (Path.GetDirectoryName tmxMap.TmxDirectory)
+                    tmxPackage
                     tmxMap
             World.enqueueRenderLayeredMessages2d tmxMapMessages world
 
