@@ -175,19 +175,22 @@ module Gaia =
 
     let private selectEntity entity (form : GaiaForm) world =
         Globals.World <- world // must be set for property grid
-        let entityTds = { DescribedEntity = entity; Form = form }
-        let previousGridItem = form.entityPropertyGrid.SelectedGridItem
-        form.entityPropertyGrid.SelectedObject <- entityTds
-        let gridItems = dictPlus StringComparer.Ordinal []
-        for gridItem in form.entityPropertyGrid.SelectedGridItem.Parent.Parent.GridItems do
-            for gridItem in gridItem.GridItems do
-                gridItems.Add (gridItem.Label, gridItem)
-        if notNull previousGridItem then
-            match gridItems.TryGetValue previousGridItem.Label with
-            | (true, gridItem) -> form.entityPropertyGrid.SelectedGridItem <- gridItem
-            | (false, _) -> if entity.GetModelGeneric<obj> world <> box () then form.entityPropertyGrid.SelectedGridItem <- gridItems.[Constants.Engine.ModelPropertyName]
-        elif entity.GetModelGeneric<obj> world <> box () then form.entityPropertyGrid.SelectedGridItem <- gridItems.[Constants.Engine.ModelPropertyName]
-        form.propertyTabControl.SelectTab 3
+        match form.entityPropertyGrid.SelectedObject with
+        | :? EntityTypeDescriptorSource as entityTds when entityTds.DescribedEntity = entity -> ()
+        | _ ->
+            let entityTds = { DescribedEntity = entity; Form = form }
+            let previousGridItem = form.entityPropertyGrid.SelectedGridItem
+            form.entityPropertyGrid.SelectedObject <- entityTds
+            let gridItems = dictPlus StringComparer.Ordinal []
+            for gridItem in form.entityPropertyGrid.SelectedGridItem.Parent.Parent.GridItems do
+                for gridItem in gridItem.GridItems do
+                    gridItems.Add (gridItem.Label, gridItem)
+            if notNull previousGridItem then
+                match gridItems.TryGetValue previousGridItem.Label with
+                | (true, gridItem) -> form.entityPropertyGrid.SelectedGridItem <- gridItem
+                | (false, _) -> if entity.GetModelGeneric<obj> world <> box () then form.entityPropertyGrid.SelectedGridItem <- gridItems.[Constants.Engine.ModelPropertyName]
+            elif entity.GetModelGeneric<obj> world <> box () then form.entityPropertyGrid.SelectedGridItem <- gridItems.[Constants.Engine.ModelPropertyName]
+            form.propertyTabControl.SelectTab 3
 
     let private deselectEntity (form : GaiaForm) world =
         Globals.World <- world // must be set for property grid
@@ -1602,7 +1605,7 @@ module Gaia =
                 ignore
         with exn ->
             match MessageBox.Show
-                ("Unexpected exception due to: " + scstring exn + "\nWould you like to undo the last operator to try to keep Gaia running?",
+                ("Unexpected exception due to: " + scstring exn + "\nWould you like to undo the last operation to try to keep Gaia running?",
                  "Unexpected Exception",
                  MessageBoxButtons.YesNo,
                  MessageBoxIcon.Error) with
@@ -1779,12 +1782,11 @@ module Gaia =
         form.hierarchyTreeView.NodeMouseClick.Add (fun (e : TreeNodeMouseClickEventArgs) ->
             addPreUpdater $ fun world ->
                 let nodeKey = e.Node.Name
-                if nodeKey <> Constants.Editor.GroupNodeKey then
-                    let address = Address.makeFromString nodeKey
-                    let entity = Entity (Globals.EditorState.SelectedGroup.GroupAddress <-- atoa address)
-                    if entity.Exists world then selectEntity entity form world
-                    if e.Button = MouseButtons.Right then
-                        form.hierarchyContextMenuStrip.Show ()
+                let address = Address.makeFromString nodeKey
+                let entity = Entity (Globals.EditorState.SelectedGroup.GroupAddress <-- atoa address)
+                if entity.Exists world then selectEntity entity form world
+                if e.Button = MouseButtons.Right then
+                    form.hierarchyContextMenuStrip.Show ()
                 form.hierarchyTreeView.SelectedNode <- e.Node
                 world)
 
