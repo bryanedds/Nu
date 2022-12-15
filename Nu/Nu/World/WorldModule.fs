@@ -246,6 +246,11 @@ module WorldModule =
         static member getStandAlone world =
             World.getAmbientStateBy AmbientState.getStandAlone world
 
+        /// Get whether the engine is running accompanied, such as in an editor.
+        [<FunctionBinding>]
+        static member getAccompanied world =
+            World.getAmbientStateBy AmbientState.getAccompanied world
+
         /// Get collection config value.
         [<FunctionBinding>]
         static member getCollectionConfig world =

@@ -180,6 +180,10 @@ module AmbientState =
     let getStandAlone (_ : 'w AmbientState) =
         StandAlone
 
+    /// Get whether the engine is running accompanied, such as in an editor.
+    let getAccompanied (_ : 'w AmbientState) =
+        not StandAlone
+
     /// Get the collection config value.
     let getConfig (_ : 'w AmbientState) =
         if Imperative then TConfig.Imperative else TConfig.Functional
