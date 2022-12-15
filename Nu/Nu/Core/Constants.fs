@@ -40,6 +40,7 @@ module Engine =
     let (*Literal*) ParticleSize2dDefault = Vector3 (12.0f, 12.0f, 0.0f)
     let (*Literal*) ParticleSize3dDefault = Vector3 (0.01f, 0.01f, 0.01f)
     let (*Literal*) EyePosition3dDefault = Vector3 (0.0f, 1.0f, 4.0f)
+    let (*Literal*) EyePosition3dOffset = Vector3 (0.0f, 0.0f, 4.0f)
     let (*Literal*) QuadtreeGranularity = 3
     let (*Literal*) QuadtreeDepth = 4
     let (*Literal*) QuadtreeSize = Vector2 (single (Math.Pow (2.0, 18.0)))

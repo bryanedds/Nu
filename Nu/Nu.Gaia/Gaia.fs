@@ -173,6 +173,19 @@ module Gaia =
             if Seq.notExists (fun (group : Group) -> group.Name = groupTabPage.Name) groups then
                 groupTabPages.RemoveByKey groupTabPage.Name
 
+    let private tryShowSelectedEntityInHierarchy (form : GaiaForm) =
+        let pathOpt =
+            match form.entityPropertyGrid.SelectedObject with
+            | null -> None
+            | :? EntityTypeDescriptorSource as entityTds -> entityTds.DescribedEntity.Surnames |> String.join Constants.Address.SeparatorStr |> Some
+            | _ -> None
+        match pathOpt with
+        | Some path ->
+            let nodeOpt = form.hierarchyTreeView.TryGetNodeFromPath path
+            if notNull nodeOpt then
+                form.hierarchyTreeView.SelectedNode <- nodeOpt
+        | None -> ()
+
     let private selectEntity entity (form : GaiaForm) world =
         Globals.World <- world // must be set for property grid
         match form.entityPropertyGrid.SelectedObject with
@@ -181,6 +194,7 @@ module Gaia =
             let entityTds = { DescribedEntity = entity; Form = form }
             let previousGridItem = form.entityPropertyGrid.SelectedGridItem
             form.entityPropertyGrid.SelectedObject <- entityTds
+            tryShowSelectedEntityInHierarchy form
             let gridItems = dictPlus StringComparer.Ordinal []
             for gridItem in form.entityPropertyGrid.SelectedGridItem.Parent.Parent.GridItems do
                 for gridItem in gridItem.GridItems do
@@ -836,18 +850,18 @@ module Gaia =
     let private handleFormPropertyApplyClick (form : GaiaForm) (_ : EventArgs) =
         applyPropertyEditor form
 
-    let private handleFormHierarchyTreeViewItemDrag (form : GaiaForm) (e : ItemDragEventArgs) =
-        if e.Button = MouseButtons.Left then
-            form.DoDragDrop (e.Item, DragDropEffects.Move) |> ignore
+    let private handleFormHierarchyTreeViewItemDrag (form : GaiaForm) (args : ItemDragEventArgs) =
+        if args.Button = MouseButtons.Left then
+            form.DoDragDrop (args.Item, DragDropEffects.Move) |> ignore
 
-    let private handleFormHierarchyTreeViewDragEnter (_ : GaiaForm) (e : DragEventArgs) =
-        e.Effect <- e.AllowedEffect
+    let private handleFormHierarchyTreeViewDragEnter (_ : GaiaForm) (args : DragEventArgs) =
+        args.Effect <- args.AllowedEffect
 
-    let private handleFormHierarchyTreeViewDragOver (form : GaiaForm) (e : DragEventArgs) =
-        let targetPoint = form.hierarchyTreeView.PointToClient (Point (e.X, e.Y))
+    let private handleFormHierarchyTreeViewDragOver (form : GaiaForm) (args : DragEventArgs) =
+        let targetPoint = form.hierarchyTreeView.PointToClient (Point (args.X, args.Y))
         form.hierarchyTreeView.SelectedNode <- form.hierarchyTreeView.GetNodeAt targetPoint
 
-    let private handleFormHierarchyTreeViewDragDrop (form : GaiaForm) (e : DragEventArgs) =
+    let private handleFormHierarchyTreeViewDragDrop (form : GaiaForm) (args : DragEventArgs) =
 
         // TODO: lift this out.
         let rec containsNode (source : TreeNode) (target : TreeNode) =
@@ -857,9 +871,9 @@ module Gaia =
 
         addPreUpdater $ fun world ->
             let world = Globals.pushPastWorld world
-            let targetPoint = form.hierarchyTreeView.PointToClient (Point (e.X, e.Y))
+            let targetPoint = form.hierarchyTreeView.PointToClient (Point (args.X, args.Y))
             let targetNodeOpt = form.hierarchyTreeView.GetNodeAt targetPoint
-            let draggedNode = e.Data.GetData typeof<TreeNode> :?> TreeNode
+            let draggedNode = args.Data.GetData typeof<TreeNode> :?> TreeNode
             if draggedNode <> targetNodeOpt && notNull targetNodeOpt && not (containsNode draggedNode targetNodeOpt) then
                 let selectedGroup = Globals.EditorState.SelectedGroup
                 let source = Entity (selectedGroup.GroupAddress <-- Address.makeFromString draggedNode.Name)
@@ -875,21 +889,20 @@ module Gaia =
             else world
 
     let private handleFormHierarchyShowSelected (form : GaiaForm) (_ : EventArgs) =
-        let pathOpt =
-            match form.entityPropertyGrid.SelectedObject with
-            | null -> None
-            | :? EntityTypeDescriptorSource as entityTds -> entityTds.DescribedEntity.Surnames |> String.join Constants.Address.SeparatorStr |> Some
-            | _ -> None
-        match pathOpt with
-        | Some path ->
-            let nodeOpt = form.hierarchyTreeView.TryGetNodeFromPath path
-            if notNull nodeOpt then
-                form.hierarchyTreeView.SelectedNode <- nodeOpt
-        | None -> ()
-
-    let private handleFormHierarchyTreeViewNodeSelect (form : GaiaForm) (_ : EventArgs) =
         addPreUpdater $ fun world ->
-            if notNull form.hierarchyTreeView.SelectedNode then
+            match form.entityPropertyGrid.SelectedObject with
+            | :? EntityTypeDescriptorSource as entityTds ->
+                let entity = entityTds.DescribedEntity
+                let world =
+                    if entity.GetIs2d world
+                    then World.setEyePosition2d (entity.GetCenter world).V2 world
+                    else World.setEyePosition3d (entity.GetPosition world + Constants.Engine.EyePosition3dOffset) world
+                world
+            | _ -> world
+
+    let private handleFormHierarchyTreeViewNodeSelect (form : GaiaForm) (args : TreeViewEventArgs) =
+        addPreUpdater $ fun world ->
+            if notNull form.hierarchyTreeView.SelectedNode && args.Action <> TreeViewAction.Unknown then
                 let nodeKey = form.hierarchyTreeView.SelectedNode.Name
                 if nodeKey <> Constants.Editor.GroupNodeKey then
                     let address = Address.makeFromString nodeKey
@@ -1779,15 +1792,15 @@ module Gaia =
         form.hierarchyTreeView.AllowDrop <- true // TODO: configure this in designer instead.
         form.hierarchyTreeView.Sorted <- true
         form.hierarchyTreeView.TreeViewNodeSorter <- treeViewSorter
-        form.hierarchyTreeView.NodeMouseClick.Add (fun (e : TreeNodeMouseClickEventArgs) ->
+        form.hierarchyTreeView.NodeMouseClick.Add (fun (args : TreeNodeMouseClickEventArgs) ->
             addPreUpdater $ fun world ->
-                let nodeKey = e.Node.Name
-                let address = Address.makeFromString nodeKey
-                let entity = Entity (Globals.EditorState.SelectedGroup.GroupAddress <-- atoa address)
-                if entity.Exists world then selectEntity entity form world
-                if e.Button = MouseButtons.Right then
-                    form.hierarchyContextMenuStrip.Show ()
-                form.hierarchyTreeView.SelectedNode <- e.Node
+                if args.Button = MouseButtons.Right then
+                    let nodeKey = args.Node.Name
+                    let address = Address.makeFromString nodeKey
+                    let entity = Entity (Globals.EditorState.SelectedGroup.GroupAddress <-- atoa address)
+                    if entity.Exists world then
+                        selectEntity entity form world
+                        form.hierarchyContextMenuStrip.Show ()
                 world)
 
         // set up events handlers
