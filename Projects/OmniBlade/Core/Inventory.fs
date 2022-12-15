@@ -248,4 +248,4 @@ type [<NoComparison>] Inventory =
         { Items = Map.empty; Gold = 0 }
 
     static member initial =
-        { Items = Map.singleton (Consumable GreenHerb) 1; Gold = 0 }
+        { Items = Map.singleton (Consumable GreenHerb) 3; Gold = 0 }
