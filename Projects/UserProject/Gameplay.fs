@@ -43,7 +43,10 @@ module Gameplay =
             [Screen.UpdateEvent => Update
              Screen.PostUpdateEvent => PostUpdateEye
              Screen.DeselectingEvent => FinishQuitting
-             Game.KeyboardKeyDownEvent =|> fun evt -> if evt.Data.KeyboardKey = KeyboardKey.Up && not evt.Data.Repeated then Jump else Nop]
+             Game.KeyboardKeyDownEvent =|> fun evt ->
+                 if evt.Data.KeyboardKey = KeyboardKey.Up && not evt.Data.Repeated
+                 then Jump :> Signal
+                 else Nop :> Signal]
 
         // here we handle the above messages
         override this.Message (_, message, _, _) =
