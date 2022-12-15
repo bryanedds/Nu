@@ -914,7 +914,7 @@ module Gaia =
                 else world
             else world
 
-    let private handleFormHierarchyTreeViewDoubleClick (form : GaiaForm) (args : EventArgs) =
+    let private handleFormHierarchyTreeViewDoubleClick (form : GaiaForm) (_ : EventArgs) =
         addPreUpdater $ fun world ->
             tryShowSelectedEntityInDisplay form world
 
