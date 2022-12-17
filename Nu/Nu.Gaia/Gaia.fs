@@ -191,9 +191,11 @@ module Gaia =
         | :? EntityTypeDescriptorSource as entityTds ->
             let entity = entityTds.DescribedEntity
             let world =
-                if entity.GetIs2d world
-                then World.setEyePosition2d (entity.GetCenter world).V2 world
-                else World.setEyePosition3d (entity.GetPosition world + Constants.Engine.EyePosition3dOffset) world
+                if not (entity.GetAbsolute world) then
+                    if entity.GetIs2d world
+                    then World.setEyePosition2d (entity.GetCenter world).V2 world
+                    else World.setEyePosition3d (entity.GetPosition world + Constants.Engine.EyePosition3dOffset) world
+                else world
             world
         | _ -> world
 
