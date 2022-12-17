@@ -44,9 +44,9 @@ module Gameplay =
              Screen.PostUpdateEvent => PostUpdateEye
              Screen.DeselectingEvent => FinishQuitting
              Game.KeyboardKeyDownEvent =|> fun evt ->
-                 if evt.Data.KeyboardKey = KeyboardKey.Up && not evt.Data.Repeated
-                 then Jump :> Signal
-                 else Nop :> Signal]
+                if evt.Data.KeyboardKey = KeyboardKey.Up && not evt.Data.Repeated
+                then Jump :> Signal
+                else Nop :> Signal]
 
         // here we handle the above messages
         override this.Message (_, message, _, _) =
@@ -58,7 +58,7 @@ module Gameplay =
         override this.Command (_, command, _, world) =
             match command with
             | Update ->
-                let physicsId = Simulants.GameplayPlayerCharacter.GetPhysicsId world
+                let physicsId = Simulants.GameplayScenePlayer.GetPhysicsId world
                 let world =
                     if World.isKeyboardKeyDown KeyboardKey.Left world then
                         if World.isBodyOnGround physicsId world
@@ -71,7 +71,7 @@ module Gameplay =
                     else world
                 just world
             | Jump ->
-                let physicsId = Simulants.GameplayPlayerCharacter.GetPhysicsId world
+                let physicsId = Simulants.GameplayScenePlayer.GetPhysicsId world
                 if World.isBodyOnGround physicsId world then
                     let world = World.playSound Constants.Audio.SoundVolumeDefault (asset "Gameplay" "Jump") world
                     let world = World.applyBodyForce (v3 0.0f 140000.0f 0.0f) physicsId world
@@ -79,7 +79,7 @@ module Gameplay =
                 else just world
             | PostUpdateEye ->
                 if World.getAdvancing world then
-                    let characterCenter = Simulants.GameplayPlayerCharacter.GetCenter world
+                    let characterCenter = Simulants.GameplayScenePlayer.GetCenter world
                     let world = World.setEyePosition2d characterCenter.V2 world
                     just world
                 else just world
@@ -96,12 +96,11 @@ module Gameplay =
                       Entity.Elevation == 10.0f
                       Entity.ClickEvent => StartQutting]]
 
-             // the player and scene groups while playing
+             // the scene group
              match gameplay with
              | Playing | Quitting ->
-                Content.group Simulants.GameplayPlayer.Name []
-                    [Content.sideViewCharacter Simulants.GameplayPlayerCharacter.Name
+                Content.groupFromFile Simulants.GameplayScene.Name "Assets/Gameplay/Scene.nugroup" []
+                    [Content.sideViewCharacter Simulants.GameplayScenePlayer.Name
                         [Entity.Position == v3 0.0f 0.0f 0.0f
                          Entity.Size == v3 108.0f 108.0f 0.0f]]
-                Content.groupFromFile Simulants.GameplayScene.Name "Assets/Gameplay/Scene.nugroup" [] []
              | Quit -> ()]
