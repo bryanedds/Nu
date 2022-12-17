@@ -12,55 +12,59 @@ open System
 open System.Numerics
 open Prime
 open Nu
+open Nu.Particles
 
 [<RequireQualifiedAccess>]
 module WorldBindings =
 
     let [<Literal>] BindingKeywords =
         "v2 v3 v4 v2i v3i v4i quat color get getAsStream set setAsStream update streamEvent stream bind self game toData monitor " +
-        "resolve relate selectScreen tryGetIsSelectedScreenIdling tryGetIsSelectedScreenTransitioning " +
-        "isSelectedScreenIdling isSelectedScreenTransitioning tryTransitionScreen transitionScreen " +
-        "setScreenSlide createDissolveScreenFromGroupFile6 createDissolveScreenFromGroupFile createSlideScreen6 " +
-        "createSlideScreen reloadExistingAssets tryReloadAssets getCurrentSongOpt " +
-        "getCurrentSongPosition getMasterAudioVolume getMasterSoundVolume getMasterSongVolume " +
-        "setMasterAudioVolume setMasterSoundVolume setMasterSongVolume playSong " +
-        "playSong6 playSound playSound3 fadeOutSong " +
-        "stopSong loadAudioPackage unloadAudioPackage reloadAudioAssets " +
-        "loadRenderPackageUse2d unloadRenderPackage2d reloadRenderAssets2d reloadRenderAssets3d " +
-        "localizeBodyShape bodyExists getBodyContactNormals getBodyLinearVelocity " +
-        "getBodyToGroundContactNormals getBodyToGroundContactNormalOpt getBodyToGroundContactTangentOpt isBodyOnGround " +
-        "createBody createBodies destroyBody destroyBodies " +
-        "createJoint createJoints destroyJoint destroyJoints " +
-        "setBodyEnabled setBodyPosition setBodyRotation setBodyLinearVelocity " +
-        "applyBodyLinearImpulse setBodyAngularVelocity applyBodyAngularImpulse applyBodyForce " +
-        "applyBodyTorque isMouseButtonDown getMousePosition getMousePosition2dScreen " +
-        "getMousePostion2dWorld getMousePosition3dScreen getMouseRay3dWorld isKeyboardKeyDown " +
-        "isKeyboardKeyUp isKeyboardAltDown isKeyboardAltUp isKeyboardCtrlDown " +
-        "isKeyboardCtrlUp isKeyboardShiftDown isKeyboardShiftUp destroyImmediate " +
-        "destroy tryGetParent getParent getChildren " +
-        "getExists isSelected getEntities0 getGroups0 " +
-        "writeGameToFile readGameFromFile getScreens setScreenDissolve " +
-        "destroyScreen createScreen createDissolveScreen writeScreenToFile " +
-        "readScreenFromFile getGroups createGroup destroyGroup " +
-        "destroyGroups writeGroupToFile readGroupFromFile getEntitiesFlattened " +
-        "getEntities getEntitiesSovereign destroyEntity destroyEntities " +
-        "tryPickEntity2d tryPickEntity3d writeEntityToFile readEntityFromFile " +
-        "createEntity renameEntity trySetEntityOverlayNameOpt trySetEntityFacetNames " +
-        "getEyePosition2d setEyePosition2d getEyeSize2d setEyeSize2d " +
-        "getEyeBounds2d getEyePosition3d setEyePosition3d getEyeRotation3d " +
-        "setEyeRotation3d getEyeFrustum3dEnclosed getEyeFrustum3dExposed getEyeFrustum3dImposter " +
-        "getLightBox3d getOmniScreenOpt setOmniScreenOpt getOmniScreen " +
-        "setOmniScreen constrainEyeBounds2d getSelectedScreenOpt getSelectedScreen " +
-        "setSelectedScreen getDesiredScreen setDesiredScreen getScreenTransitionDestinationOpt " +
-        "setScreenTransitionDestinationOpt getViewBounds2dAbsolute getPlayBounds2dAbsolute getViewBounds2d " +
-        "getPlayBounds2d isBoundsInView2d getPlayBounds3d isBoundsInView3d " +
-        "isBoundsInPlay3d tryGetTextureSize getTextureSize tryGetTextureSizeF " +
-        "getTextureSizeF getImperative getStandAlone getAccompanied " +
-        "getCollectionConfig getLiveness getUpdateRate setUpdateRate " +
-        "getAdvancing getHalted getUpdateTime getClockDelta " +
-        "exit tryGetWindowFlags tryGetWindowMinimized tryGetWindowMaximized " +
-        "tryGetWindowFullScreen trySetWindowFullScreen tryGetWindowSize getWindowSize " +
-        "getViewport getViewportOffset shouldSleep reloadSymbols"
+        "resolve relate selectScreen tryGetIsSelectedScreenIdling " +
+        "tryGetIsSelectedScreenTransitioning isSelectedScreenIdling isSelectedScreenTransitioning tryTransitionScreen " +
+        "transitionScreen setScreenSlide createDissolveScreenFromGroupFile6 createDissolveScreenFromGroupFile " +
+        "createSlideScreen6 createSlideScreen reloadExistingAssets tryReloadAssets " +
+        "getCurrentSongOpt getCurrentSongPosition getMasterAudioVolume getMasterSoundVolume " +
+        "getMasterSongVolume setMasterAudioVolume setMasterSoundVolume setMasterSongVolume " +
+        "playSong playSong6 playSound playSound3 " +
+        "fadeOutSong stopSong loadAudioPackage unloadAudioPackage " +
+        "reloadAudioAssets loadRenderPackageUse2d unloadRenderPackage2d reloadRenderAssets2d " +
+        "reloadRenderAssets3d localizeBodyShape bodyExists getBodyContactNormals " +
+        "getBodyLinearVelocity getBodyToGroundContactNormals getBodyToGroundContactNormalOpt getBodyToGroundContactTangentOpt " +
+        "isBodyOnGround createBody createBodies destroyBody " +
+        "destroyBodies createJoint createJoints destroyJoint " +
+        "destroyJoints setBodyEnabled setBodyPosition setBodyRotation " +
+        "setBodyLinearVelocity applyBodyLinearImpulse setBodyAngularVelocity applyBodyAngularImpulse " +
+        "applyBodyForce applyBodyTorque isMouseButtonDown getMousePosition " +
+        "getMousePosition2dScreen getMousePostion2dWorld getMousePosition3dScreen getMouseRay3dWorld " +
+        "isKeyboardKeyDown isKeyboardKeyUp isKeyboardAltDown isKeyboardAltUp " +
+        "isKeyboardCtrlDown isKeyboardCtrlUp isKeyboardShiftDown isKeyboardShiftUp " +
+        "destroyImmediate destroy tryGetParent getParent " +
+        "getChildren getExists isSelected getEntities0 " +
+        "getGroups0 writeGameToFile readGameFromFile getScreens " +
+        "setScreenDissolve destroyScreen createScreen createDissolveScreen " +
+        "writeScreenToFile readScreenFromFile getGroups createGroup " +
+        "destroyGroup destroyGroups writeGroupToFile readGroupFromFile " +
+        "getEntitiesFlattened getEntities getEntitiesSovereign destroyEntity " +
+        "destroyEntities tryPickEntity2d tryPickEntity3d writeEntityToFile " +
+        "readEntityFromFile createEntity renameEntity trySetEntityOverlayNameOpt " +
+        "trySetEntityFacetNames getEyePosition2d setEyePosition2d getEyeSize2d " +
+        "setEyeSize2d getEyeBounds2d getEyePosition3d setEyePosition3d " +
+        "getEyeRotation3d setEyeRotation3d getEyeFrustum3dEnclosed getEyeFrustum3dExposed " +
+        "getEyeFrustum3dImposter getLightBox3d getOmniScreenOpt setOmniScreenOpt " +
+        "getOmniScreen setOmniScreen constrainEyeBounds2d getSelectedScreenOpt " +
+        "getSelectedScreen setSelectedScreen getDesiredScreen setDesiredScreen " +
+        "getScreenTransitionDestinationOpt setScreenTransitionDestinationOpt getViewBounds2dAbsolute getPlayBounds2dAbsolute " +
+        "getViewBounds2d getPlayBounds2d isBoundsInView2d getPlayBounds3d " +
+        "isBoundsInView3d isBoundsInPlay3d getEventFilter setEventFilter " +
+        "trySetEditMode tryMakeEmitter tryGetTextureSize getTextureSize " +
+        "tryGetTextureSizeF getTextureSizeF getImperative getStandAlone " +
+        "getAccompanied getCollectionConfig getLiveness getUpdateRate " +
+        "setUpdateRate getAdvancing getHalted getUpdateTime " +
+        "getClockTime getClockDelta exit tryGetWindowFlags " +
+        "tryGetWindowMinimized tryGetWindowMaximized tryGetWindowFullScreen trySetWindowFullScreen " +
+        "tryGetWindowSize getWindowSize getViewport getViewportOffset " +
+        "shouldSleep tryLoadSymbolPackage unloadSymbolPackage tryGetSymbol " +
+        "tryGetSymbols reloadSymbols getOverlays tryGetRoutedOverlayNameOpt"
 
     let resolve relation world =
         let oldWorld = world
@@ -2560,6 +2564,78 @@ module WorldBindings =
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'isBoundsInPlay3d' due to: " + scstring exn, ValueNone)
             struct (violation, World.choose oldWorld)
 
+    let getEventFilter world =
+        let oldWorld = world
+        try
+            let result = World.getEventFilter world
+            let value = result
+            let value = ScriptingSystem.tryImport typeof<EventFilter.Filter> value world |> Option.get
+            struct (value, world)
+        with exn ->
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getEventFilter' due to: " + scstring exn, ValueNone)
+            struct (violation, World.choose oldWorld)
+
+    let setEventFilter filter world =
+        let oldWorld = world
+        try
+            let filter =
+                match ScriptingSystem.tryExport typeof<EventFilter.Filter> filter world with
+                | Some value -> value :?> EventFilter.Filter
+                | None -> failwith "Invalid argument type for 'filter'; expecting a value convertable to Filter."
+            let result = World.setEventFilter filter world
+            struct (Scripting.Unit, result)
+        with exn ->
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'setEventFilter' due to: " + scstring exn, ValueNone)
+            struct (violation, World.choose oldWorld)
+
+    let trySetEditMode editMode world =
+        let oldWorld = world
+        try
+            let editMode =
+                match ScriptingSystem.tryExport typeof<String> editMode world with
+                | Some value -> value :?> String
+                | None -> failwith "Invalid argument type for 'editMode'; expecting a value convertable to String."
+            let result = World.trySetEditMode editMode world
+            struct (Scripting.Unit, result)
+        with exn ->
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'trySetEditMode' due to: " + scstring exn, ValueNone)
+            struct (violation, World.choose oldWorld)
+
+    let tryMakeEmitter time lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax emitterStyle world =
+        let oldWorld = world
+        try
+            let time =
+                match ScriptingSystem.tryExport typeof<Int64> time world with
+                | Some value -> value :?> Int64
+                | None -> failwith "Invalid argument type for 'time'; expecting a value convertable to Int64."
+            let lifeTimeOpt =
+                match ScriptingSystem.tryExport typeof<Int64> lifeTimeOpt world with
+                | Some value -> value :?> Int64
+                | None -> failwith "Invalid argument type for 'lifeTimeOpt'; expecting a value convertable to Int64."
+            let particleLifeTimeMaxOpt =
+                match ScriptingSystem.tryExport typeof<Int64> particleLifeTimeMaxOpt world with
+                | Some value -> value :?> Int64
+                | None -> failwith "Invalid argument type for 'particleLifeTimeMaxOpt'; expecting a value convertable to Int64."
+            let particleRate =
+                match ScriptingSystem.tryExport typeof<Single> particleRate world with
+                | Some value -> value :?> Single
+                | None -> failwith "Invalid argument type for 'particleRate'; expecting a value convertable to Single."
+            let particleMax =
+                match ScriptingSystem.tryExport typeof<Int32> particleMax world with
+                | Some value -> value :?> Int32
+                | None -> failwith "Invalid argument type for 'particleMax'; expecting a value convertable to Int32."
+            let emitterStyle =
+                match ScriptingSystem.tryExport typeof<String> emitterStyle world with
+                | Some value -> value :?> String
+                | None -> failwith "Invalid argument type for 'emitterStyle'; expecting a value convertable to String."
+            let result = World.tryMakeEmitter time lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax emitterStyle world
+            let value = result
+            let value = ScriptingSystem.tryImport typeof<FSharpOption<Emitter>> value world |> Option.get
+            struct (value, world)
+        with exn ->
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'tryMakeEmitter' due to: " + scstring exn, ValueNone)
+            struct (violation, World.choose oldWorld)
+
     let tryGetTextureSize assetTag world =
         let oldWorld = world
         try
@@ -2732,6 +2808,17 @@ module WorldBindings =
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getUpdateTime' due to: " + scstring exn, ValueNone)
             struct (violation, World.choose oldWorld)
 
+    let getClockTime world =
+        let oldWorld = world
+        try
+            let result = World.getClockTime world
+            let value = result
+            let value = ScriptingSystem.tryImport typeof<DateTimeOffset> value world |> Option.get
+            struct (value, world)
+        with exn ->
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getClockTime' due to: " + scstring exn, ValueNone)
+            struct (violation, World.choose oldWorld)
+
     let getClockDelta world =
         let oldWorld = world
         try
@@ -2864,6 +2951,87 @@ module WorldBindings =
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'shouldSleep' due to: " + scstring exn, ValueNone)
             struct (violation, World.choose oldWorld)
 
+    let tryLoadSymbolPackage implicitDelimiters packageName world =
+        let oldWorld = world
+        try
+            let implicitDelimiters =
+                match ScriptingSystem.tryExport typeof<String> implicitDelimiters world with
+                | Some value -> value :?> String
+                | None -> failwith "Invalid argument type for 'implicitDelimiters'; expecting a value convertable to String."
+            let packageName =
+                match ScriptingSystem.tryExport typeof<SymbolLoadMetadata> packageName world with
+                | Some value -> value :?> SymbolLoadMetadata
+                | None -> failwith "Invalid argument type for 'packageName'; expecting a value convertable to SymbolLoadMetadata."
+            let result = World.tryLoadSymbolPackage implicitDelimiters packageName world
+            let value = result
+            let value = ScriptingSystem.tryImport typeof<Void> value world |> Option.get
+            struct (value, world)
+        with exn ->
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'tryLoadSymbolPackage' due to: " + scstring exn, ValueNone)
+            struct (violation, World.choose oldWorld)
+
+    let unloadSymbolPackage packageName world =
+        let oldWorld = world
+        try
+            let packageName =
+                match ScriptingSystem.tryExport typeof<String> packageName world with
+                | Some value -> value :?> String
+                | None -> failwith "Invalid argument type for 'packageName'; expecting a value convertable to String."
+            let result = World.unloadSymbolPackage packageName world
+            let value = result
+            let value = ScriptingSystem.tryImport typeof<Void> value world |> Option.get
+            struct (value, world)
+        with exn ->
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'unloadSymbolPackage' due to: " + scstring exn, ValueNone)
+            struct (violation, World.choose oldWorld)
+
+    let tryGetSymbol assetTag metadata world =
+        let oldWorld = world
+        try
+            let assetTag =
+                match ScriptingSystem.tryExport typeof<AssetTag<Symbol>> assetTag world with
+                | Some value -> value :?> AssetTag<Symbol>
+                | None -> failwith "Invalid argument type for 'assetTag'; expecting a value convertable to AssetTag`1."
+            let metadata =
+                match ScriptingSystem.tryExport typeof<SymbolLoadMetadata> metadata world with
+                | Some value -> value :?> SymbolLoadMetadata
+                | None -> failwith "Invalid argument type for 'metadata'; expecting a value convertable to SymbolLoadMetadata."
+            let result = World.tryGetSymbol assetTag metadata world
+            let value = result
+            let value = ScriptingSystem.tryImport typeof<FSharpOption<Symbol>> value world |> Option.get
+            struct (value, world)
+        with exn ->
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'tryGetSymbol' due to: " + scstring exn, ValueNone)
+            struct (violation, World.choose oldWorld)
+
+    let tryGetSymbols implicitDelimiters assetTags world =
+        let oldWorld = world
+        try
+            let implicitDelimiters =
+                match ScriptingSystem.tryExport typeof<AssetTag<Symbol>> implicitDelimiters world with
+                | Some value -> value :?> AssetTag<Symbol>
+                | None -> failwith "Invalid argument type for 'implicitDelimiters'; expecting a value convertable to AssetTag`1."
+            let struct (assetTags, world) =
+                match World.evalInternal assetTags world with
+                | struct (Scripting.List list, world) ->
+                    Seq.fold (fun struct (values, world) value ->
+                        let value =
+                            match ScriptingSystem.tryExport typeof<SymbolLoadMetadata> value world with
+                            | Some value -> value :?> SymbolLoadMetadata
+                            | None -> failwith "Invalid argument type for 'assetTags'; expecting a value convertable to SymbolLoadMetadata."
+                        struct (value :: values, world))
+                        struct ([], world)
+                        list
+                | struct (Scripting.Violation (_, error, _), _) -> failwith error
+                | struct (_, _) -> failwith "Relation must be either a String or Keyword."
+            let result = World.tryGetSymbols implicitDelimiters assetTags world
+            let value = result
+            let value = ScriptingSystem.tryImport typeof<FSharpList<Symbol>> value world |> Option.get
+            struct (value, world)
+        with exn ->
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'tryGetSymbols' due to: " + scstring exn, ValueNone)
+            struct (violation, World.choose oldWorld)
+
     let reloadSymbols world =
         let oldWorld = world
         try
@@ -2871,6 +3039,32 @@ module WorldBindings =
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'reloadSymbols' due to: " + scstring exn, ValueNone)
+            struct (violation, World.choose oldWorld)
+
+    let getOverlays world =
+        let oldWorld = world
+        try
+            let result = World.getOverlays world
+            let value = result
+            let value = ScriptingSystem.tryImport typeof<FSharpMap<String, Overlay>> value world |> Option.get
+            struct (value, world)
+        with exn ->
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getOverlays' due to: " + scstring exn, ValueNone)
+            struct (violation, World.choose oldWorld)
+
+    let tryGetRoutedOverlayNameOpt dispatcherName world =
+        let oldWorld = world
+        try
+            let dispatcherName =
+                match ScriptingSystem.tryExport typeof<String> dispatcherName world with
+                | Some value -> value :?> String
+                | None -> failwith "Invalid argument type for 'dispatcherName'; expecting a value convertable to String."
+            let result = World.tryGetRoutedOverlayNameOpt dispatcherName world
+            let value = result
+            let value = ScriptingSystem.tryImport typeof<FSharpOption<String>> value world |> Option.get
+            struct (value, world)
+        with exn ->
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'tryGetRoutedOverlayNameOpt' due to: " + scstring exn, ValueNone)
             struct (violation, World.choose oldWorld)
 
     let evalResolveBinding fnName exprs originOpt world =
@@ -4479,6 +4673,50 @@ module WorldBindings =
                 struct (violation, world)
         | Some violation -> struct (violation, world)
 
+    let evalGetEventFilterBinding fnName exprs originOpt world =
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [||] -> getEventFilter world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
+
+    let evalSetEventFilterBinding fnName exprs originOpt world =
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|filter|] -> setEventFilter filter world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
+
+    let evalTrySetEditModeBinding fnName exprs originOpt world =
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|editMode|] -> trySetEditMode editMode world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
+
+    let evalTryMakeEmitterBinding fnName exprs originOpt world =
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|time; lifeTimeOpt; particleLifeTimeMaxOpt; particleRate; particleMax; emitterStyle|] -> tryMakeEmitter time lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax emitterStyle world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
+
     let evalTryGetTextureSizeBinding fnName exprs originOpt world =
         let struct (evaleds, world) = World.evalManyInternal exprs world
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
@@ -4633,6 +4871,17 @@ module WorldBindings =
                 struct (violation, world)
         | Some violation -> struct (violation, world)
 
+    let evalGetClockTimeBinding fnName exprs originOpt world =
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [||] -> getClockTime world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
+
     let evalGetClockDeltaBinding fnName exprs originOpt world =
         let struct (evaleds, world) = World.evalManyInternal exprs world
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
@@ -4765,12 +5014,78 @@ module WorldBindings =
                 struct (violation, world)
         | Some violation -> struct (violation, world)
 
+    let evalTryLoadSymbolPackageBinding fnName exprs originOpt world =
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|implicitDelimiters; packageName|] -> tryLoadSymbolPackage implicitDelimiters packageName world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
+
+    let evalUnloadSymbolPackageBinding fnName exprs originOpt world =
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|packageName|] -> unloadSymbolPackage packageName world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
+
+    let evalTryGetSymbolBinding fnName exprs originOpt world =
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|assetTag; metadata|] -> tryGetSymbol assetTag metadata world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
+
+    let evalTryGetSymbolsBinding fnName exprs originOpt world =
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|implicitDelimiters; assetTags|] -> tryGetSymbols implicitDelimiters assetTags world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
+
     let evalReloadSymbolsBinding fnName exprs originOpt world =
         let struct (evaleds, world) = World.evalManyInternal exprs world
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
             | [||] -> reloadSymbols world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
+
+    let evalGetOverlaysBinding fnName exprs originOpt world =
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [||] -> getOverlays world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
+
+    let evalTryGetRoutedOverlayNameOptBinding fnName exprs originOpt world =
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|dispatcherName|] -> tryGetRoutedOverlayNameOpt dispatcherName world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
                 struct (violation, world)
@@ -4930,6 +5245,10 @@ module WorldBindings =
              ("getPlayBounds3d", { Fn = evalGetPlayBounds3dBinding; Pars = [||]; DocOpt = None })
              ("isBoundsInView3d", { Fn = evalIsBoundsInView3dBinding; Pars = [|"light"; "presence"; "bounds"|]; DocOpt = None })
              ("isBoundsInPlay3d", { Fn = evalIsBoundsInPlay3dBinding; Pars = [|"bounds"|]; DocOpt = None })
+             ("getEventFilter", { Fn = evalGetEventFilterBinding; Pars = [||]; DocOpt = None })
+             ("setEventFilter", { Fn = evalSetEventFilterBinding; Pars = [|"filter"|]; DocOpt = None })
+             ("trySetEditMode", { Fn = evalTrySetEditModeBinding; Pars = [|"editMode"|]; DocOpt = None })
+             ("tryMakeEmitter", { Fn = evalTryMakeEmitterBinding; Pars = [|"time"; "lifeTimeOpt"; "particleLifeTimeMaxOpt"; "particleRate"; "particleMax"; "emitterStyle"|]; DocOpt = None })
              ("tryGetTextureSize", { Fn = evalTryGetTextureSizeBinding; Pars = [|"assetTag"|]; DocOpt = None })
              ("getTextureSize", { Fn = evalGetTextureSizeBinding; Pars = [|"assetTag"|]; DocOpt = None })
              ("tryGetTextureSizeF", { Fn = evalTryGetTextureSizeFBinding; Pars = [|"assetTag"|]; DocOpt = None })
@@ -4944,6 +5263,7 @@ module WorldBindings =
              ("getAdvancing", { Fn = evalGetAdvancingBinding; Pars = [||]; DocOpt = None })
              ("getHalted", { Fn = evalGetHaltedBinding; Pars = [||]; DocOpt = None })
              ("getUpdateTime", { Fn = evalGetUpdateTimeBinding; Pars = [||]; DocOpt = None })
+             ("getClockTime", { Fn = evalGetClockTimeBinding; Pars = [||]; DocOpt = None })
              ("getClockDelta", { Fn = evalGetClockDeltaBinding; Pars = [||]; DocOpt = None })
              ("exit", { Fn = evalExitBinding; Pars = [||]; DocOpt = None })
              ("tryGetWindowFlags", { Fn = evalTryGetWindowFlagsBinding; Pars = [||]; DocOpt = None })
@@ -4956,7 +5276,13 @@ module WorldBindings =
              ("getViewport", { Fn = evalGetViewportBinding; Pars = [||]; DocOpt = None })
              ("getViewportOffset", { Fn = evalGetViewportOffsetBinding; Pars = [||]; DocOpt = None })
              ("shouldSleep", { Fn = evalShouldSleepBinding; Pars = [||]; DocOpt = None })
+             ("tryLoadSymbolPackage", { Fn = evalTryLoadSymbolPackageBinding; Pars = [|"implicitDelimiters"; "packageName"|]; DocOpt = None })
+             ("unloadSymbolPackage", { Fn = evalUnloadSymbolPackageBinding; Pars = [|"packageName"|]; DocOpt = None })
+             ("tryGetSymbol", { Fn = evalTryGetSymbolBinding; Pars = [|"assetTag"; "metadata"|]; DocOpt = None })
+             ("tryGetSymbols", { Fn = evalTryGetSymbolsBinding; Pars = [|"implicitDelimiters"; "assetTags"|]; DocOpt = None })
              ("reloadSymbols", { Fn = evalReloadSymbolsBinding; Pars = [||]; DocOpt = None })
+             ("getOverlays", { Fn = evalGetOverlaysBinding; Pars = [||]; DocOpt = None })
+             ("tryGetRoutedOverlayNameOpt", { Fn = evalTryGetRoutedOverlayNameOptBinding; Pars = [|"dispatcherName"|]; DocOpt = None })
             ] |>
             dictPlus StringComparer.Ordinal
         WorldScripting.Bindings <- bindings

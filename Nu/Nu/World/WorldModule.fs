@@ -291,6 +291,8 @@ module WorldModule =
 
         /// Get the world's clock time.
         /// No script function binding due to lack of a DateTimeOffset script conversion.
+        /// TODO: P1: implement DateTimeOffset symbolic conversion in Prime.
+        [<FunctionBinding>]
         static member getClockTime world =
             World.getAmbientStateBy AmbientState.getClockTime world
 
@@ -439,19 +441,23 @@ module WorldModule =
             World.updateAmbientState (AmbientState.updateSymbolics updater) world
 
         /// Try to load a symbol package with the given name.
+        [<FunctionBinding>]
         static member tryLoadSymbolPackage implicitDelimiters packageName world =
             World.getSymbolicsBy (Symbolics.tryLoadSymbolPackage implicitDelimiters packageName) world
 
         /// Unload a symbol package with the given name.
+        [<FunctionBinding>]
         static member unloadSymbolPackage packageName world =
             World.getSymbolicsBy (Symbolics.unloadSymbolPackage packageName) world
 
         /// Try to find a symbol with the given asset tag.
+        [<FunctionBinding>]
         static member tryGetSymbol assetTag metadata world =
             let symbolics = World.getSymbolics world
             Symbolics.tryGetSymbol assetTag metadata symbolics
 
         /// Try to find symbols with the given asset tags.
+        [<FunctionBinding>]
         static member tryGetSymbols implicitDelimiters assetTags world =
             let symbolics = World.getSymbolics world
             Symbolics.tryGetSymbols implicitDelimiters assetTags symbolics
@@ -473,8 +479,14 @@ module WorldModule =
             World.updateAmbientState (AmbientState.setOverlayer overlayer) world
 
         /// Get overlays.
+        [<FunctionBinding>]
         static member getOverlays world =
             World.getOverlayerBy Overlayer.getOverlays world
+
+        /// Attempt to get the given dispatcher's routed overlay name.
+        [<FunctionBinding>]
+        static member tryGetRoutedOverlayNameOpt dispatcherName world =
+            World.getOverlayRouterBy (OverlayRouter.tryGetOverlayNameOpt dispatcherName) world
 
         static member internal getOverlayRouter world =
             World.getAmbientStateBy AmbientState.getOverlayRouter world
@@ -485,9 +497,6 @@ module WorldModule =
 
         static member internal setOverlayRouter router world =
             World.updateAmbientState (AmbientState.setOverlayRouter router) world
-
-        static member internal tryGetRoutedOverlayNameOpt dispatcherName state =
-            World.getOverlayRouterBy (OverlayRouter.tryGetOverlayNameOpt dispatcherName) state
 
     type World with // Quadtree
 
@@ -568,10 +577,12 @@ module WorldModule =
             World.choose (EventSystem.setEventTracerOpt tracerOpt world)
 
         /// Get the state of the event filter.
+        [<FunctionBinding>]
         static member getEventFilter (world : World) =
             EventSystem.getEventFilter world
 
         /// Set the state of the event filter.
+        [<FunctionBinding>]
         static member setEventFilter filter (world : World) =
             World.choose (EventSystem.setEventFilter filter world)
 
@@ -714,7 +725,15 @@ module WorldModule =
         static member getEditModes world =
             world.WorldExtension.Plugin.EditModes
 
+        /// Attempt to set the edit mode.
+        [<FunctionBinding>]
+        static member trySetEditMode editMode world =
+            match (World.getEditModes world).TryGetValue editMode with
+            | (true, callback) -> callback world
+            | (false, _) -> world
+
         /// Attempt to make an emitter with the given parameters.
+        [<FunctionBinding>]
         static member tryMakeEmitter time lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax emitterStyle world =
             world.WorldExtension.Plugin.TryMakeEmitter time lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax emitterStyle
 

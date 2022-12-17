@@ -359,7 +359,9 @@ let generateBindingsCode bindings =
         "open System\n" +
         "open System.Numerics\n" +
         "open Prime\n" +
+        "open Prime.EventFilter\n" +
         "open Nu\n" +
+        "open Nu.Particles\n" +
         "\n" +
         "[<RequireQualifiedAccess>]\n" +
         "module WorldBindings =\n" +
