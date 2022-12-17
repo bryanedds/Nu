@@ -90,11 +90,11 @@ module Gameplay =
 
             [// the gui group
              Content.group Simulants.GameplayGui.Name []
-                 [Content.button Simulants.GameplayGuiQuit.Name
-                     [Entity.Text == "Quit"
-                      Entity.Position == v3 260.0f -260.0f 0.0f
-                      Entity.Elevation == 10.0f
-                      Entity.ClickEvent => StartQutting]]
+                [Content.button Simulants.GameplayGuiQuit.Name
+                    [Entity.Text == "Quit"
+                     Entity.Position == v3 260.0f -260.0f 0.0f
+                     Entity.Elevation == 10.0f
+                     Entity.ClickEvent => StartQutting]]
 
              // the scene group
              match gameplay with
