@@ -89,6 +89,10 @@
     <None Include="Assets\Default\Effect2.nueffect" />
     <None Include="Assets\Default\EnvironmentFilter.glsl" />
     <None Include="Assets\Default\FreeMonoBold.024.ttf" />
+    <None Include="Assets\Default\Highlight.png" />
+    <None Include="Assets\Default\HighlightModel.mtl" />
+    <None Include="Assets\Default\HighlightModel.obj" />
+    <None Include="Assets\Default\HighlightModelAlbedo.png" />
     <None Include="Assets\Default\Image.bmp" />
     <None Include="Assets\Default\Image2.bmp" />
     <None Include="Assets\Default\Image3.bmp" />

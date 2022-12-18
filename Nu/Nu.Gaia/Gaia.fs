@@ -1705,8 +1705,7 @@ module Gaia =
             if not (String.IsNullOrWhiteSpace filePathOpt) then
                 let filePath = filePathOpt
                 try let dirName = Path.GetDirectoryName filePath
-                    try
-                        Directory.SetCurrentDirectory dirName
+                    try Directory.SetCurrentDirectory dirName
                         let assembly = Assembly.Load (File.ReadAllBytes filePath)
                         Some (dirName, assembly.GetTypes ())
                     with _ ->
@@ -1727,8 +1726,8 @@ module Gaia =
         let savedState =
             try if File.Exists Constants.Editor.SavedStateFilePath
                 then scvalue (File.ReadAllText Constants.Editor.SavedStateFilePath)
-                else { BinaryFilePath = ""; EditModeOpt = None; UseImperativeExecution = false }
-            with _ -> { BinaryFilePath = ""; EditModeOpt = None; UseImperativeExecution = false }
+                else SavedState.defaultState
+            with _ -> SavedState.defaultState
         let savedStateDirectory = Directory.GetCurrentDirectory ()
         use startForm = new StartForm ()
         startForm.binaryFilePathText.TextChanged.Add (fun _ ->
@@ -1768,7 +1767,9 @@ module Gaia =
                         Log.trace ("Invalid Nu Assembly: " + startForm.binaryFilePathText.Text)
                     (".", NuPlugin ())
             (savedState, targetDir, plugin)
-        else (savedState, ".", NuPlugin ())
+        else
+            Directory.SetCurrentDirectory savedStateDirectory
+            (SavedState.defaultState, ".", NuPlugin ())
 
     /// Create a Gaia form.
     let createForm () =
