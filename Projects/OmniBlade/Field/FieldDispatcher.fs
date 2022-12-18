@@ -767,7 +767,7 @@ module FieldDispatcher =
                     (match field.DialogOpt with Some dialog -> Some dialog | None -> None)
 
                  // menu
-                 match field.Menu.MenuState with // TODO: DIFF: memoize?
+                 match field.Menu.MenuState with
                  | MenuTeam menuTeam ->
 
                     // team
@@ -924,7 +924,7 @@ module FieldDispatcher =
                  | None -> ()
 
                  // shop
-                 match field.ShopOpt with // TODO: DIFF: memoize?
+                 match field.ShopOpt with
                  | Some shop ->
                     let items = Content.pageItems 8 field
                     Content.panel "Shop"

@@ -43,7 +43,7 @@ module RingMenuDispatcher =
                 Map.ofSeqBy (fun (k, (v, v2)) -> (v, (k, v2))) |>
                 Map.toSeqBy (fun _ (v, v2) -> (v, (i <- inc i; i, v2))) |>
                 Map.ofSeq
-            let items = Map.map (constant (Triple.insert (Map.count items))) items // TODO: DIFF: memoize?
+            let items = Map.map (constant (Triple.insert (Map.count items))) items
             [for (itemName, (itemIndex, itemCount, itemEnabled)) in items.Pairs do
                 let buttonSize = v3 48.0f 48.0f 0.0f
                 Content.button (scstring itemName)
