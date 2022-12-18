@@ -141,7 +141,7 @@
         [empty ctr]
         ctr]]
 
-; Filter for elements that satifsy the given predicate.
+; Filter for elements that satisfy the given predicate.
 [define filter [pred ctr]
     [foldBack
         [fun [elems elem] [if [pred elem] [cons elem elems] elems]]
