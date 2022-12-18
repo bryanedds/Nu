@@ -39,6 +39,10 @@ type SavedState =
     { BinaryFilePath : string
       EditModeOpt : string option
       UseImperativeExecution : bool }
+    static member defaultState =
+        { BinaryFilePath = ""
+          EditModeOpt = None
+          UseImperativeExecution = false }
 
 /// Globals needed to sync Nu with WinForms.
 [<RequireQualifiedAccess>]
