@@ -39,7 +39,7 @@ module Nu =
             // init math module
             Math.init ()
 
-            // init OpenGL assert-ness
+            // init OpenGL assertiveness
             OpenGL.Hl.InitAssert
 #if DEBUG
                 nuConfig.StandAlone
@@ -212,10 +212,12 @@ module Nu =
                 struct (evaleds, world)
 
             // TODO: P1: implement!
-            WorldModule.addSimulantScriptUnsubscription <- fun _ _ _ -> failwithnie ()
+            WorldModule.addSimulantScriptUnsubscription <- fun _ _ _ ->
+                failwithnie ()
 
             // TODO: P1: implement!
-            WorldModule.unsubscribeSimulantScripts <- fun _ _ -> failwithnie ()
+            WorldModule.unsubscribeSimulantScripts <- fun _ _ ->
+                failwithnie ()
 
             // init isSelected F# reach-around
             WorldModule.isSelected <- fun simulant world ->
@@ -333,8 +335,8 @@ module Nu =
             WorldModule.destroy <- fun simulant world -> World.destroy simulant world
 
             // init scripting
-            World.initScripting ()
-            WorldBindings.initBindings ()
+            WorldScripting.init ()
+            WorldBindings.init ()
 
             // init vsync
             Vsync.Init nuConfig.RunSynchronously

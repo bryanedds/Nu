@@ -321,7 +321,7 @@ let generateInitBindings bindings =
             "             (\"" + name + "\", { Fn = eval" + nameCap + "Binding; Pars = [|" + pars + "|]; DocOpt = None })\n") |>
         fun dispatchers -> String.Join ("", dispatchers)
 
-    "    let initBindings () =\n" +
+    "    let init () =\n" +
     "        let bindings =\n" +
     "            [\n" +
     bindingDispatchers +

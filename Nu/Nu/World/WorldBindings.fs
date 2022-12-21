@@ -5096,7 +5096,7 @@ module WorldBindings =
         | (true, binding) -> Some binding
         | (false, _) -> None
 
-    let initBindings () =
+    let init () =
         let bindings =
             [
              ("resolve", { Fn = evalResolveBinding; Pars = [|"relation"|]; DocOpt = None })
