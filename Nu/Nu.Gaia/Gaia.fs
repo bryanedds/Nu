@@ -23,7 +23,7 @@ open Nu.Gaia.Design
 [<RequireQualifiedAccess>]
 module Gaia =
 
-    // global variables since Gaia is based on Globals to interoperate Nu and WinForms.
+    // uses global variables for state because Gaia relies on Nu.Gaia.Globals to interoperate Nu and WinForms.
     let mutable private propertyPickButtonClickHandler = EventHandler (fun _ _ -> ())
     let mutable private refreshHierarchyViewRequested = false // HACK: make sure hierarchy view isn't updated more than once per frame.
     let mutable private rightClickPosition = v2Zero
