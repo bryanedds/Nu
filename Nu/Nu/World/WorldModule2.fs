@@ -1100,12 +1100,12 @@ module WorldModule2 =
             let result =
                 try let world = World.runWithoutCleanUp runWhile id id id sdlDeps liveness true world
                     World.cleanUp world
-                    Constants.Engine.SuccessExitCode
+                    Constants.Engine.ExitCodeSuccess
                 with exn ->
                     let world = World.choose world
                     Log.trace (scstring exn)
                     World.cleanUp world
-                    Constants.Engine.FailureExitCode
+                    Constants.Engine.ExitCodeFailure
 #if MULTITHREAD_RUN_LOOP
             // stops background threads
             Environment.Exit result

@@ -686,5 +686,5 @@ module WorldModule3 =
                 use sdlDeps = sdlDeps // bind explicitly to dispose automatically
                 match World.tryMake sdlDeps worldConfig plugin with
                 | Right world -> World.run4 tautology sdlDeps Live world
-                | Left error -> Log.trace error; Constants.Engine.FailureExitCode
-            | Left error -> Log.trace error; Constants.Engine.FailureExitCode
+                | Left error -> Log.trace error; Constants.Engine.ExitCodeFailure
+            | Left error -> Log.trace error; Constants.Engine.ExitCodeFailure

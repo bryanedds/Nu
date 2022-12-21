@@ -1676,7 +1676,7 @@ module Gaia =
         | None -> None
 
     /// Select a target directory for the desired plugin and its assets.
-    let selectTargetDirAndMakeNuPlugin () =
+    let selectNuPlugin () =
         let savedState =
             try if File.Exists Constants.Editor.SavedStateFilePath
                 then scvalue (File.ReadAllText Constants.Editor.SavedStateFilePath)
@@ -1957,7 +1957,7 @@ module Gaia =
 
     /// Run Gaia.
     let run nuConfig =
-        let (savedState, targetDir', plugin) = selectTargetDirAndMakeNuPlugin ()
+        let (savedState, targetDir', plugin) = selectNuPlugin ()
         use form = createForm ()
         match tryMakeSdlDeps form with
         | Right (sdlConfig, sdlDeps) ->
@@ -1975,6 +1975,6 @@ module Gaia =
                 selectedScreen <- screen
                 selectedGroup <- Nu.World.getGroups screen world |> Seq.head
                 let _ = run5 tautology savedState.EditModeOpt sdlDeps screen form
-                Constants.Engine.SuccessExitCode
-            | Left error -> failwith error
-        | Left error -> failwith error
+                Constants.Engine.ExitCodeSuccess
+            | Left error -> Log.trace error; Constants.Engine.ExitCodeFailure
+        | Left error -> Log.trace error; Constants.Engine.ExitCodeFailure
