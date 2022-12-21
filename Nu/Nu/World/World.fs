@@ -415,6 +415,63 @@ module WorldModule3 =
                  StaticModelSurfaceFacet () :> Facet
                  StaticModelFacet () :> Facet]
 
+        /// Update late bindings internally stored by the engine from types found in the given assemblies.
+        static member updateLateBindings (assemblies : Assembly array) world =
+            Content.UpdateLateBindingsCount <- inc Content.UpdateLateBindingsCount
+            World.clearClipboard world // HACK: clear what's on the clipboard rather than changing its dispatcher instance.
+            let pluginType =
+                assemblies |>
+                Array.map (fun assembly -> assembly.GetTypes ()) |>
+                Array.concat |>
+                Array.filter (fun ty -> ty.IsSubclassOf typeof<NuPlugin>) |>
+                Array.filter (fun ty -> not ty.IsAbstract) |>
+                Array.filter (fun ty -> ty.GetConstructors () |> Seq.exists (fun ctor -> ctor.GetParameters().Length = 0)) |>
+                Array.head
+            let plugin = Activator.CreateInstance pluginType :?> NuPlugin
+            let pluginFacets = plugin.Birth<Facet> assemblies
+            let pluginEntityDispatchers = plugin.Birth<EntityDispatcher> assemblies
+            let pluginGroupDispatchers = plugin.Birth<GroupDispatcher> assemblies
+            let pluginScreenDispatchers = plugin.Birth<ScreenDispatcher> assemblies
+            let pluginGameDispatchers = plugin.Birth<GameDispatcher> assemblies
+            let world =
+                { world with WorldExtension = { world.WorldExtension with Plugin = plugin }}
+            let world =
+                Array.fold (fun world (facetName, facet) ->
+                    { world with WorldExtension = { world.WorldExtension with Dispatchers = { world.WorldExtension.Dispatchers with Facets = Map.add facetName facet world.WorldExtension.Dispatchers.Facets }}})
+                    world pluginFacets
+            let world =
+                Array.fold (fun world (entityDispatcherName, entityDispatcher) ->
+                    { world with WorldExtension = { world.WorldExtension with Dispatchers = { world.WorldExtension.Dispatchers with EntityDispatchers = Map.add entityDispatcherName entityDispatcher world.WorldExtension.Dispatchers.EntityDispatchers }}})
+                    world pluginEntityDispatchers
+            let world =
+                Array.fold (fun world (groupDispatcherName, groupDispatcher) ->
+                    { world with WorldExtension = { world.WorldExtension with Dispatchers = { world.WorldExtension.Dispatchers with GroupDispatchers = Map.add groupDispatcherName groupDispatcher world.WorldExtension.Dispatchers.GroupDispatchers }}})
+                    world pluginGroupDispatchers
+            let world =
+                Array.fold (fun world (screenDispatcherName, screenDispatcher) ->
+                    { world with WorldExtension = { world.WorldExtension with Dispatchers = { world.WorldExtension.Dispatchers with ScreenDispatchers = Map.add screenDispatcherName screenDispatcher world.WorldExtension.Dispatchers.ScreenDispatchers }}})
+                    world pluginScreenDispatchers
+            let world =
+                Array.fold (fun world (gameDispatcherName, gameDispatcher) ->
+                    { world with WorldExtension = { world.WorldExtension with Dispatchers = { world.WorldExtension.Dispatchers with GameDispatchers = Map.add gameDispatcherName gameDispatcher world.WorldExtension.Dispatchers.GameDispatchers }}})
+                    world pluginGameDispatchers
+            let lateBindingses =
+                [|Array.map (snd >> cast<LateBindings>) pluginFacets
+                  Array.map (snd >> cast<LateBindings>) pluginEntityDispatchers
+                  Array.map (snd >> cast<LateBindings>) pluginGroupDispatchers
+                  Array.map (snd >> cast<LateBindings>) pluginScreenDispatchers
+                  Array.map (snd >> cast<LateBindings>) pluginGameDispatchers|] |>
+                Array.concat
+            let world =
+                UMap.fold (fun world simulant _ ->
+                    Array.fold (fun world lateBindings -> World.updateLateBindings3 lateBindings simulant world) world lateBindingses)
+                    world (World.getSimulants world)
+            let world =
+                UMap.fold
+                    (fun world simulant _ -> World.trySynchronize false simulant world)
+                    world (World.getSimulants world)
+            world
+
         /// Make an empty world.
         static member makeEmpty (config : WorldConfig) =
 
@@ -622,7 +679,7 @@ module WorldModule3 =
                 | Left error -> Left error
             | Left error -> Left error
 
-        /// Run the game engine as a stand-alone application.
+        /// Run the game engine, returning exit code upon termination.
         static member run worldConfig plugin =
             match SdlDeps.tryMake worldConfig.SdlConfig with
             | Right sdlDeps ->
@@ -631,60 +688,3 @@ module WorldModule3 =
                 | Right world -> World.run4 tautology sdlDeps Live world
                 | Left error -> Log.trace error; Constants.Engine.FailureExitCode
             | Left error -> Log.trace error; Constants.Engine.FailureExitCode
-
-        /// Update late bindings internally stored by the engine from types found in the given assemblies.
-        static member updateLateBindings2 (assemblies : Assembly array) world =
-            Content.UpdateLateBindingsCount <- inc Content.UpdateLateBindingsCount
-            World.clearClipboard world // HACK: clear what's on the clipboard rather than changing its dispatcher instance.
-            let pluginType =
-                assemblies |>
-                Array.map (fun assembly -> assembly.GetTypes ()) |>
-                Array.concat |>
-                Array.filter (fun ty -> ty.IsSubclassOf typeof<NuPlugin>) |>
-                Array.filter (fun ty -> not ty.IsAbstract) |>
-                Array.filter (fun ty -> ty.GetConstructors () |> Seq.exists (fun ctor -> ctor.GetParameters().Length = 0)) |>
-                Array.head
-            let plugin = Activator.CreateInstance pluginType :?> NuPlugin
-            let pluginFacets = plugin.Birth<Facet> assemblies
-            let pluginEntityDispatchers = plugin.Birth<EntityDispatcher> assemblies
-            let pluginGroupDispatchers = plugin.Birth<GroupDispatcher> assemblies
-            let pluginScreenDispatchers = plugin.Birth<ScreenDispatcher> assemblies
-            let pluginGameDispatchers = plugin.Birth<GameDispatcher> assemblies
-            let world =
-                { world with WorldExtension = { world.WorldExtension with Plugin = plugin }}
-            let world =
-                Array.fold (fun world (facetName, facet) ->
-                    { world with WorldExtension = { world.WorldExtension with Dispatchers = { world.WorldExtension.Dispatchers with Facets = Map.add facetName facet world.WorldExtension.Dispatchers.Facets }}})
-                    world pluginFacets
-            let world =
-                Array.fold (fun world (entityDispatcherName, entityDispatcher) ->
-                    { world with WorldExtension = { world.WorldExtension with Dispatchers = { world.WorldExtension.Dispatchers with EntityDispatchers = Map.add entityDispatcherName entityDispatcher world.WorldExtension.Dispatchers.EntityDispatchers }}})
-                    world pluginEntityDispatchers
-            let world =
-                Array.fold (fun world (groupDispatcherName, groupDispatcher) ->
-                    { world with WorldExtension = { world.WorldExtension with Dispatchers = { world.WorldExtension.Dispatchers with GroupDispatchers = Map.add groupDispatcherName groupDispatcher world.WorldExtension.Dispatchers.GroupDispatchers }}})
-                    world pluginGroupDispatchers
-            let world =
-                Array.fold (fun world (screenDispatcherName, screenDispatcher) ->
-                    { world with WorldExtension = { world.WorldExtension with Dispatchers = { world.WorldExtension.Dispatchers with ScreenDispatchers = Map.add screenDispatcherName screenDispatcher world.WorldExtension.Dispatchers.ScreenDispatchers }}})
-                    world pluginScreenDispatchers
-            let world =
-                Array.fold (fun world (gameDispatcherName, gameDispatcher) ->
-                    { world with WorldExtension = { world.WorldExtension with Dispatchers = { world.WorldExtension.Dispatchers with GameDispatchers = Map.add gameDispatcherName gameDispatcher world.WorldExtension.Dispatchers.GameDispatchers }}})
-                    world pluginGameDispatchers
-            let lateBindingses =
-                [|Array.map (snd >> cast<LateBindings>) pluginFacets
-                  Array.map (snd >> cast<LateBindings>) pluginEntityDispatchers
-                  Array.map (snd >> cast<LateBindings>) pluginGroupDispatchers
-                  Array.map (snd >> cast<LateBindings>) pluginScreenDispatchers
-                  Array.map (snd >> cast<LateBindings>) pluginGameDispatchers|] |>
-                Array.concat
-            let world =
-                UMap.fold (fun world simulant _ ->
-                    Array.fold (fun world lateBindings -> World.updateLateBindings lateBindings simulant world) world lateBindingses)
-                    world (World.getSimulants world)
-            let world =
-                UMap.fold
-                    (fun world simulant _ -> World.trySynchronize false simulant world)
-                    world (World.getSimulants world)
-            world

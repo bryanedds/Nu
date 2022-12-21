@@ -1127,12 +1127,11 @@ module EntityDispatcherModule2 =
 
     and Entity with
 
-        member this.UpdateModel<'model> updater world =
-            this.SetModelGeneric<'model> (updater (this.GetModelGeneric<'model> world)) world
-
+        /// Send a signal to the entity.
         member this.Signal<'model, 'message, 'command when 'message :> Message and 'command :> Command> signal world =
             World.signalEntity<'model, 'message, 'command> signal this world
 
+    /// The elmish / MMCC dispatcher for entities.
     and [<AbstractClass>] EntityDispatcher<'model, 'message, 'command when 'message :> Message and 'command :> Command>
         (is2d, centered, physical, makeInitial : World -> 'model) =
         inherit EntityDispatcher (is2d, centered, physical)
@@ -1183,21 +1182,27 @@ module EntityDispatcherModule2 =
             let world = Content.synchronizeEntity initializing contentOld content entity entity world
             World.setEntityContent content entity world
 
+        /// Initialize the game's own content.
         abstract member Initialize : 'model * Entity -> InitializerContent list
         default this.Initialize (_, _) = []
 
+        /// The physics synchronization handler for the elmish / MMCC programming model.
         abstract member Physics : Vector3 * Quaternion * Vector3 * Vector3 * 'model * Entity * World -> Signal list * 'model
         default this.Physics (_, _, _, _, model, _, _) = just model
 
+        /// The message handler of the elmish / MMCC programming model.
         abstract member Message : 'model * 'message * Entity * World -> Signal list * 'model
         default this.Message (model, _, _, _) = just model
 
+        /// The command handler of the elmish / MMCC programming model.
         abstract member Command : 'model * 'command * Entity * World -> Signal list * World
         default this.Command (_, _, _, world) = just world
 
+        /// The content specifier of the elmish / MMCC programming model.
         abstract member Content : 'model * Entity -> EntityContent list
         default this.Content (_, _) = []
 
+        /// Describes how the entity is to be viewed using the View API.
         abstract member View : 'model * Entity * World -> View
         default this.View (_, _, _) = View.empty
 
@@ -1251,12 +1256,11 @@ module GroupDispatcherModule =
 
     and Group with
 
-        member this.UpdateModel<'model> updater world =
-            this.SetModelGeneric<'model> (updater (this.GetModelGeneric<'model> world)) world
-
+        /// Send a signal to the group.
         member this.Signal<'model, 'message, 'command when 'message :> Message and 'command :> Command> signal world =
             World.signalGroup<'model, 'message, 'command> signal this world
 
+    /// The elmish / MMCC dispatcher for groups.
     and [<AbstractClass>] GroupDispatcher<'model, 'message, 'command when 'message :> Message and 'command :> Command> (makeInitial : World -> 'model) =
         inherit GroupDispatcher ()
 
@@ -1300,18 +1304,23 @@ module GroupDispatcherModule =
             let world = Content.synchronizeGroup initializing contentOld content group group world
             World.setGroupContent content group world
 
+        /// Initialize the group's own content.
         abstract member Initialize : 'model * Group -> InitializerContent list
         default this.Initialize (_, _) = []
 
+        /// The message handler of the elmish / MMCC programming model.
         abstract member Message : 'model * 'message * Group * World -> Signal list * 'model
         default this.Message (model, _, _, _) = just model
 
+        /// The command handler of the elmish / MMCC programming model.
         abstract member Command : 'model * 'command * Group * World -> Signal list * World
         default this.Command (_, _, _, world) = just world
 
+        /// The content specifier of the elmish / MMCC programming model.
         abstract member Content : 'model * Group -> EntityContent list
         default this.Content (_, _) = []
 
+        /// Describes how the group is to be viewed using the View API.
         abstract member View : 'model * Group * World -> View
         default this.View (_, _, _) = View.empty
 
@@ -1330,12 +1339,11 @@ module ScreenDispatcherModule =
 
     and Screen with
 
-        member this.UpdateModel<'model> updater world =
-            this.SetModelGeneric<'model> (updater (this.GetModelGeneric<'model> world)) world
-
+        /// Send a signal to the screen.
         member this.Signal<'model, 'message, 'command when 'message :> Message and 'command :> Command> signal world =
             World.signalScreen<'model, 'message, 'command> signal this world
 
+    /// The elmish / MMCC dispatcher for screens.
     and [<AbstractClass>] ScreenDispatcher<'model, 'message, 'command when 'message :> Message and 'command :> Command> (makeInitial : World -> 'model) =
         inherit ScreenDispatcher ()
 
@@ -1379,18 +1387,23 @@ module ScreenDispatcherModule =
             let world = Content.synchronizeScreen initializing contentOld content screen screen world
             World.setScreenContent content screen world
 
+        /// Initialize the screen's own content.
         abstract member Initialize : 'model * Screen -> InitializerContent list
         default this.Initialize (_, _) = []
 
+        /// The message handler of the elmish / MMCC programming model.
         abstract member Message : 'model * 'message * Screen * World -> Signal list * 'model
         default this.Message (model, _, _, _) = just model
 
+        /// The command handler of the elmish / MMCC programming model.
         abstract member Command : 'model * 'command * Screen * World -> Signal list * World
         default this.Command (_, _, _, world) = just world
 
+        /// The content specifier of the elmish / MMCC programming model.
         abstract member Content : 'model * Screen -> GroupContent list
         default this.Content (_, _) = []
 
+        /// Describes how the screen is to be viewed using the View API.
         abstract member View : 'model * Screen * World -> View
         default this.View (_, _, _) = View.empty
 
@@ -1407,12 +1420,11 @@ module GameDispatcherModule =
 
     and Game with
 
-        member this.UpdateModel<'model> updater world =
-            this.SetModelGeneric<'model> (updater (this.GetModelGeneric<'model> world)) world
-
+        /// Send a signal to the game.
         member this.Signal<'model, 'message, 'command when 'message :> Message and 'command :> Command> signal world =
             World.signalGame<'model, 'message, 'command> signal this world
 
+    /// The elmish / MMCC dispatcher for games.
     and [<AbstractClass>] GameDispatcher<'model, 'message, 'command when 'message :> Message and 'command :> Command> (makeInitial : World -> 'model) =
         inherit GameDispatcher ()
 
@@ -1459,18 +1471,23 @@ module GameDispatcherModule =
         override this.TrySynchronize (initializing, game, world) =
             synchronize initializing game world this |> snd
 
+        /// Initialize the game's own content.
         abstract member Initialize : 'model * Game -> InitializerContent list
         default this.Initialize (_, _) = []
 
+        /// The message handler of the elmish / MMCC programming model.
         abstract member Message : 'model * 'message * Game * World -> Signal list * 'model
         default this.Message (model, _, _, _) = just model
 
+        /// The command handler of the elmish / MMCC programming model.
         abstract member Command : 'model * 'command * Game * World -> Signal list * World
         default this.Command (_, _, _, world) = just world
 
+        /// The content specifier of the elmish / MMCC programming model.
         abstract member Content : 'model * Game -> ScreenContent list
         default this.Content (_, _) = []
 
+        /// Describes how the game is to be viewed using the View API.
         abstract member View : 'model * Game * World -> View
         default this.View (_, _, _) = View.empty
 
@@ -1497,7 +1514,7 @@ module WorldModule2' =
             | :? Game as game -> game.Signal<'model, 'message, 'command> signal world
             | _ -> failwithumf ()
 
-        static member internal updateLateBindings (latebindings : LateBindings) (simulant : Simulant) world =
+        static member internal updateLateBindings3 (latebindings : LateBindings) (simulant : Simulant) world =
             match simulant with
             | :? Entity as entity ->
                 let entityState = World.getEntityState entity world
