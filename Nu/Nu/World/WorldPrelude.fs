@@ -97,6 +97,7 @@ type [<AttributeUsage (AttributeTargets.Method); AllowNullLiteral>]
     new () = FunctionBindingAttribute ""
 
 /// Configuration parameters for Nu.
+/// TODO: consider renaming StandAlone to Accompanied and flipping it's value.
 type [<NoComparison>] NuConfig =
     { RunSynchronously : bool
       StandAlone : bool }
