@@ -8,7 +8,6 @@ namespace Nu
 module OpenGL = let _ = ()
 
 namespace OpenGL
-open System.Collections.Generic
 open System.Runtime.InteropServices
 open System.Text
 open SDL2
