@@ -1262,7 +1262,7 @@ module Gaia =
                         then Log.info ("Code compiled with the following warnings (these may disable debugging of reloaded code):\n" + error)
                         else Log.info "Code compiled with no warnings."
                         Log.info "Updating code..."
-                        let world = World.updateLateBindings2 session.DynamicAssemblies world
+                        let world = World.updateLateBindings session.DynamicAssemblies world
                         Log.info "Code updated."
                         world
                     with _ ->
