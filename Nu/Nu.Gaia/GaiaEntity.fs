@@ -61,7 +61,7 @@ and EntityPropertyDescriptor (propertyDescriptor, attributes) =
             | None -> null
 
     override this.SetValue (source, value) =
-        Globals.PreUpdaters.Add $ fun world ->
+        Globals.preUpdate $ fun world ->
 
             // grab the type descriptor and entity
             let entityTds = source :?> EntityTypeDescriptorSource
@@ -86,7 +86,7 @@ and EntityPropertyDescriptor (propertyDescriptor, attributes) =
                     let target = Entity (entity.Group.GroupAddress <-- rtoa surnames)
                     let world = World.renameEntityImmediate entity target world
                     Globals.World <- world // must be set for property grid
-                    Globals.SelectEntity target Globals.Form world
+                    Globals.selectEntity target Globals.Form world
                     world
                 else
                     MessageBox.Show
@@ -107,7 +107,7 @@ and EntityPropertyDescriptor (propertyDescriptor, attributes) =
                     let target = Entity targetNames
                     let world = World.renameEntityImmediate entity target world
                     Globals.World <- world // must be set for property grid
-                    Globals.SelectEntity target Globals.Form world
+                    Globals.selectEntity target Globals.Form world
                     world
                 else
                     MessageBox.Show
