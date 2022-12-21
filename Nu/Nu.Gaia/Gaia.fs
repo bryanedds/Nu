@@ -1953,6 +1953,7 @@ module Gaia =
     /// Initialize Gaia.
     let init nuConfig =
         Nu.init nuConfig
+        Globals.init selectEntity
 
     /// Run Gaia.
     let run nuConfig =
@@ -1968,10 +1969,11 @@ module Gaia =
                   SdlConfig = sdlConfig }
             match tryMakeWorld sdlDeps worldConfig plugin with
             | Right (screen, world) ->
+                Globals.Form <- form
+                Globals.World <- world
                 targetDir <- targetDir'
                 selectedScreen <- screen
                 selectedGroup <- Nu.World.getGroups screen world |> Seq.head
-                Globals.init selectEntity form world
                 let _ = run5 tautology savedState.EditModeOpt sdlDeps screen form
                 Constants.Engine.SuccessExitCode
             | Left error -> failwith error

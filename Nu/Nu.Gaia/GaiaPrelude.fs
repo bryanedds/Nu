@@ -39,7 +39,7 @@ module Globals =
     let mutable private futureWorlds = [] : World list
     let mutable private preUpdaters = Updaters ()
     let mutable private perUpdaters = Updaters ()
-    let mutable private selectEntityCallback = Unchecked.defaultof<_> : Entity -> GaiaForm -> World -> unit
+    let mutable private selectEntityFn = Unchecked.defaultof<_> : Entity -> GaiaForm -> World -> unit
     let mutable Form = Unchecked.defaultof<GaiaForm>
     let mutable World = Unchecked.defaultof<World>
 
@@ -95,10 +95,8 @@ module Globals =
             | [] -> (false, world)
         else (false, world)
 
-    let selectEntity entity form world =
-        selectEntityCallback entity form world
+    let selectEntity =
+        selectEntityFn
 
-    let init selectEntity form world =
-        selectEntityCallback <- selectEntity
-        Form <- form
-        World <- world
+    let init selectEntity =
+        selectEntityFn <- selectEntity
