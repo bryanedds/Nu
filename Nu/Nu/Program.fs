@@ -8,17 +8,6 @@ open System.IO
 open Prime
 module Program =
 
-    (* WISDOM - Dealing with different device resolutions - Instead of rendering each component scaled to a back-buffer
-    of a varying size, render each component unscaled to an off-screen buffer of a static size and then blit that with
-    scaling to the back-buffer. NOTE: this only applies to 2d (for obvious reasons). *)
-
-    (* WISDOM: Keep all animation frame numbers even. That way, you can simply halve them if you need to move the app
-    from 60fps to 30fps. *)
-
-    (* WISDOM: You get only slightly lower performance by using reference types in the ECS when all of the pre-
-    allocated references are allocated consecutively. However, it's still much better to use value types instead
-    because you are able to end up with unmanaged types that will not need to be scanned by the GC. *)
-
     /// Program entry point.
     let [<EntryPoint; STAThread>] main _ =
 
