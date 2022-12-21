@@ -22,19 +22,6 @@ type DragEyeState =
     | DragEyePosition2d of Vector2 * Vector2
     | DragEyeInactive
 
-type EditorState =
-    { TargetDir : string
-      mutable RightClickPosition : Vector2
-      mutable DragEntityState : DragEntityState
-      mutable DragEyeState : DragEyeState
-      mutable OtherSnaps : single * single * single
-      mutable SelectedScreen : Screen // TODO: see if this is necessary or if we can just use World.getSelectedScreen.
-      mutable SelectedGroup : Group
-      mutable FilePaths : Map<Group Address, string>
-      mutable RefreshHierarchyViewRequested : bool // HACK: make sure hierarchy view isn't updated more than once per frame.
-      mutable PastWorlds : World list
-      mutable FutureWorlds : World list }
-
 type SavedState =
     { BinaryFilePath : string
       EditModeOpt : string option
@@ -48,14 +35,32 @@ type SavedState =
 [<RequireQualifiedAccess>]
 module Globals =
 
-    let mutable SelectEntity : Entity -> GaiaForm -> World -> unit = Unchecked.defaultof<_>
+    let mutable RightClickPosition = v2Zero
+    let mutable DragEntityState = DragEntityInactive
+    let mutable DragEyeState = DragEyeInactive
+    let mutable OtherSnaps = (Constants.Editor.Position3dSnapDefault, Constants.Editor.Degrees3dSnapDefault, Constants.Editor.Scale3dSnapDefault)
+    let mutable FilePaths = Map.empty<Group Address, string>
+    let mutable RefreshHierarchyViewRequested = false // HACK: make sure hierarchy view isn't updated more than once per frame.
+    let mutable PastWorlds = [] : World list
+    let mutable FutureWorlds = [] : World list
     let mutable (PreUpdaters, PerUpdaters) = (Updaters (), Updaters ())
-    let mutable World = Unchecked.defaultof<World>
-    let mutable EditorState = Unchecked.defaultof<EditorState>
+    let mutable SelectEntity = Unchecked.defaultof<_> : Entity -> GaiaForm -> World -> unit
+    let mutable SelectedScreen = Unchecked.defaultof<Screen> // TODO: see if this is necessary or if we can just use World.getSelectedScreen.
+    let mutable SelectedGroup = Unchecked.defaultof<Group>
+    let mutable TargetDir = Unchecked.defaultof<string>
     let mutable Form = Unchecked.defaultof<GaiaForm>
+    let mutable World = Unchecked.defaultof<World>
+
+    let init selectEntity screen targetDir form world =
+        SelectEntity <- selectEntity
+        SelectedScreen <- screen
+        SelectedGroup <- Nu.World.getGroups screen world |> Seq.head
+        TargetDir <- targetDir
+        Form <- form
+        World <- world
 
     let pushPastWorld pastWorld =
         let pastWorld = Nu.World.shelve pastWorld
-        EditorState.PastWorlds <- pastWorld :: EditorState.PastWorlds
-        EditorState.FutureWorlds <- []
+        PastWorlds <- pastWorld :: PastWorlds
+        FutureWorlds <- []
         pastWorld
