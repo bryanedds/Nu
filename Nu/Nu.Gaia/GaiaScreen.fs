@@ -51,7 +51,7 @@ and ScreenPropertyDescriptor (propertyDescriptor, attributes) =
         Reflection.isPropertyNonPersistentByName propertyName
 
     override this.SetValue (source, value) =
-        Globals.PreUpdaters.Add $ fun world ->
+        Globals.preUpdate $ fun world ->
         
             // grab the type descriptor and screen
             let screenTds = source :?> ScreenTypeDescriptorSource
