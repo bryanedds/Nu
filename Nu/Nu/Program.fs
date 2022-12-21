@@ -77,15 +77,15 @@ module Program =
                     ignore (slnDir, newProj)
                     
                     // success
-                    Constants.Engine.SuccessExitCode
+                    Constants.Engine.ExitCodeSuccess
 
                 // invalid name; failure
                 else
                     Console.WriteLine ("Project name '" + name + "' contains invalid path characters.")
-                    Constants.Engine.FailureExitCode
+                    Constants.Engine.ExitCodeFailure
 
             // rejected
-            | _ -> Constants.Engine.SuccessExitCode
+            | _ -> Constants.Engine.ExitCodeSuccess
 
         // nothing to do
-        else Constants.Engine.SuccessExitCode
+        else Constants.Engine.ExitCodeSuccess

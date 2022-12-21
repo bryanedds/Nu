@@ -11,10 +11,10 @@ module Program =
             match AssetGraph.tryMakeFromFile Assets.Global.AssetGraphFilePath with
             | Right assetGraph ->
                 AssetGraph.buildAssets inputDirectory outputDirectory refinementDirectory fullBuild assetGraph
-                Constants.Engine.SuccessExitCode
+                Constants.Engine.ExitCodeSuccess
             | Left error ->
                 Console.WriteLine error
-                Constants.Engine.FailureExitCode
+                Constants.Engine.ExitCodeFailure
         | _ ->
             Console.WriteLine "NuPipe.exe requires four parameters: inputDirectory, outputDirectory, refinementDirectory, and a fullBuild flag."
-            Constants.Engine.FailureExitCode
+            Constants.Engine.ExitCodeFailure
