@@ -40,7 +40,6 @@ module Globals =
     let mutable private preUpdaters = Updaters ()
     let mutable private perUpdaters = Updaters ()
     let mutable private selectEntityCallback = Unchecked.defaultof<_> : Entity -> GaiaForm -> World -> unit
-
     let mutable Form = Unchecked.defaultof<GaiaForm>
     let mutable World = Unchecked.defaultof<World>
 
