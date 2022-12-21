@@ -33,13 +33,13 @@ module Gaia =
         Globals.PerUpdaters.Add perUpdater |> ignore
 
     let private getPickableEntities2d world =
-        let selectedGroup = Globals.EditorState.SelectedGroup
+        let selectedGroup = Globals.SelectedGroup
         let (entities, world) = World.getEntitiesInView2d (HashSet ()) world
         let entitiesInGroup = entities |> Seq.filter (fun entity -> entity.GetVisible world && entity.Group = selectedGroup) |> Seq.toArray
         (entitiesInGroup, world)
 
     let private getPickableEntities3d world =
-        let selectedGroup = Globals.EditorState.SelectedGroup
+        let selectedGroup = Globals.SelectedGroup
         let (entities, world) = World.getEntitiesInView3d (HashSet ()) world
         let entitiesInGroup = entities |> Seq.filter (fun entity -> entity.GetVisible world && entity.Group = selectedGroup) |> Seq.toArray
         (entitiesInGroup, world)
@@ -54,7 +54,7 @@ module Gaia =
         snd (Single.TryParse form.createElevationTextBox.Text)
 
     let private generateEntityName dispatcherName world =
-        let selectedGroup = Globals.EditorState.SelectedGroup
+        let selectedGroup = Globals.SelectedGroup
         let name = Gen.nameForEditor dispatcherName
         let mutable entity = Entity (selectedGroup.GroupAddress <-- ntoa name)
         while entity.Exists world do
@@ -70,8 +70,8 @@ module Gaia =
 
     let private refreshSelections (form : GaiaForm) world =
         clearSelections form
-        form.groupPropertyGrid.SelectedObject <- { DescribedGroup = Seq.head (World.getGroups Globals.EditorState.SelectedScreen world); Form = form }
-        form.screenPropertyGrid.SelectedObject <- { DescribedScreen = Globals.EditorState.SelectedScreen; Form = form }
+        form.groupPropertyGrid.SelectedObject <- { DescribedGroup = Seq.head (World.getGroups Globals.SelectedScreen world); Form = form }
+        form.screenPropertyGrid.SelectedObject <- { DescribedScreen = Globals.SelectedScreen; Form = form }
         form.gamePropertyGrid.SelectedObject <- { DescribedGame = Simulants.Game; Form = form }
 
     let private refreshEditModes (form : GaiaForm) world =
@@ -124,7 +124,7 @@ module Gaia =
         Option.isSome (tryGetHierarchyTreeNode name form world)
 
     let private refreshHierarchyTreeView (_ : GaiaForm) (_ : World) =
-        Globals.EditorState.RefreshHierarchyViewRequested <- true
+        Globals.RefreshHierarchyViewRequested <- true
 
     let private refreshHierarchyTreeViewImpl (form : GaiaForm) world =
         // TODO: this code can cause severe performance issues. To unfuck performance, we will probably have to find a
@@ -132,7 +132,7 @@ module Gaia =
         // imperatively.
         let treeNodesState = form.hierarchyTreeView.GetExpandedNodesState ()
         form.hierarchyTreeView.Nodes.Clear ()
-        let entities = World.getEntitiesFlattened Globals.EditorState.SelectedGroup world
+        let entities = World.getEntitiesFlattened Globals.SelectedGroup world
         for entity in entities do
             let mutable namesUsed = [||]
             let mutable parentNodeOpt = Option<TreeNode>.None
@@ -155,13 +155,13 @@ module Gaia =
                         parentNodeOpt <- Some childNode
                     else parentNodeOpt <- Some parentNode.Nodes.[childNodeKey]
         form.hierarchyTreeView.RestoreExpandedNodesState treeNodesState
-        Globals.EditorState.RefreshHierarchyViewRequested <- false
+        Globals.RefreshHierarchyViewRequested <- false
         world
 
     let private refreshGroupTabs (form : GaiaForm) world =
 
         // add groups imperatively to preserve existing group tabs
-        let groups = World.getGroups Globals.EditorState.SelectedScreen world
+        let groups = World.getGroups Globals.SelectedScreen world
         let groupTabPages = form.groupTabControl.TabPages
         for group in groups do
             let groupName = group.Name
@@ -310,7 +310,7 @@ module Gaia =
             | null -> (Cascade, world)
             | :? EntityTypeDescriptorSource as entityTds ->
                 if atoa evt.Publisher.SimulantAddress = entityTds.DescribedEntity.EntityAddress then
-                    Globals.EditorState.DragEntityState <- DragEntityInactive
+                    Globals.DragEntityState <- DragEntityInactive
                     deselectEntity form world
                     (Cascade, world)
                 else (Cascade, world)
@@ -334,8 +334,8 @@ module Gaia =
                 match Seq.tryHead groups with
                 | None -> World.createGroup (Some "Group") screen world
                 | Some group -> (group, world)
-            Globals.EditorState.SelectedGroup <- group
-            Globals.EditorState.SelectedScreen <- screen
+            Globals.SelectedGroup <- group
+            Globals.SelectedScreen <- screen
             refreshGroupTabs form world
             refreshHierarchyTreeView form world
             refreshSelections form world
@@ -348,7 +348,7 @@ module Gaia =
         let handled = if World.getAdvancing world then Cascade else Resolve
         let mousePosition = World.getMousePosition world
         let (_, world) = tryMousePick mousePosition form world
-        Globals.EditorState.RightClickPosition <- mousePosition
+        Globals.RightClickPosition <- mousePosition
         (handled, world)
 
     let private handleNuEntityDragBegin (form : GaiaForm) (_ : Event<MouseButtonData, Game>) world =
@@ -364,7 +364,7 @@ module Gaia =
                     let eyeSize = World.getEyeSize2d world
                     let mousePositionWorld = viewport.MouseToWorld2d (entity.GetAbsolute world, mousePosition, eyePosition, eyeSize)
                     let entityPosition = if entity.MountExists world then entity.GetPositionLocal world else entity.GetPosition world
-                    Globals.EditorState.DragEntityState <- DragEntityPosition2d (world.ClockTime, mousePositionWorld, entityPosition.V2 + mousePositionWorld, entity)
+                    Globals.DragEntityState <- DragEntityPosition2d (world.ClockTime, mousePositionWorld, entityPosition.V2 + mousePositionWorld, entity)
                 else
                     let viewport = World.getViewport world
                     let eyePosition = World.getEyePosition3d world
@@ -375,7 +375,7 @@ module Gaia =
                     let intersectionOpt = mouseRayWorld.Intersection entityPlane
                     if intersectionOpt.HasValue then
                         let entityDragOffset = intersectionOpt.Value - entityPosition
-                        Globals.EditorState.DragEntityState <- DragEntityPosition3d (world.ClockTime, entityDragOffset, entityPlane, entity)
+                        Globals.DragEntityState <- DragEntityPosition3d (world.ClockTime, entityDragOffset, entityPlane, entity)
                 (handled, world)
             | (None, world) -> (handled, world)
         else (Cascade, world)
@@ -384,11 +384,11 @@ module Gaia =
         if canEditWithMouse form world then (Cascade, world)
         else
             let handled = if World.getAdvancing world then Cascade else Resolve
-            match Globals.EditorState.DragEntityState with
+            match Globals.DragEntityState with
             | DragEntityPosition2d _
             | DragEntityRotation2d _
             | DragEntityPosition3d _ ->
-                Globals.EditorState.DragEntityState <- DragEntityInactive
+                Globals.DragEntityState <- DragEntityInactive
                 form.entityPropertyGrid.Refresh ()
                 (handled, world)
             | DragEntityInactive -> (Resolve, world)
@@ -396,13 +396,13 @@ module Gaia =
     let private handleNuCameraDragBegin (_ : GaiaForm) (_ : Event<MouseButtonData, Game>) world =
         let mousePositionScreen = World.getMousePosition2dScreen world
         let dragState = DragEyePosition2d (World.getEyePosition2d world + mousePositionScreen, mousePositionScreen)
-        Globals.EditorState.DragEyeState <- dragState
+        Globals.DragEyeState <- dragState
         (Resolve, world)
 
     let private handleNuCameraDragEnd (_ : GaiaForm) (_ : Event<MouseButtonData, Game>) world =
-        match Globals.EditorState.DragEyeState with
+        match Globals.DragEyeState with
         | DragEyePosition2d _ ->
-            Globals.EditorState.DragEyeState <- DragEyeInactive
+            Globals.DragEyeState <- DragEyeInactive
             (Resolve, world)
         | DragEyeInactive -> (Resolve, world)
 
@@ -494,7 +494,7 @@ module Gaia =
 
     let private trySaveSelectedGroup filePath world =
         let oldWorld = world
-        let selectedGroup = Globals.EditorState.SelectedGroup
+        let selectedGroup = Globals.SelectedGroup
         try World.writeGroupToFile filePath selectedGroup world
         with exn ->
             World.choose oldWorld |> ignore
@@ -506,7 +506,7 @@ module Gaia =
         let oldWorld = world
 
         try // destroy current group
-            let selectedGroup = Globals.EditorState.SelectedGroup
+            let selectedGroup = Globals.SelectedGroup
             let world = World.destroyGroupImmediate selectedGroup world
 
             // load and add group, updating tab and selected group in the process
@@ -516,12 +516,12 @@ module Gaia =
                 match groupDescriptor.GroupProperties.TryFind Constants.Engine.NamePropertyName with
                 | Some (Atom (name, _)) -> name
                 | _ -> failwithumf ()
-            let group = Globals.EditorState.SelectedScreen / groupName
+            let group = Globals.SelectedScreen / groupName
             if not (group.Exists world) then
-                let (group, world) = World.readGroup groupDescriptor None Globals.EditorState.SelectedScreen world
+                let (group, world) = World.readGroup groupDescriptor None Globals.SelectedScreen world
                 form.groupTabControl.SelectedTab.Text <- group.Name
                 form.groupTabControl.SelectedTab.Name <- group.Name
-                Globals.EditorState.SelectedGroup <- group
+                Globals.SelectedGroup <- group
 
                 // refresh hierarchy view
                 refreshHierarchyTreeView form world
@@ -584,7 +584,7 @@ module Gaia =
 
     let private handlePropertyPickParentNode (propertyDescriptor : System.ComponentModel.PropertyDescriptor) (entityTds : EntityTypeDescriptorSource) (form : GaiaForm) world =
         use entityPicker = new EntityPicker ()
-        let selectedGroup = Globals.EditorState.SelectedGroup
+        let selectedGroup = Globals.SelectedGroup
         let surnamesStrs =
             World.getEntitiesFlattened selectedGroup world |>
             Seq.filter (fun entity -> not (Gen.isNameGenerated entity.Name)) |>
@@ -734,7 +734,7 @@ module Gaia =
         | _ -> failwithumf ()
 
     let private tryReloadPrelude (_ : GaiaForm) world =
-        let targetDir = Globals.EditorState.TargetDir
+        let targetDir = Globals.TargetDir
         let assetSourceDir = targetDir + "/../.."
         World.tryReloadPrelude assetSourceDir targetDir world
 
@@ -749,7 +749,7 @@ module Gaia =
 
     let private trySavePrelude (form : GaiaForm) world =
         let oldWorld = world
-        let preludeSourceDir = Globals.EditorState.TargetDir + "/../.."
+        let preludeSourceDir = Globals.TargetDir + "/../.."
         let preludeFilePath = preludeSourceDir + "/" + Assets.Global.PreludeFilePath
         try let preludeStr = form.preludeTextBox.Text.TrimEnd ()
             File.WriteAllText (preludeFilePath, preludeStr)
@@ -759,7 +759,7 @@ module Gaia =
             (false, World.choose oldWorld)
 
     let private tryReloadAssetGraph (_ : GaiaForm) world =
-        let targetDir = Globals.EditorState.TargetDir
+        let targetDir = Globals.TargetDir
         let assetSourceDir = targetDir + "/../.."
         World.tryReloadAssetGraph assetSourceDir targetDir Constants.Engine.RefinementDir world
 
@@ -779,7 +779,7 @@ module Gaia =
 
     let private trySaveAssetGraph (form : GaiaForm) world =
         let oldWorld = world
-        let assetSourceDir = Globals.EditorState.TargetDir + "/../.."
+        let assetSourceDir = Globals.TargetDir + "/../.."
         let assetGraphFilePath = assetSourceDir + "/" + Assets.Global.AssetGraphFilePath
         try let packageDescriptorsStr = form.assetGraphTextBox.Text.TrimEnd () |> scvalue<Map<string, PackageDescriptor>> |> scstring
             let prettyPrinter = (SyntaxAttribute.defaultValue typeof<AssetGraph>).PrettyPrinter
@@ -790,7 +790,7 @@ module Gaia =
             (false, World.choose oldWorld)
 
     let private tryReloadOverlays form world =
-        let targetDir = Globals.EditorState.TargetDir
+        let targetDir = Globals.TargetDir
         let overlayDir = targetDir + "/../.."
         match World.tryReloadOverlays overlayDir targetDir world with
         | (Right overlayer, world) ->
@@ -814,7 +814,7 @@ module Gaia =
 
     let private trySaveOverlayer (form : GaiaForm) world =
         let oldWorld = world
-        let overlayerSourceDir = Globals.EditorState.TargetDir + "/../.."
+        let overlayerSourceDir = Globals.TargetDir + "/../.."
         let overlayerFilePath = overlayerSourceDir + "/" + Assets.Global.OverlayerFilePath
         try let overlays = scvalue<Overlay list> (form.overlayerTextBox.Text.TrimEnd ())
             let prettyPrinter = (SyntaxAttribute.defaultValue typeof<Overlay>).PrettyPrinter
@@ -888,7 +888,7 @@ module Gaia =
             let targetNodeOpt = form.hierarchyTreeView.GetNodeAt targetPoint
             let draggedNode = args.Data.GetData typeof<TreeNode> :?> TreeNode
             if draggedNode <> targetNodeOpt && notNull targetNodeOpt && not (containsNode draggedNode targetNodeOpt) then
-                let selectedGroup = Globals.EditorState.SelectedGroup
+                let selectedGroup = Globals.SelectedGroup
                 let source = Entity (selectedGroup.GroupAddress <-- Address.makeFromString draggedNode.Name)
                 if not (source.GetProtected world) then
                     let (mountToParent, target) =
@@ -910,7 +910,7 @@ module Gaia =
                 let nodeKey = form.hierarchyTreeView.SelectedNode.Name
                 if nodeKey <> Constants.Editor.GroupNodeKey then
                     let address = Address.makeFromString nodeKey
-                    let entity = Entity (Globals.EditorState.SelectedGroup.GroupAddress <-- atoa address)
+                    let entity = Entity (Globals.SelectedGroup.GroupAddress <-- atoa address)
                     if entity.Exists world then selectEntity entity form world
                     world
                 else world
@@ -924,7 +924,7 @@ module Gaia =
         addPreUpdater $ fun world ->
             let oldWorld = world
             try let world = Globals.pushPastWorld world
-                let selectedGroup = Globals.EditorState.SelectedGroup
+                let selectedGroup = Globals.SelectedGroup
                 let dispatcherName =
                     match dispatcherNameOpt with
                     | Some dispatcherName -> dispatcherName
@@ -1014,7 +1014,7 @@ module Gaia =
                 let groupName = groupCreationForm.nameTextBox.Text
                 let groupDispatcherName = groupCreationForm.dispatcherTextBox.Text
                 try if String.length groupName = 0 then failwith "Group name cannot be empty in Gaia due to WinForms limitations."
-                    let world = World.createGroup4 groupDispatcherName (Some groupName) Globals.EditorState.SelectedScreen world |> snd
+                    let world = World.createGroup4 groupDispatcherName (Some groupName) Globals.SelectedScreen world |> snd
                     refreshGroupTabs form world
                     refreshHierarchyTreeView form world
                     deselectEntity form world
@@ -1030,9 +1030,9 @@ module Gaia =
 
     let private handleFormSave saveAs (form : GaiaForm) (_ : EventArgs) =
         addPreUpdater $ fun world ->
-            let group = Globals.EditorState.SelectedGroup
+            let group = Globals.SelectedGroup
             form.saveFileDialog.Title <- "Save '" + group.Name + "' As"
-            match Map.tryFind group.GroupAddress Globals.EditorState.FilePaths with
+            match Map.tryFind group.GroupAddress Globals.FilePaths with
             | Some filePath -> form.saveFileDialog.FileName <- filePath
             | None -> form.saveFileDialog.FileName <- String.Empty
             if saveAs || String.IsNullOrWhiteSpace form.saveFileDialog.FileName then
@@ -1040,7 +1040,7 @@ module Gaia =
                 | DialogResult.OK ->
                     let filePath = form.saveFileDialog.FileName
                     trySaveSelectedGroup filePath world
-                    Globals.EditorState.FilePaths <- Map.add group.GroupAddress filePath Globals.EditorState.FilePaths
+                    Globals.FilePaths <- Map.add group.GroupAddress filePath Globals.FilePaths
                     world
                 | _ -> world
             else trySaveSelectedGroup form.saveFileDialog.FileName world; world
@@ -1054,7 +1054,7 @@ module Gaia =
                 let filePath = form.openFileDialog.FileName
                 match tryLoadSelectedGroup form filePath world with
                 | (Some group, world) ->
-                    Globals.EditorState.FilePaths <- Map.add group.GroupAddress filePath Globals.EditorState.FilePaths
+                    Globals.FilePaths <- Map.add group.GroupAddress filePath Globals.FilePaths
                     deselectEntity form world // currently selected entity may be gone if loading into an existing group
                     world
                 | (None, world) -> world
@@ -1068,15 +1068,15 @@ module Gaia =
                 world
             | _ ->
                 let world = Globals.pushPastWorld world
-                let group = Globals.EditorState.SelectedGroup
+                let group = Globals.SelectedGroup
                 if not (group.GetProtected world) then
                     let world = World.destroyGroupImmediate group world
                     deselectEntity form world
                     form.groupTabControl.TabPages.RemoveByKey group.Name
                     let groupTabControl = form.groupTabControl
                     let groupTab = groupTabControl.SelectedTab
-                    Globals.EditorState.SelectedGroup <- Globals.EditorState.SelectedScreen / groupTab.Text
-                    Globals.EditorState.FilePaths <- Map.remove group.GroupAddress Globals.EditorState.FilePaths
+                    Globals.SelectedGroup <- Globals.SelectedScreen / groupTab.Text
+                    Globals.FilePaths <- Map.remove group.GroupAddress Globals.FilePaths
                     world
                 else
                     Log.traceOnce "Cannot close a protected group (such as one created by the Elmish API)."
@@ -1085,12 +1085,12 @@ module Gaia =
     let private handleFormUndo (form : GaiaForm) (_ : EventArgs) =
         addPerUpdater $ fun world ->
             if not (World.getImperative world) then
-                match Globals.EditorState.PastWorlds with
+                match Globals.PastWorlds with
                 | pastWorld :: pastWorlds ->
                     let futureWorld = World.shelve world
                     let world = World.unshelve pastWorld
-                    Globals.EditorState.PastWorlds <- pastWorlds
-                    Globals.EditorState.FutureWorlds <- futureWorld :: Globals.EditorState.FutureWorlds
+                    Globals.PastWorlds <- pastWorlds
+                    Globals.FutureWorlds <- futureWorld :: Globals.FutureWorlds
                     refreshFormOnUndoRedo form world
                     world
                 | [] -> world
@@ -1099,12 +1099,12 @@ module Gaia =
     let private handleFormRedo (form : GaiaForm) (_ : EventArgs) =
         addPerUpdater $ fun world ->
             if not (World.getImperative world) then
-                match Globals.EditorState.FutureWorlds with
+                match Globals.FutureWorlds with
                 | futureWorld :: futureWorlds ->
                     let pastWorld = World.shelve world
                     let world = World.unshelve futureWorld
-                    Globals.EditorState.PastWorlds <- pastWorld :: Globals.EditorState.PastWorlds
-                    Globals.EditorState.FutureWorlds <- futureWorlds
+                    Globals.PastWorlds <- pastWorld :: Globals.PastWorlds
+                    Globals.FutureWorlds <- futureWorlds
                     refreshFormOnUndoRedo form world
                     world
                 | [] -> world
@@ -1150,10 +1150,10 @@ module Gaia =
     let private handleFormPaste atMouse (form : GaiaForm) (_ : EventArgs) =
         addPreUpdater $ fun world ->
             let world = Globals.pushPastWorld world
-            let selectedGroup = Globals.EditorState.SelectedGroup
+            let selectedGroup = Globals.SelectedGroup
             let surnamesOpt = World.tryGetEntityDispatcherNameOnClipboard world |> Option.map (flip generateEntityName world) |> Option.map Array.singleton
             let snapsEir = getSnaps form |> if form.snap3dButton.Checked then Right else Left
-            let (entityOpt, world) = World.pasteEntityFromClipboard atMouse Globals.EditorState.RightClickPosition snapsEir surnamesOpt selectedGroup world
+            let (entityOpt, world) = World.pasteEntityFromClipboard atMouse Globals.RightClickPosition snapsEir surnamesOpt selectedGroup world
             match entityOpt with
             | Some entity -> selectEntity entity form world; world
             | None -> world
@@ -1174,12 +1174,12 @@ module Gaia =
 
     let private handleFormSnap3d (form : GaiaForm) (_ : EventArgs) =
         addPreUpdater $ fun world ->
-            let (positionSnap, degreesSnap, scaleSnap) = Globals.EditorState.OtherSnaps
+            let (positionSnap, degreesSnap, scaleSnap) = Globals.OtherSnaps
             let otherSnaps =
                 (snd (Single.TryParse form.positionSnapTextBox.Text),
                  snd (Single.TryParse form.degreesSnapTextBox.Text),
                  snd (Single.TryParse form.scaleSnapTextBox.Text))
-            Globals.EditorState.OtherSnaps <- otherSnaps
+            Globals.OtherSnaps <- otherSnaps
             form.positionSnapTextBox.Text <- scstring positionSnap
             form.degreesSnapTextBox.Text <- scstring degreesSnap
             form.scaleSnapTextBox.Text <- scstring scaleSnap
@@ -1207,7 +1207,7 @@ module Gaia =
         addPreUpdater $ fun world ->
             let world = Globals.pushPastWorld world
             clearSelections form // keep old type information from sticking around in re-painting property editors
-            let workingDirPath = Globals.EditorState.TargetDir + "/../.."
+            let workingDirPath = Globals.TargetDir + "/../.."
             Log.info ("Inspecting directory " + workingDirPath + " for F# code...")
             try match Array.ofSeq (Directory.EnumerateFiles (workingDirPath, "*.fsproj")) with
                 | [||] -> Log.trace ("Unable to find fsproj file in '" + workingDirPath + "'."); world
@@ -1300,8 +1300,8 @@ module Gaia =
             let selectedGroup =
                 let groupTabControl = form.groupTabControl
                 let groupTab = groupTabControl.SelectedTab
-                Globals.EditorState.SelectedScreen / groupTab.Text
-            Globals.EditorState.SelectedGroup <- selectedGroup
+                Globals.SelectedScreen / groupTab.Text
+            Globals.SelectedGroup <- selectedGroup
             refreshEntityPropertyGrid form world
             refreshHierarchyTreeView form world
             selectGroup selectedGroup form world
@@ -1390,7 +1390,7 @@ module Gaia =
                 else form.evalInputTextBox.Text
             let exprsStr = Symbol.OpenSymbolsStr + "\n" + exprsStr + "\n" + Symbol.CloseSymbolsStr
             try let exprs = scvalue<Scripting.Expr array> exprsStr
-                let group = Globals.EditorState.SelectedGroup
+                let group = Globals.SelectedGroup
                 let (selectedSimulant, localFrame) =
                     match form.entityPropertyGrid.SelectedObject with
                     | :?
@@ -1475,7 +1475,7 @@ module Gaia =
 
     let private updateEntityDrag (form : GaiaForm) world =
         if not (canEditWithMouse form world) then
-            match Globals.EditorState.DragEntityState with
+            match Globals.DragEntityState with
             | DragEntityPosition2d (time, mousePositionWorldOriginal, entityDragOffset, entity) ->
                 let localTime = world.ClockTime - time
                 if entity.Exists world && localTime.TotalSeconds >= Constants.Editor.DragMinimumSeconds then
@@ -1550,28 +1550,28 @@ module Gaia =
         else world
 
     let private updateEyeDrag (_ : GaiaForm) world =
-        match Globals.EditorState.DragEyeState with
+        match Globals.DragEyeState with
         | DragEyePosition2d (entityDragOffset, mousePositionScreenOrig) ->
             let mousePositionScreen = World.getMousePosition2dScreen world
             let eyePosition = (entityDragOffset - mousePositionScreenOrig) + -Constants.Editor.CameraSpeed * (mousePositionScreen - mousePositionScreenOrig)
             let world = World.setEyePosition2d eyePosition world
-            Globals.EditorState.DragEyeState <- DragEyePosition2d (entityDragOffset, mousePositionScreenOrig)
+            Globals.DragEyeState <- DragEyePosition2d (entityDragOffset, mousePositionScreenOrig)
             world
         | DragEyeInactive -> world
 
     // TODO: remove code duplication with below
     let private updateUndoButton (form : GaiaForm) world =
         if form.undoToolStripMenuItem.Enabled then
-            if List.isEmpty Globals.EditorState.PastWorlds then
+            if List.isEmpty Globals.PastWorlds then
                 form.undoToolStripMenuItem.Enabled <- false
-        elif not (List.isEmpty Globals.EditorState.PastWorlds) then
+        elif not (List.isEmpty Globals.PastWorlds) then
             form.undoToolStripMenuItem.Enabled <- not (World.getImperative world)
 
     let private updateRedoButton (form : GaiaForm) world =
         if form.redoToolStripMenuItem.Enabled then
-            if List.isEmpty Globals.EditorState.FutureWorlds then
+            if List.isEmpty Globals.FutureWorlds then
                 form.redoToolStripMenuItem.Enabled <- false
-        elif not (List.isEmpty Globals.EditorState.FutureWorlds) then
+        elif not (List.isEmpty Globals.FutureWorlds) then
             form.redoToolStripMenuItem.Enabled <- not (World.getImperative world)
 
     let private preUpdateEditorWorld (form : GaiaForm) world =
@@ -1579,7 +1579,7 @@ module Gaia =
         Globals.PreUpdaters.Clear ()
         let world = List.fold (fun world updater -> updater world) world preUpdatersCopy
         let world =
-            if Globals.EditorState.RefreshHierarchyViewRequested
+            if Globals.RefreshHierarchyViewRequested
             then refreshHierarchyTreeViewImpl form world
             else world
         let world = updateEntityDrag form world
@@ -1598,7 +1598,7 @@ module Gaia =
         Globals.PerUpdaters.Clear ()
         let world = List.fold (fun world updater -> updater world) world perUpdatersCopy
         let world =
-            if Globals.EditorState.RefreshHierarchyViewRequested
+            if Globals.RefreshHierarchyViewRequested
             then refreshHierarchyTreeViewImpl form world
             else world
         updateUndoButton form world
@@ -1646,19 +1646,7 @@ module Gaia =
             let item = createContextMenuItem.DropDownItems.Add dispatcherName
             item.Click.Add (handleFormCreateEntity atMouse inHierarchy (Some dispatcherName) form)
 
-    let private run3 runWhile targetDir editModeOpt sdlDeps screen (form : GaiaForm) =
-        Globals.EditorState <-
-            { TargetDir = targetDir
-              RightClickPosition = Vector2.Zero
-              DragEntityState = DragEntityInactive
-              DragEyeState = DragEyeInactive
-              OtherSnaps = (Constants.Editor.Position3dSnapDefault, Constants.Editor.Degrees3dSnapDefault, Constants.Editor.Scale3dSnapDefault)
-              SelectedScreen = screen
-              SelectedGroup = World.getGroups screen Globals.World |> Seq.head
-              FilePaths = Map.empty
-              RefreshHierarchyViewRequested = false
-              PastWorlds = []
-              FutureWorlds = [] }
+    let private run5 runWhile editModeOpt sdlDeps screen (form : GaiaForm) =
         Globals.World <- World.subscribe (handleNuMouseRightDown form) Events.MouseRightDown Simulants.Game Globals.World
         Globals.World <- World.subscribe (handleNuEntityDragBegin form) Events.MouseLeftDown Simulants.Game Globals.World
         Globals.World <- World.subscribe (handleNuEntityDragEnd form) Events.MouseLeftUp Simulants.Game Globals.World
@@ -1677,7 +1665,7 @@ module Gaia =
         refreshCreateContextMenuItemChildren false true form.createInHierarchyContextMenuItem form Globals.World
         refreshGroupTabs form Globals.World
         refreshHierarchyTreeView form Globals.World
-        selectGroup Globals.EditorState.SelectedGroup form Globals.World
+        selectGroup Globals.SelectedGroup form Globals.World
         match editModeOpt with Some editMode -> form.editModeComboBox.SelectedItem <- editMode | None -> ()
         form.screenPropertyGrid.SelectedObject <- { DescribedScreen = screen; Form = form }
         form.gamePropertyGrid.SelectedObject <- { DescribedGame = Simulants.Game; Form = form }
@@ -1790,7 +1778,7 @@ module Gaia =
             { new IComparer with
                 member this.Compare (left, right) =
                     let world = Globals.World
-                    let selectedGroup = Globals.EditorState.SelectedGroup
+                    let selectedGroup = Globals.SelectedGroup
                     let leftEntity = Entity (Array.append selectedGroup.GroupAddress.Names ((left :?> TreeNode).Name.Split Constants.Address.Separator))
                     let rightEntity = Entity (Array.append selectedGroup.GroupAddress.Names ((right :?> TreeNode).Name.Split Constants.Address.Separator))
                     if leftEntity.Exists world && rightEntity.Exists world
@@ -1806,7 +1794,7 @@ module Gaia =
                 if args.Button = MouseButtons.Right then
                     let nodeKey = args.Node.Name
                     let address = Address.makeFromString nodeKey
-                    let entity = Entity (Globals.EditorState.SelectedGroup.GroupAddress <-- atoa address)
+                    let entity = Entity (Globals.SelectedGroup.GroupAddress <-- atoa address)
                     if entity.Exists world then
                         selectEntity entity form world
                         form.hierarchyContextMenuStrip.Show ()
@@ -1997,11 +1985,14 @@ module Gaia =
         | Left msg -> Left msg
         | Right sdlDeps -> Right (sdlConfig, sdlDeps)
 
-    /// Run Gaia in isolation.
+    /// Initialize Gaia.
+    let init nuConfig =
+        Nu.init nuConfig
+
+    /// Run Gaia.
     let run nuConfig =
         let (savedState, targetDir, plugin) = selectTargetDirAndMakeNuPlugin ()
         use form = createForm ()
-        Globals.Form <- form
         match tryMakeSdlDeps form with
         | Right (sdlConfig, sdlDeps) ->
             let worldConfig =
@@ -2012,12 +2003,8 @@ module Gaia =
                   SdlConfig = sdlConfig }
             match tryMakeWorld sdlDeps worldConfig plugin with
             | Right (screen, world) ->
-                Globals.World <- world
-                let _ = run3 tautology targetDir savedState.EditModeOpt sdlDeps screen form
+                Globals.init selectEntity screen targetDir form world
+                let _ = run5 tautology savedState.EditModeOpt sdlDeps screen form
                 Constants.Engine.SuccessExitCode
             | Left error -> failwith error
         | Left error -> failwith error
-
-    let init nuConfig =
-        Nu.init nuConfig
-        Globals.SelectEntity <- selectEntity

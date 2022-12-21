@@ -7,7 +7,7 @@ open Prime
 open Nu
 module Program =
 
-    // TODO: increase warning level to 5.
+    // TODO: increase project warning level to 5.
     let [<EntryPoint; STAThread>] main _ =
         let nuConfig = { NuConfig.defaultConfig with StandAlone = false }
         Gaia.init nuConfig
