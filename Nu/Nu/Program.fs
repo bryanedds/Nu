@@ -59,9 +59,8 @@ module Program =
                     File.WriteAllText (newProj, newProjStr)
 
                     // add project to sln file
-                    // NOTE: not currently working due to project in old file format - user is instructed to do this
-                    // manually.
-                    // TODO: consider opening up sln and manually insert this rather than attempting to use dotnet.
+                    // NOTE: not working due to project in old file format - user is instructed to do this manually.
+                    // TODO: consider opening up sln and textually inserting this rather than attempting to use dotnet.
                     //Directory.SetCurrentDirectory slnDir
                     //Process.Start("dotnet", "sln add Nu.sln \"" + newProj + "\"").WaitForExit()
                     ignore (slnDir, newProj)
