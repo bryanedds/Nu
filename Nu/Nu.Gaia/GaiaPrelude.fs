@@ -45,16 +45,16 @@ module Globals =
     let mutable FutureWorlds = [] : World list
     let mutable (PreUpdaters, PerUpdaters) = (Updaters (), Updaters ())
     let mutable SelectEntity = Unchecked.defaultof<_> : Entity -> GaiaForm -> World -> unit
-    let mutable SelectedScreen = Unchecked.defaultof<Screen> // TODO: see if this is necessary or if we can just use World.getSelectedScreen.
     let mutable SelectedGroup = Unchecked.defaultof<Group>
+    let mutable SelectedScreen = Unchecked.defaultof<Screen> // TODO: see if this is necessary or if we can just use World.getSelectedScreen.
     let mutable TargetDir = Unchecked.defaultof<string>
     let mutable Form = Unchecked.defaultof<GaiaForm>
     let mutable World = Unchecked.defaultof<World>
 
     let init selectEntity screen targetDir form world =
         SelectEntity <- selectEntity
-        SelectedScreen <- screen
         SelectedGroup <- Nu.World.getGroups screen world |> Seq.head
+        SelectedScreen <- screen
         TargetDir <- targetDir
         Form <- form
         World <- world

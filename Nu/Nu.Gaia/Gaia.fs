@@ -891,13 +891,10 @@ module Gaia =
                 let selectedGroup = Globals.SelectedGroup
                 let source = Entity (selectedGroup.GroupAddress <-- Address.makeFromString draggedNode.Name)
                 if not (source.GetProtected world) then
-                    let (mountToParent, target) =
-                        if targetNodeOpt.Name = Constants.Editor.GroupNodeKey
-                        then (false, Group selectedGroup.GroupAddress / source.Name)
-                        else (true, Entity (selectedGroup.GroupAddress <-- Address.makeFromString targetNodeOpt.Name) / source.Name)
-                    let mountOpt = if mountToParent then Some (Relation.makeParent ()) else None
+                    let target = Entity (selectedGroup.GroupAddress <-- Address.makeFromString targetNodeOpt.Name) / source.Name
+                    let mount = Relation.makeParent ()
                     let world = World.renameEntityImmediate source target world
-                    target.SetMountOptWithAdjustment mountOpt world
+                    target.SetMountOptWithAdjustment (Some mount) world
                 else Log.traceOnce "Cannot relocate a protected simulant (such as an entity created by the Elmish API)."; world
             else world
 
@@ -908,12 +905,10 @@ module Gaia =
         addPreUpdater $ fun world ->
             if notNull form.hierarchyTreeView.SelectedNode && args.Action <> TreeViewAction.Unknown then
                 let nodeKey = form.hierarchyTreeView.SelectedNode.Name
-                if nodeKey <> Constants.Editor.GroupNodeKey then
-                    let address = Address.makeFromString nodeKey
-                    let entity = Entity (Globals.SelectedGroup.GroupAddress <-- atoa address)
-                    if entity.Exists world then selectEntity entity form world
-                    world
-                else world
+                let address = Address.makeFromString nodeKey
+                let entity = Entity (Globals.SelectedGroup.GroupAddress <-- atoa address)
+                if entity.Exists world then selectEntity entity form world
+                world
             else world
 
     let private handleFormHierarchyTreeViewDoubleClick (form : GaiaForm) (_ : EventArgs) =

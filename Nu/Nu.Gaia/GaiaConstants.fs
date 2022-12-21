@@ -23,4 +23,3 @@ module Constants =
         let [<Literal>] DragMinimumSeconds = 0.2
         let [<Literal>] SavedStateFilePath = "GaiaState.txt"
         let [<Literal>] NonePick = "\"None\""
-        let (*Literal*) GroupNodeKey = string Gen.id
