@@ -50,15 +50,10 @@ module Enemy =
         member this.GetHealth world : int = this.Get (nameof Entity.Health) world
         member this.SetHealth (value : int) world = this.Set (nameof Entity.Health) value world
         member this.Health = lens (nameof this.Health) this this.GetHealth this.SetHealth
-        member this.IsOnScreen world =
-            let viewBounds = World.getViewBounds2d world
-            let perimeter = this.GetBounds world
-            let center = perimeter.Center
-            viewBounds.Intersects center.V2
 
     type EnemyDispatcher () =
         inherit EntityDispatcher2d (false, true)
-        
+
         static let move (enemy : Entity) world =
             let force = v3 -750.0f -5000.0f 0.0f
             World.applyBodyForce force (enemy.GetPhysicsId world) world
@@ -69,7 +64,7 @@ module Enemy =
 
         static let handleUpdate evt world =
             let enemy = evt.Subscriber : Entity
-            let world = if enemy.IsOnScreen world then move enemy world else world
+            let world = if enemy.GetInView2d world then move enemy world else world
             let world = if enemy.GetHealth world <= 0 then die enemy world else world
             (Cascade, world)
 
