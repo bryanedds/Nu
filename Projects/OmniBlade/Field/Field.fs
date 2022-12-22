@@ -553,8 +553,8 @@ module Field =
           FieldSongTimeOpt_ = None
           ViewBoundsAbsolute_ = World.getViewBounds2dAbsolute world }
 
-    let initial saveSlot randSeedState world =
-        make TombOuter saveSlot randSeedState (Avatar.initial ()) (Map.singleton 0 (Teammate.make 3 0 Jinn)) Advents.initial Inventory.initial world
+    let initial saveSlot world =
+        make TombOuter saveSlot (max 1UL Gen.randomul) (Avatar.initial ()) (Map.singleton 0 (Teammate.make 3 0 Jinn)) Advents.initial Inventory.initial world
 
     let debug world =
         make DebugField Slot1 Rand.DefaultSeedState (Avatar.empty ()) (Map.singleton 0 (Teammate.make 3 0 Jinn)) Advents.initial Inventory.initial world
@@ -599,6 +599,6 @@ module Field =
     let loadOrInitial saveSlot world =
         match tryLoad saveSlot world with
         | Some field -> field
-        | None -> initial Slot1 (max 1UL Gen.randomul) world
+        | None -> initial saveSlot world
 
 type Field = Field.Field

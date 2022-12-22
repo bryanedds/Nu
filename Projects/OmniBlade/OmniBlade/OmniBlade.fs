@@ -134,7 +134,7 @@ module OmniBlade =
                         match gui with
                         | Intro slot ->
                             match Simulants.Intro5.GetTransitionState world with
-                            | OutgoingState -> Field (Field.initial slot (max 1UL Gen.randomul) world)
+                            | OutgoingState -> Field (Field.initial slot world)
                             | _ -> model
                         | _ -> model
                     | Field field ->
