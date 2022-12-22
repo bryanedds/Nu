@@ -140,7 +140,7 @@ type MyGameDispatcher () =
                         for k in 0 .. dec 10 do
                             yield v3 (single i * 4.5f + single k * 0.5f) (single j * 4.5f + single k * 0.5f) -205.0f }
         let world =
-            Seq.foldi (fun i world position ->
+            Seq.fold (fun world position ->
                 let (entity, world) = World.createEntity<MetricsEntityDispatcher> NoOverlay (Some [|string Gen.id64|]) group world
                 let world = entity.SetPosition (position + v3 -118.0f -118.0f 0.0f) world
                 let world = entity.SetScale (v3Dup 2.0f) world
