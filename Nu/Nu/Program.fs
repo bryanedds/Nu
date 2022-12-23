@@ -59,11 +59,30 @@ module Program =
                     File.WriteAllText (newProj, newProjStr)
 
                     // add project to sln file
-                    // NOTE: not working due to project in old file format - user is instructed to do this manually.
-                    // TODO: consider opening up sln and textually inserting this rather than attempting to use dotnet.
-                    //Directory.SetCurrentDirectory slnDir
-                    //Process.Start("dotnet", "sln add Nu.sln \"" + newProj + "\"").WaitForExit()
-                    ignore (slnDir, newProj)
+                    Directory.SetCurrentDirectory slnDir
+                    let projectGuid = Gen.id
+                    let projectGuidStr = projectGuid.ToString().ToUpper()
+                    let slnLines = "Nu.sln" |> File.ReadAllLines |> Array.toList
+                    let insertionIndex = List.findIndex ((=) "Global") slnLines
+                    let slnLines =
+                        List.take insertionIndex slnLines @
+                        ["Project(\"{F2A71F9B-5D33-465A-A702-920D77279786}\") = \"" + name + "\", \"Projects\\" + name + "\\" + name + ".fsproj\", \"{" + string projectGuid + "}\""
+                         "EndProject"] @
+                        List.skip insertionIndex slnLines
+                    let insertionIndex = List.findIndex ((=) "\tGlobalSection(SolutionProperties) = preSolution") slnLines - 1
+                    let slnLines =
+                        List.take insertionIndex slnLines @
+                        ["\t\t{" + projectGuidStr + "}.Debug|x64.ActiveCfg = Debug|x64"
+                         "\t\t{" + projectGuidStr + "}.Debug|x64.Build.0 = Debug|x64"
+                         "\t\t{" + projectGuidStr + "}.Release|x64.ActiveCfg = Release|x64"
+                         "\t\t{" + projectGuidStr + "}.Release|x64.Build.0 = Release|x64"] @
+                        List.skip insertionIndex slnLines
+                    let insertionIndex = List.findIndex ((=) "\tGlobalSection(ExtensibilityGlobals) = postSolution") slnLines - 1
+                    let slnLines =
+                        List.take insertionIndex slnLines @
+                        ["\t\t{" + projectGuidStr + "} = {E3C4D6E1-0572-4D80-84A9-8001C21372D3}"] @
+                        List.skip insertionIndex slnLines
+                    File.WriteAllLines ("Nu.sln", List.toArray slnLines)
                     
                     // success
                     Constants.Engine.ExitCodeSuccess
