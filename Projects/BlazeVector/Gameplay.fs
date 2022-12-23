@@ -12,8 +12,7 @@ module Bullet =
     type BulletDispatcher () =
         inherit EntityDispatcher2d (false, true)
 
-        static let [<Literal>] BulletLifeTime =
-            27L
+        static let [<Literal>] BulletLifeTime = 27L
 
         static let handleBodyCollision evt world =
             let bullet = evt.Subscriber : Entity
