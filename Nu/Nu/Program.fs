@@ -97,13 +97,16 @@ module Program =
                         Console.Write ("Project name '" + name + "' already exists.")
                         Constants.Engine.ExitCodeFailure
 
-                // invalid name; failure
+                // invalid name
                 else
                     Console.Write ("Project name '" + name + "' contains invalid characters.")
                     Constants.Engine.ExitCodeFailure
 
-            // rejected
-            | _ -> Constants.Engine.ExitCodeSuccess
+            // cancelled
+            | _ ->
+                Constants.Engine.ExitCodeSuccess
 
-        // nothing to do
-        else Constants.Engine.ExitCodeSuccess
+        // template project missing
+        else
+            Console.Write ("Template project is missing; new project cannot be generated.")
+            Constants.Engine.ExitCodeFailure
