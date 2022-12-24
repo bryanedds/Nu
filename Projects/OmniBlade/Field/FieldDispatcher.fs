@@ -999,7 +999,7 @@ module FieldDispatcher =
                     Content.panel "Shop"
                         [Entity.Position == v3 -450.0f -255.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v3 900.0f 510.0f 0.0f
                          Entity.LabelImage == Assets.Gui.DialogXXLImage
-                         Entity.Enabled == Option.isNone shop.ShopConfirmOpt]
+                         Entity.Enabled := Option.isNone shop.ShopConfirmOpt]
                         [yield! Content.items (v3 96.0f 347.0f 0.0f) 8 4 field ShopSelect
                          Content.button "Buy"
                             [Entity.PositionLocal == v3 24.0f 438.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 192.0f 48.0f 0.0f
