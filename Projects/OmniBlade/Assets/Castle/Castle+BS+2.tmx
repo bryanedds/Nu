@@ -56,7 +56,7 @@
   </object>
   <object id="5" gid="1" x="552" y="564" width="432" height="720">
    <properties>
-    <property name="I" value="[Sprite HeavenlyLight [Field HeavenlyLight] [255 255 255 255] Additive [0 0 0 0] FlipNone false]"/>
+    <property name="I" value="[Sprite HeavenlyLight [Field HeavenlyLight] [1 1 1 1] Additive [0 0 0 0] FlipNone false]"/>
    </properties>
   </object>
   <object id="6" gid="235" x="696" y="528" width="144" height="144">
@@ -75,10 +75,10 @@
     [Dialog &quot;One hundred years...&quot; False]
     [Dialog &quot;For one hundred years that demon crawled its way into this world through the open wound in my soul...&quot; False]
     [Dialog &quot;One hundred years of sorrow... anguish...&quot; False]
-    [Dialog &quot;...living through unbearable memories over and over...&quot; False]
+    [Dialog &quot;...living through these unbearable memories over and over...&quot; False]
     [Dialog &quot;...all for a fleeting moment of vengeance.&quot; False]
     [Wait 120]
-    [Dialog &quot;The truth is clear now.&quot; False]
+    [Dialog &quot;The truth is clear to me now.&quot; False]
     [Wait 120]
     [Dialog &quot;You cannot answer darkness with darkness.&quot; False]
     [Wait 60]
