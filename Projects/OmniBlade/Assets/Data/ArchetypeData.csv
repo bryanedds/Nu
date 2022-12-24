@@ -51,11 +51,11 @@ Naga,1.4,1.55,1.55,1,1,1,1.5,1.5,Melee,Pelt,[],[],None,[],LargeStature,Physical 
 JackRider,1.4,1.55,1.55,1,1,1,1.5,1.5,Melee,Pelt,[[1 Flame] [3 DispelCut]],[[4 ConjureIfrit]],None,[],LargeStature,Fire and Debuff magic.
 Trap,1.4,1.55,1.55,1,1,1,1.5,1.5,Melee,Pelt,[],[],[Some Metal],[Poison Sleep],LargeStature,Strong physical attacks with Debuff magic.
 Vampire,1.4,1.5,1.6,1,1,1,1.5,1.5,Melee,Pelt,[],[],[Some Dark],[Poison Sleep],LargeStature,Status magic.
-Vampiress,1.4,1.5,1.6,1,1,1,1.5,1.5,Melee,Pelt,[[1 Weaken] [2 Muddle] [3 Slow]],[[4 Snowball]],[Some Dark],[Poison Sleep],LargeStature,Status magic.
+Vampiress,1.4,1.5,1.6,1,1,1,1.5,1.5,Melee,Pelt,[[3 Slow] [4 Bolt]],[[4 Snowball]],[Some Dark],[Poison Sleep],LargeStature,Status magic.
 Cerebus,1.4,1.55,1.55,1,1,1,1.5,1.5,Melee,Pelt,[[4 DoubleCut]],[],None,[],LargeStature,Strong physical attacks w/ Countering.
 Hydra,1.4,1.55,1.55,1,1,1,1.5,1.5,Melee,Pelt,[],[],None,[],LargeStature,Physical attack with Status effects.
 Gargoyle,1.4,1.55,1.55,1,1,1,1.5,1.5,Melee,Pelt,[],[],None,[],LargeStature,Physical attack with Gravity magic.
-MasterShaman,1.3,1.5,1.6,1,1,1,1.5,1.5,Melee,Pelt,[[3 Ice]],[[4 Snowball]],None,[],LargeStature,Elemental magic.
+MasterShaman,1.3,1.5,1.6,1,1,1,1.5,1.5,Melee,Pelt,[[4 Snowball]],[[4 Bolt]],None,[],LargeStature,Elemental magic.
 FireElemental,1.3,1.5,1.6,1,1,1,1.5,1.5,Melee,Pelt,[],[],[Some Fire],[Poison],LargeStature,Physical attack and Fire magic.
 IceElemental,1.3,1.5,1.6,1,1,1,1.5,1.5,Melee,Pelt,[],[],[Some Ice],[],LargeStature,Physical attack and Ice magic.
 LightningElemental,1.3,1.5,1.6,1,1,1,1.5,1.5,Melee,Pelt,[],[],[Some Lightning],[],LargeStature,Physical attack and Lightning magic.
