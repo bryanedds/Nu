@@ -82,11 +82,16 @@ type ArmorType =
     | RubberVest
     | SilkRobe
     | ToughHide
+    | SteelMail
+    | HuntingVest
+    | FeatherRobe
     | StoneHide
 
 type AccessoryType =
-    | SilverRing
     | IronBrace
+    | SnakeCharm
+    | SilverRing
+    | SilverWatch
 
 type WeaponSubtype =
     | Melee

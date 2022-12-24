@@ -18,6 +18,7 @@ module SpiritOrbDispatcher =
 
     type [<NoComparison>] SpiritOrb =
         { AvatarLowerCenter : Vector3
+          ShowUnopenedChests : bool
           Chests : Chest array
           Portals : Portal array
           Spirits : Spirit array }
@@ -28,7 +29,7 @@ module SpiritOrbDispatcher =
         member this.SpiritOrb = this.ModelGeneric<SpiritOrb> ()
 
     type SpiritOrbDispatcher () =
-        inherit GuiDispatcher<SpiritOrb, Message, Command> ({ AvatarLowerCenter = v3Zero; Spirits = [||]; Chests = [||]; Portals = [||] })
+        inherit GuiDispatcher<SpiritOrb, Message, Command> ({ AvatarLowerCenter = v3Zero; ShowUnopenedChests = true; Spirits = [||]; Chests = [||]; Portals = [||] })
 
         static let makeViews avatarLowerCenter (orbTransform : Transform) inhabitants =
             let mutable orbTransform = orbTransform
@@ -77,7 +78,8 @@ module SpiritOrbDispatcher =
             let avatarImage = Assets.Field.SpiritAvatarImage
             let avatarDescriptor = { Transform = avatarTransform; InsetOpt = ValueNone; Image = avatarImage; Color = Color.One; Blend = Transparent; Glow = Color.Zero; Flip = FlipNone }
             let avatarView = Render2d (avatarTransform.Elevation, avatarTransform.Perimeter.Position.Y, AssetTag.generalize avatarImage, SpriteDescriptor avatarDescriptor)
-            let chestViews = makeViews spiritOrb.AvatarLowerCenter orbTransform (Array.map ChestInhabitant spiritOrb.Chests)
+            let chests = Array.filter (fun (chest : Chest) -> spiritOrb.ShowUnopenedChests || chest.Opened) spiritOrb.Chests
+            let chestViews = makeViews spiritOrb.AvatarLowerCenter orbTransform (Array.map ChestInhabitant chests)
             let portalViews = makeViews spiritOrb.AvatarLowerCenter orbTransform (Array.map PortalInhabitant spiritOrb.Portals)
             let spiritViews = makeViews spiritOrb.AvatarLowerCenter orbTransform (Array.map SpiritInhabitant spiritOrb.Spirits)
             let views = orbView :: avatarView :: chestViews @ portalViews @ spiritViews

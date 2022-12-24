@@ -773,14 +773,6 @@ module BattleDispatcher =
                     let displaySnowball = DisplaySnowball (0L, targetIndex)
                     let battle = Battle.animateCharacter time Cast2Animation sourceIndex battle
                     withSignals [playSnowball; displaySnowball] battle
-                | Bolt ->
-                    let time = World.getUpdateTime world
-                    let battle = Battle.animateCharacter time Cast2Animation sourceIndex battle
-                    withSignal (DisplayBolt (0L, targetIndex)) battle // TODO: use sound.
-                | BoltBeam ->
-                    let time = World.getUpdateTime world
-                    let battle = Battle.animateCharacter time Cast2Animation sourceIndex battle
-                    withSignal (DisplayBolt (0L, targetIndex)) battle // TODO: use new sound and effect.
                 | Stone ->
                     let time = World.getUpdateTime world
                     let battle = Battle.animateCharacter time Cast2Animation sourceIndex battle
@@ -819,30 +811,36 @@ module BattleDispatcher =
                     let playBuff = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.BuffSound)
                     let displayBuff = DisplayBuff (0L, Shield (true, true), targetIndex)
                     withSignals [playBuff; displayBuff] battle
-                | Weaken ->
-                    let time = World.getUpdateTime world
-                    let battle = Battle.animateCharacter time Cast2Animation sourceIndex battle
-                    let playDebuff = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.DebuffSound)
-                    let displayDebuff = DisplayDebuff (0L, Power (false, false), targetIndex)
-                    withSignals [playDebuff; displayDebuff] battle
                 | Muddle ->
                     let time = World.getUpdateTime world
                     let battle = Battle.animateCharacter time Cast2Animation sourceIndex battle
                     let playDebuff = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.DebuffSound)
                     let displayDebuff = DisplayDebuff (0L, Magic (false, false), targetIndex)
                     withSignals [playDebuff; displayDebuff] battle
-                | ConjureIfrit ->
+                | Weaken ->
                     let time = World.getUpdateTime world
                     let battle = Battle.animateCharacter time Cast2Animation sourceIndex battle
-                    let playIfrit = PlaySound (10L, Constants.Audio.SoundVolumeDefault, Assets.Field.IfritSound)
-                    let displayConjureIfrit = DisplayConjureIfrit 0L
-                    withSignals [playIfrit; displayConjureIfrit] battle
+                    let playDebuff = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.DebuffSound)
+                    let displayDebuff = DisplayDebuff (0L, Power (false, false), targetIndex)
+                    withSignals [playDebuff; displayDebuff] battle
                 | Slow ->
                     let time = World.getUpdateTime world
                     let battle = Battle.animateCharacter time Cast2Animation sourceIndex battle
                     let playDebuff = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.DebuffSound)
                     let displayDebuff = DisplayDebuff (0L, Time false, targetIndex)
                     withSignals [playDebuff; displayDebuff] battle
+                | Bolt ->
+                    let time = World.getUpdateTime world
+                    let battle = Battle.animateCharacter time Cast2Animation sourceIndex battle
+                    let playSound = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.ExplosionSound)
+                    let displayBolt = DisplayBolt (0L, targetIndex)
+                    withSignals [playSound; displayBolt] battle
+                | ConjureIfrit ->
+                    let time = World.getUpdateTime world
+                    let battle = Battle.animateCharacter time Cast2Animation sourceIndex battle
+                    let playIfrit = PlaySound (10L, Constants.Audio.SoundVolumeDefault, Assets.Field.IfritSound)
+                    let displayConjureIfrit = DisplayConjureIfrit 0L
+                    withSignals [playIfrit; displayConjureIfrit] battle
                 | Purify ->
                     let time = World.getUpdateTime world
                     let battle = Battle.animateCharacter time Cast2Animation sourceIndex battle

@@ -365,7 +365,7 @@ type RandMap =
           Segments = Array.init size.X (fun _ -> Array.init size.Y (constant Segment.Segment0))
           OriginOpt = None }
 
-    static member toTmx fieldName abstractPath origin (cursor : Vector2i) floor map =
+    static member toTmx fieldName abstractPath origin (cursor : Vector2i) floor useWindPortal map =
 
         // locals
         let mapTmx = TmxMap (abstractPath + "+7x7.tmx")
@@ -391,23 +391,30 @@ type RandMap =
             let object = TmxMap.makeObject entryId 0 (double openingXX) (double openingYY) (double openingWidth) (double openingHeight)
             object.Properties.Add ("I", openingInfo)
             objects.[0] <- object
-        else
-            let (stairsX, stairsY, stairsWidth, stairsHeight) = (16 * mapTmx.TileWidth, 16 * mapTmx.TileHeight, mapTmx.TileWidth, mapTmx.TileHeight)
-            let stairsInfo = "[Portal [StairsPortal true] [IX 1] Upward [" + fieldName + " " + string (dec floor) + "] [IX 2]]"
-            let stairsXX = stairsX + cursor.X * mapTmx.TileWidth * 32
-            let stairsYY = stairsY + cursor.Y * mapTmx.TileHeight * 32
-            let object = TmxMap.makeObject entryId 0 (double stairsXX) (double stairsYY) (double stairsWidth) (double stairsHeight)
-            object.Properties.Add ("I", stairsInfo)
-            objects.[0] <- object
 
         // add objects from segments
         let mutable propId = inc entryId
+        let mutable stairsCreated = false
+        let stairsInfo = "[Portal [StairsPortal True " + string useWindPortal + "] [IX 1] Upward [" + fieldName + " " + string (dec floor) + "] [IX 2]]"
         for i in 0 .. 7 - 1 do
             for j in 0 .. 7 - 1 do
                 match RandMap.getSegmentOpt map.Segments.[j].[i] segments with
                 | Some segment ->
                     if segment.ObjectGroups.Count <> 0 then
                         for objectRef in segment.ObjectGroups.[0].Objects do
+                            if  not stairsCreated &&
+                                floor > 0 &&
+                                i = cursor.X &&
+                                j = cursor.Y &&
+                                objectRef.Properties.ContainsKey "S" then
+                                let x = objectRef.X + double i * 32.0 * double mapTmx.TileWidth
+                                let y = objectRef.Y + double j * 32.0 * double mapTmx.TileHeight
+                                let w = mapTmx.TileWidth
+                                let h = mapTmx.TileHeight
+                                let object = TmxMap.makeObject entryId 0 (double x) (double y) (double w) (double h)
+                                object.Properties.Add ("I", stairsInfo)
+                                objects.[0] <- object
+                                stairsCreated <- true
                             let x = objectRef.X + double i * 32.0 * double mapTmx.TileWidth
                             let y = objectRef.Y + double j * 32.0 * double mapTmx.TileHeight
                             let object = TmxMap.makeObject propId 0 x y objectRef.Width objectRef.Height
@@ -415,6 +422,15 @@ type RandMap =
                             propId <- inc propId
                             objects.Add object
                 | None -> ()
+
+        // add stairs in default location if none created yet
+        if floor > 0 && not stairsCreated then
+            let (stairsX, stairsY, stairsWidth, stairsHeight) = (16 * mapTmx.TileWidth, 16 * mapTmx.TileHeight, mapTmx.TileWidth, mapTmx.TileHeight)
+            let stairsXX = stairsX + cursor.X * mapTmx.TileWidth * 32
+            let stairsYY = stairsY + cursor.Y * mapTmx.TileHeight * 32
+            let object = TmxMap.makeObject entryId 0 (double stairsXX) (double stairsYY) (double stairsWidth) (double stairsHeight)
+            object.Properties.Add ("I", stairsInfo)
+            objects.[0] <- object
 
         // add tiles from segments
         for l in 0 .. mapTmx.TileLayers.Count - 1 do

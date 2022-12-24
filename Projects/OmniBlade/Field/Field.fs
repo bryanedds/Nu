@@ -184,6 +184,11 @@ module Field =
             | Portal (portalType, _, _, _, _, _, requirements) when portalType <> WarpPortal -> Some (Portal.make prop.Perimeter (field.Advents.IsSupersetOf requirements))
             | _ -> None)
 
+    let getShowUnopenedChests (field : Field) =
+        match Map.tryFind field.FieldType Data.Value.Fields with
+        | Some fieldData -> fieldData.ShowUnopenedChests
+        | None -> true
+
     let tryGetFacingInteraction (prop : Prop) (field : Field) =
         match prop.PropData with
         | Sprite _ -> None
@@ -275,7 +280,10 @@ module Field =
                                         | Rightward -> portal.PropPerimeter.Right + v3 32.0f 0.0f 0.0f + if extended then v3 48.0f 0.0f 0.0f else v3Zero
                                         | Downward -> portal.PropPerimeter.Bottom + v3 0.0f -54.0f 0.0f - if extended then v3 0.0f 48.0f 0.0f else v3Zero
                                         | Leftward -> portal.PropPerimeter.Left + v3 -32.0f 0.0f 0.0f - if extended then v3 48.0f 0.0f 0.0f else v3Zero
-                                    let isWarp = match portalType with AirPortal | StairsPortal _ -> false | WarpPortal -> true
+                                    let isWarp =
+                                        match portalType with
+                                        | AirPortal | StairsPortal (_, false) -> false
+                                        | WarpPortal| StairsPortal (_, true) -> true
                                     Some (fieldType, destination, direction, isWarp)
                                 | _ -> None
                             | None -> None

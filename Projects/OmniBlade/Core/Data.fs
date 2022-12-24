@@ -118,9 +118,9 @@ type AffinityType =
 
 type [<CustomEquality; CustomComparison>] StatusType =
     | Poison
-    | Silence
-    | Sleep
-    | Confuse
+    | Silence // TODO: implement effect in battle.
+    | Sleep // TODO: implement effect in battle.
+    | Confuse // TODO: implement effect in battle.
     //| Blind - maybe in the sequel
     | Time of bool // true = Haste, false = Slow
     | Power of bool * bool // true = Up, false = Down; true = 2, false = 1
@@ -221,8 +221,6 @@ type TechType =
     | Flame
     | Ice
     | Snowball
-    | Bolt
-    | BoltBeam
     | Stone
     | Quake
     | Cure
@@ -232,8 +230,9 @@ type TechType =
     | Protect
     | Weaken
     | Muddle
-    | ConjureIfrit
     | Slow
+    | Bolt
+    | ConjureIfrit
     | Purify
 
 type ActionType =
@@ -263,6 +262,7 @@ type ArchetypeType =
     | Chillowisp
     | Fairy
     | Gel
+    | Toad
     | Beetle
     | Rat
     | Scorpion
@@ -283,7 +283,7 @@ type ArchetypeType =
     | Squidly
     | Merman
     | Feral
-    | Thief
+    | Brigand
     | Lizardman
     | Trixter
     | Monk
@@ -291,32 +291,37 @@ type ArchetypeType =
     | Tortoise
     | Robot
     | Harpy
-    | Jack
+    | JackMan
     | Avian
     | Troll
     | Mare
     | Djinn
     | Naga
-    | Jackorider
+    | JackRider
     | Trap
     | Vampire
+    | Vampiress
     | Cerebus
     | Hydra
     | Gargoyle
-    | ShamanBig
+    | MasterShaman
     | FireElemental
     | IceElemental
     | LightningElemental
     | EarthElemental
     | Minotaur
-    | Dragon
+    | LittleDragon
     | Ogre
-    | HydraBig
+    | PowerHydra
+    | Lich
     | Armoros
     | Golem
-    | RobotBig
+    | Deathbot
     | Dinoman
     | Arachnos
+    | Dragon
+    | Wolf // normal enemy whose sprite forced into BossStature
+    | Nightmare // normal enemy whose sprite forced into BossStature
 
 type ShopType =
     | Chemist
@@ -345,14 +350,28 @@ type FieldType =
     | DeadSeaConnector
     | Ruins of int
     | RuinsConnector
-    | Castle2 of int
-    | Castle2Connector
+    | DarkCastle of int
+    | DarkCastleConnector
     | Desert of int
     | DesertConnector
     | Seasons of int
     | SeasonsConnector
     | Volcano of int
     | VolcanoConnector
+
+    member this.Connector =
+        match this with
+        | CastleConnector
+        | ForestConnector
+        | FactoryConnector
+        | MountainConnector
+        | DeadSeaConnector
+        | RuinsConnector
+        | DarkCastleConnector
+        | DesertConnector
+        | SeasonsConnector
+        | VolcanoConnector -> true
+        | _ -> false
 
     static member toFieldName (fieldType : FieldType) =
         match valueToSymbol fieldType with
@@ -426,7 +445,7 @@ type PortalIndex =
 type PortalType =
     | AirPortal
     | WarpPortal
-    | StairsPortal of bool
+    | StairsPortal of bool * bool
 
 type NpcType =
     | ShadeNpc
@@ -673,14 +692,14 @@ module OmniSeedState =
         match fieldType with
         | EmptyField | DebugField | TombOuter | TombGround | TombBasement
         | CastleConnector | ForestConnector | FactoryConnector | MountainConnector | DeadSeaConnector
-        | RuinsConnector | Castle2Connector | DesertConnector | SeasonsConnector | VolcanoConnector -> state.RandSeedState
+        | RuinsConnector | DarkCastleConnector | DesertConnector | SeasonsConnector | VolcanoConnector -> state.RandSeedState
         | Castle n -> state.RandSeedState <<< n
         | Forest n -> state.RandSeedState <<< n + 6
         | Factory n -> state.RandSeedState <<< n + 12
         | Mountain n -> state.RandSeedState <<< n + 18
         | DeadSea n -> state.RandSeedState <<< n + 24
         | Ruins n -> state.RandSeedState <<< n + 30
-        | Castle2 n -> state.RandSeedState <<< n + 36
+        | DarkCastle n -> state.RandSeedState <<< n + 36
         | Desert n -> state.RandSeedState <<< n + 42
         | Seasons n -> state.RandSeedState <<< n + 48
         | Volcano n -> state.RandSeedState <<< n + 54
@@ -715,8 +734,9 @@ type [<NoComparison>] AccessoryData =
     { AccessoryType : AccessoryType // key
       ShieldBase : int
       CounterBase : int
-      Immunities : StatusType Set
       AffinityOpt : AffinityType option
+      Immunities : StatusType Set
+      Enchantments : StatusType Set
       Cost : int
       Description : string }
 
@@ -764,8 +784,8 @@ type [<NoComparison>] ArchetypeData =
       ArmorSubtype : ArmorSubtype
       Techs : Map<int, TechType> // tech availability according to level
       ChargeTechs : (int * TechType) list
-      Immunities : StatusType Set
       AffinityOpt : AffinityType option
+      Immunities : StatusType Set
       Stature : StatureType
       Description : string }
 
@@ -868,6 +888,8 @@ type [<NoComparison>] FieldData =
       FieldDebugAdvents : Advent Set
       FieldDebugKeyItems : KeyItemType list
       FieldSongOpt : Song AssetTag option
+      ShowUnopenedChests : bool
+      UseWindPortal : bool
       EncounterTypeOpt : EncounterType option
       Definitions : CueDefinitions
       Treasures : ItemType list }
@@ -929,7 +951,7 @@ module FieldData =
                     let (origin, rand) = Origin.toOrigin originRand rand
                     let (cursor, randMap, _) = RandMap.makeFromRand walkLength bias Constants.Field.RandMapSize origin floor rand
                     let fieldName = FieldType.toFieldName fieldData.FieldType
-                    let mapTmx = RandMap.toTmx fieldName fieldPath origin cursor floor randMap
+                    let mapTmx = RandMap.toTmx fieldName fieldPath origin cursor floor fieldData.UseWindPortal randMap
                     Some (Choice3Of3 (mapTmx, origin))
             match tileMapOpt with
             | Some tileMapChc -> tileMapsMemoized <- Map.add memoKey tileMapChc tileMapsMemoized
@@ -992,16 +1014,15 @@ module FieldData =
             match tileMapChc with
             | Choice3Of3 (tileMap, origin) ->
                 match fieldData.FieldTileMap with
-                | FieldRandom (walkLength, _, _, _, _) ->
+                | FieldRandom (_, _, _, _, _) ->
                     let tileMapPerimeter = box3 v3Zero (v3 (single tileMap.Width * single tileMap.TileWidth) (single tileMap.Height * single tileMap.TileHeight) 0.0f)
                     let distanceFromOriginMax =
                         let walkLengthScalar =
                             match origin with
                             | OriginC -> Constants.Field.WalkLengthScalarOpened
                             | _ -> Constants.Field.WalkLengthScalarClosed
-                        let walkRatio = single walkLength * walkLengthScalar
                         let delta = tileMapPerimeter.Bottom - tileMapPerimeter.Top
-                        delta.Magnitude * walkRatio
+                        delta.Magnitude * walkLengthScalar
                     let distanceFromOrigin =
                         match origin with
                         | OriginC -> let delta = avatarBottom - tileMapPerimeter.Center in delta.Magnitude

@@ -85,8 +85,8 @@ hitting a room object changes placement of character (conveyer belt / warp thing
 
 character enablers
 
-to enable Jinn, give each enemy Dark weakness.
+to enable Jinn, give each enemy metal or wind weakness.
 to enable Mael, give each enemy an available elemental weakness.
 to enable Shade, give each enemy Poison vulnerability and magic resistance.
-to enable Peric, give enemies AoE attacks and related debuffs.
-to enable Riain, give enemies single attacks and related self-buffs.
+to enable Peric, give AoE attacks and related debuffs.
+to enable Riain, give each enemy lightning weakness, enemies single attacks and / or related self-buffs.

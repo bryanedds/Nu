@@ -12,9 +12,11 @@ open OmniBlade
 [<AutoOpen>]
 module FieldDispatcher =
 
-    type FieldMessage =
+    type [<NoComparison>] FieldMessage =
         | Update
         | UpdateFieldTransition
+        | AvatarBodyCollision of BodyCollisionData
+        | AvatarBodySeparation of BodySeparationData
         | MenuTeamOpen
         | MenuTeamAlly of int
         | MenuItemsOpen
@@ -61,6 +63,25 @@ module FieldDispatcher =
 
     type FieldDispatcher () =
         inherit ScreenDispatcher<Field, FieldMessage, FieldCommand> (Field.empty)
+
+        static let isIntersectedProp collider collidee (avatar : Avatar) world =
+            if (collider.BodyShapeId = avatar.CoreShapeId &&
+                collidee.Entity.Exists world &&
+                collidee.Entity.Is<PropDispatcher> world &&
+                match (collidee.Entity.GetPropPlus world).Prop.PropData with
+                | Portal _ -> true
+                | Sensor _ -> true
+                | _ -> false) then
+                true
+            elif (collider.BodyShapeId = avatar.SensorShapeId &&
+                  collidee.Entity.Exists world &&
+                  collidee.Entity.Is<PropDispatcher> world &&
+                  match (collidee.Entity.GetPropPlus world).Prop.PropData with
+                  | Portal _ -> false
+                  | Sensor _ -> false
+                  | _ -> true) then
+                true
+            else false
 
         static let interactDialog dialog field =
             match Dialog.tryAdvance (Field.detokenize field) dialog with
@@ -153,7 +174,9 @@ module FieldDispatcher =
              Screen.UpdateEvent => Update
              Screen.PostUpdateEvent => UpdateFieldTransition
              Screen.PostUpdateEvent => UpdateEye
-             Screen.SelectEvent => PlayFieldSong]
+             Screen.SelectEvent => PlayFieldSong
+             Simulants.FieldSceneAvatar.BodyCollisionEvent =|> fun evt -> AvatarBodyCollision evt.Data |> signal
+             Simulants.FieldSceneAvatar.BodySeparationEvent =|> fun evt -> AvatarBodySeparation evt.Data |> signal]
 
         override this.Message (field, message, _, world) =
 
@@ -310,6 +333,48 @@ module FieldDispatcher =
 
                 // no transition
                 | None -> just field
+
+            | AvatarBodyCollision collision ->
+
+                // add collided body shape
+                let field =
+                    Field.updateAvatar (fun avatar ->
+                        if isIntersectedProp collision.BodyCollider collision.BodyCollidee avatar world then
+                            let avatar = Avatar.updateCollidedPropIds (List.cons (collision.BodyCollidee.Entity.GetPropPlus world).Prop.PropId) avatar
+                            let avatar = Avatar.updateIntersectedPropIds (List.cons (collision.BodyCollidee.Entity.GetPropPlus world).Prop.PropId) avatar
+                            avatar
+                        else avatar)
+                        field
+                just field
+
+            | AvatarBodySeparation separation ->
+
+                // add separated body shape
+                let field =
+                    Field.updateAvatar (fun avatar ->
+                        match separation with
+                        | BodySeparationImplicit physicsId ->
+                            let entityOpt =
+                                world |>
+                                World.getEntities Simulants.FieldScene |>
+                                Seq.filter (fun entity -> entity.Is<PropDispatcher> world && entity.GetPhysicsId world = physicsId) |>
+                                Seq.tryHead
+                            match entityOpt with
+                            | Some entity ->
+                                let propId = (entity.GetPropPlus world).Prop.PropId
+                                let (separatedPropIds, intersectedPropIds) = List.split ((=) propId) avatar.IntersectedPropIds
+                                let avatar = Avatar.updateIntersectedPropIds (constant intersectedPropIds) avatar
+                                let avatar = Avatar.updateSeparatedPropIds ((@) separatedPropIds) avatar
+                                avatar
+                            | None -> avatar
+                        | BodySeparationExplicit explicit ->
+                            if isIntersectedProp explicit.BodySeparator explicit.BodySeparatee avatar world then
+                                let avatar = Avatar.updateSeparatedPropIds (List.cons (explicit.BodySeparatee.Entity.GetPropPlus world).Prop.PropId) avatar
+                                let avatar = Avatar.updateIntersectedPropIds (List.remove ((=) (explicit.BodySeparatee.Entity.GetPropPlus world).Prop.PropId)) avatar
+                                avatar
+                            else avatar)
+                        field
+                just field
 
             | MenuTeamOpen ->
                 let state = MenuTeam { TeamIndex = 0; TeamIndices = Map.toKeyList field.Team }
@@ -634,7 +699,11 @@ module FieldDispatcher =
 
                 [// avatar
                  Content.entity<AvatarDispatcher> Simulants.FieldSceneAvatar.Name
-                    [Entity.Position == v3Zero; Entity.Elevation == Constants.Field.ForegroundElevation; Entity.Size == Constants.Gameplay.CharacterSize
+                    [Entity.Position == v3Zero
+                     Entity.Elevation :=
+                        Constants.Field.ForegroundElevation +
+                        if field.Avatar.Position.Y >= 480.0f && field.FieldType = ForestConnector then 1.0f else 0.0f // HACK: adjusting to work around hacky fade impl for certain fields.
+                     Entity.Size == Constants.Gameplay.CharacterSize
                      Entity.Enabled :=
                         field.Menu.MenuState = MenuClosed &&
                         Cue.notInterrupting field.Inventory field.Advents field.Cue &&
@@ -652,7 +721,7 @@ module FieldDispatcher =
                  if Field.hasEncounters field && Cue.isNil field.Cue then
                     Content.entity<SpiritOrbDispatcher> "SpiritOrb"
                         [Entity.Position == v3 -448.0f 48.0f 0.0f; Entity.Elevation == Constants.Field.SpiritOrbElevation; Entity.Size == v3 192.0f 192.0f 0.0f
-                         Entity.SpiritOrb := { AvatarLowerCenter = field.Avatar.LowerCenter; Spirits = field.Spirits; Chests = Field.getChests field; Portals = Field.getNonWarpPortals field }]
+                         Entity.SpiritOrb := { AvatarLowerCenter = field.Avatar.LowerCenter; ShowUnopenedChests = Field.getShowUnopenedChests field; Spirits = field.Spirits; Chests = Field.getChests field; Portals = Field.getNonWarpPortals field }]
 
                  // backdrop sprite
                  Content.staticSprite "Backdrop"
@@ -709,7 +778,7 @@ module FieldDispatcher =
                  Content.tmxMap "TileMapFade"
                     [Entity.Elevation == Constants.Field.BackgroundElevation + 0.5f
                      Entity.Color :=
-                        (let progress = 1.0f - (Constants.Field.ConnectorFadeYMax - field.Avatar.Bottom.Y) / Constants.Field.ConnectorFadeYMax
+                        (let progress = 1.0f - (Constants.Field.ConnectorFadeYMax - field.Avatar.Bottom.Y + Constants.Field.ConnectorFadeYMin) / Constants.Field.ConnectorFadeYMax
                          let fade = min 1.0f progress
                          Color.One.ScaleA fade)
                      Entity.TmxMap :=

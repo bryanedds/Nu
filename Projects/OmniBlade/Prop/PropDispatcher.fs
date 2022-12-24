@@ -97,16 +97,25 @@ module PropDispatcher =
                                 let inset = box2 (v2 (celSize.X * celColumn) 0.0f) celSize // TODO: turn this into a general animation function if one doesn't already exist...
                                 let image = Assets.Field.WarpAnimationSheet
                                 (true, image, Color.One, Transparent, Color.Zero, ValueSome inset, FlipNone)
-                            | StairsPortal descending ->
-                                let offsetY = if descending then Constants.Gameplay.TileCelSize.Y else 0.0f
-                                let offsetX =
-                                    match direction with
-                                    | Upward -> 0.0f
-                                    | Rightward -> Constants.Gameplay.TileCelSize.X
-                                    | Downward -> Constants.Gameplay.TileCelSize.X * 2.0f
-                                    | Leftward -> Constants.Gameplay.TileCelSize.X * 3.0f
-                                let offset = v2 offsetX offsetY
-                                (true, Assets.Field.StairsImage, Color.One, Transparent, Color.Zero, ValueSome (box2 offset Constants.Gameplay.TileCelSize), FlipNone)
+                            | StairsPortal (descending, wind) ->
+                                if not wind then
+                                    let offsetY = if descending then Constants.Gameplay.TileCelSize.Y else 0.0f
+                                    let offsetX =
+                                        match direction with
+                                        | Upward -> 0.0f
+                                        | Rightward -> Constants.Gameplay.TileCelSize.X
+                                        | Downward -> Constants.Gameplay.TileCelSize.X * 2.0f
+                                        | Leftward -> Constants.Gameplay.TileCelSize.X * 3.0f
+                                    let offset = v2 offsetX offsetY
+                                    (true, Assets.Field.StairsImage, Color.One, Transparent, Color.Zero, ValueSome (box2 offset Constants.Gameplay.TileCelSize), FlipNone)
+                                else
+                                    let time = World.getUpdateTime world
+                                    let localTime = time / 10L
+                                    let celSize = Constants.Gameplay.TileCelSize
+                                    let celColumn = single (localTime % 4L)
+                                    let inset = box2 (v2 (celSize.X * celColumn) 0.0f) celSize // TODO: turn this into a general animation function if one doesn't already exist...
+                                    let image = Assets.Field.WindAnimationSheet
+                                    (true, image, Color.One, Transparent, Color.Zero, ValueSome inset, FlipNone)
                         else (false, Assets.Default.ImageEmpty, Color.One, Transparent, Color.Zero, ValueNone, FlipNone)
                     | Door (doorType, _, _, _, _) ->
                         let image =
@@ -175,7 +184,8 @@ module PropDispatcher =
                                 | MaelNpc -> (Assets.Field.MaelAnimationSheet, Constants.Gameplay.CharacterSize)
                                 | RiainNpc -> (Assets.Field.RiainAnimationSheet, Constants.Gameplay.CharacterSize)
                                 | PericNpc -> (Assets.Field.PericAnimationSheet, Constants.Gameplay.CharacterSize)
-                                | RavelNpc | AdvenNpc | EildaenNpc | NostrusNpc | MadTrixterNpc | HeavyArmorosNpc -> (Assets.Field.NpcAnimationSheet, Constants.Gameplay.CharacterSize)
+                                | RavelNpc | AdvenNpc | EildaenNpc | NostrusNpc
+                                | MadTrixterNpc | HeavyArmorosNpc -> (Assets.Field.NpcAnimationSheet, Constants.Gameplay.CharacterSize)
                                 | AraneaImplicitumNpc -> (Assets.Field.BossAnimationSheet, Constants.Gameplay.BossSize)
                             let (row, column) =
                                 match npcType with
