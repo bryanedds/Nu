@@ -825,7 +825,7 @@ module FieldDispatcher =
                                     "\nTP  " + (string teammate.TechPoints).PadLeft 3 + " /" + (string teammate.TechPointsMax).PadLeft 3 +
                                     "\nPow " + (string teammate.Power).PadLeft 3 +      "   Mag " + (string $ teammate.Magic false).PadLeft 3 +
                                     "\nDef " + (string teammate.Defense).PadLeft 3 +    "   Abs " + (string teammate.Absorb).PadLeft 3 +
-                                    "\nExp " + (string teammate.ExpPoints).PadLeft 3 +  " /" + (string (Algorithms.expPointsForNextLevel teammate.ExpPoints)).PadLeft 3
+                                    "\nExp " + (string teammate.ExpPoints).PadLeft 3 +  " / " + (string (Algorithms.expPointsForNextLevel teammate.ExpPoints)).PadLeft 2
                                 | None -> ""]]
 
                  // inventory
