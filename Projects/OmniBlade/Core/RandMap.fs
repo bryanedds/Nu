@@ -393,6 +393,7 @@ type RandMap =
             objects.[0] <- object
 
         // add objects from segments
+        // HACK: except chest spawns at origin!
         let mutable propId = inc entryId
         let mutable stairsCreated = false
         let stairsInfo = "[Portal [StairsPortal True " + string useWindPortal + "] [IX 1] Upward [" + fieldName + " " + string (dec floor) + "] [IX 2]]"
@@ -415,12 +416,15 @@ type RandMap =
                                 object.Properties.Add ("I", stairsInfo)
                                 objects.[0] <- object
                                 stairsCreated <- true
-                            let x = objectRef.X + double i * 32.0 * double mapTmx.TileWidth
-                            let y = objectRef.Y + double j * 32.0 * double mapTmx.TileHeight
-                            let object = TmxMap.makeObject propId 0 x y objectRef.Width objectRef.Height
-                            for propertyKvp in objectRef.Properties do object.Properties.Add (propertyKvp.Key, propertyKvp.Value)
-                            propId <- inc propId
-                            objects.Add object
+                            match objectRef.Properties.TryGetValue "I" with
+                            | (true, propStr) when i = cursor.X && j = cursor.Y && propStr.Contains "ChestSpawn" -> ()
+                            | (_, _) ->
+                                let x = objectRef.X + double i * 32.0 * double mapTmx.TileWidth
+                                let y = objectRef.Y + double j * 32.0 * double mapTmx.TileHeight
+                                let object = TmxMap.makeObject propId 0 x y objectRef.Width objectRef.Height
+                                for propertyKvp in objectRef.Properties do object.Properties.Add (propertyKvp.Key, propertyKvp.Value)
+                                propId <- inc propId
+                                objects.Add object
                 | None -> ()
 
         // add stairs in default location if none created yet
