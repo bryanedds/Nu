@@ -74,17 +74,18 @@ module Constants =
         let SpiritOrbSize = v3 192.0f 192.0f 0.0f
         let SpiritOrbRatio = 0.075f
         let SpiritOrbBlipSize = v3 21.0f 21.0f 0.0f
-#if DEV && FIELD
-        let SpiritActivityMinimum = 1440L
+#if DEV_FIELD
+        let SpiritActivityMinimum = 10000L
 #else
-        let SpiritActivityMinimum = 360L
+        let SpiritActivityMinimum = 420L
 #endif
         let SpiritActivityThreshold = 120L
         let SpiritRadius = 90.0f / SpiritOrbRatio
-        let WalkLengthScalarClosed = 1.0f / 12.0f // NOTE: higher is shorter distance to stronger spirits.
-        let WalkLengthScalarOpened = 1.0f / 20.0f // NOTE: higher is shorter distance to stronger spirits.
+        let WalkLengthScalarClosed = 0.5f // NOTE: higher is shorter distance to stronger spirits.
+        let WalkLengthScalarOpened = 0.3f // NOTE: higher is shorter distance to stronger spirits.
         let TreasureProbability = 0.667f
         let RecruitmentFees = [|200; 1000; 5000; 20000|]
+        let ConnectorFadeYMin = 96.0f
         let ConnectorFadeYMax = 1440.0f
         let FeelerElevation = -100.0f
         let BackgroundElevation = -30.0f

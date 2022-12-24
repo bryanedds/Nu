@@ -23,9 +23,6 @@
   </data>
  </layer>
  <objectgroup id="3" name="Props">
-  <properties>
-   <property name="I" value="[Sensor StepPlateSensor [BodyBox [[0.5 0.5]  [0.5 0.5]] [RemoveAdvent CastleUnsealed]]"/>
-  </properties>
   <object id="4" gid="235" x="720" y="1536" width="96" height="48">
    <properties>
     <property name="I" value="[Portal AirPortal South Upward TombGround [IX 0]]"/>

@@ -103,6 +103,7 @@
     [Fade [SpriteTarget HeavenlyLight] 300 False]
     [Wait 120]
     [ReplaceAdvent [KylaAdvent 6] [KylaAdvent 7]]
+    [RemoveAdvent ForestSealed]
     [PlaySound 0.5 [Field StepWarp]]]]
   [[KylaAdvent 6] AraneaImplicitumDefeated]]</property>
    </properties>

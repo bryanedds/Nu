@@ -91,20 +91,6 @@ module Algorithms =
             | None -> single level
         (mindBase + single level) * focus |> int |> max 0
 
-    let immunities accessories archetypeType (level : int) =
-        ignore level
-        let immunities =
-            match Map.tryFind archetypeType Data.Value.Archetypes with
-            | Some archetypeData -> archetypeData.Immunities
-            | None -> Set.empty
-        List.fold
-            (fun affinityOpt accessoryType ->
-                match Map.tryFind accessoryType Data.Value.Accessories with
-                | Some accessoryData -> Set.union accessoryData.Immunities immunities
-                | None -> affinityOpt)
-            immunities
-            accessories
-
     let affinityOpt accessories archetypeType (level : int) =
         ignore level
         let affinityOpt =
@@ -117,6 +103,31 @@ module Algorithms =
                 | Some accessoryData -> match accessoryData.AffinityOpt with Some _ as opt -> opt | None -> affinityOpt
                 | None -> affinityOpt)
             affinityOpt
+            accessories
+
+    let immunities accessories archetypeType (level : int) =
+        ignore level
+        let immunities =
+            match Map.tryFind archetypeType Data.Value.Archetypes with
+            | Some archetypeData -> archetypeData.Immunities
+            | None -> Set.empty
+        List.fold
+            (fun immunities accessoryType ->
+                match Map.tryFind accessoryType Data.Value.Accessories with
+                | Some accessoryData -> Set.union accessoryData.Immunities immunities
+                | None -> immunities)
+            immunities
+            accessories
+
+    let enchantments accessories (archetypeType : ArchetypeType) (level : int) =
+        ignore archetypeType
+        ignore level
+        List.fold
+            (fun enchantments accessoryType ->
+                match Map.tryFind accessoryType Data.Value.Accessories with
+                | Some accessoryData -> Set.union accessoryData.Enchantments enchantments
+                | None -> enchantments)
+            Set.empty
             accessories
 
     let power weaponOpt statuses archetypeType level =

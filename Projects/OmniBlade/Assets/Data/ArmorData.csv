@@ -1,4 +1,4 @@
-Type,Subtype,EnduranceBase (increase by 33.3%),MindBase (increase constant amount),Cost,Description
+Type,Subtype,EnduranceBase (increase by % amount),MindBase (increase constant amount),Cost,Description
 MicroFur,Pelt,4,4,5,
 TinMail,Mail,14,12,10,Shoddy tin mail for Fighters only.
 CottonVest,Vest,13,13,10,Thick cotton vest for Clerics & Ninjas.
@@ -12,4 +12,7 @@ IronMail,Mail,25,20,100,Iron mail for Fighters only.
 RubberVest,Vest,23,21,100,Stiff rubber vest for Clerics & Ninjas.
 SilkRobe,Robe,21,22,100,Silken robe for Wizards & Conjurors.
 ToughHide,Pelt,60,21,100,
+SteelMail,Mail,31,22,200,Steel mail for Fighters only.
+HuntingVest,Vest,29,23,200,Specialty vest for Clerics & Ninjas.
+FeatherRobe,Robe,26,24,200,Feathered robe for Wizards & Conjurors.
 StoneHide,Pelt,120,26,200,

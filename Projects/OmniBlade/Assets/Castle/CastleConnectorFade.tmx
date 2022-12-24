@@ -21,9 +21,5 @@
    eJzrY2Zg6CMB57Iy4AQZrKSZRQ4G2f8ZSH9hRtgL49PLfg0WBgZNFoT9MD697B/o8B+1f2SnfzVgWldHSv8w/kCGfxZQPIUO9qcC7cjD4gZ6+B1fGNDTfvQwoFfY4woDevodm/0FQHY6Hd2QDbSrEMn+PUz0dQPI74eYEPa/Z4K4gV7xALL/K5L9SswQN9DDfljYazCj5j+QG+hV/iGHPb3LAPSwHwj70cOe3vZjA/QqA3HZT6+8N1r/jdZ/o/YPH/sBJr/71Q==
   </data>
  </layer>
- <objectgroup id="3" name="Props">
-  <properties>
-   <property name="I" value="[Sensor StepPlateSensor [BodyBox [[0.5 0.5]  [0.5 0.5]] [RemoveAdvent CastleUnsealed]]"/>
-  </properties>
- </objectgroup>
+ <objectgroup id="3" name="Props"/>
 </map>

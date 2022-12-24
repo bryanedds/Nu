@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<tileset version="1.2" tiledversion="1.3.4" name="TombInner" tilewidth="48" tileheight="48" tilecount="1479" columns="51">
+<tileset version="1.5" tiledversion="1.7.2" name="TombInner" tilewidth="48" tileheight="48" tilecount="1479" columns="51">
  <properties>
   <property name="Image" value="[Field TombInner]"/>
  </properties>
@@ -130,6 +130,21 @@
   </properties>
  </tile>
  <tile id="889">
+  <properties>
+   <property name="C" value=""/>
+  </properties>
+ </tile>
+ <tile id="1034">
+  <properties>
+   <property name="C" value=""/>
+  </properties>
+ </tile>
+ <tile id="1035">
+  <properties>
+   <property name="C" value=""/>
+  </properties>
+ </tile>
+ <tile id="1036">
   <properties>
    <property name="C" value=""/>
   </properties>

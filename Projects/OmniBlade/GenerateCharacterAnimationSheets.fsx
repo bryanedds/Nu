@@ -95,6 +95,18 @@ let copyIdleCels rowDest (sourceImage : MagickImage) (targetImage : MagickImage)
     copy width height (width * 1) (height * 0) widthDest heightDest (xOffset + widthDest * 2) (yOffset + heightDest * rowDest) sourceImage targetImage
     copy width height (width * 1) (height * 1) widthDest heightDest (xOffset + widthDest * 3) (yOffset + heightDest * rowDest) sourceImage targetImage
 
+let copyIdleCelsFromBattler rowDest (sourceImage : MagickImage) (targetImage : MagickImage) metrics =
+    let width = metrics.WidthSource
+    let height = metrics.HeightSource
+    let widthDest = metrics.WidthDest
+    let heightDest = metrics.HeightDest
+    let xOffset = metrics.XOffset
+    let yOffset = metrics.YOffset
+    flip width height (width * 3) (height * 5) widthDest heightDest (xOffset + widthDest * 0) (yOffset + heightDest * rowDest) sourceImage targetImage
+    flip width height (width * 3) (height * 5) widthDest heightDest (xOffset + widthDest * 1) (yOffset + heightDest * rowDest) sourceImage targetImage
+    copy width height (width * 3) (height * 5) widthDest heightDest (xOffset + widthDest * 2) (yOffset + heightDest * rowDest) sourceImage targetImage
+    copy width height (width * 3) (height * 5) widthDest heightDest (xOffset + widthDest * 3) (yOffset + heightDest * rowDest) sourceImage targetImage
+
 let copyTriCelsToQuadCels x y rowDest (sourceImage : MagickImage) (targetImage : MagickImage) metrics =
     let width = metrics.WidthSource
     let height = metrics.HeightSource
@@ -181,24 +193,25 @@ let generateBattlerAnimationSheet (sourceFilePath : string) (sourceFilePath2Opt 
     use stream = File.OpenWrite targetFilePath
     use sourceImage = new MagickImage (sourceFilePath)
     use targetImage = new MagickImage (MagickColor.FromRgba (byte 0, byte 0, byte 0, byte 0), 1024, 1024)
+    let metricsWalk = { WidthSource = 26; HeightSource = 36; WidthDest = 48; HeightDest = 48; XOffset = 0; YOffset = 0 }
+    let metricsBattler = { WidthSource = 48; HeightSource = 48; WidthDest = 48; HeightDest = 48; XOffset = 0; YOffset = 3 }
     match sourceFilePath2Opt with
     | Some sourceFilePath2 ->
-        let metrics = { WidthSource = 26; HeightSource = 36; WidthDest = 48; HeightDest = 48; XOffset = 0; YOffset = 0 }
         use sourceImage2 = new MagickImage (sourceFilePath2)
-        copyWalkCels sourceImage2 targetImage metrics // walk
-        copyIdleCels 10 sourceImage2 targetImage metrics // idle
-    | None -> ()
-    let metrics = { WidthSource = 48; HeightSource = 48; WidthDest = 48; HeightDest = 48; XOffset = 0; YOffset = 3 }
-    copyTriCelsToQuadCels 6 1 1 sourceImage targetImage metrics // celebrate
-    copyTriCelsToQuadCels 0 2 2 sourceImage targetImage metrics // charging
-    copyTriCelsToQuadCels 0 1 3 sourceImage targetImage metrics // poised
-    copyTriCelsToQuadCels 6 3 4 sourceImage targetImage metrics // tired
-    copyTriCels 1 0 5 sourceImage targetImage metrics // ready
-    copyTriCels 3 0 6 sourceImage targetImage metrics // attack
-    copyBiCels 0 5 7 sourceImage targetImage metrics // casting
-    copyMonoCels 0 4 8 sourceImage targetImage metrics // damage
-    copyMonoCels 3 5 9 sourceImage targetImage metrics // defend
-    copyMonoCels 6 5 11 sourceImage targetImage { metrics with YOffset = 0 } // dead
+        copyWalkCels sourceImage2 targetImage metricsWalk // walk
+        copyIdleCels 10 sourceImage2 targetImage metricsWalk // idle
+    | None ->
+        copyIdleCelsFromBattler 10 sourceImage targetImage metricsBattler // idle
+    copyTriCelsToQuadCels 6 1 1 sourceImage targetImage metricsBattler // celebrate
+    copyTriCelsToQuadCels 0 2 2 sourceImage targetImage metricsBattler // charging
+    copyTriCelsToQuadCels 0 1 3 sourceImage targetImage metricsBattler // poised
+    copyTriCelsToQuadCels 6 3 4 sourceImage targetImage metricsBattler // tired
+    copyTriCels 1 0 5 sourceImage targetImage metricsBattler // ready
+    copyTriCels 3 0 6 sourceImage targetImage metricsBattler // attack
+    copyBiCels 0 5 7 sourceImage targetImage metricsBattler // casting
+    copyMonoCels 0 4 8 sourceImage targetImage metricsBattler // damage
+    copyMonoCels 3 5 9 sourceImage targetImage metricsBattler // defend
+    copyMonoCels 6 5 11 sourceImage targetImage { metricsBattler with YOffset = 0 } // dead
     targetImage.Write (stream, MagickFormat.Png32)
 
 let generateWalkingOnlyAnimationSheet widthSource heightSource widthDest heightDest sheetWidth sheetHeight (sourceFilePath : string) (targetFilePath : string) =
@@ -262,6 +275,7 @@ generateBattlerAnimationSheet "../../Art/Enemies/Walking/Thief.png" (Some "../..
 generateBattlerAnimationSheet "../../Art/Enemies/Walking/Traveler.png" (Some "../../Art/Enemies/Walking/TravelerWalk.png") "../../Art/Enemies/Walking/Out/Traveler.png"
 generateBattlerAnimationSheet "../../Art/Enemies/Walking/Trixter.png" (Some "../../Art/Enemies/Walking/TrixterWalk.png") "../../Art/Enemies/Walking/Out/Trixter.png"
 generateBattlerAnimationSheet "../../Art/Enemies/Walking/Vampire.png" (Some "../../Art/Enemies/Walking/VampireWalk.png") "../../Art/Enemies/Walking/Out/Vampire.png"
+generateBattlerAnimationSheet "../../Art/Enemies/Walking/Vampiress.png" (Some "../../Art/Enemies/Walking/VampiressWalk.png") "../../Art/Enemies/Walking/Out/Vampiress.png"
 generateBattlerAnimationSheet "../../Art/Enemies/Walking/Witch.png" (Some "../../Art/Enemies/Walking/WitchWalk.png") "../../Art/Enemies/Walking/Out/Witch.png"
 generateBattlerAnimationSheet "../../Art/Enemies/Walking/Wolfman.png" (Some "../../Art/Enemies/Walking/WolfmanWalk.png") "../../Art/Enemies/Walking/Out/Wolfman.png"
 generateBattlerAnimationSheet "../../Art/Enemies/Walking/BlackKnight.png" (Some "../../Art/Enemies/Walking/BlackKnightWalk.png") "../../Art/Enemies/Walking/Out/BlackKnight.png"
@@ -269,22 +283,37 @@ generateBattlerAnimationSheet "../../Art/Enemies/Walking/Kyla.png" (Some "../../
 
 // generate non-walking enemy characters
 Directory.CreateDirectory "../../Art/Enemies/NonWalking/Out"
+generateBattlerAnimationSheet "../../Art/Enemies/NonWalking/Poacher.png" None "../../Art/Enemies/NonWalking/Out/Poacher.png"
 generateBattlerAnimationSheet "../../Art/Enemies/NonWalking/Feral.png" None "../../Art/Enemies/NonWalking/Out/Feral.png"
-generateBattlerAnimationSheet "../../Art/Enemies/NonWalking/DuneBrigand.png" None "../../Art/Enemies/NonWalking/Out/DuneBrigand.png"
 generateBattlerAnimationSheet "../../Art/Enemies/NonWalking/Sage.png" None "../../Art/Enemies/NonWalking/Out/Sage.png"
-generateBattlerAnimationSheet "../../Art/Enemies/NonWalking/Splittah.png" None "../../Art/Enemies/NonWalking/Out/Splittah.png"
+generateBattlerAnimationSheet "../../Art/Enemies/NonWalking/Schizoid.png" None "../../Art/Enemies/NonWalking/Out/Schizoid.png"
 
 // generate walking-only enemy characters
 Directory.CreateDirectory "../../Art/Enemies/WalkingOnly/Out"
+generateWalkingOnlyAnimationSheet 26 36 48 48 1024 1024 "../../Art/Enemies/WalkingOnly/78x144/DeathMonk.png" "../../Art/Enemies/WalkingOnly/Out/DeathMonk.png"
+generateWalkingOnlyAnimationSheet 26 36 48 48 1024 1024 "../../Art/Enemies/WalkingOnly/78x144/GrassFairy.png" "../../Art/Enemies/WalkingOnly/Out/GrassFairy.png"
+generateWalkingOnlyAnimationSheet 26 36 48 48 1024 1024 "../../Art/Enemies/WalkingOnly/78x144/Dryad.png" "../../Art/Enemies/WalkingOnly/Out/Dryad.png"
+generateWalkingOnlyAnimationSheet 26 36 48 48 1024 1024 "../../Art/Enemies/WalkingOnly/78x144/Zombie.png" "../../Art/Enemies/WalkingOnly/Out/Zombie.png"
+generateWalkingOnlyAnimationSheet 26 36 48 48 1024 1024 "../../Art/Enemies/WalkingOnly/78x144/JackMan.png" "../../Art/Enemies/WalkingOnly/Out/JackMan.png"
 generateWalkingOnlyAnimationSheet 48 48 48 48 1024 1024 "../../Art/Enemies/WalkingOnly/144x192/Hawk.png" "../../Art/Enemies/WalkingOnly/Out/Hawk.png"
 generateWalkingOnlyAnimationSheet 52 53 48 48 1024 1024 "../../Art/Enemies/WalkingOnly/156x212/Gorgon.png" "../../Art/Enemies/WalkingOnly/Out/Gorgon.png"
+generateWalkingOnlyAnimationSheet 52 53 48 48 1024 1024 "../../Art/Enemies/WalkingOnly/156x212/Cerebus.png" "../../Art/Enemies/WalkingOnly/Out/Cerebus.png"
+generateWalkingOnlyAnimationSheet 52 53 48 48 1024 1024 "../../Art/Enemies/WalkingOnly/156x212/JackRider.png" "../../Art/Enemies/WalkingOnly/Out/JackRider.png"
 generateWalkingOnlyAnimationSheet 60 64 48 48 1024 1024 "../../Art/Enemies/WalkingOnly/180x256/Apparition.png" "../../Art/Enemies/WalkingOnly/Out/Apparition.png"
 generateWalkingOnlyAnimationSheet 60 64 48 48 1024 1024 "../../Art/Enemies/WalkingOnly/180x256/Bat.png" "../../Art/Enemies/WalkingOnly/Out/Bat.png"
 generateWalkingOnlyAnimationSheet 60 64 48 48 1024 1024 "../../Art/Enemies/WalkingOnly/180x256/Snake.png" "../../Art/Enemies/WalkingOnly/Out/Snake.png"
+generateWalkingOnlyAnimationSheet 60 64 48 48 1024 1024 "../../Art/Enemies/WalkingOnly/180x256/Frog.png" "../../Art/Enemies/WalkingOnly/Out/Frog.png"
+generateWalkingOnlyAnimationSheet 60 64 48 48 1024 1024 "../../Art/Enemies/WalkingOnly/180x256/Wolf.png" "../../Art/Enemies/WalkingOnly/Out/Wolf.png"
 generateWalkingOnlyAnimationSheet 47 50 48 48 1024 1024 "../../Art/Enemies/WalkingOnly/141x200/Armoros.png" "../../Art/Enemies/WalkingOnly/Out/Armoros.png"
 generateWalkingOnlyAnimationSheet 47 50 48 48 1024 1024 "../../Art/Enemies/WalkingOnly/141x200/HeavyArmoros.png" "../../Art/Enemies/WalkingOnly/Out/HeavyArmoros.png"
 generateWalkingOnlyAnimationSheet 47 50 48 48 1024 1024 "../../Art/Enemies/WalkingOnly/141x200/Minotaur.png" "../../Art/Enemies/WalkingOnly/Out/Minotaur.png"
+generateWalkingOnlyAnimationSheet 47 50 48 48 1024 1024 "../../Art/Enemies/WalkingOnly/141x200/EarthElemental.png" "../../Art/Enemies/WalkingOnly/Out/EarthElemental.png"
+generateWalkingOnlyAnimationSheet 47 50 48 48 1024 1024 "../../Art/Enemies/WalkingOnly/141x200/Treant.png" "../../Art/Enemies/WalkingOnly/Out/Treant.png"
+generateWalkingOnlyAnimationSheet 47 50 48 48 1024 1024 "../../Art/Enemies/WalkingOnly/141x200/MasterShaman.png" "../../Art/Enemies/WalkingOnly/Out/MasterShaman.png"
+generateWalkingOnlyAnimationSheet 47 50 48 48 1024 1024 "../../Art/Enemies/WalkingOnly/141x200/Lich.png" "../../Art/Enemies/WalkingOnly/Out/Lich.png"
+generateWalkingOnlyAnimationSheet 64 48 108 92 2048 2048 "../../Art/Enemies/WalkingOnly/192x192/Nightmare.png" "../../Art/Enemies/WalkingOnly/Out/Nightmare.png"
 generateWalkingOnlyAnimationSheet 108 92 108 92 2048 2048 "../../Art/Enemies/WalkingOnly/324x368/Arachnos.png" "../../Art/Enemies/WalkingOnly/Out/Arachnos.png"
 generateWalkingOnlyAnimationSheet 108 92 108 92 2048 2048 "../../Art/Enemies/WalkingOnly/324x368/Chimera.png" "../../Art/Enemies/WalkingOnly/Out/Chimera.png"
+generateWalkingOnlyAnimationSheet 108 92 108 92 2048 2048 "../../Art/Enemies/WalkingOnly/324x368/Dragon.png" "../../Art/Enemies/WalkingOnly/Out/Dragon.png"
 generateWalkingOnlyAnimationSheet 108 92 108 92 2048 2048 "../../Art/Enemies/WalkingOnly/324x368/Pharoah.png" "../../Art/Enemies/WalkingOnly/Out/Pharoah.png"
 generateWalkingOnlyAnimationSheet 108 92 108 92 2048 2048 "../../Art/Enemies/WalkingOnly/324x368/Tiamat.png" "../../Art/Enemies/WalkingOnly/Out/Tiamat.png"
