@@ -7,9 +7,9 @@ ThinFur,Pelt,16,13,10,
 BronzeMail,Mail,19,16,50,Small bronze mail for Fighters only.
 LeatherVest,Vest,17,17,50,Leather vest for Clerics & Ninjas.
 LeatherRobe,Robe,16,18,50,Thin leather robe for Wizards & Conjurors.
-ThickFur,Pelt,32,17,50,
+ThickFur,Pelt,40,17,50,
 IronMail,Mail,25,20,100,Iron mail for Fighters only.
 RubberVest,Vest,23,21,100,Stiff rubber vest for Clerics & Ninjas.
 SilkRobe,Robe,21,22,100,Silken robe for Wizards & Conjurors.
-ToughHide,Pelt,48,21,100,
-StoneHide,Pelt,84,26,200,
+ToughHide,Pelt,60,21,100,
+StoneHide,Pelt,100,26,200,
