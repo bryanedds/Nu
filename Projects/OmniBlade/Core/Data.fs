@@ -120,7 +120,7 @@ type [<CustomEquality; CustomComparison>] StatusType =
     | Poison
     | Silence // TODO: implement effect in battle.
     | Sleep // TODO: implement effect in battle.
-    | Confuse // TODO: implement effect in battle.
+    | Confuse // TODO: implement effect in battle (disallows enemy use of techs (except charge) and same for player but randomizes attack targets, too).
     //| Blind - maybe in the sequel
     | Time of bool // true = Haste, false = Slow
     | Power of bool * bool // true = Up, false = Down; true = 2, false = 1
