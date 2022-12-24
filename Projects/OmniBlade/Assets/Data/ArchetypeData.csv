@@ -60,6 +60,7 @@ FireElemental,1.3,1.5,1.6,1,1,1,1.5,1.5,Melee,Pelt,[],[],[Some Fire],[Poison],La
 IceElemental,1.3,1.5,1.6,1,1,1,1.5,1.5,Melee,Pelt,[],[],[Some Ice],[],LargeStature,Physical attack and Ice magic.
 LightningElemental,1.3,1.5,1.6,1,1,1,1.5,1.5,Melee,Pelt,[],[],[Some Lightning],[],LargeStature,Physical attack and Lightning magic.
 EarthElemental,1.3,1.5,1.6,1,1,1,1.5,1.5,Melee,Pelt,[[2 PowerCut]],[[4 Aura]],[Some Earth],[],LargeStature,Physical attack and Earth magic.
+Nightmare,1.4,1.55,1.55,1,1,1,1.5,1.5,Melee,Pelt,[],[],None,[],BossStature,
 Minotaur,1.8,1.7,1.7,1,1,1,2,2,Melee,Pelt,[[1 Critical] [2 Slash]],[],None,[],LargeStature,Physical attacks.
 LittleDragon,1.9,1.8,1.8,1,1,1,2,2,Melee,Pelt,[],[],None,[],LargeStature,Physical attacks and Elemental magic.
 Ogre,1.8,1.8,1.6,1,1,1,2,2,Melee,Pelt,[],[],None,[],LargeStature,Strong physical attacks with Curative magic.
@@ -71,4 +72,3 @@ Deathbot,1.8,1.7,1.7,1,1,1,2,2,Melee,Pelt,[],[],[Some Metal],[Poison Sleep],Larg
 Dinoman,1.8,1.8,1.6,1,1,1,2,2,Melee,Pelt,[],[],None,[],LargeStature,Strong physical attacks with Buff magic.
 Arachnos,1.8,1.7,1.7,1,1,1,2,2,Melee,Pelt,[[1 PoisonCut] [3 Slow]],[[3 ConjureIfrit]],[Some Insect],[Poison],BossStature,Strong physical attacks with Debuff magic.
 Dragon,1.8,1.7,1.7,1,1,1,2,2,Melee,Pelt,[],[],None,[Poison Sleep],BossStature,Physical attacks and Elemental magic.
-Nightmare,1.4,1.55,1.55,1,1,1,1.5,1.5,Melee,Pelt,[],[],None,[],BossStature,

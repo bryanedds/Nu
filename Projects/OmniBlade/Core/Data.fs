@@ -268,6 +268,7 @@ type ArchetypeType =
     | Scorpion
     | Plant
     | Ghost
+    | Wolf
     | Goblin
     | Soldier
     | Knight
@@ -309,6 +310,7 @@ type ArchetypeType =
     | IceElemental
     | LightningElemental
     | EarthElemental
+    | Nightmare
     | Minotaur
     | LittleDragon
     | Ogre
@@ -320,8 +322,6 @@ type ArchetypeType =
     | Dinoman
     | Arachnos
     | Dragon
-    | Wolf // normal enemy whose sprite forced into BossStature
-    | Nightmare // normal enemy whose sprite forced into BossStature
 
 type ShopType =
     | Chemist
