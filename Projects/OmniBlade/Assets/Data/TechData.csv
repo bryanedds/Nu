@@ -15,7 +15,7 @@ Stone,9,Magical,2.2,False,False,False,0,[Some Earth],[],[],[SingleTarget [EnemyA
 Quake,10,Magical,1.2,False,False,False,0,[Some Earth],[],[],[AllTarget [EnemyAim True]],
 Cure,3,Magical,3,False,True,False,0,None,[],[],[SingleTarget [AllyAim True]],
 Empower,3,Magical,1,False,True,False,0,None,[[Power True False]],[],[SingleTarget [AllyAim True]],
-Aura,5,Magical,2,False,True,False,0,None,[],[],[AllTarget [AllyAim True]],
+Aura,5,Magical,1.5,False,True,False,0,None,[],[],[AllTarget [AllyAim True]],
 Enlighten,3,Magical,1,False,True,False,0,None,[[Magic True False]],[],[SingleTarget [AllyAim True]],
 Protect,3,Magical,1,False,True,False,0,None,[[Shield True False]],[],[SingleTarget [AllyAim True]],
 Muddle,2,Magical,0.75,False,False,False,0,None,[[Magic False False]],[],[SingleTarget [EnemyAim True]],
