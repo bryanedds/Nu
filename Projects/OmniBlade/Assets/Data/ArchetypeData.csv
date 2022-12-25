@@ -7,7 +7,7 @@ Conjuror,0.9,0.8,1.1,1,1,1.4,1,1,Rod,Robe,[[2 Weaken] [4 Muddle] [6 Slow] [8 Bol
 Cleric,1,1,1,1,1,1,1,1,Bow,Vest,[[2 Cure] [4 Empower] [6 Aura] [8 Enlighten] [12 Protect]],[],None,[],SmallStature,
 Bat,0.5,1,1,1,1,1,0.5,0.5,Melee,Pelt,[],[],None,[],SmallStature,Weak physical attacks and Drain Techs.
 Spider,0.5,1,1,1,1,1,0.5,0.5,Melee,Pelt,[],[],[Some Insect],[Poison],SmallStature,Weak physical attacks with Status effects.
-Snake,0.5,1,1,1,1,1,0.5,0.5,Melee,Pelt,[[1 PoisonCut]],[],None,[Poison],SmallStature,Weak physical attacks with Status effects.
+Snake,0.5,1.1,0.9,1,1,1,0.5,0.5,Melee,Pelt,[[1 PoisonCut]],[],None,[Poison],SmallStature,Weak physical attacks with Status effects.
 Gorgon,0.5,1,1,1,1,1,0.5,0.5,Melee,Pelt,[[2 Muddle]],[],None,[],SmallStature,Physical attacks and Debuff magic.
 Willowisp,0.5,0.9,1.1,1,1,1,0.5,0.5,Melee,Pelt,[],[],[Some Fire],[Poison],SmallStature,Weak physical attacks and Fire magic.
 Chillowisp,0.5,0.9,1.1,1,1,1,0.5,0.5,Melee,Pelt,[],[],[Some Ice],[],SmallStature,Weak physical attacks and Ice magic.
@@ -52,7 +52,7 @@ JackRider,1.4,1.55,1.55,1,1,1,1.5,1.5,Melee,Pelt,[[1 Flame] [3 DispelCut]],[[4 C
 Trap,1.4,1.55,1.55,1,1,1,1.5,1.5,Melee,Pelt,[],[],[Some Metal],[Poison Sleep],LargeStature,Strong physical attacks with Debuff magic.
 Vampire,1.4,1.5,1.6,1,1,1,1.5,1.5,Melee,Pelt,[],[],[Some Dark],[Poison Sleep],LargeStature,Status magic.
 Vampiress,1.4,1.5,1.6,1,1,1,1.5,1.5,Melee,Pelt,[[4 Snowball] [4 Bolt]],[[4 ConjureIfrit]],[Some Dark],[Poison Sleep],LargeStature,Status magic.
-Cerebus,1.4,1.55,1.55,1,1,1,1.5,1.5,Melee,Pelt,[[4 DoubleCut]],[],None,[],LargeStature,Strong physical attacks w/ Countering.
+Cerebus,1.4,1.55,1.55,1,1,1,1.5,1.5,Melee,Pelt,[[2 PowerCut] [4 DoubleCut]],[],None,[],LargeStature,Strong physical attacks w/ Countering.
 Hydra,1.4,1.55,1.55,1,1,1,1.5,1.5,Melee,Pelt,[],[],None,[],LargeStature,Physical attack with Status effects.
 Gargoyle,1.4,1.55,1.55,1,1,1,1.5,1.5,Melee,Pelt,[],[],None,[],LargeStature,Physical attack with Gravity magic.
 MasterShaman,1.3,1.5,1.6,1,1,1,1.5,1.5,Melee,Pelt,[[4 Snowball]],[[4 Bolt]],None,[],LargeStature,Elemental magic.
@@ -65,9 +65,9 @@ Minotaur,1.8,1.7,1.7,1,1,1,2,2,Melee,Pelt,[[1 Critical] [2 Slash]],[],None,[],La
 LittleDragon,1.9,1.8,1.8,1,1,1,2,2,Melee,Pelt,[],[],None,[],LargeStature,Physical attacks and Elemental magic.
 Ogre,1.8,1.8,1.6,1,1,1,2,2,Melee,Pelt,[],[],None,[],LargeStature,Strong physical attacks with Curative magic.
 PowerHydra,1.8,1.7,1.7,1,1,1,2,2,Melee,Pelt,[],[],None,[],LargeStature,Physical attack with Status effects.
-Lich,1.8,1.7,1.7,1,1,1,2,2,Melee,Pelt,[[3 DispelCut]],[[4 ConjureIfrit]],[Some Dark],[],LargeStature,Physical attack with Status effects.
+Lich,1.8,1.7,1.7,1,1,1,2,2,Melee,Pelt,[[3 DispelCut]],[[4 ConjureIfrit]],[Some Dark],[Poison Silence Sleep],LargeStature,Physical attack with Status effects.
 Armoros,1.8,1.7,1.7,1,1,1,2,2,Melee,Pelt,[[2 Slash]],[[3 HeavyCritical]],[Some Metal],[Poison Sleep],LargeStature,Strong physical attacks with Buff magic.
-Golem,1.8,1.7,1.7,1,1,1,2,2,Melee,Pelt,[[4 DoubleCut]],[[4 Ice]],[Some Earth],[],LargeStature,Physical attack and Earth magic.
+Golem,1.8,1.7,1.7,1,1,1,2,2,Melee,Pelt,[[2 PowerCut] [4 DoubleCut]],[[4 Ice]],[Some Earth],[],LargeStature,Physical attack and Earth magic.
 Deathbot,1.8,1.7,1.7,1,1,1,2,2,Melee,Pelt,[],[],[Some Metal],[Poison Sleep],LargeStature,Physical attack and Lightning magic.
 Dinoman,1.8,1.8,1.6,1,1,1,2,2,Melee,Pelt,[],[],None,[],LargeStature,Strong physical attacks with Buff magic.
 Arachnos,1.8,1.7,1.7,1,1,1,2,2,Melee,Pelt,[[1 PoisonCut] [3 Slow]],[[3 ConjureIfrit]],[Some Insect],[Poison],BossStature,Strong physical attacks with Debuff magic.
