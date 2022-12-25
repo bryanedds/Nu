@@ -15,16 +15,16 @@ type [<NoComparison>] SpiritMovement =
     | Wander
 
 type [<NoComparison>] SpiritPattern =
-    | Disinterested
-    | Confused
+    | Distracted
+    | Flighty
     | Steadfast
     | Stalking
     | Ambushing
 
     static member fromInt i =
         match i with
-        | 0 -> Disinterested
-        | 1 -> Confused
+        | 0 -> Distracted
+        | 1 -> Flighty
         | 2 -> Steadfast
         | 3 -> Stalking
         | 4 -> Ambushing
@@ -37,11 +37,11 @@ type [<NoComparison>] SpiritPattern =
 
     static member toSpiritMovement pattern =
         match pattern with
-        | Disinterested ->  [|Chase;     Wander; Wander; Wander; Wander; Wander; Wander; Wander; Wander; Wander; Wander; Wander; Wander; Wander; Wander; Wander|]
-        | Confused ->       [|Chase;     Creep; Creep; Wander;   Creep; Creep; Wander;   Creep; Creep; Wander;   Creep; Creep; Wander;   Creep; Creep; Wander|]
-        | Steadfast ->      [|Creep;     Creep; Creep; Creep;    Creep; Creep; Creep;    Creep; Creep; Creep;    Creep; Creep; Creep;    Creep; Creep; Creep|]
-        | Stalking ->       [|Creep;     Chase; Chase; Creep;    Chase; Chase; Creep;    Chase; Chase; Creep;    Chase; Chase; Creep;    Chase; Chase; Creep|]
-        | Ambushing ->      [|Creep;     Chase; Chase; Chase;    Chase; Chase; Chase;    Chase; Chase; Chase;    Chase; Chase; Chase;    Chase; Chase; Chase|]
+        | Distracted ->     [|Chase;    Creep; Wander; Wander;  Creep; Wander; Wander;  Creep; Wander; Wander;  Creep; Wander; Wander;  Creep; Wander; Wander|]
+        | Flighty ->        [|Chase;    Creep; Creep; Wander;   Creep; Creep; Wander;   Creep; Creep; Wander;   Creep; Creep; Wander;   Creep; Creep; Wander|]
+        | Steadfast ->      [|Creep;    Creep; Creep; Creep;    Creep; Creep; Creep;    Creep; Creep; Creep;    Creep; Creep; Creep;    Creep; Creep; Creep|]
+        | Stalking ->       [|Creep;    Chase; Chase; Creep;    Chase; Chase; Creep;    Chase; Chase; Creep;    Chase; Chase; Creep;    Chase; Chase; Creep|]
+        | Ambushing ->      [|Creep;    Chase; Chase; Chase;    Chase; Chase; Chase;    Chase; Chase; Chase;    Chase; Chase; Chase;    Chase; Chase; Chase|]
 
 type [<NoComparison>] SpiritState =
     { SpiritMovements : SpiritMovement array
