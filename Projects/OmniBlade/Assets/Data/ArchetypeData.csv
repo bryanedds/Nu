@@ -51,7 +51,7 @@ Naga,1.4,1.55,1.55,1,1,1,1.5,1.5,Melee,Pelt,[],[],None,[],LargeStature,Physical 
 JackRider,1.4,1.55,1.55,1,1,1,1.5,1.5,Melee,Pelt,[[1 Flame] [3 DispelCut]],[[4 ConjureIfrit]],None,[],LargeStature,Fire and Debuff magic.
 Trap,1.4,1.55,1.55,1,1,1,1.5,1.5,Melee,Pelt,[],[],[Some Metal],[Poison Sleep],LargeStature,Strong physical attacks with Debuff magic.
 Vampire,1.4,1.5,1.6,1,1,1,1.5,1.5,Melee,Pelt,[],[],[Some Dark],[Poison Sleep],LargeStature,Status magic.
-Vampiress,1.4,1.5,1.6,1,1,1,1.5,1.5,Melee,Pelt,[[4 Snowball] [4 Bolt]],[[4 ConjureIfrit]],[Some Dark],[Poison Sleep],LargeStature,Status magic.
+Vampiress,1.4,1.5,1.6,1,1,1,1.5,1.5,Melee,Pelt,[[3 Ice] [4 Snowball]],[[4 Bolt]],[Some Dark],[Poison Sleep],LargeStature,Status magic.
 Cerebus,1.4,1.55,1.55,1,1,1,1.5,1.5,Melee,Pelt,[[2 PowerCut] [4 DoubleCut]],[],None,[],LargeStature,Strong physical attacks w/ Countering.
 Hydra,1.4,1.55,1.55,1,1,1,1.5,1.5,Melee,Pelt,[],[],None,[],LargeStature,Physical attack with Status effects.
 Gargoyle,1.4,1.55,1.55,1,1,1,1.5,1.5,Melee,Pelt,[],[],None,[],LargeStature,Physical attack with Gravity magic.
@@ -67,7 +67,7 @@ Ogre,1.8,1.8,1.6,1,1,1,2,2,Melee,Pelt,[],[],None,[],LargeStature,Strong physical
 PowerHydra,1.8,1.7,1.7,1,1,1,2,2,Melee,Pelt,[],[],None,[],LargeStature,Physical attack with Status effects.
 Lich,1.8,1.7,1.7,1,1,1,2,2,Melee,Pelt,[[3 DispelCut]],[[4 ConjureIfrit]],[Some Dark],[Poison Silence Sleep],LargeStature,Physical attack with Status effects.
 Armoros,1.8,1.7,1.7,1,1,1,2,2,Melee,Pelt,[[2 Slash]],[[3 HeavyCritical]],[Some Metal],[Poison Sleep],LargeStature,Strong physical attacks with Buff magic.
-Golem,1.8,1.7,1.7,1,1,1,2,2,Melee,Pelt,[[2 PowerCut] [4 DoubleCut]],[[4 Ice]],[Some Earth],[],LargeStature,Physical attack and Earth magic.
+Golem,1.8,1.7,1.7,1,1,1,2,2,Melee,Pelt,[[2 PowerCut] [4 DoubleCut]],[[4 ConjureIfrit]],[Some Earth],[],LargeStature,Physical attack and Earth magic.
 Deathbot,1.8,1.7,1.7,1,1,1,2,2,Melee,Pelt,[],[],[Some Metal],[Poison Sleep],LargeStature,Physical attack and Lightning magic.
 Dinoman,1.8,1.8,1.6,1,1,1,2,2,Melee,Pelt,[],[],None,[],LargeStature,Strong physical attacks with Buff magic.
 Arachnos,1.8,1.7,1.7,1,1,1,2,2,Melee,Pelt,[[1 PoisonCut] [3 Slow]],[[3 ConjureIfrit]],[Some Insect],[Poison],BossStature,Strong physical attacks with Debuff magic.
