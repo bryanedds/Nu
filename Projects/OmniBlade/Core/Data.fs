@@ -1017,12 +1017,8 @@ module FieldData =
                 | FieldRandom (_, _, _, _, _) ->
                     let tileMapPerimeter = box3 v3Zero (v3 (single tileMap.Width * single tileMap.TileWidth) (single tileMap.Height * single tileMap.TileHeight) 0.0f)
                     let distanceFromOriginMax =
-                        let walkLengthScalar =
-                            match origin with
-                            | OriginC -> Constants.Field.WalkLengthScalarOpened
-                            | _ -> Constants.Field.WalkLengthScalarClosed
                         let delta = tileMapPerimeter.Bottom - tileMapPerimeter.Top
-                        delta.Magnitude * walkLengthScalar
+                        delta.Magnitude * Constants.Field.WalkLengthScalar
                     let distanceFromOrigin =
                         match origin with
                         | OriginC -> let delta = avatarBottom - tileMapPerimeter.Center in delta.Magnitude

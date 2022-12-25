@@ -81,8 +81,7 @@ module Constants =
 #endif
         let SpiritActivityThreshold = 120L
         let SpiritRadius = 90.0f / SpiritOrbRatio
-        let WalkLengthScalarClosed = 0.5f // NOTE: higher is shorter distance to stronger spirits.
-        let WalkLengthScalarOpened = 0.3f // NOTE: higher is shorter distance to stronger spirits.
+        let WalkLengthScalar = 0.2f // NOTE: higher is shorter distance to stronger spirits.
         let TreasureProbability = 0.667f
         let RecruitmentFees = [|200; 1000; 5000; 20000|]
         let ConnectorFadeYMin = 96.0f
