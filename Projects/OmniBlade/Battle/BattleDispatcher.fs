@@ -47,11 +47,7 @@ module BattleDispatcher =
         | TechCharacter6 of CharacterIndex * CharacterIndex * TechType
         | TechCharacterAmbient of CharacterIndex * CharacterIndex * TechType
         | AutoBattleEnemies
-        | ChargeCharacter of CharacterIndex
-        | PoiseCharacter of CharacterIndex
-        | WoundCharacter of CharacterIndex
-        | ResetCharacter of CharacterIndex * bool
-        | DestroyCharacter of CharacterIndex
+        | ResetCharacter of CharacterIndex * bool // TODO: replace invocations of this with a Battle function call.
         | Nop
         interface Message
 
@@ -119,7 +115,8 @@ module BattleDispatcher =
                                 withSignal (AttackCharacter1 sourceIndex) battle
                             else
                                 let battle = Battle.updateCurrentCommandOpt (constant None) battle
-                                withSignals [ResetCharacter (sourceIndex, false); PoiseCharacter sourceIndex] battle
+                                let battle = Battle.animationCharacterPoise time sourceIndex battle
+                                withSignal (ResetCharacter (sourceIndex, false)) battle
                         | 15L ->
                             withSignal (AttackCharacter2 (sourceIndex, targetIndex)) battle
                         | _ when localTime > 15L && Character.getAnimationFinished time target ->
@@ -131,18 +128,23 @@ module BattleDispatcher =
                                     then Battle.counterAttack sourceIndex targetIndex battle
                                     else battle
                                 let battle = Battle.updateCurrentCommandOpt (constant None) battle
-                                withSignals [PoiseCharacter sourceIndex; PoiseCharacter targetIndex] battle
+                                let battle = Battle.animationCharacterPoise time sourceIndex battle
+                                let battle = Battle.animationCharacterPoise time targetIndex battle
+                                just battle
                             else
                                 let woundCommand = CurrentCommand.make time (ActionCommand.make Wound sourceIndex (Some targetIndex))
                                 let battle = Battle.updateCurrentCommandOpt (constant (Some woundCommand)) battle
-                                withSignal (PoiseCharacter sourceIndex) battle
+                                let battle = Battle.animationCharacterPoise time sourceIndex battle
+                                just battle
                         | _ -> just battle
                     | None ->
                         let battle = Battle.updateCurrentCommandOpt (constant None) battle
-                        withSignals [ResetCharacter (sourceIndex, false); PoiseCharacter sourceIndex] battle
+                        let battle = Battle.animationCharacterPoise time sourceIndex battle
+                        withSignal (ResetCharacter (sourceIndex, false)) battle
                 | None ->
                     let battle = Battle.updateCurrentCommandOpt (constant None) battle
-                    withSignals [ResetCharacter (sourceIndex, false); PoiseCharacter sourceIndex] battle
+                    let battle = Battle.animationCharacterPoise time sourceIndex battle
+                    withSignal (ResetCharacter (sourceIndex, false)) battle
             | Some _ | None ->
                 let battle = Battle.updateCurrentCommandOpt (constant None) battle
                 just battle
@@ -178,24 +180,29 @@ module BattleDispatcher =
                                 withSignal (ConsumeCharacter1 (consumable, sourceIndex)) battle
                             else
                                 let battle = Battle.updateCurrentCommandOpt (constant None) battle
-                                withSignals [ResetCharacter (sourceIndex, false); PoiseCharacter sourceIndex] battle
+                                let battle = Battle.animationCharacterPoise time sourceIndex battle
+                                withSignal (ResetCharacter (sourceIndex, false)) battle
                         | 30L ->
                             withSignal (ConsumeCharacter2 (consumable, targetIndex)) battle
                         | _ when localTime > 30L && Character.getAnimationFinished time target ->
                             let battle = Battle.updateCurrentCommandOpt (constant None) battle
-                            withSignals [PoiseCharacter sourceIndex; PoiseCharacter targetIndex] battle
+                            let battle = Battle.animationCharacterPoise time sourceIndex battle
+                            let battle = Battle.animationCharacterPoise time targetIndex battle
+                            just battle
                         | _ -> just battle
                     | None ->
                         let battle = Battle.updateCurrentCommandOpt (constant None) battle
-                        withSignals [ResetCharacter (sourceIndex, false); PoiseCharacter sourceIndex] battle
+                        let battle = Battle.animationCharacterPoise time sourceIndex battle
+                        withSignal (ResetCharacter (sourceIndex, false)) battle
                 | None ->
                     let battle = Battle.updateCurrentCommandOpt (constant None) battle
-                    withSignals [ResetCharacter (sourceIndex, false); PoiseCharacter sourceIndex] battle
+                    let battle = Battle.animationCharacterPoise time sourceIndex battle
+                    withSignal (ResetCharacter (sourceIndex, false)) battle
             | Some _ | None ->
                 let battle = Battle.updateCurrentCommandOpt (constant None) battle
                 just battle
 
-        static let advanceTech techType sourceIndex (targetIndexOpt : CharacterIndex option) (_ : int64) localTime battle =
+        static let advanceTech techType sourceIndex (targetIndexOpt : CharacterIndex option) time localTime battle =
             match targetIndexOpt with
             | Some targetIndex ->
                 match Battle.tryGetCharacter targetIndex battle with
@@ -216,16 +223,20 @@ module BattleDispatcher =
                             withSignals sigs battle
                         else
                             let battle = Battle.updateCurrentCommandOpt (constant None) battle
-                            withSignals [ResetCharacter (sourceIndex, false); PoiseCharacter sourceIndex] battle
+                            let battle = Battle.animationCharacterPoise time sourceIndex battle
+                            withSignal (ResetCharacter (sourceIndex, false)) battle
                     | (_, _) ->
                         let battle = Battle.updateCurrentCommandOpt (constant None) battle
-                        withSignals [ResetCharacter (sourceIndex, false); PoiseCharacter sourceIndex] battle
+                        let battle = Battle.animationCharacterPoise time sourceIndex battle
+                        withSignal (ResetCharacter (sourceIndex, false)) battle
                 | None ->
                     let battle = Battle.updateCurrentCommandOpt (constant None) battle
-                    withSignals [ResetCharacter (sourceIndex, false); PoiseCharacter sourceIndex] battle
+                    let battle = Battle.animationCharacterPoise time sourceIndex battle
+                    withSignal (ResetCharacter (sourceIndex, false)) battle
             | None ->
                 let battle = Battle.updateCurrentCommandOpt (constant None) battle
-                withSignals [ResetCharacter (sourceIndex, false); PoiseCharacter sourceIndex] battle
+                let battle = Battle.animationCharacterPoise time sourceIndex battle
+                withSignal (ResetCharacter (sourceIndex, false)) battle
 
         static let rec advanceWound targetIndexOpt time battle =
             match targetIndexOpt with
@@ -237,24 +248,30 @@ module BattleDispatcher =
                         | DamageAnimation ->
                             if Character.getAnimationFinished time character then
                                 let battle = Battle.updateCurrentCommandOpt (constant None) battle
-                                withSignal (WoundCharacter targetIndex) battle
+                                let battle = Battle.animateCharacterWound time targetIndex battle
+                                just battle
                             else just battle
                         | PoiseAnimation _ -> // allies don't have a wound animation state but rather return to poise state
                             let battle = Battle.updateCurrentCommandOpt (constant None) battle
-                            withSignal (WoundCharacter targetIndex) battle
+                            let battle = Battle.animateCharacterWound time targetIndex battle
+                            just battle
                         | _ -> failwithumf ()
                     else
                         match character.CharacterAnimationType with
                         | DamageAnimation ->
                             if Character.getAnimationFinished time character then
-                                let woundCharacter = WoundCharacter targetIndex
+                                let battle = Battle.animateCharacterWound time targetIndex battle
                                 let playDeathSound = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.BeastDeathSound)
-                                withSignals [woundCharacter; playDeathSound] battle
+                                withSignal playDeathSound battle
                             else just battle
                         | WoundAnimation ->
                             if Character.getAnimationFinished time character then
                                 let battle = Battle.updateCurrentCommandOpt (constant None) battle
-                                withSignal (DestroyCharacter targetIndex) battle
+                                let battle =
+                                    if targetIndex.IsEnemy
+                                    then Battle.removeCharacter targetIndex battle
+                                    else battle
+                                just battle
                             else just battle
                         | _ -> failwithumf ()
                 let (sigs, battle) =
@@ -685,9 +702,14 @@ module BattleDispatcher =
                     withSignal hopEffect battle
                 | Right chargeEffects ->
                     if Battle.isCharacterWounded targetIndex battle then
+                        let time = World.getUpdateTime world
                         let battle = Battle.updateCurrentCommandOpt (constant None) battle
-                        withSignals [ResetCharacter (sourceIndex, false); PoiseCharacter sourceIndex] battle
-                    else withSignals (signal (ChargeCharacter sourceIndex) :: chargeEffects) battle
+                        let battle = Battle.animationCharacterPoise time sourceIndex battle
+                        withSignal (ResetCharacter (sourceIndex, false)) battle
+                    else
+                        let time = World.getUpdateTime world
+                        let battle = Battle.animateCharacter time (PoiseAnimation Charging) sourceIndex battle
+                        withSignals chargeEffects battle
 
             | TechCharacter2 (sourceIndex, targetIndex, techType) ->
                 match techType with
@@ -891,6 +913,7 @@ module BattleDispatcher =
                 | None -> just battle
 
             | TechCharacter6 (sourceIndex, targetIndex, techType) ->
+                let time = World.getUpdateTime world
                 let (techCost, results) = Battle.evalTechMove sourceIndex targetIndex techType battle
                 let (battle, sigs) =
                     Map.fold (fun (battle, sigs) characterIndex (cancelled, affectsWounded, hitPointsChange, added, removed) ->
@@ -907,7 +930,8 @@ module BattleDispatcher =
                                 let battle = Battle.prependActionCommand woundCommand battle
                                 (battle, sigs)
                             else
-                                let sigs = signal (PoiseCharacter characterIndex) :: sigs
+                                let time = World.getUpdateTime world
+                                let battle = Battle.animationCharacterPoise time characterIndex battle
                                 (battle, sigs)
                         (battle, sigs))
                         (battle, [])
@@ -919,7 +943,7 @@ module BattleDispatcher =
                     then Battle.counterAttack sourceIndex targetIndex battle
                     else battle
                 let battle = Battle.updateCurrentCommandOpt (constant None) battle
-                let sigs = signal (PoiseCharacter sourceIndex) :: sigs
+                let battle = Battle.animationCharacterPoise time sourceIndex battle
                 withSignals sigs battle
 
             | TechCharacterAmbient (sourceIndex, _, _) ->
@@ -936,21 +960,6 @@ module BattleDispatcher =
                 let battle = Battle.autoBattleEnemies battle
                 just battle
 
-            | ChargeCharacter sourceIndex ->
-                let time = World.getUpdateTime world
-                let battle = Battle.animateCharacter time (PoiseAnimation Charging) sourceIndex battle
-                just battle
-
-            | PoiseCharacter characterIndex ->
-                let time = World.getUpdateTime world
-                let battle = Battle.animationCharacterPoise time characterIndex battle
-                just battle
-
-            | WoundCharacter characterIndex ->
-                let time = World.getUpdateTime world
-                let battle = Battle.animateCharacterWound time characterIndex battle
-                just battle
-
             | ResetCharacter (characterIndex, halveActionTime) ->
                 let battle =
                     if halveActionTime
@@ -960,10 +969,6 @@ module BattleDispatcher =
                     if characterIndex.IsAlly
                     then Battle.updateCharacterInputState (constant NoInput) characterIndex battle
                     else Battle.updateCharacterAutoBattleOpt (constant None) characterIndex battle
-                just battle
-
-            | DestroyCharacter characterIndex ->
-                let battle = if characterIndex.IsEnemy then Battle.removeCharacter characterIndex battle else battle
                 just battle
 
             | Nop -> just battle
