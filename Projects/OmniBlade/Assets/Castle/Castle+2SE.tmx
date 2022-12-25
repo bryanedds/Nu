@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="48" tileheight="48" infinite="0" nextlayerid="4" nextobjectid="4">
+<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="48" tileheight="48" infinite="0" nextlayerid="4" nextobjectid="5">
  <tileset firstgid="1" source="Castle.tsx"/>
  <layer id="2" name="Ground" width="32" height="32">
   <data encoding="base64" compression="zlib">
@@ -12,7 +12,12 @@
   </data>
  </layer>
  <objectgroup id="3" name="Props">
-  <object id="2" gid="235" x="192" y="816" width="48" height="48">
+  <object id="2" gid="235" x="528" y="1056" width="48" height="48">
+   <properties>
+    <property name="I" value="[ChestSpawn]"/>
+   </properties>
+  </object>
+  <object id="4" gid="235" x="192" y="816" width="48" height="48">
    <properties>
     <property name="I" value="[ChestSpawn]"/>
    </properties>
