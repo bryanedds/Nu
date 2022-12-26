@@ -32,9 +32,6 @@ module BattleDispatcher =
         | TechItemCancel of CharacterIndex
         | ReticlesSelect of CharacterIndex * CharacterIndex
         | ReticlesCancel of CharacterIndex
-        | ReadyCharacters of int64
-        | PoiseCharacters
-        | CelebrateCharacters of bool
         | AttackCharacter1 of CharacterIndex
         | AttackCharacter2 of CharacterIndex * CharacterIndex
         | ConsumeCharacter1 of ConsumableType * CharacterIndex
@@ -46,7 +43,6 @@ module BattleDispatcher =
         | TechCharacter5 of CharacterIndex * CharacterIndex * TechType
         | TechCharacter6 of CharacterIndex * CharacterIndex * TechType
         | TechCharacterAmbient of CharacterIndex * CharacterIndex * TechType
-        | AutoBattleEnemies
         | ResetCharacter of CharacterIndex * bool // TODO: replace invocations of this with a Battle function call.
         | Nop
         interface Message
@@ -281,14 +277,16 @@ module BattleDispatcher =
                         let enemies = battle |> Battle.getEnemies |> Map.toValueList
                         if List.forall (fun (character : Character) -> character.IsWounded) allies then
                             // lost battle
+                            let battle = Battle.animateCharactersCelebrate time false battle
                             let battle = Battle.updateBattleState (constant (BattleQuitting (time, false, Set.empty))) battle
                             let (sigs2, battle) = advanceBattle time battle
-                            (signal (CelebrateCharacters false) :: sigs @ sigs2, battle)
+                            (sigs @ sigs2, battle)
                         elif List.forall (fun (character : Character) -> character.IsWounded) enemies && List.hasAtMost 1 enemies then
                             // won battle
+                            let battle = Battle.animateCharactersCelebrate time true battle
                             let battle = Battle.updateBattleState (constant (BattleResult (time, true))) battle
                             let (sigs2, battle) = advanceBattle time battle
-                            (signal (CelebrateCharacters true) :: sigs @ sigs2, battle)
+                            (sigs @ sigs2, battle)
                         else (sigs, battle)
                     | Some _ -> (sigs, battle)
                 withSignals sigs battle
@@ -296,16 +294,21 @@ module BattleDispatcher =
 
         and advanceReady time startTime (battle : Battle) =
             let localTime = time - startTime
+            let readyTime = localTime - 90L
             if localTime = inc 63L then // first frame after transitioning in
                 match battle.BattleSongOpt with
                 | Some battleSong -> withSignal (PlaySong (0, Constants.Audio.FadeOutMsDefault, Constants.Audio.SongVolumeDefault, 0.0, battleSong)) battle
                 | None -> just battle
             elif localTime >= 90L && localTime < 160L then
-                let localTimeReady = localTime - 90L
-                withSignal (ReadyCharacters localTimeReady) battle
+                let battle = Battle.animateCharactersReady time battle
+                if readyTime = 30L
+                then withSignal (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.UnsheatheSound)) battle
+                else just battle
             elif localTime = 160L then
                 let battle = Battle.updateBattleState (constant BattleRunning) battle
-                withSignals [PoiseCharacters; AutoBattleEnemies] battle
+                let battle = Battle.animatedCharactersPoised time battle
+                let battle = Battle.autoBattleEnemies battle
+                just battle
             else just battle
 
         and advanceCurrentCommand time currentCommand battle =
@@ -613,23 +616,6 @@ module BattleDispatcher =
 
             | ReticlesCancel characterIndex ->
                 let battle = Battle.cancelCharacterInput characterIndex battle
-                just battle
-
-            | ReadyCharacters localTime ->
-                let time = World.getUpdateTime world
-                let battle = Battle.animateCharactersReady time battle
-                if localTime = 30L
-                then withSignal (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.UnsheatheSound)) battle
-                else just battle
-
-            | PoiseCharacters ->
-                let time = World.getUpdateTime world
-                let battle = Battle.animatedCharactersPoised time battle
-                just battle
-
-            | CelebrateCharacters outcome ->
-                let time = World.getUpdateTime world
-                let battle = Battle.animateCharactersCelebrate time outcome battle
                 just battle
 
             | AttackCharacter1 sourceIndex ->
@@ -955,10 +941,6 @@ module BattleDispatcher =
                         | None -> battle
                     just battle
                 else just battle
-
-            | AutoBattleEnemies ->
-                let battle = Battle.autoBattleEnemies battle
-                just battle
 
             | ResetCharacter (characterIndex, halveActionTime) ->
                 let battle =
