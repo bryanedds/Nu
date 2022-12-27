@@ -70,7 +70,7 @@
    [ClearSpirits
     [FadeOutSong 2000]
     [Wait 120]
-    [PlaySong 2000 0 0.5 0 [Field DancingWithEvil]]
+    [PlaySong 2000 0 0.5 0 [Castle CastleResolution]]
     [Wait 300]
     [Dialog &quot;One hundred years...&quot; False]
     [Dialog &quot;For one hundred years that demon crawled its way into this world through the open wound in my soul...&quot; False]
