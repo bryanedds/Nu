@@ -54,7 +54,7 @@
     <property name="I" value="[Door WoodenDoor [Some SteelKey]]"/>
    </properties>
   </object>
-  <object id="5" gid="1" x="552" y="564" width="432" height="720">
+  <object id="5" gid="1" x="552" y="600" width="432" height="720">
    <properties>
     <property name="I" value="[Sprite HeavenlyLight [Field HeavenlyLight] [1 1 1 1] Additive [0 0 0 0] FlipNone false]"/>
    </properties>

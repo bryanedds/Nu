@@ -1,6 +1,6 @@
 Type,FieldTileMap,FieldTileIndexOffset,FieldTileIndexOffsetRange,FieldBackgroundColor,FieldDebugAdvents,FieldDebugKeyItems,FieldSongOpt,ShowUnopenedChests,UseWindPortal,EncounterTypeOpt,Definitions,TreasureList
 EmptyField,[FieldStatic [Field EmptyField]],0,[0 0],#00000000,[],[],None,True,False,None,[],[]
-DebugField,[FieldStatic [Castle Castle+BS+0]],0,[0 0],#000000FF,[[KylaAdvent 6] AraneaImplicitumDefeated],[BrassKey IronKey CopperKey AluminumKey PewterKey SteelKey],[Some [Field Field]],True,False,None,[],[]
+DebugField,[FieldStatic [Castle Castle+BS+2]],0,[0 0],#000000FF,[[KylaAdvent 6] AraneaImplicitumDefeated],[BrassKey IronKey CopperKey AluminumKey PewterKey SteelKey],[Some [Field Field]],True,False,None,[],[]
 TombOuter,[FieldStatic [Field TombOuter]],0,[0 0],#839CACFF,[],[],[Some [Field TombOuter]],True,False,None,[],[]
 TombGround,[FieldStatic [Field TombGround]],0,[0 0],#362E3FFF,[],[],[Some [Field TombGround]],True,False,None,[],[]
 CastleConnector,[FieldConnector [Castle CastleConnector] [Castle CastleConnectorFade]],0,[0 0],#362E3FFF,[],[],[Some [Castle CastleAmbience]],True,False,None,[],[]
