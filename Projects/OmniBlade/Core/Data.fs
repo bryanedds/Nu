@@ -783,7 +783,7 @@ type [<NoComparison>] ArchetypeData =
       WeaponSubtype : WeaponSubtype
       ArmorSubtype : ArmorSubtype
       Techs : Map<int, TechType> // tech availability according to level
-      ChargeTechs : (int * TechType) list
+      ChargeTechs : (int * int * TechType) list
       AffinityOpt : AffinityType option
       Immunities : StatusType Set
       Stature : StatureType
