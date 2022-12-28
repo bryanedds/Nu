@@ -359,6 +359,15 @@ module Character =
     let resetConjureCharge character =
         updateConjureChargeOpt (Option.map (constant -Constants.Battle.ConjureChargeRate)) character
 
+    let advanceConjureCharge (character : Character) =
+        if hasConjureTechs character then
+            match character.ConjureChargeOpt with
+            | Some conjureCharge ->
+                { character with ConjureChargeOpt_ = Some (conjureCharge + Constants.Battle.ConjureChargeRate) }
+            | None ->
+                { character with ConjureChargeOpt_ = Some 0 }
+        else character
+
     let resetTechCharge (character : Character) =
         updateTechChargeOpt
             (function
@@ -370,29 +379,22 @@ module Character =
              | None -> None)
             character
 
-    let advanceConjureCharge (character : Character) =
-        if hasConjureTechs character then
-            match character.ConjureChargeOpt with
-            | Some conjureCharge ->
-                { character with ConjureChargeOpt_ = Some (conjureCharge + Constants.Battle.ConjureChargeRate) }
-            | None ->
-                { character with ConjureChargeOpt_ = Some 0 }
-        else character
+    let advanceTechCharge (character : Character) =
+        updateTechChargeOpt
+            (function
+             | Some (chargeRate, chargeTime, techType) -> Some (chargeRate, chargeRate + chargeTime, techType)
+             | None -> None)
+            character
 
     let autoBattle (alliesHealthy : Map<_, _>) alliesWounded enemiesHealthy enemiesWounded (source : Character) =
 
         // TODO: once techs have the ability to revive, check for that in the curative case.
         ignore (enemiesWounded, alliesWounded)
 
-        // charge tech if any
-        let source =
-            updateTechChargeOpt
-                (function
-                 | Some (chargeRate, chargeTime, techType) -> Some (chargeRate, chargeRate + chargeTime, techType)
-                 | None -> None)
-                source
+        // advance tech charge
+        let source = advanceTechCharge source
 
-        // attempt to choose a tech type
+        // choose a tech
         let (techOpt, isChargeTech) =
 
             // see if we're charged
