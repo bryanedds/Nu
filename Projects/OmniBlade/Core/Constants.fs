@@ -117,6 +117,7 @@ module Constants =
         let PoisonDrainRate = 0.05f
         let ItemDropRate = 0.02f
         let EnemySplitScalar = 0.5f
+        let ConjureChargeRate = 6
         let ChargeMax = 12
         let CancelPosition = v3 -444.0f -237.0f 0.0f
         let StrikingDistance = 48.0f

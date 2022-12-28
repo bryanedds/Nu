@@ -234,6 +234,10 @@ type TechType =
     | Bolt
     | ConjureIfrit
     | Purify
+    member this.ConjureTech =
+        match this with
+        | ConjureIfrit -> true
+        | _ -> false
 
 type ActionType =
     | Attack

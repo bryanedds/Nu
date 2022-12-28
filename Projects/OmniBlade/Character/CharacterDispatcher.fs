@@ -79,14 +79,15 @@ module CharacterDispatcher =
         static let getChargeOrbInsetOpt (character : Character) world =
             if not character.IsWounding then
                 let celXOpt =
-                    match character.ChargeTechOpt with
-                    | Some (_, chargeAmount, _) ->
+                    match (character.ConjureChargeOpt, character.TechChargeOpt |> Option.map Triple.snd) with
+                    | (Some chargeAmount, _)
+                    | (_, Some chargeAmount) ->
                         if chargeAmount < 3 then Some 0
                         elif chargeAmount < 6 then Some 1
                         elif chargeAmount < 9 then Some 2
                         elif chargeAmount < 12 then Some 3
                         else World.getUpdateTime world / 12L % 4L + 4L |> int |> Some
-                    | None -> None
+                    | (None, None) -> None
                 match celXOpt with
                 | Some celX ->
                     let chargeOrbPosition = v2 (single celX * Constants.Battle.ChargeOrbCelSize.X) 0.0f

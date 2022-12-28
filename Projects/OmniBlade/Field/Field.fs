@@ -575,8 +575,8 @@ module Field =
                 let level = 50
                 let team =
                     Map.singleton 0 (Teammate.make level 0 Jinn) |>
-                    Map.add 1 (Teammate.make level 1 Peric) |>
-                    Map.add 2 (Teammate.make level 2 Mael)
+                    Map.add 1 (Teammate.make level 1 Mael) |>
+                    Map.add 2 (Teammate.make level 2 Riain)
                 makeBattleFromTeam Inventory.initial PrizePool.empty team PacedSpeed battle world
             | None -> Battle.empty
         updateBattleOpt (constant (Some battle)) field

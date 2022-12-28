@@ -204,6 +204,11 @@ module Battle =
     let getCharacterArchetypeType characterIndex battle =
         (getCharacter characterIndex battle).ArchetypeType
 
+    let shouldCounter sourceIndex targetIndex battle =
+        if CharacterIndex.isUnfriendly sourceIndex targetIndex
+        then getCharacterBy Character.shouldCounter targetIndex battle
+        else false
+
     let private tryUpdateCharacter updater characterIndex battle =
         match tryGetCharacter characterIndex battle with
         | Some character ->
@@ -222,8 +227,8 @@ module Battle =
     let updateCharacterActionTime updater characterIndex battle =
         updateCharacter (Character.updateActionTime updater) characterIndex battle
 
-    let updateCharacterChargeTechOpt updater characterIndex battle =
-        updateCharacter (Character.updateChargeTechOpt updater) characterIndex battle
+    let updateCharacterTechChargeOpt updater characterIndex battle =
+        updateCharacter (Character.updateTechChargeOpt updater) characterIndex battle
 
     let updateCharacterAutoBattleOpt updater characterIndex battle =
         updateCharacter (Character.updateAutoBattleOpt updater) characterIndex battle
@@ -239,9 +244,6 @@ module Battle =
 
     let updateCharacterTechPoints techPointsChange characterIndex battle =
         updateCharacter (Character.updateTechPoints ((+) techPointsChange)) characterIndex battle
-
-    let burndownCharacterStatuses burndownTime characterIndex battle =
-        updateCharacter (Character.burndownStatuses burndownTime) characterIndex battle
 
     let applyCharacterStatuses added removed characterIndex battle =
         updateCharacter (Character.applyStatusChanges added removed) characterIndex battle
@@ -282,7 +284,7 @@ module Battle =
         then updateAlliesIf (fun _ ally -> ally.IsHealthy) (Character.animate time CelebrateAnimation) battle
         else updateEnemiesIf (fun _ enemy -> enemy.IsHealthy) (Character.animate time CelebrateAnimation) battle
 
-    let animatedCharactersPoised time battle =
+    let animateCharactersPoised time battle =
         updateCharactersHealthy (fun character ->
             let poiseType = Character.getPoiseType character
             let character = Character.animate time (PoiseAnimation poiseType) character
@@ -304,6 +306,25 @@ module Battle =
     let updateDialogOpt updater field =
         { field with DialogOpt_ = updater field.DialogOpt_ }
 
+    let halveCharacterActionTime characterIndex battle =
+        updateCharacterActionTime (fun at -> min (at * 0.5f) (Constants.Battle.ActionTime * 0.5f)) characterIndex battle
+
+    let resetCharacterActionTime characterIndex battle =
+        updateCharacterActionTime (constant 0.0f) characterIndex battle
+
+    let resetCharacterInput (characterIndex : CharacterIndex) battle =
+        let battle =
+            if characterIndex.IsAlly
+            then updateCharacterInputState (constant NoInput) characterIndex battle
+            else updateCharacterAutoBattleOpt (constant None) characterIndex battle
+        battle
+
+    let resetCharacterTechCharge characterIndex battle =
+        updateCharacter Character.resetTechCharge characterIndex battle
+
+    let resetCharacterConjureCharge characterIndex battle =
+        updateCharacter Character.resetConjureCharge characterIndex battle
+
     let characterAppendedActionCommand characterIndex battle =
         seq battle.ActionCommands_ |>
         Seq.exists (fun command -> command.Source = characterIndex)
@@ -314,17 +335,27 @@ module Battle =
     let prependActionCommand command battle =
         { battle with ActionCommands_ = Queue.rev battle.ActionCommands |> Queue.conj command |> Queue.rev }
 
-    let advanceChargeTech characterIndex battle =
-        updateCharacter Character.advanceChargeTech characterIndex battle
-
     let counterAttack sourceIndex targetIndex battle =
         let attackCommand = ActionCommand.make Attack targetIndex (Some sourceIndex)
         prependActionCommand attackCommand battle
 
-    let shouldCounter sourceIndex targetIndex battle =
-        if CharacterIndex.isUnfriendly sourceIndex targetIndex
-        then getCharacterBy Character.shouldCounter targetIndex battle
-        else false
+    let advanceCharacterConjureCharge characterIndex battle =
+        updateCharacter Character.advanceConjureCharge characterIndex battle
+
+    let advanceCharacterStatusBurndown burndownTime characterIndex battle =
+        updateCharacter (Character.burndownStatuses burndownTime) characterIndex battle
+
+    let abortCharacterAction time characterIndex battle =
+        let battle = updateCurrentCommandOpt (constant None) battle
+        let battle = animationCharacterPoise time characterIndex battle
+        let battle = updateCharacterActionTime (constant 0.0f) characterIndex battle
+        let battle = resetCharacterInput characterIndex battle
+        let battle = advanceCharacterConjureCharge characterIndex battle
+        battle
+
+    let finishCharacterAction characterIndex battle =
+        let battle = advanceCharacterConjureCharge characterIndex battle
+        battle
 
     let evalAttack effectType sourceIndex targetIndex battle =
         let source = getCharacter sourceIndex battle
@@ -387,6 +418,13 @@ module Battle =
             let command = ActionCommand.make actionType sourceIndex (Some targetIndex)
             appendActionCommand command battle
         | None -> battle
+
+    let populateAllyConjureCharges battle =
+        updateAllies (fun ally ->
+            if Character.hasConjureTechs ally
+            then Character.updateConjureChargeOpt (constant (Some 0)) ally
+            else ally)
+            battle
 
     let autoBattleEnemies battle =
         let alliesHealthy = getAlliesHealthy battle
