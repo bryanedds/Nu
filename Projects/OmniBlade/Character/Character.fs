@@ -21,7 +21,8 @@ module Character =
               CharacterAnimationState_ : CharacterAnimationState
               CharacterInputState_ : CharacterInputState
               CharacterState_ : CharacterState
-              ChargeTechOpt_ : (int * int * TechType) option
+              ConjureChargeOpt_ : int option
+              TechChargeOpt_ : (int * int * TechType) option
               AutoBattleOpt_ : AutoBattle option
               ActionTime_ : single
               CelSize_ : Vector2 }
@@ -97,7 +98,8 @@ module Character =
 
         (* Local Properties *)
         member this.CharacterInputState = this.CharacterInputState_
-        member this.ChargeTechOpt = this.ChargeTechOpt_
+        member this.ConjureChargeOpt = this.ConjureChargeOpt_
+        member this.TechChargeOpt = this.TechChargeOpt_
         member this.AutoBattleOpt = this.AutoBattleOpt_
 
     let isFriendly (character : Character) (character2 : Character) =
@@ -274,6 +276,14 @@ module Character =
             Some actionType
         | _ -> None
 
+    let getConjureTechs (character : Character) =
+        if character.IsAlly
+        then character.Techs |> Set.filter (fun techType -> techType.ConjureTech)
+        else Set.empty
+
+    let hasConjureTechs character =
+        getConjureTechs character |> Set.notEmpty
+
     let burndownStatuses burndownTime character =
         { character with CharacterState_ = CharacterState.burndownStatuses burndownTime character.CharacterState_ }
 
@@ -309,8 +319,11 @@ module Character =
     let updateExpPoints updater character =
         { character with CharacterState_ = CharacterState.updateExpPoints updater character.CharacterState_ }
 
-    let updateChargeTechOpt updater character =
-        { character with ChargeTechOpt_ = updater character.ChargeTechOpt_ }
+    let updateConjureChargeOpt updater character =
+        { character with ConjureChargeOpt_ = updater character.ConjureChargeOpt_ }
+
+    let updateTechChargeOpt updater character =
+        { character with TechChargeOpt_ = updater character.TechChargeOpt_ }
 
     let updateAutoBattleOpt updater character =
         { character with AutoBattleOpt_ = updater character.AutoBattleOpt_ }
@@ -343,8 +356,11 @@ module Character =
                 character
         else character
 
-    let advanceChargeTech (character : Character) =
-        updateChargeTechOpt
+    let resetConjureCharge character =
+        updateConjureChargeOpt (Option.map (constant -Constants.Battle.ConjureChargeRate)) character
+
+    let resetTechCharge (character : Character) =
+        updateTechChargeOpt
             (function
              | Some (_, chargeTime, _) as chargeTechOpt ->
                 if chargeTime >= Constants.Battle.ChargeMax then
@@ -354,6 +370,15 @@ module Character =
              | None -> None)
             character
 
+    let advanceConjureCharge (character : Character) =
+        if hasConjureTechs character then
+            match character.ConjureChargeOpt with
+            | Some conjureCharge ->
+                { character with ConjureChargeOpt_ = Some (conjureCharge + Constants.Battle.ConjureChargeRate) }
+            | None ->
+                { character with ConjureChargeOpt_ = Some 0 }
+        else character
+
     let autoBattle (alliesHealthy : Map<_, _>) alliesWounded enemiesHealthy enemiesWounded (source : Character) =
 
         // TODO: once techs have the ability to revive, check for that in the curative case.
@@ -361,7 +386,7 @@ module Character =
 
         // charge tech if any
         let source =
-            updateChargeTechOpt
+            updateTechChargeOpt
                 (function
                  | Some (chargeRate, chargeTime, techType) -> Some (chargeRate, chargeRate + chargeTime, techType)
                  | None -> None)
@@ -371,7 +396,7 @@ module Character =
         let (techOpt, isChargeTech) =
 
             // see if we're charged
-            match source.ChargeTechOpt with
+            match source.TechChargeOpt with
             | Some (_, chargeAmount, chargeTech) when chargeAmount >= Constants.Battle.ChargeMax -> (Some chargeTech, true)
             | Some _ | None ->
                 if  Gen.randomf < Option.defaultValue 0.0f source.CharacterState_.TechProbabilityOpt &&
@@ -433,7 +458,8 @@ module Character =
           CharacterAnimationState_ = animationState
           CharacterInputState_ = NoInput
           CharacterState_ = characterState
-          ChargeTechOpt_ = chargeTechOpt
+          ConjureChargeOpt_ = None
+          TechChargeOpt_ = chargeTechOpt
           AutoBattleOpt_ = None
           ActionTime_ = actionTime
           CelSize_ = celSize }
@@ -476,7 +502,8 @@ module Character =
           CharacterAnimationState_ = characterAnimationState
           CharacterInputState_ = NoInput
           CharacterState_ = CharacterState.empty
-          ChargeTechOpt_ = None
+          ConjureChargeOpt_ = None
+          TechChargeOpt_ = None
           AutoBattleOpt_ = None
           ActionTime_ = 0.0f
           CelSize_ = Constants.Gameplay.CharacterSize.V2 }
