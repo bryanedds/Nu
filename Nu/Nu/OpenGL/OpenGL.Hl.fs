@@ -35,7 +35,7 @@ module Hl =
         if AssertEnabled then
             let error = Gl.GetError ()
             if error <> ErrorCode.NoError then
-                () // Log.debug ("OpenGL assertion failed due to: " + string error)
+                Log.debug ("OpenGL assertion failed due to: " + string error)
         a
 
 #if DEBUG
