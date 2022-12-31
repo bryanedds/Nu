@@ -190,7 +190,7 @@ module Effects =
 [<Syntax
     ("Constant Linear Random Chaos Ease EaseIn EaseOut Sin SinScaled Cos CosScaled " +
      "Or Nor Xor And Nand Equal " +
-     "Sum Delta Scale Ratio Set " +
+     "Sum Delta Scalar Ratio Set " +
      "Once Loop Bounce " +
      "Cycle Iterate " +
      "Rate " +
