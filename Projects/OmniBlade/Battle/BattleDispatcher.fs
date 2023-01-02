@@ -250,7 +250,7 @@ module BattleDispatcher =
                             let battle = Battle.updateBattleState (constant (BattleQuitting (time, false, Set.empty))) battle
                             let (sigs2, battle) = advanceBattle time battle
                             (sigs @ sigs2, battle)
-                        elif List.forall (fun (character : Character) -> character.IsWounded) enemies && List.hasAtMost 1 enemies then
+                        elif List.isEmpty enemies then
                             // won battle
                             let battle = Battle.animateCharactersCelebrate time true battle
                             let battle = Battle.updateBattleState (constant (BattleResult (time, true))) battle
