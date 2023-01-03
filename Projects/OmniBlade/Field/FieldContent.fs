@@ -46,7 +46,12 @@ module FieldContent =
 
         let pageItems rows (field : Field) =
             match field.Menu.MenuState with
-            | MenuItem menu -> pageItems5 rows menu.ItemPage false true field.Inventory.Items
+            | MenuInventory inventory ->
+                let items = Inventory.getNonKeyItems field.Inventory
+                pageItems5 rows inventory.InventoryPage false true items
+            | MenuKeyItems keyItems ->
+                let items = Inventory.getKeyItems field.Inventory
+                pageItems5 rows keyItems.KeyItemsPage false true items
             | _ ->
                 match field.ShopOpt with
                 | Some shop ->
@@ -55,10 +60,12 @@ module FieldContent =
                         match Map.tryFind shop.ShopType Data.Value.Shops with
                         | Some shopData -> pageItems5 rows shop.ShopPage false false (Map.ofListBy (flip Pair.make 1) shopData.ShopItems)
                         | None -> (false, false, Map.empty)
-                    | ShopSelling -> pageItems5 rows shop.ShopPage true true field.Inventory.Items
+                    | ShopSelling ->
+                        let items = Inventory.getNonKeyItems field.Inventory
+                        pageItems5 rows shop.ShopPage true true items
                 | None -> (false, false, Map.empty)
 
-        let sidebar name position (field : Field) menuTeamOpen menuItemsOpen menuTechOpen menuOptionsOpen menuClose =
+        let sidebar name position (field : Field) menuTeamOpen menuInventoryOpen menuTechOpen menuKeyItemsOpen menuOptionsOpen menuClose =
             Content.association name []
                 [Content.button "TeamButton"
                     [Entity.PositionLocal == position; Entity.ElevationLocal == 1.0f; Entity.Size == v3 72.0f 72.0f 0.0f
@@ -70,24 +77,26 @@ module FieldContent =
                     [Entity.PositionLocal == position - v3 0.0f 81.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 72.0f 72.0f 0.0f
                      Entity.UpImage == asset "Field" "InventoryButtonUp"
                      Entity.DownImage == asset "Field" "InventoryButtonDown"
-                     Entity.EnabledLocal := match field.Menu.MenuState with MenuItem _ -> false | _ -> true
-                     Entity.ClickEvent => menuItemsOpen ()]
+                     Entity.EnabledLocal := match field.Menu.MenuState with MenuInventory _ -> false | _ -> true
+                     Entity.ClickEvent => menuInventoryOpen ()]
                  Content.button "TechButton"
                     [Entity.PositionLocal == position - v3 0.0f 162.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 72.0f 72.0f 0.0f
                      Entity.UpImage == asset "Field" "TechButtonUp"
                      Entity.DownImage == asset "Field" "TechButtonDown"
                      Entity.EnabledLocal := match field.Menu.MenuState with MenuTech _ -> false | _ -> true
                      Entity.ClickEvent => menuTechOpen ()]
-                 Content.button "OptionsButton"
+                 Content.button "KeyItemsButton"
                     [Entity.PositionLocal == position - v3 0.0f 243.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 72.0f 72.0f 0.0f
+                     Entity.UpImage == asset "Field" "KeyItemsButtonUp"
+                     Entity.DownImage == asset "Field" "KeyItemsButtonDown"
+                     Entity.EnabledLocal := match field.Menu.MenuState with MenuKeyItems _ -> false | _ -> true
+                     Entity.ClickEvent => menuKeyItemsOpen ()]
+                 Content.button "OptionsButton"
+                    [Entity.PositionLocal == position - v3 0.0f 324.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 72.0f 72.0f 0.0f
                      Entity.UpImage == asset "Field" "OptionsButtonUp"
                      Entity.DownImage == asset "Field" "OptionsButtonDown"
                      Entity.EnabledLocal := match field.Menu.MenuState with MenuOptions -> false | _ -> true
                      Entity.ClickEvent => menuOptionsOpen ()]
-                 Content.button "HelpButton"
-                    [Entity.PositionLocal == position - v3 0.0f 324.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 72.0f 72.0f 0.0f
-                     Entity.UpImage == asset "Field" "HelpButtonUp"
-                     Entity.DownImage == asset "Field" "HelpButtonDown"]
                  Content.button "CloseButton"
                     [Entity.PositionLocal == position - v3 0.0f 405.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 72.0f 72.0f 0.0f
                      Entity.UpImage == asset "Field" "CloseButtonUp"

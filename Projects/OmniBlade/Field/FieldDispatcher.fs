@@ -19,15 +19,19 @@ module FieldDispatcher =
         | AvatarBodySeparation of BodySeparationData
         | MenuTeamOpen
         | MenuTeamAlly of int
-        | MenuItemsOpen
-        | MenuItemsPageUp
+        | MenuInventoryOpen
+        | MenuInventoryPageUp
         | MenuInventoryPageDown
-        | MenuItemSelect of int * (ItemType * int Option)
-        | MenuItemUse of int
-        | MenuItemCancel
+        | MenuInventorySelect of int * (ItemType * int Option)
+        | MenuInventoryUse of int
+        | MenuInventoryCancel
         | MenuTechOpen
         | MenuTechAlly of int
         | MenuTechSelect of int
+        | MenuKeyItemsOpen
+        | MenuKeyItemsPageUp
+        | MenuKeyItemsPageDown
+        | MenuKeyItemsSelect of int * (ItemType * int Option)
         | MenuOptionsOpen
         | MenuOptionsSelectBattleSpeed of BattleSpeed
         | MenuClose
@@ -392,16 +396,16 @@ module FieldDispatcher =
                         field
                 just field
 
-            | MenuItemsOpen ->
-                let itemState = MenuItem { ItemPage = 0 }
-                let field = Field.updateMenu (fun menu -> { menu with MenuState = itemState }) field
+            | MenuInventoryOpen ->
+                let inventoryState = MenuInventory { InventoryPage = 0 }
+                let field = Field.updateMenu (fun menu -> { menu with MenuState = inventoryState }) field
                 just field
 
-            | MenuItemsPageUp ->
+            | MenuInventoryPageUp ->
                 let field =
                     Field.updateMenu (fun menu ->
                         match menu.MenuState with
-                        | MenuItem menuItem -> { menu with MenuState = MenuItem { ItemPage = max 0 (dec menuItem.ItemPage) }}
+                        | MenuInventory inventory -> { menu with MenuState = MenuInventory { InventoryPage = max 0 (dec inventory.InventoryPage) }}
                         | _ -> menu)
                         field
                 just field
@@ -410,16 +414,16 @@ module FieldDispatcher =
                 let field =
                     Field.updateMenu (fun menu ->
                         match menu.MenuState with
-                        | MenuItem menuItem -> { menu with MenuState = MenuItem { ItemPage = inc menuItem.ItemPage }}
+                        | MenuInventory menuInventory -> { menu with MenuState = MenuInventory { InventoryPage = inc menuInventory.InventoryPage }}
                         | _ -> menu)
                         field
                 just field
 
-            | MenuItemSelect (index, (itemType, _)) ->
+            | MenuInventorySelect (index, (itemType, _)) ->
                 let field = Field.updateMenu (fun menu -> { menu with MenuUseOpt = MenuUse.tryMakeFromSelection (index, itemType) }) field
                 just field
 
-            | MenuItemUse index ->
+            | MenuInventoryUse index ->
                 match Map.tryFind index field.Team with
                 | Some teammate ->
                     match field.Menu.MenuUseOpt with
@@ -435,7 +439,7 @@ module FieldDispatcher =
                     | None -> just field
                 | None -> just field
 
-            | MenuItemCancel ->
+            | MenuInventoryCancel ->
                 let field = Field.updateMenu (fun menu -> { menu with MenuUseOpt = None }) field
                 just field
 
@@ -456,6 +460,32 @@ module FieldDispatcher =
                 just field
             
             | MenuTechSelect _ ->
+                just field
+
+            | MenuKeyItemsOpen ->
+                let inventoryState = MenuKeyItems { KeyItemsPage = 0 }
+                let field = Field.updateMenu (fun menu -> { menu with MenuState = inventoryState }) field
+                just field
+
+            | MenuKeyItemsPageUp ->
+                let field =
+                    Field.updateMenu (fun menu ->
+                        match menu.MenuState with
+                        | MenuKeyItems menuKeyItems -> { menu with MenuState = MenuKeyItems { KeyItemsPage = max 0 (dec menuKeyItems.KeyItemsPage) }}
+                        | _ -> menu)
+                        field
+                just field
+
+            | MenuKeyItemsPageDown ->
+                let field =
+                    Field.updateMenu (fun menu ->
+                        match menu.MenuState with
+                        | MenuKeyItems menuKeyItems -> { menu with MenuState = MenuKeyItems { KeyItemsPage = inc menuKeyItems.KeyItemsPage }}
+                        | _ -> menu)
+                        field
+                just field
+            
+            | MenuKeyItemsSelect _ ->
                 just field
 
             | MenuOptionsOpen ->
@@ -843,7 +873,7 @@ module FieldDispatcher =
                     Content.panel "Team"
                         [Entity.Position == v3 -450.0f -255.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v3 900.0f 510.0f 0.0f
                          Entity.LabelImage == Assets.Gui.DialogXXLImage]
-                        [Content.sidebar "Sidebar" (v3 24.0f 417.0f 0.0f) field (fun () -> MenuTeamOpen) (fun () -> MenuItemsOpen) (fun () -> MenuTechOpen) (fun () -> MenuOptionsOpen) (fun () -> MenuClose)
+                        [Content.sidebar "Sidebar" (v3 24.0f 417.0f 0.0f) field (fun () -> MenuTeamOpen) (fun () -> MenuInventoryOpen) (fun () -> MenuTechOpen) (fun () -> MenuKeyItemsOpen) (fun () -> MenuOptionsOpen) (fun () -> MenuClose)
                          yield! Content.team (v3 138.0f 417.0f 0.0f) Int32.MaxValue field tautology2 MenuTeamAlly
                          Content.label "Portrait"
                             [Entity.PositionLocal == v3 438.0f 288.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 192.0f 192.0f 0.0f
@@ -898,13 +928,13 @@ module FieldDispatcher =
                                 | None -> ""]]
 
                  // inventory
-                 | MenuItem _ ->
+                 | MenuInventory _ ->
                     Content.panel "Inventory"
                         [Entity.Position == v3 -450.0f -255.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v3 900.0f 510.0f 0.0f
                          Entity.LabelImage == Assets.Gui.DialogXXLImage
                          Entity.Enabled := Option.isNone field.Menu.MenuUseOpt]
-                        [Content.sidebar "Sidebar" (v3 24.0f 417.0f 0.0f) field (fun () -> MenuTeamOpen) (fun () -> MenuItemsOpen) (fun () -> MenuTechOpen) (fun () -> MenuOptionsOpen) (fun () -> MenuClose)
-                         yield! Content.items (v3 138.0f 417.0f 0.0f) 10 5 field MenuItemSelect
+                        [Content.sidebar "Sidebar" (v3 24.0f 417.0f 0.0f) field (fun () -> MenuTeamOpen) (fun () -> MenuInventoryOpen) (fun () -> MenuTechOpen) (fun () -> MenuKeyItemsOpen) (fun () -> MenuOptionsOpen) (fun () -> MenuClose)
+                         yield! Content.items (v3 138.0f 417.0f 0.0f) 10 5 field MenuInventorySelect
                          Content.text "Gold"
                             [Entity.PositionLocal == v3 399.0f 24.0f 0.0f; Entity.ElevationLocal == 1.0f
                              Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
@@ -915,7 +945,7 @@ module FieldDispatcher =
                              Entity.VisibleLocal := Content.pageItems 10 field |> a__
                              Entity.UpImage == Assets.Gui.ButtonSmallUpImage
                              Entity.DownImage == Assets.Gui.ButtonSmallDownImage
-                             Entity.ClickEvent => MenuItemsPageUp]
+                             Entity.ClickEvent => MenuInventoryPageUp]
                          Content.button "PageDown"
                             [Entity.PositionLocal == v3 777.0f 12.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 72.0f 72.0f 0.0f
                              Entity.Text == ">"
@@ -929,16 +959,39 @@ module FieldDispatcher =
                     Content.panel "TechTeam"
                         [Entity.Position == v3 -450.0f -255.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v3 900.0f 510.0f 0.0f
                          Entity.LabelImage == Assets.Gui.DialogXXLImage]
-                        [Content.sidebar "Sidebar" (v3 24.0f 417.0f 0.0f) field (fun () -> MenuTeamOpen) (fun () -> MenuItemsOpen) (fun () -> MenuTechOpen) (fun () -> MenuOptionsOpen) (fun () -> MenuClose)
+                        [Content.sidebar "Sidebar" (v3 24.0f 417.0f 0.0f) field (fun () -> MenuTeamOpen) (fun () -> MenuInventoryOpen) (fun () -> MenuTechOpen) (fun () -> MenuKeyItemsOpen) (fun () -> MenuOptionsOpen) (fun () -> MenuClose)
                          yield! Content.team (v3 138.0f 417.0f 0.0f) Int32.MaxValue field tautology2 MenuTechAlly
                          yield! Content.techs (v3 466.0f 429.0f 0.0f) field MenuTechSelect]
+
+                 // key items
+                 | MenuKeyItems _ ->
+                    Content.panel "KeyItems"
+                        [Entity.Position == v3 -450.0f -255.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v3 900.0f 510.0f 0.0f
+                         Entity.LabelImage == Assets.Gui.DialogXXLImage
+                         Entity.Enabled := Option.isNone field.Menu.MenuUseOpt]
+                        [Content.sidebar "Sidebar" (v3 24.0f 417.0f 0.0f) field (fun () -> MenuTeamOpen) (fun () -> MenuInventoryOpen) (fun () -> MenuTechOpen) (fun () -> MenuKeyItemsOpen) (fun () -> MenuOptionsOpen) (fun () -> MenuClose)
+                         yield! Content.items (v3 138.0f 417.0f 0.0f) 10 5 field MenuInventorySelect
+                         Content.button "PageUp"
+                            [Entity.PositionLocal == v3 138.0f 12.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 72.0f 72.0f 0.0f
+                             Entity.Text == "<"
+                             Entity.VisibleLocal := Content.pageItems 10 field |> a__
+                             Entity.UpImage == Assets.Gui.ButtonSmallUpImage
+                             Entity.DownImage == Assets.Gui.ButtonSmallDownImage
+                             Entity.ClickEvent => MenuInventoryPageUp]
+                         Content.button "PageDown"
+                            [Entity.PositionLocal == v3 777.0f 12.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 72.0f 72.0f 0.0f
+                             Entity.Text == ">"
+                             Entity.VisibleLocal := Content.pageItems 10 field |> _b_
+                             Entity.UpImage == Assets.Gui.ButtonSmallUpImage
+                             Entity.DownImage == Assets.Gui.ButtonSmallDownImage
+                             Entity.ClickEvent => MenuInventoryPageDown]]
 
                  // options
                  | MenuOptions ->
                     Content.panel "Options"
                         [Entity.Position == v3 -450.0f -255.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v3 900.0f 510.0f 0.0f
                          Entity.LabelImage == Assets.Gui.DialogXXLImage]
-                        [Content.sidebar "Sidebar" (v3 24.0f 417.0f 0.0f) field (fun () -> MenuTeamOpen) (fun () -> MenuItemsOpen) (fun () -> MenuTechOpen) (fun () -> MenuOptionsOpen) (fun () -> MenuClose)
+                        [Content.sidebar "Sidebar" (v3 24.0f 417.0f 0.0f) field (fun () -> MenuTeamOpen) (fun () -> MenuInventoryOpen) (fun () -> MenuTechOpen) (fun () -> MenuKeyItemsOpen) (fun () -> MenuOptionsOpen) (fun () -> MenuClose)
                          Content.text "BattleSpeed"
                             [Entity.PositionLocal == v3 384.0f 432.0f 0.0f; Entity.ElevationLocal == 1.0f
                              Entity.Text == "Battle Speed"]
@@ -975,12 +1028,12 @@ module FieldDispatcher =
                                 match menu.MenuUseOpt with
                                 | Some menuUse -> Teammate.canUseItem (snd menuUse.MenuUseSelection) teammate
                                 | None -> false)
-                            MenuItemUse
+                            MenuInventoryUse
                          Content.button "Close"
                             [Entity.PositionLocal == v3 810.0f 342.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 72.0f 72.0f 0.0f
                              Entity.UpImage == asset "Field" "CloseButtonUp"
                              Entity.DownImage == asset "Field" "CloseButtonDown"
-                             Entity.ClickEvent => MenuItemCancel]
+                             Entity.ClickEvent => MenuInventoryCancel]
                          Content.text "Line1"
                             [Entity.PositionLocal == v3 36.0f 354.0f 0.0f; Entity.ElevationLocal == 1.0f
                              Entity.Text := menuUse.MenuUseLine1]

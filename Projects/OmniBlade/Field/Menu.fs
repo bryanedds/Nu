@@ -82,16 +82,20 @@ type [<NoComparison>] MenuTeam =
         let tacdOpt = MenuTeam.tryGetTeammateAndCharacterData team menuTeam
         Option.map snd tacdOpt
 
-type [<NoComparison>] MenuItem =
-    { ItemPage : int }
+type [<NoComparison>] MenuInventory =
+    { InventoryPage : int }
 
 type [<NoComparison>] MenuTech =
     { TeammateIndex : int }
 
+type [<NoComparison>] MenuKeyItems =
+    { KeyItemsPage : int }
+
 type [<NoComparison>] MenuState =
     | MenuTeam of MenuTeam
-    | MenuItem of MenuItem
+    | MenuInventory of MenuInventory
     | MenuTech of MenuTech
+    | MenuKeyItems of MenuKeyItems
     | MenuOptions
     | MenuClosed
 

@@ -172,13 +172,20 @@ type [<NoComparison>] Inventory =
     { Items : Map<ItemType, int>
       Gold : int }
 
+    static member getNonKeyItems inv =
+        inv.Items |>
+        Map.toArray |>
+        Array.map (function (KeyItem _, _) -> None | (nonKeyItem, count) -> Some (nonKeyItem, count)) |>
+        Array.definitize |>
+        Map.ofArray
+
     static member getKeyItems inv =
         inv.Items |>
         Map.toArray |>
-        Array.map (function (KeyItem keyItemType, count) -> Some (keyItemType, count) | _ -> None) |>
+        Array.map (function (KeyItem _ as keyItem, count) -> Some (keyItem, count) | _ -> None) |>
         Array.definitize |>
         Map.ofArray
-        
+
     static member getConsumables inv =
         inv.Items |>
         Map.toArray |>
