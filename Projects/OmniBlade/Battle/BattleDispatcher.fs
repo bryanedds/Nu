@@ -638,6 +638,7 @@ module BattleDispatcher =
                 | (false, _) -> just battle
 
             | TechCharacter1 (sourceIndex, targetIndex, techType) ->
+                let time = World.getUpdateTime world
                 let sourcePerimeter = Battle.getCharacterPerimeter sourceIndex battle
                 let targetPerimeter = Battle.getCharacterPerimeter targetIndex battle
                 let effectOpt =
@@ -664,11 +665,10 @@ module BattleDispatcher =
                             Right [playCharge; displayCast]
                 match effectOpt with
                 | Left hopEffect ->
+                    let battle = Battle.animateCharacter time (PoiseAnimation Poising) sourceIndex battle
                     withSignal hopEffect battle
                 | Right chargeEffects ->
-                    let time = World.getUpdateTime world
                     if Battle.isCharacterHealthy targetIndex battle then
-                        let time = World.getUpdateTime world
                         let battle = Battle.animateCharacter time (PoiseAnimation Charging) sourceIndex battle
                         withSignals chargeEffects battle
                     else just (Battle.abortCharacterAction time sourceIndex battle)
