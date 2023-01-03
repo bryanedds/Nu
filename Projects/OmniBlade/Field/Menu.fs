@@ -85,7 +85,7 @@ type [<NoComparison>] MenuTeam =
 type [<NoComparison>] MenuInventory =
     { InventoryPage : int }
 
-type [<NoComparison>] MenuTech =
+type [<NoComparison>] MenuTechs =
     { TeammateIndex : int }
 
 type [<NoComparison>] MenuKeyItems =
@@ -94,7 +94,7 @@ type [<NoComparison>] MenuKeyItems =
 type [<NoComparison>] MenuState =
     | MenuTeam of MenuTeam
     | MenuInventory of MenuInventory
-    | MenuTech of MenuTech
+    | MenuTechs of MenuTechs
     | MenuKeyItems of MenuKeyItems
     | MenuOptions
     | MenuClosed

@@ -83,7 +83,7 @@ module FieldContent =
                     [Entity.PositionLocal == position - v3 0.0f 162.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 72.0f 72.0f 0.0f
                      Entity.UpImage == asset "Field" "TechButtonUp"
                      Entity.DownImage == asset "Field" "TechButtonDown"
-                     Entity.EnabledLocal := match field.Menu.MenuState with MenuTech _ -> false | _ -> true
+                     Entity.EnabledLocal := match field.Menu.MenuState with MenuTechs _ -> false | _ -> true
                      Entity.ClickEvent => menuTechOpen ()]
                  Content.button "KeyItemsButton"
                     [Entity.PositionLocal == position - v3 0.0f 243.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 72.0f 72.0f 0.0f
@@ -106,10 +106,15 @@ module FieldContent =
         let team (position : Vector3) rows (field : Field) filter fieldMsg =
             [for (index, teammate) in field.Team.Pairs do
                 let teammateName = "Teammate+" + string teammate.TeamIndex
-                let x = position.X + if index < rows then 0.0f else 252.0f + 48.0f
+                let w =
+                    match field.Menu.MenuState with
+                    | MenuTechs _ -> 336.0f
+                    | MenuTeam _ | _ -> 252.0f
+                let h = 72.0f
+                let x = position.X + if index < rows then 0.0f else w + 48.0f
                 let y = position.Y - single (index % rows) * 81.0f
                 Content.button teammateName
-                    [Entity.PositionLocal == v3 x y 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 252.0f 72.0f 0.0f
+                    [Entity.PositionLocal == v3 x y 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 w h 0.0f
                      Entity.EnabledLocal := filter teammate field.Menu
                      Entity.Text := CharacterType.getName teammate.CharacterType
                      Entity.UpImage == Assets.Gui.ButtonBigUpImage
@@ -139,17 +144,23 @@ module FieldContent =
         let techs (position : Vector3) (field : Field) fieldMsg =
             let techs =
                 match field.Menu.MenuState with
-                | MenuTech menuTech ->
+                | MenuTechs menuTech ->
                     match Map.tryFind menuTech.TeammateIndex field.Team with
                     | Some teammate -> teammate.Techs |> Seq.indexed |> Map.ofSeq
                     | None -> Map.empty
                 | _ -> Map.empty
+            let useSmallButtons = techs.Count > 6
             [for (index, tech) in techs.Pairs do
                 let techName = scstringm tech
                 let x = position.X
-                let y = position.Y - single index * 60.0f
+                let y =
+                    position.Y -
+                    single index * (if useSmallButtons then 60.0f else 81.0f) +
+                    if useSmallButtons then 12.0f else 0.0f
+                let w = 336.0f
+                let h = if useSmallButtons then 60.0f else 72.0f
                 Content.button techName
-                    [Entity.PositionLocal == v3 x y 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 336.0f 60.0f 0.0f
+                    [Entity.PositionLocal == v3 x y 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 w h 0.0f
                      Entity.Justification == Justified (JustifyLeft, JustifyMiddle); Entity.Margins == v3 16.0f 0.0f 0.0f
                      Entity.Text := techName
                      Entity.EnabledLocal == false
