@@ -25,9 +25,9 @@ module FieldDispatcher =
         | MenuInventorySelect of int * (ItemType * int Option)
         | MenuInventoryUse of int
         | MenuInventoryCancel
-        | MenuTechOpen
-        | MenuTechAlly of int
-        | MenuTechSelect of int
+        | MenuTechsOpen
+        | MenuTechsAlly of int
+        | MenuTechsSelect of int
         | MenuKeyItemsOpen
         | MenuKeyItemsPageUp
         | MenuKeyItemsPageDown
@@ -443,23 +443,23 @@ module FieldDispatcher =
                 let field = Field.updateMenu (fun menu -> { menu with MenuUseOpt = None }) field
                 just field
 
-            | MenuTechOpen ->
-                let state = MenuTech { TeammateIndex = 0 }
+            | MenuTechsOpen ->
+                let state = MenuTechs { TeammateIndex = 0 }
                 let field = Field.updateMenu (fun menu -> { menu with MenuState = state }) field
                 just field
             
-            | MenuTechAlly index ->
+            | MenuTechsAlly index ->
                 let field =
                     Field.updateMenu (fun menu ->
                         let state =
                             match menu.MenuState with
-                            | MenuTech menuTech -> MenuTech { menuTech with TeammateIndex = index }
+                            | MenuTechs menuTech -> MenuTechs { menuTech with TeammateIndex = index }
                             | state -> state
                         { menu with MenuState = state })
                         field
                 just field
             
-            | MenuTechSelect _ ->
+            | MenuTechsSelect _ ->
                 just field
 
             | MenuKeyItemsOpen ->
@@ -873,7 +873,7 @@ module FieldDispatcher =
                     Content.panel "Team"
                         [Entity.Position == v3 -450.0f -255.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v3 900.0f 510.0f 0.0f
                          Entity.LabelImage == Assets.Gui.DialogXXLImage]
-                        [Content.sidebar "Sidebar" (v3 24.0f 417.0f 0.0f) field (fun () -> MenuTeamOpen) (fun () -> MenuInventoryOpen) (fun () -> MenuTechOpen) (fun () -> MenuKeyItemsOpen) (fun () -> MenuOptionsOpen) (fun () -> MenuClose)
+                        [Content.sidebar "Sidebar" (v3 24.0f 417.0f 0.0f) field (fun () -> MenuTeamOpen) (fun () -> MenuInventoryOpen) (fun () -> MenuTechsOpen) (fun () -> MenuKeyItemsOpen) (fun () -> MenuOptionsOpen) (fun () -> MenuClose)
                          yield! Content.team (v3 138.0f 417.0f 0.0f) Int32.MaxValue field tautology2 MenuTeamAlly
                          Content.label "Portrait"
                             [Entity.PositionLocal == v3 438.0f 288.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 192.0f 192.0f 0.0f
@@ -933,7 +933,7 @@ module FieldDispatcher =
                         [Entity.Position == v3 -450.0f -255.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v3 900.0f 510.0f 0.0f
                          Entity.LabelImage == Assets.Gui.DialogXXLImage
                          Entity.Enabled := Option.isNone field.Menu.MenuUseOpt]
-                        [Content.sidebar "Sidebar" (v3 24.0f 417.0f 0.0f) field (fun () -> MenuTeamOpen) (fun () -> MenuInventoryOpen) (fun () -> MenuTechOpen) (fun () -> MenuKeyItemsOpen) (fun () -> MenuOptionsOpen) (fun () -> MenuClose)
+                        [Content.sidebar "Sidebar" (v3 24.0f 417.0f 0.0f) field (fun () -> MenuTeamOpen) (fun () -> MenuInventoryOpen) (fun () -> MenuTechsOpen) (fun () -> MenuKeyItemsOpen) (fun () -> MenuOptionsOpen) (fun () -> MenuClose)
                          yield! Content.items (v3 138.0f 417.0f 0.0f) 10 5 field MenuInventorySelect
                          Content.text "Gold"
                             [Entity.PositionLocal == v3 399.0f 24.0f 0.0f; Entity.ElevationLocal == 1.0f
@@ -954,14 +954,14 @@ module FieldDispatcher =
                              Entity.DownImage == Assets.Gui.ButtonSmallDownImage
                              Entity.ClickEvent => MenuInventoryPageDown]]
 
-                 // tech team
-                 | MenuTech _ ->
-                    Content.panel "TechTeam"
+                 // techs
+                 | MenuTechs _ ->
+                    Content.panel "Techs"
                         [Entity.Position == v3 -450.0f -255.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v3 900.0f 510.0f 0.0f
                          Entity.LabelImage == Assets.Gui.DialogXXLImage]
-                        [Content.sidebar "Sidebar" (v3 24.0f 417.0f 0.0f) field (fun () -> MenuTeamOpen) (fun () -> MenuInventoryOpen) (fun () -> MenuTechOpen) (fun () -> MenuKeyItemsOpen) (fun () -> MenuOptionsOpen) (fun () -> MenuClose)
-                         yield! Content.team (v3 138.0f 417.0f 0.0f) Int32.MaxValue field tautology2 MenuTechAlly
-                         yield! Content.techs (v3 466.0f 429.0f 0.0f) field MenuTechSelect]
+                        [Content.sidebar "Sidebar" (v3 24.0f 417.0f 0.0f) field (fun () -> MenuTeamOpen) (fun () -> MenuInventoryOpen) (fun () -> MenuTechsOpen) (fun () -> MenuKeyItemsOpen) (fun () -> MenuOptionsOpen) (fun () -> MenuClose)
+                         yield! Content.team (v3 138.0f 417.0f 0.0f) Int32.MaxValue field tautology2 MenuTechsAlly
+                         yield! Content.techs (v3 513.0f 417.0f 0.0f) field MenuTechsSelect]
 
                  // key items
                  | MenuKeyItems _ ->
@@ -969,7 +969,7 @@ module FieldDispatcher =
                         [Entity.Position == v3 -450.0f -255.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v3 900.0f 510.0f 0.0f
                          Entity.LabelImage == Assets.Gui.DialogXXLImage
                          Entity.Enabled := Option.isNone field.Menu.MenuUseOpt]
-                        [Content.sidebar "Sidebar" (v3 24.0f 417.0f 0.0f) field (fun () -> MenuTeamOpen) (fun () -> MenuInventoryOpen) (fun () -> MenuTechOpen) (fun () -> MenuKeyItemsOpen) (fun () -> MenuOptionsOpen) (fun () -> MenuClose)
+                        [Content.sidebar "Sidebar" (v3 24.0f 417.0f 0.0f) field (fun () -> MenuTeamOpen) (fun () -> MenuInventoryOpen) (fun () -> MenuTechsOpen) (fun () -> MenuKeyItemsOpen) (fun () -> MenuOptionsOpen) (fun () -> MenuClose)
                          yield! Content.items (v3 138.0f 417.0f 0.0f) 10 5 field MenuInventorySelect
                          Content.button "PageUp"
                             [Entity.PositionLocal == v3 138.0f 12.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 72.0f 72.0f 0.0f
@@ -991,7 +991,7 @@ module FieldDispatcher =
                     Content.panel "Options"
                         [Entity.Position == v3 -450.0f -255.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v3 900.0f 510.0f 0.0f
                          Entity.LabelImage == Assets.Gui.DialogXXLImage]
-                        [Content.sidebar "Sidebar" (v3 24.0f 417.0f 0.0f) field (fun () -> MenuTeamOpen) (fun () -> MenuInventoryOpen) (fun () -> MenuTechOpen) (fun () -> MenuKeyItemsOpen) (fun () -> MenuOptionsOpen) (fun () -> MenuClose)
+                        [Content.sidebar "Sidebar" (v3 24.0f 417.0f 0.0f) field (fun () -> MenuTeamOpen) (fun () -> MenuInventoryOpen) (fun () -> MenuTechsOpen) (fun () -> MenuKeyItemsOpen) (fun () -> MenuOptionsOpen) (fun () -> MenuClose)
                          Content.text "BattleSpeed"
                             [Entity.PositionLocal == v3 384.0f 432.0f 0.0f; Entity.ElevationLocal == 1.0f
                              Entity.Text == "Battle Speed"]
