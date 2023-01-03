@@ -88,6 +88,7 @@ type ArmorType =
     | StoneHide
 
 type AccessoryType =
+    | SteelRing
     | IronBrace
     | SnakeCharm
     | SilverRing
