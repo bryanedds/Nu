@@ -22,7 +22,10 @@ type [<NoComparison>] Dialog =
 
     static member getText (detokenize : string -> string) dialog =
         let detokenized = detokenize dialog.DialogTokenized
-        let text = detokenized.Split(Constants.Gameplay.DialogSplit).[dialog.DialogPage] |> Dialog.wordWrap 48
+        let text =
+            match dialog.DialogForm with
+            | DialogThin | DialogThick -> detokenized.Split(Constants.Gameplay.DialogSplit).[dialog.DialogPage] |> Dialog.wordWrap 48
+            | DialogNarration -> detokenized
         String.tryTake dialog.DialogProgress text
 
     static member advance (detokenize : string -> string) dialog world =
