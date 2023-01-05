@@ -77,9 +77,10 @@ module Constants =
 #if DEV_FIELD
         let SpiritActivityMinimum = 10000L
 #else
-        let SpiritActivityMinimum = 420L
+        let SpiritActivityMinimum = 120L
 #endif
         let SpiritActivityThreshold = 120L
+        let SpiritActivityAggressionThreshold = 4
         let SpiritRadius = 90.0f / SpiritOrbRatio
         let WalkLengthScalarClosed = 0.55f // NOTE: higher is longer distance to stronger spirits.
         let WalkLengthScalarOpened = 0.45f // NOTE: higher is longer distance to stronger spirits.
