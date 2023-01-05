@@ -121,6 +121,7 @@ type [<CustomEquality; CustomComparison>] StatusType =
     | Silence // TODO: implement effect in battle.
     | Sleep // TODO: implement effect in battle.
     | Confuse // TODO: implement effect in battle (disallows enemy use of techs (except charge) and same for player but randomizes attack targets, too).
+    | Curse // TODO: implement effect of 'can't gain HP' in battle.
     //| Blind - maybe in the sequel
     | Time of bool // true = Haste, false = Slow
     | Power of bool * bool // true = Up, false = Down; true = 2, false = 1
