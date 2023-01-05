@@ -15,7 +15,7 @@ type [<NoComparison>] SpiritMovement =
     | Wander
 
 type [<NoComparison>] SpiritPattern =
-    | Distracted
+    | Confused
     | Flighty
     | Steadfast
     | Stalking
@@ -23,7 +23,7 @@ type [<NoComparison>] SpiritPattern =
 
     static member fromInt i =
         match i with
-        | 0 -> Distracted
+        | 0 -> Confused
         | 1 -> Flighty
         | 2 -> Steadfast
         | 3 -> Stalking
@@ -37,7 +37,7 @@ type [<NoComparison>] SpiritPattern =
 
     static member toSpiritMovement pattern =
         match pattern with
-        | Distracted ->     [|Chase;    Creep; Wander; Wander;  Creep; Wander; Wander;  Creep; Wander; Wander;  Creep; Wander; Wander;  Creep; Wander; Wander|]
+        | Confused ->       [|Creep;    Wander; Wander; Wander; Wander; Wander; Wander; Wander; Wander; Wander; Wander; Wander; Wander;  Wander; Wander; Wander|]
         | Flighty ->        [|Chase;    Creep; Creep; Wander;   Creep; Creep; Wander;   Creep; Creep; Wander;   Creep; Creep; Wander;   Creep; Creep; Wander|]
         | Steadfast ->      [|Creep;    Creep; Creep; Creep;    Creep; Creep; Creep;    Creep; Creep; Creep;    Creep; Creep; Creep;    Creep; Creep; Creep|]
         | Stalking ->       [|Creep;    Chase; Chase; Creep;    Chase; Chase; Creep;    Chase; Chase; Creep;    Chase; Chase; Creep;    Chase; Chase; Creep|]

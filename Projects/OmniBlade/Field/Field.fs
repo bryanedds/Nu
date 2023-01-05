@@ -435,9 +435,13 @@ module Field =
                     | (true, fieldData) ->
                         [|0 .. spiritsDeficient - 1|] |>
                         Array.map (fun _ ->
+                            let spiritPattern =
+                                if spiritsNeeded >= Constants.Field.SpiritActivityAggressionThreshold
+                                then SpiritPattern.generate ()
+                                else SpiritPattern.Confused
                             match FieldData.tryGetSpiritType field.OmniSeedState field.Avatar.Bottom fieldData with
                             | Some spiritType ->
-                                let spiritMovement = SpiritPattern.toSpiritMovement (SpiritPattern.generate ())
+                                let spiritMovement = SpiritPattern.toSpiritMovement spiritPattern
                                 let spirit = Spirit.spawn (World.getUpdateTime world) field.Avatar.Bottom spiritType spiritMovement
                                 Some spirit
                             | None -> None) |>
