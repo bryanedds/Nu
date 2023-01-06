@@ -29,7 +29,7 @@ module Gaia =
     let mutable private rightClickPosition = v2Zero
     let mutable private dragEntityState = DragEntityInactive
     let mutable private dragEyeState = DragEyeInactive
-    let mutable private otherSnaps = (Constants.Editor.Position3dSnapDefault, Constants.Editor.Degrees3dSnapDefault, Constants.Editor.Scale3dSnapDefault)
+    let mutable private otherSnaps = (Constants.Editor.Position2dSnapDefault, Constants.Editor.Degrees2dSnapDefault, Constants.Editor.Scale2dSnapDefault)
     let mutable private filePaths = Map.empty<Group Address, string>
     let mutable private targetDir = "."
     let mutable private selectedScreen = Screen "Screen" // TODO: see if this is necessary or if we can just use World.getSelectedScreen.
@@ -962,9 +962,9 @@ module Gaia =
                         entityTransform.Position <- entityPosition.V3
                         entityTransform.Size <- entity.GetQuickSize world
                         entityTransform.Elevation <- getCreationElevation form
-                        if not form.snap3dButton.Checked
-                        then entity.SetTransformSnapped positionSnap degreesSnap scaleSnap entityTransform world
-                        else entity.SetTransform entityTransform world
+                        if form.snap3dButton.Checked
+                        then entity.SetTransform entityTransform world
+                        else entity.SetTransformSnapped positionSnap degreesSnap scaleSnap entityTransform world
                 let world =
                     if inHierarchy
                     then entity.SetMountOptWithAdjustment (Some (Relation.makeParent ())) world
@@ -1452,9 +1452,9 @@ module Gaia =
                     let mousePositionWorld = World.getMousePostion2dWorld (entity.GetAbsolute world) world
                     let entityPosition = (entityDragOffset - mousePositionWorldOriginal) + (mousePositionWorld - mousePositionWorldOriginal)
                     let entityPositionSnapped =
-                        if not form.snap3dButton.Checked
-                        then Math.snapF3d (Triple.fst (getSnaps form)) entityPosition.V3
-                        else entityPosition.V3
+                        if form.snap3dButton.Checked
+                        then entityPosition.V3
+                        else Math.snapF3d (Triple.fst (getSnaps form)) entityPosition.V3
                     let world =
                         if entity.MountExists world then
                             let entityPositionDelta = entityPositionSnapped - entity.GetPositionLocal world
@@ -1733,9 +1733,10 @@ module Gaia =
 
         // configure controls
         form.displayPanel.MaximumSize <- Drawing.Size (Constants.Render.ResolutionX, Constants.Render.ResolutionY)
-        form.positionSnapTextBox.Text <- scstring Constants.Editor.Position2dSnapDefault
-        form.degreesSnapTextBox.Text <- scstring Constants.Editor.Degrees2dSnapDefault
-        form.scaleSnapTextBox.Text <- scstring Constants.Editor.Scale2dSnapDefault
+        form.snap3dButton.Checked <- true
+        form.positionSnapTextBox.Text <- scstring Constants.Editor.Position3dSnapDefault
+        form.degreesSnapTextBox.Text <- scstring Constants.Editor.Degrees3dSnapDefault
+        form.scaleSnapTextBox.Text <- scstring Constants.Editor.Scale3dSnapDefault
         form.createElevationTextBox.Text <- scstring Constants.Editor.CreationElevationDefault
         form.propertyTabControl.SelectTab 3
 
