@@ -804,6 +804,9 @@ module WorldTypes =
             entityState
 
         member this.Position with get () = this.Transform.Position and set value = this.Transform.Position <- value
+        member this.Center with get () = this.Transform.Center and set value = this.Transform.Center <- value
+        member this.Bottom with get () = this.Transform.Bottom and set value = this.Transform.Bottom <- value
+        member this.TopLeft with get () = this.Transform.TopLeft and set value = this.Transform.TopLeft <- value
         member this.CenterLocal with get () = this.PositionLocal + (this.Transform.Center - this.Transform.Position)
         member this.BottomLocal with get () = this.PositionLocal + (this.Transform.Bottom - this.Transform.Position)
         member this.TopLeftLocal with get () = this.PositionLocal + (this.Transform.TopLeft - this.Transform.Position)
@@ -814,7 +817,13 @@ module WorldTypes =
         member this.Degrees with get () = this.Transform.Degrees and set value = this.Transform.Degrees <- value
         member this.DegreesLocal with get () = Math.radiansToDegrees3d this.AnglesLocal and set value = this.AnglesLocal <- Math.degreesToRadians3d value
         member this.Size with get () = this.Transform.Size and set value = this.Transform.Size <- value
+        member this.RotationMatrix with get () = this.Transform.RotationMatrix
         member this.Elevation with get () = this.Transform.Elevation and set value = this.Transform.Elevation <- value
+        member this.AffineMatrix with get () = this.Transform.AffineMatrix
+        member this.PerimeterUnscaled with get () = this.Transform.PerimeterUnscaled and set value = this.Transform.PerimeterUnscaled <- value
+        member this.Perimeter with get () = this.Transform.Perimeter and set value = this.Transform.Perimeter <- value
+        member this.PerimeterOriented with get () = this.Transform.PerimeterOriented
+        member this.Bounds with get () = this.Transform.Bounds
         member this.Presence with get () = this.Transform.Presence and set value = this.Transform.Presence <- value
         member internal this.Active with get () = this.Transform.Active and set value = this.Transform.Active <- value
         member internal this.Dirty with get () = this.Transform.Dirty and set value = this.Transform.Dirty <- value
@@ -839,15 +848,6 @@ module WorldTypes =
         member this.Static with get () = this.Transform.Static and set value = this.Transform.Static <- value
         member this.Light with get () = this.Transform.Light and set value = this.Transform.Light <- value
         member this.Optimized with get () = this.Transform.Optimized
-        member this.RotationMatrix with get () = this.Transform.RotationMatrix
-        member this.AffineMatrix with get () = this.Transform.AffineMatrix
-        member this.PerimeterUnscaled with get () = this.Transform.PerimeterUnscaled and set value = this.Transform.PerimeterUnscaled <- value
-        member this.Perimeter with get () = this.Transform.Perimeter and set value = this.Transform.Perimeter <- value
-        member this.Center with get () = this.Transform.Center and set value = this.Transform.Center <- value
-        member this.Bottom with get () = this.Transform.Bottom and set value = this.Transform.Bottom <- value
-        member this.TopLeft with get () = this.Transform.TopLeft and set value = this.Transform.TopLeft <- value
-        member this.PerimeterOriented with get () = this.Transform.PerimeterOriented
-        member this.Bounds with get () = this.Transform.Bounds
 
         interface SimulantState with
             member this.GetXtension () = this.Xtension
