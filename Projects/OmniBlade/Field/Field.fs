@@ -427,8 +427,7 @@ module Field =
                             distance < Constants.Field.SpiritRadius * 1.25f)
                             field.Spirits }
             let field =
-                let spiritActivity = max 0.0f (field.SpiritActivity_  - single Constants.Field.SpiritActivityMinimum)
-                let spiritsNeeded = int (spiritActivity / single Constants.Field.SpiritActivityThreshold)
+                let spiritsNeeded = int (field.SpiritActivity_ / single Constants.Field.SpiritActivityThreshold)
                 let spiritsDeficient = spiritsNeeded - Array.length field.Spirits
                 let spiritsSpawned =
                     match Data.Value.Fields.TryGetValue field.FieldType with
