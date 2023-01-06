@@ -149,25 +149,6 @@ type [<NoEquality; NoComparison>] Transform =
     member this.Down = -this.Up
     member this.Back = -this.Forward
 
-    member this.PerimeterUnscaled
-        with get () =
-            let perimeterUnscaledOffset = if this.Centered then this.Offset_ - v3UncenteredOffset else this.Offset_
-            Box3 (this.Position_ - perimeterUnscaledOffset * this.Size_, this.Size_)
-        and set (value : Box3) =
-            let perimeterUnscaledOffset = if this.Centered then this.Offset_ - v3UncenteredOffset else this.Offset_
-            this.Position <- value.Position - perimeterUnscaledOffset * value.Size
-            this.Size <- value.Size
-
-    member this.Perimeter
-        with get () =
-            let scale = this.Scale_
-            let sizeScaled = this.Size_ * scale
-            let perimeterUnscaledOffset = if this.Centered then this.Offset_ - v3UncenteredOffset else this.Offset_
-            Box3 (this.Position_ + perimeterUnscaledOffset * sizeScaled, sizeScaled)
-        and set (value : Box3) =
-            this.Scale_ <- Vector3.One
-            this.PerimeterUnscaled <- value
-
     member this.Center
         with get () =
             let perimeter = this.Perimeter
@@ -197,6 +178,25 @@ type [<NoEquality; NoComparison>] Transform =
             let perimeter = this.Perimeter
             let topLeft = perimeter.Translate (value - perimeter.TopLeft)
             this.PerimeterUnscaled <- topLeft
+
+    member this.PerimeterUnscaled
+        with get () =
+            let perimeterUnscaledOffset = if this.Centered then this.Offset_ - v3UncenteredOffset else this.Offset_
+            Box3 (this.Position_ - perimeterUnscaledOffset * this.Size_, this.Size_)
+        and set (value : Box3) =
+            let perimeterUnscaledOffset = if this.Centered then this.Offset_ - v3UncenteredOffset else this.Offset_
+            this.Position <- value.Position - perimeterUnscaledOffset * value.Size
+            this.Size <- value.Size
+
+    member this.Perimeter
+        with get () : Box3 =
+            let scale = this.Scale_
+            let sizeScaled = this.Size_ * scale
+            let perimeterUnscaledOffset = if this.Centered then this.Offset_ - v3UncenteredOffset else this.Offset_
+            Box3 (this.Position_ + perimeterUnscaledOffset * sizeScaled, sizeScaled)
+        and set (value : Box3) =
+            this.Scale_ <- Vector3.One
+            this.PerimeterUnscaled <- value
 
     member this.PerimeterOriented =
         this.CleanPerimeterOriented ()
