@@ -247,7 +247,7 @@ module WorldTypes =
              Define? AnglesLocal Vector3.Zero
              Define? Degrees Vector3.Zero
              Define? DegreesLocal Vector3.Zero
-             Define? Size Constants.Engine.EntitySize3dDefault // arbitrarily chosen
+             Define? Size Constants.Engine.EntitySize3dDefault
              Define? Elevation 0.0f
              Define? ElevationLocal 0.0f
              Define? Overflow 1.0f

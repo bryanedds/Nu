@@ -27,10 +27,11 @@ module EntityDispatcherModule =
         inherit EntityDispatcher (true, centered, physical)
 
         new (physical) =
-            EntityDispatcher3d (true, physical)
+            EntityDispatcher3d (Constants.Engine.EntityCentered3dDefault, physical)
 
         static member Properties =
-            [define Entity.Size Constants.Engine.EntitySize3dDefault]
+            [define Entity.Centered Constants.Engine.EntityCentered3dDefault
+             define Entity.Size Constants.Engine.EntitySize3dDefault]
 
 [<AutoOpen>]
 module StaticSpriteDispatcherModule =
