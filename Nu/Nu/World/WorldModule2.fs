@@ -1229,13 +1229,14 @@ module EntityDispatcherModule2 =
             EntityDispatcher3d<'model, 'message, 'command> (centered, physical, fun _ -> initial)
 
         new (physical, makeInitial : World -> 'model) =
-            EntityDispatcher3d<'model, 'message, 'command> (true, physical, makeInitial)
+            EntityDispatcher3d<'model, 'message, 'command> (Constants.Engine.EntityCentered3dDefault, physical, makeInitial)
 
         new (physical, initial : 'model) =
-            EntityDispatcher3d<'model, 'message, 'command> (true, physical, initial)
+            EntityDispatcher3d<'model, 'message, 'command> (physical, fun _ -> initial)
 
         static member Properties =
-            [define Entity.Size Constants.Engine.EntitySize3dDefault]
+            [define Entity.Centered Constants.Engine.EntityCentered3dDefault
+             define Entity.Size Constants.Engine.EntitySize3dDefault]
 
 [<AutoOpen>]
 module GuiDispatcherModule2 =
