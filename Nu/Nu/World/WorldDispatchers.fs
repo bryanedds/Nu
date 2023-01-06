@@ -76,10 +76,11 @@ module GuiDispatcherModule =
         member this.DisabledColor = lens (nameof this.DisabledColor) this this.GetDisabledColor this.SetDisabledColor
 
     type GuiDispatcher () =
-        inherit EntityDispatcher2d (false)
+        inherit EntityDispatcher2d (Constants.Engine.EntityCenteredGuiDefault, false)
 
         static member Properties =
-            [define Entity.Absolute true
+            [define Entity.Centered Constants.Engine.EntityCenteredGuiDefault
+             define Entity.Absolute true
              define Entity.AlwaysUpdate true
              define Entity.Presence Omnipresent
              define Entity.Size Constants.Engine.EntitySizeGuiDefault
