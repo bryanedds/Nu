@@ -2064,7 +2064,17 @@ module WorldModuleEntity =
                 // mutate respective spatial tree if entity is selected
                 let world =
                     if WorldModule.isSelected entity world then
-                        if World.getEntityIs3d entity world then
+                        if not (World.getEntityIs3d entity world) then
+                            let quadtree =
+                                MutantCache.mutateMutant
+                                    (fun () -> oldWorld.WorldExtension.Dispatchers.RebuildQuadtree oldWorld)
+                                    (fun entityTree ->
+                                        let entityState = World.getEntityState entity world
+                                        Quadtree.addElement entityState.Presence entityState.Bounds.Box2 entity entityTree
+                                        entityTree)
+                                    (World.getQuadtree world)
+                            World.setQuadtree quadtree world
+                        else
                             let octree =
                                 MutantCache.mutateMutant
                                     (fun () -> oldWorld.WorldExtension.Dispatchers.RebuildOctree oldWorld)
@@ -2075,16 +2085,6 @@ module WorldModuleEntity =
                                         entityTree)
                                     (World.getOctree world)
                             World.setOctree octree world
-                        else
-                            let quadtree =
-                                MutantCache.mutateMutant
-                                    (fun () -> oldWorld.WorldExtension.Dispatchers.RebuildQuadtree oldWorld)
-                                    (fun entityTree ->
-                                        let entityState = World.getEntityState entity world
-                                        Quadtree.addElement entityState.Presence entityState.Bounds.Box2 entity entityTree
-                                        entityTree)
-                                    (World.getQuadtree world)
-                            World.setQuadtree quadtree world
                     else world
 
                 // register entity if needed
@@ -2122,7 +2122,17 @@ module WorldModuleEntity =
                 // mutate entity tree if entity is selected
                 let world =
                     if WorldModule.isSelected entity world then
-                        if World.getEntityIs3d entity world then
+                        if not (World.getEntityIs3d entity world) then
+                            let quadtree =
+                                MutantCache.mutateMutant
+                                    (fun () -> world.WorldExtension.Dispatchers.RebuildQuadtree world)
+                                    (fun quadtree ->
+                                        let entityState = World.getEntityState entity oldWorld
+                                        Quadtree.removeElement entityState.Presence entityState.Bounds.Box2 entity quadtree
+                                        quadtree)
+                                    (World.getQuadtree world)
+                            World.setQuadtree quadtree world
+                        else
                             let octree =
                                 MutantCache.mutateMutant
                                     (fun () -> world.WorldExtension.Dispatchers.RebuildOctree world)
@@ -2133,16 +2143,6 @@ module WorldModuleEntity =
                                         octree)
                                     (World.getOctree world)
                             World.setOctree octree world
-                        else
-                            let quadtree =
-                                MutantCache.mutateMutant
-                                    (fun () -> world.WorldExtension.Dispatchers.RebuildQuadtree world)
-                                    (fun quadtree ->
-                                        let entityState = World.getEntityState entity oldWorld
-                                        Quadtree.removeElement entityState.Presence entityState.Bounds.Box2 entity quadtree
-                                        quadtree)
-                                    (World.getQuadtree world)
-                            World.setQuadtree quadtree world
                     else world
 
                 // remove cached entity event addresses
@@ -2407,7 +2407,14 @@ module WorldModuleEntity =
                     box3Neq oldBounds newBounds then
 
                     // update entity in entity tree
-                    if entityState.Is3d then
+                    if not (entityState.Is3d) then
+                        let quadree =
+                            MutantCache.mutateMutant
+                                (fun () -> oldWorld.WorldExtension.Dispatchers.RebuildQuadtree oldWorld)
+                                (fun quadree -> Quadtree.updateElement oldPresence oldBounds.Box2 newPresence newBounds.Box2 entity quadree; quadree)
+                                (World.getQuadtree world)
+                        World.setQuadtree quadree world
+                    else
                         let octree =
                             MutantCache.mutateMutant
                                 (fun () -> oldWorld.WorldExtension.Dispatchers.RebuildOctree oldWorld)
@@ -2417,13 +2424,6 @@ module WorldModuleEntity =
                                     octree)
                                 (World.getOctree world)
                         World.setOctree octree world
-                    else
-                        let quadree =
-                            MutantCache.mutateMutant
-                                (fun () -> oldWorld.WorldExtension.Dispatchers.RebuildQuadtree oldWorld)
-                                (fun quadree -> Quadtree.updateElement oldPresence oldBounds.Box2 newPresence newBounds.Box2 entity quadree; quadree)
-                                (World.getQuadtree world)
-                        World.setQuadtree quadree world
 
                 // fin
                 else world
@@ -2459,7 +2459,18 @@ module WorldModuleEntity =
                 let entityState = { (entityStateObj :?> EntityState) with Order = Core.getUniqueTimeStamp (); Id = id; Surnames = surnames }
                 entityState.Protected <- false // ensure pasted entity is not protected in case user pastes an Elmish entity
                 let (position, snapsOpt) =
-                    if entityState.Is3d then
+                    if not (entityState.Is3d) then
+                        let viewport = World.getViewport world
+                        let eyePosition = World.getEyePosition2d world
+                        let eyeSize = World.getEyeSize2d world
+                        let position =
+                            if atMouse
+                            then (viewport.MouseToWorld2d (entityState.Absolute, rightClickPosition, eyePosition, eyeSize)).V3
+                            else (viewport.MouseToWorld2d (entityState.Absolute, (World.getEyeSize2d world * 0.5f), eyePosition, eyeSize)).V3
+                        match snapsEir with
+                        | Left (positionSnap, degreesSnap, scaleSnap) -> (position, Some (positionSnap, degreesSnap, scaleSnap))
+                        | Right _ -> (position, None)
+                    else
                         let eyePosition = World.getEyePosition3d world
                         let eyeRotation = World.getEyeRotation3d world
                         let position =
@@ -2474,17 +2485,6 @@ module WorldModuleEntity =
                         match snapsEir with
                         | Right (positionSnap, degreesSnap, scaleSnap) -> (position, Some (positionSnap, degreesSnap, scaleSnap))
                         | Left _ -> (position, None)
-                    else
-                        let viewport = World.getViewport world
-                        let eyePosition = World.getEyePosition2d world
-                        let eyeSize = World.getEyeSize2d world
-                        let position =
-                            if atMouse
-                            then (viewport.MouseToWorld2d (entityState.Absolute, rightClickPosition, eyePosition, eyeSize)).V3
-                            else (viewport.MouseToWorld2d (entityState.Absolute, (World.getEyeSize2d world * 0.5f), eyePosition, eyeSize)).V3
-                        match snapsEir with
-                        | Left (positionSnap, degreesSnap, scaleSnap) -> (position, Some (positionSnap, degreesSnap, scaleSnap))
-                        | Right _ -> (position, None)
                 entityState.Transform.Position <- position
                 match snapsOpt with
                 | Some (positionSnap, degreesSnap, scaleSnap) -> entityState.Transform.Snap (positionSnap, degreesSnap, scaleSnap)
