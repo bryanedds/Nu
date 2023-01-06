@@ -804,6 +804,9 @@ module WorldTypes =
             entityState
 
         member this.Position with get () = this.Transform.Position and set value = this.Transform.Position <- value
+        member this.CenterLocal with get () = this.PositionLocal + (this.Transform.Center - this.Transform.Position)
+        member this.BottomLocal with get () = this.PositionLocal + (this.Transform.Bottom - this.Transform.Position)
+        member this.TopLeftLocal with get () = this.PositionLocal + (this.Transform.TopLeft - this.Transform.Position)
         member this.Rotation with get () = this.Transform.Rotation and set value = this.Transform.Rotation <- value
         member this.Scale with get () = this.Transform.Scale and set value = this.Transform.Scale <- value
         member this.Offset with get () = this.Transform.Offset and set value = this.Transform.Offset <- value
