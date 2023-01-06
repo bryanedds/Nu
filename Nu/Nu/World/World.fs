@@ -244,8 +244,18 @@ module Nu =
             // init admitScreenElements F# reach-around
             WorldModule.admitScreenElements <- fun screen world ->
                 let entities = World.getGroups screen world |> Seq.map (flip World.getEntitiesFlattened world) |> Seq.concat |> SegmentedList.ofSeq
-                let (entities3d, entities2d) = SegmentedList.partition (fun (entity : Entity) -> entity.GetIs3d world) entities
+                let (entities2d, entities3d) = SegmentedList.partition (fun (entity : Entity) -> not (entity.GetIs3d) world) entities
                 let oldWorld = world
+                let quadtree =
+                    MutantCache.mutateMutant
+                        (fun () -> oldWorld.WorldExtension.Dispatchers.RebuildQuadtree oldWorld)
+                        (fun quadtree ->
+                            for entity in entities2d do
+                                let entityState = World.getEntityState entity world
+                                Quadtree.addElement entityState.Presence entityState.Bounds.Box2 entity quadtree
+                            quadtree)
+                        (World.getQuadtree world)
+                let world = World.setQuadtree quadtree world
                 let octree =
                     MutantCache.mutateMutant
                         (fun () -> oldWorld.WorldExtension.Dispatchers.RebuildOctree oldWorld)
@@ -257,23 +267,23 @@ module Nu =
                             octree)
                         (World.getOctree world)
                 let world = World.setOctree octree world
+                world
+                
+            // init evictScreenElements F# reach-around
+            WorldModule.evictScreenElements <- fun screen world ->
+                let entities = World.getGroups screen world |> Seq.map (flip World.getEntitiesFlattened world) |> Seq.concat |> SegmentedArray.ofSeq
+                let (entities2d, entities3d) = SegmentedArray.partition (fun (entity : Entity) -> not (entity.GetIs3d world)) entities
+                let oldWorld = world
                 let quadtree =
                     MutantCache.mutateMutant
                         (fun () -> oldWorld.WorldExtension.Dispatchers.RebuildQuadtree oldWorld)
                         (fun quadtree ->
                             for entity in entities2d do
                                 let entityState = World.getEntityState entity world
-                                Quadtree.addElement entityState.Presence entityState.Bounds.Box2 entity quadtree
+                                Quadtree.removeElement entityState.Presence entityState.Bounds.Box2 entity quadtree
                             quadtree)
                         (World.getQuadtree world)
                 let world = World.setQuadtree quadtree world
-                world
-                
-            // init evictScreenElements F# reach-around
-            WorldModule.evictScreenElements <- fun screen world ->
-                let entities = World.getGroups screen world |> Seq.map (flip World.getEntitiesFlattened world) |> Seq.concat |> SegmentedArray.ofSeq
-                let (entities3d, entities2d) = SegmentedArray.partition (fun (entity : Entity) -> entity.GetIs3d world) entities
-                let oldWorld = world
                 let octree =
                     MutantCache.mutateMutant
                         (fun () -> oldWorld.WorldExtension.Dispatchers.RebuildOctree oldWorld)
@@ -285,16 +295,6 @@ module Nu =
                             octree)
                         (World.getOctree world)
                 let world = World.setOctree octree world
-                let quadtree =
-                    MutantCache.mutateMutant
-                        (fun () -> oldWorld.WorldExtension.Dispatchers.RebuildQuadtree oldWorld)
-                        (fun quadtree ->
-                            for entity in entities2d do
-                                let entityState = World.getEntityState entity world
-                                Quadtree.removeElement entityState.Presence entityState.Bounds.Box2 entity quadtree
-                            quadtree)
-                        (World.getQuadtree world)
-                let world = World.setQuadtree quadtree world
                 world
 
             // init registerScreenPhysics F# reach-around
@@ -367,9 +367,9 @@ module WorldModule3 =
         static member private makeDefaultEntityDispatchers () =
             // TODO: consider if we should reflectively generate these.
             Map.ofListBy World.pairWithName $
-                [EntityDispatcher (true, true, false)
-                 EntityDispatcher3d (true, false) :> EntityDispatcher
+                [EntityDispatcher (false, false, false)
                  EntityDispatcher2d (false) :> EntityDispatcher
+                 EntityDispatcher3d (true, false) :> EntityDispatcher
                  StaticSpriteDispatcher () :> EntityDispatcher
                  AnimatedSpriteDispatcher () :> EntityDispatcher
                  GuiDispatcher () :> EntityDispatcher

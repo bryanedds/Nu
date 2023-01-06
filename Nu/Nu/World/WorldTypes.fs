@@ -310,9 +310,9 @@ module WorldTypes =
         /// Get the default size of an entity.
         abstract GetQuickSize : Entity * World -> Vector3
         default this.GetQuickSize (_, _) =
-            if this.Is3d
-            then Constants.Engine.EntitySize3dDefault
-            else Constants.Engine.EntitySize2dDefault
+            if not this.Is3d
+            then Constants.Engine.EntitySize2dDefault
+            else Constants.Engine.EntitySize3dDefault
 
         /// Attempt to pick an entity with a ray.
         abstract RayCast : Ray3 * Entity * World -> single array
@@ -375,9 +375,9 @@ module WorldTypes =
         /// Participate in getting the default size of an entity.
         abstract GetQuickSize : Entity * World -> Vector3
         default this.GetQuickSize (entity, world) =
-            if getEntityIs3d entity world
-            then Constants.Engine.EntitySize3dDefault
-            else Constants.Engine.EntitySize2dDefault
+            if not (getEntityIs3d entity world)
+            then Constants.Engine.EntitySize2dDefault
+            else Constants.Engine.EntitySize3dDefault
 
         /// Whether a facet participates in a physics system.
         member this.Physical = physical

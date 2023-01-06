@@ -67,6 +67,24 @@ module WorldModule2 =
         static member internal makeOctree () =
             Octree.make Constants.Engine.OctreeGranularity Constants.Engine.OctreeDepth Constants.Engine.OctreeBounds
 
+        static member internal rebuildQuadtree world =
+            let omniEntities =
+                match World.getOmniScreenOpt world with
+                | Some screen -> World.getGroups screen world |> Seq.map (flip World.getEntitiesFlattened world) |> Seq.concat
+                | None -> Seq.empty
+            let selectedEntities =
+                match World.getSelectedScreenOpt world with
+                | Some screen -> World.getGroups screen world |> Seq.map (flip World.getEntitiesFlattened world) |> Seq.concat
+                | None -> Seq.empty
+            let entities = Seq.append omniEntities selectedEntities
+            let quadtree = World.makeQuadtree ()
+            for entity in entities do
+                let bounds = entity.GetBounds world
+                let presence = entity.GetPresence world
+                if not (entity.GetIs3d world) then
+                    Quadtree.addElement presence bounds.Box2 entity quadtree
+            quadtree
+
         static member internal rebuildOctree world =
             let omniEntities =
                 match World.getOmniScreenOpt world with
@@ -87,24 +105,6 @@ module WorldModule2 =
                     let element = Octelement.make static_ light presence entity
                     Octree.addElement bounds element octree
             octree
-
-        static member internal rebuildQuadtree world =
-            let omniEntities =
-                match World.getOmniScreenOpt world with
-                | Some screen -> World.getGroups screen world |> Seq.map (flip World.getEntitiesFlattened world) |> Seq.concat
-                | None -> Seq.empty
-            let selectedEntities =
-                match World.getSelectedScreenOpt world with
-                | Some screen -> World.getGroups screen world |> Seq.map (flip World.getEntitiesFlattened world) |> Seq.concat
-                | None -> Seq.empty
-            let entities = Seq.append omniEntities selectedEntities
-            let quadtree = World.makeQuadtree ()
-            for entity in entities do
-                let bounds = entity.GetBounds world
-                let presence = entity.GetPresence world
-                if not (entity.GetIs3d world) then
-                    Quadtree.addElement presence bounds.Box2 entity quadtree
-            quadtree
 
         /// Resolve a relation to an address in the current script context.
         static member resolve<'a> (relation : 'a Relation) world =
@@ -1206,21 +1206,6 @@ module EntityDispatcherModule2 =
         abstract member View : 'model * Entity * World -> View
         default this.View (_, _, _) = View.empty
 
-    and [<AbstractClass>] EntityDispatcher3d<'model, 'message, 'command when 'message :> Message and 'command :> Command> (centered, physical, makeInitial : World -> 'model) =
-        inherit EntityDispatcher<'model, 'message, 'command> (true, centered, physical, makeInitial)
-
-        new (centered, physical, initial : 'model) =
-            EntityDispatcher3d<'model, 'message, 'command> (centered, physical, fun _ -> initial)
-
-        new (physical, makeInitial : World -> 'model) =
-            EntityDispatcher3d<'model, 'message, 'command> (true, physical, makeInitial)
-
-        new (physical, initial : 'model) =
-            EntityDispatcher3d<'model, 'message, 'command> (true, physical, initial)
-
-        static member Properties =
-            [define Entity.Size Constants.Engine.EntitySize3dDefault]
-
     and [<AbstractClass>] EntityDispatcher2d<'model, 'message, 'command when 'message :> Message and 'command :> Command> (centered, physical, makeInitial : World -> 'model) =
         inherit EntityDispatcher<'model, 'message, 'command> (false, centered, physical, makeInitial)
 
@@ -1236,6 +1221,21 @@ module EntityDispatcherModule2 =
         static member Properties =
             [define Entity.Centered Constants.Engine.EntityCentered2dDefault
              define Entity.Size Constants.Engine.EntitySize2dDefault]
+
+    and [<AbstractClass>] EntityDispatcher3d<'model, 'message, 'command when 'message :> Message and 'command :> Command> (centered, physical, makeInitial : World -> 'model) =
+        inherit EntityDispatcher<'model, 'message, 'command> (true, centered, physical, makeInitial)
+
+        new (centered, physical, initial : 'model) =
+            EntityDispatcher3d<'model, 'message, 'command> (centered, physical, fun _ -> initial)
+
+        new (physical, makeInitial : World -> 'model) =
+            EntityDispatcher3d<'model, 'message, 'command> (true, physical, makeInitial)
+
+        new (physical, initial : 'model) =
+            EntityDispatcher3d<'model, 'message, 'command> (true, physical, initial)
+
+        static member Properties =
+            [define Entity.Size Constants.Engine.EntitySize3dDefault]
 
 [<AutoOpen>]
 module GuiDispatcherModule2 =

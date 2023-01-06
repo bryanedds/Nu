@@ -11,16 +11,6 @@ open Nu.Declarative
 [<AutoOpen>]
 module EntityDispatcherModule =
 
-    /// A 3d entity dispatcher.
-    type EntityDispatcher3d (centered, physical) =
-        inherit EntityDispatcher (true, centered, physical)
-
-        new (physical) =
-            EntityDispatcher3d (true, physical)
-
-        static member Properties =
-            [define Entity.Size Constants.Engine.EntitySize3dDefault]
-
     /// A 2d entity dispatcher.
     type EntityDispatcher2d (centered, physical) =
         inherit EntityDispatcher (false, centered, physical)
@@ -31,6 +21,16 @@ module EntityDispatcherModule =
         static member Properties =
             [define Entity.Centered Constants.Engine.EntityCentered2dDefault
              define Entity.Size Constants.Engine.EntitySize2dDefault]
+
+    /// A 3d entity dispatcher.
+    type EntityDispatcher3d (centered, physical) =
+        inherit EntityDispatcher (true, centered, physical)
+
+        new (physical) =
+            EntityDispatcher3d (true, physical)
+
+        static member Properties =
+            [define Entity.Size Constants.Engine.EntitySize3dDefault]
 
 [<AutoOpen>]
 module StaticSpriteDispatcherModule =
