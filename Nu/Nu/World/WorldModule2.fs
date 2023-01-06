@@ -1209,8 +1209,14 @@ module EntityDispatcherModule2 =
     and [<AbstractClass>] EntityDispatcher2d<'model, 'message, 'command when 'message :> Message and 'command :> Command> (centered, physical, makeInitial : World -> 'model) =
         inherit EntityDispatcher<'model, 'message, 'command> (true, centered, physical, makeInitial)
 
-        new (centered, physical, initial) =
+        new (centered, physical, initial : 'model) =
             EntityDispatcher2d<'model, 'message, 'command> (centered, physical, fun _ -> initial)
+
+        new (physical, makeInitial : World -> 'model) =
+            EntityDispatcher2d<'model, 'message, 'command> (Constants.Engine.EntityCentered2dDefault, physical, makeInitial)
+
+        new (physical, initial : 'model) =
+            EntityDispatcher2d<'model, 'message, 'command> (physical, fun _ -> initial)
 
         static member Properties =
             [define Entity.Centered false
@@ -1219,8 +1225,14 @@ module EntityDispatcherModule2 =
     and [<AbstractClass>] EntityDispatcher3d<'model, 'message, 'command when 'message :> Message and 'command :> Command> (centered, physical, makeInitial : World -> 'model) =
         inherit EntityDispatcher<'model, 'message, 'command> (false, centered, physical, makeInitial)
 
-        new (centered, physical, initial) =
+        new (centered, physical, initial : 'model) =
             EntityDispatcher3d<'model, 'message, 'command> (centered, physical, fun _ -> initial)
+
+        new (physical, makeInitial : World -> 'model) =
+            EntityDispatcher3d<'model, 'message, 'command> (true, physical, makeInitial)
+
+        new (physical, initial : 'model) =
+            EntityDispatcher3d<'model, 'message, 'command> (true, physical, initial)
 
         static member Properties =
             [define Entity.Size Constants.Engine.EntitySize3dDefault]
@@ -1229,7 +1241,7 @@ module EntityDispatcherModule2 =
 module GuiDispatcherModule2 =
 
     type [<AbstractClass>] GuiDispatcher<'model, 'message, 'command when 'message :> Message and 'command :> Command> (makeInitial : World -> 'model) =
-        inherit EntityDispatcher2d<'model, 'message, 'command> (false, false, makeInitial)
+        inherit EntityDispatcher2d<'model, 'message, 'command> (false, makeInitial)
 
         new (initial : 'model) =
             GuiDispatcher<'model, 'message, 'command> (fun _ -> initial)
