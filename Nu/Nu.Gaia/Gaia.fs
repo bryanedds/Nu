@@ -192,7 +192,7 @@ module Gaia =
             let entity = entityTds.DescribedEntity
             let world =
                 if not (entity.GetAbsolute world) then
-                    if not (entity.GetIs3d) world
+                    if not (entity.GetIs3d world)
                     then World.setEyePosition2d (entity.GetCenter world).V2 world
                     else World.setEyePosition3d (entity.GetPosition world + Constants.Engine.EyePosition3dOffset) world
                 else world
@@ -358,7 +358,7 @@ module Gaia =
             match tryMousePick mousePosition form world with
             | (Some (_, entity), world) ->
                 let world = Globals.pushPastWorld world
-                if not (entity.GetIs3d) world then
+                if not (entity.GetIs3d world) then
                     let viewport = World.getViewport world
                     let eyePosition = World.getEyePosition2d world
                     let eyeSize = World.getEyeSize2d world
@@ -461,7 +461,7 @@ module Gaia =
             let entity = entityTds.DescribedEntity
             let absolute = entity.GetAbsolute world
             let bounds = entity.GetHighlightBounds world
-            if not (entity.GetIs3d) world then
+            if not (entity.GetIs3d world) then
                 let elevation = Single.MaxValue
                 let transform = Transform.makePerimeter bounds v3Zero elevation absolute false
                 let image = Assets.Default.HighlightImage
@@ -937,7 +937,7 @@ module Gaia =
                 let mousePosition = World.getMousePosition world
                 let mutable entityTransform = entity.GetTransform world
                 let world =
-                    if not (entity.GetIs3d) world then
+                    if not (entity.GetIs3d world) then
                         let eyePosition = World.getEyePosition2d world
                         let eyeSize = World.getEyeSize2d world
                         let entityPosition =

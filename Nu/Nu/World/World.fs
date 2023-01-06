@@ -244,7 +244,7 @@ module Nu =
             // init admitScreenElements F# reach-around
             WorldModule.admitScreenElements <- fun screen world ->
                 let entities = World.getGroups screen world |> Seq.map (flip World.getEntitiesFlattened world) |> Seq.concat |> SegmentedList.ofSeq
-                let (entities2d, entities3d) = SegmentedList.partition (fun (entity : Entity) -> not (entity.GetIs3d) world) entities
+                let (entities2d, entities3d) = SegmentedList.partition (fun (entity : Entity) -> not (entity.GetIs3d world)) entities
                 let oldWorld = world
                 let quadtree =
                     MutantCache.mutateMutant
