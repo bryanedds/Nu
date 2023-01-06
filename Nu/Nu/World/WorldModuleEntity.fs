@@ -1116,6 +1116,9 @@ module WorldModuleEntity =
         static member internal setEntitySize value entity world =
             let entityState = World.getEntityState entity world
             if v3Neq value entityState.Size then
+                let centerPrevious = entityState.CenterLocal
+                let bottomPrevious = entityState.BottomLocal
+                let topLeftPrevious = entityState.TopLeftLocal
                 if entityState.Optimized then
                     entityState.Size <- value
                     struct (true, world)
@@ -1123,6 +1126,13 @@ module WorldModuleEntity =
                     let mutable transform = entityState.Transform
                     transform.Size <- value
                     let world = World.setEntityTransformByRef (&transform, entityState, entity, world) |> snd'
+                    let world =
+                        if entityState.PublishChangeEvents then
+                            let world = World.publishEntityChange (nameof entityState.CenterLocal) centerPrevious entityState.CenterLocal true entity world
+                            let world = World.publishEntityChange (nameof entityState.BottomLocal) bottomPrevious entityState.BottomLocal true entity world
+                            let world = World.publishEntityChange (nameof entityState.TopLeftLocal) topLeftPrevious entityState.TopLeftLocal true entity world
+                            world
+                        else world
                     struct (true, world)
             else struct (false, world)
 
