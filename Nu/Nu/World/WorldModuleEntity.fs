@@ -913,6 +913,9 @@ module WorldModuleEntity =
                     let struct (entityState, world) =
                         let previous = entityState.PositionLocal
                         if v3Neq value previous then
+                            let centerPrevious = entityState.CenterLocal
+                            let bottomPrevious = entityState.BottomLocal
+                            let topLeftPrevious = entityState.TopLeftLocal
                             let struct (entityState, world) =
                                 if entityState.Imperative then
                                     entityState.PositionLocal <- value
@@ -920,11 +923,13 @@ module WorldModuleEntity =
                                 else
                                     let entityState = { entityState with PositionLocal = value }
                                     struct (entityState, World.setEntityState entityState entity world)
-                            let world = World.publishEntityChange (nameof entityState.PositionLocal) previous value entityState.PublishChangeEvents entity world
-                            let world = World.publishEntityChange (nameof entityState.CenterLocal) previous value entityState.PublishChangeEvents entity world
-                            let world = World.publishEntityChange (nameof entityState.BottomLocal) previous value entityState.PublishChangeEvents entity world
-                            let world = World.publishEntityChange (nameof entityState.TopLeftLocal) previous value entityState.PublishChangeEvents entity world
-                            struct (entityState, world)
+                            if entityState.PublishChangeEvents then
+                                let world = World.publishEntityChange (nameof entityState.PositionLocal) previous value true entity world
+                                let world = World.publishEntityChange (nameof entityState.CenterLocal) centerPrevious entityState.CenterLocal true entity world
+                                let world = World.publishEntityChange (nameof entityState.BottomLocal) bottomPrevious entityState.BottomLocal true entity world
+                                let world = World.publishEntityChange (nameof entityState.TopLeftLocal) topLeftPrevious entityState.TopLeftLocal true entity world
+                                struct (entityState, world)
+                            else struct (entityState, world)
                         else struct (entityState, world)
 
                     // compute position
