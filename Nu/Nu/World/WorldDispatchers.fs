@@ -15,13 +15,19 @@ module EntityDispatcherModule =
     type EntityDispatcher2d (centered, physical) =
         inherit EntityDispatcher (true, centered, physical)
 
+        new (physical) =
+            EntityDispatcher2d (Constants.Engine.EntityCentered2dDefault, physical)
+
         static member Properties =
-            [define Entity.Centered false
+            [define Entity.Centered Constants.Engine.EntityCentered2dDefault
              define Entity.Size Constants.Engine.EntitySize2dDefault]
 
     /// A 3d entity dispatcher.
     type EntityDispatcher3d (centered, physical) =
         inherit EntityDispatcher (false, centered, physical)
+
+        new (physical) =
+            EntityDispatcher3d (true, physical)
 
         static member Properties =
             [define Entity.Size Constants.Engine.EntitySize3dDefault]
@@ -30,7 +36,7 @@ module EntityDispatcherModule =
 module StaticSpriteDispatcherModule =
 
     type StaticSpriteDispatcher () =
-        inherit EntityDispatcher2d (false, false)
+        inherit EntityDispatcher2d (false)
 
         static member Facets =
             [typeof<StaticSpriteFacet>]
@@ -46,7 +52,7 @@ module StaticSpriteDispatcherModule =
 module AnimatedSpriteDispatcherModule =
 
     type AnimatedSpriteDispatcher () =
-        inherit EntityDispatcher2d (false, false)
+        inherit EntityDispatcher2d (false)
 
         static member Facets =
             [typeof<AnimatedSpriteFacet>]
@@ -70,7 +76,7 @@ module GuiDispatcherModule =
         member this.DisabledColor = lens (nameof this.DisabledColor) this this.GetDisabledColor this.SetDisabledColor
 
     type GuiDispatcher () =
-        inherit EntityDispatcher2d (false, false)
+        inherit EntityDispatcher2d (false)
 
         static member Properties =
             [define Entity.Absolute true
@@ -784,7 +790,7 @@ module EffectDispatcher2dModule =
 module BlockDispatcher2dModule =
 
     type BlockDispatcher2d () =
-        inherit EntityDispatcher2d (false, true)
+        inherit EntityDispatcher2d (true)
 
         static member Facets =
             [typeof<RigidBodyFacet>
@@ -798,7 +804,7 @@ module BlockDispatcher2dModule =
 module BoxDispatcher2dModule =
 
     type BoxDispatcher2d () =
-        inherit EntityDispatcher2d (false, true)
+        inherit EntityDispatcher2d (true)
 
         static member Facets =
             [typeof<RigidBodyFacet>
@@ -825,7 +831,7 @@ module SideViewCharacterDispatcherModule =
         member this.SideViewCharacterFacingLeft = lens (nameof this.SideViewCharacterFacingLeft) this this.GetSideViewCharacterFacingLeft this.SetSideViewCharacterFacingLeft
 
     type SideViewCharacterDispatcher () =
-        inherit EntityDispatcher2d (false, true)
+        inherit EntityDispatcher2d (true)
 
         static let computeWalkCelInset (celSize : Vector2) (celRun : int) delay time =
             let compressedTime = time / delay
@@ -899,7 +905,7 @@ module SideViewCharacterDispatcherModule =
 module TileMapDispatcherModule =
 
     type TileMapDispatcher () =
-        inherit EntityDispatcher2d (false, true)
+        inherit EntityDispatcher2d (true)
 
         static member Facets =
             [typeof<TileMapFacet>]
@@ -922,7 +928,7 @@ module TileMapDispatcherModule =
 module TmxMapDispatcherModule =
 
     type TmxMapDispatcher () =
-        inherit EntityDispatcher2d (false, true)
+        inherit EntityDispatcher2d (true)
 
         static member Facets =
             [typeof<TmxMapFacet>]

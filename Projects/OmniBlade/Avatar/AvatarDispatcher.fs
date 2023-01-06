@@ -32,7 +32,7 @@ module AvatarDispatcher =
 
     type AvatarDispatcher () =
         inherit EntityDispatcher2d<Avatar, AvatarMessage, AvatarCommand>
-            (false, true, Avatar.make (box3 v3Zero Constants.Gameplay.CharacterSize) Assets.Field.JinnAnimationSheet Downward)
+            (true, Avatar.make (box3 v3Zero Constants.Gameplay.CharacterSize) Assets.Field.JinnAnimationSheet Downward)
 
         static let getSpriteInset (entity : Entity) world =
             let avatar = entity.GetAvatar world

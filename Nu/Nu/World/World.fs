@@ -367,8 +367,8 @@ module WorldModule3 =
         static member private makeDefaultEntityDispatchers () =
             // TODO: consider if we should reflectively generate these.
             Map.ofListBy World.pairWithName $
-                [EntityDispatcher (true, false, false)
-                 EntityDispatcher2d (false, false) :> EntityDispatcher
+                [EntityDispatcher (false, true, false)
+                 EntityDispatcher2d (false) :> EntityDispatcher
                  EntityDispatcher3d (true, false) :> EntityDispatcher
                  StaticSpriteDispatcher () :> EntityDispatcher
                  AnimatedSpriteDispatcher () :> EntityDispatcher
