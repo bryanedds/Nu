@@ -379,6 +379,9 @@ module WorldModuleEntity =
         static member internal getEntityFacets entity world = (World.getEntityState entity world).Facets
         static member internal getEntityPosition entity world = (World.getEntityState entity world).Position
         static member internal getEntityPositionLocal entity world = (World.getEntityState entity world).PositionLocal
+        static member internal getEntityCenterLocal entity world = (World.getEntityState entity world).CenterLocal
+        static member internal getEntityBottomLocal entity world = (World.getEntityState entity world).BottomLocal
+        static member internal getEntityTopLeftLocal entity world = (World.getEntityState entity world).TopLeftLocal
         static member internal getEntityRotation entity world = (World.getEntityState entity world).Rotation
         static member internal getEntityRotationLocal entity world = (World.getEntityState entity world).RotationLocal
         static member internal getEntityScale entity world = (World.getEntityState entity world).Scale
@@ -873,6 +876,9 @@ module WorldModuleEntity =
                                     let entityState = { entityState with PositionLocal = value }
                                     struct (entityState, World.setEntityState entityState entity world)
                             let world = World.publishEntityChange (nameof entityState.PositionLocal) previous value entityState.PublishChangeEvents entity world
+                            let world = World.publishEntityChange (nameof entityState.CenterLocal) previous value entityState.PublishChangeEvents entity world
+                            let world = World.publishEntityChange (nameof entityState.BottomLocal) previous value entityState.PublishChangeEvents entity world
+                            let world = World.publishEntityChange (nameof entityState.TopLeftLocal) previous value entityState.PublishChangeEvents entity world
                             struct (entityState, world)
                         else struct (entityState, world)
 
@@ -890,6 +896,21 @@ module WorldModuleEntity =
 
             // nothing changed
             else struct (false, world)
+
+        static member internal setEntityCenterLocal value entity world =
+            let entityState = World.getEntityState entity world
+            let offset = entityState.Center - entityState.Position
+            World.setEntityPositionLocal (value + offset) entity world
+
+        static member internal setEntityBottomLocal value entity world =
+            let entityState = World.getEntityState entity world
+            let offset = entityState.Bottom - entityState.Position
+            World.setEntityPositionLocal (value + offset) entity world
+
+        static member internal setEntityTopLeftLocal value entity world =
+            let entityState = World.getEntityState entity world
+            let offset = entityState.TopLeft - entityState.Position
+            World.setEntityPositionLocal (value + offset) entity world
 
         static member internal setEntityRotation value entity world =
             let entityState = World.getEntityState entity world
@@ -2479,6 +2500,9 @@ module WorldModuleEntity =
         EntityGetters.["Bounds"] <- fun entity world -> { PropertyType = typeof<Box3>; PropertyValue = World.getEntityBounds entity world }
         EntityGetters.["Position"] <- fun entity world -> { PropertyType = typeof<Vector3>; PropertyValue = World.getEntityPosition entity world }
         EntityGetters.["PositionLocal"] <- fun entity world -> { PropertyType = typeof<Vector3>; PropertyValue = World.getEntityPositionLocal entity world }
+        EntityGetters.["CenterLocal"] <- fun entity world -> { PropertyType = typeof<Vector3>; PropertyValue = World.getEntityCenterLocal entity world }
+        EntityGetters.["BottomLocal"] <- fun entity world -> { PropertyType = typeof<Vector3>; PropertyValue = World.getEntityBottomLocal entity world }
+        EntityGetters.["TopLeftLocal"] <- fun entity world -> { PropertyType = typeof<Vector3>; PropertyValue = World.getEntityTopLeftLocal entity world }
         EntityGetters.["Rotation"] <- fun entity world -> { PropertyType = typeof<Quaternion>; PropertyValue = World.getEntityRotation entity world }
         EntityGetters.["RotationLocal"] <- fun entity world -> { PropertyType = typeof<Quaternion>; PropertyValue = World.getEntityRotationLocal entity world }
         EntityGetters.["Scale"] <- fun entity world -> { PropertyType = typeof<Vector3>; PropertyValue = World.getEntityScale entity world }
@@ -2533,6 +2557,9 @@ module WorldModuleEntity =
         EntitySetters.["TopLeft"] <- fun property entity world -> World.setEntityTopLeft (property.PropertyValue :?> Vector3) entity world
         EntitySetters.["Position"] <- fun property entity world -> World.setEntityPosition (property.PropertyValue :?> Vector3) entity world
         EntitySetters.["PositionLocal"] <- fun property entity world -> World.setEntityPositionLocal (property.PropertyValue :?> Vector3) entity world
+        EntitySetters.["CenterLocal"] <- fun property entity world -> World.setEntityCenterLocal (property.PropertyValue :?> Vector3) entity world
+        EntitySetters.["BottomLocal"] <- fun property entity world -> World.setEntityBottomLocal (property.PropertyValue :?> Vector3) entity world
+        EntitySetters.["TopLeftLocal"] <- fun property entity world -> World.setEntityTopLeftLocal (property.PropertyValue :?> Vector3) entity world
         EntitySetters.["Scale"] <- fun property entity world -> World.setEntityScale (property.PropertyValue :?> Vector3) entity world
         EntitySetters.["ScaleLocal"] <- fun property entity world -> World.setEntityScaleLocal (property.PropertyValue :?> Vector3) entity world
         EntitySetters.["Rotation"] <- fun property entity world -> World.setEntityRotation (property.PropertyValue :?> Quaternion) entity world

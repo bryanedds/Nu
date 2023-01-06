@@ -26,6 +26,9 @@ module WorldEntityModule =
         let mutable Bounds = Unchecked.defaultof<Lens<Box3, Entity, World>>
         let mutable Position = Unchecked.defaultof<Lens<Vector3, Entity, World>>
         let mutable PositionLocal = Unchecked.defaultof<Lens<Vector3, Entity, World>>
+        let mutable CenterLocal = Unchecked.defaultof<Lens<Vector3, Entity, World>>
+        let mutable BottomLocal = Unchecked.defaultof<Lens<Vector3, Entity, World>>
+        let mutable TopLeftLocal = Unchecked.defaultof<Lens<Vector3, Entity, World>>
         let mutable Rotation = Unchecked.defaultof<Lens<Quaternion, Entity, World>>
         let mutable RotationLocal = Unchecked.defaultof<Lens<Quaternion, Entity, World>>
         let mutable Scale = Unchecked.defaultof<Lens<Vector3, Entity, World>>
@@ -103,6 +106,15 @@ module WorldEntityModule =
         member this.GetPositionLocal world = World.getEntityPositionLocal this world
         member this.SetPositionLocal value world = World.setEntityPositionLocal value this world |> snd'
         member this.PositionLocal = if notNull (this :> obj) then lens (nameof this.PositionLocal) this this.GetPositionLocal this.SetPositionLocal else Cached.PositionLocal
+        member this.GetCenterLocal world = World.getEntityCenterLocal this world
+        member this.SetCenterLocal value world = World.setEntityCenterLocal value this world |> snd'
+        member this.CenterLocal = if notNull (this :> obj) then lens (nameof this.CenterLocal) this this.GetCenterLocal this.SetCenterLocal else Cached.CenterLocal
+        member this.GetBottomLocal world = World.getEntityBottomLocal this world
+        member this.SetBottomLocal value world = World.setEntityBottomLocal value this world |> snd'
+        member this.BottomLocal = if notNull (this :> obj) then lens (nameof this.BottomLocal) this this.GetBottomLocal this.SetBottomLocal else Cached.BottomLocal
+        member this.GetTopLeftLocal world = World.getEntityTopLeftLocal this world
+        member this.SetTopLeftLocal value world = World.setEntityTopLeftLocal value this world |> snd'
+        member this.TopLeftLocal = if notNull (this :> obj) then lens (nameof this.TopLeftLocal) this this.GetTopLeftLocal this.SetTopLeftLocal else Cached.TopLeftLocal
         member this.GetRotation world = World.getEntityRotation this world
         member this.SetRotation value world = World.setEntityRotation value this world |> snd'
         member this.Rotation = if notNull (this :> obj) then lens (nameof this.Rotation) this this.GetRotation this.SetRotation else Cached.Rotation
@@ -219,6 +231,9 @@ module WorldEntityModule =
             Cached.Bounds <- lensReadOnly (nameof Cached.Bounds) Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.Position <- lens (nameof Cached.Position) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.PositionLocal <- lens (nameof Cached.PositionLocal) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
+            Cached.CenterLocal <- lens (nameof Cached.CenterLocal) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
+            Cached.BottomLocal <- lens (nameof Cached.BottomLocal) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
+            Cached.TopLeftLocal <- lens (nameof Cached.TopLeftLocal) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.Rotation <- lens (nameof Cached.Rotation) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.RotationLocal <- lens (nameof Cached.RotationLocal) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.Scale <- lens (nameof Cached.Scale) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
