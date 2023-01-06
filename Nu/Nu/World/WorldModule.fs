@@ -132,9 +132,7 @@ module WorldModule =
             let simulants = UMap.singleton HashIdentity.Structural config (Simulants.Game :> Simulant) None
             let worldExtension = { DestructionListRev = []; Dispatchers = dispatchers; Plugin = plugin; ScriptingEnv = scriptingEnv; ScriptingContext = Game () }
             let world =
-                { SequenceId = Gen.idForWorldSequence
-                  DivergenceId = Gen.idForWorldDivergence
-                  EventSystemDelegate = eventDelegate
+                { EventSystemDelegate = eventDelegate
                   EntityCachedOpt = KeyedCache.make (KeyValuePair (Unchecked.defaultof<Entity>, entityStates)) Unchecked.defaultof<EntityState>
                   EntityStates = entityStates
                   GroupStates = groupStates
