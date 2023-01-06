@@ -32,7 +32,7 @@ module WorldTypes =
     let mutable internal handleSubscribeAndUnsubscribeEventHook : bool -> obj Address -> Simulant -> obj -> obj = Unchecked.defaultof<_>
 
     // Entity F# reach-arounds.
-    let mutable internal getEntityIs2d : obj -> obj -> bool = Unchecked.defaultof<_>
+    let mutable internal getEntityIs3d : obj -> obj -> bool = Unchecked.defaultof<_>
 
     /// Represents an unsubscription operation for an event.
     type Unsubscription = World -> World
@@ -232,7 +232,7 @@ module WorldTypes =
         default this.TrySynchronize (_, _, world) = world
 
     /// The default dispatcher for entities.
-    and EntityDispatcher (is2d, centered, physical) =
+    and EntityDispatcher (is3d, centered, physical) =
         inherit SimulantDispatcher ()
 
         static member Properties =
@@ -310,9 +310,9 @@ module WorldTypes =
         /// Get the default size of an entity.
         abstract GetQuickSize : Entity * World -> Vector3
         default this.GetQuickSize (_, _) =
-            if this.Is2d
-            then Constants.Engine.EntitySize2dDefault
-            else Constants.Engine.EntitySize3dDefault
+            if this.Is3d
+            then Constants.Engine.EntitySize3dDefault
+            else Constants.Engine.EntitySize2dDefault
 
         /// Attempt to pick an entity with a ray.
         abstract RayCast : Ray3 * Entity * World -> single array
@@ -328,8 +328,8 @@ module WorldTypes =
         /// Whether the dispatcher uses a centered transform by default.
         member this.Centered = centered
 
-        /// Whether the dispatcher has a 2-dimensional transform interpretation.
-        member this.Is2d = is2d
+        /// Whether the dispatcher has a 3-dimensional transform interpretation.
+        member this.Is3d = is3d
 
     /// Dynamically augments an entity's behavior in a composable way.
     and Facet (physical) =
@@ -375,9 +375,9 @@ module WorldTypes =
         /// Participate in getting the default size of an entity.
         abstract GetQuickSize : Entity * World -> Vector3
         default this.GetQuickSize (entity, world) =
-            if getEntityIs2d entity world
-            then Constants.Engine.EntitySize2dDefault
-            else Constants.Engine.EntitySize3dDefault
+            if getEntityIs3d entity world
+            then Constants.Engine.EntitySize3dDefault
+            else Constants.Engine.EntitySize2dDefault
 
         /// Whether a facet participates in a physics system.
         member this.Physical = physical
@@ -842,7 +842,7 @@ module WorldTypes =
         member this.Protected with get () = this.Transform.Protected and internal set value = this.Transform.Protected <- value
         member this.Persistent with get () = this.Transform.Persistent and set value = this.Transform.Persistent <- value
         member this.Mounted with get () = this.Transform.Mounted and set value = this.Transform.Mounted <- value
-        member this.Is2d with get () = this.Dispatcher.Is2d
+        member this.Is3d with get () = this.Dispatcher.Is3d
         member this.Physical with get () = this.Dispatcher.Physical || Array.exists (fun (facet : Facet) -> facet.Physical) this.Facets // TODO: P1: consider using a cache flag to keep from recomputing this.
         member this.Centered with get () = this.Transform.Centered and set value = this.Transform.Centered <- value
         member this.Static with get () = this.Transform.Static and set value = this.Transform.Static <- value
@@ -1497,7 +1497,7 @@ module GroupContent =
 
 [<RequireQualifiedAccess>]
 module EntityContent =
-    
+
     let empty =
         { EntityDispatcherName = nameof EntityDispatcher
           EntityName = nameof Entity

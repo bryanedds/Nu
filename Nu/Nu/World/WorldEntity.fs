@@ -55,7 +55,7 @@ module WorldEntityModule =
         let mutable AlwaysUpdate = Unchecked.defaultof<Lens<bool, Entity, World>>
         let mutable Protected = Unchecked.defaultof<Lens<bool, Entity, World>>
         let mutable Persistent = Unchecked.defaultof<Lens<bool, Entity, World>>
-        let mutable Is2d = Unchecked.defaultof<Lens<bool, Entity, World>>
+        let mutable Is3d = Unchecked.defaultof<Lens<bool, Entity, World>>
         let mutable Centered = Unchecked.defaultof<Lens<bool, Entity, World>>
         let mutable Static = Unchecked.defaultof<Lens<bool, Entity, World>>
         let mutable Light = Unchecked.defaultof<Lens<bool, Entity, World>>
@@ -190,8 +190,8 @@ module WorldEntityModule =
         member this.GetPersistent world = World.getEntityPersistent this world
         member this.SetPersistent value world = World.setEntityPersistent value this world |> snd'
         member this.Persistent = if notNull (this :> obj) then lens (nameof this.Persistent) this this.GetPersistent this.SetPersistent else Cached.Persistent
-        member this.GetIs2d world = World.getEntityIs2d this world
-        member this.Is2d = if notNull (this :> obj) then lensReadOnly (nameof this.Is2d) this this.GetIs2d else Cached.Is2d
+        member this.GetIs3d world = World.getEntityIs3d this world
+        member this.Is3d = if notNull (this :> obj) then lensReadOnly (nameof this.Is3d) this this.GetIs3d else Cached.Is3d
         member this.GetCentered world = World.getEntityCentered this world
         member this.SetCentered value world = World.setEntityCentered value this world |> snd'
         member this.Centered = if notNull (this :> obj) then lens (nameof this.Centered) this this.GetCentered this.SetCentered else Cached.Centered
@@ -259,7 +259,7 @@ module WorldEntityModule =
             Cached.VisibleLocal <- lens (nameof Cached.VisibleLocal) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.AlwaysUpdate <- lens (nameof Cached.AlwaysUpdate) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.Persistent <- lens (nameof Cached.Persistent) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
-            Cached.Is2d <- lensReadOnly (nameof Cached.Is2d) Unchecked.defaultof<_> Unchecked.defaultof<_>
+            Cached.Is3d <- lensReadOnly (nameof Cached.Is3d) Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.Centered <- lens (nameof Cached.Centered) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.Static <- lens (nameof Cached.Static) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.Light <- lens (nameof Cached.Light) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>

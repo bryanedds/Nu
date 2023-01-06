@@ -35,11 +35,11 @@ module Engine =
     let (*Literal*) GroupSortPriority = ScreenSortPriority - 1.0f
     let (*Literal*) EntitySortPriority = GroupSortPriority - 1.0f
     let (*Literal*) EntityCentered2dDefault = false
+    let (*Literal*) EntitySize3dDefault = Vector3 1.0f
     let (*Literal*) EntitySize2dDefault = Vector3 (48.0f, 48.0f, 0.0f)
     let (*Literal*) EntitySizeGuiDefault = Vector3 (192.0f, 48.0f, 0.0f)
-    let (*Literal*) EntitySize3dDefault = Vector3 1.0f
-    let (*Literal*) ParticleSize2dDefault = Vector3 (12.0f, 12.0f, 0.0f)
     let (*Literal*) ParticleSize3dDefault = Vector3 (0.01f, 0.01f, 0.01f)
+    let (*Literal*) ParticleSize2dDefault = Vector3 (12.0f, 12.0f, 0.0f)
     let (*Literal*) EyePosition3dDefault = Vector3 (0.0f, 1.0f, 4.0f)
     let (*Literal*) EyePosition3dOffset = Vector3 (0.0f, 0.0f, 4.0f)
     let (*Literal*) QuadtreeGranularity = 3
@@ -58,8 +58,8 @@ module Engine =
 module Associations =
 
     let [<Literal>] Symbol = "Symbol"
-    let [<Literal>] Render2d = "Render2d"
     let [<Literal>] Render3d = "Render3d"
+    let [<Literal>] Render2d = "Render2d"
     let [<Literal>] Audio = "Audio"
 
 [<RequireQualifiedAccess>]
