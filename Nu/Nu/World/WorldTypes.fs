@@ -1158,22 +1158,19 @@ module WorldTypes =
     and [<ReferenceEquality; NoComparison>] World =
         internal
             { // cache line 1 (assuming 16 byte header)
-              mutable SequenceId : uint // mutated upon choose
-              mutable DivergenceId : uint // mutated upon divergence
               EventSystemDelegate : World EventSystemDelegate
               EntityCachedOpt : KeyedCache<KeyValuePair<Entity, UMap<Entity, EntityState>>, EntityState>
               EntityStates : UMap<Entity, EntityState>
               GroupStates : UMap<Group, GroupState>
-              // cache line 2
               ScreenStates : UMap<Screen, ScreenState>
               GameState : GameState
+              // cache line 2
               EntityMounts : UMap<Entity, Entity USet>
               mutable Quadtree : Entity Quadtree MutantCache // mutated when Imperative
               mutable Octree : Entity Octree MutantCache // mutated when Imperative
               mutable SelectedEcsOpt : Ecs.Ecs option // mutated when Imperative
               AmbientState : World AmbientState
               Subsystems : Subsystems // TODO: move this to WorldExtension.
-              // cache line 3
               Simulants : UMap<Simulant, Simulant USet option> // OPTIMIZATION: using None instead of empty USet to descrease number of USet instances. TODO: move this to WorldExtension.
               WorldExtension : WorldExtension }
 
@@ -1206,9 +1203,6 @@ module WorldTypes =
             inline
 #endif
             internal this.Choose () =
-            let sequenceId = Gen.idForWorldSequence
-            if sequenceId - 1u <> this.SequenceId then this.DivergenceId <- Gen.idForWorldDivergence
-            this.SequenceId <- sequenceId
             Chosen <- this :> obj
             this
 
