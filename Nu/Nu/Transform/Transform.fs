@@ -188,6 +188,16 @@ type [<NoEquality; NoComparison>] Transform =
             let bottom = perimeter.Translate (value - perimeter.Bottom)
             this.PerimeterUnscaled <- bottom
 
+    member this.TopLeft
+        with get () =
+            let perimeter = this.Perimeter
+            perimeter.TopLeft
+        and set (value : Vector3) =
+            this.Scale_ <- Vector3.One
+            let perimeter = this.Perimeter
+            let topLeft = perimeter.Translate (value - perimeter.TopLeft)
+            this.PerimeterUnscaled <- topLeft
+
     member this.PerimeterOriented =
         this.CleanPerimeterOriented ()
         this.PerimeterOrientedOpt_.Value

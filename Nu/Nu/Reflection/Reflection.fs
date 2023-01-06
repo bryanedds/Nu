@@ -43,6 +43,7 @@ module Reflection =
              ("Perimeter", true)
              ("Center", true)
              ("Bottom", true)
+             ("TopLeft", true)
              ("PerimeterOriented", true)
              ("Bounds", true)
              ("RotationMatrix", true)

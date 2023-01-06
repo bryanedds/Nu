@@ -21,6 +21,7 @@ module WorldEntityModule =
         let mutable Perimeter = Unchecked.defaultof<Lens<Box3, Entity, World>>
         let mutable Center = Unchecked.defaultof<Lens<Vector3, Entity, World>>
         let mutable Bottom = Unchecked.defaultof<Lens<Vector3, Entity, World>>
+        let mutable TopLeft = Unchecked.defaultof<Lens<Vector3, Entity, World>>
         let mutable PerimeterOriented = Unchecked.defaultof<Lens<Box3, Entity, World>>
         let mutable Bounds = Unchecked.defaultof<Lens<Box3, Entity, World>>
         let mutable Position = Unchecked.defaultof<Lens<Vector3, Entity, World>>
@@ -89,6 +90,9 @@ module WorldEntityModule =
         member this.SetBottom value world = World.setEntityBottom value this world |> snd'
         member this.GetBottom world = World.getEntityBottom this world
         member this.Bottom = if notNull (this :> obj) then lens (nameof this.Bottom) this this.GetBottom this.SetBottom else Cached.Bottom
+        member this.SetTopLeft value world = World.setEntityTopLeft value this world |> snd'
+        member this.GetTopLeft world = World.getEntityTopLeft this world
+        member this.TopLeft = if notNull (this :> obj) then lens (nameof this.TopLeft) this this.GetTopLeft this.SetTopLeft else Cached.TopLeft
         member this.GetPerimeterOriented world = World.getEntityPerimeterOriented this world
         member this.PerimeterOriented = if notNull (this :> obj) then lensReadOnly (nameof this.PerimeterOriented) this this.GetPerimeterOriented else Cached.PerimeterOriented
         member this.GetBounds world = World.getEntityBounds this world
@@ -210,6 +214,7 @@ module WorldEntityModule =
             Cached.Perimeter <- lens (nameof Cached.Perimeter) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.Center <- lens (nameof Cached.Center) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.Bottom <- lens (nameof Cached.Bottom) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
+            Cached.TopLeft <- lens (nameof Cached.TopLeft) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.PerimeterOriented <- lensReadOnly (nameof Cached.PerimeterOriented) Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.Bounds <- lensReadOnly (nameof Cached.Bounds) Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.Position <- lens (nameof Cached.Position) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>

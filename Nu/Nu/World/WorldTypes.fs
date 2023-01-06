@@ -842,6 +842,7 @@ module WorldTypes =
         member this.Perimeter with get () = this.Transform.Perimeter and set value = this.Transform.Perimeter <- value
         member this.Center with get () = this.Transform.Center and set value = this.Transform.Center <- value
         member this.Bottom with get () = this.Transform.Bottom and set value = this.Transform.Bottom <- value
+        member this.TopLeft with get () = this.Transform.TopLeft and set value = this.Transform.TopLeft <- value
         member this.PerimeterOriented with get () = this.Transform.PerimeterOriented
         member this.Bounds with get () = this.Transform.Bounds
 
