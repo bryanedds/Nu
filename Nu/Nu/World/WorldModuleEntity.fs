@@ -230,6 +230,7 @@ module WorldModuleEntity =
                         let world = World.publishEntityChange (nameof newTransform.PerimeterOriented) () () publishChangeEvents entity world
                         let world = World.publishEntityChange (nameof newTransform.Center) () () publishChangeEvents entity world
                         let world = World.publishEntityChange (nameof newTransform.Bottom) () () publishChangeEvents entity world
+                        let world = World.publishEntityChange (nameof newTransform.TopLeft) () () publishChangeEvents entity world
                         let world = World.publishEntityChange (nameof newTransform.Perimeter) () () publishChangeEvents entity world
                         let world = World.publishEntityChange (nameof newTransform.PerimeterUnscaled) () () publishChangeEvents entity world
                         let world = if positionChanged || centeredChanged then World.publishEntityChange (nameof newTransform.Position) oldTransform.Position newTransform.Position publishChangeEvents entity world else world
@@ -1400,6 +1401,23 @@ module WorldModuleEntity =
                     struct (true, world)
             else struct (false, world)
 
+        static member internal getEntityTopLeft entity world =
+            (World.getEntityState entity world).Transform.TopLeft
+
+        static member internal setEntityTopLeft value entity world =
+            let entityState = World.getEntityState entity world
+            if v3Neq value entityState.TopLeft then
+                if entityState.Optimized then
+                    entityState.TopLeft <- value
+                    let world = if entityState.Mounted then World.propagateEntityAffineMatrix entity world else world
+                    struct (true, world)
+                else
+                    let mutable transform = entityState.Transform
+                    transform.TopLeft <- value
+                    let world = World.setEntityTransformByRef (&transform, entityState, entity, world) |> snd'
+                    struct (true, world)
+            else struct (false, world)
+
         static member internal getEntityPerimeterOriented entity world =
             (World.getEntityState entity world).Transform.PerimeterOriented
 
@@ -2456,6 +2474,7 @@ module WorldModuleEntity =
         EntityGetters.["Perimeter"] <- fun entity world -> { PropertyType = typeof<Box3>; PropertyValue = World.getEntityPerimeter entity world }
         EntityGetters.["Center"] <- fun entity world -> { PropertyType = typeof<Vector3>; PropertyValue = World.getEntityCenter entity world }
         EntityGetters.["Bottom"] <- fun entity world -> { PropertyType = typeof<Vector3>; PropertyValue = World.getEntityBottom entity world }
+        EntityGetters.["TopLeft"] <- fun entity world -> { PropertyType = typeof<Vector3>; PropertyValue = World.getEntityTopLeft entity world }
         EntityGetters.["PerimeterOriented"] <- fun entity world -> { PropertyType = typeof<Box3>; PropertyValue = World.getEntityPerimeterOriented entity world }
         EntityGetters.["Bounds"] <- fun entity world -> { PropertyType = typeof<Box3>; PropertyValue = World.getEntityBounds entity world }
         EntityGetters.["Position"] <- fun entity world -> { PropertyType = typeof<Vector3>; PropertyValue = World.getEntityPosition entity world }
@@ -2511,6 +2530,7 @@ module WorldModuleEntity =
         EntitySetters.["Perimeter"] <- fun property entity world -> World.setEntityPerimeter (property.PropertyValue :?> Box3) entity world
         EntitySetters.["Center"] <- fun property entity world -> World.setEntityCenter (property.PropertyValue :?> Vector3) entity world
         EntitySetters.["Bottom"] <- fun property entity world -> World.setEntityBottom (property.PropertyValue :?> Vector3) entity world
+        EntitySetters.["TopLeft"] <- fun property entity world -> World.setEntityTopLeft (property.PropertyValue :?> Vector3) entity world
         EntitySetters.["Position"] <- fun property entity world -> World.setEntityPosition (property.PropertyValue :?> Vector3) entity world
         EntitySetters.["PositionLocal"] <- fun property entity world -> World.setEntityPositionLocal (property.PropertyValue :?> Vector3) entity world
         EntitySetters.["Scale"] <- fun property entity world -> World.setEntityScale (property.PropertyValue :?> Vector3) entity world
