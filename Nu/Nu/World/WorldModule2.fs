@@ -1241,13 +1241,14 @@ module EntityDispatcherModule2 =
 module GuiDispatcherModule2 =
 
     type [<AbstractClass>] GuiDispatcher<'model, 'message, 'command when 'message :> Message and 'command :> Command> (makeInitial : World -> 'model) =
-        inherit EntityDispatcher2d<'model, 'message, 'command> (false, makeInitial)
+        inherit EntityDispatcher2d<'model, 'message, 'command> (Constants.Engine.EntityCenteredGuiDefault, false, makeInitial)
 
         new (initial : 'model) =
             GuiDispatcher<'model, 'message, 'command> (fun _ -> initial)
 
         static member Properties =
-            [define Entity.Presence Omnipresent
+            [define Entity.Centered Constants.Engine.EntityCenteredGuiDefault
+             define Entity.Presence Omnipresent
              define Entity.Absolute true
              define Entity.AlwaysUpdate true
              define Entity.Size Constants.Engine.EntitySizeGuiDefault

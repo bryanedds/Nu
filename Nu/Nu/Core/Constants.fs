@@ -35,6 +35,7 @@ module Engine =
     let (*Literal*) GroupSortPriority = ScreenSortPriority - 1.0f
     let (*Literal*) EntitySortPriority = GroupSortPriority - 1.0f
     let (*Literal*) EntityCentered2dDefault = false
+    let (*Literal*) EntityCenteredGuiDefault = false
     let (*Literal*) EntitySize2dDefault = Vector3 (48.0f, 48.0f, 0.0f)
     let (*Literal*) EntitySizeGuiDefault = Vector3 (192.0f, 48.0f, 0.0f)
     let (*Literal*) EntitySize3dDefault = Vector3 1.0f
