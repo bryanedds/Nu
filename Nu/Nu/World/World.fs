@@ -144,9 +144,9 @@ module Nu =
                     else world
                 world :> obj
 
-            // init getEntityIs2d F# reach-around
-            WorldTypes.getEntityIs2d <- fun entityObj worldObj ->
-                World.getEntityIs2d (entityObj :?> Entity) (worldObj :?> World)
+            // init getEntityIs3d F# reach-around
+            WorldTypes.getEntityIs3d <- fun entityObj worldObj ->
+                World.getEntityIs3d (entityObj :?> Entity) (worldObj :?> World)
 
             // init eval F# reach-around
             // TODO: remove duplicated code with the following 4 functions...
@@ -244,18 +244,8 @@ module Nu =
             // init admitScreenElements F# reach-around
             WorldModule.admitScreenElements <- fun screen world ->
                 let entities = World.getGroups screen world |> Seq.map (flip World.getEntitiesFlattened world) |> Seq.concat |> SegmentedList.ofSeq
-                let (entities2d, entities3d) = SegmentedList.partition (fun (entity : Entity) -> entity.GetIs2d world) entities
+                let (entities3d, entities2d) = SegmentedList.partition (fun (entity : Entity) -> entity.GetIs3d world) entities
                 let oldWorld = world
-                let quadtree =
-                    MutantCache.mutateMutant
-                        (fun () -> oldWorld.WorldExtension.Dispatchers.RebuildQuadtree oldWorld)
-                        (fun quadtree ->
-                            for entity in entities2d do
-                                let entityState = World.getEntityState entity world
-                                Quadtree.addElement entityState.Presence entityState.Bounds.Box2 entity quadtree
-                            quadtree)
-                        (World.getQuadtree world)
-                let world = World.setQuadtree quadtree world
                 let octree =
                     MutantCache.mutateMutant
                         (fun () -> oldWorld.WorldExtension.Dispatchers.RebuildOctree oldWorld)
@@ -267,23 +257,23 @@ module Nu =
                             octree)
                         (World.getOctree world)
                 let world = World.setOctree octree world
-                world
-                
-            // init evictScreenElements F# reach-around
-            WorldModule.evictScreenElements <- fun screen world ->
-                let entities = World.getGroups screen world |> Seq.map (flip World.getEntitiesFlattened world) |> Seq.concat |> SegmentedArray.ofSeq
-                let (entities2d, entities3d) = SegmentedArray.partition (fun (entity : Entity) -> entity.GetIs2d world) entities
-                let oldWorld = world
                 let quadtree =
                     MutantCache.mutateMutant
                         (fun () -> oldWorld.WorldExtension.Dispatchers.RebuildQuadtree oldWorld)
                         (fun quadtree ->
                             for entity in entities2d do
                                 let entityState = World.getEntityState entity world
-                                Quadtree.removeElement entityState.Presence entityState.Bounds.Box2 entity quadtree
+                                Quadtree.addElement entityState.Presence entityState.Bounds.Box2 entity quadtree
                             quadtree)
                         (World.getQuadtree world)
                 let world = World.setQuadtree quadtree world
+                world
+                
+            // init evictScreenElements F# reach-around
+            WorldModule.evictScreenElements <- fun screen world ->
+                let entities = World.getGroups screen world |> Seq.map (flip World.getEntitiesFlattened world) |> Seq.concat |> SegmentedArray.ofSeq
+                let (entities3d, entities2d) = SegmentedArray.partition (fun (entity : Entity) -> entity.GetIs3d world) entities
+                let oldWorld = world
                 let octree =
                     MutantCache.mutateMutant
                         (fun () -> oldWorld.WorldExtension.Dispatchers.RebuildOctree oldWorld)
@@ -295,6 +285,16 @@ module Nu =
                             octree)
                         (World.getOctree world)
                 let world = World.setOctree octree world
+                let quadtree =
+                    MutantCache.mutateMutant
+                        (fun () -> oldWorld.WorldExtension.Dispatchers.RebuildQuadtree oldWorld)
+                        (fun quadtree ->
+                            for entity in entities2d do
+                                let entityState = World.getEntityState entity world
+                                Quadtree.removeElement entityState.Presence entityState.Bounds.Box2 entity quadtree
+                            quadtree)
+                        (World.getQuadtree world)
+                let world = World.setQuadtree quadtree world
                 world
 
             // init registerScreenPhysics F# reach-around
@@ -367,9 +367,9 @@ module WorldModule3 =
         static member private makeDefaultEntityDispatchers () =
             // TODO: consider if we should reflectively generate these.
             Map.ofListBy World.pairWithName $
-                [EntityDispatcher (false, true, false)
-                 EntityDispatcher2d (false) :> EntityDispatcher
+                [EntityDispatcher (true, true, false)
                  EntityDispatcher3d (true, false) :> EntityDispatcher
+                 EntityDispatcher2d (false) :> EntityDispatcher
                  StaticSpriteDispatcher () :> EntityDispatcher
                  AnimatedSpriteDispatcher () :> EntityDispatcher
                  GuiDispatcher () :> EntityDispatcher
@@ -511,8 +511,8 @@ module WorldModule3 =
                 { PhysicsEngine2d = MockPhysicsEngine.make ()
                   RendererProcess =
                     RendererInline
-                        ((fun _ -> MockRenderer2d.make () :> Renderer2d),
-                         (fun _ -> MockRenderer3d.make () :> Renderer3d))
+                        ((fun _ -> MockRenderer3d.make () :> Renderer3d),
+                         (fun _ -> MockRenderer2d.make () :> Renderer2d))
                   AudioPlayer = MockAudioPlayer.make () }
 
             // make the world's scripting environment
@@ -602,20 +602,20 @@ module WorldModule3 =
                 let subsystems =
                     let physicsEngine2d =
                         AetherPhysicsEngine.make config.Imperative Constants.Physics.GravityDefault
-                    let createRenderer2d =
-                        fun config ->
-                            match SdlDeps.getWindowOpt sdlDeps with
-                            | Some window -> GlRenderer2d.make window config :> Renderer2d
-                            | None -> MockRenderer2d.make () :> Renderer2d
                     let createRenderer3d =
                         fun config ->
                             match SdlDeps.getWindowOpt sdlDeps with
                             | Some window -> GlRenderer3d.make window config :> Renderer3d
                             | None -> MockRenderer3d.make () :> Renderer3d
+                    let createRenderer2d =
+                        fun config ->
+                            match SdlDeps.getWindowOpt sdlDeps with
+                            | Some window -> GlRenderer2d.make window config :> Renderer2d
+                            | None -> MockRenderer2d.make () :> Renderer2d
                     let rendererProcess =
                         if config.NuConfig.StandAlone
-                        then RendererThread (createRenderer2d, createRenderer3d) :> RendererProcess
-                        else RendererInline (createRenderer2d, createRenderer3d) :> RendererProcess
+                        then RendererThread (createRenderer3d, createRenderer2d) :> RendererProcess
+                        else RendererInline (createRenderer3d, createRenderer2d) :> RendererProcess
                     rendererProcess.Start ()
                     rendererProcess.EnqueueMessage2d (LoadRenderPackageMessage2d Assets.Default.PackageName) // enqueue default package hint
                     let audioPlayer =

@@ -16,22 +16,22 @@ type RendererProcess =
         abstract Started : bool
         abstract Terminated : bool
         abstract Start : unit -> unit
-        abstract EnqueueMessage2d : RenderMessage2d -> unit
         abstract EnqueueMessage3d : RenderMessage3d -> unit
+        abstract EnqueueMessage2d : RenderMessage2d -> unit
         abstract ClearMessages : unit -> unit
-        abstract SubmitMessages : Vector2 -> Vector2 -> Vector3 -> Quaternion -> Vector2i -> unit
+        abstract SubmitMessages : Vector3 -> Quaternion -> Vector2 -> Vector2 -> Vector2i -> unit
         abstract Swap : unit -> unit
         abstract Terminate : unit -> unit
         end
 
 /// A non-threaded render process.
-type RendererInline (createRenderer2d, createRenderer3d) =
+type RendererInline (createRenderer3d, createRenderer2d) =
 
     let mutable started = false
     let mutable terminated = false
     let mutable messages3d = List ()
     let mutable messages2d = List ()
-    let mutable renderersOpt = Option<Renderer2d * Renderer3d>.None
+    let mutable renderersOpt = Option<Renderer3d * Renderer2d>.None
 
     interface RendererProcess with
 
@@ -47,7 +47,7 @@ type RendererInline (createRenderer2d, createRenderer3d) =
             | None ->
                 let renderer3d = createRenderer3d { ShouldInitializeContext = true; ShouldBeginFrame = true; ShouldEndFrame = false }
                 let renderer2d = createRenderer2d { ShouldInitializeContext = false; ShouldBeginFrame = false; ShouldEndFrame = true }
-                renderersOpt <- Some (renderer2d, renderer3d)
+                renderersOpt <- Some (renderer3d, renderer2d)
                 started <- true
 
         member this.EnqueueMessage3d message =
@@ -64,9 +64,9 @@ type RendererInline (createRenderer2d, createRenderer3d) =
             messages3d.Clear ()
             messages2d.Clear ()
 
-        member this.SubmitMessages eyePosition2d eyeSize2d eyePosition3d eyeRotation3d windowSize =
+        member this.SubmitMessages eyePosition3d eyeRotation3d eyePosition2d eyeSize2d windowSize =
             match renderersOpt with
-            | Some (renderer2d, renderer3d) ->
+            | Some (renderer3d, renderer2d) ->
                 renderer3d.Render eyePosition3d eyeRotation3d windowSize messages3d
                 messages3d.Clear ()
                 renderer2d.Render eyePosition2d eyeSize2d windowSize messages2d
@@ -75,12 +75,12 @@ type RendererInline (createRenderer2d, createRenderer3d) =
 
         member this.Swap () =
             match renderersOpt with
-            | Some (renderer2d, _) -> renderer2d.Swap ()
+            | Some (_, renderer2d) -> renderer2d.Swap ()
             | None -> raise (InvalidOperationException "Renderers are not yet or are no longer valid.")
 
         member this.Terminate () =
             match renderersOpt with
-            | Some (renderer2d, renderer3d) ->
+            | Some (renderer3d, renderer2d) ->
                 renderer3d.CleanUp ()
                 renderer2d.CleanUp ()
                 renderersOpt <- None
@@ -88,7 +88,7 @@ type RendererInline (createRenderer2d, createRenderer3d) =
             | None -> raise (InvalidOperationException "Redundant Terminate calls.")
 
 /// A threaded render process.
-type RendererThread (createRenderer2d, createRenderer3d) =
+type RendererThread (createRenderer3d, createRenderer2d) =
 
     let mutable taskOpt = None
     let [<VolatileField>] mutable started = false
@@ -271,7 +271,7 @@ type RendererThread (createRenderer2d, createRenderer3d) =
             messageBuffers3d.[messageBufferIndex].Clear ()
             messageBuffers2d.[messageBufferIndex].Clear ()
 
-        member this.SubmitMessages eyePosition2d eyeSize2d eyePosition3d eyeRotation3d eyeMargin =
+        member this.SubmitMessages eyePosition3d eyeRotation3d eyePosition2d eyeSize2d eyeMargin =
             if Option.isNone taskOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
             while swap do Thread.Yield () |> ignore<bool>
             let messages3d = messageBuffers3d.[messageBufferIndex]

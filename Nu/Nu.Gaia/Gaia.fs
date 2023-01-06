@@ -192,9 +192,9 @@ module Gaia =
             let entity = entityTds.DescribedEntity
             let world =
                 if not (entity.GetAbsolute world) then
-                    if entity.GetIs2d world
-                    then World.setEyePosition2d (entity.GetCenter world).V2 world
-                    else World.setEyePosition3d (entity.GetPosition world + Constants.Engine.EyePosition3dOffset) world
+                    if entity.GetIs3d world
+                    then World.setEyePosition3d (entity.GetPosition world + Constants.Engine.EyePosition3dOffset) world
+                    else World.setEyePosition2d (entity.GetCenter world).V2 world
                 else world
             world
         | _ -> world
@@ -358,14 +358,7 @@ module Gaia =
             match tryMousePick mousePosition form world with
             | (Some (_, entity), world) ->
                 let world = Globals.pushPastWorld world
-                if entity.GetIs2d world then
-                    let viewport = World.getViewport world
-                    let eyePosition = World.getEyePosition2d world
-                    let eyeSize = World.getEyeSize2d world
-                    let mousePositionWorld = viewport.MouseToWorld2d (entity.GetAbsolute world, mousePosition, eyePosition, eyeSize)
-                    let entityPosition = if entity.MountExists world then entity.GetPositionLocal world else entity.GetPosition world
-                    dragEntityState <- DragEntityPosition2d (world.ClockTime, mousePositionWorld, entityPosition.V2 + mousePositionWorld, entity)
-                else
+                if entity.GetIs3d world then
                     let viewport = World.getViewport world
                     let eyePosition = World.getEyePosition3d world
                     let eyeRotation = World.getEyeRotation3d world
@@ -376,6 +369,13 @@ module Gaia =
                     if intersectionOpt.HasValue then
                         let entityDragOffset = intersectionOpt.Value - entityPosition
                         dragEntityState <- DragEntityPosition3d (world.ClockTime, entityDragOffset, entityPlane, entity)
+                else
+                    let viewport = World.getViewport world
+                    let eyePosition = World.getEyePosition2d world
+                    let eyeSize = World.getEyeSize2d world
+                    let mousePositionWorld = viewport.MouseToWorld2d (entity.GetAbsolute world, mousePosition, eyePosition, eyeSize)
+                    let entityPosition = if entity.MountExists world then entity.GetPositionLocal world else entity.GetPosition world
+                    dragEntityState <- DragEntityPosition2d (world.ClockTime, mousePositionWorld, entityPosition.V2 + mousePositionWorld, entity)
                 (handled, world)
             | (None, world) -> (handled, world)
         else (Cascade, world)
@@ -461,7 +461,15 @@ module Gaia =
             let entity = entityTds.DescribedEntity
             let absolute = entity.GetAbsolute world
             let bounds = entity.GetHighlightBounds world
-            if entity.GetIs2d world then
+            if entity.GetIs3d world then
+                let mutable boundsMatrix = Matrix4x4.CreateScale bounds.Size
+                boundsMatrix.Translation <- bounds.Center - Vector3.Transform (v3Forward * 0.01f, World.getEyeRotation3d world) // slightly closer to eye to prevent z-fighting with selected entity
+                let renderMaterial = Unchecked.defaultof<_>
+                let renderType = ForwardRenderType (0.0f, Single.MinValue)
+                let staticModel = Assets.Default.HighlightModel
+                let world = World.enqueueRenderMessage3d (RenderStaticModelMessage (absolute, boundsMatrix, ValueNone, renderMaterial, renderType, staticModel)) world
+                (Cascade, world)
+            else
                 let elevation = Single.MaxValue
                 let transform = Transform.makePerimeter bounds v3Zero elevation absolute false
                 let image = Assets.Default.HighlightImage
@@ -481,14 +489,6 @@ module Gaia =
                                       Glow = Color.Zero
                                       Flip = FlipNone }})
                         world
-                (Cascade, world)
-            else
-                let mutable boundsMatrix = Matrix4x4.CreateScale bounds.Size
-                boundsMatrix.Translation <- bounds.Center - Vector3.Transform (v3Forward * 0.01f, World.getEyeRotation3d world) // slightly closer to eye to prevent z-fighting with selected entity
-                let renderMaterial = Unchecked.defaultof<_>
-                let renderType = ForwardRenderType (0.0f, Single.MinValue)
-                let staticModel = Assets.Default.HighlightModel
-                let world = World.enqueueRenderMessage3d (RenderStaticModelMessage (absolute, boundsMatrix, ValueNone, renderMaterial, renderType, staticModel)) world
                 (Cascade, world)
         | _ -> (Cascade, world)
 
@@ -937,20 +937,7 @@ module Gaia =
                 let mousePosition = World.getMousePosition world
                 let mutable entityTransform = entity.GetTransform world
                 let world =
-                    if entity.GetIs2d world then
-                        let eyePosition = World.getEyePosition2d world
-                        let eyeSize = World.getEyeSize2d world
-                        let entityPosition =
-                            if atMouse
-                            then viewport.MouseToWorld2d (entity.GetAbsolute world, mousePosition, eyePosition, eyeSize)
-                            else viewport.MouseToWorld2d (entity.GetAbsolute world, World.getEyeSize2d world * 0.5f, eyePosition, eyeSize)
-                        entityTransform.Position <- entityPosition.V3
-                        entityTransform.Size <- entity.GetQuickSize world
-                        entityTransform.Elevation <- getCreationElevation form
-                        if not form.snap3dButton.Checked
-                        then entity.SetTransformSnapped positionSnap degreesSnap scaleSnap entityTransform world
-                        else entity.SetTransform entityTransform world
-                    else
+                    if entity.GetIs3d world then
                         let eyePosition = World.getEyePosition3d world
                         let eyeRotation = World.getEyeRotation3d world
                         let entityPosition =
@@ -963,6 +950,19 @@ module Gaia =
                         entityTransform.Position <- entityPosition
                         entityTransform.Size <- entity.GetQuickSize world
                         if form.snap3dButton.Checked
+                        then entity.SetTransformSnapped positionSnap degreesSnap scaleSnap entityTransform world
+                        else entity.SetTransform entityTransform world
+                    else
+                        let eyePosition = World.getEyePosition2d world
+                        let eyeSize = World.getEyeSize2d world
+                        let entityPosition =
+                            if atMouse
+                            then viewport.MouseToWorld2d (entity.GetAbsolute world, mousePosition, eyePosition, eyeSize)
+                            else viewport.MouseToWorld2d (entity.GetAbsolute world, World.getEyeSize2d world * 0.5f, eyePosition, eyeSize)
+                        entityTransform.Position <- entityPosition.V3
+                        entityTransform.Size <- entity.GetQuickSize world
+                        entityTransform.Elevation <- getCreationElevation form
+                        if not form.snap3dButton.Checked
                         then entity.SetTransformSnapped positionSnap degreesSnap scaleSnap entityTransform world
                         else entity.SetTransform entityTransform world
                 let world =
