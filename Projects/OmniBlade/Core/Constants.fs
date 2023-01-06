@@ -75,12 +75,11 @@ module Constants =
         let SpiritOrbRatio = 0.075f
         let SpiritOrbBlipSize = v3 21.0f 21.0f 0.0f
 #if DEV_FIELD
-        let SpiritActivityMinimum = 10000L
+        let SpiritActivityThreshold = 10000L
 #else
-        let SpiritActivityMinimum = 120L
-#endif
         let SpiritActivityThreshold = 120L
-        let SpiritActivityAggressionThreshold = 4
+#endif
+        let SpiritActivityAggressionThreshold = 5
         let SpiritRadius = 90.0f / SpiritOrbRatio
         let WalkLengthScalarClosed = 0.55f // NOTE: higher is longer distance to stronger spirits.
         let WalkLengthScalarOpened = 0.45f // NOTE: higher is longer distance to stronger spirits.
