@@ -74,38 +74,38 @@ module BodyShapeProperties =
 
 /// The shape of a physics body box.
 type [<NoComparison>] BodyBox =
-    { Extent : Vector3
-      Center : Vector3
+    { Center : Vector3
+      Size : Vector3
       PropertiesOpt : BodyShapeProperties option }
     static member toBox bodyBox =
-        box3 (bodyBox.Center - bodyBox.Extent) (bodyBox.Extent * 2.0f)
+        box3 (bodyBox.Center - bodyBox.Size * 0.5f) bodyBox.Size
     static member fromBox (box : Box3) =
-        { Extent = box.Size * 0.5f; Center = box.Center; PropertiesOpt = None }
+        { Center = box.Center; Size = box.Size; PropertiesOpt = None }
 
 /// The shape of a physics body sphere.
 type [<NoComparison>] BodySphere =
-    { Radius : single
-      Center : Vector3
+    { Center : Vector3
+      Radius : single
       PropertiesOpt : BodyShapeProperties option }
 
 /// The shape of a physics body capsule.
 type [<NoComparison>] BodyCapsule =
-    { Height : single
+    { Center : Vector3
+      Height : single
       Radius : single
-      Center : Vector3
       PropertiesOpt : BodyShapeProperties option }
 
 /// The shape of a physics body capsule.
 type [<NoComparison>] BodyBoxRounded =
-    { Extent : Vector3
+    { Center : Vector3
+      Size : Vector3
       Radius : single
-      Center : Vector3
       PropertiesOpt : BodyShapeProperties option }
 
 /// The shape of a physics body polygon.
 type [<NoComparison>] BodyPolygon =
-    { Vertices : Vector3 array
-      Center : Vector3
+    { Center : Vector3
+      Vertices : Vector3 array
       PropertiesOpt : BodyShapeProperties option }
 
 /// The shape of a physics body.
@@ -136,7 +136,7 @@ type BodyType =
 /// The properties needed to describe the physical part of a body.
 type [<NoComparison>] BodyProperties =
     { BodyId : uint64
-      Position : Vector3
+      Center : Vector3
       Rotation : Quaternion
       BodyShape : BodyShape
       BodyType : BodyType
@@ -163,7 +163,7 @@ module BodyProperties =
 
     let empty =
         { BodyId = 0UL
-          Position = v3Zero
+          Center = v3Zero
           Rotation = quatIdentity
           BodyShape = BodyEmpty
           BodyType = Dynamic
@@ -471,16 +471,16 @@ module Physics =
         | _ -> Convert.ToInt32 (categoryMask, 2)
 
     /// Localize a body shape to a specific physics object.
-    let rec localizeBodyShape (extent : Vector3) (bodyShape : BodyShape) =
+    let rec localizeBodyShape (size : Vector3) (bodyShape : BodyShape) =
         match bodyShape with
         | BodyEmpty -> BodyEmpty
-        | BodyBox bodyBox -> BodyBox { Extent = Vector3.Multiply (extent, bodyBox.Extent); Center = Vector3.Multiply (extent, bodyBox.Center); PropertiesOpt = bodyBox.PropertiesOpt }
-        | BodySphere bodySphere -> BodySphere { Radius = extent.X * bodySphere.Radius; Center = extent.X * bodySphere.Center; PropertiesOpt = bodySphere.PropertiesOpt }
-        | BodyCapsule bodyCapsule -> BodyCapsule { Height = extent.Y * bodyCapsule.Height; Radius = extent.Y * bodyCapsule.Radius; Center = extent.Y * bodyCapsule.Center; PropertiesOpt = bodyCapsule.PropertiesOpt }
-        | BodyBoxRounded bodyBoxRounded -> BodyBoxRounded { Extent = Vector3.Multiply (extent, bodyBoxRounded.Extent); Radius = extent.X * bodyBoxRounded.Radius; Center = extent.Y * bodyBoxRounded.Center; PropertiesOpt = bodyBoxRounded.PropertiesOpt }
+        | BodyBox bodyBox -> BodyBox { Center = Vector3.Multiply (bodyBox.Center, size); Size = Vector3.Multiply (size, bodyBox.Size); PropertiesOpt = bodyBox.PropertiesOpt }
+        | BodySphere bodySphere -> BodySphere { Center = size.X * bodySphere.Center; Radius = size.X * bodySphere.Radius; PropertiesOpt = bodySphere.PropertiesOpt }
+        | BodyCapsule bodyCapsule -> BodyCapsule { Center = size.Y * bodyCapsule.Center; Height = size.Y * bodyCapsule.Height; Radius = size.Y * bodyCapsule.Radius; PropertiesOpt = bodyCapsule.PropertiesOpt }
+        | BodyBoxRounded bodyBoxRounded -> BodyBoxRounded { Center = size.Y * bodyBoxRounded.Center; Size = Vector3.Multiply (size, bodyBoxRounded.Size); Radius = size.X * bodyBoxRounded.Radius; PropertiesOpt = bodyBoxRounded.PropertiesOpt }
         | BodyPolygon bodyPolygon ->
-            let vertices = Array.map (fun vertex -> vertex * extent) bodyPolygon.Vertices
-            BodyPolygon { Vertices = vertices; Center = Vector3.Multiply (extent, bodyPolygon.Center); PropertiesOpt = bodyPolygon.PropertiesOpt }
+            let vertices = Array.map (fun vertex -> vertex * size) bodyPolygon.Vertices
+            BodyPolygon { Center = Vector3.Multiply (size, bodyPolygon.Center); Vertices = vertices; PropertiesOpt = bodyPolygon.PropertiesOpt }
         | BodyShapes bodyShapes ->
-            let bodyShapes = List.map (localizeBodyShape extent) bodyShapes
+            let bodyShapes = List.map (localizeBodyShape size) bodyShapes
             BodyShapes bodyShapes

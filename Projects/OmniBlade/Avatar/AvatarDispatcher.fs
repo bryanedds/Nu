@@ -64,8 +64,8 @@ module AvatarDispatcher =
         override this.Initialize (avatar, entity) =
             let bodyShape =
                 BodyShapes
-                    [BodySphere { Radius = 0.160f; Center = v3 -0.016f -0.366f 0.0f; PropertiesOpt = Some { BodyShapeProperties.empty with BodyShapeId = avatar.CoreShapeId }}
-                     BodySphere { Radius = 0.320f; Center = v3 -0.016f -0.366f 0.0f; PropertiesOpt = Some { BodyShapeProperties.empty with BodyShapeId = avatar.SensorShapeId; SensorOpt = Some true }}]
+                    [BodySphere { Center = v3 -0.016f -0.366f 0.0f; Radius = 0.160f; PropertiesOpt = Some { BodyShapeProperties.empty with BodyShapeId = avatar.CoreShapeId }}
+                     BodySphere { Center = v3 -0.016f -0.366f 0.0f; Radius = 0.320f; PropertiesOpt = Some { BodyShapeProperties.empty with BodyShapeId = avatar.SensorShapeId; SensorOpt = Some true }}]
             [Entity.Perimeter := avatar.Perimeter
              Entity.Presence == Omnipresent
              Entity.FixedRotation == true

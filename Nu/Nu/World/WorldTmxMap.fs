@@ -94,14 +94,13 @@ module TmxMap =
         TmxObject xml
 
     let rec importShape shape (tileSize : Vector2) (tileOffset : Vector2) =
-        let tileExtent = tileSize * 0.5f
         match shape with
         | BodyEmpty as be -> be
-        | BodyBox box -> BodyBox { box with Extent = box.Extent * tileExtent.V3; Center = box.Center * tileSize.V3 + tileOffset.V3 }
-        | BodySphere circle -> BodySphere { circle with Radius = circle.Radius * tileExtent.Y; Center = circle.Center * tileSize.V3 + tileOffset.V3 }
-        | BodyCapsule capsule -> BodyCapsule { capsule with Height = tileSize.Y; Radius = capsule.Radius * tileExtent.Y; Center = capsule.Center * tileSize.V3 + tileOffset.V3 }
-        | BodyBoxRounded boxRounded -> BodyBoxRounded { boxRounded with Extent = boxRounded.Extent * tileExtent.V3; Radius = boxRounded.Radius; Center = boxRounded.Center * tileSize.V3 + tileOffset.V3 }
-        | BodyPolygon polygon -> BodyPolygon { polygon with Vertices = Array.map (fun point -> point * tileSize.V3) polygon.Vertices; Center = polygon.Center * tileSize.V3 + tileOffset.V3 }
+        | BodyBox box -> BodyBox { box with Center = box.Center * tileSize.V3 + tileOffset.V3; Size = box.Size * tileSize.V3 }
+        | BodySphere circle -> BodySphere { circle with Center = circle.Center * tileSize.V3 + tileOffset.V3; Radius = circle.Radius * tileSize.Y }
+        | BodyCapsule capsule -> BodyCapsule { capsule with Center = capsule.Center * tileSize.V3 + tileOffset.V3; Height = tileSize.Y; Radius = capsule.Radius * tileSize.Y }
+        | BodyBoxRounded boxRounded -> BodyBoxRounded { boxRounded with Center = boxRounded.Center * tileSize.V3 + tileOffset.V3; Size = boxRounded.Size * tileSize.V3; Radius = boxRounded.Radius }
+        | BodyPolygon polygon -> BodyPolygon { polygon with Center = polygon.Center * tileSize.V3 + tileOffset.V3; Vertices = Array.map (fun point -> point * tileSize.V3) polygon.Vertices }
         | BodyShapes shapes -> BodyShapes (List.map (fun shape -> importShape shape tileSize tileOffset) shapes)
 
     let getDescriptor tileMapPosition (tileMap : TmxMap) =
@@ -198,35 +197,35 @@ module TmxMap =
                             | (false, _) ->
                                 tileBoxes.Add (tileCenter.Y, List [box3 (tileCenter.V3 - tileMapDescriptor.TileSizeF.V3 * 0.5f) tileMapDescriptor.TileSizeF.V3])
                         | "Top" ->
-                            let tileShape = BodyBox { Extent = v3 1.0f 0.5f 0.0f; Center = v3 0.0f 0.25f 0.0f; PropertiesOpt = None }
+                            let tileShape = BodyBox { Center = v3 0.0f 0.25f 0.0f; Size = v3 1.0f 0.5f 0.0f; PropertiesOpt = None }
                             let tileShapeImported = importShape tileShape tileMapDescriptor.TileSizeF tileCenter
                             bodyShapes.Add tileShapeImported
                         | "Bottom" ->
-                            let tileShape = BodyBox { Extent = v3 1.0f -0.5f 0.0f; Center = v3 0.0f -0.25f 0.0f; PropertiesOpt = None }
+                            let tileShape = BodyBox { Center = v3 0.0f -0.25f 0.0f; Size = v3 1.0f -0.5f 0.0f; PropertiesOpt = None }
                             let tileShapeImported = importShape tileShape tileMapDescriptor.TileSizeF tileCenter
                             bodyShapes.Add tileShapeImported
                         | "Left" ->
-                            let tileShape = BodyBox { Extent = v3 -0.5f 1.0f 0.0f; Center = v3 -0.25f -0.0f 0.0f; PropertiesOpt = None }
+                            let tileShape = BodyBox { Center = v3 -0.25f -0.0f 0.0f; Size = v3 -0.5f 1.0f 0.0f; PropertiesOpt = None }
                             let tileShapeImported = importShape tileShape tileMapDescriptor.TileSizeF tileCenter
                             bodyShapes.Add tileShapeImported
                         | "Right" ->
-                            let tileShape = BodyBox { Extent = v3 0.5f 1.0f 0.0f; Center = v3 0.25f 0.0f 0.0f; PropertiesOpt = None }
+                            let tileShape = BodyBox { Center = v3 0.25f 0.0f 0.0f; Size = v3 0.5f 1.0f 0.0f; PropertiesOpt = None }
                             let tileShapeImported = importShape tileShape tileMapDescriptor.TileSizeF tileCenter
                             bodyShapes.Add tileShapeImported
                         | "TopLeft" ->
-                            let tileShape = BodyBox { Extent = v3 -0.5f 0.5f 0.0f; Center = v3 -0.25f 0.25f 0.0f; PropertiesOpt = None }
+                            let tileShape = BodyBox { Center = v3 -0.25f 0.25f 0.0f; Size = v3 -0.5f 0.5f 0.0f; PropertiesOpt = None }
                             let tileShapeImported = importShape tileShape tileMapDescriptor.TileSizeF tileCenter
                             bodyShapes.Add tileShapeImported
                         | "TopRight" ->
-                            let tileShape = BodyBox { Extent = v3 0.5f -0.5f 0.0f; Center = v3 0.25f 0.25f 0.0f; PropertiesOpt = None }
+                            let tileShape = BodyBox { Center = v3 0.25f 0.25f 0.0f; Size = v3 0.5f -0.5f 0.0f; PropertiesOpt = None }
                             let tileShapeImported = importShape tileShape tileMapDescriptor.TileSizeF tileCenter
                             bodyShapes.Add tileShapeImported
                         | "BottomLeft" ->
-                            let tileShape = BodyBox { Extent = v3 -0.5f -0.5f 0.0f; Center = v3 -0.25f -0.25f 0.0f; PropertiesOpt = None }
+                            let tileShape = BodyBox { Center = v3 -0.25f -0.25f 0.0f; Size = v3 -0.5f -0.5f 0.0f; PropertiesOpt = None }
                             let tileShapeImported = importShape tileShape tileMapDescriptor.TileSizeF tileCenter
                             bodyShapes.Add tileShapeImported
                         | "BottomRight" ->
-                            let tileShape = BodyBox { Extent = v3 0.5f -0.5f 0.0f; Center = v3 0.25f -0.25f 0.0f; PropertiesOpt = None }
+                            let tileShape = BodyBox { Center = v3 0.25f -0.25f 0.0f; Size = v3 0.5f -0.5f 0.0f; PropertiesOpt = None }
                             let tileShapeImported = importShape tileShape tileMapDescriptor.TileSizeF tileCenter
                             bodyShapes.Add tileShapeImported
                         | _ ->
@@ -274,7 +273,7 @@ module TmxMap =
     let getBodyProperties enabled friction restitution collisionCategories collisionMask bodyId tileMapDescriptor =
         let bodyProperties =
             { BodyId = bodyId
-              Position = v3Zero
+              Center = v3Zero
               Rotation = quatIdentity
               BodyShape = BodyShapes (getBodyShapes tileMapDescriptor)
               BodyType = BodyType.Static

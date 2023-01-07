@@ -838,7 +838,7 @@ module RigidBodyFacetModule =
              define Entity.GravityScale 1.0f
              define Entity.CollisionCategories "1"
              define Entity.CollisionMask "@"
-             define Entity.BodyShape (BodyBox { Extent = v3 0.5f 0.5f 0.0f; Center = v3Zero; PropertiesOpt = None })
+             define Entity.BodyShape (BodyBox { Center = v3Zero; Size = v3 1.0f 1.0f 0.0f; PropertiesOpt = None })
              define Entity.IgnoreCCD false
              define Entity.Bullet false
              define Entity.Sensor false
@@ -876,7 +876,7 @@ module RigidBodyFacetModule =
             let mutable transform = entity.GetTransform world
             let bodyProperties =
                 { BodyId = (entity.GetPhysicsId world).CorrelationId
-                  Position = transform.Center
+                  Center = transform.Center
                   Rotation = transform.Rotation
                   BodyShape = getBodyShape entity world
                   BodyType = entity.GetBodyType world

@@ -36,38 +36,38 @@ module PropDispatcher =
                 | Sprite _ ->
                     BodyEmpty
                 | Portal _ | Switch _ ->
-                    BodyBox { Extent = v3 0.5f 0.5f 0.0f; Center = v3Zero; PropertiesOpt = None }
+                    BodyBox { Center = v3Zero; Size = v3 1.0f 1.0f 0.0f; PropertiesOpt = None }
                 | SavePoint _ ->
-                    BodySphere { Radius = 0.1f; Center = v3Zero; PropertiesOpt = None }
+                    BodySphere { Center = v3Zero; Radius = 0.1f; PropertiesOpt = None }
                 | Door _ ->
                     match prop.Prop.PropState with
                     | DoorState true -> BodyEmpty
-                    | _ -> BodyBox { Extent = v3 0.5f 0.5f 0.0f; Center = v3Zero; PropertiesOpt = None }
+                    | _ -> BodyBox { Center = v3Zero; Size = v3 1.0f 1.0f 0.0f; PropertiesOpt = None }
                 | Chest _ ->
-                    BodyBox { Extent = v3 0.5f 0.5f 0.0f; Center = v3Zero; PropertiesOpt = None }
+                    BodyBox { Center = v3Zero; Size = v3 1.0f 1.0f 0.0f; PropertiesOpt = None }
                 | Sensor (_, shapeOpt, _, _, _) ->
                     match shapeOpt with
                     | Some shape -> shape
-                    | None -> BodyBox { Extent = v3 0.5f 0.5f 0.0f; Center = v3Zero; PropertiesOpt = None }
+                    | None -> BodyBox { Center = v3Zero; Size = v3 1.0f 1.0f 0.0f; PropertiesOpt = None }
                 | Seal (_, _, requirements) ->
                     if prop.Advents.IsSupersetOf requirements
-                    then BodyBox { Extent = v3 0.5f 0.5f 0.0f; Center = v3Zero; PropertiesOpt = None }
+                    then BodyBox { Center = v3Zero; Size = v3 1.0f 1.0f 0.0f; PropertiesOpt = None }
                     else BodyEmpty
                 | Character (_, _, _, _, _, requirements) ->
                     if prop.Advents.IsSupersetOf requirements
-                    then BodyBox { Extent = v3 0.16f 0.16f 0.0f; Center = v3 -0.01f -0.36f 0.0f; PropertiesOpt = None }
+                    then BodyBox { Center = v3 -0.01f -0.36f 0.0f; Size = v3 0.32f 0.32f 0.0f; PropertiesOpt = None }
                     else BodyEmpty
                 | Npc (npcType, _, _, requirements) | NpcBranching (npcType, _, _, requirements) ->
                     if prop.Advents.IsSupersetOf requirements && NpcType.exists prop.Advents npcType then
                         match npcType with
                         | ShadeNpc | MaelNpc | RiainNpc | PericNpc
                         | RavelNpc | AdvenNpc | EildaenNpc | NostrusNpc
-                        | MadTrixterNpc | HeavyArmorosNpc -> BodyBox { Extent = v3 0.16f 0.16f 0.0f; Center = v3 -0.01f -0.36f 0.0f; PropertiesOpt = None }
-                        | AraneaImplicitumNpc -> BodyBox { Extent = v3 0.16f 0.16f 0.0f; Center = v3 -0.01f -0.36f 0.0f; PropertiesOpt = None }
+                        | MadTrixterNpc | HeavyArmorosNpc -> BodyBox { Center = v3 -0.01f -0.36f 0.0f; Size = v3 0.32f 0.32f 0.0f; PropertiesOpt = None }
+                        | AraneaImplicitumNpc -> BodyBox { Center = v3 -0.01f -0.36f 0.0f; Size = v3 0.32f 0.32f 0.0f; PropertiesOpt = None }
                     else BodyEmpty
                 | Shopkeep (_, _, _, requirements) ->
                     if prop.Advents.IsSupersetOf requirements
-                    then BodyBox { Extent = v3 0.16f 0.16f 0.0f; Center = v3 -0.01f -0.36f 0.0f; PropertiesOpt = None }
+                    then BodyBox { Center = v3 -0.01f -0.36f 0.0f; Size = v3 0.32f 0.32f 0.0f; PropertiesOpt = None }
                     else BodyEmpty
                 | Flame _ | ChestSpawn | EmptyProp ->
                     BodyEmpty]
