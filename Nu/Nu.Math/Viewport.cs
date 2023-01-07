@@ -47,8 +47,8 @@ namespace Nu
                 vector.Y /= a;
                 vector.Z /= a;
             }
-            vector.X = (vector.X + 1f) * 0.5f * Bounds.Size.X + Bounds.Position.X;
-            vector.Y = (-vector.Y + 1f) * 0.5f * Bounds.Size.Y + Bounds.Position.Y;
+            vector.X = (vector.X + 1f) * 0.5f * Bounds.Size.X + Bounds.Min.X;
+            vector.Y = (-vector.Y + 1f) * 0.5f * Bounds.Size.Y + Bounds.Min.Y;
             vector.Z = vector.Z * (FarDistance - NearDistance) + NearDistance;
             return vector;
         }
@@ -59,8 +59,8 @@ namespace Nu
         public Vector3 Unproject(Vector3 source, Matrix4x4 frame)
         {
             Matrix4x4.Invert(frame, out Matrix4x4 matrix);
-            source.X = (source.X - Bounds.Position.X) / Bounds.Size.X * 2f - 1f;
-            source.Y = -((source.Y - Bounds.Position.Y) / Bounds.Size.Y * 2f - 1f);
+            source.X = (source.X - Bounds.Min.X) / Bounds.Size.X * 2f - 1f;
+            source.Y = -((source.Y - Bounds.Min.Y) / Bounds.Size.Y * 2f - 1f);
             source.Z = (source.Z - NearDistance) / (FarDistance - NearDistance);
             Vector3 vector = Vector3.Transform(source, matrix);
             float a = source.X * matrix.M14 + source.Y * matrix.M24 + source.Z * matrix.M34 + matrix.M44;

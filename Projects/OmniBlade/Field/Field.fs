@@ -199,7 +199,7 @@ module Field =
         | Sensor (_, _, _, _, _) -> None
         | Character (_, _, _, isRising, _, _) ->
             if isRising then
-                if prop.Bottom.Y - field.Avatar.Position.Y > 40.0f // NOTE: just a bit of hard-coding to ensure player is interacting with the character from the south.
+                if prop.Bottom.Y - field.Avatar.Bottom.Y > 40.0f // NOTE: just a bit of hard-coding to ensure player is interacting with the character from the south.
                 then Some "Talk"
                 else None
             else Some "Talk"
@@ -448,7 +448,7 @@ module Field =
                     | (false, _) -> [||]
                 { field with Spirits_ = Array.append field.Spirits_ spiritsSpawned }
             let lowerPerimeter = field.Avatar.LowerPerimeter
-            match Array.tryFind (fun (spirit : Spirit) -> lowerPerimeter.Intersects spirit.Position) field.Spirits_ with
+            match Array.tryFind (fun (spirit : Spirit) -> lowerPerimeter.Intersects spirit.Bottom) field.Spirits_ with
             | Some spirit ->
                 match Data.Value.Fields.TryGetValue field.FieldType with
                 | (true, fieldData) ->

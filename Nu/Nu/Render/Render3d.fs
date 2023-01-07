@@ -508,8 +508,8 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                 let texelHeight = albedoMetadata.TextureTexelHeight
                 let borderWidth = texelWidth * Constants.Render.TcoBorderTexelScalar
                 let borderHeight = texelHeight * Constants.Render.TcoBorderTexelScalar
-                let px = inset.Position.X * texelWidth + borderWidth
-                let py = (inset.Position.Y + inset.Size.Y) * texelHeight - borderHeight
+                let px = inset.Min.X * texelWidth + borderWidth
+                let py = (inset.Min.Y + inset.Size.Y) * texelHeight - borderHeight
                 let sx = inset.Size.X * texelWidth - borderWidth * 2.0f
                 let sy = -inset.Size.Y * texelHeight + borderHeight * 2.0f
                 Box2 (px, py, sx, sy)
@@ -556,8 +556,8 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                 let texelHeight = albedoMetadata.TextureTexelHeight
                 let borderWidth = texelWidth * Constants.Render.TcoBorderTexelScalar
                 let borderHeight = texelHeight * Constants.Render.TcoBorderTexelScalar
-                let px = inset.Position.X * texelWidth + borderWidth
-                let py = (inset.Position.Y + inset.Size.Y) * texelHeight - borderHeight
+                let px = inset.Min.X * texelWidth + borderWidth
+                let py = (inset.Min.Y + inset.Size.Y) * texelHeight - borderHeight
                 let sx = inset.Size.X * texelWidth - borderWidth * 2.0f
                 let sy = -inset.Size.Y * texelHeight + borderHeight * 2.0f
                 Box2 (px, py, sx, sy)
@@ -705,10 +705,10 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             for i in 0 .. dec parameters.Length do
                 let struct (model, texCoordsOffset, renderMaterial) = parameters.[i]
                 model.ToArray (renderer.RenderModelsFields, i * 16)
-                renderer.RenderTexCoordsOffsetsFields.[i * 4] <- texCoordsOffset.Position.X
-                renderer.RenderTexCoordsOffsetsFields.[i * 4 + 1] <- texCoordsOffset.Position.Y
-                renderer.RenderTexCoordsOffsetsFields.[i * 4 + 2] <- texCoordsOffset.Position.X + texCoordsOffset.Size.X
-                renderer.RenderTexCoordsOffsetsFields.[i * 4 + 3] <- texCoordsOffset.Position.Y + texCoordsOffset.Size.Y
+                renderer.RenderTexCoordsOffsetsFields.[i * 4] <- texCoordsOffset.Min.X
+                renderer.RenderTexCoordsOffsetsFields.[i * 4 + 1] <- texCoordsOffset.Min.Y
+                renderer.RenderTexCoordsOffsetsFields.[i * 4 + 2] <- texCoordsOffset.Min.X + texCoordsOffset.Size.X
+                renderer.RenderTexCoordsOffsetsFields.[i * 4 + 3] <- texCoordsOffset.Min.Y + texCoordsOffset.Size.Y
                 let (albedo, metalness, roughness, ambientOcclusion) =
                     ((match renderMaterial.AlbedoOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterial.Albedo),
                      (match renderMaterial.MetalnessOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterial.Metalness),
@@ -1053,7 +1053,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             let (positionTexture, albedoTexture, materialTexture, normalTexture, geometryFramebuffer) = renderer.RenderGeometryFramebuffer
             OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, geometryFramebuffer)
             OpenGL.Gl.Enable OpenGL.EnableCap.ScissorTest
-            OpenGL.Gl.Scissor (viewportOffset.Bounds.Position.X, viewportOffset.Bounds.Position.Y, viewportOffset.Bounds.Size.X, viewportOffset.Bounds.Size.Y)
+            OpenGL.Gl.Scissor (viewportOffset.Bounds.Min.X, viewportOffset.Bounds.Min.Y, viewportOffset.Bounds.Size.X, viewportOffset.Bounds.Size.Y)
             OpenGL.Gl.ClearColor (Constants.Render.WindowClearColor.R, Constants.Render.WindowClearColor.G, Constants.Render.WindowClearColor.B, Constants.Render.WindowClearColor.A)
             OpenGL.Gl.Clear (OpenGL.ClearBufferMask.ColorBufferBit ||| OpenGL.ClearBufferMask.DepthBufferBit ||| OpenGL.ClearBufferMask.StencilBufferBit)
             OpenGL.Gl.Disable OpenGL.EnableCap.ScissorTest

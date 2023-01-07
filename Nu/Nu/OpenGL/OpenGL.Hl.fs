@@ -110,8 +110,8 @@ module Hl =
 
         // set viewport
         Gl.Viewport
-            (viewportOffset.Bounds.Position.X,
-             viewportOffset.Bounds.Position.Y,
+            (viewportOffset.Bounds.Min.X,
+             viewportOffset.Bounds.Min.Y,
              viewportOffset.Bounds.Size.X,
              viewportOffset.Bounds.Size.Y)
         Assert ()
@@ -128,8 +128,8 @@ module Hl =
         // clear drawing target
         Gl.Enable EnableCap.ScissorTest
         Gl.Scissor
-            (viewportOffset.Bounds.Position.X,
-             viewportOffset.Bounds.Position.Y,
+            (viewportOffset.Bounds.Min.X,
+             viewportOffset.Bounds.Min.Y,
              viewportOffset.Bounds.Size.X,
              viewportOffset.Bounds.Size.Y)
         Gl.ClearColor (Constants.Render.WindowClearColor.R, Constants.Render.WindowClearColor.G, Constants.Render.WindowClearColor.B, Constants.Render.WindowClearColor.A)

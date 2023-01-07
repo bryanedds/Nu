@@ -25,20 +25,20 @@ module Avatar =
 
         (* Perimeter Original Properties *)
         member this.PerimeterOriginal = this.PerimeterOriginal_
-        member this.LowerPerimeterOriginal = box3 this.PerimeterOriginal_.Position (this.PerimeterOriginal_.Size.MapY ((*) 0.5f))
-        member this.PositionOriginal = this.PerimeterOriginal_.Position
+        member this.LowerPerimeterOriginal = box3 this.PerimeterOriginal_.Min (this.PerimeterOriginal_.Size.MapY ((*) 0.5f))
+        member this.MinOriginal = this.PerimeterOriginal_.Min
         member this.CenterOriginal = this.PerimeterOriginal_.Center
         member this.BottomOriginal = this.PerimeterOriginal_.Bottom
         member this.SizeOriginal = this.PerimeterOriginal_.Size
 
         (* Perimeter Properties *)
         member this.Perimeter = this.Perimeter_
-        member this.Position = this.Perimeter_.Position
+        member this.Min = this.Perimeter_.Min
         member this.Center = this.Perimeter_.Center
         member this.Bottom = this.Perimeter_.Bottom
         member this.BottomOffset = this.Perimeter_.Bottom + Constants.Field.CharacterBottomOffset
         member this.Size = this.Perimeter_.Size
-        member this.LowerPerimeter = box3 (this.Perimeter_.Position + v3 (this.Perimeter_.Size.X * 0.25f) 0.0f 0.0f) (this.Perimeter_.Size * 0.5f)
+        member this.LowerPerimeter = box3 (this.Perimeter_.Min + v3 (this.Perimeter_.Size.X * 0.25f) 0.0f 0.0f) (this.Perimeter_.Size * 0.5f)
         member this.LowerCenter = this.LowerPerimeter.Center
 
         (* Animation Properties *)
@@ -88,8 +88,8 @@ module Avatar =
         then { avatar with Perimeter_ = bounds }
         else avatar
 
-    let updatePosition updater (avatar : Avatar) =
-        updatePerimeter (fun bounds -> bounds.Position |> updater |> bounds.WithPosition) avatar
+    let updateMin updater (avatar : Avatar) =
+        updatePerimeter (fun bounds -> bounds.Min |> updater |> bounds.WithMin) avatar
 
     let updateCenter updater (avatar : Avatar) =
         updatePerimeter (fun bounds -> bounds.Center |> updater |> bounds.WithCenter) avatar

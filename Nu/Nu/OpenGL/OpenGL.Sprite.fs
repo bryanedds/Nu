@@ -125,8 +125,8 @@ module Sprite =
                 let texelHeight = 1.0f / single textureHeight
                 let borderWidth = texelWidth * Constants.Render.SpriteBorderTexelScalar
                 let borderHeight = texelHeight * Constants.Render.SpriteBorderTexelScalar
-                let px = inset.Position.X * texelWidth + borderWidth
-                let py = (inset.Position.Y + inset.Size.Y) * texelHeight - borderHeight
+                let px = inset.Min.X * texelWidth + borderWidth
+                let py = (inset.Min.Y + inset.Size.Y) * texelHeight - borderHeight
                 let sx = inset.Size.X * texelWidth - borderWidth * 2.0f
                 let sy = -inset.Size.Y * texelHeight + borderHeight * 2.0f
                 Box2 (px, py, sx, sy)
@@ -144,8 +144,8 @@ module Sprite =
         let texCoords =
             box2
                 (v2
-                    (if flipH then texCoordsUnflipped.Position.X + texCoordsUnflipped.Size.X else texCoordsUnflipped.Position.X)
-                    (if flipV then texCoordsUnflipped.Position.Y + texCoordsUnflipped.Size.Y else texCoordsUnflipped.Position.Y))
+                    (if flipH then texCoordsUnflipped.Min.X + texCoordsUnflipped.Size.X else texCoordsUnflipped.Min.X)
+                    (if flipV then texCoordsUnflipped.Min.Y + texCoordsUnflipped.Size.Y else texCoordsUnflipped.Min.Y))
                 (v2
                     (if flipH then -texCoordsUnflipped.Size.X else texCoordsUnflipped.Size.X)
                     (if flipV then -texCoordsUnflipped.Size.Y else texCoordsUnflipped.Size.Y))
@@ -160,7 +160,7 @@ module Sprite =
         // setup shader
         Gl.UseProgram shader
         Gl.UniformMatrix4 (modelViewProjectionUniform, false, modelViewProjection)
-        Gl.Uniform4 (texCoords4Uniform, texCoords.Position.X, texCoords.Position.Y, texCoords.Size.X, texCoords.Size.Y)
+        Gl.Uniform4 (texCoords4Uniform, texCoords.Min.X, texCoords.Min.Y, texCoords.Size.X, texCoords.Size.Y)
         Gl.Uniform4 (colorUniform, color.R, color.G, color.B, color.A)
         Gl.Uniform1 (texUniform, 0)
         Gl.ActiveTexture TextureUnit.Texture0

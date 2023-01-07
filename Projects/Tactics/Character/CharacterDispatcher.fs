@@ -55,5 +55,5 @@ module CharacterDispatcher =
             let bounds = entity.GetBounds world
             Some
                 (box3
-                    (bounds.Position + bounds.Size * v3 0.0f 0.5f 0.0f)
+                    (bounds.Min + bounds.Size * v3 0.0f 0.5f 0.0f)
                     (bounds.Size * v3 1.0f 0.5f 1.0f))

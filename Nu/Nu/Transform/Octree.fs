@@ -196,8 +196,8 @@ module internal Octnode =
                         [|for j in 0 .. granularity - 1 do
                             [|for k in 0 .. granularity - 1 do
                                 let childOffset = v3 (childSize.X * single i) (childSize.Y * single j) (childSize.Z * single k)
-                                let childPosition = bounds.Position + childOffset
-                                let childBounds = box3 childPosition childSize
+                                let childMin = bounds.Min + childOffset
+                                let childBounds = box3 childMin childSize
                                 yield make granularity childDepth childBounds|]|]|]
                 ValueLeft (nodes |> Array.concat |> Array.concat)
             else ValueRight (HashSet<'e Octelement> HashIdentity.Structural)

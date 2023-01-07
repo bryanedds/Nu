@@ -286,11 +286,11 @@ module TextFacetModule =
             let text = entity.GetText world
             if not (String.IsNullOrWhiteSpace text) then
                 let mutable transform = entity.GetTransform world
-                let perimeterUnscaled = transform.Perimeter  // gui currently ignores rotation and scale
+                let perimeter = transform.Perimeter // gui currently ignores rotation and scale
                 let horizon = transform.Horizon
                 let mutable textTransform = Transform.makeDefault false // centered-ness and offset is already baked into perimeterUnscaled
-                textTransform.Position <- perimeterUnscaled.Position + entity.GetMargins world + entity.GetTextOffset world
-                textTransform.Size <- perimeterUnscaled.Size - entity.GetMargins world * 2.0f
+                textTransform.Position <- perimeter.Min + entity.GetMargins world + entity.GetTextOffset world
+                textTransform.Size <- perimeter.Size - entity.GetMargins world * 2.0f
                 textTransform.Elevation <- transform.Elevation + 0.5f // lift text above parent
                 textTransform.Absolute <- transform.Absolute
                 let font = entity.GetFont world
@@ -992,7 +992,7 @@ module TileMapFacetModule =
             | Some tileMap ->
                 let mutable transform = entity.GetTransform world
                 let perimeterUnscaled = transform.PerimeterUnscaled // tile map currently ignores rotation and scale
-                let tileMapPosition = perimeterUnscaled.Position.V2
+                let tileMapPosition = perimeterUnscaled.Min.V2
                 let tileMapDescriptor = TmxMap.getDescriptor tileMapPosition tileMap
                 let bodyProperties =
                     TmxMap.getBodyProperties
@@ -1021,7 +1021,7 @@ module TileMapFacetModule =
                         (World.getUpdateTime world)
                         transform.Absolute
                         viewBounds
-                        perimeterUnscaled.Position.V2
+                        perimeterUnscaled.Min.V2
                         transform.Elevation
                         (entity.GetColor world)
                         (entity.GetGlow world)
@@ -1089,7 +1089,7 @@ module TmxMapFacetModule =
             let mutable transform = entity.GetTransform world
             let perimeterUnscaled = transform.PerimeterUnscaled // tmx map currently ignores rotation and scale
             let tmxMap = entity.GetTmxMap world
-            let tmxMapPosition = perimeterUnscaled.Position.V2
+            let tmxMapPosition = perimeterUnscaled.Min.V2
             let tmxMapDescriptor = TmxMap.getDescriptor tmxMapPosition tmxMap
             let bodyProperties =
                 TmxMap.getBodyProperties
@@ -1116,7 +1116,7 @@ module TmxMapFacetModule =
                     (World.getUpdateTime world)
                     transform.Absolute
                     viewBounds
-                    perimeterUnscaled.Position.V2
+                    perimeterUnscaled.Min.V2
                     transform.Elevation
                     (entity.GetColor world)
                     (entity.GetGlow world)
@@ -1301,7 +1301,7 @@ module StaticBillboardFacetModule =
             let bounds = entity.GetBounds world
             Some
                 (box3
-                    (bounds.Position + bounds.Size * v3 0.0f 0.5f 0.0f)
+                    (bounds.Min + bounds.Size * v3 0.0f 0.5f 0.0f)
                     (bounds.Size * v3 1.0f 0.5f 1.0f))
 
 [<AutoOpen>]

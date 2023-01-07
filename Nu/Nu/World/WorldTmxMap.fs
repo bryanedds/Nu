@@ -329,7 +329,7 @@ module TmxMap =
                             let r2 = viewBounds.Size
                             (r, r2)
                         else
-                            let r = viewBounds.Position - parallaxPosition
+                            let r = viewBounds.Min - parallaxPosition
                             let r2 = r + viewBounds.Size
                             (r, r2)
 
@@ -375,7 +375,7 @@ module TmxMap =
 
                             // compute strip transform
                             let mutable transform = Transform.makeDefault false
-                            transform.Position <- v3 (xS - modulus r.X tileSize.X) (single yC * tileSize.Y - modulus r.Y tileSize.Y) 0.0f + viewBounds.Position.V3
+                            transform.Position <- v3 (xS - modulus r.X tileSize.X) (single yC * tileSize.Y - modulus r.Y tileSize.Y) 0.0f + viewBounds.Min.V3
                             transform.Size <- v3 (single tiles.Count * tileSize.X) tileSize.Y 0.0f
                             transform.Elevation <- elevation
                             transform.Absolute <- absolute

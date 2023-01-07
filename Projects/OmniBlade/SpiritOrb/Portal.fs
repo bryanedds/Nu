@@ -17,7 +17,6 @@ module Portal =
 
         (* Perimeter Properties *)
         member this.Perimeter = this.Perimeter_
-        member this.Position = this.Perimeter_.Position
         member this.Center = this.Perimeter_.Center
         member this.Bottom = this.Perimeter_.Bottom
         member this.Size = this.Perimeter_.Size

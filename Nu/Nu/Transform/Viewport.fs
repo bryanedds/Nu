@@ -27,10 +27,10 @@ module Viewport =
         /// Compute the 2d projection matrix.
         member this.Projection2d =
             Matrix4x4.CreateOrthographicOffCenter
-                (single (this.Bounds.Position.X),
-                 single (this.Bounds.Position.X + this.Bounds.Size.X),
-                 single (this.Bounds.Position.Y),
-                 single (this.Bounds.Position.Y + this.Bounds.Size.Y),
+                (single (this.Bounds.Min.X),
+                 single (this.Bounds.Min.X + this.Bounds.Size.X),
+                 single (this.Bounds.Min.Y),
+                 single (this.Bounds.Min.Y + this.Bounds.Size.Y),
                  -1.0f, 1.0f)
 
         /// Compute the 2d view projection matrix.

@@ -168,7 +168,7 @@ module AvatarDispatcher =
                 else just world
 
         override this.Physics (position, _, _, _, avatar, _, _) =
-            let avatar = Avatar.updatePosition (constant position) avatar
+            let avatar = Avatar.updateMin (constant position) avatar
             just avatar
 
         override this.View (avatar, entity, world) =

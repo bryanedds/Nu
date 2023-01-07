@@ -114,7 +114,7 @@ namespace Nu
         {
             const float Epsilon = 1e-6f;
 
-            Vector3 min = box.Position, max = box.Position + box.Size;
+            Vector3 min = box.Min, max = box.Min + box.Size;
             float? tMin = null, tMax = null;
 
             if (Math.Abs(Direction.X) < Epsilon)
