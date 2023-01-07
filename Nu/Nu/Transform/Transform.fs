@@ -159,30 +159,16 @@ type [<NoEquality; NoComparison>] Transform =
             let perimeter = this.Perimeter
             perimeter.Center
         and set (value : Vector3) =
-            this.Scale_ <- Vector3.One
-            let perimeter = this.Perimeter
-            let perimeterCenter = perimeter.Translate (value - perimeter.Center)
-            this.PerimeterUnscaled <- perimeterCenter
+            let delta = value - this.Center
+            this.Position <- this.Position + delta
 
     member this.Bottom
         with get () =
             let perimeter = this.Perimeter
             perimeter.Bottom
         and set (value : Vector3) =
-            this.Scale_ <- Vector3.One
-            let perimeter = this.Perimeter
-            let bottom = perimeter.Translate (value - perimeter.Bottom)
-            this.PerimeterUnscaled <- bottom
-
-    member this.TopLeft
-        with get () =
-            let perimeter = this.Perimeter
-            perimeter.TopLeft
-        and set (value : Vector3) =
-            this.Scale_ <- Vector3.One
-            let perimeter = this.Perimeter
-            let topLeft = perimeter.Translate (value - perimeter.TopLeft)
-            this.PerimeterUnscaled <- topLeft
+            let delta = value - this.Bottom
+            this.Position <- this.Position + delta
 
     member this.PerimeterUnscaled
         with get () =

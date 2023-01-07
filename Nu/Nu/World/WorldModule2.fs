@@ -710,19 +710,17 @@ module WorldModule2 =
                     let bodySource = bodyTransformMessage.BodySource
                     let entity = bodySource.Simulant :?> Entity
                     if entity.Exists world && entity.IsSelected world then
-                        let entityState = World.getEntityState entity world // OPTIMIZATION: invoke entity state directly.
-                        let centerOffset = if entityState.Centered then v3Zero else entityState.Size * v3UncenteredOffset
-                        let position = bodyTransformMessage.Position - centerOffset
+                        let center = bodyTransformMessage.Center
                         let rotation = bodyTransformMessage.Rotation
                         let linearVelocity = bodyTransformMessage.LinearVelocity
                         let angularVelocity = bodyTransformMessage.AngularVelocity
                         let world =
                             if bodySource.BodyId = 0UL
-                            then entity.ApplyPhysics position rotation linearVelocity angularVelocity world
+                            then entity.ApplyPhysics center rotation linearVelocity angularVelocity world
                             else world
                         // TODO: P1: don't publish if PublishBodyTransformEvent is false.
                         let transformData =
-                            { BodyPosition = position
+                            { BodyCenter = center
                               BodyRotation = rotation
                               BodyLinearVelocity = linearVelocity
                               BodyAngularVelocity = angularVelocity }
@@ -1154,9 +1152,9 @@ module EntityDispatcherModule2 =
             then World.setEntityModel<'model> true (makeInitial world) entity world |> snd'
             else world
 
-        override this.ApplyPhysics (position, rotation, linearVelocity, angularVelocity, entity, world) =
+        override this.ApplyPhysics (center, rotation, linearVelocity, angularVelocity, entity, world) =
             let model = this.GetModel entity world
-            let (signals, model) = this.Physics (position, rotation, linearVelocity, angularVelocity, model, entity, world)
+            let (signals, model) = this.Physics (center, rotation, linearVelocity, angularVelocity, model, entity, world)
             let world = this.SetModel model entity world
             Signal.processSignals this.Message this.Command (this.Model entity) signals entity world
 

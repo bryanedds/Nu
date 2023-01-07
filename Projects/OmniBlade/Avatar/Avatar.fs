@@ -24,7 +24,6 @@ module Avatar =
 
         (* Perimeter Properties *)
         member this.Perimeter = this.Perimeter_
-        member this.Min = this.Perimeter_.Min
         member this.Center = this.Perimeter_.Center
         member this.Bottom = this.Perimeter_.Bottom
         member this.BottomOffset = this.Perimeter_.Bottom + Constants.Field.CharacterBottomOffset
@@ -78,9 +77,6 @@ module Avatar =
         if bounds =/= avatar.Perimeter
         then { avatar with Perimeter_ = bounds }
         else avatar
-
-    let updateMin updater (avatar : Avatar) =
-        updatePerimeter (fun bounds -> bounds.Min |> updater |> bounds.WithMin) avatar
 
     let updateCenter updater (avatar : Avatar) =
         updatePerimeter (fun bounds -> bounds.Center |> updater |> bounds.WithCenter) avatar

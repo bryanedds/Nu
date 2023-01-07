@@ -467,20 +467,20 @@ module WorldEntityModule =
         member this.TraverseChildren effect world = World.traverseEntityEntities effect this world
 
         /// Apply physics changes to an entity.
-        member this.ApplyPhysics (position : Vector3) rotation linearVelocity angularVelocity world =
+        member this.ApplyPhysics (center : Vector3) rotation linearVelocity angularVelocity world =
             let mutable oldTransform = this.GetTransform world
             let mutable newTransform = oldTransform
             let world =
-                if  v3Neq oldTransform.Position position ||
+                if  v3Neq oldTransform.Center center ||
                     quatNeq oldTransform.Rotation rotation then
-                    newTransform.Position <- position
+                    newTransform.Center <- center
                     newTransform.Rotation <- rotation
                     this.SetTransformByRefWithoutEvent (&newTransform, world)
                 else world
             let world = this.SetXtensionPropertyWithoutEvent "LinearVelocity" linearVelocity world
             let world = this.SetXtensionPropertyWithoutEvent "AngularVelocity" angularVelocity world
             let dispatcher = this.GetDispatcher world
-            dispatcher.ApplyPhysics (position, rotation, linearVelocity, angularVelocity, this, world)
+            dispatcher.ApplyPhysics (center, rotation, linearVelocity, angularVelocity, this, world)
 
         /// Propagate entity physics properties into the physics system.
         member this.PropagatePhysics world =
