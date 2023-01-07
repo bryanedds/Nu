@@ -718,28 +718,28 @@ type QuaternionConverter () =
 [<AutoOpen>]
 module Box2 =
     type Box2 with
-        member this.Box3 = Box3 (v3 this.Position.X this.Position.Y 0.0f, v3 this.Size.X this.Size.Y 0.0f)
+        member this.Box3 = Box3 (v3 this.Min.X this.Min.Y 0.0f, v3 this.Size.X this.Size.Y 0.0f)
         member this.Width = this.Size.X
         member this.Height = this.Size.Y
         member this.Extent = this.Size * 0.5f
-        member this.Center = this.Position + this.Extent
-        member this.Top = v2 (this.Position.X + this.Size.X * 0.5f) (this.Position.Y + this.Size.Y)
-        member this.Bottom = v2 (this.Position.X + this.Size.X * 0.5f) this.Position.Y
-        member this.Right = v2 (this.Position.X + this.Size.X) (this.Position.Y + this.Size.Y * 0.5f)
-        member this.Left = v2 this.Position.X (this.Position.Y + this.Size.Y * 0.5f)
-        member this.TopLeft = v2 this.Position.X (this.Position.Y + this.Size.Y)
-        member this.TopRight = v2 (this.Position.X + this.Size.X) (this.Position.Y + this.Size.Y)
-        member this.BottomLeft = this.Position
-        member this.BottomRight = v2 (this.Position.X + this.Size.X) this.Position.Y
+        member this.Center = this.Min + this.Extent
+        member this.Top = v2 (this.Min.X + this.Size.X * 0.5f) (this.Min.Y + this.Size.Y)
+        member this.Bottom = v2 (this.Min.X + this.Size.X * 0.5f) this.Min.Y
+        member this.Right = v2 (this.Min.X + this.Size.X) (this.Min.Y + this.Size.Y * 0.5f)
+        member this.Left = v2 this.Min.X (this.Min.Y + this.Size.Y * 0.5f)
+        member this.TopLeft = v2 this.Min.X (this.Min.Y + this.Size.Y)
+        member this.TopRight = v2 (this.Min.X + this.Size.X) (this.Min.Y + this.Size.Y)
+        member this.BottomLeft = this.Min
+        member this.BottomRight = v2 (this.Min.X + this.Size.X) this.Min.Y
         member this.IsEmpty = this.Equals Box2.Zero
-        member this.Translate translation = Box2 (this.Position + translation, this.Size)
-        member this.WithPosition position = Box2 (position, this.Size)
+        member this.Translate translation = Box2 (this.Min + translation, this.Size)
+        member this.WithMin min = Box2 (min, this.Size)
         member this.WithCenter center = this.Translate (center - this.Center)
         member this.WithBottom bottom = this.Translate (bottom - this.Bottom)
-        member this.WithSize size = Box2 (this.Position, size)
+        member this.WithSize size = Box2 (this.Min, size)
 
     let box2Zero = Box2.Zero
-    let inline box2 position size = Box2 (position, size)
+    let inline box2 min size = Box2 (min, size)
     let inline box2Eq (b : Box2) (b2 : Box2) = b.Equals b2
     let inline box2Neq (b : Box2) (b2 : Box2) = not (b.Equals b2)
 
@@ -755,7 +755,7 @@ type Box2Converter () =
         if destType = typeof<Symbol> then
             let box2 = source :?> Box2
             Symbols
-                ([Symbols ([Number (scstring box2.Position.X, ValueNone); Number (scstring box2.Position.Y, ValueNone)], ValueNone)
+                ([Symbols ([Number (scstring box2.Min.X, ValueNone); Number (scstring box2.Min.Y, ValueNone)], ValueNone)
                   Symbols ([Number (scstring box2.Size.X, ValueNone); Number (scstring box2.Size.Y, ValueNone)], ValueNone)], ValueNone) :> obj
         elif destType = typeof<Box2> then source
         else failconv "Invalid Box2Converter conversion to source." None
@@ -768,8 +768,8 @@ type Box2Converter () =
         match source with
         | :? Symbol as symbol ->
             match symbol with
-            | Symbols ([positionSymbol; sizeSymbol], _) ->
-                match (positionSymbol, sizeSymbol) with
+            | Symbols ([minSymbol; sizeSymbol], _) ->
+                match (minSymbol, sizeSymbol) with
                 | (Symbols ([Number (px, _); Number (py, _)], _), Symbols ([Number (sx, _); Number (sy, _)], _)) ->
                     Box2 (scvalue px, scvalue py, scvalue sx, scvalue sy) :> obj
                 | _ ->
@@ -782,18 +782,18 @@ type Box2Converter () =
 [<AutoOpen>]
 module Box3 =
     type Box3 with
-        member this.Box2 = Box2 (v2 this.Position.X this.Position.Y, v2 this.Size.X this.Size.Y)
+        member this.Box2 = Box2 (v2 this.Min.X this.Min.Y, v2 this.Size.X this.Size.Y)
         member this.Extent = this.Size * 0.5f
-        member this.Center = this.Position + this.Extent
-        member this.Top = v3 (this.Position.X + this.Size.X * 0.5f) (this.Position.Y + this.Size.Y) (this.Position.Z + this.Size.Z * 0.5f)
-        member this.Bottom = v3 (this.Position.X + this.Size.X * 0.5f) this.Position.Y (this.Position.Z + this.Size.Z * 0.5f)
-        member this.Right = v3 (this.Position.X + this.Size.X) (this.Position.Y + this.Size.Y * 0.5f) (this.Position.Z + this.Size.Z * 0.5f)
-        member this.Left = v3 this.Position.X (this.Position.Y + this.Size.Y * 0.5f) (this.Position.Z + this.Size.Z * 0.5f)
-        member this.TopLeft = v3 this.Position.X (this.Position.Y + this.Size.Y) (this.Position.Z + this.Size.Z * 0.5f)
-        member this.TopRight = v3 (this.Position.X + this.Size.X) (this.Position.Y + this.Size.Y) (this.Position.Z + this.Size.Z * 0.5f)
-        member this.BottomLeft = v3 this.Position.X this.Position.Y (this.Position.Z + this.Size.Z * 0.5f)
-        member this.BottomRight = v3 (this.Position.X + this.Size.X) this.Position.Y (this.Position.Z + this.Size.Z * 0.5f)
-        member this.Translate translation = Box3 (this.Position + translation, this.Size)
+        member this.Center = this.Min + this.Extent
+        member this.Top = v3 (this.Min.X + this.Size.X * 0.5f) (this.Min.Y + this.Size.Y) (this.Min.Z + this.Size.Z * 0.5f)
+        member this.Bottom = v3 (this.Min.X + this.Size.X * 0.5f) this.Min.Y (this.Min.Z + this.Size.Z * 0.5f)
+        member this.Right = v3 (this.Min.X + this.Size.X) (this.Min.Y + this.Size.Y * 0.5f) (this.Min.Z + this.Size.Z * 0.5f)
+        member this.Left = v3 this.Min.X (this.Min.Y + this.Size.Y * 0.5f) (this.Min.Z + this.Size.Z * 0.5f)
+        member this.TopLeft = v3 this.Min.X (this.Min.Y + this.Size.Y) (this.Min.Z + this.Size.Z * 0.5f)
+        member this.TopRight = v3 (this.Min.X + this.Size.X) (this.Min.Y + this.Size.Y) (this.Min.Z + this.Size.Z * 0.5f)
+        member this.BottomLeft = v3 this.Min.X this.Min.Y (this.Min.Z + this.Size.Z * 0.5f)
+        member this.BottomRight = v3 (this.Min.X + this.Size.X) this.Min.Y (this.Min.Z + this.Size.Z * 0.5f)
+        member this.Translate translation = Box3 (this.Min + translation, this.Size)
         member this.Transform (transformation : Matrix4x4) =
             if not transformation.IsIdentity then
                 let corners = this.Corners
@@ -814,13 +814,13 @@ module Box3 =
                     maxZ <- max maxZ corner.Z
                 Box3 (minX, minY, minZ, maxX- minX, maxY - minY, maxZ - minZ)
             else this
-        member this.WithPosition position = Box3 (position, this.Size)
+        member this.WithMin min = Box3 (min, this.Size)
         member this.WithCenter center = this.Translate (center - this.Center)
         member this.WithBottom bottom = this.Translate (bottom - this.Bottom)
-        member this.WithSize size = Box3 (this.Position, size)
+        member this.WithSize size = Box3 (this.Min, size)
 
     let box3Zero = Box3.Zero
-    let inline box3 position size = Box3 (position, size)
+    let inline box3 min size = Box3 (min, size)
     let inline box3Eq (b : Box3) (b2 : Box3) = b.Equals b2
     let inline box3Neq (b : Box3) (b2 : Box3) = not (b.Equals b2)
 
@@ -836,7 +836,7 @@ type Box3Converter () =
         if destType = typeof<Symbol> then
             let box3 = source :?> Box3
             Symbols
-                ([Symbols ([Number (scstring box3.Position.X, ValueNone); Number (scstring box3.Position.Y, ValueNone); Number (scstring box3.Position.Z, ValueNone)], ValueNone)
+                ([Symbols ([Number (scstring box3.Min.X, ValueNone); Number (scstring box3.Min.Y, ValueNone); Number (scstring box3.Min.Z, ValueNone)], ValueNone)
                   Symbols ([Number (scstring box3.Size.X, ValueNone); Number (scstring box3.Size.Y, ValueNone); Number (scstring box3.Size.Z, ValueNone)], ValueNone)], ValueNone) :> obj
         elif destType = typeof<Box3> then source
         else failconv "Invalid Box3Converter conversion to source." None
@@ -849,8 +849,8 @@ type Box3Converter () =
         match source with
         | :? Symbol as symbol ->
             match symbol with
-            | Symbols ([positionSymbol; sizeSymbol], _) ->
-                match (positionSymbol, sizeSymbol) with
+            | Symbols ([minSymbol; sizeSymbol], _) ->
+                match (minSymbol, sizeSymbol) with
                 | (Symbols ([Number (px, _); Number (py, _); Number (pz, _)], _), Symbols ([Number (sx, _); Number (sy, _); Number (sz, _)], _)) ->
                     Box3 (scvalue px, scvalue py, scvalue pz, scvalue sx, scvalue sy, scvalue sz) :> obj
                 | _ ->
@@ -864,23 +864,23 @@ type Box3Converter () =
 module Box2i =
     type Box2i with
         member this.Extent = this.Size / 2
-        member this.Center = this.Position + this.Extent
-        member this.Top = v2i (this.Position.X + this.Size.X / 2) (this.Position.Y + this.Size.Y)
-        member this.Bottom = v2i (this.Position.X + this.Size.X / 2) this.Position.Y
-        member this.Right = v2i (this.Position.X + this.Size.X) (this.Position.Y + this.Size.Y / 2)
-        member this.Left = v2i this.Position.X (this.Position.Y + this.Size.Y / 2)
-        member this.TopLeft = v2i this.Position.X (this.Position.Y + this.Size.Y)
-        member this.TopRight = v2i (this.Position.X + this.Size.X) (this.Position.Y + this.Size.Y)
-        member this.BottomLeft = this.Position
-        member this.BottomRight = v2i (this.Position.X + this.Size.X) this.Position.Y
-        member this.Translate translation = Box2i (this.Position + translation, this.Size)
-        member this.WithPosition position = Box2i (position, this.Size)
+        member this.Center = this.Min + this.Extent
+        member this.Top = v2i (this.Min.X + this.Size.X / 2) (this.Min.Y + this.Size.Y)
+        member this.Bottom = v2i (this.Min.X + this.Size.X / 2) this.Min.Y
+        member this.Right = v2i (this.Min.X + this.Size.X) (this.Min.Y + this.Size.Y / 2)
+        member this.Left = v2i this.Min.X (this.Min.Y + this.Size.Y / 2)
+        member this.TopLeft = v2i this.Min.X (this.Min.Y + this.Size.Y)
+        member this.TopRight = v2i (this.Min.X + this.Size.X) (this.Min.Y + this.Size.Y)
+        member this.BottomLeft = this.Min
+        member this.BottomRight = v2i (this.Min.X + this.Size.X) this.Min.Y
+        member this.Translate translation = Box2i (this.Min + translation, this.Size)
+        member this.WithMin min = Box2i (min, this.Size)
         member this.WithCenter center = this.Translate (center - this.Center)
         member this.WithBottom bottom = this.Translate (bottom - this.Bottom)
-        member this.WithSize size = Box2i (this.Position, size)
+        member this.WithSize size = Box2i (this.Min, size)
 
     let box2iZero = Box2i.Zero
-    let inline box2i position size = Box2i (position, size)
+    let inline box2i min size = Box2i (min, size)
     let inline box2iEq (b : Box2i) (b2 : Box2i) = b.Equals b2
     let inline box2iNeq (b : Box2i) (b2 : Box2i) = not (b.Equals b2)
 
@@ -896,7 +896,7 @@ type Box2iConverter () =
         if destType = typeof<Symbol> then
             let box2i = source :?> Box2i
             Symbols
-                ([Symbols ([Number (scstring box2i.Position.X, ValueNone); Number (scstring box2i.Position.Y, ValueNone)], ValueNone)
+                ([Symbols ([Number (scstring box2i.Min.X, ValueNone); Number (scstring box2i.Min.Y, ValueNone)], ValueNone)
                   Symbols ([Number (scstring box2i.Size.X, ValueNone); Number (scstring box2i.Size.Y, ValueNone)], ValueNone)], ValueNone) :> obj
         elif destType = typeof<Box2i> then source
         else failconv "Invalid Box2iConverter conversion to source." None
@@ -909,8 +909,8 @@ type Box2iConverter () =
         match source with
         | :? Symbol as symbol ->
             match symbol with
-            | Symbols ([positionSymbol; sizeSymbol], _) ->
-                match (positionSymbol, sizeSymbol) with
+            | Symbols ([minSymbol; sizeSymbol], _) ->
+                match (minSymbol, sizeSymbol) with
                 | (Symbols ([Number (px, _); Number (py, _)], _), Symbols ([Number (sx, _); Number (sy, _)], _)) ->
                     Box2i (scvalue px, scvalue py, scvalue sx, scvalue sy) :> obj
                 | _ ->
@@ -1108,7 +1108,7 @@ type ColorConverter () =
 [<AutoOpen>]
 module Plane3 =
 
-    let inline plane3 (position : Vector3) (normal : Vector3) = Plane3 (position, normal)
+    let inline plane3 (min : Vector3) (normal : Vector3) = Plane3 (min, normal)
     let inline plane3Equation (normal : Vector3) (d : single) = Plane3 (normal, d)
     let inline plane3Eq (left : Plane3) (right : Plane3) = left.Equals right
     let inline plane3Neq (left : Plane3) (right : Plane3) = not (left.Equals right)
@@ -1123,7 +1123,7 @@ module Plane3 =
 [<AutoOpen>]
 module Ray3 =
 
-    let inline ray (position : Vector3) (direction : Vector3) = Ray3 (position, direction)
+    let inline ray (min : Vector3) (direction : Vector3) = Ray3 (min, direction)
     let inline rayEq (left : Ray3) (right : Ray3) = left.Equals right
     let inline rayNeq (left : Ray3) (right : Ray3) = not (left.Equals right)
 

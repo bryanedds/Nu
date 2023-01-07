@@ -59,7 +59,7 @@ namespace Nu
                 return ContainmentType.Contains;
 
             //check if the distance from sphere center to cube face < radius
-            Vector3 min = box.Position, max = box.Position + box.Size;
+            Vector3 min = box.Min, max = box.Min + box.Size;
             double dmin = 0;
 
             if (Center.X < min.X)
@@ -223,7 +223,7 @@ namespace Nu
         public static void CreateFromBox3(in Box3 box, out Sphere result)
         {
             // Find the center of the box.
-            Vector3 min = box.Position, max = box.Position + box.Size;
+            Vector3 min = box.Min, max = box.Min + box.Size;
             Vector3 center = new Vector3((min.X + max.X) / 2.0f,
                                          (min.Y + max.Y) / 2.0f,
                                          (min.Z + max.Z) / 2.0f);

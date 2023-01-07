@@ -8,7 +8,6 @@
 //
 
 using System;
-using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Numerics;
 
@@ -18,15 +17,15 @@ namespace Nu
     /// Defines an axis-aligned 3D box (cube).
     /// Copied from - https://github.com/opentk/opentk/blob/opentk5.0/src/OpenTK.Mathematics/Geometry/Box3.cs
     /// Heavily modified by BGE to more closely conform to System.Numerics and use a size-preserving representation
-    /// ([pos, siz] instead of [min, max]).
+    /// ([min, size] instead of [min, max]).
     /// </summary>
     [StructLayout(LayoutKind.Sequential)]
     public struct Box3 : IEquatable<Box3>
     {
         /// <summary>
-        /// The position of the box.
+        /// The min of the box.
         /// </summary>
-        public Vector3 Position;
+        public Vector3 Min;
 
         /// <summary>
         /// The size of the box.
@@ -36,27 +35,27 @@ namespace Nu
         /// <summary>
         /// Initializes a new instance of the <see cref="Box3"/> struct.
         /// </summary>
-        public Box3(Vector3 position, Vector3 size)
+        public Box3(Vector3 min, Vector3 size)
         {
-            Position = position;
+            Min = min;
             Size = size;
         }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Box3"/> struct.
         /// </summary>
-        public Box3(float positionX, float positionY, float positionZ, float sizeX, float sizeY, float sizeZ)
+        public Box3(float minX, float minY, float minZ, float sizeX, float sizeY, float sizeZ)
         {
-            Position = new Vector3(positionX, positionY, positionZ);
+            Min = new Vector3(minX, minY, minZ);
             Size = new Vector3(sizeX, sizeY, sizeZ);
         }
 
-        /// Gets a box with a position 0,0,0 with the a size of 0,0,0.
+        /// Gets a box with a min 0,0,0 with the a size of 0,0,0.
         /// </summary>
         public static readonly Box3 Zero = default(Box3);
 
         /// <summary>
-        /// Gets a box with a position 0,0 with the a size of 1,1.
+        /// Gets a box with a min 0,0 with the a size of 1,1.
         /// </summary>
         public static readonly Box2 Unit = new Box2(new Vector2(0, 0), new Vector2(1, 1));
 
@@ -65,15 +64,15 @@ namespace Nu
         /// </summary>
         public static Box3 Enclose(Vector3 point, Vector3 point2)
 		{
-            var position = new Vector3(
+            var min = new Vector3(
                 Math.Min(point.X, point2.X),
                 Math.Min(point.Y, point2.Y),
                 Math.Min(point.Z, point2.Z));
-            var position2 = new Vector3(
+            var min2 = new Vector3(
                 Math.Max(point.X, point2.X),
                 Math.Max(point.Y, point2.Y),
                 Math.Max(point.Z, point2.Z));
-            return new Box3(position, position2 - position);
+            return new Box3(min, min2 - min);
         }
 
         /// <summary>
@@ -117,14 +116,14 @@ namespace Nu
         public bool Equals(Box3 other)
         {
             return
-                Position.Equals(other.Position) &&
+                Min.Equals(other.Min) &&
                 Size.Equals(other.Size);
         }
 
         /// <inheritdoc/>
         public override int GetHashCode()
         {
-            var hashCode = Position.GetHashCode();
+            var hashCode = Min.GetHashCode();
             hashCode = (hashCode * 397) ^ Size.GetHashCode();
             return hashCode;
         }
@@ -132,7 +131,7 @@ namespace Nu
         /// <inheritdoc/>
         public override string ToString()
         {
-            return string.Format("{0}\n{1}", Position, Size);
+            return string.Format("{0}\n{1}", Min, Size);
         }
 
         /// <summary>
@@ -142,7 +141,7 @@ namespace Nu
         {
             get
             {
-                var min = Position;
+                var min = Min;
                 var max = min + Size;
                 var min2 = -max;
                 var max2 = -min;
@@ -166,7 +165,7 @@ namespace Nu
 		{
             get
             {
-                Vector3 min = this.Position, max = this.Position + this.Size;
+                Vector3 min = this.Min, max = this.Min + this.Size;
                 return new Vector3[] {
                     new Vector3(min.X, max.Y, max.Z),
                     new Vector3(max.X, max.Y, max.Z),
@@ -187,7 +186,7 @@ namespace Nu
         /// <returns>Box containing area of both.</returns>
         public Box3 Combine(Vector3 point)
         {
-            var min = Position;
+            var min = Min;
             var max = min + Size;
             var min2 = new Vector3();
             var max2 = new Vector3();
@@ -207,9 +206,9 @@ namespace Nu
         /// <returns>Box containing area of both.</returns>
         public Box3 Combine(Box3 box)
         {
-            var min = Position;
+            var min = Min;
             var max = min + Size;
-            var min2 = box.Position;
+            var min2 = box.Min;
             var max2 = min2 + box.Size;
             var min3 = new Vector3();
             var max3 = new Vector3();
@@ -247,7 +246,7 @@ namespace Nu
         /// </param>
         public void Intersects(in Vector3 point, out bool result)
         {
-            Vector3 min = this.Position, max = this.Position + this.Size;
+            Vector3 min = this.Min, max = this.Min + this.Size;
             result =
                 max.X >= point.X &&
                 max.Y >= point.Y &&
@@ -282,8 +281,8 @@ namespace Nu
         /// </param>
         public void Intersects(in Box3 box, out bool result)
         {
-            Vector3 min = this.Position, max = this.Position + this.Size;
-            Vector3 min2 = box.Position, max2 = box.Position + box.Size;
+            Vector3 min = this.Min, max = this.Min + this.Size;
+            Vector3 min2 = box.Min, max2 = box.Min + box.Size;
             result =
                 !(max.X < min2.X ||
                   max.Y < min2.Y ||
@@ -318,7 +317,7 @@ namespace Nu
         /// </param>
         public void Intersects(in Sphere sphere, out bool result)
         {
-            Vector3 min = this.Position, max = this.Position + this.Size;
+            Vector3 min = this.Min, max = this.Min + this.Size;
             var squareDistance = 0.0f;
             var point = sphere.Center;
             if (point.X < min.X) squareDistance += (min.X - point.X) * (min.X - point.X);
@@ -360,8 +359,8 @@ namespace Nu
             Vector3 positiveVertex;
             Vector3 negativeVertex;
 
-            var min = Position;
-            var max = Position + Size;
+            var min = Min;
+            var max = Min + Size;
 
             if (plane.Normal.X >= 0)
             {

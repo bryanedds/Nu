@@ -32,7 +32,6 @@ module Prop =
 
         (* Perimeter Properties *)
         member this.Perimeter = this.Perimeter_
-        member this.Position = this.Perimeter_.Position
         member this.Center = this.Perimeter_.Center
         member this.Bottom = this.Perimeter_.Bottom
         member this.BottomInset = this.Perimeter_.Bottom + Constants.Field.CharacterBottomOffset
@@ -46,9 +45,6 @@ module Prop =
 
     let updatePerimeter updater (prop : Prop) =
         { prop with Perimeter_ = updater prop.Perimeter_ }
-
-    let updatePosition updater (prop : Prop) =
-        { prop with Perimeter_ = prop.Position |> updater |> prop.Perimeter.WithPosition }
 
     let updateCenter updater (prop : Prop) =
         { prop with Perimeter_ = prop.Center |> updater |> prop.Perimeter.WithCenter }

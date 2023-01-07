@@ -665,7 +665,7 @@ module FieldDispatcher =
                 if World.getUpdateRate world <> 0L then
                     let world = World.setEyePosition2d field.Avatar.Center.V2 world
                     let tileMapPerimeter2d = (Simulants.FieldSceneTileMap.GetPerimeter world).Box2
-                    let eyeBounds = tileMapPerimeter2d.WithPosition (tileMapPerimeter2d.Position + v2 48.0f 48.0f)
+                    let eyeBounds = tileMapPerimeter2d.WithMin (tileMapPerimeter2d.Min + v2 48.0f 48.0f)
                     let eyeBounds = eyeBounds.WithSize (tileMapPerimeter2d.Size - v2 96.0f 96.0f)
                     let world = World.constrainEyeBounds2d eyeBounds world
                     just world
@@ -732,7 +732,7 @@ module FieldDispatcher =
                     [Entity.Position == v3Zero
                      Entity.Elevation :=
                         Constants.Field.ForegroundElevation +
-                        if field.Avatar.Position.Y >= 480.0f && field.FieldType = ForestConnector then 1.0f else 0.0f // HACK: adjusting to work around hacky fade impl for certain fields.
+                        if field.Avatar.Bottom.Y >= 480.0f && field.FieldType = ForestConnector then 1.0f else 0.0f // HACK: adjusting to work around hacky fade impl for certain fields.
                      Entity.Size == Constants.Gameplay.CharacterSize
                      Entity.Enabled :=
                         field.Menu.MenuState = MenuClosed &&

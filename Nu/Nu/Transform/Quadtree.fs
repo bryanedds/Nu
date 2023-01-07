@@ -77,7 +77,7 @@ module internal Quadnode =
                     [|for i in 0 .. granularity * granularity - 1 do
                         let childDepth = depth - 1
                         let childSize = v2 bounds.Size.X bounds.Size.Y / single granularity
-                        let childPosition = v2 bounds.Position.X bounds.Position.Y + v2 (childSize.X * single (i % granularity)) (childSize.Y * single (i / granularity))
+                        let childPosition = v2 bounds.Min.X bounds.Min.Y + v2 (childSize.X * single (i % granularity)) (childSize.Y * single (i / granularity))
                         let childBounds = box2 childPosition childSize
                         yield make granularity childDepth childBounds|]
                 ValueLeft nodes

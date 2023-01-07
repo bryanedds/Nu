@@ -215,8 +215,8 @@ module SpriteBatch =
 #endif
         private PopulateSpriteBatchVertex (perimeter : Box2) (pivot : Vector2) (rotation : single) (texCoords : Box2) (color : Color) env =
         let perimeterOffset = env.SpriteIndex * 4
-        env.Perimeters.[perimeterOffset] <- perimeter.Position.X
-        env.Perimeters.[perimeterOffset + 1] <- perimeter.Position.Y
+        env.Perimeters.[perimeterOffset] <- perimeter.Min.X
+        env.Perimeters.[perimeterOffset + 1] <- perimeter.Min.Y
         env.Perimeters.[perimeterOffset + 2] <- perimeter.Size.X
         env.Perimeters.[perimeterOffset + 3] <- perimeter.Size.Y
         let pivotOffset = env.SpriteIndex * 2
@@ -225,8 +225,8 @@ module SpriteBatch =
         let rotationOffset = env.SpriteIndex
         env.Rotations.[rotationOffset] <- rotation
         let texCoordsOffset = env.SpriteIndex * 4
-        env.TexCoordses.[texCoordsOffset] <- texCoords.Position.X
-        env.TexCoordses.[texCoordsOffset + 1] <- texCoords.Position.Y
+        env.TexCoordses.[texCoordsOffset] <- texCoords.Min.X
+        env.TexCoordses.[texCoordsOffset + 1] <- texCoords.Min.Y
         env.TexCoordses.[texCoordsOffset + 2] <- texCoords.Size.X
         env.TexCoordses.[texCoordsOffset + 3] <- texCoords.Size.Y
         let colorOffset = env.SpriteIndex * 4
@@ -235,7 +235,7 @@ module SpriteBatch =
         env.Colors.[colorOffset + 2] <- color.B
         env.Colors.[colorOffset + 3] <- color.A
 
-    let SubmitSpriteBatchSprite (absolute, position : Vector2, size : Vector2, pivot : Vector2, rotation, texCoords : Box2 inref, color : Color inref, bfs, bfd, beq, texture, env) =
+    let SubmitSpriteBatchSprite (absolute, min : Vector2, size : Vector2, pivot : Vector2, rotation, texCoords : Box2 inref, color : Color inref, bfs, bfd, beq, texture, env) =
 
         // adjust to potential sprite batch state changes
         let state = SpriteBatchState.make absolute bfs bfd beq texture
@@ -244,7 +244,7 @@ module SpriteBatch =
             Hl.Assert ()
 
         // populate vertices
-        let perimeter = box2 position size
+        let perimeter = box2 min size
         PopulateSpriteBatchVertex perimeter pivot rotation texCoords color env
 
         // advance sprite index

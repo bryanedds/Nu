@@ -502,6 +502,7 @@ module WorldTypes =
           DesiredScreen : DesiredScreen
           EyePosition2d : Vector2
           EyeSize2d : Vector2
+          EyeCentered2d : bool                                              
           EyePosition3d : Vector3
           EyeRotation3d : Quaternion
           EyeFrustum3dEnclosed : Frustum
@@ -526,6 +527,7 @@ module WorldTypes =
               DesiredScreen = DesireIgnore
               EyePosition2d = v2Zero
               EyeSize2d = v2 (single Constants.Render.VirtualResolutionX) (single Constants.Render.VirtualResolutionY)
+              EyeCentered2d = Constants.Engine.EyeCentered2dDefault
               EyePosition3d = eyePosition3d
               EyeRotation3d = eyeRotation3d
               EyeFrustum3dEnclosed = viewport.Frustum (Constants.Render.NearPlaneDistanceEnclosed, Constants.Render.FarPlaneDistanceEnclosed, eyePosition3d, eyeRotation3d)

@@ -314,10 +314,10 @@ type RandMap =
             | OriginE ->        (bounds.Right - v2iRight,                       [3; 3; 0; 2])
             | OriginS ->        (bounds.Top - v2iUp,                            [0; 0; 1; 3])
             | OriginW ->        (bounds.Left,                                   [1; 1; 0; 2])
-            | OriginNE ->       (v2i (dec bounds.Size.X) bounds.Position.Y,     [2; 2; 3; 3])
-            | OriginNW ->       (v2i bounds.Position.X bounds.Position.Y,       [2; 2; 1; 1])
+            | OriginNE ->       (v2i (dec bounds.Size.X) bounds.Min.Y,          [2; 2; 3; 3])
+            | OriginNW ->       (v2i bounds.Min.X bounds.Min.Y,                 [2; 2; 1; 1])
             | OriginSE ->       (v2i (dec bounds.Size.X) (dec bounds.Size.Y),   [0; 0; 3; 3])
-            | OriginSW ->       (v2i bounds.Position.X (dec bounds.Size.Y),     [0; 0; 1; 1])
+            | OriginSW ->       (v2i bounds.Min.X (dec bounds.Size.Y),          [0; 0; 1; 1])
         let (maps, rand) =
             List.fold (fun (maps, rand) bias ->
                 let map = { RandMap.make size with OriginOpt = Some cursor }

@@ -248,7 +248,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
 #endif
         private batchSprite
         absolute
-        position
+        min
         size
         pivot
         rotation
@@ -269,8 +269,8 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
                 let texelHeight = textureMetadata.TextureTexelHeight
                 let borderWidth = texelWidth * Constants.Render.SpriteBorderTexelScalar
                 let borderHeight = texelHeight * Constants.Render.SpriteBorderTexelScalar
-                let px = inset.Position.X * texelWidth + borderWidth
-                let py = (inset.Position.Y + inset.Size.Y) * texelHeight - borderHeight
+                let px = inset.Min.X * texelWidth + borderWidth
+                let py = (inset.Min.Y + inset.Size.Y) * texelHeight - borderHeight
                 let sx = inset.Size.X * texelWidth - borderWidth * 2.0f
                 let sy = -inset.Size.Y * texelHeight + borderHeight * 2.0f
                 Box2 (px, py, sx, sy)
@@ -288,8 +288,8 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
         let texCoords =
             box2
                 (v2
-                    (if flipH then texCoordsUnflipped.Position.X + texCoordsUnflipped.Size.X else texCoordsUnflipped.Position.X)
-                    (if flipV then texCoordsUnflipped.Position.Y + texCoordsUnflipped.Size.Y else texCoordsUnflipped.Position.Y))
+                    (if flipH then texCoordsUnflipped.Min.X + texCoordsUnflipped.Size.X else texCoordsUnflipped.Min.X)
+                    (if flipV then texCoordsUnflipped.Min.Y + texCoordsUnflipped.Size.Y else texCoordsUnflipped.Min.Y))
                 (v2
                     (if flipH then -texCoordsUnflipped.Size.X else texCoordsUnflipped.Size.X)
                     (if flipV then -texCoordsUnflipped.Size.Y else texCoordsUnflipped.Size.Y))
@@ -303,11 +303,11 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
 
         // attempt to draw normal sprite
         if color.A <> 0.0f then
-            OpenGL.SpriteBatch.SubmitSpriteBatchSprite (absolute, position, size, pivot, rotation, &texCoords, &color, bfs, bfd, beq, texture, renderer.RenderSpriteBatchEnv)
+            OpenGL.SpriteBatch.SubmitSpriteBatchSprite (absolute, min, size, pivot, rotation, &texCoords, &color, bfs, bfd, beq, texture, renderer.RenderSpriteBatchEnv)
 
         // attempt to draw glow sprite
         if glow.A <> 0.0f then
-            OpenGL.SpriteBatch.SubmitSpriteBatchSprite (absolute, position, size, pivot, rotation, &texCoords, &glow, OpenGL.BlendingFactor.SrcAlpha, OpenGL.BlendingFactor.One, OpenGL.BlendEquationMode.FuncAdd, texture, renderer.RenderSpriteBatchEnv)
+            OpenGL.SpriteBatch.SubmitSpriteBatchSprite (absolute, min, size, pivot, rotation, &texCoords, &glow, OpenGL.BlendingFactor.SrcAlpha, OpenGL.BlendingFactor.One, OpenGL.BlendEquationMode.FuncAdd, texture, renderer.RenderSpriteBatchEnv)
 
     /// Render sprite.
     static member renderSprite
@@ -321,7 +321,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
          renderer) =
         let absolute = transform.Absolute
         let perimeter = transform.Perimeter
-        let position = perimeter.Position.V2 * Constants.Render.VirtualScalar2
+        let min = perimeter.Min.V2 * Constants.Render.VirtualScalar2
         let size = perimeter.Size.V2 * Constants.Render.VirtualScalar2
         let pivot = transform.Pivot.V2 * Constants.Render.VirtualScalar2
         let rotation = transform.Angles.Z
@@ -330,7 +330,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
         | ValueSome renderAsset ->
             match renderAsset with
             | TextureAsset (_, textureMetadata, texture) ->
-                GlRenderer2d.batchSprite absolute position size pivot rotation insetOpt textureMetadata texture color blend glow flip renderer
+                GlRenderer2d.batchSprite absolute min size pivot rotation insetOpt textureMetadata texture color blend glow flip renderer
             | _ -> Log.trace "Cannot render sprite with a non-texture asset."
         | _ -> Log.info ("SpriteDescriptor failed to render due to unloadable assets for '" + scstring image + "'.")
 
@@ -347,7 +347,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
                     let transform = &particle.Transform
                     let absolute = transform.Absolute
                     let perimeter = transform.Perimeter
-                    let position = perimeter.Position.V2 * Constants.Render.VirtualScalar2
+                    let min = perimeter.Min.V2 * Constants.Render.VirtualScalar2
                     let size = perimeter.Size.V2 * Constants.Render.VirtualScalar2
                     let pivot = transform.Pivot.V2 * Constants.Render.VirtualScalar2
                     let rotation = transform.Angles.Z
@@ -355,7 +355,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
                     let glow = &particle.Glow
                     let flip = particle.Flip
                     let insetOpt = &particle.InsetOpt
-                    GlRenderer2d.batchSprite absolute position size pivot rotation insetOpt textureMetadata texture color blend glow flip renderer
+                    GlRenderer2d.batchSprite absolute min size pivot rotation insetOpt textureMetadata texture color blend glow flip renderer
                     index <- inc index
             | _ -> Log.trace "Cannot render particle with a non-texture asset."
         | _ -> Log.info ("RenderDescriptors failed to render due to unloadable assets for '" + scstring image + "'.")
@@ -375,7 +375,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
          renderer) =
         let absolute = transform.Absolute
         let perimeter = transform.Perimeter
-        let position = perimeter.Position.V2 * Constants.Render.VirtualScalar2
+        let min = perimeter.Min.V2 * Constants.Render.VirtualScalar2
         let size = perimeter.Size.V2 * Constants.Render.VirtualScalar2
         let eyePosition = eyePosition * Constants.Render.VirtualScalar2
         let eyeSize = eyeSize * Constants.Render.VirtualScalar2
@@ -398,11 +398,11 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
                 if tile.Gid <> 0 then // not the empty tile
                     let mapRun = mapSize.X
                     let (i, j) = (tileIndex % mapRun, tileIndex / mapRun)
-                    let tilePosition =
+                    let tileMin =
                         v2
-                            (position.X + tileSize.X * single i)
-                            (position.Y - tileSize.Y - tileSize.Y * single j + size.Y)
-                    let tileBounds = box2 tilePosition tileSize
+                            (min.X + tileSize.X * single i)
+                            (min.Y - tileSize.Y - tileSize.Y * single j + size.Y)
+                    let tileBounds = box2 tileMin tileSize
                     let viewBounds = box2 (eyePosition - eyeSize * 0.5f) eyeSize
                     if tileBounds.Intersects viewBounds then
         
@@ -437,7 +437,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
                             let tileIdPosition = tileId * tileSourceSize.X
                             let tileSourcePosition = v2 (single (tileIdPosition % tileSetWidth)) (single (tileIdPosition / tileSetWidth * tileSourceSize.Y))
                             let inset = box2 tileSourcePosition (v2 (single tileSourceSize.X) (single tileSourceSize.Y))
-                            GlRenderer2d.batchSprite absolute tilePosition tileSize tilePivot 0.0f (ValueSome inset) textureMetadata texture color Transparent glow flip renderer
+                            GlRenderer2d.batchSprite absolute tileMin tileSize tilePivot 0.0f (ValueSome inset) textureMetadata texture color Transparent glow flip renderer
                         | None -> ()
 
                 tileIndex <- inc tileIndex
@@ -458,7 +458,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
             let mutable transform = transform
             let absolute = transform.Absolute
             let perimeter = transform.Perimeter
-            let position = perimeter.Position.V2 * Constants.Render.VirtualScalar2
+            let position = perimeter.Min.V2 * Constants.Render.VirtualScalar2
             let size = perimeter.Size.V2 * Constants.Render.VirtualScalar2
             let viewport = Constants.Render.Viewport
             let viewProjection = viewport.ViewProjection2d (absolute, eyePosition, eyeSize)

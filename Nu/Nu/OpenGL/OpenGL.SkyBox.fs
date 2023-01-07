@@ -362,8 +362,8 @@ module SkyBox =
 
         // restore viewport
         Gl.Viewport
-            (currentViewportOffset.Bounds.Position.X,
-             currentViewportOffset.Bounds.Position.Y,
+            (currentViewportOffset.Bounds.Min.X,
+             currentViewportOffset.Bounds.Min.Y,
              currentViewportOffset.Bounds.Size.X,
              currentViewportOffset.Bounds.Size.Y)
         Hl.Assert ()
@@ -429,8 +429,8 @@ module SkyBox =
 
         // restore viewport
         Gl.Viewport
-            (currentViewportOffset.Bounds.Position.X,
-             currentViewportOffset.Bounds.Position.Y,
+            (currentViewportOffset.Bounds.Min.X,
+             currentViewportOffset.Bounds.Min.Y,
              currentViewportOffset.Bounds.Size.X,
              currentViewportOffset.Bounds.Size.Y)
         Hl.Assert ()

@@ -700,7 +700,7 @@ module FillBarDispatcherModule =
             let perimeter = transform.Perimeter // gui currently ignores rotation
             let horizon = transform.Horizon
             let mutable borderTransform = Transform.makeDefault transform.Centered
-            borderTransform.Position <- perimeter.Position
+            borderTransform.Position <- perimeter.Min
             borderTransform.Size <- perimeter.Size
             borderTransform.Offset <- transform.Offset
             borderTransform.Elevation <- transform.Elevation + 0.5f
@@ -727,7 +727,7 @@ module FillBarDispatcherModule =
             // fill sprite
             let fillSize = perimeter.Size
             let fillInset = fillSize * entity.GetFillInset world * 0.5f
-            let fillPosition = perimeter.Position + fillInset
+            let fillPosition = perimeter.Min + fillInset
             let fillWidth = (fillSize.X - fillInset.X * 2.0f) * entity.GetFill world
             let fillHeight = fillSize.Y - fillInset.Y * 2.0f
             let fillSize = v3 fillWidth fillHeight 0.0f

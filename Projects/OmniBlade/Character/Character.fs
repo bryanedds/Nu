@@ -29,14 +29,12 @@ module Character =
 
         (* Perimeter Original Properties *)
         member this.PerimeterOriginal = this.PerimeterOriginal_
-        member this.PositionOriginal = this.PerimeterOriginal_.Position
         member this.CenterOriginal = this.PerimeterOriginal_.Center
         member this.BottomOriginal = this.PerimeterOriginal_.Bottom
         member this.SizeOriginal = this.PerimeterOriginal_.Size
 
         (* Perimeter Properties *)
         member this.Perimeter = this.Perimeter_
-        member this.Position = this.Perimeter_.Position
         member this.Center = this.Perimeter_.Center
         member this.Bottom = this.Perimeter_.Bottom
         member this.Size = this.Perimeter_.Size
@@ -334,9 +332,6 @@ module Character =
     let updatePerimeter updater (character : Character) =
         { character with Perimeter_ = updater character.Perimeter_ }
 
-    let updatePosition updater (character : Character) =
-        { character with Perimeter_ = character.Position |> updater |> character.Perimeter.WithPosition }
-
     let updateBottom updater (character : Character) =
         { character with Perimeter_ = character.Bottom |> updater |> character.Perimeter.WithBottom }
 
@@ -427,7 +422,7 @@ module Character =
         // attempt to update character with auto-battle and appropriate facing direction
         match targetOpt with
         | Some (target : Character) ->
-            let sourceToTarget = target.Position - source.Position
+            let sourceToTarget = target.Bottom - source.Bottom
             let direction = if sourceToTarget.X >= 0.0f then Rightward else Leftward // only two directions in this game
             let animationState = { source.CharacterAnimationState_ with Direction = direction }
             let autoBattle = { AutoTarget = target.CharacterIndex; AutoTechOpt = techOpt; IsChargeTech = isChargeTech }

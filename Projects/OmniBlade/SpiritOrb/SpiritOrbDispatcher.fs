@@ -34,7 +34,7 @@ module SpiritOrbDispatcher =
         static let makeViews avatarLowerCenter (orbTransform : Transform) inhabitants =
             let mutable orbTransform = orbTransform
             Array.fold (fun views inhabitant ->
-                let (position, image, color) =
+                let (center, image, color) =
                     match inhabitant with
                     | ChestInhabitant chest ->
                         let image = if chest.Opened then Assets.Field.SpiritChestOpenedImage else Assets.Field.SpiritChestClosedImage
@@ -46,8 +46,8 @@ module SpiritOrbDispatcher =
                         (portal.Center, image, color)
                     | SpiritInhabitant spirit ->
                         let color = SpiritType.getColor spirit.SpiritType
-                        (spirit.Position, Assets.Field.SpiritImage, color)
-                let delta = position - avatarLowerCenter
+                        (spirit.Center, Assets.Field.SpiritImage, color)
+                let delta = center - avatarLowerCenter
                 let distance = delta.Magnitude
                 if distance < Constants.Field.SpiritRadius then
                     let position = orbTransform.Perimeter.Center + delta * Constants.Field.SpiritOrbRatio - Constants.Field.SpiritOrbBlipSize * 0.5f

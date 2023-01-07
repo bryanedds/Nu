@@ -289,7 +289,7 @@ and [<NoEquality; NoComparison>] Subquery =
     | GetX of Subquery
     | GetY of Subquery
     | GetZ of Subquery
-    | GetPosition of Subquery
+    | GetMin of Subquery
     | GetSize of Subquery
     | Intersects of Subquery * Subquery
     | Or of Subquery * Subquery
@@ -467,8 +467,8 @@ and [<NoEquality; NoComparison>] Subquery =
             match Subquery.eval terms subquery with V3 v -> Single v.Y | Error _ as err -> err | _ -> Error "Invalid GetY argument; V3 required."
         | GetZ subquery ->
             match Subquery.eval terms subquery with V3 v -> Single v.Z | Error _ as err -> err | _ -> Error "Invalid GetZ argument; V3 required."
-        | GetPosition subquery ->
-            match Subquery.eval terms subquery with Box3 box -> V3 box.Position | Error _ as err -> err | _ -> Error "Invalid GetPosition argument; Box3 required."
+        | GetMin subquery ->
+            match Subquery.eval terms subquery with Box3 box -> V3 box.Min | Error _ as err -> err | _ -> Error "Invalid GetMin argument; Box3 required."
         | GetSize subquery ->
             match Subquery.eval terms subquery with Box3 box -> V3 box.Size | Error _ as err -> err | _ -> Error "Invalid GetSize argument; Box3 required."
         | Intersects (subquery, subquery2) ->
@@ -601,7 +601,7 @@ and [<NoEquality; NoComparison>] Subquery =
             | "X" -> GetX (Subquery.unquote target)
             | "Y" -> GetY (Subquery.unquote target)
             | "Z" -> GetZ (Subquery.unquote target)
-            | "Position" -> GetPosition (Subquery.unquote target)
+            | "Min" -> GetMin (Subquery.unquote target)
             | "Size" -> GetSize (Subquery.unquote target)
             | _ -> failwith "Unsupported index."
         | Patterns.NewTuple args ->

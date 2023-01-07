@@ -190,7 +190,7 @@ type [<NoEquality; NoComparison>] Transform =
             Box3 (this.Position_ + perimeterUnscaledOffset * this.Size_, this.Size_)
         and set (value : Box3) =
             let perimeterUnscaledOffset = if this.Centered then this.Offset_ - v3UncenteredOffset else this.Offset_
-            this.Position <- value.Position - perimeterUnscaledOffset * value.Size
+            this.Position <- value.Min - perimeterUnscaledOffset * value.Size
             this.Size <- value.Size
 
     member this.Perimeter
@@ -335,7 +335,7 @@ type [<NoEquality; NoComparison>] Transform =
     static member makePerimeter (perimeter : Box3) offset elevation absolute centered =
         let mutable transform = Unchecked.defaultof<Transform>
         transform.Flags_ <- FlagsDefault ||| if absolute then AbsoluteMask else 0u
-        transform.Position_ <- perimeter.Position
+        transform.Position_ <- perimeter.Min
         transform.Rotation_ <- Quaternion.Identity
         transform.Scale_ <- v3One
         transform.Offset_ <- offset
