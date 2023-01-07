@@ -13,8 +13,7 @@ module Avatar =
 
     type [<NoComparison>] Avatar =
         private
-            { PerimeterOriginal_ : Box3
-              Perimeter_ : Box3
+            { Perimeter_ : Box3
               CharacterAnimationState_ : CharacterAnimationState
               CelSize_ : Vector2
               CoreShapeId_ : uint64
@@ -22,14 +21,6 @@ module Avatar =
               CollidedPropIds_ : int list
               SeparatedPropIds_ : int list
               IntersectedPropIds_ : int list }
-
-        (* Perimeter Original Properties *)
-        member this.PerimeterOriginal = this.PerimeterOriginal_
-        member this.LowerPerimeterOriginal = box3 this.PerimeterOriginal_.Min (this.PerimeterOriginal_.Size.MapY ((*) 0.5f))
-        member this.MinOriginal = this.PerimeterOriginal_.Min
-        member this.CenterOriginal = this.PerimeterOriginal_.Center
-        member this.BottomOriginal = this.PerimeterOriginal_.Bottom
-        member this.SizeOriginal = this.PerimeterOriginal_.Size
 
         (* Perimeter Properties *)
         member this.Perimeter = this.Perimeter_
@@ -122,8 +113,7 @@ module Avatar =
 
     let make bounds animationSheet direction =
         let characterAnimationState = { StartTime = 0L; AnimationSheet = animationSheet; CharacterAnimationType = IdleAnimation; Direction = direction }
-        { PerimeterOriginal_ = bounds
-          Perimeter_ = bounds
+        { Perimeter_ = bounds
           CharacterAnimationState_ = characterAnimationState
           CelSize_ = Constants.Gameplay.CharacterCelSize
           CoreShapeId_ = Gen.id64
@@ -134,8 +124,7 @@ module Avatar =
 
     let empty () =
         let bounds = box3 v3Zero Constants.Gameplay.CharacterSize
-        { PerimeterOriginal_ = bounds
-          Perimeter_ = bounds
+        { Perimeter_ = bounds
           CharacterAnimationState_ = CharacterAnimationState.empty
           CelSize_ = Constants.Gameplay.CharacterCelSize
           CoreShapeId_ = Gen.id64
@@ -149,7 +138,6 @@ module Avatar =
         let bounds = box3 position Constants.Gameplay.CharacterSize
         let characterAnimationState = CharacterAnimationState.initial
         { empty () with
-            PerimeterOriginal_ = bounds
             Perimeter_ = bounds
             CharacterAnimationState_ = characterAnimationState }
 
