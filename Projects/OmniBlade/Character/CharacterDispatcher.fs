@@ -105,7 +105,7 @@ module CharacterDispatcher =
                 let mutable transform = entity.GetTransform world
                 let perimeter = transform.Perimeter
                 let characterView =
-                    Render2d (transform.Elevation, perimeter.Position.Y, AssetTag.generalize character.AnimationSheet,
+                    Render2d (transform.Elevation, transform.Horizon, AssetTag.generalize character.AnimationSheet,
                         SpriteDescriptor
                             { Transform = transform
                               InsetOpt = ValueSome (getSpriteInset character world)
@@ -130,7 +130,7 @@ module CharacterDispatcher =
                         afflictionTransform.Position <- afflictionPosition
                         afflictionTransform.Size <- Constants.Battle.AfflictionSize
                         afflictionTransform.Elevation <- transform.Elevation + 0.1f
-                        Render2d (afflictionTransform.Elevation, afflictionTransform.Perimeter.Position.Y, AssetTag.generalize afflictionImage,
+                        Render2d (afflictionTransform.Elevation, afflictionTransform.Horizon, AssetTag.generalize afflictionImage,
                             SpriteDescriptor
                                 { Transform = afflictionTransform
                                   InsetOpt = ValueSome afflictionInset
@@ -156,7 +156,7 @@ module CharacterDispatcher =
                         chargeOrbTransform.Position <- chargeOrbPosition
                         chargeOrbTransform.Size <- Constants.Battle.ChargeOrbSize
                         chargeOrbTransform.Elevation <- transform.Elevation + 0.1f
-                        Render2d (chargeOrbTransform.Elevation, chargeOrbTransform.Perimeter.Position.Y, AssetTag.generalize chargeOrbImage,
+                        Render2d (chargeOrbTransform.Elevation, chargeOrbTransform.Horizon, AssetTag.generalize chargeOrbImage,
                             SpriteDescriptor
                                 { Transform = chargeOrbTransform
                                   InsetOpt = ValueSome chargeOrbInset

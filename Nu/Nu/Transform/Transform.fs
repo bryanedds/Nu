@@ -214,6 +214,21 @@ type [<NoEquality; NoComparison>] Transform =
         let positionOverflowed = center - sizeOverflowed * 0.5f
         Box3 (positionOverflowed, sizeOverflowed)
 
+    member this.HorizonUnscaled =
+        if this.Centered
+        then this.PerimeterUnscaled.Center.Y
+        else this.PerimeterUnscaled.Bottom.Y
+
+    member this.Horizon =
+        if this.Centered
+        then this.Perimeter.Center.Y
+        else this.Perimeter.Bottom.Y
+
+    member this.HorizonOriented =
+        if this.Centered
+        then this.PerimeterOriented.Center.Y
+        else this.PerimeterOriented.Bottom.Y
+
     member this.Pivot =
         let perimeter = this.Perimeter
         let offsetScaled = this.Offset_ * this.Scale_

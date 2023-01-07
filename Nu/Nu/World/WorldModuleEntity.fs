@@ -1910,7 +1910,7 @@ module WorldModuleEntity =
         static member internal getEntitySortingPriority2d entity world =
             let entityState = World.getEntityState entity world
             { SortElevation = entityState.Transform.Elevation
-              SortHorizon = entityState.Transform.Perimeter.Position.Y
+              SortHorizon = entityState.Transform.Horizon
               SortTarget = entity }
 
         static member internal rayCastEntity ray (entity : Entity) world =

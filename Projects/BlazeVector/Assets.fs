@@ -33,7 +33,6 @@ module Assets =
         let JumpSound = asset<Sound> PackageName "Jump"
         let DeathSound = asset<Sound> PackageName "Death"
         let DeadBlazeSong = { FadeInMs = 0; FadeOutMs = Constants.Audio.FadeOutMsDefault; Start = 0.0; Volume = Constants.Audio.SongVolumeDefault * 2.0f; Song = asset<Song> PackageName "DeadBlaze" }
-        let SceneGroupFilePath = "Assets/Gameplay/Scene.nugroup"
         let Section0FilePath = "Assets/Gameplay/Section0.nugroup"
         let Section1FilePath = "Assets/Gameplay/Section1.nugroup"
         let Section2FilePath = "Assets/Gameplay/Section2.nugroup"

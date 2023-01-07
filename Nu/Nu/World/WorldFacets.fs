@@ -154,11 +154,10 @@ module StaticSpriteFacetModule =
 
         override this.Render (entity, world) =
             let mutable transform = entity.GetTransform world
-            let perimeter = transform.Perimeter
             let staticImage = entity.GetStaticImage world
             World.enqueueRenderLayeredMessage2d
                 { Elevation = transform.Elevation
-                  Horizon = perimeter.Position.Y
+                  Horizon = transform.Horizon
                   AssetTag = AssetTag.generalize staticImage
                   RenderDescriptor2d =
                     SpriteDescriptor
@@ -226,11 +225,10 @@ module AnimatedSpriteFacetModule =
 
         override this.Render (entity, world) =
             let mutable transform = entity.GetTransform world
-            let perimeter = transform.Perimeter
             let animationSheet = entity.GetAnimationSheet world
             World.enqueueRenderLayeredMessage2d
                 { Elevation = transform.Elevation
-                  Horizon = perimeter.Position.Y
+                  Horizon = transform.Horizon
                   AssetTag = AssetTag.generalize animationSheet
                   RenderDescriptor2d =
                     SpriteDescriptor
@@ -288,8 +286,8 @@ module TextFacetModule =
             let text = entity.GetText world
             if not (String.IsNullOrWhiteSpace text) then
                 let mutable transform = entity.GetTransform world
-                let perimeterUnscaled = transform.PerimeterUnscaled // gui currently ignores rotation and scale
-                let horizon = perimeterUnscaled.Position.Y
+                let perimeterUnscaled = transform.Perimeter  // gui currently ignores rotation and scale
+                let horizon = transform.Horizon
                 let mutable textTransform = Transform.makeDefault false // centered-ness and offset is already baked into perimeterUnscaled
                 textTransform.Position <- perimeterUnscaled.Position + entity.GetMargins world + entity.GetTextOffset world
                 textTransform.Size <- perimeterUnscaled.Size - entity.GetMargins world * 2.0f

@@ -907,7 +907,7 @@ module WorldModule2 =
                 transform.Absolute <- true
                 World.enqueueRenderLayeredMessage2d
                     { Elevation = transform.Elevation
-                      Horizon = transform.Perimeter.Position.Y
+                      Horizon = transform.Horizon
                       AssetTag = AssetTag.generalize dissolveImage
                       RenderDescriptor2d =
                         SpriteDescriptor

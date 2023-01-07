@@ -60,7 +60,7 @@ module SpiritOrbDispatcher =
                         let distanceNormalized = (Constants.Field.SpiritRadius - distance) / Constants.Field.SpiritRadius
                         if distanceNormalized < 0.25f then color.MapA ((*) (distanceNormalized / 0.25f)) else color
                     let descriptor = { Transform = transform; InsetOpt = ValueNone; Image = image; Blend = Transparent; Color = colorFadeIn; Glow = Color.Zero; Flip = FlipNone }
-                    let view = Render2d (transform.Elevation, transform.Perimeter.Position.Y, AssetTag.generalize image, SpriteDescriptor descriptor)
+                    let view = Render2d (transform.Elevation, transform.Horizon, AssetTag.generalize image, SpriteDescriptor descriptor)
                     view :: views
                 else views)
                 [] inhabitants
@@ -69,7 +69,7 @@ module SpiritOrbDispatcher =
             let mutable orbTransform = entity.GetTransform world
             let orbImage = Assets.Field.SpiritOrbImage
             let orbDescriptor = { Transform = orbTransform; InsetOpt = ValueNone; Image = orbImage; Color = Color.One; Blend = Transparent; Glow = Color.Zero; Flip = FlipNone }
-            let orbView = Render2d (orbTransform.Elevation, orbTransform.Perimeter.Position.Y, AssetTag.generalize orbImage, SpriteDescriptor orbDescriptor)
+            let orbView = Render2d (orbTransform.Elevation, orbTransform.Horizon, AssetTag.generalize orbImage, SpriteDescriptor orbDescriptor)
             let mutable avatarTransform = Transform.makeDefault false
             avatarTransform.Position <- orbTransform.Position + orbTransform.Size * 0.5f - Constants.Field.SpiritOrbBlipSize * 0.5f
             avatarTransform.Size <- Constants.Field.SpiritOrbBlipSize
@@ -77,7 +77,7 @@ module SpiritOrbDispatcher =
             avatarTransform.Absolute <- orbTransform.Absolute
             let avatarImage = Assets.Field.SpiritAvatarImage
             let avatarDescriptor = { Transform = avatarTransform; InsetOpt = ValueNone; Image = avatarImage; Color = Color.One; Blend = Transparent; Glow = Color.Zero; Flip = FlipNone }
-            let avatarView = Render2d (avatarTransform.Elevation, avatarTransform.Perimeter.Position.Y, AssetTag.generalize avatarImage, SpriteDescriptor avatarDescriptor)
+            let avatarView = Render2d (avatarTransform.Elevation, avatarTransform.Horizon, AssetTag.generalize avatarImage, SpriteDescriptor avatarDescriptor)
             let chests = Array.filter (fun (chest : Chest) -> spiritOrb.ShowUnopenedChests || chest.Opened) spiritOrb.Chests
             let chestViews = makeViews spiritOrb.AvatarLowerCenter orbTransform (Array.map ChestInhabitant chests)
             let portalViews = makeViews spiritOrb.AvatarLowerCenter orbTransform (Array.map PortalInhabitant spiritOrb.Portals)

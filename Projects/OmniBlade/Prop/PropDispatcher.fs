@@ -253,9 +253,9 @@ module PropDispatcher =
                     | ChestSpawn | EmptyProp ->
                         (false, Assets.Default.ImageEmpty, Color.One, Transparent, Color.Zero, ValueNone, FlipNone)
                 let elevation = if background then Constants.Field.FlooringElevation else Constants.Field.ForegroundElevation
-                let positionY = transform.Perimeter.Position.Y
+                let horizon = transform.Horizon
                 let assetTag = AssetTag.generalize image
-                Render2d (elevation, positionY, assetTag,
+                Render2d (elevation, horizon, assetTag,
                     SpriteDescriptor
                         { Transform = transform
                           InsetOpt = insetOpt
