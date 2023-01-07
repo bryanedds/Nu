@@ -124,8 +124,8 @@ type [<ReferenceEquality; NoComparison>] AetherPhysicsEngine =
     static member private attachBoxBody sourceSimulant (bodyProperties : BodyProperties) (bodyBox : BodyBox) (body : Body) =
         let bodyShape =
             body.CreateRectangle
-                (AetherPhysicsEngine.toPhysicsPolygonDiameter (bodyBox.Extent.X * 2.0f),
-                 AetherPhysicsEngine.toPhysicsPolygonDiameter (bodyBox.Extent.Y * 2.0f),
+                (AetherPhysicsEngine.toPhysicsPolygonDiameter bodyBox.Size.X,
+                 AetherPhysicsEngine.toPhysicsPolygonDiameter bodyBox.Size.Y,
                  bodyProperties.Density,
                  AetherPhysicsEngine.toPhysicsV2 bodyBox.Center)
         bodyShape.Tag <-
@@ -168,8 +168,8 @@ type [<ReferenceEquality; NoComparison>] AetherPhysicsEngine =
         Array.ofSeq bodyShapes
 
     static member private attachBodyBoxRounded sourceSimulant (bodyProperties : BodyProperties) (bodyBoxRounded : BodyBoxRounded) (body : Body) =
-        let width = AetherPhysicsEngine.toPhysicsPolygonDiameter bodyBoxRounded.Extent.X * 2.0f
-        let height = AetherPhysicsEngine.toPhysicsPolygonDiameter bodyBoxRounded.Extent.Y * 2.0f
+        let width = AetherPhysicsEngine.toPhysicsPolygonDiameter bodyBoxRounded.Size.X
+        let height = AetherPhysicsEngine.toPhysicsPolygonDiameter bodyBoxRounded.Size.Y
         let radius = AetherPhysicsEngine.toPhysicsPolygonRadius bodyBoxRounded.Radius
         let center = AetherPhysicsEngine.toPhysicsV2 bodyBoxRounded.Center
         let boxVerticalWidth = width - radius * 2.0f
@@ -235,7 +235,7 @@ type [<ReferenceEquality; NoComparison>] AetherPhysicsEngine =
         let bodySource = { Simulant = sourceSimulant; BodyId = bodyProperties.BodyId }
 
         // make the body
-        let body = physicsEngine.PhysicsContext.CreateBody (AetherPhysicsEngine.toPhysicsV2 bodyProperties.Position, bodyRotation)
+        let body = physicsEngine.PhysicsContext.CreateBody (AetherPhysicsEngine.toPhysicsV2 bodyProperties.Center, bodyRotation)
         body.Tag <- bodySource
 
         // configure body
