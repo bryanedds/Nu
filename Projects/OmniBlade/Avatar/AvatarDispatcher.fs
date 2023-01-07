@@ -174,7 +174,7 @@ module AvatarDispatcher =
         override this.View (avatar, entity, world) =
             if entity.GetVisible world then
                 let mutable transform = entity.GetTransform world
-                Render2d (transform.Elevation, transform.Position.Y, AssetTag.generalize avatar.AnimationSheet,
+                Render2d (transform.Elevation, transform.Horizon, AssetTag.generalize avatar.AnimationSheet,
                     SpriteDescriptor
                         { Transform = transform
                           InsetOpt = ValueSome (getSpriteInset entity world)

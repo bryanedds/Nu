@@ -179,7 +179,7 @@ module ButtonDispatcherModule =
             let spriteImage = if entity.GetDown world then entity.GetDownImage world else entity.GetUpImage world
             World.enqueueRenderLayeredMessage2d
                 { Elevation = spriteTransform.Elevation
-                  Horizon = spriteTransform.Position.Y
+                  Horizon = spriteTransform.Horizon
                   AssetTag = AssetTag.generalize spriteImage
                   RenderDescriptor2d =
                     SpriteDescriptor
@@ -217,7 +217,7 @@ module LabelDispatcherModule =
             let spriteImage = entity.GetLabelImage world
             World.enqueueRenderLayeredMessage2d
                 { Elevation = spriteTransform.Elevation
-                  Horizon = spriteTransform.Position.Y
+                  Horizon = spriteTransform.Bottom.Y
                   AssetTag = AssetTag.generalize spriteImage
                   RenderDescriptor2d =
                     SpriteDescriptor
@@ -260,7 +260,7 @@ module TextDispatcherModule =
                 let mutable spriteTransform = Transform.makePerimeter transform.Perimeter transform.Offset transform.Elevation transform.Absolute false
                 World.enqueueRenderLayeredMessage2d
                     { Elevation = spriteTransform.Elevation
-                      Horizon = spriteTransform.Position.Y
+                      Horizon = spriteTransform.Bottom.Y
                       AssetTag = AssetTag.generalize spriteImage
                       RenderDescriptor2d =
                         SpriteDescriptor
@@ -393,7 +393,7 @@ module ToggleButtonDispatcherModule =
                 else entity.GetUntoggledImage world
             World.enqueueRenderLayeredMessage2d
                 { Elevation = spriteTransform.Elevation
-                  Horizon = spriteTransform.Position.Y
+                  Horizon = spriteTransform.Bottom.Y
                   AssetTag = AssetTag.generalize spriteImage
                   RenderDescriptor2d =
                     SpriteDescriptor
@@ -517,7 +517,7 @@ module RadioButtonDispatcherModule =
                 else entity.GetUndialedImage world
             World.enqueueRenderLayeredMessage2d
                 { Elevation = spriteTransform.Elevation
-                  Horizon = spriteTransform.Position.Y
+                  Horizon = spriteTransform.Bottom.Y
                   AssetTag = AssetTag.generalize spriteImage
                   RenderDescriptor2d =
                     SpriteDescriptor
@@ -698,7 +698,7 @@ module FillBarDispatcherModule =
             // border sprite
             let mutable transform = entity.GetTransform world
             let perimeter = transform.Perimeter // gui currently ignores rotation
-            let horizon = perimeter.Position.Y
+            let horizon = transform.Horizon
             let mutable borderTransform = Transform.makeDefault transform.Centered
             borderTransform.Position <- perimeter.Position
             borderTransform.Size <- perimeter.Size
@@ -890,7 +890,7 @@ module SideViewCharacterDispatcherModule =
                     struct (ValueSome (computeWalkCelInset celSize celRun animationDelay time), image)
             World.enqueueRenderLayeredMessage2d
                 { Elevation = transform.Elevation
-                  Horizon = transform.Perimeter.Position.Y
+                  Horizon = transform.Horizon
                   AssetTag = AssetTag.generalize image
                   RenderDescriptor2d =
                     SpriteDescriptor

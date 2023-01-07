@@ -553,7 +553,7 @@ module EffectSystem =
             if slice.Enabled then
                 let mutable transform = Transform.makeIntuitive slice.Position slice.Scale slice.Offset slice.Size slice.Angles slice.Elevation effectSystem.Absolute slice.Centered
                 let spriteView =
-                    Render2d (transform.Elevation, transform.Position.Y, AssetTag.generalize image,
+                    Render2d (transform.Elevation, transform.Horizon, AssetTag.generalize image,
                         SpriteDescriptor 
                             { Transform = transform
                               InsetOpt = if slice.Inset.Equals box2Zero then ValueNone else ValueSome slice.Inset
@@ -591,7 +591,7 @@ module EffectSystem =
                     not (playback = Once && cel >= celCount) then
                     let mutable transform = Transform.makeIntuitive slice.Position slice.Scale slice.Offset slice.Size slice.Angles slice.Elevation effectSystem.Absolute slice.Centered
                     let animatedSpriteView =
-                        Render2d (transform.Elevation, transform.Position.Y, AssetTag.generalize image,
+                        Render2d (transform.Elevation, transform.Horizon, AssetTag.generalize image,
                             SpriteDescriptor
                                { Transform = transform
                                  InsetOpt = ValueSome inset
@@ -622,7 +622,7 @@ module EffectSystem =
             if slice.Enabled then
                 let mutable transform = Transform.makeIntuitive slice.Position slice.Scale slice.Offset slice.Size slice.Angles slice.Elevation effectSystem.Absolute slice.Centered
                 let textView =
-                    Render2d (transform.Elevation, transform.Position.Y, font,
+                    Render2d (transform.Elevation, transform.Horizon, font,
                         TextDescriptor 
                             { Transform = transform
                               Text = text
