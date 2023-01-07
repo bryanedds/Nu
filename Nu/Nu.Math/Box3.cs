@@ -55,9 +55,9 @@ namespace Nu
         public static readonly Box3 Zero = default(Box3);
 
         /// <summary>
-        /// Gets a box with a min 0,0 with the a size of 1,1.
+        /// Gets a box with a min 0,0,0 with the a size of 1,1,1.
         /// </summary>
-        public static readonly Box2 Unit = new Box2(new Vector2(0, 0), new Vector2(1, 1));
+        public static readonly Box3 Unit = new Box3(new Vector3(0, 0, 0), new Vector3(1, 1, 1));
 
         /// <summary>
         /// Create a bounding box by enclosing two points.
