@@ -169,10 +169,20 @@ type [<NoEquality; NoComparison>] Transform =
             let bottom = perimeter.Translate (value - perimeter.Bottom)
             this.PerimeterUnscaled <- bottom
 
+    member this.TopLeft
+        with get () =
+            let perimeter = this.Perimeter
+            perimeter.TopLeft
+        and set (value : Vector3) =
+            this.Scale_ <- Vector3.One
+            let perimeter = this.Perimeter
+            let topLeft = perimeter.Translate (value - perimeter.TopLeft)
+            this.PerimeterUnscaled <- topLeft
+
     member this.PerimeterUnscaled
         with get () =
             let perimeterUnscaledOffset = if this.Centered then this.Offset_ - v3UncenteredOffset else this.Offset_
-            Box3 (this.Position_ - perimeterUnscaledOffset * this.Size_, this.Size_)
+            Box3 (this.Position_ + perimeterUnscaledOffset * this.Size_, this.Size_)
         and set (value : Box3) =
             let perimeterUnscaledOffset = if this.Centered then this.Offset_ - v3UncenteredOffset else this.Offset_
             this.Position <- value.Position - perimeterUnscaledOffset * value.Size
