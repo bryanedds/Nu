@@ -290,10 +290,9 @@ module TextFacetModule =
                 let mutable transform = entity.GetTransform world
                 let perimeterUnscaled = transform.PerimeterUnscaled // gui currently ignores rotation and scale
                 let horizon = perimeterUnscaled.Position.Y
-                let mutable textTransform = Transform.makeDefault transform.Centered
+                let mutable textTransform = Transform.makeDefault false // centered-ness and offset is already baked into perimeterUnscaled
                 textTransform.Position <- perimeterUnscaled.Position + entity.GetMargins world + entity.GetTextOffset world
                 textTransform.Size <- perimeterUnscaled.Size - entity.GetMargins world * 2.0f
-                textTransform.Offset <- transform.Offset
                 textTransform.Elevation <- transform.Elevation + 0.5f // lift text above parent
                 textTransform.Absolute <- transform.Absolute
                 let font = entity.GetFont world
