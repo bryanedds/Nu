@@ -736,6 +736,7 @@ module Box2 =
         member this.WithMin min = Box2 (min, this.Size)
         member this.WithCenter center = this.Translate (center - this.Center)
         member this.WithBottom bottom = this.Translate (bottom - this.Bottom)
+        member this.WithBottomLeft bottomLeft = this.Translate (bottomLeft - this.BottomLeft)
         member this.WithSize size = Box2 (this.Min, size)
         member this.Box3 = Box3 (v3 this.Min.X this.Min.Y 0.0f, v3 this.Size.X this.Size.Y 0.0f)
 
@@ -822,6 +823,7 @@ module Box3 =
         member this.WithMin min = Box3 (min, this.Size)
         member this.WithCenter center = this.Translate (center - this.Center)
         member this.WithBottom bottom = this.Translate (bottom - this.Bottom)
+        member this.WithBottomLeft bottomLeft = this.Translate (bottomLeft - this.BottomLeft)
         member this.WithSize size = Box3 (this.Min, size)
         member this.Box2 = Box2 (v2 this.Min.X this.Min.Y, v2 this.Size.X this.Size.Y)
 
@@ -887,6 +889,7 @@ module Box2i =
         member this.WithMin min = Box2i (min, this.Size)
         member this.WithCenter center = this.Translate (center - this.Center)
         member this.WithBottom bottom = this.Translate (bottom - this.Bottom)
+        member this.WithBottomLeft bottomLeft = this.Translate (bottomLeft - this.BottomLeft)
         member this.WithSize size = Box2i (this.Min, size)
 
     let box2iZero = Box2i.Zero

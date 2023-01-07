@@ -217,7 +217,7 @@ module LabelDispatcherModule =
             let spriteImage = entity.GetLabelImage world
             World.enqueueRenderLayeredMessage2d
                 { Elevation = spriteTransform.Elevation
-                  Horizon = spriteTransform.Bottom.Y
+                  Horizon = spriteTransform.Horizon
                   AssetTag = AssetTag.generalize spriteImage
                   RenderDescriptor2d =
                     SpriteDescriptor
@@ -260,7 +260,7 @@ module TextDispatcherModule =
                 let mutable spriteTransform = Transform.makePerimeter transform.Perimeter transform.Offset transform.Elevation transform.Absolute false
                 World.enqueueRenderLayeredMessage2d
                     { Elevation = spriteTransform.Elevation
-                      Horizon = spriteTransform.Bottom.Y
+                      Horizon = spriteTransform.Horizon
                       AssetTag = AssetTag.generalize spriteImage
                       RenderDescriptor2d =
                         SpriteDescriptor
@@ -393,7 +393,7 @@ module ToggleButtonDispatcherModule =
                 else entity.GetUntoggledImage world
             World.enqueueRenderLayeredMessage2d
                 { Elevation = spriteTransform.Elevation
-                  Horizon = spriteTransform.Bottom.Y
+                  Horizon = spriteTransform.Horizon
                   AssetTag = AssetTag.generalize spriteImage
                   RenderDescriptor2d =
                     SpriteDescriptor
@@ -517,7 +517,7 @@ module RadioButtonDispatcherModule =
                 else entity.GetUndialedImage world
             World.enqueueRenderLayeredMessage2d
                 { Elevation = spriteTransform.Elevation
-                  Horizon = spriteTransform.Bottom.Y
+                  Horizon = spriteTransform.Horizon
                   AssetTag = AssetTag.generalize spriteImage
                   RenderDescriptor2d =
                     SpriteDescriptor
