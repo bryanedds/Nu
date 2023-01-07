@@ -58,7 +58,7 @@ type [<NoComparison>] BodySeparationData =
     | BodySeparationExplicit of BodySeparationExplicit
 
 type [<NoComparison>] BodyTransformData =
-    { BodyPosition : Vector3
+    { BodyCenter : Vector3
       BodyRotation : Quaternion
       BodyLinearVelocity : Vector3
       BodyAngularVelocity : Vector3 }

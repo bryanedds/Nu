@@ -380,7 +380,7 @@ type [<NoComparison>] BodySeparationMessage =
 /// A message from the physics system describing the updated transform of a body.
 type [<NoComparison>] BodyTransformMessage =
     { BodySource : BodySourceInternal
-      Position : Vector3
+      Center : Vector3
       Rotation : Quaternion
       LinearVelocity : Vector3
       AngularVelocity : Vector3 }

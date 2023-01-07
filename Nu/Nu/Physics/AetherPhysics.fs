@@ -412,7 +412,7 @@ type [<ReferenceEquality; NoComparison>] AetherPhysicsEngine =
                 let bodyTransformMessage =
                     BodyTransformMessage
                         { BodySource = body.Tag :?> BodySourceInternal
-                          Position = AetherPhysicsEngine.toPixelV3 body.Position
+                          Center = AetherPhysicsEngine.toPixelV3 body.Position
                           Rotation = (v3 0.0f 0.0f -body.Rotation).RollPitchYaw
                           LinearVelocity = AetherPhysicsEngine.toPixelV3 body.LinearVelocity
                           AngularVelocity = v3 body.AngularVelocity 0.0f 0.0f }
