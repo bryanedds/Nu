@@ -718,10 +718,10 @@ type QuaternionConverter () =
 [<AutoOpen>]
 module Box2 =
     type Box2 with
-        member this.Box3 = Box3 (v3 this.Min.X this.Min.Y 0.0f, v3 this.Size.X this.Size.Y 0.0f)
+        member this.Max = this.Min + this.Size
+        member this.Extent = this.Size * 0.5f
         member this.Width = this.Size.X
         member this.Height = this.Size.Y
-        member this.Extent = this.Size * 0.5f
         member this.Center = this.Min + this.Extent
         member this.Top = v2 (this.Min.X + this.Size.X * 0.5f) (this.Min.Y + this.Size.Y)
         member this.Bottom = v2 (this.Min.X + this.Size.X * 0.5f) this.Min.Y
@@ -737,6 +737,7 @@ module Box2 =
         member this.WithCenter center = this.Translate (center - this.Center)
         member this.WithBottom bottom = this.Translate (bottom - this.Bottom)
         member this.WithSize size = Box2 (this.Min, size)
+        member this.Box3 = Box3 (v3 this.Min.X this.Min.Y 0.0f, v3 this.Size.X this.Size.Y 0.0f)
 
     let box2Zero = Box2.Zero
     let inline box2 min size = Box2 (min, size)
@@ -782,8 +783,11 @@ type Box2Converter () =
 [<AutoOpen>]
 module Box3 =
     type Box3 with
-        member this.Box2 = Box2 (v2 this.Min.X this.Min.Y, v2 this.Size.X this.Size.Y)
+        member this.Max = this.Min + this.Size
         member this.Extent = this.Size * 0.5f
+        member this.Width = this.Size.X
+        member this.Height = this.Size.Y
+        member this.Depth = this.Size.Z
         member this.Center = this.Min + this.Extent
         member this.Top = v3 (this.Min.X + this.Size.X * 0.5f) (this.Min.Y + this.Size.Y) (this.Min.Z + this.Size.Z * 0.5f)
         member this.Bottom = v3 (this.Min.X + this.Size.X * 0.5f) this.Min.Y (this.Min.Z + this.Size.Z * 0.5f)
@@ -793,6 +797,7 @@ module Box3 =
         member this.TopRight = v3 (this.Min.X + this.Size.X) (this.Min.Y + this.Size.Y) (this.Min.Z + this.Size.Z * 0.5f)
         member this.BottomLeft = v3 this.Min.X this.Min.Y (this.Min.Z + this.Size.Z * 0.5f)
         member this.BottomRight = v3 (this.Min.X + this.Size.X) this.Min.Y (this.Min.Z + this.Size.Z * 0.5f)
+        member this.IsEmpty = this.Equals Box3.Zero
         member this.Translate translation = Box3 (this.Min + translation, this.Size)
         member this.Transform (transformation : Matrix4x4) =
             if not transformation.IsIdentity then
@@ -818,6 +823,7 @@ module Box3 =
         member this.WithCenter center = this.Translate (center - this.Center)
         member this.WithBottom bottom = this.Translate (bottom - this.Bottom)
         member this.WithSize size = Box3 (this.Min, size)
+        member this.Box2 = Box2 (v2 this.Min.X this.Min.Y, v2 this.Size.X this.Size.Y)
 
     let box3Zero = Box3.Zero
     let inline box3 min size = Box3 (min, size)
@@ -863,7 +869,10 @@ type Box3Converter () =
 [<AutoOpen>]
 module Box2i =
     type Box2i with
+        member this.Max = this.Min + this.Size
         member this.Extent = this.Size / 2
+        member this.Width = this.Size.X
+        member this.Height = this.Size.Y
         member this.Center = this.Min + this.Extent
         member this.Top = v2i (this.Min.X + this.Size.X / 2) (this.Min.Y + this.Size.Y)
         member this.Bottom = v2i (this.Min.X + this.Size.X / 2) this.Min.Y
@@ -873,6 +882,7 @@ module Box2i =
         member this.TopRight = v2i (this.Min.X + this.Size.X) (this.Min.Y + this.Size.Y)
         member this.BottomLeft = this.Min
         member this.BottomRight = v2i (this.Min.X + this.Size.X) this.Min.Y
+        member this.IsEmpty = this.Equals Box2i.Zero
         member this.Translate translation = Box2i (this.Min + translation, this.Size)
         member this.WithMin min = Box2i (min, this.Size)
         member this.WithCenter center = this.Translate (center - this.Center)
