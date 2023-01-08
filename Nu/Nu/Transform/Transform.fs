@@ -178,6 +178,22 @@ type [<NoEquality; NoComparison>] Transform =
             let delta = value - this.BottomLeft
             this.Position <- this.Position + delta
 
+    member this.Min
+        with get () =
+            let perimeter = this.Perimeter
+            perimeter.Min
+        and set (value : Vector3) =
+            let delta = value - this.Min
+            this.Position <- this.Position + delta
+
+    member this.Max
+        with get () =
+            let perimeter = this.Perimeter
+            perimeter.Max
+        and set (value : Vector3) =
+            let delta = value - this.Max
+            this.Position <- this.Position + delta
+
     member this.PerimeterUnscaled
         with get () =
             let perimeterUnscaledOffset = if this.Centered then this.Offset_ - v3UncenteredOffset else this.Offset_

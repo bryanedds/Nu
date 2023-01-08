@@ -234,6 +234,8 @@ module WorldModuleEntity =
                         let world = World.publishEntityChange (nameof newTransform.Center) () () publishChangeEvents entity world
                         let world = World.publishEntityChange (nameof newTransform.Bottom) () () publishChangeEvents entity world
                         let world = World.publishEntityChange (nameof newTransform.BottomLeft) () () publishChangeEvents entity world
+                        let world = World.publishEntityChange (nameof newTransform.Min) () () publishChangeEvents entity world
+                        let world = World.publishEntityChange (nameof newTransform.Max) () () publishChangeEvents entity world
                         let world = if scaleChanged then World.publishEntityChange (nameof newTransform.Scale) oldTransform.Scale newTransform.Scale publishChangeEvents entity world else world
                         let world = if offsetChanged then World.publishEntityChange (nameof newTransform.Offset) oldTransform.Offset newTransform.Offset publishChangeEvents entity world else world
                         let world = if sizeChanged then World.publishEntityChange (nameof newTransform.Size) oldTransform.Size newTransform.Size publishChangeEvents entity world else world
@@ -380,10 +382,14 @@ module WorldModuleEntity =
         static member internal getEntityCenter entity world = (World.getEntityState entity world).Transform.Center
         static member internal getEntityBottom entity world = (World.getEntityState entity world).Transform.Bottom
         static member internal getEntityBottomLeft entity world = (World.getEntityState entity world).Transform.BottomLeft
+        static member internal getEntityMin entity world = (World.getEntityState entity world).Transform.Min
+        static member internal getEntityMax entity world = (World.getEntityState entity world).Transform.Max
         static member internal getEntityPositionLocal entity world = (World.getEntityState entity world).PositionLocal
         static member internal getEntityCenterLocal entity world = (World.getEntityState entity world).CenterLocal
         static member internal getEntityBottomLocal entity world = (World.getEntityState entity world).BottomLocal
         static member internal getEntityBottomLeftLocal entity world = (World.getEntityState entity world).BottomLeftLocal
+        static member internal getEntityMinLocal entity world = (World.getEntityState entity world).MinLocal
+        static member internal getEntityMaxLocal entity world = (World.getEntityState entity world).MaxLocal
         static member internal getEntityRotation entity world = (World.getEntityState entity world).Rotation
         static member internal getEntityRotationLocal entity world = (World.getEntityState entity world).RotationLocal
         static member internal getEntityScale entity world = (World.getEntityState entity world).Scale
@@ -847,45 +853,28 @@ module WorldModuleEntity =
 
         static member internal setEntityCenter value entity world =
             let entityState = World.getEntityState entity world
-            if v3Neq value entityState.Center then
-                if entityState.Optimized then
-                    entityState.Center <- value
-                    let world = if entityState.Mounted then World.propagateEntityAffineMatrix entity world else world
-                    struct (true, world)
-                else
-                    let mutable transform = entityState.Transform
-                    transform.Center <- value
-                    let world = World.setEntityTransformByRef (&transform, entityState, entity, world) |> snd'
-                    struct (true, world)
-            else struct (false, world)
+            let offset = entityState.Center - entityState.Position
+            World.setEntityPosition (value + offset) entity world
 
         static member internal setEntityBottom value entity world =
             let entityState = World.getEntityState entity world
-            if v3Neq value entityState.Bottom then
-                if entityState.Optimized then
-                    entityState.Bottom <- value
-                    let world = if entityState.Mounted then World.propagateEntityAffineMatrix entity world else world
-                    struct (true, world)
-                else
-                    let mutable transform = entityState.Transform
-                    transform.Bottom <- value
-                    let world = World.setEntityTransformByRef (&transform, entityState, entity, world) |> snd'
-                    struct (true, world)
-            else struct (false, world)
+            let offset = entityState.Bottom - entityState.Position
+            World.setEntityPosition (value + offset) entity world
 
         static member internal setEntityBottomLeft value entity world =
             let entityState = World.getEntityState entity world
-            if v3Neq value entityState.BottomLeft then
-                if entityState.Optimized then
-                    entityState.BottomLeft <- value
-                    let world = if entityState.Mounted then World.propagateEntityAffineMatrix entity world else world
-                    struct (true, world)
-                else
-                    let mutable transform = entityState.Transform
-                    transform.BottomLeft <- value
-                    let world = World.setEntityTransformByRef (&transform, entityState, entity, world) |> snd'
-                    struct (true, world)
-            else struct (false, world)
+            let offset = entityState.BottomLeft - entityState.Position
+            World.setEntityPosition (value + offset) entity world
+
+        static member internal setEntityMin value entity world =
+            let entityState = World.getEntityState entity world
+            let offset = entityState.Min - entityState.Position
+            World.setEntityPosition (value + offset) entity world
+
+        static member internal setEntityMax value entity world =
+            let entityState = World.getEntityState entity world
+            let offset = entityState.Max - entityState.Position
+            World.setEntityPosition (value + offset) entity world
 
         static member internal setEntityPositionLocal value entity world =
 
@@ -915,6 +904,8 @@ module WorldModuleEntity =
                             let centerPrevious = entityState.CenterLocal
                             let bottomPrevious = entityState.BottomLocal
                             let bottomLeftPrevious = entityState.BottomLeftLocal
+                            let minPrevious = entityState.MinLocal
+                            let maxPrevious = entityState.MaxLocal
                             let struct (entityState, world) =
                                 if entityState.Imperative then
                                     entityState.PositionLocal <- value
@@ -927,6 +918,8 @@ module WorldModuleEntity =
                                 let world = World.publishEntityChange (nameof entityState.CenterLocal) centerPrevious entityState.CenterLocal true entity world
                                 let world = World.publishEntityChange (nameof entityState.BottomLocal) bottomPrevious entityState.BottomLocal true entity world
                                 let world = World.publishEntityChange (nameof entityState.BottomLeftLocal) bottomLeftPrevious entityState.BottomLeftLocal true entity world
+                                let world = World.publishEntityChange (nameof entityState.MinLocal) minPrevious entityState.MinLocal true entity world
+                                let world = World.publishEntityChange (nameof entityState.MaxLocal) maxPrevious entityState.MaxLocal true entity world
                                 struct (entityState, world)
                             else struct (entityState, world)
                         else struct (entityState, world)
@@ -959,6 +952,16 @@ module WorldModuleEntity =
         static member internal setEntityBottomLeftLocal value entity world =
             let entityState = World.getEntityState entity world
             let offset = entityState.BottomLeft - entityState.Position
+            World.setEntityPositionLocal (value + offset) entity world
+
+        static member internal setEntityMinLocal value entity world =
+            let entityState = World.getEntityState entity world
+            let offset = entityState.Min - entityState.Position
+            World.setEntityPositionLocal (value + offset) entity world
+
+        static member internal setEntityMaxLocal value entity world =
+            let entityState = World.getEntityState entity world
+            let offset = entityState.Max - entityState.Position
             World.setEntityPositionLocal (value + offset) entity world
 
         static member internal setEntityRotation value entity world =
@@ -1118,6 +1121,8 @@ module WorldModuleEntity =
                 let centerPrevious = entityState.CenterLocal
                 let bottomPrevious = entityState.BottomLocal
                 let bottomLeftPrevious = entityState.BottomLeftLocal
+                let minPrevious = entityState.MinLocal
+                let maxPrevious = entityState.MaxLocal
                 if entityState.Optimized then
                     entityState.Size <- value
                     struct (true, world)
@@ -1130,6 +1135,8 @@ module WorldModuleEntity =
                             let world = World.publishEntityChange (nameof entityState.CenterLocal) centerPrevious entityState.CenterLocal true entity world
                             let world = World.publishEntityChange (nameof entityState.BottomLocal) bottomPrevious entityState.BottomLocal true entity world
                             let world = World.publishEntityChange (nameof entityState.BottomLeftLocal) bottomLeftPrevious entityState.BottomLeftLocal true entity world
+                            let world = World.publishEntityChange (nameof entityState.MinLocal) minPrevious entityState.MinLocal true entity world
+                            let world = World.publishEntityChange (nameof entityState.MaxLocal) maxPrevious entityState.MaxLocal true entity world
                             world
                         else world
                     struct (true, world)
@@ -2503,10 +2510,14 @@ module WorldModuleEntity =
         EntityGetters.["Center"] <- fun entity world -> { PropertyType = typeof<Vector3>; PropertyValue = World.getEntityCenter entity world }
         EntityGetters.["Bottom"] <- fun entity world -> { PropertyType = typeof<Vector3>; PropertyValue = World.getEntityBottom entity world }
         EntityGetters.["BottomLeft"] <- fun entity world -> { PropertyType = typeof<Vector3>; PropertyValue = World.getEntityBottomLeft entity world }
+        EntityGetters.["Min"] <- fun entity world -> { PropertyType = typeof<Vector3>; PropertyValue = World.getEntityMin entity world }
+        EntityGetters.["Max"] <- fun entity world -> { PropertyType = typeof<Vector3>; PropertyValue = World.getEntityMax entity world }
         EntityGetters.["PositionLocal"] <- fun entity world -> { PropertyType = typeof<Vector3>; PropertyValue = World.getEntityPositionLocal entity world }
         EntityGetters.["CenterLocal"] <- fun entity world -> { PropertyType = typeof<Vector3>; PropertyValue = World.getEntityCenterLocal entity world }
         EntityGetters.["BottomLocal"] <- fun entity world -> { PropertyType = typeof<Vector3>; PropertyValue = World.getEntityBottomLocal entity world }
         EntityGetters.["BottomLeftLocal"] <- fun entity world -> { PropertyType = typeof<Vector3>; PropertyValue = World.getEntityBottomLeftLocal entity world }
+        EntityGetters.["MinLocal"] <- fun entity world -> { PropertyType = typeof<Vector3>; PropertyValue = World.getEntityMinLocal entity world }
+        EntityGetters.["MaxLocal"] <- fun entity world -> { PropertyType = typeof<Vector3>; PropertyValue = World.getEntityMaxLocal entity world }
         EntityGetters.["Rotation"] <- fun entity world -> { PropertyType = typeof<Quaternion>; PropertyValue = World.getEntityRotation entity world }
         EntityGetters.["RotationLocal"] <- fun entity world -> { PropertyType = typeof<Quaternion>; PropertyValue = World.getEntityRotationLocal entity world }
         EntityGetters.["Scale"] <- fun entity world -> { PropertyType = typeof<Vector3>; PropertyValue = World.getEntityScale entity world }
@@ -2562,10 +2573,14 @@ module WorldModuleEntity =
         EntitySetters.["Center"] <- fun property entity world -> World.setEntityCenter (property.PropertyValue :?> Vector3) entity world
         EntitySetters.["Bottom"] <- fun property entity world -> World.setEntityBottom (property.PropertyValue :?> Vector3) entity world
         EntitySetters.["BottomLeft"] <- fun property entity world -> World.setEntityBottomLeft (property.PropertyValue :?> Vector3) entity world
+        EntitySetters.["Min"] <- fun property entity world -> World.setEntityMin (property.PropertyValue :?> Vector3) entity world
+        EntitySetters.["Max"] <- fun property entity world -> World.setEntityMax (property.PropertyValue :?> Vector3) entity world
         EntitySetters.["PositionLocal"] <- fun property entity world -> World.setEntityPositionLocal (property.PropertyValue :?> Vector3) entity world
         EntitySetters.["CenterLocal"] <- fun property entity world -> World.setEntityCenterLocal (property.PropertyValue :?> Vector3) entity world
         EntitySetters.["BottomLocal"] <- fun property entity world -> World.setEntityBottomLocal (property.PropertyValue :?> Vector3) entity world
         EntitySetters.["BottomLeftLocal"] <- fun property entity world -> World.setEntityBottomLeftLocal (property.PropertyValue :?> Vector3) entity world
+        EntitySetters.["MinLocal"] <- fun property entity world -> World.setEntityMinLocal (property.PropertyValue :?> Vector3) entity world
+        EntitySetters.["MaxLocal"] <- fun property entity world -> World.setEntityMaxLocal (property.PropertyValue :?> Vector3) entity world
         EntitySetters.["Scale"] <- fun property entity world -> World.setEntityScale (property.PropertyValue :?> Vector3) entity world
         EntitySetters.["ScaleLocal"] <- fun property entity world -> World.setEntityScaleLocal (property.PropertyValue :?> Vector3) entity world
         EntitySetters.["Rotation"] <- fun property entity world -> World.setEntityRotation (property.PropertyValue :?> Quaternion) entity world
