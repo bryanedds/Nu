@@ -131,7 +131,7 @@ namespace Nu
         /// <inheritdoc/>
         public override string ToString()
         {
-            return string.Format("{0}\n{1}", Min, Size);
+            return $"{{Min:{Min} Size:{Size}}}";
         }
 
         /// <summary>

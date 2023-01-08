@@ -432,7 +432,7 @@ namespace Nu
         /// <returns>A <see cref="String"/> representation of this <see cref="Ray3"/>.</returns>
         public override string ToString()
         {
-            return "{{Origin:" + Origin.ToString() + " Direction:" + Direction.ToString() + "}}";
+            return $"{{Origin:{Origin} Direction:{Direction}}}";
         }
     }
 }

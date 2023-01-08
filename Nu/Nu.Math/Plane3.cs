@@ -442,7 +442,7 @@ namespace Nu
         /// <returns>A <see cref="String"/> representation of this <see cref="Plane3"/>.</returns>
         public override string ToString()
         {
-            return "{Normal:" + Normal + " D:" + D + "}";
+            return $"{{Normal:{Normal} D:{D}}}";
         }
 
         #endregion
