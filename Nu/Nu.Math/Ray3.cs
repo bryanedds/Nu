@@ -22,16 +22,16 @@ namespace Nu
         /// <summary>
         /// The origin of this <see cref="Ray3"/>.
         /// </summary>
-        public Vector3 Position;
+        public Vector3 Origin;
 
         /// <summary>
         /// Create a <see cref="Ray3"/>.
         /// </summary>
-        /// <param name="position">The origin of the <see cref="Ray3"/>.</param>
+        /// <param name="origin">The origin of the <see cref="Ray3"/>.</param>
         /// <param name="direction">The direction of the <see cref="Ray3"/>.</param>
-        public Ray3(Vector3 position, Vector3 direction)
+        public Ray3(Vector3 origin, Vector3 direction)
         {
-            this.Position = position;
+            this.Origin = origin;
             this.Direction = direction;
         }
 
@@ -58,7 +58,7 @@ namespace Nu
         /// </returns>
         public bool Equals(Ray3 other)
         {
-            return this.Position.Equals(other.Position) && this.Direction.Equals(other.Direction);
+            return this.Origin.Equals(other.Origin) && this.Direction.Equals(other.Direction);
         }
 
         /// <summary>
@@ -67,7 +67,7 @@ namespace Nu
         /// <returns>A hash code for this <see cref="Ray3"/>.</returns>
         public override int GetHashCode()
         {
-            return Position.GetHashCode() ^ Direction.GetHashCode();
+            return Origin.GetHashCode() ^ Direction.GetHashCode();
         }
 
         /// <summary>
@@ -75,8 +75,8 @@ namespace Nu
         /// </summary>
         public Ray3 Transform(Matrix4x4 m)
 		{
-            var a = Vector3.Transform(Position, m);
-            var b = Vector3.Transform(Position + Direction, m);
+            var a = Vector3.Transform(Origin, m);
+            var b = Vector3.Transform(Origin + Direction, m);
             return new Ray3(a, Vector3.Normalize(b - a));
 		}
 
@@ -85,8 +85,8 @@ namespace Nu
         /// </summary>
         public Ray3 Transform(Quaternion q)
 		{
-            var a = Vector3.Transform(Position, q);
-            var b = Vector3.Transform(Position + Direction, q);
+            var a = Vector3.Transform(Origin, q);
+            var b = Vector3.Transform(Origin + Direction, q);
             return new Ray3(a, Vector3.Normalize(b - a));
 		}
 
@@ -95,8 +95,8 @@ namespace Nu
         /// </summary>
         public Vector3 Project(Vector3 p)
 		{
-            var a = Position;
-            var b = Position + Direction;
+            var a = Origin;
+            var b = Origin + Direction;
             var c = p - a;
             var d = b - a;
             return a + Vector3.Dot(c, d) / Vector3.Dot(d, d) * d;
@@ -119,13 +119,13 @@ namespace Nu
 
             if (Math.Abs(Direction.X) < Epsilon)
             {
-                if (Position.X < min.X || Position.X > max.X)
+                if (Origin.X < min.X || Origin.X > max.X)
                     return null;
             }
             else
             {
-                tMin = (min.X - Position.X) / Direction.X;
-                tMax = (max.X - Position.X) / Direction.X;
+                tMin = (min.X - Origin.X) / Direction.X;
+                tMax = (max.X - Origin.X) / Direction.X;
 
                 if (tMin > tMax)
                 {
@@ -137,13 +137,13 @@ namespace Nu
 
             if (Math.Abs(Direction.Y) < Epsilon)
             {
-                if (Position.Y < min.Y || Position.Y > max.Y)
+                if (Origin.Y < min.Y || Origin.Y > max.Y)
                     return null;
             }
             else
             {
-                var tMinY = (min.Y - Position.Y) / Direction.Y;
-                var tMaxY = (max.Y - Position.Y) / Direction.Y;
+                var tMinY = (min.Y - Origin.Y) / Direction.Y;
+                var tMaxY = (max.Y - Origin.Y) / Direction.Y;
 
                 if (tMinY > tMaxY)
                 {
@@ -161,13 +161,13 @@ namespace Nu
 
             if (Math.Abs(Direction.Z) < Epsilon)
             {
-                if (Position.Z < min.Z || Position.Z > max.Z)
+                if (Origin.Z < min.Z || Origin.Z > max.Z)
                     return null;
             }
             else
             {
-                var tMinZ = (min.Z - Position.Z) / Direction.Z;
-                var tMaxZ = (max.Z - Position.Z) / Direction.Z;
+                var tMinZ = (min.Z - Origin.Z) / Direction.Z;
+                var tMaxZ = (max.Z - Origin.Z) / Direction.Z;
 
                 if (tMinZ > tMaxZ)
                 {
@@ -264,7 +264,7 @@ namespace Nu
                 return;
             }
 
-            result = (-plane.D - Vector3.Dot(plane.Normal, Position)) / den;
+            result = (-plane.D - Vector3.Dot(plane.Normal, Origin)) / den;
 
             if (result < 0.0f)
             {
@@ -289,7 +289,7 @@ namespace Nu
         public void Intersects(in Sphere sphere, out float? result)
         {
             // Find the vector between where the ray starts the the sphere's centre
-            Vector3 difference = sphere.Center - this.Position;
+            Vector3 difference = sphere.Center - this.Origin;
 
             float differenceLengthSquared = difference.LengthSquared();
             float sphereRadiusSquared = sphere.Radius * sphere.Radius;
@@ -312,7 +312,7 @@ namespace Nu
 
             // Next we kinda use Pythagoras to check if we are within the bounds of the sphere
             // if x = radius of sphere
-            // if y = distance between ray position and sphere centre
+            // if y = distance between ray origin and sphere centre
             // if z = the distance we've travelled along the ray
             // if x^2 + z^2 - y^2 < 0, we do not intersect
             float dist = sphereRadiusSquared + distanceAlongRay * distanceAlongRay - differenceLengthSquared;
@@ -347,7 +347,7 @@ namespace Nu
 
                 // Calculate the U parameter of the intersection point.
                 float inverseDeterminant = 1.0f / determinant;
-                Vector3 distanceVector = Position - a;
+                Vector3 distanceVector = Origin - a;
                 float triangleU = Vector3.Dot(distanceVector, directionCrossEdge2);
                 triangleU *= inverseDeterminant;
 
@@ -398,9 +398,9 @@ namespace Nu
         {
             var d = Vector3.Dot(plane.Normal * -plane.D, -plane.Normal);
             var t =
-                -(d + Position.Z * plane.Normal.Z + Position.Y * plane.Normal.Y + Position.X * plane.Normal.X) /
+                -(d + Origin.Z * plane.Normal.Z + Origin.Y * plane.Normal.Y + Origin.X * plane.Normal.X) /
                 +(Direction.Z * plane.Normal.Z + Direction.Y * plane.Normal.Y + Direction.X * plane.Normal.X);
-            return Position + t * Direction;
+            return Origin + t * Direction;
         }
 
         /// <summary>
@@ -431,18 +431,7 @@ namespace Nu
         /// <returns>A <see cref="String"/> representation of this <see cref="Ray3"/>.</returns>
         public override string ToString()
         {
-            return "{{Position:" + Position.ToString() + " Direction:" + Direction.ToString() + "}}";
-        }
-
-        /// <summary>
-        /// Deconstruction method for <see cref="Ray3"/>.
-        /// </summary>
-        /// <param name="position">Receives the start position of the ray.</param>
-        /// <param name="direction">Receives the direction of the ray.</param>
-        public void Deconstruct(out Vector3 position, out Vector3 direction)
-        {
-            position = Position;
-            direction = Direction;
+            return "{{Origin:" + Origin.ToString() + " Direction:" + Direction.ToString() + "}}";
         }
     }
 }

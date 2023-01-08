@@ -554,17 +554,6 @@ namespace Nu
         }
 
         /// <summary>
-        /// Deconstruction method for <see cref="Sphere"/>.
-        /// </summary>
-        /// <param name="center"></param>
-        /// <param name="radius"></param>
-        public void Deconstruct(out Vector3 center, out float radius)
-        {
-            center = Center;
-            radius = Radius;
-        }
-
-        /// <summary>
         /// Compares whether two <see cref="Sphere"/> instances are equal.
         /// </summary>
         /// <param name="a"><see cref="Sphere"/> instance on the left of the equal sign.</param>

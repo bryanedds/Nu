@@ -497,18 +497,6 @@ namespace Nu
         }
 
         /// <summary>
-        /// Deconstructs the vector into it's individual components.
-        /// </summary>
-        /// <param name="x">The X component of the vector.</param>
-        /// <param name="y">The Y component of the vector.</param>
-        [Pure]
-        public void Deconstruct(out int x, out int y)
-        {
-            x = X;
-            y = Y;
-        }
-
-        /// <summary>
         /// Returns the hashcode for this instance.
         /// </summary>
         /// <returns>A System.Int32 containing the unique hashcode for this instance.</returns>

@@ -445,17 +445,6 @@ namespace Nu
             return "{Normal:" + Normal + " D:" + D + "}";
         }
 
-        /// <summary>
-        /// Deconstruction method for <see cref="Plane3"/>.
-        /// </summary>
-        /// <param name="normal"></param>
-        /// <param name="d"></param>
-        public void Deconstruct(out Vector3 normal, out float d)
-        {
-            normal = Normal;
-            d = D;
-        }
-
         #endregion
     }
 }
