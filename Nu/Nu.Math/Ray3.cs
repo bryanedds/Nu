@@ -11,18 +11,19 @@ namespace Nu
     /// <summary>
     /// Represents a ray with an origin and a direction in 3D space.
     /// Copied from - https://github.com/MonoGame/MonoGame/blob/v3.8/MonoGame.Framework/Ray.cs
+    /// Renamed Position to Origin by BGE for nomenclature more consistent with Nu.
     /// </summary>
     public struct Ray3 : IEquatable<Ray3>
     {
         /// <summary>
-        /// The direction of this <see cref="Ray3"/>.
-        /// </summary>
-        public Vector3 Direction;
-
-        /// <summary>
         /// The origin of this <see cref="Ray3"/>.
         /// </summary>
         public Vector3 Origin;
+
+        /// <summary>
+        /// The direction of this <see cref="Ray3"/>.
+        /// </summary>
+        public Vector3 Direction;
 
         /// <summary>
         /// Create a <see cref="Ray3"/>.

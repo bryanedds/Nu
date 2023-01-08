@@ -141,24 +141,6 @@ module WorldModuleGame =
         static member setEyeSize2d value world =
             World.setEyeSize2dPlus value world |> snd'
 
-        /// Get the current 2d eye's centered-ness.
-        [<FunctionBinding>]
-        static member getEyeCentered2d world =
-            (World.getGameState world).EyeCentered2d
-
-        /// Set the current 2d eye's centered-ness.
-        static member internal setEyeCentered2dPlus value world =
-            let gameState = World.getGameState world
-            let previous = gameState.EyeCentered2d
-            if previous <> value
-            then struct (true, world |> World.setGameState { gameState with EyeCentered2d = value } |> World.publishGameChange (nameof gameState.EyeCentered2d) previous value)
-            else struct (false, world)
-
-        /// Set the current 2d eye centered-ness.
-        [<FunctionBinding>]
-        static member setEyeCentered2d value world =
-            World.setEyeCentered2dPlus value world |> snd'
-
         /// Get the current 2d eye bounds.
         [<FunctionBinding>]
         static member getEyeBounds2d world =
@@ -283,11 +265,7 @@ module WorldModuleGame =
                         elif eyeBounds.Top.Y > bounds.Top.Y then bounds.Top.Y - eyeBounds.Size.Y
                         else eyeBounds.Min.Y)
             let eyePosition = eyeBounds.Center
-            let eyeSize = World.getEyeSize2d world
-            let eyeCentered = World.getEyeCentered2d world
-            if eyeCentered
-            then World.setEyePosition2d eyePosition world
-            else World.setEyePosition2d (eyePosition - eyeSize * 0.5f) world
+            World.setEyePosition2d eyePosition world
 
         /// Set the currently selected screen or None.
         static member internal setSelectedScreenOptPlus value world =
@@ -414,10 +392,8 @@ module WorldModuleGame =
         [<FunctionBinding>]
         static member getViewBounds2d world =
             let gameState = World.getGameState world
-            if gameState.EyeCentered2d then
-                let min = v2 (gameState.EyePosition2d.X - gameState.EyeSize2d.X * 0.5f) (gameState.EyePosition2d.Y - gameState.EyeSize2d.Y * 0.5f)
-                box2 min gameState.EyeSize2d
-            else box2 gameState.EyePosition2d gameState.EyeSize2d
+            let min = v2 (gameState.EyePosition2d.X - gameState.EyeSize2d.X * 0.5f) (gameState.EyePosition2d.Y - gameState.EyeSize2d.Y * 0.5f)
+            box2 min gameState.EyeSize2d
 
         /// Get the bounds of the 2d play zone.
         [<FunctionBinding>]
@@ -621,7 +597,6 @@ module WorldModuleGame =
         GameGetters.Add ("DesiredScreen", fun world -> { PropertyType = typeof<DesiredScreen>; PropertyValue = World.getDesiredScreen world })
         GameGetters.Add ("EyePosition2d", fun world -> { PropertyType = typeof<Vector2>; PropertyValue = World.getEyePosition2d world })
         GameGetters.Add ("EyeSize2d", fun world -> { PropertyType = typeof<Vector2>; PropertyValue = World.getEyeSize2d world })
-        GameGetters.Add ("EyeCentered2d", fun world -> { PropertyType = typeof<bool>; PropertyValue = World.getEyeCentered2d world })
         GameGetters.Add ("EyePosition3d", fun world -> { PropertyType = typeof<Vector3>; PropertyValue = World.getEyePosition3d world })
         GameGetters.Add ("EyeRotation3d", fun world -> { PropertyType = typeof<Quaternion>; PropertyValue = World.getEyeRotation3d world })
         GameGetters.Add ("EyeFrustum3dEnclosed", fun world -> { PropertyType = typeof<Frustum>; PropertyValue = World.getEyeFrustum3dEnclosed world })
@@ -638,7 +613,6 @@ module WorldModuleGame =
         GameSetters.Add ("DesiredScreen", fun property world -> World.setDesiredScreenPlus (property.PropertyValue :?> DesiredScreen) world)
         GameSetters.Add ("EyePosition2d", fun property world -> World.setEyePosition2dPlus (property.PropertyValue :?> Vector2) world)
         GameSetters.Add ("EyeSize2d", fun property world -> World.setEyeSize2dPlus (property.PropertyValue :?> Vector2) world)
-        GameSetters.Add ("EyeCentered2d", fun property world -> World.setEyeCentered2dPlus (property.PropertyValue :?> bool) world)
         GameSetters.Add ("EyePosition3d", fun property world -> World.setEyePosition3dPlus (property.PropertyValue :?> Vector3) world)
         GameSetters.Add ("EyeRotation3d", fun property world -> World.setEyeRotation3dPlus (property.PropertyValue :?> Quaternion) world)
 
