@@ -526,7 +526,7 @@ namespace Nu
         /// <returns>A <see cref="String"/> representation of this <see cref="Sphere"/>.</returns>
         public override string ToString()
         {
-            return "{Center:" + this.Center + " Radius:" + this.Radius + "}";
+            return $"{{Center:{0} Radius:{this.Radius}}}";
         }
 
         /// <summary>

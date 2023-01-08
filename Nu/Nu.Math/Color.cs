@@ -295,7 +295,7 @@ namespace Nu
         /// <returns>A <see cref="string"/> that describes this Color structure.</returns>
         public override string ToString()
         {
-            return $"({R}, {G}, {B}, {A})";
+            return $"<{R}, {G}, {B}, {A}>";
         }
 
         /// <summary>

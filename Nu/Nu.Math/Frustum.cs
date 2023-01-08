@@ -442,7 +442,7 @@ namespace Nu
         /// <returns><see cref="String"/> representation of this <see cref="Frustum"/>.</returns>
         public override string ToString()
         {
-            return "{Near: " + this._planes[0] +
+            return "{Near:" + this._planes[0] +
                    " Far:" + this._planes[1] +
                    " Left:" + this._planes[2] +
                    " Right:" + this._planes[3] +
