@@ -105,23 +105,23 @@ module WorldModuleGame =
             then struct (true, world |> World.setGameState { gameState with ScriptFrame = value } |> World.publishGameChange (nameof gameState.ScriptFrame) previous value)
             else struct (false, world)
 
-        /// Get the current 2d eye position.
+        /// Get the current 2d eye center.
         [<FunctionBinding>]
-        static member getEyePosition2d world =
-            (World.getGameState world).EyePosition2d
+        static member getEyeCenter2d world =
+            (World.getGameState world).EyeCenter2d
 
-        /// Set the current 2d eye position.
-        static member internal setEyePosition2dPlus value world =
+        /// Set the current 2d eye center.
+        static member internal setEyeCenter2dPlus value world =
             let gameState = World.getGameState world
-            let previous = gameState.EyePosition2d
+            let previous = gameState.EyeCenter2d
             if v2Neq previous value
-            then struct (true, world |> World.setGameState { gameState with EyePosition2d = value } |> World.publishGameChange (nameof gameState.EyePosition2d) previous value)
+            then struct (true, world |> World.setGameState { gameState with EyeCenter2d = value } |> World.publishGameChange (nameof gameState.EyeCenter2d) previous value)
             else struct (false, world)
 
-        /// Set the current 2d eye position.
+        /// Set the current 2d eye center.
         [<FunctionBinding>]
-        static member setEyePosition2d value world =
-            World.setEyePosition2dPlus value world |> snd'
+        static member setEyeCenter2d value world =
+            World.setEyeCenter2dPlus value world |> snd'
 
         /// Get the current 2d eye size.
         [<FunctionBinding>]
@@ -144,34 +144,34 @@ module WorldModuleGame =
         /// Get the current 2d eye bounds.
         [<FunctionBinding>]
         static member getEyeBounds2d world =
-            let eyePosition = World.getEyePosition2d world
+            let eyeCenter = World.getEyeCenter2d world
             let eyeSize = World.getEyeSize2d world
-            box2 (eyePosition - eyeSize * 0.5f) eyeSize
+            box2 (eyeCenter - eyeSize * 0.5f) eyeSize
 
-        /// Get the current 3d eye position.
+        /// Get the current 3d eye center.
         [<FunctionBinding>]
-        static member getEyePosition3d world =
-            (World.getGameState world).EyePosition3d
+        static member getEyeCenter3d world =
+            (World.getGameState world).EyeCenter3d
 
-        /// Set the current 3d eye position.
-        static member internal setEyePosition3dPlus (value : Vector3) world =
+        /// Set the current 3d eye center.
+        static member internal setEyeCenter3dPlus (value : Vector3) world =
             let gameState = World.getGameState world
-            let previous = gameState.EyePosition3d
+            let previous = gameState.EyeCenter3d
             if v3Neq previous value then
                 let viewport = Constants.Render.Viewport
                 let gameState =
                     { gameState with
-                        EyePosition3d = value
+                        EyeCenter3d = value
                         EyeFrustum3dEnclosed = viewport.Frustum (Constants.Render.NearPlaneDistanceEnclosed, Constants.Render.FarPlaneDistanceEnclosed, value, gameState.EyeRotation3d)
                         EyeFrustum3dExposed = viewport.Frustum (Constants.Render.NearPlaneDistanceExposed, Constants.Render.FarPlaneDistanceExposed, value, gameState.EyeRotation3d)
                         EyeFrustum3dImposter = viewport.Frustum (Constants.Render.NearPlaneDistanceImposter, Constants.Render.FarPlaneDistanceImposter, value, gameState.EyeRotation3d) }
-                struct (true, world |> World.setGameState gameState |> World.publishGameChange (nameof gameState.EyePosition3d) previous value)
+                struct (true, world |> World.setGameState gameState |> World.publishGameChange (nameof gameState.EyeCenter3d) previous value)
             else struct (false, world)
 
-        /// Set the current 3d eye position.
+        /// Set the current 3d eye center.
         [<FunctionBinding>]
-        static member setEyePosition3d value world =
-            World.setEyePosition3dPlus value world |> snd'
+        static member setEyeCenter3d value world =
+            World.setEyeCenter3dPlus value world |> snd'
 
         /// Get the current 3d eye rotation.
         [<FunctionBinding>]
@@ -187,9 +187,9 @@ module WorldModuleGame =
                 let gameState =
                     { gameState with
                         EyeRotation3d = value
-                        EyeFrustum3dEnclosed = viewport.Frustum (Constants.Render.NearPlaneDistanceEnclosed, Constants.Render.FarPlaneDistanceEnclosed, gameState.EyePosition3d, value)
-                        EyeFrustum3dExposed = viewport.Frustum (Constants.Render.NearPlaneDistanceExposed, Constants.Render.FarPlaneDistanceExposed, gameState.EyePosition3d, value)
-                        EyeFrustum3dImposter = viewport.Frustum (Constants.Render.NearPlaneDistanceImposter, Constants.Render.FarPlaneDistanceImposter, gameState.EyePosition3d, value) }
+                        EyeFrustum3dEnclosed = viewport.Frustum (Constants.Render.NearPlaneDistanceEnclosed, Constants.Render.FarPlaneDistanceEnclosed, gameState.EyeCenter3d, value)
+                        EyeFrustum3dExposed = viewport.Frustum (Constants.Render.NearPlaneDistanceExposed, Constants.Render.FarPlaneDistanceExposed, gameState.EyeCenter3d, value)
+                        EyeFrustum3dImposter = viewport.Frustum (Constants.Render.NearPlaneDistanceImposter, Constants.Render.FarPlaneDistanceImposter, gameState.EyeCenter3d, value) }
                 struct (true, world |> World.setGameState gameState |> World.publishGameChange (nameof gameState.EyeRotation3d) previous value)
             else struct (false, world)
 
@@ -217,7 +217,7 @@ module WorldModuleGame =
         [<FunctionBinding>]
         static member getLightBox3d world =
             let lightBoxSize = Constants.Render.LightBoxSize3d
-            box3 ((World.getGameState world).EyePosition3d - lightBoxSize * 0.5f) lightBoxSize
+            box3 ((World.getGameState world).EyeCenter3d - lightBoxSize * 0.5f) lightBoxSize
 
         /// Get the omni-screen, if any.
         [<FunctionBinding>]
@@ -264,8 +264,8 @@ module WorldModuleGame =
                     (if eyeBounds.Min.Y < bounds.Min.Y then bounds.Min.Y
                         elif eyeBounds.Top.Y > bounds.Top.Y then bounds.Top.Y - eyeBounds.Size.Y
                         else eyeBounds.Min.Y)
-            let eyePosition = eyeBounds.Center
-            World.setEyePosition2d eyePosition world
+            let eyeCenter = eyeBounds.Center
+            World.setEyeCenter2d eyeCenter world
 
         /// Set the currently selected screen or None.
         static member internal setSelectedScreenOptPlus value world =
@@ -383,7 +383,7 @@ module WorldModuleGame =
                 (v2 (gameState.EyeSize2d.X * -0.5f) (gameState.EyeSize2d.Y * -0.5f))
                 (v2 gameState.EyeSize2d.X gameState.EyeSize2d.Y)
 
-        /// Get the bounds of the 2d play zone irrespective of eye position.
+        /// Get the bounds of the 2d play zone irrespective of eye center.
         [<FunctionBinding>]
         static member getPlayBounds2dAbsolute world =
             World.getViewBounds2d world
@@ -392,7 +392,7 @@ module WorldModuleGame =
         [<FunctionBinding>]
         static member getViewBounds2d world =
             let gameState = World.getGameState world
-            let min = v2 (gameState.EyePosition2d.X - gameState.EyeSize2d.X * 0.5f) (gameState.EyePosition2d.Y - gameState.EyeSize2d.Y * 0.5f)
+            let min = v2 (gameState.EyeCenter2d.X - gameState.EyeSize2d.X * 0.5f) (gameState.EyeCenter2d.Y - gameState.EyeSize2d.Y * 0.5f)
             box2 min gameState.EyeSize2d
 
         /// Get the bounds of the 2d play zone.
@@ -409,8 +409,8 @@ module WorldModuleGame =
         /// Get the bounds of the 3d play zone.
         [<FunctionBinding>]
         static member getPlayBounds3d world =
-            let eyePosition = World.getEyePosition3d world
-            let eyeBox = box3 (eyePosition - Constants.Render.PlayBoxSize3d * 0.5f) Constants.Render.PlayBoxSize3d
+            let eyeCenter = World.getEyeCenter3d world
+            let eyeBox = box3 (eyeCenter - Constants.Render.PlayBoxSize3d * 0.5f) Constants.Render.PlayBoxSize3d
             let eyeFrustum = World.getEyeFrustum3dEnclosed world
             struct (eyeBox, eyeFrustum)
 
@@ -595,9 +595,9 @@ module WorldModuleGame =
         GameGetters.Add ("SelectedScreenOpt", fun world -> { PropertyType = typeof<Screen option>; PropertyValue = World.getSelectedScreenOpt world })
         GameGetters.Add ("ScreenTransitionDestinationOpt", fun world -> { PropertyType = typeof<Screen option>; PropertyValue = World.getScreenTransitionDestinationOpt world })
         GameGetters.Add ("DesiredScreen", fun world -> { PropertyType = typeof<DesiredScreen>; PropertyValue = World.getDesiredScreen world })
-        GameGetters.Add ("EyePosition2d", fun world -> { PropertyType = typeof<Vector2>; PropertyValue = World.getEyePosition2d world })
+        GameGetters.Add ("EyeCenter2d", fun world -> { PropertyType = typeof<Vector2>; PropertyValue = World.getEyeCenter2d world })
         GameGetters.Add ("EyeSize2d", fun world -> { PropertyType = typeof<Vector2>; PropertyValue = World.getEyeSize2d world })
-        GameGetters.Add ("EyePosition3d", fun world -> { PropertyType = typeof<Vector3>; PropertyValue = World.getEyePosition3d world })
+        GameGetters.Add ("EyeCenter3d", fun world -> { PropertyType = typeof<Vector3>; PropertyValue = World.getEyeCenter3d world })
         GameGetters.Add ("EyeRotation3d", fun world -> { PropertyType = typeof<Quaternion>; PropertyValue = World.getEyeRotation3d world })
         GameGetters.Add ("EyeFrustum3dEnclosed", fun world -> { PropertyType = typeof<Frustum>; PropertyValue = World.getEyeFrustum3dEnclosed world })
         GameGetters.Add ("EyeFrustum3dExposed", fun world -> { PropertyType = typeof<Frustum>; PropertyValue = World.getEyeFrustum3dExposed world })
@@ -611,9 +611,9 @@ module WorldModuleGame =
         GameSetters.Add ("Model", fun property world -> World.setGameModelProperty false { DesignerType = property.PropertyType; DesignerValue = property.PropertyValue } world)
         GameSetters.Add ("OmniScreenOpt", fun property world -> World.setOmniScreenOptPlus (property.PropertyValue :?> Screen option) world)
         GameSetters.Add ("DesiredScreen", fun property world -> World.setDesiredScreenPlus (property.PropertyValue :?> DesiredScreen) world)
-        GameSetters.Add ("EyePosition2d", fun property world -> World.setEyePosition2dPlus (property.PropertyValue :?> Vector2) world)
+        GameSetters.Add ("EyeCenter2d", fun property world -> World.setEyeCenter2dPlus (property.PropertyValue :?> Vector2) world)
         GameSetters.Add ("EyeSize2d", fun property world -> World.setEyeSize2dPlus (property.PropertyValue :?> Vector2) world)
-        GameSetters.Add ("EyePosition3d", fun property world -> World.setEyePosition3dPlus (property.PropertyValue :?> Vector3) world)
+        GameSetters.Add ("EyeCenter3d", fun property world -> World.setEyeCenter3dPlus (property.PropertyValue :?> Vector3) world)
         GameSetters.Add ("EyeRotation3d", fun property world -> World.setEyeRotation3dPlus (property.PropertyValue :?> Quaternion) world)
 
     /// Initialize getters and setters

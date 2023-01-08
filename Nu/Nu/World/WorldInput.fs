@@ -39,17 +39,17 @@ module WorldInputModule =
         [<FunctionBinding>]
         static member getMousePosition2dScreen world =
             let viewport = World.getViewport world
-            let eyePosition = World.getEyePosition2d world
+            let eyeCenter = World.getEyeCenter2d world
             let eyeSize = World.getEyeSize2d world
-            viewport.MouseTo2dScreen (World.getMousePosition world, eyePosition, eyeSize)
+            viewport.MouseTo2dScreen (World.getMousePosition world, eyeCenter, eyeSize)
 
         /// Get the 2d world position of the mouse.
         [<FunctionBinding>]
         static member getMousePostion2dWorld absolute world =
             let viewport = World.getViewport world
-            let eyePosition = World.getEyePosition2d world
+            let eyeCenter = World.getEyeCenter2d world
             let eyeSize = World.getEyeSize2d world
-            viewport.MouseToWorld2d (absolute, World.getMousePosition world, eyePosition, eyeSize)
+            viewport.MouseToWorld2d (absolute, World.getMousePosition world, eyeCenter, eyeSize)
 
         /// Get the 3d screen position of the mouse.
         [<FunctionBinding>]
@@ -61,9 +61,9 @@ module WorldInputModule =
         [<FunctionBinding>]
         static member getMouseRay3dWorld absolute world =
             let viewport = World.getViewport world
-            let eyePosition = World.getEyePosition3d world
+            let eyeCenter = World.getEyeCenter3d world
             let eyeRotation = World.getEyeRotation3d world
-            viewport.MouseToWorld3d (absolute, World.getMousePosition world, eyePosition, eyeRotation)
+            viewport.MouseToWorld3d (absolute, World.getMousePosition world, eyeCenter, eyeRotation)
 
         /// Check that the given keyboard key is down.
         [<FunctionBinding>]

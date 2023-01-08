@@ -500,9 +500,9 @@ module WorldTypes =
           SelectedScreenOpt : Screen option
           ScreenTransitionDestinationOpt : Screen option
           DesiredScreen : DesiredScreen
-          EyePosition2d : Vector2
+          EyeCenter2d : Vector2
           EyeSize2d : Vector2
-          EyePosition3d : Vector3
+          EyeCenter3d : Vector3
           EyeRotation3d : Quaternion
           EyeFrustum3dEnclosed : Frustum
           EyeFrustum3dExposed : Frustum
@@ -513,7 +513,7 @@ module WorldTypes =
 
         /// Make a game state value.
         static member make (dispatcher : GameDispatcher) =
-            let eyePosition3d = Constants.Engine.EyePosition3dDefault
+            let eyeCenter3d = Constants.Engine.EyeCenter3dDefault
             let eyeRotation3d = quatIdentity
             let viewport = Constants.Render.Viewport
             { Dispatcher = dispatcher
@@ -524,13 +524,13 @@ module WorldTypes =
               SelectedScreenOpt = None
               ScreenTransitionDestinationOpt = None
               DesiredScreen = DesireIgnore
-              EyePosition2d = v2Zero
+              EyeCenter2d = v2Zero
               EyeSize2d = v2 (single Constants.Render.VirtualResolutionX) (single Constants.Render.VirtualResolutionY)
-              EyePosition3d = eyePosition3d
+              EyeCenter3d = eyeCenter3d
               EyeRotation3d = eyeRotation3d
-              EyeFrustum3dEnclosed = viewport.Frustum (Constants.Render.NearPlaneDistanceEnclosed, Constants.Render.FarPlaneDistanceEnclosed, eyePosition3d, eyeRotation3d)
-              EyeFrustum3dExposed = viewport.Frustum (Constants.Render.NearPlaneDistanceExposed, Constants.Render.FarPlaneDistanceExposed, eyePosition3d, eyeRotation3d)
-              EyeFrustum3dImposter = viewport.Frustum (Constants.Render.NearPlaneDistanceImposter, Constants.Render.FarPlaneDistanceImposter, eyePosition3d, eyeRotation3d)
+              EyeFrustum3dEnclosed = viewport.Frustum (Constants.Render.NearPlaneDistanceEnclosed, Constants.Render.FarPlaneDistanceEnclosed, eyeCenter3d, eyeRotation3d)
+              EyeFrustum3dExposed = viewport.Frustum (Constants.Render.NearPlaneDistanceExposed, Constants.Render.FarPlaneDistanceExposed, eyeCenter3d, eyeRotation3d)
+              EyeFrustum3dImposter = viewport.Frustum (Constants.Render.NearPlaneDistanceImposter, Constants.Render.FarPlaneDistanceImposter, eyeCenter3d, eyeRotation3d)
               ScriptFrame = Scripting.DeclarationFrame StringComparer.Ordinal
               Order = Core.getUniqueTimeStamp ()
               Id = Gen.id }

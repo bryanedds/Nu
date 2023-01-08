@@ -59,7 +59,7 @@ const float REFLECTION_LOD_MAX = 5.0;
 const float GAMMA = 2.2;
 const int LIGHTS_MAX = 8;
 
-uniform vec3 eyePosition;
+uniform vec3 eyeCenter;
 uniform sampler2D albedoTexture;
 uniform sampler2D metalnessTexture;
 uniform sampler2D roughnessTexture;
@@ -68,7 +68,7 @@ uniform sampler2D normalTexture;
 uniform samplerCube irradianceMap;
 uniform samplerCube environmentFilterMap;
 uniform sampler2D brdfTexture;
-uniform vec3 lightPositions[LIGHTS_MAX];
+uniform vec3 lightOrigins[LIGHTS_MAX];
 uniform vec4 lightColors[LIGHTS_MAX];
 uniform float lightBrightnesses[LIGHTS_MAX];
 uniform float lightIntensities[LIGHTS_MAX];
@@ -150,7 +150,7 @@ void main()
 
     // compute lighting profile
     vec3 n = getNormal();
-    vec3 v = normalize(eyePosition - positionOut);
+    vec3 v = normalize(eyeCenter - positionOut);
     vec3 r = reflect(-v, n);
 
     // compute lightAccum term
@@ -160,9 +160,9 @@ void main()
     for (int i = 0; i < LIGHTS_MAX; ++i)
     {
         // per-light radiance
-        vec3 l = normalize(lightPositions[i] - positionOut);
+        vec3 l = normalize(lightOrigins[i] - positionOut);
         vec3 h = normalize(v + l);
-        vec3 d = lightPositions[i] - positionOut;
+        vec3 d = lightOrigins[i] - positionOut;
         float distanceSquared = dot(d, d);
         float attenuation = 1.0 / distanceSquared;
         float intensity =
