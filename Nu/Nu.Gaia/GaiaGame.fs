@@ -34,7 +34,7 @@ and GamePropertyDescriptor (propertyDescriptor, attributes) =
         if propertyName.EndsWith "Script" || propertyName.EndsWith "ScriptOpt" then "Scripts"
         elif propertyName = "Name" ||  propertyName.EndsWith "Model" then "\rAmbient Properties"
         elif propertyName = "DesiredScreen" || propertyName = "OmniScreenOpt" || propertyName = "ScreenTransitionDestinationOpt" || propertyName = "SelectedScreenOpt" ||
-             propertyName = "EyePosition2d" || propertyName = "EyeSize2d" || propertyName = "EyeCentered2d" || propertyName = "EyePosition3d" || propertyName = "EyeRotation3d" ||
+             propertyName = "EyePosition2d" || propertyName = "EyeSize2d" || propertyName = "EyePosition3d" || propertyName = "EyeRotation3d" ||
              propertyName = "EyeFrustum3dEnclosed" || propertyName = "EyeFrustum3dExposed" || propertyName = "EyeFrustum3dImposter" then
              "\rBuilt-In Properties"
         else "\rXtension Properties"
