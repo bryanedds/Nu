@@ -933,7 +933,7 @@ module BattleDispatcher =
 
             match command with
             | UpdateEye ->
-                let world = World.setEyePosition2d v2Zero world
+                let world = World.setEyeCenter2d v2Zero world
                 just world
             
             | DisplayHop hop ->

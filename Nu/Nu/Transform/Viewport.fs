@@ -14,15 +14,15 @@ module Viewport =
             Matrix4x4.CreateTranslation (v3 translation.X translation.Y 1.0f)
 
         /// Compute the 2d relative view matrix.
-        member this.ViewRelative2d (eyePosition : Vector2, eyeSize : Vector2) =
-            let translation = -eyePosition * Constants.Render.VirtualScalar2 + eyeSize * 0.5f * Constants.Render.VirtualScalar2
+        member this.ViewRelative2d (eyeCenter : Vector2, eyeSize : Vector2) =
+            let translation = -eyeCenter * Constants.Render.VirtualScalar2 + eyeSize * 0.5f * Constants.Render.VirtualScalar2
             Matrix4x4.CreateTranslation (v3 translation.X translation.Y 1.0f)
 
         /// Compute a 2d view matrix.
-        member this.View2d (absolute, eyePosition, eyeSize) =
+        member this.View2d (absolute, eyeCenter, eyeSize) =
             if absolute
-            then this.View2dAbsolute (eyePosition, eyeSize)
-            else this.ViewRelative2d (eyePosition, eyeSize)
+            then this.View2dAbsolute (eyeCenter, eyeSize)
+            else this.ViewRelative2d (eyeCenter, eyeSize)
 
         /// Compute the 2d projection matrix.
         member this.Projection2d =
@@ -34,8 +34,8 @@ module Viewport =
                  -1.0f, 1.0f)
 
         /// Compute the 2d view projection matrix.
-        member this.ViewProjection2d (absolute, eyePosition, eyeSize) =
-            let view = this.View2d (absolute, eyePosition, eyeSize)
+        member this.ViewProjection2d (absolute, eyeCenter, eyeSize) =
+            let view = this.View2d (absolute, eyeCenter, eyeSize)
             let projection = this.Projection2d
             view * projection
 
@@ -46,12 +46,12 @@ module Viewport =
                 -(mousePosition.Y / single Constants.Render.VirtualScalar - eyeSize.Y * 0.5f) // negation for right-handedness
 
         /// Transform the given mouse position to 2d world space.
-        member this.MouseToWorld2d (absolute, mousePosition, eyePosition : Vector2, eyeSize : Vector2) =
-            let mouseScreen = this.MouseTo2dScreen (mousePosition, eyePosition, eyeSize)
+        member this.MouseToWorld2d (absolute, mousePosition, eyeCenter : Vector2, eyeSize : Vector2) =
+            let mouseScreen = this.MouseTo2dScreen (mousePosition, eyeCenter, eyeSize)
             let view =
                 if absolute
                 then Matrix4x4.Identity
-                else Matrix4x4.CreateTranslation eyePosition.V3
+                else Matrix4x4.CreateTranslation eyeCenter.V3
             (Vector3.Transform (mouseScreen.V3, view)).V2
 
         /// Transform the given mouse position to 2d entity space (eye 2d coordinates).
@@ -64,15 +64,15 @@ module Viewport =
             m4Identity
 
         /// Compute the 3d relative view matrix.
-        member this.ViewRelative3d (eyePosition : Vector3, eyeRotation : Quaternion) =
-            let eyeTarget = eyePosition + Vector3.Transform (v3Forward, eyeRotation)
-            Matrix4x4.CreateLookAt (eyePosition, eyeTarget, v3Up)
+        member this.ViewRelative3d (eyeCenter : Vector3, eyeRotation : Quaternion) =
+            let eyeTarget = eyeCenter + Vector3.Transform (v3Forward, eyeRotation)
+            Matrix4x4.CreateLookAt (eyeCenter, eyeTarget, v3Up)
 
         /// Compute a 3d view matrix.
-        member this.View3d (absolute, eyePosition, eyeRotation) =
+        member this.View3d (absolute, eyeCenter, eyeRotation) =
             if absolute
-            then this.View3dAbsolute (eyePosition, eyeRotation)
-            else this.ViewRelative3d (eyePosition, eyeRotation)
+            then this.View3dAbsolute (eyeCenter, eyeRotation)
+            else this.ViewRelative3d (eyeCenter, eyeRotation)
 
         /// Compute the 3d projection matrix.
         member this.Projection3d nearPlaneDistance farPlaneDistance =
@@ -83,15 +83,15 @@ module Viewport =
                  farPlaneDistance)
 
         /// Compute a 3d view projection matrix.
-        member this.ViewProjection3d (absolute, nearPlaneDistance, farPlaneDistance, eyePosition, eyeSize) =
-            let view = this.View3d (absolute, eyePosition, eyeSize)
+        member this.ViewProjection3d (absolute, nearPlaneDistance, farPlaneDistance, eyeCenter, eyeSize) =
+            let view = this.View3d (absolute, eyeCenter, eyeSize)
             let projection = this.Projection3d nearPlaneDistance farPlaneDistance
             view * projection
 
         /// Compute a 3d view frustum.
-        member this.Frustum (nearPlaneDistance, farPlaneDistance, eyePosition, eyeRotation : Quaternion) =
-            let eyeTarget = eyePosition + Vector3.Transform (v3Forward, eyeRotation)
-            let view = Matrix4x4.CreateLookAt (eyePosition, eyeTarget, v3Up)
+        member this.Frustum (nearPlaneDistance, farPlaneDistance, eyeCenter, eyeRotation : Quaternion) =
+            let eyeTarget = eyeCenter + Vector3.Transform (v3Forward, eyeRotation)
+            let view = Matrix4x4.CreateLookAt (eyeCenter, eyeTarget, v3Up)
             let projection = this.Projection3d nearPlaneDistance farPlaneDistance
             let viewProjection = view * projection
             Frustum viewProjection
@@ -103,8 +103,8 @@ module Viewport =
                 (1.0f - (mousePosition.Y / single Constants.Render.ResolutionY)) // inversion for right-handedness
 
         /// Transform the given mouse position to 3d world space.
-        member this.MouseToWorld3d (absolute, mousePosition : Vector2, eyePosition, eyeRotation) =
+        member this.MouseToWorld3d (absolute, mousePosition : Vector2, eyeCenter, eyeRotation) =
             let viewProjection = this.ViewProjection3d (absolute, Constants.Render.NearPlaneDistanceOmnipresent, Constants.Render.FarPlaneDistanceOmnipresent, v3Zero, eyeRotation)
             let near = this.Unproject (mousePosition.V3.WithZ 0.0f, viewProjection)
             let far = this.Unproject (mousePosition.V3.WithZ 1.0f, viewProjection)
-            ray (near + eyePosition) (Vector3.Normalize (far - near))
+            ray (near + eyeCenter) (Vector3.Normalize (far - near))

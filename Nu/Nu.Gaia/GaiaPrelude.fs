@@ -19,7 +19,7 @@ type DragEntityState =
     | DragEntityInactive
 
 type DragEyeState =
-    | DragEyePosition2d of Vector2 * Vector2
+    | DragEyeCenter2d of Vector2 * Vector2
     | DragEyeInactive
 
 type SavedState =

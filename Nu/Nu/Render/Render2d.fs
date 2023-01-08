@@ -370,14 +370,14 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
          tileSourceSize : Vector2i,
          tileSize : Vector2,
          tileAssets : (TmxTileset * Image AssetTag) array,
-         eyePosition : Vector2,
+         eyeCenter : Vector2,
          eyeSize : Vector2,
          renderer) =
         let absolute = transform.Absolute
         let perimeter = transform.Perimeter
         let min = perimeter.Min.V2 * Constants.Render.VirtualScalar2
         let size = perimeter.Size.V2 * Constants.Render.VirtualScalar2
-        let eyePosition = eyePosition * Constants.Render.VirtualScalar2
+        let eyeCenter = eyeCenter * Constants.Render.VirtualScalar2
         let eyeSize = eyeSize * Constants.Render.VirtualScalar2
         let tileSize = tileSize * Constants.Render.VirtualScalar2
         let tilePivot = tileSize * 0.5f // just rotate around center
@@ -403,7 +403,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
                             (min.X + tileSize.X * single i)
                             (min.Y - tileSize.Y - tileSize.Y * single j + size.Y)
                     let tileBounds = box2 tileMin tileSize
-                    let viewBounds = box2 (eyePosition - eyeSize * 0.5f) eyeSize
+                    let viewBounds = box2 (eyeCenter - eyeSize * 0.5f) eyeSize
                     if tileBounds.Intersects viewBounds then
         
                         // compute tile flip
@@ -450,7 +450,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
          font : Font AssetTag,
          color : Color inref,
          justification : Justification,
-         eyePosition : Vector2,
+         eyeCenter : Vector2,
          eyeSize : Vector2,
          renderer : GlRenderer2d) =
         let (transform, color) = (transform, color) // make visible from lambda
@@ -461,7 +461,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
             let position = perimeter.Min.V2 * Constants.Render.VirtualScalar2
             let size = perimeter.Size.V2 * Constants.Render.VirtualScalar2
             let viewport = Constants.Render.Viewport
-            let viewProjection = viewport.ViewProjection2d (absolute, eyePosition, eyeSize)
+            let viewProjection = viewport.ViewProjection2d (absolute, eyeCenter, eyeSize)
             let font = AssetTag.generalize font
             match GlRenderer2d.tryGetRenderAsset font renderer with
             | ValueSome renderAsset ->
@@ -556,11 +556,11 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
 #if !DEBUG
         inline
 #endif
-        private renderCallback callback eyePosition eyeSize renderer =
-        flip OpenGL.SpriteBatch.InterruptSpriteBatchFrame renderer.RenderSpriteBatchEnv $ fun () -> callback (eyePosition, eyeSize, renderer)
+        private renderCallback callback eyeCenter eyeSize renderer =
+        flip OpenGL.SpriteBatch.InterruptSpriteBatchFrame renderer.RenderSpriteBatchEnv $ fun () -> callback (eyeCenter, eyeSize, renderer)
         OpenGL.Hl.Assert ()
 
-    static member private renderDescriptor descriptor eyePosition eyeSize renderer =
+    static member private renderDescriptor descriptor eyeCenter eyeSize renderer =
         match descriptor with
         | SpriteDescriptor descriptor ->
             GlRenderer2d.renderSprite (&descriptor.Transform, &descriptor.InsetOpt, descriptor.Image, &descriptor.Color, descriptor.Blend, &descriptor.Glow, descriptor.Flip, renderer)
@@ -582,16 +582,16 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
             GlRenderer2d.renderTiles
                 (&descriptor.Transform, &descriptor.Color, &descriptor.Glow,
                  descriptor.MapSize, descriptor.Tiles, descriptor.TileSourceSize, descriptor.TileSize, descriptor.TileAssets,
-                 eyePosition, eyeSize, renderer)
+                 eyeCenter, eyeSize, renderer)
         | TextDescriptor descriptor ->
             GlRenderer2d.renderText
-                (&descriptor.Transform, descriptor.Text, descriptor.Font, &descriptor.Color, descriptor.Justification, eyePosition, eyeSize, renderer)
+                (&descriptor.Transform, descriptor.Text, descriptor.Font, &descriptor.Color, descriptor.Justification, eyeCenter, eyeSize, renderer)
         | RenderCallbackDescriptor2d callback ->
-            GlRenderer2d.renderCallback callback eyePosition eyeSize renderer
+            GlRenderer2d.renderCallback callback eyeCenter eyeSize renderer
 
-    static member private renderLayeredMessages eyePosition eyeSize renderer =
+    static member private renderLayeredMessages eyeCenter eyeSize renderer =
         for message in renderer.RenderLayeredMessages do
-            GlRenderer2d.renderDescriptor message.RenderDescriptor2d eyePosition eyeSize renderer
+            GlRenderer2d.renderDescriptor message.RenderDescriptor2d eyeCenter eyeSize renderer
 
     /// Make a GlRenderer2d.
     static member make window config =
@@ -640,7 +640,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
         member renderer.SpriteBatchEnvOpt =
             Some renderer.RenderSpriteBatchEnv
 
-        member renderer.Render eyePosition eyeSize windowSize renderMessages =
+        member renderer.Render eyeCenter eyeSize windowSize renderMessages =
 
             // begin frame
             let viewportOffset = Constants.Render.ViewportOffset windowSize
@@ -650,15 +650,15 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
 
             // begin sprite batch frame
             let viewport = Constants.Render.Viewport
-            let viewProjectionAbsolute = viewport.ViewProjection2d (true, eyePosition, eyeSize)
-            let viewProjectionRelative = viewport.ViewProjection2d (false, eyePosition, eyeSize)
+            let viewProjectionAbsolute = viewport.ViewProjection2d (true, eyeCenter, eyeSize)
+            let viewProjectionRelative = viewport.ViewProjection2d (false, eyeCenter, eyeSize)
             OpenGL.SpriteBatch.BeginSpriteBatchFrame (&viewProjectionAbsolute, &viewProjectionRelative, renderer.RenderSpriteBatchEnv)
             OpenGL.Hl.Assert ()
 
             // render frame
             GlRenderer2d.handleRenderMessages renderMessages renderer
             GlRenderer2d.sortRenderLayeredMessages renderer
-            GlRenderer2d.renderLayeredMessages eyePosition eyeSize renderer
+            GlRenderer2d.renderLayeredMessages eyeCenter eyeSize renderer
             renderer.RenderLayeredMessages.Clear ()
 
             // end sprite batch frame

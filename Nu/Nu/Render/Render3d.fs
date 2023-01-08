@@ -40,7 +40,7 @@ and [<ReferenceEquality; NoComparison>] RenderTasks =
 
 /// The parameters for completing a render pass.
 and [<ReferenceEquality; NoComparison>] RenderPassParameters3d =
-    { EyePosition : Vector3
+    { EyeCenter : Vector3
       EyeRotation : Quaternion
       ViewAbsolute : Matrix4x4
       ViewRelative : Matrix4x4
@@ -116,7 +116,7 @@ and [<ReferenceEquality; NoComparison>] RenderMessage3d =
 /// A sortable light.
 /// OPTIMIZATION: mutable field for caching distance squared.
 and [<ReferenceEquality; NoComparison>] SortableLight =
-    { SortableLightPosition : Vector3
+    { SortableLightOrigin : Vector3
       SortableLightColor : Color
       SortableLightBrightness : single
       SortableLightIntensity : single
@@ -125,12 +125,12 @@ and [<ReferenceEquality; NoComparison>] SortableLight =
     /// Sort lights into array for uploading to OpenGL.
     /// TODO: 3D: consider getting rid of allocation here.
     static member sortLightsIntoArrays position lights =
-        let lightPositions = Array.zeroCreate<single> (Constants.Render.ShaderLightsMax * 3)
+        let lightOrigins = Array.zeroCreate<single> (Constants.Render.ShaderLightsMax * 3)
         let lightColors = Array.zeroCreate<single> (Constants.Render.ShaderLightsMax * 4)
         let lightBrightnesses = Array.zeroCreate<single> (Constants.Render.ShaderLightsMax)
         let lightIntensities = Array.zeroCreate<single> (Constants.Render.ShaderLightsMax)
         for light in lights do
-            light.SortableLightDistanceSquared <- (light.SortableLightPosition - position).MagnitudeSquared
+            light.SortableLightDistanceSquared <- (light.SortableLightOrigin - position).MagnitudeSquared
         let lightsSorted = lights |> Seq.toArray |> Array.sortBy (fun light -> light.SortableLightDistanceSquared)
         for i in 0 .. dec Constants.Render.ShaderLightsMax do
             if i < lightsSorted.Length then
@@ -139,16 +139,16 @@ and [<ReferenceEquality; NoComparison>] SortableLight =
                 let b = i
                 let n = i
                 let light = lightsSorted.[i]
-                lightPositions.[p] <- light.SortableLightPosition.X
-                lightPositions.[p+1] <- light.SortableLightPosition.Y
-                lightPositions.[p+2] <- light.SortableLightPosition.Z
+                lightOrigins.[p] <- light.SortableLightOrigin.X
+                lightOrigins.[p+1] <- light.SortableLightOrigin.Y
+                lightOrigins.[p+2] <- light.SortableLightOrigin.Z
                 lightBrightnesses.[b] <- light.SortableLightBrightness
                 lightIntensities.[n] <- light.SortableLightIntensity
                 lightColors.[c] <- light.SortableLightColor.R
                 lightColors.[c+1] <- light.SortableLightColor.G
                 lightColors.[c+2] <- light.SortableLightColor.B
                 lightColors.[c+3] <- light.SortableLightColor.A
-        (lightPositions, lightColors, lightBrightnesses, lightIntensities)
+        (lightOrigins, lightColors, lightBrightnesses, lightIntensities)
 
 /// The 3d renderer. Represents the 3d rendering system in Nu generally.
 and Renderer3d =
@@ -611,7 +611,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                 for light in modelAsset.Lights do
                     let lightMatrix = light.LightMatrix * modelMatrix
                     let light =
-                        { SortableLightPosition = lightMatrix.Translation
+                        { SortableLightOrigin = lightMatrix.Translation
                           SortableLightColor = light.LightColor
                           SortableLightBrightness = light.LightBrightness
                           SortableLightIntensity = light.LightIntensity
@@ -650,15 +650,15 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
              shader,
              skyBoxSurface)
 
-    static member private sortSurfaces eyePosition (surfaces : struct (single * single * Matrix4x4 * Box2 * RenderMaterial * OpenGL.PhysicallyBased.PhysicallyBasedSurface) SegmentedList) =
+    static member private sortSurfaces eyeCenter (surfaces : struct (single * single * Matrix4x4 * Box2 * RenderMaterial * OpenGL.PhysicallyBased.PhysicallyBasedSurface) SegmentedList) =
         surfaces |>
-        Seq.map (fun struct (sort, subsort, model, texCoordsOffset, renderMaterial, surface) -> struct (sort, subsort, model, texCoordsOffset, renderMaterial, surface, (model.Translation - eyePosition).MagnitudeSquared)) |>
+        Seq.map (fun struct (sort, subsort, model, texCoordsOffset, renderMaterial, surface) -> struct (sort, subsort, model, texCoordsOffset, renderMaterial, surface, (model.Translation - eyeCenter).MagnitudeSquared)) |>
         Seq.toArray |> // TODO: 3D: use a preallocated array to avoid allocating on the LOH.
         Array.sortByDescending (fun struct (sort, subsort, _, _, _, _, distanceSquared) -> struct (sort, distanceSquared, subsort)) |>
         Array.map (fun struct (_, _, model, texCoordsOffset, renderMaterialOpt, surface, _) -> struct (model, texCoordsOffset, renderMaterialOpt, surface))
 
     static member private renderPhysicallyBasedSurfaces
-        eyePosition
+        eyeCenter
         viewArray
         projectionArray
         (parameters : struct (Matrix4x4 * Box2 * RenderMaterial) SegmentedList)
@@ -666,7 +666,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
         irradianceMap
         environmentFilterMap
         brdfTexture
-        lightPositions
+        lightOrigins
         lightColors
         lightBrightnesses
         lightIntensities
@@ -724,8 +724,8 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
 
             // draw surfaces
             OpenGL.PhysicallyBased.DrawPhysicallyBasedSurfaces
-                (eyePosition, parameters.Length, renderer.RenderModelsFields, renderer.RenderTexCoordsOffsetsFields, renderer.RenderAlbedosFields, renderer.RenderMaterialsFields, viewArray, projectionArray,
-                 blending, irradianceMap, environmentFilterMap, brdfTexture, lightPositions, lightColors, lightBrightnesses, lightIntensities,
+                (eyeCenter, parameters.Length, renderer.RenderModelsFields, renderer.RenderTexCoordsOffsetsFields, renderer.RenderAlbedosFields, renderer.RenderMaterialsFields, viewArray, projectionArray,
+                 blending, irradianceMap, environmentFilterMap, brdfTexture, lightOrigins, lightColors, lightBrightnesses, lightIntensities,
                  surface.SurfaceMaterial, surface.PhysicallyBasedGeometry, shader)
 
     /// Make a GlRenderer3d.
@@ -903,7 +903,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
         member renderer.PhysicallyBasedShader =
             renderer.RenderPhysicallyBasedForwardShader
 
-        member renderer.Render eyePosition eyeRotation windowSize renderMessages =
+        member renderer.Render eyeCenter eyeRotation windowSize renderMessages =
 
             // begin frame
             let viewportOffset = Constants.Render.ViewportOffset windowSize
@@ -912,10 +912,10 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                 OpenGL.Hl.Assert ()
 
             // compute view and projection
-            let eyeTarget = eyePosition + Vector3.Transform (v3Forward, eyeRotation)
+            let eyeTarget = eyeCenter + Vector3.Transform (v3Forward, eyeRotation)
             let viewAbsolute = m4Identity
             let viewAbsoluteArray = viewAbsolute.ToArray ()
-            let viewRelative = Matrix4x4.CreateLookAt (eyePosition, eyeTarget, v3Up)
+            let viewRelative = Matrix4x4.CreateLookAt (eyeCenter, eyeTarget, v3Up)
             let viewRelativeArray = viewRelative.ToArray ()
             let viewSkyBox = Matrix4x4.CreateFromQuaternion (Quaternion.Inverse eyeRotation)
             let viewSkyBoxArray = viewSkyBox.ToArray ()
@@ -937,7 +937,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                 | RenderSkyBoxMessage cubeMap ->
                     SegmentedList.add cubeMap renderer.RenderTasks.RenderSkyBoxes
                 | RenderLightMessage3d (position, color, brightness, intensity, _) ->
-                    let light = { SortableLightPosition = position; SortableLightColor = color; SortableLightBrightness = brightness; SortableLightIntensity = intensity; SortableLightDistanceSquared = Single.MaxValue }
+                    let light = { SortableLightOrigin = position; SortableLightColor = color; SortableLightBrightness = brightness; SortableLightIntensity = intensity; SortableLightDistanceSquared = Single.MaxValue }
                     SegmentedList.add light renderer.RenderTasks.RenderLights
                 | RenderBillboardMessage (absolute, modelMatrix, insetOpt, renderMaterial, albedoImage, metalnessImage, roughnessImage, ambientOcclusionImage, normalImage, minFilterOpt, magFilterOpt, renderType) ->
                     let (albedoMetadata, albedoTexture) =
@@ -1040,12 +1040,12 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                     GlRenderer3d.handleReloadRenderAssets renderer
 
             // sort absolute forward surfaces
-            let forwardSurfacesSorted = GlRenderer3d.sortSurfaces eyePosition renderer.RenderTasks.RenderSurfacesForwardAbsolute
+            let forwardSurfacesSorted = GlRenderer3d.sortSurfaces eyeCenter renderer.RenderTasks.RenderSurfacesForwardAbsolute
             SegmentedList.addMany forwardSurfacesSorted renderer.RenderTasks.RenderSurfacesForwardAbsoluteSorted
             SegmentedList.clear renderer.RenderTasks.RenderSurfacesForwardAbsolute
 
             // sort relative forward surfaces
-            let forwardSurfacesSorted = GlRenderer3d.sortSurfaces eyePosition renderer.RenderTasks.RenderSurfacesForwardRelative
+            let forwardSurfacesSorted = GlRenderer3d.sortSurfaces eyeCenter renderer.RenderTasks.RenderSurfacesForwardRelative
             SegmentedList.addMany forwardSurfacesSorted renderer.RenderTasks.RenderSurfacesForwardRelativeSorted
             SegmentedList.clear renderer.RenderTasks.RenderSurfacesForwardRelative
 
@@ -1098,14 +1098,14 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                     else Option.get irradianceAndEnviconmentMapsOptRef.Value
                 | None -> (renderer.RenderIrradianceMap, renderer.RenderEnvironmentFilterMap)
 
-            // sort lights for deferred relative to eye position
-            let (lightPositions, lightColors, lightBrightnesses, lightIntensities) =
-                SortableLight.sortLightsIntoArrays eyePosition renderer.RenderTasks.RenderLights
+            // sort lights for deferred relative to eye center
+            let (lightOrigins, lightColors, lightBrightnesses, lightIntensities) =
+                SortableLight.sortLightsIntoArrays eyeCenter renderer.RenderTasks.RenderLights
 
             // deferred render surfaces w/ absolute transforms
             for entry in renderer.RenderTasks.RenderSurfacesDeferredAbsolute do
                 GlRenderer3d.renderPhysicallyBasedSurfaces
-                    eyePosition
+                    eyeCenter
                     viewAbsoluteArray
                     projectionArray
                     entry.Value
@@ -1113,7 +1113,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                     irradianceMap
                     environmentFilterMap
                     renderer.RenderBrdfTexture
-                    lightPositions
+                    lightOrigins
                     lightColors
                     lightBrightnesses
                     lightIntensities
@@ -1125,7 +1125,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
             // deferred render surfaces w/ relative transforms
             for entry in renderer.RenderTasks.RenderSurfacesDeferredRelative do
                 GlRenderer3d.renderPhysicallyBasedSurfaces
-                    eyePosition
+                    eyeCenter
                     viewRelativeArray
                     projectionArray
                     entry.Value
@@ -1133,7 +1133,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                     irradianceMap
                     environmentFilterMap
                     renderer.RenderBrdfTexture
-                    lightPositions
+                    lightOrigins
                     lightColors
                     lightBrightnesses
                     lightIntensities
@@ -1158,8 +1158,8 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
 
             // deferred render lighting quad
             OpenGL.PhysicallyBased.DrawPhysicallyBasedDeferred2Surface
-                (eyePosition, positionTexture, albedoTexture, materialTexture, normalTexture,
-                 irradianceMap, environmentFilterMap, renderer.RenderBrdfTexture, lightPositions, lightColors, lightBrightnesses, lightIntensities,
+                (eyeCenter, positionTexture, albedoTexture, materialTexture, normalTexture,
+                 irradianceMap, environmentFilterMap, renderer.RenderBrdfTexture, lightOrigins, lightColors, lightBrightnesses, lightIntensities,
                  renderer.RenderPhysicallyBasedQuad, renderer.RenderPhysicallyBasedDeferred2Shader)
             OpenGL.Hl.Assert ()
 
@@ -1172,10 +1172,10 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
 
             // forward render surfaces w/ absolute transforms
             for (model, texCoordsOffset, renderMaterial, surface) in renderer.RenderTasks.RenderSurfacesForwardAbsoluteSorted do
-                let (lightPositions, lightColors, lightBrightnesses, lightIntensities) =
+                let (lightOrigins, lightColors, lightBrightnesses, lightIntensities) =
                     SortableLight.sortLightsIntoArrays model.Translation renderer.RenderTasks.RenderLights
                 GlRenderer3d.renderPhysicallyBasedSurfaces
-                    eyePosition
+                    eyeCenter
                     viewAbsoluteArray
                     projectionArray
                     (SegmentedList.singleton (model, texCoordsOffset, renderMaterial))
@@ -1184,7 +1184,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                     environmentFilterMap
                     renderer.RenderBrdfTexture
                     lightColors
-                    lightPositions
+                    lightOrigins
                     lightBrightnesses
                     lightIntensities
                     surface
@@ -1194,10 +1194,10 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
 
             // forward render surfaces w/ relative transforms
             for (model, texCoordsOffset, renderMaterial, surface) in renderer.RenderTasks.RenderSurfacesForwardRelativeSorted do
-                let (lightPositions, lightColors, lightBrightnesses, lightIntensities) =
+                let (lightOrigins, lightColors, lightBrightnesses, lightIntensities) =
                     SortableLight.sortLightsIntoArrays model.Translation renderer.RenderTasks.RenderLights
                 GlRenderer3d.renderPhysicallyBasedSurfaces
-                    eyePosition
+                    eyeCenter
                     viewRelativeArray
                     projectionArray
                     (SegmentedList.singleton (model, texCoordsOffset, renderMaterial))
@@ -1205,7 +1205,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                     irradianceMap
                     environmentFilterMap
                     renderer.RenderBrdfTexture
-                    lightPositions
+                    lightOrigins
                     lightColors
                     lightBrightnesses
                     lightIntensities
@@ -1216,7 +1216,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
 
             // render post-passes
             let passParameters =
-                { EyePosition = eyePosition
+                { EyeCenter = eyeCenter
                   EyeRotation = eyeRotation
                   ViewAbsolute = viewAbsolute
                   ViewRelative = viewRelative

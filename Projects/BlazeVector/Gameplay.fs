@@ -300,10 +300,10 @@ module Gameplay =
                     if World.getAdvancing world then
                         let playerPosition = Simulants.GameplayScenePlayer.GetPosition world
                         let playerSize = Simulants.GameplayScenePlayer.GetSize world
-                        let eyePosition = World.getEyePosition2d world
+                        let eyeCenter = World.getEyeCenter2d world
                         let eyeSize = World.getEyeSize2d world
-                        let eyePosition = v2 (playerPosition.X + playerSize.X * 0.5f + eyeSize.X * 0.33f) eyePosition.Y
-                        World.setEyePosition2d eyePosition world
+                        let eyeCenter = v2 (playerPosition.X + playerSize.X * 0.5f + eyeSize.X * 0.33f) eyeCenter.Y
+                        World.setEyeCenter2d eyeCenter world
                     else world
 
                 // update player fall

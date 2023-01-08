@@ -921,8 +921,8 @@ module WorldModule2 =
 
         static member private renderScreenTransition (screen : Screen) world =
             match screen.GetTransitionState world with
-            | IncomingState -> World.renderScreenTransition5 (World.getEyePosition2d world) (World.getEyeSize2d world) screen (screen.GetIncoming world) world
-            | OutgoingState -> World.renderScreenTransition5 (World.getEyePosition2d world) (World.getEyeSize2d world) screen (screen.GetOutgoing world) world
+            | IncomingState -> World.renderScreenTransition5 (World.getEyeCenter2d world) (World.getEyeSize2d world) screen (screen.GetIncoming world) world
+            | OutgoingState -> World.renderScreenTransition5 (World.getEyeCenter2d world) (World.getEyeSize2d world) screen (screen.GetOutgoing world) world
             | IdlingState -> world
 
         static member private renderSimulants world =
@@ -1068,9 +1068,9 @@ module WorldModule2 =
                                                             let rendererProcess = World.getRendererProcess world
                                                             if not firstFrame then rendererProcess.Swap ()
                                                             rendererProcess.SubmitMessages
-                                                                (World.getEyePosition3d world)
+                                                                (World.getEyeCenter3d world)
                                                                 (World.getEyeRotation3d world)
-                                                                (World.getEyePosition2d world)
+                                                                (World.getEyeCenter2d world)
                                                                 (World.getEyeSize2d world)
                                                                 (World.getWindowSize world)
 

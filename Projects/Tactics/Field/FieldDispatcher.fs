@@ -89,31 +89,31 @@ module FieldDispatcher =
             | UpdateCommand ->
                 let moveSpeed = if World.isKeyboardKeyDown KeyboardKey.Return world then 0.5f elif World.isKeyboardShiftDown world then 0.02f else 0.12f
                 let turnSpeed = if World.isKeyboardShiftDown world then 0.025f else 0.05f
-                let position = World.getEyePosition3d world
+                let position = World.getEyeCenter3d world
                 let rotation = World.getEyeRotation3d world
                 let world =
                     if World.isKeyboardKeyDown KeyboardKey.W world
-                    then World.setEyePosition3d (position + Vector3.Transform (v3Forward, rotation) * moveSpeed) world
+                    then World.setEyeCenter3d (position + Vector3.Transform (v3Forward, rotation) * moveSpeed) world
                     else world
                 let world =
                     if World.isKeyboardKeyDown KeyboardKey.S world
-                    then World.setEyePosition3d (position + Vector3.Transform (v3Back, rotation) * moveSpeed) world
+                    then World.setEyeCenter3d (position + Vector3.Transform (v3Back, rotation) * moveSpeed) world
                     else world
                 let world =
                     if World.isKeyboardKeyDown KeyboardKey.A world
-                    then World.setEyePosition3d (position + Vector3.Transform (v3Left, rotation) * moveSpeed) world
+                    then World.setEyeCenter3d (position + Vector3.Transform (v3Left, rotation) * moveSpeed) world
                     else world
                 let world =
                     if World.isKeyboardKeyDown KeyboardKey.D world
-                    then World.setEyePosition3d (position + Vector3.Transform (v3Right, rotation) * moveSpeed) world
+                    then World.setEyeCenter3d (position + Vector3.Transform (v3Right, rotation) * moveSpeed) world
                     else world
                 let world =
                     if World.isKeyboardKeyDown KeyboardKey.Up world
-                    then World.setEyePosition3d (position + Vector3.Transform (v3Up, rotation) * moveSpeed) world
+                    then World.setEyeCenter3d (position + Vector3.Transform (v3Up, rotation) * moveSpeed) world
                     else world
                 let world =
                     if World.isKeyboardKeyDown KeyboardKey.Down world
-                    then World.setEyePosition3d (position + Vector3.Transform (v3Down, rotation) * moveSpeed) world
+                    then World.setEyeCenter3d (position + Vector3.Transform (v3Down, rotation) * moveSpeed) world
                     else world
                 let world =
                     if World.isKeyboardKeyDown KeyboardKey.Left world

@@ -80,7 +80,7 @@ module Gameplay =
             | PostUpdateEye ->
                 if World.getAdvancing world then
                     let characterCenter = Simulants.GameplayScenePlayer.GetCenter world
-                    let world = World.setEyePosition2d characterCenter.V2 world
+                    let world = World.setEyeCenter2d characterCenter.V2 world
                     just world
                 else just world
             | Nop -> just world
