@@ -114,17 +114,6 @@ namespace Nu
 		}
 
         /// <summary>
-        /// Deconstructs this Color and turns it into a tuple containing 4 floats.
-        /// </summary>
-        public void Deconstruct(out float r, out float g, out float b, out float a)
-        {
-            r = R;
-            g = G;
-            b = B;
-            a = A;
-        }
-
-        /// <summary>
         /// Compares whether this Color structure is equal to the specified Color.
         /// </summary>
         /// <param name="other">The Color structure to compare to.</param>

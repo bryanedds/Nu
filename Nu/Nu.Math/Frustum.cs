@@ -418,7 +418,7 @@ namespace Nu
         public void Intersects(in Ray3 ray, out float? result)
         {
             ContainmentType ctype;
-            this.Contains(in ray.Position, out ctype);
+            this.Contains(in ray.Origin, out ctype);
 
             switch (ctype)
             {
