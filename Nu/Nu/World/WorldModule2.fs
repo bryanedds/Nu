@@ -403,7 +403,10 @@ module WorldModule2 =
             let world = World.setEntityProtected true slideSprite world |> snd'
             let world = slideSprite.SetPersistent false world
             let world = slideSprite.SetSize cameraEyeSize.V3 world
-            let world = slideSprite.SetPosition (-cameraEyeSize.V3 * 0.5f) world
+            let world =
+                if not Constants.Engine.EntityCentered2dDefault
+                then slideSprite.SetPosition (-cameraEyeSize.V3 * 0.5f) world
+                else world
             let world = slideSprite.SetAbsolute true world
             let world =
                 match slideDescriptor.SlideImageOpt with
