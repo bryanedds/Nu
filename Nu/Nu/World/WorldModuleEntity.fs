@@ -853,27 +853,27 @@ module WorldModuleEntity =
 
         static member internal setEntityCenter value entity world =
             let entityState = World.getEntityState entity world
-            let offset = entityState.Center - entityState.Position
+            let offset = entityState.Position - entityState.Center
             World.setEntityPosition (value + offset) entity world
 
         static member internal setEntityBottom value entity world =
             let entityState = World.getEntityState entity world
-            let offset = entityState.Bottom - entityState.Position
+            let offset = entityState.Position - entityState.Bottom
             World.setEntityPosition (value + offset) entity world
 
         static member internal setEntityBottomLeft value entity world =
             let entityState = World.getEntityState entity world
-            let offset = entityState.BottomLeft - entityState.Position
+            let offset = entityState.Position - entityState.BottomLeft
             World.setEntityPosition (value + offset) entity world
 
         static member internal setEntityMin value entity world =
             let entityState = World.getEntityState entity world
-            let offset = entityState.Min - entityState.Position
+            let offset = entityState.Position - entityState.Min
             World.setEntityPosition (value + offset) entity world
 
         static member internal setEntityMax value entity world =
             let entityState = World.getEntityState entity world
-            let offset = entityState.Max - entityState.Position
+            let offset = entityState.Position - entityState.Max
             World.setEntityPosition (value + offset) entity world
 
         static member internal setEntityPositionLocal value entity world =
@@ -941,27 +941,27 @@ module WorldModuleEntity =
 
         static member internal setEntityCenterLocal value entity world =
             let entityState = World.getEntityState entity world
-            let offset = entityState.Center - entityState.Position
+            let offset = entityState.PositionLocal - entityState.CenterLocal
             World.setEntityPositionLocal (value + offset) entity world
 
         static member internal setEntityBottomLocal value entity world =
             let entityState = World.getEntityState entity world
-            let offset = entityState.Bottom - entityState.Position
+            let offset = entityState.PositionLocal - entityState.BottomLocal
             World.setEntityPositionLocal (value + offset) entity world
 
         static member internal setEntityBottomLeftLocal value entity world =
             let entityState = World.getEntityState entity world
-            let offset = entityState.BottomLeft - entityState.Position
+            let offset = entityState.PositionLocal - entityState.BottomLeftLocal
             World.setEntityPositionLocal (value + offset) entity world
 
         static member internal setEntityMinLocal value entity world =
             let entityState = World.getEntityState entity world
-            let offset = entityState.Min - entityState.Position
+            let offset = entityState.PositionLocal - entityState.MinLocal
             World.setEntityPositionLocal (value + offset) entity world
 
         static member internal setEntityMaxLocal value entity world =
             let entityState = World.getEntityState entity world
-            let offset = entityState.Max - entityState.Position
+            let offset = entityState.PositionLocal - entityState.MaxLocal
             World.setEntityPositionLocal (value + offset) entity world
 
         static member internal setEntityRotation value entity world =
