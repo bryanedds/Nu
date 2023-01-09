@@ -1,34 +1,37 @@
 [GroupDispatcher
- [[Model
-   ["Microsoft.FSharp.Core.Unit, FSharp.Core, Version=4.7.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" []]]
+ [[Model ["Microsoft.FSharp.Core.Unit, FSharp.Core, Version=7.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" []]]
   [Name Gui]
   [Persistent True]
   [Visible True]]
  [[ButtonDispatcher
    [[Name Back]
-    [Position [-96 -184 0]]
-    [Text Back]]]
+    [Position [0 -144 0]]
+    [Text Back]]
+   []]
   [TextDispatcher
    [[BackgroundImageOpt
      [Some [Default Image3]]]
     [Justification [Justified JustifyCenter JustifyMiddle]]
     [Model ["System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" Credits]]
-    [Position [-256 96 0]]
+    [Position [0 144 0]]
     [Size [512 96 0]]
-    [Text Credits]]]
+    [Text Credits]]
+   []]
   [TextDispatcher
    [[BackgroundImageOpt
      [Some [Default Image3]]]
     [Justification [Justified JustifyCenter JustifyMiddle]]
     [Model ["System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" "Code + Music + SFX: Bryan Edds"]]
-    [Position [-256 0 0]]
+    [Position [0 36 0]]
     [Size [512 48 0]]
-    [Text "Code + Music + SFX: Bryan Edds"]]]
+    [Text "Code + Music + SFX: Bryan Edds"]]
+   []]
   [TextDispatcher
    [[BackgroundImageOpt
      [Some [Default Image3]]]
     [Justification [Justified JustifyCenter JustifyMiddle]]
     [Model ["System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" "Art: MindChamber"]]
-    [Position [-256 -96 0]]
+    [Position [0 -48 0]]
     [Size [512 48 0]]
-    [Text "Art: MindChamber"]]]]]
+    [Text "Art: MindChamber"]]
+   []]]]
