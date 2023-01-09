@@ -1,5 +1,5 @@
 [GroupDispatcher
- [[Model ["Microsoft.FSharp.Core.Unit, FSharp.Core, Version=4.7.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" []]]
+ [[Model ["Microsoft.FSharp.Core.Unit, FSharp.Core, Version=7.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" []]]
   [Name Layer]
   [Persistent True]
   [Visible True]]
@@ -19,25 +19,21 @@
    []]
   [EnemyDispatcher
    [[Elevation 4]
-    [Position [300 108 0]]]
+    [Position [-420 111.2737 0]]]
    []]
   [EnemyDispatcher
    [[Elevation 4]
-    [Position [996 -120 0]]]
+    [Position [990.5504 -113.2054 0]]]
    []]
   [EnemyDispatcher
    [[Elevation 4]
-    [Position [420 168 0]]]
+    [Position [90.55058 -16.73351 0]]]
    []]
   [EnemyDispatcher
    [[Elevation 4]
-    [Position [929.7387 47.44397 0]]]
+    [Position [414.5507 175.2742 0]]]
    []]
   [EnemyDispatcher
    [[Elevation 4]
-    [Position [744 168 0]]]
-   []]
-  [EnemyDispatcher
-   [[Elevation 4]
-    [Position [809.7387 -113.212 0]]]
+    [Position [804.2891 -113.2007 0]]]
    []]]]
