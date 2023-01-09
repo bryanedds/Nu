@@ -1,26 +1,27 @@
 [GroupDispatcher
- [[Model
-   ["Microsoft.FSharp.Core.Unit, FSharp.Core, Version=4.7.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" []]]
+ [[Model ["Microsoft.FSharp.Core.Unit, FSharp.Core, Version=7.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" []]]
   [Name Gui]
   [Persistent True]
   [Visible True]]
  [[ButtonDispatcher
    [[Name Credits]
-    [Position [-96 -112 0]]
-    [Text Credits]]]
+    [Position [0 -72 0]]
+    [Text Credits]]
+   []]
   [ButtonDispatcher
    [[Name Exit]
-    [Position [-96 -184 0]]
-    [Text Exit]]]
+    [Position [0 -144 0]]
+    [Text Exit]]
+   []]
   [ButtonDispatcher
-   [[Name Play]
-    [Position [-96 -40 0]]
-    [Text Play]]]
+   [[Name Play] [Text Play]]
+   []]
   [TextDispatcher
    [[BackgroundImageOpt
      [Some [Default Image3]]]
     [Justification [Justified JustifyCenter JustifyMiddle]]
     [Model ["System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" BlazeVector]]
-    [Position [-256 96 0]]
+    [Position [0 120 0]]
     [Size [512 96 0]]
-    [Text BlazeVector]]]]]
+    [Text BlazeVector]]
+   []]]]
