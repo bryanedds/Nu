@@ -1,40 +1,45 @@
 [GroupDispatcher
- [[Model
-   ["Microsoft.FSharp.Core.Unit, FSharp.Core, Version=4.7.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" []]]
+ [[Model ["Microsoft.FSharp.Core.Unit, FSharp.Core, Version=4.7.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" []]]
   [Name Layer]
   [Persistent True]
   [Visible True]]
- [[EnemyDispatcher
-   [[Elevation 1]
-    [Position [-159.8438 -175.68 0]]]]
-  [EnemyDispatcher
-   [[Elevation 1]
-    [Position [96 -79.68001 0]]]]
-  [EnemyDispatcher
-   [[Elevation 1]
-    [Position [1328 -175.68 0]]]]
-  [EnemyDispatcher
-   [[Elevation 1]
-    [Position [416 -79.68001 0]]]]
-  [TileMapDispatcher
+ [[TileMapDispatcher
    [[Elevation -8]
-    [Parallax 0.1]
-    [Position [-480 -304 0]]
-    [TileMap
-     [Gameplay BackgroundA]]]]
+    [Size [2048 576 0]]
+    [TileMap [Gameplay BackgroundA]]]
+   []]
   [TileMapDispatcher
    [[Elevation -4]
-    [Parallax 0.1]
-    [Position [-480 -304 0]]
-    [TileMap
-     [Gameplay BackgroundB]]]]
-  [EnemyDispatcher
-   [[Elevation 1]
-    [Position [1472 -175.68 0]]]]
-  [EnemyDispatcher
-   [[Elevation 1]
-    [Position [1114.274 -207.68 0]]]]
+    [Size [2048 576 0]]
+    [TileMap [Gameplay BackgroundB]]]
+   []]
   [TileMapDispatcher
-   [[Position [-480 -304 0]]
-    [TileMap
-     [Gameplay Section1TileMap]]]]]]
+   [[Size [2048 576 0]]
+    [TileMap [Gameplay Section1TileMap]]]
+   []]
+  [EnemyDispatcher
+   [[Elevation 1]
+    [LinearVelocity [-66.00072 0 0]]
+    [Position [-146.13 -16.72181 0]]]
+   []]
+  [EnemyDispatcher
+   [[Elevation 1]
+    [LinearVelocity [-66.00072 0 0]]
+    [Position [93.87003 -16.72181 0]]]
+   []]
+  [EnemyDispatcher
+   [[Elevation 1]
+    [Position [780 -113.2007 0]]]
+   []]
+  [EnemyDispatcher
+   [[Elevation 1]
+    [Position [528 -144 0]]]
+   []]
+  [EnemyDispatcher
+   [[Elevation 1]
+    [Position [924 -113.2007 0]]]
+   []]
+  [EnemyDispatcher
+   [[Elevation 1]
+    [Position [669.5667 -127.133 0]]]
+   []]]]

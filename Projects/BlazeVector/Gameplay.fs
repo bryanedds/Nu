@@ -127,7 +127,7 @@ module Player =
         static let createBullet (player : Entity) world =
             let mutable playerTransform = player.GetTransform world
             let (bullet, world) = World.createEntity<BulletDispatcher> NoOverlay None player.Group world // OPTIMIZATION: NoOverlay to avoid reflection.
-            let bulletPosition = playerTransform.Position + v3 (playerTransform.Size.X * 0.95f) (playerTransform.Size.Y * 0.4f) 0.0f
+            let bulletPosition = playerTransform.Position + v3 (playerTransform.Size.X * 0.7f) 0.0f 0.0f
             let world = bullet.SetPosition bulletPosition world
             let world = bullet.SetElevation playerTransform.Elevation world
             (bullet, world)
@@ -327,6 +327,6 @@ module Gameplay =
              | Playing | Quitting ->
                 Content.group Simulants.GameplayScene.Name []
                     [Content.entity<PlayerDispatcher> Simulants.GameplayScenePlayer.Name
-                        [Entity.Position == v3 -300.0f -175.6805f 0.0f
+                        [Entity.Position == v3 -960.0f -127.6805f 0.0f
                          Entity.Elevation == 1.0f]]
              | Quit -> ()]
