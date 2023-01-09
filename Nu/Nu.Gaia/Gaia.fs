@@ -1655,23 +1655,25 @@ module Gaia =
 
     /// Attempt to select a target directory for the desired plugin and its assets from the give file path.
     let trySelectTargetDirAndMakeNuPluginFromFilePathOpt filePathOpt =
-        let dirNameAndTypesOpt =
+        let filePathAndDirNameAndTypesOpt =
             if not (String.IsNullOrWhiteSpace filePathOpt) then
                 let filePath = filePathOpt
                 try let dirName = Path.GetDirectoryName filePath
                     try Directory.SetCurrentDirectory dirName
                         let assembly = Assembly.Load (File.ReadAllBytes filePath)
-                        Some (dirName, assembly.GetTypes ())
+                        Some (filePath, dirName, assembly.GetTypes ())
                     with _ ->
                         let assembly = Assembly.LoadFrom filePath
-                        Some (dirName, assembly.GetTypes ())
+                        Some (filePath, dirName, assembly.GetTypes ())
                 with _ -> None
             else None
-        match dirNameAndTypesOpt with
-        | Some (dirName, types) ->
+        match filePathAndDirNameAndTypesOpt with
+        | Some (filePath, dirName, types) ->
             let pluginTypeOpt = Array.tryFind (fun (ty : Type) -> ty.IsSubclassOf typeof<NuPlugin>) types
             match pluginTypeOpt with
-            | Some ty -> let plugin = Activator.CreateInstance ty :?> NuPlugin in Some (dirName, plugin)
+            | Some ty ->
+                Constants.Override.fromAppConfig filePath
+                let plugin = Activator.CreateInstance ty :?> NuPlugin in Some (dirName, plugin)
             | None -> None
         | None -> None
 
@@ -1705,7 +1707,7 @@ module Gaia =
                     startForm.modeComboBox.SelectedIndex <- i
         | None -> ()
         startForm.useImperativeExecutionCheckBox.Checked <- savedState.UseImperativeExecution
-        if  startForm.ShowDialog () = DialogResult.OK then
+        if startForm.ShowDialog () = DialogResult.OK then
             let savedState =
                 { BinaryFilePath = startForm.binaryFilePathText.Text
                   EditModeOpt = if String.IsNullOrWhiteSpace startForm.modeComboBox.Text then None else Some startForm.modeComboBox.Text
