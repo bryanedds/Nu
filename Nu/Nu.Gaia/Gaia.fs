@@ -1672,8 +1672,8 @@ module Gaia =
             let pluginTypeOpt = Array.tryFind (fun (ty : Type) -> ty.IsSubclassOf typeof<NuPlugin>) types
             match pluginTypeOpt with
             | Some ty ->
-                Constants.Override.fromAppConfig filePath
-                let plugin = Activator.CreateInstance ty :?> NuPlugin in Some (dirName, plugin)
+                let plugin = Activator.CreateInstance ty :?> NuPlugin
+                Some (filePath, dirName, plugin)
             | None -> None
         | None -> None
 
@@ -1688,7 +1688,7 @@ module Gaia =
         use startForm = new StartForm ()
         startForm.binaryFilePathText.TextChanged.Add (fun _ ->
             match trySelectTargetDirAndMakeNuPluginFromFilePathOpt startForm.binaryFilePathText.Text with
-            | Some (_, plugin) ->
+            | Some (_, _, plugin) ->
                 startForm.modeComboBox.Items.Clear ()
                 for kvp in plugin.EditModes do
                    startForm.modeComboBox.Items.Add (kvp.Key) |> ignore
@@ -1714,7 +1714,8 @@ module Gaia =
                   UseImperativeExecution = startForm.useImperativeExecutionCheckBox.Checked }
             let (targetDir, plugin) =
                 match trySelectTargetDirAndMakeNuPluginFromFilePathOpt startForm.binaryFilePathText.Text with
-                | Some (targetDir, plugin) ->
+                | Some (filePath, targetDir, plugin) ->
+                    Constants.Override.fromAppConfig filePath
                     try File.WriteAllText (savedStateDirectory + "/" + Constants.Editor.SavedStateFilePath, scstring savedState)
                     with _ -> Log.info "Could not save editor state."
                     (targetDir, plugin)
