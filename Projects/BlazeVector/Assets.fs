@@ -16,7 +16,6 @@ module Assets =
         let MachinerySong = { FadeInMs = 0; FadeOutMs = Constants.Audio.FadeOutMsDefault; Volume = Constants.Audio.SongVolumeDefault; Start = 0.0; Song = asset<Song> PackageName "Machinery" }
         let TitleGroupFilePath = "Assets/Gui/Title.nugroup"
         let CreditsGroupFilePath = "Assets/Gui/Credits.nugroup"
-        let GameplayGroupFilePath = "Assets/Gui/Gameplay.nugroup"
 
     // these are assets from the Gameplay package.
     [<RequireQualifiedAccess>]

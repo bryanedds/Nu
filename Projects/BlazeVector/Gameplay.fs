@@ -318,7 +318,7 @@ module Gameplay =
              Content.group Simulants.GameplayGui.Name []
                  [Content.button Simulants.GameplayGuiQuit.Name
                      [Entity.Text == "Quit"
-                      Entity.Position == v3 260.0f -260.0f 0.0f
+                      Entity.Position == v3 336.0f -216.0f 0.0f
                       Entity.Elevation == 10.0f
                       Entity.ClickEvent => StartQutting]]
 
@@ -327,6 +327,6 @@ module Gameplay =
              | Playing | Quitting ->
                 Content.group Simulants.GameplayScene.Name []
                     [Content.entity<PlayerDispatcher> Simulants.GameplayScenePlayer.Name
-                        [Entity.Position == v3 -960.0f -127.6805f 0.0f
+                        [Entity.Position == v3 -876.0f -127.6805f 0.0f
                          Entity.Elevation == 1.0f]]
              | Quit -> ()]
