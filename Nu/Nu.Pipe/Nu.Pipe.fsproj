@@ -45,6 +45,7 @@
     <WarningsAsErrors />
     <StartArguments>..\.. . ..\..\Refinement True</StartArguments>
     <PlatformTarget>x64</PlatformTarget>
+    <OtherFlags>--warnon:1182 --nowarn:3536</OtherFlags>
   </PropertyGroup>
   <PropertyGroup>
     <MinimumVisualStudioVersion Condition="'$(MinimumVisualStudioVersion)' == ''">11</MinimumVisualStudioVersion>
