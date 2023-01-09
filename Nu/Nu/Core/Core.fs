@@ -62,6 +62,11 @@ module CoreOperators =
     /// Same as the ($) operator found in Prime, but placed here to expose it directly from Nu.
     let inline ($) f g = f g
 
+/// Denotes that a value should not be altered by the consumer of the API.
+/// TODO: remove this after updating Prime.
+type [<AttributeUsage (AttributeTargets.Field)>] UniformAttribute () =
+    inherit Attribute ()
+
 /// The desired frame rate.
 type [<NoComparison>] DesiredFps =
     | Fps60

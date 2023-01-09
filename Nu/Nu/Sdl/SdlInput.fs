@@ -7,6 +7,9 @@ open SDL2
 open Prime
 open Nu
 
+// for NativeInterop with KeyboardState
+#nowarn "9"
+
 /// Describes a mouse button.
 type [<StructuralEquality; StructuralComparison>] MouseButton =
     | MouseLeft
