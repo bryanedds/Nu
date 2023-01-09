@@ -53,8 +53,8 @@ module Engine =
     let [<Uniform>] OctreeSize = Vector3 (single (Math.Pow (2.0, 10.0)))
     let [<Uniform>] OctreeBounds = Box3 (-OctreeSize * 0.5f, OctreeSize)
     let [<Uniform>] GravityDefault = Vector3 (0.0f, -9.80665f, 0.0f)
-    let [<Uniform>] EventTracing = match ConfigurationManager.AppSettings.["EventTracing"] with null -> false | tracing -> scvalue<bool> tracing
-    let [<Uniform>] EventFilter = match ConfigurationManager.AppSettings.["EventFilter"] with null -> EventFilter.Empty | filter -> scvalue<EventFilter.Filter> filter
+    let [<Uniform>] mutable EventTracing = match ConfigurationManager.AppSettings.["EventTracing"] with null -> false | tracing -> scvalue<bool> tracing
+    let [<Uniform>] mutable EventFilter = match ConfigurationManager.AppSettings.["EventFilter"] with null -> EventFilter.Empty | filter -> scvalue<EventFilter.Filter> filter
 
 [<RequireQualifiedAccess>]
 module Associations =

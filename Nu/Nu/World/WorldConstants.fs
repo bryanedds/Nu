@@ -34,9 +34,11 @@ module Override =
             for key in settings.AllKeys do
                 let value = settings.[key].Value
                 match key with
-                | nameof Engine.EntityCentered2dDefault -> Engine.EntityCentered2dDefault <- scvalue<bool> value
-                | nameof Engine.EntityCenteredGuiDefault -> Engine.EntityCenteredGuiDefault <- scvalue<bool> value
-                | nameof Engine.EntityCentered3dDefault -> Engine.EntityCentered3dDefault <- scvalue<bool> value
+                | nameof Engine.EntityCentered2dDefault -> Engine.EntityCentered2dDefault <- scvalue value
+                | nameof Engine.EntityCenteredGuiDefault -> Engine.EntityCenteredGuiDefault <- scvalue value
+                | nameof Engine.EntityCentered3dDefault -> Engine.EntityCentered3dDefault <- scvalue value
+                | nameof Engine.EventTracing -> Engine.EventTracing <- scvalue value
+                | nameof Engine.EventFilter -> Engine.EventFilter <- scvalue value
                 | _ -> ()
         with
         | :? ConfigurationErrorsException ->
