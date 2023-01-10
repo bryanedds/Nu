@@ -1132,6 +1132,135 @@ module TmxMapFacetModule =
             TmxMap.getQuickSize tmxMap
 
 [<AutoOpen>]
+module LayoutFacetModule =
+
+    type FlowLimit =
+        | FlowWithinParent
+        | FlowUnbounded
+        | FlowTo of single
+
+    type FlowDirection =
+        | FlowUpward
+        | FlowRightward
+        | FlowDownward
+        | FlowLeftward
+
+    [<Syntax
+        ("Flow Grid Dock Manual",
+         "FlowWithinParent FlowUnbounded FlowTo " +
+         "FlowUpward FlowRightward FlowDownward FlowLeftward",
+         "", "", "",
+         Constants.PrettyPrinter.DefaultThresholdMin,
+         Constants.PrettyPrinter.DefaultThresholdMax)>]
+    type Layout =
+        | Flow of FlowDirection * FlowLimit
+        | Grid of Vector2i // grid stretch layout
+        | Dock // 
+        | Manual
+
+    type Entity with
+        member this.GetLayout world : Layout = this.Get (nameof this.Layout) world
+        member this.SetLayout (value : Layout) world = this.Set (nameof this.Layout) value world
+        member this.Layout = lens (nameof this.Layout) this this.GetLayout this.SetLayout
+        member this.GetLayoutMargins world : Vector2 = this.Get (nameof this.LayoutMargins) world
+        member this.SetLayoutMargins (value : Vector2) world = this.Set (nameof this.LayoutMargins) value world
+        member this.LayoutMargins = lens (nameof this.LayoutMargins) this this.GetLayoutMargins this.SetLayoutMargins
+
+    type LayoutFacet () =
+        inherit Facet (false)
+
+        static let rec flowRightward
+            reentry (margins : Vector2) wrapLimit leftX (offsetX : single byref) (offsetY : single byref) (maximum : single byref) (child : Entity) world =
+            let childPerimeter = child.GetPerimeter world
+            let childHalfWidth = childPerimeter.Width * 0.5f
+            let childHalfHeight = childPerimeter.Height * 0.5f
+            let childCenter = v2 offsetX offsetY + v2 margins.X -margins.Y + v2 childHalfWidth -childHalfHeight
+            let childRightX = childCenter.X + childHalfWidth + margins.X
+            offsetX <- childCenter.X + childHalfWidth
+            let world =
+                if childRightX >= leftX + wrapLimit then
+                    offsetX <- leftX
+                    offsetY <- offsetY + -margins.Y + -maximum
+                    maximum <- 0.0f
+                    if not reentry
+                    then flowRightward true margins wrapLimit leftX &offsetX &offsetY &maximum child world
+                    else child.SetCenterLocal childCenter.V3 world
+                else child.SetCenterLocal childCenter.V3 world
+            if childPerimeter.Height > maximum then maximum <- childPerimeter.Height
+            world
+
+        static let rec flowDownward
+            reentry (margins : Vector2) wrapLimit topY (offsetX : single byref) (offsetY : single byref) (maximum : single byref) (child : Entity) world =
+            let childPerimeter = child.GetPerimeter world
+            let childHalfWidth = childPerimeter.Width * 0.5f
+            let childHalfHeight = childPerimeter.Height * 0.5f
+            let childCenter = v2 offsetX offsetY + v2 margins.X -margins.Y + v2 childHalfWidth -childHalfHeight
+            let childBottomY = childCenter.Y + -childHalfHeight + -margins.Y
+            offsetY <- childCenter.Y + -childHalfHeight
+            let world =
+                if childBottomY <= topY + -wrapLimit then
+                    offsetX <- offsetX + margins.X + maximum
+                    offsetY <- topY
+                    maximum <- 0.0f
+                    if not reentry
+                    then flowDownward true margins wrapLimit topY &offsetX &offsetY &maximum child world
+                    else child.SetCenterLocal childCenter.V3 world
+                else child.SetCenterLocal childCenter.V3 world
+            if childPerimeter.Width > maximum then maximum <- childPerimeter.Width
+            world
+
+        static member Properties =
+            [define Entity.Layout Manual
+             define Entity.LayoutMargins v2Zero]
+
+        override this.Update (entity, world) =
+            match entity.GetLayout world with
+            | Manual -> world // OPTIMIZATION: early exit.
+            | layout ->
+                let children = World.getEntityChildren entity world
+                let children = Seq.sortBy (flip World.getEntityOrder world) children
+                let margins = entity.GetLayoutMargins world
+                let perimeter = (entity.GetPerimeter world).Box2
+                let world =
+                    match layout with
+                    | Flow (flowDirection, flowLimit) ->
+                        match flowDirection with
+                        | FlowUpward -> world
+                        | FlowRightward ->
+                            let wrapLimit =
+                                match flowLimit with
+                                | FlowWithinParent -> perimeter.Width
+                                | FlowUnbounded -> Single.MaxValue
+                                | FlowTo flowLimit -> flowLimit
+                            let leftX = perimeter.Width * -0.5f
+                            let topY = perimeter.Height * 0.5f
+                            let mutable offsetX = leftX
+                            let mutable offsetY = topY
+                            let mutable maximum = 0.0f
+                            Seq.fold (fun world child ->
+                                flowRightward false margins wrapLimit leftX &offsetX &offsetY &maximum child world)
+                                world children
+                        | FlowDownward ->
+                            let wrapLimit =
+                                match flowLimit with
+                                | FlowWithinParent -> perimeter.Height
+                                | FlowUnbounded -> Single.MaxValue
+                                | FlowTo flowLimit -> flowLimit
+                            let leftX = perimeter.Width * -0.5f
+                            let topY = perimeter.Height * 0.5f
+                            let mutable offsetX = leftX
+                            let mutable offsetY = topY
+                            let mutable maximum = 0.0f
+                            Seq.fold (fun world child ->
+                                flowDownward false margins wrapLimit topY &offsetX &offsetY &maximum child world)
+                                world children
+                        | FlowLeftward -> world
+                    | Grid dims -> world
+                    | Dock -> world
+                    | Manual -> world
+                world
+
+[<AutoOpen>]
 module SkyBoxFacetModule =
 
     type Entity with

@@ -491,7 +491,7 @@ module WorldEntityModule =
         member this.TraverseMounters effect world = World.traverseEntityMounters effect this world
 
         /// Get an entity's children.
-        member this.GetChildren world = World.getEntityEntities this world
+        member this.GetChildren world = World.getEntityChildren this world
 
         /// Traverse an entity's children.
         member this.TraverseChildren effect world = World.traverseEntityEntities effect this world
@@ -737,7 +737,7 @@ module WorldEntityModule =
                 if not (Gen.isNameGenerated entity.Name)
                 then EntityDescriptor.setNameOpt (Some entity.Name) entityDescriptor
                 else entityDescriptor
-            let entities = World.getEntityEntities entity world
+            let entities = World.getEntityChildren entity world
             { entityDescriptor with EntityDescriptors = World.writeEntities entities world }
 
         /// Write multiple entities to a group descriptor.

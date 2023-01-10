@@ -194,7 +194,7 @@ module WorldSimulantModule =
         [<FunctionBinding>]
         static member getChildren (simulant : Simulant) world =
             match simulant with
-            | :? Entity as entity -> enumerable<Simulant> (World.getEntityEntities entity world)
+            | :? Entity as entity -> enumerable<Simulant> (World.getEntityChildren entity world)
             | :? Group as group -> enumerable<Simulant> (World.getEntities group world)
             | :? Screen as screen -> enumerable<Simulant> (World.getGroups screen world)
             | :? Game -> enumerable<Simulant> (World.getScreens world)
