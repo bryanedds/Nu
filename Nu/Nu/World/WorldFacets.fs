@@ -1219,8 +1219,10 @@ module LayoutFacetModule =
             match entity.GetLayout world with
             | Manual -> world // OPTIMIZATION: early exit.
             | layout ->
-                let children = World.getEntityChildren entity world
-                let children = Seq.sortBy (flip World.getEntityOrder world) children
+                let children =
+                    World.getEntityChildren entity world |>
+                    Array.ofSeq |>
+                    Array.sortBy (flip World.getEntityOrder world)
                 let margin = entity.GetLayoutMargin world
                 let perimeter = (entity.GetPerimeter world).Box2
                 let world =
@@ -1239,7 +1241,7 @@ module LayoutFacetModule =
                                 | FlowWithinParent -> perimeter.Width
                                 | FlowUnbounded -> Single.MaxValue
                                 | FlowTo flowLimit -> flowLimit
-                            Seq.fold (fun world child ->
+                            Array.fold (fun world child ->
                                 flowRightward false leftX margin wrapLimit &offsetX &offsetY &maximum child world)
                                 world children
                         | FlowDownward ->
@@ -1248,7 +1250,7 @@ module LayoutFacetModule =
                                 | FlowWithinParent -> perimeter.Height
                                 | FlowUnbounded -> Single.MaxValue
                                 | FlowTo flowLimit -> flowLimit
-                            Seq.fold (fun world child ->
+                            Array.fold (fun world child ->
                                 flowDownward false topY margin wrapLimit &offsetX &offsetY &maximum child world)
                                 world children
                         | FlowLeftward -> world
