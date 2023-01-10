@@ -1154,10 +1154,10 @@ module LayoutFacetModule =
          "", "", "",
          Constants.PrettyPrinter.DefaultThresholdMin,
          Constants.PrettyPrinter.DefaultThresholdMax)>]
-    type Layout =
+    type [<NoComparison>] Layout =
         | Flow of FlowDirection * FlowLimit
         | Grid of Vector2i
-        | Dock
+        | Dock of Vector4 * bool
         | Manual
 
     type Entity with
@@ -1172,40 +1172,40 @@ module LayoutFacetModule =
         inherit Facet (false)
 
         static let rec flowRightward
-            reentry (margins : Vector2) wrapLimit leftX (offsetX : single byref) (offsetY : single byref) (maximum : single byref) (child : Entity) world =
+            reentry leftX (margin : Vector2) wrapLimit (offsetX : single byref) (offsetY : single byref) (maximum : single byref) (child : Entity) world =
             let childPerimeter = child.GetPerimeter world
             let childHalfWidth = childPerimeter.Width * 0.5f
             let childHalfHeight = childPerimeter.Height * 0.5f
-            let childCenter = v2 offsetX offsetY + v2 margins.X -margins.Y + v2 childHalfWidth -childHalfHeight
-            let childRightX = childCenter.X + childHalfWidth + margins.X
+            let childCenter = v2 offsetX offsetY + v2 margin.X -margin.Y + v2 childHalfWidth -childHalfHeight
+            let childRightX = childCenter.X + childHalfWidth + margin.X
             offsetX <- childCenter.X + childHalfWidth
             let world =
                 if childRightX >= leftX + wrapLimit then
                     offsetX <- leftX
-                    offsetY <- offsetY + -margins.Y + -maximum
+                    offsetY <- offsetY + -margin.Y + -maximum
                     maximum <- 0.0f
                     if not reentry
-                    then flowRightward true margins wrapLimit leftX &offsetX &offsetY &maximum child world
+                    then flowRightward true leftX margin wrapLimit &offsetX &offsetY &maximum child world
                     else child.SetCenterLocal childCenter.V3 world
                 else child.SetCenterLocal childCenter.V3 world
             if childPerimeter.Height > maximum then maximum <- childPerimeter.Height
             world
 
         static let rec flowDownward
-            reentry (margins : Vector2) wrapLimit topY (offsetX : single byref) (offsetY : single byref) (maximum : single byref) (child : Entity) world =
+            reentry topY (margin : Vector2) wrapLimit (offsetX : single byref) (offsetY : single byref) (maximum : single byref) (child : Entity) world =
             let childPerimeter = child.GetPerimeter world
             let childHalfWidth = childPerimeter.Width * 0.5f
             let childHalfHeight = childPerimeter.Height * 0.5f
-            let childCenter = v2 offsetX offsetY + v2 margins.X -margins.Y + v2 childHalfWidth -childHalfHeight
-            let childBottomY = childCenter.Y + -childHalfHeight + -margins.Y
+            let childCenter = v2 offsetX offsetY + v2 margin.X -margin.Y + v2 childHalfWidth -childHalfHeight
+            let childBottomY = childCenter.Y + -childHalfHeight + -margin.Y
             offsetY <- childCenter.Y + -childHalfHeight
             let world =
                 if childBottomY <= topY + -wrapLimit then
-                    offsetX <- offsetX + margins.X + maximum
+                    offsetX <- offsetX + margin.X + maximum
                     offsetY <- topY
                     maximum <- 0.0f
                     if not reentry
-                    then flowDownward true margins wrapLimit topY &offsetX &offsetY &maximum child world
+                    then flowDownward true topY margin wrapLimit &offsetX &offsetY &maximum child world
                     else child.SetCenterLocal childCenter.V3 world
                 else child.SetCenterLocal childCenter.V3 world
             if childPerimeter.Width > maximum then maximum <- childPerimeter.Width
@@ -1226,6 +1226,11 @@ module LayoutFacetModule =
                 let world =
                     match layout with
                     | Flow (flowDirection, flowLimit) ->
+                        let leftX = perimeter.Width * -0.5f
+                        let topY = perimeter.Height * 0.5f
+                        let mutable offsetX = leftX
+                        let mutable offsetY = topY
+                        let mutable maximum = 0.0f
                         match flowDirection with
                         | FlowUpward -> world
                         | FlowRightward ->
@@ -1234,13 +1239,8 @@ module LayoutFacetModule =
                                 | FlowWithinParent -> perimeter.Width
                                 | FlowUnbounded -> Single.MaxValue
                                 | FlowTo flowLimit -> flowLimit
-                            let leftX = perimeter.Width * -0.5f
-                            let topY = perimeter.Height * 0.5f
-                            let mutable offsetX = leftX
-                            let mutable offsetY = topY
-                            let mutable maximum = 0.0f
                             Seq.fold (fun world child ->
-                                flowRightward false margin wrapLimit leftX &offsetX &offsetY &maximum child world)
+                                flowRightward false leftX margin wrapLimit &offsetX &offsetY &maximum child world)
                                 world children
                         | FlowDownward ->
                             let wrapLimit =
@@ -1248,17 +1248,12 @@ module LayoutFacetModule =
                                 | FlowWithinParent -> perimeter.Height
                                 | FlowUnbounded -> Single.MaxValue
                                 | FlowTo flowLimit -> flowLimit
-                            let leftX = perimeter.Width * -0.5f
-                            let topY = perimeter.Height * 0.5f
-                            let mutable offsetX = leftX
-                            let mutable offsetY = topY
-                            let mutable maximum = 0.0f
                             Seq.fold (fun world child ->
-                                flowDownward false margin wrapLimit topY &offsetX &offsetY &maximum child world)
+                                flowDownward false topY margin wrapLimit &offsetX &offsetY &maximum child world)
                                 world children
                         | FlowLeftward -> world
                     | Grid dims -> world
-                    | Dock -> world
+                    | Dock (insets, percentageBased) -> world
                     | Manual -> world
                 world
 
