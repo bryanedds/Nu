@@ -33,6 +33,41 @@ type [<NoComparison>] TileMapDescriptor =
       TileMapSizeF : Vector2
       TileMapPosition : Vector2 }
 
+/// The mannter in which a gui entity may be docked by a parent entity.
+type DockType =
+    | DockCenter
+    | DockTop
+    | DockRight
+    | DockBottom
+    | DockLeft
+
+/// The manner in which a flow layout flows its children.
+type FlowLimit =
+    | FlowWithinParent
+    | FlowUnbounded
+    | FlowTo of single
+
+/// The direction in which a flow layout flows its children.
+type FlowDirection =
+    | FlowUpward
+    | FlowRightward
+    | FlowDownward
+    | FlowLeftward
+
+/// A gui layout.
+[<Syntax
+    ("Flow Dock Grid Manual",
+     "FlowWithinParent FlowUnbounded FlowTo " +
+     "FlowUpward FlowRightward FlowDownward FlowLeftward",
+     "", "", "",
+     Constants.PrettyPrinter.DefaultThresholdMin,
+     Constants.PrettyPrinter.DefaultThresholdMax)>]
+type [<NoComparison>] Layout =
+    | Flow of FlowDirection * FlowLimit
+    | Dock of Vector4 * bool * bool
+    | Grid of Vector2i * bool
+    | Manual
+
 /// The type of a screen transition. Incoming means a new screen is being shown and Outgoing
 /// means an existing screen being hidden.
 type [<StructuralEquality; NoComparison; Struct>] TransitionType =

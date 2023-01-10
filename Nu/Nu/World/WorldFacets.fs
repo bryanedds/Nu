@@ -1136,30 +1136,6 @@ module TmxMapFacetModule =
 [<AutoOpen>]
 module LayoutFacetModule =
 
-    type FlowLimit =
-        | FlowWithinParent
-        | FlowUnbounded
-        | FlowTo of single
-
-    type FlowDirection =
-        | FlowUpward
-        | FlowRightward
-        | FlowDownward
-        | FlowLeftward
-
-    [<Syntax
-        ("Flow Grid Dock Manual",
-         "FlowWithinParent FlowUnbounded FlowTo " +
-         "FlowUpward FlowRightward FlowDownward FlowLeftward",
-         "", "", "",
-         Constants.PrettyPrinter.DefaultThresholdMin,
-         Constants.PrettyPrinter.DefaultThresholdMax)>]
-    type [<NoComparison>] Layout =
-        | Flow of FlowDirection * FlowLimit
-        | Grid of Vector2i
-        | Dock of Vector4 * bool
-        | Manual
-
     type Entity with
         member this.GetLayout world : Layout = this.Get (nameof this.Layout) world
         member this.SetLayout (value : Layout) world = this.Set (nameof this.Layout) value world
@@ -1225,6 +1201,8 @@ module LayoutFacetModule =
                     Array.sortBy (flip World.getEntityOrder world)
                 let margin = entity.GetLayoutMargin world
                 let perimeter = (entity.GetPerimeter world).Box2
+                let perimeterWidthHalf = perimeter.Width * 0.5f
+                let perimeterHeightHalf = perimeter.Height * 0.5f
                 let world =
                     match layout with
                     | Flow (flowDirection, flowLimit) ->
@@ -1254,8 +1232,49 @@ module LayoutFacetModule =
                                 flowDownward false topY margin wrapLimit &offsetX &offsetY &maximum child world)
                                 world children
                         | FlowLeftward -> world
-                    | Grid dims -> world
-                    | Dock (insets, percentageBased) -> world
+                    | Dock (margins, stretchChildren, percentageBased) ->
+                        Array.fold (fun world (child : Entity) ->
+                            match child.TryGetProperty (nameof DockType) world with
+                            | Some dockTypeProperty ->
+                                match dockTypeProperty.PropertyValue with
+                                | :? DockType as dockType ->
+                                    match dockType with
+                                    | DockCenter ->
+                                        let size =
+                                            v2
+                                                (perimeter.Width - margins.X - margins.Z)
+                                                (perimeter.Height - margins.Y - margins.W)
+                                        let position =
+                                            v2
+                                                ((margins.X - margins.Z) * 0.5f)
+                                                ((margins.Y - margins.W) * 0.5f)
+                                        let world = child.SetPositionLocal position.V3 world
+                                        child.SetSize size.V3 world
+                                    | DockTop ->
+                                        let size = v2 perimeter.Width margins.W
+                                        let position = v2 0.0f (perimeterHeightHalf - margins.Z * 0.5f)
+                                        let world = child.SetPositionLocal position.V3 world
+                                        child.SetSize size.V3 world
+                                    | DockRight ->
+                                        let size = v2 margins.Z (perimeter.Height - margins.Y - margins.W)
+                                        let position = v2 (perimeterWidthHalf - margins.Z * 0.5f) ((margins.Y - margins.W) * 0.5f)
+                                        let world = child.SetPositionLocal position.V3 world
+                                        child.SetSize size.V3 world
+                                    | DockBottom ->
+                                        let size = v2 perimeter.Width margins.Y
+                                        let position = v2 0.0f (-perimeterHeightHalf + margins.Y * 0.5f)
+                                        let world = child.SetPositionLocal position.V3 world
+                                        child.SetSize size.V3 world
+                                    | DockLeft ->
+                                        let size = v2 margins.X (perimeter.Height - margins.Y - margins.W)
+                                        let position = v2 (-perimeterWidthHalf + margins.X * 0.5f) ((margins.Y - margins.W) * 0.5f)
+                                        let world = child.SetPositionLocal position.V3 world
+                                        child.SetSize size.V3 world
+                                | _ -> world
+                            | None -> world)
+                            world
+                            children
+                    | Grid (dims, stretchChildren) -> world
                     | Manual -> world
                 world
 
