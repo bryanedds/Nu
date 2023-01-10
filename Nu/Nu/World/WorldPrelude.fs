@@ -41,23 +41,23 @@ type DockType =
     | DockBottom
     | DockLeft
 
-/// The manner in which a flow layout flows its children.
+/// The manner in which a layout limits the flow its children.
 type FlowLimit =
-    | FlowWithinParent
-    | FlowUnbounded
+    | FlowParent
+    | FlowUnlimited
     | FlowTo of single
 
-/// The direction in which a flow layout flows its children.
+/// The direction in which a layout flows its children.
 type FlowDirection =
-    | FlowUpward
     | FlowRightward
     | FlowDownward
     | FlowLeftward
+    | FlowUpward
 
 /// A gui layout.
 [<Syntax
     ("Flow Dock Grid Manual",
-     "FlowWithinParent FlowUnbounded FlowTo " +
+     "FlowParent FlowUnlimited FlowTo " +
      "FlowUpward FlowRightward FlowDownward FlowLeftward",
      "", "", "",
      Constants.PrettyPrinter.DefaultThresholdMin,
@@ -65,7 +65,7 @@ type FlowDirection =
 type [<NoComparison>] Layout =
     | Flow of FlowDirection * FlowLimit
     | Dock of Vector4 * bool * bool
-    | Grid of Vector2i * bool
+    | Grid of Vector2i * FlowDirection option * bool
     | Manual
 
 /// The type of a screen transition. Incoming means a new screen is being shown and Outgoing

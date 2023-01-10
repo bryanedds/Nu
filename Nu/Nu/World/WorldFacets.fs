@@ -1194,12 +1194,11 @@ module LayoutFacetModule =
             let mutable offsetY = topY
             let mutable maximum = 0.0f
             match flowDirection with
-            | FlowUpward -> world
             | FlowRightward ->
                 let wrapLimit =
                     match flowLimit with
-                    | FlowWithinParent -> perimeter.Width
-                    | FlowUnbounded -> Single.MaxValue
+                    | FlowParent -> perimeter.Width
+                    | FlowUnlimited -> Single.MaxValue
                     | FlowTo flowLimit -> flowLimit
                 Array.fold (fun world child ->
                     flowRightward false leftX margin wrapLimit &offsetX &offsetY &maximum child world)
@@ -1207,13 +1206,14 @@ module LayoutFacetModule =
             | FlowDownward ->
                 let wrapLimit =
                     match flowLimit with
-                    | FlowWithinParent -> perimeter.Height
-                    | FlowUnbounded -> Single.MaxValue
+                    | FlowParent -> perimeter.Height
+                    | FlowUnlimited -> Single.MaxValue
                     | FlowTo flowLimit -> flowLimit
                 Array.fold (fun world child ->
                     flowDownward false topY margin wrapLimit &offsetX &offsetY &maximum child world)
                     world children
             | FlowLeftward -> world
+            | FlowUpward -> world
 
         static let dockLayout (perimeter : Box2) margin (margins : Vector4) children world =
             let perimeterWidthHalf = perimeter.Width * 0.5f
@@ -1260,7 +1260,7 @@ module LayoutFacetModule =
                 | None -> world)
                 world children
 
-        static let gridLayout (perimeter : Box2) margin (dims : Vector2i) children world =
+        static let gridLayout (perimeter : Box2) margin (dims : Vector2i) flowDirectionOpt children world =
             let perimeterWidthHalf = perimeter.Width * 0.5f
             let perimeterHeightHalf = perimeter.Height * 0.5f
             let cellSize = v2 (perimeter.Width / single dims.X) (perimeter.Height / single dims.Y)
@@ -1268,12 +1268,25 @@ module LayoutFacetModule =
             let cellHeightHalf = cellSize.Y * 0.5f
             let childSize = cellSize - margin
             Array.foldi (fun n world (child : Entity) ->
-                let i = single (n / dims.Y)
-                let j = single (n % dims.Y)
+                let (i, j) =
+                    match flowDirectionOpt with
+                    | Some flowDirection ->
+                        match flowDirection with
+                        | FlowRightward -> (n % dims.Y, n / dims.Y)
+                        | FlowDownward -> (n / dims.Y, n % dims.Y)
+                        | FlowLeftward -> (dec dims.Y - n % dims.Y, dec dims.Y - n / dims.Y)
+                        | FlowUpward -> (dec dims.Y - n / dims.Y, dec dims.Y - n % dims.Y)
+                    | None ->
+                        match child.TryGetProperty Constants.Engine.GridPositionPropertyName world with
+                        | Some gridPositionProperty ->
+                            match gridPositionProperty.PropertyValue with
+                            | :? Vector2i as gridPosition -> (gridPosition.X, gridPosition.Y)
+                            | _ -> (0, 0)
+                        | None -> (0, 0)
                 let childPosition =
                     v2
-                        (-perimeterWidthHalf + i * cellSize.X + cellWidthHalf)
-                        (perimeterHeightHalf - j * cellSize.Y - cellHeightHalf)
+                        (-perimeterWidthHalf + single i * cellSize.X + cellWidthHalf)
+                        (perimeterHeightHalf - single j * cellSize.Y - cellHeightHalf)
                 let world = child.SetPositionLocal childPosition.V3 world
                 child.SetSize childSize.V3 world)
                 world children
@@ -1298,8 +1311,8 @@ module LayoutFacetModule =
                         flowLayout perimeter margin flowDirection flowLimit children world
                     | Dock (margins, stretchChildren, percentageBased) ->
                         dockLayout perimeter margin margins children world
-                    | Grid (dims, stretchChildren) ->
-                        gridLayout perimeter margin dims children world
+                    | Grid (dims, flowDirectionOpt, stretchChildren) ->
+                        gridLayout perimeter margin dims flowDirectionOpt children world
                     | Manual -> world
                 world
 

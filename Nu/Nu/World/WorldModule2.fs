@@ -1259,6 +1259,7 @@ module GuiDispatcherModule2 =
              define Entity.Size Constants.Engine.EntitySizeGuiDefault
              define Entity.DisabledColor (Color (0.75f, 0.75f, 0.75f, 0.75f))
              define Entity.DockType DockCenter
+             define Entity.GridPosition v2iZero
              define Entity.Layout Manual
              define Entity.LayoutMargin v2Zero]
 
