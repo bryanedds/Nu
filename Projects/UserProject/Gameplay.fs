@@ -91,9 +91,9 @@ module Gameplay =
             [// the gui group
              Content.group Simulants.GameplayGui.Name []
                 [Content.button Simulants.GameplayGuiQuit.Name
-                    [Entity.Text == "Quit"
-                     Entity.Position == v3 336.0f -216.0f 0.0f
+                    [Entity.Position == v3 336.0f -216.0f 0.0f
                      Entity.Elevation == 10.0f
+                     Entity.Text == "Quit"
                      Entity.ClickEvent => StartQutting]]
 
              // the scene group
@@ -101,6 +101,6 @@ module Gameplay =
              | Playing | Quitting ->
                 Content.groupFromFile Simulants.GameplayScene.Name "Assets/Gameplay/Scene.nugroup" []
                     [Content.sideViewCharacter Simulants.GameplayScenePlayer.Name
-                        [Entity.Position == v3 0.0f 0.0f 0.0f
+                        [Entity.Position == v3 0.0f 54.0f 0.0f
                          Entity.Size == v3 108.0f 108.0f 0.0f]]
              | Quit -> ()]
