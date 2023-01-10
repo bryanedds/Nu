@@ -254,20 +254,20 @@ module TextFacetModule =
         member this.GetFont world : Font AssetTag = this.Get (nameof this.Font) world
         member this.SetFont (value : Font AssetTag) world = this.Set (nameof this.Font) value world
         member this.Font = lens (nameof this.Font) this this.GetFont this.SetFont
-        member this.GetMargins world : Vector3 = this.Get (nameof this.Margins) world
-        member this.SetMargins (value : Vector3) world = this.Set (nameof this.Margins) value world
-        member this.Margins = lens (nameof this.Margins) this this.GetMargins this.SetMargins
         member this.GetJustification world : Justification = this.Get (nameof this.Justification) world
         member this.SetJustification (value : Justification) world = this.Set (nameof this.Justification) value world
         member this.Justification = lens (nameof this.Justification) this this.GetJustification this.SetJustification
+        member this.GetTextMargin world : Vector2 = this.Get (nameof this.TextMargin) world
+        member this.SetTextMargin (value : Vector2) world = this.Set (nameof this.TextMargin) value world
+        member this.TextMargin = lens (nameof this.TextMargin) this this.GetTextMargin this.SetTextMargin
         member this.GetTextColor world : Color = this.Get (nameof this.TextColor) world
         member this.SetTextColor (value : Color) world = this.Set (nameof this.TextColor) value world
         member this.TextColor = lens (nameof this.TextColor) this this.GetTextColor this.SetTextColor
         member this.GetTextDisabledColor world : Color = this.Get (nameof this.TextDisabledColor) world
         member this.SetTextDisabledColor (value : Color) world = this.Set (nameof this.TextDisabledColor) value world
         member this.TextDisabledColor = lens (nameof this.TextDisabledColor) this this.GetTextDisabledColor this.SetTextDisabledColor
-        member this.GetTextOffset world : Vector3 = this.Get (nameof this.TextOffset) world
-        member this.SetTextOffset (value : Vector3) world = this.Set (nameof this.TextOffset) value world
+        member this.GetTextOffset world : Vector2 = this.Get (nameof this.TextOffset) world
+        member this.SetTextOffset (value : Vector2) world = this.Set (nameof this.TextOffset) value world
         member this.TextOffset = lens (nameof this.TextOffset) this this.GetTextOffset this.SetTextOffset
 
     type TextFacet () =
@@ -276,11 +276,11 @@ module TextFacetModule =
         static member Properties =
             [define Entity.Text ""
              define Entity.Font Assets.Default.Font
-             define Entity.Margins v3Zero
              define Entity.Justification (Justified (JustifyCenter, JustifyMiddle))
+             define Entity.TextMargin v2Zero
              define Entity.TextColor Color.Black
              define Entity.TextDisabledColor (Color (0.25f, 0.25f, 0.25f, 0.75f))
-             define Entity.TextOffset v3Zero]
+             define Entity.TextOffset v2Zero]
 
         override this.Render (entity, world) =
             let text = entity.GetText world
@@ -289,8 +289,10 @@ module TextFacetModule =
                 let perimeter = transform.Perimeter // gui currently ignores rotation and scale
                 let horizon = transform.Horizon
                 let mutable textTransform = Transform.makeDefault false // centered-ness and offset is already baked into perimeterUnscaled
-                textTransform.Position <- perimeter.Min + entity.GetMargins world + entity.GetTextOffset world
-                textTransform.Size <- perimeter.Size - entity.GetMargins world * 2.0f
+                let margin = (entity.GetTextMargin world).V3
+                let offset = (entity.GetTextOffset world).V3
+                textTransform.Position <- perimeter.Min + margin + offset
+                textTransform.Size <- perimeter.Size - margin * 2.0f
                 textTransform.Elevation <- transform.Elevation + 0.5f // lift text above parent
                 textTransform.Absolute <- transform.Absolute
                 let font = entity.GetFont world
@@ -1154,17 +1156,17 @@ module LayoutFacetModule =
          Constants.PrettyPrinter.DefaultThresholdMax)>]
     type Layout =
         | Flow of FlowDirection * FlowLimit
-        | Grid of Vector2i // grid stretch layout
-        | Dock // 
+        | Grid of Vector2i
+        | Dock
         | Manual
 
     type Entity with
         member this.GetLayout world : Layout = this.Get (nameof this.Layout) world
         member this.SetLayout (value : Layout) world = this.Set (nameof this.Layout) value world
         member this.Layout = lens (nameof this.Layout) this this.GetLayout this.SetLayout
-        member this.GetLayoutMargins world : Vector2 = this.Get (nameof this.LayoutMargins) world
-        member this.SetLayoutMargins (value : Vector2) world = this.Set (nameof this.LayoutMargins) value world
-        member this.LayoutMargins = lens (nameof this.LayoutMargins) this this.GetLayoutMargins this.SetLayoutMargins
+        member this.GetLayoutMargin world : Vector2 = this.Get (nameof this.LayoutMargin) world
+        member this.SetLayoutMargin (value : Vector2) world = this.Set (nameof this.LayoutMargin) value world
+        member this.LayoutMargin = lens (nameof this.LayoutMargin) this this.GetLayoutMargin this.SetLayoutMargin
 
     type LayoutFacet () =
         inherit Facet (false)
@@ -1211,7 +1213,7 @@ module LayoutFacetModule =
 
         static member Properties =
             [define Entity.Layout Manual
-             define Entity.LayoutMargins v2Zero]
+             define Entity.LayoutMargin v2Zero]
 
         override this.Update (entity, world) =
             match entity.GetLayout world with
@@ -1219,7 +1221,7 @@ module LayoutFacetModule =
             | layout ->
                 let children = World.getEntityChildren entity world
                 let children = Seq.sortBy (flip World.getEntityOrder world) children
-                let margins = entity.GetLayoutMargins world
+                let margin = entity.GetLayoutMargin world
                 let perimeter = (entity.GetPerimeter world).Box2
                 let world =
                     match layout with
@@ -1238,7 +1240,7 @@ module LayoutFacetModule =
                             let mutable offsetY = topY
                             let mutable maximum = 0.0f
                             Seq.fold (fun world child ->
-                                flowRightward false margins wrapLimit leftX &offsetX &offsetY &maximum child world)
+                                flowRightward false margin wrapLimit leftX &offsetX &offsetY &maximum child world)
                                 world children
                         | FlowDownward ->
                             let wrapLimit =
@@ -1252,7 +1254,7 @@ module LayoutFacetModule =
                             let mutable offsetY = topY
                             let mutable maximum = 0.0f
                             Seq.fold (fun world child ->
-                                flowDownward false margins wrapLimit topY &offsetX &offsetY &maximum child world)
+                                flowDownward false margin wrapLimit topY &offsetX &offsetY &maximum child world)
                                 world children
                         | FlowLeftward -> world
                     | Grid dims -> world
