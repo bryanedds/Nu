@@ -7,7 +7,6 @@ open System.Diagnostics
 #if !PLATFORM_AGNOSTIC_TIMESTAMPING
 open System.Runtime.InteropServices
 #endif
-open System.Configuration
 open Prime
 
 [<RequireQualifiedAccess>]
