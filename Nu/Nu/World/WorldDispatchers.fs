@@ -75,6 +75,9 @@ module GuiDispatcherModule =
         member this.GetDisabledColor world : Color = this.Get (nameof this.DisabledColor) world
         member this.SetDisabledColor (value : Color) world = this.Set (nameof this.DisabledColor) value world
         member this.DisabledColor = lens (nameof this.DisabledColor) this this.GetDisabledColor this.SetDisabledColor
+        member this.GetDockType world : DockType = this.Get (nameof this.DockType) world
+        member this.SetDockType (value : DockType) world = this.Set (nameof this.DockType) value world
+        member this.DockType = lens (nameof this.DockType) this this.GetDockType this.SetDockType
 
     type GuiDispatcher () =
         inherit EntityDispatcher2d (Constants.Engine.EntityCenteredGuiDefault, false)
@@ -89,6 +92,7 @@ module GuiDispatcherModule =
              define Entity.Presence Omnipresent
              define Entity.Size Constants.Engine.EntitySizeGuiDefault
              define Entity.DisabledColor (Color (0.75f, 0.75f, 0.75f, 0.75f))
+             define Entity.DockType DockCenter
              define Entity.Layout Manual
              define Entity.LayoutMargin v2Zero]
 

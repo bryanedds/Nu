@@ -131,7 +131,7 @@ module FieldContent =
                 let y = position.Y - single (index % columns) * 81.0f
                 Content.button itemName
                     [Entity.PositionLocal := v3 x y 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 336.0f 72.0f 0.0f
-                     Entity.Justification == Justified (JustifyLeft, JustifyMiddle); Entity.Margins == v3 16.0f 0.0f 0.0f
+                     Entity.Justification == Justified (JustifyLeft, JustifyMiddle); Entity.TextMargin == v2 16.0f 0.0f
                      Entity.Text :=
                         match itemCountOpt with
                         | Some count when count > 1 -> itemName + String (Array.create (17 - itemName.Length) ' ') + "x" + string count
@@ -161,7 +161,7 @@ module FieldContent =
                 let h = if useSmallButtons then 60.0f else 72.0f
                 Content.button techName
                     [Entity.PositionLocal == v3 x y 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 w h 0.0f
-                     Entity.Justification == Justified (JustifyLeft, JustifyMiddle); Entity.Margins == v3 16.0f 0.0f 0.0f
+                     Entity.Justification == Justified (JustifyLeft, JustifyMiddle); Entity.TextMargin == v2 16.0f 0.0f
                      Entity.Text := techName
                      Entity.EnabledLocal == false
                      Entity.UpImage == Assets.Gui.ButtonSquishedUpImage

@@ -70,3 +70,11 @@ type [<AttributeUsage (AttributeTargets.Field)>] UniformAttribute () =
 type [<NoComparison>] DesiredFps =
     | Fps60
     | Fps30
+
+// TODO: remove after updating Prime.
+[<RequireQualifiedAccess>]
+module Array =
+
+    /// Foldi for arrays.
+    let foldi folder state (array : _ array) =
+        Seq.foldi folder state array
