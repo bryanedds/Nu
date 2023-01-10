@@ -78,6 +78,9 @@ module GuiDispatcherModule =
         member this.GetDockType world : DockType = this.Get (nameof this.DockType) world
         member this.SetDockType (value : DockType) world = this.Set (nameof this.DockType) value world
         member this.DockType = lens (nameof this.DockType) this this.GetDockType this.SetDockType
+        member this.GetGridPosition world : Vector2i = this.Get (nameof this.GridPosition) world
+        member this.SetGridPosition (value : Vector2i) world = this.Set (nameof this.GridPosition) value world
+        member this.GridPosition = lens (nameof this.GridPosition) this this.GetGridPosition this.SetGridPosition
 
     type GuiDispatcher () =
         inherit EntityDispatcher2d (Constants.Engine.EntityCenteredGuiDefault, false)
@@ -93,6 +96,7 @@ module GuiDispatcherModule =
              define Entity.Size Constants.Engine.EntitySizeGuiDefault
              define Entity.DisabledColor (Color (0.75f, 0.75f, 0.75f, 0.75f))
              define Entity.DockType DockCenter
+             define Entity.GridPosition v2iZero
              define Entity.Layout Manual
              define Entity.LayoutMargin v2Zero]
 
