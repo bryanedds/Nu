@@ -79,13 +79,18 @@ module GuiDispatcherModule =
     type GuiDispatcher () =
         inherit EntityDispatcher2d (Constants.Engine.EntityCenteredGuiDefault, false)
 
+        static member Facets =
+            [typeof<LayoutFacet>]
+
         static member Properties =
             [define Entity.Centered Constants.Engine.EntityCenteredGuiDefault
              define Entity.Absolute true
              define Entity.AlwaysUpdate true
              define Entity.Presence Omnipresent
              define Entity.Size Constants.Engine.EntitySizeGuiDefault
-             define Entity.DisabledColor (Color (0.75f, 0.75f, 0.75f, 0.75f))]
+             define Entity.DisabledColor (Color (0.75f, 0.75f, 0.75f, 0.75f))
+             define Entity.Layout Manual
+             define Entity.LayoutMargins v2Zero]
 
 [<AutoOpen>]
 module ButtonDispatcherModule =

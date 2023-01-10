@@ -1248,13 +1248,18 @@ module GuiDispatcherModule2 =
         new (initial : 'model) =
             GuiDispatcher<'model, 'message, 'command> (fun _ -> initial)
 
+        static member Facets =
+            [typeof<LayoutFacet>]
+
         static member Properties =
             [define Entity.Centered Constants.Engine.EntityCenteredGuiDefault
              define Entity.Presence Omnipresent
              define Entity.Absolute true
              define Entity.AlwaysUpdate true
              define Entity.Size Constants.Engine.EntitySizeGuiDefault
-             define Entity.DisabledColor (Color (0.75f, 0.75f, 0.75f, 0.75f))]
+             define Entity.DisabledColor (Color (0.75f, 0.75f, 0.75f, 0.75f))
+             define Entity.Layout Manual
+             define Entity.LayoutMargins v2Zero]
 
 [<AutoOpen>]
 module GroupDispatcherModule =
