@@ -1259,7 +1259,7 @@ module GuiDispatcherModule2 =
              define Entity.Size Constants.Engine.EntitySizeGuiDefault
              define Entity.DisabledColor (Color (0.75f, 0.75f, 0.75f, 0.75f))
              define Entity.Layout Manual
-             define Entity.LayoutMargins v2Zero]
+             define Entity.LayoutMargin v2Zero]
 
 [<AutoOpen>]
 module GroupDispatcherModule =

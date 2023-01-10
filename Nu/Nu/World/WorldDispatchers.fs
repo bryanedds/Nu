@@ -90,7 +90,7 @@ module GuiDispatcherModule =
              define Entity.Size Constants.Engine.EntitySizeGuiDefault
              define Entity.DisabledColor (Color (0.75f, 0.75f, 0.75f, 0.75f))
              define Entity.Layout Manual
-             define Entity.LayoutMargins v2Zero]
+             define Entity.LayoutMargin v2Zero]
 
 [<AutoOpen>]
 module ButtonDispatcherModule =
@@ -99,8 +99,8 @@ module ButtonDispatcherModule =
         member this.GetDown world : bool = this.Get (nameof this.Down) world
         member this.SetDown (value : bool) world = this.Set (nameof this.Down) value world
         member this.Down = lens (nameof this.Down) this this.GetDown this.SetDown
-        member this.GetDownTextOffset world : Vector3 = this.Get (nameof this.DownTextOffset) world
-        member this.SetDownTextOffset (value : Vector3) world = this.Set (nameof this.DownTextOffset) value world
+        member this.GetDownTextOffset world : Vector2 = this.Get (nameof this.DownTextOffset) world
+        member this.SetDownTextOffset (value : Vector2) world = this.Set (nameof this.DownTextOffset) value world
         member this.DownTextOffset = lens (nameof this.DownTextOffset) this this.GetDownTextOffset this.SetDownTextOffset
         member this.GetUpImage world : Image AssetTag = this.Get (nameof this.UpImage) world
         member this.SetUpImage (value : Image AssetTag) world = this.Set (nameof this.UpImage) value world
@@ -142,7 +142,7 @@ module ButtonDispatcherModule =
             let entity = evt.Subscriber : Entity
             let wasDown = entity.GetDown world
             let world = entity.SetDown false world
-            let world = entity.SetTextOffset v3Zero world
+            let world = entity.SetTextOffset v2Zero world
             if entity.GetVisible world then
                 let mutable transform = entity.GetTransform world
                 let perimeter = transform.Perimeter.Box2
@@ -167,7 +167,7 @@ module ButtonDispatcherModule =
 
         static member Properties =
             [define Entity.Down false
-             define Entity.DownTextOffset v3Zero
+             define Entity.DownTextOffset v2Zero
              define Entity.UpImage Assets.Default.Image
              define Entity.DownImage Assets.Default.Image2
              define Entity.ClickSoundOpt (Some Assets.Default.Sound)
@@ -294,14 +294,14 @@ module ToggleButtonDispatcherModule =
         member this.GetToggled world : bool = this.Get (nameof this.Toggled) world
         member this.SetToggled (value : bool) world = this.Set (nameof this.Toggled) value world
         member this.Toggled = lens (nameof this.Toggled) this this.GetToggled this.SetToggled
-        member this.GetToggledTextOffset world : Vector3 = this.Get (nameof this.ToggledTextOffset) world
-        member this.SetToggledTextOffset (value : Vector3) world = this.Set (nameof this.ToggledTextOffset) value world
+        member this.GetToggledTextOffset world : Vector2 = this.Get (nameof this.ToggledTextOffset) world
+        member this.SetToggledTextOffset (value : Vector2) world = this.Set (nameof this.ToggledTextOffset) value world
         member this.ToggledTextOffset = lens (nameof this.ToggledTextOffset) this this.GetToggledTextOffset this.SetToggledTextOffset
         member this.GetPressed world : bool = this.Get (nameof this.Pressed) world
         member this.SetPressed (value : bool) world = this.Set (nameof this.Pressed) value world
         member this.Pressed = lens (nameof this.Pressed) this this.GetPressed this.SetPressed
-        member this.GetPressedTextOffset world : Vector3 = this.Get (nameof this.PressedTextOffset) world
-        member this.SetPressedTextOffset (value : Vector3) world = this.Set (nameof this.PressedTextOffset) value world
+        member this.GetPressedTextOffset world : Vector2 = this.Get (nameof this.PressedTextOffset) world
+        member this.SetPressedTextOffset (value : Vector2) world = this.Set (nameof this.PressedTextOffset) value world
         member this.PressedTextOffset = lens (nameof this.PressedTextOffset) this this.GetPressedTextOffset this.SetPressedTextOffset
         member this.GetUntoggledImage world : Image AssetTag = this.Get (nameof this.UntoggledImage) world
         member this.SetUntoggledImage (value : Image AssetTag) world = this.Set (nameof this.UntoggledImage) value world
@@ -367,9 +367,9 @@ module ToggleButtonDispatcherModule =
 
         static member Properties =
             [define Entity.Toggled false
-             define Entity.ToggledTextOffset v3Zero
+             define Entity.ToggledTextOffset v2Zero
              define Entity.Pressed false
-             define Entity.PressedTextOffset v3Zero
+             define Entity.PressedTextOffset v2Zero
              define Entity.UntoggledImage Assets.Default.Image
              define Entity.ToggledImage Assets.Default.Image2
              define Entity.ToggleSoundOpt (Some Assets.Default.Sound)
@@ -386,7 +386,7 @@ module ToggleButtonDispatcherModule =
             let textOffset =
                 if entity.GetPressed world then entity.GetPressedTextOffset world
                 elif entity.GetToggled world then entity.GetToggledTextOffset world
-                else v3Zero
+                else v2Zero
             entity.SetTextOffset textOffset world
 
         override this.Render (entity, world) =
@@ -423,8 +423,8 @@ module RadioButtonDispatcherModule =
         member this.GetDialed world : bool = this.Get (nameof this.Dialed) world
         member this.SetDialed (value : bool) world = this.Set (nameof this.Dialed) value world
         member this.Dialed = lens (nameof this.Dialed) this this.GetDialed this.SetDialed
-        member this.GetDialedTextOffset world : Vector3 = this.Get (nameof this.DialedTextOffset) world
-        member this.SetDialedTextOffset (value : Vector3) world = this.Set (nameof this.DialedTextOffset) value world
+        member this.GetDialedTextOffset world : Vector2 = this.Get (nameof this.DialedTextOffset) world
+        member this.SetDialedTextOffset (value : Vector2) world = this.Set (nameof this.DialedTextOffset) value world
         member this.DialedTextOffset = lens (nameof this.DialedTextOffset) this this.GetDialedTextOffset this.SetDialedTextOffset
         member this.GetUndialedImage world : Image AssetTag = this.Get (nameof this.UndialedImage) world
         member this.SetUndialedImage (value : Image AssetTag) world = this.Set (nameof this.UndialedImage) value world
@@ -491,9 +491,9 @@ module RadioButtonDispatcherModule =
 
         static member Properties =
             [define Entity.Dialed false
-             define Entity.DialedTextOffset v3Zero
+             define Entity.DialedTextOffset v2Zero
              define Entity.Pressed false
-             define Entity.PressedTextOffset v3Zero
+             define Entity.PressedTextOffset v2Zero
              define Entity.UndialedImage Assets.Default.Image
              define Entity.DialedImage Assets.Default.Image2
              define Entity.DialSoundOpt (Some Assets.Default.Sound)
@@ -510,7 +510,7 @@ module RadioButtonDispatcherModule =
             let textOffset =
                 if entity.GetPressed world then entity.GetPressedTextOffset world
                 elif entity.GetDialed world then entity.GetDialedTextOffset world
-                else v3Zero
+                else v2Zero
             entity.SetTextOffset textOffset world
 
         override this.Render (entity, world) =
