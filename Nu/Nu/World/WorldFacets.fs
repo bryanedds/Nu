@@ -1243,7 +1243,8 @@ module LayoutFacetModule =
                                         let size =
                                             v2
                                                 (perimeter.Width - margins.X - margins.Z)
-                                                (perimeter.Height - margins.Y - margins.W)
+                                                (perimeter.Height - margins.Y - margins.W) -
+                                            margin
                                         let position =
                                             v2
                                                 ((margins.X - margins.Z) * 0.5f)
@@ -1251,22 +1252,22 @@ module LayoutFacetModule =
                                         let world = child.SetPositionLocal position.V3 world
                                         child.SetSize size.V3 world
                                     | DockTop ->
-                                        let size = v2 perimeter.Width margins.W
+                                        let size = v2 perimeter.Width margins.W - margin
                                         let position = v2 0.0f (perimeterHeightHalf - margins.Z * 0.5f)
                                         let world = child.SetPositionLocal position.V3 world
                                         child.SetSize size.V3 world
                                     | DockRight ->
-                                        let size = v2 margins.Z (perimeter.Height - margins.Y - margins.W)
+                                        let size = v2 margins.Z (perimeter.Height - margins.Y - margins.W) - margin
                                         let position = v2 (perimeterWidthHalf - margins.Z * 0.5f) ((margins.Y - margins.W) * 0.5f)
                                         let world = child.SetPositionLocal position.V3 world
                                         child.SetSize size.V3 world
                                     | DockBottom ->
-                                        let size = v2 perimeter.Width margins.Y
+                                        let size = v2 perimeter.Width margins.Y - margin
                                         let position = v2 0.0f (-perimeterHeightHalf + margins.Y * 0.5f)
                                         let world = child.SetPositionLocal position.V3 world
                                         child.SetSize size.V3 world
                                     | DockLeft ->
-                                        let size = v2 margins.X (perimeter.Height - margins.Y - margins.W)
+                                        let size = v2 margins.X (perimeter.Height - margins.Y - margins.W) - margin
                                         let position = v2 (-perimeterWidthHalf + margins.X * 0.5f) ((margins.Y - margins.W) * 0.5f)
                                         let world = child.SetPositionLocal position.V3 world
                                         child.SetSize size.V3 world
