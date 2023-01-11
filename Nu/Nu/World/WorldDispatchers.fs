@@ -19,8 +19,8 @@ module EntityDispatcherModule =
             EntityDispatcher2d (false, Constants.Engine.EntityCentered2dDefault, physical)
 
         static member Properties =
-            [define Entity.Centered Constants.Engine.EntityCentered2dDefault
-             define Entity.Size Constants.Engine.EntitySize2dDefault]
+            [define Entity.Size Constants.Engine.EntitySize2dDefault
+             define Entity.Centered Constants.Engine.EntityCentered2dDefault]
 
     /// A 3d entity dispatcher.
     type EntityDispatcher3d (centered, physical) =
@@ -30,8 +30,8 @@ module EntityDispatcherModule =
             EntityDispatcher3d (Constants.Engine.EntityCentered3dDefault, physical)
 
         static member Properties =
-            [define Entity.Centered Constants.Engine.EntityCentered3dDefault
-             define Entity.Size Constants.Engine.EntitySize3dDefault]
+            [define Entity.Size Constants.Engine.EntitySize3dDefault
+             define Entity.Centered Constants.Engine.EntityCentered3dDefault]
 
 [<AutoOpen>]
 module StaticSpriteDispatcherModule =
@@ -84,11 +84,11 @@ module GuiDispatcherModule =
             [typeof<LayoutFacet>]
 
         static member Properties =
-            [define Entity.Centered Constants.Engine.EntityCenteredGuiDefault
+            [define Entity.Size Constants.Engine.EntitySizeGuiDefault
+             define Entity.Centered Constants.Engine.EntityCenteredGuiDefault
              define Entity.Absolute true
              define Entity.AlwaysUpdate true
              define Entity.Presence Omnipresent
-             define Entity.Size Constants.Engine.EntitySizeGuiDefault
              define Entity.DisabledColor (Color (0.75f, 0.75f, 0.75f, 0.75f))
              define Entity.Layout Manual
              define Entity.LayoutMargin v2Zero
