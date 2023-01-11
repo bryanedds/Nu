@@ -57,6 +57,7 @@ type [<NoComparison>] BodySeparationData =
     | BodySeparationImplicit of PhysicsId
     | BodySeparationExplicit of BodySeparationExplicit
 
+/// Tje data for describing a change in transform.
 type [<NoComparison>] BodyTransformData =
     { BodyCenter : Vector3
       BodyRotation : Quaternion
@@ -69,6 +70,7 @@ type [<NoComparison>] LifeCycleData =
     | UnregisteringData of Simulant
     | MountOptChangeData of Entity Relation option * Entity Relation option * Entity
 
+/// The data for describing a mounting or unmounting event.
 type MountData =
     { Mount : Entity
       Mounter : Entity }
@@ -81,13 +83,13 @@ module Events =
     let Unregistering = stoa<unit> "Unregistering/Event"
     let Change propertyName = stoa<ChangeData> ("Change/" + propertyName + "/Event")
     let LifeCycle simulantTypeName = stoa<LifeCycleData> ("LifeCycle/" + simulantTypeName + "/Event")
-    let MountAdded = stoa<MountData> "Mount/Added/Event"
-    let MountRemoving = stoa<MountData> "Mount/Removing/Event"
     let Update = stoa<unit> "Update/Event"
     let PostUpdate = stoa<unit> "PostUpdate/Event"
     let Render = stoa<unit> "Render/Event"
     let Select = stoa<unit> "Select/Event"
     let Deselecting = stoa<unit> "Deselecting/Event"
+    let Mount = stoa<MountData> "Mount/Event"
+    let Unmount = stoa<MountData> "Unmount/Event"
     let BodyAdding = stoa<PhysicsId> "Body/Adding/Event"
     let BodyRemoving = stoa<PhysicsId> "Body/Removing/Event"
     let BodyCollision = stoa<BodyCollisionData> "BodyCollision/Event"
