@@ -131,13 +131,18 @@ module Gaia =
     let private refreshHierarchyTreeView (_ : GaiaForm) (_ : World) =
         refreshHierarchyViewRequested <- true
 
-    let private refreshHierarchyTreeViewImpl (form : GaiaForm) world =
+    let private refreshHierarchyTreeViewImmediate (form : GaiaForm) world =
         // TODO: this code can cause severe performance issues. To unfuck performance, we will probably have to find a
         // way to update the hierarchy tree without a complete rebuild of it - IE, updating it in-place and
         // imperatively.
         let treeNodesState = form.hierarchyTreeView.GetExpandedNodesState ()
         form.hierarchyTreeView.Nodes.Clear ()
-        let entities = World.getEntitiesFlattened selectedGroup world
+        let entities =
+            World.getEntitiesFlattened selectedGroup world |>
+            Seq.map (fun entity -> (entity.GetOrder world, entity)) |>
+            Array.ofSeq |>
+            Array.sortBy fst |>
+            Array.map snd
         for entity in entities do
             let mutable namesUsed = [||]
             let mutable parentNodeOpt = Option<TreeNode>.None
@@ -206,23 +211,20 @@ module Gaia =
 
     let private selectEntity entity (form : GaiaForm) world =
         Globals.World <- world // must be set for property grid
-        match form.entityPropertyGrid.SelectedObject with
-        | :? EntityTypeDescriptorSource as entityTds when entityTds.DescribedEntity = entity -> ()
-        | _ ->
-            let entityTds = { DescribedEntity = entity; Form = form }
-            let previousGridItem = form.entityPropertyGrid.SelectedGridItem
-            form.entityPropertyGrid.SelectedObject <- entityTds
-            tryShowSelectedEntityInHierarchy form
-            let gridItems = dictPlus StringComparer.Ordinal []
-            for gridItem in form.entityPropertyGrid.SelectedGridItem.Parent.Parent.GridItems do
-                for gridItem in gridItem.GridItems do
-                    gridItems.Add (gridItem.Label, gridItem)
-            if notNull previousGridItem then
-                match gridItems.TryGetValue previousGridItem.Label with
-                | (true, gridItem) -> form.entityPropertyGrid.SelectedGridItem <- gridItem
-                | (false, _) -> if entity.GetModelGeneric<obj> world <> box () then form.entityPropertyGrid.SelectedGridItem <- gridItems.[Constants.Engine.ModelPropertyName]
-            elif entity.GetModelGeneric<obj> world <> box () then form.entityPropertyGrid.SelectedGridItem <- gridItems.[Constants.Engine.ModelPropertyName]
-            form.propertyTabControl.SelectTab 3
+        let entityTds = { DescribedEntity = entity; Form = form }
+        let previousGridItem = form.entityPropertyGrid.SelectedGridItem
+        form.entityPropertyGrid.SelectedObject <- entityTds
+        tryShowSelectedEntityInHierarchy form
+        let gridItems = dictPlus StringComparer.Ordinal []
+        for gridItem in form.entityPropertyGrid.SelectedGridItem.Parent.Parent.GridItems do
+            for gridItem in gridItem.GridItems do
+                gridItems.Add (gridItem.Label, gridItem)
+        if notNull previousGridItem then
+            match gridItems.TryGetValue previousGridItem.Label with
+            | (true, gridItem) -> form.entityPropertyGrid.SelectedGridItem <- gridItem
+            | (false, _) -> if entity.GetModelGeneric<obj> world <> box () then form.entityPropertyGrid.SelectedGridItem <- gridItems.[Constants.Engine.ModelPropertyName]
+        elif entity.GetModelGeneric<obj> world <> box () then form.entityPropertyGrid.SelectedGridItem <- gridItems.[Constants.Engine.ModelPropertyName]
+        form.propertyTabControl.SelectTab 3
 
     let private deselectEntity (form : GaiaForm) world =
         Globals.World <- world // must be set for property grid
@@ -901,7 +903,7 @@ module Gaia =
 
     let private handleFormHierarchyTreeViewNodeSelect (form : GaiaForm) (args : TreeViewEventArgs) =
         Globals.preUpdate $ fun world ->
-            if notNull form.hierarchyTreeView.SelectedNode && args.Action <> TreeViewAction.Unknown then
+            if notNull form.hierarchyTreeView.SelectedNode then
                 let nodeKey = form.hierarchyTreeView.SelectedNode.Name
                 let address = Address.makeFromString nodeKey
                 let entity = Entity (selectedGroup.GroupAddress <-- atoa address)
@@ -1556,7 +1558,7 @@ module Gaia =
         let world = Globals.processPreUpdaters world
         let world =
             if refreshHierarchyViewRequested
-            then refreshHierarchyTreeViewImpl form world
+            then refreshHierarchyTreeViewImmediate form world
             else world
         let world = updateEntityDrag form world
         let world = updateEyeDrag form world
@@ -1573,7 +1575,7 @@ module Gaia =
         let world = Globals.processPerUpdaters world
         let world =
             if refreshHierarchyViewRequested
-            then refreshHierarchyTreeViewImpl form world
+            then refreshHierarchyTreeViewImmediate form world
             else world
         updateUndoButton form world
         updateRedoButton form world
@@ -1750,21 +1752,7 @@ module Gaia =
         form.createElevationTextBox.Text <- scstring Constants.Editor.CreationElevationDefault
         form.propertyTabControl.SelectTab 3
 
-        // build tree view sorter
-        let treeViewSorter =
-            { new IComparer with
-                member this.Compare (left, right) =
-                    let world = Globals.World
-                    let leftEntity = Entity (Array.append selectedGroup.GroupAddress.Names ((left :?> TreeNode).Name.Split Constants.Address.Separator))
-                    let rightEntity = Entity (Array.append selectedGroup.GroupAddress.Names ((right :?> TreeNode).Name.Split Constants.Address.Separator))
-                    if leftEntity.Exists world && rightEntity.Exists world
-                    then (leftEntity.GetOrder world).CompareTo (rightEntity.GetOrder world)
-                    else 0 }
-
         // same for hierarchy tree view...
-        form.hierarchyTreeView.AllowDrop <- true // TODO: configure this in designer instead.
-        form.hierarchyTreeView.Sorted <- true
-        form.hierarchyTreeView.TreeViewNodeSorter <- treeViewSorter
         form.hierarchyTreeView.NodeMouseClick.Add (fun (args : TreeNodeMouseClickEventArgs) ->
             Globals.preUpdate $ fun world ->
                 if args.Button = MouseButtons.Right then
@@ -1775,6 +1763,24 @@ module Gaia =
                         selectEntity entity form world
                         form.hierarchyContextMenuStrip.Show ()
                 world)
+        form.hierarchyTreeView.KeyDown.Add (fun args ->
+            if uint args.Modifiers &&& uint Keys.Alt <> 0u && (args.KeyCode = Keys.Up || args.KeyCode = Keys.Down) then
+                args.Handled <- true
+                Globals.preUpdate $ fun world ->
+                    match form.entityPropertyGrid.SelectedObject with
+                    | :? EntityTypeDescriptorSource as entityTds ->
+                        let entity = entityTds.DescribedEntity
+                        let peerOpt =
+                            if args.KeyCode = Keys.Up then World.tryGetPreviousEntity entity world
+                            elif args.KeyCode = Keys.Down then World.tryGetNextEntity entity world
+                            else None
+                        match peerOpt with
+                        | Some peer ->
+                            let world = World.swapEntityOrders entity peer world
+                            refreshHierarchyTreeView form world
+                            world
+                        | None -> world
+                    | _ -> world)
 
         // set up events handlers
         form.exitToolStripMenuItem.Click.Add (handleFormExit form)

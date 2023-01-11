@@ -685,40 +685,55 @@ module WorldEntityModule =
             let sorted = Array.sortBy fst intersections
             Array.tryHead sorted
 
-        /// Try to find the entity in the given entity's group with the closest previous order.
+        /// Try to find the entity among the given entity's peers with the closest previous order.
         static member tryGetPreviousEntity (entity : Entity) world =
+            match entity.Parent with
+            | :? Entity as parent ->
+                let order = World.getEntityOrder entity world
+                World.getEntityChildren parent world |>
+                Seq.map (fun child -> (child.GetOrder world, child)) |>
+                Array.ofSeq |>
+                Array.sortBy fst |>
+                Array.rev |>
+                Array.tryFind (fun (order', _) -> order' < order) |>
+                Option.map snd
+            | :? Group as parent ->
+                let order = World.getEntityOrder entity world
+                World.getEntitiesSovereign parent world |>
+                Seq.map (fun child -> (child.GetOrder world, child)) |>
+                Array.ofSeq |>
+                Array.sortBy fst |>
+                Array.rev |>
+                Array.tryFind (fun (order', _) -> order' < order) |>
+                Option.map snd
+            | _ -> failwithumf ()
+
+        /// Try to find the entity among the given entity's peers with the closest next order.
+        static member tryGetNextEntity (entity : Entity) world =
+            match entity.Parent with
+            | :? Entity as parent ->
+                let order = World.getEntityOrder entity world
+                World.getEntityChildren parent world |>
+                Seq.map (fun child -> (child.GetOrder world, child)) |>
+                Array.ofSeq |>
+                Array.sortBy fst |>
+                Array.tryFind (fun (order', _) -> order' > order) |>
+                Option.map snd
+            | :? Group as parent ->
+                let order = World.getEntityOrder entity world
+                World.getEntitiesSovereign parent world |>
+                Seq.map (fun child -> (child.GetOrder world, child)) |>
+                Array.ofSeq |>
+                Array.sortBy fst |>
+                Array.tryFind (fun (order', _) -> order' > order) |>
+                Option.map snd
+            | _ -> None
+
+        /// Swap the orders of two entities.
+        static member swapEntityOrders entity entity2 world =
             let order = World.getEntityOrder entity world
-            let mutable previousOrderDeltaOpt = ValueNone
-            let mutable previousOpt = ValueNone
-            let entities = World.getEntitiesFlattened entity.Group world
-            for entity2 in entities do
-                let order2 = World.getEntityOrder entity2 world
-                let orderDelta = order - order2
-                if orderDelta > 0L then
-                    match previousOrderDeltaOpt with
-                    | ValueSome orderDelta2 ->
-                        if orderDelta < orderDelta2 then
-                            previousOrderDeltaOpt <- ValueSome orderDelta
-                            previousOpt <- ValueSome entity2
-                    | ValueNone ->
-                        previousOrderDeltaOpt <- ValueSome orderDelta
-                        previousOpt <- ValueSome entity2
-            match previousOpt with
-            | ValueSome previous -> Some previous
-            | ValueNone -> None
-
-        /// Change an entity's order between that of before and after's.
-        static member reorderEntity entityBefore entityAfter entity world =
-            let orderBefore = World.getEntityOrder entityBefore world;
-            let orderAfter = World.getEntityOrder entityAfter world;
-            let order = (orderBefore + orderAfter) / 2L;
-            World.setEntityOrder order entity world |> snd'
-
-        /// Change an entity's order between that of target and its previous sibling's.
-        static member insertEntity target entity world =
-            match World.tryGetPreviousEntity target world with
-            | Some previous -> World.reorderEntity previous target entity world
-            | None -> world
+            let world = World.setEntityOrder (World.getEntityOrder entity2 world) entity world |> snd'
+            World.setEntityOrder order entity2 world |> snd'
 
         /// Write an entity to an entity descriptor.
         static member writeEntity (entity : Entity) (entityDescriptor : EntityDescriptor) world =

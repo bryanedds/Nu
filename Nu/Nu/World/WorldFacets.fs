@@ -1310,9 +1310,9 @@ module LayoutFacetModule =
                                 then child.GetLayoutOrder world
                                 else 0
                             let order = child.GetOrder world
-                            (child, layoutOrder, order)) |>
+                            (layoutOrder, order, child)) |>
                         Array.sortBy ab_ |>
-                        Array.map a__
+                        Array.map __c
                     let perimeter = (entity.GetPerimeter world).Box2
                     let margin = entity.GetLayoutMargin world
                     let world =
