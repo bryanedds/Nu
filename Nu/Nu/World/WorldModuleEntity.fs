@@ -604,21 +604,28 @@ module WorldModuleEntity =
         static member internal addEntityToMounts mountOpt entity world =
             match Option.bind (tryResolve entity) mountOpt with
             | Some newMount ->
-                match world.EntityMounts.TryGetValue newMount with
-                | (true, mounters) ->
-                    let mounters = USet.add entity mounters
-                    let world = { world with EntityMounts = UMap.add newMount mounters world.EntityMounts }
-                    world
-                | (false, _) ->
-                    let mounters = USet.singleton HashIdentity.Structural (World.getCollectionConfig world) entity
-                    let world = World.choose { world with EntityMounts = UMap.add newMount mounters world.EntityMounts }
-                    let world = if World.getEntityExists newMount world then World.setEntityMounted true newMount world |> snd' else world
-                    world
+                let world =
+                    match world.EntityMounts.TryGetValue newMount with
+                    | (true, mounters) ->
+                        let mounters = USet.add entity mounters
+                        let world = { world with EntityMounts = UMap.add newMount mounters world.EntityMounts }
+                        world
+                    | (false, _) ->
+                        let mounters = USet.singleton HashIdentity.Structural (World.getCollectionConfig world) entity
+                        let world = World.choose { world with EntityMounts = UMap.add newMount mounters world.EntityMounts }
+                        let world = if World.getEntityExists newMount world then World.setEntityMounted true newMount world |> snd' else world
+                        world
+                let mountData = { Mount = newMount; Mounter = entity }
+                let eventTrace = EventTrace.debug "World" "addEntityToMounts" "" EventTrace.empty
+                World.publish mountData (Events.MountAdded --> newMount) eventTrace entity world
             | None -> world
 
         static member internal removeEntityFromMounts mountOpt entity world =
             match Option.bind (tryResolve entity) mountOpt with
             | Some oldMount ->
+                let mountData = { Mount = oldMount; Mounter = entity }
+                let eventTrace = EventTrace.debug "World" "removeEntityFromMounts" "" EventTrace.empty
+                let world = World.publish mountData (Events.MountRemoving --> oldMount) eventTrace entity world
                 match world.EntityMounts.TryGetValue oldMount with
                 | (true, mounters) ->
                     let mounters = USet.remove entity mounters

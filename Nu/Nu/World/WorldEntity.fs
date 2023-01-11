@@ -858,7 +858,7 @@ module WorldEntityModule =
             // update mount hierarchy
             let mountOpt = World.getEntityMountOpt entity world
             let world = World.addEntityToMounts mountOpt entity world
-            
+
             // read the entity's children
             let world = World.readEntities entityDescriptor.EntityDescriptors entity world |> snd
             (entity, world)

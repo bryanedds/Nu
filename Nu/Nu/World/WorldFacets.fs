@@ -1338,6 +1338,8 @@ module LayoutFacetModule =
 
         override this.Register (entity, world) =
             let world = performLayout entity world
+            let world = World.monitor handleLayout (Events.MountAdded --> entity) entity world
+            let world = World.monitor handleLayout (Events.MountRemoving --> entity) entity world
             let world = World.monitor handleLayout entity.Transform.ChangeEvent entity world
             let world = World.monitor handleLayout entity.Layout.ChangeEvent entity world
             let world = World.monitor handleLayout entity.LayoutMargin.ChangeEvent entity world
