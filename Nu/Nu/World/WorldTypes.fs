@@ -328,7 +328,7 @@ module WorldTypes =
         /// Whether the dispatcher uses a centered transform by default.
         member this.Centered = centered
 
-        /// Whether the dispatcher is a gui dispatcher.
+        /// Whether the dispatcher has a 2-dimensional transform interpretation.
         member this.Is2d = is2d
 
         /// Whether the dispatcher is a gui dispatcher.
