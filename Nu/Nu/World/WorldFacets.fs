@@ -1265,7 +1265,7 @@ module LayoutFacetModule =
                 else world)
                 world children
 
-        static let gridLayout (perimeter : Box2) margin (dims : Vector2i) flowDirectionOpt children world =
+        static let gridLayout (perimeter : Box2) margin (dims : Vector2i) flowDirectionOpt resizeChildren children world =
             let perimeterWidthHalf = perimeter.Width * 0.5f
             let perimeterHeightHalf = perimeter.Height * 0.5f
             let cellSize = v2 (perimeter.Width / single dims.X) (perimeter.Height / single dims.Y)
@@ -1291,7 +1291,9 @@ module LayoutFacetModule =
                         (-perimeterWidthHalf + single i * cellSize.X + cellWidthHalf)
                         (perimeterHeightHalf - single j * cellSize.Y - cellHeightHalf)
                 let world = child.SetPositionLocal childPosition.V3 world
-                child.SetSize childSize.V3 world)
+                if resizeChildren
+                then child.SetSize childSize.V3 world
+                else world)
                 world children
 
         static let performLayout (entity : Entity) world =
@@ -1317,10 +1319,10 @@ module LayoutFacetModule =
                         match layout with
                         | Flow (flowDirection, flowLimit) ->
                             flowLayout perimeter margin flowDirection flowLimit children world
-                        | Dock (margins, stretchChildren, percentageBased) ->
+                        | Dock (margins, percentageBased, resizeChildren) ->
                             dockLayout perimeter margin margins children world
-                        | Grid (dims, flowDirectionOpt, stretchChildren) ->
-                            gridLayout perimeter margin dims flowDirectionOpt children world
+                        | Grid (dims, flowDirectionOpt, resizeChildren) ->
+                            gridLayout perimeter margin dims flowDirectionOpt resizeChildren children world
                         | Manual -> world
                     world
             else world
