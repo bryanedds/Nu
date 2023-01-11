@@ -54,13 +54,18 @@ module Gaia =
     let private getCreationElevation (form : GaiaForm) =
         snd (Single.TryParse form.createElevationTextBox.Text)
 
-    let private generateEntityName dispatcherName world =
-        let name = Gen.nameForEditor dispatcherName
-        let mutable entity = Entity (selectedGroup.GroupAddress <-- ntoa name)
-        while entity.Exists world do
-            let name = Gen.nameForEditor dispatcherName
-            entity <- Entity (selectedGroup.GroupAddress <-- ntoa name)
-        entity.Name
+    let rec private generateEntityName' dispatcherName existingEntityNames world =
+        let mutable name = Gen.nameForEditor dispatcherName
+        if Set.contains name existingEntityNames
+        then generateEntityName' dispatcherName existingEntityNames world
+        else name
+
+    let private generateEntityName dispatcherName selectedGroup world =
+        let existingEntityNames =
+            World.getEntitiesFlattened selectedGroup world |>
+            Seq.map (fun entity -> entity.Name) |>
+            Set.ofSeq
+        generateEntityName' dispatcherName existingEntityNames world
 
     let private clearSelections (form : GaiaForm) =
         form.entityPropertyGrid.SelectedObject <- null
@@ -922,7 +927,7 @@ module Gaia =
                     | "(Routed Overlay)" -> RoutedOverlay
                     | "(No Overlay)" -> NoOverlay
                     | overlayName -> ExplicitOverlay overlayName
-                let name = generateEntityName dispatcherName world
+                let name = generateEntityName dispatcherName selectedGroup world
                 let surnames =
                     match form.entityPropertyGrid.SelectedObject with
                     | null -> [|name|]
@@ -1121,7 +1126,10 @@ module Gaia =
     let private handleFormPaste atMouse (form : GaiaForm) (_ : EventArgs) =
         Globals.preUpdate $ fun world ->
             let world = Globals.pushPastWorld world
-            let surnamesOpt = World.tryGetEntityDispatcherNameOnClipboard world |> Option.map (flip generateEntityName world) |> Option.map Array.singleton
+            let surnamesOpt =
+                World.tryGetEntityDispatcherNameOnClipboard world |>
+                Option.map (fun dispatcherName -> generateEntityName dispatcherName selectedGroup world) |>
+                Option.map Array.singleton
             let snapsEir = getSnaps form |> if form.snap3dButton.Checked then Right else Left
             let (entityOpt, world) = World.pasteEntityFromClipboard atMouse rightClickPosition snapsEir surnamesOpt selectedGroup world
             match entityOpt with

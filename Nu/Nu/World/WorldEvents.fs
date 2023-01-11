@@ -69,6 +69,10 @@ type [<NoComparison>] LifeCycleData =
     | UnregisteringData of Simulant
     | MountOptChangeData of Entity Relation option * Entity Relation option * Entity
 
+type MountData =
+    { Mount : Entity
+      Mounter : Entity }
+
 [<RequireQualifiedAccess>]
 module Events =
 
@@ -77,6 +81,8 @@ module Events =
     let Unregistering = stoa<unit> "Unregistering/Event"
     let Change propertyName = stoa<ChangeData> ("Change/" + propertyName + "/Event")
     let LifeCycle simulantTypeName = stoa<LifeCycleData> ("LifeCycle/" + simulantTypeName + "/Event")
+    let MountAdded = stoa<MountData> "Mount/Added/Event"
+    let MountRemoving = stoa<MountData> "Mount/Removing/Event"
     let Update = stoa<unit> "Update/Event"
     let PostUpdate = stoa<unit> "PostUpdate/Event"
     let Render = stoa<unit> "Render/Event"
