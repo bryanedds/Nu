@@ -54,10 +54,10 @@ module Gaia =
     let private getCreationElevation (form : GaiaForm) =
         snd (Single.TryParse form.createElevationTextBox.Text)
 
-    let rec private generateEntityName' dispatcherName existingEntityNames world =
+    let rec private generateEntityName3 dispatcherName existingEntityNames world =
         let mutable name = Gen.nameForEditor dispatcherName
         if Set.contains name existingEntityNames
-        then generateEntityName' dispatcherName existingEntityNames world
+        then generateEntityName3 dispatcherName existingEntityNames world
         else name
 
     let private generateEntityName dispatcherName selectedGroup world =
@@ -65,7 +65,7 @@ module Gaia =
             World.getEntitiesFlattened selectedGroup world |>
             Seq.map (fun entity -> entity.Name) |>
             Set.ofSeq
-        generateEntityName' dispatcherName existingEntityNames world
+        generateEntityName3 dispatcherName existingEntityNames world
 
     let private clearSelections (form : GaiaForm) =
         form.entityPropertyGrid.SelectedObject <- null
