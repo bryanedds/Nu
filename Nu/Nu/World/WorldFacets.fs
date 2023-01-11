@@ -1294,6 +1294,41 @@ module LayoutFacetModule =
                 child.SetSize childSize.V3 world)
                 world children
 
+        static let performLayout (entity : Entity) world =
+            if entity.GetCentered world then // NOTE: layouts onlt supported for centered entities.
+                match entity.GetLayout world with
+                | Manual -> world // OPTIMIZATION: early exit.
+                | layout ->
+                    let children =
+                        World.getEntityChildren entity world |>
+                        Array.ofSeq |>
+                        Array.map (fun child ->
+                            let layoutOrder =
+                                if child.Has<LayoutFacet> world
+                                then child.GetLayoutOrder world
+                                else 0
+                            let order = child.GetOrder world
+                            (child, layoutOrder, order)) |>
+                        Array.sortBy ab_ |>
+                        Array.map a__
+                    let perimeter = (entity.GetPerimeter world).Box2
+                    let margin = entity.GetLayoutMargin world
+                    let world =
+                        match layout with
+                        | Flow (flowDirection, flowLimit) ->
+                            flowLayout perimeter margin flowDirection flowLimit children world
+                        | Dock (margins, stretchChildren, percentageBased) ->
+                            dockLayout perimeter margin margins children world
+                        | Grid (dims, flowDirectionOpt, stretchChildren) ->
+                            gridLayout perimeter margin dims flowDirectionOpt children world
+                        | Manual -> world
+                    world
+            else world
+
+        static let handleLayout evt world =
+            let entity = evt.Subscriber : Entity
+            (Cascade, performLayout entity world)
+
         static member Properties =
             [define Entity.Layout Manual
              define Entity.LayoutMargin v2Zero
@@ -1301,34 +1336,12 @@ module LayoutFacetModule =
              define Entity.DockType DockCenter
              define Entity.GridPosition v2iZero]
 
-        override this.Update (entity, world) =
-            match entity.GetLayout world with
-            | Manual -> world // OPTIMIZATION: early exit.
-            | layout ->
-                let children =
-                    World.getEntityChildren entity world |>
-                    Array.ofSeq |>
-                    Array.map (fun child ->
-                        let layoutOrder =
-                            if child.Has<LayoutFacet> world
-                            then child.GetLayoutOrder world
-                            else 0
-                        let order = child.GetOrder world
-                        (child, layoutOrder, order)) |>
-                    Array.sortBy ab_ |>
-                    Array.map a__
-                let perimeter = (entity.GetPerimeter world).Box2
-                let margin = entity.GetLayoutMargin world
-                let world =
-                    match layout with
-                    | Flow (flowDirection, flowLimit) ->
-                        flowLayout perimeter margin flowDirection flowLimit children world
-                    | Dock (margins, stretchChildren, percentageBased) ->
-                        dockLayout perimeter margin margins children world
-                    | Grid (dims, flowDirectionOpt, stretchChildren) ->
-                        gridLayout perimeter margin dims flowDirectionOpt children world
-                    | Manual -> world
-                world
+        override this.Register (entity, world) =
+            let world = performLayout entity world
+            let world = World.monitor handleLayout entity.Transform.ChangeEvent entity world
+            let world = World.monitor handleLayout entity.Layout.ChangeEvent entity world
+            let world = World.monitor handleLayout entity.LayoutMargin.ChangeEvent entity world
+            world
 
 [<AutoOpen>]
 module SkyBoxFacetModule =
