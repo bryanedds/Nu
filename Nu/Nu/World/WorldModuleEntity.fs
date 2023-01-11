@@ -617,24 +617,25 @@ module WorldModuleEntity =
                         world
                 let mountData = { Mount = newMount; Mounter = entity }
                 let eventTrace = EventTrace.debug "World" "addEntityToMounts" "" EventTrace.empty
-                World.publish mountData (Events.MountAdded --> newMount) eventTrace entity world
+                World.publish mountData (Events.Mount --> newMount) eventTrace entity world
             | None -> world
 
         static member internal removeEntityFromMounts mountOpt entity world =
             match Option.bind (tryResolve entity) mountOpt with
             | Some oldMount ->
+                let world =
+                    match world.EntityMounts.TryGetValue oldMount with
+                    | (true, mounters) ->
+                        let mounters = USet.remove entity mounters
+                        if USet.isEmpty mounters then
+                            let world = World.choose { world with EntityMounts = UMap.remove oldMount world.EntityMounts }
+                            let world = if World.getEntityExists oldMount world then World.setEntityMounted false oldMount world |> snd' else world
+                            world
+                        else World.choose { world with EntityMounts = UMap.add oldMount mounters world.EntityMounts }
+                    | (false, _) -> world
                 let mountData = { Mount = oldMount; Mounter = entity }
                 let eventTrace = EventTrace.debug "World" "removeEntityFromMounts" "" EventTrace.empty
-                let world = World.publish mountData (Events.MountRemoving --> oldMount) eventTrace entity world
-                match world.EntityMounts.TryGetValue oldMount with
-                | (true, mounters) ->
-                    let mounters = USet.remove entity mounters
-                    if USet.isEmpty mounters then
-                        let world = World.choose { world with EntityMounts = UMap.remove oldMount world.EntityMounts }
-                        let world = if World.getEntityExists oldMount world then World.setEntityMounted false oldMount world |> snd' else world
-                        world
-                    else World.choose { world with EntityMounts = UMap.add oldMount mounters world.EntityMounts }
-                | (false, _) -> world
+                World.publish mountData (Events.Unmount --> oldMount) eventTrace entity world
             | None -> world
 
         static member internal propagateEntityAffineMatrix3 mount mounter world =
