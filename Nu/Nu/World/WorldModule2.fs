@@ -1220,8 +1220,8 @@ module EntityDispatcherModule2 =
             EntityDispatcher2d<'model, 'message, 'command> (physical, fun _ -> initial)
 
         static member Properties =
-            [define Entity.Centered Constants.Engine.EntityCentered2dDefault
-             define Entity.Size Constants.Engine.EntitySize2dDefault]
+            [define Entity.Size Constants.Engine.EntitySize2dDefault
+             define Entity.Centered Constants.Engine.EntityCentered2dDefault]
 
     and [<AbstractClass>] GuiDispatcher<'model, 'message, 'command when 'message :> Message and 'command :> Command> (makeInitial : World -> 'model) =
         inherit EntityDispatcher2d<'model, 'message, 'command> (Constants.Engine.EntityCenteredGuiDefault, false, makeInitial)
@@ -1233,11 +1233,11 @@ module EntityDispatcherModule2 =
             [typeof<LayoutFacet>]
 
         static member Properties =
-            [define Entity.Centered Constants.Engine.EntityCenteredGuiDefault
+            [define Entity.Size Constants.Engine.EntitySizeGuiDefault
+             define Entity.Centered Constants.Engine.EntityCenteredGuiDefault
              define Entity.Presence Omnipresent
              define Entity.Absolute true
              define Entity.AlwaysUpdate true
-             define Entity.Size Constants.Engine.EntitySizeGuiDefault
              define Entity.DisabledColor (Color (0.75f, 0.75f, 0.75f, 0.75f))
              define Entity.Layout Manual
              define Entity.LayoutMargin v2Zero
@@ -1258,8 +1258,8 @@ module EntityDispatcherModule2 =
             EntityDispatcher3d<'model, 'message, 'command> (physical, fun _ -> initial)
 
         static member Properties =
-            [define Entity.Centered Constants.Engine.EntityCentered3dDefault
-             define Entity.Size Constants.Engine.EntitySize3dDefault]
+            [define Entity.Size Constants.Engine.EntitySize3dDefault
+             define Entity.Centered Constants.Engine.EntityCentered3dDefault]
 
 [<AutoOpen>]
 module GroupDispatcherModule =
