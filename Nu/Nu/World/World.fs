@@ -144,9 +144,9 @@ module Nu =
                     else world
                 world :> obj
 
-            // init getEntityIs3d F# reach-around
-            WorldTypes.getEntityIs3d <- fun entityObj worldObj ->
-                World.getEntityIs3d (entityObj :?> Entity) (worldObj :?> World)
+            // init getEntityIs2d F# reach-around
+            WorldTypes.getEntityIs2d <- fun entityObj worldObj ->
+                World.getEntityIs2d (entityObj :?> Entity) (worldObj :?> World)
 
             // init eval F# reach-around
             // TODO: remove duplicated code with the following 4 functions...
@@ -244,7 +244,7 @@ module Nu =
             // init admitScreenElements F# reach-around
             WorldModule.admitScreenElements <- fun screen world ->
                 let entities = World.getGroups screen world |> Seq.map (flip World.getEntitiesFlattened world) |> Seq.concat |> SegmentedList.ofSeq
-                let (entities2d, entities3d) = SegmentedList.partition (fun (entity : Entity) -> not (entity.GetIs3d world)) entities
+                let (entities2d, entities3d) = SegmentedList.partition (fun (entity : Entity) -> entity.GetIs2d world) entities
                 let oldWorld = world
                 let quadtree =
                     MutantCache.mutateMutant
@@ -272,7 +272,7 @@ module Nu =
             // init evictScreenElements F# reach-around
             WorldModule.evictScreenElements <- fun screen world ->
                 let entities = World.getGroups screen world |> Seq.map (flip World.getEntitiesFlattened world) |> Seq.concat |> SegmentedArray.ofSeq
-                let (entities2d, entities3d) = SegmentedArray.partition (fun (entity : Entity) -> not (entity.GetIs3d world)) entities
+                let (entities2d, entities3d) = SegmentedArray.partition (fun (entity : Entity) -> entity.GetIs2d world) entities
                 let oldWorld = world
                 let quadtree =
                     MutantCache.mutateMutant
@@ -367,7 +367,7 @@ module WorldModule3 =
         static member private makeDefaultEntityDispatchers () =
             // TODO: consider if we should reflectively generate these.
             Map.ofListBy World.pairWithName $
-                [EntityDispatcher (false, false, false)
+                [EntityDispatcher (true, false, false, false)
                  EntityDispatcher2d (false) :> EntityDispatcher
                  EntityDispatcher3d (true, false) :> EntityDispatcher
                  StaticSpriteDispatcher () :> EntityDispatcher
@@ -409,6 +409,7 @@ module WorldModule3 =
                  JointFacet () :> Facet
                  TileMapFacet () :> Facet
                  TmxMapFacet () :> Facet
+                 LayoutFacet () :> Facet
                  LightFacet3d () :> Facet
                  SkyBoxFacet () :> Facet
                  StaticBillboardFacet () :> Facet

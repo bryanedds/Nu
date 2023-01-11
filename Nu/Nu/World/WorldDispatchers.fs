@@ -12,11 +12,11 @@ open Nu.Declarative
 module EntityDispatcherModule =
 
     /// A 2d entity dispatcher.
-    type EntityDispatcher2d (centered, physical) =
-        inherit EntityDispatcher (false, centered, physical)
+    type EntityDispatcher2d (isGui, centered, physical) =
+        inherit EntityDispatcher (true, isGui, centered, physical)
 
         new (physical) =
-            EntityDispatcher2d (Constants.Engine.EntityCentered2dDefault, physical)
+            EntityDispatcher2d (false, Constants.Engine.EntityCentered2dDefault, physical)
 
         static member Properties =
             [define Entity.Centered Constants.Engine.EntityCentered2dDefault
@@ -24,7 +24,7 @@ module EntityDispatcherModule =
 
     /// A 3d entity dispatcher.
     type EntityDispatcher3d (centered, physical) =
-        inherit EntityDispatcher (true, centered, physical)
+        inherit EntityDispatcher (false, false, centered, physical)
 
         new (physical) =
             EntityDispatcher3d (Constants.Engine.EntityCentered3dDefault, physical)
@@ -75,18 +75,10 @@ module GuiDispatcherModule =
         member this.GetDisabledColor world : Color = this.Get (nameof this.DisabledColor) world
         member this.SetDisabledColor (value : Color) world = this.Set (nameof this.DisabledColor) value world
         member this.DisabledColor = lens (nameof this.DisabledColor) this this.GetDisabledColor this.SetDisabledColor
-        member this.GetDockType world : DockType = this.Get (nameof this.DockType) world
-        member this.SetDockType (value : DockType) world = this.Set (nameof this.DockType) value world
-        member this.DockType = lens (nameof this.DockType) this this.GetDockType this.SetDockType
-        member this.GetLayoutIndex world : int = this.Get (nameof this.LayoutOrder) world
-        member this.SetLayoutIndex (value : int) world = this.Set (nameof this.LayoutOrder) value world
-        member this.LayoutOrder = lens (nameof this.LayoutOrder) this this.GetLayoutIndex this.SetLayoutIndex
-        member this.GetGridPosition world : Vector2i = this.Get (nameof this.GridPosition) world
-        member this.SetGridPosition (value : Vector2i) world = this.Set (nameof this.GridPosition) value world
-        member this.GridPosition = lens (nameof this.GridPosition) this this.GetGridPosition this.SetGridPosition
 
+    /// A gui entity dispatcher.
     type GuiDispatcher () =
-        inherit EntityDispatcher2d (Constants.Engine.EntityCenteredGuiDefault, false)
+        inherit EntityDispatcher2d (true, Constants.Engine.EntityCenteredGuiDefault, false)
 
         static member Facets =
             [typeof<LayoutFacet>]
@@ -98,11 +90,11 @@ module GuiDispatcherModule =
              define Entity.Presence Omnipresent
              define Entity.Size Constants.Engine.EntitySizeGuiDefault
              define Entity.DisabledColor (Color (0.75f, 0.75f, 0.75f, 0.75f))
+             define Entity.Layout Manual
+             define Entity.LayoutMargin v2Zero
              define Entity.LayoutOrder 0
              define Entity.DockType DockCenter
-             define Entity.GridPosition v2iZero
-             define Entity.Layout Manual
-             define Entity.LayoutMargin v2Zero]
+             define Entity.GridPosition v2iZero]
 
 [<AutoOpen>]
 module ButtonDispatcherModule =
@@ -784,7 +776,7 @@ module FillBarDispatcherModule =
 module BasicEmitterDispatcher2dModule =
 
     type BasicEmitterDispatcher2d () =
-        inherit EntityDispatcher2d (true, false)
+        inherit EntityDispatcher2d (false, true, false)
 
         static member Facets =
             [typeof<BasicEmitter2dFacet>]
@@ -796,7 +788,7 @@ module BasicEmitterDispatcher2dModule =
 module EffectDispatcher2dModule =
 
     type EffectDispatcher2d () =
-        inherit EntityDispatcher2d (true, false)
+        inherit EntityDispatcher2d (false, true, false)
 
         static member Facets =
             [typeof<Effect2dFacet>]

@@ -1143,6 +1143,15 @@ module LayoutFacetModule =
         member this.GetLayoutMargin world : Vector2 = this.Get (nameof this.LayoutMargin) world
         member this.SetLayoutMargin (value : Vector2) world = this.Set (nameof this.LayoutMargin) value world
         member this.LayoutMargin = lens (nameof this.LayoutMargin) this this.GetLayoutMargin this.SetLayoutMargin
+        member this.GetLayoutOrder world : int = this.Get (nameof this.LayoutOrder) world
+        member this.SetLayoutOrder (value : int) world = this.Set (nameof this.LayoutOrder) value world
+        member this.LayoutOrder = lens (nameof this.LayoutOrder) this this.GetLayoutOrder this.SetLayoutOrder
+        member this.GetDockType world : DockType = this.Get (nameof this.DockType) world
+        member this.SetDockType (value : DockType) world = this.Set (nameof this.DockType) value world
+        member this.DockType = lens (nameof this.DockType) this this.GetDockType this.SetDockType
+        member this.GetGridPosition world : Vector2i = this.Get (nameof this.GridPosition) world
+        member this.SetGridPosition (value : Vector2i) world = this.Set (nameof this.GridPosition) value world
+        member this.GridPosition = lens (nameof this.GridPosition) this this.GetGridPosition this.SetGridPosition
 
     type LayoutFacet () =
         inherit Facet (false)
@@ -1219,45 +1228,41 @@ module LayoutFacetModule =
             let perimeterWidthHalf = perimeter.Width * 0.5f
             let perimeterHeightHalf = perimeter.Height * 0.5f
             Array.fold (fun world (child : Entity) ->
-                match child.TryGetProperty (nameof DockType) world with
-                | Some dockTypeProperty ->
-                    match dockTypeProperty.PropertyValue with
-                    | :? DockType as dockType ->
-                        match dockType with
-                        | DockCenter ->
-                            let size =
-                                v2
-                                    (perimeter.Width - margins.X - margins.Z)
-                                    (perimeter.Height - margins.Y - margins.W) -
-                                margin
-                            let position =
-                                v2
-                                    ((margins.X - margins.Z) * 0.5f)
-                                    ((margins.Y - margins.W) * 0.5f)
-                            let world = child.SetPositionLocal position.V3 world
-                            child.SetSize size.V3 world
-                        | DockTop ->
-                            let size = v2 perimeter.Width margins.W - margin
-                            let position = v2 0.0f (perimeterHeightHalf - margins.Z * 0.5f)
-                            let world = child.SetPositionLocal position.V3 world
-                            child.SetSize size.V3 world
-                        | DockRight ->
-                            let size = v2 margins.Z (perimeter.Height - margins.Y - margins.W) - margin
-                            let position = v2 (perimeterWidthHalf - margins.Z * 0.5f) ((margins.Y - margins.W) * 0.5f)
-                            let world = child.SetPositionLocal position.V3 world
-                            child.SetSize size.V3 world
-                        | DockBottom ->
-                            let size = v2 perimeter.Width margins.Y - margin
-                            let position = v2 0.0f (-perimeterHeightHalf + margins.Y * 0.5f)
-                            let world = child.SetPositionLocal position.V3 world
-                            child.SetSize size.V3 world
-                        | DockLeft ->
-                            let size = v2 margins.X (perimeter.Height - margins.Y - margins.W) - margin
-                            let position = v2 (-perimeterWidthHalf + margins.X * 0.5f) ((margins.Y - margins.W) * 0.5f)
-                            let world = child.SetPositionLocal position.V3 world
-                            child.SetSize size.V3 world
-                    | _ -> world
-                | None -> world)
+                if child.Has<LayoutFacet> world then
+                    match child.GetDockType world with
+                    | DockCenter ->
+                        let size =
+                            v2
+                                (perimeter.Width - margins.X - margins.Z)
+                                (perimeter.Height - margins.Y - margins.W) -
+                            margin
+                        let position =
+                            v2
+                                ((margins.X - margins.Z) * 0.5f)
+                                ((margins.Y - margins.W) * 0.5f)
+                        let world = child.SetPositionLocal position.V3 world
+                        child.SetSize size.V3 world
+                    | DockTop ->
+                        let size = v2 perimeter.Width margins.W - margin
+                        let position = v2 0.0f (perimeterHeightHalf - margins.Z * 0.5f)
+                        let world = child.SetPositionLocal position.V3 world
+                        child.SetSize size.V3 world
+                    | DockRight ->
+                        let size = v2 margins.Z (perimeter.Height - margins.Y - margins.W) - margin
+                        let position = v2 (perimeterWidthHalf - margins.Z * 0.5f) ((margins.Y - margins.W) * 0.5f)
+                        let world = child.SetPositionLocal position.V3 world
+                        child.SetSize size.V3 world
+                    | DockBottom ->
+                        let size = v2 perimeter.Width margins.Y - margin
+                        let position = v2 0.0f (-perimeterHeightHalf + margins.Y * 0.5f)
+                        let world = child.SetPositionLocal position.V3 world
+                        child.SetSize size.V3 world
+                    | DockLeft ->
+                        let size = v2 margins.X (perimeter.Height - margins.Y - margins.W) - margin
+                        let position = v2 (-perimeterWidthHalf + margins.X * 0.5f) ((margins.Y - margins.W) * 0.5f)
+                        let world = child.SetPositionLocal position.V3 world
+                        child.SetSize size.V3 world
+                else world)
                 world children
 
         static let gridLayout (perimeter : Box2) margin (dims : Vector2i) flowDirectionOpt children world =
@@ -1277,12 +1282,10 @@ module LayoutFacetModule =
                         | FlowLeftward -> (dec dims.Y - n % dims.Y, dec dims.Y - n / dims.Y)
                         | FlowUpward -> (dec dims.Y - n / dims.Y, dec dims.Y - n % dims.Y)
                     | None ->
-                        match child.TryGetProperty Constants.Engine.GridPositionPropertyName world with
-                        | Some gridPositionProperty ->
-                            match gridPositionProperty.PropertyValue with
-                            | :? Vector2i as gridPosition -> (gridPosition.X, gridPosition.Y)
-                            | _ -> (0, 0)
-                        | None -> (0, 0)
+                        if child.Has<LayoutFacet> world then
+                            let gridPosition = child.GetGridPosition world
+                            (gridPosition.X, gridPosition.Y)
+                        else (0, 0)
                 let childPosition =
                     v2
                         (-perimeterWidthHalf + single i * cellSize.X + cellWidthHalf)
@@ -1293,7 +1296,10 @@ module LayoutFacetModule =
 
         static member Properties =
             [define Entity.Layout Manual
-             define Entity.LayoutMargin v2Zero]
+             define Entity.LayoutMargin v2Zero
+             define Entity.LayoutOrder 0
+             define Entity.DockType DockCenter
+             define Entity.GridPosition v2iZero]
 
         override this.Update (entity, world) =
             match entity.GetLayout world with
@@ -1304,12 +1310,9 @@ module LayoutFacetModule =
                     Array.ofSeq |>
                     Array.map (fun child ->
                         let layoutOrder =
-                            match child.TryGetProperty (Constants.Engine.LayoutOrderPropertyName) world with
-                            | Some property ->
-                                match property.PropertyValue with
-                                | :? int as layoutOrder -> layoutOrder
-                                | _ -> 0
-                            | None -> 0
+                            if child.Has<LayoutFacet> world
+                            then child.GetLayoutOrder world
+                            else 0
                         let order = child.GetOrder world
                         (child, layoutOrder, order)) |>
                     Array.sortBy ab_ |>
