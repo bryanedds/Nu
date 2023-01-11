@@ -27,6 +27,7 @@ module Engine =
     let [<Literal>] ModelPropertyName = "Model"
     let [<Literal>] SurnamesPropertyName = "Surnames"
     let [<Literal>] OverlayNameOptPropertyName = "OverlayNameOpt"
+    let [<Literal>] LayoutOrderPropertyName = "LayoutOrder"
     let [<Literal>] GridPositionPropertyName = "GridPosition"
     let [<Literal>] EffectNameDefault = "Effect"
     let [<Literal>] RefinementDir = "refinement"

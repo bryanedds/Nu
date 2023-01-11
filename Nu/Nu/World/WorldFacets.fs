@@ -1302,7 +1302,18 @@ module LayoutFacetModule =
                 let children =
                     World.getEntityChildren entity world |>
                     Array.ofSeq |>
-                    Array.sortBy (flip World.getEntityOrder world)
+                    Array.map (fun child ->
+                        let layoutOrder =
+                            match child.TryGetProperty (Constants.Engine.LayoutOrderPropertyName) world with
+                            | Some property ->
+                                match property.PropertyValue with
+                                | :? int as layoutOrder -> layoutOrder
+                                | _ -> 0
+                            | None -> 0
+                        let order = child.GetOrder world
+                        (child, layoutOrder, order)) |>
+                    Array.sortBy ab_ |>
+                    Array.map a__
                 let perimeter = (entity.GetPerimeter world).Box2
                 let margin = entity.GetLayoutMargin world
                 let world =

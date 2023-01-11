@@ -78,6 +78,9 @@ module GuiDispatcherModule =
         member this.GetDockType world : DockType = this.Get (nameof this.DockType) world
         member this.SetDockType (value : DockType) world = this.Set (nameof this.DockType) value world
         member this.DockType = lens (nameof this.DockType) this this.GetDockType this.SetDockType
+        member this.GetLayoutIndex world : int = this.Get (nameof this.LayoutOrder) world
+        member this.SetLayoutIndex (value : int) world = this.Set (nameof this.LayoutOrder) value world
+        member this.LayoutOrder = lens (nameof this.LayoutOrder) this this.GetLayoutIndex this.SetLayoutIndex
         member this.GetGridPosition world : Vector2i = this.Get (nameof this.GridPosition) world
         member this.SetGridPosition (value : Vector2i) world = this.Set (nameof this.GridPosition) value world
         member this.GridPosition = lens (nameof this.GridPosition) this this.GetGridPosition this.SetGridPosition
@@ -95,6 +98,7 @@ module GuiDispatcherModule =
              define Entity.Presence Omnipresent
              define Entity.Size Constants.Engine.EntitySizeGuiDefault
              define Entity.DisabledColor (Color (0.75f, 0.75f, 0.75f, 0.75f))
+             define Entity.LayoutOrder 0
              define Entity.DockType DockCenter
              define Entity.GridPosition v2iZero
              define Entity.Layout Manual
