@@ -122,7 +122,7 @@ module WorldPhysics =
         /// Send a message to the physics system to create a physics body.
         [<FunctionBinding>]
         static member createBody (entity : Entity) entityId (bodyProperties : BodyProperties) world =
-            if not (entity.GetIs3d world) then
+            if entity.GetIs2d world then
                 let createBodyMessage = CreateBodyMessage { SourceSimulant = entity; SourceId = entityId; BodyProperties = bodyProperties }
                 World.enqueuePhysicsMessage2d createBodyMessage world
             else
@@ -131,7 +131,7 @@ module WorldPhysics =
         /// Send a message to the physics system to create several physics bodies.
         [<FunctionBinding>]
         static member createBodies (entity : Entity) entityId bodiesProperties world =
-            if not (entity.GetIs3d world) then
+            if entity.GetIs2d world then
                 let createBodiesMessage = CreateBodiesMessage { SourceSimulant = entity; SourceId = entityId; BodiesProperties = bodiesProperties }
                 World.enqueuePhysicsMessage2d createBodiesMessage world
             else
@@ -153,7 +153,7 @@ module WorldPhysics =
         /// Send a message to the physics system to create a physics joint.
         [<FunctionBinding>]
         static member createJoint (entity : Entity) entityId jointProperties world =
-            if not (entity.GetIs3d world) then
+            if entity.GetIs2d world then
                 let createJointMessage = CreateJointMessage { SourceSimulant = entity; SourceId = entityId; JointProperties = jointProperties }
                 World.enqueuePhysicsMessage2d createJointMessage world
             else
@@ -162,7 +162,7 @@ module WorldPhysics =
         /// Send a message to the physics system to create physics joints.
         [<FunctionBinding>]
         static member createJoints (entity : Entity) entityId jointsProperties world =
-            if not (entity.GetIs3d world) then
+            if entity.GetIs2d world then
                 let createJointsMessage = CreateJointsMessage { SourceSimulant = entity; SourceId = entityId; JointsProperties = jointsProperties }
                 World.enqueuePhysicsMessage2d createJointsMessage world
             else

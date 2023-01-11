@@ -81,7 +81,7 @@ module WorldModule2 =
             for entity in entities do
                 let bounds = entity.GetBounds world
                 let presence = entity.GetPresence world
-                if not (entity.GetIs3d world) then
+                if entity.GetIs2d world then
                     Quadtree.addElement presence bounds.Box2 entity quadtree
             quadtree
 
@@ -1134,11 +1134,11 @@ module EntityDispatcherModule2 =
 
     /// The elmish / MMCC dispatcher for entities.
     and [<AbstractClass>] EntityDispatcher<'model, 'message, 'command when 'message :> Message and 'command :> Command>
-        (is3d, centered, physical, makeInitial : World -> 'model) =
-        inherit EntityDispatcher (is3d, centered, physical)
+        (is2d, isGui, centered, physical, makeInitial : World -> 'model) =
+        inherit EntityDispatcher (is2d, isGui, centered, physical)
 
-        new (is3d, centered, physical, initial : 'model) =
-            EntityDispatcher<'model, 'message, 'command> (is3d, centered, physical, fun _ -> initial)
+        new (is2d, isGui, centered, physical, initial : 'model) =
+            EntityDispatcher<'model, 'message, 'command> (is2d, isGui, centered, physical, fun _ -> initial)
 
         member this.GetModel (entity : Entity) world : 'model =
             entity.GetModelGeneric<'model> world
@@ -1208,7 +1208,7 @@ module EntityDispatcherModule2 =
         default this.View (_, _, _) = View.empty
 
     and [<AbstractClass>] EntityDispatcher2d<'model, 'message, 'command when 'message :> Message and 'command :> Command> (centered, physical, makeInitial : World -> 'model) =
-        inherit EntityDispatcher<'model, 'message, 'command> (false, centered, physical, makeInitial)
+        inherit EntityDispatcher<'model, 'message, 'command> (true, false, centered, physical, makeInitial)
 
         new (centered, physical, initial : 'model) =
             EntityDispatcher2d<'model, 'message, 'command> (centered, physical, fun _ -> initial)
@@ -1223,26 +1223,7 @@ module EntityDispatcherModule2 =
             [define Entity.Centered Constants.Engine.EntityCentered2dDefault
              define Entity.Size Constants.Engine.EntitySize2dDefault]
 
-    and [<AbstractClass>] EntityDispatcher3d<'model, 'message, 'command when 'message :> Message and 'command :> Command> (centered, physical, makeInitial : World -> 'model) =
-        inherit EntityDispatcher<'model, 'message, 'command> (true, centered, physical, makeInitial)
-
-        new (centered, physical, initial : 'model) =
-            EntityDispatcher3d<'model, 'message, 'command> (centered, physical, fun _ -> initial)
-
-        new (physical, makeInitial : World -> 'model) =
-            EntityDispatcher3d<'model, 'message, 'command> (Constants.Engine.EntityCentered3dDefault, physical, makeInitial)
-
-        new (physical, initial : 'model) =
-            EntityDispatcher3d<'model, 'message, 'command> (physical, fun _ -> initial)
-
-        static member Properties =
-            [define Entity.Centered Constants.Engine.EntityCentered3dDefault
-             define Entity.Size Constants.Engine.EntitySize3dDefault]
-
-[<AutoOpen>]
-module GuiDispatcherModule2 =
-
-    type [<AbstractClass>] GuiDispatcher<'model, 'message, 'command when 'message :> Message and 'command :> Command> (makeInitial : World -> 'model) =
+    and [<AbstractClass>] GuiDispatcher<'model, 'message, 'command when 'message :> Message and 'command :> Command> (makeInitial : World -> 'model) =
         inherit EntityDispatcher2d<'model, 'message, 'command> (Constants.Engine.EntityCenteredGuiDefault, false, makeInitial)
 
         new (initial : 'model) =
@@ -1258,11 +1239,27 @@ module GuiDispatcherModule2 =
              define Entity.AlwaysUpdate true
              define Entity.Size Constants.Engine.EntitySizeGuiDefault
              define Entity.DisabledColor (Color (0.75f, 0.75f, 0.75f, 0.75f))
+             define Entity.Layout Manual
+             define Entity.LayoutMargin v2Zero
              define Entity.LayoutOrder 0
              define Entity.DockType DockCenter
-             define Entity.GridPosition v2iZero
-             define Entity.Layout Manual
-             define Entity.LayoutMargin v2Zero]
+             define Entity.GridPosition v2iZero]
+
+    and [<AbstractClass>] EntityDispatcher3d<'model, 'message, 'command when 'message :> Message and 'command :> Command> (centered, physical, makeInitial : World -> 'model) =
+        inherit EntityDispatcher<'model, 'message, 'command> (false, false, centered, physical, makeInitial)
+
+        new (centered, physical, initial : 'model) =
+            EntityDispatcher3d<'model, 'message, 'command> (centered, physical, fun _ -> initial)
+
+        new (physical, makeInitial : World -> 'model) =
+            EntityDispatcher3d<'model, 'message, 'command> (Constants.Engine.EntityCentered3dDefault, physical, makeInitial)
+
+        new (physical, initial : 'model) =
+            EntityDispatcher3d<'model, 'message, 'command> (physical, fun _ -> initial)
+
+        static member Properties =
+            [define Entity.Centered Constants.Engine.EntityCentered3dDefault
+             define Entity.Size Constants.Engine.EntitySize3dDefault]
 
 [<AutoOpen>]
 module GroupDispatcherModule =

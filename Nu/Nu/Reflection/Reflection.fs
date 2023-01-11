@@ -65,6 +65,8 @@ module Reflection =
              ("PublishPostUpdates", true)
              ("PublishRenders", true)
              ("Mounted", true)
+             ("Is2d", true)
+             ("IsGui", true)
              ("Is3d", true)
              ("Physical", true)
              ("Optimized", true)]

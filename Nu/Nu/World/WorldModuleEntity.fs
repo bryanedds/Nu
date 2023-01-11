@@ -417,6 +417,8 @@ module WorldModuleEntity =
         static member internal getEntityProtected entity world = (World.getEntityState entity world).Protected
         static member internal getEntityPersistent entity world = (World.getEntityState entity world).Persistent
         static member internal getEntityMounted entity world = (World.getEntityState entity world).Mounted
+        static member internal getEntityIs2d entity world = (World.getEntityState entity world).Is2d
+        static member internal getEntityIsGui entity world = (World.getEntityState entity world).IsGui
         static member internal getEntityIs3d entity world = (World.getEntityState entity world).Is3d
         static member internal getEntityCentered entity world = (World.getEntityState entity world).Centered
         static member internal getEntityStatic entity world = (World.getEntityState entity world).Static
@@ -2071,7 +2073,7 @@ module WorldModuleEntity =
                 // mutate respective spatial tree if entity is selected
                 let world =
                     if WorldModule.isSelected entity world then
-                        if not (World.getEntityIs3d entity world) then
+                        if World.getEntityIs2d entity world then
                             let quadtree =
                                 MutantCache.mutateMutant
                                     (fun () -> oldWorld.WorldExtension.Dispatchers.RebuildQuadtree oldWorld)
@@ -2129,7 +2131,7 @@ module WorldModuleEntity =
                 // mutate entity tree if entity is selected
                 let world =
                     if WorldModule.isSelected entity world then
-                        if not (World.getEntityIs3d entity world) then
+                        if World.getEntityIs2d entity world then
                             let quadtree =
                                 MutantCache.mutateMutant
                                     (fun () -> world.WorldExtension.Dispatchers.RebuildQuadtree world)
@@ -2414,7 +2416,7 @@ module WorldModuleEntity =
                     box3Neq oldBounds newBounds then
 
                     // update entity in entity tree
-                    if not (entityState.Is3d) then
+                    if entityState.Is2d then
                         let quadree =
                             MutantCache.mutateMutant
                                 (fun () -> oldWorld.WorldExtension.Dispatchers.RebuildQuadtree oldWorld)
@@ -2466,7 +2468,7 @@ module WorldModuleEntity =
                 let entityState = { (entityStateObj :?> EntityState) with Order = Core.getUniqueTimeStamp (); Id = id; Surnames = surnames }
                 entityState.Protected <- false // ensure pasted entity is not protected in case user pastes an Elmish entity
                 let (position, snapsOpt) =
-                    if not (entityState.Is3d) then
+                    if entityState.Is2d then
                         let viewport = World.getViewport world
                         let eyeCenter = World.getEyeCenter2d world
                         let eyeSize = World.getEyeSize2d world
@@ -2552,6 +2554,8 @@ module WorldModuleEntity =
         EntityGetters.["Protected"] <- fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityProtected entity world }
         EntityGetters.["Persistent"] <- fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPersistent entity world }
         EntityGetters.["Mounted"] <- fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityMounted entity world }
+        EntityGetters.["Is2d"] <- fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityIs2d entity world }
+        EntityGetters.["IsGui"] <- fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityIsGui entity world }
         EntityGetters.["Is3d"] <- fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityIs3d entity world }
         EntityGetters.["Centered"] <- fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityCentered entity world }
         EntityGetters.["Static"] <- fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityStatic entity world }
