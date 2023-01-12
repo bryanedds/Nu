@@ -1776,9 +1776,11 @@ module Gaia =
                             else None
                         match peerOpt with
                         | Some peer ->
-                            let world = World.swapEntityOrders entity peer world
-                            refreshHierarchyTreeView form world
-                            world
+                            if not (entity.GetProtected world) && not (peer.GetProtected world) then
+                                let world = World.swapEntityOrders entity peer world
+                                refreshHierarchyTreeView form world
+                                world
+                            else Log.traceOnce "Cannot reorder a protected simulant (such as an entity created by the Elmish API)."; world
                         | None -> world
                     | _ -> world)
 
