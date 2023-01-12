@@ -502,7 +502,7 @@ module WorldEntityModule =
         member this.GetChildren world = World.getEntityChildren this world
 
         /// Traverse an entity's children.
-        member this.TraverseChildren effect world = World.traverseEntityEntities effect this world
+        member this.TraverseChildren effect world = World.traverseEntityChildren effect this world
 
         /// Apply physics changes to an entity.
         member this.ApplyPhysics (center : Vector3) rotation linearVelocity angularVelocity world =

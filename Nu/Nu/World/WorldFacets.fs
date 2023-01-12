@@ -1297,12 +1297,12 @@ module LayoutFacetModule =
                 world children
 
         static let performLayout (entity : Entity) world =
-            if entity.GetCentered world then // NOTE: layouts onlt supported for centered entities.
+            if entity.GetCentered world then // NOTE: layouts only supported for centered entities.
                 match entity.GetLayout world with
                 | Manual -> world // OPTIMIZATION: early exit.
                 | layout ->
                     let children =
-                        World.getEntityChildren entity world |>
+                        World.getEntityMounters entity world |>
                         Array.ofSeq |>
                         Array.map (fun child ->
                             let layoutOrder =
@@ -1331,6 +1331,27 @@ module LayoutFacetModule =
             let entity = evt.Subscriber : Entity
             (Cascade, performLayout entity world)
 
+        static let handleMount evt world =
+            let entity = evt.Subscriber : Entity
+            let mounter = evt.Data.Mounter
+            let (orderChangeUnsub, world) = World.monitorPlus (fun _ world -> (Cascade, performLayout entity world)) (Entity.Order.ChangeEvent --> mounter) entity world
+            let (layoutOrderChangeUnsub, world) = World.monitorPlus (fun _ world -> (Cascade, performLayout entity world)) (Entity.LayoutOrder.ChangeEvent --> mounter) entity world
+            let (dockTypeChangeUnsub, world) = World.monitorPlus (fun _ world -> (Cascade, performLayout entity world)) (Entity.DockType.ChangeEvent --> mounter) entity world
+            let (gridPositionChangeUnsub, world) = World.monitorPlus (fun _ world -> (Cascade, performLayout entity world)) (Entity.GridPosition.ChangeEvent --> mounter) entity world
+            let world =
+                World.monitor (fun evt world ->
+                    let world =
+                        if evt.Data.Mounter = mounter then
+                            let world = world |> orderChangeUnsub |> layoutOrderChangeUnsub |> dockTypeChangeUnsub |> gridPositionChangeUnsub
+                            performLayout entity world
+                        else world
+                    (Cascade, world))
+                    (Events.Unmount --> entity)
+                    entity
+                    world
+            let world = performLayout entity world
+            (Cascade, world)
+
         static member Properties =
             [define Entity.Layout Manual
              define Entity.LayoutMargin v2Zero
@@ -1340,8 +1361,7 @@ module LayoutFacetModule =
 
         override this.Register (entity, world) =
             let world = performLayout entity world
-            let world = World.monitor handleLayout (Events.Mount --> entity) entity world
-            let world = World.monitor handleLayout (Events.Unmount --> entity) entity world
+            let world = World.monitor handleMount (Events.Mount --> entity) entity world
             let world = World.monitor handleLayout entity.Transform.ChangeEvent entity world
             let world = World.monitor handleLayout entity.Layout.ChangeEvent entity world
             let world = World.monitor handleLayout entity.LayoutMargin.ChangeEvent entity world

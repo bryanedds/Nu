@@ -597,7 +597,7 @@ module WorldModuleEntity =
                 | None -> Seq.empty
             | (false, _) -> Seq.empty
 
-        static member internal traverseEntityEntities effect entity (world : World) =
+        static member internal traverseEntityChildren effect entity (world : World) =
             let mounters = World.getEntityChildren entity world
             Seq.fold (fun world mounter -> effect entity mounter world) world mounters
 
@@ -2126,12 +2126,11 @@ module WorldModuleEntity =
                 // cache entity children for later possible destruction
                 let children = World.getEntityChildren entity world
 
+                // unmount from hierarchy
+                let world = World.setEntityMountOpt None entity world |> snd'
+
                 // unregister entity
                 let world = World.unregisterEntity entity world
-
-                // remove mount from hierarchy
-                let mountOpt = World.getEntityMountOpt entity world
-                let world = World.removeEntityFromMounts mountOpt entity world
 
                 // destroy any scheduled tasklets
                 let world = World.removeTasklets entity world
