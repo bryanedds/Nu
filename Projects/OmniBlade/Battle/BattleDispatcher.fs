@@ -1136,7 +1136,8 @@ module BattleDispatcher =
                              Entity.Size == v3 48.0f 6.0f 0.0f
                              Entity.Center := ally.BottomOffset
                              Entity.Elevation == Constants.Battle.GuiElevation
-                             Entity.Fill := single ally.HitPoints / single ally.HitPointsMax]
+                             Entity.Fill := single ally.HitPoints / single ally.HitPointsMax
+                             Entity.FillColor := if ally.Statuses.ContainsKey Poison then Color.Green else Color.Red]
 
                          // tech bar
                          Content.fillBar "TechBar" 
@@ -1144,8 +1145,8 @@ module BattleDispatcher =
                              Entity.Size == v3 48.0f 6.0f 0.0f
                              Entity.Center := ally.BottomOffset2
                              Entity.Elevation == Constants.Battle.GuiElevation
-                             Entity.FillColor == Color (byte 74, byte 91, byte 169, byte 255)
-                             Entity.Fill := single ally.TechPoints / single ally.TechPointsMax]]]
+                             Entity.Fill := single ally.TechPoints / single ally.TechPointsMax
+                             Entity.FillColor == Color (byte 74, byte 91, byte 169, byte 255)]]]
 
              // inputs condition
              if battle.Running then
