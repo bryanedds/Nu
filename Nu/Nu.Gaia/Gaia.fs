@@ -3,7 +3,6 @@
 
 namespace Nu.Gaia
 open System
-open System.Collections
 open System.Collections.Generic
 open System.ComponentModel
 open System.Drawing
@@ -901,7 +900,7 @@ module Gaia =
     let private handleFormHierarchyTreeViewCollapseAllClick (form : GaiaForm) (_ : EventArgs) =
         form.hierarchyTreeView.CollapseAll ()
 
-    let private handleFormHierarchyTreeViewNodeSelect (form : GaiaForm) (args : TreeViewEventArgs) =
+    let private handleFormHierarchyTreeViewNodeSelect (form : GaiaForm) (_ : TreeViewEventArgs) =
         Globals.preUpdate $ fun world ->
             if notNull form.hierarchyTreeView.SelectedNode then
                 let nodeKey = form.hierarchyTreeView.SelectedNode.Name
