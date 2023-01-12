@@ -10,8 +10,10 @@ open System.Diagnostics
 module Log =
 
     let mutable private Initialized = false
+#if DEBUG
     let mutable private InfoOnceMessages = hashSetPlus StringComparer.Ordinal []
     let mutable private DebugOnceMessages = hashSetPlus StringComparer.Ordinal []
+#endif
     let mutable private TraceOnceMessages = hashSetPlus StringComparer.Ordinal []
 
     let private getUtcNowStr () =
