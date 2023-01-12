@@ -1131,7 +1131,7 @@ module BattleDispatcher =
                     Content.composite (CharacterIndex.toEntityName index + "+Hud") []
 
                         [// health bar
-                         Content.fillBar "HealthBar" 
+                         Content.fillBar "HealthBar"
                             [Entity.MountOpt == None
                              Entity.Size == v3 48.0f 6.0f 0.0f
                              Entity.Center := ally.BottomOffset
@@ -1140,7 +1140,7 @@ module BattleDispatcher =
                              Entity.FillColor := if ally.Statuses.ContainsKey Poison then Color.LawnGreen else Color.Red]
 
                          // tech bar
-                         Content.fillBar "TechBar" 
+                         Content.fillBar "TechBar"
                             [Entity.MountOpt == None
                              Entity.Size == v3 48.0f 6.0f 0.0f
                              Entity.Center := ally.BottomOffset2

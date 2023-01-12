@@ -714,8 +714,8 @@ module FillBarDispatcherModule =
             borderTransform.Offset <- transform.Offset
             borderTransform.Elevation <- transform.Elevation + 0.5f
             borderTransform.Absolute <- transform.Absolute
-            let disabledColor = entity.GetDisabledColor world
-            let borderImageColor = (entity.GetBorderColor world).WithA disabledColor.A
+            let alpha = if transform.Enabled then 1.0f else (entity.GetDisabledColor world).A
+            let borderImageColor = (entity.GetBorderColor world).WithA alpha
             let borderImage = entity.GetBorderImage world
             let world =
                 World.enqueueRenderLayeredMessage2d
@@ -746,7 +746,7 @@ module FillBarDispatcherModule =
             fillTransform.Offset <- transform.Offset
             fillTransform.Elevation <- transform.Elevation
             fillTransform.Absolute <- transform.Absolute
-            let fillImageColor = (entity.GetFillColor world).WithA disabledColor.A
+            let fillImageColor = (entity.GetFillColor world).WithA alpha
             let fillImage = entity.GetFillImage world
             let world =
                 World.enqueueRenderLayeredMessage2d
