@@ -215,10 +215,10 @@ namespace Nu
         /// <returns>The result of the calculation.</returns>
         public static Color operator *(Color color, float scale)
         {
-            color.R = (byte)(color.R * scale);
-            color.G = (byte)(color.G * scale);
-            color.B = (byte)(color.B * scale);
-            color.A = (byte)(color.A * scale);
+            color.R *= scale;
+            color.G *= scale;
+            color.B *= scale;
+            color.A *= scale;
             return color;
         }
 
@@ -230,10 +230,10 @@ namespace Nu
         /// <returns>The result of the calculation.</returns>
         public static Color operator *(float scale, Color color)
         {
-            color.R = (byte)(color.R * scale);
-            color.G = (byte)(color.G * scale);
-            color.B = (byte)(color.B * scale);
-            color.A = (byte)(color.A * scale);
+            color.R *= scale;
+            color.G *= scale;
+            color.B *= scale;
+            color.A *= scale;
             return color;
         }
 
@@ -245,10 +245,10 @@ namespace Nu
         /// <returns>Result of multiplication.</returns>
         public static Color operator *(Color color, Color scale)
         {
-            color.R = (byte)(color.R * (scale.R / 255.0f));
-            color.G = (byte)(color.G * (scale.G / 255.0f));
-            color.B = (byte)(color.B * (scale.B / 255.0f));
-            color.A = (byte)(color.A * (scale.A / 255.0f));
+            color.R *= scale.R;
+            color.G *= scale.G;
+            color.B *= scale.B;
+            color.A *= scale.A;
             return color;
         }
 
@@ -260,10 +260,10 @@ namespace Nu
         /// <returns>The result of the calculation.</returns>
         public static Color operator /(Color color, float scale)
         {
-            color.R = (byte)(color.R / scale);
-            color.G = (byte)(color.G / scale);
-            color.B = (byte)(color.B / scale);
-            color.A = (byte)(color.A / scale);
+            color.R /= scale;
+            color.G /= scale;
+            color.B /= scale;
+            color.A /= scale;
             return color;
         }
 
