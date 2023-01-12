@@ -1320,6 +1320,7 @@ module LayoutFacetModule =
                         | Flow (flowDirection, flowLimit) ->
                             flowLayout perimeter margin flowDirection flowLimit children world
                         | Dock (margins, percentageBased, resizeChildren) ->
+                            ignore (percentageBased, resizeChildren) // TODO: implement using these values.
                             dockLayout perimeter margin margins children world
                         | Grid (dims, flowDirectionOpt, resizeChildren) ->
                             gridLayout perimeter margin dims flowDirectionOpt resizeChildren children world
