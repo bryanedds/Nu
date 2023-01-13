@@ -887,15 +887,19 @@ module Gaia =
             let targetPoint = form.hierarchyTreeView.PointToClient (Point (args.X, args.Y))
             let targetNodeOpt = form.hierarchyTreeView.GetNodeAt targetPoint
             let draggedNode = args.Data.GetData typeof<TreeNode> :?> TreeNode
-            if draggedNode <> targetNodeOpt && notNull targetNodeOpt && not (containsNode draggedNode targetNodeOpt) then
-                let source = Entity (selectedGroup.GroupAddress <-- Address.makeFromString draggedNode.Name)
-                if not (source.GetProtected world) then
+            let source = Entity (selectedGroup.GroupAddress <-- Address.makeFromString draggedNode.Name)
+            if not (source.GetProtected world) then
+                if isNull targetNodeOpt then
+                    let target = Entity (selectedGroup.GroupAddress <-- Address.makeFromString source.Name)
+                    let world = World.renameEntityImmediate source target world
+                    target.SetMountOptWithAdjustment None world
+                elif draggedNode <> targetNodeOpt && not (containsNode draggedNode targetNodeOpt) then
                     let target = Entity (selectedGroup.GroupAddress <-- Address.makeFromString targetNodeOpt.Name) / source.Name
                     let mount = Relation.makeParent ()
                     let world = World.renameEntityImmediate source target world
                     target.SetMountOptWithAdjustment (Some mount) world
-                else Log.traceOnce "Cannot relocate a protected simulant (such as an entity created by the Elmish API)."; world
-            else world
+                else world
+            else Log.traceOnce "Cannot relocate a protected simulant (such as an entity created by the Elmish API)."; world
 
     let private handleFormHierarchyTreeViewCollapseAllClick (form : GaiaForm) (_ : EventArgs) =
         form.hierarchyTreeView.CollapseAll ()
