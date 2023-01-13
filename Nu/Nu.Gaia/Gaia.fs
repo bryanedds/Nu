@@ -891,8 +891,8 @@ module Gaia =
             if not (source.GetProtected world) then
                 if isNull targetNodeOpt then
                     let target = Entity (selectedGroup.GroupAddress <-- Address.makeFromString source.Name)
-                    let world = World.renameEntityImmediate source target world
-                    target.SetMountOptWithAdjustment None world
+                    let world = source.SetMountOptWithAdjustment None world
+                    World.renameEntityImmediate source target world
                 elif draggedNode <> targetNodeOpt && not (containsNode draggedNode targetNodeOpt) then
                     let target = Entity (selectedGroup.GroupAddress <-- Address.makeFromString targetNodeOpt.Name) / source.Name
                     let mount = Relation.makeParent ()
