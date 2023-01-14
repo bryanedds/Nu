@@ -17,10 +17,7 @@ module Avatar =
               CharacterAnimationState_ : CharacterAnimationState
               CelSize_ : Vector2
               CoreShapeId_ : uint64
-              SensorShapeId_ : uint64
-              CollidedPropIds_ : int list
-              SeparatedPropIds_ : int list
-              IntersectedPropIds_ : int list }
+              SensorShapeId_ : uint64 }
 
         (* Perimeter Properties *)
         member this.Perimeter = this.Perimeter_
@@ -41,9 +38,6 @@ module Avatar =
         (* Local Properties *)
         member this.CoreShapeId = this.CoreShapeId_
         member this.SensorShapeId = this.SensorShapeId_
-        member this.CollidedPropIds = this.CollidedPropIds_
-        member this.SeparatedPropIds = this.SeparatedPropIds_
-        member this.IntersectedPropIds = this.IntersectedPropIds_
 
     let getAnimationInset time (avatar : Avatar) =
         CharacterAnimationState.inset time avatar.CelSize_ avatar.CharacterAnimationState_
@@ -53,24 +47,6 @@ module Avatar =
 
     let getAnimationFinished time avatar =
         CharacterAnimationState.getFinished time avatar.CharacterAnimationState_
-
-    let updateCollidedPropIds updater (avatar : Avatar) =
-        let propIds = updater avatar.CollidedPropIds_
-        if propIds =/= avatar.CollidedPropIds_
-        then { avatar with CollidedPropIds_ = propIds }
-        else avatar
-
-    let updateSeparatedPropIds updater (avatar : Avatar) =
-        let propIds = updater avatar.SeparatedPropIds_
-        if propIds =/= avatar.SeparatedPropIds_
-        then { avatar with SeparatedPropIds_ = propIds }
-        else avatar
-
-    let updateIntersectedPropIds updater (avatar : Avatar) =
-        let propIds = updater avatar.IntersectedPropIds_
-        if propIds =/= avatar.IntersectedPropIds_
-        then { avatar with IntersectedPropIds_ = propIds }
-        else avatar
 
     let updatePerimeter updater (avatar : Avatar) =
         let bounds = updater avatar.Perimeter_
@@ -101,22 +77,13 @@ module Avatar =
     let animate time characterAnimationType avatar =
         updateCharacterAnimationState (fun state -> CharacterAnimationState.setCharacterAnimationType (Some time) characterAnimationType state) avatar
 
-    let toSymbolizable avatar =
-        { avatar with
-            CollidedPropIds_ = []
-            SeparatedPropIds_ = []
-            IntersectedPropIds_ = [] }
-
     let make bounds animationSheet direction =
         let characterAnimationState = { StartTime = 0L; AnimationSheet = animationSheet; CharacterAnimationType = IdleAnimation; Direction = direction }
         { Perimeter_ = bounds
           CharacterAnimationState_ = characterAnimationState
           CelSize_ = Constants.Gameplay.CharacterCelSize
           CoreShapeId_ = Gen.id64
-          SensorShapeId_ = Gen.id64
-          CollidedPropIds_ = []
-          SeparatedPropIds_ = []
-          IntersectedPropIds_ = [] }
+          SensorShapeId_ = Gen.id64 }
 
     let empty () =
         let bounds = box3 v3Zero Constants.Gameplay.CharacterSize
@@ -124,10 +91,7 @@ module Avatar =
           CharacterAnimationState_ = CharacterAnimationState.empty
           CelSize_ = Constants.Gameplay.CharacterCelSize
           CoreShapeId_ = Gen.id64
-          SensorShapeId_ = Gen.id64
-          CollidedPropIds_ = []
-          SeparatedPropIds_ = []
-          IntersectedPropIds_ = [] }
+          SensorShapeId_ = Gen.id64 }
 
     let initial () =
         let position = v3 2064.0f 48.0f 0.0f - Constants.Gameplay.CharacterSize.WithY 0.0f * 0.5f

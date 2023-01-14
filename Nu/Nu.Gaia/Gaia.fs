@@ -688,7 +688,7 @@ module Gaia =
                         if isEntity then
                             let selectedEntityTds = selectedObject :?> EntityTypeDescriptorSource
                             let handler = handlePropertyPickButton selectedGridItem.PropertyDescriptor selectedEntityTds form
-                            Globals.preUpdate handler)
+                            Globals.nextPreUpdate handler)
                     form.pickPropertyButton.Click.AddHandler propertyPickButtonClickHandler
             | _ ->
                 form.propertyEditor.Enabled <- false
@@ -890,7 +890,7 @@ module Gaia =
             elif target.Parent = source then true
             else containsNode source target.Parent
 
-        Globals.preUpdate $ fun world ->
+        Globals.nextPreUpdate $ fun world ->
             let world = Globals.pushPastWorld world
             let targetPoint = form.hierarchyTreeView.PointToClient (Point (args.X, args.Y))
             let targetNodeOpt = form.hierarchyTreeView.GetNodeAt targetPoint
@@ -913,7 +913,7 @@ module Gaia =
         form.hierarchyTreeView.CollapseAll ()
 
     let private handleFormHierarchyTreeViewNodeSelect (form : GaiaForm) (_ : TreeViewEventArgs) =
-        Globals.preUpdate $ fun world ->
+        Globals.nextPreUpdate $ fun world ->
             if notNull form.hierarchyTreeView.SelectedNode then
                 let nodeKey = form.hierarchyTreeView.SelectedNode.Name
                 let address = Address.makeFromString nodeKey
@@ -923,11 +923,11 @@ module Gaia =
             else world
 
     let private handleFormHierarchyTreeViewDoubleClick (form : GaiaForm) (_ : EventArgs) =
-        Globals.preUpdate $ fun world ->
+        Globals.nextPreUpdate $ fun world ->
             tryShowSelectedEntityInDisplay form world
 
     let private handleFormCreateEntity atMouse inHierarchy (dispatcherNameOpt : string option) (form : GaiaForm) (_ : EventArgs) =
-        Globals.preUpdate $ fun world ->
+        Globals.nextPreUpdate $ fun world ->
             let oldWorld = world
             try let world = Globals.pushPastWorld world
                 let dispatcherName =
@@ -995,7 +995,7 @@ module Gaia =
                 world
 
     let private handleFormDeleteEntity (form : GaiaForm) (_ : EventArgs) =
-        Globals.preUpdate $ fun world ->
+        Globals.nextPreUpdate $ fun world ->
             let world = Globals.pushPastWorld world
             match form.entityPropertyGrid.SelectedObject with
             | :? EntityTypeDescriptorSource as entityTds ->
@@ -1013,7 +1013,7 @@ module Gaia =
         groupCreationForm.StartPosition <- FormStartPosition.CenterParent
         groupCreationForm.dispatcherTextBox.Text <- typeof<GroupDispatcher>.Name
         groupCreationForm.okButton.Click.Add $ fun _ ->
-            Globals.preUpdate $ fun world ->
+            Globals.nextPreUpdate $ fun world ->
                 let oldWorld = world
                 let world = Globals.pushPastWorld world
                 let groupName = groupCreationForm.nameTextBox.Text
@@ -1034,7 +1034,7 @@ module Gaia =
         groupCreationForm.ShowDialog form |> ignore
 
     let private handleFormSave saveAs (form : GaiaForm) (_ : EventArgs) =
-        Globals.preUpdate $ fun world ->
+        Globals.nextPreUpdate $ fun world ->
             let group = selectedGroup
             form.saveFileDialog.Title <- "Save '" + group.Name + "' As"
             match Map.tryFind group.GroupAddress filePaths with
@@ -1051,7 +1051,7 @@ module Gaia =
             else trySaveSelectedGroup form.saveFileDialog.FileName world; world
 
     let private handleFormOpen (form : GaiaForm) (_ : EventArgs) =
-        Globals.preUpdate $ fun world ->
+        Globals.nextPreUpdate $ fun world ->
             form.openFileDialog.FileName <- String.Empty
             match form.openFileDialog.ShowDialog form with
             | DialogResult.OK ->
@@ -1066,7 +1066,7 @@ module Gaia =
             | _ -> world
 
     let private handleFormClose (form : GaiaForm) (_ : EventArgs) =
-        Globals.preUpdate $ fun world ->
+        Globals.nextPreUpdate $ fun world ->
             match form.groupTabControl.TabPages.Count with
             | 1 ->
                 MessageBox.Show ("Cannot close the only remaining group.", "Group close error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
@@ -1088,19 +1088,19 @@ module Gaia =
                     world
 
     let private handleFormUndo (form : GaiaForm) (_ : EventArgs) =
-        Globals.perUpdate $ fun world ->
+        Globals.nextUpdate $ fun world ->
             match Globals.tryUndo world with
             | (true, world) -> refreshFormOnUndoRedo form world; world
             | (false, world) -> world
 
     let private handleFormRedo (form : GaiaForm) (_ : EventArgs) =
-        Globals.perUpdate $ fun world ->
+        Globals.nextUpdate $ fun world ->
             match Globals.tryRedo world with
             | (true, world) -> refreshFormOnUndoRedo form world; world
             | (false, world) -> world
 
     let private handleFormRunButtonClick (form : GaiaForm) (_ : EventArgs) =
-        Globals.preUpdate $ fun world ->
+        Globals.nextPreUpdate $ fun world ->
             let updateRate = if form.runButton.Checked then 1L else 0L
             let world =
                 if updateRate <> 0L then
@@ -1110,20 +1110,20 @@ module Gaia =
             World.setUpdateRate updateRate world
 
     let private handleFormSongPlayback (form : GaiaForm) (_ : EventArgs) =
-        Globals.preUpdate $ fun world ->
+        Globals.nextPreUpdate $ fun world ->
             if form.songPlaybackButton.Checked
             then World.setMasterSongVolume 1.0f world
             else World.setMasterSongVolume 0.0f world
 
     let private handleFormCopy (form : GaiaForm) (_ : EventArgs) =
-        Globals.preUpdate $ fun world ->
+        Globals.nextPreUpdate $ fun world ->
             match form.entityPropertyGrid.SelectedObject with
             | null -> world
             | :? EntityTypeDescriptorSource as entityTds -> World.copyEntityToClipboard entityTds.DescribedEntity world; world
             | _ -> failwithumf ()
 
     let private handleFormCut (form : GaiaForm) (_ : EventArgs) =
-        Globals.preUpdate $ fun world ->
+        Globals.nextPreUpdate $ fun world ->
             let world = Globals.pushPastWorld world
             match form.entityPropertyGrid.SelectedObject with
             | null -> world
@@ -1137,7 +1137,7 @@ module Gaia =
             | _ -> failwithumf ()
 
     let private handleFormPaste atMouse (form : GaiaForm) (_ : EventArgs) =
-        Globals.preUpdate $ fun world ->
+        Globals.nextPreUpdate $ fun world ->
             let world = Globals.pushPastWorld world
             let surnamesOpt =
                 World.tryGetEntityDispatcherNameOnClipboard world |>
@@ -1150,7 +1150,7 @@ module Gaia =
             | None -> world
 
     let private handleFormQuickSize (form : GaiaForm) (_ : EventArgs) =
-        Globals.preUpdate $ fun world ->
+        Globals.nextPreUpdate $ fun world ->
             let world = Globals.pushPastWorld world
             match form.entityPropertyGrid.SelectedObject with
             | null -> world
@@ -1164,7 +1164,7 @@ module Gaia =
             | _ -> failwithumf ()
 
     let private handleFormSnap3d (form : GaiaForm) (_ : EventArgs) =
-        Globals.preUpdate $ fun world ->
+        Globals.nextPreUpdate $ fun world ->
             let (positionSnap, degreesSnap, scaleSnap) = otherSnaps
             let otherSnaps' =
                 (snd (Single.TryParse form.positionSnapTextBox.Text),
@@ -1177,7 +1177,7 @@ module Gaia =
             world
 
     let private handleFormResetEye (_ : GaiaForm) (_ : EventArgs) =
-        Globals.preUpdate $ fun world ->
+        Globals.nextPreUpdate $ fun world ->
             let world = Globals.pushPastWorld world
             let world = World.setEyeCenter2d v2Zero world
             let world = World.setEyeCenter3d Constants.Engine.EyeCenter3dDefault world
@@ -1185,7 +1185,7 @@ module Gaia =
             world
 
     let private handleFormSelectEditMode (form : GaiaForm) (_ : EventArgs) =
-        Globals.preUpdate $ fun world ->
+        Globals.nextPreUpdate $ fun world ->
             let editModes = World.getEditModes world
             match editModes.TryGetValue (form.editModeComboBox.SelectedItem :?> string) with
             | (true, callback) ->
@@ -1195,7 +1195,7 @@ module Gaia =
             | (false, _) -> world
 
     let private handleFormReloadCode form (_ : EventArgs) =
-        Globals.preUpdate $ fun world ->
+        Globals.nextPreUpdate $ fun world ->
             let world = Globals.pushPastWorld world
             clearSelections form // keep old type information from sticking around in re-painting property editors
             let workingDirPath = targetDir + "/../.."
@@ -1265,7 +1265,7 @@ module Gaia =
                 World.choose world
 
     let private handleFormReloadAssets (form : GaiaForm) (_ : EventArgs) =
-        Globals.preUpdate $ fun world ->
+        Globals.nextPreUpdate $ fun world ->
             match tryReloadAssetGraph form world with
             | (Right assetGraph, world) ->
                 let prettyPrinter = (SyntaxAttribute.defaultValue typeof<AssetGraph>).PrettyPrinter
@@ -1280,14 +1280,14 @@ module Gaia =
         handleFormReloadCode form args
 
     let private handleFormGroupTabDeselected (form : GaiaForm) (_ : EventArgs) =
-        Globals.preUpdate $ fun world ->
+        Globals.nextPreUpdate $ fun world ->
             deselectEntity form world
             refreshEntityPropertyGrid form world
             refreshGroupPropertyGrid form world
             world
 
     let private handleFormGroupTabSelected (form : GaiaForm) (_ : EventArgs) =
-        Globals.preUpdate $ fun world ->
+        Globals.nextPreUpdate $ fun world ->
             let selectedGroup' =
                 let groupTabControl = form.groupTabControl
                 let groupTab = groupTabControl.SelectedTab
@@ -1299,7 +1299,7 @@ module Gaia =
             world
 
     let private handleTraceEventsCheckBoxChanged (form : GaiaForm) (_ : EventArgs) =
-        Globals.preUpdate $ fun world ->
+        Globals.nextPreUpdate $ fun world ->
             let eventTracerOpt =
                 if form.traceEventsCheckBox.Checked
                 then Some (Log.remark "Event")
@@ -1307,7 +1307,7 @@ module Gaia =
             World.setEventTracerOpt eventTracerOpt world
 
     let private handleApplyEventFilterClick (form : GaiaForm) (_ : EventArgs) =
-        Globals.preUpdate $ fun world ->
+        Globals.nextPreUpdate $ fun world ->
             let oldWorld = world
             try let eventFilter = scvalue<EventFilter.Filter> form.eventFilterTextBox.Text
                 let world = World.setEventFilter eventFilter world
@@ -1320,7 +1320,7 @@ module Gaia =
                 world
 
     let private handleRefreshEventFilterClick (form : GaiaForm) (_ : EventArgs) =
-        Globals.preUpdate $ fun world ->
+        Globals.nextPreUpdate $ fun world ->
             let eventFilter = World.getEventFilter world
             let eventFilterStr = scstring eventFilter
             let prettyPrinter = (SyntaxAttribute.defaultValue typeof<EventFilter.Filter>).PrettyPrinter
@@ -1329,7 +1329,7 @@ module Gaia =
             world
 
     let private handleSavePreludeClick (form : GaiaForm) (_ : EventArgs) =
-        Globals.preUpdate $ fun world ->
+        Globals.nextPreUpdate $ fun world ->
             match trySavePrelude form world with
             | (true, world) ->
                 match tryReloadPrelude form world with
@@ -1340,11 +1340,11 @@ module Gaia =
             | (false, world) -> world
 
     let private handleLoadPreludeClick (form : GaiaForm) (_ : EventArgs) =
-        Globals.preUpdate $ fun world ->
+        Globals.nextPreUpdate $ fun world ->
             tryLoadPrelude form world
 
     let private handleSaveAssetGraphClick (form : GaiaForm) (_ : EventArgs) =
-        Globals.preUpdate $ fun world ->
+        Globals.nextPreUpdate $ fun world ->
             match trySaveAssetGraph form world with
             | (true, world) ->
                 match tryReloadAssetGraph form world with
@@ -1355,11 +1355,11 @@ module Gaia =
             | (false, world) -> world
 
     let private handleLoadAssetGraphClick (form : GaiaForm) (_ : EventArgs) =
-        Globals.preUpdate $ fun world ->
+        Globals.nextPreUpdate $ fun world ->
             tryLoadAssetGraph form world
 
     let private handleSaveOverlayerClick (form : GaiaForm) (_ : EventArgs) =
-        Globals.preUpdate $ fun world ->
+        Globals.nextPreUpdate $ fun world ->
             match trySaveOverlayer form world with
             | (true, world) ->
                 match tryReloadOverlays form world with
@@ -1370,11 +1370,11 @@ module Gaia =
             | (false, world) -> world
 
     let private handleLoadOverlayerClick (form : GaiaForm) (_ : EventArgs) =
-        Globals.preUpdate $ fun world ->
+        Globals.nextPreUpdate $ fun world ->
             tryLoadOverlayer form world
 
     let private handleEvalClick (form : GaiaForm) (_ : EventArgs) =
-        Globals.preUpdate $ fun world ->
+        Globals.nextPreUpdate $ fun world ->
             let exprsStr =
                 if String.notEmpty form.evalInputTextBox.SelectedText
                 then form.evalInputTextBox.SelectedText
@@ -1583,7 +1583,7 @@ module Gaia =
         else world
 
     let private perUpdateEditorWorld (form : GaiaForm) world =
-        let world = Globals.processPerUpdaters world
+        let world = Globals.processUpdaters world
         let world =
             if refreshHierarchyViewRequested
             then refreshHierarchyTreeViewImmediate form world
@@ -1765,7 +1765,7 @@ module Gaia =
 
         // same for hierarchy tree view...
         form.hierarchyTreeView.NodeMouseClick.Add (fun (args : TreeNodeMouseClickEventArgs) ->
-            Globals.preUpdate $ fun world ->
+            Globals.nextPreUpdate $ fun world ->
                 if args.Button = MouseButtons.Right then
                     let nodeKey = args.Node.Name
                     let address = Address.makeFromString nodeKey
@@ -1777,7 +1777,7 @@ module Gaia =
         form.hierarchyTreeView.KeyDown.Add (fun args ->
             if uint args.Modifiers &&& uint Keys.Alt <> 0u && (args.KeyCode = Keys.Up || args.KeyCode = Keys.Down) then
                 args.Handled <- true
-                Globals.preUpdate $ fun world ->
+                Globals.nextPreUpdate $ fun world ->
                     match form.entityPropertyGrid.SelectedObject with
                     | :? EntityTypeDescriptorSource as entityTds ->
                         let entity = entityTds.DescribedEntity
