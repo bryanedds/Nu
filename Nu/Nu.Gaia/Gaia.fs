@@ -510,31 +510,36 @@ module Gaia =
         // old world in case we need to rewind
         let oldWorld = world
 
-        try // destroy current group
-            let world = World.destroyGroupImmediate selectedGroup world
+        try // try to destroy current group
+            if not (selectedGroup.GetProtected world) then
+                let world = World.destroyGroupImmediate selectedGroup world
 
-            // load and add group, updating tab and selected group in the process
-            let groupDescriptorStr = File.ReadAllText filePath
-            let groupDescriptor = scvalue<GroupDescriptor> groupDescriptorStr
-            let groupName =
-                match groupDescriptor.GroupProperties.TryFind Constants.Engine.NamePropertyName with
-                | Some (Atom (name, _)) -> name
-                | _ -> failwithumf ()
-            let group = selectedScreen / groupName
-            if not (group.Exists world) then
-                let (group, world) = World.readGroup groupDescriptor None selectedScreen world
-                form.groupTabControl.SelectedTab.Text <- group.Name
-                form.groupTabControl.SelectedTab.Name <- group.Name
-                selectedGroup <- group
+                // load and add group, updating tab and selected group in the process
+                let groupDescriptorStr = File.ReadAllText filePath
+                let groupDescriptor = scvalue<GroupDescriptor> groupDescriptorStr
+                let groupName =
+                    match groupDescriptor.GroupProperties.TryFind Constants.Engine.NamePropertyName with
+                    | Some (Atom (name, _)) -> name
+                    | _ -> failwithumf ()
+                let group = selectedScreen / groupName
+                if not (group.Exists world) then
+                    let (group, world) = World.readGroup groupDescriptor None selectedScreen world
+                    form.groupTabControl.SelectedTab.Text <- group.Name
+                    form.groupTabControl.SelectedTab.Name <- group.Name
+                    selectedGroup <- group
 
-                // refresh hierarchy view
-                refreshHierarchyTreeView form world
-                (Some group, world)
+                    // refresh hierarchy view
+                    refreshHierarchyTreeView form world
+                    (Some group, world)
             
-            // handle load failure
+                // handle load failure
+                else
+                    let world = World.choose oldWorld
+                    MessageBox.Show ("Could not load group file with same name as an existing group", "File load error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+                    (None, world)
+
             else
-                let world = World.choose oldWorld
-                MessageBox.Show ("Could not load group file with same name as an existing group", "File load error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+                MessageBox.Show ("Cannot load into a protected simulant (such as a group created by the Elmish API).", "File load error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
                 (None, world)
 
         // handle load failure
