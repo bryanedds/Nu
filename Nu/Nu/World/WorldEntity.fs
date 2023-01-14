@@ -460,7 +460,7 @@ module WorldEntityModule =
                     if mountOld.Exists world then
                         let world = this.SetPositionLocal v3Zero world
                         let world = this.SetRotationLocal quatIdentity world
-                        let world = this.SetScaleLocal v3Zero world
+                        let world = this.SetScaleLocal v3One world
                         let world = this.SetElevationLocal 0.0f world
                         let world = this.SetVisible (this.GetVisibleLocal world) world
                         let world = this.SetEnabled (this.GetEnabledLocal world) world
