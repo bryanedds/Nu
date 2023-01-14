@@ -345,7 +345,7 @@ type [<NoEquality; NoComparison>] Transform =
     static member makePerimeter (perimeter : Box3) offset elevation absolute centered =
         let mutable transform = Unchecked.defaultof<Transform>
         transform.Flags_ <- FlagsDefault ||| if absolute then AbsoluteMask else 0u
-        transform.Position_ <- perimeter.Min
+        transform.Position_ <- if centered then perimeter.Center else perimeter.Min
         transform.Rotation_ <- Quaternion.Identity
         transform.Scale_ <- v3One
         transform.Offset_ <- offset
