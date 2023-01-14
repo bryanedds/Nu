@@ -215,15 +215,18 @@ module Gaia =
         form.entityPropertyGrid.SelectedObject <- entityTds
         tryShowSelectedEntityInHierarchy form
         let gridItems = dictPlus StringComparer.Ordinal []
-        for gridItem in form.entityPropertyGrid.SelectedGridItem.Parent.Parent.GridItems do
-            for gridItem in gridItem.GridItems do
-                gridItems.Add (gridItem.Label, gridItem)
-        if notNull previousGridItem then
-            match gridItems.TryGetValue previousGridItem.Label with
-            | (true, gridItem) -> form.entityPropertyGrid.SelectedGridItem <- gridItem
-            | (false, _) -> if entity.GetModelGeneric<obj> world <> box () then form.entityPropertyGrid.SelectedGridItem <- gridItems.[Constants.Engine.ModelPropertyName]
-        elif entity.GetModelGeneric<obj> world <> box () then form.entityPropertyGrid.SelectedGridItem <- gridItems.[Constants.Engine.ModelPropertyName]
-        form.propertyTabControl.SelectTab 3
+        try
+            for gridItem in form.entityPropertyGrid.SelectedGridItem.Parent.Parent.GridItems do
+                for gridItem in gridItem.GridItems do
+                    gridItems.Add (gridItem.Label, gridItem)
+            if notNull previousGridItem then
+                match gridItems.TryGetValue previousGridItem.Label with
+                | (true, gridItem) -> form.entityPropertyGrid.SelectedGridItem <- gridItem
+                | (false, _) -> if entity.GetModelGeneric<obj> world <> box () then form.entityPropertyGrid.SelectedGridItem <- gridItems.[Constants.Engine.ModelPropertyName]
+            elif entity.GetModelGeneric<obj> world <> box () then form.entityPropertyGrid.SelectedGridItem <- gridItems.[Constants.Engine.ModelPropertyName]
+            form.propertyTabControl.SelectTab 3
+        with :? NullReferenceException ->
+            Log.debug "Unexpected but known error for which we are looking for a reproduction case."
 
     let private deselectEntity (form : GaiaForm) world =
         Globals.World <- world // must be set for property grid
