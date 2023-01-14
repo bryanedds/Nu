@@ -45,17 +45,18 @@ type [<NoComparison>] BodyCollisionData =
       Normal : Vector3
       Speed : single }
 
+/// The implicit data for a separation event.
+/// Unfortunately, due to the fact that physics system itself does not raise separation events until the following
+/// frame, we need both an implicit and explicit body separation representation and the user MUST handle both!
+type [<NoComparison>] BodySeparationImplicitData =
+    { BodyPhysicsId : PhysicsId }
+
 /// The explicit data for a separation event.
-type [<NoComparison>] BodySeparationExplicit =
+/// Unfortunately, due to the fact that physics system itself does not raise separation events until the following
+/// frame, we need both an implicit and explicit body separation representation and the user MUST handle both!
+type [<NoComparison>] BodySeparationExplicitData =
     { BodySeparator : BodyShapeSource
       BodySeparatee : BodyShapeSource }
-
-/// The data for a separation event.
-/// Unfortunately, due to the fact that physics system itself does not raise separation events until the following
-/// frame, we need both an implicit and explicit body separation representation.
-type [<NoComparison>] BodySeparationData =
-    | BodySeparationImplicit of PhysicsId
-    | BodySeparationExplicit of BodySeparationExplicit
 
 /// Tje data for describing a change in transform.
 type [<NoComparison>] BodyTransformData =
@@ -93,7 +94,8 @@ module Events =
     let BodyAdding = stoa<PhysicsId> "Body/Adding/Event"
     let BodyRemoving = stoa<PhysicsId> "Body/Removing/Event"
     let BodyCollision = stoa<BodyCollisionData> "BodyCollision/Event"
-    let BodySeparation = stoa<BodySeparationData> "BodySeparation/Event"
+    let BodySeparationImplicit = stoa<BodySeparationImplicitData> "BodySeparationImplicit/Event"
+    let BodySeparationExplicit = stoa<BodySeparationExplicitData> "BodySeparationExplicit/Event"
     let BodyTransform = stoa<BodyTransformData> "BodyTransform/Event"
     let Click = stoa<unit> "Click/Event"
     let Down = stoa<unit> "Down/Event"
