@@ -815,7 +815,8 @@ module RigidBodyFacetModule =
         member this.GetPhysicsId world : PhysicsId = this.Get (nameof this.PhysicsId) world
         member this.PhysicsId = lensReadOnly (nameof this.PhysicsId) this this.GetPhysicsId
         member this.BodyCollisionEvent = Events.BodyCollision --> this
-        member this.BodySeparationEvent = Events.BodySeparation --> this
+        member this.BodySeparationImplicitEvent = Events.BodySeparationImplicit
+        member this.BodySeparationExplicitEvent = Events.BodySeparationExplicit --> this
         member this.BodyTransformEvent = Events.BodyTransform --> this
 
     type RigidBodyFacet () =

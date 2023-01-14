@@ -43,13 +43,13 @@ module WorldPhysics =
                         world message.BodiesProperties
                 | DestroyBodyMessage message ->
                     let eventTrace = EventTrace.debug "World" "enqueuePhysicsMessage2d" "" EventTrace.empty
-                    let world = World.publish (BodySeparationImplicit message.PhysicsId) Events.BodySeparation eventTrace Simulants.Game world
+                    let world = World.publish { BodyPhysicsId = message.PhysicsId } Events.BodySeparationImplicit eventTrace Simulants.Game world
                     let world = World.publish message.PhysicsId Events.BodyRemoving eventTrace Simulants.Game world
                     world
                 | DestroyBodiesMessage message ->
                     let eventTrace = EventTrace.debug "World" "enqueuePhysicsMessage2d" "" EventTrace.empty
                     List.fold (fun world (physicsId : PhysicsId) ->
-                        let world = World.publish (BodySeparationImplicit physicsId) Events.BodySeparation eventTrace Simulants.Game world
+                        let world = World.publish { BodyPhysicsId = physicsId } Events.BodySeparationImplicit eventTrace Simulants.Game world
                         let world = World.publish physicsId Events.BodyRemoving eventTrace Simulants.Game world
                         world)
                         world message.PhysicsIds

@@ -16,7 +16,8 @@ module AvatarDispatcher =
         | Update
         | PostUpdate
         | BodyCollision of BodyCollisionData
-        | BodySeparation of BodySeparationData
+        | BodySeparationImplicit of BodySeparationImplicitData
+        | BodySeparationExplicit of BodySeparationExplicitData
         | TryFace of Direction
         | Nil
         interface Message
@@ -73,7 +74,8 @@ module AvatarDispatcher =
              Entity.BodyShape := bodyShape
              Entity.UpdateEvent => Update
              Entity.BodyCollisionEvent =|> fun evt -> BodyCollision evt.Data |> signal
-             Entity.BodySeparationEvent =|> fun evt -> BodySeparation evt.Data |> signal
+             Entity.BodySeparationImplicitEvent =|> fun evt -> BodySeparationImplicit evt.Data |> signal
+             Entity.BodySeparationExplicitEvent =|> fun evt -> BodySeparationExplicit evt.Data |> signal
              entity.Group.PostUpdateEvent => PostUpdate]
 
         override this.Message (avatar, message, entity, world) =
@@ -126,30 +128,31 @@ module AvatarDispatcher =
                     else avatar
                 just avatar
 
-            | BodySeparation separation ->
+            | BodySeparationImplicit separation ->
 
                 // add separated body shape
-                match separation with
-                | BodySeparationImplicit physicsId ->
-                    let entityOpt =
-                        world |>
-                        World.getEntities Simulants.FieldScene |>
-                        Seq.filter (fun entity -> entity.Is<PropDispatcher> world && entity.GetPhysicsId world = physicsId) |>
-                        Seq.tryHead
-                    match entityOpt with
-                    | Some entity ->
-                        let propId = (entity.GetPropPlus world).Prop.PropId
-                        let (separatedPropIds, intersectedPropIds) = List.split ((=) propId) avatar.IntersectedPropIds
-                        let avatar = Avatar.updateIntersectedPropIds (constant intersectedPropIds) avatar
-                        let avatar = Avatar.updateSeparatedPropIds ((@) separatedPropIds) avatar
-                        just avatar
-                    | None -> just avatar
-                | BodySeparationExplicit explicit ->
-                    if isIntersectedProp explicit.BodySeparator explicit.BodySeparatee avatar world then
-                        let avatar = Avatar.updateSeparatedPropIds (List.cons (explicit.BodySeparatee.Entity.GetPropPlus world).Prop.PropId) avatar
-                        let avatar = Avatar.updateIntersectedPropIds (List.remove ((=) (explicit.BodySeparatee.Entity.GetPropPlus world).Prop.PropId)) avatar
-                        just avatar
-                    else just avatar
+                let entityOpt =
+                    world |>
+                    World.getEntities Simulants.FieldScene |>
+                    Seq.filter (fun entity -> entity.Is<PropDispatcher> world && entity.GetPhysicsId world = separation.BodyPhysicsId) |>
+                    Seq.tryHead
+                match entityOpt with
+                | Some entity ->
+                    let propId = (entity.GetPropPlus world).Prop.PropId
+                    let (separatedPropIds, intersectedPropIds) = List.split ((=) propId) avatar.IntersectedPropIds
+                    let avatar = Avatar.updateIntersectedPropIds (constant intersectedPropIds) avatar
+                    let avatar = Avatar.updateSeparatedPropIds ((@) separatedPropIds) avatar
+                    just avatar
+                | None -> just avatar
+
+            | BodySeparationExplicit separation ->
+
+                // add separated body shape
+                if isIntersectedProp separation.BodySeparator separation.BodySeparatee avatar world then
+                    let avatar = Avatar.updateSeparatedPropIds (List.cons (separation.BodySeparatee.Entity.GetPropPlus world).Prop.PropId) avatar
+                    let avatar = Avatar.updateIntersectedPropIds (List.remove ((=) (separation.BodySeparatee.Entity.GetPropPlus world).Prop.PropId)) avatar
+                    just avatar
+                else just avatar
 
             | Nil ->
 

@@ -705,9 +705,9 @@ module WorldModule2 =
                         let explicit =
                             { BodySeparator = BodyShapeSource.fromInternal bodySeparationMessage.BodyShapeSource
                               BodySeparatee = BodyShapeSource.fromInternal bodySeparationMessage.BodyShapeSource2 }
-                        let separationAddress = Events.BodySeparation --> entity.EntityAddress
+                        let separationAddress = Events.BodySeparationExplicit --> entity.EntityAddress
                         let eventTrace = EventTrace.debug "World" "processIntegrationMessage" "" EventTrace.empty
-                        World.publish (BodySeparationExplicit explicit) separationAddress eventTrace Simulants.Game world
+                        World.publish explicit separationAddress eventTrace Simulants.Game world
                     else world
                 | BodyTransformMessage bodyTransformMessage ->
                     let bodySource = bodyTransformMessage.BodySource
