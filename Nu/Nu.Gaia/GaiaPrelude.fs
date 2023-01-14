@@ -79,6 +79,7 @@ module Globals =
                 let world = Nu.World.unshelve pastWorld
                 pastWorlds <- pastWorlds'
                 futureWorlds <- futureWorld :: futureWorlds
+                World <- world
                 (true, world)
             | [] -> (false, world)
         else (false, world)
@@ -91,6 +92,7 @@ module Globals =
                 let world = Nu.World.unshelve futureWorld
                 pastWorlds <- pastWorld :: pastWorlds
                 futureWorlds <- futureWorlds'
+                World <- world
                 (true, world)
             | [] -> (false, world)
         else (false, world)
