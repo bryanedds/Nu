@@ -1093,7 +1093,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                                 renderer.RenderEnvironmentFilterShader
                                 (OpenGL.SkyBox.SkyBoxSurface.make cubeMap renderer.RenderSkyBoxGeometry)
                         let result = (irradianceMap, environmentFilterMap)
-                        irradianceAndEnviconmentMapsOptRef := Some result
+                        irradianceAndEnviconmentMapsOptRef.Value <- Some result
                         result
                     else Option.get irradianceAndEnviconmentMapsOptRef.Value
                 | None -> (renderer.RenderIrradianceMap, renderer.RenderEnvironmentFilterMap)
