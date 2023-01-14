@@ -15,6 +15,7 @@ module FieldDispatcher =
     type [<NoComparison>] FieldMessage =
         | Update
         | UpdateFieldTransition
+        | UpdateAvatarBodyTracking
         | AvatarBodyCollision of BodyCollisionData
         | AvatarBodySeparationImplicit of BodySeparationImplicitData
         | AvatarBodySeparationExplicit of BodySeparationExplicitData
@@ -179,6 +180,7 @@ module FieldDispatcher =
              Screen.UpdateEvent => Update
              Screen.PostUpdateEvent => UpdateFieldTransition
              Screen.PostUpdateEvent => UpdateEye
+             Screen.PostUpdateEvent => UpdateAvatarBodyTracking
              Screen.SelectEvent => PlayFieldSong
              Simulants.FieldSceneAvatar.BodyCollisionEvent =|> fun evt -> AvatarBodyCollision evt.Data |> signal
              Simulants.FieldSceneAvatar.BodySeparationImplicitEvent =|> fun evt -> AvatarBodySeparationImplicit evt.Data |> signal
@@ -310,7 +312,6 @@ module FieldDispatcher =
                             let field =
                                 Field.updateAvatar (fun avatar ->
                                     let avatar = Avatar.updateDirection (constant fieldTransition.FieldDirection) avatar
-                                    let avatar = Avatar.updateIntersectedPropIds (constant []) avatar
                                     let avatar = Avatar.updateBottom (constant fieldTransition.FieldDestination) avatar
                                     avatar)
                                     field
@@ -339,52 +340,53 @@ module FieldDispatcher =
 
                 // no transition
                 | None -> just field
+            
+            | UpdateAvatarBodyTracking ->
+
+                // clear all temporary avatar body shapes
+                let field = Field.updateAvatarCollidedPropIds (constant []) field
+                let field = Field.updateAvatarSeparatedPropIds (constant []) field
+                just field
 
             | AvatarBodyCollision collision ->
 
                 // add collided body shape
                 let field =
-                    Field.updateAvatar (fun avatar ->
-                        if isIntersectedProp collision.BodyCollider collision.BodyCollidee avatar world then
-                            let avatar = Avatar.updateCollidedPropIds (List.cons (collision.BodyCollidee.Entity.GetPropPlus world).Prop.PropId) avatar
-                            let avatar = Avatar.updateIntersectedPropIds (List.cons (collision.BodyCollidee.Entity.GetPropPlus world).Prop.PropId) avatar
-                            avatar
-                        else avatar)
+                    if isIntersectedProp collision.BodyCollider collision.BodyCollidee field.Avatar world then
+                        let field = Field.updateAvatarCollidedPropIds (List.cons (collision.BodyCollidee.Entity.GetPropPlus world).Prop.PropId) field
+                        let field = Field.updateAvatarIntersectedPropIds (List.cons (collision.BodyCollidee.Entity.GetPropPlus world).Prop.PropId) field
                         field
+                    else field
                 just field
 
             | AvatarBodySeparationImplicit separation ->
 
                 // add separated body shape
                 let field =
-                    Field.updateAvatar (fun avatar ->
-                        let entityOpt =
-                            world |>
-                            World.getEntities Simulants.FieldScene |>
-                            Seq.filter (fun entity -> entity.Is<PropDispatcher> world && entity.GetPhysicsId world = separation.BodyPhysicsId) |>
-                            Seq.tryHead
-                        match entityOpt with
-                        | Some entity ->
-                            let propId = (entity.GetPropPlus world).Prop.PropId
-                            let (separatedPropIds, intersectedPropIds) = List.split ((=) propId) avatar.IntersectedPropIds
-                            let avatar = Avatar.updateIntersectedPropIds (constant intersectedPropIds) avatar
-                            let avatar = Avatar.updateSeparatedPropIds ((@) separatedPropIds) avatar
-                            avatar
-                        | None -> avatar)
+                    let entityOpt =
+                        world |>
+                        World.getEntities Simulants.FieldScene |>
+                        Seq.filter (fun entity -> entity.Is<PropDispatcher> world && entity.GetPhysicsId world = separation.BodyPhysicsId) |>
+                        Seq.tryHead
+                    match entityOpt with
+                    | Some entity ->
+                        let propId = (entity.GetPropPlus world).Prop.PropId
+                        let (separatedPropIds, intersectedPropIds) = List.split ((=) propId) field.AvatarIntersectedPropIds
+                        let field = Field.updateAvatarIntersectedPropIds (constant intersectedPropIds) field
+                        let field = Field.updateAvatarSeparatedPropIds ((@) separatedPropIds) field
                         field
+                    | None -> field
                 just field
 
             | AvatarBodySeparationExplicit separation ->
 
                 // add separated body shape
                 let field =
-                    Field.updateAvatar (fun avatar ->
-                        if isIntersectedProp separation.BodySeparator separation.BodySeparatee avatar world then
-                            let avatar = Avatar.updateSeparatedPropIds (List.cons (separation.BodySeparatee.Entity.GetPropPlus world).Prop.PropId) avatar
-                            let avatar = Avatar.updateIntersectedPropIds (List.remove ((=) (separation.BodySeparatee.Entity.GetPropPlus world).Prop.PropId)) avatar
-                            avatar
-                        else avatar)
+                    if isIntersectedProp separation.BodySeparator separation.BodySeparatee field.Avatar world then
+                        let field = Field.updateAvatarSeparatedPropIds (List.cons (separation.BodySeparatee.Entity.GetPropPlus world).Prop.PropId) field
+                        let field = Field.updateAvatarIntersectedPropIds (List.remove ((=) (separation.BodySeparatee.Entity.GetPropPlus world).Prop.PropId)) field
                         field
+                    else field
                 just field
 
             | MenuTeamOpen ->

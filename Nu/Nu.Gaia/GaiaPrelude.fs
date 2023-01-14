@@ -38,25 +38,25 @@ module Globals =
     let mutable private pastWorlds = [] : World list
     let mutable private futureWorlds = [] : World list
     let mutable private preUpdaters = Updaters ()
-    let mutable private perUpdaters = Updaters ()
+    let mutable private updaters = Updaters ()
     let mutable private selectEntityFn = Unchecked.defaultof<_> : Entity -> GaiaForm -> World -> unit
     let mutable Form = Unchecked.defaultof<GaiaForm>
     let mutable World = Unchecked.defaultof<World>
 
-    let preUpdate updater =
+    let nextPreUpdate updater =
         preUpdaters.Add updater
 
-    let perUpdate updater =
-        perUpdaters.Add updater
+    let nextUpdate updater =
+        updaters.Add updater
 
     let processPreUpdaters world =
         let preUpdatersCopy = List.ofSeq preUpdaters
         preUpdaters.Clear ()
         List.fold (fun world updater -> updater world) world preUpdatersCopy
 
-    let processPerUpdaters world =
-        let perUpdatersCopy = List.ofSeq perUpdaters
-        perUpdaters.Clear ()
+    let processUpdaters world =
+        let perUpdatersCopy = List.ofSeq updaters
+        updaters.Clear ()
         List.fold (fun world updater -> updater world) world perUpdatersCopy
 
     let pushPastWorld pastWorld =

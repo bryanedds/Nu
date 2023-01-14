@@ -14,7 +14,6 @@ module AvatarDispatcher =
 
     type [<NoComparison>] AvatarMessage =
         | Update
-        | PostUpdate
         | TryFace of Direction
         | Nil
         interface Message
@@ -59,7 +58,7 @@ module AvatarDispatcher =
         static member Facets =
             [typeof<RigidBodyFacet>]
 
-        override this.Initialize (avatar, entity) =
+        override this.Initialize (avatar, _) =
             let bodyShape =
                 BodyShapes
                     [BodySphere { Center = v3 -0.016f -0.366f 0.0f; Radius = 0.160f; PropertiesOpt = Some { BodyShapeProperties.empty with BodyShapeId = avatar.CoreShapeId }}
@@ -69,8 +68,7 @@ module AvatarDispatcher =
              Entity.FixedRotation == true
              Entity.GravityScale == 0.0f
              Entity.BodyShape := bodyShape
-             Entity.UpdateEvent => Update
-             entity.Group.PostUpdateEvent => PostUpdate]
+             Entity.UpdateEvent => Update]
 
         override this.Message (avatar, message, entity, world) =
             let time = World.getUpdateTime world
@@ -88,13 +86,6 @@ module AvatarDispatcher =
                             Avatar.animate time WalkAnimation avatar
                         else avatar
                     else Avatar.animate time IdleAnimation avatar
-                just avatar
-
-            | PostUpdate ->
-
-                // clear all temporary body shapes
-                let avatar = Avatar.updateCollidedPropIds (constant []) avatar
-                let avatar = Avatar.updateSeparatedPropIds (constant []) avatar
                 just avatar
 
             | TryFace direction ->

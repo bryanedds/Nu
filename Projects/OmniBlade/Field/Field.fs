@@ -39,6 +39,9 @@ module Field =
               SaveSlot_ : SaveSlot
               OmniSeedState_ : OmniSeedState
               Avatar_ : Avatar
+              AvatarCollidedPropIds_ : int list
+              AvatarSeparatedPropIds_ : int list
+              AvatarIntersectedPropIds_ : int list
               Team_ : Map<int, Teammate>
               SpiritActivity_ : single
               Spirits_ : Spirit array
@@ -63,6 +66,9 @@ module Field =
         member this.FieldState = this.FieldState_
         member this.OmniSeedState = this.OmniSeedState_
         member this.Avatar = this.Avatar_
+        member this.AvatarCollidedPropIds = this.AvatarCollidedPropIds_
+        member this.AvatarSeparatedPropIds = this.AvatarSeparatedPropIds_
+        member this.AvatarIntersectedPropIds = this.AvatarIntersectedPropIds_
         member this.Team = this.Team_
         member this.SpiritActivity = this.SpiritActivity_
         member this.Spirits = this.Spirits_
@@ -222,7 +228,7 @@ module Field =
     let getFacingProps (field : Field) =
         List.filter
             (fun propId -> isFacingProp propId field)
-            field.Avatar.IntersectedPropIds
+            field.AvatarIntersectedPropIds
 
     let tryGetFacingProp (field : Field) =
         match getFacingProps field with
@@ -241,7 +247,7 @@ module Field =
             match field.Props_.TryGetValue propId with
             | (true, prop) -> prop.PropData = SavePoint
             | (false, _) -> false)
-            field.Avatar.IntersectedPropIds
+            field.AvatarIntersectedPropIds
 
     let tryGetInteraction (field : Field) =
         match field.DialogOpt with
@@ -261,7 +267,7 @@ module Field =
                 | None -> None
 
     let tryGetTouchingPortal (field : Field) =
-        field.Avatar.IntersectedPropIds |>
+        field.AvatarIntersectedPropIds |>
         List.choose (fun propId ->
             match field.Props_.TryGetValue propId with
             | (true, prop) ->
@@ -301,7 +307,7 @@ module Field =
                 | Sensor (sensorType, _, cue, _, requirements) -> Some (sensorType, cue, requirements)
                 | _ -> None
             | (false, _) -> None)
-            field.Avatar.CollidedPropIds
+            field.AvatarCollidedPropIds
 
     let getUntouchedSensors (field : Field) =
         List.choose (fun propId ->
@@ -311,7 +317,7 @@ module Field =
                 | Sensor (sensorType, _, cue, _, requirements) -> Some (sensorType, cue, requirements)
                 | _ -> None
             | (false, _) -> None)
-            field.Avatar.SeparatedPropIds
+            field.AvatarSeparatedPropIds
 
     let hasEncounters (field : Field) =
         match Data.Value.Fields.TryGetValue field.FieldType with
@@ -331,6 +337,24 @@ module Field =
         let avatar = field.Avatar_
         let avatar = updater avatar
         if avatar =/= field.Avatar_ then { field with Avatar_ = avatar }
+        else field
+
+    let updateAvatarCollidedPropIds updater field =
+        let propIds = updater field.AvatarCollidedPropIds_
+        if propIds =/= field.AvatarCollidedPropIds_
+        then { field with AvatarCollidedPropIds_ = propIds }
+        else field
+
+    let updateAvatarSeparatedPropIds updater field =
+        let propIds = updater field.AvatarSeparatedPropIds_
+        if propIds =/= field.AvatarSeparatedPropIds_
+        then { field with AvatarSeparatedPropIds_ = propIds }
+        else field
+
+    let updateAvatarIntersectedPropIds updater field =
+        let propIds = updater field.AvatarIntersectedPropIds_
+        if propIds =/= field.AvatarIntersectedPropIds_
+        then { field with AvatarIntersectedPropIds_ = propIds }
         else field
 
     let updateTeam updater field =
@@ -494,13 +518,16 @@ module Field =
         let field = synchronizeTeamFromAllies allies field
         let field = updateInventory (constant battle.Inventory) field
         let field = updateAdvents (Set.union consequents) field
-        let field = updateAvatar (Avatar.updateIntersectedPropIds (constant [])) field
+        let field = updateAvatarIntersectedPropIds (constant []) field
         field
 
     let toSymbolizable field =
         { field with
             UpdateTime_ = 0L
-            Avatar_ = Avatar.toSymbolizable field.Avatar
+            Avatar_ = field.Avatar
+            AvatarCollidedPropIds_ = []
+            AvatarSeparatedPropIds_ = []
+            AvatarIntersectedPropIds_ = []
             Props_ = Map.empty
             FieldSongTimeOpt_ = None }
 
@@ -521,6 +548,9 @@ module Field =
           SaveSlot_ = saveSlot
           OmniSeedState_ = omniSeedState
           Avatar_ = avatar
+          AvatarCollidedPropIds_ = []
+          AvatarSeparatedPropIds_ = []
+          AvatarIntersectedPropIds_ = []
           SpiritActivity_ = 0.0f
           Spirits_ = [||]
           Team_ = team
@@ -546,6 +576,9 @@ module Field =
           SaveSlot_ = Slot1
           OmniSeedState_ = OmniSeedState.make ()
           Avatar_ = Avatar.empty ()
+          AvatarCollidedPropIds_ = []
+          AvatarSeparatedPropIds_ = []
+          AvatarIntersectedPropIds_ = []
           SpiritActivity_ = 0.0f
           Spirits_ = [||]
           Team_ = Map.empty
