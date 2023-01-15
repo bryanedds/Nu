@@ -735,6 +735,14 @@ module WorldEntityModule =
             let world = World.setEntityOrder (World.getEntityOrder entity2 world) entity world |> snd'
             World.setEntityOrder order entity2 world |> snd'
 
+        /// Insert an entity's order between previous and optionally next.
+        static member insertEntityOrder (entity : Entity) (previousOpt : Entity option) (next : Entity) world =
+            let order = 
+                match previousOpt with
+                | Some previous -> (previous.GetOrder world + next.GetOrder world) / 2L
+                | None -> next.GetOrder world / 2L
+            World.setEntityOrder order entity world |> snd'
+
         /// Write an entity to an entity descriptor.
         static member writeEntity (entity : Entity) (entityDescriptor : EntityDescriptor) world =
             let overlayer = World.getOverlayer world
