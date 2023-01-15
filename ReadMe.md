@@ -21,6 +21,9 @@ Wandering around the forest in OmniBlade.
 ![image](https://user-images.githubusercontent.com/1625560/209454643-7142731e-ede7-48d3-8a97-d691fd9263e7.png)
 A critical battle with evil itself!
 
+![image](https://user-images.githubusercontent.com/1625560/212570637-69cfd2c9-3b61-4d7a-82ce-933582f130e5.png)
+Live editing a cutscene.
+
 ![image](https://user-images.githubusercontent.com/1625560/181411155-d66b3c98-3506-42f7-8974-34b7eb5de877.png)
 Editing a 3D scene imported from Unity in Nu's editor, Gaia.
 
