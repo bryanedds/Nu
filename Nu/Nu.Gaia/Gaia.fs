@@ -22,7 +22,7 @@ open Nu.Gaia.Design
 [<RequireQualifiedAccess>]
 module Gaia =
 
-    // uses global variables for state because Gaia relies on Nu.Gaia.Globals to interoperate Nu and WinForms.
+    // uses global variables for state because Gaia relies on Nu.Gaia.Globals to interoperate Nu and WinForms
     let mutable private propertyPickButtonClickHandler = EventHandler (fun _ _ -> ())
     let mutable private refreshHierarchyViewRequested = false // HACK: make sure hierarchy view isn't updated more than once per frame.
     let mutable private rightClickPosition = v2Zero
@@ -134,6 +134,7 @@ module Gaia =
         // TODO: this code can cause severe performance issues. To unfuck performance, we will probably have to find a
         // way to update the hierarchy tree without a complete rebuild of it - IE, updating it in-place and
         // imperatively.
+        Globals.World <- world
         let treeNodesState = form.hierarchyTreeView.GetExpandedNodesState ()
         form.hierarchyTreeView.Nodes.Clear ()
         let entities =
@@ -878,10 +879,6 @@ module Gaia =
     let private handleFormHierarchyTreeViewDragEnter (_ : GaiaForm) (args : DragEventArgs) =
         args.Effect <- args.AllowedEffect
 
-    let private handleFormHierarchyTreeViewDragOver (form : GaiaForm) (args : DragEventArgs) =
-        let targetPoint = form.hierarchyTreeView.PointToClient (Point (args.X, args.Y))
-        form.hierarchyTreeView.SelectedNode <- form.hierarchyTreeView.GetNodeAt targetPoint
-
     let private handleFormHierarchyTreeViewDragDrop (form : GaiaForm) (args : DragEventArgs) =
 
         // TODO: lift this out.
@@ -898,27 +895,48 @@ module Gaia =
             let source = Entity (selectedGroup.GroupAddress <-- Address.makeFromString draggedNode.Name)
             if not (source.GetProtected world) then
                 if isNull targetNodeOpt then
-                    let target = Entity (selectedGroup.GroupAddress <-- Address.makeFromString source.Name)
+                    let source' = Entity (selectedGroup.GroupAddress <-- Address.makeFromString source.Name)
                     let world = source.SetMountOptWithAdjustment None world
-                    World.renameEntityImmediate source target world
+                    let world = World.renameEntityImmediate source source' world
+                    let world = refreshHierarchyTreeViewImmediate form world
+                    selectEntity source' form world
+                    world
                 elif draggedNode <> targetNodeOpt && not (containsNode draggedNode targetNodeOpt) then
-                    let target = Entity (selectedGroup.GroupAddress <-- Address.makeFromString targetNodeOpt.Name) / source.Name
-                    let mount = Relation.makeParent ()
-                    let world = World.renameEntityImmediate source target world
-                    target.SetMountOptWithAdjustment (Some mount) world
+                    if args.KeyState &&& 32 = 0 then // alt not pressed
+                        let source' = Entity (selectedGroup.GroupAddress <-- Address.makeFromString targetNodeOpt.Name) / source.Name
+                        let mount = Relation.makeParent ()
+                        let world = World.renameEntityImmediate source source' world
+                        let world = source'.SetMountOptWithAdjustment (Some mount) world
+                        let world = refreshHierarchyTreeViewImmediate form world
+                        selectEntity source' form world
+                        world
+                    else // alt pressed
+                        let next = Entity (selectedGroup.GroupAddress <-- Address.makeFromString targetNodeOpt.Name)
+                        let previousOpt = World.tryGetPreviousEntity next world
+                        let parentOpt = match next.Parent with :? Entity as parent -> Some parent | _ -> None
+                        let mountOpt = match parentOpt with Some _ -> Some (Relation.makeParent ()) | None -> None
+                        let source' = match parentOpt with Some parent -> parent / source.Name | None -> selectedGroup / source.Name
+                        let world = World.insertEntityOrder source previousOpt next world
+                        let world = World.renameEntityImmediate source source' world
+                        let world = source'.SetMountOptWithAdjustment mountOpt world
+                        let world = refreshHierarchyTreeViewImmediate form world
+                        selectEntity source' form world
+                        world
                 else world
             else Log.traceOnce "Cannot relocate a protected simulant (such as an entity created by the Elmish API)."; world
 
     let private handleFormHierarchyTreeViewCollapseAllClick (form : GaiaForm) (_ : EventArgs) =
         form.hierarchyTreeView.CollapseAll ()
 
-    let private handleFormHierarchyTreeViewNodeSelect (form : GaiaForm) (_ : TreeViewEventArgs) =
+    let private handleFormHierarchyTreeViewNodeSelect (form : GaiaForm) (evt : TreeViewEventArgs) =
         Globals.nextPreUpdate $ fun world ->
             if notNull form.hierarchyTreeView.SelectedNode then
                 let nodeKey = form.hierarchyTreeView.SelectedNode.Name
                 let address = Address.makeFromString nodeKey
                 let entity = Entity (selectedGroup.GroupAddress <-- atoa address)
-                if entity.Exists world then selectEntity entity form world
+                if  entity.Exists world &&
+                    evt.Action <> TreeViewAction.Unknown then
+                    selectEntity entity form world
                 world
             else world
 
@@ -987,6 +1005,7 @@ module Gaia =
                     if inHierarchy
                     then entity.SetMountOptWithAdjustment (Some (Relation.makeParent ())) world
                     else world
+                let world = refreshHierarchyTreeViewImmediate form world
                 selectEntity entity form world
                 world
             with exn ->
@@ -1824,7 +1843,6 @@ module Gaia =
         form.hierarchyTreeView.DoubleClick.Add (handleFormHierarchyTreeViewDoubleClick form)
         form.hierarchyTreeView.ItemDrag.Add (handleFormHierarchyTreeViewItemDrag form)
         form.hierarchyTreeView.DragEnter.Add (handleFormHierarchyTreeViewDragEnter form)
-        form.hierarchyTreeView.DragOver.Add (handleFormHierarchyTreeViewDragOver form)
         form.hierarchyTreeView.DragDrop.Add (handleFormHierarchyTreeViewDragDrop form)
         form.createEntityButton.Click.Add (handleFormCreateEntity false false None form)
         form.createToolStripMenuItem.Click.Add (handleFormCreateEntity false false None form)
