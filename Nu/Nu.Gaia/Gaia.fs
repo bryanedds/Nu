@@ -134,7 +134,7 @@ module Gaia =
         // TODO: this code can cause severe performance issues. To unfuck performance, we will probably have to find a
         // way to update the hierarchy tree without a complete rebuild of it - IE, updating it in-place and
         // imperatively.
-        Globals.World <- world
+        Globals.World <- world // must be set for property grid
         let treeNodesState = form.hierarchyTreeView.GetExpandedNodesState ()
         form.hierarchyTreeView.Nodes.Clear ()
         let entities =

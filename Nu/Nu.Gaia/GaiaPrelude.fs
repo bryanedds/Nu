@@ -97,8 +97,8 @@ module Globals =
             | [] -> (false, world)
         else (false, world)
 
-    let selectEntity =
-        selectEntityFn
+    let selectEntity entity form world =
+        selectEntityFn entity form world
 
     let init selectEntity =
         selectEntityFn <- selectEntity
