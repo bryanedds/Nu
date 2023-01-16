@@ -4,7 +4,7 @@ DebugBattle,[[240 -48 0] [-384 -48 0] [-384 78 0] [-384 -162 0]],[AraneaImplicit
 CastleBattle,[[240 -48 0] [-384 -48 0] [-384 78 0] [-384 -162 0]],[DarkBat DarkBat DarkBat],[Castle CastleBattle],0,[0 1480],[Some [Castle CastleBattle]]
 CastleBattle2,[[240 -48 0] [-384 -48 0] [-384 78 0] [-384 -162 0]],[BlueGoblin DarkBat],[Castle CastleBattle],0,[0 1480],[Some [Castle CastleBattle]]
 CastleBattle3,[[240 -48 0] [-384 -48 0] [-384 78 0] [-384 -162 0]],[BlueGoblin DarkBat DarkBat],[Castle CastleBattle],0,[0 1480],[Some [Castle CastleBattle]]
-CastleBattle4,[[240 -48 0] [-384 -48 0] [-384 78 0] [-384 -162 0]],[BlueGoblin BlueGoblin DarkBat],[Castle CastleBattle],0,[0 1480],[Some [Castle CastleBattle]]
+CastleBattle4,[[240 -48 0] [-384 -48 0] [-384 78 0] [-384 -162 0]],[BlueGoblin BlueGoblin],[Castle CastleBattle],0,[0 1480],[Some [Castle CastleBattle]]
 CastleBattle5,[[240 -48 0] [-384 -48 0] [-384 78 0] [-384 -162 0]],[BlueGoblin DarkBat DarkBat DarkBat],[Castle CastleBattle],0,[0 1480],[Some [Castle CastleBattle]]
 CastleBattle6,[[240 -48 0] [-384 -48 0] [-384 78 0] [-384 -162 0]],[MadMinotaur],[Castle CastleBattle],0,[0 1480],[Some [Castle CastleBattle]]
 CastleBattle7,[[240 -48 0] [-384 -48 0] [-384 78 0] [-384 -162 0]],[BlueGoblin BlueGoblin BlueGoblin],[Castle CastleBattle],0,[0 1480],[Some [Castle CastleBattle]]
