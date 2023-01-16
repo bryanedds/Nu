@@ -57,7 +57,7 @@
     [Dialog &quot;What is freedom...?&quot;]
     [Dialog &quot;It must be the death of purpose...&quot;]
     [Face [CharacterTarget [Enemy Kyla]] Leftward]
-    [Dialog &quot;I was raised a servant of a servant...&quot;]
+    [Dialog &quot;I was raised to be a servant of a servant...&quot;]
     [Dialog &quot;My master is cruel, but unlike the world, her cruelty is predictable.&quot;]
     [Dialog &quot;I came under her ward when my mother passed, but I think she always hated me.&quot;]
     [Face [CharacterTarget [Enemy Kyla]] Downward]
