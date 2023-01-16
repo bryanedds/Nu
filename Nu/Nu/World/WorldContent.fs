@@ -229,9 +229,12 @@ module Content =
                     else world
                 let world =
                     Seq.fold (fun world (entity : Entity, entityContent : EntityContent) ->
-                        let (entity, world) = World.createEntity5 entityContent.EntityDispatcherName DefaultOverlay (Some entity.Surnames) entity.Group world
+                        let world =
+                            if not (entity.Exists world) // may have already been created by an event raise by a peer entity causing a synchronization of a containing simulant
+                            then World.createEntity5 entityContent.EntityDispatcherName DefaultOverlay (Some entity.Surnames) entity.Group world |> snd
+                            else world
                         let world = World.setEntityProtected true entity world |> snd'
-                        synchronizeEntity true EntityContent.empty entityContent origin entity world)
+                        synchronizeEntity true (EntityContent.makeEmpty ()) entityContent origin entity world)
                         world entitiesAdded
                 world
             | None -> world
@@ -257,9 +260,12 @@ module Content =
                     else world
                 let world =
                     Seq.fold (fun world (entity : Entity, entityContent : EntityContent) ->
-                        let (entity, world) = World.createEntity5 entityContent.EntityDispatcherName DefaultOverlay (Some entity.Surnames) entity.Group world
+                        let world =
+                            if not (entity.Exists world) // may have already been created by an event raise by a peer entity causing a synchronization of a containing simulant
+                            then World.createEntity5 entityContent.EntityDispatcherName DefaultOverlay (Some entity.Surnames) entity.Group world |> snd
+                            else world
                         let world = World.setEntityProtected true entity world |> snd'
-                        synchronizeEntity true EntityContent.empty entityContent origin entity world)
+                        synchronizeEntity true (EntityContent.makeEmpty ()) entityContent origin entity world)
                         world entitiesAdded
                 world
             | None -> world
@@ -304,12 +310,14 @@ module Content =
                         world groupsPotentiallyAltered
                 let world =
                     Seq.fold (fun world (group : Group, groupContent : GroupContent) ->
-                        let (group, world) =
-                            match groupContent.GroupFilePathOpt with
-                            | Some groupFilePath -> World.readGroupFromFile groupFilePath None screen world
-                            | None -> World.createGroup4 groupContent.GroupDispatcherName (Some group.Name) group.Screen world
+                        let world =
+                            if not (group.Exists world) then // may have already been created by an event raise by a peer entity causing a synchronization of a containing simulant
+                                match groupContent.GroupFilePathOpt with
+                                | Some groupFilePath -> World.readGroupFromFile groupFilePath None screen world |> snd
+                                | None -> World.createGroup4 groupContent.GroupDispatcherName (Some group.Name) group.Screen world |> snd
+                            else world
                         let world = World.setGroupProtected true group world |> snd'
-                        synchronizeGroup true GroupContent.empty groupContent origin group world)
+                        synchronizeGroup true (GroupContent.makeEmpty ()) groupContent origin group world)
                         world groupsAdded
                 world
             | None -> world
@@ -334,10 +342,13 @@ module Content =
                         world screensPotentiallyAltered
                 let world =
                     Seq.fold (fun world (screen : Screen, screenContent : ScreenContent) ->
-                        let (screen, world) = World.createScreen3 screenContent.ScreenDispatcherName (Some screen.Name) world
+                        let world =
+                            if not (screen.Exists world) // may have already been created by an event raise by a peer entity causing a synchronization of a containing simulant
+                            then World.createScreen3 screenContent.ScreenDispatcherName (Some screen.Name) world |> snd
+                            else world
                         let world = World.setScreenProtected true screen world |> snd'
                         let world = World.applyScreenBehavior setScreenSlide screenContent.ScreenBehavior screen world
-                        synchronizeScreen true ScreenContent.empty screenContent origin screen world)
+                        synchronizeScreen true (ScreenContent.makeEmpty ()) screenContent origin screen world)
                         world screensAdded
                 (content.InitialScreenNameOpt |> Option.map Screen, world)
             | None -> (content.InitialScreenNameOpt |> Option.map Screen, world)
