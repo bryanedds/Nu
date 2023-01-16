@@ -17,6 +17,7 @@ module WorldTypes =
     let mutable internal Chosen = obj ()
 
     // Empty content variables.
+    // OPTIMIZATION: allows us to avoid allocating content objects for entities that don't use them.
     let mutable internal EmptyGameContent = Unchecked.defaultof<obj>
     let mutable internal EmptyScreenContent = Unchecked.defaultof<obj>
     let mutable internal EmptyGroupContent = Unchecked.defaultof<obj>

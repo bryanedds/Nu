@@ -1879,16 +1879,25 @@ module WorldModuleEntity =
 
         static member internal trySetEntityPropertyFast propertyName property entity world =
             match EntitySetters.TryGetValue propertyName with
-            | (true, setter) -> setter property entity world |> snd'
+            | (true, setter) ->
+                if World.getEntityExists entity world
+                then setter property entity world |> snd'
+                else world
             | (false, _) -> World.trySetEntityXtensionPropertyFast propertyName property entity world
 
         static member internal trySetEntityProperty propertyName property entity world =
             match EntitySetters.TryGetValue propertyName with
-            | (true, setter) -> let struct (changed, world) = setter property entity world in struct (true, changed, world)
+            | (true, setter) ->
+                if World.getEntityExists entity world then
+                    let struct (changed, world) = setter property entity world
+                    struct (true, changed, world)
+                else (false, false, world)
             | (false, _) -> World.trySetEntityXtensionProperty propertyName property entity world
 
         static member internal setEntityPropertyFast propertyName property entity world =
-            World.trySetEntityPropertyFast propertyName property entity world
+            match EntitySetters.TryGetValue propertyName with
+            | (true, setter) -> setter property entity world |> snd'
+            | (false, _) -> World.trySetEntityXtensionPropertyFast propertyName property entity world
 
         static member internal setEntityProperty propertyName property entity world =
             match World.trySetEntityProperty propertyName property entity world with
