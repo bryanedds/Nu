@@ -230,7 +230,7 @@ module Content =
                 let world =
                     Seq.fold (fun world (entity : Entity, entityContent : EntityContent) ->
                         let world =
-                            if not (entity.Exists world) // may have already been created by an event raise by a peer entity causing a synchronization of a containing simulant
+                            if not (entity.Exists world) || entity.GetDestroying world
                             then World.createEntity5 entityContent.EntityDispatcherName DefaultOverlay (Some entity.Surnames) entity.Group world |> snd
                             else world
                         let world = World.setEntityProtected true entity world |> snd'
@@ -261,7 +261,7 @@ module Content =
                 let world =
                     Seq.fold (fun world (entity : Entity, entityContent : EntityContent) ->
                         let world =
-                            if not (entity.Exists world) // may have already been created by an event raise by a peer entity causing a synchronization of a containing simulant
+                            if not (entity.Exists world) || entity.GetDestroying world
                             then World.createEntity5 entityContent.EntityDispatcherName DefaultOverlay (Some entity.Surnames) entity.Group world |> snd
                             else world
                         let world = World.setEntityProtected true entity world |> snd'
@@ -311,7 +311,7 @@ module Content =
                 let world =
                     Seq.fold (fun world (group : Group, groupContent : GroupContent) ->
                         let world =
-                            if not (group.Exists world) then // may have already been created by an event raise by a peer entity causing a synchronization of a containing simulant
+                            if not (group.Exists world) || group.GetDestroying world then
                                 match groupContent.GroupFilePathOpt with
                                 | Some groupFilePath -> World.readGroupFromFile groupFilePath None screen world |> snd
                                 | None -> World.createGroup4 groupContent.GroupDispatcherName (Some group.Name) group.Screen world |> snd
@@ -343,7 +343,7 @@ module Content =
                 let world =
                     Seq.fold (fun world (screen : Screen, screenContent : ScreenContent) ->
                         let world =
-                            if not (screen.Exists world) // may have already been created by an event raise by a peer entity causing a synchronization of a containing simulant
+                            if not (screen.Exists world) || screen.GetDestroying world
                             then World.createScreen3 screenContent.ScreenDispatcherName (Some screen.Name) world |> snd
                             else world
                         let world = World.setScreenProtected true screen world |> snd'
