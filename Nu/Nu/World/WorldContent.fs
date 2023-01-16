@@ -234,7 +234,7 @@ module Content =
                             then World.createEntity5 entityContent.EntityDispatcherName DefaultOverlay (Some entity.Surnames) entity.Group world |> snd
                             else world
                         let world = World.setEntityProtected true entity world |> snd'
-                        synchronizeEntity true (EntityContent.makeEmpty ()) entityContent origin entity world)
+                        synchronizeEntity true EntityContent.empty entityContent origin entity world)
                         world entitiesAdded
                 world
             | None -> world
@@ -265,7 +265,7 @@ module Content =
                             then World.createEntity5 entityContent.EntityDispatcherName DefaultOverlay (Some entity.Surnames) entity.Group world |> snd
                             else world
                         let world = World.setEntityProtected true entity world |> snd'
-                        synchronizeEntity true (EntityContent.makeEmpty ()) entityContent origin entity world)
+                        synchronizeEntity true EntityContent.empty entityContent origin entity world)
                         world entitiesAdded
                 world
             | None -> world
@@ -317,7 +317,7 @@ module Content =
                                 | None -> World.createGroup4 groupContent.GroupDispatcherName (Some group.Name) group.Screen world |> snd
                             else world
                         let world = World.setGroupProtected true group world |> snd'
-                        synchronizeGroup true (GroupContent.makeEmpty ()) groupContent origin group world)
+                        synchronizeGroup true GroupContent.empty groupContent origin group world)
                         world groupsAdded
                 world
             | None -> world
@@ -348,7 +348,7 @@ module Content =
                             else world
                         let world = World.setScreenProtected true screen world |> snd'
                         let world = World.applyScreenBehavior setScreenSlide screenContent.ScreenBehavior screen world
-                        synchronizeScreen true (ScreenContent.makeEmpty ()) screenContent origin screen world)
+                        synchronizeScreen true ScreenContent.empty screenContent origin screen world)
                         world screensAdded
                 (content.InitialScreenNameOpt |> Option.map Screen, world)
             | None -> (content.InitialScreenNameOpt |> Option.map Screen, world)
