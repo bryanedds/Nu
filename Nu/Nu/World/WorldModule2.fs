@@ -1007,7 +1007,7 @@ module WorldModule2 =
                     let now = DateTimeOffset.UtcNow
                     let currentUpdateTime = now.ToUnixTimeMilliseconds ()
                     let delta = currentUpdateTime - lastUpdate
-                    if delta >= 32 then
+                    if delta >= Constants.Engine.DesiredFrameTimeMinimum then
                         lastUpdateTimeOpt <- Some currentUpdateTime
                         true
                     else false
