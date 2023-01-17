@@ -98,7 +98,7 @@ module Hl =
         SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_DEPTH_SIZE, 24) |> ignore<int>
         SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_STENCIL_SIZE, 8) |> ignore<int>
         let glContext = SDL.SDL_GL_CreateContext window
-        SDL.SDL_GL_SetSwapInterval (match Constants.Engine.DesiredFps with Fps30 -> 2 | Fps60 -> 1) |> ignore<int>
+        SDL.SDL_GL_SetSwapInterval 1 |> ignore<int>
         Gl.BindAPI ()
         let version = Gl.GetString StringName.Version
         Log.info ("Initialized OpenGL " + version + ".")
