@@ -63,8 +63,8 @@ module WorldBindings =
         "getClockTime getClockDelta exit tryGetWindowFlags " +
         "tryGetWindowMinimized tryGetWindowMaximized tryGetWindowFullScreen trySetWindowFullScreen " +
         "tryGetWindowSize getWindowSize getViewport getViewportOffset " +
-        "shouldSleep tryLoadSymbolPackage unloadSymbolPackage tryGetSymbol " +
-        "tryGetSymbols reloadSymbols getOverlays tryGetRoutedOverlayNameOpt"
+        "tryLoadSymbolPackage unloadSymbolPackage tryGetSymbol tryGetSymbols " +
+        "reloadSymbols getOverlays tryGetRoutedOverlayNameOpt"
 
     let resolve relation world =
         let oldWorld = world
@@ -2940,17 +2940,6 @@ module WorldBindings =
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getViewportOffset' due to: " + scstring exn, ValueNone)
             struct (violation, World.choose oldWorld)
 
-    let shouldSleep world =
-        let oldWorld = world
-        try
-            let result = World.shouldSleep world
-            let value = result
-            let value = ScriptingSystem.tryImport typeof<Boolean> value world |> Option.get
-            struct (value, world)
-        with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'shouldSleep' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
-
     let tryLoadSymbolPackage implicitDelimiters packageName world =
         let oldWorld = world
         try
@@ -5003,17 +4992,6 @@ module WorldBindings =
                 struct (violation, world)
         | Some violation -> struct (violation, world)
 
-    let evalShouldSleepBinding fnName exprs originOpt world =
-        let struct (evaleds, world) = World.evalManyInternal exprs world
-        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
-        | None ->
-            match evaleds with
-            | [||] -> shouldSleep world
-            | _ ->
-                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
-                struct (violation, world)
-        | Some violation -> struct (violation, world)
-
     let evalTryLoadSymbolPackageBinding fnName exprs originOpt world =
         let struct (evaleds, world) = World.evalManyInternal exprs world
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
@@ -5275,7 +5253,6 @@ module WorldBindings =
              ("getWindowSize", { Fn = evalGetWindowSizeBinding; Pars = [||]; DocOpt = None })
              ("getViewport", { Fn = evalGetViewportBinding; Pars = [||]; DocOpt = None })
              ("getViewportOffset", { Fn = evalGetViewportOffsetBinding; Pars = [||]; DocOpt = None })
-             ("shouldSleep", { Fn = evalShouldSleepBinding; Pars = [||]; DocOpt = None })
              ("tryLoadSymbolPackage", { Fn = evalTryLoadSymbolPackageBinding; Pars = [|"implicitDelimiters"; "packageName"|]; DocOpt = None })
              ("unloadSymbolPackage", { Fn = evalUnloadSymbolPackageBinding; Pars = [|"packageName"|]; DocOpt = None })
              ("tryGetSymbol", { Fn = evalTryGetSymbolBinding; Pars = [|"assetTag"; "metadata"|]; DocOpt = None })

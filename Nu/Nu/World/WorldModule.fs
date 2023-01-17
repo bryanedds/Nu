@@ -420,11 +420,6 @@ module WorldModule =
             let windowSize = World.getWindowSize world
             Constants.Render.ViewportOffset windowSize
 
-        /// Check whether the world should sleep rather than run.
-        [<FunctionBinding>]
-        static member shouldSleep world =
-            World.getAmbientStateBy AmbientState.shouldSleep world
-
         static member internal getSymbolicsBy by world =
             World.getAmbientStateBy (AmbientState.getSymbolicsBy by) world
 

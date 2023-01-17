@@ -350,16 +350,6 @@ module AmbientState =
             Some (v2i !width !height)
         | _ -> None
 
-    /// Check whether we should sleep rather than run.
-    let shouldSleep state =
-        match tryGetWindowFlags state with
-        | Some flags ->
-            let minimized = flags &&& uint32 SDL.SDL_WindowFlags.SDL_WINDOW_MINIMIZED <> 0u
-            let focused = flags &&& uint32 SDL.SDL_WindowFlags.SDL_WINDOW_INPUT_FOCUS <> 0u
-            let fullScreen = flags &&& uint32 SDL.SDL_WindowFlags.SDL_WINDOW_FULLSCREEN <> 0u
-            minimized || not focused && fullScreen
-        | None -> false
-
     /// Get symbolics with the by map.
     let getSymbolicsBy by state =
         by state.Symbolics
