@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="64" height="64" tilewidth="48" tileheight="48" infinite="0" nextlayerid="7" nextobjectid="17">
+<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="64" height="64" tilewidth="48" tileheight="48" infinite="0" nextlayerid="7" nextobjectid="18">
  <tileset firstgid="1" source="TombInner.tsx"/>
  <layer id="6" name="Basement" width="64" height="64">
   <data encoding="base64" compression="zlib">
@@ -67,12 +67,17 @@
     <property name="I" value="[Seal [0 0 1 0.5] [Dialog &quot;Sealed...&quot;] [DeadSeaSealed]]"/>
    </properties>
   </object>
-  <object id="10" gid="235" x="240" y="1296" width="96" height="96">
+  <object id="10" gid="235" x="528" y="2688" width="96" height="96">
    <properties>
     <property name="I" value="[Seal [0.625 0.53 0 0.5] [Dialog &quot;Sealed...&quot;] [MountainSealed]]"/>
    </properties>
   </object>
-  <object id="11" gid="235" x="528" y="2688" width="96" height="96">
+  <object id="11" gid="235" x="240" y="1296" width="96" height="96">
+   <properties>
+    <property name="I" value="[Seal [0 0.8 0.8 0.5] [Dialog &quot;Sealed...&quot;] [FactorySealed]]"/>
+   </properties>
+  </object>
+  <object id="17" gid="235" x="240" y="1296" width="96" height="96">
    <properties>
     <property name="I" value="[Seal [0 0.8 0.8 0.5] [Dialog &quot;Sealed...&quot;] [FactorySealed]]"/>
    </properties>
