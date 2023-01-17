@@ -15,6 +15,8 @@ open Nu.Declarative
 [<AutoOpen; ModuleBinding>]
 module WorldModule2 =
 
+    let mutable private lastUpdateTimeOpt = None
+
     (* Performance Timers *)
     let private TotalTimer = Diagnostics.Stopwatch ()
     let private InputTimer = Diagnostics.Stopwatch ()
@@ -997,56 +999,74 @@ module WorldModule2 =
 
         /// Run the game engine with threading with the given handlers, but don't clean up at the end, and return the world.
         static member runWithoutCleanUp runWhile preProcess perProcess postProcess (sdlDeps : SdlDeps) liveness firstFrame world =
+
+            // avoid updating faster than desired FPS
+            let shouldUpdate =
+                match lastUpdateTimeOpt with
+                | Some lastUpdate ->
+                    let now = DateTimeOffset.UtcNow
+                    let currentUpdateTime = now.ToUnixTimeMilliseconds ()
+                    let delta = currentUpdateTime - lastUpdate
+                    if delta >= 32 then
+                        lastUpdateTimeOpt <- Some currentUpdateTime
+                        true
+                    else false
+                | None ->
+                    let now = DateTimeOffset.UtcNow
+                    let currentUpdateTime = now.ToUnixTimeMilliseconds ()
+                    lastUpdateTimeOpt <- Some currentUpdateTime
+                    true
+
+            // run loop
             TotalTimer.Start ()
             if runWhile world then
-                if World.shouldSleep world then Thread.Sleep (1000 / Constants.Engine.DesiredFpsI) // don't let game run too fast while full screen unfocused
                 PreProcessTimer.Start ()
-                let world = preProcess world
+                let world = if shouldUpdate then preProcess world else world
                 PreProcessTimer.Stop ()
                 match liveness with
                 | Live ->                
-                    let world = World.updateScreenTransition world
+                    let world = if shouldUpdate then World.updateScreenTransition world else world
                     match World.getLiveness world with
                     | Live ->
                         InputTimer.Start ()
-                        let (liveness, world) = World.processInput world
+                        let (liveness, world) = if shouldUpdate then World.processInput world else (Live, world)
                         InputTimer.Stop ()
                         match liveness with
                         | Live ->
                             PhysicsTimer.Start ()
-                            let world = World.processPhysics world
+                            let world = if shouldUpdate then World.processPhysics world else world
                             PhysicsTimer.Stop ()
                             match World.getLiveness world with
                             | Live ->
                                 UpdateTimer.Start ()
-                                let world = World.updateSimulants world
+                                let world = if shouldUpdate then World.updateSimulants world else world
                                 UpdateTimer.Stop ()
                                 match World.getLiveness world with
                                 | Live ->
                                     PostUpdateTimer.Start ()
-                                    let world = World.postUpdateSimulants world
+                                    let world = if shouldUpdate then World.postUpdateSimulants world else world
                                     PostUpdateTimer.Stop ()
                                     match World.getLiveness world with
                                     | Live ->
                                         PerProcessTimer.Start ()
-                                        let world = perProcess world
+                                        let world = if shouldUpdate then perProcess world else world
                                         PerProcessTimer.Stop ()
                                         match World.getLiveness world with
                                         | Live ->
                                             TaskletsTimer.Start ()
-                                            WorldModule.TaskletProcessingStarted <- true
-                                            let world = World.processTasklets world
+                                            if shouldUpdate then WorldModule.TaskletProcessingStarted <- true
+                                            let world = if shouldUpdate then World.processTasklets world else world
                                             TaskletsTimer.Stop ()
                                             match World.getLiveness world with
                                             | Live ->
                                                 DestructionTimer.Start ()
-                                                let world = World.destroySimulants world
+                                                let world = if shouldUpdate then World.destroySimulants world else world
                                                 DestructionTimer.Stop ()
                                                 match World.getLiveness world with
                                                 | Live ->
                                                     PostProcessTimer.Start ()
-                                                    let world = World.postProcess world
-                                                    let world = postProcess world
+                                                    let world = if shouldUpdate then World.postProcess world else world
+                                                    let world = if shouldUpdate then postProcess world else world
                                                     PostProcessTimer.Stop ()
                                                     match World.getLiveness world with
                                                     | Live ->
@@ -1079,8 +1099,8 @@ module WorldModule2 =
 
                                                             // update counters and recur
                                                             TotalTimer.Stop ()
-                                                            let world = World.updateTime world
-                                                            WorldModule.TaskletProcessingStarted <- false
+                                                            let world = if shouldUpdate then World.updateTime world else world
+                                                            if shouldUpdate then WorldModule.TaskletProcessingStarted <- false
                                                             World.runWithoutCleanUp runWhile preProcess perProcess postProcess sdlDeps liveness false world
 
                                                         | Dead -> world

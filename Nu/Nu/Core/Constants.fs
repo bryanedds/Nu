@@ -14,6 +14,7 @@ module Engine =
     let [<Uniform>] DesiredFps = Fps60
     let [<Uniform>] DesiredFpsI = match DesiredFps with Fps30 -> 30 | Fps60 -> 60
     let [<Uniform>] DesiredFpsF = match DesiredFps with Fps30 -> 30.0f | Fps60 -> 60.0f
+    let [<Uniform>] DesiredFrameTimeMinimum = match DesiredFps with Fps30 -> 32L | Fps60 -> 15L
     let [<Literal>] ExitCodeSuccess = 0
     let [<Literal>] ExitCodeFailure = 1
     let [<Literal>] NamePropertyName = "Name"
