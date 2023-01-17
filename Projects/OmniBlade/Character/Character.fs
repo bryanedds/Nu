@@ -18,6 +18,7 @@ module Character =
               Perimeter_ : Box3
               CharacterIndex_ : CharacterIndex
               CharacterType_ : CharacterType
+              Boss_ : bool
               CharacterAnimationState_ : CharacterAnimationState
               CharacterInputState_ : CharacterInputState
               CharacterState_ : CharacterState
@@ -53,10 +54,11 @@ module Character =
         (* CharacterState Properties *)
         member this.Name = CharacterType.getName this.CharacterType_
         member this.CharacterIndex = this.CharacterIndex_
-        member this.CharacterType = this.CharacterType_
         member this.PartyIndex = match this.CharacterIndex with AllyIndex index | EnemyIndex index -> index
+        member this.CharacterType = this.CharacterType_
         member this.IsAlly = match this.CharacterIndex with AllyIndex _ -> true | EnemyIndex _ -> false
         member this.IsEnemy = not this.IsAlly
+        member this.Boss = this.Boss_
         member this.ActionTime = this.ActionTime_
         member this.CelSize = this.CelSize_
         member this.ArchetypeType = this.CharacterState_.ArchetypeType
@@ -346,7 +348,7 @@ module Character =
             updateActionTime (fun actionTime ->
                 if  statusesAdded.Contains (Time false) &&
                     actionTime < Constants.Battle.ActionTime then
-                    actionTime * Constants.Battle.ActionTimeSlowScalar
+                    actionTime * Constants.Battle.ActionTimeSlowScalar character.Boss_
                 else actionTime)
                 character
         else character
@@ -445,13 +447,14 @@ module Character =
     let animate time characterAnimationType character =
         { character with CharacterAnimationState_ = CharacterAnimationState.setCharacterAnimationType (Some time) characterAnimationType character.CharacterAnimationState_ }
 
-    let make bounds characterIndex characterType (characterState : CharacterState) animationSheet celSize direction chargeTechOpt actionTime =
+    let make bounds characterIndex characterType boss animationSheet celSize direction (characterState : CharacterState) chargeTechOpt actionTime =
         let animationType = if characterState.IsHealthy then IdleAnimation else WoundAnimation
         let animationState = { StartTime = 0L; AnimationSheet = animationSheet; CharacterAnimationType = animationType; Direction = direction }
         { PerimeterOriginal_ = bounds
           Perimeter_ = bounds
           CharacterIndex_ = characterIndex
           CharacterType_ = characterType
+          Boss_ = boss
           CharacterAnimationState_ = animationState
           CharacterInputState_ = NoInput
           CharacterState_ = characterState
@@ -484,7 +487,7 @@ module Character =
                     if waitSpeed then       1000.0f - 125.0f - Gen.randomf1 8.0f * 75.0f
                     elif allyCount = 1 then 1000.0f - 400.0f - Gen.randomf1 6.0f * 75.0f
                     else                    1000.0f - 450.0f - Gen.randomf1 8.0f * 75.0f
-                let enemy = make bounds (EnemyIndex index) characterType characterState characterData.AnimationSheet celSize Rightward chargeTechOpt actionTime
+                let enemy = make bounds (EnemyIndex index) characterType characterData.Boss characterData.AnimationSheet celSize Rightward characterState chargeTechOpt actionTime
                 Some enemy
             | None -> None
         | None -> None
@@ -496,6 +499,7 @@ module Character =
           Perimeter_ = bounds
           CharacterIndex_ = AllyIndex 0
           CharacterType_ = Ally Jinn
+          Boss_ = false
           CharacterAnimationState_ = characterAnimationState
           CharacterInputState_ = NoInput
           CharacterState_ = CharacterState.empty

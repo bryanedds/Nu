@@ -102,7 +102,7 @@ module Constants =
 
         let AllyMax = 3.0f
         let ActionTime = 1000.0f
-        let ActionTimeSlowScalar = 2.0f / 3.0f
+        let ActionTimeSlowScalar isBoss = if isBoss then 0.75f else (2.0f / 3.0f)
         let ActionTimeHasteScalar = 1.5f
         let BurndownTime = 3000.0f
         let AffinityResistanceScalar = 0.75f

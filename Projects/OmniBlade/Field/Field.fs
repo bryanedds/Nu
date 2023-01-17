@@ -135,11 +135,12 @@ module Field =
                         let bounds = box3 position size
                         let characterIndex = AllyIndex teamIndex
                         let characterType = characterData.CharacterType
-                        let characterState = CharacterState.make characterData teammate.HitPoints teammate.TechPoints teammate.ExpPoints teammate.WeaponOpt teammate.ArmorOpt teammate.Accessories
+                        let boss = characterData.Boss
                         let animationSheet = characterData.AnimationSheet
                         let direction = Direction.ofVector3 -bounds.Bottom
                         let actionTime = 1000.0f - Constants.Battle.AllyActionTimeSpacing * single index
-                        let character = Character.make bounds characterIndex characterType characterState animationSheet celSize direction None actionTime
+                        let characterState = CharacterState.make characterData teammate.HitPoints teammate.TechPoints teammate.ExpPoints teammate.WeaponOpt teammate.ArmorOpt teammate.Accessories
+                        let character = Character.make bounds characterIndex characterType boss animationSheet celSize direction characterState None actionTime
                         character
                     | None -> failwith ("Could not find CharacterData for '" + scstring teammate.CharacterType + "'."))
                 party
