@@ -1074,24 +1074,20 @@ module WorldModule2 =
 
                                                             // process rendering
                                                             let rendererProcess = World.getRendererProcess world
-
-                                                            // swap
                                                             if not firstFrame then rendererProcess.Swap ()
-
-                                                            // avoid updating faster than desired FPS
-                                                            if FrameTimer.IsRunning then
-                                                                while let e = FrameTimer.Elapsed in e.TotalMilliseconds < Constants.Engine.DesiredFrameTimeMinimum do
-                                                                    Thread.Yield () |> ignore<bool>
-                                                            FrameTimer.Reset ()
-                                                            FrameTimer.Start ()
-
-                                                            // submit messages
                                                             rendererProcess.SubmitMessages
                                                                 (World.getEyeCenter3d world)
                                                                 (World.getEyeRotation3d world)
                                                                 (World.getEyeCenter2d world)
                                                                 (World.getEyeSize2d world)
                                                                 (World.getWindowSize world)
+
+                                                            // avoid updating faster than desired FPS
+                                                            if FrameTimer.IsRunning then
+                                                                while let e = FrameTimer.Elapsed in e.TotalMilliseconds < 33.3333333 do
+                                                                    Thread.Yield () |> ignore<bool>
+                                                            FrameTimer.Reset ()
+                                                            FrameTimer.Start ()
 
                                                             // update counters and recur
                                                             TotalTimer.Stop ()
