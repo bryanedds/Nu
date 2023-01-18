@@ -4,6 +4,7 @@
 namespace Nu
 open System
 open System.Collections.Generic
+open System.Diagnostics
 open System.Numerics
 open System.Threading
 open System.Threading.Tasks
@@ -32,6 +33,7 @@ type RendererInline (createRenderer3d, createRenderer2d) =
     let mutable messages3d = List ()
     let mutable messages2d = List ()
     let mutable renderersOpt = Option<Renderer3d * Renderer2d>.None
+    let mutable stopWatch = Stopwatch ()
 
     interface RendererProcess with
 
@@ -75,7 +77,18 @@ type RendererInline (createRenderer3d, createRenderer2d) =
 
         member this.Swap () =
             match renderersOpt with
-            | Some (_, renderer2d) -> renderer2d.Swap ()
+            | Some (_, renderer2d) ->
+
+                // swap
+                renderer2d.Swap ()
+
+                // avoid updating faster than desired FPS
+                if stopWatch.IsRunning then
+                    while let e = stopWatch.Elapsed in e.TotalMilliseconds < Constants.Engine.DesiredFrameTimeMinimum do
+                        Thread.Yield () |> ignore<bool>
+                stopWatch.Reset ()
+                stopWatch.Start ()
+
             | None -> raise (InvalidOperationException "Renderers are not yet or are no longer valid.")
 
         member this.Terminate () =
@@ -95,6 +108,7 @@ type RendererThread (createRenderer3d, createRenderer2d) =
     let [<VolatileField>] mutable terminated = false
     let [<VolatileField>] mutable submissionOpt = Option<RenderMessage3d List * RenderMessage2d List * Vector3 * Quaternion * Vector2 * Vector2 * Vector2i>.None
     let [<VolatileField>] mutable swap = false
+    let mutable stopWatch = Stopwatch ()
     let mutable messageBufferIndex = 0
     let messageBuffers3d = [|List (); List ()|]
     let messageBuffers2d = [|List (); List ()|]
@@ -170,7 +184,7 @@ type RendererThread (createRenderer3d, createRenderer2d) =
             // guard against early termination
             if not terminated then
 
-                // receive submission
+                // receie submission
                 let (messages3d, messages2d, eyeCenter3d, eyeRotation3d, eyeCenter2d, eyeSize2d, windowSize) = Option.get submissionOpt
                 submissionOpt <- None
 
@@ -194,6 +208,13 @@ type RendererThread (createRenderer3d, createRenderer2d) =
 
                     // swap
                     renderer2d.Swap ()
+
+                    // avoid updating faster than desired FPS
+                    if stopWatch.IsRunning then
+                        while let e = stopWatch.Elapsed in e.TotalMilliseconds < Constants.Engine.DesiredFrameTimeMinimum do
+                            Thread.Yield () |> ignore<bool>
+                    stopWatch.Reset ()
+                    stopWatch.Start ()
 
                     // complete swap request
                     swap <- false
