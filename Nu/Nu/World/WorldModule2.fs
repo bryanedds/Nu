@@ -4,7 +4,6 @@
 namespace Nu
 open System
 open System.Collections.Generic
-open System.Diagnostics
 open System.IO
 open System.Numerics
 open SDL2
@@ -14,8 +13,6 @@ open Nu.Declarative
 
 [<AutoOpen; ModuleBinding>]
 module WorldModule2 =
-
-    let mutable private stopWatch = Stopwatch ()
 
     (* Performance Timers *)
     let private TotalTimer = Diagnostics.Stopwatch ()
@@ -1000,13 +997,6 @@ module WorldModule2 =
         /// Run the game engine with threading with the given handlers, but don't clean up at the end, and return the world.
         static member runWithoutCleanUp runWhile preProcess perProcess postProcess (sdlDeps : SdlDeps) liveness firstFrame world =
 
-            // avoid updating faster than desired FPS
-            if stopWatch.IsRunning then
-                while stopWatch.ElapsedMilliseconds < Constants.Engine.DesiredFrameTimeMinimum do
-                    Threading.Thread.Yield () |> ignore<bool>
-            stopWatch.Reset ()
-            stopWatch.Start ()
-
             // run loop
             TotalTimer.Start ()
             if runWhile world then
@@ -1079,6 +1069,7 @@ module WorldModule2 =
 
                                                             // process rendering
                                                             let rendererProcess = World.getRendererProcess world
+
                                                             if not firstFrame then rendererProcess.Swap ()
                                                             rendererProcess.SubmitMessages
                                                                 (World.getEyeCenter3d world)
