@@ -12,12 +12,7 @@
   </data>
  </layer>
  <objectgroup id="3" name="Props">
-  <object id="2" gid="235" x="672" y="768" width="48" height="48">
-   <properties>
-    <property name="I" value="[ChestSpawn]"/>
-   </properties>
-  </object>
-  <object id="3" gid="235" x="816" y="768" width="48" height="48">
+  <object id="2" gid="235" x="744" y="768" width="48" height="48">
    <properties>
     <property name="I" value="[ChestSpawn]"/>
    </properties>
