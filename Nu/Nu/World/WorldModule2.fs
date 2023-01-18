@@ -4,8 +4,10 @@
 namespace Nu
 open System
 open System.Collections.Generic
+open System.Diagnostics
 open System.IO
 open System.Numerics
+open System.Threading
 open SDL2
 open Prime
 open Nu
@@ -14,33 +16,36 @@ open Nu.Declarative
 [<AutoOpen; ModuleBinding>]
 module WorldModule2 =
 
+    (* Frame Pacing Timer *)
+    let private FrameTimer = Stopwatch ()
+
     (* Performance Timers *)
-    let private TotalTimer = Diagnostics.Stopwatch ()
-    let private InputTimer = Diagnostics.Stopwatch ()
-    let private PhysicsTimer = Diagnostics.Stopwatch ()
-    let private UpdateTimer = Diagnostics.Stopwatch ()
-    let private UpdateGatherTimer = Diagnostics.Stopwatch ()
-    let private UpdateGameTimer = Diagnostics.Stopwatch ()
-    let private UpdateScreensTimer = Diagnostics.Stopwatch ()
-    let private UpdateGroupsTimer = Diagnostics.Stopwatch ()
-    let private UpdateEntitiesTimer = Diagnostics.Stopwatch ()
-    let private PostUpdateTimer = Diagnostics.Stopwatch ()
-    let private PostUpdateGatherTimer = Diagnostics.Stopwatch ()
-    let private PostUpdateGameTimer = Diagnostics.Stopwatch ()
-    let private PostUpdateScreensTimer = Diagnostics.Stopwatch ()
-    let private PostUpdateGroupsTimer = Diagnostics.Stopwatch ()
+    let private TotalTimer = Stopwatch ()
+    let private InputTimer = Stopwatch ()
+    let private PhysicsTimer = Stopwatch ()
+    let private UpdateTimer = Stopwatch ()
+    let private UpdateGatherTimer = Stopwatch ()
+    let private UpdateGameTimer = Stopwatch ()
+    let private UpdateScreensTimer = Stopwatch ()
+    let private UpdateGroupsTimer = Stopwatch ()
+    let private UpdateEntitiesTimer = Stopwatch ()
+    let private PostUpdateTimer = Stopwatch ()
+    let private PostUpdateGatherTimer = Stopwatch ()
+    let private PostUpdateGameTimer = Stopwatch ()
+    let private PostUpdateScreensTimer = Stopwatch ()
+    let private PostUpdateGroupsTimer = Stopwatch ()
 #if !DISABLE_ENTITY_POST_UPDATE
-    let private PostUpdateEntitiesTimer = Diagnostics.Stopwatch ()
+    let private PostUpdateEntitiesTimer = Stopwatch ()
 #endif
-    let private TaskletsTimer = Diagnostics.Stopwatch ()
-    let private DestructionTimer = Diagnostics.Stopwatch ()
-    let private PerProcessTimer = Diagnostics.Stopwatch ()
-    let private PreProcessTimer = Diagnostics.Stopwatch ()
-    let private PostProcessTimer = Diagnostics.Stopwatch ()
-    let private RenderGatherTimer = Diagnostics.Stopwatch ()
-    let private RenderEntitiesTimer = Diagnostics.Stopwatch ()
-    let private RenderTimer = Diagnostics.Stopwatch ()
-    let private AudioTimer = Diagnostics.Stopwatch ()
+    let private TaskletsTimer = Stopwatch ()
+    let private DestructionTimer = Stopwatch ()
+    let private PerProcessTimer = Stopwatch ()
+    let private PreProcessTimer = Stopwatch ()
+    let private PostProcessTimer = Stopwatch ()
+    let private RenderGatherTimer = Stopwatch ()
+    let private RenderEntitiesTimer = Stopwatch ()
+    let private RenderTimer = Stopwatch ()
+    let private AudioTimer = Stopwatch ()
 
     (* Transition Values *)
     let private ScreenTransitionMouseLeftId = Gen.id
@@ -1070,7 +1075,17 @@ module WorldModule2 =
                                                             // process rendering
                                                             let rendererProcess = World.getRendererProcess world
 
+                                                            // swap
                                                             if not firstFrame then rendererProcess.Swap ()
+
+                                                            // avoid updating faster than desired FPS
+                                                            if FrameTimer.IsRunning then
+                                                                while let e = FrameTimer.Elapsed in e.TotalMilliseconds < Constants.Engine.DesiredFrameTimeMinimum do
+                                                                    Thread.Yield () |> ignore<bool>
+                                                            FrameTimer.Reset ()
+                                                            FrameTimer.Start ()
+
+                                                            // submit messages
                                                             rendererProcess.SubmitMessages
                                                                 (World.getEyeCenter3d world)
                                                                 (World.getEyeRotation3d world)
