@@ -552,12 +552,10 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                 let albedoMetadata = surface.SurfaceMaterial.AlbedoMetadata
                 let texelWidth = albedoMetadata.TextureTexelWidth
                 let texelHeight = albedoMetadata.TextureTexelHeight
-                let borderWidth = texelWidth * Constants.Render.TcoBorderTexelScalar
-                let borderHeight = texelHeight * Constants.Render.TcoBorderTexelScalar
-                let px = inset.Min.X * texelWidth + borderWidth
-                let py = (inset.Min.Y + inset.Size.Y) * texelHeight - borderHeight
-                let sx = inset.Size.X * texelWidth - borderWidth * 2.0f
-                let sy = -inset.Size.Y * texelHeight + borderHeight * 2.0f
+                let px = inset.Min.X * texelWidth
+                let py = (inset.Min.Y + inset.Size.Y) * texelHeight
+                let sx = inset.Size.X * texelWidth
+                let sy = -inset.Size.Y * texelHeight
                 Box2 (px, py, sx, sy)
             | ValueNone -> box2 v2Zero v2Zero
         match renderType with
