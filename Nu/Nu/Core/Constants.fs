@@ -110,7 +110,6 @@ module Render =
     let [<Literal>] IrradianceMapResolution = 32
     let [<Literal>] EnvironmentFilterResolution = 128
     let [<Literal>] EnvironmentFilterMips = 5 // NOTE: changing this requires changing the REFLECTION_LOD_MAX constants in shader code.
-    let [<Literal>] TcoBorderTexelScalar = 0.01f // NOTE: I don't know if this really does anything in practice. Need to test more.
 
 [<RequireQualifiedAccess>]
 module Assimp =

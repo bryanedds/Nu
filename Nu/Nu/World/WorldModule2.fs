@@ -1072,21 +1072,23 @@ module WorldModule2 =
                                                                 else world
                                                             AudioTimer.Stop ()
 
-                                                            // process rendering
+                                                            // process rendering (1/2)
                                                             let rendererProcess = World.getRendererProcess world
                                                             if not firstFrame then rendererProcess.Swap ()
+
+                                                            // avoid updating faster than desired FPS
+                                                            if FrameTimer.IsRunning then
+                                                                while let e = FrameTimer.Elapsed in e.TotalMilliseconds < 33.33333 do
+                                                                    Thread.Yield () |> ignore<bool>
+                                                            FrameTimer.Restart()
+
+                                                            // process rendering (2/2)
                                                             rendererProcess.SubmitMessages
                                                                 (World.getEyeCenter3d world)
                                                                 (World.getEyeRotation3d world)
                                                                 (World.getEyeCenter2d world)
                                                                 (World.getEyeSize2d world)
                                                                 (World.getWindowSize world)
-
-                                                            // avoid updating faster than desired FPS
-                                                            if FrameTimer.IsRunning then
-                                                                while let e = FrameTimer.Elapsed in e.TotalMilliseconds < Constants.Engine.DesiredFrameTimeMinimum do
-                                                                    Thread.Yield () |> ignore<bool>
-                                                            FrameTimer.Restart()
 
                                                             // update counters and recur
                                                             TotalTimer.Stop ()
