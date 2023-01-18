@@ -4,9 +4,9 @@
 namespace Nu
 open System
 open System.Collections.Generic
+open System.Diagnostics
 open System.IO
 open System.Numerics
-open System.Threading
 open SDL2
 open Prime
 open Nu
@@ -15,7 +15,7 @@ open Nu.Declarative
 [<AutoOpen; ModuleBinding>]
 module WorldModule2 =
 
-    let mutable private lastUpdateTimeOpt = None
+    let mutable private stopWatch = Stopwatch ()
 
     (* Performance Timers *)
     let private TotalTimer = Diagnostics.Stopwatch ()
@@ -1002,20 +1002,15 @@ module WorldModule2 =
 
             // avoid updating faster than desired FPS
             let shouldUpdate =
-                match lastUpdateTimeOpt with
-                | Some lastUpdate ->
-                    let now = DateTimeOffset.UtcNow
-                    let currentUpdateTime = now.ToUnixTimeMilliseconds ()
-                    let delta = currentUpdateTime - lastUpdate
-                    if delta >= Constants.Engine.DesiredFrameTimeMinimum then
-                        lastUpdateTimeOpt <- Some currentUpdateTime
-                        true
-                    else false
-                | None ->
-                    let now = DateTimeOffset.UtcNow
-                    let currentUpdateTime = now.ToUnixTimeMilliseconds ()
-                    lastUpdateTimeOpt <- Some currentUpdateTime
-                    true
+                if stopWatch.IsRunning then
+                    stopWatch.Stop ()
+                    let ms = stopWatch.ElapsedMilliseconds
+                    ms >= Constants.Engine.DesiredFrameTimeMinimum
+                else true
+            stopWatch.Reset ()
+            stopWatch.Start ()
+            if not shouldUpdate then
+                Log.info "Skip"
 
             // run loop
             TotalTimer.Start ()
