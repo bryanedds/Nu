@@ -1001,67 +1001,62 @@ module WorldModule2 =
         static member runWithoutCleanUp runWhile preProcess perProcess postProcess (sdlDeps : SdlDeps) liveness firstFrame world =
 
             // avoid updating faster than desired FPS
-            let shouldUpdate =
-                if stopWatch.IsRunning then
-                    stopWatch.Stop ()
-                    let ms = stopWatch.ElapsedMilliseconds
-                    ms >= Constants.Engine.DesiredFrameTimeMinimum
-                else true
+            if stopWatch.IsRunning then
+                while stopWatch.ElapsedMilliseconds < Constants.Engine.DesiredFrameTimeMinimum do
+                    Threading.Thread.Yield () |> ignore<bool>
             stopWatch.Reset ()
             stopWatch.Start ()
-            if not shouldUpdate then
-                Log.info "Skip"
 
             // run loop
             TotalTimer.Start ()
             if runWhile world then
                 PreProcessTimer.Start ()
-                let world = if shouldUpdate then preProcess world else world
+                let world = preProcess world
                 PreProcessTimer.Stop ()
                 match liveness with
                 | Live ->                
-                    let world = if shouldUpdate then World.updateScreenTransition world else world
+                    let world = World.updateScreenTransition world
                     match World.getLiveness world with
                     | Live ->
                         InputTimer.Start ()
-                        let (liveness, world) = if shouldUpdate then World.processInput world else (Live, world)
+                        let (liveness, world) = World.processInput world
                         InputTimer.Stop ()
                         match liveness with
                         | Live ->
                             PhysicsTimer.Start ()
-                            let world = if shouldUpdate then World.processPhysics world else world
+                            let world = World.processPhysics world
                             PhysicsTimer.Stop ()
                             match World.getLiveness world with
                             | Live ->
                                 UpdateTimer.Start ()
-                                let world = if shouldUpdate then World.updateSimulants world else world
+                                let world = World.updateSimulants world
                                 UpdateTimer.Stop ()
                                 match World.getLiveness world with
                                 | Live ->
                                     PostUpdateTimer.Start ()
-                                    let world = if shouldUpdate then World.postUpdateSimulants world else world
+                                    let world = World.postUpdateSimulants world
                                     PostUpdateTimer.Stop ()
                                     match World.getLiveness world with
                                     | Live ->
                                         PerProcessTimer.Start ()
-                                        let world = if shouldUpdate then perProcess world else world
+                                        let world = perProcess world
                                         PerProcessTimer.Stop ()
                                         match World.getLiveness world with
                                         | Live ->
                                             TaskletsTimer.Start ()
-                                            if shouldUpdate then WorldModule.TaskletProcessingStarted <- true
-                                            let world = if shouldUpdate then World.processTasklets world else world
+                                            WorldModule.TaskletProcessingStarted <- true
+                                            let world = World.processTasklets world
                                             TaskletsTimer.Stop ()
                                             match World.getLiveness world with
                                             | Live ->
                                                 DestructionTimer.Start ()
-                                                let world = if shouldUpdate then World.destroySimulants world else world
+                                                let world = World.destroySimulants world
                                                 DestructionTimer.Stop ()
                                                 match World.getLiveness world with
                                                 | Live ->
                                                     PostProcessTimer.Start ()
-                                                    let world = if shouldUpdate then World.postProcess world else world
-                                                    let world = if shouldUpdate then postProcess world else world
+                                                    let world = World.postProcess world
+                                                    let world = postProcess world
                                                     PostProcessTimer.Stop ()
                                                     match World.getLiveness world with
                                                     | Live ->
@@ -1094,8 +1089,8 @@ module WorldModule2 =
 
                                                             // update counters and recur
                                                             TotalTimer.Stop ()
-                                                            let world = if shouldUpdate then World.updateTime world else world
-                                                            if shouldUpdate then WorldModule.TaskletProcessingStarted <- false
+                                                            let world = World.updateTime world
+                                                            WorldModule.TaskletProcessingStarted <- false
                                                             World.runWithoutCleanUp runWhile preProcess perProcess postProcess sdlDeps liveness false world
 
                                                         | Dead -> world
