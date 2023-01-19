@@ -264,7 +264,8 @@ module FieldDispatcher =
 
                 // advance spirits
                 let (signals : Signal list, field) =
-                    if  field.Menu.MenuState = MenuClosed &&
+                    if  world.Advancing &&
+                        field.Menu.MenuState = MenuClosed &&
                         Cue.notInterrupting field.Inventory field.Advents field.Cue &&
                         Option.isNone field.DialogOpt &&
                         Option.isNone field.BattleOpt &&
