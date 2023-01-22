@@ -88,7 +88,7 @@ type AffinityType =
     | Wind
     | Dark
     | Light
-    | Earth // nothing is weak to
+    | Earth // the neutral element
     | Metal // weak to self
     | Insect // weak to self
 
@@ -101,7 +101,6 @@ type AffinityType =
         | (Wind, Wind) -> Constants.Battle.AffinityResistanceScalar
         | (Dark, Dark) -> Constants.Battle.AffinityResistanceScalar
         | (Light, Light) -> Constants.Battle.AffinityResistanceScalar
-        | (Earth, Earth) -> Constants.Battle.AffinityResistanceScalar
         | (Metal, Metal) -> Constants.Battle.AffinityVulnerabilityScalar
         | (Insect, Insect) -> Constants.Battle.AffinityVulnerabilityScalar
         | (Fire, Ice) -> Constants.Battle.AffinityVulnerabilityScalar
@@ -113,7 +112,6 @@ type AffinityType =
         | (Wind, Water) -> Constants.Battle.AffinityVulnerabilityScalar
         | (Dark, Light) -> Constants.Battle.AffinityVulnerabilityScalar
         | (Light, Dark) -> Constants.Battle.AffinityVulnerabilityScalar
-        | (Metal, Earth) -> Constants.Battle.AffinityVulnerabilityScalar
         | (_, _) -> 1.0f
 
 type [<CustomEquality; CustomComparison>] StatusType =
