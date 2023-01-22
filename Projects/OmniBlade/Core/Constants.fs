@@ -59,6 +59,7 @@ module Constants =
         let PropsGroupName = "Props"
         let TransitionTime = 60L
         let RandMapSize = v2iDup 7
+        let RoomSize = v2iDup 32
 #if DEV
         let AvatarWalkForce = 60000.0f
         let AvatarWalkForceMouse = 66000.0f
