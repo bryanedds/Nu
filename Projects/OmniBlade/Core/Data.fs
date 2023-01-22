@@ -85,9 +85,9 @@ type AffinityType =
     | Ice
     | Lightning
     | Water
+    | Wind // weak to self
     | Metal // vulnerable to shadow
     | Earth // not resistant to self
-    | Wind // not resistant to self
     | Light // not resistant to self
     | Shadow // not resistant to self
 
@@ -101,15 +101,16 @@ type AffinityType =
         | (Water, Water) -> Constants.Battle.AffinityResistanceScalar
         | (Metal, Metal) -> Constants.Battle.AffinityResistanceScalar
 
-        // vulnerabilities
+        // self-vulnerable
+        | (Wind, Wind) -> Constants.Battle.AffinityVulnerabilityScalar
+
+        // vulnerable
         | (Fire, Ice) -> Constants.Battle.AffinityVulnerabilityScalar
         | (Fire, Earth) -> Constants.Battle.AffinityVulnerabilityScalar
         | (Ice, Fire) -> Constants.Battle.AffinityVulnerabilityScalar
         | (Lightning, Water) -> Constants.Battle.AffinityVulnerabilityScalar
         | (Lightning, Metal) -> Constants.Battle.AffinityVulnerabilityScalar
         | (Water, Lightning) -> Constants.Battle.AffinityVulnerabilityScalar
-        | (Earth, Wind) -> Constants.Battle.AffinityVulnerabilityScalar
-        | (Wind, Water) -> Constants.Battle.AffinityVulnerabilityScalar
         | (Light, Shadow) -> Constants.Battle.AffinityVulnerabilityScalar
         | (Shadow, Light) -> Constants.Battle.AffinityVulnerabilityScalar
         | (Shadow, Metal) -> Constants.Battle.AffinityVulnerabilityScalar
