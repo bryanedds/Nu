@@ -8,7 +8,7 @@ open Nu
 open TiledSharp
 open OmniBlade
 
-type OriginStatic =
+type Origin =
     | OriginC
     | OriginN
     | OriginE
@@ -19,34 +19,17 @@ type OriginStatic =
     | OriginSE
     | OriginSW
 
-type Origin =
-    | OriginStatic of OriginStatic
-    | OriginNorthern
-    | OriginEastern
-    | OriginSouthern
-    | OriginWestern
-    | OriginHorizontal
-    | OriginVertical
-    | OriginCardinal
-    | OriginDiagonal
-    | OriginCross
-    | OriginX
-    | OriginRandom
-
-    static member toOrigin originRand rand =
-        match originRand with
-        | OriginStatic origin -> (origin, rand)
-        | OriginNorthern -> Rand.nextItem [OriginNW; OriginN; OriginNE] rand
-        | OriginEastern -> (OriginE, rand)
-        | OriginSouthern -> Rand.nextItem [OriginSW; OriginS; OriginSE] rand
-        | OriginWestern -> (OriginW, rand)
-        | OriginHorizontal -> Rand.nextItem [OriginE; OriginW] rand
-        | OriginVertical -> Rand.nextItem [OriginN; OriginS] rand
-        | OriginCardinal -> Rand.nextItem [OriginN; OriginE; OriginS; OriginW] rand
-        | OriginDiagonal -> Rand.nextItem [OriginNE; OriginNW; OriginSE; OriginSW] rand
-        | OriginCross -> Rand.nextItem [OriginC; OriginN; OriginE; OriginS; OriginW] rand
-        | OriginX -> Rand.nextItem [OriginC; OriginNE; OriginNW; OriginSE; OriginSW] rand
-        | OriginRandom -> Rand.nextItem [OriginC; OriginN; OriginE; OriginS; OriginW; OriginNE; OriginNW; OriginSE; OriginSW] rand
+    static member approximatePosition (perimeter : Box2) origin =
+        match origin with
+        | OriginC -> perimeter.Center
+        | OriginN -> perimeter.Top
+        | OriginE -> perimeter.Right
+        | OriginS -> perimeter.Bottom
+        | OriginW -> perimeter.Left
+        | OriginNE -> perimeter.TopRight
+        | OriginNW -> perimeter.TopLeft
+        | OriginSE -> perimeter.BottomRight
+        | OriginSW -> perimeter.BottomLeft
 
 type Segment =
     | Segment0 = 0b000000

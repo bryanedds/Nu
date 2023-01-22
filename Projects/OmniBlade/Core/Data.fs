@@ -912,8 +912,8 @@ type [<NoComparison>] FieldData =
 [<RequireQualifiedAccess>]
 module FieldData =
 
-    let mutable tileMapsMemoized = Map.empty<uint64 * FieldType, Choice<TmxMap, TmxMap * TmxMap, TmxMap * OriginStatic>>
-    let mutable propObjectsMemoized = Map.empty<uint64 * FieldType, (TmxMap * TmxObjectGroup * TmxObject) list>
+    let mutable tileMapsMemoized = Map.empty<uint64 * FieldType, Choice<TmxMap, TmxMap * TmxMap, TmxMap * Origin>>
+    let mutable propObjectsMemoized = Map.empty<uint64 * FieldType, TmxMap * (TmxObjectGroup * TmxObject) list * Origin option>
     let mutable propDescriptorsMemoized = Map.empty<uint64 * FieldType, PropDescriptor list>
 
     let objectToPropOpt (object : TmxObject) (group : TmxObjectGroup) (tileMap : TmxMap) =
@@ -930,22 +930,6 @@ module FieldData =
             Some { PropPerimeter = propPerimeter; PropElevation = propElevation; PropData = propData; PropId = object.Id }
         | (false, _) -> None
 
-    let inflateProp prop (treasures : ItemType FStack) rand =
-        match prop.PropData with
-        | ChestSpawn ->
-            let (probability, rand) = Rand.nextSingleUnder 1.0f rand
-            if probability < Constants.Field.TreasureProbability then
-                let (treasure, treasures, rand) =
-                    if FStack.notEmpty treasures then
-                        let (index, rand) = Rand.nextIntUnder (FStack.length treasures) rand
-                        (FStack.index index treasures, FStack.removeAt index treasures, rand)
-                    else (Consumable GreenHerb, treasures, rand)
-                let (id, rand) = let (i, rand) = Rand.nextInt rand in let (j, rand) = Rand.nextInt rand in (Gen.idFromInts i j, rand)
-                let prop = { prop with PropData = Chest (WoodenChest, treasure, id, None, Cue.Fin, Set.empty) }
-                (prop, treasures, rand)
-            else ({ prop with PropData = EmptyProp }, treasures, rand)
-        | _ -> (prop, treasures, rand)
-
     let tryGetTileMap omniSeedState fieldData =
         let rotatedSeedState = OmniSeedState.rotate fieldData.FieldType omniSeedState
         let memoKey = (rotatedSeedState, fieldData.FieldType)
@@ -961,13 +945,12 @@ module FieldData =
                     match (Metadata.tryGetTileMapMetadata fieldAsset, Metadata.tryGetTileMapMetadata fieldFadeAsset) with
                     | (Some (_, _, tileMap), Some (_, _, tileMapFade)) -> Some (Choice2Of3 (tileMap, tileMapFade))
                     | (_, _) -> None
-                | FieldRandom (walkLength, bias, originRand, floor, fieldPath) ->
+                | FieldRandom (walkLength, bias, origin, floor, fieldPath) ->
                     let rand = Rand.makeFromSeedState rotatedSeedState
-                    let (origin, rand) = Origin.toOrigin originRand rand
                     let (cursor, randMap, _) = RandMap.makeFromRand walkLength bias Constants.Field.RandMapSize origin floor rand
                     let fieldName = FieldType.toFieldName fieldData.FieldType
-                    let mapTmx = RandMap.toTmx fieldName fieldPath origin cursor floor fieldData.UseWindPortal randMap
-                    Some (Choice3Of3 (mapTmx, origin))
+                    let tileMap = RandMap.toTmx fieldName fieldPath origin cursor floor fieldData.UseWindPortal randMap
+                    Some (Choice3Of3 (tileMap, origin))
             match tileMapOpt with
             | Some tileMapChc -> tileMapsMemoized <- Map.add memoKey tileMapChc tileMapsMemoized
             | None -> ()
@@ -979,21 +962,32 @@ module FieldData =
         let memoKey = (rotatedSeedState, fieldData.FieldType)
         match Map.tryFind memoKey propObjectsMemoized with
         | None ->
-            let propObjects =
+            let result =
                 match tryGetTileMap omniSeedState fieldData with
                 | Some tileMapChc ->
                     match tileMapChc with
-                    | Choice1Of3 tileMap
-                    | Choice2Of3 (tileMap, _)
-                    | Choice3Of3 (tileMap, _) ->
+                    | Choice1Of3 tileMap ->
                         if tileMap.ObjectGroups.Contains Constants.Field.PropsGroupName then
                             let group = tileMap.ObjectGroups.Item Constants.Field.PropsGroupName
-                            enumerable<TmxObject> group.Objects |> Seq.map (fun propObject -> (tileMap, group, propObject)) |> Seq.toList
-                        else []
-                | None -> []
-            propObjectsMemoized <- Map.add memoKey propObjects propObjectsMemoized
-            propObjects
-        | Some propObjects -> propObjects
+                            let propObjects = enumerable<TmxObject> group.Objects |> Seq.map (fun propObject -> (group, propObject)) |> Seq.toList
+                            (tileMap, propObjects, None)
+                        else (tileMap, [], None)
+                    | Choice2Of3 (tileMap, _) ->
+                        if tileMap.ObjectGroups.Contains Constants.Field.PropsGroupName then
+                            let group = tileMap.ObjectGroups.Item Constants.Field.PropsGroupName
+                            let propObjects = enumerable<TmxObject> group.Objects |> Seq.map (fun propObject -> (group, propObject)) |> Seq.toList
+                            (tileMap, propObjects, None)
+                        else (tileMap, [], None)
+                    | Choice3Of3 (tileMap, origin) ->
+                        if tileMap.ObjectGroups.Contains Constants.Field.PropsGroupName then
+                            let group = tileMap.ObjectGroups.Item Constants.Field.PropsGroupName
+                            let propObjects = enumerable<TmxObject> group.Objects |> Seq.map (fun propObject -> (group, propObject)) |> Seq.toList
+                            (tileMap, propObjects, Some origin)
+                        else (tileMap, [], None)
+                | None -> (TmxMap.makeDefault (), [], None)
+            propObjectsMemoized <- Map.add memoKey result propObjectsMemoized
+            result
+        | Some result -> result
 
     let getPropDescriptors omniSeedState fieldData =
         let rotatedSeedState = OmniSeedState.rotate fieldData.FieldType omniSeedState
@@ -1001,16 +995,57 @@ module FieldData =
         match Map.tryFind memoKey propDescriptorsMemoized with
         | None ->
             let rand = Rand.makeFromSeedState rotatedSeedState
-            let propObjects = getPropObjects omniSeedState fieldData
-            let propsUninflated = List.choose (fun (tileMap, group, object) -> objectToPropOpt object group tileMap) propObjects
-            let (propsRandomized, rand) = Rand.nextPermutation propsUninflated rand
-            let (propDescriptors, _, _) =
-                List.foldBack (fun prop (propDescriptors, treasures, rand) ->
-                    let (propDescriptor, treasures, rand) = inflateProp prop treasures rand
-                    let treasures = if FStack.isEmpty treasures then FStack.ofSeq fieldData.Treasures else treasures
-                    (propDescriptor :: propDescriptors, treasures, rand))
-                    propsRandomized
-                    ([], FStack.ofSeq fieldData.Treasures, rand)
+            let (tileMap, propObjects, originOpt) = getPropObjects omniSeedState fieldData
+            let props = List.choose (fun (group, object) -> objectToPropOpt object group tileMap) propObjects
+            let (chestSpawnsUnsorted, nonChestSpawns) = List.split (fun prop -> match prop.PropData with ChestSpawn -> true | _ -> false) props
+            let chestSpawns =
+                match originOpt with
+                | Some origin ->
+                    let mapSize =
+                        v2 // TODO: implement TotalWidth and TotalHeight extension properties for TmxMap.
+                            (single (tileMap.Width * tileMap.TileWidth))
+                            (single (tileMap.Height * tileMap.TileHeight))
+                    let mapPerimeter = box2 v2Zero mapSize
+                    let originPosition = Origin.approximatePosition mapPerimeter origin
+                    chestSpawnsUnsorted |>
+                    List.map (fun chestSpawn -> (Vector2.DistanceSquared (chestSpawn.PropPerimeter.Center.V2, originPosition), chestSpawn)) |>
+                    List.sortBy fst |>
+                    List.map snd
+                | None -> chestSpawnsUnsorted
+            let treasuresRepeat = match fieldData.Treasures.Length with 0 -> 0 | treasureCount -> inc (chestSpawnsUnsorted.Length / treasureCount)
+            let treasuresIndexed = fieldData.Treasures |> List.rev |> List.indexed
+            let treasures =
+                Seq.init treasuresRepeat (constant treasuresIndexed) |>
+                Seq.concat |>
+                Seq.take chestSpawns.Length |>
+                Seq.sortBy fst |>
+                Seq.map snd |>
+                Seq.toList
+            let (chestSpawneds, _) =
+                List.foldBack2 (fun chestSpawn treasure (chestSpawneds, rand) ->
+                    let (probability, rand) = Rand.nextSingleUnder 1.0f rand
+                    if probability < Constants.Field.TreasureProbability then
+                        let (id, rand) = let (i, rand) = Rand.nextInt rand in let (j, rand) = Rand.nextInt rand in (Gen.idFromInts i j, rand)
+                        let chestSpawned = { chestSpawn with PropData = Chest (WoodenChest, treasure, id, None, Cue.Fin, Set.empty) }
+#if DEV
+                        let mapSize =
+                            v2 // TODO: implement TotalWidth and TotalHeight extension properties for TmxMap.
+                                (single (tileMap.Width * tileMap.TileWidth))
+                                (single (tileMap.Height * tileMap.TileHeight))
+                        let mapPerimeter = box2 v2Zero mapSize
+                        match originOpt with
+                        | Some origin ->
+                            let originPosition = Origin.approximatePosition mapPerimeter origin
+                            let distance = Vector2.Distance (chestSpawned.PropPerimeter.Center.V2, originPosition)
+                            printfn "%A:%A" distance (scstring chestSpawned.PropData)
+                        | None -> ()
+#endif
+                        (chestSpawned :: chestSpawneds, rand)
+                    else (chestSpawneds, rand))
+                    chestSpawns
+                    treasures
+                    ([], rand)
+            let propDescriptors = chestSpawneds @ nonChestSpawns
             propDescriptorsMemoized <- Map.add memoKey propDescriptors propDescriptorsMemoized
             propDescriptors
         | Some propDescriptors -> propDescriptors
