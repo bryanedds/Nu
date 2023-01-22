@@ -936,12 +936,9 @@ module FieldDispatcher =
                                     "\nDef " + (string teammate.Defense).PadLeft 3 +    "   Abs " + (string teammate.Absorb).PadLeft 3 +
                                     "\nExp " + (string teammate.ExpPoints).PadLeft 3 +  " / " + string (Algorithms.expPointsForNextLevel teammate.ExpPoints)
                                 | None -> ""]
-                         match MenuTeam.tryGetTeammate field.Team menuTeam with
-                         | Some teammate when teammate.CharacterType = Ally Jinn ->
-                            Content.text "Gold"
-                                [Entity.PositionLocal == v3 444.0f 5.0f 0.0f; Entity.ElevationLocal == 1.0f
-                                 Entity.Text := string field.Inventory.Gold + "G"]
-                         | Some _ | None -> ()]
+                         Content.text "Gold"
+                            [Entity.PositionLocal == v3 444.0f 5.0f 0.0f; Entity.ElevationLocal == 1.0f
+                             Entity.Text := string field.Inventory.Gold + "G"]]
 
                  // inventory
                  | MenuInventory _ ->
