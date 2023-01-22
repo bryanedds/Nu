@@ -1125,7 +1125,7 @@ module BattleDispatcher =
                     Content.entity<CharacterDispatcher> (CharacterIndex.toEntityName index) [Entity.Character := character]
 
                  // hud
-                 for (index, ally) in (Battle.getAlliesHealthy battle).Pairs do
+                 for (index, character) in (Battle.getCharactersHealthy battle).Pairs do
 
                     // bars
                     Content.composite (CharacterIndex.toEntityName index + "+Hud") []
@@ -1134,19 +1134,24 @@ module BattleDispatcher =
                          Content.fillBar "HealthBar"
                             [Entity.MountOpt == None
                              Entity.Size == v3 48.0f 6.0f 0.0f
-                             Entity.Center := ally.BottomOffset
+                             Entity.Center := character.BottomOffset
                              Entity.Elevation == Constants.Battle.GuiElevation
-                             Entity.Fill := single ally.HitPoints / single ally.HitPointsMax
-                             Entity.FillColor := if ally.Statuses.ContainsKey Poison then Color.LawnGreen.WithA 0.75f else Color.Red.WithA 0.75f]
+                             Entity.Fill := single character.HitPoints / single character.HitPointsMax
+                             Entity.FillColor := if character.Statuses.ContainsKey Poison then Color.LawnGreen.WithA 0.6f else Color.Red.WithA 0.6f
+                             Entity.BorderImage == Assets.Battle.HealthBorderImage
+                             Entity.BorderColor == Color.White]
 
                          // tech bar
-                         Content.fillBar "TechBar"
-                            [Entity.MountOpt == None
-                             Entity.Size == v3 48.0f 6.0f 0.0f
-                             Entity.Center := ally.BottomOffset2
-                             Entity.Elevation == Constants.Battle.GuiElevation
-                             Entity.Fill := single ally.TechPoints / single ally.TechPointsMax
-                             Entity.FillColor == Color (byte 74, byte 91, byte 169, byte 191)]]]
+                         if character.IsAlly then
+                            Content.fillBar "TechBar"
+                               [Entity.MountOpt == None
+                                Entity.Size == v3 48.0f 6.0f 0.0f
+                                Entity.Center := character.BottomOffset2
+                                Entity.Elevation == Constants.Battle.GuiElevation
+                                Entity.Fill := single character.TechPoints / single character.TechPointsMax
+                                Entity.FillColor == (color8 (byte 74) (byte 91) (byte 169) (byte 255)).WithA 0.6f
+                                Entity.BorderImage == Assets.Battle.TechBorderImage
+                                Entity.BorderColor == Color.White]]]
 
              // inputs condition
              if battle.Running then
@@ -1155,7 +1160,7 @@ module BattleDispatcher =
                 Content.group Simulants.BattleInputs.Name []
 
                     [// inputs
-                     for (index, ally) in (Battle.getAlliesHealthy battle).Pairs do
+                     for (index, ally) in (Battle.getCharactersHealthy battle).Pairs do
 
                         // input
                         Content.composite (CharacterIndex.toEntityName index + "+Input") []

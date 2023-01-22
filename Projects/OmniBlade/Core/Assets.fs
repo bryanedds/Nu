@@ -148,6 +148,8 @@ module Assets =
     module Battle =
 
         let PackageName = "Battle"
+        let HealthBorderImage = asset<Image> PackageName "HealthBorder"
+        let TechBorderImage = asset<Image> PackageName "TechBorder"
         let CancelImage = asset<Image> PackageName "Cancel"
         let BoltAnimationSheet = asset<Image> PackageName "Bolt" // TODO: P1: Convert art.
         let CycloneBlurAnimationSheet = asset<Image> PackageName "CycloneBlur"
