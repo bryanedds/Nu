@@ -62,7 +62,7 @@ Travel together... $FEE gold...?&quot; [&quot;Yes&quot; [Recruit Riain]] [&quot;
   </object>
   <object id="12" gid="443" x="1056" y="624" width="144" height="144">
    <properties>
-    <property name="I" value="[Npc ShadeNpc None [Prompt &quot;We can combine our efforts... for $FEE gold...?&quot; [&quot;Yes&quot; [Recruit Shade]] [&quot;No&quot; Fin]]]"/>
+    <property name="I" value="[Npc ShadeNpc None [Prompt &quot;My shadow technique can cut through metal... But it will cost you $FEE gold...&quot; [&quot;Yes&quot; [Recruit Shade]] [&quot;No&quot; Fin]]]"/>
    </properties>
   </object>
   <object id="13" gid="443" x="3168" y="3408" width="144" height="144">
