@@ -85,33 +85,36 @@ type AffinityType =
     | Ice
     | Lightning
     | Water
-    | Wind
-    | Dark
-    | Light
-    | Earth // the neutral element
-    | Metal // weak to self
-    | Insect // weak to self
+    | Metal // vulnerable to shadow
+    | Earth // not resistant to self
+    | Wind // not resistant to self
+    | Light // not resistant to self
+    | Shadow // not resistant to self
 
     static member getScalar source target =
         match (source, target) with
+
+        // self-resist
         | (Fire, Fire) -> Constants.Battle.AffinityResistanceScalar
         | (Ice, Ice) -> Constants.Battle.AffinityResistanceScalar
         | (Lightning, Lightning) -> Constants.Battle.AffinityResistanceScalar
         | (Water, Water) -> Constants.Battle.AffinityResistanceScalar
-        | (Wind, Wind) -> Constants.Battle.AffinityResistanceScalar
-        | (Dark, Dark) -> Constants.Battle.AffinityResistanceScalar
-        | (Light, Light) -> Constants.Battle.AffinityResistanceScalar
-        | (Metal, Metal) -> Constants.Battle.AffinityVulnerabilityScalar
-        | (Insect, Insect) -> Constants.Battle.AffinityVulnerabilityScalar
+        | (Metal, Metal) -> Constants.Battle.AffinityResistanceScalar
+
+        // vulnerabilities
         | (Fire, Ice) -> Constants.Battle.AffinityVulnerabilityScalar
+        | (Fire, Earth) -> Constants.Battle.AffinityVulnerabilityScalar
         | (Ice, Fire) -> Constants.Battle.AffinityVulnerabilityScalar
-        | (Ice, Insect) -> Constants.Battle.AffinityVulnerabilityScalar
         | (Lightning, Water) -> Constants.Battle.AffinityVulnerabilityScalar
         | (Lightning, Metal) -> Constants.Battle.AffinityVulnerabilityScalar
         | (Water, Lightning) -> Constants.Battle.AffinityVulnerabilityScalar
+        | (Earth, Wind) -> Constants.Battle.AffinityVulnerabilityScalar
         | (Wind, Water) -> Constants.Battle.AffinityVulnerabilityScalar
-        | (Dark, Light) -> Constants.Battle.AffinityVulnerabilityScalar
-        | (Light, Dark) -> Constants.Battle.AffinityVulnerabilityScalar
+        | (Light, Shadow) -> Constants.Battle.AffinityVulnerabilityScalar
+        | (Shadow, Light) -> Constants.Battle.AffinityVulnerabilityScalar
+        | (Shadow, Metal) -> Constants.Battle.AffinityVulnerabilityScalar
+
+        // neutral
         | (_, _) -> 1.0f
 
 type [<CustomEquality; CustomComparison>] StatusType =
@@ -267,7 +270,10 @@ type ArchetypeType =
     | Willowisp
     | Chillowisp
     | Fairy
-    | Gel
+    | FireGel
+    | WaterGel
+    | LightningGel
+    | EarthGel
     | Toad
     | Beetle
     | Rat
@@ -313,12 +319,12 @@ type ArchetypeType =
     | Gargoyle
     | MasterShaman
     | FireElemental
-    | IceElemental
+    | WaterElemental
     | LightningElemental
     | EarthElemental
     | Nightmare
     | Minotaur
-    | LittleDragon
+    | Wyvern
     | Ogre
     | PowerHydra
     | Lich
@@ -327,7 +333,8 @@ type ArchetypeType =
     | Deathbot
     | Dinoman
     | Arachnos
-    | Dragon
+    | FireDragon
+    | WaterDragon
 
 type ShopType =
     | Chemist
@@ -785,7 +792,7 @@ type [<NoComparison>] ArchetypeData =
       Absorb : single // absorb scalar
       Focus : single // tech points scalar
       Wealth : single // gold scalar
-      Mythos : single // exp scala
+      Mythos : single // exp scalar
       WeaponSubtype : WeaponSubtype
       ArmorSubtype : ArmorSubtype
       Techs : Map<int, TechType> // tech availability according to level
