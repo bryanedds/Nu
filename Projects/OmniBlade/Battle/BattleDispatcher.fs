@@ -1125,7 +1125,7 @@ module BattleDispatcher =
                     Content.entity<CharacterDispatcher> (CharacterIndex.toEntityName index) [Entity.Character := character]
 
                  // hud
-                 for (index, character) in (Battle.getCharactersHealthy battle).Pairs do
+                 for (index, character) in (Battle.getCharactersHudded battle).Pairs do
 
                     // bars
                     Content.composite (CharacterIndex.toEntityName index + "+Hud") []
@@ -1137,7 +1137,7 @@ module BattleDispatcher =
                              Entity.Center := character.BottomOffset
                              Entity.Elevation == Constants.Battle.GuiElevation
                              Entity.Fill := single character.HitPoints / single character.HitPointsMax
-                             Entity.FillColor := if character.Statuses.ContainsKey Poison then Color.LawnGreen.WithA 0.6f else Color.Red.WithA 0.6f
+                             Entity.FillColor := if character.Statuses.ContainsKey Poison then Color.LawnGreen.WithA 0.75f else Color.Red.WithA 0.75f
                              Entity.BorderImage == Assets.Battle.HealthBorderImage
                              Entity.BorderColor == Color.White]
 
@@ -1149,7 +1149,7 @@ module BattleDispatcher =
                                 Entity.Center := character.BottomOffset2
                                 Entity.Elevation == Constants.Battle.GuiElevation
                                 Entity.Fill := single character.TechPoints / single character.TechPointsMax
-                                Entity.FillColor == (color8 (byte 74) (byte 91) (byte 169) (byte 255)).WithA 0.6f
+                                Entity.FillColor == (color8 (byte 74) (byte 91) (byte 169) (byte 255)).WithA 0.75f
                                 Entity.BorderImage == Assets.Battle.TechBorderImage
                                 Entity.BorderColor == Color.White]]]
 
