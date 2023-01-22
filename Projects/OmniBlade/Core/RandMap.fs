@@ -234,9 +234,9 @@ type RandMap =
 
     static member tryAddSpecialRoomSouthFromNorthWest specialSegment map =
         let mutable bossRoomAdded = false
-        for i in 0 .. 7 - 1 do // starting from the north row
+        for i in 0 .. dec Constants.Field.RandMapSize.X do // starting from the north row
             if not bossRoomAdded then
-                for j in 0 .. 7 - 1 do // travel east
+                for j in 0 .. dec Constants.Field.RandMapSize.Y do // travel east
                     if not bossRoomAdded then
                         if  i > 0 &&
                             map.Segments.[i].[j] |> Segment.notEmpty &&
@@ -252,9 +252,9 @@ type RandMap =
 
     static member tryAddSpecialRoomSouthFromNorthEast specialSegment map =
         let mutable bossRoomAdded = false
-        for i in 0 .. 7 - 1 do // starting from the north row
+        for i in 0 .. dec Constants.Field.RandMapSize.X do // starting from the north row
             if not bossRoomAdded then
-                for j in 7 - 1 .. - 1 .. 0 do // travel west
+                for j in dec Constants.Field.RandMapSize.Y .. - 1 .. 0 do // travel west
                     if not bossRoomAdded then
                         if  i > 0 &&
                             map.Segments.[i].[j] |> Segment.notEmpty &&
@@ -270,11 +270,11 @@ type RandMap =
 
     static member tryAddSpecialRoomNorthFromSouthWest specialSegment map =
         let mutable bossRoomAdded = false
-        for i in 7 - 1 .. - 1 .. 0 do // starting from the south row
+        for i in dec Constants.Field.RandMapSize.X .. - 1 .. 0 do // starting from the south row
             if not bossRoomAdded then
-                for j in 0 .. 7 - 1 do // travel east
+                for j in 0 .. dec Constants.Field.RandMapSize.Y do // travel east
                     if not bossRoomAdded then
-                        if  i < dec 7 &&
+                        if  i < dec Constants.Field.RandMapSize.X &&
                             map.Segments.[i].[j] |> Segment.notEmpty &&
                             map.Segments.[i].[j] |> Segment.notSpecial &&
                             map.Segments.[inc i].[j] |> Segment.isEmpty then
@@ -288,11 +288,11 @@ type RandMap =
 
     static member tryAddSpecialRoomNorthFromSouthEast specialSegment map =
         let mutable bossRoomAdded = false
-        for i in 7 - 1 .. - 1 .. 0 do // starting from the south row
+        for i in dec Constants.Field.RandMapSize.X .. - 1 .. 0 do // starting from the south row
             if not bossRoomAdded then
-                for j in 7 - 1 .. - 1 .. 0 do // travel west
+                for j in dec Constants.Field.RandMapSize.Y .. - 1 .. 0 do // travel west
                     if not bossRoomAdded then
-                        if  i < dec 7 &&
+                        if  i < dec Constants.Field.RandMapSize.X &&
                             map.Segments.[i].[j] |> Segment.notEmpty &&
                             map.Segments.[i].[j] |> Segment.notSpecial &&
                             map.Segments.[inc i].[j] |> Segment.isEmpty then
@@ -388,8 +388,8 @@ type RandMap =
                 | OriginS ->    (7  * mapTmx.TileWidth, 0  * mapTmx.TileHeight, mapTmx.TileWidth * 18, mapTmx.TileHeight * 1,  "[Portal AirPortal [IX 0] Upward " + fieldName + "Connector [IX 0]]")
                 | OriginSE ->   (7  * mapTmx.TileWidth, 0  * mapTmx.TileHeight, mapTmx.TileWidth * 18, mapTmx.TileHeight * 1,  "[Portal AirPortal [IX 0] Upward " + fieldName + "Connector [IX 0]]")
                 | OriginSW ->   (7  * mapTmx.TileWidth, 0  * mapTmx.TileHeight, mapTmx.TileWidth * 18, mapTmx.TileHeight * 1,  "[Portal AirPortal [IX 0] Upward " + fieldName + "Connector [IX 0]]")
-            let openingXX = openingX + cursor.X * mapTmx.TileWidth * 32
-            let openingYY = openingY + inc cursor.Y * mapTmx.TileHeight * 32
+            let openingXX = openingX + cursor.X * mapTmx.TileWidth * Constants.Field.RoomSize.X
+            let openingYY = openingY + inc cursor.Y * mapTmx.TileHeight * Constants.Field.RoomSize.Y
             let object = TmxMap.makeObject entryId 0 (double openingXX) (double openingYY) (double openingWidth) (double openingHeight)
             object.Properties.Add ("I", openingInfo)
             objects.[0] <- object
@@ -399,8 +399,8 @@ type RandMap =
         let mutable propId = inc entryId
         let mutable stairsCreated = false
         let stairsInfo = "[Portal [StairsPortal True " + string useWindPortal + "] [IX 1] Upward [" + fieldName + " " + string (dec floor) + "] [IX 2]]"
-        for i in 0 .. 7 - 1 do
-            for j in 0 .. 7 - 1 do
+        for i in 0 .. dec Constants.Field.RandMapSize.X do
+            for j in 0 .. dec Constants.Field.RandMapSize.Y do
                 match RandMap.getSegmentOpt map.Segments.[j].[i] segments with
                 | Some segment ->
                     if segment.ObjectGroups.Count <> 0 then
@@ -410,8 +410,8 @@ type RandMap =
                                 i = cursor.X &&
                                 j = cursor.Y &&
                                 objectRef.Properties.ContainsKey "S" then
-                                let x = objectRef.X + double i * 32.0 * double mapTmx.TileWidth
-                                let y = objectRef.Y + double j * 32.0 * double mapTmx.TileHeight
+                                let x = objectRef.X + double i * double Constants.Field.RoomSize.X * double mapTmx.TileWidth
+                                let y = objectRef.Y + double j * double Constants.Field.RoomSize.Y * double mapTmx.TileHeight
                                 let w = mapTmx.TileWidth
                                 let h = mapTmx.TileHeight
                                 let object = TmxMap.makeObject entryId 0 (double x) (double y) (double w) (double h)
@@ -421,8 +421,8 @@ type RandMap =
                             match objectRef.Properties.TryGetValue "I" with
                             | (true, propStr) when i = cursor.X && j = cursor.Y && propStr.Contains "ChestSpawn" -> ()
                             | (_, _) ->
-                                let x = objectRef.X + double i * 32.0 * double mapTmx.TileWidth
-                                let y = objectRef.Y + double j * 32.0 * double mapTmx.TileHeight
+                                let x = objectRef.X + double i * double Constants.Field.RoomSize.X * double mapTmx.TileWidth
+                                let y = objectRef.Y + double j * double Constants.Field.RoomSize.Y * double mapTmx.TileHeight
                                 let object = TmxMap.makeObject propId 0 x y objectRef.Width objectRef.Height
                                 for propertyKvp in objectRef.Properties do object.Properties.Add (propertyKvp.Key, propertyKvp.Value)
                                 propId <- inc propId
@@ -432,8 +432,8 @@ type RandMap =
         // add stairs in default location if none created yet
         if floor > 0 && not stairsCreated then
             let (stairsX, stairsY, stairsWidth, stairsHeight) = (16 * mapTmx.TileWidth, 16 * mapTmx.TileHeight, mapTmx.TileWidth, mapTmx.TileHeight)
-            let stairsXX = stairsX + cursor.X * mapTmx.TileWidth * 32
-            let stairsYY = stairsY + cursor.Y * mapTmx.TileHeight * 32
+            let stairsXX = stairsX + cursor.X * mapTmx.TileWidth * Constants.Field.RoomSize.X
+            let stairsYY = stairsY + cursor.Y * mapTmx.TileHeight * Constants.Field.RoomSize.Y
             let object = TmxMap.makeObject entryId 0 (double stairsXX) (double stairsYY) (double stairsWidth) (double stairsHeight)
             object.Properties.Add ("I", stairsInfo)
             objects.[0] <- object
@@ -441,21 +441,21 @@ type RandMap =
         // add tiles from segments
         for l in 0 .. mapTmx.TileLayers.Count - 1 do
             let layer = mapTmx.TileLayers.[l]
-            for j in 0 .. 7 - 1 do
-                for jj in 0 .. 32 - 1 do
-                    for i in 0 .. 7 - 1 do
-                        for ii in 0 .. 32 - 1 do
-                            let x = i * 32 + ii
-                            let y = j * 32 + jj
+            for j in 0 .. dec Constants.Field.RandMapSize.Y do
+                for jj in 0 .. dec Constants.Field.RoomSize.Y do
+                    for i in 0 .. dec Constants.Field.RandMapSize.X do
+                        for ii in 0 .. dec Constants.Field.RoomSize.X do
+                            let x = i * Constants.Field.RoomSize.X + ii
+                            let y = j * Constants.Field.RoomSize.Y + jj
                             let tileFromSegment =
                                 match RandMap.getSegmentOpt map.Segments.[j].[i] segments with
                                 | Some segment ->
                                     match Seq.tryFind (fun (segmentLayer : TmxLayer) -> segmentLayer.Name = layer.Name) segment.TileLayers with
-                                    | Some segmentLayer -> segmentLayer.Tiles.[ii + jj * 32]
+                                    | Some segmentLayer -> segmentLayer.Tiles.[ii + jj * Constants.Field.RoomSize.X]
                                     | None -> TmxLayerTile 0u
                                 | Some _ | None -> TmxLayerTile 0u
                             let tile = TmxMap.makeLayerTile tileFromSegment.Gid tileFromSegment.HorizontalFlip tileFromSegment.VerticalFlip tileFromSegment.DiagonalFlip
-                            layer.Tiles.[x + y * 32  * 7] <- tile
+                            layer.Tiles.[x + y * Constants.Field.RoomSize.X * Constants.Field.RandMapSize.X] <- tile
 
         // le map tmx
         mapTmx
