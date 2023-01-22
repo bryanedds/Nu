@@ -99,21 +99,21 @@ module BattleDispatcher =
 
         static let advanceAttack sourceIndex (targetIndexOpt : CharacterIndex option) time localTime battle =
             match Battle.tryGetCharacter sourceIndex battle with
-            | Some source when source.IsHealthy ->
+            | Some source when source.Healthy ->
                 match targetIndexOpt with
                 | Some targetIndex ->
                     match Battle.tryGetCharacter targetIndex battle with
                     | Some target ->
                         match localTime with
                         | 0L ->
-                            if target.IsHealthy
+                            if target.Healthy
                             then withSignal (AttackCharacter1 sourceIndex) battle
                             else just (Battle.abortCharacterAction time sourceIndex battle)
                         | 15L ->
                             withSignal (AttackCharacter2 (sourceIndex, targetIndex)) battle
                         | _ when localTime > 15L && Character.getAnimationFinished time target ->
                             let target = Battle.getCharacter targetIndex battle
-                            if target.IsHealthy then
+                            if target.Healthy then
                                 let battle = Battle.updateCurrentCommandOpt (constant None) battle
                                 let battle = Battle.animationCharacterPoise time sourceIndex battle
                                 let battle = Battle.animationCharacterPoise time targetIndex battle
@@ -137,7 +137,7 @@ module BattleDispatcher =
 
         static let advanceDefend sourceIndex time localTime battle =
             match Battle.tryGetCharacter sourceIndex battle with
-            | Some source when source.IsHealthy ->
+            | Some source when source.Healthy ->
                 match localTime with
                 | 0L ->
                     let battle =
@@ -156,14 +156,14 @@ module BattleDispatcher =
 
         static let advanceConsume consumable sourceIndex (targetIndexOpt : CharacterIndex option) time localTime battle =
             match Battle.tryGetCharacter sourceIndex battle with
-            | Some source when source.IsHealthy ->
+            | Some source when source.Healthy ->
                 match targetIndexOpt with
                 | Some targetIndex ->
                     match Battle.tryGetCharacter targetIndex battle with
                     | Some target ->
                         match localTime with
                         | 0L ->
-                            if target.IsHealthy || consumable = Revive // HACK: should really be checked ConsumableData.
+                            if target.Healthy || consumable = Revive // HACK: should really be checked ConsumableData.
                             then withSignal (ConsumeCharacter1 (consumable, sourceIndex)) battle
                             else just (Battle.abortCharacterAction time sourceIndex battle)
                         | 30L ->
@@ -187,7 +187,7 @@ module BattleDispatcher =
                     match (Map.tryFind techType Data.Value.Techs,  Map.tryFind techType Data.Value.TechAnimations) with
                     | (Some techData, Some techAnimationData) ->
                         ignore techData // TODO: check for target.IsWounded case if techData is affecting wounded...
-                        if target.IsHealthy then
+                        if target.Healthy then
                             let (sigs, battle) =
                                 if localTime = techAnimationData.TechStart then withSignal (TechCharacter1 (sourceIndex, targetIndex, techType)) battle
                                 elif localTime = techAnimationData.TechingStart then withSignal (TechCharacter2 (sourceIndex, targetIndex, techType)) battle
@@ -208,7 +208,7 @@ module BattleDispatcher =
             | Some targetIndex ->
                 let character = Battle.getCharacter targetIndex battle
                 let (sigs, battle) =
-                    if character.IsAlly then
+                    if character.Ally then
                         match character.CharacterAnimationType with
                         | DamageAnimation ->
                             if Character.getAnimationFinished time character then
@@ -233,7 +233,7 @@ module BattleDispatcher =
                             if Character.getAnimationFinished time character then
                                 let battle = Battle.updateCurrentCommandOpt (constant None) battle
                                 let battle =
-                                    if targetIndex.IsEnemy
+                                    if targetIndex.Enemy
                                     then Battle.removeCharacter targetIndex battle
                                     else battle
                                 just battle
@@ -244,7 +244,7 @@ module BattleDispatcher =
                     | None ->
                         let allies = battle |> Battle.getAllies |> Map.toValueList
                         let enemies = battle |> Battle.getEnemies |> Map.toValueList
-                        if List.forall (fun (character : Character) -> character.IsWounded) allies then
+                        if List.forall (fun (character : Character) -> character.Wounded) allies then
                             // lost battle
                             let battle = Battle.animateCharactersCelebrate time false battle
                             let battle = Battle.updateBattleState (constant (BattleQuitting (time, false, Set.empty))) battle
@@ -311,7 +311,7 @@ module BattleDispatcher =
             let battle =
                 match command.ActionCommand.Action with
                 | Attack | Defend ->
-                    if source.IsHealthy && not (Map.containsKey Sleep source.Statuses) then
+                    if source.Healthy && not (Map.containsKey Sleep source.Statuses) then
                         let targetIndexOpt = Battle.tryRetargetIfNeeded false targetIndexOpt battle
                         let command = { command with ActionCommand = { command.ActionCommand with TargetOpt = targetIndexOpt }}
                         Battle.updateCurrentCommandOpt (constant (Some command)) battle
@@ -319,7 +319,7 @@ module BattleDispatcher =
                 | Consume consumableType ->
                     match Data.Value.Consumables.TryGetValue consumableType with
                     | (true, consumable) ->
-                        if source.IsHealthy && not (Map.containsKey Sleep source.Statuses) then
+                        if source.Healthy && not (Map.containsKey Sleep source.Statuses) then
                             let targetIndexOpt = Battle.tryRetargetIfNeeded consumable.Revive targetIndexOpt battle
                             let command = { command with ActionCommand = { command.ActionCommand with TargetOpt = targetIndexOpt }}
                             Battle.updateCurrentCommandOpt (constant (Some command)) battle
@@ -328,7 +328,7 @@ module BattleDispatcher =
                 | Tech techType ->
                     match Data.Value.Techs.TryGetValue techType with
                     | (true, _) ->
-                        if source.IsHealthy && not (Map.containsKey Sleep source.Statuses) && not (Map.containsKey Silence source.Statuses) then
+                        if source.Healthy && not (Map.containsKey Sleep source.Statuses) && not (Map.containsKey Silence source.Statuses) then
                             let targetIndexOpt = Battle.tryRetargetIfNeeded false targetIndexOpt battle // TODO: consider affecting wounded.
                             let command = { command with ActionCommand = { command.ActionCommand with TargetOpt = targetIndexOpt }}
                             Battle.updateCurrentCommandOpt (constant (Some command)) battle
@@ -372,7 +372,7 @@ module BattleDispatcher =
             let battle =
                 Battle.updateCharacters (fun character ->
                     let actionTimeDelta =
-                        if character.IsAlly || battle.BattleSpeed = WaitSpeed
+                        if character.Ally || battle.BattleSpeed = WaitSpeed
                         then Constants.Battle.AllyActionTimeDelta
                         else Constants.Battle.EnemyActionTimeDelta
                     let actionTimeDelta =
@@ -393,21 +393,21 @@ module BattleDispatcher =
                         character.ActionTime % 500.0f < 250.0f &&
                         actionTime % 500.0f >= 250.0f
                     let character =
-                        if character.IsHealthy && not (Map.containsKey Sleep character.Statuses)
+                        if character.Healthy && not (Map.containsKey Sleep character.Statuses)
                         then Character.updateActionTime ((+) actionTimeDelta) character
                         else character
                     let character =
-                        if character.IsHealthy
+                        if character.Healthy
                         then Character.burndownStatuses actionTimeDelta character
                         else character
                     let character =
-                        if character.IsHealthy && poisoned then
+                        if character.Healthy && poisoned then
                             let damage = single character.HitPointsMax * Constants.Battle.PoisonDrainRate |> max 1.0f |> int
                             let alliesHealthy = Battle.getAlliesHealthy battle
                             Character.updateHitPoints (fun hp -> (false, max 1 (hp - damage))) false alliesHealthy character
                         else character
                     let character =
-                        if character.IsHealthy && Character.isReadyForAutoBattle character then
+                        if character.Healthy && Character.readyForAutoBattle character then
                             let alliesHealthy = Battle.getAlliesHealthy battle
                             let alliesWounded = Battle.getAlliesWounded battle
                             let enemiesHealthy = Battle.getEnemiesHealthy battle
@@ -460,7 +460,7 @@ module BattleDispatcher =
                 let battle = Battle.updateDialogOpt (constant (Some dialog)) battle
                 let (sigs, battle) =
                     if outcome then
-                        let battle = Battle.updateAllies (fun ally -> if ally.IsHealthy then Character.updateExpPoints ((+) battle.PrizePool.Exp) ally else ally) battle
+                        let battle = Battle.updateAllies (fun ally -> if ally.Healthy then Character.updateExpPoints ((+) battle.PrizePool.Exp) ally else ally) battle
                         let battle = Battle.updateInventory (fun inv -> { inv with Gold = inv.Gold + battle.PrizePool.Gold }) battle
                         let battle = Battle.updateInventory (Inventory.tryAddItems battle.PrizePool.Items >> snd) battle
                         if List.notEmpty alliesLevelingUp
@@ -605,7 +605,7 @@ module BattleDispatcher =
                 let battle = Battle.updateCharacterHitPoints false false -damage targetIndex battle
                 let battle = Battle.animateCharacter time DamageAnimation targetIndex battle
                 let battle =
-                    if Battle.isCharacterWounded targetIndex battle then
+                    if Battle.getCharacterWounded targetIndex battle then
                         let battle = Battle.halveCharacterActionTime targetIndex battle
                         Battle.resetCharacterInput targetIndex battle
                     else battle
@@ -668,7 +668,7 @@ module BattleDispatcher =
                     let battle = Battle.animateCharacter time (PoiseAnimation Poising) sourceIndex battle
                     withSignal hopEffect battle
                 | Right chargeEffects ->
-                    if Battle.isCharacterHealthy targetIndex battle then
+                    if Battle.getCharacterHealthy targetIndex battle then
                         let battle = Battle.animateCharacter time (PoiseAnimation Charging) sourceIndex battle
                         withSignals chargeEffects battle
                     else just (Battle.abortCharacterAction time sourceIndex battle)
@@ -835,7 +835,7 @@ module BattleDispatcher =
                 let results = Battle.evalTechMove sourceIndex targetIndex techType battle |> snd
                 let (battle, sigs) =
                     Map.fold (fun (battle, sigs) characterIndex (cancelled, _, hitPointsChange, _, _) ->
-                        if hitPointsChange < 0 && Battle.isCharacterHealthy characterIndex battle then
+                        if hitPointsChange < 0 && Battle.getCharacterHealthy characterIndex battle then
                             let battle = Battle.animateCharacter time DamageAnimation characterIndex battle
                             let sigs = if cancelled then signal (DisplayCancel characterIndex) :: sigs else sigs
                             (battle, sigs)
@@ -880,10 +880,10 @@ module BattleDispatcher =
                 let (battle, sigs) =
                     Map.fold (fun (battle, sigs) characterIndex (cancelled, affectsWounded, hitPointsChange, added, removed) ->
                         let battle = Battle.updateCharacterHitPoints cancelled affectsWounded hitPointsChange characterIndex battle
-                        let randomizer = if sourceIndex.IsAlly then StatusType.randomizeStrong else StatusType.randomizeWeak
+                        let randomizer = if sourceIndex.Ally then StatusType.randomizeStrong else StatusType.randomizeWeak
                         let added = added |> Set.toSeq |> Seq.filter randomizer |> Set.ofSeq
                         let battle = Battle.applyCharacterStatuses added removed characterIndex battle
-                        let wounded = Battle.isCharacterWounded characterIndex battle
+                        let wounded = Battle.getCharacterWounded characterIndex battle
                         let battle =
                             if wounded then
                                 let battle = Battle.halveCharacterActionTime characterIndex battle
@@ -1142,7 +1142,7 @@ module BattleDispatcher =
                              Entity.BorderColor == Color.White]
 
                          // tech bar
-                         if character.IsAlly then
+                         if character.Ally then
                             Content.fillBar "TechBar"
                                [Entity.MountOpt == None
                                 Entity.Size == v3 48.0f 6.0f 0.0f

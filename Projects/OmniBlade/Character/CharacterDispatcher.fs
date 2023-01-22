@@ -24,7 +24,7 @@ module CharacterDispatcher =
 
         static let getSpriteColor (character : Character) world =
             let color =
-                if character.CharacterAnimationType = WoundAnimation && character.IsEnemy then
+                if character.CharacterAnimationType = WoundAnimation && character.Enemy then
                     match Character.getAnimationProgressOpt (World.getUpdateTime world) character with
                     | Some progress -> Color (byte 255, byte 128, byte 255, byte 255 - (byte (progress * 255.0f))) // purple
                     | None -> failwithumf ()
@@ -36,8 +36,8 @@ module CharacterDispatcher =
             let pulseProgress = single pulseTime / single Constants.Battle.CharacterPulseLength
             let pulseIntensity = byte (sin (pulseProgress * single Math.PI) * 255.0f)
             let statuses = character.Statuses
-            if character.IsWounded then Color.Zero
-            elif Character.isAutoTeching character then Color (byte 255, byte 64, byte 64, pulseIntensity) // bright red
+            if character.Wounded then Color.Zero
+            elif Character.autoTeching character then Color (byte 255, byte 64, byte 64, pulseIntensity) // bright red
             elif Map.exists (fun key _ -> match key with Time true -> true | _ -> false) statuses then Color (byte 255, byte 255, byte 255, pulseIntensity) // bright white
             elif Map.exists (fun key _ -> match key with Power (true, _) -> true | _ -> false) statuses then Color (byte 255, byte 255, byte 127, pulseIntensity) // bright orange
             elif Map.exists (fun key _ -> match key with Magic (true, _) -> true | _ -> false) statuses then Color (byte 255, byte 127, byte 255, pulseIntensity) // bright purple
@@ -53,10 +53,10 @@ module CharacterDispatcher =
             else Color.Zero
 
         static let getAfflictionInsetOpt (character : Character) world =
-            if not character.IsWounding then
+            if not character.Wounding then
                 let statuses = character.Statuses
                 let celYOpt =
-                    if character.IsWounded then None
+                    if character.Wounded then None
                     elif Map.containsKey Confuse statuses then Some 3
                     elif Map.containsKey Sleep statuses then Some 2
                     elif Map.containsKey Silence statuses then Some 1
@@ -77,7 +77,7 @@ module CharacterDispatcher =
             else None
 
         static let getChargeOrbInsetOpt (character : Character) world =
-            if not character.IsWounding then
+            if not character.Wounding then
                 let celXOpt =
                     match (character.ConjureChargeOpt, character.TechChargeOpt |> Option.map Triple.snd) with
                     | (Some chargeAmount, _)

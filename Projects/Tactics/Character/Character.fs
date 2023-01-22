@@ -21,8 +21,8 @@ module Character =
         member this.CharacterIndex = this.CharacterIndex_
         member this.CharacterType = this.CharacterType_
         member this.PartyIndex = match this.CharacterIndex with AllyIndex index | EnemyIndex index -> index
-        member this.IsAlly = match this.CharacterIndex with AllyIndex _ -> true | EnemyIndex _ -> false
-        member this.IsEnemy = not this.IsAlly
+        member this.Ally = match this.CharacterIndex with AllyIndex _ -> true | EnemyIndex _ -> false
+        member this.Enemy = not this.Ally
         member this.CelSize = this.CelSize_
 
         (* Animation Properties *)
@@ -31,8 +31,8 @@ module Character =
         member this.CharacterAnimationType = this.CharacterAnimationState_.CharacterAnimationType
         member this.Direction = this.CharacterAnimationState_.Direction
 
-    let isFriendly (character : Character) (character2 : Character) =
-        CharacterIndex.isFriendly character.CharacterIndex character2.CharacterIndex
+    let friendly (character : Character) (character2 : Character) =
+        CharacterIndex.friendly character.CharacterIndex character2.CharacterIndex
 
     let getPoiseType character =
         character.CharacterState_
