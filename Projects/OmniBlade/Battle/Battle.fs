@@ -79,16 +79,16 @@ module Battle =
 
     let getCharactersHealthy battle =
         getCharacters battle |>
-        Map.filter (fun _ character -> character.IsHealthy)
+        Map.filter (fun _ character -> character.Healthy)
 
     let getCharactersWounded battle =
         getCharacters battle |>
-        Map.filter (fun _ character -> character.IsWounded)
+        Map.filter (fun _ character -> character.Wounded)
 
     let getCharactersHudded battle =
         getCharactersIf (fun _ (character : Character) ->
-            character.IsAlly ||
-            (character.IsEnemy && not character.IsWounding))
+            character.Ally ||
+            (character.Enemy && not character.Wounding))
             battle
 
     let getAllies battle =
@@ -96,20 +96,20 @@ module Battle =
 
     let getAlliesHealthy battle =
         getAllies battle |>
-        Map.filter (fun _ character -> character.IsHealthy)
+        Map.filter (fun _ character -> character.Healthy)
 
     let getAlliesWounded battle =
         getAllies battle |>
-        Map.filter (fun _ character -> character.IsWounded)
+        Map.filter (fun _ character -> character.Wounded)
 
     let getEnemies battle =
         battle.Characters_ |> Map.toSeq |> Seq.filter (function (EnemyIndex _, _) -> true | _ -> false) |> Map.ofSeq
 
     let getEnemiesHealthy battle =
-        battle.Characters_ |> Map.toSeq |> Seq.filter (function (EnemyIndex _, enemy) -> not enemy.IsWounding | _ -> false) |> Map.ofSeq
+        battle.Characters_ |> Map.toSeq |> Seq.filter (function (EnemyIndex _, enemy) -> not enemy.Wounding | _ -> false) |> Map.ofSeq
 
     let getEnemiesWounded battle =
-        battle.Characters_ |> Map.toSeq |> Seq.filter (function (EnemyIndex _, enemy) -> enemy.IsWounding | _ -> false) |> Map.ofSeq
+        battle.Characters_ |> Map.toSeq |> Seq.filter (function (EnemyIndex _, enemy) -> enemy.Wounding | _ -> false) |> Map.ofSeq
 
     let getTargets aimType battle =
         match aimType with
@@ -161,10 +161,10 @@ module Battle =
         updateCharactersIf tautology2 updater battle
 
     let updateCharactersHealthy updater battle =
-        updateCharactersIf (fun _ character -> character.IsHealthy) updater battle
+        updateCharactersIf (fun _ character -> character.Healthy) updater battle
 
     let updateCharactersWounded updater battle =
-        updateCharactersIf (fun _ character -> character.IsWounded) updater battle
+        updateCharactersIf (fun _ character -> character.Wounded) updater battle
 
     let updateAlliesIf pred updater battle =
         updateCharactersIf (fun i c -> pred i c && match i with AllyIndex _ -> true | _ -> false) updater battle
@@ -192,11 +192,11 @@ module Battle =
     let getCharacterBy by characterIndex battle =
         tryGetCharacter characterIndex battle |> Option.get |> by
 
-    let isCharacterHealthy characterIndex battle =
-        (getCharacter characterIndex battle).IsHealthy
+    let getCharacterHealthy characterIndex battle =
+        (getCharacter characterIndex battle).Healthy
 
-    let isCharacterWounded characterIndex battle =
-        (getCharacter characterIndex battle).IsWounded
+    let getCharacterWounded characterIndex battle =
+        (getCharacter characterIndex battle).Wounded
 
     let getCharacterPerimeterOriginal characterIndex battle =
         (getCharacter characterIndex battle).PerimeterOriginal
@@ -211,7 +211,7 @@ module Battle =
         (getCharacter characterIndex battle).ArchetypeType
 
     let shouldCounter sourceIndex targetIndex battle =
-        if CharacterIndex.isUnfriendly sourceIndex targetIndex
+        if CharacterIndex.unfriendly sourceIndex targetIndex
         then getCharacterBy Character.shouldCounter targetIndex battle
         else false
 
@@ -274,7 +274,7 @@ module Battle =
     let animateCharacterWound time characterIndex battle =
         updateCharacter (fun character ->
             let character =
-                if character.IsAlly
+                if character.Ally
                 then Character.updateCharacterInputState (constant NoInput) character
                 else character
             let character = Character.animate time WoundAnimation character
@@ -287,8 +287,8 @@ module Battle =
 
     let animateCharactersCelebrate time outcome battle =
         if outcome
-        then updateAlliesIf (fun _ ally -> ally.IsHealthy) (Character.animate time CelebrateAnimation) battle
-        else updateEnemiesIf (fun _ enemy -> enemy.IsHealthy) (Character.animate time CelebrateAnimation) battle
+        then updateAlliesIf (fun _ ally -> ally.Healthy) (Character.animate time CelebrateAnimation) battle
+        else updateEnemiesIf (fun _ enemy -> enemy.Healthy) (Character.animate time CelebrateAnimation) battle
 
     let animateCharactersPoised time battle =
         updateCharactersHealthy (fun character ->
@@ -320,7 +320,7 @@ module Battle =
 
     let resetCharacterInput (characterIndex : CharacterIndex) battle =
         let battle =
-            if characterIndex.IsAlly
+            if characterIndex.Ally
             then updateCharacterInputState (constant NoInput) characterIndex battle
             else updateCharacterAutoBattleOpt (constant None) characterIndex battle
         battle
@@ -386,14 +386,14 @@ module Battle =
         match targetIndexOpt with
         | Some targetIndex ->
             if affectingWounded then
-                match tryGetCharacterBy (fun (target : Character) -> target.IsHealthy) targetIndex battle with
+                match tryGetCharacterBy (fun (target : Character) -> target.Healthy) targetIndex battle with
                 | Some true | None ->
                     match targetIndex with
                     | AllyIndex _ -> Gen.randomItemOpt (Map.toKeyList (Map.remove targetIndex (getAlliesWounded battle)))
                     | EnemyIndex _ -> Gen.randomItemOpt (Map.toKeyList (Map.remove targetIndex (getEnemiesWounded battle)))
                 | Some false -> targetIndexOpt
             else
-                match tryGetCharacterBy (fun (target : Character) -> target.IsWounded) targetIndex battle with
+                match tryGetCharacterBy (fun (target : Character) -> target.Wounded) targetIndex battle with
                 | Some true | None ->
                     match targetIndex with
                     | AllyIndex _ -> Gen.randomItemOpt (Map.toKeyList (Map.remove targetIndex (getAlliesHealthy battle)))

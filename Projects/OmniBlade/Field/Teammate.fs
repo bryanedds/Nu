@@ -22,8 +22,8 @@ type [<NoComparison>] Teammate =
 
     member this.Name = CharacterType.getName this.CharacterType
     member this.Level = Algorithms.expPointsToLevel this.ExpPoints
-    member this.IsHealthy = this.HitPoints > 0
-    member this.IsWounded = this.HitPoints <= 0
+    member this.Healthy = this.HitPoints > 0
+    member this.Wounded = this.HitPoints <= 0
     member this.HitPointsMax = Algorithms.hitPointsMax this.ArmorOpt this.ArchetypeType this.Level
     member this.TechPointsMax = Algorithms.techPointsMax this.ArmorOpt this.ArchetypeType this.Level
     member this.Power = Algorithms.power this.WeaponOpt Map.empty this.ArchetypeType this.Level // no statuses outside battle

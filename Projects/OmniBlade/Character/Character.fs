@@ -56,8 +56,8 @@ module Character =
         member this.CharacterIndex = this.CharacterIndex_
         member this.PartyIndex = match this.CharacterIndex with AllyIndex index | EnemyIndex index -> index
         member this.CharacterType = this.CharacterType_
-        member this.IsAlly = match this.CharacterIndex with AllyIndex _ -> true | EnemyIndex _ -> false
-        member this.IsEnemy = not this.IsAlly
+        member this.Ally = match this.CharacterIndex with AllyIndex _ -> true | EnemyIndex _ -> false
+        member this.Enemy = not this.Ally
         member this.Boss = this.Boss_
         member this.ActionTime = this.ActionTime_
         member this.CelSize = this.CelSize_
@@ -73,9 +73,9 @@ module Character =
         member this.Statuses = this.CharacterState_.Statuses
         member this.Defending = this.CharacterState_.Defending
         member this.Charging = this.CharacterState_.Charging
-        member this.IsHealthy = this.CharacterState_.IsHealthy
-        member this.IsWounded = this.CharacterState_.IsWounded
-        member this.IsWounding = match this.CharacterAnimationState_.CharacterAnimationType with WoundAnimation -> true | _ -> false
+        member this.Healthy = this.CharacterState_.Healthy
+        member this.Wounded = this.CharacterState_.Wounded
+        member this.Wounding = match this.CharacterAnimationState_.CharacterAnimationType with WoundAnimation -> true | _ -> false
         member this.Level = this.CharacterState_.Level
         member this.HitPointsMax = this.CharacterState_.HitPointsMax
         member this.TechPointsMax = this.CharacterState_.TechPointsMax
@@ -102,17 +102,17 @@ module Character =
         member this.TechChargeOpt = this.TechChargeOpt_
         member this.AutoBattleOpt = this.AutoBattleOpt_
 
-    let isFriendly (character : Character) (character2 : Character) =
-        CharacterIndex.isFriendly character.CharacterIndex character2.CharacterIndex
+    let friendly (character : Character) (character2 : Character) =
+        CharacterIndex.friendly character.CharacterIndex character2.CharacterIndex
 
-    let isReadyForAutoBattle character =
+    let readyForAutoBattle character =
         Option.isNone character.AutoBattleOpt_ &&
-        character.IsEnemy &&
+        character.Enemy &&
         character.ActionTime >= 60.0f
 
-    let isAutoTeching character =
+    let autoTeching character =
         match character.AutoBattleOpt_ with
-        | Some autoBattle -> Option.isSome autoBattle.AutoTechOpt && not autoBattle.IsChargeTech
+        | Some autoBattle -> Option.isSome autoBattle.AutoTechOpt && not autoBattle.ChargeTech
         | None -> false
 
     let shouldCounter (character : Character) =
@@ -123,9 +123,9 @@ module Character =
     let evalAimType aimType (target : Character) (characters : Map<CharacterIndex, Character>) =
         match aimType with
         | AnyAim healthy ->
-            Map.filter (fun _ (c : Character) -> c.IsHealthy = healthy) characters
+            Map.filter (fun _ (c : Character) -> c.Healthy = healthy) characters
         | EnemyAim healthy | AllyAim healthy ->
-            Map.filter (fun _ (c : Character) -> c.IsHealthy = healthy && isFriendly target c) characters
+            Map.filter (fun _ (c : Character) -> c.Healthy = healthy && friendly target c) characters
         | NoAim ->
             Map.empty
 
@@ -199,7 +199,7 @@ module Character =
         let techScalar =
             // NOTE: certain techs can't be used effectively by enemies, so they are given a special scalar.
             // TODO: pull this from TechData.EnemyScalarOpt.
-            if source.IsEnemy then
+            if source.Enemy then
                 match techData.TechType with
                 | Slash -> 1.333f
                 | TechType.Flame -> 1.45f
@@ -212,7 +212,7 @@ module Character =
                 | _ -> techData.Scalar
             else techData.Scalar
         let splitScalar =
-            if source.IsAlly then
+            if source.Ally then
                 if techData.Split && targetCount > 1
                 then 1.5f / min 3.0f (single targetCount)
                 else 1.0f
@@ -230,7 +230,7 @@ module Character =
             let healing = single efficacy * techScalar * splitScalar |> int |> max 1
             (target.CharacterIndex, false, false, healing, techData.StatusesAdded, techData.StatusesRemoved)
         else
-            let cancelled = techData.Cancels && isAutoTeching target
+            let cancelled = techData.Cancels && autoTeching target
             let shield = target.Shield techData.EffectType
             let defendingScalar = if target.Defending then Constants.Battle.DefendingScalar else 1.0f
             let damage = (single efficacy * affinityScalar * techScalar * splitScalar + specialAddend - single shield) * defendingScalar |> int |> max 1
@@ -277,7 +277,7 @@ module Character =
         | _ -> None
 
     let getConjureTechs (character : Character) =
-        if character.IsAlly
+        if character.Ally
         then character.Techs |> Set.filter (fun techType -> techType.ConjureTech)
         else Set.empty
 
@@ -296,19 +296,19 @@ module Character =
 
     let updateHitPoints updater affectWounded alliesHealthy character =
         let (cancel, characterState) =
-            if character.CharacterState_.IsHealthy || affectWounded then
+            if character.CharacterState_.Healthy || affectWounded then
                 let (cancel, hitPoints) = updater character.CharacterState_.HitPoints
                 let characterState = CharacterState.updateHitPoints (constant hitPoints) character.CharacterState_
                 (cancel, characterState)
             else (false, character.CharacterState_)
         let autoBattleOpt =
             match character.AutoBattleOpt_ with
-            | Some autoBattle when cancel && not autoBattle.IsChargeTech -> // cannot cancel charge tech
+            | Some autoBattle when cancel && not autoBattle.ChargeTech -> // cannot cancel charge tech
                 match autoBattle.AutoTarget with
-                | AllyIndex _ as ally -> Some { AutoTarget = ally; AutoTechOpt = None; IsChargeTech = false }
+                | AllyIndex _ as ally -> Some { AutoTarget = ally; AutoTechOpt = None; ChargeTech = false }
                 | EnemyIndex _ ->
                     match Gen.randomKeyOpt alliesHealthy with
-                    | Some ally -> Some { AutoTarget = ally; AutoTechOpt = None; IsChargeTech = false }
+                    | Some ally -> Some { AutoTarget = ally; AutoTechOpt = None; ChargeTech = false }
                     | None -> None
             | autoBattleOpt -> autoBattleOpt // use existing state if not cancelled
         { character with CharacterState_ = characterState; AutoBattleOpt_ = autoBattleOpt }
@@ -338,7 +338,7 @@ module Character =
         { character with Perimeter_ = character.Bottom |> updater |> character.Perimeter.WithBottom }
 
     let applyStatusChanges statusesAdded statusesRemoved (character : Character) =
-        if character.IsHealthy then
+        if character.Healthy then
             let character =
                 updateStatuses (fun statuses ->
                     let statuses = Set.fold (fun statuses status -> Map.add status Constants.Battle.BurndownTime statuses) statuses statusesAdded
@@ -427,7 +427,7 @@ module Character =
             let sourceToTarget = target.Bottom - source.Bottom
             let direction = if sourceToTarget.X >= 0.0f then Rightward else Leftward // only two directions in this game
             let animationState = { source.CharacterAnimationState_ with Direction = direction }
-            let autoBattle = { AutoTarget = target.CharacterIndex; AutoTechOpt = techOpt; IsChargeTech = isChargeTech }
+            let autoBattle = { AutoTarget = target.CharacterIndex; AutoTechOpt = techOpt; ChargeTech = isChargeTech }
             { source with CharacterAnimationState_ = animationState; AutoBattleOpt_ = Some autoBattle }
         | None -> source
 
@@ -448,7 +448,7 @@ module Character =
         { character with CharacterAnimationState_ = CharacterAnimationState.setCharacterAnimationType (Some time) characterAnimationType character.CharacterAnimationState_ }
 
     let make bounds characterIndex characterType boss animationSheet celSize direction (characterState : CharacterState) chargeTechOpt actionTime =
-        let animationType = if characterState.IsHealthy then IdleAnimation else WoundAnimation
+        let animationType = if characterState.Healthy then IdleAnimation else WoundAnimation
         let animationState = { StartTime = 0L; AnimationSheet = animationSheet; CharacterAnimationType = animationType; Direction = direction }
         { PerimeterOriginal_ = bounds
           Perimeter_ = bounds

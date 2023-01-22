@@ -10,7 +10,7 @@ open OmniBlade
 type [<NoComparison>] AutoBattle =
     { AutoTarget : CharacterIndex
       AutoTechOpt : TechType option
-      IsChargeTech : bool }
+      ChargeTech : bool }
 
 type [<NoComparison>] CharacterState =
     { ArchetypeType : ArchetypeType
@@ -30,8 +30,8 @@ type [<NoComparison>] CharacterState =
       ItemPrizeOpt : ItemType option }
 
     member this.Level = Algorithms.expPointsToLevel this.ExpPoints
-    member this.IsHealthy = this.HitPoints > 0
-    member this.IsWounded = this.HitPoints <= 0
+    member this.Healthy = this.HitPoints > 0
+    member this.Wounded = this.HitPoints <= 0
     member this.HitPointsMax = Algorithms.hitPointsMax this.ArmorOpt this.ArchetypeType this.Level
     member this.TechPointsMax = Algorithms.techPointsMax this.ArmorOpt this.ArchetypeType this.Level
     member this.Power = Algorithms.power this.WeaponOpt this.Statuses this.ArchetypeType this.Level
