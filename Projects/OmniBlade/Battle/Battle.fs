@@ -85,6 +85,12 @@ module Battle =
         getCharacters battle |>
         Map.filter (fun _ character -> character.IsWounded)
 
+    let getCharactersHudded battle =
+        getCharactersIf (fun _ (character : Character) ->
+            character.IsAlly ||
+            (character.IsEnemy && not character.IsWounding))
+            battle
+
     let getAllies battle =
         battle.Characters_ |> Map.toSeq |> Seq.filter (function (AllyIndex _, _) -> true | _ -> false) |> Map.ofSeq
 
