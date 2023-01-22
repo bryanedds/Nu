@@ -925,7 +925,7 @@ module FieldDispatcher =
                                 | Some teammate -> "Acc: " + Option.mapOrDefaultValue string "None" (List.tryHead teammate.Accessories)
                                 | None -> ""]
                          Content.text "Stats"
-                            [Entity.PositionLocal == v3 444.0f -84.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 512.0f 256.0f 0.0f
+                            [Entity.PositionLocal == v3 444.0f -81.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 512.0f 256.0f 0.0f
                              Entity.Justification == Unjustified true
                              Entity.Text :=
                                 match MenuTeam.tryGetTeammate field.Team menuTeam with
@@ -935,7 +935,13 @@ module FieldDispatcher =
                                     "\nPow " + (string teammate.Power).PadLeft 3 +      "   Mag " + (string $ teammate.Magic false).PadLeft 3 +
                                     "\nDef " + (string teammate.Defense).PadLeft 3 +    "   Abs " + (string teammate.Absorb).PadLeft 3 +
                                     "\nExp " + (string teammate.ExpPoints).PadLeft 3 +  " / " + string (Algorithms.expPointsForNextLevel teammate.ExpPoints)
-                                | None -> ""]]
+                                | None -> ""]
+                         match MenuTeam.tryGetTeammate field.Team menuTeam with
+                         | Some teammate when teammate.CharacterType = Ally Jinn ->
+                            Content.text "Gold"
+                                [Entity.PositionLocal == v3 444.0f 5.0f 0.0f; Entity.ElevationLocal == 1.0f
+                                 Entity.Text := string field.Inventory.Gold + "G"]
+                         | Some _ | None -> ()]
 
                  // inventory
                  | MenuInventory _ ->
@@ -945,10 +951,6 @@ module FieldDispatcher =
                          Entity.Enabled := Option.isNone field.Menu.MenuUseOpt]
                         [Content.sidebar "Sidebar" (v3 24.0f 417.0f 0.0f) field (fun () -> MenuTeamOpen) (fun () -> MenuInventoryOpen) (fun () -> MenuTechsOpen) (fun () -> MenuKeyItemsOpen) (fun () -> MenuOptionsOpen) (fun () -> MenuClose)
                          yield! Content.items (v3 138.0f 417.0f 0.0f) 10 5 field MenuInventorySelect
-                         Content.text "Gold"
-                            [Entity.PositionLocal == v3 399.0f 24.0f 0.0f; Entity.ElevationLocal == 1.0f
-                             Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
-                             Entity.Text := string field.Inventory.Gold + "G"]
                          Content.button "PageUp"
                             [Entity.PositionLocal == v3 138.0f 12.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 72.0f 72.0f 0.0f
                              Entity.Text == "<"
