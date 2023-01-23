@@ -969,7 +969,7 @@ module BattleDispatcher =
                 | Some target ->
                     let effect = Effects.makeHitPointsChangeEffect delta
                     let (entity, world) = World.createEntity<EffectDispatcher2d> DefaultOverlay None Simulants.BattleScene world
-                    let world = entity.SetPosition target.BottomOriginalOffset3 world
+                    let world = entity.SetPosition target.BottomOriginalOffset4 world
                     let world = entity.SetEffect effect world
                     let world = entity.SetElevation Constants.Battle.GuiEffectElevation world
                     let world = entity.SetSelfDestruct true world
