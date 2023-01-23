@@ -101,6 +101,7 @@ module Field =
                 { StartTime = time
                   AnimationSheet = animationSheet
                   CharacterAnimationType = IdleAnimation
+                  Materializing = false
                   Direction = direction }
             CharacterState (Color.One, characterAnimationState)
         | Portal _ | Chest _ | Sensor _ | Npc _ | NpcBranching _ | Shopkeep _ | Seal _ | Flame _ | SavePoint | ChestSpawn | EmptyProp -> NilState
@@ -118,7 +119,6 @@ module Field =
 
     let private makeBattleFromTeam inventory prizePool (team : Map<int, Teammate>) battleSpeed battleData world =
         let party = team |> Map.toList |> List.tryTake 3
-        let offsetCharacters = List.hasAtMost 1 party
         let allyPositions =
             if List.length party < 3
             then List.take 2 battleData.BattleAllyPositions
@@ -131,7 +131,7 @@ module Field =
                         // TODO: bounds checking
                         let size = Constants.Gameplay.CharacterSize
                         let celSize = Constants.Gameplay.CharacterCelSize
-                        let position = if offsetCharacters then allyPositions.[teamIndex] + Constants.Battle.CharacterOffset else allyPositions.[teamIndex]
+                        let position = if party.Length = 1 then allyPositions.[teamIndex] + Constants.Battle.CharacterOffset else allyPositions.[teamIndex]
                         let bounds = box3 position size
                         let characterIndex = AllyIndex teamIndex
                         let characterType = characterData.CharacterType
@@ -144,7 +144,7 @@ module Field =
                         character
                     | None -> failwith ("Could not find CharacterData for '" + scstring teammate.CharacterType + "'."))
                 party
-        let battle = Battle.makeFromParty offsetCharacters inventory prizePool party battleSpeed battleData world
+        let battle = Battle.makeFromParty inventory prizePool party battleSpeed battleData world
         battle
         
     let rec detokenize (field : Field) (text : string) =
@@ -290,7 +290,7 @@ module Field =
                                     let isWarp =
                                         match portalType with
                                         | AirPortal | StairsPortal (_, false) -> false
-                                        | WarpPortal| StairsPortal (_, true) -> true
+                                        | WarpPortal | StairsPortal (_, true) -> true
                                     Some (fieldType, destination, direction, isWarp)
                                 | _ -> None
                             | None -> None

@@ -19,39 +19,6 @@ module CharacterDispatcher =
     type CharacterDispatcher () =
         inherit EntityDispatcher2d<Character, Message, Command> (true, Character.empty)
 
-        static let getSpriteInset (character : Character) world =
-            Character.getAnimationInset (World.getUpdateTime world) character
-
-        static let getSpriteColor (character : Character) world =
-            let color =
-                if character.CharacterAnimationType = WoundAnimation && character.Enemy then
-                    match Character.getAnimationProgressOpt (World.getUpdateTime world) character with
-                    | Some progress -> Color (byte 255, byte 128, byte 255, byte 255 - (byte (progress * 255.0f))) // purple
-                    | None -> failwithumf ()
-                else Color.One
-            color
-
-        static let getSpriteGlow (character : Character) world =
-            let pulseTime = World.getUpdateTime world % Constants.Battle.CharacterPulseLength
-            let pulseProgress = single pulseTime / single Constants.Battle.CharacterPulseLength
-            let pulseIntensity = byte (sin (pulseProgress * single Math.PI) * 255.0f)
-            let statuses = character.Statuses
-            if character.Wounded then Color.Zero
-            elif Character.autoTeching character then Color (byte 255, byte 64, byte 64, pulseIntensity) // bright red
-            elif Map.exists (fun key _ -> match key with Time true -> true | _ -> false) statuses then Color (byte 255, byte 255, byte 255, pulseIntensity) // bright white
-            elif Map.exists (fun key _ -> match key with Power (true, _) -> true | _ -> false) statuses then Color (byte 255, byte 255, byte 127, pulseIntensity) // bright orange
-            elif Map.exists (fun key _ -> match key with Magic (true, _) -> true | _ -> false) statuses then Color (byte 255, byte 127, byte 255, pulseIntensity) // bright purple
-            elif Map.exists (fun key _ -> match key with Shield (true, _) -> true | _ -> false) statuses then Color (byte 127, byte 255, byte 127, pulseIntensity) // bright yellow
-            elif Map.containsKey Confuse statuses then Color (byte 191, byte 191, byte 255, pulseIntensity) // blue-green
-            elif Map.containsKey Sleep statuses then Color (byte 0, byte 0, byte 255, pulseIntensity) // blue
-            elif Map.containsKey Silence statuses then Color (byte 255,byte 255, byte 0, pulseIntensity) // orange
-            elif Map.containsKey Poison statuses then Color (byte 0, byte 191, byte 0, pulseIntensity) // green
-            elif Map.exists (fun key _ -> match key with Time false -> true | _ -> false) statuses then Color (byte 127, byte 127, byte 127, pulseIntensity) // dark white
-            elif Map.exists (fun key _ -> match key with Power (false, _) -> true | _ -> false) statuses then Color (byte 127, byte 127, byte 0, pulseIntensity) // dark orange
-            elif Map.exists (fun key _ -> match key with Magic (false, _) -> true | _ -> false) statuses then Color (byte 127, byte 0, byte 127, pulseIntensity) // dark purple
-            elif Map.exists (fun key _ -> match key with Shield (false, _) -> true | _ -> false) statuses then Color (byte 0, byte 127, byte 0, pulseIntensity) // dark yellow
-            else Color.Zero
-
         static let getAfflictionInsetOpt (character : Character) world =
             if not character.Wounding then
                 let statuses = character.Statuses
@@ -103,17 +70,18 @@ module CharacterDispatcher =
 
         override this.View (character, entity, world) =
             if entity.GetVisible world then
+                let time = World.getUpdateTime world
                 let mutable transform = entity.GetTransform world
                 let perimeter = transform.Perimeter
                 let characterView =
                     Render2d (transform.Elevation, transform.Horizon, AssetTag.generalize character.AnimationSheet,
                         SpriteDescriptor
                             { Transform = transform
-                              InsetOpt = ValueSome (getSpriteInset character world)
+                              InsetOpt = ValueSome (Character.getAnimationInset time character)
                               Image = character.AnimationSheet
-                              Color = getSpriteColor character world
+                              Color = Character.getAnimationColor time character
                               Blend = Transparent
-                              Glow = getSpriteGlow character world
+                              Glow = Character.getAnimationGlow time character
                               Flip = FlipNone })
                 let afflictionView =
                     match getAfflictionInsetOpt character world with

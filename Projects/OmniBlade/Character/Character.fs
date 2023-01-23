@@ -90,9 +90,10 @@ module Character =
         member this.ItemPrizeOpt = this.CharacterState_.ItemPrizeOpt
 
         (* Animation Properties *)
-        member this.TimeStart = this.CharacterAnimationState_.StartTime
+        member this.AnimationStartTime = this.CharacterAnimationState_.StartTime
         member this.AnimationSheet = this.CharacterAnimationState_.AnimationSheet
         member this.CharacterAnimationType = this.CharacterAnimationState_.CharacterAnimationType
+        member this.Materializing = this.CharacterAnimationState_.Materializing
         member this.Direction = this.CharacterAnimationState_.Direction
 
         (* Local Properties *)
@@ -186,7 +187,7 @@ module Character =
             characters |>
             evalAimType aimType target
 
-    let evalTech (targetCount : int) techData source (target : Character) =
+    let evalTechUnary (targetCount : int) techData source (target : Character) =
         let efficacy =
             match techData.EffectType with
             | Physical -> source.CharacterState_.Power
@@ -211,6 +212,7 @@ module Character =
                 | _ -> techData.Scalar
             else techData.Scalar
         let splitScalar =
+            // NOTE: enemy techs power is not split but generally reduced.
             if source.Ally then
                 if techData.Split && targetCount > 1
                 then 1.5f / min 3.0f (single targetCount)
@@ -235,14 +237,16 @@ module Character =
             let damage = (single efficacy * affinityScalar * techScalar * splitScalar + specialAddend - single shield) * defendingScalar |> int |> max 1
             (target.CharacterIndex, cancelled, false, -damage, Set.difference techData.StatusesAdded target.Immunities, techData.StatusesRemoved)
 
-    let evalTechMove techData source target characters =
+    let evalTech techData source target characters =
         let targets = evaluateTargetType techData.TargetType source target characters
         let targetsCount = Map.count targets
-        Map.fold (fun results _ target ->
-            let (index, cancelled, affectsWounded, delta, added, removed) = evalTech targetsCount techData source target
-            Map.add index (cancelled, affectsWounded, delta, added, removed) results)
-            Map.empty
-            targets
+        let results =
+            Map.fold (fun results _ target ->
+                let (index, cancelled, affectsWounded, delta, added, removed) = evalTechUnary targetsCount techData source target
+                Map.add index (cancelled, affectsWounded, delta, added, removed) results)
+                Map.empty
+                targets
+        (techData.SpawnOpt, results)
 
     let getPoiseType character =
         CharacterState.getPoiseType character.CharacterState_
@@ -250,14 +254,50 @@ module Character =
     let getAttackResult effectType source target =
         CharacterState.getAttackResult effectType source.CharacterState_ target.CharacterState_
 
-    let getAnimationInset time (character : Character) =
-        CharacterAnimationState.inset time character.CelSize_ character.CharacterAnimationState_
-
     let getAnimationIndex time character =
         CharacterAnimationState.index time character.CharacterAnimationState_
 
     let getAnimationProgressOpt time character =
         CharacterAnimationState.progressOpt time character.CharacterAnimationState_
+
+    let getAnimationInset time (character : Character) =
+        CharacterAnimationState.inset time character.CelSize_ character.CharacterAnimationState_
+
+    let getAnimationColor time (character : Character) =
+        let color =
+            if character.CharacterAnimationType = WoundAnimation && character.Enemy then
+                match getAnimationProgressOpt time character with
+                | Some progress -> Color (byte 255, byte 128, byte 255, byte 255 - (byte (progress * 255.0f))) // purple
+                | None -> failwithumf ()
+            else Color.One
+        let color =
+            if character.Materializing then
+                let localTime = time - character.AnimationStartTime
+                let progress = single localTime / single Constants.Battle.CharacterMaterializeDuration
+                color.ScaleA progress
+            else color
+        color
+
+    let getAnimationGlow time (character : Character) =
+        let pulseTime = time % Constants.Battle.CharacterPulseDuration
+        let pulseProgress = single pulseTime / single Constants.Battle.CharacterPulseDuration
+        let pulseIntensity = byte (sin (pulseProgress * single Math.PI) * 255.0f)
+        let statuses = character.Statuses
+        if character.Wounded then Color.Zero
+        elif autoTeching character then Color (byte 255, byte 64, byte 64, pulseIntensity) // bright red
+        elif Map.exists (fun key _ -> match key with Time true -> true | _ -> false) statuses then Color (byte 255, byte 255, byte 255, pulseIntensity) // bright white
+        elif Map.exists (fun key _ -> match key with Power (true, _) -> true | _ -> false) statuses then Color (byte 255, byte 255, byte 127, pulseIntensity) // bright orange
+        elif Map.exists (fun key _ -> match key with Magic (true, _) -> true | _ -> false) statuses then Color (byte 255, byte 127, byte 255, pulseIntensity) // bright purple
+        elif Map.exists (fun key _ -> match key with Shield (true, _) -> true | _ -> false) statuses then Color (byte 127, byte 255, byte 127, pulseIntensity) // bright yellow
+        elif Map.containsKey Confuse statuses then Color (byte 191, byte 191, byte 255, pulseIntensity) // blue-green
+        elif Map.containsKey Sleep statuses then Color (byte 0, byte 0, byte 255, pulseIntensity) // blue
+        elif Map.containsKey Silence statuses then Color (byte 255,byte 255, byte 0, pulseIntensity) // orange
+        elif Map.containsKey Poison statuses then Color (byte 0, byte 191, byte 0, pulseIntensity) // green
+        elif Map.exists (fun key _ -> match key with Time false -> true | _ -> false) statuses then Color (byte 127, byte 127, byte 127, pulseIntensity) // dark white
+        elif Map.exists (fun key _ -> match key with Power (false, _) -> true | _ -> false) statuses then Color (byte 127, byte 127, byte 0, pulseIntensity) // dark orange
+        elif Map.exists (fun key _ -> match key with Magic (false, _) -> true | _ -> false) statuses then Color (byte 127, byte 0, byte 127, pulseIntensity) // dark purple
+        elif Map.exists (fun key _ -> match key with Shield (false, _) -> true | _ -> false) statuses then Color (byte 0, byte 127, byte 0, pulseIntensity) // dark yellow
+        else Color.Zero
 
     let getAnimationFinished time character =
         CharacterAnimationState.getFinished time character.CharacterAnimationState_
@@ -446,9 +486,12 @@ module Character =
     let animate time characterAnimationType character =
         { character with CharacterAnimationState_ = CharacterAnimationState.setCharacterAnimationType (Some time) characterAnimationType character.CharacterAnimationState_ }
 
+    let materialize character =
+        { character with CharacterAnimationState_ = CharacterAnimationState.materialize character.CharacterAnimationState_ }
+
     let make bounds characterIndex characterType boss animationSheet celSize direction (characterState : CharacterState) chargeTechOpt actionTime =
         let animationType = if characterState.Healthy then IdleAnimation else WoundAnimation
-        let animationState = { StartTime = 0L; AnimationSheet = animationSheet; CharacterAnimationType = animationType; Direction = direction }
+        let animationState = { StartTime = 0L; AnimationSheet = animationSheet; CharacterAnimationType = animationType; Materializing = false; Direction = direction }
         { PerimeterOriginal_ = bounds
           Perimeter_ = bounds
           CharacterIndex_ = characterIndex
@@ -463,7 +506,7 @@ module Character =
           ActionTime_ = actionTime
           CelSize_ = celSize }
 
-    let tryMakeEnemy allyCount index offsetCharacters waitSpeed enemyData =
+    let tryMakeEnemy allyCount subindex waitSpeed enemyData =
         match Map.tryFind (Enemy enemyData.EnemyType) Data.Value.Characters with
         | Some characterData ->
             let archetypeType = characterData.ArchetypeType
@@ -473,7 +516,7 @@ module Character =
                     match archetypeData.Stature with
                     | SmallStature | NormalStature | LargeStature -> (Constants.Gameplay.CharacterSize, Constants.Gameplay.CharacterCelSize)
                     | BossStature -> (Constants.Gameplay.BossSize, Constants.Gameplay.BossCelSize)
-                let position = if offsetCharacters then enemyData.EnemyPosition + Constants.Battle.CharacterOffset else enemyData.EnemyPosition
+                let position = if allyCount = 1 then enemyData.EnemyPosition + Constants.Battle.CharacterOffset else enemyData.EnemyPosition
                 let bounds = box3 position size
                 let hitPoints = Algorithms.hitPointsMax characterData.ArmorOpt archetypeType characterData.LevelBase
                 let techPoints = Algorithms.techPointsMax characterData.ArmorOpt archetypeType characterData.LevelBase
@@ -486,14 +529,14 @@ module Character =
                     if waitSpeed then       1000.0f - 125.0f - Gen.randomf1 8.0f * 75.0f
                     elif allyCount = 1 then 1000.0f - 400.0f - Gen.randomf1 6.0f * 75.0f
                     else                    1000.0f - 450.0f - Gen.randomf1 8.0f * 75.0f
-                let enemy = make bounds (EnemyIndex index) characterType characterData.Boss characterData.AnimationSheet celSize Rightward characterState chargeTechOpt actionTime
+                let enemy = make bounds (EnemyIndex subindex) characterType characterData.Boss characterData.AnimationSheet celSize Rightward characterState chargeTechOpt actionTime
                 Some enemy
             | None -> None
         | None -> None
 
     let empty =
         let bounds = box3 v3Zero Constants.Gameplay.CharacterSize
-        let characterAnimationState = { StartTime = 0L; AnimationSheet = Assets.Field.JinnAnimationSheet; CharacterAnimationType = IdleAnimation; Direction = Downward }
+        let characterAnimationState = { StartTime = 0L; AnimationSheet = Assets.Field.JinnAnimationSheet; CharacterAnimationType = IdleAnimation; Materializing = false; Direction = Downward }
         { PerimeterOriginal_ = bounds
           Perimeter_ = bounds
           CharacterIndex_ = AllyIndex 0
