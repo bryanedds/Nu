@@ -12,6 +12,7 @@ type [<NoComparison>] CharacterAnimationState =
     { StartTime : int64
       AnimationSheet : Image AssetTag
       CharacterAnimationType : CharacterAnimationType
+      Materializing : bool // whether the character is fading in
       Direction : Direction }
 
     static member face direction state =
@@ -98,10 +99,14 @@ type [<NoComparison>] CharacterAnimationState =
         | Some progress -> progress = 1.0f
         | None -> true
 
+    static member materialize state =
+        { state with Materializing = true }
+
     static member empty =
         { StartTime = 0L
           AnimationSheet = Assets.Field.JinnAnimationSheet
           CharacterAnimationType = IdleAnimation
+          Materializing = false
           Direction = Downward }
 
     static member initial =

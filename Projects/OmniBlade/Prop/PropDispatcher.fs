@@ -124,6 +124,10 @@ module PropDispatcher =
                                 match prop.Prop.PropState with
                                 | DoorState opened -> if opened then Assets.Field.WoodenDoorOpenedImage else Assets.Field.WoodenDoorClosedImage
                                 | _ -> failwithumf ()
+                            | SteelDoor ->
+                                match prop.Prop.PropState with
+                                | DoorState opened -> if opened then Assets.Field.SteelDoorOpenedImage else Assets.Field.SteelDoorClosedImage
+                                | _ -> failwithumf ()
                         (false, image, Color.One, Transparent, Color.Zero, ValueNone, FlipNone)
                     | Chest (chestType, _, id, _, _, _) ->
                         let opened = prop.Advents.Contains (Opened id)
@@ -133,6 +137,10 @@ module PropDispatcher =
                                 if opened
                                 then Assets.Field.WoodenChestOpenedImage
                                 else Assets.Field.WoodenChestClosedImage
+                            | SteelChest ->
+                                if opened
+                                then Assets.Field.SteelChestOpenedImage
+                                else Assets.Field.SteelChestClosedImage
                             | BrassChest ->
                                 if opened
                                 then Assets.Field.BrassChestOpenedImage

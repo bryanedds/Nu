@@ -3,6 +3,7 @@
 
 namespace OmniBlade
 open System
+open System.Numerics
 open Prime
 open Nu
 open OmniBlade
@@ -88,7 +89,7 @@ module Battle =
     let getCharactersHudded battle =
         getCharactersIf (fun _ (character : Character) ->
             character.Ally ||
-            (character.Enemy && not character.Wounding))
+            (character.Enemy && not character.Wounding && not character.Materializing))
             battle
 
     let getAllies battle =
@@ -139,6 +140,14 @@ module Battle =
     let getEnemyIndices battle =
         getEnemies battle |>
         Map.toKeyList
+
+    let nextEnemyIndex battle =
+        let mutable lastIndex = 0
+        for entry in getEnemies battle do
+            if entry.Key.Subindex > lastIndex then
+                lastIndex <- entry.Key.Subindex
+        let enemySubindex = inc lastIndex
+        EnemyIndex enemySubindex
 
     let getAlliesHealthyIndices battle =
         getAlliesHealthy battle |>
@@ -368,19 +377,19 @@ module Battle =
         let target = getCharacter targetIndex battle
         Character.getAttackResult effectType source target
 
-    let evalTech targetCount techData sourceIndex targetIndex battle =
+    let evalTechUnary targetCount techData sourceIndex targetIndex battle =
         let source = getCharacter sourceIndex battle
         let target = getCharacter targetIndex battle
-        (techData.TechCost, Character.evalTech targetCount techData source target)
+        (techData.TechCost, Character.evalTechUnary targetCount techData source target)
 
-    let evalTechMove sourceIndex targetIndex techType battle =
+    let evalTech sourceIndex targetIndex techType battle =
         match Map.tryFind techType Data.Value.Techs with
         | Some techData ->
             let source = getCharacter sourceIndex battle
             let target = getCharacter targetIndex battle
             let characters = getCharacters battle
-            (techData.TechCost, Character.evalTechMove techData source target characters)
-        | None -> (0, Map.empty)
+            Triple.prepend techData.TechCost (Character.evalTech techData source target characters)
+        | None -> (0, None, Map.empty)
 
     let tryRetargetIfNeeded affectingWounded targetIndexOpt battle =
         match targetIndexOpt with
@@ -492,10 +501,10 @@ module Battle =
         List.iteri (fun index enemy -> tryRandomizeEnemy 0 index enemy layout) enemies
         layout
 
-    let private randomizeEnemies allyCount offsetCharacters waitSpeed enemies =
-        let (w, h) = (10, 8)
-        let origin = v2 -288.0f -240.0f
+    let private randomizeEnemies allyCount waitSpeed enemies =
+        let origin = v2 -288.0f -240.0f // TODO: P1: turn these duplicated vars into global consts.
         let tile = v2 48.0f 48.0f
+        let (w, h) = (10, 8)
         let layout = randomizeEnemyLayout w h enemies
         let enemies =
             layout |>
@@ -506,15 +515,49 @@ module Battle =
                     | Right None -> None
                     | Right (Some (enemyIndex, enemy)) ->
                         let position = v3 (origin.X + single x * tile.X) (origin.Y + single y * tile.Y) 0.0f
-                        Character.tryMakeEnemy allyCount enemyIndex offsetCharacters waitSpeed { EnemyType = enemy; EnemyPosition = position })
+                        Character.tryMakeEnemy allyCount enemyIndex waitSpeed { EnemyType = enemy; EnemyPosition = position })
                     arr) |>
             Array.concat |>
             Array.definitize |>
             Array.toList
         enemies
 
-    let makeFromParty offsetCharacters inventory (prizePool : PrizePool) (party : Party) battleSpeed battleData world =
-        let enemies = randomizeEnemies party.Length offsetCharacters (battleSpeed = WaitSpeed) battleData.BattleEnemies
+    let spawnEnemies time (spawn : SpawnType list) battle =
+        let origin = v2 -288.0f -240.0f // TODO: P1: turn these duplicated vars into global consts.
+        let tile = v2 48.0f 48.0f
+        let (w, h) = (10, 8)
+        let waitSpeed = battle.BattleSpeed_ = WaitSpeed
+        let allyCount = battle |> getAllies |> Map.count
+        let battle =
+            List.fold (fun battle (spawnType : SpawnType) ->
+                let mutable battle = battle
+                let mutable spawned = false
+                let mutable tries = 0
+                while not spawned && tries < 100 do
+                    let (i, j) = (Gen.random1 w, Gen.random1 h)
+                    let position = v3 (origin.X + single i * tile.X) (origin.Y + single j * tile.Y) 0.0f
+                    let positions = battle |> getEnemies |> Map.toValueArray |> Array.map (fun (enemy : Character) -> enemy.PerimeterOriginal.BottomLeft)
+                    let notOnSides = i <> 0 && i <> w - 1
+                    let notOverlapping = Array.notExists (fun position' -> Vector3.Distance (position, position') < tile.X * 2.0f) positions
+                    if notOnSides && notOverlapping then
+                        let enemyIndex = nextEnemyIndex battle                        
+                        match Character.tryMakeEnemy allyCount enemyIndex.Subindex waitSpeed { EnemyType = spawnType.EnemyType; EnemyPosition = position } with
+                        | Some enemy ->
+                            let enemy =
+                                match spawnType.SpawnEffectType with
+                                | Materialize -> Character.materialize enemy
+                                | Unearth -> Character.animate time UnearthAnimation enemy
+                            battle <- addCharacter enemyIndex enemy battle
+                            spawned <- true
+                        | None -> ()
+                    tries <- inc tries
+                battle)
+                battle
+                spawn
+        battle
+
+    let makeFromParty inventory (prizePool : PrizePool) (party : Party) battleSpeed battleData world =
+        let enemies = randomizeEnemies party.Length (battleSpeed = WaitSpeed) battleData.BattleEnemies
         let characters = party @ enemies |> Map.ofListBy (fun (character : Character) -> (character.CharacterIndex, character))
         let prizePool = { prizePool with Gold = List.fold (fun gold (enemy : Character) -> gold + enemy.GoldPrize) prizePool.Gold enemies }
         let prizePool = { prizePool with Exp = List.fold (fun exp (enemy : Character) -> exp + enemy.ExpPrize) prizePool.Exp enemies }

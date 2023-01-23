@@ -58,7 +58,7 @@ module Constants =
         let LinearDamping = 19.0f
         let PropsGroupName = "Props"
         let TransitionTime = 60L
-        let RandMapSize = v2iDup 7
+        let RandMapSize = v2iDup 9
         let RoomSize = v2iDup 32
 #if DEV
         let AvatarWalkForce = 60000.0f
@@ -80,14 +80,14 @@ module Constants =
 #else
         let SpiritActivityThreshold = 240L
 #endif
-        let SpiritActivityAggressionThreshold = 4
+        let SpiritActivityAggressionThreshold = 3
         let SpiritRadius = 90.0f / SpiritOrbRatio
         let WalkLengthScalarClosed = 0.55f // NOTE: higher is longer distance to stronger spirits.
         let WalkLengthScalarOpened = 0.45f // NOTE: higher is longer distance to stronger spirits.
         let TreasureProbability = 0.667f
-        let RecruitmentFees = [|200; 1000; 5000; 20000|]
+        let RecruitmentFees = [|200; 1000; 2500; 5000|]
         let ConnectorFadeYMin = 96.0f
-        let ConnectorFadeYMax = 1440.0f
+        let ConnectorFadeYMax = 1296.0f
         let FeelerElevation = -100.0f
         let BackgroundElevation = -30.0f
         let FlooringElevation = -10.0f
@@ -135,7 +135,8 @@ module Constants =
         let CharacterBottomOffset3 = v3 0.0f -48.0f 0.0f
         let CharacterBottomOffset4 = v3 0.0f 30.0f 0.0f
         let CharacterOffset = v3 -96.0f 0.0f 0.0f
-        let CharacterPulseLength = 60L
+        let CharacterPulseDuration = 60L
+        let CharacterMaterializeDuration = 120L
         let RingMenuRadius = 84.0f
         let BackgroundElevation = -30.0f
         let GuiBackgroundElevation = -5.0f

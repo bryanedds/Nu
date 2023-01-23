@@ -62,6 +62,11 @@ type CharacterIndex =
     member this.Enemy =
         not this.Ally
 
+    member this.Subindex =
+        match this with
+        | AllyIndex index
+        | EnemyIndex index -> index
+
     static member friendly index index2 =
         match (index, index2) with
         | (AllyIndex _, AllyIndex _) -> true
@@ -266,76 +271,16 @@ type ArchetypeType =
     | Conjuror
     | Cleric
     | Bat
-    | Spider
     | Snake
-    | Willowisp
-    | Chillowisp
-    | Fairy
-    | FireGel
-    | WaterGel
-    | LightningGel
-    | EarthGel
-    | Toad
-    | Beetle
-    | Rat
-    | Scorpion
-    | Plant
-    | Ghost
-    | Wolf
+    | Gorgon
     | Goblin
     | Soldier
-    | Knight
-    | Imp
-    | Zombie
-    | Skeleton
     | Shaman
-    | Glurble
-    | Wolfman
-    | Dryad
-    | Mummy
-    | Witch
-    | Squidly
-    | Merman
-    | Feral
-    | Brigand
-    | Lizardman
     | Trixter
-    | Monk
-    | Gorgon
-    | Tortoise
-    | Robot
-    | Harpy
-    | JackMan
     | Avian
-    | Troll
-    | Mare
-    | Djinn
-    | Naga
-    | JackRider
-    | Trap
-    | Vampire
-    | Vampiress
-    | Cerebus
-    | Hydra
-    | Gargoyle
-    | MasterShaman
-    | FireElemental
-    | WaterElemental
-    | LightningElemental
-    | EarthElemental
-    | Nightmare
     | Minotaur
-    | Wyvern
-    | Ogre
-    | PowerHydra
-    | Lich
     | Armoros
-    | Golem
-    | Deathbot
-    | Dinoman
     | Arachnos
-    | FireDragon
-    | WaterDragon
 
 type ShopType =
     | Chemist
@@ -438,10 +383,12 @@ type LockType =
 
 type ChestType =
     | WoodenChest
+    | SteelChest
     | BrassChest
 
 type DoorType =
     | WoodenDoor
+    | SteelDoor
 
 type PortalIndex =
     | Center
@@ -528,7 +475,7 @@ type CharacterAnimationType =
     | Cast2Animation
     | SlashAnimation
     | WhirlAnimation
-    | BuryAnimation // TODO: get rid of this
+    | UnearthAnimation
 
 type AllyType =
     | Jinn
@@ -561,6 +508,14 @@ type CharacterType =
         match characterType with
         | Ally ty -> string ty
         | Enemy ty -> string ty
+
+type SpawnEffectType =
+    | Materialize
+    | Unearth
+
+type SpawnType =
+    { EnemyType : EnemyType
+      SpawnEffectType : SpawnEffectType }
 
 type [<NoComparison>] SpiritType =
     | WeakSpirit
@@ -778,6 +733,7 @@ type [<NoComparison>] TechData =
       AffinityOpt : AffinityType option
       StatusesAdded : StatusType Set
       StatusesRemoved : StatusType Set
+      SpawnOpt : SpawnType list option
       TargetType : TargetType
       Description : string }
 
@@ -892,7 +848,7 @@ type [<NoComparison>] PropDescriptor =
 type [<NoComparison>] FieldTileMap =
     | FieldStatic of TileMap AssetTag
     | FieldConnector of TileMap AssetTag * TileMap AssetTag
-    | FieldRandom of int * single * Origin * int * string
+    | FieldRandom of int * int * single * Origin * int * string
 
 type [<NoComparison>] FieldData =
     { FieldType : FieldType // key
@@ -945,9 +901,9 @@ module FieldData =
                     match (Metadata.tryGetTileMapMetadata fieldAsset, Metadata.tryGetTileMapMetadata fieldFadeAsset) with
                     | (Some (_, _, tileMap), Some (_, _, tileMapFade)) -> Some (Choice2Of3 (tileMap, tileMapFade))
                     | (_, _) -> None
-                | FieldRandom (walkLength, bias, origin, floor, fieldPath) ->
+                | FieldRandom (walkCount, walkLength, bias, origin, floor, fieldPath) ->
                     let rand = Rand.makeFromSeedState rotatedSeedState
-                    let (cursor, randMap, _) = RandMap.makeFromRand walkLength bias Constants.Field.RandMapSize origin floor rand
+                    let (cursor, randMap, _) = RandMap.makeFromRand walkCount walkLength bias Constants.Field.RandMapSize origin floor rand
                     let fieldName = FieldType.toFieldName fieldData.FieldType
                     let tileMap = RandMap.toTmx fieldName fieldPath origin cursor floor fieldData.UseWindPortal randMap
                     Some (Choice3Of3 (tileMap, origin))
@@ -1026,7 +982,8 @@ module FieldData =
                     let (probability, rand) = Rand.nextSingleUnder 1.0f rand
                     if probability < Constants.Field.TreasureProbability then
                         let (id, rand) = let (i, rand) = Rand.nextInt rand in let (j, rand) = Rand.nextInt rand in (Gen.idFromInts i j, rand)
-                        let chestSpawned = { chestSpawn with PropData = Chest (WoodenChest, treasure, id, None, Cue.Fin, Set.empty) }
+                        let chestType = match fieldData.FieldType with Factory _ -> SteelChest | _ -> WoodenChest
+                        let chestSpawned = { chestSpawn with PropData = Chest (chestType, treasure, id, None, Cue.Fin, Set.empty) }
 #if DEV
                         let mapSize =
                             v2 // TODO: implement TotalWidth and TotalHeight extension properties for TmxMap.
@@ -1064,7 +1021,7 @@ module FieldData =
             match tileMapChc with
             | Choice3Of3 (tileMap, origin) ->
                 match fieldData.FieldTileMap with
-                | FieldRandom (_, _, _, _, _) ->
+                | FieldRandom (_, _, _, _, _, _) ->
                     let tileMapPerimeter = box3 v3Zero (v3 (single tileMap.Width * single tileMap.TileWidth) (single tileMap.Height * single tileMap.TileHeight) 0.0f)
                     let distanceFromOriginMax =
                         let walkLengthScalar =

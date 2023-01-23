@@ -706,7 +706,7 @@ module BattleDispatcher =
                     let playHit = PlaySound (60L, Constants.Audio.SoundVolumeDefault, Assets.Field.HitSound)
                     let perimeter = Battle.getCharacterPerimeter sourceIndex battle
                     let slashSpike = DisplaySlashSpike (10L, perimeter.Bottom, targetIndex)
-                    let impactSplashes = Battle.evalTechMove sourceIndex targetIndex techType battle |> snd |> Map.toKeyList |> List.map (fun targetIndex -> DisplayImpactSplash (70L, targetIndex) |> signal)
+                    let impactSplashes = Battle.evalTech sourceIndex targetIndex techType battle |> Triple.thd |> Map.toKeyList |> List.map (fun targetIndex -> DisplayImpactSplash (70L, targetIndex) |> signal)
                     let battle = Battle.animateCharacter time SlashAnimation sourceIndex battle
                     withSignals (signal playSlash :: signal playHit :: signal slashSpike :: impactSplashes) battle
                 | PowerCut ->
@@ -769,7 +769,7 @@ module BattleDispatcher =
                     let time = World.getUpdateTime world
                     let battle = Battle.animateCharacter time Cast2Animation sourceIndex battle
                     let playCure = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.CureSound)
-                    let displayCures = Battle.evalTechMove sourceIndex targetIndex techType battle |> snd |> Map.toKeyList |> List.map (fun targetIndex -> DisplayCure (0L, targetIndex) |> signal)
+                    let displayCures = Battle.evalTech sourceIndex targetIndex techType battle |> Triple.thd |> Map.toKeyList |> List.map (fun targetIndex -> DisplayCure (0L, targetIndex) |> signal)
                     withSignals (signal playCure :: displayCures) battle
                 | Empower ->
                     let time = World.getUpdateTime world
@@ -781,7 +781,7 @@ module BattleDispatcher =
                     let time = World.getUpdateTime world
                     let battle = Battle.animateCharacter time Cast2Animation sourceIndex battle
                     let playCure = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.CureSound)
-                    let displayCures = Battle.evalTechMove sourceIndex targetIndex techType battle |> snd |> Map.toKeyList |> List.map (fun targetIndex -> DisplayCure (0L, targetIndex) |> signal)
+                    let displayCures = Battle.evalTech sourceIndex targetIndex techType battle |> Triple.thd |> Map.toKeyList |> List.map (fun targetIndex -> DisplayCure (0L, targetIndex) |> signal)
                     withSignals (signal playCure :: displayCures) battle
                 | Enlighten ->
                     let time = World.getUpdateTime world
@@ -832,7 +832,7 @@ module BattleDispatcher =
 
             | TechCharacter3 (sourceIndex, targetIndex, techType) ->
                 let time = World.getUpdateTime world
-                let results = Battle.evalTechMove sourceIndex targetIndex techType battle |> snd
+                let (_, spawnOpt, results) = Battle.evalTech sourceIndex targetIndex techType battle
                 let (battle, sigs) =
                     Map.fold (fun (battle, sigs) characterIndex (cancelled, _, hitPointsChange, _, _) ->
                         if hitPointsChange < 0 && Battle.getCharacterHealthy characterIndex battle then
@@ -842,10 +842,14 @@ module BattleDispatcher =
                         else (battle, sigs))
                         (battle, [])
                         results
+                let battle =
+                    match spawnOpt with
+                    | Some spawn -> Battle.spawnEnemies time spawn battle
+                    | _ -> battle
                 withSignals sigs battle
 
             | TechCharacter4 (sourceIndex, targetIndex, techType) ->
-                let results = Battle.evalTechMove sourceIndex targetIndex techType battle |> snd 
+                let results = Battle.evalTech sourceIndex targetIndex techType battle |> Triple.thd
                 let (battle, sigs) =
                     Map.fold (fun (battle, sigs) _ (_, _, _, _, _) ->
                         // TODO: glow effect
@@ -876,7 +880,7 @@ module BattleDispatcher =
 
             | TechCharacter6 (sourceIndex, targetIndex, techType) ->
                 let time = World.getUpdateTime world
-                let (techCost, results) = Battle.evalTechMove sourceIndex targetIndex techType battle
+                let (techCost, _, results) = Battle.evalTech sourceIndex targetIndex techType battle
                 let (battle, sigs) =
                     Map.fold (fun (battle, sigs) characterIndex (cancelled, affectsWounded, hitPointsChange, added, removed) ->
                         let battle = Battle.updateCharacterHitPoints cancelled affectsWounded hitPointsChange characterIndex battle

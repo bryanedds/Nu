@@ -287,22 +287,23 @@ type RandMap =
                             bossRoomAdded <- true
         bossRoomAdded
 
-    static member makeFromRand walkLength biasChance (size : Vector2i) origin floor rand =
+    static member makeFromRand walkCount walkLength biasChance (size : Vector2i) origin floor rand =
         if size.X < 4 || size.Y < 4 then failwith "Invalid RandMap size."
         let bounds = box2i v2iZero size
         let (cursor, biases) =
             match origin with
             | OriginC ->        (bounds.Center,                                 [0; 1; 2; 3]) // 0 = n; 1 = e; 2 = s; 3 = w
-            | OriginN ->        (bounds.Bottom,                                 [2; 2; 1; 3])
-            | OriginE ->        (bounds.Right - v2iRight,                       [3; 3; 0; 2])
-            | OriginS ->        (bounds.Top - v2iUp,                            [0; 0; 1; 3])
-            | OriginW ->        (bounds.Left,                                   [1; 1; 0; 2])
-            | OriginNE ->       (v2i (dec bounds.Size.X) bounds.Min.Y,          [2; 2; 3; 3])
-            | OriginNW ->       (v2i bounds.Min.X bounds.Min.Y,                 [2; 2; 1; 1])
-            | OriginSE ->       (v2i (dec bounds.Size.X) (dec bounds.Size.Y),   [0; 0; 3; 3])
-            | OriginSW ->       (v2i bounds.Min.X (dec bounds.Size.Y),          [0; 0; 1; 1])
+            | OriginN ->        (bounds.Bottom,                                 [2; 1; 3])
+            | OriginE ->        (bounds.Right - v2iRight,                       [3; 0; 2])
+            | OriginS ->        (bounds.Top - v2iUp,                            [0; 1; 3])
+            | OriginW ->        (bounds.Left,                                   [1; 0; 2])
+            | OriginNE ->       (v2i (dec bounds.Size.X) bounds.Min.Y,          [2; 3])
+            | OriginNW ->       (v2i bounds.Min.X bounds.Min.Y,                 [2; 1])
+            | OriginSE ->       (v2i (dec bounds.Size.X) (dec bounds.Size.Y),   [0; 3])
+            | OriginSW ->       (v2i bounds.Min.X (dec bounds.Size.Y),          [0; 1])
+        let biases = Seq.initInfinite (constant biases) |> Seq.concat |> Seq.take walkCount
         let (maps, rand) =
-            List.fold (fun (maps, rand) bias ->
+            Seq.fold (fun (maps, rand) bias ->
                 let map = { RandMap.make size with OriginOpt = Some cursor }
                 let (_, rand) = List.fold (fun (cursor, rand) _ -> RandMap.walk biasChance bias cursor map rand) (cursor, rand) [0 .. dec walkLength]
                 (map :: maps, rand))
@@ -332,16 +333,39 @@ type RandMap =
                  RandMap.tryAddSpecialRoomSouthFromNorthEast BossSegment
                  RandMap.tryAddSpecialRoomSouthFromNorthWest BossSegment]
                 rand
-        // TODO: try to add more narrative segment placement variety while keeping each coming from opposite directions.
+        let enoughRooms walkLength (map : RandMap) =
+            let mutable roomCount = 0
+            for i in 0 .. map.Segments.Length - 1 do
+                for j in 0 .. map.Segments.[i].Length - 1 do
+                    if map.Segments.[i].[j] <> Segment.Segment0 then
+                        roomCount <- inc roomCount
+            let roomMin = walkLength + int (Operators.floor (single walkLength * 0.667f))
+            let roomMax = walkLength + int (Operators.ceil (single walkLength * 1.0f))
+            roomCount >= roomMin && roomCount <= roomMax
+        let noContiguousSameRooms (map : RandMap) =
+            let mutable found = false
+            for i in 0 .. map.Segments.Length - 2 do
+                for j in 0 .. map.Segments.[i].Length - 1 do
+                    if  map.Segments.[i].[j] <> Segment.Segment0 &&
+                        map.Segments.[i].[j] = map.Segments.[inc i].[j] then
+                        found <- true
+            for i in 0 .. map.Segments.Length - 1 do
+                for j in 0 .. map.Segments.[i].Length - 2 do
+                    if  map.Segments.[i].[j] <> Segment.Segment0 &&
+                        map.Segments.[i].[j] = map.Segments.[i].[inc j] then
+                        found <- true
+            not found
         let isMapValid =
             RandMap.tryAddSpecialRoomSouthFromNorthWest NarrativeSegment map &&
             RandMap.tryAddSpecialRoomNorthFromSouthEast NarrativeSegment map &&
-            tryAddBoss map
+            tryAddBoss map &&
+            enoughRooms walkLength map &&
+            noContiguousSameRooms map
 #if DEV
         RandMap.printn map
 #endif
         if not isMapValid // make another if no valid map could be created
-        then RandMap.makeFromRand walkLength biasChance size origin floor rand
+        then RandMap.makeFromRand walkCount walkLength biasChance size origin floor rand
         else (cursor, map, rand)
 
     static member make (size : Vector2i) =
@@ -353,24 +377,25 @@ type RandMap =
     static member toTmx fieldName abstractPath origin (cursor : Vector2i) floor useWindPortal map =
 
         // locals
-        let mapTmx = TmxMap (abstractPath + "+7x7.tmx")
+        let mapTmx = TmxMap (abstractPath + "+9x9.tmx")
         let objects = mapTmx.ObjectGroups.[0].Objects
         let segments = Segments.load floor abstractPath
+        let slop = 12 // extra translation so that collision doesn't happen due to portal being directly aligned with a wall
         let entryId = 0
 
         // create entry prop
         if floor = 0 then
             let (openingX, openingY, openingWidth, openingHeight, openingInfo) =
                 match origin with
-                | OriginC ->    (15 * mapTmx.TileWidth, 15 * mapTmx.TileHeight, mapTmx.TileWidth * 2,  mapTmx.TileHeight * 2,  "[Portal AirPortal [IX 0] Downward " + fieldName + "Connector [IX 0]]")
-                | OriginE ->    (31 * mapTmx.TileWidth, 7  * mapTmx.TileHeight, mapTmx.TileWidth * 1,  mapTmx.TileHeight * 18, "[Portal AirPortal [IX 0] Leftward " + fieldName + "Connector [IX 0]]")
-                | OriginW ->    (0  * mapTmx.TileWidth, 7  * mapTmx.TileHeight, mapTmx.TileWidth * 1,  mapTmx.TileHeight * 18, "[Portal AirPortal [IX 0] Rightward " + fieldName + "Connector [IX 0]]")
-                | OriginN ->    (7  * mapTmx.TileWidth, 31 * mapTmx.TileHeight, mapTmx.TileWidth * 18, mapTmx.TileHeight * 1,  "[Portal AirPortal [IX 0] Downward " + fieldName + "Connector [IX 0]]")
-                | OriginNE ->   (7  * mapTmx.TileWidth, 31 * mapTmx.TileHeight, mapTmx.TileWidth * 18, mapTmx.TileHeight * 1,  "[Portal AirPortal [IX 0] Downward " + fieldName + "Connector [IX 0]]")
-                | OriginNW ->   (7  * mapTmx.TileWidth, 31 * mapTmx.TileHeight, mapTmx.TileWidth * 18, mapTmx.TileHeight * 1,  "[Portal AirPortal [IX 0] Downward " + fieldName + "Connector [IX 0]]")
-                | OriginS ->    (7  * mapTmx.TileWidth, 0  * mapTmx.TileHeight, mapTmx.TileWidth * 18, mapTmx.TileHeight * 1,  "[Portal AirPortal [IX 0] Upward " + fieldName + "Connector [IX 0]]")
-                | OriginSE ->   (7  * mapTmx.TileWidth, 0  * mapTmx.TileHeight, mapTmx.TileWidth * 18, mapTmx.TileHeight * 1,  "[Portal AirPortal [IX 0] Upward " + fieldName + "Connector [IX 0]]")
-                | OriginSW ->   (7  * mapTmx.TileWidth, 0  * mapTmx.TileHeight, mapTmx.TileWidth * 18, mapTmx.TileHeight * 1,  "[Portal AirPortal [IX 0] Upward " + fieldName + "Connector [IX 0]]")
+                | OriginC ->    (15 * mapTmx.TileWidth,         15 * mapTmx.TileHeight,         mapTmx.TileWidth * 2,  mapTmx.TileHeight * 2,  "[Portal AirPortal [IX 0] Downward " + fieldName + "Connector [IX 0]]")
+                | OriginE ->    (31 * mapTmx.TileWidth + slop,  7  * mapTmx.TileHeight,         mapTmx.TileWidth * 1,  mapTmx.TileHeight * 18, "[Portal AirPortal [IX 0] Leftward " + fieldName + "Connector [IX 0]]")
+                | OriginW ->    (0  * mapTmx.TileWidth - slop,  7  * mapTmx.TileHeight,         mapTmx.TileWidth * 1,  mapTmx.TileHeight * 18, "[Portal AirPortal [IX 0] Rightward " + fieldName + "Connector [IX 0]]")
+                | OriginN ->    (7  * mapTmx.TileWidth,         31 * mapTmx.TileHeight - slop,  mapTmx.TileWidth * 18, mapTmx.TileHeight * 1,  "[Portal AirPortal [IX 0] Downward " + fieldName + "Connector [IX 0]]")
+                | OriginNE ->   (7  * mapTmx.TileWidth,         31 * mapTmx.TileHeight - slop,  mapTmx.TileWidth * 18, mapTmx.TileHeight * 1,  "[Portal AirPortal [IX 0] Downward " + fieldName + "Connector [IX 0]]")
+                | OriginNW ->   (7  * mapTmx.TileWidth,         31 * mapTmx.TileHeight - slop,  mapTmx.TileWidth * 18, mapTmx.TileHeight * 1,  "[Portal AirPortal [IX 0] Downward " + fieldName + "Connector [IX 0]]")
+                | OriginS ->    (7  * mapTmx.TileWidth,         0  * mapTmx.TileHeight + slop,  mapTmx.TileWidth * 18, mapTmx.TileHeight * 1,  "[Portal AirPortal [IX 0] Upward " + fieldName + "Connector [IX 0]]")
+                | OriginSE ->   (7  * mapTmx.TileWidth,         0  * mapTmx.TileHeight + slop,  mapTmx.TileWidth * 18, mapTmx.TileHeight * 1,  "[Portal AirPortal [IX 0] Upward " + fieldName + "Connector [IX 0]]")
+                | OriginSW ->   (7  * mapTmx.TileWidth,         0  * mapTmx.TileHeight + slop,  mapTmx.TileWidth * 18, mapTmx.TileHeight * 1,  "[Portal AirPortal [IX 0] Upward " + fieldName + "Connector [IX 0]]")
             let openingXX = openingX + cursor.X * mapTmx.TileWidth * Constants.Field.RoomSize.X
             let openingYY = openingY + inc cursor.Y * mapTmx.TileHeight * Constants.Field.RoomSize.Y
             let object = TmxMap.makeObject entryId 0 (double openingXX) (double openingYY) (double openingWidth) (double openingHeight)
