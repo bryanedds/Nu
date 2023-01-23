@@ -10,9 +10,9 @@ What is the **Nu Game Engine**?
 
 This repository hosts several projects, including -
 
-- the sample game **BlazeVector**.
-- the Chrono Trigger-like game, **OmniBlade** available free for Windows (https://github.com/bryanedds/Nu/releases/download/v10.6.2/OmniBlade.Windows.zip) and Linux (https://github.com/bryanedds/Nu/releases/download/v10.6.2/OmniBlade.Linux.zip)
-- the Final Fantasy Tactics-like game, codenamed ['Tactics'](https://github.com/bryanedds/Nu/tree/master/Projects/Tactics). 
+- the sample game ['BlazeVector'](https://github.com/bryanedds/Nu/tree/master/Projects/BlazeVector).
+- the Chrono Trigger-like game demo, ['OmniBlade'](https://github.com/bryanedds/Nu/tree/master/Projects/OmniBlade) available free for Windows (https://github.com/bryanedds/Nu/releases/download/v10.6.2/OmniBlade.Windows.zip) and Linux (https://github.com/bryanedds/Nu/releases/download/v10.6.2/OmniBlade.Linux.zip)
+- the Final Fantasy Tactics-like game prototype, codenamed ['Tactics'](https://github.com/bryanedds/Nu/tree/master/Projects/Tactics). 
 
 Here is some media on the Nu Game Engine -
 
