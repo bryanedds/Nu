@@ -34,7 +34,8 @@ module Character =
         member this.BottomOriginal = this.PerimeterOriginal_.Bottom
         member this.BottomOriginalOffset = this.BottomOriginal + Constants.Battle.CharacterBottomOffset
         member this.BottomOriginalOffset2 = this.BottomOriginal + Constants.Battle.CharacterBottomOffset2
-        member this.BottomOriginalOffset3 = this.Bottom + Constants.Battle.CharacterBottomOffset3
+        member this.BottomOriginalOffset3 = this.BottomOriginal + Constants.Battle.CharacterBottomOffset3
+        member this.BottomOriginalOffset4 = this.Bottom + Constants.Battle.CharacterBottomOffset4
         member this.SizeOriginal = this.PerimeterOriginal_.Size
 
         (* Perimeter Properties *)
