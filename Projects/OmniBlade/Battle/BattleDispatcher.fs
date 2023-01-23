@@ -969,7 +969,7 @@ module BattleDispatcher =
                 | Some target ->
                     let effect = Effects.makeHitPointsChangeEffect delta
                     let (entity, world) = World.createEntity<EffectDispatcher2d> DefaultOverlay None Simulants.BattleScene world
-                    let world = entity.SetPosition target.BottomOffset5 world
+                    let world = entity.SetPosition target.BottomOriginalOffset3 world
                     let world = entity.SetEffect effect world
                     let world = entity.SetElevation Constants.Battle.GuiEffectElevation world
                     let world = entity.SetSelfDestruct true world
@@ -1134,8 +1134,8 @@ module BattleDispatcher =
                          Content.fillBar "HealthBar"
                             [Entity.MountOpt == None
                              Entity.Size == v3 48.0f 6.0f 0.0f
-                             Entity.Center := character.BottomOffset
-                             Entity.Elevation == Constants.Battle.GuiElevation
+                             Entity.Center := character.BottomOriginalOffset
+                             Entity.Elevation == Constants.Battle.GuiBackgroundElevation
                              Entity.Fill := single character.HitPoints / single character.HitPointsMax
                              Entity.FillColor := if character.Statuses.ContainsKey Poison then Color.LawnGreen.WithA 0.75f else Color.Red.WithA 0.75f
                              Entity.BorderImage == Assets.Battle.HealthBorderImage
@@ -1146,8 +1146,8 @@ module BattleDispatcher =
                             Content.fillBar "TechBar"
                                [Entity.MountOpt == None
                                 Entity.Size == v3 48.0f 6.0f 0.0f
-                                Entity.Center := character.BottomOffset2
-                                Entity.Elevation == Constants.Battle.GuiElevation
+                                Entity.Center := character.BottomOriginalOffset2
+                                Entity.Elevation == Constants.Battle.GuiBackgroundElevation
                                 Entity.Fill := single character.TechPoints / single character.TechPointsMax
                                 Entity.FillColor == (color8 (byte 74) (byte 91) (byte 169) (byte 255)).WithA 0.75f
                                 Entity.BorderImage == Assets.Battle.TechBorderImage

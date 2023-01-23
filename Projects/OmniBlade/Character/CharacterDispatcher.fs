@@ -98,7 +98,8 @@ module CharacterDispatcher =
 
         override this.Initialize (character, _) =
             [Entity.Presence == Omnipresent
-             Entity.Perimeter := character.Perimeter]
+             Entity.Perimeter := character.Perimeter
+             Entity.Elevation == Constants.Battle.ForegroundElevation]
 
         override this.View (character, entity, world) =
             if entity.GetVisible world then
