@@ -32,6 +32,9 @@ module Character =
         member this.PerimeterOriginal = this.PerimeterOriginal_
         member this.CenterOriginal = this.PerimeterOriginal_.Center
         member this.BottomOriginal = this.PerimeterOriginal_.Bottom
+        member this.BottomOriginalOffset = this.BottomOriginal + Constants.Battle.CharacterBottomOffset
+        member this.BottomOriginalOffset2 = this.BottomOriginal + Constants.Battle.CharacterBottomOffset2
+        member this.BottomOriginalOffset3 = this.Bottom + Constants.Battle.CharacterBottomOffset3
         member this.SizeOriginal = this.PerimeterOriginal_.Size
 
         (* Perimeter Properties *)
@@ -45,11 +48,6 @@ module Character =
         member this.CenterOffset2 = this.Center + Constants.Battle.CharacterCenterOffset2
         member this.CenterOffset3 = this.Center + Constants.Battle.CharacterCenterOffset3
         member this.CenterOffset4 = this.Center + Constants.Battle.CharacterCenterOffset4
-        member this.BottomOffset = this.Bottom + Constants.Battle.CharacterBottomOffset
-        member this.BottomOffset2 = this.Bottom + Constants.Battle.CharacterBottomOffset2
-        member this.BottomOffset3 = this.Bottom + Constants.Battle.CharacterBottomOffset3
-        member this.BottomOffset4 = this.Bottom + Constants.Battle.CharacterBottomOffset4
-        member this.BottomOffset5 = this.Bottom + Constants.Battle.CharacterBottomOffset5
 
         (* CharacterState Properties *)
         member this.Name = CharacterType.getName this.CharacterType_
