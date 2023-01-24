@@ -11,10 +11,10 @@ open Prime
 [<RequireQualifiedAccess>]
 module Engine =
 
-    let [<Uniform>] DesiredFps = Fps60
-    let [<Uniform>] DesiredFpsI = match DesiredFps with Fps30 -> 30 | Fps60 -> 60 | Fps120 -> 120
-    let [<Uniform>] DesiredFpsF = match DesiredFps with Fps30 -> 30.0f | Fps60 -> 60.0f | Fps120 -> 120.0f
-    let [<Uniform>] DesiredFpsD = match DesiredFps with Fps30 -> 30.0 | Fps60 -> 60.0 | Fps120 -> 120.0
+    let [<Uniform>] DesiredFps = LimitTo60
+    let [<Uniform>] DesiredFpsI = match DesiredFps with LimitTo30 -> 30 | LimitTo60 -> 60 | Unlimited -> 1000000 // arbitrary large number to allow for division
+    let [<Uniform>] DesiredFpsF = single DesiredFpsI
+    let [<Uniform>] DesiredFpsD = double DesiredFpsI
     let [<Uniform>] DesiredFrameTimeMinimum = DesiredFpsD * 0.001
     let [<Literal>] ExitCodeSuccess = 0
     let [<Literal>] ExitCodeFailure = 1

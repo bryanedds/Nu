@@ -68,9 +68,9 @@ type [<AttributeUsage (AttributeTargets.Field)>] UniformAttribute () =
 
 /// The desired frame rate.
 type [<NoComparison>] DesiredFps =
-    | Fps30
-    | Fps60
-    | Fps120
+    | LimitTo30
+    | LimitTo60
+    | Unlimited
 
 // TODO: remove after updating Prime.
 [<RequireQualifiedAccess>]
