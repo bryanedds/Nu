@@ -260,12 +260,9 @@ module AmbientState =
     let updateTime state =
         let now = DateTimeOffset.UtcNow
         let delta = now - state.ClockTime
-        let frameProgress = 1000.0f / Constants.Engine.DesiredFpsF * single state.UpdateRate
-        let clockDelta = single delta.TotalMilliseconds / frameProgress
-        let clockDeltaNormalized = if clockDelta < 4.0f then clockDelta else 1.0f // assume timing is unnatural about a 4 frame delay
         { state with
             UpdateTime = state.UpdateTime + state.UpdateRate
-            ClockDelta = clockDeltaNormalized
+            ClockDelta = single delta.TotalMilliseconds
             ClockTime = now }
 
     /// Place the engine into a state such that the app will exit at the end of the current update.
