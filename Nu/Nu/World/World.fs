@@ -51,7 +51,6 @@ module Nu =
             WorldModuleGame.init ()
             WorldModuleScreen.init ()
             WorldModuleGroup.init ()
-            WorldModuleEntity.init ()
 
             // init simulant types
             Entity.init ()
