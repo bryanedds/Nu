@@ -46,7 +46,7 @@ module WorldTypes =
 
     /// The data required to execute slide screen presentation.
     and [<NoComparison>] Slide =
-        { IdlingTime : int64
+        { IdlingTime : PolyTime
           Destination : Screen }
 
     /// Describes the behavior of a screen.
@@ -584,7 +584,6 @@ module WorldTypes =
           Content : ScreenContent
           Ecs : Ecs.Ecs
           TransitionState : TransitionState
-          TransitionUpdates : int64
           Incoming : Transition
           Outgoing : Transition
           SlideOpt : Slide option
@@ -596,15 +595,14 @@ module WorldTypes =
           Name : string }
 
         /// Make a screen state value.
-        static member make nameOpt (dispatcher : ScreenDispatcher) ecs =
+        static member make time nameOpt (dispatcher : ScreenDispatcher) ecs =
             let (id, name) = Gen.id64AndNameIf nameOpt
             { Dispatcher = dispatcher
               Xtension = Xtension.makeFunctional ()
               Model = { DesignerType = typeof<unit>; DesignerValue = () }
               Content = EmptyScreenContent :?> ScreenContent
               Ecs = ecs
-              TransitionState = IdlingState
-              TransitionUpdates = 0L // TODO: roll this field into Incoming/OutgoingState values
+              TransitionState = IdlingState time
               Incoming = Transition.make Incoming
               Outgoing = Transition.make Outgoing
               SlideOpt = None
@@ -1210,6 +1208,18 @@ module WorldTypes =
         /// Get the clock time as of when the current frame began.
         member this.ClockTime =
             AmbientState.getClockTime this.AmbientState
+
+        /// Get the polymorphic engine time.
+        member this.PolyTime =
+            match Constants.Engine.DesiredFps with
+            | LimitTo30 | LimitTo60 -> Frames this.UpdateTime
+            | Unlimited -> DateTimeOffset this.ClockTime
+
+        /// Get the polymorphic engine step.
+        member this.PolyStep =
+            match Constants.Engine.DesiredFps with
+            | LimitTo30 | LimitTo60 -> Frames this.UpdateRate
+            | Unlimited -> Milliseconds this.ClockDelta
 
         member
 #if !DEBUG

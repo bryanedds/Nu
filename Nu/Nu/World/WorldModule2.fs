@@ -185,7 +185,7 @@ module WorldModule2 =
         static member private setScreenTransitionStatePlus state (screen : Screen) world =
             let world = screen.SetTransitionState state world
             match state with
-            | IdlingState ->
+            | IdlingState _ ->
                 let world = World.unsubscribe ScreenTransitionMouseLeftId world
                 let world = World.unsubscribe ScreenTransitionMouseCenterId world
                 let world = World.unsubscribe ScreenTransitionMouseRightId world
@@ -193,8 +193,7 @@ module WorldModule2 =
                 let world = World.unsubscribe ScreenTransitionMouseX2Id world
                 let world = World.unsubscribe ScreenTransitionKeyboardKeyId world
                 world
-            | IncomingState
-            | OutgoingState ->
+            | IncomingState _ | OutgoingState _ ->
                 let world = World.subscribePlus ScreenTransitionMouseLeftId World.handleAsSwallow (stoa<MouseButtonData> "Mouse/Left/@/Event") Simulants.Game world |> snd
                 let world = World.subscribePlus ScreenTransitionMouseCenterId World.handleAsSwallow (stoa<MouseButtonData> "Mouse/Center/@/Event") Simulants.Game world |> snd
                 let world = World.subscribePlus ScreenTransitionMouseRightId World.handleAsSwallow (stoa<MouseButtonData> "Mouse/Right/@/Event") Simulants.Game world |> snd
@@ -204,40 +203,43 @@ module WorldModule2 =
                 world
 
         static member private updateScreenTransition3 transitionType (selectedScreen : Screen) world =
-            // NOTE: we do not immediately transition when transition time is zero because we only want screen
-            // transitions to happen outside the update loop!
             // NOTE: transitions always take one additional frame because it needs to render frame 0 and frame MAX + 1 for
             // full opacity if fading and and an extra frame for the render messages to actually get processed.
             let transition =
                 match transitionType with
                 | Incoming -> selectedScreen.GetIncoming world
                 | Outgoing -> selectedScreen.GetOutgoing world
-            let transitionUpdates = selectedScreen.GetTransitionUpdates world
-            if transitionUpdates = transition.TransitionLifeTime + 1L then
-                (true, selectedScreen.SetTransitionUpdates 0L world)
-            elif transitionUpdates > transition.TransitionLifeTime then
-                Log.debug ("TransitionLifeTime for screen '" + scstring selectedScreen.ScreenAddress + "' must be a consistent multiple of UpdateRate.")
-                (true, selectedScreen.SetTransitionUpdates 0L world)
-            else (false, selectedScreen.SetTransitionUpdates (transitionUpdates + World.getUpdateRate world) world)
+            let transitionTime =
+                (selectedScreen.GetTransitionState world).TransitionTime
+            match (transitionTime, transition.TransitionLifeTime) with
+            | (Frames time, Frames lifeTime) ->
+                let localTime = world.UpdateTime - time
+                localTime > lifeTime
+            | (DateTimeOffset time, Milliseconds lifeTime) ->
+                let localTime = world.ClockTime - time
+                single localTime.TotalMilliseconds > lifeTime
+            | (_, _) -> failwithumf ()
 
-        static member private updateScreenIdling3 slide (selectedScreen : Screen) world =
-            // NOTE: we do not immediately transition when transition time is zero because we only want screen
-            // transitions to happen outside the update loop!
+        static member private updateScreenIdling3 transitionTime slide (_ : Screen) (world : World) =
             // NOTE: transitions always take one additional frame because it needs to render frame 0 and frame MAX + 1 for
             // full opacity if fading and an extra frame for the render messages to actually get processed.
-            let transitionUpdates = selectedScreen.GetTransitionUpdates world
-            if transitionUpdates = slide.IdlingTime + 1L then
-                (true, selectedScreen.SetTransitionUpdates 0L world)
-            elif transitionUpdates > slide.IdlingTime then
-                Log.debug ("IdlingTimeOpt for screen '" + scstring selectedScreen.ScreenAddress + "' must be Some consistent multiple of UpdateRate or None.")
-                (true, selectedScreen.SetTransitionUpdates 0L world)
-            else (false, selectedScreen.SetTransitionUpdates (transitionUpdates + World.getUpdateRate world) world)
+            match (transitionTime, slide.IdlingTime) with
+            | (Frames time, Frames lifeTime) ->
+                let localTime = world.UpdateTime - time
+                localTime > lifeTime
+            | (DateTimeOffset time, Milliseconds lifeTime) ->
+                let localTime = world.ClockTime - time
+                single localTime.TotalMilliseconds > lifeTime
+            | (_, _) -> failwithumf ()
 
-        static member private updateScreenIncoming (selectedScreen : Screen) world =
+        static member private updateScreenIncoming transitionTime (selectedScreen : Screen) world =
             match World.getLiveness world with
             | Live ->
                 let world =
-                    if selectedScreen.GetTransitionUpdates world = 0L then
+                    if (match transitionTime with
+                        | Frames time -> time = 0L
+                        | DateTimeOffset time -> time = world.ClockTime
+                        | Milliseconds _ -> failwithumf ()) then
                         let world =
                             match (selectedScreen.GetIncoming world).SongOpt with
                             | Some playSong ->
@@ -250,39 +252,40 @@ module WorldModule2 =
                     else world
                 match World.getLiveness world with
                 | Live ->
-                    match World.updateScreenTransition3 Incoming selectedScreen world with
-                    | (true, world) ->
+                    if World.updateScreenTransition3 Incoming selectedScreen world then
                         let eventTrace = EventTrace.debug "World" "updateScreenIncoming" "IncomingFinish" EventTrace.empty
-                        let world = World.setScreenTransitionStatePlus IdlingState selectedScreen world
+                        let world = World.setScreenTransitionStatePlus (IdlingState world.PolyTime) selectedScreen world
                         World.publish () (Events.IncomingFinish --> selectedScreen) eventTrace selectedScreen world
-                    | (false, world) -> world
+                    else world
                 | Dead -> world
             | Dead -> world
 
-        static member private updateScreenIdling (selectedScreen : Screen) world =
+        static member private updateScreenIdling transitionTime (selectedScreen : Screen) world =
             match World.getLiveness world with
             | Live ->
                 match selectedScreen.GetSlideOpt world with
                 | Some slide ->
-                    match World.updateScreenIdling3 slide selectedScreen world with
-                    | (true, world) -> World.setScreenTransitionStatePlus OutgoingState selectedScreen world
-                    | (false, world) -> world
+                    if World.updateScreenIdling3 transitionTime slide selectedScreen world
+                    then World.setScreenTransitionStatePlus (OutgoingState world.PolyTime) selectedScreen world
+                    else world
                 | None ->
                     match Simulants.Game.GetDesiredScreen world with
                     | Desire desiredScreen ->
                         if desiredScreen <> selectedScreen then
                             if World.getStandAlone world || World.getAdvancing world then
-                                let world = selectedScreen.SetTransitionUpdates 0L world
-                                World.setScreenTransitionStatePlus OutgoingState selectedScreen world
+                                World.setScreenTransitionStatePlus (OutgoingState world.PolyTime) selectedScreen world
                             else World.setSelectedScreenOpt (Some desiredScreen) world // quick cut such as when halted in editor
                         else world
-                    | DesireNone -> World.setScreenTransitionStatePlus OutgoingState selectedScreen world
+                    | DesireNone -> World.setScreenTransitionStatePlus (OutgoingState world.PolyTime) selectedScreen world
                     | DesireIgnore -> world
             | Dead -> world
 
-        static member private updateScreenOutgoing (selectedScreen : Screen) world =
+        static member private updateScreenOutgoing transitionTime (selectedScreen : Screen) (world : World) =
             let world =
-                if selectedScreen.GetTransitionUpdates world = 0L then
+                if (match transitionTime with
+                    | Frames time -> time = 0L
+                    | DateTimeOffset time -> time = world.ClockTime
+                    | Milliseconds _ -> failwithumf ()) then
                     let incoming = selectedScreen.GetIncoming world
                     let outgoing = selectedScreen.GetOutgoing world
                     let world =
@@ -315,9 +318,8 @@ module WorldModule2 =
                 else world
             match World.getLiveness world with
             | Live ->
-                match World.updateScreenTransition3 Outgoing selectedScreen world with
-                | (true, world) ->
-                    let world = World.setScreenTransitionStatePlus IdlingState selectedScreen world
+                if World.updateScreenTransition3 Outgoing selectedScreen world then
+                    let world = World.setScreenTransitionStatePlus (IdlingState world.PolyTime) selectedScreen world
                     let world =
                         match World.getLiveness world with
                         | Live ->
@@ -340,25 +342,25 @@ module WorldModule2 =
                         match destinationOpt with
                         | Some destination ->
                             if destination <> selectedScreen
-                            then World.selectScreen IncomingState destination world
+                            then World.selectScreen (IncomingState world.PolyTime) destination world
                             else world
                         | None ->
                             let world = World.selectScreenOpt None world
                             match Simulants.Game.GetDesiredScreen world with // handle the possibility that screen deselect event changed destination
-                            | Desire destination -> World.selectScreen IncomingState destination world
+                            | Desire destination -> World.selectScreen (IncomingState world.PolyTime) destination world
                             | DesireNone -> world
                             | DesireIgnore -> world
                     | Dead -> world
-                | (false, world) -> world
+                else world
             | Dead -> world
 
         static member private updateScreenTransition world =
             match World.getSelectedScreenOpt world with
             | Some selectedScreen ->
                 match selectedScreen.GetTransitionState world with
-                | IncomingState -> World.updateScreenIncoming selectedScreen world
-                | IdlingState -> World.updateScreenIdling selectedScreen world
-                | OutgoingState -> World.updateScreenOutgoing selectedScreen world
+                | IncomingState transitionTime -> World.updateScreenIncoming transitionTime selectedScreen world
+                | IdlingState transitionTime -> World.updateScreenIdling transitionTime selectedScreen world
+                | OutgoingState transitionTime -> World.updateScreenOutgoing transitionTime selectedScreen world
             | None ->
                 match World.getDesiredScreen world with
                 | Desire desiredScreen -> World.transitionScreen desiredScreen world
@@ -373,11 +375,11 @@ module WorldModule2 =
                 if  selectedScreen <> destination &&
                     not (World.isSelectedScreenTransitioning world) then
                     let world = World.setScreenTransitionDestinationOpt (Some destination) world |> snd'
-                    let world = World.setScreenTransitionStatePlus OutgoingState selectedScreen world
+                    let world = World.setScreenTransitionStatePlus (OutgoingState world.PolyTime) selectedScreen world
                     (true, world)
                 else (false, world)
             | None ->
-                let world = World.setScreenTransitionStatePlus IncomingState destination world
+                let world = World.setScreenTransitionStatePlus (IncomingState world.PolyTime) destination world
                 let world = World.setSelectedScreen destination world
                 (true, world)
 
@@ -897,10 +899,18 @@ module WorldModule2 =
             // fin
             world
 
-        static member private renderScreenTransition5 (_ : Vector2) (eyeSize : Vector2) (screen : Screen) transition world =
+        static member private renderScreenTransition5 transitionTime (_ : Vector2) (eyeSize : Vector2) (_ : Screen) transition (world : World) =
             match transition.DissolveImageOpt with
             | Some dissolveImage ->
-                let progress = single (screen.GetTransitionUpdates world) / single (inc transition.TransitionLifeTime)
+                let progress =
+                    match (transitionTime , transition.TransitionLifeTime) with
+                    | (Frames time, Frames lifeTime) ->
+                        let localTime = world.UpdateTime - time
+                        single localTime / single (inc lifeTime)
+                    | (DateTimeOffset time, Milliseconds lifeTime) ->
+                        let localTime = world.ClockTime - time
+                        single localTime.TotalMilliseconds / lifeTime
+                    | (_, _) -> failwithumf ()
                 let alpha = match transition.TransitionType with Incoming -> 1.0f - progress | Outgoing -> progress
                 let color = Color.One.WithA alpha
                 let position = -eyeSize.V3 * 0.5f
@@ -928,9 +938,9 @@ module WorldModule2 =
 
         static member private renderScreenTransition (screen : Screen) world =
             match screen.GetTransitionState world with
-            | IncomingState -> World.renderScreenTransition5 (World.getEyeCenter2d world) (World.getEyeSize2d world) screen (screen.GetIncoming world) world
-            | OutgoingState -> World.renderScreenTransition5 (World.getEyeCenter2d world) (World.getEyeSize2d world) screen (screen.GetOutgoing world) world
-            | IdlingState -> world
+            | IncomingState transitionTime -> World.renderScreenTransition5 transitionTime (World.getEyeCenter2d world) (World.getEyeSize2d world) screen (screen.GetIncoming world) world
+            | OutgoingState transitionTime -> World.renderScreenTransition5 transitionTime (World.getEyeCenter2d world) (World.getEyeSize2d world) screen (screen.GetOutgoing world) world
+            | IdlingState _ -> world
 
         static member private renderSimulants world =
 
@@ -991,11 +1001,7 @@ module WorldModule2 =
             let physicsEngine = World.getPhysicsEngine2d world
             let (physicsMessages, physicsEngine) = physicsEngine.PopMessages ()
             let world = World.setPhysicsEngine2d physicsEngine world
-            let stepTime =
-                match Constants.Engine.DesiredFps with
-                | LimitTo30 | LimitTo60 -> Frames (World.getUpdateRate world)
-                | Unlimited -> Milliseconds world.ClockDelta
-            let integrationMessages = physicsEngine.Integrate stepTime physicsMessages
+            let integrationMessages = physicsEngine.Integrate world.PolyStep physicsMessages
             let world = Seq.fold (flip World.processIntegrationMessage) world integrationMessages
             world
 
@@ -1082,7 +1088,7 @@ module WorldModule2 =
 
                                                             // avoid updating faster than desired FPS
                                                             if FrameTimer.IsRunning then
-                                                                while let e = FrameTimer.Elapsed in e.TotalMilliseconds < Constants.Engine.DesiredFrameTimeMinimum do
+                                                                while let e = FrameTimer.Elapsed in e.TotalMilliseconds < Constants.Engine.DesiredFps.Double * 0.001 do
                                                                     Thread.Yield () |> ignore<bool>
                                                             FrameTimer.Restart()
 

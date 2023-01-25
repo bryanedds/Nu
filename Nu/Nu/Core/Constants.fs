@@ -11,11 +11,7 @@ open Prime
 [<RequireQualifiedAccess>]
 module Engine =
 
-    let [<Uniform>] DesiredFps = LimitTo60
-    let [<Uniform>] DesiredFpsI = match DesiredFps with LimitTo30 -> 30 | LimitTo60 -> 60 | Unlimited -> 1000000 // arbitrary large number to allow for division
-    let [<Uniform>] DesiredFpsF = single DesiredFpsI
-    let [<Uniform>] DesiredFpsD = double DesiredFpsI
-    let [<Uniform>] DesiredFrameTimeMinimum = DesiredFpsD * 0.001
+    let [<Uniform>] mutable DesiredFps = match ConfigurationManager.AppSettings.["EntityCentered2dDefault"] with null -> LimitTo60 | desiredFps -> scvalue<DesiredFps> desiredFps
     let [<Literal>] ExitCodeSuccess = 0
     let [<Literal>] ExitCodeFailure = 1
     let [<Literal>] NamePropertyName = "Name"
