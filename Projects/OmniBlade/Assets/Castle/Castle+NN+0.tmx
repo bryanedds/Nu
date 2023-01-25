@@ -52,7 +52,7 @@
    [ClearSpirits
     [FadeOutSong 2000]
     [Wait 120]
-    [PlaySong 2000 0 0.5 0 [Field SadDarkness]]
+    [PlaySong 2000 0 0 0.5 [Field SadDarkness]]
     [Wait 180]
     [Dialog &quot;Why does every day get worse...?&quot;]
     [Face [CharacterTarget [Enemy Kyla]] Downward]
@@ -68,7 +68,7 @@
     [FadeOutSong 2000]
     [Fade [CharacterTarget [Enemy Kyla]] 150]
     [ReplaceAdvent [KylaAdvent 1] [KylaAdvent 2]]
-    [PlaySong 2000 0 0.5 0 [Castle CastlePart1]]
+    [PlaySong 2000 0 0 0.5 [Castle CastlePart1]]
     [Wait 120]
     [PlaySound 0.5 [Field Unlatch]]
     [Dialog &quot;Something unlatched...&quot;]]]

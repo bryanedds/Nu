@@ -71,8 +71,8 @@ module BattleDispatcher =
         | DisplayHop of Hop
         | DisplayCircle of Vector3 * single
         | PlaySound of int64 * single * AssetTag<Sound>
-        | PlaySong of int * int * single * double * Song AssetTag
-        | FadeOutSong of int
+        | PlaySong of single * single * single * single * Song AssetTag
+        | FadeOutSong of single
         interface Command
 
     type Screen with
@@ -266,7 +266,7 @@ module BattleDispatcher =
             let readyTime = localTime - 90L
             if localTime = inc 63L then // first frame after transitioning in
                 match battle.BattleSongOpt with
-                | Some battleSong -> withSignal (PlaySong (0, Constants.Audio.FadeOutMsDefault, Constants.Audio.SongVolumeDefault, 0.0, battleSong)) battle
+                | Some battleSong -> withSignal (PlaySong (0.0f, Constants.Audio.FadeOutTimeDefault, 0.0f, Constants.Audio.SongVolumeDefault, battleSong)) battle
                 | None -> just battle
             elif localTime >= 90L && localTime < 160L then
                 let battle = Battle.animateCharactersReady time battle
@@ -467,7 +467,7 @@ module BattleDispatcher =
                         then withSignal (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.GrowthSound)) battle
                         else just battle
                     else just battle
-                (signal (FadeOutSong 6000) :: sigs, battle)
+                (signal (FadeOutSong 6.0f) :: sigs, battle)
             else
                 match battle.DialogOpt with
                 | None -> just (Battle.updateBattleState (constant (BattleQuitting (time, outcome, battle.PrizePool.Consequents))) battle)
@@ -476,7 +476,7 @@ module BattleDispatcher =
         and advanceCease time startTime battle =
             let localTime = time - startTime
             if localTime = 0L
-            then withSignal (FadeOutSong Constants.Audio.FadeOutMsDefault) battle
+            then withSignal (FadeOutSong Constants.Audio.FadeOutTimeDefault) battle
             else just battle
 
         and advanceBattle time (battle : Battle) : Signal list * Battle =
@@ -1088,8 +1088,8 @@ module BattleDispatcher =
                 let world = World.schedule (World.playSound volume sound) delay screen world
                 just world
 
-            | PlaySong (fadeIn, fadeOut, volume, start, assetTag) ->
-                let world = World.playSong fadeIn fadeOut volume start assetTag world
+            | PlaySong (fadeIn, fadeOut, start, volume, assetTag) ->
+                let world = World.playSong fadeIn fadeOut start volume assetTag world
                 just world
 
             | FadeOutSong fade ->

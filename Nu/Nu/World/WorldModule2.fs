@@ -245,7 +245,7 @@ module WorldModule2 =
                             | Some playSong ->
                                 match World.getCurrentSongOpt world with
                                 | Some song when assetEq song.Song playSong.Song -> world // do nothing when song is the same
-                                | _ -> World.playSong playSong.FadeInMs playSong.FadeOutMs playSong.Volume 0.0 playSong.Song world // play song when song is different
+                                | _ -> World.playSong playSong.FadeInTime playSong.FadeOutTime 0.0f playSong.Volume playSong.Song world // play song when song is different
                             | None -> world
                         let eventTrace = EventTrace.debug "World" "updateScreenIncoming" "IncomingStart" EventTrace.empty
                         World.publish () (Events.IncomingStart --> selectedScreen) eventTrace selectedScreen world
@@ -307,10 +307,10 @@ module WorldModule2 =
                                 match (incoming.SongOpt, (destination.GetIncoming world).SongOpt) with
                                 | (Some song, Some song2) when assetEq song.Song song2.Song -> world // do nothing when song is the same
                                 | (None, None) -> world // do nothing when neither plays a song (allowing manual control)
-                                | (_, _) -> World.fadeOutSong playSong.FadeOutMs world // fade out when song is different
+                                | (_, _) -> World.fadeOutSong playSong.FadeOutTime world // fade out when song is different
                             | None ->
                                 match incoming.SongOpt with
-                                | Some _ -> World.fadeOutSong playSong.FadeOutMs world
+                                | Some _ -> World.fadeOutSong playSong.FadeOutTime world
                                 | None -> world
                         | None -> world
                     let eventTrace = EventTrace.debug "World" "updateScreenTransition" "OutgoingStart" EventTrace.empty
@@ -1088,7 +1088,8 @@ module WorldModule2 =
 
                                                             // avoid updating faster than desired FPS
                                                             if FrameTimer.IsRunning then
-                                                                while let e = FrameTimer.Elapsed in e.TotalSeconds < Constants.Engine.DesiredFps.Double do
+                                                                let frameTimeMinimum = 1.0 / Constants.Engine.DesiredFrameRate.AsDouble
+                                                                while let e = FrameTimer.Elapsed in e.TotalSeconds < frameTimeMinimum do
                                                                     Thread.Yield () |> ignore<bool>
                                                             FrameTimer.Restart()
 

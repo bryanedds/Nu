@@ -52,7 +52,7 @@
    [ClearSpirits
     [FadeOutSong 2000]
     [Wait 120]
-    [PlaySong 2000 0 0.5 0 [Field Unfolding]]
+    [PlaySong 2000 0 0 0.5 [Field Unfolding]]
     [Wait 180]
     [Dialog &quot;What is freedom...?&quot;]
     [Dialog &quot;It must be the death of purpose...&quot;]
@@ -70,7 +70,7 @@
     [FadeOutSong 2000]
     [Fade [CharacterTarget [Enemy Kyla]] 150]
     [ReplaceAdvent [KylaAdvent 0] [KylaAdvent 1]]
-    [PlaySong 2000 0 0.5 0 [Castle CastlePart1]]
+    [PlaySong 2000 0 0 0.5 [Castle CastlePart1]]
     [Wait 120]
     [PlaySound 0.5 [Field Unlatch]]
     [Dialog &quot;Something unlatched...&quot;]]]

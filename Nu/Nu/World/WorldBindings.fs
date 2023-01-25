@@ -476,54 +476,54 @@ module WorldBindings =
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'setMasterSongVolume' due to: " + scstring exn, ValueNone)
             struct (violation, World.choose oldWorld)
 
-    let playSong timeToFadeInSongMs timeToFadeOutSongMs volume start song world =
+    let playSong timeToFadeInSongMs timeToFadeOutSongMs start volume song world =
         let oldWorld = world
         try
             let timeToFadeInSongMs =
-                match ScriptingSystem.tryExport typeof<Int32> timeToFadeInSongMs world with
-                | Some value -> value :?> Int32
-                | None -> failwith "Invalid argument type for 'timeToFadeInSongMs'; expecting a value convertable to Int32."
+                match ScriptingSystem.tryExport typeof<Single> timeToFadeInSongMs world with
+                | Some value -> value :?> Single
+                | None -> failwith "Invalid argument type for 'timeToFadeInSongMs'; expecting a value convertable to Single."
             let timeToFadeOutSongMs =
-                match ScriptingSystem.tryExport typeof<Int32> timeToFadeOutSongMs world with
-                | Some value -> value :?> Int32
-                | None -> failwith "Invalid argument type for 'timeToFadeOutSongMs'; expecting a value convertable to Int32."
+                match ScriptingSystem.tryExport typeof<Single> timeToFadeOutSongMs world with
+                | Some value -> value :?> Single
+                | None -> failwith "Invalid argument type for 'timeToFadeOutSongMs'; expecting a value convertable to Single."
+            let start =
+                match ScriptingSystem.tryExport typeof<Single> start world with
+                | Some value -> value :?> Single
+                | None -> failwith "Invalid argument type for 'start'; expecting a value convertable to Single."
             let volume =
                 match ScriptingSystem.tryExport typeof<Single> volume world with
                 | Some value -> value :?> Single
                 | None -> failwith "Invalid argument type for 'volume'; expecting a value convertable to Single."
-            let start =
-                match ScriptingSystem.tryExport typeof<Double> start world with
-                | Some value -> value :?> Double
-                | None -> failwith "Invalid argument type for 'start'; expecting a value convertable to Double."
             let song =
                 match ScriptingSystem.tryExport typeof<AssetTag<Song>> song world with
                 | Some value -> value :?> AssetTag<Song>
                 | None -> failwith "Invalid argument type for 'song'; expecting a value convertable to AssetTag`1."
-            let result = World.playSong timeToFadeInSongMs timeToFadeOutSongMs volume start song world
+            let result = World.playSong timeToFadeInSongMs timeToFadeOutSongMs start volume song world
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'playSong' due to: " + scstring exn, ValueNone)
             struct (violation, World.choose oldWorld)
 
-    let playSong6 timeToFadeInSongMs timeToFadeOutSongMs volume start songPackageName songAssetName world =
+    let playSong6 timeToFadeInSongMs timeToFadeOutSongMs start volume songPackageName songAssetName world =
         let oldWorld = world
         try
             let timeToFadeInSongMs =
-                match ScriptingSystem.tryExport typeof<Int32> timeToFadeInSongMs world with
-                | Some value -> value :?> Int32
-                | None -> failwith "Invalid argument type for 'timeToFadeInSongMs'; expecting a value convertable to Int32."
+                match ScriptingSystem.tryExport typeof<Single> timeToFadeInSongMs world with
+                | Some value -> value :?> Single
+                | None -> failwith "Invalid argument type for 'timeToFadeInSongMs'; expecting a value convertable to Single."
             let timeToFadeOutSongMs =
-                match ScriptingSystem.tryExport typeof<Int32> timeToFadeOutSongMs world with
-                | Some value -> value :?> Int32
-                | None -> failwith "Invalid argument type for 'timeToFadeOutSongMs'; expecting a value convertable to Int32."
+                match ScriptingSystem.tryExport typeof<Single> timeToFadeOutSongMs world with
+                | Some value -> value :?> Single
+                | None -> failwith "Invalid argument type for 'timeToFadeOutSongMs'; expecting a value convertable to Single."
+            let start =
+                match ScriptingSystem.tryExport typeof<Single> start world with
+                | Some value -> value :?> Single
+                | None -> failwith "Invalid argument type for 'start'; expecting a value convertable to Single."
             let volume =
                 match ScriptingSystem.tryExport typeof<Single> volume world with
                 | Some value -> value :?> Single
                 | None -> failwith "Invalid argument type for 'volume'; expecting a value convertable to Single."
-            let start =
-                match ScriptingSystem.tryExport typeof<Double> start world with
-                | Some value -> value :?> Double
-                | None -> failwith "Invalid argument type for 'start'; expecting a value convertable to Double."
             let songPackageName =
                 match ScriptingSystem.tryExport typeof<String> songPackageName world with
                 | Some value -> value :?> String
@@ -532,7 +532,7 @@ module WorldBindings =
                 match ScriptingSystem.tryExport typeof<String> songAssetName world with
                 | Some value -> value :?> String
                 | None -> failwith "Invalid argument type for 'songAssetName'; expecting a value convertable to String."
-            let result = World.playSong7 timeToFadeInSongMs timeToFadeOutSongMs volume start songPackageName songAssetName world
+            let result = World.playSong7 timeToFadeInSongMs timeToFadeOutSongMs start volume songPackageName songAssetName world
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'playSong6' due to: " + scstring exn, ValueNone)
@@ -580,8 +580,8 @@ module WorldBindings =
         let oldWorld = world
         try
             let timeToFadeOutSongMs =
-                match ScriptingSystem.tryExport typeof<Int32> timeToFadeOutSongMs world with
-                | Some value -> value :?> Int32
+                match ScriptingSystem.tryExport typeof<Single> timeToFadeOutSongMs world with
+                | Some value -> value :?> Single
                 | None -> failwith "Invalid argument type for 'timeToFadeOutSongMs'; expecting a value convertable to Int32."
             let result = World.fadeOutSong timeToFadeOutSongMs world
             struct (Scripting.Unit, result)

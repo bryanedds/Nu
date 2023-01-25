@@ -30,7 +30,7 @@ module DeclarativeOperators2 =
                 World.enqueueRenderLayeredMessage2d message world
             | Render3d renderMessage -> World.enqueueRenderMessage3d renderMessage world
             | PlaySound (volume, assetTag) -> World.playSound volume assetTag world
-            | PlaySong (fadeIn, fadeOut, volume, start, assetTag) -> World.playSong fadeIn fadeOut volume start assetTag world
+            | PlaySong (fadeIn, fadeOut, start, volume, assetTag) -> World.playSong fadeIn fadeOut start volume assetTag world
             | FadeOutSong fade -> World.fadeOutSong fade world
             | StopSong -> World.stopSong world
             | SpawnEmitter (_, _) -> world

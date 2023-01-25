@@ -12,11 +12,11 @@ module Dissolve =
     /// The default 'dissolving' transition behavior of screens.
     let Default =
         { IncomingTime =
-            match Constants.Engine.DesiredFps with
+            match Constants.Engine.DesiredFrameRate with
             | StaticFrameRate fps -> Frames (fps / 3L)
             | DynamicFrameRate -> Seconds (1.0f / 3.0f)
           OutgoingTime =
-            match Constants.Engine.DesiredFps with
+            match Constants.Engine.DesiredFrameRate with
             | StaticFrameRate fps -> Frames (fps / 2L)
             | DynamicFrameRate -> Seconds (2.0f / 3.0f)
           DissolveImage = Assets.Default.Image8 }
@@ -28,7 +28,7 @@ module Slide =
     let Default =
         { DissolveDescriptor = Dissolve.Default
           IdlingTime =
-            match Constants.Engine.DesiredFps with
+            match Constants.Engine.DesiredFrameRate with
             | StaticFrameRate fps -> Frames (fps / 2L)
             | DynamicFrameRate -> Seconds 1.0f
           SlideImageOpt = Some Assets.Default.Image5 }
@@ -43,7 +43,7 @@ module Override =
             for key in settings.AllKeys do
                 let value = settings.[key].Value
                 match key with
-                | nameof Engine.DesiredFps -> Engine.DesiredFps <- scvalue value
+                | nameof Engine.DesiredFrameRate -> Engine.DesiredFrameRate <- scvalue value
                 | nameof Engine.EntityCentered2dDefault -> Engine.EntityCentered2dDefault <- scvalue value
                 | nameof Engine.EntityCenteredGuiDefault -> Engine.EntityCenteredGuiDefault <- scvalue value
                 | nameof Engine.EntityCentered3dDefault -> Engine.EntityCentered3dDefault <- scvalue value

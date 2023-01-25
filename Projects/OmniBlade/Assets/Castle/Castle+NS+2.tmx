@@ -51,7 +51,7 @@
    [ClearSpirits
     [FadeOutSong 2000]
     [Wait 120]
-    [PlaySong 2000 0 0.5 0 [Field HorrorSilent]]
+    [PlaySong 2000 0 0 0.5 [Field HorrorSilent]]
     [Wait 180]
     [Dialog &quot;A message from the eastern front?&quot; False]
     [Face [CharacterTarget [Enemy Kyla]] Downward]
@@ -90,7 +90,7 @@
     [Dialog &quot;...the same end I gave to her...&quot; False]
     [Fade [CharacterTarget [Enemy Kyla]] 150]
     [ReplaceAdvent [KylaAdvent 5] [KylaAdvent 6]]
-    [PlaySong 1000 0 0.5 0 [Castle CastlePart3]]
+    [PlaySong 1000 0 0 0.5 [Castle CastlePart3]]
     [Wait 120]
     [PlaySound 0.5 [Field Unlatch]]
     [Dialog &quot;Something unlatched...&quot; False]]]
