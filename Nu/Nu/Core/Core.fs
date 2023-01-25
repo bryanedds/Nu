@@ -66,7 +66,7 @@ module CoreOperators =
 type [<AttributeUsage (AttributeTargets.Field)>] UniformAttribute () =
     inherit Attribute ()
 
-/// Affords different representations of time.
+/// Affords different representations of time based on updates or wall clock time.
 type [<Struct>] PolyTime =
     | UpdateTime of UpdateTime : int64 // in updates
     | ClockTime of ClockTime : single // in seconds

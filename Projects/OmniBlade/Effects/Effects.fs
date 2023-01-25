@@ -270,7 +270,7 @@ module Effects =
                    iceBombard (v3 -700.0f 0.0f 0.0f)
                    iceBombard (v3 500.0f 500.0f 0.0f)
                    iceBombard (v3 500.0f -500.0f 0.0f)|])}
-    
+
     let makeSnowballEffect () =
         let fall = Positions (Sum, Linear, Once, [|{ TweenValue = v3 0.0f 800.0f 0.0f; TweenLength = 80L };{ TweenValue = v3 0.0f -800.0f 0.0f; TweenLength = 0L }|])
         let rotate =
@@ -286,7 +286,7 @@ module Effects =
               StaticSprite
                (Resource (AssetTag.toPair Assets.Battle.SnowballImage),
                 [|Size (v3 432.0f 432.0f 0.0f); fall; rotate|], Nil) }
-    
+
     let makeHolyCastEffect () =
         { EffectName = "HolyCast"
           LifeTimeOpt = Some 36L
@@ -295,7 +295,7 @@ module Effects =
               AnimatedSprite
                (Resource (AssetTag.toPair Assets.Battle.HolyCastAnimationSheet),
                 v2i 100 100, 6, 36, 1L, Once, [||], Nil) }
-    
+
     let makePurifyEffect () =
         let sprite position =
             AnimatedSprite
@@ -358,7 +358,7 @@ module Effects =
                              protection [|blink; outwardMovement (v3 outwardReach -outwardReach 0.0f); bend (v3 -clockwiseBias 0.0f 0.0f)|]
                              protection [|blink; outwardMovement (v3 -outwardReach -outwardReach 0.0f); bend (v3 0.0f clockwiseBias 0.0f)|]
                              protection [|blink; outwardMovement (v3 -outwardReach outwardReach 0.0f); bend (v3 clockwiseBias 0.0f 0.0f)|]|])))|])}
-    
+
     let makeDimensionalCastEffect () =
         let length = 60L
         let electronSize = Size (v3 9.0f 9.0f 0.0f)
@@ -395,7 +395,7 @@ module Effects =
                      Emit (Shift 0.0f, Rate 1.0f, [|orbitH|], [||], StaticSprite (Resource (AssetTag.toPair Assets.Battle.NonLocationBlueImage), [|nonLocationSize; fade|], Nil));
                      StaticSprite (Resource (AssetTag.toPair Assets.Battle.ElectronGreenImage), [|orbitV; electronSize; positionAdjustY|], Nil);
                      Emit (Shift 0.0f, Rate 1.0f, [|orbitV; positionAdjustY|], [||], StaticSprite (Resource (AssetTag.toPair Assets.Battle.NonLocationGreenImage), [|nonLocationSize; fade|], Nil))|])}
-    
+
     let makeBuffEffect statusType =
         let image =
             match statusType with
@@ -417,7 +417,7 @@ module Effects =
               Contents
                   (Shift 0.0f,
                    [|StaticSprite (Resource (AssetTag.toPair image), [|shrink; PositionRelative (v3 0.0f 32.0f 0.0f)|], Nil)|])}
-    
+
     let makeDebuffEffect statusType =
         let image =
             match statusType with
@@ -439,7 +439,7 @@ module Effects =
               Contents
                   (Shift 0.0f,
                    [|StaticSprite (Resource (AssetTag.toPair image), [|shrink; PositionRelative (v3 0.0f 32.0f 0.0f)|], Nil)|])}
-    
+
     let makeConjureIfritEffect () =
         let fireSpinSize = Size (v3 600.0f 600.0f 0.0f)
         let fireSpin aspects =
@@ -456,7 +456,7 @@ module Effects =
                      fireSpin [|fireSpinSize; PositionAbsolute (v3 144.0f 168.0f 0.0f)|]
                      fireSpin [|fireSpinSize; PositionAbsolute (v3 -144.0f -111.0f 0.0f)|]
                      fireSpin [|fireSpinSize; PositionAbsolute (v3 144.0f -111.0f 0.0f)|]|])}
-    
+
     let makeHopEffect start stop =
         { EffectName = "Hop"
           LifeTimeOpt = Some 20L // +2 due to rendering / update order
