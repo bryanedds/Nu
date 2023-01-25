@@ -261,15 +261,10 @@ module WorldModule =
         static member internal updateTime world =
             World.updateAmbientState AmbientState.updateTime world
 
-        /// Get the update rate.
+        /// Set whether the world state is advancing.
         [<FunctionBinding>]
-        static member getUpdateRate world =
-            World.getAmbientStateBy AmbientState.getUpdateRate world
-
-        /// Set the update rate, starting at the end of the current frame.
-        [<FunctionBinding>]
-        static member setUpdateRate updateRate world =
-            World.frame (World.updateAmbientState (AmbientState.setUpdateRateImmediate updateRate)) Simulants.Game world
+        static member setAdvancing advancing world =
+            World.frame (World.updateAmbientState (AmbientState.setAdvancing advancing)) Simulants.Game world
 
         /// Check that the update rate is non-zero.
         [<FunctionBinding>]
@@ -373,7 +368,7 @@ module WorldModule =
 
         /// Schedule an operation to be executed by the engine at the end of the current frame or the next frame if we've already started processing tasklets.
         static member frame operation (simulant : Simulant) (world : World) =
-            let time = if TaskletProcessingStarted then UpdateTime world.UpdateRate else UpdateTime 0L
+            let time = if TaskletProcessingStarted && world.Advancing then UpdateTime 1L else UpdateTime 0L
             World.schedule operation time simulant world
 
         /// Attempt to get the window flags.

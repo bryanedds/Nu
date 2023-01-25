@@ -2751,30 +2751,6 @@ module WorldBindings =
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getLiveness' due to: " + scstring exn, ValueNone)
             struct (violation, World.choose oldWorld)
 
-    let getUpdateRate world =
-        let oldWorld = world
-        try
-            let result = World.getUpdateRate world
-            let value = result
-            let value = ScriptingSystem.tryImport typeof<Int64> value world |> Option.get
-            struct (value, world)
-        with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getUpdateRate' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
-
-    let setUpdateRate updateRate world =
-        let oldWorld = world
-        try
-            let updateRate =
-                match ScriptingSystem.tryExport typeof<Int64> updateRate world with
-                | Some value -> value :?> Int64
-                | None -> failwith "Invalid argument type for 'updateRate'; expecting a value convertable to Int64."
-            let result = World.setUpdateRate updateRate world
-            struct (Scripting.Unit, result)
-        with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'setUpdateRate' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
-
     let getAdvancing world =
         let oldWorld = world
         try
@@ -4805,28 +4781,6 @@ module WorldBindings =
                 struct (violation, world)
         | Some violation -> struct (violation, world)
 
-    let evalGetUpdateRateBinding fnName exprs originOpt world =
-        let struct (evaleds, world) = World.evalManyInternal exprs world
-        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
-        | None ->
-            match evaleds with
-            | [||] -> getUpdateRate world
-            | _ ->
-                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
-                struct (violation, world)
-        | Some violation -> struct (violation, world)
-
-    let evalSetUpdateRateBinding fnName exprs originOpt world =
-        let struct (evaleds, world) = World.evalManyInternal exprs world
-        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
-        | None ->
-            match evaleds with
-            | [|updateRate|] -> setUpdateRate updateRate world
-            | _ ->
-                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
-                struct (violation, world)
-        | Some violation -> struct (violation, world)
-
     let evalGetAdvancingBinding fnName exprs originOpt world =
         let struct (evaleds, world) = World.evalManyInternal exprs world
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
@@ -5236,8 +5190,6 @@ module WorldBindings =
              ("getAccompanied", { Fn = evalGetAccompaniedBinding; Pars = [||]; DocOpt = None })
              ("getCollectionConfig", { Fn = evalGetCollectionConfigBinding; Pars = [||]; DocOpt = None })
              ("getLiveness", { Fn = evalGetLivenessBinding; Pars = [||]; DocOpt = None })
-             ("getUpdateRate", { Fn = evalGetUpdateRateBinding; Pars = [||]; DocOpt = None })
-             ("setUpdateRate", { Fn = evalSetUpdateRateBinding; Pars = [|"updateRate"|]; DocOpt = None })
              ("getAdvancing", { Fn = evalGetAdvancingBinding; Pars = [||]; DocOpt = None })
              ("getHalted", { Fn = evalGetHaltedBinding; Pars = [||]; DocOpt = None })
              ("getUpdateTime", { Fn = evalGetUpdateTimeBinding; Pars = [||]; DocOpt = None })

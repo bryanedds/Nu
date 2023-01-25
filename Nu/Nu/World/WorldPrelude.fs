@@ -160,7 +160,7 @@ type [<NoComparison>] NuConfig =
 /// Configuration parameters for the world.
 type [<ReferenceEquality; NoComparison>] WorldConfig =
     { Imperative : bool
-      UpdateRate : int64
+      Advancing : bool
       ModeOpt : string option
       SdlConfig : SdlConfig
       NuConfig : NuConfig }
@@ -168,7 +168,7 @@ type [<ReferenceEquality; NoComparison>] WorldConfig =
     /// The default configuration of the world.
     static member defaultConfig =
         { Imperative = true
-          UpdateRate = 1L
+          Advancing = true
           ModeOpt = None
           SdlConfig = SdlConfig.defaultConfig
           NuConfig = NuConfig.defaultConfig }
@@ -205,12 +205,13 @@ module AmbientState =
         private
             { // cache line 1 (assuming 16 byte header)
               Liveness : Liveness
-              UpdateRate : int64
+              Advancing : bool
               UpdateTime : int64
               KeyValueStore : UMap<Guid, obj>
+              TickDelta : int
               // cache line 2
-              SystemDelta : int64
-              SystemTime : int64
+              TickTime : int
+              TickCountPrevious : int
               Tasklets : OMap<Simulant, 'w Tasklet UList>
               SdlDepsOpt : SdlDeps option
               Symbolics : Symbolics
@@ -237,50 +238,49 @@ module AmbientState =
     let getLiveness state =
         state.Liveness
 
-    /// Get the update rate.
-    let getUpdateRate state =
-        state.UpdateRate
-
-    /// Set the update rate.
-    let setUpdateRateImmediate updateRate state =
-        { state with AmbientState.UpdateRate = updateRate }
-
-    /// Check that update rate is non-zero.
+    /// Check that the world's state is advancing.
     let getAdvancing state =
-        getUpdateRate state <> 0L
+        state.Advancing
 
-    /// Check that update rate is zero.
+    /// Set whether the world's state is advancing.
+    let setAdvancing advancing (state : _ AmbientState) =
+        { state with Advancing = advancing }
+
+    /// Check that the world's state is advancing.
     let getHalted state =
-        getUpdateRate state = 0L
+        not state.Advancing
 
     /// Get the update time.
     let getUpdateTime state =
         state.UpdateTime
 
-    /// Get the system delta as a number of environment ticks.
-    let getSystemDelta state =
-        state.SystemDelta
+    /// Get the tick delta as a number of environment ticks.
+    let getTickDelta state =
+        state.TickDelta
 
-    /// Get the system time as a number of environment ticks.
-    let getSystemTime state =
-        state.SystemTime
+    /// Get the tick time as a number of environment ticks.
+    let getTickTime state =
+        state.TickTime
 
     /// Get the clock delta as a floating point number.
     let getClockDelta state =
-        single state.SystemDelta / single TimeSpan.TicksPerSecond
+        single state.TickDelta / single TimeSpan.TicksPerSecond
 
     /// Get the clock time.
     let getClockTime state =
-        single state.SystemTime / single TimeSpan.TicksPerSecond
+        single state.TickTime / single TimeSpan.TicksPerSecond
 
     /// Update the update and clock times.
     let updateTime state =
-        let time = int64 Environment.TickCount
-        let delta = time - state.SystemTime
+        let updateDelta = if state.Advancing then 1L else 0L
+        let tickCount = Environment.TickCount
+        let tickDelta = tickCount - state.TickCountPrevious
+        let systemDelta = if state.Advancing then tickDelta else 0
         { state with
-            UpdateTime = state.UpdateTime + state.UpdateRate
-            SystemDelta = delta
-            SystemTime = time }
+            UpdateTime = state.UpdateTime + updateDelta
+            TickDelta = systemDelta
+            TickTime = state.TickTime + tickDelta
+            TickCountPrevious = tickCount }
 
     /// Place the engine into a state such that the app will exit at the end of the current update.
     let exit state =
@@ -402,16 +402,17 @@ module AmbientState =
         { state with OverlayRouter = router }
 
     /// Make an ambient state value.
-    let make imperative standAlone updateRate symbolics overlayer overlayRouter sdlDepsOpt =
+    let make imperative standAlone advancing symbolics overlayer overlayRouter sdlDepsOpt =
         Imperative <- imperative
         StandAlone <- standAlone
         let config = if imperative then TConfig.Imperative else TConfig.Functional
         { Liveness = Live
-          UpdateRate = updateRate
+          Advancing = advancing
           UpdateTime = 0L
           KeyValueStore = UMap.makeEmpty HashIdentity.Structural config
-          SystemDelta = 0L
-          SystemTime = Environment.TickCount
+          TickDelta = 0
+          TickTime = 0
+          TickCountPrevious = Environment.TickCount
           Tasklets = OMap.makeEmpty HashIdentity.Structural config
           SdlDepsOpt = sdlDepsOpt
           Symbolics = symbolics
