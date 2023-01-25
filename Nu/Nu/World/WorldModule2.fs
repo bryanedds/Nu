@@ -203,8 +203,6 @@ module WorldModule2 =
                 world
 
         static member private updateScreenTransition3 transitionType (selectedScreen : Screen) world =
-            // NOTE: transitions always take one additional frame because it needs to render frame 0 and frame MAX + 1 for
-            // full opacity if fading and and an extra frame for the render messages to actually get processed.
             let transition =
                 match transitionType with
                 | Incoming -> selectedScreen.GetIncoming world
@@ -214,22 +212,20 @@ module WorldModule2 =
             match (transitionTime, transition.TransitionLifeTime) with
             | (FrameTime time, FrameTime lifeTime) ->
                 let localTime = world.UpdateTime - time
-                localTime > lifeTime
+                localTime - 2L = lifeTime
             | (DateTimeOffset time, ClockTime lifeTime) ->
                 let localTime = world.ClockTime - time
-                single localTime.TotalSeconds > lifeTime
+                single localTime.TotalSeconds - world.ClockDelta >= lifeTime
             | (_, _) -> failwithumf ()
 
         static member private updateScreenIdling3 transitionTime slide (_ : Screen) (world : World) =
-            // NOTE: transitions always take one additional frame because it needs to render frame 0 and frame MAX + 1 for
-            // full opacity if fading and an extra frame for the render messages to actually get processed.
             match (transitionTime, slide.IdlingTime) with
             | (FrameTime time, FrameTime lifeTime) ->
                 let localTime = world.UpdateTime - time
-                localTime > lifeTime
+                localTime - 2L = lifeTime
             | (DateTimeOffset time, ClockTime lifeTime) ->
                 let localTime = world.ClockTime - time
-                single localTime.TotalSeconds > lifeTime
+                single localTime.TotalSeconds - world.ClockDelta >= lifeTime
             | (_, _) -> failwithumf ()
 
         static member private updateScreenIncoming transitionTime (selectedScreen : Screen) world =
@@ -237,8 +233,8 @@ module WorldModule2 =
             | Live ->
                 let world =
                     if (match transitionTime with
-                        | FrameTime time -> time = world.UpdateTime - 1L
-                        | DateTimeOffset time -> time >= world.ClockTime - world.ClockDeltaFloor
+                        | FrameTime time -> time + 1L = world.UpdateTime
+                        | DateTimeOffset time -> time + world.ClockDeltaFloor >= world.ClockTime
                         | ClockTime _ -> failwith "Cannot evaluate screen transition with transition time as ClockTime.") then
                         let world =
                             match (selectedScreen.GetIncoming world).SongOpt with
@@ -283,8 +279,8 @@ module WorldModule2 =
         static member private updateScreenOutgoing transitionTime (selectedScreen : Screen) (world : World) =
             let world =
                 if (match transitionTime with
-                    | FrameTime time -> time = world.UpdateTime
-                    | DateTimeOffset time -> time = world.ClockTime
+                    | FrameTime time -> time + 1L = world.UpdateTime
+                    | DateTimeOffset time -> time + world.ClockDeltaFloor >= world.ClockTime
                     | ClockTime _ -> failwith "Cannot evaluate screen transition with transition time as ClockTime.") then
                     let incoming = selectedScreen.GetIncoming world
                     let outgoing = selectedScreen.GetOutgoing world
@@ -355,6 +351,8 @@ module WorldModule2 =
             | Dead -> world
 
         static member private updateScreenTransition world =
+            // NOTE: transitions always take one additional frame because it needs to render frame 0 and frame MAX + 1 for
+            // full opacity if fading and an extra frame for the render messages to actually get processed.
             match World.getSelectedScreenOpt world with
             | Some selectedScreen ->
                 match selectedScreen.GetTransitionState world with
