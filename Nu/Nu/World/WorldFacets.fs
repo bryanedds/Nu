@@ -206,7 +206,6 @@ module AnimatedSpriteFacetModule =
                     match entity.GetAnimationDelay world with
                     | UpdateTime delay -> int (world.UpdateTime / delay) % celCount
                     | ClockTime delay -> int (world.ClockTime / delay) % celCount
-                    | SystemTime _ -> failwithnie ()
                 let celSize = entity.GetCelSize world
                 let celI = cel % celRun
                 let celJ = cel / celRun

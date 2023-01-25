@@ -233,8 +233,7 @@ module WorldModule2 =
                 let world =
                     if (match transitionTime with
                         | UpdateTime time -> time + 1L = world.UpdateTime
-                        | ClockTime time -> time + world.ClockDelta >= world.ClockTime
-                        | SystemTime _ -> failwithnie ()) then
+                        | ClockTime time -> time + world.ClockDelta >= world.ClockTime) then
                         let world =
                             match (selectedScreen.GetIncoming world).SongOpt with
                             | Some playSong ->
@@ -279,8 +278,7 @@ module WorldModule2 =
             let world =
                 if (match transitionTime with
                     | UpdateTime time -> time + 1L = world.UpdateTime
-                    | ClockTime time -> time + world.ClockDelta >= world.ClockTime
-                    | SystemTime _ -> failwithnie ()) then
+                    | ClockTime time -> time + world.ClockDelta >= world.ClockTime) then
                     let incoming = selectedScreen.GetIncoming world
                     let outgoing = selectedScreen.GetOutgoing world
                     let world =
@@ -575,7 +573,6 @@ module WorldModule2 =
                 match tasklet.ScheduledTime with
                 | UpdateTime time -> time <= world.UpdateTime
                 | ClockTime time -> time <= world.ClockTime
-                | SystemTime _ -> failwithnie ()
             if shouldRun
             then (taskletsNotRun, tasklet.ScheduledOp world)
             else

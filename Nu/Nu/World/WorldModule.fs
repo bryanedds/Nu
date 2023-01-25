@@ -368,7 +368,6 @@ module WorldModule =
                 match delay with
                 | UpdateTime delay -> UpdateTime (world.UpdateTime + delay)
                 | ClockTime delay -> ClockTime (world.ClockTime + delay)
-                | SystemTime _ -> failwithnie ()
             let tasklet = { ScheduledTime = time; ScheduledOp = operation }
             World.addTasklet simulant tasklet world
 

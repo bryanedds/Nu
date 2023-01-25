@@ -849,8 +849,7 @@ module SideViewCharacterDispatcherModule =
                 match (time, delay) with
                 | (UpdateTime time, UpdateTime delay) -> time / delay
                 | (ClockTime time, ClockTime delay) -> time / delay |> int64
-                | (SystemTime _, SystemTime _) -> failwithnie ()
-                | (_, _) -> failwithnie ()
+                | (_, _) -> failwith "Cannot operate on incompatible PolyTime values."
             let frame = compressedTime % int64 celRun
             let i = single (frame % 3L)
             let j = single (frame / 3L)

@@ -70,7 +70,6 @@ type [<AttributeUsage (AttributeTargets.Field)>] UniformAttribute () =
 type PolyTime =
     | UpdateTime of int64 // in updates
     | ClockTime of single // in seconds
-    | SystemTime of int64 // in ticks
 
 /// The desired frame rate.
 type [<NoComparison>] FrameRate =
