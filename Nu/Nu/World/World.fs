@@ -523,7 +523,7 @@ module WorldModule3 =
             let ambientState =
                 let overlayRouter = OverlayRouter.empty
                 let symbolics = Symbolics.makeEmpty ()
-                AmbientState.make config.Imperative config.NuConfig.StandAlone 1L symbolics Overlayer.empty overlayRouter None
+                AmbientState.make config.Imperative config.NuConfig.StandAlone true symbolics Overlayer.empty overlayRouter None
 
             // make the world's quadtree
             let quadtree = World.makeQuadtree ()
@@ -645,7 +645,7 @@ module WorldModule3 =
                             List.concat
                         let overlayRouter = OverlayRouter.make overlayRoutes
                         let symbolics = Symbolics.makeEmpty ()
-                        AmbientState.make config.Imperative config.NuConfig.StandAlone config.UpdateRate symbolics overlayer overlayRouter (Some sdlDeps)
+                        AmbientState.make config.Imperative config.NuConfig.StandAlone config.Advancing symbolics overlayer overlayRouter (Some sdlDeps)
 
                     // make the world's quadtree
                     let quadtree = World.makeQuadtree ()

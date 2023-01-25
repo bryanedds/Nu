@@ -374,7 +374,7 @@ module Gaia =
                     let eyeSize = World.getEyeSize2d world
                     let mousePositionWorld = viewport.MouseToWorld2d (entity.GetAbsolute world, mousePosition, eyeCenter, eyeSize)
                     let entityPosition = if entity.MountExists world then entity.GetPositionLocal world else entity.GetPosition world
-                    dragEntityState <- DragEntityPosition2d (world.ClockTime, mousePositionWorld, entityPosition.V2 + mousePositionWorld, entity)
+                    dragEntityState <- DragEntityPosition2d (DateTimeOffset.Now, mousePositionWorld, entityPosition.V2 + mousePositionWorld, entity)
                 else
                     let viewport = World.getViewport world
                     let eyeCenter = World.getEyeCenter3d world
@@ -385,7 +385,7 @@ module Gaia =
                     let intersectionOpt = mouseRayWorld.Intersection entityPlane
                     if intersectionOpt.HasValue then
                         let entityDragOffset = intersectionOpt.Value - entityPosition
-                        dragEntityState <- DragEntityPosition3d (world.ClockTime, entityDragOffset, entityPlane, entity)
+                        dragEntityState <- DragEntityPosition3d (DateTimeOffset.Now, entityDragOffset, entityPlane, entity)
                 (handled, world)
             | (None, world) -> (handled, world)
         else (Cascade, world)
@@ -1120,13 +1120,13 @@ module Gaia =
 
     let private handleFormRunButtonClick (form : GaiaForm) (_ : EventArgs) =
         Globals.nextPreUpdate $ fun world ->
-            let updateRate = if form.runButton.Checked then 1L else 0L
+            let advancing = form.runButton.Checked
             let world =
-                if updateRate <> 0L then
+                if advancing then
                     form.displayPanel.Focus () |> ignore
                     Globals.pushPastWorld world
                 else world
-            World.setUpdateRate updateRate world
+            World.setAdvancing advancing world
 
     let private handleFormSongPlayback (form : GaiaForm) (_ : EventArgs) =
         Globals.nextPreUpdate $ fun world ->
@@ -1487,7 +1487,7 @@ module Gaia =
         if not (canEditWithMouse form world) then
             match dragEntityState with
             | DragEntityPosition2d (time, mousePositionWorldOriginal, entityDragOffset, entity) ->
-                let localTime = world.ClockTime - time
+                let localTime = DateTimeOffset.Now - time
                 if entity.Exists world && localTime.TotalSeconds >= Constants.Editor.DragMinimumSeconds then
                     let mousePositionWorld = World.getMousePostion2dWorld (entity.GetAbsolute world) world
                     let entityPosition = (entityDragOffset - mousePositionWorldOriginal) + (mousePositionWorld - mousePositionWorldOriginal)
@@ -1517,7 +1517,7 @@ module Gaia =
                     world
                 else world
             | DragEntityPosition3d (time, entityDragOffset, entityPlane, entity) ->
-                let localTime = world.ClockTime - time
+                let localTime = DateTimeOffset.Now - time
                 if entity.Exists world && localTime.TotalSeconds >= Constants.Editor.DragMinimumSeconds then
                     let mouseRayWorld = World.getMouseRay3dWorld (entity.GetAbsolute world) world
                     let intersectionOpt = mouseRayWorld.Intersection entityPlane
@@ -2011,7 +2011,7 @@ module Gaia =
         | Right (sdlConfig, sdlDeps) ->
             let worldConfig =
                 { Imperative = savedState.UseImperativeExecution
-                  UpdateRate = 0L
+                  Advancing = false
                   ModeOpt = savedState.EditModeOpt
                   NuConfig = nuConfig
                   SdlConfig = sdlConfig }

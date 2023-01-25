@@ -672,7 +672,7 @@ module FieldDispatcher =
                 else just world
 
             | UpdateEye ->
-                if World.getUpdateRate world <> 0L then
+                if world.Advancing then
                     let world = World.setEyeCenter2d field.Avatar.Center.V2 world
                     let tileMapPerimeter2d = (Simulants.FieldSceneTileMap.GetPerimeter world).Box2
                     let eyeBounds = tileMapPerimeter2d.WithMin (tileMapPerimeter2d.Min + v2 48.0f 48.0f)

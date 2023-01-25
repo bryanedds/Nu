@@ -1193,25 +1193,21 @@ module WorldTypes =
         member this.Halted =
             AmbientState.getHalted this.AmbientState
 
-        /// Get the rate at which the world is updating.
-        member this.UpdateRate =
-            AmbientState.getUpdateRate this.AmbientState
+        /// Check that the world is advancing (not halted).
+        member this.SetAdvancing advancing =
+            AmbientState.setAdvancing advancing this.AmbientState
 
         /// Get the number of updates that have transpired.
         member this.UpdateTime =
             AmbientState.getUpdateTime this.AmbientState
 
-        /// Get the system delta as a number of environment ticks.
-        member this.SystemDelta =
-            AmbientState.getSystemDelta this.AmbientState
+        /// Get the tick delta as a number of environment ticks.
+        member this.TickDelta =
+            AmbientState.getTickDelta this.AmbientState
 
-        /// Get the system time as a number of environment ticks.
-        member this.SystemTime =
-            AmbientState.getSystemTime this.AmbientState
-
-        /// Get the system time as a number of environment ticks.
-        member this.SystemTimePrevious =
-            this.SystemTime - this.SystemDelta
+        /// Get the tick time as a number of environment ticks.
+        member this.TickTime =
+            AmbientState.getTickTime this.AmbientState
 
         /// Get the amount of clock time that has transpired between this and the previous frame.
         member this.ClockDelta =
@@ -1220,10 +1216,6 @@ module WorldTypes =
         /// Get the clock time as of when the current frame began.
         member this.ClockTime =
             AmbientState.getClockTime this.AmbientState
-
-        /// Get the previous clock time.
-        member this.ClockTimePrevious =
-            this.ClockTime - this.ClockDelta
 
         /// Get the polymorphic engine time.
         member this.PolyTime =
@@ -1234,7 +1226,7 @@ module WorldTypes =
         /// Get the polymorphic engine step.
         member this.PolyStep =
             match Constants.Engine.DesiredFrameRate with
-            | StaticFrameRate _ -> UpdateTime this.UpdateRate
+            | StaticFrameRate _ -> UpdateTime (if this.Advancing then 1L else 0L)
             | DynamicFrameRate -> ClockTime this.ClockDelta
 
         member
