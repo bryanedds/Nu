@@ -224,7 +224,7 @@ module WorldModule2 =
             // NOTE: we do not immediately transition when transition time is zero because we only want screen
             // transitions to happen outside the update loop!
             // NOTE: transitions always take one additional frame because it needs to render frame 0 and frame MAX + 1 for
-            // full opacity if fading and and an extra frame for the render messages to actually get processed.
+            // full opacity if fading and an extra frame for the render messages to actually get processed.
             let transitionUpdates = selectedScreen.GetTransitionUpdates world
             if transitionUpdates = slide.IdlingTime + 1L then
                 (true, selectedScreen.SetTransitionUpdates 0L world)
