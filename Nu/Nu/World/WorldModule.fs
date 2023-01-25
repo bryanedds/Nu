@@ -363,13 +363,19 @@ module WorldModule =
             World.updateAmbientState (AmbientState.addTasklet simulant tasklet) world
 
         /// Schedule an operation to be executed by the engine with the given delay.
-        static member schedule operation delay (simulant : Simulant) world =
-            let tasklet = { ScheduledTime = World.getUpdateTime world + delay; ScheduledOp = operation }
+        static member schedule operation delay (simulant : Simulant) (world : World) =
+            let time =
+                match delay with
+                | FrameTime delay -> FrameTime (world.UpdateTime + delay)
+                | ClockTime delay -> DateTimeOffset (world.ClockTime + TimeSpan.FromTicks (delay * single TimeSpan.TicksPerSecond |> round |> int64))
+                | DateTimeOffset _ as time -> time
+            let tasklet = { ScheduledTime = time; ScheduledOp = operation }
             World.addTasklet simulant tasklet world
 
         /// Schedule an operation to be executed by the engine at the end of the current frame or the next frame if we've already started processing tasklets.
-        static member frame operation (simulant : Simulant) world =
-            World.schedule operation (if TaskletProcessingStarted then World.getUpdateRate world else 0L) simulant world
+        static member frame operation (simulant : Simulant) (world : World) =
+            let time = if TaskletProcessingStarted then FrameTime world.UpdateRate else FrameTime 0L
+            World.schedule operation time simulant world
 
         /// Attempt to get the window flags.
         [<FunctionBinding>]
