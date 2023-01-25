@@ -95,7 +95,7 @@ module BattleDispatcher =
                     | Bottom bottom -> entity.SetBottom bottom world
                 let world = entity.SetElevation Constants.Battle.EffectElevation world
                 entity.SetSelfDestruct true world)
-                (FrameTime delay)
+                (UpdateTime delay)
                 screen world
 
         static let advanceAttack sourceIndex (targetIndexOpt : CharacterIndex option) time localTime battle =
@@ -1086,7 +1086,7 @@ module BattleDispatcher =
                 displayEffect delay (v3 48.0f 48.0f 0.0f) (Position (v3 0.0f 0.0f 0.0f)) (Effects.makeConjureIfritEffect ()) screen world |> just
 
             | PlaySound (delay, volume, sound) ->
-                let world = World.schedule (World.playSound volume sound) (FrameTime delay) screen world
+                let world = World.schedule (World.playSound volume sound) (UpdateTime delay) screen world
                 just world
 
             | PlaySong (fadeIn, fadeOut, start, volume, assetTag) ->

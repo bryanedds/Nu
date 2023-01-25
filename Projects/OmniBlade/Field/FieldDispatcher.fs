@@ -273,7 +273,7 @@ module FieldDispatcher =
                         Option.isNone field.FieldTransitionOpt then
                         match Field.advanceSpirits field world with
                         | Left (battleData, field) ->
-                            let clockTime = let t = World.getClockTime world in single (t.ToUnixTimeMilliseconds () * 1000L)
+                            let clockTime = world.ClockTime
                             let playTime = Option.defaultValue clockTime field.FieldSongTimeOpt
                             let startTime = clockTime - playTime
                             let prizePool = { Consequents = Set.empty; Items = []; Gold = 0; Exp = 0 }
@@ -327,7 +327,7 @@ module FieldDispatcher =
 
                         // finish transition
                         elif time = fieldTransition.FieldTransitionTime then
-                            let startTime = let t = World.getClockTime world in single (t.ToUnixTimeMilliseconds () * 1000L)
+                            let startTime = world.ClockTime
                             let field = Field.updateFieldSongTimeOpt (constant (Some startTime)) field
                             let field = Field.updateFieldTransitionOpt (constant None) field
                             just field
@@ -590,7 +590,7 @@ module FieldDispatcher =
             | TryBattle (battleType, consequents) ->
                 match Map.tryFind battleType Data.Value.Battles with
                 | Some battleData ->
-                    let clockTime = let t = World.getClockTime world in single (t.ToUnixTimeMilliseconds ()) * 1000.0f
+                    let clockTime = world.ClockTime
                     let playTime = Option.defaultValue clockTime field.FieldSongTimeOpt
                     let startTime = clockTime - playTime
                     let prizePool = { Consequents = consequents; Items = []; Gold = 0; Exp = 0 }
@@ -688,7 +688,7 @@ module FieldDispatcher =
                     | (Some fieldSong, Some currentSong) ->
                         if not (AssetTag.equals fieldSong currentSong.Song) then
                             let (playTime, startTime) =
-                                let clockTime = let t = World.getClockTime world in single (t.ToUnixTimeMilliseconds ()) * 1000.0f
+                                let clockTime = world.ClockTime
                                 match field.FieldSongTimeOpt with
                                 | Some playTime ->
                                     let deltaTime = clockTime - playTime
@@ -703,7 +703,7 @@ module FieldDispatcher =
                         else just world
                     | (Some fieldSong, None) ->
                         let (playTime, startTime) =
-                            let clockTime = let t = World.getClockTime world in single (t.ToUnixTimeMilliseconds ()) * 1000.0f
+                            let clockTime = world.ClockTime
                             match field.FieldSongTimeOpt with
                             | Some playTime ->
                                 let deltaTime = clockTime - playTime
@@ -719,7 +719,7 @@ module FieldDispatcher =
                 | (false, _) -> just world
 
             | PlaySound (delay, volume, sound) ->
-                let world = World.schedule (World.playSound volume sound) (FrameTime delay) screen world
+                let world = World.schedule (World.playSound volume sound) (UpdateTime delay) screen world
                 just world
 
             | PlaySong (fadeIn, fadeOut, start, volume, assetTag) ->
