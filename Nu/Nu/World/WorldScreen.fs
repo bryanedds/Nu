@@ -22,9 +22,6 @@ module WorldScreenModule =
         member this.GetTransitionState world = World.getScreenTransitionState this world
         member this.SetTransitionState value world = World.setScreenTransitionState value this world |> snd'
         member this.TransitionState = lens (nameof this.TransitionState) this this.GetTransitionState this.SetTransitionState
-        member this.GetTransitionUpdates world = World.getScreenTransitionUpdates this world
-        member this.SetTransitionUpdates value world = World.setScreenTransitionUpdates value this world |> snd'
-        member this.TransitionUpdates = lens (nameof this.TransitionUpdates) this this.GetTransitionUpdates this.SetTransitionUpdates
         member this.GetIncoming world = World.getScreenIncoming this world
         member this.SetIncoming value world = World.setScreenIncoming value this world |> snd'
         member this.Incoming = lens (nameof this.Incoming) this this.GetIncoming this.SetIncoming
@@ -98,7 +95,7 @@ module WorldScreenModule =
             World.setScreenXtensionProperty propertyName property this world
 
         /// Check that a screen is in an idling state (not transitioning in nor out).
-        member this.IsIdling world = match this.GetTransitionState world with IdlingState -> true | _ -> false
+        member this.IsIdling world = match this.GetTransitionState world with IdlingState _ -> true | _ -> false
 
         /// Check that a screen is selected.
         member this.IsSelected world =
@@ -218,7 +215,7 @@ module WorldScreenModule =
                 | Some dispatcher -> dispatcher
                 | None -> failwith ("Could not find ScreenDispatcher named '" + dispatcherName + "'.")
             let ecs = world.WorldExtension.Plugin.MakeEcs ()
-            let screenState = ScreenState.make nameOpt dispatcher ecs
+            let screenState = ScreenState.make world.PolyTime nameOpt dispatcher ecs
             let screenState = Reflection.attachProperties ScreenState.copy screenState.Dispatcher screenState world
             let screen = ntos screenState.Name
             let world =
@@ -310,7 +307,7 @@ module WorldScreenModule =
             let ecs = world.WorldExtension.Plugin.MakeEcs ()
 
             // make the screen state and populate its properties
-            let screenState = ScreenState.make None dispatcher ecs
+            let screenState = ScreenState.make world.PolyTime None dispatcher ecs
             let screenState = Reflection.attachProperties ScreenState.copy screenState.Dispatcher screenState world
             let screenState = Reflection.readPropertiesToTarget ScreenState.copy screenDescriptor.ScreenProperties screenState
 

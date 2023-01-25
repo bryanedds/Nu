@@ -924,7 +924,7 @@ module Particles =
             let particleBehaviors =
                 Behaviors.singleton
                     (Behavior.ofSeq BasicParticle.body
-                        [Transformer.force (Gravity (Constants.Engine.GravityDefault / Constants.Engine.DesiredFpsF))
+                        [Transformer.force (Gravity (Constants.Engine.GravityDefault / Constants.Engine.DesiredFps.Single))
                          Transformer.force (Velocity Constraint.empty)])
             let emitterBehavior = fun _ (emitter : BasicEmitter) ->
                 emitter.Body.Angles <- emitter.Body.Angles + v3Dup 0.1f

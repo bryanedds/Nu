@@ -75,36 +75,45 @@ type [<StructuralEquality; NoComparison; Struct>] TransitionType =
     | Outgoing
 
 /// The state of a screen's transition.
-type [<StructuralEquality; NoComparison; Struct>] TransitionState =
-    | IncomingState
-    | OutgoingState
-    | IdlingState
+type [<StructuralEquality; NoComparison>] TransitionState =
+    | IncomingState of PolyTime
+    | OutgoingState of PolyTime
+    | IdlingState of PolyTime
+    member this.TransitionTime =
+        match this with
+        | IncomingState time -> time
+        | OutgoingState time -> time
+        | IdlingState time -> time
 
 /// Describes one of a screen's transition processes.
 /// TODO: figure out if this really needs to be CLIMutable.
 type [<StructuralEquality; NoComparison; CLIMutable>] Transition =
     { TransitionType : TransitionType
-      TransitionLifeTime : int64
+      TransitionLifeTime : PolyTime
       DissolveImageOpt : Image AssetTag option
       SongOpt : SongDescriptor option }
 
     /// Make a screen transition.
     static member make transitionType =
+        let lifeTime =
+            match Constants.Engine.DesiredFps with
+            | LimitTo30 | LimitTo60 -> Frames 0L
+            | Unlimited -> Milliseconds 0.0f
         { TransitionType = transitionType
-          TransitionLifeTime = 0L
+          TransitionLifeTime = lifeTime
           DissolveImageOpt = None
           SongOpt = None }
 
 /// Describes the behavior of the screen dissolving algorithm.
 type [<NoComparison>] DissolveDescriptor =
-    { IncomingTime : int64
-      OutgoingTime : int64
+    { IncomingTime : PolyTime
+      OutgoingTime : PolyTime
       DissolveImage : Image AssetTag }
 
 /// Describes the behavior of the screen slide algorithm.
 type [<NoComparison>] SlideDescriptor =
     { DissolveDescriptor : DissolveDescriptor
-      IdlingTime : int64
+      IdlingTime : PolyTime
       SlideImageOpt : Image AssetTag option }
 
 /// Describes the shape of a desired overlay.
