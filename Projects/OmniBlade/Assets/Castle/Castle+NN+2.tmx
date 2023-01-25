@@ -47,7 +47,7 @@
    [ClearSpirits
     [FadeOutSong 2000]
     [Wait 120]
-    [PlaySong 2000 0 0.5 0 [Field Joining]]
+    [PlaySong 2000 0 0 0.5 [Field Joining]]
     [Wait 180]
     [Dialog &quot;It is done.&quot;]
     [Dialog &quot;Everyone wears a blank face now...&quot;]
@@ -66,7 +66,7 @@
     [FadeOutSong 2000]
     [Fade [CharacterTarget [Enemy Kyla]] 150]
     [ReplaceAdvent [KylaAdvent 4] [KylaAdvent 5]]
-    [PlaySong 2000 0 0.5 0 [Castle CastlePart3]]
+    [PlaySong 2000 0 0 0.5 [Castle CastlePart3]]
     [Wait 120]
     [PlaySound 0.5 [Field Unlatch]]
     [Dialog &quot;Something unlatched...&quot;]]]

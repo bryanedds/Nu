@@ -582,8 +582,8 @@ type [<NoComparison>] MoveType =
 type [<NoComparison>] Cue =
     | Fin
     | PlaySound of single * Sound AssetTag
-    | PlaySong of int * int * single * double * Song AssetTag
-    | FadeOutSong of int
+    | PlaySong of single * single * single * single * Song AssetTag
+    | FadeOutSong of single
     | Face of CueTarget * Direction
     | ClearSpirits
     | Recruit of AllyType

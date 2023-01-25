@@ -43,8 +43,8 @@ module Assets =
         let AffirmSound = asset<Sound> PackageName "Affirm"
         let MistakeSound = asset<Sound> PackageName "Mistake"
         let SlotSound = asset<Sound> PackageName "Slot"
-        let TitleSong = { FadeInMs = 0; FadeOutMs = Constants.Audio.FadeOutMsDefault; Volume = Constants.Audio.SongVolumeDefault; Start = 0.0; Song = asset<Song> PackageName "Title" }
-        let IntroSong = { FadeInMs = 0; FadeOutMs = 1500; Volume = Constants.Audio.SongVolumeDefault; Start = 0.0; Song = asset<Song> PackageName "Intro" }
+        let TitleSong = { FadeInTime = 0.0f; FadeOutTime = Constants.Audio.FadeOutTimeDefault; StartTime = 0.0f; Volume = Constants.Audio.SongVolumeDefault; Song = asset<Song> PackageName "Title" }
+        let IntroSong = { FadeInTime = 0.0f; FadeOutTime = Constants.Audio.FadeOutTimeDefault; StartTime = 0.0f; Volume = Constants.Audio.SongVolumeDefault; Song = asset<Song> PackageName "Intro" }
         let TitleGroupFilePath = "Assets/Gui/Groups/Title.nugroup"
         let PickGroupFilePath = "Assets/Gui/Groups/Pick.nugroup"
         let IntroGroupFilePath = "Assets/Gui/Groups/Intro.nugroup"

@@ -10,8 +10,8 @@ open OmniBlade
 type FieldCueSignal =
     | TryBattle of BattleType * Advent Set
     | PlaySound of int64 * single * Sound AssetTag
-    | PlaySong of int * int * single * double * Song AssetTag
-    | FadeOutSong of int
+    | PlaySong of single * single * single * single * Song AssetTag
+    | FadeOutSong of single
     interface Signal
 
 [<RequireQualifiedAccess>]
@@ -30,8 +30,8 @@ module FieldCue =
         | Cue.PlaySound (volume, sound) ->
             (Cue.Fin, definitions, withSignal (PlaySound (0L, volume, sound)) field)
 
-        | Cue.PlaySong (fadeIn, fadeOut, volume, start, song) ->
-            (Cue.Fin, definitions, withSignal (PlaySong (fadeIn, fadeOut, volume, start, song)) field)
+        | Cue.PlaySong (fadeIn, fadeOut, start, volume, song) ->
+            (Cue.Fin, definitions, withSignal (PlaySong (fadeIn, fadeOut, start, volume, song)) field)
 
         | Cue.FadeOutSong fade ->
             (Cue.Fin, definitions, withSignal (FadeOutSong fade) field)

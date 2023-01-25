@@ -11,7 +11,7 @@ open Prime
 [<RequireQualifiedAccess>]
 module Engine =
 
-    let [<Uniform>] mutable DesiredFps = match ConfigurationManager.AppSettings.["EntityCentered2dDefault"] with null -> StaticFrameRate 60L | desiredFps -> scvalue<DesiredFps> desiredFps
+    let [<Uniform>] mutable DesiredFrameRate = match ConfigurationManager.AppSettings.["DesiredFrameRate"] with null -> StaticFrameRate 60L | desiredFrameRate -> scvalue<FrameRate> desiredFrameRate
     let [<Literal>] ExitCodeSuccess = 0
     let [<Literal>] ExitCodeFailure = 1
     let [<Literal>] NamePropertyName = "Name"
@@ -119,9 +119,9 @@ module Audio =
     let [<Literal>] SongVolumeDefault = 0.5f
     let [<Literal>] SoundVolumeDefault = 1.0f
     let [<Literal>] BufferSizeDefault = 1024
-    let [<Literal>] FadeInMinimum = 100 // NOTE: Mix_PlayMusic seems to sometimes cause audio 'popping' when starting a song, so a minimum fade is used instead.
-    let [<Literal>] FadeOutMsDefault = 500
-    let [<Literal>] SongResumptionMaximum = 90000L // HACK: prevents songs from starting over too often due to hack in SdlAudioPlayer.playSong.
+    let [<Literal>] FadeInTimeMinimum = 0.1f // NOTE: Mix_PlayMusic seems to sometimes cause audio 'popping' when starting a song, so a minimum fade is used instead.
+    let [<Literal>] FadeOutTimeDefault = 0.5f
+    let [<Literal>] SongResumptionMaximum = 90.0f // HACK: prevents songs from starting over too often due to hack in SdlAudioPlayer.playSong.
 
 [<RequireQualifiedAccess>]
 module Physics =

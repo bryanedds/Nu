@@ -72,18 +72,18 @@ type PolyTime =
     | Seconds of single
     | DateTimeOffset of DateTimeOffset
 
-/// The desired frame rate per second.
-type [<NoComparison>] DesiredFps =
+/// The desired frame rate.
+type [<NoComparison>] FrameRate =
     | StaticFrameRate of int64
     | DynamicFrameRate
-    member this.Int =
+    member this.AsInt =
         match this with
         | StaticFrameRate fps -> fps
         | DynamicFrameRate -> 1000000 // arbitrary large number to allow for division
-    member this.Single =
-        single this.Int
-    member this.Double =
-        double this.Int
+    member this.AsSingle =
+        single this.AsInt
+    member this.AsDouble =
+        double this.AsInt
 
 // TODO: remove after updating Prime.
 [<RequireQualifiedAccess>]

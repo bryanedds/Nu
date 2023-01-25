@@ -81,15 +81,15 @@ module WorldAudio =
 
         /// Send a message to the audio system to play a song.
         [<FunctionBinding>]
-        static member playSong timeToFadeInSongMs timeToFadeOutSongMs volume start song world =
-            let playSongMessage = PlaySongMessage { FadeInMs = timeToFadeInSongMs; FadeOutMs = timeToFadeOutSongMs; Volume = volume; Start = start; Song = song }
+        static member playSong fadeInTime fadeOutTime startTime volume song world =
+            let playSongMessage = PlaySongMessage { FadeInTime = fadeInTime; FadeOutTime = fadeOutTime; StartTime = startTime; Volume = volume; Song = song }
             World.enqueueAudioMessage playSongMessage world
 
         /// Send a message to the audio system to play a song.
         [<FunctionBinding "playSong6">]
-        static member playSong7 timeToFadeInSongMs timeToFadeOutSongMs volume start songPackageName songAssetName world =
+        static member playSong7 fadeInTime fadeOutTime startTime volume songPackageName songAssetName world =
             let song = AssetTag.make<Song> songPackageName songAssetName
-            World.playSong timeToFadeInSongMs timeToFadeOutSongMs volume start song world
+            World.playSong fadeInTime fadeOutTime startTime volume song world
 
         /// Send a message to the audio system to play a sound.
         [<FunctionBinding>]
@@ -105,8 +105,8 @@ module WorldAudio =
 
         /// Send a message to the audio system to fade out any current song.
         [<FunctionBinding>]
-        static member fadeOutSong timeToFadeOutSongMs world =
-            let fadeOutSongMessage = FadeOutSongMessage timeToFadeOutSongMs
+        static member fadeOutSong fadeOutTime world =
+            let fadeOutSongMessage = FadeOutSongMessage fadeOutTime
             World.enqueueAudioMessage fadeOutSongMessage world
 
         /// Send a message to the audio system to stop a song.

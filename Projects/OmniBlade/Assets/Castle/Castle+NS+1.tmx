@@ -42,7 +42,7 @@
    [ClearSpirits
     [FadeOutSong 2000]
     [Wait 120]
-    [PlaySong 2000 0 0.5 0 [Field TheCalling]]
+    [PlaySong 2000 0 0 0.5 [Field TheCalling]]
     [Wait 180]
     [Dialog &quot;Always. They have always treated me this way...&quot;]
     [Dialog &quot;Things cannot be put right. Things can only be put in my favor...&quot;]
@@ -61,7 +61,7 @@
     [FadeOutSong 2000]
     [Fade [CharacterTarget [Enemy Kyla]] 150]
     [ReplaceAdvent [KylaAdvent 2] [KylaAdvent 3]]
-    [PlaySong 2000 0 0.5 0 [Castle CastlePart2]]
+    [PlaySong 2000 0 0 0.5 [Castle CastlePart2]]
     [Wait 120]
     [PlaySound 0.5 [Field Unlatch]]
     [Dialog &quot;Something unlatched...&quot;]]]
