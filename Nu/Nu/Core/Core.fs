@@ -66,7 +66,7 @@ module CoreOperators =
 type [<AttributeUsage (AttributeTargets.Field)>] UniformAttribute () =
     inherit Attribute ()
 
-/// The desired frame rate.
+/// The desired frame rate per second.
 type [<NoComparison>] DesiredFps =
     | LimitTo30
     | LimitTo60

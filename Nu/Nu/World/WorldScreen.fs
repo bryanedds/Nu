@@ -11,7 +11,7 @@ open Nu
 module WorldScreenModule =
 
     type Screen with
-    
+
         member this.GetDispatcher world = World.getScreenDispatcher this world
         member this.Dispatcher = lensReadOnly (nameof this.Dispatcher) this this.GetDispatcher
         member this.GetModelGeneric<'a> world = World.getScreenModel<'a> this world
