@@ -11,7 +11,6 @@ namespace Nu
 open System
 open System.Numerics
 open Prime
-open Prime.EventFilter
 open Nu
 open Nu.Particles
 
@@ -2978,7 +2977,7 @@ module WorldBindings =
         try
             let result = World.getEventFilter world
             let value = result
-            let value = ScriptingSystem.tryImport typeof<Filter> value world |> Option.get
+            let value = ScriptingSystem.tryImport typeof<EventFilter.Filter> value world |> Option.get
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getEventFilter' due to: " + scstring exn, ValueNone)
@@ -2988,8 +2987,8 @@ module WorldBindings =
         let oldWorld = world
         try
             let filter =
-                match ScriptingSystem.tryExport typeof<Filter> filter world with
-                | Some value -> value :?> Filter
+                match ScriptingSystem.tryExport typeof<EventFilter.Filter> filter world with
+                | Some value -> value :?> EventFilter.Filter
                 | None -> failwith "Invalid argument type for 'filter'; expecting a value convertable to Filter."
             let result = World.setEventFilter filter world
             struct (Scripting.Unit, result)
