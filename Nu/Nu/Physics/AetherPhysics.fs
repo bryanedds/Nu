@@ -497,8 +497,8 @@ type [<ReferenceEquality; NoComparison>] AetherPhysicsEngine =
             AetherPhysicsEngine.handlePhysicsMessages physicsMessages physicsEngine
             let physicsStepAmount =
                 match stepTime with
-                | Frames frames -> 1.0f / Constants.Engine.DesiredFrameRate.AsSingle * single frames
-                | Seconds secs -> secs
+                | FrameTime frames -> 1.0f / Constants.Engine.DesiredFrameRate.AsSingle * single frames
+                | ClockTime secs -> secs
                 | DateTimeOffset _ -> failwithumf ()
             AetherPhysicsEngine.applyGravity physicsStepAmount physicsEngine
             physicsEngine.PhysicsContext.Step physicsStepAmount
