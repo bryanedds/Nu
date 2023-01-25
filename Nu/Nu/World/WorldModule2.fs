@@ -237,7 +237,7 @@ module WorldModule2 =
             | Live ->
                 let world =
                     if (match transitionTime with
-                        | FrameTime time -> time = 0L
+                        | FrameTime time -> time = world.UpdateTime
                         | DateTimeOffset time -> time = world.ClockTime
                         | ClockTime _ -> failwith "Cannot evaluate screen transition with transition time as ClockTime.") then
                         let world =
@@ -283,7 +283,7 @@ module WorldModule2 =
         static member private updateScreenOutgoing transitionTime (selectedScreen : Screen) (world : World) =
             let world =
                 if (match transitionTime with
-                    | FrameTime time -> time = 0L
+                    | FrameTime time -> time = world.UpdateTime
                     | DateTimeOffset time -> time = world.ClockTime
                     | ClockTime _ -> failwith "Cannot evaluate screen transition with transition time as ClockTime.") then
                     let incoming = selectedScreen.GetIncoming world
