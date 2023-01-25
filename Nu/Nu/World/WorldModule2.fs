@@ -237,8 +237,8 @@ module WorldModule2 =
             | Live ->
                 let world =
                     if (match transitionTime with
-                        | FrameTime time -> time = world.UpdateTime
-                        | DateTimeOffset time -> time = world.ClockTime
+                        | FrameTime time -> time = world.UpdateTime - 1L
+                        | DateTimeOffset time -> time >= world.ClockTime - world.ClockDeltaFloor
                         | ClockTime _ -> failwith "Cannot evaluate screen transition with transition time as ClockTime.") then
                         let world =
                             match (selectedScreen.GetIncoming world).SongOpt with
@@ -576,8 +576,8 @@ module WorldModule2 =
         static member private processTasklet simulant tasklet (taskletsNotRun : OMap<Simulant, World Tasklet UList>) (world : World) =
             let shouldRun =
                 match tasklet.ScheduledTime with
-                | FrameTime time -> time = world.UpdateTime
-                | DateTimeOffset time -> time >= world.ClockTime && time < world.ClockTime + TimeSpan.FromSeconds (double world.ClockDelta)
+                | FrameTime time -> time >= world.UpdateTime
+                | DateTimeOffset time -> time >= world.ClockTime
                 | ClockTime _ -> failwith "Cannot evaluate tasklet with scheduled time as ClockTime."
             if shouldRun
             then (taskletsNotRun, tasklet.ScheduledOp world)
