@@ -239,7 +239,7 @@ module WorldModule2 =
                     if (match transitionTime with
                         | FrameTime time -> time = 0L
                         | DateTimeOffset time -> time = world.ClockTime
-                        | ClockTime _ -> failwithumf ()) then
+                        | ClockTime _ -> failwith "Cannot evaluate screen transition with transition time as ClockTime.") then
                         let world =
                             match (selectedScreen.GetIncoming world).SongOpt with
                             | Some playSong ->
@@ -285,7 +285,7 @@ module WorldModule2 =
                 if (match transitionTime with
                     | FrameTime time -> time = 0L
                     | DateTimeOffset time -> time = world.ClockTime
-                    | ClockTime _ -> failwithumf ()) then
+                    | ClockTime _ -> failwith "Cannot evaluate screen transition with transition time as ClockTime.") then
                     let incoming = selectedScreen.GetIncoming world
                     let outgoing = selectedScreen.GetOutgoing world
                     let world =
@@ -573,14 +573,14 @@ module WorldModule2 =
             let world = Seq.fold (fun world (entity : Entity) -> entity.PropagatePhysics world) world entities
             world
 
-        static member private processTasklet simulant tasklet (taskletsNotRun : OMap<Simulant, World Tasklet UList>) world =
-            let time = World.getUpdateTime world
-            if time = tasklet.ScheduledTime then
-                let world = tasklet.ScheduledOp world
-                (taskletsNotRun, world)
-            elif time > tasklet.ScheduledTime then
-                Log.debug ("Tasklet leak found for time '" + scstring time + "'.")
-                (taskletsNotRun, world)
+        static member private processTasklet simulant tasklet (taskletsNotRun : OMap<Simulant, World Tasklet UList>) (world : World) =
+            let shouldRun =
+                match tasklet.ScheduledTime with
+                | FrameTime time -> time = world.UpdateTime
+                | DateTimeOffset time -> time >= world.ClockTime && time < world.ClockTime + TimeSpan.FromSeconds (double world.ClockDelta)
+                | ClockTime _ -> failwith "Cannot evaluate tasklet with scheduled time as ClockTime."
+            if shouldRun
+            then (taskletsNotRun, tasklet.ScheduledOp world)
             else
                 let taskletsNotRun =
                     match taskletsNotRun.TryGetValue simulant with

@@ -125,7 +125,7 @@ type [<NoComparison>] OverlayNameDescriptor =
 
 /// A tasklet to be completed at the scheduled update time.
 type [<ReferenceEquality; NoComparison>] 'w Tasklet =
-    { ScheduledTime : int64
+    { ScheduledTime : PolyTime
       ScheduledOp : 'w -> 'w }
 
 /// Specifies that a module contains functions that need to be considered for binding generation.

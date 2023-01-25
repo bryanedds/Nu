@@ -905,20 +905,23 @@ module WorldScripting =
 
         static member internal evalSchedule fnName exprs originOpt world =
             match exprs with
-            | [|Scripting.Int64 i; body; relationExpr|] ->
+            | [|timeExpr; body; relationExpr|] ->
                 let context = World.getScriptContext world
                 match World.tryResolveRelation fnName relationExpr originOpt context world with
                 | Right (simulant, world) ->
-                    let world =
-                        World.schedule
-                            (fun world ->
-                                match World.tryGetScriptFrame context world with
-                                | Some scriptFrame -> World.eval body scriptFrame context world |> snd'
-                                | None -> world)
-                            i simulant world
-                    struct (Unit, world)
+                    match ScriptingSystem.tryExport typeof<PolyTime> timeExpr world with
+                    | Some value -> 
+                        let time = value :?> PolyTime
+                        let world =
+                            World.schedule
+                                (fun world ->
+                                    match World.tryGetScriptFrame context world with
+                                    | Some scriptFrame -> World.eval body scriptFrame context world |> snd'
+                                    | None -> world)
+                                time simulant world
+                        struct (Unit, world)
+                    | None -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires Time for first argument.", originOpt), world)
                 | Left error -> error
-            | [|_; _; _|] -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires an Int64 for the first argument.", originOpt), world)
             | _ -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for '" + fnName + "'; 3 arguments required.", originOpt), world)
 
         static member internal evalFrame fnName exprs originOpt world =
