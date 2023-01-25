@@ -1205,9 +1205,25 @@ module WorldTypes =
         member this.ClockDelta =
             AmbientState.getClockDelta this.AmbientState
 
+        /// Get the amount of clock time that has transpired between this and the previous frame rounded to closest time span.
+        member this.ClockDeltaRound =
+            this.ClockDelta * single TimeSpan.TicksPerSecond |> round |> int64 |> TimeSpan.FromTicks
+
+        /// Get the amount of clock time that has transpired between this and the previous frame rounded to longer time span.
+        member this.ClockDeltaCeil =
+            this.ClockDelta * single TimeSpan.TicksPerSecond |> ceil |> int64 |> TimeSpan.FromTicks
+
+        /// Get the amount of clock time that has transpired between this and the previous frame rounded to shorter time span.
+        member this.ClockDeltaFloor =
+            this.ClockDelta * single TimeSpan.TicksPerSecond |> floor |> int64 |> TimeSpan.FromTicks
+
         /// Get the clock time as of when the current frame began.
         member this.ClockTime =
             AmbientState.getClockTime this.AmbientState
+
+        /// Get the previous clock time.
+        member this.ClockTimePrevious =
+            DateTimeOffset (this.ClockTime - this.ClockDeltaCeil)
 
         /// Get the polymorphic engine time.
         member this.PolyTime =
