@@ -145,7 +145,6 @@
     <Compile Include="World\WorldStream.fs" />
     <Compile Include="World\World.fs" />
     <Compile Include="Program.fs" />
-    <None Include="Interactive.fsx" />
     <None Include="GenerateInputBindings.fsx" />
     <None Include="GenerateWorldBindings.fsx" />
     <None Include="App.config" />

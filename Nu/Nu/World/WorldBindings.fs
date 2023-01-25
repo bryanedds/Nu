@@ -11,6 +11,7 @@ namespace Nu
 open System
 open System.Numerics
 open Prime
+open Prime.EventFilter
 open Nu
 open Nu.Particles
 
@@ -19,52 +20,51 @@ module WorldBindings =
 
     let [<Literal>] BindingKeywords =
         "v2 v3 v4 v2i v3i v4i quat color get getAsStream set setAsStream update streamEvent stream bind self game toData monitor " +
-        "resolve relate selectScreen tryGetIsSelectedScreenIdling " +
-        "tryGetIsSelectedScreenTransitioning isSelectedScreenIdling isSelectedScreenTransitioning tryTransitionScreen " +
-        "transitionScreen setScreenSlide createDissolveScreenFromGroupFile6 createDissolveScreenFromGroupFile " +
-        "createSlideScreen6 createSlideScreen reloadExistingAssets tryReloadAssets " +
-        "getCurrentSongOpt getCurrentSongPosition getMasterAudioVolume getMasterSoundVolume " +
-        "getMasterSongVolume setMasterAudioVolume setMasterSoundVolume setMasterSongVolume " +
-        "playSong playSong6 playSound playSound3 " +
-        "fadeOutSong stopSong loadAudioPackage unloadAudioPackage " +
-        "reloadAudioAssets loadRenderPackageUse2d unloadRenderPackage2d reloadRenderAssets2d " +
-        "reloadRenderAssets3d localizeBodyShape bodyExists getBodyContactNormals " +
-        "getBodyLinearVelocity getBodyToGroundContactNormals getBodyToGroundContactNormalOpt getBodyToGroundContactTangentOpt " +
-        "isBodyOnGround createBody createBodies destroyBody " +
-        "destroyBodies createJoint createJoints destroyJoint " +
-        "destroyJoints setBodyEnabled setBodyPosition setBodyRotation " +
-        "setBodyLinearVelocity applyBodyLinearImpulse setBodyAngularVelocity applyBodyAngularImpulse " +
-        "applyBodyForce applyBodyTorque isMouseButtonDown getMousePosition " +
-        "getMousePosition2dScreen getMousePostion2dWorld getMousePosition3dScreen getMouseRay3dWorld " +
-        "isKeyboardKeyDown isKeyboardKeyUp isKeyboardAltDown isKeyboardAltUp " +
-        "isKeyboardCtrlDown isKeyboardCtrlUp isKeyboardShiftDown isKeyboardShiftUp " +
-        "destroyImmediate destroy tryGetParent getParent " +
-        "getChildren getExists isSelected getEntities0 " +
-        "getGroups0 writeGameToFile readGameFromFile getScreens " +
-        "setScreenDissolve destroyScreen createScreen createDissolveScreen " +
-        "writeScreenToFile readScreenFromFile getGroups createGroup " +
-        "destroyGroup destroyGroups writeGroupToFile readGroupFromFile " +
-        "getEntitiesFlattened getEntities getEntitiesSovereign destroyEntity " +
-        "destroyEntities tryPickEntity2d tryPickEntity3d writeEntityToFile " +
-        "readEntityFromFile createEntity renameEntity trySetEntityOverlayNameOpt " +
-        "trySetEntityFacetNames getEyeCenter2d setEyeCenter2d getEyeSize2d " +
-        "setEyeSize2d getEyeBounds2d getEyeCenter3d setEyeCenter3d " +
-        "getEyeRotation3d setEyeRotation3d getEyeFrustum3dEnclosed getEyeFrustum3dExposed " +
-        "getEyeFrustum3dImposter getLightBox3d getOmniScreenOpt setOmniScreenOpt " +
-        "getOmniScreen setOmniScreen constrainEyeBounds2d getSelectedScreenOpt " +
-        "getSelectedScreen setSelectedScreen getDesiredScreen setDesiredScreen " +
-        "getScreenTransitionDestinationOpt setScreenTransitionDestinationOpt getViewBounds2dAbsolute getPlayBounds2dAbsolute " +
-        "getViewBounds2d getPlayBounds2d isBoundsInView2d getPlayBounds3d " +
-        "isBoundsInView3d isBoundsInPlay3d getEventFilter setEventFilter " +
-        "trySetEditMode tryMakeEmitter tryGetTextureSize getTextureSize " +
-        "tryGetTextureSizeF getTextureSizeF getImperative getStandAlone " +
-        "getAccompanied getCollectionConfig getLiveness getUpdateRate " +
-        "setUpdateRate getAdvancing getHalted getUpdateTime " +
-        "getClockTime getClockDelta exit tryGetWindowFlags " +
-        "tryGetWindowMinimized tryGetWindowMaximized tryGetWindowFullScreen trySetWindowFullScreen " +
-        "tryGetWindowSize getWindowSize getViewport getViewportOffset " +
-        "tryLoadSymbolPackage unloadSymbolPackage tryGetSymbol tryGetSymbols " +
-        "reloadSymbols getOverlays tryGetRoutedOverlayNameOpt"
+        "resolve relate selectScreen tryGetIsSelectedScreenIdling tryGetIsSelectedScreenTransitioning " +
+        "isSelectedScreenIdling isSelectedScreenTransitioning tryTransitionScreen transitionScreen setScreenSlide " +
+        "createDissolveScreenFromGroupFile6 createDissolveScreenFromGroupFile createSlideScreen6 createSlideScreen " +
+        "reloadExistingAssets tryReloadAssets getCurrentSongOpt getCurrentSongPosition " +
+        "getMasterAudioVolume getMasterSoundVolume getMasterSongVolume setMasterAudioVolume " +
+        "setMasterSoundVolume setMasterSongVolume playSong playSong6 " +
+        "playSound playSound3 fadeOutSong stopSong " +
+        "loadAudioPackage unloadAudioPackage reloadAudioAssets loadRenderPackageUse2d " +
+        "unloadRenderPackage2d reloadRenderAssets2d reloadRenderAssets3d localizeBodyShape " +
+        "bodyExists getBodyContactNormals getBodyLinearVelocity getBodyToGroundContactNormals " +
+        "getBodyToGroundContactNormalOpt getBodyToGroundContactTangentOpt isBodyOnGround createBody " +
+        "createBodies destroyBody destroyBodies createJoint " +
+        "createJoints destroyJoint destroyJoints setBodyEnabled " +
+        "setBodyPosition setBodyRotation setBodyLinearVelocity applyBodyLinearImpulse " +
+        "setBodyAngularVelocity applyBodyAngularImpulse applyBodyForce applyBodyTorque " +
+        "isMouseButtonDown getMousePosition getMousePosition2dScreen getMousePostion2dWorld " +
+        "getMousePosition3dScreen getMouseRay3dWorld isKeyboardKeyDown isKeyboardKeyUp " +
+        "isKeyboardAltDown isKeyboardAltUp isKeyboardCtrlDown isKeyboardCtrlUp " +
+        "isKeyboardShiftDown isKeyboardShiftUp destroyImmediate destroy " +
+        "tryGetParent getParent getChildren getExists " +
+        "isSelected getEntities0 getGroups0 writeGameToFile " +
+        "readGameFromFile getScreens setScreenDissolve destroyScreen " +
+        "createScreen createDissolveScreen writeScreenToFile readScreenFromFile " +
+        "getGroups createGroup destroyGroup destroyGroups " +
+        "writeGroupToFile readGroupFromFile getEntitiesFlattened getEntities " +
+        "getEntitiesSovereign destroyEntity destroyEntities tryPickEntity2d " +
+        "tryPickEntity3d writeEntityToFile readEntityFromFile createEntity " +
+        "renameEntity trySetEntityOverlayNameOpt trySetEntityFacetNames getEyeCenter2d " +
+        "setEyeCenter2d getEyeSize2d setEyeSize2d getEyeBounds2d " +
+        "getEyeCenter3d setEyeCenter3d getEyeRotation3d setEyeRotation3d " +
+        "getEyeFrustum3dEnclosed getEyeFrustum3dExposed getEyeFrustum3dImposter getLightBox3d " +
+        "getOmniScreenOpt setOmniScreenOpt getOmniScreen setOmniScreen " +
+        "constrainEyeBounds2d getSelectedScreenOpt getSelectedScreen setSelectedScreen " +
+        "getDesiredScreen setDesiredScreen getScreenTransitionDestinationOpt setScreenTransitionDestinationOpt " +
+        "getViewBounds2dAbsolute getPlayBounds2dAbsolute getViewBounds2d getPlayBounds2d " +
+        "isBoundsInView2d getPlayBounds3d isBoundsInView3d isBoundsInPlay3d " +
+        "tryGetTextureSize getTextureSize tryGetTextureSizeF getTextureSizeF " +
+        "getImperative getStandAlone getAccompanied getCollectionConfig " +
+        "getLiveness setAdvancing getAdvancing getHalted " +
+        "getUpdateTime getClockTime getClockDelta exit " +
+        "tryGetWindowFlags tryGetWindowMinimized tryGetWindowMaximized tryGetWindowFullScreen " +
+        "trySetWindowFullScreen tryGetWindowSize getWindowSize getViewport " +
+        "getViewportOffset tryLoadSymbolPackage unloadSymbolPackage tryGetSymbol " +
+        "tryGetSymbols reloadSymbols getOverlays tryGetRoutedOverlayNameOpt " +
+        "getEventFilter setEventFilter trySetEditMode tryMakeEmitter"
 
     let resolve relation world =
         let oldWorld = world
@@ -476,21 +476,21 @@ module WorldBindings =
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'setMasterSongVolume' due to: " + scstring exn, ValueNone)
             struct (violation, World.choose oldWorld)
 
-    let playSong timeToFadeInSongMs timeToFadeOutSongMs start volume song world =
+    let playSong fadeInTime fadeOutTime startTime volume song world =
         let oldWorld = world
         try
-            let timeToFadeInSongMs =
-                match ScriptingSystem.tryExport typeof<Single> timeToFadeInSongMs world with
+            let fadeInTime =
+                match ScriptingSystem.tryExport typeof<Single> fadeInTime world with
                 | Some value -> value :?> Single
-                | None -> failwith "Invalid argument type for 'timeToFadeInSongMs'; expecting a value convertable to Single."
-            let timeToFadeOutSongMs =
-                match ScriptingSystem.tryExport typeof<Single> timeToFadeOutSongMs world with
+                | None -> failwith "Invalid argument type for 'fadeInTime'; expecting a value convertable to Single."
+            let fadeOutTime =
+                match ScriptingSystem.tryExport typeof<Single> fadeOutTime world with
                 | Some value -> value :?> Single
-                | None -> failwith "Invalid argument type for 'timeToFadeOutSongMs'; expecting a value convertable to Single."
-            let start =
-                match ScriptingSystem.tryExport typeof<Single> start world with
+                | None -> failwith "Invalid argument type for 'fadeOutTime'; expecting a value convertable to Single."
+            let startTime =
+                match ScriptingSystem.tryExport typeof<Single> startTime world with
                 | Some value -> value :?> Single
-                | None -> failwith "Invalid argument type for 'start'; expecting a value convertable to Single."
+                | None -> failwith "Invalid argument type for 'startTime'; expecting a value convertable to Single."
             let volume =
                 match ScriptingSystem.tryExport typeof<Single> volume world with
                 | Some value -> value :?> Single
@@ -499,27 +499,27 @@ module WorldBindings =
                 match ScriptingSystem.tryExport typeof<AssetTag<Song>> song world with
                 | Some value -> value :?> AssetTag<Song>
                 | None -> failwith "Invalid argument type for 'song'; expecting a value convertable to AssetTag`1."
-            let result = World.playSong timeToFadeInSongMs timeToFadeOutSongMs start volume song world
+            let result = World.playSong fadeInTime fadeOutTime startTime volume song world
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'playSong' due to: " + scstring exn, ValueNone)
             struct (violation, World.choose oldWorld)
 
-    let playSong6 timeToFadeInSongMs timeToFadeOutSongMs start volume songPackageName songAssetName world =
+    let playSong6 fadeInTime fadeOutTime startTime volume songPackageName songAssetName world =
         let oldWorld = world
         try
-            let timeToFadeInSongMs =
-                match ScriptingSystem.tryExport typeof<Single> timeToFadeInSongMs world with
+            let fadeInTime =
+                match ScriptingSystem.tryExport typeof<Single> fadeInTime world with
                 | Some value -> value :?> Single
-                | None -> failwith "Invalid argument type for 'timeToFadeInSongMs'; expecting a value convertable to Single."
-            let timeToFadeOutSongMs =
-                match ScriptingSystem.tryExport typeof<Single> timeToFadeOutSongMs world with
+                | None -> failwith "Invalid argument type for 'fadeInTime'; expecting a value convertable to Single."
+            let fadeOutTime =
+                match ScriptingSystem.tryExport typeof<Single> fadeOutTime world with
                 | Some value -> value :?> Single
-                | None -> failwith "Invalid argument type for 'timeToFadeOutSongMs'; expecting a value convertable to Single."
-            let start =
-                match ScriptingSystem.tryExport typeof<Single> start world with
+                | None -> failwith "Invalid argument type for 'fadeOutTime'; expecting a value convertable to Single."
+            let startTime =
+                match ScriptingSystem.tryExport typeof<Single> startTime world with
                 | Some value -> value :?> Single
-                | None -> failwith "Invalid argument type for 'start'; expecting a value convertable to Single."
+                | None -> failwith "Invalid argument type for 'startTime'; expecting a value convertable to Single."
             let volume =
                 match ScriptingSystem.tryExport typeof<Single> volume world with
                 | Some value -> value :?> Single
@@ -532,7 +532,7 @@ module WorldBindings =
                 match ScriptingSystem.tryExport typeof<String> songAssetName world with
                 | Some value -> value :?> String
                 | None -> failwith "Invalid argument type for 'songAssetName'; expecting a value convertable to String."
-            let result = World.playSong7 timeToFadeInSongMs timeToFadeOutSongMs start volume songPackageName songAssetName world
+            let result = World.playSong7 fadeInTime fadeOutTime startTime volume songPackageName songAssetName world
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'playSong6' due to: " + scstring exn, ValueNone)
@@ -576,14 +576,14 @@ module WorldBindings =
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'playSound3' due to: " + scstring exn, ValueNone)
             struct (violation, World.choose oldWorld)
 
-    let fadeOutSong timeToFadeOutSongMs world =
+    let fadeOutSong fadeOutTime world =
         let oldWorld = world
         try
-            let timeToFadeOutSongMs =
-                match ScriptingSystem.tryExport typeof<Single> timeToFadeOutSongMs world with
+            let fadeOutTime =
+                match ScriptingSystem.tryExport typeof<Single> fadeOutTime world with
                 | Some value -> value :?> Single
-                | None -> failwith "Invalid argument type for 'timeToFadeOutSongMs'; expecting a value convertable to Int32."
-            let result = World.fadeOutSong timeToFadeOutSongMs world
+                | None -> failwith "Invalid argument type for 'fadeOutTime'; expecting a value convertable to Single."
+            let result = World.fadeOutSong fadeOutTime world
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'fadeOutSong' due to: " + scstring exn, ValueNone)
@@ -2564,78 +2564,6 @@ module WorldBindings =
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'isBoundsInPlay3d' due to: " + scstring exn, ValueNone)
             struct (violation, World.choose oldWorld)
 
-    let getEventFilter world =
-        let oldWorld = world
-        try
-            let result = World.getEventFilter world
-            let value = result
-            let value = ScriptingSystem.tryImport typeof<EventFilter.Filter> value world |> Option.get
-            struct (value, world)
-        with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getEventFilter' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
-
-    let setEventFilter filter world =
-        let oldWorld = world
-        try
-            let filter =
-                match ScriptingSystem.tryExport typeof<EventFilter.Filter> filter world with
-                | Some value -> value :?> EventFilter.Filter
-                | None -> failwith "Invalid argument type for 'filter'; expecting a value convertable to Filter."
-            let result = World.setEventFilter filter world
-            struct (Scripting.Unit, result)
-        with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'setEventFilter' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
-
-    let trySetEditMode editMode world =
-        let oldWorld = world
-        try
-            let editMode =
-                match ScriptingSystem.tryExport typeof<String> editMode world with
-                | Some value -> value :?> String
-                | None -> failwith "Invalid argument type for 'editMode'; expecting a value convertable to String."
-            let result = World.trySetEditMode editMode world
-            struct (Scripting.Unit, result)
-        with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'trySetEditMode' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
-
-    let tryMakeEmitter time lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax emitterStyle world =
-        let oldWorld = world
-        try
-            let time =
-                match ScriptingSystem.tryExport typeof<Int64> time world with
-                | Some value -> value :?> Int64
-                | None -> failwith "Invalid argument type for 'time'; expecting a value convertable to Int64."
-            let lifeTimeOpt =
-                match ScriptingSystem.tryExport typeof<Int64> lifeTimeOpt world with
-                | Some value -> value :?> Int64
-                | None -> failwith "Invalid argument type for 'lifeTimeOpt'; expecting a value convertable to Int64."
-            let particleLifeTimeMaxOpt =
-                match ScriptingSystem.tryExport typeof<Int64> particleLifeTimeMaxOpt world with
-                | Some value -> value :?> Int64
-                | None -> failwith "Invalid argument type for 'particleLifeTimeMaxOpt'; expecting a value convertable to Int64."
-            let particleRate =
-                match ScriptingSystem.tryExport typeof<Single> particleRate world with
-                | Some value -> value :?> Single
-                | None -> failwith "Invalid argument type for 'particleRate'; expecting a value convertable to Single."
-            let particleMax =
-                match ScriptingSystem.tryExport typeof<Int32> particleMax world with
-                | Some value -> value :?> Int32
-                | None -> failwith "Invalid argument type for 'particleMax'; expecting a value convertable to Int32."
-            let emitterStyle =
-                match ScriptingSystem.tryExport typeof<String> emitterStyle world with
-                | Some value -> value :?> String
-                | None -> failwith "Invalid argument type for 'emitterStyle'; expecting a value convertable to String."
-            let result = World.tryMakeEmitter time lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax emitterStyle world
-            let value = result
-            let value = ScriptingSystem.tryImport typeof<FSharpOption<Emitter>> value world |> Option.get
-            struct (value, world)
-        with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'tryMakeEmitter' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
-
     let tryGetTextureSize assetTag world =
         let oldWorld = world
         try
@@ -2751,6 +2679,19 @@ module WorldBindings =
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getLiveness' due to: " + scstring exn, ValueNone)
             struct (violation, World.choose oldWorld)
 
+    let setAdvancing advancing world =
+        let oldWorld = world
+        try
+            let advancing =
+                match ScriptingSystem.tryExport typeof<Boolean> advancing world with
+                | Some value -> value :?> Boolean
+                | None -> failwith "Invalid argument type for 'advancing'; expecting a value convertable to Boolean."
+            let result = World.setAdvancing advancing world
+            struct (Scripting.Unit, result)
+        with exn ->
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'setAdvancing' due to: " + scstring exn, ValueNone)
+            struct (violation, World.choose oldWorld)
+
     let getAdvancing world =
         let oldWorld = world
         try
@@ -2789,7 +2730,7 @@ module WorldBindings =
         try
             let result = World.getClockTime world
             let value = result
-            let value = ScriptingSystem.tryImport typeof<DateTimeOffset> value world |> Option.get
+            let value = ScriptingSystem.tryImport typeof<Single> value world |> Option.get
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getClockTime' due to: " + scstring exn, ValueNone)
@@ -3030,6 +2971,78 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'tryGetRoutedOverlayNameOpt' due to: " + scstring exn, ValueNone)
+            struct (violation, World.choose oldWorld)
+
+    let getEventFilter world =
+        let oldWorld = world
+        try
+            let result = World.getEventFilter world
+            let value = result
+            let value = ScriptingSystem.tryImport typeof<Filter> value world |> Option.get
+            struct (value, world)
+        with exn ->
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getEventFilter' due to: " + scstring exn, ValueNone)
+            struct (violation, World.choose oldWorld)
+
+    let setEventFilter filter world =
+        let oldWorld = world
+        try
+            let filter =
+                match ScriptingSystem.tryExport typeof<Filter> filter world with
+                | Some value -> value :?> Filter
+                | None -> failwith "Invalid argument type for 'filter'; expecting a value convertable to Filter."
+            let result = World.setEventFilter filter world
+            struct (Scripting.Unit, result)
+        with exn ->
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'setEventFilter' due to: " + scstring exn, ValueNone)
+            struct (violation, World.choose oldWorld)
+
+    let trySetEditMode editMode world =
+        let oldWorld = world
+        try
+            let editMode =
+                match ScriptingSystem.tryExport typeof<String> editMode world with
+                | Some value -> value :?> String
+                | None -> failwith "Invalid argument type for 'editMode'; expecting a value convertable to String."
+            let result = World.trySetEditMode editMode world
+            struct (Scripting.Unit, result)
+        with exn ->
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'trySetEditMode' due to: " + scstring exn, ValueNone)
+            struct (violation, World.choose oldWorld)
+
+    let tryMakeEmitter time lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax emitterStyle world =
+        let oldWorld = world
+        try
+            let time =
+                match ScriptingSystem.tryExport typeof<Int64> time world with
+                | Some value -> value :?> Int64
+                | None -> failwith "Invalid argument type for 'time'; expecting a value convertable to Int64."
+            let lifeTimeOpt =
+                match ScriptingSystem.tryExport typeof<Int64> lifeTimeOpt world with
+                | Some value -> value :?> Int64
+                | None -> failwith "Invalid argument type for 'lifeTimeOpt'; expecting a value convertable to Int64."
+            let particleLifeTimeMaxOpt =
+                match ScriptingSystem.tryExport typeof<Int64> particleLifeTimeMaxOpt world with
+                | Some value -> value :?> Int64
+                | None -> failwith "Invalid argument type for 'particleLifeTimeMaxOpt'; expecting a value convertable to Int64."
+            let particleRate =
+                match ScriptingSystem.tryExport typeof<Single> particleRate world with
+                | Some value -> value :?> Single
+                | None -> failwith "Invalid argument type for 'particleRate'; expecting a value convertable to Single."
+            let particleMax =
+                match ScriptingSystem.tryExport typeof<Int32> particleMax world with
+                | Some value -> value :?> Int32
+                | None -> failwith "Invalid argument type for 'particleMax'; expecting a value convertable to Int32."
+            let emitterStyle =
+                match ScriptingSystem.tryExport typeof<String> emitterStyle world with
+                | Some value -> value :?> String
+                | None -> failwith "Invalid argument type for 'emitterStyle'; expecting a value convertable to String."
+            let result = World.tryMakeEmitter time lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax emitterStyle world
+            let value = result
+            let value = ScriptingSystem.tryImport typeof<FSharpOption<Emitter>> value world |> Option.get
+            struct (value, world)
+        with exn ->
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'tryMakeEmitter' due to: " + scstring exn, ValueNone)
             struct (violation, World.choose oldWorld)
 
     let evalResolveBinding fnName exprs originOpt world =
@@ -3301,7 +3314,7 @@ module WorldBindings =
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [|timeToFadeInSongMs; timeToFadeOutSongMs; volume; start; song|] -> playSong timeToFadeInSongMs timeToFadeOutSongMs volume start song world
+            | [|fadeInTime; fadeOutTime; startTime; volume; song|] -> playSong fadeInTime fadeOutTime startTime volume song world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
                 struct (violation, world)
@@ -3312,7 +3325,7 @@ module WorldBindings =
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [|timeToFadeInSongMs; timeToFadeOutSongMs; volume; start; songPackageName; songAssetName|] -> playSong6 timeToFadeInSongMs timeToFadeOutSongMs volume start songPackageName songAssetName world
+            | [|fadeInTime; fadeOutTime; startTime; volume; songPackageName; songAssetName|] -> playSong6 fadeInTime fadeOutTime startTime volume songPackageName songAssetName world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
                 struct (violation, world)
@@ -3345,7 +3358,7 @@ module WorldBindings =
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [|timeToFadeOutSongMs|] -> fadeOutSong timeToFadeOutSongMs world
+            | [|fadeOutTime|] -> fadeOutSong fadeOutTime world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
                 struct (violation, world)
@@ -4638,50 +4651,6 @@ module WorldBindings =
                 struct (violation, world)
         | Some violation -> struct (violation, world)
 
-    let evalGetEventFilterBinding fnName exprs originOpt world =
-        let struct (evaleds, world) = World.evalManyInternal exprs world
-        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
-        | None ->
-            match evaleds with
-            | [||] -> getEventFilter world
-            | _ ->
-                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
-                struct (violation, world)
-        | Some violation -> struct (violation, world)
-
-    let evalSetEventFilterBinding fnName exprs originOpt world =
-        let struct (evaleds, world) = World.evalManyInternal exprs world
-        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
-        | None ->
-            match evaleds with
-            | [|filter|] -> setEventFilter filter world
-            | _ ->
-                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
-                struct (violation, world)
-        | Some violation -> struct (violation, world)
-
-    let evalTrySetEditModeBinding fnName exprs originOpt world =
-        let struct (evaleds, world) = World.evalManyInternal exprs world
-        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
-        | None ->
-            match evaleds with
-            | [|editMode|] -> trySetEditMode editMode world
-            | _ ->
-                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
-                struct (violation, world)
-        | Some violation -> struct (violation, world)
-
-    let evalTryMakeEmitterBinding fnName exprs originOpt world =
-        let struct (evaleds, world) = World.evalManyInternal exprs world
-        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
-        | None ->
-            match evaleds with
-            | [|time; lifeTimeOpt; particleLifeTimeMaxOpt; particleRate; particleMax; emitterStyle|] -> tryMakeEmitter time lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax emitterStyle world
-            | _ ->
-                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
-                struct (violation, world)
-        | Some violation -> struct (violation, world)
-
     let evalTryGetTextureSizeBinding fnName exprs originOpt world =
         let struct (evaleds, world) = World.evalManyInternal exprs world
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
@@ -4776,6 +4745,17 @@ module WorldBindings =
         | None ->
             match evaleds with
             | [||] -> getLiveness world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
+
+    let evalSetAdvancingBinding fnName exprs originOpt world =
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|advancing|] -> setAdvancing advancing world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
                 struct (violation, world)
@@ -5023,6 +5003,50 @@ module WorldBindings =
                 struct (violation, world)
         | Some violation -> struct (violation, world)
 
+    let evalGetEventFilterBinding fnName exprs originOpt world =
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [||] -> getEventFilter world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
+
+    let evalSetEventFilterBinding fnName exprs originOpt world =
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|filter|] -> setEventFilter filter world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
+
+    let evalTrySetEditModeBinding fnName exprs originOpt world =
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|editMode|] -> trySetEditMode editMode world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
+
+    let evalTryMakeEmitterBinding fnName exprs originOpt world =
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|time; lifeTimeOpt; particleLifeTimeMaxOpt; particleRate; particleMax; emitterStyle|] -> tryMakeEmitter time lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax emitterStyle world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
+
     let tryGetBinding fnName =
         match WorldScripting.Bindings.TryGetValue fnName with
         | (true, binding) -> Some binding
@@ -5055,11 +5079,11 @@ module WorldBindings =
              ("setMasterAudioVolume", { Fn = evalSetMasterAudioVolumeBinding; Pars = [|"volume"|]; DocOpt = None })
              ("setMasterSoundVolume", { Fn = evalSetMasterSoundVolumeBinding; Pars = [|"volume"|]; DocOpt = None })
              ("setMasterSongVolume", { Fn = evalSetMasterSongVolumeBinding; Pars = [|"volume"|]; DocOpt = None })
-             ("playSong", { Fn = evalPlaySongBinding; Pars = [|"timeToFadeInSongMs"; "timeToFadeOutSongMs"; "volume"; "start"; "song"|]; DocOpt = None })
-             ("playSong6", { Fn = evalPlaySong6Binding; Pars = [|"timeToFadeInSongMs"; "timeToFadeOutSongMs"; "volume"; "start"; "songPackageName"; "songAssetName"|]; DocOpt = None })
+             ("playSong", { Fn = evalPlaySongBinding; Pars = [|"fadeInTime"; "fadeOutTime"; "startTime"; "volume"; "song"|]; DocOpt = None })
+             ("playSong6", { Fn = evalPlaySong6Binding; Pars = [|"fadeInTime"; "fadeOutTime"; "startTime"; "volume"; "songPackageName"; "songAssetName"|]; DocOpt = None })
              ("playSound", { Fn = evalPlaySoundBinding; Pars = [|"volume"; "sound"|]; DocOpt = None })
              ("playSound3", { Fn = evalPlaySound3Binding; Pars = [|"volume"; "soundPackageName"; "soundAssetName"|]; DocOpt = None })
-             ("fadeOutSong", { Fn = evalFadeOutSongBinding; Pars = [|"timeToFadeOutSongMs"|]; DocOpt = None })
+             ("fadeOutSong", { Fn = evalFadeOutSongBinding; Pars = [|"fadeOutTime"|]; DocOpt = None })
              ("stopSong", { Fn = evalStopSongBinding; Pars = [||]; DocOpt = None })
              ("loadAudioPackage", { Fn = evalLoadAudioPackageBinding; Pars = [|"packageName"|]; DocOpt = None })
              ("unloadAudioPackage", { Fn = evalUnloadAudioPackageBinding; Pars = [|"packageName"|]; DocOpt = None })
@@ -5177,10 +5201,6 @@ module WorldBindings =
              ("getPlayBounds3d", { Fn = evalGetPlayBounds3dBinding; Pars = [||]; DocOpt = None })
              ("isBoundsInView3d", { Fn = evalIsBoundsInView3dBinding; Pars = [|"light"; "presence"; "bounds"|]; DocOpt = None })
              ("isBoundsInPlay3d", { Fn = evalIsBoundsInPlay3dBinding; Pars = [|"bounds"|]; DocOpt = None })
-             ("getEventFilter", { Fn = evalGetEventFilterBinding; Pars = [||]; DocOpt = None })
-             ("setEventFilter", { Fn = evalSetEventFilterBinding; Pars = [|"filter"|]; DocOpt = None })
-             ("trySetEditMode", { Fn = evalTrySetEditModeBinding; Pars = [|"editMode"|]; DocOpt = None })
-             ("tryMakeEmitter", { Fn = evalTryMakeEmitterBinding; Pars = [|"time"; "lifeTimeOpt"; "particleLifeTimeMaxOpt"; "particleRate"; "particleMax"; "emitterStyle"|]; DocOpt = None })
              ("tryGetTextureSize", { Fn = evalTryGetTextureSizeBinding; Pars = [|"assetTag"|]; DocOpt = None })
              ("getTextureSize", { Fn = evalGetTextureSizeBinding; Pars = [|"assetTag"|]; DocOpt = None })
              ("tryGetTextureSizeF", { Fn = evalTryGetTextureSizeFBinding; Pars = [|"assetTag"|]; DocOpt = None })
@@ -5190,6 +5210,7 @@ module WorldBindings =
              ("getAccompanied", { Fn = evalGetAccompaniedBinding; Pars = [||]; DocOpt = None })
              ("getCollectionConfig", { Fn = evalGetCollectionConfigBinding; Pars = [||]; DocOpt = None })
              ("getLiveness", { Fn = evalGetLivenessBinding; Pars = [||]; DocOpt = None })
+             ("setAdvancing", { Fn = evalSetAdvancingBinding; Pars = [|"advancing"|]; DocOpt = None })
              ("getAdvancing", { Fn = evalGetAdvancingBinding; Pars = [||]; DocOpt = None })
              ("getHalted", { Fn = evalGetHaltedBinding; Pars = [||]; DocOpt = None })
              ("getUpdateTime", { Fn = evalGetUpdateTimeBinding; Pars = [||]; DocOpt = None })
@@ -5212,6 +5233,10 @@ module WorldBindings =
              ("reloadSymbols", { Fn = evalReloadSymbolsBinding; Pars = [||]; DocOpt = None })
              ("getOverlays", { Fn = evalGetOverlaysBinding; Pars = [||]; DocOpt = None })
              ("tryGetRoutedOverlayNameOpt", { Fn = evalTryGetRoutedOverlayNameOptBinding; Pars = [|"dispatcherName"|]; DocOpt = None })
+             ("getEventFilter", { Fn = evalGetEventFilterBinding; Pars = [||]; DocOpt = None })
+             ("setEventFilter", { Fn = evalSetEventFilterBinding; Pars = [|"filter"|]; DocOpt = None })
+             ("trySetEditMode", { Fn = evalTrySetEditModeBinding; Pars = [|"editMode"|]; DocOpt = None })
+             ("tryMakeEmitter", { Fn = evalTryMakeEmitterBinding; Pars = [|"time"; "lifeTimeOpt"; "particleLifeTimeMaxOpt"; "particleRate"; "particleMax"; "emitterStyle"|]; DocOpt = None })
             ] |>
             dictPlus StringComparer.Ordinal
         WorldScripting.Bindings <- bindings

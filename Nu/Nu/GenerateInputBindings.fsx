@@ -75,8 +75,11 @@ let generateBindingsCode codesStr =
     "\n"
 
 do
-    typeof<SDL.SDL_Scancode> |>
-    enumEntries |>
-    enumEntriesToCode |>
-    generateBindingsCode |>
-    fun code -> File.WriteAllText ("../../Sdl/SdlInputBindings.fs", code)
+    Directory.SetCurrentDirectory (__SOURCE_DIRECTORY__ + "/bin/Debug")
+    Nu.init NuConfig.defaultConfig
+    let code =
+        typeof<SDL.SDL_Scancode> |>
+        enumEntries |>
+        enumEntriesToCode |>
+        generateBindingsCode
+    File.WriteAllText ("../../Sdl/SdlInputBindings.fs", code)
