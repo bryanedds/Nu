@@ -67,9 +67,9 @@ type [<AttributeUsage (AttributeTargets.Field)>] UniformAttribute () =
     inherit Attribute ()
 
 /// Affords different representations of time.
-type PolyTime =
-    | UpdateTime of int64 // in updates
-    | ClockTime of single // in seconds
+type [<Struct>] PolyTime =
+    | UpdateTime of UpdateTime : int64 // in updates
+    | ClockTime of ClockTime : single // in seconds
 
 /// The desired frame rate.
 type [<NoComparison>] FrameRate =
