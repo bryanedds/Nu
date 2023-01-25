@@ -195,7 +195,7 @@ module OmniBlade =
              Content.screenWithGroupFromFile Simulants.Credits.Name (Dissolve (Constants.Gui.Dissolve, Some Assets.Gui.TitleSong)) Assets.Gui.CreditsGroupFilePath [] []
 
              // pick
-             Content.screenWithGroupFromFile Simulants.Pick.Name (Dissolve ({ Constants.Gui.Dissolve with OutgoingTime = Frames 90L }, Some Assets.Gui.TitleSong)) Assets.Gui.PickGroupFilePath [] []
+             Content.screenWithGroupFromFile Simulants.Pick.Name (Dissolve ({ Constants.Gui.Dissolve with OutgoingTime = FrameTime 90L }, Some Assets.Gui.TitleSong)) Assets.Gui.PickGroupFilePath [] []
 
              // field
              Content.screen<FieldDispatcher> Simulants.Field.Name (Dissolve (Constants.Gui.Dissolve, None)) [] []

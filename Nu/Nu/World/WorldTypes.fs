@@ -1212,14 +1212,14 @@ module WorldTypes =
         /// Get the polymorphic engine time.
         member this.PolyTime =
             match Constants.Engine.DesiredFrameRate with
-            | StaticFrameRate _ -> Frames this.UpdateTime
+            | StaticFrameRate _ -> FrameTime this.UpdateTime
             | DynamicFrameRate -> DateTimeOffset this.ClockTime
 
         /// Get the polymorphic engine step.
         member this.PolyStep =
             match Constants.Engine.DesiredFrameRate with
-            | StaticFrameRate _ -> Frames this.UpdateRate
-            | DynamicFrameRate -> Seconds this.ClockDelta
+            | StaticFrameRate _ -> FrameTime this.UpdateRate
+            | DynamicFrameRate -> ClockTime this.ClockDelta
 
         member
 #if !DEBUG

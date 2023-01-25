@@ -212,10 +212,10 @@ module WorldModule2 =
             let transitionTime =
                 (selectedScreen.GetTransitionState world).TransitionTime
             match (transitionTime, transition.TransitionLifeTime) with
-            | (Frames time, Frames lifeTime) ->
+            | (FrameTime time, FrameTime lifeTime) ->
                 let localTime = world.UpdateTime - time
                 localTime > lifeTime
-            | (DateTimeOffset time, Seconds lifeTime) ->
+            | (DateTimeOffset time, ClockTime lifeTime) ->
                 let localTime = world.ClockTime - time
                 single localTime.TotalSeconds > lifeTime
             | (_, _) -> failwithumf ()
@@ -224,10 +224,10 @@ module WorldModule2 =
             // NOTE: transitions always take one additional frame because it needs to render frame 0 and frame MAX + 1 for
             // full opacity if fading and an extra frame for the render messages to actually get processed.
             match (transitionTime, slide.IdlingTime) with
-            | (Frames time, Frames lifeTime) ->
+            | (FrameTime time, FrameTime lifeTime) ->
                 let localTime = world.UpdateTime - time
                 localTime > lifeTime
-            | (DateTimeOffset time, Seconds lifeTime) ->
+            | (DateTimeOffset time, ClockTime lifeTime) ->
                 let localTime = world.ClockTime - time
                 single localTime.TotalSeconds > lifeTime
             | (_, _) -> failwithumf ()
@@ -237,9 +237,9 @@ module WorldModule2 =
             | Live ->
                 let world =
                     if (match transitionTime with
-                        | Frames time -> time = 0L
+                        | FrameTime time -> time = 0L
                         | DateTimeOffset time -> time = world.ClockTime
-                        | Seconds _ -> failwithumf ()) then
+                        | ClockTime _ -> failwithumf ()) then
                         let world =
                             match (selectedScreen.GetIncoming world).SongOpt with
                             | Some playSong ->
@@ -283,9 +283,9 @@ module WorldModule2 =
         static member private updateScreenOutgoing transitionTime (selectedScreen : Screen) (world : World) =
             let world =
                 if (match transitionTime with
-                    | Frames time -> time = 0L
+                    | FrameTime time -> time = 0L
                     | DateTimeOffset time -> time = world.ClockTime
-                    | Seconds _ -> failwithumf ()) then
+                    | ClockTime _ -> failwithumf ()) then
                     let incoming = selectedScreen.GetIncoming world
                     let outgoing = selectedScreen.GetOutgoing world
                     let world =
@@ -904,10 +904,10 @@ module WorldModule2 =
             | Some dissolveImage ->
                 let progress =
                     match (transitionTime , transition.TransitionLifeTime) with
-                    | (Frames time, Frames lifeTime) ->
+                    | (FrameTime time, FrameTime lifeTime) ->
                         let localTime = world.UpdateTime - time
                         single localTime / single (inc lifeTime)
-                    | (DateTimeOffset time, Seconds lifeTime) ->
+                    | (DateTimeOffset time, ClockTime lifeTime) ->
                         let localTime = world.ClockTime - time
                         single localTime.TotalSeconds / lifeTime
                     | (_, _) -> failwithumf ()

@@ -97,8 +97,8 @@ type [<StructuralEquality; NoComparison; CLIMutable>] Transition =
     static member make transitionType =
         let lifeTime =
             match Constants.Engine.DesiredFrameRate with
-            | StaticFrameRate _ -> Frames 0L
-            | DynamicFrameRate -> Seconds 0.0f
+            | StaticFrameRate _ -> FrameTime 0L
+            | DynamicFrameRate -> ClockTime 0.0f
         { TransitionType = transitionType
           TransitionLifeTime = lifeTime
           DissolveImageOpt = None

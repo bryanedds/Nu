@@ -68,8 +68,8 @@ type [<AttributeUsage (AttributeTargets.Field)>] UniformAttribute () =
 
 /// Affords different representations of time.
 type PolyTime =
-    | Frames of int64
-    | Seconds of single
+    | FrameTime of int64
+    | ClockTime of single // in seconds
     | DateTimeOffset of DateTimeOffset
 
 /// The desired frame rate.
