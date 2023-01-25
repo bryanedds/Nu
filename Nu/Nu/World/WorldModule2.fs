@@ -576,8 +576,8 @@ module WorldModule2 =
         static member private processTasklet simulant tasklet (taskletsNotRun : OMap<Simulant, World Tasklet UList>) (world : World) =
             let shouldRun =
                 match tasklet.ScheduledTime with
-                | FrameTime time -> time >= world.UpdateTime
-                | DateTimeOffset time -> time >= world.ClockTime
+                | FrameTime time -> time <= world.UpdateTime
+                | DateTimeOffset time -> time <= world.ClockTime
                 | ClockTime _ -> failwith "Cannot evaluate tasklet with scheduled time as ClockTime."
             if shouldRun
             then (taskletsNotRun, tasklet.ScheduledOp world)
