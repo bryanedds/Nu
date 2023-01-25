@@ -39,7 +39,7 @@ module Bullet =
 
         override this.Register (bullet, world) =
             let world = World.monitor handleBodyCollision bullet.BodyCollisionEvent bullet world
-            let world = World.schedule (World.destroyEntity bullet) (FrameTime BulletLifeTime) bullet world
+            let world = World.schedule (World.destroyEntity bullet) (UpdateTime BulletLifeTime) bullet world
             world
 
 [<AutoOpen>]
@@ -94,7 +94,7 @@ module Enemy =
              define Entity.CelCount 6
              define Entity.CelRun 4
              define Entity.CelSize (v2 48.0f 96.0f)
-             define Entity.AnimationDelay 8L
+             define Entity.AnimationDelay (UpdateTime 8L)
              define Entity.AnimationSheet Assets.Gameplay.EnemyImage
              define Entity.Health 7]
 
@@ -204,7 +204,7 @@ module Player =
              define Entity.CelCount 16
              define Entity.CelRun 4
              define Entity.CelSize (v2 48.0f 96.0f)
-             define Entity.AnimationDelay 3L
+             define Entity.AnimationDelay (UpdateTime 3L)
              define Entity.AnimationSheet Assets.Gameplay.PlayerImage
              nonPersistent Entity.LastTimeOnGround Int64.MinValue
              nonPersistent Entity.LastTimeJump Int64.MinValue]

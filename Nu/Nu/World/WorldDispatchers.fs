@@ -62,7 +62,7 @@ module AnimatedSpriteDispatcherModule =
             [define Entity.CelSize (Vector2 (12.0f, 12.0f))
              define Entity.CelRun 4
              define Entity.CelCount 16
-             define Entity.AnimationDelay 4L
+             define Entity.AnimationDelay (match Constants.Engine.DesiredFrameRate with StaticFrameRate _ -> UpdateTime 4L | DynamicFrameRate -> ClockTime 0.25f)
              define Entity.AnimationSheet Assets.Default.Image6
              define Entity.Color Color.One
              define Entity.Glow Color.Zero
@@ -844,8 +844,13 @@ module SideViewCharacterDispatcherModule =
     type SideViewCharacterDispatcher () =
         inherit EntityDispatcher2d (true)
 
-        static let computeWalkCelInset (celSize : Vector2) (celRun : int) delay time =
-            let compressedTime = time / delay
+        static let computeWalkCelInset time delay (celSize : Vector2) (celRun : int) =
+            let compressedTime =
+                match (time, delay) with
+                | (UpdateTime time, UpdateTime delay) -> time / delay
+                | (ClockTime time, ClockTime delay) -> time / delay |> int64
+                | (SystemTime _, SystemTime _) -> failwithnie ()
+                | (_, _) -> failwithnie ()
             let frame = compressedTime % int64 celRun
             let i = single (frame % 3L)
             let j = single (frame / 3L)
@@ -858,7 +863,7 @@ module SideViewCharacterDispatcherModule =
         static member Properties =
             [define Entity.CelSize (v2 28.0f 28.0f)
              define Entity.CelRun 8
-             define Entity.AnimationDelay 4L
+             define Entity.AnimationDelay (match Constants.Engine.DesiredFrameRate with StaticFrameRate _ -> UpdateTime 4L | DynamicFrameRate -> ClockTime 0.25f)
              define Entity.FixedRotation true
              define Entity.GravityScale 3.0f
              define Entity.BodyShape (BodyCapsule { Height = 0.5f; Radius = 0.25f; Center = v3Zero; PropertiesOpt = None })
@@ -879,7 +884,6 @@ module SideViewCharacterDispatcherModule =
             else world
 
         override this.Render (entity, world) =
-            let time = World.getUpdateTime world
             let physicsId = entity.GetPhysicsId world
             let facingLeft = entity.GetSideViewCharacterFacingLeft world
             let velocity = World.getBodyLinearVelocity physicsId world
@@ -896,7 +900,7 @@ module SideViewCharacterDispatcherModule =
                     struct (ValueNone, image)
                 else
                     let image = entity.GetSideViewCharacterWalkSheet world
-                    struct (ValueSome (computeWalkCelInset celSize celRun animationDelay time), image)
+                    struct (ValueSome (computeWalkCelInset world.PolyTime animationDelay celSize celRun), image)
             World.enqueueRenderLayeredMessage2d
                 { Elevation = transform.Elevation
                   Horizon = transform.Horizon

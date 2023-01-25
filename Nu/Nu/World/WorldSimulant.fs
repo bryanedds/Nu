@@ -241,17 +241,6 @@ module WorldSimulantModule =
                 World.derive eventTarget
             else failwithumf ()
 
-        /// Take only one event from a stream per update.
-        static member internal noMoreThanOncePerUpdate (stream : Stream<'a, World>) =
-            stream |>
-            Stream.trackEvent4
-                (fun (a, current) _ world ->
-                    let previous = current
-                    let current = World.getClockTime world
-                    ((a, current), previous < current))
-                id (Unchecked.defaultof<'a>, DateTimeOffset.MinValue) |>
-            Stream.first
-
 [<RequireQualifiedAccess>]
 module PropertyDescriptor =
 

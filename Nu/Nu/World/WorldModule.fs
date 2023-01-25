@@ -366,15 +366,15 @@ module WorldModule =
         static member schedule operation delay (simulant : Simulant) (world : World) =
             let time =
                 match delay with
-                | FrameTime delay -> FrameTime (world.UpdateTime + delay)
-                | ClockTime delay -> DateTimeOffset (world.ClockTime + TimeSpan.FromTicks (delay * single TimeSpan.TicksPerSecond |> round |> int64))
-                | DateTimeOffset _ as time -> time
+                | UpdateTime delay -> UpdateTime (world.UpdateTime + delay)
+                | ClockTime delay -> ClockTime (world.ClockTime + delay)
+                | SystemTime _ -> failwithnie ()
             let tasklet = { ScheduledTime = time; ScheduledOp = operation }
             World.addTasklet simulant tasklet world
 
         /// Schedule an operation to be executed by the engine at the end of the current frame or the next frame if we've already started processing tasklets.
         static member frame operation (simulant : Simulant) (world : World) =
-            let time = if TaskletProcessingStarted then FrameTime world.UpdateRate else FrameTime 0L
+            let time = if TaskletProcessingStarted then UpdateTime world.UpdateRate else UpdateTime 0L
             World.schedule operation time simulant world
 
         /// Attempt to get the window flags.

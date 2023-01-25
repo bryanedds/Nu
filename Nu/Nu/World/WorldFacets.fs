@@ -188,8 +188,8 @@ module AnimatedSpriteFacetModule =
         member this.GetCelCount world : int = this.Get (nameof this.CelCount) world
         member this.SetCelCount (value : int) world = this.Set (nameof this.CelCount) value world
         member this.CelCount = lens (nameof this.CelCount) this this.GetCelCount this.SetCelCount
-        member this.GetAnimationDelay world : int64 = this.Get (nameof this.AnimationDelay) world
-        member this.SetAnimationDelay (value : int64) world = this.Set (nameof this.AnimationDelay) value world
+        member this.GetAnimationDelay world : PolyTime = this.Get (nameof this.AnimationDelay) world
+        member this.SetAnimationDelay (value : PolyTime) world = this.Set (nameof this.AnimationDelay) value world
         member this.AnimationDelay = lens (nameof this.AnimationDelay) this this.GetAnimationDelay this.SetAnimationDelay
         member this.GetAnimationSheet world : Image AssetTag = this.Get (nameof this.AnimationSheet) world
         member this.SetAnimationSheet (value : Image AssetTag) world = this.Set (nameof this.AnimationSheet) value world
@@ -202,7 +202,11 @@ module AnimatedSpriteFacetModule =
             let celCount = entity.GetCelCount world
             let celRun = entity.GetCelRun world
             if celCount <> 0 && celRun <> 0 then
-                let cel = int (World.getUpdateTime world / entity.GetAnimationDelay world) % celCount
+                let cel =
+                    match entity.GetAnimationDelay world with
+                    | UpdateTime delay -> int (world.UpdateTime / delay) % celCount
+                    | ClockTime delay -> int (world.ClockTime / delay) % celCount
+                    | SystemTime _ -> failwithnie ()
                 let celSize = entity.GetCelSize world
                 let celI = cel % celRun
                 let celJ = cel / celRun
@@ -216,7 +220,7 @@ module AnimatedSpriteFacetModule =
             [define Entity.CelSize (Vector2 (12.0f, 12.0f))
              define Entity.CelRun 4
              define Entity.CelCount 16
-             define Entity.AnimationDelay 4L
+             define Entity.AnimationDelay (match Constants.Engine.DesiredFrameRate with StaticFrameRate _ -> UpdateTime 4L | DynamicFrameRate -> ClockTime 0.25f)
              define Entity.AnimationSheet Assets.Default.Image6
              define Entity.Color Color.One
              define Entity.Blend Transparent
@@ -1021,7 +1025,7 @@ module TileMapFacetModule =
                 let viewBounds = World.getViewBounds2d world
                 let tileMapMessages =
                     TmxMap.getLayeredMessages2d
-                        (World.getUpdateTime world)
+                        world.PolyTime
                         transform.Absolute
                         viewBounds
                         perimeterUnscaled.Min.V2
@@ -1116,7 +1120,7 @@ module TmxMapFacetModule =
             let tmxPackage = if tmxMap.TmxDirectory = "" then Assets.Default.PackageName else Path.GetFileName tmxMap.TmxDirectory // really folder name, but whatever...
             let tmxMapMessages =
                 TmxMap.getLayeredMessages2d
-                    (World.getUpdateTime world)
+                    world.PolyTime
                     transform.Absolute
                     viewBounds
                     perimeterUnscaled.Min.V2
