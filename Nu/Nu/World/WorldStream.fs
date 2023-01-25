@@ -10,10 +10,6 @@ open Nu
 [<RequireQualifiedAccess>]
 module Stream =
 
-    /// Take only one event from a stream per update.
-    let [<DebuggerHidden; DebuggerStepThrough>] noMoreThanOncePerUpdate (stream : Stream<'a, World>) =
-        World.noMoreThanOncePerUpdate stream
-
     /// Take events from a stream only when World.getAdvancing evaluates to true.
     let [<DebuggerHidden; DebuggerStepThrough>] whenAdvancing stream =
         Stream.filterEvent (fun _ -> World.getAdvancing) stream

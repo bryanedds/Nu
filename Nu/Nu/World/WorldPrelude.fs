@@ -21,7 +21,7 @@ type [<StructuralEquality; NoComparison; Struct>] TileDescriptor =
 /// Describes a Tiled tile animation.
 type [<StructuralEquality; NoComparison; Struct>] TileAnimationDescriptor =
     { TileAnimationRun : int
-      TileAnimationDelay : int64 }
+      TileAnimationDelay : PolyTime }
 
 /// Describes a Tiled tile map.
 type [<NoComparison>] TileMapDescriptor =
@@ -97,7 +97,7 @@ type [<StructuralEquality; NoComparison; CLIMutable>] Transition =
     static member make transitionType =
         let lifeTime =
             match Constants.Engine.DesiredFrameRate with
-            | StaticFrameRate _ -> FrameTime 0L
+            | StaticFrameRate _ -> UpdateTime 0L
             | DynamicFrameRate -> ClockTime 0.0f
         { TransitionType = transitionType
           TransitionLifeTime = lifeTime
@@ -205,12 +205,12 @@ module AmbientState =
         private
             { // cache line 1 (assuming 16 byte header)
               Liveness : Liveness
-              UpdateRate : int64 // NOTE: might be better to make this accessible from World to avoid cache misses
+              UpdateRate : int64
               UpdateTime : int64
-              ClockDelta : single // NOTE: might be better to make this accessible from World to avoid cache misses
-              // cache line 2
               KeyValueStore : UMap<Guid, obj>
-              ClockTime : DateTimeOffset // moved down here because it's 16 bytes according to - https://stackoverflow.com/a/38731608
+              // cache line 2
+              SystemDelta : int64
+              SystemTime : int64
               Tasklets : OMap<Simulant, 'w Tasklet UList>
               SdlDepsOpt : SdlDeps option
               Symbolics : Symbolics
@@ -257,22 +257,30 @@ module AmbientState =
     let getUpdateTime state =
         state.UpdateTime
 
+    /// Get the system delta as a number of environment ticks.
+    let getSystemDelta state =
+        state.SystemDelta
+
+    /// Get the system time as a number of environment ticks.
+    let getSystemTime state =
+        state.SystemTime
+
     /// Get the clock delta as a floating point number.
     let getClockDelta state =
-        state.ClockDelta
+        single state.SystemDelta / single TimeSpan.TicksPerSecond
 
     /// Get the clock time.
     let getClockTime state =
-        state.ClockTime
+        single state.SystemTime / single TimeSpan.TicksPerSecond
 
     /// Update the update and clock times.
     let updateTime state =
-        let now = DateTimeOffset.UtcNow
-        let delta = now - state.ClockTime
+        let time = int64 Environment.TickCount
+        let delta = time - state.SystemTime
         { state with
             UpdateTime = state.UpdateTime + state.UpdateRate
-            ClockDelta = single delta.TotalSeconds
-            ClockTime = now }
+            SystemDelta = delta
+            SystemTime = time }
 
     /// Place the engine into a state such that the app will exit at the end of the current update.
     let exit state =
@@ -401,9 +409,9 @@ module AmbientState =
         { Liveness = Live
           UpdateRate = updateRate
           UpdateTime = 0L
-          ClockDelta = 1.0f
           KeyValueStore = UMap.makeEmpty HashIdentity.Structural config
-          ClockTime = DateTimeOffset.Now
+          SystemDelta = 0L
+          SystemTime = Environment.TickCount
           Tasklets = OMap.makeEmpty HashIdentity.Structural config
           SdlDepsOpt = sdlDepsOpt
           Symbolics = symbolics

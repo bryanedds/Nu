@@ -1201,21 +1201,21 @@ module WorldTypes =
         member this.UpdateTime =
             AmbientState.getUpdateTime this.AmbientState
 
+        /// Get the system delta as a number of environment ticks.
+        member this.SystemDelta =
+            AmbientState.getSystemDelta this.AmbientState
+
+        /// Get the system time as a number of environment ticks.
+        member this.SystemTime =
+            AmbientState.getSystemTime this.AmbientState
+
+        /// Get the system time as a number of environment ticks.
+        member this.SystemTimePrevious =
+            this.SystemTime - this.SystemDelta
+
         /// Get the amount of clock time that has transpired between this and the previous frame.
         member this.ClockDelta =
             AmbientState.getClockDelta this.AmbientState
-
-        /// Get the amount of clock time that has transpired between this and the previous frame rounded to closest time span.
-        member this.ClockDeltaRound =
-            this.ClockDelta * single TimeSpan.TicksPerSecond |> round |> int64 |> TimeSpan.FromTicks
-
-        /// Get the amount of clock time that has transpired between this and the previous frame rounded to longer time span.
-        member this.ClockDeltaCeil =
-            this.ClockDelta * single TimeSpan.TicksPerSecond |> ceil |> int64 |> TimeSpan.FromTicks
-
-        /// Get the amount of clock time that has transpired between this and the previous frame rounded to shorter time span.
-        member this.ClockDeltaFloor =
-            this.ClockDelta * single TimeSpan.TicksPerSecond |> floor |> int64 |> TimeSpan.FromTicks
 
         /// Get the clock time as of when the current frame began.
         member this.ClockTime =
@@ -1223,18 +1223,18 @@ module WorldTypes =
 
         /// Get the previous clock time.
         member this.ClockTimePrevious =
-            DateTimeOffset (this.ClockTime - this.ClockDeltaCeil)
+            this.ClockTime - this.ClockDelta
 
         /// Get the polymorphic engine time.
         member this.PolyTime =
             match Constants.Engine.DesiredFrameRate with
-            | StaticFrameRate _ -> FrameTime this.UpdateTime
-            | DynamicFrameRate -> DateTimeOffset this.ClockTime
+            | StaticFrameRate _ -> UpdateTime this.UpdateTime
+            | DynamicFrameRate -> ClockTime this.ClockTime
 
         /// Get the polymorphic engine step.
         member this.PolyStep =
             match Constants.Engine.DesiredFrameRate with
-            | StaticFrameRate _ -> FrameTime this.UpdateRate
+            | StaticFrameRate _ -> UpdateTime this.UpdateRate
             | DynamicFrameRate -> ClockTime this.ClockDelta
 
         member

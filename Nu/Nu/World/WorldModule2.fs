@@ -207,25 +207,24 @@ module WorldModule2 =
                 match transitionType with
                 | Incoming -> selectedScreen.GetIncoming world
                 | Outgoing -> selectedScreen.GetOutgoing world
-            let transitionTime =
-                (selectedScreen.GetTransitionState world).TransitionTime
+            let transitionTime = (selectedScreen.GetTransitionState world).TransitionTime
             match (transitionTime, transition.TransitionLifeTime) with
-            | (FrameTime time, FrameTime lifeTime) ->
+            | (UpdateTime time, UpdateTime lifeTime) ->
                 let localTime = world.UpdateTime - time
                 localTime - 2L = lifeTime
-            | (DateTimeOffset time, ClockTime lifeTime) ->
+            | (ClockTime time, ClockTime lifeTime) ->
                 let localTime = world.ClockTime - time
-                single localTime.TotalSeconds - world.ClockDelta >= lifeTime
+                localTime - world.ClockDelta * 2.0f >= lifeTime
             | (_, _) -> failwithumf ()
 
         static member private updateScreenIdling3 transitionTime slide (_ : Screen) (world : World) =
             match (transitionTime, slide.IdlingTime) with
-            | (FrameTime time, FrameTime lifeTime) ->
+            | (UpdateTime time, UpdateTime lifeTime) ->
                 let localTime = world.UpdateTime - time
                 localTime - 2L = lifeTime
-            | (DateTimeOffset time, ClockTime lifeTime) ->
+            | (ClockTime time, ClockTime lifeTime) ->
                 let localTime = world.ClockTime - time
-                single localTime.TotalSeconds - world.ClockDelta >= lifeTime
+                localTime - world.ClockDelta * 2.0f >= lifeTime
             | (_, _) -> failwithumf ()
 
         static member private updateScreenIncoming transitionTime (selectedScreen : Screen) world =
@@ -233,9 +232,9 @@ module WorldModule2 =
             | Live ->
                 let world =
                     if (match transitionTime with
-                        | FrameTime time -> time + 1L = world.UpdateTime
-                        | DateTimeOffset time -> time + world.ClockDeltaFloor >= world.ClockTime
-                        | ClockTime _ -> failwith "Cannot evaluate screen transition with transition time as ClockTime.") then
+                        | UpdateTime time -> time + 1L = world.UpdateTime
+                        | ClockTime time -> time + world.ClockDelta >= world.ClockTime
+                        | SystemTime _ -> failwithnie ()) then
                         let world =
                             match (selectedScreen.GetIncoming world).SongOpt with
                             | Some playSong ->
@@ -279,9 +278,9 @@ module WorldModule2 =
         static member private updateScreenOutgoing transitionTime (selectedScreen : Screen) (world : World) =
             let world =
                 if (match transitionTime with
-                    | FrameTime time -> time + 1L = world.UpdateTime
-                    | DateTimeOffset time -> time + world.ClockDeltaFloor >= world.ClockTime
-                    | ClockTime _ -> failwith "Cannot evaluate screen transition with transition time as ClockTime.") then
+                    | UpdateTime time -> time + 1L = world.UpdateTime
+                    | ClockTime time -> time + world.ClockDelta >= world.ClockTime
+                    | SystemTime _ -> failwithnie ()) then
                     let incoming = selectedScreen.GetIncoming world
                     let outgoing = selectedScreen.GetOutgoing world
                     let world =
@@ -574,9 +573,9 @@ module WorldModule2 =
         static member private processTasklet simulant tasklet (taskletsNotRun : OMap<Simulant, World Tasklet UList>) (world : World) =
             let shouldRun =
                 match tasklet.ScheduledTime with
-                | FrameTime time -> time <= world.UpdateTime
-                | DateTimeOffset time -> time <= world.ClockTime
-                | ClockTime _ -> failwith "Cannot evaluate tasklet with scheduled time as ClockTime."
+                | UpdateTime time -> time <= world.UpdateTime
+                | ClockTime time -> time <= world.ClockTime
+                | SystemTime _ -> failwithnie ()
             if shouldRun
             then (taskletsNotRun, tasklet.ScheduledOp world)
             else
@@ -902,12 +901,12 @@ module WorldModule2 =
             | Some dissolveImage ->
                 let progress =
                     match (transitionTime , transition.TransitionLifeTime) with
-                    | (FrameTime time, FrameTime lifeTime) ->
+                    | (UpdateTime time, UpdateTime lifeTime) ->
                         let localTime = world.UpdateTime - time
-                        single localTime / single (inc lifeTime)
-                    | (DateTimeOffset time, ClockTime lifeTime) ->
+                        single localTime / (single lifeTime + 1.0f)
+                    | (ClockTime time, ClockTime lifeTime) ->
                         let localTime = world.ClockTime - time
-                        single localTime.TotalSeconds / lifeTime
+                        single localTime / (lifeTime + world.ClockDelta)
                     | (_, _) -> failwithumf ()
                 let alpha = match transition.TransitionType with Incoming -> 1.0f - progress | Outgoing -> progress
                 let color = Color.One.WithA alpha
