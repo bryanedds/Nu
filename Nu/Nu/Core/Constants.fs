@@ -130,7 +130,6 @@ module Audio =
 [<RequireQualifiedAccess>]
 module Physics =
 
-    let [<Uniform>] PhysicsStepRate = 1.0f / Engine.DesiredFpsF
     let [<Literal>] PhysicsToPixelRatio = 48.0f // 48 pixels = 1 meter
     let [<Uniform>] PixelToPhysicsRatio = 1.0f / PhysicsToPixelRatio
     let [<Literal>] DensityDefault = 1.0f

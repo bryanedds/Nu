@@ -991,7 +991,11 @@ module WorldModule2 =
             let physicsEngine = World.getPhysicsEngine2d world
             let (physicsMessages, physicsEngine) = physicsEngine.PopMessages ()
             let world = World.setPhysicsEngine2d physicsEngine world
-            let integrationMessages = physicsEngine.Integrate (World.getUpdateRate world) physicsMessages
+            let stepTime =
+                match Constants.Engine.DesiredFps with
+                | LimitTo30 | LimitTo60 -> Frames (World.getUpdateRate world)
+                | Unlimited -> Milliseconds world.ClockDelta
+            let integrationMessages = physicsEngine.Integrate stepTime physicsMessages
             let world = Seq.fold (flip World.processIntegrationMessage) world integrationMessages
             world
 
