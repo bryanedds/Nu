@@ -367,8 +367,7 @@ module TmxMap =
                                                     match (time, xTileAnimationDescriptor.TileAnimationDelay) with
                                                     | (UpdateTime time, UpdateTime delay) -> time / delay
                                                     | (ClockTime time, ClockTime delay) -> time / delay |> int64
-                                                    | (SystemTime _, SystemTime _) -> failwithnie ()
-                                                    | (_, _) -> failwithnie ()
+                                                    | (_, _) -> failwith "Cannot operate on incompatible PolyTime values."
                                                 let xTileOffset = int compressedTime % xTileAnimationDescriptor.TileAnimationRun
                                                 makeLayerTile (xTileGid + xTileOffset) xTile.HorizontalFlip xTile.VerticalFlip xTile.DiagonalFlip
                                             | ValueNone ->
