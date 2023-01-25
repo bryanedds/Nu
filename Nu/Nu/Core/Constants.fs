@@ -11,7 +11,7 @@ open Prime
 [<RequireQualifiedAccess>]
 module Engine =
 
-    let [<Uniform>] mutable DesiredFps = match ConfigurationManager.AppSettings.["EntityCentered2dDefault"] with null -> LimitTo60 | desiredFps -> scvalue<DesiredFps> desiredFps
+    let [<Uniform>] mutable DesiredFps = match ConfigurationManager.AppSettings.["EntityCentered2dDefault"] with null -> StaticFrameRate 60L | desiredFps -> scvalue<DesiredFps> desiredFps
     let [<Literal>] ExitCodeSuccess = 0
     let [<Literal>] ExitCodeFailure = 1
     let [<Literal>] NamePropertyName = "Name"
