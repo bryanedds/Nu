@@ -69,19 +69,17 @@ type [<AttributeUsage (AttributeTargets.Field)>] UniformAttribute () =
 /// Affords different representations of time.
 type PolyTime =
     | Frames of int64
-    | Milliseconds of single
+    | Seconds of single
     | DateTimeOffset of DateTimeOffset
 
 /// The desired frame rate per second.
 type [<NoComparison>] DesiredFps =
-    | LimitTo30
-    | LimitTo60
-    | Unlimited
+    | StaticFrameRate of int64
+    | DynamicFrameRate
     member this.Int =
         match this with
-        | LimitTo30 -> 30
-        | LimitTo60 -> 60
-        | Unlimited -> 1000000 // arbitrary large number to allow for division
+        | StaticFrameRate fps -> fps
+        | DynamicFrameRate -> 1000000 // arbitrary large number to allow for division
     member this.Single =
         single this.Int
     member this.Double =

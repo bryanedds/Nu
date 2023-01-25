@@ -97,8 +97,8 @@ type [<StructuralEquality; NoComparison; CLIMutable>] Transition =
     static member make transitionType =
         let lifeTime =
             match Constants.Engine.DesiredFps with
-            | LimitTo30 | LimitTo60 -> Frames 0L
-            | Unlimited -> Milliseconds 0.0f
+            | StaticFrameRate _ -> Frames 0L
+            | DynamicFrameRate -> Seconds 0.0f
         { TransitionType = transitionType
           TransitionLifeTime = lifeTime
           DissolveImageOpt = None
@@ -271,7 +271,7 @@ module AmbientState =
         let delta = now - state.ClockTime
         { state with
             UpdateTime = state.UpdateTime + state.UpdateRate
-            ClockDelta = single delta.TotalMilliseconds
+            ClockDelta = single delta.TotalSeconds
             ClockTime = now }
 
     /// Place the engine into a state such that the app will exit at the end of the current update.

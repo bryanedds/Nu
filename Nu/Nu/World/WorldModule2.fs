@@ -215,9 +215,9 @@ module WorldModule2 =
             | (Frames time, Frames lifeTime) ->
                 let localTime = world.UpdateTime - time
                 localTime > lifeTime
-            | (DateTimeOffset time, Milliseconds lifeTime) ->
+            | (DateTimeOffset time, Seconds lifeTime) ->
                 let localTime = world.ClockTime - time
-                single localTime.TotalMilliseconds > lifeTime
+                single localTime.TotalSeconds > lifeTime
             | (_, _) -> failwithumf ()
 
         static member private updateScreenIdling3 transitionTime slide (_ : Screen) (world : World) =
@@ -227,9 +227,9 @@ module WorldModule2 =
             | (Frames time, Frames lifeTime) ->
                 let localTime = world.UpdateTime - time
                 localTime > lifeTime
-            | (DateTimeOffset time, Milliseconds lifeTime) ->
+            | (DateTimeOffset time, Seconds lifeTime) ->
                 let localTime = world.ClockTime - time
-                single localTime.TotalMilliseconds > lifeTime
+                single localTime.TotalSeconds > lifeTime
             | (_, _) -> failwithumf ()
 
         static member private updateScreenIncoming transitionTime (selectedScreen : Screen) world =
@@ -239,7 +239,7 @@ module WorldModule2 =
                     if (match transitionTime with
                         | Frames time -> time = 0L
                         | DateTimeOffset time -> time = world.ClockTime
-                        | Milliseconds _ -> failwithumf ()) then
+                        | Seconds _ -> failwithumf ()) then
                         let world =
                             match (selectedScreen.GetIncoming world).SongOpt with
                             | Some playSong ->
@@ -285,7 +285,7 @@ module WorldModule2 =
                 if (match transitionTime with
                     | Frames time -> time = 0L
                     | DateTimeOffset time -> time = world.ClockTime
-                    | Milliseconds _ -> failwithumf ()) then
+                    | Seconds _ -> failwithumf ()) then
                     let incoming = selectedScreen.GetIncoming world
                     let outgoing = selectedScreen.GetOutgoing world
                     let world =
@@ -907,9 +907,9 @@ module WorldModule2 =
                     | (Frames time, Frames lifeTime) ->
                         let localTime = world.UpdateTime - time
                         single localTime / single (inc lifeTime)
-                    | (DateTimeOffset time, Milliseconds lifeTime) ->
+                    | (DateTimeOffset time, Seconds lifeTime) ->
                         let localTime = world.ClockTime - time
-                        single localTime.TotalMilliseconds / lifeTime
+                        single localTime.TotalSeconds / lifeTime
                     | (_, _) -> failwithumf ()
                 let alpha = match transition.TransitionType with Incoming -> 1.0f - progress | Outgoing -> progress
                 let color = Color.One.WithA alpha
@@ -1088,7 +1088,7 @@ module WorldModule2 =
 
                                                             // avoid updating faster than desired FPS
                                                             if FrameTimer.IsRunning then
-                                                                while let e = FrameTimer.Elapsed in e.TotalMilliseconds < Constants.Engine.DesiredFps.Double * 0.001 do
+                                                                while let e = FrameTimer.Elapsed in e.TotalSeconds < Constants.Engine.DesiredFps.Double do
                                                                     Thread.Yield () |> ignore<bool>
                                                             FrameTimer.Restart()
 
