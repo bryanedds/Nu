@@ -436,7 +436,7 @@ type PhysicsEngine =
     /// Enqueue a message from an external source.
     abstract EnqueueMessage : PhysicsMessage -> PhysicsEngine
     /// Integrate the physics system one step.
-    abstract Integrate : PolyTime -> PhysicsMessage UList -> IntegrationMessage SegmentedArray
+    abstract Integrate : GameTime -> PhysicsMessage UList -> IntegrationMessage SegmentedArray
 
 /// The mock implementation of PhysicsEngine.
 type [<ReferenceEquality; NoComparison>] MockPhysicsEngine =

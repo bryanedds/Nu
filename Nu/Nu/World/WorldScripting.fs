@@ -909,9 +909,9 @@ module WorldScripting =
                 let context = World.getScriptContext world
                 match World.tryResolveRelation fnName relationExpr originOpt context world with
                 | Right (simulant, world) ->
-                    match ScriptingSystem.tryExport typeof<PolyTime> timeExpr world with
+                    match ScriptingSystem.tryExport typeof<GameTime> timeExpr world with
                     | Some value -> 
-                        let time = value :?> PolyTime
+                        let time = value :?> GameTime
                         let world =
                             World.schedule
                                 (fun world ->

@@ -46,7 +46,7 @@ module WorldTypes =
 
     /// The data required to execute slide screen presentation.
     and [<NoComparison>] Slide =
-        { IdlingTime : PolyTime
+        { IdlingTime : GameTime
           Destination : Screen }
 
     /// Describes the behavior of a screen.
@@ -1218,12 +1218,12 @@ module WorldTypes =
             AmbientState.getClockTime this.AmbientState
 
         /// Get the polymorphic engine time delta.
-        member this.PolyDelta =
-            AmbientState.getPolyDelta this.AmbientState
+        member this.GameDelta =
+            AmbientState.getGameDelta this.AmbientState
 
         /// Get the polymorphic engine time.
-        member this.PolyTime =
-            AmbientState.getPolyTime this.AmbientState
+        member this.GameTime =
+            AmbientState.getGameTime this.AmbientState
 
         member
 #if !DEBUG

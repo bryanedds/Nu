@@ -248,7 +248,7 @@ module WorldModule2 =
                 | Live ->
                     if World.updateScreenTransition3 Incoming selectedScreen world then
                         let eventTrace = EventTrace.debug "World" "updateScreenIncoming" "IncomingFinish" EventTrace.empty
-                        let world = World.setScreenTransitionStatePlus (IdlingState world.PolyTime) selectedScreen world
+                        let world = World.setScreenTransitionStatePlus (IdlingState world.GameTime) selectedScreen world
                         World.publish () (Events.IncomingFinish --> selectedScreen) eventTrace selectedScreen world
                     else world
                 | Dead -> world
@@ -260,17 +260,17 @@ module WorldModule2 =
                 match selectedScreen.GetSlideOpt world with
                 | Some slide ->
                     if World.updateScreenIdling3 transitionTime slide selectedScreen world
-                    then World.setScreenTransitionStatePlus (OutgoingState world.PolyTime) selectedScreen world
+                    then World.setScreenTransitionStatePlus (OutgoingState world.GameTime) selectedScreen world
                     else world
                 | None ->
                     match Simulants.Game.GetDesiredScreen world with
                     | Desire desiredScreen ->
                         if desiredScreen <> selectedScreen then
                             if World.getStandAlone world || World.getAdvancing world then
-                                World.setScreenTransitionStatePlus (OutgoingState world.PolyTime) selectedScreen world
+                                World.setScreenTransitionStatePlus (OutgoingState world.GameTime) selectedScreen world
                             else World.setSelectedScreenOpt (Some desiredScreen) world // quick cut such as when halted in editor
                         else world
-                    | DesireNone -> World.setScreenTransitionStatePlus (OutgoingState world.PolyTime) selectedScreen world
+                    | DesireNone -> World.setScreenTransitionStatePlus (OutgoingState world.GameTime) selectedScreen world
                     | DesireIgnore -> world
             | Dead -> world
 
@@ -312,7 +312,7 @@ module WorldModule2 =
             match World.getLiveness world with
             | Live ->
                 if World.updateScreenTransition3 Outgoing selectedScreen world then
-                    let world = World.setScreenTransitionStatePlus (IdlingState world.PolyTime) selectedScreen world
+                    let world = World.setScreenTransitionStatePlus (IdlingState world.GameTime) selectedScreen world
                     let world =
                         match World.getLiveness world with
                         | Live ->
@@ -335,12 +335,12 @@ module WorldModule2 =
                         match destinationOpt with
                         | Some destination ->
                             if destination <> selectedScreen
-                            then World.selectScreen (IncomingState world.PolyTime) destination world
+                            then World.selectScreen (IncomingState world.GameTime) destination world
                             else world
                         | None ->
                             let world = World.selectScreenOpt None world
                             match Simulants.Game.GetDesiredScreen world with // handle the possibility that screen deselect event changed destination
-                            | Desire destination -> World.selectScreen (IncomingState world.PolyTime) destination world
+                            | Desire destination -> World.selectScreen (IncomingState world.GameTime) destination world
                             | DesireNone -> world
                             | DesireIgnore -> world
                     | Dead -> world
@@ -370,11 +370,11 @@ module WorldModule2 =
                 if  selectedScreen <> destination &&
                     not (World.isSelectedScreenTransitioning world) then
                     let world = World.setScreenTransitionDestinationOpt (Some destination) world |> snd'
-                    let world = World.setScreenTransitionStatePlus (OutgoingState world.PolyTime) selectedScreen world
+                    let world = World.setScreenTransitionStatePlus (OutgoingState world.GameTime) selectedScreen world
                     (true, world)
                 else (false, world)
             | None ->
-                let world = World.setScreenTransitionStatePlus (IncomingState world.PolyTime) destination world
+                let world = World.setScreenTransitionStatePlus (IncomingState world.GameTime) destination world
                 let world = World.setSelectedScreen destination world
                 (true, world)
 
@@ -998,7 +998,7 @@ module WorldModule2 =
             let physicsEngine = World.getPhysicsEngine2d world
             let (physicsMessages, physicsEngine) = physicsEngine.PopMessages ()
             let world = World.setPhysicsEngine2d physicsEngine world
-            let integrationMessages = physicsEngine.Integrate world.PolyDelta physicsMessages
+            let integrationMessages = physicsEngine.Integrate world.GameDelta physicsMessages
             let world = Seq.fold (flip World.processIntegrationMessage) world integrationMessages
             world
 

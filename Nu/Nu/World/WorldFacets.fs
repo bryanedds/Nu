@@ -188,8 +188,8 @@ module AnimatedSpriteFacetModule =
         member this.GetCelCount world : int = this.Get (nameof this.CelCount) world
         member this.SetCelCount (value : int) world = this.Set (nameof this.CelCount) value world
         member this.CelCount = lens (nameof this.CelCount) this this.GetCelCount this.SetCelCount
-        member this.GetAnimationDelay world : PolyTime = this.Get (nameof this.AnimationDelay) world
-        member this.SetAnimationDelay (value : PolyTime) world = this.Set (nameof this.AnimationDelay) value world
+        member this.GetAnimationDelay world : GameTime = this.Get (nameof this.AnimationDelay) world
+        member this.SetAnimationDelay (value : GameTime) world = this.Set (nameof this.AnimationDelay) value world
         member this.AnimationDelay = lens (nameof this.AnimationDelay) this this.GetAnimationDelay this.SetAnimationDelay
         member this.GetAnimationSheet world : Image AssetTag = this.Get (nameof this.AnimationSheet) world
         member this.SetAnimationSheet (value : Image AssetTag) world = this.Set (nameof this.AnimationSheet) value world
@@ -219,7 +219,7 @@ module AnimatedSpriteFacetModule =
             [define Entity.CelSize (Vector2 (12.0f, 12.0f))
              define Entity.CelRun 4
              define Entity.CelCount 16
-             define Entity.AnimationDelay (PolyTime.make 4L (1.0f / 15.0f))
+             define Entity.AnimationDelay (GameTime.make 4L (1.0f / 15.0f))
              define Entity.AnimationSheet Assets.Default.Image6
              define Entity.Color Color.One
              define Entity.Blend Transparent
@@ -563,8 +563,8 @@ module Effect2dFacetModule =
         member this.GetEffectSymbolOpt world : Symbol AssetTag option = this.Get (nameof this.EffectSymbolOpt) world
         member this.SetEffectSymbolOpt (value : Symbol AssetTag option) world = this.Set (nameof this.EffectSymbolOpt) value world
         member this.EffectSymbolOpt = lens (nameof this.EffectSymbolOpt) this this.GetEffectSymbolOpt this.SetEffectSymbolOpt
-        member this.GetEffectStartTimeOpt world : PolyTime option = this.Get (nameof this.EffectStartTimeOpt) world
-        member this.SetEffectStartTimeOpt (value : PolyTime option) world = this.Set (nameof this.EffectStartTimeOpt) value world
+        member this.GetEffectStartTimeOpt world : GameTime option = this.Get (nameof this.EffectStartTimeOpt) world
+        member this.SetEffectStartTimeOpt (value : GameTime option) world = this.Set (nameof this.EffectStartTimeOpt) value world
         member this.EffectStartTimeOpt = lens (nameof this.EffectStartTimeOpt) this this.GetEffectStartTimeOpt this.SetEffectStartTimeOpt
         member this.GetEffectDefinitions world : Effects.Definitions = this.Get (nameof this.EffectDefinitions) world
         member this.SetEffectDefinitions (value : Effects.Definitions) world = this.Set (nameof this.EffectDefinitions) value world
@@ -592,12 +592,12 @@ module Effect2dFacetModule =
         member this.GetEffectStartTime world =
             match this.GetEffectStartTimeOpt world with
             | Some effectStartTime -> effectStartTime
-            | None -> PolyTime.zero
+            | None -> GameTime.zero
 
         /// The time relative to the start of the effect.
         member this.GetEffectTime world =
             let startTime = this.GetEffectStartTime world
-            let time = World.getPolyTime world
+            let time = World.getGameTime world
             time - startTime
 
     type Effect2dFacet () =
@@ -658,7 +658,7 @@ module Effect2dFacetModule =
                 match (entity.GetSelfDestruct world, effect.LifeTimeOpt) with
                 | (true, Some lifetime) ->
                     let effectTime = entity.GetEffectTime world
-                    if  effectTime >= lifetime - world.PolyDelta && // NOTE: keeps effect from rendering past the last frame when it is created mid-frame.
+                    if  effectTime >= lifetime - world.GameDelta && // NOTE: keeps effect from rendering past the last frame when it is created mid-frame.
                         (match ParticleSystem.getLiveness time particleSystem with Live -> false | Dead -> true) then
                         World.destroyEntity entity world
                     else world
@@ -691,7 +691,7 @@ module Effect2dFacetModule =
                   Effects.Centered = entity.GetEffectCentered world }
             let effectHistory = entity.GetEffectHistory world
             let effectDefinitions = entity.GetEffectDefinitions world
-            let effectSystem = EffectSystem.make effectAbsolute effectTime world.PolyDelta effectDefinitions
+            let effectSystem = EffectSystem.make effectAbsolute effectTime world.GameDelta effectDefinitions
 
             // evaluate effect with effect system
             let (view, _) = EffectSystem.eval effect effectSlice effectHistory effectSystem
@@ -749,7 +749,7 @@ module Effect2dFacetModule =
             world
 
         override this.Register (entity, world) =
-            let effectStartTime = Option.defaultValue (World.getPolyTime world) (entity.GetEffectStartTimeOpt world)
+            let effectStartTime = Option.defaultValue (World.getGameTime world) (entity.GetEffectStartTimeOpt world)
             let world = entity.SetEffectStartTimeOpt (Some effectStartTime) world
             let world = World.monitor handleEffectsChanged (entity.GetChangeEvent (nameof entity.EffectSymbolOpt)) entity world
             World.monitor handleAssetsReload Events.AssetsReload entity world
@@ -1024,7 +1024,7 @@ module TileMapFacetModule =
                 let viewBounds = World.getViewBounds2d world
                 let tileMapMessages =
                     TmxMap.getLayeredMessages2d
-                        world.PolyTime
+                        world.GameTime
                         transform.Absolute
                         viewBounds
                         perimeterUnscaled.Min.V2
@@ -1119,7 +1119,7 @@ module TmxMapFacetModule =
             let tmxPackage = if tmxMap.TmxDirectory = "" then Assets.Default.PackageName else Path.GetFileName tmxMap.TmxDirectory // really folder name, but whatever...
             let tmxMapMessages =
                 TmxMap.getLayeredMessages2d
-                    world.PolyTime
+                    world.GameTime
                     transform.Absolute
                     viewBounds
                     perimeterUnscaled.Min.V2
