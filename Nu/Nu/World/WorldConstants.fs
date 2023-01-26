@@ -14,11 +14,11 @@ module Dissolve =
         { IncomingTime =
             match Constants.Engine.DesiredFrameRate with
             | StaticFrameRate fps -> UpdateTime (fps / 2L)
-            | DynamicFrameRate -> ClockTime 0.5f
+            | DynamicFrameRate _ -> ClockTime 0.5f
           OutgoingTime =
             match Constants.Engine.DesiredFrameRate with
             | StaticFrameRate fps -> UpdateTime fps
-            | DynamicFrameRate -> ClockTime 1.0f
+            | DynamicFrameRate _ -> ClockTime 1.0f
           DissolveImage = Assets.Default.Image8 }
 
 [<RequireQualifiedAccess>]
@@ -30,7 +30,7 @@ module Slide =
           IdlingTime =
             match Constants.Engine.DesiredFrameRate with
             | StaticFrameRate fps -> UpdateTime fps
-            | DynamicFrameRate -> ClockTime 1.0f
+            | DynamicFrameRate _ -> ClockTime 1.0f
           SlideImageOpt = Some Assets.Default.Image5 }
 
 [<RequireQualifiedAccess>]

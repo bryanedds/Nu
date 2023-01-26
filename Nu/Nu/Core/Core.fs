@@ -61,28 +61,15 @@ module CoreOperators =
     /// Same as the ($) operator found in Prime, but placed here to expose it directly from Nu.
     let inline ($) f g = f g
 
+/// The desired frame rate.
+type [<NoComparison>] FrameRate =
+    | StaticFrameRate of int64
+    | DynamicFrameRate of int64 option
+
 /// Denotes that a value should not be altered by the consumer of the API.
 /// TODO: remove this after updating Prime.
 type [<AttributeUsage (AttributeTargets.Field)>] UniformAttribute () =
     inherit Attribute ()
-
-/// Affords different representations of time based on updates or wall clock time.
-type [<Struct>] PolyTime =
-    | UpdateTime of UpdateTime : int64 // in updates
-    | ClockTime of ClockTime : single // in seconds
-
-/// The desired frame rate.
-type [<NoComparison>] FrameRate =
-    | StaticFrameRate of int64
-    | DynamicFrameRate
-    member this.AsInt =
-        match this with
-        | StaticFrameRate fps -> fps
-        | DynamicFrameRate -> 1000000 // arbitrary large number to allow for division
-    member this.AsSingle =
-        single this.AsInt
-    member this.AsDouble =
-        double this.AsInt
 
 // TODO: remove after updating Prime.
 [<RequireQualifiedAccess>]

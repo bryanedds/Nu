@@ -496,9 +496,10 @@ type [<ReferenceEquality; NoComparison>] AetherPhysicsEngine =
         member physicsEngine.Integrate stepTime physicsMessages =
             AetherPhysicsEngine.handlePhysicsMessages physicsMessages physicsEngine
             let physicsStepAmount =
-                match stepTime with
-                | UpdateTime frames -> 1.0f / Constants.Engine.DesiredFrameRate.AsSingle * single frames
-                | ClockTime secs -> secs
+                match (Constants.Engine.DesiredFrameRate, stepTime) with
+                | (StaticFrameRate frameRate, UpdateTime frames) -> 1.0f / single frameRate * single frames
+                | (DynamicFrameRate _, ClockTime secs) -> secs
+                | (_, _) -> failwithumf ()
             AetherPhysicsEngine.applyGravity physicsStepAmount physicsEngine
             physicsEngine.PhysicsContext.Step physicsStepAmount
             AetherPhysicsEngine.createIntegrationMessages physicsEngine

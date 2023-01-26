@@ -921,10 +921,14 @@ module Particles =
                     particle.Color.A <- 1.0f - progress
                     index <- inc index
                 Output.empty
+            let gravity =
+                match Constants.Engine.DesiredFrameRate with
+                | StaticFrameRate frameRate -> Constants.Engine.GravityDefault / single frameRate
+                // TODO: implement. | DynamicFrameRate _ -> failwithnie ()
             let particleBehaviors =
                 Behaviors.singleton
                     (Behavior.ofSeq BasicParticle.body
-                        [Transformer.force (Gravity (Constants.Engine.GravityDefault / Constants.Engine.DesiredFrameRate.AsSingle))
+                        [Transformer.force (Gravity gravity)
                          Transformer.force (Velocity Constraint.empty)])
             let emitterBehavior = fun _ (emitter : BasicEmitter) ->
                 emitter.Body.Angles <- emitter.Body.Angles + v3Dup 0.1f

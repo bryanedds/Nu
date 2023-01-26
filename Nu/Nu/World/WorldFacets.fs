@@ -219,7 +219,7 @@ module AnimatedSpriteFacetModule =
             [define Entity.CelSize (Vector2 (12.0f, 12.0f))
              define Entity.CelRun 4
              define Entity.CelCount 16
-             define Entity.AnimationDelay (match Constants.Engine.DesiredFrameRate with StaticFrameRate _ -> UpdateTime 4L | DynamicFrameRate -> ClockTime 0.25f)
+             define Entity.AnimationDelay (PolyTime.make 4L (1.0f / 15.0f))
              define Entity.AnimationSheet Assets.Default.Image6
              define Entity.Color Color.One
              define Entity.Blend Transparent
@@ -563,8 +563,8 @@ module Effect2dFacetModule =
         member this.GetEffectSymbolOpt world : Symbol AssetTag option = this.Get (nameof this.EffectSymbolOpt) world
         member this.SetEffectSymbolOpt (value : Symbol AssetTag option) world = this.Set (nameof this.EffectSymbolOpt) value world
         member this.EffectSymbolOpt = lens (nameof this.EffectSymbolOpt) this this.GetEffectSymbolOpt this.SetEffectSymbolOpt
-        member this.GetEffectStartTimeOpt world : int64 option = this.Get (nameof this.EffectStartTimeOpt) world
-        member this.SetEffectStartTimeOpt (value : int64 option) world = this.Set (nameof this.EffectStartTimeOpt) value world
+        member this.GetEffectStartTimeOpt world : PolyTime option = this.Get (nameof this.EffectStartTimeOpt) world
+        member this.SetEffectStartTimeOpt (value : PolyTime option) world = this.Set (nameof this.EffectStartTimeOpt) value world
         member this.EffectStartTimeOpt = lens (nameof this.EffectStartTimeOpt) this this.GetEffectStartTimeOpt this.SetEffectStartTimeOpt
         member this.GetEffectDefinitions world : Effects.Definitions = this.Get (nameof this.EffectDefinitions) world
         member this.SetEffectDefinitions (value : Effects.Definitions) world = this.Set (nameof this.EffectDefinitions) value world
@@ -592,12 +592,12 @@ module Effect2dFacetModule =
         member this.GetEffectStartTime world =
             match this.GetEffectStartTimeOpt world with
             | Some effectStartTime -> effectStartTime
-            | None -> 0L
+            | None -> PolyTime.zero
 
         /// The time relative to the start of the effect.
         member this.GetEffectTime world =
             let startTime = this.GetEffectStartTime world
-            let time = World.getUpdateTime world
+            let time = World.getPolyTime world
             time - startTime
 
     type Effect2dFacet () =
@@ -658,7 +658,7 @@ module Effect2dFacetModule =
                 match (entity.GetSelfDestruct world, effect.LifeTimeOpt) with
                 | (true, Some lifetime) ->
                     let effectTime = entity.GetEffectTime world
-                    if  effectTime >= dec lifetime && // NOTE: dec keeps effect from rendering past the last frame when it is created mid-frame
+                    if  effectTime >= lifetime - world.PolyDelta && // NOTE: keeps effect from rendering past the last frame when it is created mid-frame.
                         (match ParticleSystem.getLiveness time particleSystem with Live -> false | Dead -> true) then
                         World.destroyEntity entity world
                     else world
@@ -691,7 +691,7 @@ module Effect2dFacetModule =
                   Effects.Centered = entity.GetEffectCentered world }
             let effectHistory = entity.GetEffectHistory world
             let effectDefinitions = entity.GetEffectDefinitions world
-            let effectSystem = EffectSystem.make effectAbsolute effectTime effectDefinitions
+            let effectSystem = EffectSystem.make effectAbsolute effectTime world.PolyDelta effectDefinitions
 
             // evaluate effect with effect system
             let (view, _) = EffectSystem.eval effect effectSlice effectHistory effectSystem
@@ -749,7 +749,7 @@ module Effect2dFacetModule =
             world
 
         override this.Register (entity, world) =
-            let effectStartTime = Option.defaultValue (World.getUpdateTime world) (entity.GetEffectStartTimeOpt world)
+            let effectStartTime = Option.defaultValue (World.getPolyTime world) (entity.GetEffectStartTimeOpt world)
             let world = entity.SetEffectStartTimeOpt (Some effectStartTime) world
             let world = World.monitor handleEffectsChanged (entity.GetChangeEvent (nameof entity.EffectSymbolOpt)) entity world
             World.monitor handleAssetsReload Events.AssetsReload entity world

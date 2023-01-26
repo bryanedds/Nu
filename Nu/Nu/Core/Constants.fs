@@ -12,7 +12,8 @@ open Prime
 module Engine =
 
     let [<Uniform>] mutable DesiredFrameRate = match ConfigurationManager.AppSettings.["DesiredFrameRate"] with null -> StaticFrameRate 60L | desiredFrameRate -> scvalue<FrameRate> desiredFrameRate
-    let [<Literal>] DesireFrameTimeTolerance = 0.0005 // keeps frame timing from getting behind the actual vsync cycles
+    let [<Literal>] DesiredFrameTimeTolerance = 0.0005 // keeps frame timing from getting behind the actual vsync cycles
+    let [<Literal>] DesiredFrameTimeMinimum = 0.001 // maximum frame rate of 1000 in all configurations.
     let [<Literal>] ExitCodeSuccess = 0
     let [<Literal>] ExitCodeFailure = 1
     let [<Literal>] NamePropertyName = "Name"
