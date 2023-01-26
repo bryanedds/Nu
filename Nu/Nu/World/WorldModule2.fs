@@ -552,10 +552,13 @@ module WorldModule2 =
 
         /// Shelve the a world for background storage.
         static member shelve world =
-            world // nothing to do
+            World.shelveAmbientState world
 
         /// Unshelve the state of a world.
-        static member unshelve world =
+        static member unshelve (world : World) =
+
+            // sync tick watch state to advancing
+            let world = World.unshelveAmbientState world
 
             // clear existing 2d physics messages
             let world = World.updatePhysicsEngine2d (fun physicsEngine -> physicsEngine.ClearMessages ()) world
