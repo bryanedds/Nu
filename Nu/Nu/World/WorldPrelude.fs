@@ -3,6 +3,7 @@
 
 namespace Nu
 open System
+open System.Diagnostics
 open System.Numerics
 open SDL2
 open TiledSharp
@@ -204,11 +205,11 @@ module AmbientState =
               Liveness : Liveness
               Advancing : bool
               UpdateTime : int64
-              KeyValueStore : UMap<Guid, obj>
-              TickDelta : int
+              TickDelta : int64
               // cache line 2
-              TickTime : int
-              TickCountPrevious : int
+              KeyValueStore : UMap<Guid, obj>
+              TickTime : int64
+              TickWatch : Stopwatch
               Tasklets : OMap<Simulant, 'w Tasklet UList>
               SdlDepsOpt : SdlDeps option
               Symbolics : Symbolics
@@ -241,7 +242,10 @@ module AmbientState =
 
     /// Set whether the world's state is advancing.
     let setAdvancing advancing (state : _ AmbientState) =
-        { state with Advancing = advancing }
+        if advancing <> state.Advancing then
+            if advancing then state.TickWatch.Start () else state.TickWatch.Stop ()
+            { state with Advancing = advancing }
+        else state
 
     /// Check that the world's state is advancing.
     let getHalted state =
@@ -261,11 +265,11 @@ module AmbientState =
 
     /// Get the clock delta as a number of seconds.
     let getClockDelta state =
-        single state.TickDelta / single TimeSpan.TicksPerSecond
+        single state.TickDelta / single Stopwatch.Frequency
 
     /// Get the clock time as a number of seconds.
     let getClockTime state =
-        single state.TickTime / single TimeSpan.TicksPerSecond
+        single state.TickTime / single Stopwatch.Frequency
 
     /// Get the polymorphic engine time delta.
     let getPolyDelta state =
@@ -282,14 +286,23 @@ module AmbientState =
     /// Update the update and clock times.
     let updateTime state =
         let updateDelta = if state.Advancing then 1L else 0L
-        let tickCount = Environment.TickCount
-        let tickDelta = tickCount - state.TickCountPrevious
-        let systemDelta = if state.Advancing then tickDelta else 0
+        let tickTime = state.TickWatch.ElapsedTicks - state.TickTime
+        let tickDelta = tickTime - state.TickTime
         { state with
             UpdateTime = state.UpdateTime + updateDelta
-            TickDelta = systemDelta
-            TickTime = state.TickTime + tickDelta
-            TickCountPrevious = tickCount }
+            TickDelta = tickDelta
+            TickTime = tickTime }
+
+    /// Shelve the ambient state.
+    let shelve (state : _ AmbientState) =
+        state
+
+    /// Unshelve the ambient state.
+    let unshelve state =
+        if state.Advancing
+        then state.TickWatch.Start ()
+        else state.TickWatch.Stop ()
+        state
 
     /// Place the engine into a state such that the app will exit at the end of the current frame.
     let exit state =
@@ -418,10 +431,10 @@ module AmbientState =
         { Liveness = Live
           Advancing = advancing
           UpdateTime = 0L
+          TickDelta = 0L
           KeyValueStore = UMap.makeEmpty HashIdentity.Structural config
-          TickDelta = 0
-          TickTime = 0
-          TickCountPrevious = Environment.TickCount
+          TickTime = 0L
+          TickWatch = if advancing then Stopwatch.StartNew () else Stopwatch ()
           Tasklets = OMap.makeEmpty HashIdentity.Structural config
           SdlDepsOpt = sdlDepsOpt
           Symbolics = symbolics

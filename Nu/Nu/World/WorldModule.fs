@@ -301,6 +301,14 @@ module WorldModule =
         static member getPolyTime world =
             World.getAmbientStateBy AmbientState.getPolyTime world
 
+        /// Shelve the ambient state.
+        static member internal shelveAmbientState world =
+            World.choose { world with AmbientState = AmbientState.shelve world.AmbientState }
+
+        /// Unshelve the ambient state.
+        static member internal unshelveAmbientState world =
+            World.choose { world with AmbientState = AmbientState.unshelve world.AmbientState }
+
         /// Place the engine into a state such that the app will exit at the end of the current frame.
         [<FunctionBinding>]
         static member exit world =
