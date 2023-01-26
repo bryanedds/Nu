@@ -2,7 +2,19 @@
 // Copyright (C) Bryan Edds, 2013-2020.
 
 #I __SOURCE_DIRECTORY__
-#load "Interactive.fsx"
+#r "../../packages/Magick.NET-Q8-x64.7.5.0.1/lib/net40/Magick.NET-Q8-x64.dll"
+#r "../../packages/Csv.1.0.58/lib/net40/Csv.dll"
+#r "../../packages/FParsec.1.0.3/lib/net40-client/FParsecCS.dll" // MUST be referenced BEFORE FParsec.dll!
+#r "../../packages/FParsec.1.0.3/lib/net40-client/FParsec.dll"
+#r "../../packages/Prime.8.4.0/lib/net472/Prime.dll"
+#r "../../packages/Prime.Scripting.8.0.0/lib/net472/Prime.Scripting.exe"
+#r "../../packages/Aether.Physics2D.1.5.0/lib/net40/Aether.Physics2D.dll"
+#r "../../packages/Nito.Collections.Deque.1.1.0/lib/netstandard2.0/Nito.Collections.Deque.dll"
+#r "../../Nu/Nu.Dependencies/SDL2-CS.dll/lib/net20/SDL2-CS.dll"
+#r "../../Nu/Nu.Dependencies/TiledSharp.1.0.2/lib/netstandard2.0/TiledSharp.dll"
+#r "../../Nu/Nu.Math/bin/x64/Debug/Nu.Math.dll"
+#r "../../Nu/Nu/bin/Debug/Nu.exe"
+
 open System
 open System.Text.RegularExpressions
 open System.Linq
@@ -76,7 +88,6 @@ let generateBindingsCode codesStr =
 
 do
     Directory.SetCurrentDirectory (__SOURCE_DIRECTORY__ + "/bin/Debug")
-    Nu.init NuConfig.defaultConfig
     let code =
         typeof<SDL.SDL_Scancode> |>
         enumEntries |>
