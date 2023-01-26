@@ -86,8 +86,8 @@ and [<Struct; CustomEquality; CustomComparison; TypeConverter (typeof<PolyTimeCo
     static member (*) (left, right) = PolyTime.ap (*) (*) left right
     static member (/) (left, right) = PolyTime.ap (/) (/) left right
     static member (%) (left, right) = PolyTime.ap (%) (%) left right
-//    static member op_Implicit (i : int64) = UpdateTime i
-//    static member op_Implicit (s : single) = ClockTime s
+    static member op_Implicit (i : int64) = UpdateTime i
+    static member op_Implicit (s : single) = ClockTime s
     static member isZero time = PolyTime.unary isZero isZero time
     static member notZero time = PolyTime.unary notZero notZero time
     static member zero = PolyTime.make 0L 0.0f
