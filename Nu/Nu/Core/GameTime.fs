@@ -131,3 +131,26 @@ and [<Struct; CustomEquality; CustomComparison; TypeConverter (typeof<GameTimeCo
             match that with
             | :? GameTime as that -> (this :> GameTime IComparable).CompareTo that
             | _ -> failwithumf ()
+
+[<AutoOpen>]
+module GameTimeExtension =
+
+    type UInt32 with
+        member this.u = UpdateTime (int64 this)
+        member this.c = ClockTime (single this)
+
+    type Int32 with
+        member this.u = UpdateTime (int64 this)
+        member this.c = ClockTime (single this)
+
+    type Int64 with
+        member this.u = UpdateTime this
+        member this.c = ClockTime (single this)
+
+    type Single with
+        member this.u = UpdateTime (int64 this)
+        member this.c = ClockTime this
+
+    type Double with
+        member this.u = UpdateTime (int64 this)
+        member this.c = ClockTime (single this)
