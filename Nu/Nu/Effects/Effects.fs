@@ -264,7 +264,7 @@ module EffectSystem =
             let totalTime = Array.fold (fun totalTime (keyFrame : 'kf) -> totalTime + keyFrame.KeyFrameLength) PolyTime.zero keyFrames
             if totalTime <> PolyTime.zero then
                 let moduloTime = localTime % totalTime
-                let bouncing = PolyTime.int64 (localTime / totalTime) % 2L = 1L
+                let bouncing = int (localTime / totalTime) % 2 = 1
                 let bounceTime = if bouncing then totalTime - moduloTime else moduloTime
                 selectKeyFrames2 bounceTime Once keyFrames
             else (PolyTime.zero, Array.head keyFrames, Array.head keyFrames)
@@ -335,7 +335,7 @@ module EffectSystem =
     let private evalInset (celSize : Vector2i) celRun celCount delay playback effectSystem =
         // TODO: make sure Bounce playback works as intended!
         // TODO: stop assuming that animation sheets are fully and evenly populated when flipping!
-        let celUnmodulated = PolyTime.int (effectSystem.EffectTime / delay)
+        let celUnmodulated = int (effectSystem.EffectTime / delay)
         let cel = celUnmodulated % celCount
         let celI = cel % celRun
         let celJ = cel / celRun
@@ -387,7 +387,7 @@ module EffectSystem =
         evalContent content slice history effectSystem
 
     and private evalProgress keyFrameTime keyFrameLength effectSystem =
-        let progress = if PolyTime.isZero keyFrameLength then 1.0f else PolyTime.single keyFrameTime / PolyTime.single keyFrameLength
+        let progress = if PolyTime.isZero keyFrameLength then 1.0f else single keyFrameTime / single keyFrameLength
         let progress = progress + effectSystem.ProgressOffset
         if progress > 1.0f then progress - 1.0f else progress
 
@@ -581,7 +581,7 @@ module EffectSystem =
         if PolyTime.notZero delay && celRun <> 0 then
 
             // compute cel
-            let cel = PolyTime.int (effectSystem.EffectTime / delay)
+            let cel = int (effectSystem.EffectTime / delay)
 
             // eval inset
             let inset = evalInset celSize celRun celCount delay playback effectSystem
@@ -706,8 +706,8 @@ module EffectSystem =
                     let timePassed = effectSystem.EffectDelta * PolyTime.make (int64 i) (single i)
                     let slice = { slice with Elevation = slice.Elevation + shift }
                     let slice = evalAspects emitterAspects slice { effectSystem with EffectTime = effectSystem.EffectTime - timePassed }
-                    let emitCountLastFrame = PolyTime.single (effectSystem.EffectTime - timePassed - effectSystem.EffectDelta) * rate
-                    let emitCountThisFrame = PolyTime.single (effectSystem.EffectTime - timePassed) * rate
+                    let emitCountLastFrame = single (effectSystem.EffectTime - timePassed - effectSystem.EffectDelta) * rate
+                    let emitCountThisFrame = single (effectSystem.EffectTime - timePassed) * rate
                     let emitCount = int emitCountThisFrame - int emitCountLastFrame
                     let effectSystem = { effectSystem with EffectTime = timePassed }
                     let effectSystem =

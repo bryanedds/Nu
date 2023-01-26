@@ -88,6 +88,10 @@ and [<Struct; CustomEquality; CustomComparison; TypeConverter (typeof<PolyTimeCo
     static member (%) (left, right) = PolyTime.ap (%) (%) left right
     static member op_Implicit (i : int64) = UpdateTime i
     static member op_Implicit (s : single) = ClockTime s
+    static member op_Explicit time = match time with UpdateTime time -> int time | ClockTime time -> int time
+    static member op_Explicit time = match time with UpdateTime time -> int64 time | ClockTime time -> int64 time
+    static member op_Explicit time = match time with UpdateTime time -> single time | ClockTime time -> single time
+    static member op_Explicit time = match time with UpdateTime time -> double time | ClockTime time -> double time
     static member isZero time = PolyTime.unary isZero isZero time
     static member notZero time = PolyTime.unary notZero notZero time
     static member zero = PolyTime.make 0L 0.0f
@@ -95,12 +99,6 @@ and [<Struct; CustomEquality; CustomComparison; TypeConverter (typeof<PolyTimeCo
     static member max (left : PolyTime) right = if left >= right then left else right
     static member MinValue = PolyTime.make Int64.MinValue Single.MinValue
     static member MaxValue = PolyTime.make Int64.MaxValue Single.MaxValue
-
-    // TODO: figure out how to override the explicit conversion operator instead of exposing these.
-    static member int time = PolyTime.unary int int time
-    static member int64 time = PolyTime.unary id int64 time
-    static member single time = PolyTime.unary single id time
-    static member double time = PolyTime.unary double double time
 
     override this.Equals that =
         match that with
