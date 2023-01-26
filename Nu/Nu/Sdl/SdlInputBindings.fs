@@ -254,3 +254,5 @@ type KeyboardKey =
     | Sleep = 282
     | App1 = 283
     | App2 = 284
+    | Audiorewind = 285
+    | Audiofastforward = 286
