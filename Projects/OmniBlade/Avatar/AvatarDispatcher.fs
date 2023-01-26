@@ -36,25 +36,6 @@ module AvatarDispatcher =
             let inset = Avatar.getAnimationInset (World.getUpdateTime world) avatar
             inset
 
-        static let isIntersectedProp collider collidee (avatar : Avatar) world =
-            if (collider.BodyShapeId = avatar.CoreShapeId &&
-                collidee.Entity.Exists world &&
-                collidee.Entity.Is<PropDispatcher> world &&
-                match (collidee.Entity.GetPropPlus world).Prop.PropData with
-                | Portal _ -> true
-                | Sensor _ -> true
-                | _ -> false) then
-                true
-            elif (collider.BodyShapeId = avatar.SensorShapeId &&
-                  collidee.Entity.Exists world &&
-                  collidee.Entity.Is<PropDispatcher> world &&
-                  match (collidee.Entity.GetPropPlus world).Prop.PropData with
-                  | Portal _ -> false
-                  | Sensor _ -> false
-                  | _ -> true) then
-                true
-            else false
-
         static member Facets =
             [typeof<RigidBodyFacet>]
 
