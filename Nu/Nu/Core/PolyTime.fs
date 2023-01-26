@@ -19,7 +19,7 @@ type PolyTimeConverter () =
         if destType = typeof<Symbol> then
             let polyTime = source :?> PolyTime
             match polyTime with
-            | UpdateTime time -> Number (string time, ValueNone)
+            | UpdateTime time -> Number (string time, ValueNone) :> obj
             | ClockTime time -> Number (string time, ValueNone) :> obj
         elif destType = typeof<PolyTime> then source
         else failconv "Invalid PolyTime conversion to source." None
@@ -34,8 +34,8 @@ type PolyTimeConverter () =
             match symbol with
             | Number (time, _) ->
                 match Constants.Engine.DesiredFrameRate with
-                | StaticFrameRate _ -> UpdateTime (Int64.Parse time)
-                | DynamicFrameRate _ -> ClockTime (Single.Parse time)
+                | StaticFrameRate _ -> UpdateTime (Int64.Parse time) :> obj
+                | DynamicFrameRate _ -> ClockTime (Single.Parse time) :> obj
             | _ -> failconv "Invalid PolyTimeConverter conversion from source." (Some symbol)
         | :? PolyTime -> source
         | _ -> failconv "Invalid PolyTimeConverter conversion from source." None
@@ -86,6 +86,11 @@ and [<Struct; CustomEquality; CustomComparison; TypeConverter (typeof<PolyTimeCo
     static member (*) (left, right) = PolyTime.ap (*) (*) left right
     static member (/) (left, right) = PolyTime.ap (/) (/) left right
     static member (%) (left, right) = PolyTime.ap (%) (%) left right
+    static member (+) (left, right) = PolyTime.unary ((+) (int64 right) >> UpdateTime) ((+) (single right) >> ClockTime) left
+    static member (-) (left, right) = PolyTime.unary ((-) (int64 right) >> UpdateTime) ((-) (single right) >> ClockTime) left
+    static member (*) (left, right) = PolyTime.unary ((*) (int64 right) >> UpdateTime) ((*) (single right) >> ClockTime) left
+    static member (/) (left, right) = PolyTime.unary ((/) (int64 right) >> UpdateTime) ((/) (single right) >> ClockTime) left
+    static member (%) (left, right) = PolyTime.unary ((%) (int64 right) >> UpdateTime) ((%) (single right) >> ClockTime) left
     static member op_Implicit (i : int64) = UpdateTime i
     static member op_Implicit (s : single) = ClockTime s
     static member op_Explicit time = match time with UpdateTime time -> int time | ClockTime time -> int time
