@@ -215,7 +215,7 @@ module WorldScreenModule =
                 | Some dispatcher -> dispatcher
                 | None -> failwith ("Could not find ScreenDispatcher named '" + dispatcherName + "'.")
             let ecs = world.WorldExtension.Plugin.MakeEcs ()
-            let screenState = ScreenState.make world.PolyTime nameOpt dispatcher ecs
+            let screenState = ScreenState.make world.GameTime nameOpt dispatcher ecs
             let screenState = Reflection.attachProperties ScreenState.copy screenState.Dispatcher screenState world
             let screen = ntos screenState.Name
             let world =
@@ -307,7 +307,7 @@ module WorldScreenModule =
             let ecs = world.WorldExtension.Plugin.MakeEcs ()
 
             // make the screen state and populate its properties
-            let screenState = ScreenState.make world.PolyTime None dispatcher ecs
+            let screenState = ScreenState.make world.GameTime None dispatcher ecs
             let screenState = Reflection.attachProperties ScreenState.copy screenState.Dispatcher screenState world
             let screenState = Reflection.readPropertiesToTarget ScreenState.copy screenDescriptor.ScreenProperties screenState
 

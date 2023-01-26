@@ -291,15 +291,15 @@ module WorldModule =
         static member getClockTime world =
             World.getAmbientStateBy AmbientState.getClockTime world
 
-        /// Get the world's polymorphic delta time.
+        /// Get the world's game delta time.
         [<FunctionBinding>]
-        static member getPOlyDelta world =
-            World.getAmbientStateBy AmbientState.getPolyDelta world
+        static member getGameDelta world =
+            World.getAmbientStateBy AmbientState.getGameDelta world
 
-        /// Get the world's polymorphic time.
+        /// Get the world's game time.
         [<FunctionBinding>]
-        static member getPolyTime world =
-            World.getAmbientStateBy AmbientState.getPolyTime world
+        static member getGameTime world =
+            World.getAmbientStateBy AmbientState.getGameTime world
 
         /// Shelve the ambient state.
         static member internal shelveAmbientState world =

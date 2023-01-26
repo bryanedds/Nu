@@ -22,7 +22,7 @@ type [<StructuralEquality; NoComparison; Struct>] TileDescriptor =
 /// Describes a Tiled tile animation.
 type [<StructuralEquality; NoComparison; Struct>] TileAnimationDescriptor =
     { TileAnimationRun : int
-      TileAnimationDelay : PolyTime }
+      TileAnimationDelay : GameTime }
 
 /// Describes a Tiled tile map.
 type [<NoComparison>] TileMapDescriptor =
@@ -77,9 +77,9 @@ type [<StructuralEquality; NoComparison; Struct>] TransitionType =
 
 /// The state of a screen's transition.
 type [<StructuralEquality; NoComparison>] TransitionState =
-    | IncomingState of PolyTime
-    | OutgoingState of PolyTime
-    | IdlingState of PolyTime
+    | IncomingState of GameTime
+    | OutgoingState of GameTime
+    | IdlingState of GameTime
     member this.TransitionTime =
         match this with
         | IncomingState time -> time
@@ -90,13 +90,13 @@ type [<StructuralEquality; NoComparison>] TransitionState =
 /// TODO: figure out if this really needs to be CLIMutable.
 type [<StructuralEquality; NoComparison; CLIMutable>] Transition =
     { TransitionType : TransitionType
-      TransitionLifeTime : PolyTime
+      TransitionLifeTime : GameTime
       DissolveImageOpt : Image AssetTag option
       SongOpt : SongDescriptor option }
 
     /// Make a screen transition.
     static member make transitionType =
-        let lifeTime = PolyTime.zero
+        let lifeTime = GameTime.zero
         { TransitionType = transitionType
           TransitionLifeTime = lifeTime
           DissolveImageOpt = None
@@ -104,14 +104,14 @@ type [<StructuralEquality; NoComparison; CLIMutable>] Transition =
 
 /// Describes the behavior of the screen dissolving algorithm.
 type [<NoComparison>] DissolveDescriptor =
-    { IncomingTime : PolyTime
-      OutgoingTime : PolyTime
+    { IncomingTime : GameTime
+      OutgoingTime : GameTime
       DissolveImage : Image AssetTag }
 
 /// Describes the behavior of the screen slide algorithm.
 type [<NoComparison>] SlideDescriptor =
     { DissolveDescriptor : DissolveDescriptor
-      IdlingTime : PolyTime
+      IdlingTime : GameTime
       SlideImageOpt : Image AssetTag option }
 
 /// Describes the shape of a desired overlay.
@@ -123,7 +123,7 @@ type [<NoComparison>] OverlayNameDescriptor =
 
 /// A tasklet to be completed at the scheduled update time.
 type [<ReferenceEquality; NoComparison>] 'w Tasklet =
-    { ScheduledTime : PolyTime
+    { ScheduledTime : GameTime
       ScheduledOp : 'w -> 'w }
 
 /// Specifies that a module contains functions that need to be considered for binding generation.
@@ -272,13 +272,13 @@ module AmbientState =
         single state.TickTime / single Stopwatch.Frequency
 
     /// Get the polymorphic engine time delta.
-    let getPolyDelta state =
+    let getGameDelta state =
         match Constants.Engine.DesiredFrameRate with
         | StaticFrameRate _ -> UpdateTime (if state.Advancing then 1L else 0L)
         | DynamicFrameRate _ -> ClockTime (getClockDelta state)
 
     /// Get the polymorphic engine time.
-    let getPolyTime state =
+    let getGameTime state =
         match Constants.Engine.DesiredFrameRate with
         | StaticFrameRate _ -> UpdateTime (getUpdateTime state)
         | DynamicFrameRate _ -> ClockTime (getClockTime state)

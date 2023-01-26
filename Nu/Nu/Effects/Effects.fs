@@ -53,59 +53,59 @@ module Effects =
           Centered : bool }
 
     type KeyFrame =
-        abstract KeyFrameLength : PolyTime
+        abstract KeyFrameLength : GameTime
 
     type [<NoComparison>] LogicKeyFrame =
         { LogicValue : bool
-          LogicLength : PolyTime }
+          LogicLength : GameTime }
         interface KeyFrame with
             member this.KeyFrameLength = this.LogicLength
 
     type [<NoComparison>] TweenKeyFrame =
         { TweenValue : single
-          TweenLength : PolyTime }
+          TweenLength : GameTime }
         interface KeyFrame with
             member this.KeyFrameLength = this.TweenLength
 
     type [<NoComparison>] Tween2KeyFrame =
         { TweenValue : Vector2
-          TweenLength : PolyTime }
+          TweenLength : GameTime }
         interface KeyFrame with
             member this.KeyFrameLength = this.TweenLength
 
     type [<NoComparison>] Tween3KeyFrame =
         { TweenValue : Vector3
-          TweenLength : PolyTime }
+          TweenLength : GameTime }
         interface KeyFrame with
             member this.KeyFrameLength = this.TweenLength
 
     type [<NoComparison>] Tween4KeyFrame =
         { TweenValue : Vector4
-          TweenLength : PolyTime }
+          TweenLength : GameTime }
         interface KeyFrame with
             member this.KeyFrameLength = this.TweenLength
 
     type [<NoComparison>] TweenBox2KeyFrame =
         { TweenValue : Box2
-          TweenLength : PolyTime }
+          TweenLength : GameTime }
         interface KeyFrame with
             member this.KeyFrameLength = this.TweenLength
 
     type [<NoComparison>] TweenCKeyFrame =
         { TweenValue : Color
-          TweenLength : PolyTime }
+          TweenLength : GameTime }
         interface KeyFrame with
             member this.KeyFrameLength = this.TweenLength
 
     type [<NoComparison>] TweenIKeyFrame =
         { TweenValue : int
-          TweenLength : PolyTime }
+          TweenLength : GameTime }
         interface KeyFrame with
             member this.KeyFrameLength = this.TweenLength
 
     type [<NoComparison>] Tween2IKeyFrame =
         { TweenValue : Vector2i
-          TweenLength : PolyTime }
+          TweenLength : GameTime }
         interface KeyFrame with
             member this.KeyFrameLength = this.TweenLength
             
@@ -164,15 +164,15 @@ module Effects =
     and [<NoComparison>] Content =
         | Nil // first to make default value when missing
         | StaticSprite of Resource * Aspect array * Content
-        | AnimatedSprite of Resource * Vector2i * int * int * PolyTime * Playback * Aspect array * Content
+        | AnimatedSprite of Resource * Vector2i * int * int * GameTime * Playback * Aspect array * Content
         | TextSprite of Resource * string * Aspect array * Content
         | SoundEffect of Resource * Aspect array * Content
         | Mount of Shift * Aspect array * Content
         | Repeat of Shift * Repetition * Aspect array * Content
         | Emit of Shift * Rate * Aspect array * Aspect array * Content
         | Tag of string * Aspect array * Content
-        | Delay of PolyTime * Content
-        | Segment of PolyTime * PolyTime * Content
+        | Delay of GameTime * Content
+        | Segment of GameTime * GameTime * Content
         | Expand of string * Argument array
         | Contents of Shift * Content array
 
@@ -206,7 +206,7 @@ module Effects =
      Constants.PrettyPrinter.CompositionalThresholdMax)>]
 type [<NoComparison>] Effect =
     { EffectName : string
-      LifeTimeOpt : PolyTime option
+      LifeTimeOpt : GameTime option
       Definitions : Effects.Definitions
       Content : Effects.Content }
 
@@ -232,8 +232,8 @@ module EffectSystem =
             { Absolute : bool
               Views : View List
               ProgressOffset : single
-              EffectTime : PolyTime
-              EffectDelta : PolyTime
+              EffectTime : GameTime
+              EffectDelta : GameTime
               EffectEnv : Definitions
               Chaos : Random }
 
@@ -255,19 +255,19 @@ module EffectSystem =
                     | _ -> selectKeyFrames2 (localTime - head.KeyFrameLength) playback (Array.cons next tail)
                 else (localTime, head, next)
         | Loop ->
-            let totalTime = Array.fold (fun totalTime (keyFrame : 'kf) -> totalTime + keyFrame.KeyFrameLength) PolyTime.zero keyFrames 
-            if totalTime <> PolyTime.zero then
+            let totalTime = Array.fold (fun totalTime (keyFrame : 'kf) -> totalTime + keyFrame.KeyFrameLength) GameTime.zero keyFrames 
+            if totalTime <> GameTime.zero then
                 let moduloTime = localTime % totalTime
                 selectKeyFrames2 moduloTime Once keyFrames
-            else (PolyTime.zero, Array.head keyFrames, Array.head keyFrames)
+            else (GameTime.zero, Array.head keyFrames, Array.head keyFrames)
         | Bounce ->
-            let totalTime = Array.fold (fun totalTime (keyFrame : 'kf) -> totalTime + keyFrame.KeyFrameLength) PolyTime.zero keyFrames
-            if totalTime <> PolyTime.zero then
+            let totalTime = Array.fold (fun totalTime (keyFrame : 'kf) -> totalTime + keyFrame.KeyFrameLength) GameTime.zero keyFrames
+            if totalTime <> GameTime.zero then
                 let moduloTime = localTime % totalTime
                 let bouncing = int (localTime / totalTime) % 2 = 1
                 let bounceTime = if bouncing then totalTime - moduloTime else moduloTime
                 selectKeyFrames2 bounceTime Once keyFrames
-            else (PolyTime.zero, Array.head keyFrames, Array.head keyFrames)
+            else (GameTime.zero, Array.head keyFrames, Array.head keyFrames)
 
     let private selectKeyFrames<'kf when 'kf :> KeyFrame> localTime playback (keyFrames : 'kf array) =
         keyFrames |>
@@ -387,7 +387,7 @@ module EffectSystem =
         evalContent content slice history effectSystem
 
     and private evalProgress keyFrameTime keyFrameLength effectSystem =
-        let progress = if PolyTime.isZero keyFrameLength then 1.0f else single keyFrameTime / single keyFrameLength
+        let progress = if GameTime.isZero keyFrameLength then 1.0f else single keyFrameTime / single keyFrameLength
         let progress = progress + effectSystem.ProgressOffset
         if progress > 1.0f then progress - 1.0f else progress
 
@@ -578,7 +578,7 @@ module EffectSystem =
         let slice = evalAspects aspects slice effectSystem
 
         // ensure valid data
-        if PolyTime.notZero delay && celRun <> 0 then
+        if GameTime.notZero delay && celRun <> 0 then
 
             // compute cel
             let cel = int (effectSystem.EffectTime / delay)
@@ -703,7 +703,7 @@ module EffectSystem =
             Seq.foldi
                 (fun i effectSystem (slice : Slice) ->
                     let oldEffectTime = effectSystem.EffectTime
-                    let timePassed = effectSystem.EffectDelta * PolyTime.make (int64 i) (single i)
+                    let timePassed = effectSystem.EffectDelta * GameTime.make (int64 i) (single i)
                     let slice = { slice with Elevation = slice.Elevation + shift }
                     let slice = evalAspects emitterAspects slice { effectSystem with EffectTime = effectSystem.EffectTime - timePassed }
                     let emitCountLastFrame = single (effectSystem.EffectTime - timePassed - effectSystem.EffectDelta) * rate
@@ -758,7 +758,7 @@ module EffectSystem =
         | Tag (name, aspects, content) ->
             evalTag name aspects content slice history effectSystem
         | Delay (delay, content) ->
-            evalSegment delay PolyTime.MaxValue content slice history effectSystem
+            evalSegment delay GameTime.MaxValue content slice history effectSystem
         | Segment (start, stop, content) ->
             evalSegment start stop content slice history effectSystem
         | Contents (Shift shift, contents) ->
@@ -780,7 +780,7 @@ module EffectSystem =
     let eval effect slice history effectSystem =
         let alive =
             match effect.LifeTimeOpt with
-            | Some lifetime -> lifetime <= PolyTime.zero || effectSystem.EffectTime <= lifetime
+            | Some lifetime -> lifetime <= GameTime.zero || effectSystem.EffectTime <= lifetime
             | None -> true
         if alive then
             let effectSystem = { effectSystem with EffectEnv = Map.concat effectSystem.EffectEnv effect.Definitions }

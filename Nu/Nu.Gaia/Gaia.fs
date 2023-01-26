@@ -1978,7 +1978,7 @@ module Gaia =
                 else world
 
             // proceed directly to idle state
-            let world = World.selectScreen (IdlingState world.PolyTime) screen world
+            let world = World.selectScreen (IdlingState world.GameTime) screen world
             Right (screen, world)
 
         // error

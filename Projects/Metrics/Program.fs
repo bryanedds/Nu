@@ -148,7 +148,7 @@ type MyGameDispatcher () =
                 world)
                 world positions
 #endif
-        let world = World.selectScreen (IdlingState world.PolyTime) screen world
+        let world = World.selectScreen (IdlingState world.GameTime) screen world
         world
 #else
 
