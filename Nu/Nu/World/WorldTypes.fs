@@ -957,19 +957,19 @@ module WorldTypes =
         override this.GetHashCode () =
             Address.hash this.ScreenAddress
 
-        interface Simulant with
-            member this.SimulantAddress = simulantAddress
-            end
-
-        interface Screen IComparable with
-            member this.CompareTo that =
-                Address.compare this.ScreenAddress that.ScreenAddress
-
         interface IComparable with
             member this.CompareTo that =
                 match that with
                 | :? Screen as that -> (this :> Screen IComparable).CompareTo that
                 | _ -> failwith "Invalid Screen comparison (comparee not of type Screen)."
+
+        interface Screen IComparable with
+            member this.CompareTo that =
+                Address.compare this.ScreenAddress that.ScreenAddress
+
+        interface Simulant with
+            member this.SimulantAddress = simulantAddress
+            end
 
     /// Forms a logical group of entities.
     and Group (groupAddress) =
@@ -1217,17 +1217,13 @@ module WorldTypes =
         member this.ClockTime =
             AmbientState.getClockTime this.AmbientState
 
+        /// Get the polymorphic engine time delta.
+        member this.PolyDelta =
+            AmbientState.getPolyDelta this.AmbientState
+
         /// Get the polymorphic engine time.
         member this.PolyTime =
-            match Constants.Engine.DesiredFrameRate with
-            | StaticFrameRate _ -> UpdateTime this.UpdateTime
-            | DynamicFrameRate -> ClockTime this.ClockTime
-
-        /// Get the polymorphic engine step.
-        member this.PolyStep =
-            match Constants.Engine.DesiredFrameRate with
-            | StaticFrameRate _ -> UpdateTime (if this.Advancing then 1L else 0L)
-            | DynamicFrameRate -> ClockTime this.ClockDelta
+            AmbientState.getPolyTime this.AmbientState
 
         member
 #if !DEBUG

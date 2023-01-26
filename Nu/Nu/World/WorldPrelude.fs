@@ -95,10 +95,7 @@ type [<StructuralEquality; NoComparison; CLIMutable>] Transition =
 
     /// Make a screen transition.
     static member make transitionType =
-        let lifeTime =
-            match Constants.Engine.DesiredFrameRate with
-            | StaticFrameRate _ -> UpdateTime 0L
-            | DynamicFrameRate -> ClockTime 0.0f
+        let lifeTime = PolyTime.zero
         { TransitionType = transitionType
           TransitionLifeTime = lifeTime
           DissolveImageOpt = None
@@ -262,13 +259,25 @@ module AmbientState =
     let getTickTime state =
         state.TickTime
 
-    /// Get the clock delta as a floating point number.
+    /// Get the clock delta as a number of seconds.
     let getClockDelta state =
         single state.TickDelta / single TimeSpan.TicksPerSecond
 
-    /// Get the clock time.
+    /// Get the clock time as a number of seconds.
     let getClockTime state =
         single state.TickTime / single TimeSpan.TicksPerSecond
+
+    /// Get the polymorphic engine time delta.
+    let getPolyDelta state =
+        match Constants.Engine.DesiredFrameRate with
+        | StaticFrameRate _ -> UpdateTime (if state.Advancing then 1L else 0L)
+        | DynamicFrameRate _ -> ClockTime (getClockDelta state)
+
+    /// Get the polymorphic engine time.
+    let getPolyTime state =
+        match Constants.Engine.DesiredFrameRate with
+        | StaticFrameRate _ -> UpdateTime (getUpdateTime state)
+        | DynamicFrameRate _ -> ClockTime (getClockTime state)
 
     /// Update the update and clock times.
     let updateTime state =
@@ -282,7 +291,7 @@ module AmbientState =
             TickTime = state.TickTime + tickDelta
             TickCountPrevious = tickCount }
 
-    /// Place the engine into a state such that the app will exit at the end of the current update.
+    /// Place the engine into a state such that the app will exit at the end of the current frame.
     let exit state =
         { state with Liveness = Dead }
 

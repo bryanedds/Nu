@@ -995,7 +995,7 @@ module WorldModule2 =
             let physicsEngine = World.getPhysicsEngine2d world
             let (physicsMessages, physicsEngine) = physicsEngine.PopMessages ()
             let world = World.setPhysicsEngine2d physicsEngine world
-            let integrationMessages = physicsEngine.Integrate world.PolyStep physicsMessages
+            let integrationMessages = physicsEngine.Integrate world.PolyDelta physicsMessages
             let world = Seq.fold (flip World.processIntegrationMessage) world integrationMessages
             world
 
@@ -1082,8 +1082,12 @@ module WorldModule2 =
 
                                                             // avoid updating faster than desired FPS
                                                             if FrameTimer.IsRunning then
-                                                                let frameTimeTolerance = Constants.Engine.DesireFrameTimeTolerance
-                                                                let frameTimeMinimum = 1.0 / Constants.Engine.DesiredFrameRate.AsDouble - frameTimeTolerance
+                                                                let frameTimeTolerance = Constants.Engine.DesiredFrameTimeTolerance
+                                                                let frameTimeMinimum =
+                                                                    match Constants.Engine.DesiredFrameRate with
+                                                                    | StaticFrameRate frameRate -> 1.0 / double frameRate - frameTimeTolerance
+                                                                    | DynamicFrameRate (Some frameRate) -> 1.0 / double frameRate - frameTimeTolerance
+                                                                    | DynamicFrameRate None -> Constants.Engine.DesiredFrameTimeMinimum
                                                                 while let e = FrameTimer.Elapsed in e.TotalSeconds < frameTimeMinimum do
                                                                     Thread.Yield () |> ignore<bool>
                                                             FrameTimer.Restart()

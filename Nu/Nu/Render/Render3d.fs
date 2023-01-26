@@ -58,7 +58,7 @@ and [<CustomEquality; CustomComparison>] RenderPassMessage3d =
         member this.CompareTo that =
             match that with
             | :? RenderPassMessage3d as that -> this.RenderPassOrder.CompareTo that.RenderPassOrder
-            | _ -> -1
+            | _ -> failwithumf ()
     override this.Equals (that : obj) =
         match that with
         | :? RenderPassMessage3d as that -> this.RenderPassOrder = that.RenderPassOrder

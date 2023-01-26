@@ -53,59 +53,59 @@ module Effects =
           Centered : bool }
 
     type KeyFrame =
-        abstract KeyFrameLength : int64
+        abstract KeyFrameLength : PolyTime
 
     type [<NoComparison>] LogicKeyFrame =
         { LogicValue : bool
-          LogicLength : int64 }
+          LogicLength : PolyTime }
         interface KeyFrame with
             member this.KeyFrameLength = this.LogicLength
 
     type [<NoComparison>] TweenKeyFrame =
         { TweenValue : single
-          TweenLength : int64 }
+          TweenLength : PolyTime }
         interface KeyFrame with
             member this.KeyFrameLength = this.TweenLength
 
     type [<NoComparison>] Tween2KeyFrame =
         { TweenValue : Vector2
-          TweenLength : int64 }
+          TweenLength : PolyTime }
         interface KeyFrame with
             member this.KeyFrameLength = this.TweenLength
 
     type [<NoComparison>] Tween3KeyFrame =
         { TweenValue : Vector3
-          TweenLength : int64 }
+          TweenLength : PolyTime }
         interface KeyFrame with
             member this.KeyFrameLength = this.TweenLength
 
     type [<NoComparison>] Tween4KeyFrame =
         { TweenValue : Vector4
-          TweenLength : int64 }
+          TweenLength : PolyTime }
         interface KeyFrame with
             member this.KeyFrameLength = this.TweenLength
 
     type [<NoComparison>] TweenBox2KeyFrame =
         { TweenValue : Box2
-          TweenLength : int64 }
+          TweenLength : PolyTime }
         interface KeyFrame with
             member this.KeyFrameLength = this.TweenLength
 
     type [<NoComparison>] TweenCKeyFrame =
         { TweenValue : Color
-          TweenLength : int64 }
+          TweenLength : PolyTime }
         interface KeyFrame with
             member this.KeyFrameLength = this.TweenLength
 
     type [<NoComparison>] TweenIKeyFrame =
         { TweenValue : int
-          TweenLength : int64 }
+          TweenLength : PolyTime }
         interface KeyFrame with
             member this.KeyFrameLength = this.TweenLength
 
     type [<NoComparison>] Tween2IKeyFrame =
         { TweenValue : Vector2i
-          TweenLength : int64 }
+          TweenLength : PolyTime }
         interface KeyFrame with
             member this.KeyFrameLength = this.TweenLength
             
@@ -164,15 +164,15 @@ module Effects =
     and [<NoComparison>] Content =
         | Nil // first to make default value when missing
         | StaticSprite of Resource * Aspect array * Content
-        | AnimatedSprite of Resource * Vector2i * int * int * int64 * Playback * Aspect array * Content
+        | AnimatedSprite of Resource * Vector2i * int * int * PolyTime * Playback * Aspect array * Content
         | TextSprite of Resource * string * Aspect array * Content
         | SoundEffect of Resource * Aspect array * Content
         | Mount of Shift * Aspect array * Content
         | Repeat of Shift * Repetition * Aspect array * Content
         | Emit of Shift * Rate * Aspect array * Aspect array * Content
         | Tag of string * Aspect array * Content
-        | Delay of int64 * Content
-        | Segment of int64 * int64 * Content
+        | Delay of PolyTime * Content
+        | Segment of PolyTime * PolyTime * Content
         | Expand of string * Argument array
         | Contents of Shift * Content array
 
@@ -206,7 +206,7 @@ module Effects =
      Constants.PrettyPrinter.CompositionalThresholdMax)>]
 type [<NoComparison>] Effect =
     { EffectName : string
-      LifeTimeOpt : int64 option
+      LifeTimeOpt : PolyTime option
       Definitions : Effects.Definitions
       Content : Effects.Content }
 
@@ -232,7 +232,8 @@ module EffectSystem =
             { Absolute : bool
               Views : View List
               ProgressOffset : single
-              EffectTime : int64
+              EffectTime : PolyTime
+              EffectDelta : PolyTime
               EffectEnv : Definitions
               Chaos : Random }
 
@@ -254,19 +255,19 @@ module EffectSystem =
                     | _ -> selectKeyFrames2 (localTime - head.KeyFrameLength) playback (Array.cons next tail)
                 else (localTime, head, next)
         | Loop ->
-            let totalTime = Array.fold (fun totalTime (keyFrame : 'kf) -> totalTime + keyFrame.KeyFrameLength) 0L keyFrames 
-            if totalTime <> 0L then
+            let totalTime = Array.fold (fun totalTime (keyFrame : 'kf) -> totalTime + keyFrame.KeyFrameLength) PolyTime.zero keyFrames 
+            if totalTime <> PolyTime.zero then
                 let moduloTime = localTime % totalTime
                 selectKeyFrames2 moduloTime Once keyFrames
-            else (0L, Array.head keyFrames, Array.head keyFrames)
+            else (PolyTime.zero, Array.head keyFrames, Array.head keyFrames)
         | Bounce ->
-            let totalTime = Array.fold (fun totalTime (keyFrame : 'kf) -> totalTime + keyFrame.KeyFrameLength) 0L keyFrames
-            if totalTime <> 0L then
+            let totalTime = Array.fold (fun totalTime (keyFrame : 'kf) -> totalTime + keyFrame.KeyFrameLength) PolyTime.zero keyFrames
+            if totalTime <> PolyTime.zero then
                 let moduloTime = localTime % totalTime
-                let bouncing = localTime / totalTime % 2L = 1L
+                let bouncing = PolyTime.int64 (localTime / totalTime) % 2L = 1L
                 let bounceTime = if bouncing then totalTime - moduloTime else moduloTime
                 selectKeyFrames2 bounceTime Once keyFrames
-            else (0L, Array.head keyFrames, Array.head keyFrames)
+            else (PolyTime.zero, Array.head keyFrames, Array.head keyFrames)
 
     let private selectKeyFrames<'kf when 'kf :> KeyFrame> localTime playback (keyFrames : 'kf array) =
         keyFrames |>
@@ -334,7 +335,7 @@ module EffectSystem =
     let private evalInset (celSize : Vector2i) celRun celCount delay playback effectSystem =
         // TODO: make sure Bounce playback works as intended!
         // TODO: stop assuming that animation sheets are fully and evenly populated when flipping!
-        let celUnmodulated = int (effectSystem.EffectTime / delay)
+        let celUnmodulated = PolyTime.int (effectSystem.EffectTime / delay)
         let cel = celUnmodulated % celCount
         let celI = cel % celRun
         let celJ = cel / celRun
@@ -386,7 +387,7 @@ module EffectSystem =
         evalContent content slice history effectSystem
 
     and private evalProgress keyFrameTime keyFrameLength effectSystem =
-        let progress = if keyFrameLength = 0L then 1.0f else single keyFrameTime / single keyFrameLength
+        let progress = if PolyTime.isZero keyFrameLength then 1.0f else PolyTime.single keyFrameTime / PolyTime.single keyFrameLength
         let progress = progress + effectSystem.ProgressOffset
         if progress > 1.0f then progress - 1.0f else progress
 
@@ -577,10 +578,10 @@ module EffectSystem =
         let slice = evalAspects aspects slice effectSystem
 
         // ensure valid data
-        if delay <> 0L && celRun <> 0 then
+        if PolyTime.notZero delay && celRun <> 0 then
 
             // compute cel
-            let cel = int (effectSystem.EffectTime / delay)
+            let cel = PolyTime.int (effectSystem.EffectTime / delay)
 
             // eval inset
             let inset = evalInset celSize celRun celCount delay playback effectSystem
@@ -702,11 +703,11 @@ module EffectSystem =
             Seq.foldi
                 (fun i effectSystem (slice : Slice) ->
                     let oldEffectTime = effectSystem.EffectTime
-                    let timePassed = int64 i
+                    let timePassed = effectSystem.EffectDelta * PolyTime.make (int64 i) (single i)
                     let slice = { slice with Elevation = slice.Elevation + shift }
                     let slice = evalAspects emitterAspects slice { effectSystem with EffectTime = effectSystem.EffectTime - timePassed }
-                    let emitCountLastFrame = single (effectSystem.EffectTime - timePassed - 1L) * rate
-                    let emitCountThisFrame = single (effectSystem.EffectTime - timePassed) * rate
+                    let emitCountLastFrame = PolyTime.single (effectSystem.EffectTime - timePassed - effectSystem.EffectDelta) * rate
+                    let emitCountThisFrame = PolyTime.single (effectSystem.EffectTime - timePassed) * rate
                     let emitCount = int emitCountThisFrame - int emitCountLastFrame
                     let effectSystem = { effectSystem with EffectTime = timePassed }
                     let effectSystem =
@@ -757,7 +758,7 @@ module EffectSystem =
         | Tag (name, aspects, content) ->
             evalTag name aspects content slice history effectSystem
         | Delay (delay, content) ->
-            evalSegment delay Int64.MaxValue content slice history effectSystem
+            evalSegment delay PolyTime.MaxValue content slice history effectSystem
         | Segment (start, stop, content) ->
             evalSegment start stop content slice history effectSystem
         | Contents (Shift shift, contents) ->
@@ -779,7 +780,7 @@ module EffectSystem =
     let eval effect slice history effectSystem =
         let alive =
             match effect.LifeTimeOpt with
-            | Some lifetime -> lifetime <= 0L || effectSystem.EffectTime <= lifetime
+            | Some lifetime -> lifetime <= PolyTime.zero || effectSystem.EffectTime <= lifetime
             | None -> true
         if alive then
             let effectSystem = { effectSystem with EffectEnv = Map.concat effectSystem.EffectEnv effect.Definitions }
@@ -800,11 +801,12 @@ module EffectSystem =
               Content = Contents (Shift 0.0f, effects |> List.map (fun effect -> effect.Content) |> Array.ofList) }
         effectCombined
 
-    let make absolute effectTime globalEnv =
+    let make absolute effectTime effectDelta globalEnv =
         { Absolute = absolute
           Views = List<View> ()
           ProgressOffset = 0.0f
           EffectTime = effectTime
+          EffectDelta = effectDelta
           EffectEnv = globalEnv
           Chaos = System.Random () }
 

@@ -281,17 +281,25 @@ module WorldModule =
         static member getUpdateTime world =
             World.getAmbientStateBy AmbientState.getUpdateTime world
 
+        /// Get the world's clock delta time.
+        [<FunctionBinding>]
+        static member getClockDelta world =
+            World.getAmbientStateBy AmbientState.getClockDelta world
+
         /// Get the world's clock time.
-        /// No script function binding due to lack of a DateTimeOffset script conversion.
-        /// TODO: P1: implement DateTimeOffset symbolic conversion in Prime.
         [<FunctionBinding>]
         static member getClockTime world =
             World.getAmbientStateBy AmbientState.getClockTime world
 
-        /// Get the world's clock delta time in normalized floating point units.
+        /// Get the world's polymorphic delta time.
         [<FunctionBinding>]
-        static member getClockDelta world =
-            World.getAmbientStateBy AmbientState.getClockDelta world
+        static member getPOlyDelta world =
+            World.getAmbientStateBy AmbientState.getPolyDelta world
+
+        /// Get the world's polymorphic time.
+        [<FunctionBinding>]
+        static member getPolyTime world =
+            World.getAmbientStateBy AmbientState.getPolyTime world
 
         /// Place the engine into a state such that the app will exit at the end of the current frame.
         [<FunctionBinding>]
