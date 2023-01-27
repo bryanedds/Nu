@@ -69,7 +69,6 @@
     <Compile Include="Core\Assimp.fs" />
     <Compile Include="Core\Assets.fs" />
     <Compile Include="Core\Constants.fs" />
-    <Compile Include="Core\GameTime.fs" />
     <Compile Include="Collections\ListTree.fs" />
     <Compile Include="Collections\KeyedArray.fs" />
     <Compile Include="Collections\SegmentedArray.fs" />

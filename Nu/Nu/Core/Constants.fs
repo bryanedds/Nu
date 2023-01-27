@@ -55,6 +55,186 @@ module Engine =
     let [<Uniform>] mutable EventTracing = match ConfigurationManager.AppSettings.["EventTracing"] with null -> false | tracing -> scvalue<bool> tracing
     let [<Uniform>] mutable EventFilter = match ConfigurationManager.AppSettings.["EventFilter"] with null -> EventFilter.Empty | filter -> scvalue<EventFilter.Filter> filter
 
+namespace Nu
+open System
+open System.ComponentModel
+open Prime
+open Nu
+
+/// Type converter for GameTime.
+type GameTimeConverter () =
+    inherit TypeConverter ()
+
+    override this.CanConvertTo (_, destType) =
+        destType = typeof<Symbol> ||
+        destType = typeof<GameTime>
+
+    override this.ConvertTo (_, _, source, destType) =
+        if destType = typeof<Symbol> then
+            let gameTime = source :?> GameTime
+            match gameTime with
+            | UpdateTime time -> Number (string time, ValueNone) :> obj
+            | ClockTime time -> Number (string time, ValueNone) :> obj
+        elif destType = typeof<GameTime> then source
+        else failconv "Invalid GameTime conversion to source." None
+
+    override this.CanConvertFrom (_, sourceType) =
+        sourceType = typeof<Symbol> ||
+        sourceType = typeof<GameTime>
+
+    override this.ConvertFrom (_, _, source) =
+        match source with
+        | :? Symbol as symbol ->
+            match symbol with
+            | Number (time, _) ->
+                match Constants.Engine.DesiredFrameRate with
+                | StaticFrameRate _ -> UpdateTime (Int64.Parse time) :> obj
+                | DynamicFrameRate _ -> ClockTime (Single.Parse time) :> obj
+            | _ -> failconv "Invalid GameTimeConverter conversion from source." (Some symbol)
+        | :? GameTime -> source
+        | _ -> failconv "Invalid GameTimeConverter conversion from source." None
+
+/// Provide a variable representation of time based on whether the engine is configured to use a static or a dynamic
+/// frame rate.
+and [<Struct; CustomEquality; CustomComparison; TypeConverter (typeof<GameTimeConverter>)>] GameTime =
+    | UpdateTime of UpdateTime : int64 // in updates
+    | ClockTime of ClockTime : single // in seconds
+
+    static member inline unary op op2 time =
+        match time with
+        | UpdateTime time -> op time
+        | ClockTime time -> op2 time
+
+    static member inline binary op op2 left right =
+        match (left, right) with
+        | (UpdateTime leftTime, UpdateTime rightTime) -> op leftTime rightTime
+        | (ClockTime leftTime, ClockTime rightTime) -> op2 leftTime rightTime
+        | (_, _) -> failwith "Cannot apply operation to mixed GameTimes."
+
+    static member inline ap op op2 left right =
+        match (left, right) with
+        | (UpdateTime leftTime, UpdateTime rightTime) -> UpdateTime (op leftTime rightTime)
+        | (ClockTime leftTime, ClockTime rightTime) -> ClockTime (op2 leftTime rightTime)
+        | (_, _) -> failwith "Cannot apply operation to mixed GameTimes."
+
+    static member make updateTime clockTime =
+        match Constants.Engine.DesiredFrameRate with
+        | StaticFrameRate _ -> UpdateTime updateTime
+        | DynamicFrameRate _ -> ClockTime clockTime
+
+    static member ofUpdates updates =
+        match Constants.Engine.DesiredFrameRate with
+        | StaticFrameRate _ -> UpdateTime updates
+        | DynamicFrameRate (Some frameRate) -> ClockTime (1.0f / single frameRate * single updates)
+        | DynamicFrameRate None -> failwith "Cannot construct GameTime from updates with uncapped dynamic frame rate."
+
+    static member ofSeconds seconds =
+        match Constants.Engine.DesiredFrameRate with
+        | StaticFrameRate frameRate -> UpdateTime (int64 (single frameRate * seconds))
+        | DynamicFrameRate _ -> ClockTime seconds
+
+    static member equals left right =
+        GameTime.binary (=) (=) left right
+
+    static member compare left right =
+        match (left, right) with
+        | (UpdateTime leftTime, UpdateTime rightTime) -> if leftTime < rightTime then -1 elif leftTime > rightTime then 1 else 0
+        | (ClockTime leftTime, ClockTime rightTime) -> if leftTime < rightTime then -1 elif leftTime > rightTime then 1 else 0
+        | (_, _) -> failwith "Cannot apply operation to mixed GameTim   es."
+
+    static member progress startTime currentTime lifeTime =
+        match (startTime, currentTime, lifeTime) with
+        | (UpdateTime startTime, UpdateTime currentTime, UpdateTime lifeTime) -> (single (currentTime - startTime)) / single lifeTime
+        | (ClockTime startTime, ClockTime currentTime, ClockTime lifeTime) -> (currentTime - startTime) / lifeTime
+        | (_, _, _) -> failwith "Cannot apply operation to mixed GameTimes."
+
+    static member (+) (left, right) = GameTime.ap (+) (+) left right
+    static member (-) (left, right) = GameTime.ap (-) (-) left right
+    static member (*) (left, right) = GameTime.ap (*) (*) left right
+    static member (/) (left, right) = GameTime.ap (/) (/) left right
+    static member (%) (left, right) = GameTime.ap (%) (%) left right
+    static member (+) (left, right) = GameTime.unary ((+) (int64 right) >> UpdateTime) (flip (+) (single right) >> ClockTime) left
+    static member (-) (left, right) = GameTime.unary ((-) (int64 right) >> UpdateTime) (flip (-) (single right) >> ClockTime) left
+    static member (*) (left, right) = GameTime.unary ((*) (int64 right) >> UpdateTime) (flip (*) (single right) >> ClockTime) left
+    static member (/) (left, right) = GameTime.unary ((/) (int64 right) >> UpdateTime) (flip (/) (single right) >> ClockTime) left
+    static member (%) (left, right) = GameTime.unary ((%) (int64 right) >> UpdateTime) (flip (%) (single right) >> ClockTime) left
+    static member (+) (left, right) = GameTime.unary ((+) (int64 left) >> UpdateTime) ((+) (single left) >> ClockTime) right
+    static member (-) (left, right) = GameTime.unary ((-) (int64 left) >> UpdateTime) ((-) (single left) >> ClockTime) right
+    static member (*) (left, right) = GameTime.unary ((*) (int64 left) >> UpdateTime) ((*) (single left) >> ClockTime) right
+    static member (/) (left, right) = GameTime.unary ((/) (int64 left) >> UpdateTime) ((/) (single left) >> ClockTime) right
+    static member (%) (left, right) = GameTime.unary ((%) (int64 left) >> UpdateTime) ((%) (single left) >> ClockTime) right
+    static member op_Implicit (i : int64) = UpdateTime i
+    static member op_Implicit (s : single) = ClockTime s
+    static member op_Explicit time = match time with UpdateTime time -> int time | ClockTime time -> int time
+    static member op_Explicit time = match time with UpdateTime time -> int64 time | ClockTime time -> int64 time
+    static member op_Explicit time = match time with UpdateTime time -> single time | ClockTime time -> single time
+    static member op_Explicit time = match time with UpdateTime time -> double time | ClockTime time -> double time
+    static member isZero time = GameTime.unary isZero isZero time
+    static member notZero time = GameTime.unary notZero notZero time
+    static member zero = GameTime.ofSeconds 0.0f
+    static member min (left : GameTime) right = if left <= right then left else right
+    static member max (left : GameTime) right = if left >= right then left else right
+    static member MinValue = GameTime.make Int64.MinValue Single.MinValue
+    static member MaxValue = GameTime.make Int64.MaxValue Single.MaxValue
+
+    member this.Seconds =
+        match (Constants.Engine.DesiredFrameRate, this) with
+        | (StaticFrameRate frameRate, UpdateTime time) -> 1.0f / single frameRate * single time
+        | (_, ClockTime time) -> time
+        | (_, _) -> failwith "Cannot apply operation to mixed GameTime."
+
+    override this.Equals that =
+        match that with
+        | :? GameTime as that -> GameTime.equals this that
+        | _ -> false
+
+    override this.GetHashCode () =
+        GameTime.unary hash hash this
+
+    interface GameTime IEquatable with
+        member this.Equals that =
+            GameTime.equals this that
+
+    interface GameTime IComparable with
+        member this.CompareTo that =
+            GameTime.compare this that
+
+    interface IComparable with
+        member this.CompareTo that =
+            match that with
+            | :? GameTime as that -> (this :> GameTime IComparable).CompareTo that
+            | _ -> failwithumf ()
+
+[<AutoOpen>]
+module GameTimeExtension =
+
+    type UInt32 with
+        member this.u = UpdateTime (int64 this)
+        member this.c = ClockTime (single this)
+
+    type Int32 with
+        member this.u = UpdateTime (int64 this)
+        member this.c = ClockTime (single this)
+
+    type Int64 with
+        member this.u = UpdateTime this
+        member this.c = ClockTime (single this)
+
+    type Single with
+        member this.u = UpdateTime (int64 this)
+        member this.c = ClockTime this
+
+    type Double with
+        member this.u = UpdateTime (int64 this)
+        member this.c = ClockTime (single this)
+
+namespace Nu.Constants
+open System
+open System.Configuration
+open System.Numerics
+open Prime
+open Nu
+
 [<RequireQualifiedAccess>]
 module Associations =
 
@@ -114,8 +294,12 @@ module Assimp =
     let [<Literal>] PostProcessSteps = Assimp.PostProcessSteps.Triangulate ||| Assimp.PostProcessSteps.GlobalScale
 
 [<RequireQualifiedAccess>]
-module AudioPlayer =
+module Audio =
 
+    let [<Literal>] SongVolumeDefault = 0.5f
+    let [<Literal>] SoundVolumeDefault = 1.0f
+    let [<Uniform>] FadeOutTimeDefault = GameTime.ofSeconds 0.5f
+    let [<Uniform>] SongResumptionMaximum = GameTime.ofSeconds 90.0f // HACK: prevents songs from starting over too often due to hack in SdlAudioPlayer.playSong.
     let [<Literal>] Frequency = 44100
     let [<Literal>] BufferSizeDefault = 1024
     let [<Literal>] FadeInSecondsMinimum = 0.1f // NOTE: Mix_PlayMusic seems to sometimes cause audio 'popping' when starting a song, so a minimum fade is used instead.
