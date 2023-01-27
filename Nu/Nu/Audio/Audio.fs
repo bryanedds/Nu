@@ -17,9 +17,9 @@ type Sound = private { __ : unit }
 
 /// Descrides a song.
 type [<NoComparison>] SongDescriptor =
-    { FadeInTime: single
-      FadeOutTime : single
-      StartTime : single
+    { FadeInTime: GameTime
+      FadeOutTime : GameTime
+      StartTime : GameTime
       Volume : single
       Song : Song AssetTag }
 
@@ -34,7 +34,7 @@ type [<NoComparison>] AudioMessage =
     | UnloadAudioPackageMessage of string
     | PlaySoundMessage of SoundDescriptor
     | PlaySongMessage of SongDescriptor
-    | FadeOutSongMessage of single
+    | FadeOutSongMessage of GameTime
     | StopSongMessage
     | ReloadAudioAssetsMessage
 
@@ -201,10 +201,10 @@ type [<ReferenceEquality; NoComparison>] SdlAudioPlayer =
                 //    else 0.0
                 SDL_mixer.Mix_HaltMusic () |> ignore // NOTE: have to stop current song in case it is still fading out, causing the next song not to play.
                 SDL_mixer.Mix_VolumeMusic (int (playSongMessage.Volume * audioPlayer.MasterAudioVolume * audioPlayer.MasterSongVolume * single SDL_mixer.MIX_MAX_VOLUME)) |> ignore
-                match SDL_mixer.Mix_FadeInMusicPos (oggAsset, -1, int (max Constants.Audio.FadeInTimeMinimum playSongMessage.FadeInTime * 1000.0f), double playSongMessage.StartTime) with
+                match SDL_mixer.Mix_FadeInMusicPos (oggAsset, -1, int (max Constants.AudioPlayer.FadeInSecondsMinimum playSongMessage.FadeInTime.Seconds * 1000.0f), double playSongMessage.StartTime) with
                 | -1 ->
                     // HACK: start time exceeded length of track, so starting over.
-                    SDL_mixer.Mix_FadeInMusicPos (oggAsset, -1, int (max Constants.Audio.FadeInTimeMinimum playSongMessage.FadeInTime * 1000.0f), 0.0) |> ignore
+                    SDL_mixer.Mix_FadeInMusicPos (oggAsset, -1, int (max Constants.AudioPlayer.FadeInSecondsMinimum playSongMessage.FadeInTime.Seconds * 1000.0f), 0.0) |> ignore
                 | _ -> ()
                 audioPlayer.CurrentSongOpt <- Some (playSongMessage, oggAsset)
         | None ->
@@ -241,11 +241,11 @@ type [<ReferenceEquality; NoComparison>] SdlAudioPlayer =
     static member private handlePlaySong playSongMessage audioPlayer =
         SdlAudioPlayer.playSong playSongMessage audioPlayer
     
-    static member private handleFadeOutSong fadeOutTime =
+    static member private handleFadeOutSong (fadeOutTime : GameTime) =
         if SDL_mixer.Mix_PlayingMusic () = 1 then
-            if  fadeOutTime <> 0.0f &&
+            if  fadeOutTime <> GameTime.zero &&
                 SDL_mixer.Mix_FadingMusic () <> SDL_mixer.Mix_Fading.MIX_FADING_OUT then
-                SDL_mixer.Mix_FadeOutMusic (int (fadeOutTime * 1000.0f)) |> ignore
+                SDL_mixer.Mix_FadeOutMusic (int (fadeOutTime.Seconds * 1000.0f)) |> ignore
             else
                 SDL_mixer.Mix_HaltMusic () |> ignore
     

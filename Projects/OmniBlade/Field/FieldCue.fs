@@ -10,8 +10,8 @@ open OmniBlade
 type FieldCueSignal =
     | TryBattle of BattleType * Advent Set
     | PlaySound of int64 * single * Sound AssetTag
-    | PlaySong of single * single * single * single * Song AssetTag
-    | FadeOutSong of single
+    | PlaySong of int64 * int64 * int64 * single * Song AssetTag
+    | FadeOutSong of int64
     interface Signal
 
 [<RequireQualifiedAccess>]

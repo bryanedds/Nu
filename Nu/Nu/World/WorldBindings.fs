@@ -479,17 +479,17 @@ module WorldBindings =
         let oldWorld = world
         try
             let fadeInTime =
-                match ScriptingSystem.tryExport typeof<Single> fadeInTime world with
-                | Some value -> value :?> Single
-                | None -> failwith "Invalid argument type for 'fadeInTime'; expecting a value convertable to Single."
+                match ScriptingSystem.tryExport typeof<GameTime> fadeInTime world with
+                | Some value -> value :?> GameTime
+                | None -> failwith "Invalid argument type for 'fadeInTime'; expecting a value convertable to GameTime."
             let fadeOutTime =
-                match ScriptingSystem.tryExport typeof<Single> fadeOutTime world with
-                | Some value -> value :?> Single
-                | None -> failwith "Invalid argument type for 'fadeOutTime'; expecting a value convertable to Single."
+                match ScriptingSystem.tryExport typeof<GameTime> fadeOutTime world with
+                | Some value -> value :?> GameTime
+                | None -> failwith "Invalid argument type for 'fadeOutTime'; expecting a value convertable to GameTime."
             let startTime =
-                match ScriptingSystem.tryExport typeof<Single> startTime world with
-                | Some value -> value :?> Single
-                | None -> failwith "Invalid argument type for 'startTime'; expecting a value convertable to Single."
+                match ScriptingSystem.tryExport typeof<GameTime> startTime world with
+                | Some value -> value :?> GameTime
+                | None -> failwith "Invalid argument type for 'startTime'; expecting a value convertable to GameTime."
             let volume =
                 match ScriptingSystem.tryExport typeof<Single> volume world with
                 | Some value -> value :?> Single
@@ -508,17 +508,17 @@ module WorldBindings =
         let oldWorld = world
         try
             let fadeInTime =
-                match ScriptingSystem.tryExport typeof<Single> fadeInTime world with
-                | Some value -> value :?> Single
-                | None -> failwith "Invalid argument type for 'fadeInTime'; expecting a value convertable to Single."
+                match ScriptingSystem.tryExport typeof<GameTime> fadeInTime world with
+                | Some value -> value :?> GameTime
+                | None -> failwith "Invalid argument type for 'fadeInTime'; expecting a value convertable to GameTime."
             let fadeOutTime =
-                match ScriptingSystem.tryExport typeof<Single> fadeOutTime world with
-                | Some value -> value :?> Single
-                | None -> failwith "Invalid argument type for 'fadeOutTime'; expecting a value convertable to Single."
+                match ScriptingSystem.tryExport typeof<GameTime> fadeOutTime world with
+                | Some value -> value :?> GameTime
+                | None -> failwith "Invalid argument type for 'fadeOutTime'; expecting a value convertable to GameTime."
             let startTime =
-                match ScriptingSystem.tryExport typeof<Single> startTime world with
-                | Some value -> value :?> Single
-                | None -> failwith "Invalid argument type for 'startTime'; expecting a value convertable to Single."
+                match ScriptingSystem.tryExport typeof<GameTime> startTime world with
+                | Some value -> value :?> GameTime
+                | None -> failwith "Invalid argument type for 'startTime'; expecting a value convertable to GameTime."
             let volume =
                 match ScriptingSystem.tryExport typeof<Single> volume world with
                 | Some value -> value :?> Single
@@ -579,9 +579,9 @@ module WorldBindings =
         let oldWorld = world
         try
             let fadeOutTime =
-                match ScriptingSystem.tryExport typeof<Single> fadeOutTime world with
-                | Some value -> value :?> Single
-                | None -> failwith "Invalid argument type for 'fadeOutTime'; expecting a value convertable to Single."
+                match ScriptingSystem.tryExport typeof<GameTime> fadeOutTime world with
+                | Some value -> value :?> GameTime
+                | None -> failwith "Invalid argument type for 'fadeOutTime'; expecting a value convertable to GameTime."
             let result = World.fadeOutSong fadeOutTime world
             struct (Scripting.Unit, result)
         with exn ->

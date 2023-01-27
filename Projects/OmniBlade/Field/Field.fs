@@ -57,7 +57,7 @@ module Field =
               FieldTransitionOpt_ : FieldTransition option
               DialogOpt_ : Dialog option
               BattleOpt_ : Battle option
-              FieldSongTimeOpt_ : single option
+              FieldSongTimeOpt_ : int64 option
               ViewBoundsAbsolute_ : Box2 }
 
         (* Local Properties *)

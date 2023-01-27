@@ -219,7 +219,7 @@ module AnimatedSpriteFacetModule =
             [define Entity.CelSize (Vector2 (12.0f, 12.0f))
              define Entity.CelRun 4
              define Entity.CelCount 16
-             define Entity.AnimationDelay (GameTime.make 4L (1.0f / 15.0f))
+             define Entity.AnimationDelay (GameTime.ofSeconds (1.0f / 15.0f))
              define Entity.AnimationSheet Assets.Default.Image6
              define Entity.Color Color.One
              define Entity.Blend Transparent

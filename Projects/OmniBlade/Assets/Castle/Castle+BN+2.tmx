@@ -68,9 +68,9 @@
   True
   [Sequence
    [ClearSpirits
-    [FadeOutSong 2000]
+    [FadeOutSong 120]
     [Wait 120]
-    [PlaySong 2000 0 0 0.5 [Castle CastleResolution]]
+    [PlaySong 120 0 0 0.5 [Castle CastleResolution]]
     [Wait 300]
     [Dialog &quot;One hundred years...&quot; False]
     [Dialog &quot;For one hundred years that demon crawled its way into this world through the open wound in my soul...&quot; False]
@@ -86,20 +86,20 @@
     [Wait 60]
     [Dialog &quot;You cannot answer cruelty with cruelty...&quot; False]
     [Wait 240]
-    [FadeOutSong 4000]
+    [FadeOutSong 240]
     [Dialog &quot;What is that sound?&quot; False]
     [Wait 90]
     [Face [CharacterTarget [Enemy Kyla]] Downward]
     [Wait 90]
     [Dialog &quot;I think I can feel the wind...&quot; False]
-    [PlaySong 1000 0 0 0.5 [Field ItsTimeToGo]]
+    [PlaySong 60 0 0 0.5 [Field ItsTimeToGo]]
     [Parallel
      [[Fade [SpriteTarget HeavenlyLight] 480 True] [Wait 557]]]
     [Parallel
      [[Move [CharacterTarget [Enemy Kyla]] [0 384 0] Mosey]
       [Sequence [[Wait 120] [Dialog &quot;There's already enough suffering in the world...&quot; True] [Wait 180] [Dialog &quot;There's too much suffering in the world...&quot; True] [Wait 180] [Dialog &quot;I'm sorry for what I've added to it...&quot; True]]]]]
     [Wait 240]
-    [FadeOutSong 5000]
+    [FadeOutSong 300]
     [Fade [SpriteTarget HeavenlyLight] 300 False]
     [Wait 120]
     [ReplaceAdvent [KylaAdvent 6] [KylaAdvent 7]]

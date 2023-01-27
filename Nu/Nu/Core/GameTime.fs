@@ -64,7 +64,20 @@ and [<Struct; CustomEquality; CustomComparison; TypeConverter (typeof<GameTimeCo
         | (_, _) -> failwith "Cannot apply operation to mixed GameTimes."
 
     static member make updateTime clockTime =
-        match Constants.Engine.DesiredFrameRate with StaticFrameRate _ -> UpdateTime updateTime | DynamicFrameRate _ -> ClockTime clockTime
+        match Constants.Engine.DesiredFrameRate with
+        | StaticFrameRate _ -> UpdateTime updateTime
+        | DynamicFrameRate _ -> ClockTime clockTime
+
+    static member ofUpdates updates =
+        match Constants.Engine.DesiredFrameRate with
+        | StaticFrameRate _ -> UpdateTime updates
+        | DynamicFrameRate (Some frameRate) -> ClockTime (1.0f / single frameRate * single updates)
+        | DynamicFrameRate None -> failwith "Cannot construct GameTime from updates with uncapped dynamic frame rate."
+
+    static member ofSeconds seconds =
+        match Constants.Engine.DesiredFrameRate with
+        | StaticFrameRate frameRate -> UpdateTime (int64 (single frameRate * seconds))
+        | DynamicFrameRate _ -> ClockTime seconds
 
     static member equals left right =
         GameTime.binary (=) (=) left right
@@ -104,11 +117,17 @@ and [<Struct; CustomEquality; CustomComparison; TypeConverter (typeof<GameTimeCo
     static member op_Explicit time = match time with UpdateTime time -> double time | ClockTime time -> double time
     static member isZero time = GameTime.unary isZero isZero time
     static member notZero time = GameTime.unary notZero notZero time
-    static member zero = GameTime.make 0L 0.0f
+    static member zero = GameTime.ofSeconds 0.0f
     static member min (left : GameTime) right = if left <= right then left else right
     static member max (left : GameTime) right = if left >= right then left else right
     static member MinValue = GameTime.make Int64.MinValue Single.MinValue
     static member MaxValue = GameTime.make Int64.MaxValue Single.MaxValue
+
+    member this.Seconds =
+        match (Constants.Engine.DesiredFrameRate, this) with
+        | (StaticFrameRate frameRate, UpdateTime time) -> 1.0f / single frameRate * single time
+        | (_, ClockTime time) -> time
+        | (_, _) -> failwith "Cannot apply operation to mixed GameTime."
 
     override this.Equals that =
         match that with

@@ -13,7 +13,7 @@ module Assets =
     module Gui =
 
         let PackageName = "Gui"
-        let MachinerySong = { FadeInTime = 0.0f; FadeOutTime = Constants.Audio.FadeOutTimeDefault; StartTime = 0.0f; Volume = Constants.Audio.SongVolumeDefault; Song = asset<Song> PackageName "Machinery" }
+        let MachinerySong = { FadeInTime = GameTime.zero; FadeOutTime = Constants.Audio.FadeOutTimeDefault; StartTime = GameTime.zero; Volume = Constants.Audio.SongVolumeDefault; Song = asset<Song> PackageName "Machinery" }
         let TitleGroupFilePath = "Assets/Gui/Title.nugroup"
         let CreditsGroupFilePath = "Assets/Gui/Credits.nugroup"
 
@@ -31,7 +31,7 @@ module Assets =
         let ShotSound = asset<Sound> PackageName "Shot"
         let JumpSound = asset<Sound> PackageName "Jump"
         let DeathSound = asset<Sound> PackageName "Death"
-        let DeadBlazeSong = { FadeInTime = 0.0f; FadeOutTime = Constants.Audio.FadeOutTimeDefault; StartTime = 0.0f; Volume = Constants.Audio.SongVolumeDefault * 2.0f; Song = asset<Song> PackageName "DeadBlaze" }
+        let DeadBlazeSong = { FadeInTime = GameTime.zero; FadeOutTime = Constants.Audio.FadeOutTimeDefault; StartTime = GameTime.zero; Volume = Constants.Audio.SongVolumeDefault * 2.0f; Song = asset<Song> PackageName "DeadBlaze" }
         let Section0FilePath = "Assets/Gameplay/Section0.nugroup"
         let Section1FilePath = "Assets/Gameplay/Section1.nugroup"
         let Section2FilePath = "Assets/Gameplay/Section2.nugroup"
