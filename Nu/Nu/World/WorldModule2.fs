@@ -1085,11 +1085,13 @@ module WorldModule2 =
 
                                                             // avoid updating faster than desired FPS
                                                             if FrameTimer.IsRunning then
+                                                                let frameTimeSlop =
+                                                                    Constants.Engine.DesiredFrameTimeSlop
                                                                 let frameTimeMinimum =
                                                                     match Constants.Engine.DesiredFrameRate with
-                                                                    | StaticFrameRate frameRate -> 1.0 / double frameRate
-                                                                    | DynamicFrameRate (Some frameRate) -> 1.0 / double frameRate
-                                                                    | DynamicFrameRate None -> Constants.Engine.DesiredFrameTimeMinimum
+                                                                    | StaticFrameRate frameRate -> 1.0 / double frameRate - frameTimeSlop
+                                                                    | DynamicFrameRate (Some frameRate) -> 1.0 / double frameRate - frameTimeSlop
+                                                                    | DynamicFrameRate None -> Constants.Engine.DesiredFrameTimeMinimum - frameTimeSlop
                                                                 while let e = FrameTimer.Elapsed in e.TotalSeconds < frameTimeMinimum do
                                                                     Thread.Yield () |> ignore<bool>
                                                             FrameTimer.Restart()
