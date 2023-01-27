@@ -548,11 +548,11 @@ module RadioButtonDispatcherModule =
 module FpsDispatcherModule =
 
     type Entity with
-        member this.GetStartTime world : int64 = this.Get (nameof this.StartTime) world
-        member this.SetStartTime (value : int64) world = this.Set (nameof this.StartTime) value world
-        member this.StartTime = lens (nameof this.StartTime) this this.GetStartTime this.SetStartTime
-        member this.GetStartDateTime world : DateTime = this.Get (nameof this.StartDateTime) world
-        member this.SetStartDateTime (value : DateTime) world = this.Set (nameof this.StartDateTime) value world
+        member this.GetStartUpdateTime world : int64 = this.Get (nameof this.StartUpdateTime) world
+        member this.SetStartUpdateTime (value : int64) world = this.Set (nameof this.StartUpdateTime) value world
+        member this.StartUpdateTime = lens (nameof this.StartUpdateTime) this this.GetStartUpdateTime this.SetStartUpdateTime
+        member this.GetStartDateTime world : DateTimeOffset = this.Get (nameof this.StartDateTime) world
+        member this.SetStartDateTime (value : DateTimeOffset) world = this.Set (nameof this.StartDateTime) value world
         member this.StartDateTime = lens (nameof this.StartDateTime) this this.GetStartDateTime this.SetStartDateTime
 
     type FpsDispatcher () =
@@ -560,24 +560,24 @@ module FpsDispatcherModule =
 
         static let resetIntermittent (entity : Entity) world =
             let startDateTime = entity.GetStartDateTime world
-            let currentDateTime = DateTime.UtcNow
+            let currentDateTime = DateTimeOffset.UtcNow
             let elapsedDateTime = currentDateTime - startDateTime
             if elapsedDateTime.TotalSeconds >= 5.0 then
-                let world = entity.SetStartTime (World.getUpdateTime world) world
+                let world = entity.SetStartUpdateTime (World.getUpdateTime world) world
                 entity.SetStartDateTime currentDateTime world
             else world
 
         static member Properties =
-            [define Entity.StartTime 0L
-             define Entity.StartDateTime DateTime.UtcNow]
+            [define Entity.StartUpdateTime 0L
+             define Entity.StartDateTime DateTimeOffset.UtcNow]
 
         override this.Update (entity, world) =
             if entity.GetEnabled world then
                 let world = resetIntermittent entity world
                 let startDateTime = entity.GetStartDateTime world
-                let currentDateTime = DateTime.UtcNow
+                let currentDateTime = DateTimeOffset.UtcNow
                 let elapsedDateTime = currentDateTime - startDateTime
-                let time = double (World.getUpdateTime world - entity.GetStartTime world)
+                let time = double (World.getUpdateTime world - entity.GetStartUpdateTime world)
                 let frames = time / elapsedDateTime.TotalSeconds
                 if not (Double.IsNaN frames) then
                     let framesStr = "FPS: " + String.Format ("{0:f2}", frames)

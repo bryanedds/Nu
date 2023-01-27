@@ -133,6 +133,18 @@ and [<Struct; CustomEquality; CustomComparison; TypeConverter (typeof<GameTimeCo
         | StaticFrameRate frameRate -> UpdateTime (int64 (single frameRate * seconds))
         | DynamicFrameRate _ -> ClockTime seconds
 
+    static member toUpdates time =
+        match (Constants.Engine.DesiredFrameRate, time) with
+        | (_, UpdateTime time) -> time
+        | (DynamicFrameRate (Some frameRate), ClockTime time) -> int64 (time / (1.0f / single frameRate))
+        | (_, _) -> failwith "Cannot apply operation to mixed GameTimes."
+
+    static member toSeconds time =
+        match (Constants.Engine.DesiredFrameRate, time) with
+        | (StaticFrameRate frameRate, UpdateTime time) -> 1.0f / single frameRate * single time
+        | (_, ClockTime time) -> time
+        | (_, _) -> failwith "Cannot apply operation to mixed GameTimes."
+
     static member equals left right =
         GameTime.binary (=) (=) left right
 
@@ -140,7 +152,7 @@ and [<Struct; CustomEquality; CustomComparison; TypeConverter (typeof<GameTimeCo
         match (left, right) with
         | (UpdateTime leftTime, UpdateTime rightTime) -> if leftTime < rightTime then -1 elif leftTime > rightTime then 1 else 0
         | (ClockTime leftTime, ClockTime rightTime) -> if leftTime < rightTime then -1 elif leftTime > rightTime then 1 else 0
-        | (_, _) -> failwith "Cannot apply operation to mixed GameTim   es."
+        | (_, _) -> failwith "Cannot apply operation to mixed GameTimes."
 
     static member progress startTime currentTime lifeTime =
         match (startTime, currentTime, lifeTime) with
@@ -177,11 +189,17 @@ and [<Struct; CustomEquality; CustomComparison; TypeConverter (typeof<GameTimeCo
     static member MinValue = GameTime.make Int64.MinValue Single.MinValue
     static member MaxValue = GameTime.make Int64.MaxValue Single.MaxValue
 
+    member this.Updates =
+        GameTime.toUpdates this
+
     member this.Seconds =
-        match (Constants.Engine.DesiredFrameRate, this) with
-        | (StaticFrameRate frameRate, UpdateTime time) -> 1.0f / single frameRate * single time
-        | (_, ClockTime time) -> time
-        | (_, _) -> failwith "Cannot apply operation to mixed GameTime."
+        GameTime.toSeconds this
+
+    member this.IsZero =
+        GameTime.isZero this
+
+    member this.NotZero =
+        GameTime.notZero this
 
     override this.Equals that =
         match that with
@@ -209,24 +227,24 @@ and [<Struct; CustomEquality; CustomComparison; TypeConverter (typeof<GameTimeCo
 module GameTimeExtension =
 
     type UInt32 with
-        member this.u = UpdateTime (int64 this)
-        member this.c = ClockTime (single this)
+        member this.u = GameTime.ofUpdates (int64 this)
+        member this.c = GameTime.ofSeconds (single this)
 
     type Int32 with
-        member this.u = UpdateTime (int64 this)
-        member this.c = ClockTime (single this)
+        member this.u = GameTime.ofUpdates (int64 this)
+        member this.c = GameTime.ofSeconds (single this)
 
     type Int64 with
-        member this.u = UpdateTime this
-        member this.c = ClockTime (single this)
+        member this.u = GameTime.ofUpdates this
+        member this.c = GameTime.ofSeconds (single this)
 
     type Single with
-        member this.u = UpdateTime (int64 this)
-        member this.c = ClockTime this
+        member this.u = GameTime.ofUpdates (int64 this)
+        member this.c = GameTime.ofSeconds this
 
     type Double with
-        member this.u = UpdateTime (int64 this)
-        member this.c = ClockTime (single this)
+        member this.u = GameTime.ofUpdates (int64 this)
+        member this.c = GameTime.ofSeconds (single this)
 
 namespace Nu.Constants
 open System
