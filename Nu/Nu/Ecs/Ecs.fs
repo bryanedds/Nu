@@ -409,7 +409,7 @@ and Ecs () =
         // NOTE: we allow some special munging with world here. The callback may choose to ignore the world and return
         // the default of 'w. This works fine so long as 'w is a reference type where null is not a proper value
         // because we restore the original world when a null result is detected. However, this does not work
-        // when 'w is a reference type that has null as a proper value because we have no way to do efficiently
+        // when 'w is a reference type that has null as a proper value because we have no way to efficiently
         // detect that case. Option would be an example of a reference type with null as a proper value.
         let event = { event with EcsEventName = event.EcsEventName + Constants.Ecs.UnscheduledEventSuffix }
         let oldWorld = world
