@@ -9,33 +9,32 @@ open Nu
 module Particles =
 
     /// Describes the life of an instance value.
-    /// OPTIMIZATION: LifeTimeOpt uses 0L to represent infinite life.
+    /// OPTIMIZATION: LifeTimeOpt uses GameTime.zero to represent infinite life.
     /// OPTIMIZATION: doesn't use Liveness type to avoid its constructor calls.
     /// OPTIMIZATION: pre-computes progress scalar to minimize number of divides.
     type [<StructuralEquality; NoComparison; Struct>] Life =
-        { StartTime : int64
-          LifeTimeOpt : int64
+        { StartTime : GameTime
+          LifeTimeOpt : GameTime
           ProgressScalar : single }
 
         /// The progress made through the instance's life.
-        static member getProgress time life =
-            match life.LifeTimeOpt with
-            | 0L -> 0.0f
-            | _ -> single (time - life.StartTime) * life.ProgressScalar
+        static member getProgress (time : GameTime) life =
+            if life.LifeTimeOpt.NotZero
+            then single (time - life.StartTime) * life.ProgressScalar
+            else 0.0f
 
         /// The progress made through the instance's life within a sub-range.
-        static member getProgress3 time sublife life =
-            match sublife.LifeTimeOpt with
-            | 0L -> Life.getProgress time life
-            | _ ->
+        static member getProgress3 (time : GameTime) sublife life =
+            if sublife.LifeTimeOpt.NotZero then
                 let localTime = time - life.StartTime
                 Life.getProgress localTime sublife
+            else Life.getProgress time life
 
         /// The liveness of the instance as a boolean.
-        static member getLiveness time life =
-            match life.LifeTimeOpt with
-            | 0L -> true
-            | lifeTime -> time - life.StartTime < lifeTime
+        static member getLiveness (time : GameTime) life =
+            if life.LifeTimeOpt.NotZero
+            then time - life.StartTime < life.LifeTimeOpt
+            else true
 
         /// Make a life value.
         static member make startTime lifeTimeOpt =
@@ -183,82 +182,84 @@ module Particles =
     and Emitter =
 
         /// Determine liveness of emitter.
-        abstract GetLiveness : int64 -> Liveness
+        abstract GetLiveness : GameTime -> Liveness
 
         /// Run the emitter.
-        abstract Run : int64 -> Output * Emitter
+        abstract Run : GameTime -> GameTime -> Output * Emitter
 
         /// Convert the emitted particles to a ParticlesDescriptor.
-        abstract ToParticlesDescriptor : int64 -> ParticlesDescriptor
+        abstract ToParticlesDescriptor : GameTime -> ParticlesDescriptor
 
         /// Change the maximum number of allowable particles.
         abstract Resize : int -> Emitter
 
     /// Transforms a constrained value.
     type 'a Transformer =
-        int64 -> Constraint -> 'a SegmentedArray -> Output
+        GameTime -> GameTime -> Constraint -> 'a SegmentedArray -> Output
 
     [<RequireQualifiedAccess>]
     module Transformer =
 
         /// Accelerate bodies both linearly and angularly.
-        let accelerate (bodies : Body SegmentedArray) =
+        let accelerate (delta : GameTime) (bodies : Body SegmentedArray) =
             let mutable i = 0
+            let scalar = single delta
             while i < dec bodies.Length do
                 let body = &bodies.[i]
-                body.Position <- body.Position + body.LinearVelocity
-                body.Angles <- body.Angles + body.AngularVelocity
+                body.Position <- body.Position + body.LinearVelocity * scalar
+                body.Angles <- body.Angles + body.AngularVelocity * scalar
                 i <- inc i
 
         /// Constrain bodies.
-        let rec constrain c (bodies : Body SegmentedArray) =
+        let rec constrain (delta : GameTime) c (bodies : Body SegmentedArray) =
+            let scalar = single delta
             match c with
             | Sphere (radius, center) ->
                 let mutable i = 0
                 while i < dec bodies.Length do
                     let body = &bodies.[i]
-                    let positionNext = body.Position + body.LinearVelocity
-                    let delta = positionNext - center
-                    let distanceSquared = delta.MagnitudeSquared
+                    let positionNext = body.Position + body.LinearVelocity * scalar
+                    let distanceDelta = positionNext - center
+                    let distanceSquared = distanceDelta.MagnitudeSquared
                     let radiusSquared = radius * radius
                     if distanceSquared < radiusSquared then
                         let normal = Vector3.Normalize (center - positionNext)
                         let reflectedVelocity = Vector3.Reflect (body.LinearVelocity, normal)
-                        let linearVelocity = reflectedVelocity * body.Restitution
-                        body.LinearVelocity <- linearVelocity
+                        body.LinearVelocity <- reflectedVelocity * body.Restitution
                     i <- inc i
             | Box box ->
                 // TODO: implement properly bouncing angles.
                 let mutable i = 0
                 while i < dec bodies.Length do
                     let body = &bodies.[i]
-                    let positionNext = body.Position + body.LinearVelocity
-                    let delta = positionNext - box.Center
+                    let positionNext = body.Position + body.LinearVelocity * scalar
+                    let distanceDelta = positionNext - box.Center
                     if box.Intersects positionNext then
                         let speed = body.LinearVelocity.Magnitude
-                        let distanceNormalized = Vector3.Normalize delta
-                        let linearVelocity = speed * distanceNormalized * body.Restitution
-                        body.LinearVelocity <- linearVelocity
+                        let distanceNormalized = Vector3.Normalize distanceDelta
+                        body.LinearVelocity <- speed * distanceNormalized * body.Restitution
                     i <- inc i
             | Constraints constraints ->
                 let mutable i = 0
                 while i < dec constraints.Length do
                     let constrain' = constraints.[i]
-                    constrain constrain' bodies
+                    constrain delta constrain' bodies
                     i <- inc i
 
         /// Make a force transformer.
         let force force : Body Transformer =
-            fun _ c bodies ->
+            fun delta _ c bodies ->
                 match force with
                 | Gravity gravity ->
+                    let scalar = single delta
                     let mutable i = 0
                     while i < dec bodies.Length do
                         let body = &bodies.[i]
-                        body.LinearVelocity <- body.LinearVelocity + gravity
+                        body.LinearVelocity <- body.LinearVelocity + gravity * scalar
                         i <- inc i
                     Output.empty
                 | Attractor (position, radius, force) ->
+                    let scalar = single delta
                     let mutable i = 0
                     while i < dec bodies.Length do
                         let body = &bodies.[i]
@@ -267,31 +268,31 @@ module Particles =
                         let normal = direction / distance
                         if distance < radius then
                             let pull = (radius - distance) / radius
-                            let pullForce = pull * force
-                            body.LinearVelocity <- body.LinearVelocity + pullForce * normal
+                            body.LinearVelocity <- body.LinearVelocity + normal * (pull * force * scalar)
                         i <- inc i
                     Output.empty
                 | Drag (linearDrag, angularDrag) ->
+                    let scalar = single delta
                     let mutable i = 0
                     while i < dec bodies.Length do
                         let body = &bodies.[i]
                         let linearDrag = body.LinearVelocity * linearDrag
                         let angularDrag = body.AngularVelocity * angularDrag
-                        body.LinearVelocity <- body.LinearVelocity - linearDrag
-                        body.AngularVelocity <- body.AngularVelocity - angularDrag
+                        body.LinearVelocity <- body.LinearVelocity - linearDrag * scalar
+                        body.AngularVelocity <- body.AngularVelocity - angularDrag * scalar
                         i <- inc i
                     Output.empty
                 | Velocity c2 ->
                     let c3 = c + c2
-                    constrain c3 bodies
-                    accelerate bodies
+                    constrain delta c3 bodies
+                    accelerate delta bodies
                     Output.empty
 
         /// Make a logic transformer.
         let logic logic : struct (Life * bool) Transformer =
             match logic.LogicType with
             | Or value ->
-                fun _ _ targets ->
+                fun _ _ _ targets ->
                     let mutable i = 0
                     while i < dec targets.Length do
                         let v = &targets.[i]
@@ -300,7 +301,7 @@ module Particles =
                         i <- inc i
                     Output.empty
             | Nor value ->
-                fun _ _ targets ->
+                fun _ _ _ targets ->
                     let mutable i = 0
                     while i < dec targets.Length do
                         let v = &targets.[i]
@@ -309,7 +310,7 @@ module Particles =
                         i <- inc i
                     Output.empty
             | Xor value ->
-                fun _ _ targets ->
+                fun _ _ _ targets ->
                     let mutable i = 0
                     while i < dec targets.Length do
                         let v = &targets.[i]
@@ -318,7 +319,7 @@ module Particles =
                         i <- inc i
                     Output.empty
             | And value ->
-                fun _ _ targets ->
+                fun _ _ _ targets ->
                     let mutable i = 0
                     while i < dec targets.Length do
                         let v = &targets.[i]
@@ -327,7 +328,7 @@ module Particles =
                         i <- inc i
                     Output.empty
             | Nand value ->
-                fun _ _ targets ->
+                fun _ _ _ targets ->
                     let mutable i = 0
                     while i < dec targets.Length do
                         let v = &targets.[i]
@@ -336,7 +337,7 @@ module Particles =
                         i <- inc i
                     Output.empty
             | Equal value ->
-                fun _ _ targets ->
+                fun _ _ _ targets ->
                     let mutable i = 0
                     while i < dec targets.Length do
                         let v = &targets.[i]
@@ -356,7 +357,7 @@ module Particles =
                 | Set -> fun _ value2 -> value2
             match range.RangeType with
             | Constant value ->
-                fun _ _ targets ->
+                fun _ _ _ targets ->
                     let mutable i = 0
                     while i < dec targets.Length do
                         let v = &targets.[i]
@@ -365,7 +366,7 @@ module Particles =
                         i <- inc i
                     Output.empty
             | Linear (value, value2) ->
-                fun _ _ targets ->
+                fun _ _ _ targets ->
                     let mutable i = 0
                     while i < dec targets.Length do
                         let v = &targets.[i]
@@ -376,7 +377,7 @@ module Particles =
                         i <- inc i
                     Output.empty
             | Random (value, value2) ->
-                fun _ _ targets ->
+                fun _ _ _ targets ->
                     let mutable i = 0
                     while i < dec targets.Length do
                         let v = &targets.[i]
@@ -389,7 +390,7 @@ module Particles =
                         i <- inc i
                     Output.empty
             | Chaos (value, value2) ->
-                fun _ _ targets ->
+                fun _ _ _ targets ->
                     let mutable i = 0
                     while i < dec targets.Length do
                         let v = &targets.[i]
@@ -400,7 +401,7 @@ module Particles =
                         i <- inc i
                     Output.empty
             | Ease (value, value2) ->
-                fun _ _ targets ->
+                fun _ _ _ targets ->
                     let mutable i = 0
                     while i < dec targets.Length do
                         let v = &targets.[i]
@@ -412,7 +413,7 @@ module Particles =
                         i <- inc i
                     Output.empty
             | EaseIn (value, value2) ->
-                fun _ _ targets ->
+                fun _ _ _ targets ->
                     let mutable i = 0
                     while i < dec targets.Length do
                         let v = &targets.[i]
@@ -425,7 +426,7 @@ module Particles =
                         i <- inc i
                     Output.empty
             | EaseOut (value, value2) ->
-                fun _ _ targets ->
+                fun _ _ _ targets ->
                     let mutable i = 0
                     while i < dec targets.Length do
                         let v = &targets.[i]
@@ -438,7 +439,7 @@ module Particles =
                         i <- inc i
                     Output.empty
             | Sin (value, value2) ->
-                fun _ _ targets ->
+                fun _ _ _ targets ->
                     let mutable i = 0
                     while i < dec targets.Length do
                         let v = &targets.[i]
@@ -451,7 +452,7 @@ module Particles =
                         i <- inc i
                     Output.empty
             | SinScaled (scalar, value, value2) ->
-                fun _ _ targets ->
+                fun _ _ _ targets ->
                     let mutable i = 0
                     while i < dec targets.Length do
                         let v = &targets.[i]
@@ -464,7 +465,7 @@ module Particles =
                         i <- inc i
                     Output.empty
             | Cos (value, value2) ->
-                fun _ _ targets ->
+                fun _ _ _ targets ->
                     let mutable i = 0
                     while i < dec targets.Length do
                         let v = &targets.[i]
@@ -477,7 +478,7 @@ module Particles =
                         i <- inc i
                     Output.empty
             | CosScaled (scalar, value, value2) ->
-                fun _ _ targets ->
+                fun _ _ _ targets ->
                     let mutable i = 0
                     while i < dec targets.Length do
                         let v = &targets.[i]
@@ -549,10 +550,10 @@ module Particles =
     type Behavior =
 
         /// Run the behavior over a single target.
-        abstract Run : int64 -> Constraint -> obj -> (Output * obj)
+        abstract Run : GameTime -> GameTime -> Constraint -> obj -> (Output * obj)
 
         /// Run the behavior over multiple targets.
-        abstract RunMany : int64 -> Constraint -> obj -> Output
+        abstract RunMany : GameTime -> GameTime -> Constraint -> obj -> Output
 
     /// Defines a generic behavior.
     type [<ReferenceEquality; NoComparison>] Behavior<'a, 'b when 'a : struct> =
@@ -569,28 +570,28 @@ module Particles =
 
         /// Run the behavior over targets.
         /// OPTIMIZATION: runs transformers in batches for better utilization of instruction cache.
-        static member runMany time (constrain : Constraint) (behavior : Behavior<'a, 'b>) (targets : 'a SegmentedArray) =
+        static member runMany delta time (constrain : Constraint) (behavior : Behavior<'a, 'b>) (targets : 'a SegmentedArray) =
             let fields = behavior.Scope.In targets
             let output =
                 FStack.fold (fun output transformer ->
-                    output + transformer time constrain fields)
+                    output + transformer delta time constrain fields)
                     Output.empty
                     behavior.Transformers
             behavior.Scope.Out output fields targets
 
         /// Run the behavior over a single target.
-        static member run time (constrain : Constraint) (behavior : Behavior<'a, 'b>) (target : 'a) =
+        static member run delta time (constrain : Constraint) (behavior : Behavior<'a, 'b>) (target : 'a) =
             let targets = SegmentedArray.singleton target
-            let output = Behavior<'a, 'b>.runMany time constrain behavior targets
+            let output = Behavior<'a, 'b>.runMany delta time constrain behavior targets
             let target = SegmentedArray.item 0 targets
             (output, target)
 
         interface Behavior with
-            member this.Run time constrain targetObj =
-                let (outputs, target) = Behavior<'a, 'b>.run time constrain this (targetObj :?> 'a)
+            member this.Run delta time constrain targetObj =
+                let (outputs, target) = Behavior<'a, 'b>.run delta time constrain this (targetObj :?> 'a)
                 (outputs, target :> obj)
-            member this.RunMany time constrain targetsObj =
-                Behavior<'a, 'b>.runMany time constrain this (targetsObj :?> 'a SegmentedArray)
+            member this.RunMany delta time constrain targetsObj =
+                Behavior<'a, 'b>.runMany delta time constrain this (targetsObj :?> 'a SegmentedArray)
 
     /// A composition of behaviors.
     type [<ReferenceEquality; NoComparison>] Behaviors =
@@ -617,20 +618,20 @@ module Particles =
             { Behaviors = Seq.fold (fun behaviors behavior -> FStack.conj behavior behaviors) behaviors.Behaviors behaviorsMany }
 
         /// Run the behaviors over a single target.
-        static member run time behaviors constrain (target : 'a) =
+        static member run delta time behaviors constrain (target : 'a) =
             let (outputs, targets) =
                 FStack.fold (fun (output, target) (behavior : Behavior) ->
-                    let (output2, targets2) = behavior.Run time constrain target
+                    let (output2, targets2) = behavior.Run delta time constrain target
                     (output + output2, targets2))
                     (Output.empty, target :> obj)
                     behaviors.Behaviors
             (outputs, targets :?> 'a)
 
         /// Run the behaviors over targets.
-        static member runMany time behaviors constrain (targets : 'a SegmentedArray) =
+        static member runMany delta time behaviors constrain (targets : 'a SegmentedArray) =
             let outputs =
                 FStack.fold (fun output (behavior : Behavior) ->
-                    output + behavior.RunMany time constrain targets)
+                    output + behavior.RunMany delta time constrain targets)
                     Output.empty
                     behaviors.Behaviors
             outputs
@@ -640,8 +641,8 @@ module Particles =
         { Body : Body
           Blend : Blend
           Image : Image AssetTag
-          LifeTimeOpt : int64
-          ParticleLifeTimeMaxOpt : int64
+          LifeTimeOpt : GameTime
+          ParticleLifeTimeMaxOpt : GameTime
           ParticleRate : single
           ParticleMax : int
           ParticleSeed : 'a
@@ -664,19 +665,19 @@ module Particles =
           Blend : Blend
           Image : Image AssetTag
           Life : Life
-          ParticleLifeTimeMaxOpt : int64 // OPTIMIZATION: uses 0L to represent infinite particle life.
-          ParticleRate : single
+          ParticleLifeTimeMaxOpt : GameTime // OPTIMIZATION: uses GameTime.zero to represent infinite particle life.
+          ParticleRate : GameTime
           mutable ParticleIndex : int // the current particle buffer insertion point
           mutable ParticleWatermark : int // tracks the highest active particle index; never decreases.
           ParticleRing : 'a SegmentedArray // operates as a ring-buffer
           ParticleSeed : 'a
           Constraint : Constraint
-          ParticleInitializer : int64 -> 'a Emitter -> 'a
-          ParticleBehavior : int64 -> 'a Emitter -> Output
+          ParticleInitializer : GameTime -> 'a Emitter -> 'a
+          ParticleBehavior : GameTime -> 'a Emitter -> Output
           ParticleBehaviors : Behaviors
-          EmitterBehavior : int64 -> 'a Emitter -> Output
+          EmitterBehavior : GameTime -> 'a Emitter -> Output
           EmitterBehaviors : Behaviors
-          ToParticlesDescriptor : int64 -> 'a Emitter -> ParticlesDescriptor }
+          ToParticlesDescriptor : GameTime -> 'a Emitter -> ParticlesDescriptor }
 
         static member private emit time emitter =
             let particle = &emitter.ParticleRing.[emitter.ParticleIndex]
@@ -693,34 +694,37 @@ module Particles =
 
         /// Determine emitter's liveness.
         static member getLiveness time emitter =
-            match emitter.ParticleLifeTimeMaxOpt with
-            | 0L -> Live
-            | lifeTime -> if Life.getLiveness (time - lifeTime) emitter.Life then Live else Dead
+            if emitter.ParticleLifeTimeMaxOpt.NotZero then
+                if Life.getLiveness (time - emitter.ParticleLifeTimeMaxOpt) emitter.Life
+                then Live
+                else Dead
+            else Live
 
         /// Run the emitter.
-        static member run time (emitter : 'a Emitter) =
+        static member run delta time (emitter : 'a Emitter) =
 
             // determine local time
             let localTime = time - emitter.Life.StartTime
+            let localTimePrevious = localTime - delta
 
             // emit new particles if live
             if Life.getLiveness time emitter.Life then
-                let emitCountLastFrame = single (dec localTime) * emitter.ParticleRate
-                let emitCountThisFrame = single localTime * emitter.ParticleRate
-                let emitCount = int emitCountThisFrame - int emitCountLastFrame
+                let emitCount = single (localTime * emitter.ParticleRate)
+                let emitCountPrevious = single (localTimePrevious * emitter.ParticleRate)
+                let emitCount = int emitCount - int emitCountPrevious
                 for _ in 0 .. emitCount - 1 do Emitter<'a>.emit time emitter
 
             // update emitter in-place
             let output = emitter.EmitterBehavior time emitter
 
             // update emitter compositionally
-            let (output2, emitter) = Behaviors.run time emitter.EmitterBehaviors emitter.Constraint emitter
+            let (output2, emitter) = Behaviors.run delta time emitter.EmitterBehaviors emitter.Constraint emitter
 
             // update existing particles in-place
             let output3 = emitter.ParticleBehavior time emitter
 
             // update existing particles compositionally
-            let output4 = Behaviors.runMany time emitter.ParticleBehaviors emitter.Constraint emitter.ParticleRing
+            let output4 = Behaviors.runMany delta time emitter.ParticleBehaviors emitter.Constraint emitter.ParticleRing
 
             // fin
             (output + output2 + output3 + output4, emitter)
@@ -752,8 +756,8 @@ module Particles =
         interface Emitter with
             member this.GetLiveness time =
                 Emitter<'a>.getLiveness time this
-            member this.Run time =
-                let (output, emitter) = Emitter<'a>.run time this
+            member this.Run delta time =
+                let (output, emitter) = Emitter<'a>.run delta time this
                 (output, emitter :> Emitter)
             member this.ToParticlesDescriptor time =
                 this.ToParticlesDescriptor time this
@@ -897,7 +901,7 @@ module Particles =
         let makeDefault time lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax =
             let image = asset Assets.Default.PackageName Assets.Default.ImageName
             let particleSeed =
-                { Life = Life.make 0L 120L
+                { Life = Life.make GameTime.zero (GameTime.ofSeconds 2.0f)
                   Body = Body.defaultBody2d
                   Offset = v3Zero
                   Size = Constants.Engine.ParticleSize2dDefault
@@ -924,7 +928,7 @@ module Particles =
             let gravity =
                 match Constants.Engine.DesiredFrameRate with
                 | StaticFrameRate frameRate -> Constants.Engine.GravityDefault / single frameRate
-                // TODO: implement. | DynamicFrameRate _ -> failwithnie ()
+                | DynamicFrameRate _ -> Constants.Engine.GravityDefault
             let particleBehaviors =
                 Behaviors.singleton
                     (Behavior.ofSeq BasicParticle.body
@@ -961,17 +965,17 @@ module Particles =
             { particleSystem with Emitters = Map.remove emitterId particleSystem.Emitters }
 
         /// Run the particle system.
-        static member run time particleSystem =
+        static member run delta time particleSystem =
             let (output, emitters) =
                 Map.fold (fun (output, emitters) emitterId (emitter : Emitter) ->
-                    let (output2, emitter) = emitter.Run time
+                    let (output2, emitter) = emitter.Run delta time
                     let emitters = match emitter.GetLiveness time with Live -> Map.add emitterId emitter emitters | Dead -> emitters
                     (output + output2, emitters))
                     (Output.empty, Map.empty)
                     particleSystem.Emitters
             let particleSystem = { Emitters = emitters }
             (particleSystem, output)
-    
+
         /// Convert the emitted particles to ParticlesDescriptors.
         static member toParticlesDescriptors time particleSystem =
             let descriptorsRev =
@@ -979,7 +983,7 @@ module Particles =
                     (emitter.ToParticlesDescriptor time :: descriptors))
                     [] particleSystem.Emitters
             List.rev descriptorsRev
-    
+
         /// The empty particle system.
         static member empty =
             { Emitters = Map.empty }

@@ -3013,17 +3013,17 @@ module WorldBindings =
         let oldWorld = world
         try
             let time =
-                match ScriptingSystem.tryExport typeof<Int64> time world with
-                | Some value -> value :?> Int64
-                | None -> failwith "Invalid argument type for 'time'; expecting a value convertable to Int64."
+                match ScriptingSystem.tryExport typeof<GameTime> time world with
+                | Some value -> value :?> GameTime
+                | None -> failwith "Invalid argument type for 'time'; expecting a value convertable to GameTime."
             let lifeTimeOpt =
-                match ScriptingSystem.tryExport typeof<Int64> lifeTimeOpt world with
-                | Some value -> value :?> Int64
-                | None -> failwith "Invalid argument type for 'lifeTimeOpt'; expecting a value convertable to Int64."
+                match ScriptingSystem.tryExport typeof<GameTime> lifeTimeOpt world with
+                | Some value -> value :?> GameTime
+                | None -> failwith "Invalid argument type for 'lifeTimeOpt'; expecting a value convertable to GameTime."
             let particleLifeTimeMaxOpt =
-                match ScriptingSystem.tryExport typeof<Int64> particleLifeTimeMaxOpt world with
-                | Some value -> value :?> Int64
-                | None -> failwith "Invalid argument type for 'particleLifeTimeMaxOpt'; expecting a value convertable to Int64."
+                match ScriptingSystem.tryExport typeof<GameTime> particleLifeTimeMaxOpt world with
+                | Some value -> value :?> GameTime
+                | None -> failwith "Invalid argument type for 'particleLifeTimeMaxOpt'; expecting a value convertable to GameTime."
             let particleRate =
                 match ScriptingSystem.tryExport typeof<Single> particleRate world with
                 | Some value -> value :?> Single

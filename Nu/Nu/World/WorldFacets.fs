@@ -330,14 +330,14 @@ module BasicEmitter2dFacetModule =
         member this.GetEmitterBlend world : Blend = this.Get (nameof this.EmitterBlend) world
         member this.SetEmitterBlend (value : Blend) world = this.Set (nameof this.EmitterBlend) value world
         member this.EmitterBlend = lens (nameof this.EmitterBlend) this this.GetEmitterBlend this.SetEmitterBlend
-        member this.GetEmitterLifeTimeOpt world : int64 = this.Get (nameof this.EmitterLifeTimeOpt) world
-        member this.SetEmitterLifeTimeOpt (value : int64) world = this.Set (nameof this.EmitterLifeTimeOpt) value world
+        member this.GetEmitterLifeTimeOpt world : GameTime = this.Get (nameof this.EmitterLifeTimeOpt) world
+        member this.SetEmitterLifeTimeOpt (value : GameTime) world = this.Set (nameof this.EmitterLifeTimeOpt) value world
         member this.EmitterLifeTimeOpt = lens (nameof this.EmitterLifeTimeOpt) this this.GetEmitterLifeTimeOpt this.SetEmitterLifeTimeOpt
-        member this.GetParticleLifeTimeMaxOpt world : int64 = this.Get (nameof this.ParticleLifeTimeMaxOpt) world
-        member this.SetParticleLifeTimeMaxOpt (value : int64) world = this.Set (nameof this.ParticleLifeTimeMaxOpt) value world
+        member this.GetParticleLifeTimeMaxOpt world : GameTime = this.Get (nameof this.ParticleLifeTimeMaxOpt) world
+        member this.SetParticleLifeTimeMaxOpt (value : GameTime) world = this.Set (nameof this.ParticleLifeTimeMaxOpt) value world
         member this.ParticleLifeTimeMaxOpt = lens (nameof this.ParticleLifeTimeMaxOpt) this this.GetParticleLifeTimeMaxOpt this.SetParticleLifeTimeMaxOpt
-        member this.GetParticleRate world : single = this.Get (nameof this.ParticleRate) world
-        member this.SetParticleRate (value : single) world = this.Set (nameof this.ParticleRate) value world
+        member this.GetParticleRate world : GameTime = this.Get (nameof this.ParticleRate) world
+        member this.SetParticleRate (value : GameTime) world = this.Set (nameof this.ParticleRate) value world
         member this.ParticleRate = lens (nameof this.ParticleRate) this this.GetParticleRate this.SetParticleRate
         member this.GetParticleMax world : int = this.Get (nameof this.ParticleMax) world
         member this.SetParticleMax (value : int) world = this.Set (nameof this.ParticleMax) value world
@@ -360,7 +360,7 @@ module BasicEmitter2dFacetModule =
 
         static let tryMakeEmitter (entity : Entity) world =
             World.tryMakeEmitter
-                (World.getUpdateTime world)
+                (World.getGameTime world)
                 (entity.GetEmitterLifeTimeOpt world)
                 (entity.GetParticleLifeTimeMaxOpt world)
                 (entity.GetParticleRate world)
@@ -389,7 +389,7 @@ module BasicEmitter2dFacetModule =
                     Constraint = entity.GetEmitterConstraint world }
             | None ->
                 Particles.BasicEmitter2d.makeEmpty
-                    (World.getUpdateTime world)
+                    (World.getGameTime world)
                     (entity.GetEmitterLifeTimeOpt world)
                     (entity.GetParticleLifeTimeMaxOpt world)
                     (entity.GetParticleRate world)
@@ -427,12 +427,12 @@ module BasicEmitter2dFacetModule =
             (Cascade, world)
 
         static let handleEmitterLifeTimeOptChanged evt world =
-            let emitterLifeTimeOpt = evt.Data.Value :?> int64
+            let emitterLifeTimeOpt = evt.Data.Value :?> GameTime
             let world = updateEmitter (fun emitter -> if emitter.Life.LifeTimeOpt <> emitterLifeTimeOpt then { emitter with Life = { emitter.Life with LifeTimeOpt = emitterLifeTimeOpt }} else emitter) evt.Subscriber world
             (Cascade, world)
 
         static let handleParticleLifeTimeMaxOptChanged evt world =
-            let particleLifeTimeMaxOpt = evt.Data.Value :?> int64
+            let particleLifeTimeMaxOpt = evt.Data.Value :?> GameTime
             let world = updateEmitter (fun emitter -> if emitter.ParticleLifeTimeMaxOpt <> particleLifeTimeMaxOpt then { emitter with ParticleLifeTimeMaxOpt = particleLifeTimeMaxOpt } else emitter) evt.Subscriber world
             (Cascade, world)
 
@@ -498,11 +498,11 @@ module BasicEmitter2dFacetModule =
             [define Entity.SelfDestruct false
              define Entity.EmitterBlend Transparent
              define Entity.EmitterImage Assets.Default.Image
-             define Entity.EmitterLifeTimeOpt 0L
-             define Entity.ParticleLifeTimeMaxOpt 60L
-             define Entity.ParticleRate 1.0f
+             define Entity.EmitterLifeTimeOpt GameTime.zero
+             define Entity.ParticleLifeTimeMaxOpt (GameTime.ofSeconds 1.0f)
+             define Entity.ParticleRate (GameTime.make 1L 60.0f)
              define Entity.ParticleMax 60
-             define Entity.BasicParticleSeed { Life = Particles.Life.make 0L 60L; Body = Particles.Body.defaultBody2d; Size = Constants.Engine.ParticleSize2dDefault; Offset = v3Zero; Inset = box2Zero; Color = Color.One; Glow = Color.Zero; Flip = FlipNone }
+             define Entity.BasicParticleSeed { Life = Particles.Life.make GameTime.zero (GameTime.ofSeconds 1.0f); Body = Particles.Body.defaultBody2d; Size = Constants.Engine.ParticleSize2dDefault; Offset = v3Zero; Inset = box2Zero; Color = Color.One; Glow = Color.Zero; Flip = FlipNone }
              define Entity.EmitterConstraint Particles.Constraint.empty
              define Entity.EmitterStyle "BasicEmitter2d"
              nonPersistent Entity.ParticleSystem ParticleSystem.empty]
@@ -532,15 +532,16 @@ module BasicEmitter2dFacetModule =
 
         override this.Update (entity, world) =
             if entity.GetEnabled world then
-                let time = World.getUpdateTime world
+                let delta = world.GameDelta
+                let time = world.GameTime
                 let particleSystem = entity.GetParticleSystem world
-                let (particleSystem, output) = ParticleSystem.run time particleSystem
+                let (particleSystem, output) = ParticleSystem.run delta time particleSystem
                 let world = entity.SetParticleSystem particleSystem world
                 processOutput output entity world
             else world
 
         override this.Render (entity, world) =
-            let time = World.getUpdateTime world
+            let time = World.getGameTime world
             let particleSystem = entity.GetParticleSystem world
             let particlesMessages =
                 particleSystem |>
@@ -649,10 +650,11 @@ module Effect2dFacetModule =
 
         override this.Update (entity, world) =
             if entity.GetEnabled world then
-                let time = World.getUpdateTime world
+                let delta = World.getGameDelta world
+                let time = World.getGameTime world
                 let effect = entity.GetEffect world
                 let particleSystem = entity.GetParticleSystem world
-                let (particleSystem, output) = ParticleSystem.run time particleSystem
+                let (particleSystem, output) = ParticleSystem.run delta time particleSystem
                 let world = entity.SetParticleSystem particleSystem world
                 let world = processOutput output entity world
                 match (entity.GetSelfDestruct world, effect.LifeTimeOpt) with
@@ -668,7 +670,7 @@ module Effect2dFacetModule =
         override this.Render (entity, world) =
 
             // set up effect system to evaluate effect
-            let time = World.getUpdateTime world
+            let time = World.getGameTime world
             let world = entity.SetEffectTags Map.empty world
             let mutable transform = entity.GetTransform world
             let effect = entity.GetEffect world
