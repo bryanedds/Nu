@@ -11,11 +11,14 @@ open Prime
 [<RequireQualifiedAccess>]
 module Engine =
 
-    let [<Uniform>] mutable DesiredFrameRate = match ConfigurationManager.AppSettings.["DesiredFrameRate"] with null -> StaticFrameRate 60L | desiredFrameRate -> scvalue<FrameRate> desiredFrameRate
-    let [<Literal>] DesiredFrameTimeMinimum = 0.001 // maximum frame rate of 1000 in all configurations.
-    let [<Literal>] DesiredFrameTimeSlop = 0.000001
     let [<Literal>] ExitCodeSuccess = 0
     let [<Literal>] ExitCodeFailure = 1
+    let [<Literal>] LohSize = 85000 // the approximate size of the .NET Large-Object Heap in byte, although this seems misleading in some cases...
+    let [<Uniform>] GravityDefault = Vector3 (0.0f, -9.80665f, 0.0f)
+    let [<Literal>] GameSortPriority = Single.MaxValue
+    let [<Uniform>] ScreenSortPriority = GameSortPriority - 1.0f
+    let [<Uniform>] GroupSortPriority = ScreenSortPriority - 1.0f
+    let [<Uniform>] EntitySortPriority = GroupSortPriority - 1.0f
     let [<Literal>] NamePropertyName = "Name"
     let [<Literal>] DispatcherPropertyName = "Dispatcher"
     let [<Literal>] PropertiesPropertyName = "Properties"
@@ -29,11 +32,9 @@ module Engine =
     let [<Literal>] OverlayNameOptPropertyName = "OverlayNameOpt"
     let [<Literal>] EffectNameDefault = "Effect"
     let [<Literal>] RefinementDir = "refinement"
-    let [<Literal>] GameSortPriority = Single.MaxValue
-    let [<Literal>] LohSize = 85000
-    let [<Uniform>] ScreenSortPriority = GameSortPriority - 1.0f
-    let [<Uniform>] GroupSortPriority = ScreenSortPriority - 1.0f
-    let [<Uniform>] EntitySortPriority = GroupSortPriority - 1.0f
+    let [<Uniform>] mutable DesiredFrameRate = match ConfigurationManager.AppSettings.["DesiredFrameRate"] with null -> StaticFrameRate 60L | desiredFrameRate -> scvalue<FrameRate> desiredFrameRate
+    let [<Literal>] DesiredFrameTimeMinimum = 0.001 // maximum frame rate of 1000 in all configurations.
+    let [<Literal>] DesiredFrameTimeSlop = 0.0005 // maximum frame rate of 1000 in all configurations.
     let [<Uniform>] EntitySize2dDefault = Vector3 (48.0f, 48.0f, 0.0f)
     let [<Uniform>] EntitySizeGuiDefault = Vector3 (192.0f, 48.0f, 0.0f)
     let [<Uniform>] EntitySize3dDefault = Vector3 1.0f
@@ -52,7 +53,6 @@ module Engine =
     let [<Uniform>] OctreeDepth = 4
     let [<Uniform>] OctreeSize = Vector3 (single (Math.Pow (2.0, 10.0)))
     let [<Uniform>] OctreeBounds = Box3 (-OctreeSize * 0.5f, OctreeSize)
-    let [<Uniform>] GravityDefault = Vector3 (0.0f, -9.80665f, 0.0f)
     let [<Uniform>] mutable EventTracing = match ConfigurationManager.AppSettings.["EventTracing"] with null -> false | tracing -> scvalue<bool> tracing
     let [<Uniform>] mutable EventFilter = match ConfigurationManager.AppSettings.["EventFilter"] with null -> EventFilter.Empty | filter -> scvalue<EventFilter.Filter> filter
 
