@@ -13,6 +13,7 @@ module Engine =
 
     let [<Uniform>] mutable DesiredFrameRate = match ConfigurationManager.AppSettings.["DesiredFrameRate"] with null -> StaticFrameRate 60L | desiredFrameRate -> scvalue<FrameRate> desiredFrameRate
     let [<Literal>] DesiredFrameTimeMinimum = 0.001 // maximum frame rate of 1000 in all configurations.
+    let [<Literal>] DesiredFrameTimeSlop = 0.0005 // maximum frame rate of 1000 in all configurations.
     let [<Literal>] ExitCodeSuccess = 0
     let [<Literal>] ExitCodeFailure = 1
     let [<Literal>] NamePropertyName = "Name"
