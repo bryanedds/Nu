@@ -7,14 +7,6 @@ open Prime
 open Nu
 
 [<RequireQualifiedAccess>]
-module Audio =
-
-    let [<Literal>] SongVolumeDefault = 0.5f
-    let [<Literal>] SoundVolumeDefault = 1.0f
-    let [<Uniform>] FadeOutTimeDefault = GameTime.ofSeconds 0.5f
-    let [<Uniform>] SongResumptionMaximum = GameTime.ofSeconds 90.0f // HACK: prevents songs from starting over too often due to hack in SdlAudioPlayer.playSong.
-
-[<RequireQualifiedAccess>]
 module Dissolve =
 
     /// The default 'dissolving' transition behavior of screens.

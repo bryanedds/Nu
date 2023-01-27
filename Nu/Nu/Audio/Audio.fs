@@ -201,10 +201,10 @@ type [<ReferenceEquality; NoComparison>] SdlAudioPlayer =
                 //    else 0.0
                 SDL_mixer.Mix_HaltMusic () |> ignore // NOTE: have to stop current song in case it is still fading out, causing the next song not to play.
                 SDL_mixer.Mix_VolumeMusic (int (playSongMessage.Volume * audioPlayer.MasterAudioVolume * audioPlayer.MasterSongVolume * single SDL_mixer.MIX_MAX_VOLUME)) |> ignore
-                match SDL_mixer.Mix_FadeInMusicPos (oggAsset, -1, int (max Constants.AudioPlayer.FadeInSecondsMinimum playSongMessage.FadeInTime.Seconds * 1000.0f), double playSongMessage.StartTime) with
+                match SDL_mixer.Mix_FadeInMusicPos (oggAsset, -1, int (max Constants.Audio.FadeInSecondsMinimum playSongMessage.FadeInTime.Seconds * 1000.0f), double playSongMessage.StartTime) with
                 | -1 ->
                     // HACK: start time exceeded length of track, so starting over.
-                    SDL_mixer.Mix_FadeInMusicPos (oggAsset, -1, int (max Constants.AudioPlayer.FadeInSecondsMinimum playSongMessage.FadeInTime.Seconds * 1000.0f), 0.0) |> ignore
+                    SDL_mixer.Mix_FadeInMusicPos (oggAsset, -1, int (max Constants.Audio.FadeInSecondsMinimum playSongMessage.FadeInTime.Seconds * 1000.0f), 0.0) |> ignore
                 | _ -> ()
                 audioPlayer.CurrentSongOpt <- Some (playSongMessage, oggAsset)
         | None ->
