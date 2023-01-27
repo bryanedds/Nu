@@ -1354,7 +1354,7 @@ module WorldTypes =
         default this.MakeEcs () = Ecs.Ecs ()
 
         /// Attempt to make an emitter of the given name.
-        abstract TryMakeEmitter : GameTime -> GameTime -> GameTime -> GameTime -> int -> string -> Particles.Emitter option
+        abstract TryMakeEmitter : GameTime -> GameTime -> GameTime -> single -> int -> string -> Particles.Emitter option
         default this.TryMakeEmitter time lifeTimeOpt particleLifeTimeOpt particleRate particleMax emitterName =
             match emitterName with
             | "BasicEmitter2d" -> Particles.BasicEmitter2d.makeDefault time lifeTimeOpt particleLifeTimeOpt particleRate particleMax :> Particles.Emitter |> Some

@@ -336,8 +336,8 @@ module BasicEmitter2dFacetModule =
         member this.GetParticleLifeTimeMaxOpt world : GameTime = this.Get (nameof this.ParticleLifeTimeMaxOpt) world
         member this.SetParticleLifeTimeMaxOpt (value : GameTime) world = this.Set (nameof this.ParticleLifeTimeMaxOpt) value world
         member this.ParticleLifeTimeMaxOpt = lens (nameof this.ParticleLifeTimeMaxOpt) this this.GetParticleLifeTimeMaxOpt this.SetParticleLifeTimeMaxOpt
-        member this.GetParticleRate world : GameTime = this.Get (nameof this.ParticleRate) world
-        member this.SetParticleRate (value : GameTime) world = this.Set (nameof this.ParticleRate) value world
+        member this.GetParticleRate world : single = this.Get (nameof this.ParticleRate) world
+        member this.SetParticleRate (value : single) world = this.Set (nameof this.ParticleRate) value world
         member this.ParticleRate = lens (nameof this.ParticleRate) this this.GetParticleRate this.SetParticleRate
         member this.GetParticleMax world : int = this.Get (nameof this.ParticleMax) world
         member this.SetParticleMax (value : int) world = this.Set (nameof this.ParticleMax) value world
@@ -500,7 +500,7 @@ module BasicEmitter2dFacetModule =
              define Entity.EmitterImage Assets.Default.Image
              define Entity.EmitterLifeTimeOpt GameTime.zero
              define Entity.ParticleLifeTimeMaxOpt (GameTime.ofSeconds 1.0f)
-             define Entity.ParticleRate (GameTime.make 1L 60.0f)
+             define Entity.ParticleRate (match Constants.Engine.DesiredFrameRate with StaticFrameRate _ -> 1.0f | DynamicFrameRate _ -> 60.0f)
              define Entity.ParticleMax 60
              define Entity.BasicParticleSeed { Life = Particles.Life.make GameTime.zero (GameTime.ofSeconds 1.0f); Body = Particles.Body.defaultBody2d; Size = Constants.Engine.ParticleSize2dDefault; Offset = v3Zero; Inset = box2Zero; Color = Color.One; Glow = Color.Zero; Flip = FlipNone }
              define Entity.EmitterConstraint Particles.Constraint.empty
