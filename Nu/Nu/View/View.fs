@@ -12,8 +12,8 @@ type [<ReferenceEquality; NoComparison>] View =
     | Render2d of single * single * obj AssetTag * RenderDescriptor2d
     | Render3d of RenderMessage3d
     | PlaySound of single * Sound AssetTag
-    | PlaySong of single * single * single * single * Song AssetTag
-    | FadeOutSong of single
+    | PlaySong of GameTime * GameTime * GameTime * single * Song AssetTag
+    | FadeOutSong of GameTime
     | StopSong
     | SpawnEmitter of string * EmitterDescriptor
     | Tag of string * obj

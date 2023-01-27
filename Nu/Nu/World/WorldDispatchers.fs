@@ -62,7 +62,7 @@ module AnimatedSpriteDispatcherModule =
             [define Entity.CelSize (Vector2 (12.0f, 12.0f))
              define Entity.CelRun 4
              define Entity.CelCount 16
-             define Entity.AnimationDelay (GameTime.make 4L (1.0f / 15.0f))
+             define Entity.AnimationDelay (GameTime.ofSeconds (1.0f / 15.0f))
              define Entity.AnimationSheet Assets.Default.Image6
              define Entity.Color Color.One
              define Entity.Glow Color.Zero
@@ -862,7 +862,7 @@ module SideViewCharacterDispatcherModule =
         static member Properties =
             [define Entity.CelSize (v2 28.0f 28.0f)
              define Entity.CelRun 8
-             define Entity.AnimationDelay (GameTime.make 4L (1.0f / 15.0f))
+             define Entity.AnimationDelay (GameTime.ofSeconds (1.0f / 15.0f))
              define Entity.FixedRotation true
              define Entity.GravityScale 3.0f
              define Entity.BodyShape (BodyCapsule { Height = 0.5f; Radius = 0.25f; Center = v3Zero; PropertiesOpt = None })

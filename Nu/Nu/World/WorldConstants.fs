@@ -7,18 +7,20 @@ open Prime
 open Nu
 
 [<RequireQualifiedAccess>]
+module Audio =
+
+    let [<Literal>] SongVolumeDefault = 0.5f
+    let [<Literal>] SoundVolumeDefault = 1.0f
+    let [<Uniform>] FadeOutTimeDefault = GameTime.ofSeconds 0.5f
+    let [<Uniform>] SongResumptionMaximum = GameTime.ofSeconds 90.0f // HACK: prevents songs from starting over too often due to hack in SdlAudioPlayer.playSong.
+
+[<RequireQualifiedAccess>]
 module Dissolve =
 
     /// The default 'dissolving' transition behavior of screens.
     let Default =
-        { IncomingTime =
-            match Constants.Engine.DesiredFrameRate with
-            | StaticFrameRate fps -> UpdateTime (fps / 2L)
-            | DynamicFrameRate _ -> ClockTime 0.5f
-          OutgoingTime =
-            match Constants.Engine.DesiredFrameRate with
-            | StaticFrameRate fps -> UpdateTime fps
-            | DynamicFrameRate _ -> ClockTime 1.0f
+        { IncomingTime = GameTime.ofSeconds 0.5f
+          OutgoingTime = GameTime.ofSeconds 1.0f
           DissolveImage = Assets.Default.Image8 }
 
 [<RequireQualifiedAccess>]
@@ -27,10 +29,7 @@ module Slide =
     /// The default 'slide shot' behavior of slide screens.
     let Default =
         { DissolveDescriptor = Dissolve.Default
-          IdlingTime =
-            match Constants.Engine.DesiredFrameRate with
-            | StaticFrameRate fps -> UpdateTime fps
-            | DynamicFrameRate _ -> ClockTime 1.0f
+          IdlingTime = GameTime.ofSeconds 1.0f
           SlideImageOpt = Some Assets.Default.Image5 }
 
 [<RequireQualifiedAccess>]

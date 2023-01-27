@@ -14,26 +14,26 @@ module Constants =
     module Gui =
 
         let Dissolve =
-            { IncomingTime = UpdateTime 40L
-              OutgoingTime = UpdateTime 60L
+            { IncomingTime = 40u.u
+              OutgoingTime = 60u.u
               DissolveImage = Assets.Default.Image8 }
 
         let Splash =
             { DissolveDescriptor = Constants.Dissolve.Default
-              IdlingTime = UpdateTime 60L
+              IdlingTime = 60u.u
               SlideImageOpt = Some Assets.Gui.Splash }
 
     [<RequireQualifiedAccess>]
     module Intro =
 
         let Dissolve =
-            { IncomingTime = UpdateTime 95L
-              OutgoingTime = UpdateTime 95L
+            { IncomingTime = 95u.u
+              OutgoingTime = 95u.u
               DissolveImage = Assets.Default.Image8 }
 
         let Splash =
             { DissolveDescriptor = Constants.Dissolve.Default
-              IdlingTime = UpdateTime 160L
+              IdlingTime = 160u.u
               SlideImageOpt = None }
 
     [<RequireQualifiedAccess>]
@@ -96,7 +96,7 @@ module Constants =
         let SpiritOrbElevation = 20.0f
         let GuiElevation = 30.0f
         let GuiEffectElevation = 40.0f
-        let FieldSongFadeInTime = 1.0f
+        let FieldSongFadeInTime = 60L
 
     [<RequireQualifiedAccess>]
     module Battle =

@@ -40,9 +40,9 @@
     <property name="I">[Character [Enemy Kyla] Downward True False
   [Sequence
    [ClearSpirits
-    [FadeOutSong 2000]
+    [FadeOutSong 120]
     [Wait 120]
-    [PlaySong 2000 0 0 0.5 [Field TheCalling]]
+    [PlaySong 120 0 0 0.5 [Field TheCalling]]
     [Wait 180]
     [Dialog &quot;Always. They have always treated me this way...&quot;]
     [Dialog &quot;Things cannot be put right. Things can only be put in my favor...&quot;]
@@ -58,10 +58,10 @@
     [Face [CharacterTarget [Enemy Kyla]] Downward]
     [Dialog &quot;Imagine their faces when they see the lowest servant become the highest... their victim become their tormentor...&quot;]
     [Dialog &quot;Things could not be put right...&quot;]
-    [FadeOutSong 2000]
+    [FadeOutSong 120]
     [Fade [CharacterTarget [Enemy Kyla]] 150]
     [ReplaceAdvent [KylaAdvent 2] [KylaAdvent 3]]
-    [PlaySong 2000 0 0 0.5 [Castle CastlePart2]]
+    [PlaySong 120 0 0 0.5 [Castle CastlePart2]]
     [Wait 120]
     [PlaySound 0.5 [Field Unlatch]]
     [Dialog &quot;Something unlatched...&quot;]]]

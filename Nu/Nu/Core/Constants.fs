@@ -114,15 +114,11 @@ module Assimp =
     let [<Literal>] PostProcessSteps = Assimp.PostProcessSteps.Triangulate ||| Assimp.PostProcessSteps.GlobalScale
 
 [<RequireQualifiedAccess>]
-module Audio =
+module AudioPlayer =
 
     let [<Literal>] Frequency = 44100
-    let [<Literal>] SongVolumeDefault = 0.5f
-    let [<Literal>] SoundVolumeDefault = 1.0f
     let [<Literal>] BufferSizeDefault = 1024
-    let [<Literal>] FadeInTimeMinimum = 0.1f // NOTE: Mix_PlayMusic seems to sometimes cause audio 'popping' when starting a song, so a minimum fade is used instead.
-    let [<Literal>] FadeOutTimeDefault = 0.5f
-    let [<Literal>] SongResumptionMaximum = 90.0f // HACK: prevents songs from starting over too often due to hack in SdlAudioPlayer.playSong.
+    let [<Literal>] FadeInSecondsMinimum = 0.1f // NOTE: Mix_PlayMusic seems to sometimes cause audio 'popping' when starting a song, so a minimum fade is used instead.
 
 [<RequireQualifiedAccess>]
 module Physics =
