@@ -377,7 +377,12 @@ module BattleDispatcher =
                         then Constants.Battle.AllyActionTimeDelta
                         else Constants.Battle.EnemyActionTimeDelta
                     let actionTimeDelta =
-                        if Map.containsKey (Time false) character.Statuses then actionTimeDelta * Constants.Battle.ActionTimeSlowScalar character.Boss
+                        if Map.containsKey (Time false) character.Statuses then
+                            let slowScalar =
+                                if character.Ally then Constants.Battle.ActionTimeSlowScalar
+                                elif character.Boss then Constants.Battle.ActionTimeSlowerScalar
+                                else Constants.Battle.ActionTimeSlowestScalar
+                            actionTimeDelta * slowScalar
                         elif Map.containsKey (Time true) character.Statuses then actionTimeDelta * Constants.Battle.ActionTimeHasteScalar
                         else actionTimeDelta
                     let actionTimeDelta =
