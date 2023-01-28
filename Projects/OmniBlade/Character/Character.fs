@@ -387,7 +387,11 @@ module Character =
             updateActionTime (fun actionTime ->
                 if  statusesAdded.Contains (Time false) &&
                     actionTime < Constants.Battle.ActionTime then
-                    actionTime * Constants.Battle.ActionTimeSlowScalar character.Boss_
+                    let slowScalar =
+                        if character.Ally then Constants.Battle.ActionTimeSlowScalar
+                        elif character.Boss then Constants.Battle.ActionTimeSlowerScalar
+                        else Constants.Battle.ActionTimeSlowestScalar
+                    actionTime * slowScalar
                 else actionTime)
                 character
         else character
