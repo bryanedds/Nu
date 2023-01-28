@@ -22,6 +22,7 @@ type [<StructuralEquality; NoComparison; Struct>] TileDescriptor =
 /// Describes a Tiled tile animation.
 type [<StructuralEquality; NoComparison; Struct>] TileAnimationDescriptor =
     { TileAnimationRun : int
+      TileAnimationStride : int
       TileAnimationDelay : GameTime }
 
 /// Describes a Tiled tile map.

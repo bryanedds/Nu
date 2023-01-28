@@ -368,7 +368,7 @@ module TmxMap =
                                                     | (UpdateTime time, UpdateTime delay) -> time / delay
                                                     | (ClockTime time, ClockTime delay) -> time / delay |> int64
                                                     | (_, _) -> failwith "Cannot operate on incompatible GameTime values."
-                                                let xTileOffset = int compressedTime % xTileAnimationDescriptor.TileAnimationRun
+                                                let xTileOffset = int compressedTime % xTileAnimationDescriptor.TileAnimationRun * xTileAnimationDescriptor.TileAnimationStride
                                                 makeLayerTile (xTileGid + xTileOffset) xTile.HorizontalFlip xTile.VerticalFlip xTile.DiagonalFlip
                                             | ValueNone ->
                                                 makeLayerTile xTileGid xTile.HorizontalFlip xTile.VerticalFlip xTile.DiagonalFlip
