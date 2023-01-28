@@ -424,7 +424,11 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
                             let tileCount = if tileCountOpt.HasValue then tileCountOpt.Value else 0
                             if  tile.Gid >= set.FirstGid && tile.Gid < set.FirstGid + tileCount ||
                                 not tileCountOpt.HasValue then // HACK: when tile count is missing, assume we've found the tile...?
-                                tileSetWidth <- let tileSetWidthOpt = set.Image.Width in tileSetWidthOpt.Value
+                                let tileSetWidth' = let width = set.Image.Width in width.Value
+#if DEBUG
+                                if tileSetWidth' % tileSourceSize.X <> 0 then Log.debugOnce ("Tile set for " + set.Name + "width is not evenly divided by tile width.")
+#endif
+                                tileSetWidth <- tileSetWidth'
                                 tileSetTextureOpt <- Some (textureMetadata, texture)
                             if Option.isNone tileSetTextureOpt then
                                 tileSetIndex <- inc tileSetIndex
