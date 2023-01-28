@@ -380,7 +380,7 @@ module Character =
         if character.Healthy then
             let character =
                 updateStatuses (fun statuses ->
-                    let statuses = Set.fold (fun statuses status -> Map.add status Constants.Battle.BurndownTime statuses) statuses statusesAdded
+                    let statuses = Set.fold (fun statuses status -> Map.add status Constants.Battle.StatusBurndownTime statuses) statuses statusesAdded
                     let statuses = Set.fold (fun statuses status -> Map.remove status statuses) statuses statusesRemoved
                     statuses)
                     character
