@@ -388,7 +388,7 @@ module BattleDispatcher =
                             | PacedSpeed -> actionTimeDelta * Constants.Battle.PacedSpeedScalar
                             | WaitSpeed -> 0.0f
                         else actionTimeDelta * 1.0f
-                    let poisoned =
+                    let poisoning =
                         let actionTime = character.ActionTime + actionTimeDelta
                         Map.containsKey Poison character.Statuses &&
                         character.ActionTime % 500.0f < 250.0f &&
@@ -402,8 +402,12 @@ module BattleDispatcher =
                         then Character.burndownStatuses actionTimeDelta character
                         else character
                     let character =
-                        if character.Healthy && poisoned then
-                            let damage = single character.HitPointsMax * Constants.Battle.PoisonDrainRate |> max 1.0f |> int
+                        if character.Healthy && poisoning then
+                            let poisonDrainRate =
+                                if character.Ally then Constants.Battle.PoisonDrainRateMedium
+                                elif character.Boss then Constants.Battle.PoisonDrainRateSlow
+                                else Constants.Battle.PoisonDrainRateFast
+                            let damage = single character.HitPointsMax * poisonDrainRate |> max 1.0f |> int
                             let alliesHealthy = Battle.getAlliesHealthy battle
                             Character.updateHitPoints (fun hp -> (false, max 1 (hp - damage))) false alliesHealthy character
                         else character
