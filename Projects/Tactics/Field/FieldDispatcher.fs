@@ -55,7 +55,6 @@ module FieldDispatcher =
             [Screen.UpdateEvent => UpdateMessage
              Screen.UpdateEvent => UpdateCommand]
 
-#if false
         override this.Register (game, world) =
             let world = base.Register (game, world)
 #if DEBUG
@@ -74,11 +73,10 @@ module FieldDispatcher =
                         positions.Add position
             let world =
                 Seq.fold (fun world position ->
-                    let (staticModel, world) = World.createEntity<StaticModelDispatcher> NoOverlay None Simulants.Field.Scene.Group world
+                    let (staticModel, world) = World.createEntity<StaticModelDispatcher> NoOverlay None Simulants.FieldScene world
                     staticModel.SetPosition position world)
                     world positions
             world
-#endif
 
         override this.Message (field, message, _, world) =
             match message with

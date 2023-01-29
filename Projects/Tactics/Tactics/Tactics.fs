@@ -133,7 +133,7 @@ module TacticsGame =
                         match gui with
                         | Intro slot ->
                             match Simulants.Intro5.GetTransitionState world with
-                            | OutgoingState_ -> Atlas (Atlas.debug world)
+                            | OutgoingState _ -> Atlas (Atlas.debug world)
                             | _ -> model
                         | _ -> model
                     | Atlas atlas ->
