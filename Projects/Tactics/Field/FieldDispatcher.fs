@@ -57,11 +57,7 @@ module FieldDispatcher =
 
         override this.Register (game, world) =
             let world = base.Register (game, world)
-#if DEBUG
-            let population = 30
-#else
-            let population = 60
-#endif
+            let population = 50
             let spread = 15.0f
             let offset = v3Dup spread * single population * 0.5f
             let positions = Collections.Generic.List ()

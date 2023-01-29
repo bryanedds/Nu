@@ -206,6 +206,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
           mutable RenderTexCoordsOffsetsFields : single array
           mutable RenderAlbedosFields : single array
           mutable RenderMaterialsFields : single array
+          mutable RenderUserDefinedStaticModelFields : Dictionary<int, single array>
           RenderTasks : RenderTasks
           RenderPackages : Packages<RenderAsset, GlPackageState3d>
           mutable RenderPackageCachedOpt : string * Dictionary<string, RenderAsset> // OPTIMIZATION: nullable for speed
@@ -427,7 +428,14 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
 
                 // create vertex data, truncating it when required
                 let vertexCount = surfaceDescriptor.Positions.Length
-                let mutable vertexData = Array.zeroCreate (vertexCount * 8)
+                let elementCount = vertexCount * 8
+                let mutable vertexData =
+                    match renderer.RenderUserDefinedStaticModelFields.TryGetValue elementCount with
+                    | (false, _) ->
+                        let vertexData = Array.zeroCreate elementCount
+                        renderer.RenderUserDefinedStaticModelFields.[elementCount] <- vertexData
+                        vertexData
+                    | (true, vertexData) -> vertexData
                 let mutable i = 0
                 try
                     while i < vertexCount do
@@ -883,6 +891,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
               RenderTexCoordsOffsetsFields = Array.zeroCreate<single> (4 * Constants.Render.GeometryBatchPrealloc)
               RenderAlbedosFields = Array.zeroCreate<single> (4 * Constants.Render.GeometryBatchPrealloc)
               RenderMaterialsFields = Array.zeroCreate<single> (3 * Constants.Render.GeometryBatchPrealloc)
+              RenderUserDefinedStaticModelFields = dictPlus HashIdentity.Structural []
               RenderTasks = renderTasks
               RenderPackages = dictPlus StringComparer.Ordinal []
               RenderPackageCachedOpt = Unchecked.defaultof<_>
