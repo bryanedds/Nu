@@ -834,7 +834,7 @@ module FieldDispatcher =
 
                  // menu button
                  Content.button "Menu"
-                    [Entity.Position == v3 -456.0f -246.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v3 144.0f 48.0f 0.0f
+                    [Entity.Position == v3 -450.0f -246.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v3 144.0f 48.0f 0.0f
                      Entity.UpImage == Assets.Gui.ButtonShortUpImage; Entity.DownImage == Assets.Gui.ButtonShortDownImage
                      Entity.Text == "Menu"
                      Entity.Visible :=
@@ -855,12 +855,13 @@ module FieldDispatcher =
                         Option.isNone field.BattleOpt &&
                         Option.isNone field.ShopOpt &&
                         Option.isNone field.FieldTransitionOpt &&
-                        Field.isTouchingSavePoint field
+                        Field.isTouchingSavePoint field &&
+                        field.Team.Count > 2
                      Entity.Text == "Party"]
 
                  // interact button
                  Content.button "Interact"
-                    [Entity.Position == v3 312.0f -246.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v3 144.0f 48.0f 0.0f
+                    [Entity.Position == v3 306.0f -246.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v3 144.0f 48.0f 0.0f
                      Entity.UpImage == Assets.Gui.ButtonShortUpImage; Entity.DownImage == Assets.Gui.ButtonShortDownImage
                      Entity.Visible :=
                         field.Menu.MenuState = MenuClosed &&
