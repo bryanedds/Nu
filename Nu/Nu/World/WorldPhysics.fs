@@ -43,13 +43,13 @@ module WorldPhysics =
                         world message.BodiesProperties
                 | DestroyBodyMessage message ->
                     let eventTrace = EventTrace.debug "World" "enqueuePhysicsMessage2d" "" EventTrace.empty
-                    let world = World.publish { BodyPhysicsId = message.PhysicsId } Events.BodySeparationImplicit eventTrace Simulants.Game world
+                    let world = World.publish { BodySourceSimulant = message.SourceSimulant; BodyPhysicsId = message.PhysicsId } Events.BodySeparationImplicit eventTrace Simulants.Game world
                     let world = World.publish message.PhysicsId Events.BodyRemoving eventTrace Simulants.Game world
                     world
                 | DestroyBodiesMessage message ->
                     let eventTrace = EventTrace.debug "World" "enqueuePhysicsMessage2d" "" EventTrace.empty
                     List.fold (fun world (physicsId : PhysicsId) ->
-                        let world = World.publish { BodyPhysicsId = physicsId } Events.BodySeparationImplicit eventTrace Simulants.Game world
+                        let world = World.publish { BodySourceSimulant = message.SourceSimulant; BodyPhysicsId = physicsId } Events.BodySeparationImplicit eventTrace Simulants.Game world
                         let world = World.publish physicsId Events.BodyRemoving eventTrace Simulants.Game world
                         world)
                         world message.PhysicsIds
@@ -139,15 +139,15 @@ module WorldPhysics =
 
         /// Send a message to the physics system to destroy a physics body.
         [<FunctionBinding>]
-        static member destroyBody physicsId world =
-            let destroyBodyMessage = DestroyBodyMessage { PhysicsId = physicsId }
+        static member destroyBody sourceSimulant physicsId world =
+            let destroyBodyMessage = DestroyBodyMessage { SourceSimulant = sourceSimulant; PhysicsId = physicsId }
             World.enqueuePhysicsMessage2d destroyBodyMessage world
 
         /// Send a message to the physics system to destroy several physics bodies. Note that all bodies must be either
         /// all 2d or all 3d. A mixture may result in some bodies not being destroyed.
         [<FunctionBinding>]
-        static member destroyBodies physicsIds world =
-            let destroyBodiesMessage = DestroyBodiesMessage { PhysicsIds = physicsIds }
+        static member destroyBodies sourceSimulant physicsIds world =
+            let destroyBodiesMessage = DestroyBodiesMessage { SourceSimulant = sourceSimulant; PhysicsIds = physicsIds }
             World.enqueuePhysicsMessage2d destroyBodiesMessage world
 
         /// Send a message to the physics system to create a physics joint.
@@ -170,14 +170,14 @@ module WorldPhysics =
 
         /// Send a message to the physics system to destroy a physics joint.
         [<FunctionBinding>]
-        static member destroyJoint physicsId world =
-            let destroyJointMessage = DestroyJointMessage { PhysicsId = physicsId }
+        static member destroyJoint sourceSimulant physicsId world =
+            let destroyJointMessage = DestroyJointMessage { SourceSimulant = sourceSimulant; PhysicsId = physicsId }
             World.enqueuePhysicsMessage2d destroyJointMessage world
 
         /// Send a message to the physics system to destroy physics joints.
         [<FunctionBinding>]
-        static member destroyJoints physicsIds world =
-            let destroyJointsMessage = DestroyJointsMessage { PhysicsIds = physicsIds }
+        static member destroyJoints sourceSimulant physicsIds world =
+            let destroyJointsMessage = DestroyJointsMessage { SourceSimulant = sourceSimulant; PhysicsIds = physicsIds }
             World.enqueuePhysicsMessage2d destroyJointsMessage world
 
         /// Send a message to the physics system to set the enabled-ness of a body with the given physics id.

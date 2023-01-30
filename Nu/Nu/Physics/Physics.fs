@@ -294,11 +294,13 @@ type [<NoComparison>] CreateBodiesMessage =
 
 /// A message to the physics system to destroy a body.
 type [<NoComparison>] DestroyBodyMessage =
-    { PhysicsId : PhysicsId }
+    { SourceSimulant : Simulant
+      PhysicsId : PhysicsId }
 
 /// A message to the physics system to destroy multiple bodies.
 type [<NoComparison>] DestroyBodiesMessage =
-    { PhysicsIds : PhysicsId list }
+    { SourceSimulant : Simulant
+      PhysicsIds : PhysicsId list }
 
 /// A message to the physics system to create a joint.
 type [<NoComparison>] CreateJointMessage =
@@ -314,11 +316,13 @@ type [<NoComparison>] CreateJointsMessage =
 
 /// A message to the physics system to destroy a joint.
 type [<NoComparison>] DestroyJointMessage =
-    { PhysicsId : PhysicsId }
+    { SourceSimulant : Simulant
+      PhysicsId : PhysicsId }
 
 /// A message to the physics system to destroy multiple joints.
 type [<NoComparison>] DestroyJointsMessage =
-    { PhysicsIds : PhysicsId list }
+    { SourceSimulant : Simulant
+      PhysicsIds : PhysicsId list }
 
 /// A message to the physics system to destroy a body.
 type [<NoComparison>] SetBodyEnabledMessage =

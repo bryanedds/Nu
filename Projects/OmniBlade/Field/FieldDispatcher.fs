@@ -363,21 +363,14 @@ module FieldDispatcher =
             | AvatarBodySeparationImplicit separation ->
 
                 // add separated body shape
-                let field =
-                    let entityOpt =
-                        world |>
-                        World.getEntities Simulants.FieldScene |>
-                        Seq.filter (fun entity -> entity.Is<PropDispatcher> world && entity.GetPhysicsId world = separation.BodyPhysicsId) |>
-                        Seq.tryHead
-                    match entityOpt with
-                    | Some entity ->
-                        let propId = (entity.GetPropPlus world).Prop.PropId
-                        let (separatedPropIds, intersectedPropIds) = List.split ((=) propId) field.AvatarIntersectedPropIds
-                        let field = Field.updateAvatarIntersectedPropIds (constant intersectedPropIds) field
-                        let field = Field.updateAvatarSeparatedPropIds ((@) separatedPropIds) field
-                        field
-                    | None -> field
-                just field
+                match separation.BodySourceSimulant with
+                | :? Entity as entity ->
+                    let propId = (entity.GetPropPlus world).Prop.PropId
+                    let (separatedPropIds, intersectedPropIds) = List.split ((=) propId) field.AvatarIntersectedPropIds
+                    let field = Field.updateAvatarIntersectedPropIds (constant intersectedPropIds) field
+                    let field = Field.updateAvatarSeparatedPropIds ((@) separatedPropIds) field
+                    just field
+                | _ -> just field
 
             | AvatarBodySeparationExplicit separation ->
 

@@ -276,8 +276,9 @@ type [<ReferenceEquality; NoComparison>] AetherPhysicsEngine =
                 Log.debug ("Could not destroy non-existent body with PhysicsId = " + scstring physicsId + "'.")
 
     static member private destroyBodies (destroyBodiesMessage : DestroyBodiesMessage) physicsEngine =
-        List.iter
-            (fun physicsId -> AetherPhysicsEngine.destroyBody { PhysicsId = physicsId } physicsEngine)
+        List.iter (fun physicsId ->
+            let destroyBodyMessage : DestroyBodyMessage = { SourceSimulant = destroyBodiesMessage.SourceSimulant; PhysicsId = physicsId }
+            AetherPhysicsEngine.destroyBody destroyBodyMessage physicsEngine)
             destroyBodiesMessage.PhysicsIds
 
     static member private createJoint (createJointMessage : CreateJointMessage) physicsEngine =
@@ -320,10 +321,9 @@ type [<ReferenceEquality; NoComparison>] AetherPhysicsEngine =
                 Log.debug ("Could not destroy non-existent joint with PhysicsId = " + scstring destroyJointMessage.PhysicsId + "'.")
 
     static member private destroyJoints (destroyJointsMessage : DestroyJointsMessage) physicsEngine =
-        List.iter
-            (fun physicsId ->
-                let destroyJointMessage = { PhysicsId = physicsId }
-                AetherPhysicsEngine.destroyJoint destroyJointMessage physicsEngine)
+        List.iter (fun physicsId ->
+            let destroyJointMessage = { SourceSimulant = destroyJointsMessage.SourceSimulant; PhysicsId = physicsId }
+            AetherPhysicsEngine.destroyJoint destroyJointMessage physicsEngine)
             destroyJointsMessage.PhysicsIds
 
     static member private setBodyEnabled (setBodyEnabledMessage : SetBodyEnabledMessage) physicsEngine =
