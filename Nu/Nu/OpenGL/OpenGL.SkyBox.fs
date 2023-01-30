@@ -4,7 +4,9 @@
 namespace OpenGL
 open System
 open System.Numerics
+open System.Runtime.CompilerServices
 open System.Runtime.InteropServices
+open FSharp.NativeInterop
 open Prime
 open Nu
 
@@ -113,7 +115,7 @@ module SkyBox =
         (vertexData, indexData, bounds)
 
     /// Create sky geometry from a mesh.
-    let CreateSkyBoxGeometryFromMesh (renderable, vertexData : single array, indexData : int array, bounds) =
+    let CreateSkyBoxGeometryFromMesh (renderable, vertexData : single Memory, indexData : int Memory, bounds) =
 
         // make buffers
         let (vertices, vertexBuffer, indexBuffer, vao) =
@@ -130,9 +132,9 @@ module SkyBox =
                 let vertexBuffer = Hl.AllocBuffer ()
                 let vertexSize = (3 (*position*)) * sizeof<single>
                 Gl.BindBuffer (BufferTarget.ArrayBuffer, vertexBuffer)
-                let vertexDataPtr = GCHandle.Alloc (vertexData, GCHandleType.Pinned)
-                try Gl.BufferData (BufferTarget.ArrayBuffer, uint (vertexData.Length * sizeof<single>), vertexDataPtr.AddrOfPinnedObject (), BufferUsage.StaticDraw)
-                finally vertexDataPtr.Free ()
+                use vertexDataHnd = vertexData.Pin () in
+                    let vertexDataNInt = vertexDataHnd.Pointer |> NativePtr.ofVoidPtr<single> |> NativePtr.toNativeInt
+                    Gl.BufferData (BufferTarget.ArrayBuffer, uint (vertexData.Length * sizeof<single>), vertexDataNInt, BufferUsage.StaticDraw)
                 Gl.EnableVertexAttribArray 0u
                 Gl.VertexAttribPointer (0u, 3, VertexAttribType.Float, false, vertexSize, nativeint 0)
                 Hl.Assert ()
@@ -141,9 +143,9 @@ module SkyBox =
                 let indexBuffer = Hl.AllocBuffer ()
                 Gl.BindBuffer (BufferTarget.ElementArrayBuffer, indexBuffer)
                 let indexDataSize = uint (indexData.Length * sizeof<uint>)
-                let indexDataPtr = GCHandle.Alloc (indexData, GCHandleType.Pinned)
-                try Gl.BufferData (BufferTarget.ElementArrayBuffer, indexDataSize, indexDataPtr.AddrOfPinnedObject (), BufferUsage.StaticDraw)
-                finally indexDataPtr.Free ()
+                use indexDataHnd = indexData.Pin () in
+                    let indexDataNInt = indexDataHnd.Pointer |> NativePtr.ofVoidPtr<uint> |> NativePtr.toNativeInt
+                    Gl.BufferData (BufferTarget.ElementArrayBuffer, indexDataSize, indexDataNInt, BufferUsage.StaticDraw)
                 Hl.Assert ()
 
                 // finalize vao
@@ -158,6 +160,7 @@ module SkyBox =
 
                 // compute vertices
                 let vertices = Array.zeroCreate (vertexData.Length / 3)
+                let vertexData = vertexData.Span
                 for i in 0 .. dec vertices.Length do
                     let j = i * 3
                     let vertex = v3 vertexData.[j] vertexData.[j+1] vertexData.[j+2]
@@ -182,7 +185,7 @@ module SkyBox =
     /// Create sky box geometry.
     let CreateSkyBoxGeometry renderable =
         let (vertexData, indexData, bounds) = CreateSkyBoxMesh ()
-        CreateSkyBoxGeometryFromMesh (renderable, vertexData, indexData, bounds)
+        CreateSkyBoxGeometryFromMesh (renderable, vertexData.AsMemory (), indexData.AsMemory (), bounds)
 
     /// Create a sky box shader.
     let CreateSkyBoxShader (shaderFilePath : string) =

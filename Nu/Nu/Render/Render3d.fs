@@ -206,7 +206,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
           mutable RenderTexCoordsOffsetsFields : single array
           mutable RenderAlbedosFields : single array
           mutable RenderMaterialsFields : single array
-          mutable RenderUserDefinedStaticModelFields : Dictionary<int, single array>
+          mutable RenderUserDefinedStaticModelFields : single array
           RenderTasks : RenderTasks
           RenderPackages : Packages<RenderAsset, GlPackageState3d>
           mutable RenderPackageCachedOpt : string * Dictionary<string, RenderAsset> // OPTIMIZATION: nullable for speed
@@ -429,15 +429,12 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                 // create vertex data, truncating it when required
                 let vertexCount = surfaceDescriptor.Positions.Length
                 let elementCount = vertexCount * 8
-                let mutable vertexData =
-                    match renderer.RenderUserDefinedStaticModelFields.TryGetValue elementCount with
-                    | (false, _) ->
-                        let vertexData = Array.zeroCreate elementCount
-                        renderer.RenderUserDefinedStaticModelFields.[elementCount] <- vertexData
-                        vertexData
-                    | (true, vertexData) -> vertexData
+                if  renderer.RenderUserDefinedStaticModelFields.Length < elementCount then
+                    renderer.RenderUserDefinedStaticModelFields <- Array.zeroCreate elementCount // TODO: grow this by power of two.
+                let vertexData = renderer.RenderUserDefinedStaticModelFields.AsMemory (0, elementCount)
                 let mutable i = 0
                 try
+                    let vertexData = vertexData.Span
                     while i < vertexCount do
                         let u = i * 8
                         vertexData.[u] <- surfaceDescriptor.Positions.[i].X
@@ -450,11 +447,13 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
                         vertexData.[u+7] <- surfaceDescriptor.Normals.[i].Z
                         i <- inc i
                 with :? IndexOutOfRangeException ->
-                    vertexData <- Array.take i vertexData
-                    Log.debug "Vertex data truncated due to an inequal count among surface descriptor Positions, TexCoordses, and Normals."
+                    Log.debug "Vertex data truncated due to an unequal count among surface descriptor Positions, TexCoordses, and Normals."
 
-                // crete geometry
-                let geometry = OpenGL.PhysicallyBased.CreatePhysicallyBasedGeometry (true, vertexData, surfaceDescriptor.Indices, surfaceDescriptor.Bounds)
+                // create index data
+                let indexData = surfaceDescriptor.Indices.AsMemory ()
+
+                // create geometry
+                let geometry = OpenGL.PhysicallyBased.CreatePhysicallyBasedGeometry (true, vertexData, indexData, surfaceDescriptor.Bounds)
 
                 // create surface
                 let surface = OpenGL.PhysicallyBased.CreatePhysicallyBasedSurface ([||], surfaceDescriptor.AffineMatrix, surfaceDescriptor.Bounds, material, geometry)
@@ -891,7 +890,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer3d =
               RenderTexCoordsOffsetsFields = Array.zeroCreate<single> (4 * Constants.Render.GeometryBatchPrealloc)
               RenderAlbedosFields = Array.zeroCreate<single> (4 * Constants.Render.GeometryBatchPrealloc)
               RenderMaterialsFields = Array.zeroCreate<single> (3 * Constants.Render.GeometryBatchPrealloc)
-              RenderUserDefinedStaticModelFields = dictPlus HashIdentity.Structural []
+              RenderUserDefinedStaticModelFields = [||]
               RenderTasks = renderTasks
               RenderPackages = dictPlus StringComparer.Ordinal []
               RenderPackageCachedOpt = Unchecked.defaultof<_>

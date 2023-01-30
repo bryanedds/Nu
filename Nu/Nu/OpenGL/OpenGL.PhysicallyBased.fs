@@ -5,7 +5,9 @@ namespace OpenGL
 open System
 open System.IO
 open System.Numerics
+open System.Runtime.CompilerServices
 open System.Runtime.InteropServices
+open FSharp.NativeInterop
 open Prime
 open Nu
 
@@ -358,7 +360,7 @@ module PhysicallyBased =
         (vertexData, indexData, bounds)
 
     /// Create physically-based geometry from a mesh.
-    let CreatePhysicallyBasedGeometry (renderable, vertexData : single array, indexData : int array, bounds) =
+    let CreatePhysicallyBasedGeometry (renderable, vertexData : single Memory, indexData : int Memory, bounds) =
 
         // make buffers
         let (vertices, indices, vertexBuffer, modelBuffer, texCoordsOffsetBuffer, albedoBuffer, materialBuffer, indexBuffer, vao) =
@@ -377,9 +379,9 @@ module PhysicallyBased =
                 let normalOffset =      (3 (*position*) + 2 (*tex coords*)) * sizeof<single>
                 let vertexSize =        (3 (*position*) + 2 (*tex coords*) + 3 (*normal*)) * sizeof<single>
                 Gl.BindBuffer (BufferTarget.ArrayBuffer, vertexBuffer)
-                let vertexDataPtr = GCHandle.Alloc (vertexData, GCHandleType.Pinned)
-                try Gl.BufferData (BufferTarget.ArrayBuffer, uint (vertexData.Length * sizeof<single>), vertexDataPtr.AddrOfPinnedObject (), BufferUsage.StaticDraw)
-                finally vertexDataPtr.Free ()
+                use vertexDataHnd = vertexData.Pin () in
+                    let vertexDataNInt = vertexDataHnd.Pointer |> NativePtr.ofVoidPtr<single> |> NativePtr.toNativeInt
+                    Gl.BufferData (BufferTarget.ArrayBuffer, uint (vertexData.Length * sizeof<single>), vertexDataNInt, BufferUsage.StaticDraw)
                 Gl.EnableVertexAttribArray 0u
                 Gl.VertexAttribPointer (0u, 3, VertexAttribType.Float, false, vertexSize, nativeint 0)
                 Gl.EnableVertexAttribArray 1u
@@ -445,30 +447,37 @@ module PhysicallyBased =
                 let indexBuffer = Hl.AllocBuffer ()
                 Gl.BindBuffer (BufferTarget.ElementArrayBuffer, indexBuffer)
                 let indexDataSize = uint (indexData.Length * sizeof<uint>)
-                let indexDataPtr = GCHandle.Alloc (indexData, GCHandleType.Pinned)
-                try Gl.BufferData (BufferTarget.ElementArrayBuffer, indexDataSize, indexDataPtr.AddrOfPinnedObject (), BufferUsage.StaticDraw)
-                finally indexDataPtr.Free ()
+                use indexDataHnd = indexData.Pin () in
+                    let indexDataNInt = indexDataHnd.Pointer |> NativePtr.ofVoidPtr<uint> |> NativePtr.toNativeInt
+                    Gl.BufferData (BufferTarget.ElementArrayBuffer, indexDataSize, indexDataNInt, BufferUsage.StaticDraw)
                 Hl.Assert ()
 
                 // finalize vao
                 Gl.BindVertexArray 0u
                 Hl.Assert ()
 
+                // create indices
+                let indices = indexData.ToArray ()
+
                 // fin
-                ([||], indexData, vertexBuffer, modelBuffer, texCoordsOffsetBuffer, albedoBuffer, materialBuffer, indexBuffer, vao)
+                ([||], indices, vertexBuffer, modelBuffer, texCoordsOffsetBuffer, albedoBuffer, materialBuffer, indexBuffer, vao)
 
             // fake buffers
             else
 
                 // compute vertices
                 let vertices = Array.zeroCreate (vertexData.Length / 8)
+                let vertexData = vertexData.Span
                 for i in 0 .. dec vertices.Length do
                     let j = i * 8
                     let vertex = v3 vertexData.[j] vertexData.[j+1] vertexData.[j+2]
                     vertices.[i] <- vertex
 
+                // create indices
+                let indices = indexData.ToArray ()
+
                 // fin
-                (vertices, indexData, 0u, 0u, 0u, 0u, 0u, 0u, 0u)
+                (vertices, indices, 0u, 0u, 0u, 0u, 0u, 0u, 0u)
 
         // make physically-based geometry
         let geometry =
@@ -498,23 +507,23 @@ module PhysicallyBased =
             TryCreatePhysicallyBasedMesh mesh
 #endif
         match meshOpt with
-        | Right (vertexData, indexData, bounds) -> Right (CreatePhysicallyBasedGeometry (renderable, vertexData, indexData, bounds))
+        | Right (vertexData, indexData, bounds) -> Right (CreatePhysicallyBasedGeometry (renderable, vertexData.AsMemory (), indexData.AsMemory (), bounds))
         | Left error -> Left error
 
     /// Create physically-based quad.
     let CreatePhysicallyBasedQuad renderable =
         let (vertexData, indexData, bounds) = CreatePhysicallyBasedQuadMesh ()
-        CreatePhysicallyBasedGeometry (renderable, vertexData, indexData, bounds)
+        CreatePhysicallyBasedGeometry (renderable, vertexData.AsMemory (), indexData.AsMemory (), bounds)
 
     /// Create physically-based billboard.
     let CreatePhysicallyBasedBillboard renderable =
         let (vertexData, indexData, bounds) = CreatePhysicallyBasedBillboardMesh ()
-        CreatePhysicallyBasedGeometry (renderable, vertexData, indexData, bounds)
+        CreatePhysicallyBasedGeometry (renderable, vertexData.AsMemory (), indexData.AsMemory (), bounds)
 
     /// Create physically-based cube.
     let CreatePhysicallyBasedCube renderable =
         let (vertexData, indexData, bounds) = CreatePhysicallyBasedCubeMesh ()
-        CreatePhysicallyBasedGeometry (renderable, vertexData, indexData, bounds)
+        CreatePhysicallyBasedGeometry (renderable, vertexData.AsMemory (), indexData.AsMemory (), bounds)
 
     /// Create physically-based material from an assimp mesh. falling back on default in case of missing textures.
     let CreatePhysicallyBasedMaterial (renderable, dirPath, defaultMaterial, minFilterOpt, magFilterOpt, textureMemo, material : Assimp.Material) =
