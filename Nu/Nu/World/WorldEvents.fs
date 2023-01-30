@@ -49,7 +49,8 @@ type [<NoComparison>] BodyCollisionData =
 /// Unfortunately, due to the fact that physics system itself does not raise separation events until the following
 /// frame, we need both an implicit and explicit body separation representation and the user MUST handle both!
 type [<NoComparison>] BodySeparationImplicitData =
-    { BodyPhysicsId : PhysicsId }
+    { BodySourceSimulant : Simulant
+      BodyPhysicsId : PhysicsId }
 
 /// The explicit data for a separation event.
 /// Unfortunately, due to the fact that physics system itself does not raise separation events until the following

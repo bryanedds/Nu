@@ -908,7 +908,7 @@ module RigidBodyFacetModule =
             World.createBody entity (entity.GetId world) bodyProperties world
 
         override this.UnregisterPhysics (entity, world) =
-            World.destroyBody (entity.GetPhysicsId world) world
+            World.destroyBody entity (entity.GetPhysicsId world) world
 
 [<AutoOpen>]
 module JointFacetModule =
@@ -937,7 +937,7 @@ module JointFacetModule =
             World.createJoint entity (entity.GetId world) jointProperties world
 
         override this.UnregisterPhysics (entity, world) =
-            World.destroyJoint (entity.GetPhysicsId world) world
+            World.destroyJoint entity (entity.GetPhysicsId world) world
 
 [<AutoOpen>]
 module TileMapFacetModule =
@@ -1015,7 +1015,7 @@ module TileMapFacetModule =
             | None -> world
 
         override this.UnregisterPhysics (entity, world) =
-            World.destroyBody (entity.GetPhysicsId world) world
+            World.destroyBody entity (entity.GetPhysicsId world) world
 
         override this.Render (entity, world) =
             let tileMapAsset = entity.GetTileMap world
@@ -1111,7 +1111,7 @@ module TmxMapFacetModule =
             World.createBody entity (entity.GetId world) bodyProperties world
 
         override this.UnregisterPhysics (entity, world) =
-            World.destroyBody (entity.GetPhysicsId world) world
+            World.destroyBody entity (entity.GetPhysicsId world) world
 
         override this.Render (entity, world) =
             let mutable transform = entity.GetTransform world

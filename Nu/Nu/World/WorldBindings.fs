@@ -863,41 +863,6 @@ module WorldBindings =
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'createBodies' due to: " + scstring exn, ValueNone)
             struct (violation, World.choose oldWorld)
 
-    let destroyBody physicsId world =
-        let oldWorld = world
-        try
-            let physicsId =
-                match ScriptingSystem.tryExport typeof<PhysicsId> physicsId world with
-                | Some value -> value :?> PhysicsId
-                | None -> failwith "Invalid argument type for 'physicsId'; expecting a value convertable to PhysicsId."
-            let result = World.destroyBody physicsId world
-            struct (Scripting.Unit, result)
-        with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'destroyBody' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
-
-    let destroyBodies physicsIds world =
-        let oldWorld = world
-        try
-            let struct (physicsIds, world) =
-                match World.evalInternal physicsIds world with
-                | struct (Scripting.List list, world) ->
-                    Seq.fold (fun struct (values, world) value ->
-                        let value =
-                            match ScriptingSystem.tryExport typeof<PhysicsId> value world with
-                            | Some value -> value :?> PhysicsId
-                            | None -> failwith "Invalid argument type for 'physicsIds'; expecting a value convertable to PhysicsId."
-                        struct (value :: values, world))
-                        struct ([], world)
-                        list
-                | struct (Scripting.Violation (_, error, _), _) -> failwith error
-                | struct (_, _) -> failwith "Relation must be either a String or Keyword."
-            let result = World.destroyBodies physicsIds world
-            struct (Scripting.Unit, result)
-        with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'destroyBodies' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
-
     let createJoint entity entityId jointProperties world =
         let oldWorld = world
         try
@@ -959,41 +924,6 @@ module WorldBindings =
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'createJoints' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
-
-    let destroyJoint physicsId world =
-        let oldWorld = world
-        try
-            let physicsId =
-                match ScriptingSystem.tryExport typeof<PhysicsId> physicsId world with
-                | Some value -> value :?> PhysicsId
-                | None -> failwith "Invalid argument type for 'physicsId'; expecting a value convertable to PhysicsId."
-            let result = World.destroyJoint physicsId world
-            struct (Scripting.Unit, result)
-        with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'destroyJoint' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
-
-    let destroyJoints physicsIds world =
-        let oldWorld = world
-        try
-            let struct (physicsIds, world) =
-                match World.evalInternal physicsIds world with
-                | struct (Scripting.List list, world) ->
-                    Seq.fold (fun struct (values, world) value ->
-                        let value =
-                            match ScriptingSystem.tryExport typeof<PhysicsId> value world with
-                            | Some value -> value :?> PhysicsId
-                            | None -> failwith "Invalid argument type for 'physicsIds'; expecting a value convertable to PhysicsId."
-                        struct (value :: values, world))
-                        struct ([], world)
-                        list
-                | struct (Scripting.Violation (_, error, _), _) -> failwith error
-                | struct (_, _) -> failwith "Relation must be either a String or Keyword."
-            let result = World.destroyJoints physicsIds world
-            struct (Scripting.Unit, result)
-        with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'destroyJoints' due to: " + scstring exn, ValueNone)
             struct (violation, World.choose oldWorld)
 
     let setBodyEnabled enabled physicsId world =
@@ -3561,28 +3491,6 @@ module WorldBindings =
                 struct (violation, world)
         | Some violation -> struct (violation, world)
 
-    let evalDestroyBodyBinding fnName exprs originOpt world =
-        let struct (evaleds, world) = World.evalManyInternal exprs world
-        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
-        | None ->
-            match evaleds with
-            | [|physicsId|] -> destroyBody physicsId world
-            | _ ->
-                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
-                struct (violation, world)
-        | Some violation -> struct (violation, world)
-
-    let evalDestroyBodiesBinding fnName exprs originOpt world =
-        let struct (evaleds, world) = World.evalManyInternal exprs world
-        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
-        | None ->
-            match evaleds with
-            | [|physicsIds|] -> destroyBodies physicsIds world
-            | _ ->
-                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
-                struct (violation, world)
-        | Some violation -> struct (violation, world)
-
     let evalCreateJointBinding fnName exprs originOpt world =
         let struct (evaleds, world) = World.evalManyInternal exprs world
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
@@ -3600,28 +3508,6 @@ module WorldBindings =
         | None ->
             match evaleds with
             | [|entity; entityId; jointsProperties|] -> createJoints entity entityId jointsProperties world
-            | _ ->
-                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
-                struct (violation, world)
-        | Some violation -> struct (violation, world)
-
-    let evalDestroyJointBinding fnName exprs originOpt world =
-        let struct (evaleds, world) = World.evalManyInternal exprs world
-        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
-        | None ->
-            match evaleds with
-            | [|physicsId|] -> destroyJoint physicsId world
-            | _ ->
-                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
-                struct (violation, world)
-        | Some violation -> struct (violation, world)
-
-    let evalDestroyJointsBinding fnName exprs originOpt world =
-        let struct (evaleds, world) = World.evalManyInternal exprs world
-        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
-        | None ->
-            match evaleds with
-            | [|physicsIds|] -> destroyJoints physicsIds world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
                 struct (violation, world)
@@ -5101,12 +4987,8 @@ module WorldBindings =
              ("isBodyOnGround", { Fn = evalIsBodyOnGroundBinding; Pars = [|"physicsId"|]; DocOpt = None })
              ("createBody", { Fn = evalCreateBodyBinding; Pars = [|"entity"; "entityId"; "bodyProperties"|]; DocOpt = None })
              ("createBodies", { Fn = evalCreateBodiesBinding; Pars = [|"entity"; "entityId"; "bodiesProperties"|]; DocOpt = None })
-             ("destroyBody", { Fn = evalDestroyBodyBinding; Pars = [|"physicsId"|]; DocOpt = None })
-             ("destroyBodies", { Fn = evalDestroyBodiesBinding; Pars = [|"physicsIds"|]; DocOpt = None })
              ("createJoint", { Fn = evalCreateJointBinding; Pars = [|"entity"; "entityId"; "jointProperties"|]; DocOpt = None })
              ("createJoints", { Fn = evalCreateJointsBinding; Pars = [|"entity"; "entityId"; "jointsProperties"|]; DocOpt = None })
-             ("destroyJoint", { Fn = evalDestroyJointBinding; Pars = [|"physicsId"|]; DocOpt = None })
-             ("destroyJoints", { Fn = evalDestroyJointsBinding; Pars = [|"physicsIds"|]; DocOpt = None })
              ("setBodyEnabled", { Fn = evalSetBodyEnabledBinding; Pars = [|"enabled"; "physicsId"|]; DocOpt = None })
              ("setBodyPosition", { Fn = evalSetBodyPositionBinding; Pars = [|"position"; "physicsId"|]; DocOpt = None })
              ("setBodyRotation", { Fn = evalSetBodyRotationBinding; Pars = [|"rotation"; "physicsId"|]; DocOpt = None })
