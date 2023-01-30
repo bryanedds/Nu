@@ -19,46 +19,47 @@ module WorldBindings =
 
     let [<Literal>] BindingKeywords =
         "v2 v3 v4 v2i v3i v4i quat color get getAsStream set setAsStream update streamEvent stream bind self game toData monitor " +
-        "resolve relate selectScreen tryGetIsSelectedScreenIdling tryGetIsSelectedScreenTransitioning " +
-        "isSelectedScreenIdling isSelectedScreenTransitioning tryTransitionScreen transitionScreen setScreenSlide " +
-        "createDissolveScreenFromGroupFile6 createDissolveScreenFromGroupFile createSlideScreen6 createSlideScreen " +
-        "reloadExistingAssets tryReloadAssets getCurrentSongOpt getCurrentSongPosition " +
-        "getMasterAudioVolume getMasterSoundVolume getMasterSongVolume setMasterAudioVolume " +
-        "setMasterSoundVolume setMasterSongVolume playSong playSong6 " +
-        "playSound playSound3 fadeOutSong stopSong " +
-        "loadAudioPackage unloadAudioPackage reloadAudioAssets loadRenderPackageUse2d " +
-        "unloadRenderPackage2d reloadRenderAssets2d reloadRenderAssets3d localizeBodyShape " +
-        "bodyExists getBodyContactNormals getBodyLinearVelocity getBodyToGroundContactNormals " +
-        "getBodyToGroundContactNormalOpt getBodyToGroundContactTangentOpt isBodyOnGround createBody " +
-        "createBodies destroyBody destroyBodies createJoint " +
-        "createJoints destroyJoint destroyJoints setBodyEnabled " +
-        "setBodyPosition setBodyRotation setBodyLinearVelocity applyBodyLinearImpulse " +
-        "setBodyAngularVelocity applyBodyAngularImpulse applyBodyForce applyBodyTorque " +
-        "isMouseButtonDown getMousePosition getMousePosition2dScreen getMousePostion2dWorld " +
-        "getMousePosition3dScreen getMouseRay3dWorld isKeyboardKeyDown isKeyboardKeyUp " +
-        "isKeyboardAltDown isKeyboardAltUp isKeyboardCtrlDown isKeyboardCtrlUp " +
-        "isKeyboardShiftDown isKeyboardShiftUp destroyImmediate destroy " +
-        "tryGetParent getParent getChildren getExists " +
-        "isSelected getEntities0 getGroups0 writeGameToFile " +
-        "readGameFromFile getScreens setScreenDissolve destroyScreen " +
-        "createScreen createDissolveScreen writeScreenToFile readScreenFromFile " +
-        "getGroups createGroup destroyGroup destroyGroups " +
-        "writeGroupToFile readGroupFromFile getEntitiesFlattened getEntities " +
-        "getEntitiesSovereign destroyEntity destroyEntities tryPickEntity2d " +
-        "tryPickEntity3d writeEntityToFile readEntityFromFile createEntity " +
-        "renameEntity trySetEntityOverlayNameOpt trySetEntityFacetNames getEyeCenter2d " +
-        "setEyeCenter2d getEyeSize2d setEyeSize2d getEyeBounds2d " +
-        "getEyeCenter3d setEyeCenter3d getEyeRotation3d setEyeRotation3d " +
-        "getEyeFrustum3dEnclosed getEyeFrustum3dExposed getEyeFrustum3dImposter getLightBox3d " +
-        "getOmniScreenOpt setOmniScreenOpt getOmniScreen setOmniScreen " +
-        "constrainEyeBounds2d getSelectedScreenOpt getSelectedScreen setSelectedScreen " +
-        "getDesiredScreen setDesiredScreen getScreenTransitionDestinationOpt setScreenTransitionDestinationOpt " +
-        "getViewBounds2dAbsolute getPlayBounds2dAbsolute getViewBounds2d getPlayBounds2d " +
-        "isBoundsInView2d getPlayBounds3d isBoundsInView3d isBoundsInPlay3d " +
-        "tryGetTextureSize getTextureSize tryGetTextureSizeF getTextureSizeF " +
-        "getImperative getStandAlone getAccompanied getCollectionConfig " +
-        "getLiveness setAdvancing getAdvancing getHalted " +
-        "getUpdateTime getClockTime getClockDelta exit " +
+        "resolve relate selectScreen tryGetIsSelectedScreenIdling " +
+        "tryGetIsSelectedScreenTransitioning isSelectedScreenIdling isSelectedScreenTransitioning tryTransitionScreen " +
+        "transitionScreen setScreenSlide createDissolveScreenFromGroupFile6 createDissolveScreenFromGroupFile " +
+        "createSlideScreen6 createSlideScreen reloadExistingAssets tryReloadAssets " +
+        "getCurrentSongOpt getCurrentSongPosition getMasterAudioVolume getMasterSoundVolume " +
+        "getMasterSongVolume setMasterAudioVolume setMasterSoundVolume setMasterSongVolume " +
+        "playSong playSong6 playSound playSound3 " +
+        "fadeOutSong stopSong loadAudioPackage unloadAudioPackage " +
+        "reloadAudioAssets loadRenderPackageUse2d unloadRenderPackage2d reloadRenderAssets2d " +
+        "reloadRenderAssets3d localizeBodyShape bodyExists getBodyContactNormals " +
+        "getBodyLinearVelocity getBodyToGroundContactNormals getBodyToGroundContactNormalOpt getBodyToGroundContactTangentOpt " +
+        "isBodyOnGround createBody createBodies destroyBody " +
+        "destroyBodies createJoint createJoints destroyJoint " +
+        "destroyJoints setBodyEnabled setBodyPosition setBodyRotation " +
+        "setBodyLinearVelocity applyBodyLinearImpulse setBodyAngularVelocity applyBodyAngularImpulse " +
+        "applyBodyForce applyBodyTorque isMouseButtonDown getMousePosition " +
+        "getMousePosition2dScreen getMousePostion2dWorld getMousePosition3dScreen getMouseRay3dWorld " +
+        "isKeyboardKeyDown isKeyboardKeyUp isKeyboardAltDown isKeyboardAltUp " +
+        "isKeyboardCtrlDown isKeyboardCtrlUp isKeyboardShiftDown isKeyboardShiftUp " +
+        "destroyImmediate destroy tryGetParent getParent " +
+        "getChildren getExists isSelected getEntities0 " +
+        "getGroups0 writeGameToFile readGameFromFile getScreens " +
+        "setScreenDissolve destroyScreen createScreen createDissolveScreen " +
+        "writeScreenToFile readScreenFromFile getGroups createGroup " +
+        "destroyGroup destroyGroups writeGroupToFile readGroupFromFile " +
+        "getEntitiesFlattened getEntities getEntitiesSovereign destroyEntity " +
+        "destroyEntities tryPickEntity2d tryPickEntity3d writeEntityToFile " +
+        "readEntityFromFile createEntity renameEntity trySetEntityOverlayNameOpt " +
+        "trySetEntityFacetNames getEyeCenter2d setEyeCenter2d getEyeSize2d " +
+        "setEyeSize2d getEyeBounds2d getEyeCenter3d setEyeCenter3d " +
+        "getEyeRotation3d setEyeRotation3d getEyeFrustum3dEnclosed getEyeFrustum3dExposed " +
+        "getEyeFrustum3dImposter getLightBox3d getOmniScreenOpt setOmniScreenOpt " +
+        "getOmniScreen setOmniScreen constrainEyeBounds2d getSelectedScreenOpt " +
+        "getSelectedScreen setSelectedScreen getDesiredScreen setDesiredScreen " +
+        "getScreenTransitionDestinationOpt setScreenTransitionDestinationOpt getViewBounds2dAbsolute getPlayBounds2dAbsolute " +
+        "getViewBounds2d getPlayBounds2d isBoundsInView2d getPlayBounds3d " +
+        "isBoundsInView3d isBoundsInPlay3d tryGetTextureSize getTextureSize " +
+        "tryGetTextureSizeF getTextureSizeF getImperative getStandAlone " +
+        "getAccompanied getCollectionConfig getLiveness setAdvancing " +
+        "getAdvancing getHalted getUpdateTime getClockDelta " +
+        "getClockTime getGameDelta getGameTime exit " +
         "tryGetWindowFlags tryGetWindowMinimized tryGetWindowMaximized tryGetWindowFullScreen " +
         "trySetWindowFullScreen tryGetWindowSize getWindowSize getViewport " +
         "getViewportOffset tryLoadSymbolPackage unloadSymbolPackage tryGetSymbol " +
@@ -863,6 +864,61 @@ module WorldBindings =
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'createBodies' due to: " + scstring exn, ValueNone)
             struct (violation, World.choose oldWorld)
 
+    let destroyBody sourceSimulant physicsId world =
+        let oldWorld = world
+        try
+            let struct (sourceSimulant, world) =
+                let context = World.getScriptContext world
+                match World.evalInternal sourceSimulant world with
+                | struct (Scripting.String str, world)
+                | struct (Scripting.Keyword str, world) ->
+                    let relation = Relation.makeFromString str
+                    let address = Relation.resolve context.SimulantAddress relation
+                    struct (World.derive address, world)
+                | struct (Scripting.Violation (_, error, _), _) -> failwith error
+                | struct (_, _) -> failwith "Relation must be either a String or Keyword."
+            let physicsId =
+                match ScriptingSystem.tryExport typeof<PhysicsId> physicsId world with
+                | Some value -> value :?> PhysicsId
+                | None -> failwith "Invalid argument type for 'physicsId'; expecting a value convertable to PhysicsId."
+            let result = World.destroyBody sourceSimulant physicsId world
+            struct (Scripting.Unit, result)
+        with exn ->
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'destroyBody' due to: " + scstring exn, ValueNone)
+            struct (violation, World.choose oldWorld)
+
+    let destroyBodies sourceSimulant physicsIds world =
+        let oldWorld = world
+        try
+            let struct (sourceSimulant, world) =
+                let context = World.getScriptContext world
+                match World.evalInternal sourceSimulant world with
+                | struct (Scripting.String str, world)
+                | struct (Scripting.Keyword str, world) ->
+                    let relation = Relation.makeFromString str
+                    let address = Relation.resolve context.SimulantAddress relation
+                    struct (World.derive address, world)
+                | struct (Scripting.Violation (_, error, _), _) -> failwith error
+                | struct (_, _) -> failwith "Relation must be either a String or Keyword."
+            let struct (physicsIds, world) =
+                match World.evalInternal physicsIds world with
+                | struct (Scripting.List list, world) ->
+                    Seq.fold (fun struct (values, world) value ->
+                        let value =
+                            match ScriptingSystem.tryExport typeof<PhysicsId> value world with
+                            | Some value -> value :?> PhysicsId
+                            | None -> failwith "Invalid argument type for 'physicsIds'; expecting a value convertable to PhysicsId."
+                        struct (value :: values, world))
+                        struct ([], world)
+                        list
+                | struct (Scripting.Violation (_, error, _), _) -> failwith error
+                | struct (_, _) -> failwith "Relation must be either a String or Keyword."
+            let result = World.destroyBodies sourceSimulant physicsIds world
+            struct (Scripting.Unit, result)
+        with exn ->
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'destroyBodies' due to: " + scstring exn, ValueNone)
+            struct (violation, World.choose oldWorld)
+
     let createJoint entity entityId jointProperties world =
         let oldWorld = world
         try
@@ -924,6 +980,61 @@ module WorldBindings =
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'createJoints' due to: " + scstring exn, ValueNone)
+            struct (violation, World.choose oldWorld)
+
+    let destroyJoint sourceSimulant physicsId world =
+        let oldWorld = world
+        try
+            let struct (sourceSimulant, world) =
+                let context = World.getScriptContext world
+                match World.evalInternal sourceSimulant world with
+                | struct (Scripting.String str, world)
+                | struct (Scripting.Keyword str, world) ->
+                    let relation = Relation.makeFromString str
+                    let address = Relation.resolve context.SimulantAddress relation
+                    struct (World.derive address, world)
+                | struct (Scripting.Violation (_, error, _), _) -> failwith error
+                | struct (_, _) -> failwith "Relation must be either a String or Keyword."
+            let physicsId =
+                match ScriptingSystem.tryExport typeof<PhysicsId> physicsId world with
+                | Some value -> value :?> PhysicsId
+                | None -> failwith "Invalid argument type for 'physicsId'; expecting a value convertable to PhysicsId."
+            let result = World.destroyJoint sourceSimulant physicsId world
+            struct (Scripting.Unit, result)
+        with exn ->
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'destroyJoint' due to: " + scstring exn, ValueNone)
+            struct (violation, World.choose oldWorld)
+
+    let destroyJoints sourceSimulant physicsIds world =
+        let oldWorld = world
+        try
+            let struct (sourceSimulant, world) =
+                let context = World.getScriptContext world
+                match World.evalInternal sourceSimulant world with
+                | struct (Scripting.String str, world)
+                | struct (Scripting.Keyword str, world) ->
+                    let relation = Relation.makeFromString str
+                    let address = Relation.resolve context.SimulantAddress relation
+                    struct (World.derive address, world)
+                | struct (Scripting.Violation (_, error, _), _) -> failwith error
+                | struct (_, _) -> failwith "Relation must be either a String or Keyword."
+            let struct (physicsIds, world) =
+                match World.evalInternal physicsIds world with
+                | struct (Scripting.List list, world) ->
+                    Seq.fold (fun struct (values, world) value ->
+                        let value =
+                            match ScriptingSystem.tryExport typeof<PhysicsId> value world with
+                            | Some value -> value :?> PhysicsId
+                            | None -> failwith "Invalid argument type for 'physicsIds'; expecting a value convertable to PhysicsId."
+                        struct (value :: values, world))
+                        struct ([], world)
+                        list
+                | struct (Scripting.Violation (_, error, _), _) -> failwith error
+                | struct (_, _) -> failwith "Relation must be either a String or Keyword."
+            let result = World.destroyJoints sourceSimulant physicsIds world
+            struct (Scripting.Unit, result)
+        with exn ->
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'destroyJoints' due to: " + scstring exn, ValueNone)
             struct (violation, World.choose oldWorld)
 
     let setBodyEnabled enabled physicsId world =
@@ -2654,6 +2765,17 @@ module WorldBindings =
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getUpdateTime' due to: " + scstring exn, ValueNone)
             struct (violation, World.choose oldWorld)
 
+    let getClockDelta world =
+        let oldWorld = world
+        try
+            let result = World.getClockDelta world
+            let value = result
+            let value = ScriptingSystem.tryImport typeof<Single> value world |> Option.get
+            struct (value, world)
+        with exn ->
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getClockDelta' due to: " + scstring exn, ValueNone)
+            struct (violation, World.choose oldWorld)
+
     let getClockTime world =
         let oldWorld = world
         try
@@ -2665,15 +2787,26 @@ module WorldBindings =
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getClockTime' due to: " + scstring exn, ValueNone)
             struct (violation, World.choose oldWorld)
 
-    let getClockDelta world =
+    let getGameDelta world =
         let oldWorld = world
         try
-            let result = World.getClockDelta world
+            let result = World.getGameDelta world
             let value = result
-            let value = ScriptingSystem.tryImport typeof<Single> value world |> Option.get
+            let value = ScriptingSystem.tryImport typeof<GameTime> value world |> Option.get
             struct (value, world)
         with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getClockDelta' due to: " + scstring exn, ValueNone)
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getGameDelta' due to: " + scstring exn, ValueNone)
+            struct (violation, World.choose oldWorld)
+
+    let getGameTime world =
+        let oldWorld = world
+        try
+            let result = World.getGameTime world
+            let value = result
+            let value = ScriptingSystem.tryImport typeof<GameTime> value world |> Option.get
+            struct (value, world)
+        with exn ->
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getGameTime' due to: " + scstring exn, ValueNone)
             struct (violation, World.choose oldWorld)
 
     let exit world =
@@ -2919,7 +3052,7 @@ module WorldBindings =
             let filter =
                 match ScriptingSystem.tryExport typeof<EventFilter.Filter> filter world with
                 | Some value -> value :?> EventFilter.Filter
-                | None -> failwith "Invalid argument type for 'filter'; expecting a value convertable to Filter."
+                | None -> failwith "Invalid argument type for 'filter'; expecting a value convertable to EventFilter."
             let result = World.setEventFilter filter world
             struct (Scripting.Unit, result)
         with exn ->
@@ -3491,6 +3624,28 @@ module WorldBindings =
                 struct (violation, world)
         | Some violation -> struct (violation, world)
 
+    let evalDestroyBodyBinding fnName exprs originOpt world =
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|sourceSimulant; physicsId|] -> destroyBody sourceSimulant physicsId world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
+
+    let evalDestroyBodiesBinding fnName exprs originOpt world =
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|sourceSimulant; physicsIds|] -> destroyBodies sourceSimulant physicsIds world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
+
     let evalCreateJointBinding fnName exprs originOpt world =
         let struct (evaleds, world) = World.evalManyInternal exprs world
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
@@ -3508,6 +3663,28 @@ module WorldBindings =
         | None ->
             match evaleds with
             | [|entity; entityId; jointsProperties|] -> createJoints entity entityId jointsProperties world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
+
+    let evalDestroyJointBinding fnName exprs originOpt world =
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|sourceSimulant; physicsId|] -> destroyJoint sourceSimulant physicsId world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
+
+    let evalDestroyJointsBinding fnName exprs originOpt world =
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|sourceSimulant; physicsIds|] -> destroyJoints sourceSimulant physicsIds world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
                 struct (violation, world)
@@ -4679,6 +4856,17 @@ module WorldBindings =
                 struct (violation, world)
         | Some violation -> struct (violation, world)
 
+    let evalGetClockDeltaBinding fnName exprs originOpt world =
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [||] -> getClockDelta world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
+
     let evalGetClockTimeBinding fnName exprs originOpt world =
         let struct (evaleds, world) = World.evalManyInternal exprs world
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
@@ -4690,12 +4878,23 @@ module WorldBindings =
                 struct (violation, world)
         | Some violation -> struct (violation, world)
 
-    let evalGetClockDeltaBinding fnName exprs originOpt world =
+    let evalGetGameDeltaBinding fnName exprs originOpt world =
         let struct (evaleds, world) = World.evalManyInternal exprs world
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [||] -> getClockDelta world
+            | [||] -> getGameDelta world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
+
+    let evalGetGameTimeBinding fnName exprs originOpt world =
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [||] -> getGameTime world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
                 struct (violation, world)
@@ -4987,8 +5186,12 @@ module WorldBindings =
              ("isBodyOnGround", { Fn = evalIsBodyOnGroundBinding; Pars = [|"physicsId"|]; DocOpt = None })
              ("createBody", { Fn = evalCreateBodyBinding; Pars = [|"entity"; "entityId"; "bodyProperties"|]; DocOpt = None })
              ("createBodies", { Fn = evalCreateBodiesBinding; Pars = [|"entity"; "entityId"; "bodiesProperties"|]; DocOpt = None })
+             ("destroyBody", { Fn = evalDestroyBodyBinding; Pars = [|"sourceSimulant"; "physicsId"|]; DocOpt = None })
+             ("destroyBodies", { Fn = evalDestroyBodiesBinding; Pars = [|"sourceSimulant"; "physicsIds"|]; DocOpt = None })
              ("createJoint", { Fn = evalCreateJointBinding; Pars = [|"entity"; "entityId"; "jointProperties"|]; DocOpt = None })
              ("createJoints", { Fn = evalCreateJointsBinding; Pars = [|"entity"; "entityId"; "jointsProperties"|]; DocOpt = None })
+             ("destroyJoint", { Fn = evalDestroyJointBinding; Pars = [|"sourceSimulant"; "physicsId"|]; DocOpt = None })
+             ("destroyJoints", { Fn = evalDestroyJointsBinding; Pars = [|"sourceSimulant"; "physicsIds"|]; DocOpt = None })
              ("setBodyEnabled", { Fn = evalSetBodyEnabledBinding; Pars = [|"enabled"; "physicsId"|]; DocOpt = None })
              ("setBodyPosition", { Fn = evalSetBodyPositionBinding; Pars = [|"position"; "physicsId"|]; DocOpt = None })
              ("setBodyRotation", { Fn = evalSetBodyRotationBinding; Pars = [|"rotation"; "physicsId"|]; DocOpt = None })
@@ -5095,8 +5298,10 @@ module WorldBindings =
              ("getAdvancing", { Fn = evalGetAdvancingBinding; Pars = [||]; DocOpt = None })
              ("getHalted", { Fn = evalGetHaltedBinding; Pars = [||]; DocOpt = None })
              ("getUpdateTime", { Fn = evalGetUpdateTimeBinding; Pars = [||]; DocOpt = None })
-             ("getClockTime", { Fn = evalGetClockTimeBinding; Pars = [||]; DocOpt = None })
              ("getClockDelta", { Fn = evalGetClockDeltaBinding; Pars = [||]; DocOpt = None })
+             ("getClockTime", { Fn = evalGetClockTimeBinding; Pars = [||]; DocOpt = None })
+             ("getGameDelta", { Fn = evalGetGameDeltaBinding; Pars = [||]; DocOpt = None })
+             ("getGameTime", { Fn = evalGetGameTimeBinding; Pars = [||]; DocOpt = None })
              ("exit", { Fn = evalExitBinding; Pars = [||]; DocOpt = None })
              ("tryGetWindowFlags", { Fn = evalTryGetWindowFlagsBinding; Pars = [||]; DocOpt = None })
              ("tryGetWindowMinimized", { Fn = evalTryGetWindowMinimizedBinding; Pars = [||]; DocOpt = None })
