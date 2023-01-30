@@ -364,7 +364,7 @@ module FieldDispatcher =
 
                 // add separated body shape
                 match separation.BodySourceSimulant with
-                | :? Entity as entity ->
+                | :? Entity as entity when entity.Is<PropDispatcher> world ->
                     let propId = (entity.GetPropPlus world).Prop.PropId
                     let (separatedPropIds, intersectedPropIds) = List.split ((=) propId) field.AvatarIntersectedPropIds
                     let field = Field.updateAvatarIntersectedPropIds (constant intersectedPropIds) field
