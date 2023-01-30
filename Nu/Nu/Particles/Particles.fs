@@ -666,7 +666,7 @@ module Particles =
           Image : Image AssetTag
           Life : Life
           ParticleLifeTimeMaxOpt : GameTime // OPTIMIZATION: uses GameTime.zero to represent infinite particle life.
-          ParticleRate : GameTime
+          ParticleRate : single
           mutable ParticleIndex : int // the current particle buffer insertion point
           mutable ParticleWatermark : int // tracks the highest active particle index; never decreases.
           ParticleRing : 'a SegmentedArray // operates as a ring-buffer
@@ -709,8 +709,8 @@ module Particles =
 
             // emit new particles if live
             if Life.getLiveness time emitter.Life then
-                let emitCount = single (localTime * emitter.ParticleRate)
-                let emitCountPrevious = single (localTimePrevious * emitter.ParticleRate)
+                let emitCount = single localTime * emitter.ParticleRate
+                let emitCountPrevious = single localTimePrevious * emitter.ParticleRate
                 let emitCount = int emitCount - int emitCountPrevious
                 for _ in 0 .. emitCount - 1 do Emitter<'a>.emit time emitter
 
