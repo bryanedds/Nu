@@ -23,7 +23,7 @@ module SegmentedDictionary =
 
         member this.Item (key : 'k) : 'v =
             let hashCode = this.Comparer.GetHashCode key
-            let index = Math.Abs (hashCode % 32)
+            let index = Math.Abs (hashCode % 32) // TODO: use constant.
             this.Dictionaries.[index].[key]
 
         member this.TryGetValue (key, valueRef : _ outref) =
