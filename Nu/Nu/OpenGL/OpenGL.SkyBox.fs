@@ -14,7 +14,7 @@ open Nu
 module SkyBox =
 
     /// Describes some sky box geometry that's loaded into VRAM.
-    type [<NoComparison>] SkyBoxGeometry =
+    type SkyBoxGeometry =
         { Bounds : Box3
           PrimitiveType : PrimitiveType
           ElementCount : int
@@ -33,14 +33,14 @@ module SkyBox =
               SkyBoxGeometry = geometry }
 
     /// Describes a sky box shader that's loaded into GPU.
-    type [<NoComparison>] SkyBoxShader =
+    type SkyBoxShader =
         { ViewUniform : int
           ProjectionUniform : int
           CubeMapUniform : int
           SkyBoxShader : uint }
 
     /// Describes a environment filter shader that's loaded into GPU.
-    type [<NoComparison>] EnvironmentFilterShader =
+    type EnvironmentFilterShader =
         { ViewUniform : int
           ProjectionUniform : int
           RoughnessUniform : int

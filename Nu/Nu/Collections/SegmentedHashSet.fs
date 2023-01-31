@@ -10,7 +10,7 @@ open System.Collections.Generic
 [<RequireQualifiedAccess>]
 module SegmentedHashSet =
 
-    type [<ReferenceEquality; NoComparison>] SegmentedHashSet<'a when 'a : equality> =
+    type [<ReferenceEquality>] SegmentedHashSet<'a when 'a : equality> =
         private
             { HashSets : 'a HashSet array
               Comparer : 'a IEqualityComparer }

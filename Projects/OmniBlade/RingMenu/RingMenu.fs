@@ -11,11 +11,11 @@ open OmniBlade
 [<AutoOpen>]
 module RingMenuDispatcher =
 
-    type [<NoComparison>] RingMenu =
+    type RingMenu =
         { Items : Map<string, int * bool>
           Cancellable : bool }
 
-    type [<NoComparison>] RingMenuCommand =
+    type RingMenuCommand =
         | ItemCancel
         | ItemSelect of string
         interface Command

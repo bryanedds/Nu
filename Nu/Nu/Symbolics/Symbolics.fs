@@ -19,7 +19,7 @@ type [<StructuralEquality; StructuralComparison; Struct>] SymbolLoadMetadata =
 module Symbolics =
 
     /// Provides references to symbols that are loaded from files.
-    type [<ReferenceEquality; NoComparison>] Symbolics =
+    type [<ReferenceEquality>] Symbolics =
         private
             { SymbolPackages : Packages<SymbolLoadMetadata * Symbol, unit> }
 

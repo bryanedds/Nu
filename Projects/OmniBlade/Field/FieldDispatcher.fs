@@ -12,7 +12,7 @@ open OmniBlade
 [<AutoOpen>]
 module FieldDispatcher =
 
-    type [<NoComparison>] FieldMessage =
+    type FieldMessage =
         | Update
         | UpdateFieldTransition
         | UpdateAvatarBodyTracking
@@ -51,7 +51,7 @@ module FieldDispatcher =
         | Interact
         interface Message
 
-    type [<NoComparison>] FieldCommand =
+    type FieldCommand =
         | ProcessKeyInput
         | ProcessTouchInput of Vector2
         | UpdateEye

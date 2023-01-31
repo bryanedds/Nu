@@ -19,7 +19,7 @@ type AetherBodyDictionary = Dictionary<PhysicsId, single * Dynamics.Body>
 type AetherJointDictionary = Dictionary<PhysicsId, Dynamics.Joints.Joint>
 
 /// The Aether 2d implementation of PhysicsEngine.
-type [<ReferenceEquality; NoComparison>] AetherPhysicsEngine =
+type [<ReferenceEquality>] AetherPhysicsEngine =
     private
         { PhysicsContext : Dynamics.World
           Bodies : AetherBodyDictionary

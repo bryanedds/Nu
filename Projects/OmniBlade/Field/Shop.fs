@@ -7,11 +7,11 @@ open Prime
 open Nu
 open OmniBlade
 
-type [<NoComparison>] ShopState =
+type ShopState =
     | ShopBuying
     | ShopSelling
 
-type [<NoComparison>] ShopConfirm =
+type ShopConfirm =
     { ShopConfirmSelection : int * ItemType
       ShopConfirmPrice : int
       ShopConfirmOffer : string
@@ -83,7 +83,7 @@ type [<NoComparison>] ShopConfirm =
                 | None -> None
         | KeyItem _ | Stash _ -> None
 
-type [<NoComparison>] Shop =
+type Shop =
     { ShopType : ShopType
       ShopState : ShopState
       ShopPage : int

@@ -242,7 +242,7 @@ type StatementPlus<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'c8, 'c9, 's when
     'c9 : struct and 'c9 :> 'c9 Component> =
     delegate of 'c byref * 'c2 byref * 'c3 byref * 'c4 byref * 'c5 byref * 'c6 byref * 'c7 byref * 'c8 byref * 'c9 byref * 's -> unit
 
-and [<NoComparison>] Term =
+and Term =
     | Error of string
     | Tag
     | Bool of bool

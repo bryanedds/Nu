@@ -19,7 +19,7 @@ module OmniBlade =
         | Pick
         | Intro of SaveSlot
 
-    type [<NoComparison>] Model =
+    type Model =
         | Gui of Gui
         | Field of Field
 

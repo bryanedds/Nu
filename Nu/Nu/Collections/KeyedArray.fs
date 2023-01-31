@@ -12,7 +12,7 @@ module KeyedArray =
     /// A garbage-collected keyed array.
     /// TODO: once this is well-tested, let's consider moving into Prime.
     /// NOTE: not supported by SymbolicConverter.
-    type [<ReferenceEquality; NoComparison>] KeyedArray<'k, 'v when 'k : equality> =
+    type [<ReferenceEquality>] KeyedArray<'k, 'v when 'k : equality> =
         private
             { Keys_ : SortedDictionary<int, 'k> // sorted so that compacting does not change order
               Indices_ : Dictionary<'k, int>

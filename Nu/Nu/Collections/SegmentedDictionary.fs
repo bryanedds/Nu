@@ -10,7 +10,7 @@ open System.Collections.Generic
 [<RequireQualifiedAccess>]
 module SegmentedDictionary =
 
-    type [<ReferenceEquality; NoComparison>] SegmentedDictionary<'k, 'v when 'k : equality> =
+    type [<ReferenceEquality>] SegmentedDictionary<'k, 'v when 'k : equality> =
         private
             { Dictionaries : Dictionary<'k, 'v> array
               Comparer : 'k IEqualityComparer }

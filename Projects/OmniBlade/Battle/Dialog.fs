@@ -7,12 +7,12 @@ open Prime
 open Nu
 open OmniBlade
 
-type [<NoComparison>] DialogForm =
+type DialogForm =
     | DialogThin
     | DialogThick
     | DialogNarration
 
-type [<NoComparison>] Dialog =
+type Dialog =
     { DialogForm : DialogForm
       DialogTokenized : string
       DialogProgress : int

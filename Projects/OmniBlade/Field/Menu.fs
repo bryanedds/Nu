@@ -7,7 +7,7 @@ open Prime
 open Nu
 open OmniBlade
 
-type [<NoComparison>] MenuUse =
+type MenuUse =
     { MenuUseSelection : int * ItemType
       MenuUseLine1 : string
       MenuUseLine2 : string
@@ -63,7 +63,7 @@ type [<NoComparison>] MenuUse =
                 | None -> None
         | KeyItem _ | Stash _ -> None
 
-type [<NoComparison>] MenuTeam =
+type MenuTeam =
     { TeamIndex : int
       TeamIndices : int list }
       
@@ -82,16 +82,16 @@ type [<NoComparison>] MenuTeam =
         let tacdOpt = MenuTeam.tryGetTeammateAndCharacterData team menuTeam
         Option.map snd tacdOpt
 
-type [<NoComparison>] MenuInventory =
+type MenuInventory =
     { InventoryPage : int }
 
-type [<NoComparison>] MenuTechs =
+type MenuTechs =
     { TeammateIndex : int }
 
-type [<NoComparison>] MenuKeyItems =
+type MenuKeyItems =
     { KeyItemsPage : int }
 
-type [<NoComparison>] MenuState =
+type MenuState =
     | MenuTeam of MenuTeam
     | MenuInventory of MenuInventory
     | MenuTechs of MenuTechs
@@ -99,6 +99,6 @@ type [<NoComparison>] MenuState =
     | MenuOptions
     | MenuClosed
 
-type [<NoComparison>] Menu =
+type Menu =
     { MenuState : MenuState
       MenuUseOpt : MenuUse option }

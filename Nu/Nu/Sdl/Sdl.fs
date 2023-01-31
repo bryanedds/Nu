@@ -8,21 +8,21 @@ open Prime
 open Nu
 
 /// A window for rendering in SDL OpenGL.
-type [<ReferenceEquality; NoComparison>] SglWindow =
+type [<ReferenceEquality>] SglWindow =
     { SglWindow : nativeint }
 
 /// A window for rendering in Windows Forms.
-type [<ReferenceEquality; NoComparison>] WfglWindow =
+type [<ReferenceEquality>] WfglWindow =
     { WfglSwapWindow : unit -> unit
       WfglWindow : nativeint }
 
 /// A window for rendering.
-type [<ReferenceEquality; NoComparison>] Window =
+type [<ReferenceEquality>] Window =
     | SglWindow of SglWindow
     | WfglWindow of WfglWindow
 
 /// Describes the initial configuration of a window created via SDL.
-type [<NoComparison>] SdlWindowConfig =
+type SdlWindowConfig =
     { WindowTitle : string
       WindowX : int
       WindowY : int
@@ -36,12 +36,12 @@ type [<NoComparison>] SdlWindowConfig =
           WindowFlags = SDL.SDL_WindowFlags.SDL_WINDOW_SHOWN ||| SDL.SDL_WindowFlags.SDL_WINDOW_OPENGL }
 
 /// Describes the view that SDL will use to render.
-type [<ReferenceEquality; NoComparison>] SdlViewConfig =
+type [<ReferenceEquality>] SdlViewConfig =
     | NewWindow of SdlWindowConfig
     | ExistingWindow of WfglWindow
 
 /// Describes the general configuration of SDL.
-type [<ReferenceEquality; NoComparison>] SdlConfig =
+type [<ReferenceEquality>] SdlConfig =
     { ViewConfig : SdlViewConfig
       ViewW : int
       ViewH : int
@@ -58,7 +58,7 @@ type [<ReferenceEquality; NoComparison>] SdlConfig =
 module SdlDeps =
 
     /// The dependencies needed to initialize SDL.
-    type [<ReferenceEquality; NoComparison>] SdlDeps =
+    type [<ReferenceEquality>] SdlDeps =
         private
             { WindowOpt : Window option
               Config : SdlConfig

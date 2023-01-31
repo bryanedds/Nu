@@ -10,7 +10,7 @@ open OmniBlade
 [<RequireQualifiedAccess>]
 module Chest =
 
-    type [<NoComparison>] Chest =
+    type Chest =
         private
             { Perimeter_ : Box3
               Opened_ : bool }

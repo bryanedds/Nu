@@ -20,7 +20,7 @@ type 'w Lens =
 
 /// Describes a property of a simulant.
 /// Similar to a Haskell lens, but specialized to simulant properties.
-type [<ReferenceEquality; NoComparison>] Lens<'a, 's, 'w when 's :> Simulant> =
+type [<ReferenceEquality>] Lens<'a, 's, 'w when 's :> Simulant> =
     { Name : string
       This : 's
       Get : 'w -> 'a

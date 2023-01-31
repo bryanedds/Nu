@@ -12,13 +12,13 @@ open OmniBlade
 [<AutoOpen>]
 module AvatarDispatcher =
 
-    type [<NoComparison>] AvatarMessage =
+    type AvatarMessage =
         | Update
         | TryFace of Direction
         | Nil
         interface Message
 
-    type [<NoComparison>] AvatarCommand =
+    type AvatarCommand =
         | TryTravel of Vector3
         interface Command
 

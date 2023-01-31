@@ -17,7 +17,7 @@ module CubeMap =
         string * string * string * string * string * string
 
     /// Memoizes cube map loads.
-    type [<ReferenceEquality; NoComparison>] CubeMapMemo =
+    type [<ReferenceEquality>] CubeMapMemo =
         private
             { CubeMaps : Dictionary<CubeMapMemoKey, uint> }
 

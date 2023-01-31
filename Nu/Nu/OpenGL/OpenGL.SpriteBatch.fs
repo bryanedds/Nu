@@ -30,7 +30,7 @@ module SpriteBatch =
         static member defaultState =
             SpriteBatchState.make false BlendingFactor.SrcAlpha BlendingFactor.OneMinusSrcAlpha BlendEquationMode.FuncAdd 0u
 
-    type [<ReferenceEquality; NoComparison>] SpriteBatchEnv =
+    type [<ReferenceEquality>] SpriteBatchEnv =
         private
             { mutable SpriteIndex : int
               mutable ViewProjectionAbsolute : Matrix4x4

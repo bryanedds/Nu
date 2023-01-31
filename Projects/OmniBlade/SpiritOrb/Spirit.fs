@@ -8,13 +8,13 @@ open Prime
 open Nu
 open OmniBlade
 
-type [<NoComparison>] SpiritMovement =
+type SpiritMovement =
     | Creep
     | Chase
     | Scatter
     | Wander
 
-type [<NoComparison>] SpiritPattern =
+type SpiritPattern =
     | Confused
     | Flighty
     | Steadfast
@@ -43,7 +43,7 @@ type [<NoComparison>] SpiritPattern =
         | Stalking ->       [|Creep;    Chase; Chase; Creep;    Chase; Chase; Creep;    Chase; Chase; Creep;    Chase; Chase; Creep;    Chase; Chase; Creep|]
         | Ambushing ->      [|Creep;    Chase; Chase; Chase;    Chase; Chase; Chase;    Chase; Chase; Chase;    Chase; Chase; Chase;    Chase; Chase; Chase|]
 
-type [<NoComparison>] SpiritState =
+type SpiritState =
     { SpiritMovements : SpiritMovement array
       SpiritMovementIndex : int
       SpiritMovementStart : int64
@@ -92,7 +92,7 @@ type [<NoComparison>] SpiritState =
 [<RequireQualifiedAccess>]
 module Spirit =
 
-    type [<NoComparison>] Spirit =
+    type Spirit =
         private
             { Perimeter_ : Box3
               SpiritType_ : SpiritType

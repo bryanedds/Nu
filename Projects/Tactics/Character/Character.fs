@@ -8,7 +8,7 @@ open Tactics
 [<RequireQualifiedAccess>]
 module Character =
 
-    type [<NoComparison>] Character =
+    type Character =
         private
             { CharacterIndex_ : CharacterIndex
               CharacterType_ : CharacterType

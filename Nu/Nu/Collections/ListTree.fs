@@ -7,7 +7,7 @@ open System.Collections.Generic
 /// An imperative tree data structure.
 /// TODO: move this to Prime once it's tested.
 /// NOTE: not supported by SymbolicConverter.
-type [<ReferenceEquality; NoComparison>] 'a ListTree =
+type [<ReferenceEquality>] 'a ListTree =
     | ListRoot of 'a ListTree List
     | ListBranch of 'a * 'a ListTree List
 

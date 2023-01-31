@@ -13,7 +13,7 @@ open Prime
 open Nu
 
 /// Describes what to render.
-type [<ReferenceEquality; NoComparison>] RenderDescriptor2d =
+type [<ReferenceEquality>] RenderDescriptor2d =
     | SpriteDescriptor of SpriteDescriptor
     | SpritesDescriptor of SpritesDescriptor
     | SpriteDescriptors of SpriteDescriptors
@@ -25,14 +25,14 @@ type [<ReferenceEquality; NoComparison>] RenderDescriptor2d =
 
 /// A layered message to the 2d rendering system.
 /// NOTE: mutation is used only for internal sprite descriptor caching.
-and [<ReferenceEquality; NoComparison>] RenderLayeredMessage2d =
+and [<ReferenceEquality>] RenderLayeredMessage2d =
     { mutable Elevation : single
       mutable Horizon : single
       mutable AssetTag : obj AssetTag
       mutable RenderDescriptor2d : RenderDescriptor2d }
 
 /// A message to the 2d rendering system.
-and [<ReferenceEquality; NoComparison>] RenderMessage2d =
+and [<ReferenceEquality>] RenderMessage2d =
     | RenderLayeredMessage2d of RenderLayeredMessage2d
     | LoadRenderPackageMessage2d of string
     | UnloadRenderPackageMessage2d of string
@@ -51,7 +51,7 @@ and Renderer2d =
     abstract CleanUp : unit -> unit
 
 /// The mock implementation of Renderer2d.
-type [<ReferenceEquality; NoComparison>] MockRenderer2d =
+type [<ReferenceEquality>] MockRenderer2d =
     private
         { MockRenderer2d : unit }
 
@@ -78,7 +78,7 @@ type RenderLayeredMessage2dComparer () =
                 else strCmp left.AssetTag.PackageName right.AssetTag.PackageName
 
 /// The OpenGL implementation of Renderer2d.
-type [<ReferenceEquality; NoComparison>] GlRenderer2d =
+type [<ReferenceEquality>] GlRenderer2d =
     private
         { RenderWindow : Window
           RenderSpriteShader : int * int * int * int * uint

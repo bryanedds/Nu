@@ -12,13 +12,13 @@ type private EcsCallbackUnscheduled<'d, 'w when 'w : not struct> =
     EcsEvent<'d, 'w> -> Ecs -> 'w -> 'w
 
 /// A scheduled Ecs event callback.
-and [<ReferenceEquality; NoComparison>] EcsCallbackScheduled<'d, 'w when 'w : not struct> =
+and [<ReferenceEquality>] EcsCallbackScheduled<'d, 'w when 'w : not struct> =
     { EcsQuery : Query
       EcsDependencies : Query list
       EcsCallback : EcsEvent<'d, 'w> -> Ecs -> 'w -> unit }
 
 /// A scheduled Ecs event callback.
-and [<ReferenceEquality; NoComparison>] private EcsCallbackScheduledObj =
+and [<ReferenceEquality>] private EcsCallbackScheduledObj =
     { EcsQuery : Query
       EcsDependencies : Query list
       EcsCallbackObj : obj }
@@ -35,7 +35,7 @@ and [<StructuralEquality; NoComparison; Struct>] EcsEvent =
       EcsEventType : EcsEventType }
 
 /// An Ecs event.
-and [<NoComparison>] EcsEvent<'d, 'w when 'w : not struct> =
+and EcsEvent<'d, 'w when 'w : not struct> =
     { EcsEventData : 'd }
 
 /// Data for an Ecs registration event.

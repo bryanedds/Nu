@@ -36,7 +36,7 @@ module Effects =
         | Ratio
         | Set
 
-    type [<NoComparison>] Slice =
+    type Slice =
         { Position : Vector3
           Scale : Vector3
           Offset : Vector3
@@ -55,55 +55,55 @@ module Effects =
     type KeyFrame =
         abstract KeyFrameLength : GameTime
 
-    type [<NoComparison>] LogicKeyFrame =
+    type LogicKeyFrame =
         { LogicValue : bool
           LogicLength : GameTime }
         interface KeyFrame with
             member this.KeyFrameLength = this.LogicLength
 
-    type [<NoComparison>] TweenKeyFrame =
+    type TweenKeyFrame =
         { TweenValue : single
           TweenLength : GameTime }
         interface KeyFrame with
             member this.KeyFrameLength = this.TweenLength
 
-    type [<NoComparison>] Tween2KeyFrame =
+    type Tween2KeyFrame =
         { TweenValue : Vector2
           TweenLength : GameTime }
         interface KeyFrame with
             member this.KeyFrameLength = this.TweenLength
 
-    type [<NoComparison>] Tween3KeyFrame =
+    type Tween3KeyFrame =
         { TweenValue : Vector3
           TweenLength : GameTime }
         interface KeyFrame with
             member this.KeyFrameLength = this.TweenLength
 
-    type [<NoComparison>] Tween4KeyFrame =
+    type Tween4KeyFrame =
         { TweenValue : Vector4
           TweenLength : GameTime }
         interface KeyFrame with
             member this.KeyFrameLength = this.TweenLength
 
-    type [<NoComparison>] TweenBox2KeyFrame =
+    type TweenBox2KeyFrame =
         { TweenValue : Box2
           TweenLength : GameTime }
         interface KeyFrame with
             member this.KeyFrameLength = this.TweenLength
 
-    type [<NoComparison>] TweenCKeyFrame =
+    type TweenCKeyFrame =
         { TweenValue : Color
           TweenLength : GameTime }
         interface KeyFrame with
             member this.KeyFrameLength = this.TweenLength
 
-    type [<NoComparison>] TweenIKeyFrame =
+    type TweenIKeyFrame =
         { TweenValue : int
           TweenLength : GameTime }
         interface KeyFrame with
             member this.KeyFrameLength = this.TweenLength
 
-    type [<NoComparison>] Tween2IKeyFrame =
+    type Tween2IKeyFrame =
         { TweenValue : Vector2i
           TweenLength : GameTime }
         interface KeyFrame with
@@ -124,11 +124,11 @@ module Effects =
     type [<StructuralEquality; StructuralComparison>] Shift =
         Shift of single
 
-    type [<NoComparison>] Resource =
+    type Resource =
         | Resource of string * string
         | Expand of string * Argument array
 
-    and [<NoComparison>] Aspect =
+    and Aspect =
         | Enabled of bool
         | PositionAbsolute of Vector3
         | PositionRelative of Vector3
@@ -161,7 +161,7 @@ module Effects =
         | Expand of string * Argument array
         | Aspects of Aspect array
 
-    and [<NoComparison>] Content =
+    and Content =
         | Nil // first to make default value when missing
         | StaticSprite of Resource * Aspect array * Content
         | AnimatedSprite of Resource * Vector2i * int * int * GameTime * Playback * Aspect array * Content
@@ -179,7 +179,7 @@ module Effects =
     and Argument =
         SymbolicCompression<Resource, SymbolicCompression<Aspect, Content>>
 
-    type [<NoComparison>] Definition =
+    type Definition =
         { DefinitionParams : string array
           DefinitionBody : SymbolicCompression<Resource, SymbolicCompression<Aspect, Content>> }
 
@@ -204,7 +204,7 @@ module Effects =
      "", "", "", "",
      Constants.PrettyPrinter.DefaultThresholdMin,
      Constants.PrettyPrinter.CompositionalThresholdMax)>]
-type [<NoComparison>] Effect =
+type Effect =
     { EffectName : string
       LifeTimeOpt : GameTime option
       Definitions : Effects.Definitions
@@ -227,7 +227,7 @@ module EffectSystem =
     open Effects
 
     /// An abstract data type for executing effects.
-    type [<ReferenceEquality; NoComparison>] EffectSystem =
+    type [<ReferenceEquality>] EffectSystem =
         private
             { Absolute : bool
               Views : View List

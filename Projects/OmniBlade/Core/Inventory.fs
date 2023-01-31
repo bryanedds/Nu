@@ -159,7 +159,7 @@ type ItemType =
              | (KeyItem _, _) | (Stash _, _) -> None)
             items
 
-type [<NoComparison>] PrizePool =
+type PrizePool =
     { Consequents : Advent Set
       Items : ItemType list
       Gold : int
@@ -169,7 +169,7 @@ type [<NoComparison>] PrizePool =
         { Consequents = Set.empty; Items = []; Gold = 0; Exp = 0 }
 
 // TODO: make this abstract due to item limit constraints.
-type [<NoComparison>] Inventory =
+type Inventory =
     { Items : Map<ItemType, int>
       Gold : int }
 

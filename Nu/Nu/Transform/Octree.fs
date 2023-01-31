@@ -43,7 +43,7 @@ type [<CustomEquality; NoComparison>] Octelement<'e when 'e : equality> =
 [<RequireQualifiedAccess>]
 module internal Octnode =
 
-    type [<ReferenceEquality; NoComparison>] Octnode<'e when 'e : equality> =
+    type [<ReferenceEquality>] Octnode<'e when 'e : equality> =
         private
             { Depth : int
               Bounds : Box3
@@ -265,7 +265,7 @@ module Octree =
             member this.GetEnumerator () = enr :> IEnumerator
 
     /// A spatial structure that organizes elements in a 3d grid.
-    type [<ReferenceEquality; NoComparison>] Octree<'e when 'e : equality> =
+    type [<ReferenceEquality>] Octree<'e when 'e : equality> =
         private
             { Node : 'e Octnode
               Omnipresent : 'e Octelement HashSet

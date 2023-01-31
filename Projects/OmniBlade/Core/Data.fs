@@ -517,7 +517,7 @@ type SpawnType =
     { EnemyType : EnemyType
       SpawnEffectType : SpawnEffectType }
 
-type [<NoComparison>] SpiritType =
+type SpiritType =
     | WeakSpirit
     | NormalSpirit
     | StrongSpirit
@@ -528,7 +528,7 @@ type [<NoComparison>] SpiritType =
         | NormalSpirit -> Color (byte 255, byte 191, byte 191, byte 127)
         | StrongSpirit -> Color (byte 255, byte 127, byte 127, byte 127)
 
-type [<NoComparison>] CueTarget =
+type CueTarget =
     | AvatarTarget // (field only)
     | CharacterTarget of CharacterType // (field only)
     | NpcTarget of NpcType // (field only)
@@ -536,19 +536,19 @@ type [<NoComparison>] CueTarget =
     | CharacterIndexTarget of CharacterIndex // (battle only)
     | SpriteTarget of string
 
-type [<NoComparison>] CuePredicate =
+type CuePredicate =
     | Gold of int
     | Item of ItemType
     | Items of ItemType list
     | Advent of Advent
     | Advents of Advent Set
 
-type [<NoComparison>] CueWait =
+type CueWait =
     | Wait
     | Timed of int64
     | NoWait
 
-type [<NoComparison>] MoveType =
+type MoveType =
     | Walk
     | Run
     | Mosey
@@ -579,7 +579,7 @@ type [<NoComparison>] MoveType =
      "", "", "", "",
      Constants.PrettyPrinter.DefaultThresholdMin,
      Constants.PrettyPrinter.DetailedThresholdMax)>]
-type [<NoComparison>] Cue =
+type Cue =
     | Fin
     | PlaySound of single * Sound AssetTag
     | PlaySong of int64 * int64 * int64 * single * Song AssetTag
@@ -646,7 +646,7 @@ type [<NoComparison>] Cue =
 type CueDefinitions =
     Map<string, Cue>
 
-type [<NoComparison>] Branch =
+type Branch =
     { Cue : Cue
       Requirements : Advent Set }
 
@@ -681,7 +681,7 @@ module OmniSeedState =
 
 type OmniSeedState = OmniSeedState.OmniSeedState
 
-type [<NoComparison>] WeaponData =
+type WeaponData =
     { WeaponType : WeaponType // key
       WeaponSubtype : WeaponSubtype
       PowerBase : int
@@ -689,7 +689,7 @@ type [<NoComparison>] WeaponData =
       Cost : int
       Description : string }
 
-type [<NoComparison>] ArmorData =
+type ArmorData =
     { ArmorType : ArmorType // key
       ArmorSubtype : ArmorSubtype
       EnduranceBase : int
@@ -699,7 +699,7 @@ type [<NoComparison>] ArmorData =
     member this.EnduranceBaseDisplay = this.EnduranceBase / Constants.Gameplay.ArmorStatBaseDisplayDivisor
     member this.MindBaseDisplay = this.MindBase / Constants.Gameplay.ArmorStatBaseDisplayDivisor
 
-type [<NoComparison>] AccessoryData =
+type AccessoryData =
     { AccessoryType : AccessoryType // key
       ShieldBase : int
       CounterBase : int
@@ -709,7 +709,7 @@ type [<NoComparison>] AccessoryData =
       Cost : int
       Description : string }
 
-type [<NoComparison>] ConsumableData =
+type ConsumableData =
     { ConsumableType : ConsumableType // key
       Scalar : single
       Curative : bool
@@ -721,7 +721,7 @@ type [<NoComparison>] ConsumableData =
       Cost : int
       Description : string }
 
-type [<NoComparison>] TechData =
+type TechData =
     { TechType : TechType // key
       TechCost : int
       EffectType : EffectType
@@ -740,7 +740,7 @@ type [<NoComparison>] TechData =
     member this.AimType =
         TargetType.getAimType this.TargetType
 
-type [<NoComparison>] ArchetypeData =
+type ArchetypeData =
     { ArchetypeType : ArchetypeType // key
       Stamina : single // hit points scalar
       Strength : single // power scalar
@@ -759,7 +759,7 @@ type [<NoComparison>] ArchetypeData =
       Stature : StatureType
       Description : string }
 
-type [<NoComparison>] TechAnimationData =
+type TechAnimationData =
     { TechType : TechType // key
       TechStart : int64
       TechingStart : int64
@@ -768,24 +768,24 @@ type [<NoComparison>] TechAnimationData =
       TechingStop : int64
       TechStop : int64 }
 
-type [<NoComparison>] KeyItemData =
+type KeyItemData =
     { KeyItemData : unit }
 
-type [<NoComparison>] DoorData =
+type DoorData =
     { DoorType : DoorType // key
       DoorKeyOpt : string option
       OpenImage : Image AssetTag
       ClosedImage : Image AssetTag }
 
-type [<NoComparison>] ShopData =
+type ShopData =
     { ShopType : ShopType // key
       ShopItems : ItemType list }
 
-type [<NoComparison>] EnemyDescriptor =
+type EnemyDescriptor =
     { EnemyType : EnemyType
       EnemyPosition : Vector3 }
 
-type [<NoComparison>] BattleData =
+type BattleData =
     { BattleType : BattleType // key
       BattleAllyPositions : Vector3 list
       BattleEnemies : EnemyType list
@@ -794,11 +794,11 @@ type [<NoComparison>] BattleData =
       BattleTileIndexOffsetRange : int * int
       BattleSongOpt : Song AssetTag option }
 
-type [<NoComparison>] EncounterData =
+type EncounterData =
     { EncounterType : EncounterType // key
       BattleTypes : BattleType list }
 
-type [<NoComparison>] CharacterData =
+type CharacterData =
     { CharacterType : CharacterType // key
       ArchetypeType : ArchetypeType
       LevelBase : int
@@ -814,7 +814,7 @@ type [<NoComparison>] CharacterData =
       ExpScalar : single
       Description : string }
 
-type [<NoComparison>] CharacterAnimationData =
+type CharacterAnimationData =
     { CharacterAnimationType : CharacterAnimationType // key
       AnimationType : AnimationType
       LengthOpt : int64 option
@@ -822,7 +822,7 @@ type [<NoComparison>] CharacterAnimationData =
       Delay : int64
       Offset : Vector2i }
 
-type [<NoComparison>] PropData =
+type PropData =
     | Sprite of string * Image AssetTag * Color * Blend * Color * Flip * bool
     | Portal of PortalType * PortalIndex * Direction * FieldType * PortalIndex * bool * Advent Set // leads to a different portal
     | Door of DoorType * KeyItemType option * Cue * Cue * Advent Set // for simplicity, we just have north / south doors
@@ -839,18 +839,18 @@ type [<NoComparison>] PropData =
     | ChestSpawn
     | EmptyProp
 
-type [<NoComparison>] PropDescriptor =
+type PropDescriptor =
     { PropPerimeter : Box3
       PropElevation : single
       PropData : PropData
       PropId : int }
 
-type [<NoComparison>] FieldTileMap =
+type FieldTileMap =
     | FieldStatic of TileMap AssetTag
     | FieldConnector of TileMap AssetTag * TileMap AssetTag
     | FieldRandom of int * int * single * Origin * int * string
 
-type [<NoComparison>] FieldData =
+type FieldData =
     { FieldType : FieldType // key
       FieldTileMap : FieldTileMap
       FieldTileIndexOffset : int
@@ -1054,7 +1054,7 @@ module FieldData =
 [<RequireQualifiedAccess>]
 module Data =
 
-    type [<ReferenceEquality; NoComparison>] OmniData =
+    type [<ReferenceEquality>] OmniData =
         { Weapons : Map<WeaponType, WeaponData>
           Armors : Map<ArmorType, ArmorData>
           Accessories : Map<AccessoryType, AccessoryData>

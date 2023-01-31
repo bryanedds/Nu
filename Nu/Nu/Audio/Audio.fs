@@ -16,7 +16,7 @@ type Song = private { __ : unit }
 type Sound = private { __ : unit }
 
 /// Descrides a song.
-type [<NoComparison>] SongDescriptor =
+type SongDescriptor =
     { FadeInTime: GameTime
       FadeOutTime : GameTime
       StartTime : GameTime
@@ -24,12 +24,12 @@ type [<NoComparison>] SongDescriptor =
       Song : Song AssetTag }
 
 /// Describes a sound.
-type [<NoComparison>] SoundDescriptor =
+type SoundDescriptor =
     { Volume : single
       Sound : Sound AssetTag }
 
 /// A message to the audio system.
-type [<NoComparison>] AudioMessage =
+type AudioMessage =
     | LoadAudioPackageMessage of string
     | UnloadAudioPackageMessage of string
     | PlaySoundMessage of SoundDescriptor
@@ -39,7 +39,7 @@ type [<NoComparison>] AudioMessage =
     | ReloadAudioAssetsMessage
 
 /// An audio asset used by the audio system.
-type [<NoComparison>] AudioAsset =
+type AudioAsset =
     | WavAsset of nativeint
     | OggAsset of nativeint
 
@@ -65,7 +65,7 @@ type AudioPlayer =
     abstract Play : AudioMessage List -> unit
 
 /// The mock implementation of AudioPlayer.
-type [<ReferenceEquality; NoComparison>] MockAudioPlayer =
+type [<ReferenceEquality>] MockAudioPlayer =
     private
         { MockAudioPlayer : unit }
     
@@ -84,7 +84,7 @@ type [<ReferenceEquality; NoComparison>] MockAudioPlayer =
         { MockAudioPlayer = () }
 
 /// The SDL implementation of AudioPlayer.
-type [<ReferenceEquality; NoComparison>] SdlAudioPlayer =
+type [<ReferenceEquality>] SdlAudioPlayer =
     private
         { AudioContext : unit // audio context, interestingly, is global. Good luck encapsulating that!
           AudioPackages : Packages<AudioAsset, unit>
