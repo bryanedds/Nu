@@ -30,7 +30,7 @@ module PhysicallyBased =
           TwoSided : bool }
 
     /// Describes some physically-based geometry that's loaded into VRAM.
-    type [<NoComparison>] PhysicallyBasedGeometry =
+    type PhysicallyBasedGeometry =
         { Bounds : Box3
           PrimitiveType : PrimitiveType
           ElementCount : int
@@ -108,7 +108,7 @@ module PhysicallyBased =
             this.HashCode
 
     /// A light inside a physically-based static model.
-    type [<NoComparison>] PhysicallyBasedLight =
+    type PhysicallyBasedLight =
         { LightNames : string array
           LightMatrixIsIdentity : bool
           LightMatrix : Matrix4x4
@@ -118,20 +118,20 @@ module PhysicallyBased =
           PhysicallyBasedLightType : LightType }
 
     /// A part of a physically-based hierarchy.
-    type [<NoComparison>] PhysicallyBasedPart =
+    type PhysicallyBasedPart =
         | PhysicallyBasedNode of string array
         | PhysicallyBasedLight of PhysicallyBasedLight
         | PhysicallyBasedSurface of PhysicallyBasedSurface
 
     /// A physically-based static model.
-    type [<NoComparison>] PhysicallyBasedStaticModel =
+    type PhysicallyBasedStaticModel =
         { Bounds : Box3
           Lights : PhysicallyBasedLight array
           Surfaces : PhysicallyBasedSurface array
           PhysicallyBasedStaticHierarchy : PhysicallyBasedPart array TreeNode }
 
     /// Describes a physically-based shader that's loaded into GPU.
-    type [<NoComparison>] PhysicallyBasedShader =
+    type PhysicallyBasedShader =
         { ViewUniform : int
           ProjectionUniform : int
           EyeCenterUniform : int
@@ -150,7 +150,7 @@ module PhysicallyBased =
           PhysicallyBasedShader : uint }
 
     /// Describes a second pass of a deferred physically-based shader that's loaded into GPU.
-    type [<NoComparison>] PhysicallyBasedDeferred2Shader =
+    type PhysicallyBasedDeferred2Shader =
         { EyeCenterUniform : int
           PositionTextureUniform : int
           AlbedoTextureUniform : int

@@ -7,7 +7,7 @@ open Prime
 open Nu
 open OmniBlade
 
-type [<NoComparison>] Teammate =
+type Teammate =
     { TeamIndex : int
       PartyIndexOpt : int option
       ArchetypeType : ArchetypeType

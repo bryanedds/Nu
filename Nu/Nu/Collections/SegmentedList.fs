@@ -11,7 +11,7 @@ open System.Collections.Generic
 module SegmentedList =
 
     /// TODO: implement remove.
-    type [<ReferenceEquality; NoComparison>] 'a SegmentedList =
+    type [<ReferenceEquality>] 'a SegmentedList =
         private
             { mutable TotalLength : int
               mutable ListCapacity : int

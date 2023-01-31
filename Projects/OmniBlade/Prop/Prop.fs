@@ -8,7 +8,7 @@ open Prime
 open Nu
 open OmniBlade
 
-type [<NoComparison>] PropState =
+type PropState =
     | DoorState of bool
     | SwitchState of bool
     | CharacterState of Color * CharacterAnimationState
@@ -22,7 +22,7 @@ module Prop =
         ("", "", "", "", "",
          Constants.PrettyPrinter.DefaultThresholdMin,
          Constants.PrettyPrinter.DetailedThresholdMax)>]
-    type [<NoComparison>] Prop =
+    type Prop =
         private
             { Perimeter_ : Box3
               Elevation_ : single

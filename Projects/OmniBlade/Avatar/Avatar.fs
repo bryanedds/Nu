@@ -11,7 +11,7 @@ open OmniBlade
 [<RequireQualifiedAccess>]
 module Avatar =
 
-    type [<NoComparison>] Avatar =
+    type Avatar =
         private
             { Perimeter_ : Box3
               CharacterAnimationState_ : CharacterAnimationState

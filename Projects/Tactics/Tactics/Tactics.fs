@@ -18,7 +18,7 @@ module TacticsGame =
         | Pick
         | Intro of SaveSlot
 
-    type [<NoComparison>] Model =
+    type Model =
         | Gui of Gui
         | Atlas of Atlas
 

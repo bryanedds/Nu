@@ -28,7 +28,7 @@
     <Prefer32Bit>false</Prefer32Bit>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
     <WarningsAsErrors />
-    <OtherFlags>--warnon:1182 --nowarn:3391 --nowarn:3536</OtherFlags>
+    <OtherFlags>--warnon:1182 --nowarn:1178 --nowarn:3391 --nowarn:3536</OtherFlags>
     <PlatformTarget>x64</PlatformTarget>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x64' ">
@@ -42,7 +42,7 @@
     <Prefer32Bit>false</Prefer32Bit>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <WarningsAsErrors />
-    <OtherFlags>--warnon:1182 --nowarn:3391 --nowarn:3536</OtherFlags>
+    <OtherFlags>--warnon:1182 --nowarn:1178 --nowarn:3391 --nowarn:3536</OtherFlags>
     <PlatformTarget>x64</PlatformTarget>
   </PropertyGroup>
   <PropertyGroup>

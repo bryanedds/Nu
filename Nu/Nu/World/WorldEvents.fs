@@ -8,38 +8,38 @@ open Prime
 open Nu
 
 /// The data for a mouse move event.
-type [<NoComparison>] MouseMoveData =
+type MouseMoveData =
     { Position : Vector2 }
 
 /// The data for a mouse button event.
-type [<NoComparison>] MouseButtonData =
+type MouseButtonData =
     { Position : Vector2
       Button : MouseButton
       Down : bool }
 
 /// The data for a keyboard key event.
-type [<NoComparison>] KeyboardKeyData =
+type KeyboardKeyData =
     { KeyboardKey : KeyboardKey
       Repeated : bool
       Down : bool }
 
 /// The data for a gamepad button event.
-type [<NoComparison>] GamepadDirectionData =
+type GamepadDirectionData =
     { GamepadDirection : GamepadDirection }
 
 /// The data for a gamepad button event.
-type [<NoComparison>] GamepadButtonData =
+type GamepadButtonData =
     { GamepadButton : GamepadButton
       Down : bool }
 
 /// The data of a body transform event.
-type [<NoComparison>] TransformData =
+type TransformData =
     { BodySource : BodySource
       Position : Vector3
       Rotation : Quaternion }
 
 /// The data for a collision event.
-type [<NoComparison>] BodyCollisionData =
+type BodyCollisionData =
     { BodyCollider : BodyShapeSource
       BodyCollidee : BodyShapeSource
       Normal : Vector3
@@ -48,26 +48,26 @@ type [<NoComparison>] BodyCollisionData =
 /// The implicit data for a separation event.
 /// Unfortunately, due to the fact that physics system itself does not raise separation events until the following
 /// frame, we need both an implicit and explicit body separation representation and the user MUST handle both!
-type [<NoComparison>] BodySeparationImplicitData =
+type BodySeparationImplicitData =
     { BodySourceSimulant : Simulant
       BodyPhysicsId : PhysicsId }
 
 /// The explicit data for a separation event.
 /// Unfortunately, due to the fact that physics system itself does not raise separation events until the following
 /// frame, we need both an implicit and explicit body separation representation and the user MUST handle both!
-type [<NoComparison>] BodySeparationExplicitData =
+type BodySeparationExplicitData =
     { BodySeparator : BodyShapeSource
       BodySeparatee : BodyShapeSource }
 
 /// Tje data for describing a change in transform.
-type [<NoComparison>] BodyTransformData =
+type BodyTransformData =
     { BodyCenter : Vector3
       BodyRotation : Quaternion
       BodyLinearVelocity : Vector3
       BodyAngularVelocity : Vector3 }
 
 /// The data for a life cycle event.
-type [<NoComparison>] LifeCycleData =
+type LifeCycleData =
     | RegisterData of Simulant
     | UnregisteringData of Simulant
     | MountOptChangeData of Entity Relation option * Entity Relation option * Entity

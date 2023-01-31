@@ -35,7 +35,7 @@ module Texture =
               TextureInternalFormat = Unchecked.defaultof<_> }
 
     /// Memoizes texture loads.
-    type [<ReferenceEquality; NoComparison>] TextureMemo =
+    type [<ReferenceEquality>] TextureMemo =
         private
             { Textures : Dictionary<string, TextureMetadata * uint> }
 

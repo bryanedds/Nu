@@ -12,11 +12,11 @@ open OmniBlade
 [<AutoOpen>]
 module BattleDispatcher =
 
-    type [<NoComparison>] Hop =
+    type Hop =
         { HopStart : Vector3
           HopStop : Vector3 }
           
-    type [<NoComparison>] Positioning =
+    type Positioning =
         | Position of Vector3
         | Center of Vector3
         | Bottom of Vector3
@@ -46,7 +46,7 @@ module BattleDispatcher =
         | Nop
         interface Message
 
-    type [<NoComparison>] BattleCommand =
+    type BattleCommand =
         | UpdateEye
         | DisplayCancel of CharacterIndex
         | DisplayHitPointsChange of CharacterIndex * int

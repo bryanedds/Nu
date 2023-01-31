@@ -1145,7 +1145,7 @@ module Ray3 =
     ("PointLight", "", "", "", "",
      Constants.PrettyPrinter.DefaultThresholdMin,
      Constants.PrettyPrinter.DefaultThresholdMax)>]
-type [<NoComparison>] LightType =
+type LightType =
     | PointLight
 
 /// The input for a 2d ray cast operation.

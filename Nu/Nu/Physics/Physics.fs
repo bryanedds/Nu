@@ -42,18 +42,18 @@ type [<CustomEquality; NoComparison>] PhysicsId =
         PhysicsId.hash this
 
 /// Store origination information about a simulant physics body.
-type [<NoComparison>] BodySourceInternal =
+type BodySourceInternal =
     { Simulant : Simulant
       BodyId : uint64 }
 
 /// Store origination information about a simulant physics shape body.
-type [<NoComparison>] BodyShapeSourceInternal =
+type BodyShapeSourceInternal =
     { Simulant : Simulant
       BodyId : uint64
       ShapeId : uint64 }
 
 /// Describes body shape-specific properties.
-type [<NoComparison>] BodyShapeProperties =
+type BodyShapeProperties =
     { BodyShapeId : uint64
       FrictionOpt : single option
       RestitutionOpt : single option
@@ -73,7 +73,7 @@ module BodyShapeProperties =
           SensorOpt = None }
 
 /// The shape of a physics body box.
-type [<NoComparison>] BodyBox =
+type BodyBox =
     { Center : Vector3
       Size : Vector3
       PropertiesOpt : BodyShapeProperties option }
@@ -83,27 +83,27 @@ type [<NoComparison>] BodyBox =
         { Center = box.Center; Size = box.Size; PropertiesOpt = None }
 
 /// The shape of a physics body sphere.
-type [<NoComparison>] BodySphere =
+type BodySphere =
     { Center : Vector3
       Radius : single
       PropertiesOpt : BodyShapeProperties option }
 
 /// The shape of a physics body capsule.
-type [<NoComparison>] BodyCapsule =
+type BodyCapsule =
     { Center : Vector3
       Height : single
       Radius : single
       PropertiesOpt : BodyShapeProperties option }
 
 /// The shape of a physics body capsule.
-type [<NoComparison>] BodyBoxRounded =
+type BodyBoxRounded =
     { Center : Vector3
       Size : Vector3
       Radius : single
       PropertiesOpt : BodyShapeProperties option }
 
 /// The shape of a physics body polygon.
-type [<NoComparison>] BodyPolygon =
+type BodyPolygon =
     { Center : Vector3
       Vertices : Vector3 array
       PropertiesOpt : BodyShapeProperties option }
@@ -113,7 +113,7 @@ type [<NoComparison>] BodyPolygon =
     ("BodyEmpty BodyBox BodySphere BodyCapsule BodyPolygon BodyShapes", "", "", "", "",
      Constants.PrettyPrinter.DefaultThresholdMin,
      Constants.PrettyPrinter.DetailedThresholdMax)>]
-type [<NoComparison>] BodyShape =
+type BodyShape =
     | BodyEmpty
     | BodyBox of BodyBox
     | BodySphere of BodySphere
@@ -134,7 +134,7 @@ type BodyType =
     | Dynamic
 
 /// The properties needed to describe the physical part of a body.
-type [<NoComparison>] BodyProperties =
+type BodyProperties =
     { BodyId : uint64
       Center : Vector3
       Rotation : Quaternion
@@ -185,7 +185,7 @@ module BodyProperties =
           Bullet = false
           Sensor = false }
 
-type [<NoComparison>] JointAngle =
+type JointAngle =
     { TargetId : PhysicsId
       TargetId2 : PhysicsId
       Anchor : Vector3
@@ -193,7 +193,7 @@ type [<NoComparison>] JointAngle =
       TargetAngle : single
       Softness : single }
 
-type [<NoComparison>] JointDistance =
+type JointDistance =
     { TargetId : PhysicsId
       TargetId2 : PhysicsId
       Anchor : Vector3
@@ -201,49 +201,49 @@ type [<NoComparison>] JointDistance =
       Length : single
       Frequency : single }
 
-type [<NoComparison>] JointFriction =
+type JointFriction =
     { TargetId : PhysicsId
       TargetId2 : PhysicsId
       Anchor : Vector3
       Anchor2 : Vector3 }
 
-type [<NoComparison>] JointGear =
+type JointGear =
     { TargetId : PhysicsId
       TargetId2 : PhysicsId
       Anchor : Vector3
       Anchor2 : Vector3 }
 
-type [<NoComparison>] JointMotor =
+type JointMotor =
     { TargetId : PhysicsId
       TargetId2 : PhysicsId
       Anchor : Vector3
       Anchor2 : Vector3 }
 
-type [<NoComparison>] JointPrismatic =
+type JointPrismatic =
     { TargetId : PhysicsId
       TargetId2 : PhysicsId
       Anchor : Vector3
       Anchor2 : Vector3 }
 
-type [<NoComparison>] JointPulley =
+type JointPulley =
     { TargetId : PhysicsId
       TargetId2 : PhysicsId
       Anchor : Vector3
       Anchor2 : Vector3 }
 
-type [<NoComparison>] JointRevolute =
+type JointRevolute =
     { TargetId : PhysicsId
       TargetId2 : PhysicsId
       Anchor : Vector3
       Anchor2 : Vector3 }
 
-type [<NoComparison>] JointRope =
+type JointRope =
     { TargetId : PhysicsId
       TargetId2 : PhysicsId
       Anchor : Vector3
       Anchor2 : Vector3 }
 
-type [<NoComparison>] JointWheel =
+type JointWheel =
     { TargetId : PhysicsId
       TargetId2 : PhysicsId
       Anchor : Vector3
@@ -269,7 +269,7 @@ type JointDevice =
     | JointRope of JointRope
     | JointWheel of JointWheel
 
-type [<NoComparison>] JointProperties =
+type JointProperties =
     { JointId : uint64
       JointDevice : JointDevice }
 
@@ -281,108 +281,108 @@ module JointProperties =
           JointDevice = JointEmpty }
 
 /// A message to the physics system to create a body.
-type [<NoComparison>] CreateBodyMessage =
+type CreateBodyMessage =
     { SourceSimulant : Simulant
       SourceId : uint64
       BodyProperties : BodyProperties }
 
 /// A message to the physics system to create multiple bodies.
-type [<NoComparison>] CreateBodiesMessage =
+type CreateBodiesMessage =
     { SourceSimulant : Simulant
       SourceId : uint64
       BodiesProperties : BodyProperties list }
 
 /// A message to the physics system to destroy a body.
-type [<NoComparison>] DestroyBodyMessage =
+type DestroyBodyMessage =
     { SourceSimulant : Simulant
       PhysicsId : PhysicsId }
 
 /// A message to the physics system to destroy multiple bodies.
-type [<NoComparison>] DestroyBodiesMessage =
+type DestroyBodiesMessage =
     { SourceSimulant : Simulant
       PhysicsIds : PhysicsId list }
 
 /// A message to the physics system to create a joint.
-type [<NoComparison>] CreateJointMessage =
+type CreateJointMessage =
     { SourceSimulant : Simulant
       SourceId : uint64
       JointProperties : JointProperties }
 
 /// A message to the physics system to create multiple joints.
-type [<NoComparison>] CreateJointsMessage =
+type CreateJointsMessage =
     { SourceSimulant : Simulant
       SourceId : uint64
       JointsProperties : JointProperties list }
 
 /// A message to the physics system to destroy a joint.
-type [<NoComparison>] DestroyJointMessage =
+type DestroyJointMessage =
     { SourceSimulant : Simulant
       PhysicsId : PhysicsId }
 
 /// A message to the physics system to destroy multiple joints.
-type [<NoComparison>] DestroyJointsMessage =
+type DestroyJointsMessage =
     { SourceSimulant : Simulant
       PhysicsIds : PhysicsId list }
 
 /// A message to the physics system to destroy a body.
-type [<NoComparison>] SetBodyEnabledMessage =
+type SetBodyEnabledMessage =
     { PhysicsId : PhysicsId
       Enabled : bool }
 
 /// A message to the physics system to destroy a body.
-type [<NoComparison>] SetBodyPositionMessage =
+type SetBodyPositionMessage =
     { PhysicsId : PhysicsId
       Position : Vector3 }
 
 /// A message to the physics system to set the rotation of a body.
-type [<NoComparison>] SetBodyRotationMessage =
+type SetBodyRotationMessage =
     { PhysicsId : PhysicsId
       Rotation : Quaternion }
 
 /// A message to the physics system to set the linear velocity of a body.
-type [<NoComparison>] SetBodyLinearVelocityMessage =
+type SetBodyLinearVelocityMessage =
     { PhysicsId : PhysicsId
       LinearVelocity : Vector3 }
 
 /// A message to the physics system to apply a linear impulse to a body.
-type [<NoComparison>] ApplyBodyLinearImpulseMessage =
+type ApplyBodyLinearImpulseMessage =
     { PhysicsId : PhysicsId
       LinearImpulse : Vector3 }
 
 /// A message to the physics system to set the angular velocity of a body.
-type [<NoComparison>] SetBodyAngularVelocityMessage =
+type SetBodyAngularVelocityMessage =
     { PhysicsId : PhysicsId
       AngularVelocity : Vector3 }
 
 /// A message to the physics system to apply an angular impulse to a body.
-type [<NoComparison>] ApplyBodyAngularImpulseMessage =
+type ApplyBodyAngularImpulseMessage =
     { PhysicsId : PhysicsId
       AngularImpulse : Vector3 }
 
 /// A message to the physics system to apply a force to a body.
-type [<NoComparison>] ApplyBodyForceMessage =
+type ApplyBodyForceMessage =
     { PhysicsId : PhysicsId
       Force : Vector3 }
 
 /// A message to the physics system to apply torque to a body.
-type [<NoComparison>] ApplyBodyTorqueMessage =
+type ApplyBodyTorqueMessage =
     { PhysicsId : PhysicsId
       Torque : Vector3 }
 
 /// A message from the physics system describing a body collision that took place.
-type [<NoComparison>] BodyCollisionMessage =
+type BodyCollisionMessage =
     { BodyShapeSource : BodyShapeSourceInternal
       BodyShapeSource2 : BodyShapeSourceInternal
       Normal : Vector3
       Speed : single }
 
 /// A message from the physics system describing a body separation that took place.
-type [<NoComparison>] BodySeparationMessage =
+type BodySeparationMessage =
     { BodyShapeSource : BodyShapeSourceInternal
       BodyShapeSource2 : BodyShapeSourceInternal }
 
 /// A message from the physics system describing the updated transform of a body.
-type [<NoComparison>] BodyTransformMessage =
+type BodyTransformMessage =
     { BodySource : BodySourceInternal
       Center : Vector3
       Rotation : Quaternion
@@ -390,13 +390,13 @@ type [<NoComparison>] BodyTransformMessage =
       AngularVelocity : Vector3 }
 
 /// A message from the physics system.
-type [<NoComparison>] IntegrationMessage =
+type IntegrationMessage =
     | BodyCollisionMessage of BodyCollisionMessage
     | BodySeparationMessage of BodySeparationMessage
     | BodyTransformMessage of BodyTransformMessage
 
 /// A message to the physics system.
-type [<NoComparison>] PhysicsMessage =
+type PhysicsMessage =
     | CreateBodyMessage of CreateBodyMessage
     | CreateBodiesMessage of CreateBodiesMessage
     | DestroyBodyMessage of DestroyBodyMessage
@@ -443,7 +443,7 @@ type PhysicsEngine =
     abstract Integrate : GameTime -> PhysicsMessage UList -> IntegrationMessage SegmentedArray
 
 /// The mock implementation of PhysicsEngine.
-type [<ReferenceEquality; NoComparison>] MockPhysicsEngine =
+type [<ReferenceEquality>] MockPhysicsEngine =
     private { MockPhysicsEngine : unit }
     static member make () = { MockPhysicsEngine = () }
     interface PhysicsEngine with

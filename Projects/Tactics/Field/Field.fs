@@ -7,7 +7,7 @@ open TiledSharp
 open Nu
 open Tactics
 
-type [<NoComparison>] Occupant =
+type Occupant =
     | Character of Character
     | Chest of unit
 
@@ -43,12 +43,12 @@ type FieldScript =
     | FieldScripts of FieldScript list
     static member empty = FieldScripts []
 
-type [<NoComparison>] FieldTileVertices =
+type FieldTileVertices =
     { FieldTileVertices : Vector3 array }
     member this.Center =
         (this.FieldTileVertices.[0] + this.FieldTileVertices.[1] + this.FieldTileVertices.[2] + this.FieldTileVertices.[3]) / 4.0f
 
-type [<NoComparison>] FieldMetadata =
+type FieldMetadata =
     { FieldTileVerticesMap : Map<Vector2i, FieldTileVertices>
       FieldUntraversableSurfaceDescriptor : StaticModelSurfaceDescriptor
       FieldTraversableSurfaceDescriptor : StaticModelSurfaceDescriptor
@@ -57,7 +57,7 @@ type [<NoComparison>] FieldMetadata =
 [<RequireQualifiedAccess>]
 module Field =
 
-    type [<NoComparison>] Field =
+    type Field =
         private
             { FieldState_ : FieldState
               FieldScript : FieldScript

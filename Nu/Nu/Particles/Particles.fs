@@ -43,7 +43,7 @@ module Particles =
               ProgressScalar = 1.0f / single lifeTimeOpt }
 
     /// A spatial constraint.
-    type [<NoComparison>] Constraint =
+    type Constraint =
         | Box of Box3
         | Sphere of single * Vector3
         | Constraints of Constraint SegmentedArray
@@ -79,12 +79,12 @@ module Particles =
         | Equal of bool
 
     /// Describes logic of behavior over a section of a target's life time.
-    type [<NoComparison>] Logic =
+    type Logic =
         { LogicLife : Life
           LogicType : LogicType }
 
     /// The type of range.
-    type [<NoComparison>] 'a RangeType =
+    type 'a RangeType =
         | Constant of 'a
         | Linear of 'a * 'a
         | Random of 'a * 'a
@@ -98,7 +98,7 @@ module Particles =
         | CosScaled of single * 'a * 'a
 
     /// How a range is to be applied.
-    type [<NoComparison>] RangeApplicator =
+    type RangeApplicator =
         | Sum
         | Delta
         | Scale
@@ -106,13 +106,13 @@ module Particles =
         | Set
 
     /// Describes range of behavior over a section of a target's life time.
-    type [<NoComparison>] 'a Range =
+    type 'a Range =
         { RangeLife : Life
           RangeType : 'a RangeType
           RangeApplicator : RangeApplicator }
 
     /// The forces that may operate on a target.
-    type [<NoComparison>] Force =
+    type Force =
         | Gravity of Vector3
         | Attractor of Vector3 * single * single
         | Drag of single * single
@@ -152,7 +152,7 @@ module Particles =
         abstract Life : Life with get, set
 
     /// The output of a behavior.
-    type [<ReferenceEquality; NoComparison>] Output =
+    type [<ReferenceEquality>] Output =
         | OutputEmitter of string * Emitter
         | OutputSound of single * Sound AssetTag
         | Outputs of Output SegmentedArray
@@ -516,7 +516,7 @@ module Particles =
         let rangeColor time range = rangeSrtp Color.Multiply Color.Divide Color.op_Multiply time range
 
     /// Scopes transformable values.
-    type [<ReferenceEquality; NoComparison>] Scope<'a, 'b when 'a : struct> =
+    type [<ReferenceEquality>] Scope<'a, 'b when 'a : struct> =
         { In : 'a SegmentedArray -> 'b SegmentedArray
           Out : Output -> 'b SegmentedArray -> 'a SegmentedArray -> Output }
 
@@ -556,7 +556,7 @@ module Particles =
         abstract RunMany : GameTime -> GameTime -> Constraint -> obj -> Output
 
     /// Defines a generic behavior.
-    type [<ReferenceEquality; NoComparison>] Behavior<'a, 'b when 'a : struct> =
+    type [<ReferenceEquality>] Behavior<'a, 'b when 'a : struct> =
         { Scope : Scope<'a, 'b>
           Transformers : 'b Transformer FStack }
 
@@ -594,7 +594,7 @@ module Particles =
                 Behavior<'a, 'b>.runMany delta time constrain this (targetsObj :?> 'a SegmentedArray)
 
     /// A composition of behaviors.
-    type [<ReferenceEquality; NoComparison>] Behaviors =
+    type [<ReferenceEquality>] Behaviors =
         { Behaviors : Behavior FStack }
 
         /// The empty behaviors.
@@ -637,7 +637,7 @@ module Particles =
             outputs
 
     /// Describes an emitter.
-    and [<ReferenceEquality; NoComparison>] EmitterDescriptor<'a when 'a :> Particle and 'a : struct> =
+    and [<ReferenceEquality>] EmitterDescriptor<'a when 'a :> Particle and 'a : struct> =
         { Body : Body
           Blend : Blend
           Image : Image AssetTag
@@ -658,7 +658,7 @@ module Particles =
     /// NOTE: ideally, this would be an abstract data type, but I feel that would discourage users from making their
     /// own emitters - it would looks like making an emitter would require a lot of additional boilerplate as well as
     /// making it harder to use this existing emitter as an example.
-    and [<ReferenceEquality; NoComparison>] Emitter<'a when 'a :> Particle and 'a : equality and 'a : struct> =
+    and [<ReferenceEquality>] Emitter<'a when 'a :> Particle and 'a : equality and 'a : struct> =
         { mutable Body : Body // mutable for animation
           Elevation : single
           Absolute : bool
@@ -945,7 +945,7 @@ module Particles =
 
     /// A particle system.
     /// TODO: consider making this an abstract data type?
-    type [<ReferenceEquality; NoComparison>] ParticleSystem =
+    type [<ReferenceEquality>] ParticleSystem =
         { Emitters : Map<string, Emitter> }
     
         /// Get the liveness of the particle system.

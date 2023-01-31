@@ -11,7 +11,7 @@ open Prime
 [<RequireQualifiedAccess>]
 module internal Quadnode =
 
-    type [<ReferenceEquality; NoComparison>] Quadnode<'e when 'e : equality> =
+    type [<ReferenceEquality>] Quadnode<'e when 'e : equality> =
         private
             { Depth : int
               Bounds : Box2
@@ -145,7 +145,7 @@ module Quadtree =
             member this.GetEnumerator () = enr :> IEnumerator
 
     /// A spatial structure that organizes elements on a 2d plane. TODO: document this.
-    type [<ReferenceEquality; NoComparison>] Quadtree<'e when 'e : equality> =
+    type [<ReferenceEquality>] Quadtree<'e when 'e : equality> =
         private
             { Node : 'e Quadnode
               Omnipresent : 'e HashSet

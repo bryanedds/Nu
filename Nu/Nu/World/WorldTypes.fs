@@ -39,29 +39,29 @@ module WorldTypes =
     type Unsubscription = World -> World
 
     /// Specified the desired screen, if any, or whether to ignore screen desire functionality altogether.
-    and [<NoComparison>] DesiredScreen =
+    and DesiredScreen =
         | Desire of Screen
         | DesireNone
         | DesireIgnore
 
     /// The data required to execute slide screen presentation.
-    and [<NoComparison>] Slide =
+    and Slide =
         { IdlingTime : GameTime
           Destination : Screen }
 
     /// Describes the behavior of a screen.
-    and [<NoComparison>] ScreenBehavior =
+    and ScreenBehavior =
         | Vanilla
         | Dissolve of DissolveDescriptor * SongDescriptor option
         | Slide of DissolveDescriptor * SlideDescriptor * SongDescriptor option * Screen
         | OmniScreen
 
     /// The data for a change in the world's ambient state.
-    and [<NoComparison>] AmbientChangeData = 
+    and AmbientChangeData = 
         { OldWorldWithOldState : World }
 
     /// Store origination information about a simulant physics body.
-    and [<NoComparison>] BodySource =
+    and BodySource =
         { Entity : Entity
           BodyId : uint64 }
         static member internal fromInternal (internal_ : BodySourceInternal) =
@@ -69,7 +69,7 @@ module WorldTypes =
               BodyId = internal_.BodyId }
     
     /// Store origination information about a simulant physics shape body.
-    and [<NoComparison>] BodyShapeSource =
+    and BodyShapeSource =
         { Entity : Entity
           BodyId : uint64
           BodyShapeId : uint64 }
@@ -392,7 +392,7 @@ module WorldTypes =
         interface LateBindings
 
     /// Describes a property to the Elmish content system.
-    and [<ReferenceEquality; NoComparison>] PropertyContent =
+    and [<ReferenceEquality>] PropertyContent =
         { PropertyInitializer : bool
           PropertyLens : World Lens
           PropertyValue : obj }
@@ -402,7 +402,7 @@ module WorldTypes =
               PropertyValue = value }
 
     /// Describes an initializer to the Elmish content system.
-    and [<ReferenceEquality; NoComparison>] InitializerContent =
+    and [<ReferenceEquality>] InitializerContent =
         | PropertyContent of PropertyContent
         | EventSignalContent of obj Address * obj
         | EventHandlerContent of PartialEquatable<obj Address, Event -> obj>
@@ -418,7 +418,7 @@ module WorldTypes =
         abstract GetChildContentsOpt<'v when 'v :> SimulantContent> : unit -> OrderedDictionary<string, 'v>
 
     /// Describes a game to the Elmish content system.
-    and [<ReferenceEquality; NoComparison>] GameContent =
+    and [<ReferenceEquality>] GameContent =
         { InitialScreenNameOpt : string option
           mutable SimulantCachedOpt : Simulant
           mutable EventSignalContentsOpt : OrderedDictionary<obj Address * obj, Guid> // OPTIMIZATION: lazily created.
@@ -435,7 +435,7 @@ module WorldTypes =
             member this.GetChildContentsOpt<'v when 'v :> SimulantContent> () = this.ScreenContents :> obj :?> OrderedDictionary<string, 'v>
 
     /// Describes a screen to the Elmish content system.
-    and [<ReferenceEquality; NoComparison>] ScreenContent =
+    and [<ReferenceEquality>] ScreenContent =
         { ScreenDispatcherName : string
           ScreenName : string
           ScreenBehavior : ScreenBehavior
@@ -455,7 +455,7 @@ module WorldTypes =
             member this.GetChildContentsOpt<'v when 'v :> SimulantContent> () = this.GroupContents :> obj :?> OrderedDictionary<string, 'v>
 
     /// Describes a group to the Elmish content system.
-    and [<ReferenceEquality; NoComparison>] GroupContent =
+    and [<ReferenceEquality>] GroupContent =
         { GroupDispatcherName : string
           GroupName : string
           GroupFilePathOpt : string option
@@ -474,7 +474,7 @@ module WorldTypes =
             member this.GetChildContentsOpt<'v when 'v :> SimulantContent> () = this.EntityContentsOpt :> obj :?> OrderedDictionary<string, 'v>
 
     /// Describes an entity to the Elmish content system.
-    and [<ReferenceEquality; NoComparison>] EntityContent =
+    and [<ReferenceEquality>] EntityContent =
         { EntityDispatcherName : string
           EntityName : string
           mutable EntityCachedOpt : Entity // OPTIMIZATION: allows us to more often hit the EntityStateOpt cache. May be null.
@@ -498,7 +498,7 @@ module WorldTypes =
             end
 
     /// Hosts the ongoing state of a game.
-    and [<ReferenceEquality; NoComparison; CLIMutable>] GameState =
+    and [<ReferenceEquality; CLIMutable>] GameState =
         { Dispatcher : GameDispatcher
           Xtension : Xtension
           Model : DesignerProperty
@@ -577,7 +577,7 @@ module WorldTypes =
             member this.GetXtension () = this.Xtension
 
     /// Hosts the ongoing state of a screen.
-    and [<ReferenceEquality; NoComparison; CLIMutable>] ScreenState =
+    and [<ReferenceEquality; CLIMutable>] ScreenState =
         { Dispatcher : ScreenDispatcher
           Xtension : Xtension
           Model : DesignerProperty
@@ -648,7 +648,7 @@ module WorldTypes =
             member this.GetXtension () = this.Xtension
 
     /// Hosts the ongoing state of a group.
-    and [<ReferenceEquality; NoComparison; CLIMutable>] GroupState =
+    and [<ReferenceEquality; CLIMutable>] GroupState =
         { Dispatcher : GroupDispatcher
           Xtension : Xtension
           Model : DesignerProperty
@@ -712,7 +712,7 @@ module WorldTypes =
 
     /// Hosts the ongoing state of an entity.
     /// OPTIMIZATION: ScriptFrameOpt is instantiated only when needed.
-    and [<ReferenceEquality; NoComparison; CLIMutable>] EntityState =
+    and [<ReferenceEquality; CLIMutable>] EntityState =
         { mutable Transform : Transform
           mutable Dispatcher : EntityDispatcher
           mutable Facets : Facet array
@@ -1138,7 +1138,7 @@ module WorldTypes =
     /// 
     /// I would prefer this type to be inlined in World, but it has been extracted to its own white-box
     /// type for efficiency reasons.
-    and [<ReferenceEquality; NoComparison>] internal Dispatchers =
+    and [<ReferenceEquality>] internal Dispatchers =
         { Facets : Map<string, Facet>
           EntityDispatchers : Map<string, EntityDispatcher>
           GroupDispatchers : Map<string, GroupDispatcher>
@@ -1150,13 +1150,13 @@ module WorldTypes =
           RebuildOctree : World -> Entity Octree }
 
     /// The subsystems encapsulated by the engine.
-    and [<ReferenceEquality; NoComparison>] internal Subsystems =
+    and [<ReferenceEquality>] internal Subsystems =
         { PhysicsEngine2d : PhysicsEngine
           RendererProcess : RendererProcess
           AudioPlayer : AudioPlayer }
 
     /// Keeps the World from occupying more than two cache lines.
-    and [<ReferenceEquality; NoComparison>] internal WorldExtension =
+    and [<ReferenceEquality>] internal WorldExtension =
         { DestructionListRev : Simulant list
           Dispatchers : Dispatchers
           Plugin : NuPlugin
@@ -1166,7 +1166,7 @@ module WorldTypes =
     /// The world, in a functional programming sense. Hosts the game object, the dependencies needed
     /// to implement a game, messages to by consumed by the various engine sub-systems, and general
     /// configuration data.
-    and [<ReferenceEquality; NoComparison>] World =
+    and [<ReferenceEquality>] World =
         internal
             { // cache line 1 (assuming 16 byte header)
               EventSystemDelegate : World EventSystemDelegate

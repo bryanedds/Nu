@@ -8,7 +8,7 @@ open Prime
 open Nu
 open OmniBlade
 
-type [<NoComparison>] CharacterAnimationState =
+type CharacterAnimationState =
     { StartTime : int64
       AnimationSheet : Image AssetTag
       CharacterAnimationType : CharacterAnimationType

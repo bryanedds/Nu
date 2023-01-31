@@ -10,7 +10,7 @@ open OmniBlade
 [<RequireQualifiedAccess>]
 module Portal =
 
-    type [<NoComparison>] Portal =
+    type Portal =
         private
             { Perimeter_ : Box3
               Active_ : bool }

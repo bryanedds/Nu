@@ -11,12 +11,12 @@ open OmniBlade
 [<AutoOpen>]
 module SpiritOrbDispatcher =
 
-    type [<NoComparison>] SpiritOrbInhabitant =
+    type SpiritOrbInhabitant =
         | ChestInhabitant of Chest
         | PortalInhabitant of Portal
         | SpiritInhabitant of Spirit
 
-    type [<NoComparison>] SpiritOrb =
+    type SpiritOrb =
         { AvatarLowerCenter : Vector3
           ShowUnopenedChests : bool
           Chests : Chest array

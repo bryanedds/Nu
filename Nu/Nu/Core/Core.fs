@@ -62,7 +62,7 @@ module CoreOperators =
     let inline ($) f g = f g
 
 /// The desired frame rate.
-type [<NoComparison>] FrameRate =
+type FrameRate =
     | StaticFrameRate of int64
     | DynamicFrameRate of int64 option
 

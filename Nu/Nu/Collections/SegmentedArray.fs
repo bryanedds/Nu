@@ -53,7 +53,7 @@ module SegmentedArray =
             member this.Reset () = this.Reset ()
             member this.Dispose () = ()
 
-    and [<ReferenceEquality; NoComparison>] 'a SegmentedArray =
+    and [<ReferenceEquality>] 'a SegmentedArray =
         private
             { TotalLength : int
               SegmentSize : int

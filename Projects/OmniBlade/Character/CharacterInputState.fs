@@ -7,7 +7,7 @@ open Prime
 open Nu
 open OmniBlade
 
-type [<NoComparison>] CharacterInputState =
+type CharacterInputState =
     | NoInput
     | RegularMenu
     | TechMenu

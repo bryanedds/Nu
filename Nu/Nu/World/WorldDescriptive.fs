@@ -8,7 +8,7 @@ open Nu
 
 /// Describes a generalized simulant value independent of the engine.
 /// Not used for serialization.
-type [<NoComparison>] SimulantDescriptor =
+type SimulantDescriptor =
     { SimulantSurnamesOpt : string array option
       SimulantDispatcherName : string
       SimulantProperties : (string * Property) list
@@ -16,7 +16,7 @@ type [<NoComparison>] SimulantDescriptor =
 
 /// Describes an entity value independent of the engine.
 /// Used to directly serialize an entity.
-type [<NoComparison>] EntityDescriptor =
+type EntityDescriptor =
     { EntityDispatcherName : string
       EntityProperties : Map<string, Symbol>
       EntityDescriptors : EntityDescriptor list }
@@ -44,7 +44,7 @@ module EntityDescriptor =
 
 /// Describes a group value independent of the engine.
 /// Used to directly serialize a group.
-type [<NoComparison>] GroupDescriptor =
+type GroupDescriptor =
     { GroupDispatcherName : string
       GroupProperties : Map<string, Symbol>
       EntityDescriptors : EntityDescriptor list }
@@ -66,7 +66,7 @@ module GroupDescriptor =
 
 /// Describes a screen value independent of the engine.
 /// Used to directly serialize a screen.
-type [<NoComparison>] ScreenDescriptor =
+type ScreenDescriptor =
     { ScreenDispatcherName : string
       ScreenProperties : Map<string, Symbol>
       GroupDescriptors : GroupDescriptor list }
@@ -88,7 +88,7 @@ module ScreenDescriptor =
 
 /// Describes a game value independent of the engine.
 /// Used to directly serialize a game.
-type [<NoComparison>] GameDescriptor =
+type GameDescriptor =
     { GameDispatcherName : string
       GameProperties : Map<string, Symbol>
       ScreenDescriptors : ScreenDescriptor list }

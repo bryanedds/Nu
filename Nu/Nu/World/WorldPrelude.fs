@@ -26,7 +26,7 @@ type [<StructuralEquality; NoComparison; Struct>] TileAnimationDescriptor =
       TileAnimationDelay : GameTime }
 
 /// Describes a Tiled tile map.
-type [<NoComparison>] TileMapDescriptor =
+type TileMapDescriptor =
     { TileMap : TmxMap
       TileSizeI : Vector2i
       TileSizeF : Vector2
@@ -64,7 +64,7 @@ type FlowDirection =
      "", "", "",
      Constants.PrettyPrinter.DefaultThresholdMin,
      Constants.PrettyPrinter.DefaultThresholdMax)>]
-type [<NoComparison>] Layout =
+type Layout =
     | Flow of FlowDirection * FlowLimit
     | Dock of Vector4 * bool * bool
     | Grid of Vector2i * FlowDirection option * bool
@@ -104,26 +104,26 @@ type [<StructuralEquality; NoComparison; CLIMutable>] Transition =
           SongOpt = None }
 
 /// Describes the behavior of the screen dissolving algorithm.
-type [<NoComparison>] DissolveDescriptor =
+type DissolveDescriptor =
     { IncomingTime : GameTime
       OutgoingTime : GameTime
       DissolveImage : Image AssetTag }
 
 /// Describes the behavior of the screen slide algorithm.
-type [<NoComparison>] SlideDescriptor =
+type SlideDescriptor =
     { DissolveDescriptor : DissolveDescriptor
       IdlingTime : GameTime
       SlideImageOpt : Image AssetTag option }
 
 /// Describes the shape of a desired overlay.
-type [<NoComparison>] OverlayNameDescriptor =
+type OverlayNameDescriptor =
     | NoOverlay
     | RoutedOverlay
     | DefaultOverlay
     | ExplicitOverlay of string
 
 /// A tasklet to be completed at the scheduled update time.
-type [<ReferenceEquality; NoComparison>] 'w Tasklet =
+type [<ReferenceEquality>] 'w Tasklet =
     { ScheduledTime : GameTime
       ScheduledOp : 'w -> 'w }
 
@@ -141,7 +141,7 @@ type [<AttributeUsage (AttributeTargets.Method); AllowNullLiteral>]
 
 /// Configuration parameters for Nu.
 /// TODO: consider renaming StandAlone to Accompanied and flipping it's value.
-type [<NoComparison>] NuConfig =
+type NuConfig =
     { RunSynchronously : bool
       StandAlone : bool }
 
@@ -157,7 +157,7 @@ type [<NoComparison>] NuConfig =
           StandAlone = true }
 
 /// Configuration parameters for the world.
-type [<ReferenceEquality; NoComparison>] WorldConfig =
+type [<ReferenceEquality>] WorldConfig =
     { Imperative : bool
       Advancing : bool
       ModeOpt : string option
@@ -200,7 +200,7 @@ module AmbientState =
     let mutable private StandAlone = true
 
     /// The ambient state of the world.
-    type [<ReferenceEquality; NoComparison>] 'w AmbientState =
+    type [<ReferenceEquality>] 'w AmbientState =
         private
             { // cache line 1 (assuming 16 byte header)
               Liveness : Liveness

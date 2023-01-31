@@ -8,7 +8,7 @@ open Prime
 open Nu
 open OmniBlade
 
-type [<NoComparison>] PropPlus =
+type PropPlus =
     { Prop : Prop
       Advents : Advent Set
       PointOfInterest : Vector3 }
