@@ -29,7 +29,7 @@ module SegmentedHashSet =
             member this.GetEnumerator () = (Seq.concat this.HashSets).GetEnumerator () :> IEnumerator
 
     let make (comparer : 'a IEqualityComparer) =
-        let hashSets = Array.init 32 (fun _ -> HashSet<'a> comparer)
+        let hashSets = Array.init 32 (fun _ -> HashSet<'a> comparer) // TODO: use constant.
         { HashSets = hashSets
           Comparer = comparer }
 
