@@ -5,7 +5,6 @@ namespace OpenGL
 open System
 open System.IO
 open System.Numerics
-open System.Runtime.CompilerServices
 open System.Runtime.InteropServices
 open FSharp.NativeInterop
 open Prime

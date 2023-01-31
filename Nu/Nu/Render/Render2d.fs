@@ -16,7 +16,7 @@ open Nu
 type [<ReferenceEquality; NoComparison>] RenderDescriptor2d =
     | SpriteDescriptor of SpriteDescriptor
     | SpritesDescriptor of SpritesDescriptor
-    | SpritesSegmentedDescriptor of SegmentedSpritesDescriptor
+    | SpriteDescriptors of SpriteDescriptors
     | CachedSpriteDescriptor of CachedSpriteDescriptor
     | ParticlesDescriptor of ParticlesDescriptor
     | TilesDescriptor of TilesDescriptor
@@ -366,7 +366,7 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
          color : Color inref,
          glow : Color inref,
          mapSize : Vector2i,
-         tiles : TmxLayerTile array,
+         tiles : TmxLayerTile SegmentedList,
          tileSourceSize : Vector2i,
          tileSize : Vector2,
          tileAssets : (TmxTileset * Image AssetTag) array,
@@ -391,10 +391,10 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
             Array.definitizePlus
         if allFound then
             // OPTIMIZATION: allocating refs in a tight-loop is problematic, so pulled out here
-            let tilesLength = Array.length tiles
+            let tilesLength = tiles.Length
             let mutable tileIndex = 0
             while tileIndex < tilesLength do
-                let tile = &tiles.[tileIndex]
+                let tile = tiles.[tileIndex]
                 if tile.Gid <> 0 then // not the empty tile
                     let mapRun = mapSize.X
                     let (i, j) = (tileIndex % mapRun, tileIndex / mapRun)
@@ -572,10 +572,10 @@ type [<ReferenceEquality; NoComparison>] GlRenderer2d =
             for index in 0 .. sprites.Length - 1 do
                 let sprite = &sprites.[index]
                 GlRenderer2d.renderSprite (&sprite.Transform, &sprite.InsetOpt, sprite.Image, &sprite.Color, sprite.Blend, &sprite.Glow, sprite.Flip, renderer)
-        | SpritesSegmentedDescriptor descriptor ->
-            let sprites = descriptor.SegmentedSprites
+        | SpriteDescriptors descriptor ->
+            let sprites = descriptor.SpriteDescriptors
             for index in 0 .. sprites.Length - 1 do
-                let sprite = &sprites.[index]
+                let sprite = sprites.[index]
                 GlRenderer2d.renderSprite (&sprite.Transform, &sprite.InsetOpt, sprite.Image, &sprite.Color, sprite.Blend, &sprite.Glow, sprite.Flip, renderer)
         | CachedSpriteDescriptor descriptor ->
             GlRenderer2d.renderSprite (&descriptor.CachedSprite.Transform, &descriptor.CachedSprite.InsetOpt, descriptor.CachedSprite.Image, &descriptor.CachedSprite.Color, descriptor.CachedSprite.Blend, &descriptor.CachedSprite.Glow, descriptor.CachedSprite.Flip, renderer)
