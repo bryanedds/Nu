@@ -99,11 +99,11 @@ type [<NoEquality; NoComparison>] SpriteDescriptor =
 
 /// Describes how to render multiple sprites to the rendering system.
 type [<NoEquality; NoComparison>] SpritesDescriptor =
-    { Sprites : Sprite array }
+    { Sprites : Sprite SegmentedArray }
 
-/// Describes how to render multiple sprites to the rendering system without potentially allocating from the LOH.
-type [<NoEquality; NoComparison>] SegmentedSpritesDescriptor =
-    { SegmentedSprites : Sprite SegmentedArray }
+/// Describes how to render multiple sprite descriptors to the rendering system.
+type [<NoEquality; NoComparison>] SpriteDescriptors =
+    { SpriteDescriptors : SpriteDescriptor SegmentedList }
 
 /// Describes an internally cached sprite used to avoid GC promotion of sprite descriptors.
 type [<NoEquality; NoComparison>] CachedSpriteDescriptor =
@@ -115,7 +115,7 @@ type [<NoEquality; NoComparison>] TilesDescriptor =
       Color : Color
       Glow : Color
       MapSize : Vector2i
-      Tiles : TmxLayerTile array
+      Tiles : TmxLayerTile SegmentedList
       TileSourceSize : Vector2i
       TileSize : Vector2
       TileAssets : (TmxTileset * Image AssetTag) array }

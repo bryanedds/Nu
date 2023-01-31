@@ -343,7 +343,7 @@ module TmxMap =
                         if yO >= 0.0f && yI >= 0 && yI < tileMap.Height then
 
                             // accumulate strip tiles
-                            let tiles = List ()
+                            let tiles = SegmentedList.make ()
                             let mutable xS = 0.0f
                             let mutable xO = r.X
                             while xO < r2.X + tileSize.X do
@@ -372,14 +372,14 @@ module TmxMap =
                                                 makeLayerTile (xTileGid + xTileOffset) xTile.HorizontalFlip xTile.VerticalFlip xTile.DiagonalFlip
                                             | ValueNone ->
                                                 makeLayerTile xTileGid xTile.HorizontalFlip xTile.VerticalFlip xTile.DiagonalFlip
-                                        tiles.Add xTile
+                                        SegmentedList.add xTile tiles
                                 else xS <- xS + tileSize.X
                                 xO <- xO + tileSize.X
 
                             // compute strip transform
                             let mutable transform = Transform.makeDefault false
                             transform.Position <- v3 (xS - modulus r.X tileSize.X) (single yC * tileSize.Y - modulus r.Y tileSize.Y) 0.0f + viewBounds.Min.V3
-                            transform.Size <- v3 (single tiles.Count * tileSize.X) tileSize.Y 0.0f
+                            transform.Size <- v3 (single tiles.Length * tileSize.X) tileSize.Y 0.0f
                             transform.Elevation <- elevation
                             transform.Absolute <- absolute
 
@@ -398,7 +398,7 @@ module TmxMap =
                                               Color = tileMapColor
                                               Glow = tileMapGlow
                                               MapSize = Vector2i (tileMap.Width, tileMap.Height)
-                                              Tiles = Seq.toArray tiles
+                                              Tiles = tiles
                                               TileSourceSize = tileSourceSize
                                               TileSize = tileSize
                                               TileAssets = tileAssets }}
