@@ -1224,9 +1224,17 @@ module Gaia =
                 | fsprojFilePaths ->
                     let fsprojFilePath = fsprojFilePaths.[0]
                     Log.info ("Inspecting code for F# project '" + fsprojFilePath + "'...")
-                    let fsprojFileLines = File.ReadAllLines fsprojFilePath
-                    let fsprojDllFilePaths =
-                        // imagine manually parsing an xml file...
+                    let fsprojFileLines =
+                        File.ReadAllLines fsprojFilePath
+                    let fsprojPackageLines = // TODO: pull these from the fsproj file!
+                        ["#r \"nuget: Magick.NET-Q8-x64, 7.5.0.1\""
+                         "#r \"nuget: Csv, 1.0.58\""
+                         "#r \"nuget: FParsec, 1.0.3\"" // MUST be referenced BEFORE FParsec.dll\!" +
+                         "#r \"nuget: Prime, 9.0.0\""
+                         "#r \"nuget: Prime.Scripting, 9.0.0\""
+                         "#r \"nuget: Aether.Physics2D, 1.5.0\""
+                         "#r \"nuget: Nito.Collections.Deque, 1.1.0\""]
+                    let fsprojDllFilePaths = // imagine manually parsing an xml file...
                         fsprojFileLines |>
                         Array.map (fun line -> line.Trim ()) |>
                         Array.filter (fun line -> line.Contains "HintPath" && line.Contains ".dll") |>
@@ -1254,9 +1262,10 @@ module Gaia =
                         "Release"
 #endif
                     let fsxFileString =
+                        String.Join ("\n", fsprojPackageLines) + "\n" +
                         String.Join ("\n", Array.map (fun (filePath : string) -> "#r \"../../../" + filePath + "\"") fsprojDllFilePaths) + "\n" +
                         "#r \"../../../../../Nu/Nu.Math/bin/" + buildName + "/netstandard2.0/Nu.Math.dll\"\n" +
-                        "#r \"../../../../../Nu/Nu.Pipe/bin/" + buildName + "/net7.0/Nu.Pipe.exe\"\n" +
+                        "#r \"../../../../../Nu/Nu.Pipe/bin/" + buildName + "/net7.0/Nu.Pipe.dll\"\n" +
                         "#r \"../../../../../Nu/Nu/bin/" + buildName + "/net7.0/Nu.dll\"\n" +
                         String.Join ("\n", Array.map (fun (filePath : string) -> "#load \"../../../" + filePath + "\"") fsprojFsFilePaths)
                     Log.info ("Compiling code via generated F# script:\n" + fsxFileString)
