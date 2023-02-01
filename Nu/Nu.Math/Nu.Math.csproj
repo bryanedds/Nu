@@ -16,8 +16,4 @@
 	  <WarningLevel>7</WarningLevel>
 	</PropertyGroup>
 
-	<ItemGroup>
-		<PackageReference Include="System.Numerics.Vectors" Version="4.5.0" />
-	</ItemGroup>
-
 </Project>
