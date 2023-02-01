@@ -10,10 +10,10 @@
 #r "../../packages/Prime.Scripting.8.0.0/lib/net472/Prime.Scripting.exe"
 #r "../../packages/Aether.Physics2D.1.5.0/lib/net40/Aether.Physics2D.dll"
 #r "../../packages/Nito.Collections.Deque.1.1.0/lib/netstandard2.0/Nito.Collections.Deque.dll"
-#r "../../Nu/Nu.Dependencies/SDL2-CS.dll/lib/net20/SDL2-CS.dll"
+#r "../../Nu/Nu.Dependencies/SDL2-CS/netstandard2.0/SDL2-CS.dll"
 #r "../../Nu/Nu.Dependencies/TiledSharp.1.0.2/lib/netstandard2.0/TiledSharp.dll"
-#r "../../Nu/Nu.Math/bin/x64/Debug/Nu.Math.dll"
-#r "../../Nu/Nu/bin/Debug/Nu.exe"
+#r "../../Nu/Nu.Math/bin/Debug/netstandard2.0/Nu.Math.dll"
+#r "../../Nu/Nu/bin/Debug/net7.0/Nu.exe"
 
 open System
 open System.Reflection

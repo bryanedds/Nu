@@ -9,7 +9,7 @@
 		<ProjectGuid>{F1768F36-9ED3-4C36-9DCE-9535AEFB0732}</ProjectGuid>
 		<PlatformTarget>AnyCPU</PlatformTarget>
 		<DisableFastUpToDateCheck>true</DisableFastUpToDateCheck>
-		<PostBuildEvent>"$(MSBuildProjectDirectory)\..\..\Nu\Nu.Pipe\bin\$(Configuration)\net7.0\Nu.Pipe.exe" "$(MSBuildProjectDirectory)\\" "$(MSBuildProjectDirectory)\bin\$(Configuration)\net7.0\\" "$(MSBuildProjectDirectory)\refinement\\" "False"</PostBuildEvent>
+		<PostBuildEvent>"$(MSBuildProjectDirectory)\..\..\Nu\Nu.Pipe\bin\$(Configuration)\net7.0\Nu.Pipe.exe" "$(MSBuildProjectDirectory)\\" "$(MSBuildProjectDirectory)\bin\$(Configuration)\net7.0-windows\\" "$(MSBuildProjectDirectory)\refinement\\" "False"</PostBuildEvent>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCpu'">
