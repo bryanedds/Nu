@@ -3,7 +3,7 @@
 	<PropertyGroup>
 		<OutputType>Exe</OutputType>
 		<TargetFramework>net7.0</TargetFramework>
-		<ProjectGuid>a7a6f758-e122-4c2c-9525-1f29802d007c</ProjectGuid>
+		<ProjectGuid>56988FA5-8358-442A-B027-A9767FF41FA8</ProjectGuid>
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
 		<PlatformTarget>AnyCPU</PlatformTarget>
 	</PropertyGroup>

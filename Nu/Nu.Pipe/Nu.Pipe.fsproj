@@ -4,7 +4,6 @@
 		<OutputType>Exe</OutputType>
 		<TargetFramework>net7.0</TargetFramework>
 		<ProjectGuid>{85D631A5-821A-4755-A68E-C1FFC64E469A}</ProjectGuid>
-		<GenerateDocumentationFile>true</GenerateDocumentationFile>
 		<PlatformTarget>AnyCPU</PlatformTarget>
 		<StartArguments>..\.. . ..\..\Refinement True</StartArguments>
 	</PropertyGroup>
