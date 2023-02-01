@@ -422,7 +422,7 @@ module EffectSystem =
             if Array.notEmpty keyFrames then
                 let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
                 let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
-                let tweened = tween Vector3.op_Multiply keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
+                let tweened = tween (fun (a, b) -> a * b) keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
                 let applied = applyTween Vector3.Multiply Vector3.Divide slice.Position tweened applicator
                 { slice with Position = applied }
             else slice

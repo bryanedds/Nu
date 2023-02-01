@@ -2012,11 +2012,10 @@ module WorldModuleEntity =
 #if !DISABLE_ENTITY_POST_UPDATE
             let struct (changed', world) = World.updateEntityPublishPostUpdateFlag entity world
             changed <- changed || changed'
-#else
+#endif
             let struct (changed', world) = World.updateEntityPublishRenderFlag entity world
             changed <- changed || changed'
             struct (changed, world)
-#endif
 
         static member internal divergeEntity entity world =
             let entityState = World.getEntityState entity world
