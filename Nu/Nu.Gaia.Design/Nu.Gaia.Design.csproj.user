@@ -1,0 +1,27 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="Current" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup />
+  <ItemGroup>
+    <Compile Update="AssetPicker.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="EntityPicker.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="GaiaForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="GroupCreationForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="SelectablePanel.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Update="StartForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="SymbolicTextBox.cs">
+      <SubType>Component</SubType>
+    </Compile>
+  </ItemGroup>
+</Project>

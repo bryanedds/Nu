@@ -1,144 +1,42 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
-  <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">x64</Platform>
-    <ProjectGuid>{F67217C1-6BB3-4180-916B-B7B4CDC14C2D}</ProjectGuid>
-    <OutputType>WinExe</OutputType>
-    <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Nu.Gaia.Design</RootNamespace>
-    <AssemblyName>Nu.Gaia.Design</AssemblyName>
-    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
-    <FileAlignment>512</FileAlignment>
-    <TargetFrameworkProfile />
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
-    <DebugSymbols>true</DebugSymbols>
-    <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <DebugType>full</DebugType>
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <LangVersion>7.3</LangVersion>
-    <ErrorReport>prompt</ErrorReport>
-    <Prefer32Bit>true</Prefer32Bit>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
-    <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <Optimize>true</Optimize>
-    <DebugType>pdbonly</DebugType>
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <LangVersion>7.3</LangVersion>
-    <ErrorReport>prompt</ErrorReport>
-    <Prefer32Bit>true</Prefer32Bit>
-  </PropertyGroup>
-  <ItemGroup>
-    <Reference Include="OpenGL.Net">
-      <HintPath>..\Nu.Dependencies\OpenGL.NET.0.8.4\lib\net461\OpenGL.Net.dll</HintPath>
-    </Reference>
-    <Reference Include="OpenGL.Net.WinForms">
-      <HintPath>..\Nu.Dependencies\OpenGL.NET.0.8.4\lib\net461\OpenGL.Net.WinForms.dll</HintPath>
-    </Reference>
-    <Reference Include="ScintillaNET">
-      <HintPath>..\Nu.Dependencies\ScintillaNET\ScintillaNET.dll</HintPath>
-    </Reference>
-    <Reference Include="ScintillaNET FindReplaceDialog, Version=1.4.0.26906, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\Nu.Dependencies\ScintillaNET-FindReplace\Debug\ScintillaNET FindReplaceDialog.dll</HintPath>
-    </Reference>
-    <Reference Include="System" />
-    <Reference Include="System.Core" />
-    <Reference Include="Microsoft.CSharp" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Deployment" />
-    <Reference Include="System.Drawing" />
-    <Reference Include="System.Windows.Forms" />
-    <Reference Include="System.Xml" />
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Include="AssetPicker.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="AssetPicker.Designer.cs">
-      <DependentUpon>AssetPicker.cs</DependentUpon>
-    </Compile>
-    <Compile Include="EntityPicker.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="EntityPicker.Designer.cs">
-      <DependentUpon>EntityPicker.cs</DependentUpon>
-    </Compile>
-    <Compile Include="GaiaForm.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="GaiaForm.Designer.cs">
-      <DependentUpon>GaiaForm.cs</DependentUpon>
-    </Compile>
-    <Compile Include="GroupCreationForm.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="GroupCreationForm.Designer.cs">
-      <DependentUpon>GroupCreationForm.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Program.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Properties\Resources.Designer.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DependentUpon>Resources.resx</DependentUpon>
-    </Compile>
-    <Compile Include="StartForm.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="StartForm.Designer.cs">
-      <DependentUpon>StartForm.cs</DependentUpon>
-    </Compile>
-    <Compile Include="SymbolicTextBox.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="SelectablePanel.cs">
-      <SubType>UserControl</SubType>
-    </Compile>
-    <Compile Include="TreeViewExtension.cs" />
-    <EmbeddedResource Include="AssetPicker.resx">
-      <DependentUpon>AssetPicker.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="EntityPicker.resx">
-      <DependentUpon>EntityPicker.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="GaiaForm.resx">
-      <DependentUpon>GaiaForm.cs</DependentUpon>
-      <SubType>Designer</SubType>
-    </EmbeddedResource>
-    <EmbeddedResource Include="GroupCreationForm.resx">
-      <DependentUpon>GroupCreationForm.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Properties\Resources.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <SubType>Designer</SubType>
-      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
-    <EmbeddedResource Include="StartForm.resx">
-      <DependentUpon>StartForm.cs</DependentUpon>
-    </EmbeddedResource>
-    <None Include="App.config" />
-    <None Include="Properties\Settings.settings">
-      <Generator>SettingsSingleFileGenerator</Generator>
-      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
-    </None>
-    <Compile Include="Properties\Settings.Designer.cs">
-      <AutoGen>True</AutoGen>
-      <DependentUpon>Settings.settings</DependentUpon>
-      <DesignTimeSharedInput>True</DesignTimeSharedInput>
-    </Compile>
-  </ItemGroup>
-  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
-       Other similar extension points exist, see Microsoft.Common.targets.
-  <Target Name="BeforeBuild">
-  </Target>
-  <Target Name="AfterBuild">
-  </Target>
-  -->
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<OutputType>WinExe</OutputType>
+		<TargetFramework>net7.0-windows</TargetFramework>
+		<Nullable>enable</Nullable>
+		<UseWindowsForms>true</UseWindowsForms>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<ProjectGuid>{F67217C1-6BB3-4180-916B-B7B4CDC14C2D}</ProjectGuid>
+		<PlatformTarget>AnyCPU</PlatformTarget>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCpu'">
+		<DefineConstants>TRACE</DefineConstants>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCpu'">
+		<DefineConstants>TRACE</DefineConstants>
+	</PropertyGroup>
+
+	<ItemGroup>
+	  <PackageReference Include="System.Security.AccessControl" Version="6.0.0" />
+	  <PackageReference Include="System.Threading" Version="4.3.0" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Reference Include="OpenGL.Net">
+			<HintPath>..\..\Nu\Nu.Dependencies\OpenGL.NET.0.8.4\lib\net461\OpenGL.Net.dll</HintPath>
+		</Reference>
+		<Reference Include="OpenGL.Net.WinForms">
+			<HintPath>..\..\Nu\Nu.Dependencies\OpenGL.NET.0.8.4\lib\net461\OpenGL.Net.WinForms.dll</HintPath>
+		</Reference>
+		<Reference Include="ScintillaNET">
+			<HintPath>..\..\Nu\Nu.Dependencies\ScintillaNET\net7.0-windows\ScintillaNET.dll</HintPath>
+		</Reference>
+		<Reference Include="ScintillaNET FindReplaceDialog, Version=1.4.0.26906, Culture=neutral, processorArchitecture=MSIL">
+			<SpecificVersion>False</SpecificVersion>
+			<HintPath>..\..\Nu\Nu.Dependencies\ScintillaNET-FindReplace\Debug\ScintillaNET FindReplaceDialog.dll</HintPath>
+		</Reference>
+	</ItemGroup>
+
 </Project>

@@ -7,13 +7,15 @@
 		<PlatformTarget>AnyCPU</PlatformTarget>
 		<AssemblyName>UserProject</AssemblyName>
 		<Name>UserProject</Name>
+		<DisableFastUpToDateCheck>true</DisableFastUpToDateCheck>
+		<PostBuildEvent>"$(MSBuildProjectDirectory)\..\..\Nu\Nu.Pipe\bin\$(Configuration)\net7.0\Nu.Pipe.exe" "$(MSBuildProjectDirectory)\\" "$(MSBuildProjectDirectory)\bin\$(Configuration)\net7.0\\" "$(MSBuildProjectDirectory)\refinement\\" "False"</PostBuildEvent>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCpu'">
 		<WarnOn>FS1182</WarnOn>
 		<NoWarn>FS9;FS1178;FS3391;FS3536</NoWarn>
 		<WarningLevel>5</WarningLevel>
-		<DefineConstants>TRACE;PLATFORM_AGNOSTIC_TIMESTAMPING;DISABLE_ENTITY_POST_UPDATE</DefineConstants>
+		<DefineConstants>TRACE</DefineConstants>
 		<DocumentationFile>bin\Debug\UserProject.xml</DocumentationFile>
 	</PropertyGroup>
 
@@ -22,7 +24,7 @@
 		<NoWarn>FS9;FS1178;FS3391;FS3536</NoWarn>
 		<Tailcalls>False</Tailcalls>
 		<WarningLevel>5</WarningLevel>
-		<DefineConstants>TRACE;PLATFORM_AGNOSTIC_TIMESTAMPING;DISABLE_ENTITY_POST_UPDATE</DefineConstants>
+		<DefineConstants>TRACE</DefineConstants>
 		<DocumentationFile>bin\Release\UserProject.xml</DocumentationFile>
 	</PropertyGroup>
 
@@ -42,7 +44,6 @@
 		<Content Include="Prelude.nuscript">
 			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
 		</Content>
-		<Content Include="packages.config" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -76,14 +77,7 @@
 		<ProjectReference Include="..\..\Nu\Nu.Math\Nu.Math.csproj" />
 		<ProjectReference Include="..\..\Nu\Nu.Pipe\Nu.Pipe.fsproj" />
 	</ItemGroup>
-
-	<PropertyGroup>
-		<PreBuildEvent />
-	</PropertyGroup>
-	<PropertyGroup>
-		<PostBuildEvent>"$(MSBuildProjectDirectory)\..\..\Nu\Nu.Pipe\bin\$(Configuration)\net7.0\Nu.Pipe.exe" "$(MSBuildProjectDirectory)\\" "$(MSBuildProjectDirectory)\bin\$(Configuration)\net7.0\\" "$(MSBuildProjectDirectory)\refinement\\" "False"</PostBuildEvent>
-		<DisableFastUpToDateCheck>true</DisableFastUpToDateCheck>
-	</PropertyGroup>
+	
 	<Target Name="AfterClean">
 		<RemoveDir Directories="$(OutDir)Assets" />
 		<RemoveDir Directories="$(OutDir)Refinement" />
