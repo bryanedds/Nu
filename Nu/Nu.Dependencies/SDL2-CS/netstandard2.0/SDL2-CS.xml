@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>SDL2-CS</name>
+    </assembly>
+    <members>
+        <member name="M:SDL2.SDL.SDL_GetNumTouchDevices">
+            \brief Get the number of registered touch devices.
+        </member>
+        <member name="M:SDL2.SDL.SDL_GetTouchDevice(System.Int32)">
+            \brief Get the touch ID with the given index, or 0 if the index is invalid.
+        </member>
+        <member name="M:SDL2.SDL.SDL_GetNumTouchFingers(System.Int64)">
+            \brief Get the number of active fingers for a given touch device.
+        </member>
+        <member name="M:SDL2.SDL.SDL_GetTouchFinger(System.Int64,System.Int32)">
+            \brief Get the finger object of the given touch, with the given index.
+            Returns pointer to SDL_Finger.
+        </member>
+    </members>
+</doc>
