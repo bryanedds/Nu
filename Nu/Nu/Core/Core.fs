@@ -65,16 +65,3 @@ module CoreOperators =
 type FrameRate =
     | StaticFrameRate of int64
     | DynamicFrameRate of int64 option
-
-/// Denotes that a value should not be altered by the consumer of the API.
-/// TODO: remove this after updating Prime.
-type [<AttributeUsage (AttributeTargets.Field)>] UniformAttribute () =
-    inherit Attribute ()
-
-// TODO: remove after updating Prime.
-[<RequireQualifiedAccess>]
-module Array =
-
-    /// Foldi for arrays.
-    let foldi folder state (array : _ array) =
-        Seq.foldi folder state array

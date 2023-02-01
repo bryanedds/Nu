@@ -1,160 +1,77 @@
-<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
-  <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">x64</Platform>
-    <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>85d631a5-821a-4755-a68e-c1ffc64e469a</ProjectGuid>
-    <OutputType>Exe</OutputType>
-    <RootNamespace>NuPipe</RootNamespace>
-    <AssemblyName>Nu.Pipe</AssemblyName>
-    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
-    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
-    <Name>Nu.Pipe</Name>
-    <TargetFrameworkProfile />
-    <NuGetPackageImportStamp>
-    </NuGetPackageImportStamp>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x64' ">
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <Tailcalls>false</Tailcalls>
-    <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <WarningLevel>5</WarningLevel>
-    <DocumentationFile>bin\Debug\Nu.Pipe.xml</DocumentationFile>
-    <Prefer32Bit>false</Prefer32Bit>
-    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
-    <WarningsAsErrors />
-    <StartArguments>..\.. . ..\..\Refinement True</StartArguments>
-    <OtherFlags>--warnon:1182 --nowarn:1178 --nowarn:3391 --nowarn:3536</OtherFlags>
-    <PlatformTarget>x64</PlatformTarget>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x64' ">
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <Tailcalls>false</Tailcalls>
-    <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <WarningLevel>5</WarningLevel>
-    <DocumentationFile>bin\Release\Nu.Pipe.xml</DocumentationFile>
-    <Prefer32Bit>false</Prefer32Bit>
-    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
-    <WarningsAsErrors />
-    <StartArguments>..\.. . ..\..\Refinement True</StartArguments>
-    <PlatformTarget>x64</PlatformTarget>
-    <OtherFlags>--warnon:1182 --nowarn:1178 --nowarn:3391 --nowarn:3536</OtherFlags>
-  </PropertyGroup>
-  <PropertyGroup>
-    <MinimumVisualStudioVersion Condition="'$(MinimumVisualStudioVersion)' == ''">11</MinimumVisualStudioVersion>
-  </PropertyGroup>
-  <Choose>
-    <When Condition="'$(VisualStudioVersion)' == '11.0'">
-      <PropertyGroup Condition="Exists('$(MSBuildExtensionsPath32)\..\Microsoft SDKs\F#\3.0\Framework\v4.0\Microsoft.FSharp.Targets')">
-        <FSharpTargetsPath>$(MSBuildExtensionsPath32)\..\Microsoft SDKs\F#\3.0\Framework\v4.0\Microsoft.FSharp.Targets</FSharpTargetsPath>
-      </PropertyGroup>
-    </When>
-    <Otherwise>
-      <PropertyGroup Condition="Exists('$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\FSharp\Microsoft.FSharp.Targets')">
-        <FSharpTargetsPath>$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\FSharp\Microsoft.FSharp.Targets</FSharpTargetsPath>
-      </PropertyGroup>
-    </Otherwise>
-  </Choose>
-  <Import Project="$(FSharpTargetsPath)" Condition="Exists('$(FSharpTargetsPath)')" />
-  <ItemGroup>
-    <Compile Include="Program.fs" />
-    <None Include="App.config" />
-    <Content Include="AssetGraph.nuag">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="packages.config" />
-  </ItemGroup>
-  <ItemGroup>
-    <Reference Include="Aether.Physics2D">
-      <HintPath>..\..\packages\Aether.Physics2D.1.5.0\lib\net40\Aether.Physics2D.dll</HintPath>
-    </Reference>
-    <Reference Include="AssimpNet">
-      <HintPath>..\Nu.Dependencies\AssimpNet.02-17-20\net472\AssimpNet.dll</HintPath>
-    </Reference>
-    <Reference Include="Csv">
-      <HintPath>..\..\packages\Csv.1.0.58\lib\net40\Csv.dll</HintPath>
-    </Reference>
-    <Reference Include="FParsec">
-      <HintPath>..\..\packages\FParsec.1.0.3\lib\net40-client\FParsec.dll</HintPath>
-    </Reference>
-    <Reference Include="FParsecCS">
-      <HintPath>..\..\packages\FParsec.1.0.3\lib\net40-client\FParsecCS.dll</HintPath>
-    </Reference>
-    <Reference Include="FSharp.Core">
-      <HintPath>..\..\packages\FSharp.Core.7.0.0\lib\netstandard2.0\FSharp.Core.dll</HintPath>
-    </Reference>
-    <Reference Include="Magick.NET-Q8-x64">
-      <HintPath>..\..\packages\Magick.NET-Q8-x64.7.5.0.1\lib\net40\Magick.NET-Q8-x64.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.CSharp" />
-    <Reference Include="mscorlib" />
-    <Reference Include="Nito.Collections.Deque">
-      <HintPath>..\..\packages\Nito.Collections.Deque.1.1.0\lib\netstandard2.0\Nito.Collections.Deque.dll</HintPath>
-    </Reference>
-    <Reference Include="OpenGL.Net">
-      <HintPath>..\Nu.Dependencies\OpenGL.NET.0.8.4\lib\net461\OpenGL.Net.dll</HintPath>
-    </Reference>
-    <Reference Include="Prime">
-      <HintPath>..\..\packages\Prime.8.4.0\lib\net472\Prime.dll</HintPath>
-    </Reference>
-    <Reference Include="Prime.Scripting">
-      <HintPath>..\..\packages\Prime.Scripting.8.0.0\lib\net472\Prime.Scripting.exe</HintPath>
-    </Reference>
-    <Reference Include="SDL2-CS">
-      <HintPath>..\Nu.Dependencies\SDL2-CS.dll\lib\net20\SDL2-CS.dll</HintPath>
-    </Reference>
-    <Reference Include="System.Buffers">
-      <HintPath>..\..\packages\System.Buffers.4.5.1\lib\net461\System.Buffers.dll</HintPath>
-    </Reference>
-    <Reference Include="System.Collections.Immutable">
-      <HintPath>..\..\packages\System.Collections.Immutable.6.0.0\lib\net461\System.Collections.Immutable.dll</HintPath>
-    </Reference>
-    <Reference Include="System.Memory">
-      <HintPath>..\..\packages\System.Memory.4.5.4\lib\net461\System.Memory.dll</HintPath>
-    </Reference>
-    <Reference Include="System.Numerics.Vectors">
-      <HintPath>..\..\packages\System.Numerics.Vectors.4.5.0\lib\net46\System.Numerics.Vectors.dll</HintPath>
-    </Reference>
-    <Reference Include="System.Runtime.CompilerServices.Unsafe">
-      <HintPath>..\..\packages\System.Runtime.CompilerServices.Unsafe.6.0.0\lib\net461\System.Runtime.CompilerServices.Unsafe.dll</HintPath>
-    </Reference>
-    <Reference Include="TiledSharp">
-      <HintPath>..\Nu.Dependencies\TiledSharp.1.0.2\lib\netstandard2.0\TiledSharp.dll</HintPath>
-    </Reference>
-    <Reference Include="System" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.Drawing" />
-    <Reference Include="System.Numerics" />
-    <Reference Include="System.Xml.Linq" />
-    <ProjectReference Include="..\Nu.Math\Nu.Math.csproj">
-      <Name>Nu.Math</Name>
-      <Project>{f184a111-8c28-40b4-8cde-7bf2a64b3ca7}</Project>
-      <Private>True</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\Nu\Nu.fsproj">
-      <Name>Nu</Name>
-      <Project>{a7a6f758-e122-4c2c-9525-1f29802d007c}</Project>
-      <Private>True</Private>
-    </ProjectReference>
-  </ItemGroup>
-  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
-    <PropertyGroup>
-      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
-    </PropertyGroup>
-    <Error Condition="!Exists('..\..\packages\Magick.NET-Q8-x64.7.5.0.1\build\net40\Magick.NET-Q8-x64.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\packages\Magick.NET-Q8-x64.7.5.0.1\build\net40\Magick.NET-Q8-x64.targets'))" />
-  </Target>
-  <Target Name="BeforeBuild">
-    <Copy SourceFiles="..\..\packages\Magick.NET-Q8-x64.7.5.0.1\runtimes\linux-x64\native\Magick.NET-Q8-x64.Native.dll.so" DestinationFiles="$(TargetDir)libMagick.NET-Q8-x64.Native.dll.so" ContinueOnError="false" />
-  </Target>
-  <Target Name="AfterBuild">
-    <Copy SourceFiles="..\..\packages\Magick.NET-Q8-x64.7.5.0.1\lib\netstandard20\Magick.NET-Q8-x64.dll" DestinationFiles="$(TargetDir)Magick.NET-Q8-x64.dll" ContinueOnError="false" />
-  </Target>
-  <Import Project="..\..\packages\Magick.NET-Q8-x64.7.5.0.1\build\net40\Magick.NET-Q8-x64.targets" Condition="Exists('..\..\packages\Magick.NET-Q8-x64.7.5.0.1\build\net40\Magick.NET-Q8-x64.targets')" />
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<OutputType>Exe</OutputType>
+		<TargetFramework>net7.0</TargetFramework>
+		<ProjectGuid>{85D631A5-821A-4755-A68E-C1FFC64E469A}</ProjectGuid>
+		<GenerateDocumentationFile>true</GenerateDocumentationFile>
+		<PlatformTarget>AnyCPU</PlatformTarget>
+		<StartArguments>..\.. . ..\..\Refinement True</StartArguments>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCpu'">
+		<WarnOn>FS1182</WarnOn>
+		<NoWarn>FS9;FS1178;FS3391;FS3536</NoWarn>
+		<WarningLevel>5</WarningLevel>
+		<DefineConstants>TRACE;PLATFORM_AGNOSTIC_TIMESTAMPING;DISABLE_ENTITY_POST_UPDATE</DefineConstants>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCpu'">
+		<WarnOn>FS1182</WarnOn>
+		<NoWarn>FS9;FS1178;FS3391;FS3536</NoWarn>
+		<Tailcalls>False</Tailcalls>
+		<WarningLevel>5</WarningLevel>
+		<DefineConstants>TRACE;PLATFORM_AGNOSTIC_TIMESTAMPING;DISABLE_ENTITY_POST_UPDATE</DefineConstants>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<Compile Include="Program.fs" />
+		<None Include="App.config" />
+		<Content Include="AssetGraph.nuag">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</Content>
+	</ItemGroup>
+
+	<ItemGroup>
+		<Reference Include="AssimpNet">
+			<HintPath>..\Nu.Dependencies\AssimpNet.02-17-20\net472\AssimpNet.dll</HintPath>
+		</Reference>
+		<Reference Include="OpenGL.Net">
+			<HintPath>..\Nu.Dependencies\OpenGL.NET.0.8.4\lib\net461\OpenGL.Net.dll</HintPath>
+		</Reference>
+		<Reference Include="SDL2-CS">
+			<HintPath>..\Nu.Dependencies\SDL2-CS\netstandard2.0\SDL2-CS.dll</HintPath>
+		</Reference>
+		<Reference Include="TiledSharp">
+			<HintPath>..\Nu.Dependencies\TiledSharp.1.0.2\lib\netstandard2.0\TiledSharp.dll</HintPath>
+		</Reference>
+		<PackageReference Include="Csv" Version="1.0.58" />
+		<PackageReference Include="FParsec" Version="1.0.3" />
+		<PackageReference Include="Aether.Physics2D" Version="1.5.0" />
+		<PackageReference Include="Magick.NET-Q8-x64" Version="7.5.0.1" />
+		<PackageReference Include="Nito.Collections.Deque" Version="1.1.0" />
+		<PackageReference Include="Prime" Version="9.0.0" />
+		<PackageReference Include="Prime.Scripting" Version="9.0.0" />
+		<PackageReference Include="System.Runtime" Version="4.3.1" />
+		<PackageReference Include="System.Configuration.ConfigurationManager" Version="7.0.0" />
+		<PackageReference Include="System.Numerics.Vectors" Version="4.5.0" />
+		<PackageReference Include="System.Security.AccessControl" Version="6.0.0" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\Nu\Nu.fsproj" />
+		<ProjectReference Include="..\Nu.Math\Nu.Math.csproj" />
+	</ItemGroup>
+
+	<Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+		<Error Condition="!Exists('..\..\packages\Magick.NET-Q8-x64.7.5.0.1\build\net40\Magick.NET-Q8-x64.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\packages\Magick.NET-Q8-x64.7.5.0.1\build\net40\Magick.NET-Q8-x64.targets'))" />
+	</Target>
+	<Target Name="BeforeBuild">
+		<Copy SourceFiles="..\..\packages\Magick.NET-Q8-x64.7.5.0.1\runtimes\linux-x64\native\Magick.NET-Q8-x64.Native.dll.so" DestinationFiles="$(TargetDir)libMagick.NET-Q8-x64.Native.dll.so" ContinueOnError="false" />
+	</Target>
+	<Target Name="AfterBuild">
+		<Copy SourceFiles="..\..\packages\Magick.NET-Q8-x64.7.5.0.1\lib\netstandard20\Magick.NET-Q8-x64.dll" DestinationFiles="$(TargetDir)Magick.NET-Q8-x64.dll" ContinueOnError="false" />
+	</Target>
+	<Import Project="..\..\packages\Magick.NET-Q8-x64.7.5.0.1\build\net40\Magick.NET-Q8-x64.targets" Condition="Exists('..\..\packages\Magick.NET-Q8-x64.7.5.0.1\build\net40\Magick.NET-Q8-x64.targets')" />
+
 </Project>

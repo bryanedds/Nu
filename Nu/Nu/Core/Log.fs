@@ -79,12 +79,7 @@ module Log =
         if not Initialized then
 
             // add listeners
-            let listeners =
-#if DEBUG
-                Debug.Listeners
-#else
-                Trace.Listeners
-#endif
+            let listeners = Trace.Listeners
             listeners.Add (new TextWriterTraceListener (Console.Out)) |> ignore
             match fileNameOpt with
             | Some fileName -> listeners.Add (new TextWriterTraceListener (fileName)) |> ignore
