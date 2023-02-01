@@ -2,14 +2,13 @@
 // Copyright (C) Bryan Edds, 2013-2020.
 
 #I __SOURCE_DIRECTORY__
-#r "../../packages/Magick.NET-Q8-x64.7.5.0.1/lib/net40/Magick.NET-Q8-x64.dll"
-#r "../../packages/Csv.1.0.58/lib/net40/Csv.dll"
-#r "../../packages/FParsec.1.0.3/lib/net40-client/FParsecCS.dll" // MUST be referenced BEFORE FParsec.dll!
-#r "../../packages/FParsec.1.0.3/lib/net40-client/FParsec.dll"
-#r "../../packages/Prime.8.4.0/lib/net472/Prime.dll"
-#r "../../packages/Prime.Scripting.8.0.0/lib/net472/Prime.Scripting.exe"
-#r "../../packages/Aether.Physics2D.1.5.0/lib/net40/Aether.Physics2D.dll"
-#r "../../packages/Nito.Collections.Deque.1.1.0/lib/netstandard2.0/Nito.Collections.Deque.dll"
+#r "nuget: Magick.NET-Q8-x64, 7.5.0.1"
+#r "nuget: Csv, 1.0.58"
+#r "nuget: FParsec, 1.0.3" // MUST be referenced BEFORE FParsec.dll!
+#r "nuget: Prime, 9.0.0"
+#r "nuget: Prime.Scripting, 9.0.0"
+#r "nuget: Aether.Physics2D, 1.5.0"
+#r "nuget: Nito.Collections.Deque, 1.1.0"
 #r "../../Nu/Nu.Dependencies/SDL2-CS/netstandard2.0/SDL2-CS.dll"
 #r "../../Nu/Nu.Dependencies/TiledSharp.1.0.2/lib/netstandard2.0/TiledSharp.dll"
 #r "../../Nu/Nu.Math/bin/Debug/netstandard2.0/Nu.Math.dll"
