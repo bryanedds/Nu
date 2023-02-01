@@ -106,7 +106,7 @@ module AssetGraph =
         if usingRawAssets then List.fold getAssetExtension2 rawAssetExtension refinements
         else rawAssetExtension
 
-    let private writeMagickImageAsPng psdHack filePath (image : MagickImage) =
+    let private writeMagickImageAsPng psdHack (filePath : string) (image : MagickImage) =
         match Path.GetExtension filePath with
         | ".png" ->
             use stream = File.OpenWrite filePath
@@ -121,7 +121,7 @@ module AssetGraph =
         | _ -> Log.info ("Invalid image file format for scaling refinement; must be of *.png format.")
 
     /// Apply a single refinement to an asset.
-    let private refineAssetOnce intermediateFileSubpath intermediateDirectory refinementDirectory refinement =
+    let private refineAssetOnce (intermediateFileSubpath : string) intermediateDirectory refinementDirectory refinement =
 
         // build the intermediate file path
         let intermediateFileExtension = Path.GetExtension intermediateFileSubpath
@@ -261,8 +261,8 @@ module AssetGraph =
 
         // compute the asset graph's tracker file path
         let outputFilePathOpt =
-            Option.map
-                (fun filePath -> outputDirectory + "/" + Path.ChangeExtension(Path.GetFileName filePath, ".tracker"))
+            Option.map (fun (filePath : string) ->
+                outputDirectory + "/" + Path.ChangeExtension(Path.GetFileName filePath, ".tracker"))
                 assetGraph.FilePathOpt
 
         // check if the output assetGraph file is newer than the current
