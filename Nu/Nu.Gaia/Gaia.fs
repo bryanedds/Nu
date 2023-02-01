@@ -1257,7 +1257,7 @@ module Gaia =
                         String.Join ("\n", Array.map (fun (filePath : string) -> "#r \"../../../" + filePath + "\"") fsprojDllFilePaths) + "\n" +
                         "#r \"../../../../../Nu/Nu.Math/bin/" + buildName + "/netstandard2.0/Nu.Math.dll\"\n" +
                         "#r \"../../../../../Nu/Nu.Pipe/bin/" + buildName + "/net7.0/Nu.Pipe.exe\"\n" +
-                        "#r \"../../../../../Nu/Nu/bin/" + buildName + "/net7.0/Nu.exe\"\n" +
+                        "#r \"../../../../../Nu/Nu/bin/" + buildName + "/net7.0/Nu.dll\"\n" +
                         String.Join ("\n", Array.map (fun (filePath : string) -> "#load \"../../../" + filePath + "\"") fsprojFsFilePaths)
                     Log.info ("Compiling code via generated F# script:\n" + fsxFileString)
                     let defaultArgs = [|"fsi.exe"; "--debug+"; "--debug:full"; "--optimize-"; "--tailcalls-"; "--multiemit+"; "--gui-"|]
