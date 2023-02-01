@@ -13,8 +13,8 @@ module Program =
 
         // ensure template directory exists
         let programDir = Reflection.Assembly.GetEntryAssembly().Location |> Path.GetDirectoryName 
-        let slnDir = programDir + "/../../../.." |> Path.Simplify
-        let templateDir = programDir + "/../../../Nu.Template" |> Path.Simplify
+        let slnDir = programDir + "/../../../../.." |> Path.Simplify
+        let templateDir = programDir + "/../../../../Nu.Template" |> Path.Simplify
         if Directory.Exists templateDir then
 
             // query user to create new project
@@ -32,7 +32,7 @@ module Program =
                     // compute directories
                     let templateIdentifier = templateDir.Replace("/", "\\") // this is what dotnet knows the template as for uninstall...
                     let templateFileName = "Nu.Template.fsproj"
-                    let projectsDir = programDir + "/../../../../Projects" |> Path.Simplify
+                    let projectsDir = programDir + "/../../../../../Projects" |> Path.Simplify
                     let newProjDir = projectsDir + "/" + name |> Path.Simplify
                     let newFileName = name + ".fsproj"
                     let newProj = newProjDir + "/" + newFileName |> Path.Simplify
@@ -58,15 +58,15 @@ module Program =
                         File.Copy (templateFileName, newFileName, true)
                         File.Delete templateFileName
 
-                        // substitute $safeprojectname$ in project file
+                        // substitute project guid in project file
+                        let projectGuid = Gen.id
+                        let projectGuidStr = projectGuid.ToString().ToUpper()
                         let newProjStr = File.ReadAllText newProj
-                        let newProjStr = newProjStr.Replace("$safeprojectname$", name)
+                        let newProjStr = newProjStr.Replace("4DBBAA23-56BA-43CB-AB63-C45D5FC1016F", projectGuidStr)
                         File.WriteAllText (newProj, newProjStr)
 
                         // add project to sln file
                         Directory.SetCurrentDirectory slnDir
-                        let projectGuid = Gen.id
-                        let projectGuidStr = projectGuid.ToString().ToUpper()
                         let slnLines = "Nu.sln" |> File.ReadAllLines |> Array.toList
                         let insertionIndex = List.findIndex ((=) "Global") slnLines
                         let slnLines =
@@ -77,10 +77,10 @@ module Program =
                         let insertionIndex = List.findIndex ((=) "\tGlobalSection(SolutionProperties) = preSolution") slnLines - 1
                         let slnLines =
                             List.take insertionIndex slnLines @
-                            ["\t\t{" + projectGuidStr + "}.Debug|x64.ActiveCfg = Debug|x64"
-                             "\t\t{" + projectGuidStr + "}.Debug|x64.Build.0 = Debug|x64"
-                             "\t\t{" + projectGuidStr + "}.Release|x64.ActiveCfg = Release|x64"
-                             "\t\t{" + projectGuidStr + "}.Release|x64.Build.0 = Release|x64"] @
+                            ["\t\t{" + projectGuidStr + "}.Debug|Any CPU.ActiveCfg = Debug|Any CPU"
+                             "\t\t{" + projectGuidStr + "}.Debug|Any CPU.Build.0 = Debug|Any CPU"
+                             "\t\t{" + projectGuidStr + "}.Release|Any CPU.ActiveCfg = Release|Any CPU"
+                             "\t\t{" + projectGuidStr + "}.Release|Any CPU.Build.0 = Release|x64"] @
                             List.skip insertionIndex slnLines
                         let insertionIndex = List.findIndex ((=) "\tGlobalSection(ExtensibilityGlobals) = postSolution") slnLines - 1
                         let slnLines =

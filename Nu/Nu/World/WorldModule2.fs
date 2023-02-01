@@ -538,7 +538,7 @@ module WorldModule2 =
         [<FunctionBinding>]
         static member tryReloadAssets world =
             let targetDir = AppDomain.CurrentDomain.BaseDirectory
-            let assetSourceDir = Path.Simplify (targetDir + "../..")
+            let assetSourceDir = Path.Simplify (targetDir + "../../..")
             match World.tryReloadAssetGraph assetSourceDir targetDir Constants.Engine.RefinementDir world with
             | (Right _, world) -> (true, world)
             | (Left _, world) -> (false, world)

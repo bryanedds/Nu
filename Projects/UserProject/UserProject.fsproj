@@ -5,8 +5,6 @@
 		<TargetFramework>net7.0</TargetFramework>
 		<ProjectGuid>{8533224E-E08B-4EA2-89DF-9D6D72C1374E}</ProjectGuid>
 		<PlatformTarget>AnyCPU</PlatformTarget>
-		<AssemblyName>UserProject</AssemblyName>
-		<Name>UserProject</Name>
 		<DisableFastUpToDateCheck>true</DisableFastUpToDateCheck>
 		<PostBuildEvent>"$(MSBuildProjectDirectory)\..\..\Nu\Nu.Pipe\bin\$(Configuration)\net7.0\Nu.Pipe.exe" "$(MSBuildProjectDirectory)\\" "$(MSBuildProjectDirectory)\bin\$(Configuration)\net7.0\\" "$(MSBuildProjectDirectory)\refinement\\" "False"</PostBuildEvent>
 	</PropertyGroup>
@@ -16,7 +14,6 @@
 		<NoWarn>FS9;FS1178;FS3391;FS3536</NoWarn>
 		<WarningLevel>5</WarningLevel>
 		<DefineConstants>TRACE</DefineConstants>
-		<DocumentationFile>bin\Debug\UserProject.xml</DocumentationFile>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCpu'">
@@ -25,7 +22,6 @@
 		<Tailcalls>False</Tailcalls>
 		<WarningLevel>5</WarningLevel>
 		<DefineConstants>TRACE</DefineConstants>
-		<DocumentationFile>bin\Release\UserProject.xml</DocumentationFile>
 	</PropertyGroup>
 
 	<ItemGroup>
