@@ -41,28 +41,28 @@
             // 
             // binaryFilePathText
             // 
-            this.binaryFilePathText.Location = new System.Drawing.Point(14, 45);
+            this.binaryFilePathText.Location = new System.Drawing.Point(16, 52);
             this.binaryFilePathText.Margin = new System.Windows.Forms.Padding(2);
             this.binaryFilePathText.Name = "binaryFilePathText";
-            this.binaryFilePathText.Size = new System.Drawing.Size(411, 20);
+            this.binaryFilePathText.Size = new System.Drawing.Size(479, 23);
             this.binaryFilePathText.TabIndex = 1;
             // 
             // label1
             // 
             this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(11, 18);
+            this.label1.Location = new System.Drawing.Point(13, 21);
             this.label1.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(180, 13);
+            this.label1.Size = new System.Drawing.Size(200, 15);
             this.label1.TabIndex = 0;
             this.label1.Text = "Select game\'s executable for editing.";
             // 
             // selectExecutable
             // 
-            this.selectExecutable.Location = new System.Drawing.Point(429, 45);
+            this.selectExecutable.Location = new System.Drawing.Point(500, 52);
             this.selectExecutable.Margin = new System.Windows.Forms.Padding(2);
             this.selectExecutable.Name = "selectExecutable";
-            this.selectExecutable.Size = new System.Drawing.Size(24, 20);
+            this.selectExecutable.Size = new System.Drawing.Size(28, 23);
             this.selectExecutable.TabIndex = 2;
             this.selectExecutable.Text = "...";
             this.selectExecutable.UseVisualStyleBackColor = true;
@@ -70,9 +70,10 @@
             // 
             // customButton
             // 
-            this.customButton.Location = new System.Drawing.Point(262, 141);
+            this.customButton.Location = new System.Drawing.Point(306, 163);
+            this.customButton.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.customButton.Name = "customButton";
-            this.customButton.Size = new System.Drawing.Size(96, 23);
+            this.customButton.Size = new System.Drawing.Size(112, 27);
             this.customButton.TabIndex = 6;
             this.customButton.Text = "Use Settings";
             this.customButton.UseVisualStyleBackColor = true;
@@ -81,23 +82,25 @@
             // defaultButton
             // 
             this.defaultButton.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-            this.defaultButton.Location = new System.Drawing.Point(364, 141);
+            this.defaultButton.Location = new System.Drawing.Point(425, 163);
+            this.defaultButton.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.defaultButton.Name = "defaultButton";
-            this.defaultButton.Size = new System.Drawing.Size(91, 23);
+            this.defaultButton.Size = new System.Drawing.Size(106, 27);
             this.defaultButton.TabIndex = 7;
             this.defaultButton.Text = "Use Defaults";
             this.defaultButton.UseVisualStyleBackColor = true;
             // 
             // openFileDialog
             // 
-            this.openFileDialog.Filter = "EXE files|*.exe|All files|*.*";
+            this.openFileDialog.Filter = "DLL files|*.dll|All files|*.*";
             // 
             // useImperativeExecutionCheckBox
             // 
             this.useImperativeExecutionCheckBox.AutoSize = true;
-            this.useImperativeExecutionCheckBox.Location = new System.Drawing.Point(14, 109);
+            this.useImperativeExecutionCheckBox.Location = new System.Drawing.Point(16, 126);
+            this.useImperativeExecutionCheckBox.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.useImperativeExecutionCheckBox.Name = "useImperativeExecutionCheckBox";
-            this.useImperativeExecutionCheckBox.Size = new System.Drawing.Size(284, 17);
+            this.useImperativeExecutionCheckBox.Size = new System.Drawing.Size(310, 19);
             this.useImperativeExecutionCheckBox.TabIndex = 5;
             this.useImperativeExecutionCheckBox.Text = "Use Imperative Execution (faster, but no Undo / Redo)";
             this.useImperativeExecutionCheckBox.UseVisualStyleBackColor = true;
@@ -107,27 +110,29 @@
             this.modeComboBox.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.modeComboBox.Enabled = false;
             this.modeComboBox.FormattingEnabled = true;
-            this.modeComboBox.Location = new System.Drawing.Point(56, 77);
+            this.modeComboBox.Location = new System.Drawing.Point(65, 89);
+            this.modeComboBox.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.modeComboBox.Name = "modeComboBox";
-            this.modeComboBox.Size = new System.Drawing.Size(399, 21);
+            this.modeComboBox.Size = new System.Drawing.Size(465, 23);
             this.modeComboBox.TabIndex = 4;
             // 
             // label2
             // 
             this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(13, 81);
+            this.label2.Location = new System.Drawing.Point(15, 93);
+            this.label2.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(37, 13);
+            this.label2.Size = new System.Drawing.Size(41, 15);
             this.label2.TabIndex = 3;
             this.label2.Text = "Mode:";
             // 
             // StartForm
             // 
             this.AcceptButton = this.customButton;
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.CancelButton = this.defaultButton;
-            this.ClientSize = new System.Drawing.Size(467, 179);
+            this.ClientSize = new System.Drawing.Size(545, 207);
             this.ControlBox = false;
             this.Controls.Add(this.label2);
             this.Controls.Add(this.modeComboBox);

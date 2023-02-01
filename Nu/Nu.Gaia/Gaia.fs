@@ -1229,7 +1229,7 @@ module Gaia =
                         // imagine manually parsing an xml file...
                         fsprojFileLines |>
                         Array.map (fun line -> line.Trim ()) |>
-                        Array.filter (fun line -> line.Contains "HintPath" && (line.Contains ".dll" || line.Contains ".exe")) |>
+                        Array.filter (fun line -> line.Contains "HintPath" && line.Contains ".dll") |>
                         Array.map (fun line -> line.Replace ("<HintPath>", "")) |>
                         Array.map (fun line -> line.Replace ("</HintPath>", "")) |>
                         Array.map (fun line -> line.Replace ("=", "")) |>
