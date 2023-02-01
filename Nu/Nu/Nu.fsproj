@@ -3,7 +3,7 @@
 	<PropertyGroup>
 		<OutputType>Exe</OutputType>
 		<TargetFramework>net7.0</TargetFramework>
-		<ProjectGuid>56988FA5-8358-442A-B027-A9767FF41FA8</ProjectGuid>
+		<ProjectGuid>{A7A6F758-E122-4C2C-9525-1F29802D007C}</ProjectGuid>
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
 		<PlatformTarget>AnyCPU</PlatformTarget>
 	</PropertyGroup>
@@ -119,7 +119,6 @@
 		<Content Include="Prelude.nuscript">
 			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
 		</Content>
-		<Content Include="packages.config" />
 		<None Include="SDL2.dll">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</None>
