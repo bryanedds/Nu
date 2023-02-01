@@ -746,7 +746,7 @@ module Gaia =
         | _ -> failwithumf ()
 
     let private tryReloadPrelude (_ : GaiaForm) world =
-        let assetSourceDir = targetDir + "/../.."
+        let assetSourceDir = targetDir + "/../../.."
         World.tryReloadPrelude assetSourceDir targetDir world
 
     let private tryLoadPrelude (form : GaiaForm) world =
@@ -760,7 +760,7 @@ module Gaia =
 
     let private trySavePrelude (form : GaiaForm) world =
         let oldWorld = world
-        let preludeSourceDir = targetDir + "/../.."
+        let preludeSourceDir = targetDir + "/../../.."
         let preludeFilePath = preludeSourceDir + "/" + Assets.Global.PreludeFilePath
         try let preludeStr = form.preludeTextBox.Text.TrimEnd ()
             File.WriteAllText (preludeFilePath, preludeStr)
@@ -770,7 +770,7 @@ module Gaia =
             (false, World.choose oldWorld)
 
     let private tryReloadAssetGraph (_ : GaiaForm) world =
-        let assetSourceDir = targetDir + "/../.."
+        let assetSourceDir = targetDir + "/../../.."
         World.tryReloadAssetGraph assetSourceDir targetDir Constants.Engine.RefinementDir world
 
     let private tryLoadAssetGraph (form : GaiaForm) world =
@@ -789,7 +789,7 @@ module Gaia =
 
     let private trySaveAssetGraph (form : GaiaForm) world =
         let oldWorld = world
-        let assetSourceDir = targetDir + "/../.."
+        let assetSourceDir = targetDir + "/../../.."
         let assetGraphFilePath = assetSourceDir + "/" + Assets.Global.AssetGraphFilePath
         try let packageDescriptorsStr = form.assetGraphTextBox.Text.TrimEnd () |> scvalue<Map<string, PackageDescriptor>> |> scstring
             let prettyPrinter = (SyntaxAttribute.defaultValue typeof<AssetGraph>).PrettyPrinter
@@ -800,7 +800,7 @@ module Gaia =
             (false, World.choose oldWorld)
 
     let private tryReloadOverlays form world =
-        let overlayDir = targetDir + "/../.."
+        let overlayDir = targetDir + "/../../.."
         match World.tryReloadOverlays overlayDir targetDir world with
         | (Right overlayer, world) ->
             refreshOverlayComboBox form world
@@ -823,7 +823,7 @@ module Gaia =
 
     let private trySaveOverlayer (form : GaiaForm) world =
         let oldWorld = world
-        let overlayerSourceDir = targetDir + "/../.."
+        let overlayerSourceDir = targetDir + "/../../.."
         let overlayerFilePath = overlayerSourceDir + "/" + Assets.Global.OverlayerFilePath
         try let overlays = scvalue<Overlay list> (form.overlayerTextBox.Text.TrimEnd ())
             let prettyPrinter = (SyntaxAttribute.defaultValue typeof<Overlay>).PrettyPrinter
@@ -1217,7 +1217,7 @@ module Gaia =
         Globals.nextPreUpdate $ fun world ->
             let world = Globals.pushPastWorld world
             clearSelections form // keep old type information from sticking around in re-painting property editors
-            let workingDirPath = targetDir + "/../.."
+            let workingDirPath = targetDir + "/../../.."
             Log.info ("Inspecting directory " + workingDirPath + " for F# code...")
             try match Array.ofSeq (Directory.EnumerateFiles (workingDirPath, "*.fsproj")) with
                 | [||] -> Log.trace ("Unable to find fsproj file in '" + workingDirPath + "'."); world
@@ -1254,11 +1254,11 @@ module Gaia =
                         "Release"
 #endif
                     let fsxFileString =
-                        String.Join ("\n", Array.map (fun (filePath : string) -> "#r \"../../" + filePath + "\"") fsprojDllFilePaths) + "\n" +
-                        "#r \"../../../../Nu/Nu.Math/bin/x64/" + buildName + "/Nu.Math.dll\"\n" +
-                        "#r \"../../../../Nu/Nu.Pipe/bin/" + buildName + "/Nu.Pipe.exe\"\n" +
-                        "#r \"../../../../Nu/Nu/bin/" + buildName + "/Nu.exe\"\n" +
-                        String.Join ("\n", Array.map (fun (filePath : string) -> "#load \"../../" + filePath + "\"") fsprojFsFilePaths)
+                        String.Join ("\n", Array.map (fun (filePath : string) -> "#r \"../../../" + filePath + "\"") fsprojDllFilePaths) + "\n" +
+                        "#r \"../../../../../Nu/Nu.Math/bin/" + buildName + "/netstandard2.0/Nu.Math.dll\"\n" +
+                        "#r \"../../../../../Nu/Nu.Pipe/bin/" + buildName + "/net7.0/Nu.Pipe.exe\"\n" +
+                        "#r \"../../../../../Nu/Nu/bin/" + buildName + "/net7.0/Nu.exe\"\n" +
+                        String.Join ("\n", Array.map (fun (filePath : string) -> "#load \"../../../" + filePath + "\"") fsprojFsFilePaths)
                     Log.info ("Compiling code via generated F# script:\n" + fsxFileString)
                     let defaultArgs = [|"fsi.exe"; "--debug+"; "--debug:full"; "--optimize-"; "--tailcalls-"; "--multiemit+"; "--gui-"|]
                     use errorStream = new StringWriter ()
