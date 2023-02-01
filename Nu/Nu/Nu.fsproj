@@ -222,10 +222,7 @@
 		<PackageReference Include="Nito.Collections.Deque" Version="1.1.0" />
 		<PackageReference Include="Prime" Version="9.0.0" />
 		<PackageReference Include="Prime.Scripting" Version="9.0.0" />
-		<PackageReference Include="System.Runtime" Version="4.3.1" />
 		<PackageReference Include="System.Configuration.ConfigurationManager" Version="7.0.0" />
-		<PackageReference Include="System.Numerics.Vectors" Version="4.5.0" />
-		<PackageReference Include="System.Security.AccessControl" Version="6.0.0" />
 	</ItemGroup>
 
 	<ItemGroup>
