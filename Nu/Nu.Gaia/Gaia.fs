@@ -1222,6 +1222,12 @@ module Gaia =
             try match Array.ofSeq (Directory.EnumerateFiles (workingDirPath, "*.fsproj")) with
                 | [||] -> Log.trace ("Unable to find fsproj file in '" + workingDirPath + "'."); world
                 | fsprojFilePaths ->
+                    let buildName =
+#if DEBUG
+                        "Debug"
+#else
+                        "Release"
+#endif
                     let fsprojFilePath = fsprojFilePaths.[0]
                     Log.info ("Inspecting code for F# project '" + fsprojFilePath + "'...")
                     let fsprojFileLines = File.ReadAllLines fsprojFilePath
@@ -1244,6 +1250,10 @@ module Gaia =
                         Array.map (fun line -> line.Replace ("\"", "")) |>
                         Array.map (fun line -> line.Replace ("\\", "/")) |>
                         Array.map (fun line -> line.Trim ())
+                    let fsprojProjectLines = // TODO: see if we can pull these from the fsproj as well...
+                        ["#r \"../../../../../Nu/Nu.Math/bin/" + buildName + "/netstandard2.0/Nu.Math.dll\""
+                         "#r \"../../../../../Nu/Nu.Pipe/bin/" + buildName + "/net7.0/Nu.Pipe.dll\""
+                         "#r \"../../../../../Nu/Nu/bin/" + buildName + "/net7.0/Nu.dll\""]
                     let fsprojFsFilePaths =
                         fsprojFileLines |>
                         Array.map (fun line -> line.Trim ()) |>
@@ -1255,18 +1265,10 @@ module Gaia =
                         Array.map (fun line -> line.Replace ("\"", "")) |>
                         Array.map (fun line -> line.Replace ("\\", "/")) |>
                         Array.map (fun line -> line.Trim ())
-                    let buildName =
-#if DEBUG
-                        "Debug"
-#else
-                        "Release"
-#endif
                     let fsxFileString =
                         String.Join ("\n", Array.map (fun (nugetPath : string) -> "#r \"" + nugetPath + "\"") fsprojNugetPaths) + "\n" +
                         String.Join ("\n", Array.map (fun (filePath : string) -> "#r \"../../../" + filePath + "\"") fsprojDllFilePaths) + "\n" +
-                        "#r \"../../../../../Nu/Nu.Math/bin/" + buildName + "/netstandard2.0/Nu.Math.dll\"\n" +
-                        "#r \"../../../../../Nu/Nu.Pipe/bin/" + buildName + "/net7.0/Nu.Pipe.dll\"\n" +
-                        "#r \"../../../../../Nu/Nu/bin/" + buildName + "/net7.0/Nu.dll\"\n" +
+                        String.Join ("\n", fsprojProjectLines) + "\n" +
                         String.Join ("\n", Array.map (fun (filePath : string) -> "#load \"../../../" + filePath + "\"") fsprojFsFilePaths)
                     Log.info ("Compiling code via generated F# script:\n" + fsxFileString)
                     let defaultArgs = [|"fsi.exe"; "--debug+"; "--debug:full"; "--optimize-"; "--tailcalls-"; "--multiemit+"; "--gui-"|]
