@@ -1,4 +1,4 @@
-﻿namespace Nu.Gaia.Design
+namespace Nu.Gaia.Design
 {
     partial class GaiaForm
     {
@@ -1688,6 +1688,7 @@
             this.Name = "GaiaForm";
             this.Text = "Gaia for Nu Game Engine";
             this.WindowState = System.Windows.Forms.FormWindowState.Maximized;
+            this.Load += new System.EventHandler(this.GaiaForm_Load);
             this.contextMenuStrip.ResumeLayout(false);
             this.splitContainer1.Panel1.ResumeLayout(false);
             this.splitContainer1.Panel2.ResumeLayout(false);

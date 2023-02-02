@@ -48,6 +48,12 @@ namespace Nu.Gaia.Design
             return focusedControl;
         }
 
+        private void GaiaForm_Load(object sender, System.EventArgs e)
+        {
+            if (DesignMode)
+                return;
+        }
+
         private IntPtr SetLowLevelKeyboardHook(LowLevelKeyboardProc proc)
         {
             using (Process curProcess = Process.GetCurrentProcess())
