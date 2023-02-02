@@ -66,9 +66,9 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\Nu\Nu.fsproj" />
-		<ProjectReference Include="..\Nu.Math\Nu.Math.csproj" />
-		<ProjectReference Include="..\Nu.Pipe\Nu.Pipe.fsproj" />
+		<ProjectReference Include="..\..\Nu\Nu\Nu.fsproj" />
+		<ProjectReference Include="..\..\Nu\Nu.Math\Nu.Math.csproj" />
+		<ProjectReference Include="..\..\Nu\Nu.Pipe\Nu.Pipe.fsproj" />
 	</ItemGroup>
 
 	<Target Name="AfterClean">
