@@ -26,6 +26,11 @@
 		<DefineConstants>TRACE</DefineConstants>
 	</PropertyGroup>
 
+	<Target Name="AfterCleanNuPipe" AfterTargets="Clean">
+		<RemoveDir Directories="refinement" />
+		<RemoveDir Directories="$(OutDir)/Assets" />
+	</Target>
+
 	<ItemGroup>
 		<Compile Include="Nelmish.fs" />
 		<Compile Include="NelmishPlugin.fs" />
