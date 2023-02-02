@@ -5,6 +5,7 @@
 		<TargetFramework>net7.0</TargetFramework>
 		<ProjectGuid>{85D631A5-821A-4755-A68E-C1FFC64E469A}</ProjectGuid>
 		<PlatformTarget>AnyCPU</PlatformTarget>
+		<ServerGarbageCollection>true</ServerGarbageCollection>
 		<StartArguments>..\.. . ..\..\Refinement True</StartArguments>
 	</PropertyGroup>
 

@@ -8,6 +8,7 @@
 		<ImplicitUsings>enable</ImplicitUsings>
 		<ProjectGuid>{F1768F36-9ED3-4C36-9DCE-9535AEFB0732}</ProjectGuid>
 		<PlatformTarget>AnyCPU</PlatformTarget>
+		<ServerGarbageCollection>true</ServerGarbageCollection>
 		<DisableFastUpToDateCheck>true</DisableFastUpToDateCheck>
 		<PostBuildEvent>dotnet "$(MSBuildProjectDirectory)/../../Nu/Nu.Pipe/bin/$(Configuration)/net7.0/Nu.Pipe.dll" "$(MSBuildProjectDirectory)/" "$(MSBuildProjectDirectory)/bin/$(Configuration)/net7.0-windows/" "$(MSBuildProjectDirectory)/refinement/" "False"</PostBuildEvent>
 	</PropertyGroup>
