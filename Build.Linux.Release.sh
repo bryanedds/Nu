@@ -1,2 +1,2 @@
 sudo nuget restore
-sudo msbuild Nu.sln /property:Configuration=Release
+sudo dotnet build --configuration Release
