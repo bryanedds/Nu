@@ -24,4 +24,9 @@
       <SubType>Component</SubType>
     </Compile>
   </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Update="GaiaForm.resx">
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+  </ItemGroup>
 </Project>
