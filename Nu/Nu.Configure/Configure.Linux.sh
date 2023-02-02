@@ -1,5 +1,5 @@
-# configure Debian for Nu applications
-echo Configuring Debian for Nu applications...
+# configure Linux for Nu applications
+echo Configuring Linux for Nu applications...
 
 # configure sdl2 and components
 sudo apt update
