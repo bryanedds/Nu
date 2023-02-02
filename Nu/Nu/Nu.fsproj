@@ -7,6 +7,7 @@
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
 		<PlatformTarget>AnyCPU</PlatformTarget>
 		<ServerGarbageCollection>true</ServerGarbageCollection>
+		<TieredPGO>true</TieredPGO>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCpu'">
