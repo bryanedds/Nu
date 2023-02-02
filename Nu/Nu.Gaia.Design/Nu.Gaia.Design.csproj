@@ -9,6 +9,7 @@
 		<ProjectGuid>{F67217C1-6BB3-4180-916B-B7B4CDC14C2D}</ProjectGuid>
 		<PlatformTarget>AnyCPU</PlatformTarget>
 		<ServerGarbageCollection>true</ServerGarbageCollection>
+		<TieredPGO>true</TieredPGO>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCpu'">
