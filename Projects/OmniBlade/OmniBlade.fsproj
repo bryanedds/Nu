@@ -108,19 +108,4 @@
 		<ProjectReference Include="..\..\Nu\Nu.Pipe\Nu.Pipe.fsproj" />
 	</ItemGroup>
 
-	<Target Name="AfterClean">
-		<RemoveDir Directories="$(OutDir)Assets" />
-		<RemoveDir Directories="$(OutDir)Refinement" />
-	</Target>
-	<Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
-		<Error Condition="!Exists('..\..\packages\Magick.NET-Q8-x64.7.5.0.1\build\net40\Magick.NET-Q8-x64.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\packages\Magick.NET-Q8-x64.7.5.0.1\build\net40\Magick.NET-Q8-x64.targets'))" />
-	</Target>
-	<Target Name="BeforeBuild">
-		<Copy SourceFiles="..\..\packages\Magick.NET-Q8-x64.7.5.0.1\runtimes\linux-x64\native\Magick.NET-Q8-x64.Native.dll.so" DestinationFiles="$(TargetDir)libMagick.NET-Q8-x64.Native.dll.so" ContinueOnError="false" />
-	</Target>
-	<Target Name="AfterBuild">
-		<Copy SourceFiles="..\..\packages\Magick.NET-Q8-x64.7.5.0.1\lib\netstandard20\Magick.NET-Q8-x64.dll" DestinationFiles="$(TargetDir)Magick.NET-Q8-x64.dll" ContinueOnError="false" />
-	</Target>
-	<Import Project="..\..\packages\Magick.NET-Q8-x64.7.5.0.1\build\net40\Magick.NET-Q8-x64.targets" Condition="Exists('..\..\packages\Magick.NET-Q8-x64.7.5.0.1\build\net40\Magick.NET-Q8-x64.targets')" />
-
 </Project>
