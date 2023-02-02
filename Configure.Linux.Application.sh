@@ -1,5 +1,5 @@
-# configure Linux for Nu applications
-echo Configuring Linux for Nu applications...
+# configure Linux for Nu application
+echo Configuring Linux for Nu application...
 
 # configure sdl2 and components
 sudo apt update
