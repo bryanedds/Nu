@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
 		<OutputType>Exe</OutputType>
@@ -25,6 +25,11 @@
 		<WarningLevel>5</WarningLevel>
 		<DefineConstants>TRACE</DefineConstants>
 	</PropertyGroup>
+
+	<Target Name="AfterCleanNuPipe" AfterTargets="Clean">
+		<RemoveDir Directories="refinement" />
+		<RemoveDir Directories="$(OutDir)/Assets" />
+	</Target>
 
 	<ItemGroup>
 		<Compile Include="Core\Assets.fs" />
