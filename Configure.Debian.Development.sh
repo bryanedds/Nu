@@ -9,12 +9,10 @@ sudo apt install \
   libmikmod-dev libfishsound1-dev libsmpeg-dev liboggz2-dev libflac-dev libfluidsynth-dev libsdl2-mixer-dev libsdl2-mixer-2.0-0 \
   libfreetype6-dev libsdl2-ttf-dev libsdl2-ttf-2.0-0
 
-# configure mono
-sudo apt install apt-transport-https dirmngr gnupg ca-certificates
-sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF
-echo "deb https://download.mono-project.com/repo/debian stable-buster main" | sudo tee /etc/apt/sources.list.d/mono-official-stable.list
-sudo apt update
-sudo apt install mono-devel
+# configure .net
+# if this reports that the package can't be found, try the advice here - https://dev.to/solrevdev/unable-to-locate-package-dotnet-sdk-3-1-4b6
+sudo apt-get update
+sudo apt-get install -y dotnet-sdk-7.0
 
 # configure F#
 sudo apt install fsharp

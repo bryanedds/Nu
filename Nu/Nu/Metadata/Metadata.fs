@@ -4,8 +4,6 @@
 namespace Nu
 open System
 open System.Collections.Generic
-open System.Drawing
-open System.Drawing.Imaging
 open System.IO
 open TiledSharp
 open Prime
@@ -17,7 +15,7 @@ exception TileSetPropertyNotFoundException of string
 /// Metadata for an asset. Useful to describe various attributes of an asset without having the
 /// full asset loaded into memory.
 type AssetMetadata =
-    | TextureMetadata of Vector2i * PixelFormat
+    | TextureMetadata of Vector2i * OpenGL.InternalFormat
     | TileMapMetadata of string * (TmxTileset * Image AssetTag) array * TmxMap
     | StaticModelMetadata of OpenGL.PhysicallyBased.PhysicallyBasedStaticModel
     | SoundMetadata
@@ -65,11 +63,12 @@ module Metadata =
 
     let private tryGenerateTextureMetadata asset =
         if File.Exists asset.FilePath then
-            try use fileStream = new FileStream (asset.FilePath, FileMode.Open, FileAccess.Read, FileShare.Read)
-                use image = Image.FromStream (fileStream, false, false)
-                Some (TextureMetadata (Vector2i (image.Width, image.Height), image.PixelFormat))
-            with _ as exn ->
-                let errorMessage = "Failed to load texture '" + asset.FilePath + "' due to: " + scstring exn
+            match OpenGL.Texture.TryCreateImageData asset.FilePath with
+            | Some (metadata, _, disposer) -> 
+                use d = disposer
+                Some (TextureMetadata (v2i metadata.TextureWidth metadata.TextureHeight, metadata.TextureInternalFormat))
+            | None ->
+                let errorMessage = "Failed to load texture metadata for '" + asset.FilePath + "."
                 Log.trace errorMessage
                 None
         else
