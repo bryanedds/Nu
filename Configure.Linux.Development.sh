@@ -1,5 +1,5 @@
-# configure Ubuntu for Nu applications
-echo Configuring Ubuntu for Nu applications...
+# configure Linux for Nu development
+echo Configuring Linux for Nu development...
 
 # configure sdl2 and components
 sudo apt update
@@ -12,4 +12,10 @@ sudo apt install \
 # configure .net
 # if this reports that the package can't be found, try the advice here - https://dev.to/solrevdev/unable-to-locate-package-dotnet-sdk-3-1-4b6
 sudo apt-get update
-sudo apt-get install -y dotnet-runtime-7.0
+sudo apt-get install -y dotnet-sdk-7.0
+
+# configure F#
+sudo apt install fsharp
+
+# configure code
+sudo snap install code --classic
