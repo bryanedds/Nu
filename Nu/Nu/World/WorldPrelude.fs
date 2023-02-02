@@ -287,7 +287,7 @@ module AmbientState =
     /// Update the update and clock times.
     let updateTime state =
         let updateDelta = if state.Advancing then 1L else 0L
-        let tickTime = state.TickWatch.ElapsedTicks - state.TickTime
+        let tickTime = state.TickWatch.ElapsedTicks
         let tickDelta = tickTime - state.TickTime
         { state with
             UpdateTime = state.UpdateTime + updateDelta
