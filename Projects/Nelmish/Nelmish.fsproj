@@ -6,7 +6,7 @@
 		<ProjectGuid>{6C1968A2-094C-4BD5-B779-B150FC969DB6}</ProjectGuid>
 		<PlatformTarget>AnyCPU</PlatformTarget>
 		<DisableFastUpToDateCheck>true</DisableFastUpToDateCheck>
-		<PostBuildEvent>"$(MSBuildProjectDirectory)\..\..\Nu\Nu.Pipe\bin\$(Configuration)\net7.0\Nu.Pipe.exe" "$(MSBuildProjectDirectory)\\" "$(MSBuildProjectDirectory)\bin\$(Configuration)\net7.0\\" "$(MSBuildProjectDirectory)\refinement\\" "False"</PostBuildEvent>
+		<PostBuildEvent>dotnet "$(MSBuildProjectDirectory)/../../Nu/Nu.Pipe/bin/$(Configuration)/net7.0/Nu.Pipe.dll" "$(MSBuildProjectDirectory)/" "$(MSBuildProjectDirectory)/bin/$(Configuration)/net7.0/" "$(MSBuildProjectDirectory)/refinement/" "False"</PostBuildEvent>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCpu'">
@@ -46,7 +46,7 @@
 			<HintPath>..\..\Nu\Nu.Dependencies\AssimpNet.02-17-20\net472\AssimpNet.dll</HintPath>
 		</Reference>
 		<Reference Include="OpenGL.Net">
-			<HintPath>..\..\Nu\Nu.Dependencies\OpenGL.NET.0.8.4\lib\net461\OpenGL.Net.dll</HintPath>
+			<HintPath>..\..\Nu\Nu.Dependencies\OpenGL.NET.0.8.4\lib\netcoreapp2.2\OpenGL.Net.dll</HintPath>
 		</Reference>
 		<Reference Include="SDL2-CS">
 			<HintPath>..\..\Nu\Nu.Dependencies\SDL2-CS\netstandard2.0\SDL2-CS.dll</HintPath>
