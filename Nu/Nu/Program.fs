@@ -71,7 +71,7 @@ module Program =
                         let insertionIndex = List.findIndex ((=) "Global") slnLines
                         let slnLines =
                             List.take insertionIndex slnLines @
-                            ["Project(\"{F2A71F9B-5D33-465A-A702-920D77279786}\") = \"" + name + "\", \"Projects\\" + name + "\\" + name + ".fsproj\", \"{" + projectGuidStr + "}\""
+                            ["Project(\"{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}\") = \"" + name + "\", \"Projects\\" + name + "\\" + name + ".fsproj\", \"{" + projectGuidStr + "}\""
                              "EndProject"] @
                             List.skip insertionIndex slnLines
                         let insertionIndex = List.findIndex ((=) "\tGlobalSection(SolutionProperties) = preSolution") slnLines - 1
