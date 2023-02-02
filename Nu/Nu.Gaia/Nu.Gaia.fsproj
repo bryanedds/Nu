@@ -3,8 +3,8 @@
 	<PropertyGroup>
 		<OutputType>WinExe</OutputType>
 		<TargetFramework>net7.0-windows</TargetFramework>
-		<Nullable>enable</Nullable>
 		<UseWindowsForms>true</UseWindowsForms>
+		<EnableWindowsTargeting>true</EnableWindowsTargeting>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<ProjectGuid>{F1768F36-9ED3-4C36-9DCE-9535AEFB0732}</ProjectGuid>
 		<PlatformTarget>AnyCPU</PlatformTarget>
