@@ -783,7 +783,7 @@
             // 
             this.terminal.Panel2.Controls.Add(this.splitContainer10);
             this.terminal.Size = new System.Drawing.Size(1548, 279);
-            this.terminal.SplitterDistance = 1108;
+            this.terminal.SplitterDistance = 1107;
             this.terminal.SplitterWidth = 5;
             this.terminal.TabIndex = 0;
             // 
@@ -801,7 +801,7 @@
             this.splitContainer10.Panel1.Controls.Add(this.evalLineButton);
             this.splitContainer10.Panel1.Controls.Add(this.clearOutputButton);
             this.splitContainer10.Panel1.Controls.Add(this.evalButton);
-            this.splitContainer10.Size = new System.Drawing.Size(435, 279);
+            this.splitContainer10.Size = new System.Drawing.Size(436, 279);
             this.splitContainer10.SplitterDistance = 55;
             this.splitContainer10.SplitterWidth = 5;
             this.splitContainer10.TabIndex = 1;
@@ -869,20 +869,20 @@
             // 
             // discardPreludeButton
             // 
-            this.discardPreludeButton.Location = new System.Drawing.Point(19, 47);
+            this.discardPreludeButton.Location = new System.Drawing.Point(5, 36);
             this.discardPreludeButton.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.discardPreludeButton.Name = "discardPreludeButton";
-            this.discardPreludeButton.Size = new System.Drawing.Size(172, 27);
+            this.discardPreludeButton.Size = new System.Drawing.Size(167, 27);
             this.discardPreludeButton.TabIndex = 4;
             this.discardPreludeButton.Text = "[D]iscard Changes";
             this.discardPreludeButton.UseVisualStyleBackColor = true;
             // 
             // applyPreludeButton
             // 
-            this.applyPreludeButton.Location = new System.Drawing.Point(19, 14);
+            this.applyPreludeButton.Location = new System.Drawing.Point(5, 3);
             this.applyPreludeButton.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.applyPreludeButton.Name = "applyPreludeButton";
-            this.applyPreludeButton.Size = new System.Drawing.Size(172, 27);
+            this.applyPreludeButton.Size = new System.Drawing.Size(167, 27);
             this.applyPreludeButton.TabIndex = 2;
             this.applyPreludeButton.Text = "[A]pply Changes";
             this.applyPreludeButton.UseVisualStyleBackColor = true;
@@ -920,10 +920,10 @@
             // 
             // discardEventFilterButton
             // 
-            this.discardEventFilterButton.Location = new System.Drawing.Point(19, 74);
+            this.discardEventFilterButton.Location = new System.Drawing.Point(5, 69);
             this.discardEventFilterButton.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.discardEventFilterButton.Name = "discardEventFilterButton";
-            this.discardEventFilterButton.Size = new System.Drawing.Size(172, 27);
+            this.discardEventFilterButton.Size = new System.Drawing.Size(167, 27);
             this.discardEventFilterButton.TabIndex = 4;
             this.discardEventFilterButton.Text = "[D]iscard Changes";
             this.discardEventFilterButton.UseVisualStyleBackColor = true;
@@ -931,7 +931,7 @@
             // traceEventsCheckBox
             // 
             this.traceEventsCheckBox.AutoSize = true;
-            this.traceEventsCheckBox.Location = new System.Drawing.Point(19, 14);
+            this.traceEventsCheckBox.Location = new System.Drawing.Point(5, 11);
             this.traceEventsCheckBox.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.traceEventsCheckBox.Name = "traceEventsCheckBox";
             this.traceEventsCheckBox.Size = new System.Drawing.Size(99, 19);
@@ -941,10 +941,10 @@
             // 
             // applyEventFilterButton
             // 
-            this.applyEventFilterButton.Location = new System.Drawing.Point(19, 40);
+            this.applyEventFilterButton.Location = new System.Drawing.Point(5, 36);
             this.applyEventFilterButton.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.applyEventFilterButton.Name = "applyEventFilterButton";
-            this.applyEventFilterButton.Size = new System.Drawing.Size(172, 27);
+            this.applyEventFilterButton.Size = new System.Drawing.Size(167, 27);
             this.applyEventFilterButton.TabIndex = 2;
             this.applyEventFilterButton.Text = "[A]pply Changes";
             this.applyEventFilterButton.UseVisualStyleBackColor = true;
