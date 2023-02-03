@@ -14,6 +14,8 @@ module Engine =
     let [<Literal>] ExitCodeSuccess = 0
     let [<Literal>] ExitCodeFailure = 1
     let [<Literal>] LohSize = 85000 // the approximate size of the .NET Large-Object Heap in byte, although this seems misleading in some cases...
+    let [<Literal>] Meter2d = 48.0f
+    let [<Literal>] Meter3d = 1.0f
     let [<Uniform>] GravityDefault = Vector3 (0.0f, -9.80665f, 0.0f)
     let [<Literal>] GameSortPriority = Single.MaxValue
     let [<Uniform>] ScreenSortPriority = GameSortPriority - 1.0f
@@ -35,8 +37,8 @@ module Engine =
     let [<Uniform>] mutable DesiredFrameRate = match ConfigurationManager.AppSettings.["DesiredFrameRate"] with null -> StaticFrameRate 60L | desiredFrameRate -> scvalue<FrameRate> desiredFrameRate
     let [<Literal>] DesiredFrameTimeMinimum = 0.001 // maximum frame rate of 1000 in all configurations.
     let [<Literal>] DesiredFrameTimeSlop = 0.0005
-    let [<Uniform>] EntitySize2dDefault = Vector3 (48.0f, 48.0f, 0.0f)
-    let [<Uniform>] EntitySizeGuiDefault = Vector3 (192.0f, 48.0f, 0.0f)
+    let [<Uniform>] EntitySize2dDefault = Vector3 (Meter2d, Meter2d, 0.0f)
+    let [<Uniform>] EntitySizeGuiDefault = Vector3 (Meter2d * 4.0f, Meter2d, 0.0f)
     let [<Uniform>] EntitySize3dDefault = Vector3 1.0f
     let [<Uniform>] mutable EntityCentered2dDefault = match ConfigurationManager.AppSettings.["EntityCentered2dDefault"] with null -> true | centered -> scvalue<bool> centered
     let [<Uniform>] mutable EntityCenteredGuiDefault = match ConfigurationManager.AppSettings.["EntityCenteredGuiDefault"] with null -> true | centered -> scvalue<bool> centered
@@ -326,10 +328,9 @@ module Audio =
 [<RequireQualifiedAccess>]
 module Physics =
 
-    let [<Literal>] PhysicsToPixelRatio = 48.0f // 48 pixels = 1 meter
-    let [<Uniform>] PixelToPhysicsRatio = 1.0f / PhysicsToPixelRatio
+    let [<Literal>] PhysicsToPixelRatio = Engine.Meter2d // 48 pixels = 1 meter
+    let [<Uniform>] PixelToPhysicsRatio = 1.0f / Engine.Meter2d
     let [<Literal>] DensityDefault = 1.0f
-    let [<Uniform>] GravityDefault = Engine.GravityDefault * PhysicsToPixelRatio
 
 [<RequireQualifiedAccess>]
 module TileMap =

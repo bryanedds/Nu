@@ -602,7 +602,7 @@ module WorldModule3 =
                 // make the world's subsystems
                 let subsystems =
                     let physicsEngine2d =
-                        AetherPhysicsEngine.make config.Imperative Constants.Physics.GravityDefault
+                        AetherPhysicsEngine.make config.Imperative Constants.Engine.GravityDefault
                     let createRenderer3d =
                         fun config ->
                             match SdlDeps.getWindowOpt sdlDeps with
