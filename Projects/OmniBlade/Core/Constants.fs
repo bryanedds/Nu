@@ -14,26 +14,26 @@ module Constants =
     module Gui =
 
         let Dissolve =
-            { IncomingTime = 40u.u
-              OutgoingTime = 60u.u
+            { IncomingTime = 40L
+              OutgoingTime = 60L
               DissolveImage = Assets.Default.Image8 }
 
         let Splash =
             { DissolveDescriptor = Constants.Dissolve.Default
-              IdlingTime = 60u.u
+              IdlingTime = 60L
               SlideImageOpt = Some Assets.Gui.Splash }
 
     [<RequireQualifiedAccess>]
     module Intro =
 
         let Dissolve =
-            { IncomingTime = 95u.u
-              OutgoingTime = 95u.u
+            { IncomingTime = 95L
+              OutgoingTime = 95L
               DissolveImage = Assets.Default.Image8 }
 
         let Splash =
             { DissolveDescriptor = Constants.Dissolve.Default
-              IdlingTime = 160u.u
+              IdlingTime = 160L
               SlideImageOpt = None }
 
     [<RequireQualifiedAccess>]

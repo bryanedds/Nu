@@ -95,7 +95,7 @@ module BattleDispatcher =
                     | Bottom bottom -> entity.SetBottom bottom world
                 let world = entity.SetElevation Constants.Battle.EffectElevation world
                 entity.SetSelfDestruct true world)
-                delay.u
+                delay
                 screen world
 
         static let advanceAttack sourceIndex (targetIndexOpt : CharacterIndex option) time localTime battle =
@@ -267,7 +267,7 @@ module BattleDispatcher =
             let readyTime = localTime - 90L
             if localTime = inc 63L then // first frame after transitioning in
                 match battle.BattleSongOpt with
-                | Some battleSong -> withSignal (PlaySong (0u.u, Constants.Audio.FadeOutTimeDefault, 0u.u, Constants.Audio.SongVolumeDefault, battleSong)) battle
+                | Some battleSong -> withSignal (PlaySong (0L, Constants.Audio.FadeOutTimeDefault, 0L, Constants.Audio.SongVolumeDefault, battleSong)) battle
                 | None -> just battle
             elif localTime >= 90L && localTime < 160L then
                 let battle = Battle.animateCharactersReady time battle
@@ -477,7 +477,7 @@ module BattleDispatcher =
                         then withSignal (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.GrowthSound)) battle
                         else just battle
                     else just battle
-                (signal (FadeOutSong 360u.u) :: sigs, battle)
+                (signal (FadeOutSong 360L) :: sigs, battle)
             else
                 match battle.DialogOpt with
                 | None -> just (Battle.updateBattleState (constant (BattleQuitting (time, outcome, battle.PrizePool.Consequents))) battle)
@@ -1095,7 +1095,7 @@ module BattleDispatcher =
                 displayEffect delay (v3 48.0f 48.0f 0.0f) (Position (v3 0.0f 0.0f 0.0f)) (Effects.makeConjureIfritEffect ()) screen world |> just
 
             | PlaySound (delay, volume, sound) ->
-                let world = World.schedule (World.playSound volume sound) delay.u screen world
+                let world = World.schedule (World.playSound volume sound) delay screen world
                 just world
 
             | PlaySong (fadeIn, fadeOut, start, volume, assetTag) ->
