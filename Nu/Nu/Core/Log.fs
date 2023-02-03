@@ -78,7 +78,7 @@ module Log =
         // init only once
         if not Initialized then
 
-            // add listeners
+            // add listener
             let listeners = Trace.Listeners
             listeners.Add (new TextWriterTraceListener (Console.Out)) |> ignore
             match fileNameOpt with
