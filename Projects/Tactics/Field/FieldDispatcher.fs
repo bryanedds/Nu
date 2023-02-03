@@ -55,10 +55,9 @@ module FieldDispatcher =
             [Screen.UpdateEvent => UpdateMessage
              Screen.UpdateEvent => UpdateCommand]
 
-#if FALSE
         override this.Register (game, world) =
             let world = base.Register (game, world)
-            let population = 50
+            let population = 25
             let spread = 15.0f
             let offset = v3Dup spread * single population * 0.5f
             let positions = Collections.Generic.List ()
@@ -74,7 +73,6 @@ module FieldDispatcher =
                     staticModel.SetPosition position world)
                     world positions
             world
-#endif
 
         override this.Message (field, message, _, world) =
             match message with
