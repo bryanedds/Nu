@@ -909,12 +909,16 @@ module Particles =
                   Color = Color.One
                   Glow = Color.Zero
                   Flip = FlipNone }
+            let particleScalar =
+                match Constants.Engine.DesiredFrameRate with
+                | StaticFrameRate frameRate -> 1.0f / single frameRate
+                | DynamicFrameRate _ -> 1.0f
             let particleInitializer = fun _ (emitter : BasicEmitter) ->
                 let particle = emitter.ParticleSeed
                 particle.Body.Position <- emitter.Body.Position
                 particle.Body.Angles <- emitter.Body.Angles
-                particle.Body.LinearVelocity <- (v3 (Gen.randomf - 0.5f) Gen.randomf (Gen.randomf - 0.5f)) * v3Dup 6.0f
-                particle.Body.AngularVelocity <- v3 Gen.randomf Gen.randomf Gen.randomf - v3Dup 0.5f
+                particle.Body.LinearVelocity <- (v3 (Gen.randomf - 0.5f) Gen.randomf (Gen.randomf - 0.5f)) * v3Dup 360.0f * particleScalar
+                particle.Body.AngularVelocity <- v3 Gen.randomf Gen.randomf Gen.randomf - v3Dup 30.0f * particleScalar
                 particle
             let particleBehavior = fun time emitter ->
                 let watermark = emitter.ParticleWatermark
@@ -928,7 +932,7 @@ module Particles =
             let gravity =
                 match Constants.Engine.DesiredFrameRate with
                 | StaticFrameRate frameRate -> Constants.Engine.GravityDefault / single frameRate
-                | DynamicFrameRate _ -> Constants.Engine.GravityDefault
+                | DynamicFrameRate _ -> Constants.Engine.GravityDefault * Constants.Engine.Meter2d
             let particleBehaviors =
                 Behaviors.singleton
                     (Behavior.ofSeq BasicParticle.body
