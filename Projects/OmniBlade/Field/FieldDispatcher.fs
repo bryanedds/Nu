@@ -716,11 +716,11 @@ module FieldDispatcher =
                 just world
 
             | PlaySong (fadeIn, fadeOut, start, volume, assetTag) ->
-                let world = World.playSong fadeIn.u fadeOut.u start.u volume assetTag world
+                let world = World.playSong fadeIn fadeOut start volume assetTag world
                 just world
 
             | FadeOutSong fade ->
-                let world = World.fadeOutSong fade.u world
+                let world = World.fadeOutSong fade world
                 just world
 
             | Nop -> just world

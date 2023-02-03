@@ -226,29 +226,6 @@ and [<Struct; CustomEquality; CustomComparison; TypeConverter (typeof<GameTimeCo
             | :? GameTime as that -> (this :> GameTime IComparable).CompareTo that
             | _ -> failwithumf ()
 
-[<AutoOpen>]
-module GameTimeExtension =
-
-    type UInt32 with
-        member this.u = GameTime.ofUpdates (int64 this)
-        member this.c = GameTime.ofSeconds (single this)
-
-    type Int32 with
-        member this.u = GameTime.ofUpdates (int64 this)
-        member this.c = GameTime.ofSeconds (single this)
-
-    type Int64 with
-        member this.u = GameTime.ofUpdates this
-        member this.c = GameTime.ofSeconds (single this)
-
-    type Single with
-        member this.u = GameTime.ofUpdates (int64 this)
-        member this.c = GameTime.ofSeconds this
-
-    type Double with
-        member this.u = GameTime.ofUpdates (int64 this)
-        member this.c = GameTime.ofSeconds (single this)
-
 namespace Nu.Constants
 open System
 open System.Configuration
