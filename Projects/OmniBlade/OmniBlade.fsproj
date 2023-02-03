@@ -86,7 +86,7 @@
 
 	<ItemGroup>
 		<Reference Include="AssimpNet">
-			<HintPath>..\..\Nu\Nu.Dependencies\AssimpNet.02-17-20\net472\AssimpNet.dll</HintPath>
+			<HintPath>..\..\Nu\Nu.Dependencies\AssimpNet.09-26-22\netstandard1.3\AssimpNet.dll</HintPath>
 		</Reference>
 		<Reference Include="OpenGL.Net">
 			<HintPath>..\..\Nu\Nu.Dependencies\OpenGL.NET.0.8.4\lib\netcoreapp2.2\OpenGL.Net.dll</HintPath>
