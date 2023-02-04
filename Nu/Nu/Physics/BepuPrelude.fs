@@ -244,7 +244,8 @@ type [<AllowNullLiteral>] ContactEvents
     /// <param name="body">Body to monitor for events.</param>
     /// <param name="handler">Handlers to use for the body.</param>
     member this.Register (body : BodyHandle, handler : IContactEventHandler) =
-        this.Register (simulation.Bodies[body].CollidableReference, handler)
+        let body = simulation.Bodies.[body]
+        this.Register (body.CollidableReference, handler)
 
     /// <summary>
     /// Begins listening for events related to the given static.
@@ -280,7 +281,8 @@ type [<AllowNullLiteral>] ContactEvents
     /// </summary>
     /// <param name="body">Body to stop listening for.</param>
     member this.Unregister (body : BodyHandle) =
-        this.Unregister (simulation.Bodies[body].CollidableReference)
+        let body = simulation.Bodies[body]
+        this.Unregister (body.CollidableReference)
 
     /// <summary>
     /// Stops listening for events related to the given static.
@@ -303,7 +305,7 @@ type [<AllowNullLiteral>] ContactEvents
     /// <summary>
     /// Callback attached to the simulation's ITimestepper which executes just prior to collision detection to take a snapshot of activity states to determine which pairs we should expect updates in.
     /// </summary>
-    member private this.SetFreshnessForCurrentActivityStatus (dt : single, threadDispatcher : IThreadDispatcher) =
+    member private this.SetFreshnessForCurrentActivityStatus (_ : single, _ : IThreadDispatcher) =
         //Every single pair tracked by the contact events has a 'freshness' flag. If the final flush sees a pair that is stale, it'll remove it
         //and any necessary events to represent the end of that pair are reported.
         //HandleManifoldForCollidable sets 'Fresh' to true for any processed pair, but pairs between sleeping or static bodies will not show up in HandleManifoldForCollidable since they're not active.
