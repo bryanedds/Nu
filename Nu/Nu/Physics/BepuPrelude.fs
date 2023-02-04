@@ -4,7 +4,6 @@ open System.Diagnostics
 open System.Numerics
 open System.Runtime.CompilerServices
 open System.Runtime.InteropServices
-open System.Threading
 open tainicom.Aether.Physics2D.Dynamics
 open BepuPhysics
 open BepuPhysics.Collidables
@@ -181,15 +180,15 @@ type [<AllowNullLiteral>] ContactEvents
     //The CollidableProperty is quite barebones- it doesn't try to stop all invalid accesses, and the backing memory isn't guaranteed to be zero initialized.
     //IndexSets are tightly bitpacked and are cheap to access, so they're an easy way to check if a collidable can trigger an event before doing any further processing.
 
+    let mutable listenerIndices = Unchecked.defaultof<CollidableProperty<int>>
+    let mutable simulation = Unchecked.defaultof<Simulation>
     let mutable threadPools = threadPools
     let mutable pool = pool
-    let mutable listenerIndices = Unchecked.defaultof<CollidableProperty<int>>
-    let mutable staticListenerFlags = Unchecked.defaultof<IndexSet>
-    let mutable bodyListenerFlags = Unchecked.defaultof<IndexSet>
-    let mutable listenerCount = Unchecked.defaultof<int>
-    let mutable listeners = Unchecked.defaultof<Listener array>
-    let mutable pendingWorkerAdds = Unchecked.defaultof<PendingWorkerAdd QuickList array>
-    let mutable simulation = Unchecked.defaultof<Simulation>
+    let mutable staticListenerFlags = IndexSet ()
+    let mutable bodyListenerFlags = IndexSet ()
+    let mutable listenerCount = 0
+    let mutable listeners = Array.empty<Listener>
+    let mutable pendingWorkerAdds = Array.empty<PendingWorkerAdd QuickList>
     let beforeCollisionDetectionHandler = TimestepperStageHandler (fun delta td -> this.SetFreshnessForCurrentActivityStatus (delta, td))
 
     /// <summary>
@@ -198,10 +197,7 @@ type [<AllowNullLiteral>] ContactEvents
     /// <param name="threadDispatcher">Thread dispatcher to pull per-thread buffer pools from, if any.</param>
     /// <param name="pool">Buffer pool used to manage resources internally. If null, the simulation's pool will be used.</param>
     new (threadDispatcher : IThreadDispatcher, pool : BufferPool) =
-        ContactEvents (threadDispatcher, Unchecked.defaultof<_>, pool)
-
-    new () =
-        ContactEvents (Unchecked.defaultof<_>, Unchecked.defaultof<_>, Unchecked.defaultof<_>)
+        ContactEvents (threadDispatcher, new WorkerBufferPools (pool, threadDispatcher.ThreadCount), pool)
 
     member this.GetPoolForWorker (workerIndex : int) =
         if threadDispatcher = null
@@ -215,7 +211,7 @@ type [<AllowNullLiteral>] ContactEvents
     /// <remarks>The constructor and initialization are split because of how this class is expected to be used. 
     /// It will be passed into a simulation's constructor as a part of its contact callbacks, so there is no simulation available at the time of construction.</remarks>
     member this.Initialize (simulation_ : Simulation) =
-        simulation <- simulation
+        simulation <- simulation_
         if isNull pool then pool <- simulation.BufferPool
         threadPools <- if notNull threadDispatcher then new WorkerBufferPools (pool, threadDispatcher.ThreadCount) else null
         simulation.Timestepper.add_BeforeCollisionDetection beforeCollisionDetectionHandler
@@ -229,16 +225,16 @@ type [<AllowNullLiteral>] ContactEvents
     /// <param name="handler">Handlers to use for the collidable.</param>
     member this.Register (collidable : CollidableReference, handler : IContactEventHandler) =
 
-        Debug.Assert (not (this.IsListener collidable), "Should only try to register listeners that weren't previously registered")
-        if collidable.Mobility = CollidableMobility.Static then
-            staticListenerFlags.Add (collidable.RawHandleValue, pool)
-        else
-            bodyListenerFlags.Add (collidable.RawHandleValue, pool)
+        Debug.Assert (not (this.IsListener collidable), "Should only try to register listeners that weren't previously registered.")
+
+        if collidable.Mobility = CollidableMobility.Static
+        then staticListenerFlags.Add (collidable.RawHandleValue, pool)
+        else bodyListenerFlags.Add (collidable.RawHandleValue, pool)
         if listenerCount > listeners.Length then
             Array.Resize (&listeners, listeners.Length * 2)
 
         //Note that allocations for the previous collision list are deferred until they actually exist.
-        listeners.[listenerCount] <- { Source = collidable; Handler = handler; PreviousCollisions = Unchecked.defaultof<_> }
+        listeners.[listenerCount] <- { Source = collidable; Handler = handler; PreviousCollisions = QuickList () }
         listenerIndices.[collidable] <- listenerCount
         listenerCount <- inc listenerCount
 
@@ -381,10 +377,10 @@ type [<AllowNullLiteral>] ContactEvents
                             previousContactIndex <- inc previousContactIndex
 
                         if not featureIdWasInPreviousCollision then
-                            let mutable offset = Unchecked.defaultof<_>
-                            let mutable normal = Unchecked.defaultof<_>
-                            let mutable depth = Unchecked.defaultof<_>
-                            let mutable unused = Unchecked.defaultof<_>
+                            let mutable offset = v3Zero
+                            let mutable normal = v3Zero
+                            let mutable depth = 0.0f
+                            let mutable unused = 0
                             manifold.GetContact (contactIndex, &offset, &normal, &depth, &unused)
                             listener.Handler.OnContactAdded (sourceRef, pair, &manifold, offset, normal, depth, featureId, contactIndex, workerIndex)
 
@@ -419,10 +415,10 @@ type [<AllowNullLiteral>] ContactEvents
 
                 //Dispatch events for all contacts in this new manifold.
                 for i in 0 .. dec manifold.Count do
-                    let mutable offset = Unchecked.defaultof<_>
-                    let mutable normal = Unchecked.defaultof<_>
-                    let mutable depth = Unchecked.defaultof<_>
-                    let mutable featureId = Unchecked.defaultof<_>
+                    let mutable offset = v3Zero
+                    let mutable normal = v3Zero
+                    let mutable depth = 0.0f
+                    let mutable featureId = 0
                     manifold.GetContact (i, &offset, &normal, &depth, &featureId)
                     listener.Handler.OnContactAdded(sourceRef, pair, &manifold, offset, normal, depth, featureId, i, workerIndex)
                     if depth >= 0.0f then
@@ -458,9 +454,9 @@ type [<AllowNullLiteral>] ContactEvents
                 if not collision.Fresh then
 
                     //Sort the references to be consistent with the direct narrow phase results.
-                    let mutable pair = Unchecked.defaultof<CollidablePair>
-                    let mutable unused = Unchecked.defaultof<_>
-                    let mutable unused2 = Unchecked.defaultof<_>
+                    let mutable pair = CollidablePair ()
+                    let mutable unused = CollidableMobility.Dynamic
+                    let mutable unused2 = CollidableMobility.Dynamic
                     NarrowPhase.SortCollidableReferencesForPair (listener.Source, collision.Collidable, &unused, &unused2, &pair.A, &pair.B)
                     if collision.ContactCount > 0 then
                         let mutable emptyManifold = EmptyManifold ()
@@ -473,7 +469,7 @@ type [<AllowNullLiteral>] ContactEvents
                     listener.PreviousCollisions.FastRemoveAt j //This collision was not updated since the last flush despite being active. It should be removed.
                     if  listener.PreviousCollisions.Count = 0 then
                         listener.PreviousCollisions.Dispose pool
-                        listener.PreviousCollisions <- Unchecked.defaultof<_>
+                        listener.PreviousCollisions <- QuickList ()
                 else
                     collision.Fresh <- false
 
@@ -486,7 +482,7 @@ type [<AllowNullLiteral>] ContactEvents
                 collisions.AllocateUnsafely () <- pendingAdds[j].Collision
             if pendingAdds.Span.Allocated then
                 pendingAdds.Dispose (this.GetPoolForWorker i)
-            pendingAdds <- Unchecked.defaultof<_> //We rely on zeroing out the count for lazy initialization.
+            pendingAdds <- QuickList () //We rely on zeroing out the count for lazy initialization.
 
         if notNull threadPools then threadPools.Clear ()
 
@@ -508,7 +504,7 @@ type [<Struct>] PoseIntegratorCallbacks =
 
     new (gravity) =
         { Gravity = gravity
-          GravityWideDelta = Unchecked.defaultof<_> }
+          GravityWideDelta = Vector3Wide () }
 
     interface IPoseIntegratorCallbacks with
         member this.AngularIntegrationMode = AngularIntegrationMode.Nonconserving
@@ -552,52 +548,3 @@ type NarrowPhaseCallbacks =
 
         member this.Dispose () =
             ()
-
-type [<Struct>] ContactResponseParticle =
-    val mutable Position : Vector3
-    val mutable Age : single
-    val mutable Normal : Vector3
-
-type EventHandler
-    (simulation : Simulation,
-     pool : BufferPool,
-     particles : QuickList<ContactResponseParticle>) =
-
-    let mutable simulation = simulation
-    let mutable pool = pool
-    let mutable particles = particles
-
-    new (simulation : Simulation, pool : BufferPool) =
-        new EventHandler (simulation, pool, QuickList<ContactResponseParticle> (128, pool))
-
-    interface IContactEventHandler with
-
-        member this.OnContactAdded<'TManifold when 'TManifold : (new : unit -> 'TManifold) and 'TManifold :> IContactManifold<'TManifold>>
-            (_ : CollidableReference, pair : CollidablePair, _ : 'TManifold byref,
-             contactOffset : Vector3, contactNormal : Vector3, _ : single, _ : int, _ : int, _ : int) =
-
-            //Simply ignore any particles beyond the allocated space.
-            let index = Interlocked.Increment &particles.Count - 1
-            if index < particles.Span.Length then
-
-                //Contact data is calibrated according to the order of the pair, so using A's position is important.
-                let particle = &particles[index]
-                particle.Position <-
-                    contactOffset +
-                    if pair.A.Mobility = CollidableMobility.Static
-                    then (StaticReference (pair.A.StaticHandle, simulation.Statics)).Pose.Position
-                    else (BodyReference (pair.A.BodyHandle, simulation.Bodies)).Pose.Position
-                particle.Age <- 0.0f
-                particle.Normal <- contactNormal
-
-        member this.OnContactRemoved(_ : CollidableReference, _ : CollidablePair, _ : byref<'TManifold>, _ : int, _: int) : unit = ()
-        member this.OnPairCreated(_ : CollidableReference, _ : CollidablePair, _ : byref<'TManifold>, _ : int) : unit = ()
-        member this.OnPairEnded(_ : CollidableReference, _ : CollidablePair) : unit = ()
-        member this.OnPairUpdated(_ : CollidableReference, _ : CollidablePair, _ : byref<'TManifold>, _ : int) : unit = ()
-        member this.OnStartedTouching(_ : CollidableReference, _ : CollidablePair, _ : byref<'TManifold>, _ : int) : unit = ()
-        member this.OnStoppedTouching(_ : CollidableReference, _ : CollidablePair, _ : byref<'TManifold>, _ : int) : unit = ()
-        member this.OnTouching(_ : CollidableReference, _ : CollidablePair, _ : byref<'TManifold>, _ : int) : unit = ()
-
-    interface IDisposable with
-        member this.Dispose () =
-            particles.Dispose pool
