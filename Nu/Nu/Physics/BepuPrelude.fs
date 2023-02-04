@@ -4,6 +4,7 @@ open System.Diagnostics
 open System.Numerics
 open System.Runtime.CompilerServices
 open System.Runtime.InteropServices
+open System.Threading
 open tainicom.Aether.Physics2D.Dynamics
 open BepuPhysics
 open BepuPhysics.Collidables
@@ -40,21 +41,29 @@ type [<Struct; StructLayout (LayoutKind.Sequential)>] Collidable =
       mutable CollisionMask : Category
       mutable Sensor : bool }
 
-//For final events fired by the flush that still expect a manifold, we'll provide a special empty type.
-//This type never has any contacts, so there's no need for any property grabbers.
-type EmptyManifold =
-    struct end
-    interface IContactManifold<EmptyManifold> with
-        member this.Count = 0
-        member this.Convex = true
-        member this.GetContact (_ : int, _ : Vector3 byref, _ : Vector3 byref, _ : single byref, _ : int byref) = raise (NotImplementedException ())
-        member this.GetDepth (_ : EmptyManifold byref, _ : int) = raise (NotImplementedException ()); Unchecked.defaultof<_>
-        member this.GetFeatureId (_ : int) = raise (NotImplementedException ())
-        member this.GetFeatureId (_ : EmptyManifold byref, _ : int) = raise (NotImplementedException ()); Unchecked.defaultof<_>
-        member this.GetNormal (_ : EmptyManifold byref, _ : int) = raise (NotImplementedException ()); Unchecked.defaultof<_>
-        member this.GetOffset (_ : EmptyManifold byref, _ : int) = raise (NotImplementedException ()); Unchecked.defaultof<_>
+[<AutoOpen>]
+module EmptyManifoldModule =
 
-//For the purpose of this demo, we'll use some regular ol' interfaces rather than using the struct-implementing-interface for specialization.
+    //HACK: need some global values to pass back via reference in order to satisfy F#'s unification system.
+    let mutable private i = 0
+    let mutable private f = 0.0f
+    let mutable private v3 = v3Zero
+
+    //For final events fired by the flush that still expect a manifold, we'll provide a special empty type.
+    //This type never has any contacts, so there's no need for any property grabbers.
+    type EmptyManifold =
+        struct end
+        interface IContactManifold<EmptyManifold> with
+            member this.Count = 0
+            member this.Convex = true
+            member this.GetContact (_ : int, _ : Vector3 byref, _ : Vector3 byref, _ : single byref, _ : int byref) = raise (NotImplementedException ())
+            member this.GetDepth (_ : EmptyManifold byref, _ : int) = raise (NotImplementedException ()); &f
+            member this.GetFeatureId (_ : int) = raise (NotImplementedException ())
+            member this.GetFeatureId (_ : EmptyManifold byref, _ : int) = raise (NotImplementedException ()); &i
+            member this.GetNormal (_ : EmptyManifold byref, _ : int) = raise (NotImplementedException ()); &v3
+            member this.GetOffset (_ : EmptyManifold byref, _ : int) = raise (NotImplementedException ()); &v3
+
+//For the purpose of this code, we'll use some regular ol' interfaces rather than using the struct-implementing-interface for specialization.
 //This array will be GC tracked as a result, but that should be mostly fine. If you've got hundreds of thousands of event handlers, you may want to consider alternatives.
 type [<Struct>] Listener =
     { Source : CollidableReference
@@ -70,7 +79,7 @@ and IContactEventHandler =
         /// <summary>
         /// Fires when a contact is added.
         /// </summary>
-        /// <typeparam name="TManifold">Type of the contact manifold detected.</typeparam>
+        /// <typeparam name="'TManifold">Type of the contact manifold detected.</typeparam>
         /// <param name="eventSource">Collidable that the event was attached to.</param>
         /// <param name="pair">Collidable pair triggering the event.</param>
         /// <param name="contactManifold">Set of remaining contacts in the collision.</param>
@@ -86,7 +95,7 @@ and IContactEventHandler =
         /// <summary>
         /// Fires when a contact is removed.
         /// </summary>
-        /// <typeparam name="TManifold">Type of the contact manifold detected.</typeparam>
+        /// <typeparam name="'TManifold">Type of the contact manifold detected.</typeparam>
         /// <param name="eventSource">Collidable that the event was attached to.</param>
         /// <param name="pair">Collidable pair triggering the event.</param>
         /// <param name="contactManifold">Set of remaining contacts in the collision.</param>
@@ -98,7 +107,7 @@ and IContactEventHandler =
         /// <summary>
         /// Fires the first time a pair is observed to be touching. Touching means that there are contacts with nonnegative depths in the manifold.
         /// </summary>
-        /// <typeparam name="TManifold">Type of the contact manifold detected.</typeparam>
+        /// <typeparam name="'TManifold">Type of the contact manifold detected.</typeparam>
         /// <param name="eventSource">Collidable that the event was attached to.</param>
         /// <param name="pair">Collidable pair triggering the event.</param>
         /// <param name="contactManifold">Set of remaining contacts in the collision.</param>
@@ -109,7 +118,7 @@ and IContactEventHandler =
         /// <summary>
         /// Fires whenever a pair is observed to be touching. Touching means that there are contacts with nonnegative depths in the manifold. Will not fire for sleeping pairs.
         /// </summary>
-        /// <typeparam name="TManifold">Type of the contact manifold detected.</typeparam>
+        /// <typeparam name="'TManifold">Type of the contact manifold detected.</typeparam>
         /// <param name="eventSource">Collidable that the event was attached to.</param>
         /// <param name="pair">Collidable pair triggering the event.</param>
         /// <param name="contactManifold">Set of remaining contacts in the collision.</param>
@@ -121,7 +130,7 @@ and IContactEventHandler =
         /// <summary>
         /// Fires when a pair stops touching. Touching means that there are contacts with nonnegative depths in the manifold.
         /// </summary>
-        /// <typeparam name="TManifold">Type of the contact manifold detected.</typeparam>
+        /// <typeparam name="'TManifold">Type of the contact manifold detected.</typeparam>
         /// <param name="eventSource">Collidable that the event was attached to.</param>
         /// <param name="pair">Collidable pair triggering the event.</param>
         /// <param name="contactManifold">Set of remaining contacts in the collision.</param>
@@ -132,7 +141,7 @@ and IContactEventHandler =
         /// <summary>
         /// Fires when a pair is observed for the first time.
         /// </summary>
-        /// <typeparam name="TManifold">Type of the contact manifold detected.</typeparam>
+        /// <typeparam name="'TManifold">Type of the contact manifold detected.</typeparam>
         /// <param name="eventSource">Collidable that the event was attached to.</param>
         /// <param name="pair">Collidable pair triggering the event.</param>
         /// <param name="contactManifold">Set of remaining contacts in the collision.</param>
@@ -143,7 +152,7 @@ and IContactEventHandler =
         /// <summary>
         /// Fires whenever a pair is updated. Will not fire for sleeping pairs.
         /// </summary>
-        /// <typeparam name="TManifold">Type of the contact manifold detected.</typeparam>
+        /// <typeparam name="'TManifold">Type of the contact manifold detected.</typeparam>
         /// <param name="eventSource">Collidable that the event was attached to.</param>
         /// <param name="pair">Collidable pair triggering the event.</param>
         /// <param name="contactManifold">Set of remaining contacts in the collision.</param>
@@ -154,7 +163,7 @@ and IContactEventHandler =
         /// <summary>
         /// Fires when a pair ends.
         /// </summary>
-        /// <typeparam name="TManifold">Type of the contact manifold detected.</typeparam>
+        /// <typeparam name="'TManifold">Type of the contact manifold detected.</typeparam>
         /// <param name="eventSource">Collidable that the event was attached to.</param>
         /// <param name="pair">Collidable pair triggering the event.</param>
         abstract OnPairEnded : CollidableReference * CollidablePair -> unit
@@ -164,12 +173,14 @@ and IContactEventHandler =
 /// <summary>
 /// Watches a set of bodies and statics for contact changes and reports events.
 /// </summary>
-type ContactEvents (threadDispatcher : IThreadDispatcher, threadPools : WorkerBufferPools, pool : BufferPool) =
+type [<AllowNullLiteral>] ContactEvents
+    (threadDispatcher : IThreadDispatcher, threadPools : WorkerBufferPools, pool : BufferPool) as this =
 
     //We'll use a handle->index mapping in a CollidableProperty to point at our contiguously stored listeners (in the later listeners array).
     //Note that there's also IndexSets for the statics and bodies; those will be checked first before accessing the listenerIndices.
     //The CollidableProperty is quite barebones- it doesn't try to stop all invalid accesses, and the backing memory isn't guaranteed to be zero initialized.
     //IndexSets are tightly bitpacked and are cheap to access, so they're an easy way to check if a collidable can trigger an event before doing any further processing.
+
     let mutable threadPools = threadPools
     let mutable pool = pool
     let mutable listenerIndices = Unchecked.defaultof<CollidableProperty<int>>
@@ -179,6 +190,7 @@ type ContactEvents (threadDispatcher : IThreadDispatcher, threadPools : WorkerBu
     let mutable listeners = Unchecked.defaultof<Listener array>
     let mutable pendingWorkerAdds = Unchecked.defaultof<PendingWorkerAdd QuickList array>
     let mutable simulation = Unchecked.defaultof<Simulation>
+    let beforeCollisionDetectionHandler = TimestepperStageHandler (fun delta td -> this.SetFreshnessForCurrentActivityStatus (delta, td))
 
     /// <summary>
     /// Creates a new contact events stream.
@@ -188,13 +200,16 @@ type ContactEvents (threadDispatcher : IThreadDispatcher, threadPools : WorkerBu
     new (threadDispatcher : IThreadDispatcher, pool : BufferPool) =
         ContactEvents (threadDispatcher, Unchecked.defaultof<_>, pool)
 
+    new () =
+        ContactEvents (Unchecked.defaultof<_>, Unchecked.defaultof<_>, Unchecked.defaultof<_>)
+
     member this.GetPoolForWorker (workerIndex : int) =
         if threadDispatcher = null then pool :> IUnmanagedMemoryPool else threadPools.[workerIndex]
 
     /// <summary>
     /// Initializes the contact events system with a simulation.
     /// </summary>
-    /// <param name="simulation">Simulation to use with the contact events demo.</param>
+    /// <param name="simulation">Simulation to use with the contact events code.</param>
     /// <remarks>The constructor and initialization are split because of how this class is expected to be used. 
     /// It will be passed into a simulation's constructor as a part of its contact callbacks, so there is no simulation available at the time of construction.</remarks>
     member this.Initialize (simulation_ : Simulation) =
@@ -202,7 +217,7 @@ type ContactEvents (threadDispatcher : IThreadDispatcher, threadPools : WorkerBu
         if isNull pool then
             pool <- simulation.BufferPool
         threadPools <- if notNull threadDispatcher then new WorkerBufferPools (pool, threadDispatcher.ThreadCount) else null
-        simulation.Timestepper.add_BeforeCollisionDetection this.SetFreshnessForCurrentActivityStatus
+        simulation.Timestepper.add_BeforeCollisionDetection beforeCollisionDetectionHandler
         listenerIndices <- new CollidableProperty<int> (simulation, pool)
         pendingWorkerAdds <- Array.zeroCreate (if isNull threadDispatcher then 1 else threadDispatcher.ThreadCount)
 
@@ -298,7 +313,7 @@ type ContactEvents (threadDispatcher : IThreadDispatcher, threadPools : WorkerBu
         //We don't want Flush to report that sleeping pairs have stopped colliding, so we pre-initialize any such sleeping/static pair as 'fresh'.
 
         //This could be multithreaded reasonably easily if there are a ton of listeners or collisions, but that would be a pretty high bar.
-        //For simplicity, the demo will keep it single threaded.
+        //For simplicity, the code will keep it single threaded.
         let bodyHandleToLocation = simulation.Bodies.HandleToLocation
         for i in 0 .. dec listenerCount do
             let listener = &listeners.[i]
@@ -309,7 +324,7 @@ type ContactEvents (threadDispatcher : IThreadDispatcher, threadPools : WorkerBu
                     //Pair updates will set the 'freshness' to true when they happen, so that they won't be considered 'stale' in the flush and removed.
                     listener.PreviousCollisions.[j].Fresh <- false
             else //The listener is either static or sleeping. We should only expect updates if the other collidable is awake.
-                for j in 0 .. dec listener.PreviousCollisions do
+                for j in 0 .. dec listener.PreviousCollisions.Count do
                     listener.PreviousCollisions.[j].Fresh <-
                         listener.PreviousCollisions.[j].Collidable.Mobility = CollidableMobility.Static ||
                         bodyHandleToLocation[listener.PreviousCollisions.[j].Collidable.BodyHandle.Value].SetIndex > 0
@@ -317,7 +332,7 @@ type ContactEvents (threadDispatcher : IThreadDispatcher, threadPools : WorkerBu
     [<MethodImpl (MethodImplOptions.AggressiveInlining)>]
     member private this.UpdatePreviousCollision<'TManifold when 'TManifold : (new : unit -> 'TManifold) and 'TManifold :> IContactManifold<'TManifold>>
         (collision : PreviousCollision byref, manifold : 'TManifold byref, isTouching : bool) =
-        Debug.Assert(manifold.Count <= 8, "This demo was built on the assumption that nonconvex manifolds will have a maximum of four contacts, but that might have changed.")
+        Debug.Assert (manifold.Count <= 8, "This code was built on the assumption that nonconvex manifolds will have a maximum of four contacts, but that might have changed.")
         let manifoldCount = min 8 manifold.Count
         for i in 0 .. dec manifoldCount do
             Unsafe.Add (&collision.FeatureId0, i) <- manifold.GetFeatureId i
@@ -449,14 +464,13 @@ type ContactEvents (threadDispatcher : IThreadDispatcher, threadPools : WorkerBu
                     NarrowPhase.SortCollidableReferencesForPair (listener.Source, collision.Collidable, &unused, &unused2, &pair.A, &pair.B)
                     if collision.ContactCount > 0 then
                         let mutable emptyManifold = EmptyManifold ()
-                        for i in 0 .. dec collision.ContactCount do
+                        for previousContactCount in 0 .. dec collision.ContactCount do
                             listener.Handler.OnContactRemoved (listener.Source, pair, &emptyManifold, Unsafe.Add (&collision.FeatureId0, previousContactCount), 0)
                         if collision.WasTouching then
                             listener.Handler.OnStoppedTouching (listener.Source, pair, &emptyManifold, 0)
 
                     listener.Handler.OnPairEnded (collision.Collidable, pair)
-                    //This collision was not updated since the last flush despite being active. It should be removed.
-                    listener.PreviousCollisions.FastRemoveAt j
+                    listener.PreviousCollisions.FastRemoveAt j //This collision was not updated since the last flush despite being active. It should be removed.
                     if  listener.PreviousCollisions.Count = 0 then
                         listener.PreviousCollisions.Dispose pool
                         listener.PreviousCollisions <- Unchecked.defaultof<_>
@@ -472,8 +486,7 @@ type ContactEvents (threadDispatcher : IThreadDispatcher, threadPools : WorkerBu
                 collisions.AllocateUnsafely () <- pendingAdds[j].Collision
             if pendingAdds.Span.Allocated then
                 pendingAdds.Dispose (this.GetPoolForWorker i)
-            //We rely on zeroing out the count for lazy initialization.
-            pendingAdds <- Unchecked.defaultof<_>
+            pendingAdds <- Unchecked.defaultof<_> //We rely on zeroing out the count for lazy initialization.
 
         if notNull threadPools then threadPools.Clear ()
 
@@ -483,7 +496,7 @@ type ContactEvents (threadDispatcher : IThreadDispatcher, threadPools : WorkerBu
         if staticListenerFlags.Flags.Allocated then
             staticListenerFlags.Dispose pool
         listenerIndices.Dispose ()
-        simulation.Timestepper.remove_BeforeCollisionDetection this.SetFreshnessForCurrentActivityStatus
+        simulation.Timestepper.remove_BeforeCollisionDetection beforeCollisionDetectionHandler
         if notNull threadPools then threadPools.Dispose ()
         for i in 0 .. dec pendingWorkerAdds.Length do
             Debug.Assert (not pendingWorkerAdds[i].Span.Allocated, "The pending worker adds should have been disposed by the previous flush.")
@@ -505,7 +518,10 @@ type [<Struct>] PoseIntegratorCallbacks =
         member this.PrepareForIntegration (clockDelta : single) = this.GravityWideDelta <- Vector3Wide.Broadcast (this.Gravity * clockDelta)
         member this.IntegrateVelocity (_ : Vector<int>, _ : Vector3Wide, _ : QuaternionWide, _ : BodyInertiaWide, _ : Vector<int>, _ : int, _ : Vector<single>, velocity : BodyVelocityWide byref) = velocity.Linear <- velocity.Linear + this.GravityWideDelta
 
-type NarrowPhaseCallbacks (events : ContactEvents) =
+type NarrowPhaseCallbacks =
+    struct
+        val mutable ContactEvents : ContactEvents
+        end
 
     interface INarrowPhaseCallbacks with
 
@@ -523,7 +539,7 @@ type NarrowPhaseCallbacks (events : ContactEvents) =
             pairMaterial.FrictionCoefficient <- 1f
             pairMaterial.MaximumRecoveryVelocity <- 2f
             pairMaterial.SpringSettings <- SpringSettings (30.0f, 1.0f)
-            events.HandleManifold (workerIndex, pair, &manifold)
+            this.ContactEvents.HandleManifold (workerIndex, pair, &manifold)
             true
 
         [<MethodImpl (MethodImplOptions.AggressiveInlining)>]
@@ -532,133 +548,56 @@ type NarrowPhaseCallbacks (events : ContactEvents) =
             b.Mobility = CollidableMobility.Dynamic
 
         member this.Initialize (simulation : Simulation) =
-            events.Initialize simulation
+            this.ContactEvents.Initialize simulation
 
         member this.Dispose () =
             ()
 
-/// <summary>
-/// Shows how to use the contact event handler above to respond to new collisions.
-/// </summary>
-public class ContactEventsDemo : Demo
-{
-    struct ContactResponseParticle
-    {
-        public Vector3 Position;
-        public single Age;
-        public Vector3 Normal;
-    }
+type [<Struct>] ContactResponseParticle =
+    val mutable Position : Vector3
+    val mutable Age : single
+    val mutable Normal : Vector3
 
-    class EventHandler : IContactEventHandler
-    {
-        public Simulation Simulation;
-        public BufferPool Pool;
-        public QuickList<ContactResponseParticle> Particles;
+type EventHandler
+    (simulation : Simulation,
+     pool : BufferPool,
+     particles : QuickList<ContactResponseParticle>) =
 
-        public EventHandler(Simulation simulation, BufferPool pool)
-        {
-            Simulation = simulation;
-            Particles = new QuickList<ContactResponseParticle>(128, pool);
-            Pool = pool;
-        }
+    let mutable simulation = simulation
+    let mutable pool = pool
+    let mutable particles = particles
 
-        member this.OnContactAdded<TManifold>(CollidableReference eventSource, CollidablePair pair, ref TManifold contactManifold,
-            Vector3 contactOffset, Vector3 contactNormal, single depth, int featureId, int contactIndex, int workerIndex) where TManifold : unmanaged, IContactManifold<TManifold>
-        {
+    new (simulation : Simulation, pool : BufferPool) =
+        new EventHandler (simulation, pool, QuickList<ContactResponseParticle> (128, pool))
+
+    interface IContactEventHandler with
+
+        member this.OnContactAdded<'TManifold when 'TManifold : (new : unit -> 'TManifold) and 'TManifold :> IContactManifold<'TManifold>>
+            (_ : CollidableReference, pair : CollidablePair, _ : 'TManifold byref,
+             contactOffset : Vector3, contactNormal : Vector3, _ : single, _ : int, _ : int, _ : int) =
+
             //Simply ignore any particles beyond the allocated space.
-            var index = Interlocked.Increment(ref Particles.Count) - 1;
-            if (index < Particles.Span.Length)
-            {
-                ref var particle = ref Particles[index];
+            let index = Interlocked.Increment (&particles.Count) - 1
+            if index < particles.Span.Length then
 
                 //Contact data is calibrated according to the order of the pair, so using A's position is important.
-                particle.Position = contactOffset + (pair.A.Mobility == CollidableMobility.Static ?
-                    new StaticReference(pair.A.StaticHandle, Simulation.Statics).Pose.Position :
-                    new BodyReference(pair.A.BodyHandle, Simulation.Bodies).Pose.Position);
-                particle.Age = 0;
-                particle.Normal = contactNormal;
-            }
-        }
+                let particle = &particles[index]
+                particle.Position <-
+                    contactOffset +
+                    if pair.A.Mobility = CollidableMobility.Static
+                    then (StaticReference (pair.A.StaticHandle, simulation.Statics)).Pose.Position
+                    else (BodyReference (pair.A.BodyHandle, simulation.Bodies)).Pose.Position
+                particle.Age <- 0.0f
+                particle.Normal <- contactNormal
 
-        member this.Dispose()
-        {
-            //In the demo we won't actually call this, since it's going to persist until the demo dies. At that point, the buffer pool will be dropped and all its allocations will be cleaned up anyway.
-            Particles.Dispose(Pool);
-        }
+        member this.OnContactRemoved(_ : CollidableReference, _ : CollidablePair, _ : byref<'TManifold>, _ : int, _: int) : unit = ()
+        member this.OnPairCreated(_ : CollidableReference, _ : CollidablePair, _ : byref<'TManifold>, _ : int) : unit = ()
+        member this.OnPairEnded(_ : CollidableReference, _ : CollidablePair) : unit = ()
+        member this.OnPairUpdated(_ : CollidableReference, _ : CollidablePair, _ : byref<'TManifold>, _ : int) : unit = ()
+        member this.OnStartedTouching(_ : CollidableReference, _ : CollidablePair, _ : byref<'TManifold>, _ : int) : unit = ()
+        member this.OnStoppedTouching(_ : CollidableReference, _ : CollidablePair, _ : byref<'TManifold>, _ : int) : unit = ()
+        member this.OnTouching(_ : CollidableReference, _ : CollidablePair, _ : byref<'TManifold>, _ : int) : unit = ()
 
-    }
-
-    ContactEvents events;
-    EventHandler eventHandler;
-
-
-    public override void Initialize(ContentArchive content, Camera camera)
-    {
-        camera.Position = new Vector3(0, 8, -20);
-        camera.Yaw = MathHelper.Pi;
-
-        events = new ContactEvents(ThreadDispatcher, BufferPool);
-        Simulation = Simulation.Create(BufferPool, new ContactEventCallbacks(events), new DemoPoseIntegratorCallbacks(new Vector3(0, -10, 0)), new SolveDescription(8, 1));
-        eventHandler = new EventHandler(Simulation, BufferPool);
-
-        var listenedBody1 = Simulation.Bodies.Add(BodyDescription.CreateConvexDynamic(new Vector3(0, 5, 0), 1, Simulation.Shapes, new Box(1, 2, 3)));
-        events.Register(Simulation.Bodies[listenedBody1].CollidableReference, eventHandler);
-
-        var listenedBody2 = Simulation.Bodies.Add(BodyDescription.CreateConvexDynamic(new Vector3(0.5f, 10, 0), 1, Simulation.Shapes, new Capsule(0.25f, 0.7f)));
-        events.Register(Simulation.Bodies[listenedBody2].CollidableReference, eventHandler);
-
-
-        Simulation.Statics.Add(new StaticDescription(new Vector3(0, -0.5f, 0), Simulation.Shapes.Add(new Box(30, 1, 30))));
-        Simulation.Statics.Add(new StaticDescription(new Vector3(0, 3, 15), Simulation.Shapes.Add(new Box(30, 5, 1))));
-    }
-
-    public override void Update(Window window, Camera camera, Input input, single dt)
-    {
-        base.Update(window, camera, input, dt);
-        //Can't forget to flush the events!
-        //base.Update includes a call to the Simulation.Timestep, which will have called the event handlers if necessary.
-        //Any newly observed collisions need to be pushed into the main storage, and any dead collisions need to be cleaned out.
-        events.Flush();
-
-        //Age and scoot the particles we created for new contacts for the animation.
-        ref var particles = ref eventHandler.Particles;
-        //The count was incremented across multiple threads; it may have gone beyond the buffer size. Ignore the extra.
-        if (particles.Count > particles.Span.Length)
-            particles.Count = particles.Span.Length;
-        for (int i = particles.Count - 1; i >= 0; --i)
-        {
-            ref var particle = ref particles[i];
-            particle.Age += dt;
-            if (particle.Age > 0.7325f)
-            {
-                particles.FastRemoveAt(i);
-            }
-            else
-            {
-                particle.Position += particle.Normal * (2 * dt);
-            }
-
-        }
-    }
-
-    public override void Render(Renderer renderer, Camera camera, Input input, TextBuilder text, Font font)
-    {
-        ref var particles = ref eventHandler.Particles;
-        for (int i = particles.Count - 1; i >= 0; --i)
-        {
-            ref var particle = ref particles[i];
-            var radius = particle.Age * (particle.Age * (0.135f - 2.7f * particle.Age) + 1.35f);
-            var pose = new RigidPose(particle.Position);
-            renderer.Shapes.AddShape(new Sphere(radius), Simulation.Shapes, pose, new Vector3(0, 1, 0));
-        }
-
-        var resolution = renderer.Surface.Resolution;
-        renderer.TextBatcher.Write(text.Clear().Append("The library does not have a built-in concept of contact events like 'contact added' and 'contact removed'."), new Vector2(16, resolution.Y - 80), 16, Vector3.One, font);
-        renderer.TextBatcher.Write(text.Clear().Append("The INarrowPhaseCallbacks interface exposes callbacks that can be used to create such events."), new Vector2(16, resolution.Y - 64), 16, Vector3.One, font);
-        renderer.TextBatcher.Write(text.Clear().Append("This demo shows how events could be implemented. Green particles are spawned on contact add."), new Vector2(16, resolution.Y - 48), 16, Vector3.One, font);
-        renderer.TextBatcher.Write(text.Clear().Append("The full list of events supported in the demo's source:"), new Vector2(16, resolution.Y - 32), 16, Vector3.One, font);
-        renderer.TextBatcher.Write(text.Clear().Append("OnContactAdded, OnContactRemoved, OnStartedTouching, OnTouching, OnStoppedTouching, OnPairCreated, OnPairUpdated, and OnPairEnded."), new Vector2(16, resolution.Y - 16), 16, Vector3.One, font);
-
-        base.Render(renderer, camera, input, text, font);
-    }
-}
+    interface IDisposable with
+        member this.Dispose () =
+            particles.Dispose pool
