@@ -1,18 +1,17 @@
 ﻿namespace Nu
 open System
+open System.Diagnostics
 open System.Numerics
-open BepuUtilities
+open System.Runtime.CompilerServices
+open System.Runtime.InteropServices
+open tainicom.Aether.Physics2D.Dynamics
 open BepuPhysics
 open BepuPhysics.Collidables
 open BepuPhysics.CollisionDetection
+open BepuPhysics.Constraints
+open BepuUtilities
 open BepuUtilities.Collections
 open BepuUtilities.Memory
-open System.Runtime.CompilerServices
-open BepuPhysics.Constraints
-open System.Diagnostics
-open System.Threading
-open System.Runtime.InteropServices
-open tainicom.Aether.Physics2D.Dynamics
 open Prime
 
 type [<Struct; StructLayout (LayoutKind.Sequential)>] PreviousCollision =
@@ -381,7 +380,7 @@ type ContactEvents (threadDispatcher : IThreadDispatcher, threadPools : WorkerBu
                     if previousContactsStillExist <> (1 <<< collision.ContactCount) - 1 then //At least one contact that used to exist no longer does.
                         for previousContactIndex in 0 .. dec collision.ContactCount do
                             if (previousContactsStillExist &&& (1 <<< previousContactIndex)) = 0 then
-                                listener.Handler.OnContactRemoved (sourceRef, pair, &manifold, Unsafe.Add(ref collision.FeatureId0, previousContactIndex), workerIndex)
+                                listener.Handler.OnContactRemoved (sourceRef, pair, &manifold, Unsafe.Add (&collision.FeatureId0, previousContactIndex), workerIndex)
 
                     if not collision.WasTouching && isTouching then
                         listener.Handler.OnStartedTouching (sourceRef, pair, &manifold, workerIndex)
