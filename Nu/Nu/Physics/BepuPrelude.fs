@@ -35,10 +35,10 @@ type [<Struct>] PendingWorkerAdd =
       mutable Collision : PreviousCollision }
 
 type [<Struct; StructLayout (LayoutKind.Sequential)>] Collidable =
-    { PreviousCollisions : PreviousCollision QuickList
-      CollisionCategories : Category
-      CollisionMask : Category
-      Sensor : bool }
+    { mutable PreviousCollisions : PreviousCollision QuickList
+      mutable CollisionCategories : Category
+      mutable CollisionMask : Category
+      mutable Sensor : bool }
 
 //For final events fired by the flush that still expect a manifold, we'll provide a special empty type.
 //This type never has any contacts, so there's no need for any property grabbers.
@@ -185,12 +185,11 @@ type ContactEvents (threadDispatcher : IThreadDispatcher, threadPools : WorkerBu
     /// </summary>
     /// <param name="threadDispatcher">Thread dispatcher to pull per-thread buffer pools from, if any.</param>
     /// <param name="pool">Buffer pool used to manage resources internally. If null, the simulation's pool will be used.</param>
-    /// <param name="initialListenerCapacity">Number of listeners to allocate space for initially.</param>
     new (threadDispatcher : IThreadDispatcher, pool : BufferPool) =
         ContactEvents (threadDispatcher, Unchecked.defaultof<_>, pool)
 
     member this.GetPoolForWorker (workerIndex : int) =
-        if threadDispatcher = null then pool else threadPools.[workerIndex]
+        if threadDispatcher = null then pool :> IUnmanagedMemoryPool else threadPools.[workerIndex]
 
     /// <summary>
     /// Initializes the contact events system with a simulation.
@@ -202,7 +201,7 @@ type ContactEvents (threadDispatcher : IThreadDispatcher, threadPools : WorkerBu
         simulation <- simulation
         if isNull pool then
             pool <- simulation.BufferPool
-        threadPools <- if notNull threadDispatcher then WorkerBufferPools (pool, threadDispatcher.ThreadCount) else null
+        threadPools <- if notNull threadDispatcher then new WorkerBufferPools (pool, threadDispatcher.ThreadCount) else null
         simulation.Timestepper.add_BeforeCollisionDetection this.SetFreshnessForCurrentActivityStatus
         listenerIndices <- new CollidableProperty<int> (simulation, pool)
         pendingWorkerAdds <- Array.zeroCreate (if isNull threadDispatcher then 1 else threadDispatcher.ThreadCount)
@@ -241,7 +240,7 @@ type ContactEvents (threadDispatcher : IThreadDispatcher, threadPools : WorkerBu
     /// <param name="staticHandle">Static to monitor for events.</param>
     /// <param name="handler">Handlers to use for the static.</param>
     member this.Register(staticHandle : StaticHandle, handler : IContactEventHandler) =
-        this.Register(CollidableReference staticHandle, handler);
+        this.Register(CollidableReference staticHandle, handler)
 
     /// <summary>
     /// Stops listening for events related to the given collidable.
@@ -297,13 +296,13 @@ type ContactEvents (threadDispatcher : IThreadDispatcher, threadPools : WorkerBu
         //and any necessary events to represent the end of that pair are reported.
         //HandleManifoldForCollidable sets 'Fresh' to true for any processed pair, but pairs between sleeping or static bodies will not show up in HandleManifoldForCollidable since they're not active.
         //We don't want Flush to report that sleeping pairs have stopped colliding, so we pre-initialize any such sleeping/static pair as 'fresh'.
-        //
+
         //This could be multithreaded reasonably easily if there are a ton of listeners or collisions, but that would be a pretty high bar.
         //For simplicity, the demo will keep it single threaded.
         let bodyHandleToLocation = simulation.Bodies.HandleToLocation
         for i in 0 .. dec listenerCount do
             let listener = &listeners.[i]
-            let source = listener.Source;
+            let source = listener.Source
             let sourceExpectsUpdates = source.Mobility <> CollidableMobility.Static && bodyHandleToLocation.[source.BodyHandle.Value].SetIndex = 0
             if sourceExpectsUpdates then //If it's a body, and it's in the active set (index 0), then every pair associated with the listener should expect updates.
                 for j in 0 .. dec listener.PreviousCollisions.Count do
@@ -445,13 +444,13 @@ type ContactEvents (threadDispatcher : IThreadDispatcher, threadPools : WorkerBu
 
                     //Sort the references to be consistent with the direct narrow phase results.
                     let mutable pair = Unchecked.defaultof<CollidablePair>
-                    let unused = Unchecked.defaultof<_>
-                    let unused2 = Unchecked.defaultof<_>
+                    let mutable unused = Unchecked.defaultof<_>
+                    let mutable unused2 = Unchecked.defaultof<_>
                     NarrowPhase.SortCollidableReferencesForPair (listener.Source, collision.Collidable, &unused, &unused2, &pair.A, &pair.B)
                     if collision.ContactCount > 0 then
-                        let emptyManifold = EmptyManifold ()
+                        let mutable emptyManifold = EmptyManifold ()
                         for i in 0 .. dec collision.ContactCount do
-                            listener.Handler.OnContactRemoved (listener.Source, pair, &emptyManifold, Unsafe.Add (&collision.FeatureId0, previousContactCount), 0);
+                            listener.Handler.OnContactRemoved (listener.Source, pair, &emptyManifold, Unsafe.Add (&collision.FeatureId0, previousContactCount), 0)
                         if collision.WasTouching then
                             listener.Handler.OnStoppedTouching (listener.Source, pair, &emptyManifold, 0)
 
@@ -499,20 +498,12 @@ type [<Struct>] PoseIntegratorCallbacks =
           GravityWideDelta = Unchecked.defaultof<_> }
 
     interface IPoseIntegratorCallbacks with
-
         member this.AngularIntegrationMode = AngularIntegrationMode.Nonconserving
-
         member this.AllowSubstepsForUnconstrainedBodies = false
-
         member this.IntegrateVelocityForKinematics = false
-
         member this.Initialize (_ : Simulation) = ()
-
-        member this.PrepareForIntegration (clockDelta : single) =
-            this.GravityWideDelta <- Vector3Wide.Broadcast (this.Gravity * clockDelta)
-
-        member this.IntegrateVelocity (_ : Vector<int>, _ : Vector3Wide, _ : QuaternionWide, _ : BodyInertiaWide, _ : Vector<int>, _ : int, _ : Vector<single>, velocity : BodyVelocityWide byref) =
-            velocity.Linear <- velocity.Linear + this.GravityWideDelta
+        member this.PrepareForIntegration (clockDelta : single) = this.GravityWideDelta <- Vector3Wide.Broadcast (this.Gravity * clockDelta)
+        member this.IntegrateVelocity (_ : Vector<int>, _ : Vector3Wide, _ : QuaternionWide, _ : BodyInertiaWide, _ : Vector<int>, _ : int, _ : Vector<single>, velocity : BodyVelocityWide byref) = velocity.Linear <- velocity.Linear + this.GravityWideDelta
 
 type NarrowPhaseCallbacks (events : ContactEvents) =
 
@@ -532,16 +523,13 @@ type NarrowPhaseCallbacks (events : ContactEvents) =
             pairMaterial.FrictionCoefficient <- 1f
             pairMaterial.MaximumRecoveryVelocity <- 2f
             pairMaterial.SpringSettings <- SpringSettings (30.0f, 1.0f)
-            events.HandleManifold (workerIndex, pair, &manifold);
+            events.HandleManifold (workerIndex, pair, &manifold)
             true
 
         [<MethodImpl (MethodImplOptions.AggressiveInlining)>]
         member this.AllowContactGeneration (_ : int, a : CollidableReference, b : CollidableReference, _ : single byref) =
-            if a.Mobility = CollidableMobility.Dynamic || b.Mobility = CollidableMobility.Dynamic then
-                let aCollidable = this.Collidables.[a.BodyHandle.Value]
-                let bCollidable = this.Collidables.[b.BodyHandle.Value]
-                int aCollidable.CollisionMask &&& int bCollidable.CollisionCategories <> 0
-            else false
+            a.Mobility = CollidableMobility.Dynamic ||
+            b.Mobility = CollidableMobility.Dynamic
 
         member this.Initialize (simulation : Simulation) =
             events.Initialize simulation
