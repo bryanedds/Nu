@@ -175,13 +175,14 @@ and IContactEventHandler =
 type [<AllowNullLiteral>] ContactEvents
     (threadDispatcher : IThreadDispatcher, threadPools : WorkerBufferPools, pool : BufferPool) as this =
 
-    //We'll use a handle->index mapping in a CollidableProperty to point at our contiguously stored listeners (in the later listeners array).
+    //We use a handle->index mapping in a CollidableProperty to point at our contiguously stored listeners (in the later listeners array).
     //Note that there's also IndexSets for the statics and bodies; those will be checked first before accessing the listenerIndices.
     //The CollidableProperty is quite barebones- it doesn't try to stop all invalid accesses, and the backing memory isn't guaranteed to be zero initialized.
     //IndexSets are tightly bitpacked and are cheap to access, so they're an easy way to check if a collidable can trigger an event before doing any further processing.
 
-    let mutable listenerIndices = Unchecked.defaultof<CollidableProperty<int>>
+    //Note that simulation and listernerIndices are null until the Initialize method is called.
     let mutable simulation = Unchecked.defaultof<Simulation>
+    let mutable listenerIndices = Unchecked.defaultof<CollidableProperty<int>>
     let mutable threadPools = threadPools
     let mutable pool = pool
     let mutable staticListenerFlags = IndexSet ()

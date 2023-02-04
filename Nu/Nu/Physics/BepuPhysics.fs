@@ -34,7 +34,7 @@ type [<ReferenceEquality>] BepuPhysicsEngine =
         //let box = new Box (1.0f, 2.0f, 3.0f)
         //let convexDyanmic = BodyDescription.CreateConvexDynamic(new Vector3(0.0f, 5.0f, 0.0f), 1.0f, Simulation.Shapes, &box)
         //let listenedBody1 = simulation.Bodies.Add &convexDyanmic
-        contactEvents.Register (simulation.Bodies[listenedBody1].CollidableReference, eventHandler)
+        //contactEvents.Register (simulation.Bodies[listenedBody1].CollidableReference, eventHandler)
 
         { PhysicsContext = simulation
           PhysicsMessages = UList.makeEmpty Imperative
