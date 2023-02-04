@@ -204,7 +204,9 @@ type [<AllowNullLiteral>] ContactEvents
         ContactEvents (Unchecked.defaultof<_>, Unchecked.defaultof<_>, Unchecked.defaultof<_>)
 
     member this.GetPoolForWorker (workerIndex : int) =
-        if threadDispatcher = null then pool :> IUnmanagedMemoryPool else threadPools.[workerIndex]
+        if threadDispatcher = null
+        then pool :> IUnmanagedMemoryPool
+        else threadPools.[workerIndex]
 
     /// <summary>
     /// Initializes the contact events system with a simulation.
@@ -214,8 +216,7 @@ type [<AllowNullLiteral>] ContactEvents
     /// It will be passed into a simulation's constructor as a part of its contact callbacks, so there is no simulation available at the time of construction.</remarks>
     member this.Initialize (simulation_ : Simulation) =
         simulation <- simulation
-        if isNull pool then
-            pool <- simulation.BufferPool
+        if isNull pool then pool <- simulation.BufferPool
         threadPools <- if notNull threadDispatcher then new WorkerBufferPools (pool, threadDispatcher.ThreadCount) else null
         simulation.Timestepper.add_BeforeCollisionDetection beforeCollisionDetectionHandler
         listenerIndices <- new CollidableProperty<int> (simulation, pool)
@@ -321,8 +322,7 @@ type [<AllowNullLiteral>] ContactEvents
             let sourceExpectsUpdates = source.Mobility <> CollidableMobility.Static && bodyHandleToLocation.[source.BodyHandle.Value].SetIndex = 0
             if sourceExpectsUpdates then //If it's a body, and it's in the active set (index 0), then every pair associated with the listener should expect updates.
                 for j in 0 .. dec listener.PreviousCollisions.Count do
-                    //Pair updates will set the 'freshness' to true when they happen, so that they won't be considered 'stale' in the flush and removed.
-                    listener.PreviousCollisions.[j].Fresh <- false
+                    listener.PreviousCollisions.[j].Fresh <- false //Pair updates will set the 'freshness' to true when they happen, so that they won't be considered 'stale' in the flush and removed.
             else //The listener is either static or sleeping. We should only expect updates if the other collidable is awake.
                 for j in 0 .. dec listener.PreviousCollisions.Count do
                     listener.PreviousCollisions.[j].Fresh <-
@@ -577,7 +577,7 @@ type EventHandler
              contactOffset : Vector3, contactNormal : Vector3, _ : single, _ : int, _ : int, _ : int) =
 
             //Simply ignore any particles beyond the allocated space.
-            let index = Interlocked.Increment (&particles.Count) - 1
+            let index = Interlocked.Increment &particles.Count - 1
             if index < particles.Span.Length then
 
                 //Contact data is calibrated according to the order of the pair, so using A's position is important.
