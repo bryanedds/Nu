@@ -1,6 +1,6 @@
 ﻿namespace MyGame
 open System
-open Prime
+open System.IO
 open Nu
 open MyGame
 module Program =
@@ -16,6 +16,9 @@ module Program =
 
         // use the default world config with the above SDL config
         let worldConfig = { WorldConfig.defaultConfig with SdlConfig = sdlConfig }
+
+        // point current working directory at program's base directory
+        Directory.SetCurrentDirectory AppContext.BaseDirectory
 
         // initialize Nu
         Nu.init worldConfig.NuConfig
