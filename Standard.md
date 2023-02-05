@@ -7,7 +7,7 @@ Correctness, Consistency, Simplicity
 
 1) Set warning levels to the highest level possible in all projects.
 
-2) Enable warnings as errors in all projects.
+2) Enable warnings as errors in foundational projects like F# libs, frameworks, and engines.
 
 3) Enable `--warnon:1182` (warn on unused variables) in all F# projects.
 
@@ -32,7 +32,7 @@ Correctness, Consistency, Simplicity
 
 12) Try to use unique names for public fields and discriminated union cases to avoid ambiguating type inference. For example, `Id` is not a good public field name, but `ProductId` might be.
 
-13) Avoid use of NoEquality attribute except where unavoidable. It's better to force yourself to make a decision on equality semantics rather than just punting on it.
+13) Avoid use of NoEquality attribute except where unavoidable. It's better to force yourself to make a decision on equality semantics when you can.
 
 **B) Consistency**
 
