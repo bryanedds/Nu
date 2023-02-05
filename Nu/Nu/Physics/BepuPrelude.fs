@@ -111,7 +111,7 @@ and IContactEventHandler =
         /// <param name="pair">Collidable pair triggering the event.</param>
         /// <param name="contactManifold">Set of remaining contacts in the collision.</param>
         /// <param name="workerIndex">Index of the worker thread that fired this event.</param>
-        abstract OnStartedTouching<'TManifold when 'TManifold : (new : unit -> 'TManifold) and 'TManifold :> IContactManifold<'TManifold>> :
+        abstract OnTouchingStarted<'TManifold when 'TManifold : (new : unit -> 'TManifold) and 'TManifold :> IContactManifold<'TManifold>> :
             CollidableReference * CollidablePair * 'TManifold byref * int -> unit
 
         /// <summary>
@@ -122,7 +122,7 @@ and IContactEventHandler =
         /// <param name="pair">Collidable pair triggering the event.</param>
         /// <param name="contactManifold">Set of remaining contacts in the collision.</param>
         /// <param name="workerIndex">Index of the worker thread that fired this event.</param>
-        abstract OnTouching<'TManifold when 'TManifold : (new : unit -> 'TManifold) and 'TManifold :> IContactManifold<'TManifold>> :
+        abstract OnTouchingUpdated<'TManifold when 'TManifold : (new : unit -> 'TManifold) and 'TManifold :> IContactManifold<'TManifold>> :
             CollidableReference * CollidablePair * 'TManifold byref * int -> unit
 
 
@@ -134,7 +134,7 @@ and IContactEventHandler =
         /// <param name="pair">Collidable pair triggering the event.</param>
         /// <param name="contactManifold">Set of remaining contacts in the collision.</param>
         /// <param name="workerIndex">Index of the worker thread that fired this event.</param>
-        abstract OnStoppedTouching<'TManifold when 'TManifold : (new : unit -> 'TManifold) and 'TManifold :> IContactManifold<'TManifold>> :
+        abstract OnTouchingStopped<'TManifold when 'TManifold : (new : unit -> 'TManifold) and 'TManifold :> IContactManifold<'TManifold>> :
             CollidableReference  * CollidablePair  * 'TManifold byref * int -> unit
 
         /// <summary>
@@ -394,11 +394,11 @@ type [<AllowNullLiteral>] ContactEvents
                                 listener.Handler.OnContactRemoved (sourceRef, pair, &manifold, Unsafe.Add (&collision.FeatureId0, previousContactIndex), workerIndex)
 
                     if not collision.WasTouching && isTouching then
-                        listener.Handler.OnStartedTouching (sourceRef, pair, &manifold, workerIndex)
+                        listener.Handler.OnTouchingStarted (sourceRef, pair, &manifold, workerIndex)
                     elif collision.WasTouching && not isTouching then
-                        listener.Handler.OnStoppedTouching (sourceRef, pair, &manifold, workerIndex)
+                        listener.Handler.OnTouchingStopped (sourceRef, pair, &manifold, workerIndex)
                     if isTouching then
-                        listener.Handler.OnTouching (sourceRef, pair, &manifold, workerIndex)
+                        listener.Handler.OnTouchingUpdated (sourceRef, pair, &manifold, workerIndex)
 
                     this.UpdatePreviousCollision (&collision, &manifold, isTouching)
 
@@ -425,8 +425,8 @@ type [<AllowNullLiteral>] ContactEvents
                     if depth >= 0.0f then isTouching <- true
 
                 if isTouching then
-                    listener.Handler.OnStartedTouching (sourceRef, pair, &manifold, workerIndex)
-                    listener.Handler.OnTouching (sourceRef, pair, &manifold, workerIndex)
+                    listener.Handler.OnTouchingStarted (sourceRef, pair, &manifold, workerIndex)
+                    listener.Handler.OnTouchingUpdated (sourceRef, pair, &manifold, workerIndex)
 
                 this.UpdatePreviousCollision (&pendingAdd.Collision, &manifold, isTouching)
 
@@ -463,7 +463,7 @@ type [<AllowNullLiteral>] ContactEvents
                         for previousContactCount in 0 .. dec collision.ContactCount do
                             listener.Handler.OnContactRemoved (listener.Source, pair, &emptyManifold, Unsafe.Add (&collision.FeatureId0, previousContactCount), 0)
                         if collision.WasTouching then
-                            listener.Handler.OnStoppedTouching (listener.Source, pair, &emptyManifold, 0)
+                            listener.Handler.OnTouchingStopped (listener.Source, pair, &emptyManifold, 0)
 
                     listener.Handler.OnPairEnded (collision.Collidable, pair)
                     listener.PreviousCollisions.FastRemoveAt j //This collision was not updated since the last flush despite being active. It should be removed.

@@ -60,8 +60,7 @@ type [<ReferenceEquality>] AetherPhysicsEngine =
         let bodyCollisionMessage =
             { BodyShapeSource = bodyShape.Tag :?> BodyShapeSourceInternal
               BodyShapeSource2 = bodyShape2.Tag :?> BodyShapeSourceInternal
-              Normal = Vector3 (normal.X, normal.Y, 0.0f)
-              Speed = contact.TangentSpeed * Constants.Physics.PhysicsToPixelRatio }
+              Normal = Vector3 (normal.X, normal.Y, 0.0f) }
         let integrationMessage = BodyCollisionMessage bodyCollisionMessage
         physicsEngine.IntegrationMessages.Add integrationMessage
         true
