@@ -231,8 +231,8 @@ type [<AllowNullLiteral>] ContactEvents
         if collidable.Mobility = CollidableMobility.Static
         then staticListenerFlags.Add (collidable.RawHandleValue, pool)
         else bodyListenerFlags.Add (collidable.RawHandleValue, pool)
-        if listenerCount > listeners.Length then
-            Array.Resize (&listeners, listeners.Length * 2)
+
+        if listenerCount > listeners.Length then Array.Resize (&listeners, listeners.Length * 2)
 
         //Note that allocations for the previous collision list are deferred until they actually exist.
         listeners.[listenerCount] <- { Source = collidable; Handler = handler; PreviousCollisions = QuickList () }
@@ -262,14 +262,13 @@ type [<AllowNullLiteral>] ContactEvents
     /// <param name="collidable">Collidable to stop listening for.</param>
     member this.Unregister (collidable : CollidableReference) =
         Debug.Assert (this.IsListener collidable, "Should only try to unregister listeners that actually exist.")
-        if collidable.Mobility = CollidableMobility.Static then
-            staticListenerFlags.Remove collidable.RawHandleValue
-        else
-            bodyListenerFlags.Remove collidable.RawHandleValue
+        if collidable.Mobility = CollidableMobility.Static
+        then staticListenerFlags.Remove collidable.RawHandleValue
+        else bodyListenerFlags.Remove collidable.RawHandleValue
         let index = listenerIndices.[collidable]
         listenerCount <- dec listenerCount
         let removedSlot = &listeners.[index]
-        if  removedSlot.PreviousCollisions.Span.Allocated then
+        if removedSlot.PreviousCollisions.Span.Allocated then
             removedSlot.PreviousCollisions.Dispose pool
         let lastSlot = &listeners.[listenerCount]
         if index < listenerCount then
@@ -298,10 +297,9 @@ type [<AllowNullLiteral>] ContactEvents
     /// <param name="collidable">Collidable to check.</param>
     /// <returns>True if the collidable has been registered as a listener, false otherwise.</returns>
     member this.IsListener (collidable : CollidableReference) =
-        if collidable.Mobility = CollidableMobility.Static then
-            staticListenerFlags.Contains collidable.RawHandleValue
-        else
-            bodyListenerFlags.Contains collidable.RawHandleValue
+        if collidable.Mobility = CollidableMobility.Static
+        then staticListenerFlags.Contains collidable.RawHandleValue
+        else bodyListenerFlags.Contains collidable.RawHandleValue
 
     /// <summary>
     /// Callback attached to the simulation's ITimestepper which executes just prior to collision detection to take a snapshot of activity states to determine which pairs we should expect updates in.
@@ -424,8 +422,7 @@ type [<AllowNullLiteral>] ContactEvents
                     let mutable featureId = 0
                     manifold.GetContact (i, &offset, &normal, &depth, &featureId)
                     listener.Handler.OnContactAdded(sourceRef, pair, &manifold, offset, normal, depth, featureId, i, workerIndex)
-                    if depth >= 0.0f then
-                        isTouching <- true
+                    if depth >= 0.0f then isTouching <- true
 
                 if isTouching then
                     listener.Handler.OnStartedTouching (sourceRef, pair, &manifold, workerIndex)
@@ -473,8 +470,8 @@ type [<AllowNullLiteral>] ContactEvents
                     if  listener.PreviousCollisions.Count = 0 then
                         listener.PreviousCollisions.Dispose pool
                         listener.PreviousCollisions <- QuickList ()
-                else
-                    collision.Fresh <- false
+
+                else collision.Fresh <- false
 
         for i in 0 .. dec pendingWorkerAdds.Length do
             let pendingAdds = &pendingWorkerAdds.[i]
