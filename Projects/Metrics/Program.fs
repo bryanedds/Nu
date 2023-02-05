@@ -1,6 +1,7 @@
 ﻿namespace Metrics
 open System
 open System.Collections.Generic
+open System.IO
 open System.Numerics
 open Prime
 open Nu
@@ -209,5 +210,6 @@ module Program =
 #else
         let worldConfig = { WorldConfig.defaultConfig with Imperative = true; SdlConfig = sdlConfig }
 #endif
+        Directory.SetCurrentDirectory AppContext.BaseDirectory
         Nu.init worldConfig.NuConfig
         World.run worldConfig (MetricsPlugin ())
