@@ -121,7 +121,7 @@ type [<ReferenceEquality>] AetherPhysicsEngine =
         body.SetIsSensor bodyProperties.Sensor
         body.SleepingAllowed <- true
 
-    static member private attachBoxBody sourceSimulant (bodyProperties : BodyProperties) (bodyBox : BodyBox) (body : Body) =
+    static member private attachBodyBox sourceSimulant (bodyBox : BodyBox) (bodyProperties : BodyProperties) (body : Body) =
         let bodyShape =
             body.CreateRectangle
                 (AetherPhysicsEngine.toPhysicsPolygonDiameter bodyBox.Size.X,
@@ -134,7 +134,7 @@ type [<ReferenceEquality>] AetherPhysicsEngine =
               ShapeId = match bodyBox.PropertiesOpt with Some p -> p.BodyShapeId | None -> 0UL }
         AetherPhysicsEngine.configureBodyShapeProperties bodyProperties bodyBox.PropertiesOpt bodyShape
 
-    static member private attachBodySphere sourceSimulant (bodyProperties : BodyProperties) (bodySphere : BodySphere) (body : Body) =
+    static member private attachBodySphere sourceSimulant (bodySphere : BodySphere) (bodyProperties : BodyProperties) (body : Body) =
         let bodyShape =
             body.CreateCircle
                 (AetherPhysicsEngine.toPhysicsPolygonRadius bodySphere.Radius,
@@ -146,7 +146,7 @@ type [<ReferenceEquality>] AetherPhysicsEngine =
               ShapeId = match bodySphere.PropertiesOpt with Some p -> p.BodyShapeId | None -> 0UL }
         AetherPhysicsEngine.configureBodyShapeProperties bodyProperties bodySphere.PropertiesOpt bodyShape
 
-    static member private attachBodyCapsule sourceSimulant (bodyProperties : BodyProperties) (bodyCapsule : BodyCapsule) (body : Body) =
+    static member private attachBodyCapsule sourceSimulant (bodyCapsule : BodyCapsule) (bodyProperties : BodyProperties) (body : Body) =
         let height = AetherPhysicsEngine.toPhysicsPolygonDiameter bodyCapsule.Height
         let endRadius = AetherPhysicsEngine.toPhysicsPolygonRadius bodyCapsule.Radius
         let density = bodyProperties.Density
@@ -167,7 +167,7 @@ type [<ReferenceEquality>] AetherPhysicsEngine =
             AetherPhysicsEngine.configureBodyShapeProperties bodyProperties bodyCapsule.PropertiesOpt bodyShape |> ignore
         Array.ofSeq bodyShapes
 
-    static member private attachBodyBoxRounded sourceSimulant (bodyProperties : BodyProperties) (bodyBoxRounded : BodyBoxRounded) (body : Body) =
+    static member private attachBodyBoxRounded sourceSimulant (bodyBoxRounded : BodyBoxRounded) (bodyProperties : BodyProperties) (body : Body) =
         let width = AetherPhysicsEngine.toPhysicsPolygonDiameter bodyBoxRounded.Size.X
         let height = AetherPhysicsEngine.toPhysicsPolygonDiameter bodyBoxRounded.Size.Y
         let radius = AetherPhysicsEngine.toPhysicsPolygonRadius bodyBoxRounded.Radius
@@ -197,7 +197,7 @@ type [<ReferenceEquality>] AetherPhysicsEngine =
             AetherPhysicsEngine.configureBodyShapeProperties bodyProperties bodyBoxRounded.PropertiesOpt bodyShape |> ignore
         Array.ofSeq bodyShapes
 
-    static member private attachBodyPolygon sourceSimulant bodyProperties bodyPolygon (body : Body) =
+    static member private attachBodyPolygon sourceSimulant bodyPolygon bodyProperties (body : Body) =
         let vertices =
             bodyPolygon.Vertices |>
             Array.map (fun vertex -> vertex + bodyPolygon.Center) |>
@@ -209,22 +209,22 @@ type [<ReferenceEquality>] AetherPhysicsEngine =
               ShapeId = match bodyPolygon.PropertiesOpt with Some p -> p.BodyShapeId | None -> 0UL }
         AetherPhysicsEngine.configureBodyShapeProperties bodyProperties bodyPolygon.PropertiesOpt bodyShape
 
-    static member private attachBodyShapes sourceSimulant bodyProperties bodyShapes (body : Body) =
+    static member private attachBodyShapes sourceSimulant bodyShapes bodyProperties (body : Body) =
         let list = List ()
         for bodyShape in bodyShapes do
-            let bodyShapes = AetherPhysicsEngine.attachBodyShape sourceSimulant bodyProperties bodyShape body
+            let bodyShapes = AetherPhysicsEngine.attachBodyShape sourceSimulant bodyShape bodyProperties body
             list.AddRange bodyShapes
         Array.ofSeq list
 
-    static member private attachBodyShape sourceSimulant bodyProperties bodyShape (body : Body) =
+    static member private attachBodyShape sourceSimulant bodyShape bodyProperties (body : Body) =
         match bodyShape with
         | BodyEmpty -> [||]
-        | BodyBox bodyBox -> AetherPhysicsEngine.attachBoxBody sourceSimulant bodyProperties bodyBox body |> Array.singleton
-        | BodySphere bodySphere -> AetherPhysicsEngine.attachBodySphere sourceSimulant bodyProperties bodySphere body |> Array.singleton
-        | BodyCapsule bodyCapsule -> AetherPhysicsEngine.attachBodyCapsule sourceSimulant bodyProperties bodyCapsule body |> Array.ofSeq
-        | BodyBoxRounded bodyBoxRounded -> AetherPhysicsEngine.attachBodyBoxRounded sourceSimulant bodyProperties bodyBoxRounded body |> Array.ofSeq
-        | BodyPolygon bodyPolygon -> AetherPhysicsEngine.attachBodyPolygon sourceSimulant bodyProperties bodyPolygon body |> Array.singleton
-        | BodyShapes bodyShapes -> AetherPhysicsEngine.attachBodyShapes sourceSimulant bodyProperties bodyShapes body
+        | BodyBox bodyBox -> AetherPhysicsEngine.attachBodyBox sourceSimulant bodyBox bodyProperties body |> Array.singleton
+        | BodySphere bodySphere -> AetherPhysicsEngine.attachBodySphere sourceSimulant bodySphere bodyProperties body |> Array.singleton
+        | BodyCapsule bodyCapsule -> AetherPhysicsEngine.attachBodyCapsule sourceSimulant bodyCapsule bodyProperties body |> Array.ofSeq
+        | BodyBoxRounded bodyBoxRounded -> AetherPhysicsEngine.attachBodyBoxRounded sourceSimulant bodyBoxRounded bodyProperties body |> Array.ofSeq
+        | BodyPolygon bodyPolygon -> AetherPhysicsEngine.attachBodyPolygon sourceSimulant bodyPolygon bodyProperties body |> Array.singleton
+        | BodyShapes bodyShapes -> AetherPhysicsEngine.attachBodyShapes sourceSimulant bodyShapes bodyProperties body
         
     static member private createBody (createBodyMessage : CreateBodyMessage) physicsEngine =
 
@@ -242,7 +242,7 @@ type [<ReferenceEquality>] AetherPhysicsEngine =
         AetherPhysicsEngine.configureBodyProperties bodyProperties body
 
         // attach body shape
-        AetherPhysicsEngine.attachBodyShape sourceSimulant bodyProperties bodyProperties.BodyShape body |> ignore
+        AetherPhysicsEngine.attachBodyShape sourceSimulant bodyProperties.BodyShape bodyProperties body |> ignore
 
         // listen for collisions
         body.add_OnCollision (fun fn fn2 collision -> AetherPhysicsEngine.handleCollision physicsEngine fn fn2 collision)

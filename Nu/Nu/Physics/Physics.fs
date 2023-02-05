@@ -156,7 +156,8 @@ type BodyProperties =
       CollisionMask : int
       IgnoreCCD : bool
       Bullet : bool
-      Sensor : bool }
+      Sensor : bool
+      IgnoreEvents : bool }
 
 [<RequireQualifiedAccess>]
 module BodyProperties =
