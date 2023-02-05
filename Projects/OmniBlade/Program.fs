@@ -3,7 +3,7 @@
 
 namespace OmniBlade
 open System
-open Prime
+open System.IO
 open Nu
 open SDL2
 open OmniBlade
@@ -20,5 +20,6 @@ module Program =
 #endif
         let sdlConfig = { SdlConfig.defaultConfig with ViewConfig = NewWindow sdlWindowConfig }
         let worldConfig = { WorldConfig.defaultConfig with SdlConfig = sdlConfig }
+        Directory.SetCurrentDirectory AppContext.BaseDirectory
         Nu.init worldConfig.NuConfig
         World.run worldConfig (OmniBladePlugin ())

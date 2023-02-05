@@ -166,7 +166,7 @@ type RendererThread (createRenderer3d, createRenderer2d) =
         while not terminated do
 
             // loop until submission exists
-            while Option.isNone submissionOpt && not terminated do Thread.Yield () |> ignore<bool>
+            while Option.isNone submissionOpt && not terminated do Thread.Sleep 1
 
             // guard against early termination
             if not terminated then
@@ -188,7 +188,7 @@ type RendererThread (createRenderer3d, createRenderer2d) =
                 freeSpriteMessages messages2d
 
                 // loop until swap is requested
-                while not swap && not terminated do Thread.Yield () |> ignore<bool>
+                while not swap && not terminated do Thread.Sleep 1
 
                 // guard against early termination
                 if not terminated then
@@ -221,7 +221,7 @@ type RendererThread (createRenderer3d, createRenderer2d) =
             task.Start ()
 
             // wait for task to finish starting
-            while not started do Thread.Yield () |> ignore<bool>
+            while not started do Thread.Sleep 1
 
         member this.EnqueueMessage3d message =
             if Option.isNone taskOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
@@ -274,7 +274,7 @@ type RendererThread (createRenderer3d, createRenderer2d) =
 
         member this.SubmitMessages eyeCenter3d eyeRotation3d eyeCenter2d eyeSize2d eyeMargin =
             if Option.isNone taskOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
-            while swap do Thread.Yield () |> ignore<bool>
+            while swap do Thread.Sleep 1
             let messages3d = messageBuffers3d.[messageBufferIndex]
             let messages2d = messageBuffers2d.[messageBufferIndex]
             messageBufferIndex <- if messageBufferIndex = 0 then 1 else 0
