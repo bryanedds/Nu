@@ -374,8 +374,7 @@ type ApplyBodyTorqueMessage =
 type BodyCollisionMessage =
     { BodyShapeSource : BodyShapeSourceInternal
       BodyShapeSource2 : BodyShapeSourceInternal
-      Normal : Vector3
-      Speed : single }
+      Normal : Vector3 }
 
 /// A message from the physics system describing a body separation that took place.
 type BodySeparationMessage =
@@ -392,7 +391,7 @@ type BodyTransformMessage =
 
 /// A message from the physics system.
 type IntegrationMessage =
-    | BodyCollisionMessage of BodyCollisionMessage
+    | BodyCollisionMessage of BodyCollisionMessage  
     | BodySeparationMessage of BodySeparationMessage
     | BodyTransformMessage of BodyTransformMessage
 

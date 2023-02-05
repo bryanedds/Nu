@@ -6,11 +6,27 @@ open System
 open System.Collections.Generic
 open System.Numerics
 open BepuPhysics
+open BepuPhysics.Collidables
 open BepuUtilities
 open BepuUtilities.Memory
 open Prime
 open Nu
-open BepuPhysics.Collidables
+
+type internal ConactEventHandler (integrationMessages : IntegrationMessage List) =
+    interface IContactEventHandler with
+        member this.OnContactAdded (eventSource, pair, contactManifold, contactOffset, contactNormal, depth, featureId, contactIndex, workerIndex) = ()
+        member this.OnContactRemoved (eventSource, pair, contactManifold, removedFeatureId, workerIndex) = ()
+        member this.OnPairCreated (eventSource, pair, contactManifold, workerIndex) = ()
+        member this.OnPairUpdated (arg1eventSource, pair, contactManifold, workerIndex) = ()
+        member this.OnPairEnded (eventSource, pair) = ()
+        member this.OnTouchingStarted (eventSource, pair, contactManifold, workerIndex) =
+        let bodyCollisionMessage =
+            { BodyShapeSource = bodyShape.Tag :?> BodyShapeSourceInternal
+              BodyShapeSource2 = bodyShape2.Tag :?> BodyShapeSourceInternal
+              Normal = contactManifold.GetNormal 0 }
+            integrationMessages.Add (IntegrationMessage.BodyCollisionMessage bodyCollisionMessage)
+        member this.OnTouchingUpdated (eventSource, pair, contactManifold, workerIndex) = ()
+        member this.OnTouchingStopped (eventSource, pair, contactManifold, workerIndex) = ()
 
 /// The BepuPhysics 3d implementation of PhysicsEngine.
 type [<ReferenceEquality>] BepuPhysicsEngine =
@@ -48,15 +64,15 @@ type [<ReferenceEquality>] BepuPhysicsEngine =
         let pose = RigidPose (bodyProperties.Center, bodyProperties.Rotation)
         compoundBuilder.Add (&box, &pose, mass) // NOTE: passing mass as weight.
 
-    static member private createCompoundSingleton attachBody bodyProperties bodyBox physicsEngine =
+    static member private createCompoundSingleton attachBody (bodyProperties : BodyProperties) physicsEngine =
 
         use compoundBuilder = CompoundBuilder (physicsEngine.PhysicsContext.BufferPool, physicsEngine.PhysicsContext.Shapes, 1)
-        attachBody bodyProperties &compoundBuilder physicsEngine
+        attachBody bodyProperties compoundBuilder0 physicsEngine
         let mutable compoundChildren = Buffer<CompoundChild> ()
         let mutable compoundInertia = BodyInertia ()
         let mutable compoundCenter = Vector3 ()
         compoundBuilder.BuildDynamicCompound (&compoundChildren, &compoundInertia, &compoundCenter)
-        
+
         let velocities = BodyVelocity (bodyProperties.LinearVelocity, bodyProperties.AngularVelocity)
         let compound = Compound compoundChildren
         let shapeIndex = physicsEngine.PhysicsContext.Shapes.Add &compound
@@ -72,11 +88,14 @@ type [<ReferenceEquality>] BepuPhysicsEngine =
             | Kinematic ->
                 let bodyDescription = BodyDescription.CreateKinematic (RigidPose (), velocities, shapeIndex, activity)
                 physicsEngine.PhysicsContext.Bodies.Add &bodyDescription |> Right
-        
+
         if not bodyProperties.IgnoreEvents then
             match handle with
             | Left _ -> ()
             | Right bodyHandle -> physicsEngine.ContactEvents.Register (bodyHandle, _)
+
+    static member private createCompoundBox bodyBox bodyProperties physicsEngine =
+        BepuPhysicsEngine.createCompoundSingleton (BepuPhysicsEngine.attachBodyBox bodyBox) bodyProperties physicsEngine
 
     static member private integrate stepTime physicsEngine =
 
