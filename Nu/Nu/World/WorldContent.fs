@@ -202,7 +202,7 @@ module Content =
             else None
         else None
 
-    ///
+    /// Synchronize an entity and its contained simulants to the given content.
     let rec synchronizeEntity initializing (contentOld : EntityContent) (content : EntityContent) (origin : Simulant) (entity : Entity) world =
         if contentOld =/= content then
             let mutable mountOptFound = false
@@ -240,7 +240,7 @@ module Content =
             | None -> world
         else world
 
-    ///
+    /// Synchronize a group and its contained simulants to the given content.
     let synchronizeGroup initializing (contentOld : GroupContent) (content : GroupContent) (origin : Simulant) (group : Group) world =
         if contentOld =/= content then
             let world = synchronizeEventSignals contentOld content origin group world
@@ -271,7 +271,7 @@ module Content =
             | None -> world
         else world
 
-    ///
+    /// Synchronize a screen and its contained simulants to the given content.
     let synchronizeScreen initializing (contentOld : ScreenContent) (content : ScreenContent) (origin : Simulant) (screen : Screen) world =
         if contentOld =/= content then
             let world = synchronizeEventSignals contentOld content origin screen world
@@ -323,7 +323,7 @@ module Content =
             | None -> world
         else world
 
-    ///
+    /// Synchronize a screen and its contained simulants to the given content.
     let synchronizeGame setScreenSlide initializing (contentOld : GameContent) (content : GameContent) (origin : Simulant) world =
         if contentOld =/= content then
             let game = Simulants.Game
@@ -354,7 +354,7 @@ module Content =
             | None -> (content.InitialScreenNameOpt |> Option.map Screen, world)
         else (content.InitialScreenNameOpt |> Option.map Screen, world)
 
-    ///
+    /// Describe an entity with the given initializers as well as its contained entities.
     let composite<'entityDispatcher when 'entityDispatcher :> EntityDispatcher> entityName initializers entities =
         let mutable eventSignalContentsOpt = null
         let mutable eventHandlerContentsOpt = null
@@ -372,7 +372,7 @@ module Content =
           EventSignalContentsOpt = eventSignalContentsOpt; EventHandlerContentsOpt = eventHandlerContentsOpt; PropertyContentsOpt = propertyContentsOpt
           EntityContentsOpt = entityContentsOpt }
 
-    ///
+    /// Describe an entity with the given dispatcher type and initializers.
     let entity<'entityDispatcher when 'entityDispatcher :> EntityDispatcher> entityName initializers =
         composite<'entityDispatcher> entityName initializers []
 
@@ -451,7 +451,7 @@ module Content =
     /// Describe a static model expanded into an entity hierarchy with the given initializers.
     let staticModelHierarchy entityName initializers = entity<StaticModelHierarchyDispatcher> entityName initializers
 
-    ///
+    /// Describe a group with the given dispatcher type and initializers as well as its contained entities.
     let private group4<'groupDispatcher when 'groupDispatcher :> GroupDispatcher> groupName groupFilePathOpt initializers entities =
         let mutable eventSignalContentsOpt = null
         let mutable eventHandlerContentsOpt = null
@@ -469,15 +469,15 @@ module Content =
           EventSignalContentsOpt = eventSignalContentsOpt; EventHandlerContentsOpt = eventHandlerContentsOpt; PropertyContentsOpt = propertyContentsOpt
           EntityContentsOpt = entityContentsOpt }
 
-    ///
+    /// Describe a group with the given dispatcher type and initializers as well as its contained entities.
     let group<'groupDispatcher when 'groupDispatcher :> GroupDispatcher> groupName initializers entities =
         group4<'groupDispatcher> groupName None initializers entities
 
-    ///
+    /// Describe a group and its contained entities loaded from the given file with the given initializers.
     let groupFromFile<'groupDispatcher when 'groupDispatcher :> GroupDispatcher> groupName filePath initializers entities =
         group4<'groupDispatcher> groupName (Some filePath) initializers entities
 
-    ///
+    /// Describe a screen with the given dispatcher type and initializers as well as its contained simulants.
     let private screen5<'screenDispatcher when 'screenDispatcher :> ScreenDispatcher> screenName screenBehavior groupFilePathOpt initializers groups =
         let mutable eventSignalContentsOpt = null
         let mutable eventHandlerContentsOpt = null
@@ -494,13 +494,15 @@ module Content =
           EventSignalContentsOpt = eventSignalContentsOpt; EventHandlerContentsOpt = eventHandlerContentsOpt; PropertyContentsOpt = propertyContentsOpt
           GroupContents = groupContents }
 
+    /// Describe a screen with the given dispatcher type and initializers as well as its contained simulants.
     let screen<'screenDispatcher when 'screenDispatcher :> ScreenDispatcher> screenName screenBehavior initializers groups =
         screen5<'screenDispatcher> screenName screenBehavior None initializers groups
 
+    /// Describe a screen with the given type and initializers with a group loaded from the given file.
     let screenWithGroupFromFile<'screenDispatcher when 'screenDispatcher :> ScreenDispatcher> screenName screenBehavior groupFilePath initializers groups =
         screen5<'screenDispatcher> screenName screenBehavior (Some groupFilePath) initializers groups
 
-    ///
+    /// Describe a game with the given initializers as well as its contained simulants.
     let game initializers screens =
         let initialScreenNameOpt = match Seq.tryHead screens with Some screen -> Some screen.ScreenName | None -> None
         let mutable eventSignalContentsOpt = null
