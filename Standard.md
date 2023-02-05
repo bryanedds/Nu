@@ -13,7 +13,7 @@ Correctness, Consistency, Simplicity
 
 4) Prefer immutable types and referentially-transparent functions.
 
-5) Make illegal states unrepresentable when feasible [*Here's our friend Scott Wlaschin on the subject*](http://fsharpforfunandprofit.com/posts/designing-with-types-making-illegal-states-unrepresentable/).
+5) Make illegal states unrepresentable when feasible [*Here's our friend Scott Wlaschin on the subject.*](http://fsharpforfunandprofit.com/posts/designing-with-types-making-illegal-states-unrepresentable/)
 
 6) Avoid trading away exhaustiveness checking unless you have a specific need.
 
@@ -154,7 +154,7 @@ Correctness, Consistency, Simplicity
 
 **C) Simplicity**
 
-1) Use F\# as a functional-first language, rather than an object-oriented one. [*Here's our friend Rich Hickey on why object-orientation in inherently complex.*](http://www.infoq.com/presentations/Simple-Made-Easy).
+1) Use F\# as a functional-first language, rather than an object-oriented one. [*Here's our friend Rich Hickey on why object-orientation in inherently complex.*](http://www.infoq.com/presentations/Simple-Made-Easy)
 
 2) For mutation that you can't avoid, try to encapsulate it behind a referentially-transparent interface wherever feasible. For example, consider wrapping your mutable constructs with [*KeyedCache*](https://github.com/bryanedds/Nu/blob/master/Prime/Prime/KeyedCache.fs) or [*MutantCache*](https://github.com/bryanedds/Nu/blob/master/Prime/Prime/MutantCache.fs)
 
