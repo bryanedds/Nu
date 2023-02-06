@@ -67,7 +67,7 @@
 		<Compile Include="AssetGraph\AssetGraph.fs" />
 		<Compile Include="Physics\Physics.fs" />
 		<Compile Include="Physics\AetherPhysics.fs" />
-		<Compile Include="Physics\BepuEventSystem.fs" />
+		<Compile Include="Physics\BepuPhysics.EventSystem.fs" />
 		<Compile Include="Physics\BepuPhysics.fs" />
 		<Compile Include="Render\Render.fs" />
 		<Compile Include="Render\Render2d.fs" />
