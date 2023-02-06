@@ -163,47 +163,25 @@ type [<ReferenceEquality>] BepuPhysicsEngine =
                           AngularVelocity = body.Velocity.Angular }
                 physicsEngine.IntegrationMessages.Add bodyTransformMessage
 
+        static member private handlePhysicsMessages physicsMessages physicsEngine = () // TODO.
+
     interface PhysicsEngine with
 
-        member physicsEngine.BodyExists physicsId =
-            ()
-
-        member physicsEngine.GetBodyContactNormals physicsId =
-            ()
-
-        member physicsEngine.GetBodyLinearVelocity physicsId =
-            ()
-
-        member physicsEngine.GetBodyToGroundContactNormals physicsId =
-            ()
-
-        member physicsEngine.GetBodyToGroundContactNormalOpt physicsId =
-            ()
-
-        member physicsEngine.GetBodyToGroundContactTangentOpt physicsId =
-            ()
-
-        member physicsEngine.IsBodyOnGround physicsId =
-            ()
-
-        member physicsEngine.PopMessages () =
-            ()
-
-        member physicsEngine.ClearMessages () =
-            ()
-
-        member physicsEngine.EnqueueMessage physicsMessage =
-            ()
+        member physicsEngine.BodyExists physicsId = () // TODO.
+        member physicsEngine.GetBodyContactNormals physicsId = () // TODO.
+        member physicsEngine.GetBodyLinearVelocity physicsId = () // TODO.
+        member physicsEngine.GetBodyToGroundContactNormals physicsId = () // TODO.
+        member physicsEngine.GetBodyToGroundContactNormalOpt physicsId = () // TODO.
+        member physicsEngine.GetBodyToGroundContactTangentOpt physicsId = () // TODO.
+        member physicsEngine.IsBodyOnGround physicsId = () // TODO.
+        member physicsEngine.PopMessages () = () // TODO.
+        member physicsEngine.ClearMessages () = () // TODO.
+        member physicsEngine.EnqueueMessage physicsMessage = () // TODO.
 
         member physicsEngine.Integrate stepTime physicsMessages =
-            AetherPhysicsEngine.handlePhysicsMessages physicsMessages physicsEngine
-            let physicsStepAmount =
-                match (Constants.Engine.DesiredFrameRate, stepTime) with
-                | (StaticFrameRate frameRate, UpdateTime frames) -> 1.0f / single frameRate * single frames
-                | (DynamicFrameRate _, ClockTime secs) -> secs
-                | (_, _) -> failwithumf ()
-            physicsEngine.PhysicsContext.Solve physicsStepAmount
-            AetherPhysicsEngine.createIntegrationMessages physicsEngine
+            BepuPhysicsEngine.handlePhysicsMessages physicsMessages physicsEngine
+            BepuPhysicsEngine.integrate stepTime physicsEngine
+            BepuPhysicsEngine.createIntegrationMessages physicsEngine
             let integrationMessages = SegmentedArray.ofSeq physicsEngine.IntegrationMessages
             physicsEngine.IntegrationMessages.Clear ()
             integrationMessages
