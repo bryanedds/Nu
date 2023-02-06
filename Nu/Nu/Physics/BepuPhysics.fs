@@ -12,7 +12,7 @@ open BepuUtilities.Memory
 open Prime
 open Nu
 
-type internal ConactEventHandler (integrationMessages : IntegrationMessage List) =
+type internal ContactEventHandler (integrationMessages : IntegrationMessage List, shapeSources : CollidableProperty<BodyShapeSourceInternalJib> array) =
     interface IContactEventHandler with
         member this.OnContactAdded (eventSource, pair, contactManifold, contactOffset, contactNormal, depth, featureId, contactIndex, workerIndex) = ()
         member this.OnContactRemoved (eventSource, pair, contactManifold, removedFeatureId, workerIndex) = ()
@@ -20,10 +20,14 @@ type internal ConactEventHandler (integrationMessages : IntegrationMessage List)
         member this.OnPairUpdated (arg1eventSource, pair, contactManifold, workerIndex) = ()
         member this.OnPairEnded (eventSource, pair) = ()
         member this.OnTouchingStarted (eventSource, pair, contactManifold, workerIndex) =
-        let bodyCollisionMessage =
-            { BodyShapeSource = bodyShape.Tag :?> BodyShapeSourceInternal
-              BodyShapeSource2 = bodyShape2.Tag :?> BodyShapeSourceInternal
-              Normal = contactManifold.GetNormal 0 }
+            let (shapeSource, shapeSource2) =
+                if pair.A = eventSource
+                then (shapeSources.[0].[pair.A], shapeSources.[0].[pair.B])
+                else (shapeSources.[0].[pair.B], shapeSources.[0].[pair.A])
+            let bodyCollisionMessage =
+                { BodyShapeSource = shapeSource.BodyShapeSourceInternalObj :?> BodyShapeSourceInternal
+                  BodyShapeSource2 = shapeSource2.BodyShapeSourceInternalObj :?> BodyShapeSourceInternal
+                  Normal = contactManifold.GetNormal (&contactManifold, 0) }
             integrationMessages.Add (IntegrationMessage.BodyCollisionMessage bodyCollisionMessage)
         member this.OnTouchingUpdated (eventSource, pair, contactManifold, workerIndex) = ()
         member this.OnTouchingStopped (eventSource, pair, contactManifold, workerIndex) = ()
@@ -35,64 +39,76 @@ type [<ReferenceEquality>] BepuPhysicsEngine =
           PhysicsMessages : PhysicsMessage UList
           IntegrationMessages : IntegrationMessage List
           ThreadDispatcher : ThreadDispatcher
+          ShapeSources : CollidableProperty<BodyShapeSourceInternalJib> array
           ContactEvents : ContactEvents
-          NarrowPhaseCallbacks : NarrowPhaseCallbacks
-          PoseIntegratorCallbacks : PoseIntegratorCallbacks
+          ContactEventHandler : ContactEventHandler
           mutable RebuildingHack : bool }
 
     static member make () =
+        let physicsMessages = UList.makeEmpty Imperative
+        let integrationMessages = List ()
         let threadDispatcher = new ThreadDispatcher (Constants.Physics.TargetThreadCount)
         let bufferPool = new BufferPool ()
-        let contactEvents = ContactEvents (threadDispatcher, bufferPool)
+        let shapeSources = Array.init 1 (fun _ -> new CollidableProperty<BodyShapeSourceInternalJib> ())
+        let contactEvents = ContactEvents (threadDispatcher, bufferPool, shapeSources)
+        let contactEventHandler = ContactEventHandler (integrationMessages, shapeSources)
         let narrowPhaseCallbacks = NarrowPhaseCallbacks ()
         let poseIntegratorCallbacks = PoseIntegratorCallbacks Constants.Engine.GravityDefault
         let solveDescription = new SolveDescription (8, 1)
         let simulation = Simulation.Create (bufferPool, narrowPhaseCallbacks, poseIntegratorCallbacks, solveDescription)
         { PhysicsContext = simulation
-          PhysicsMessages = UList.makeEmpty Imperative
-          IntegrationMessages = List ()
+          PhysicsMessages = physicsMessages
+          IntegrationMessages = integrationMessages
           ThreadDispatcher = threadDispatcher
+          ShapeSources = shapeSources
           ContactEvents = contactEvents
-          NarrowPhaseCallbacks = narrowPhaseCallbacks
-          PoseIntegratorCallbacks = poseIntegratorCallbacks
+          ContactEventHandler = contactEventHandler
           RebuildingHack = false }
 
-    static member private attachBodyBox (bodyBox : BodyBox) (bodyProperties : BodyProperties) (compoundBuilder : CompoundBuilder byref) physicsEngine =
+    static member cleanUp physicsEngine =
+        physicsEngine.ContactEvents.Dispose ()
+        physicsEngine.ShapeSources.[0].Dispose ()
+        physicsEngine.ThreadDispatcher.Dispose ()
+        physicsEngine.PhysicsContext.Dispose ()
+
+    static member private attachBodyBox (bodyBox : BodyBox) (bodyProperties : BodyProperties) (compoundBuilder : CompoundBuilder array) physicsEngine =
         let box = Box (bodyBox.Size.X, bodyBox.Size.Y, bodyBox.Size.Z)
         let volume = bodyBox.Size.X * bodyBox.Size.Y * bodyBox.Size.Z
         let mass = volume * bodyProperties.Density
         let pose = RigidPose (bodyProperties.Center, bodyProperties.Rotation)
-        compoundBuilder.Add (&box, &pose, mass) // NOTE: passing mass as weight.
+        compoundBuilder.[0].Add (&box, &pose, mass) // NOTE: passing mass as weight.
 
     static member private createCompoundSingleton attachBody (bodyProperties : BodyProperties) physicsEngine =
 
-        use compoundBuilder = CompoundBuilder (physicsEngine.PhysicsContext.BufferPool, physicsEngine.PhysicsContext.Shapes, 1)
-        attachBody bodyProperties compoundBuilder0 physicsEngine
-        let mutable compoundChildren = Buffer<CompoundChild> ()
-        let mutable compoundInertia = BodyInertia ()
-        let mutable compoundCenter = Vector3 ()
-        compoundBuilder.BuildDynamicCompound (&compoundChildren, &compoundInertia, &compoundCenter)
+        let compoundBuilder = Array.init 1 (fun _ -> new CompoundBuilder (physicsEngine.PhysicsContext.BufferPool, physicsEngine.PhysicsContext.Shapes, 1))
+        try attachBody bodyProperties compoundBuilder physicsEngine
+            let mutable compoundChildren = Buffer<CompoundChild> ()
+            let mutable compoundInertia = BodyInertia ()
+            let mutable compoundCenter = Vector3 ()
+            compoundBuilder.[0].BuildDynamicCompound (&compoundChildren, &compoundInertia, &compoundCenter)
 
-        let velocities = BodyVelocity (bodyProperties.LinearVelocity, bodyProperties.AngularVelocity)
-        let compound = Compound compoundChildren
-        let shapeIndex = physicsEngine.PhysicsContext.Shapes.Add &compound
-        let activity = BodyActivityDescription Constants.Physics.SleepThreshold
-        let handle =  
-            match bodyProperties.BodyType with
-            | Static ->
-                let staticDescription = StaticDescription (RigidPose (), shapeIndex)
-                physicsEngine.PhysicsContext.Statics.Add &staticDescription |> Left
-            | Dynamic ->
-                let bodyDescription = BodyDescription.CreateDynamic (RigidPose (), velocities, compoundInertia, shapeIndex, activity)
-                physicsEngine.PhysicsContext.Bodies.Add &bodyDescription |> Right
-            | Kinematic ->
-                let bodyDescription = BodyDescription.CreateKinematic (RigidPose (), velocities, shapeIndex, activity)
-                physicsEngine.PhysicsContext.Bodies.Add &bodyDescription |> Right
+            let velocities = BodyVelocity (bodyProperties.LinearVelocity, bodyProperties.AngularVelocity)
+            let compound = Compound compoundChildren
+            let shapeIndex = physicsEngine.PhysicsContext.Shapes.Add &compound
+            let activity = BodyActivityDescription Constants.Physics.SleepThreshold
+            let handle =  
+                match bodyProperties.BodyType with
+                | Static ->
+                    let staticDescription = StaticDescription (RigidPose (), shapeIndex)
+                    physicsEngine.PhysicsContext.Statics.Add &staticDescription |> Left
+                | Dynamic ->
+                    let bodyDescription = BodyDescription.CreateDynamic (RigidPose (), velocities, compoundInertia, shapeIndex, activity)
+                    physicsEngine.PhysicsContext.Bodies.Add &bodyDescription |> Right
+                | Kinematic ->
+                    let bodyDescription = BodyDescription.CreateKinematic (RigidPose (), velocities, shapeIndex, activity)
+                    physicsEngine.PhysicsContext.Bodies.Add &bodyDescription |> Right
 
-        if not bodyProperties.IgnoreEvents then
-            match handle with
-            | Left _ -> ()
-            | Right bodyHandle -> physicsEngine.ContactEvents.Register (bodyHandle, _)
+            if not bodyProperties.IgnoreEvents then
+                match handle with
+                | Left _ -> ()
+                | Right bodyHandle -> physicsEngine.ContactEvents.Register (bodyHandle, physicsEngine.ContactEventHandler)
+
+        finally compoundBuilder.[0].Dispose ()
 
     static member private createCompoundBox bodyBox bodyProperties physicsEngine =
         BepuPhysicsEngine.createCompoundSingleton (BepuPhysicsEngine.attachBodyBox bodyBox) bodyProperties physicsEngine

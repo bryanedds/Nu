@@ -48,9 +48,17 @@ type BodySourceInternal =
 
 /// Store origination information about a simulant physics shape body.
 type BodyShapeSourceInternal =
-    { Simulant : Simulant
-      BodyId : uint64
-      ShapeId : uint64 }
+    struct
+        val SimulantObj : obj
+        val BodyId : uint64
+        val ShapeId : uint64
+        end
+
+/// Stores a BodyShapeSourceInternal in a way required by value-based physics engines.
+type BodyShapeSourceInternalJib =
+    struct
+        val BodyShapeSourceInternalObj : obj
+        end
 
 /// Describes body shape-specific properties.
 type BodyShapeProperties =
@@ -281,107 +289,107 @@ module JointProperties =
         { JointId = Gen.id64
           JointDevice = JointEmpty }
 
-/// A message to the physics system to create a body.
+/// A message to a physics engine to create a body.
 type CreateBodyMessage =
     { SourceSimulant : Simulant
       SourceId : uint64
       BodyProperties : BodyProperties }
 
-/// A message to the physics system to create multiple bodies.
+/// A message to a physics engine to create multiple bodies.
 type CreateBodiesMessage =
     { SourceSimulant : Simulant
       SourceId : uint64
       BodiesProperties : BodyProperties list }
 
-/// A message to the physics system to destroy a body.
+/// A message to a physics engine to destroy a body.
 type DestroyBodyMessage =
     { SourceSimulant : Simulant
       PhysicsId : PhysicsId }
 
-/// A message to the physics system to destroy multiple bodies.
+/// A message to a physics engine to destroy multiple bodies.
 type DestroyBodiesMessage =
     { SourceSimulant : Simulant
       PhysicsIds : PhysicsId list }
 
-/// A message to the physics system to create a joint.
+/// A message to a physics engine to create a joint.
 type CreateJointMessage =
     { SourceSimulant : Simulant
       SourceId : uint64
       JointProperties : JointProperties }
 
-/// A message to the physics system to create multiple joints.
+/// A message to a physics engine to create multiple joints.
 type CreateJointsMessage =
     { SourceSimulant : Simulant
       SourceId : uint64
       JointsProperties : JointProperties list }
 
-/// A message to the physics system to destroy a joint.
+/// A message to a physics engine to destroy a joint.
 type DestroyJointMessage =
     { SourceSimulant : Simulant
       PhysicsId : PhysicsId }
 
-/// A message to the physics system to destroy multiple joints.
+/// A message to a physics engine to destroy multiple joints.
 type DestroyJointsMessage =
     { SourceSimulant : Simulant
       PhysicsIds : PhysicsId list }
 
-/// A message to the physics system to destroy a body.
+/// A message to a physics engine to destroy a body.
 type SetBodyEnabledMessage =
     { PhysicsId : PhysicsId
       Enabled : bool }
 
-/// A message to the physics system to destroy a body.
+/// A message to a physics engine to destroy a body.
 type SetBodyPositionMessage =
     { PhysicsId : PhysicsId
       Position : Vector3 }
 
-/// A message to the physics system to set the rotation of a body.
+/// A message to a physics engine to set the rotation of a body.
 type SetBodyRotationMessage =
     { PhysicsId : PhysicsId
       Rotation : Quaternion }
 
-/// A message to the physics system to set the linear velocity of a body.
+/// A message to a physics engine to set the linear velocity of a body.
 type SetBodyLinearVelocityMessage =
     { PhysicsId : PhysicsId
       LinearVelocity : Vector3 }
 
-/// A message to the physics system to apply a linear impulse to a body.
+/// A message to a physics engine to apply a linear impulse to a body.
 type ApplyBodyLinearImpulseMessage =
     { PhysicsId : PhysicsId
       LinearImpulse : Vector3 }
 
-/// A message to the physics system to set the angular velocity of a body.
+/// A message to a physics engine to set the angular velocity of a body.
 type SetBodyAngularVelocityMessage =
     { PhysicsId : PhysicsId
       AngularVelocity : Vector3 }
 
-/// A message to the physics system to apply an angular impulse to a body.
+/// A message to a physics engine to apply an angular impulse to a body.
 type ApplyBodyAngularImpulseMessage =
     { PhysicsId : PhysicsId
       AngularImpulse : Vector3 }
 
-/// A message to the physics system to apply a force to a body.
+/// A message to a physics engine to apply a force to a body.
 type ApplyBodyForceMessage =
     { PhysicsId : PhysicsId
       Force : Vector3 }
 
-/// A message to the physics system to apply torque to a body.
+/// A message to a physics engine to apply torque to a body.
 type ApplyBodyTorqueMessage =
     { PhysicsId : PhysicsId
       Torque : Vector3 }
 
-/// A message from the physics system describing a body collision that took place.
+/// A message from a physics engine describing a body collision that took place.
 type BodyCollisionMessage =
     { BodyShapeSource : BodyShapeSourceInternal
       BodyShapeSource2 : BodyShapeSourceInternal
       Normal : Vector3 }
 
-/// A message from the physics system describing a body separation that took place.
+/// A message from a physics engine describing a body separation that took place.
 type BodySeparationMessage =
     { BodyShapeSource : BodyShapeSourceInternal
       BodyShapeSource2 : BodyShapeSourceInternal }
 
-/// A message from the physics system describing the updated transform of a body.
+/// A message from a physics engine describing the updated transform of a body.
 type BodyTransformMessage =
     { BodySource : BodySourceInternal
       Center : Vector3
@@ -389,13 +397,13 @@ type BodyTransformMessage =
       LinearVelocity : Vector3
       AngularVelocity : Vector3 }
 
-/// A message from the physics system.
+/// A message from a physics engine.
 type IntegrationMessage =
     | BodyCollisionMessage of BodyCollisionMessage  
     | BodySeparationMessage of BodySeparationMessage
     | BodyTransformMessage of BodyTransformMessage
 
-/// A message to the physics system.
+/// A message to a physics engine.
 type PhysicsMessage =
     | CreateBodyMessage of CreateBodyMessage
     | CreateBodiesMessage of CreateBodiesMessage
@@ -439,8 +447,10 @@ type PhysicsEngine =
     abstract ClearMessages : unit -> PhysicsEngine
     /// Enqueue a message from an external source.
     abstract EnqueueMessage : PhysicsMessage -> PhysicsEngine
-    /// Integrate the physics system one step.
+    /// Integrate the physics engine one step.
     abstract Integrate : GameTime -> PhysicsMessage UList -> IntegrationMessage SegmentedArray
+    /// Handle physics clean up by freeing all involved resources.
+    abstract CleanUp : unit -> unit
 
 /// The mock implementation of PhysicsEngine.
 type [<ReferenceEquality>] MockPhysicsEngine =
