@@ -48,11 +48,9 @@ type BodySourceInternal =
 
 /// Store origination information about a simulant physics shape body.
 type BodyShapeSourceInternal =
-    struct
-        val SimulantObj : obj
-        val BodyId : uint64
-        val ShapeId : uint64
-        end
+    { Simulant : Simulant
+      BodyId : uint64
+      ShapeId : uint64 }
 
 /// Stores a BodyShapeSourceInternal in a way required by value-based physics engines.
 type BodyShapeSourceInternalJib =
