@@ -98,7 +98,7 @@ module TmxMap =
         | BodyEmpty as be -> be
         | BodyBox box -> BodyBox { box with Center = box.Center * tileSize.V3 + tileOffset.V3; Size = box.Size * tileSize.V3 }
         | BodySphere circle -> BodySphere { circle with Center = circle.Center * tileSize.V3 + tileOffset.V3; Radius = circle.Radius * tileSize.Y }
-        | BodyCapsule capsule -> BodyCapsule { capsule with Center = capsule.Center * tileSize.V3 + tileOffset.V3; Height = tileSize.Y; Radius = capsule.Radius * tileSize.Y }
+        | BodyCapsule capsule -> BodyCapsule { capsule with Center = capsule.Center * tileSize.V3 + tileOffset.V3; Length = tileSize.Y; Radius = capsule.Radius * tileSize.Y }
         | BodyBoxRounded boxRounded -> BodyBoxRounded { boxRounded with Center = boxRounded.Center * tileSize.V3 + tileOffset.V3; Size = boxRounded.Size * tileSize.V3; Radius = boxRounded.Radius }
         | BodyPolygon polygon -> BodyPolygon { polygon with Center = polygon.Center * tileSize.V3 + tileOffset.V3; Vertices = Array.map (fun point -> point * tileSize.V3) polygon.Vertices }
         | BodyShapes shapes -> BodyShapes (List.map (fun shape -> importShape shape tileSize tileOffset) shapes)
