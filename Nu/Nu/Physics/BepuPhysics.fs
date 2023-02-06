@@ -136,7 +136,7 @@ type [<ReferenceEquality>] BepuPhysicsEngine =
         // awake-body list for better performance. It's quite suboptimal to have to iterate through all bodies!
         // Note also that I tried building Farseer with #define USE_AWAKE_BODY_SET so we can query from that
         // AwakeBodyList, but there are compilation errors that, when I tried to fix, broke the whole system.
-        for body in physicsEngine.PhysicsContext. do
+        for body in physicsEngine.PhysicsContext.Bodies do
             if body.Awake && body.BodyType <> Dynamics.BodyType.Static then
                 let bodyTransformMessage =
                     BodyTransformMessage
