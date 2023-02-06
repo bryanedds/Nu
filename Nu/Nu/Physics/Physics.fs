@@ -469,6 +469,7 @@ type [<ReferenceEquality>] MockPhysicsEngine =
         member physicsEngine.ClearMessages () = physicsEngine :> PhysicsEngine
         member physicsEngine.EnqueueMessage _ = physicsEngine :> PhysicsEngine
         member physicsEngine.Integrate _ _ = SegmentedArray.empty
+        member physicsEngine.CleanUp () = ()
 
 [<RequireQualifiedAccess>]
 module Physics =

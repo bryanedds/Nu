@@ -244,11 +244,11 @@ type [<ReferenceEquality>] AetherPhysicsEngine =
         AetherPhysicsEngine.attachBodyShape sourceSimulant bodyProperties.BodyShape bodyProperties body |> ignore
 
         // listen for collisions
-        body.add_OnCollision (fun fn fn2 collision -> AetherPhysicsEngine.handleCollision physicsEngine fn fn2 collision)
+        body.add_OnCollision (fun bodyShape bodyShape2 collision -> AetherPhysicsEngine.handleCollision physicsEngine bodyShape bodyShape2 collision)
 
         // listen for separations
         // TODO: P1: use the contact variable as well?
-        body.add_OnSeparation (fun fn fn2 _ -> AetherPhysicsEngine.handleSeparation physicsEngine fn fn2)
+        body.add_OnSeparation (fun bodyShape bodyShape2 _ -> AetherPhysicsEngine.handleSeparation physicsEngine bodyShape bodyShape2)
 
         // attempt to add the body
         if not (physicsEngine.Bodies.TryAdd ({ SourceId = createBodyMessage.SourceId; CorrelationId = bodyProperties.BodyId }, (bodyProperties.GravityScale, body))) then
@@ -505,3 +505,6 @@ type [<ReferenceEquality>] AetherPhysicsEngine =
             let integrationMessages = SegmentedArray.ofSeq physicsEngine.IntegrationMessages
             physicsEngine.IntegrationMessages.Clear ()
             integrationMessages
+
+        member physicsEngine.CleanUp () =
+            ()
