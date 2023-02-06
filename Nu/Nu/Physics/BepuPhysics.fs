@@ -78,7 +78,7 @@ type [<ReferenceEquality>] BepuPhysicsEngine =
         let pose = RigidPose (bodyProperties.Center, bodyProperties.Rotation)
         compoundBuilder.[0].Add (&box, &pose, mass) // NOTE: passing mass as weight.
 
-    static member private createCompoundSingleton attachBody (bodyProperties : BodyProperties) physicsEngine =
+    static member private createCompoundSingleton attachBody bodyShapeSource (bodyProperties : BodyProperties) physicsEngine =
 
         let compoundBuilder = Array.init 1 (fun _ -> new CompoundBuilder (physicsEngine.PhysicsContext.BufferPool, physicsEngine.PhysicsContext.Shapes, 1))
         try attachBody bodyProperties compoundBuilder physicsEngine
@@ -105,8 +105,11 @@ type [<ReferenceEquality>] BepuPhysicsEngine =
 
             if not bodyProperties.IgnoreEvents then
                 match handle with
-                | Left _ -> ()
-                | Right bodyHandle -> physicsEngine.ContactEvents.Register (bodyHandle, physicsEngine.ContactEventHandler)
+                | Left staticHandle ->
+                    physicsEngine.ShapeSources.[0].[staticHandle] <- BodyShapeSourceInternalJib bodyShapeSource
+                | Right bodyHandle ->
+                    physicsEngine.ShapeSources.[0].[bodyHandle] <- BodyShapeSourceInternalJib bodyShapeSource
+                    physicsEngine.ContactEvents.Register (bodyHandle, physicsEngine.ContactEventHandler)
 
         finally compoundBuilder.[0].Dispose ()
 

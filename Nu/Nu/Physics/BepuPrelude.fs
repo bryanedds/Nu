@@ -259,8 +259,8 @@ type [<AllowNullLiteral>] ContactEvents
     /// </summary>
     /// <param name="staticHandle">Static to monitor for events.</param>
     /// <param name="handler">Handlers to use for the static.</param>
-    member this.Register(staticHandle : StaticHandle, handler : IContactEventHandler) =
-        this.Register(CollidableReference staticHandle, handler)
+    member this.Register (staticHandle : StaticHandle, handler : IContactEventHandler) =
+        this.Register (CollidableReference staticHandle, handler)
 
     /// <summary>
     /// Stops listening for events related to the given collidable.

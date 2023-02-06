@@ -808,15 +808,15 @@ module RigidBodyFacetModule =
         member this.GetBodyShape world : BodyShape = this.Get (nameof this.BodyShape) world
         member this.SetBodyShape (value : BodyShape) world = this.Set (nameof this.BodyShape) value world
         member this.BodyShape = lens (nameof this.BodyShape) this this.GetBodyShape this.SetBodyShape
-        member this.GetIgnoreCCD world : bool = this.Get (nameof this.IgnoreCCD) world
-        member this.SetIgnoreCCD (value : bool) world = this.Set (nameof this.IgnoreCCD) value world
-        member this.IgnoreCCD = lens (nameof this.IgnoreCCD) this this.GetIgnoreCCD this.SetIgnoreCCD
         member this.GetBullet world : bool = this.Get (nameof this.Bullet) world
         member this.SetBullet (value : bool) world = this.Set (nameof this.Bullet) value world
         member this.Bullet = lens (nameof this.Bullet) this this.GetBullet this.SetBullet
         member this.GetSensor world : bool = this.Get (nameof this.Sensor) world
         member this.SetSensor (value : bool) world = this.Set (nameof this.Sensor) value world
         member this.Sensor = lens (nameof this.Sensor) this this.GetSensor this.SetSensor
+        member this.GetIgnoreCCD world : bool = this.Get (nameof this.IgnoreCCD) world
+        member this.SetIgnoreCCD (value : bool) world = this.Set (nameof this.IgnoreCCD) value world
+        member this.IgnoreCCD = lens (nameof this.IgnoreCCD) this this.GetIgnoreCCD this.SetIgnoreCCD
         member this.GetPhysicsId world : PhysicsId = this.Get (nameof this.PhysicsId) world
         member this.PhysicsId = lensReadOnly (nameof this.PhysicsId) this this.GetPhysicsId
         member this.BodyCollisionEvent = Events.BodyCollision --> this
@@ -847,9 +847,9 @@ module RigidBodyFacetModule =
              define Entity.CollisionCategories "1"
              define Entity.CollisionMask "@"
              define Entity.BodyShape (BodyBox { Center = v3Zero; Size = v3 1.0f 1.0f 0.0f; PropertiesOpt = None })
-             define Entity.IgnoreCCD false
              define Entity.Bullet false
              define Entity.Sensor false
+             define Entity.IgnoreCCD false
              computed Entity.PhysicsId (fun (entity : Entity) world -> { SourceId = entity.GetId world; CorrelationId = 0UL }) None]
 
         override this.Register (entity, world) =
@@ -902,9 +902,9 @@ module RigidBodyFacetModule =
                   GravityScale = entity.GetGravityScale world
                   CollisionCategories = Physics.categorizeCollisionMask (entity.GetCollisionCategories world)
                   CollisionMask = Physics.categorizeCollisionMask (entity.GetCollisionMask world)
-                  IgnoreCCD = entity.GetIgnoreCCD world
                   Bullet = entity.GetBullet world
-                  Sensor = entity.GetSensor world }
+                  Sensor = entity.GetSensor world
+                  IgnoreCCD = entity.GetIgnoreCCD world }
             World.createBody entity (entity.GetId world) bodyProperties world
 
         override this.UnregisterPhysics (entity, world) =

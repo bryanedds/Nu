@@ -59,6 +59,8 @@ type BodyShapeSourceInternalJib =
     struct
         val BodyShapeSourceInternalObj : obj
         end
+    new (obj) =
+        { BodyShapeSourceInternalObj = obj }
 
 /// Describes body shape-specific properties.
 type BodyShapeProperties =
@@ -162,9 +164,9 @@ type BodyProperties =
       GravityScale : single
       CollisionCategories : int
       CollisionMask : int
-      IgnoreCCD : bool
       Bullet : bool
       Sensor : bool
+      IgnoreCCD : bool
       IgnoreEvents : bool }
 
 [<RequireQualifiedAccess>]
@@ -190,9 +192,10 @@ module BodyProperties =
           GravityScale = 1.0f
           CollisionCategories = 1
           CollisionMask = -1
-          IgnoreCCD = false
           Bullet = false
-          Sensor = false }
+          Sensor = false
+          IgnoreCCD = false
+          IgnoreEvents = false }
 
 type JointAngle =
     { TargetId : PhysicsId
