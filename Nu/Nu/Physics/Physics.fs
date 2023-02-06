@@ -99,7 +99,7 @@ type BodySphere =
 /// The shape of a physics body capsule.
 type BodyCapsule =
     { Center : Vector3
-      Height : single
+      Length : single
       Radius : single
       PropertiesOpt : BodyShapeProperties option }
 
@@ -492,7 +492,7 @@ module Physics =
         | BodyEmpty -> BodyEmpty
         | BodyBox bodyBox -> BodyBox { Center = Vector3.Multiply (bodyBox.Center, size); Size = Vector3.Multiply (size, bodyBox.Size); PropertiesOpt = bodyBox.PropertiesOpt }
         | BodySphere bodySphere -> BodySphere { Center = size.X * bodySphere.Center; Radius = size.X * bodySphere.Radius; PropertiesOpt = bodySphere.PropertiesOpt }
-        | BodyCapsule bodyCapsule -> BodyCapsule { Center = size.Y * bodyCapsule.Center; Height = size.Y * bodyCapsule.Height; Radius = size.Y * bodyCapsule.Radius; PropertiesOpt = bodyCapsule.PropertiesOpt }
+        | BodyCapsule bodyCapsule -> BodyCapsule { Center = size.Y * bodyCapsule.Center; Length = size.Y * bodyCapsule.Length; Radius = size.Y * bodyCapsule.Radius; PropertiesOpt = bodyCapsule.PropertiesOpt }
         | BodyBoxRounded bodyBoxRounded -> BodyBoxRounded { Center = size.Y * bodyBoxRounded.Center; Size = Vector3.Multiply (size, bodyBoxRounded.Size); Radius = size.X * bodyBoxRounded.Radius; PropertiesOpt = bodyBoxRounded.PropertiesOpt }
         | BodyPolygon bodyPolygon ->
             let vertices = Array.map (fun vertex -> vertex * size) bodyPolygon.Vertices

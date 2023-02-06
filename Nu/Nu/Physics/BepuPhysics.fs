@@ -142,10 +142,10 @@ type [<ReferenceEquality>] BepuPhysicsEngine =
         physicsEngine.ThreadDispatcher.Dispose ()
         physicsEngine.PhysicsContext.Dispose ()
 
-    static member private createCompoundSingleton attachBody bodyShapeSource (bodyProperties : BodyProperties) physicsEngine =
+    static member private createBody4 attachBodyShape bodyPropertiesOpt (bodyProperties : BodyProperties) (bodySource : BodySourceInternal) physicsEngine =
 
         let compoundBuilder = Array.init 1 (fun _ -> new CompoundBuilder (physicsEngine.PhysicsContext.BufferPool, physicsEngine.PhysicsContext.Shapes, 1))
-        try attachBody bodyProperties compoundBuilder physicsEngine
+        try attachBodyShape bodyProperties compoundBuilder physicsEngine
             let mutable compoundChildren = Buffer<CompoundChild> ()
             let mutable compoundInertia = BodyInertia ()
             let mutable compoundCenter = Vector3 ()
@@ -167,6 +167,10 @@ type [<ReferenceEquality>] BepuPhysicsEngine =
                     let bodyDescription = BodyDescription.CreateKinematic (RigidPose (), velocities, shapeIndex, activity)
                     physicsEngine.PhysicsContext.Bodies.Add &bodyDescription |> Right
 
+            let bodyShapeSource =
+                { Simulant = bodySource.Simulant
+                  BodyId = bodySource.BodyId
+                  ShapeId = match bodyPropertiesOpt with Some p -> p.BodyShapeId | None -> 0UL }
             match handle with
             | Left staticHandle ->
                 physicsEngine.ShapeSources.[0].[staticHandle] <- BodyShapeSourceInternalJib bodyShapeSource
@@ -191,11 +195,107 @@ type [<ReferenceEquality>] BepuPhysicsEngine =
         let pose = RigidPose (bodyProperties.Center, bodyProperties.Rotation)
         compoundBuilder.[0].Add (&box, &pose, mass) // NOTE: passing mass as weight.
 
-    static member private createCompoundSphere bodySphere bodyProperties physicsEngine =
-        BepuPhysicsEngine.createCompoundSingleton (BepuPhysicsEngine.attachBodySphere bodySphere) bodyProperties physicsEngine
+    static member private attachBodyCapsule (bodyCapsule : BodyCapsule) (bodyProperties : BodyProperties) (compoundBuilder : CompoundBuilder array) physicsEngine =
+        let capsule = Capsule (bodyCapsule.Radius, bodyCapsule.Length)
+        let volume = MathF.PI * bodyCapsule.Radius |> flip pown 2
+        let mass = volume * bodyProperties.Density
+        let pose = RigidPose (bodyProperties.Center, bodyProperties.Rotation)
+        compoundBuilder.[0].Add (&capsule, &pose, mass) // NOTE: passing mass as weight.
 
-    static member private createCompoundBox bodyBox bodyProperties physicsEngine =
-        BepuPhysicsEngine.createCompoundSingleton (BepuPhysicsEngine.attachBodyBox bodyBox) bodyProperties physicsEngine
+    static member private attachBodyTriangle a b c (bodyProperties : BodyProperties) (compoundBuilder : CompoundBuilder array) physicsEngine =
+        let capsule = Triangle (a, b, c)
+        let ab = (b - a).Magnitude // NOTE: using Heron's formula.
+        let bc = (c - b).Magnitude
+        let ca = (a - c).Magnitude
+        let s = (ab + bc + ca) * 0.5f
+        let volume = sqrt (s * (s - ab) * (s - bc) * (s - ca))
+        let mass = volume * bodyProperties.Density
+        let pose = RigidPose (bodyProperties.Center, bodyProperties.Rotation)
+        compoundBuilder.[0].Add (&capsule, &pose, mass) // NOTE: passing mass as weight.
+
+    static member private attachBodyPolygon bodyPolygon bodyProperties compoundBuilder physicsEngine =
+        if bodyPolygon.Vertices.Length >= 3 then
+            let triangles = Array.windowed 3 bodyPolygon.Vertices
+            for triangle in triangles do
+                let (a, b, c) = (triangle.[0], triangle.[1], triangle.[2])
+                BepuPhysicsEngine.attachBodyTriangle a b c bodyProperties compoundBuilder physicsEngine
+        else Log.debug "Degenerate polygon sent to BepuPhysicsEngine; 3 or more vertices required."
+
+    static member private attachBodyBoxRounded (bodyBoxRounded : BodyBoxRounded) (bodyProperties : BodyProperties) (compoundBuilder : CompoundBuilder array) physicsEngine =
+        Log.debug "Rounded box not yet implemented via BepuPhysicsEngine; creating a normal box instead."
+        let bodyBox = { Center = bodyBoxRounded.Center; Size = bodyBoxRounded.Size; PropertiesOpt = bodyBoxRounded.PropertiesOpt }
+        BepuPhysicsEngine.attachBodyBox bodyBox bodyProperties compoundBuilder physicsEngine
+
+    static member private attachBodyShapes bodyShapes bodyProperties compoundBuilder physicsEngine =
+        for bodyShape in bodyShapes do
+            BepuPhysicsEngine.attachBodyShape bodyShape bodyProperties compoundBuilder physicsEngine
+
+    static member private attachBodyShape bodyShape bodyProperties compoundBuilder physicsEngine =
+        match bodyShape with
+        | BodyEmpty -> ()
+        | BodyBox bodyBox -> BepuPhysicsEngine.attachBodyBox bodyBox bodyProperties compoundBuilder physicsEngine
+        | BodySphere bodySphere -> BepuPhysicsEngine.attachBodySphere bodySphere bodyProperties compoundBuilder physicsEngine
+        | BodyCapsule bodyCapsule -> BepuPhysicsEngine.attachBodyCapsule bodyCapsule bodyProperties compoundBuilder physicsEngine
+        | BodyBoxRounded bodyBoxRounded -> BepuPhysicsEngine.attachBodyBoxRounded bodyBoxRounded bodyProperties compoundBuilder physicsEngine
+        | BodyPolygon bodyPolygon -> BepuPhysicsEngine.attachBodyPolygon bodyPolygon bodyProperties compoundBuilder physicsEngine
+        | BodyShapes bodyShapes -> BepuPhysicsEngine.attachBodyShapes bodyShapes bodyProperties compoundBuilder physicsEngine
+
+    static member private createBody3 bodyShape bodyProperties bodyShapeSource physicsEngine =
+        BepuPhysicsEngine.createBody4 (BepuPhysicsEngine.attachBodyShape bodyShape) bodyProperties bodyShapeSource physicsEngine
+
+    static member private createBody (createBodyMessage : CreateBodyMessage) physicsEngine =
+
+        // get fields
+        let sourceSimulant = createBodyMessage.SourceSimulant
+        let bodyProperties = createBodyMessage.BodyProperties
+        let bodyRotation = bodyProperties.Rotation
+        let bodySource = { Simulant = sourceSimulant; BodyId = bodyProperties.BodyId }
+
+        // make the body
+        BepuPhysicsEngine.createBody3 bodyProperties.BodyShape bodyProperties bodySource physicsEngine
+
+        // configure body
+        AetherPhysicsEngine.configureBodyProperties bodyProperties body
+
+        // attach body shape
+        AetherPhysicsEngine.attachBodyShape sourceSimulant bodyProperties.BodyShape bodyProperties body |> ignore
+
+        // listen for collisions
+        body.add_OnCollision (fun bodyShape bodyShape2 collision -> AetherPhysicsEngine.handleCollision physicsEngine bodyShape bodyShape2 collision)
+
+        // listen for separations
+        // TODO: P1: use the contact variable as well?
+        body.add_OnSeparation (fun bodyShape bodyShape2 _ -> AetherPhysicsEngine.handleSeparation physicsEngine bodyShape bodyShape2)
+
+        // attempt to add the body
+        if not (physicsEngine.Bodies.TryAdd ({ SourceId = createBodyMessage.SourceId; CorrelationId = bodyProperties.BodyId }, (bodyProperties.GravityScale, body))) then
+            Log.debug ("Could not add body via '" + scstring bodyProperties + "'.")
+
+    static member private handlePhysicsMessage physicsEngine physicsMessage =
+        match physicsMessage with
+        | CreateBodyMessage createBodyMessage -> BepuPhysicsEngine.createBody createBodyMessage physicsEngine
+        | CreateBodiesMessage createBodiesMessage -> BepuPhysicsEngine.createBodies createBodiesMessage physicsEngine
+        | DestroyBodyMessage destroyBodyMessage -> BepuPhysicsEngine.destroyBody destroyBodyMessage physicsEngine
+        | DestroyBodiesMessage destroyBodiesMessage -> BepuPhysicsEngine.destroyBodies destroyBodiesMessage physicsEngine
+        | CreateJointMessage createJointMessage -> BepuPhysicsEngine.createJoint createJointMessage physicsEngine
+        | CreateJointsMessage createJointsMessage -> BepuPhysicsEngine.createJoints createJointsMessage physicsEngine
+        | DestroyJointMessage destroyJointMessage -> BepuPhysicsEngine.destroyJoint destroyJointMessage physicsEngine
+        | DestroyJointsMessage destroyJointsMessage -> BepuPhysicsEngine.destroyJoints destroyJointsMessage physicsEngine
+        | SetBodyEnabledMessage setBodyEnabledMessage -> BepuPhysicsEngine.setBodyEnabled setBodyEnabledMessage physicsEngine
+        | SetBodyPositionMessage setBodyPositionMessage -> BepuPhysicsEngine.setBodyPosition setBodyPositionMessage physicsEngine
+        | SetBodyRotationMessage setBodyRotationMessage -> BepuPhysicsEngine.setBodyRotation setBodyRotationMessage physicsEngine
+        | SetBodyAngularVelocityMessage setBodyAngularVelocityMessage -> BepuPhysicsEngine.setBodyAngularVelocity setBodyAngularVelocityMessage physicsEngine
+        | ApplyBodyAngularImpulseMessage applyBodyAngularImpulseMessage -> BepuPhysicsEngine.applyBodyAngularImpulse applyBodyAngularImpulseMessage physicsEngine
+        | SetBodyLinearVelocityMessage setBodyLinearVelocityMessage -> BepuPhysicsEngine.setBodyLinearVelocity setBodyLinearVelocityMessage physicsEngine
+        | ApplyBodyLinearImpulseMessage applyBodyLinearImpulseMessage -> BepuPhysicsEngine.applyBodyLinearImpulse applyBodyLinearImpulseMessage physicsEngine
+        | ApplyBodyForceMessage applyBodyForceMessage -> BepuPhysicsEngine.applyBodyForce applyBodyForceMessage physicsEngine
+        | ApplyBodyTorqueMessage applyBodyTorqueMessage -> BepuPhysicsEngine.applyBodyTorque applyBodyTorqueMessage physicsEngine
+        | SetGravityMessage gravity -> physicsEngine.PhysicsContext.Gravity <- BepuPhysicsEngine.toPhysicsV2 gravity
+        | RebuildPhysicsHackMessage ->
+            physicsEngine.RebuildingHack <- true
+            physicsEngine.PhysicsContext.Clear ()
+            physicsEngine.Bodies.Clear ()
+            physicsEngine.IntegrationMessages.Clear ()
 
     static member private integrate stepTime physicsEngine =
 
