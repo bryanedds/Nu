@@ -5,15 +5,74 @@ namespace Nu
 open System
 open System.Collections.Generic
 open System.Numerics
+open System.Runtime.CompilerServices
 open BepuPhysics
 open BepuPhysics.Collidables
+open BepuPhysics.CollisionDetection
+open BepuPhysics.Constraints
 open BepuPhysics.EventSystem
 open BepuUtilities
 open BepuUtilities.Memory
 open Prime
 open Nu
 
-type internal ContactEventHandler (integrationMessages : IntegrationMessage List, shapeSources : CollidableProperty<BodyShapeSourceInternalJib> array) =
+type private PoseIntegratorCallbacks =
+    struct
+        val Gravity : Vector3
+        val mutable GravityWideDelta : Vector3Wide
+        end
+
+    new (gravity) =
+        { Gravity = gravity
+          GravityWideDelta = Vector3Wide () }
+
+    interface IPoseIntegratorCallbacks with
+        member this.AngularIntegrationMode = AngularIntegrationMode.Nonconserving
+        member this.AllowSubstepsForUnconstrainedBodies = false
+        member this.IntegrateVelocityForKinematics = false
+        member this.Initialize (_ : Simulation) = ()
+        member this.PrepareForIntegration (clockDelta : single) = this.GravityWideDelta <- Vector3Wide.Broadcast (this.Gravity * clockDelta)
+        member this.IntegrateVelocity (_ : Vector<int>, _ : Vector3Wide, _ : QuaternionWide, _ : BodyInertiaWide, _ : Vector<int>, _ : int, _ : Vector<single>, velocity : BodyVelocityWide byref) = velocity.Linear <- velocity.Linear + this.GravityWideDelta
+
+type private NarrowPhaseCallbacks =
+    struct
+        val mutable ContactEvents : ContactEvents
+        end
+
+    member this.Dispose () =
+        this.ContactEvents.Dispose ()
+
+    interface INarrowPhaseCallbacks with
+
+        [<MethodImpl (MethodImplOptions.AggressiveInlining)>]
+        member this.AllowContactGeneration (_ : int, _ : CollidablePair, _ : int, _ : int) =
+            true
+
+        [<MethodImpl (MethodImplOptions.AggressiveInlining)>]
+        member this.ConfigureContactManifold (_ : int, _ : CollidablePair, _ : int, _ : int, _ : ConvexContactManifold byref) =
+            true
+
+        [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
+        member this.ConfigureContactManifold<'TManifold when 'TManifold : (new : unit -> 'TManifold) and 'TManifold :> IContactManifold<'TManifold>>
+            (workerIndex : int, pair : CollidablePair, manifold : 'TManifold byref, pairMaterial : PairMaterialProperties byref) =
+            pairMaterial.FrictionCoefficient <- 1f
+            pairMaterial.MaximumRecoveryVelocity <- 2f
+            pairMaterial.SpringSettings <- SpringSettings (30.0f, 1.0f)
+            this.ContactEvents.HandleManifold (workerIndex, pair, &manifold)
+            true
+
+        [<MethodImpl (MethodImplOptions.AggressiveInlining)>]
+        member this.AllowContactGeneration (_ : int, a : CollidableReference, b : CollidableReference, _ : single byref) =
+            a.Mobility = CollidableMobility.Dynamic ||
+            b.Mobility = CollidableMobility.Dynamic
+
+        member this.Initialize (simulation : Simulation) =
+            this.ContactEvents.Initialize simulation
+
+        member this.Dispose () =
+            this.Dispose ()
+
+type private ContactEventHandler (integrationMessages : IntegrationMessage List, shapeSources : CollidableProperty<BodyShapeSourceInternalJib> array) =
     interface IContactEventHandler with
 
         member this.OnContactAdded (eventSource, pair, contactManifold, contactOffset, contactNormal, depth, featureId, contactIndex, workerIndex) = ()
@@ -83,13 +142,6 @@ type [<ReferenceEquality>] BepuPhysicsEngine =
         physicsEngine.ThreadDispatcher.Dispose ()
         physicsEngine.PhysicsContext.Dispose ()
 
-    static member private attachBodyBox (bodyBox : BodyBox) (bodyProperties : BodyProperties) (compoundBuilder : CompoundBuilder array) physicsEngine =
-        let box = Box (bodyBox.Size.X, bodyBox.Size.Y, bodyBox.Size.Z)
-        let volume = bodyBox.Size.X * bodyBox.Size.Y * bodyBox.Size.Z
-        let mass = volume * bodyProperties.Density
-        let pose = RigidPose (bodyProperties.Center, bodyProperties.Rotation)
-        compoundBuilder.[0].Add (&box, &pose, mass) // NOTE: passing mass as weight.
-
     static member private createCompoundSingleton attachBody bodyShapeSource (bodyProperties : BodyProperties) physicsEngine =
 
         let compoundBuilder = Array.init 1 (fun _ -> new CompoundBuilder (physicsEngine.PhysicsContext.BufferPool, physicsEngine.PhysicsContext.Shapes, 1))
@@ -124,6 +176,23 @@ type [<ReferenceEquality>] BepuPhysicsEngine =
                     physicsEngine.ContactEvents.Register (bodyHandle, physicsEngine.ContactEventHandler)
 
         finally compoundBuilder.[0].Dispose ()
+
+    static member private attachBodySphere (bodySphere : BodySphere) (bodyProperties : BodyProperties) (compoundBuilder : CompoundBuilder array) physicsEngine =
+        let sphere = Collidables.Sphere bodySphere.Radius
+        let volume = 4.0f / 3.0f * MathF.PI * pown bodySphere.Radius 3
+        let mass = volume * bodyProperties.Density
+        let pose = RigidPose (bodyProperties.Center, bodyProperties.Rotation)
+        compoundBuilder.[0].Add (&sphere, &pose, mass) // NOTE: passing mass as weight.
+
+    static member private attachBodyBox (bodyBox : BodyBox) (bodyProperties : BodyProperties) (compoundBuilder : CompoundBuilder array) physicsEngine =
+        let box = Box (bodyBox.Size.X, bodyBox.Size.Y, bodyBox.Size.Z)
+        let volume = bodyBox.Size.X * bodyBox.Size.Y * bodyBox.Size.Z
+        let mass = volume * bodyProperties.Density
+        let pose = RigidPose (bodyProperties.Center, bodyProperties.Rotation)
+        compoundBuilder.[0].Add (&box, &pose, mass) // NOTE: passing mass as weight.
+
+    static member private createCompoundSphere bodySphere bodyProperties physicsEngine =
+        BepuPhysicsEngine.createCompoundSingleton (BepuPhysicsEngine.attachBodySphere bodySphere) bodyProperties physicsEngine
 
     static member private createCompoundBox bodyBox bodyProperties physicsEngine =
         BepuPhysicsEngine.createCompoundSingleton (BepuPhysicsEngine.attachBodyBox bodyBox) bodyProperties physicsEngine

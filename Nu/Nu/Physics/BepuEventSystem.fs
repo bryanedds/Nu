@@ -8,7 +8,6 @@ open tainicom.Aether.Physics2D.Dynamics
 open BepuPhysics
 open BepuPhysics.Collidables
 open BepuPhysics.CollisionDetection
-open BepuPhysics.Constraints
 open BepuUtilities
 open BepuUtilities.Collections
 open BepuUtilities.Memory
@@ -499,58 +498,3 @@ type [<AllowNullLiteral>] ContactEvents
         if notNull threadPools then threadPools.Dispose ()
         for i in 0 .. dec pendingWorkerAdds.Length do
             Debug.Assert (not pendingWorkerAdds[i].Span.Allocated, "The pending worker adds should have been disposed by the previous flush.")
-
-type [<Struct>] PoseIntegratorCallbacks =
-
-    val Gravity : Vector3
-    val mutable GravityWideDelta : Vector3Wide
-
-    new (gravity) =
-        { Gravity = gravity
-          GravityWideDelta = Vector3Wide () }
-
-    interface IPoseIntegratorCallbacks with
-        member this.AngularIntegrationMode = AngularIntegrationMode.Nonconserving
-        member this.AllowSubstepsForUnconstrainedBodies = false
-        member this.IntegrateVelocityForKinematics = false
-        member this.Initialize (_ : Simulation) = ()
-        member this.PrepareForIntegration (clockDelta : single) = this.GravityWideDelta <- Vector3Wide.Broadcast (this.Gravity * clockDelta)
-        member this.IntegrateVelocity (_ : Vector<int>, _ : Vector3Wide, _ : QuaternionWide, _ : BodyInertiaWide, _ : Vector<int>, _ : int, _ : Vector<single>, velocity : BodyVelocityWide byref) = velocity.Linear <- velocity.Linear + this.GravityWideDelta
-
-type NarrowPhaseCallbacks =
-    struct
-        val mutable ContactEvents : ContactEvents
-        end
-
-    member this.Dispose () =
-        this.ContactEvents.Dispose ()
-
-    interface INarrowPhaseCallbacks with
-
-        [<MethodImpl (MethodImplOptions.AggressiveInlining)>]
-        member this.AllowContactGeneration (_ : int, _ : CollidablePair, _ : int, _ : int) =
-            true
-
-        [<MethodImpl (MethodImplOptions.AggressiveInlining)>]
-        member this.ConfigureContactManifold (_ : int, _ : CollidablePair, _ : int, _ : int, _ : ConvexContactManifold byref) =
-            true
-
-        [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
-        member this.ConfigureContactManifold<'TManifold when 'TManifold : (new : unit -> 'TManifold) and 'TManifold :> IContactManifold<'TManifold>>
-            (workerIndex : int, pair : CollidablePair, manifold : 'TManifold byref, pairMaterial : PairMaterialProperties byref) =
-            pairMaterial.FrictionCoefficient <- 1f
-            pairMaterial.MaximumRecoveryVelocity <- 2f
-            pairMaterial.SpringSettings <- SpringSettings (30.0f, 1.0f)
-            this.ContactEvents.HandleManifold (workerIndex, pair, &manifold)
-            true
-
-        [<MethodImpl (MethodImplOptions.AggressiveInlining)>]
-        member this.AllowContactGeneration (_ : int, a : CollidableReference, b : CollidableReference, _ : single byref) =
-            a.Mobility = CollidableMobility.Dynamic ||
-            b.Mobility = CollidableMobility.Dynamic
-
-        member this.Initialize (simulation : Simulation) =
-            this.ContactEvents.Initialize simulation
-
-        member this.Dispose () =
-            this.Dispose ()
