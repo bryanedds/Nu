@@ -291,9 +291,9 @@ module TmxMap =
               GravityScale = 0.0f
               CollisionCategories = Physics.categorizeCollisionMask collisionCategories
               CollisionMask = Physics.categorizeCollisionMask collisionMask
-              IgnoreCCD = false
               Bullet = false
-              Sensor = false }
+              Sensor = false
+              IgnoreCCD = false }
         bodyProperties
 
     let getLayeredMessages2d time absolute (viewBounds : Box2) (tileMapPosition : Vector2) tileMapElevation tileMapColor tileMapGlow tileLayerClearance tileIndexOffset tileIndexOffsetRange tileMapPackage (tileMap : TmxMap) =
