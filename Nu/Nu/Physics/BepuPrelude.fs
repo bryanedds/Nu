@@ -64,7 +64,7 @@ module EmptyManifoldModule =
 
 //For the purpose of this code, we'll use some regular ol' interfaces rather than using the struct-implementing-interface for specialization.
 //This array will be GC tracked as a result, but that should be mostly fine. If you've got hundreds of thousands of event handlers, you may want to consider alternatives.
-type [<Struct>] Listener =
+type [<Struct>] ContactEventListener =
     { Source : CollidableReference
       Handler : IContactEventHandler
       mutable PreviousCollisions : PreviousCollision QuickList }
@@ -173,7 +173,7 @@ and IContactEventHandler =
 /// Watches a set of bodies and statics for contact changes and reports events.
 /// </summary>
 type [<AllowNullLiteral>] ContactEvents
-    (threadDispatcher : IThreadDispatcher, threadPools : WorkerBufferPools, pool : BufferPool) as this =
+    (threadDispatcher : IThreadDispatcher, threadPools : WorkerBufferPools, pool : BufferPool, shapeSources : CollidableProperty<BodyShapeSourceInternalJib> array) as this =
 
     //We use a handle->index mapping in a CollidableProperty to point at our contiguously stored listeners (in the later listeners array).
     //Note that there's also IndexSets for the statics and bodies; those will be checked first before accessing the listenerIndices.
@@ -188,7 +188,7 @@ type [<AllowNullLiteral>] ContactEvents
     let mutable staticListenerFlags = IndexSet ()
     let mutable bodyListenerFlags = IndexSet ()
     let mutable listenerCount = 0
-    let mutable listeners = Array.empty<Listener>
+    let mutable listeners = Array.empty<ContactEventListener>
     let mutable pendingWorkerAdds = Array.empty<PendingWorkerAdd QuickList>
     let beforeCollisionDetectionHandler = TimestepperStageHandler (fun delta td -> this.SetFreshnessForCurrentActivityStatus (delta, td))
 
@@ -197,8 +197,14 @@ type [<AllowNullLiteral>] ContactEvents
     /// </summary>
     /// <param name="threadDispatcher">Thread dispatcher to pull per-thread buffer pools from, if any.</param>
     /// <param name="pool">Buffer pool used to manage resources internally. If null, the simulation's pool will be used.</param>
-    new (threadDispatcher : IThreadDispatcher, pool : BufferPool) =
-        ContactEvents (threadDispatcher, new WorkerBufferPools (pool, threadDispatcher.ThreadCount), pool)
+    new (threadDispatcher : IThreadDispatcher, pool : BufferPool, shapeSources) =
+        ContactEvents (threadDispatcher, new WorkerBufferPools (pool, threadDispatcher.ThreadCount), pool, shapeSources)
+
+    member this.Listeners =
+        listeners
+
+    member this.ListenerIndices =
+        &listenerIndices
 
     member this.GetPoolForWorker (workerIndex : int) =
         if threadDispatcher = null
@@ -338,14 +344,14 @@ type [<AllowNullLiteral>] ContactEvents
         collision.WasTouching <- isTouching
 
     member private this.HandleManifoldForCollidable<'TManifold when 'TManifold : (new : unit -> 'TManifold) and 'TManifold :> IContactManifold<'TManifold>>
-        (workerIndex : int, sourceRef : CollidableReference, otherRef : CollidableReference, pair : CollidablePair, manifold : 'TManifold byref) =
+        (workerIndex : int, source : CollidableReference, other : CollidableReference, pair : CollidablePair, manifold : 'TManifold byref) =
 
         //The "source" refers to the object that an event handler was (potentially) attached to, so we look for listeners registered for it.
         //(This function is called for both orders of the pair, so we'll catch listeners for either.)
-        if this.IsListener sourceRef then
+        if this.IsListener source then
 
             //This collidable is registered. Is the opposing collidable present?
-            let listenerIndex = listenerIndices.[sourceRef]
+            let listenerIndex = listenerIndices.[source]
             let listener = &listeners.[listenerIndex]
             let mutable previousCollisionIndex = -1
             let mutable isTouching = false
@@ -354,7 +360,7 @@ type [<AllowNullLiteral>] ContactEvents
             while i < listener.PreviousCollisions.Count && not collisionFound do
 
                 let mutable collision = &listener.PreviousCollisions.[i]
-                if collision.Collidable.Packed = otherRef.Packed then
+                if collision.Collidable.Packed = other.Packed then
 
                     //Since the 'Packed' field contains both the handle type (dynamic, kinematic, or static) and the handle index packed into a single bitfield, an equal value guarantees we are dealing with the same collidable.
                     collisionFound <- true
@@ -383,7 +389,7 @@ type [<AllowNullLiteral>] ContactEvents
                             let mutable depth = 0.0f
                             let mutable unused = 0
                             manifold.GetContact (contactIndex, &offset, &normal, &depth, &unused)
-                            listener.Handler.OnContactAdded (sourceRef, pair, &manifold, offset, normal, depth, featureId, contactIndex, workerIndex)
+                            listener.Handler.OnContactAdded (source, pair, &manifold, offset, normal, depth, featureId, contactIndex, workerIndex)
 
                         if manifold.GetDepth (&manifold, contactIndex) >= 0.0f then
                             isTouching <- true
@@ -391,14 +397,14 @@ type [<AllowNullLiteral>] ContactEvents
                     if previousContactsStillExist <> (1 <<< collision.ContactCount) - 1 then //At least one contact that used to exist no longer does.
                         for previousContactIndex in 0 .. dec collision.ContactCount do
                             if (previousContactsStillExist &&& (1 <<< previousContactIndex)) = 0 then
-                                listener.Handler.OnContactRemoved (sourceRef, pair, &manifold, Unsafe.Add (&collision.FeatureId0, previousContactIndex), workerIndex)
+                                listener.Handler.OnContactRemoved (source, pair, &manifold, Unsafe.Add (&collision.FeatureId0, previousContactIndex), workerIndex)
 
                     if not collision.WasTouching && isTouching then
-                        listener.Handler.OnTouchingStarted (sourceRef, pair, &manifold, workerIndex)
+                        listener.Handler.OnTouchingStarted (source, pair, &manifold, workerIndex)
                     elif collision.WasTouching && not isTouching then
-                        listener.Handler.OnTouchingStopped (sourceRef, pair, &manifold, workerIndex)
+                        listener.Handler.OnTouchingStopped (source, pair, &manifold, workerIndex)
                     if isTouching then
-                        listener.Handler.OnTouchingUpdated (sourceRef, pair, &manifold, workerIndex)
+                        listener.Handler.OnTouchingUpdated (source, pair, &manifold, workerIndex)
 
                     this.UpdatePreviousCollision (&collision, &manifold, isTouching)
 
@@ -410,9 +416,9 @@ type [<AllowNullLiteral>] ContactEvents
                 addsforWorker.EnsureCapacity (max (inc addsforWorker.Count) 64, this.GetPoolForWorker workerIndex) //EnsureCapacity will create the list if it doesn't already exist.
                 let pendingAdd = &addsforWorker.AllocateUnsafely ()
                 pendingAdd.ListenerIndex <- listenerIndex
-                pendingAdd.Collision.Collidable <- otherRef
+                pendingAdd.Collision.Collidable <- other
 
-                listener.Handler.OnPairCreated(sourceRef, pair, &manifold, workerIndex)
+                listener.Handler.OnPairCreated(source, pair, &manifold, workerIndex)
 
                 //Dispatch events for all contacts in this new manifold.
                 for i in 0 .. dec manifold.Count do
@@ -421,16 +427,16 @@ type [<AllowNullLiteral>] ContactEvents
                     let mutable depth = 0.0f
                     let mutable featureId = 0
                     manifold.GetContact (i, &offset, &normal, &depth, &featureId)
-                    listener.Handler.OnContactAdded(sourceRef, pair, &manifold, offset, normal, depth, featureId, i, workerIndex)
+                    listener.Handler.OnContactAdded(source, pair, &manifold, offset, normal, depth, featureId, i, workerIndex)
                     if depth >= 0.0f then isTouching <- true
 
                 if isTouching then
-                    listener.Handler.OnTouchingStarted (sourceRef, pair, &manifold, workerIndex)
-                    listener.Handler.OnTouchingUpdated (sourceRef, pair, &manifold, workerIndex)
+                    listener.Handler.OnTouchingStarted (source, pair, &manifold, workerIndex)
+                    listener.Handler.OnTouchingUpdated (source, pair, &manifold, workerIndex)
 
                 this.UpdatePreviousCollision (&pendingAdd.Collision, &manifold, isTouching)
 
-            listener.Handler.OnPairUpdated (sourceRef, pair, &manifold, workerIndex)
+            listener.Handler.OnPairUpdated (source, pair, &manifold, workerIndex)
 
     [<MethodImpl (MethodImplOptions.AggressiveInlining)>]
     member this.HandleManifold<'TManifold when 'TManifold : (new : unit -> 'TManifold) and 'TManifold :> IContactManifold<'TManifold>>
@@ -519,6 +525,9 @@ type NarrowPhaseCallbacks =
         val mutable ContactEvents : ContactEvents
         end
 
+    member this.Dispose () =
+        this.ContactEvents.Dispose ()
+
     interface INarrowPhaseCallbacks with
 
         [<MethodImpl (MethodImplOptions.AggressiveInlining)>]
@@ -547,4 +556,4 @@ type NarrowPhaseCallbacks =
             this.ContactEvents.Initialize simulation
 
         member this.Dispose () =
-            ()
+            this.Dispose ()
