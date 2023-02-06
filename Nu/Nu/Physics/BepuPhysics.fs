@@ -39,11 +39,10 @@ type internal ContactEventHandler (integrationMessages : IntegrationMessage List
                 if pair.A = eventSource
                 then (shapeSources.[0].[pair.A], shapeSources.[0].[pair.B])
                 else (shapeSources.[0].[pair.B], shapeSources.[0].[pair.A])
-            let bodyCollisionMessage =
+            let bodySeparationMessage =
                 { BodyShapeSource = shapeSource.BodyShapeSourceInternalObj :?> BodyShapeSourceInternal
-                  BodyShapeSource2 = shapeSource2.BodyShapeSourceInternalObj :?> BodyShapeSourceInternal
-                  Normal = contactManifold.GetNormal (&contactManifold, 0) }
-            integrationMessages.Add (IntegrationMessage.BodyCollisionMessage bodyCollisionMessage)
+                  BodyShapeSource2 = shapeSource2.BodyShapeSourceInternalObj :?> BodyShapeSourceInternal }
+            integrationMessages.Add (IntegrationMessage.BodySeparationMessage bodySeparationMessage)
 
 /// The BepuPhysics 3d implementation of PhysicsEngine.
 type [<ReferenceEquality>] BepuPhysicsEngine =
@@ -104,7 +103,7 @@ type [<ReferenceEquality>] BepuPhysicsEngine =
             let compound = Compound compoundChildren
             let shapeIndex = physicsEngine.PhysicsContext.Shapes.Add &compound
             let activity = BodyActivityDescription Constants.Physics.SleepThreshold
-            let handle =  
+            let handle =
                 match bodyProperties.BodyType with
                 | Static ->
                     let staticDescription = StaticDescription (RigidPose (), shapeIndex)
@@ -116,12 +115,12 @@ type [<ReferenceEquality>] BepuPhysicsEngine =
                     let bodyDescription = BodyDescription.CreateKinematic (RigidPose (), velocities, shapeIndex, activity)
                     physicsEngine.PhysicsContext.Bodies.Add &bodyDescription |> Right
 
-            if not bodyProperties.IgnoreEvents then
-                match handle with
-                | Left staticHandle ->
-                    physicsEngine.ShapeSources.[0].[staticHandle] <- BodyShapeSourceInternalJib bodyShapeSource
-                | Right bodyHandle ->
-                    physicsEngine.ShapeSources.[0].[bodyHandle] <- BodyShapeSourceInternalJib bodyShapeSource
+            match handle with
+            | Left staticHandle ->
+                physicsEngine.ShapeSources.[0].[staticHandle] <- BodyShapeSourceInternalJib bodyShapeSource
+            | Right bodyHandle ->
+                physicsEngine.ShapeSources.[0].[bodyHandle] <- BodyShapeSourceInternalJib bodyShapeSource
+                if not bodyProperties.IgnoreEvents then
                     physicsEngine.ContactEvents.Register (bodyHandle, physicsEngine.ContactEventHandler)
 
         finally compoundBuilder.[0].Dispose ()

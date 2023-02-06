@@ -15,6 +15,9 @@ open BepuUtilities.Memory
 open Prime
 open Nu
 
+// NOTE: the code in this file originates as a port from the C# Bepu demo code here -
+// https://github.com/bepu/bepuphysics2/blob/074d784d14980f0b9dfa96949e0057109f0cecc4/Demos/Demos/ContactEventsDemo.cs
+
 type [<Struct; StructLayout (LayoutKind.Sequential)>] private PreviousCollision =
     { mutable Collidable : CollidableReference
       mutable Fresh : bool
@@ -125,7 +128,6 @@ and IContactEventHandler =
         /// <param name="workerIndex">Index of the worker thread that fired this event.</param>
         abstract OnTouchingUpdated<'TManifold when 'TManifold : (new : unit -> 'TManifold) and 'TManifold :> IContactManifold<'TManifold>> :
             CollidableReference * CollidablePair * 'TManifold byref * int -> unit
-
 
         /// <summary>
         /// Fires when a pair stops touching. Touching means that there are contacts with nonnegative depths in the manifold.
