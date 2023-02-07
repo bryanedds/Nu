@@ -67,7 +67,8 @@ type private NarrowPhaseCallbacks =
             true
 
         [<MethodImpl (MethodImplOptions.AggressiveInlining)>]
-        member this.ConfigureContactManifold (_ : int, _ : CollidablePair, _ : int, _ : int, _ : ConvexContactManifold byref) =
+        member this.ConfigureContactManifold (workerIndex : int, pair : CollidablePair, shapeId : int, shapeId2 : int, manifold : ConvexContactManifold byref) =
+            this.ContactEvents.HandleManifold (workerIndex, pair, &manifold)
             true
 
         [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
@@ -76,7 +77,6 @@ type private NarrowPhaseCallbacks =
             pairMaterial.FrictionCoefficient <- 1f
             pairMaterial.MaximumRecoveryVelocity <- 2f
             pairMaterial.SpringSettings <- SpringSettings (30.0f, 1.0f)
-            this.ContactEvents.HandleManifold (workerIndex, pair, &manifold)
             true
 
         [<MethodImpl (MethodImplOptions.AggressiveInlining)>]
@@ -189,7 +189,9 @@ type [<ReferenceEquality>] BepuPhysicsEngine =
 
             let bodySourceData = BodySourceData (bodySource, physicsEngine.BufferPool)
             for i in 0 .. dec compoundChildren.Length do
-                let shapeId = _
+                let child = &compoundChildren.[i]
+                let shapeIndex = child.ShapeIndex
+                let shapeId = _ // correlate from shape index to shape id via shape ids dictionary
                 let bodyShapeSource = { Simulant = bodySource.Simulant; BodyId = bodySource.BodyId; ShapeId = shapeId }
                 bodySource.BodyShapeSourceInternalObjs.Add (shapeId, bodyShapeSource)
             match handle with
