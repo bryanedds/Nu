@@ -507,7 +507,7 @@ module Gaia =
         try World.writeGroupToFile filePath selectedGroup world
         with exn ->
             World.choose oldWorld |> ignore
-            MessageBox.Show ("Could not save file due to: " + scstring exn, "File save error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+            MessageBox.Show ("Could not save file due to: " + scstring exn, "File Save Error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
 
     let private tryLoadSelectedGroup (form : GaiaForm) filePath world =
 
@@ -539,17 +539,17 @@ module Gaia =
                 // handle load failure
                 else
                     let world = World.choose oldWorld
-                    MessageBox.Show ("Could not load group file with same name as an existing group", "File load error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+                    MessageBox.Show ("Could not load group file with same name as an existing group", "File Load Error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
                     (None, world)
 
             else
-                MessageBox.Show ("Cannot load into a protected simulant (such as a group created by the Elmish API).", "File load error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+                MessageBox.Show ("Cannot load into a protected simulant (such as a group created by the Elmish API).", "File Load Error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
                 (None, world)
 
         // handle load failure
         with exn ->
             let world = World.choose oldWorld
-            MessageBox.Show ("Could not load group file due to: " + scstring exn, "File load error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+            MessageBox.Show ("Could not load group file due to: " + scstring exn, "File Load Error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
             (None, world)
 
     let private handleFormExit (form : GaiaForm) (_ : EventArgs) =
@@ -747,7 +747,7 @@ module Gaia =
             form.preludeTextBox.Text <- preludeStr.Replace ("\n", "\r\n")
             world
         | (Left error, world) ->
-            MessageBox.Show ("Could not load prelude due to: " + error + "'.", "Failed to load prelude", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+            MessageBox.Show ("Could not load prelude due to: " + error + "'.", "Failed to Load Prelude", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
             world
 
     let private trySavePrelude (form : GaiaForm) world =
@@ -758,7 +758,7 @@ module Gaia =
             File.WriteAllText (preludeFilePath, preludeStr)
             (true, world)
         with exn ->
-            MessageBox.Show ("Could not save asset graph due to: " + scstring exn, "Failed to save asset graph", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+            MessageBox.Show ("Could not save asset graph due to: " + scstring exn, "Failed to Save Asset Graph", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
             (false, World.choose oldWorld)
 
     let private tryReloadAssetGraph (_ : GaiaForm) world =
@@ -776,7 +776,7 @@ module Gaia =
             form.assetGraphTextBox.SelectionStart <- selectionStart
             world
         | (Left error, world) ->
-            MessageBox.Show ("Could not load asset graph due to: " + error + "'.", "Failed to load asset graph", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+            MessageBox.Show ("Could not load asset graph due to: " + error + "'.", "Failed to Load Asset Graph", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
             world
 
     let private trySaveAssetGraph (form : GaiaForm) world =
@@ -788,7 +788,7 @@ module Gaia =
             File.WriteAllText (assetGraphFilePath, PrettyPrinter.prettyPrint packageDescriptorsStr prettyPrinter)
             (true, world)
         with exn ->
-            MessageBox.Show ("Could not save asset graph due to: " + scstring exn, "Failed to save asset graph", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+            MessageBox.Show ("Could not save asset graph due to: " + scstring exn, "Failed to Save Asset Graph", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
             (false, World.choose oldWorld)
 
     let private tryReloadOverlays form world =
@@ -810,7 +810,7 @@ module Gaia =
             form.overlayerTextBox.SelectionStart <- selectionStart
             world
         | (Left error, world) ->
-            MessageBox.Show ("Could not reload overlayer due to: " + error + "'.", "Failed to reload overlayer", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+            MessageBox.Show ("Could not reload overlayer due to: " + error + "'.", "Failed to Reload Overlayer", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
             world
 
     let private trySaveOverlayer (form : GaiaForm) world =
@@ -822,7 +822,7 @@ module Gaia =
             File.WriteAllText (overlayerFilePath, PrettyPrinter.prettyPrint (scstring overlays) prettyPrinter)
             (true, world)
         with exn ->
-            MessageBox.Show ("Could not save overlayer due to: " + scstring exn, "Failed to save overlayer", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+            MessageBox.Show ("Could not save overlayer due to: " + scstring exn, "Failed to Save Overlayer", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
             (false, oldWorld)
 
     let private handleFormEntityPropertyGridSelectedObjectsChanged (form : GaiaForm) (_ : EventArgs) =
@@ -915,7 +915,9 @@ module Gaia =
                         selectEntity source' form world
                         world
                 else world
-            else Log.traceOnce "Cannot relocate a protected simulant (such as an entity created by the Elmish API)."; world
+            else
+                MessageBox.Show ("Cannot relocate a protected simulant (such as an entity created by the Elmish API).", "Protected Elmish Simulant", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+                world
 
     let private handleFormHierarchyTreeViewCollapseAllClick (form : GaiaForm) (_ : EventArgs) =
         form.hierarchyTreeView.CollapseAll ()
@@ -1002,7 +1004,7 @@ module Gaia =
                 world
             with exn ->
                 let world = World.choose oldWorld
-                MessageBox.Show (scstring exn, "Could not create entity", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+                MessageBox.Show (scstring exn, "Could Not Create Entity", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
                 world
 
     let private handleFormDeleteEntity (form : GaiaForm) (_ : EventArgs) =
@@ -1015,7 +1017,7 @@ module Gaia =
                     deselectEntity form world
                     world
                 else
-                    Log.traceOnce "Cannot destroy a protected simulant (such as an entity created by the Elmish API)."
+                    MessageBox.Show ("Cannot destroy a protected simulant (such as an entity created by the Elmish API).", "Protected Elmish Simulant", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
                     world
             | _ -> world
 
@@ -1038,7 +1040,7 @@ module Gaia =
                     world
                 with exn ->
                     let world = World.choose oldWorld
-                    MessageBox.Show ("Could not create group due to: " + scstring exn, "Group creation error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+                    MessageBox.Show ("Could not create group due to: " + scstring exn, "Group Creation Error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
                     world
             groupCreationForm.Close ()
         groupCreationForm.cancelButton.Click.Add (fun _ -> groupCreationForm.Close ())
@@ -1080,7 +1082,7 @@ module Gaia =
         Globals.nextPreUpdate $ fun world ->
             match form.groupTabControl.TabPages.Count with
             | 1 ->
-                MessageBox.Show ("Cannot close the only remaining group.", "Group close error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+                MessageBox.Show ("Cannot close the only remaining group.", "Group Close Error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
                 world
             | _ ->
                 let world = Globals.pushPastWorld world
@@ -1095,7 +1097,7 @@ module Gaia =
                     filePaths <- Map.remove group.GroupAddress filePaths
                     world
                 else
-                    Log.traceOnce "Cannot close a protected group (such as one created by the Elmish API)."
+                    MessageBox.Show ("Cannot close a protected group (such as one created by the Elmish API).", "Protected Elmish Simulant", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
                     world
 
     let private handleFormUndo (form : GaiaForm) (_ : EventArgs) =
@@ -1144,7 +1146,9 @@ module Gaia =
                     let world = World.cutEntityToClipboard entityTds.DescribedEntity world
                     deselectEntity form world
                     world
-                else Log.traceOnce "Cannot cut a protected simulant (such as an entity created by the Elmish API)."; world
+                else
+                    MessageBox.Show ("Cannot cut a protected simulant (such as an entity created by the Elmish API).", "Protected Elmish Simulant", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+                    world
             | _ -> failwithumf ()
 
     let private handleFormPaste atMouse (form : GaiaForm) (_ : EventArgs) =
@@ -1295,7 +1299,7 @@ module Gaia =
                 form.assetGraphTextBox.Text <- assetGraphPretty.Replace ("\n", "\r\n")
                 world
             | (Left error, world) ->
-                MessageBox.Show ("Asset reload error due to: " + error + "'.", "Asset reload error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+                MessageBox.Show ("Asset reload error due to: " + error + "'.", "Asset Reload Error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
                 world
 
     let private handleFormReloadAll (form : GaiaForm) (args : EventArgs) =
@@ -1340,7 +1344,7 @@ module Gaia =
                 world
             with exn ->
                 let world = World.choose oldWorld
-                MessageBox.Show ("Invalid event filter due to: " + scstring exn, "Invalid event filter", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+                MessageBox.Show ("Invalid event filter due to: " + scstring exn, "Invalid Event Filter", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
                 world
 
     let private handleRefreshEventFilterClick (form : GaiaForm) (_ : EventArgs) =
@@ -1359,7 +1363,7 @@ module Gaia =
                 match tryReloadPrelude form world with
                 | (Right _, world) -> world
                 | (Left error, world) ->
-                    MessageBox.Show ("Prelude reload error due to: " + error + "'.", "Prelude reload error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+                    MessageBox.Show ("Prelude reload error due to: " + error + "'.", "Prelude Reload Error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
                     world
             | (false, world) -> world
 
@@ -1374,7 +1378,7 @@ module Gaia =
                 match tryReloadAssetGraph form world with
                 | (Right _, world) -> world
                 | (Left error, world) ->
-                    MessageBox.Show ("Asset reload error due to: " + error + "'.", "Asset reload error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+                    MessageBox.Show ("Asset reload error due to: " + error + "'.", "Asset Reload Error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
                     world
             | (false, world) -> world
 
@@ -1389,7 +1393,7 @@ module Gaia =
                 match tryReloadOverlays form world with
                 | (Right _, world) -> world
                 | (Left error, world) ->
-                    MessageBox.Show ("Overlayer reload error due to: " + error + "'.", "Overlayer reload error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+                    MessageBox.Show ("Overlayer reload error due to: " + error + "'.", "Overlayer Reload Error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
                     world
             | (false, world) -> world
 
@@ -1813,7 +1817,9 @@ module Gaia =
                                 let world = World.swapEntityOrders entity peer world
                                 refreshHierarchyTreeView form world
                                 world
-                            else Log.traceOnce "Cannot reorder a protected simulant (such as an entity created by the Elmish API)."; world
+                            else
+                                MessageBox.Show ("Cannot reorder a protected simulant (such as an entity created by the Elmish API).", "Protected Elmish Simulant", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+                                world
                         | None -> world
                     | _ -> world)
 
