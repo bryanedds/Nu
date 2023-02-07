@@ -20,9 +20,6 @@
     <Compile Update="StartForm.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Update="SymbolicTextBox.cs">
-      <SubType>Component</SubType>
-    </Compile>
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Update="GaiaForm.resx">
