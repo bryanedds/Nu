@@ -139,7 +139,7 @@ module Gaia =
         form.hierarchyTreeView.Nodes.Clear ()
         let entities =
             World.getEntitiesFlattened selectedGroup world |>
-            Seq.map (fun entity -> (entity.GetOrder world, entity)) |>
+            Seq.map (fun entity -> ((entity.Surnames.Length, entity.GetOrder world), entity)) |>
             Array.ofSeq |>
             Array.sortBy fst |>
             Array.map snd
