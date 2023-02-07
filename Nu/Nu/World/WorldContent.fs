@@ -524,17 +524,33 @@ module Content =
 module ContentOperators =
 
     /// Define a property initializer.
-    let inline (==) (lens : Lens<'a, 's, World>) (value : 'a) : InitializerContent =
+    let
+#if !DEBUG
+        inline
+#endif
+        (==) (lens : Lens<'a, 's, World>) (value : 'a) : InitializerContent =
         PropertyContent (PropertyContent.make true lens value)
 
     /// Define a property synchronizer.
-    let inline (:=) (lens : Lens<'a, 's, World>) (value : 'a) : InitializerContent =
+    let
+#if !DEBUG
+        inline
+#endif
+        (:=) (lens : Lens<'a, 's, World>) (value : 'a) : InitializerContent =
         PropertyContent (PropertyContent.make false lens value)
 
     /// Define an event signal.
-    let inline (=>) (eventAddress : 'a Address) (signal : Signal) : InitializerContent =
+    let
+#if !DEBUG
+        inline
+#endif
+        (=>) (eventAddress : 'a Address) (signal : Signal) : InitializerContent =
         EventSignalContent (Address.generalize eventAddress, signal)
 
     /// Define an event handler.
-    let inline (=|>) (eventAddress : 'a Address) (callback : Event<'a, 's> -> Signal) : InitializerContent =
+    let
+#if !DEBUG
+        inline
+#endif
+        (=|>) (eventAddress : 'a Address) (callback : Event<'a, 's> -> Signal) : InitializerContent =
         EventHandlerContent (PartialEquatable.make (Address.generalize eventAddress) (fun (evt : Event) -> callback (Event.specialize evt) :> obj))
