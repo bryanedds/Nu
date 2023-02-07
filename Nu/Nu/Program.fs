@@ -45,8 +45,8 @@ module Program =
 
                         // install nu template
                         Directory.SetCurrentDirectory templateDir
-                        Process.Start("dotnet", "new -u \"" + templateIdentifier + "\"").WaitForExit()
-                        Process.Start("dotnet", "new -i ./").WaitForExit()
+                        Process.Start("dotnet", "new uninstall \"" + templateIdentifier + "\"").WaitForExit()
+                        Process.Start("dotnet", "new install ./").WaitForExit()
 
                         // instantiate nu template
                         Directory.SetCurrentDirectory projectsDir

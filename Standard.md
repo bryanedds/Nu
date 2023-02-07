@@ -7,32 +7,30 @@ Correctness, Consistency, Simplicity
 
 1) Set warning levels to the highest level possible in all projects.
 
-2) Enable warnings as errors in all projects.
+2) Enable `--warnon:1182` (warn on unused variables) in all F# projects.
 
-3) Enable `--warnon:1182` (warn on unused variables) in all F# projects.
+3) Prefer immutable types and referentially-transparent functions.
 
-4) Prefer immutable types and referentially-transparent functions.
+4) Make illegal states unrepresentable when feasible [*Here's our friend Scott Wlaschin on the subject.*](http://fsharpforfunandprofit.com/posts/designing-with-types-making-illegal-states-unrepresentable/)
 
-5) Make illegal states unrepresentable when feasible [*Here's our friend Scott Wlaschin on the subject.*](http://fsharpforfunandprofit.com/posts/designing-with-types-making-illegal-states-unrepresentable/)
+5) Avoid trading away exhaustiveness checking unless you have a specific need.
 
-6) Avoid trading away exhaustiveness checking unless you have a specific need.
+6) Avoid trading away type inference unless you have a specific need.
 
-7) Avoid trading away type inference unless you have a specific need.
+7) Avoid creating object and struct types, as well as instance members, and properties for all but the most trivial getters, unless you have a specific need (such as for creating a plug-in, a DSL, for interop, for efficiency, or etc).
 
-8) Avoid creating object and struct types, as well as instance members, and properties for all but the most trivial getters, unless you have a specific need (such as for creating a plug-in, a DSL, for interop, for efficiency, or etc).
-
-9) Try to preserve debuggability of code by -
+8) Try to preserve debuggability of code by -
 
 -   introducing local bindings to potentially-interesting intermediate results,
 -   avoiding unnecessary laziness and asynchrony (but since async being strewn throughout code is rarely avoidable, consider using the [*Vsync monad*](https://github.com/bryanedds/Nu/blob/master/Prime/Prime/Vsync.fs) instead).
 
-10) Suffix option bindings, choice bindings, either bindings, and bindings to potentially null values with `Opt`.
+9) Suffix option bindings, choice bindings, either bindings, and bindings to potentially null values with `Opt`.
 
-11) Prefix functions that return an option, choice, either, or potential null with `try`.
+10) Prefix functions that return an option, choice, either, or potential null with `try`.
 
-12) Try to use unique names for public fields and discriminated union cases to avoid ambiguating type inference. For example, `Id` is not a good public field name, but `ProductId` might be.
+11) Try to use unique names for public fields and discriminated union cases to avoid ambiguating type inference. For example, `Id` is not a good public field name, but `ProductId` might be.
 
-13) Avoid use of NoEquality attribute except where unavoidable. It's better to force yourself to make a decision on equality semantics rather than just punting on it.
+12) Avoid use of NoEquality attribute except where unavoidable. It's better to force yourself to make a decision on equality semantics when you can.
 
 **B) Consistency**
 

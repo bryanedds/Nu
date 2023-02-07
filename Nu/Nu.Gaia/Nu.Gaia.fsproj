@@ -71,9 +71,6 @@
 		<Reference Include="TiledSharp">
 			<HintPath>..\..\Nu\Nu.Dependencies\TiledSharp.1.0.2\lib\netstandard2.0\TiledSharp.dll</HintPath>
 		</Reference>
-		<Reference Include="ScintillaNET">
-			<HintPath>..\..\Nu\Nu.Dependencies\ScintillaNET\net7.0-windows\ScintillaNET.dll</HintPath>
-		</Reference>
 		<PackageReference Include="Csv" Version="1.0.58" />
 		<PackageReference Include="FParsec" Version="1.0.3" />
 		<PackageReference Include="Aether.Physics2D" Version="1.5.0" />

@@ -139,7 +139,7 @@ module Gaia =
         form.hierarchyTreeView.Nodes.Clear ()
         let entities =
             World.getEntitiesFlattened selectedGroup world |>
-            Seq.map (fun entity -> (entity.GetOrder world, entity)) |>
+            Seq.map (fun entity -> ((entity.Surnames.Length, entity.GetOrder world), entity)) |>
             Array.ofSeq |>
             Array.sortBy fst |>
             Array.map snd
@@ -507,7 +507,7 @@ module Gaia =
         try World.writeGroupToFile filePath selectedGroup world
         with exn ->
             World.choose oldWorld |> ignore
-            MessageBox.Show ("Could not save file due to: " + scstring exn, "File save error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+            MessageBox.Show ("Could not save file due to: " + scstring exn, "File Save Error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
 
     let private tryLoadSelectedGroup (form : GaiaForm) filePath world =
 
@@ -539,17 +539,17 @@ module Gaia =
                 // handle load failure
                 else
                     let world = World.choose oldWorld
-                    MessageBox.Show ("Could not load group file with same name as an existing group", "File load error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+                    MessageBox.Show ("Could not load group file with same name as an existing group", "File Load Error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
                     (None, world)
 
             else
-                MessageBox.Show ("Cannot load into a protected simulant (such as a group created by the Elmish API).", "File load error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+                MessageBox.Show ("Cannot load into a protected simulant (such as a group created by the Elmish API).", "File Load Error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
                 (None, world)
 
         // handle load failure
         with exn ->
             let world = World.choose oldWorld
-            MessageBox.Show ("Could not load group file due to: " + scstring exn, "File load error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+            MessageBox.Show ("Could not load group file due to: " + scstring exn, "File Load Error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
             (None, world)
 
     let private handleFormExit (form : GaiaForm) (_ : EventArgs) =
@@ -590,7 +590,7 @@ module Gaia =
                 | null -> world
                 | selectedNodeParent ->
                     let assetTag = (AssetTag.make<obj> selectedNodeParent.Text selectedNode.Text)
-                    form.propertyValueTextBoxText <- scstring assetTag
+                    form.propertyValueTextBox.Text <- scstring assetTag
                     form.applyPropertyButton.PerformClick ()
                     world
         | _ -> world
@@ -624,7 +624,7 @@ module Gaia =
                     let parent = Entity (string entity.Group.GroupAddress + Constants.Address.SeparatorStr + parentSurnamesStr)
                     let parentRelation = Relation.relate entity.EntityAddress parent.EntityAddress
                     if parentRelation <> Relation.makeCurrent () then
-                        form.propertyValueTextBoxText <- scstring parentRelation
+                        form.propertyValueTextBox.Text <- scstring parentRelation
                         if propertyDescriptor.Name = "MountOpt"
                         then entity.SetMountOptWithAdjustment (Some parentRelation) world
                         else form.applyPropertyButton.PerformClick (); world
@@ -643,8 +643,7 @@ module Gaia =
             form.propertyEditor.Enabled <- false
             form.propertyNameLabel.Text <- String.Empty
             form.propertyDescriptionTextBox.Text <- String.Empty
-            form.propertyValueTextBoxText <- String.Empty
-            form.propertyValueTextBox.EmptyUndoBuffer ()
+            form.propertyValueTextBox.Text <- String.Empty
         | (selectedObject, selectedGridItem) ->
             match selectedGridItem.GridItemType with
             | GridItemType.Property ->
@@ -654,7 +653,7 @@ module Gaia =
                 form.propertyNameLabel.Text <- selectedGridItem.Label
                 form.propertyDescriptionTextBox.Text <- selectedGridItem.PropertyDescriptor.Description
                 if ty <> typeof<ComputedProperty> && (notNull selectedGridItem.Value || FSharpType.isNullTrueValue ty) then
-                    let (keywords0, keywords1, prettyPrinter) =
+                    let (_, _, prettyPrinter) =
                         match (isEntity, selectedGridItem.Label) with
                         | (true, Constants.Engine.OverlayNameOptPropertyName) ->
                             let overlays = World.getOverlays world
@@ -674,12 +673,8 @@ module Gaia =
                     let strUnescaped = typeConverter.ConvertToString selectedGridItem.Value
                     let strEscaped = String.escape strUnescaped
                     let strPretty = PrettyPrinter.prettyPrint strEscaped prettyPrinter
-                    form.propertyValueTextBoxText <- strPretty + "\n"
-                    form.propertyValueTextBox.EmptyUndoBuffer ()
-                    form.propertyValueTextBox.Keywords0 <- keywords0
-                    form.propertyValueTextBox.Keywords1 <- keywords1
+                    form.propertyValueTextBox.Text <- strPretty.Replace ("\n", "\r\n")
                     form.propertyValueTextBox.SelectionStart <- selectionStart
-                    form.propertyValueTextBox.ScrollCaret ()
                     form.pickPropertyButton.Visible <-
                         selectedGridItem.PropertyDescriptor.PropertyType = typeof<Entity Relation option> ||
                         (selectedGridItem.PropertyDescriptor.PropertyType.IsGenericType &&
@@ -695,8 +690,7 @@ module Gaia =
                 form.propertyEditor.Enabled <- false
                 form.propertyNameLabel.Text <- String.Empty
                 form.propertyDescriptionTextBox.Text <- String.Empty
-                form.propertyValueTextBoxText <- String.Empty
-                form.propertyValueTextBox.EmptyUndoBuffer ()
+                form.propertyValueTextBox.Text <- String.Empty
                 form.pickPropertyButton.Visible <- false
                 form.pickPropertyButton.Click.RemoveHandler propertyPickButtonClickHandler
 
@@ -709,8 +703,7 @@ module Gaia =
             | GridItemType.Property when form.propertyNameLabel.Text = selectedGridItem.Label ->
                 let propertyDescriptor = selectedGridItem.PropertyDescriptor
                 let typeConverter = SymbolicConverter (false, None, propertyDescriptor.PropertyType)
-                try form.propertyValueTextBox.EndUndoAction ()
-                    let strEscaped = form.propertyValueTextBox.Text.TrimEnd ()
+                try let strEscaped = form.propertyValueTextBox.Text.TrimEnd ()
                     let strUnescaped = String.unescape strEscaped
                     let propertyValue = typeConverter.ConvertFromString strUnescaped
                     propertyDescriptor.SetValue (selectedObject, propertyValue)
@@ -721,7 +714,6 @@ module Gaia =
                         match Symbol.getOriginOpt symbol with
                         | ValueSome origin ->
                             form.propertyValueTextBox.SelectionStart <- int origin.Start.Index
-                            form.propertyValueTextBox.SelectionEnd <- int origin.Stop.Index
                         | ValueNone -> ()
                     | None -> ()
                     Log.info ("Invalid apply property operation due to: " + scstring exn)
@@ -752,10 +744,10 @@ module Gaia =
     let private tryLoadPrelude (form : GaiaForm) world =
         match tryReloadPrelude form world with
         | (Right preludeStr, world) ->
-            form.preludeTextBox.Text <- preludeStr + "\n"
+            form.preludeTextBox.Text <- preludeStr.Replace ("\n", "\r\n")
             world
         | (Left error, world) ->
-            MessageBox.Show ("Could not load prelude due to: " + error + "'.", "Failed to load prelude", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+            MessageBox.Show ("Could not load prelude due to: " + error + "'.", "Failed to Load Prelude", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
             world
 
     let private trySavePrelude (form : GaiaForm) world =
@@ -766,7 +758,7 @@ module Gaia =
             File.WriteAllText (preludeFilePath, preludeStr)
             (true, world)
         with exn ->
-            MessageBox.Show ("Could not save asset graph due to: " + scstring exn, "Failed to save asset graph", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+            MessageBox.Show ("Could not save asset graph due to: " + scstring exn, "Failed to Save Asset Graph", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
             (false, World.choose oldWorld)
 
     let private tryReloadAssetGraph (_ : GaiaForm) world =
@@ -779,12 +771,12 @@ module Gaia =
             let selectionStart = form.assetGraphTextBox.SelectionStart
             let packageDescriptorsStr = scstring (AssetGraph.getPackageDescriptors assetGraph)
             let prettyPrinter = (SyntaxAttribute.defaultValue typeof<AssetGraph>).PrettyPrinter
-            form.assetGraphTextBox.Text <- PrettyPrinter.prettyPrint packageDescriptorsStr prettyPrinter + "\n"
+            let packageDescriptorsPretty = PrettyPrinter.prettyPrint packageDescriptorsStr prettyPrinter
+            form.assetGraphTextBox.Text <- packageDescriptorsPretty.Replace ("\n", "\r\n")
             form.assetGraphTextBox.SelectionStart <- selectionStart
-            form.assetGraphTextBox.ScrollCaret ()
             world
         | (Left error, world) ->
-            MessageBox.Show ("Could not load asset graph due to: " + error + "'.", "Failed to load asset graph", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+            MessageBox.Show ("Could not load asset graph due to: " + error + "'.", "Failed to Load Asset Graph", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
             world
 
     let private trySaveAssetGraph (form : GaiaForm) world =
@@ -796,7 +788,7 @@ module Gaia =
             File.WriteAllText (assetGraphFilePath, PrettyPrinter.prettyPrint packageDescriptorsStr prettyPrinter)
             (true, world)
         with exn ->
-            MessageBox.Show ("Could not save asset graph due to: " + scstring exn, "Failed to save asset graph", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+            MessageBox.Show ("Could not save asset graph due to: " + scstring exn, "Failed to Save Asset Graph", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
             (false, World.choose oldWorld)
 
     let private tryReloadOverlays form world =
@@ -813,12 +805,12 @@ module Gaia =
             let selectionStart = form.overlayerTextBox.SelectionStart
             let extrinsicOverlaysStr = scstring (Overlayer.getExtrinsicOverlays overlayer)
             let prettyPrinter = (SyntaxAttribute.defaultValue typeof<Overlay>).PrettyPrinter
-            form.overlayerTextBox.Text <- PrettyPrinter.prettyPrint extrinsicOverlaysStr prettyPrinter + "\n"
+            let extrinsicOverlaysPretty = PrettyPrinter.prettyPrint extrinsicOverlaysStr prettyPrinter
+            form.overlayerTextBox.Text <- extrinsicOverlaysPretty.Replace ("\n", "\r\n")
             form.overlayerTextBox.SelectionStart <- selectionStart
-            form.overlayerTextBox.ScrollCaret ()
             world
         | (Left error, world) ->
-            MessageBox.Show ("Could not reload overlayer due to: " + error + "'.", "Failed to reload overlayer", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+            MessageBox.Show ("Could not reload overlayer due to: " + error + "'.", "Failed to Reload Overlayer", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
             world
 
     let private trySaveOverlayer (form : GaiaForm) world =
@@ -830,7 +822,7 @@ module Gaia =
             File.WriteAllText (overlayerFilePath, PrettyPrinter.prettyPrint (scstring overlays) prettyPrinter)
             (true, world)
         with exn ->
-            MessageBox.Show ("Could not save overlayer due to: " + scstring exn, "Failed to save overlayer", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+            MessageBox.Show ("Could not save overlayer due to: " + scstring exn, "Failed to Save Overlayer", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
             (false, oldWorld)
 
     let private handleFormEntityPropertyGridSelectedObjectsChanged (form : GaiaForm) (_ : EventArgs) =
@@ -923,7 +915,9 @@ module Gaia =
                         selectEntity source' form world
                         world
                 else world
-            else Log.traceOnce "Cannot relocate a protected simulant (such as an entity created by the Elmish API)."; world
+            else
+                MessageBox.Show ("Cannot relocate a protected simulant (such as an entity created by the Elmish API).", "Protected Elmish Simulant", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+                world
 
     let private handleFormHierarchyTreeViewCollapseAllClick (form : GaiaForm) (_ : EventArgs) =
         form.hierarchyTreeView.CollapseAll ()
@@ -1010,7 +1004,7 @@ module Gaia =
                 world
             with exn ->
                 let world = World.choose oldWorld
-                MessageBox.Show (scstring exn, "Could not create entity", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+                MessageBox.Show (scstring exn, "Could Not Create Entity", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
                 world
 
     let private handleFormDeleteEntity (form : GaiaForm) (_ : EventArgs) =
@@ -1023,7 +1017,7 @@ module Gaia =
                     deselectEntity form world
                     world
                 else
-                    Log.traceOnce "Cannot destroy a protected simulant (such as an entity created by the Elmish API)."
+                    MessageBox.Show ("Cannot destroy a protected simulant (such as an entity created by the Elmish API).", "Protected Elmish Simulant", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
                     world
             | _ -> world
 
@@ -1046,7 +1040,7 @@ module Gaia =
                     world
                 with exn ->
                     let world = World.choose oldWorld
-                    MessageBox.Show ("Could not create group due to: " + scstring exn, "Group creation error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+                    MessageBox.Show ("Could not create group due to: " + scstring exn, "Group Creation Error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
                     world
             groupCreationForm.Close ()
         groupCreationForm.cancelButton.Click.Add (fun _ -> groupCreationForm.Close ())
@@ -1088,7 +1082,7 @@ module Gaia =
         Globals.nextPreUpdate $ fun world ->
             match form.groupTabControl.TabPages.Count with
             | 1 ->
-                MessageBox.Show ("Cannot close the only remaining group.", "Group close error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+                MessageBox.Show ("Cannot close the only remaining group.", "Group Close Error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
                 world
             | _ ->
                 let world = Globals.pushPastWorld world
@@ -1103,7 +1097,7 @@ module Gaia =
                     filePaths <- Map.remove group.GroupAddress filePaths
                     world
                 else
-                    Log.traceOnce "Cannot close a protected group (such as one created by the Elmish API)."
+                    MessageBox.Show ("Cannot close a protected group (such as one created by the Elmish API).", "Protected Elmish Simulant", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
                     world
 
     let private handleFormUndo (form : GaiaForm) (_ : EventArgs) =
@@ -1152,7 +1146,9 @@ module Gaia =
                     let world = World.cutEntityToClipboard entityTds.DescribedEntity world
                     deselectEntity form world
                     world
-                else Log.traceOnce "Cannot cut a protected simulant (such as an entity created by the Elmish API)."; world
+                else
+                    MessageBox.Show ("Cannot cut a protected simulant (such as an entity created by the Elmish API).", "Protected Elmish Simulant", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+                    world
             | _ -> failwithumf ()
 
     let private handleFormPaste atMouse (form : GaiaForm) (_ : EventArgs) =
@@ -1299,10 +1295,11 @@ module Gaia =
             match tryReloadAssetGraph form world with
             | (Right assetGraph, world) ->
                 let prettyPrinter = (SyntaxAttribute.defaultValue typeof<AssetGraph>).PrettyPrinter
-                form.assetGraphTextBox.Text <- PrettyPrinter.prettyPrint (scstring assetGraph) prettyPrinter + "\n"
+                let assetGraphPretty = PrettyPrinter.prettyPrint (scstring assetGraph) prettyPrinter
+                form.assetGraphTextBox.Text <- assetGraphPretty.Replace ("\n", "\r\n")
                 world
             | (Left error, world) ->
-                MessageBox.Show ("Asset reload error due to: " + error + "'.", "Asset reload error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+                MessageBox.Show ("Asset reload error due to: " + error + "'.", "Asset Reload Error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
                 world
 
     let private handleFormReloadAll (form : GaiaForm) (args : EventArgs) =
@@ -1342,11 +1339,12 @@ module Gaia =
             try let eventFilter = scvalue<EventFilter.Filter> form.eventFilterTextBox.Text
                 let world = World.setEventFilter eventFilter world
                 let prettyPrinter = (SyntaxAttribute.defaultValue typeof<EventFilter.Filter>).PrettyPrinter
-                form.eventFilterTextBox.Text <- PrettyPrinter.prettyPrint (scstring eventFilter) prettyPrinter + "\n"
+                let eventFilterPretty = PrettyPrinter.prettyPrint (scstring eventFilter) prettyPrinter
+                form.eventFilterTextBox.Text <- eventFilterPretty.Replace ("\n", "\r\n")
                 world
             with exn ->
                 let world = World.choose oldWorld
-                MessageBox.Show ("Invalid event filter due to: " + scstring exn, "Invalid event filter", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+                MessageBox.Show ("Invalid event filter due to: " + scstring exn, "Invalid Event Filter", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
                 world
 
     let private handleRefreshEventFilterClick (form : GaiaForm) (_ : EventArgs) =
@@ -1355,7 +1353,7 @@ module Gaia =
             let eventFilterStr = scstring eventFilter
             let prettyPrinter = (SyntaxAttribute.defaultValue typeof<EventFilter.Filter>).PrettyPrinter
             let eventFilterPretty = PrettyPrinter.prettyPrint eventFilterStr prettyPrinter
-            form.eventFilterTextBox.Text <- eventFilterPretty + "\n"
+            form.eventFilterTextBox.Text <- eventFilterPretty.Replace ("\n", "\r\n")
             world
 
     let private handleSavePreludeClick (form : GaiaForm) (_ : EventArgs) =
@@ -1365,7 +1363,7 @@ module Gaia =
                 match tryReloadPrelude form world with
                 | (Right _, world) -> world
                 | (Left error, world) ->
-                    MessageBox.Show ("Prelude reload error due to: " + error + "'.", "Prelude reload error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+                    MessageBox.Show ("Prelude reload error due to: " + error + "'.", "Prelude Reload Error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
                     world
             | (false, world) -> world
 
@@ -1380,7 +1378,7 @@ module Gaia =
                 match tryReloadAssetGraph form world with
                 | (Right _, world) -> world
                 | (Left error, world) ->
-                    MessageBox.Show ("Asset reload error due to: " + error + "'.", "Asset reload error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+                    MessageBox.Show ("Asset reload error due to: " + error + "'.", "Asset Reload Error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
                     world
             | (false, world) -> world
 
@@ -1395,7 +1393,7 @@ module Gaia =
                 match tryReloadOverlays form world with
                 | (Right _, world) -> world
                 | (Left error, world) ->
-                    MessageBox.Show ("Overlayer reload error due to: " + error + "'.", "Overlayer reload error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+                    MessageBox.Show ("Overlayer reload error due to: " + error + "'.", "Overlayer Reload Error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
                     world
             | (false, world) -> world
 
@@ -1427,9 +1425,8 @@ module Gaia =
                 form.evalOutputTextBox.ReadOnly <- false
                 form.evalOutputTextBox.Text <-
                     if String.notEmpty form.evalOutputTextBox.Text
-                    then form.evalOutputTextBox.Text + evaledsStr + "\n"
-                    else evaledsStr + "\n"
-                form.evalOutputTextBox.GotoPosition form.evalOutputTextBox.Text.Length
+                    then form.evalOutputTextBox.Text + evaledsStr.Replace ("\n", "\r\n")
+                    else evaledsStr.Replace ("\n", "\r\n")
                 form.evalOutputTextBox.ReadOnly <- true
                 world
             with exn -> Log.debug ("Could not evaluate input due to: " + scstring exn); world
@@ -1699,7 +1696,6 @@ module Gaia =
                 | :? ToolStripDropDown
                 // | :? ToolStripComboBox wtf?
                 | :? TextBox
-                | :? SymbolicTextBox -> handleKeyboardInput key true form Globals.World
                 | _ -> handleKeyboardInput key false form Globals.World
             GaiaForm.CallNextHookEx (form.HookId, nCode, wParam, lParam)) |> ignore
         tryRun3 runWhile sdlDeps (form : GaiaForm)
@@ -1821,7 +1817,9 @@ module Gaia =
                                 let world = World.swapEntityOrders entity peer world
                                 refreshHierarchyTreeView form world
                                 world
-                            else Log.traceOnce "Cannot reorder a protected simulant (such as an entity created by the Elmish API)."; world
+                            else
+                                MessageBox.Show ("Cannot reorder a protected simulant (such as an entity created by the Elmish API).", "Protected Elmish Simulant", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+                                world
                         | None -> world
                     | _ -> world)
 
@@ -1891,49 +1889,11 @@ module Gaia =
         form.createEntityComboBox.SelectedIndexChanged.Add (handleCreateEntityComboBoxSelectedIndexChanged form)
         form.Closing.Add (handleFormClosing form)
 
-        // populate event filter keywords
-        match typeof<EventFilter.Filter>.GetCustomAttribute<SyntaxAttribute> true with
-        | null -> ()
-        | syntax ->
-            form.eventFilterTextBox.Keywords0 <- syntax.Keywords0
-            form.eventFilterTextBox.Keywords1 <- syntax.Keywords1
-
-        // populate evaluator and prelude keywords
-        match typeof<Scripting.Expr>.GetCustomAttribute<SyntaxAttribute> true with
-        | null -> ()
-        | syntax ->
-            form.evalInputTextBox.Keywords0 <- syntax.Keywords0 + " " + WorldBindings.BindingKeywords
-            form.evalInputTextBox.Keywords1 <- syntax.Keywords1
-            form.evalOutputTextBox.Keywords0 <- syntax.Keywords0 + " " + WorldBindings.BindingKeywords
-            form.evalOutputTextBox.Keywords1 <- syntax.Keywords1
-            form.preludeTextBox.Keywords0 <- syntax.Keywords0 + " " + WorldBindings.BindingKeywords
-            form.preludeTextBox.Keywords1 <- syntax.Keywords1
-
-        // populate asset graph keywords
-        match typeof<AssetGraph>.GetCustomAttribute<SyntaxAttribute> true with
-        | null -> ()
-        | syntax ->
-            form.assetGraphTextBox.Keywords0 <- syntax.Keywords0
-            form.assetGraphTextBox.Keywords1 <- syntax.Keywords1
-
-        // populate overlayer keywords
-        match typeof<Overlay>.GetCustomAttribute<SyntaxAttribute> true with
-        | null -> ()
-        | syntax ->
-            form.overlayerTextBox.Keywords0 <- syntax.Keywords0
-            form.overlayerTextBox.Keywords1 <- syntax.Keywords1
-
         // populate rollout tab texts
         handleRefreshEventFilterClick form (EventArgs ())
         handleLoadPreludeClick form (EventArgs ())
         handleLoadAssetGraphClick form (EventArgs ())
         handleLoadOverlayerClick form (EventArgs ())
-
-        // clear undo buffers
-        form.eventFilterTextBox.EmptyUndoBuffer ()
-        form.preludeTextBox.EmptyUndoBuffer ()
-        form.assetGraphTextBox.EmptyUndoBuffer ()
-        form.overlayerTextBox.EmptyUndoBuffer ()
 
         // finally, show and activate form
         form.Show ()
