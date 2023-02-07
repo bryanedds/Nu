@@ -653,7 +653,7 @@ module Gaia =
                 form.propertyNameLabel.Text <- selectedGridItem.Label
                 form.propertyDescriptionTextBox.Text <- selectedGridItem.PropertyDescriptor.Description
                 if ty <> typeof<ComputedProperty> && (notNull selectedGridItem.Value || FSharpType.isNullTrueValue ty) then
-                    let (keywords0, keywords1, prettyPrinter) =
+                    let (_, _, prettyPrinter) =
                         match (isEntity, selectedGridItem.Label) with
                         | (true, Constants.Engine.OverlayNameOptPropertyName) ->
                             let overlays = World.getOverlays world
