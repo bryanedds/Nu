@@ -590,7 +590,7 @@ module Gaia =
                 | null -> world
                 | selectedNodeParent ->
                     let assetTag = (AssetTag.make<obj> selectedNodeParent.Text selectedNode.Text)
-                    form.propertyValueTextBoxText <- scstring assetTag
+                    form.propertyValueTextBox.Text <- scstring assetTag
                     form.applyPropertyButton.PerformClick ()
                     world
         | _ -> world
@@ -624,7 +624,7 @@ module Gaia =
                     let parent = Entity (string entity.Group.GroupAddress + Constants.Address.SeparatorStr + parentSurnamesStr)
                     let parentRelation = Relation.relate entity.EntityAddress parent.EntityAddress
                     if parentRelation <> Relation.makeCurrent () then
-                        form.propertyValueTextBoxText <- scstring parentRelation
+                        form.propertyValueTextBox.Text <- scstring parentRelation
                         if propertyDescriptor.Name = "MountOpt"
                         then entity.SetMountOptWithAdjustment (Some parentRelation) world
                         else form.applyPropertyButton.PerformClick (); world
@@ -643,8 +643,7 @@ module Gaia =
             form.propertyEditor.Enabled <- false
             form.propertyNameLabel.Text <- String.Empty
             form.propertyDescriptionTextBox.Text <- String.Empty
-            form.propertyValueTextBoxText <- String.Empty
-            form.propertyValueTextBox.EmptyUndoBuffer ()
+            form.propertyValueTextBox.Text <- String.Empty
         | (selectedObject, selectedGridItem) ->
             match selectedGridItem.GridItemType with
             | GridItemType.Property ->
@@ -674,12 +673,8 @@ module Gaia =
                     let strUnescaped = typeConverter.ConvertToString selectedGridItem.Value
                     let strEscaped = String.escape strUnescaped
                     let strPretty = PrettyPrinter.prettyPrint strEscaped prettyPrinter
-                    form.propertyValueTextBoxText <- strPretty + "\n"
-                    form.propertyValueTextBox.EmptyUndoBuffer ()
-                    form.propertyValueTextBox.Keywords0 <- keywords0
-                    form.propertyValueTextBox.Keywords1 <- keywords1
+                    form.propertyValueTextBox.Text <- strPretty.Replace ("\n", "\r\n")
                     form.propertyValueTextBox.SelectionStart <- selectionStart
-                    form.propertyValueTextBox.ScrollCaret ()
                     form.pickPropertyButton.Visible <-
                         selectedGridItem.PropertyDescriptor.PropertyType = typeof<Entity Relation option> ||
                         (selectedGridItem.PropertyDescriptor.PropertyType.IsGenericType &&
@@ -695,8 +690,7 @@ module Gaia =
                 form.propertyEditor.Enabled <- false
                 form.propertyNameLabel.Text <- String.Empty
                 form.propertyDescriptionTextBox.Text <- String.Empty
-                form.propertyValueTextBoxText <- String.Empty
-                form.propertyValueTextBox.EmptyUndoBuffer ()
+                form.propertyValueTextBox.Text <- String.Empty
                 form.pickPropertyButton.Visible <- false
                 form.pickPropertyButton.Click.RemoveHandler propertyPickButtonClickHandler
 
@@ -709,8 +703,7 @@ module Gaia =
             | GridItemType.Property when form.propertyNameLabel.Text = selectedGridItem.Label ->
                 let propertyDescriptor = selectedGridItem.PropertyDescriptor
                 let typeConverter = SymbolicConverter (false, None, propertyDescriptor.PropertyType)
-                try form.propertyValueTextBox.EndUndoAction ()
-                    let strEscaped = form.propertyValueTextBox.Text.TrimEnd ()
+                try let strEscaped = form.propertyValueTextBox.Text.TrimEnd ()
                     let strUnescaped = String.unescape strEscaped
                     let propertyValue = typeConverter.ConvertFromString strUnescaped
                     propertyDescriptor.SetValue (selectedObject, propertyValue)
@@ -721,7 +714,6 @@ module Gaia =
                         match Symbol.getOriginOpt symbol with
                         | ValueSome origin ->
                             form.propertyValueTextBox.SelectionStart <- int origin.Start.Index
-                            form.propertyValueTextBox.SelectionEnd <- int origin.Stop.Index
                         | ValueNone -> ()
                     | None -> ()
                     Log.info ("Invalid apply property operation due to: " + scstring exn)
@@ -752,7 +744,7 @@ module Gaia =
     let private tryLoadPrelude (form : GaiaForm) world =
         match tryReloadPrelude form world with
         | (Right preludeStr, world) ->
-            form.preludeTextBox.Text <- preludeStr + "\n"
+            form.preludeTextBox.Text <- preludeStr.Replace ("\n", "\r\n")
             world
         | (Left error, world) ->
             MessageBox.Show ("Could not load prelude due to: " + error + "'.", "Failed to load prelude", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
@@ -779,9 +771,9 @@ module Gaia =
             let selectionStart = form.assetGraphTextBox.SelectionStart
             let packageDescriptorsStr = scstring (AssetGraph.getPackageDescriptors assetGraph)
             let prettyPrinter = (SyntaxAttribute.defaultValue typeof<AssetGraph>).PrettyPrinter
-            form.assetGraphTextBox.Text <- PrettyPrinter.prettyPrint packageDescriptorsStr prettyPrinter + "\n"
+            let packageDescriptorsPretty = PrettyPrinter.prettyPrint packageDescriptorsStr prettyPrinter
+            form.assetGraphTextBox.Text <- packageDescriptorsPretty.Replace ("\n", "\r\n")
             form.assetGraphTextBox.SelectionStart <- selectionStart
-            form.assetGraphTextBox.ScrollCaret ()
             world
         | (Left error, world) ->
             MessageBox.Show ("Could not load asset graph due to: " + error + "'.", "Failed to load asset graph", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
@@ -813,9 +805,9 @@ module Gaia =
             let selectionStart = form.overlayerTextBox.SelectionStart
             let extrinsicOverlaysStr = scstring (Overlayer.getExtrinsicOverlays overlayer)
             let prettyPrinter = (SyntaxAttribute.defaultValue typeof<Overlay>).PrettyPrinter
-            form.overlayerTextBox.Text <- PrettyPrinter.prettyPrint extrinsicOverlaysStr prettyPrinter + "\n"
+            let extrinsicOverlaysPretty = PrettyPrinter.prettyPrint extrinsicOverlaysStr prettyPrinter
+            form.overlayerTextBox.Text <- extrinsicOverlaysPretty.Replace ("\n", "\r\n")
             form.overlayerTextBox.SelectionStart <- selectionStart
-            form.overlayerTextBox.ScrollCaret ()
             world
         | (Left error, world) ->
             MessageBox.Show ("Could not reload overlayer due to: " + error + "'.", "Failed to reload overlayer", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
@@ -1299,7 +1291,8 @@ module Gaia =
             match tryReloadAssetGraph form world with
             | (Right assetGraph, world) ->
                 let prettyPrinter = (SyntaxAttribute.defaultValue typeof<AssetGraph>).PrettyPrinter
-                form.assetGraphTextBox.Text <- PrettyPrinter.prettyPrint (scstring assetGraph) prettyPrinter + "\n"
+                let assetGraphPretty = PrettyPrinter.prettyPrint (scstring assetGraph) prettyPrinter
+                form.assetGraphTextBox.Text <- assetGraphPretty.Replace ("\n", "\r\n")
                 world
             | (Left error, world) ->
                 MessageBox.Show ("Asset reload error due to: " + error + "'.", "Asset reload error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
@@ -1342,7 +1335,8 @@ module Gaia =
             try let eventFilter = scvalue<EventFilter.Filter> form.eventFilterTextBox.Text
                 let world = World.setEventFilter eventFilter world
                 let prettyPrinter = (SyntaxAttribute.defaultValue typeof<EventFilter.Filter>).PrettyPrinter
-                form.eventFilterTextBox.Text <- PrettyPrinter.prettyPrint (scstring eventFilter) prettyPrinter + "\n"
+                let eventFilterPretty = PrettyPrinter.prettyPrint (scstring eventFilter) prettyPrinter
+                form.eventFilterTextBox.Text <- eventFilterPretty.Replace ("\n", "\r\n")
                 world
             with exn ->
                 let world = World.choose oldWorld
@@ -1355,7 +1349,7 @@ module Gaia =
             let eventFilterStr = scstring eventFilter
             let prettyPrinter = (SyntaxAttribute.defaultValue typeof<EventFilter.Filter>).PrettyPrinter
             let eventFilterPretty = PrettyPrinter.prettyPrint eventFilterStr prettyPrinter
-            form.eventFilterTextBox.Text <- eventFilterPretty + "\n"
+            form.eventFilterTextBox.Text <- eventFilterPretty.Replace ("\n", "\r\n")
             world
 
     let private handleSavePreludeClick (form : GaiaForm) (_ : EventArgs) =
@@ -1427,9 +1421,8 @@ module Gaia =
                 form.evalOutputTextBox.ReadOnly <- false
                 form.evalOutputTextBox.Text <-
                     if String.notEmpty form.evalOutputTextBox.Text
-                    then form.evalOutputTextBox.Text + evaledsStr + "\n"
-                    else evaledsStr + "\n"
-                form.evalOutputTextBox.GotoPosition form.evalOutputTextBox.Text.Length
+                    then form.evalOutputTextBox.Text + evaledsStr.Replace ("\n", "\r\n")
+                    else evaledsStr.Replace ("\n", "\r\n")
                 form.evalOutputTextBox.ReadOnly <- true
                 world
             with exn -> Log.debug ("Could not evaluate input due to: " + scstring exn); world
@@ -1699,7 +1692,6 @@ module Gaia =
                 | :? ToolStripDropDown
                 // | :? ToolStripComboBox wtf?
                 | :? TextBox
-                | :? SymbolicTextBox -> handleKeyboardInput key true form Globals.World
                 | _ -> handleKeyboardInput key false form Globals.World
             GaiaForm.CallNextHookEx (form.HookId, nCode, wParam, lParam)) |> ignore
         tryRun3 runWhile sdlDeps (form : GaiaForm)
@@ -1891,49 +1883,11 @@ module Gaia =
         form.createEntityComboBox.SelectedIndexChanged.Add (handleCreateEntityComboBoxSelectedIndexChanged form)
         form.Closing.Add (handleFormClosing form)
 
-        // populate event filter keywords
-        match typeof<EventFilter.Filter>.GetCustomAttribute<SyntaxAttribute> true with
-        | null -> ()
-        | syntax ->
-            form.eventFilterTextBox.Keywords0 <- syntax.Keywords0
-            form.eventFilterTextBox.Keywords1 <- syntax.Keywords1
-
-        // populate evaluator and prelude keywords
-        match typeof<Scripting.Expr>.GetCustomAttribute<SyntaxAttribute> true with
-        | null -> ()
-        | syntax ->
-            form.evalInputTextBox.Keywords0 <- syntax.Keywords0 + " " + WorldBindings.BindingKeywords
-            form.evalInputTextBox.Keywords1 <- syntax.Keywords1
-            form.evalOutputTextBox.Keywords0 <- syntax.Keywords0 + " " + WorldBindings.BindingKeywords
-            form.evalOutputTextBox.Keywords1 <- syntax.Keywords1
-            form.preludeTextBox.Keywords0 <- syntax.Keywords0 + " " + WorldBindings.BindingKeywords
-            form.preludeTextBox.Keywords1 <- syntax.Keywords1
-
-        // populate asset graph keywords
-        match typeof<AssetGraph>.GetCustomAttribute<SyntaxAttribute> true with
-        | null -> ()
-        | syntax ->
-            form.assetGraphTextBox.Keywords0 <- syntax.Keywords0
-            form.assetGraphTextBox.Keywords1 <- syntax.Keywords1
-
-        // populate overlayer keywords
-        match typeof<Overlay>.GetCustomAttribute<SyntaxAttribute> true with
-        | null -> ()
-        | syntax ->
-            form.overlayerTextBox.Keywords0 <- syntax.Keywords0
-            form.overlayerTextBox.Keywords1 <- syntax.Keywords1
-
         // populate rollout tab texts
         handleRefreshEventFilterClick form (EventArgs ())
         handleLoadPreludeClick form (EventArgs ())
         handleLoadAssetGraphClick form (EventArgs ())
         handleLoadOverlayerClick form (EventArgs ())
-
-        // clear undo buffers
-        form.eventFilterTextBox.EmptyUndoBuffer ()
-        form.preludeTextBox.EmptyUndoBuffer ()
-        form.assetGraphTextBox.EmptyUndoBuffer ()
-        form.overlayerTextBox.EmptyUndoBuffer ()
 
         // finally, show and activate form
         form.Show ()

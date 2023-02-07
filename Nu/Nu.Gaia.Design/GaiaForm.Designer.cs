@@ -69,36 +69,36 @@ namespace Nu.Gaia.Design
             this.propertyNameLabel = new System.Windows.Forms.Label();
             this.discardPropertyButton = new System.Windows.Forms.Button();
             this.propertyDescriptionTextBox = new System.Windows.Forms.TextBox();
-            this.propertyValueTextBox = new Nu.Gaia.Design.SymbolicTextBox();
+            this.propertyValueTextBox = new System.Windows.Forms.TextBox();
             this.assetGraphTabPage = new System.Windows.Forms.TabPage();
             this.assetGraph = new System.Windows.Forms.SplitContainer();
             this.discardAssetGraphButton = new System.Windows.Forms.Button();
             this.applyAssetGraphButton = new System.Windows.Forms.Button();
-            this.assetGraphTextBox = new Nu.Gaia.Design.SymbolicTextBox();
+            this.assetGraphTextBox = new System.Windows.Forms.TextBox();
             this.overlayTabPage = new System.Windows.Forms.TabPage();
             this.overlayer = new System.Windows.Forms.SplitContainer();
             this.discardOverlayerButton = new System.Windows.Forms.Button();
             this.applyOverlayerButton = new System.Windows.Forms.Button();
-            this.overlayerTextBox = new Nu.Gaia.Design.SymbolicTextBox();
+            this.overlayerTextBox = new System.Windows.Forms.TextBox();
             this.evaluatorTabPage = new System.Windows.Forms.TabPage();
             this.terminal = new System.Windows.Forms.SplitContainer();
-            this.evalInputTextBox = new Nu.Gaia.Design.SymbolicTextBox();
+            this.evalInputTextBox = new System.Windows.Forms.TextBox();
             this.splitContainer10 = new System.Windows.Forms.SplitContainer();
             this.evalLineButton = new System.Windows.Forms.Button();
             this.clearOutputButton = new System.Windows.Forms.Button();
             this.evalButton = new System.Windows.Forms.Button();
-            this.evalOutputTextBox = new Nu.Gaia.Design.SymbolicTextBox();
+            this.evalOutputTextBox = new System.Windows.Forms.TextBox();
             this.preludeTabPage = new System.Windows.Forms.TabPage();
             this.splitContainer6 = new System.Windows.Forms.SplitContainer();
             this.discardPreludeButton = new System.Windows.Forms.Button();
             this.applyPreludeButton = new System.Windows.Forms.Button();
-            this.preludeTextBox = new Nu.Gaia.Design.SymbolicTextBox();
+            this.preludeTextBox = new System.Windows.Forms.TextBox();
             this.eventTracingTabPage = new System.Windows.Forms.TabPage();
             this.eventTracing = new System.Windows.Forms.SplitContainer();
             this.discardEventFilterButton = new System.Windows.Forms.Button();
             this.traceEventsCheckBox = new System.Windows.Forms.CheckBox();
             this.applyEventFilterButton = new System.Windows.Forms.Button();
-            this.eventFilterTextBox = new Nu.Gaia.Design.SymbolicTextBox();
+            this.eventFilterTextBox = new System.Windows.Forms.TextBox();
             this.propertyTabControl = new System.Windows.Forms.TabControl();
             this.gameTabPage = new System.Windows.Forms.TabPage();
             this.gamePropertyGrid = new System.Windows.Forms.PropertyGrid();
@@ -681,14 +681,11 @@ namespace Nu.Gaia.Design
             // propertyValueTextBox
             // 
             this.propertyValueTextBox.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.propertyValueTextBox.ExtraDescent = 1;
-            this.propertyValueTextBox.Keywords0 = "";
-            this.propertyValueTextBox.Keywords1 = "";
-            this.propertyValueTextBox.KeywordsImplicit = "True False Some None Right Left";
-            this.propertyValueTextBox.Lexer = ScintillaNET.Lexer.Lisp;
+            this.propertyValueTextBox.Font = new System.Drawing.Font("Lucida Console", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.propertyValueTextBox.Location = new System.Drawing.Point(0, 0);
-            this.propertyValueTextBox.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.propertyValueTextBox.Multiline = true;
             this.propertyValueTextBox.Name = "propertyValueTextBox";
+            this.propertyValueTextBox.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
             this.propertyValueTextBox.Size = new System.Drawing.Size(1359, 273);
             this.propertyValueTextBox.TabIndex = 0;
             // 
@@ -749,14 +746,11 @@ namespace Nu.Gaia.Design
             // assetGraphTextBox
             // 
             this.assetGraphTextBox.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.assetGraphTextBox.ExtraDescent = 1;
-            this.assetGraphTextBox.Keywords0 = "";
-            this.assetGraphTextBox.Keywords1 = "";
-            this.assetGraphTextBox.KeywordsImplicit = "True False Some None Right Left";
-            this.assetGraphTextBox.Lexer = ScintillaNET.Lexer.Lisp;
+            this.assetGraphTextBox.Font = new System.Drawing.Font("Lucida Console", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.assetGraphTextBox.Location = new System.Drawing.Point(0, 0);
-            this.assetGraphTextBox.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.assetGraphTextBox.Multiline = true;
             this.assetGraphTextBox.Name = "assetGraphTextBox";
+            this.assetGraphTextBox.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
             this.assetGraphTextBox.Size = new System.Drawing.Size(1359, 273);
             this.assetGraphTextBox.TabIndex = 0;
             // 
@@ -817,16 +811,13 @@ namespace Nu.Gaia.Design
             // overlayerTextBox
             // 
             this.overlayerTextBox.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.overlayerTextBox.ExtraDescent = 1;
-            this.overlayerTextBox.Keywords0 = "";
-            this.overlayerTextBox.Keywords1 = "";
-            this.overlayerTextBox.KeywordsImplicit = "True False Some None Right Left";
-            this.overlayerTextBox.Lexer = ScintillaNET.Lexer.Lisp;
+            this.overlayerTextBox.Font = new System.Drawing.Font("Lucida Console", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.overlayerTextBox.Location = new System.Drawing.Point(0, 0);
-            this.overlayerTextBox.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.overlayerTextBox.Multiline = true;
             this.overlayerTextBox.Name = "overlayerTextBox";
+            this.overlayerTextBox.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
             this.overlayerTextBox.Size = new System.Drawing.Size(1359, 273);
-            this.overlayerTextBox.TabIndex = 0;
+            this.overlayerTextBox.TabIndex = 1;
             // 
             // evaluatorTabPage
             // 
@@ -855,24 +846,21 @@ namespace Nu.Gaia.Design
             // 
             this.terminal.Panel2.Controls.Add(this.splitContainer10);
             this.terminal.Size = new System.Drawing.Size(1548, 279);
-            this.terminal.SplitterDistance = 1118;
+            this.terminal.SplitterDistance = 1114;
             this.terminal.SplitterWidth = 5;
             this.terminal.TabIndex = 0;
             // 
             // evalInputTextBox
             // 
             this.evalInputTextBox.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.evalInputTextBox.ExtraDescent = 1;
-            this.evalInputTextBox.Keywords0 = "";
-            this.evalInputTextBox.Keywords1 = "";
-            this.evalInputTextBox.KeywordsImplicit = "True False Some None Right Left";
-            this.evalInputTextBox.Lexer = ScintillaNET.Lexer.Lisp;
+            this.evalInputTextBox.Font = new System.Drawing.Font("Lucida Console", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.evalInputTextBox.Location = new System.Drawing.Point(0, 0);
-            this.evalInputTextBox.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.evalInputTextBox.Multiline = true;
             this.evalInputTextBox.Name = "evalInputTextBox";
-            this.evalInputTextBox.Size = new System.Drawing.Size(1118, 279);
-            this.evalInputTextBox.TabIndex = 0;
-            this.evalInputTextBox.Text = "; Evaluate script expressions here!\n[+ 2 2]\n";
+            this.evalInputTextBox.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
+            this.evalInputTextBox.Size = new System.Drawing.Size(1114, 279);
+            this.evalInputTextBox.TabIndex = 2;
+            this.evalInputTextBox.Text = "; Evaluate script expressions here!\r\n[+ 2 2]";
             // 
             // splitContainer10
             // 
@@ -892,7 +880,7 @@ namespace Nu.Gaia.Design
             // splitContainer10.Panel2
             // 
             this.splitContainer10.Panel2.Controls.Add(this.evalOutputTextBox);
-            this.splitContainer10.Size = new System.Drawing.Size(425, 279);
+            this.splitContainer10.Size = new System.Drawing.Size(429, 279);
             this.splitContainer10.SplitterDistance = 55;
             this.splitContainer10.SplitterWidth = 5;
             this.splitContainer10.TabIndex = 1;
@@ -931,17 +919,13 @@ namespace Nu.Gaia.Design
             // evalOutputTextBox
             // 
             this.evalOutputTextBox.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.evalOutputTextBox.ExtraDescent = 1;
-            this.evalOutputTextBox.Keywords0 = "";
-            this.evalOutputTextBox.Keywords1 = "";
-            this.evalOutputTextBox.KeywordsImplicit = "True False Some None Right Left";
-            this.evalOutputTextBox.Lexer = ScintillaNET.Lexer.Lisp;
+            this.evalOutputTextBox.Font = new System.Drawing.Font("Lucida Console", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.evalOutputTextBox.Location = new System.Drawing.Point(0, 0);
-            this.evalOutputTextBox.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.evalOutputTextBox.Multiline = true;
             this.evalOutputTextBox.Name = "evalOutputTextBox";
-            this.evalOutputTextBox.ReadOnly = true;
-            this.evalOutputTextBox.Size = new System.Drawing.Size(365, 279);
-            this.evalOutputTextBox.TabIndex = 0;
+            this.evalOutputTextBox.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
+            this.evalOutputTextBox.Size = new System.Drawing.Size(369, 279);
+            this.evalOutputTextBox.TabIndex = 2;
             // 
             // preludeTabPage
             // 
@@ -1000,16 +984,13 @@ namespace Nu.Gaia.Design
             // preludeTextBox
             // 
             this.preludeTextBox.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.preludeTextBox.ExtraDescent = 1;
-            this.preludeTextBox.Keywords0 = "";
-            this.preludeTextBox.Keywords1 = "";
-            this.preludeTextBox.KeywordsImplicit = "True False Some None Right Left";
-            this.preludeTextBox.Lexer = ScintillaNET.Lexer.Lisp;
+            this.preludeTextBox.Font = new System.Drawing.Font("Lucida Console", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.preludeTextBox.Location = new System.Drawing.Point(0, 0);
-            this.preludeTextBox.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.preludeTextBox.Multiline = true;
             this.preludeTextBox.Name = "preludeTextBox";
+            this.preludeTextBox.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
             this.preludeTextBox.Size = new System.Drawing.Size(1359, 273);
-            this.preludeTextBox.TabIndex = 0;
+            this.preludeTextBox.TabIndex = 1;
             // 
             // eventTracingTabPage
             // 
@@ -1080,16 +1061,13 @@ namespace Nu.Gaia.Design
             // eventFilterTextBox
             // 
             this.eventFilterTextBox.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.eventFilterTextBox.ExtraDescent = 1;
-            this.eventFilterTextBox.Keywords0 = "";
-            this.eventFilterTextBox.Keywords1 = "";
-            this.eventFilterTextBox.KeywordsImplicit = "True False Some None Right Left";
-            this.eventFilterTextBox.Lexer = ScintillaNET.Lexer.Lisp;
+            this.eventFilterTextBox.Font = new System.Drawing.Font("Lucida Console", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.eventFilterTextBox.Location = new System.Drawing.Point(0, 0);
-            this.eventFilterTextBox.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.eventFilterTextBox.Multiline = true;
             this.eventFilterTextBox.Name = "eventFilterTextBox";
+            this.eventFilterTextBox.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
             this.eventFilterTextBox.Size = new System.Drawing.Size(1359, 273);
-            this.eventFilterTextBox.TabIndex = 0;
+            this.eventFilterTextBox.TabIndex = 1;
             // 
             // propertyTabControl
             // 
@@ -1133,7 +1111,7 @@ namespace Nu.Gaia.Design
             this.screenTabPage.Location = new System.Drawing.Point(4, 24);
             this.screenTabPage.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.screenTabPage.Name = "screenTabPage";
-            this.screenTabPage.Size = new System.Drawing.Size(328, 938);
+            this.screenTabPage.Size = new System.Drawing.Size(280, 941);
             this.screenTabPage.TabIndex = 2;
             this.screenTabPage.Text = "Screen";
             this.screenTabPage.UseVisualStyleBackColor = true;
@@ -1145,7 +1123,7 @@ namespace Nu.Gaia.Design
             this.screenPropertyGrid.Location = new System.Drawing.Point(0, 0);
             this.screenPropertyGrid.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.screenPropertyGrid.Name = "screenPropertyGrid";
-            this.screenPropertyGrid.Size = new System.Drawing.Size(328, 938);
+            this.screenPropertyGrid.Size = new System.Drawing.Size(280, 941);
             this.screenPropertyGrid.TabIndex = 1;
             this.screenPropertyGrid.ToolbarVisible = false;
             // 
@@ -1156,7 +1134,7 @@ namespace Nu.Gaia.Design
             this.groupTabPage.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.groupTabPage.Name = "groupTabPage";
             this.groupTabPage.Padding = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            this.groupTabPage.Size = new System.Drawing.Size(328, 938);
+            this.groupTabPage.Size = new System.Drawing.Size(280, 941);
             this.groupTabPage.TabIndex = 1;
             this.groupTabPage.Text = "Group";
             this.groupTabPage.UseVisualStyleBackColor = true;
@@ -1168,7 +1146,7 @@ namespace Nu.Gaia.Design
             this.groupPropertyGrid.Location = new System.Drawing.Point(4, 3);
             this.groupPropertyGrid.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.groupPropertyGrid.Name = "groupPropertyGrid";
-            this.groupPropertyGrid.Size = new System.Drawing.Size(320, 932);
+            this.groupPropertyGrid.Size = new System.Drawing.Size(272, 935);
             this.groupPropertyGrid.TabIndex = 0;
             this.groupPropertyGrid.ToolbarVisible = false;
             // 
@@ -1179,7 +1157,7 @@ namespace Nu.Gaia.Design
             this.entityTabPage.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.entityTabPage.Name = "entityTabPage";
             this.entityTabPage.Padding = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            this.entityTabPage.Size = new System.Drawing.Size(328, 938);
+            this.entityTabPage.Size = new System.Drawing.Size(280, 941);
             this.entityTabPage.TabIndex = 0;
             this.entityTabPage.Text = "Entity";
             this.entityTabPage.UseVisualStyleBackColor = true;
@@ -1192,7 +1170,7 @@ namespace Nu.Gaia.Design
             this.entityPropertyGrid.Location = new System.Drawing.Point(4, 3);
             this.entityPropertyGrid.Margin = new System.Windows.Forms.Padding(2);
             this.entityPropertyGrid.Name = "entityPropertyGrid";
-            this.entityPropertyGrid.Size = new System.Drawing.Size(320, 932);
+            this.entityPropertyGrid.Size = new System.Drawing.Size(272, 935);
             this.entityPropertyGrid.TabIndex = 0;
             this.entityPropertyGrid.ToolbarVisible = false;
             // 
@@ -1785,6 +1763,7 @@ namespace Nu.Gaia.Design
             this.propertyEditorTabPage.ResumeLayout(false);
             this.propertyEditor.Panel1.ResumeLayout(false);
             this.propertyEditor.Panel2.ResumeLayout(false);
+            this.propertyEditor.Panel2.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.propertyEditor)).EndInit();
             this.propertyEditor.ResumeLayout(false);
             this.splitContainer5.Panel1.ResumeLayout(false);
@@ -1796,31 +1775,37 @@ namespace Nu.Gaia.Design
             this.assetGraphTabPage.ResumeLayout(false);
             this.assetGraph.Panel1.ResumeLayout(false);
             this.assetGraph.Panel2.ResumeLayout(false);
+            this.assetGraph.Panel2.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.assetGraph)).EndInit();
             this.assetGraph.ResumeLayout(false);
             this.overlayTabPage.ResumeLayout(false);
             this.overlayer.Panel1.ResumeLayout(false);
             this.overlayer.Panel2.ResumeLayout(false);
+            this.overlayer.Panel2.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.overlayer)).EndInit();
             this.overlayer.ResumeLayout(false);
             this.evaluatorTabPage.ResumeLayout(false);
             this.terminal.Panel1.ResumeLayout(false);
+            this.terminal.Panel1.PerformLayout();
             this.terminal.Panel2.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.terminal)).EndInit();
             this.terminal.ResumeLayout(false);
             this.splitContainer10.Panel1.ResumeLayout(false);
             this.splitContainer10.Panel2.ResumeLayout(false);
+            this.splitContainer10.Panel2.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer10)).EndInit();
             this.splitContainer10.ResumeLayout(false);
             this.preludeTabPage.ResumeLayout(false);
             this.splitContainer6.Panel1.ResumeLayout(false);
             this.splitContainer6.Panel2.ResumeLayout(false);
+            this.splitContainer6.Panel2.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer6)).EndInit();
             this.splitContainer6.ResumeLayout(false);
             this.eventTracingTabPage.ResumeLayout(false);
             this.eventTracing.Panel1.ResumeLayout(false);
             this.eventTracing.Panel1.PerformLayout();
             this.eventTracing.Panel2.ResumeLayout(false);
+            this.eventTracing.Panel2.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.eventTracing)).EndInit();
             this.eventTracing.ResumeLayout(false);
             this.propertyTabControl.ResumeLayout(false);
@@ -1865,18 +1850,12 @@ namespace Nu.Gaia.Design
         public System.Windows.Forms.TabPage propertyEditorTabPage;
         public System.Windows.Forms.TabPage eventTracingTabPage;
         public System.Windows.Forms.TabControl rolloutTabControl;
-        public SymbolicTextBox propertyValueTextBox;
-        public SymbolicTextBox eventFilterTextBox;
         public System.Windows.Forms.TabPage overlayTabPage;
         public System.Windows.Forms.Button discardAssetGraphButton;
         public System.Windows.Forms.Button applyAssetGraphButton;
-        public SymbolicTextBox assetGraphTextBox;
         public System.Windows.Forms.Button discardOverlayerButton;
         public System.Windows.Forms.Button applyOverlayerButton;
-        public SymbolicTextBox overlayerTextBox;
         public System.Windows.Forms.TabPage assetGraphTabPage;
-        public SymbolicTextBox evalInputTextBox;
-        public SymbolicTextBox evalOutputTextBox;
         private System.Windows.Forms.SplitContainer splitContainer10;
         public System.Windows.Forms.SplitContainer terminal;
         public System.Windows.Forms.SplitContainer eventTracing;
@@ -1888,7 +1867,6 @@ namespace Nu.Gaia.Design
         public System.Windows.Forms.SplitContainer splitContainer6;
         public System.Windows.Forms.Button discardPreludeButton;
         public System.Windows.Forms.Button applyPreludeButton;
-        public SymbolicTextBox preludeTextBox;
         public System.Windows.Forms.TabControl propertyTabControl;
         public System.Windows.Forms.PropertyGrid groupPropertyGrid;
         private System.Windows.Forms.TabControl tabControl1;
@@ -1982,6 +1960,13 @@ namespace Nu.Gaia.Design
         public System.Windows.Forms.ToolStripButton hierarchyCollapseAllButton;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator11;
         private System.Windows.Forms.ToolStripLabel toolStripLabel6;
+        public TextBox propertyValueTextBox;
+        public TextBox overlayerTextBox;
+        public TextBox assetGraphTextBox;
+        public TextBox preludeTextBox;
+        public TextBox eventFilterTextBox;
+        public TextBox evalInputTextBox;
+        public TextBox evalOutputTextBox;
     }
 }
 

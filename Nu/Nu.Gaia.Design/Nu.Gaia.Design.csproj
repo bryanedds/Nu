@@ -32,13 +32,6 @@
 		<Reference Include="OpenGL.Net.WinForms">
 			<HintPath>..\..\Nu\Nu.Dependencies\OpenGL.NET.0.8.4\lib\net461\OpenGL.Net.WinForms.dll</HintPath>
 		</Reference>
-		<Reference Include="ScintillaNET">
-			<HintPath>..\..\Nu\Nu.Dependencies\ScintillaNET\net7.0-windows\ScintillaNET.dll</HintPath>
-		</Reference>
-		<Reference Include="ScintillaNET FindReplaceDialog, Version=1.4.0.26906, Culture=neutral, processorArchitecture=MSIL">
-			<SpecificVersion>False</SpecificVersion>
-			<HintPath>..\..\Nu\Nu.Dependencies\ScintillaNET-FindReplace\Debug\ScintillaNET FindReplaceDialog.dll</HintPath>
-		</Reference>
 	</ItemGroup>
 
 </Project>
