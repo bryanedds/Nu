@@ -3,6 +3,7 @@
 
 namespace Nu
 open System
+open System.Collections.Concurrent
 open System.Collections.Generic
 open System.Numerics
 open System.Runtime.CompilerServices
@@ -12,9 +13,26 @@ open BepuPhysics.CollisionDetection
 open BepuPhysics.Constraints
 open BepuPhysics.EventSystem
 open BepuUtilities
+open BepuUtilities.Collections
 open BepuUtilities.Memory
 open Prime
 open Nu
+
+type private BodyShapeSourceData =
+    struct
+        val BodyShapeSourceInternalObj : obj
+        end
+    new (bodyShapeSourceInternalObj : BodyShapeSourceInternal) =
+        { BodyShapeSourceInternalObj = bodyShapeSourceInternalObj }
+
+type private BodySourceData =
+    struct
+        val BodySourceInternalObj : obj
+        val BodyShapeSourceInternalObjs : QuickDictionary<int, BodyShapeSourceData, PrimitiveComparer<int>>
+        end
+    new (bodySourceInternal : BodySourceInternal, pool) =
+        { BodySourceInternalObj = bodySourceInternal
+          BodyShapeSourceInternalObjs = QuickDictionary (1, pool) }
 
 type private PoseIntegratorCallbacks =
     struct
@@ -72,7 +90,7 @@ type private NarrowPhaseCallbacks =
         member this.Dispose () =
             this.Dispose ()
 
-type private ContactEventHandler (integrationMessages : IntegrationMessage List, shapeSources : CollidableProperty<BodyShapeSourceInternalJib> array) =
+type private ContactEventHandler (integrationMessages : IntegrationMessage ConcurrentQueue, bodySourceData : CollidableProperty<BodySourceData> array) =
     interface IContactEventHandler with
 
         member this.OnContactAdded (eventSource, pair, contactManifold, contactOffset, contactNormal, depth, featureId, contactIndex, workerIndex) = ()
@@ -82,47 +100,48 @@ type private ContactEventHandler (integrationMessages : IntegrationMessage List,
         member this.OnPairEnded (eventSource, pair) = ()
         member this.OnTouchingUpdated (eventSource, pair, contactManifold, workerIndex) = ()
 
-        member this.OnTouchingStarted (eventSource, pair, contactManifold, workerIndex) =
-            let (shapeSource, shapeSource2) =
+        member this.OnTouchingStarted (eventSource, pair, contactManifold, _) =
+            let (bodySource, bodySource2) =
                 if pair.A = eventSource
-                then (shapeSources.[0].[pair.A], shapeSources.[0].[pair.B])
-                else (shapeSources.[0].[pair.B], shapeSources.[0].[pair.A])
+                then (bodySourceData.[0].[pair.A], bodySourceData.[0].[pair.B])
+                else (bodySourceData.[0].[pair.B], bodySourceData.[0].[pair.A])
             let bodyCollisionMessage =
-                { BodyShapeSource = shapeSource.BodyShapeSourceInternalObj :?> BodyShapeSourceInternal
-                  BodyShapeSource2 = shapeSource2.BodyShapeSourceInternalObj :?> BodyShapeSourceInternal
+                { BodyShapeSource = bodySource.BodyShapeSourceInternalObjs.[???] :?> BodyShapeSourceInternal
+                  BodyShapeSource2 = bodySource2.BodyShapeSourceInternalObjs.[???] :?> BodyShapeSourceInternal
                   Normal = contactManifold.GetNormal (&contactManifold, 0) }
-            integrationMessages.Add (IntegrationMessage.BodyCollisionMessage bodyCollisionMessage)
+            integrationMessages.Enqueue (IntegrationMessage.BodyCollisionMessage bodyCollisionMessage)
 
-        member this.OnTouchingStopped (eventSource, pair, contactManifold, workerIndex) =
-            let (shapeSource, shapeSource2) =
+        member this.OnTouchingStopped (eventSource, pair, contactManifold, _) =
+            let (bodySource, bodySource2) =
                 if pair.A = eventSource
-                then (shapeSources.[0].[pair.A], shapeSources.[0].[pair.B])
-                else (shapeSources.[0].[pair.B], shapeSources.[0].[pair.A])
+                then (bodySourceData.[0].[pair.A], bodySourceData.[0].[pair.B])
+                else (bodySourceData.[0].[pair.B], bodySourceData.[0].[pair.A])
             let bodySeparationMessage =
-                { BodyShapeSource = shapeSource.BodyShapeSourceInternalObj :?> BodyShapeSourceInternal
-                  BodyShapeSource2 = shapeSource2.BodyShapeSourceInternalObj :?> BodyShapeSourceInternal }
-            integrationMessages.Add (IntegrationMessage.BodySeparationMessage bodySeparationMessage)
+                { BodyShapeSource = bodySource.BodyShapeSourceInternalObjs.[???] :?> BodyShapeSourceInternal
+                  BodyShapeSource2 = bodySource2.BodyShapeSourceInternalObjs.[???] :?> BodyShapeSourceInternal }
+            integrationMessages.Enqueue (IntegrationMessage.BodySeparationMessage bodySeparationMessage)
 
 /// The BepuPhysics 3d implementation of PhysicsEngine.
 type [<ReferenceEquality>] BepuPhysicsEngine =
     private
         { PhysicsContext : Simulation
           PhysicsMessages : PhysicsMessage UList
-          IntegrationMessages : IntegrationMessage List
+          IntegrationMessages : IntegrationMessage ConcurrentQueue
           ThreadDispatcher : ThreadDispatcher
-          ShapeSources : CollidableProperty<BodyShapeSourceInternalJib> array
+          BufferPool : BufferPool
+          BodySourceData : CollidableProperty<BodySourceData> array
           ContactEvents : ContactEvents
           ContactEventHandler : ContactEventHandler
           mutable RebuildingHack : bool }
 
     static member make () =
         let physicsMessages = UList.makeEmpty Imperative
-        let integrationMessages = List ()
+        let integrationMessages = ConcurrentQueue ()
         let threadDispatcher = new ThreadDispatcher (Constants.Physics.TargetThreadCount)
         let bufferPool = new BufferPool ()
-        let shapeSources = Array.init 1 (fun _ -> new CollidableProperty<BodyShapeSourceInternalJib> ())
+        let bodySourceData = Array.init 1 (fun _ -> new CollidableProperty<BodySourceData> ())
         let contactEvents = ContactEvents (threadDispatcher, bufferPool)
-        let contactEventHandler = ContactEventHandler (integrationMessages, shapeSources)
+        let contactEventHandler = ContactEventHandler (integrationMessages, bodySourceData)
         let narrowPhaseCallbacks = NarrowPhaseCallbacks ()
         let poseIntegratorCallbacks = PoseIntegratorCallbacks Constants.Engine.GravityDefault
         let solveDescription = new SolveDescription (8, 1)
@@ -131,14 +150,15 @@ type [<ReferenceEquality>] BepuPhysicsEngine =
           PhysicsMessages = physicsMessages
           IntegrationMessages = integrationMessages
           ThreadDispatcher = threadDispatcher
-          ShapeSources = shapeSources
+          BufferPool = bufferPool
+          BodySourceData = bodySourceData
           ContactEvents = contactEvents
           ContactEventHandler = contactEventHandler
           RebuildingHack = false }
 
     static member cleanUp physicsEngine =
         physicsEngine.ContactEvents.Dispose ()
-        physicsEngine.ShapeSources.[0].Dispose ()
+        physicsEngine.BodySourceData.[0].Dispose ()
         physicsEngine.ThreadDispatcher.Dispose ()
         physicsEngine.PhysicsContext.Dispose ()
 
@@ -167,15 +187,16 @@ type [<ReferenceEquality>] BepuPhysicsEngine =
                     let bodyDescription = BodyDescription.CreateKinematic (RigidPose (), velocities, shapeIndex, activity)
                     physicsEngine.PhysicsContext.Bodies.Add &bodyDescription |> Right
 
-            let bodyShapeSource =
-                { Simulant = bodySource.Simulant
-                  BodyId = bodySource.BodyId
-                  ShapeId = match bodyPropertiesOpt with Some p -> p.BodyShapeId | None -> 0UL }
+            let bodySourceData = BodySourceData (bodySource, physicsEngine.BufferPool)
+            for i in 0 .. dec compoundChildren.Length do
+                let shapeId = _
+                let bodyShapeSource = { Simulant = bodySource.Simulant; BodyId = bodySource.BodyId; ShapeId = shapeId }
+                bodySource.BodyShapeSourceInternalObjs.Add (shapeId, bodyShapeSource)
             match handle with
             | Left staticHandle ->
-                physicsEngine.ShapeSources.[0].[staticHandle] <- BodyShapeSourceInternalJib bodyShapeSource
+                physicsEngine.BodySourceData.[0].[staticHandle] <- bodySource
             | Right bodyHandle ->
-                physicsEngine.ShapeSources.[0].[bodyHandle] <- BodyShapeSourceInternalJib bodyShapeSource
+                physicsEngine.BodySourceData.[0].[bodyHandle] <- bodySource
                 if not bodyProperties.IgnoreEvents then
                     physicsEngine.ContactEvents.Register (bodyHandle, physicsEngine.ContactEventHandler)
 
@@ -313,15 +334,14 @@ type [<ReferenceEquality>] BepuPhysicsEngine =
         physicsEngine.ContactEvents.Flush ()
 
     static member private createIntegrationMessages physicsEngine =
-        let shapeSources = physicsEngine.ShapeSources
+        let bodySourceData = physicsEngine.BodySourceData
         let bodies = physicsEngine.PhysicsContext.Bodies
         let bodiesActive = bodies.ActiveSet
         for i in 0 .. bodiesActive.Count do
             let bodyHandle = bodiesActive.IndexToHandle.[i]
             let body = bodies.[bodyHandle]
             if body.Awake then
-                let shapeSource = shapeSources.[0].[bodyHandle].BodyShapeSourceInternalObj :?> BodyShapeSourceInternal
-                let bodySource = { BodySourceInternal.Simulant = shapeSource.Simulant; BodyId = shapeSource.BodyId }
+                let bodySource = bodySourceData.[0].[bodyHandle].BodySourceInternalObj :?> BodySourceInternal
                 let bodyTransformMessage =
                     BodyTransformMessage
                         { BodySource = bodySource
@@ -329,7 +349,7 @@ type [<ReferenceEquality>] BepuPhysicsEngine =
                           Rotation = body.Pose.Orientation
                           LinearVelocity = body.Velocity.Linear
                           AngularVelocity = body.Velocity.Angular }
-                physicsEngine.IntegrationMessages.Add bodyTransformMessage
+                physicsEngine.IntegrationMessages.Enqueue bodyTransformMessage
 
         static member private handlePhysicsMessages physicsMessages physicsEngine = () // TODO.
 

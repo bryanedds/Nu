@@ -52,14 +52,6 @@ type BodyShapeSourceInternal =
       BodyId : uint64
       ShapeId : uint64 }
 
-/// Stores a BodyShapeSourceInternal in a way required by value-based physics engines.
-type BodyShapeSourceInternalJib =
-    struct
-        val BodyShapeSourceInternalObj : obj
-        end
-    new (obj) =
-        { BodyShapeSourceInternalObj = obj }
-
 /// Describes body shape-specific properties.
 type BodyShapeProperties =
     { BodyShapeId : uint64
