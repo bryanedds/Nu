@@ -22,6 +22,8 @@ type [<Struct; StructLayout (LayoutKind.Sequential)>] private PreviousCollision 
       mutable Fresh : bool
       mutable WasTouching : bool
       mutable ContactCount : int
+      mutable ShapeId : int
+      mutable ShapeId2 : int
       mutable FeatureId0 : int
       mutable FeatureId1 : int
       mutable FeatureId2 : int
@@ -84,6 +86,8 @@ and IContactEventHandler =
         /// <typeparam name="'TManifold">Type of the contact manifold detected.</typeparam>
         /// <param name="eventSource">Collidable that the event was attached to.</param>
         /// <param name="pair">Collidable pair triggering the event.</param>
+        /// <param name="shapeId">The shape index of the touching shape.</param>
+        /// <param name="shapeId2">The shape index of the other touching shape.</param>
         /// <param name="contactManifold">Set of remaining contacts in the collision.</param>
         /// <param name="contactOffset">Offset from the pair's local origin to the new contact.</param>
         /// <param name="contactNormal">Normal of the new contact.</param>
@@ -92,7 +96,7 @@ and IContactEventHandler =
         /// <param name="contactIndex">Index of the new contact in the contact manifold.</param>
         /// <param name="workerIndex">Index of the worker thread that fired this event.</param>
         abstract OnContactAdded<'TManifold when 'TManifold : (new : unit -> 'TManifold) and 'TManifold :> IContactManifold<'TManifold>> :
-            CollidableReference * CollidablePair * 'TManifold byref * Vector3 * Vector3 * single * int * int * int -> unit
+            CollidableReference * CollidablePair * int * int * 'TManifold byref * Vector3 * Vector3 * single * int * int * int -> unit
 
         /// <summary>
         /// Fires when a contact is removed.
@@ -100,11 +104,13 @@ and IContactEventHandler =
         /// <typeparam name="'TManifold">Type of the contact manifold detected.</typeparam>
         /// <param name="eventSource">Collidable that the event was attached to.</param>
         /// <param name="pair">Collidable pair triggering the event.</param>
+        /// <param name="shapeId">The shape index of the touching shape.</param>
+        /// <param name="shapeId2">The shape index of the other touching shape.</param>
         /// <param name="contactManifold">Set of remaining contacts in the collision.</param>
         /// <param name="removedFeatureId">Feature id of the contact that was removed and is no longer present in the contact manifold.</param>
         /// <param name="workerIndex">Index of the worker thread that fired this event.</param>
         abstract OnContactRemoved<'TManifold when 'TManifold : (new : unit -> 'TManifold) and 'TManifold :> IContactManifold<'TManifold>> :
-            CollidableReference * CollidablePair * 'TManifold byref * int * int -> unit
+            CollidableReference * CollidablePair * int * int * 'TManifold byref * int * int -> unit
 
         /// <summary>
         /// Fires the first time a pair is observed to be touching. Touching means that there are contacts with nonnegative depths in the manifold.
@@ -112,10 +118,12 @@ and IContactEventHandler =
         /// <typeparam name="'TManifold">Type of the contact manifold detected.</typeparam>
         /// <param name="eventSource">Collidable that the event was attached to.</param>
         /// <param name="pair">Collidable pair triggering the event.</param>
+        /// <param name="shapeId">The shape index of the touching shape.</param>
+        /// <param name="shapeId2">The shape index of the other touching shape.</param>
         /// <param name="contactManifold">Set of remaining contacts in the collision.</param>
         /// <param name="workerIndex">Index of the worker thread that fired this event.</param>
         abstract OnTouchingStarted<'TManifold when 'TManifold : (new : unit -> 'TManifold) and 'TManifold :> IContactManifold<'TManifold>> :
-            CollidableReference * CollidablePair * 'TManifold byref * int -> unit
+            CollidableReference * CollidablePair * int * int * 'TManifold byref * int -> unit
 
         /// <summary>
         /// Fires whenever a pair is observed to be touching. Touching means that there are contacts with nonnegative depths in the manifold. Will not fire for sleeping pairs.
@@ -123,10 +131,12 @@ and IContactEventHandler =
         /// <typeparam name="'TManifold">Type of the contact manifold detected.</typeparam>
         /// <param name="eventSource">Collidable that the event was attached to.</param>
         /// <param name="pair">Collidable pair triggering the event.</param>
+        /// <param name="shapeId">The shape index of the touching shape.</param>
+        /// <param name="shapeId2">The shape index of the other touching shape.</param>
         /// <param name="contactManifold">Set of remaining contacts in the collision.</param>
         /// <param name="workerIndex">Index of the worker thread that fired this event.</param>
         abstract OnTouchingUpdated<'TManifold when 'TManifold : (new : unit -> 'TManifold) and 'TManifold :> IContactManifold<'TManifold>> :
-            CollidableReference * CollidablePair * 'TManifold byref * int -> unit
+            CollidableReference * CollidablePair * int * int * 'TManifold byref * int -> unit
 
         /// <summary>
         /// Fires when a pair stops touching. Touching means that there are contacts with nonnegative depths in the manifold.
@@ -134,10 +144,12 @@ and IContactEventHandler =
         /// <typeparam name="'TManifold">Type of the contact manifold detected.</typeparam>
         /// <param name="eventSource">Collidable that the event was attached to.</param>
         /// <param name="pair">Collidable pair triggering the event.</param>
+        /// <param name="shapeId">The shape index of the touching shape.</param>
+        /// <param name="shapeId2">The shape index of the other touching shape.</param>
         /// <param name="contactManifold">Set of remaining contacts in the collision.</param>
         /// <param name="workerIndex">Index of the worker thread that fired this event.</param>
         abstract OnTouchingStopped<'TManifold when 'TManifold : (new : unit -> 'TManifold) and 'TManifold :> IContactManifold<'TManifold>> :
-            CollidableReference  * CollidablePair  * 'TManifold byref * int -> unit
+            CollidableReference  * CollidablePair  * int * int * 'TManifold byref * int -> unit
 
         /// <summary>
         /// Fires when a pair is observed for the first time.
@@ -145,10 +157,12 @@ and IContactEventHandler =
         /// <typeparam name="'TManifold">Type of the contact manifold detected.</typeparam>
         /// <param name="eventSource">Collidable that the event was attached to.</param>
         /// <param name="pair">Collidable pair triggering the event.</param>
+        /// <param name="shapeId">The shape index of the touching shape.</param>
+        /// <param name="shapeId2">The shape index of the other touching shape.</param>
         /// <param name="contactManifold">Set of remaining contacts in the collision.</param>
         /// <param name="workerIndex">Index of the worker thread that fired this event.</param>
         abstract OnPairCreated<'TManifold when 'TManifold : (new : unit -> 'TManifold) and 'TManifold :> IContactManifold<'TManifold>> :
-            CollidableReference * CollidablePair  * 'TManifold byref * int -> unit
+            CollidableReference * CollidablePair  * int * int * 'TManifold byref * int -> unit
 
         /// <summary>
         /// Fires whenever a pair is updated. Will not fire for sleeping pairs.
@@ -156,10 +170,12 @@ and IContactEventHandler =
         /// <typeparam name="'TManifold">Type of the contact manifold detected.</typeparam>
         /// <param name="eventSource">Collidable that the event was attached to.</param>
         /// <param name="pair">Collidable pair triggering the event.</param>
+        /// <param name="shapeId">The shape index of the touching shape.</param>
+        /// <param name="shapeId2">The shape index of the other touching shape.</param>
         /// <param name="contactManifold">Set of remaining contacts in the collision.</param>
         /// <param name="workerIndex">Index of the worker thread that fired this event.</param>
         abstract OnPairUpdated<'TManifold when 'TManifold : (new : unit -> 'TManifold) and 'TManifold :> IContactManifold<'TManifold>> :
-            CollidableReference  * CollidablePair  * 'TManifold byref * int -> unit
+            CollidableReference  * CollidablePair  * int * int * 'TManifold byref * int -> unit
 
         /// <summary>
         /// Fires when a pair ends.
@@ -167,7 +183,9 @@ and IContactEventHandler =
         /// <typeparam name="'TManifold">Type of the contact manifold detected.</typeparam>
         /// <param name="eventSource">Collidable that the event was attached to.</param>
         /// <param name="pair">Collidable pair triggering the event.</param>
-        abstract OnPairEnded : CollidableReference * CollidablePair -> unit
+        /// <param name="shapeId">The shape index of the touching shape.</param>
+        /// <param name="shapeId2">The shape index of the other touching shape.</param>
+        abstract OnPairEnded : CollidableReference * CollidablePair * int * int -> unit
 
         end
 
@@ -330,7 +348,7 @@ type [<AllowNullLiteral>] ContactEvents
 
     [<MethodImpl (MethodImplOptions.AggressiveInlining)>]
     member private this.UpdatePreviousCollision<'TManifold when 'TManifold : (new : unit -> 'TManifold) and 'TManifold :> IContactManifold<'TManifold>>
-        (collision : PreviousCollision byref, manifold : 'TManifold byref, isTouching : bool) =
+        (collision : PreviousCollision byref, shapeId : int, shapeId2 : int, manifold : 'TManifold byref, isTouching : bool) =
         Debug.Assert (manifold.Count <= 8, "This code was built on the assumption that nonconvex manifolds will have a maximum of four contacts, but that might have changed.")
         let manifoldCount = min 8 manifold.Count
         for i in 0 .. dec manifoldCount do
@@ -338,9 +356,11 @@ type [<AllowNullLiteral>] ContactEvents
         collision.ContactCount <- manifold.Count
         collision.Fresh <- true
         collision.WasTouching <- isTouching
+        collision.ShapeId <- shapeId
+        collision.ShapeId2 <- shapeId2
 
     member private this.HandleManifoldForCollidable<'TManifold when 'TManifold : (new : unit -> 'TManifold) and 'TManifold :> IContactManifold<'TManifold>>
-        (workerIndex : int, source : CollidableReference, other : CollidableReference, pair : CollidablePair, manifold : 'TManifold byref) =
+        (workerIndex : int, source : CollidableReference, other : CollidableReference, pair : CollidablePair, shapeId : int, shapeId2 : int, manifold : 'TManifold byref) =
 
         //The "source" refers to the object that an event handler was (potentially) attached to, so we look for listeners registered for it.
         //(This function is called for both orders of the pair, so we'll catch listeners for either.)
@@ -385,7 +405,7 @@ type [<AllowNullLiteral>] ContactEvents
                             let mutable depth = 0.0f
                             let mutable unused = 0
                             manifold.GetContact (contactIndex, &offset, &normal, &depth, &unused)
-                            listener.Handler.OnContactAdded (source, pair, &manifold, offset, normal, depth, featureId, contactIndex, workerIndex)
+                            listener.Handler.OnContactAdded (source, pair, shapeId, shapeId2, &manifold, offset, normal, depth, featureId, contactIndex, workerIndex)
 
                         if manifold.GetDepth (&manifold, contactIndex) >= 0.0f then
                             isTouching <- true
@@ -393,16 +413,16 @@ type [<AllowNullLiteral>] ContactEvents
                     if previousContactsStillExist <> (1 <<< collision.ContactCount) - 1 then //At least one contact that used to exist no longer does.
                         for previousContactIndex in 0 .. dec collision.ContactCount do
                             if (previousContactsStillExist &&& (1 <<< previousContactIndex)) = 0 then
-                                listener.Handler.OnContactRemoved (source, pair, &manifold, Unsafe.Add (&collision.FeatureId0, previousContactIndex), workerIndex)
+                                listener.Handler.OnContactRemoved (source, pair, shapeId, shapeId2, &manifold, Unsafe.Add (&collision.FeatureId0, previousContactIndex), workerIndex)
 
                     if not collision.WasTouching && isTouching then
-                        listener.Handler.OnTouchingStarted (source, pair, &manifold, workerIndex)
+                        listener.Handler.OnTouchingStarted (source, pair, shapeId, shapeId2, &manifold, workerIndex)
                     elif collision.WasTouching && not isTouching then
-                        listener.Handler.OnTouchingStopped (source, pair, &manifold, workerIndex)
+                        listener.Handler.OnTouchingStopped (source, pair, shapeId, shapeId2, &manifold, workerIndex)
                     if isTouching then
-                        listener.Handler.OnTouchingUpdated (source, pair, &manifold, workerIndex)
+                        listener.Handler.OnTouchingUpdated (source, pair, shapeId, shapeId2, &manifold, workerIndex)
 
-                    this.UpdatePreviousCollision (&collision, &manifold, isTouching)
+                    this.UpdatePreviousCollision (&collision, shapeId, shapeId2, &manifold, isTouching)
 
                 i <- inc i
 
@@ -414,7 +434,7 @@ type [<AllowNullLiteral>] ContactEvents
                 pendingAdd.ListenerIndex <- listenerIndex
                 pendingAdd.Collision.Collidable <- other
 
-                listener.Handler.OnPairCreated(source, pair, &manifold, workerIndex)
+                listener.Handler.OnPairCreated(source, pair, shapeId, shapeId2, &manifold, workerIndex)
 
                 //Dispatch events for all contacts in this new manifold.
                 for i in 0 .. dec manifold.Count do
@@ -423,22 +443,22 @@ type [<AllowNullLiteral>] ContactEvents
                     let mutable depth = 0.0f
                     let mutable featureId = 0
                     manifold.GetContact (i, &offset, &normal, &depth, &featureId)
-                    listener.Handler.OnContactAdded(source, pair, &manifold, offset, normal, depth, featureId, i, workerIndex)
+                    listener.Handler.OnContactAdded(source, pair, shapeId, shapeId2, &manifold, offset, normal, depth, featureId, i, workerIndex)
                     if depth >= 0.0f then isTouching <- true
 
                 if isTouching then
-                    listener.Handler.OnTouchingStarted (source, pair, &manifold, workerIndex)
-                    listener.Handler.OnTouchingUpdated (source, pair, &manifold, workerIndex)
+                    listener.Handler.OnTouchingStarted (source, pair, shapeId, shapeId2, &manifold, workerIndex)
+                    listener.Handler.OnTouchingUpdated (source, pair, shapeId, shapeId2, &manifold, workerIndex)
 
-                this.UpdatePreviousCollision (&pendingAdd.Collision, &manifold, isTouching)
+                this.UpdatePreviousCollision (&pendingAdd.Collision, shapeId, shapeId2, &manifold, isTouching)
 
-            listener.Handler.OnPairUpdated (source, pair, &manifold, workerIndex)
+            listener.Handler.OnPairUpdated (source, pair, shapeId, shapeId2, &manifold, workerIndex)
 
     [<MethodImpl (MethodImplOptions.AggressiveInlining)>]
     member this.HandleManifold<'TManifold when 'TManifold : (new : unit -> 'TManifold) and 'TManifold :> IContactManifold<'TManifold>>
-        (workerIndex : int, pair : CollidablePair, manifold : 'TManifold byref) =
-        this.HandleManifoldForCollidable (workerIndex, pair.A, pair.B, pair, &manifold)
-        this.HandleManifoldForCollidable (workerIndex, pair.B, pair.A, pair, &manifold)
+        (workerIndex : int, pair : CollidablePair, shapeId : int, shapeId2 : int, manifold : 'TManifold byref) =
+        this.HandleManifoldForCollidable (workerIndex, pair.A, pair.B, pair, shapeId, shapeId2, &manifold)
+        this.HandleManifoldForCollidable (workerIndex, pair.B, pair.A, pair, shapeId2, shapeId, &manifold)
 
     member this.Flush () =
 
@@ -463,11 +483,11 @@ type [<AllowNullLiteral>] ContactEvents
                     if collision.ContactCount > 0 then
                         let mutable emptyManifold = EmptyManifold ()
                         for previousContactCount in 0 .. dec collision.ContactCount do
-                            listener.Handler.OnContactRemoved (listener.Source, pair, &emptyManifold, Unsafe.Add (&collision.FeatureId0, previousContactCount), 0)
+                            listener.Handler.OnContactRemoved (listener.Source, pair, collision.ShapeId, collision.ShapeId2, &emptyManifold, Unsafe.Add (&collision.FeatureId0, previousContactCount), 0)
                         if collision.WasTouching then
-                            listener.Handler.OnTouchingStopped (listener.Source, pair, &emptyManifold, 0)
+                            listener.Handler.OnTouchingStopped (listener.Source, pair, collision.ShapeId, collision.ShapeId2, &emptyManifold, 0)
 
-                    listener.Handler.OnPairEnded (collision.Collidable, pair)
+                    listener.Handler.OnPairEnded (collision.Collidable, pair, collision.ShapeId, collision.ShapeId2)
                     listener.PreviousCollisions.FastRemoveAt j //This collision was not updated since the last flush despite being active. It should be removed.
                     if  listener.PreviousCollisions.Count = 0 then
                         listener.PreviousCollisions.Dispose pool

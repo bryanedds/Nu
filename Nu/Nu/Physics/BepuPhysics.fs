@@ -68,7 +68,7 @@ type private NarrowPhaseCallbacks =
 
         [<MethodImpl (MethodImplOptions.AggressiveInlining)>]
         member this.ConfigureContactManifold (workerIndex : int, pair : CollidablePair, shapeId : int, shapeId2 : int, manifold : ConvexContactManifold byref) =
-            this.ContactEvents.HandleManifold (workerIndex, pair, &manifold)
+            this.ContactEvents.HandleManifold (workerIndex, pair, shapeId, shapeId2, &manifold)
             true
 
         [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
@@ -93,32 +93,32 @@ type private NarrowPhaseCallbacks =
 type private ContactEventHandler (integrationMessages : IntegrationMessage ConcurrentQueue, bodySourceData : CollidableProperty<BodySourceData> array) =
     interface IContactEventHandler with
 
-        member this.OnContactAdded (eventSource, pair, contactManifold, contactOffset, contactNormal, depth, featureId, contactIndex, workerIndex) = ()
-        member this.OnContactRemoved (eventSource, pair, contactManifold, removedFeatureId, workerIndex) = ()
-        member this.OnPairCreated (eventSource, pair, contactManifold, workerIndex) = ()
-        member this.OnPairUpdated (arg1eventSource, pair, contactManifold, workerIndex) = ()
-        member this.OnPairEnded (eventSource, pair) = ()
-        member this.OnTouchingUpdated (eventSource, pair, contactManifold, workerIndex) = ()
+        member this.OnContactAdded (eventSource, pair, shapeId, shapeId2, contactManifold, contactOffset, contactNormal, depth, featureId, contactIndex, workerIndex) = ()
+        member this.OnContactRemoved (eventSource, pair, shapeId, shapeId2, contactManifold, removedFeatureId, workerIndex) = ()
+        member this.OnPairCreated (eventSource, pair, shapeId, shapeId2, contactManifold, workerIndex) = ()
+        member this.OnPairUpdated (arg1eventSource, pair, shapeId, shapeId2, contactManifold, workerIndex) = ()
+        member this.OnPairEnded (eventSource, pair, shapeId, shapeId2) = ()
+        member this.OnTouchingUpdated (eventSource, pair, shapeId, shapeId2, contactManifold, workerIndex) = ()
 
-        member this.OnTouchingStarted (eventSource, pair, contactManifold, _) =
+        member this.OnTouchingStarted (eventSource, pair, shapeId, shapeId2, contactManifold, _) =
             let (bodySource, bodySource2) =
                 if pair.A = eventSource
                 then (bodySourceData.[0].[pair.A], bodySourceData.[0].[pair.B])
                 else (bodySourceData.[0].[pair.B], bodySourceData.[0].[pair.A])
             let bodyCollisionMessage =
-                { BodyShapeSource = bodySource.BodyShapeSourceInternalObjs.[???] :?> BodyShapeSourceInternal
-                  BodyShapeSource2 = bodySource2.BodyShapeSourceInternalObjs.[???] :?> BodyShapeSourceInternal
+                { BodyShapeSource = bodySource.BodyShapeSourceInternalObjs.[shapeId].Value.BodyShapeSourceInternalObj :?> BodyShapeSourceInternal
+                  BodyShapeSource2 = bodySource2.BodyShapeSourceInternalObjs.[shapeId2].Value.BodyShapeSourceInternalObj :?> BodyShapeSourceInternal
                   Normal = contactManifold.GetNormal (&contactManifold, 0) }
             integrationMessages.Enqueue (IntegrationMessage.BodyCollisionMessage bodyCollisionMessage)
 
-        member this.OnTouchingStopped (eventSource, pair, contactManifold, _) =
+        member this.OnTouchingStopped (eventSource, pair, shapeId, shapeId2, contactManifold, _) =
             let (bodySource, bodySource2) =
                 if pair.A = eventSource
                 then (bodySourceData.[0].[pair.A], bodySourceData.[0].[pair.B])
                 else (bodySourceData.[0].[pair.B], bodySourceData.[0].[pair.A])
             let bodySeparationMessage =
-                { BodyShapeSource = bodySource.BodyShapeSourceInternalObjs.[???] :?> BodyShapeSourceInternal
-                  BodyShapeSource2 = bodySource2.BodyShapeSourceInternalObjs.[???] :?> BodyShapeSourceInternal }
+                { BodyShapeSource = bodySource.BodyShapeSourceInternalObjs.[shapeId].Value.BodyShapeSourceInternalObj :?> BodyShapeSourceInternal
+                  BodyShapeSource2 = bodySource2.BodyShapeSourceInternalObjs.[shapeId2].Value.BodyShapeSourceInternalObj :?> BodyShapeSourceInternal }
             integrationMessages.Enqueue (IntegrationMessage.BodySeparationMessage bodySeparationMessage)
 
 /// The BepuPhysics 3d implementation of PhysicsEngine.
@@ -162,15 +162,17 @@ type [<ReferenceEquality>] BepuPhysicsEngine =
         physicsEngine.ThreadDispatcher.Dispose ()
         physicsEngine.PhysicsContext.Dispose ()
 
-    static member private createBody4 attachBodyShape bodyPropertiesOpt (bodyProperties : BodyProperties) (bodySource : BodySourceInternal) physicsEngine =
+    static member private createBody4 attachBodyShape (bodyProperties : BodyProperties) (bodySource : BodySourceInternal) physicsEngine =
 
+        let compoundShapeIds = List ()
         let compoundBuilder = Array.init 1 (fun _ -> new CompoundBuilder (physicsEngine.PhysicsContext.BufferPool, physicsEngine.PhysicsContext.Shapes, 1))
-        try attachBodyShape bodyProperties compoundBuilder physicsEngine
+        try attachBodyShape bodyProperties compoundShapeIds compoundBuilder physicsEngine
             let mutable compoundChildren = Buffer<CompoundChild> ()
             let mutable compoundInertia = BodyInertia ()
             let mutable compoundCenter = Vector3 ()
             compoundBuilder.[0].BuildDynamicCompound (&compoundChildren, &compoundInertia, &compoundCenter)
 
+            let pose = RigidPose (bodyProperties.Center, bodyProperties.Rotation)
             let velocities = BodyVelocity (bodyProperties.LinearVelocity, bodyProperties.AngularVelocity)
             let compound = Compound compoundChildren
             let shapeIndex = physicsEngine.PhysicsContext.Shapes.Add &compound
@@ -178,54 +180,58 @@ type [<ReferenceEquality>] BepuPhysicsEngine =
             let handle =
                 match bodyProperties.BodyType with
                 | Static ->
-                    let staticDescription = StaticDescription (RigidPose (), shapeIndex)
+                    let staticDescription = StaticDescription (pose, shapeIndex)
                     physicsEngine.PhysicsContext.Statics.Add &staticDescription |> Left
                 | Dynamic ->
-                    let bodyDescription = BodyDescription.CreateDynamic (RigidPose (), velocities, compoundInertia, shapeIndex, activity)
+                    let bodyDescription = BodyDescription.CreateDynamic (pose, velocities, compoundInertia, shapeIndex, activity)
                     physicsEngine.PhysicsContext.Bodies.Add &bodyDescription |> Right
                 | Kinematic ->
-                    let bodyDescription = BodyDescription.CreateKinematic (RigidPose (), velocities, shapeIndex, activity)
+                    let bodyDescription = BodyDescription.CreateKinematic (pose, velocities, shapeIndex, activity)
                     physicsEngine.PhysicsContext.Bodies.Add &bodyDescription |> Right
 
             let bodySourceData = BodySourceData (bodySource, physicsEngine.BufferPool)
             for i in 0 .. dec compoundChildren.Length do
                 let child = &compoundChildren.[i]
                 let shapeIndex = child.ShapeIndex
-                let shapeId = _ // correlate from shape index to shape id via shape ids dictionary
-                let bodyShapeSource = { Simulant = bodySource.Simulant; BodyId = bodySource.BodyId; ShapeId = shapeId }
-                bodySource.BodyShapeSourceInternalObjs.Add (shapeId, bodyShapeSource)
+                let shapeId = compoundShapeIds.[i]
+                let bodyShapeSourceData = BodyShapeSourceData { Simulant = bodySource.Simulant; BodyId = bodySource.BodyId; ShapeId = shapeId }
+                bodySourceData.BodyShapeSourceInternalObjs.Add (shapeIndex.Index, &bodyShapeSourceData, physicsEngine.BufferPool) |> ignore<bool>
             match handle with
             | Left staticHandle ->
-                physicsEngine.BodySourceData.[0].[staticHandle] <- bodySource
+                physicsEngine.BodySourceData.[0].[staticHandle] <- bodySourceData
             | Right bodyHandle ->
-                physicsEngine.BodySourceData.[0].[bodyHandle] <- bodySource
+                physicsEngine.BodySourceData.[0].[bodyHandle] <- bodySourceData
                 if not bodyProperties.IgnoreEvents then
                     physicsEngine.ContactEvents.Register (bodyHandle, physicsEngine.ContactEventHandler)
 
         finally compoundBuilder.[0].Dispose ()
 
-    static member private attachBodySphere (bodySphere : BodySphere) (bodyProperties : BodyProperties) (compoundBuilder : CompoundBuilder array) physicsEngine =
+    static member private attachBodyBox (bodyBox : BodyBox) (bodyProperties : BodyProperties) (compoundShapeIds : uint64 List) (compoundBuilder : CompoundBuilder array) physicsEngine =
+        let box = Box (bodyBox.Size.X, bodyBox.Size.Y, bodyBox.Size.Z)
+        let bodyShapeId = match bodyBox.PropertiesOpt with Some bodyProperties2 -> bodyProperties2.BodyShapeId | None -> 0UL
+        compoundShapeIds.Add bodyShapeId
+        let volume = bodyBox.Size.X * bodyBox.Size.Y * bodyBox.Size.Z
+        let mass = volume * bodyProperties.Density
+        let pose = RigidPose (bodyBox.Center, quatIdentity)
+        compoundBuilder.[0].Add (&box, &pose, mass) // NOTE: passing mass as weight.
+
+    static member private attachBodySphere (bodySphere : BodySphere) (bodyProperties : BodyProperties) (compoundShapeIds : uint64 List) (compoundBuilder : CompoundBuilder array) physicsEngine =
         let sphere = Collidables.Sphere bodySphere.Radius
+        let bodyShapeId = match bodySphere.PropertiesOpt with Some bodyProperties2 -> bodyProperties2.BodyShapeId | None -> 0UL
+        compoundShapeIds.Add bodyShapeId
         let volume = 4.0f / 3.0f * MathF.PI * pown bodySphere.Radius 3
         let mass = volume * bodyProperties.Density
         let pose = RigidPose (bodyProperties.Center, bodyProperties.Rotation)
         compoundBuilder.[0].Add (&sphere, &pose, mass) // NOTE: passing mass as weight.
 
-    static member private attachBodyBox (bodyBox : BodyBox) (bodyProperties : BodyProperties) (compoundBuilder : CompoundBuilder array) physicsEngine =
-        let box = Box (bodyBox.Size.X, bodyBox.Size.Y, bodyBox.Size.Z)
-        let volume = bodyBox.Size.X * bodyBox.Size.Y * bodyBox.Size.Z
-        let mass = volume * bodyProperties.Density
-        let pose = RigidPose (bodyProperties.Center, bodyProperties.Rotation)
-        compoundBuilder.[0].Add (&box, &pose, mass) // NOTE: passing mass as weight.
-
-    static member private attachBodyCapsule (bodyCapsule : BodyCapsule) (bodyProperties : BodyProperties) (compoundBuilder : CompoundBuilder array) physicsEngine =
+    static member private attachBodyCapsule (bodyCapsule : BodyCapsule) (bodyProperties : BodyProperties) (compoundShapeIds : uint64 List) (compoundBuilder : CompoundBuilder array) physicsEngine =
         let capsule = Capsule (bodyCapsule.Radius, bodyCapsule.Length)
         let volume = MathF.PI * bodyCapsule.Radius |> flip pown 2
         let mass = volume * bodyProperties.Density
         let pose = RigidPose (bodyProperties.Center, bodyProperties.Rotation)
         compoundBuilder.[0].Add (&capsule, &pose, mass) // NOTE: passing mass as weight.
 
-    static member private attachBodyTriangle a b c (bodyProperties : BodyProperties) (compoundBuilder : CompoundBuilder array) physicsEngine =
+    static member private attachBodyTriangle a b c (bodyProperties : BodyProperties) (compoundShapeIds : uint64 List) (compoundBuilder : CompoundBuilder array) physicsEngine =
         let capsule = Triangle (a, b, c)
         let ab = (b - a).Magnitude // NOTE: using Heron's formula.
         let bc = (c - b).Magnitude
@@ -236,63 +242,41 @@ type [<ReferenceEquality>] BepuPhysicsEngine =
         let pose = RigidPose (bodyProperties.Center, bodyProperties.Rotation)
         compoundBuilder.[0].Add (&capsule, &pose, mass) // NOTE: passing mass as weight.
 
-    static member private attachBodyPolygon bodyPolygon bodyProperties compoundBuilder physicsEngine =
+    static member private attachBodyPolygon bodyPolygon bodyProperties compoundShapeIds compoundBuilder physicsEngine =
         if bodyPolygon.Vertices.Length >= 3 then
             let triangles = Array.windowed 3 bodyPolygon.Vertices
             for triangle in triangles do
                 let (a, b, c) = (triangle.[0], triangle.[1], triangle.[2])
-                BepuPhysicsEngine.attachBodyTriangle a b c bodyProperties compoundBuilder physicsEngine
+                BepuPhysicsEngine.attachBodyTriangle a b c bodyProperties compoundShapeIds compoundBuilder physicsEngine
         else Log.debug "Degenerate polygon sent to BepuPhysicsEngine; 3 or more vertices required."
 
-    static member private attachBodyBoxRounded (bodyBoxRounded : BodyBoxRounded) (bodyProperties : BodyProperties) (compoundBuilder : CompoundBuilder array) physicsEngine =
+    static member private attachBodyBoxRounded (bodyBoxRounded : BodyBoxRounded) (bodyProperties : BodyProperties) (compoundShapeIds : uint64 List) (compoundBuilder : CompoundBuilder array) physicsEngine =
         Log.debug "Rounded box not yet implemented via BepuPhysicsEngine; creating a normal box instead."
         let bodyBox = { Center = bodyBoxRounded.Center; Size = bodyBoxRounded.Size; PropertiesOpt = bodyBoxRounded.PropertiesOpt }
-        BepuPhysicsEngine.attachBodyBox bodyBox bodyProperties compoundBuilder physicsEngine
+        BepuPhysicsEngine.attachBodyBox bodyBox bodyProperties compoundShapeIds compoundBuilder physicsEngine
 
-    static member private attachBodyShapes bodyShapes bodyProperties compoundBuilder physicsEngine =
+    static member private attachBodyShapes bodyShapes bodyProperties compoundShapeIds compoundBuilder physicsEngine =
         for bodyShape in bodyShapes do
-            BepuPhysicsEngine.attachBodyShape bodyShape bodyProperties compoundBuilder physicsEngine
+            BepuPhysicsEngine.attachBodyShape bodyShape bodyProperties compoundShapeIds compoundBuilder physicsEngine
 
-    static member private attachBodyShape bodyShape bodyProperties compoundBuilder physicsEngine =
+    static member private attachBodyShape bodyShape bodyProperties compoundShapeIds compoundBuilder physicsEngine =
         match bodyShape with
         | BodyEmpty -> ()
-        | BodyBox bodyBox -> BepuPhysicsEngine.attachBodyBox bodyBox bodyProperties compoundBuilder physicsEngine
-        | BodySphere bodySphere -> BepuPhysicsEngine.attachBodySphere bodySphere bodyProperties compoundBuilder physicsEngine
-        | BodyCapsule bodyCapsule -> BepuPhysicsEngine.attachBodyCapsule bodyCapsule bodyProperties compoundBuilder physicsEngine
-        | BodyBoxRounded bodyBoxRounded -> BepuPhysicsEngine.attachBodyBoxRounded bodyBoxRounded bodyProperties compoundBuilder physicsEngine
-        | BodyPolygon bodyPolygon -> BepuPhysicsEngine.attachBodyPolygon bodyPolygon bodyProperties compoundBuilder physicsEngine
-        | BodyShapes bodyShapes -> BepuPhysicsEngine.attachBodyShapes bodyShapes bodyProperties compoundBuilder physicsEngine
+        | BodyBox bodyBox -> BepuPhysicsEngine.attachBodyBox bodyBox bodyProperties compoundShapeIds compoundBuilder physicsEngine
+        | BodySphere bodySphere -> BepuPhysicsEngine.attachBodySphere bodySphere bodyProperties compoundShapeIds compoundBuilder physicsEngine
+        | BodyCapsule bodyCapsule -> BepuPhysicsEngine.attachBodyCapsule bodyCapsule bodyProperties compoundShapeIds compoundBuilder physicsEngine
+        | BodyBoxRounded bodyBoxRounded -> BepuPhysicsEngine.attachBodyBoxRounded bodyBoxRounded bodyProperties compoundShapeIds compoundBuilder physicsEngine
+        | BodyPolygon bodyPolygon -> BepuPhysicsEngine.attachBodyPolygon bodyPolygon bodyProperties compoundShapeIds compoundBuilder physicsEngine
+        | BodyShapes bodyShapes -> BepuPhysicsEngine.attachBodyShapes bodyShapes bodyProperties compoundShapeIds compoundBuilder physicsEngine
 
     static member private createBody3 bodyShape bodyProperties bodyShapeSource physicsEngine =
         BepuPhysicsEngine.createBody4 (BepuPhysicsEngine.attachBodyShape bodyShape) bodyProperties bodyShapeSource physicsEngine
 
     static member private createBody (createBodyMessage : CreateBodyMessage) physicsEngine =
-
-        // get fields
         let sourceSimulant = createBodyMessage.SourceSimulant
         let bodyProperties = createBodyMessage.BodyProperties
-        let bodyRotation = bodyProperties.Rotation
         let bodySource = { Simulant = sourceSimulant; BodyId = bodyProperties.BodyId }
-
-        // make the body
         BepuPhysicsEngine.createBody3 bodyProperties.BodyShape bodyProperties bodySource physicsEngine
-
-        // configure body
-        AetherPhysicsEngine.configureBodyProperties bodyProperties body
-
-        // attach body shape
-        AetherPhysicsEngine.attachBodyShape sourceSimulant bodyProperties.BodyShape bodyProperties body |> ignore
-
-        // listen for collisions
-        body.add_OnCollision (fun bodyShape bodyShape2 collision -> AetherPhysicsEngine.handleCollision physicsEngine bodyShape bodyShape2 collision)
-
-        // listen for separations
-        // TODO: P1: use the contact variable as well?
-        body.add_OnSeparation (fun bodyShape bodyShape2 _ -> AetherPhysicsEngine.handleSeparation physicsEngine bodyShape bodyShape2)
-
-        // attempt to add the body
-        if not (physicsEngine.Bodies.TryAdd ({ SourceId = createBodyMessage.SourceId; CorrelationId = bodyProperties.BodyId }, (bodyProperties.GravityScale, body))) then
-            Log.debug ("Could not add body via '" + scstring bodyProperties + "'.")
 
     static member private handlePhysicsMessage physicsEngine physicsMessage =
         match physicsMessage with
@@ -317,7 +301,6 @@ type [<ReferenceEquality>] BepuPhysicsEngine =
         | RebuildPhysicsHackMessage ->
             physicsEngine.RebuildingHack <- true
             physicsEngine.PhysicsContext.Clear ()
-            physicsEngine.Bodies.Clear ()
             physicsEngine.IntegrationMessages.Clear ()
 
     static member private integrate stepTime physicsEngine =
