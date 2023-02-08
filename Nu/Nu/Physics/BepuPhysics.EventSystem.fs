@@ -14,7 +14,7 @@ open BepuUtilities.Memory
 open Prime
 open Nu
 
-// NOTE: the code in this file originates as a port from the C# Bepu demo code here -
+// NOTE: the code in this file originates as an extended port from the C# Bepu demo code here -
 // https://github.com/bepu/bepuphysics2/blob/074d784d14980f0b9dfa96949e0057109f0cecc4/Demos/Demos/ContactEventsDemo.cs
 
 type [<Struct; StructLayout (LayoutKind.Sequential)>] private PreviousCollision =
@@ -40,10 +40,7 @@ type [<Struct>] private PendingWorkerAdd =
       mutable Collision : PreviousCollision }
 
 type [<Struct; StructLayout (LayoutKind.Sequential)>] private Collidable =
-    { mutable PreviousCollisions : PreviousCollision QuickList
-      mutable CollisionCategories : Category
-      mutable CollisionMask : Category
-      mutable Sensor : bool }
+    { mutable PreviousCollisions : PreviousCollision QuickList }
 
 [<AutoOpen>]
 module EmptyManifoldModule =
