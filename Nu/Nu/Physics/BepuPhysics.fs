@@ -162,50 +162,6 @@ type [<ReferenceEquality>] BepuPhysicsEngine =
         physicsEngine.ThreadDispatcher.Dispose ()
         physicsEngine.PhysicsContext.Dispose ()
 
-    static member private createBody4 attachBodyShape (bodyProperties : BodyProperties) (bodySource : BodySourceInternal) physicsEngine =
-
-        let compoundShapeIds = List ()
-        let compoundBuilder = Array.init 1 (fun _ -> new CompoundBuilder (physicsEngine.PhysicsContext.BufferPool, physicsEngine.PhysicsContext.Shapes, 1))
-        try attachBodyShape bodyProperties compoundShapeIds compoundBuilder
-            let mutable compoundChildren = Buffer<CompoundChild> ()
-            let mutable compoundInertia = BodyInertia ()
-            let mutable compoundCenter = Vector3 ()
-            compoundBuilder.[0].BuildDynamicCompound (&compoundChildren, &compoundInertia, &compoundCenter)
-
-            let pose = RigidPose (bodyProperties.Center, bodyProperties.Rotation)
-            let velocities = BodyVelocity (bodyProperties.LinearVelocity, bodyProperties.AngularVelocity)
-            let compound = Compound compoundChildren
-            let shapeIndex = physicsEngine.PhysicsContext.Shapes.Add &compound
-            let activity = BodyActivityDescription Constants.Physics.SleepThreshold
-            let handle =
-                match bodyProperties.BodyType with
-                | Static ->
-                    let staticDescription = StaticDescription (pose, shapeIndex)
-                    physicsEngine.PhysicsContext.Statics.Add &staticDescription |> Left
-                | Dynamic ->
-                    let bodyDescription = BodyDescription.CreateDynamic (pose, velocities, compoundInertia, shapeIndex, activity)
-                    physicsEngine.PhysicsContext.Bodies.Add &bodyDescription |> Right
-                | Kinematic ->
-                    let bodyDescription = BodyDescription.CreateKinematic (pose, velocities, shapeIndex, activity)
-                    physicsEngine.PhysicsContext.Bodies.Add &bodyDescription |> Right
-
-            let bodySourceData = BodySourceData (bodySource, physicsEngine.BufferPool)
-            for i in 0 .. dec compoundChildren.Length do
-                let child = &compoundChildren.[i]
-                let shapeIndex = child.ShapeIndex
-                let shapeId = compoundShapeIds.[i]
-                let bodyShapeSourceData = BodyShapeSourceData { Simulant = bodySource.Simulant; BodyId = bodySource.BodyId; ShapeId = shapeId }
-                bodySourceData.BodyShapeSourceInternalObjs.Add (shapeIndex.Index, &bodyShapeSourceData, physicsEngine.BufferPool) |> ignore<bool>
-            match handle with
-            | Left staticHandle ->
-                physicsEngine.BodySourceData.[0].[staticHandle] <- bodySourceData
-            | Right bodyHandle ->
-                physicsEngine.BodySourceData.[0].[bodyHandle] <- bodySourceData
-                if not bodyProperties.IgnoreEvents then
-                    physicsEngine.ContactEvents.Register (bodyHandle, physicsEngine.ContactEventHandler)
-
-        finally compoundBuilder.[0].Dispose ()
-
     static member private attachBodyBox (bodyBox : BodyBox) (bodyProperties : BodyProperties) (compoundShapeIds : uint64 List) (compoundBuilder : CompoundBuilder array) =
         let bodyShapeId = match bodyBox.PropertiesOpt with Some bodyProperties2 -> bodyProperties2.BodyShapeId | None -> 0UL
         compoundShapeIds.Add bodyShapeId
@@ -272,6 +228,50 @@ type [<ReferenceEquality>] BepuPhysicsEngine =
         | BodyBoxRounded bodyBoxRounded -> BepuPhysicsEngine.attachBodyBoxRounded bodyBoxRounded bodyProperties compoundShapeIds compoundBuilder
         | BodyPolygon bodyPolygon -> BepuPhysicsEngine.attachBodyPolygon bodyPolygon bodyProperties compoundShapeIds compoundBuilder
         | BodyShapes bodyShapes -> BepuPhysicsEngine.attachBodyShapes bodyShapes bodyProperties compoundShapeIds compoundBuilder
+
+    static member private createBody4 attachBodyShape (bodyProperties : BodyProperties) (bodySource : BodySourceInternal) physicsEngine =
+
+        let compoundShapeIds = List ()
+        let compoundBuilder = Array.init 1 (fun _ -> new CompoundBuilder (physicsEngine.PhysicsContext.BufferPool, physicsEngine.PhysicsContext.Shapes, 1))
+        try attachBodyShape bodyProperties compoundShapeIds compoundBuilder
+            let mutable compoundChildren = Buffer<CompoundChild> ()
+            let mutable compoundInertia = BodyInertia ()
+            let mutable compoundCenter = Vector3 ()
+            compoundBuilder.[0].BuildDynamicCompound (&compoundChildren, &compoundInertia, &compoundCenter)
+
+            let pose = RigidPose (bodyProperties.Center, bodyProperties.Rotation)
+            let velocities = BodyVelocity (bodyProperties.LinearVelocity, bodyProperties.AngularVelocity)
+            let compound = Compound compoundChildren
+            let shapeIndex = physicsEngine.PhysicsContext.Shapes.Add &compound
+            let activity = BodyActivityDescription Constants.Physics.SleepThreshold
+            let handle =
+                match bodyProperties.BodyType with
+                | Static ->
+                    let staticDescription = StaticDescription (pose, shapeIndex)
+                    physicsEngine.PhysicsContext.Statics.Add &staticDescription |> Left
+                | Dynamic ->
+                    let bodyDescription = BodyDescription.CreateDynamic (pose, velocities, compoundInertia, shapeIndex, activity)
+                    physicsEngine.PhysicsContext.Bodies.Add &bodyDescription |> Right
+                | Kinematic ->
+                    let bodyDescription = BodyDescription.CreateKinematic (pose, velocities, shapeIndex, activity)
+                    physicsEngine.PhysicsContext.Bodies.Add &bodyDescription |> Right
+
+            let bodySourceData = BodySourceData (bodySource, physicsEngine.BufferPool)
+            for i in 0 .. dec compoundChildren.Length do
+                let child = &compoundChildren.[i]
+                let shapeIndex = child.ShapeIndex
+                let shapeId = compoundShapeIds.[i]
+                let bodyShapeSourceData = BodyShapeSourceData { Simulant = bodySource.Simulant; BodyId = bodySource.BodyId; ShapeId = shapeId }
+                bodySourceData.BodyShapeSourceInternalObjs.Add (shapeIndex.Index, &bodyShapeSourceData, physicsEngine.BufferPool) |> ignore<bool>
+            match handle with
+            | Left staticHandle ->
+                physicsEngine.BodySourceData.[0].[staticHandle] <- bodySourceData
+            | Right bodyHandle ->
+                physicsEngine.BodySourceData.[0].[bodyHandle] <- bodySourceData
+                if not bodyProperties.IgnoreEvents then
+                    physicsEngine.ContactEvents.Register (bodyHandle, physicsEngine.ContactEventHandler)
+
+        finally compoundBuilder.[0].Dispose ()
 
     static member private createBody3 bodyShape bodyProperties bodyShapeSource physicsEngine =
         BepuPhysicsEngine.createBody4 (BepuPhysicsEngine.attachBodyShape bodyShape) bodyProperties bodyShapeSource physicsEngine
