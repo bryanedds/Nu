@@ -146,7 +146,7 @@ type [<ReferenceEquality>] AetherPhysicsEngine =
         AetherPhysicsEngine.configureBodyShapeProperties bodyProperties bodySphere.PropertiesOpt bodyShape
 
     static member private attachBodyCapsule sourceSimulant (bodyCapsule : BodyCapsule) (bodyProperties : BodyProperties) (body : Body) =
-        let height = AetherPhysicsEngine.toPhysicsPolygonDiameter bodyCapsule.Height
+        let height = AetherPhysicsEngine.toPhysicsPolygonDiameter bodyCapsule.Length
         let endRadius = AetherPhysicsEngine.toPhysicsPolygonRadius bodyCapsule.Radius
         let density = bodyProperties.Density
         let center = AetherPhysicsEngine.toPhysicsV2 bodyCapsule.Center

@@ -166,7 +166,7 @@ type [<ReferenceEquality>] BepuPhysicsEngine =
 
         let compoundShapeIds = List ()
         let compoundBuilder = Array.init 1 (fun _ -> new CompoundBuilder (physicsEngine.PhysicsContext.BufferPool, physicsEngine.PhysicsContext.Shapes, 1))
-        try attachBodyShape bodyProperties compoundShapeIds compoundBuilder physicsEngine
+        try attachBodyShape bodyProperties compoundShapeIds compoundBuilder
             let mutable compoundChildren = Buffer<CompoundChild> ()
             let mutable compoundInertia = BodyInertia ()
             let mutable compoundCenter = Vector3 ()
@@ -206,32 +206,36 @@ type [<ReferenceEquality>] BepuPhysicsEngine =
 
         finally compoundBuilder.[0].Dispose ()
 
-    static member private attachBodyBox (bodyBox : BodyBox) (bodyProperties : BodyProperties) (compoundShapeIds : uint64 List) (compoundBuilder : CompoundBuilder array) physicsEngine =
-        let box = Box (bodyBox.Size.X, bodyBox.Size.Y, bodyBox.Size.Z)
+    static member private attachBodyBox (bodyBox : BodyBox) (bodyProperties : BodyProperties) (compoundShapeIds : uint64 List) (compoundBuilder : CompoundBuilder array) =
         let bodyShapeId = match bodyBox.PropertiesOpt with Some bodyProperties2 -> bodyProperties2.BodyShapeId | None -> 0UL
         compoundShapeIds.Add bodyShapeId
+        let box = Box (bodyBox.Size.X, bodyBox.Size.Y, bodyBox.Size.Z)
         let volume = bodyBox.Size.X * bodyBox.Size.Y * bodyBox.Size.Z
         let mass = volume * bodyProperties.Density
         let pose = RigidPose (bodyBox.Center, quatIdentity)
         compoundBuilder.[0].Add (&box, &pose, mass) // NOTE: passing mass as weight.
 
-    static member private attachBodySphere (bodySphere : BodySphere) (bodyProperties : BodyProperties) (compoundShapeIds : uint64 List) (compoundBuilder : CompoundBuilder array) physicsEngine =
-        let sphere = Collidables.Sphere bodySphere.Radius
+    static member private attachBodySphere (bodySphere : BodySphere) (bodyProperties : BodyProperties) (compoundShapeIds : uint64 List) (compoundBuilder : CompoundBuilder array) =
         let bodyShapeId = match bodySphere.PropertiesOpt with Some bodyProperties2 -> bodyProperties2.BodyShapeId | None -> 0UL
         compoundShapeIds.Add bodyShapeId
+        let sphere = Collidables.Sphere bodySphere.Radius
         let volume = 4.0f / 3.0f * MathF.PI * pown bodySphere.Radius 3
         let mass = volume * bodyProperties.Density
         let pose = RigidPose (bodyProperties.Center, bodyProperties.Rotation)
         compoundBuilder.[0].Add (&sphere, &pose, mass) // NOTE: passing mass as weight.
 
-    static member private attachBodyCapsule (bodyCapsule : BodyCapsule) (bodyProperties : BodyProperties) (compoundShapeIds : uint64 List) (compoundBuilder : CompoundBuilder array) physicsEngine =
+    static member private attachBodyCapsule (bodyCapsule : BodyCapsule) (bodyProperties : BodyProperties) (compoundShapeIds : uint64 List) (compoundBuilder : CompoundBuilder array) =
+        let bodyShapeId = match bodyCapsule.PropertiesOpt with Some bodyProperties2 -> bodyProperties2.BodyShapeId | None -> 0UL
+        compoundShapeIds.Add bodyShapeId
         let capsule = Capsule (bodyCapsule.Radius, bodyCapsule.Length)
         let volume = MathF.PI * bodyCapsule.Radius |> flip pown 2
         let mass = volume * bodyProperties.Density
         let pose = RigidPose (bodyProperties.Center, bodyProperties.Rotation)
         compoundBuilder.[0].Add (&capsule, &pose, mass) // NOTE: passing mass as weight.
 
-    static member private attachBodyTriangle a b c (bodyProperties : BodyProperties) (compoundShapeIds : uint64 List) (compoundBuilder : CompoundBuilder array) physicsEngine =
+    static member private attachBodyTriangle a b c bodyPropertiesOpt (bodyProperties : BodyProperties) (compoundShapeIds : uint64 List) (compoundBuilder : CompoundBuilder array) =
+        let bodyShapeId = match bodyPropertiesOpt with Some bodyProperties2 -> bodyProperties2.BodyShapeId | None -> 0UL
+        compoundShapeIds.Add bodyShapeId
         let capsule = Triangle (a, b, c)
         let ab = (b - a).Magnitude // NOTE: using Heron's formula.
         let bc = (c - b).Magnitude
@@ -242,32 +246,32 @@ type [<ReferenceEquality>] BepuPhysicsEngine =
         let pose = RigidPose (bodyProperties.Center, bodyProperties.Rotation)
         compoundBuilder.[0].Add (&capsule, &pose, mass) // NOTE: passing mass as weight.
 
-    static member private attachBodyPolygon bodyPolygon bodyProperties compoundShapeIds compoundBuilder physicsEngine =
+    static member private attachBodyPolygon bodyPolygon bodyProperties compoundShapeIds compoundBuilder =
         if bodyPolygon.Vertices.Length >= 3 then
             let triangles = Array.windowed 3 bodyPolygon.Vertices
             for triangle in triangles do
                 let (a, b, c) = (triangle.[0], triangle.[1], triangle.[2])
-                BepuPhysicsEngine.attachBodyTriangle a b c bodyProperties compoundShapeIds compoundBuilder physicsEngine
+                BepuPhysicsEngine.attachBodyTriangle a b c bodyPolygon.PropertiesOpt bodyProperties compoundShapeIds compoundBuilder
         else Log.debug "Degenerate polygon sent to BepuPhysicsEngine; 3 or more vertices required."
 
-    static member private attachBodyBoxRounded (bodyBoxRounded : BodyBoxRounded) (bodyProperties : BodyProperties) (compoundShapeIds : uint64 List) (compoundBuilder : CompoundBuilder array) physicsEngine =
+    static member private attachBodyBoxRounded (bodyBoxRounded : BodyBoxRounded) (bodyProperties : BodyProperties) (compoundShapeIds : uint64 List) (compoundBuilder : CompoundBuilder array) =
         Log.debug "Rounded box not yet implemented via BepuPhysicsEngine; creating a normal box instead."
         let bodyBox = { Center = bodyBoxRounded.Center; Size = bodyBoxRounded.Size; PropertiesOpt = bodyBoxRounded.PropertiesOpt }
-        BepuPhysicsEngine.attachBodyBox bodyBox bodyProperties compoundShapeIds compoundBuilder physicsEngine
+        BepuPhysicsEngine.attachBodyBox bodyBox bodyProperties compoundShapeIds compoundBuilder
 
-    static member private attachBodyShapes bodyShapes bodyProperties compoundShapeIds compoundBuilder physicsEngine =
+    static member private attachBodyShapes bodyShapes bodyProperties compoundShapeIds compoundBuilder =
         for bodyShape in bodyShapes do
-            BepuPhysicsEngine.attachBodyShape bodyShape bodyProperties compoundShapeIds compoundBuilder physicsEngine
+            BepuPhysicsEngine.attachBodyShape bodyShape bodyProperties compoundShapeIds compoundBuilder
 
-    static member private attachBodyShape bodyShape bodyProperties compoundShapeIds compoundBuilder physicsEngine =
+    static member private attachBodyShape bodyShape bodyProperties compoundShapeIds compoundBuilder =
         match bodyShape with
         | BodyEmpty -> ()
-        | BodyBox bodyBox -> BepuPhysicsEngine.attachBodyBox bodyBox bodyProperties compoundShapeIds compoundBuilder physicsEngine
-        | BodySphere bodySphere -> BepuPhysicsEngine.attachBodySphere bodySphere bodyProperties compoundShapeIds compoundBuilder physicsEngine
-        | BodyCapsule bodyCapsule -> BepuPhysicsEngine.attachBodyCapsule bodyCapsule bodyProperties compoundShapeIds compoundBuilder physicsEngine
-        | BodyBoxRounded bodyBoxRounded -> BepuPhysicsEngine.attachBodyBoxRounded bodyBoxRounded bodyProperties compoundShapeIds compoundBuilder physicsEngine
-        | BodyPolygon bodyPolygon -> BepuPhysicsEngine.attachBodyPolygon bodyPolygon bodyProperties compoundShapeIds compoundBuilder physicsEngine
-        | BodyShapes bodyShapes -> BepuPhysicsEngine.attachBodyShapes bodyShapes bodyProperties compoundShapeIds compoundBuilder physicsEngine
+        | BodyBox bodyBox -> BepuPhysicsEngine.attachBodyBox bodyBox bodyProperties compoundShapeIds compoundBuilder
+        | BodySphere bodySphere -> BepuPhysicsEngine.attachBodySphere bodySphere bodyProperties compoundShapeIds compoundBuilder
+        | BodyCapsule bodyCapsule -> BepuPhysicsEngine.attachBodyCapsule bodyCapsule bodyProperties compoundShapeIds compoundBuilder
+        | BodyBoxRounded bodyBoxRounded -> BepuPhysicsEngine.attachBodyBoxRounded bodyBoxRounded bodyProperties compoundShapeIds compoundBuilder
+        | BodyPolygon bodyPolygon -> BepuPhysicsEngine.attachBodyPolygon bodyPolygon bodyProperties compoundShapeIds compoundBuilder
+        | BodyShapes bodyShapes -> BepuPhysicsEngine.attachBodyShapes bodyShapes bodyProperties compoundShapeIds compoundBuilder
 
     static member private createBody3 bodyShape bodyProperties bodyShapeSource physicsEngine =
         BepuPhysicsEngine.createBody4 (BepuPhysicsEngine.attachBodyShape bodyShape) bodyProperties bodyShapeSource physicsEngine
