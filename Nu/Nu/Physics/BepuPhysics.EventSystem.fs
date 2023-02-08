@@ -189,8 +189,7 @@ and IContactEventHandler =
 /// <summary>
 /// Watches a set of bodies and statics for contact changes and reports events.
 /// </summary>
-type [<AllowNullLiteral>] ContactEvents
-    (threadDispatcher : IThreadDispatcher, threadPools : WorkerBufferPools, pool : BufferPool) as this =
+type [<AllowNullLiteral>] ContactEvents (threadDispatcher : IThreadDispatcher, threadPools : WorkerBufferPools, pool : BufferPool) as this =
 
     //We use a handle->index mapping in a CollidableProperty to point at our contiguously stored listeners (in the later listeners array).
     //Note that there's also IndexSets for the statics and bodies; those will be checked first before accessing the listenerIndices.
@@ -298,7 +297,7 @@ type [<AllowNullLiteral>] ContactEvents
     /// </summary>
     /// <param name="body">Body to stop listening for.</param>
     member this.Unregister (body : BodyHandle) =
-        let body = simulation.Bodies[body]
+        let body = simulation.Bodies.[body]
         this.Unregister (body.CollidableReference)
 
     /// <summary>
@@ -372,7 +371,7 @@ type [<AllowNullLiteral>] ContactEvents
             let mutable collisionFound = false
             while i < listener.PreviousCollisions.Count && not collisionFound do
 
-                let mutable collision = &listener.PreviousCollisions.[i]
+                let collision = &listener.PreviousCollisions.[i]
                 if collision.Collidable.Packed = other.Packed then
 
                     //Since the 'Packed' field contains both the handle type (dynamic, kinematic, or static) and the handle index packed into a single bitfield, an equal value guarantees we are dealing with the same collidable.
