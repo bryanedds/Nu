@@ -9,6 +9,6 @@ module Program =
 
     // TODO: increase project warning level to 5.
     let [<EntryPoint; STAThread>] main _ =
-        let nuConfig = { NuConfig.defaultConfig with StandAlone = false }
+        let nuConfig = { NuConfig.defaultConfig with Accompanied = true }
         Gaia.init nuConfig
         Gaia.run nuConfig

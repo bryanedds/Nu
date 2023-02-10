@@ -156,7 +156,9 @@ module OmniBlade =
 
             match command with
             | Exit ->
-                just (World.exit world)
+                if World.getUnaccompanied world
+                then just (World.exit world)
+                else just world
 
             | UpdateCommand ->
 
