@@ -15,7 +15,7 @@ module Nu =
     let mutable private Initialized = false
 
     /// Initialize the Nu game engine.
-    let init nuConfig =
+    let init (nuConfig : NuConfig) =
 
         // init only if needed
         if not Initialized then
@@ -42,7 +42,7 @@ module Nu =
             // init OpenGL assertiveness
             OpenGL.Hl.InitAssert
 #if DEBUG
-                nuConfig.StandAlone
+                nuConfig.Unaccompanied
 #else
                 false
 #endif
@@ -523,7 +523,7 @@ module WorldModule3 =
             let ambientState =
                 let overlayRouter = OverlayRouter.empty
                 let symbolics = Symbolics.makeEmpty ()
-                AmbientState.make config.Imperative config.NuConfig.StandAlone true symbolics Overlayer.empty overlayRouter None
+                AmbientState.make config.Imperative config.NuConfig.Accompanied true symbolics Overlayer.empty overlayRouter None
 
             // make the world's quadtree
             let quadtree = World.makeQuadtree ()
@@ -615,7 +615,7 @@ module WorldModule3 =
                             | Some window -> GlRenderer2d.make window config :> Renderer2d
                             | None -> MockRenderer2d.make () :> Renderer2d
                     let rendererProcess =
-                        if config.NuConfig.StandAlone
+                        if config.NuConfig.Unaccompanied
                         then RendererThread (createRenderer3d, createRenderer2d) :> RendererProcess
                         else RendererInline (createRenderer3d, createRenderer2d) :> RendererProcess
                     rendererProcess.Start ()
@@ -646,7 +646,7 @@ module WorldModule3 =
                             List.concat
                         let overlayRouter = OverlayRouter.make overlayRoutes
                         let symbolics = Symbolics.makeEmpty ()
-                        AmbientState.make config.Imperative config.NuConfig.StandAlone config.Advancing symbolics overlayer overlayRouter (Some sdlDeps)
+                        AmbientState.make config.Imperative config.NuConfig.Accompanied config.Advancing symbolics overlayer overlayRouter (Some sdlDeps)
 
                     // make the world's quadtree
                     let quadtree = World.makeQuadtree ()

@@ -73,7 +73,10 @@ module BlazeVector =
         // here we handle the above commands
         override this.Command (_, command, _, world) =
             match command with
-            | Exit -> just (World.exit world)
+            | Exit ->
+                if World.getUnaccompanied world
+                then just (World.exit world)
+                else just world
 
         // here we describe the content of the game, including all of its screens.
         override this.Content (_, _) =

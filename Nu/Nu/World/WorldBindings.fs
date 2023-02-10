@@ -56,7 +56,7 @@ module WorldBindings =
         "getScreenTransitionDestinationOpt setScreenTransitionDestinationOpt getViewBounds2dAbsolute getPlayBounds2dAbsolute " +
         "getViewBounds2d getPlayBounds2d isBoundsInView2d getPlayBounds3d " +
         "isBoundsInView3d isBoundsInPlay3d tryGetTextureSize getTextureSize " +
-        "tryGetTextureSizeF getTextureSizeF getImperative getStandAlone " +
+        "tryGetTextureSizeF getTextureSizeF getImperative getUnaccompanied " +
         "getAccompanied getCollectionConfig getLiveness setAdvancing " +
         "getAdvancing getHalted getUpdateTime getClockDelta " +
         "getClockTime getGameDelta getGameTime exit " +
@@ -2675,15 +2675,15 @@ module WorldBindings =
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getImperative' due to: " + scstring exn, ValueNone)
             struct (violation, World.choose oldWorld)
 
-    let getStandAlone world =
+    let getUnaccompanied world =
         let oldWorld = world
         try
-            let result = World.getStandAlone world
+            let result = World.getUnaccompanied world
             let value = result
             let value = ScriptingSystem.tryImport typeof<Boolean> value world |> Option.get
             struct (value, world)
         with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getStandAlone' due to: " + scstring exn, ValueNone)
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getUnaccompanied' due to: " + scstring exn, ValueNone)
             struct (violation, World.choose oldWorld)
 
     let getAccompanied world =
@@ -4768,12 +4768,12 @@ module WorldBindings =
                 struct (violation, world)
         | Some violation -> struct (violation, world)
 
-    let evalGetStandAloneBinding fnName exprs originOpt world =
+    let evalGetUnaccompaniedBinding fnName exprs originOpt world =
         let struct (evaleds, world) = World.evalManyInternal exprs world
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [||] -> getStandAlone world
+            | [||] -> getUnaccompanied world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
                 struct (violation, world)
@@ -5290,7 +5290,7 @@ module WorldBindings =
              ("tryGetTextureSizeF", { Fn = evalTryGetTextureSizeFBinding; Pars = [|"assetTag"|]; DocOpt = None })
              ("getTextureSizeF", { Fn = evalGetTextureSizeFBinding; Pars = [|"assetTag"|]; DocOpt = None })
              ("getImperative", { Fn = evalGetImperativeBinding; Pars = [||]; DocOpt = None })
-             ("getStandAlone", { Fn = evalGetStandAloneBinding; Pars = [||]; DocOpt = None })
+             ("getUnaccompanied", { Fn = evalGetUnaccompaniedBinding; Pars = [||]; DocOpt = None })
              ("getAccompanied", { Fn = evalGetAccompaniedBinding; Pars = [||]; DocOpt = None })
              ("getCollectionConfig", { Fn = evalGetCollectionConfigBinding; Pars = [||]; DocOpt = None })
              ("getLiveness", { Fn = evalGetLivenessBinding; Pars = [||]; DocOpt = None })

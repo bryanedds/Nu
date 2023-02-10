@@ -143,7 +143,11 @@ type [<AttributeUsage (AttributeTargets.Method); AllowNullLiteral>]
 /// TODO: consider renaming StandAlone to Accompanied and flipping it's value.
 type NuConfig =
     { RunSynchronously : bool
-      StandAlone : bool }
+      Accompanied : bool }
+
+    /// That Nu is to run unaccompanied.
+    member this.Unaccompanied =
+        not this.Accompanied
 
     /// The default configuration for Nu.
     static member defaultConfig =
@@ -154,7 +158,7 @@ type NuConfig =
             false
 #endif
         { RunSynchronously = runSynchronously
-          StandAlone = true }
+          Accompanied = false }
 
 /// Configuration parameters for the world.
 type [<ReferenceEquality>] WorldConfig =
@@ -196,8 +200,8 @@ module AmbientState =
     /// Tracks whether the engine is running imperatively.
     let mutable private Imperative = true
 
-    /// Tracks whether the engine is running stand-alone.
-    let mutable private StandAlone = true
+    /// Tracks whether the engine is running accompanied by another program, such as an editor.
+    let mutable private Accompanied = true
 
     /// The ambient state of the world.
     type [<ReferenceEquality>] 'w AmbientState =
@@ -221,13 +225,13 @@ module AmbientState =
     let getImperative (_ : 'w AmbientState) =
         Imperative
 
-    /// Get whether the engine is running stand-alone.
-    let getStandAlone (_ : 'w AmbientState) =
-        StandAlone
-
     /// Get whether the engine is running accompanied, such as in an editor.
     let getAccompanied (_ : 'w AmbientState) =
-        not StandAlone
+        Accompanied
+
+    /// Get whether the engine is running unaccompanied.
+    let getUnaccompanied (_ : 'w AmbientState) =
+        not Accompanied
 
     /// Get the collection config value.
     let getConfig (_ : 'w AmbientState) =
@@ -425,9 +429,9 @@ module AmbientState =
         { state with OverlayRouter = router }
 
     /// Make an ambient state value.
-    let make imperative standAlone advancing symbolics overlayer overlayRouter sdlDepsOpt =
+    let make imperative accompanied advancing symbolics overlayer overlayRouter sdlDepsOpt =
         Imperative <- imperative
-        StandAlone <- standAlone
+        Accompanied <- accompanied
         let config = if imperative then TConfig.Imperative else TConfig.Functional
         { Liveness = Live
           Advancing = advancing

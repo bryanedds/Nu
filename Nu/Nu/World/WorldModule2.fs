@@ -266,7 +266,7 @@ module WorldModule2 =
                     match Simulants.Game.GetDesiredScreen world with
                     | Desire desiredScreen ->
                         if desiredScreen <> selectedScreen then
-                            if World.getStandAlone world || World.getAdvancing world then
+                            if World.getUnaccompanied world || World.getAdvancing world then
                                 World.setScreenTransitionStatePlus (OutgoingState world.GameTime) selectedScreen world
                             else World.setSelectedScreenOpt (Some desiredScreen) world // quick cut such as when halted in editor
                         else world
@@ -611,7 +611,9 @@ module WorldModule2 =
             let world =
                 match evt.``type`` with
                 | SDL.SDL_EventType.SDL_QUIT ->
-                    World.exit world
+                    if World.getUnaccompanied world
+                    then World.exit world
+                    else world
                 | SDL.SDL_EventType.SDL_MOUSEMOTION ->
                     let mousePosition = v2 (single evt.button.x) (single evt.button.y)
                     let world =
@@ -961,7 +963,7 @@ module WorldModule2 =
             // render entities
             RenderEntitiesTimer.Start ()
             let world =
-                if World.getStandAlone world then
+                if World.getUnaccompanied world then
                     Seq.fold (fun world (entity : Entity) ->
                         if entity.GetVisible world
                         then World.renderEntity entity world

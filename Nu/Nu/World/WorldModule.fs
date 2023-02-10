@@ -238,15 +238,15 @@ module WorldModule =
         static member getImperative world =
             World.getAmbientStateBy AmbientState.getImperative world
 
-        /// Get whether the engine is running stand-alone.
-        [<FunctionBinding>]
-        static member getStandAlone world =
-            World.getAmbientStateBy AmbientState.getStandAlone world
-
         /// Get whether the engine is running accompanied, such as in an editor.
         [<FunctionBinding>]
         static member getAccompanied world =
             World.getAmbientStateBy AmbientState.getAccompanied world
+
+        /// Get whether the engine is running unaccompanied, such as outside of an editor.
+        [<FunctionBinding>]
+        static member getUnaccompanied world =
+            World.getAmbientStateBy AmbientState.getUnaccompanied world
 
         /// Get collection config value.
         [<FunctionBinding>]
