@@ -175,6 +175,7 @@ namespace Nu.Gaia.Design
             this.reloadAllButton = new System.Windows.Forms.ToolStripButton();
             this.toolStripSeparator2 = new System.Windows.Forms.ToolStripSeparator();
             this.songPlaybackButton = new System.Windows.Forms.ToolStripButton();
+            this.toolStripLabel7 = new System.Windows.Forms.ToolStripLabel();
             this.contextMenuStrip.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
             this.splitContainer1.Panel1.SuspendLayout();
@@ -846,7 +847,7 @@ namespace Nu.Gaia.Design
             // 
             this.terminal.Panel2.Controls.Add(this.splitContainer10);
             this.terminal.Size = new System.Drawing.Size(1548, 279);
-            this.terminal.SplitterDistance = 1114;
+            this.terminal.SplitterDistance = 1113;
             this.terminal.SplitterWidth = 5;
             this.terminal.TabIndex = 0;
             // 
@@ -858,7 +859,7 @@ namespace Nu.Gaia.Design
             this.evalInputTextBox.Multiline = true;
             this.evalInputTextBox.Name = "evalInputTextBox";
             this.evalInputTextBox.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
-            this.evalInputTextBox.Size = new System.Drawing.Size(1114, 279);
+            this.evalInputTextBox.Size = new System.Drawing.Size(1113, 279);
             this.evalInputTextBox.TabIndex = 2;
             this.evalInputTextBox.Text = "; Evaluate script expressions here!\r\n[+ 2 2]";
             // 
@@ -880,7 +881,7 @@ namespace Nu.Gaia.Design
             // splitContainer10.Panel2
             // 
             this.splitContainer10.Panel2.Controls.Add(this.evalOutputTextBox);
-            this.splitContainer10.Size = new System.Drawing.Size(429, 279);
+            this.splitContainer10.Size = new System.Drawing.Size(430, 279);
             this.splitContainer10.SplitterDistance = 55;
             this.splitContainer10.SplitterWidth = 5;
             this.splitContainer10.TabIndex = 1;
@@ -924,7 +925,7 @@ namespace Nu.Gaia.Design
             this.evalOutputTextBox.Multiline = true;
             this.evalOutputTextBox.Name = "evalOutputTextBox";
             this.evalOutputTextBox.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
-            this.evalOutputTextBox.Size = new System.Drawing.Size(369, 279);
+            this.evalOutputTextBox.Size = new System.Drawing.Size(370, 279);
             this.evalOutputTextBox.TabIndex = 2;
             // 
             // preludeTabPage
@@ -1397,14 +1398,15 @@ namespace Nu.Gaia.Design
             this.toolStripLabel2,
             this.editModeComboBox,
             this.toolStripSeparator8,
-            this.reloadCodeButton,
+            this.toolStripLabel7,
             this.reloadAssetsButton,
+            this.reloadCodeButton,
             this.reloadAllButton,
             this.toolStripSeparator2,
             this.songPlaybackButton});
             this.toolStrip.Location = new System.Drawing.Point(0, 0);
             this.toolStrip.Name = "toolStrip";
-            this.toolStrip.Size = new System.Drawing.Size(1721, 25);
+            this.toolStrip.Size = new System.Drawing.Size(1759, 25);
             this.toolStrip.TabIndex = 1;
             this.toolStrip.Text = "toolStrip1";
             // 
@@ -1689,8 +1691,8 @@ namespace Nu.Gaia.Design
             this.reloadCodeButton.Image = ((System.Drawing.Image)(resources.GetObject("reloadCodeButton.Image")));
             this.reloadCodeButton.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.reloadCodeButton.Name = "reloadCodeButton";
-            this.reloadCodeButton.Size = new System.Drawing.Size(86, 22);
-            this.reloadCodeButton.Text = "[Reload Code]";
+            this.reloadCodeButton.Size = new System.Drawing.Size(47, 22);
+            this.reloadCodeButton.Text = "[Code]";
             this.reloadCodeButton.ToolTipText = "Attempt to reload the program\'s F# code.";
             // 
             // reloadAllButton
@@ -1718,6 +1720,12 @@ namespace Nu.Gaia.Design
             this.songPlaybackButton.Size = new System.Drawing.Size(23, 22);
             this.songPlaybackButton.Text = "toolStripButton1";
             this.songPlaybackButton.ToolTipText = "Toggle Song Playback";
+            // 
+            // toolStripLabel7
+            // 
+            this.toolStripLabel7.Name = "toolStripLabel7";
+            this.toolStripLabel7.Size = new System.Drawing.Size(46, 22);
+            this.toolStripLabel7.Text = "Reload:";
             // 
             // GaiaForm
             // 
@@ -1967,6 +1975,7 @@ namespace Nu.Gaia.Design
         public TextBox eventFilterTextBox;
         public TextBox evalInputTextBox;
         public TextBox evalOutputTextBox;
+        private ToolStripLabel toolStripLabel7;
     }
 }
 

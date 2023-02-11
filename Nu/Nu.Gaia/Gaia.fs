@@ -1209,6 +1209,18 @@ module Gaia =
                 callback world
             | (false, _) -> world
 
+    let private handleFormReloadAssets (form : GaiaForm) (_ : EventArgs) =
+        Globals.nextPreUpdate $ fun world ->
+            match tryReloadAssetGraph form world with
+            | (Right assetGraph, world) ->
+                let prettyPrinter = (SyntaxAttribute.defaultValue typeof<AssetGraph>).PrettyPrinter
+                let assetGraphPretty = PrettyPrinter.prettyPrint (scstring assetGraph) prettyPrinter
+                form.assetGraphTextBox.Text <- assetGraphPretty.Replace ("\n", "\r\n")
+                world
+            | (Left error, world) ->
+                MessageBox.Show ("Asset reload error due to: " + error + "'.", "Asset Reload Error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+                world
+
     let private handleFormReloadCode form (_ : EventArgs) =
         Globals.nextPreUpdate $ fun world ->
             let world = Globals.pushPastWorld world
@@ -1289,18 +1301,6 @@ module Gaia =
             with exn ->
                 Log.trace ("Failed to inspect for F# code due to: " + scstring exn)
                 World.choose world
-
-    let private handleFormReloadAssets (form : GaiaForm) (_ : EventArgs) =
-        Globals.nextPreUpdate $ fun world ->
-            match tryReloadAssetGraph form world with
-            | (Right assetGraph, world) ->
-                let prettyPrinter = (SyntaxAttribute.defaultValue typeof<AssetGraph>).PrettyPrinter
-                let assetGraphPretty = PrettyPrinter.prettyPrint (scstring assetGraph) prettyPrinter
-                form.assetGraphTextBox.Text <- assetGraphPretty.Replace ("\n", "\r\n")
-                world
-            | (Left error, world) ->
-                MessageBox.Show ("Asset reload error due to: " + error + "'.", "Asset Reload Error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
-                world
 
     let private handleFormReloadAll (form : GaiaForm) (args : EventArgs) =
         handleFormReloadAssets form args
@@ -1879,9 +1879,9 @@ module Gaia =
         form.snap3dButton.Click.Add (handleFormSnap3d form)
         form.resetEyeButton.Click.Add (handleFormResetEye form)
         form.editModeComboBox.KeyDown.Add (fun evt -> evt.Handled <- true) // disable key events for edit mode combo box
-        form.reloadAllButton.Click.Add (handleFormReloadAll form)
-        form.reloadCodeButton.Click.Add (handleFormReloadCode form)
         form.reloadAssetsButton.Click.Add (handleFormReloadAssets form)
+        form.reloadCodeButton.Click.Add (handleFormReloadCode form)
+        form.reloadAllButton.Click.Add (handleFormReloadAll form)
         form.groupTabControl.Deselected.Add (handleFormGroupTabDeselected form)
         form.groupTabControl.Selected.Add (handleFormGroupTabSelected form)
         form.evalButton.Click.Add (handleEvalClick form)
