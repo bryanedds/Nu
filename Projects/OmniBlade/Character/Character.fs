@@ -334,23 +334,27 @@ module Character =
         { character with CharacterState_ = characterState }
 
     let updateHitPoints updater affectWounded alliesHealthy character =
-        let (cancel, characterState) =
+        let (cancelled, characterState) =
             if character.CharacterState_.Healthy || affectWounded then
                 let (cancel, hitPoints) = updater character.CharacterState_.HitPoints
                 let characterState = CharacterState.updateHitPoints (constant hitPoints) character.CharacterState_
                 (cancel, characterState)
             else (false, character.CharacterState_)
-        let autoBattleOpt =
+        let (cancelled, autoBattleOpt) =
             match character.AutoBattleOpt_ with
-            | Some autoBattle when cancel && not autoBattle.ChargeTech -> // cannot cancel charge tech
+            | Some autoBattle when cancelled && not autoBattle.ChargeTech -> // cannot cancel charge tech
                 match autoBattle.AutoTarget with
-                | AllyIndex _ as ally -> Some { AutoTarget = ally; AutoTechOpt = None; ChargeTech = false }
+                | AllyIndex _ as ally -> (true, Some { AutoTarget = ally; AutoTechOpt = None; ChargeTech = false })
                 | EnemyIndex _ ->
                     match Gen.randomKeyOpt alliesHealthy with
-                    | Some ally -> Some { AutoTarget = ally; AutoTechOpt = None; ChargeTech = false }
-                    | None -> None
-            | autoBattleOpt -> autoBattleOpt // use existing state if not cancelled
-        { character with CharacterState_ = characterState; AutoBattleOpt_ = autoBattleOpt }
+                    | Some ally -> (true, Some { AutoTarget = ally; AutoTechOpt = None; ChargeTech = false })
+                    | None -> (true, None)
+            | autoBattleOpt -> (false, autoBattleOpt) // use existing state if not cancelled
+        let actionTime =
+            if cancelled
+            then max Constants.Battle.ActionTimeCancelMinimum (character.ActionTime_ - Constants.Battle.ActionTimeCancelReduction)
+            else character.ActionTime_
+        { character with CharacterState_ = characterState; AutoBattleOpt_ = autoBattleOpt; ActionTime_ = actionTime }
 
     let updateTechPoints updater character =
         { character with CharacterState_ = CharacterState.updateTechPoints updater character.CharacterState_ }
