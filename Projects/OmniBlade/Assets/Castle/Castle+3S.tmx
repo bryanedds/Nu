@@ -16,7 +16,7 @@
  </layer>
  <layer id="1" name="Furnishing" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJztlE0OgjAQRifSrjgGidUj+bNUY0zUm3AS9QYsuBGJ1bVNaBMsBWagaIyd5C066fC+6YI0AkgDgUDgDznz75JPSjJNjiSzoM6Zs9QUGomksKDOmbOIShKNQJJYUOfMGVuXGOCK5Bbjv/vL9VDv9yS8oe+aMYA5+6zzrvaVeueVcq9ZvU+pHX/nxNvvT5VPOHZu6lfrwOs++3+47ciwUI6lw9PUr7o3Dp+LrgzUorh9Z+jj9pVhiHtoBh/uvhl8uqkZxnBjM4zpNhxb/PuR3cHv3/8CFD+hKQ==
+   eJztlE0OgjAQRifSrjgGidUj+bNUY0zUm3AS9QYsuBGJxbVNaBOUYWihaIyd5C3afuF97YI0AkgDgUDgDznz75JPKjJNTpAROeoMy5m11BQaSVAQOeoMy5m1iCoSjSBIiBx1huXM2nYuMcDVklts/91fnlK938PhDX3PjAHM2Wedd3Vfqe+8Uu41a+67zI6/cuJ0fqp8Arlz2359Drzpe/8fbjs6LJRjiXja9uvuDeLD6OrgOi5u3x36uH11GOIe2sGHu28Hn27XDmO4bTuM6TYcCf9+ZHfw+/c/ASoAoRE=
   </data>
  </layer>
  <layer id="6" name="Decor" width="32" height="32">
@@ -26,7 +26,7 @@
  </layer>
  <layer id="4" name="Ceiling" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJztzSEOgEAMRNFaNlkF54U6wAFXhIMwdWt2A0Fg/ktGtdOaAQBKYzabFM/ve19vhFmdRVmL7tWZn0qto1nsNG88tamzK0fRHZJ5n+r/NYud5g0AAAD86watIhEu
+   eJztzDEKgDAQRNFps5BKr+S1NJ3aaa6oB3G1somgAav/YGCbvxIA4K6P0uBL8X1X++M0ejP55od2C9Ie6n6ULN6svlxoO1NqTGrtuj/9AAAAwP8OQgIOOA==
   </data>
  </layer>
  <objectgroup id="3" name="Props">
