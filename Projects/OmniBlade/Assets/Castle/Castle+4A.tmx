@@ -16,21 +16,21 @@
  </layer>
  <layer id="1" name="Furnishing" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJztlskKwkAMhoNtb/oSitsjuRy1iOD2Ir6DV69eLaInfRpFW88mOMIwztLpggcn8EHJJPnDpKRdewBrC2YBKG0S2NXKgtN3+k7f6RelvwjsWCGb2rc2+ZaWtYhjBSBiHDkiAfIdkBOyleiTb89iVPlibXqOkRsj5rgJkO+OJMhOok++K4tR5Yu16bntyWkIkK+JdDz1/OssRpUvQ2fnKsClqo8pM9/Z7yzBd+PpmX15c0LcAXPJTuv4AF3f7MuaMw3e2qqdOsCcoW/2Zc3hd7Vup5dlvP5YMQPRHhgba2ZpOv8Y3f1I+Fal6aGF99jW3L/pXKWdtoce1u5r6pvOddq2s7C1NNpl9WCjXXQPWbSL6iGPNt9DyKHrZyrE5tX+h//fF8COQks=
+   eJztll0KwjAMx8u6XkTRzSP58ahDBn5dZCdyyLyQQzefTbFCKU27dtuTDfyhpEl+oR1ZC0pI4aADI6jtmVstHwV+4Ad+4A/FPzE3XQz8s2MtrioipBSqJJWKuO8Gukc4/ypisHy1Nl83oFqokVQr4r4nqDXwHyIGy1dr83VC9Zoq4r4ZKKU4fyJisHydggXTWQvfxpvafX1zMpgBR81MSWNCFrHd55uTsy8bm6lryNnEdp9vjjyrTTN9LJP5O+QOVHtBbGO4S9v+z/jZb5V/VZce5nCOieH8bfsYu2sPS6i9MtS37ZvYrnfhal3YY/Xgwh66Bx/2UD30Ycs9ZJJM/eRKbF/2P7x/P7uROq8=
   </data>
  </layer>
  <layer id="5" name="Ceiling" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJztzrENgDAMRNEbIFkZ6IAOmICWFchyXAdCRLhBNP9JLiKf7UgAgCZLravL/+zu3Rtc4wf3I7sn92bXUsmsgX/VMm+7n+xJKul8b4HZa+Y+DwAAAOkAajAQWw==
+   eJztzrERwCAMQ1EvwMohHUkXmCAtW0YLcKjhKPLfnSoL4wgAwJEisnKmPbuLZpdyL/jf2f1oVpU26LzGXaPObLejG2+dDgAAwJ99sf0NQQ==
   </data>
  </layer>
  <objectgroup id="3" name="Props">
-  <object id="1" gid="235" x="1392" y="1056" width="48" height="48">
+  <object id="1" gid="235" x="1128" y="720" width="48" height="48">
    <properties>
     <property name="I" value="[ChestSpawn]"/>
    </properties>
   </object>
-  <object id="2" gid="235" x="96" y="1056" width="48" height="48">
+  <object id="2" gid="235" x="360" y="720" width="48" height="48">
    <properties>
     <property name="I" value="[ChestSpawn]"/>
    </properties>

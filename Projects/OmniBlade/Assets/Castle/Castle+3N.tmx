@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="48" tileheight="48" infinite="0" nextlayerid="5" nextobjectid="4">
+<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="48" tileheight="48" infinite="0" nextlayerid="5" nextobjectid="5">
  <tileset firstgid="1" source="Castle.tsx"/>
  <tileset firstgid="1480" source="CastleInterior.tsx"/>
  <tileset firstgid="3160" source="CastleObjects.tsx"/>
@@ -11,12 +11,12 @@
  </layer>
  <layer id="1" name="Furnishing" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJzt1kEKwjAQQNGhMbv2EkKNp9BrqGsR0YV6kZ5Ikbqqp1Fq3DvBiBIaTGiIFGfgrTLjpzsLBlA4WnOAHbLNkrv/lq9X+5TE73+275H7ZnvI4vV92qH7vu0V7s4D9an9P+0Nf/Jpq9ny920bJfaOiVv7hm9Sv+/1nbo/GMoGth2JasfvHvQABMrRRd+p+6tBNrDtCGzm7Hu7xvcpdmdogvr6TrQUaqoU4Jy67YwygHEWrk3T3Vnw3wr5f4EQQkh3PAD87bDi
+   eJztlk0KwjAQRofGbKS9hFDjKfQa6lrEn4V6kZ5IkXalp1Fq3DuhESW0NKGhUpwPHgRmvjyyS8IAEku2HOCAVGXF7e9y5e3Ogvb93+5ny37TPWLt+V3cvv2u7g3uLjz5yf0/7h0vcHGr7Pmn24QUfefAzv3AmdTzo+6p/skgLaFqRyK55buHPQCBxMhN91T/biBLqNoR6IxZvTvH+Qy9c2SKDHRPNMRH1n2ASwhwDYtz3c44AphEftyUbmfJf4vP/wJBEATRHV6tT7I7
   </data>
  </layer>
  <layer id="4" name="Ceiling" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJztzkENACAQA8EVcFgB22ABzHEKeBJIdpK+2kdBkqR/zYAV503PfmRqgVbu/JIkSXrNBlhHA24=
+   eJztzrEJgEAQRNGf3uFFWofGmtuX5WgLWo4W4jZgeCjyH0y0A7MgSfqTM8GV3ttvM3SRObPU3hpjZ2/giEz5ubPGfYv0BYZS+ytJkqRvugFXJQcb
   </data>
  </layer>
  <objectgroup id="3" name="Props">
@@ -28,6 +28,11 @@
   <object id="3" gid="235" x="168" y="840" width="48" height="48">
    <properties>
     <property name="S" value=""/>
+   </properties>
+  </object>
+  <object id="4" gid="235" x="1104" y="720" width="48" height="48">
+   <properties>
+    <property name="I" value="[ChestSpawn]"/>
    </properties>
   </object>
  </objectgroup>

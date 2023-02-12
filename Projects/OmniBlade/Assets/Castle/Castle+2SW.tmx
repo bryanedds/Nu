@@ -6,7 +6,7 @@
  <tileset firstgid="3416" source="CastleObjects2.tsx"/>
  <layer id="2" name="Ground" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJzrYGZg6BjFo3gUk4x7oXjU/lH7R+2nLVaG4pHqf1rZ30tnPNjsH+jwJwWv4iVsP7qawZ7+Ru0ftX/U/lH7R+0fGPsBbwIttQ==
+   eJzrYGZg6BjFo3gUk4x7oXjU/lH7R+2nLVaG4pHqf1rZ30tnPBjsl+UZuPDP5CLfvlW8hO1HVzPY09+o/aP2j9o/av+o/QNjPwAerS07
   </data>
  </layer>
  <layer id="5" name="Flooring" width="32" height="32">
@@ -16,21 +16,21 @@
  </layer>
  <layer id="1" name="Furnishing" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJztlNEKwiAUhsXhZS9RRD1YVCxq24vsHXqFrhdRL7QYdZ+yIxxEnRpogQc+GHI834Hh3xaEtAEcGCEVsGNhM0IR7oZzpSN1xB2k+8G9T6CLuMMR3G/OohjpYYd9JL9wr/m3rDnsEMuP3XiHWH5TZf//+SvmR2Px1w731Yy4Uz0y2/DZjY5v31Qd9NhmqDn1onpktuGzAXLHVD302GaoWbkyILNNPde9fVkiA5YTM9Ss9KnL7PseNStTFM7KVJXSX3L3JsB/dvj/Uz3YLdgyP06W/Ckd7mP3L+Rv9md/9md/9qfxfwDqfaGJ
+   eJztlE0KwjAQRkMkm6qXUESv4H3En4i2vUjv4BVcV0RXehipiO5NyERCaNI2QqqQgQclTOdNKfmyDkKZA2uCUAwsiNsMV7g7ZRywIPG4g3SfmfcO5B532ID7xRh2BAXssPTk5+4Je770ELoyBrCDLz930wh9ahWJHXz5TRX8/+ePSTNSiz+p8b6eESdcjsw29eyIxd03VQ49thl6Tj1xOTLb1LMH5I6pCuixzdCzcmxAZpt+zu++qXgGjCpm6FnZpPb973v0rPRdVMvKNurWbc8/Zd9PmXvm4N/V+P9VPaqbMyfN2Fryh9Z4X3X/Qv4Gf/AHf/AHfzv+N4q2pcg=
   </data>
  </layer>
  <layer id="4" name="Ceiling" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJztzLENADAIwDAe4P+1a7/kgwohttpzlAgAeDu500zdxrvTAAD8rABrXgLH
+   eJxjYBgFQxWs4GFg2MkzMHZbcWFnj4JRMAqGJ1jASx015IKVRJhNjJqBBIOhrNzLPbD2/x8EYTAKRsEoGAWjYBSMZAAAG2IG3Q==
   </data>
  </layer>
  <objectgroup id="3" name="Props">
-  <object id="3" gid="235" x="744" y="288" width="48" height="48">
+  <object id="3" gid="235" x="768" y="288" width="48" height="48">
    <properties>
     <property name="I" value="[ChestSpawn]"/>
    </properties>
   </object>
-  <object id="4" gid="235" x="1344" y="816" width="48" height="48">
+  <object id="4" gid="235" x="1296" y="720" width="48" height="48">
    <properties>
     <property name="I" value="[ChestSpawn]"/>
    </properties>
