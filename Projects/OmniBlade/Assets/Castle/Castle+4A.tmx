@@ -1,14 +1,26 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="48" tileheight="48" infinite="0" nextlayerid="4" nextobjectid="3">
+<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="48" tileheight="48" infinite="0" nextlayerid="6" nextobjectid="4">
  <tileset firstgid="1" source="Castle.tsx"/>
+ <tileset firstgid="1480" source="CastleObjects.tsx"/>
+ <tileset firstgid="1736" source="CastleObjects2.tsx"/>
  <layer id="2" name="Ground" width="32" height="32">
   <data encoding="base64" compression="zlib">
    eJzt0KENADAIRUGSLo9h55pOAALRE09+LiFPRDarV3c/jc/n8/l8/uzGr23/n8/n8/n8Df8CMOAuiw==
   </data>
  </layer>
+ <layer id="4" name="Flooring" width="32" height="32">
+  <data encoding="base64" compression="zlib">
+   eJxjYBgFo2AUjIJRMApGAT6gxE4dNaNg8IInrAwMLGyE8VNWyvTgAiJAdSpAzArFqkDsgkVMlI0yPfjsRzfbBYsYIT4hPfjsN0EKM1OoWehi6GaTqgcX+MKKCDP08ETG2PyLjFXYMM35SkT84woTUuOfGL+SYj+p8U9t+0mNf2rajy1NIMclIflRMAoGKwAAWvsZPg==
+  </data>
+ </layer>
  <layer id="1" name="Furnishing" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJztlksOgkAMhgkwF9GoeCQfSyWGxNdFOJHG6IU0Cq7txDEZxnagPNw4Tf7Nn7ZfA00hDTwvZWgtPDJWgterjhzf8R3f8dvibwVPewt/x+wldfaLOiqZvtQJdPFp/kHlYLVU38zQTcn0pe6g3MK/qhysluo7CorqK5m+1AAUBTS/p3KwWqqvCxdYPGA3MmQ/cvCeDJ/q84kYbsAGuSnDEPYz/PYj8MYMn+qTiDebuqkTqJkidTPw5gyf6qPfattN7yp0/pJ4B12FfPYL41v1qxkwNmcGap/L9ryMXXUGap8pn8OuMgO1z5TPZbe9D3XYbc3QhK3PEGuyzZMYuU3Z//D/+wI/1Drn
+   eJztlskKwkAMhoNdPHv1qGjrG+ijuBxVpOD2Ij6RIvpCilbPJjjCMM7S6YIHJ/BByST5w6Sk3XkAOwuWAShtEdjVyoPTd/pO3+mXpb8O7Ngijfq3Nvk2lrWIUw3gwDhxHATId0TOSFOiT749i1Hli7XpOUWujJTjKkC+G/JA2hJ98l1YjCpfrE3PkSenLUC+DhJ76vm3WIwqX4bO+iHAINTHVJnv7Hf2wHfj6Zl9RXPmuANWkp0W+wA93+zLm5MEb23VTh1jzsQ3+/Lm8Ltat9OrMl5/ppiBaHeMTTWzNJ1/jO5+KnyrsvTQxXuMNPdvOldpZ+1hiLVHmvqmc5227SxsLYt2VT3YaJfdQx7tsnooos33MOfQ9ZMIsUW1/+H/9wUmyjxv
+  </data>
+ </layer>
+ <layer id="5" name="Ceiling" width="32" height="32">
+  <data encoding="base64" compression="zlib">
+   eJztzisOgDAQhOEB0VosV4D7X6vgAMfIhrRhDcH8XzKm++hKAICSpM3Z0z+7D9dO5/rg/9DuLA3OmNvlqfMe6nnZ3bL41rW6dw7M1j3PeQAAAEg317MNEw==
   </data>
  </layer>
  <objectgroup id="3" name="Props">
@@ -20,6 +32,11 @@
   <object id="2" gid="235" x="96" y="1056" width="48" height="48">
    <properties>
     <property name="I" value="[ChestSpawn]"/>
+   </properties>
+  </object>
+  <object id="3" gid="235" x="744" y="840" width="48" height="48">
+   <properties>
+    <property name="S" value=""/>
    </properties>
   </object>
  </objectgroup>

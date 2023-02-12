@@ -1,14 +1,26 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="48" tileheight="48" infinite="0" nextlayerid="4" nextobjectid="5">
+<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="48" tileheight="48" infinite="0" nextlayerid="6" nextobjectid="6">
  <tileset firstgid="1" source="Castle.tsx"/>
+ <tileset firstgid="1480" source="CastleObjects.tsx"/>
+ <tileset firstgid="1736" source="CastleObjects2.tsx"/>
  <layer id="2" name="Ground" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJzt0LEJACAMAMGAy6fJzjYuYJMoXPH1weeKSEnX1YnP5/N/9Ku51/zp/3w+n8/nT/gbpo0uJw==
+   eJzrYGZg6BjFo3gUk4x7oXjU/lH7R+2nLVaG4pHqf1rZ30tnPNjsH+jwJwVLsRO2H13NYE9/o/aP2j9q/6j9o/YPjP0AGU0siQ==
+  </data>
+ </layer>
+ <layer id="5" name="Flooring" width="32" height="32">
+  <data encoding="base64" compression="zlib">
+   eJztwQENAAAAwqD3T20PBxQAAADwbhAAAAE=
   </data>
  </layer>
  <layer id="1" name="Furnishing" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJztlEEKwjAQRUNKLlIRPZioVLTtRXqiiuiFKqJ7EzKBISShzWKiMB8elJDOm03+UAkxZHBSQrTAQeXNyMW4e81VWjrCHZz7ob1PYCTc4Qzuj2ZVWSbY4UjkN+6t/napYQcqP3bjHaj8sbD///ytWkaf8Hcz/vc74i7DuG7DZzdp334sI9xJzfB76i3DuG7DZy/onVgmuJOa4XflJoLrNny2rsJv36WGO6kZfldSx+/KEsFdWSol/Y127wr5sduwV8u4JPqnmfE/dv9C/7Kf/exnP/vL+L+Vi56t
+   eJztlOEKwiAQx8Uhfe4VFlEPFhWL2vYie6JF1AstYn1P8YRDplMDLfDgB0PO+x0M/11BSBfAiRFSAwcWNiMU4W45VyppIu6g3A/ufQJ9xB3O4H5zVoVkgB2OkfzCveXfqkrYIZYfu/EOsfymyv7/89fMj9bibxzu6xlxp9OobMNnNyrfvql66LHN0HNqpNOobMNnL8gdUw3QY5uhZ+XGgMo2/Xzq7asSGbCemaFnpU+Vi+979KxMUTgrU1VKf8XduwD/0uH/z/Vgt2DP/LhY8qdyuI/dv5C/2Z/92Z/92Z/G/wG6158x
+  </data>
+ </layer>
+ <layer id="4" name="Ceiling" width="32" height="32">
+  <data encoding="base64" compression="zlib">
+   eJztzKENADAIAEEctrb7L8oGDSG43unPRwDA28mdZuo23p0GAOBnBSF8AG8=
   </data>
  </layer>
  <objectgroup id="3" name="Props">
@@ -20,6 +32,11 @@
   <object id="4" gid="235" x="1344" y="816" width="48" height="48">
    <properties>
     <property name="I" value="[ChestSpawn]"/>
+   </properties>
+  </object>
+  <object id="5" gid="235" x="744" y="840" width="48" height="48">
+   <properties>
+    <property name="S" value=""/>
    </properties>
   </object>
  </objectgroup>

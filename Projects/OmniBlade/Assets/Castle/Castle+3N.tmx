@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="48" tileheight="48" infinite="0" nextlayerid="4" nextobjectid="3">
+<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="48" tileheight="48" infinite="0" nextlayerid="5" nextobjectid="4">
  <tileset firstgid="1" source="Castle.tsx"/>
+ <tileset firstgid="1480" source="CastleObjects.tsx"/>
  <layer id="2" name="Ground" width="32" height="32">
   <data encoding="base64" compression="zlib">
    eJzt0bEJACAQBMEHmzf5nk2sQMUXnGDCY4PrLaIvyml1v0u/rp+FfW1tbW3ts80f3f4YAF4wAOsgLjs=
@@ -8,13 +9,23 @@
  </layer>
  <layer id="1" name="Furnishing" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJzt1sEOATEQxvHJrr4IWfVIOIsIB7zIPhGReiGy6u4TI0Sq2mi6ETPJ79QZ/+xNXRLVgRaKaA3vZqbCfyvWvb0v8vef2+fM/df2oMzXj2mn7se259idJOpL+3/aS3UT077OSj1uv2HQ2xVh7RPeLL9v+M6wLTMerh0LTeB39ztEGio48J1lR2Y9XDsazar83G7wPkJ3DEPo8p1mPaY9XDsyMm3OVLUr5f8FIYQQv+MC66CtCQ==
+   eJzt1kEKwjAQheGhNT2IUOMR9CbqWkR0oV6kR9ELKFIvpNS69wUjSmloQkNEOgPfKjP+dGcWE2WW1oJoB6ZZCvvfcvVuX6Lw/e/2I3C/2h7G4foubd991/YKu3NPfW53p70RLy5tNVvxuW0jR+8c2bXveCv1+1HfqftTRV7DtFNCYfndgx6RhBSu+k7d3yrKGqYdiWYaN7cLvE/RncEE+vpOtuRrRgnROLHb2cOhYZenG7MQv+Xz/wJjjLH/8QS9JK9c
+  </data>
+ </layer>
+ <layer id="4" name="Ceiling" width="32" height="32">
+  <data encoding="base64" compression="zlib">
+   eJztysERABAQBMF7iYEUyJlUXQS8qe6qee1GAMC7eokY5fypubdsZuvyBQD41QZVbwHo
   </data>
  </layer>
  <objectgroup id="3" name="Props">
   <object id="2" gid="235" x="624" y="576" width="48" height="48">
    <properties>
     <property name="I" value="[ChestSpawn]"/>
+   </properties>
+  </object>
+  <object id="3" gid="235" x="168" y="840" width="48" height="48">
+   <properties>
+    <property name="S" value=""/>
    </properties>
   </object>
  </objectgroup>

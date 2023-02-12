@@ -1,14 +1,26 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="48" tileheight="48" infinite="0" nextlayerid="4" nextobjectid="5">
+<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="48" tileheight="48" infinite="0" nextlayerid="6" nextobjectid="6">
  <tileset firstgid="1" source="Castle.tsx"/>
+ <tileset firstgid="1480" source="CastleObjects.tsx"/>
+ <tileset firstgid="1736" source="CastleObjects2.tsx"/>
  <layer id="2" name="Ground" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJztzaEJAAAIADDB5y3+bPEBo7CwvMqIAs56+f1+v9/v9/v9fv+HfwD9TS0j
+   eJztzrENADAIwDCknsKzLP2ZhR8qVA+ZnToRpZXl9Prj1+7E5/P5fD6fz+fz+Rv8BryULFk=
+  </data>
+ </layer>
+ <layer id="5" name="Flooring" width="32" height="32">
+  <data encoding="base64" compression="zlib">
+   eJzt17EBABAQwMA0/xOw/3JsQM8MFArJAlcHzOykFtDjnV8Saurr6+vr6+vr6+vr/+CP/R7z8j8WLlwIvw==
   </data>
  </layer>
  <layer id="1" name="Furnishing" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJztzjEKgDAMheFg6UV08WYWRNSL9ES6eKG6uJvSFLq4ZAgOL/BDp34vOqKoaPZEqzR53R/asr1zZ1faDDdU+2L3lg7DDYvYDze4UpINwcjP9sjver1ssPJbu91g5X8dfPjw4cOHDx8+fPjw4f/ZfwFdHOAt
+   eJztzrEJgDAQheHDEF1B21SOoBMpiKiLZCJtXEgbe+9ItLNJcVi8gx9S5XveEPmEBks0xTqb9kdqYi/cloVmxQ2PvbN7xlbFDWO0L67MiSruiBt6JV/smt8N2y3nTNig5YvtCnpP3rJBy/86+PDhw4cPHz58+PDhw/+zfwN+juDt
+  </data>
+ </layer>
+ <layer id="4" name="Ceiling" width="32" height="32">
+  <data encoding="base64" compression="zlib">
+   eJztxiESABAABMBLVBX//6egyoaZ3bQJP2o1GSWZZf+2Xs8HAADgTQuvewCw
   </data>
  </layer>
  <objectgroup id="3" name="Props">
@@ -20,6 +32,11 @@
   <object id="4" gid="235" x="816" y="336" width="48" height="48">
    <properties>
     <property name="I" value="[ChestSpawn]"/>
+   </properties>
+  </object>
+  <object id="5" gid="235" x="648" y="912" width="48" height="48">
+   <properties>
+    <property name="S" value=""/>
    </properties>
   </object>
  </objectgroup>
