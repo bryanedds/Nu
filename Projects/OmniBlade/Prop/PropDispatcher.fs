@@ -145,7 +145,7 @@ module PropDispatcher =
                                 if opened
                                 then Assets.Field.BrassChestOpenedImage
                                 else Assets.Field.BrassChestClosedImage
-                        (false, image, Color.One, Transparent, Color.Zero, ValueNone, FlipNone)
+                        (true, image, Color.One, Transparent, Color.Zero, ValueNone, FlipNone)
                     | Switch (switchType, _, _, _) ->
                         let image =
                             match switchType with
