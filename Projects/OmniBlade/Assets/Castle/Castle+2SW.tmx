@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="48" tileheight="48" infinite="0" nextlayerid="6" nextobjectid="6">
  <tileset firstgid="1" source="Castle.tsx"/>
- <tileset firstgid="3508" source="CastleInterior.tsx"/>
- <tileset firstgid="5188" source="CastleObjects.tsx"/>
- <tileset firstgid="5444" source="CastleObjects2.tsx"/>
+ <tileset firstgid="1480" source="CastleInterior.tsx"/>
+ <tileset firstgid="3160" source="CastleObjects.tsx"/>
+ <tileset firstgid="3416" source="CastleObjects2.tsx"/>
  <layer id="2" name="Ground" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJzrYGZg6BjFo3gUk4x7oXjU/lH7R+2nLVaG4pHqf1rZ30tnPNjsH+jwJwVPEyVsP7qawZ7+Ru0ftX/U/lH7R+0fGPsB2LMtnQ==
+   eJzrYGZg6BjFo3gUk4x7oXjU/lH7R+2nLVaG4pHqf1rZ30tnPNjsH+jwJwWv4iVsP7qawZ7+Ru0ftX/U/lH7R+0fGPsBbwIttQ==
   </data>
  </layer>
  <layer id="5" name="Flooring" width="32" height="32">
@@ -16,12 +16,12 @@
  </layer>
  <layer id="1" name="Furnishing" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJztlHEKwiAUh8XhEbpAEXWwqFjUtoO0I3SSRdSFFqP+T9kTHqJODbTABx8Meb7vwfDXFoS0ARwYIRWwY2EzQhHuhnOlI3XEHaT7wb1PoIu4wxHcb86iGOlhh30kv3Cv+besOewQy4/deIdYflNl///5K+ZHY/HXDvfVjLhTPTLb8NmNjm/fVB302GaoOfWiemS24bMBcsdUPfTYZqhZuTIgs0091719WSIDlhMz1Kz0qcvs+x41K1MUzspUldJfcvcmwH92+P9TPdgt2DI/Tpb8KR3uY/cv5G/2Z3/2Z3/2p/F/AHXuoVk=
+   eJztlNEKwiAUhsXhZS9RRD1YVCxq24vsHXqFrhdRL7QYdZ+yIxxEnRpogQc+GHI834Hh3xaEtAEcGCEVsGNhM0IR7oZzpSN1xB2k+8G9T6CLuMMR3G/OohjpYYd9JL9wr/m3rDnsEMuP3XiHWH5TZf//+SvmR2Px1w731Yy4Uz0y2/DZjY5v31Qd9NhmqDn1onpktuGzAXLHVD302GaoWbkyILNNPde9fVkiA5YTM9Ss9KnL7PseNStTFM7KVJXSX3L3JsB/dvj/Uz3YLdgyP06W/Ckd7mP3L+Rv9md/9md/9qfxfwDqfaGJ
   </data>
  </layer>
  <layer id="4" name="Ceiling" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJztzLENADAIwDCe4Ouu/ZcPKoTYas9RIgDg7eROM3Ub704DAPCzAqLAApc=
+   eJztzLENADAIwDAe4P+1a7/kgwohttpzlAgAeDu500zdxrvTAAD8rABrXgLH
   </data>
  </layer>
  <objectgroup id="3" name="Props">

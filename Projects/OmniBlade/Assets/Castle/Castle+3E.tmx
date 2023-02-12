@@ -1,22 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="48" tileheight="48" infinite="0" nextlayerid="5" nextobjectid="4">
  <tileset firstgid="1" source="Castle.tsx"/>
- <tileset firstgid="3508" source="CastleInterior.tsx"/>
- <tileset firstgid="5188" source="CastleObjects.tsx"/>
- <tileset firstgid="5444" source="CastleObjects2.tsx"/>
+ <tileset firstgid="1480" source="CastleInterior.tsx"/>
+ <tileset firstgid="3160" source="CastleObjects.tsx"/>
+ <tileset firstgid="3416" source="CastleObjects2.tsx"/>
  <layer id="2" name="Ground" width="32" height="32" opacity="0.9">
   <data encoding="base64" compression="zlib">
-   eJzrYGZg6CAT90IxufopxaP2j9o/av+o/aP2j9o/aj91zaQXHmz2D3T448PTRMm3H13vYE1/o/aP2j9q/6j9o/bTx34AiSwuow==
+   eJzrYGZg6CAT90IxufopxaP2j9o/av+o/aP2j9o/aj91zaQXHmz2D3T448OreMm3H13vYE1/o/aP2j9q/6j9o/bTx34AHlsuuw==
   </data>
  </layer>
  <layer id="1" name="Furnishing" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJztlkkOAUEUhitd7QZcQGI6kmFpCjEdhCM4BTsiXIjQrL2X6Ki0ejXQD4uu5F/U9H9/dw3dCynEwkOjnCBLP+fn9Y4y/v/yp9DXY85g4m8C/gwm/jHgz2DiFyV/BhP/Gxls/E8yDGHcxKKZA1+XgfJT2ei9g/F70DYhbMO+Q0AzL+ATSX0Gyldlo/cZFIFOCUWPvquBXw6FqIT690D5xmt6eHiXoF4hhH1VqWdjqQO7Eb62FyXtG/ORnfRe5YVY55/1ZYFm24o6V/WN+abn4iyuZ4qT3wH++EcZ4vPnkmFuWf8r+NyIdaTmqvcPZuhaZMpYhb1f0+z/gcEvzfu3CexWgo/sdorfAJ+9mjbbh8/BduVzsV34nGwbn5tt4//6/zvjZ3xfvzve/IFZ
+   eJztlkkOgkAQRTs07PQSJk5Hclg6ReN0Ee/gFVxrjK70NBoF11YlEgl29aCUuqCSv6AL/vvQTcNCCrFw0DgQZA0CN693lPP/lz+DXp85g46/9vgz6Pgnjz+Djl+S/Bl0/G9kMPE/yTCC86YGzS34qgyUX5KN3ls4fwfapIRj2Nt7NPMKPqFUZ6B8k2z0voBC0Dml8NGLNPyKL0TVVz8Hyjee0/3DuwzHVULYq0k1G6sB7Kb/Ol6StG/MRzZ6r4rP6w4FIY6F53Gy51qUb8zX3Rdn2b5TnPwu8Cc/yhC/fzYZlob5j8DnRswjdW1y/8EMPYN0GWuw9uuK9T/U+GW5/7aA3U7xkd3J8BvgslazZrvwOdi2fC62DZ+TbeJzs038X/9/5/yc7+p3B58Vgng=
   </data>
  </layer>
  <layer id="4" name="Ceiling" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJztzbERABAUA9A/BFtrrcCaSk6hcafxXpciSQQAnJX8tttSRE8z14v/tbvvAgD8ZABcVQWB
+   eJztzKENACAQBMEt4OnfYmkBmsO+ICSAZMfu5UCSJKjlrr38Zi3tesCIdTu1+5UkSfrJBEqKB0Q=
   </data>
  </layer>
  <objectgroup id="3" name="Props">

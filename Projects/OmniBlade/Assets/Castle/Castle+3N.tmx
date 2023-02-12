@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="48" tileheight="48" infinite="0" nextlayerid="5" nextobjectid="4">
  <tileset firstgid="1" source="Castle.tsx"/>
- <tileset firstgid="3508" source="CastleInterior.tsx"/>
- <tileset firstgid="5188" source="CastleObjects.tsx"/>
- <tileset firstgid="5444" source="CastleObjects2.tsx"/>
+ <tileset firstgid="1480" source="CastleInterior.tsx"/>
+ <tileset firstgid="3160" source="CastleObjects.tsx"/>
+ <tileset firstgid="3416" source="CastleObjects2.tsx"/>
  <layer id="2" name="Ground" width="32" height="32">
   <data encoding="base64" compression="zlib">
    eJzt0bEJACAQBMEHmzf5nk2sQMUXnGDCY4PrLaIvyml1v0u/rp+FfW1tbW3ts80f3f4YAF4wAOsgLjs=
@@ -11,12 +11,12 @@
  </layer>
  <layer id="1" name="Furnishing" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJzt1kEKwjAQQNGhMTdoLyDUiF5IXYuILtSL9DS6U6S9kFLj3glGlNBgQkOkOANvlRk/3VkwgMLRmgPskG2W3P23fL3aVRK//9m+R+6b7SGL1/dph+77tle4Ow/Up/b/tDf8yaetZsvft22U2Dsnbu0bvkn9ftR36v5kKBvYdiSqHb970AMQKEcXfafurwbZwLYjsJmz7+0a36fYnaEJ6us70VKo2acAh9RtZ5QBjLNwbZruzoL/Vsj/C4QQQrrjAZDvsJo=
+   eJzt1kEKwjAQQNGhMbv2EkKNp9BrqGsR0YV6kZ5Ikbqqp1Fq3DvBiBIaTGiIFGfgrTLjpzsLBlA4WnOAHbLNkrv/lq9X+5TE73+275H7ZnvI4vV92qH7vu0V7s4D9an9P+0Nf/Jpq9ny920bJfaOiVv7hm9Sv+/1nbo/GMoGth2JasfvHvQABMrRRd+p+6tBNrDtCGzm7Hu7xvcpdmdogvr6TrQUaqoU4Jy67YwygHEWrk3T3Vnw3wr5f4EQQkh3PAD87bDi
   </data>
  </layer>
  <layer id="4" name="Ceiling" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJztzrENACAMA8EfIjSwNqwAa5IJKBFIf5IruzBIkvSvGbDivOnZj0wt0MqdX5IkSa/ZyDoDJg==
+   eJztzkENACAQA8EVcFgB22ABzHEKeBJIdpK+2kdBkqR/zYAV503PfmRqgVbu/JIkSXrNBlhHA24=
   </data>
  </layer>
  <objectgroup id="3" name="Props">
