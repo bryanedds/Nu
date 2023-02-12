@@ -6,7 +6,7 @@
  <tileset firstgid="3416" source="CastleObjects2.tsx"/>
  <layer id="2" name="Ground" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJzrYGZg6CAT90IxufopxaP2j9o/av+o/aP2j9o/aj91zSQFDyf7Bzr88eFVvMM//Y3aP2r/qP1Dw/5RPPQxAJdbLdE=
+   eJzrYGZg6CAT90IxufopxaP2j9o/av+o/aP2j9o/aj91zSQFDyf7Bzr88eFVvMM//Y3aP2r/qP1Dw/6BxMhlIXq5OIqJxwAGBi4p
   </data>
  </layer>
  <layer id="5" name="Flooring" width="32" height="32">
@@ -16,7 +16,7 @@
  </layer>
  <layer id="1" name="Furnishing" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJzrY2Zg6CMB57Iy4AQZrKSZRQ4etX/U/lH7R+2nhf3ZQP35BHAhjezPhpq9n4mB4SAU74ViGB8kd4iJ+vbD7AaZ/QmIv0DxByiG8UFyX2lgfy7UbpDZqkC+OhQrQzGMD5LTYKaN/SC78ZkNApt48ctTYj8hu4kBlNhPDUCu/alAfXlUcAMl+Y8YNyykUfwjuyGNAMbnxqFe/o7aP2r/qP2D235c5WQWUCyFDvZjcwM97UZ2A6xMprfd1MQAPdS9NQ==
+   eJztlFEKwjAMQMPGPj2FiB5MRRzb2EV2B6/gv4ieSET/TSCB/thua1MUEnjQLDQvMJqhBBgm0FTwNQ7VtF5zML/5zW9+DX+N97sAvZK/5t7XAuDGXBjJqXYv0vvFTb2fyIt5MJJT7a3gb9hNvVeYr5klIznVNqWOn9y+3hTnhb8e4w+5x0SMP0XM9e/wXptghpj3N2aGk9L/d2fYB/DN+O/71/zmN/9v+2VPuruQzkf8ts3gd2eQyOl2Z5CdnNudkg+hkL6R
   </data>
  </layer>
  <layer id="4" name="Ceiling" width="32" height="32">

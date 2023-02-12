@@ -6,7 +6,7 @@
  <tileset firstgid="3416" source="CastleObjects2.tsx"/>
  <layer id="2" name="Ground" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJzrYGZg6BjFo3gUk4x7oXjU/lH7R+0ftX+k2k8JHg72D3T4I4ut4h156W/U/lH7R+0fxaOYdAwAN80tvQ==
+   eJzrYGZg6BjFo3gUk4x7oXjU/lH7R+0ftX+k2k8JHg72D3T4I4ut4h156W/U/lH7R+0fWRi5nKNnmTfcMACmaS4V
   </data>
  </layer>
  <layer id="5" name="Flooring" width="32" height="32">
@@ -16,12 +16,12 @@
  </layer>
  <layer id="1" name="Furnishing" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJztl00KwjAQRgdLd+0lLKJ7PZJ/KGq9SG+g4hVct0i9kEXq3hmSQgwVbBmnCzPwSEgg71t9kMQDSFqw9gF2moXf7o22kHuPZD1FLJihct/QW2hSwQwb7X4ikae46wxLIT+5R7gfhwATpK8zSPnJbQ9lkPJ/Guf/b39sdOK3cPqpA666E3ODzCC34PRTBzx0J5YGhUFpwemnDhh4qhOHBlHNWQWnn+YSqvUQAByRU/B+b59z+5uO8/P6z2F3/hXezRvC6e+6f53f+Z3/t8zQsa3JQN0zFfqD2Rkk3WaGqkOl3Zy8AAgKywA=
+   eJztl00KwkAMRoOlu/YSiuhej+Qfilov0huoeAXXitQLWaTuTWgGpkXFljQunMCDYQLzvtUHE3sAcQ0WPsCamfr13qgLuTfIuZUTKWYw7it6U+akmGHJ7gfS8XJunGGm5Cd3H8+DEGCItDmDlp/cR/SaOXIGLf+7cf7/9kdWJ36LpJ864MKdmFicLZISkn7qgDt3YmaRWmQlJP3UAV0v78SeRefFnUHST2N6aRsA7JB9UNyX76X9Vcf5Zf2H8PO+Sf8cd5OKSPp/3b/O7/zO3yxjdKz8Ys/RmbpnpPQHMxnMaLrtDKZDtd2SPAE1VM3a
   </data>
  </layer>
  <layer id="4" name="Ceiling" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJxjYBgF5AJhXgYGEd6Bs18ZaLfKANo/CkbBKBgFyGABtDwS5WJgEANiVy5UeWcg/yknA8MzTtrYvxJqfy8PA0MfEPfzoMrjEh8Fo2AUjIJRMApGwSgYKQAAH3cIWg==
+   eJxjYBgF5AJhXgYGEd6BsXsB0F5lIFbhhbDpDVbyYmePglEwCkYugJVFolwMDGJA7MqFKu8M5D/lZGB4xkkb+2FlUS8PA0MfEPfzoMrjEh8Fo2AUjIJRMApGwSgYKQAA9okLIA==
   </data>
  </layer>
  <objectgroup id="3" name="Props">
