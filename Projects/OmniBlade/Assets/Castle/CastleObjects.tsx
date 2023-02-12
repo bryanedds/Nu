@@ -381,12 +381,12 @@
  </tile>
  <tile id="230">
   <properties>
-   <property name="C" value="TopRight"/>
+   <property name="C" value="Right"/>
   </properties>
  </tile>
  <tile id="231">
   <properties>
-   <property name="C" value="TopLeft"/>
+   <property name="C" value="Left"/>
   </properties>
  </tile>
 </tileset>
