@@ -6,7 +6,7 @@
  <tileset firstgid="3416" source="CastleObjects2.tsx"/>
  <layer id="2" name="Ground" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJzrYGZg6BjFo3gUk4x7oXjU/lH7R+0ftX+k2k8JHg72D3T4I4ut4h156W/U/lH7R+0fWRi5nKNnmTfcMACmaS4V
+   eJzrYGZg6BjFo3gUk4x7oXjU/lH7R+0ftX+k2k8JHg72D3T4I4ut4h156W/U/lH7R+0fWRi5nKNnmYeM2bggeKDDghIMAOvgLR8=
   </data>
  </layer>
  <layer id="5" name="Flooring" width="32" height="32">
@@ -16,21 +16,21 @@
  </layer>
  <layer id="1" name="Furnishing" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJztl00KwkAMRoOlu/YSiuhej+Qfilov0huoeAXXitQLWaTuTWgGpkXFljQunMCDYQLzvtUHE3sAcQ0WPsCamfr13qgLuTfIuZUTKWYw7it6U+akmGHJ7gfS8XJunGGm5Cd3H8+DEGCItDmDlp/cR/SaOXIGLf+7cf7/9kdWJ36LpJ864MKdmFicLZISkn7qgDt3YmaRWmQlJP3UAV0v78SeRefFnUHST2N6aRsA7JB9UNyX76X9Vcf5Zf2H8PO+Sf8cd5OKSPp/3b/O7/zO3yxjdKz8Ys/RmbpnpPQHMxnMaLrtDKZDtd2SPAE1VM3a
+   eJztl00KwjAQRoOlgtJewiK61yP5h6LWi/QGKl6ha4vUQ3gNi9S9M2QCsajYko4LM/AgZCDvW32QyBEiqsDCFWJNTN1qb1QF3RsgaUhCxgzKfQZvRhwZMyzJfQcCR3KlDDMmP7r7cB74QgyBDmXg8qM7Bq+amDJw+d+N9f+3P9Q68VtM+rEDTtSJqUaikRYw6ccOuFEn5hqZRl7ApB87oOvITuxpBC/uFCb9OKqXtp4QO2DvPe+L96b9Zcf6zfoP/ud9nf457CYlMen/df9av/Vbf72MwbFyZc9dWhI8Y/eMmP5gKkOzLeF06xlUh3K7TfIAbZfPuA==
   </data>
  </layer>
  <layer id="4" name="Ceiling" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJxjYBgF5AJhXgYGEd6BsXsB0F5lIFbhhbDpDVbyYmePglEwCkYugJVFolwMDGJA7MqFKu8M5D/lZGB4xkkb+2FlUS8PA0MfEPfzoMrjEh8Fo2AUjIJRMApGwSgYKQAA9okLIA==
+   eJxjYBgF5AJhXgYGEd6BsXsB0F5lIFbhhbDpDVbyYmePglEwCkYugJVFolwMDGJA7MqFKu8M5D/lZGB4xkkb+2FlUS8PA0MfEPfzoMrjEh8Fo2AUjIJRMApGwdAA1zgheBSQDwAnoAze
   </data>
  </layer>
  <objectgroup id="3" name="Props">
-  <object id="1" gid="235" x="744" y="1392" width="48" height="48">
+  <object id="1" gid="235" x="672" y="1392" width="48" height="48">
    <properties>
     <property name="I" value="[ChestSpawn]"/>
    </properties>
   </object>
-  <object id="3" gid="235" x="744" y="288" width="48" height="48">
+  <object id="3" gid="235" x="864" y="336" width="48" height="48">
    <properties>
     <property name="I" value="[ChestSpawn]"/>
    </properties>

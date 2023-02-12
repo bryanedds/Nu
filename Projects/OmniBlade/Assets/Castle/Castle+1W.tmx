@@ -6,7 +6,7 @@
  <tileset firstgid="3416" source="CastleObjects2.tsx"/>
  <layer id="2" name="Ground" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJztzrENACAIAEESa/emcRGndAsk4Yqr/3NFJAAwyinWrT/J3f8fAOjhAavILWM=
+   eJztzzENACAMAMEmsOIPSV0wgkpcQBNuuPnz2SISAPjKuqxa/7bZ37X3eP8PQA0Hd0gtNA==
   </data>
  </layer>
  <layer id="5" name="Flooring" width="32" height="32">
@@ -16,21 +16,21 @@
  </layer>
  <layer id="1" name="Furnishing" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJztzkEKwjAQBdBBya65hCJVzyVa3OhJuldQ8QquFemJKqUH8A8ETGbR2k2y6Aw8UpJP/5RTolIppUboYOLambC/mhC9hKrHkKzvDUexQ4u7j9D2GJL1NfAUO+QwF/IOMtuVl28LqN0OhevnOWVE5+x38iwt0QrWNvzmuSBzhdsfWf+fD9zN3A5+f+zhHVL286Ts36N7k6D/bsNutjVx+d1KKaXG6wvx0fgp
+   eJztzkEKwjAQBdBBza65RKVUPZEHkCpu9CTdK6h4BdeK9ESK9AD+YMRkFq3dJIvOwCMl+fRPOSQqhRCihzYqrKXy+6sB0Y2pWnTJuu6wZTvUuHsydYsuWdcLrmyHHMZM3oBnm/L8LYOH3WFl+83sEqJ98jvNTDTRFGba/zZzQOYIpz+y7j8vuEvtDm5/yJmPPjvE6v/uEKs/Q/ca3YsI/WftdxuFCsvtFkII0V9vr875Cg==
   </data>
  </layer>
  <layer id="4" name="Ceiling" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJzt0kEOQDAUBNC/pGn3OA9uxB1IcAUbEgfjHKar0qhIbETmJZP+pJP+TUWIiOhvKuXmWoV7vhLdyIjEiDLnufDeyW+6E+7WWGRDZsyjud7XaJFWu9NK0E2RzJxnq0OnR4YH3eObS2A/kS/0p992iYiIvmAHZ1QPsw==
+   eJxjYBgFo2AUjIJRMNxAKReCXcaFWx06cAOq5eBlYOAEYi5eVLYrmjkueNQuBco95WRgeAbEy4DsBbzY7evkYWDo4kHQICABVCsJxFK8qGwQ6AWq6QPifiLUIpu5Eof99ASqLAPtgoF3w0DbTwzAlaYpVTsKRsEoGAWjYBQMBgAARewQLg==
   </data>
  </layer>
  <objectgroup id="3" name="Props">
-  <object id="3" gid="235" x="1296" y="912" width="48" height="48">
+  <object id="3" gid="235" x="240" y="720" width="48" height="48">
    <properties>
     <property name="I" value="[ChestSpawn]"/>
    </properties>
   </object>
-  <object id="4" gid="235" x="1296" y="768" width="48" height="48">
+  <object id="4" gid="235" x="1344" y="864" width="48" height="48">
    <properties>
     <property name="I" value="[ChestSpawn]"/>
    </properties>

@@ -21,16 +21,16 @@
  </layer>
  <layer id="6" name="Ceiling" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJxjYBgFuEAdLwNDPRA38NJXLwy0A/V2AHEnGWZQohcGJgD1TgTiSVAzFhBhFkwNsl5hIBYhwx2neBgYVvMg+CuJMAOmZgVQ306oXmWgmAoF4TAKRsEoGAWjYBSMgpEJdgHbErt5CKtDb7OMglEwCkbBYAUAAzAUAw==
+   eJxjYBgFuEAdLwNDPRA38NJXLwy0A/V2AHEnGWZQohcGJgD1TgTiSVAzFhBhFkwNsl5hIBYhwx2neBgYVvMg+CuJMAOmZicPQ8NOqF5loJgKBeEwCkbBKBgFo2AUjIKRCXYB2xK7eQirQ2+zjIJRMApGwWAFAHXBFJQ=
   </data>
  </layer>
  <objectgroup id="3" name="Props">
-  <object id="3" gid="235" x="1296" y="768" width="48" height="48">
+  <object id="3" gid="235" x="1296" y="336" width="48" height="48">
    <properties>
     <property name="I" value="[ChestSpawn]"/>
    </properties>
   </object>
-  <object id="4" gid="235" x="192" y="768" width="48" height="48">
+  <object id="4" gid="235" x="432" y="1152" width="48" height="48">
    <properties>
     <property name="I" value="[ChestSpawn]"/>
    </properties>

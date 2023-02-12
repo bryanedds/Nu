@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="48" tileheight="48" infinite="0" nextlayerid="6" nextobjectid="4">
+<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="48" tileheight="48" infinite="0" nextlayerid="7" nextobjectid="4">
  <tileset firstgid="1" source="Castle.tsx"/>
  <tileset firstgid="1480" source="CastleInterior.tsx"/>
  <tileset firstgid="3160" source="CastleObjects.tsx"/>
@@ -16,21 +16,26 @@
  </layer>
  <layer id="1" name="Furnishing" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJztlE0OgjAQRhtpT0Ji9Uj+LMUYE/Um3IgFNyKxunYS2gRLgU5pZeFM8hYzYfK+6YIyY6wkCIL4Qx5iWepVS6WpPakssHumV5pGozxpLLB7ppdZS66RnuQW2D3TU4XXC97vveAbbjhjW/5b5xPuVfrmA7iPvD/H1Fl8cxfj36/BJx03D827dRV9n/0/LCYy7MCxd3iG5l33yeFzMZUBWxh37Awh7lgZ5rjnZojhDs0Q043NkMLtmyGl23Ab8V8Su8kf3/8BhzuYiQ==
+   eJztlE0OgjAQRifSrjgGidUj+bNUY0zUm3AS9QYsuBGJ1bVNaBMsBWagaIyd5C066fC+6YI0AkgDgUDgDznz75JPSjJNjiSzoM6Zs9QUGomksKDOmbOIShKNQJJYUOfMGVuXGOCK5Bbjv/vL9VDv9yS8oe+aMYA5+6zzrvaVeueVcq9ZvU+pHX/nxNvvT5VPOHZu6lfrwOs++3+47ciwUI6lw9PUr7o3Dp+LrgzUorh9Z+jj9pVhiHtoBh/uvhl8uqkZxnBjM4zpNhxb/PuR3cHv3/8CFD+hKQ==
+  </data>
+ </layer>
+ <layer id="6" name="Decor" width="32" height="32">
+  <data encoding="base64" compression="zlib">
+   eJztzqENADAMBLHnWbnp7F2hLAG2dPwSANjrVNKf3Zq+BQDY6wEXhQZh
   </data>
  </layer>
  <layer id="4" name="Ceiling" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJztzLERwCAMQ1Ev4JVJOqALTBwNABymoPrvTp0kMwDASHKzR3l9vx/drGR9FKUGvk42M58+mtIDXycbAAAA3PEDJHwLBg==
+   eJztzSEOgEAMRNFaNlkF54U6wAFXhIMwdWt2A0Fg/ktGtdOaAQBKYzabFM/ve19vhFmdRVmL7tWZn0qto1nsNG88tamzK0fRHZJ5n+r/NYud5g0AAAD86watIhEu
   </data>
  </layer>
  <objectgroup id="3" name="Props">
-  <object id="1" gid="235" x="336" y="720" width="48" height="48">
+  <object id="1" gid="235" x="120" y="720" width="48" height="48">
    <properties>
     <property name="I" value="[ChestSpawn]"/>
    </properties>
   </object>
-  <object id="2" gid="235" x="1152" y="720" width="48" height="48">
+  <object id="2" gid="235" x="1368" y="720" width="48" height="48">
    <properties>
     <property name="I" value="[ChestSpawn]"/>
    </properties>
