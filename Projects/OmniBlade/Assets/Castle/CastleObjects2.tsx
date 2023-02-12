@@ -4,24 +4,14 @@
   <property name="Image" value="[Castle CastleObjects2]"/>
  </properties>
  <image source="CastleObjects2.png" width="432" height="528"/>
- <tile id="10">
-  <properties>
-   <property name="C" value=""/>
-  </properties>
- </tile>
  <tile id="11">
-  <properties>
-   <property name="C" value=""/>
-  </properties>
- </tile>
- <tile id="12">
   <properties>
    <property name="C" value=""/>
   </properties>
  </tile>
  <tile id="13">
   <properties>
-   <property name="C" value=""/>
+   <property name="C" value="Right"/>
   </properties>
  </tile>
  <tile id="14">
@@ -31,7 +21,7 @@
  </tile>
  <tile id="15">
   <properties>
-   <property name="C" value=""/>
+   <property name="C" value="Left"/>
   </properties>
  </tile>
  <tile id="16">
@@ -44,24 +34,14 @@
    <property name="C" value=""/>
   </properties>
  </tile>
- <tile id="28">
-  <properties>
-   <property name="C" value=""/>
-  </properties>
- </tile>
  <tile id="29">
-  <properties>
-   <property name="C" value=""/>
-  </properties>
- </tile>
- <tile id="30">
   <properties>
    <property name="C" value=""/>
   </properties>
  </tile>
  <tile id="31">
   <properties>
-   <property name="C" value=""/>
+   <property name="C" value="Left"/>
   </properties>
  </tile>
  <tile id="32">
@@ -71,7 +51,7 @@
  </tile>
  <tile id="33">
   <properties>
-   <property name="C" value=""/>
+   <property name="C" value="Right"/>
   </properties>
  </tile>
  <tile id="34">
