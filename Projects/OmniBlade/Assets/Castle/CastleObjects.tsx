@@ -371,22 +371,22 @@
  </tile>
  <tile id="228">
   <properties>
-   <property name="C" value=""/>
+   <property name="C" value="Top"/>
   </properties>
  </tile>
  <tile id="229">
   <properties>
-   <property name="C" value=""/>
+   <property name="C" value="Top"/>
   </properties>
  </tile>
  <tile id="230">
   <properties>
-   <property name="C" value=""/>
+   <property name="C" value="TopRight"/>
   </properties>
  </tile>
  <tile id="231">
   <properties>
-   <property name="C" value=""/>
+   <property name="C" value="TopLeft"/>
   </properties>
  </tile>
 </tileset>
