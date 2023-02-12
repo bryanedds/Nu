@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="48" tileheight="48" infinite="0" nextlayerid="6" nextobjectid="6">
  <tileset firstgid="1" source="Castle.tsx"/>
- <tileset firstgid="1480" source="CastleObjects.tsx"/>
- <tileset firstgid="1736" source="CastleObjects2.tsx"/>
+ <tileset firstgid="3508" source="CastleInterior.tsx"/>
+ <tileset firstgid="5188" source="CastleObjects.tsx"/>
+ <tileset firstgid="5444" source="CastleObjects2.tsx"/>
  <layer id="2" name="Ground" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJzrYGZg6BjFo3gUk4x7oXjU/lH7R+2nLVaG4pHqf1rZ30tnPNjsH+jwJwVLsRO2H13NYE9/o/aP2j9q/6j9o/YPjP0AGU0siQ==
+   eJzrYGZg6BjFo3gUk4x7oXjU/lH7R+2nLVaG4pHqf1rZ30tnPNjsH+jwJwVPEyVsP7qawZ7+Ru0ftX/U/lH7R+0fGPsB2LMtnQ==
   </data>
  </layer>
  <layer id="5" name="Flooring" width="32" height="32">
@@ -15,12 +16,12 @@
  </layer>
  <layer id="1" name="Furnishing" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJztlOEKwiAQx8Uhfe4VFlEPFhWL2vYie6JF1AstYn1P8YRDplMDLfDgB0PO+x0M/11BSBfAiRFSAwcWNiMU4W45VyppIu6g3A/ufQJ9xB3O4H5zVoVkgB2OkfzCveXfqkrYIZYfu/EOsfymyv7/89fMj9bibxzu6xlxp9OobMNnNyrfvql66LHN0HNqpNOobMNnL8gdUw3QY5uhZ+XGgMo2/Xzq7asSGbCemaFnpU+Vi+979KxMUTgrU1VKf8XduwD/0uH/z/Vgt2DP/LhY8qdyuI/dv5C/2Z/92Z/92Z/G/wG6158x
+   eJztlHEKwiAUh8XhEbpAEXWwqFjUtoO0I3SSRdSFFqP+T9kTHqJODbTABx8Meb7vwfDXFoS0ARwYIRWwY2EzQhHuhnOlI3XEHaT7wb1PoIu4wxHcb86iGOlhh30kv3Cv+besOewQy4/deIdYflNl///5K+ZHY/HXDvfVjLhTPTLb8NmNjm/fVB302GaoOfWiemS24bMBcsdUPfTYZqhZuTIgs0091719WSIDlhMz1Kz0qcvs+x41K1MUzspUldJfcvcmwH92+P9TPdgt2DI/Tpb8KR3uY/cv5G/2Z3/2Z3/2p/F/AHXuoVk=
   </data>
  </layer>
  <layer id="4" name="Ceiling" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJztzKENADAIAEEctrb7L8oGDSG43unPRwDA28mdZuo23p0GAOBnBSF8AG8=
+   eJztzLENADAIwDCe4Ouu/ZcPKoTYas9RIgDg7eROM3Ub704DAPCzAqLAApc=
   </data>
  </layer>
  <objectgroup id="3" name="Props">

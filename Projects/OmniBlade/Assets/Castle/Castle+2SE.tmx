@@ -1,21 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="48" tileheight="48" infinite="0" nextlayerid="5" nextobjectid="6">
  <tileset firstgid="1" source="Castle.tsx"/>
- <tileset firstgid="1480" source="CastleObjects.tsx"/>
- <tileset firstgid="1736" source="CastleObjects2.tsx"/>
+ <tileset firstgid="3508" source="CastleInterior.tsx"/>
+ <tileset firstgid="5188" source="CastleObjects.tsx"/>
+ <tileset firstgid="5444" source="CastleObjects2.tsx"/>
  <layer id="2" name="Ground" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJzrYGZg6BjFo3gUj+JRPIpH8YjHvXTE5NgvxU6cGDXsp2ZY0kMfNc2gRD+1whCfOcpQTMv4I9U8attNirm0spsY82ltNz576GU3NvvobTcuN9DTbnQ3DITdo/ZTx34AKmQszw==
+   eJzrYGZg6BjFo3gUj+JRPIpH8YjHvXTE5Ng/TZQ4MWrYT82wpIc+appBiX5qhSE+c5ShmJbxR6p51LabFHNpZTcx5tPabnz20MtubPbR225cbqCn3ehuGAi7R+2njv0A/dkt4w==
   </data>
  </layer>
  <layer id="1" name="Furnishing" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJztlE0OgjAQRieguPYKGoJH0JtwADVG4w8X4UQaAxfSENw7TWqEplNb27Jqk5fAFPI+SGfKGKAMBAKBABzGAOcBEd0Fco8AKuTGqQhs9xmiu8Zag7TIk9MS2O63Hf+Ru19IivcZMudkBLb7Wdz3M/cCr4dcXf/QbtGvu6YTvZoP/x6f2xKcDL5B9G803k9HABdFLxcWfp0MOfqvkXw+sBrrH5aRWrJ/J86/XxkexHxoeO/mhJ+51xKfDFWGWfydD11YjeofE7dWBn7WlwnAKunXXLhNzqRq2bhtM7hw/5vBpds0gw+3bgaf7g+qOb3z7A5+9/43SRmxWg==
+   eJztlN8NgjAQhy+gG+ACGoIjMYAao/EPg8gITqFvGoMLaQi+e01qhKZXW9vy1CZfAlfI94P0rowBykAgEAjAegiw6xHRXSC3CKBCrpyKwHafIbrvWKuRBnlyGgLb/abl33D3C0nxPkMmnIzAdj+Lu37mnuJ1n6vt79st+nXXYaRX8+Ff4XMLgq3BN4j+ucb76QBgr+jlwsKvkyFH/yWSzwdWY/3DMlJL9u/E+fcrw4OYDzXv3ZzwM/dM4pOhyjCOv/OhDatR/WPi1slw5Gf9lACck27NhdvkTKqWjds2gwv3vxlcuk0z+HDrZvDp/qCa00vP7uB3738D6Uu0lg==
   </data>
  </layer>
  <layer id="4" name="Ceiling" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJzt1DsKgDAQBNCtYmvrFfQo/g7g7wJ+rrBHdwIpIm6hoGIxDxbCTHArI0JERH9Su3PWIGtDXho9OsUdrYzuriH6xorzhhkxE2bGdEaPTnFHe5wXoyeiZ8T/uPUWvClNRPpop38LfPaVLOzKsbdwx4yIiK7ZAeorDNY=
+   eJzt1MsJgDAQBNAtIva7BXi1BS3FXwH+GvDThBPIIeIeFFQ8zIOFMBPckxEhIqI/qd05a5C1IS+NHp3ijlZGd9cQfWPFecOMmAkzYzqjR6e4oz3Oi9ET0TPif9x6C96UJiJ9tNO/BT77ShZ25dhbuGNGRETX7AHeHhY=
   </data>
  </layer>
  <objectgroup id="3" name="Props">
