@@ -244,26 +244,6 @@
    <property name="C" value=""/>
   </properties>
  </tile>
- <tile id="1061">
-  <properties>
-   <property name="C" value=""/>
-  </properties>
- </tile>
- <tile id="1062">
-  <properties>
-   <property name="C" value=""/>
-  </properties>
- </tile>
- <tile id="1063">
-  <properties>
-   <property name="C" value=""/>
-  </properties>
- </tile>
- <tile id="1064">
-  <properties>
-   <property name="C" value=""/>
-  </properties>
- </tile>
  <tile id="1107">
   <properties>
    <property name="C" value=""/>
