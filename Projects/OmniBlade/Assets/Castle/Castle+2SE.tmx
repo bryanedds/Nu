@@ -1,14 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="48" tileheight="48" infinite="0" nextlayerid="4" nextobjectid="5">
+<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="48" tileheight="48" infinite="0" nextlayerid="5" nextobjectid="6">
  <tileset firstgid="1" source="Castle.tsx"/>
+ <tileset firstgid="1480" source="CastleObjects.tsx"/>
+ <tileset firstgid="1736" source="CastleObjects2.tsx"/>
  <layer id="2" name="Ground" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJztkTEOACAIxEj8vIt/djdqRI/TxBs60hLIySwLIYQQ4nsKkdf7yFsy5pCOk3nUDXc8yP95fei2xxvVXvFHt2cdVrvXY7dHOzDb7Q432upj+hWcUi53
+   eJzrYGZg6BjFo3gUj+JRPIpH8YjHvXTE5NgvxU6cGDXsp2ZY0kMfNc2gRD+1whCfOcpQTMv4I9U8attNirm0spsY82ltNz576GU3NvvobTcuN9DTbnQ3DITdo/ZTx34AKmQszw==
   </data>
  </layer>
  <layer id="1" name="Furnishing" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJztlP8KgjAQxw+tFynEHskHqIiiH76IT1SEvVAh+n83OPEY29rmtH928AHdHJ+v4l2VAlSRSCQSgdMS4DojsrtEnglATTyIWoHvHkd2v3CtQVriQ7QKfPc4vf9M7g7J8D4n1kSuwHePw/3CvcHrOYv753bL/n+Uq/+Iz+01XDzeoffvLM5nC4CboZfLEX6bDAX678kwH3iPizXRPyKjrlTfTp5/vzK82XzgPd5Q7xYav3BvFT4VpgyrdJgPvMfFmq5/XNwu/4NN+bhDZRjjHpshhNs3Q0i3a4Yp3LYZpnT3mOb0YWJ39If3fwHRm7BT
+   eJztlE0OgjAQRieguPYKGoJH0JtwADVG4w8X4UQaAxfSENw7TWqEplNb27Jqk5fAFPI+SGfKGKAMBAKBABzGAOcBEd0Fco8AKuTGqQhs9xmiu8Zag7TIk9MS2O63Hf+Ru19IivcZMudkBLb7Wdz3M/cCr4dcXf/QbtGvu6YTvZoP/x6f2xKcDL5B9G803k9HABdFLxcWfp0MOfqvkXw+sBrrH5aRWrJ/J86/XxkexHxoeO/mhJ+51xKfDFWGWfydD11YjeofE7dWBn7WlwnAKunXXLhNzqRq2bhtM7hw/5vBpds0gw+3bgaf7g+qOb3z7A5+9/43SRmxWg==
+  </data>
+ </layer>
+ <layer id="4" name="Ceiling" width="32" height="32">
+  <data encoding="base64" compression="zlib">
+   eJzt1DsKgDAQBNCtYmvrFfQo/g7g7wJ+rrBHdwIpIm6hoGIxDxbCTHArI0JERH9Su3PWIGtDXho9OsUdrYzuriH6xorzhhkxE2bGdEaPTnFHe5wXoyeiZ8T/uPUWvClNRPpop38LfPaVLOzKsbdwx4yIiK7ZAeorDNY=
   </data>
  </layer>
  <objectgroup id="3" name="Props">
@@ -20,6 +27,11 @@
   <object id="4" gid="235" x="192" y="816" width="48" height="48">
    <properties>
     <property name="I" value="[ChestSpawn]"/>
+   </properties>
+  </object>
+  <object id="5" gid="235" x="744" y="816" width="48" height="48">
+   <properties>
+    <property name="S" value=""/>
    </properties>
   </object>
  </objectgroup>

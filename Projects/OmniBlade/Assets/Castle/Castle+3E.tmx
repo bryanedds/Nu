@@ -1,14 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="48" tileheight="48" infinite="0" nextlayerid="4" nextobjectid="3">
+<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="48" tileheight="48" infinite="0" nextlayerid="5" nextobjectid="4">
  <tileset firstgid="1" source="Castle.tsx"/>
+ <tileset firstgid="1480" source="CastleObjects2.tsx"/>
+ <tileset firstgid="1579" source="CastleObjects.tsx"/>
  <layer id="2" name="Ground" width="32" height="32" opacity="0.9">
   <data encoding="base64" compression="zlib">
-   eJzt0LENACAIRUESl6dxZxsnQIMWV7zycwk5IrLY3FX3p/H5fD6fz797s6vf/Nf/5/P5fD6/w1/7si5j
+   eJzrYGZg6CAT90IxufopxaP2j9o/av+o/aP2j9o/aj91zaQXHmz2D3T448NSbOTbj653sKa/UftH7R+1f9T+UfvpYz8Ayj0tjQ==
   </data>
  </layer>
  <layer id="1" name="Furnishing" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJztllkOgjAQhhsKF8EoeCSXR7do3C7CiTRGLqRR8NmZpE0a7UKVER+Y5H8Ypvm/P7QsGWcs89A6YsZaRH5en6jl/y9/B7M5cQYb/xDQZ7DxLwF9Bhs/5vQZbPxfZHDxv8mwgnVbh/YV+LoMJj+Vjd4nWH8WOgrJHmd5YGbewafg+gwmX5WN3jdQIXQVkj3OSgu/FzKWhPr7YPKVe5oL7y70iVBHSPY4S7mejTUA9jB8vx5zs6/kI9vmTVWS3wRb5TdVyJ8Cf9NQBvn81ZGhBJ+H5z6q7x/MMHPIljGFs9/XnP+lxa/O9+8I2OMXPrInNX4DfM5q3WwfPgW7Kp+KXYVPyXbxqdkuftP/3y2/5fv6PQGRO3ud
+   eJztlkkOgkAQRTs0svcKJooeyWHpFI3TRbyAHkVj9EIaRddWJZB0sKsHpdQFnfwFXc1/H3qAtRRi7aFZRZBtXPHzekcl/3/5S6iNmDOY+LuAP4OJfw74M5j4NcmfwcT/RgYb/5MMUxi3sGjlwNdloPxUNnofYPwRtM8J+7B2CmjmDXwSqc9A+aps9L6CEtAlpySt3Q38RihEHOrfA+Wbzekp9a7DdUwIa02pZ2NrA7sTvvbXJO2b8ZGd995EQmwjxScSbzf1XtU345uei7O57ilO/gD48x9lyPafS4aqZf7v4PMg5pG6Vz1/MMPQIlPGJqz9lmb9Twx+RZ6/XWD3cnxk9wv8Bvis1aLZPnwOtiufi+3C52Tb+NxsG//X/98lv+T7+j0Bz/Z+kQ==
+  </data>
+ </layer>
+ <layer id="4" name="Ceiling" width="32" height="32">
+  <data encoding="base64" compression="zlib">
+   eJztzSEOACAQA8FTaCyPhjeDvCAwJBhm/LYRAHBWy9u2r2akrl3853bfBQD4yQQyEwK5
   </data>
  </layer>
  <objectgroup id="3" name="Props">
@@ -20,6 +27,11 @@
   <object id="2" gid="235" x="144" y="864" width="48" height="48">
    <properties>
     <property name="I" value="[ChestSpawn]"/>
+   </properties>
+  </object>
+  <object id="3" gid="235" x="744.187" y="839.942" width="48" height="48">
+   <properties>
+    <property name="S" value=""/>
    </properties>
   </object>
  </objectgroup>

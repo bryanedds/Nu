@@ -1,14 +1,27 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="48" tileheight="48" infinite="0" nextlayerid="4" nextobjectid="5">
+<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="48" tileheight="48" infinite="0" nextlayerid="6" nextobjectid="6">
  <tileset firstgid="1" source="Castle.tsx"/>
+ <tileset firstgid="1480" source="CastleObjects.tsx"/>
+ <tileset firstgid="1736" source="CastleObjects2.tsx"/>
+ <tileset firstgid="1835" source="CastleInterior.tsx"/>
  <layer id="2" name="Ground" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJzt0LEJACAMRcGAy9u4s40LGAWJXPHKn4P0FtGTjVV2fxqfz+fz+fy7N3f6yX/9fz6fz6/gq34TgOYtpQ==
+   eJzrYGZg6CAT90IxufopxaP2j9o/av+o/aP2j9o/aj91zSQFDyf7Bzr88WEp9uGf/kbtH7V/1P6hYf8oHvoYAOHtLTs=
+  </data>
+ </layer>
+ <layer id="5" name="Flooring" width="32" height="32">
+  <data encoding="base64" compression="zlib">
+   eJxjYCAfPGFlYHjKSoEBFAIRNgYGUbZR+0ftH7V/1P5R+6kFKrgZGCq5B85+YsGo/dS3H1Sns7ARh01pYP8XoP2sbMRh1WEY/qP2j9o/av+o/cQAUFn5dQD7X6Ng6AMAEUINFg==
   </data>
  </layer>
  <layer id="1" name="Furnishing" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJztlNEKglAMhofik4TUg1WEotGL+EYi9UQRed8GG3iRmm7nYLDBdzHH2fffuCYFaBZQZTBal2zZrjW43/3ud38If4nvrzPcAvlL3t0lAHemZaSn2SOx94ubdr+QN/NkpKdZH8BfsZt259jvmR0jPc0OaRg/uad2/1Iav9at9VvUWv8J39UGGTT/n0UG7f2hDOcZpjL++/11v/vdv23/2J0s8Nsxgv9bhpjuYQa5ybHdlnwAAwW7yA==
+   eJzrY2Zg6CMB57Iy4AQZrKSZRQ4etX/U/lH7R+2nhf3ZQP35BHAhjezPhpq9n4mB4SAU74ViGB8kd4iJ+vbD7AaZ/QmIv0DxByiG8UFyX2lgfy7UbpDZqkC+OhQrQzGMD5LTYKaN/SC78ZkNAkrs+OUpsZ+Q3cQASuynBiDX/lSgvjwquIGS/EeMGwRpFP/IbkgjgPG5caiXv6P2j9o/av/gth9XOZkFFEuhg/3Y3EBPu5HdACuT6W03NTEAEOm8CQ==
+  </data>
+ </layer>
+ <layer id="4" name="Ceiling" width="32" height="32">
+  <data encoding="base64" compression="zlib">
+   eJztzqENACAMRNFTYLEsBRvABrC/oxKBLoT8l1xS9ysBAF5VglSDX29Ya269Zne3pej3w0m+3AcAAPjBArVZApM=
   </data>
  </layer>
  <objectgroup id="3" name="Props">
@@ -20,6 +33,11 @@
   <object id="4" gid="235" x="144" y="816" width="48" height="48">
    <properties>
     <property name="I" value="[ChestSpawn]"/>
+   </properties>
+  </object>
+  <object id="5" gid="235" x="840" y="840" width="48" height="48">
+   <properties>
+    <property name="S" value=""/>
    </properties>
   </object>
  </objectgroup>

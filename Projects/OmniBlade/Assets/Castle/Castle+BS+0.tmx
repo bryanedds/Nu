@@ -21,7 +21,7 @@
  </layer>
  <layer id="1" name="Furnishing" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJy9lztOw0AQhlex3GB8AIhooEgEJVwCIWoeAipeIgKSi+QQtLQUCJGC1HAQoEBC0DMje+TRMPvwJvYv/cJa7873r7KD1uPEmLHDg9SY20hfpO7aPiN7BH7pxHk4QwZiT6HOT6SfIzNw9i+4lxReS6rnEH9FZJDsPoxt5sZsgSeZMY+52zjnddGYN/BqzQwam2sFah5B/WPwSVaN8zGcwxWaQbKnC8X6Kxg7B9+Ad0VtTTiHr0FhLVcGjf1d8odlL41SP5sk12AtV4ZrCxuF8yed4j2qn/3nkXqZvkbLcCn49HvjvHUHY9/xbo+96+bVM9XD2nQeJJ+ftUMHI2T/qA3Gp3r0FzNIPukd5jyBPy2c0P1zYc0PUdPGX4LzuwzuWs566P65sCbuidfk/DPWK9sw5wDm7pRzZS+F7F+u0Wqeih7kGbhkL4Xs39WzGtuVQfZSyP61/vOxXRl4L8X8/qFsWwbeSzHnvw7bdx7qKobty3CXh43NwnZluFdYcmwebFuGB4XPx+bJrnsemmCHZmiS7cvQBptnkGqLTZZqkz1Q9j/rt1YdNt1VSbHfOTHmd1WSdqdski+/TbQ7ZZN8ZPP/d/gs75Sh/gOnZZsN
+   eJy9lztOw0AQhlex3GB8AIhooEgEJVwCIWoeAipeIgKSi+QQtDwqKkQKUsNBgAIJQc+M7JFHw+x6vY79S7+w1rvz/avsoPU4Mmbs8CA25jrQZ7G7dpmRPQK/dMI8rJGB2FOo8xPo58AMnP0L7kWZV6Li2cdfARkkuw9j66kxG+BJYswd+N7ihySb8zpvzBt4uWIGjc21BDUPoP4h+CgpxvkYzuHyzSDZ07ls/QWMnYKvwNuitiacw9egsJYrg8b+zvnDvJdGcTmbJNdgLVeGSwsbhfMnnew9qp/855F6ib5Gy3Au+PR747xVB2PX8W6HveumxTPVw9p0HiSfn7V9B8Nn/6g1xqd69BczSD7pHeY8gT8tHN/9c2HND1HTxl+A87sI7lrOuu/+ubAm7onX5PwT1iubMGcP5m7lc2Uv+exfrtFqHose5Bm4ZC/57N/VsxrblUH2ks/+tf4rY7sy8F4K+f192bYMvJdCzn8Vdtl5qKoQdlmGm9RvrA7bleFWYcmxWbBtGR4VPh+bJbvqeWiC7ZuhSXZZhjbYPINUW2yyVJvsgbL/ut9aVdh0VyWFfueEmN9VSdqdskm+/DbR7pRN8pHN/9/hs7xT+voPED6apQ==
   </data>
  </layer>
  <layer id="6" name="Decor" width="32" height="32">
