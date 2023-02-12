@@ -21,17 +21,17 @@
  </layer>
  <layer id="1" name="Furnishing" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJy9l71Ow0AMx0+NsjTkAaBigaEVjPASCDHzIWCigKiA9kX6EKx8TEyIDnSGBwEGJAQSI7YSK5Zx7i5XEkt/EV18/v2tntFlHBkztmgQG3MZqJPYXtslZI9AT60wDWfwQOwp1PkK1GOgB87+BnWjTMtR8eyjjwAPkt2DtbXUmHXQJDHmBnRborsky3meM+YFtFTRg8bmsQg196H+AegwKdb5Gubw8PUg2dN2tv8M1o5BF6AtUVsLzOF7MLCWzYPG/sz5w3yWRrGbTSH3YC2bh/MSNgbmT1rZe4xe8pdH0U30PZqHU8Gn3xvzViyMHcu7bfaukxbPVA9r03mQfH7W9iwMn/4xVhmf6tFf9CD5FK+Q8wB6L+H49s8Da76JmmX8eTi/C6BOyVn37Z8H1sSeeE3O77NZ2YCcXcjdzHPlLPn0L/doNY/EDHIPPOQs+fRvm1mNbfMgZ8mnf23+XGybBz5LIb+/L7vMA5+lkPNfhe06D1UjhO3ycJX6rf20w9k2D9cKS67N0rfLw73C52v/ya56Hupg+3qok+3y0ASbe5DRFJsko0n2QOl/1m+tKmy6q1KEfueEiN9VKbQ7ZZ18+W2i3Snr5COb/7/DZ3mn9NUvlxKbOA==
+   eJy9lztOw0AQhlex3MT4ABDRQJEISrgEQtQ8BFQEEBGQXCSHoOVRUSFSkBoOAhRICCRKZmSvMhpmn8Ye6Ves9ex8/yg7iT1OlBpbNEiVuozUSWqv7RKyR6CnVpyGFTxo9hTqfEXqMdIDZX+Dukmh5WR27aOPCA+c3YO1tVypddAkU+oGdGvQXVbkPM8p9QJaCvQgsWksQs19qH8AOsxm63QNc2j4euDsabvYfwZrx6AL0BarLQXm0D0YWMvmQWJ/lvxhOUuj1M3WwfdgLZuHcwMbA/MnreI+Ri/7y9PRzeQ9kodTxtffN+atWBg7lnvb5F4nn13relhbnwfOp2dtz8Lw6R9jlfB1Pf2JHjhfxyvkPIDeDRzf/mlgzTdW08Sfh/O7AOoYzrpv/zSwJvZEa1J+n8zKBuTsQu5mmctnyad/vkeqecRmkHqgwWfJp3/bzEpsmwc+Sz79S/PnYts80FmK+f592SYPdJZizn8I23UeQiOG7fJwlfut/bTj2TYP1wKLr1Xp2+XhXuDTtf9kh56HOti+Hupkuzw0waYeeDTF1uLRJHsg9F/1XSuELf2vVXnXCpF+VuXBnynr5PN3E+mZsk4+sunvHV7zZ0pf/QKKM5fO
   </data>
  </layer>
  <layer id="6" name="Decor" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJxjYBg6YCkvA8MyIF7Bi2AvR+OD2NQGwkAzRYB4HRCvB+KNSOwNaHwQew0PA8NaHurZrww0UwXqrxpuBoY6bghdC8UwPogGgX1Au9dT0X4YqAW6QQdohy4Q63EjxJHFaqkU/pO4qGMOOWZNpqLdpJpJTX9Tw2wOYHxyAjEXCfFKjh56AC1uwmpAoG0A3b0AGEf9QPsXUTEdXICaRay/NIkMJ1IAyMz+QZYehgIYTvlvFNAXZLEOtAtGwSgYBaOA+mARL3Y2vcBqXuzsoQYAnTwltQ==
+   eJxjYBg6YCkvA8MyIF7Bi2AvR+OD2NQGwkAzRYB4HRCvB+KNSOwNaHwQew0PA8NaHurZrww0UwXqrxpuBoY6bghdC8UwPogGgX1Au9dT0X4YqAW6QQdohy4Q63EjxJHFaqkU/pO4qGMOOWZNpqLdpJpJTX9Tw2wOYHxyAjEXCfFKjh56AC1uwmpAoG0A3b0AGEf9QPsXUTEdXICaRay/NIkMJ1IAyMz+QZYehgIYTvlvFNAXZLEOtAtGwSgYBcMRHGJCsPcw4VZHK/AVyc73A2D/cAEA2wYmUQ==
   </data>
  </layer>
  <layer id="4" name="Ceiling" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJztkzsKgDAQRNOk9JKiFhZ6A7VTO/UMttZ+TucUGwyiICEhovvgQZYsO9UI8YwiEKKEFXn1r+/YpsbNBrZwJBVq1nds0+FmDwc4kQo16zsumHF3gVtwvNfTvDnKZvxg0imbPTTplM0emnTKdQ+Z/8D94/4xDPMuMnm8U3m/54oYmQkZecjPkRmSuYd85hvsrEQyKg==
+   eJxjYCAO1PEyMNQDcQMUY5NHVkNt0A40swOIO4F4CRTDAIyPrIbaYALQzIlAPAmI10IxDMD4yGpoAbYDzd0BxLt4EeydaPxdNLJ7FAwMICdPUTMfkpOnqJkPyclTtM6Ho2DkgNH8N5r/RsEoGAWDC+SxIthZrLjV0QqkAu1Mg+KUAbA/H2hnEhTnD4D9Aw0W8WJn0wus5sXOHmoAAHtZNPg=
   </data>
  </layer>
  <objectgroup id="3" name="Props">
