@@ -15,6 +15,10 @@ module Reflection =
     let mutable private Initialized =
         false
 
+    /// A dictionary of all loaded assemblies.
+    let private AssembliesLoaded =
+        Dictionary<string, Assembly> StringComparer.Ordinal
+
     let private PropertyDefinitionsCache =
         Dictionary<Type, PropertyDefinition list> HashIdentity.Structural
 
@@ -73,10 +77,6 @@ module Reflection =
              ("Is3d", true)
              ("Physical", true)
              ("Optimized", true)]
-
-    /// A dictionary of all loaded assemblies.
-    let internal AssembliesLoaded =
-        Dictionary<string, Assembly> StringComparer.Ordinal
 
     /// Configure a property to be non-persistent.
     let internal initPropertyNonPersistent nonPersistent propertyName =
