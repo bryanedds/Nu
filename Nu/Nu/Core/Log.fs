@@ -85,8 +85,7 @@ module Log =
             | Some fileName -> listeners.Add (new TextWriterTraceListener (fileName)) |> ignore
             | None -> ()
 
-            // automatically flush all logs
-            Debug.AutoFlush <- true
+            // automatically flush logs
             Trace.AutoFlush <- true
 
             // mark as Initialized
