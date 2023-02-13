@@ -262,7 +262,7 @@ module Render =
     let [<Literal>] NearPlaneDistanceExposed = FarPlaneDistanceEnclosed
     let [<Literal>] FarPlaneDistanceExposed = 400.0f
     let [<Literal>] NearPlaneDistanceImposter = FarPlaneDistanceExposed
-    let [<Literal>] FarPlaneDistanceImposter = 800.0f
+    let [<Literal>] FarPlaneDistanceImposter = 1600.0f
     let [<Literal>] NearPlaneDistanceOmnipresent = NearPlaneDistanceEnclosed
     let [<Literal>] FarPlaneDistanceOmnipresent = FarPlaneDistanceImposter
     let [<Uniform>] ViewportMargin (windowSize : Vector2i) = let size = Vector2i (ResolutionX, ResolutionY) in Vector2i ((windowSize.X - size.X) / 2, (windowSize.Y - size.Y) / 2)
