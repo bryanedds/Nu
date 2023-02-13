@@ -20,21 +20,14 @@ module Nu =
         // init only if needed
         if not Initialized then
 
-            // process loading assemblies
-            AppDomain.CurrentDomain.AssemblyLoad.Add (fun args ->
-                Reflection.AssembliesLoaded.[args.LoadedAssembly.FullName] <- args.LoadedAssembly)
-            AppDomain.CurrentDomain.add_AssemblyResolve (ResolveEventHandler (fun _ args ->
-                snd (Reflection.AssembliesLoaded.TryGetValue args.Name)))
-
-            // process existing assemblies
-            for assembly in AppDomain.CurrentDomain.GetAssemblies () do
-                Reflection.AssembliesLoaded.[assembly.FullName] <- assembly
-
             // ensure the current culture is invariate
             Thread.CurrentThread.CurrentCulture <- Globalization.CultureInfo.InvariantCulture
 
             // init logging
             Log.init (Some "Log.txt")
+
+            // init reflection module
+            Reflection.init ()
 
             // init math module
             Math.init ()

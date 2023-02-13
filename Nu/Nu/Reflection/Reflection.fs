@@ -12,6 +12,9 @@ open Nu
 [<RequireQualifiedAccess>]
 module Reflection =
 
+    let mutable private Initialized =
+        false
+
     let private PropertyDefinitionsCache =
         Dictionary<Type, PropertyDefinition list> HashIdentity.Structural
 
@@ -519,6 +522,21 @@ module Reflection =
         let sourceType = source.GetType ()
         let instrinsicFacetNames = getIntrinsicFacetNames sourceType
         attachIntrinsicFacetsViaNames copyTarget dispatcherMap facetMap instrinsicFacetNames target world
+
+    let init () =
+
+        // initialize once
+        if not Initialized then
+
+            // process loading assemblies
+            AppDomain.CurrentDomain.AssemblyLoad.Add (fun args ->
+                AssembliesLoaded.[args.LoadedAssembly.FullName] <- args.LoadedAssembly)
+            AppDomain.CurrentDomain.add_AssemblyResolve (ResolveEventHandler (fun _ args ->
+                snd (AssembliesLoaded.TryGetValue args.Name)))
+
+            // process existing assemblies
+            for assembly in AppDomain.CurrentDomain.GetAssemblies () do
+                AssembliesLoaded.[assembly.FullName] <- assembly
 
 namespace Prime
 open Nu
