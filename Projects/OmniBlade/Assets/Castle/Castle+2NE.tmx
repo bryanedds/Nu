@@ -11,7 +11,7 @@
  </layer>
  <layer id="1" name="Furnishing" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJztlE0KwjAQRgfb7vQSSmn1RIIuVUSpPxfpXqF6B9eK1AspUvd+wQ6GojSB0ihk4EFmGPIygSR2iGINIo++xtTT20uXOfZfG/Kz+9Ko3y+7HzX7i+7Q+eyeoWdUsd+6rfvX3L5LtELfsiJ03CL68B/RcwYpOOWkEqo1gfBHim6e/4q+O8jALSeTUK1lkr/MPYB36L7mb6PPB0FOR1pzrlILnLe/bO5iHFpESZNoB/YgRN4FPbBBvlWoiWC/qWA/368J/xj+haE74Pdv6gzyHyTOMKmZKv9Qi8VisfwPT5MIxFo=
+   eJztlE0KwjAQRgfb7vQSSmn1RIIuVUSpPxfpXqF6B9eK6IUUqXu/YAdDsaSB0ihk4EFmGPIygSR2iGINIo8KY+rp7aXLHPuvDfnZfW3U75fdz5r9eXfofHfP0DOq2G/d1v1rbt8lWqFvWRE6bhF9+I/oOYNLAacMVU0g/FFJN89/Q98DpAXcM1S1VPKr3AN4h+57/jb6fBBkdKQ152VqgfPxq+bOx6FFlDSJdmAPQuRd0AMb5NsSNRHsNxXs5/s14R/DvzB0B/z+TZ1B/oPEGSY1U+UfarFYLJb/4QUy98Rq
   </data>
  </layer>
  <layer id="4" name="Ceiling" width="32" height="32">

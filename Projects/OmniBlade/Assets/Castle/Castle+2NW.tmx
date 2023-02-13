@@ -11,12 +11,12 @@
  </layer>
  <layer id="1" name="Furnishing" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJzrY2Zg6CMB57Iy4AQZrKSZRQ4etX/U/lH7R+2nlv35rKThQiBeyEs9+w8yIfBeKMYlth+IDwHxKira/4UJgT9AMS6xT0D8FYg3U9F+dShWJgKrArEGM3XjnxSwCYe/6WU/ITBq/8DZnwW0O4UM+9NYqYPJsXsUj+JRPIpH8cjFANNJ2/g=
+   eJzt0UEKQEAUxvGJZukUEgeTpCQXcQdbS9YSJ5LYezWzkBIzvVj4Xv02b/H+TVO5QlQGcikuJ5Vmt2ygjz766HP1C2mmJLXH1x8dpdfGk+N+IBNpGPuro8zaenLcL2QjHWM/1PwHAhK5vP9vMu3Fu9/q3w363/UzascW/UTysGkDAMB/7dMJ2/g=
   </data>
  </layer>
  <layer id="4" name="Ceiling" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJztzSENAAAIADAK0N9iaUkDLBv7CzwCAHaVt38f/wAAHwxWpQFk
+   eJztzjERACAMxdAvoPW/smKKOgALMDIwU47LM5BIAIBXNJPC8vp9tcehX/z+y64m9wEAAH4wAdPPBS4=
   </data>
  </layer>
  <objectgroup id="3" name="Props">
