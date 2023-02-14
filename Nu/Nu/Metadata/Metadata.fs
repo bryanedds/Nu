@@ -4,6 +4,7 @@
 namespace Nu
 open System
 open System.Collections.Generic
+open System.Diagnostics
 open System.IO
 open TiledSharp
 open Prime
@@ -61,6 +62,14 @@ module TmxExtensions =
 
 [<RequireQualifiedAccess>]
 module Metadata =
+
+    (* Performance Timers *)
+    let private TextureTimer = Stopwatch ()
+    let private TmxTimer = Stopwatch ()
+    let private FbxTimer = Stopwatch ()
+    let private ObjTimer = Stopwatch ()
+    let private WavTimer = Stopwatch ()
+    let private OggTimer = Stopwatch ()
 
     let mutable private MetadataPackages :
         UMap<string, UMap<string, AssetMetadata>> = UMap.makeEmpty StringComparer.Ordinal Imperative
@@ -122,12 +131,36 @@ module Metadata =
             | ".jpg"
             | ".jpeg"
             | ".tif"
-            | ".tiff" -> tryGenerateTextureMetadata asset
-            | ".tmx" -> tryGenerateTileMapMetadata asset
-            | ".fbx" -> tryGenerateStaticModelMetadata asset
-            | ".obj" -> tryGenerateStaticModelMetadata asset
-            | ".wav" -> Some SoundMetadata
-            | ".ogg" -> Some SongMetadata
+            | ".tiff" ->
+                TextureTimer.Start ()
+                let metadataOpt = tryGenerateTextureMetadata asset
+                TextureTimer.Stop ()
+                metadataOpt
+            | ".tmx" ->
+                TmxTimer.Start ()
+                let metadataOpt = tryGenerateTileMapMetadata asset
+                TmxTimer.Stop ()
+                metadataOpt
+            | ".fbx" ->
+                FbxTimer.Start ()
+                let metadataOpt = tryGenerateStaticModelMetadata asset
+                FbxTimer.Stop ()
+                metadataOpt
+            | ".obj" ->
+                ObjTimer.Start ()
+                let metadataOpt = tryGenerateStaticModelMetadata asset
+                ObjTimer.Stop ()
+                metadataOpt
+            | ".wav" ->
+                WavTimer.Start ()
+                let metadataOpt = Some SoundMetadata
+                WavTimer.Stop ()
+                metadataOpt
+            | ".ogg" ->
+                OggTimer.Start ()
+                let metadataOpt = Some SongMetadata
+                OggTimer.Stop ()
+                metadataOpt
             | _ -> None
         match metadataOpt with
         | Some metadata -> Some (asset.AssetTag.AssetName, metadata)
