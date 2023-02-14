@@ -99,7 +99,7 @@ module Metadata =
             None
 
     let private tryGenerateTileMapMetadata asset =
-        try let tmxMap = TmxMap asset.FilePath
+        try let tmxMap = TmxMap (asset.FilePath, true)
             let imageAssets = tmxMap.GetImageAssets asset.AssetTag.PackageName
             Some (TileMapMetadata (asset.FilePath, imageAssets, tmxMap))
         with _ as exn ->
