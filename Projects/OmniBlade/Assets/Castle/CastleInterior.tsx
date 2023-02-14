@@ -521,22 +521,22 @@
  </tile>
  <tile id="1507">
   <properties>
-   <property name="C" value="Top"/>
+   <property name="C" value=""/>
   </properties>
  </tile>
  <tile id="1508">
   <properties>
-   <property name="C" value="Top"/>
+   <property name="C" value=""/>
   </properties>
  </tile>
  <tile id="1509">
   <properties>
-   <property name="C" value="Top"/>
+   <property name="C" value=""/>
   </properties>
  </tile>
  <tile id="1510">
   <properties>
-   <property name="C" value="Top"/>
+   <property name="C" value=""/>
   </properties>
  </tile>
  <tile id="1512">
