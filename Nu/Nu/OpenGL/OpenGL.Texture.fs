@@ -4,8 +4,6 @@
 namespace OpenGL
 open System
 open System.Collections.Generic
-open System.Drawing
-open System.Drawing.Imaging
 open System.Runtime.InteropServices
 open SDL2
 open Prime
@@ -57,45 +55,43 @@ module Texture =
             Marshal.Copy (rowTop, 0, pixelsBottom, surface.pitch)
             Marshal.Copy (rowBottom, 0, pixelsTop, surface.pitch)
 
-    let private TryCreateImageBitmap (filePath : string) =
-        try let bitmap = new Bitmap (filePath)
-            let data = bitmap.LockBits (Rectangle (0, 0, bitmap.Width, bitmap.Height), ImageLockMode.ReadOnly, Imaging.PixelFormat.Format32bppRgb)
-            let metadata =
-                { TextureWidth = bitmap.Width
-                  TextureHeight = bitmap.Height
-                  TextureTexelWidth = 1.0f / single bitmap.Width
-                  TextureTexelHeight = 1.0f / single bitmap.Height
-                  TextureInternalFormat = InternalFormat.Rgba8 }
-            Some (metadata, data.Scan0, { new IDisposable with member this.Dispose () = bitmap.Dispose () })
-        with _ -> None
-
-    let private TryCreateImageSurface filePath =
-        let format = SDL.SDL_PIXELFORMAT_ARGB8888 // seems to be the right format on Ubuntu...
-        let unconvertedPtr = SDL_image.IMG_Load filePath
-        if unconvertedPtr <> nativeint 0 then
-            let unconverted = Marshal.PtrToStructure<SDL.SDL_Surface> unconvertedPtr
-            let metadata =
-                { TextureWidth = unconverted.w
-                  TextureHeight = unconverted.h
-                  TextureTexelWidth = 1.0f / single unconverted.w
-                  TextureTexelHeight = 1.0f / single unconverted.h
-                  TextureInternalFormat = InternalFormat.Rgba8 }
-            let unconvertedFormat = Marshal.PtrToStructure<SDL.SDL_PixelFormat> unconverted.format
-            if unconvertedFormat.format <> format then
-                let convertedPtr = SDL.SDL_ConvertSurfaceFormat (unconvertedPtr, format, 0u)
-                let converted = Marshal.PtrToStructure<SDL.SDL_Surface> convertedPtr
-                SDL.SDL_FreeSurface unconvertedPtr // no longer need this
-                Some (metadata, converted.pixels, { new IDisposable with member this.Dispose () = SDL.SDL_FreeSurface convertedPtr })
-            else Some (metadata, unconverted.pixels, { new IDisposable with member this.Dispose () = SDL.SDL_FreeSurface unconvertedPtr })
-        else None
-
     /// Attempt to create uploadable image data from the given file path.
     /// Don't forget to dispose the last field when finished with the image data.
-    let TryCreateImageData filePath =
+    let TryCreateImageData (filePath : string) =
         match Environment.OSVersion.Platform with
         | PlatformID.Win32NT
-        | PlatformID.Win32Windows -> TryCreateImageBitmap filePath
-        | _ -> TryCreateImageSurface filePath
+        | PlatformID.Win32Windows ->
+            // NOTE: System.Drawing.Bitmap is, AFAIK, only available on non-Windows platforms, so we use a fast path here.
+            try let bitmap = new System.Drawing.Bitmap (filePath)
+                let data = bitmap.LockBits (System.Drawing.Rectangle (0, 0, bitmap.Width, bitmap.Height), System.Drawing.Imaging.ImageLockMode.ReadOnly, System.Drawing.Imaging.PixelFormat.Format32bppRgb)
+                let metadata =
+                    { TextureWidth = bitmap.Width
+                      TextureHeight = bitmap.Height
+                      TextureTexelWidth = 1.0f / single bitmap.Width
+                      TextureTexelHeight = 1.0f / single bitmap.Height
+                      TextureInternalFormat = InternalFormat.Rgba8 }
+                Some (metadata, data.Scan0, { new IDisposable with member this.Dispose () = bitmap.Dispose () })
+            with _ -> None
+        | _ ->
+            // NOTE: System.Drawing.Bitmap is not, AFAIK, available on non-Windows platforms, so we use a slower path here.
+            let format = SDL.SDL_PIXELFORMAT_ARGB8888 // seems to be the right format on Ubuntu...
+            let unconvertedPtr = SDL_image.IMG_Load filePath
+            if unconvertedPtr <> nativeint 0 then
+                let unconverted = Marshal.PtrToStructure<SDL.SDL_Surface> unconvertedPtr
+                let metadata =
+                    { TextureWidth = unconverted.w
+                      TextureHeight = unconverted.h
+                      TextureTexelWidth = 1.0f / single unconverted.w
+                      TextureTexelHeight = 1.0f / single unconverted.h
+                      TextureInternalFormat = InternalFormat.Rgba8 }
+                let unconvertedFormat = Marshal.PtrToStructure<SDL.SDL_PixelFormat> unconverted.format
+                if unconvertedFormat.format <> format then
+                    let convertedPtr = SDL.SDL_ConvertSurfaceFormat (unconvertedPtr, format, 0u)
+                    let converted = Marshal.PtrToStructure<SDL.SDL_Surface> convertedPtr
+                    SDL.SDL_FreeSurface unconvertedPtr // no longer need this
+                    Some (metadata, converted.pixels, { new IDisposable with member this.Dispose () = SDL.SDL_FreeSurface convertedPtr })
+                else Some (metadata, unconverted.pixels, { new IDisposable with member this.Dispose () = SDL.SDL_FreeSurface unconvertedPtr })
+            else None
 
     let private TryCreateTextureInternal (textureOpt, generateMipmaps, filePath : string) =
 
@@ -104,7 +100,7 @@ module Texture =
         | Some (metadata, imageData, disposer) ->
 
             // upload the image data to gl
-            use d = disposer
+            use _ = disposer
             let texture = match textureOpt with Some texture -> texture | None -> Gl.GenTexture ()
             Gl.BindTexture (TextureTarget.Texture2d, texture)
             Gl.TexImage2D (TextureTarget.Texture2d, 0, metadata.TextureInternalFormat, metadata.TextureWidth, metadata.TextureHeight, 0, PixelFormat.Bgra, PixelType.UnsignedByte, imageData)
