@@ -26,7 +26,7 @@
  </layer>
  <layer id="4" name="Ceiling" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJztz7sJgEAQBNABTTww0hr8FGJbaqZmaovagZ/Y1cjgTvCDIsyDhWNh9hiAiIj2UhfIZHL3fO7ujVUhmVKmOsh2DtA7926Y1JJpZFpDNlHIPQX4antfukH/NlnAbH33f2QDsf3un4P0HTWdTfunBdI31HQ27YmIiHQWCTgVBg==
+   eJztzzsKgDAQBNCBWMZr+Lmk2qmdekC9gRZ+GhtXK4tE8IMizIOFEJhdBiAior3IBWKZxD2fu7tjlUomk8kPsrUGGn1vh00hmVKmsmRnjaSV253e3pd20L+NCpjUd/cDBwidd2/20ncwdLb9P82Tvr6hs+2fiIjIZAHBuBgs
   </data>
  </layer>
  <objectgroup id="3" name="Props">
