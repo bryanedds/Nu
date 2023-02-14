@@ -6,7 +6,7 @@
  <tileset firstgid="3416" source="CastleObjects2.tsx"/>
  <layer id="2" name="Ground" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJzrYGZg6BjFo3gUk4x7oXjU/lH7R+0ftX+k2k8JHg72D3T4I4ut4h156W/U/lH7R+0fWRi5nKNnmYeM2bggeKDDghIMAOvgLR8=
+   eJzrYGZg6BjFo3gUk4x7oXjU/lH7R+0ftX+k2k8JHg72D3T4I4ut4h156W/U/lH7R+0fWMzFNfLsZuOC4IEOe0owAB27K9k=
   </data>
  </layer>
  <layer id="5" name="Flooring" width="32" height="32">
@@ -16,12 +16,12 @@
  </layer>
  <layer id="1" name="Furnishing" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJztl00KwkAMRoOlgmIvYRGr5/IPRa0X6Q1UvIJrRXSlF/AaFtG9CTMjFVTaksaFE3gwZErft/pgIgcgysHIBZhq+m6+f+SF3DNkW1KEghmM+4DeWLMRzDDW7jviO4qLzjAQ8pM7wPOxBnBC6jqDlJ/caw+eQ2fKIOX/NNb/3/4w0Ylp4fRTB+x0J+5TQN9x+qkDrroTbymImf3UAQ1HdWIzgf9mZ+D005hemmMvLpAlEuCuhbS91z0Ntz/rWD+vf+V9vy/SP8S7XkY4/b/uX+u3fusvli46Jq7quXNFQWfqno7QG8xkKFcVku5kBtOh0m5OHmVU0ZI=
+   eJztl00KwkAMRgdLhRZ7CYtYPZd/KGq9SG+g4hVcK6IrvYALL2ER3ZswGamgUktMFzbwYMiUvm/1wUSWUlEGBrZSY6JrZ/tHVtA9AdYlTSiYwbh34I2JlWCGIblvgG9pzpShJ+RHdwDnfUWpA1ClDFJ+dC899Rg8YwYp/7sp/P/tDxOdmBZOP3bAhjpxmwL8jtOPHXChTrymIGb2YwfULN2J9QT+i52B049jemkKvTgD5kAAuwbQ9J73ONz+b6fw8/oX3uf7X/r7cNf5Ek5/3v1b+At/Xv6Tk58f3a4r42+DY0QZjo4G3dg9LaE3mMlQdjWS7mQG06HSbk7utRrSJA==
   </data>
  </layer>
  <layer id="4" name="Ceiling" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJxjYBgFQxEs4GVg2MXDwLCbB8KmN1jJi509CkbBKBi5ALkscuWC0BxAMU4g5oLKOXPRzn5YWdQLLBf7gLgfiCWAYpJALMWLKj4KRsEoGAWjYBSMgqEHrnFC8CggHwAAfX0MYQ==
+   eJxjYBgFQxEs4GVg2MXDwLCbB8KmN1jJi509CkbBKBi5ALkscuWC0BxAMU4g5oLKOXPRzn5YWdQLLBf7gLgfiCWAYpJALMWLKj4KRsEoGAWjYBQMdXCLc+TZfY0TgkcB+QAA/vQOJw==
   </data>
  </layer>
  <objectgroup id="3" name="Props">

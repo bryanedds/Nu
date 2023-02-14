@@ -26,12 +26,12 @@
  </layer>
  <layer id="6" name="Decor" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJxjYBgFo2AUEAMeczIwPOFEFbPgop/9wkC7RKD2OUPpDCjtAqVFgbQYld1kTsg8bgTzMJB9BIit6BguStyE1Qxl8B8Ylg+AfnwIxI/w+BVZDdMwD5NRMApGwSgYBaNgFIyCUUAeAAAuSgyb
+   eJxjYBgFo2AUEAOecDI0PAZiZDELLvrZL8LF0CDMBbHfGWpvBpR2gdKiQFqMym4yJ2QeN4J5GMg+AsRWdAwXJW7CaoYy+A8MywdAPz4E4kd4/IqshmmYh8koGAWjYBSMglEwCkbBKCAPAABNyQ6b
   </data>
  </layer>
  <layer id="5" name="Ceiling" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJxjYBgFo2AUEAMeczIwPOEcGLuncTEwTAdiEa6BsX8UjIJRMApGweAAeawIdhYrbnW0AqlAO9OgOGUA7M8H2pkExfkDYP8hJgR7DxNudbQCX5HsfD8A9lsitUOsuBga6O+CUTAKRgGlAADkVwvr
+   eJxjYBgFo2AUDHYwjYuBYTrXQLtiFIyCUTAKRsFAgzxWBDuLFbc6WoFUoJ1pUJwyAPbnA+1MguL8AbD/EBOCvYcJtzpaga9Idr4fAPstkdoiVlwMDfR3wSgYBaOAUgAAwZwJ9A==
   </data>
  </layer>
  <objectgroup id="3" name="Props">

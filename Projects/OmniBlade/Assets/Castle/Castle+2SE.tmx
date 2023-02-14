@@ -11,12 +11,12 @@
  </layer>
  <layer id="1" name="Furnishing" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJztlE0OgjAQRiegO7yEhuCROIAao/GHi3AHr+BaY3Clp9EQ3DtNaoSmU1vbsmqTl8AU8j5IZ8oYoAwEAoEArIcAux4R3QVyiQAq5MypCGz3GaL7irUaaZAnpyGw3W9a/g13v5AU7zNkwskIbPezuOtn7ile97na/r7dol93HUZ6NR/+FT63INgafIPon2u8nw4A9opeLiz8Ohly9J8i+XxgNdY/LCO1ZP9OnH+/MjyI+VDz3s0JP3PPJD4Zqgzj+Dsf2rAa1T8mbp0MR37WbwnAPenWXLhNzqRq2bhtM7hw/5vBpds0gw+3bgaf7g+qOb307A5+9/43iCm03g==
+   eJztlE0KwjAQRoequ3oJpdQj9QAqovjTi/QOXsG1IrrS0yhF906gpeOQxMQmXSXwoPnS8qalM0UPoAgEAoEArAYA2w7h7hw5RwAXwontaa47k+Uc7r5iViIvwpPtaa47k+Wc2r+u3G8kwX2KjAmpBNUZzVXP1lC/cE/wustF/V27ud907YdmmQ//Eu+bK9hYvAP3zwyeT/oAO00v5y38JjVk6D9GzXyg/S8y0T+iRtWSfTs+/37V8CDzgfZ/WfVupvAL91Tik6GrYdRr5gNFZKr+sXGb1HCo/vVbDHCPvzMXbpt/UrfauNvW4ML9bw0u3bY1+HCb1uDTXaOb0wvP7uB37/8A3hm05g==
   </data>
  </layer>
  <layer id="4" name="Ceiling" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJxjYBgFo2AUjIJRMJjAXR5MsXtAsftQ8dtY5IFyDUA1DdSw/y2S+f+A7P9A/A6I30PFX2ORB8o1vIPa/xeL/CgYBaNg6IMFvMSJ0QqshNq1C1im7OZBFRsFo2AUjIJRQBwAALyRGPA=
+   eJztzr0NgCAUBOBrIVjpRqILqT2jmKiFK+g4/szhM6GQxIJCC5L7kiveFRwAERGloNFAq8Ou03CbAnb1/V7pt04Fd0gGuUdJ/fjDJPu53IWkkli5797qlweJKGl9Ftf9ZfZbiwFWE3ZERBTnApX1D9E=
   </data>
  </layer>
  <objectgroup id="3" name="Props">
