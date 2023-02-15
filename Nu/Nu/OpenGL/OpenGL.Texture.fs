@@ -62,8 +62,8 @@ module Texture =
         | PlatformID.Win32NT
         | PlatformID.Win32Windows ->
             // NOTE: System.Drawing.Bitmap is, AFAIK, only available on non-Windows platforms, so we use a fast path here.
-            try let bitmap = new System.Drawing.Bitmap (filePath)
-                let data = bitmap.LockBits (System.Drawing.Rectangle (0, 0, bitmap.Width, bitmap.Height), System.Drawing.Imaging.ImageLockMode.ReadOnly, System.Drawing.Imaging.PixelFormat.Format32bppRgb)
+            try let bitmap = new Drawing.Bitmap (filePath)
+                let data = bitmap.LockBits (Drawing.Rectangle (0, 0, bitmap.Width, bitmap.Height), Drawing.Imaging.ImageLockMode.ReadOnly, Drawing.Imaging.PixelFormat.Format32bppRgb)
                 let metadata =
                     { TextureWidth = bitmap.Width
                       TextureHeight = bitmap.Height

@@ -81,7 +81,7 @@ module Metadata =
             | PlatformID.Win32Windows ->
                 // NOTE: System.Drawing.Image is, AFAIK, only available on non-Windows platforms, so we use a fast path here.
                 use fileStream = new FileStream (asset.FilePath, FileMode.Open, FileAccess.Read, FileShare.Read)
-                use image = System.Drawing.Image.FromStream (fileStream, false, false)
+                use image = Drawing.Image.FromStream (fileStream, false, false)
                 Some (TextureMetadata (v2i image.Width image.Height, ImagingPixelFormat image.PixelFormat))
             | _ ->
                 // NOTE: System.Drawing.Image is not, AFAIK, available on non-Windows platforms, so we use a VERY slow path here.
