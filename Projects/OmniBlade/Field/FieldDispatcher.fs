@@ -19,6 +19,7 @@ module FieldDispatcher =
         | AvatarBodyCollision of BodyCollisionData
         | AvatarBodySeparationImplicit of BodySeparationImplicitData
         | AvatarBodySeparationExplicit of BodySeparationExplicitData
+        | ScreenTransitioning of bool
         | MenuTeamOpen
         | MenuTeamAlly of int
         | MenuInventoryOpen
@@ -182,6 +183,10 @@ module FieldDispatcher =
              Screen.PostUpdateEvent => UpdateEye
              Screen.PostUpdateEvent => UpdateAvatarBodyTracking
              Screen.SelectEvent => PlayFieldSong
+             Screen.IncomingStartEvent => ScreenTransitioning true
+             Screen.IncomingFinishEvent => ScreenTransitioning false
+             Screen.OutgoingStartEvent => ScreenTransitioning true
+             Screen.OutgoingFinishEvent => ScreenTransitioning false
              Simulants.FieldSceneAvatar.BodyCollisionEvent =|> fun evt -> AvatarBodyCollision evt.Data |> signal
              Simulants.FieldSceneAvatar.BodySeparationImplicitEvent =|> fun evt -> AvatarBodySeparationImplicit evt.Data |> signal
              Simulants.FieldSceneAvatar.BodySeparationExplicitEvent =|> fun evt -> AvatarBodySeparationExplicit evt.Data |> signal]
@@ -381,6 +386,10 @@ module FieldDispatcher =
                         let field = Field.updateAvatarIntersectedPropIds (List.remove ((=) (separation.BodySeparatee.Entity.GetPropPlus world).Prop.PropId)) field
                         field
                     else field
+                just field
+
+            | ScreenTransitioning transitioning ->
+                let field = Field.updateScreenTransitioning (constant transitioning) field
                 just field
 
             | MenuTeamOpen ->
@@ -842,7 +851,8 @@ module FieldDispatcher =
                         Cue.notInterrupting field.Inventory field.Advents field.Cue &&
                         Option.isNone field.DialogOpt &&
                         Option.isNone field.ShopOpt &&
-                        Option.isNone field.FieldTransitionOpt
+                        Option.isNone field.FieldTransitionOpt &&
+                        not field.ScreenTransitioning
                      Entity.ClickEvent => MenuTeamOpen]
 
                  // party button
@@ -856,6 +866,7 @@ module FieldDispatcher =
                         Option.isNone field.ShopOpt &&
                         Option.isNone field.FieldTransitionOpt &&
                         Field.isTouchingSavePoint field &&
+                        not field.ScreenTransitioning &&
                         field.Team.Count > 2
                      Entity.Text == "Party"]
 
@@ -869,7 +880,8 @@ module FieldDispatcher =
                         Option.isNone field.BattleOpt &&
                         Option.isNone field.ShopOpt &&
                         Option.isNone field.FieldTransitionOpt &&
-                        Option.isSome (Field.tryGetInteraction field)
+                        Option.isSome (Field.tryGetInteraction field) &&
+                        not field.ScreenTransitioning
                      Entity.Text :=
                         match Field.tryGetInteraction field with
                         | Some interaction -> interaction
