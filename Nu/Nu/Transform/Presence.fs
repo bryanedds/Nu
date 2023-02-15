@@ -4,9 +4,9 @@ open Prime
 open Nu
 
 /// Describes the form of an element's presence.
-/// TODO: see if implemented IEquatable will keep an expression like `pres = pres2` from boxing. If so, consolidate the
-/// eq and neq functions below into the definition. This would need to be done for our other user-defined value types
-/// as well.
+/// TODO: see if implemented IEquatable<_> will keep an expression like `pres = pres2` from boxing. If so, consolidate
+/// the eq and neq functions below into the definition. This could need to be done for our other user-defined value
+/// types as well.
 [<Syntax
     ("Enclosed Exposed Imposter Prominent Omnipresent", "", "", "", "",
      Constants.PrettyPrinter.DefaultThresholdMin,
@@ -16,7 +16,7 @@ type [<StructuralEquality; NoComparison; Struct>] Presence =
     | Enclosed
     /// Outside an enclosed structure so visible from a distance.
     | Exposed
-    /// Visible for miles but invisible once as close as Exposed or Enclosed.
+    /// Visible for great distances but invisible once as close as Exposed or Enclosed.
     | Imposter
     /// Both Exposed and Imposter.
     | Prominent
