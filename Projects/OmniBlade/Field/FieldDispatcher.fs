@@ -108,13 +108,13 @@ module FieldDispatcher =
                 let field = Field.updateInventory (Inventory.tryAddItem itemType >> snd) field
                 let field =
                     match battleTypeOpt with
-                    | Some battleType -> Field.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogTokenized = "Found " + ItemType.getName itemType + "!^But something approaches!"; DialogProgress = 0; DialogPage = 0; DialogPromptOpt = None; DialogBattleOpt = Some (battleType, Set.empty) })) field
-                    | None -> Field.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogTokenized = "Found " + ItemType.getName itemType + "!"; DialogProgress = 0; DialogPage = 0; DialogPromptOpt = None; DialogBattleOpt = None })) field
+                    | Some battleType -> Field.updateDialogOpt (constant (Some (Dialog.makePlus DialogThin ("Found " + ItemType.getName itemType + "!^But something approaches!") None (Some (battleType, Set.empty))))) field
+                    | None -> Field.updateDialogOpt (constant (Some (Dialog.make DialogThin ("Found " + ItemType.getName itemType + "!")))) field
                 let field = Field.updateCue (constant cue) field
                 withSignal (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.ChestOpenSound)) field
             else
                 let field = Field.updateAvatar (Avatar.lookAt prop.Center) field
-                let field = Field.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogTokenized = "Locked!"; DialogProgress = 0; DialogPage = 0; DialogPromptOpt = None; DialogBattleOpt = None })) field
+                let field = Field.updateDialogOpt (constant (Some (Dialog.make DialogThin "Locked!"))) field
                 withSignal (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.ChestLockedSound)) field
 
         static let interactDoor keyItemTypeOpt cue requirements (prop : Prop) (field : Field) =
@@ -128,7 +128,7 @@ module FieldDispatcher =
                     withSignal (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.DoorOpenSound)) field
                 else
                     let field = Field.updateAvatar (Avatar.lookAt prop.Center) field
-                    let field = Field.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogTokenized = "Locked!"; DialogProgress = 0; DialogPage = 0; DialogPromptOpt = None; DialogBattleOpt = None })) field
+                    let field = Field.updateDialogOpt (constant (Some (Dialog.make DialogThin "Locked!"))) field
                     withSignal (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.DoorLockedSound)) field
             | _ -> failwithumf ()
 
@@ -143,7 +143,7 @@ module FieldDispatcher =
                     withSignal (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.SwitchUseSound)) field
                 else
                     let field = Field.updateAvatar (Avatar.lookAt prop.Center) field
-                    let field = Field.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogTokenized = "Won't budge!"; DialogProgress = 0; DialogPage = 0; DialogPromptOpt = None; DialogBattleOpt = None })) field
+                    let field = Field.updateDialogOpt (constant (Some (Dialog.make DialogThin "Won't budge!"))) field
                     withSignal (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.SwitchStuckSound)) field
             | _ -> failwithumf ()
 

@@ -296,7 +296,7 @@ module FieldCue =
                 (cue, definitions, just field)
             | None ->
                 let dialogForm = if isNarration then DialogNarration else DialogThick
-                let dialog = { DialogForm = dialogForm; DialogTokenized = text; DialogProgress = 0; DialogPage = 0; DialogPromptOpt = None; DialogBattleOpt = None }
+                let dialog = Dialog.make dialogForm text
                 let field = Field.updateDialogOpt (constant (Some dialog)) field
                 (DialogState, definitions, just field)
 
@@ -310,7 +310,7 @@ module FieldCue =
             | Some _ ->
                 (cue, definitions, just field)
             | None ->
-                let dialog = { DialogForm = DialogThick; DialogTokenized = text; DialogProgress = 0; DialogPage = 0; DialogPromptOpt = Some (leftPrompt, rightPrompt); DialogBattleOpt = None }
+                let dialog = Dialog.makePrompt DialogThick text (leftPrompt, rightPrompt)
                 let field = Field.updateDialogOpt (constant (Some dialog)) field
                 (PromptState, definitions, just field)
 

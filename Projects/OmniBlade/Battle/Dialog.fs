@@ -15,10 +15,10 @@ type DialogForm =
 type Dialog =
     { DialogForm : DialogForm
       DialogTokenized : string
-      DialogProgress : int
-      DialogPage : int
       DialogPromptOpt : ((string * Cue) * (string * Cue)) option
-      DialogBattleOpt : (BattleType * Advent Set) option }
+      DialogBattleOpt : (BattleType * Advent Set) option
+      DialogProgress : int
+      DialogPage : int }
 
     static member getText (detokenize : string -> string) dialog =
         let detokenized = detokenize dialog.DialogTokenized
@@ -79,13 +79,13 @@ type Dialog =
     static member makePlus dialogForm textTokenized promptOpt battleOpt =
         { DialogForm = dialogForm
           DialogTokenized = textTokenized
-          DialogProgress = 0
-          DialogPage = 0
           DialogPromptOpt = promptOpt
-          DialogBattleOpt = battleOpt }
+          DialogBattleOpt = battleOpt
+          DialogProgress = 0
+          DialogPage = 0 }
 
     static member makePrompt dialogForm textTokenized prompt =
-        Dialog.makePlus dialogForm textTokenized (Some prompt)
+        Dialog.makePlus dialogForm textTokenized (Some prompt) None
 
     static member make dialogForm textTokenized =
         Dialog.makePlus dialogForm textTokenized None None

@@ -466,7 +466,7 @@ module BattleDispatcher =
                     | _ :: _ as items -> "^Found " + (items |> List.map (fun i -> ItemType.getName i) |> String.join ", ") + "!"
                     | [] -> ""
                 let text = textA + textB + textC + textD
-                let dialog = { DialogForm = DialogThick; DialogTokenized = text; DialogProgress = 0; DialogPage = 0; DialogPromptOpt = None; DialogBattleOpt = None }
+                let dialog = Dialog.make DialogThick text
                 let battle = Battle.updateDialogOpt (constant (Some dialog)) battle
                 let (sigs, battle) =
                     if outcome then
