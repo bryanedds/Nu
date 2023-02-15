@@ -53,8 +53,9 @@ module Field =
               Definitions_ : CueDefinitions
               DefinitionsOriginal_ : CueDefinitions
               Cue_ : Cue
-              ShopOpt_ : Shop option
+              ScreenTransitioning_ : bool
               FieldTransitionOpt_ : FieldTransition option
+              ShopOpt_ : Shop option
               DialogOpt_ : Dialog option
               BattleOpt_ : Battle option
               FieldSongTimeOpt_ : int64 option
@@ -80,8 +81,9 @@ module Field =
         member this.Definitions = this.Definitions_
         member this.DefinitionsOriginal = this.DefinitionsOriginal_
         member this.Cue = this.Cue_
-        member this.ShopOpt = this.ShopOpt_
+        member this.ScreenTransitioning = this.ScreenTransitioning_
         member this.FieldTransitionOpt = this.FieldTransitionOpt_
+        member this.ShopOpt = this.ShopOpt_
         member this.DialogOpt = this.DialogOpt_
         member this.BattleOpt = this.BattleOpt_
         member this.FieldSongTimeOpt = this.FieldSongTimeOpt_
@@ -392,14 +394,17 @@ module Field =
     let updateCue updater field =
         { field with Cue_ = updater field.Cue_ }
 
+    let updateScreenTransitioning updater field =
+        { field with ScreenTransitioning_ = updater field.ScreenTransitioning_ }
+
+    let updateFieldTransitionOpt updater field =
+        { field with FieldTransitionOpt_ = updater field.FieldTransitionOpt_ }
+
     let updateShopOpt updater field =
         { field with ShopOpt_ = updater field.ShopOpt_ }
 
     let updateDialogOpt updater field =
         { field with DialogOpt_ = updater field.DialogOpt_ }
-
-    let updateFieldTransitionOpt updater field =
-        { field with FieldTransitionOpt_ = updater field.FieldTransitionOpt_ }
 
     let updateBattleOpt updater field =
         let battleOpt = updater field.BattleOpt_
@@ -563,8 +568,9 @@ module Field =
           Definitions_ = definitions
           DefinitionsOriginal_ = definitions
           Cue_ = Cue.Fin
-          ShopOpt_ = None
+          ScreenTransitioning_ = false
           FieldTransitionOpt_ = None
+          ShopOpt_ = None
           DialogOpt_ = None
           BattleOpt_ = None
           FieldSongTimeOpt_ = None
@@ -591,8 +597,9 @@ module Field =
           Definitions_ = Map.empty
           DefinitionsOriginal_ = Map.empty
           Cue_ = Cue.Fin
-          ShopOpt_ = None
           FieldTransitionOpt_ = None
+          ScreenTransitioning_ = false
+          ShopOpt_ = None
           DialogOpt_ = None
           BattleOpt_ = None
           FieldSongTimeOpt_ = None
