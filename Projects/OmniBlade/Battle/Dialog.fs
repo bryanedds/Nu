@@ -75,3 +75,17 @@ type Dialog =
                 wordWrap acc right
             else text :: acc
         wordWrap [] text |> List.rev |> String.join "\n"
+
+    static member makePlus dialogForm textTokenized promptOpt battleOpt =
+        { DialogForm = dialogForm
+          DialogTokenized = textTokenized
+          DialogProgress = 0
+          DialogPage = 0
+          DialogPromptOpt = promptOpt
+          DialogBattleOpt = battleOpt }
+
+    static member makePrompt dialogForm textTokenized prompt =
+        Dialog.makePlus dialogForm textTokenized (Some prompt)
+
+    static member make dialogForm textTokenized =
+        Dialog.makePlus dialogForm textTokenized None None
