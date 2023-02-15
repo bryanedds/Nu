@@ -145,7 +145,7 @@ module FieldContent =
             let techs =
                 match field.Menu.MenuState with
                 | MenuTechs menuTech ->
-                    match Map.tryFind menuTech.TeammateIndex field.Team with
+                    match Map.tryFind menuTech.TeamIndex field.Team with
                     | Some teammate -> teammate.Techs |> Seq.indexed |> Map.ofSeq
                     | None -> Map.empty
                 | _ -> Map.empty

@@ -86,7 +86,7 @@ type MenuInventory =
     { InventoryPage : int }
 
 type MenuTechs =
-    { TeammateIndex : int }
+    { TeamIndex : int }
 
 type MenuKeyItems =
     { KeyItemsPage : int }
