@@ -14,7 +14,7 @@
 		<WarnOn>FS1182</WarnOn>
 		<NoWarn>FS9;FS1178;FS3391;FS3536</NoWarn>
 		<WarningLevel>5</WarningLevel>
-		<DefineConstants>TRACE;PLATFORM_AGNOSTIC_TIMESTAMPING;DISABLE_ENTITY_POST_UPDATE</DefineConstants>
+		<DefineConstants>TRACE;DISABLE_ENTITY_POST_UPDATE</DefineConstants>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCpu'">
@@ -22,7 +22,7 @@
 		<NoWarn>FS9;FS1178;FS3391;FS3536</NoWarn>
 		<Tailcalls>False</Tailcalls>
 		<WarningLevel>5</WarningLevel>
-		<DefineConstants>TRACE;PLATFORM_AGNOSTIC_TIMESTAMPING;DISABLE_ENTITY_POST_UPDATE</DefineConstants>
+		<DefineConstants>TRACE;DISABLE_ENTITY_POST_UPDATE</DefineConstants>
 	</PropertyGroup>
 
 	<ItemGroup>
