@@ -32,9 +32,9 @@ module BattleDispatcher =
         | TechItemCancel of CharacterIndex
         | ReticlesSelect of CharacterIndex * CharacterIndex
         | ReticlesCancel of CharacterIndex
-        | AttackCharacter1 of CharacterIndex
+        | AttackCharacter1 of CharacterIndex * CharacterIndex
         | AttackCharacter2 of CharacterIndex * CharacterIndex
-        | ConsumeCharacter1 of ConsumableType * CharacterIndex
+        | ConsumeCharacter1 of ConsumableType * CharacterIndex * CharacterIndex
         | ConsumeCharacter2 of ConsumableType * CharacterIndex
         | TechCharacter1 of CharacterIndex * CharacterIndex * TechType
         | TechCharacter2 of CharacterIndex * CharacterIndex * TechType
@@ -108,7 +108,7 @@ module BattleDispatcher =
                         match localTime with
                         | 0L ->
                             if target.Healthy
-                            then withSignal (AttackCharacter1 sourceIndex) battle
+                            then withSignal (AttackCharacter1 (sourceIndex, targetIndex)) battle
                             else just (Battle.abortCharacterAction time sourceIndex battle)
                         | 15L ->
                             withSignal (AttackCharacter2 (sourceIndex, targetIndex)) battle
@@ -165,7 +165,7 @@ module BattleDispatcher =
                         match localTime with
                         | 0L ->
                             if target.Healthy || consumable = Revive // HACK: should really be checked ConsumableData.
-                            then withSignal (ConsumeCharacter1 (consumable, sourceIndex)) battle
+                            then withSignal (ConsumeCharacter1 (consumable, sourceIndex, targetIndex)) battle
                             else just (Battle.abortCharacterAction time sourceIndex battle)
                         | 30L ->
                             withSignal (ConsumeCharacter2 (consumable, targetIndex)) battle
@@ -603,8 +603,12 @@ module BattleDispatcher =
                 let battle = Battle.cancelCharacterInput characterIndex battle
                 just battle
 
-            | AttackCharacter1 sourceIndex ->
+            | AttackCharacter1 (sourceIndex, targetIndex) ->
                 let time = World.getUpdateTime world
+                let sourcePerimeter = Battle.getCharacterPerimeter sourceIndex battle
+                let targetPerimeter = Battle.getCharacterPerimeter targetIndex battle
+                let direction = if sourcePerimeter.Bottom.X <= targetPerimeter.Bottom.X then Rightward else Leftward
+                let battle = Battle.faceCharacter direction sourceIndex battle
                 let battle = Battle.animateCharacter time AttackAnimation sourceIndex battle
                 let playHit = PlaySound (15L, Constants.Audio.SoundVolumeDefault, Assets.Field.HitSound)
                 withSignal playHit battle
@@ -621,8 +625,12 @@ module BattleDispatcher =
                     else battle
                 withSignal (DisplayHitPointsChange (targetIndex, -damage)) battle
 
-            | ConsumeCharacter1 (consumable, sourceIndex) ->
+            | ConsumeCharacter1 (consumable, sourceIndex, targetIndex) ->
                 let time = World.getUpdateTime world
+                let sourcePerimeter = Battle.getCharacterPerimeter sourceIndex battle
+                let targetPerimeter = Battle.getCharacterPerimeter targetIndex battle
+                let direction = if sourcePerimeter.Bottom.X <= targetPerimeter.Bottom.X then Rightward else Leftward
+                let battle = Battle.faceCharacter direction sourceIndex battle
                 let battle = Battle.animateCharacter time CastAnimation sourceIndex battle
                 let battle = Battle.updateInventory (Inventory.tryRemoveItem (Consumable consumable) >> snd) battle
                 just battle
@@ -651,6 +659,8 @@ module BattleDispatcher =
                 let time = World.getUpdateTime world
                 let sourcePerimeter = Battle.getCharacterPerimeter sourceIndex battle
                 let targetPerimeter = Battle.getCharacterPerimeter targetIndex battle
+                let direction = if sourcePerimeter.Bottom.X <= targetPerimeter.Bottom.X then Rightward else Leftward
+                let battle = Battle.faceCharacter direction sourceIndex battle
                 let effectOpt =
                     match techType with
                     | Critical | HeavyCritical | PoisonCut | PowerCut | DispelCut | DoubleCut ->

@@ -4,7 +4,6 @@
 namespace Nu
 open System
 open System.Collections.Generic
-open System.Diagnostics
 open System.Numerics
 open System.Threading
 open System.Threading.Tasks
