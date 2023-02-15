@@ -447,7 +447,7 @@ module FieldDispatcher =
                 just field
 
             | MenuTechsOpen ->
-                let state = MenuTechs { TeammateIndex = 0 }
+                let state = MenuTechs { TeamIndex = 0 }
                 let field = Field.updateMenu (fun menu -> { menu with MenuState = state }) field
                 just field
             
@@ -456,7 +456,7 @@ module FieldDispatcher =
                     Field.updateMenu (fun menu ->
                         let state =
                             match menu.MenuState with
-                            | MenuTechs menuTech -> MenuTechs { menuTech with TeammateIndex = index }
+                            | MenuTechs menuTech -> MenuTechs { menuTech with TeamIndex = index }
                             | state -> state
                         { menu with MenuState = state })
                         field
@@ -891,7 +891,11 @@ module FieldDispatcher =
                         [Entity.Position == v3 -450.0f -255.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v3 900.0f 510.0f 0.0f
                          Entity.LabelImage == Assets.Gui.DialogXXLImage]
                         [Content.sidebar "Sidebar" (v3 24.0f 417.0f 0.0f) field (fun () -> MenuTeamOpen) (fun () -> MenuInventoryOpen) (fun () -> MenuTechsOpen) (fun () -> MenuKeyItemsOpen) (fun () -> MenuOptionsOpen) (fun () -> MenuClose)
-                         yield! Content.team (v3 138.0f 417.0f 0.0f) Int32.MaxValue field tautology2 MenuTeamAlly
+                         yield! Content.team (v3 138.0f 417.0f 0.0f) Int32.MaxValue field (fun teammate menu ->
+                            match menu.MenuState with
+                            | MenuTeam team -> team.TeamIndex <> teammate.TeamIndex
+                            | _ -> true)
+                            MenuTeamAlly
                          Content.label "Portrait"
                             [Entity.PositionLocal == v3 438.0f 288.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 192.0f 192.0f 0.0f
                              Entity.LabelImage :=
@@ -976,7 +980,11 @@ module FieldDispatcher =
                         [Entity.Position == v3 -450.0f -255.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v3 900.0f 510.0f 0.0f
                          Entity.LabelImage == Assets.Gui.DialogXXLImage]
                         [Content.sidebar "Sidebar" (v3 24.0f 417.0f 0.0f) field (fun () -> MenuTeamOpen) (fun () -> MenuInventoryOpen) (fun () -> MenuTechsOpen) (fun () -> MenuKeyItemsOpen) (fun () -> MenuOptionsOpen) (fun () -> MenuClose)
-                         yield! Content.team (v3 138.0f 417.0f 0.0f) Int32.MaxValue field tautology2 MenuTechsAlly
+                         yield! Content.team (v3 138.0f 417.0f 0.0f) Int32.MaxValue field (fun teammate menu ->
+                            match menu.MenuState with
+                            | MenuTechs techs -> techs.TeamIndex <> teammate.TeamIndex
+                            | _ -> true)
+                            MenuTechsAlly
                          yield! Content.techs (v3 513.0f 417.0f 0.0f) field MenuTechsSelect]
 
                  // key items
@@ -1039,11 +1047,10 @@ module FieldDispatcher =
                     Content.panel "Use"
                         [Entity.Position == v3 -450.0f -216.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation + 10.0f; Entity.Size == v3 900.0f 432.0f 0.0f
                          Entity.LabelImage == Assets.Gui.DialogXLImage]
-                        [yield! Content.team (v3 160.0f 183.0f 0.0f) 3 field
-                            (fun teammate menu ->
-                                match menu.MenuUseOpt with
-                                | Some menuUse -> Teammate.canUseItem (snd menuUse.MenuUseSelection) teammate
-                                | None -> false)
+                        [yield! Content.team (v3 160.0f 183.0f 0.0f) 3 field (fun teammate menu ->
+                            match menu.MenuUseOpt with
+                            | Some menuUse -> Teammate.canUseItem (snd menuUse.MenuUseSelection) teammate
+                            | None -> false)
                             MenuInventoryUse
                          Content.button "Close"
                             [Entity.PositionLocal == v3 810.0f 342.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 72.0f 72.0f 0.0f
