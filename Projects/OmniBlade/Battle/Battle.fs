@@ -269,6 +269,9 @@ module Battle =
     let undefendCharacter characterIndex battle =
         updateCharacter Character.undefend characterIndex battle
 
+    let faceCharacter direction characterIndex battle =
+        updateCharacter (Character.face direction) characterIndex battle
+
     let animateCharacter time animation characterIndex battle =
         updateCharacter (Character.animate time animation) characterIndex battle
 

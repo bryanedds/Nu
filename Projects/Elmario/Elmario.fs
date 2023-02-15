@@ -8,7 +8,6 @@ open Nu.Declarative
 // the code base.
 [<RequireQualifiedAccess>]
 module Simulants =
-
     let Screen = Nu.Screen "Screen"
     let Group = Screen / "Group"
     let Elmario = Group / "Elmario"
