@@ -9,7 +9,7 @@ open Prime
 [<RequireQualifiedAccess>]
 module Core =
 
-    let mutable private lastStamp =
+    let mutable private LastTimeStamp =
         Stopwatch.GetTimestamp ()
 
     /// Get a time stamp at the highest-available resolution.
@@ -19,8 +19,8 @@ module Core =
     /// Get a unique time stamp, spinning until the time stamp advances if need be.
     let getUniqueTimeStamp () =
         let mutable nextStamp = getTimeStamp ()
-        while nextStamp = lastStamp do nextStamp <- getTimeStamp ()
-        lastStamp <- nextStamp
+        while nextStamp = LastTimeStamp do nextStamp <- getTimeStamp ()
+        LastTimeStamp <- nextStamp
         nextStamp
 
 [<AutoOpen>]
