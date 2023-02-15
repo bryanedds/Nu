@@ -884,7 +884,7 @@ module BattleDispatcher =
                 let hopOpt =
                     match techType with
                     | Critical | HeavyCritical | PoisonCut | PowerCut | DispelCut | DoubleCut ->
-                        let hopDirection = Direction.ofVector3 (targetPerimeter.Bottom - sourcePerimeterOriginal.Bottom)
+                        let hopDirection = Direction.ofVector3 (v3 (targetPerimeter.Bottom.X - sourcePerimeterOriginal.Bottom.X) 0.0f 0.0f)
                         let hopStart = targetPerimeter.Bottom - Direction.toVector3 hopDirection * Constants.Battle.StrikingDistance
                         Some
                             { HopStart = hopStart
