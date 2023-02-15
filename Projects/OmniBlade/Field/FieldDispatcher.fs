@@ -174,6 +174,7 @@ module FieldDispatcher =
         static let interactSavePoint (field : Field) =
             let field = Field.restoreTeam field
             Field.save field
+            let field = Field.updateDialogOpt (constant (Some (Dialog.make DialogThin "Recovered strength and saved game."))) field
             withSignal (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Gui.SlotSound)) field
 
         override this.Initialize (_, _) =
