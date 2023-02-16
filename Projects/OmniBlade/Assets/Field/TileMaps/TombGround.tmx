@@ -37,7 +37,7 @@
     <property name="I" value="[Portal AirPortal [IX 0] Downward CastleConnector South true]"/>
    </properties>
   </object>
-  <object id="4" gid="235" x="2616" y="2472" width="48" height="48">
+  <object id="4" gid="235" x="2616" y="2496" width="48" height="48">
    <properties>
     <property name="I" value="[SavePoint]"/>
    </properties>

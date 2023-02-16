@@ -607,8 +607,10 @@ module BattleDispatcher =
                 let time = World.getUpdateTime world
                 let sourcePerimeter = Battle.getCharacterPerimeter sourceIndex battle
                 let targetPerimeter = Battle.getCharacterPerimeter targetIndex battle
-                let direction = if sourcePerimeter.Bottom.X <= targetPerimeter.Bottom.X then Rightward else Leftward
-                let battle = Battle.faceCharacter direction sourceIndex battle
+                let battle =
+                    if sourcePerimeter.Bottom.X < targetPerimeter.Bottom.X then Battle.faceCharacter Rightward sourceIndex battle
+                    elif sourcePerimeter.Bottom.X > targetPerimeter.Bottom.X then Battle.faceCharacter Leftward sourceIndex battle
+                    else battle
                 let battle = Battle.animateCharacter time AttackAnimation sourceIndex battle
                 let playHit = PlaySound (15L, Constants.Audio.SoundVolumeDefault, Assets.Field.HitSound)
                 withSignal playHit battle
@@ -629,8 +631,10 @@ module BattleDispatcher =
                 let time = World.getUpdateTime world
                 let sourcePerimeter = Battle.getCharacterPerimeter sourceIndex battle
                 let targetPerimeter = Battle.getCharacterPerimeter targetIndex battle
-                let direction = if sourcePerimeter.Bottom.X <= targetPerimeter.Bottom.X then Rightward else Leftward
-                let battle = Battle.faceCharacter direction sourceIndex battle
+                let battle =
+                    if sourcePerimeter.Bottom.X < targetPerimeter.Bottom.X then Battle.faceCharacter Rightward sourceIndex battle
+                    elif sourcePerimeter.Bottom.X > targetPerimeter.Bottom.X then Battle.faceCharacter Leftward sourceIndex battle
+                    else battle
                 let battle = Battle.animateCharacter time CastAnimation sourceIndex battle
                 let battle = Battle.updateInventory (Inventory.tryRemoveItem (Consumable consumable) >> snd) battle
                 just battle
@@ -659,8 +663,10 @@ module BattleDispatcher =
                 let time = World.getUpdateTime world
                 let sourcePerimeter = Battle.getCharacterPerimeter sourceIndex battle
                 let targetPerimeter = Battle.getCharacterPerimeter targetIndex battle
-                let direction = if sourcePerimeter.Bottom.X <= targetPerimeter.Bottom.X then Rightward else Leftward
-                let battle = Battle.faceCharacter direction sourceIndex battle
+                let battle =
+                    if sourcePerimeter.Bottom.X < targetPerimeter.Bottom.X then Battle.faceCharacter Rightward sourceIndex battle
+                    elif sourcePerimeter.Bottom.X > targetPerimeter.Bottom.X then Battle.faceCharacter Leftward sourceIndex battle
+                    else battle
                 let effectOpt =
                     match techType with
                     | Critical | HeavyCritical | PoisonCut | PowerCut | DispelCut | DoubleCut ->
