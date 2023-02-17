@@ -299,38 +299,16 @@ type FieldType =
     | TombBasement
     | Castle of int
     | CastleConnector
-    | Forest of int
-    | ForestConnector
-    | Factory of int
-    | FactoryConnector
-    | Mountain of int
-    | MountainConnector
-    | DeadSea of int
-    | DeadSeaConnector
-    | Ruins of int
-    | RuinsConnector
-    | DarkCastle of int
-    | DarkCastleConnector
-    | Desert of int
-    | DesertConnector
-    | Seasons of int
-    | SeasonsConnector
-    | Volcano of int
-    | VolcanoConnector
 
     member this.Connector =
         match this with
-        | CastleConnector
-        | ForestConnector
-        | FactoryConnector
-        | MountainConnector
-        | DeadSeaConnector
-        | RuinsConnector
-        | DarkCastleConnector
-        | DesertConnector
-        | SeasonsConnector
-        | VolcanoConnector -> true
-        | _ -> false
+        | EmptyField
+        | DebugField
+        | TombOuter
+        | TombGround
+        | TombBasement
+        | Castle _ -> false
+        | CastleConnector -> true
 
     static member toFieldName (fieldType : FieldType) =
         match valueToSymbol fieldType with
@@ -660,18 +638,8 @@ module OmniSeedState =
     let rotate fieldType state =
         match fieldType with
         | EmptyField | DebugField | TombOuter | TombGround | TombBasement
-        | CastleConnector | ForestConnector | FactoryConnector | MountainConnector | DeadSeaConnector
-        | RuinsConnector | DarkCastleConnector | DesertConnector | SeasonsConnector | VolcanoConnector -> state.RandSeedState
-        | Castle n -> state.RandSeedState <<< n
-        | Forest n -> state.RandSeedState <<< n + 6
-        | Factory n -> state.RandSeedState <<< n + 12
-        | Mountain n -> state.RandSeedState <<< n + 18
-        | DeadSea n -> state.RandSeedState <<< n + 24
-        | Ruins n -> state.RandSeedState <<< n + 30
-        | DarkCastle n -> state.RandSeedState <<< n + 36
-        | Desert n -> state.RandSeedState <<< n + 42
-        | Seasons n -> state.RandSeedState <<< n + 48
-        | Volcano n -> state.RandSeedState <<< n + 54
+        | CastleConnector -> state.RandSeedState
+        | Castle n -> state.RandSeedState <<< n + 0 // increment constant by m for each level to ensure unique seed
 
     let makeFromSeedState randSeedState =
         { RandSeedState = randSeedState }
@@ -982,7 +950,7 @@ module FieldData =
                     let (probability, rand) = Rand.nextSingleUnder 1.0f rand
                     if probability < Constants.Field.TreasureProbability then
                         let (id, rand) = let (i, rand) = Rand.nextInt rand in let (j, rand) = Rand.nextInt rand in (Gen.idFromInts i j, rand)
-                        let chestType = match fieldData.FieldType with Factory _ -> SteelChest | _ -> WoodenChest
+                        let chestType = match fieldData.FieldType with Castle _ -> WoodenChest | _ -> SteelChest
                         let chestSpawned = { chestSpawn with PropData = Chest (chestType, treasure, id, None, Cue.Fin, Set.empty) }
 #if DEV
                         let mapSize =

@@ -751,9 +751,7 @@ module FieldDispatcher =
                 [// avatar
                  Content.entity<AvatarDispatcher> Simulants.FieldSceneAvatar.Name
                     [Entity.Position == v3Zero
-                     Entity.Elevation :=
-                        Constants.Field.ForegroundElevation +
-                        if field.Avatar.Bottom.Y >= 480.0f && field.FieldType = ForestConnector then 1.0f else 0.0f // HACK: adjusting to work around hacky fade impl for certain fields.
+                     Entity.Elevation := Constants.Field.ForegroundElevation
                      Entity.Size == Constants.Gameplay.CharacterSize
                      Entity.Enabled :=
                         field.Menu.MenuState = MenuClosed &&
