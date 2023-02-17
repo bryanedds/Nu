@@ -299,51 +299,59 @@ module FieldDispatcher =
                 match field.FieldTransitionOpt with
                 | Some fieldTransition ->
 
-                    // handle field transition
-                    let time = field.UpdateTime
-                    let currentSongOpt = world |> World.getCurrentSongOpt |> Option.map (fun song -> song.Song)
-                    let (signals, field) =
+                    // attempt to get field data for destination
+                    match Data.Value.Fields.TryGetValue fieldTransition.FieldType with
+                    | (true, destinationData) ->
 
-                        // start transition
-                        if time = fieldTransition.FieldTransitionTime - Constants.Field.TransitionTime then
-                            match Data.Value.Fields.TryGetValue fieldTransition.FieldType with
-                            | (true, fieldData) ->
-                                match (currentSongOpt, fieldData.FieldSongOpt) with
+                        // handle field transition
+                        let time = field.UpdateTime
+                        let currentSongOpt = world |> World.getCurrentSongOpt |> Option.map (fun song -> song.Song)
+                        let (signals, field) =
+
+                            // start transition
+                            if time = fieldTransition.FieldTransitionTime - Constants.Field.TransitionTime then
+                                match (currentSongOpt, destinationData.FieldSongOpt) with
                                 | (Some song, Some song2) when assetEq song song2 -> just field
                                 | (_, _) -> withSignal (FadeOutSong 30L) field
-                            | (false, _) -> just field
 
-                        // just past half-way point of transition
-                        elif time = fieldTransition.FieldTransitionTime - Constants.Field.TransitionTime / 2L + 1L then
-                            let field = Field.updateFieldType (constant fieldTransition.FieldType) field world
-                            let field =
-                                Field.updateAvatar (fun avatar ->
-                                    let avatar = Avatar.updateDirection (constant fieldTransition.FieldDirection) avatar
-                                    let avatar = Avatar.updateBottom (constant fieldTransition.FieldDestination) avatar
-                                    avatar)
-                                    field
-                            let songCmd =
-                                match Field.getFieldSongOpt field with
-                                | Some fieldSong ->
-                                    match currentSongOpt with
-                                    | Some song when assetEq song fieldSong -> Nop
-                                    | _ -> PlaySong (0L, 30L, 0L, Constants.Audio.SongVolumeDefault, fieldSong)
-                                | None -> Nop
-                            withSignal songCmd field
+                            // just past half-way point of transition
+                            elif time = fieldTransition.FieldTransitionTime - Constants.Field.TransitionTime / 2L + 1L then
+                                match destinationData.FieldType with // pre-generate fields
+                                | CastleConnector -> for i in 0 .. 2 do FieldData.tryGetTileMap field.OmniSeedState (Data.Value.Fields.[Castle i]) |> ignore
+                                | _ -> ()
+                                let field =
+                                    Field.updateFieldType (constant fieldTransition.FieldType) field world
+                                let field =
+                                    Field.updateAvatar (fun avatar ->
+                                        let avatar = Avatar.updateDirection (constant fieldTransition.FieldDirection) avatar
+                                        let avatar = Avatar.updateBottom (constant fieldTransition.FieldDestination) avatar
+                                        avatar)
+                                        field
+                                let songCmd =
+                                    match Field.getFieldSongOpt field with
+                                    | Some fieldSong ->
+                                        match currentSongOpt with
+                                        | Some song when assetEq song fieldSong -> Nop
+                                        | _ -> PlaySong (0L, 30L, 0L, Constants.Audio.SongVolumeDefault, fieldSong)
+                                    | None -> Nop
+                                withSignal songCmd field
 
-                        // finish transition
-                        elif time = fieldTransition.FieldTransitionTime then
-                            let startTime = world.UpdateTime
-                            let field = Field.updateFieldSongTimeOpt (constant (Some startTime)) field
-                            let field = Field.updateFieldTransitionOpt (constant None) field
-                            just field
+                            // finish transition
+                            elif time = fieldTransition.FieldTransitionTime then
+                                let startTime = world.UpdateTime
+                                let field = Field.updateFieldSongTimeOpt (constant (Some startTime)) field
+                                let field = Field.updateFieldTransitionOpt (constant None) field
+                                just field
 
-                        // intermediate state
-                        else just field
+                            // intermediate state
+                            else just field
 
-                    // update field reference to make sure transition binding actuates
-                    let field = Field.updateReference field
-                    (signals, field)
+                        // update field reference to make sure transition binding actuates
+                        let field = Field.updateReference field
+                        (signals, field)
+
+                    // no transition
+                    | (false, _) -> just field
 
                 // no transition
                 | None -> just field
