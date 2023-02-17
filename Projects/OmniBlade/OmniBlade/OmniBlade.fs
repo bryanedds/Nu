@@ -143,7 +143,7 @@ module OmniBlade =
                             match battle.BattleState with
                             | BattleQuitting (_, outcome, consequents) ->
                                 if outcome then
-                                    let field = Field.synchronizeFromBattle consequents battle field
+                                    let field = Field.exitBattle consequents battle field
                                     Field (Field.updateBattleOpt (constant None) field)
                                 else Field (Field.updateFieldState (constant Quitting) field)
                             | _ -> model

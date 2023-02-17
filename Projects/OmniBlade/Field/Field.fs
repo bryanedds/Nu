@@ -426,12 +426,6 @@ module Field =
         let teammate = Teammate.make level index allyType
         updateTeam (Map.add index teammate) field
 
-    let enterBattle songTime prizePool battleData (field : Field) world =
-        let battle = makeBattleFromTeam field.Inventory prizePool field.Team field.Options.BattleSpeed battleData world
-        let field = clearSpirits field
-        let field = updateFieldSongTimeOpt (constant (Some songTime)) field
-        updateBattleOpt (constant (Some battle)) field
-
     let restoreTeam field =
         { field with Team_ = Map.map (fun _ -> Teammate.restore) field.Team_ }
 
@@ -493,9 +487,7 @@ module Field =
                                 | NormalSpirit -> encounterData.BattleTypes.[Gen.random2 3 6]
                                 | StrongSpirit -> encounterData.BattleTypes.[Gen.random2 6 9]
                             match Data.Value.Battles.TryGetValue battleType with
-                            | (true, battleData) ->
-                                let field = { field with Spirits_ = [||] }
-                                Left (battleData, field)
+                            | (true, battleData) -> Left (battleData, field)
                             | (false, _) -> Right field
                         | (false, _) -> Right field
                     | None -> Right field
@@ -525,6 +517,16 @@ module Field =
         let field = updateInventory (constant battle.Inventory) field
         let field = updateAdvents (Set.union consequents) field
         let field = updateAvatarIntersectedPropIds (constant []) field
+        field
+
+    let enterBattle songTime prizePool battleData (field : Field) world =
+        let battle = makeBattleFromTeam field.Inventory prizePool field.Team field.Options.BattleSpeed battleData world
+        let field = updateFieldSongTimeOpt (constant (Some songTime)) field
+        updateBattleOpt (constant (Some battle)) field
+
+    let exitBattle consequents battle field =
+        let field = synchronizeFromBattle consequents battle field
+        let field = clearSpirits field
         field
 
     let toSymbolizable field =
