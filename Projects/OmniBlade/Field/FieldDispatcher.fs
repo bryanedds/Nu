@@ -870,6 +870,7 @@ module FieldDispatcher =
                         field.Menu.MenuState = MenuClosed &&
                         (Cue.notInterrupting field.Inventory field.Advents field.Cue || Option.isSome field.DialogOpt) &&
                         Option.isNone field.BattleOpt &&
+                        Option.isNone field.DialogOpt &&
                         Option.isNone field.ShopOpt &&
                         Option.isNone field.FieldTransitionOpt &&
                         Field.isTouchingSavePoint field &&
