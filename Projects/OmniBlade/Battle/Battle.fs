@@ -312,7 +312,7 @@ module Battle =
             battle
 
     let updateBattleState updater battle =
-        { battle with BattleState_ = updater battle.BattleState_ }
+        { battle with BattleState_ = updater battle.BattleState }
 
     let updateInventory updater battle =
         { battle with Inventory_ = updater battle.Inventory_ }
@@ -353,10 +353,10 @@ module Battle =
         Seq.exists (fun command -> command.Source = characterIndex)
 
     let appendActionCommand command battle =
-        { battle with ActionCommands_ = Queue.conj command battle.ActionCommands }
+        { battle with ActionCommands_ = Queue.conj command battle.ActionCommands_ }
 
     let prependActionCommand command battle =
-        { battle with ActionCommands_ = Queue.rev battle.ActionCommands |> Queue.conj command |> Queue.rev }
+        { battle with ActionCommands_ = Queue.rev battle.ActionCommands_ |> Queue.conj command |> Queue.rev }
 
     let counterAttack sourceIndex targetIndex battle =
         let attackCommand = ActionCommand.make Attack targetIndex (Some sourceIndex)
