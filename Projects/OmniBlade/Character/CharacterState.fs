@@ -7,12 +7,12 @@ open Prime
 open Nu
 open OmniBlade
 
-type AutoBattle =
+type [<SymbolicExpansion>] AutoBattle =
     { AutoTarget : CharacterIndex
       AutoTechOpt : TechType option
       ChargeTech : bool }
 
-type CharacterState =
+type [<SymbolicExpansion>] CharacterState =
     { ArchetypeType : ArchetypeType
       ExpPoints : int
       AbsorbCreep : single

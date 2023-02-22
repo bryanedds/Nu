@@ -64,7 +64,7 @@
 		<PackageReference Include="BepuPhysics" Version="2.4.0" />
 		<PackageReference Include="Magick.NET-Q8-x64" Version="7.5.0.1" />
 		<PackageReference Include="Nito.Collections.Deque" Version="1.1.0" />
-		<PackageReference Include="Prime" Version="9.1.0" />
+		<PackageReference Include="Prime" Version="9.2.0" />
 		<PackageReference Include="Prime.Scripting" Version="9.0.0" />
 		<PackageReference Include="System.Configuration.ConfigurationManager" Version="7.0.0" />
 	</ItemGroup>

@@ -12,7 +12,7 @@ type DialogForm =
     | DialogThick
     | DialogNarration
 
-type Dialog =
+type [<SymbolicExpansion>] Dialog =
     { DialogForm : DialogForm
       DialogTokenized : string
       DialogPromptOpt : ((string * Cue) * (string * Cue)) option

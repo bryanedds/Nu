@@ -83,7 +83,7 @@ type ShopConfirm =
                 | None -> None
         | KeyItem _ | Stash _ -> None
 
-type Shop =
+type [<SymbolicExpansion>] Shop =
     { ShopType : ShopType
       ShopState : ShopState
       ShopPage : int
