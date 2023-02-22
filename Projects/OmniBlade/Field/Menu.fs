@@ -99,6 +99,6 @@ type MenuState =
     | MenuOptions
     | MenuClosed
 
-type Menu =
+type [<SymbolicExpansion>] Menu =
     { MenuState : MenuState
       MenuUseOpt : MenuUse option }

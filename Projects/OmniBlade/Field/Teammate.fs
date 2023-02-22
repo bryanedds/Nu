@@ -7,7 +7,7 @@ open Prime
 open Nu
 open OmniBlade
 
-type Teammate =
+type [<SymbolicExpansion>] Teammate =
     { TeamIndex : int
       PartyIndexOpt : int option
       ArchetypeType : ArchetypeType
