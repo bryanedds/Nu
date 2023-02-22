@@ -22,7 +22,7 @@ module Prop =
         ("", "", "", "", "",
          Constants.PrettyPrinter.DefaultThresholdMin,
          Constants.PrettyPrinter.DetailedThresholdMax)>]
-    type Prop =
+    type [<SymbolicExpansion>] Prop =
         private
             { Perimeter_ : Box3
               Elevation_ : single

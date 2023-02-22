@@ -593,8 +593,8 @@ type Cue =
     | Expand of string
     | Parallel of Cue list
     | Sequence of Cue list
-    static member isNil cue = match cue with Fin -> true | _ -> false
-    static member notNil cue = match cue with Fin -> false | _ -> true
+    static member isFin cue = match cue with Fin -> true | _ -> false
+    static member notFin cue = match cue with Fin -> false | _ -> true
     static member isInterrupting (inventory : Inventory) (advents : Advent Set) cue =
         match cue with
         | Fin | PlaySound _ | PlaySong _ | FadeOutSong _ | Face _ | ClearSpirits | Recruit _ -> false
@@ -631,7 +631,7 @@ type Branch =
 [<RequireQualifiedAccess>]
 module OmniSeedState =
 
-    type OmniSeedState =
+    type [<SymbolicExpansion>] OmniSeedState =
         private
             { RandSeedState : uint64 }
 

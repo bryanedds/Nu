@@ -767,7 +767,7 @@ module FieldDispatcher =
                         [Entity.PropPlus := PropPlus.make prop field.Advents field.Avatar.Bottom]
 
                  // spirit orb
-                 if Field.hasEncounters field && Cue.isNil field.Cue then
+                 if Field.hasEncounters field && Cue.isFin field.Cue then
                     Content.entity<SpiritOrbDispatcher> "SpiritOrb"
                         [Entity.Position == v3 -448.0f 48.0f 0.0f; Entity.Elevation == Constants.Field.SpiritOrbElevation; Entity.Size == v3 192.0f 192.0f 0.0f
                          Entity.SpiritOrb := { AvatarLowerCenter = field.Avatar.LowerCenter; ShowUnopenedChests = Field.getShowUnopenedChests field; Spirits = field.Spirits; Chests = Field.getChests field; Portals = Field.getNonWarpPortals field }]

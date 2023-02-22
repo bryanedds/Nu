@@ -12,7 +12,7 @@ open OmniBlade
 [<RequireQualifiedAccess>]
 module Character =
 
-    type Character =
+    type [<SymbolicExpansion>] Character =
         private
             { PerimeterOriginal_ : Box3
               Perimeter_ : Box3

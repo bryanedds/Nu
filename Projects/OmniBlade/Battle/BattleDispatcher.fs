@@ -15,7 +15,7 @@ module BattleDispatcher =
     type Hop =
         { HopStart : Vector3
           HopStop : Vector3 }
-          
+
     type Positioning =
         | Position of Vector3
         | Center of Vector3

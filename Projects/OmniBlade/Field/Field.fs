@@ -14,7 +14,7 @@ type SaveSlot =
     | Slot2
     | Slot3
 
-type Options =
+type [<SymbolicExpansion>] Options =
     { BattleSpeed : BattleSpeed }
 
 type FieldState =
@@ -31,7 +31,7 @@ type FieldTransition =
 [<RequireQualifiedAccess>]
 module Field =
 
-    type Field =
+    type [<SymbolicExpansion>] Field =
         private
             { UpdateTime_ : int64
               FieldType_ : FieldType

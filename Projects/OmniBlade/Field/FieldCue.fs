@@ -361,7 +361,7 @@ module FieldCue =
             let (cues, definitions, (signals, field)) =
                 List.fold (fun (cues, definitions, (signals, field)) cue ->
                     let (cue, definitions, (signals2, field)) = advance cue definitions field
-                    if Cue.isNil cue
+                    if Cue.isFin cue
                     then (cues, definitions, (signals @ signals2, field))
                     else (cues @ [cue], definitions, (signals @ signals2, field)))
                     ([], definitions, ([], field))
@@ -377,7 +377,7 @@ module FieldCue =
                     then (halted, haltedCues @ [cue], definitions, (signals, field))
                     else
                         let (cue, definitions, (signals2, field)) = advance cue definitions field
-                        if Cue.isNil cue
+                        if Cue.isFin cue
                         then (false, [], definitions, (signals @ signals2, field))
                         else (true, [cue], definitions, (signals @ signals2, field)))
                     (false, [], definitions, ([], field))
