@@ -120,9 +120,8 @@ type CharacterAnimationType =
     | Cast2Animation
     | SlashAnimation
     | WhirlAnimation
-    | BuryAnimation // TODO: get rid of this
 
-type CharacterAnimationState =
+type [<SymbolicExpansion>] CharacterAnimationState =
     { StartTime : int64
       AnimationSheet : Image AssetTag
       CharacterAnimationType : CharacterAnimationType
@@ -201,7 +200,6 @@ type CharacterAnimationState =
         | Cast2Animation -> CharacterAnimationState.indexLoopedWithDirection 2 10L (v2i 0 7) time state
         | SlashAnimation -> CharacterAnimationState.indexSaturatedWithDirection 3 15L (v2i 0 6) time state
         | WhirlAnimation -> CharacterAnimationState.indexLoopedWithDirection 4 3L (v2i 0 12) time state
-        | BuryAnimation -> CharacterAnimationState.indexSaturatedWithDirection 4 10L (v2i 0 12) time state
 
     static member inset time (celSize : Vector2) state =
         let index = CharacterAnimationState.index time state
@@ -230,7 +228,6 @@ type CharacterAnimationState =
             | Cast2Animation -> None
             | SlashAnimation -> Some 120
             | WhirlAnimation -> None
-            | BuryAnimation -> None
         match lengthOpt with
         | Some length -> Some (min 1.0f (single localTime / single length))
         | None -> None

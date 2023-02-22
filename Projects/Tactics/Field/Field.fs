@@ -57,7 +57,7 @@ type FieldMetadata =
 [<RequireQualifiedAccess>]
 module Field =
 
-    type Field =
+    type [<SymbolicExpansion>] Field =
         private
             { FieldState_ : FieldState
               FieldScript : FieldScript
