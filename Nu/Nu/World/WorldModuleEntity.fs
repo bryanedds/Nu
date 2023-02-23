@@ -2305,7 +2305,7 @@ module WorldModuleEntity =
             match entityStateOpt :> obj with
             | null -> world
             | _ ->
-                let entityState = { entityStateOpt with Order = Core.getUniqueTimeStamp (); Id = Gen.id64; Surnames = destination.Surnames }
+                let entityState = { entityStateOpt with Order = Core.getTimeStampUnique (); Id = Gen.id64; Surnames = destination.Surnames }
                 World.addEntity false entityState destination world
 
         /// Rename an entity. Note that since this destroys the renamed entity immediately, you should not call this
@@ -2480,7 +2480,7 @@ module WorldModuleEntity =
             match Clipboard with
             | Some entityStateObj ->
                 let (id, surnames) = Gen.id64AndSurnamesIf surnamesOpt
-                let entityState = { (entityStateObj :?> EntityState) with Order = Core.getUniqueTimeStamp (); Id = id; Surnames = surnames }
+                let entityState = { (entityStateObj :?> EntityState) with Order = Core.getTimeStampUnique (); Id = id; Surnames = surnames }
                 entityState.Protected <- false // ensure pasted entity is not protected in case user pastes an Elmish entity
                 let (position, snapsOpt) =
                     if entityState.Is2d then
