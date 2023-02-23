@@ -279,7 +279,7 @@ module FieldDispatcher =
                         Option.isNone field.FieldTransitionOpt then
                         match Field.advanceSpirits field world with
                         | Left (battleData, field) ->
-                            let time = world.UpdateTime
+                            let time = field.UpdateTime
                             let playTime = Option.defaultValue time field.FieldSongTimeOpt
                             let startTime = time - playTime
                             let prizePool = { Consequents = Set.empty; Items = []; Gold = 0; Exp = 0 }
@@ -601,7 +601,7 @@ module FieldDispatcher =
             | TryBattle (battleType, consequents) ->
                 match Map.tryFind battleType Data.Value.Battles with
                 | Some battleData ->
-                    let time = world.UpdateTime
+                    let time = field.UpdateTime
                     let playTime = Option.defaultValue time field.FieldSongTimeOpt
                     let startTime = time - playTime
                     let prizePool = { Consequents = consequents; Items = []; Gold = 0; Exp = 0 }
@@ -699,7 +699,7 @@ module FieldDispatcher =
                     | (Some fieldSong, Some currentSong) ->
                         if not (AssetTag.equals fieldSong currentSong.Song) then
                             let (playTime, startTime) =
-                                let time = world.UpdateTime
+                                let time = field.UpdateTime
                                 match field.FieldSongTimeOpt with
                                 | Some playTime ->
                                     let deltaTime = time - playTime
@@ -714,7 +714,7 @@ module FieldDispatcher =
                         else just world
                     | (Some fieldSong, None) ->
                         let (playTime, startTime) =
-                            let time = world.UpdateTime
+                            let time = field.UpdateTime
                             match field.FieldSongTimeOpt with
                             | Some playTime ->
                                 let deltaTime = time - playTime
