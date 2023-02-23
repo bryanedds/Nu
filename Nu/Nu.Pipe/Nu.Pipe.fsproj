@@ -7,7 +7,7 @@
 		<PlatformTarget>AnyCPU</PlatformTarget>
 		<ServerGarbageCollection>true</ServerGarbageCollection>
 		<TieredPGO>true</TieredPGO>
-		<StartArguments>..\.. . ..\..\Refinement True</StartArguments>
+		<StartArguments>../.. . ../../Refinement True</StartArguments>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCpu'">
