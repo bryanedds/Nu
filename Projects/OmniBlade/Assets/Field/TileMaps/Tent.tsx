@@ -1,14 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<tileset version="1.2" tiledversion="1.3.4" name="Tent" tilewidth="48" tileheight="48" tilecount="414" columns="18">
+<tileset version="1.5" tiledversion="1.7.2" name="Tent" tilewidth="48" tileheight="48" tilecount="414" columns="18">
  <properties>
   <property name="Image" value="[Field Tent]"/>
  </properties>
  <image source="Tent.png" width="864" height="1104"/>
- <tile id="132">
-  <properties>
-   <property name="C" value=""/>
-  </properties>
- </tile>
  <tile id="149">
   <properties>
    <property name="C" value=""/>
