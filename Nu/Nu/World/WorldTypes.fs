@@ -539,7 +539,7 @@ module WorldTypes =
               EyeFrustum3dExposed = viewport.Frustum (Constants.Render.NearPlaneDistanceExposed, Constants.Render.FarPlaneDistanceExposed, eyeCenter3d, eyeRotation3d)
               EyeFrustum3dImposter = viewport.Frustum (Constants.Render.NearPlaneDistanceImposter, Constants.Render.FarPlaneDistanceImposter, eyeCenter3d, eyeRotation3d)
               ScriptFrame = Scripting.DeclarationFrame StringComparer.Ordinal
-              Order = Core.getUniqueTimeStamp ()
+              Order = Core.getTimeStampUnique ()
               Id = Gen.id }
 
         /// Try to get an xtension property and its type information.
@@ -609,7 +609,7 @@ module WorldTypes =
               Protected = false
               Persistent = true
               ScriptFrame = Scripting.DeclarationFrame StringComparer.Ordinal
-              Order = Core.getUniqueTimeStamp ()
+              Order = Core.getTimeStampUnique ()
               Id = id
               Name = name }
 
@@ -672,7 +672,7 @@ module WorldTypes =
               Protected = false
               Persistent = true
               ScriptFrame = Scripting.DeclarationFrame StringComparer.Ordinal
-              Order = Core.getUniqueTimeStamp ()
+              Order = Core.getTimeStampUnique ()
               Id = id
               Name = name }
 
@@ -752,7 +752,7 @@ module WorldTypes =
               ScriptFrameOpt = Unchecked.defaultof<_>
               OverlayNameOpt = overlayNameOpt
               FacetNames = Set.empty
-              Order = Core.getUniqueTimeStamp ()
+              Order = Core.getTimeStampUnique ()
               Id = id
               Surnames = surnames }
 

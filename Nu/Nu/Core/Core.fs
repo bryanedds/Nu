@@ -17,7 +17,7 @@ module Core =
         Stopwatch.GetTimestamp ()
 
     /// Get a unique time stamp, spinning until the time stamp advances if need be.
-    let getUniqueTimeStamp () =
+    let getTimeStampUnique () =
         let mutable nextStamp = getTimeStamp ()
         while nextStamp = LastTimeStamp do nextStamp <- getTimeStamp ()
         LastTimeStamp <- nextStamp
