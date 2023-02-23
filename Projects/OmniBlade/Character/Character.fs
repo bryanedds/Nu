@@ -221,12 +221,6 @@ module Character =
                 if techData.Split
                 then Constants.Battle.EnemySplitScalar
                 else 1.0f
-        let specialAddend =
-            // NOTE: certain techs need to be stronger at the start of the game but adjusting their scalars isn't adequate.
-            // TODO: consider pulling this from TechData.AddendOpt.
-            match techData.TechType with
-            | Critical -> 1.0f
-            | _ -> 0.0f
         if techData.Curative then
             let healing = single efficacy * techScalar * splitScalar |> int |> max 1
             (target.CharacterIndex, false, false, healing, techData.StatusesAdded, techData.StatusesRemoved)
@@ -234,7 +228,7 @@ module Character =
             let cancelled = techData.Cancels && autoTeching target
             let shield = target.Shield techData.EffectType
             let defendingScalar = if target.Defending then Constants.Battle.DefendingScalar else 1.0f
-            let damage = (single efficacy * affinityScalar * techScalar * splitScalar + specialAddend - single shield) * defendingScalar |> int |> max 1
+            let damage = (single efficacy * affinityScalar * techScalar * splitScalar - single shield) * defendingScalar |> int |> max 1
             (target.CharacterIndex, cancelled, false, -damage, Set.difference techData.StatusesAdded target.Immunities, techData.StatusesRemoved)
 
     let evalTech techData source target characters =
