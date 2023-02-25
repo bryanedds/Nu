@@ -338,7 +338,7 @@ module FieldDispatcher =
 
                             // finish transition
                             elif time = fieldTransition.FieldTransitionTime then
-                                let startTime = world.UpdateTime
+                                let startTime = field.UpdateTime
                                 let field = Field.updateFieldSongTimeOpt (constant (Some startTime)) field
                                 let field = Field.updateFieldTransitionOpt (constant None) field
                                 just field
