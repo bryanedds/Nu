@@ -331,7 +331,12 @@ module Field =
         let fieldType = updater field.FieldType_
         let spiritActivity = 0.0f
         let props = makeProps fieldType field.OmniSeedState_ world
-        { field with FieldType_ = fieldType; SpiritActivity_ = spiritActivity; Spirits_ = [||]; Props_ = props }
+        { field with
+            FieldType_ = fieldType
+            SpiritActivity_ = spiritActivity
+            Spirits_ = [||]
+            Props_ = props
+            FieldSongTimeOpt_ = None }
 
     let updateFieldState updater field =
         { field with FieldState_ = updater field.FieldState_ }
