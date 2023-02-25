@@ -535,7 +535,7 @@ module Character =
                 let characterState = CharacterState.make characterData hitPoints techPoints expPoints characterData.WeaponOpt characterData.ArmorOpt characterData.Accessories
                 let actionTime =
                     if waitSpeed then       1000.0f - 125.0f - Gen.randomf1 8.0f * 75.0f
-                    elif allyCount = 1 then 1000.0f - 375.0f - Gen.randomf1 6.0f * 75.0f
+                    elif allyCount = 1 then 1000.0f - 400.0f - Gen.randomf1 6.0f * 75.0f
                     else                    1000.0f - 375.0f - Gen.randomf1 8.0f * 75.0f
                 let enemy = make bounds (EnemyIndex subindex) characterType characterData.Boss characterData.AnimationSheet celSize Rightward characterState chargeTechOpt actionTime
                 Some enemy
