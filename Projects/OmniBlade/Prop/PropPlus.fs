@@ -8,7 +8,7 @@ open Prime
 open Nu
 open OmniBlade
 
-type PropPlus =
+type [<CustomEquality; NoComparison>] PropPlus =
     { Prop : Prop
       Advents : Advent Set
       PointOfInterest : Vector3 }
@@ -22,3 +22,16 @@ type PropPlus =
         { Prop = Prop.empty
           Advents = Set.empty
           PointOfInterest = v3Zero }
+
+    override this.Equals (that : obj) =
+        match that with
+        | :? PropPlus as that ->
+            this.Prop === that.Prop &&
+            this.Advents === that.Advents &&
+            v3Eq this.PointOfInterest that.PointOfInterest
+        | _ -> false
+
+    override this.GetHashCode () =
+        hash this.Prop ^^^
+        hash this.Advents ^^^
+        hash this.PointOfInterest
