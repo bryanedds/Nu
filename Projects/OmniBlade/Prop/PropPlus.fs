@@ -26,8 +26,8 @@ type [<CustomEquality; NoComparison>] PropPlus =
     override this.Equals (that : obj) =
         match that with
         | :? PropPlus as that ->
-            this.Prop === that.Prop &&
-            this.Advents === that.Advents &&
+            this.Prop = that.Prop &&
+            refEq this.Advents that.Advents && // OPTIMIZATION: presume advents come from a relatively static source.
             v3Eq this.PointOfInterest that.PointOfInterest
         | _ -> false
 
