@@ -910,7 +910,7 @@ module Particles =
                   Glow = Color.Zero
                   Flip = FlipNone }
             let particleScalar =
-                match Constants.Engine.DesiredFrameRate with
+                match Constants.GameTime.DesiredFrameRate with
                 | StaticFrameRate frameRate -> 1.0f / single frameRate
                 | DynamicFrameRate _ -> 1.0f
             let particleInitializer = fun _ (emitter : BasicEmitter) ->
@@ -930,7 +930,7 @@ module Particles =
                     index <- inc index
                 Output.empty
             let gravity =
-                match Constants.Engine.DesiredFrameRate with
+                match Constants.GameTime.DesiredFrameRate with
                 | StaticFrameRate frameRate -> v3 0.0f -Constants.Engine.Meter2d 0.0f / single frameRate
                 | DynamicFrameRate _ -> v3 0.0f -Constants.Engine.Meter2d 0.0f * Constants.Engine.Meter2d
             let particleBehaviors =

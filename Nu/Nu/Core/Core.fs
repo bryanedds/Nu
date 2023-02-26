@@ -4,7 +4,6 @@
 namespace Nu
 open System
 open System.Diagnostics
-open Prime
 
 [<RequireQualifiedAccess>]
 module Core =
@@ -33,8 +32,3 @@ module CoreOperators =
     /// Sequences two functions like Haskell ($).
     /// Same as the ($) operator found in Prime, but placed here to expose it directly from Nu.
     let inline ($) f g = f g
-
-/// The desired frame rate.
-type FrameRate =
-    | StaticFrameRate of int64
-    | DynamicFrameRate of int64 option

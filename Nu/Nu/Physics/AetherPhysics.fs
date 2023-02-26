@@ -496,7 +496,7 @@ type [<ReferenceEquality>] AetherPhysicsEngine =
         member physicsEngine.Integrate stepTime physicsMessages =
             AetherPhysicsEngine.handlePhysicsMessages physicsMessages physicsEngine
             let physicsStepAmount =
-                match (Constants.Engine.DesiredFrameRate, stepTime) with
+                match (Constants.GameTime.DesiredFrameRate, stepTime) with
                 | (StaticFrameRate frameRate, UpdateTime frames) -> 1.0f / single frameRate * single frames
                 | (DynamicFrameRate _, ClockTime secs) -> secs
                 | (_, _) -> failwithumf ()

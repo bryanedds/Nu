@@ -34,7 +34,7 @@ module Override =
             for key in settings.AllKeys do
                 let value = settings.[key].Value
                 match key with
-                | nameof Engine.DesiredFrameRate -> Engine.DesiredFrameRate <- scvalue value
+                | nameof GameTime.DesiredFrameRate -> GameTime.DesiredFrameRate <- scvalue value
                 | nameof Engine.EntityCentered2dDefault -> Engine.EntityCentered2dDefault <- scvalue value
                 | nameof Engine.EntityCenteredGuiDefault -> Engine.EntityCenteredGuiDefault <- scvalue value
                 | nameof Engine.EntityCentered3dDefault -> Engine.EntityCentered3dDefault <- scvalue value
