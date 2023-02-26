@@ -405,7 +405,7 @@ let generateBindingsCode bindings =
     initBindings
 
 let types =
-    let _ = Constants.Engine.DesiredFrameRate // makes sure Nu assembly is actually loaded
+    let _ = Constants.GameTime.DesiredFrameRate // makes sure Nu assembly is actually loaded
     AppDomain.CurrentDomain.GetAssemblies () |>
     Array.filter (fun asm -> (asm.GetName ()).Name = "Nu") |>
     Array.head |>

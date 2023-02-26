@@ -2,9 +2,9 @@
 // Copyright (C) Bryan Edds, 2013-2020.
 
 namespace Nu
-open Prime
 open System
 open System.Diagnostics
+open Prime
 
 [<RequireQualifiedAccess>]
 module Log =
