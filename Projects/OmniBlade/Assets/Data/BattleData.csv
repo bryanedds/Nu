@@ -20,7 +20,7 @@ Castle2Battle6,[[240 -48 0] [-384 -48 0] [-384 78 0] [-384 -162 0]],[FacelessSol
 Castle2Battle7,[[240 -48 0] [-384 -48 0] [-384 78 0] [-384 -162 0]],[Hawk FacelessSoldier FacelessSoldier FacelessSoldier],[Castle CastleBattle],-612,[0 1480],[Some [Castle CastleBattle]]
 Castle2Battle8,[[240 -48 0] [-384 -48 0] [-384 78 0] [-384 -162 0]],[Hawk Hawk FacelessSoldier FacelessSoldier],[Castle CastleBattle],-612,[0 1480],[Some [Castle CastleBattle]]
 Castle2Battle9,[[240 -48 0] [-384 -48 0] [-384 78 0] [-384 -162 0]],[Hawk Hawk Hawk],[Castle CastleBattle],-612,[0 1480],[Some [Castle CastleBattle]]
-HeavyArmorosBattle,[[240 -48 0] [-384 -48 0] [-384 78 0] [-384 -162 0]],[HeavyArmoros Hawk Hawk],[Castle CastleBattle],-612,[0 1480],[Some [Battle Midboss]]
+HeavyArmorosBattle,[[240 -48 0] [-384 -48 0] [-384 78 0] [-384 -162 0]],[HeavyArmoros Hawk Hawk],[Castle CastleBattle],-612,[0 1480],[Some [Battle Midboss2]]
 Castle3Battle,[[240 -48 0] [-384 -48 0] [-384 78 0] [-384 -162 0]],[Cloak PitViper PitViper],[Castle CastleBattle],-18,[0 1480],[Some [Castle CastleBattle]]
 Castle3Battle2,[[240 -48 0] [-384 -48 0] [-384 78 0] [-384 -162 0]],[PitViper PitViper PitViper PitViper],[Castle CastleBattle],-18,[0 1480],[Some [Castle CastleBattle]]
 Castle3Battle3,[[240 -48 0] [-384 -48 0] [-384 78 0] [-384 -162 0]],[Cloak Cloak],[Castle CastleBattle],-18,[0 1480],[Some [Castle CastleBattle]]
