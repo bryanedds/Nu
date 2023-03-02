@@ -16,7 +16,7 @@ module Program =
         // this specifies the configuration of the game engine's use of SDL
         let sdlConfig = { SdlConfig.defaultConfig with ViewConfig = NewWindow sdlWindowConfig }
 
-        // use the default world config with the above SDL config
+        // this specifies the world config using the above SDL config
         let worldConfig = { WorldConfig.defaultConfig with SdlConfig = sdlConfig }
 
         // point current working directory at program's base directory
