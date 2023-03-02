@@ -16,7 +16,7 @@
  </layer>
  <layer id="4" name="Flooring" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJztlcsJgDAQRLcAc1crUOvTDrQD7UA7MB1oX643kYWMksUPOzCHhA3v8pIQWSyWL6ZOiJrkOf7I7Mn4xldK6ogybu7k9ZEfmr2Tgs+W3MrJ6yM/NHsl+73uga7cBZy98k60PDsA9dwZnO0UPNH0D/HpzI/pIOLTmR/LQfMPi5Z/qEcSP4aDqEcSP+Y7GMrf/7+381ule/X2eMFlae8L2QBoh15T
+   eJztld0NQDAUhe8A+o4JsAnzsAEbsAEbsAF7ud5EbtJDWn+5JzkPldt8iXxtiTQazRdTBkRV8By/Z/agfOV7SmiIIm5s5PWeb5u9koT3ptzMyOs93zZ7Jtu5boEu3BmcPXNP1DzbAZ24IzjbePDEp3+IT0e+SwcRn458Vw6qf1h8+Yd6JPFdOIh6JPFd3oO2/P39exO/EDi1cK7yB//HXZkEl6VvX8gKln5e/g==
   </data>
  </layer>
  <layer id="1" name="Furnishing" width="32" height="32">
