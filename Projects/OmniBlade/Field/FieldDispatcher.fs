@@ -316,7 +316,7 @@ module FieldDispatcher =
 
                             // just past half-way point of transition
                             elif time = fieldTransition.FieldTransitionTime - Constants.Field.TransitionTime / 2L + 1L then
-                                match destinationData.FieldType with // pre-generate fields
+                                match destinationData.FieldType with // HACK: pre-generate fields.
                                 | CastleConnector -> for i in 0 .. 2 do FieldData.tryGetTileMap field.OmniSeedState (Data.Value.Fields.[Castle i]) |> ignore
                                 | _ -> ()
                                 let field =
