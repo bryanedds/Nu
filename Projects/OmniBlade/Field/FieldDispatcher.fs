@@ -60,6 +60,7 @@ module FieldDispatcher =
         | PlaySound of int64 * single * Sound AssetTag
         | PlaySong of int64 * int64 * int64 * single * Song AssetTag
         | FadeOutSong of int64
+        | ScheduleSignal of int64 * Signal
         | Nop
         interface Command
 
@@ -730,7 +731,7 @@ module FieldDispatcher =
                 | (false, _) -> just world
 
             | PlaySound (delay, volume, sound) ->
-                let world = World.schedule (World.playSound volume sound) (UpdateTime delay) screen world
+                let world = World.schedule delay (World.playSound volume sound) screen world
                 just world
 
             | PlaySong (fadeIn, fadeOut, start, volume, assetTag) ->
@@ -739,6 +740,10 @@ module FieldDispatcher =
 
             | FadeOutSong fade ->
                 let world = World.fadeOutSong fade world
+                just world
+
+            | ScheduleSignal (delay, signal) ->
+                let world = World.schedule delay (screen.Signal signal) screen world
                 just world
 
             | Nop -> just world

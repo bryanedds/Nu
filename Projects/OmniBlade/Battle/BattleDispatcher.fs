@@ -73,7 +73,7 @@ module BattleDispatcher =
         inherit ScreenDispatcher<Battle, BattleMessage, BattleCommand> (Battle.empty)
 
         static let displayEffect (delay : int64) size positioning effect screen world =
-            World.schedule (fun world ->
+            World.schedule delay (fun world ->
                 let (entity, world) = World.createEntity<EffectDispatcher2d> DefaultOverlay None Simulants.BattleScene world
                 let world = entity.SetEffect effect world
                 let world = entity.SetSize size world
@@ -84,7 +84,6 @@ module BattleDispatcher =
                     | Bottom bottom -> entity.SetBottom bottom world
                 let world = entity.SetElevation Constants.Battle.EffectElevation world
                 entity.SetSelfDestruct true world)
-                delay
                 screen world
 
         static let advanceAttack sourceIndex (targetIndexOpt : CharacterIndex option) time localTime battle =
@@ -1041,7 +1040,7 @@ module BattleDispatcher =
                 displayEffect delay (v3 48.0f 48.0f 0.0f) (Position (v3 0.0f 0.0f 0.0f)) (Effects.makeConjureIfritEffect ()) screen world |> just
 
             | PlaySound (delay, volume, sound) ->
-                let world = World.schedule (World.playSound volume sound) delay screen world
+                let world = World.schedule delay (World.playSound volume sound) screen world
                 just world
 
             | PlaySong (fadeIn, fadeOut, start, volume, assetTag) ->
