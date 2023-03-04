@@ -39,7 +39,7 @@ module Bullet =
 
         override this.Register (bullet, world) =
             let world = World.monitor handleBodyCollision bullet.BodyCollisionEvent bullet world
-            let world = World.schedule (World.destroyEntity bullet) (UpdateTime BulletLifeTime) bullet world
+            let world = World.schedule BulletLifeTime (World.destroyEntity bullet) bullet world
             world
 
 [<AutoOpen>]

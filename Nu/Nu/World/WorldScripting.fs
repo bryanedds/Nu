@@ -905,20 +905,19 @@ module WorldScripting =
 
         static member internal evalSchedule fnName exprs originOpt world =
             match exprs with
-            | [|timeExpr; body; relationExpr|] ->
+            | [|delayExpr; body; relationExpr|] ->
                 let context = World.getScriptContext world
                 match World.tryResolveRelation fnName relationExpr originOpt context world with
                 | Right (simulant, world) ->
-                    match ScriptingSystem.tryExport typeof<GameTime> timeExpr world with
+                    match ScriptingSystem.tryExport typeof<GameTime> delayExpr world with
                     | Some value -> 
-                        let time = value :?> GameTime
+                        let delay = value :?> GameTime
                         let world =
-                            World.schedule
-                                (fun world ->
-                                    match World.tryGetScriptFrame context world with
-                                    | Some scriptFrame -> World.eval body scriptFrame context world |> snd'
-                                    | None -> world)
-                                time simulant world
+                            World.schedule delay (fun world ->
+                                match World.tryGetScriptFrame context world with
+                                | Some scriptFrame -> World.eval body scriptFrame context world |> snd'
+                                | None -> world)
+                                simulant world
                         struct (Unit, world)
                     | None -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires Time for first argument.", originOpt), world)
                 | Left error -> error
