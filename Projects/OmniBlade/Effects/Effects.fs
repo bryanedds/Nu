@@ -174,13 +174,13 @@ module Effects =
 
     let makeCycloneBlurEffect radius =
         { EffectName = "CycloneBlur"
-          LifeTimeOpt = Some 100L
+          LifeTimeOpt = Some 98L
           Definitions = Map.empty
           Content =
               AnimatedSprite
                (Resource (AssetTag.toPair Assets.Battle.CycloneBlurAnimationSheet),
                 v2i 78 78, 2, 4, 3L, Loop,
-                [|Circle (radius, 2.0f, 100L); Size (v3 234.0f 234.0f 0.0f)|],
+                [|Circle (radius, 2.0f, 98L); Size (v3 234.0f 234.0f 0.0f)|],
                 Nil) }
 
     let makeArcaneCastEffect () =
