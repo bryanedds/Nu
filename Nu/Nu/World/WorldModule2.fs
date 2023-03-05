@@ -28,6 +28,9 @@ module WorldModule2 =
     let private PreUpdateGameTimer = Stopwatch ()
     let private PreUpdateScreensTimer = Stopwatch ()
     let private PreUpdateGroupsTimer = Stopwatch ()
+#if !DISABLE_ENTITY_PRE_UPDATE
+    let private PreUpdateEntitiesTimer = Stopwatch ()
+#endif
     let private UpdateTimer = Stopwatch ()
     let private UpdateGatherTimer = Stopwatch ()
     let private UpdateGameTimer = Stopwatch ()
