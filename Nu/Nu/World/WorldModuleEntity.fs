@@ -411,6 +411,7 @@ module WorldModuleEntity =
         static member internal getEntityVisible entity world = (World.getEntityState entity world).Visible
         static member internal getEntityVisibleLocal entity world = (World.getEntityState entity world).VisibleLocal
         static member internal getEntityAlwaysUpdate entity world = (World.getEntityState entity world).AlwaysUpdate
+        static member internal getEntityPublishPreUpdates entity world = (World.getEntityState entity world).PublishPreUpdates
         static member internal getEntityPublishUpdates entity world = (World.getEntityState entity world).PublishUpdates
         static member internal getEntityPublishPostUpdates entity world = (World.getEntityState entity world).PublishPostUpdates
         static member internal getEntityPublishRenders entity world = (World.getEntityState entity world).PublishRenders
@@ -448,6 +449,22 @@ module WorldModuleEntity =
                         entityState.PublishChangeEvents <- value
                         struct (entityState, World.setEntityState entityState entity world)
                 let world = World.publishEntityChange (nameof entityState.PublishChangeEvents) previous value entityState.PublishChangeEvents entity world
+                struct (true, world)
+            else struct (false, world)
+        
+        static member internal setEntityPublishPreUpdates value entity world =
+            let entityState = World.getEntityState entity world
+            let previous = entityState.PublishPreUpdates
+            if value <> previous then
+                let struct (entityState, world) =
+                    if entityState.Imperative then
+                        entityState.PublishPreUpdates <- value
+                        struct (entityState, world)
+                    else
+                        let entityState = EntityState.diverge entityState
+                        entityState.PublishPreUpdates <- value
+                        struct (entityState, World.setEntityState entityState entity world)
+                let world = World.publishEntityChange (nameof entityState.PublishPreUpdates) previous value entityState.PublishChangeEvents entity world
                 struct (true, world)
             else struct (false, world)
         
@@ -1994,6 +2011,11 @@ module WorldModuleEntity =
             | Some bounds -> bounds
             | None -> World.getEntityBounds entity world
 
+#if !DISABLE_ENTITY_PRE_UPDATE
+        static member internal updateEntityPublishPreUpdateFlag entity world =
+            World.updateEntityPublishEventFlag World.setEntityPublishPreUpdates entity (atooa (Events.PreUpdate --> entity)) world
+#endif
+
         static member internal updateEntityPublishUpdateFlag entity world =
             World.updateEntityPublishEventFlag World.setEntityPublishUpdates entity (atooa (Events.Update --> entity)) world
 
@@ -2007,6 +2029,10 @@ module WorldModuleEntity =
 
         static member internal updateEntityPublishFlags entity world =
             let mutable changed = false // bit of funky mutation in the face of #if
+#if !DISABLE_ENTITY_PRE_UPDATE
+            let struct (changed', world) = World.updateEntityPublishPreUpdateFlag entity world
+            changed <- changed || changed'
+#endif
             let struct (changed', world) = World.updateEntityPublishUpdateFlag entity world
             changed <- changed || changed'
 #if !DISABLE_ENTITY_POST_UPDATE

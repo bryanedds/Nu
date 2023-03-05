@@ -48,6 +48,7 @@ module WorldScreenModule =
         member this.RegisterEvent = Events.Register --> this
         member this.UnregisteringEvent = Events.Unregistering --> this
         member this.ChangeEvent propertyName = Events.Change propertyName --> this
+        member this.PreUpdateEvent = Events.PreUpdate --> this
         member this.UpdateEvent = Events.Update --> this
         member this.PostUpdateEvent = Events.PostUpdate --> this
         member this.RenderEvent = Events.Render --> this
@@ -123,6 +124,21 @@ module WorldScreenModule =
         member this.TrySignal signal world = (this.GetDispatcher world).TrySignal (signal, this, world)
 
     type World with
+
+        static member internal preUpdateScreen (screen : Screen) world =
+
+            // pre-update ecs
+            let ecs = World.getScreenEcs screen world
+            let world = ecs.Notify Ecs.EcsEvents.PreUpdate () world
+            let world = ecs.Publish Ecs.EcsEvents.PreUpdate () world
+
+            // pre-update via dispatcher
+            let dispatcher = World.getScreenDispatcher screen world
+            let world = dispatcher.PreUpdate (screen, world)
+
+            // publish pre-update event
+            let eventTrace = EventTrace.debug "World" "preUpdateScreen" "" EventTrace.empty
+            World.publishPlus () (Events.PreUpdate --> screen) eventTrace Simulants.Game false false world
 
         static member internal updateScreen (screen : Screen) world =
 

@@ -57,6 +57,11 @@ module ScriptFacetModule =
         member this.GetUnregisterScript world : Scripting.Expr = this.Get (nameof this.UnregisterScript) world
         member this.SetUnregisterScript (value : Scripting.Expr) world = this.Set (nameof this.UnregisterScript) value world
         member this.UnregisterScript = lens (nameof this.UnregisterScript) this this.GetUnregisterScript this.SetUnregisterScript
+#if !DISABLE_ENTITY_PRE_UPDATE
+        member this.GetPreUpdateScript world : Scripting.Expr = this.Get (nameof this.PreUpdateScript) world
+        member this.SetPreUpdateScript (value : Scripting.Expr) world = this.Set (nameof this.PreUpdateScript) value world
+        member this.PreUpdateScript = lens (nameof this.PreUpdateScript) this this.GetPreUpdateScript this.SetPreUpdateScript
+#endif
         member this.GetUpdateScript world : Scripting.Expr = this.Get (nameof this.UpdateScript) world
         member this.SetUpdateScript (value : Scripting.Expr) world = this.Set (nameof this.UpdateScript) value world
         member this.UpdateScript = lens (nameof this.UpdateScript) this this.GetUpdateScript this.SetUpdateScript
@@ -92,6 +97,9 @@ module ScriptFacetModule =
              define Entity.ScriptUnsubscriptions []
              define Entity.RegisterScript Scripting.Unit
              define Entity.UnregisterScript Scripting.Unit
+#if !DISABLE_ENTITY_PRE_UPDATE
+             define Entity.PreUpdateScript Scripting.Unit
+#endif
              define Entity.UpdateScript Scripting.Unit
 #if !DISABLE_ENTITY_POST_UPDATE
              define Entity.PostUpdateScript Scripting.Unit
@@ -106,6 +114,11 @@ module ScriptFacetModule =
 
         override this.Unregister (entity, world) =
             World.evalWithLogging (entity.GetUnregisterScript world) (entity.GetScriptFrame world) entity world |> snd'
+
+#if !DISABLE_ENTITY_PRE_UPDATE
+        override this.PreUpdate (entity, world) =
+            World.evalWithLogging (entity.GetPreUpdateScript world) (entity.GetScriptFrame world) entity world |> snd'
+#endif
 
         override this.Update (entity, world) =
             World.evalWithLogging (entity.GetUpdateScript world) (entity.GetScriptFrame world) entity world |> snd'

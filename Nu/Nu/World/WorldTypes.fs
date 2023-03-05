@@ -136,6 +136,10 @@ module WorldTypes =
         abstract Unregister : Game * World -> World
         default this.Unregister (_, world) = world
 
+        /// Pre-update a game.
+        abstract PreUpdate : Game * World -> World
+        default this.PreUpdate (_, world) = world
+
         /// Update a game.
         abstract Update : Game * World -> World
         default this.Update (_, world) = world
@@ -172,6 +176,10 @@ module WorldTypes =
         abstract Unregister : Screen * World -> World
         default this.Unregister (_, world) = world
 
+        /// Pre-update a screen.
+        abstract PreUpdate : Screen * World -> World
+        default this.PreUpdate (_, world) = world
+
         /// Update a screen.
         abstract Update : Screen * World -> World
         default this.Update (_, world) = world
@@ -207,6 +215,10 @@ module WorldTypes =
         /// Unregister a group when removing it from a screen.
         abstract Unregister : Group * World -> World
         default this.Unregister (_, world) = world
+
+        /// Pre-update a group.
+        abstract PreUpdate : Group * World -> World
+        default this.PreUpdate (_, world) = world
 
         /// Update a group.
         abstract Update : Group * World -> World
@@ -265,6 +277,7 @@ module WorldTypes =
              Define? Static false
              Define? Light false
              Define? AlwaysUpdate false
+             Define? PublishPreUpdates false
              Define? PublishUpdates false
              Define? PublishPostUpdates false
              Define? PublishRenders false
@@ -277,6 +290,12 @@ module WorldTypes =
         /// Unregister an entity when removing it from a group.
         abstract Unregister : Entity * World -> World
         default this.Unregister (_, world) = world
+
+#if !DISABLE_ENTITY_PRE_UPDATE
+        /// Pre-update an entity.
+        abstract PreUpdate : Entity * World -> World
+        default this.PreUpdate (_, world) = world
+#endif
 
         /// Update an entity.
         abstract Update : Entity * World -> World
@@ -356,6 +375,12 @@ module WorldTypes =
         /// Participate in the unregistration of an entity's physics from the physics subsystem.
         abstract UnregisterPhysics : Entity * World -> World
         default this.UnregisterPhysics (_, world) = world
+
+#if !DISABLE_ENTITY_PRE_UPDATE
+        /// Pre-update a facet.
+        abstract PreUpdate : Entity * World -> World
+        default this.PreUpdate (_, world) = world
+#endif
 
         /// Update a facet.
         abstract Update : Entity * World -> World
@@ -845,6 +870,7 @@ module WorldTypes =
         member this.Visible with get () = this.Transform.Visible and set value = this.Transform.Visible <- value
         member this.VisibleLocal with get () = this.Transform.VisibleLocal and set value = this.Transform.VisibleLocal <- value
         member this.AlwaysUpdate with get () = this.Transform.AlwaysUpdate and set value = this.Transform.AlwaysUpdate <- value
+        member this.PublishPreUpdates with get () = this.Transform.PublishPreUpdates and set value = this.Transform.PublishPreUpdates <- value
         member this.PublishUpdates with get () = this.Transform.PublishUpdates and set value = this.Transform.PublishUpdates <- value
         member this.PublishPostUpdates with get () = this.Transform.PublishPostUpdates and set value = this.Transform.PublishPostUpdates <- value
         member this.PublishRenders with get () = this.Transform.PublishRenders and set value = this.Transform.PublishRenders <- value

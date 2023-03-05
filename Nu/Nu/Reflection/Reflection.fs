@@ -68,6 +68,7 @@ module Reflection =
              ("Bounds", true)
              ("Imperative", true)
              ("PublishChangeEvents", true)
+             ("PublishPreUpdates", true)
              ("PublishUpdates", true)
              ("PublishPostUpdates", true)
              ("PublishRenders", true)

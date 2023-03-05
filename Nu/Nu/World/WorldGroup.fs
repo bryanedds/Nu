@@ -39,6 +39,7 @@ module WorldGroupModule =
         member this.RegisterEvent = Events.Register --> this
         member this.UnregisteringEvent = Events.Unregistering --> this
         member this.ChangeEvent propertyName = Events.Change propertyName --> this
+        member this.PreUpdateEvent = Events.PreUpdate --> this
         member this.UpdateEvent = Events.Update --> this
         member this.PostUpdateEvent = Events.PostUpdate --> this
         member this.RenderEvent = Events.Render --> this
@@ -106,6 +107,16 @@ module WorldGroupModule =
             (this.GetDispatcher world).TrySignal (signal, this, world)
 
     type World with
+
+        static member internal preUpdateGroup (group : Group) world =
+
+            // pre-update via dispatcher
+            let dispatcher = group.GetDispatcher world
+            let world = dispatcher.PreUpdate (group, world)
+
+            // publish pre-update event
+            let eventTrace = EventTrace.debug "World" "preUpdateGroup" "" EventTrace.empty
+            World.publishPlus () (Events.PreUpdate --> group) eventTrace Simulants.Game false false world
 
         static member internal updateGroup (group : Group) world =
 
