@@ -303,6 +303,9 @@ module WorldEntityModule =
         member this.RegisterEvent = Events.Register --> this
         member this.UnregisteringEvent = Events.Unregistering --> this
         member this.ChangeEvent propertyName = Events.Change propertyName --> this
+#if !DISABLE_ENTITY_PRE_UPDATE
+        member this.PreUpdateEvent = Events.PreUpdate --> this
+#endif
         member this.UpdateEvent = Events.Update --> this
 #if !DISABLE_ENTITY_POST_UPDATE
         member this.PostUpdateEvent = Events.PostUpdate --> this
@@ -546,6 +549,21 @@ module WorldEntityModule =
             (this.GetDispatcher world).TrySignal (signal, this, world)
 
     type World with
+
+#if !DISABLE_ENTITY_PRE_UPDATE
+        static member internal preUpdateEntity (entity : Entity) world =
+            let dispatcher = entity.GetDispatcher world
+            let world = dispatcher.PreUpdate (entity, world)
+            let facets = entity.GetFacets world
+            let world =
+                if Array.notEmpty facets // OPTIMIZATION: avoid lambda allocation.
+                then Array.fold (fun world (facet : Facet) -> facet.PreUpdate (entity, world)) world facets
+                else world
+            if World.getEntityPublishPreUpdates entity world then
+                let eventTrace = EventTrace.debug "World" "preUpdateEntity" "" EventTrace.empty
+                World.publishPlus () entity.PreUpdateEvent eventTrace Simulants.Game false false world
+            else world
+#endif
 
         static member internal updateEntity (entity : Entity) world =
             let dispatcher = entity.GetDispatcher world

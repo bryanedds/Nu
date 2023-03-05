@@ -50,6 +50,7 @@ and [<StructuralEquality; NoComparison; Struct>] EcsRegistrationData =
 
 /// The out-of-box events for the Ecs construct.
 and [<AbstractClass; Sealed>] EcsEvents =
+    static member PreUpdate = { EcsEventName = "PreUpdate"; EcsEventType = GlobalEvent }
     static member Update = { EcsEventName = "Update"; EcsEventType = GlobalEvent }
     static member PostUpdate = { EcsEventName = "PostUpdate"; EcsEventType = GlobalEvent }
     static member Render = { EcsEventName = "Render"; EcsEventType = GlobalEvent }

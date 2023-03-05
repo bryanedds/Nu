@@ -53,6 +53,7 @@ module WorldGameModule =
         member this.RegisterEvent = Events.Register
         member this.UnregisteringEvent = Events.Unregistering
         member this.ChangeEvent propertyName = Events.Change propertyName
+        member this.PreUpdateEvent = Events.PreUpdate
         member this.UpdateEvent = Events.Update
         member this.PostUpdateEvent = Events.PostUpdate
         member this.RenderEvent = Events.Render
@@ -152,6 +153,17 @@ module WorldGameModule =
             let eventTrace = EventTrace.debug "World" "unregisteringGame" "" EventTrace.empty
             let world = World.publishPlus (UnregisteringData game) (Events.LifeCycle (nameof Game)) eventTrace game true false world
             dispatcher.Unregister (game, world)
+
+        static member internal preUpdateGame world =
+                
+            // pre-update via dispatcher
+            let game = Simulants.Game
+            let dispatcher = game.GetDispatcher world
+            let world = dispatcher.PreUpdate (game, world)
+
+            // publish pre-update event
+            let eventTrace = EventTrace.debug "World" "preUpdateGame" "" EventTrace.empty
+            World.publishPlus () Events.PreUpdate eventTrace game false false world
 
         static member internal updateGame world =
 

@@ -75,6 +75,16 @@ module Nu =
                         let eventFirstName = eventNames.[0]
                         let entity = Entity (Array.skip 2 eventNames)
                         match eventFirstName with
+#if !DISABLE_ENTITY_PRE_UPDATE
+                        | "PreUpdate" ->
+    #if DEBUG
+                            if Array.contains (Address.head Events.Wildcard) eventNames then
+                                Log.debug
+                                    ("Subscribing to entity pre-update events with a wildcard is not supported. " +
+                                     "This will cause a bug where some entity pre-update events are not published.")
+    #endif
+                            World.updateEntityPublishPreUpdateFlag entity world |> snd'
+#endif
                         | "Update" ->
 #if DEBUG
                             if Array.contains (Address.head Events.Wildcard) eventNames then

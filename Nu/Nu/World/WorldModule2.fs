@@ -23,6 +23,11 @@ module WorldModule2 =
     let private TotalTimer = Stopwatch ()
     let private InputTimer = Stopwatch ()
     let private PhysicsTimer = Stopwatch ()
+    let private PreUpdateTimer = Stopwatch ()
+    let private PreUpdateGatherTimer = Stopwatch ()
+    let private PreUpdateGameTimer = Stopwatch ()
+    let private PreUpdateScreensTimer = Stopwatch ()
+    let private PreUpdateGroupsTimer = Stopwatch ()
     let private UpdateTimer = Stopwatch ()
     let private UpdateGatherTimer = Stopwatch ()
     let private UpdateGameTimer = Stopwatch ()
@@ -799,6 +804,57 @@ module WorldModule2 =
             let frustumImposter = World.getEyeFrustum3dImposter world
             let lightBox = World.getLightBox3d world
             World.getEntities3dBy (Octree.getElementsInView frustumEnclosed frustumExposed frustumImposter lightBox set) world
+
+        static member private preUpdateSimulants world =
+
+            // gather simulants
+            PreUpdateGatherTimer.Start ()
+            let screens = match World.getOmniScreenOpt world with Some omniScreen -> [omniScreen] | None -> []
+            let screens = match World.getSelectedScreenOpt world with Some selectedScreen -> selectedScreen :: screens | None -> screens
+            let screens = List.rev screens
+            let groups = Seq.concat (List.map (flip World.getGroups world) screens)
+#if !DISABLE_ENTITY_PRE_UPDATE
+            let (entities3d, world) = World.getEntitiesInPlay3d CachedHashSet3d world
+            let (entities2d, world) = World.getEntitiesInPlay2d CachedHashSet2d world
+            let entities = Seq.append entities3d entities2d
+#endif
+            PreUpdateGatherTimer.Stop ()
+
+            // pre-update game
+            PreUpdateGameTimer.Start ()
+            let world = World.preUpdateGame world
+            PreUpdateGameTimer.Stop ()
+
+            // pre-update screens
+            PreUpdateScreensTimer.Start ()
+            let world = List.fold (fun world screen -> World.preUpdateScreen screen world) world screens
+            PreUpdateScreensTimer.Stop ()
+
+            // pre-update groups
+            PreUpdateGroupsTimer.Start ()
+            let world = Seq.fold (fun world group -> World.preUpdateGroup group world) world groups
+            PreUpdateGroupsTimer.Stop ()
+
+#if !DISABLE_ENTITY_PRE_UPDATE
+            // pre-update entities
+            PreUpdateEntitiesTimer.Start ()
+            let advancing = World.getAdvancing world
+            let world =
+                Seq.fold (fun world (entity : Entity) ->
+                    if not (entity.GetStatic world) && (entity.GetAlwaysUpdate world || advancing)
+                    then World.preUpdateEntity entity world
+                    else world)
+                    world
+                    entities
+            PreUpdateEntitiesTimer.Stop ()
+
+            // clear cached hash sets
+            CachedHashSet3d.Clear ()
+            CachedHashSet2d.Clear ()
+#endif
+
+            // fin
+            world
 
         static member private updateSimulants world =
 
