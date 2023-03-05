@@ -396,8 +396,8 @@ module WorldModule3 =
                  StaticSpriteFacet () :> Facet
                  AnimatedSpriteFacet () :> Facet
                  TextFacet () :> Facet
-                 BasicEmitter2dFacet () :> Facet
-                 Effect2dFacet () :> Facet
+                 BasicEmitterFacet2d () :> Facet
+                 EffectFacet2d () :> Facet
                  RigidBodyFacet () :> Facet
                  JointFacet () :> Facet
                  TileMapFacet () :> Facet

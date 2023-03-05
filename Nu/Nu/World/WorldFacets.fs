@@ -314,7 +314,7 @@ module TextFacetModule =
             else world
 
 [<AutoOpen>]
-module BasicEmitter2dFacetModule =
+module BasicEmitterFacet2dModule =
 
     type Entity with
 
@@ -355,7 +355,7 @@ module BasicEmitter2dFacetModule =
         member this.SetParticleSystem (value : ParticleSystem) world = this.Set (nameof this.ParticleSystem) value world
         member this.ParticleSystem = lens (nameof this.ParticleSystem) this this.GetParticleSystem this.SetParticleSystem
 
-    type BasicEmitter2dFacet () =
+    type BasicEmitterFacet2d () =
         inherit Facet (false)
 
         static let tryMakeEmitter (entity : Entity) world =
@@ -554,7 +554,7 @@ module BasicEmitter2dFacetModule =
             World.enqueueRenderLayeredMessages2d particlesMessages world
 
 [<AutoOpen>]
-module Effect2dFacetModule =
+module EffectFacet2dModule =
 
     type EffectTags =
         Map<string, Effects.Slice>
@@ -601,7 +601,7 @@ module Effect2dFacetModule =
             let time = World.getGameTime world
             time - startTime
 
-    type Effect2dFacet () =
+    type EffectFacet2d () =
         inherit Facet (false)
 
         static let updateParticleSystem updater (entity : Entity) world =

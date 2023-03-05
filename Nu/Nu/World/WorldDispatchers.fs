@@ -779,7 +779,7 @@ module BasicEmitterDispatcher2dModule =
         inherit EntityDispatcher2d (false, true, false)
 
         static member Facets =
-            [typeof<BasicEmitter2dFacet>]
+            [typeof<BasicEmitterFacet2d>]
 
         static member Properties =
             [define Entity.Centered true]
@@ -791,7 +791,7 @@ module EffectDispatcher2dModule =
         inherit EntityDispatcher2d (false, true, false)
 
         static member Facets =
-            [typeof<Effect2dFacet>]
+            [typeof<EffectFacet2d>]
 
         static member Properties =
             [define Entity.Centered true
