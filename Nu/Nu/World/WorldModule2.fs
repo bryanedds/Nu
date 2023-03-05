@@ -1088,86 +1088,92 @@ module WorldModule2 =
                             PhysicsTimer.Stop ()
                             match World.getLiveness world with
                             | Live ->
-                                UpdateTimer.Start ()
-                                let world = World.updateSimulants world
-                                UpdateTimer.Stop ()
+                                PreUpdateTimer.Start ()
+                                let world = World.preUpdateSimulants world
+                                PreUpdateTimer.Stop ()
                                 match World.getLiveness world with
                                 | Live ->
-                                    PostUpdateTimer.Start ()
-                                    let world = World.postUpdateSimulants world
-                                    PostUpdateTimer.Stop ()
+                                    UpdateTimer.Start ()
+                                    let world = World.updateSimulants world
+                                    UpdateTimer.Stop ()
                                     match World.getLiveness world with
                                     | Live ->
-                                        PerProcessTimer.Start ()
-                                        let world = perProcess world
-                                        PerProcessTimer.Stop ()
+                                        PostUpdateTimer.Start ()
+                                        let world = World.postUpdateSimulants world
+                                        PostUpdateTimer.Stop ()
                                         match World.getLiveness world with
                                         | Live ->
-                                            TaskletsTimer.Start ()
-                                            WorldModule.TaskletProcessingStarted <- true
-                                            let world = World.processTasklets world
-                                            TaskletsTimer.Stop ()
+                                            PerProcessTimer.Start ()
+                                            let world = perProcess world
+                                            PerProcessTimer.Stop ()
                                             match World.getLiveness world with
                                             | Live ->
-                                                DestructionTimer.Start ()
-                                                let world = World.destroySimulants world
-                                                DestructionTimer.Stop ()
+                                                TaskletsTimer.Start ()
+                                                WorldModule.TaskletProcessingStarted <- true
+                                                let world = World.processTasklets world
+                                                TaskletsTimer.Stop ()
                                                 match World.getLiveness world with
                                                 | Live ->
-                                                    PostProcessTimer.Start ()
-                                                    let world = World.postProcess world
-                                                    let world = postProcess world
-                                                    PostProcessTimer.Stop ()
+                                                    DestructionTimer.Start ()
+                                                    let world = World.destroySimulants world
+                                                    DestructionTimer.Stop ()
                                                     match World.getLiveness world with
                                                     | Live ->
-                                                        RenderTimer.Start ()
-                                                        let world = World.renderSimulants world
-                                                        RenderTimer.Stop ()
+                                                        PostProcessTimer.Start ()
+                                                        let world = World.postProcess world
+                                                        let world = postProcess world
+                                                        PostProcessTimer.Stop ()
                                                         match World.getLiveness world with
                                                         | Live ->
+                                                            RenderTimer.Start ()
+                                                            let world = World.renderSimulants world
+                                                            RenderTimer.Stop ()
+                                                            match World.getLiveness world with
+                                                            | Live ->
 
-                                                            // process audio
-                                                            AudioTimer.Start ()
-                                                            let world =
-                                                                if SDL.SDL_WasInit SDL.SDL_INIT_AUDIO <> 0u then
-                                                                    let audioPlayer = World.getAudioPlayer world
-                                                                    let audioMessages = audioPlayer.PopMessages ()
-                                                                    audioPlayer.Play audioMessages
-                                                                    world
-                                                                else world
-                                                            AudioTimer.Stop ()
+                                                                // process audio
+                                                                AudioTimer.Start ()
+                                                                let world =
+                                                                    if SDL.SDL_WasInit SDL.SDL_INIT_AUDIO <> 0u then
+                                                                        let audioPlayer = World.getAudioPlayer world
+                                                                        let audioMessages = audioPlayer.PopMessages ()
+                                                                        audioPlayer.Play audioMessages
+                                                                        world
+                                                                    else world
+                                                                AudioTimer.Stop ()
 
-                                                            // process rendering (1/2)
-                                                            let rendererProcess = World.getRendererProcess world
-                                                            if not firstFrame then rendererProcess.Swap ()
+                                                                // process rendering (1/2)
+                                                                let rendererProcess = World.getRendererProcess world
+                                                                if not firstFrame then rendererProcess.Swap ()
 
-                                                            // avoid updating faster than desired FPS
-                                                            if FrameTimer.IsRunning then
-                                                                let frameTimeSlop =
-                                                                    Constants.GameTime.DesiredFrameTimeSlop
-                                                                let frameTimeMinimum =
-                                                                    match Constants.GameTime.DesiredFrameRate with
-                                                                    | StaticFrameRate frameRate -> 1.0 / double frameRate - frameTimeSlop
-                                                                    | DynamicFrameRate (Some frameRate) -> 1.0 / double frameRate - frameTimeSlop
-                                                                    | DynamicFrameRate None -> Constants.GameTime.DesiredFrameTimeMinimum - frameTimeSlop
-                                                                while let e = FrameTimer.Elapsed in e.TotalSeconds < frameTimeMinimum do
-                                                                    Thread.Yield () |> ignore<bool> // use Yield rather than Sleep for precision
-                                                            FrameTimer.Restart ()
+                                                                // avoid updating faster than desired FPS
+                                                                if FrameTimer.IsRunning then
+                                                                    let frameTimeSlop =
+                                                                        Constants.GameTime.DesiredFrameTimeSlop
+                                                                    let frameTimeMinimum =
+                                                                        match Constants.GameTime.DesiredFrameRate with
+                                                                        | StaticFrameRate frameRate -> 1.0 / double frameRate - frameTimeSlop
+                                                                        | DynamicFrameRate (Some frameRate) -> 1.0 / double frameRate - frameTimeSlop
+                                                                        | DynamicFrameRate None -> Constants.GameTime.DesiredFrameTimeMinimum - frameTimeSlop
+                                                                    while let e = FrameTimer.Elapsed in e.TotalSeconds < frameTimeMinimum do
+                                                                        Thread.Yield () |> ignore<bool> // use Yield rather than Sleep for precision
+                                                                FrameTimer.Restart ()
 
-                                                            // process rendering (2/2)
-                                                            rendererProcess.SubmitMessages
-                                                                (World.getEyeCenter3d world)
-                                                                (World.getEyeRotation3d world)
-                                                                (World.getEyeCenter2d world)
-                                                                (World.getEyeSize2d world)
-                                                                (World.getWindowSize world)
+                                                                // process rendering (2/2)
+                                                                rendererProcess.SubmitMessages
+                                                                    (World.getEyeCenter3d world)
+                                                                    (World.getEyeRotation3d world)
+                                                                    (World.getEyeCenter2d world)
+                                                                    (World.getEyeSize2d world)
+                                                                    (World.getWindowSize world)
 
-                                                            // update counters and recur
-                                                            TotalTimer.Stop ()
-                                                            let world = World.updateTime world
-                                                            WorldModule.TaskletProcessingStarted <- false
-                                                            World.runWithoutCleanUp runWhile preProcess perProcess postProcess sdlDeps liveness false world
+                                                                // update counters and recur
+                                                                TotalTimer.Stop ()
+                                                                let world = World.updateTime world
+                                                                WorldModule.TaskletProcessingStarted <- false
+                                                                World.runWithoutCleanUp runWhile preProcess perProcess postProcess sdlDeps liveness false world
 
+                                                            | Dead -> world
                                                         | Dead -> world
                                                     | Dead -> world
                                                 | Dead -> world
