@@ -227,12 +227,11 @@ module EffectDescriptor =
           Definitions = definitions
           Content = content }
 
+    /// The default effect descriptor.
+    let defaultDispatcher = make Constants.Engine.EffectNameDefault None Map.empty (Effects.Contents (Effects.Shift 0.0f, [||]))
+
     /// The empty effect descriptor.
-    let empty =
-        { EffectName = Constants.Engine.EffectNameDefault
-          LifeTimeOpt = None
-          Definitions = Map.empty
-          Content = Effects.Contents (Effects.Shift 0.0f, [||]) }
+    let empty = make "" None Map.empty (Effects.Contents (Effects.Shift 0.0f, [||]))
 
 [<RequireQualifiedAccess>]
 module EffectSystem =
