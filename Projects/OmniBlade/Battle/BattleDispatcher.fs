@@ -782,12 +782,13 @@ module BattleDispatcher =
             match message with
             | Update ->
 
-                // update ride tags
-                let rideTags =
-                    if Simulants.BattleSceneRide.Exists world
-                    then Simulants.BattleSceneRide.GetEffectTags world
-                    else Map.empty
-                let battle = Battle.updateRideTags (constant rideTags) battle
+                // NOTE: rides dummied out until implemented properly.
+                //// update ride tags
+                //let rideTags =
+                //    if Simulants.BattleSceneRide.Exists world
+                //    then Simulants.BattleSceneRide.GetEffectTags world
+                //    else Map.empty
+                //let battle = Battle.updateRideTags (constant rideTags) battle
 
                 // advance battle
                 let (signals, battle) = 
