@@ -104,6 +104,7 @@ module Effect =
             (match ParticleSystem.getLiveness time particleSystem with Live -> false | Dead -> true)
         | None -> false
 
+    /// Run a live effect, applying side-effects such as issuing rendering and audio commands as needed.
     let run effect (world : World) =
 
         // run if not exhausted
@@ -198,6 +199,7 @@ module Effect =
         // exhausted
         else (true, effect, world)
 
+    /// Make a live effect.
     let makePlus startTime centered offset transform particleSystem historyMax definitions descriptor =
         { StartTime_ = startTime
           Centered_ = centered
@@ -210,9 +212,11 @@ module Effect =
           Tags_ = Map.empty
           Descriptor_ = descriptor }
 
+    /// Make a live effect.
     let make startTime offset transform descriptor =
         makePlus startTime true offset transform ParticleSystem.empty Constants.Effects.EffectHistoryMaxDefault Map.empty descriptor
 
+    /// Make an empty live effect.
     let makeEmpty () =
         make GameTime.zero v3Zero (Transform.makeEmpty ()) EffectDescriptor.empty
 
