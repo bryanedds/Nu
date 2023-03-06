@@ -901,6 +901,7 @@ module BattleDispatcher =
                 let world = entity.SetEffectDescriptor descriptor world
                 let world = entity.SetEffectOffset v3Zero world
                 let world = entity.SetSelfDestruct true world
+                let world = entity.SetRunMode RunOnPreUpdate world
                 just world
 
             | DisplayCircle (position, radius) ->
@@ -909,6 +910,7 @@ module BattleDispatcher =
                 let world = entity.SetPosition position world
                 let world = entity.SetEffectDescriptor descriptor world
                 let world = entity.SetSelfDestruct true world
+                let world = entity.SetRunMode RunOnPreUpdate world
                 just world
 
             | DisplayCancel targetIndex ->

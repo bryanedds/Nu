@@ -557,11 +557,17 @@ module BasicEmitterFacet2dModule =
 [<AutoOpen>]
 module EffectFacet2dModule =
 
-    type EffectTags =
-        Map<string, Effects.Slice>
+    type RunMode =
+        | RunOnPreUpdate
+        | RunOnUpdate
+        | RunOnPostUpdate
+        | RunOnRender
 
     type Entity with
 
+        member this.GetRunMode world : RunMode = this.Get (nameof this.RunMode) world
+        member this.SetRunMode (value : RunMode) world = this.Set (nameof this.RunMode) value world
+        member this.RunMode = lens (nameof this.RunMode) this this.GetRunMode this.SetRunMode
         member this.GetEffectSymbolOpt world : Symbol AssetTag option = this.Get (nameof this.EffectSymbolOpt) world
         member this.SetEffectSymbolOpt (value : Symbol AssetTag option) world = this.Set (nameof this.EffectSymbolOpt) value world
         member this.EffectSymbolOpt = lens (nameof this.EffectSymbolOpt) this this.GetEffectSymbolOpt this.SetEffectSymbolOpt
@@ -574,19 +580,19 @@ module EffectFacet2dModule =
         member this.GetEffectDescriptor world : EffectDescriptor = this.Get (nameof this.EffectDescriptor) world
         member this.SetEffectDescriptor (value : EffectDescriptor) world = this.Set (nameof this.EffectDescriptor) value world
         member this.EffectDescriptor = lens (nameof this.EffectDescriptor) this this.GetEffectDescriptor this.SetEffectDescriptor
-        member this.GetEffectOffset world : Vector3 = this.Get (nameof this.EffectOffset) world
-        member this.SetEffectOffset (value : Vector3) world = this.Set (nameof this.EffectOffset) value world
-        member this.EffectOffset = lens (nameof this.EffectOffset) this this.GetEffectOffset this.SetEffectOffset
         member this.GetEffectCentered world : bool = this.Get (nameof this.EffectCentered) world
         member this.SetEffectCentered (value : bool) world = this.Set (nameof this.EffectCentered) value world
         member this.EffectCentered = lens (nameof this.EffectCentered) this this.GetEffectCentered this.SetEffectCentered
+        member this.GetEffectOffset world : Vector3 = this.Get (nameof this.EffectOffset) world
+        member this.SetEffectOffset (value : Vector3) world = this.Set (nameof this.EffectOffset) value world
+        member this.EffectOffset = lens (nameof this.EffectOffset) this this.GetEffectOffset this.SetEffectOffset
         member this.GetEffectHistoryMax world : int = this.Get (nameof this.EffectHistoryMax) world
         member this.SetEffectHistoryMax (value : int) world = this.Set (nameof this.EffectHistoryMax) value world
         member this.EffectHistoryMax = lens (nameof this.EffectHistoryMax) this this.GetEffectHistoryMax this.SetEffectHistoryMax
         member this.GetEffectHistory world : Effects.Slice Nito.Collections.Deque = this.Get (nameof this.EffectHistory) world
         member this.EffectHistory = lensReadOnly (nameof this.EffectHistory) this this.GetEffectHistory
-        member this.GetEffectTags world : EffectTags = this.Get (nameof this.EffectTags) world
-        member this.SetEffectTags (value : EffectTags) world = this.Set (nameof this.EffectTags) value world
+        member this.GetEffectTags world : Map<string, Effects.Slice> = this.Get (nameof this.EffectTags) world
+        member this.SetEffectTags (value : Map<string, Effects.Slice>) world = this.Set (nameof this.EffectTags) value world
         member this.EffectTags = lens (nameof this.EffectTags) this this.GetEffectTags this.SetEffectTags
 
         /// The start time of the effect, or zero if none.
@@ -607,30 +613,7 @@ module EffectFacet2dModule =
                 | None -> world
             | None -> world
 
-        static let handleEffectsChanged evt world =
-            let entity = evt.Subscriber : Entity
-            let world = setEffect (entity.GetEffectSymbolOpt world) entity world
-            (Cascade, world)
-
-        static let handleAssetsReload evt world =
-            let entity = evt.Subscriber : Entity
-            let world = setEffect (entity.GetEffectSymbolOpt world) entity world
-            (Cascade, world)
-
-        static member Properties =
-            [define Entity.ParticleSystem ParticleSystem.empty
-             define Entity.SelfDestruct false
-             define Entity.EffectSymbolOpt None
-             define Entity.EffectStartTimeOpt None
-             define Entity.EffectDefinitions Map.empty
-             define Entity.EffectDescriptor EffectDescriptor.empty
-             define Entity.EffectOffset v3Zero
-             define Entity.EffectCentered true
-             define Entity.EffectHistoryMax Constants.Effects.EffectHistoryMaxDefault
-             variable Entity.EffectHistory (fun _ -> Nito.Collections.Deque<Effects.Slice> (inc Constants.Effects.EffectHistoryMaxDefault))
-             nonPersistent Entity.EffectTags Map.empty]
-
-        override this.Render (entity, world) =
+        static let run (entity : Entity) world =
 
             // make effect
             let effect =
@@ -653,11 +636,90 @@ module EffectFacet2dModule =
             then World.destroyEntity entity world
             else world
 
+        static let handleEffectsChanged evt world =
+            let entity = evt.Subscriber : Entity
+            let world = setEffect (entity.GetEffectSymbolOpt world) entity world
+            (Cascade, world)
+
+        static let handleAssetsReload evt world =
+            let entity = evt.Subscriber : Entity
+            let world = setEffect (entity.GetEffectSymbolOpt world) entity world
+            (Cascade, world)
+
+#if DISABLE_ENTITY_PRE_UPDATE
+        static let handleRunOnPreUpdate evt world =
+            let entity = evt.Subscriber : Entity
+            let world =
+                if entity.GetEnabled world then
+                    match entity.GetRunMode world with
+                    | RunOnPreUpdate -> run entity world
+                    | _ -> world
+                else world
+            (Cascade, world)
+#endif
+
+#if DISABLE_ENTITY_POST_UPDATE
+        static let handleRunOnPostUpdate evt world =
+            let entity = evt.Subscriber : Entity
+            let world =
+                if entity.GetEnabled world then
+                    match entity.GetRunMode world with
+                    | RunOnPostUpdate -> run entity world
+                    | _ -> world
+                else world
+            (Cascade, world)
+#endif
+
+        static member Properties =
+            [define Entity.ParticleSystem ParticleSystem.empty
+             define Entity.SelfDestruct false
+             define Entity.RunMode RunOnRender
+             define Entity.EffectSymbolOpt None
+             define Entity.EffectStartTimeOpt None
+             define Entity.EffectDefinitions Map.empty
+             define Entity.EffectDescriptor EffectDescriptor.empty
+             define Entity.EffectCentered true
+             define Entity.EffectOffset v3Zero
+             define Entity.EffectHistoryMax Constants.Effects.EffectHistoryMaxDefault
+             variable Entity.EffectHistory (fun _ -> Nito.Collections.Deque<Effects.Slice> (inc Constants.Effects.EffectHistoryMaxDefault))
+             nonPersistent Entity.EffectTags Map.empty]
+
+#if !DISABLE_ENTITY_PRE_UPDATE
+        override this.PreUpdate (entity, world) =
+            if entity.GetEnabled world && entity.GetRunMode world = RunOnPreUpdate
+            then run entity world
+            else world
+#endif
+
+        override this.Update (entity, world) =
+            if entity.GetEnabled world && entity.GetRunMode world = RunOnUpdate
+            then run entity world
+            else world
+
+#if !DISABLE_ENTITY_POST_UPDATE
+        override this.PostUpdate (entity, world) =
+            if entity.GetEnabled world && entity.GetRunMode world = RunOnPostUpdate
+            then run entity world
+            else world
+#endif
+
+        override this.Render (entity, world) =
+            if entity.GetEnabled world && entity.GetRunMode world = RunOnRender
+            then run entity world
+            else world
+
         override this.Register (entity, world) =
             let effectStartTime = Option.defaultValue (World.getGameTime world) (entity.GetEffectStartTimeOpt world)
             let world = entity.SetEffectStartTimeOpt (Some effectStartTime) world
             let world = World.monitor handleEffectsChanged (entity.GetChangeEvent (nameof entity.EffectSymbolOpt)) entity world
-            World.monitor handleAssetsReload Events.AssetsReload entity world
+            let world = World.monitor handleAssetsReload Events.AssetsReload entity world
+#if DISABLE_ENTITY_PRE_UPDATE
+            let world = World.monitor handleRunOnPreUpdate entity.Group.PreUpdateEvent entity world
+#endif
+#if DISABLE_ENTITY_POST_UPDATE
+            let world = World.monitor handleRunOnPostUpdate entity.Group.PostUpdateEvent entity world
+#endif
+            world
 
 [<AutoOpen>]
 module RigidBodyFacetModule =
