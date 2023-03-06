@@ -9,35 +9,9 @@ open Nu.Effects
 open OmniBlade
 
 [<RequireQualifiedAccess>]
-module Effects =
+module EffectDescriptors =
 
-    let Hop (start, stop, height, hopLength) =
-        Aspects
-            [|Positions
-                (Sum, Linear, Once,
-                 [|{ TweenValue = start; TweenLength = hopLength }
-                   { TweenValue = stop; TweenLength = 0L }|])
-              Positions
-                (Sum, SinScaled 0.5f, Once,
-                 [|{ TweenValue = v3Zero; TweenLength = hopLength }
-                   { TweenValue = v3 0.0f height 0.0f; TweenLength = 0L }|])|]
-
-    let Circle (radius, repetitions, length) =
-        Aspects
-            [|Positions
-               (Sum, SinScaled repetitions, Once,
-                [|{ TweenValue = v3Zero; TweenLength = length }
-                  { TweenValue = v3 -radius 0.0f 0.0f; TweenLength = 0L }|])
-              Positions
-               (Sum, CosScaled repetitions, Once,
-                [|{ TweenValue = v3Zero; TweenLength = length }
-                  { TweenValue = v3 0.0f -radius 0.0f; TweenLength = 0L }|])
-              Positions
-               (Sum, Constant, Once,
-                [|{ TweenValue = v3 0.0f radius 0.0f; TweenLength = length }
-                  { TweenValue = v3 0.0f radius 0.0f; TweenLength = 0L }|])|]
-
-    let makeHitPointsChangeEffect delta =
+    let hitPointsChange delta =
         let colorOpaque =
             if delta < 0
             then color8 (byte 255) (byte 255) (byte 255) (byte 255)
@@ -64,7 +38,7 @@ module Effects =
                        { TweenValue = colorTransparent; TweenLength = 0L }|])|],
                  Nil) }
 
-    let makeCancelEffect () =
+    let cancel () =
         { EffectName = "Cancel"
           LifeTimeOpt = Some 40L
           Definitions = Map.empty
@@ -83,7 +57,7 @@ module Effects =
                        { TweenValue = v3 156.0f 48.0f 0.0f; TweenLength = 0L }|])|],
                  Nil) }
 
-    let makeBoltEffect () =
+    let bolt () =
         let boltSprite =
             StaticSprite
                 (Resource (AssetTag.toPair Assets.Battle.BoltAnimationSheet),
@@ -126,7 +100,7 @@ module Effects =
                    Delay (10L, explosionSprite)
                    Delay (10L, thunderSoundEffect)|]) }
 
-    let makeImpactSplashEffect () =
+    let impactSplash () =
         { EffectName = "ImpactSplash"
           LifeTimeOpt = Some 24L
           Definitions = Map.empty
@@ -144,7 +118,7 @@ module Effects =
                      [|PositionRelative (v3 48.0f 0.0f 0.0f); Size (v3 96.0f 96.0f 0.0f); Flip FlipNone|],
                      Nil)|]) }
 
-    let makeCutEffect light =
+    let cut light =
         let image = if light then Assets.Battle.LightCutImage else Assets.Battle.CutImage
         { EffectName = "Cut"
           LifeTimeOpt = Some 24L
@@ -158,7 +132,7 @@ module Effects =
                       { TweenValue = Color.One.WithA8 (byte 0); TweenLength = 0L }|])|],
                 Nil) }
 
-    let makeSlashSpikeEffect position position2 =
+    let slashSpike position position2 =
         let spike = AnimatedSprite (Resource (AssetTag.toPair Assets.Battle.SpikeAnimationSheet), v2i 32 32, 5, 5, 3L, Once, [||], Nil)
         let emit =
             Emit
@@ -172,7 +146,7 @@ module Effects =
           Definitions = Map.empty
           Content = emit }
 
-    let makeCycloneBlurEffect radius =
+    let cycloneBlur radius =
         { EffectName = "CycloneBlur"
           LifeTimeOpt = Some 98L
           Definitions = Map.empty
@@ -183,7 +157,7 @@ module Effects =
                 [|Circle (radius, 2.0f, 98L); Size (v3 234.0f 234.0f 0.0f)|],
                 Nil) }
 
-    let makeArcaneCastEffect () =
+    let arcaneCast () =
         let halfWidth = 50.0f
         let altitude = halfWidth * 2.0f * 0.866f
         let candle position = AnimatedSprite (Resource (AssetTag.toPair Assets.Battle.CandleAnimationSheet), v2i 16 20, 3, 3, 5L, Loop, [|Size (v3 64.0f 80.0f 0.0f); position|], Nil)
@@ -201,7 +175,7 @@ module Effects =
                    staticEffect (PositionRelative (v3 -25.0f 50.0f 0.0f)) (Degrees (v3 0.0f 0.0f 30.0f))
                    staticEffect (PositionRelative (v3 25.0f 50.0f 0.0f)) (Degrees (v3 0.0f 0.0f -30.0f))|]) }
 
-    let makeFireEffect position position2 =
+    let fire position position2 =
         let fireSize = Size (v3 64.0f 64.0f 0.0f)
         let activation timeOn timeOff = Enableds (Equal, Once, [|{ LogicValue = true; LogicLength = timeOn}; { LogicValue = false; LogicLength = timeOff }|])
         let linearTravel position position2 duration = Positions (Set, EaseOut, Once, [|{ TweenValue = position; TweenLength = duration }; { TweenValue = position2; TweenLength = 0L }|])
@@ -228,7 +202,7 @@ module Effects =
                    Delay (40L, fireball (Aspects [|linearTravel position position2 20L|]) (activation 20L 40L))
                    Delay (60L, Emit (Shift 0.0f, Rate 0.1f, [||], [|linearTravel position2 (position2 + (v3 0.0f 70.0f 0.0f)) 20L|], burn))|]) }
 
-    let makeFlameEffect position position2 =
+    let flame position position2 =
         { EffectName = "Flame"
           LifeTimeOpt = Some 100L
           Definitions = Map.empty
@@ -243,7 +217,7 @@ module Effects =
                    Color (Color.One.WithA8 (byte 207))|],
                  AnimatedSprite (Resource (AssetTag.toPair Assets.Battle.FlameAnimationSheet), v2i 64 64, 6, 6, 6L, Once, [||], Nil))}
 
-    let makeIceEffect () =
+    let ice () =
         let coverRadius = 50.0f
         let bombardActivation = Enableds (Equal, Once, [|{ LogicValue = true; LogicLength = 10L };{ LogicValue = false; LogicLength = 0L }|])
         let bombardTravel origin = Positions (Sum, Linear, Once, [|{ TweenValue = origin; TweenLength = 10L };{ TweenValue = v3Zero; TweenLength = 0L }|])
@@ -271,7 +245,7 @@ module Effects =
                    iceBombard (v3 500.0f 500.0f 0.0f)
                    iceBombard (v3 500.0f -500.0f 0.0f)|])}
 
-    let makeSnowballEffect () =
+    let snowball () =
         let fall = Positions (Sum, Linear, Once, [|{ TweenValue = v3 0.0f 800.0f 0.0f; TweenLength = 80L };{ TweenValue = v3 0.0f -800.0f 0.0f; TweenLength = 0L }|])
         let rotate =
             Degreeses (Set, Constant, Loop,
@@ -287,7 +261,7 @@ module Effects =
                (Resource (AssetTag.toPair Assets.Battle.SnowballImage),
                 [|Size (v3 432.0f 432.0f 0.0f); fall; rotate|], Nil) }
 
-    let makeHolyCastEffect () =
+    let holyCast () =
         { EffectName = "HolyCast"
           LifeTimeOpt = Some 36L
           Definitions = Map.empty
@@ -296,7 +270,7 @@ module Effects =
                (Resource (AssetTag.toPair Assets.Battle.HolyCastAnimationSheet),
                 v2i 100 100, 6, 36, 1L, Once, [||], Nil) }
 
-    let makePurifyEffect () =
+    let purify () =
         let sprite position =
             AnimatedSprite
              (Resource (AssetTag.toPair Assets.Battle.PurifyAnimationSheet),
@@ -311,7 +285,7 @@ module Effects =
                    Delay (12L, sprite (v3 -16.0f 64.0f 0.0f));
                    Delay (24L, sprite (v3 16.0f 32.0f 0.0f))|])}
 
-    let makeCureEffect () =
+    let cure () =
         let path =
             Aspects
                 [|Positions
@@ -334,7 +308,7 @@ module Effects =
           Definitions = Map.empty
           Content = Emit (Shift 0.0f, Rate 0.2f, [|path|], [||], sparkle)}
 
-    let makeProtectEffect () =
+    let protect () =
         let protection aspects = StaticSprite (Resource (AssetTag.toPair Assets.Battle.ProtectSphereImage), aspects, Nil)
         let blink = Enableds (Equal, Loop, [|{ LogicValue = true; LogicLength = 1L };{ LogicValue = false; LogicLength = 2L }|])
         let outwardReach = 64.0f
@@ -359,7 +333,7 @@ module Effects =
                              protection [|blink; outwardMovement (v3 -outwardReach -outwardReach 0.0f); bend (v3 0.0f clockwiseBias 0.0f)|]
                              protection [|blink; outwardMovement (v3 -outwardReach outwardReach 0.0f); bend (v3 clockwiseBias 0.0f 0.0f)|]|])))|])}
 
-    let makeDimensionalCastEffect () =
+    let dimensionalCast () =
         let length = 60L
         let electronSize = Size (v3 9.0f 9.0f 0.0f)
         let nonLocationSize = Size (v3 3.0f 3.0f 0.0f)
@@ -396,7 +370,7 @@ module Effects =
                      StaticSprite (Resource (AssetTag.toPair Assets.Battle.ElectronGreenImage), [|orbitV; electronSize; positionAdjustY|], Nil);
                      Emit (Shift 0.0f, Rate 1.0f, [|orbitV; positionAdjustY|], [||], StaticSprite (Resource (AssetTag.toPair Assets.Battle.NonLocationGreenImage), [|nonLocationSize; fade|], Nil))|])}
 
-    let makeBuffEffect statusType =
+    let buff statusType =
         let image =
             match statusType with
             | Power (_, _) -> Assets.Battle.PowerBuffImage
@@ -418,7 +392,7 @@ module Effects =
                   (Shift 0.0f,
                    [|StaticSprite (Resource (AssetTag.toPair image), [|shrink; PositionRelative (v3 0.0f 32.0f 0.0f)|], Nil)|])}
 
-    let makeDebuffEffect statusType =
+    let debuff statusType =
         let image =
             match statusType with
             | Power (_, _) -> Assets.Battle.PowerDebuffImage
@@ -440,7 +414,7 @@ module Effects =
                   (Shift 0.0f,
                    [|StaticSprite (Resource (AssetTag.toPair image), [|shrink; PositionRelative (v3 0.0f 32.0f 0.0f)|], Nil)|])}
 
-    let makeConjureIfritEffect () =
+    let conjureIfrit () =
         let fireSpinSize = Size (v3 600.0f 600.0f 0.0f)
         let fireSpin aspects =
             AnimatedSprite
@@ -457,13 +431,13 @@ module Effects =
                      fireSpin [|fireSpinSize; PositionAbsolute (v3 -144.0f -111.0f 0.0f)|]
                      fireSpin [|fireSpinSize; PositionAbsolute (v3 144.0f -111.0f 0.0f)|]|])}
 
-    let makeHopEffect start stop =
+    let hop start stop =
         { EffectName = "Hop"
           LifeTimeOpt = Some 20L // +2 due to rendering / update order
           Definitions = Map.empty
           Content = Tag ("Tag", [|Hop (start, stop, 24.0f, 18L)|], Nil) }
 
-    let makeCircleEffect radius =
+    let circle radius =
         { EffectName = "Circle"
           LifeTimeOpt = Some 100L // +2 due to rendering / update order
           Definitions = Map.empty
