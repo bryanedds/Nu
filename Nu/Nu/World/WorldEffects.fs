@@ -98,9 +98,9 @@ module Effect =
         let particleSystem = effect.ParticleSystem_
         let effectDescriptor = effect.Descriptor_
         match effectDescriptor.LifeTimeOpt with
-        | Some lifetime ->
-            let effectTime = effect.StartTime_
-            effectTime >= lifetime - delta &&
+        | Some lifeTime ->
+            let localTime = time - effect.StartTime_
+            localTime >= lifeTime - delta &&
             (match ParticleSystem.getLiveness time particleSystem with Live -> false | Dead -> true)
         | None -> false
 
@@ -112,8 +112,8 @@ module Effect =
 
             // set up effect system to evaluate effect
             let time = world.GameTime
-            let delta = world.GameDelta
             let localTime = time - effect.StartTime_
+            let delta = world.GameDelta
             let mutable transform = effect.Transform_
             let effectSlice =
                 { Effects.Position = transform.Position

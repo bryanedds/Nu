@@ -592,12 +592,6 @@ module EffectFacet2dModule =
             | Some effectStartTime -> effectStartTime
             | None -> GameTime.zero
 
-        /// The time relative to the start of the effect.
-        member this.GetEffectTime world =
-            let startTime = this.GetEffectStartTime world
-            let time = World.getGameTime world
-            time - startTime
-
     type EffectFacet2d () =
         inherit Facet (false)
 
@@ -637,7 +631,7 @@ module EffectFacet2dModule =
             // make effect
             let effect =
                 Effect.makePlus
-                    (entity.GetEffectTime world)
+                    (entity.GetEffectStartTime world)
                     (entity.GetEffectCentered world)
                     (entity.GetEffectOffset world)
                     (entity.GetTransform world)
