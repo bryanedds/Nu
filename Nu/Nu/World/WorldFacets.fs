@@ -584,7 +584,6 @@ module EffectFacet2dModule =
         member this.SetEffectHistoryMax (value : int) world = this.Set (nameof this.EffectHistoryMax) value world
         member this.EffectHistoryMax = lens (nameof this.EffectHistoryMax) this this.GetEffectHistoryMax this.SetEffectHistoryMax
         member this.GetEffectHistory world : Effects.Slice Nito.Collections.Deque = this.Get (nameof this.EffectHistory) world
-        member private this.SetEffectHistory (value : Effects.Slice Nito.Collections.Deque) world = this.Set (nameof this.EffectHistory) value world
         member this.EffectHistory = lensReadOnly (nameof this.EffectHistory) this this.GetEffectHistory
 
         /// The start time of the effect, or zero if none.
