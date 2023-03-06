@@ -331,12 +331,14 @@ module Nu =
                 | :? Game as game -> (game.GetDispatcher world).TrySignal (signalObj, game, world)
                 | _ -> failwithumf ()
 
-            // init miscellaneous F# reach-arounds
+            // init life-cycle F# reach-arounds
             WorldModule.register <- fun simulant world -> World.register simulant world
             WorldModule.unregister <- fun simulant world -> World.unregister simulant world
             WorldModule.destroyImmediate <- fun simulant world -> World.destroyImmediate simulant world
             WorldModule.destroy <- fun simulant world -> World.destroy simulant world
-            WorldModule.makeEmptyEffect <- fun () -> Effect.makeEmpty () :> obj
+
+            // init miscellaneous F# reach-arounds
+            WorldModule.getEmptyEffect <- fun () -> Effect.empty :> obj
 
             // init scripting
             WorldScripting.init ()

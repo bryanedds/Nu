@@ -50,7 +50,7 @@ module Effect =
 
         override this.ConvertFrom (_, _, source) =
             match source with
-            | :? Symbol -> WorldModule.makeEmptyEffect ()
+            | :? Symbol -> WorldModule.getEmptyEffect ()
             | :? Effect -> source
             | _ -> failconv "Invalid EffectConverter conversion from source." None
 
@@ -216,8 +216,8 @@ module Effect =
     let make startTime offset transform descriptor =
         makePlus startTime true offset transform ParticleSystem.empty Constants.Effects.EffectHistoryMaxDefault Map.empty descriptor
 
-    /// Make an empty live effect.
-    let makeEmpty () =
+    /// The empty live effect.
+    let empty =
         make GameTime.zero v3Zero (Transform.makeEmpty ()) EffectDescriptor.empty
 
 type Effect = Effect.Effect

@@ -111,7 +111,7 @@ module WorldModule =
     let mutable internal destroy : Simulant -> World -> World =
         Unchecked.defaultof<_>
 
-    let mutable internal makeEmptyEffect : unit -> obj =
+    let mutable internal getEmptyEffect : unit -> obj =
         Unchecked.defaultof<_>
 
     type World with // Construction
