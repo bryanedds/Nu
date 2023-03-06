@@ -27,26 +27,6 @@ module Declarative =
 open Declarative
 
 [<AutoOpen>]
-module DeclarativeOperators2 =
-
-    type World with
-
-        static member internal renderView view world =
-            match view with
-            | Render2d (elevation, horizon, assetTag, descriptor) ->
-                let message = { Elevation = elevation; Horizon = horizon; AssetTag = AssetTag.generalize assetTag; RenderDescriptor2d = descriptor }
-                World.enqueueRenderLayeredMessage2d message world
-            | Render3d renderMessage -> World.enqueueRenderMessage3d renderMessage world
-            | PlaySound (volume, assetTag) -> World.playSound volume assetTag world
-            | PlaySong (fadeIn, fadeOut, start, volume, assetTag) -> World.playSong fadeIn fadeOut start volume assetTag world
-            | FadeOutSong fade -> World.fadeOutSong fade world
-            | StopSong -> World.stopSong world
-            | SpawnEmitter (_, _) -> world
-            | Tag _ -> world
-            | Views views -> Array.fold (fun world view -> World.renderView view world) world views
-            | SegmentedViews views -> SegmentedArray.fold (fun world view -> World.renderView view world) world views
-
-[<AutoOpen>]
 module ScriptFacetModule =
 
     type Entity with
@@ -591,18 +571,15 @@ module EffectFacet2dModule =
         member this.GetEffectDefinitions world : Effects.Definitions = this.Get (nameof this.EffectDefinitions) world
         member this.SetEffectDefinitions (value : Effects.Definitions) world = this.Set (nameof this.EffectDefinitions) value world
         member this.EffectDefinitions = lens (nameof this.EffectDefinitions) this this.GetEffectDefinitions this.SetEffectDefinitions
-        member this.GetEffect world : Effect = this.Get (nameof this.Effect) world
-        member this.SetEffect (value : Effect) world = this.Set (nameof this.Effect) value world
-        member this.Effect = lens (nameof this.Effect) this this.GetEffect this.SetEffect
+        member this.GetEffectDescriptor world : EffectDescriptor = this.Get (nameof this.EffectDescriptor) world
+        member this.SetEffectDescriptor (value : EffectDescriptor) world = this.Set (nameof this.EffectDescriptor) value world
+        member this.EffectDescriptor = lens (nameof this.EffectDescriptor) this this.GetEffectDescriptor this.SetEffectDescriptor
         member this.GetEffectOffset world : Vector3 = this.Get (nameof this.EffectOffset) world
         member this.SetEffectOffset (value : Vector3) world = this.Set (nameof this.EffectOffset) value world
         member this.EffectOffset = lens (nameof this.EffectOffset) this this.GetEffectOffset this.SetEffectOffset
         member this.GetEffectCentered world : bool = this.Get (nameof this.EffectCentered) world
         member this.SetEffectCentered (value : bool) world = this.Set (nameof this.EffectCentered) value world
         member this.EffectCentered = lens (nameof this.EffectCentered) this this.GetEffectCentered this.SetEffectCentered
-        member this.GetEffectTags world : EffectTags = this.Get (nameof this.EffectTags) world
-        member private this.SetEffectTags (value : EffectTags) world = this.Set (nameof this.EffectTags) value world
-        member this.EffectTags = lensReadOnly (nameof this.EffectTags) this this.GetEffectTags
         member this.GetEffectHistoryMax world : int = this.Get (nameof this.EffectHistoryMax) world
         member this.SetEffectHistoryMax (value : int) world = this.Set (nameof this.EffectHistoryMax) value world
         member this.EffectHistoryMax = lens (nameof this.EffectHistoryMax) this this.GetEffectHistoryMax this.SetEffectHistoryMax
@@ -625,24 +602,12 @@ module EffectFacet2dModule =
     type EffectFacet2d () =
         inherit Facet (false)
 
-        static let updateParticleSystem updater (entity : Entity) world =
-            let particleSystem = entity.GetParticleSystem world
-            let particleSystem = updater particleSystem
-            let world = entity.SetParticleSystem particleSystem world
-            world
-
-        static let rec processOutput output entity world =
-            match output with
-            | Particles.OutputSound (volume, sound) -> World.enqueueAudioMessage (PlaySoundMessage { Volume = volume; Sound = sound }) world
-            | Particles.OutputEmitter (name, emitter) -> updateParticleSystem (fun ps -> { ps with Emitters = Map.add name emitter ps.Emitters }) entity world
-            | Particles.Outputs outputs -> SegmentedArray.fold (fun world output -> processOutput output entity world) world outputs
-
         static let setEffect effectSymbolOpt (entity : Entity) world =
             match effectSymbolOpt with
             | Some effectSymbol ->
                 let symbolLoadMetadata = { ImplicitDelimiters = false; StripCsvHeader = false }
-                match World.assetTagToValueOpt<Effect> effectSymbol symbolLoadMetadata world with
-                | Some effect -> entity.SetEffect effect world
+                match World.assetTagToValueOpt<EffectDescriptor> effectSymbol symbolLoadMetadata world with
+                | Some effect -> entity.SetEffectDescriptor effect world
                 | None -> world
             | None -> world
 
@@ -661,115 +626,33 @@ module EffectFacet2dModule =
              define Entity.EffectSymbolOpt None
              define Entity.EffectStartTimeOpt None
              define Entity.EffectDefinitions Map.empty
-             define Entity.Effect Effect.empty
+             define Entity.EffectDescriptor EffectDescriptor.empty
              define Entity.EffectOffset v3Zero
              define Entity.EffectCentered true
-             nonPersistent Entity.EffectTags Map.empty
              define Entity.EffectHistoryMax Constants.Effects.EffectHistoryMaxDefault
              define Entity.ParticleSystem ParticleSystem.empty
              variable Entity.EffectHistory (fun _ -> Nito.Collections.Deque<Effects.Slice> (inc Constants.Effects.EffectHistoryMaxDefault))]
 
-        override this.Update (entity, world) =
-            if entity.GetEnabled world then
-                let delta = World.getGameDelta world
-                let time = World.getGameTime world
-                let effect = entity.GetEffect world
-                let particleSystem = entity.GetParticleSystem world
-                let (particleSystem, output) = ParticleSystem.run delta time particleSystem
-                let world = entity.SetParticleSystem particleSystem world
-                let world = processOutput output entity world
-                match (entity.GetSelfDestruct world, effect.LifeTimeOpt) with
-                | (true, Some lifetime) ->
-                    let effectTime = entity.GetEffectTime world
-                    if  effectTime >= lifetime - world.GameDelta && // NOTE: keeps effect from rendering past the last frame when it is created mid-frame.
-                        (match ParticleSystem.getLiveness time particleSystem with Live -> false | Dead -> true) then
-                        World.destroyEntity entity world
-                    else world
-                | (_, _) -> world
-            else world
-
         override this.Render (entity, world) =
 
-            // set up effect system to evaluate effect
-            let time = World.getGameTime world
-            let world = entity.SetEffectTags Map.empty world
-            let mutable transform = entity.GetTransform world
-            let effect = entity.GetEffect world
-            let effectTime = entity.GetEffectTime world
-            let effectAbsolute = entity.GetAbsolute world
-            let effectSlice =
-                { Effects.Position = transform.Position
-                  Effects.Scale = transform.Scale
-                  Effects.Angles = transform.Angles
-                  Effects.Elevation = transform.Elevation
-                  Effects.Offset = entity.GetEffectOffset world
-                  Effects.Size = transform.Size
-                  Effects.Inset = Box2.Zero
-                  Effects.Color = Color.One
-                  Effects.Blend = Transparent
-                  Effects.Glow = Color.Zero
-                  Effects.Flip = FlipNone
-                  Effects.Volume = Constants.Audio.SoundVolumeDefault
-                  Effects.Enabled = true
-                  Effects.Centered = entity.GetEffectCentered world }
-            let effectHistory = entity.GetEffectHistory world
-            let effectDefinitions = entity.GetEffectDefinitions world
-            let effectSystem = EffectSystem.make effectAbsolute effectTime world.GameDelta effectDefinitions
-
-            // evaluate effect with effect system
-            let (view, _) = EffectSystem.eval effect effectSlice effectHistory effectSystem
-
-            // render effect view
-            let world = World.renderView view world
-
-            // convert view to array for storing tags and spawning emitters
-            let views = View.toSeq view
-
-            // store tags
-            let tags =
-                views |>
-                Seq.choose (function Tag (name, value) -> Some (name, value :?> Effects.Slice) | _ -> None) |>
-                Map.ofSeq
-            let world = entity.SetEffectTags tags world
-
-            // spawn emitters
-            let particleSystem =
-                views |>
-                Seq.choose (function SpawnEmitter (name, descriptor) -> Some (name, descriptor) | _ -> None) |>
-                Seq.choose (fun (name : string, descriptor : EmitterDescriptor) ->
-                    match descriptor with
-                    | :? Particles.BasicEmitterDescriptor as descriptor ->
-                        match World.tryMakeEmitter time descriptor.LifeTimeOpt descriptor.ParticleLifeTimeMaxOpt descriptor.ParticleRate descriptor.ParticleMax descriptor.Style world with
-                        | Some (:? Particles.BasicEmitter as emitter) ->
-                            let emitter =
-                                { emitter with
-                                    Body = descriptor.Body
-                                    Blend = descriptor.Blend
-                                    Image = descriptor.Image
-                                    ParticleSeed = descriptor.ParticleSeed
-                                    Constraint = descriptor.Constraint }
-                            Some (name, emitter)
-                        | _ -> None
-                    | _ -> None) |>
-                Seq.fold (fun particleSystem (name, emitter) ->
-                    ParticleSystem.add name emitter particleSystem)
+            // make effect
+            let effect =
+                Effect.makePlus
+                    (entity.GetEffectTime world)
+                    (entity.GetEffectCentered world)
+                    (entity.GetEffectOffset world)
+                    (entity.GetTransform world)
                     (entity.GetParticleSystem world)
+                    (entity.GetEffectHistoryMax world)
+                    (entity.GetEffectDefinitions world)
+                    (entity.GetEffectDescriptor world)
 
-            // render particles
-            let particlesMessages =
-                particleSystem |>
-                ParticleSystem.toParticlesDescriptors time |>
-                List.map (fun (descriptor : ParticlesDescriptor) ->
-                    { Elevation = descriptor.Elevation
-                      Horizon = descriptor.Horizon
-                      AssetTag = AssetTag.generalize descriptor.Image
-                      RenderDescriptor2d = ParticlesDescriptor descriptor })
-            let world = World.enqueueRenderLayeredMessages2d particlesMessages world
-
-            // update effect history in-place
-            effectHistory.AddToFront effectSlice
-            if effectHistory.Count > entity.GetEffectHistoryMax world then effectHistory.RemoveFromBack () |> ignore
-            world
+            // run effect, optionally destroying upon exhaustion
+            let (exhausted, effect, world) = Effect.run effect world
+            let world = entity.SetParticleSystem effect.ParticleSystem world
+            if exhausted && entity.GetSelfDestruct world
+            then World.destroyEntity entity world
+            else world
 
         override this.Register (entity, world) =
             let effectStartTime = Option.defaultValue (World.getGameTime world) (entity.GetEffectStartTimeOpt world)

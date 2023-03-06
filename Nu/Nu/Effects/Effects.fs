@@ -204,16 +204,16 @@ module Effects =
      "", "", "", "",
      Constants.PrettyPrinter.DefaultThresholdMin,
      Constants.PrettyPrinter.CompositionalThresholdMax)>]
-type Effect =
+type EffectDescriptor =
     { EffectName : string
       LifeTimeOpt : GameTime option
       Definitions : Effects.Definitions
       Content : Effects.Content }
 
 [<RequireQualifiedAccess>]
-module Effect =
+module EffectDescriptor =
 
-    /// The empty effect.
+    /// The empty effect descriptor.
     let empty =
         { EffectName = Constants.Engine.EffectNameDefault
           LifeTimeOpt = None
@@ -223,22 +223,21 @@ module Effect =
 [<RequireQualifiedAccess>]
 module EffectSystem =
 
-    // effects
     open Effects
 
-    /// An abstract data type for executing effects.
+    /// Evaluates effect descriptors.
     type [<ReferenceEquality>] EffectSystem =
         private
-            { Absolute : bool
-              Views : View List
+            { EffectViews : View List
               ProgressOffset : single
               EffectTime : GameTime
               EffectDelta : GameTime
-              EffectEnv : Definitions
-              Chaos : Random }
+              EffectAbsolute : bool
+              EffectChaos : Random
+              EffectEnv : Definitions }
 
     let rec private addView view effectSystem =
-        effectSystem.Views.Add view
+        effectSystem.EffectViews.Add view
         effectSystem
 
     let rec private selectKeyFrames2<'kf when 'kf :> KeyFrame> localTime playback (keyFrames : 'kf array) =
@@ -552,7 +551,7 @@ module EffectSystem =
         // build sprite views
         let effectSystem =
             if slice.Enabled then
-                let mutable transform = Transform.makeIntuitive slice.Position slice.Scale slice.Offset slice.Size slice.Angles slice.Elevation effectSystem.Absolute slice.Centered
+                let mutable transform = Transform.makeIntuitive slice.Position slice.Scale slice.Offset slice.Size slice.Angles slice.Elevation effectSystem.EffectAbsolute slice.Centered
                 let spriteView =
                     Render2d (transform.Elevation, transform.Horizon, AssetTag.generalize image,
                         SpriteDescriptor 
@@ -590,7 +589,7 @@ module EffectSystem =
             let effectSystem =
                 if  slice.Enabled &&
                     not (playback = Once && cel >= celCount) then
-                    let mutable transform = Transform.makeIntuitive slice.Position slice.Scale slice.Offset slice.Size slice.Angles slice.Elevation effectSystem.Absolute slice.Centered
+                    let mutable transform = Transform.makeIntuitive slice.Position slice.Scale slice.Offset slice.Size slice.Angles slice.Elevation effectSystem.EffectAbsolute slice.Centered
                     let animatedSpriteView =
                         Render2d (transform.Elevation, transform.Horizon, AssetTag.generalize image,
                             SpriteDescriptor
@@ -621,7 +620,7 @@ module EffectSystem =
         // build text views
         let effectSystem =
             if slice.Enabled then
-                let mutable transform = Transform.makeIntuitive slice.Position slice.Scale slice.Offset slice.Size slice.Angles slice.Elevation effectSystem.Absolute slice.Centered
+                let mutable transform = Transform.makeIntuitive slice.Position slice.Scale slice.Offset slice.Size slice.Angles slice.Elevation effectSystem.EffectAbsolute slice.Centered
                 let textView =
                     Render2d (transform.Elevation, transform.Horizon, font,
                         TextDescriptor 
@@ -773,42 +772,40 @@ module EffectSystem =
             contents
 
     let private release effectSystem =
-        let views = Views (effectSystem.Views.ToArray ())
-        let effectSystem = { effectSystem with Views = List<View> () }
+        let views = Views (effectSystem.EffectViews.ToArray ())
+        let effectSystem = { effectSystem with EffectViews = List<View> () }
         (views, effectSystem)
 
-    let eval effect slice history effectSystem =
+    let eval descriptor slice history effectSystem =
         let alive =
-            match effect.LifeTimeOpt with
+            match descriptor.LifeTimeOpt with
             | Some lifetime -> lifetime <= GameTime.zero || effectSystem.EffectTime <= lifetime
             | None -> true
         if alive then
-            let effectSystem = { effectSystem with EffectEnv = Map.concat effectSystem.EffectEnv effect.Definitions }
-            try let effectSystem = evalContent effect.Content slice history effectSystem
+            let effectSystem = { effectSystem with EffectEnv = Map.concat effectSystem.EffectEnv descriptor.Definitions }
+            try let effectSystem = evalContent descriptor.Content slice history effectSystem
                 release effectSystem
             with exn ->
-                let prettyPrinter = (SyntaxAttribute.defaultValue typeof<Effect>).PrettyPrinter
-                let effectStr = PrettyPrinter.prettyPrint (scstring effect) prettyPrinter
-                Log.debug ("Error in effect:\n" + effectStr + "\n due to: " + scstring exn)
+                let prettyPrinter = (SyntaxAttribute.defaultValue typeof<EffectDescriptor>).PrettyPrinter
+                let effectStr = PrettyPrinter.prettyPrint (scstring descriptor) prettyPrinter
+                Log.debug ("Error in effect descriptor:\n" + effectStr + "\n due to: " + scstring exn)
                 release effectSystem
         else release effectSystem
 
-    let combineEffects effects =
-        let effectCombined =
-            { EffectName = String.concat "+" (List.map (fun effect -> effect.EffectName) effects)
-              LifeTimeOpt = None
-              Definitions = List.fold (fun definitions effect -> Map.concat definitions effect.Definitions) Map.empty effects
-              Content = Contents (Shift 0.0f, effects |> List.map (fun effect -> effect.Content) |> Array.ofList) }
-        effectCombined
+    let combine descriptors =
+        { EffectName = String.concat "+" (List.map (fun descriptor -> descriptor.EffectName) descriptors)
+          LifeTimeOpt = None
+          Definitions = List.fold (fun definitions descriptor -> Map.concat definitions descriptor.Definitions) Map.empty descriptors
+          Content = Contents (Shift 0.0f, descriptors |> List.map (fun descriptor -> descriptor.Content) |> Array.ofList) }
 
-    let make absolute effectTime effectDelta globalEnv =
-        { Absolute = absolute
-          Views = List<View> ()
+    let make effectTime effectDelta effectAbsolute effectChaos globalEnv =
+        { EffectViews = List<View> ()
           ProgressOffset = 0.0f
           EffectTime = effectTime
           EffectDelta = effectDelta
-          EffectEnv = globalEnv
-          Chaos = System.Random () }
+          EffectAbsolute = effectAbsolute
+          EffectChaos = effectChaos
+          EffectEnv = globalEnv }
 
-/// An abstract data type for executing effects.
+/// Evaluates effect descriptors.
 type EffectSystem = EffectSystem.EffectSystem
