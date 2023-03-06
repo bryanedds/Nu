@@ -456,104 +456,106 @@ type [<ReferenceEquality>] GlRenderer2d =
          eyeCenter : Vector2,
          eyeSize : Vector2,
          renderer : GlRenderer2d) =
-        let (transform, color) = (transform, color) // make visible from lambda
-        flip OpenGL.SpriteBatch.InterruptSpriteBatchFrame renderer.RenderSpriteBatchEnv $ fun () ->
-            let mutable transform = transform
-            let absolute = transform.Absolute
-            let perimeter = transform.Perimeter
-            let position = perimeter.Min.V2 * Constants.Render.VirtualScalar2
-            let size = perimeter.Size.V2 * Constants.Render.VirtualScalar2
-            let viewport = Constants.Render.Viewport
-            let viewProjection = viewport.ViewProjection2d (absolute, eyeCenter, eyeSize)
-            let font = AssetTag.generalize font
-            match GlRenderer2d.tryGetRenderAsset font renderer with
-            | ValueSome renderAsset ->
-                match renderAsset with
-                | FontAsset (_, _, font) ->
+        let color = color // copy to local for proprety access
+        if color.A8 <> 0uy then // HACK: SDL_TTF doesn't handle zero alpha text as expected, at least in the current version.
+            let transform = transform // copy to local to make visible from lambda
+            flip OpenGL.SpriteBatch.InterruptSpriteBatchFrame renderer.RenderSpriteBatchEnv $ fun () ->
+                let mutable transform = transform
+                let absolute = transform.Absolute
+                let perimeter = transform.Perimeter
+                let position = perimeter.Min.V2 * Constants.Render.VirtualScalar2
+                let size = perimeter.Size.V2 * Constants.Render.VirtualScalar2
+                let viewport = Constants.Render.Viewport
+                let viewProjection = viewport.ViewProjection2d (absolute, eyeCenter, eyeSize)
+                let font = AssetTag.generalize font
+                match GlRenderer2d.tryGetRenderAsset font renderer with
+                | ValueSome renderAsset ->
+                    match renderAsset with
+                    | FontAsset (_, _, font) ->
 
-                    // gather rendering resources
-                    // NOTE: the resource implications (throughput and fragmentation?) of creating and destroying a
-                    // surface and texture one or more times a frame must be understood!
-                    let (offset, textSurface, textSurfacePtr) =
+                        // gather rendering resources
+                        // NOTE: the resource implications (throughput and fragmentation?) of creating and destroying a
+                        // surface and texture one or more times a frame must be understood!
+                        let (offset, textSurface, textSurfacePtr) =
 
-                        // create sdl color
-                        let mutable colorSdl = SDL.SDL_Color ()
-                        colorSdl.r <- color.R8
-                        colorSdl.g <- color.G8
-                        colorSdl.b <- color.B8
-                        colorSdl.a <- color.A8
+                            // create sdl color
+                            let mutable colorSdl = SDL.SDL_Color ()
+                            colorSdl.r <- color.R8
+                            colorSdl.g <- color.G8
+                            colorSdl.b <- color.B8
+                            colorSdl.a <- color.A8
 
-                        // get text metrics
-                        let mutable width = 0
-                        let mutable height = 0
-                        SDL_ttf.TTF_SizeText (font, text, &width, &height) |> ignore
-                        let width = single (width * Constants.Render.VirtualScalar)
-                        let height = single (height * Constants.Render.VirtualScalar)
+                            // get text metrics
+                            let mutable width = 0
+                            let mutable height = 0
+                            SDL_ttf.TTF_SizeText (font, text, &width, &height) |> ignore
+                            let width = single (width * Constants.Render.VirtualScalar)
+                            let height = single (height * Constants.Render.VirtualScalar)
 
-                        // justify
-                        match justification with
-                        | Unjustified wrapped ->
-                            let textSurfacePtr =
-                                if wrapped
-                                then SDL_ttf.TTF_RenderText_Blended_Wrapped (font, text, colorSdl, uint32 size.X)
-                                else SDL_ttf.TTF_RenderText_Blended (font, text, colorSdl)
-                            let textSurface = Marshal.PtrToStructure<SDL.SDL_Surface> textSurfacePtr
+                            // justify
+                            match justification with
+                            | Unjustified wrapped ->
+                                let textSurfacePtr =
+                                    if wrapped
+                                    then SDL_ttf.TTF_RenderText_Blended_Wrapped (font, text, colorSdl, uint32 size.X)
+                                    else SDL_ttf.TTF_RenderText_Blended (font, text, colorSdl)
+                                let textSurface = Marshal.PtrToStructure<SDL.SDL_Surface> textSurfacePtr
+                                let textSurfaceHeight = single (textSurface.h * Constants.Render.VirtualScalar)
+                                let offsetY = size.Y - textSurfaceHeight
+                                (v2 0.0f offsetY, textSurface, textSurfacePtr)
+                            | Justified (h, v) ->
+                                let textSurfacePtr = SDL_ttf.TTF_RenderText_Blended (font, text, colorSdl)
+                                let textSurface = Marshal.PtrToStructure<SDL.SDL_Surface> textSurfacePtr
+                                let offsetX =
+                                    match h with
+                                    | JustifyLeft -> 0.0f
+                                    | JustifyCenter -> (size.X - width) * 0.5f
+                                    | JustifyRight -> size.X - width
+                                let offsetY =
+                                    match v with
+                                    | JustifyTop -> 0.0f
+                                    | JustifyMiddle -> (size.Y - height) * 0.5f
+                                    | JustifyBottom -> size.Y - height
+                                let offset = v2 offsetX offsetY
+                                (offset, textSurface, textSurfacePtr)
+
+                        if textSurfacePtr <> IntPtr.Zero then
+
+                            // construct mvp matrix
+                            let textSurfaceWidth = single (textSurface.w * Constants.Render.VirtualScalar)
                             let textSurfaceHeight = single (textSurface.h * Constants.Render.VirtualScalar)
-                            let offsetY = size.Y - textSurfaceHeight
-                            (v2 0.0f offsetY, textSurface, textSurfacePtr)
-                        | Justified (h, v) ->
-                            let textSurfacePtr = SDL_ttf.TTF_RenderText_Blended (font, text, colorSdl)
-                            let textSurface = Marshal.PtrToStructure<SDL.SDL_Surface> textSurfacePtr
-                            let offsetX =
-                                match h with
-                                | JustifyLeft -> 0.0f
-                                | JustifyCenter -> (size.X - width) * 0.5f
-                                | JustifyRight -> size.X - width
-                            let offsetY =
-                                match v with
-                                | JustifyTop -> 0.0f
-                                | JustifyMiddle -> (size.Y - height) * 0.5f
-                                | JustifyBottom -> size.Y - height
-                            let offset = v2 offsetX offsetY
-                            (offset, textSurface, textSurfacePtr)
+                            let translation = (position + offset).V3
+                            let scale = v3 textSurfaceWidth textSurfaceHeight 1.0f
+                            let modelTranslation = Matrix4x4.CreateTranslation translation
+                            let modelScale = Matrix4x4.CreateScale scale
+                            let modelMatrix = modelScale * modelTranslation
+                            let modelViewProjection = modelMatrix * viewProjection
 
-                    if textSurfacePtr <> IntPtr.Zero then
+                            // upload texture
+                            let textTexture = OpenGL.Gl.GenTexture ()
+                            OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, textTexture)
+                            OpenGL.Gl.TexImage2D (OpenGL.TextureTarget.Texture2d, 0, OpenGL.InternalFormat.Rgba8, textSurface.w, textSurface.h, 0, OpenGL.PixelFormat.Bgra, OpenGL.PixelType.UnsignedByte, textSurface.pixels)
+                            OpenGL.Gl.TexParameter (OpenGL.TextureTarget.Texture2d, OpenGL.TextureParameterName.TextureMinFilter, int OpenGL.TextureMinFilter.Nearest)
+                            OpenGL.Gl.TexParameter (OpenGL.TextureTarget.Texture2d, OpenGL.TextureParameterName.TextureMagFilter, int OpenGL.TextureMagFilter.Nearest)
+                            OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, 0u)
+                            OpenGL.Hl.Assert ()
 
-                        // construct mvp matrix
-                        let textSurfaceWidth = single (textSurface.w * Constants.Render.VirtualScalar)
-                        let textSurfaceHeight = single (textSurface.h * Constants.Render.VirtualScalar)
-                        let translation = (position + offset).V3
-                        let scale = v3 textSurfaceWidth textSurfaceHeight 1.0f
-                        let modelTranslation = Matrix4x4.CreateTranslation translation
-                        let modelScale = Matrix4x4.CreateScale scale
-                        let modelMatrix = modelScale * modelTranslation
-                        let modelViewProjection = modelMatrix * viewProjection
+                            // draw text sprite
+                            // NOTE: we allocate an array here, too.
+                            let (vertices, indices, vao) = renderer.RenderTextQuad
+                            let (modelViewProjectionUniform, texCoords4Uniform, colorUniform, texUniform, shader) = renderer.RenderSpriteShader
+                            OpenGL.Sprite.DrawSprite (vertices, indices, vao, modelViewProjection.ToArray (), ValueNone, Color.White, FlipNone, textSurface.w, textSurface.h, textTexture, modelViewProjectionUniform, texCoords4Uniform, colorUniform, texUniform, shader)
+                            OpenGL.Hl.Assert ()
 
-                        // upload texture
-                        let textTexture = OpenGL.Gl.GenTexture ()
-                        OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, textTexture)
-                        OpenGL.Gl.TexImage2D (OpenGL.TextureTarget.Texture2d, 0, OpenGL.InternalFormat.Rgba8, textSurface.w, textSurface.h, 0, OpenGL.PixelFormat.Bgra, OpenGL.PixelType.UnsignedByte, textSurface.pixels)
-                        OpenGL.Gl.TexParameter (OpenGL.TextureTarget.Texture2d, OpenGL.TextureParameterName.TextureMinFilter, int OpenGL.TextureMinFilter.Nearest)
-                        OpenGL.Gl.TexParameter (OpenGL.TextureTarget.Texture2d, OpenGL.TextureParameterName.TextureMagFilter, int OpenGL.TextureMagFilter.Nearest)
-                        OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, 0u)
-                        OpenGL.Hl.Assert ()
+                            // destroy texture
+                            OpenGL.Gl.DeleteTextures textTexture
+                            OpenGL.Hl.Assert ()
 
-                        // draw text sprite
-                        // NOTE: we allocate an array here, too.
-                        let (vertices, indices, vao) = renderer.RenderTextQuad
-                        let (modelViewProjectionUniform, texCoords4Uniform, colorUniform, texUniform, shader) = renderer.RenderSpriteShader
-                        OpenGL.Sprite.DrawSprite (vertices, indices, vao, modelViewProjection.ToArray (), ValueNone, Color.White, FlipNone, textSurface.w, textSurface.h, textTexture, modelViewProjectionUniform, texCoords4Uniform, colorUniform, texUniform, shader)
-                        OpenGL.Hl.Assert ()
+                        SDL.SDL_FreeSurface textSurfacePtr
 
-                        // destroy texture
-                        OpenGL.Gl.DeleteTextures textTexture
-                        OpenGL.Hl.Assert ()
-
-                    SDL.SDL_FreeSurface textSurfacePtr
-
-                | _ -> Log.debug "Cannot render text with a non-font asset."
-            | _ -> Log.info ("TextDescriptor failed due to unloadable assets for '" + scstring font + "'.")
-        OpenGL.Hl.Assert ()
+                    | _ -> Log.debug "Cannot render text with a non-font asset."
+                | _ -> Log.info ("TextDescriptor failed due to unloadable assets for '" + scstring font + "'.")
+            OpenGL.Hl.Assert ()
 
     static member
 #if !DEBUG
