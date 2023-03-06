@@ -703,9 +703,9 @@ module FieldDispatcher =
                                 let time = field.UpdateTime
                                 match field.FieldSongTimeOpt with
                                 | Some playTime ->
-                                    let deltaTime = time - playTime
+                                    let startTime = time - playTime
                                     if playTime < int64 Constants.Audio.SongResumptionMaximum
-                                    then (playTime, deltaTime)
+                                    then (playTime, startTime)
                                     else (0L, time)
                                 | None -> (0L, time)
                             let fadeIn = if playTime <> 0L then Constants.Field.FieldSongFadeInTime else 0L
@@ -718,9 +718,9 @@ module FieldDispatcher =
                             let time = field.UpdateTime
                             match field.FieldSongTimeOpt with
                             | Some playTime ->
-                                let deltaTime = time - playTime
+                                let startTime = time - playTime
                                 if playTime < int64 Constants.Audio.SongResumptionMaximum
-                                then (playTime, deltaTime)
+                                then (playTime, startTime)
                                 else (0L, time)
                             | None -> (0L, time)
                         let fadeIn = if playTime <> 0L then Constants.Field.FieldSongFadeInTime else 0L
@@ -795,12 +795,12 @@ module FieldDispatcher =
                         match field.FieldTransitionOpt with
                         | Some transition ->
                             let time = field.UpdateTime
-                            let deltaTime = single transition.FieldTransitionTime - single time
+                            let localTime = single transition.FieldTransitionTime - single time
                             let halfTransitionTime = single Constants.Field.TransitionTime * 0.5f
                             let progress =
-                                if deltaTime < halfTransitionTime
-                                then deltaTime / halfTransitionTime
-                                else 1.0f - (deltaTime - halfTransitionTime) / halfTransitionTime
+                                if localTime < halfTransitionTime
+                                then localTime / halfTransitionTime
+                                else 1.0f - (localTime - halfTransitionTime) / halfTransitionTime
                             Color.Black.WithA progress
                         | None -> Color.Zero]
 
