@@ -228,7 +228,7 @@ module EffectDescriptor =
           Content = content }
 
     /// The default effect descriptor.
-    let defaultDispatcher = make Constants.Engine.EffectNameDefault None Map.empty (Effects.Contents (Effects.Shift 0.0f, [||]))
+    let defaultDescriptor = make Constants.Engine.EffectNameDefault None Map.empty (Effects.Contents (Effects.Shift 0.0f, [||]))
 
     /// The empty effect descriptor.
     let empty = make String.Empty None Map.empty (Effects.Contents (Effects.Shift 0.0f, [||]))
