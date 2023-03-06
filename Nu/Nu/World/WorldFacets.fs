@@ -637,6 +637,7 @@ module EffectFacet2dModule =
                     (entity.GetTransform world)
                     (entity.GetParticleSystem world)
                     (entity.GetEffectHistoryMax world)
+                    (entity.GetEffectHistory world)
                     (entity.GetEffectDefinitions world)
                     (entity.GetEffectDescriptor world)
 
