@@ -185,7 +185,7 @@ module Effect =
           Tags_ = Map.empty
           Descriptor_ = descriptor }
 
-    let make startTime offset transform effect =
-        makePlus startTime true offset transform ParticleSystem.empty Constants.Effects.EffectHistoryMaxDefault Map.empty effect
+    let make startTime offset transform descriptor =
+        makePlus startTime true offset transform ParticleSystem.empty Constants.Effects.EffectHistoryMaxDefault Map.empty descriptor
 
 type Effect = Effect.Effect
