@@ -54,7 +54,7 @@ module Effect =
             | :? Effect -> source
             | _ -> failconv "Invalid EffectConverter conversion from source." None
 
-    /// A live effect.
+    /// An effect.
     and [<ReferenceEquality; NoComparison; TypeConverter (typeof<EffectConverter>)>] Effect =
         private
             { StartTime_ : GameTime
@@ -92,23 +92,23 @@ module Effect =
                 (effect, world)
                 outputs
 
-    let private exhausted effect world =
+    let private liveness effect world =
         let time = World.getGameTime world
-        let delta = World.getGameDelta world
         let particleSystem = effect.ParticleSystem_
         let effectDescriptor = effect.Descriptor_
         match effectDescriptor.LifeTimeOpt with
         | Some lifeTime ->
             let localTime = time - effect.StartTime_
-            localTime >= lifeTime - delta &&
-            (match ParticleSystem.getLiveness time particleSystem with Live -> false | Dead -> true)
-        | None -> false
+            if localTime <= lifeTime then Live
+            else ParticleSystem.getLiveness time particleSystem
+        | None -> Live
 
-    /// Run a live effect, applying side-effects such as issuing rendering and audio commands as needed.
+    /// Run an effect, applying side-effects such as issuing rendering and audio commands as needed.
     let run effect (world : World) =
 
-        // run if not exhausted
-        if not (exhausted effect world) then
+        // run if live
+        match liveness effect world with
+        | Live ->
 
             // set up effect system to evaluate effect
             let time = world.GameTime
@@ -194,12 +194,12 @@ module Effect =
             let (particleSystem, output) = ParticleSystem.run delta time particleSystem
             let effect = { effect with ParticleSystem_ = particleSystem }
             let (effect, world) = processParticleSystemOutput output effect world
-            (false, effect, world)
+            (Live, effect, world)
 
-        // exhausted
-        else (true, effect, world)
+        // dead
+        | Dead -> (Dead, effect, world)
 
-    /// Make a live effect.
+    /// Make an effect.
     let makePlus startTime centered offset transform particleSystem historyMax history definitions descriptor =
         { StartTime_ = startTime
           Centered_ = centered
@@ -212,11 +212,11 @@ module Effect =
           Tags_ = Map.empty
           Descriptor_ = descriptor }
 
-    /// Make a live effect.
+    /// Make an effect.
     let make startTime offset transform descriptor =
         makePlus startTime true offset transform ParticleSystem.empty Constants.Effects.EffectHistoryMaxDefault (Nito.Collections.Deque ()) Map.empty descriptor
 
-    /// The empty live effect.
+    /// The empty effect.
     let empty =
         make GameTime.zero v3Zero (Transform.makeEmpty ()) EffectDescriptor.empty
 

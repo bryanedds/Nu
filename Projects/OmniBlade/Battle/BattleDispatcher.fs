@@ -75,7 +75,6 @@ module BattleDispatcher =
         static let displayEffect (delay : int64) size positioning descriptor screen world =
             World.schedule delay (fun world ->
                 let (entity, world) = World.createEntity<EffectDispatcher2d> DefaultOverlay None Simulants.BattleScene world
-                let world = entity.SetEffectDescriptor descriptor world
                 let world = entity.SetSize size world
                 let world =
                     match positioning with
@@ -83,7 +82,9 @@ module BattleDispatcher =
                     | Center center -> entity.SetCenter center world
                     | Bottom bottom -> entity.SetBottom bottom world
                 let world = entity.SetElevation Constants.Battle.EffectElevation world
-                entity.SetSelfDestruct true world)
+                let world = entity.SetSelfDestruct true world
+                let world = entity.SetEffectDescriptor descriptor world
+                world)
                 screen world
 
         static let advanceAttack sourceIndex (targetIndexOpt : CharacterIndex option) time localTime battle =
@@ -898,19 +899,16 @@ module BattleDispatcher =
             | DisplayHop hop ->
                 let descriptor = EffectDescriptors.hop hop.HopStart hop.HopStop
                 let (entity, world) = World.createEntity<EffectDispatcher2d> DefaultOverlay (Some Simulants.BattleSceneRide.Surnames) Simulants.BattleScene world
-                let world = entity.SetEffectDescriptor descriptor world
-                let world = entity.SetEffectOffset v3Zero world
                 let world = entity.SetSelfDestruct true world
-                let world = entity.SetRunMode RunOnPreUpdate world
+                let world = entity.SetEffectDescriptor descriptor world
                 just world
 
             | DisplayCircle (position, radius) ->
                 let descriptor = EffectDescriptors.circle radius
                 let (entity, world) = World.createEntity<EffectDispatcher2d> DefaultOverlay (Some Simulants.BattleSceneRide.Surnames) Simulants.BattleScene world
                 let world = entity.SetPosition position world
-                let world = entity.SetEffectDescriptor descriptor world
                 let world = entity.SetSelfDestruct true world
-                let world = entity.SetRunMode RunOnPreUpdate world
+                let world = entity.SetEffectDescriptor descriptor world
                 just world
 
             | DisplayCancel targetIndex ->
@@ -919,9 +917,9 @@ module BattleDispatcher =
                     let descriptor = EffectDescriptors.cancel ()
                     let (entity, world) = World.createEntity<EffectDispatcher2d> DefaultOverlay None Simulants.BattleScene world
                     let world = entity.SetPosition target.CenterOffset4 world
-                    let world = entity.SetEffectDescriptor descriptor world
                     let world = entity.SetElevation (Constants.Battle.GuiEffectElevation + 1.0f) world
                     let world = entity.SetSelfDestruct true world
+                    let world = entity.SetEffectDescriptor descriptor world
                     just world
                 | None -> just world
 
@@ -931,9 +929,9 @@ module BattleDispatcher =
                     let descriptor = EffectDescriptors.hitPointsChange delta
                     let (entity, world) = World.createEntity<EffectDispatcher2d> DefaultOverlay None Simulants.BattleScene world
                     let world = entity.SetPosition target.BottomOriginalOffset4 world
-                    let world = entity.SetEffectDescriptor descriptor world
                     let world = entity.SetElevation Constants.Battle.GuiEffectElevation world
                     let world = entity.SetSelfDestruct true world
+                    let world = entity.SetEffectDescriptor descriptor world
                     just world
                 | None -> just world
 

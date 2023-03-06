@@ -65,7 +65,7 @@ module ScriptFacetModule =
     type ScriptFacet () =
         inherit Facet (false)
 
-        static let handleScriptChanged evt world =
+        static let handleScriptChange evt world =
             let entity = evt.Subscriber : Entity
             let script = entity.GetScript world
             let scriptFrame = Scripting.DeclarationFrame StringComparer.Ordinal
@@ -73,7 +73,7 @@ module ScriptFacetModule =
             let world = evalManyWithLogging script scriptFrame entity world |> snd'
             (Cascade, world)
 
-        static let handleRegisterScriptChanged evt world =
+        static let handleRegisterScriptChange evt world =
             let entity = evt.Subscriber : Entity
             let world = World.unregisterEntity entity world
             let world = World.registerEntity entity world
@@ -96,8 +96,8 @@ module ScriptFacetModule =
 
         override this.Register (entity, world) =
             let world = World.evalWithLogging (entity.GetRegisterScript world) (entity.GetScriptFrame world) entity world |> snd'
-            let world = World.monitor handleScriptChanged (entity.GetChangeEvent (nameof entity.ScriptFrame)) entity world
-            let world = World.monitor handleRegisterScriptChanged (entity.GetChangeEvent (nameof entity.RegisterScript)) entity world
+            let world = World.monitor handleScriptChange (entity.GetChangeEvent (nameof entity.ScriptFrame)) entity world
+            let world = World.monitor handleRegisterScriptChange (entity.GetChangeEvent (nameof entity.RegisterScript)) entity world
             world
 
         override this.Unregister (entity, world) =
@@ -417,53 +417,53 @@ module BasicEmitterFacet2dModule =
             | Particles.OutputEmitter (name, emitter) -> updateParticleSystem (fun ps -> { ps with Emitters = Map.add name emitter ps.Emitters }) entity world
             | Particles.Outputs outputs -> SegmentedArray.fold (fun world output -> processOutput output entity world) world outputs
 
-        static let handleEmitterBlendChanged evt world =
+        static let handleEmitterBlendChange evt world =
             let emitterBlend = evt.Data.Value :?> Blend
             let world = updateEmitter (fun emitter -> if emitter.Blend <> emitterBlend then { emitter with Blend = emitterBlend } else emitter) evt.Subscriber world
             (Cascade, world)
 
-        static let handleEmitterImageChanged evt world =
+        static let handleEmitterImageChange evt world =
             let emitterImage = evt.Data.Value :?> Image AssetTag
             let world = updateEmitter (fun emitter -> if assetNeq emitter.Image emitterImage then { emitter with Image = emitterImage } else emitter) evt.Subscriber world
             (Cascade, world)
 
-        static let handleEmitterLifeTimeOptChanged evt world =
+        static let handleEmitterLifeTimeOptChange evt world =
             let emitterLifeTimeOpt = evt.Data.Value :?> GameTime
             let world = updateEmitter (fun emitter -> if emitter.Life.LifeTimeOpt <> emitterLifeTimeOpt then { emitter with Life = { emitter.Life with LifeTimeOpt = emitterLifeTimeOpt }} else emitter) evt.Subscriber world
             (Cascade, world)
 
-        static let handleParticleLifeTimeMaxOptChanged evt world =
+        static let handleParticleLifeTimeMaxOptChange evt world =
             let particleLifeTimeMaxOpt = evt.Data.Value :?> GameTime
             let world = updateEmitter (fun emitter -> if emitter.ParticleLifeTimeMaxOpt <> particleLifeTimeMaxOpt then { emitter with ParticleLifeTimeMaxOpt = particleLifeTimeMaxOpt } else emitter) evt.Subscriber world
             (Cascade, world)
 
-        static let handleParticleRateChanged evt world =
+        static let handleParticleRateChange evt world =
             let particleRate = evt.Data.Value :?> single
             let world = updateEmitter (fun emitter -> if emitter.ParticleRate <> particleRate then { emitter with ParticleRate = particleRate } else emitter) evt.Subscriber world
             (Cascade, world)
 
-        static let handleParticleMaxChanged evt world =
+        static let handleParticleMaxChange evt world =
             let particleMax = evt.Data.Value :?> int
             let world = updateEmitter (fun emitter -> if emitter.ParticleRing.Length <> particleMax then Particles.BasicEmitter2d.resize particleMax emitter else emitter) evt.Subscriber world
             (Cascade, world)
 
-        static let handleBasicParticleSeedChanged evt world =
+        static let handleBasicParticleSeedChange evt world =
             let particleSeed = evt.Data.Value :?> Particles.BasicParticle
             let world = updateEmitter (fun emitter -> if emitter.ParticleSeed <> particleSeed then { emitter with ParticleSeed = particleSeed } else emitter) evt.Subscriber world
             (Cascade, world)
 
-        static let handleEmitterConstraintChanged evt world =
+        static let handleEmitterConstraintChange evt world =
             let emitterConstraint = evt.Data.Value :?> Particles.Constraint
             let world = updateEmitter (fun emitter -> if emitter.Constraint <> emitterConstraint then { emitter with Constraint = emitterConstraint } else emitter) evt.Subscriber world
             (Cascade, world)
 
-        static let handleEmitterStyleChanged evt world =
+        static let handleEmitterStyleChange evt world =
             let entity = evt.Subscriber
             let emitter = makeEmitter entity world
             let world = updateEmitter (constant emitter) entity world
             (Cascade, world)
 
-        static let handlePositionChanged evt world =
+        static let handlePositionChange evt world =
             let entity = evt.Subscriber : Entity
             let particleSystem = entity.GetParticleSystem world
             let particleSystem =
@@ -479,7 +479,7 @@ module BasicEmitterFacet2dModule =
             let world = entity.SetParticleSystem particleSystem world
             (Cascade, world)
 
-        static let handleRotationChanged evt world =
+        static let handleRotationChange evt world =
             let entity = evt.Subscriber : Entity
             let particleSystem = entity.GetParticleSystem world
             let particleSystem =
@@ -513,17 +513,17 @@ module BasicEmitterFacet2dModule =
             let particleSystem = entity.GetParticleSystem world
             let particleSystem = { particleSystem with Emitters = Map.add typeof<Particles.BasicEmitter>.Name (emitter :> Particles.Emitter) particleSystem.Emitters }
             let world = entity.SetParticleSystem particleSystem world
-            let world = World.monitor handlePositionChanged (entity.GetChangeEvent (nameof entity.Position)) entity world
-            let world = World.monitor handleRotationChanged (entity.GetChangeEvent (nameof entity.Rotation)) entity world
-            let world = World.monitor handleEmitterBlendChanged (entity.GetChangeEvent (nameof entity.EmitterBlend)) entity world
-            let world = World.monitor handleEmitterImageChanged (entity.GetChangeEvent (nameof entity.EmitterImage)) entity world
-            let world = World.monitor handleEmitterLifeTimeOptChanged (entity.GetChangeEvent (nameof entity.EmitterLifeTimeOpt)) entity world
-            let world = World.monitor handleParticleLifeTimeMaxOptChanged (entity.GetChangeEvent (nameof entity.ParticleLifeTimeMaxOpt)) entity world
-            let world = World.monitor handleParticleRateChanged (entity.GetChangeEvent (nameof entity.ParticleRate)) entity world
-            let world = World.monitor handleParticleMaxChanged (entity.GetChangeEvent (nameof entity.ParticleMax)) entity world
-            let world = World.monitor handleBasicParticleSeedChanged (entity.GetChangeEvent (nameof entity.BasicParticleSeed)) entity world
-            let world = World.monitor handleEmitterConstraintChanged (entity.GetChangeEvent (nameof entity.EmitterConstraint)) entity world
-            let world = World.monitor handleEmitterStyleChanged (entity.GetChangeEvent (nameof entity.EmitterStyle)) entity world
+            let world = World.monitor handlePositionChange (entity.GetChangeEvent (nameof entity.Position)) entity world
+            let world = World.monitor handleRotationChange (entity.GetChangeEvent (nameof entity.Rotation)) entity world
+            let world = World.monitor handleEmitterBlendChange (entity.GetChangeEvent (nameof entity.EmitterBlend)) entity world
+            let world = World.monitor handleEmitterImageChange (entity.GetChangeEvent (nameof entity.EmitterImage)) entity world
+            let world = World.monitor handleEmitterLifeTimeOptChange (entity.GetChangeEvent (nameof entity.EmitterLifeTimeOpt)) entity world
+            let world = World.monitor handleParticleLifeTimeMaxOptChange (entity.GetChangeEvent (nameof entity.ParticleLifeTimeMaxOpt)) entity world
+            let world = World.monitor handleParticleRateChange (entity.GetChangeEvent (nameof entity.ParticleRate)) entity world
+            let world = World.monitor handleParticleMaxChange (entity.GetChangeEvent (nameof entity.ParticleMax)) entity world
+            let world = World.monitor handleBasicParticleSeedChange (entity.GetChangeEvent (nameof entity.BasicParticleSeed)) entity world
+            let world = World.monitor handleEmitterConstraintChange (entity.GetChangeEvent (nameof entity.EmitterConstraint)) entity world
+            let world = World.monitor handleEmitterStyleChange (entity.GetChangeEvent (nameof entity.EmitterStyle)) entity world
             world
 
         override this.Unregister (entity, world) =
@@ -557,17 +557,15 @@ module BasicEmitterFacet2dModule =
 [<AutoOpen>]
 module EffectFacet2dModule =
 
-    type RunMode =
-        | RunOnPreUpdate
-        | RunOnUpdate
-        | RunOnPostUpdate
-        | RunOnRender
+    type EffectMode =
+        | RunEarly
+        | RunLate
 
     type Entity with
 
-        member this.GetRunMode world : RunMode = this.Get (nameof this.RunMode) world
-        member this.SetRunMode (value : RunMode) world = this.Set (nameof this.RunMode) value world
-        member this.RunMode = lens (nameof this.RunMode) this this.GetRunMode this.SetRunMode
+        member this.GetEffectMode world : EffectMode = this.Get (nameof this.EffectMode) world
+        member this.SetEffectMode (value : EffectMode) world = this.Set (nameof this.EffectMode) value world
+        member this.EffectMode = lens (nameof this.EffectMode) this this.GetEffectMode this.SetEffectMode
         member this.GetEffectSymbolOpt world : Symbol AssetTag option = this.Get (nameof this.EffectSymbolOpt) world
         member this.SetEffectSymbolOpt (value : Symbol AssetTag option) world = this.Set (nameof this.EffectSymbolOpt) value world
         member this.EffectSymbolOpt = lens (nameof this.EffectSymbolOpt) this this.GetEffectSymbolOpt this.SetEffectSymbolOpt
@@ -629,14 +627,24 @@ module EffectFacet2dModule =
                     (entity.GetEffectDescriptor world)
 
             // run effect, optionally destroying upon exhaustion
-            let (exhausted, effect, world) = Effect.run effect world
+            let (liveness, effect, world) = Effect.run effect world
             let world = entity.SetParticleSystem effect.ParticleSystem world
             let world = entity.SetEffectTags effect.Tags world
-            if exhausted && entity.GetSelfDestruct world
+            if liveness = Dead && entity.GetSelfDestruct world
             then World.destroyEntity entity world
             else world
 
-        static let handleEffectsChanged evt world =
+        static let handleEffectDescriptorChange evt world =
+            let entity = evt.Subscriber : Entity
+            let world =
+                if entity.GetEnabled world then
+                    match entity.GetEffectMode world with
+                    | RunEarly -> run entity world
+                    | _ -> world
+                else world
+            (Cascade, world)
+
+        static let handleEffectsChange evt world =
             let entity = evt.Subscriber : Entity
             let world = setEffect (entity.GetEffectSymbolOpt world) entity world
             (Cascade, world)
@@ -647,24 +655,24 @@ module EffectFacet2dModule =
             (Cascade, world)
 
 #if DISABLE_ENTITY_PRE_UPDATE
-        static let handleRunOnPreUpdate evt world =
+        static let handleRunEarly evt world =
             let entity = evt.Subscriber : Entity
             let world =
                 if entity.GetEnabled world then
-                    match entity.GetRunMode world with
-                    | RunOnPreUpdate -> run entity world
+                    match entity.GetEffectMode world with
+                    | RunEarly -> run entity world
                     | _ -> world
                 else world
             (Cascade, world)
 #endif
 
 #if DISABLE_ENTITY_POST_UPDATE
-        static let handleRunOnPostUpdate evt world =
+        static let handleRunLate evt world =
             let entity = evt.Subscriber : Entity
             let world =
                 if entity.GetEnabled world then
-                    match entity.GetRunMode world with
-                    | RunOnPostUpdate -> run entity world
+                    match entity.GetEffectMode world with
+                    | RunLate -> run entity world
                     | _ -> world
                 else world
             (Cascade, world)
@@ -673,7 +681,7 @@ module EffectFacet2dModule =
         static member Properties =
             [define Entity.ParticleSystem ParticleSystem.empty
              define Entity.SelfDestruct false
-             define Entity.RunMode RunOnRender
+             define Entity.EffectMode RunEarly
              define Entity.EffectSymbolOpt None
              define Entity.EffectStartTimeOpt None
              define Entity.EffectDefinitions Map.empty
@@ -686,38 +694,29 @@ module EffectFacet2dModule =
 
 #if !DISABLE_ENTITY_PRE_UPDATE
         override this.PreUpdate (entity, world) =
-            if entity.GetEnabled world && entity.GetRunMode world = RunOnPreUpdate
+            if entity.GetEnabled world && entity.GetEffectMode world = RunEarly
             then run entity world
             else world
 #endif
-
-        override this.Update (entity, world) =
-            if entity.GetEnabled world && entity.GetRunMode world = RunOnUpdate
-            then run entity world
-            else world
 
 #if !DISABLE_ENTITY_POST_UPDATE
         override this.PostUpdate (entity, world) =
-            if entity.GetEnabled world && entity.GetRunMode world = RunOnPostUpdate
+            if entity.GetEnabled world && entity.GetEffectMode world = RunLate
             then run entity world
             else world
 #endif
-
-        override this.Render (entity, world) =
-            if entity.GetEnabled world && entity.GetRunMode world = RunOnRender
-            then run entity world
-            else world
 
         override this.Register (entity, world) =
             let effectStartTime = Option.defaultValue (World.getGameTime world) (entity.GetEffectStartTimeOpt world)
             let world = entity.SetEffectStartTimeOpt (Some effectStartTime) world
-            let world = World.monitor handleEffectsChanged (entity.GetChangeEvent (nameof entity.EffectSymbolOpt)) entity world
+            let world = World.monitor handleEffectDescriptorChange (entity.GetChangeEvent (nameof entity.EffectDescriptor)) entity world
+            let world = World.monitor handleEffectsChange (entity.GetChangeEvent (nameof entity.EffectSymbolOpt)) entity world
             let world = World.monitor handleAssetsReload Events.AssetsReload entity world
 #if DISABLE_ENTITY_PRE_UPDATE
-            let world = World.monitor handleRunOnPreUpdate entity.Group.PreUpdateEvent entity world
+            let world = World.monitor handleRunEarly entity.Group.PreUpdateEvent entity world
 #endif
 #if DISABLE_ENTITY_POST_UPDATE
-            let world = World.monitor handleRunOnPostUpdate entity.Group.PostUpdateEvent entity world
+            let world = World.monitor handleRunLate entity.Group.PostUpdateEvent entity world
 #endif
             world
 
