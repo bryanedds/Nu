@@ -315,8 +315,9 @@ module FieldDispatcher =
                                 | (Some song, Some song2) when assetEq song song2 -> just field
                                 | (_, _) -> withSignal (FadeOutSong 30L) field
 
-                            // just past half-way point of transition
-                            elif time = fieldTransition.FieldTransitionTime - Constants.Field.TransitionTime / 2L + 1L then
+                            // half-way transition (fully blacked out)
+                            // HACK: had to add two frames rather than one, indicating there might be a bug in this approach.
+                            elif time = fieldTransition.FieldTransitionTime - Constants.Field.TransitionTime / 2L + 2L then
                                 match destinationData.FieldType with // HACK: pre-generate fields.
                                 | CastleConnector -> for i in 0 .. 2 do FieldData.tryGetTileMap field.OmniSeedState (Data.Value.Fields.[Castle i]) |> ignore
                                 | _ -> ()
