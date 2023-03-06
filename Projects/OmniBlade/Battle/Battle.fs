@@ -54,7 +54,7 @@ module Battle =
               CurrentCommandOpt_ : CurrentCommand option
               ActionCommands_ : ActionCommand Queue
               DialogOpt_ : Dialog option
-              RideTags_ : EffectTags }
+              RideTags_ : Map<string, Effects.Slice> }
 
         (* Local Properties *)
         member this.Running = match this.BattleState with BattleRunning _ -> true | _ -> false
