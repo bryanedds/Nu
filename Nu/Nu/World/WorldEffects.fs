@@ -130,7 +130,7 @@ module Effect =
                   Effects.Volume = Constants.Audio.SoundVolumeDefault
                   Effects.Enabled = true
                   Effects.Centered = effect.Centered_ }
-            let effectSystem = EffectSystem.make localTime delta transform.Absolute (Random ()) effect.Definitions_
+            let effectSystem = EffectSystem.make localTime delta transform.Absolute effect.Definitions_
 
             // evaluate effect with effect system
             let (view, _) = EffectSystem.eval effect.Descriptor_ effectSlice effect.History_ effectSystem
