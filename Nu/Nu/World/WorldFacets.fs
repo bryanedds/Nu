@@ -576,6 +576,9 @@ module EffectFacet2dModule =
         member this.SetEffectDefinitions (value : Effects.Definitions) world = this.Set (nameof this.EffectDefinitions) value world
         member this.EffectDefinitions = lens (nameof this.EffectDefinitions) this this.GetEffectDefinitions this.SetEffectDefinitions
         member this.GetEffectDescriptor world : EffectDescriptor = this.Get (nameof this.EffectDescriptor) world
+        /// When EffectMode is set to RunEarly (which it is by default), call this AFETER setting the rest of the
+        /// entity's properties. This is because setting the effect descriptin in RunEarly mode will immediately run
+        /// the first frame of the effect due to a semantic limitation in Nu.
         member this.SetEffectDescriptor (value : EffectDescriptor) world = this.Set (nameof this.EffectDescriptor) value world
         member this.EffectDescriptor = lens (nameof this.EffectDescriptor) this this.GetEffectDescriptor this.SetEffectDescriptor
         member this.GetEffectCentered world : bool = this.Get (nameof this.EffectCentered) world
