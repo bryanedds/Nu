@@ -3,6 +3,7 @@
 
 namespace Nu
 open System
+open System.ComponentModel
 open System.Numerics
 open Prime
 open Nu
@@ -30,7 +31,31 @@ module WorldView =
 [<RequireQualifiedAccess>]
 module Effect =
 
-    type Effect =
+    /// Converts effects, always providing an empty effect when converting from Symbol.
+    type EffectConverter () =
+        inherit TypeConverter ()
+
+        override this.CanConvertTo (_, destType) =
+            destType = typeof<Symbol> ||
+            destType = typeof<Effect>
+
+        override this.ConvertTo (_, _, source, destType) =
+            if destType = typeof<Symbol> then Symbol.Symbols ([], ValueNone)
+            elif destType = typeof<Effect> then source
+            else failconv "Invalid EffectConverter conversion to source." None
+
+        override this.CanConvertFrom (_, sourceType) =
+            sourceType = typeof<Symbol> ||
+            sourceType = typeof<GameTime>
+
+        override this.ConvertFrom (_, _, source) =
+            match source with
+            | :? Symbol -> WorldModule.makeEmptyEffect ()
+            | :? Effect -> source
+            | _ -> failconv "Invalid EffectConverter conversion from source." None
+
+    /// A live effect.
+    and [<ReferenceEquality; NoComparison; TypeConverter (typeof<EffectConverter>)>] Effect =
         private
             { StartTime_ : GameTime
               Centered_ : bool
@@ -187,5 +212,8 @@ module Effect =
 
     let make startTime offset transform descriptor =
         makePlus startTime true offset transform ParticleSystem.empty Constants.Effects.EffectHistoryMaxDefault Map.empty descriptor
+
+    let makeEmpty () =
+        make GameTime.zero v3Zero (Transform.makeEmpty ()) EffectDescriptor.empty
 
 type Effect = Effect.Effect

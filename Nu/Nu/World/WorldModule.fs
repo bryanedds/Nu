@@ -111,6 +111,9 @@ module WorldModule =
     let mutable internal destroy : Simulant -> World -> World =
         Unchecked.defaultof<_>
 
+    let mutable internal makeEmptyEffect : unit -> obj =
+        Unchecked.defaultof<_>
+
     type World with // Construction
 
         /// Choose a world to be used as the active world. Call this whenever the most recently constructed world value

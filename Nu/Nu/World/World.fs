@@ -336,6 +336,7 @@ module Nu =
             WorldModule.unregister <- fun simulant world -> World.unregister simulant world
             WorldModule.destroyImmediate <- fun simulant world -> World.destroyImmediate simulant world
             WorldModule.destroy <- fun simulant world -> World.destroy simulant world
+            WorldModule.makeEmptyEffect <- fun () -> Effect.makeEmpty () :> obj
 
             // init scripting
             WorldScripting.init ()
