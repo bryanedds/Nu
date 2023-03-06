@@ -435,10 +435,10 @@ module EffectDescriptors =
         { EffectName = "Hop"
           LifeTimeOpt = Some 20L
           Definitions = Map.empty
-          Content = Tag ("Tag", [|Hop (start, stop, 24.0f, 20L)|], Nil) }
+          Content = Tag ("Tag", [|Hop (start, stop, 24.0f, 18L)|], Nil) }
 
     let circle radius =
         { EffectName = "Circle"
           LifeTimeOpt = Some 100L
           Definitions = Map.empty
-          Content = Tag ("Tag", [|Circle (radius, 2.0f, 100L)|], Nil) }
+          Content = Tag ("Tag", [|Circle (radius, 2.0f, 98L)|], Nil) }
