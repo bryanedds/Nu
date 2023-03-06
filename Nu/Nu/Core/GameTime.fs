@@ -44,7 +44,7 @@ type GameTimeConverter () =
             | UpdateTime time -> Number (string time, ValueNone) :> obj
             | ClockTime time -> Number (string time, ValueNone) :> obj
         elif destType = typeof<GameTime> then source
-        else failconv "Invalid GameTime conversion to source." None
+        else failconv "Invalid GameTimeConverter conversion to source." None
 
     override this.CanConvertFrom (_, sourceType) =
         sourceType = typeof<Symbol> ||
