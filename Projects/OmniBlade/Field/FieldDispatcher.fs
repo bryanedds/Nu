@@ -316,8 +316,7 @@ module FieldDispatcher =
                                 | (_, _) -> withSignal (FadeOutSong 30L) field
 
                             // half-way transition (fully blacked out)
-                            // HACK: had to add two frames rather than one, indicating there might be a bug in this approach.
-                            elif time = fieldTransition.FieldTransitionTime - Constants.Field.TransitionTime / 2L + 2L then
+                            elif time = fieldTransition.FieldTransitionTime - Constants.Field.TransitionTime / 2L + 1L then
                                 match destinationData.FieldType with // HACK: pre-generate fields.
                                 | CastleConnector -> for i in 0 .. 2 do FieldData.tryGetTileMap field.OmniSeedState (Data.Value.Fields.[Castle i]) |> ignore
                                 | _ -> ()
