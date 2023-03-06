@@ -40,7 +40,8 @@
 		<Compile Include="Core\Data.fs" />
 		<Compile Include="Core\Algorithms.fs" />
 		<Compile Include="Core\Events.fs" />
-		<Compile Include="Effects\Effects.fs" />
+		<Compile Include="Effects\EffectAspects.fs" />
+		<Compile Include="Effects\EffectDescriptors.fs" />
 		<Compile Include="RingMenu\RingMenu.fs" />
 		<Compile Include="Reticles\Reticles.fs" />
 		<Compile Include="Character\CharacterAnimationState.fs" />

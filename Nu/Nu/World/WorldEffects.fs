@@ -8,7 +8,7 @@ open Prime
 open Nu
 
 [<AutoOpen>]
-module DeclarativeOperators2 =
+module WorldView =
 
     type World with
 
