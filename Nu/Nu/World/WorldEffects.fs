@@ -200,21 +200,21 @@ module Effect =
         else (true, effect, world)
 
     /// Make a live effect.
-    let makePlus startTime centered offset transform particleSystem historyMax definitions descriptor =
+    let makePlus startTime centered offset transform particleSystem historyMax history definitions descriptor =
         { StartTime_ = startTime
           Centered_ = centered
           Offset_ = offset
           Transform_ = transform
           ParticleSystem_ = particleSystem
           HistoryMax_ = historyMax
-          History_ = Nito.Collections.Deque ()
+          History_ = history
           Definitions_ = definitions
           Tags_ = Map.empty
           Descriptor_ = descriptor }
 
     /// Make a live effect.
     let make startTime offset transform descriptor =
-        makePlus startTime true offset transform ParticleSystem.empty Constants.Effects.EffectHistoryMaxDefault Map.empty descriptor
+        makePlus startTime true offset transform ParticleSystem.empty Constants.Effects.EffectHistoryMaxDefault (Nito.Collections.Deque ()) Map.empty descriptor
 
     /// The empty live effect.
     let empty =
