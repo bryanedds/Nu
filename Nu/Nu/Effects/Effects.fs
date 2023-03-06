@@ -241,12 +241,11 @@ module EffectSystem =
     /// Evaluates effect descriptors.
     type [<ReferenceEquality>] EffectSystem =
         private
-            { EffectViews : View List
-              ProgressOffset : single
-              EffectTime : GameTime
+            { EffectLocalTime : GameTime
               EffectDelta : GameTime
+              EffectProgressOffset : single
               EffectAbsolute : bool
-              EffectChaos : Random
+              EffectViews : View List
               EffectEnv : Definitions }
 
     let rec private addView view effectSystem =
@@ -347,7 +346,7 @@ module EffectSystem =
     let private evalInset (celSize : Vector2i) celRun celCount delay playback effectSystem =
         // TODO: make sure Bounce playback works as intended!
         // TODO: stop assuming that animation sheets are fully and evenly populated when flipping!
-        let celUnmodulated = int (effectSystem.EffectTime / delay)
+        let celUnmodulated = int (effectSystem.EffectLocalTime / delay)
         let cel = celUnmodulated % celCount
         let celI = cel % celRun
         let celJ = cel / celRun
@@ -390,7 +389,7 @@ module EffectSystem =
                 asset Assets.Default.PackageName Assets.Default.ImageName
 
     let rec private iterateViews incrementAspects content slice history effectSystem =
-        let effectSystem = { effectSystem with ProgressOffset = 0.0f }
+        let effectSystem = { effectSystem with EffectProgressOffset = 0.0f }
         let slice = evalAspects incrementAspects slice effectSystem
         (slice, evalContent content slice history effectSystem)
 
@@ -400,7 +399,7 @@ module EffectSystem =
 
     and private evalProgress keyFrameTime keyFrameLength effectSystem =
         let progress = if GameTime.isZero keyFrameLength then 1.0f else single keyFrameTime / single keyFrameLength
-        let progress = progress + effectSystem.ProgressOffset
+        let progress = progress + effectSystem.EffectProgressOffset
         if progress > 1.0f then progress - 1.0f else progress
 
     and private evalAspect aspect (slice : Slice) effectSystem =
@@ -426,13 +425,13 @@ module EffectSystem =
         | Volume volume -> { slice with Volume = volume }
         | Enableds (applicator, playback, keyFrames) ->
             if Array.notEmpty keyFrames then
-                let (_, keyFrame, _) = selectKeyFrames effectSystem.EffectTime playback keyFrames
+                let (_, keyFrame, _) = selectKeyFrames effectSystem.EffectLocalTime playback keyFrames
                 let applied = applyLogic slice.Enabled keyFrame.LogicValue applicator
                 { slice with Enabled = applied }
             else slice
         | Positions (applicator, algorithm, playback, keyFrames) ->
             if Array.notEmpty keyFrames then
-                let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
+                let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectLocalTime playback keyFrames
                 let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
                 let tweened = tween (fun (a, b) -> a * b) keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
                 let applied = applyTween Vector3.Multiply Vector3.Divide slice.Position tweened applicator
@@ -440,7 +439,7 @@ module EffectSystem =
             else slice
         | Translations (applicator, algorithm, playback, keyFrames) ->
             if Array.notEmpty keyFrames then
-                let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
+                let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectLocalTime playback keyFrames
                 let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
                 let tweened = tween Vector3.op_Multiply keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
                 let oriented = Vector3.Transform (tweened, slice.Angles.RollPitchYaw)
@@ -449,7 +448,7 @@ module EffectSystem =
             else slice
         | Scales (applicator, algorithm, playback, keyFrames) ->
             if Array.notEmpty keyFrames then
-                let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
+                let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectLocalTime playback keyFrames
                 let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
                 let tweened = tween Vector3.op_Multiply keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
                 let applied = applyTween Vector3.Multiply Vector3.Divide slice.Size tweened applicator
@@ -457,7 +456,7 @@ module EffectSystem =
             else slice
         | Offsets (applicator, algorithm, playback, keyFrames) ->
             if Array.notEmpty keyFrames then
-                let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
+                let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectLocalTime playback keyFrames
                 let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
                 let tweened = tween Vector3.op_Multiply keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
                 let applied = applyTween Vector3.Multiply Vector3.Divide slice.Position tweened applicator
@@ -465,7 +464,7 @@ module EffectSystem =
             else slice
         | Sizes (applicator, algorithm, playback, keyFrames) ->
             if Array.notEmpty keyFrames then
-                let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
+                let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectLocalTime playback keyFrames
                 let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
                 let tweened = tween Vector3.op_Multiply keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
                 let applied = applyTween Vector3.Multiply Vector3.Divide slice.Size tweened applicator
@@ -473,7 +472,7 @@ module EffectSystem =
             else slice
         | Angleses (applicator, algorithm, playback, keyFrames) ->
             if Array.notEmpty keyFrames then
-                let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
+                let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectLocalTime playback keyFrames
                 let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
                 let tweened = tween Vector3.Multiply keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
                 let applied = applyTween Vector3.Multiply Vector3.Divide slice.Angles tweened applicator
@@ -481,7 +480,7 @@ module EffectSystem =
             else slice
         | Degreeses (applicator, algorithm, playback, keyFrames) ->
             if Array.notEmpty keyFrames then
-                let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
+                let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectLocalTime playback keyFrames
                 let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
                 let tweened = tween Vector3.Multiply keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
                 let applied = applyTween Vector3.Multiply Vector3.Divide (Math.radiansToDegrees3d slice.Angles) tweened applicator
@@ -489,7 +488,7 @@ module EffectSystem =
             else slice
         | Elevations (applicator, algorithm, playback, keyFrames) ->
             if Array.notEmpty keyFrames then
-                let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
+                let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectLocalTime playback keyFrames
                 let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
                 let tweened = tween (fun (x, y) -> x * y) keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
                 let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) slice.Elevation tweened applicator
@@ -497,14 +496,14 @@ module EffectSystem =
             else slice
         | Insets (_, _, playback, keyFrames) ->
             if Array.notEmpty keyFrames then
-                let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
+                let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectLocalTime playback keyFrames
                 let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
                 let applied = if progress < 0.5f then keyFrame.TweenValue else keyFrame2.TweenValue
                 { slice with Inset = applied }
             else slice
         | Colors (applicator, algorithm, playback, keyFrames) ->
             if Array.notEmpty keyFrames then
-                let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
+                let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectLocalTime playback keyFrames
                 let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
                 let tweened = tween Vector4.op_Multiply (keyFrame.TweenValue.Vector4) (keyFrame2.TweenValue.Vector4) progress algorithm
                 let applied = applyTween Color.Multiply Color.Divide slice.Color (Nu.Color tweened) applicator
@@ -512,7 +511,7 @@ module EffectSystem =
             else slice
         | Glows (applicator, algorithm, playback, keyFrames) ->
             if Array.notEmpty keyFrames then
-                let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
+                let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectLocalTime playback keyFrames
                 let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
                 let tweened = tween Color.op_Multiply keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
                 let applied = applyTween Color.Multiply Color.Divide slice.Color tweened applicator
@@ -520,7 +519,7 @@ module EffectSystem =
             else slice
         | Volumes (applicator, algorithm, playback, keyFrames) ->
             if Array.notEmpty keyFrames then
-                let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
+                let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectLocalTime playback keyFrames
                 let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
                 let tweened = tween (fun (x, y) -> x * y) keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
                 let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) slice.Volume tweened applicator
@@ -593,7 +592,7 @@ module EffectSystem =
         if GameTime.notZero delay && celRun <> 0 then
 
             // compute cel
-            let cel = int (effectSystem.EffectTime / delay)
+            let cel = int (effectSystem.EffectLocalTime / delay)
 
             // eval inset
             let inset = evalInset celSize celRun celCount delay playback effectSystem
@@ -690,7 +689,7 @@ module EffectSystem =
         | Cycle count ->
             Array.fold
                 (fun effectSystem i ->
-                    let effectSystem = { effectSystem with ProgressOffset = 1.0f / single count * single i }
+                    let effectSystem = { effectSystem with EffectProgressOffset = 1.0f / single count * single i }
                     cycleViews incrementAspects content slice history effectSystem)
                 effectSystem
                 [|0 .. count - 1|]
@@ -714,14 +713,14 @@ module EffectSystem =
         let effectSystem =
             Seq.foldi
                 (fun i effectSystem (slice : Slice) ->
-                    let oldEffectTime = effectSystem.EffectTime
+                    let oldEffectTime = effectSystem.EffectLocalTime
                     let timePassed = effectSystem.EffectDelta * GameTime.make (int64 i) (single i)
                     let slice = { slice with Elevation = slice.Elevation + shift }
-                    let slice = evalAspects emitterAspects slice { effectSystem with EffectTime = effectSystem.EffectTime - timePassed }
-                    let emitCountLastFrame = single (effectSystem.EffectTime - timePassed - effectSystem.EffectDelta) * rate
-                    let emitCountThisFrame = single (effectSystem.EffectTime - timePassed) * rate
+                    let slice = evalAspects emitterAspects slice { effectSystem with EffectLocalTime = effectSystem.EffectLocalTime - timePassed }
+                    let emitCountLastFrame = single (effectSystem.EffectLocalTime - timePassed - effectSystem.EffectDelta) * rate
+                    let emitCountThisFrame = single (effectSystem.EffectLocalTime - timePassed) * rate
                     let emitCount = int emitCountThisFrame - int emitCountLastFrame
-                    let effectSystem = { effectSystem with EffectTime = timePassed }
+                    let effectSystem = { effectSystem with EffectLocalTime = timePassed }
                     let effectSystem =
                         Array.fold
                             (fun effectSystem _ ->
@@ -731,17 +730,17 @@ module EffectSystem =
                                 else effectSystem)
                             effectSystem
                             [|0 .. emitCount - 1|]
-                    { effectSystem with EffectTime = oldEffectTime })
+                    { effectSystem with EffectLocalTime = oldEffectTime })
                 effectSystem
                 history
         effectSystem
 
     and private evalSegment start stop content slice history effectSystem =
-        if  effectSystem.EffectTime >= start &&
-            effectSystem.EffectTime < stop then
-            let effectSystem = { effectSystem with EffectTime = effectSystem.EffectTime - start }
+        if  effectSystem.EffectLocalTime >= start &&
+            effectSystem.EffectLocalTime < stop then
+            let effectSystem = { effectSystem with EffectLocalTime = effectSystem.EffectLocalTime - start }
             let effectSystem = evalContent content slice history effectSystem
-            let effectSystem = { effectSystem with EffectTime = effectSystem.EffectTime + start }
+            let effectSystem = { effectSystem with EffectLocalTime = effectSystem.EffectLocalTime + start }
             effectSystem
         else effectSystem
 
@@ -792,7 +791,7 @@ module EffectSystem =
     let eval descriptor slice history effectSystem =
         let alive =
             match descriptor.LifeTimeOpt with
-            | Some lifetime -> lifetime <= GameTime.zero || effectSystem.EffectTime <= lifetime
+            | Some lifetime -> lifetime <= GameTime.zero || effectSystem.EffectLocalTime <= lifetime
             | None -> true
         if alive then
             let effectSystem = { effectSystem with EffectEnv = Map.concat effectSystem.EffectEnv descriptor.Definitions }
@@ -805,13 +804,12 @@ module EffectSystem =
                 release effectSystem
         else release effectSystem
 
-    let make effectTime effectDelta effectAbsolute effectChaos globalEnv =
-        { EffectViews = List<View> ()
-          ProgressOffset = 0.0f
-          EffectTime = effectTime
-          EffectDelta = effectDelta
-          EffectAbsolute = effectAbsolute
-          EffectChaos = effectChaos
+    let make localTime delta absolute globalEnv =
+        { EffectLocalTime = localTime
+          EffectDelta = delta
+          EffectProgressOffset = 0.0f
+          EffectAbsolute = absolute
+          EffectViews = List<View> ()
           EffectEnv = globalEnv }
 
 /// Evaluates effect descriptors.
