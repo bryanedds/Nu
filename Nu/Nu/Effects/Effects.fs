@@ -213,6 +213,20 @@ type EffectDescriptor =
 [<RequireQualifiedAccess>]
 module EffectDescriptor =
 
+    /// Combine multiple effect descriptors into one.
+    let concat descriptors =
+        { EffectName = String.concat "+" (Seq.map (fun descriptor -> descriptor.EffectName) descriptors)
+          LifeTimeOpt = None
+          Definitions = Seq.fold (fun definitions descriptor -> Map.concat definitions descriptor.Definitions) Map.empty descriptors
+          Content = Effects.Contents (Effects.Shift 0.0f, descriptors |> Seq.map (fun descriptor -> descriptor.Content) |> Array.ofSeq) }
+
+    /// Make an effect descriptor.
+    let make name lifeTimeOpt definitions content =
+        { EffectName = name
+          LifeTimeOpt = lifeTimeOpt
+          Definitions = definitions
+          Content = content }
+
     /// The empty effect descriptor.
     let empty =
         { EffectName = Constants.Engine.EffectNameDefault
@@ -791,12 +805,6 @@ module EffectSystem =
                 Log.debug ("Error in effect descriptor:\n" + effectStr + "\n due to: " + scstring exn)
                 release effectSystem
         else release effectSystem
-
-    let combine descriptors =
-        { EffectName = String.concat "+" (List.map (fun descriptor -> descriptor.EffectName) descriptors)
-          LifeTimeOpt = None
-          Definitions = List.fold (fun definitions descriptor -> Map.concat definitions descriptor.Definitions) Map.empty descriptors
-          Content = Contents (Shift 0.0f, descriptors |> List.map (fun descriptor -> descriptor.Content) |> Array.ofList) }
 
     let make effectTime effectDelta effectAbsolute effectChaos globalEnv =
         { EffectViews = List<View> ()
