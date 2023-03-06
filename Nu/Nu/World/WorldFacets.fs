@@ -585,6 +585,9 @@ module EffectFacet2dModule =
         member this.EffectHistoryMax = lens (nameof this.EffectHistoryMax) this this.GetEffectHistoryMax this.SetEffectHistoryMax
         member this.GetEffectHistory world : Effects.Slice Nito.Collections.Deque = this.Get (nameof this.EffectHistory) world
         member this.EffectHistory = lensReadOnly (nameof this.EffectHistory) this this.GetEffectHistory
+        member this.GetEffectTags world : EffectTags = this.Get (nameof this.EffectTags) world
+        member this.SetEffectTags (value : EffectTags) world = this.Set (nameof this.EffectTags) value world
+        member this.EffectTags = lens (nameof this.EffectTags) this this.GetEffectTags this.SetEffectTags
 
         /// The start time of the effect, or zero if none.
         member this.GetEffectStartTime world =
@@ -615,7 +618,8 @@ module EffectFacet2dModule =
             (Cascade, world)
 
         static member Properties =
-            [define Entity.SelfDestruct false
+            [define Entity.ParticleSystem ParticleSystem.empty
+             define Entity.SelfDestruct false
              define Entity.EffectSymbolOpt None
              define Entity.EffectStartTimeOpt None
              define Entity.EffectDefinitions Map.empty
@@ -623,8 +627,8 @@ module EffectFacet2dModule =
              define Entity.EffectOffset v3Zero
              define Entity.EffectCentered true
              define Entity.EffectHistoryMax Constants.Effects.EffectHistoryMaxDefault
-             define Entity.ParticleSystem ParticleSystem.empty
-             variable Entity.EffectHistory (fun _ -> Nito.Collections.Deque<Effects.Slice> (inc Constants.Effects.EffectHistoryMaxDefault))]
+             variable Entity.EffectHistory (fun _ -> Nito.Collections.Deque<Effects.Slice> (inc Constants.Effects.EffectHistoryMaxDefault))
+             nonPersistent Entity.EffectTags Map.empty]
 
         override this.Render (entity, world) =
 
@@ -644,6 +648,7 @@ module EffectFacet2dModule =
             // run effect, optionally destroying upon exhaustion
             let (exhausted, effect, world) = Effect.run effect world
             let world = entity.SetParticleSystem effect.ParticleSystem world
+            let world = entity.SetEffectTags effect.Tags world
             if exhausted && entity.GetSelfDestruct world
             then World.destroyEntity entity world
             else world
