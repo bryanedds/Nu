@@ -558,9 +558,8 @@ module BasicEmitterFacet2dModule =
 module EffectFacet2dModule =
 
     type RunMode =
-        | RunOnPreUpdate
-        | RunOnUpdate
-        | RunOnPostUpdate
+        | RunEarly
+        | RunLate
 
     type Entity with
 
@@ -577,9 +576,9 @@ module EffectFacet2dModule =
         member this.SetEffectDefinitions (value : Effects.Definitions) world = this.Set (nameof this.EffectDefinitions) value world
         member this.EffectDefinitions = lens (nameof this.EffectDefinitions) this this.GetEffectDefinitions this.SetEffectDefinitions
         member this.GetEffectDescriptor world : EffectDescriptor = this.Get (nameof this.EffectDescriptor) world
-        /// When RunMode is set to RunOnPreUpdate (which it is by default), call this AFETER setting the rest of the
-        /// entity's properties. This is because setting the effect descriptin in RunOnPreUpdate mode will immediately run
-        /// the first frame of the effect due to a semantic limitation in Nu.
+        /// When RunMode is set to RunEarly, call this AFETER setting the rest of the entity's properties. This
+        /// is because setting the effect descriptin in RunEarly mode will immediately run the first frame of the
+        /// effect due to a semantic limitation in Nu.
         member this.SetEffectDescriptor (value : EffectDescriptor) world = this.Set (nameof this.EffectDescriptor) value world
         member this.EffectDescriptor = lens (nameof this.EffectDescriptor) this this.GetEffectDescriptor this.SetEffectDescriptor
         member this.GetEffectCentered world : bool = this.Get (nameof this.EffectCentered) world
@@ -643,7 +642,7 @@ module EffectFacet2dModule =
             let world =
                 if entity.GetEnabled world then
                     match entity.GetRunMode world with
-                    | RunOnPreUpdate -> run entity world
+                    | RunEarly -> run entity world
                     | _ -> world
                 else world
             (Cascade, world)
@@ -659,24 +658,24 @@ module EffectFacet2dModule =
             (Cascade, world)
 
 #if DISABLE_ENTITY_PRE_UPDATE
-        static let handleRunEarly evt world =
+        static let handlePreUpdate evt world =
             let entity = evt.Subscriber : Entity
             let world =
                 if entity.GetEnabled world then
                     match entity.GetRunMode world with
-                    | RunOnPreUpdate -> run entity world
+                    | RunEarly -> run entity world
                     | _ -> world
                 else world
             (Cascade, world)
 #endif
 
 #if DISABLE_ENTITY_POST_UPDATE
-        static let handleRunLate evt world =
+        static let handlePostUpdate evt world =
             let entity = evt.Subscriber : Entity
             let world =
                 if entity.GetEnabled world then
                     match entity.GetRunMode world with
-                    | RunOnPostUpdate -> run entity world
+                    | RunLate -> run entity world
                     | _ -> world
                 else world
             (Cascade, world)
@@ -685,7 +684,7 @@ module EffectFacet2dModule =
         static member Properties =
             [define Entity.ParticleSystem ParticleSystem.empty
              define Entity.SelfDestruct false
-             define Entity.RunMode RunOnPreUpdate
+             define Entity.RunMode RunLate
              define Entity.EffectSymbolOpt None
              define Entity.EffectStartTimeOpt None
              define Entity.EffectDefinitions Map.empty
@@ -703,28 +702,23 @@ module EffectFacet2dModule =
             let world = World.monitor handleEffectsChange (entity.GetChangeEvent (nameof entity.EffectSymbolOpt)) entity world
             let world = World.monitor handleAssetsReload Events.AssetsReload entity world
 #if DISABLE_ENTITY_PRE_UPDATE
-            let world = World.monitor handleRunEarly entity.Group.PreUpdateEvent entity world
+            let world = World.monitor handlePreUpdate entity.Group.PreUpdateEvent entity world
 #endif
 #if DISABLE_ENTITY_POST_UPDATE
-            let world = World.monitor handleRunLate entity.Group.PostUpdateEvent entity world
+            let world = World.monitor handlePostUpdate entity.Group.PostUpdateEvent entity world
 #endif
             world
 
 #if !DISABLE_ENTITY_PRE_UPDATE
         override this.PreUpdate (entity, world) =
-            if entity.GetEnabled world && entity.GetRunMode world = RunOnPreUpdate
+            if entity.GetEnabled world && entity.GetRunMode world = RunEarly
             then run entity world
             else world
 #endif
 
-        override this.Update (entity, world) =
-            if entity.GetEnabled world && entity.GetRunMode world = RunOnUpdate
-            then run entity world
-            else world
-
 #if !DISABLE_ENTITY_POST_UPDATE
         override this.PostUpdate (entity, world) =
-            if entity.GetEnabled world && entity.GetRunMode world = RunOnPostUpdate
+            if entity.GetEnabled world && entity.GetRunMode world = RunLate
             then run entity world
             else world
 #endif

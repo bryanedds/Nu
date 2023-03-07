@@ -170,6 +170,19 @@ module Effect =
                     ParticleSystem.add name emitter particleSystem)
                     effect.ParticleSystem_
 
+            // update effect history in-place
+            effect.History_.AddToFront effectSlice
+            if  effect.History_.Count > effect.HistoryMax_ then
+                effect.History_.RemoveFromBack () |> ignore
+
+            // update tags
+            let effect = { effect with Tags_ = tags }
+
+            // run particles
+            let (particleSystem, output) = ParticleSystem.run delta time particleSystem
+            let effect = { effect with ParticleSystem_ = particleSystem }
+            let (effect, world) = processParticleSystemOutput output effect world
+
             // render particles
             let particlesMessages =
                 particleSystem |>
@@ -181,19 +194,7 @@ module Effect =
                       RenderDescriptor2d = ParticlesDescriptor descriptor })
             let world = World.enqueueRenderLayeredMessages2d particlesMessages world
 
-            // update effect history in-place
-            effect.History_.AddToFront effectSlice
-            if  effect.History_.Count > effect.HistoryMax_ then
-                effect.History_.RemoveFromBack () |> ignore
-
-            // update tags
-            let effect = { effect with Tags_ = tags }
-
-            // run particle system
-            let particleSystem = effect.ParticleSystem_
-            let (particleSystem, output) = ParticleSystem.run delta time particleSystem
-            let effect = { effect with ParticleSystem_ = particleSystem }
-            let (effect, world) = processParticleSystemOutput output effect world
+            // fin
             (Live, effect, world)
 
         // dead
