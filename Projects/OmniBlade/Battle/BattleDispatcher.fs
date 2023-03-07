@@ -916,30 +916,28 @@ module BattleDispatcher =
             | DisplayCancel targetIndex ->
                 match Battle.tryGetCharacter targetIndex battle with
                 | Some target ->
-                    let descriptor = EffectDescriptors.cancel ()
                     let (entity, world) = World.createEntity<EffectDispatcher2d> DefaultOverlay None Simulants.BattleScene world
                     let world = entity.SetPosition target.CenterOffset4 world
                     let world = entity.SetElevation (Constants.Battle.GuiEffectElevation + 1.0f) world
                     let world = entity.SetSelfDestruct true world
-                    let world = entity.SetEffectDescriptor descriptor world
+                    let world = entity.SetEffectDescriptor EffectDescriptors.cancel world
                     just world
                 | None -> just world
 
             | DisplayHitPointsChange (targetIndex, delta) ->
                 match Battle.tryGetCharacter targetIndex battle with
                 | Some target ->
-                    let descriptor = EffectDescriptors.hitPointsChange delta
                     let (entity, world) = World.createEntity<EffectDispatcher2d> DefaultOverlay None Simulants.BattleScene world
                     let world = entity.SetPosition target.BottomOriginalOffset4 world
                     let world = entity.SetElevation Constants.Battle.GuiEffectElevation world
                     let world = entity.SetSelfDestruct true world
-                    let world = entity.SetEffectDescriptor descriptor world
+                    let world = entity.SetEffectDescriptor (EffectDescriptors.hitPointsChange delta) world
                     just world
                 | None -> just world
 
             | DisplayBolt (delay, targetIndex) ->
                 match Battle.tryGetCharacter targetIndex battle with
-                | Some target -> displayEffect delay (v3 192.0f 758.0f 0.0f) (Bottom target.Bottom) (EffectDescriptors.bolt ()) screen world |> just
+                | Some target -> displayEffect delay (v3 192.0f 758.0f 0.0f) (Bottom target.Bottom) EffectDescriptors.bolt screen world |> just
                 | None -> just world
 
             | DisplayCycloneBlur (delay, targetIndex, radius) ->
@@ -949,7 +947,7 @@ module BattleDispatcher =
 
             | DisplayImpactSplash (delay, targetIndex) ->
                 match Battle.tryGetCharacter targetIndex battle with
-                | Some target -> displayEffect delay (v3 192.0f 96.0f 0.0f) (Bottom target.Bottom) (EffectDescriptors.impactSplash ()) screen world |> just
+                | Some target -> displayEffect delay (v3 192.0f 96.0f 0.0f) (Bottom target.Bottom) EffectDescriptors.impactSplash screen world |> just
                 | None -> just world
 
             | DisplayCut (delay, light, targetIndex) ->
@@ -961,14 +959,13 @@ module BattleDispatcher =
                 match Battle.tryGetCharacter targetIndex battle with
                 | Some target ->
                     let projection = Vector3.Normalize (target.Bottom - bottom) * single Constants.Render.VirtualResolutionX + target.Bottom
-                    let descriptor = (EffectDescriptors.slashSpike bottom projection)
-                    let world = displayEffect delay (v3 96.0f 96.0f 0.0f) (Bottom bottom) descriptor screen world
+                    let world = displayEffect delay (v3 96.0f 96.0f 0.0f) (Bottom bottom) (EffectDescriptors.slashSpike bottom projection) screen world
                     just world
                 | None -> just world
 
             | DisplayArcaneCast (delay, sourceIndex) ->
                 match Battle.tryGetCharacter sourceIndex battle with
-                | Some source -> displayEffect delay (v3 300.0f 300.0f 0.0f) (Bottom (source.Bottom - v3 0.0f 120.0f 0.0f)) (EffectDescriptors.arcaneCast ()) screen world |> just
+                | Some source -> displayEffect delay (v3 300.0f 300.0f 0.0f) (Bottom (source.Bottom - v3 0.0f 120.0f 0.0f)) EffectDescriptors.arcaneCast screen world |> just
                 | None -> just world
             
             | DisplayFire (delay, sourceIndex, targetIndex) ->
@@ -976,7 +973,7 @@ module BattleDispatcher =
                 | Some source ->
                     match Battle.tryGetCharacter targetIndex battle with
                     | Some target ->
-                        let descriptor = EffectDescriptors.fire (source.Bottom + (v3 80.0f 80.0f 0.0f)) (target.Bottom + (v3 0.0f 20.0f 0.0f))
+                        let descriptor = EffectDescriptors.fire (source.Bottom + v3 80.0f 80.0f 0.0f) (target.Bottom + v3 0.0f 20.0f 0.0f)
                         let world = displayEffect delay (v3 100.0f 100.0f 0.0f) (Bottom (source.Bottom - v3 0.0f 50.0f 0.0f)) descriptor screen world
                         just world
                     | None -> just world
@@ -995,37 +992,37 @@ module BattleDispatcher =
             
             | DisplayIce (delay, targetIndex) ->
                 match Battle.tryGetCharacter targetIndex battle with
-                | Some target -> displayEffect delay (v3 48.0f 48.0f 0.0f) (Bottom target.Bottom) (EffectDescriptors.ice ()) screen world |> just
+                | Some target -> displayEffect delay (v3 48.0f 48.0f 0.0f) (Bottom target.Bottom) EffectDescriptors.ice screen world |> just
                 | None -> just world
             
             | DisplaySnowball (delay, targetIndex) ->
                 match Battle.tryGetCharacter targetIndex battle with
-                | Some target -> displayEffect delay (v3 432.0f 432.0f 0.0f) (Bottom target.Bottom) (EffectDescriptors.snowball ()) screen world |> just
+                | Some target -> displayEffect delay (v3 432.0f 432.0f 0.0f) (Bottom target.Bottom) EffectDescriptors.snowball screen world |> just
                 | None -> just world
 
             | DisplayHolyCast (delay, sourceIndex) ->
                 match Battle.tryGetCharacter sourceIndex battle with
-                | Some source -> displayEffect delay (v3 300.0f 300.0f 0.0f) (Bottom (source.Bottom - v3 0.0f 100.0f 0.0f)) (EffectDescriptors.holyCast ()) screen world |> just
+                | Some source -> displayEffect delay (v3 300.0f 300.0f 0.0f) (Bottom (source.Bottom - v3 0.0f 100.0f 0.0f)) EffectDescriptors.holyCast screen world |> just
                 | None -> just world
             
             | DisplayPurify (delay, targetIndex) ->
                 match Battle.tryGetCharacter targetIndex battle with
-                | Some target -> displayEffect delay (v3 192.0f 192.0f 0.0f) (Bottom (target.Bottom - v3 0.0f 100.0f 0.0f)) (EffectDescriptors.purify ()) screen world |> just
+                | Some target -> displayEffect delay (v3 192.0f 192.0f 0.0f) (Bottom (target.Bottom - v3 0.0f 100.0f 0.0f)) EffectDescriptors.purify screen world |> just
                 | None -> just world
 
             | DisplayCure (delay, targetIndex) ->
                 match Battle.tryGetCharacter targetIndex battle with
-                | Some target -> displayEffect delay (v3 48.0f 48.0f 0.0f) (Bottom target.Bottom) (EffectDescriptors.cure ()) screen world |> just
+                | Some target -> displayEffect delay (v3 48.0f 48.0f 0.0f) (Bottom target.Bottom) EffectDescriptors.cure screen world |> just
                 | None -> just world
             
             | DisplayProtect (delay, targetIndex) ->
                 match Battle.tryGetCharacter targetIndex battle with
-                | Some target -> displayEffect delay (v3 48.0f 48.0f 0.0f) (Bottom target.Bottom) (EffectDescriptors.protect ()) screen world |> just
+                | Some target -> displayEffect delay (v3 48.0f 48.0f 0.0f) (Bottom target.Bottom) EffectDescriptors.protect screen world |> just
                 | None -> just world
 
             | DisplayDimensionalCast (delay, sourceIndex) ->
                 match Battle.tryGetCharacter sourceIndex battle with
-                | Some source -> displayEffect delay (v3 48.0f 48.0f 0.0f) (Bottom source.Bottom) (EffectDescriptors.dimensionalCast ()) screen world |> just
+                | Some source -> displayEffect delay (v3 48.0f 48.0f 0.0f) (Bottom source.Bottom) EffectDescriptors.dimensionalCast screen world |> just
                 | None -> just world
 
             | DisplayBuff (delay, statusType, targetIndex) ->
@@ -1039,7 +1036,7 @@ module BattleDispatcher =
                 | None -> just world
 
             | DisplayConjureIfrit delay ->
-                displayEffect delay (v3 48.0f 48.0f 0.0f) (Position (v3 0.0f 0.0f 0.0f)) (EffectDescriptors.conjureIfrit ()) screen world |> just
+                displayEffect delay (v3 48.0f 48.0f 0.0f) (Position (v3 0.0f 0.0f 0.0f)) EffectDescriptors.conjureIfrit screen world |> just
 
             | PlaySound (delay, volume, sound) ->
                 let world = World.schedule delay (World.playSound volume sound) screen world
