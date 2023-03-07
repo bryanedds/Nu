@@ -784,6 +784,9 @@ module RigidBodyFacetModule =
         member this.GetSensor world : bool = this.Get (nameof this.Sensor) world
         member this.SetSensor (value : bool) world = this.Set (nameof this.Sensor) value world
         member this.Sensor = lens (nameof this.Sensor) this this.GetSensor this.SetSensor
+        member this.GetModelDriven world : bool = this.Get (nameof this.ModelDriven) world
+        member this.SetModelDriven (value : bool) world = this.Set (nameof this.ModelDriven) value world
+        member this.ModelDriven = lens (nameof this.ModelDriven) this this.GetModelDriven this.SetModelDriven
         member this.GetPhysicsId world : PhysicsId = this.Get (nameof this.PhysicsId) world
         member this.PhysicsId = lensReadOnly (nameof this.PhysicsId) this this.GetPhysicsId
         member this.BodyCollisionEvent = Events.BodyCollision --> this
@@ -813,10 +816,11 @@ module RigidBodyFacetModule =
              define Entity.GravityScale 1.0f
              define Entity.CollisionCategories "1"
              define Entity.CollisionMask "@"
-             define Entity.BodyShape (BodyBox { Center = v3Zero; Size = v3 1.0f 1.0f 0.0f; PropertiesOpt = None })
+             define Entity.BodyShape (BodyBox { Center = v3Zero; Size = v3One; PropertiesOpt = None })
              define Entity.IgnoreCCD false
              define Entity.Bullet false
              define Entity.Sensor false
+             define Entity.ModelDriven false
              computed Entity.PhysicsId (fun (entity : Entity) world -> { SourceId = entity.GetId world; CorrelationId = 0UL }) None]
 
         override this.Register (entity, world) =
