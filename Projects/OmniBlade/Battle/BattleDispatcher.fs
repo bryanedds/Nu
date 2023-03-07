@@ -23,6 +23,7 @@ module BattleDispatcher =
 
     type BattleMessage =
         | Update
+        | UpdateRideTags of Map<string, Effects.Slice>
         | InteractDialog
         | RegularItemSelect of CharacterIndex * string
         | RegularItemCancel of CharacterIndex
@@ -471,10 +472,6 @@ module BattleDispatcher =
                                         else battle
                                     withSignals sigs battle
                                 else just battle
-                            let battle =
-                                match Map.tryFind "Tag" battle.RideTags with
-                                | Some tag -> Battle.updateCharacterBottom (constant tag.Position) sourceIndex battle
-                                | None -> battle
                             withSignals sigs battle
                         else just (Battle.abortCharacterAction time sourceIndex battle)
                     | (_, _) -> just (Battle.abortCharacterAction time sourceIndex battle)
@@ -776,19 +773,13 @@ module BattleDispatcher =
 
         override this.Initialize (_, _) =
             [Screen.UpdateEvent => Update
-             Screen.PostUpdateEvent => UpdateEye]
+             Screen.PostUpdateEvent => UpdateEye
+             Simulants.BattleSceneRide.EffectTags.ChangeEvent =|> fun evt -> UpdateRideTags (evt.Data.Value :?> Map<string, Effects.Slice>)]
 
         override this.Message (battle, message, _, world) =
 
             match message with
             | Update ->
-
-                // update ride tags
-                let rideTags =
-                    if Simulants.BattleSceneRide.Exists world
-                    then Simulants.BattleSceneRide.GetEffectTags world
-                    else Map.empty
-                let battle = Battle.updateRideTags (constant rideTags) battle
 
                 // advance battle
                 let (signals, battle) = 
@@ -806,6 +797,17 @@ module BattleDispatcher =
 
                 // fin
                 (signals, battle)
+
+            | UpdateRideTags tags ->
+                match Map.tryFind "Tag" tags with
+                | Some tag ->
+                    match battle.CurrentCommandOpt with
+                    | Some command ->
+                        let character = command.ActionCommand.Source
+                        let battle = Battle.updateCharacterBottom (constant tag.Position) character battle
+                        just battle
+                    | None -> just battle
+                | None -> just battle
 
             | InteractDialog ->
                 match battle.DialogOpt with
