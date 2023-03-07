@@ -431,7 +431,7 @@ module BattleDispatcher =
                                     match hopOpt with
                                     | Some hop -> withSignal (DisplayHop hop) battle
                                     | None -> just battle
-                                elif localTime = techAnimationData.TechStop then
+                                elif localTime > techAnimationData.TechStop then
                                     let (techCost, _, results) = Battle.evalTech sourceIndex targetIndex techType battle
                                     let (battle, sigs) =
                                         Map.fold (fun (battle, sigs) characterIndex (cancelled, affectsWounded, hitPointsChange, added, removed) ->
