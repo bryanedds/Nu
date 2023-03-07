@@ -557,15 +557,16 @@ module BasicEmitterFacet2dModule =
 [<AutoOpen>]
 module EffectFacet2dModule =
 
-    type EffectMode =
-        | RunEarly
-        | RunLate
+    type RunMode =
+        | RunOnPreUpdate
+        | RunOnUpdate
+        | RunOnPostUpdate
 
     type Entity with
 
-        member this.GetEffectMode world : EffectMode = this.Get (nameof this.EffectMode) world
-        member this.SetEffectMode (value : EffectMode) world = this.Set (nameof this.EffectMode) value world
-        member this.EffectMode = lens (nameof this.EffectMode) this this.GetEffectMode this.SetEffectMode
+        member this.GetRunMode world : RunMode = this.Get (nameof this.RunMode) world
+        member this.SetRunMode (value : RunMode) world = this.Set (nameof this.RunMode) value world
+        member this.RunMode = lens (nameof this.RunMode) this this.GetRunMode this.SetRunMode
         member this.GetEffectSymbolOpt world : Symbol AssetTag option = this.Get (nameof this.EffectSymbolOpt) world
         member this.SetEffectSymbolOpt (value : Symbol AssetTag option) world = this.Set (nameof this.EffectSymbolOpt) value world
         member this.EffectSymbolOpt = lens (nameof this.EffectSymbolOpt) this this.GetEffectSymbolOpt this.SetEffectSymbolOpt
@@ -576,8 +577,8 @@ module EffectFacet2dModule =
         member this.SetEffectDefinitions (value : Effects.Definitions) world = this.Set (nameof this.EffectDefinitions) value world
         member this.EffectDefinitions = lens (nameof this.EffectDefinitions) this this.GetEffectDefinitions this.SetEffectDefinitions
         member this.GetEffectDescriptor world : EffectDescriptor = this.Get (nameof this.EffectDescriptor) world
-        /// When EffectMode is set to RunEarly (which it is by default), call this AFETER setting the rest of the
-        /// entity's properties. This is because setting the effect descriptin in RunEarly mode will immediately run
+        /// When RunMode is set to RunOnPreUpdate (which it is by default), call this AFETER setting the rest of the
+        /// entity's properties. This is because setting the effect descriptin in RunOnPreUpdate mode will immediately run
         /// the first frame of the effect due to a semantic limitation in Nu.
         member this.SetEffectDescriptor (value : EffectDescriptor) world = this.Set (nameof this.EffectDescriptor) value world
         member this.EffectDescriptor = lens (nameof this.EffectDescriptor) this this.GetEffectDescriptor this.SetEffectDescriptor
@@ -641,8 +642,8 @@ module EffectFacet2dModule =
             let entity = evt.Subscriber : Entity
             let world =
                 if entity.GetEnabled world then
-                    match entity.GetEffectMode world with
-                    | RunEarly -> run entity world
+                    match entity.GetRunMode world with
+                    | RunOnPreUpdate -> run entity world
                     | _ -> world
                 else world
             (Cascade, world)
@@ -662,8 +663,8 @@ module EffectFacet2dModule =
             let entity = evt.Subscriber : Entity
             let world =
                 if entity.GetEnabled world then
-                    match entity.GetEffectMode world with
-                    | RunEarly -> run entity world
+                    match entity.GetRunMode world with
+                    | RunOnPreUpdate -> run entity world
                     | _ -> world
                 else world
             (Cascade, world)
@@ -674,8 +675,8 @@ module EffectFacet2dModule =
             let entity = evt.Subscriber : Entity
             let world =
                 if entity.GetEnabled world then
-                    match entity.GetEffectMode world with
-                    | RunLate -> run entity world
+                    match entity.GetRunMode world with
+                    | RunOnPostUpdate -> run entity world
                     | _ -> world
                 else world
             (Cascade, world)
@@ -684,7 +685,7 @@ module EffectFacet2dModule =
         static member Properties =
             [define Entity.ParticleSystem ParticleSystem.empty
              define Entity.SelfDestruct false
-             define Entity.EffectMode RunEarly
+             define Entity.RunMode RunOnPreUpdate
              define Entity.EffectSymbolOpt None
              define Entity.EffectStartTimeOpt None
              define Entity.EffectDefinitions Map.empty
@@ -697,14 +698,14 @@ module EffectFacet2dModule =
 
 #if !DISABLE_ENTITY_PRE_UPDATE
         override this.PreUpdate (entity, world) =
-            if entity.GetEnabled world && entity.GetEffectMode world = RunEarly
+            if entity.GetEnabled world && entity.GetRunMode world = RunOnPreUpdate
             then run entity world
             else world
 #endif
 
 #if !DISABLE_ENTITY_POST_UPDATE
         override this.PostUpdate (entity, world) =
-            if entity.GetEnabled world && entity.GetEffectMode world = RunLate
+            if entity.GetEnabled world && entity.GetRunMode world = RunOnPostUpdate
             then run entity world
             else world
 #endif
@@ -722,6 +723,11 @@ module EffectFacet2dModule =
             let world = World.monitor handleRunLate entity.Group.PostUpdateEvent entity world
 #endif
             world
+
+        override this.Update (entity, world) =
+            if entity.GetEnabled world && entity.GetRunMode world = RunOnUpdate
+            then run entity world
+            else world
 
 [<AutoOpen>]
 module RigidBodyFacetModule =
