@@ -696,20 +696,6 @@ module EffectFacet2dModule =
              variable Entity.EffectHistory (fun _ -> Nito.Collections.Deque<Effects.Slice> (inc Constants.Effects.EffectHistoryMaxDefault))
              nonPersistent Entity.EffectTags Map.empty]
 
-#if !DISABLE_ENTITY_PRE_UPDATE
-        override this.PreUpdate (entity, world) =
-            if entity.GetEnabled world && entity.GetRunMode world = RunOnPreUpdate
-            then run entity world
-            else world
-#endif
-
-#if !DISABLE_ENTITY_POST_UPDATE
-        override this.PostUpdate (entity, world) =
-            if entity.GetEnabled world && entity.GetRunMode world = RunOnPostUpdate
-            then run entity world
-            else world
-#endif
-
         override this.Register (entity, world) =
             let effectStartTime = Option.defaultValue (World.getGameTime world) (entity.GetEffectStartTimeOpt world)
             let world = entity.SetEffectStartTimeOpt (Some effectStartTime) world
@@ -724,10 +710,24 @@ module EffectFacet2dModule =
 #endif
             world
 
+#if !DISABLE_ENTITY_PRE_UPDATE
+        override this.PreUpdate (entity, world) =
+            if entity.GetEnabled world && entity.GetRunMode world = RunOnPreUpdate
+            then run entity world
+            else world
+#endif
+
         override this.Update (entity, world) =
             if entity.GetEnabled world && entity.GetRunMode world = RunOnUpdate
             then run entity world
             else world
+
+#if !DISABLE_ENTITY_POST_UPDATE
+        override this.PostUpdate (entity, world) =
+            if entity.GetEnabled world && entity.GetRunMode world = RunOnPostUpdate
+            then run entity world
+            else world
+#endif
 
 [<AutoOpen>]
 module RigidBodyFacetModule =
