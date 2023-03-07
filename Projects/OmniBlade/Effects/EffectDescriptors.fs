@@ -38,7 +38,7 @@ module EffectDescriptors =
                        { TweenValue = colorTransparent; TweenLength = 0L }|])|],
                  Nil) }
 
-    let cancel () =
+    let cancel =
         { EffectName = "Cancel"
           LifeTimeOpt = Some 40L
           Definitions = Map.empty
@@ -57,7 +57,7 @@ module EffectDescriptors =
                        { TweenValue = v3 156.0f 48.0f 0.0f; TweenLength = 0L }|])|],
                  Nil) }
 
-    let bolt () =
+    let bolt =
         let boltSprite =
             StaticSprite
                 (Resource (AssetTag.toPair Assets.Battle.BoltAnimationSheet),
@@ -100,7 +100,7 @@ module EffectDescriptors =
                    Delay (10L, explosionSprite)
                    Delay (10L, thunderSoundEffect)|]) }
 
-    let impactSplash () =
+    let impactSplash =
         { EffectName = "ImpactSplash"
           LifeTimeOpt = Some 24L
           Definitions = Map.empty
@@ -157,7 +157,7 @@ module EffectDescriptors =
                 [|Circle (radius, 2.0f, 98L); Size (v3 234.0f 234.0f 0.0f)|],
                 Nil) }
 
-    let arcaneCast () =
+    let arcaneCast =
         let halfWidth = 50.0f
         let altitude = halfWidth * 2.0f * 0.866f
         let candle position = AnimatedSprite (Resource (AssetTag.toPair Assets.Battle.CandleAnimationSheet), v2i 16 20, 3, 3, 5L, Loop, [|Size (v3 64.0f 80.0f 0.0f); position|], Nil)
@@ -217,7 +217,7 @@ module EffectDescriptors =
                    Color (Color.One.WithA8 (byte 207))|],
                  AnimatedSprite (Resource (AssetTag.toPair Assets.Battle.FlameAnimationSheet), v2i 64 64, 6, 6, 6L, Once, [||], Nil))}
 
-    let ice () =
+    let ice =
         let coverRadius = 50.0f
         let bombardActivation = Enableds (Equal, Once, [|{ LogicValue = true; LogicLength = 10L };{ LogicValue = false; LogicLength = 0L }|])
         let bombardTravel origin = Positions (Sum, Linear, Once, [|{ TweenValue = origin; TweenLength = 10L };{ TweenValue = v3Zero; TweenLength = 0L }|])
@@ -245,7 +245,7 @@ module EffectDescriptors =
                    iceBombard (v3 500.0f 500.0f 0.0f)
                    iceBombard (v3 500.0f -500.0f 0.0f)|])}
 
-    let snowball () =
+    let snowball =
         let fall = Positions (Sum, Linear, Once, [|{ TweenValue = v3 0.0f 800.0f 0.0f; TweenLength = 80L };{ TweenValue = v3 0.0f -800.0f 0.0f; TweenLength = 0L }|])
         let rotate =
             Degreeses (Set, Constant, Loop,
@@ -261,7 +261,7 @@ module EffectDescriptors =
                (Resource (AssetTag.toPair Assets.Battle.SnowballImage),
                 [|Size (v3 432.0f 432.0f 0.0f); fall; rotate|], Nil) }
 
-    let holyCast () =
+    let holyCast =
         { EffectName = "HolyCast"
           LifeTimeOpt = Some 36L
           Definitions = Map.empty
@@ -270,7 +270,7 @@ module EffectDescriptors =
                (Resource (AssetTag.toPair Assets.Battle.HolyCastAnimationSheet),
                 v2i 100 100, 6, 36, 1L, Once, [||], Nil) }
 
-    let purify () =
+    let purify =
         let sprite position =
             AnimatedSprite
              (Resource (AssetTag.toPair Assets.Battle.PurifyAnimationSheet),
@@ -285,7 +285,7 @@ module EffectDescriptors =
                    Delay (12L, sprite (v3 -16.0f 64.0f 0.0f));
                    Delay (24L, sprite (v3 16.0f 32.0f 0.0f))|])}
 
-    let cure () =
+    let cure =
         let path =
             Aspects
                 [|Positions
@@ -308,7 +308,7 @@ module EffectDescriptors =
           Definitions = Map.empty
           Content = Emit (Shift 0.0f, Rate 0.2f, [|path|], [||], sparkle)}
 
-    let protect () =
+    let protect =
         let protection aspects = StaticSprite (Resource (AssetTag.toPair Assets.Battle.ProtectSphereImage), aspects, Nil)
         let blink = Enableds (Equal, Loop, [|{ LogicValue = true; LogicLength = 1L };{ LogicValue = false; LogicLength = 2L }|])
         let outwardReach = 64.0f
@@ -333,7 +333,7 @@ module EffectDescriptors =
                              protection [|blink; outwardMovement (v3 -outwardReach -outwardReach 0.0f); bend (v3 0.0f clockwiseBias 0.0f)|]
                              protection [|blink; outwardMovement (v3 -outwardReach outwardReach 0.0f); bend (v3 clockwiseBias 0.0f 0.0f)|]|])))|])}
 
-    let dimensionalCast () =
+    let dimensionalCast =
         let length = 60L
         let electronSize = Size (v3 9.0f 9.0f 0.0f)
         let nonLocationSize = Size (v3 3.0f 3.0f 0.0f)
@@ -414,7 +414,7 @@ module EffectDescriptors =
                   (Shift 0.0f,
                    [|StaticSprite (Resource (AssetTag.toPair image), [|shrink; PositionRelative (v3 0.0f 32.0f 0.0f)|], Nil)|])}
 
-    let conjureIfrit () =
+    let conjureIfrit =
         let fireSpinSize = Size (v3 600.0f 600.0f 0.0f)
         let fireSpin aspects =
             AnimatedSprite
