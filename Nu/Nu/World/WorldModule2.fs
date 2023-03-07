@@ -1060,6 +1060,9 @@ module WorldModule2 =
             let (physicsMessages, physicsEngine) = physicsEngine.PopMessages ()
             let world = World.setPhysicsEngine2d physicsEngine world
             let integrationMessages = physicsEngine.Integrate world.GameDelta physicsMessages
+            let integrationData = { IntegrationMessages = integrationMessages }
+            let eventTrace = EventTrace.debug "World" "processPhysics" "" EventTrace.empty
+            let world = World.publish integrationData Events.Integration eventTrace Simulants.Game world
             let world = Seq.fold (flip World.processIntegrationMessage) world integrationMessages
             world
 

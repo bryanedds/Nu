@@ -32,6 +32,12 @@ type GamepadButtonData =
     { GamepadButton : GamepadButton
       Down : bool }
 
+/// The data for a physics integration event.
+type IntegrationData =
+    { /// The integration messages sourced from a physics engine.
+      /// Do NOT change the content of this collection as it is exposed as a SegmentedArray for speed.
+      IntegrationMessages : IntegrationMessage SegmentedArray }
+
 /// The data of a body transform event.
 type TransformData =
     { BodySource : BodySource
@@ -93,6 +99,7 @@ module Events =
     let Deselecting = stoa<unit> "Deselecting/Event"
     let Mount = stoa<MountData> "Mount/Event"
     let Unmount = stoa<MountData> "Unmount/Event"
+    let Integration = stoa<IntegrationData> "Integration/Event"
     let BodyAdding = stoa<PhysicsId> "Body/Adding/Event"
     let BodyRemoving = stoa<PhysicsId> "Body/Removing/Event"
     let BodyCollision = stoa<BodyCollisionData> "BodyCollision/Event"
