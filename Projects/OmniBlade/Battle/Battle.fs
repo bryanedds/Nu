@@ -53,8 +53,7 @@ module Battle =
               BattleSpeed_ : BattleSpeed
               CurrentCommandOpt_ : CurrentCommand option
               ActionCommands_ : ActionCommand Queue
-              DialogOpt_ : Dialog option
-              RideTags_ : Map<string, Effects.Slice> }
+              DialogOpt_ : Dialog option }
 
         (* Local Properties *)
         member this.Running = match this.BattleState with BattleRunning _ -> true | _ -> false
@@ -70,7 +69,6 @@ module Battle =
         member this.CurrentCommandOpt = this.CurrentCommandOpt_
         member this.ActionCommands = this.ActionCommands_
         member this.DialogOpt = this.DialogOpt_
-        member this.RideTags = this.RideTags_
 
     let getCharacters battle =
         battle.Characters_
@@ -324,9 +322,6 @@ module Battle =
 
     let updateDialogOpt updater field =
         { field with DialogOpt_ = updater field.DialogOpt_ }
-
-    let updateRideTags updater field =
-        { field with RideTags_ = updater field.RideTags_ }
 
     let halveCharacterActionTime characterIndex battle =
         updateCharacterActionTime (fun at -> min (at * 0.5f) (Constants.Battle.ActionTime * 0.5f)) characterIndex battle
@@ -584,8 +579,7 @@ module Battle =
               BattleSpeed_ = battleSpeed
               CurrentCommandOpt_ = None
               ActionCommands_ = Queue.empty
-              DialogOpt_ = None
-              RideTags_ = Map.empty }
+              DialogOpt_ = None }
         battle
 
     let empty =
@@ -602,8 +596,7 @@ module Battle =
               BattleSpeed_ = PacedSpeed
               CurrentCommandOpt_ = None
               ActionCommands_ = Queue.empty
-              DialogOpt_ = None
-              RideTags_ = Map.empty }
+              DialogOpt_ = None }
         | None -> failwith "Expected data for DebugBattle to be available."
 
 type Battle = Battle.Battle
