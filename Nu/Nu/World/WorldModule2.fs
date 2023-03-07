@@ -731,7 +731,7 @@ module WorldModule2 =
                         let linearVelocity = bodyTransformMessage.LinearVelocity
                         let angularVelocity = bodyTransformMessage.AngularVelocity
                         let world =
-                            if bodySource.BodyId = 0UL
+                            if bodySource.BodyId = 0UL && not (entity.GetModelDriven world)
                             then entity.ApplyPhysics center rotation linearVelocity angularVelocity world
                             else world
                         // TODO: P1: don't publish if PublishBodyTransformEvent is false.
