@@ -25,7 +25,7 @@ module Vector2 =
             let a = Vector2.Normalize this
             let b = Vector2.Normalize that
             acos (Vector2.Dot (a, b))
-        static member Pow (a : Vector2) (b : Vector2) =
+        static member Pow (a : Vector2, b : Vector2) =
             Vector2
                 (single (Math.Pow (double a.X, double b.X)),
                  single (Math.Pow (double a.Y, double b.Y)))
@@ -134,7 +134,7 @@ module Vector3 =
             let a = Vector3.Normalize this
             let b = Vector3.Normalize that
             acos (Vector3.Dot (a, b))
-        static member Pow (a : Vector3) (b : Vector3) =
+        static member Pow (a : Vector3, b : Vector3) =
             Vector3
                 (single (Math.Pow (double a.X, double b.X)),
                  single (Math.Pow (double a.Y, double b.Y)),
@@ -249,7 +249,7 @@ module Vector4 =
         member this.WithY y = Vector4 (this.X, y, this.Z, this.W)
         member this.WithZ z = Vector4 (this.X, this.Y, z, this.W)
         member this.WithW w = Vector4 (this.X, this.Y, this.Z, w)
-        static member Pow (a : Vector4) (b : Vector4) =
+        static member Pow (a : Vector4, b : Vector4) =
             Vector4
                 (single (Math.Pow (double a.X, double b.X)),
                  single (Math.Pow (double a.Y, double b.Y)),
@@ -355,7 +355,7 @@ module Vector2i =
         member this.MapY mapper = Vector2i (this.X, mapper this.Y)
         member this.WithX x = Vector2i (x, this.Y)
         member this.WithY y = Vector2i (this.X, y)
-        static member Pow (a : Vector2i) (b : Vector2i) =
+        static member Pow (a : Vector2i, b : Vector2i) =
             Vector2i
                 (pown a.X b.X,
                  pown a.Y b.Y)
@@ -455,7 +455,7 @@ module Vector3i =
         member this.WithX x = Vector3i (x, this.Y, this.Z)
         member this.WithY y = Vector3i (this.X, y, this.Z)
         member this.WithZ z = Vector3i (this.X, this.Y, z)
-        static member Pow (a : Vector3i) (b : Vector3i) =
+        static member Pow (a : Vector3i, b : Vector3i) =
             Vector3i
                 (pown a.X b.X,
                  pown a.Y b.Y,
@@ -560,7 +560,7 @@ module Vector4i =
         member this.WithY y = Vector4i (this.X, y, this.Z, this.W)
         member this.WithZ z = Vector4i (this.X, this.Y, z, this.W)
         member this.WithW w = Vector4i (this.X, this.Y, this.Z, w)
-        static member Pow (a : Vector4i) (b : Vector4i) =
+        static member Pow (a : Vector4i, b : Vector4i) =
             Vector4i
                 (pown a.X b.X,
                  pown a.Y b.Y,
@@ -1055,7 +1055,7 @@ module Color =
         member this.WithG8 g = Color (this.R8, g, this.B8, this.A8)
         member this.WithB8 b = Color (this.R8, this.G8, b, this.A8)
         member this.WithA8 a = Color (this.R8, this.G8, this.B8, a)
-        static member Pow (a : Color) (b : Color) =
+        static member Pow (a : Color, b : Color) =
             Color
                 (single (Math.Pow (double a.R, double b.R)),
                  single (Math.Pow (double a.G, double b.G)),
