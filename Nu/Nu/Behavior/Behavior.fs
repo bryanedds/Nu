@@ -10,8 +10,24 @@ type 'a Behavior = GameTime -> 'a
 [<RequireQualifiedAccess>]
 module Behavior =
 
+    let returnB (bhvr : 'a Behavior): 'a Behavior =
+        let bhvr = fun time ->
+            bhvr time
+        bhvr
+
     let map<'a, 'b> mapper (bhvr : 'a Behavior) : 'b Behavior =
         bhvr >> mapper
+
+    let apply (bhvrF : ('a -> 'b) Behavior) (bhvrA : 'a Behavior) : 'b Behavior =
+        let bhvr = fun time ->
+            let a = bhvrA time
+            let f = bhvrF time
+            f a
+        bhvr
+
+    let bind f (bhvr : 'a Behavior) : 'b Behavior =
+        let bhvr2 = fun time -> f (bhvr time)
+        bhvr2
 
     let lift1<'a, 'b>
         (op : 'a -> 'b)
@@ -101,7 +117,7 @@ module Behavior =
             bhvr
 
     // basic behavior combinators
-    let id bhvr = map id bhvr
+    let id bhvr = returnB bhvr
     let constant k bhvr = map (constant k) bhvr
     let not bhvr = map not bhvr
     let fst bhvr = map fst bhvr
@@ -144,10 +160,8 @@ module Behavior =
     let inline powc n bhvr = map (fun a -> Color.Pow (a, n)) bhvr
     let inline pown n bhvr = map (fun a -> pown a n) bhvr
 
-    // behavior-specific combinators
-    let product (bhvr : 'a Behavior) (bhvr2 : 'b Behavior) =
-        let (bhvr3 : Behavior<'a * 'b>) = fun a -> (bhvr a, bhvr2 a)
-        bhvr3
+    // binary behavior combinators
+    let inline product (bhvr : 'a Behavior) (bhvr2 : 'b Behavior) = let (bhvr3 : Behavior<'a * 'b>) = fun a -> (bhvr a, bhvr2 a) in bhvr3
 
 [<RequireQualifiedAccess>]
 module GameTimeExtension =

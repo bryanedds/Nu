@@ -9,12 +9,8 @@ type Modifier<'a, 'b> = 'a Behavior -> 'b Behavior
 [<RequireQualifiedAccess>]
 module Modifier =
 
-    let returnB : Modifier<'a, 'a> =
+    let returnM : Modifier<'a, 'a> =
         let mdfr = fun bhvr -> bhvr
-        mdfr
-
-    let arrow (f : 'a -> 'b) : Modifier<'a, 'b> =
-        let mdfr = fun bhvr -> bhvr >> f
         mdfr
 
     let map<'a, 'b, 'c>
@@ -26,6 +22,9 @@ module Modifier =
             op b
         mdfr
 
+    let arrow (f : 'a -> 'b) : Modifier<'a, 'b> =
+        let mdfr = fun bhvr -> bhvr >> f
+        mdfr
 
     let lift1<'a, 'b, 'c>
         (op : 'b -> 'c)
