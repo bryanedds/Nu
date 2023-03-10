@@ -145,6 +145,11 @@ module Behavior =
     // advanced behavior combinators
     let inline eq b bhvr = map (fun a -> a = b) bhvr
     let inline neq b bhvr = map (fun a -> a <> b) bhvr
+    let inline or_ b bhvr = map (fun a -> a || b) bhvr
+    let inline nor b bhvr = map (fun a -> Operators.not a && Operators.not b) bhvr
+    let inline xor (b : bool) bhvr = map (fun a -> a <> b) bhvr
+    let inline and_ b bhvr = map (fun a -> a && b) bhvr
+    let inline nand b bhvr = map (fun a -> Operators.not (a && b)) bhvr
     let inline lerp a b bhvr = map (fun p -> a + p * (b - a)) bhvr
     let inline step stride bhvr = map (fun p -> int (p / stride)) bhvr
     let inline pulse stride bhvr = map (fun steps -> steps % 2 <> 0) (step stride bhvr)
@@ -158,6 +163,7 @@ module Behavior =
     let inline delta difference bhvr = map (fun a -> a - difference) bhvr
     let inline scale scalar bhvr = map (fun a -> a * scalar) bhvr
     let inline ratio divisor bhvr = map (fun a -> a / divisor) bhvr
+    let inline modulo divisor bhvr = map (fun a -> a % divisor) bhvr
     let inline sin bhvr = map sin bhvr
     let inline cos bhvr = map cos bhvr
     let inline powf n bhvr = map (fun a -> single (Math.Pow (double a, double n))) bhvr
@@ -233,17 +239,18 @@ module Behavior =
 
     // product behavior combinators
     let inline product (bhvr : 'a Behavior) (bhvr2 : 'b Behavior) = let (bhvr3 : Behavior<'a * 'b>) = fun a -> (bhvr a, bhvr2 a) in bhvr3
+    let inline productMap mapper bhvr = map (fun (a, b) -> mapper a b) bhvr
+    let inline productOr bhvr = productMap (||) bhvr
+    let inline productNor bhvr = productMap (fun a b -> Operators.not a && Operators.not b) bhvr
+    let inline productXor bhvr = productMap (fun a b -> a <> b) bhvr
+    let inline productAnd bhvr = productMap (fun a b -> a && b) bhvr
+    let inline productNand bhvr = productMap (fun a b -> Operators.not (a && b)) bhvr
+    let inline productSum bhvr = productMap (fun a b -> a + b) bhvr
+    let inline productDelta bhvr = productMap (fun a b -> a - b) bhvr
+    let inline productScale bhvr = productMap (fun a b -> a * b) bhvr
+    let inline productRatio bhvr = productMap (fun a b -> a / b) bhvr
+    let inline productModulo bhvr = productMap (fun a b -> a % b) bhvr
     let inline map2 mapper (bhvr : 'a Behavior) (bhvr2 : 'b Behavior) : 'c Behavior = product bhvr bhvr2 |> map mapper
-    let inline mapProduct mapper bhvr = map (fun (a, b) -> mapper a b) bhvr
-    let inline sumProduct bhvr = mapProduct (fun a b -> a + b) bhvr
-    let inline deltaProduct bhvr = mapProduct (fun a b -> a - b) bhvr
-    let inline scaleProduct bhvr = mapProduct (fun a b -> a * b) bhvr
-    let inline ratioProduct bhvr = mapProduct (fun a b -> a / b) bhvr
-    let inline orProduct bhvr = mapProduct (||) bhvr
-    let inline norProduct bhvr = mapProduct (fun a b -> Operators.not a && Operators.not b) bhvr
-    let inline xorProduct bhvr = mapProduct (fun a b -> a <> b) bhvr
-    let inline andProduct bhvr = mapProduct (fun a b -> a && b) bhvr
-    let inline nandProduct bhvr = mapProduct (fun a b -> Operators.not (a && b)) bhvr
 
 /// Builds behaviors.
 type [<Sealed>] BehaviorBuilder () =
