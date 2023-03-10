@@ -29,6 +29,10 @@ module Vector2 =
             Vector2
                 (single (Math.Pow (double a.X, double b.X)),
                  single (Math.Pow (double a.Y, double b.Y)))
+        static member Modulo (a : Vector2, b : Vector2) =
+            Vector2
+                (a.X % b.X,
+                 a.Y % b.Y)
 
     let inline v2 x y = Vector2 (x, y)
     let inline v2Eq (v : Vector2) (v2 : Vector2) = v.X = v2.X && v.Y = v2.Y
@@ -139,6 +143,11 @@ module Vector3 =
                 (single (Math.Pow (double a.X, double b.X)),
                  single (Math.Pow (double a.Y, double b.Y)),
                  single (Math.Pow (double a.Z, double b.Z)))
+        static member Modulo (a : Vector3, b : Vector3) =
+            Vector3
+                (a.X % b.X,
+                 a.Y % b.Y,
+                 a.Z % b.Z)
 
     let inline v3 x y z = Vector3 (x, y, z)
     let inline v3Eq (v : Vector3) (v2 : Vector3) = v.X = v2.X && v.Y = v2.Y && v.Z = v2.Z
@@ -255,6 +264,12 @@ module Vector4 =
                  single (Math.Pow (double a.Y, double b.Y)),
                  single (Math.Pow (double a.Z, double b.Z)),
                  single (Math.Pow (double a.W, double b.W)))
+        static member Modulo (a : Vector4, b : Vector4) =
+            Vector4
+                (a.X % b.X,
+                 a.Y % b.Y,
+                 a.Z % b.Z,
+                 a.W % b.W)
 
     let inline v4 x y z w = Vector4 (x, y, z, w)
     let inline v4Eq (v : Vector4) (v2 : Vector4) = v.X = v2.X && v.Y = v2.Y && v.Z = v2.Z && v.W = v2.W
@@ -359,6 +374,10 @@ module Vector2i =
             Vector2i
                 (pown a.X b.X,
                  pown a.Y b.Y)
+        static member Modulo (a : Vector2i, b : Vector2i) =
+            Vector2i
+                (a.X % b.X,
+                 a.Y % b.Y)
 
     let inline v2i x y = Vector2i (x, y)
     let inline v2iEq (v : Vector2i) (v2 : Vector2i) = v.X = v2.X && v.Y = v2.Y
@@ -460,6 +479,11 @@ module Vector3i =
                 (pown a.X b.X,
                  pown a.Y b.Y,
                  pown a.Z b.Z)
+        static member Modulo (a : Vector3i, b : Vector3i) =
+            Vector3i
+                (a.X % b.X,
+                 a.Y % b.Y,
+                 a.Z % b.Z)
 
     let inline v3i x y z = Vector3i (x, y, z)
     let inline v3iEq (v : Vector3i) (v2 : Vector3i) = v.X = v2.X && v.Y = v2.Y && v.Z = v2.Z
@@ -566,6 +590,12 @@ module Vector4i =
                  pown a.Y b.Y,
                  pown a.Z b.Z,
                  pown a.W b.W)
+        static member Modulo (a : Vector4i, b : Vector4i) =
+            Vector4i
+                (a.X % b.X,
+                 a.Y % b.Y,
+                 a.Z % b.Z,
+                 a.W % b.W)
 
     let inline v4i x y z w = Vector4i (x, y, z, w)
     let inline v4iEq (v : Vector4i) (v2 : Vector4i) = v.X = v2.X && v.Y = v2.Y && v.Z = v2.Z && v.W = v2.W
@@ -1061,6 +1091,12 @@ module Color =
                  single (Math.Pow (double a.G, double b.G)),
                  single (Math.Pow (double a.B, double b.B)),
                  single (Math.Pow (double a.A, double b.A)))
+        static member Modulo (a : Color, b : Color) =
+            Color
+                (a.R % b.R,
+                 a.G % b.G,
+                 a.B % b.B,
+                 a.A % b.A)
 
     let inline color (r : single) (g : single) (b : single) (a : single) = Color (r, g, b, a)
     let inline colorDup (a : single) = color a a a a
