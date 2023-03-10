@@ -133,6 +133,15 @@ module Behavior =
     let inline delta difference bhvr = map (fun a -> a - difference) bhvr
     let inline scale scalar bhvr = map (fun a -> a * scalar) bhvr
     let inline ratio divisor bhvr = map (fun a -> a / divisor) bhvr
+    let inline powf n bhvr = map (fun a -> single (Math.Pow (double a, double n))) bhvr
+    let inline powd n bhvr = map (fun a -> Math.Pow (a, n)) bhvr
+    let inline pow2 n bhvr = map (fun a -> Vector2.Pow (a, n)) bhvr
+    let inline pow3 n bhvr = map (fun a -> Vector3.Pow (a, n)) bhvr
+    let inline pow4 n bhvr = map (fun a -> Vector4.Pow (a, n)) bhvr
+    let inline pow2i n bhvr = map (fun a -> Vector2i.Pow (a, n)) bhvr
+    let inline pow3i n bhvr = map (fun a -> Vector3i.Pow (a, n)) bhvr
+    let inline pow4i n bhvr = map (fun a -> Vector4i.Pow (a, n)) bhvr
+    let inline powc n bhvr = map (fun a -> Color.Pow (a, n)) bhvr
     let inline pown n bhvr = map (fun a -> pown a n) bhvr
 
     // behavior-specific combinators
