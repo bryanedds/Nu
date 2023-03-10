@@ -10,9 +10,8 @@ type 'a Behavior = GameTime -> 'a
 [<RequireQualifiedAccess>]
 module Behavior =
 
-    let returnB (bhvr : 'a Behavior): 'a Behavior =
-        let bhvr = fun time ->
-            bhvr time
+    let returnB (a : 'a): 'a Behavior =
+        let bhvr = fun _ -> a
         bhvr
 
     let map<'a, 'b> mapper (bhvr : 'a Behavior) : 'b Behavior =
@@ -25,9 +24,13 @@ module Behavior =
             f a
         bhvr
 
-    let bind f (bhvr : 'a Behavior) : 'b Behavior =
-        let bhvr2 = fun time -> f (bhvr time)
-        bhvr2
+    let bind (bhvr : 'a Behavior) (f : 'a -> 'b Behavior) : 'b Behavior =
+        let bhvr =
+            fun time ->
+                let a = bhvr time
+                let b = f a
+                b time
+        bhvr
 
     let lift1<'a, 'b>
         (op : 'a -> 'b)

@@ -131,3 +131,18 @@ module Modifier =
     let (<<<) (left, right) = composeFlip left right
     let ( *** ) (left, right) = split left right
     let (&&&) (left, right) = fanOut left right
+
+    open System.Numerics
+
+    let private hop (p : Vector3) (p2 : Vector3) (h : single) (start : GameTime) (length : GameTime) =
+        let lerp =
+            Behavior.timeSlice start length |>
+            Behavior.lerp p p2
+        let jump =
+            Behavior.timeSlice start length |>
+            Behavior.sin |>
+            Behavior.scale h
+        behave {
+            let! p = lerp
+            let! h = jump
+            return v3 p.X (p.Y + h) p.Z }
