@@ -163,6 +163,18 @@ module Behavior =
     // binary behavior combinators
     let inline product (bhvr : 'a Behavior) (bhvr2 : 'b Behavior) = let (bhvr3 : Behavior<'a * 'b>) = fun a -> (bhvr a, bhvr2 a) in bhvr3
 
+/// Builds a behavior monad.
+type BehaviorBuilder () =
+    member inline this.Return a = Behavior.returnB a
+    member inline this.ReturnFrom a = a
+    member inline this.Bind (a, f) = Behavior.bind a f
+
+[<AutoOpen>]
+module BehaviorBuilder =
+
+    /// Builds behaviors.
+    let behave = BehaviorBuilder ()
+
 [<RequireQualifiedAccess>]
 module GameTimeExtension =
     type GameTime with
