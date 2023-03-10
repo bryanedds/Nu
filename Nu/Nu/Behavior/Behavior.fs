@@ -114,7 +114,6 @@ module Behavior =
     let mapFst mapper bhvr = map (fun (a, b) -> (mapper a, b)) bhvr
     let mapSnd mapper bhvr = map (fun (a, b) -> (a, mapper b)) bhvr
     let swap bhvr = map (fun (a, b) -> (b, a)) bhvr
-    let product bhvr bhvr2 = let bhvr3 = fun time -> (bhvr time, bhvr2 time) in bhvr3
 
     // boot-strapping combinators
     let unit = let (bhvr : unit Behavior) = fun _ -> () in bhvr
@@ -134,6 +133,12 @@ module Behavior =
     let inline delta difference bhvr = map (fun a -> a - difference) bhvr
     let inline scale scalar bhvr = map (fun a -> a * scalar) bhvr
     let inline ratio divisor bhvr = map (fun a -> a / divisor) bhvr
+    let inline pown n bhvr = map (fun a -> pown a n) bhvr
+
+    // behavior-specific combinators
+    let product (bhvr : 'a Behavior) (bhvr2 : 'b Behavior) =
+        let (bhvr3 : Behavior<'a * 'b>) = fun a -> (bhvr a, bhvr2 a)
+        bhvr3
 
 /// Modifies behaviors.
 type Modifier<'a, 'b> = 'a Behavior -> 'b Behavior
@@ -142,21 +147,22 @@ type Modifier<'a, 'b> = 'a Behavior -> 'b Behavior
 module Modifier =
 
     let returnB : Modifier<'a, 'a> =
-        fun bhvr ->
-            bhvr
+        let mdfr = fun bhvr -> bhvr
+        mdfr
 
     let arrow (f : 'a -> 'b) : Modifier<'a, 'b> =
-        fun bhvr ->
-            bhvr >> f
+        let mdfr = fun bhvr -> bhvr >> f
+        mdfr
 
     let map<'a, 'b, 'c>
         (op : 'b -> 'c)
         (mdfr : Modifier<'a, 'b>) :
         Modifier<'a, 'c> =
-        fun bhvr ->
-            fun time ->
-                let b = mdfr bhvr time
-                op b
+        let mdfr = fun bhvr time ->
+            let b = mdfr bhvr time
+            op b
+        mdfr
+
 
     let lift1<'a, 'b, 'c>
         (op : 'b -> 'c)
@@ -169,11 +175,11 @@ module Modifier =
         (mdfr : Modifier<'a, 'b>)
         (modifier2 : Modifier<'a, 'c>) :
         Modifier<'a, 'd> =
-        fun bhvr ->
-            fun time ->
-                let b = mdfr bhvr time
-                let c = modifier2 bhvr time
-                op b c
+        let mdfr = fun bhvr time ->
+            let b = mdfr bhvr time
+            let c = modifier2 bhvr time
+            op b c
+        mdfr
 
     let lift3<'a, 'b, 'c, 'd, 'e>
         (op : 'b -> 'c -> 'd -> 'e)
@@ -181,12 +187,12 @@ module Modifier =
         (modifier2 : Modifier<'a, 'c>)
         (modifier3 : Modifier<'a, 'd>) :
         Modifier<'a, 'e> =
-        fun bhvr ->
-            fun time ->
-                let b = mdfr bhvr time
-                let c = modifier2 bhvr time
-                let d = modifier3 bhvr time
-                op b c d
+        let mdfr = fun bhvr time ->
+            let b = mdfr bhvr time
+            let c = modifier2 bhvr time
+            let d = modifier3 bhvr time
+            op b c d
+        mdfr
 
     let lift4<'a, 'b, 'c, 'd, 'e, 'f>
         (op : 'b -> 'c -> 'd -> 'e -> 'f)
@@ -195,13 +201,13 @@ module Modifier =
         (modifier3 : Modifier<'a, 'd>)
         (modifier4 : Modifier<'a, 'e>) :
         Modifier<'a, 'f> =
-        fun bhvr ->
-            fun time ->
-                let b = mdfr bhvr time
-                let c = modifier2 bhvr time
-                let d = modifier3 bhvr time
-                let e = modifier4 bhvr time
-                op b c d e
+        let mdfr = fun bhvr time ->
+            let b = mdfr bhvr time
+            let c = modifier2 bhvr time
+            let d = modifier3 bhvr time
+            let e = modifier4 bhvr time
+            op b c d e
+        mdfr
 
     let lift5<'a, 'b, 'c, 'd, 'e, 'f, 'g>
         (op : 'b -> 'c -> 'd -> 'e -> 'f -> 'g)
@@ -211,81 +217,61 @@ module Modifier =
         (modifier4 : Modifier<'a, 'e>)
         (modifier5 : Modifier<'a, 'f>) :
         Modifier<'a, 'g> =
-        fun bhvr ->
-            fun time ->
-                let b = mdfr bhvr time
-                let c = modifier2 bhvr time
-                let d = modifier3 bhvr time
-                let e = modifier4 bhvr time
-                let f = modifier5 bhvr time
-                op b c d e f
+        let mdfr = fun bhvr time ->
+            let b = mdfr bhvr time
+            let c = modifier2 bhvr time
+            let d = modifier3 bhvr time
+            let e = modifier4 bhvr time
+            let f = modifier5 bhvr time
+            op b c d e f
+        mdfr
 
     let first (mdfr : Modifier<'a, 'b>) : Modifier<'a * 'c, 'b * 'c> =
-        fun bhvr ->
+        let mdfr = fun bhvr ->
             let b = mdfr (Behavior.fst bhvr)
             let c = Behavior.snd bhvr
             Behavior.product b c
+        mdfr
 
     let second (mdfr : Modifier<'a, 'b>) : Modifier<'c * 'a, 'c * 'b> =
-        fun bhvr ->
+        let mdfr = fun bhvr ->
             let b = mdfr (Behavior.snd bhvr)
             let c = Behavior.fst bhvr
             Behavior.product c b
+        mdfr
 
     let compose (left : Modifier<'a, 'b>) (right : Modifier<'b, 'c>) : Modifier<'a, 'c> =
-        fun bhvr ->
+        let mdfr = fun bhvr ->
             right $
                 fun time ->
                     left (fun time -> bhvr time) time
+        mdfr
 
     let composeFlip (left : Modifier<'b, 'c>) (right : Modifier<'a, 'b>) : Modifier<'a, 'c> =
         compose right left
 
     let split (mdfr : Modifier<'a, 'b>) (modifier2 : Modifier<'a2, 'b2>) : Modifier<'a * 'a2, 'b * 'b2> =
-        fun bhvr ->
+        let mdfr = fun bhvr ->
             let b = mdfr (Behavior.fst bhvr)
             let b2 = modifier2 (Behavior.snd bhvr)
             Behavior.product b b2
+        mdfr
 
     let fanOut (mdfr : Modifier<'a, 'b>) (modifier2 : Modifier<'a, 'b2>) : Modifier<'a, 'b * 'b2> =
-        fun bhvr ->
+        let mdfr = fun bhvr ->
             let b = mdfr bhvr
             let b2 = modifier2 bhvr
             Behavior.product b b2
-            
-    let id mdfr = map id mdfr
-    let constant k mdfr = map (constant k) mdfr
-    let not mdfr = map not mdfr
-    let dup mdfr = map dup mdfr
-    let fst mdfr = map fst mdfr
-    let snd mdfr = map snd mdfr
-    let prepend a mdfr = map (fun b -> (a, b)) mdfr
-    let append b mdfr = map (fun a -> (a, b)) mdfr
-    let withFst a mdfr = map (fun (_, b) -> (a, b)) mdfr
-    let withSnd b mdfr = map (fun (a, _) -> (a, b)) mdfr
-    let mapFst mapper mdfr = map (fun (a, b) -> (mapper a, b)) mdfr
-    let mapSnd mapper mdfr = map (fun (a, b) -> (a, mapper b)) mdfr
-    let swap mdfr = map (fun (a, b) -> (b, a)) mdfr
+        mdfr
 
+    // operator combinators
     let (>>>) (left, right) = compose left right
     let (<<<) (left, right) = composeFlip left right
     let ( *** ) (left, right) = split left right
     let (&&&) (left, right) = fanOut left right
 
-    let private hop (p : Vector3) (p2 : Vector3) (h : single) (start : GameTime) (length : GameTime) =
-        let lerp =
-            Behavior.timeSlice start length |>
-            Behavior.lerp p p2
-        let jump =
-            Behavior.timeSlice start length |>
-            Behavior.sin |>
-            Behavior.scale h
-        Behavior.lift2 (fun (p : Vector3) h -> v3 p.X (p.Y + h) p.Z) lerp jump
-
 [<RequireQualifiedAccess>]
 module GameTimeExtension =
-
     type GameTime with
-
         member this.Run (behavior : 'a Behavior) =
             behavior this
