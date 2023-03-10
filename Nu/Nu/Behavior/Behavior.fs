@@ -143,15 +143,23 @@ module Behavior =
     let timeSlice start length = let bhvr = timeSliceRaw start length in  normalize length bhvr
 
     // advanced behavior combinators
+    let inline eq b bhvr = map (fun a -> a = b) bhvr
+    let inline neq b bhvr = map (fun a -> a <> b) bhvr
     let inline lerp a b bhvr = map (fun p -> a + p * (b - a)) bhvr
     let inline step stride bhvr = map (fun p -> int (p / stride)) bhvr
     let inline pulse stride bhvr = map (fun steps -> steps % 2 <> 0) (step stride bhvr)
-    let inline sin bhvr = map sin bhvr
-    let inline cos bhvr = map cos bhvr
-    let inline sum addend bhvr = map (fun a -> a + addend) bhvr
+    let inline random bhvr = map (fun a -> Random(hash a)) bhvr
+    let inline randomb bhvr = map (fun a -> Random(hash a).Next() <= Int32.MaxValue / 2) bhvr
+    let inline randomi bhvr = map (fun a -> Random(hash a).Next()) bhvr
+    let inline randoml bhvr = map (fun a -> Random(hash a).NextInt64()) bhvr
+    let inline randomf bhvr = map (fun a -> Random(hash a).NextDouble() |> single) bhvr
+    let inline randomd bhvr = map (fun a -> Random(hash a).NextDouble()) bhvr
+    let inline sum summand bhvr = map (fun a -> a + summand) bhvr
     let inline delta difference bhvr = map (fun a -> a - difference) bhvr
     let inline scale scalar bhvr = map (fun a -> a * scalar) bhvr
     let inline ratio divisor bhvr = map (fun a -> a / divisor) bhvr
+    let inline sin bhvr = map sin bhvr
+    let inline cos bhvr = map cos bhvr
     let inline powf n bhvr = map (fun a -> single (Math.Pow (double a, double n))) bhvr
     let inline powd n bhvr = map (fun a -> Math.Pow (a, n)) bhvr
     let inline pow2 n bhvr = map (fun a -> Vector2.Pow (a, n)) bhvr
@@ -162,15 +170,86 @@ module Behavior =
     let inline pow4i n bhvr = map (fun a -> Vector4i.Pow (a, n)) bhvr
     let inline powc n bhvr = map (fun a -> Color.Pow (a, n)) bhvr
     let inline pown n bhvr = map (fun a -> pown a n) bhvr
+    let inline isZero bhvr = map Generics.isZero bhvr
+    let inline notZero bhvr = map Generics.notZero bhvr
+    let inline isNeg bhvr = map (fun a -> a < Generics.zero ()) bhvr
+    let inline isPositive bhvr = map (fun a -> a < Generics.zero ()) bhvr
 
-    // binary behavior combinators
+    let inline serp (scale : (^a * single) -> ^a) (a : ^a) (b : ^a) bhvr : ^a Behavior =
+        map (fun (s : single) ->
+            let scaled = float s * Math.PI * 2.0
+            let scalar = Math.Sin scaled
+            a + scale (b - a, single scalar))
+            bhvr
+
+    let inline serpScaled (scale : (^a * single) -> ^a) (a : ^a) (b : ^a) (scalar : single) bhvr : ^a Behavior =
+        map (fun (s : single) ->
+            let scaled = float s * Math.PI * 2.0 * float scalar
+            let scalar = Math.Sin scaled
+            a + scale (b - a, single scalar))
+            bhvr
+
+    let inline cerp (scale : (^a * single) -> ^a) (a : ^a) (b : ^a) bhvr : ^a Behavior =
+        map (fun (s : single) ->
+            let scaled = float s * Math.PI * 2.0
+            let scalar = Math.Cos scaled
+            a + scale (b - a, single scalar))
+            bhvr
+
+    let inline cerpScaled (scale : (^a * single) -> ^a) (value : ^a) (value2 : ^a) (scalar : single) bhvr : ^a Behavior =
+        map (fun (progress : single) ->
+            let scaled = float progress * Math.PI * 2.0 * float scalar
+            let scalar = Math.Cos scaled
+            value + scale (value2 - value, single scalar))
+            bhvr
+
+    let inline ease (scale : (^a * single) -> ^a) (a : ^a) (b : ^a) bhvr : ^a Behavior =
+        map (fun (s : single) ->
+            let scalar = single (Math.Pow (Math.Sin (Math.PI * double s * 0.5), 2.0))
+            a + scale (b - a, scalar))
+            bhvr
+
+    let inline easeIn (scale : (^a * single) -> ^a) (a : ^a) (b : ^a) bhvr : ^a Behavior =
+        map (fun (s : single) ->
+            let scaled = float s * Math.PI * 0.5
+            let scalar = single (1.0 + Math.Sin (scaled + Math.PI * 1.5))
+            a + scale (b - a, scalar))
+            bhvr
+
+    let inline easeOut (scale : (^a * single) -> ^a) (a : ^a) (b : ^a) bhvr : ^a Behavior =
+        map (fun (s : single) ->
+            let scaled = float s * Math.PI * 0.5
+            let scalar = single (Math.Sin scaled)
+            a + scale (b - a, scalar))
+            bhvr
+
+    let inline serpf a b bhvr = serp (fun (c, s) -> c * s) a b bhvr
+    let inline serpScaledf a b scalar bhvr = serpScaled (fun (c, s) -> c * s) a b scalar bhvr
+    let inline cerpf a b bhvr = cerp (fun (c, s) -> c * s) a b bhvr
+    let inline cerpScaledf a b scalar bhvr = cerpScaled (fun (c, s) -> c * s) a b scalar bhvr
+    let inline easef a b bhvr = ease (fun (c, s) -> c * s) a b bhvr
+    let inline easeInf a b bhvr = easeIn (fun (c, s) -> c * s) a b bhvr
+    let inline easeOutf a b bhvr = easeIn (fun (c, s) -> c * s) a b bhvr
+
+    // product behavior combinators
     let inline product (bhvr : 'a Behavior) (bhvr2 : 'b Behavior) = let (bhvr3 : Behavior<'a * 'b>) = fun a -> (bhvr a, bhvr2 a) in bhvr3
+    let inline map2 mapper (bhvr : 'a Behavior) (bhvr2 : 'b Behavior) : 'c Behavior = product bhvr bhvr2 |> map mapper
+    let inline mapProduct mapper bhvr = map (fun (a, b) -> mapper a b) bhvr
+    let inline sumProduct bhvr = mapProduct (fun a b -> a + b) bhvr
+    let inline deltaProduct bhvr = mapProduct (fun a b -> a - b) bhvr
+    let inline scaleProduct bhvr = mapProduct (fun a b -> a * b) bhvr
+    let inline ratioProduct bhvr = mapProduct (fun a b -> a / b) bhvr
+    let inline orProduct bhvr = mapProduct (||) bhvr
+    let inline norProduct bhvr = mapProduct (fun a b -> Operators.not a && Operators.not b) bhvr
+    let inline xorProduct bhvr = mapProduct (fun a b -> a <> b) bhvr
+    let inline andProduct bhvr = mapProduct (fun a b -> a && b) bhvr
+    let inline nandProduct bhvr = mapProduct (fun a b -> Operators.not (a && b)) bhvr
 
-/// Builds a behavior monad.
-type BehaviorBuilder () =
-    member inline this.Return a = Behavior.returnB a
-    member inline this.ReturnFrom a = a
-    member inline this.Bind (a, f) = Behavior.bind a f
+/// Builds behaviors.
+type [<Sealed>] BehaviorBuilder () =
+    member this.Return a = Behavior.returnB a
+    member this.ReturnFrom a = a
+    member this.Bind (a, f) = Behavior.bind a f
 
 [<AutoOpen>]
 module BehaviorBuilder =
