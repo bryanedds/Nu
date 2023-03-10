@@ -108,12 +108,12 @@ module Effects =
           TweenLength : GameTime }
         interface KeyFrame with
             member this.KeyFrameLength = this.TweenLength
-            
+
     type [<StructuralEquality; StructuralComparison>] Playback =
         | Once
         | Loop
         | Bounce
-        
+
     type [<StructuralEquality; StructuralComparison>] Repetition =
         | Cycle of Cycles : int
         | Iterate of Iterations : int

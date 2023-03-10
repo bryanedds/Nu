@@ -149,6 +149,7 @@ and [<Struct; CustomEquality; CustomComparison; TypeConverter (typeof<GameTimeCo
     static member op_Explicit time = match time with UpdateTime time -> int64 time | ClockTime time -> int64 time
     static member op_Explicit time = match time with UpdateTime time -> single time | ClockTime time -> single time
     static member op_Explicit time = match time with UpdateTime time -> double time | ClockTime time -> double time
+    static member get_Zero () = GameTime.zero
     static member isZero time = GameTime.unary isZero isZero time
     static member notZero time = GameTime.unary notZero notZero time
     static member zero = GameTime.ofSeconds 0.0f
