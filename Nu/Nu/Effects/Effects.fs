@@ -342,7 +342,7 @@ module EffectSystem =
         | Delta -> value - value2
         | Scalar -> mul (value, value2)
         | Ratio -> div (value, value2)
-        | Pow -> pow value value2
+        | Pow -> pow (value, value2)
         | Set -> value2
 
     let private evalInset (celSize : Vector2i) celRun celCount delay playback effectSystem =
@@ -493,7 +493,7 @@ module EffectSystem =
                 let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectLocalTime playback keyFrames
                 let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
                 let tweened = tween (fun (x, y) -> x * y) keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
-                let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) (fun a a2 -> single (Math.Pow (double a, double a2))) slice.Elevation tweened applicator
+                let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) (fun (x, y) -> single (Math.Pow (double x, double y))) slice.Elevation tweened applicator
                 { slice with Elevation = applied }
             else slice
         | Insets (_, _, playback, keyFrames) ->
@@ -524,7 +524,7 @@ module EffectSystem =
                 let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectLocalTime playback keyFrames
                 let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
                 let tweened = tween (fun (x, y) -> x * y) keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
-                let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) (fun a a2 -> single (Math.Pow (double a, double a2)))slice.Volume tweened applicator
+                let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) (fun (x, y) -> single (Math.Pow (double x, double y))) slice.Volume tweened applicator
                 { slice with Volume = applied }
             else slice
         | Aspect.Expand (definitionName, _) ->
