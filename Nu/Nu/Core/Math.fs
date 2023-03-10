@@ -25,6 +25,10 @@ module Vector2 =
             let a = Vector2.Normalize this
             let b = Vector2.Normalize that
             acos (Vector2.Dot (a, b))
+        static member Pow (a : Vector2) (b : Vector2) =
+            Vector2
+                (single (Math.Pow (double a.X, double b.X)),
+                 single (Math.Pow (double a.Y, double b.Y)))
 
     let inline v2 x y = Vector2 (x, y)
     let inline v2Eq (v : Vector2) (v2 : Vector2) = v.X = v2.X && v.Y = v2.Y
@@ -130,6 +134,11 @@ module Vector3 =
             let a = Vector3.Normalize this
             let b = Vector3.Normalize that
             acos (Vector3.Dot (a, b))
+        static member Pow (a : Vector3) (b : Vector3) =
+            Vector3
+                (single (Math.Pow (double a.X, double b.X)),
+                 single (Math.Pow (double a.Y, double b.Y)),
+                 single (Math.Pow (double a.Z, double b.Z)))
 
     let inline v3 x y z = Vector3 (x, y, z)
     let inline v3Eq (v : Vector3) (v2 : Vector3) = v.X = v2.X && v.Y = v2.Y && v.Z = v2.Z
@@ -240,6 +249,12 @@ module Vector4 =
         member this.WithY y = Vector4 (this.X, y, this.Z, this.W)
         member this.WithZ z = Vector4 (this.X, this.Y, z, this.W)
         member this.WithW w = Vector4 (this.X, this.Y, this.Z, w)
+        static member Pow (a : Vector4) (b : Vector4) =
+            Vector4
+                (single (Math.Pow (double a.X, double b.X)),
+                 single (Math.Pow (double a.Y, double b.Y)),
+                 single (Math.Pow (double a.Z, double b.Z)),
+                 single (Math.Pow (double a.W, double b.W)))
 
     let inline v4 x y z w = Vector4 (x, y, z, w)
     let inline v4Eq (v : Vector4) (v2 : Vector4) = v.X = v2.X && v.Y = v2.Y && v.Z = v2.Z && v.W = v2.W
@@ -340,6 +355,10 @@ module Vector2i =
         member this.MapY mapper = Vector2i (this.X, mapper this.Y)
         member this.WithX x = Vector2i (x, this.Y)
         member this.WithY y = Vector2i (this.X, y)
+        static member Pow (a : Vector2i) (b : Vector2i) =
+            Vector2i
+                (pown a.X b.X,
+                 pown a.Y b.Y)
 
     let inline v2i x y = Vector2i (x, y)
     let inline v2iEq (v : Vector2i) (v2 : Vector2i) = v.X = v2.X && v.Y = v2.Y
@@ -436,6 +455,11 @@ module Vector3i =
         member this.WithX x = Vector3i (x, this.Y, this.Z)
         member this.WithY y = Vector3i (this.X, y, this.Z)
         member this.WithZ z = Vector3i (this.X, this.Y, z)
+        static member Pow (a : Vector3i) (b : Vector3i) =
+            Vector3i
+                (pown a.X b.X,
+                 pown a.Y b.Y,
+                 pown a.Z b.Z)
 
     let inline v3i x y z = Vector3i (x, y, z)
     let inline v3iEq (v : Vector3i) (v2 : Vector3i) = v.X = v2.X && v.Y = v2.Y && v.Z = v2.Z
@@ -536,6 +560,12 @@ module Vector4i =
         member this.WithY y = Vector4i (this.X, y, this.Z, this.W)
         member this.WithZ z = Vector4i (this.X, this.Y, z, this.W)
         member this.WithW w = Vector4i (this.X, this.Y, this.Z, w)
+        static member Pow (a : Vector4i) (b : Vector4i) =
+            Vector4i
+                (pown a.X b.X,
+                 pown a.Y b.Y,
+                 pown a.Z b.Z,
+                 pown a.W b.W)
 
     let inline v4i x y z w = Vector4i (x, y, z, w)
     let inline v4iEq (v : Vector4i) (v2 : Vector4i) = v.X = v2.X && v.Y = v2.Y && v.Z = v2.Z && v.W = v2.W
@@ -1025,6 +1055,12 @@ module Color =
         member this.WithG8 g = Color (this.R8, g, this.B8, this.A8)
         member this.WithB8 b = Color (this.R8, this.G8, b, this.A8)
         member this.WithA8 a = Color (this.R8, this.G8, this.B8, a)
+        static member Pow (a : Color) (b : Color) =
+            Color
+                (single (Math.Pow (double a.R, double b.R)),
+                 single (Math.Pow (double a.G, double b.G)),
+                 single (Math.Pow (double a.B, double b.B)),
+                 single (Math.Pow (double a.A, double b.A)))
 
     let inline color (r : single) (g : single) (b : single) (a : single) = Color (r, g, b, a)
     let inline colorDup (a : single) = color a a a a

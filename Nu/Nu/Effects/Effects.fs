@@ -34,6 +34,7 @@ module Effects =
         | Delta
         | Scalar
         | Ratio
+        | Pow
         | Set
 
     type Slice =
@@ -335,12 +336,13 @@ module EffectSystem =
         | Nand -> not (value && value2)
         | Equal -> value2
 
-    let inline private applyTween mul div (value : ^a) (value2 : ^a) applicator =
+    let inline private applyTween mul div pow (value : ^a) (value2 : ^a) applicator =
         match applicator with
         | Sum -> value + value2
         | Delta -> value - value2
         | Scalar -> mul (value, value2)
         | Ratio -> div (value, value2)
+        | Pow -> pow value value2
         | Set -> value2
 
     let private evalInset (celSize : Vector2i) celRun celCount delay playback effectSystem =
@@ -434,7 +436,7 @@ module EffectSystem =
                 let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectLocalTime playback keyFrames
                 let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
                 let tweened = tween (fun (a, b) -> a * b) keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
-                let applied = applyTween Vector3.Multiply Vector3.Divide slice.Position tweened applicator
+                let applied = applyTween Vector3.Multiply Vector3.Divide Vector3.Pow slice.Position tweened applicator
                 { slice with Position = applied }
             else slice
         | Translations (applicator, algorithm, playback, keyFrames) ->
@@ -443,7 +445,7 @@ module EffectSystem =
                 let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
                 let tweened = tween Vector3.op_Multiply keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
                 let oriented = Vector3.Transform (tweened, slice.Angles.RollPitchYaw)
-                let applied = applyTween Vector3.Multiply Vector3.Divide slice.Position oriented applicator
+                let applied = applyTween Vector3.Multiply Vector3.Divide Vector3.Pow slice.Position oriented applicator
                 { slice with Position = applied }
             else slice
         | Scales (applicator, algorithm, playback, keyFrames) ->
@@ -451,7 +453,7 @@ module EffectSystem =
                 let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectLocalTime playback keyFrames
                 let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
                 let tweened = tween Vector3.op_Multiply keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
-                let applied = applyTween Vector3.Multiply Vector3.Divide slice.Size tweened applicator
+                let applied = applyTween Vector3.Multiply Vector3.Divide Vector3.Pow slice.Size tweened applicator
                 { slice with Scale = applied }
             else slice
         | Offsets (applicator, algorithm, playback, keyFrames) ->
@@ -459,7 +461,7 @@ module EffectSystem =
                 let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectLocalTime playback keyFrames
                 let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
                 let tweened = tween Vector3.op_Multiply keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
-                let applied = applyTween Vector3.Multiply Vector3.Divide slice.Position tweened applicator
+                let applied = applyTween Vector3.Multiply Vector3.Divide Vector3.Pow slice.Position tweened applicator
                 { slice with Offset = applied }
             else slice
         | Sizes (applicator, algorithm, playback, keyFrames) ->
@@ -467,7 +469,7 @@ module EffectSystem =
                 let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectLocalTime playback keyFrames
                 let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
                 let tweened = tween Vector3.op_Multiply keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
-                let applied = applyTween Vector3.Multiply Vector3.Divide slice.Size tweened applicator
+                let applied = applyTween Vector3.Multiply Vector3.Divide Vector3.Pow slice.Size tweened applicator
                 { slice with Size = applied }
             else slice
         | Angleses (applicator, algorithm, playback, keyFrames) ->
@@ -475,7 +477,7 @@ module EffectSystem =
                 let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectLocalTime playback keyFrames
                 let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
                 let tweened = tween Vector3.Multiply keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
-                let applied = applyTween Vector3.Multiply Vector3.Divide slice.Angles tweened applicator
+                let applied = applyTween Vector3.Multiply Vector3.Divide Vector3.Pow slice.Angles tweened applicator
                 { slice with Angles = applied }
             else slice
         | Degreeses (applicator, algorithm, playback, keyFrames) ->
@@ -483,7 +485,7 @@ module EffectSystem =
                 let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectLocalTime playback keyFrames
                 let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
                 let tweened = tween Vector3.Multiply keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
-                let applied = applyTween Vector3.Multiply Vector3.Divide (Math.radiansToDegrees3d slice.Angles) tweened applicator
+                let applied = applyTween Vector3.Multiply Vector3.Divide Vector3.Pow (Math.radiansToDegrees3d slice.Angles) tweened applicator
                 { slice with Angles = Math.degreesToRadians3d applied }
             else slice
         | Elevations (applicator, algorithm, playback, keyFrames) ->
@@ -491,7 +493,7 @@ module EffectSystem =
                 let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectLocalTime playback keyFrames
                 let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
                 let tweened = tween (fun (x, y) -> x * y) keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
-                let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) slice.Elevation tweened applicator
+                let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) (fun a a2 -> single (Math.Pow (double a, double a2))) slice.Elevation tweened applicator
                 { slice with Elevation = applied }
             else slice
         | Insets (_, _, playback, keyFrames) ->
@@ -506,7 +508,7 @@ module EffectSystem =
                 let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectLocalTime playback keyFrames
                 let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
                 let tweened = tween Vector4.op_Multiply (keyFrame.TweenValue.Vector4) (keyFrame2.TweenValue.Vector4) progress algorithm
-                let applied = applyTween Color.Multiply Color.Divide slice.Color (Nu.Color tweened) applicator
+                let applied = applyTween Color.Multiply Color.Divide Color.Pow slice.Color (Nu.Color tweened) applicator
                 { slice with Color = applied }
             else slice
         | Glows (applicator, algorithm, playback, keyFrames) ->
@@ -514,7 +516,7 @@ module EffectSystem =
                 let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectLocalTime playback keyFrames
                 let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
                 let tweened = tween Color.op_Multiply keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
-                let applied = applyTween Color.Multiply Color.Divide slice.Color tweened applicator
+                let applied = applyTween Color.Multiply Color.Divide Color.Pow slice.Color tweened applicator
                 { slice with Color = applied }
             else slice
         | Volumes (applicator, algorithm, playback, keyFrames) ->
@@ -522,7 +524,7 @@ module EffectSystem =
                 let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectLocalTime playback keyFrames
                 let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
                 let tweened = tween (fun (x, y) -> x * y) keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
-                let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) slice.Volume tweened applicator
+                let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) (fun a a2 -> single (Math.Pow (double a, double a2)))slice.Volume tweened applicator
                 { slice with Volume = applied }
             else slice
         | Aspect.Expand (definitionName, _) ->
