@@ -4,4 +4,4 @@
 namespace Nu
 open Nu
 
-// 3d physics with Bepu (or PhysX.NET?)
+// 3d physics with PhysX.NET.

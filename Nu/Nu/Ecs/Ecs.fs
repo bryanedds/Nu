@@ -1,4 +1,7 @@
-﻿namespace Nu.Ecs
+﻿// Nu Game Engine.
+// Copyright (C) Bryan Edds, 2013-2020.
+
+namespace Nu.Ecs
 open System
 open System.Collections.Generic
 open System.Collections.Concurrent

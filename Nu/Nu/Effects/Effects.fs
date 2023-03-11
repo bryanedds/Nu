@@ -1,192 +1,192 @@
 ﻿// Nu Game Engine.
 // Copyright (C) Bryan Edds, 2013-2020.
 
-namespace Nu
+namespace Nu.Effects
 open System
 open System.Collections.Generic
 open System.Numerics
 open Prime
-module Effects =
+open Nu
 
-    type [<StructuralEquality; StructuralComparison>] LogicApplicator =
-        | Or
-        | Nor
-        | Xor
-        | And
-        | Nand
-        | Equal
+type [<StructuralEquality; StructuralComparison>] LogicApplicator =
+    | Or
+    | Nor
+    | Xor
+    | And
+    | Nand
+    | Equal
 
-    type [<StructuralEquality; StructuralComparison>] TweenAlgorithm =
-        | Constant
-        | Linear
-        | Random
-        | Chaos
-        | Ease
-        | EaseIn
-        | EaseOut
-        | Sin
-        | SinScaled of single
-        | Cos
-        | CosScaled of single
+type [<StructuralEquality; StructuralComparison>] TweenAlgorithm =
+    | Constant
+    | Linear
+    | Random
+    | Chaos
+    | Ease
+    | EaseIn
+    | EaseOut
+    | Sin
+    | SinScaled of single
+    | Cos
+    | CosScaled of single
 
-    type [<StructuralEquality; StructuralComparison>] TweenApplicator =
-        | Sum
-        | Delta
-        | Scalar
-        | Ratio
-        | Modulo
-        | Pow
-        | Set
+type [<StructuralEquality; StructuralComparison>] TweenApplicator =
+    | Sum
+    | Delta
+    | Scalar
+    | Ratio
+    | Modulo
+    | Pow
+    | Set
 
-    type Slice =
-        { Position : Vector3
-          Scale : Vector3
-          Offset : Vector3
-          Size : Vector3
-          Angles : Vector3
-          Elevation : single
-          Inset : Box2
-          Color : Color
-          Blend : Blend
-          Glow : Color
-          Flip : Flip
-          Volume : single
-          Enabled : bool
-          Centered : bool }
+type Slice =
+    { Position : Vector3
+      Scale : Vector3
+      Offset : Vector3
+      Size : Vector3
+      Angles : Vector3
+      Elevation : single
+      Inset : Box2
+      Color : Color
+      Blend : Blend
+      Glow : Color
+      Flip : Flip
+      Volume : single
+      Enabled : bool
+      Centered : bool }
 
-    type KeyFrame =
-        abstract KeyFrameLength : GameTime
+type KeyFrame =
+    abstract KeyFrameLength : GameTime
 
-    type LogicKeyFrame =
-        { LogicValue : bool
-          LogicLength : GameTime }
-        interface KeyFrame with
-            member this.KeyFrameLength = this.LogicLength
+type LogicKeyFrame =
+    { LogicValue : bool
+      LogicLength : GameTime }
+    interface KeyFrame with
+        member this.KeyFrameLength = this.LogicLength
 
-    type TweenKeyFrame =
-        { TweenValue : single
-          TweenLength : GameTime }
-        interface KeyFrame with
-            member this.KeyFrameLength = this.TweenLength
+type TweenKeyFrame =
+    { TweenValue : single
+      TweenLength : GameTime }
+    interface KeyFrame with
+        member this.KeyFrameLength = this.TweenLength
 
-    type Tween2KeyFrame =
-        { TweenValue : Vector2
-          TweenLength : GameTime }
-        interface KeyFrame with
-            member this.KeyFrameLength = this.TweenLength
+type Tween2KeyFrame =
+    { TweenValue : Vector2
+      TweenLength : GameTime }
+    interface KeyFrame with
+        member this.KeyFrameLength = this.TweenLength
 
-    type Tween3KeyFrame =
-        { TweenValue : Vector3
-          TweenLength : GameTime }
-        interface KeyFrame with
-            member this.KeyFrameLength = this.TweenLength
+type Tween3KeyFrame =
+    { TweenValue : Vector3
+      TweenLength : GameTime }
+    interface KeyFrame with
+        member this.KeyFrameLength = this.TweenLength
 
-    type Tween4KeyFrame =
-        { TweenValue : Vector4
-          TweenLength : GameTime }
-        interface KeyFrame with
-            member this.KeyFrameLength = this.TweenLength
+type Tween4KeyFrame =
+    { TweenValue : Vector4
+      TweenLength : GameTime }
+    interface KeyFrame with
+        member this.KeyFrameLength = this.TweenLength
 
-    type TweenBox2KeyFrame =
-        { TweenValue : Box2
-          TweenLength : GameTime }
-        interface KeyFrame with
-            member this.KeyFrameLength = this.TweenLength
+type TweenBox2KeyFrame =
+    { TweenValue : Box2
+      TweenLength : GameTime }
+    interface KeyFrame with
+        member this.KeyFrameLength = this.TweenLength
 
-    type TweenCKeyFrame =
-        { TweenValue : Color
-          TweenLength : GameTime }
-        interface KeyFrame with
-            member this.KeyFrameLength = this.TweenLength
+type TweenCKeyFrame =
+    { TweenValue : Color
+      TweenLength : GameTime }
+    interface KeyFrame with
+        member this.KeyFrameLength = this.TweenLength
 
-    type TweenIKeyFrame =
-        { TweenValue : int
-          TweenLength : GameTime }
-        interface KeyFrame with
-            member this.KeyFrameLength = this.TweenLength
+type TweenIKeyFrame =
+    { TweenValue : int
+      TweenLength : GameTime }
+    interface KeyFrame with
+        member this.KeyFrameLength = this.TweenLength
 
-    type Tween2IKeyFrame =
-        { TweenValue : Vector2i
-          TweenLength : GameTime }
-        interface KeyFrame with
-            member this.KeyFrameLength = this.TweenLength
+type Tween2IKeyFrame =
+    { TweenValue : Vector2i
+      TweenLength : GameTime }
+    interface KeyFrame with
+        member this.KeyFrameLength = this.TweenLength
 
-    type [<StructuralEquality; StructuralComparison>] Playback =
-        | Once
-        | Loop
-        | Bounce
+type [<StructuralEquality; StructuralComparison>] Playback =
+    | Once
+    | Loop
+    | Bounce
 
-    type [<StructuralEquality; StructuralComparison>] Repetition =
-        | Cycle of Cycles : int
-        | Iterate of Iterations : int
+type [<StructuralEquality; StructuralComparison>] Repetition =
+    | Cycle of Cycles : int
+    | Iterate of Iterations : int
 
-    type [<StructuralEquality; StructuralComparison>] Rate =
-        Rate of single
+type [<StructuralEquality; StructuralComparison>] Rate =
+    Rate of single
 
-    type [<StructuralEquality; StructuralComparison>] Shift =
-        Shift of single
+type [<StructuralEquality; StructuralComparison>] Shift =
+    Shift of single
 
-    type Resource =
-        | Resource of string * string
-        | Expand of string * Argument array
+type Resource =
+    | Resource of string * string
+    | Expand of string * Argument array
 
-    and Aspect =
-        | Enabled of bool
-        | PositionAbsolute of Vector3
-        | PositionRelative of Vector3
-        | Translation of Vector3
-        | Scale of Vector3
-        | Offset of Vector3
-        | Angles of Vector3
-        | Degrees of Vector3
-        | Size of Vector3
-        | Elevation of single
-        | Inset of Box2
-        | Color of Color
-        | Blend of Blend
-        | Glow of Color
-        | Flip of Flip
-        | Volume of single
-        | Enableds of LogicApplicator * Playback * LogicKeyFrame array
-        | Positions of TweenApplicator * TweenAlgorithm * Playback * Tween3KeyFrame array
-        | Translations of TweenApplicator * TweenAlgorithm * Playback * Tween3KeyFrame array
-        | Scales of TweenApplicator * TweenAlgorithm * Playback * Tween3KeyFrame array
-        | Offsets of TweenApplicator * TweenAlgorithm * Playback * Tween3KeyFrame array
-        | Angleses of TweenApplicator * TweenAlgorithm * Playback * Tween3KeyFrame array
-        | Degreeses of TweenApplicator * TweenAlgorithm * Playback * Tween3KeyFrame array
-        | Sizes of TweenApplicator * TweenAlgorithm * Playback * Tween3KeyFrame array
-        | Elevations of TweenApplicator * TweenAlgorithm * Playback * TweenKeyFrame array
-        | Insets of TweenApplicator * TweenAlgorithm * Playback * TweenBox2KeyFrame array
-        | Colors of TweenApplicator * TweenAlgorithm * Playback * TweenCKeyFrame array
-        | Glows of TweenApplicator * TweenAlgorithm * Playback * TweenCKeyFrame array
-        | Volumes of TweenApplicator * TweenAlgorithm * Playback * TweenKeyFrame array
-        | Expand of string * Argument array
-        | Aspects of Aspect array
+and Aspect =
+    | Enabled of bool
+    | PositionAbsolute of Vector3
+    | PositionRelative of Vector3
+    | Translation of Vector3
+    | Scale of Vector3
+    | Offset of Vector3
+    | Angles of Vector3
+    | Degrees of Vector3
+    | Size of Vector3
+    | Elevation of single
+    | Inset of Box2
+    | Color of Color
+    | Blend of Blend
+    | Glow of Color
+    | Flip of Flip
+    | Volume of single
+    | Enableds of LogicApplicator * Playback * LogicKeyFrame array
+    | Positions of TweenApplicator * TweenAlgorithm * Playback * Tween3KeyFrame array
+    | Translations of TweenApplicator * TweenAlgorithm * Playback * Tween3KeyFrame array
+    | Scales of TweenApplicator * TweenAlgorithm * Playback * Tween3KeyFrame array
+    | Offsets of TweenApplicator * TweenAlgorithm * Playback * Tween3KeyFrame array
+    | Angleses of TweenApplicator * TweenAlgorithm * Playback * Tween3KeyFrame array
+    | Degreeses of TweenApplicator * TweenAlgorithm * Playback * Tween3KeyFrame array
+    | Sizes of TweenApplicator * TweenAlgorithm * Playback * Tween3KeyFrame array
+    | Elevations of TweenApplicator * TweenAlgorithm * Playback * TweenKeyFrame array
+    | Insets of TweenApplicator * TweenAlgorithm * Playback * TweenBox2KeyFrame array
+    | Colors of TweenApplicator * TweenAlgorithm * Playback * TweenCKeyFrame array
+    | Glows of TweenApplicator * TweenAlgorithm * Playback * TweenCKeyFrame array
+    | Volumes of TweenApplicator * TweenAlgorithm * Playback * TweenKeyFrame array
+    | Expand of string * Argument array
+    | Aspects of Aspect array
 
-    and Content =
-        | Nil // first to make default value when missing
-        | StaticSprite of Resource * Aspect array * Content
-        | AnimatedSprite of Resource * Vector2i * int * int * GameTime * Playback * Aspect array * Content
-        | TextSprite of Resource * string * Aspect array * Content
-        | SoundEffect of Resource * Aspect array * Content
-        | Mount of Shift * Aspect array * Content
-        | Repeat of Shift * Repetition * Aspect array * Content
-        | Emit of Shift * Rate * Aspect array * Aspect array * Content
-        | Tag of string * Aspect array * Content
-        | Delay of GameTime * Content
-        | Segment of GameTime * GameTime * Content
-        | Expand of string * Argument array
-        | Contents of Shift * Content array
+and Content =
+    | Nil // first to make default value when missing
+    | StaticSprite of Resource * Aspect array * Content
+    | AnimatedSprite of Resource * Vector2i * int * int * GameTime * Playback * Aspect array * Content
+    | TextSprite of Resource * string * Aspect array * Content
+    | SoundEffect of Resource * Aspect array * Content
+    | Mount of Shift * Aspect array * Content
+    | Repeat of Shift * Repetition * Aspect array * Content
+    | Emit of Shift * Rate * Aspect array * Aspect array * Content
+    | Tag of string * Aspect array * Content
+    | Delay of GameTime * Content
+    | Segment of GameTime * GameTime * Content
+    | Expand of string * Argument array
+    | Contents of Shift * Content array
 
-    and Argument =
-        SymbolicCompression<Resource, SymbolicCompression<Aspect, Content>>
+and Argument =
+    SymbolicCompression<Resource, SymbolicCompression<Aspect, Content>>
 
-    type Definition =
-        { DefinitionParams : string array
-          DefinitionBody : SymbolicCompression<Resource, SymbolicCompression<Aspect, Content>> }
+type Definition =
+    { DefinitionParams : string array
+      DefinitionBody : SymbolicCompression<Resource, SymbolicCompression<Aspect, Content>> }
 
-    type Definitions =
-        Map<string, Definition>
+type Definitions =
+    Map<string, Definition>
 
 /// Describes an effect in a compositional manner.
 [<Syntax
@@ -209,8 +209,8 @@ module Effects =
 type EffectDescriptor =
     { EffectName : string
       LifeTimeOpt : GameTime option
-      Definitions : Effects.Definitions
-      Content : Effects.Content }
+      Definitions : Definitions
+      Content : Content }
 
 [<RequireQualifiedAccess>]
 module EffectDescriptor =
@@ -220,7 +220,7 @@ module EffectDescriptor =
         { EffectName = String.concat "+" (Seq.map (fun descriptor -> descriptor.EffectName) descriptors)
           LifeTimeOpt = None
           Definitions = Seq.fold (fun definitions descriptor -> Map.concat definitions descriptor.Definitions) Map.empty descriptors
-          Content = Effects.Contents (Effects.Shift 0.0f, descriptors |> Seq.map (fun descriptor -> descriptor.Content) |> Array.ofSeq) }
+          Content = Contents (Shift 0.0f, descriptors |> Seq.map (fun descriptor -> descriptor.Content) |> Array.ofSeq) }
 
     /// Make an effect descriptor.
     let make name lifeTimeOpt definitions content =
@@ -230,15 +230,13 @@ module EffectDescriptor =
           Content = content }
 
     /// The default effect descriptor.
-    let defaultDescriptor = make Constants.Engine.EffectNameDefault None Map.empty (Effects.Contents (Effects.Shift 0.0f, [||]))
+    let defaultDescriptor = make Constants.Engine.EffectNameDefault None Map.empty (Contents (Shift 0.0f, [||]))
 
     /// The empty effect descriptor.
-    let empty = make String.Empty None Map.empty (Effects.Contents (Effects.Shift 0.0f, [||]))
+    let empty = make String.Empty None Map.empty (Contents (Shift 0.0f, [||]))
 
 [<RequireQualifiedAccess>]
 module EffectSystem =
-
-    open Effects
 
     /// Evaluates effect descriptors.
     type [<ReferenceEquality>] EffectSystem =
@@ -609,13 +607,13 @@ module EffectSystem =
                     let animatedSpriteView =
                         Render2d (transform.Elevation, transform.Horizon, AssetTag.generalize image,
                             SpriteDescriptor
-                               { Transform = transform
-                                 InsetOpt = ValueSome inset
-                                 Image = AssetTag.specialize<Image> image
-                                 Color = slice.Color
-                                 Blend = slice.Blend
-                                 Glow = slice.Glow
-                                 Flip = slice.Flip })
+                                { Transform = transform
+                                  InsetOpt = ValueSome inset
+                                  Image = AssetTag.specialize<Image> image
+                                  Color = slice.Color
+                                  Blend = slice.Blend
+                                  Glow = slice.Glow
+                                  Flip = slice.Flip })
                     addView animatedSpriteView effectSystem
                 else effectSystem
 

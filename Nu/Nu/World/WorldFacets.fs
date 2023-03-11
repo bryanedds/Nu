@@ -352,8 +352,8 @@ module BasicEmitterFacet2dModule =
         member this.GetEmitterStyle world : string = this.Get (nameof this.EmitterStyle) world
         member this.SetEmitterStyle (value : string) world = this.Set (nameof this.EmitterStyle) value world
         member this.EmitterStyle = lens (nameof this.EmitterStyle) this this.GetEmitterStyle this.SetEmitterStyle
-        member this.GetParticleSystem world : ParticleSystem = this.Get (nameof this.ParticleSystem) world
-        member this.SetParticleSystem (value : ParticleSystem) world = this.Set (nameof this.ParticleSystem) value world
+        member this.GetParticleSystem world : Particles.ParticleSystem = this.Get (nameof this.ParticleSystem) world
+        member this.SetParticleSystem (value : Particles.ParticleSystem) world = this.Set (nameof this.ParticleSystem) value world
         member this.ParticleSystem = lens (nameof this.ParticleSystem) this this.GetParticleSystem this.SetParticleSystem
 
     type BasicEmitterFacet2d () =
@@ -506,7 +506,7 @@ module BasicEmitterFacet2dModule =
              define Entity.BasicParticleSeed { Life = Particles.Life.make GameTime.zero (GameTime.ofSeconds 1.0f); Body = Particles.Body.defaultBody2d; Size = Constants.Engine.ParticleSize2dDefault; Offset = v3Zero; Inset = box2Zero; Color = Color.One; Glow = Color.Zero; Flip = FlipNone }
              define Entity.EmitterConstraint Particles.Constraint.empty
              define Entity.EmitterStyle "BasicEmitter2d"
-             nonPersistent Entity.ParticleSystem ParticleSystem.empty]
+             nonPersistent Entity.ParticleSystem Particles.ParticleSystem.empty]
 
         override this.Register (entity, world) =
             let emitter = makeEmitter entity world
@@ -536,7 +536,7 @@ module BasicEmitterFacet2dModule =
                 let delta = world.GameDelta
                 let time = world.GameTime
                 let particleSystem = entity.GetParticleSystem world
-                let (particleSystem, output) = ParticleSystem.run delta time particleSystem
+                let (particleSystem, output) = Particles.ParticleSystem.run delta time particleSystem
                 let world = entity.SetParticleSystem particleSystem world
                 processOutput output entity world
             else world
@@ -546,7 +546,7 @@ module BasicEmitterFacet2dModule =
             let particleSystem = entity.GetParticleSystem world
             let particlesMessages =
                 particleSystem |>
-                ParticleSystem.toParticlesDescriptors time |>
+                Particles.ParticleSystem.toParticlesDescriptors time |>
                 List.map (fun (descriptor : ParticlesDescriptor) ->
                     { Elevation = descriptor.Elevation
                       Horizon = descriptor.Horizon
@@ -575,11 +575,11 @@ module EffectFacet2dModule =
         member this.GetEffectDefinitions world : Effects.Definitions = this.Get (nameof this.EffectDefinitions) world
         member this.SetEffectDefinitions (value : Effects.Definitions) world = this.Set (nameof this.EffectDefinitions) value world
         member this.EffectDefinitions = lens (nameof this.EffectDefinitions) this this.GetEffectDefinitions this.SetEffectDefinitions
-        member this.GetEffectDescriptor world : EffectDescriptor = this.Get (nameof this.EffectDescriptor) world
+        member this.GetEffectDescriptor world : Effects.EffectDescriptor = this.Get (nameof this.EffectDescriptor) world
         /// When RunMode is set to RunEarly, call this AFETER setting the rest of the entity's properties. This
         /// is because setting the effect descriptin in RunEarly mode will immediately run the first frame of the
         /// effect due to a semantic limitation in Nu.
-        member this.SetEffectDescriptor (value : EffectDescriptor) world = this.Set (nameof this.EffectDescriptor) value world
+        member this.SetEffectDescriptor (value : Effects.EffectDescriptor) world = this.Set (nameof this.EffectDescriptor) value world
         member this.EffectDescriptor = lens (nameof this.EffectDescriptor) this this.GetEffectDescriptor this.SetEffectDescriptor
         member this.GetEffectCentered world : bool = this.Get (nameof this.EffectCentered) world
         member this.SetEffectCentered (value : bool) world = this.Set (nameof this.EffectCentered) value world
@@ -609,7 +609,7 @@ module EffectFacet2dModule =
             match effectSymbolOpt with
             | Some effectSymbol ->
                 let symbolLoadMetadata = { ImplicitDelimiters = false; StripCsvHeader = false }
-                match World.assetTagToValueOpt<EffectDescriptor> effectSymbol symbolLoadMetadata world with
+                match World.assetTagToValueOpt<Effects.EffectDescriptor> effectSymbol symbolLoadMetadata world with
                 | Some effect -> entity.SetEffectDescriptor effect world
                 | None -> world
             | None -> world
@@ -682,13 +682,13 @@ module EffectFacet2dModule =
 #endif
 
         static member Properties =
-            [define Entity.ParticleSystem ParticleSystem.empty
+            [define Entity.ParticleSystem Particles.ParticleSystem.empty
              define Entity.SelfDestruct false
              define Entity.RunMode RunLate
              define Entity.EffectSymbolOpt None
              define Entity.EffectStartTimeOpt None
              define Entity.EffectDefinitions Map.empty
-             define Entity.EffectDescriptor EffectDescriptor.empty
+             define Entity.EffectDescriptor Effects.EffectDescriptor.empty
              define Entity.EffectCentered true
              define Entity.EffectOffset v3Zero
              define Entity.EffectHistoryMax Constants.Effects.EffectHistoryMaxDefault

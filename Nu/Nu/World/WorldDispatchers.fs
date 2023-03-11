@@ -795,7 +795,7 @@ module EffectDispatcher2dModule =
 
         static member Properties =
             [define Entity.Centered true
-             define Entity.EffectDescriptor (scvalue<EffectDescriptor> "[Effect None [] [Contents [Shift 0] [[StaticSprite [Resource Default Image] [] Nil]]]]")]
+             define Entity.EffectDescriptor (scvalue<Effects.EffectDescriptor> "[Effect None [] [Contents [Shift 0] [[StaticSprite [Resource Default Image] [] Nil]]]]")]
 
 [<AutoOpen>]
 module BlockDispatcher2dModule =

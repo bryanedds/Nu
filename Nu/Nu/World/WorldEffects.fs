@@ -7,6 +7,8 @@ open System.ComponentModel
 open System.Numerics
 open Prime
 open Nu
+open Nu.Effects
+open Nu.Particles
 
 [<AutoOpen>]
 module WorldView =
@@ -24,7 +26,7 @@ module WorldView =
             | FadeOutSong fade -> World.fadeOutSong fade world
             | StopSong -> World.stopSong world
             | SpawnEmitter (_, _) -> world
-            | Tag _ -> world
+            | Nu.Tag _ -> world
             | Views views -> Array.fold (fun world view -> World.renderView view world) world views
             | SegmentedViews views -> SegmentedArray.fold (fun world view -> World.renderView view world) world views
 
@@ -61,11 +63,11 @@ module Effect =
               Centered_ : bool
               Offset_ : Vector3
               Transform_ : Transform
-              ParticleSystem_ : Particles.ParticleSystem
+              ParticleSystem_ : ParticleSystem
               HistoryMax_ : int
               History_ : Effects.Slice Nito.Collections.Deque
-              Definitions_ : Effects.Definitions
-              Tags_ : Map<string, Effects.Slice>
+              Definitions_ : Definitions
+              Tags_ : Map<string, Slice>
               Descriptor_ : EffectDescriptor }
 
         member this.StartTime = this.StartTime_
@@ -79,14 +81,14 @@ module Effect =
 
     let rec private processParticleSystemOutput output effect world =
         match output with
-        | Particles.OutputSound (volume, sound) ->
+        | OutputSound (volume, sound) ->
             let world = World.enqueueAudioMessage (PlaySoundMessage { Volume = volume; Sound = sound }) world
             (effect, world)
-        | Particles.OutputEmitter (name, emitter) ->
+        | OutputEmitter (name, emitter) ->
             let particleSystem = { effect.ParticleSystem_ with Emitters = Map.add name emitter effect.ParticleSystem_.Emitters }
             let effect = { effect with ParticleSystem_ = particleSystem }
             (effect, world)
-        | Particles.Outputs outputs ->
+        | Outputs outputs ->
             SegmentedArray.fold (fun (effect, world) output ->
                 processParticleSystemOutput output effect world)
                 (effect, world)
@@ -116,20 +118,20 @@ module Effect =
             let delta = world.GameDelta
             let mutable transform = effect.Transform_
             let effectSlice =
-                { Effects.Position = transform.Position
-                  Effects.Scale = transform.Scale
-                  Effects.Angles = transform.Angles
-                  Effects.Elevation = transform.Elevation
-                  Effects.Offset = effect.Offset_
-                  Effects.Size = transform.Size
-                  Effects.Inset = Box2.Zero
-                  Effects.Color = Color.One
-                  Effects.Blend = Transparent
-                  Effects.Glow = Color.Zero
-                  Effects.Flip = FlipNone
-                  Effects.Volume = Constants.Audio.SoundVolumeDefault
-                  Effects.Enabled = true
-                  Effects.Centered = effect.Centered_ }
+                { Position = transform.Position
+                  Scale = transform.Scale
+                  Angles = transform.Angles
+                  Elevation = transform.Elevation
+                  Offset = effect.Offset_
+                  Size = transform.Size
+                  Inset = Box2.Zero
+                  Color = Color.One
+                  Blend = Transparent
+                  Glow = Color.Zero
+                  Flip = FlipNone
+                  Volume = Constants.Audio.SoundVolumeDefault
+                  Enabled = true
+                  Centered = effect.Centered_ }
             let effectSystem = EffectSystem.make localTime delta transform.Absolute effect.Definitions_
 
             // evaluate effect with effect system
@@ -144,7 +146,7 @@ module Effect =
             // extract tags
             let tags =
                 views |>
-                Seq.choose (function Tag (name, value) -> Some (name, value :?> Effects.Slice) | _ -> None) |>
+                Seq.choose (function Nu.Tag (name, value) -> Some (name, value :?> Slice) | _ -> None) |>
                 Map.ofSeq
 
             // spawn emitters
@@ -153,9 +155,9 @@ module Effect =
                 Seq.choose (function SpawnEmitter (name, descriptor) -> Some (name, descriptor) | _ -> None) |>
                 Seq.choose (fun (name : string, descriptor : EmitterDescriptor) ->
                     match descriptor with
-                    | :? Particles.BasicEmitterDescriptor as descriptor ->
+                    | :? BasicEmitterDescriptor as descriptor ->
                         match World.tryMakeEmitter time descriptor.LifeTimeOpt descriptor.ParticleLifeTimeMaxOpt descriptor.ParticleRate descriptor.ParticleMax descriptor.Style world with
-                        | Some (:? Particles.BasicEmitter as emitter) ->
+                        | Some (:? BasicEmitter as emitter) ->
                             let emitter =
                                 { emitter with
                                     Body = descriptor.Body

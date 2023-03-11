@@ -1,7 +1,7 @@
-﻿namespace Nu
+﻿namespace Nu.Behaviors
 open System
 open FSharp.Core
-open Prime
+open Nu
 
 /// Modifies behaviors.
 type Modifier<'a, 'b> =
