@@ -184,6 +184,8 @@ module Behavior =
     let inline negate bhvr = map (fun a -> -a) bhvr // TODO: redfine as Generics.negate after updating Prime.
     let inline inc bhvr = map inc bhvr
     let inline dec bhvr = map dec bhvr
+    let inline min b bhvr = map (fun a -> min a b) bhvr
+    let inline max b bhvr = map (fun a -> max a b) bhvr
     let inline random bhvr = map (fun a -> Random(hash a)) bhvr
     let inline randomb bhvr = map (fun a -> Random(hash a).Next() <= Int32.MaxValue / 2) bhvr
     let inline randomi bhvr = map (fun a -> Random(hash a).Next()) bhvr
