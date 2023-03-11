@@ -19,14 +19,14 @@ type 'a Behavior =
             let b = that.Run time
             mapper (a, b))
 
-    static member (.=.)  (left : _ Behavior, right : _ Behavior) : _ Behavior = left.Map2 (fun (a, b) -> a = b) right
-    static member (.<>.) (left : _ Behavior, right : _ Behavior) : _ Behavior = left.Map2 (fun (a, b) -> a <> b) right
-    static member (.<.)  (left : _ Behavior, right : _ Behavior) : _ Behavior = left.Map2 (fun (a, b) -> a < b) right
-    static member (.<=.) (left : _ Behavior, right : _ Behavior) : _ Behavior = left.Map2 (fun (a, b) -> a <= b) right
-    static member (.>.)  (left : _ Behavior, right : _ Behavior) : _ Behavior = left.Map2 (fun (a, b) -> a > b) right
-    static member (.>=.) (left : _ Behavior, right : _ Behavior) : _ Behavior = left.Map2 (fun (a, b) -> a >= b) right
-    static member (.||.) (left : _ Behavior, right : _ Behavior) : _ Behavior = left.Map2 (fun (a, b) -> a || b) right
-    static member (.&&.) (left : _ Behavior, right : _ Behavior) : _ Behavior = left.Map2 (fun (a, b) -> a && b) right
+    static member (=.)   (left : _ Behavior, right : _ Behavior) : _ Behavior = left.Map2 (fun (a, b) -> a = b) right
+    static member (<>.)  (left : _ Behavior, right : _ Behavior) : _ Behavior = left.Map2 (fun (a, b) -> a <> b) right
+    static member (<.)   (left : _ Behavior, right : _ Behavior) : _ Behavior = left.Map2 (fun (a, b) -> a < b) right
+    static member (<=.)  (left : _ Behavior, right : _ Behavior) : _ Behavior = left.Map2 (fun (a, b) -> a <= b) right
+    static member (>.)   (left : _ Behavior, right : _ Behavior) : _ Behavior = left.Map2 (fun (a, b) -> a > b) right
+    static member (>=.)  (left : _ Behavior, right : _ Behavior) : _ Behavior = left.Map2 (fun (a, b) -> a >= b) right
+    static member (||.)  (left : _ Behavior, right : _ Behavior) : _ Behavior = left.Map2 (fun (a, b) -> a || b) right
+    static member (&&.)  (left : _ Behavior, right : _ Behavior) : _ Behavior = left.Map2 (fun (a, b) -> a && b) right
     static member (+)    (left : _ Behavior, right : _ Behavior) : _ Behavior = left.Map2 (fun (a, b) -> a + b) right
     static member (-)    (left : _ Behavior, right : _ Behavior) : _ Behavior = left.Map2 (fun (a, b) -> a - b) right
     static member (*)    (left : _ Behavior, right : _ Behavior) : _ Behavior = left.Map2 (fun (a, b) -> a * b) right
@@ -289,13 +289,6 @@ module BehaviorBuilder =
 
     /// Builds behaviors.
     let behave = BehaviorBuilder ()
-
-    let private hop (p : Vector3) (p2 : Vector3) (h : single) (start : GameTime) (length : GameTime) =
-        behave {
-            let! _ = Behavior.time .=. Behavior.time
-            let! p = Behavior.timeSlice start length |> Behavior.lerp p p2
-            let! h = Behavior.timeSlice start length |> Behavior.sin |> Behavior.scale h
-            return v3 p.X (p.Y + h) p.Z }
 
 [<RequireQualifiedAccess>]
 module GameTimeExtension =
