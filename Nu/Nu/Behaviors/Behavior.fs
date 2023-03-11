@@ -181,6 +181,7 @@ module Behavior =
     let inline notZero bhvr = map Generics.notZero bhvr
     let inline isNeg bhvr = map (fun a -> a < Generics.zero ()) bhvr
     let inline isPositive bhvr = map (fun a -> a < Generics.zero ()) bhvr
+    let inline negate bhvr = map (fun a -> -a) bhvr // TODO: redfine as Generics.negate after updating Prime.
     let inline inc bhvr = map inc bhvr
     let inline dec bhvr = map dec bhvr
     let inline random bhvr = map (fun a -> Random(hash a)) bhvr
@@ -282,6 +283,7 @@ module BehaviorBuilder =
 
     /// Builds behaviors.
     let behave = BehaviorBuilder ()
+    Behavior.neq
 
 [<RequireQualifiedAccess>]
 module GameTimeExtension =
