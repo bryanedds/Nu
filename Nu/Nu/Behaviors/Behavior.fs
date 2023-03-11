@@ -263,13 +263,13 @@ module Behavior =
             value + scale (value2 - value, single scalar))
             bhvr
 
-    let inline easef a b bhvr = ease (fun (c, s) -> c * s) a b bhvr
-    let inline easeInf a b bhvr = easeIn (fun (c, s) -> c * s) a b bhvr
-    let inline easeOutf a b bhvr = easeOut (fun (c, s) -> c * s) a b bhvr
-    let inline sinTweenf a b bhvr = sinTween (fun (c, s) -> c * s) a b bhvr
-    let inline sinTweenScaledf a b scalar bhvr = sinTweenScaled (fun (c, s) -> c * s) a b scalar bhvr
-    let inline cosTweenf a b bhvr = cosTween (fun (c, s) -> c * s) a b bhvr
-    let inline cosTweenScaledf a b scalar bhvr = cosTweenScaled (fun (c, s) -> c * s) a b scalar bhvr
+    let inline easef a b bhvr = ease (fun (c, p) -> c * p) a b bhvr
+    let inline easeInf a b bhvr = easeIn (fun (c, p) -> c * p) a b bhvr
+    let inline easeOutf a b bhvr = easeOut (fun (c, p) -> c * p) a b bhvr
+    let inline sinTweenf a b bhvr = sinTween (fun (c, p) -> c * p) a b bhvr
+    let inline sinTweenScaledf a b scalar bhvr = sinTweenScaled (fun (c, p) -> c * p) a b scalar bhvr
+    let inline cosTweenf a b bhvr = cosTween (fun (c, p) -> c * p) a b bhvr
+    let inline cosTweenScaledf a b scalar bhvr = cosTweenScaled (fun (c, p) -> c * p) a b scalar bhvr
 
 /// Builds behaviors.
 type [<Sealed>] BehaviorBuilder () =
