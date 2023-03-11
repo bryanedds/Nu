@@ -143,7 +143,7 @@ module Behavior =
             time / length)
             bhvr
 
-    // product behavior combinators
+    (* Product Combinators *)
     let id bhvr = returnB bhvr
     let map2 mapper (bhvr : 'a Behavior) (bhvr2 : 'b Behavior) : 'c Behavior = bhvr.Map2 mapper bhvr2
     let mapP mapper bhvr = map (fun (a, b) -> mapper a b) bhvr
@@ -159,7 +159,7 @@ module Behavior =
     let mapSnd mapper bhvr = map (fun (a, b) -> (a, mapper b)) bhvr
     let swap bhvr = map (fun (a, b) -> (b, a)) bhvr
 
-    // boot-strapping combinators
+    (* Boot-Strapping Combinators *)
     let unit : unit Behavior = Behavior (fun _ -> ())
     let constant k : _ Behavior = Behavior (fun _ -> k)
     let time : GameTime Behavior = Behavior (fun (time : GameTime) -> time)
@@ -168,7 +168,7 @@ module Behavior =
     let timeLoop stride bounce = let bhvr = timeLoopRaw stride bounce in normalize stride bhvr
     let timeSlice start length = let bhvr = timeSliceRaw start length in  normalize length bhvr
 
-    // advanced behavior combinators
+    (* Advanced Combinators *)
     let inline eq b bhvr = map (fun a -> a = b) bhvr
     let inline neq b bhvr = map (fun a -> a <> b) bhvr
     let inline not bhvr = map not bhvr
@@ -283,7 +283,6 @@ module BehaviorBuilder =
 
     /// Builds behaviors.
     let behave = BehaviorBuilder ()
-    Behavior.neq
 
 [<RequireQualifiedAccess>]
 module GameTimeExtension =
