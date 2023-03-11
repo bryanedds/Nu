@@ -143,9 +143,11 @@ module Behavior =
             time / length)
             bhvr
 
-    // basic behavior combinators
+    // product behavior combinators
     let id bhvr = returnB bhvr
-    let not bhvr = map not bhvr
+    let map2 mapper (bhvr : 'a Behavior) (bhvr2 : 'b Behavior) : 'c Behavior = bhvr.Map2 mapper bhvr2
+    let mapP mapper bhvr = map (fun (a, b) -> mapper a b) bhvr
+    let product (bhvr : 'a Behavior) (bhvr2 : 'b Behavior) : Behavior<'a * 'b> = Behavior (fun a -> (run a bhvr, run a bhvr2))
     let fst bhvr = map fst bhvr
     let snd bhvr = map snd bhvr
     let dup bhvr = map dup bhvr
@@ -169,14 +171,18 @@ module Behavior =
     // advanced behavior combinators
     let inline eq b bhvr = map (fun a -> a = b) bhvr
     let inline neq b bhvr = map (fun a -> a <> b) bhvr
+    let inline not bhvr = map not bhvr
     let inline or_ b bhvr = map (fun a -> a || b) bhvr
     let inline nor b bhvr = map (fun a -> Operators.not a && Operators.not b) bhvr
     let inline xor (b : bool) bhvr = map (fun a -> a <> b) bhvr
     let inline and_ b bhvr = map (fun a -> a && b) bhvr
     let inline nand b bhvr = map (fun a -> Operators.not (a && b)) bhvr
-    let inline lerp a b bhvr = map (fun p -> a + p * (b - a)) bhvr
-    let inline step stride bhvr = map (fun p -> int (p / stride)) bhvr
-    let inline pulse stride bhvr = map (fun steps -> steps % 2 <> 0) (step stride bhvr)
+    let inline isZero bhvr = map Generics.isZero bhvr
+    let inline notZero bhvr = map Generics.notZero bhvr
+    let inline isNeg bhvr = map (fun a -> a < Generics.zero ()) bhvr
+    let inline isPositive bhvr = map (fun a -> a < Generics.zero ()) bhvr
+    let inline inc bhvr = map inc bhvr
+    let inline dec bhvr = map dec bhvr
     let inline random bhvr = map (fun a -> Random(hash a)) bhvr
     let inline randomb bhvr = map (fun a -> Random(hash a).Next() <= Int32.MaxValue / 2) bhvr
     let inline randomi bhvr = map (fun a -> Random(hash a).Next()) bhvr
@@ -200,40 +206,14 @@ module Behavior =
     let inline pow4i n bhvr = map (fun a -> Vector4i.Pow (a, n)) bhvr
     let inline powc n bhvr = map (fun a -> Color.Pow (a, n)) bhvr
     let inline pown n bhvr = map (fun a -> pown a n) bhvr
-    let inline inc bhvr = map inc bhvr
-    let inline dec bhvr = map dec bhvr
-    let inline isZero bhvr = map Generics.isZero bhvr
-    let inline notZero bhvr = map Generics.notZero bhvr
-    let inline isNeg bhvr = map (fun a -> a < Generics.zero ()) bhvr
-    let inline isPositive bhvr = map (fun a -> a < Generics.zero ()) bhvr
+    let inline step stride bhvr = map (fun p -> int (p / stride)) bhvr
+    let inline pulse stride bhvr = map (fun steps -> steps % 2 <> 0) (step stride bhvr)
 
-    let inline serp (scale : (^a * single) -> ^a) (a : ^a) (b : ^a) bhvr : ^a Behavior =
-        map (fun (s : single) ->
-            let scaled = float s * Math.PI * 2.0
-            let scalar = Math.Sin scaled
-            a + scale (b - a, single scalar))
-            bhvr
+    let inline constantTween (a :'a) (_ :'a) bhvr =
+        map (fun (_ : 'b) -> a) bhvr
 
-    let inline serpScaled (scale : (^a * single) -> ^a) (a : ^a) (b : ^a) (scalar : single) bhvr : ^a Behavior =
-        map (fun (s : single) ->
-            let scaled = float s * Math.PI * 2.0 * float scalar
-            let scalar = Math.Sin scaled
-            a + scale (b - a, single scalar))
-            bhvr
-
-    let inline cerp (scale : (^a * single) -> ^a) (a : ^a) (b : ^a) bhvr : ^a Behavior =
-        map (fun (s : single) ->
-            let scaled = float s * Math.PI * 2.0
-            let scalar = Math.Cos scaled
-            a + scale (b - a, single scalar))
-            bhvr
-
-    let inline cerpScaled (scale : (^a * single) -> ^a) (value : ^a) (value2 : ^a) (scalar : single) bhvr : ^a Behavior =
-        map (fun (progress : single) ->
-            let scaled = float progress * Math.PI * 2.0 * float scalar
-            let scalar = Math.Cos scaled
-            value + scale (value2 - value, single scalar))
-            bhvr
+    let inline lerp a b bhvr =
+        map (fun p -> a + p * (b - a)) bhvr
 
     let inline ease (scale : (^a * single) -> ^a) (a : ^a) (b : ^a) bhvr : ^a Behavior =
         map (fun (s : single) ->
@@ -255,28 +235,41 @@ module Behavior =
             a + scale (b - a, scalar))
             bhvr
 
-    let inline serpf a b bhvr = serp (fun (c, s) -> c * s) a b bhvr
-    let inline serpScaledf a b scalar bhvr = serpScaled (fun (c, s) -> c * s) a b scalar bhvr
-    let inline cerpf a b bhvr = cerp (fun (c, s) -> c * s) a b bhvr
-    let inline cerpScaledf a b scalar bhvr = cerpScaled (fun (c, s) -> c * s) a b scalar bhvr
+    let inline sinTween (scale : (^a * single) -> ^a) (a : ^a) (b : ^a) bhvr : ^a Behavior =
+        map (fun (s : single) ->
+            let scaled = float s * Math.PI * 2.0
+            let scalar = Math.Sin scaled
+            a + scale (b - a, single scalar))
+            bhvr
+
+    let inline sinTweenScaled (scale : (^a * single) -> ^a) (a : ^a) (b : ^a) (scalar : single) bhvr : ^a Behavior =
+        map (fun (s : single) ->
+            let scaled = float s * Math.PI * 2.0 * float scalar
+            let scalar = Math.Sin scaled
+            a + scale (b - a, single scalar))
+            bhvr
+
+    let inline cosTween (scale : (^a * single) -> ^a) (a : ^a) (b : ^a) bhvr : ^a Behavior =
+        map (fun (s : single) ->
+            let scaled = float s * Math.PI * 2.0
+            let scalar = Math.Cos scaled
+            a + scale (b - a, single scalar))
+            bhvr
+
+    let inline cosTweenScaled (scale : (^a * single) -> ^a) (value : ^a) (value2 : ^a) (scalar : single) bhvr : ^a Behavior =
+        map (fun (progress : single) ->
+            let scaled = float progress * Math.PI * 2.0 * float scalar
+            let scalar = Math.Cos scaled
+            value + scale (value2 - value, single scalar))
+            bhvr
+
     let inline easef a b bhvr = ease (fun (c, s) -> c * s) a b bhvr
     let inline easeInf a b bhvr = easeIn (fun (c, s) -> c * s) a b bhvr
-    let inline easeOutf a b bhvr = easeIn (fun (c, s) -> c * s) a b bhvr
-
-    // product behavior combinators
-    let map2 mapper (bhvr : 'a Behavior) (bhvr2 : 'b Behavior) : 'c Behavior = bhvr.Map2 mapper bhvr2
-    let inline product (bhvr : 'a Behavior) (bhvr2 : 'b Behavior) : Behavior<'a * 'b> = Behavior (fun a -> (run a bhvr, run a bhvr2))
-    let inline productMap mapper bhvr = map (fun (a, b) -> mapper a b) bhvr
-    let inline productOr bhvr = productMap (||) bhvr
-    let inline productNor bhvr = productMap (fun a b -> Operators.not a && Operators.not b) bhvr
-    let inline productXor bhvr = productMap (fun a b -> a <> b) bhvr
-    let inline productAnd bhvr = productMap (fun a b -> a && b) bhvr
-    let inline productNand bhvr = productMap (fun a b -> Operators.not (a && b)) bhvr
-    let inline productSum bhvr = productMap (fun a b -> a + b) bhvr
-    let inline productDelta bhvr = productMap (fun a b -> a - b) bhvr
-    let inline productScale bhvr = productMap (fun a b -> a * b) bhvr
-    let inline productRatio bhvr = productMap (fun a b -> a / b) bhvr
-    let inline productModulo bhvr = productMap (fun a b -> a % b) bhvr
+    let inline easeOutf a b bhvr = easeOut (fun (c, s) -> c * s) a b bhvr
+    let inline sinTweenf a b bhvr = sinTween (fun (c, s) -> c * s) a b bhvr
+    let inline sinTweenScaledf a b scalar bhvr = sinTweenScaled (fun (c, s) -> c * s) a b scalar bhvr
+    let inline cosTweenf a b bhvr = cosTween (fun (c, s) -> c * s) a b bhvr
+    let inline cosTweenScaledf a b scalar bhvr = cosTweenScaled (fun (c, s) -> c * s) a b scalar bhvr
 
 /// Builds behaviors.
 type [<Sealed>] BehaviorBuilder () =
