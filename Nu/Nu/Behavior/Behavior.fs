@@ -5,32 +5,59 @@ open FSharp.Core
 open Prime
 
 /// Provides for time-driven behavior.
-type 'a Behavior = GameTime -> 'a
+type 'a Behavior =
+    | Behavior of (GameTime -> 'a)
+
+    member internal this.Run a =
+        match this with
+        | Behavior f -> f a
+
+    member internal this.Map2 mapper (that : _ Behavior) : _ Behavior =
+        Behavior (fun time ->
+            let a = this.Run time
+            let b = that.Run time
+            mapper (a, b))
+
+    static member inline (.=.)  (left : _ Behavior, right : _ Behavior) : _ Behavior = left.Map2 (fun (a, b) -> a = b) right
+    static member inline (.<>.) (left : _ Behavior, right : _ Behavior) : _ Behavior = left.Map2 (fun (a, b) -> a <> b) right
+    static member inline (.<.)  (left : _ Behavior, right : _ Behavior) : _ Behavior = left.Map2 (fun (a, b) -> a < b) right
+    static member inline (.<=.) (left : _ Behavior, right : _ Behavior) : _ Behavior = left.Map2 (fun (a, b) -> a <= b) right
+    static member inline (.>.)  (left : _ Behavior, right : _ Behavior) : _ Behavior = left.Map2 (fun (a, b) -> a > b) right
+    static member inline (.>=.) (left : _ Behavior, right : _ Behavior) : _ Behavior = left.Map2 (fun (a, b) -> a >= b) right
+    static member inline (.||.) (left : _ Behavior, right : _ Behavior) : _ Behavior = left.Map2 (fun (a, b) -> a || b) right
+    static member inline (.&&.) (left : _ Behavior, right : _ Behavior) : _ Behavior = left.Map2 (fun (a, b) -> a && b) right
+    static member inline (+)    (left : _ Behavior, right : _ Behavior) : _ Behavior = left.Map2 (fun (a, b) -> a + b) right
+    static member inline (-)    (left : _ Behavior, right : _ Behavior) : _ Behavior = left.Map2 (fun (a, b) -> a - b) right
+    static member inline (*)    (left : _ Behavior, right : _ Behavior) : _ Behavior = left.Map2 (fun (a, b) -> a * b) right
+    static member inline (/)    (left : _ Behavior, right : _ Behavior) : _ Behavior = left.Map2 (fun (a, b) -> a / b) right
+    static member inline (%)    (left : _ Behavior, right : _ Behavior) : _ Behavior = left.Map2 (fun (a, b) -> a % b) right
+    static member inline (>>>)  (left : _ Behavior, right : _ Behavior) : _ Behavior = left.Map2 (fun (a, b) -> a >>> b) right
+    static member inline (<<<)  (left : _ Behavior, right : _ Behavior) : _ Behavior = left.Map2 (fun (a, b) -> a <<< b) right
+    static member inline (^^^)  (left : _ Behavior, right : _ Behavior) : _ Behavior = left.Map2 (fun (a, b) -> a ^^^ b) right
 
 [<RequireQualifiedAccess>]
 module Behavior =
 
+    let run a (bhvr : 'a Behavior) =
+        bhvr.Run a
+
     let returnB (a : 'a): 'a Behavior =
-        let bhvr = fun _ -> a
-        bhvr
+        Behavior (fun _ -> a)
 
     let map<'a, 'b> mapper (bhvr : 'a Behavior) : 'b Behavior =
-        bhvr >> mapper
+        Behavior (match bhvr with Behavior bhvr -> bhvr >> mapper)
 
     let apply (bhvrF : ('a -> 'b) Behavior) (bhvrA : 'a Behavior) : 'b Behavior =
-        let bhvr = fun time ->
-            let a = bhvrA time
-            let f = bhvrF time
-            f a
-        bhvr
+        Behavior (fun time ->
+            let a = run time bhvrA
+            let f = run time bhvrF
+            f a)
 
     let bind (bhvr : 'a Behavior) (f : 'a -> 'b Behavior) : 'b Behavior =
-        let bhvr =
-            fun time ->
-                let a = bhvr time
-                let b = f a
-                b time
-        bhvr
+        Behavior (fun time ->
+            let a = run time bhvr
+            let b = f a
+            run time b)
 
     let lift1<'a, 'b>
         (op : 'a -> 'b)
@@ -43,11 +70,10 @@ module Behavior =
         (bhvr : 'a Behavior)
         (bhvr2 : 'b Behavior) :
         'c Behavior =
-        let bhvr = fun time ->
-            let a = bhvr time
-            let b = bhvr2 time
-            op a b
-        bhvr
+        Behavior (fun time ->
+            let a = run time bhvr
+            let b = run time bhvr2
+            op a b)
 
     let lift3<'a, 'b, 'c, 'd>
         (op : 'a -> 'b -> 'c -> 'd)
@@ -55,12 +81,11 @@ module Behavior =
         (bhvr2 : 'b Behavior)
         (bhvr3 : 'c Behavior) :
         'd Behavior =
-        let bhvr = fun time ->
-            let a = bhvr time
-            let b = bhvr2 time
-            let c = bhvr3 time
-            op a b c
-        bhvr
+        Behavior (fun time ->
+            let a = run time bhvr
+            let b = run time bhvr2
+            let c = run time bhvr3
+            op a b c)
 
     let lift4<'a, 'b, 'c, 'd, 'e>
         (op : 'a -> 'b -> 'c -> 'd -> 'e)
@@ -69,13 +94,12 @@ module Behavior =
         (bhvr3 : 'c Behavior)
         (bhvr4 : 'd Behavior) :
         'e Behavior =
-        let bhvr = fun time ->
-            let a = bhvr time
-            let b = bhvr2 time
-            let c = bhvr3 time
-            let d = bhvr4 time
-            op a b c d
-        bhvr
+        Behavior (fun time ->
+            let a = run time bhvr
+            let b = run time bhvr2
+            let c = run time bhvr3
+            let d = run time bhvr4
+            op a b c d)
 
     let lift5<'a, 'b, 'c, 'd, 'e, 'f>
         (op : 'a -> 'b -> 'c -> 'd -> 'e -> 'f)
@@ -85,14 +109,13 @@ module Behavior =
         (bhvr4 : 'd Behavior)
         (bhvr5 : 'e Behavior) :
         'f Behavior =
-        let bhvr = fun time ->
-            let a = bhvr time
-            let b = bhvr2 time
-            let c = bhvr3 time
-            let d = bhvr4 time
-            let e = bhvr5 time
-            op a b c d e
-        bhvr
+        Behavior (fun time ->
+            let a = run time bhvr
+            let b = run time bhvr2
+            let c = run time bhvr3
+            let d = run time bhvr4
+            let e = run time bhvr5
+            op a b c d e)
 
     let inline loop stride bounce bhvr =
         map (fun a ->
@@ -121,7 +144,6 @@ module Behavior =
 
     // basic behavior combinators
     let id bhvr = returnB bhvr
-    let constant k bhvr = map (constant k) bhvr
     let not bhvr = map not bhvr
     let fst bhvr = map fst bhvr
     let snd bhvr = map snd bhvr
@@ -135,8 +157,9 @@ module Behavior =
     let swap bhvr = map (fun (a, b) -> (b, a)) bhvr
 
     // boot-strapping combinators
-    let unit = let (bhvr : unit Behavior) = fun _ -> () in bhvr
-    let time : GameTime Behavior = let bhvr = fun (time : GameTime) -> time in bhvr
+    let unit : unit Behavior = Behavior (fun _ -> ())
+    let constant k : _ Behavior = Behavior (fun _ -> k)
+    let time : GameTime Behavior = Behavior (fun (time : GameTime) -> time)
     let timeLoopRaw stride bounce = loop stride bounce time
     let timeSliceRaw start length = slice start length time
     let timeLoop stride bounce = let bhvr = timeLoopRaw stride bounce in normalize stride bhvr
@@ -176,6 +199,8 @@ module Behavior =
     let inline pow4i n bhvr = map (fun a -> Vector4i.Pow (a, n)) bhvr
     let inline powc n bhvr = map (fun a -> Color.Pow (a, n)) bhvr
     let inline pown n bhvr = map (fun a -> pown a n) bhvr
+    let inline inc bhvr = map inc bhvr
+    let inline dec bhvr = map dec bhvr
     let inline isZero bhvr = map Generics.isZero bhvr
     let inline notZero bhvr = map Generics.notZero bhvr
     let inline isNeg bhvr = map (fun a -> a < Generics.zero ()) bhvr
@@ -238,7 +263,8 @@ module Behavior =
     let inline easeOutf a b bhvr = easeIn (fun (c, s) -> c * s) a b bhvr
 
     // product behavior combinators
-    let inline product (bhvr : 'a Behavior) (bhvr2 : 'b Behavior) = let (bhvr3 : Behavior<'a * 'b>) = fun a -> (bhvr a, bhvr2 a) in bhvr3
+    let inline map2 mapper (bhvr : 'a Behavior) (bhvr2 : 'b Behavior) : 'c Behavior = bhvr.Map2 mapper bhvr2
+    let inline product (bhvr : 'a Behavior) (bhvr2 : 'b Behavior) : Behavior<'a * 'b> = Behavior (fun a -> (run a bhvr, run a bhvr2))
     let inline productMap mapper bhvr = map (fun (a, b) -> mapper a b) bhvr
     let inline productOr bhvr = productMap (||) bhvr
     let inline productNor bhvr = productMap (fun a b -> Operators.not a && Operators.not b) bhvr
@@ -250,7 +276,6 @@ module Behavior =
     let inline productScale bhvr = productMap (fun a b -> a * b) bhvr
     let inline productRatio bhvr = productMap (fun a b -> a / b) bhvr
     let inline productModulo bhvr = productMap (fun a b -> a % b) bhvr
-    let inline map2 mapper (bhvr : 'a Behavior) (bhvr2 : 'b Behavior) : 'c Behavior = product bhvr bhvr2 |> map mapper
 
 /// Builds behaviors.
 type [<Sealed>] BehaviorBuilder () =
@@ -264,8 +289,15 @@ module BehaviorBuilder =
     /// Builds behaviors.
     let behave = BehaviorBuilder ()
 
+    let private hop (p : Vector3) (p2 : Vector3) (h : single) (start : GameTime) (length : GameTime) =
+        behave {
+            let! _ = Behavior.time .=. Behavior.time
+            let! p = Behavior.timeSlice start length |> Behavior.lerp p p2
+            let! h = Behavior.timeSlice start length |> Behavior.sin |> Behavior.scale h
+            return v3 p.X (p.Y + h) p.Z }
+
 [<RequireQualifiedAccess>]
 module GameTimeExtension =
     type GameTime with
         member this.Run (behavior : 'a Behavior) =
-            behavior this
+            Behavior.run this behavior
