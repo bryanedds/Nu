@@ -1,6 +1,7 @@
 ﻿namespace Nu.Behaviors
 open System
 open FSharp.Core
+open Prime
 open Nu
 
 /// Modifies behaviors.
@@ -30,7 +31,8 @@ type Modifier<'a, 'b> =
             let b2 = that.Run bhvr
             Behavior.product b b2
 
-    member internal this.ComposeA (f : 'b -> 'c) : Modifier<'a, 'c> =
+    // TODO: implement (^>>), (>>^), and (<<^).
+    member internal this.ComposeLFlip (f : 'b -> 'c) : Modifier<'a, 'c> =
         Modifier $ fun bhvr ->
             let b = this.Run bhvr
             let c = Behavior.map f b
@@ -40,7 +42,7 @@ type Modifier<'a, 'b> =
     static member ( <<< ) (left : Modifier<'b, 'c>, right : Modifier<'a, 'b>) = right.Compose left
     static member ( *** ) (left : Modifier<'a, 'b>, right : Modifier<'a2, 'b2>) = left.Split right
     static member ( &&& ) (left : Modifier<'a, 'b>, right : Modifier<'a, 'b2>) = left.FanOut right
-    static member ( ^<< ) (left : Func<'b, 'c>,     right : Modifier<'a, 'b>) = right.ComposeA left.Invoke
+    static member ( ^<< ) (left : Func<'b, 'c>,     right : Modifier<'a, 'b>) = right.ComposeLFlip left.Invoke
 
 [<RequireQualifiedAccess>]
 module Modifier =
@@ -153,5 +155,37 @@ module Modifier =
     let fanOut (mdfr : Modifier<'a, 'b>) (mdfr2 : Modifier<'a, 'b2>) : Modifier<'a, 'b * 'b2> =
         mdfr.FanOut mdfr2
 
-    let composeA (f : 'b -> 'c) (mdfr : Modifier<'a, 'b>) : Modifier<'a, 'c> =
-        mdfr.ComposeA f
+    let composeLFlip (f : 'b -> 'c) (mdfr : Modifier<'a, 'b>) : Modifier<'a, 'c> =
+        mdfr.ComposeLFlip f
+
+    // TODO: figure out how to implement this properly.
+    let private apply (mdfr : Modifier<Modifier<'a, 'b> * 'b, 'b>) =
+        Modifier $ fun (_ : 'b Behavior) ->
+            let _ = run Unchecked.defaultof<_> mdfr
+            Unchecked.defaultof<_>
+
+    // TODO: make sure we implemented this properly.
+    let loop (mdfr : Modifier<'a * 'c, 'b * 'c>) : Modifier<'a, 'b> =
+        Modifier $ fun (a : 'a Behavior) ->
+            let mutable c = Unchecked.defaultof<'c>
+            let ac = Behavior.append c a
+            let bc = run ac mdfr
+            Behavior $ fun time ->
+                let (b, c') = Behavior.run time bc
+                c <- c'
+                b
+
+    // TODO: figure out how to implement this properly.
+    let rec private delay (a : 'a) : Modifier<'a, 'a> =
+        Modifier $ fun (bhvr : 'a Behavior) ->
+            Behavior $ fun time ->
+                let _ = delay (Behavior.run time bhvr)
+                a
+
+    // TODO: figure out how to implement this properly.
+    let private left (mdfr : Modifier<'a, 'b>) : Modifier<Either<'a, 'c>, Either<'b, 'c>> =
+        Unchecked.defaultof<_>
+
+    // TODO: figure out how to implement this properly.
+    let private right (mdfr : Modifier<'a, 'b>) : Modifier<Either<'c, 'a>, Either<'c, 'b>> =
+        Unchecked.defaultof<_>
