@@ -30,10 +30,17 @@ type Modifier<'a, 'b> =
             let b2 = that.Run bhvr
             Behavior.product b b2
 
+    member internal this.ComposeA (f : 'b -> 'c) : Modifier<'a, 'c> =
+        Modifier $ fun bhvr ->
+            let b = this.Run bhvr
+            let c = Behavior.map f b
+            c
+
     static member ( >>> ) (left : Modifier<'a, 'b>, right : Modifier<'b, 'c>) = left.Compose right
     static member ( <<< ) (left : Modifier<'b, 'c>, right : Modifier<'a, 'b>) = right.Compose left
     static member ( *** ) (left : Modifier<'a, 'b>, right : Modifier<'a2, 'b2>) = left.Split right
     static member ( &&& ) (left : Modifier<'a, 'b>, right : Modifier<'a, 'b2>) = left.FanOut right
+    static member ( ^<< ) (left : Func<'b, 'c>,     right : Modifier<'a, 'b>) = right.ComposeA left.Invoke
 
 [<RequireQualifiedAccess>]
 module Modifier =
@@ -145,3 +152,6 @@ module Modifier =
 
     let fanOut (mdfr : Modifier<'a, 'b>) (mdfr2 : Modifier<'a, 'b2>) : Modifier<'a, 'b * 'b2> =
         mdfr.FanOut mdfr2
+
+    let composeA (f : 'b -> 'c) (mdfr : Modifier<'a, 'b>) : Modifier<'a, 'c> =
+        mdfr.ComposeA f

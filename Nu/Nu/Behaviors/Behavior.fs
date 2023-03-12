@@ -146,7 +146,7 @@ module Behavior =
     (* Product Combinators *)
     let id bhvr = returnB bhvr
     let map2 mapper (bhvr : 'a Behavior) (bhvr2 : 'b Behavior) : 'c Behavior = bhvr.Map2 mapper bhvr2
-    let mapP mapper bhvr = map (fun (a, b) -> mapper a b) bhvr
+    let mapProduct mapper bhvr = map (fun (a, b) -> mapper a b) bhvr
     let product (bhvr : 'a Behavior) (bhvr2 : 'b Behavior) : Behavior<'a * 'b> = Behavior (fun a -> (run a bhvr, run a bhvr2))
     let fst bhvr = map fst bhvr
     let snd bhvr = map snd bhvr
