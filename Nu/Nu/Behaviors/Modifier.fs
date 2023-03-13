@@ -38,11 +38,11 @@ type Modifier<'a, 'b> =
             let c = Behavior.map f b
             c
 
-    static member ( >>> ) (left : Modifier<'a, 'b>, right : Modifier<'b, 'c>) = left.Compose right
-    static member ( <<< ) (left : Modifier<'b, 'c>, right : Modifier<'a, 'b>) = right.Compose left
-    static member ( *** ) (left : Modifier<'a, 'b>, right : Modifier<'a2, 'b2>) = left.Split right
-    static member ( &&& ) (left : Modifier<'a, 'b>, right : Modifier<'a, 'b2>) = left.FanOut right
-    static member ( ^<< ) (left : Func<'b, 'c>,     right : Modifier<'a, 'b>) = right.ComposeLFlip left.Invoke
+    static member ( >>>> ) (left : Modifier<'a, 'b>, right : Modifier<'b, 'c>) = left.Compose right
+    static member ( <<<< ) (left : Modifier<'b, 'c>, right : Modifier<'a, 'b>) = right.Compose left
+    static member ( **** ) (left : Modifier<'a, 'b>, right : Modifier<'a2, 'b2>) = left.Split right
+    static member ( &&&& ) (left : Modifier<'a, 'b>, right : Modifier<'a, 'b2>) = left.FanOut right
+    static member ( ^<<< ) (left : Func<'b, 'c>,     right : Modifier<'a, 'b>) = right.ComposeLFlip left.Invoke
 
 [<RequireQualifiedAccess>]
 module Modifier =
@@ -157,6 +157,9 @@ module Modifier =
 
     let composeLFlip (f : 'b -> 'c) (mdfr : Modifier<'a, 'b>) : Modifier<'a, 'c> =
         mdfr.ComposeLFlip f
+
+    let combine (a : Modifier<'a, 'b>) (b : Modifier<'a, 'c>) (c : Modifier<'b * 'c, 'a>) =
+        a &&&& b >>>> c
 
     // TODO: figure out how to implement this properly.
     let private apply (mdfr : Modifier<Modifier<'a, 'b> * 'b, 'b>) =
