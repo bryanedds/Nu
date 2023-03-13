@@ -5,6 +5,8 @@ open Prime
 open Nu
 
 /// Modifies behaviors.
+/// TODO: implement (^>>), (>>^), and (<<^).
+/// TODO: implement arrow choice combinators as well.
 type Modifier<'a, 'b> =
     | Modifier of ('a Behavior -> 'b Behavior)
 
@@ -31,7 +33,6 @@ type Modifier<'a, 'b> =
             let b2 = that.Run bhvr
             Behavior.product b b2
 
-    // TODO: implement (^>>), (>>^), and (<<^).
     member internal this.ComposeLFlip (f : 'b -> 'c) : Modifier<'a, 'c> =
         Modifier $ fun bhvr ->
             let b = this.Run bhvr
@@ -157,9 +158,6 @@ module Modifier =
 
     let composeLFlip (f : 'b -> 'c) (mdfr : Modifier<'a, 'b>) : Modifier<'a, 'c> =
         mdfr.ComposeLFlip f
-
-    let combine (a : Modifier<'a, 'b>) (b : Modifier<'a, 'c>) (c : Modifier<'b * 'c, 'a>) =
-        a &&&& b >>>> c
 
     // TODO: figure out how to implement this properly.
     let private apply (mdfr : Modifier<Modifier<'a, 'b> * 'b, 'b>) =
