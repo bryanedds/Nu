@@ -184,7 +184,6 @@ module Modifier =
                 let _ = delay (Behavior.run time bhvrA)
                 a
 
-    // TODO: make sure we implemented this properly.
     let loop (mdfr : Modifier<'a * 'c, 'b * 'c>) : Modifier<'a, 'b> =
         Modifier $ fun (bhvrA : 'a Behavior) ->
             let mutable c = Unchecked.defaultof<'c>
