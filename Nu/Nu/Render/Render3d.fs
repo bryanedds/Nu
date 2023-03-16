@@ -29,14 +29,14 @@ and [<StructuralEquality; NoComparison; Struct>] RenderMaterial =
 
 /// A collection of render tasks in a pass.
 and [<ReferenceEquality>] RenderTasks =
-    { mutable RenderSkyBoxes : CubeMap AssetTag SegmentedList
-      mutable RenderLights : SortableLight SegmentedList
+    { RenderSkyBoxes : CubeMap AssetTag SegmentedList
+      RenderLights : SortableLight SegmentedList
       RenderSurfacesDeferredAbsolute : Dictionary<OpenGL.PhysicallyBased.PhysicallyBasedSurface, struct (Matrix4x4 * Box2 * RenderMaterial) SegmentedList>
       RenderSurfacesDeferredRelative : Dictionary<OpenGL.PhysicallyBased.PhysicallyBasedSurface, struct (Matrix4x4 * Box2 * RenderMaterial) SegmentedList>
-      mutable RenderSurfacesForwardAbsolute : struct (single * single * Matrix4x4 * Box2 * RenderMaterial * OpenGL.PhysicallyBased.PhysicallyBasedSurface) SegmentedList
-      mutable RenderSurfacesForwardRelative : struct (single * single * Matrix4x4 * Box2 * RenderMaterial * OpenGL.PhysicallyBased.PhysicallyBasedSurface) SegmentedList
-      mutable RenderSurfacesForwardAbsoluteSorted : struct (Matrix4x4 * Box2 * RenderMaterial * OpenGL.PhysicallyBased.PhysicallyBasedSurface) SegmentedList
-      mutable RenderSurfacesForwardRelativeSorted : struct (Matrix4x4 * Box2 * RenderMaterial * OpenGL.PhysicallyBased.PhysicallyBasedSurface) SegmentedList }
+      RenderSurfacesForwardAbsolute : struct (single * single * Matrix4x4 * Box2 * RenderMaterial * OpenGL.PhysicallyBased.PhysicallyBasedSurface) SegmentedList
+      RenderSurfacesForwardRelative : struct (single * single * Matrix4x4 * Box2 * RenderMaterial * OpenGL.PhysicallyBased.PhysicallyBasedSurface) SegmentedList
+      RenderSurfacesForwardAbsoluteSorted : struct (Matrix4x4 * Box2 * RenderMaterial * OpenGL.PhysicallyBased.PhysicallyBasedSurface) SegmentedList
+      RenderSurfacesForwardRelativeSorted : struct (Matrix4x4 * Box2 * RenderMaterial * OpenGL.PhysicallyBased.PhysicallyBasedSurface) SegmentedList }
 
 /// The parameters for completing a render pass.
 and [<ReferenceEquality>] RenderPassParameters3d =
