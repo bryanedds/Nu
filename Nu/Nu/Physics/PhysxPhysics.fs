@@ -71,6 +71,9 @@ module BodyModule =
         { LowLevelRigidBody : unit
           IslandNodeIndex : Index }
 
+    type PxsRigidBody =
+        { __ : unit }
+
 [<AutoOpen>]
 module ConstraintModule =
 
@@ -150,8 +153,14 @@ module InteractionModule =
     and ConstraintInteraction =
         | ConstraintInteraction of ActorCore * ActorCore * Constraint * Index
     and ElementSimInteraction =
+        | ElementInteractionMarker of ElementInteractionMarker
+        | ShapeInteraction of ShapeInteraction
+        | TriggerInteraction of TriggerInteraction
+    and ElementInteractionMarker =
         | ElementInteractionMarker of ActorCore * ActorCore * ElementSim * ElementSim
+    and ShapeInteraction =
         | ShapeInteraction of ActorCore * ActorCore * ElementSim * ElementSim
+    and TriggerInteraction =
         | TriggerInteraction of ActorCore * ActorCore * ElementSim * ElementSim
 
     type PxMaterial =
@@ -189,6 +198,14 @@ module ArticulationModule =
           IslandNodeIndex : Index }
 
 [<AutoOpen>]
+module ContactModule =
+
+    type PxsContactManager =
+        { RigidBody0 : PxsRigidBody
+          RigidBody1 : PxsRigidBody
+          ShapeInteraction : ShapeInteraction }
+
+[<AutoOpen>]
 module IslandModule =
 
     type Island =
@@ -196,6 +213,10 @@ module IslandModule =
 
     type IslandSim =
         { Islands : Island array }
+
+    type SimpleIslandManager =
+        { AccurateIslandManager : IslandSim
+          SpeculativeIslandManager : IslandSim }
 
 [<AutoOpen>]
 module BroadPhaseModule =
@@ -213,9 +234,9 @@ module BroadPhaseModule =
           BoxGroups : FilterGroup array
           BoxContactDistances : single array }
 
-    type ABP = unit
-    type MBP = unit
-    type Sap = unit
+    type ABP = unit // 
+    type MBP = unit // multi-box pruning
+    type Sap = unit // sweep-and-prune
     type BroadPhase =
         | BroadPhaseABP of ABP
         | BroadPhaseMBP of MBP
@@ -238,6 +259,9 @@ module NarrowPhaseModule =
 
     type PxsContext =
         { SimStats : PxvSimStats }
+
+    type PxsCCDContext =
+        { __ : unit }
 
     type NPhaseCore =
         { __ : unit }
@@ -263,18 +287,32 @@ module SceneModule =
         | eMUTABLE_FLAGS = 4097 // PxSceneFlag.eENABLE_ACTIVE_ACTORS ||| eEXCLUDE_KINEMATICS_FROM_ACTIVE_ACTORS
 
     type NpScene =
-        { SceneFlags : PxSceneFlag
-          Actors : ActorCore array
+        { Actors : ActorCore array
           Articulations : Articulation array
+          SceneFlags : PxSceneFlag
           LowLevelContext : PxsContext }
 
     type Scene =
-        { ActiveBodies : PxsBodyCore array
+
+        { // unknown
+          ActiveBodies : PxsBodyCore array
           ActiveCompoundBodies : PxsBodyCore array
           Interactions : Interaction array
+          PublicFlags : PxSceneFlag
+          LowLevelContext : PxsContext
+
+          // broad phase
           AABBManager : AABBManager
           BroadPhase : BroadPhase
+
+          // narrow phase
+          SimpleIslandManager : SimpleIslandManager
+          FoundPatchManagers : PxsContactManager array
+          LostPatchManagers : PxsContactManager array
+          CCDContext : PxsCCDContext
+
           NPhaseCore : NPhaseCore }
+
         member this.Pipeline =
             [Fn "simulate"
                 [Fn "prepareCollide" []
@@ -288,16 +326,28 @@ module SceneModule =
              Fn "postBroadPhaseContinuation"
                 [Fn "finishBroadPhase" []]
              Fn "preallocateContactManagers" []
+             Fn "postBroadPhaseStage2"
+                [Fn "processLostTouchPairs" []]
              Fn "registerSceneInteractions" []
              Fn "registerInteractions" []
              Fn "registerContactManagers" []
              Fn "islandInsertion" []
+             Fn "postBroadPhaseStage3"
+                [Fn "finishBroadPhaseStage2"
+                    [Fn "processLostTouchPairs" []]]
              Fn "unblockNarrowPhase" []
              Fn "advanceStep" []
              Fn "secondPassNarrowPhase" []
-             Fn "postNarrowPhase" []
-             Fn "islandGen" []
+             Fn "postNarrowPhase"
+                [Fn "releaseConstraints" []]
+             Fn "islandGen"
+                [Fn "processNarrowPhaseTouchEvents" []
+                 Fn "processNarrowPhaseTouchEventsStage2" []]
+             Fn "setEdgesConnected"
+                [Fn "wakeObjectsUp" []]
              Fn "postIslandGen" []
+             Fn "solver"
+                [Fn "beforeSolver" []]
              Fn "updateBodiesAndShapes" []
              Fn "updateDynamics" []
              Fn "updateSimulationController" []
