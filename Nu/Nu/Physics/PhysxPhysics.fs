@@ -16,6 +16,7 @@ module CoreModule =
     type Index = int
     type PxBounds3 = unit
     type Matrix3x3 = unit
+    type 'a HashSet = { __ :  unit }
 
     type Singleton =
         interface end
@@ -75,46 +76,6 @@ module BodyModule =
         { __ : unit }
 
 [<AutoOpen>]
-module ConstraintModule =
-
-    type Constraint =
-        { LinBreakForce : single
-          AngBreakForce : single
-          Index : Index //this is also a constraint write back index
-          BodyCore1Ref : PxsBodyCore ref
-          BodyCore2Ref : PxsBodyCore ref }
-
-    type ArticulationLoopConstraint =
-        { LinkIndex0 : Index
-          LinkIndex1 : Index
-          Constraint : Constraint }
-
-[<AutoOpen>]
-module ActorModule =
-
-    type [<RequireQualifiedAccess>] PxActorType =
-        | eRIGID_STATIC
-        | eRIGID_DYNAMIC
-        | eARTICULATION_LINK
-
-    type [<RequireQualifiedAccess>] PxActorFlag =
-        | eVISUALIZATION = 1
-        | eDISABLE_GRAVITY = 2
-        | eSEND_SLEEP_NOTIFIES = 4
-        | eDISABLE_SIMULATION = 8
-
-    type ActorCore =
-        { ActorType : PxActorType
-          ActorFlags : PxActorFlag
-          DominanceGroup : Index
-          AggregateId : Index
-          OwnerClient : Index  }
-
-    type ElementSim =
-        { Actor : ActorCore
-          ElementID : Index }
-
-[<AutoOpen>]
 module InteractionModule =
 
     type [<RequireQualifiedAccess>] InteractionType =
@@ -144,25 +105,6 @@ module InteractionModule =
         | eMULTIPLY
         | eMAX
 
-    type Interaction =
-        | ArticulationJointSim of ArticulationJointSim
-        | ConstraintInteraction of ConstraintInteraction
-        | ElementSimInteraction of ElementSimInteraction
-    and ArticulationJointSim =
-        | ArticularionJointSim of ActorCore * ActorCore * InteractionType * InteractionFlag
-    and ConstraintInteraction =
-        | ConstraintInteraction of ActorCore * ActorCore * Constraint * Index
-    and ElementSimInteraction =
-        | ElementInteractionMarker of ElementInteractionMarker
-        | ShapeInteraction of ShapeInteraction
-        | TriggerInteraction of TriggerInteraction
-    and ElementInteractionMarker =
-        | ElementInteractionMarker of ActorCore * ActorCore * ElementSim * ElementSim
-    and ShapeInteraction =
-        | ShapeInteraction of ActorCore * ActorCore * ElementSim * ElementSim
-    and TriggerInteraction =
-        | TriggerInteraction of ActorCore * ActorCore * ElementSim * ElementSim
-
     type PxMaterial =
         { DynamicFriction : single
           StaticFriction : single
@@ -173,6 +115,76 @@ module InteractionModule =
 
     type PxsMaterialManager =
         { PxMaterial : PxMaterial array }
+
+[<AutoOpen>]
+module ActorModule =
+
+    type [<RequireQualifiedAccess>] PxActorType =
+        | eRIGID_STATIC
+        | eRIGID_DYNAMIC
+        | eARTICULATION_LINK
+
+    type [<RequireQualifiedAccess>] PxActorFlag =
+        | eVISUALIZATION = 1
+        | eDISABLE_GRAVITY = 2
+        | eSEND_SLEEP_NOTIFIES = 4
+        | eDISABLE_SIMULATION = 8
+
+    type ActorSim =
+        { ActorType : PxActorType
+          ActorFlags : PxActorFlag
+          DominanceGroup : Index
+          AggregateId : Index
+          OwnerClient : Index  }
+
+    type ElementSim =
+        { Actor : ActorSim
+          ElementID : Index }
+        
+    type ElementInteractionMarker =
+        | ElementInteractionMarker of ActorSim * ActorSim * ElementSim * ElementSim
+    type ShapeInteraction =
+        | ShapeInteraction of ActorSim * ActorSim * ElementSim * ElementSim
+    type TriggerInteraction =
+        | TriggerInteraction of ActorSim * ActorSim * ElementSim * ElementSim
+    type ArticulationJointSim =
+        | ArticularionJointSim of ActorSim * ActorSim * InteractionType * InteractionFlag
+    type ConstraintInteraction =
+        | ConstraintInteraction of ActorSim * ActorSim * ConstraintSim * Index
+    type ElementSimInteraction =
+        | ElementInteractionMarker of ElementInteractionMarker
+        | ShapeInteraction of ShapeInteraction
+        | TriggerInteraction of TriggerInteraction
+    type Interaction =
+        | ArticulationJointSim of ArticulationJointSim
+        | ConstraintInteraction of ConstraintInteraction
+        | ElementSimInteraction of ElementSimInteraction
+
+[<AutoOpen>]
+module ConstraintModule =
+
+    type [<RequireQualifiedAccess>] ConstraintFlag =
+        | ePENDING_GROUP_UPDATE = 1 // For constraint projection an island of the bodies connected by constraints is generated.
+        | eBREAKABLE = 2 // The constraint can break
+        | eCHECK_MAX_FORCE_EXCEEDED = 4 // This constraint will get tested for breakage at the end of the sim step
+        | eBROKEN = 8
+
+    type Constraint =
+        { LinBreakForce : single
+          AngBreakForce : single
+          Index : Index //this is also a constraint write back index
+          BodyCore1Ref : PxsBodyCore ref
+          BodyCore2Ref : PxsBodyCore ref }
+
+    type ArticulationLoopConstraint =
+        { LinkIndex0 : Index
+          LinkIndex1 : Index
+          Constraint : Constraint }
+
+    type ConstraintSim =
+        { Bodies : BodySim * BodySim
+          ConstraintInteraction : ConstraintInteraction
+          ConstraintFlags : ConstraintFlag }
 
 [<AutoOpen>]
 module ArticulationModule =
@@ -287,7 +299,7 @@ module SceneModule =
         | eMUTABLE_FLAGS = 4097 // PxSceneFlag.eENABLE_ACTIVE_ACTORS ||| eEXCLUDE_KINEMATICS_FROM_ACTIVE_ACTORS
 
     type NpScene =
-        { Actors : ActorCore array
+        { Actors : ActorSim array
           Articulations : Articulation array
           SceneFlags : PxSceneFlag
           LowLevelContext : PxsContext }
@@ -298,6 +310,10 @@ module SceneModule =
           ActiveBodies : PxsBodyCore array
           ActiveCompoundBodies : PxsBodyCore array
           Interactions : Interaction array
+          Articulations : ArticulationSim HashSet
+          Constraints : ConstraintSim HashSet
+          ActiveBreakableConstraints : ConstraintSim array
+          BrokenConstraints : ConstraintSim HashSet
           PublicFlags : PxSceneFlag
           LowLevelContext : PxsContext
 
@@ -310,7 +326,6 @@ module SceneModule =
           FoundPatchManagers : PxsContactManager array
           LostPatchManagers : PxsContactManager array
           CCDContext : PxsCCDContext
-
           NPhaseCore : NPhaseCore }
 
         member this.Pipeline =
@@ -352,13 +367,28 @@ module SceneModule =
              Fn "updateDynamics" []
              Fn "updateSimulationController" []
              Fn "processLostContacts" []
+             Fn "processNarrowPhaseLostTouchEvents" []
+             Fn "processNarrowPhaseLostTouchEventsIslands" []
+             Fn "processLostContacts2" []
              Fn "unregisterInteractions" []
              Fn "lostTouchReports" []
              Fn "destroyManagers" []
-             Fn "postSolver" []
+             Fn "processLostContacts3" []
+             Fn "postThirdPassIslandGen"
+                [Fn "putObjectsToSleep" []
+                 Fn "putInteractionsToSleep" []]
+             Fn "postSolver"
+                [Fn "integrateKinematicPose" []]
              Fn "constraintProjection" []
-             Fn "afterIntegration" []
-             Fn "finalizationPhase" []]
+             Fn "afterIntegration"
+                [Fn "updateKinematicCached" []
+                 Fn "checkForceThresholdContactEvents" []]
+             Fn "finalizationPhase"
+                [Fn "fireOnAdvanceCallback" []
+                 Fn "checkConstraintBreakage" []]
+             Fn "prepareOutOfBoundsCallbacks" []
+             Fn "fireOutOfBoundsCallbacks" []
+             Fn "fireTriggerCallbacks" []]
 
 [<AutoOpen>]
 module PhysicModule =
