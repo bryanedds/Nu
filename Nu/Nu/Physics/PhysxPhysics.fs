@@ -16,21 +16,13 @@ module CoreModule =
     type Index = int
     type PxBounds3 = unit
     type Matrix3x3 = unit
+    type Singleton = interface end
     type 'a HashSet = { __ :  unit }
-
-    type Singleton =
-        interface end
-
-    type PxTransform =
-        { Quaternion : Quaternion
-          Position : Vector3 }
-
-    type SpatialVector =
-        { Linear : Vector3
-          Angular : Vector3 }
-
+    type PxTransform = { Quaternion : Quaternion; Position : Vector3 }
+    type SpatialVector = { Linear : Vector3; Angular : Vector3 }
+    type ForwardDeclaration = unit
     type Fn = Fn of string * Fn list
-    [<AutoOpen>] module Fn = let Fn name calls = Fn (name, calls)
+    let Fn name calls = Fn (name, calls)
 
 [<AutoOpen>]
 module ShapeModule =
@@ -50,17 +42,21 @@ module ShapeModule =
         | PxTriangleMeshGeometryLL
         | PxHeightFieldGeometryLL
 
-    type PxsShapeCore =
+    type Shape =
         { Transform : PxTransform
           ContactOffset : single
           ShapeFlags : PxShapeFlag
           MaterialIndex : Index
           Geometry : GeometryUnion }
 
+    type ShapeSim =
+        { Shape : Shape
+          ID : Index }
+
 [<AutoOpen>]
 module BodyModule =
 
-    type PxsBodyCore =
+    type Body =
         { Transform : PxTransform
           CcdAdvanceCoefficient : single
           LinearVelocity : Vector3
@@ -68,15 +64,47 @@ module BodyModule =
           AngularVelocity : Vector3
           AndMuchMore___ : unit }
 
-    type BodySim =
-        { LowLevelRigidBody : unit
-          IslandNodeIndex : Index }
+    type RigidBody =
+        { Body : Body }
 
-    type PxsRigidBody =
-        { __ : unit }
+    type BodySim =
+        { RigidBody : RigidBody
+          ID : Index}
+
+[<AutoOpen>]
+module ActorModule =
+
+    type [<RequireQualifiedAccess>] PxActorType =
+        | eRIGID_STATIC
+        | eRIGID_DYNAMIC
+        | eARTICULATION_LINK
+
+    type [<RequireQualifiedAccess>] PxActorFlag =
+        | eVISUALIZATION = 1
+        | eDISABLE_GRAVITY = 2
+        | eSEND_SLEEP_NOTIFIES = 4
+        | eDISABLE_SIMULATION = 8
+
+    type Actor =
+        { ActorType : PxActorType
+          ActorFlags : PxActorFlag }
+
+    type ActorSim =
+        { Actor : Actor
+          OwnerClient : Index
+          DominanceGroup : Index
+          AggregateId : Index }
+
+    /// A ElementSim is a part of a ActorSim. It contributes to the activation framework by adding its 
+    /// interactions to the actor.
+    type ElementSim =
+        { Actor : ActorSim
+          ElementID : Index }
 
 [<AutoOpen>]
 module InteractionModule =
+
+    type ConstraintSim = ForwardDeclaration
 
     type [<RequireQualifiedAccess>] InteractionType =
         | eOVERLAP // corresponds to ShapeInteraction
@@ -93,11 +121,6 @@ module InteractionModule =
         | eIN_DIRTY_LIST = 8 // The interaction is in the dirty list
         | eIS_FILTER_PAIR = 16 // The interaction is tracked by the filter callback mechanism
         | eIS_ACTIVE = 32
-
-    type [<RequireQualifiedAccess>] FilterGroup =
-        | eSTATICS
-        | eDYNAMICS_BASE
-        | eAGGREGATE_BASE
 
     type [<RequireQualifiedAccess>] PxCombineMode =
         | eAVERAGE
@@ -116,31 +139,6 @@ module InteractionModule =
     type PxsMaterialManager =
         { PxMaterial : PxMaterial array }
 
-[<AutoOpen>]
-module ActorModule =
-
-    type [<RequireQualifiedAccess>] PxActorType =
-        | eRIGID_STATIC
-        | eRIGID_DYNAMIC
-        | eARTICULATION_LINK
-
-    type [<RequireQualifiedAccess>] PxActorFlag =
-        | eVISUALIZATION = 1
-        | eDISABLE_GRAVITY = 2
-        | eSEND_SLEEP_NOTIFIES = 4
-        | eDISABLE_SIMULATION = 8
-
-    type ActorSim =
-        { ActorType : PxActorType
-          ActorFlags : PxActorFlag
-          DominanceGroup : Index
-          AggregateId : Index
-          OwnerClient : Index  }
-
-    type ElementSim =
-        { Actor : ActorSim
-          ElementID : Index }
-        
     type ElementInteractionMarker =
         | ElementInteractionMarker of ActorSim * ActorSim * ElementSim * ElementSim
     type ShapeInteraction =
@@ -173,8 +171,8 @@ module ConstraintModule =
         { LinBreakForce : single
           AngBreakForce : single
           Index : Index //this is also a constraint write back index
-          BodyCore1Ref : PxsBodyCore ref
-          BodyCore2Ref : PxsBodyCore ref }
+          BodyCore1Ref : Body ref
+          BodyCore2Ref : Body ref }
 
     type ArticulationLoopConstraint =
         { LinkIndex0 : Index
@@ -202,7 +200,8 @@ module ArticulationModule =
           Pose : PxTransform array }
 
     and ArticulationSim =
-        { ArticulationLinks : ArticulationLink array
+        { Articulation : Articulation
+          ArticulationLinks : ArticulationLink array
           Bodies : BodySim array
           Joints : ArticulationJointSim array
           LoopConstraints : ArticulationLoopConstraint array
@@ -213,30 +212,17 @@ module ArticulationModule =
 module ContactModule =
 
     type PxsContactManager =
-        { RigidBody0 : PxsRigidBody
-          RigidBody1 : PxsRigidBody
+        { RigidBody0 : RigidBody
+          RigidBody1 : RigidBody
           ShapeInteraction : ShapeInteraction }
-
-[<AutoOpen>]
-module IslandModule =
-
-    type Island =
-        { __ : unit }
-
-    type IslandSim =
-        { Islands : Island array }
-
-    type SimpleIslandManager =
-        { AccurateIslandManager : IslandSim
-          SpeculativeIslandManager : IslandSim }
 
 [<AutoOpen>]
 module BroadPhaseModule =
 
-    type Aggregate =
-        { Bounds : PxBounds3
-          AggregatedBounds : Index array
-          BoundsIndex : Index }
+    type [<RequireQualifiedAccess>] FilterGroup =
+        | eSTATICS
+        | eDYNAMICS_BASE
+        | eAGGREGATE_BASE
 
     type BroadPhaseUpdateData =
         { ShapesCreated : Index array
@@ -254,6 +240,11 @@ module BroadPhaseModule =
         | BroadPhaseMBP of MBP
         | BroadPhaseSap of Sap
 
+    type Aggregate =
+        { Bounds : PxBounds3
+          AggregatedBounds : Index array
+          BoundsIndex : Index }
+
     /// A structure responsible for:
     /// storing an aabb representation for each active shape in the related scene
     /// managing the creation/removal of aabb representations when their related shapes are created/removed
@@ -262,6 +253,19 @@ module BroadPhaseModule =
     /// computing and reporting the incremental changes to the set of overlapping aabb pairs
     type AABBManager =
         { Aggregates : Aggregate array }
+
+[<AutoOpen>]
+module IslandModule =
+
+    type Island =
+        { __ : unit }
+
+    type IslandSim =
+        { Islands : Island array }
+
+    type SimpleIslandManager =
+        { AccurateIslandManager : IslandSim
+          SpeculativeIslandManager : IslandSim }
 
 [<AutoOpen>]
 module NarrowPhaseModule =
@@ -307,8 +311,8 @@ module SceneModule =
     type Scene =
 
         { // unknown
-          ActiveBodies : PxsBodyCore array
-          ActiveCompoundBodies : PxsBodyCore array
+          ActiveBodies : Body array
+          ActiveCompoundBodies : Body array
           Interactions : Interaction array
           Articulations : ArticulationSim HashSet
           Constraints : ConstraintSim HashSet
