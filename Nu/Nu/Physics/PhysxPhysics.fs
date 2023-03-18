@@ -319,7 +319,7 @@ module SceneModule =
 
     type Scene =
 
-        { // unknown
+        { // uncategorized
           ActiveBodies : Body array
           ActiveCompoundBodies : Body array
           Interactions : Interaction array
