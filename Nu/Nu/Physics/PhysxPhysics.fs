@@ -23,13 +23,11 @@ module CoreModule =
     type ForwardDeclaration = unit
     type Call =
         | Fn of string * Call list
-        | Md of string * string * Call list
         | Task of string
         | Handler of string
         | ForEachIn of string * Call
         | Do of Call list
     let Fn name calls = Fn (name, calls)
-    let Md name method calls = Md (name, method, calls)
     let Task name = Task name
     let Handler name = Handler name
     let ForEachIn name call = ForEachIn (name, call)
@@ -348,13 +346,13 @@ module SceneModule =
 
             [Fn "simulate"
                 [Fn "prepareCollide"
-                    [Md "mBrokenConstraints" "clear" []]
+                    [Fn "mBrokenConstraints.clear" []]
                  Fn "stepSetupCollide"
-                    [Md "mProjectionManager" "processPendingUpdates" []
+                    [Fn "mProjectionManager.processPendingUpdates" []
                      Fn "kinematicsSetup"
                         [ForEachIn "getActiveKinematicBodies" $ Task "SCKinematicUpdateTask"
                          Task "ScKinematicAddDynamicTask"]
-                     Md "mNPhaseCore" "updateDirtyInteractions" []]]
+                     Fn "mNPhaseCore.updateDirtyInteractions" []]]
 
              Fn "collideStep" []
 
@@ -364,22 +362,22 @@ module SceneModule =
                  ForEachIn "mDirtyShapeSimMap" $ Task "SpeculativeCCDContactDistanceArticulationUpdateTask"]
 
              Fn "rigidBodyNarrowPhase"
-                [Md "mLLContext" "resetThreadContexts" []
-                 Md "mLLContext" "updateContactManager"
-                    [Md "mNpImplementationContext" "updateContactManager"
+                [Fn "mLLContext.resetThreadContexts" []
+                 Fn "mLLContext.updateContactManager"
+                    [Fn "mNpImplementationContext.updateContactManager"
                         [Fn "processContactManager"
                             [ForEachIn "mNarrowPhasePairs.mContactManagerMapping" $ Task "PxsCMDiscreteUpdateTask"]]]]
 
              Fn "broadPhase"
-                [Md "mAABBManager" "updateAABBsAndBP"
-                    [ForEachIn "mAddedHandleMap" $ Md "mAddedHandles" "pushBack" []
-                     ForEachIn "mChangedHandleMap" $ Md "mUpdatedHandles|?" "pushBack" []
-                     ForEachIn "mDirtyAggregates" $ Md "mUpdatedHandles|?" "pushBack" []
-                     ForEachIn "mRemovedHandleMap" $ Md "mRemovedHandles" "pushBack" []
+                [Fn "mAABBManager.updateAABBsAndBP"
+                    [ForEachIn "mAddedHandleMap" $ Fn "mAddedHandles.pushBack" []
+                     ForEachIn "mChangedHandleMap" $ Fn "mUpdatedHandles.pushBack" []
+                     ForEachIn "mDirtyAggregates" $ Fn "mUpdatedHandles|?.pushBack" []
+                     ForEachIn "mRemovedHandleMap" $ Fn "mRemovedHandles.pushBack" []
                      Fn "handleOriginShift" []]]
 
              Fn "postBroadPhase"
-                [Md "mAABBManager" "postBroadPhase"
+                [Fn "mAABBManager.postBroadPhase"
                     [Fn "processBPPairs"
                         [ForEachIn "mBroadPhase.mDeletedPairsArray" $ Handler "DeletedPairHandler"
                          ForEachIn "mDirtyAggregates" $ Task "SortAggregateBoundsParallel"
@@ -388,16 +386,16 @@ module SceneModule =
                              ForEachIn "mAggregateAggregatePairs" $ Task "ProcessAggPairsParallelTask"
                              ForEachIn "mActorAggregatePairs" $ Task "ProcessAggPairsParallelTask"]
                          Fn "postBpStage3"
-                            [ForEachIn "mDirtyAggregates" $ Md "item" "resetDirtyState" []
+                            [ForEachIn "mDirtyAggregates" $ Fn "item.resetDirtyState" []
                              ForEachIn "mAggPairTasks" $ Unchecked.defaultof<_>
                              ForEachIn "mBroadPhase.mCreatedPairsArray" $ Handler "CreatedPairHandler"
-                             Md "mCreatedPairs" "clear" []
+                             Fn "mCreatedPairs.clear" []
                              Unchecked.defaultof<_>
-                             Md "mAddedHandleMap" "clear" []
-                             Md "mRemovedHandleMap" "clear" []]]]]
+                             Fn "mAddedHandleMap.clear" []
+                             Fn "mRemovedHandleMap.clear" []]]]]
 
              Fn "postBroadPhaseContinuation"
-                [Md "mAABBManager.mChangedHandleMap" "clear" []
+                [Fn "mAABBManager.mChangedHandleMap.clear" []
                  Fn "finishBroadPhase"
                     [ForEachIn "mAABBManager.mCreatedOverlaps" $ Fn "createRbElementInteraction" []
                      ForEachIn "mAABBManager.mCreatedOverlaps" $ Task "OverlapFilterTask"]]
@@ -409,23 +407,41 @@ module SceneModule =
              Fn "postBroadPhaseStage2"
                 [Fn "processLostTouchPairs"
                     [ForEachIn "mLostTouchPairs" $ Fn "internalWakeUp" []
-                     Md "mLostTouchPairs" "clear" []
-                     Md "mLostTouchPairsDeletedBodyIDs" "clear" []]
-                 ForEachIn "mPreallocatedContactManagers" $ Md "mLLContext.mContactManagerPool" "put" []
-                 ForEachIn "mPreallocatedShapeInteractions" $ Md "mNPhaseCore.mShapeInteractionPool" "deallocate" []
-                 ForEachIn "mPreallocatedInteractionMarkers" $ Md "mNPhaseCore.mShapeInteractionPool" "deallocate" []]
+                     Fn "mLostTouchPairs.clear" []
+                     Fn "mLostTouchPairsDeletedBodyIDs.clear" []]
+                 ForEachIn "mPreallocatedContactManagers" $ Fn "mLLContext.mContactManagerPool.put" []
+                 ForEachIn "mPreallocatedShapeInteractions" $ Fn "mNPhaseCore.mShapeInteractionPool.deallocate" []
+                 ForEachIn "mPreallocatedInteractionMarkers" $ Fn "mNPhaseCore.mShapeInteractionPool.deallocate" []]
 
              Fn "registerSceneInteractions"
                 [ForEachIn "mPreallocatedShapeInteractions" $ Do
                     [Fn "registerInteraction" []
-                     Md "mNPhaseCore" "registerInteraction" []]
+                     Fn "mNPhaseCore.registerInteraction" []]
                  ForEachIn "mPreallocatedInteractionMarkers" $ Do
                     [Fn "registerInteraction" []
-                     Md "mNPhaseCore" "registerInteraction" []]]
+                     Fn "mNPhaseCore.registerInteraction" []]]
 
-             Fn "registerInteractions" []
-             Fn "registerContactManagers" []
-             Fn "islandInsertion" []
+             Fn "registerInteractions"
+                [ForEachIn "mPreallocatedShapeInteractions" $ Do
+                    [Fn "interaction.mActor0.registerInteractionInActor" []
+                     Fn "interaction.mActor1.registerInteractionInActor" []
+                     Fn "interaction.mActor0.registerCountedInteraction" []
+                     Fn "interaction.mActor1.registerCountedInteraction" []]
+                 ForEachIn "mPreallocatedInteractionMarkers" $ Fn "registerInActors(NULL)" []]
+
+             Fn "registerContactManagers"
+                [ForEachIn "mPreallocatedContactManagers" $ Fn "nphaseContext.registerContactManager" []
+                 Fn "nphaseContext->unlock" []]
+
+             Fn "islandInsertion"
+                [ForEachIn "mPreallocatedShapeInteractions" $ Fn "mSimpleIslandManager->addContactManager" []
+                 Fn "mSimpleIslandManager.firstPassIslandGen"
+                    [Fn "mSpeculativeIslandManager.clearDeactivations" []
+                     Fn "mSpeculativeIslandManager.wakeIslands" []
+                     Fn "mSpeculativeIslandManager.processNewEdges" []
+                     Fn "mSpeculativeIslandManager.removeDestroyedEdges" []
+                     Fn "mSpeculativeIslandManager.processLostEdges" []]]
+
              Fn "postBroadPhaseStage3"
                 [Fn "finishBroadPhaseStage2"
                     [Fn "processLostTouchPairs" []]]
