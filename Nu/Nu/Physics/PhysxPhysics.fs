@@ -444,8 +444,19 @@ module SceneModule =
 
              Fn "postBroadPhaseStage3"
                 [Fn "finishBroadPhaseStage2"
-                    [Fn "processLostTouchPairs" []]]
+                    [ForEachIn "mAABBManager.mDestroyedOverlaps" $ Do
+                        [Fn "mNPhaseCore.onOverlapRemovedStage1" []
+                         Fn "mNPhaseCore.lostTouchReports" []
+                         Fn "interaction.destroyManager" []
+                         Fn "interaction.clearIslandGenData" []
+                         Fn "unregisterInteraction" []
+                         Fn "mNPhaseCore.unregisterInteraction" []
+                         Fn "mNPhaseCore.onOverlapRemoved" []]
+                     ForEachIn "mAABBManager.mDestroyedOverlaps" $ Fn "mNPhaseCore.onOverlapRemoved" []
+                     Fn "processLostTouchPairs" []]]
+
              Fn "unblockNarrowPhase" []
+
              Fn "advanceStep" []
              Fn "secondPassNarrowPhase" []
              Fn "postNarrowPhase"
