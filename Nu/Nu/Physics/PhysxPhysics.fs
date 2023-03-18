@@ -23,12 +23,12 @@ module CoreModule =
     type ForwardDeclaration = unit
     type Call =
         | Fn of string * Call list
-        | Task of string
+        | Task of string * Call list
         | Handler of string
         | ForEachIn of string * Call
         | Do of Call list
     let Fn name calls = Fn (name, calls)
-    let Task name = Task name
+    let Task name calls = Task (name, calls)
     let Handler name = Handler name
     let ForEachIn name call = ForEachIn (name, call)
     let Do calls = Do calls
@@ -350,23 +350,23 @@ module SceneModule =
                  Fn "stepSetupCollide"
                     [Fn "mProjectionManager.processPendingUpdates" []
                      Fn "kinematicsSetup"
-                        [ForEachIn "getActiveKinematicBodies" $ Task "SCKinematicUpdateTask"
-                         Task "ScKinematicAddDynamicTask"]
+                        [ForEachIn "getActiveKinematicBodies" $ Task "SCKinematicUpdateTask" []
+                         Task "ScKinematicAddDynamicTask" []]
                      Fn "mNPhaseCore.updateDirtyInteractions" []]]
 
              Fn "collideStep" []
 
              Fn "preRigidBodyNarrowPhase"
-                [ForEachIn "mSpeculativeCCDRigidBodyBitMap" $ Task "SpeculativeCCDContactDistanceUpdateTask"
-                 ForEachIn "mSpeculativeCCDArticulationBitMap" $ Task "SpeculativeCCDContactDistanceArticulationUpdateTask"
-                 ForEachIn "mDirtyShapeSimMap" $ Task "SpeculativeCCDContactDistanceArticulationUpdateTask"]
+                [ForEachIn "mSpeculativeCCDRigidBodyBitMap" $ Task "SpeculativeCCDContactDistanceUpdateTask" []
+                 ForEachIn "mSpeculativeCCDArticulationBitMap" $ Task "SpeculativeCCDContactDistanceArticulationUpdateTask" []
+                 ForEachIn "mDirtyShapeSimMap" $ Task "SpeculativeCCDContactDistanceArticulationUpdateTask" []]
 
              Fn "rigidBodyNarrowPhase"
                 [Fn "mLLContext.resetThreadContexts" []
                  Fn "mLLContext.updateContactManager"
                     [Fn "mNpImplementationContext.updateContactManager"
                         [Fn "processContactManager"
-                            [ForEachIn "mNarrowPhasePairs.mContactManagerMapping" $ Task "PxsCMDiscreteUpdateTask"]]]]
+                            [ForEachIn "mNarrowPhasePairs.mContactManagerMapping" $ Task "PxsCMDiscreteUpdateTask" []]]]]
 
              Fn "broadPhase"
                 [Fn "mAABBManager.updateAABBsAndBP"
@@ -380,11 +380,11 @@ module SceneModule =
                 [Fn "mAABBManager.postBroadPhase"
                     [Fn "processBPPairs"
                         [ForEachIn "mBroadPhase.mDeletedPairsArray" $ Handler "DeletedPairHandler"
-                         ForEachIn "mDirtyAggregates" $ Task "SortAggregateBoundsParallel"
+                         ForEachIn "mDirtyAggregates" $ Task "SortAggregateBoundsParallel" []
                          Fn "postBpStage2"
-                            [ForEachIn "mDirtyAggregates" $ Task "ProcessSelfCollisionPairsParallel"
-                             ForEachIn "mAggregateAggregatePairs" $ Task "ProcessAggPairsParallelTask"
-                             ForEachIn "mActorAggregatePairs" $ Task "ProcessAggPairsParallelTask"]
+                            [ForEachIn "mDirtyAggregates" $ Task "ProcessSelfCollisionPairsParallel" []
+                             ForEachIn "mAggregateAggregatePairs" $ Task "ProcessAggPairsParallelTask" []
+                             ForEachIn "mActorAggregatePairs" $ Task "ProcessAggPairsParallelTask" []]
                          Fn "postBpStage3"
                             [ForEachIn "mDirtyAggregates" $ Fn "item.resetDirtyState" []
                              ForEachIn "mAggPairTasks" $ Unchecked.defaultof<_>
@@ -398,11 +398,11 @@ module SceneModule =
                 [Fn "mAABBManager.mChangedHandleMap.clear" []
                  Fn "finishBroadPhase"
                     [ForEachIn "mAABBManager.mCreatedOverlaps" $ Fn "createRbElementInteraction" []
-                     ForEachIn "mAABBManager.mCreatedOverlaps" $ Task "OverlapFilterTask"]]
+                     ForEachIn "mAABBManager.mCreatedOverlaps" $ Task "OverlapFilterTask" []]]
 
              Fn "preallocateContactManagers"
                 [ForEachIn "mOverlapFilterTaskHead" $ Unchecked.defaultof<_> []
-                 ForEachIn "mOverlapFilterTaskHead" $ Task "OnOverlapCreatedTask"]
+                 ForEachIn "mOverlapFilterTaskHead" $ Task "OnOverlapCreatedTask" []]
 
              Fn "postBroadPhaseStage2"
                 [Fn "processLostTouchPairs"
@@ -458,12 +458,37 @@ module SceneModule =
              Fn "unblockNarrowPhase" []
 
              Fn "advanceStep" []
-             Fn "secondPassNarrowPhase" []
+
+             Fn "secondPassNarrowPhase"
+                [ForEachIn "mActivatedEdges" $ Fn "notifyInteractionActivated" []
+                 Fn "mLLContext.secondPassUpdateContactManager"
+                    [Fn "mNpImplementationContext.secondPassUpdateContactManager"
+                        [Fn "processContactManagerSecondPass"
+                            [ForEachIn "mNewNarrowPhasePairs.mContactManagerMapping" $ Task "PxsCMDiscreteUpdateTask" []]]]]
+
              Fn "postNarrowPhase"
-                [Fn "releaseConstraints" []]
+                [Fn "mLLContext.fetchUpdateContactManager"
+                    [Fn "mNpImplementationContext.fetchUpdateContactManager" []
+                     Fn "mergeCMDiscreteUpdateResults"
+                        [ForEachIn "mNpThreadContextPool" $ Do
+                            [Fn "mContactManagerTouchEvent.combineInPlace"
+                             Fn "mContactManagerPatchChangeEvent.combineInPlace"]]]]
+                 Fn "releaseConstraints" []]
+
              Fn "islandGen"
-                [Fn "processNarrowPhaseTouchEvents" []
-                 Fn "processNarrowPhaseTouchEventsStage2" []]
+                [Fn "processNarrowPhaseTouchEvents"
+                    [Fn "context.fillManagerTouchEvents"
+                        [ForEachIn "mContactManagerTouchEvent" $ Unchecked.defaultof<_>]]
+                 Fn "processNarrowPhaseTouchEventsStage2"
+                    [ForEachIn "mTouchFoundEvents" $ Do
+                        [Fn "mNPhaseCore.managerNewTouch"
+                            [Fn "processUserNotification" []]
+                         Fn "shapeInteraction.managerNewTouch"
+                            [Fn "adjustCountersOnNewTouch" []
+                             Fn "processUserNotification"
+                                [Fn "processUserNotificationSync" []
+                                 Fn "processUserNotificationAsync" []]]]]]
+
              Fn "setEdgesConnected"
                 [Fn "wakeObjectsUp" []]
              Fn "postIslandGen" []
