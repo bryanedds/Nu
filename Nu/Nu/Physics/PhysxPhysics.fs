@@ -27,11 +27,13 @@ module CoreModule =
         | Task of string
         | Handler of string
         | ForEachIn of string * Call
+        | Do of Call list
     let Fn name calls = Fn (name, calls)
     let Md name method calls = Md (name, method, calls)
     let Task name = Task name
     let Handler name = Handler name
     let ForEachIn name call = ForEachIn (name, call)
+    let Do calls = Do calls
     let ($) = (<|)
 
 [<AutoOpen>]
@@ -398,15 +400,29 @@ module SceneModule =
                 [Md "mAABBManager.mChangedHandleMap" "clear" []
                  Fn "finishBroadPhase"
                     [ForEachIn "mAABBManager.mCreatedOverlaps" $ Fn "createRbElementInteraction" []
-                     ForEachIn "mAABBManager.mCreatedOverlaps" $ Task "OverlapFilterTask"]]]
+                     ForEachIn "mAABBManager.mCreatedOverlaps" $ Task "OverlapFilterTask"]]
 
              Fn "preallocateContactManagers"
                 [ForEachIn "mOverlapFilterTaskHead" $ Unchecked.defaultof<_> []
                  ForEachIn "mOverlapFilterTaskHead" $ Task "OnOverlapCreatedTask"]
 
              Fn "postBroadPhaseStage2"
-                [Fn "processLostTouchPairs" []]
-             Fn "registerSceneInteractions" []
+                [Fn "processLostTouchPairs"
+                    [ForEachIn "mLostTouchPairs" $ Fn "internalWakeUp" []
+                     Md "mLostTouchPairs" "clear" []
+                     Md "mLostTouchPairsDeletedBodyIDs" "clear" []]
+                 ForEachIn "mPreallocatedContactManagers" $ Md "mLLContext.mContactManagerPool" "put" []
+                 ForEachIn "mPreallocatedShapeInteractions" $ Md "mNPhaseCore.mShapeInteractionPool" "deallocate" []
+                 ForEachIn "mPreallocatedInteractionMarkers" $ Md "mNPhaseCore.mShapeInteractionPool" "deallocate" []]
+
+             Fn "registerSceneInteractions"
+                [ForEachIn "mPreallocatedShapeInteractions" $ Do
+                    [Fn "registerInteraction" []
+                     Md "mNPhaseCore" "registerInteraction" []]
+                 ForEachIn "mPreallocatedInteractionMarkers" $ Do
+                    [Fn "registerInteraction" []
+                     Md "mNPhaseCore" "registerInteraction" []]]
+
              Fn "registerInteractions" []
              Fn "registerContactManagers" []
              Fn "islandInsertion" []
