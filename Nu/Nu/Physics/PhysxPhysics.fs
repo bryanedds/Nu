@@ -471,8 +471,8 @@ module SceneModule =
                     [Fn "mNpImplementationContext.fetchUpdateContactManager" []
                      Fn "mergeCMDiscreteUpdateResults"
                         [ForEachIn "mNpThreadContextPool" $ Do
-                            [Fn "mContactManagerTouchEvent.combineInPlace"
-                             Fn "mContactManagerPatchChangeEvent.combineInPlace"]]]]
+                            [Fn "mContactManagerTouchEvent.combineInPlace" []
+                             Fn "mContactManagerPatchChangeEvent.combineInPlace" []]]]
                  Fn "releaseConstraints" []]
 
              Fn "islandGen"
