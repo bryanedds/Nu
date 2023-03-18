@@ -120,7 +120,6 @@ module InteractionModule =
         | eOVERLAP // corresponds to ShapeInteraction
         | eTRIGGER // corresponds to TriggerInteraction
         | eMARKER // corresponds to ElementInteractionMarker
-        | eTRACKED_IN_SCENE_COUNT // not a real type, interactions above this limit are tracked in the scene
         | eCONSTRAINTSHADER // corresponds to ConstraintInteraction
         | eARTICULATION // corresponds to ArticulationJointSim
 
