@@ -21,8 +21,16 @@ module CoreModule =
     type PxTransform = { Quaternion : Quaternion; Position : Vector3 }
     type SpatialVector = { Linear : Vector3; Angular : Vector3 }
     type ForwardDeclaration = unit
-    type Fn = Fn of string * Fn list
+    type Call =
+        | Fn of string * Call list
+        | Md of string * string * Call list
+        | Task of string
+        | ForEachIn of string * Call
     let Fn name calls = Fn (name, calls)
+    let Md name method calls = Md (name, method, calls)
+    let Task name = Task name
+    let ForEachIn name call = ForEachIn (name, call)
+    let ($) = (<|)
 
 [<AutoOpen>]
 module ShapeModule =
@@ -171,8 +179,8 @@ module ConstraintModule =
         { LinBreakForce : single
           AngBreakForce : single
           Index : Index //this is also a constraint write back index
-          BodyCore1Ref : Body ref
-          BodyCore2Ref : Body ref }
+          BodyCore1 : Body
+          BodyCore2 : Body }
 
     type ArticulationLoopConstraint =
         { LinkIndex0 : Index
@@ -333,14 +341,39 @@ module SceneModule =
           NPhaseCore : NPhaseCore }
 
         member this.Pipeline =
+
             [Fn "simulate"
-                [Fn "prepareCollide" []
-                 Fn "stepSetupCollide" []
-                 Fn "kinematicsSetup" []]
+                [Fn "prepareCollide"
+                    [Md "mBrokenConstraints" "clear" []]
+                 Fn "stepSetupCollide"
+                    [Md "mProjectionManager" "processPendingUpdates" []
+                     Fn "kinematicsSetup"
+                        [ForEachIn "getActiveKinematicBodies" $ Task "SCKinematicUpdateTask"
+                         Task "ScKinematicAddDynamicTask"]
+                     Md "mNPhaseCore" "updateDirtyInteractions" []]]
+
              Fn "collideStep" []
-             Fn "preRigidBodyNarrowPhase" []
-             Fn "rigidBodyNarrowPhase" []
-             Fn "broadPhase" []
+
+             Fn "preRigidBodyNarrowPhase"
+                [ForEachIn "mSpeculativeCCDRigidBodyBitMap" $ Task "SpeculativeCCDContactDistanceUpdateTask"
+                 ForEachIn "mSpeculativeCCDArticulationBitMap" $ Task "SpeculativeCCDContactDistanceArticulationUpdateTask"
+                 ForEachIn "mDirtyShapeSimMap" $ Task "SpeculativeCCDContactDistanceArticulationUpdateTask"]
+
+             Fn "rigidBodyNarrowPhase"
+                [Md "mLLContext" "resetThreadContexts" []
+                 Md "mLLContext" "updateContactManager"
+                    [Md "mNpImplementationContext" "updateContactManager"
+                        [Fn "processContactManager"
+                            [ForEachIn "mNarrowPhasePairs.mContactManagerMapping" $ Task "PxsCMDiscreteUpdateTask"]]]]
+
+             Fn "broadPhase"
+                [Md "mAABBManager" "updateAABBsAndBP"
+                    [ForEachIn "mAddedHandleMap" $ Md "mAddedHandles" "pushBack" []
+                     ForEachIn "mChangedHandleMap" $ Md "mUpdatedHandles|?" "pushBack" []
+                     ForEachIn "mDirtyAggregates" $ Md "mUpdatedHandles|?" "pushBack" []
+                     ForEachIn "mRemovedHandleMap" $ Md "mRemovedHandles" "pushBack" []
+                     Fn "handleOriginShift" []]]
+
              Fn "postBroadPhase" []
              Fn "postBroadPhaseContinuation"
                 [Fn "finishBroadPhase" []]
