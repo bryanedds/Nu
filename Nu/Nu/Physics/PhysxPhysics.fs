@@ -395,8 +395,15 @@ module SceneModule =
                              Md "mRemovedHandleMap" "clear" []]]]]
 
              Fn "postBroadPhaseContinuation"
-                [Fn "finishBroadPhase" []]
-             Fn "preallocateContactManagers" []
+                [Md "mAABBManager.mChangedHandleMap" "clear" []
+                 Fn "finishBroadPhase"
+                    [ForEachIn "mAABBManager.mCreatedOverlaps" $ Fn "createRbElementInteraction" []
+                     ForEachIn "mAABBManager.mCreatedOverlaps" $ Task "OverlapFilterTask"]]]
+
+             Fn "preallocateContactManagers"
+                [ForEachIn "mOverlapFilterTaskHead" $ Unchecked.defaultof<_> []
+                 ForEachIn "mOverlapFilterTaskHead" $ Task "OnOverlapCreatedTask"]
+
              Fn "postBroadPhaseStage2"
                 [Fn "processLostTouchPairs" []]
              Fn "registerSceneInteractions" []
