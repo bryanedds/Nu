@@ -490,7 +490,19 @@ module SceneModule =
                                  Fn "processUserNotificationAsync" []]]]]]
 
              Fn "setEdgesConnected"
-                [Fn "wakeObjectsUp" []]
+                [ForEachIn "mTouchFoundEvents" $
+                    Fn "mSimpleIslandManager.setEdgeConnected"
+                        [Fn "mIslandManager.addContactManager" []
+                         Fn "mConnectedMap.set" []]
+                 Fn "mSimpleIslandManager.secondPassIslandGen"
+                    [Fn "mIslandManager.wakeIslands" []
+                     Fn "mIslandManager.processNewEdges" []
+                     Fn "mIslandManager.removeDestroyedEdges" []
+                     Fn "mIslandManager.processLostEdges" []]
+                 Fn "wakeObjectsUp"
+                    [ForEachIn "islandSim.mActiveNodes:eRIGID_BODY_TYPE" $ Fn "bodySim.setActive" []
+                     ForEachIn "islandSim.mActiveNodes:eARTICULATION_TYPE" $ Fn "articSim.setActive" []]]
+
              Fn "postIslandGen" []
              Fn "solver"
                 [Fn "beforeSolver" []]
