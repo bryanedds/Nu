@@ -25,10 +25,12 @@ module CoreModule =
         | Fn of string * Call list
         | Md of string * string * Call list
         | Task of string
+        | Handler of string
         | ForEachIn of string * Call
     let Fn name calls = Fn (name, calls)
     let Md name method calls = Md (name, method, calls)
     let Task name = Task name
+    let Handler name = Handler name
     let ForEachIn name call = ForEachIn (name, call)
     let ($) = (<|)
 
@@ -374,7 +376,24 @@ module SceneModule =
                      ForEachIn "mRemovedHandleMap" $ Md "mRemovedHandles" "pushBack" []
                      Fn "handleOriginShift" []]]
 
-             Fn "postBroadPhase" []
+             Fn "postBroadPhase"
+                [Md "mAABBManager" "postBroadPhase"
+                    [Fn "processBPPairs"
+                        [ForEachIn "mBroadPhase.mDeletedPairsArray" $ Handler "DeletedPairHandler"
+                         ForEachIn "mDirtyAggregates" $ Task "SortAggregateBoundsParallel"
+                         Fn "postBpStage2"
+                            [ForEachIn "mDirtyAggregates" $ Task "ProcessSelfCollisionPairsParallel"
+                             ForEachIn "mAggregateAggregatePairs" $ Task "ProcessAggPairsParallelTask"
+                             ForEachIn "mActorAggregatePairs" $ Task "ProcessAggPairsParallelTask"]
+                         Fn "postBpStage3"
+                            [ForEachIn "mDirtyAggregates" $ Md "item" "resetDirtyState" []
+                             ForEachIn "mAggPairTasks" $ Unchecked.defaultof<_>
+                             ForEachIn "mBroadPhase.mCreatedPairsArray" $ Handler "CreatedPairHandler"
+                             Md "mCreatedPairs" "clear" []
+                             Unchecked.defaultof<_>
+                             Md "mAddedHandleMap" "clear" []
+                             Md "mRemovedHandleMap" "clear" []]]]]
+
              Fn "postBroadPhaseContinuation"
                 [Fn "finishBroadPhase" []]
              Fn "preallocateContactManagers" []
