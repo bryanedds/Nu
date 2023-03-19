@@ -130,12 +130,12 @@ module FieldDispatcher =
         override this.View (field, _, world) =
             let fieldMetadata = Field.getFieldMetadata field
             let fieldTexCoordsOffset = box2 (v2 (16.0f * (single (world.UpdateTime / 20L % 3L))) 0.0f) v2Zero
-            let fieldUntraversableView = Render3d (RenderUserDefinedStaticModel (false, m4Identity, ValueSome fieldTexCoordsOffset, Unchecked.defaultof<_>, ForwardRenderType (0.0f, 0.0f), [|fieldMetadata.FieldUntraversableSurfaceDescriptor|], fieldMetadata.FieldBounds))
-            let fieldTraversableView = Render3d (RenderUserDefinedStaticModel (false, m4Identity, ValueSome fieldTexCoordsOffset, Unchecked.defaultof<_>, ForwardRenderType (0.0f, -1.0f), [|fieldMetadata.FieldTraversableSurfaceDescriptor|], fieldMetadata.FieldBounds))
+            let fieldUntraversableView = Render3d (RenderUserDefinedStaticModelMessage (false, m4Identity, ValueSome fieldTexCoordsOffset, Unchecked.defaultof<_>, ForwardRenderType (0.0f, 0.0f), [|fieldMetadata.FieldUntraversableSurfaceDescriptor|], fieldMetadata.FieldBounds))
+            let fieldTraversableView = Render3d (RenderUserDefinedStaticModelMessage (false, m4Identity, ValueSome fieldTexCoordsOffset, Unchecked.defaultof<_>, ForwardRenderType (0.0f, -1.0f), [|fieldMetadata.FieldTraversableSurfaceDescriptor|], fieldMetadata.FieldBounds))
             let fieldCursorView =
                 match Field.tryGetFieldTileDataAtMouse field world with
                 | Some (_, _, vertices) ->
                     let highlightDescriptor = createFieldHighlightSurfaceDescriptor vertices.FieldTileVertices
-                    Render3d (RenderUserDefinedStaticModel (false, m4Identity, ValueNone, Unchecked.defaultof<_>, ForwardRenderType (-1.0f, 0.0f), [|highlightDescriptor|], highlightDescriptor.Bounds))
+                    Render3d (RenderUserDefinedStaticModelMessage (false, m4Identity, ValueNone, Unchecked.defaultof<_>, ForwardRenderType (-1.0f, 0.0f), [|highlightDescriptor|], highlightDescriptor.Bounds))
                 | None -> View.empty
             Views [|fieldUntraversableView; fieldTraversableView; fieldCursorView|]
