@@ -502,7 +502,9 @@ module SceneModule =
                     [ForEachIn "islandSim.mActiveNodes:eRIGID_BODY_TYPE" $ Fn "bodySim.setActive" []
                      ForEachIn "islandSim.mActiveNodes:eARTICULATION_TYPE" $ Fn "articSim.setActive" []]]
 
-             Fn "postIslandGen" []
+             Fn "postIslandGen"
+                [Fn "mNPhaseCore.processTriggerInteractions"
+                    [ForEachIn "mOwnerScene.mInteractions" $ Task "TriggerContactTask" []]]
              Fn "solver"
                 [Fn "beforeSolver" []]
              Fn "updateBodiesAndShapes" []
