@@ -227,7 +227,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
             match (physicsEngine.Bodies.TryGetValue jointAngle.TargetId, physicsEngine.Bodies.TryGetValue jointAngle.TargetId2) with
             | ((true, (_, body)), (true, (_, body2))) ->
                 let hinge = new HingeConstraint (body, body2, jointAngle.Anchor, jointAngle.Anchor2, jointAngle.Axis, jointAngle.Axis2)
-                hinge.SetLimit (jointAngle.AngleMin, jointAngle.AngleMax, jointAngle.Softness, jointAngle.BiasFactor)
+                hinge.SetLimit (jointAngle.AngleMin, jointAngle.AngleMax, jointAngle.Softness, jointAngle.BiasFactor, jointAngle.RelaxationFactor)
                 hinge.BreakingImpulseThreshold <- jointAngle.BreakImpulseThreshold
                 physicsEngine.PhysicsContext.AddConstraint hinge
                 if not (physicsEngine.Constraints.TryAdd ({ SourceId = createJointMessage.SourceId; CorrelationId = jointProperties.JointId }, hinge)) then

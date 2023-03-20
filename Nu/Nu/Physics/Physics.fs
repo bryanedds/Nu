@@ -193,6 +193,7 @@ type JointAngle =
       AngleMax : single
       Softness : single
       BiasFactor : single
+      RelaxationFactor : single
       BreakImpulseThreshold : single }
 
 type JointDistance =
