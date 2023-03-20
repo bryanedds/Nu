@@ -187,8 +187,12 @@ type JointAngle =
       TargetId2 : PhysicsId
       Anchor : Vector3
       Anchor2 : Vector3
-      TargetAngle : single
-      Softness : single }
+      Axis : Vector3
+      Axis2 : Vector3
+      AngleLimit : single
+      Softness : single
+      BiasFactor : single
+      BreakImpulseThreshold : single }
 
 type JointDistance =
     { TargetId : PhysicsId
