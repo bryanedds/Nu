@@ -152,12 +152,12 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
     static member private createBody3 attachBodyShape sourceId (bodyProperties : BodyProperties) physicsEngine =
         let massAccumulator = ref 0.0f
         let compoundShape = new CompoundShape ()
-        do attachBodyShape bodyProperties compoundShape massAccumulator
+        attachBodyShape bodyProperties compoundShape massAccumulator
         let motionState = new DefaultMotionState (Matrix4x4.CreateFromTrs (bodyProperties.Center, bodyProperties.Rotation, v3One))
         use constructionInfo = new RigidBodyConstructionInfo (massAccumulator.Value, motionState, compoundShape)
         let body = new RigidBody (constructionInfo)
-        do BulletPhysicsEngine.configureBodyProperties bodyProperties body physicsEngine.PhysicsContext.Gravity
-        do physicsEngine.PhysicsContext.AddRigidBody body
+        BulletPhysicsEngine.configureBodyProperties bodyProperties body physicsEngine.PhysicsContext.Gravity
+        physicsEngine.PhysicsContext.AddRigidBody body
         if not (physicsEngine.Bodies.TryAdd ({ SourceId = sourceId; CorrelationId = bodyProperties.BodyId }, (bodyProperties.GravityScale, body))) then
             Log.debug ("Could not add body via '" + scstring bodyProperties + "'.")
 
@@ -207,7 +207,9 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
                 body.Gravity <- gravityScale * gravity
         | RebuildPhysicsHackMessage ->
             physicsEngine.RebuildingHack <- true
-            physicsEngine.PhysicsContext.Clear ()
+            for (_, body) in physicsEngine.Bodies.Values do
+                physicsEngine.PhysicsContext.RemoveRigidBody body
+            physicsEngine.Bodies.Clear ()
             physicsEngine.IntegrationMessages.Clear ()
 
     static member private integrate stepTime physicsEngine =
