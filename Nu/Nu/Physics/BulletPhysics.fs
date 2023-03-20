@@ -72,6 +72,13 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
         body.Friction <- bodyProperties.Friction
         body.Restitution <- bodyProperties.Restitution
         //body.FixedRotation <- bodyProperties.FixedRotation
+        match bodyProperties.CollisionDetection with
+        | Discontinuous ->
+            body.CcdMotionThreshold <- 0.0f
+            body.CcdSweptSphereRadius <- 0.0f
+        | Continuous ccd ->
+            body.CcdMotionThreshold <- ccd.ContinuousMotionThreshold
+            body.CcdSweptSphereRadius <- ccd.SweptSphereRadius
         //body.SetCollisionCategories (enum<Category> bodyProperties.CollisionCategories)
         //body.SetCollidesWith (enum<Category> bodyProperties.CollisionMask)
         //body.BodyType <- bodyProperties.BodyType
