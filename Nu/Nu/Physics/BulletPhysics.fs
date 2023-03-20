@@ -59,38 +59,38 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
     static member private configureBodyShapeProperties (_ : BodyProperties) (_ : BodyShapeProperties option) (_ : PolyhedralConvexShape) =
         () // NOTE: cannot configure bullet shapes on a per-shape basis.
 
-    static member private configureObjectProperties (bodyProperties : BodyProperties) (body : CollisionObject) =
+    static member private configureObjectProperties (bodyProperties : BodyProperties) (object : CollisionObject) =
         if bodyProperties.Awake
-        then body.ActivationState <- body.ActivationState &&& ~~~ActivationState.IslandSleeping
-        else body.ActivationState <- body.ActivationState ||| ActivationState.IslandSleeping
+        then object.ActivationState <- object.ActivationState &&& ~~~ActivationState.IslandSleeping
+        else object.ActivationState <- object.ActivationState ||| ActivationState.IslandSleeping
         if bodyProperties.AwakeAlways
-        then body.ActivationState <- body.ActivationState ||| ActivationState.DisableDeactivation
-        else body.ActivationState <- body.ActivationState &&& ~~~ActivationState.DisableDeactivation
+        then object.ActivationState <- object.ActivationState ||| ActivationState.DisableDeactivation
+        else object.ActivationState <- object.ActivationState &&& ~~~ActivationState.DisableDeactivation
         if bodyProperties.Enabled
-        then body.ActivationState <- body.ActivationState ||| ActivationState.DisableSimulation
-        else body.ActivationState <- body.ActivationState &&& ~~~ActivationState.DisableSimulation
-        body.Friction <- bodyProperties.Friction
-        body.Restitution <- bodyProperties.Restitution
+        then object.ActivationState <- object.ActivationState ||| ActivationState.DisableSimulation
+        else object.ActivationState <- object.ActivationState &&& ~~~ActivationState.DisableSimulation
+        object.Friction <- bodyProperties.Friction
+        object.Restitution <- bodyProperties.Restitution
         //body.FixedRotation <- bodyProperties.FixedRotation
         match bodyProperties.CollisionDetection with
         | DiscontinuousDetection ->
-            body.CcdMotionThreshold <- 0.0f
-            body.CcdSweptSphereRadius <- 0.0f
+            object.CcdMotionThreshold <- 0.0f
+            object.CcdSweptSphereRadius <- 0.0f
         | ContinuousDetection cd ->
-            body.CcdMotionThreshold <- cd.ContinuousMotionThreshold
-            body.CcdSweptSphereRadius <- cd.SweptSphereRadius
+            object.CcdMotionThreshold <- cd.ContinuousMotionThreshold
+            object.CcdSweptSphereRadius <- cd.SweptSphereRadius
         //body.SetCollisionCategories (enum<Category> bodyProperties.CollisionCategories)
         //body.SetCollidesWith (enum<Category> bodyProperties.CollisionMask)
         match bodyProperties.BodyType with
         | Static ->
-            body.CollisionFlags <- body.CollisionFlags ||| CollisionFlags.StaticObject
-            body.CollisionFlags <- body.CollisionFlags &&& ~~~CollisionFlags.KinematicObject
+            object.CollisionFlags <- object.CollisionFlags ||| CollisionFlags.StaticObject
+            object.CollisionFlags <- object.CollisionFlags &&& ~~~CollisionFlags.KinematicObject
         | Dynamic ->
-            body.CollisionFlags <- body.CollisionFlags &&& ~~~CollisionFlags.StaticObject
-            body.CollisionFlags <- body.CollisionFlags &&& ~~~CollisionFlags.KinematicObject
+            object.CollisionFlags <- object.CollisionFlags &&& ~~~CollisionFlags.StaticObject
+            object.CollisionFlags <- object.CollisionFlags &&& ~~~CollisionFlags.KinematicObject
         | Kinematic ->
-            body.CollisionFlags <- body.CollisionFlags ||| CollisionFlags.KinematicObject
-            body.CollisionFlags <- body.CollisionFlags &&& ~~~CollisionFlags.StaticObject
+            object.CollisionFlags <- object.CollisionFlags ||| CollisionFlags.KinematicObject
+            object.CollisionFlags <- object.CollisionFlags &&& ~~~CollisionFlags.StaticObject
 
     static member private configureBodyProperties (bodyProperties : BodyProperties) (body : RigidBody) gravity =
         BulletPhysicsEngine.configureObjectProperties bodyProperties body
@@ -183,14 +183,14 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
             use constructionInfo = new RigidBodyConstructionInfo (massAccumulator.Value, motionState, compoundShape)
             let body = new RigidBody (constructionInfo)
             BulletPhysicsEngine.configureBodyProperties bodyProperties body physicsEngine.PhysicsContext.Gravity
-            physicsEngine.PhysicsContext.AddRigidBody body
+            physicsEngine.PhysicsContext.AddRigidBody (body, bodyProperties.CollisionCategories, bodyProperties.CollisionMask)
             if not (physicsEngine.Bodies.TryAdd ({ SourceId = sourceId; CorrelationId = bodyProperties.BodyId }, (bodyProperties.GravityOpt, body))) then
                 Log.debug ("Could not add body via '" + scstring bodyProperties + "'.")
         else
             let ghost = new GhostObject ()
             ghost.CollisionFlags <- ghost.CollisionFlags &&& ~~~CollisionFlags.NoContactResponse
             BulletPhysicsEngine.configureObjectProperties bodyProperties ghost
-            physicsEngine.PhysicsContext.AddCollisionObject ghost
+            physicsEngine.PhysicsContext.AddCollisionObject (ghost, bodyProperties.CollisionCategories, bodyProperties.CollisionMask)
             if not (physicsEngine.Ghosts.TryAdd ({ SourceId = sourceId; CorrelationId = bodyProperties.BodyId }, ghost)) then
                 Log.debug ("Could not add body via '" + scstring bodyProperties + "'.")
 
