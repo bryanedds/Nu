@@ -13,11 +13,15 @@ open Nu
 /// Tracks Bullet physics bodies by their PhysicsIds.
 type internal BulletBodyDictionary = OrderedDictionary<PhysicsId, Vector3 option * RigidBody>
 
+/// Tracks Bullet physics bodies by their PhysicsIds.
+type internal BulletGhostDictionary = OrderedDictionary<PhysicsId, GhostObject>
+
 /// The BulletPhysics 3d implementation of PhysicsEngine.
 type [<ReferenceEquality>] BulletPhysicsEngine =
     private
         { PhysicsContext : DynamicsWorld
           Bodies : BulletBodyDictionary
+          Ghosts : BulletGhostDictionary
           CollisionConfiguration : CollisionConfiguration
           PhysicsDispatcher : Dispatcher
           BroadPhaseInterface : BroadphaseInterface
@@ -36,6 +40,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
         let integrationMessages = ConcurrentQueue ()
         { PhysicsContext = world
           Bodies = OrderedDictionary HashIdentity.Structural
+          Ghosts = OrderedDictionary HashIdentity.Structural
           CollisionConfiguration = collisionConfiguration
           PhysicsDispatcher = physicsDispatcher
           BroadPhaseInterface = broadPhaseInterface
@@ -51,8 +56,38 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
         physicsEngine.PhysicsDispatcher.Dispose ()
         physicsEngine.CollisionConfiguration.Dispose ()
 
+    static member private configureBodyShapeProperties (_ : BodyProperties) (_ : BodyShapeProperties option) (_ : PolyhedralConvexShape) =
+        () // NOTE: cannot configure bullet shapes on a per-shape basis.
+
+    static member private configureObjectProperties (bodyProperties : BodyProperties) (body : CollisionObject) =
+        if bodyProperties.Awake
+        then body.ActivationState <- body.ActivationState &&& ~~~ActivationState.IslandSleeping
+        else body.ActivationState <- body.ActivationState ||| ActivationState.IslandSleeping
+        if bodyProperties.AwakeAlways
+        then body.ActivationState <- body.ActivationState ||| ActivationState.DisableDeactivation
+        else body.ActivationState <- body.ActivationState &&& ~~~ActivationState.DisableDeactivation
+        if bodyProperties.Enabled
+        then body.ActivationState <- body.ActivationState ||| ActivationState.DisableSimulation
+        else body.ActivationState <- body.ActivationState &&& ~~~ActivationState.DisableSimulation
+        body.Friction <- bodyProperties.Friction
+        body.Restitution <- bodyProperties.Restitution
+        //body.FixedRotation <- bodyProperties.FixedRotation
+        //body.SetCollisionCategories (enum<Category> bodyProperties.CollisionCategories)
+        //body.SetCollidesWith (enum<Category> bodyProperties.CollisionMask)
+        //body.BodyType <- bodyProperties.BodyType
+        //body.IgnoreCCD <- bodyProperties.IgnoreCCD
+
+    static member private configureBodyProperties (bodyProperties : BodyProperties) (body : RigidBody) gravity =
+        BulletPhysicsEngine.configureObjectProperties bodyProperties body
+        body.MotionState.WorldTransform <- Matrix4x4.CreateFromTrs (bodyProperties.Center, bodyProperties.Rotation, v3One)
+        body.LinearVelocity <- bodyProperties.LinearVelocity
+        body.AngularVelocity <- bodyProperties.AngularVelocity
+        body.SetDamping (bodyProperties.LinearDamping, bodyProperties.AngularDamping)
+        body.Gravity <- match bodyProperties.GravityOpt with Some gravity -> gravity | None -> gravity
+
     static member private attachBodyBox sourceSimulant (bodyProperties : BodyProperties) (bodyBox : BodyBox) (compoundShape : CompoundShape) (massAccumulator : single ref) =
         let box = new BoxShape (bodyBox.Size * 0.5f)
+        BulletPhysicsEngine.configureBodyShapeProperties bodyProperties bodyBox.PropertiesOpt box
         box.UserObject <-
             { Simulant = sourceSimulant
               BodyId = bodyProperties.BodyId
@@ -124,42 +159,25 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
         | BodyPolygon bodyPolygon -> () //BulletPhysicsEngine.attachBodyPolygon bodyPolygon bodyProperties compoundShapeIds compoundBuilder
         | BodyShapes bodyShapes -> BulletPhysicsEngine.attachBodyShapes sourceSimulant bodyProperties bodyShapes compoundShape massAccumulator
 
-    static member private configureBodyProperties (bodyProperties : BodyProperties) (body : RigidBody) gravity =
-        if bodyProperties.Awake
-        then body.ActivationState <- body.ActivationState &&& ~~~ActivationState.IslandSleeping
-        else body.ActivationState <- body.ActivationState ||| ActivationState.IslandSleeping
-        if bodyProperties.AwakeAlways
-        then body.ActivationState <- body.ActivationState ||| ActivationState.DisableDeactivation
-        else body.ActivationState <- body.ActivationState &&& ~~~ActivationState.DisableDeactivation
-        if bodyProperties.Enabled
-        then body.ActivationState <- body.ActivationState ||| ActivationState.DisableSimulation
-        else body.ActivationState <- body.ActivationState &&& ~~~ActivationState.DisableSimulation
-        body.MotionState.WorldTransform <- Matrix4x4.CreateFromTrs (bodyProperties.Center, bodyProperties.Rotation, v3One)
-        body.Friction <- bodyProperties.Friction
-        body.Restitution <- bodyProperties.Restitution
-        body.LinearVelocity <- bodyProperties.LinearVelocity
-        body.AngularVelocity <- bodyProperties.AngularVelocity
-        body.SetDamping (bodyProperties.LinearDamping, bodyProperties.AngularDamping)
-        body.Gravity <- match bodyProperties.GravityOpt with Some gravity -> gravity | None -> gravity
-        //body.FixedRotation <- bodyProperties.FixedRotation
-        //body.SetCollisionCategories (enum<Category> bodyProperties.CollisionCategories)
-        //body.SetCollidesWith (enum<Category> bodyProperties.CollisionMask)
-        //body.BodyType <- bodyProperties.BodyType
-        //body.IgnoreCCD <- bodyProperties.IgnoreCCD
-        //body.IsBullet <- bodyProperties.Bullet
-        //body.SetIsSensor bodyProperties.Sensor
-
     static member private createBody3 attachBodyShape sourceId (bodyProperties : BodyProperties) physicsEngine =
         let massAccumulator = ref 0.0f
         let compoundShape = new CompoundShape ()
         attachBodyShape bodyProperties compoundShape massAccumulator
-        let motionState = new DefaultMotionState (Matrix4x4.CreateFromTrs (bodyProperties.Center, bodyProperties.Rotation, v3One))
-        use constructionInfo = new RigidBodyConstructionInfo (massAccumulator.Value, motionState, compoundShape)
-        let body = new RigidBody (constructionInfo)
-        BulletPhysicsEngine.configureBodyProperties bodyProperties body physicsEngine.PhysicsContext.Gravity
-        physicsEngine.PhysicsContext.AddRigidBody body
-        if not (physicsEngine.Bodies.TryAdd ({ SourceId = sourceId; CorrelationId = bodyProperties.BodyId }, (bodyProperties.GravityOpt, body))) then
-            Log.debug ("Could not add body via '" + scstring bodyProperties + "'.")
+        if bodyProperties.Sensor then
+            let motionState = new DefaultMotionState (Matrix4x4.CreateFromTrs (bodyProperties.Center, bodyProperties.Rotation, v3One))
+            use constructionInfo = new RigidBodyConstructionInfo (massAccumulator.Value, motionState, compoundShape)
+            let body = new RigidBody (constructionInfo)
+            BulletPhysicsEngine.configureBodyProperties bodyProperties body physicsEngine.PhysicsContext.Gravity
+            physicsEngine.PhysicsContext.AddRigidBody body
+            if not (physicsEngine.Bodies.TryAdd ({ SourceId = sourceId; CorrelationId = bodyProperties.BodyId }, (bodyProperties.GravityOpt, body))) then
+                Log.debug ("Could not add body via '" + scstring bodyProperties + "'.")
+        else
+            let ghost = new GhostObject ()
+            ghost.CollisionFlags <- ghost.CollisionFlags &&& ~~~CollisionFlags.NoContactResponse
+            BulletPhysicsEngine.configureObjectProperties bodyProperties ghost
+            physicsEngine.PhysicsContext.AddCollisionObject ghost
+            if not (physicsEngine.Ghosts.TryAdd ({ SourceId = sourceId; CorrelationId = bodyProperties.BodyId }, ghost)) then
+                Log.debug ("Could not add body via '" + scstring bodyProperties + "'.")
 
     static member private createBody4 bodyShape bodyProperties (bodySource : BodySourceInternal) physicsEngine =
         BulletPhysicsEngine.createBody3
@@ -211,17 +229,17 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
             physicsEngine.RebuildingHack <- true
             for (_, body) in physicsEngine.Bodies.Values do
                 physicsEngine.PhysicsContext.RemoveRigidBody body
+            for ghost in physicsEngine.Ghosts.Values do
+                physicsEngine.PhysicsContext.RemoveCollisionObject ghost
             physicsEngine.Bodies.Clear ()
             physicsEngine.IntegrationMessages.Clear ()
 
     static member private integrate stepTime physicsEngine =
-    
         let physicsStepAmount =
             match (Constants.GameTime.DesiredFrameRate, stepTime) with
             | (StaticFrameRate frameRate, UpdateTime frames) -> 1.0f / single frameRate * single frames
             | (DynamicFrameRate _, ClockTime secs) -> secs
             | (_, _) -> failwithumf ()
-
         if physicsStepAmount > 0.0f then
             let result = physicsEngine.PhysicsContext.StepSimulation physicsStepAmount
             ignore result
