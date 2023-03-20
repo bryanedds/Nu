@@ -10,8 +10,8 @@ open BulletSharp
 open Prime
 open Nu
 
-/// Tracks physics bodies by their PhysicsIds.
-type internal BulletBodyDictionary = OrderedDictionary<PhysicsId, Vector3 * RigidBody>
+/// Tracks Bullet physics bodies by their PhysicsIds.
+type internal BulletBodyDictionary = OrderedDictionary<PhysicsId, Vector3 option * RigidBody>
 
 /// The BulletPhysics 3d implementation of PhysicsEngine.
 type [<ReferenceEquality>] BulletPhysicsEngine =
@@ -140,7 +140,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
         body.LinearVelocity <- bodyProperties.LinearVelocity
         body.AngularVelocity <- bodyProperties.AngularVelocity
         body.SetDamping (bodyProperties.LinearDamping, bodyProperties.AngularDamping)
-        body.Gravity <- bodyProperties.GravityScale * gravity
+        body.Gravity <- match bodyProperties.GravityOpt with Some gravity -> gravity | None -> gravity
         //body.FixedRotation <- bodyProperties.FixedRotation
         //body.SetCollisionCategories (enum<Category> bodyProperties.CollisionCategories)
         //body.SetCollidesWith (enum<Category> bodyProperties.CollisionMask)
@@ -158,7 +158,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
         let body = new RigidBody (constructionInfo)
         BulletPhysicsEngine.configureBodyProperties bodyProperties body physicsEngine.PhysicsContext.Gravity
         physicsEngine.PhysicsContext.AddRigidBody body
-        if not (physicsEngine.Bodies.TryAdd ({ SourceId = sourceId; CorrelationId = bodyProperties.BodyId }, (bodyProperties.GravityScale, body))) then
+        if not (physicsEngine.Bodies.TryAdd ({ SourceId = sourceId; CorrelationId = bodyProperties.BodyId }, (bodyProperties.GravityOpt, body))) then
             Log.debug ("Could not add body via '" + scstring bodyProperties + "'.")
 
     static member private createBody4 bodyShape bodyProperties (bodySource : BodySourceInternal) physicsEngine =
@@ -203,8 +203,10 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
         //| ApplyBodyTorqueMessage applyBodyTorqueMessage -> BulletPhysicsEngine.applyBodyTorque applyBodyTorqueMessage physicsEngine
         | SetGravityMessage gravity ->
             physicsEngine.PhysicsContext.Gravity <- gravity
-            for (gravityScale, body) in physicsEngine.Bodies.Values do
-                body.Gravity <- gravityScale * gravity
+            for (gravityOpt, body) in physicsEngine.Bodies.Values do
+                match gravityOpt with
+                | Some gravity -> body.Gravity <- gravity
+                | None -> body.Gravity <- gravity
         | RebuildPhysicsHackMessage ->
             physicsEngine.RebuildingHack <- true
             for (_, body) in physicsEngine.Bodies.Values do
