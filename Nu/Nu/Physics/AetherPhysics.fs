@@ -12,10 +12,10 @@ open tainicom.Aether.Physics2D.Dynamics.Joints
 open Prime
 open Nu
 
-/// Tracks physics bodies by their PhysicsIds.
-type internal AetherBodyDictionary = OrderedDictionary<PhysicsId, Vector3 * Dynamics.Body>
+/// Tracks Aether physics bodies by their PhysicsIds.
+type internal AetherBodyDictionary = OrderedDictionary<PhysicsId, Vector3 option * Dynamics.Body>
 
-/// Tracks physics joints by their PhysicsIds.
+/// Tracks Aether physics joints by their PhysicsIds.
 type internal AetherJointDictionary = OrderedDictionary<PhysicsId, Dynamics.Joints.Joint>
 
 /// The Aether 2d implementation of PhysicsEngine.
@@ -37,8 +37,8 @@ type [<ReferenceEquality>] AetherPhysicsEngine =
     static member private toPixelV3 (v2 : Common.Vector2) =
         Vector3 (AetherPhysicsEngine.toPixel v2.X, AetherPhysicsEngine.toPixel v2.Y, 0.0f)
 
-    static member private toPhysicsV2 (v2 : Vector3) =
-        Common.Vector2 (AetherPhysicsEngine.toPhysics v2.X, AetherPhysicsEngine.toPhysics v2.Y)
+    static member private toPhysicsV2 (v3 : Vector3) =
+        Common.Vector2 (AetherPhysicsEngine.toPhysics v3.X, AetherPhysicsEngine.toPhysics v3.Y)
 
     static member private toPhysicsPolygonDiameter value =
         let value = AetherPhysicsEngine.toPhysics value
@@ -262,7 +262,7 @@ type [<ReferenceEquality>] AetherPhysicsEngine =
         body.add_OnSeparation (fun fn fn2 _ -> AetherPhysicsEngine.handleSeparation physicsEngine fn fn2)
 
         // attempt to add the body
-        if not (physicsEngine.Bodies.TryAdd ({ SourceId = createBodyMessage.SourceId; CorrelationId = bodyProperties.BodyId }, (bodyProperties.GravityScale, body))) then
+        if not (physicsEngine.Bodies.TryAdd ({ SourceId = createBodyMessage.SourceId; CorrelationId = bodyProperties.BodyId }, (bodyProperties.GravityOpt, body))) then
             Log.debug ("Could not add body via '" + scstring bodyProperties + "'.")
 
     static member private createBodies (createBodiesMessage : CreateBodiesMessage) physicsEngine =
@@ -429,10 +429,13 @@ type [<ReferenceEquality>] AetherPhysicsEngine =
                 physicsEngine.IntegrationMessages.Add bodyTransformMessage
 
     static member private applyGravity physicsStepAmount physicsEngine =
-        for (gravityScale, body) in physicsEngine.Bodies.Values do
+        for (gravityOpt, body) in physicsEngine.Bodies.Values do
             if  body.BodyType = Dynamics.BodyType.Dynamic then
-                body.LinearVelocity <-
-                body.LinearVelocity + physicsStepAmount * gravityScale.V2 * physicsEngine.PhysicsContext.Gravity
+                let gravity =
+                    match gravityOpt with
+                    | Some gravity -> AetherPhysicsEngine.toPhysicsV2 gravity
+                    | None -> physicsEngine.PhysicsContext.Gravity
+                body.LinearVelocity <- body.LinearVelocity + physicsStepAmount * gravity
 
     /// Make a physics engine.
     static member make imperative gravity =

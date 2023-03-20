@@ -76,10 +76,10 @@ module BodyShapeProperties =
     ("Mass Density", "", "", "", "",
      Constants.PrettyPrinter.DefaultThresholdMin,
      Constants.PrettyPrinter.SimpleThresholdMax);
-     StructuralEquality; StructuralComparison>]
+     StructuralEquality; StructuralComparison; Struct>]
 type BodyWeight =
-    | Mass of single
-    | Density of single
+    | Mass of Mass : single
+    | Density of Density : single
 
 /// The shape of a physics body box.
 type BodyBox =
@@ -147,9 +147,9 @@ type BodyProperties =
     { BodyId : uint64
       Center : Vector3
       Rotation : Quaternion
+      BodyType : BodyType
       BodyShape : BodyShape
       BodyWeight : BodyWeight
-      BodyType : BodyType
       Awake : bool
       AwakeAlways : bool
       Enabled : bool
@@ -160,7 +160,7 @@ type BodyProperties =
       AngularVelocity : Vector3
       AngularDamping : single
       FixedRotation : bool
-      GravityScale : Vector3
+      GravityOpt : Vector3 option
       CollisionCategories : int
       CollisionMask : int
       IgnoreCCD : bool
