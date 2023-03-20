@@ -736,9 +736,9 @@ module RigidBodyFacetModule =
         member this.GetAwake world : bool = this.Get (nameof this.Awake) world
         member this.SetAwake (value : bool) world = this.Set (nameof this.Awake) value world
         member this.Awake = lens (nameof this.Awake) this this.GetAwake this.SetAwake
-        member this.GetDensity world : single = this.Get (nameof this.Density) world
-        member this.SetDensity (value : single) world = this.Set (nameof this.Density) value world
-        member this.Density = lens (nameof this.Density) this this.GetDensity this.SetDensity
+        member this.GetAwakeAlways world : bool = this.Get (nameof this.AwakeAlways) world
+        member this.SetAwakeAlways (value : bool) world = this.Set (nameof this.AwakeAlways) value world
+        member this.AwakeAlways = lens (nameof this.AwakeAlways) this this.GetAwakeAlways this.SetAwakeAlways
         member this.GetFriction world : single = this.Get (nameof this.Friction) world
         member this.SetFriction (value : single) world = this.Set (nameof this.Friction) value world
         member this.Friction = lens (nameof this.Friction) this this.GetFriction this.SetFriction
@@ -757,15 +757,18 @@ module RigidBodyFacetModule =
         member this.GetAngularDamping world : single = this.Get (nameof this.AngularDamping) world
         member this.SetAngularDamping (value : single) world = this.Set (nameof this.AngularDamping) value world
         member this.AngularDamping = lens (nameof this.AngularDamping) this this.GetAngularDamping this.SetAngularDamping
-        member this.GetFixedRotation world : bool = this.Get (nameof this.FixedRotation) world
-        member this.SetFixedRotation (value : bool) world = this.Set (nameof this.FixedRotation) value world
-        member this.FixedRotation = lens (nameof this.FixedRotation) this this.GetFixedRotation this.SetFixedRotation
-        member this.GetInertia world : single = this.Get (nameof this.Inertia) world
-        member this.SetInertia (value : single) world = this.Set (nameof this.Inertia) value world
-        member this.Inertia = lens (nameof this.Inertia) this this.GetInertia this.SetInertia
-        member this.GetGravityScale world : single = this.Get (nameof this.GravityScale) world
-        member this.SetGravityScale (value : single) world = this.Set (nameof this.GravityScale) value world
-        member this.GravityScale = lens (nameof this.GravityScale) this this.GetGravityScale this.SetGravityScale
+        member this.GetAngularFactor world : Vector3 = this.Get (nameof this.AngularFactor) world
+        member this.SetAngularFactor (value : Vector3) world = this.Set (nameof this.AngularFactor) value world
+        member this.AngularFactor = lens (nameof this.AngularFactor) this this.GetAngularFactor this.SetAngularFactor
+        member this.GetSubstance world : Substance = this.Get (nameof this.Substance) world
+        member this.SetSubstance (value : Substance) world = this.Set (nameof this.Substance) value world
+        member this.Substance = lens (nameof this.Substance) this this.GetSubstance this.SetSubstance
+        member this.GetGravityOverrideOpt world : Vector3 option = this.Get (nameof this.GravityOverrideOpt) world
+        member this.SetGravityOverrideOpt (value : Vector3 option) world = this.Set (nameof this.GravityOverrideOpt) value world
+        member this.GravityOverrideOpt = lens (nameof this.GravityOverrideOpt) this this.GetGravityOverrideOpt this.SetGravityOverrideOpt
+        member this.GetCollisionDetection world : CollisionDetection = this.Get (nameof this.CollisionDetection) world
+        member this.SetCollisionDetection (value : CollisionDetection) world = this.Set (nameof this.CollisionDetection) value world
+        member this.CollisionDetection = lens (nameof this.CollisionDetection) this this.GetCollisionDetection this.SetCollisionDetection
         member this.GetCollisionCategories world : string = this.Get (nameof this.CollisionCategories) world
         member this.SetCollisionCategories (value : string) world = this.Set (nameof this.CollisionCategories) value world
         member this.CollisionCategories = lens (nameof this.CollisionCategories) this this.GetCollisionCategories this.SetCollisionCategories
@@ -775,12 +778,6 @@ module RigidBodyFacetModule =
         member this.GetBodyShape world : BodyShape = this.Get (nameof this.BodyShape) world
         member this.SetBodyShape (value : BodyShape) world = this.Set (nameof this.BodyShape) value world
         member this.BodyShape = lens (nameof this.BodyShape) this this.GetBodyShape this.SetBodyShape
-        member this.GetIgnoreCCD world : bool = this.Get (nameof this.IgnoreCCD) world
-        member this.SetIgnoreCCD (value : bool) world = this.Set (nameof this.IgnoreCCD) value world
-        member this.IgnoreCCD = lens (nameof this.IgnoreCCD) this this.GetIgnoreCCD this.SetIgnoreCCD
-        member this.GetBullet world : bool = this.Get (nameof this.Bullet) world
-        member this.SetBullet (value : bool) world = this.Set (nameof this.Bullet) value world
-        member this.Bullet = lens (nameof this.Bullet) this this.GetBullet this.SetBullet
         member this.GetSensor world : bool = this.Get (nameof this.Sensor) world
         member this.SetSensor (value : bool) world = this.Set (nameof this.Sensor) value world
         member this.Sensor = lens (nameof this.Sensor) this this.GetSensor this.SetSensor
@@ -804,21 +801,20 @@ module RigidBodyFacetModule =
             [define Entity.BodyEnabled true
              define Entity.BodyType Dynamic
              define Entity.Awake true
-             define Entity.Density Constants.Physics.DensityDefault
+             define Entity.AwakeAlways false
              define Entity.Friction 0.2f
              define Entity.Restitution 0.0f
              define Entity.LinearVelocity v3Zero
              define Entity.LinearDamping 0.0f
              define Entity.AngularVelocity v3Zero
              define Entity.AngularDamping 0.0f
-             define Entity.FixedRotation false
-             define Entity.Inertia 0.0f
-             define Entity.GravityScale 1.0f
+             define Entity.AngularFactor v3One
+             define Entity.Substance (Density 1.0f)
+             define Entity.GravityOverrideOpt None
+             define Entity.CollisionDetection Discontinuous
              define Entity.CollisionCategories "1"
              define Entity.CollisionMask "@"
              define Entity.BodyShape (BodyBox { Center = v3Zero; Size = v3One; PropertiesOpt = None })
-             define Entity.IgnoreCCD false
-             define Entity.Bullet false
              define Entity.Sensor false
              define Entity.ModelDriven false
              computed Entity.PhysicsId (fun (entity : Entity) world -> { SourceId = entity.GetId world; CorrelationId = 0UL }) None]
@@ -833,21 +829,20 @@ module RigidBodyFacetModule =
             let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.BodyEnabled)) entity world
             let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.BodyType)) entity world
             let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.Awake)) entity world
-            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.Density)) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.AwakeAlways)) entity world
             let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.Friction)) entity world
             let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.Restitution)) entity world
             let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.LinearVelocity)) entity world
             let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.LinearDamping)) entity world
             let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.AngularVelocity)) entity world
             let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.AngularDamping)) entity world
-            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.FixedRotation)) entity world
-            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.Inertia)) entity world
-            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.GravityScale)) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.AngularFactor)) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.Substance)) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.GravityOverrideOpt)) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.CollisionDetection)) entity world
             let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.CollisionCategories)) entity world
             let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.CollisionMask)) entity world
             let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.BodyShape)) entity world
-            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.IgnoreCCD)) entity world
-            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.Bullet)) entity world
             let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.Sensor)) entity world
             world
 
@@ -860,21 +855,20 @@ module RigidBodyFacetModule =
                   BodyShape = getBodyShape entity world
                   BodyType = entity.GetBodyType world
                   Awake = entity.GetAwake world
+                  AwakeAlways = entity.GetAwakeAlways world
                   Enabled = entity.GetBodyEnabled world
-                  Density = entity.GetDensity world
                   Friction = entity.GetFriction world
                   Restitution = entity.GetRestitution world
                   LinearVelocity = entity.GetLinearVelocity world
                   LinearDamping = entity.GetLinearDamping world
                   AngularVelocity = entity.GetAngularVelocity world
                   AngularDamping = entity.GetAngularDamping world
-                  FixedRotation = entity.GetFixedRotation world
-                  Inertia = entity.GetInertia world
-                  GravityScale = entity.GetGravityScale world
+                  AngularFactor = entity.GetAngularFactor world
+                  Substance = entity.GetSubstance world
+                  GravityOverrideOpt = entity.GetGravityOverrideOpt world
+                  CollisionDetection = entity.GetCollisionDetection world
                   CollisionCategories = Physics.categorizeCollisionMask (entity.GetCollisionCategories world)
                   CollisionMask = Physics.categorizeCollisionMask (entity.GetCollisionMask world)
-                  IgnoreCCD = entity.GetIgnoreCCD world
-                  Bullet = entity.GetBullet world
                   Sensor = entity.GetSensor world }
             World.createBody entity (entity.GetId world) bodyProperties world
 

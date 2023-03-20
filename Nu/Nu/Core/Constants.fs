@@ -129,7 +129,6 @@ module Physics =
 
     let [<Literal>] PhysicsToPixelRatio = Engine.Meter2d // 48 pixels = 1 meter
     let [<Uniform>] PixelToPhysicsRatio = 1.0f / Engine.Meter2d
-    let [<Literal>] DensityDefault = 1.0f
 
 [<RequireQualifiedAccess>]
 module TileMap =
