@@ -400,6 +400,7 @@ type [<ReferenceEquality>] AetherPhysicsEngine =
             physicsEngine.RebuildingHack <- true
             physicsEngine.PhysicsContext.Clear ()
             physicsEngine.Bodies.Clear ()
+            physicsEngine.Joints.Clear ()
             physicsEngine.IntegrationMessages.Clear ()
 
     static member private handlePhysicsMessages physicsMessages physicsEngine =
