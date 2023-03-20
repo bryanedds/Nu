@@ -10,10 +10,14 @@ open BulletSharp
 open Prime
 open Nu
 
+/// Tracks physics bodies by their PhysicsIds.
+type internal BulletBodyDictionary = Dictionary<PhysicsId, Vector3 * RigidBody>
+
 /// The BulletPhysics 3d implementation of PhysicsEngine.
 type [<ReferenceEquality>] BulletPhysicsEngine =
     private
-        { PhysicsContext : DiscreteDynamicsWorld
+        { PhysicsContext : DynamicsWorld
+          Bodies : BulletBodyDictionary
           CollisionConfiguration : CollisionConfiguration
           PhysicsDispatcher : Dispatcher
           BroadPhaseInterface : BroadphaseInterface
@@ -31,6 +35,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
         let world = new DiscreteDynamicsWorld (physicsDispatcher, broadPhaseInterface, constraintSolver, collisionConfiguration)
         let integrationMessages = ConcurrentQueue ()
         { PhysicsContext = world
+          Bodies = dictPlus HashIdentity.Structural []
           CollisionConfiguration = collisionConfiguration
           PhysicsDispatcher = physicsDispatcher
           BroadPhaseInterface = broadPhaseInterface
@@ -144,25 +149,28 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
         //body.IsBullet <- bodyProperties.Bullet
         //body.SetIsSensor bodyProperties.Sensor
 
-    static member private createBody3 attachBodyShape (bodyProperties : BodyProperties) gravity =
+    static member private createBody3 attachBodyShape sourceId (bodyProperties : BodyProperties) physicsEngine =
         let massAccumulator = ref 0.0f
-        use compoundShape = new CompoundShape ()
+        let compoundShape = new CompoundShape ()
         do attachBodyShape bodyProperties compoundShape massAccumulator
-        use motionState = new DefaultMotionState (Matrix4x4.CreateFromTrs (bodyProperties.Center, bodyProperties.Rotation, v3One))
+        let motionState = new DefaultMotionState (Matrix4x4.CreateFromTrs (bodyProperties.Center, bodyProperties.Rotation, v3One))
         use constructionInfo = new RigidBodyConstructionInfo (massAccumulator.Value, motionState, compoundShape)
         let body = new RigidBody (constructionInfo)
-        BulletPhysicsEngine.configureBodyProperties bodyProperties body gravity
+        do BulletPhysicsEngine.configureBodyProperties bodyProperties body physicsEngine.PhysicsContext.Gravity
+        do physicsEngine.PhysicsContext.AddRigidBody body
+        if not (physicsEngine.Bodies.TryAdd ({ SourceId = sourceId; CorrelationId = bodyProperties.BodyId }, (bodyProperties.GravityScale, body))) then
+            Log.debug ("Could not add body via '" + scstring bodyProperties + "'.")
 
-    static member private createBody4 bodyShape bodyProperties (bodySource : BodySourceInternal) gravity =
+    static member private createBody4 bodyShape bodyProperties (bodySource : BodySourceInternal) physicsEngine =
         BulletPhysicsEngine.createBody3
-            (fun props cs ma -> BulletPhysicsEngine.attachBodyShape bodySource.Simulant props bodyShape cs ma)
-            bodyProperties gravity
+            (fun ps cs ma -> BulletPhysicsEngine.attachBodyShape bodySource.Simulant ps bodyShape cs ma)
+            bodySource.BodyId bodyProperties physicsEngine
 
     static member private createBody (createBodyMessage : CreateBodyMessage) physicsEngine =
         let sourceSimulant = createBodyMessage.SourceSimulant
         let bodyProperties = createBodyMessage.BodyProperties
         let bodySource = { Simulant = sourceSimulant; BodyId = bodyProperties.BodyId }
-        BulletPhysicsEngine.createBody4 bodyProperties.BodyShape bodyProperties bodySource physicsEngine.PhysicsContext.Gravity
+        BulletPhysicsEngine.createBody4 bodyProperties.BodyShape bodyProperties bodySource physicsEngine
 
     static member private createBodies (createBodiesMessage : CreateBodiesMessage) physicsEngine =
         List.iter
@@ -193,7 +201,10 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
         //| ApplyBodyLinearImpulseMessage applyBodyLinearImpulseMessage -> BulletPhysicsEngine.applyBodyLinearImpulse applyBodyLinearImpulseMessage physicsEngine
         //| ApplyBodyForceMessage applyBodyForceMessage -> BulletPhysicsEngine.applyBodyForce applyBodyForceMessage physicsEngine
         //| ApplyBodyTorqueMessage applyBodyTorqueMessage -> BulletPhysicsEngine.applyBodyTorque applyBodyTorqueMessage physicsEngine
-        | SetGravityMessage gravity -> physicsEngine.PhysicsContext.Gravity <- gravity
+        | SetGravityMessage gravity ->
+            physicsEngine.PhysicsContext.Gravity <- gravity
+            for (gravityScale, body) in physicsEngine.Bodies.Values do
+                body.Gravity <- gravityScale * gravity
         | RebuildPhysicsHackMessage ->
             physicsEngine.RebuildingHack <- true
             physicsEngine.PhysicsContext.Clear ()
@@ -212,21 +223,16 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
             ignore result
 
     static member private createIntegrationMessages physicsEngine =
-        let bodySourceData = physicsEngine.BodySourceData
-        let bodies = physicsEngine.PhysicsContext.Bodies
-        let bodiesActive = bodies.ActiveSet
-        for i in 0 .. bodiesActive.Count do
-            let bodyHandle = bodiesActive.IndexToHandle.[i]
-            let body = bodies.[bodyHandle]
-            if body.Awake then
-                let bodySource = bodySourceData.[0].[bodyHandle].BodySourceInternalObj :?> BodySourceInternal
+        for (_, body) in physicsEngine.Bodies.Values do
+            let asleep = int body.ActivationState &&& int ActivationState.IslandSleeping <> 0
+            if not asleep then
                 let bodyTransformMessage =
                     BodyTransformMessage
-                        { BodySource = bodySource
-                          Center = body.Pose.Position
-                          Rotation = body.Pose.Orientation
-                          LinearVelocity = body.Velocity.Linear
-                          AngularVelocity = body.Velocity.Angular }
+                        { BodySource = body.UserObject :?> BodySourceInternal
+                          Center = body.MotionState.WorldTransform.Translation
+                          Rotation = body.MotionState.WorldTransform.Rotation
+                          LinearVelocity = body.LinearVelocity
+                          AngularVelocity = body.AngularVelocity }
                 physicsEngine.IntegrationMessages.Enqueue bodyTransformMessage
 
         static member private handlePhysicsMessages physicsMessages physicsEngine = () // TODO.
