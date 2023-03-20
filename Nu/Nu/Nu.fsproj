@@ -188,6 +188,9 @@
 		<None Include="nvtt.dll">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</None>
+		<None Include="libbulletc.dll">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
 		<None Include="libassimp.so">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</None>
@@ -211,6 +214,9 @@
 	<ItemGroup>
 		<Reference Include="AssimpNet">
 			<HintPath>..\Nu.Dependencies\AssimpNet.09-26-22\netstandard1.3\AssimpNet.dll</HintPath>
+		</Reference>
+		<Reference Include="BulletSharpPInvoke">
+			<HintPath>..\Nu.Dependencies\BulletSharpPInvoke\netstandard2.1\BulletSharp.dll</HintPath>
 		</Reference>
 		<Reference Include="OpenGL.Net">
 			<HintPath>..\Nu.Dependencies\OpenGL.NET.0.8.4\lib\netcoreapp2.2\OpenGL.Net.dll</HintPath>
