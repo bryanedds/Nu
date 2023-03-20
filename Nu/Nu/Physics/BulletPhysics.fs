@@ -293,20 +293,20 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
                           AngularVelocity = body.AngularVelocity }
                 physicsEngine.IntegrationMessages.Enqueue bodyTransformMessage
 
-        static member private handlePhysicsMessages physicsMessages physicsEngine = () // TODO.
+        static member private handlePhysicsMessages physicsMessages physicsEngine = ()
 
     interface PhysicsEngine with
 
-        member physicsEngine.BodyExists physicsId = Unchecked.defaultof<_> // TODO.
-        member physicsEngine.GetBodyContactNormals physicsId = Unchecked.defaultof<_> // TODO.
-        member physicsEngine.GetBodyLinearVelocity physicsId = Unchecked.defaultof<_> // TODO.
-        member physicsEngine.GetBodyToGroundContactNormals physicsId = Unchecked.defaultof<_> // TODO.
-        member physicsEngine.GetBodyToGroundContactNormalOpt physicsId = Unchecked.defaultof<_> // TODO.
-        member physicsEngine.GetBodyToGroundContactTangentOpt physicsId = Unchecked.defaultof<_> // TODO.
-        member physicsEngine.IsBodyOnGround physicsId = Unchecked.defaultof<_> // TODO.
-        member physicsEngine.PopMessages () = Unchecked.defaultof<_> // TODO.
-        member physicsEngine.ClearMessages () = Unchecked.defaultof<_> // TODO.
-        member physicsEngine.EnqueueMessage physicsMessage = Unchecked.defaultof<_> // TODO.
+        member physicsEngine.BodyExists physicsId = Unchecked.defaultof<_>
+        member physicsEngine.GetBodyContactNormals physicsId = Unchecked.defaultof<_>
+        member physicsEngine.GetBodyLinearVelocity physicsId = Unchecked.defaultof<_>
+        member physicsEngine.GetBodyToGroundContactNormals physicsId = Unchecked.defaultof<_>
+        member physicsEngine.GetBodyToGroundContactNormalOpt physicsId = Unchecked.defaultof<_>
+        member physicsEngine.GetBodyToGroundContactTangentOpt physicsId = Unchecked.defaultof<_>
+        member physicsEngine.IsBodyOnGround physicsId = Unchecked.defaultof<_>
+        member physicsEngine.PopMessages () = Unchecked.defaultof<_>
+        member physicsEngine.ClearMessages () = Unchecked.defaultof<_>
+        member physicsEngine.EnqueueMessage physicsMessage = Unchecked.defaultof<_>
 
         member physicsEngine.Integrate stepTime physicsMessages =
             BulletPhysicsEngine.handlePhysicsMessages physicsMessages physicsEngine
