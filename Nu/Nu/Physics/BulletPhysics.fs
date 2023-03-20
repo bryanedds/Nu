@@ -79,8 +79,6 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
         | ContinuousDetection cd ->
             object.CcdMotionThreshold <- cd.ContinuousMotionThreshold
             object.CcdSweptSphereRadius <- cd.SweptSphereRadius
-        //body.SetCollisionCategories (enum<Category> bodyProperties.CollisionCategories)
-        //body.SetCollidesWith (enum<Category> bodyProperties.CollisionMask)
         match bodyProperties.BodyType with
         | Static ->
             object.CollisionFlags <- object.CollisionFlags ||| CollisionFlags.StaticObject
