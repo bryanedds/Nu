@@ -213,13 +213,26 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
                 BulletPhysicsEngine.createBody createBodyMessage physicsEngine)
             createBodiesMessage.BodiesProperties
 
+    static member private createJoint (createJointMessage : CreateJointMessage) physicsEngine =
+        match createJointMessage.JointProperties.JointDevice with
+        | JointEmpty ->
+            ()
+        | JointAngle jointAngle ->
+            match (physicsEngine.Bodies.TryGetValue jointAngle.TargetId, physicsEngine.Bodies.TryGetValue jointAngle.TargetId2) with
+            | ((true, (_, body)), (true, (_, body2))) ->
+                let joint = new HingeConstraint (body, body2, jointAngle.Anchor, jointAngle.Anchor2, jointAngle.Axis, jointAngle.Axis2)
+                joint.SetLimit (-jointAngle.AngleLimit * 0.5f, jointAngle.AngleLimit * 0.5f, jointAngle.Softness, jointAngle.BiasFactor)
+                joint.BreakingImpulseThreshold <- jointAngle.BreakImpulseThreshold
+            | (_, _) -> Log.debug "Could not set create a joint for one or more non-existent bodies."
+        | _ -> failwithnie ()
+
     static member private handlePhysicsMessage physicsEngine physicsMessage =
         match physicsMessage with
         | CreateBodyMessage createBodyMessage -> BulletPhysicsEngine.createBody createBodyMessage physicsEngine
         | CreateBodiesMessage createBodiesMessage -> BulletPhysicsEngine.createBodies createBodiesMessage physicsEngine
         //| DestroyBodyMessage destroyBodyMessage -> BulletPhysicsEngine.destroyBody destroyBodyMessage physicsEngine
         //| DestroyBodiesMessage destroyBodiesMessage -> BulletPhysicsEngine.destroyBodies destroyBodiesMessage physicsEngine
-        //| CreateJointMessage createJointMessage -> BulletPhysicsEngine.createJoint createJointMessage physicsEngine
+        | CreateJointMessage createJointMessage -> BulletPhysicsEngine.createJoint createJointMessage physicsEngine
         //| CreateJointsMessage createJointsMessage -> BulletPhysicsEngine.createJoints createJointsMessage physicsEngine
         //| DestroyJointMessage destroyJointMessage -> BulletPhysicsEngine.destroyJoint destroyJointMessage physicsEngine
         //| DestroyJointsMessage destroyJointsMessage -> BulletPhysicsEngine.destroyJoints destroyJointsMessage physicsEngine
