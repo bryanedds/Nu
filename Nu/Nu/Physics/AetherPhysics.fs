@@ -399,8 +399,8 @@ type [<ReferenceEquality>] AetherPhysicsEngine =
         | RebuildPhysicsHackMessage ->
             physicsEngine.RebuildingHack <- true
             physicsEngine.PhysicsContext.Clear ()
-            physicsEngine.Bodies.Clear ()
             physicsEngine.Joints.Clear ()
+            physicsEngine.Bodies.Clear ()
             physicsEngine.IntegrationMessages.Clear ()
 
     static member private handlePhysicsMessages physicsMessages physicsEngine =
