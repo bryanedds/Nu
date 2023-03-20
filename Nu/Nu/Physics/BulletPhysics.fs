@@ -198,8 +198,8 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
                 Log.debug ("Could not add body via '" + scstring bodyProperties + "'.")
 
     static member private createBody4 bodyShape bodyProperties (bodySource : BodySourceInternal) physicsEngine =
-        BulletPhysicsEngine.createBody3
-            (fun ps cs ma -> BulletPhysicsEngine.attachBodyShape bodySource.Simulant ps bodyShape cs ma)
+        BulletPhysicsEngine.createBody3 (fun ps cs ma ->
+            BulletPhysicsEngine.attachBodyShape bodySource.Simulant ps bodyShape cs ma)
             bodySource.BodyId bodyProperties physicsEngine
 
     static member private createBody (createBodyMessage : CreateBodyMessage) physicsEngine =
@@ -227,7 +227,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
             match (physicsEngine.Bodies.TryGetValue jointAngle.TargetId, physicsEngine.Bodies.TryGetValue jointAngle.TargetId2) with
             | ((true, (_, body)), (true, (_, body2))) ->
                 let hinge = new HingeConstraint (body, body2, jointAngle.Anchor, jointAngle.Anchor2, jointAngle.Axis, jointAngle.Axis2)
-                hinge.SetLimit (-jointAngle.AngleLimit * 0.5f, jointAngle.AngleLimit * 0.5f, jointAngle.Softness, jointAngle.BiasFactor)
+                hinge.SetLimit (jointAngle.AngleMin, jointAngle.AngleMax, jointAngle.Softness, jointAngle.BiasFactor)
                 hinge.BreakingImpulseThreshold <- jointAngle.BreakImpulseThreshold
                 physicsEngine.PhysicsContext.AddConstraint hinge
                 if not (physicsEngine.Constraints.TryAdd ({ SourceId = createJointMessage.SourceId; CorrelationId = jointProperties.JointId }, hinge)) then

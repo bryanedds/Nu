@@ -299,7 +299,7 @@ type [<ReferenceEquality>] AetherPhysicsEngine =
             match (physicsEngine.Bodies.TryGetValue jointAngle.TargetId, physicsEngine.Bodies.TryGetValue jointAngle.TargetId2) with
             | ((true, (_, body)), (true, (_, body2))) ->
                 let joint = JointFactory.CreateAngleJoint (physicsEngine.PhysicsContext, body, body2)
-                joint.TargetAngle <- -jointAngle.AngleLimit
+                joint.TargetAngle <- -(jointAngle.AngleMax - jointAngle.AngleMin)
                 joint.Softness <- jointAngle.Softness
                 joint.BiasFactor <- jointAngle.BiasFactor
                 joint.Breakpoint <- jointAngle.BreakImpulseThreshold
