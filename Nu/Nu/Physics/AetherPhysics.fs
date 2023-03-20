@@ -13,7 +13,7 @@ open Prime
 open Nu
 
 /// Tracks physics bodies by their PhysicsIds.
-type AetherBodyDictionary = Dictionary<PhysicsId, single * Dynamics.Body>
+type AetherBodyDictionary = Dictionary<PhysicsId, Vector3 * Dynamics.Body>
 
 /// Tracks physics joints by their PhysicsIds.
 type AetherJointDictionary = Dictionary<PhysicsId, Dynamics.Joints.Joint>
@@ -53,6 +53,13 @@ type [<ReferenceEquality>] AetherPhysicsEngine =
         | Static -> Dynamics.BodyType.Static
         | Kinematic -> Dynamics.BodyType.Kinematic
         | Dynamic -> Dynamics.BodyType.Dynamic
+
+    static member private toPhysicsDensity bodyWeight =
+        match bodyWeight with
+        | Density density -> density
+        | Mass _ ->
+            Log.debugOnce "Currently 2D physics only supports BodyWeight in terms of Density; using Density = 1.0f."
+            1.0f
 
     static member private handleCollision
         physicsEngine (bodyShape : Dynamics.Fixture) (bodyShape2 : Dynamics.Fixture) (contact : Dynamics.Contacts.Contact) =
@@ -102,7 +109,9 @@ type [<ReferenceEquality>] AetherPhysicsEngine =
 
     static member private configureBodyProperties (bodyProperties : BodyProperties) (body : Body) =
         body.Awake <- bodyProperties.Awake
+        body.SleepingAllowed <- not bodyProperties.AwakeAlways
         body.Enabled <- bodyProperties.Enabled
+        body.Position <- AetherPhysicsEngine.toPhysicsV2 bodyProperties.Center
         body.Rotation <- -bodyProperties.Rotation.RollPitchYaw.Z
         body.SetFriction bodyProperties.Friction
         body.SetRestitution bodyProperties.Restitution
@@ -111,7 +120,6 @@ type [<ReferenceEquality>] AetherPhysicsEngine =
         body.AngularVelocity <- bodyProperties.AngularVelocity.Z
         body.AngularDamping <- bodyProperties.AngularDamping
         body.FixedRotation <- bodyProperties.FixedRotation
-        body.Inertia <- bodyProperties.Inertia
         body.IgnoreGravity <- true // we do all gravity processing ourselves due to: https://github.com/tainicom/Aether.Physics2D/issues/85#issuecomment-716051707
         body.SetCollisionCategories (enum<Category> bodyProperties.CollisionCategories)
         body.SetCollidesWith (enum<Category> bodyProperties.CollisionMask)
@@ -119,14 +127,13 @@ type [<ReferenceEquality>] AetherPhysicsEngine =
         body.IgnoreCCD <- bodyProperties.IgnoreCCD
         body.IsBullet <- bodyProperties.Bullet
         body.SetIsSensor bodyProperties.Sensor
-        body.SleepingAllowed <- true
 
     static member private attachBoxBody sourceSimulant (bodyProperties : BodyProperties) (bodyBox : BodyBox) (body : Body) =
         let bodyShape =
             body.CreateRectangle
                 (AetherPhysicsEngine.toPhysicsPolygonDiameter bodyBox.Size.X,
                  AetherPhysicsEngine.toPhysicsPolygonDiameter bodyBox.Size.Y,
-                 bodyProperties.Density,
+                 AetherPhysicsEngine.toPhysicsDensity bodyProperties.BodyWeight,
                  AetherPhysicsEngine.toPhysicsV2 bodyBox.Center)
         bodyShape.Tag <-
             { Simulant = sourceSimulant
@@ -138,7 +145,7 @@ type [<ReferenceEquality>] AetherPhysicsEngine =
         let bodyShape =
             body.CreateCircle
                 (AetherPhysicsEngine.toPhysicsPolygonRadius bodySphere.Radius,
-                 bodyProperties.Density,
+                 AetherPhysicsEngine.toPhysicsDensity bodyProperties.BodyWeight,
                  AetherPhysicsEngine.toPhysicsV2 bodySphere.Center)
         bodyShape.Tag <-
             { Simulant = sourceSimulant
@@ -149,7 +156,7 @@ type [<ReferenceEquality>] AetherPhysicsEngine =
     static member private attachBodyCapsule sourceSimulant (bodyProperties : BodyProperties) (bodyCapsule : BodyCapsule) (body : Body) =
         let height = AetherPhysicsEngine.toPhysicsPolygonDiameter bodyCapsule.Height
         let endRadius = AetherPhysicsEngine.toPhysicsPolygonRadius bodyCapsule.Radius
-        let density = bodyProperties.Density
+        let density = AetherPhysicsEngine.toPhysicsDensity bodyProperties.BodyWeight
         let center = AetherPhysicsEngine.toPhysicsV2 bodyCapsule.Center
         let rectangle = Common.PolygonTools.CreateRectangle (endRadius * 0.9f, height * 0.5f, center, 0.0f) // scaled in the capsule's box to stop corner sticking.
         let list = List<Common.Vertices> ()
@@ -174,7 +181,7 @@ type [<ReferenceEquality>] AetherPhysicsEngine =
         let center = AetherPhysicsEngine.toPhysicsV2 bodyBoxRounded.Center
         let boxVerticalWidth = width - radius * 2.0f
         let boxHorizontalHeight = height - radius * 2.0f
-        let density = bodyProperties.Density
+        let density = AetherPhysicsEngine.toPhysicsDensity bodyProperties.BodyWeight
         let rectangleV = Common.PolygonTools.CreateRectangle (boxVerticalWidth * 0.5f, height * 0.5f * 0.9f, center, 0.0f) // scaled in height to stop corner sticking
         let rectangleH = Common.PolygonTools.CreateRectangle (width * 0.5f * 0.9f, boxHorizontalHeight * 0.5f, center, 0.0f) // scaled in width to stop corner sticking
         let list = List<Common.Vertices> ()
@@ -202,7 +209,10 @@ type [<ReferenceEquality>] AetherPhysicsEngine =
             bodyPolygon.Vertices |>
             Array.map (fun vertex -> vertex + bodyPolygon.Center) |>
             Array.map AetherPhysicsEngine.toPhysicsV2
-        let bodyShape = body.CreatePolygon (Common.Vertices vertices, bodyProperties.Density)
+        let bodyShape =
+            body.CreatePolygon
+                (Common.Vertices vertices,
+                 AetherPhysicsEngine.toPhysicsDensity bodyProperties.BodyWeight)
         bodyShape.Tag <-
             { Simulant = sourceSimulant
               BodyId = bodyProperties.BodyId
@@ -422,7 +432,7 @@ type [<ReferenceEquality>] AetherPhysicsEngine =
         for (gravityScale, body) in physicsEngine.Bodies.Values do
             if  body.BodyType = Dynamics.BodyType.Dynamic then
                 body.LinearVelocity <-
-                body.LinearVelocity + physicsStepAmount * gravityScale * physicsEngine.PhysicsContext.Gravity
+                body.LinearVelocity + physicsStepAmount * gravityScale.V2 * physicsEngine.PhysicsContext.Gravity
 
     /// Make a physics engine.
     static member make imperative gravity =

@@ -72,6 +72,15 @@ module BodyShapeProperties =
           CollisionMaskOpt = None
           SensorOpt = None }
 
+[<Syntax
+    ("Mass Density", "", "", "", "",
+     Constants.PrettyPrinter.DefaultThresholdMin,
+     Constants.PrettyPrinter.SimpleThresholdMax);
+     StructuralEquality; StructuralComparison>]
+type BodyWeight =
+    | Mass of single
+    | Density of single
+
 /// The shape of a physics body box.
 type BodyBox =
     { Center : Vector3
@@ -139,10 +148,11 @@ type BodyProperties =
       Center : Vector3
       Rotation : Quaternion
       BodyShape : BodyShape
+      BodyWeight : BodyWeight
       BodyType : BodyType
       Awake : bool
+      AwakeAlways : bool
       Enabled : bool
-      Density : single
       Friction : single
       Restitution : single
       LinearVelocity : Vector3
@@ -150,40 +160,12 @@ type BodyProperties =
       AngularVelocity : Vector3
       AngularDamping : single
       FixedRotation : bool
-      Inertia : single
-      GravityScale : single
+      GravityScale : Vector3
       CollisionCategories : int
       CollisionMask : int
       IgnoreCCD : bool
       Bullet : bool
       Sensor : bool }
-
-[<RequireQualifiedAccess>]
-module BodyProperties =
-
-    let empty =
-        { BodyId = 0UL
-          Center = v3Zero
-          Rotation = quatIdentity
-          BodyShape = BodyEmpty
-          BodyType = Dynamic
-          Awake = true
-          Enabled = true
-          Density = Constants.Physics.DensityDefault
-          Friction = 0.2f
-          Restitution = 0.0f
-          LinearVelocity = v3Zero
-          LinearDamping = 0.0f
-          AngularVelocity = v3Zero
-          AngularDamping = 0.0f
-          FixedRotation = false
-          Inertia = 0.0f
-          GravityScale = 1.0f
-          CollisionCategories = 1
-          CollisionMask = -1
-          IgnoreCCD = false
-          Bullet = false
-          Sensor = false }
 
 type JointAngle =
     { TargetId : PhysicsId
