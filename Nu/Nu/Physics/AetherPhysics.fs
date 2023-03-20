@@ -13,10 +13,10 @@ open Prime
 open Nu
 
 /// Tracks physics bodies by their PhysicsIds.
-type AetherBodyDictionary = Dictionary<PhysicsId, Vector3 * Dynamics.Body>
+type internal AetherBodyDictionary = Dictionary<PhysicsId, Vector3 * Dynamics.Body>
 
 /// Tracks physics joints by their PhysicsIds.
-type AetherJointDictionary = Dictionary<PhysicsId, Dynamics.Joints.Joint>
+type internal AetherJointDictionary = Dictionary<PhysicsId, Dynamics.Joints.Joint>
 
 /// The Aether 2d implementation of PhysicsEngine.
 type [<ReferenceEquality>] AetherPhysicsEngine =
