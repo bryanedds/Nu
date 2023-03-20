@@ -73,16 +73,24 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
         body.Restitution <- bodyProperties.Restitution
         //body.FixedRotation <- bodyProperties.FixedRotation
         match bodyProperties.CollisionDetection with
-        | Discontinuous ->
+        | DiscontinuousDetection ->
             body.CcdMotionThreshold <- 0.0f
             body.CcdSweptSphereRadius <- 0.0f
-        | Continuous ccd ->
-            body.CcdMotionThreshold <- ccd.ContinuousMotionThreshold
-            body.CcdSweptSphereRadius <- ccd.SweptSphereRadius
+        | ContinuousDetection cd ->
+            body.CcdMotionThreshold <- cd.ContinuousMotionThreshold
+            body.CcdSweptSphereRadius <- cd.SweptSphereRadius
         //body.SetCollisionCategories (enum<Category> bodyProperties.CollisionCategories)
         //body.SetCollidesWith (enum<Category> bodyProperties.CollisionMask)
-        //body.BodyType <- bodyProperties.BodyType
-        //body.IgnoreCCD <- bodyProperties.IgnoreCCD
+        match bodyProperties.BodyType with
+        | Static ->
+            body.CollisionFlags <- body.CollisionFlags ||| CollisionFlags.StaticObject
+            body.CollisionFlags <- body.CollisionFlags &&& ~~~CollisionFlags.KinematicObject
+        | Dynamic ->
+            body.CollisionFlags <- body.CollisionFlags &&& ~~~CollisionFlags.StaticObject
+            body.CollisionFlags <- body.CollisionFlags &&& ~~~CollisionFlags.KinematicObject
+        | Kinematic ->
+            body.CollisionFlags <- body.CollisionFlags ||| CollisionFlags.KinematicObject
+            body.CollisionFlags <- body.CollisionFlags &&& ~~~CollisionFlags.StaticObject
 
     static member private configureBodyProperties (bodyProperties : BodyProperties) (body : RigidBody) gravity =
         BulletPhysicsEngine.configureObjectProperties bodyProperties body
