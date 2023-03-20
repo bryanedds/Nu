@@ -278,21 +278,20 @@ module TmxMap =
               BodyShape = BodyShapes (getBodyShapes tileMapDescriptor)
               BodyType = BodyType.Static
               Awake = false
+              AwakeAlways = false
               Enabled = enabled
-              Density = Constants.Physics.DensityDefault
               Friction = friction
               Restitution = restitution
               LinearVelocity = v3Zero
               LinearDamping = 0.0f
               AngularVelocity = v3Zero
               AngularDamping = 0.0f
-              FixedRotation = true
-              Inertia = 0.0f
-              GravityScale = 0.0f
+              AngularFactor = v3One
+              Substance = Density 1.0f
+              GravityOverrideOpt = Some v3Zero
+              CollisionDetection = Discontinuous
               CollisionCategories = Physics.categorizeCollisionMask collisionCategories
               CollisionMask = Physics.categorizeCollisionMask collisionMask
-              IgnoreCCD = false
-              Bullet = false
               Sensor = false }
         bodyProperties
 

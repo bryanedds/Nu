@@ -72,18 +72,18 @@ module BodyShapeProperties =
           CollisionMaskOpt = None
           SensorOpt = None }
 
-/// Describes the weight of a body either in terms of mass or density.
+/// Describes the substantial nature of a body in terms of mass or density.
 [<Syntax
     ("Mass Density", "", "", "", "",
      Constants.PrettyPrinter.DefaultThresholdMin,
      Constants.PrettyPrinter.SimpleThresholdMax);
      StructuralEquality; StructuralComparison; Struct>]
-type BodyWeight =
+type Substance =
     | Mass of Mass : single
     | Density of Density : single
 
-/// Describes the attributes of CCD.
-type [<Struct>] ContinuousDetection =
+/// Describes the attributes of continuous collision detection.
+type [<Struct>] Continuous =
     { ContinuousMotionThreshold : single
       SweptSphereRadius : single }
 
@@ -94,8 +94,8 @@ type [<Struct>] ContinuousDetection =
      Constants.PrettyPrinter.SimpleThresholdMax);
      StructuralEquality; NoComparison; Struct>]
 type CollisionDetection =
-    | DiscontinuousDetection
-    | ContinuousDetection of ContinuousDetection
+    | Discontinuous
+    | Continuous of Continuous
 
 /// The shape of a physics body box.
 type BodyBox =
@@ -165,7 +165,6 @@ type BodyProperties =
       Rotation : Quaternion
       BodyType : BodyType
       BodyShape : BodyShape
-      BodyWeight : BodyWeight
       Awake : bool
       AwakeAlways : bool
       Enabled : bool
@@ -175,8 +174,9 @@ type BodyProperties =
       LinearDamping : single
       AngularVelocity : Vector3
       AngularDamping : single
-      FixedRotation : bool
-      GravityOpt : Vector3 option
+      AngularFactor : Vector3
+      Substance : Substance
+      GravityOverrideOpt : Vector3 option
       CollisionDetection : CollisionDetection
       CollisionCategories : int
       CollisionMask : int

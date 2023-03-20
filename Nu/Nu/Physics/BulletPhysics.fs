@@ -71,14 +71,13 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
         else object.ActivationState <- object.ActivationState &&& ~~~ActivationState.DisableSimulation
         object.Friction <- bodyProperties.Friction
         object.Restitution <- bodyProperties.Restitution
-        //body.FixedRotation <- bodyProperties.FixedRotation
         match bodyProperties.CollisionDetection with
-        | DiscontinuousDetection ->
+        | Discontinuous ->
             object.CcdMotionThreshold <- 0.0f
             object.CcdSweptSphereRadius <- 0.0f
-        | ContinuousDetection cd ->
-            object.CcdMotionThreshold <- cd.ContinuousMotionThreshold
-            object.CcdSweptSphereRadius <- cd.SweptSphereRadius
+        | Continuous continuous ->
+            object.CcdMotionThreshold <- continuous.ContinuousMotionThreshold
+            object.CcdSweptSphereRadius <- continuous.SweptSphereRadius
         match bodyProperties.BodyType with
         | Static ->
             object.CollisionFlags <- object.CollisionFlags ||| CollisionFlags.StaticObject
@@ -95,8 +94,9 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
         body.MotionState.WorldTransform <- Matrix4x4.CreateFromTrs (bodyProperties.Center, bodyProperties.Rotation, v3One)
         body.LinearVelocity <- bodyProperties.LinearVelocity
         body.AngularVelocity <- bodyProperties.AngularVelocity
+        body.AngularFactor <- bodyProperties.AngularFactor
         body.SetDamping (bodyProperties.LinearDamping, bodyProperties.AngularDamping)
-        body.Gravity <- match bodyProperties.GravityOpt with Some gravity -> gravity | None -> gravity
+        body.Gravity <- match bodyProperties.GravityOverrideOpt with Some gravityOverride -> gravityOverride | None -> gravity
 
     static member private attachBodyBox sourceSimulant (bodyProperties : BodyProperties) (bodyBox : BodyBox) (compoundShape : CompoundShape) (massAccumulator : single ref) =
         let box = new BoxShape (bodyBox.Size * 0.5f)
@@ -106,7 +106,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
               BodyId = bodyProperties.BodyId
               ShapeId = match bodyBox.PropertiesOpt with Some p -> p.BodyShapeId | None -> 0UL }
         let mass =
-            match bodyProperties.BodyWeight with
+            match bodyProperties.Substance with
             | Density density ->
                 let volume = bodyBox.Size.X * bodyBox.Size.Y * bodyBox.Size.Z
                 volume * density
@@ -182,7 +182,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
             let body = new RigidBody (constructionInfo)
             BulletPhysicsEngine.configureBodyProperties bodyProperties body physicsEngine.PhysicsContext.Gravity
             physicsEngine.PhysicsContext.AddRigidBody (body, bodyProperties.CollisionCategories, bodyProperties.CollisionMask)
-            if not (physicsEngine.Bodies.TryAdd ({ SourceId = sourceId; CorrelationId = bodyProperties.BodyId }, (bodyProperties.GravityOpt, body))) then
+            if not (physicsEngine.Bodies.TryAdd ({ SourceId = sourceId; CorrelationId = bodyProperties.BodyId }, (bodyProperties.GravityOverrideOpt, body))) then
                 Log.debug ("Could not add body via '" + scstring bodyProperties + "'.")
         else
             let ghost = new GhostObject ()
@@ -234,9 +234,9 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
         //| ApplyBodyTorqueMessage applyBodyTorqueMessage -> BulletPhysicsEngine.applyBodyTorque applyBodyTorqueMessage physicsEngine
         | SetGravityMessage gravity ->
             physicsEngine.PhysicsContext.Gravity <- gravity
-            for (gravityOpt, body) in physicsEngine.Bodies.Values do
-                match gravityOpt with
-                | Some gravity -> body.Gravity <- gravity
+            for (gravityOverrideOpt, body) in physicsEngine.Bodies.Values do
+                match gravityOverrideOpt with
+                | Some gravityOverride -> body.Gravity <- gravityOverride
                 | None -> body.Gravity <- gravity
         | RebuildPhysicsHackMessage ->
             physicsEngine.RebuildingHack <- true
@@ -274,16 +274,16 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
 
     interface PhysicsEngine with
 
-        member physicsEngine.BodyExists physicsId = () // TODO.
-        member physicsEngine.GetBodyContactNormals physicsId = () // TODO.
-        member physicsEngine.GetBodyLinearVelocity physicsId = () // TODO.
-        member physicsEngine.GetBodyToGroundContactNormals physicsId = () // TODO.
-        member physicsEngine.GetBodyToGroundContactNormalOpt physicsId = () // TODO.
-        member physicsEngine.GetBodyToGroundContactTangentOpt physicsId = () // TODO.
-        member physicsEngine.IsBodyOnGround physicsId = () // TODO.
-        member physicsEngine.PopMessages () = () // TODO.
-        member physicsEngine.ClearMessages () = () // TODO.
-        member physicsEngine.EnqueueMessage physicsMessage = () // TODO.
+        member physicsEngine.BodyExists physicsId = Unchecked.defaultof<_> // TODO.
+        member physicsEngine.GetBodyContactNormals physicsId = Unchecked.defaultof<_> // TODO.
+        member physicsEngine.GetBodyLinearVelocity physicsId = Unchecked.defaultof<_> // TODO.
+        member physicsEngine.GetBodyToGroundContactNormals physicsId = Unchecked.defaultof<_> // TODO.
+        member physicsEngine.GetBodyToGroundContactNormalOpt physicsId = Unchecked.defaultof<_> // TODO.
+        member physicsEngine.GetBodyToGroundContactTangentOpt physicsId = Unchecked.defaultof<_> // TODO.
+        member physicsEngine.IsBodyOnGround physicsId = Unchecked.defaultof<_> // TODO.
+        member physicsEngine.PopMessages () = Unchecked.defaultof<_> // TODO.
+        member physicsEngine.ClearMessages () = Unchecked.defaultof<_> // TODO.
+        member physicsEngine.EnqueueMessage physicsMessage = Unchecked.defaultof<_> // TODO.
 
         member physicsEngine.Integrate stepTime physicsMessages =
             BulletPhysicsEngine.handlePhysicsMessages physicsMessages physicsEngine
