@@ -189,7 +189,8 @@ type JointAngle =
       Anchor2 : Vector3
       Axis : Vector3
       Axis2 : Vector3
-      AngleLimit : single
+      AngleMin : single
+      AngleMax : single
       Softness : single
       BiasFactor : single
       BreakImpulseThreshold : single }
