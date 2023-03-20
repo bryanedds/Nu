@@ -83,19 +83,19 @@ type BodyWeight =
     | Density of Density : single
 
 /// Describes the attributes of CCD.
-type [<Struct>] ContinuousCollisionDetection =
+type [<Struct>] ContinuousDetection =
     { ContinuousMotionThreshold : single
       SweptSphereRadius : single }
 
 /// Describe the form of collision detection to use.
 [<Syntax
-    ("Discontinuous Continuous", "", "", "", "",
+    ("DiscontinuousDetection ContinuousDetection", "", "", "", "",
      Constants.PrettyPrinter.DefaultThresholdMin,
      Constants.PrettyPrinter.SimpleThresholdMax);
      StructuralEquality; NoComparison; Struct>]
 type CollisionDetection =
-    | Discontinuous
-    | Continuous of ContinuousCollisionDetection
+    | DiscontinuousDetection
+    | ContinuousDetection of ContinuousDetection
 
 /// The shape of a physics body box.
 type BodyBox =
