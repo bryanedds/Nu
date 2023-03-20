@@ -72,6 +72,7 @@ module BodyShapeProperties =
           CollisionMaskOpt = None
           SensorOpt = None }
 
+/// Describes the weight of a body either in terms of mass or density.
 [<Syntax
     ("Mass Density", "", "", "", "",
      Constants.PrettyPrinter.DefaultThresholdMin,
@@ -80,6 +81,21 @@ module BodyShapeProperties =
 type BodyWeight =
     | Mass of Mass : single
     | Density of Density : single
+
+/// Describes the attributes of CCD.
+type [<Struct>] ContinuousCollisionDetection =
+    { ContinuousMotionThreshold : single
+      SweptSphereRadius : single }
+
+/// Describe the form of collision detection to use.
+[<Syntax
+    ("Discontinuous Continuous", "", "", "", "",
+     Constants.PrettyPrinter.DefaultThresholdMin,
+     Constants.PrettyPrinter.SimpleThresholdMax);
+     StructuralEquality; NoComparison; Struct>]
+type CollisionDetection =
+    | Discontinuous
+    | Continuous of ContinuousCollisionDetection
 
 /// The shape of a physics body box.
 type BodyBox =
@@ -161,9 +177,9 @@ type BodyProperties =
       AngularDamping : single
       FixedRotation : bool
       GravityOpt : Vector3 option
+      CollisionDetection : CollisionDetection
       CollisionCategories : int
       CollisionMask : int
-      IgnoreCCD : bool
       Sensor : bool }
 
 type JointAngle =

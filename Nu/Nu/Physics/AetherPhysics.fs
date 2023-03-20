@@ -121,10 +121,10 @@ type [<ReferenceEquality>] AetherPhysicsEngine =
         body.AngularDamping <- bodyProperties.AngularDamping
         body.FixedRotation <- bodyProperties.FixedRotation
         body.IgnoreGravity <- true // we do all gravity processing ourselves due to: https://github.com/tainicom/Aether.Physics2D/issues/85#issuecomment-716051707
+        body.IgnoreCCD <- match bodyProperties.CollisionDetection with Discontinuous -> true | Continuous _ -> false
         body.SetCollisionCategories (enum<Category> bodyProperties.CollisionCategories)
         body.SetCollidesWith (enum<Category> bodyProperties.CollisionMask)
         body.BodyType <- AetherPhysicsEngine.toPhysicsBodyType bodyProperties.BodyType
-        body.IgnoreCCD <- bodyProperties.IgnoreCCD
         body.SetIsSensor bodyProperties.Sensor
 
     static member private attachBoxBody sourceSimulant (bodyProperties : BodyProperties) (bodyBox : BodyBox) (body : Body) =
