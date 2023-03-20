@@ -11,7 +11,7 @@ open Prime
 open Nu
 
 /// Tracks physics bodies by their PhysicsIds.
-type internal BulletBodyDictionary = Dictionary<PhysicsId, Vector3 * RigidBody>
+type internal BulletBodyDictionary = OrderedDictionary<PhysicsId, Vector3 * RigidBody>
 
 /// The BulletPhysics 3d implementation of PhysicsEngine.
 type [<ReferenceEquality>] BulletPhysicsEngine =
