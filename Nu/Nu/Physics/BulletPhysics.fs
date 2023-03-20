@@ -262,12 +262,12 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
                 | None -> body.Gravity <- gravity
         | RebuildPhysicsHackMessage ->
             physicsEngine.RebuildingHack <- true
-            for (_, body) in physicsEngine.Bodies.Values do physicsEngine.PhysicsContext.RemoveRigidBody body
-            physicsEngine.Bodies.Clear ()
-            for ghost in physicsEngine.Ghosts.Values do physicsEngine.PhysicsContext.RemoveCollisionObject ghost
-            physicsEngine.Ghosts.Clear ()
             for constrain in physicsEngine.Constraints.Values do physicsEngine.PhysicsContext.RemoveConstraint constrain
             physicsEngine.Constraints.Clear ()
+            for ghost in physicsEngine.Ghosts.Values do physicsEngine.PhysicsContext.RemoveCollisionObject ghost
+            physicsEngine.Ghosts.Clear ()
+            for (_, body) in physicsEngine.Bodies.Values do physicsEngine.PhysicsContext.RemoveRigidBody body
+            physicsEngine.Bodies.Clear ()
             physicsEngine.IntegrationMessages.Clear ()
 
     static member private integrate stepTime physicsEngine =
