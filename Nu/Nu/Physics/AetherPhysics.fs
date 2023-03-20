@@ -291,7 +291,8 @@ type [<ReferenceEquality>] AetherPhysicsEngine =
             destroyBodiesMessage.PhysicsIds
 
     static member private createJoint (createJointMessage : CreateJointMessage) physicsEngine =
-        match createJointMessage.JointProperties.JointDevice with
+        let jointProperties = createJointMessage.JointProperties
+        match jointProperties.JointDevice with
         | JointEmpty ->
             ()
         | JointAngle jointAngle ->

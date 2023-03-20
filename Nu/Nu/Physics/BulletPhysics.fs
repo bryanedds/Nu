@@ -13,8 +13,11 @@ open Nu
 /// Tracks Bullet physics bodies by their PhysicsIds.
 type internal BulletBodyDictionary = OrderedDictionary<PhysicsId, Vector3 option * RigidBody>
 
-/// Tracks Bullet physics bodies by their PhysicsIds.
+/// Tracks Bullet physics ghosts by their PhysicsIds.
 type internal BulletGhostDictionary = OrderedDictionary<PhysicsId, GhostObject>
+
+/// Tracks Bullet physics constraints by their PhysicsIds.
+type internal BulletConstraintDictionary = OrderedDictionary<PhysicsId, TypedConstraint>
 
 /// The BulletPhysics 3d implementation of PhysicsEngine.
 type [<ReferenceEquality>] BulletPhysicsEngine =
@@ -22,6 +25,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
         { PhysicsContext : DynamicsWorld
           Bodies : BulletBodyDictionary
           Ghosts : BulletGhostDictionary
+          Constraints : BulletConstraintDictionary
           CollisionConfiguration : CollisionConfiguration
           PhysicsDispatcher : Dispatcher
           BroadPhaseInterface : BroadphaseInterface
@@ -41,6 +45,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
         { PhysicsContext = world
           Bodies = OrderedDictionary HashIdentity.Structural
           Ghosts = OrderedDictionary HashIdentity.Structural
+          Constraints = OrderedDictionary HashIdentity.Structural
           CollisionConfiguration = collisionConfiguration
           PhysicsDispatcher = physicsDispatcher
           BroadPhaseInterface = broadPhaseInterface
@@ -214,15 +219,19 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
             createBodiesMessage.BodiesProperties
 
     static member private createJoint (createJointMessage : CreateJointMessage) physicsEngine =
-        match createJointMessage.JointProperties.JointDevice with
+        let jointProperties = createJointMessage.JointProperties
+        match jointProperties.JointDevice with
         | JointEmpty ->
             ()
         | JointAngle jointAngle ->
             match (physicsEngine.Bodies.TryGetValue jointAngle.TargetId, physicsEngine.Bodies.TryGetValue jointAngle.TargetId2) with
             | ((true, (_, body)), (true, (_, body2))) ->
-                let joint = new HingeConstraint (body, body2, jointAngle.Anchor, jointAngle.Anchor2, jointAngle.Axis, jointAngle.Axis2)
-                joint.SetLimit (-jointAngle.AngleLimit * 0.5f, jointAngle.AngleLimit * 0.5f, jointAngle.Softness, jointAngle.BiasFactor)
-                joint.BreakingImpulseThreshold <- jointAngle.BreakImpulseThreshold
+                let hinge = new HingeConstraint (body, body2, jointAngle.Anchor, jointAngle.Anchor2, jointAngle.Axis, jointAngle.Axis2)
+                hinge.SetLimit (-jointAngle.AngleLimit * 0.5f, jointAngle.AngleLimit * 0.5f, jointAngle.Softness, jointAngle.BiasFactor)
+                hinge.BreakingImpulseThreshold <- jointAngle.BreakImpulseThreshold
+                physicsEngine.PhysicsContext.AddConstraint hinge
+                if not (physicsEngine.Constraints.TryAdd ({ SourceId = createJointMessage.SourceId; CorrelationId = jointProperties.JointId }, hinge)) then
+                    Log.debug ("Could not add joint via '" + scstring jointProperties + "'.")
             | (_, _) -> Log.debug "Could not set create a joint for one or more non-existent bodies."
         | _ -> failwithnie ()
 
@@ -253,11 +262,12 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
                 | None -> body.Gravity <- gravity
         | RebuildPhysicsHackMessage ->
             physicsEngine.RebuildingHack <- true
-            for (_, body) in physicsEngine.Bodies.Values do
-                physicsEngine.PhysicsContext.RemoveRigidBody body
-            for ghost in physicsEngine.Ghosts.Values do
-                physicsEngine.PhysicsContext.RemoveCollisionObject ghost
+            for (_, body) in physicsEngine.Bodies.Values do physicsEngine.PhysicsContext.RemoveRigidBody body
             physicsEngine.Bodies.Clear ()
+            for ghost in physicsEngine.Ghosts.Values do physicsEngine.PhysicsContext.RemoveCollisionObject ghost
+            physicsEngine.Ghosts.Clear ()
+            for constrain in physicsEngine.Constraints.Values do physicsEngine.PhysicsContext.RemoveConstraint constrain
+            physicsEngine.Constraints.Clear ()
             physicsEngine.IntegrationMessages.Clear ()
 
     static member private integrate stepTime physicsEngine =
