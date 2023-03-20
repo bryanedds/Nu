@@ -81,7 +81,7 @@ type [<ReferenceEquality>] AetherPhysicsEngine =
         let integrationMessage = BodySeparationMessage bodySeparationMessage
         physicsEngine.IntegrationMessages.Add integrationMessage
 
-    static member private getBodyContacts physicsId physicsEngine =
+    static member private getBodyContacts (physicsId : PhysicsId) physicsEngine =
         let (_, body) = physicsEngine.Bodies.[physicsId]
         let contacts = List<Contact> ()
         let mutable current = body.ContactList
