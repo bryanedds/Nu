@@ -16,6 +16,9 @@ type internal BulletBodyDictionary = OrderedDictionary<PhysicsId, Vector3 option
 /// Tracks Bullet physics ghosts by their PhysicsIds.
 type internal BulletGhostDictionary = OrderedDictionary<PhysicsId, GhostObject>
 
+/// Tracks CollisionObject physics ghosts by their PhysicsIds.
+type internal BulletCollisionObjectDictionary = OrderedDictionary<PhysicsId, CollisionObject>
+
 /// Tracks Bullet physics constraints by their PhysicsIds.
 type internal BulletConstraintDictionary = OrderedDictionary<PhysicsId, TypedConstraint>
 
@@ -23,9 +26,10 @@ type internal BulletConstraintDictionary = OrderedDictionary<PhysicsId, TypedCon
 type [<ReferenceEquality>] BulletPhysicsEngine =
     private
         { PhysicsContext : DynamicsWorld
+          Constraints : BulletConstraintDictionary
           Bodies : BulletBodyDictionary
           Ghosts : BulletGhostDictionary
-          Constraints : BulletConstraintDictionary
+          CollisionObjects : BulletCollisionObjectDictionary
           CollisionConfiguration : CollisionConfiguration
           PhysicsDispatcher : Dispatcher
           BroadPhaseInterface : BroadphaseInterface
@@ -43,9 +47,10 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
         let world = new DiscreteDynamicsWorld (physicsDispatcher, broadPhaseInterface, constraintSolver, collisionConfiguration)
         let integrationMessages = ConcurrentQueue ()
         { PhysicsContext = world
+          Constraints = OrderedDictionary HashIdentity.Structural
           Bodies = OrderedDictionary HashIdentity.Structural
           Ghosts = OrderedDictionary HashIdentity.Structural
-          Constraints = OrderedDictionary HashIdentity.Structural
+          CollisionObjects = OrderedDictionary HashIdentity.Structural
           CollisionConfiguration = collisionConfiguration
           PhysicsDispatcher = physicsDispatcher
           BroadPhaseInterface = broadPhaseInterface
@@ -201,15 +206,19 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
             let body = new RigidBody (constructionInfo)
             BulletPhysicsEngine.configureBodyProperties bodyProperties body physicsEngine.PhysicsContext.Gravity
             physicsEngine.PhysicsContext.AddRigidBody (body, bodyProperties.CollisionCategories, bodyProperties.CollisionMask)
-            if not (physicsEngine.Bodies.TryAdd ({ SourceId = sourceId; CorrelationId = bodyProperties.BodyId }, (bodyProperties.GravityOverrideOpt, body))) then
-                Log.debug ("Could not add body via '" + scstring bodyProperties + "'.")
+            let physicsId = { SourceId = sourceId; CorrelationId = bodyProperties.BodyId }
+            if physicsEngine.Bodies.TryAdd (physicsId, (bodyProperties.GravityOverrideOpt, body))
+            then physicsEngine.CollisionObjects.Add (physicsId, body)
+            else Log.debug ("Could not add body via '" + scstring bodyProperties + "'.")
         else
             let ghost = new GhostObject ()
             ghost.CollisionFlags <- ghost.CollisionFlags &&& ~~~CollisionFlags.NoContactResponse
             BulletPhysicsEngine.configureCollisionObjectProperties bodyProperties ghost
             physicsEngine.PhysicsContext.AddCollisionObject (ghost, bodyProperties.CollisionCategories, bodyProperties.CollisionMask)
-            if not (physicsEngine.Ghosts.TryAdd ({ SourceId = sourceId; CorrelationId = bodyProperties.BodyId }, ghost)) then
-                Log.debug ("Could not add body via '" + scstring bodyProperties + "'.")
+            let physicsId = { SourceId = sourceId; CorrelationId = bodyProperties.BodyId }
+            if physicsEngine.Ghosts.TryAdd (physicsId, ghost)
+            then physicsEngine.CollisionObjects.Add (physicsId, ghost)
+            else Log.debug ("Could not add body via '" + scstring bodyProperties + "'.")
 
     static member private createBody4 bodyShape bodyProperties (bodySource : BodySourceInternal) physicsEngine =
         BulletPhysicsEngine.createBody3 (fun ps cs ma ->
@@ -232,6 +241,30 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
                 BulletPhysicsEngine.createBody createBodyMessage physicsEngine)
             createBodiesMessage.BodiesProperties
 
+    static member private destroyBody (destroyBodyMessage : DestroyBodyMessage) physicsEngine =
+        let physicsId = destroyBodyMessage.PhysicsId
+        match physicsEngine.CollisionObjects.TryGetValue physicsId with
+        | (true, collisionObject) ->
+            match collisionObject with
+            | :? RigidBody as body ->
+                physicsEngine.CollisionObjects.Remove physicsId |> ignore
+                physicsEngine.Bodies.Remove physicsId |> ignore
+                physicsEngine.PhysicsContext.RemoveRigidBody body
+            | :? GhostObject as ghost ->
+                physicsEngine.CollisionObjects.Remove physicsId |> ignore
+                physicsEngine.Ghosts.Remove physicsId |> ignore
+                physicsEngine.PhysicsContext.RemoveCollisionObject ghost
+            | _ -> ()
+        | (false, _) ->
+            if not physicsEngine.RebuildingHack then
+                Log.debug ("Could not destroy non-existent body with PhysicsId = " + scstring physicsId + "'.")
+
+    static member private destroyBodies (destroyBodiesMessage : DestroyBodiesMessage) physicsEngine =
+        List.iter (fun physicsId ->
+            let destroyBodyMessage : DestroyBodyMessage = { SourceSimulant = destroyBodiesMessage.SourceSimulant; PhysicsId = physicsId }
+            BulletPhysicsEngine.destroyBody destroyBodyMessage physicsEngine)
+            destroyBodiesMessage.PhysicsIds
+
     static member private createJoint (createJointMessage : CreateJointMessage) physicsEngine =
         let jointProperties = createJointMessage.JointProperties
         match jointProperties.JointDevice with
@@ -244,21 +277,48 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
                 hinge.SetLimit (jointAngle.AngleMin, jointAngle.AngleMax, jointAngle.Softness, jointAngle.BiasFactor, jointAngle.RelaxationFactor)
                 hinge.BreakingImpulseThreshold <- jointAngle.BreakImpulseThreshold
                 physicsEngine.PhysicsContext.AddConstraint hinge
-                if not (physicsEngine.Constraints.TryAdd ({ SourceId = createJointMessage.SourceId; CorrelationId = jointProperties.JointId }, hinge)) then
-                    Log.debug ("Could not add joint via '" + scstring jointProperties + "'.")
+                let physicsId = { SourceId = createJointMessage.SourceId; CorrelationId = jointProperties.JointId }
+                if physicsEngine.Constraints.TryAdd (physicsId, hinge)
+                then () // nothing to do
+                else Log.debug ("Could not add joint via '" + scstring jointProperties + "'.")
             | (_, _) -> Log.debug "Could not set create a joint for one or more non-existent bodies."
         | _ -> failwithnie ()
+
+    static member private createJoints (createJointsMessage : CreateJointsMessage) physicsEngine =
+        List.iter
+            (fun jointProperties ->
+                let createJointMessage =
+                    { SourceSimulant = createJointsMessage.SourceSimulant
+                      SourceId = createJointsMessage.SourceId
+                      JointProperties = jointProperties }
+                BulletPhysicsEngine.createJoint createJointMessage physicsEngine)
+            createJointsMessage.JointsProperties
+
+    static member private destroyJoint (destroyJointMessage : DestroyJointMessage) physicsEngine =
+        match physicsEngine.Constraints.TryGetValue destroyJointMessage.PhysicsId with
+        | (true, contrain) ->
+            physicsEngine.Constraints.Remove destroyJointMessage.PhysicsId |> ignore
+            physicsEngine.PhysicsContext.RemoveConstraint contrain
+        | (false, _) ->
+            if not physicsEngine.RebuildingHack then
+                Log.debug ("Could not destroy non-existent joint with PhysicsId = " + scstring destroyJointMessage.PhysicsId + "'.")
+
+    static member private destroyJoints (destroyJointsMessage : DestroyJointsMessage) physicsEngine =
+        List.iter (fun physicsId ->
+            let destroyJointMessage = { SourceSimulant = destroyJointsMessage.SourceSimulant; PhysicsId = physicsId }
+            BulletPhysicsEngine.destroyJoint destroyJointMessage physicsEngine)
+            destroyJointsMessage.PhysicsIds
 
     static member private handlePhysicsMessage physicsEngine physicsMessage =
         match physicsMessage with
         | CreateBodyMessage createBodyMessage -> BulletPhysicsEngine.createBody createBodyMessage physicsEngine
         | CreateBodiesMessage createBodiesMessage -> BulletPhysicsEngine.createBodies createBodiesMessage physicsEngine
-        //| DestroyBodyMessage destroyBodyMessage -> BulletPhysicsEngine.destroyBody destroyBodyMessage physicsEngine
-        //| DestroyBodiesMessage destroyBodiesMessage -> BulletPhysicsEngine.destroyBodies destroyBodiesMessage physicsEngine
+        | DestroyBodyMessage destroyBodyMessage -> BulletPhysicsEngine.destroyBody destroyBodyMessage physicsEngine
+        | DestroyBodiesMessage destroyBodiesMessage -> BulletPhysicsEngine.destroyBodies destroyBodiesMessage physicsEngine
         | CreateJointMessage createJointMessage -> BulletPhysicsEngine.createJoint createJointMessage physicsEngine
-        //| CreateJointsMessage createJointsMessage -> BulletPhysicsEngine.createJoints createJointsMessage physicsEngine
-        //| DestroyJointMessage destroyJointMessage -> BulletPhysicsEngine.destroyJoint destroyJointMessage physicsEngine
-        //| DestroyJointsMessage destroyJointsMessage -> BulletPhysicsEngine.destroyJoints destroyJointsMessage physicsEngine
+        | CreateJointsMessage createJointsMessage -> BulletPhysicsEngine.createJoints createJointsMessage physicsEngine
+        | DestroyJointMessage destroyJointMessage -> BulletPhysicsEngine.destroyJoint destroyJointMessage physicsEngine
+        | DestroyJointsMessage destroyJointsMessage -> BulletPhysicsEngine.destroyJoints destroyJointsMessage physicsEngine
         //| SetBodyEnabledMessage setBodyEnabledMessage -> BulletPhysicsEngine.setBodyEnabled setBodyEnabledMessage physicsEngine
         //| SetBodyPositionMessage setBodyPositionMessage -> BulletPhysicsEngine.setBodyPosition setBodyPositionMessage physicsEngine
         //| SetBodyRotationMessage setBodyRotationMessage -> BulletPhysicsEngine.setBodyRotation setBodyRotationMessage physicsEngine
@@ -277,6 +337,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
         | RebuildPhysicsHackMessage ->
             physicsEngine.RebuildingHack <- true
             for constrain in physicsEngine.Constraints.Values do physicsEngine.PhysicsContext.RemoveConstraint constrain
+            physicsEngine.CollisionObjects.Clear ()
             physicsEngine.Constraints.Clear ()
             for ghost in physicsEngine.Ghosts.Values do physicsEngine.PhysicsContext.RemoveCollisionObject ghost
             physicsEngine.Ghosts.Clear ()
@@ -311,16 +372,73 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
 
     interface PhysicsEngine with
 
-        member physicsEngine.BodyExists physicsId = Unchecked.defaultof<_>
-        member physicsEngine.GetBodyContactNormals physicsId = Unchecked.defaultof<_>
-        member physicsEngine.GetBodyLinearVelocity physicsId = Unchecked.defaultof<_>
-        member physicsEngine.GetBodyToGroundContactNormals physicsId = Unchecked.defaultof<_>
-        member physicsEngine.GetBodyToGroundContactNormalOpt physicsId = Unchecked.defaultof<_>
-        member physicsEngine.GetBodyToGroundContactTangentOpt physicsId = Unchecked.defaultof<_>
-        member physicsEngine.IsBodyOnGround physicsId = Unchecked.defaultof<_>
-        member physicsEngine.PopMessages () = Unchecked.defaultof<_>
-        member physicsEngine.ClearMessages () = Unchecked.defaultof<_>
-        member physicsEngine.EnqueueMessage physicsMessage = Unchecked.defaultof<_>
+        member physicsEngine.BodyExists physicsId =
+            physicsEngine.CollisionObjects.ContainsKey physicsId
+
+        member physicsEngine.GetBodyContactNormals physicsId =
+            // TODO: see if this can be optimized from linear search to constant-time look-up.
+            match physicsEngine.CollisionObjects.TryGetValue physicsId with
+            | (true, collisionObject) ->
+                let dispatcher = physicsEngine.PhysicsContext.Dispatcher
+                let manifoldCount = dispatcher.NumManifolds
+                [for i in 0 .. dec manifoldCount do
+                    let manifold = dispatcher.GetManifoldByIndexInternal i
+                    if manifold.Body0 = collisionObject then
+                        let contactCount = manifold.NumContacts
+                        for j in 0 .. dec contactCount do
+                            let contact = manifold.GetContactPoint j
+                            yield contact.NormalWorldOnB]
+            | (false, _) -> []
+
+        member physicsEngine.GetBodyLinearVelocity physicsId =
+            match physicsEngine.Bodies.TryGetValue physicsId with
+            | (true, (_, body)) -> body.LinearVelocity
+            | (false, _) ->
+                if physicsEngine.Ghosts.ContainsKey physicsId then v3Zero
+                else failwith ("No body with PhysicsId = " + scstring physicsId + ".")
+
+        member physicsEngine.GetBodyToGroundContactNormals physicsId =
+            List.filter
+                (fun normal ->
+                    let theta = Vector3.Dot (normal, Vector3.UnitY) |> double |> Math.Acos |> Math.Abs
+                    theta < Math.PI * 0.25)
+                ((physicsEngine :> PhysicsEngine).GetBodyContactNormals physicsId)
+
+        member physicsEngine.GetBodyToGroundContactNormalOpt physicsId =
+            let groundNormals = (physicsEngine :> PhysicsEngine).GetBodyToGroundContactNormals physicsId
+            match groundNormals with
+            | [] -> None
+            | _ ->
+                let averageNormal = List.reduce (fun normal normal2 -> (normal + normal2) * 0.5f) groundNormals
+                Some averageNormal
+
+        member physicsEngine.GetBodyToGroundContactTangentOpt physicsId =
+            match (physicsEngine :> PhysicsEngine).GetBodyToGroundContactNormalOpt physicsId with
+            | Some normal -> Some (Vector3.Cross (v3Forward, normal))
+            | None -> None
+
+        member physicsEngine.IsBodyOnGround physicsId =
+            let groundNormals = (physicsEngine :> PhysicsEngine).GetBodyToGroundContactNormals physicsId
+            List.notEmpty groundNormals
+
+        member physicsEngine.PopMessages () =
+            let messages = physicsEngine.PhysicsMessages
+            let physicsEngine = { physicsEngine with PhysicsMessages = UList.makeEmpty (UList.getConfig physicsEngine.PhysicsMessages) }
+            (messages, physicsEngine :> PhysicsEngine)
+
+        member physicsEngine.ClearMessages () =
+            let physicsEngine = { physicsEngine with PhysicsMessages = UList.makeEmpty (UList.getConfig physicsEngine.PhysicsMessages) }
+            physicsEngine :> PhysicsEngine
+
+        member physicsEngine.EnqueueMessage physicsMessage =
+#if HANDLE_PHYSICS_MESSAGES_IMMEDIATE
+            BulletPhysicsEngine.handlePhysicsMessage physicsEngine physicsMessage
+            physicsEngine
+#else
+            let physicsMessages = UList.add physicsMessage physicsEngine.PhysicsMessages
+            let physicsEngine = { physicsEngine with PhysicsMessages = physicsMessages }
+            physicsEngine :> PhysicsEngine
+#endif
 
         member physicsEngine.Integrate stepTime physicsMessages =
             BulletPhysicsEngine.handlePhysicsMessages physicsMessages physicsEngine
