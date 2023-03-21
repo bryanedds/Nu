@@ -518,6 +518,7 @@ module WorldModule3 =
             // make the world's subsystems
             let subsystems =
                 { PhysicsEngine2d = MockPhysicsEngine.make ()
+                  PhysicsEngine3d = MockPhysicsEngine.make ()
                   RendererProcess =
                     RendererInline
                         ((fun _ -> MockRenderer3d.make () :> Renderer3d),
@@ -609,9 +610,10 @@ module WorldModule3 =
 
                 // make the world's subsystems
                 let subsystems =
-                    let gravityScalar = Constants.Engine.Meter2d
-                    let gravity = Constants.Engine.GravityDefault * gravityScalar
-                    let physicsEngine2d = AetherPhysicsEngine.make config.Imperative gravity
+                    let gravity2d = Constants.Engine.GravityDefault * Constants.Engine.Meter2d
+                    let physicsEngine2d = AetherPhysicsEngine.make config.Imperative gravity2d
+                    let gravity3d = Constants.Engine.GravityDefault
+                    let physicsEngine3d = BulletPhysicsEngine.make config.Imperative gravity3d
                     let createRenderer3d =
                         fun config ->
                             match SdlDeps.getWindowOpt sdlDeps with
@@ -634,6 +636,7 @@ module WorldModule3 =
                         else MockAudioPlayer.make () :> AudioPlayer
                     audioPlayer.EnqueueMessage (LoadAudioPackageMessage Assets.Default.PackageName) // enqueue default package hint
                     { PhysicsEngine2d = physicsEngine2d
+                      PhysicsEngine3d = physicsEngine3d
                       RendererProcess = rendererProcess
                       AudioPlayer = audioPlayer }
 

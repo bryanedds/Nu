@@ -281,9 +281,7 @@ type [<ReferenceEquality>] AetherPhysicsEngine =
         | (true, (_, body)) ->
             physicsEngine.Bodies.Remove physicsId |> ignore
             physicsEngine.PhysicsContext.Remove body
-        | (false, _) ->
-            if not physicsEngine.RebuildingHack then
-                Log.debug ("Could not destroy non-existent body with PhysicsId = " + scstring physicsId + "'.")
+        | (false, _) -> ()
 
     static member private destroyBodies (destroyBodiesMessage : DestroyBodiesMessage) physicsEngine =
         List.iter (fun physicsId ->
@@ -322,9 +320,7 @@ type [<ReferenceEquality>] AetherPhysicsEngine =
         | (true, joint) ->
             physicsEngine.Joints.Remove destroyJointMessage.PhysicsId |> ignore
             physicsEngine.PhysicsContext.Remove joint
-        | (false, _) ->
-            if not physicsEngine.RebuildingHack then
-                Log.debug ("Could not destroy non-existent joint with PhysicsId = " + scstring destroyJointMessage.PhysicsId + "'.")
+        | (false, _) -> ()
 
     static member private destroyJoints (destroyJointsMessage : DestroyJointsMessage) physicsEngine =
         List.iter (fun physicsId ->

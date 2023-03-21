@@ -1178,6 +1178,7 @@ module WorldTypes =
     /// The subsystems encapsulated by the engine.
     and [<ReferenceEquality>] internal Subsystems =
         { PhysicsEngine2d : PhysicsEngine
+          PhysicsEngine3d : PhysicsEngine
           RendererProcess : RendererProcess
           AudioPlayer : AudioPlayer }
 

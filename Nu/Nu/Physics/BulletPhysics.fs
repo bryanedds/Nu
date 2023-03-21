@@ -38,13 +38,15 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
           IntegrationMessages : IntegrationMessage ConcurrentQueue
           mutable RebuildingHack : bool }
 
-    static member make () =
-        let physicsMessages = UList.makeEmpty Imperative
+    static member make imperative gravity =
+        let config = if imperative then Imperative else Functional
+        let physicsMessages = UList.makeEmpty config
         let collisionConfiguration = new DefaultCollisionConfiguration ()
         let physicsDispatcher = new CollisionDispatcher (collisionConfiguration)
         let broadPhaseInterface = new DbvtBroadphase ()
         let constraintSolver = new SequentialImpulseConstraintSolver ()
         let world = new DiscreteDynamicsWorld (physicsDispatcher, broadPhaseInterface, constraintSolver, collisionConfiguration)
+        world.Gravity <- gravity
         let integrationMessages = ConcurrentQueue ()
         { PhysicsContext = world
           Constraints = OrderedDictionary HashIdentity.Structural
@@ -257,9 +259,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
                 physicsEngine.Ghosts.Remove physicsId |> ignore
                 physicsEngine.PhysicsContext.RemoveCollisionObject ghost
             | _ -> ()
-        | (false, _) ->
-            if not physicsEngine.RebuildingHack then
-                Log.debug ("Could not destroy non-existent body with PhysicsId = " + scstring physicsId + "'.")
+        | (false, _) -> ()
 
     static member private destroyBodies (destroyBodiesMessage : DestroyBodiesMessage) physicsEngine =
         List.iter (fun physicsId ->
@@ -301,9 +301,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
         | (true, contrain) ->
             physicsEngine.Constraints.Remove destroyJointMessage.PhysicsId |> ignore
             physicsEngine.PhysicsContext.RemoveConstraint contrain
-        | (false, _) ->
-            if not physicsEngine.RebuildingHack then
-                Log.debug ("Could not destroy non-existent joint with PhysicsId = " + scstring destroyJointMessage.PhysicsId + "'.")
+        | (false, _) -> ()
 
     static member private destroyJoints (destroyJointsMessage : DestroyJointsMessage) physicsEngine =
         List.iter (fun physicsId ->

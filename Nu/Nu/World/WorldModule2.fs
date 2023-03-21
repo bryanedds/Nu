@@ -1055,8 +1055,7 @@ module WorldModule2 =
                 result
             else (Dead, world)
 
-        static member private processPhysics world =
-            let physicsEngine = World.getPhysicsEngine2d world
+        static member private processPhysics2 (physicsEngine : PhysicsEngine) world =
             let (physicsMessages, physicsEngine) = physicsEngine.PopMessages ()
             let world = World.setPhysicsEngine2d physicsEngine world
             let integrationMessages = physicsEngine.Integrate world.GameDelta physicsMessages
@@ -1064,6 +1063,13 @@ module WorldModule2 =
             let eventTrace = EventTrace.debug "World" "processPhysics" "" EventTrace.empty
             let world = World.publish integrationData Events.Integration eventTrace Simulants.Game world
             let world = Seq.fold (flip World.processIntegrationMessage) world integrationMessages
+            world
+
+        static member private processPhysics world =
+            let physicsEngine3d = World.getPhysicsEngine3d world
+            let world = World.processPhysics2 physicsEngine3d world
+            let physicsEngine2d = World.getPhysicsEngine2d world
+            let world = World.processPhysics2 physicsEngine2d world
             world
 
         static member private cleanUp world =
