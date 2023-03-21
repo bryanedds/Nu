@@ -61,10 +61,10 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
         physicsEngine.PhysicsDispatcher.Dispose ()
         physicsEngine.CollisionConfiguration.Dispose ()
 
-    static member private configureBodyShapeProperties (_ : BodyProperties) (_ : BodyShapeProperties option) (_ : PolyhedralConvexShape) =
+    static member private configureBodyShapeProperties (_ : BodyProperties) (_ : BodyShapeProperties option) (_ : ConvexInternalShape) =
         () // NOTE: cannot configure bullet shapes on a per-shape basis.
 
-    static member private configureObjectProperties (bodyProperties : BodyProperties) (object : CollisionObject) =
+    static member private configureCollisionObjectProperties (bodyProperties : BodyProperties) (object : CollisionObject) =
         if bodyProperties.Awake
         then object.ActivationState <- object.ActivationState &&& ~~~ActivationState.IslandSleeping
         else object.ActivationState <- object.ActivationState ||| ActivationState.IslandSleeping
@@ -95,7 +95,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
             object.CollisionFlags <- object.CollisionFlags &&& ~~~CollisionFlags.StaticObject
 
     static member private configureBodyProperties (bodyProperties : BodyProperties) (body : RigidBody) gravity =
-        BulletPhysicsEngine.configureObjectProperties bodyProperties body
+        BulletPhysicsEngine.configureCollisionObjectProperties bodyProperties body
         body.MotionState.WorldTransform <- Matrix4x4.CreateFromTrs (bodyProperties.Center, bodyProperties.Rotation, v3One)
         body.LinearVelocity <- bodyProperties.LinearVelocity
         body.AngularVelocity <- bodyProperties.AngularVelocity
@@ -119,24 +119,43 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
         massAccumulator := massAccumulator.Value + mass
         compoundShape.AddChildShape (Matrix4x4.CreateFromTrs (bodyProperties.Center, bodyProperties.Rotation, v3Zero), box)
 
-    //static member private attachBodySphere (bodySphere : BodySphere) (bodyProperties : BodyProperties) (compoundShapeIds : uint64 List) (compoundBuilder : CompoundBuilder array) =
-    //    let bodyShapeId = match bodySphere.PropertiesOpt with Some bodyProperties2 -> bodyProperties2.BodyShapeId | None -> 0UL
-    //    compoundShapeIds.Add bodyShapeId
-    //    let sphere = Collidables.Sphere bodySphere.Radius
-    //    let volume = 4.0f / 3.0f * MathF.PI * pown bodySphere.Radius 3
-    //    let mass = volume * bodyProperties.Density
-    //    let pose = RigidPose (bodyProperties.Center, bodyProperties.Rotation)
-    //    compoundBuilder.[0].Add (&sphere, &pose, mass) // NOTE: passing mass as weight.
-    //
-    //static member private attachBodyCapsule (bodyCapsule : BodyCapsule) (bodyProperties : BodyProperties) (compoundShapeIds : uint64 List) (compoundBuilder : CompoundBuilder array) =
-    //    let bodyShapeId = match bodyCapsule.PropertiesOpt with Some bodyProperties2 -> bodyProperties2.BodyShapeId | None -> 0UL
-    //    compoundShapeIds.Add bodyShapeId
-    //    let capsule = Capsule (bodyCapsule.Radius, bodyCapsule.Length)
-    //    let volume = MathF.PI * bodyCapsule.Radius |> flip pown 2
-    //    let mass = volume * bodyProperties.Density
-    //    let pose = RigidPose (bodyProperties.Center, bodyProperties.Rotation)
-    //    compoundBuilder.[0].Add (&capsule, &pose, mass) // NOTE: passing mass as weight.
-    //
+    static member private attachBodySphere sourceSimulant (bodyProperties : BodyProperties) (bodySphere : BodySphere) (compoundShape : CompoundShape) (massAccumulator : single ref) =
+        let sphere = new SphereShape (bodySphere.Radius)
+        BulletPhysicsEngine.configureBodyShapeProperties bodyProperties bodySphere.PropertiesOpt sphere
+        sphere.UserObject <-
+            { Simulant = sourceSimulant
+              BodyId = bodyProperties.BodyId
+              ShapeId = match bodySphere.PropertiesOpt with Some p -> p.BodyShapeId | None -> 0UL }
+        let mass =
+            match bodyProperties.Substance with
+            | Density density ->
+                let volume = 4.0f / 3.0f * MathF.PI * pown bodySphere.Radius 3
+                volume * density
+            | Mass mass -> mass
+        massAccumulator := massAccumulator.Value + mass
+        compoundShape.AddChildShape (Matrix4x4.CreateFromTrs (bodyProperties.Center, bodyProperties.Rotation, v3Zero), sphere)
+
+    static member private attachBodyCapsule sourceSimulant (bodyProperties : BodyProperties) (bodyCapsule : BodyCapsule) (compoundShape : CompoundShape) (massAccumulator : single ref) =
+        let capsule = new CapsuleShape (bodyCapsule.Radius, bodyCapsule.Height)
+        BulletPhysicsEngine.configureBodyShapeProperties bodyProperties bodyCapsule.PropertiesOpt capsule
+        capsule.UserObject <-
+            { Simulant = sourceSimulant
+              BodyId = bodyProperties.BodyId
+              ShapeId = match bodyCapsule.PropertiesOpt with Some p -> p.BodyShapeId | None -> 0UL }
+        let mass =
+            match bodyProperties.Substance with
+            | Density density ->
+                let volume = MathF.PI * pown bodyCapsule.Radius 2 * (4.0f / 3.0f * bodyCapsule.Radius * bodyCapsule.Height)
+                volume * density
+            | Mass mass -> mass
+        massAccumulator := massAccumulator.Value + mass
+        compoundShape.AddChildShape (Matrix4x4.CreateFromTrs (bodyProperties.Center, bodyProperties.Rotation, v3Zero), capsule)
+
+    static member private attachBodyBoxRounded sourceSimulant (bodyProperties : BodyProperties) (bodyBoxRounded : BodyBoxRounded) (compoundShape : CompoundShape) (massAccumulator : single ref) =
+        Log.debugOnce "Rounded box not yet implemented via BulletPhysicsEngine; creating a normal box instead."
+        let bodyBox = { Center = bodyBoxRounded.Center; Size = bodyBoxRounded.Size; PropertiesOpt = bodyBoxRounded.PropertiesOpt }
+        BulletPhysicsEngine.attachBodyBox sourceSimulant bodyProperties bodyBox compoundShape massAccumulator
+
     //static member private attachBodyTriangle a b c bodyPropertiesOpt (bodyProperties : BodyProperties) (compoundShapeIds : uint64 List) (compoundBuilder : CompoundBuilder array) =
     //    let bodyShapeId = match bodyPropertiesOpt with Some bodyProperties2 -> bodyProperties2.BodyShapeId | None -> 0UL
     //    compoundShapeIds.Add bodyShapeId
@@ -149,7 +168,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
     //    let mass = volume * bodyProperties.Density
     //    let pose = RigidPose (bodyProperties.Center, bodyProperties.Rotation)
     //    compoundBuilder.[0].Add (&capsule, &pose, mass) // NOTE: passing mass as weight.
-    //
+
     //static member private attachBodyPolygon bodyPolygon bodyProperties compoundShapeIds compoundBuilder =
     //    if bodyPolygon.Vertices.Length >= 3 then
     //        let triangles = Array.windowed 3 bodyPolygon.Vertices
@@ -157,11 +176,6 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
     //            let (a, b, c) = (triangle.[0], triangle.[1], triangle.[2])
     //            BulletPhysicsEngine.attachBodyTriangle a b c bodyPolygon.PropertiesOpt bodyProperties compoundShapeIds compoundBuilder
     //    else Log.debug "Degenerate polygon sent to BulletPhysicsEngine; 3 or more vertices required."
-    //
-    //static member private attachBodyBoxRounded (bodyBoxRounded : BodyBoxRounded) (bodyProperties : BodyProperties) (compoundShapeIds : uint64 List) (compoundBuilder : CompoundBuilder array) =
-    //    Log.debug "Rounded box not yet implemented via BulletPhysicsEngine; creating a normal box instead."
-    //    let bodyBox = { Center = bodyBoxRounded.Center; Size = bodyBoxRounded.Size; PropertiesOpt = bodyBoxRounded.PropertiesOpt }
-    //    BulletPhysicsEngine.attachBodyBox bodyBox bodyProperties compoundShapeIds compoundBuilder
 
     static member private attachBodyShapes sourceSimulant bodyProperties bodyShapes compoundShape massAccumulator =
         for bodyShape in bodyShapes do
@@ -171,9 +185,9 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
         match bodyShape with
         | BodyEmpty -> ()
         | BodyBox bodyBox -> BulletPhysicsEngine.attachBodyBox sourceSimulant bodyProperties bodyBox compoundShape massAccumulator
-        | BodySphere bodySphere -> () //BulletPhysicsEngine.attachBodySphere bodySphere bodyProperties compoundShapeIds compoundBuilder
-        | BodyCapsule bodyCapsule -> () //BulletPhysicsEngine.attachBodyCapsule bodyCapsule bodyProperties compoundShapeIds compoundBuilder
-        | BodyBoxRounded bodyBoxRounded -> () //BulletPhysicsEngine.attachBodyBoxRounded bodyBoxRounded bodyProperties compoundShapeIds compoundBuilder
+        | BodySphere bodySphere -> BulletPhysicsEngine.attachBodySphere sourceSimulant bodyProperties bodySphere compoundShape massAccumulator
+        | BodyCapsule bodyCapsule -> BulletPhysicsEngine.attachBodyCapsule sourceSimulant bodyProperties bodyCapsule compoundShape massAccumulator
+        | BodyBoxRounded bodyBoxRounded -> BulletPhysicsEngine.attachBodyBoxRounded sourceSimulant bodyProperties bodyBoxRounded compoundShape massAccumulator
         | BodyPolygon bodyPolygon -> () //BulletPhysicsEngine.attachBodyPolygon bodyPolygon bodyProperties compoundShapeIds compoundBuilder
         | BodyShapes bodyShapes -> BulletPhysicsEngine.attachBodyShapes sourceSimulant bodyProperties bodyShapes compoundShape massAccumulator
 
@@ -192,7 +206,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
         else
             let ghost = new GhostObject ()
             ghost.CollisionFlags <- ghost.CollisionFlags &&& ~~~CollisionFlags.NoContactResponse
-            BulletPhysicsEngine.configureObjectProperties bodyProperties ghost
+            BulletPhysicsEngine.configureCollisionObjectProperties bodyProperties ghost
             physicsEngine.PhysicsContext.AddCollisionObject (ghost, bodyProperties.CollisionCategories, bodyProperties.CollisionMask)
             if not (physicsEngine.Ghosts.TryAdd ({ SourceId = sourceId; CorrelationId = bodyProperties.BodyId }, ghost)) then
                 Log.debug ("Could not add body via '" + scstring bodyProperties + "'.")
