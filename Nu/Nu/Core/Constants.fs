@@ -16,7 +16,6 @@ module Engine =
     let [<Literal>] LohSize = 85000 // the approximate size of the .NET Large-Object Heap in bytes, although this seems misleading for some uses...
     let [<Literal>] Meter2d = 48.0f
     let [<Literal>] Meter3d = 1.0f
-    let [<Uniform>] GravityDefault = Vector3 (0.0f, -9.80665f, 0.0f)
     let [<Literal>] GameSortPriority = Single.MaxValue
     let [<Uniform>] ScreenSortPriority = GameSortPriority - 1.0f
     let [<Uniform>] GroupSortPriority = ScreenSortPriority - 1.0f
@@ -127,6 +126,8 @@ module Audio =
 [<RequireQualifiedAccess>]
 module Physics =
 
+    let [<Uniform>] Gravity2dDefault = Vector3 (0.0f, -9.80665f, 0.0f) * Engine.EntitySize2dDefault.Y
+    let [<Uniform>] Gravity3dDefault = Vector3 (0.0f, -9.80665f, 0.0f)
     let [<Literal>] PhysicsToPixelRatio = Engine.Meter2d // 48 pixels = 1 meter
     let [<Uniform>] PixelToPhysicsRatio = 1.0f / Engine.Meter2d
 
