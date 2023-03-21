@@ -338,7 +338,7 @@ type [<ReferenceEquality>] AetherPhysicsEngine =
 
     static member private setBodyCenter (setBodyCenterMessage : SetBodyCenterMessage) physicsEngine =
         match physicsEngine.Bodies.TryGetValue setBodyCenterMessage.PhysicsId with
-        | (true, (_, body)) -> body.Center <- AetherPhysicsEngine.toPhysicsV2 setBodyCenterMessage.Center
+        | (true, (_, body)) -> body.Position <- AetherPhysicsEngine.toPhysicsV2 setBodyCenterMessage.Center
         | (false, _) -> Log.debug ("Could not set center of non-existent body with PhysicsId = " + scstring setBodyCenterMessage.PhysicsId + "'.")
 
     static member private setBodyRotation (setBodyRotationMessage : SetBodyRotationMessage) physicsEngine =
@@ -353,7 +353,10 @@ type [<ReferenceEquality>] AetherPhysicsEngine =
 
     static member private applyBodyLinearImpulse (applyBodyLinearImpulseMessage : ApplyBodyLinearImpulseMessage) physicsEngine =
         match physicsEngine.Bodies.TryGetValue applyBodyLinearImpulseMessage.PhysicsId with
-        | (true, (_, body)) -> body.ApplyLinearImpulse (AetherPhysicsEngine.toPhysicsV2 applyBodyLinearImpulseMessage.LinearImpulse)
+        | (true, (_, body)) ->
+            body.ApplyLinearImpulse
+                (AetherPhysicsEngine.toPhysicsV2 applyBodyLinearImpulseMessage.LinearImpulse,
+                 AetherPhysicsEngine.toPhysicsV2 applyBodyLinearImpulseMessage.Offset)
         | (false, _) -> Log.debug ("Could not apply linear impulse to non-existent body with PhysicsId = " + scstring applyBodyLinearImpulseMessage.PhysicsId + "'.")
 
     static member private setBodyAngularVelocity (setBodyAngularVelocityMessage : SetBodyAngularVelocityMessage) physicsEngine =
@@ -368,7 +371,10 @@ type [<ReferenceEquality>] AetherPhysicsEngine =
 
     static member private applyBodyForce (applyBodyForceMessage : ApplyBodyForceMessage) physicsEngine =
         match physicsEngine.Bodies.TryGetValue applyBodyForceMessage.PhysicsId with
-        | (true, (_, body)) -> body.ApplyForce (AetherPhysicsEngine.toPhysicsV2 applyBodyForceMessage.Force)
+        | (true, (_, body)) ->
+            body.ApplyForce
+                (AetherPhysicsEngine.toPhysicsV2 applyBodyForceMessage.Force,
+                 AetherPhysicsEngine.toPhysicsV2 applyBodyForceMessage.Offset)
         | (false, _) -> Log.debug ("Could not apply force to non-existent body with PhysicsId = " + scstring applyBodyForceMessage.PhysicsId + "'.")
 
     static member private applyBodyTorque (applyBodyTorqueMessage : ApplyBodyTorqueMessage) physicsEngine =
