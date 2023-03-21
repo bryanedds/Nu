@@ -864,7 +864,7 @@ module SideViewCharacterDispatcherModule =
              define Entity.CelRun 8
              define Entity.AnimationDelay (GameTime.ofSeconds (1.0f / 15.0f))
              define Entity.AngularFactor v3Zero
-             define Entity.GravityOverrideOpt (Some (v3 0.0f 3.0f 0.0f))
+             define Entity.GravityOverrideOpt (Some (Constants.Physics.Gravity2dDefault * 3.0f))
              define Entity.BodyShape (BodyCapsule { Height = 0.5f; Radius = 0.25f; Center = v3Zero; PropertiesOpt = None })
              define Entity.SideViewCharacterIdleImage Assets.Default.SideViewCharacterIdleImage
              define Entity.SideViewCharacterJumpImage Assets.Default.SideViewCharacterJumpImage
