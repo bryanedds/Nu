@@ -127,15 +127,15 @@ type BodyBoxRounded =
       Radius : single
       PropertiesOpt : BodyShapeProperties option }
 
-/// The shape of a physics body polygon.
-type BodyPolygon =
+/// The shape of a physics body convex hull.
+type BodyConvexHull =
     { Center : Vector3
       Vertices : Vector3 array
       PropertiesOpt : BodyShapeProperties option }
 
 /// The shape of a physics body.
 [<Syntax
-    ("BodyEmpty BodyBox BodySphere BodyCapsule BodyPolygon BodyShapes", "", "", "", "",
+    ("BodyEmpty BodyBox BodySphere BodyCapsule BodyConvexHull BodyShapes", "", "", "", "",
      Constants.PrettyPrinter.DefaultThresholdMin,
      Constants.PrettyPrinter.DetailedThresholdMax)>]
 type BodyShape =
@@ -144,7 +144,7 @@ type BodyShape =
     | BodySphere of BodySphere
     | BodyCapsule of BodyCapsule
     | BodyBoxRounded of BodyBoxRounded
-    | BodyPolygon of BodyPolygon
+    | BodyConvexHull of BodyConvexHull
     | BodyShapes of BodyShape list
 
 /// The type of a physics body; Static, Kinematic, or Dynamic.
@@ -487,9 +487,9 @@ module Physics =
         | BodySphere bodySphere -> BodySphere { Center = size.X * bodySphere.Center; Radius = size.X * bodySphere.Radius; PropertiesOpt = bodySphere.PropertiesOpt }
         | BodyCapsule bodyCapsule -> BodyCapsule { Center = size.Y * bodyCapsule.Center; Height = size.Y * bodyCapsule.Height; Radius = size.Y * bodyCapsule.Radius; PropertiesOpt = bodyCapsule.PropertiesOpt }
         | BodyBoxRounded bodyBoxRounded -> BodyBoxRounded { Center = size.Y * bodyBoxRounded.Center; Size = Vector3.Multiply (size, bodyBoxRounded.Size); Radius = size.X * bodyBoxRounded.Radius; PropertiesOpt = bodyBoxRounded.PropertiesOpt }
-        | BodyPolygon bodyPolygon ->
-            let vertices = Array.map (fun vertex -> vertex * size) bodyPolygon.Vertices
-            BodyPolygon { Center = Vector3.Multiply (size, bodyPolygon.Center); Vertices = vertices; PropertiesOpt = bodyPolygon.PropertiesOpt }
+        | BodyConvexHull bodyConvexHull ->
+            let vertices = Array.map (fun vertex -> vertex * size) bodyConvexHull.Vertices
+            BodyConvexHull { Center = Vector3.Multiply (size, bodyConvexHull.Center); Vertices = vertices; PropertiesOpt = bodyConvexHull.PropertiesOpt }
         | BodyShapes bodyShapes ->
             let bodyShapes = List.map (localizeBodyShape size) bodyShapes
             BodyShapes bodyShapes
