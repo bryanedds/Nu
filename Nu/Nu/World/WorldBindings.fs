@@ -864,40 +864,40 @@ module WorldBindings =
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'createBodies' due to: " + scstring exn, ValueNone)
             struct (violation, World.choose oldWorld)
 
-    let destroyBody sourceSimulant physicsId world =
+    let destroyBody entity physicsId world =
         let oldWorld = world
         try
-            let struct (sourceSimulant, world) =
+            let struct (entity, world) =
                 let context = World.getScriptContext world
-                match World.evalInternal sourceSimulant world with
+                match World.evalInternal entity world with
                 | struct (Scripting.String str, world)
                 | struct (Scripting.Keyword str, world) ->
                     let relation = Relation.makeFromString str
                     let address = Relation.resolve context.SimulantAddress relation
-                    struct (World.derive address, world)
+                    struct (Entity address, world)
                 | struct (Scripting.Violation (_, error, _), _) -> failwith error
                 | struct (_, _) -> failwith "Relation must be either a String or Keyword."
             let physicsId =
                 match ScriptingSystem.tryExport typeof<PhysicsId> physicsId world with
                 | Some value -> value :?> PhysicsId
                 | None -> failwith "Invalid argument type for 'physicsId'; expecting a value convertable to PhysicsId."
-            let result = World.destroyBody sourceSimulant physicsId world
+            let result = World.destroyBody entity physicsId world
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'destroyBody' due to: " + scstring exn, ValueNone)
             struct (violation, World.choose oldWorld)
 
-    let destroyBodies sourceSimulant physicsIds world =
+    let destroyBodies entity physicsIds world =
         let oldWorld = world
         try
-            let struct (sourceSimulant, world) =
+            let struct (entity, world) =
                 let context = World.getScriptContext world
-                match World.evalInternal sourceSimulant world with
+                match World.evalInternal entity world with
                 | struct (Scripting.String str, world)
                 | struct (Scripting.Keyword str, world) ->
                     let relation = Relation.makeFromString str
                     let address = Relation.resolve context.SimulantAddress relation
-                    struct (World.derive address, world)
+                    struct (Entity address, world)
                 | struct (Scripting.Violation (_, error, _), _) -> failwith error
                 | struct (_, _) -> failwith "Relation must be either a String or Keyword."
             let struct (physicsIds, world) =
@@ -913,7 +913,7 @@ module WorldBindings =
                         list
                 | struct (Scripting.Violation (_, error, _), _) -> failwith error
                 | struct (_, _) -> failwith "Relation must be either a String or Keyword."
-            let result = World.destroyBodies sourceSimulant physicsIds world
+            let result = World.destroyBodies entity physicsIds world
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'destroyBodies' due to: " + scstring exn, ValueNone)
@@ -982,40 +982,40 @@ module WorldBindings =
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'createJoints' due to: " + scstring exn, ValueNone)
             struct (violation, World.choose oldWorld)
 
-    let destroyJoint sourceSimulant physicsId world =
+    let destroyJoint entity physicsId world =
         let oldWorld = world
         try
-            let struct (sourceSimulant, world) =
+            let struct (entity, world) =
                 let context = World.getScriptContext world
-                match World.evalInternal sourceSimulant world with
+                match World.evalInternal entity world with
                 | struct (Scripting.String str, world)
                 | struct (Scripting.Keyword str, world) ->
                     let relation = Relation.makeFromString str
                     let address = Relation.resolve context.SimulantAddress relation
-                    struct (World.derive address, world)
+                    struct (Entity address, world)
                 | struct (Scripting.Violation (_, error, _), _) -> failwith error
                 | struct (_, _) -> failwith "Relation must be either a String or Keyword."
             let physicsId =
                 match ScriptingSystem.tryExport typeof<PhysicsId> physicsId world with
                 | Some value -> value :?> PhysicsId
                 | None -> failwith "Invalid argument type for 'physicsId'; expecting a value convertable to PhysicsId."
-            let result = World.destroyJoint sourceSimulant physicsId world
+            let result = World.destroyJoint entity physicsId world
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'destroyJoint' due to: " + scstring exn, ValueNone)
             struct (violation, World.choose oldWorld)
 
-    let destroyJoints sourceSimulant physicsIds world =
+    let destroyJoints entity physicsIds world =
         let oldWorld = world
         try
-            let struct (sourceSimulant, world) =
+            let struct (entity, world) =
                 let context = World.getScriptContext world
-                match World.evalInternal sourceSimulant world with
+                match World.evalInternal entity world with
                 | struct (Scripting.String str, world)
                 | struct (Scripting.Keyword str, world) ->
                     let relation = Relation.makeFromString str
                     let address = Relation.resolve context.SimulantAddress relation
-                    struct (World.derive address, world)
+                    struct (Entity address, world)
                 | struct (Scripting.Violation (_, error, _), _) -> failwith error
                 | struct (_, _) -> failwith "Relation must be either a String or Keyword."
             let struct (physicsIds, world) =
@@ -1031,7 +1031,7 @@ module WorldBindings =
                         list
                 | struct (Scripting.Violation (_, error, _), _) -> failwith error
                 | struct (_, _) -> failwith "Relation must be either a String or Keyword."
-            let result = World.destroyJoints sourceSimulant physicsIds world
+            let result = World.destroyJoints entity physicsIds world
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'destroyJoints' due to: " + scstring exn, ValueNone)
@@ -3637,7 +3637,7 @@ module WorldBindings =
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [|sourceSimulant; physicsId|] -> destroyBody sourceSimulant physicsId world
+            | [|entity; physicsId|] -> destroyBody entity physicsId world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
                 struct (violation, world)
@@ -3648,7 +3648,7 @@ module WorldBindings =
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [|sourceSimulant; physicsIds|] -> destroyBodies sourceSimulant physicsIds world
+            | [|entity; physicsIds|] -> destroyBodies entity physicsIds world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
                 struct (violation, world)
@@ -3681,7 +3681,7 @@ module WorldBindings =
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [|sourceSimulant; physicsId|] -> destroyJoint sourceSimulant physicsId world
+            | [|entity; physicsId|] -> destroyJoint entity physicsId world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
                 struct (violation, world)
@@ -3692,7 +3692,7 @@ module WorldBindings =
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [|sourceSimulant; physicsIds|] -> destroyJoints sourceSimulant physicsIds world
+            | [|entity; physicsIds|] -> destroyJoints entity physicsIds world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
                 struct (violation, world)
@@ -5194,12 +5194,12 @@ module WorldBindings =
              ("isBodyOnGround", { Fn = evalIsBodyOnGroundBinding; Pars = [|"physicsId"|]; DocOpt = None })
              ("createBody", { Fn = evalCreateBodyBinding; Pars = [|"entity"; "entityId"; "bodyProperties"|]; DocOpt = None })
              ("createBodies", { Fn = evalCreateBodiesBinding; Pars = [|"entity"; "entityId"; "bodiesProperties"|]; DocOpt = None })
-             ("destroyBody", { Fn = evalDestroyBodyBinding; Pars = [|"sourceSimulant"; "physicsId"|]; DocOpt = None })
-             ("destroyBodies", { Fn = evalDestroyBodiesBinding; Pars = [|"sourceSimulant"; "physicsIds"|]; DocOpt = None })
+             ("destroyBody", { Fn = evalDestroyBodyBinding; Pars = [|"entity"; "physicsId"|]; DocOpt = None })
+             ("destroyBodies", { Fn = evalDestroyBodiesBinding; Pars = [|"entity"; "physicsIds"|]; DocOpt = None })
              ("createJoint", { Fn = evalCreateJointBinding; Pars = [|"entity"; "entityId"; "jointProperties"|]; DocOpt = None })
              ("createJoints", { Fn = evalCreateJointsBinding; Pars = [|"entity"; "entityId"; "jointsProperties"|]; DocOpt = None })
-             ("destroyJoint", { Fn = evalDestroyJointBinding; Pars = [|"sourceSimulant"; "physicsId"|]; DocOpt = None })
-             ("destroyJoints", { Fn = evalDestroyJointsBinding; Pars = [|"sourceSimulant"; "physicsIds"|]; DocOpt = None })
+             ("destroyJoint", { Fn = evalDestroyJointBinding; Pars = [|"entity"; "physicsId"|]; DocOpt = None })
+             ("destroyJoints", { Fn = evalDestroyJointsBinding; Pars = [|"entity"; "physicsIds"|]; DocOpt = None })
              ("setBodyEnabled", { Fn = evalSetBodyEnabledBinding; Pars = [|"enabled"; "physicsId"|]; DocOpt = None })
              ("setBodyCenter", { Fn = evalSetBodyCenterBinding; Pars = [|"center"; "physicsId"|]; DocOpt = None })
              ("setBodyRotation", { Fn = evalSetBodyRotationBinding; Pars = [|"rotation"; "physicsId"|]; DocOpt = None })
