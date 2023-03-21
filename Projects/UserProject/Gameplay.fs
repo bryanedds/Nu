@@ -62,19 +62,19 @@ module Gameplay =
                 let world =
                     if World.isKeyboardKeyDown KeyboardKey.Left world then
                         if World.isBodyOnGround physicsId world
-                        then World.applyBodyForce (v3 -2500.0f 0.0f 0.0f) physicsId world
-                        else World.applyBodyForce (v3 -750.0f 0.0f 0.0f) physicsId world
+                        then World.applyBodyForce (v3 -2500.0f 0.0f 0.0f) v3Zero physicsId world
+                        else World.applyBodyForce (v3 -750.0f 0.0f 0.0f) v3Zero physicsId world
                     elif World.isKeyboardKeyDown KeyboardKey.Right world then
                         if World.isBodyOnGround physicsId world
-                        then World.applyBodyForce (v3 2500.0f 0.0f 0.0f) physicsId world
-                        else World.applyBodyForce (v3 750.0f 0.0f 0.0f) physicsId world
+                        then World.applyBodyForce (v3 2500.0f 0.0f 0.0f) v3Zero physicsId world
+                        else World.applyBodyForce (v3 750.0f 0.0f 0.0f) v3Zero physicsId world
                     else world
                 just world
             | Jump ->
                 let physicsId = Simulants.GameplayScenePlayer.GetPhysicsId world
                 if World.isBodyOnGround physicsId world then
                     let world = World.playSound Constants.Audio.SoundVolumeDefault (asset "Gameplay" "Jump") world
-                    let world = World.applyBodyForce (v3 0.0f 140000.0f 0.0f) physicsId world
+                    let world = World.applyBodyForce (v3 0.0f 140000.0f 0.0f) v3Zero physicsId world
                     just world
                 else just world
             | PostUpdateEye ->

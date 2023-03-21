@@ -292,6 +292,7 @@ module TmxMap =
               CollisionDetection = Discontinuous
               CollisionCategories = Physics.categorizeCollisionMask collisionCategories
               CollisionMask = Physics.categorizeCollisionMask collisionMask
+              Bullet = false
               Sensor = false }
         bodyProperties
 

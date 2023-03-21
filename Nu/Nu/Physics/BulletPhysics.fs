@@ -98,6 +98,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
         | Kinematic ->
             object.CollisionFlags <- object.CollisionFlags ||| CollisionFlags.KinematicObject
             object.CollisionFlags <- object.CollisionFlags &&& ~~~CollisionFlags.StaticObject
+        //object.IsBullet <- bodyProperties.Bullet // TODO: see if we can find a Bullet equivalent of this to Aether.
 
     static member private configureBodyProperties (bodyProperties : BodyProperties) (body : RigidBody) gravity =
         BulletPhysicsEngine.configureCollisionObjectProperties bodyProperties body

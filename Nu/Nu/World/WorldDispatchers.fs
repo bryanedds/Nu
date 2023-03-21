@@ -1153,3 +1153,30 @@ module StaticModelHierarchyDispatcherModule =
                 else world
             let world = World.monitor synchronizeChildren (entity.ChangeEvent (nameof entity.StaticModel)) entity world
             world
+
+[<AutoOpen>]
+module BlockDispatcher3dModule =
+
+    type BlockDispatcher3d () =
+        inherit EntityDispatcher3d (true)
+
+        static member Facets =
+            [typeof<RigidBodyFacet>
+             typeof<StaticModelFacet>]
+
+        static member Properties =
+            [define Entity.BodyType Static
+             define Entity.StaticModel Assets.Default.StaticModel]
+
+[<AutoOpen>]
+module BoxDispatcher3dModule =
+
+    type BoxDispatcher3d () =
+        inherit EntityDispatcher3d (true)
+
+        static member Facets =
+            [typeof<RigidBodyFacet>
+             typeof<StaticModelFacet>]
+
+        static member Properties =
+            [define Entity.StaticModel Assets.Default.StaticModel]
