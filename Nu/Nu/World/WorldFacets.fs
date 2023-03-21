@@ -818,6 +818,7 @@ module RigidBodyFacetModule =
              define Entity.CollisionCategories "1"
              define Entity.CollisionMask "@"
              define Entity.BodyShape (BodyBox { Center = v3Zero; Size = v3One; PropertiesOpt = None })
+             define Entity.Bullet false
              define Entity.Sensor false
              define Entity.ModelDriven false
              computed Entity.PhysicsId (fun (entity : Entity) world -> { SourceId = entity.GetId world; CorrelationId = 0UL }) None]
@@ -846,6 +847,7 @@ module RigidBodyFacetModule =
             let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.CollisionCategories)) entity world
             let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.CollisionMask)) entity world
             let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.BodyShape)) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.Bullet)) entity world
             let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.Sensor)) entity world
             world
 
