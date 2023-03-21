@@ -2,13 +2,14 @@
 // Copyright (C) Bryan Edds, 2013-2020.
 
 #I __SOURCE_DIRECTORY__
-#r "nuget: Magick.NET-Q8-x64, 7.5.0.1"
+#r "nuget: Aether.Physics2D, 1.5.0"
 #r "nuget: Csv, 1.0.58"
 #r "nuget: FParsec, 1.0.3"
+#r "nuget: Magick.NET-Q8-x64, 7.5.0.1"
+#r "nuget: Nito.Collections.Deque, 1.1.0"
 #r "nuget: Prime, 9.2.0"
 #r "nuget: Prime.Scripting, 9.0.0"
-#r "nuget: Aether.Physics2D, 1.5.0"
-#r "nuget: Nito.Collections.Deque, 1.1.0"
+#r "nuget: System.Configuration.ConfigurationManager, 7.0.0"
 #r "../../Nu/Nu.Dependencies/SDL2-CS/netstandard2.0/SDL2-CS.dll"
 #r "../../Nu/Nu.Dependencies/TiledSharp.1.0.2/lib/netstandard2.0/TiledSharp.dll"
 #r "../../Nu/Nu.Math/bin/Debug/netstandard2.0/Nu.Math.dll"
