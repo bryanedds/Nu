@@ -16,8 +16,8 @@ type internal BulletBodyDictionary = OrderedDictionary<PhysicsId, Vector3 option
 /// Tracks Bullet physics ghosts by their PhysicsIds.
 type internal BulletGhostDictionary = OrderedDictionary<PhysicsId, GhostObject>
 
-/// Tracks CollisionObject physics ghosts by their PhysicsIds.
-type internal BulletCollisionObjectDictionary = OrderedDictionary<PhysicsId, CollisionObject>
+/// Tracks Bullet physics collision objects by their PhysicsIds.
+type internal BulletObjectDictionary = OrderedDictionary<PhysicsId, CollisionObject>
 
 /// Tracks Bullet physics constraints by their PhysicsIds.
 type internal BulletConstraintDictionary = OrderedDictionary<PhysicsId, TypedConstraint>
@@ -29,7 +29,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
           Constraints : BulletConstraintDictionary
           Bodies : BulletBodyDictionary
           Ghosts : BulletGhostDictionary
-          CollisionObjects : BulletCollisionObjectDictionary
+          Objects : BulletObjectDictionary
           CollisionConfiguration : CollisionConfiguration
           PhysicsDispatcher : Dispatcher
           BroadPhaseInterface : BroadphaseInterface
@@ -50,7 +50,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
           Constraints = OrderedDictionary HashIdentity.Structural
           Bodies = OrderedDictionary HashIdentity.Structural
           Ghosts = OrderedDictionary HashIdentity.Structural
-          CollisionObjects = OrderedDictionary HashIdentity.Structural
+          Objects = OrderedDictionary HashIdentity.Structural
           CollisionConfiguration = collisionConfiguration
           PhysicsDispatcher = physicsDispatcher
           BroadPhaseInterface = broadPhaseInterface
@@ -208,7 +208,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
             physicsEngine.PhysicsContext.AddRigidBody (body, bodyProperties.CollisionCategories, bodyProperties.CollisionMask)
             let physicsId = { SourceId = sourceId; CorrelationId = bodyProperties.BodyId }
             if physicsEngine.Bodies.TryAdd (physicsId, (bodyProperties.GravityOverrideOpt, body))
-            then physicsEngine.CollisionObjects.Add (physicsId, body)
+            then physicsEngine.Objects.Add (physicsId, body)
             else Log.debug ("Could not add body via '" + scstring bodyProperties + "'.")
         else
             let ghost = new GhostObject ()
@@ -217,7 +217,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
             physicsEngine.PhysicsContext.AddCollisionObject (ghost, bodyProperties.CollisionCategories, bodyProperties.CollisionMask)
             let physicsId = { SourceId = sourceId; CorrelationId = bodyProperties.BodyId }
             if physicsEngine.Ghosts.TryAdd (physicsId, ghost)
-            then physicsEngine.CollisionObjects.Add (physicsId, ghost)
+            then physicsEngine.Objects.Add (physicsId, ghost)
             else Log.debug ("Could not add body via '" + scstring bodyProperties + "'.")
 
     static member private createBody4 bodyShape bodyProperties (bodySource : BodySourceInternal) physicsEngine =
@@ -243,15 +243,15 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
 
     static member private destroyBody (destroyBodyMessage : DestroyBodyMessage) physicsEngine =
         let physicsId = destroyBodyMessage.PhysicsId
-        match physicsEngine.CollisionObjects.TryGetValue physicsId with
-        | (true, collisionObject) ->
-            match collisionObject with
+        match physicsEngine.Objects.TryGetValue physicsId with
+        | (true, object) ->
+            match object with
             | :? RigidBody as body ->
-                physicsEngine.CollisionObjects.Remove physicsId |> ignore
+                physicsEngine.Objects.Remove physicsId |> ignore
                 physicsEngine.Bodies.Remove physicsId |> ignore
                 physicsEngine.PhysicsContext.RemoveRigidBody body
             | :? GhostObject as ghost ->
-                physicsEngine.CollisionObjects.Remove physicsId |> ignore
+                physicsEngine.Objects.Remove physicsId |> ignore
                 physicsEngine.Ghosts.Remove physicsId |> ignore
                 physicsEngine.PhysicsContext.RemoveCollisionObject ghost
             | _ -> ()
@@ -309,6 +309,51 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
             BulletPhysicsEngine.destroyJoint destroyJointMessage physicsEngine)
             destroyJointsMessage.PhysicsIds
 
+    static member private setBodyEnabled (setBodyEnabledMessage : SetBodyEnabledMessage) physicsEngine =
+        match physicsEngine.Objects.TryGetValue setBodyEnabledMessage.PhysicsId with
+        | (true, object) ->
+            if setBodyEnabledMessage.Enabled
+            then object.ActivationState <- object.ActivationState ||| ActivationState.DisableSimulation
+            else object.ActivationState <- object.ActivationState &&& ~~~ActivationState.DisableSimulation
+        | (false, _) -> Log.debug ("Could not set enabled of non-existent body with PhysicsId = " + scstring setBodyEnabledMessage.PhysicsId + "'.")
+
+    static member private setBodyCenter (setBodyCenterMessage : SetBodyCenterMessage) physicsEngine =
+        match physicsEngine.Objects.TryGetValue setBodyCenterMessage.PhysicsId with
+        | (true, object) ->
+            let mutable transform = object.WorldTransform
+            transform.Translation <- setBodyCenterMessage.Center
+            object.WorldTransform <- transform
+        | (false, _) -> Log.debug ("Could not set center of non-existent body with PhysicsId = " + scstring setBodyCenterMessage.PhysicsId + "'.")
+
+    static member private setBodyRotation (setBodyRotationMessage : SetBodyRotationMessage) physicsEngine =
+        match physicsEngine.Objects.TryGetValue setBodyRotationMessage.PhysicsId with
+        | (true, object) -> object.WorldTransform <- object.WorldTransform.SetRotation setBodyRotationMessage.Rotation
+        | (false, _) -> Log.debug ("Could not set rotation of non-existent body with PhysicsId = " + scstring setBodyRotationMessage.PhysicsId + "'.")
+
+    static member private setBodyAngularVelocity (setBodyAngularVelocityMessage : SetBodyAngularVelocityMessage) physicsEngine =
+        match physicsEngine.Objects.TryGetValue setBodyAngularVelocityMessage.PhysicsId with
+        | (true, (:? RigidBody as body)) -> body.AngularVelocity <- setBodyAngularVelocityMessage.AngularVelocity
+        | (true, _) -> () // nothing to do
+        | (false, _) -> Log.debug ("Could not set angular velocity of non-existent body with PhysicsId = " + scstring setBodyAngularVelocityMessage.PhysicsId + "'.")
+
+    static member private applyBodyAngularImpulse (applyBodyAngularImpulseMessage : ApplyBodyAngularImpulseMessage) physicsEngine =
+        match physicsEngine.Objects.TryGetValue applyBodyAngularImpulseMessage.PhysicsId with
+        | (true, (:? RigidBody as body)) -> body.ApplyTorqueImpulse (applyBodyAngularImpulseMessage.AngularImpulse)
+        | (true, _) -> () // nothing to do
+        | (false, _) -> Log.debug ("Could not apply angular impulse to non-existent body with PhysicsId = " + scstring applyBodyAngularImpulseMessage.PhysicsId + "'.")
+
+    static member private setBodyLinearVelocity (setBodyLinearVelocityMessage : SetBodyLinearVelocityMessage) physicsEngine =
+        match physicsEngine.Objects.TryGetValue setBodyLinearVelocityMessage.PhysicsId with
+        | (true, (:? RigidBody as body)) -> body.LinearVelocity <- setBodyLinearVelocityMessage.LinearVelocity
+        | (true, _) -> () // nothing to do
+        | (false, _) -> Log.debug ("Could not set linear velocity of non-existent body with PhysicsId = " + scstring setBodyLinearVelocityMessage.PhysicsId + "'.")
+
+    static member private applyBodyLinearImpulse (applyBodyLinearImpulseMessage : ApplyBodyLinearImpulseMessage) physicsEngine =
+        match physicsEngine.Objects.TryGetValue applyBodyLinearImpulseMessage.PhysicsId with
+        | (true, (:? RigidBody as body)) -> body.ApplyTorqueImpulse (applyBodyLinearImpulseMessage.LinearImpulse)
+        | (true, _) -> () // nothing to do
+        | (false, _) -> Log.debug ("Could not apply linear impulse to non-existent body with PhysicsId = " + scstring applyBodyLinearImpulseMessage.PhysicsId + "'.")
+
     static member private handlePhysicsMessage physicsEngine physicsMessage =
         match physicsMessage with
         | CreateBodyMessage createBodyMessage -> BulletPhysicsEngine.createBody createBodyMessage physicsEngine
@@ -319,13 +364,13 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
         | CreateJointsMessage createJointsMessage -> BulletPhysicsEngine.createJoints createJointsMessage physicsEngine
         | DestroyJointMessage destroyJointMessage -> BulletPhysicsEngine.destroyJoint destroyJointMessage physicsEngine
         | DestroyJointsMessage destroyJointsMessage -> BulletPhysicsEngine.destroyJoints destroyJointsMessage physicsEngine
-        //| SetBodyEnabledMessage setBodyEnabledMessage -> BulletPhysicsEngine.setBodyEnabled setBodyEnabledMessage physicsEngine
-        //| SetBodyPositionMessage setBodyPositionMessage -> BulletPhysicsEngine.setBodyPosition setBodyPositionMessage physicsEngine
-        //| SetBodyRotationMessage setBodyRotationMessage -> BulletPhysicsEngine.setBodyRotation setBodyRotationMessage physicsEngine
-        //| SetBodyAngularVelocityMessage setBodyAngularVelocityMessage -> BulletPhysicsEngine.setBodyAngularVelocity setBodyAngularVelocityMessage physicsEngine
-        //| ApplyBodyAngularImpulseMessage applyBodyAngularImpulseMessage -> BulletPhysicsEngine.applyBodyAngularImpulse applyBodyAngularImpulseMessage physicsEngine
-        //| SetBodyLinearVelocityMessage setBodyLinearVelocityMessage -> BulletPhysicsEngine.setBodyLinearVelocity setBodyLinearVelocityMessage physicsEngine
-        //| ApplyBodyLinearImpulseMessage applyBodyLinearImpulseMessage -> BulletPhysicsEngine.applyBodyLinearImpulse applyBodyLinearImpulseMessage physicsEngine
+        | SetBodyEnabledMessage setBodyEnabledMessage -> BulletPhysicsEngine.setBodyEnabled setBodyEnabledMessage physicsEngine
+        | SetBodyCenterMessage setBodyCenterMessage -> BulletPhysicsEngine.setBodyCenter setBodyCenterMessage physicsEngine
+        | SetBodyRotationMessage setBodyRotationMessage -> BulletPhysicsEngine.setBodyRotation setBodyRotationMessage physicsEngine
+        | SetBodyAngularVelocityMessage setBodyAngularVelocityMessage -> BulletPhysicsEngine.setBodyAngularVelocity setBodyAngularVelocityMessage physicsEngine
+        | ApplyBodyAngularImpulseMessage applyBodyAngularImpulseMessage -> BulletPhysicsEngine.applyBodyAngularImpulse applyBodyAngularImpulseMessage physicsEngine
+        | SetBodyLinearVelocityMessage setBodyLinearVelocityMessage -> BulletPhysicsEngine.setBodyLinearVelocity setBodyLinearVelocityMessage physicsEngine
+        | ApplyBodyLinearImpulseMessage applyBodyLinearImpulseMessage -> BulletPhysicsEngine.applyBodyLinearImpulse applyBodyLinearImpulseMessage physicsEngine
         //| ApplyBodyForceMessage applyBodyForceMessage -> BulletPhysicsEngine.applyBodyForce applyBodyForceMessage physicsEngine
         //| ApplyBodyTorqueMessage applyBodyTorqueMessage -> BulletPhysicsEngine.applyBodyTorque applyBodyTorqueMessage physicsEngine
         | SetGravityMessage gravity ->
@@ -337,7 +382,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
         | RebuildPhysicsHackMessage ->
             physicsEngine.RebuildingHack <- true
             for constrain in physicsEngine.Constraints.Values do physicsEngine.PhysicsContext.RemoveConstraint constrain
-            physicsEngine.CollisionObjects.Clear ()
+            physicsEngine.Objects.Clear ()
             physicsEngine.Constraints.Clear ()
             for ghost in physicsEngine.Ghosts.Values do physicsEngine.PhysicsContext.RemoveCollisionObject ghost
             physicsEngine.Ghosts.Clear ()
@@ -376,17 +421,17 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
     interface PhysicsEngine with
 
         member physicsEngine.BodyExists physicsId =
-            physicsEngine.CollisionObjects.ContainsKey physicsId
+            physicsEngine.Objects.ContainsKey physicsId
 
         member physicsEngine.GetBodyContactNormals physicsId =
             // TODO: see if this can be optimized from linear search to constant-time look-up.
-            match physicsEngine.CollisionObjects.TryGetValue physicsId with
-            | (true, collisionObject) ->
+            match physicsEngine.Objects.TryGetValue physicsId with
+            | (true, object) ->
                 let dispatcher = physicsEngine.PhysicsContext.Dispatcher
                 let manifoldCount = dispatcher.NumManifolds
                 [for i in 0 .. dec manifoldCount do
                     let manifold = dispatcher.GetManifoldByIndexInternal i
-                    if manifold.Body0 = collisionObject then
+                    if manifold.Body0 = object then
                         let contactCount = manifold.NumContacts
                         for j in 0 .. dec contactCount do
                             let contact = manifold.GetContactPoint j
