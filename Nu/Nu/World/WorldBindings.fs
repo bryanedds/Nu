@@ -1054,21 +1054,21 @@ module WorldBindings =
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'setBodyEnabled' due to: " + scstring exn, ValueNone)
             struct (violation, World.choose oldWorld)
 
-    let setBodyPosition position physicsId world =
+    let setBodyCenter center physicsId world =
         let oldWorld = world
         try
             let position =
-                match ScriptingSystem.tryExport typeof<Vector3> position world with
+                match ScriptingSystem.tryExport typeof<Vector3> center world with
                 | Some value -> value :?> Vector3
                 | None -> failwith "Invalid argument type for 'position'; expecting a value convertable to Vector3."
             let physicsId =
                 match ScriptingSystem.tryExport typeof<PhysicsId> physicsId world with
                 | Some value -> value :?> PhysicsId
                 | None -> failwith "Invalid argument type for 'physicsId'; expecting a value convertable to PhysicsId."
-            let result = World.setBodyPosition position physicsId world
+            let result = World.setBodyCenter position physicsId world
             struct (Scripting.Unit, result)
         with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'setBodyPosition' due to: " + scstring exn, ValueNone)
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'setBodyCenter' due to: " + scstring exn, ValueNone)
             struct (violation, World.choose oldWorld)
 
     let setBodyRotation rotation physicsId world =
@@ -1105,23 +1105,6 @@ module WorldBindings =
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'setBodyLinearVelocity' due to: " + scstring exn, ValueNone)
             struct (violation, World.choose oldWorld)
 
-    let applyBodyLinearImpulse linearImpulse physicsId world =
-        let oldWorld = world
-        try
-            let linearImpulse =
-                match ScriptingSystem.tryExport typeof<Vector3> linearImpulse world with
-                | Some value -> value :?> Vector3
-                | None -> failwith "Invalid argument type for 'linearImpulse'; expecting a value convertable to Vector3."
-            let physicsId =
-                match ScriptingSystem.tryExport typeof<PhysicsId> physicsId world with
-                | Some value -> value :?> PhysicsId
-                | None -> failwith "Invalid argument type for 'physicsId'; expecting a value convertable to PhysicsId."
-            let result = World.applyBodyLinearImpulse linearImpulse physicsId world
-            struct (Scripting.Unit, result)
-        with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'applyBodyLinearImpulse' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
-
     let setBodyAngularVelocity angularVelocity physicsId world =
         let oldWorld = world
         try
@@ -1154,23 +1137,6 @@ module WorldBindings =
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'applyBodyAngularImpulse' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
-
-    let applyBodyForce force physicsId world =
-        let oldWorld = world
-        try
-            let force =
-                match ScriptingSystem.tryExport typeof<Vector3> force world with
-                | Some value -> value :?> Vector3
-                | None -> failwith "Invalid argument type for 'force'; expecting a value convertable to Vector3."
-            let physicsId =
-                match ScriptingSystem.tryExport typeof<PhysicsId> physicsId world with
-                | Some value -> value :?> PhysicsId
-                | None -> failwith "Invalid argument type for 'physicsId'; expecting a value convertable to PhysicsId."
-            let result = World.applyBodyForce force physicsId world
-            struct (Scripting.Unit, result)
-        with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'applyBodyForce' due to: " + scstring exn, ValueNone)
             struct (violation, World.choose oldWorld)
 
     let applyBodyTorque torque physicsId world =
@@ -3701,12 +3667,12 @@ module WorldBindings =
                 struct (violation, world)
         | Some violation -> struct (violation, world)
 
-    let evalSetBodyPositionBinding fnName exprs originOpt world =
+    let evalSetBodyCenterBinding fnName exprs originOpt world =
         let struct (evaleds, world) = World.evalManyInternal exprs world
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [|position; physicsId|] -> setBodyPosition position physicsId world
+            | [|center; physicsId|] -> setBodyCenter center physicsId world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
                 struct (violation, world)
@@ -3734,17 +3700,6 @@ module WorldBindings =
                 struct (violation, world)
         | Some violation -> struct (violation, world)
 
-    let evalApplyBodyLinearImpulseBinding fnName exprs originOpt world =
-        let struct (evaleds, world) = World.evalManyInternal exprs world
-        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
-        | None ->
-            match evaleds with
-            | [|linearImpulse; physicsId|] -> applyBodyLinearImpulse linearImpulse physicsId world
-            | _ ->
-                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
-                struct (violation, world)
-        | Some violation -> struct (violation, world)
-
     let evalSetBodyAngularVelocityBinding fnName exprs originOpt world =
         let struct (evaleds, world) = World.evalManyInternal exprs world
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
@@ -3762,17 +3717,6 @@ module WorldBindings =
         | None ->
             match evaleds with
             | [|angularImpulse; physicsId|] -> applyBodyAngularImpulse angularImpulse physicsId world
-            | _ ->
-                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
-                struct (violation, world)
-        | Some violation -> struct (violation, world)
-
-    let evalApplyBodyForceBinding fnName exprs originOpt world =
-        let struct (evaleds, world) = World.evalManyInternal exprs world
-        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
-        | None ->
-            match evaleds with
-            | [|force; physicsId|] -> applyBodyForce force physicsId world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
                 struct (violation, world)
@@ -5193,13 +5137,11 @@ module WorldBindings =
              ("destroyJoint", { Fn = evalDestroyJointBinding; Pars = [|"sourceSimulant"; "physicsId"|]; DocOpt = None })
              ("destroyJoints", { Fn = evalDestroyJointsBinding; Pars = [|"sourceSimulant"; "physicsIds"|]; DocOpt = None })
              ("setBodyEnabled", { Fn = evalSetBodyEnabledBinding; Pars = [|"enabled"; "physicsId"|]; DocOpt = None })
-             ("setBodyPosition", { Fn = evalSetBodyPositionBinding; Pars = [|"position"; "physicsId"|]; DocOpt = None })
+             ("setBodyCenter", { Fn = evalSetBodyCenterBinding; Pars = [|"center"; "physicsId"|]; DocOpt = None })
              ("setBodyRotation", { Fn = evalSetBodyRotationBinding; Pars = [|"rotation"; "physicsId"|]; DocOpt = None })
              ("setBodyLinearVelocity", { Fn = evalSetBodyLinearVelocityBinding; Pars = [|"linearVelocity"; "physicsId"|]; DocOpt = None })
-             ("applyBodyLinearImpulse", { Fn = evalApplyBodyLinearImpulseBinding; Pars = [|"linearImpulse"; "physicsId"|]; DocOpt = None })
              ("setBodyAngularVelocity", { Fn = evalSetBodyAngularVelocityBinding; Pars = [|"angularVelocity"; "physicsId"|]; DocOpt = None })
              ("applyBodyAngularImpulse", { Fn = evalApplyBodyAngularImpulseBinding; Pars = [|"angularImpulse"; "physicsId"|]; DocOpt = None })
-             ("applyBodyForce", { Fn = evalApplyBodyForceBinding; Pars = [|"force"; "physicsId"|]; DocOpt = None })
              ("applyBodyTorque", { Fn = evalApplyBodyTorqueBinding; Pars = [|"torque"; "physicsId"|]; DocOpt = None })
              ("isMouseButtonDown", { Fn = evalIsMouseButtonDownBinding; Pars = [|"mouseButton"|]; DocOpt = None })
              ("getMousePosition", { Fn = evalGetMousePositionBinding; Pars = [||]; DocOpt = None })

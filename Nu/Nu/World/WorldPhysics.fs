@@ -188,9 +188,9 @@ module WorldPhysics =
 
         /// Send a message to the physics system to set the position of a body with the given physics id.
         [<FunctionBinding>]
-        static member setBodyPosition position physicsId world =
-            let setBodyPositionMessage = SetBodyPositionMessage { PhysicsId = physicsId; Position = position }
-            World.enqueuePhysicsMessage2d setBodyPositionMessage world
+        static member setBodyCenter center physicsId world =
+            let setBodyCenterMessage = SetBodyCenterMessage { PhysicsId = physicsId; Center = center }
+            World.enqueuePhysicsMessage2d setBodyCenterMessage world
 
         /// Send a message to the physics system to set the rotation of a body with the given physics id.
         [<FunctionBinding>]
@@ -206,8 +206,8 @@ module WorldPhysics =
 
         /// Send a message to the physics system to apply linear impulse to a body with the given physics id.
         [<FunctionBinding>]
-        static member applyBodyLinearImpulse linearImpulse physicsId world =
-            let applyBodyLinearImpulseMessage = ApplyBodyLinearImpulseMessage { PhysicsId = physicsId; LinearImpulse = linearImpulse }
+        static member applyBodyLinearImpulse linearImpulse offset physicsId world =
+            let applyBodyLinearImpulseMessage = ApplyBodyLinearImpulseMessage { PhysicsId = physicsId; LinearImpulse = linearImpulse; Offset = offset }
             World.enqueuePhysicsMessage2d applyBodyLinearImpulseMessage world
 
         /// Send a message to the physics system to set the angular velocity of a body with the given physics id.
@@ -224,8 +224,8 @@ module WorldPhysics =
 
         /// Send a message to the physics system to apply force to a body with the given physics id.
         [<FunctionBinding>]
-        static member applyBodyForce force physicsId world =
-            let applyBodyForceMessage = ApplyBodyForceMessage { PhysicsId = physicsId; Force = force }
+        static member applyBodyForce force offset physicsId world =
+            let applyBodyForceMessage = ApplyBodyForceMessage { PhysicsId = physicsId; Force = force; Offset = offset }
             World.enqueuePhysicsMessage2d applyBodyForceMessage world
 
         /// Send a message to the physics system to apply torque to a body with the given physics id.

@@ -350,7 +350,8 @@ type SetBodyLinearVelocityMessage =
 /// A message to the physics system to apply a linear impulse to a body.
 type ApplyBodyLinearImpulseMessage =
     { PhysicsId : PhysicsId
-      LinearImpulse : Vector3 }
+      LinearImpulse : Vector3
+      Offset : Vector3 }
 
 /// A message to the physics system to set the angular velocity of a body.
 type SetBodyAngularVelocityMessage =
@@ -365,7 +366,8 @@ type ApplyBodyAngularImpulseMessage =
 /// A message to the physics system to apply a force to a body.
 type ApplyBodyForceMessage =
     { PhysicsId : PhysicsId
-      Force : Vector3 }
+      Force : Vector3
+      Offset : Vector3 }
 
 /// A message to the physics system to apply torque to a body.
 type ApplyBodyTorqueMessage =
