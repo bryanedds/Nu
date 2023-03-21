@@ -25,8 +25,8 @@ module PropDispatcher =
             [entity.Perimeter := prop.Prop.Perimeter
              entity.BodyType == Static
              entity.LinearDamping == 0.0f
-             entity.FixedRotation == true
-             entity.GravityScale == 0.0f
+             entity.AngularFactor == v3Zero
+             entity.GravityOverrideOpt == Some v3Zero
              entity.Sensor :=
                 match prop.Prop.PropData with
                 | Portal _ | Sensor _ | SavePoint -> true

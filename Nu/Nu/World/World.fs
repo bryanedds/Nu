@@ -399,7 +399,9 @@ module WorldModule3 =
                  StaticBillboardDispatcher () :> EntityDispatcher
                  StaticModelSurfaceDispatcher () :> EntityDispatcher
                  StaticModelDispatcher () :> EntityDispatcher
-                 StaticModelHierarchyDispatcher () :> EntityDispatcher]
+                 StaticModelHierarchyDispatcher () :> EntityDispatcher
+                 BlockDispatcher3d () :> EntityDispatcher
+                 BoxDispatcher3d () :> EntityDispatcher]
 
         static member private makeDefaultFacets () =
             // TODO: consider if we should reflectively generate these.

@@ -46,8 +46,8 @@ module AvatarDispatcher =
                      BodySphere { Center = v3 -0.016f -0.366f 0.0f; Radius = 0.320f; PropertiesOpt = Some { BodyShapeProperties.empty with BodyShapeId = avatar.SensorShapeId; SensorOpt = Some true }}]
             [Entity.Perimeter := avatar.Perimeter
              Entity.Presence == Omnipresent
-             Entity.FixedRotation == true
-             Entity.GravityScale == 0.0f
+             Entity.AngularFactor == v3Zero
+             Entity.GravityOverrideOpt == Some v3Zero
              Entity.BodyShape := bodyShape
              Entity.UpdateEvent => Update]
 
@@ -95,7 +95,7 @@ module AvatarDispatcher =
                     force <> v3Zero &&
                     entity.GetEnabled world then
                     let physicsId = Simulants.FieldSceneAvatar.GetPhysicsId world
-                    let world = World.applyBodyForce force physicsId world
+                    let world = World.applyBodyForce force v3Zero physicsId world
                     just world
                 else just world
 

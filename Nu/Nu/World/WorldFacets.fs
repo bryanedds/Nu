@@ -778,6 +778,9 @@ module RigidBodyFacetModule =
         member this.GetBodyShape world : BodyShape = this.Get (nameof this.BodyShape) world
         member this.SetBodyShape (value : BodyShape) world = this.Set (nameof this.BodyShape) value world
         member this.BodyShape = lens (nameof this.BodyShape) this this.GetBodyShape this.SetBodyShape
+        member this.GetBullet world : bool = this.Get (nameof this.Bullet) world
+        member this.SetBullet (value : bool) world = this.Set (nameof this.Bullet) value world
+        member this.Bullet = lens (nameof this.Bullet) this this.GetBullet this.SetBullet
         member this.GetSensor world : bool = this.Get (nameof this.Sensor) world
         member this.SetSensor (value : bool) world = this.Set (nameof this.Sensor) value world
         member this.Sensor = lens (nameof this.Sensor) this this.GetSensor this.SetSensor
@@ -869,6 +872,7 @@ module RigidBodyFacetModule =
                   CollisionDetection = entity.GetCollisionDetection world
                   CollisionCategories = Physics.categorizeCollisionMask (entity.GetCollisionCategories world)
                   CollisionMask = Physics.categorizeCollisionMask (entity.GetCollisionMask world)
+                  Bullet = entity.GetBullet world
                   Sensor = entity.GetSensor world }
             World.createBody entity (entity.GetId world) bodyProperties world
 

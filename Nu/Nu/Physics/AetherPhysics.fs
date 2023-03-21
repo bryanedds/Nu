@@ -125,6 +125,7 @@ type [<ReferenceEquality>] AetherPhysicsEngine =
         body.SetCollisionCategories (enum<Category> bodyProperties.CollisionCategories)
         body.SetCollidesWith (enum<Category> bodyProperties.CollisionMask)
         body.BodyType <- AetherPhysicsEngine.toPhysicsBodyType bodyProperties.BodyType
+        body.IsBullet <- bodyProperties.Bullet
         body.SetIsSensor bodyProperties.Sensor
 
     static member private attachBoxBody sourceSimulant (bodyProperties : BodyProperties) (bodyBox : BodyBox) (body : Body) =

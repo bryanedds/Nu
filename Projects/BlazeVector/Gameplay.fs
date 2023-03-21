@@ -29,10 +29,10 @@ module Bullet =
         static member Properties =
             [define Entity.Size (v3 20.0f 20.0f 0.0f)
              define Entity.Presence Omnipresent
-             define Entity.Density 0.1f
+             define Entity.Substance (Density 0.1f)
              define Entity.Restitution 0.5f
              define Entity.LinearDamping 0.0f
-             define Entity.GravityScale 0.0f
+             define Entity.GravityOverrideOpt (Some v3Zero)
              define Entity.Bullet true
              define Entity.BodyShape (BodySphere { Center = v3Zero; Radius = 0.5f; PropertiesOpt = None })
              define Entity.StaticImage Assets.Gameplay.PlayerBulletImage]
@@ -55,7 +55,7 @@ module Enemy =
 
         static let move (enemy : Entity) world =
             let force = v3 -750.0f -5000.0f 0.0f
-            World.applyBodyForce force (enemy.GetPhysicsId world) world
+            World.applyBodyForce force v3Zero (enemy.GetPhysicsId world) world
 
         static let die (enemy : Entity) world =
             let world = World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.ExplosionSound world
@@ -87,9 +87,9 @@ module Enemy =
         static member Properties =
             [define Entity.Size (v3 48.0f 96.0f 0.0f)
              define Entity.Friction 0.0f
-             define Entity.FixedRotation true
+             define Entity.AngularFactor v3Zero
              define Entity.LinearDamping 3.0f
-             define Entity.GravityScale 0.0f
+             define Entity.GravityOverrideOpt (Some v3Zero)
              define Entity.BodyShape (BodyCapsule { Center = v3Zero; Height = 0.5f; Radius = 0.25f; PropertiesOpt = None })
              define Entity.CelCount 6
              define Entity.CelRun 4
@@ -134,7 +134,7 @@ module Player =
 
         static let propelBullet (bullet : Entity) world =
             let world = World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.ShotSound world
-            World.applyBodyLinearImpulse (v3 BulletForce 0.0f 0.0f) (bullet.GetPhysicsId world) world
+            World.applyBodyLinearImpulse (v3 BulletForce 0.0f 0.0f) v3Zero (bullet.GetPhysicsId world) world
 
         static let shootBullet (player : Entity) world =
             let (bullet, world) = createBullet player world
@@ -169,7 +169,7 @@ module Player =
                     let downForce = if groundTangent.Y > 0.0f then ClimbForce else 0.0f
                     Vector3.Multiply (groundTangent, v3 WalkForce downForce 0.0f)
                 | None -> v3 WalkForce FallForce 0.0f
-            let world = World.applyBodyForce force physicsId world
+            let world = World.applyBodyForce force v3Zero physicsId world
             (Cascade, world)
 
         static let handleJump evt world =
@@ -179,7 +179,7 @@ module Player =
                 time <= player.GetLastTimeOnGround world + 10L then
                 let world = World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.JumpSound world
                 let world = player.SetLastTimeJump time world
-                let world = World.applyBodyLinearImpulse (v3 0.0f JumpForce 0.0f) (player.GetPhysicsId world) world
+                let world = World.applyBodyLinearImpulse (v3 0.0f JumpForce 0.0f) v3Zero (player.GetPhysicsId world) world
                 (Cascade, world)
             else (Cascade, world)
 
@@ -196,10 +196,10 @@ module Player =
 
         static member Properties =
             [define Entity.Size (v3 48.0f 96.0f 0.0f)
-             define Entity.FixedRotation true
+             define Entity.AngularFactor v3Zero
              define Entity.Friction 0.0f
              define Entity.LinearDamping 3.0f
-             define Entity.GravityScale 0.0f
+             define Entity.GravityOverrideOpt (Some v3Zero)
              define Entity.BodyShape (BodyCapsule { Center = v3Zero; Height = 0.5f; Radius = 0.25f; PropertiesOpt = None })
              define Entity.CelCount 16
              define Entity.CelRun 4
