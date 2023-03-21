@@ -333,9 +333,9 @@ type SetBodyEnabledMessage =
       Enabled : bool }
 
 /// A message to the physics system to destroy a body.
-type SetBodyPositionMessage =
+type SetBodyCenterMessage =
     { PhysicsId : PhysicsId
-      Position : Vector3 }
+      Center : Vector3 }
 
 /// A message to the physics system to set the rotation of a body.
 type SetBodyRotationMessage =
@@ -409,7 +409,7 @@ type PhysicsMessage =
     | DestroyJointMessage of DestroyJointMessage
     | DestroyJointsMessage of DestroyJointsMessage
     | SetBodyEnabledMessage of SetBodyEnabledMessage
-    | SetBodyPositionMessage of SetBodyPositionMessage
+    | SetBodyCenterMessage of SetBodyCenterMessage
     | SetBodyRotationMessage of SetBodyRotationMessage
     | SetBodyAngularVelocityMessage of SetBodyAngularVelocityMessage
     | ApplyBodyAngularImpulseMessage of ApplyBodyAngularImpulseMessage

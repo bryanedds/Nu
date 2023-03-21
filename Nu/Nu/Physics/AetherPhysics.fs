@@ -336,10 +336,10 @@ type [<ReferenceEquality>] AetherPhysicsEngine =
         | (true, (_, body)) -> body.Enabled <- setBodyEnabledMessage.Enabled
         | (false, _) -> Log.debug ("Could not set enabled of non-existent body with PhysicsId = " + scstring setBodyEnabledMessage.PhysicsId + "'.")
 
-    static member private setBodyPosition (setBodyPositionMessage : SetBodyPositionMessage) physicsEngine =
-        match physicsEngine.Bodies.TryGetValue setBodyPositionMessage.PhysicsId with
-        | (true, (_, body)) -> body.Position <- AetherPhysicsEngine.toPhysicsV2 setBodyPositionMessage.Position
-        | (false, _) -> Log.debug ("Could not set position of non-existent body with PhysicsId = " + scstring setBodyPositionMessage.PhysicsId + "'.")
+    static member private setBodyCenter (setBodyCenterMessage : SetBodyCenterMessage) physicsEngine =
+        match physicsEngine.Bodies.TryGetValue setBodyCenterMessage.PhysicsId with
+        | (true, (_, body)) -> body.Center <- AetherPhysicsEngine.toPhysicsV2 setBodyCenterMessage.Center
+        | (false, _) -> Log.debug ("Could not set center of non-existent body with PhysicsId = " + scstring setBodyCenterMessage.PhysicsId + "'.")
 
     static member private setBodyRotation (setBodyRotationMessage : SetBodyRotationMessage) physicsEngine =
         match physicsEngine.Bodies.TryGetValue setBodyRotationMessage.PhysicsId with
@@ -387,7 +387,7 @@ type [<ReferenceEquality>] AetherPhysicsEngine =
         | DestroyJointMessage destroyJointMessage -> AetherPhysicsEngine.destroyJoint destroyJointMessage physicsEngine
         | DestroyJointsMessage destroyJointsMessage -> AetherPhysicsEngine.destroyJoints destroyJointsMessage physicsEngine
         | SetBodyEnabledMessage setBodyEnabledMessage -> AetherPhysicsEngine.setBodyEnabled setBodyEnabledMessage physicsEngine
-        | SetBodyPositionMessage setBodyPositionMessage -> AetherPhysicsEngine.setBodyPosition setBodyPositionMessage physicsEngine
+        | SetBodyCenterMessage setBodyCenterMessage -> AetherPhysicsEngine.setBodyCenter setBodyCenterMessage physicsEngine
         | SetBodyRotationMessage setBodyRotationMessage -> AetherPhysicsEngine.setBodyRotation setBodyRotationMessage physicsEngine
         | SetBodyAngularVelocityMessage setBodyAngularVelocityMessage -> AetherPhysicsEngine.setBodyAngularVelocity setBodyAngularVelocityMessage physicsEngine
         | ApplyBodyAngularImpulseMessage applyBodyAngularImpulseMessage -> AetherPhysicsEngine.applyBodyAngularImpulse applyBodyAngularImpulseMessage physicsEngine
