@@ -203,10 +203,10 @@ type [<ReferenceEquality>] AetherPhysicsEngine =
             AetherPhysicsEngine.configureBodyShapeProperties bodyProperties bodyBoxRounded.PropertiesOpt bodyShape |> ignore
         Array.ofSeq bodyShapes
 
-    static member private attachBodyPolygon sourceSimulant bodyProperties bodyPolygon (body : Body) =
+    static member private attachBodyConvexHull sourceSimulant bodyProperties bodyConvexHull (body : Body) =
         let vertices =
-            bodyPolygon.Vertices |>
-            Array.map (fun vertex -> vertex + bodyPolygon.Center) |>
+            bodyConvexHull.Vertices |>
+            Array.map (fun vertex -> vertex + bodyConvexHull.Center) |>
             Array.map AetherPhysicsEngine.toPhysicsV2
         let bodyShape =
             body.CreatePolygon
@@ -215,8 +215,8 @@ type [<ReferenceEquality>] AetherPhysicsEngine =
         bodyShape.Tag <-
             { Simulant = sourceSimulant
               BodyId = bodyProperties.BodyId
-              ShapeId = match bodyPolygon.PropertiesOpt with Some p -> p.BodyShapeId | None -> 0UL }
-        AetherPhysicsEngine.configureBodyShapeProperties bodyProperties bodyPolygon.PropertiesOpt bodyShape
+              ShapeId = match bodyConvexHull.PropertiesOpt with Some p -> p.BodyShapeId | None -> 0UL }
+        AetherPhysicsEngine.configureBodyShapeProperties bodyProperties bodyConvexHull.PropertiesOpt bodyShape
 
     static member private attachBodyShapes sourceSimulant bodyProperties bodyShapes (body : Body) =
         let list = List ()
@@ -232,7 +232,7 @@ type [<ReferenceEquality>] AetherPhysicsEngine =
         | BodySphere bodySphere -> AetherPhysicsEngine.attachBodySphere sourceSimulant bodyProperties bodySphere body |> Array.singleton
         | BodyCapsule bodyCapsule -> AetherPhysicsEngine.attachBodyCapsule sourceSimulant bodyProperties bodyCapsule body |> Array.ofSeq
         | BodyBoxRounded bodyBoxRounded -> AetherPhysicsEngine.attachBodyBoxRounded sourceSimulant bodyProperties bodyBoxRounded body |> Array.ofSeq
-        | BodyPolygon bodyPolygon -> AetherPhysicsEngine.attachBodyPolygon sourceSimulant bodyProperties bodyPolygon body |> Array.singleton
+        | BodyConvexHull bodyConvexHull -> AetherPhysicsEngine.attachBodyConvexHull sourceSimulant bodyProperties bodyConvexHull body |> Array.singleton
         | BodyShapes bodyShapes -> AetherPhysicsEngine.attachBodyShapes sourceSimulant bodyProperties bodyShapes body
         
     static member private createBody (createBodyMessage : CreateBodyMessage) physicsEngine =

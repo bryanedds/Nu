@@ -161,26 +161,27 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
         let bodyBox = { Center = bodyBoxRounded.Center; Size = bodyBoxRounded.Size; PropertiesOpt = bodyBoxRounded.PropertiesOpt }
         BulletPhysicsEngine.attachBodyBox sourceSimulant bodyProperties bodyBox compoundShape massAccumulator
 
-    //static member private attachBodyTriangle a b c bodyPropertiesOpt (bodyProperties : BodyProperties) (compoundShapeIds : uint64 List) (compoundBuilder : CompoundBuilder array) =
-    //    let bodyShapeId = match bodyPropertiesOpt with Some bodyProperties2 -> bodyProperties2.BodyShapeId | None -> 0UL
-    //    compoundShapeIds.Add bodyShapeId
-    //    let capsule = Triangle (a, b, c)
-    //    let ab = (b - a).Magnitude // NOTE: using Heron's formula.
-    //    let bc = (c - b).Magnitude
-    //    let ca = (a - c).Magnitude
-    //    let s = (ab + bc + ca) * 0.5f
-    //    let volume = sqrt (s * (s - ab) * (s - bc) * (s - ca))
-    //    let mass = volume * bodyProperties.Density
-    //    let pose = RigidPose (bodyProperties.Center, bodyProperties.Rotation)
-    //    compoundBuilder.[0].Add (&capsule, &pose, mass) // NOTE: passing mass as weight.
-
-    //static member private attachBodyPolygon bodyPolygon bodyProperties compoundShapeIds compoundBuilder =
-    //    if bodyPolygon.Vertices.Length >= 3 then
-    //        let triangles = Array.windowed 3 bodyPolygon.Vertices
-    //        for triangle in triangles do
-    //            let (a, b, c) = (triangle.[0], triangle.[1], triangle.[2])
-    //            BulletPhysicsEngine.attachBodyTriangle a b c bodyPolygon.PropertiesOpt bodyProperties compoundShapeIds compoundBuilder
-    //    else Log.debug "Degenerate polygon sent to BulletPhysicsEngine; 3 or more vertices required."
+    static member private attachBodyConvexHull sourceSimulant (bodyProperties : BodyProperties) (bodyConvexHull : BodyConvexHull) (compoundShape : CompoundShape) (massAccumulator : single ref) =
+        let hull = new ConvexHullShape (bodyConvexHull.Vertices)
+        BulletPhysicsEngine.configureBodyShapeProperties bodyProperties bodyConvexHull.PropertiesOpt hull
+        hull.UserObject <-
+            { Simulant = sourceSimulant
+              BodyId = bodyProperties.BodyId
+              ShapeId = match bodyConvexHull.PropertiesOpt with Some p -> p.BodyShapeId | None -> 0UL }
+        let mass =
+            match bodyProperties.Substance with
+            | Density density ->
+                // NOTE: we approximate volume with the volume of a bounding box.
+                // TODO: use a more accurate volume calculation.
+                let mutable min = v3Zero
+                let mutable max = v3Zero
+                hull.GetAabb (m4Identity, &min, &max)
+                let box = box3 min max
+                let volume = box.Width * box.Height * box.Depth
+                volume * density
+            | Mass mass -> mass
+        massAccumulator := massAccumulator.Value + mass
+        compoundShape.AddChildShape (Matrix4x4.CreateFromTrs (bodyProperties.Center, bodyProperties.Rotation, v3Zero), hull)
 
     static member private attachBodyShapes sourceSimulant bodyProperties bodyShapes compoundShape massAccumulator =
         for bodyShape in bodyShapes do
@@ -193,7 +194,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
         | BodySphere bodySphere -> BulletPhysicsEngine.attachBodySphere sourceSimulant bodyProperties bodySphere compoundShape massAccumulator
         | BodyCapsule bodyCapsule -> BulletPhysicsEngine.attachBodyCapsule sourceSimulant bodyProperties bodyCapsule compoundShape massAccumulator
         | BodyBoxRounded bodyBoxRounded -> BulletPhysicsEngine.attachBodyBoxRounded sourceSimulant bodyProperties bodyBoxRounded compoundShape massAccumulator
-        | BodyPolygon bodyPolygon -> () //BulletPhysicsEngine.attachBodyPolygon bodyPolygon bodyProperties compoundShapeIds compoundBuilder
+        | BodyConvexHull bodyConvexHull -> BulletPhysicsEngine.attachBodyConvexHull sourceSimulant bodyProperties bodyConvexHull compoundShape massAccumulator
         | BodyShapes bodyShapes -> BulletPhysicsEngine.attachBodyShapes sourceSimulant bodyProperties bodyShapes compoundShape massAccumulator
 
     static member private createBody3 attachBodyShape sourceId (bodyProperties : BodyProperties) physicsEngine =
@@ -436,7 +437,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
             physicsEngine.Objects.ContainsKey physicsId
 
         member physicsEngine.GetBodyContactNormals physicsId =
-            // TODO: see if this can be optimized from linear search to constant-time look-up.
+            // TODO: see if this can be optimized from a linear-time search to constant-time look-up.
             match physicsEngine.Objects.TryGetValue physicsId with
             | (true, object) ->
                 let dispatcher = physicsEngine.PhysicsContext.Dispatcher
