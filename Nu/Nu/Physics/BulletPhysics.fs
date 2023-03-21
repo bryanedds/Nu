@@ -204,7 +204,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
         let massAccumulator = ref 0.0f
         let compoundShape = new CompoundShape ()
         attachBodyShape bodyProperties compoundShape massAccumulator
-        if bodyProperties.Sensor then
+        if not bodyProperties.Sensor then
             let motionState = new DefaultMotionState (Matrix4x4.CreateFromTrs (bodyProperties.Center, bodyProperties.Rotation, v3One))
             use constructionInfo = new RigidBodyConstructionInfo (massAccumulator.Value, motionState, compoundShape)
             let body = new RigidBody (constructionInfo)
