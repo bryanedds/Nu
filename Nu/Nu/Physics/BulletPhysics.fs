@@ -368,7 +368,10 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
                           AngularVelocity = body.AngularVelocity }
                 physicsEngine.IntegrationMessages.Enqueue bodyTransformMessage
 
-        static member private handlePhysicsMessages physicsMessages physicsEngine = ()
+    static member private handlePhysicsMessages physicsMessages physicsEngine =
+        for physicsMessage in physicsMessages do
+            BulletPhysicsEngine.handlePhysicsMessage physicsEngine physicsMessage
+        physicsEngine.RebuildingHack <- false
 
     interface PhysicsEngine with
 
