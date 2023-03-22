@@ -224,16 +224,17 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
             then physicsEngine.Objects.Add (physicsId, ghost)
             else Log.debug ("Could not add body via '" + scstring bodyProperties + "'.")
 
-    static member private createBody4 bodyShape bodyProperties (bodySource : BodySourceInternal) physicsEngine =
+    static member private createBody4 bodyShape bodyProperties (bodySource : BodySourceInternal) sourceId physicsEngine =
         BulletPhysicsEngine.createBody3 (fun ps cs ma ->
             BulletPhysicsEngine.attachBodyShape bodySource.Simulant ps bodyShape cs ma)
-            bodySource.BodyId bodyProperties physicsEngine
+            sourceId bodyProperties physicsEngine
 
     static member private createBody (createBodyMessage : CreateBodyMessage) physicsEngine =
+        let sourceId = createBodyMessage.SourceId
         let sourceSimulant = createBodyMessage.SourceSimulant
         let bodyProperties = createBodyMessage.BodyProperties
         let bodySource = { Simulant = sourceSimulant; BodyId = bodyProperties.BodyId }
-        BulletPhysicsEngine.createBody4 bodyProperties.BodyShape bodyProperties bodySource physicsEngine
+        BulletPhysicsEngine.createBody4 bodyProperties.BodyShape bodyProperties bodySource sourceId physicsEngine
 
     static member private createBodies (createBodiesMessage : CreateBodiesMessage) physicsEngine =
         List.iter
