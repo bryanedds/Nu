@@ -84,7 +84,7 @@ type Substance =
 
 /// Describes the attributes of continuous collision detection.
 type [<Struct>] Continuous =
-    { ContinuousMotionThreshold : single
+    { MotionThreshold : single
       SweptSphereRadius : single }
 
 /// Describe the form of collision detection to use.

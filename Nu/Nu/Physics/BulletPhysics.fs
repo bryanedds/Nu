@@ -84,7 +84,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
             object.CcdMotionThreshold <- 0.0f
             object.CcdSweptSphereRadius <- 0.0f
         | Continuous continuous ->
-            object.CcdMotionThreshold <- continuous.ContinuousMotionThreshold
+            object.CcdMotionThreshold <- continuous.MotionThreshold
             object.CcdSweptSphereRadius <- continuous.SweptSphereRadius
         match bodyProperties.BodyType with
         | Static ->
@@ -205,12 +205,16 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
 
     static member private createBody3 attachBodyShape bodySourceId (bodySource : BodySourceInternal) (bodyProperties : BodyProperties) physicsEngine =
         let accumulators = ref (0.0f, v3Zero)
-        let compoundShape = new CompoundShape ()
-        attachBodyShape bodyProperties compoundShape accumulators
+        let shape =
+            let compoundShape = new CompoundShape ()
+            attachBodyShape bodyProperties compoundShape accumulators
+            if compoundShape.ChildList.Count = 1 && not (compoundShape.ChildList.[0].ChildShape :? CompoundShape)
+            then compoundShape.ChildList.[0].ChildShape
+            else compoundShape
         let (mass, inertia) = accumulators.Value
         if not bodyProperties.Sensor then
             let motionState = new DefaultMotionState (Matrix4x4.CreateFromTrs (bodyProperties.Center, bodyProperties.Rotation, v3One))
-            let constructionInfo = new RigidBodyConstructionInfo (mass, motionState, compoundShape, inertia)
+            let constructionInfo = new RigidBodyConstructionInfo (mass, motionState, shape, inertia)
             let body = new RigidBody (constructionInfo)
             body.UserObject <- bodySource
             BulletPhysicsEngine.configureBodyProperties bodyProperties body physicsEngine.PhysicsContext.Gravity
