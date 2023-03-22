@@ -72,15 +72,11 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
         () // NOTE: cannot configure bullet shapes on a per-shape basis.
 
     static member private configureCollisionObjectProperties (bodyProperties : BodyProperties) (object : CollisionObject) =
-        if bodyProperties.Awake
-        then object.ActivationState <- object.ActivationState &&& ~~~ActivationState.IslandSleeping
-        else object.ActivationState <- object.ActivationState ||| ActivationState.IslandSleeping
-        if bodyProperties.AwakeAlways
-        then object.ActivationState <- object.ActivationState ||| ActivationState.DisableDeactivation
-        else object.ActivationState <- object.ActivationState &&& ~~~ActivationState.DisableDeactivation
-        if bodyProperties.Enabled
-        then object.ActivationState <- object.ActivationState &&& ~~~ActivationState.DisableSimulation
-        else object.ActivationState <- object.ActivationState ||| ActivationState.DisableSimulation
+        match (bodyProperties.Awake, bodyProperties.Enabled) with
+        | (true, true) -> object.ActivationState <- ActivationState.ActiveTag
+        | (true, false) -> object.ActivationState <- ActivationState.DisableSimulation
+        | (false, true) -> object.ActivationState <- ActivationState.IslandSleeping
+        | (false, false) -> object.ActivationState <- ActivationState.DisableSimulation
         object.Friction <- bodyProperties.Friction
         object.Restitution <- bodyProperties.Restitution
         match bodyProperties.CollisionDetection with
@@ -105,6 +101,9 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
     static member private configureBodyProperties (bodyProperties : BodyProperties) (body : RigidBody) gravity =
         BulletPhysicsEngine.configureCollisionObjectProperties bodyProperties body
         body.MotionState.WorldTransform <- Matrix4x4.CreateFromTrs (bodyProperties.Center, bodyProperties.Rotation, v3One)
+        if bodyProperties.AwakeAlways // TODO: see if we can find a more reliable way to disable sleeping.
+        then body.SetSleepingThresholds (0.0f, 0.0f)
+        else body.SetSleepingThresholds (0.8f, 1.0f) // TODO: move to constants?
         body.LinearVelocity <- bodyProperties.LinearVelocity
         body.AngularVelocity <- bodyProperties.AngularVelocity
         body.AngularFactor <- bodyProperties.AngularFactor
@@ -200,14 +199,14 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
         | BodyConvexHull bodyConvexHull -> BulletPhysicsEngine.attachBodyConvexHull sourceSimulant bodyProperties bodyConvexHull compoundShape massAccumulator
         | BodyShapes bodyShapes -> BulletPhysicsEngine.attachBodyShapes sourceSimulant bodyProperties bodyShapes compoundShape massAccumulator
 
-    static member private createBody3 attachBodyShape bodySourceId bodySource (bodyProperties : BodyProperties) physicsEngine =
+    static member private createBody3 attachBodyShape bodySourceId (bodySource : BodySourceInternal) (bodyProperties : BodyProperties) physicsEngine =
         let massAccumulator = ref 0.0f
         let compoundShape = new CompoundShape ()
         attachBodyShape bodyProperties compoundShape massAccumulator
         let inertiaLocal = compoundShape.CalculateLocalInertia massAccumulator.Value
         if not bodyProperties.Sensor then
             let motionState = new DefaultMotionState (Matrix4x4.CreateFromTrs (bodyProperties.Center, bodyProperties.Rotation, v3One))
-            use constructionInfo = new RigidBodyConstructionInfo (massAccumulator.Value, motionState, compoundShape, inertiaLocal)
+            let constructionInfo = new RigidBodyConstructionInfo (massAccumulator.Value, motionState, compoundShape, inertiaLocal)
             let body = new RigidBody (constructionInfo)
             body.UserObject <- bodySource
             BulletPhysicsEngine.configureBodyProperties bodyProperties body physicsEngine.PhysicsContext.Gravity
