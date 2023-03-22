@@ -322,9 +322,10 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
     static member private setBodyEnabled (setBodyEnabledMessage : SetBodyEnabledMessage) physicsEngine =
         match physicsEngine.Objects.TryGetValue setBodyEnabledMessage.PhysicsId with
         | (true, object) ->
-            if setBodyEnabledMessage.Enabled
-            then object.ActivationState <- object.ActivationState ||| ActivationState.DisableSimulation
-            else object.ActivationState <- object.ActivationState &&& ~~~ActivationState.DisableSimulation
+            object.ActivationState <-
+                if setBodyEnabledMessage.Enabled
+                then ActivationState.ActiveTag
+                else ActivationState.DisableSimulation
         | (false, _) -> Log.debug ("Could not set enabled of non-existent body with PhysicsId = " + scstring setBodyEnabledMessage.PhysicsId + "'.")
 
     static member private setBodyCenter (setBodyCenterMessage : SetBodyCenterMessage) physicsEngine =
