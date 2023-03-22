@@ -79,8 +79,8 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
         then object.ActivationState <- object.ActivationState ||| ActivationState.DisableDeactivation
         else object.ActivationState <- object.ActivationState &&& ~~~ActivationState.DisableDeactivation
         if bodyProperties.Enabled
-        then object.ActivationState <- object.ActivationState ||| ActivationState.DisableSimulation
-        else object.ActivationState <- object.ActivationState &&& ~~~ActivationState.DisableSimulation
+        then object.ActivationState <- object.ActivationState &&& ~~~ActivationState.DisableSimulation
+        else object.ActivationState <- object.ActivationState ||| ActivationState.DisableSimulation
         object.Friction <- bodyProperties.Friction
         object.Restitution <- bodyProperties.Restitution
         match bodyProperties.CollisionDetection with
@@ -200,41 +200,44 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
         | BodyConvexHull bodyConvexHull -> BulletPhysicsEngine.attachBodyConvexHull sourceSimulant bodyProperties bodyConvexHull compoundShape massAccumulator
         | BodyShapes bodyShapes -> BulletPhysicsEngine.attachBodyShapes sourceSimulant bodyProperties bodyShapes compoundShape massAccumulator
 
-    static member private createBody3 attachBodyShape sourceId (bodyProperties : BodyProperties) physicsEngine =
+    static member private createBody3 attachBodyShape bodySourceId bodySource (bodyProperties : BodyProperties) physicsEngine =
         let massAccumulator = ref 0.0f
         let compoundShape = new CompoundShape ()
         attachBodyShape bodyProperties compoundShape massAccumulator
+        let inertiaLocal = compoundShape.CalculateLocalInertia massAccumulator.Value
         if not bodyProperties.Sensor then
             let motionState = new DefaultMotionState (Matrix4x4.CreateFromTrs (bodyProperties.Center, bodyProperties.Rotation, v3One))
-            use constructionInfo = new RigidBodyConstructionInfo (massAccumulator.Value, motionState, compoundShape)
+            use constructionInfo = new RigidBodyConstructionInfo (massAccumulator.Value, motionState, compoundShape, inertiaLocal)
             let body = new RigidBody (constructionInfo)
+            body.UserObject <- bodySource
             BulletPhysicsEngine.configureBodyProperties bodyProperties body physicsEngine.PhysicsContext.Gravity
             physicsEngine.PhysicsContext.AddRigidBody (body, bodyProperties.CollisionCategories, bodyProperties.CollisionMask)
-            let physicsId = { SourceId = sourceId; CorrelationId = bodyProperties.BodyId }
+            let physicsId = { SourceId = bodySourceId; CorrelationId = bodyProperties.BodyId }
             if physicsEngine.Bodies.TryAdd (physicsId, (bodyProperties.GravityOverrideOpt, body))
             then physicsEngine.Objects.Add (physicsId, body)
             else Log.debug ("Could not add body via '" + scstring bodyProperties + "'.")
         else
             let ghost = new GhostObject ()
             ghost.CollisionFlags <- ghost.CollisionFlags &&& ~~~CollisionFlags.NoContactResponse
+            ghost.UserObject <- bodySource
             BulletPhysicsEngine.configureCollisionObjectProperties bodyProperties ghost
             physicsEngine.PhysicsContext.AddCollisionObject (ghost, bodyProperties.CollisionCategories, bodyProperties.CollisionMask)
-            let physicsId = { SourceId = sourceId; CorrelationId = bodyProperties.BodyId }
+            let physicsId = { SourceId = bodySourceId; CorrelationId = bodyProperties.BodyId }
             if physicsEngine.Ghosts.TryAdd (physicsId, ghost)
             then physicsEngine.Objects.Add (physicsId, ghost)
             else Log.debug ("Could not add body via '" + scstring bodyProperties + "'.")
 
-    static member private createBody4 bodyShape bodyProperties (bodySource : BodySourceInternal) sourceId physicsEngine =
+    static member private createBody4 bodyShape bodyProperties bodySourceId (bodySource : BodySourceInternal) physicsEngine =
         BulletPhysicsEngine.createBody3 (fun ps cs ma ->
             BulletPhysicsEngine.attachBodyShape bodySource.Simulant ps bodyShape cs ma)
-            sourceId bodyProperties physicsEngine
+            bodySourceId bodySource bodyProperties physicsEngine
 
     static member private createBody (createBodyMessage : CreateBodyMessage) physicsEngine =
-        let sourceId = createBodyMessage.SourceId
-        let sourceSimulant = createBodyMessage.SourceSimulant
+        let bodySourceId = createBodyMessage.SourceId
+        let bodySourceSimulant = createBodyMessage.SourceSimulant
         let bodyProperties = createBodyMessage.BodyProperties
-        let bodySource = { Simulant = sourceSimulant; BodyId = bodyProperties.BodyId }
-        BulletPhysicsEngine.createBody4 bodyProperties.BodyShape bodyProperties bodySource sourceId physicsEngine
+        let bodySource = { Simulant = bodySourceSimulant; BodyId = bodyProperties.BodyId }
+        BulletPhysicsEngine.createBody4 bodyProperties.BodyShape bodyProperties bodySourceId bodySource physicsEngine
 
     static member private createBodies (createBodiesMessage : CreateBodiesMessage) physicsEngine =
         List.iter

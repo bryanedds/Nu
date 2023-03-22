@@ -1062,7 +1062,7 @@ module WorldModule2 =
             let world = World.setPhysicsEngine2d physicsEngine world
             let integrationMessages = physicsEngine.Integrate world.GameDelta physicsMessages
             let integrationData = { IntegrationMessages = integrationMessages }
-            let eventTrace = EventTrace.debug "World" "processPhysics" "" EventTrace.empty
+            let eventTrace = EventTrace.debug "World" "processPhysics2d" "" EventTrace.empty
             let world = World.publish integrationData Events.Integration eventTrace Simulants.Game world
             let world = Seq.fold (flip World.processIntegrationMessage) world integrationMessages
             world
@@ -1073,7 +1073,7 @@ module WorldModule2 =
             let world = World.setPhysicsEngine3d physicsEngine world
             let integrationMessages = physicsEngine.Integrate world.GameDelta physicsMessages
             let integrationData = { IntegrationMessages = integrationMessages }
-            let eventTrace = EventTrace.debug "World" "processPhysics" "" EventTrace.empty
+            let eventTrace = EventTrace.debug "World" "processPhysics3d" "" EventTrace.empty
             let world = World.publish integrationData Events.Integration eventTrace Simulants.Game world
             let world = Seq.fold (flip World.processIntegrationMessage) world integrationMessages
             world
