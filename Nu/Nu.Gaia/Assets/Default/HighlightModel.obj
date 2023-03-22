@@ -1,7 +1,7 @@
 # Blender v3.0.1 OBJ File: ''
 # www.blender.org
 mtllib HighlightModel.mtl
-o Cube_Cube.001
+o Cube
 v -0.500000 -0.500000 0.500000
 v -0.500000 0.500000 0.500000
 v -0.500000 -0.500000 -0.500000
