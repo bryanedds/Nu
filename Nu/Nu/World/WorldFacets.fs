@@ -1563,7 +1563,9 @@ module StaticModelFacetModule =
             boundsExtended.Size
 
         override this.RayCast (ray, entity, world) =
-            let rayEntity = ray.Transform (Matrix4x4.Invert (entity.GetAffineMatrix world) |> snd)
+            let affineMatrix = entity.GetAffineMatrix world
+            let inverseMatrix = Matrix4x4.Invert affineMatrix |> snd
+            let rayEntity = ray.Transform inverseMatrix
             match Metadata.tryGetStaticModelMetadata (entity.GetStaticModel world) with
             | Some staticModel ->
                 let intersectionses =
@@ -1576,7 +1578,8 @@ module StaticModelFacetModule =
                         if boundsIntersectionOpt.HasValue then
                             raySurface.Intersects (geometry.Indices, geometry.Vertices) |>
                             Seq.map snd' |>
-                            Seq.map (fun intersection -> rayEntity.Origin + rayEntity.Direction * intersection) |>
+                            Seq.map (fun intersectionEntity -> rayEntity.Origin + rayEntity.Direction * intersectionEntity) |>
+                            Seq.map (fun pointEntity -> Vector3.Transform (pointEntity, affineMatrix)) |>
                             Seq.map (fun point -> (point - ray.Origin).Magnitude) |>
                             Seq.toArray
                         else [||])
