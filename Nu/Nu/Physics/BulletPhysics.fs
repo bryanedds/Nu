@@ -44,8 +44,8 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
         let collisionConfiguration = new DefaultCollisionConfiguration ()
         let physicsDispatcher = new CollisionDispatcher (collisionConfiguration)
         let broadPhaseInterface = new DbvtBroadphase ()
-        let constraintSolver = new MultiBodyConstraintSolver ()
-        let world = new MultiBodyDynamicsWorld (physicsDispatcher, broadPhaseInterface, constraintSolver, collisionConfiguration)
+        let constraintSolver = new SequentialImpulseConstraintSolver ()
+        let world = new DiscreteDynamicsWorld (physicsDispatcher, broadPhaseInterface, constraintSolver, collisionConfiguration)
         world.Gravity <- gravity
         let integrationMessages = ConcurrentQueue ()
         { PhysicsContext = world
@@ -218,7 +218,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
             let physicsId = { SourceId = bodySourceId; CorrelationId = bodyProperties.BodyId }
             if physicsEngine.Bodies.TryAdd (physicsId, (bodyProperties.GravityOverrideOpt, body))
             then physicsEngine.Objects.Add (physicsId, body)
-            else Log.debug ("Could not add body via '" + scstring bodyProperties + "'.")
+            else Log.debug ("Could not add body for '" + scstring physicsId + "'.")
         else
             let ghost = new GhostObject ()
             ghost.CollisionFlags <- ghost.CollisionFlags &&& ~~~CollisionFlags.NoContactResponse
@@ -228,7 +228,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
             let physicsId = { SourceId = bodySourceId; CorrelationId = bodyProperties.BodyId }
             if physicsEngine.Ghosts.TryAdd (physicsId, ghost)
             then physicsEngine.Objects.Add (physicsId, ghost)
-            else Log.debug ("Could not add body via '" + scstring bodyProperties + "'.")
+            else Log.debug ("Could not add body for '" + scstring physicsId + "'.")
 
     static member private createBody4 bodyShape bodyProperties bodySourceId (bodySource : BodySourceInternal) physicsEngine =
         BulletPhysicsEngine.createBody3 (fun ps cs accs ->
@@ -277,8 +277,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
     static member private createJoint (createJointMessage : CreateJointMessage) physicsEngine =
         let jointProperties = createJointMessage.JointProperties
         match jointProperties.JointDevice with
-        | JointEmpty ->
-            ()
+        | JointEmpty -> ()
         | JointAngle jointAngle ->
             match (physicsEngine.Bodies.TryGetValue jointAngle.TargetId, physicsEngine.Bodies.TryGetValue jointAngle.TargetId2) with
             | ((true, (_, body)), (true, (_, body2))) ->
@@ -289,8 +288,8 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
                 let physicsId = { SourceId = createJointMessage.SourceId; CorrelationId = jointProperties.JointId }
                 if physicsEngine.Constraints.TryAdd (physicsId, hinge)
                 then () // nothing to do
-                else Log.debug ("Could not add joint via '" + scstring jointProperties + "'.")
-            | (_, _) -> Log.debug "Could not set create a joint for one or more non-existent bodies."
+                else Log.debug ("Could not add joint via '" + scstring createJointMessage + "'.")
+            | (_, _) -> Log.debug "Could not create a joint for one or more non-existent bodies."
         | _ -> failwithnie ()
 
     static member private createJoints (createJointsMessage : CreateJointsMessage) physicsEngine =
