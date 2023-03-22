@@ -569,16 +569,12 @@ module WorldModule2 =
             // sync tick watch state to advancing
             let world = World.unshelveAmbientState world
 
-            // clear existing 3d physics messages
+            // clear existing 3d physics messages and rebuild
             let world = World.updatePhysicsEngine3d (fun physicsEngine -> physicsEngine.ClearMessages ()) world
-
-            // rebuild 3d physics state
             let world = World.enqueuePhysicsMessage3d RebuildPhysicsHackMessage world
 
-            // clear existing 2d physics messages
+            // clear existing 2d physics messages and rebuild
             let world = World.updatePhysicsEngine2d (fun physicsEngine -> physicsEngine.ClearMessages ()) world
-
-            // rebuild 2d physics state
             let world = World.enqueuePhysicsMessage2d RebuildPhysicsHackMessage world
 
             // propagate current physics state
