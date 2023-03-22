@@ -262,8 +262,9 @@ type [<ReferenceEquality>] AetherPhysicsEngine =
         body.add_OnSeparation (fun fn fn2 _ -> AetherPhysicsEngine.handleSeparation physicsEngine fn fn2)
 
         // attempt to add the body
-        if not (physicsEngine.Bodies.TryAdd ({ SourceId = createBodyMessage.SourceId; CorrelationId = bodyProperties.BodyId }, (bodyProperties.GravityOverrideOpt, body))) then
-            Log.debug ("Could not add body via '" + scstring bodyProperties + "'.")
+        let physicsId = { SourceId = createBodyMessage.SourceId; CorrelationId = bodyProperties.BodyId }
+        if not (physicsEngine.Bodies.TryAdd (physicsId, (bodyProperties.GravityOverrideOpt, body))) then
+            Log.debug ("Could not add body for '" + scstring physicsId + "'.")
 
     static member private createBodies (createBodiesMessage : CreateBodiesMessage) physicsEngine =
         List.iter
@@ -292,8 +293,7 @@ type [<ReferenceEquality>] AetherPhysicsEngine =
     static member private createJoint (createJointMessage : CreateJointMessage) physicsEngine =
         let jointProperties = createJointMessage.JointProperties
         match jointProperties.JointDevice with
-        | JointEmpty ->
-            ()
+        | JointEmpty -> ()
         | JointAngle jointAngle ->
             match (physicsEngine.Bodies.TryGetValue jointAngle.TargetId, physicsEngine.Bodies.TryGetValue jointAngle.TargetId2) with
             | ((true, (_, body)), (true, (_, body2))) ->
@@ -302,7 +302,7 @@ type [<ReferenceEquality>] AetherPhysicsEngine =
                 joint.Softness <- jointAngle.Softness
                 joint.BiasFactor <- jointAngle.BiasFactor
                 joint.Breakpoint <- jointAngle.BreakImpulseThreshold
-            | (_, _) -> Log.debug "Could not set create a joint for one or more non-existent bodies."
+            | (_, _) -> Log.debug "Could not create a joint for one or more non-existent bodies."
         | _ -> failwithnie ()
 
     static member private createJoints (createJointsMessage : CreateJointsMessage) physicsEngine =
