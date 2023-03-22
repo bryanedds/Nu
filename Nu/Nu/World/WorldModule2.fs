@@ -553,6 +553,7 @@ module WorldModule2 =
 
         /// Clear all messages in all subsystems.
         static member clearMessages world =
+             let world = World.updatePhysicsEngine3d (fun physicsEngine -> physicsEngine.ClearMessages ()) world
              let world = World.updatePhysicsEngine2d (fun physicsEngine -> physicsEngine.ClearMessages ()) world
              World.withRendererProcess (fun rendererProcess -> rendererProcess.ClearMessages ()) world
              World.withAudioPlayer (fun audioPlayer -> audioPlayer.ClearMessages ()) world
