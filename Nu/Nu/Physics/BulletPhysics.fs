@@ -105,8 +105,9 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
         then body.SetSleepingThresholds (0.0f, 0.0f)
         else body.SetSleepingThresholds (0.8f, 1.0f) // TODO: move to constants?
         body.LinearVelocity <- bodyProperties.LinearVelocity
+        body.LinearFactor <- if bodyProperties.BodyType = Static then v3Zero else v3One
         body.AngularVelocity <- bodyProperties.AngularVelocity
-        body.AngularFactor <- bodyProperties.AngularFactor
+        body.AngularFactor <- if bodyProperties.BodyType = Static then v3Zero else bodyProperties.AngularFactor
         body.SetDamping (bodyProperties.LinearDamping, bodyProperties.AngularDamping)
         body.Gravity <- match bodyProperties.GravityOverrideOpt with Some gravityOverride -> gravityOverride | None -> gravity
 
