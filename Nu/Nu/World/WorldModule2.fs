@@ -77,7 +77,7 @@ module WorldModule2 =
             Quadtree.make Constants.Engine.QuadtreeGranularity Constants.Engine.QuadtreeDepth Constants.Engine.QuadtreeBounds
 
         static member internal makeOctree () =
-            Octree.make Constants.Engine.OctreeDepth Constants.Engine.OctreeBounds
+            Octree.make Constants.Engine.OctreeDepth Constants.Engine.OctreeSize
 
         static member internal rebuildQuadtree world =
             let omniEntities =
