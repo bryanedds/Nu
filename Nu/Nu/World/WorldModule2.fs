@@ -756,6 +756,21 @@ module WorldModule2 =
                     else world
             | Dead -> world
 
+        static member private getElements2dBy getElementsFromQuadree world =
+            let quadtree = World.getQuadtree world
+            let (quadtree, quadtreeCache) = MutantCache.getMutant (fun () -> World.rebuildQuadtree world) quadtree
+            let world = World.setQuadtree quadtreeCache world
+            let elements = getElementsFromQuadree quadtree
+            (elements, world)
+
+        static member private getElementsInView2d set world =
+            let viewBounds = World.getViewBounds2d world
+            World.getElements2dBy (Quadtree.getElementsInView viewBounds set) world
+
+        static member private getElementsInPlay2d set world =
+            let playBounds = World.getPlayBounds2d world
+            World.getElements2dBy (Quadtree.getElementsInPlay playBounds set) world
+
         static member private getEntities2dBy getElementsFromQuadtree world =
             let quadtree = World.getQuadtree world
             let (quadtree, quadtreeCache) = MutantCache.getMutant (fun () -> World.rebuildQuadtree world) quadtree
@@ -785,6 +800,24 @@ module WorldModule2 =
         static member getEntitiesInPlay2d set world =
             let playBounds = World.getPlayBounds2d world
             World.getEntities2dBy (Quadtree.getElementsInPlay playBounds set) world
+
+        static member private getElements3dBy getElementsFromOctree world =
+            let octree = World.getOctree world
+            let (octree, octreeCache) = MutantCache.getMutant (fun () -> World.rebuildOctree world) octree
+            let world = World.setOctree octreeCache world
+            let elements = getElementsFromOctree octree
+            (elements, world)
+
+        static member private getElementsInPlay3d set world =
+            let struct (playBox, playFrustum) = World.getPlayBounds3d world
+            World.getElements3dBy (Octree.getElementsInPlay playBox playFrustum set) world
+
+        static member private getElementsInView3d set world =
+            let frustumEnclosed = World.getEyeFrustum3dEnclosed world
+            let frustumExposed = World.getEyeFrustum3dExposed world
+            let frustumImposter = World.getEyeFrustum3dImposter world
+            let lightBox = World.getLightBox3d world
+            World.getElements3dBy (Octree.getElementsInView frustumEnclosed frustumExposed frustumImposter lightBox set) world
 
         static member private getEntities3dBy getElementsFromOctree world =
             let octree = World.getOctree world
@@ -828,8 +861,8 @@ module WorldModule2 =
             let screens = List.rev screens
             let groups = Seq.concat (List.map (flip World.getGroups world) screens)
 #if !DISABLE_ENTITY_PRE_UPDATE
-            let (entities3d, world) = World.getEntitiesInPlay3d CachedHashSet3d world
-            let (entities2d, world) = World.getEntitiesInPlay2d CachedHashSet2d world
+            let (elements3d, world) = World.getElementsInPlay3d CachedHashSet3d world
+            let (elements2d, world) = World.getElementsInPlay2d CachedHashSet2d world
 #endif
             PreUpdateGatherTimer.Stop ()
 
@@ -852,8 +885,8 @@ module WorldModule2 =
             // pre-update entities
             PreUpdateEntitiesTimer.Start ()
             let advancing = World.getAdvancing world
-            let world = Seq.fold (fun world (entity : Entity) -> if not (entity.GetStatic world) && (entity.GetAlwaysUpdate world || advancing) then World.preUpdateEntity entity world else world) world entities3d
-            let world = Seq.fold (fun world (entity : Entity) -> if not (entity.GetStatic world) && (entity.GetAlwaysUpdate world || advancing) then World.preUpdateEntity entity world else world) world entities2d
+            let world = Seq.fold (fun world (element : Entity Octelement) -> if not (element.Entry.GetStatic world) && (element.Entry.GetAlwaysUpdate world || advancing) then World.preUpdateEntity element.Entry world else world) world elements3d
+            let world = Seq.fold (fun world (element : Entity Quadelement) -> if not (element.Entry.GetStatic world) && (element.Entry.GetAlwaysUpdate world || advancing) then World.preUpdateEntity element.Entry world else world) world elements2d
             PreUpdateEntitiesTimer.Stop ()
 
             // clear cached hash sets
@@ -872,8 +905,8 @@ module WorldModule2 =
             let screens = match World.getSelectedScreenOpt world with Some selectedScreen -> selectedScreen :: screens | None -> screens
             let screens = List.rev screens
             let groups = Seq.concat (List.map (flip World.getGroups world) screens)
-            let (entities3d, world) = World.getEntitiesInPlay3d CachedHashSet3d world
-            let (entities2d, world) = World.getEntitiesInPlay2d CachedHashSet2d world
+            let (elements3d, world) = World.getElementsInPlay3d CachedHashSet3d world
+            let (elements2d, world) = World.getElementsInPlay2d CachedHashSet2d world
             UpdateGatherTimer.Stop ()
 
             // update game
@@ -894,8 +927,8 @@ module WorldModule2 =
             // update entities
             UpdateEntitiesTimer.Start ()
             let advancing = World.getAdvancing world
-            let world = Seq.fold (fun world (entity : Entity) -> if not (entity.GetStatic world) && (entity.GetAlwaysUpdate world || advancing) then World.updateEntity entity world else world) world entities3d
-            let world = Seq.fold (fun world (entity : Entity) -> if not (entity.GetStatic world) && (entity.GetAlwaysUpdate world || advancing) then World.updateEntity entity world else world) world entities2d
+            let world = Seq.fold (fun world (element : Entity Octelement) -> if not (element.Entry.GetStatic world) && (element.Entry.GetAlwaysUpdate world || advancing) then World.updateEntity element.Entry world else world) world elements3d
+            let world = Seq.fold (fun world (element : Entity Quadelement) -> if not (element.Entry.GetStatic world) && (element.Entry.GetAlwaysUpdate world || advancing) then World.updateEntity element.Entry world else world) world elements2d
             UpdateEntitiesTimer.Stop ()
 
             // clear cached hash sets
@@ -914,8 +947,8 @@ module WorldModule2 =
             let screens = List.rev screens
             let groups = Seq.concat (List.map (flip World.getGroups world) screens)
 #if !DISABLE_ENTITY_POST_UPDATE
-            let (entities3d, world) = World.getEntitiesInPlay3d CachedHashSet3d world
-            let (entities2d, world) = World.getEntitiesInPlay2d CachedHashSet2d world
+            let (elements3d, world) = World.getElementsInPlay3d CachedHashSet3d world
+            let (elements2d, world) = World.getElementsInPlay2d CachedHashSet2d world
 #endif
             PostUpdateGatherTimer.Stop ()
 
@@ -938,8 +971,8 @@ module WorldModule2 =
             // post-update entities
             PostUpdateEntitiesTimer.Start ()
             let advancing = World.getAdvancing world
-            let world = Seq.fold (fun world (entity : Entity) -> if not (entity.GetStatic world) && (entity.GetAlwaysUpdate world || advancing) then World.postUpdateEntity entity world else world) world entities3d
-            let world = Seq.fold (fun world (entity : Entity) -> if not (entity.GetStatic world) && (entity.GetAlwaysUpdate world || advancing) then World.postUpdateEntity entity world else world) world entities2d
+            let world = Seq.fold (fun world (element : Entity Octelement) -> if not (element.Entry.GetStatic world) && (element.Entry.GetAlwaysUpdate world || advancing) then World.postUpdateEntity element.Entry world else world) world elements3d
+            let world = Seq.fold (fun world (element : Entity Quadelement) -> if not (element.Entry.GetStatic world) && (element.Entry.GetAlwaysUpdate world || advancing) then World.postUpdateEntity element.Entry world else world) world elements2d
             PostUpdateEntitiesTimer.Stop ()
 
             // clear cached hash sets
@@ -1001,8 +1034,8 @@ module WorldModule2 =
             let screens = match World.getSelectedScreenOpt world with Some selectedScreen -> selectedScreen :: screens | None -> screens
             let screens = List.rev screens
             let groups = Seq.concat (List.map (flip World.getGroups world) screens)
-            let (entities3d, world) = World.getEntitiesInView3d CachedHashSet3d world
-            let (entities2d, world) = World.getEntitiesInView2d CachedHashSet2d world
+            let (elements3d, world) = World.getElementsInView3d CachedHashSet3d world
+            let (elements2d, world) = World.getElementsInView2d CachedHashSet2d world
             RenderGatherTimer.Stop ()
 
             // render simulants breadth-first
@@ -1011,16 +1044,16 @@ module WorldModule2 =
             let world = match World.getSelectedScreenOpt world with Some selectedScreen -> World.renderScreenTransition selectedScreen world | None -> world
             let world = Seq.fold (fun world (group : Group) -> if group.GetVisible world then World.renderGroup group world else world) world groups
 
-            // render entities 3d
+            // render entities
             RenderEntitiesTimer.Start ()
             let world =
                 if World.getUnaccompanied world
-                then Seq.fold (fun world (entity : Entity) -> World.renderEntity entity world) world entities3d
-                else Seq.fold (fun world (entity : Entity) -> if entity.Group.GetVisible world then World.renderEntity entity world else world) world entities3d
+                then Seq.fold (fun world (element : Entity Octelement) -> World.renderEntity element.Entry world) world elements3d
+                else Seq.fold (fun world (element : Entity Octelement) -> if element.Entry.Group.GetVisible world then World.renderEntity element.Entry world else world) world elements3d
             let world =
                 if World.getUnaccompanied world
-                then Seq.fold (fun world (entity : Entity) -> World.renderEntity entity world) world entities2d
-                else Seq.fold (fun world (entity : Entity) -> if entity.Group.GetVisible world then World.renderEntity entity world else world) world entities3d
+                then Seq.fold (fun world (element : Entity Quadelement) -> World.renderEntity element.Entry world) world elements2d
+                else Seq.fold (fun world (element : Entity Quadelement) -> if element.Entry.Group.GetVisible world then World.renderEntity element.Entry world else world) world elements2d
             RenderEntitiesTimer.Stop ()
 
             // clear cached hash sets
