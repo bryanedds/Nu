@@ -74,7 +74,7 @@ module WorldModule2 =
     type World with
 
         static member internal makeQuadtree () =
-            Quadtree.make Constants.Engine.QuadtreeGranularity Constants.Engine.QuadtreeDepth Constants.Engine.QuadtreeBounds
+            Quadtree.make Constants.Engine.QuadtreeDepth Constants.Engine.QuadtreeSize
 
         static member internal makeOctree () =
             Octree.make Constants.Engine.OctreeDepth Constants.Engine.OctreeSize
