@@ -351,6 +351,10 @@ module Octree =
         tree.Depth
 
     let make<'e when 'e : equality> (depth : int) (size : Vector3) =
+        if  not (MathHelper.IsPowerOfTwo size.X) ||
+            not (MathHelper.IsPowerOfTwo size.Y) ||
+            not (MathHelper.IsPowerOfTwo size.Z) then
+            failwith "Invalid size for Octtree. Expected value whose components are a power of two."
         let leaves = dictPlus HashIdentity.Structural []
         let mutable leafSize = size
         for _ in 1 .. dec depth do leafSize <- leafSize * 0.5f

@@ -124,6 +124,38 @@ namespace Nu
             return System.Math.Pow(2, System.Math.Ceiling(System.Math.Log((double)n, 2)));
         }
 
+        /// <summary>
+        /// Determines if a long number is a power of two.
+        /// </summary>
+        public static bool IsPowerOfTwo(long n)
+        {
+            return NextPowerOfTwo(n) == n;
+        }
+
+        /// <summary>
+        /// Determines if an integer number is a power of two.
+        /// </summary>
+        public static bool IsPowerOfTwo(int n)
+        {
+            return NextPowerOfTwo(n) == n;
+        }
+
+        /// <summary>
+        /// Determines if a floating point number is a power of two.
+        /// </summary>
+        public static bool IsPowerOfTwo(float n)
+        {
+            return NextPowerOfTwo(n) == n;
+        }
+
+        /// <summary>
+        /// Determines if a double precision floating point number is a power of two.
+        /// </summary>
+        public static bool IsPowerOfTwo(double n)
+        {
+            return NextPowerOfTwo(n) == n;
+        }
+
         /// <summary>Calculates the factorial of a given natural number.
         /// </summary>
         /// <param name="n">The number.</param>
