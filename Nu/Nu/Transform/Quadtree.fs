@@ -8,27 +8,35 @@ open System.Collections.Generic
 open System.Numerics
 open Prime
 
-/// Masks for Octelement flags.
+/// Masks for Quadelement flags.
 module QuadelementMasks =
 
-    // OPTIMIZATION: Octelement flag bit-masks for performance.
+    // OPTIMIZATION: Quadelement flag bit-masks for performance.
     let [<Literal>] VisibleMask =   0b00000001u
 
 // NOTE: opening this in order to make the Quadelement property implementations reasonably succinct.
 open QuadelementMasks
 
-/// An element in an quadtree.
-type [<CustomEquality; NoComparison>] Quadelement<'e when 'e : equality> = 
-    { HashCode : int // OPTIMIZATION: cache hash code to increase look-up speed.
-      Flags : uint
-      Entry : 'e }
-    member this.Visible = this.Flags &&& VisibleMask <> 0u
-    override this.GetHashCode () = this.HashCode
-    override this.Equals that = match that with :? Quadelement<'e> as that -> this.Entry.Equals that.Entry | _ -> false
-    static member make visible (entry : 'e) =
-        let hashCode = entry.GetHashCode ()
-        let flags = if visible then VisibleMask else 0u
-        { HashCode = hashCode; Flags = flags; Entry = entry }
+[<RequireQualifiedAccess>]
+module Quadelement =
+
+    /// An element in an quadtree.
+    type [<CustomEquality; NoComparison>] Quadelement<'e when 'e : equality> = 
+        private
+            { HashCode_ : int // OPTIMIZATION: cache hash code to increase look-up speed.
+              Flags_ : uint
+              Entry_ : 'e }
+        member this.Visible = this.Flags_ &&& VisibleMask <> 0u
+        member this.Entry = this.Entry_
+        override this.GetHashCode () = this.HashCode_
+        override this.Equals that = match that with :? Quadelement<'e> as that -> this.Entry_.Equals that.Entry_ | _ -> false
+        static member make visible (entry : 'e) =
+            let hashCode = entry.GetHashCode ()
+            let flags = if visible then VisibleMask else 0u
+            { HashCode_ = hashCode; Flags_ = flags; Entry_ = entry }
+
+/// An element in a quadree.
+type Quadelement<'e when 'e : equality> = Quadelement.Quadelement<'e>
 
 [<RequireQualifiedAccess>]
 module internal Quadnode =
@@ -249,7 +257,7 @@ module Quadtree =
     let make<'e when 'e : equality> depth (size : Vector2) =
         if  not (MathHelper.IsPowerOfTwo size.X) ||
             not (MathHelper.IsPowerOfTwo size.Y) then
-            failwith "Invalid size for Octtree. Expected value whose components are a power of two."
+            failwith "Invalid size for Quadtree. Expected value whose components are a power of two."
         let leaves = dictPlus HashIdentity.Structural []
         let mutable leafSize = size
         for _ in 1 .. dec depth do leafSize <- leafSize * 0.5f
