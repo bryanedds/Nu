@@ -766,7 +766,7 @@ module WorldModule2 =
 
         /// Get all 2d entities in the given bounds, including all uncullable entities.
         static member getEntitiesInBounds2d bounds set world =
-            World.getEntities2dBy (Quadtree.getElementsInBounds_ bounds set) world
+            World.getEntities2dBy (Quadtree.getElementsInBounds bounds set) world
 
         /// Get all 2d entities at the given point, including all uncullable entities.
         static member getEntitiesAtPoint2d point set world =
