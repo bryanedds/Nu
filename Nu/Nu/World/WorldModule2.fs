@@ -92,9 +92,11 @@ module WorldModule2 =
             let quadtree = World.makeQuadtree ()
             for entity in entities do
                 let bounds = entity.GetBounds world
+                let visible = entity.GetVisible world
                 let presence = entity.GetPresence world
                 if entity.GetIs2d world then
-                    Quadtree.addElement presence bounds.Box2 entity quadtree
+                    let element = Quadelement.make visible entity
+                    Quadtree.addElement presence bounds.Box2 element quadtree
             quadtree
 
         static member internal rebuildOctree world =
@@ -110,11 +112,12 @@ module WorldModule2 =
             let octree = World.makeOctree ()
             for entity in entities do
                 let bounds = entity.GetBounds world
+                let visible = entity.GetVisible world
                 let static_ = entity.GetStatic world
                 let light = entity.GetLight world
                 let presence = entity.GetPresence world
                 if entity.GetIs3d world then
-                    let element = Octelement.make static_ light presence entity
+                    let element = Octelement.make visible static_ light presence entity
                     Octree.addElement bounds element octree
             octree
 
@@ -753,7 +756,8 @@ module WorldModule2 =
             let quadtree = World.getQuadtree world
             let (quadtree, quadtreeCache) = MutantCache.getMutant (fun () -> World.rebuildQuadtree world) quadtree
             let world = World.setQuadtree quadtreeCache world
-            let entities : Entity seq = getElementsFromQuadtree quadtree
+            let elements = getElementsFromQuadtree quadtree
+            let entities = Seq.map (fun (element : Entity Quadelement) -> element.Entry) elements
             (entities, world)
 
         /// Get all uncullable (non-cullable) 2d entities.
@@ -762,28 +766,28 @@ module WorldModule2 =
 
         /// Get all 2d entities in the given bounds, including all uncullable entities.
         static member getEntitiesInBounds2d bounds set world =
-            World.getEntities2dBy (Quadtree.getElementsInBounds bounds set) world
+            World.getEntities2dBy (Quadtree.getElementsInBounds_ bounds set) world
 
         /// Get all 2d entities at the given point, including all uncullable entities.
         static member getEntitiesAtPoint2d point set world =
             World.getEntities2dBy (Quadtree.getElementsAtPoint point set) world
 
-        /// Get all 2d entities needing to update for the current 2d play zone, including all uncullable entities.
-        static member getEntitiesInPlay2d set world =
-            let playBounds = World.getPlayBounds2d world
-            World.getEntities2dBy (Quadtree.getElementsInBounds playBounds set) world
-
         /// Get all 2d entities in the current 2d view, including all uncullable entities.
         static member getEntitiesInView2d set world =
             let viewBounds = World.getViewBounds2d world
-            World.getEntities2dBy (Quadtree.getElementsInBounds viewBounds set) world
+            World.getEntities2dBy (Quadtree.getElementsInView viewBounds set) world
+
+        /// Get all 2d entities needing to update for the current 2d play zone, including all uncullable entities.
+        static member getEntitiesInPlay2d set world =
+            let playBounds = World.getPlayBounds2d world
+            World.getEntities2dBy (Quadtree.getElementsInPlay playBounds set) world
 
         static member private getEntities3dBy getElementsFromOctree world =
             let octree = World.getOctree world
             let (octree, octreeCache) = MutantCache.getMutant (fun () -> World.rebuildOctree world) octree
             let world = World.setOctree octreeCache world
             let elements = getElementsFromOctree octree
-            let entities = Seq.map (fun element -> element.Entry) elements
+            let entities = Seq.map (fun (element : Entity Octelement) -> element.Entry) elements
             (entities, world)
 
         /// Get all uncullable 3d entities.
@@ -1027,14 +1031,12 @@ module WorldModule2 =
             let world =
                 if World.getUnaccompanied world then
                     Seq.fold (fun world (entity : Entity) ->
-                        if entity.GetVisible world
-                        then World.renderEntity entity world
-                        else world)
+                        World.renderEntity entity world)
                         world entities
                 else
                     Seq.fold (fun world (entity : Entity) ->
                         let group = entity.Group
-                        if group.GetVisible world && entity.GetVisible world
+                        if group.GetVisible world
                         then World.renderEntity entity world
                         else world)
                         world entities
