@@ -408,7 +408,7 @@ module WorldModule2 =
             let world = World.destroyGroupImmediate slideGroup world
 
             // create slide group
-            let cameraEyeSize = World.getEyeSize2d world
+            let eyeSize = World.getEyeSize2d world
             let world = screen.SetSlideOpt (Some { IdlingTime = slideDescriptor.IdlingTime; Destination = destination }) world
             let world = World.createGroup<GroupDispatcher> (Some slideGroup.Name) screen world |> snd
             let world = World.setGroupProtected true slideGroup world |> snd'
@@ -418,10 +418,10 @@ module WorldModule2 =
             let world = World.createEntity<StaticSpriteDispatcher> DefaultOverlay (Some slideSprite.Surnames) slideGroup world |> snd
             let world = World.setEntityProtected true slideSprite world |> snd'
             let world = slideSprite.SetPersistent false world
-            let world = slideSprite.SetSize cameraEyeSize.V3 world
+            let world = slideSprite.SetSize eyeSize.V3 world
             let world =
                 if not Constants.Engine.EntityCentered2dDefault
-                then slideSprite.SetPosition (-cameraEyeSize.V3 * 0.5f) world
+                then slideSprite.SetPosition (-eyeSize.V3 * 0.5f) world
                 else world
             let world = slideSprite.SetAbsolute true world
             let world =
