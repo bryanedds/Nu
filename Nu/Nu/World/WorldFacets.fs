@@ -733,12 +733,12 @@ module RigidBodyFacetModule =
         member this.GetBodyType world : BodyType = this.Get (nameof this.BodyType) world
         member this.SetBodyType (value : BodyType) world = this.Set (nameof this.BodyType) value world
         member this.BodyType = lens (nameof this.BodyType) this this.GetBodyType this.SetBodyType
-        member this.GetAwake world : bool = this.Get (nameof this.Awake) world
-        member this.SetAwake (value : bool) world = this.Set (nameof this.Awake) value world
-        member this.Awake = lens (nameof this.Awake) this this.GetAwake this.SetAwake
-        member this.GetAwakeAlways world : bool = this.Get (nameof this.AwakeAlways) world
-        member this.SetAwakeAlways (value : bool) world = this.Set (nameof this.AwakeAlways) value world
-        member this.AwakeAlways = lens (nameof this.AwakeAlways) this this.GetAwakeAlways this.SetAwakeAlways
+        member this.GetSleeping world : bool = this.Get (nameof this.Sleeping) world
+        member this.SetSleeping (value : bool) world = this.Set (nameof this.Sleeping) value world
+        member this.Sleeping = lens (nameof this.Sleeping) this this.GetSleeping this.SetSleeping
+        member this.GetSleepingAllowed world : bool = this.Get (nameof this.SleepingAllowed) world
+        member this.SetSleepingAllowed (value : bool) world = this.Set (nameof this.SleepingAllowed) value world
+        member this.SleepingAllowed = lens (nameof this.SleepingAllowed) this this.GetSleepingAllowed this.SetSleepingAllowed
         member this.GetFriction world : single = this.Get (nameof this.Friction) world
         member this.SetFriction (value : single) world = this.Set (nameof this.Friction) value world
         member this.Friction = lens (nameof this.Friction) this this.GetFriction this.SetFriction
@@ -803,8 +803,8 @@ module RigidBodyFacetModule =
         static member Properties =
             [define Entity.BodyEnabled true
              define Entity.BodyType Dynamic
-             define Entity.Awake true
-             define Entity.AwakeAlways false
+             define Entity.Sleeping false
+             define Entity.SleepingAllowed true
              define Entity.Friction 0.2f
              define Entity.Restitution 0.0f
              define Entity.LinearVelocity v3Zero
@@ -832,8 +832,8 @@ module RigidBodyFacetModule =
             let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.Centered)) entity world
             let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.BodyEnabled)) entity world
             let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.BodyType)) entity world
-            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.Awake)) entity world
-            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.AwakeAlways)) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.Sleeping)) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.SleepingAllowed)) entity world
             let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.Friction)) entity world
             let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.Restitution)) entity world
             let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.LinearVelocity)) entity world
@@ -859,8 +859,8 @@ module RigidBodyFacetModule =
                   Rotation = transform.Rotation
                   BodyShape = getBodyShape entity world
                   BodyType = entity.GetBodyType world
-                  Awake = entity.GetAwake world
-                  AwakeAlways = entity.GetAwakeAlways world
+                  Sleeping = entity.GetSleeping world
+                  SleepingAllowed = entity.GetSleepingAllowed world
                   Enabled = entity.GetBodyEnabled world
                   Friction = entity.GetFriction world
                   Restitution = entity.GetRestitution world
