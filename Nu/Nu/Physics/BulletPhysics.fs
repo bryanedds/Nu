@@ -72,10 +72,10 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
         () // NOTE: cannot configure bullet shapes on a per-shape basis.
 
     static member private configureCollisionObjectProperties (bodyProperties : BodyProperties) (object : CollisionObject) =
-        match (bodyProperties.Awake, bodyProperties.Enabled) with
-        | (true, true) -> object.ActivationState <- ActivationState.ActiveTag
+        match (bodyProperties.Sleeping, bodyProperties.Enabled) with
+        | (true, true) -> object.ActivationState <- ActivationState.IslandSleeping
         | (true, false) -> object.ActivationState <- ActivationState.DisableSimulation
-        | (false, true) -> object.ActivationState <- ActivationState.IslandSleeping
+        | (false, true) -> object.ActivationState <- ActivationState.ActiveTag
         | (false, false) -> object.ActivationState <- ActivationState.DisableSimulation
         object.Friction <- bodyProperties.Friction
         object.Restitution <- bodyProperties.Restitution
@@ -101,9 +101,9 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
     static member private configureBodyProperties (bodyProperties : BodyProperties) (body : RigidBody) gravity =
         BulletPhysicsEngine.configureCollisionObjectProperties bodyProperties body
         body.MotionState.WorldTransform <- Matrix4x4.CreateFromTrs (bodyProperties.Center, bodyProperties.Rotation, v3One)
-        if bodyProperties.AwakeAlways // TODO: see if we can find a more reliable way to disable sleeping.
-        then body.SetSleepingThresholds (0.0f, 0.0f)
-        else body.SetSleepingThresholds (0.8f, 1.0f) // TODO: move to constants?
+        if bodyProperties.SleepingAllowed // TODO: see if we can find a more reliable way to disable sleeping.
+        then body.SetSleepingThresholds (0.8f, 1.0f) // TODO: move to constants?
+        else body.SetSleepingThresholds (0.0f, 0.0f)
         body.LinearVelocity <- bodyProperties.LinearVelocity
         body.LinearFactor <- if bodyProperties.BodyType = Static then v3Zero else v3One
         body.AngularVelocity <- bodyProperties.AngularVelocity
