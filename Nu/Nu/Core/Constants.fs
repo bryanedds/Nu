@@ -130,6 +130,7 @@ module Physics =
     let [<Uniform>] Gravity3dDefault = Vector3 (0.0f, -9.80665f, 0.0f)
     let [<Literal>] PhysicsToPixelRatio = Engine.Meter2d // 48 pixels = 1 meter
     let [<Uniform>] PixelToPhysicsRatio = 1.0f / Engine.Meter2d
+    let [<Uniform>] ThreadCount = max 1 (Environment.ProcessorCount - 2)
 
 [<RequireQualifiedAccess>]
 module TileMap =
