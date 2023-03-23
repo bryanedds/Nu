@@ -354,7 +354,7 @@ module Octree =
         let leaves = dictPlus HashIdentity.Structural []
         let mutable leafSize = size
         for _ in 1 .. dec depth do leafSize <- leafSize * 0.5f
-        let min = size * -0.5f + v3 0.0f (leafSize.Y * 0.5f) 0.0f // OPTIMIZATION: offset Min.Y by half Size.Y to minimize vertical margin hits when placing most objects at Y = 0.
+        let min = size * -0.5f + leafSize * 0.5f // OPTIMIZATION: offset min by half leaf size to minimize margin hits at origin.
         let bounds = box3 min size
         { Leaves = leaves
           LeafSize = leafSize

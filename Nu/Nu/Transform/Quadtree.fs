@@ -215,7 +215,7 @@ module Quadtree =
         Quadnode.getElementsAtPoint point tree.Node set
         new QuadtreeEnumerable<'e> (new QuadtreeEnumerator<'e> (tree.Omnipresent, set)) :> 'e Quadelement IEnumerable
 
-    let getElementsInBounds_ bounds set tree =
+    let getElementsInBounds bounds set tree =
         Quadnode.getElementsInBounds true bounds tree.Node set
         new QuadtreeEnumerable<'e> (new QuadtreeEnumerator<'e> (tree.Omnipresent, set)) :> 'e Quadelement IEnumerable
 
