@@ -41,23 +41,11 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
     static member make imperative gravity =
         let config = if imperative then Imperative else Functional
         let physicsMessages = UList.makeEmpty config
-#if !BULLET_PHYSICS_MULTITHREAD
-        let collisionConstructionInfo = new DefaultCollisionConstructionInfo ()
-        collisionConstructionInfo.DefaultMaxPersistentManifoldPoolSize <- 80000
-        collisionConstructionInfo.DefaultMaxCollisionAlgorithmPoolSize <- 80000
-        let collisionConfiguration = new DefaultCollisionConfiguration (collisionConstructionInfo)
-        let physicsDispatcher = new CollisionDispatcher (collisionConfiguration)
-        let broadPhaseInterface = new DbvtBroadphase ()
-        let constraintSolver = new SequentialImpulseConstraintSolverMultiThreaded ()
-        let constraintSolverPool = new ConstraintSolverPoolMultiThreaded (Constants.Physics.ThreadCount)
-        let world = new DiscreteDynamicsWorldMultiThreaded (physicsDispatcher, broadPhaseInterface, constraintSolverPool, constraintSolver, collisionConfiguration)
-#else
         let collisionConfiguration = new DefaultCollisionConfiguration ()
         let physicsDispatcher = new CollisionDispatcher (collisionConfiguration)
         let broadPhaseInterface = new DbvtBroadphase ()
         let constraintSolver = new SequentialImpulseConstraintSolver ()
         let world = new DiscreteDynamicsWorld (physicsDispatcher, broadPhaseInterface, constraintSolver, collisionConfiguration)
-#endif
         world.Gravity <- gravity
         let integrationMessages = ConcurrentQueue ()
         { PhysicsContext = world
