@@ -12,8 +12,9 @@ open Prime
 module OctelementMasks =
 
     // OPTIMIZATION: Octelement flag bit-masks for performance.
-    let [<Literal>] StaticMask =    0b00000001u
-    let [<Literal>] LightMask =     0b00000010u
+    let [<Literal>] VisibleMask =   0b00000001u
+    let [<Literal>] StaticMask =    0b00000010u
+    let [<Literal>] LightMask =     0b00000100u
 
 // NOTE: opening this in order to make the Octelement property implementations reasonably succinct.
 open OctelementMasks
@@ -24,18 +25,20 @@ type [<CustomEquality; NoComparison>] Octelement<'e when 'e : equality> =
       Flags : uint
       Presence : Presence
       Entry : 'e }
-    member this.Static with get () = this.Flags &&& StaticMask <> 0u
-    member this.Light with get () = this.Flags &&& LightMask <> 0u
-    member this.Enclosed with get () = this.Presence.EnclosedType
-    member this.Exposed with get () = this.Presence.ExposedType
-    member this.Imposter with get () = this.Presence.ImposterType
-    member this.Prominent with get () = this.Presence.ProminentType
-    member this.Omnipresent with get () = this.Presence.OmnipresentType
+    member this.Visible = this.Flags &&& VisibleMask <> 0u
+    member this.Static = this.Flags &&& StaticMask <> 0u
+    member this.Light = this.Flags &&& LightMask <> 0u
+    member this.Enclosed = this.Presence.EnclosedType
+    member this.Exposed = this.Presence.ExposedType
+    member this.Imposter = this.Presence.ImposterType
+    member this.Prominent = this.Presence.ProminentType
+    member this.Omnipresent = this.Presence.OmnipresentType
     override this.GetHashCode () = this.HashCode
     override this.Equals that = match that with :? Octelement<'e> as that -> this.Entry.Equals that.Entry | _ -> false
-    static member make static_ light presence (entry : 'e) =
+    static member make visible static_ light presence (entry : 'e) =
         let hashCode = entry.GetHashCode ()
         let flags =
+            (if visible then VisibleMask else 0u) |||
             (if static_ then StaticMask else 0u) |||
             (if light then LightMask else 0u)
         { HashCode = hashCode; Flags = flags; Presence = presence; Entry = entry }
@@ -114,16 +117,17 @@ module internal Octnode =
                 if not element.Static then
                     set.Add element |> ignore
 
-    let rec internal getLightsInBox box node (set : 'e Octelement HashSet) =
+    let rec internal getLightsInBox unfiltered box node (set : 'e Octelement HashSet) =
         match node.Children with
         | ValueLeft nodes ->
             for node in nodes do
                 if isIntersectingBox box node then
-                    getLightsInBox box node set
+                    getLightsInBox unfiltered box node set
         | ValueRight elements ->
             for element in elements do
-                if element.Light then
-                    set.Add element |> ignore
+                if element.Visible || unfiltered then
+                    if element.Light then
+                        set.Add element |> ignore
 
     let rec internal getElementsInPlayFrustum frustum node (set : 'e Octelement HashSet) =
         match node.Children with
@@ -136,23 +140,24 @@ module internal Octnode =
                 if not element.Static then
                     set.Add element |> ignore
 
-    let rec internal getElementsInViewFrustum enclosed exposed imposter frustum node (set : 'e Octelement HashSet) =
+    let rec internal getElementsInViewFrustum unfiltered enclosed exposed imposter frustum node (set : 'e Octelement HashSet) =
         match node.Children with
         | ValueLeft nodes ->
             for node in nodes do
                 if isIntersectingFrustum frustum node then
-                    getElementsInViewFrustum enclosed exposed imposter frustum node set
+                    getElementsInViewFrustum unfiltered enclosed exposed imposter frustum node set
         | ValueRight elements ->
             for element in elements do
-                if enclosed then
-                    if element.Enclosed || element.Exposed || element.Prominent then
-                        set.Add element |> ignore
-                elif exposed then
-                    if element.Exposed || element.Prominent then
-                        set.Add element |> ignore
-                elif imposter then
-                    if element.Imposter || element.Prominent then
-                        set.Add element |> ignore
+                if element.Visible || unfiltered then
+                    if enclosed then
+                        if element.Enclosed || element.Exposed || element.Prominent then
+                            set.Add element |> ignore
+                    elif exposed then
+                        if element.Exposed || element.Prominent then
+                            set.Add element |> ignore
+                    elif imposter then
+                        if element.Imposter || element.Prominent then
+                            set.Add element |> ignore
 
     let rec internal getElementsInView frustumEnclosed frustumExposed frustumImposter lightBox node (set : 'e Octelement HashSet) =
         match node.Children with
@@ -161,12 +166,12 @@ module internal Octnode =
                 let intersectingEnclosed = isIntersectingFrustum frustumEnclosed node
                 let intersectingExposed = isIntersectingFrustum frustumExposed node
                 if intersectingEnclosed || intersectingExposed then
-                    if intersectingEnclosed then getElementsInViewFrustum true false false frustumEnclosed node set
-                    if intersectingExposed then getElementsInViewFrustum false true false frustumExposed node set
+                    if intersectingEnclosed then getElementsInViewFrustum false true false false frustumEnclosed node set
+                    if intersectingExposed then getElementsInViewFrustum false false true false frustumExposed node set
                 elif isIntersectingFrustum frustumImposter node then
-                    getElementsInViewFrustum false false true frustumImposter node set
+                    getElementsInViewFrustum false false false true frustumImposter node set
                 if isIntersectingBox lightBox node then
-                    getLightsInBox lightBox node set
+                    getLightsInBox false lightBox node set
         | ValueRight _ -> ()
 
     let rec internal getElementsInPlay playBox playFrustum node (set : 'e Octelement HashSet) =
@@ -178,14 +183,6 @@ module internal Octnode =
                 if isIntersectingFrustum playFrustum node then
                     getElementsInPlayFrustum playFrustum node set
         | ValueRight _ -> ()
-
-    let rec internal clone node =
-        { Depth = node.Depth
-          Bounds = node.Bounds
-          Children =
-            match node.Children with
-            | ValueRight elements -> ValueRight (HashSet (elements, HashIdentity.Structural))
-            | ValueLeft nodes -> ValueLeft (Array.map clone nodes) }
 
     let rec internal make<'e when 'e : equality> depth (bounds : Box3) (leaves : Dictionary<Vector3, 'e Octnode>) : 'e Octnode =
         if depth < 1 then failwith "Invalid depth for Octnode. Expected value of at least 1."
@@ -343,7 +340,8 @@ module Octree =
 
     let getElementsInView frustumEnclosed frustumExposed frustumImposter lightBox (set : _ HashSet) tree =
         Octnode.getElementsInView frustumEnclosed frustumExposed frustumImposter lightBox tree.Node set
-        new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (tree.Omnipresent, set)) :> 'e Octelement IEnumerable
+        let omnipresent = tree.Omnipresent |> Seq.filter (fun element -> element.Visible)
+        new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (omnipresent, set)) :> 'e Octelement IEnumerable
 
     let getElementsInPlay playBox playFrustum (set : _ HashSet) tree =
         Octnode.getElementsInPlay playBox playFrustum tree.Node set

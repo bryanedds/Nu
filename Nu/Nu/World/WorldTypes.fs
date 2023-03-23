@@ -1171,7 +1171,7 @@ module WorldTypes =
           ScreenDispatchers : Map<string, ScreenDispatcher>
           GameDispatchers : Map<string, GameDispatcher>
           TryGetExtrinsic : string -> World ScriptingTrinsic option
-          UpdateEntityInEntityTree : bool -> bool -> Presence -> Box3 -> Entity -> World -> World -> World
+          UpdateEntityInEntityTree : bool -> bool -> bool -> Presence -> Box3 -> Entity -> World -> World -> World
           RebuildQuadtree : World -> Entity Quadtree
           RebuildOctree : World -> Entity Octree }
 
