@@ -35,13 +35,13 @@ module Content =
 
                 // unsubscribe to removed events
                 let world =
-                    Seq.fold
+                    List.foldGeneric
                         (fun world subscriptionId -> World.unsubscribe subscriptionId world)
                         world eventSignalsRemoved
 
                 // subscribe to added events
                 let world =
-                    Seq.fold (fun world ((eventAddress : obj Address, signalObj), subscriptionId) ->
+                    List.foldGeneric (fun world ((eventAddress : obj Address, signalObj), subscriptionId) ->
                         let eventAddress = if eventAddress.Anonymous then eventAddress --> simulant.SimulantAddress else eventAddress
                         let (unsubscribe, world) =
                             World.subscribePlus subscriptionId (fun (_ : Event) world ->
@@ -89,13 +89,13 @@ module Content =
 
                 // unsubscribe from removed handlers
                 let world =
-                    Seq.fold
+                    List.foldGeneric
                         (fun world (subscriptionId, _) -> World.unsubscribe subscriptionId world)
                         world eventHandlersRemoved
 
                 // subscribe to added handlers
                 let world =
-                    Seq.fold (fun world ((_, eventAddress : obj Address), (subscriptionId, handler)) ->
+                    List.foldGeneric (fun world ((_, eventAddress : obj Address), (subscriptionId, handler)) ->
                         let eventAddress = if eventAddress.Anonymous then eventAddress --> simulant.SimulantAddress else eventAddress
                         let (unsubscribe, world) =
                             World.subscribePlus subscriptionId (fun event world ->
@@ -129,7 +129,7 @@ module Content =
         if notNull content.PropertyContentsOpt && content.PropertyContentsOpt.Count > 0 then
             let simulant = if notNull (contentOld.SimulantCachedOpt :> obj) then contentOld.SimulantCachedOpt else simulant
             content.SimulantCachedOpt <- simulant
-            Seq.fold (fun world propertyContent ->
+            List.foldGeneric (fun world propertyContent ->
                 if not propertyContent.PropertyInitializer || initializing then
                     let lens = propertyContent.PropertyLens
                     let simulant = match lens.This :> obj with null -> simulant | _ -> lens.This
@@ -218,17 +218,16 @@ module Content =
             match tryDifferentiateChildren<Entity, EntityContent> contentOld content entity with
             | Some (entitiesAdded, entitiesRemoved, entitiesPotentiallyAltered) ->
                 let world =
-                    Seq.fold (fun world entity -> World.destroyEntity entity world) world entitiesRemoved
+                    List.foldGeneric (fun world entity -> World.destroyEntity entity world) world entitiesRemoved
                 let world =
                     if notNull contentOld.EntityContentsOpt then
-                        Seq.fold (fun world (kvp : KeyValuePair<Entity, _>) ->
-                            let (entity, entityContent) = (kvp.Key, kvp.Value)
+                        OrderedDictionary.fold (fun world (entity : Entity) entityContent ->
                             let entityContentOld = contentOld.EntityContentsOpt.[entity.Name]
                             synchronizeEntity initializing entityContentOld entityContent origin entity world)
                             world entitiesPotentiallyAltered
                     else world
                 let world =
-                    Seq.fold (fun world (entity : Entity, entityContent : EntityContent) ->
+                    List.foldGeneric (fun world (entity : Entity, entityContent : EntityContent) ->
                         let world =
                             if not (entity.Exists world) || entity.GetDestroying world
                             then World.createEntity5 entityContent.EntityDispatcherName DefaultOverlay (Some entity.Surnames) entity.Group world |> snd
@@ -249,17 +248,16 @@ module Content =
             match tryDifferentiateChildren<Entity, EntityContent> contentOld content group with
             | Some (entitiesAdded, entitiesRemoved, entitiesPotentiallyAltered) ->
                 let world =
-                    Seq.fold (fun world entity -> World.destroyEntity entity world) world entitiesRemoved
+                    List.foldGeneric (fun world entity -> World.destroyEntity entity world) world entitiesRemoved
                 let world =
                     if notNull contentOld.EntityContentsOpt then
-                        Seq.fold (fun world (kvp : KeyValuePair<Entity, _>) ->
-                            let (entity, entityContent) = (kvp.Key, kvp.Value)
+                        OrderedDictionary.fold (fun world (entity : Entity) entityContent ->
                             let entityContentOld = contentOld.EntityContentsOpt.[entity.Name]
                             synchronizeEntity initializing entityContentOld entityContent origin entity world)
                             world entitiesPotentiallyAltered
                     else world
                 let world =
-                    Seq.fold (fun world (entity : Entity, entityContent : EntityContent) ->
+                    List.foldGeneric (fun world (entity : Entity, entityContent : EntityContent) ->
                         let world =
                             if not (entity.Exists world) || entity.GetDestroying world
                             then World.createEntity5 entityContent.EntityDispatcherName DefaultOverlay (Some entity.Surnames) entity.Group world |> snd
@@ -301,15 +299,14 @@ module Content =
             match tryDifferentiateChildren<Group, GroupContent> contentOld content screen with
             | Some (groupsAdded, groupsRemoved, groupsPotentiallyAltered) ->
                 let world =
-                    Seq.fold (fun world group -> World.destroyGroup group world) world groupsRemoved
+                    List.foldGeneric (fun world group -> World.destroyGroup group world) world groupsRemoved
                 let world =
-                    Seq.fold (fun world (kvp : KeyValuePair<Group, _>) ->
-                        let (group, groupContent) = (kvp.Key, kvp.Value)
+                    OrderedDictionary.fold (fun world (group : Group) groupContent ->
                         let groupContentOld = contentOld.GroupContents.[group.Name]
                         synchronizeGroup initializing groupContentOld groupContent origin group world)
                         world groupsPotentiallyAltered
                 let world =
-                    Seq.fold (fun world (group : Group, groupContent : GroupContent) ->
+                    List.foldGeneric (fun world (group : Group, groupContent : GroupContent) ->
                         let world =
                             if not (group.Exists world) || group.GetDestroying world then
                                 match groupContent.GroupFilePathOpt with
@@ -333,15 +330,14 @@ module Content =
             match tryDifferentiateChildren<Screen, ScreenContent> contentOld content game with
             | Some (screensAdded, screensRemoved, screensPotentiallyAltered) ->
                 let world =
-                    Seq.fold (fun world screen -> World.destroyScreen screen world) world screensRemoved
+                    List.foldGeneric (fun world screen -> World.destroyScreen screen world) world screensRemoved
                 let world =
-                    Seq.fold (fun world (kvp : KeyValuePair<Screen, _>) ->
-                        let (screen, screenContent) = (kvp.Key, kvp.Value)
+                    OrderedDictionary.fold (fun world (screen : Screen) screenContent ->
                         let screenContentOld = contentOld.ScreenContents.[screen.Name]
                         synchronizeScreen initializing screenContentOld screenContent origin screen world)
                         world screensPotentiallyAltered
                 let world =
-                    Seq.fold (fun world (screen : Screen, screenContent : ScreenContent) ->
+                    List.foldGeneric (fun world (screen : Screen, screenContent : ScreenContent) ->
                         let world =
                             if not (screen.Exists world) || screen.GetDestroying world
                             then World.createScreen3 screenContent.ScreenDispatcherName (Some screen.Name) world |> snd

@@ -40,6 +40,7 @@
 		<Compile Include="Collections\SegmentedList.fs" />
 		<Compile Include="Collections\SegmentedHashSet.fs" />
 		<Compile Include="Collections\SegmentedDictionary.fs" />
+		<Compile Include="Collections\OrderedDictionary.fs" />
 		<Compile Include="Ecs\EcsPrelude.fs" />
 		<Compile Include="Ecs\Ecs.fs" />
 		<Compile Include="Transform\Presence.fs" />
