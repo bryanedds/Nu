@@ -49,7 +49,6 @@ module Engine =
     let [<Uniform>] QuadtreeBounds = Box2 (-QuadtreeSize * 0.5f, QuadtreeSize)
     let [<Uniform>] OctreeDepth = 7
     let [<Uniform>] OctreeSize = Vector3 2048.0f // over a mile
-    let [<Uniform>] OctreeBounds = Box3 (-OctreeSize * 0.5f + v3 0.0f 16.0f 0.0f, OctreeSize) // OPTIMIZATION: offset Min.Y by half a node to minimize vertical margin hits when placing most objects at Y = 0.
     let [<Uniform>] mutable EventTracing = match ConfigurationManager.AppSettings.["EventTracing"] with null -> false | tracing -> scvalue<bool> tracing
     let [<Uniform>] mutable EventFilter = match ConfigurationManager.AppSettings.["EventFilter"] with null -> EventFilter.Empty | filter -> scvalue<EventFilter.Filter> filter
 
