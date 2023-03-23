@@ -19,29 +19,38 @@ module OctelementMasks =
 // NOTE: opening this in order to make the Octelement property implementations reasonably succinct.
 open OctelementMasks
 
+[<RequireQualifiedAccess>]
+module Octelement =
+
+    /// An element in an octree.
+    type [<CustomEquality; NoComparison>] Octelement<'e when 'e : equality> =
+        private
+            { HashCode_ : int // OPTIMIZATION: cache hash code to increase look-up speed.
+              Flags_ : uint
+              Presence_ : Presence
+              Entry_ : 'e }
+        member this.Visible = this.Flags_ &&& VisibleMask <> 0u
+        member this.Static = this.Flags_ &&& StaticMask <> 0u
+        member this.Light = this.Flags_ &&& LightMask <> 0u
+        member this.Enclosed = this.Presence_.EnclosedType
+        member this.Exposed = this.Presence_.ExposedType
+        member this.Imposter = this.Presence_.ImposterType
+        member this.Prominent = this.Presence_.ProminentType
+        member this.Omnipresent = this.Presence_.OmnipresentType
+        member this.Presence = this.Presence_
+        member this.Entry = this.Entry_
+        override this.GetHashCode () = this.HashCode_
+        override this.Equals that = match that with :? Octelement<'e> as that -> this.Entry_.Equals that.Entry_ | _ -> false
+        static member make visible static_ light presence (entry : 'e) =
+            let hashCode = entry.GetHashCode ()
+            let flags =
+                (if visible then VisibleMask else 0u) |||
+                (if static_ then StaticMask else 0u) |||
+                (if light then LightMask else 0u)
+            { HashCode_ = hashCode; Flags_ = flags; Presence_ = presence; Entry_ = entry }
+
 /// An element in an octree.
-type [<CustomEquality; NoComparison>] Octelement<'e when 'e : equality> = 
-    { HashCode : int // OPTIMIZATION: cache hash code to increase look-up speed.
-      Flags : uint
-      Presence : Presence
-      Entry : 'e }
-    member this.Visible = this.Flags &&& VisibleMask <> 0u
-    member this.Static = this.Flags &&& StaticMask <> 0u
-    member this.Light = this.Flags &&& LightMask <> 0u
-    member this.Enclosed = this.Presence.EnclosedType
-    member this.Exposed = this.Presence.ExposedType
-    member this.Imposter = this.Presence.ImposterType
-    member this.Prominent = this.Presence.ProminentType
-    member this.Omnipresent = this.Presence.OmnipresentType
-    override this.GetHashCode () = this.HashCode
-    override this.Equals that = match that with :? Octelement<'e> as that -> this.Entry.Equals that.Entry | _ -> false
-    static member make visible static_ light presence (entry : 'e) =
-        let hashCode = entry.GetHashCode ()
-        let flags =
-            (if visible then VisibleMask else 0u) |||
-            (if static_ then StaticMask else 0u) |||
-            (if light then LightMask else 0u)
-        { HashCode = hashCode; Flags = flags; Presence = presence; Entry = entry }
+type Octelement<'e when 'e : equality> = Octelement.Octelement<'e>
 
 [<RequireQualifiedAccess>]
 module internal Octnode =
@@ -286,8 +295,9 @@ module Octree =
         | (true, leaf) when Octnode.containsBox bounds leaf -> leaf
         | (_, _) -> tree.Node
 
-    let addElement bounds element tree =
-        if element.Presence.OmnipresentType then
+    let addElement bounds (element : 'e Octelement) tree =
+        let presence = element.Presence
+        if presence.OmnipresentType then
             tree.Omnipresent.Remove element |> ignore
             tree.Omnipresent.Add element |> ignore
         else
@@ -299,8 +309,9 @@ module Octree =
                 let node = findNode bounds tree
                 Octnode.addElement bounds element node
 
-    let removeElement bounds element tree =
-        if element.Presence.OmnipresentType then 
+    let removeElement bounds (element : 'e Octelement) tree =
+        let presence = element.Presence
+        if presence.OmnipresentType then 
             tree.Omnipresent.Remove element |> ignore
         else
             if not (Octnode.isIntersectingBox bounds tree.Node) then
