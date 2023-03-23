@@ -231,6 +231,9 @@ module Quadtree =
         tree.Depth
 
     let make<'e when 'e : equality> depth (size : Vector2) =
+        if  not (MathHelper.IsPowerOfTwo size.X) ||
+            not (MathHelper.IsPowerOfTwo size.Y) then
+            failwith "Invalid size for Octtree. Expected value whose components are a power of two."
         let min = size * -0.5f
         let bounds = box2 min size
         { Node = Quadnode.make<'e> depth bounds
