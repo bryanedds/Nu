@@ -403,13 +403,13 @@ module Gaia =
                 (handled, world)
             | DragEntityInactive -> (Resolve, world)
 
-    let private handleNuCameraDragBegin (_ : GaiaForm) (_ : Event<MouseButtonData, Game>) world =
+    let private handleNuEyeDragBegin (_ : GaiaForm) (_ : Event<MouseButtonData, Game>) world =
         let mousePositionScreen = World.getMousePosition2dScreen world
         let dragState = DragEyeCenter2d (World.getEyeCenter2d world + mousePositionScreen, mousePositionScreen)
         dragEyeState <- dragState
         (Resolve, world)
 
-    let private handleNuCameraDragEnd (_ : GaiaForm) (_ : Event<MouseButtonData, Game>) world =
+    let private handleNuEyeDragEnd (_ : GaiaForm) (_ : Event<MouseButtonData, Game>) world =
         match dragEyeState with
         | DragEyeCenter2d _ ->
             dragEyeState <- DragEyeInactive
@@ -417,7 +417,7 @@ module Gaia =
         | DragEyeInactive -> (Resolve, world)
 
     let private handleNuUpdate (form : GaiaForm) (_ : Event<unit, Game>) world =
-        if not form.runButton.Checked then
+        if not form.runButton.Checked || form.liveEditCheckBox.Checked then
             let moveSpeed =
                 if World.isKeyboardCtrlDown world then 0.0f // ignore movement while ctrl pressed
                 elif World.isKeyboardKeyDown KeyboardKey.Return world then 0.5f
@@ -1571,7 +1571,7 @@ module Gaia =
         match dragEyeState with
         | DragEyeCenter2d (entityDragOffset, mousePositionScreenOrig) ->
             let mousePositionScreen = World.getMousePosition2dScreen world
-            let eyeCenter = (entityDragOffset - mousePositionScreenOrig) + -Constants.Editor.CameraSpeed * (mousePositionScreen - mousePositionScreenOrig)
+            let eyeCenter = (entityDragOffset - mousePositionScreenOrig) + -Constants.Editor.EyeSpeed * (mousePositionScreen - mousePositionScreenOrig)
             let world = World.setEyeCenter2d eyeCenter world
             dragEyeState <- DragEyeCenter2d (entityDragOffset, mousePositionScreenOrig)
             world
@@ -1664,8 +1664,8 @@ module Gaia =
         Globals.World <- World.subscribe (handleNuMouseRightDown form) Events.MouseRightDown Simulants.Game Globals.World
         Globals.World <- World.subscribe (handleNuEntityDragBegin form) Events.MouseLeftDown Simulants.Game Globals.World
         Globals.World <- World.subscribe (handleNuEntityDragEnd form) Events.MouseLeftUp Simulants.Game Globals.World
-        Globals.World <- World.subscribe (handleNuCameraDragBegin form) Events.MouseCenterDown Simulants.Game Globals.World
-        Globals.World <- World.subscribe (handleNuCameraDragEnd form) Events.MouseCenterUp Simulants.Game Globals.World
+        Globals.World <- World.subscribe (handleNuEyeDragBegin form) Events.MouseCenterDown Simulants.Game Globals.World
+        Globals.World <- World.subscribe (handleNuEyeDragEnd form) Events.MouseCenterUp Simulants.Game Globals.World
         Globals.World <- World.subscribe (handleNuUpdate form) Events.Update Simulants.Game Globals.World
         Globals.World <- World.subscribe (handleNuRender form) Events.Render Simulants.Game Globals.World
         Globals.World <- World.subscribe (handleNuEntityLifeCycle form) (Events.LifeCycle (nameof Entity)) Simulants.Game Globals.World

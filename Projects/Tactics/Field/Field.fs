@@ -21,7 +21,7 @@ type NarrativeState =
 
 type BattleState =
     | BattleReady of int64
-    | BattleCharacterReady of int64 // camera moving to character
+    | BattleCharacterReady of int64 // eye moving to character
     | BattleCharacterMenu of CharacterIndex // using ring menu or AI
     | BattleCharacterMoving of int64 * int * Vector2i array * CharacterIndex // character moving to destination
     | BattleCharacterAttacking of CharacterIndex * CharacterIndex
