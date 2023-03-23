@@ -1223,7 +1223,7 @@ module WorldModule2 =
                     Log.trace (scstring exn)
                     World.cleanUp world
                     Constants.Engine.ExitCodeFailure
-#if MULTITHREAD_RUN_LOOP
+#if RUN_LOOP_MULTITHREAD
             // stops background threads
             Environment.Exit result
 #endif

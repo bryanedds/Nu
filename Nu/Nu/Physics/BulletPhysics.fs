@@ -44,8 +44,14 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
         let collisionConfiguration = new DefaultCollisionConfiguration ()
         let physicsDispatcher = new CollisionDispatcher (collisionConfiguration)
         let broadPhaseInterface = new DbvtBroadphase ()
+#if BULLET_PHYSICS_MULTITHREAD
+        let constraintSolver = new SequentialImpulseConstraintSolverMultiThreaded ()
+        let constraintSolverPool = new ConstraintSolverPoolMultiThreaded (Constants.Physics.ThreadCount)
+        let world = new DiscreteDynamicsWorldMultiThreaded (physicsDispatcher, broadPhaseInterface, constraintSolverPool, constraintSolver, collisionConfiguration)
+#else
         let constraintSolver = new SequentialImpulseConstraintSolver ()
         let world = new DiscreteDynamicsWorld (physicsDispatcher, broadPhaseInterface, constraintSolver, collisionConfiguration)
+#endif
         world.Gravity <- gravity
         let integrationMessages = ConcurrentQueue ()
         { PhysicsContext = world
@@ -426,8 +432,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
 
     static member private createIntegrationMessages physicsEngine =
         for (_, body) in physicsEngine.Bodies.Values do
-            let asleep = int body.ActivationState &&& int ActivationState.IslandSleeping <> 0
-            if not asleep then
+            if body.IsActive then
                 let bodyTransformMessage =
                     BodyTransformMessage
                         { BodySource = body.UserObject :?> BodySourceInternal
