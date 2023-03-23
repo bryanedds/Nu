@@ -85,18 +85,18 @@ module internal Quadnode =
                 if element.Visible || unfiltered then
                     set.Add element |> ignore
 
-    let rec internal make<'e when 'e : equality> granularity depth (bounds : Box2) =
-        if granularity < 2 then failwith "Invalid granularity for Quadnode. Expected value of at least 2."
+    let rec internal make<'e when 'e : equality> depth (bounds : Box2) =
         if depth < 1 then failwith "Invalid depth for Quadnode. Expected value of at least 1."
+        let granularity = 2
         let children =
             if depth > 1 then
                 let (nodes : 'e Quadnode array) =
-                    [|for i in 0 .. granularity * granularity - 1 do
+                    [|for i in 0 .. dec (granularity * granularity) do
                         let childDepth = depth - 1
                         let childSize = v2 bounds.Size.X bounds.Size.Y / single granularity
                         let childPosition = v2 bounds.Min.X bounds.Min.Y + v2 (childSize.X * single (i % granularity)) (childSize.Y * single (i / granularity))
                         let childBounds = box2 childPosition childSize
-                        yield make granularity childDepth childBounds|]
+                        yield make childDepth childBounds|]
                 ValueLeft nodes
             else ValueRight (HashSet<'e Quadelement> HashIdentity.Structural)
         { Depth = depth
@@ -167,7 +167,6 @@ module Quadtree =
             { Node : 'e Quadnode
               Omnipresent : 'e Quadelement HashSet
               Depth : int
-              Granularity : int
               Bounds : Box2 }
 
     let addElement (presence : Presence) bounds element tree =
@@ -231,11 +230,12 @@ module Quadtree =
     let getDepth tree =
         tree.Depth
 
-    let make<'e when 'e : equality> granularity depth bounds =
-        { Node = Quadnode.make<'e> granularity depth bounds
+    let make<'e when 'e : equality> depth (size : Vector2) =
+        let min = size * -0.5f
+        let bounds = box2 min size
+        { Node = Quadnode.make<'e> depth bounds
           Omnipresent = HashSet HashIdentity.Structural
           Depth = depth
-          Granularity = granularity
           Bounds = bounds }
 
 /// A spatial structure that organizes elements on a 2d plane. TODO: document this.
