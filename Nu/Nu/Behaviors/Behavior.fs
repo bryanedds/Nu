@@ -132,7 +132,7 @@ module Behavior =
         map (fun a ->
             let local = a - start
             if local > length then length
-            elif local < Generics.zero () then Generics.zero ()
+            elif local < Generic.zero () then Generic.zero ()
             else local)
             bhvr
 
@@ -177,10 +177,10 @@ module Behavior =
     let inline xor (b : bool) bhvr = map (fun a -> a <> b) bhvr
     let inline and_ b bhvr = map (fun a -> a && b) bhvr
     let inline nand b bhvr = map (fun a -> Operators.not (a && b)) bhvr
-    let inline isZero bhvr = map Generics.isZero bhvr
-    let inline notZero bhvr = map Generics.notZero bhvr
-    let inline isNeg bhvr = map (fun a -> a < Generics.zero ()) bhvr
-    let inline isPositive bhvr = map (fun a -> a < Generics.zero ()) bhvr
+    let inline isZero bhvr = map Generic.isZero bhvr
+    let inline notZero bhvr = map Generic.notZero bhvr
+    let inline isNeg bhvr = map (fun a -> a < Generic.zero ()) bhvr
+    let inline isPositive bhvr = map (fun a -> a < Generic.zero ()) bhvr
     let inline negate bhvr = map (fun a -> -a) bhvr // TODO: redfine as Generics.negate after updating Prime.
     let inline inc bhvr = map inc bhvr
     let inline dec bhvr = map dec bhvr
