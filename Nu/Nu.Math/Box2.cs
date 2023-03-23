@@ -75,6 +75,17 @@ namespace Nu
         }
 
         /// <summary>
+        /// Create a bounding box by enclosing multiple points.
+        /// </summary>
+        public static Box2 Enclose(Vector2[] points)
+        {
+            if (points.Length == 0) return default(Box2);
+            var bounds = new Box2(points[0], Vector2.Zero);
+            foreach (var point in points) bounds = bounds.Combine(point);
+            return bounds;
+        }
+
+        /// <summary>
         /// Equality comparator.
         /// </summary>
         /// <param name="left">The left operand.</param>
@@ -120,6 +131,44 @@ namespace Nu
         public override string ToString()
         {
             return $"{{Min:{Min} Size:{Size}}}";
+        }
+
+        /// <summary>
+        /// Combine area of box with a point.
+        /// </summary>
+        /// <param name="box"></param>
+        /// <returns>Box containing area of both.</returns>
+        public Box2 Combine(Vector2 point)
+        {
+            var min = Min;
+            var max = min + Size;
+            var min2 = new Vector2();
+            var max2 = new Vector2();
+            min2.X = Math.Min(min.X, point.X);
+            min2.Y = Math.Min(min.Y, point.Y);
+            max2.X = Math.Max(max.X, point.X);
+            max2.Y = Math.Max(max.Y, point.Y);
+            return new Box2(min2, max2 - min2);
+        }
+
+        /// <summary>
+        /// Combine area of two boxes.
+        /// </summary>
+        /// <param name="box"></param>
+        /// <returns>Box containing area of both.</returns>
+        public Box2 Combine(Box2 box)
+        {
+            var min = Min;
+            var max = min + Size;
+            var min2 = box.Min;
+            var max2 = min2 + box.Size;
+            var min3 = new Vector2();
+            var max3 = new Vector2();
+            min3.X = Math.Min(min.X, min2.X);
+            min3.Y = Math.Min(min.Y, min2.Y);
+            max3.X = Math.Max(max.X, max2.X);
+            max3.Y = Math.Max(max.Y, max2.Y);
+            return new Box2(min3, max3 - min3);
         }
 
         /// <summary>

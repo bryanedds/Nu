@@ -272,8 +272,8 @@ module Octree =
         private
             { Leaves : Dictionary<Vector3, 'e Octnode>
               LeafSize : Vector3
-              Node : 'e Octnode
               Omnipresent : 'e Octelement HashSet
+              Node : 'e Octnode
               Depth : int
               Bounds : Box3 }
 
@@ -318,7 +318,7 @@ module Octree =
         else tree.Omnipresent.Remove element |> ignore
         let isInNode = not newPresence.OmnipresentType && Octnode.isIntersectingBox newBounds tree.Node
         if isInNode then 
-            let newNode = findNode oldBounds tree
+            let newNode = findNode newBounds tree
             Octnode.addElement newBounds element newNode
         else tree.Omnipresent.Add element |> ignore
 
@@ -362,8 +362,8 @@ module Octree =
         let bounds = box3 min size
         { Leaves = leaves
           LeafSize = leafSize
-          Node = Octnode.make<'e> depth bounds leaves
           Omnipresent = HashSet HashIdentity.Structural
+          Node = Octnode.make<'e> depth bounds leaves
           Depth = depth
           Bounds = bounds }
 
