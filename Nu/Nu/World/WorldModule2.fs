@@ -830,7 +830,6 @@ module WorldModule2 =
 #if !DISABLE_ENTITY_PRE_UPDATE
             let (entities3d, world) = World.getEntitiesInPlay3d CachedHashSet3d world
             let (entities2d, world) = World.getEntitiesInPlay2d CachedHashSet2d world
-            let entities = Seq.append entities3d entities2d
 #endif
             PreUpdateGatherTimer.Stop ()
 
@@ -853,13 +852,8 @@ module WorldModule2 =
             // pre-update entities
             PreUpdateEntitiesTimer.Start ()
             let advancing = World.getAdvancing world
-            let world =
-                Seq.fold (fun world (entity : Entity) ->
-                    if not (entity.GetStatic world) && (entity.GetAlwaysUpdate world || advancing)
-                    then World.preUpdateEntity entity world
-                    else world)
-                    world
-                    entities
+            let world = Seq.fold (fun world (entity : Entity) -> if not (entity.GetStatic world) && (entity.GetAlwaysUpdate world || advancing) then World.preUpdateEntity entity world else world) world entities3d
+            let world = Seq.fold (fun world (entity : Entity) -> if not (entity.GetStatic world) && (entity.GetAlwaysUpdate world || advancing) then World.preUpdateEntity entity world else world) world entities2d
             PreUpdateEntitiesTimer.Stop ()
 
             // clear cached hash sets
@@ -880,7 +874,6 @@ module WorldModule2 =
             let groups = Seq.concat (List.map (flip World.getGroups world) screens)
             let (entities3d, world) = World.getEntitiesInPlay3d CachedHashSet3d world
             let (entities2d, world) = World.getEntitiesInPlay2d CachedHashSet2d world
-            let entities = Seq.append entities3d entities2d
             UpdateGatherTimer.Stop ()
 
             // update game
@@ -901,13 +894,8 @@ module WorldModule2 =
             // update entities
             UpdateEntitiesTimer.Start ()
             let advancing = World.getAdvancing world
-            let world =
-                Seq.fold (fun world (entity : Entity) ->
-                    if not (entity.GetStatic world) && (entity.GetAlwaysUpdate world || advancing)
-                    then World.updateEntity entity world
-                    else world)
-                    world
-                    entities
+            let world = Seq.fold (fun world (entity : Entity) -> if not (entity.GetStatic world) && (entity.GetAlwaysUpdate world || advancing) then World.updateEntity entity world else world) world entities3d
+            let world = Seq.fold (fun world (entity : Entity) -> if not (entity.GetStatic world) && (entity.GetAlwaysUpdate world || advancing) then World.updateEntity entity world else world) world entities2d
             UpdateEntitiesTimer.Stop ()
 
             // clear cached hash sets
@@ -928,7 +916,6 @@ module WorldModule2 =
 #if !DISABLE_ENTITY_POST_UPDATE
             let (entities3d, world) = World.getEntitiesInPlay3d CachedHashSet3d world
             let (entities2d, world) = World.getEntitiesInPlay2d CachedHashSet2d world
-            let entities = Seq.append entities3d entities2d
 #endif
             PostUpdateGatherTimer.Stop ()
 
@@ -951,13 +938,8 @@ module WorldModule2 =
             // post-update entities
             PostUpdateEntitiesTimer.Start ()
             let advancing = World.getAdvancing world
-            let world =
-                Seq.fold (fun world (entity : Entity) ->
-                    if not (entity.GetStatic world) && (entity.GetAlwaysUpdate world || advancing)
-                    then World.postUpdateEntity entity world
-                    else world)
-                    world
-                    entities
+            let world = Seq.fold (fun world (entity : Entity) -> if not (entity.GetStatic world) && (entity.GetAlwaysUpdate world || advancing) then World.postUpdateEntity entity world else world) world entities3d
+            let world = Seq.fold (fun world (entity : Entity) -> if not (entity.GetStatic world) && (entity.GetAlwaysUpdate world || advancing) then World.postUpdateEntity entity world else world) world entities2d
             PostUpdateEntitiesTimer.Stop ()
 
             // clear cached hash sets
@@ -1021,7 +1003,6 @@ module WorldModule2 =
             let groups = Seq.concat (List.map (flip World.getGroups world) screens)
             let (entities3d, world) = World.getEntitiesInView3d CachedHashSet3d world
             let (entities2d, world) = World.getEntitiesInView2d CachedHashSet2d world
-            let entities = Seq.append entities3d entities2d
             RenderGatherTimer.Stop ()
 
             // render simulants breadth-first
@@ -1030,20 +1011,16 @@ module WorldModule2 =
             let world = match World.getSelectedScreenOpt world with Some selectedScreen -> World.renderScreenTransition selectedScreen world | None -> world
             let world = Seq.fold (fun world (group : Group) -> if group.GetVisible world then World.renderGroup group world else world) world groups
 
-            // render entities
+            // render entities 3d
             RenderEntitiesTimer.Start ()
             let world =
-                if World.getUnaccompanied world then
-                    Seq.fold (fun world (entity : Entity) ->
-                        World.renderEntity entity world)
-                        world entities
-                else
-                    Seq.fold (fun world (entity : Entity) ->
-                        let group = entity.Group
-                        if group.GetVisible world
-                        then World.renderEntity entity world
-                        else world)
-                        world entities
+                if World.getUnaccompanied world
+                then Seq.fold (fun world (entity : Entity) -> World.renderEntity entity world) world entities3d
+                else Seq.fold (fun world (entity : Entity) -> if entity.Group.GetVisible world then World.renderEntity entity world else world) world entities3d
+            let world =
+                if World.getUnaccompanied world
+                then Seq.fold (fun world (entity : Entity) -> World.renderEntity entity world) world entities2d
+                else Seq.fold (fun world (entity : Entity) -> if entity.Group.GetVisible world then World.renderEntity entity world else world) world entities3d
             RenderEntitiesTimer.Stop ()
 
             // clear cached hash sets
