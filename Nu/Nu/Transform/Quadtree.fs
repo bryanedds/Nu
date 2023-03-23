@@ -205,13 +205,6 @@ module Quadtree =
     let getDepth tree =
         tree.Depth
 
-    let clone tree =
-        { Node = Quadnode.clone tree.Node
-          Omnipresent = HashSet (tree.Omnipresent, HashIdentity.Structural)
-          Depth = tree.Depth
-          Granularity = tree.Granularity
-          Bounds = tree.Bounds }
-
     let make<'e when 'e : equality> granularity depth bounds =
         { Node = Quadnode.make<'e> granularity depth bounds
           Omnipresent = HashSet HashIdentity.Structural

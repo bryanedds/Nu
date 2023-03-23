@@ -43,14 +43,13 @@ module Engine =
     let [<Uniform>] ParticleSize3dDefault = Vector3 (0.01f, 0.01f, 0.01f)
     let [<Uniform>] EyeCenter3dDefault = Vector3 (0.0f, 1.0f, 4.0f)
     let [<Uniform>] EyeCenter3dOffset = Vector3 (0.0f, 0.0f, 4.0f)
-    let [<Uniform>] QuadtreeGranularity = 3
-    let [<Uniform>] QuadtreeDepth = 4
-    let [<Uniform>] QuadtreeSize = Vector2 (single (Math.Pow (2.0, 18.0)))
+    let [<Uniform>] QuadtreeGranularity = 2
+    let [<Uniform>] QuadtreeDepth = 7
+    let [<Uniform>] QuadtreeSize = Vector2 65536.0f // under a mile
     let [<Uniform>] QuadtreeBounds = Box2 (-QuadtreeSize * 0.5f, QuadtreeSize)
-    let [<Uniform>] OctreeGranularity = 3
-    let [<Uniform>] OctreeDepth = 4
-    let [<Uniform>] OctreeSize = Vector3 (single (Math.Pow (2.0, 10.0)))
-    let [<Uniform>] OctreeBounds = Box3 (-OctreeSize * 0.5f, OctreeSize)
+    let [<Uniform>] OctreeDepth = 7
+    let [<Uniform>] OctreeSize = Vector3 2048.0f // over a mile
+    let [<Uniform>] OctreeBounds = Box3 (-OctreeSize * 0.5f + v3 0.0f 16.0f 0.0f, OctreeSize) // OPTIMIZATION: offset Min.Y by half a node to minimize vertical margin hits when placing most objects at Y = 0.
     let [<Uniform>] mutable EventTracing = match ConfigurationManager.AppSettings.["EventTracing"] with null -> false | tracing -> scvalue<bool> tracing
     let [<Uniform>] mutable EventFilter = match ConfigurationManager.AppSettings.["EventFilter"] with null -> EventFilter.Empty | filter -> scvalue<EventFilter.Filter> filter
 

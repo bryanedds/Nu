@@ -58,6 +58,9 @@ module internal Octnode =
     let inline internal isIntersectingFrustum (frustum : Frustum) node =
         frustum.Intersects node.Bounds
 
+    let inline internal containsBox (bounds : Box3) node =
+        node.Bounds.Combine bounds = node.Bounds
+
     let rec internal addElement bounds element node =
         if isIntersectingBox bounds node then
             match node.Children with
@@ -184,26 +187,29 @@ module internal Octnode =
             | ValueRight elements -> ValueRight (HashSet (elements, HashIdentity.Structural))
             | ValueLeft nodes -> ValueLeft (Array.map clone nodes) }
 
-    let rec internal make<'e when 'e : equality> granularity depth (bounds : Box3) : 'e Octnode =
-        if granularity < 2 then failwith "Invalid granularity for Octnode. Expected value of at least 2."
+    let rec internal make<'e when 'e : equality> depth (bounds : Box3) (leaves : Dictionary<Vector3, 'e Octnode>) : 'e Octnode =
         if depth < 1 then failwith "Invalid depth for Octnode. Expected value of at least 1."
+        let granularity = 2
         let childDepth = depth - 1
         let childSize = bounds.Size / single granularity
         let children =
             if depth > 1 then
                 let nodes =
-                    [|for i in 0 .. granularity - 1 do
-                        [|for j in 0 .. granularity - 1 do
-                            [|for k in 0 .. granularity - 1 do
+                    [|for i in 0 .. dec granularity do
+                        [|for j in 0 .. dec granularity do
+                            [|for k in 0 .. dec granularity do
                                 let childOffset = v3 (childSize.X * single i) (childSize.Y * single j) (childSize.Z * single k)
                                 let childMin = bounds.Min + childOffset
                                 let childBounds = box3 childMin childSize
-                                yield make granularity childDepth childBounds|]|]|]
+                                yield make childDepth childBounds leaves|]|]|]
                 ValueLeft (nodes |> Array.concat |> Array.concat)
             else ValueRight (HashSet<'e Octelement> HashIdentity.Structural)
-        { Depth = depth
-          Bounds = bounds
-          Children = children }
+        let node =
+            { Depth = depth
+              Bounds = bounds
+              Children = children }
+        if depth = 1 then leaves.Add (bounds.Min, node)
+        node
 
 type internal Octnode<'e when 'e : equality> = Octnode.Octnode<'e>
 
@@ -267,11 +273,21 @@ module Octree =
     /// A spatial structure that organizes elements in a 3d grid.
     type [<ReferenceEquality>] Octree<'e when 'e : equality> =
         private
-            { Node : 'e Octnode
+            { Leaves : Dictionary<Vector3, 'e Octnode>
+              LeafSize : Vector3
+              Node : 'e Octnode
               Omnipresent : 'e Octelement HashSet
               Depth : int
-              Granularity : int
               Bounds : Box3 }
+
+    let private findNode (bounds : Box3) tree =
+        let offset = -tree.Bounds.Min // use offset to bring div ops into positive space
+        let divs = (bounds.Min + offset) / tree.LeafSize
+        let evens = v3 (divs.X |> int |> single) (divs.Y |> int |> single) (divs.Z |> int |> single)
+        let leafKey = evens * tree.LeafSize - offset
+        match tree.Leaves.TryGetValue leafKey with
+        | (true, leaf) when Octnode.containsBox bounds leaf -> leaf
+        | (_, _) -> tree.Node
 
     let addElement bounds element tree =
         if element.Presence.OmnipresentType then
@@ -282,7 +298,9 @@ module Octree =
                 Log.info "Element is outside the octree's containment area or is being added redundantly."
                 tree.Omnipresent.Remove element |> ignore
                 tree.Omnipresent.Add element |> ignore
-            else Octnode.addElement bounds element tree.Node
+            else
+                let node = findNode bounds tree
+                Octnode.addElement bounds element node
 
     let removeElement bounds element tree =
         if element.Presence.OmnipresentType then 
@@ -291,31 +309,28 @@ module Octree =
             if not (Octnode.isIntersectingBox bounds tree.Node) then
                 Log.info "Element is outside the octree's containment area or is not present for removal."
                 tree.Omnipresent.Remove element |> ignore
-            else Octnode.removeElement bounds element tree.Node
+            else
+                let node = findNode bounds tree
+                Octnode.removeElement bounds element node
 
     let updateElement (oldPresence : Presence) oldBounds (newPresence : Presence) newBounds element tree =
         let wasInNode = not oldPresence.OmnipresentType && Octnode.isIntersectingBox oldBounds tree.Node
-        let isInNode = not newPresence.OmnipresentType && Octnode.isIntersectingBox newBounds tree.Node
         if wasInNode then
-            if isInNode then
-                Octnode.updateElement oldBounds newBounds element tree.Node
-            else
-                Octnode.removeElement oldBounds element tree.Node |> ignore
-                tree.Omnipresent.Remove element |> ignore
-                tree.Omnipresent.Add element |> ignore
-        else
-            if isInNode then
-                tree.Omnipresent.Remove element |> ignore
-                Octnode.addElement newBounds element tree.Node
-            else
-                tree.Omnipresent.Remove element |> ignore
-                tree.Omnipresent.Add element |> ignore
+            let oldNode = findNode oldBounds tree
+            Octnode.removeElement oldBounds element oldNode |> ignore
+        else tree.Omnipresent.Remove element |> ignore
+        let isInNode = not newPresence.OmnipresentType && Octnode.isIntersectingBox newBounds tree.Node
+        if isInNode then 
+            let newNode = findNode oldBounds tree
+            Octnode.addElement newBounds element newNode
+        else tree.Omnipresent.Add element |> ignore
 
     let getElementsOmnipresent (set : _ HashSet) tree =
         new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (tree.Omnipresent, set)) :> 'e Octelement IEnumerable
 
     let getElementsAtPoint point (set : _ HashSet) tree =
-        Octnode.getElementsAtPoint point tree.Node set
+        let node = findNode (box3 point v3Zero) tree
+        Octnode.getElementsAtPoint point node set
         new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (tree.Omnipresent, set)) :> 'e Octelement IEnumerable
 
     let getElementsInBounds bounds (set : _ HashSet) tree =
@@ -337,18 +352,15 @@ module Octree =
     let getDepth tree =
         tree.Depth
 
-    let clone tree =
-        { Node = Octnode.clone tree.Node
-          Omnipresent = HashSet (tree.Omnipresent, HashIdentity.Structural)
-          Depth = tree.Depth
-          Granularity = tree.Granularity
-          Bounds = tree.Bounds }
-
-    let make<'e when 'e : equality> granularity depth bounds =
-        { Node = Octnode.make<'e> granularity depth bounds
+    let make<'e when 'e : equality> (depth : int) (bounds : Box3) =
+        let leaves = dictPlus HashIdentity.Structural []
+        let mutable leafSize = bounds.Size
+        for _ in 1 .. dec depth do leafSize <- leafSize * 0.5f
+        { Leaves = leaves
+          LeafSize = leafSize
+          Node = Octnode.make<'e> depth bounds leaves
           Omnipresent = HashSet HashIdentity.Structural
           Depth = depth
-          Granularity = granularity
           Bounds = bounds }
 
 /// A spatial structure that organizes elements in a 3d grid.
