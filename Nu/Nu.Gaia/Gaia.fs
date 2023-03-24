@@ -1481,6 +1481,7 @@ module Gaia =
             if Keys.L = key && Keys.Alt = Control.ModifierKeys && form.rolloutTabControl.SelectedTab.Name = "evaluatorTabPage" then form.evalLineButton.PerformClick ()
             match form.FocusedControl  with
             | :? ToolStripDropDown | :? TextBox -> ()
+            // | :? ToolStripComboBox -> () // doesn't implement Control... not sure how to match.
             | _ ->
                 if Keys.A = key && Keys.Control = Control.ModifierKeys then handleFormSave true form (EventArgs ())
                 if Keys.Z = key && Keys.Control = Control.ModifierKeys then handleFormUndo form (EventArgs ())
