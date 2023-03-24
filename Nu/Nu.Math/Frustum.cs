@@ -13,6 +13,7 @@ namespace Nu
     /// </summary>
     public class Frustum : IEquatable<Frustum>
     {
+        private Box3 _bounds;
         private Matrix4x4 _matrix;
         private readonly Vector3[] _corners = new Vector3[CornerCount];
         private readonly Plane3[] _planes = new Plane3[PlaneCount];
@@ -26,6 +27,14 @@ namespace Nu
         /// The number of corner points in the frustum.
         /// </summary>
         public const int CornerCount = 8;
+
+        /// <summary>
+        /// The axis-aligned bounding box enclosing the frustum.
+        /// </summary>
+        public Box3 Bounds
+        {
+            get { return _bounds; }
+        }
 
         /// <summary>
         /// Gets or sets the <see cref="Matrix4x4"/> of the frustum.
@@ -98,6 +107,7 @@ namespace Nu
             this._matrix = value;
             this.CreatePlanes();
             this.CreateCorners();
+            this._bounds = Box3.Enclose(this._corners);
         }
 
         /// <summary>
@@ -331,9 +341,13 @@ namespace Nu
         /// <param name="result"><c>true</c> if specified <see cref="Box3"/> intersects with this <see cref="Frustum"/>; <c>false</c> otherwise as an output parameter.</param>
         public void Intersects(in Box3 box, out bool result)
         {
-            var containment = default(ContainmentType);
-            this.Contains(in box, out containment);
-            result = containment != ContainmentType.Disjoint;
+            if (this._bounds.Intersects(box))
+            {
+                var containment = default(ContainmentType);
+                this.Contains(in box, out containment);
+                result = containment != ContainmentType.Disjoint;
+            }
+            else result = false;
         }
 
         /// <summary>
