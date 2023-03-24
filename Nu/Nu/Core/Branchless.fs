@@ -23,16 +23,19 @@ type Branchless () =
     static member inline int64ToBool int64 = Branchless.reinterpret (int int64) : bool
 
     /// Convert a bool as a single without branching.
-    static member inline boolToSingle bool = (Branchless.reinterpret bool : int) |> single
+    static member inline boolToSingle bool =
+        (Branchless.reinterpret bool : int) |> single
+        //let int = (Branchless.reinterpret bool : int)
+        //let intFraction = int <<< 23
+        //let intExponent = (int <<< 24) ||| (int <<< 25) ||| (int <<< 26) ||| (int <<< 27) ||| (int <<< 28) ||| (int <<< 29)
+        //Branchless.reinterpret (intFraction ||| intExponent) : single
 
     /// Convert a single as a bool without branching.
-    static member inline singleToBool single = Branchless.reinterpret (int single) : bool
-
-    /// Convert a bool as a single without branching.
-    static member inline boolToDouble bool = (Branchless.reinterpret bool : int) |> double
-
-    /// Convert a single as a bool without branching.
-    static member inline doubleToBool double = Branchless.reinterpret (int double) : bool
+    static member inline singleToBool single =
+        Branchless.reinterpret (int single) : bool
+        //let int = Branchless.reinterpret single : int
+        //let intFractionMask = 8388608 // 1 << 23
+        //Branchless.reinterpret (int &&& intFractionMask >>> 23) : bool
 
     /// Branchless min for ints.
     static member inline min a = fun b ->
@@ -59,7 +62,7 @@ type Branchless () =
         a' + b'
 
     /// Branchless min for singles.
-    static member min a = fun b ->
+    static member inline min a = fun b ->
         let a' = Branchless.boolToSingle (a <= b) * a
         let b' = Branchless.boolToSingle (b < a) * b
         a' + b'
@@ -68,16 +71,4 @@ type Branchless () =
     static member inline max a = fun b ->
         let a' = Branchless.boolToSingle (a >= b) * a
         let b' = Branchless.boolToSingle (b > a) * b
-        a' + b'
-
-    /// Branchless min for doubles.
-    static member inline min a = fun b ->
-        let a' = Branchless.boolToDouble (a <= b) * a
-        let b' = Branchless.boolToDouble (b < a) * b
-        a' + b'
-
-    /// Branchless max for doubles.
-    static member inline max a = fun b ->
-        let a' = Branchless.boolToDouble (a >= b) * a
-        let b' = Branchless.boolToDouble (b > a) * b
         a' + b'
