@@ -179,7 +179,7 @@ module Quadtree =
     type [<ReferenceEquality>] Quadtree<'e when 'e : equality> =
         private
             { Leaves : Dictionary<Vector2, 'e Quadnode>
-              LeafSize : Vector2
+              LeafSize : Vector2 // TODO: consider keeping the inverse of this to avoid divides.
               Omnipresent : 'e Quadelement HashSet
               Node : 'e Quadnode
               Depth : int

@@ -280,7 +280,7 @@ module Octree =
     type [<ReferenceEquality>] Octree<'e when 'e : equality> =
         private
             { Leaves : Dictionary<Vector3, 'e Octnode>
-              LeafSize : Vector3
+              LeafSize : Vector3 // TODO: consider keeping the inverse of this to avoid divides.
               Omnipresent : 'e Octelement HashSet
               Node : 'e Octnode
               Depth : int
