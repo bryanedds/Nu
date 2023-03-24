@@ -5,9 +5,8 @@ namespace Nu
 open System
 #nowarn "42"
 
-type [<Struct>] FloatRegister = { FloatRegister : single }
-
 /// Provides operators for branchless programming.
+/// TODO: consider moving into Prime.
 type [<AbstractClass; Sealed>] Branchless () =
 
     static member inline private reinterpret<'a, 'b> (a : 'a) : 'b = (# "" a : 'b #)
