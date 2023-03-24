@@ -28,9 +28,9 @@
 	<ItemGroup>
 		<Compile Include="Core\Core.fs" />
 		<Compile Include="Core\Log.fs" />
-		<Compile Include="Core\Branchless.fs" />
 		<Compile Include="Core\Gen.fs" />
 		<Compile Include="Core\Math.fs" />
+		<Compile Include="Core\Branchless.fs" />
 		<Compile Include="Core\Assimp.fs" />
 		<Compile Include="Core\Assets.fs" />
 		<Compile Include="Core\GameTime.fs" />
