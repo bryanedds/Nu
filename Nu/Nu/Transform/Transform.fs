@@ -276,12 +276,12 @@ type [<NoEquality; NoComparison>] Transform =
                     for i in 0 .. corners.Length - 1 do
                         let corner = &corners.[i]
                         corner <- Vector3.Transform (corner - pivot, rotation) + pivot
-                        minX <- min minX corner.X
-                        minY <- min minY corner.Y
-                        minZ <- min minZ corner.Z
-                        maxX <- max maxX corner.X
-                        maxY <- max maxY corner.Y
-                        maxZ <- max maxZ corner.Z
+                        minX <- Branchless.minf minX corner.X
+                        minY <- Branchless.minf minY corner.Y
+                        minZ <- Branchless.minf minZ corner.Z
+                        maxX <- Branchless.maxf maxX corner.X
+                        maxY <- Branchless.maxf maxY corner.Y
+                        maxZ <- Branchless.maxf maxZ corner.Z
                     Box3 (minX, minY, minZ, maxX - minX, maxY - minY, maxZ - minZ)
                 else perimeter
             this.PerimeterOrientedOpt_ <- ref perimeterOriented
