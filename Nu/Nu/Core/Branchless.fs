@@ -8,7 +8,7 @@ open System
 /// Provides operators for branchless programming.
 type Branchless () =
 
-    static member inline reinterpret<'a, 'b> (a : 'a) : 'b = (# "" a : 'b #)
+    static member inline private reinterpret<'a, 'b> (a : 'a) : 'b = (# "" a : 'b #)
 
     /// Convert a bool as an int without branching.
     static member inline boolToInt bool = Branchless.reinterpret bool : int
@@ -35,8 +35,11 @@ type Branchless () =
 
     /// Convert a single as a bool without branching.
     static member inline singleToBool single =
-        let int = Branchless.reinterpret single : int
-        Branchless.reinterpret (int >>> 29) : bool
+        Branchless.reinterpret (int single) : bool
+        // NOTE: this code has been dummied out since a binary cmp between a floating point register and an int seems
+        // to always result in unequal. Like stated above, I'm don't know how to efficiently land an fp register value
+        // in a non-fp register.
+        //(Branchless.reinterpret single : int) <> 0
 
     /// Branchless min for ints.
     static member inline min a = fun b ->
