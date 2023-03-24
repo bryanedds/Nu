@@ -323,15 +323,25 @@ module Octree =
 
     let updateElement (oldPresence : Presence) oldBounds (newPresence : Presence) newBounds element tree =
         let wasInNode = not oldPresence.OmnipresentType && Octnode.isIntersectingBox oldBounds tree.Node
-        if wasInNode then
-            let oldNode = findNode oldBounds tree
-            Octnode.removeElement oldBounds element oldNode |> ignore
-        else tree.Omnipresent.Remove element |> ignore
         let isInNode = not newPresence.OmnipresentType && Octnode.isIntersectingBox newBounds tree.Node
-        if isInNode then 
-            let newNode = findNode newBounds tree
-            Octnode.addElement newBounds element newNode
-        else tree.Omnipresent.Add element |> ignore
+        if wasInNode then
+            if isInNode then
+                let oldNode = findNode oldBounds tree
+                let newNode = findNode newBounds tree
+                if oldNode = newNode
+                then Octnode.updateElement oldBounds newBounds element oldNode
+                else Octnode.updateElement oldBounds newBounds element tree.Node
+            else
+                Octnode.removeElement oldBounds element tree.Node |> ignore
+                tree.Omnipresent.Remove element |> ignore
+                tree.Omnipresent.Add element |> ignore
+        else
+            if isInNode then
+                tree.Omnipresent.Remove element |> ignore
+                Octnode.addElement newBounds element tree.Node
+            else
+                tree.Omnipresent.Remove element |> ignore
+                tree.Omnipresent.Add element |> ignore
 
     let getElementsOmnipresent (set : _ HashSet) tree =
         new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (tree.Omnipresent, set)) :> 'e Octelement IEnumerable
