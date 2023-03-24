@@ -4,6 +4,7 @@
 namespace Nu
 open System
 open System.Numerics
+open Prime
 open Nu
 
 /// Masks for Transform flags.
@@ -273,15 +274,15 @@ type [<NoEquality; NoComparison>] Transform =
                     let mutable maxX = Single.MinValue
                     let mutable maxY = Single.MinValue
                     let mutable maxZ = Single.MinValue
-                    for i in 0 .. corners.Length - 1 do
+                    for i in 0 .. dec 8 do // OPTIMIZATION: hard code to allow for loop unrolling.
                         let corner = &corners.[i]
                         corner <- Vector3.Transform (corner - pivot, rotation) + pivot
-                        minX <- Branchless.minf minX corner.X
-                        minY <- Branchless.minf minY corner.Y
-                        minZ <- Branchless.minf minZ corner.Z
-                        maxX <- Branchless.maxf maxX corner.X
-                        maxY <- Branchless.maxf maxY corner.Y
-                        maxZ <- Branchless.maxf maxZ corner.Z
+                        minX <- Branchless.min minX corner.X
+                        minY <- Branchless.min minY corner.Y
+                        minZ <- Branchless.min minZ corner.Z
+                        maxX <- Branchless.max maxX corner.X
+                        maxY <- Branchless.max maxY corner.Y
+                        maxZ <- Branchless.max maxZ corner.Z
                     Box3 (minX, minY, minZ, maxX - minX, maxY - minY, maxZ - minZ)
                 else perimeter
             this.PerimeterOrientedOpt_ <- ref perimeterOriented
