@@ -939,6 +939,7 @@ module Gaia =
             tryShowSelectedEntityInDisplay form world
 
     let private handleFormCreateEntity atMouse inHierarchy (dispatcherNameOpt : string option) (form : GaiaForm) (_ : EventArgs) =
+        form.displayPanel.Focus () |> ignore<bool>
         Globals.nextPreUpdate $ fun world ->
             let oldWorld = world
             try let world = Globals.pushPastWorld world
@@ -1438,8 +1439,11 @@ module Gaia =
     let private handleCreateEntityComboBoxSelectedIndexChanged (form : GaiaForm) (_ : EventArgs) =
         form.overlayComboBox.SelectedIndex <- 0
 
-    let private handleKeyboardInput key isKeyFromKeyableControl (form : GaiaForm) world =
+    let private handleKeyboardInput key (form : GaiaForm) world =
         if Form.ActiveForm = (form :> Form) then
+            if Keys.Escape = key then
+                if form.FocusedControl = form.displayPanel then deselectEntity form world
+                form.displayPanel.Focus () |> ignore<bool>
             if Keys.F5 = key then form.runButton.PerformClick ()
             if Keys.D3 = key && Keys.None = Control.ModifierKeys then form.snap3dButton.Checked <- form.snap3dButton.Checked
             if Keys.X = key && Keys.None = Control.ModifierKeys then form.constrainXButton.Checked <- not form.constrainXButton.Checked
@@ -1475,7 +1479,9 @@ module Gaia =
             if Keys.T = key && Keys.Alt = Control.ModifierKeys && form.rolloutTabControl.SelectedTab.Name = "eventTracingTabPage" then form.traceEventsCheckBox.Checked <- not form.traceEventsCheckBox.Checked
             if Keys.V = key && Keys.Alt = Control.ModifierKeys && form.rolloutTabControl.SelectedTab.Name = "evaluatorTabPage" then form.evalButton.PerformClick ()
             if Keys.L = key && Keys.Alt = Control.ModifierKeys && form.rolloutTabControl.SelectedTab.Name = "evaluatorTabPage" then form.evalLineButton.PerformClick ()
-            if not isKeyFromKeyableControl then
+            match form.FocusedControl  with
+            | :? ToolStripDropDown | :? TextBox -> ()
+            | _ ->
                 if Keys.A = key && Keys.Control = Control.ModifierKeys then handleFormSave true form (EventArgs ())
                 if Keys.Z = key && Keys.Control = Control.ModifierKeys then handleFormUndo form (EventArgs ())
                 if Keys.Y = key && Keys.Control = Control.ModifierKeys then handleFormRedo form (EventArgs ())
@@ -1485,7 +1491,6 @@ module Gaia =
                 if Keys.C = key && Keys.Control = Control.ModifierKeys then handleFormCopy form (EventArgs ())
                 if Keys.V = key && Keys.Control = Control.ModifierKeys then handleFormPaste false form (EventArgs ())
                 if Keys.Delete = key then handleFormDeleteEntity form (EventArgs ())
-                if Keys.Escape = key then deselectEntity form world
 
     let private handleFormClosing (_ : GaiaForm) (args : CancelEventArgs) =
         match MessageBox.Show ("Are you sure you want to close Gaia?", "Close Gaia?", MessageBoxButtons.OKCancel) with
@@ -1704,12 +1709,8 @@ module Gaia =
             let WM_KEYDOWN = 0x0100
             let WM_SYSKEYDOWN = 0x0104
             if nCode >= 0 && (wParam = IntPtr WM_KEYDOWN || wParam = IntPtr WM_SYSKEYDOWN) then
-                let key = lParam |> Marshal.ReadInt32 |> enum<Keys> 
-                match form.GetFocusedControl () with
-                | :? ToolStripDropDown
-                // | :? ToolStripComboBox wtf?
-                | :? TextBox
-                | _ -> handleKeyboardInput key false form Globals.World
+                let key = lParam |> Marshal.ReadInt32 |> enum<Keys>
+                handleKeyboardInput key form Globals.World
             GaiaForm.CallNextHookEx (form.HookId, nCode, wParam, lParam)) |> ignore
         tryRun3 runWhile sdlDeps (form : GaiaForm)
 

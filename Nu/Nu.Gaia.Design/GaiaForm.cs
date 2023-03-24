@@ -36,17 +36,20 @@ namespace Nu.Gaia.Design
             }
         }
 
+        public Control FocusedControl
+        {
+            get
+            {
+                Control focusedControl = null;
+                IntPtr focusedHandle = GetFocus();
+                if (focusedHandle != IntPtr.Zero) focusedControl = Control.FromHandle(focusedHandle);
+                return focusedControl;
+            }
+        }
+
         public delegate IntPtr LowLevelKeyboardProc(int nCode, IntPtr wParam, IntPtr lParam);
 
         public event LowLevelKeyboardProc LowLevelKeyboardHook;
-
-        public Control GetFocusedControl()
-        {
-            Control focusedControl = null;
-            IntPtr focusedHandle = GetFocus();
-            if (focusedHandle != IntPtr.Zero) focusedControl = Control.FromHandle(focusedHandle);
-            return focusedControl;
-        }
 
         private void GaiaForm_Load(object sender, System.EventArgs e)
         {
