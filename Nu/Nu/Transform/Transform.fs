@@ -277,12 +277,12 @@ type [<NoEquality; NoComparison>] Transform =
                     for i in 0 .. dec 8 do // OPTIMIZATION: hard code to allow for loop unrolling.
                         let corner = &corners.[i]
                         corner <- Vector3.Transform (corner - pivot, rotation) + pivot
-                        minX <- Branchless.min minX corner.X
-                        minY <- Branchless.min minY corner.Y
-                        minZ <- Branchless.min minZ corner.Z
-                        maxX <- Branchless.max maxX corner.X
-                        maxY <- Branchless.max maxY corner.Y
-                        maxZ <- Branchless.max maxZ corner.Z
+                        minX <- min minX corner.X
+                        minY <- min minY corner.Y
+                        minZ <- min minZ corner.Z
+                        maxX <- max maxX corner.X
+                        maxY <- max maxY corner.Y
+                        maxZ <- max maxZ corner.Z
                     Box3 (minX, minY, minZ, maxX - minX, maxY - minY, maxZ - minZ)
                 else perimeter
             this.PerimeterOrientedOpt_ <- ref perimeterOriented
