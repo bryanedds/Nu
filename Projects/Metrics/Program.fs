@@ -134,19 +134,16 @@ type MyGameDispatcher () =
         let world = World.createEntity<SkyBoxDispatcher> DefaultOverlay None group world |> snd
         let world = fps.SetPosition (v3 200.0f -250.0f 0.0f) world
 #if !ECS
-        let positions = // 25,000 entity positions (goal: 60FPS, current: 59FPS)
+        let positions = // 25,000 entity positions (goal: 60FPS, current: 30FPS)
             seq {
                 for i in 0 .. dec 50 do
                     for j in 0 .. dec 50 do
                         for k in 0 .. dec 10 do
-                            yield v3 (single i * 4.5f + single k * 0.5f) (single j * 4.5f + single k * 0.5f) -205.0f }
+                            yield v3 (single i * 4.0f + single k * 0.5f) (single j * 4.0f + single k * 0.5f) -200.0f }
         let world =
             Seq.fold (fun world position ->
                 let (entity, world) = World.createEntity<MetricsEntityDispatcher> NoOverlay (Some [|string Gen.id64|]) group world
-                let world = entity.SetPosition (position + v3 -118.0f -118.0f 0.0f) world
-                let world = entity.SetScale (v3Dup 2.0f) world
-                let world = entity.SetPresence Omnipresent world
-                world)
+                entity.SetPosition (position + v3 -120.0f -100.0f 0.0f) world)
                 world positions
 #endif
         let world = World.selectScreen (IdlingState world.GameTime) screen world
