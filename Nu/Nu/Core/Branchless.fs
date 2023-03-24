@@ -8,7 +8,7 @@ open System
 /// Provides operators for branchless programming.
 type Branchless () =
 
-    static member inline private reinterpret<'a, 'b> (a : 'a) : 'b = (# "" a : 'b #)
+    static member inline reinterpret<'a, 'b> (a : 'a) : 'b = (# "" a : 'b #)
 
     /// Convert a bool as an int without branching.
     static member inline boolToInt bool = Branchless.reinterpret bool : int
@@ -25,6 +25,9 @@ type Branchless () =
     /// Convert a bool as a single without branching.
     static member inline boolToSingle bool =
         (Branchless.reinterpret bool : int) |> single
+        // NOTE: this code has been dummied out due to broken performance. Broken perf is likely due to the resulting
+        // value not landing in a floating-point enabled register. I don't know of a performant way to land an int
+        // value into a fp register with .NET.
         //let int = (Branchless.reinterpret bool : int)
         //let intFraction = int <<< 23
         //let intExponent = (int <<< 24) ||| (int <<< 25) ||| (int <<< 26) ||| (int <<< 27) ||| (int <<< 28) ||| (int <<< 29)
@@ -32,10 +35,8 @@ type Branchless () =
 
     /// Convert a single as a bool without branching.
     static member inline singleToBool single =
-        Branchless.reinterpret (int single) : bool
-        //let int = Branchless.reinterpret single : int
-        //let intFractionMask = 8388608 // 1 << 23
-        //Branchless.reinterpret (int &&& intFractionMask >>> 23) : bool
+        let int = Branchless.reinterpret single : int
+        Branchless.reinterpret (int >>> 29) : bool
 
     /// Branchless min for ints.
     static member inline min a = fun b ->
