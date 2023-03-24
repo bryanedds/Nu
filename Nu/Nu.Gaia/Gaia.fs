@@ -1521,6 +1521,12 @@ module Gaia =
                                 | (false, true, _) -> entity.GetPosition world + entityPositionDelta * v3Up
                                 | (_, _, _) -> entity.GetPosition world + entityPositionDelta
                             entity.SetPosition entityPositionConstrained world
+                    let world =
+                        if entity.Has<RigidBodyFacet> world then
+                            let world = entity.SetLinearVelocity v3Zero world
+                            let world = entity.SetAngularVelocity v3Zero world
+                            world
+                        else world
                     // NOTE: disabled the following line to fix perf issue caused by refreshing the property grid every frame
                     // form.entityPropertyGrid.Refresh ()
                     world
@@ -1559,6 +1565,12 @@ module Gaia =
                                     | (false, true, true) -> entity.GetPosition world + entityPositionDelta * (v3Up + v3Back)
                                     | (_, _, _) -> entity.GetPosition world + entityPositionDelta
                                 entity.SetPosition entityPositionConstrained world
+                        let world =
+                            if entity.Has<RigidBodyFacet> world then
+                                let world = entity.SetLinearVelocity v3Zero world
+                                let world = entity.SetAngularVelocity v3Zero world
+                                world
+                            else world
                         // NOTE: disabled the following line to fix perf issue caused by refreshing the property grid every frame
                         // form.entityPropertyGrid.Refresh ()
                         world
