@@ -12,19 +12,19 @@ type [<AbstractClass; Sealed>] Branchless () =
     static member inline private reinterpret<'a, 'b> (a : 'a) : 'b = (# "" a : 'b #)
 
     /// Convert a bool as an int without branching.
-    static member inline boolToInt bool = Branchless.reinterpret bool : int
+    static member inline boolToInt (bool : bool) = Branchless.reinterpret bool : int
 
     /// Convert an int as a bool without branching.
-    static member inline intToBool int = Branchless.reinterpret int : bool
+    static member inline intToBool (int : int) = Branchless.reinterpret int : bool
 
     /// Convert a bool as an int64 without branching.
-    static member inline boolToInt64 bool = (Branchless.reinterpret bool : int) |> int64
+    static member inline boolToInt64 (bool : bool) = (Branchless.reinterpret bool : int) |> int64
 
     /// Convert an int64 as a bool without branching.
-    static member inline int64ToBool int64 = Branchless.reinterpret (int int64) : bool
+    static member inline int64ToBool (int64 : int64) = Branchless.reinterpret (int int64) : bool
 
     /// Convert a bool as a single without branching.
-    static member inline boolToSingle bool =
+    static member inline boolToSingle (bool : bool) =
         (Branchless.reinterpret bool : int) |> single
         // NOTE: this code has been dummied out due to broken performance. Broken perf is likely due to the resulting
         // value not landing in a floating-point enabled register. I don't know of a performant way to land an int
@@ -35,12 +35,20 @@ type [<AbstractClass; Sealed>] Branchless () =
         //Branchless.reinterpret (intFraction ||| intExponent) : single
 
     /// Convert a single as a bool without branching.
-    static member inline singleToBool single =
+    static member inline singleToBool (single : single) =
         Branchless.reinterpret (int single) : bool
         // NOTE: this code has been dummied out since a binary cmp between a floating point register and an int seems
         // to always result in unequal. Like stated above, I'm don't know how to efficiently land an fp register value
         // in a non-fp register.
         //(Branchless.reinterpret single : int) <> 0
+
+    /// Convert a bool as a double without branching.
+    static member inline boolToDouble (bool : bool) =
+        (Branchless.reinterpret bool : int) |> double
+
+    /// Convert a double as a bool without branching.
+    static member inline singleToDouble (double : double) =
+        Branchless.reinterpret (int double) : bool
 
     /// Branchless min for ints.
     static member inline min a = fun b ->
@@ -76,4 +84,16 @@ type [<AbstractClass; Sealed>] Branchless () =
     static member inline max a = fun b ->
         let a' = Branchless.boolToSingle (a >= b) * a
         let b' = Branchless.boolToSingle (b > a) * b
+        a' + b'
+
+    /// Branchless min for doubles.
+    static member inline min a = fun b ->
+        let a' = Branchless.boolToDouble (a <= b) * a
+        let b' = Branchless.boolToDouble (b < a) * b
+        a' + b'
+
+    /// Branchless max for doubles.
+    static member inline max a = fun b ->
+        let a' = Branchless.boolToDouble (a >= b) * a
+        let b' = Branchless.boolToDouble (b > a) * b
         a' + b'
