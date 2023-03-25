@@ -129,35 +129,38 @@ type [<ReferenceEquality>] AetherPhysicsEngine =
         body.SetIsSensor bodyProperties.Sensor
 
     static member private attachBoxBody sourceSimulant (bodyProperties : BodyProperties) (bodyBox : BodyBox) (body : Body) =
-        let bodyShape =
+        let transform = Option.defaultValue m4Identity bodyBox.TransformOpt
+        let shape =
             body.CreateRectangle
-                (AetherPhysicsEngine.toPhysicsPolygonDiameter bodyBox.Size.X,
-                 AetherPhysicsEngine.toPhysicsPolygonDiameter bodyBox.Size.Y,
+                (AetherPhysicsEngine.toPhysicsPolygonDiameter (bodyBox.Size.X * transform.Scale.X),
+                 AetherPhysicsEngine.toPhysicsPolygonDiameter (bodyBox.Size.Y * transform.Scale.Y),
                  AetherPhysicsEngine.toPhysicsDensity bodyProperties.Substance,
-                 AetherPhysicsEngine.toPhysicsV2 bodyBox.Center)
-        bodyShape.Tag <-
+                 AetherPhysicsEngine.toPhysicsV2 transform.Translation)
+        shape.Tag <-
             { Simulant = sourceSimulant
               BodyId = bodyProperties.BodyId
               ShapeId = match bodyBox.PropertiesOpt with Some p -> p.BodyShapeId | None -> 0UL }
-        AetherPhysicsEngine.configureBodyShapeProperties bodyProperties bodyBox.PropertiesOpt bodyShape
+        AetherPhysicsEngine.configureBodyShapeProperties bodyProperties bodyBox.PropertiesOpt shape
 
     static member private attachBodySphere sourceSimulant (bodyProperties : BodyProperties) (bodySphere : BodySphere) (body : Body) =
-        let bodyShape =
+        let transform = Option.defaultValue m4Identity bodySphere.TransformOpt
+        let shape =
             body.CreateCircle
-                (AetherPhysicsEngine.toPhysicsPolygonRadius bodySphere.Radius,
+                (AetherPhysicsEngine.toPhysicsPolygonRadius (bodySphere.Radius * transform.Scale.X),
                  AetherPhysicsEngine.toPhysicsDensity bodyProperties.Substance,
-                 AetherPhysicsEngine.toPhysicsV2 bodySphere.Center)
-        bodyShape.Tag <-
+                 AetherPhysicsEngine.toPhysicsV2 transform.Translation)
+        shape.Tag <-
             { Simulant = sourceSimulant
               BodyId = bodyProperties.BodyId
               ShapeId = match bodySphere.PropertiesOpt with Some p -> p.BodyShapeId | None -> 0UL }
-        AetherPhysicsEngine.configureBodyShapeProperties bodyProperties bodySphere.PropertiesOpt bodyShape
+        AetherPhysicsEngine.configureBodyShapeProperties bodyProperties bodySphere.PropertiesOpt shape
 
     static member private attachBodyCapsule sourceSimulant (bodyProperties : BodyProperties) (bodyCapsule : BodyCapsule) (body : Body) =
-        let height = AetherPhysicsEngine.toPhysicsPolygonDiameter bodyCapsule.Height
-        let endRadius = AetherPhysicsEngine.toPhysicsPolygonRadius bodyCapsule.Radius
+        let transform = Option.defaultValue m4Identity bodyCapsule.TransformOpt
+        let height = AetherPhysicsEngine.toPhysicsPolygonDiameter (bodyCapsule.Height * transform.Scale.Y)
+        let endRadius = AetherPhysicsEngine.toPhysicsPolygonRadius (bodyCapsule.Radius * transform.Scale.Y)
         let density = AetherPhysicsEngine.toPhysicsDensity bodyProperties.Substance
-        let center = AetherPhysicsEngine.toPhysicsV2 bodyCapsule.Center
+        let center = AetherPhysicsEngine.toPhysicsV2 transform.Translation
         let rectangle = Common.PolygonTools.CreateRectangle (endRadius * 0.9f, height * 0.5f, center, 0.0f) // scaled in the capsule's box to stop corner sticking.
         let list = List<Common.Vertices> ()
         list.Add rectangle
@@ -175,10 +178,11 @@ type [<ReferenceEquality>] AetherPhysicsEngine =
         Array.ofSeq bodyShapes
 
     static member private attachBodyBoxRounded sourceSimulant (bodyProperties : BodyProperties) (bodyBoxRounded : BodyBoxRounded) (body : Body) =
-        let width = AetherPhysicsEngine.toPhysicsPolygonDiameter bodyBoxRounded.Size.X
-        let height = AetherPhysicsEngine.toPhysicsPolygonDiameter bodyBoxRounded.Size.Y
-        let radius = AetherPhysicsEngine.toPhysicsPolygonRadius bodyBoxRounded.Radius
-        let center = AetherPhysicsEngine.toPhysicsV2 bodyBoxRounded.Center
+        let transform = Option.defaultValue m4Identity bodyBoxRounded.TransformOpt
+        let width = AetherPhysicsEngine.toPhysicsPolygonDiameter (bodyBoxRounded.Size.X * transform.Scale.X)
+        let height = AetherPhysicsEngine.toPhysicsPolygonDiameter (bodyBoxRounded.Size.Y * transform.Scale.Y)
+        let radius = AetherPhysicsEngine.toPhysicsPolygonRadius (bodyBoxRounded.Radius * transform.Scale.X)
+        let center = AetherPhysicsEngine.toPhysicsV2 transform.Translation
         let boxVerticalWidth = width - radius * 2.0f
         let boxHorizontalHeight = height - radius * 2.0f
         let density = AetherPhysicsEngine.toPhysicsDensity bodyProperties.Substance
@@ -187,7 +191,7 @@ type [<ReferenceEquality>] AetherPhysicsEngine =
         let list = List<Common.Vertices> ()
         list.Add rectangleV
         list.Add rectangleH
-        let bodyShapes = body.CreateCompoundPolygon (list, density)
+        let bodyShapes =            body.CreateCompoundPolygon (list, density)
         let bodyShapeTopLeft =      body.CreateCircle (radius, density, Common.Vector2 (-width * 0.5f + radius, +height * 0.5f - radius) + center)
         let bodyShapeTopRight =     body.CreateCircle (radius, density, Common.Vector2 (+width * 0.5f - radius, +height * 0.5f - radius) + center)
         let bodyShapeBottomLeft =   body.CreateCircle (radius, density, Common.Vector2 (-width * 0.5f + radius, -height * 0.5f + radius) + center)
@@ -205,10 +209,10 @@ type [<ReferenceEquality>] AetherPhysicsEngine =
         Array.ofSeq bodyShapes
 
     static member private attachBodyConvexHull sourceSimulant bodyProperties bodyConvexHull (body : Body) =
-        let vertices =
-            bodyConvexHull.Vertices |>
-            Array.map (fun vertex -> vertex + bodyConvexHull.Center) |>
-            Array.map AetherPhysicsEngine.toPhysicsV2
+        let transform = Option.defaultValue m4Identity bodyConvexHull.TransformOpt
+        let vertices = Array.zeroCreate bodyConvexHull.Vertices.Length
+        for i in 0 .. dec bodyConvexHull.Vertices.Length do
+            vertices.[i] <- AetherPhysicsEngine.toPhysicsV2 (Vector3.Transform (bodyConvexHull.Vertices.[i], transform))
         let bodyShape =
             body.CreatePolygon
                 (Common.Vertices vertices,

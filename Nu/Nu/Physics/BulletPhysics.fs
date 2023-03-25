@@ -125,7 +125,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
                 volume * density
             | Mass mass -> mass
         let inertia' = box.CalculateLocalInertia mass'
-        compoundShape.AddChildShape (Matrix4x4.CreateTranslation bodyBox.Center, box)
+        compoundShape.AddChildShape (Option.defaultValue m4Identity bodyBox.TransformOpt, box)
         (mass + mass', inertia + inertia')
 
     static member private attachBodySphere sourceSimulant (bodyProperties : BodyProperties) (bodySphere : BodySphere) (compoundShape : CompoundShape) mass inertia =
@@ -142,7 +142,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
                 volume * density
             | Mass mass -> mass
         let inertia' = sphere.CalculateLocalInertia mass'
-        compoundShape.AddChildShape (Matrix4x4.CreateTranslation bodySphere.Center, sphere)
+        compoundShape.AddChildShape (Option.defaultValue m4Identity bodySphere.TransformOpt, sphere)
         (mass + mass', inertia + inertia')
 
     static member private attachBodyCapsule sourceSimulant (bodyProperties : BodyProperties) (bodyCapsule : BodyCapsule) (compoundShape : CompoundShape) mass inertia =
@@ -159,12 +159,12 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
                 volume * density
             | Mass mass -> mass
         let inertia' = capsule.CalculateLocalInertia mass'
-        compoundShape.AddChildShape (Matrix4x4.CreateTranslation bodyCapsule.Center, capsule)
+        compoundShape.AddChildShape (Option.defaultValue m4Identity bodyCapsule.TransformOpt, capsule)
         (mass + mass', inertia + inertia')
 
     static member private attachBodyBoxRounded sourceSimulant (bodyProperties : BodyProperties) (bodyBoxRounded : BodyBoxRounded) (compoundShape : CompoundShape) mass inertia =
         Log.debugOnce "Rounded box not yet implemented via BulletPhysicsEngine; creating a normal box instead."
-        let bodyBox = { Center = bodyBoxRounded.Center; Size = bodyBoxRounded.Size; PropertiesOpt = bodyBoxRounded.PropertiesOpt }
+        let bodyBox = { Size = bodyBoxRounded.Size; TransformOpt = bodyBoxRounded.TransformOpt; PropertiesOpt = bodyBoxRounded.PropertiesOpt }
         BulletPhysicsEngine.attachBodyBox sourceSimulant bodyProperties bodyBox compoundShape mass inertia
 
     static member private attachBodyConvexHull sourceSimulant (bodyProperties : BodyProperties) (bodyConvexHull : BodyConvexHull) (compoundShape : CompoundShape) mass inertia =
@@ -187,7 +187,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
                 volume * density
             | Mass mass -> mass
         let inertia' = hull.CalculateLocalInertia mass'
-        compoundShape.AddChildShape (Matrix4x4.CreateTranslation bodyConvexHull.Center, hull)
+        compoundShape.AddChildShape (Option.defaultValue m4Identity bodyConvexHull.TransformOpt, hull)
         (mass + mass', inertia + inertia')
 
     static member private attachBodyShapes sourceSimulant bodyProperties bodyShapes compoundShape mass inertia =

@@ -798,7 +798,9 @@ module RigidBodyFacetModule =
         inherit Facet (true)
 
         static let getBodyShape (entity : Entity) world =
-            World.localizeBodyShape (entity.GetScale world * entity.GetSize world) (entity.GetBodyShape world) world
+            let scalar = entity.GetScale world * entity.GetSize world
+            let bodyShape = entity.GetBodyShape world
+            World.localizeBodyShape scalar bodyShape world
 
         static member Properties =
             [define Entity.BodyEnabled true
@@ -817,7 +819,7 @@ module RigidBodyFacetModule =
              define Entity.CollisionDetection Discontinuous
              define Entity.CollisionCategories "1"
              define Entity.CollisionMask "@"
-             define Entity.BodyShape (BodyBox { Center = v3Zero; Size = v3One; PropertiesOpt = None })
+             define Entity.BodyShape (BodyBox { Size = v3One; TransformOpt = None; PropertiesOpt = None })
              define Entity.Bullet false
              define Entity.Sensor false
              define Entity.ModelDriven false
