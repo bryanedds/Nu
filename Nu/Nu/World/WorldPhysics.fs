@@ -234,7 +234,7 @@ module WorldPhysics =
                 World.enqueuePhysicsMessage3d setBodyEnabledMessage world
             elif world.Subsystems.PhysicsEngine2d.BodyExists physicsId then
                 World.enqueuePhysicsMessage2d setBodyEnabledMessage world
-            else Log.debug ("Body for '" + scstring physicsId + "' not found."); world
+            else world
 
         /// Send a physics message to set the position of a body with the given physics id.
         [<FunctionBinding>]
@@ -244,7 +244,7 @@ module WorldPhysics =
                 World.enqueuePhysicsMessage3d setBodyCenterMessage world
             elif world.Subsystems.PhysicsEngine2d.BodyExists physicsId then
                 World.enqueuePhysicsMessage2d setBodyCenterMessage world
-            else Log.debug ("Body for '" + scstring physicsId + "' not found."); world
+            else world
 
         /// Send a physics message to set the rotation of a body with the given physics id.
         [<FunctionBinding>]
@@ -254,7 +254,7 @@ module WorldPhysics =
                 World.enqueuePhysicsMessage3d setBodyRotationMessage world
             elif world.Subsystems.PhysicsEngine2d.BodyExists physicsId then
                 World.enqueuePhysicsMessage2d setBodyRotationMessage world
-            else Log.debug ("Body for '" + scstring physicsId + "' not found."); world
+            else world
 
         /// Send a physics message to set the linear velocity of a body with the given physics id.
         [<FunctionBinding>]
@@ -264,7 +264,7 @@ module WorldPhysics =
                 World.enqueuePhysicsMessage3d setBodyLinearVelocityMessage world
             elif world.Subsystems.PhysicsEngine2d.BodyExists physicsId then
                 World.enqueuePhysicsMessage2d setBodyLinearVelocityMessage world
-            else Log.debug ("Body for '" + scstring physicsId + "' not found."); world
+            else world
 
         /// Send a physics message to apply linear impulse to a body with the given physics id.
         [<FunctionBinding>]
@@ -274,7 +274,7 @@ module WorldPhysics =
                 World.enqueuePhysicsMessage3d applyBodyLinearImpulseMessage world
             elif world.Subsystems.PhysicsEngine2d.BodyExists physicsId then
                 World.enqueuePhysicsMessage2d applyBodyLinearImpulseMessage world
-            else Log.debug ("Body for '" + scstring physicsId + "' not found."); world
+            else world
 
         /// Send a physics message to set the angular velocity of a body with the given physics id.
         [<FunctionBinding>]
@@ -284,7 +284,7 @@ module WorldPhysics =
                 World.enqueuePhysicsMessage3d setBodyAngularVelocityMessage world
             elif world.Subsystems.PhysicsEngine2d.BodyExists physicsId then
                 World.enqueuePhysicsMessage2d setBodyAngularVelocityMessage world
-            else Log.debug ("Body for '" + scstring physicsId + "' not found."); world
+            else world
 
         /// Send a physics message to apply angular impulse to a body with the given physics id.
         [<FunctionBinding>]
@@ -294,7 +294,7 @@ module WorldPhysics =
                 World.enqueuePhysicsMessage3d applyBodyAngularImpulseMessage world
             elif world.Subsystems.PhysicsEngine2d.BodyExists physicsId then
                 World.enqueuePhysicsMessage2d applyBodyAngularImpulseMessage world
-            else Log.debug ("Body for '" + scstring physicsId + "' not found."); world
+            else world
 
         /// Send a physics message to apply force to a body with the given physics id.
         [<FunctionBinding>]
@@ -304,7 +304,7 @@ module WorldPhysics =
                 World.enqueuePhysicsMessage3d applyBodyForceMessage world
             elif world.Subsystems.PhysicsEngine2d.BodyExists physicsId then
                 World.enqueuePhysicsMessage2d applyBodyForceMessage world
-            else Log.debug ("Body for '" + scstring physicsId + "' not found."); world
+            else world
 
         /// Send a physics message to apply torque to a body with the given physics id.
         [<FunctionBinding>]
@@ -314,4 +314,4 @@ module WorldPhysics =
                 World.enqueuePhysicsMessage3d applyBodyTorqueMessage world
             elif world.Subsystems.PhysicsEngine2d.BodyExists physicsId then
                 World.enqueuePhysicsMessage2d applyBodyTorqueMessage world
-            else Log.debug ("Body for '" + scstring physicsId + "' not found."); world
+            else world
