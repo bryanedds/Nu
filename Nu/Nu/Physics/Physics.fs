@@ -13,7 +13,7 @@ type [<CustomEquality; NoComparison>] PhysicsId =
       CorrelationId : uint64 }
 
     /// The invalid physics id.
-    static member InvalidId =
+    static member invalid =
         { SourceId = 0UL; CorrelationId = 0UL }
 
     /// Hash a PhysicsId.
