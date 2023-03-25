@@ -125,7 +125,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
                 volume * density
             | Mass mass -> mass
         let inertia' = box.CalculateLocalInertia mass'
-        compoundShape.AddChildShape (Matrix4x4.CreateFromTrs (bodyProperties.Center, bodyProperties.Rotation, v3One), box)
+        compoundShape.AddChildShape (Matrix4x4.CreateTranslation bodyBox.Center, box)
         (mass + mass', inertia + inertia')
 
     static member private attachBodySphere sourceSimulant (bodyProperties : BodyProperties) (bodySphere : BodySphere) (compoundShape : CompoundShape) mass inertia =
@@ -142,7 +142,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
                 volume * density
             | Mass mass -> mass
         let inertia' = sphere.CalculateLocalInertia mass'
-        compoundShape.AddChildShape (Matrix4x4.CreateFromTrs (bodyProperties.Center, bodyProperties.Rotation, v3One), sphere)
+        compoundShape.AddChildShape (Matrix4x4.CreateTranslation bodySphere.Center, sphere)
         (mass + mass', inertia + inertia')
 
     static member private attachBodyCapsule sourceSimulant (bodyProperties : BodyProperties) (bodyCapsule : BodyCapsule) (compoundShape : CompoundShape) mass inertia =
@@ -159,7 +159,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
                 volume * density
             | Mass mass -> mass
         let inertia' = capsule.CalculateLocalInertia mass'
-        compoundShape.AddChildShape (Matrix4x4.CreateFromTrs (bodyProperties.Center, bodyProperties.Rotation, v3One), capsule)
+        compoundShape.AddChildShape (Matrix4x4.CreateTranslation bodyCapsule.Center, capsule)
         (mass + mass', inertia + inertia')
 
     static member private attachBodyBoxRounded sourceSimulant (bodyProperties : BodyProperties) (bodyBoxRounded : BodyBoxRounded) (compoundShape : CompoundShape) mass inertia =
@@ -187,7 +187,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
                 volume * density
             | Mass mass -> mass
         let inertia' = hull.CalculateLocalInertia mass'
-        compoundShape.AddChildShape (Matrix4x4.CreateFromTrs (bodyProperties.Center, bodyProperties.Rotation, v3One), hull)
+        compoundShape.AddChildShape (Matrix4x4.CreateTranslation bodyConvexHull.Center, hull)
         (mass + mass', inertia + inertia')
 
     static member private attachBodyShapes sourceSimulant bodyProperties bodyShapes compoundShape mass inertia =
