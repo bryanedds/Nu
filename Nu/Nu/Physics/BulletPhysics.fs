@@ -111,70 +111,70 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
         body.SetDamping (bodyProperties.LinearDamping, bodyProperties.AngularDamping)
         body.Gravity <- match bodyProperties.GravityOverrideOpt with Some gravityOverride -> gravityOverride | None -> gravity
 
-    static member private attachBodyBox sourceSimulant (bodyProperties : BodyProperties) (bodyBox : BodyBox) (compoundShape : CompoundShape) (accumulators : (single * Vector3) ref) =
+    static member private attachBodyBox sourceSimulant (bodyProperties : BodyProperties) (bodyBox : BodyBox) (compoundShape : CompoundShape) mass inertia =
         let box = new BoxShape (bodyBox.Size * 0.5f)
         BulletPhysicsEngine.configureBodyShapeProperties bodyProperties bodyBox.PropertiesOpt box
         box.UserObject <-
             { Simulant = sourceSimulant
               BodyId = bodyProperties.BodyId
               ShapeId = match bodyBox.PropertiesOpt with Some p -> p.BodyShapeId | None -> 0UL }
-        let mass =
+        let mass' =
             match bodyProperties.Substance with
             | Density density ->
                 let volume = bodyBox.Size.X * bodyBox.Size.Y * bodyBox.Size.Z
                 volume * density
             | Mass mass -> mass
-        let inertia = box.CalculateLocalInertia mass
-        accumulators := (fst accumulators.Value + mass, snd accumulators.Value + inertia)
+        let inertia' = box.CalculateLocalInertia mass'
         compoundShape.AddChildShape (Matrix4x4.CreateFromTrs (bodyProperties.Center, bodyProperties.Rotation, v3One), box)
+        (mass + mass', inertia + inertia')
 
-    static member private attachBodySphere sourceSimulant (bodyProperties : BodyProperties) (bodySphere : BodySphere) (compoundShape : CompoundShape) (accumulators : (single * Vector3) ref) =
+    static member private attachBodySphere sourceSimulant (bodyProperties : BodyProperties) (bodySphere : BodySphere) (compoundShape : CompoundShape) mass inertia =
         let sphere = new SphereShape (bodySphere.Radius)
         BulletPhysicsEngine.configureBodyShapeProperties bodyProperties bodySphere.PropertiesOpt sphere
         sphere.UserObject <-
             { Simulant = sourceSimulant
               BodyId = bodyProperties.BodyId
               ShapeId = match bodySphere.PropertiesOpt with Some p -> p.BodyShapeId | None -> 0UL }
-        let mass =
+        let mass' =
             match bodyProperties.Substance with
             | Density density ->
                 let volume = 4.0f / 3.0f * MathF.PI * pown bodySphere.Radius 3
                 volume * density
             | Mass mass -> mass
-        let inertia = sphere.CalculateLocalInertia mass
-        accumulators := (fst accumulators.Value + mass, snd accumulators.Value + inertia)
+        let inertia' = sphere.CalculateLocalInertia mass'
         compoundShape.AddChildShape (Matrix4x4.CreateFromTrs (bodyProperties.Center, bodyProperties.Rotation, v3One), sphere)
+        (mass + mass', inertia + inertia')
 
-    static member private attachBodyCapsule sourceSimulant (bodyProperties : BodyProperties) (bodyCapsule : BodyCapsule) (compoundShape : CompoundShape) (accumulators : (single * Vector3) ref) =
+    static member private attachBodyCapsule sourceSimulant (bodyProperties : BodyProperties) (bodyCapsule : BodyCapsule) (compoundShape : CompoundShape) mass inertia =
         let capsule = new CapsuleShape (bodyCapsule.Radius, bodyCapsule.Height)
         BulletPhysicsEngine.configureBodyShapeProperties bodyProperties bodyCapsule.PropertiesOpt capsule
         capsule.UserObject <-
             { Simulant = sourceSimulant
               BodyId = bodyProperties.BodyId
               ShapeId = match bodyCapsule.PropertiesOpt with Some p -> p.BodyShapeId | None -> 0UL }
-        let mass =
+        let mass' =
             match bodyProperties.Substance with
             | Density density ->
                 let volume = MathF.PI * pown bodyCapsule.Radius 2 * (4.0f / 3.0f * bodyCapsule.Radius * bodyCapsule.Height)
                 volume * density
             | Mass mass -> mass
-        let inertia = capsule.CalculateLocalInertia mass
-        accumulators := (fst accumulators.Value + mass, snd accumulators.Value + inertia)
+        let inertia' = capsule.CalculateLocalInertia mass'
         compoundShape.AddChildShape (Matrix4x4.CreateFromTrs (bodyProperties.Center, bodyProperties.Rotation, v3One), capsule)
+        (mass + mass', inertia + inertia')
 
-    static member private attachBodyBoxRounded sourceSimulant (bodyProperties : BodyProperties) (bodyBoxRounded : BodyBoxRounded) (compoundShape : CompoundShape) (accumulators : (single * Vector3) ref) =
+    static member private attachBodyBoxRounded sourceSimulant (bodyProperties : BodyProperties) (bodyBoxRounded : BodyBoxRounded) (compoundShape : CompoundShape) mass inertia =
         Log.debugOnce "Rounded box not yet implemented via BulletPhysicsEngine; creating a normal box instead."
         let bodyBox = { Center = bodyBoxRounded.Center; Size = bodyBoxRounded.Size; PropertiesOpt = bodyBoxRounded.PropertiesOpt }
-        BulletPhysicsEngine.attachBodyBox sourceSimulant bodyProperties bodyBox compoundShape accumulators
+        BulletPhysicsEngine.attachBodyBox sourceSimulant bodyProperties bodyBox compoundShape mass inertia
 
-    static member private attachBodyConvexHull sourceSimulant (bodyProperties : BodyProperties) (bodyConvexHull : BodyConvexHull) (compoundShape : CompoundShape) (accumulators : (single * Vector3) ref) =
+    static member private attachBodyConvexHull sourceSimulant (bodyProperties : BodyProperties) (bodyConvexHull : BodyConvexHull) (compoundShape : CompoundShape) mass inertia =
         let hull = new ConvexHullShape (bodyConvexHull.Vertices)
         BulletPhysicsEngine.configureBodyShapeProperties bodyProperties bodyConvexHull.PropertiesOpt hull
         hull.UserObject <-
             { Simulant = sourceSimulant
               BodyId = bodyProperties.BodyId
               ShapeId = match bodyConvexHull.PropertiesOpt with Some p -> p.BodyShapeId | None -> 0UL }
-        let mass =
+        let mass' =
             match bodyProperties.Substance with
             | Density density ->
                 // NOTE: we approximate volume with the volume of a bounding box.
@@ -186,33 +186,34 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
                 let volume = box.Width * box.Height * box.Depth
                 volume * density
             | Mass mass -> mass
-        let inertia = hull.CalculateLocalInertia mass
-        accumulators := (fst accumulators.Value + mass, snd accumulators.Value + inertia)
+        let inertia' = hull.CalculateLocalInertia mass'
         compoundShape.AddChildShape (Matrix4x4.CreateFromTrs (bodyProperties.Center, bodyProperties.Rotation, v3One), hull)
+        (mass + mass', inertia + inertia')
 
-    static member private attachBodyShapes sourceSimulant bodyProperties bodyShapes compoundShape accumulators =
-        for bodyShape in bodyShapes do
-            BulletPhysicsEngine.attachBodyShape sourceSimulant bodyProperties bodyShape compoundShape accumulators
+    static member private attachBodyShapes sourceSimulant bodyProperties bodyShapes compoundShape mass inertia =
+        List.fold (fun (mass, inertia) bodyShape ->
+            let (mass', inertia') = BulletPhysicsEngine.attachBodyShape sourceSimulant bodyProperties bodyShape compoundShape mass inertia
+            (mass + mass', inertia + inertia'))
+            (mass, inertia)
+            bodyShapes
 
-    static member private attachBodyShape sourceSimulant bodyProperties bodyShape compoundShape accumulators =
+    static member private attachBodyShape sourceSimulant bodyProperties bodyShape compoundShape masses inertia =
         match bodyShape with
-        | BodyEmpty -> ()
-        | BodyBox bodyBox -> BulletPhysicsEngine.attachBodyBox sourceSimulant bodyProperties bodyBox compoundShape accumulators
-        | BodySphere bodySphere -> BulletPhysicsEngine.attachBodySphere sourceSimulant bodyProperties bodySphere compoundShape accumulators
-        | BodyCapsule bodyCapsule -> BulletPhysicsEngine.attachBodyCapsule sourceSimulant bodyProperties bodyCapsule compoundShape accumulators
-        | BodyBoxRounded bodyBoxRounded -> BulletPhysicsEngine.attachBodyBoxRounded sourceSimulant bodyProperties bodyBoxRounded compoundShape accumulators
-        | BodyConvexHull bodyConvexHull -> BulletPhysicsEngine.attachBodyConvexHull sourceSimulant bodyProperties bodyConvexHull compoundShape accumulators
-        | BodyShapes bodyShapes -> BulletPhysicsEngine.attachBodyShapes sourceSimulant bodyProperties bodyShapes compoundShape accumulators
+        | BodyEmpty -> (masses, inertia)
+        | BodyBox bodyBox -> BulletPhysicsEngine.attachBodyBox sourceSimulant bodyProperties bodyBox compoundShape masses inertia
+        | BodySphere bodySphere -> BulletPhysicsEngine.attachBodySphere sourceSimulant bodyProperties bodySphere compoundShape masses inertia
+        | BodyCapsule bodyCapsule -> BulletPhysicsEngine.attachBodyCapsule sourceSimulant bodyProperties bodyCapsule compoundShape masses inertia
+        | BodyBoxRounded bodyBoxRounded -> BulletPhysicsEngine.attachBodyBoxRounded sourceSimulant bodyProperties bodyBoxRounded compoundShape masses inertia
+        | BodyConvexHull bodyConvexHull -> BulletPhysicsEngine.attachBodyConvexHull sourceSimulant bodyProperties bodyConvexHull compoundShape masses inertia
+        | BodyShapes bodyShapes -> BulletPhysicsEngine.attachBodyShapes sourceSimulant bodyProperties bodyShapes compoundShape masses inertia
 
     static member private createBody3 attachBodyShape bodySourceId (bodySource : BodySourceInternal) (bodyProperties : BodyProperties) physicsEngine =
-        let accumulators = ref (0.0f, v3Zero)
-        let shape =
+        let (shape, mass, inertia) =
             let compoundShape = new CompoundShape ()
-            attachBodyShape bodyProperties compoundShape accumulators
+            let (mass, inertia) = attachBodyShape bodyProperties compoundShape 0.0f v3Zero
             if compoundShape.ChildList.Count = 1 && not (compoundShape.ChildList.[0].ChildShape :? CompoundShape)
-            then compoundShape.ChildList.[0].ChildShape
-            else compoundShape
-        let (mass, inertia) = accumulators.Value
+            then (compoundShape.ChildList.[0].ChildShape, mass, inertia)
+            else (compoundShape, mass, inertia)
         if not bodyProperties.Sensor then
             let motionState = new DefaultMotionState (Matrix4x4.CreateFromTrs (bodyProperties.Center, bodyProperties.Rotation, v3One))
             let constructionInfo = new RigidBodyConstructionInfo (mass, motionState, shape, inertia)
