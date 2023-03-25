@@ -568,8 +568,8 @@ module FpsDispatcherModule =
             else world
 
         static member Properties =
-            [define Entity.StartUpdateTime 0L
-             define Entity.StartDateTime DateTimeOffset.UtcNow]
+            [nonPersistent Entity.StartUpdateTime 0L
+             nonPersistent Entity.StartDateTime DateTimeOffset.UtcNow]
 
         override this.Update (entity, world) =
             if entity.GetEnabled world then
