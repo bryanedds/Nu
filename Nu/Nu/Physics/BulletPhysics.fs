@@ -29,7 +29,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
           Bodies : BulletBodyDictionary
           Ghosts : BulletGhostDictionary
           Objects : BulletObjectDictionary
-          mutable Manifolds : (BodySourceInternal * BodySourceInternal) HashSet
+          mutable Manifolds : (BodySourceInternal * BodySourceInternal) HashSet // TODO: consider using SegmentedHashSet here to avoid hitting the LoH in any scenario.
           CollisionConfiguration : CollisionConfiguration
           PhysicsDispatcher : Dispatcher
           BroadPhaseInterface : BroadphaseInterface
