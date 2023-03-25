@@ -99,38 +99,36 @@ type CollisionDetection =
 
 /// The shape of a physics body box.
 type BodyBox =
-    { Center : Vector3
-      Size : Vector3
+    { Size : Vector3
+      TransformOpt : Matrix4x4 option
       PropertiesOpt : BodyShapeProperties option }
-    static member toBox bodyBox =
-        box3 (bodyBox.Center - bodyBox.Size * 0.5f) bodyBox.Size
-    static member fromBox (box : Box3) =
-        { Center = box.Center; Size = box.Size; PropertiesOpt = None }
+    static member ofBox3 (box : Box3) =
+        { Size = box.Size; TransformOpt = Some (Matrix4x4.CreateTranslation box.Center); PropertiesOpt = None }
 
 /// The shape of a physics body sphere.
 type BodySphere =
-    { Center : Vector3
-      Radius : single
+    { Radius : single
+      TransformOpt : Matrix4x4 option
       PropertiesOpt : BodyShapeProperties option }
 
 /// The shape of a physics body capsule.
 type BodyCapsule =
-    { Center : Vector3
-      Height : single
+    { Height : single
       Radius : single
+      TransformOpt : Matrix4x4 option
       PropertiesOpt : BodyShapeProperties option }
 
 /// The shape of a physics body capsule.
 type BodyBoxRounded =
-    { Center : Vector3
-      Size : Vector3
+    { Size : Vector3
       Radius : single
+      TransformOpt : Matrix4x4 option
       PropertiesOpt : BodyShapeProperties option }
 
 /// The shape of a physics body convex hull.
 type BodyConvexHull =
-    { Center : Vector3
-      Vertices : Vector3 array
+    { Vertices : Vector3 array
+      TransformOpt : Matrix4x4 option
       PropertiesOpt : BodyShapeProperties option }
 
 /// The shape of a physics body.
@@ -480,17 +478,20 @@ module Physics =
         | "@" -> -1
         | _ -> Convert.ToInt32 (categoryMask, 2)
 
-    /// Localize a body shape to a specific physics object.
-    let rec localizeBodyShape (size : Vector3) (bodyShape : BodyShape) =
+    /// Localize a body shape to a specific size.
+    let rec localizeBodyShape (size : Vector3) bodyShape =
+        let scaleTranslation (scalar : Vector3) (transformOpt : Matrix4x4 option) =
+            match transformOpt with
+            | Some transform ->
+                let mutable transform = transform
+                transform.Translation <- transform.Translation * scalar
+                Some transform
+            | None -> None
         match bodyShape with
         | BodyEmpty -> BodyEmpty
-        | BodyBox bodyBox -> BodyBox { Center = Vector3.Multiply (bodyBox.Center, size); Size = Vector3.Multiply (size, bodyBox.Size); PropertiesOpt = bodyBox.PropertiesOpt }
-        | BodySphere bodySphere -> BodySphere { Center = size.X * bodySphere.Center; Radius = size.X * bodySphere.Radius; PropertiesOpt = bodySphere.PropertiesOpt }
-        | BodyCapsule bodyCapsule -> BodyCapsule { Center = size.Y * bodyCapsule.Center; Height = size.Y * bodyCapsule.Height; Radius = size.Y * bodyCapsule.Radius; PropertiesOpt = bodyCapsule.PropertiesOpt }
-        | BodyBoxRounded bodyBoxRounded -> BodyBoxRounded { Center = size.Y * bodyBoxRounded.Center; Size = Vector3.Multiply (size, bodyBoxRounded.Size); Radius = size.X * bodyBoxRounded.Radius; PropertiesOpt = bodyBoxRounded.PropertiesOpt }
-        | BodyConvexHull bodyConvexHull ->
-            let vertices = Array.map (fun vertex -> vertex * size) bodyConvexHull.Vertices
-            BodyConvexHull { Center = Vector3.Multiply (size, bodyConvexHull.Center); Vertices = vertices; PropertiesOpt = bodyConvexHull.PropertiesOpt }
-        | BodyShapes bodyShapes ->
-            let bodyShapes = List.map (localizeBodyShape size) bodyShapes
-            BodyShapes bodyShapes
+        | BodyBox bodyBox -> BodyBox { bodyBox with Size = Vector3.Multiply (size, bodyBox.Size); TransformOpt = scaleTranslation size bodyBox.TransformOpt }
+        | BodySphere bodySphere -> BodySphere { bodySphere with Radius = size.X * bodySphere.Radius; TransformOpt = scaleTranslation size bodySphere.TransformOpt }
+        | BodyCapsule bodyCapsule -> BodyCapsule { bodyCapsule with Height = size.Y * bodyCapsule.Height; Radius = size.Y * bodyCapsule.Radius; TransformOpt = scaleTranslation size bodyCapsule.TransformOpt }
+        | BodyBoxRounded bodyBoxRounded -> BodyBoxRounded { bodyBoxRounded with Size = Vector3.Multiply (size, bodyBoxRounded.Size); Radius = size.X * bodyBoxRounded.Radius; TransformOpt = scaleTranslation size bodyBoxRounded.TransformOpt }
+        | BodyConvexHull bodyConvexHull -> BodyConvexHull { bodyConvexHull with Vertices = Array.map (fun vertex -> size * vertex) bodyConvexHull.Vertices; TransformOpt = scaleTranslation size bodyConvexHull.TransformOpt }
+        | BodyShapes bodyShapes -> BodyShapes (List.map (localizeBodyShape size) bodyShapes)

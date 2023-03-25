@@ -30,11 +30,11 @@ module WorldPhysics =
         static member internal updatePhysicsEngine3d updater world =
             World.setPhysicsEngine3d (updater (World.getPhysicsEngine3d world)) world
 
-        /// Localize a body shape to a specific physics object.
+        /// Localize a body shape to a specific size.
         [<FunctionBinding>]
-        static member localizeBodyShape (extent : Vector3) (bodyShape : BodyShape) (world : World) =
+        static member localizeBodyShape (size : Vector3) (bodyShape : BodyShape) (world : World) =
             ignore world // for world parameter for scripting
-            Physics.localizeBodyShape extent bodyShape
+            Physics.localizeBodyShape size bodyShape
 
         /// Enqueue a 2d physics message in the world.
         static member enqueuePhysicsMessage2d (message : PhysicsMessage) world =
