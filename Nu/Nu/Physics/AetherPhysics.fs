@@ -67,8 +67,7 @@ type [<ReferenceEquality>] AetherPhysicsEngine =
         let bodyCollisionMessage =
             { BodyShapeSource = bodyShape.Tag :?> BodyShapeSourceInternal
               BodyShapeSource2 = bodyShape2.Tag :?> BodyShapeSourceInternal
-              Normal = Vector3 (normal.X, normal.Y, 0.0f)
-              Speed = contact.TangentSpeed * Constants.Physics.PhysicsToPixelRatio }
+              Normal = Vector3 (normal.X, normal.Y, 0.0f) }
         let integrationMessage = BodyCollisionMessage bodyCollisionMessage
         physicsEngine.IntegrationMessages.Add integrationMessage
         true
@@ -259,11 +258,10 @@ type [<ReferenceEquality>] AetherPhysicsEngine =
         AetherPhysicsEngine.attachBodyShape sourceSimulant bodyProperties bodyProperties.BodyShape body |> ignore
 
         // listen for collisions
-        body.add_OnCollision (fun fn fn2 collision -> AetherPhysicsEngine.handleCollision physicsEngine fn fn2 collision)
+        body.add_OnCollision (fun fixture fixture2 collision -> AetherPhysicsEngine.handleCollision physicsEngine fixture fixture2 collision)
 
         // listen for separations
-        // TODO: P1: use the contact variable as well?
-        body.add_OnSeparation (fun fn fn2 _ -> AetherPhysicsEngine.handleSeparation physicsEngine fn fn2)
+        body.add_OnSeparation (fun fixture fixture2 _ -> AetherPhysicsEngine.handleSeparation physicsEngine fixture fixture2)
 
         // attempt to add the body
         let physicsId = { SourceId = createBodyMessage.SourceId; CorrelationId = bodyProperties.BodyId }
@@ -448,7 +446,7 @@ type [<ReferenceEquality>] AetherPhysicsEngine =
               Bodies = AetherBodyDictionary (HashIdentity.FromFunctions PhysicsId.hash PhysicsId.equals)
               Joints = AetherJointDictionary (HashIdentity.FromFunctions PhysicsId.hash PhysicsId.equals)
               PhysicsMessages = UList.makeEmpty config
-              IntegrationMessages = List<IntegrationMessage> ()
+              IntegrationMessages = List ()
               RebuildingHack = false }
         physicsEngine :> PhysicsEngine
 
@@ -522,3 +520,6 @@ type [<ReferenceEquality>] AetherPhysicsEngine =
             let integrationMessages = SegmentedArray.ofSeq physicsEngine.IntegrationMessages
             physicsEngine.IntegrationMessages.Clear ()
             integrationMessages
+
+        member physicsEngine.CleanUp () =
+            ()
