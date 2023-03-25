@@ -3,7 +3,6 @@
 
 namespace Nu
 open System
-open System.Collections.Concurrent
 open System.Collections.Generic
 open System.Numerics
 open BulletSharp
@@ -30,43 +29,29 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
           Bodies : BulletBodyDictionary
           Ghosts : BulletGhostDictionary
           Objects : BulletObjectDictionary
+          mutable Manifolds : (BodySourceInternal * BodySourceInternal) HashSet
           CollisionConfiguration : CollisionConfiguration
           PhysicsDispatcher : Dispatcher
           BroadPhaseInterface : BroadphaseInterface
           ConstraintSolver : ConstraintSolver
           PhysicsMessages : PhysicsMessage UList
-          IntegrationMessages : IntegrationMessage ConcurrentQueue
+          IntegrationMessages : IntegrationMessage List
           mutable RebuildingHack : bool }
 
-    static member make imperative gravity =
-        let config = if imperative then Imperative else Functional
-        let physicsMessages = UList.makeEmpty config
-        let collisionConfiguration = new DefaultCollisionConfiguration ()
-        let physicsDispatcher = new CollisionDispatcher (collisionConfiguration)
-        let broadPhaseInterface = new DbvtBroadphase ()
-        let constraintSolver = new SequentialImpulseConstraintSolver ()
-        let world = new DiscreteDynamicsWorld (physicsDispatcher, broadPhaseInterface, constraintSolver, collisionConfiguration)
-        world.Gravity <- gravity
-        let integrationMessages = ConcurrentQueue ()
-        { PhysicsContext = world
-          Constraints = OrderedDictionary HashIdentity.Structural
-          Bodies = OrderedDictionary HashIdentity.Structural
-          Ghosts = OrderedDictionary HashIdentity.Structural
-          Objects = OrderedDictionary HashIdentity.Structural
-          CollisionConfiguration = collisionConfiguration
-          PhysicsDispatcher = physicsDispatcher
-          BroadPhaseInterface = broadPhaseInterface
-          ConstraintSolver = constraintSolver
-          PhysicsMessages = physicsMessages
-          IntegrationMessages = integrationMessages
-          RebuildingHack = false }
-
-    static member cleanUp physicsEngine =
-        physicsEngine.PhysicsContext.Dispose ()
-        physicsEngine.ConstraintSolver.Dispose ()
-        physicsEngine.BroadPhaseInterface.Dispose ()
-        physicsEngine.PhysicsDispatcher.Dispose ()
-        physicsEngine.CollisionConfiguration.Dispose ()
+    static member private handleCollision physicsEngine (bodySource : BodySourceInternal) (bodySource2 : BodySourceInternal) normal =
+        let bodyCollisionMessage =
+            { BodyShapeSource = { Simulant = bodySource.Simulant; BodyId = bodySource.BodyId; ShapeId = 0UL }
+              BodyShapeSource2 = { Simulant = bodySource2.Simulant; BodyId = bodySource2.BodyId; ShapeId = 0UL }
+              Normal = normal }
+        let integrationMessage = BodyCollisionMessage bodyCollisionMessage
+        physicsEngine.IntegrationMessages.Add integrationMessage
+    
+    static member private handleSeparation physicsEngine (bodySource : BodySourceInternal) (bodySource2 : BodySourceInternal) =
+        let bodySeparationMessage =
+            { BodyShapeSource = { Simulant = bodySource.Simulant; BodyId = bodySource.BodyId; ShapeId = 0UL }
+              BodyShapeSource2 = { Simulant = bodySource2.Simulant; BodyId = bodySource2.BodyId; ShapeId = 0UL }}
+        let integrationMessage = BodySeparationMessage bodySeparationMessage
+        physicsEngine.IntegrationMessages.Add integrationMessage
 
     static member private configureBodyShapeProperties (_ : BodyProperties) (_ : BodyShapeProperties option) (_ : ConvexInternalShape) =
         () // NOTE: cannot configure bullet shapes on a per-shape basis.
@@ -426,6 +411,39 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
             ignore result
 
     static member private createIntegrationMessages physicsEngine =
+
+        // create collision messages
+        let manifoldsOld = physicsEngine.Manifolds
+        physicsEngine.Manifolds <- HashSet HashIdentity.Structural
+        let numManifolds = physicsEngine.PhysicsContext.Dispatcher.NumManifolds
+        for i in 0 .. dec numManifolds do
+            let manifold = physicsEngine.PhysicsContext.Dispatcher.GetManifoldByIndexInternal i
+            let body0 = manifold.Body0
+            let body1 = manifold.Body1
+            let bodySource0 = body0.UserObject :?> BodySourceInternal
+            let bodySource1 = body1.UserObject :?> BodySourceInternal
+            let manifold0 = (bodySource0, bodySource1)
+            let manifold1 = (bodySource1, bodySource0)
+            let mutable normal = v3Zero
+            let numContacts = manifold.NumContacts
+            for j in 0 .. dec numContacts do
+                let contact = manifold.GetContactPoint j
+                normal <- normal - contact.NormalWorldOnB
+            normal <- normal / single numContacts
+            physicsEngine.Manifolds.Add manifold0 |> ignore<bool>
+            physicsEngine.Manifolds.Add manifold1 |> ignore<bool>
+
+        // create collision messages
+        for (bodySourceA, bodySourceB) as manifold in physicsEngine.Manifolds do
+            if not (manifoldsOld.Contains manifold) then
+                BulletPhysicsEngine.handleSeparation physicsEngine bodySourceA bodySourceB
+
+        // create separation messages
+        for (bodySourceA, bodySourceB) as manifold in manifoldsOld do
+            if not (physicsEngine.Manifolds.Contains manifold) then
+                BulletPhysicsEngine.handleSeparation physicsEngine bodySourceA bodySourceB
+
+        // create transform messages
         for (_, body) in physicsEngine.Bodies.Values do
             if body.IsActive then
                 let bodyTransformMessage =
@@ -435,12 +453,42 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
                           Rotation = body.MotionState.WorldTransform.Rotation
                           LinearVelocity = body.LinearVelocity
                           AngularVelocity = body.AngularVelocity }
-                physicsEngine.IntegrationMessages.Enqueue bodyTransformMessage
+                physicsEngine.IntegrationMessages.Add bodyTransformMessage
 
     static member private handlePhysicsMessages physicsMessages physicsEngine =
         for physicsMessage in physicsMessages do
             BulletPhysicsEngine.handlePhysicsMessage physicsEngine physicsMessage
         physicsEngine.RebuildingHack <- false
+
+    static member make imperative gravity =
+        let config = if imperative then Imperative else Functional
+        let physicsMessages = UList.makeEmpty config
+        let collisionConfiguration = new DefaultCollisionConfiguration ()
+        let physicsDispatcher = new CollisionDispatcher (collisionConfiguration)
+        let broadPhaseInterface = new DbvtBroadphase ()
+        let constraintSolver = new SequentialImpulseConstraintSolver ()
+        let world = new DiscreteDynamicsWorld (physicsDispatcher, broadPhaseInterface, constraintSolver, collisionConfiguration)
+        world.Gravity <- gravity
+        { PhysicsContext = world
+          Constraints = OrderedDictionary HashIdentity.Structural
+          Bodies = OrderedDictionary HashIdentity.Structural
+          Ghosts = OrderedDictionary HashIdentity.Structural
+          Objects = OrderedDictionary HashIdentity.Structural
+          Manifolds = HashSet HashIdentity.Structural
+          CollisionConfiguration = collisionConfiguration
+          PhysicsDispatcher = physicsDispatcher
+          BroadPhaseInterface = broadPhaseInterface
+          ConstraintSolver = constraintSolver
+          PhysicsMessages = physicsMessages
+          IntegrationMessages = List ()
+          RebuildingHack = false }
+
+    static member cleanUp physicsEngine =
+        physicsEngine.PhysicsContext.Dispose ()
+        physicsEngine.ConstraintSolver.Dispose ()
+        physicsEngine.BroadPhaseInterface.Dispose ()
+        physicsEngine.PhysicsDispatcher.Dispose ()
+        physicsEngine.CollisionConfiguration.Dispose ()
 
     interface PhysicsEngine with
 
@@ -459,7 +507,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
                         let contactCount = manifold.NumContacts
                         for j in 0 .. dec contactCount do
                             let contact = manifold.GetContactPoint j
-                            yield contact.NormalWorldOnB]
+                            yield -contact.NormalWorldOnB]
             | (false, _) -> []
 
         member physicsEngine.GetBodyLinearVelocity physicsId =
@@ -519,3 +567,6 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
             let integrationMessages = SegmentedArray.ofSeq physicsEngine.IntegrationMessages
             physicsEngine.IntegrationMessages.Clear ()
             integrationMessages
+
+        member physicsEngine.CleanUp () =
+            BulletPhysicsEngine.cleanUp physicsEngine

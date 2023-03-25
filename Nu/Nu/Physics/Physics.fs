@@ -377,8 +377,7 @@ type ApplyBodyTorqueMessage =
 type BodyCollisionMessage =
     { BodyShapeSource : BodyShapeSourceInternal
       BodyShapeSource2 : BodyShapeSourceInternal
-      Normal : Vector3
-      Speed : single }
+      Normal : Vector3 }
 
 /// A message from the physics system describing a body separation that took place.
 type BodySeparationMessage =
@@ -445,6 +444,8 @@ type PhysicsEngine =
     abstract EnqueueMessage : PhysicsMessage -> PhysicsEngine
     /// Integrate the physics system one step.
     abstract Integrate : GameTime -> PhysicsMessage UList -> IntegrationMessage SegmentedArray
+    /// Handle physics clean up by freeing all created resources.
+    abstract CleanUp : unit -> unit
 
 /// The mock implementation of PhysicsEngine.
 type [<ReferenceEquality>] MockPhysicsEngine =
@@ -462,6 +463,7 @@ type [<ReferenceEquality>] MockPhysicsEngine =
         member physicsEngine.ClearMessages () = physicsEngine :> PhysicsEngine
         member physicsEngine.EnqueueMessage _ = physicsEngine :> PhysicsEngine
         member physicsEngine.Integrate _ _ = SegmentedArray.empty
+        member physicsEngine.CleanUp () = ()
 
 [<RequireQualifiedAccess>]
 module Physics =

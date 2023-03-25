@@ -48,8 +48,7 @@ type TransformData =
 type BodyCollisionData =
     { BodyCollider : BodyShapeSource
       BodyCollidee : BodyShapeSource
-      Normal : Vector3
-      Speed : single }
+      Normal : Vector3 }
 
 /// The implicit data for a separation event.
 /// Unfortunately, due to the fact that physics system itself does not raise separation events until the following

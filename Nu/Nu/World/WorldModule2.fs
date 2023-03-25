@@ -716,8 +716,7 @@ module WorldModule2 =
                         let collisionData =
                             { BodyCollider = BodyShapeSource.fromInternal bodyCollisionMessage.BodyShapeSource
                               BodyCollidee = BodyShapeSource.fromInternal bodyCollisionMessage.BodyShapeSource2
-                              Normal = bodyCollisionMessage.Normal
-                              Speed = bodyCollisionMessage.Speed }
+                              Normal = bodyCollisionMessage.Normal }
                         let collisionAddress = Events.BodyCollision --> entity.EntityAddress
                         let eventTrace = EventTrace.debug "World" "processIntegrationMessage" "" EventTrace.empty
                         World.publish collisionData collisionAddress eventTrace Simulants.Game world
