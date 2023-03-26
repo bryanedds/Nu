@@ -9,19 +9,19 @@ open TiledSharp
 open Prime
 open Nu
 
-/// Generically exposes simulant lenses and events.
+/// Declaratively exposes simulant lenses and events.
 module Declarative =
 
-    /// Generically exposes Game lenses and events.
+    /// Declaratively exposes Game lenses and events.
     let Game = Unchecked.defaultof<Game>
 
-    /// Generically exposes Screen lenses and events.
+    /// Declaratively exposes Screen lenses and events.
     let Screen = Unchecked.defaultof<Screen>
 
-    /// Generically exposes Group lenses and events.
+    /// Declaratively exposes Group lenses and events.
     let Group = Unchecked.defaultof<Group>
 
-    /// Generically exposes Entity lenses and events.
+    /// Declaratively exposes Entity lenses and events.
     let Entity = Unchecked.defaultof<Entity>
 
 open Declarative
