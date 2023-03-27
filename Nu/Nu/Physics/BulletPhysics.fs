@@ -422,28 +422,28 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
             let body1 = manifold.Body1
             let bodySource0 = body0.UserObject :?> BodySourceInternal
             let bodySource1 = body1.UserObject :?> BodySourceInternal
-            let collisionKey0 = (bodySource0, bodySource1)
-            let collisionKey1 = (bodySource1, bodySource0)
+            let collisionKey = (bodySource0, bodySource1)
             let mutable normal = v3Zero
             let numContacts = manifold.NumContacts
             for j in 0 .. dec numContacts do
                 let contact = manifold.GetContactPoint j
                 normal <- normal - contact.NormalWorldOnB
             normal <- normal / single numContacts
-            SegmentedDictionary.add collisionKey0 normal physicsEngine.Collisions
-            SegmentedDictionary.add collisionKey1 -normal physicsEngine.Collisions
+            SegmentedDictionary.add collisionKey normal physicsEngine.Collisions
 
         // create collision messages
         for entry in physicsEngine.Collisions do
             let (bodySourceA, bodySourceB) = entry.Key
             if not (SegmentedDictionary.containsKey entry.Key collisionsOld) then
                 BulletPhysicsEngine.handleCollision physicsEngine bodySourceA bodySourceB entry.Value
+                BulletPhysicsEngine.handleCollision physicsEngine bodySourceB bodySourceA -entry.Value
 
         // create separation messages
         for entry in collisionsOld do
             let (bodySourceA, bodySourceB) = entry.Key
             if not (SegmentedDictionary.containsKey entry.Key physicsEngine.Collisions) then
                 BulletPhysicsEngine.handleSeparation physicsEngine bodySourceA bodySourceB
+                BulletPhysicsEngine.handleSeparation physicsEngine bodySourceB bodySourceA
 
         // create transform messages
         for (_, body) in physicsEngine.Bodies.Values do
