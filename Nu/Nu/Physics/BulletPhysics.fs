@@ -29,7 +29,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
           Bodies : BulletBodyDictionary
           Ghosts : BulletGhostDictionary
           Objects : BulletObjectDictionary
-          mutable Manifolds : (BodySourceInternal * BodySourceInternal) HashSet // TODO: consider using SegmentedHashSet here to avoid hitting the LoH in any scenario.
+          mutable Collisions : SegmentedDictionary<BodySourceInternal * BodySourceInternal, Vector3>
           CollisionConfiguration : CollisionConfiguration
           PhysicsDispatcher : Dispatcher
           BroadPhaseInterface : BroadphaseInterface
@@ -413,8 +413,8 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
     static member private createIntegrationMessages physicsEngine =
 
         // create collision messages
-        let manifoldsOld = physicsEngine.Manifolds
-        physicsEngine.Manifolds <- HashSet HashIdentity.Structural
+        let collisionsOld = physicsEngine.Collisions
+        physicsEngine.Collisions <- SegmentedDictionary.make HashIdentity.Structural
         let numManifolds = physicsEngine.PhysicsContext.Dispatcher.NumManifolds
         for i in 0 .. dec numManifolds do
             let manifold = physicsEngine.PhysicsContext.Dispatcher.GetManifoldByIndexInternal i
@@ -422,25 +422,27 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
             let body1 = manifold.Body1
             let bodySource0 = body0.UserObject :?> BodySourceInternal
             let bodySource1 = body1.UserObject :?> BodySourceInternal
-            let manifold0 = (bodySource0, bodySource1)
-            let manifold1 = (bodySource1, bodySource0)
+            let collisionKey0 = (bodySource0, bodySource1)
+            let collisionKey1 = (bodySource1, bodySource0)
             let mutable normal = v3Zero
             let numContacts = manifold.NumContacts
             for j in 0 .. dec numContacts do
                 let contact = manifold.GetContactPoint j
                 normal <- normal - contact.NormalWorldOnB
             normal <- normal / single numContacts
-            physicsEngine.Manifolds.Add manifold0 |> ignore<bool>
-            physicsEngine.Manifolds.Add manifold1 |> ignore<bool>
+            SegmentedDictionary.add collisionKey0 normal physicsEngine.Collisions
+            SegmentedDictionary.add collisionKey1 -normal physicsEngine.Collisions
 
         // create collision messages
-        for (bodySourceA, bodySourceB) as manifold in physicsEngine.Manifolds do
-            if not (manifoldsOld.Contains manifold) then
-                BulletPhysicsEngine.handleSeparation physicsEngine bodySourceA bodySourceB
+        for entry in physicsEngine.Collisions do
+            let (bodySourceA, bodySourceB) = entry.Key
+            if not (SegmentedDictionary.containsKey entry.Key collisionsOld) then
+                BulletPhysicsEngine.handleCollision physicsEngine bodySourceA bodySourceB entry.Value
 
         // create separation messages
-        for (bodySourceA, bodySourceB) as manifold in manifoldsOld do
-            if not (physicsEngine.Manifolds.Contains manifold) then
+        for entry in collisionsOld do
+            let (bodySourceA, bodySourceB) = entry.Key
+            if not (SegmentedDictionary.containsKey entry.Key physicsEngine.Collisions) then
                 BulletPhysicsEngine.handleSeparation physicsEngine bodySourceA bodySourceB
 
         // create transform messages
@@ -474,7 +476,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
           Bodies = OrderedDictionary HashIdentity.Structural
           Ghosts = OrderedDictionary HashIdentity.Structural
           Objects = OrderedDictionary HashIdentity.Structural
-          Manifolds = HashSet HashIdentity.Structural
+          Collisions = SegmentedDictionary.make HashIdentity.Structural
           CollisionConfiguration = collisionConfiguration
           PhysicsDispatcher = physicsDispatcher
           BroadPhaseInterface = broadPhaseInterface
