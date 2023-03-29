@@ -110,11 +110,11 @@ module Nu =
                         //        match (World.getSubscriptions world).TryGetValue eventAddress with
                         //        | (true, subscriptions) -> OMap.notEmpty subscriptions
                         //        | (false, _) -> false
-                        //    let physicsIdOpt =
-                        //        match entity.TryGetProperty "PhysicsId" world with
-                        //        | Some property when property.PropertyType = typeof<PhysicsId> -> Some property.PropertyValue
+                        //    let bodyIdOpt =
+                        //        match entity.TryGetProperty "BodyId" world with
+                        //        | Some property when property.PropertyType = typeof<BodyId> -> Some property.PropertyValue
                         //        | _ -> None
-                        //    match (physicsIdOpt, hasSubscription) then
+                        //    match (bodyIdOpt, hasSubscription) then
                         //    | 
                         //    world
                         | _ -> world

@@ -46,7 +46,7 @@ module WorldPhysics =
                 | CreateBodiesMessage message ->
                     let eventTrace = EventTrace.debug "World" "enqueuePhysicsMessage2d" "" EventTrace.empty
                     List.fold (fun world (bodyProperties : BodyProperties) ->
-                        let bodyId = { BodySource = message.BodySource; BodyId = bodyProperties.BodyId }
+                        let bodyId = { BodySource = message.BodySource; BodyIndex = bodyProperties.BodyIndex }
                         World.publish bodyId Events.BodyAdding eventTrace Simulants.Game world)
                         world message.BodiesProperties
                 | DestroyBodyMessage message ->
@@ -56,7 +56,7 @@ module WorldPhysics =
                     world
                 | DestroyBodiesMessage message ->
                     let eventTrace = EventTrace.debug "World" "enqueuePhysicsMessage2d" "" EventTrace.empty
-                    List.fold (fun world (bodyId : PhysicsId) ->
+                    List.fold (fun world (bodyId : BodyId) ->
                         let world = World.publish { BodyId = bodyId } Events.BodySeparationImplicit eventTrace Simulants.Game world
                         let world = World.publish bodyId Events.BodyRemoving eventTrace Simulants.Game world
                         world)
@@ -78,7 +78,7 @@ module WorldPhysics =
                 | CreateBodiesMessage message ->
                     let eventTrace = EventTrace.debug "World" "enqueuePhysicsMessage3d" "" EventTrace.empty
                     List.fold (fun world (bodyProperties : BodyProperties) ->
-                        let bodyId = { BodySource = message.BodySource; BodyId = bodyProperties.BodyId }
+                        let bodyId = { BodySource = message.BodySource; BodyIndex = bodyProperties.BodyIndex }
                         World.publish bodyId Events.BodyAdding eventTrace Simulants.Game world)
                         world message.BodiesProperties
                 | DestroyBodyMessage message ->
@@ -88,7 +88,7 @@ module WorldPhysics =
                     world
                 | DestroyBodiesMessage message ->
                     let eventTrace = EventTrace.debug "World" "enqueuePhysicsMessage3d" "" EventTrace.empty
-                    List.fold (fun world (bodyId : PhysicsId) ->
+                    List.fold (fun world (bodyId : BodyId) ->
                         let world = World.publish { BodyId = bodyId } Events.BodySeparationImplicit eventTrace Simulants.Game world
                         let world = World.publish bodyId Events.BodyRemoving eventTrace Simulants.Game world
                         world)
@@ -102,63 +102,63 @@ module WorldPhysics =
 
         /// Check that the world contains a body with the given physics id.
         [<FunctionBinding>]
-        static member bodyExists physicsId world =
-            world.Subsystems.PhysicsEngine3d.BodyExists physicsId ||
-            world.Subsystems.PhysicsEngine2d.BodyExists physicsId
+        static member bodyExists bodyId world =
+            world.Subsystems.PhysicsEngine3d.BodyExists bodyId ||
+            world.Subsystems.PhysicsEngine2d.BodyExists bodyId
 
         /// Get the contact normals of the body with the given physics id.
         [<FunctionBinding>]
-        static member getBodyContactNormals physicsId world =
-            if world.Subsystems.PhysicsEngine3d.BodyExists physicsId then
-                world.Subsystems.PhysicsEngine3d.GetBodyContactNormals physicsId
-            elif world.Subsystems.PhysicsEngine2d.BodyExists physicsId then
-                world.Subsystems.PhysicsEngine2d.GetBodyContactNormals physicsId
-            else Log.debug ("Body for '" + scstring physicsId + "' not found."); []
+        static member getBodyContactNormals bodyId world =
+            if world.Subsystems.PhysicsEngine3d.BodyExists bodyId then
+                world.Subsystems.PhysicsEngine3d.GetBodyContactNormals bodyId
+            elif world.Subsystems.PhysicsEngine2d.BodyExists bodyId then
+                world.Subsystems.PhysicsEngine2d.GetBodyContactNormals bodyId
+            else Log.debug ("Body for '" + scstring bodyId + "' not found."); []
 
         /// Get the linear velocity of the body with the given physics id.
         [<FunctionBinding>]
-        static member getBodyLinearVelocity physicsId world =
-            if world.Subsystems.PhysicsEngine3d.BodyExists physicsId then
-                world.Subsystems.PhysicsEngine3d.GetBodyLinearVelocity physicsId
-            elif world.Subsystems.PhysicsEngine2d.BodyExists physicsId then
-                world.Subsystems.PhysicsEngine2d.GetBodyLinearVelocity physicsId
-            else Log.debug ("Body for '" + scstring physicsId + "' not found."); v3Zero
+        static member getBodyLinearVelocity bodyId world =
+            if world.Subsystems.PhysicsEngine3d.BodyExists bodyId then
+                world.Subsystems.PhysicsEngine3d.GetBodyLinearVelocity bodyId
+            elif world.Subsystems.PhysicsEngine2d.BodyExists bodyId then
+                world.Subsystems.PhysicsEngine2d.GetBodyLinearVelocity bodyId
+            else Log.debug ("Body for '" + scstring bodyId + "' not found."); v3Zero
 
         /// Get the contact normals where the body with the given physics id is touching the ground.
         [<FunctionBinding>]
-        static member getBodyToGroundContactNormals physicsId world =
-            if world.Subsystems.PhysicsEngine3d.BodyExists physicsId then
-                world.Subsystems.PhysicsEngine3d.GetBodyToGroundContactNormals physicsId
-            elif world.Subsystems.PhysicsEngine2d.BodyExists physicsId then
-                world.Subsystems.PhysicsEngine2d.GetBodyToGroundContactNormals physicsId
-            else Log.debug ("Body for '" + scstring physicsId + "' not found."); []
+        static member getBodyToGroundContactNormals bodyId world =
+            if world.Subsystems.PhysicsEngine3d.BodyExists bodyId then
+                world.Subsystems.PhysicsEngine3d.GetBodyToGroundContactNormals bodyId
+            elif world.Subsystems.PhysicsEngine2d.BodyExists bodyId then
+                world.Subsystems.PhysicsEngine2d.GetBodyToGroundContactNormals bodyId
+            else Log.debug ("Body for '" + scstring bodyId + "' not found."); []
 
         /// Get a contact normal where the body with the given physics id is touching the ground (if one exists).
         [<FunctionBinding>]
-        static member getBodyToGroundContactNormalOpt physicsId world =
-            if world.Subsystems.PhysicsEngine3d.BodyExists physicsId then
-                world.Subsystems.PhysicsEngine3d.GetBodyToGroundContactNormalOpt physicsId
-            elif world.Subsystems.PhysicsEngine2d.BodyExists physicsId then
-                world.Subsystems.PhysicsEngine2d.GetBodyToGroundContactNormalOpt physicsId
-            else Log.debug ("Body for '" + scstring physicsId + "' not found."); None
+        static member getBodyToGroundContactNormalOpt bodyId world =
+            if world.Subsystems.PhysicsEngine3d.BodyExists bodyId then
+                world.Subsystems.PhysicsEngine3d.GetBodyToGroundContactNormalOpt bodyId
+            elif world.Subsystems.PhysicsEngine2d.BodyExists bodyId then
+                world.Subsystems.PhysicsEngine2d.GetBodyToGroundContactNormalOpt bodyId
+            else Log.debug ("Body for '" + scstring bodyId + "' not found."); None
 
         /// Get a contact tangent where the body with the given physics id is touching the ground (if one exists).
         [<FunctionBinding>]
-        static member getBodyToGroundContactTangentOpt physicsId world =
-            if world.Subsystems.PhysicsEngine3d.BodyExists physicsId then
-                world.Subsystems.PhysicsEngine3d.GetBodyToGroundContactTangentOpt physicsId
-            elif world.Subsystems.PhysicsEngine2d.BodyExists physicsId then
-                world.Subsystems.PhysicsEngine2d.GetBodyToGroundContactTangentOpt physicsId
-            else Log.debug ("Body for '" + scstring physicsId + "' not found."); None
+        static member getBodyToGroundContactTangentOpt bodyId world =
+            if world.Subsystems.PhysicsEngine3d.BodyExists bodyId then
+                world.Subsystems.PhysicsEngine3d.GetBodyToGroundContactTangentOpt bodyId
+            elif world.Subsystems.PhysicsEngine2d.BodyExists bodyId then
+                world.Subsystems.PhysicsEngine2d.GetBodyToGroundContactTangentOpt bodyId
+            else Log.debug ("Body for '" + scstring bodyId + "' not found."); None
 
         /// Check that the body with the given physics id is on the ground.
         [<FunctionBinding>]
-        static member isBodyOnGround physicsId world =
-            if world.Subsystems.PhysicsEngine3d.BodyExists physicsId then
-                world.Subsystems.PhysicsEngine3d.IsBodyOnGround physicsId
-            elif world.Subsystems.PhysicsEngine2d.BodyExists physicsId then
-                world.Subsystems.PhysicsEngine2d.IsBodyOnGround physicsId
-            else Log.debug ("Body for '" + scstring physicsId + "' not found."); false
+        static member isBodyOnGround bodyId world =
+            if world.Subsystems.PhysicsEngine3d.BodyExists bodyId then
+                world.Subsystems.PhysicsEngine3d.IsBodyOnGround bodyId
+            elif world.Subsystems.PhysicsEngine2d.BodyExists bodyId then
+                world.Subsystems.PhysicsEngine2d.IsBodyOnGround bodyId
+            else Log.debug ("Body for '" + scstring bodyId + "' not found."); false
 
         /// Send a physics message to create a physics body.
         [<FunctionBinding>]

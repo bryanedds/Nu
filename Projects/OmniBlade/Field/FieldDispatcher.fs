@@ -72,9 +72,9 @@ module FieldDispatcher =
     type FieldDispatcher () =
         inherit ScreenDispatcher<Field, FieldMessage, FieldCommand> (Field.empty)
 
-        static let isIntersectedProp (collider : BodyShapeId) (collidee : BodyShapeId) (avatar : Avatar) world =
+        static let isIntersectedProp (collider : ShapeIndex) (collidee : ShapeIndex) (avatar : Avatar) world =
             let collideeEntity = collidee.BodyId.BodySource :?> Entity
-            if (collider.BodyShapeId = avatar.CoreShapeId &&
+            if (collider.ShapeIndex = avatar.CoreShapeId &&
                 collideeEntity.Exists world &&
                 collideeEntity.Is<PropDispatcher> world &&
                 match (collideeEntity.GetPropPlus world).Prop.PropData with
@@ -82,7 +82,7 @@ module FieldDispatcher =
                 | Sensor _ -> true
                 | _ -> false) then
                 true
-            elif (collider.BodyShapeId = avatar.SensorShapeId &&
+            elif (collider.ShapeIndex = avatar.SensorShapeId &&
                   collideeEntity.Exists world &&
                   collideeEntity.Is<PropDispatcher> world &&
                   match (collideeEntity.GetPropPlus world).Prop.PropData with

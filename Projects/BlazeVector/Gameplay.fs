@@ -55,7 +55,7 @@ module Enemy =
 
         static let move (enemy : Entity) world =
             let force = v3 -750.0f -5000.0f 0.0f
-            World.applyBodyForce force v3Zero (enemy.GetPhysicsId world) world
+            World.applyBodyForce force v3Zero (enemy.GetBodyId world) world
 
         static let die (enemy : Entity) world =
             let world = World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.ExplosionSound world
@@ -133,7 +133,7 @@ module Player =
 
         static let propelBullet (bullet : Entity) world =
             let world = World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.ShotSound world
-            World.applyBodyLinearImpulse (v3 BulletForce 0.0f 0.0f) v3Zero (bullet.GetPhysicsId world) world
+            World.applyBodyLinearImpulse (v3 BulletForce 0.0f 0.0f) v3Zero (bullet.GetBodyId world) world
 
         static let shootBullet (player : Entity) world =
             let (bullet, world) = createBullet player world
@@ -152,7 +152,7 @@ module Player =
             (Cascade, world)
 
         static let getLastTimeOnGround (player : Entity) world =
-            if not (World.isBodyOnGround (player.GetPhysicsId world) world)
+            if not (World.isBodyOnGround (player.GetBodyId world) world)
             then player.GetLastTimeOnGround world
             else World.getUpdateTime world
 
@@ -160,15 +160,15 @@ module Player =
             let player = evt.Subscriber : Entity
             let lastTimeOnGround = getLastTimeOnGround player world
             let world = player.SetLastTimeOnGround lastTimeOnGround world
-            let physicsId = player.GetPhysicsId world
-            let groundTangentOpt = World.getBodyToGroundContactTangentOpt physicsId world
+            let bodyId = player.GetBodyId world
+            let groundTangentOpt = World.getBodyToGroundContactTangentOpt bodyId world
             let force =
                 match groundTangentOpt with
                 | Some groundTangent ->
                     let downForce = if groundTangent.Y > 0.0f then ClimbForce else 0.0f
                     Vector3.Multiply (groundTangent, v3 WalkForce downForce 0.0f)
                 | None -> v3 WalkForce FallForce 0.0f
-            let world = World.applyBodyForce force v3Zero physicsId world
+            let world = World.applyBodyForce force v3Zero bodyId world
             (Cascade, world)
 
         static let handleJump evt world =
@@ -178,7 +178,7 @@ module Player =
                 time <= player.GetLastTimeOnGround world + 10L then
                 let world = World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.JumpSound world
                 let world = player.SetLastTimeJump time world
-                let world = World.applyBodyLinearImpulse (v3 0.0f JumpForce 0.0f) v3Zero (player.GetPhysicsId world) world
+                let world = World.applyBodyLinearImpulse (v3 0.0f JumpForce 0.0f) v3Zero (player.GetBodyId world) world
                 (Cascade, world)
             else (Cascade, world)
 

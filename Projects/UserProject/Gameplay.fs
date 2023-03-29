@@ -58,23 +58,23 @@ module Gameplay =
         override this.Command (_, command, _, world) =
             match command with
             | Update ->
-                let physicsId = Simulants.GameplayScenePlayer.GetPhysicsId world
+                let bodyId = Simulants.GameplayScenePlayer.GetBodyId world
                 let world =
                     if World.isKeyboardKeyDown KeyboardKey.Left world then
-                        if World.isBodyOnGround physicsId world
-                        then World.applyBodyForce (v3 -2500.0f 0.0f 0.0f) v3Zero physicsId world
-                        else World.applyBodyForce (v3 -750.0f 0.0f 0.0f) v3Zero physicsId world
+                        if World.isBodyOnGround bodyId world
+                        then World.applyBodyForce (v3 -2500.0f 0.0f 0.0f) v3Zero bodyId world
+                        else World.applyBodyForce (v3 -750.0f 0.0f 0.0f) v3Zero bodyId world
                     elif World.isKeyboardKeyDown KeyboardKey.Right world then
-                        if World.isBodyOnGround physicsId world
-                        then World.applyBodyForce (v3 2500.0f 0.0f 0.0f) v3Zero physicsId world
-                        else World.applyBodyForce (v3 750.0f 0.0f 0.0f) v3Zero physicsId world
+                        if World.isBodyOnGround bodyId world
+                        then World.applyBodyForce (v3 2500.0f 0.0f 0.0f) v3Zero bodyId world
+                        else World.applyBodyForce (v3 750.0f 0.0f 0.0f) v3Zero bodyId world
                     else world
                 just world
             | Jump ->
-                let physicsId = Simulants.GameplayScenePlayer.GetPhysicsId world
-                if World.isBodyOnGround physicsId world then
+                let bodyId = Simulants.GameplayScenePlayer.GetBodyId world
+                if World.isBodyOnGround bodyId world then
                     let world = World.playSound Constants.Audio.SoundVolumeDefault (asset "Gameplay" "Jump") world
-                    let world = World.applyBodyForce (v3 0.0f 140000.0f 0.0f) v3Zero physicsId world
+                    let world = World.applyBodyForce (v3 0.0f 140000.0f 0.0f) v3Zero bodyId world
                     just world
                 else just world
             | PostUpdateEye ->

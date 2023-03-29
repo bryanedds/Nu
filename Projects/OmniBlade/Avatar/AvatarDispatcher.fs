@@ -42,8 +42,8 @@ module AvatarDispatcher =
         override this.Initialize (avatar, _) =
             let bodyShape =
                 BodyShapes
-                    [BodySphere { Radius = 0.160f; TransformOpt = Some (Matrix4x4.CreateTranslation (v3 -0.016f -0.366f 0.0f)); PropertiesOpt = Some { BodyShapeProperties.empty with BodyShapeId = avatar.CoreShapeId }}
-                     BodySphere { Radius = 0.320f; TransformOpt = Some (Matrix4x4.CreateTranslation (v3 -0.016f -0.366f 0.0f)); PropertiesOpt = Some { BodyShapeProperties.empty with BodyShapeId = avatar.SensorShapeId; SensorOpt = Some true }}]
+                    [BodySphere { Radius = 0.160f; TransformOpt = Some (Matrix4x4.CreateTranslation (v3 -0.016f -0.366f 0.0f)); PropertiesOpt = Some { BodyShapeProperties.empty with ShapeIndex = avatar.CoreShapeId }}
+                     BodySphere { Radius = 0.320f; TransformOpt = Some (Matrix4x4.CreateTranslation (v3 -0.016f -0.366f 0.0f)); PropertiesOpt = Some { BodyShapeProperties.empty with ShapeIndex = avatar.SensorShapeId; SensorOpt = Some true }}]
             [Entity.Perimeter := avatar.Perimeter
              Entity.Presence == Omnipresent
              Entity.AngularFactor == v3Zero
@@ -94,8 +94,8 @@ module AvatarDispatcher =
                 if  not (World.isSelectedScreenTransitioning world) &&
                     force <> v3Zero &&
                     entity.GetEnabled world then
-                    let physicsId = Simulants.FieldSceneAvatar.GetPhysicsId world
-                    let world = World.applyBodyForce force v3Zero physicsId world
+                    let bodyId = Simulants.FieldSceneAvatar.GetBodyId world
+                    let world = World.applyBodyForce force v3Zero bodyId world
                     just world
                 else just world
 

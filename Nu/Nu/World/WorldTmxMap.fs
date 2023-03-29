@@ -283,9 +283,9 @@ module TmxMap =
         Seq.concat |>
         Seq.toList
 
-    let getBodyProperties enabled friction restitution collisionCategories collisionMask bodyId tileMapDescriptor =
+    let getBodyProperties enabled friction restitution collisionCategories collisionMask bodyIndex tileMapDescriptor =
         let bodyProperties =
-            { BodyId = bodyId
+            { BodyIndex = bodyIndex
               Center = v3Zero
               Rotation = quatIdentity
               BodyShape = BodyShapes (getBodyShapes tileMapDescriptor)

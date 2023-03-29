@@ -9,45 +9,45 @@ open Nu
 
 /// Identifies a body that can be found in a physics engine.
 /// NOTE: It would be more accurate to name this BodyId, but it may be too late to make such a large change.
-type [<CustomEquality; NoComparison>] PhysicsId =
+type [<CustomEquality; NoComparison>] BodyId =
     { BodySource : Simulant
-      BodyId : uint64 }
+      BodyIndex : uint64 }
 
-    /// Hash a PhysicsId.
+    /// Hash a BodyId.
     static member hash pid =
         pid.BodySource.SimulantAddress.GetHashCode () ^^^
-        pid.BodyId.GetHashCode ()
+        pid.BodyIndex.GetHashCode ()
 
-    /// Equate PhysicsIds.
+    /// Equate BodyIds.
     static member equals pid pid2 =
         Address.equals pid.BodySource.SimulantAddress pid2.BodySource.SimulantAddress &&
-        pid.BodyId = pid2.BodyId
+        pid.BodyIndex = pid2.BodyIndex
 
-    interface PhysicsId IEquatable with
+    interface BodyId IEquatable with
         member this.Equals that =
-            PhysicsId.equals this that
+            BodyId.equals this that
 
     override this.Equals that =
         match that with
-        | :? PhysicsId as that -> PhysicsId.equals this that
+        | :? BodyId as that -> BodyId.equals this that
         | _ -> false
 
     override this.GetHashCode () =
-        PhysicsId.hash this
+        BodyId.hash this
 
 /// Identified a body shape in a physics engine.
-and BodyShapeId =
-    { BodyId : PhysicsId
-      BodyShapeId : uint64 }
+and ShapeIndex =
+    { BodyId : BodyId
+      ShapeIndex : uint64 }
 
 /// Identified a joint in a physics engine.
 and JointId =
     { JointSource : Simulant
-      JointId : uint64 }
+      JointIndex : uint64 }
 
 /// Describes body shape-specific properties.
 type BodyShapeProperties =
-    { BodyShapeId : uint64
+    { ShapeIndex : uint64
       FrictionOpt : single option
       RestitutionOpt : single option
       CollisionCategoriesOpt : int option
@@ -58,7 +58,7 @@ type BodyShapeProperties =
 module BodyShapeProperties =
 
     let empty =
-        { BodyShapeId = 0UL
+        { ShapeIndex = 0UL
           FrictionOpt = None
           RestitutionOpt = None
           CollisionCategoriesOpt = None
@@ -151,7 +151,7 @@ type BodyType =
 
 /// The properties needed to describe the physical part of a body.
 type BodyProperties =
-    { BodyId : uint64
+    { BodyIndex : uint64
       Center : Vector3
       Rotation : Quaternion
       BodyType : BodyType
@@ -175,8 +175,8 @@ type BodyProperties =
       Sensor : bool }
 
 type JointAngle =
-    { TargetId : PhysicsId
-      TargetId2 : PhysicsId
+    { TargetId : BodyId
+      TargetId2 : BodyId
       Anchor : Vector3
       Anchor2 : Vector3
       Axis : Vector3
@@ -189,58 +189,58 @@ type JointAngle =
       BreakImpulseThreshold : single }
 
 type JointDistance =
-    { TargetId : PhysicsId
-      TargetId2 : PhysicsId
+    { TargetId : BodyId
+      TargetId2 : BodyId
       Anchor : Vector3
       Anchor2 : Vector3
       Length : single
       Frequency : single }
 
 type JointFriction =
-    { TargetId : PhysicsId
-      TargetId2 : PhysicsId
+    { TargetId : BodyId
+      TargetId2 : BodyId
       Anchor : Vector3
       Anchor2 : Vector3 }
 
 type JointGear =
-    { TargetId : PhysicsId
-      TargetId2 : PhysicsId
+    { TargetId : BodyId
+      TargetId2 : BodyId
       Anchor : Vector3
       Anchor2 : Vector3 }
 
 type JointMotor =
-    { TargetId : PhysicsId
-      TargetId2 : PhysicsId
+    { TargetId : BodyId
+      TargetId2 : BodyId
       Anchor : Vector3
       Anchor2 : Vector3 }
 
 type JointPrismatic =
-    { TargetId : PhysicsId
-      TargetId2 : PhysicsId
+    { TargetId : BodyId
+      TargetId2 : BodyId
       Anchor : Vector3
       Anchor2 : Vector3 }
 
 type JointPulley =
-    { TargetId : PhysicsId
-      TargetId2 : PhysicsId
+    { TargetId : BodyId
+      TargetId2 : BodyId
       Anchor : Vector3
       Anchor2 : Vector3 }
 
 type JointRevolute =
-    { TargetId : PhysicsId
-      TargetId2 : PhysicsId
+    { TargetId : BodyId
+      TargetId2 : BodyId
       Anchor : Vector3
       Anchor2 : Vector3 }
 
 type JointRope =
-    { TargetId : PhysicsId
-      TargetId2 : PhysicsId
+    { TargetId : BodyId
+      TargetId2 : BodyId
       Anchor : Vector3
       Anchor2 : Vector3 }
 
 type JointWheel =
-    { TargetId : PhysicsId
-      TargetId2 : PhysicsId
+    { TargetId : BodyId
+      TargetId2 : BodyId
       Anchor : Vector3
       Anchor2 : Vector3 }
 
@@ -265,19 +265,19 @@ type JointDevice =
     | JointWheel of JointWheel
 
 type JointProperties =
-    { JointId : uint64
+    { JointIndex : uint64
       JointDevice : JointDevice }
 
 [<RequireQualifiedAccess>]
 module JointProperties =
 
     let empty =
-        { JointId = Gen.id64
+        { JointIndex = Gen.id64
           JointDevice = JointEmpty }
 
 /// A message to the physics system to create a body.
 type CreateBodyMessage =
-    { BodyId : PhysicsId
+    { BodyId : BodyId
       BodyProperties : BodyProperties }
 
 /// A message to the physics system to create multiple bodies.
@@ -287,11 +287,11 @@ type CreateBodiesMessage =
 
 /// A message to the physics system to destroy a body.
 type DestroyBodyMessage =
-    { BodyId : PhysicsId }
+    { BodyId : BodyId }
 
 /// A message to the physics system to destroy multiple bodies.
 type DestroyBodiesMessage =
-    { BodyIds : PhysicsId list }
+    { BodyIds : BodyId list }
 
 /// A message to the physics system to create a joint.
 type CreateJointMessage =
@@ -313,65 +313,65 @@ type DestroyJointsMessage =
 
 /// A message to the physics system to destroy a body.
 type SetBodyEnabledMessage =
-    { BodyId : PhysicsId
+    { BodyId : BodyId
       Enabled : bool }
 
 /// A message to the physics system to destroy a body.
 type SetBodyCenterMessage =
-    { BodyId : PhysicsId
+    { BodyId : BodyId
       Center : Vector3 }
 
 /// A message to the physics system to set the rotation of a body.
 type SetBodyRotationMessage =
-    { BodyId : PhysicsId
+    { BodyId : BodyId
       Rotation : Quaternion }
 
 /// A message to the physics system to set the linear velocity of a body.
 type SetBodyLinearVelocityMessage =
-    { BodyId : PhysicsId
+    { BodyId : BodyId
       LinearVelocity : Vector3 }
 
 /// A message to the physics system to apply a linear impulse to a body.
 type ApplyBodyLinearImpulseMessage =
-    { BodyId : PhysicsId
+    { BodyId : BodyId
       LinearImpulse : Vector3
       Offset : Vector3 }
 
 /// A message to the physics system to set the angular velocity of a body.
 type SetBodyAngularVelocityMessage =
-    { BodyId : PhysicsId
+    { BodyId : BodyId
       AngularVelocity : Vector3 }
 
 /// A message to the physics system to apply an angular impulse to a body.
 type ApplyBodyAngularImpulseMessage =
-    { BodyId : PhysicsId
+    { BodyId : BodyId
       AngularImpulse : Vector3 }
 
 /// A message to the physics system to apply a force to a body.
 type ApplyBodyForceMessage =
-    { BodyId : PhysicsId
+    { BodyId : BodyId
       Force : Vector3
       Offset : Vector3 }
 
 /// A message to the physics system to apply torque to a body.
 type ApplyBodyTorqueMessage =
-    { BodyId : PhysicsId
+    { BodyId : BodyId
       Torque : Vector3 }
 
 /// A message from the physics system describing a body collision that took place.
 type BodyCollisionMessage =
-    { BodyShapeSource : BodyShapeId
-      BodyShapeSource2 : BodyShapeId
+    { BodyShapeSource : ShapeIndex
+      BodyShapeSource2 : ShapeIndex
       Normal : Vector3 }
 
 /// A message from the physics system describing a body separation that took place.
 type BodySeparationMessage =
-    { BodyShapeSource : BodyShapeId
-      BodyShapeSource2 : BodyShapeId }
+    { BodyShapeSource : ShapeIndex
+      BodyShapeSource2 : ShapeIndex }
 
 /// A message from the physics system describing the updated transform of a body.
 type BodyTransformMessage =
-    { BodyId : PhysicsId
+    { BodyId : BodyId
       Center : Vector3
       Rotation : Quaternion
       LinearVelocity : Vector3
@@ -408,19 +408,19 @@ type PhysicsMessage =
 /// Represents a physics engine in Nu.
 type PhysicsEngine =
     /// Check that the physics engine contain the body with the given physics id.
-    abstract BodyExists : PhysicsId -> bool
+    abstract BodyExists : BodyId -> bool
     /// Get the contact normals of the body with the given physics id.
-    abstract GetBodyContactNormals : PhysicsId -> Vector3 list
+    abstract GetBodyContactNormals : BodyId -> Vector3 list
     /// Get the linear velocity of the body with the given physics id.
-    abstract GetBodyLinearVelocity : PhysicsId -> Vector3
+    abstract GetBodyLinearVelocity : BodyId -> Vector3
     /// Get the contact normals where the body with the given physics id is touching the ground.
-    abstract GetBodyToGroundContactNormals : PhysicsId -> Vector3 list
+    abstract GetBodyToGroundContactNormals : BodyId -> Vector3 list
     /// Get a contact normal where the body with the given physics id is touching the ground (if one exists).
-    abstract GetBodyToGroundContactNormalOpt : PhysicsId -> Vector3 option
+    abstract GetBodyToGroundContactNormalOpt : BodyId -> Vector3 option
     /// Get a contact tangent where the body with the given physics id is touching the ground (if one exists).
-    abstract GetBodyToGroundContactTangentOpt : PhysicsId -> Vector3 option
+    abstract GetBodyToGroundContactTangentOpt : BodyId -> Vector3 option
     /// Check that the body with the given physics id is on the ground.
-    abstract IsBodyOnGround : PhysicsId -> bool
+    abstract IsBodyOnGround : BodyId -> bool
     /// Pop all of the physics messages that have been enqueued.
     abstract PopMessages : unit -> PhysicsMessage UList * PhysicsEngine
     /// Clear all of the physics messages that have been enqueued.
