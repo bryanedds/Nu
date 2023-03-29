@@ -8,7 +8,6 @@ open Prime
 open Nu
 
 /// Identifies a body that can be found in a physics engine.
-/// NOTE: It would be more accurate to name this BodyId, but it may be too late to make such a large change.
 type [<CustomEquality; NoComparison>] BodyId =
     { BodySource : Simulant
       BodyIndex : uint64 }
