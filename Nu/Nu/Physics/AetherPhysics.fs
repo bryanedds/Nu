@@ -302,7 +302,7 @@ type [<ReferenceEquality>] AetherPhysicsEngine =
         List.iter
             (fun (jointProperties : JointProperties) ->
                 let createJointMessage =
-                    { JointId = { JointSource = createJointsMessage.JointsSource; JointIndex = jointProperties.JointIndex }
+                    { JointSource = createJointsMessage.JointsSource
                       JointProperties = jointProperties }
                 AetherPhysicsEngine.createJoint createJointMessage physicsEngine)
             createJointsMessage.JointsProperties

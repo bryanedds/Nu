@@ -884,6 +884,37 @@ module RigidBodyFacetModule =
             World.destroyBody (entity.GetIs2d world) (entity.GetBodyId world) world
 
 [<AutoOpen>]
+module JointFacetModule =
+
+    type Entity with
+        member this.GetJointDevice world : JointDevice = this.Get (nameof this.JointDevice) world
+        member this.SetJointDevice (value : JointDevice) world = this.Set (nameof this.JointDevice) value world
+        member this.JointDevice = lens (nameof this.JointDevice) this this.GetJointDevice this.SetJointDevice
+        member this.GetJointId world : JointId = this.Get (nameof this.JointId) world
+        member this.JointId = lensReadOnly (nameof this.JointId) this this.GetJointId
+
+    type JointFacet () =
+        inherit Facet (true)
+
+        static member Properties =
+            [define Entity.JointDevice JointEmpty
+             computed Entity.JointId (fun (entity : Entity) world -> { JointSource = entity; JointIndex = 0UL }) None]
+
+        override this.Register (entity, world) =
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.Transform)) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.JointDevice)) entity world
+            world
+
+        override this.RegisterPhysics (entity, world) =
+            let jointProperties =
+                { JointIndex = (entity.GetJointId world).JointIndex
+                  JointDevice = (entity.GetJointDevice world) }
+            World.createJoint (entity.GetIs2d world) entity jointProperties world
+
+        override this.UnregisterPhysics (entity, world) =
+            World.destroyJoint (entity.GetIs2d world) (entity.GetJointId world) world
+
+[<AutoOpen>]
 module TileMapFacetModule =
 
     type Entity with
