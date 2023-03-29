@@ -40,7 +40,7 @@ type CurrentCommand =
 [<RequireQualifiedAccess>]
 module Battle =
 
-    type [<SymbolicExpansion>] Battle =
+    type [<ReferenceEquality; SymbolicExpansion>] Battle =
         private
             { BattleState_ : BattleState
               Characters_ : Map<CharacterIndex, Character>

@@ -12,7 +12,7 @@ type AtlasState =
 [<RequireQualifiedAccess>]
 module Atlas =
 
-    type [<SymbolicExpansion>] Atlas =
+    type [<ReferenceEquality; SymbolicExpansion>] Atlas =
         private
             { AtlasState_ : AtlasState
               SaveSlot_ : SaveSlot
