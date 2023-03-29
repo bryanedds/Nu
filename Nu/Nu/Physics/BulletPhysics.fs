@@ -257,8 +257,8 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
             destroyBodiesMessage.BodyIds
 
     static member private createJoint (createJointMessage : CreateJointMessage) physicsEngine =
-        let jointId = createJointMessage.JointId
         let jointProperties = createJointMessage.JointProperties
+        let jointId = { JointSource = createJointMessage.JointSource; JointIndex = jointProperties.JointIndex }
         match jointProperties.JointDevice with
         | JointEmpty -> ()
         | JointAngle jointAngle ->
@@ -278,7 +278,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
         List.iter
             (fun (jointProperties : JointProperties) ->
                 let createJointMessage =
-                    { JointId = { JointSource = createJointsMessage.JointsSource; JointIndex = jointProperties.JointIndex }
+                    { JointSource = createJointsMessage.JointsSource
                       JointProperties = jointProperties }
                 BulletPhysicsEngine.createJoint createJointMessage physicsEngine)
             createJointsMessage.JointsProperties

@@ -294,7 +294,7 @@ type DestroyBodiesMessage =
 
 /// A message to the physics system to create a joint.
 type CreateJointMessage =
-    { JointId : JointId
+    { JointSource : Simulant
       JointProperties : JointProperties }
 
 /// A message to the physics system to create multiple joints.

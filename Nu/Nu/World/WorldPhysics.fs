@@ -194,8 +194,8 @@ module WorldPhysics =
 
         /// Send a physics message to create a physics joint.
         [<FunctionBinding>]
-        static member createJoint is2d jointId jointProperties world =
-            let createJointMessage = CreateJointMessage { JointId = jointId; JointProperties = jointProperties }
+        static member createJoint is2d jointSource jointProperties world =
+            let createJointMessage = CreateJointMessage { JointSource = jointSource; JointProperties = jointProperties }
             if not is2d
             then World.enqueuePhysicsMessage3d createJointMessage world
             else World.enqueuePhysicsMessage2d createJointMessage world
