@@ -31,7 +31,7 @@ type FieldTransition =
 [<RequireQualifiedAccess>]
 module Field =
 
-    type [<SymbolicExpansion>] Field =
+    type [<ReferenceEquality; SymbolicExpansion>] Field =
         private
             { UpdateTime_ : int64
               FieldType_ : FieldType

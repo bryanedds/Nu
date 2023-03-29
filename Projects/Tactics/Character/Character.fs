@@ -8,7 +8,7 @@ open Tactics
 [<RequireQualifiedAccess>]
 module Character =
 
-    type [<SymbolicExpansion>] Character =
+    type [<ReferenceEquality; SymbolicExpansion>] Character =
         private
             { CharacterIndex_ : CharacterIndex
               CharacterType_ : CharacterType
