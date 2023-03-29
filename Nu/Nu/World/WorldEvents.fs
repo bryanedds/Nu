@@ -40,28 +40,28 @@ type IntegrationData =
 
 /// The data of a body transform event.
 type TransformData =
-    { BodyId : PhysicsId
+    { BodyId : BodyId
       Position : Vector3
       Rotation : Quaternion }
 
 /// The data for a collision event.
 type BodyCollisionData =
-    { BodyShapeCollider : BodyShapeId
-      BodyShapeCollidee : BodyShapeId
+    { BodyShapeCollider : ShapeIndex
+      BodyShapeCollidee : ShapeIndex
       Normal : Vector3 }
 
 /// The implicit data for a separation event.
 /// Unfortunately, due to the fact that physics system itself does not raise separation events until the following
 /// frame, we need both an implicit and explicit body separation representation and the user MUST handle both!
 type BodySeparationImplicitData =
-    { BodyId : PhysicsId }
+    { BodyId : BodyId }
 
 /// The explicit data for a separation event.
 /// Unfortunately, due to the fact that physics system itself does not raise separation events until the following
 /// frame, we need both an implicit and explicit body separation representation and the user MUST handle both!
 type BodySeparationExplicitData =
-    { BodyShapeSeparator : BodyShapeId
-      BodyShapeSeparatee : BodyShapeId }
+    { BodyShapeSeparator : ShapeIndex
+      BodyShapeSeparatee : ShapeIndex }
 
 /// Tje data for describing a change in transform.
 type BodyTransformData =
@@ -98,8 +98,8 @@ module Events =
     let Mount = stoa<MountData> "Mount/Event"
     let Unmount = stoa<MountData> "Unmount/Event"
     let Integration = stoa<IntegrationData> "Integration/Event"
-    let BodyAdding = stoa<PhysicsId> "Body/Adding/Event"
-    let BodyRemoving = stoa<PhysicsId> "Body/Removing/Event"
+    let BodyAdding = stoa<BodyId> "Body/Adding/Event"
+    let BodyRemoving = stoa<BodyId> "Body/Removing/Event"
     let BodyCollision = stoa<BodyCollisionData> "BodyCollision/Event"
     let BodySeparationImplicit = stoa<BodySeparationImplicitData> "BodySeparationImplicit/Event"
     let BodySeparationExplicit = stoa<BodySeparationExplicitData> "BodySeparationExplicit/Event"

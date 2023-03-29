@@ -10,13 +10,13 @@ open Prime
 open Nu
 
 /// Tracks Bullet physics bodies by their BodyIds.
-type internal BulletBodyDictionary = OrderedDictionary<PhysicsId, Vector3 option * RigidBody>
+type internal BulletBodyDictionary = OrderedDictionary<BodyId, Vector3 option * RigidBody>
 
 /// Tracks Bullet physics ghosts by their BodyIds.
-type internal BulletGhostDictionary = OrderedDictionary<PhysicsId, GhostObject>
+type internal BulletGhostDictionary = OrderedDictionary<BodyId, GhostObject>
 
 /// Tracks Bullet physics collision objects by their BodyIds.
-type internal BulletObjectDictionary = OrderedDictionary<PhysicsId, CollisionObject>
+type internal BulletObjectDictionary = OrderedDictionary<BodyId, CollisionObject>
 
 /// Tracks Bullet physics constraints by their BodyIds.
 type internal BulletConstraintDictionary = OrderedDictionary<JointId, TypedConstraint>
@@ -30,7 +30,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
           Bodies : BulletBodyDictionary
           Ghosts : BulletGhostDictionary
           Objects : BulletObjectDictionary
-          mutable Collisions : SegmentedDictionary<PhysicsId * PhysicsId, Vector3>
+          mutable Collisions : SegmentedDictionary<BodyId * BodyId, Vector3>
           CollisionConfiguration : CollisionConfiguration
           PhysicsDispatcher : Dispatcher
           BroadPhaseInterface : BroadphaseInterface
@@ -39,18 +39,18 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
           IntegrationMessages : IntegrationMessage List
           mutable RebuildingHack : bool }
 
-    static member private handleCollision physicsEngine (bodyId : PhysicsId) (bodyId2 : PhysicsId) normal =
+    static member private handleCollision physicsEngine (bodyId : BodyId) (bodyId2 : BodyId) normal =
         let bodyCollisionMessage =
-            { BodyShapeSource = { BodyId = bodyId; BodyShapeId = 0UL }
-              BodyShapeSource2 = { BodyId = bodyId2; BodyShapeId = 0UL }
+            { BodyShapeSource = { BodyId = bodyId; ShapeIndex = 0UL }
+              BodyShapeSource2 = { BodyId = bodyId2; ShapeIndex = 0UL }
               Normal = normal }
         let integrationMessage = BodyCollisionMessage bodyCollisionMessage
         physicsEngine.IntegrationMessages.Add integrationMessage
     
-    static member private handleSeparation physicsEngine (bodyId : PhysicsId) (bodyId2 : PhysicsId) =
+    static member private handleSeparation physicsEngine (bodyId : BodyId) (bodyId2 : BodyId) =
         let bodySeparationMessage =
-            { BodyShapeSource = { BodyId = bodyId; BodyShapeId = 0UL }
-              BodyShapeSource2 = { BodyId = bodyId2; BodyShapeId = 0UL }}
+            { BodyShapeSource = { BodyId = bodyId; ShapeIndex = 0UL }
+              BodyShapeSource2 = { BodyId = bodyId2; ShapeIndex = 0UL }}
         let integrationMessage = BodySeparationMessage bodySeparationMessage
         physicsEngine.IntegrationMessages.Add integrationMessage
 
@@ -101,8 +101,8 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
         let box = new BoxShape (bodyBox.Size * 0.5f)
         BulletPhysicsEngine.configureBodyShapeProperties bodyProperties bodyBox.PropertiesOpt box
         box.UserObject <-
-            { BodyId = { BodySource = bodySource; BodyId = bodyProperties.BodyId }
-              BodyShapeId = match bodyBox.PropertiesOpt with Some p -> p.BodyShapeId | None -> 0UL }
+            { BodyId = { BodySource = bodySource; BodyIndex = bodyProperties.BodyIndex }
+              ShapeIndex = match bodyBox.PropertiesOpt with Some p -> p.ShapeIndex | None -> 0UL }
         let mass' =
             match bodyProperties.Substance with
             | Density density ->
@@ -117,8 +117,8 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
         let sphere = new SphereShape (bodySphere.Radius)
         BulletPhysicsEngine.configureBodyShapeProperties bodyProperties bodySphere.PropertiesOpt sphere
         sphere.UserObject <-
-            { BodyId = { BodySource = bodySource; BodyId = bodyProperties.BodyId }
-              BodyShapeId = match bodySphere.PropertiesOpt with Some p -> p.BodyShapeId | None -> 0UL }
+            { BodyId = { BodySource = bodySource; BodyIndex = bodyProperties.BodyIndex }
+              ShapeIndex = match bodySphere.PropertiesOpt with Some p -> p.ShapeIndex | None -> 0UL }
         let mass' =
             match bodyProperties.Substance with
             | Density density ->
@@ -133,8 +133,8 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
         let capsule = new CapsuleShape (bodyCapsule.Radius, bodyCapsule.Height)
         BulletPhysicsEngine.configureBodyShapeProperties bodyProperties bodyCapsule.PropertiesOpt capsule
         capsule.UserObject <-
-            { BodyId = { BodySource = bodySource; BodyId = bodyProperties.BodyId }
-              BodyShapeId = match bodyCapsule.PropertiesOpt with Some p -> p.BodyShapeId | None -> 0UL }
+            { BodyId = { BodySource = bodySource; BodyIndex = bodyProperties.BodyIndex }
+              ShapeIndex = match bodyCapsule.PropertiesOpt with Some p -> p.ShapeIndex | None -> 0UL }
         let mass' =
             match bodyProperties.Substance with
             | Density density ->
@@ -154,8 +154,8 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
         let hull = new ConvexHullShape (bodyConvexHull.Vertices)
         BulletPhysicsEngine.configureBodyShapeProperties bodyProperties bodyConvexHull.PropertiesOpt hull
         hull.UserObject <-
-            { BodyId = { BodySource = bodySource; BodyId = bodyProperties.BodyId }
-              BodyShapeId = match bodyConvexHull.PropertiesOpt with Some p -> p.BodyShapeId | None -> 0UL }
+            { BodyId = { BodySource = bodySource; BodyIndex = bodyProperties.BodyIndex }
+              ShapeIndex = match bodyConvexHull.PropertiesOpt with Some p -> p.ShapeIndex | None -> 0UL }
         let mass' =
             match bodyProperties.Substance with
             | Density density ->
@@ -216,7 +216,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
             then physicsEngine.Objects.Add (bodyId, ghost)
             else Log.debug ("Could not add body for '" + scstring bodyId + "'.")
 
-    static member private createBody4 bodyShape (bodyId : PhysicsId) bodyProperties physicsEngine =
+    static member private createBody4 bodyShape (bodyId : BodyId) bodyProperties physicsEngine =
         BulletPhysicsEngine.createBody3 (fun ps cs accs ->
             BulletPhysicsEngine.attachBodyShape bodyId.BodySource ps bodyShape cs accs)
             bodyId bodyProperties physicsEngine
@@ -230,7 +230,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
         List.iter
             (fun (bodyProperties : BodyProperties) ->
                 let createBodyMessage =
-                    { BodyId = { BodySource = createBodiesMessage.BodySource; BodyId = bodyProperties.BodyId }
+                    { BodyId = { BodySource = createBodiesMessage.BodySource; BodyIndex = bodyProperties.BodyIndex }
                       BodyProperties = bodyProperties }
                 BulletPhysicsEngine.createBody createBodyMessage physicsEngine)
             createBodiesMessage.BodiesProperties
@@ -278,7 +278,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
         List.iter
             (fun (jointProperties : JointProperties) ->
                 let createJointMessage =
-                    { JointId = { JointSource = createJointsMessage.JointsSource; JointId = jointProperties.JointId }
+                    { JointId = { JointSource = createJointsMessage.JointsSource; JointIndex = jointProperties.JointIndex }
                       JointProperties = jointProperties }
                 BulletPhysicsEngine.createJoint createJointMessage physicsEngine)
             createJointsMessage.JointsProperties
@@ -403,8 +403,8 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
             let manifold = physicsEngine.PhysicsContext.Dispatcher.GetManifoldByIndexInternal i
             let body0 = manifold.Body0
             let body1 = manifold.Body1
-            let bodySource0 = body0.UserObject :?> PhysicsId
-            let bodySource1 = body1.UserObject :?> PhysicsId
+            let bodySource0 = body0.UserObject :?> BodyId
+            let bodySource1 = body1.UserObject :?> BodyId
             let collisionKey = (bodySource0, bodySource1)
             let mutable normal = v3Zero
             let numContacts = manifold.NumContacts
@@ -433,7 +433,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
             if body.IsActive then
                 let bodyTransformMessage =
                     BodyTransformMessage
-                        { BodyId = body.UserObject :?> PhysicsId
+                        { BodyId = body.UserObject :?> BodyId
                           Center = body.MotionState.WorldTransform.Translation
                           Rotation = body.MotionState.WorldTransform.Rotation
                           LinearVelocity = body.LinearVelocity
@@ -477,12 +477,12 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
 
     interface PhysicsEngine with
 
-        member physicsEngine.BodyExists physicsId =
-            physicsEngine.Objects.ContainsKey physicsId
+        member physicsEngine.BodyExists bodyId =
+            physicsEngine.Objects.ContainsKey bodyId
 
-        member physicsEngine.GetBodyContactNormals physicsId =
+        member physicsEngine.GetBodyContactNormals bodyId =
             // TODO: see if this can be optimized from a linear-time search to constant-time look-up.
-            match physicsEngine.Objects.TryGetValue physicsId with
+            match physicsEngine.Objects.TryGetValue bodyId with
             | (true, object) ->
                 let dispatcher = physicsEngine.PhysicsContext.Dispatcher
                 let manifoldCount = dispatcher.NumManifolds
@@ -495,35 +495,35 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
                             yield -contact.NormalWorldOnB]
             | (false, _) -> []
 
-        member physicsEngine.GetBodyLinearVelocity physicsId =
-            match physicsEngine.Bodies.TryGetValue physicsId with
+        member physicsEngine.GetBodyLinearVelocity bodyId =
+            match physicsEngine.Bodies.TryGetValue bodyId with
             | (true, (_, body)) -> body.LinearVelocity
             | (false, _) ->
-                if physicsEngine.Ghosts.ContainsKey physicsId then v3Zero
-                else failwith ("No body with BodyId = " + scstring physicsId + ".")
+                if physicsEngine.Ghosts.ContainsKey bodyId then v3Zero
+                else failwith ("No body with BodyId = " + scstring bodyId + ".")
 
-        member physicsEngine.GetBodyToGroundContactNormals physicsId =
+        member physicsEngine.GetBodyToGroundContactNormals bodyId =
             List.filter
                 (fun normal ->
                     let theta = Vector3.Dot (normal, Vector3.UnitY) |> double |> Math.Acos |> Math.Abs
                     theta < Math.PI * 0.25)
-                ((physicsEngine :> PhysicsEngine).GetBodyContactNormals physicsId)
+                ((physicsEngine :> PhysicsEngine).GetBodyContactNormals bodyId)
 
-        member physicsEngine.GetBodyToGroundContactNormalOpt physicsId =
-            let groundNormals = (physicsEngine :> PhysicsEngine).GetBodyToGroundContactNormals physicsId
+        member physicsEngine.GetBodyToGroundContactNormalOpt bodyId =
+            let groundNormals = (physicsEngine :> PhysicsEngine).GetBodyToGroundContactNormals bodyId
             match groundNormals with
             | [] -> None
             | _ ->
                 let averageNormal = List.reduce (fun normal normal2 -> (normal + normal2) * 0.5f) groundNormals
                 Some averageNormal
 
-        member physicsEngine.GetBodyToGroundContactTangentOpt physicsId =
-            match (physicsEngine :> PhysicsEngine).GetBodyToGroundContactNormalOpt physicsId with
+        member physicsEngine.GetBodyToGroundContactTangentOpt bodyId =
+            match (physicsEngine :> PhysicsEngine).GetBodyToGroundContactNormalOpt bodyId with
             | Some normal -> Some (Vector3.Cross (v3Forward, normal))
             | None -> None
 
-        member physicsEngine.IsBodyOnGround physicsId =
-            let groundNormals = (physicsEngine :> PhysicsEngine).GetBodyToGroundContactNormals physicsId
+        member physicsEngine.IsBodyOnGround bodyId =
+            let groundNormals = (physicsEngine :> PhysicsEngine).GetBodyToGroundContactNormals bodyId
             List.notEmpty groundNormals
 
         member physicsEngine.PopMessages () =

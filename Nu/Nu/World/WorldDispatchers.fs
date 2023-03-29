@@ -876,22 +876,22 @@ module SideViewCharacterDispatcherModule =
                 // we have to use a bit of hackery to remember whether the character is facing left or
                 // right when there is no velocity
                 let facingLeft = entity.GetSideViewCharacterFacingLeft world
-                let velocity = World.getBodyLinearVelocity (entity.GetPhysicsId world) world
+                let velocity = World.getBodyLinearVelocity (entity.GetBodyId world) world
                 if facingLeft && velocity.X > 1.0f then entity.SetSideViewCharacterFacingLeft false world
                 elif not facingLeft && velocity.X < -1.0f then entity.SetSideViewCharacterFacingLeft true world
                 else world
             else world
 
         override this.Render (entity, world) =
-            let physicsId = entity.GetPhysicsId world
+            let bodyId = entity.GetBodyId world
             let facingLeft = entity.GetSideViewCharacterFacingLeft world
-            let velocity = World.getBodyLinearVelocity physicsId world
+            let velocity = World.getBodyLinearVelocity bodyId world
             let celSize = entity.GetCelSize world
             let celRun = entity.GetCelRun world
             let animationDelay = entity.GetAnimationDelay world
             let mutable transform = entity.GetTransform world
             let struct (insetOpt, image) =
-                if not (World.isBodyOnGround physicsId world) then
+                if not (World.isBodyOnGround bodyId world) then
                     let image = entity.GetSideViewCharacterJumpImage world
                     struct (ValueNone, image)
                 elif velocity.X < 5.0f && velocity.X > -5.0f then

@@ -13,7 +13,7 @@ open Prime
 open Nu
 
 /// Tracks Aether physics bodies by their BodyIds.
-type internal AetherBodyDictionary = OrderedDictionary<PhysicsId, Vector3 option * Dynamics.Body>
+type internal AetherBodyDictionary = OrderedDictionary<BodyId, Vector3 option * Dynamics.Body>
 
 /// Tracks Aether physics joints by their BodyIds.
 type internal AetherJointDictionary = OrderedDictionary<JointId, Dynamics.Joints.Joint>
@@ -65,8 +65,8 @@ type [<ReferenceEquality>] AetherPhysicsEngine =
         physicsEngine (bodyShape : Dynamics.Fixture) (bodyShape2 : Dynamics.Fixture) (contact : Dynamics.Contacts.Contact) =
         let normal = fst (contact.GetWorldManifold ())
         let bodyCollisionMessage =
-            { BodyShapeSource = bodyShape.Tag :?> BodyShapeId
-              BodyShapeSource2 = bodyShape2.Tag :?> BodyShapeId
+            { BodyShapeSource = bodyShape.Tag :?> ShapeIndex
+              BodyShapeSource2 = bodyShape2.Tag :?> ShapeIndex
               Normal = Vector3 (normal.X, normal.Y, 0.0f) }
         let integrationMessage = BodyCollisionMessage bodyCollisionMessage
         physicsEngine.IntegrationMessages.Add integrationMessage
@@ -75,12 +75,12 @@ type [<ReferenceEquality>] AetherPhysicsEngine =
     static member private handleSeparation
         physicsEngine (bodyShape : Dynamics.Fixture) (bodyShape2 : Dynamics.Fixture) =
         let bodySeparationMessage =
-            { BodyShapeSource = bodyShape.Tag :?> BodyShapeId
-              BodyShapeSource2 = bodyShape2.Tag :?> BodyShapeId }
+            { BodyShapeSource = bodyShape.Tag :?> ShapeIndex
+              BodyShapeSource2 = bodyShape2.Tag :?> ShapeIndex }
         let integrationMessage = BodySeparationMessage bodySeparationMessage
         physicsEngine.IntegrationMessages.Add integrationMessage
 
-    static member private getBodyContacts (bodyId : PhysicsId) physicsEngine =
+    static member private getBodyContacts (bodyId : BodyId) physicsEngine =
         let (_, body) = physicsEngine.Bodies.[bodyId]
         let contacts = List<Contact> ()
         let mutable current = body.ContactList
@@ -136,8 +136,8 @@ type [<ReferenceEquality>] AetherPhysicsEngine =
                  AetherPhysicsEngine.toPhysicsDensity bodyProperties.Substance,
                  AetherPhysicsEngine.toPhysicsV2 transform.Translation)
         shape.Tag <-
-            { BodyId = { BodySource = bodySource; BodyId = bodyProperties.BodyId }
-              BodyShapeId = match bodyBox.PropertiesOpt with Some p -> p.BodyShapeId | None -> 0UL }
+            { BodyId = { BodySource = bodySource; BodyIndex = bodyProperties.BodyIndex }
+              ShapeIndex = match bodyBox.PropertiesOpt with Some p -> p.ShapeIndex | None -> 0UL }
         AetherPhysicsEngine.configureBodyShapeProperties bodyProperties bodyBox.PropertiesOpt shape
 
     static member private attachBodySphere bodySource (bodyProperties : BodyProperties) (bodySphere : BodySphere) (body : Body) =
@@ -148,8 +148,8 @@ type [<ReferenceEquality>] AetherPhysicsEngine =
                  AetherPhysicsEngine.toPhysicsDensity bodyProperties.Substance,
                  AetherPhysicsEngine.toPhysicsV2 transform.Translation)
         shape.Tag <-
-            { BodyId = { BodySource = bodySource; BodyId = bodyProperties.BodyId }
-              BodyShapeId = match bodySphere.PropertiesOpt with Some p -> p.BodyShapeId | None -> 0UL }
+            { BodyId = { BodySource = bodySource; BodyIndex = bodyProperties.BodyIndex }
+              ShapeIndex = match bodySphere.PropertiesOpt with Some p -> p.ShapeIndex | None -> 0UL }
         AetherPhysicsEngine.configureBodyShapeProperties bodyProperties bodySphere.PropertiesOpt shape
 
     static member private attachBodyCapsule bodySource (bodyProperties : BodyProperties) (bodyCapsule : BodyCapsule) (body : Body) =
@@ -168,8 +168,8 @@ type [<ReferenceEquality>] AetherPhysicsEngine =
         bodyShapes.Add bodyShapeBottom
         for bodyShape in bodyShapes do
             bodyShape.Tag <-
-                { BodyId = { BodySource = bodySource; BodyId = bodyProperties.BodyId }
-                  BodyShapeId = match bodyCapsule.PropertiesOpt with Some p -> p.BodyShapeId | None -> 0UL }
+                { BodyId = { BodySource = bodySource; BodyIndex = bodyProperties.BodyIndex }
+                  ShapeIndex = match bodyCapsule.PropertiesOpt with Some p -> p.ShapeIndex | None -> 0UL }
             AetherPhysicsEngine.configureBodyShapeProperties bodyProperties bodyCapsule.PropertiesOpt bodyShape |> ignore
         Array.ofSeq bodyShapes
 
@@ -198,8 +198,8 @@ type [<ReferenceEquality>] AetherPhysicsEngine =
         bodyShapes.Add bodyShapeBottomRight
         for bodyShape in bodyShapes do
             bodyShape.Tag <-
-                { BodyId = { BodySource = bodySource; BodyId = bodyProperties.BodyId }
-                  BodyShapeId = match bodyBoxRounded.PropertiesOpt with Some p -> p.BodyShapeId | None -> 0UL }
+                { BodyId = { BodySource = bodySource; BodyIndex = bodyProperties.BodyIndex }
+                  ShapeIndex = match bodyBoxRounded.PropertiesOpt with Some p -> p.ShapeIndex | None -> 0UL }
             AetherPhysicsEngine.configureBodyShapeProperties bodyProperties bodyBoxRounded.PropertiesOpt bodyShape |> ignore
         Array.ofSeq bodyShapes
 
@@ -213,8 +213,8 @@ type [<ReferenceEquality>] AetherPhysicsEngine =
                 (Common.Vertices vertices,
                  AetherPhysicsEngine.toPhysicsDensity bodyProperties.Substance)
         bodyShape.Tag <-
-            { BodyId = { BodySource = bodySource; BodyId = bodyProperties.BodyId }
-              BodyShapeId = match bodyConvexHull.PropertiesOpt with Some p -> p.BodyShapeId | None -> 0UL }
+            { BodyId = { BodySource = bodySource; BodyIndex = bodyProperties.BodyIndex }
+              ShapeIndex = match bodyConvexHull.PropertiesOpt with Some p -> p.ShapeIndex | None -> 0UL }
         AetherPhysicsEngine.configureBodyShapeProperties bodyProperties bodyConvexHull.PropertiesOpt bodyShape
 
     static member private attachBodyShapes bodySource bodyProperties bodyShapes (body : Body) =
@@ -257,7 +257,7 @@ type [<ReferenceEquality>] AetherPhysicsEngine =
         body.add_OnSeparation (fun fixture fixture2 _ -> AetherPhysicsEngine.handleSeparation physicsEngine fixture fixture2)
 
         // attempt to add the body
-        let bodyId = { BodySource = createBodyMessage.BodyId.BodySource; BodyId = bodyProperties.BodyId }
+        let bodyId = { BodySource = createBodyMessage.BodyId.BodySource; BodyIndex = bodyProperties.BodyIndex }
         if not (physicsEngine.Bodies.TryAdd (bodyId, (bodyProperties.GravityOverrideOpt, body))) then
             Log.debug ("Could not add body for '" + scstring bodyId + "'.")
 
@@ -265,7 +265,7 @@ type [<ReferenceEquality>] AetherPhysicsEngine =
         List.iter
             (fun (bodyProperties : BodyProperties) ->
                 let createBodyMessage =
-                    { BodyId = { BodySource = createBodiesMessage.BodySource; BodyId = bodyProperties.BodyId }
+                    { BodyId = { BodySource = createBodiesMessage.BodySource; BodyIndex = bodyProperties.BodyIndex }
                       BodyProperties = bodyProperties }
                 AetherPhysicsEngine.createBody createBodyMessage physicsEngine)
             createBodiesMessage.BodiesProperties
@@ -302,7 +302,7 @@ type [<ReferenceEquality>] AetherPhysicsEngine =
         List.iter
             (fun (jointProperties : JointProperties) ->
                 let createJointMessage =
-                    { JointId = { JointSource = createJointsMessage.JointsSource; JointId = jointProperties.JointId }
+                    { JointId = { JointSource = createJointsMessage.JointsSource; JointIndex = jointProperties.JointIndex }
                       JointProperties = jointProperties }
                 AetherPhysicsEngine.createJoint createJointMessage physicsEngine)
             createJointsMessage.JointsProperties
@@ -411,7 +411,7 @@ type [<ReferenceEquality>] AetherPhysicsEngine =
             if body.Awake && body.BodyType <> Dynamics.BodyType.Static then
                 let bodyTransformMessage =
                     BodyTransformMessage
-                        { BodyId = body.Tag :?> PhysicsId
+                        { BodyId = body.Tag :?> BodyId
                           Center = AetherPhysicsEngine.toPixelV3 body.Position
                           Rotation = (v3 0.0f 0.0f -body.Rotation).RollPitchYaw
                           LinearVelocity = AetherPhysicsEngine.toPixelV3 body.LinearVelocity
@@ -432,7 +432,7 @@ type [<ReferenceEquality>] AetherPhysicsEngine =
         let config = if imperative then Imperative else Functional
         let physicsEngine =
             { PhysicsContext = World (AetherPhysicsEngine.toPhysicsV2 gravity)
-              Bodies = AetherBodyDictionary (HashIdentity.FromFunctions PhysicsId.hash PhysicsId.equals)
+              Bodies = AetherBodyDictionary (HashIdentity.FromFunctions BodyId.hash BodyId.equals)
               Joints = AetherJointDictionary HashIdentity.Structural
               PhysicsMessages = UList.makeEmpty config
               IntegrationMessages = List ()
