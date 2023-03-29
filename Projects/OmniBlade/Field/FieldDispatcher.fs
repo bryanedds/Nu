@@ -72,19 +72,20 @@ module FieldDispatcher =
     type FieldDispatcher () =
         inherit ScreenDispatcher<Field, FieldMessage, FieldCommand> (Field.empty)
 
-        static let isIntersectedProp collider collidee (avatar : Avatar) world =
+        static let isIntersectedProp (collider : BodyShapeId) (collidee : BodyShapeId) (avatar : Avatar) world =
+            let collideeEntity = collidee.BodyId.BodySource :?> Entity
             if (collider.BodyShapeId = avatar.CoreShapeId &&
-                collidee.Entity.Exists world &&
-                collidee.Entity.Is<PropDispatcher> world &&
-                match (collidee.Entity.GetPropPlus world).Prop.PropData with
+                collideeEntity.Exists world &&
+                collideeEntity.Is<PropDispatcher> world &&
+                match (collideeEntity.GetPropPlus world).Prop.PropData with
                 | Portal _ -> true
                 | Sensor _ -> true
                 | _ -> false) then
                 true
             elif (collider.BodyShapeId = avatar.SensorShapeId &&
-                  collidee.Entity.Exists world &&
-                  collidee.Entity.Is<PropDispatcher> world &&
-                  match (collidee.Entity.GetPropPlus world).Prop.PropData with
+                  collideeEntity.Exists world &&
+                  collideeEntity.Is<PropDispatcher> world &&
+                  match (collideeEntity.GetPropPlus world).Prop.PropData with
                   | Portal _ -> false
                   | Sensor _ -> false
                   | _ -> true) then
@@ -368,9 +369,9 @@ module FieldDispatcher =
 
                 // add collided body shape
                 let field =
-                    if isIntersectedProp collision.BodyCollider collision.BodyCollidee field.Avatar world then
-                        let field = Field.updateAvatarCollidedPropIds (List.cons (collision.BodyCollidee.Entity.GetPropPlus world).Prop.PropId) field
-                        let field = Field.updateAvatarIntersectedPropIds (List.cons (collision.BodyCollidee.Entity.GetPropPlus world).Prop.PropId) field
+                    if isIntersectedProp collision.BodyShapeCollider collision.BodyShapeCollidee field.Avatar world then
+                        let field = Field.updateAvatarCollidedPropIds (List.cons ((collision.BodyShapeCollidee.BodyId.BodySource :?> Entity).GetPropPlus world).Prop.PropId) field
+                        let field = Field.updateAvatarIntersectedPropIds (List.cons ((collision.BodyShapeCollidee.BodyId.BodySource :?> Entity).GetPropPlus world).Prop.PropId) field
                         field
                     else field
                 just field
@@ -378,7 +379,7 @@ module FieldDispatcher =
             | AvatarBodySeparationImplicit separation ->
 
                 // add separated body shape
-                match separation.BodySourceSimulant with
+                match separation.BodyId.BodySource with
                 | :? Entity as entity when entity.Is<PropDispatcher> world ->
                     let propId = (entity.GetPropPlus world).Prop.PropId
                     let (separatedPropIds, intersectedPropIds) = List.split ((=) propId) field.AvatarIntersectedPropIds
@@ -391,9 +392,9 @@ module FieldDispatcher =
 
                 // add separated body shape
                 let field =
-                    if isIntersectedProp separation.BodySeparator separation.BodySeparatee field.Avatar world then
-                        let field = Field.updateAvatarSeparatedPropIds (List.cons (separation.BodySeparatee.Entity.GetPropPlus world).Prop.PropId) field
-                        let field = Field.updateAvatarIntersectedPropIds (List.remove ((=) (separation.BodySeparatee.Entity.GetPropPlus world).Prop.PropId)) field
+                    if isIntersectedProp separation.BodyShapeSeparator separation.BodyShapeSeparatee field.Avatar world then
+                        let field = Field.updateAvatarSeparatedPropIds (List.cons ((separation.BodyShapeSeparatee.BodyId.BodySource :?> Entity).GetPropPlus world).Prop.PropId) field
+                        let field = Field.updateAvatarIntersectedPropIds (List.remove ((=) ((separation.BodyShapeSeparatee.BodyId.BodySource :?> Entity).GetPropPlus world).Prop.PropId)) field
                         field
                     else field
                 just field

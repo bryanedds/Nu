@@ -823,7 +823,7 @@ module RigidBodyFacetModule =
              define Entity.Bullet false
              define Entity.Sensor false
              define Entity.ModelDriven false
-             computed Entity.PhysicsId (fun (entity : Entity) world -> { SourceId = entity.GetId world; CorrelationId = 0UL }) None]
+             computed Entity.PhysicsId (fun (entity : Entity) _ -> { BodySource = entity; BodyId = 0UL }) None]
 
         override this.Register (entity, world) =
             let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.Position)) entity world
@@ -856,7 +856,7 @@ module RigidBodyFacetModule =
         override this.RegisterPhysics (entity, world) =
             let mutable transform = entity.GetTransform world
             let bodyProperties =
-                { BodyId = (entity.GetPhysicsId world).CorrelationId
+                { BodyId = (entity.GetPhysicsId world).BodyId
                   Center = transform.Center
                   Rotation = transform.Rotation
                   BodyShape = getBodyShape entity world
@@ -878,39 +878,10 @@ module RigidBodyFacetModule =
                   CollisionMask = Physics.categorizeCollisionMask (entity.GetCollisionMask world)
                   Bullet = entity.GetBullet world
                   Sensor = entity.GetSensor world }
-            World.createBody entity (entity.GetId world) bodyProperties world
+            World.createBody (entity.GetIs2d world) (entity.GetPhysicsId world) bodyProperties world
 
         override this.UnregisterPhysics (entity, world) =
-            World.destroyBody entity (entity.GetPhysicsId world) world
-
-[<AutoOpen>]
-module JointFacetModule =
-
-    type Entity with
-        member this.GetJointDevice world : JointDevice = this.Get (nameof this.JointDevice) world
-        member this.SetJointDevice (value : JointDevice) world = this.Set (nameof this.JointDevice) value world
-        member this.JointDevice = lens (nameof this.JointDevice) this this.GetJointDevice this.SetJointDevice
-
-    type JointFacet () =
-        inherit Facet (true)
-
-        static member Properties =
-            [define Entity.JointDevice JointEmpty
-             computed Entity.PhysicsId (fun (entity : Entity) world -> { SourceId = entity.GetId world; CorrelationId = 0UL }) None]
-
-        override this.Register (entity, world) =
-            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.Transform)) entity world
-            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.JointDevice)) entity world
-            world
-
-        override this.RegisterPhysics (entity, world) =
-            let jointProperties =
-                { JointId = (entity.GetPhysicsId world).CorrelationId
-                  JointDevice = (entity.GetJointDevice world) }
-            World.createJoint entity (entity.GetId world) jointProperties world
-
-        override this.UnregisterPhysics (entity, world) =
-            World.destroyJoint entity (entity.GetPhysicsId world) world
+            World.destroyBody (entity.GetIs2d world) (entity.GetPhysicsId world) world
 
 [<AutoOpen>]
 module TileMapFacetModule =
@@ -945,7 +916,7 @@ module TileMapFacetModule =
              define Entity.TileIndexOffset 0
              define Entity.TileIndexOffsetRange (0, 0)
              define Entity.TileMap Assets.Default.TileMap
-             computed Entity.PhysicsId (fun (entity : Entity) world -> { SourceId = entity.GetId world; CorrelationId = 0UL }) None]
+             computed Entity.PhysicsId (fun (entity : Entity) _ -> { BodySource = entity; BodyId = 0UL }) None]
 
         override this.Register (entity, world) =
             let world = entity.SetSize (entity.GetQuickSize world) world
@@ -982,13 +953,13 @@ module TileMapFacetModule =
                         (entity.GetRestitution world)
                         (entity.GetCollisionCategories world)
                         (entity.GetCollisionMask world)
-                        (entity.GetPhysicsId world).CorrelationId
+                        (entity.GetPhysicsId world).BodyId
                         tileMapDescriptor
-                World.createBody entity (entity.GetId world) bodyProperties world
+                World.createBody (entity.GetIs2d world) (entity.GetPhysicsId world) bodyProperties world
             | None -> world
 
         override this.UnregisterPhysics (entity, world) =
-            World.destroyBody entity (entity.GetPhysicsId world) world
+            World.destroyBody (entity.GetIs2d world) (entity.GetPhysicsId world) world
 
         override this.Render (entity, world) =
             let tileMapAsset = entity.GetTileMap world
@@ -1043,7 +1014,7 @@ module TmxMapFacetModule =
              define Entity.TileIndexOffset 0
              define Entity.TileIndexOffsetRange (0, 0)
              define Entity.TmxMap (TmxMap.makeDefault ())
-             computed Entity.PhysicsId (fun (entity : Entity) world -> { SourceId = entity.GetId world; CorrelationId = 0UL }) None]
+             computed Entity.PhysicsId (fun (entity : Entity) _ -> { BodySource = entity; BodyId = 0UL }) None]
 
         override this.Register (entity, world) =
             let world = entity.SetSize (entity.GetQuickSize world) world
@@ -1079,12 +1050,12 @@ module TmxMapFacetModule =
                     (entity.GetRestitution world)
                     (entity.GetCollisionCategories world)
                     (entity.GetCollisionMask world)
-                    (entity.GetPhysicsId world).CorrelationId
+                    (entity.GetPhysicsId world).BodyId
                     tmxMapDescriptor
-            World.createBody entity (entity.GetId world) bodyProperties world
+            World.createBody (entity.GetIs2d world) (entity.GetPhysicsId world) bodyProperties world
 
         override this.UnregisterPhysics (entity, world) =
-            World.destroyBody entity (entity.GetPhysicsId world) world
+            World.destroyBody (entity.GetIs2d world) (entity.GetPhysicsId world) world
 
         override this.Render (entity, world) =
             let mutable transform = entity.GetTransform world

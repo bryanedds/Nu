@@ -7,27 +7,21 @@ open System.Numerics
 open Prime
 open Nu
 
-/// Identifies a target whose body can be found in the physics engine.
+/// Identifies a body that can be found in a physics engine.
+/// NOTE: It would be more accurate to name this BodyId, but it may be too late to make such a large change.
 type [<CustomEquality; NoComparison>] PhysicsId =
-    { SourceId : uint64
-      CorrelationId : uint64 }
-
-    /// The invalid physics id.
-    static member invalid =
-        { SourceId = 0UL; CorrelationId = 0UL }
+    { BodySource : Simulant
+      BodyId : uint64 }
 
     /// Hash a PhysicsId.
     static member hash pid =
-        pid.SourceId.GetHashCode () ^^^ pid.CorrelationId.GetHashCode ()
+        pid.BodySource.SimulantAddress.GetHashCode () ^^^
+        pid.BodyId.GetHashCode ()
 
     /// Equate PhysicsIds.
     static member equals pid pid2 =
-        pid.SourceId.Equals pid2.SourceId &&
-        pid.CorrelationId.Equals pid2.CorrelationId
-
-    /// Make a PhysicsId for an external source.
-    static member make sourceId =
-        { SourceId = sourceId; CorrelationId = Gen.id64 }
+        Address.equals pid.BodySource.SimulantAddress pid2.BodySource.SimulantAddress &&
+        pid.BodyId = pid2.BodyId
 
     interface PhysicsId IEquatable with
         member this.Equals that =
@@ -41,16 +35,15 @@ type [<CustomEquality; NoComparison>] PhysicsId =
     override this.GetHashCode () =
         PhysicsId.hash this
 
-/// Store origination information about a simulant physics body.
-type BodySourceInternal =
-    { Simulant : Simulant
-      BodyId : uint64 }
+/// Identified a body shape in a physics engine.
+and BodyShapeId =
+    { BodyId : PhysicsId
+      BodyShapeId : uint64 }
 
-/// Store origination information about a simulant physics shape body.
-type BodyShapeSourceInternal =
-    { Simulant : Simulant
-      BodyId : uint64
-      ShapeId : uint64 }
+/// Identified a joint in a physics engine.
+and JointId =
+    { JointSource : Simulant
+      JointId : uint64 }
 
 /// Describes body shape-specific properties.
 type BodyShapeProperties =
@@ -284,109 +277,101 @@ module JointProperties =
 
 /// A message to the physics system to create a body.
 type CreateBodyMessage =
-    { SourceSimulant : Simulant
-      SourceId : uint64
+    { BodyId : PhysicsId
       BodyProperties : BodyProperties }
 
 /// A message to the physics system to create multiple bodies.
 type CreateBodiesMessage =
-    { SourceSimulant : Simulant
-      SourceId : uint64
+    { BodySource : Simulant
       BodiesProperties : BodyProperties list }
 
 /// A message to the physics system to destroy a body.
 type DestroyBodyMessage =
-    { SourceSimulant : Simulant
-      PhysicsId : PhysicsId }
+    { BodyId : PhysicsId }
 
 /// A message to the physics system to destroy multiple bodies.
 type DestroyBodiesMessage =
-    { SourceSimulant : Simulant
-      PhysicsIds : PhysicsId list }
+    { BodyIds : PhysicsId list }
 
 /// A message to the physics system to create a joint.
 type CreateJointMessage =
-    { SourceSimulant : Simulant
-      SourceId : uint64
+    { JointId : JointId
       JointProperties : JointProperties }
 
 /// A message to the physics system to create multiple joints.
 type CreateJointsMessage =
-    { SourceSimulant : Simulant
-      SourceId : uint64
+    { JointsSource : Simulant
       JointsProperties : JointProperties list }
 
 /// A message to the physics system to destroy a joint.
 type DestroyJointMessage =
-    { SourceSimulant : Simulant
-      PhysicsId : PhysicsId }
+    { JointId : JointId }
 
 /// A message to the physics system to destroy multiple joints.
 type DestroyJointsMessage =
-    { SourceSimulant : Simulant
-      PhysicsIds : PhysicsId list }
+    { JointIds : JointId list }
 
 /// A message to the physics system to destroy a body.
 type SetBodyEnabledMessage =
-    { PhysicsId : PhysicsId
+    { BodyId : PhysicsId
       Enabled : bool }
 
 /// A message to the physics system to destroy a body.
 type SetBodyCenterMessage =
-    { PhysicsId : PhysicsId
+    { BodyId : PhysicsId
       Center : Vector3 }
 
 /// A message to the physics system to set the rotation of a body.
 type SetBodyRotationMessage =
-    { PhysicsId : PhysicsId
+    { BodyId : PhysicsId
       Rotation : Quaternion }
 
 /// A message to the physics system to set the linear velocity of a body.
 type SetBodyLinearVelocityMessage =
-    { PhysicsId : PhysicsId
+    { BodyId : PhysicsId
       LinearVelocity : Vector3 }
 
 /// A message to the physics system to apply a linear impulse to a body.
 type ApplyBodyLinearImpulseMessage =
-    { PhysicsId : PhysicsId
+    { BodyId : PhysicsId
       LinearImpulse : Vector3
       Offset : Vector3 }
 
 /// A message to the physics system to set the angular velocity of a body.
 type SetBodyAngularVelocityMessage =
-    { PhysicsId : PhysicsId
+    { BodyId : PhysicsId
       AngularVelocity : Vector3 }
 
 /// A message to the physics system to apply an angular impulse to a body.
 type ApplyBodyAngularImpulseMessage =
-    { PhysicsId : PhysicsId
+    { BodyId : PhysicsId
       AngularImpulse : Vector3 }
 
 /// A message to the physics system to apply a force to a body.
 type ApplyBodyForceMessage =
-    { PhysicsId : PhysicsId
+    { BodyId : PhysicsId
       Force : Vector3
       Offset : Vector3 }
 
 /// A message to the physics system to apply torque to a body.
 type ApplyBodyTorqueMessage =
-    { PhysicsId : PhysicsId
+    { BodyId : PhysicsId
       Torque : Vector3 }
 
 /// A message from the physics system describing a body collision that took place.
 type BodyCollisionMessage =
-    { BodyShapeSource : BodyShapeSourceInternal
-      BodyShapeSource2 : BodyShapeSourceInternal
+    { BodyShapeSource : BodyShapeId
+      BodyShapeSource2 : BodyShapeId
       Normal : Vector3 }
 
 /// A message from the physics system describing a body separation that took place.
 type BodySeparationMessage =
-    { BodyShapeSource : BodyShapeSourceInternal
-      BodyShapeSource2 : BodyShapeSourceInternal }
+    { BodyShapeSource : BodyShapeId
+      BodyShapeSource2 : BodyShapeId }
 
 /// A message from the physics system describing the updated transform of a body.
 type BodyTransformMessage =
-    { BodySource : BodySourceInternal
+    { BodyId : PhysicsId
       Center : Vector3
       Rotation : Quaternion
       LinearVelocity : Vector3
