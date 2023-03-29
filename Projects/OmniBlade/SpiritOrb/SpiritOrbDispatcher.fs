@@ -16,7 +16,7 @@ module SpiritOrbDispatcher =
         | PortalInhabitant of Portal
         | SpiritInhabitant of Spirit
 
-    type SpiritOrb =
+    type [<ReferenceEquality>] SpiritOrb =
         { AvatarLowerCenter : Vector3
           ShowUnopenedChests : bool
           Chests : Chest array
