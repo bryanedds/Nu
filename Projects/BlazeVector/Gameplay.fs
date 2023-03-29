@@ -71,12 +71,11 @@ module Enemy =
             let enemy = evt.Subscriber : Entity
             let world =
                 if World.getAdvancing world then
-                    let collidee = evt.Data.BodyCollidee.Entity
-                    let bullet = collidee.Is<BulletDispatcher> world
-                    if bullet then
+                    match evt.Data.BodyShapeCollidee.BodyId.BodySource with
+                    | :? Entity as collidee when collidee.Is<BulletDispatcher> world ->
                         let world = World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.HitSound world
                         enemy.SetHealth (enemy.GetHealth world - 1) world
-                    else world
+                    | _ -> world
                 else world
             (Cascade, world)
 

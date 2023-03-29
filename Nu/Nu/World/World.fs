@@ -103,6 +103,20 @@ module Nu =
     #endif
                             World.updateEntityPublishPostUpdateFlag entity world |> snd'
 #endif
+                        // TODO: finish implementing collision event check elision.
+                        //| "BodyCollision" | "BodySeparationExplicit" ->
+                        //    let hasSubscription =
+                        //        subscribing ||
+                        //        match (World.getSubscriptions world).TryGetValue eventAddress with
+                        //        | (true, subscriptions) -> OMap.notEmpty subscriptions
+                        //        | (false, _) -> false
+                        //    let physicsIdOpt =
+                        //        match entity.TryGetProperty "PhysicsId" world with
+                        //        | Some property when property.PropertyType = typeof<PhysicsId> -> Some property.PropertyValue
+                        //        | _ -> None
+                        //    match (physicsIdOpt, hasSubscription) then
+                        //    | 
+                        //    world
                         | _ -> world
                     else world
                 let world =
@@ -416,7 +430,6 @@ module WorldModule3 =
                  BasicEmitterFacet2d () :> Facet
                  EffectFacet2d () :> Facet
                  RigidBodyFacet () :> Facet
-                 JointFacet () :> Facet
                  TileMapFacet () :> Facet
                  TmxMapFacet () :> Facet
                  LayoutFacet () :> Facet

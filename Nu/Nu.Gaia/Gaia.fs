@@ -1528,7 +1528,8 @@ module Gaia =
                                 | (_, _, _) -> entity.GetPosition world + entityPositionDelta
                             entity.SetPosition entityPositionConstrained world
                     let world =
-                        if entity.Has<RigidBodyFacet> world then
+                        if  Option.isSome (entity.TryGetProperty "LinearVelocity" world) &&
+                            Option.isSome (entity.TryGetProperty "AngularVelocity" world) then
                             let world = entity.SetLinearVelocity v3Zero world
                             let world = entity.SetAngularVelocity v3Zero world
                             world
@@ -1572,7 +1573,8 @@ module Gaia =
                                     | (_, _, _) -> entity.GetPosition world + entityPositionDelta
                                 entity.SetPosition entityPositionConstrained world
                         let world =
-                            if entity.Has<RigidBodyFacet> world then
+                            if  Option.isSome (entity.TryGetProperty "LinearVelocity" world) &&
+                                Option.isSome (entity.TryGetProperty "AngularVelocity" world) then
                                 let world = entity.SetLinearVelocity v3Zero world
                                 let world = entity.SetAngularVelocity v3Zero world
                                 world

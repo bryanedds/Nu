@@ -41,27 +41,26 @@ module WorldPhysics =
             let world =
                 match message with
                 | CreateBodyMessage message ->
-                    let physicsId = { SourceId = message.SourceId; CorrelationId = message.BodyProperties.BodyId }
                     let eventTrace = EventTrace.debug "World" "enqueuePhysicsMessage2d" "" EventTrace.empty
-                    World.publish physicsId Events.BodyAdding eventTrace Simulants.Game world
+                    World.publish message.BodyId Events.BodyAdding eventTrace Simulants.Game world
                 | CreateBodiesMessage message ->
                     let eventTrace = EventTrace.debug "World" "enqueuePhysicsMessage2d" "" EventTrace.empty
                     List.fold (fun world (bodyProperties : BodyProperties) ->
-                        let physicsId = { SourceId = message.SourceId; CorrelationId = bodyProperties.BodyId }
-                        World.publish physicsId Events.BodyAdding eventTrace Simulants.Game world)
+                        let bodyId = { BodySource = message.BodySource; BodyId = bodyProperties.BodyId }
+                        World.publish bodyId Events.BodyAdding eventTrace Simulants.Game world)
                         world message.BodiesProperties
                 | DestroyBodyMessage message ->
                     let eventTrace = EventTrace.debug "World" "enqueuePhysicsMessage2d" "" EventTrace.empty
-                    let world = World.publish { BodySourceSimulant = message.SourceSimulant; BodyPhysicsId = message.PhysicsId } Events.BodySeparationImplicit eventTrace Simulants.Game world
-                    let world = World.publish message.PhysicsId Events.BodyRemoving eventTrace Simulants.Game world
+                    let world = World.publish { BodyId = message.BodyId } Events.BodySeparationImplicit eventTrace Simulants.Game world
+                    let world = World.publish message.BodyId Events.BodyRemoving eventTrace Simulants.Game world
                     world
                 | DestroyBodiesMessage message ->
                     let eventTrace = EventTrace.debug "World" "enqueuePhysicsMessage2d" "" EventTrace.empty
-                    List.fold (fun world (physicsId : PhysicsId) ->
-                        let world = World.publish { BodySourceSimulant = message.SourceSimulant; BodyPhysicsId = physicsId } Events.BodySeparationImplicit eventTrace Simulants.Game world
-                        let world = World.publish physicsId Events.BodyRemoving eventTrace Simulants.Game world
+                    List.fold (fun world (bodyId : PhysicsId) ->
+                        let world = World.publish { BodyId = bodyId } Events.BodySeparationImplicit eventTrace Simulants.Game world
+                        let world = World.publish bodyId Events.BodyRemoving eventTrace Simulants.Game world
                         world)
-                        world message.PhysicsIds
+                        world message.BodyIds
                 | _ -> world
             World.updatePhysicsEngine2d (fun physicsEngine -> physicsEngine.EnqueueMessage message) world
 
@@ -74,27 +73,26 @@ module WorldPhysics =
             let world =
                 match message with
                 | CreateBodyMessage message ->
-                    let physicsId = { SourceId = message.SourceId; CorrelationId = message.BodyProperties.BodyId }
                     let eventTrace = EventTrace.debug "World" "enqueuePhysicsMessage3d" "" EventTrace.empty
-                    World.publish physicsId Events.BodyAdding eventTrace Simulants.Game world
+                    World.publish message.BodyId Events.BodyAdding eventTrace Simulants.Game world
                 | CreateBodiesMessage message ->
                     let eventTrace = EventTrace.debug "World" "enqueuePhysicsMessage3d" "" EventTrace.empty
                     List.fold (fun world (bodyProperties : BodyProperties) ->
-                        let physicsId = { SourceId = message.SourceId; CorrelationId = bodyProperties.BodyId }
-                        World.publish physicsId Events.BodyAdding eventTrace Simulants.Game world)
+                        let bodyId = { BodySource = message.BodySource; BodyId = bodyProperties.BodyId }
+                        World.publish bodyId Events.BodyAdding eventTrace Simulants.Game world)
                         world message.BodiesProperties
                 | DestroyBodyMessage message ->
                     let eventTrace = EventTrace.debug "World" "enqueuePhysicsMessage3d" "" EventTrace.empty
-                    let world = World.publish { BodySourceSimulant = message.SourceSimulant; BodyPhysicsId = message.PhysicsId } Events.BodySeparationImplicit eventTrace Simulants.Game world
-                    let world = World.publish message.PhysicsId Events.BodyRemoving eventTrace Simulants.Game world
+                    let world = World.publish { BodyId = message.BodyId } Events.BodySeparationImplicit eventTrace Simulants.Game world
+                    let world = World.publish message.BodyId Events.BodyRemoving eventTrace Simulants.Game world
                     world
                 | DestroyBodiesMessage message ->
                     let eventTrace = EventTrace.debug "World" "enqueuePhysicsMessage3d" "" EventTrace.empty
-                    List.fold (fun world (physicsId : PhysicsId) ->
-                        let world = World.publish { BodySourceSimulant = message.SourceSimulant; BodyPhysicsId = physicsId } Events.BodySeparationImplicit eventTrace Simulants.Game world
-                        let world = World.publish physicsId Events.BodyRemoving eventTrace Simulants.Game world
+                    List.fold (fun world (bodyId : PhysicsId) ->
+                        let world = World.publish { BodyId = bodyId } Events.BodySeparationImplicit eventTrace Simulants.Game world
+                        let world = World.publish bodyId Events.BodyRemoving eventTrace Simulants.Game world
                         world)
-                        world message.PhysicsIds
+                        world message.BodyIds
                 | _ -> world
             World.updatePhysicsEngine3d (fun physicsEngine -> physicsEngine.EnqueueMessage message) world
 
@@ -164,154 +162,136 @@ module WorldPhysics =
 
         /// Send a physics message to create a physics body.
         [<FunctionBinding>]
-        static member createBody (entity : Entity) entityId (bodyProperties : BodyProperties) world =
-            let createBodyMessage = CreateBodyMessage { SourceSimulant = entity; SourceId = entityId; BodyProperties = bodyProperties }
-            if entity.GetIs3d world
+        static member createBody is2d bodyId (bodyProperties : BodyProperties) world =
+            let createBodyMessage = CreateBodyMessage { BodyId = bodyId; BodyProperties = bodyProperties }
+            if not is2d
             then World.enqueuePhysicsMessage3d createBodyMessage world
             else World.enqueuePhysicsMessage2d createBodyMessage world
 
         /// Send a physics message to create several physics bodies.
         [<FunctionBinding>]
-        static member createBodies (entity : Entity) entityId bodiesProperties world =
-            let createBodiesMessage = CreateBodiesMessage { SourceSimulant = entity; SourceId = entityId; BodiesProperties = bodiesProperties }
-            if entity.GetIs3d world
+        static member createBodies is2d bodySource bodiesProperties world =
+            let createBodiesMessage = CreateBodiesMessage { BodySource = bodySource; BodiesProperties = bodiesProperties }
+            if not is2d
             then World.enqueuePhysicsMessage3d createBodiesMessage world
             else World.enqueuePhysicsMessage2d createBodiesMessage world
 
         /// Send a physics message to destroy a physics body.
         [<FunctionBinding>]
-        static member destroyBody (entity : Entity) physicsId world =
-            let destroyBodyMessage = DestroyBodyMessage { SourceSimulant = entity; PhysicsId = physicsId }
-            if entity.GetIs3d world
+        static member destroyBody is2d bodyId world =
+            let destroyBodyMessage = DestroyBodyMessage { BodyId = bodyId }
+            if not is2d
             then World.enqueuePhysicsMessage3d destroyBodyMessage world
             else World.enqueuePhysicsMessage2d destroyBodyMessage world
 
         /// Send a physics message to destroy several physics bodies.
         [<FunctionBinding>]
-        static member destroyBodies (entity : Entity) physicsIds world =
-            let destroyBodiesMessage = DestroyBodiesMessage { SourceSimulant = entity; PhysicsIds = physicsIds }
-            if entity.GetIs3d world
+        static member destroyBodies is2d bodyIds world =
+            let destroyBodiesMessage = DestroyBodiesMessage { BodyIds = bodyIds }
+            if not is2d
             then World.enqueuePhysicsMessage3d destroyBodiesMessage world
             else World.enqueuePhysicsMessage2d destroyBodiesMessage world
 
         /// Send a physics message to create a physics joint.
         [<FunctionBinding>]
-        static member createJoint (entity : Entity) entityId jointProperties world =
-            let createJointMessage = CreateJointMessage { SourceSimulant = entity; SourceId = entityId; JointProperties = jointProperties }
-            if entity.GetIs3d world
+        static member createJoint is2d jointId jointProperties world =
+            let createJointMessage = CreateJointMessage { JointId = jointId; JointProperties = jointProperties }
+            if not is2d
             then World.enqueuePhysicsMessage3d createJointMessage world
             else World.enqueuePhysicsMessage2d createJointMessage world
 
         /// Send a physics message to create physics joints.
         [<FunctionBinding>]
-        static member createJoints (entity : Entity) entityId jointsProperties world =
-            let createJointsMessage = CreateJointsMessage { SourceSimulant = entity; SourceId = entityId; JointsProperties = jointsProperties }
-            if entity.GetIs3d world
+        static member createJoints is2d jointSource jointsProperties world =
+            let createJointsMessage = CreateJointsMessage { JointsSource = jointSource; JointsProperties = jointsProperties }
+            if not is2d
             then World.enqueuePhysicsMessage3d createJointsMessage world
             else World.enqueuePhysicsMessage2d createJointsMessage world
 
         /// Send a physics message to destroy a physics joint.
         [<FunctionBinding>]
-        static member destroyJoint (entity : Entity) physicsId world =
-            let destroyJointMessage = DestroyJointMessage { SourceSimulant = entity; PhysicsId = physicsId }
-            if entity.GetIs3d world
+        static member destroyJoint is2d jointId world =
+            let destroyJointMessage = DestroyJointMessage { JointId = jointId }
+            if not is2d
             then World.enqueuePhysicsMessage3d destroyJointMessage world
             else World.enqueuePhysicsMessage2d destroyJointMessage world
 
         /// Send a physics message to destroy physics joints.
         [<FunctionBinding>]
-        static member destroyJoints (entity : Entity) physicsIds world =
-            let destroyJointsMessage = DestroyJointsMessage { SourceSimulant = entity; PhysicsIds = physicsIds }
-            if entity.GetIs3d world
+        static member destroyJoints is2d jointIds world =
+            let destroyJointsMessage = DestroyJointsMessage { JointIds = jointIds }
+            if not is2d
             then World.enqueuePhysicsMessage3d destroyJointsMessage world
             else World.enqueuePhysicsMessage2d destroyJointsMessage world
 
         /// Send a physics message to set the enabled-ness of a body with the given physics id.
         [<FunctionBinding>]
-        static member setBodyEnabled enabled physicsId world =
-            let setBodyEnabledMessage = SetBodyEnabledMessage { PhysicsId = physicsId; Enabled = enabled }
-            if world.Subsystems.PhysicsEngine3d.BodyExists physicsId then
-                World.enqueuePhysicsMessage3d setBodyEnabledMessage world
-            elif world.Subsystems.PhysicsEngine2d.BodyExists physicsId then
-                World.enqueuePhysicsMessage2d setBodyEnabledMessage world
-            else world
+        static member setBodyEnabled enabled bodyId world =
+            let setBodyEnabledMessage = SetBodyEnabledMessage { BodyId = bodyId; Enabled = enabled }
+            let world = World.enqueuePhysicsMessage3d setBodyEnabledMessage world
+            let world = World.enqueuePhysicsMessage2d setBodyEnabledMessage world
+            world
 
         /// Send a physics message to set the position of a body with the given physics id.
         [<FunctionBinding>]
-        static member setBodyCenter center physicsId world =
-            let setBodyCenterMessage = SetBodyCenterMessage { PhysicsId = physicsId; Center = center }
-            if world.Subsystems.PhysicsEngine3d.BodyExists physicsId then
-                World.enqueuePhysicsMessage3d setBodyCenterMessage world
-            elif world.Subsystems.PhysicsEngine2d.BodyExists physicsId then
-                World.enqueuePhysicsMessage2d setBodyCenterMessage world
-            else world
+        static member setBodyCenter center bodyId world =
+            let setBodyCenterMessage = SetBodyCenterMessage { BodyId = bodyId; Center = center }
+            let world = World.enqueuePhysicsMessage3d setBodyCenterMessage world
+            let world = World.enqueuePhysicsMessage2d setBodyCenterMessage world
+            world
 
         /// Send a physics message to set the rotation of a body with the given physics id.
         [<FunctionBinding>]
-        static member setBodyRotation rotation physicsId world =
-            let setBodyRotationMessage = SetBodyRotationMessage { PhysicsId = physicsId; Rotation = rotation }
-            if world.Subsystems.PhysicsEngine3d.BodyExists physicsId then
-                World.enqueuePhysicsMessage3d setBodyRotationMessage world
-            elif world.Subsystems.PhysicsEngine2d.BodyExists physicsId then
-                World.enqueuePhysicsMessage2d setBodyRotationMessage world
-            else world
+        static member setBodyRotation rotation bodyId world =
+            let setBodyRotationMessage = SetBodyRotationMessage { BodyId = bodyId; Rotation = rotation }
+            let world = World.enqueuePhysicsMessage3d setBodyRotationMessage world
+            let world = World.enqueuePhysicsMessage2d setBodyRotationMessage world
+            world
 
         /// Send a physics message to set the linear velocity of a body with the given physics id.
         [<FunctionBinding>]
-        static member setBodyLinearVelocity linearVelocity physicsId world =
-            let setBodyLinearVelocityMessage = SetBodyLinearVelocityMessage { PhysicsId = physicsId; LinearVelocity = linearVelocity }
-            if world.Subsystems.PhysicsEngine3d.BodyExists physicsId then
-                World.enqueuePhysicsMessage3d setBodyLinearVelocityMessage world
-            elif world.Subsystems.PhysicsEngine2d.BodyExists physicsId then
-                World.enqueuePhysicsMessage2d setBodyLinearVelocityMessage world
-            else world
+        static member setBodyLinearVelocity linearVelocity bodyId world =
+            let setBodyLinearVelocityMessage = SetBodyLinearVelocityMessage { BodyId = bodyId; LinearVelocity = linearVelocity }
+            let world = World.enqueuePhysicsMessage3d setBodyLinearVelocityMessage world
+            let world = World.enqueuePhysicsMessage2d setBodyLinearVelocityMessage world
+            world
 
         /// Send a physics message to apply linear impulse to a body with the given physics id.
         [<FunctionBinding>]
-        static member applyBodyLinearImpulse linearImpulse offset physicsId world =
-            let applyBodyLinearImpulseMessage = ApplyBodyLinearImpulseMessage { PhysicsId = physicsId; LinearImpulse = linearImpulse; Offset = offset }
-            if world.Subsystems.PhysicsEngine3d.BodyExists physicsId then
-                World.enqueuePhysicsMessage3d applyBodyLinearImpulseMessage world
-            elif world.Subsystems.PhysicsEngine2d.BodyExists physicsId then
-                World.enqueuePhysicsMessage2d applyBodyLinearImpulseMessage world
-            else world
+        static member applyBodyLinearImpulse linearImpulse offset bodyId world =
+            let applyBodyLinearImpulseMessage = ApplyBodyLinearImpulseMessage { BodyId = bodyId; LinearImpulse = linearImpulse; Offset = offset }
+            let world = World.enqueuePhysicsMessage3d applyBodyLinearImpulseMessage world
+            let world = World.enqueuePhysicsMessage2d applyBodyLinearImpulseMessage world
+            world
 
         /// Send a physics message to set the angular velocity of a body with the given physics id.
         [<FunctionBinding>]
-        static member setBodyAngularVelocity angularVelocity physicsId world =
-            let setBodyAngularVelocityMessage = SetBodyAngularVelocityMessage { PhysicsId = physicsId; AngularVelocity = angularVelocity }
-            if world.Subsystems.PhysicsEngine3d.BodyExists physicsId then
-                World.enqueuePhysicsMessage3d setBodyAngularVelocityMessage world
-            elif world.Subsystems.PhysicsEngine2d.BodyExists physicsId then
-                World.enqueuePhysicsMessage2d setBodyAngularVelocityMessage world
-            else world
+        static member setBodyAngularVelocity angularVelocity bodyId world =
+            let setBodyAngularVelocityMessage = SetBodyAngularVelocityMessage { BodyId = bodyId; AngularVelocity = angularVelocity }
+            let world = World.enqueuePhysicsMessage3d setBodyAngularVelocityMessage world
+            let world = World.enqueuePhysicsMessage2d setBodyAngularVelocityMessage world
+            world
 
         /// Send a physics message to apply angular impulse to a body with the given physics id.
         [<FunctionBinding>]
-        static member applyBodyAngularImpulse angularImpulse physicsId world =
-            let applyBodyAngularImpulseMessage = ApplyBodyAngularImpulseMessage { PhysicsId = physicsId; AngularImpulse = angularImpulse }
-            if world.Subsystems.PhysicsEngine3d.BodyExists physicsId then
-                World.enqueuePhysicsMessage3d applyBodyAngularImpulseMessage world
-            elif world.Subsystems.PhysicsEngine2d.BodyExists physicsId then
-                World.enqueuePhysicsMessage2d applyBodyAngularImpulseMessage world
-            else world
+        static member applyBodyAngularImpulse angularImpulse bodyId world =
+            let applyBodyAngularImpulseMessage = ApplyBodyAngularImpulseMessage { BodyId = bodyId; AngularImpulse = angularImpulse }
+            let world = World.enqueuePhysicsMessage3d applyBodyAngularImpulseMessage world
+            let world = World.enqueuePhysicsMessage2d applyBodyAngularImpulseMessage world
+            world
 
         /// Send a physics message to apply force to a body with the given physics id.
         [<FunctionBinding>]
-        static member applyBodyForce force offset physicsId world =
-            let applyBodyForceMessage = ApplyBodyForceMessage { PhysicsId = physicsId; Force = force; Offset = offset }
-            if world.Subsystems.PhysicsEngine3d.BodyExists physicsId then
-                World.enqueuePhysicsMessage3d applyBodyForceMessage world
-            elif world.Subsystems.PhysicsEngine2d.BodyExists physicsId then
-                World.enqueuePhysicsMessage2d applyBodyForceMessage world
-            else world
+        static member applyBodyForce force offset bodyId world =
+            let applyBodyForceMessage = ApplyBodyForceMessage { BodyId = bodyId; Force = force; Offset = offset }
+            let world = World.enqueuePhysicsMessage3d applyBodyForceMessage world
+            let world = World.enqueuePhysicsMessage2d applyBodyForceMessage world
+            world
 
         /// Send a physics message to apply torque to a body with the given physics id.
         [<FunctionBinding>]
-        static member applyBodyTorque torque physicsId world =
-            let applyBodyTorqueMessage = ApplyBodyTorqueMessage { PhysicsId = physicsId; Torque = torque }
-            if world.Subsystems.PhysicsEngine3d.BodyExists physicsId then
-                World.enqueuePhysicsMessage3d applyBodyTorqueMessage world
-            elif world.Subsystems.PhysicsEngine2d.BodyExists physicsId then
-                World.enqueuePhysicsMessage2d applyBodyTorqueMessage world
-            else world
+        static member applyBodyTorque torque bodyId world =
+            let applyBodyTorqueMessage = ApplyBodyTorqueMessage { BodyId = bodyId; Torque = torque }
+            let world = World.enqueuePhysicsMessage3d applyBodyTorqueMessage world
+            let world = World.enqueuePhysicsMessage2d applyBodyTorqueMessage world
+            world

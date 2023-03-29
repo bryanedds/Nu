@@ -40,29 +40,28 @@ type IntegrationData =
 
 /// The data of a body transform event.
 type TransformData =
-    { BodySource : BodySource
+    { BodyId : PhysicsId
       Position : Vector3
       Rotation : Quaternion }
 
 /// The data for a collision event.
 type BodyCollisionData =
-    { BodyCollider : BodyShapeSource
-      BodyCollidee : BodyShapeSource
+    { BodyShapeCollider : BodyShapeId
+      BodyShapeCollidee : BodyShapeId
       Normal : Vector3 }
 
 /// The implicit data for a separation event.
 /// Unfortunately, due to the fact that physics system itself does not raise separation events until the following
 /// frame, we need both an implicit and explicit body separation representation and the user MUST handle both!
 type BodySeparationImplicitData =
-    { BodySourceSimulant : Simulant
-      BodyPhysicsId : PhysicsId }
+    { BodyId : PhysicsId }
 
 /// The explicit data for a separation event.
 /// Unfortunately, due to the fact that physics system itself does not raise separation events until the following
 /// frame, we need both an implicit and explicit body separation representation and the user MUST handle both!
 type BodySeparationExplicitData =
-    { BodySeparator : BodyShapeSource
-      BodySeparatee : BodyShapeSource }
+    { BodyShapeSeparator : BodyShapeId
+      BodyShapeSeparatee : BodyShapeId }
 
 /// Tje data for describing a change in transform.
 type BodyTransformData =

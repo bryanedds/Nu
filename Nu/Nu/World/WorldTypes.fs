@@ -60,24 +60,6 @@ module WorldTypes =
     and AmbientChangeData = 
         { OldWorldWithOldState : World }
 
-    /// Store origination information about a simulant physics body.
-    and BodySource =
-        { Entity : Entity
-          BodyId : uint64 }
-        static member internal fromInternal (internal_ : BodySourceInternal) =
-            { Entity = internal_.Simulant :?> Entity
-              BodyId = internal_.BodyId }
-    
-    /// Store origination information about a simulant physics shape body.
-    and BodyShapeSource =
-        { Entity : Entity
-          BodyId : uint64
-          BodyShapeId : uint64 }
-        static member internal fromInternal (internal_ : BodyShapeSourceInternal) =
-            { Entity = internal_.Simulant :?> Entity
-              BodyId = internal_.BodyId
-              BodyShapeId = internal_.ShapeId }
-
     /// Describes the information needed to sort simulants.
     /// OPTIMIZATION: carries related simulant to avoid GC pressure.
     /// NOTE: SortPriority can't be structified because it is currently cast to IComparable.
