@@ -201,7 +201,7 @@ module FieldDispatcher =
 
                 // pull field state from avatar
                 let avatar = Simulants.FieldSceneAvatar.GetAvatar world
-                let field = if avatar <> field.Avatar then Field.updateAvatar (constant avatar) field else field
+                let field = if avatar =/= field.Avatar then Field.updateAvatar (constant avatar) field else field
 
                 // advance field time
                 let field = Field.advanceUpdateTime field
@@ -296,6 +296,10 @@ module FieldDispatcher =
                 (signals, field)
 
             | UpdateFieldTransition ->
+
+                // pull field state from avatar
+                let avatar = Simulants.FieldSceneAvatar.GetAvatar world
+                let field = if avatar =/= field.Avatar then Field.updateAvatar (constant avatar) field else field
 
                 // check if transitioning
                 match field.FieldTransitionOpt with
