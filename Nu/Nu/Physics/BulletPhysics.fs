@@ -403,17 +403,17 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
             let manifold = physicsEngine.PhysicsContext.Dispatcher.GetManifoldByIndexInternal i
             let body0 = manifold.Body0
             let body1 = manifold.Body1
-            let bodySource0 = body0.UserObject :?> BodyId
-            let bodySource1 = body1.UserObject :?> BodyId
-            let collisionKey = (bodySource0, bodySource1)
-            let mutable normal = v3Zero
-            let numContacts = manifold.NumContacts
-            for j in 0 .. dec numContacts do
-                let contact = manifold.GetContactPoint j
-                normal <- normal - contact.NormalWorldOnB
-            normal <- normal / single numContacts
             if  body0.UserIndex = 1 ||
                 body1.UserIndex = 1 then
+                let bodySource0 = body0.UserObject :?> BodyId
+                let bodySource1 = body1.UserObject :?> BodyId
+                let collisionKey = (bodySource0, bodySource1)
+                let mutable normal = v3Zero
+                let numContacts = manifold.NumContacts
+                for j in 0 .. dec numContacts do
+                    let contact = manifold.GetContactPoint j
+                    normal <- normal - contact.NormalWorldOnB
+                normal <- normal / single numContacts
                 SegmentedDictionary.add collisionKey normal physicsEngine.Collisions
 
         // create collision messages
