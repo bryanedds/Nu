@@ -412,7 +412,9 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
                 let contact = manifold.GetContactPoint j
                 normal <- normal - contact.NormalWorldOnB
             normal <- normal / single numContacts
-            SegmentedDictionary.add collisionKey normal physicsEngine.Collisions
+            if  body0.UserIndex = 1 ||
+                body1.UserIndex = 1 then
+                SegmentedDictionary.add collisionKey normal physicsEngine.Collisions
 
         // create collision messages
         for entry in physicsEngine.Collisions do
@@ -525,6 +527,14 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
         member physicsEngine.IsBodyOnGround bodyId =
             let groundNormals = (physicsEngine :> PhysicsEngine).GetBodyToGroundContactNormals bodyId
             List.notEmpty groundNormals
+
+        member physicsEngine.SetBodyObserved observed bodyId =
+            match physicsEngine.Bodies.TryGetValue bodyId with
+            | (true, (_, body)) -> body.UserIndex <- if observed then 1 else -1
+            | (false, _) ->
+                match physicsEngine.Ghosts.TryGetValue bodyId with
+                | (true, ghost) -> ghost.UserIndex <- if observed then 1 else -1
+                | (false, _) -> ()
 
         member physicsEngine.PopMessages () =
             let messages = physicsEngine.PhysicsMessages
