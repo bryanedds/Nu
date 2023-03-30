@@ -420,6 +420,8 @@ type PhysicsEngine =
     abstract GetBodyToGroundContactTangentOpt : BodyId -> Vector3 option
     /// Check that the body with the given physics id is on the ground.
     abstract IsBodyOnGround : BodyId -> bool
+    /// Set whether a body's physics events are being observed.
+    abstract SetBodyObserved : bool -> BodyId -> unit
     /// Pop all of the physics messages that have been enqueued.
     abstract PopMessages : unit -> PhysicsMessage UList * PhysicsEngine
     /// Clear all of the physics messages that have been enqueued.
@@ -443,6 +445,7 @@ type [<ReferenceEquality>] MockPhysicsEngine =
         member physicsEngine.GetBodyToGroundContactNormalOpt _ = failwith "No bodies in MockPhysicsEngine"
         member physicsEngine.GetBodyToGroundContactTangentOpt _ = failwith "No bodies in MockPhysicsEngine"
         member physicsEngine.IsBodyOnGround _ = failwith "No bodies in MockPhysicsEngine"
+        member physicsEngine.SetBodyObserved _ _ = failwith "No bodies in MockPhysicsEngine"
         member physicsEngine.PopMessages () = (UList.makeEmpty Functional, physicsEngine :> PhysicsEngine)
         member physicsEngine.ClearMessages () = physicsEngine :> PhysicsEngine
         member physicsEngine.EnqueueMessage _ = physicsEngine :> PhysicsEngine

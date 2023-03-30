@@ -103,20 +103,8 @@ module Nu =
     #endif
                             World.updateEntityPublishPostUpdateFlag entity world |> snd'
 #endif
-                        // TODO: finish implementing collision event check elision.
-                        //| "BodyCollision" | "BodySeparationExplicit" ->
-                        //    let hasSubscription =
-                        //        subscribing ||
-                        //        match (World.getSubscriptions world).TryGetValue eventAddress with
-                        //        | (true, subscriptions) -> OMap.notEmpty subscriptions
-                        //        | (false, _) -> false
-                        //    let bodyIdOpt =
-                        //        match entity.TryGetProperty "BodyId" world with
-                        //        | Some property when property.PropertyType = typeof<BodyId> -> Some property.PropertyValue
-                        //        | _ -> None
-                        //    match (bodyIdOpt, hasSubscription) then
-                        //    | 
-                        //    world
+                        | "BodyCollision" | "BodySeparationExplicit" ->
+                            World.updateBodyObserved subscribing entity world
                         | _ -> world
                     else world
                 let world =

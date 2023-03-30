@@ -898,7 +898,7 @@ module JointFacetModule =
 
         static member Properties =
             [define Entity.JointDevice JointEmpty
-             computed Entity.JointId (fun (entity : Entity) world -> { JointSource = entity; JointIndex = 0UL }) None]
+             computed Entity.JointId (fun (entity : Entity) _ -> { JointSource = entity; JointIndex = 0UL }) None]
 
         override this.Register (entity, world) =
             let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.Transform)) entity world

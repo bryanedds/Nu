@@ -477,6 +477,10 @@ type [<ReferenceEquality>] AetherPhysicsEngine =
             let groundNormals = (physicsEngine :> PhysicsEngine).GetBodyToGroundContactNormals bodyId
             List.notEmpty groundNormals
 
+        member physicsEngine.SetBodyObserved _ _ =
+            // TODO: consider implementing.
+            ()
+
         member physicsEngine.PopMessages () =
             let messages = physicsEngine.PhysicsMessages
             let physicsEngine = { physicsEngine with PhysicsMessages = UList.makeEmpty (UList.getConfig physicsEngine.PhysicsMessages) }

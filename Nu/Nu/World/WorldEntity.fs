@@ -813,6 +813,8 @@ module WorldEntityModule =
         /// Read an entity from an entity descriptor.
         static member readEntity entityDescriptor (nameOpt : string option) (parent : Simulant) world =
 
+            (* TODO: factor out common code between this and createEntity5 - there's just too much. *)
+
             // make the dispatcher
             let dispatcherName = entityDescriptor.EntityDispatcherName
             let dispatchers = World.getEntityDispatchers world
@@ -896,12 +898,24 @@ module WorldEntityModule =
                 else world
             let world = World.addEntity true entityState entity world
 
+            // update optimization flags
+#if !DISABLE_ENTITY_PRE_UPDATE
+            let world = World.updateEntityPublishPreUpdateFlag entity world |> snd'
+#endif
+            let world = World.updateEntityPublishUpdateFlag entity world |> snd'
+#if !DISABLE_ENTITY_POST_UPDATE
+            let world = World.updateEntityPublishPostUpdateFlag entity world |> snd'
+#endif
+            let world = World.updateBodyObserved false entity world
+
             // update mount hierarchy
             let mountOpt = World.getEntityMountOpt entity world
             let world = World.addEntityToMounts mountOpt entity world
 
             // read the entity's children
             let world = World.readEntities entityDescriptor.EntityDescriptors entity world |> snd
+
+            // fin
             (entity, world)
 
         /// Read an entity from a file.
