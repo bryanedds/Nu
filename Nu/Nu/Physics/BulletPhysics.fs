@@ -41,16 +41,16 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
 
     static member private handleCollision physicsEngine (bodyId : BodyId) (bodyId2 : BodyId) normal =
         let bodyCollisionMessage =
-            { BodyShapeSource = { BodyId = bodyId; ShapeIndex = 0UL }
-              BodyShapeSource2 = { BodyId = bodyId2; ShapeIndex = 0UL }
+            { BodyShapeSource = { BodyId = bodyId; ShapeIndex = 0 }
+              BodyShapeSource2 = { BodyId = bodyId2; ShapeIndex = 0 }
               Normal = normal }
         let integrationMessage = BodyCollisionMessage bodyCollisionMessage
         physicsEngine.IntegrationMessages.Add integrationMessage
     
     static member private handleSeparation physicsEngine (bodyId : BodyId) (bodyId2 : BodyId) =
         let bodySeparationMessage =
-            { BodyShapeSource = { BodyId = bodyId; ShapeIndex = 0UL }
-              BodyShapeSource2 = { BodyId = bodyId2; ShapeIndex = 0UL }}
+            { BodyShapeSource = { BodyId = bodyId; ShapeIndex = 0 }
+              BodyShapeSource2 = { BodyId = bodyId2; ShapeIndex = 0 }}
         let integrationMessage = BodySeparationMessage bodySeparationMessage
         physicsEngine.IntegrationMessages.Add integrationMessage
 
@@ -102,7 +102,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
         BulletPhysicsEngine.configureBodyShapeProperties bodyProperties bodyBox.PropertiesOpt box
         box.UserObject <-
             { BodyId = { BodySource = bodySource; BodyIndex = bodyProperties.BodyIndex }
-              ShapeIndex = match bodyBox.PropertiesOpt with Some p -> p.ShapeIndex | None -> 0UL }
+              ShapeIndex = match bodyBox.PropertiesOpt with Some p -> p.ShapeIndex | None -> 0 }
         let mass' =
             match bodyProperties.Substance with
             | Density density ->
@@ -118,7 +118,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
         BulletPhysicsEngine.configureBodyShapeProperties bodyProperties bodySphere.PropertiesOpt sphere
         sphere.UserObject <-
             { BodyId = { BodySource = bodySource; BodyIndex = bodyProperties.BodyIndex }
-              ShapeIndex = match bodySphere.PropertiesOpt with Some p -> p.ShapeIndex | None -> 0UL }
+              ShapeIndex = match bodySphere.PropertiesOpt with Some p -> p.ShapeIndex | None -> 0 }
         let mass' =
             match bodyProperties.Substance with
             | Density density ->
@@ -134,7 +134,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
         BulletPhysicsEngine.configureBodyShapeProperties bodyProperties bodyCapsule.PropertiesOpt capsule
         capsule.UserObject <-
             { BodyId = { BodySource = bodySource; BodyIndex = bodyProperties.BodyIndex }
-              ShapeIndex = match bodyCapsule.PropertiesOpt with Some p -> p.ShapeIndex | None -> 0UL }
+              ShapeIndex = match bodyCapsule.PropertiesOpt with Some p -> p.ShapeIndex | None -> 0 }
         let mass' =
             match bodyProperties.Substance with
             | Density density ->
@@ -155,7 +155,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
         BulletPhysicsEngine.configureBodyShapeProperties bodyProperties bodyConvexHull.PropertiesOpt hull
         hull.UserObject <-
             { BodyId = { BodySource = bodySource; BodyIndex = bodyProperties.BodyIndex }
-              ShapeIndex = match bodyConvexHull.PropertiesOpt with Some p -> p.ShapeIndex | None -> 0UL }
+              ShapeIndex = match bodyConvexHull.PropertiesOpt with Some p -> p.ShapeIndex | None -> 0 }
         let mass' =
             match bodyProperties.Substance with
             | Density density ->
@@ -189,18 +189,20 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
         | BodyConvexHull bodyConvexHull -> BulletPhysicsEngine.attachBodyConvexHull bodySource bodyProperties bodyConvexHull compoundShape masses inertia
         | BodyShapes bodyShapes -> BulletPhysicsEngine.attachBodyShapes bodySource bodyProperties bodyShapes compoundShape masses inertia
 
-    static member private createBody3 attachBodyShape bodyId (bodyProperties : BodyProperties) physicsEngine =
+    static member private createBody3 attachBodyShape (bodyId : BodyId) (bodyProperties : BodyProperties) physicsEngine =
         let (shape, mass, inertia) =
             let compoundShape = new CompoundShape ()
             let (mass, inertia) = attachBodyShape bodyProperties compoundShape 0.0f v3Zero
             if compoundShape.ChildList.Count = 1 && not (compoundShape.ChildList.[0].ChildShape :? CompoundShape)
             then (compoundShape.ChildList.[0].ChildShape, mass, inertia)
             else (compoundShape, mass, inertia)
+        let userIndex = if bodyId.BodyIndex = Constants.Physics.InternalBodyIndex then -1 else 1
         if not bodyProperties.Sensor then
             let motionState = new DefaultMotionState (Matrix4x4.CreateFromTrs (bodyProperties.Center, bodyProperties.Rotation, v3One))
             let constructionInfo = new RigidBodyConstructionInfo (mass, motionState, shape, inertia)
             let body = new RigidBody (constructionInfo)
             body.UserObject <- bodyId
+            body.UserIndex <- userIndex
             BulletPhysicsEngine.configureBodyProperties bodyProperties body physicsEngine.PhysicsContext.Gravity
             physicsEngine.PhysicsContext.AddRigidBody (body, bodyProperties.CollisionCategories, bodyProperties.CollisionMask)
             if physicsEngine.Bodies.TryAdd (bodyId, (bodyProperties.GravityOverrideOpt, body))
@@ -210,6 +212,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
             let ghost = new GhostObject ()
             ghost.CollisionFlags <- ghost.CollisionFlags &&& ~~~CollisionFlags.NoContactResponse
             ghost.UserObject <- bodyId
+            ghost.UserIndex <- userIndex
             BulletPhysicsEngine.configureCollisionObjectProperties bodyProperties ghost
             physicsEngine.PhysicsContext.AddCollisionObject (ghost, bodyProperties.CollisionCategories, bodyProperties.CollisionMask)
             if physicsEngine.Ghosts.TryAdd (bodyId, ghost)
@@ -347,6 +350,14 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
         | (true, (:? RigidBody as body)) -> body.ApplyTorque applyBodyTorqueMessage.Torque
         | (_, _) -> ()
 
+    static member private setBodyObserved (setBodyObservedMessage : SetBodyObservedMessage) physicsEngine =
+        match physicsEngine.Bodies.TryGetValue setBodyObservedMessage.BodyId with
+        | (true, (_, body)) -> body.UserIndex <- if setBodyObservedMessage.Observed then 1 else -1
+        | (false, _) ->
+            match physicsEngine.Ghosts.TryGetValue setBodyObservedMessage.BodyId with
+            | (true, ghost) -> ghost.UserIndex <- if setBodyObservedMessage.Observed then 1 else -1
+            | (false, _) -> ()
+
     static member private handlePhysicsMessage physicsEngine physicsMessage =
         match physicsMessage with
         | CreateBodyMessage createBodyMessage -> BulletPhysicsEngine.createBody createBodyMessage physicsEngine
@@ -366,6 +377,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
         | ApplyBodyLinearImpulseMessage applyBodyLinearImpulseMessage -> BulletPhysicsEngine.applyBodyLinearImpulse applyBodyLinearImpulseMessage physicsEngine
         | ApplyBodyForceMessage applyBodyForceMessage -> BulletPhysicsEngine.applyBodyForce applyBodyForceMessage physicsEngine
         | ApplyBodyTorqueMessage applyBodyTorqueMessage -> BulletPhysicsEngine.applyBodyTorque applyBodyTorqueMessage physicsEngine
+        | SetBodyObservedMessage setBodyObservedMessage -> BulletPhysicsEngine.setBodyObserved setBodyObservedMessage physicsEngine
         | SetGravityMessage gravity ->
             physicsEngine.PhysicsContext.Gravity <- gravity
             for (gravityOverrideOpt, body) in physicsEngine.Bodies.Values do
@@ -527,14 +539,6 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
         member physicsEngine.IsBodyOnGround bodyId =
             let groundNormals = (physicsEngine :> PhysicsEngine).GetBodyToGroundContactNormals bodyId
             List.notEmpty groundNormals
-
-        member physicsEngine.SetBodyObserved observed bodyId =
-            match physicsEngine.Bodies.TryGetValue bodyId with
-            | (true, (_, body)) -> body.UserIndex <- if observed then 1 else -1
-            | (false, _) ->
-                match physicsEngine.Ghosts.TryGetValue bodyId with
-                | (true, ghost) -> ghost.UserIndex <- if observed then 1 else -1
-                | (false, _) -> ()
 
         member physicsEngine.PopMessages () =
             let messages = physicsEngine.PhysicsMessages

@@ -72,9 +72,9 @@ module FieldDispatcher =
     type FieldDispatcher () =
         inherit ScreenDispatcher<Field, FieldMessage, FieldCommand> (Field.empty)
 
-        static let isIntersectedProp (collider : ShapeIndex) (collidee : ShapeIndex) (avatar : Avatar) world =
+        static let isIntersectedProp (collider : ShapeIndex) (collidee : ShapeIndex) world =
             let collideeEntity = collidee.BodyId.BodySource :?> Entity
-            if (collider.ShapeIndex = avatar.CoreShapeId &&
+            if (collider.ShapeIndex = Constants.Field.AvatarCollisionShapeIndex &&
                 collideeEntity.Exists world &&
                 collideeEntity.Is<PropDispatcher> world &&
                 match (collideeEntity.GetPropPlus world).Prop.PropData with
@@ -82,7 +82,7 @@ module FieldDispatcher =
                 | Sensor _ -> true
                 | _ -> false) then
                 true
-            elif (collider.ShapeIndex = avatar.SensorShapeId &&
+            elif (collider.ShapeIndex = Constants.Field.AvatarSensorShapeIndex &&
                   collideeEntity.Exists world &&
                   collideeEntity.Is<PropDispatcher> world &&
                   match (collideeEntity.GetPropPlus world).Prop.PropData with
@@ -373,7 +373,7 @@ module FieldDispatcher =
 
                 // add collided body shape
                 let field =
-                    if isIntersectedProp collision.BodyShapeCollider collision.BodyShapeCollidee field.Avatar world then
+                    if isIntersectedProp collision.BodyShapeCollider collision.BodyShapeCollidee world then
                         let field = Field.updateAvatarCollidedPropIds (List.cons ((collision.BodyShapeCollidee.BodyId.BodySource :?> Entity).GetPropPlus world).Prop.PropId) field
                         let field = Field.updateAvatarIntersectedPropIds (List.cons ((collision.BodyShapeCollidee.BodyId.BodySource :?> Entity).GetPropPlus world).Prop.PropId) field
                         field
@@ -396,7 +396,7 @@ module FieldDispatcher =
 
                 // add separated body shape
                 let field =
-                    if isIntersectedProp separation.BodyShapeSeparator separation.BodyShapeSeparatee field.Avatar world then
+                    if isIntersectedProp separation.BodyShapeSeparator separation.BodyShapeSeparatee world then
                         let field = Field.updateAvatarSeparatedPropIds (List.cons ((separation.BodyShapeSeparatee.BodyId.BodySource :?> Entity).GetPropPlus world).Prop.PropId) field
                         let field = Field.updateAvatarIntersectedPropIds (List.remove ((=) ((separation.BodyShapeSeparatee.BodyId.BodySource :?> Entity).GetPropPlus world).Prop.PropId)) field
                         field
@@ -768,7 +768,6 @@ module FieldDispatcher =
                         Cue.notInterrupting field.Inventory field.Advents field.Cue &&
                         Option.isNone field.DialogOpt &&
                         Option.isNone field.ShopOpt
-                     Entity.LinearDamping == Constants.Field.LinearDamping
                      Entity.Avatar := field.Avatar]
 
                  // props
