@@ -259,7 +259,7 @@ type [<ReferenceEquality>] AetherPhysicsEngine =
         AetherPhysicsEngine.attachBodyShape bodyId.BodySource bodyProperties bodyProperties.BodyShape body |> ignore
 
         // always listen for collisions if not internal body
-        if not (bodyId.BodyIndex = Constants.Physics.InternalBodyIndex) then
+        if not (bodyId.BodyIndex = Constants.Physics.InternalIndex) then
             body.add_OnCollision physicsEngine.CollisionHandler
             body.add_OnSeparation physicsEngine.SeparationHandler
 
@@ -377,12 +377,12 @@ type [<ReferenceEquality>] AetherPhysicsEngine =
         | (true, (_, body)) -> body.ApplyTorque (applyBodyTorqueMessage.Torque.X)
         | (false, _) -> ()
 
-    static member private setBodyObserved (setBodyObservedMessage : SetBodyObservedMessage) physicsEngine =
-        match physicsEngine.Bodies.TryGetValue setBodyObservedMessage.BodyId with
+    static member private setBodyObservable (setBodyObservableMessage : SetBodyObservableMessage) physicsEngine =
+        match physicsEngine.Bodies.TryGetValue setBodyObservableMessage.BodyId with
         | (true, (_, body)) ->
             body.remove_OnCollision physicsEngine.CollisionHandler
             body.remove_OnSeparation physicsEngine.SeparationHandler
-            if setBodyObservedMessage.Observed then
+            if setBodyObservableMessage.Observable then
                 body.add_OnCollision physicsEngine.CollisionHandler
                 body.add_OnSeparation physicsEngine.SeparationHandler
         | (false, _) -> ()
@@ -406,7 +406,7 @@ type [<ReferenceEquality>] AetherPhysicsEngine =
         | ApplyBodyLinearImpulseMessage applyBodyLinearImpulseMessage -> AetherPhysicsEngine.applyBodyLinearImpulse applyBodyLinearImpulseMessage physicsEngine
         | ApplyBodyForceMessage applyBodyForceMessage -> AetherPhysicsEngine.applyBodyForce applyBodyForceMessage physicsEngine
         | ApplyBodyTorqueMessage applyBodyTorqueMessage -> AetherPhysicsEngine.applyBodyTorque applyBodyTorqueMessage physicsEngine
-        | SetBodyObservedMessage setBodyObservedMessage -> AetherPhysicsEngine.setBodyObserved setBodyObservedMessage physicsEngine
+        | SetBodyObservableMessage setBodyObservableMessage -> AetherPhysicsEngine.setBodyObservable setBodyObservableMessage physicsEngine
         | SetGravityMessage gravity -> physicsEngine.PhysicsContext.Gravity <- AetherPhysicsEngine.toPhysicsV2 gravity
         | RebuildPhysicsHackMessage ->
             physicsEngine.RebuildingHack <- true

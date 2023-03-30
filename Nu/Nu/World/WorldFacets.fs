@@ -823,7 +823,7 @@ module RigidBodyFacetModule =
              define Entity.Bullet false
              define Entity.Sensor false
              define Entity.ModelDriven false
-             computed Entity.BodyId (fun (entity : Entity) _ -> { BodySource = entity; BodyIndex = Constants.Physics.InternalBodyIndex }) None]
+             computed Entity.BodyId (fun (entity : Entity) _ -> { BodySource = entity; BodyIndex = Constants.Physics.InternalIndex }) None]
 
         override this.Register (entity, world) =
             let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.Position)) entity world
@@ -879,7 +879,7 @@ module RigidBodyFacetModule =
                   Bullet = entity.GetBullet world
                   Sensor = entity.GetSensor world }
             let world = World.createBody (entity.GetIs2d world) (entity.GetBodyId world) bodyProperties world
-            let world = World.updateBodyObserved false entity world
+            let world = World.updateBodyObservable false entity world
             world
 
         override this.UnregisterPhysics (entity, world) =
@@ -900,7 +900,7 @@ module JointFacetModule =
 
         static member Properties =
             [define Entity.JointDevice JointEmpty
-             computed Entity.JointId (fun (entity : Entity) _ -> { JointSource = entity; JointIndex = 0 }) None]
+             computed Entity.JointId (fun (entity : Entity) _ -> { JointSource = entity; JointIndex = Constants.Physics.InternalIndex }) None]
 
         override this.Register (entity, world) =
             let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.Transform)) entity world

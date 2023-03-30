@@ -358,9 +358,9 @@ type ApplyBodyTorqueMessage =
       Torque : Vector3 }
 
 /// An internally used message to the physics system to set the observed state of a body.
-type SetBodyObservedMessage =
+type SetBodyObservableMessage =
     { BodyId : BodyId
-      Observed : bool }
+      Observable : bool }
 
 /// A message from the physics system describing a body collision that took place.
 type BodyCollisionMessage =
@@ -406,7 +406,7 @@ type PhysicsMessage =
     | ApplyBodyLinearImpulseMessage of ApplyBodyLinearImpulseMessage
     | ApplyBodyForceMessage of ApplyBodyForceMessage
     | ApplyBodyTorqueMessage of ApplyBodyTorqueMessage
-    | SetBodyObservedMessage of SetBodyObservedMessage
+    | SetBodyObservableMessage of SetBodyObservableMessage
     | SetGravityMessage of Vector3
     | RebuildPhysicsHackMessage
 
@@ -426,7 +426,7 @@ type PhysicsEngine =
     abstract GetBodyToGroundContactTangentOpt : BodyId -> Vector3 option
     /// Check that the body with the given physics id is on the ground.
     abstract IsBodyOnGround : BodyId -> bool
-    /// Set whether a body's physics events are being observed.
+    /// Pop all of the physics messages that have been enqueued.
     abstract PopMessages : unit -> PhysicsMessage UList * PhysicsEngine
     /// Clear all of the physics messages that have been enqueued.
     abstract ClearMessages : unit -> PhysicsEngine

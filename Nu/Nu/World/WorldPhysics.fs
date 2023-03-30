@@ -295,9 +295,23 @@ module WorldPhysics =
             let world = World.enqueuePhysicsMessage3d applyBodyTorqueMessage world
             let world = World.enqueuePhysicsMessage2d applyBodyTorqueMessage world
             world
+            
+        static member private setBodyObservableInternal allowInternalIndexing observable (bodyId : BodyId) world =
+            if allowInternalIndexing || bodyId.BodyIndex <> Constants.Physics.InternalIndex then
+                let setBodyObservableMessage = SetBodyObservableMessage { BodyId = bodyId; Observable = observable }
+                let world = World.enqueuePhysicsMessage3d setBodyObservableMessage world
+                let world = World.enqueuePhysicsMessage2d setBodyObservableMessage world
+                world
+            else Log.debug "Set the observability of an internally indexed body from outside the engine is prohibited."; world
 
-        static member internal updateBodyObserved subscribing (bodySource : Entity) world =
-            let hasSubscription =
+        /// Send a physics message to set the observability of a body.
+        /// Disabling observability where it's not needed can significantly increase performance.
+        [<FunctionBinding>]
+        static member setBodyObservable observable bodyId world =
+            World.setBodyObservableInternal false observable bodyId world
+
+        static member internal updateBodyObservable subscribing (bodySource : Entity) world =
+            let observable =
                 subscribing ||
                 let collisionEventAddress = atooa (Events.BodyCollision --> bodySource.EntityAddress)
                 match (World.getSubscriptions world).TryGetValue collisionEventAddress with
@@ -307,8 +321,5 @@ module WorldPhysics =
                     match (World.getSubscriptions world).TryGetValue separationEventAddress with
                     | (true, subscriptions) -> OMap.notEmpty subscriptions
                     | (false, _) -> false
-            let bodyId = { BodySource = bodySource; BodyIndex = Constants.Physics.InternalBodyIndex }
-            let setBodyObservedMessage = SetBodyObservedMessage { BodyId = bodyId; Observed = hasSubscription }
-            let world = World.enqueuePhysicsMessage3d setBodyObservedMessage world
-            let world = World.enqueuePhysicsMessage2d setBodyObservedMessage world
-            world
+            let bodyId = { BodySource = bodySource; BodyIndex = Constants.Physics.InternalIndex }
+            World.setBodyObservableInternal true observable bodyId world
