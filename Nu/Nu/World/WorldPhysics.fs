@@ -295,3 +295,20 @@ module WorldPhysics =
             let world = World.enqueuePhysicsMessage3d applyBodyTorqueMessage world
             let world = World.enqueuePhysicsMessage2d applyBodyTorqueMessage world
             world
+
+        static member internal updateBodyObserved subscribing (bodySource : Entity) world =
+            let hasSubscription =
+                subscribing ||
+                let collisionEventAddress = atooa (Events.BodyCollision --> bodySource.EntityAddress)
+                match (World.getSubscriptions world).TryGetValue collisionEventAddress with
+                | (true, subscriptions) -> OMap.notEmpty subscriptions
+                | (false, _) ->
+                    let separationEventAddress = atooa (Events.BodySeparationExplicit --> bodySource.EntityAddress)
+                    match (World.getSubscriptions world).TryGetValue separationEventAddress with
+                    | (true, subscriptions) -> OMap.notEmpty subscriptions
+                    | (false, _) -> false
+            let bodyId = { BodySource = bodySource; BodyIndex = Constants.Physics.InternalBodyIndex }
+            let setBodyObservedMessage = SetBodyObservedMessage { BodyId = bodyId; Observed = hasSubscription }
+            let world = World.enqueuePhysicsMessage3d setBodyObservedMessage world
+            let world = World.enqueuePhysicsMessage2d setBodyObservedMessage world
+            world

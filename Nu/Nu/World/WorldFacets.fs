@@ -823,7 +823,7 @@ module RigidBodyFacetModule =
              define Entity.Bullet false
              define Entity.Sensor false
              define Entity.ModelDriven false
-             computed Entity.BodyId (fun (entity : Entity) _ -> { BodySource = entity; BodyIndex = 0UL }) None]
+             computed Entity.BodyId (fun (entity : Entity) _ -> { BodySource = entity; BodyIndex = Constants.Physics.InternalBodyIndex }) None]
 
         override this.Register (entity, world) =
             let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.Position)) entity world
@@ -878,7 +878,9 @@ module RigidBodyFacetModule =
                   CollisionMask = Physics.categorizeCollisionMask (entity.GetCollisionMask world)
                   Bullet = entity.GetBullet world
                   Sensor = entity.GetSensor world }
-            World.createBody (entity.GetIs2d world) (entity.GetBodyId world) bodyProperties world
+            let world = World.createBody (entity.GetIs2d world) (entity.GetBodyId world) bodyProperties world
+            let world = World.updateBodyObserved false entity world
+            world
 
         override this.UnregisterPhysics (entity, world) =
             World.destroyBody (entity.GetIs2d world) (entity.GetBodyId world) world
@@ -898,7 +900,7 @@ module JointFacetModule =
 
         static member Properties =
             [define Entity.JointDevice JointEmpty
-             computed Entity.JointId (fun (entity : Entity) _ -> { JointSource = entity; JointIndex = 0UL }) None]
+             computed Entity.JointId (fun (entity : Entity) _ -> { JointSource = entity; JointIndex = 0 }) None]
 
         override this.Register (entity, world) =
             let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.Transform)) entity world
@@ -947,7 +949,7 @@ module TileMapFacetModule =
              define Entity.TileIndexOffset 0
              define Entity.TileIndexOffsetRange (0, 0)
              define Entity.TileMap Assets.Default.TileMap
-             computed Entity.BodyId (fun (entity : Entity) _ -> { BodySource = entity; BodyIndex = 0UL }) None]
+             computed Entity.BodyId (fun (entity : Entity) _ -> { BodySource = entity; BodyIndex = 0 }) None]
 
         override this.Register (entity, world) =
             let world = entity.SetSize (entity.GetQuickSize world) world
@@ -1045,7 +1047,7 @@ module TmxMapFacetModule =
              define Entity.TileIndexOffset 0
              define Entity.TileIndexOffsetRange (0, 0)
              define Entity.TmxMap (TmxMap.makeDefault ())
-             computed Entity.BodyId (fun (entity : Entity) _ -> { BodySource = entity; BodyIndex = 0UL }) None]
+             computed Entity.BodyId (fun (entity : Entity) _ -> { BodySource = entity; BodyIndex = 0 }) None]
 
         override this.Register (entity, world) =
             let world = entity.SetSize (entity.GetQuickSize world) world

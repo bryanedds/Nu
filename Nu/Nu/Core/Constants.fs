@@ -127,6 +127,7 @@ module Physics =
     let [<Literal>] PhysicsToPixelRatio = Engine.Meter2d // 48 pixels = 1 meter
     let [<Uniform>] PixelToPhysicsRatio = 1.0f / Engine.Meter2d
     let [<Uniform>] ThreadCount = max 1 (Environment.ProcessorCount - 2)
+    let [<Literal>] InternalBodyIndex = -1 // NOTE: do not use this outside of the engine code.
 
 [<RequireQualifiedAccess>]
 module TileMap =

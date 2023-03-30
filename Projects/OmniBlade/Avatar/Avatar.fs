@@ -15,9 +15,7 @@ module Avatar =
         private
             { Perimeter_ : Box3
               CharacterAnimationState_ : CharacterAnimationState
-              CelSize_ : Vector2
-              CoreShapeId_ : uint64
-              SensorShapeId_ : uint64 }
+              CelSize_ : Vector2 }
 
         (* Perimeter Properties *)
         member this.Perimeter = this.Perimeter_
@@ -34,10 +32,6 @@ module Avatar =
         member this.CharacterAnimationType = this.CharacterAnimationState_.CharacterAnimationType
         member this.Direction = this.CharacterAnimationState_.Direction
         member this.CelSize = this.CelSize_
-
-        (* Local Properties *)
-        member this.CoreShapeId = this.CoreShapeId_
-        member this.SensorShapeId = this.SensorShapeId_
 
     let getAnimationInset time (avatar : Avatar) =
         CharacterAnimationState.inset time avatar.CelSize_ avatar.CharacterAnimationState_
@@ -81,17 +75,13 @@ module Avatar =
         let characterAnimationState = { StartTime = 0L; AnimationSheet = animationSheet; CharacterAnimationType = IdleAnimation; Materializing = false; Direction = direction }
         { Perimeter_ = bounds
           CharacterAnimationState_ = characterAnimationState
-          CelSize_ = Constants.Gameplay.CharacterCelSize
-          CoreShapeId_ = Gen.id64
-          SensorShapeId_ = Gen.id64 }
+          CelSize_ = Constants.Gameplay.CharacterCelSize }
 
     let empty () =
         let bounds = box3 v3Zero Constants.Gameplay.CharacterSize
         { Perimeter_ = bounds
           CharacterAnimationState_ = CharacterAnimationState.empty
-          CelSize_ = Constants.Gameplay.CharacterCelSize
-          CoreShapeId_ = Gen.id64
-          SensorShapeId_ = Gen.id64 }
+          CelSize_ = Constants.Gameplay.CharacterCelSize }
 
     let initial () =
         let position = v3 2064.0f 48.0f 0.0f - Constants.Gameplay.CharacterSize.WithY 0.0f * 0.5f

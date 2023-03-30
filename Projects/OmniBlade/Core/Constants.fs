@@ -55,11 +55,12 @@ module Constants =
     [<RequireQualifiedAccess>]
     module Field =
 
-        let LinearDamping = 19.0f
         let PropsGroupName = "Props"
         let TransitionTime = 60L
         let RandMapSize = v2iDup 9
         let RoomSize = v2iDup 32
+        let AvatarCollisionShapeIndex = 1
+        let AvatarSensorShapeIndex = 2
 #if DEV
         let AvatarWalkForce = 60000.0f
         let AvatarWalkForceMouse = 66000.0f

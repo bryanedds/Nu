@@ -906,7 +906,6 @@ module WorldEntityModule =
 #if !DISABLE_ENTITY_POST_UPDATE
             let world = World.updateEntityPublishPostUpdateFlag entity world |> snd'
 #endif
-            let world = World.updateBodyObserved false entity world
 
             // update mount hierarchy
             let mountOpt = World.getEntityMountOpt entity world

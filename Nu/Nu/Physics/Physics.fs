@@ -10,7 +10,7 @@ open Nu
 /// Identifies a body that can be found in a physics engine.
 type [<CustomEquality; NoComparison>] BodyId =
     { BodySource : Simulant
-      BodyIndex : uint64 }
+      BodyIndex : int }
 
     /// Hash a BodyId.
     static member hash pid =
@@ -37,16 +37,16 @@ type [<CustomEquality; NoComparison>] BodyId =
 /// Identified a body shape in a physics engine.
 and ShapeIndex =
     { BodyId : BodyId
-      ShapeIndex : uint64 }
+      ShapeIndex : int }
 
 /// Identified a joint in a physics engine.
 and JointId =
     { JointSource : Simulant
-      JointIndex : uint64 }
+      JointIndex : int }
 
 /// Describes body shape-specific properties.
 type BodyShapeProperties =
-    { ShapeIndex : uint64
+    { ShapeIndex : int
       FrictionOpt : single option
       RestitutionOpt : single option
       CollisionCategoriesOpt : int option
@@ -57,7 +57,7 @@ type BodyShapeProperties =
 module BodyShapeProperties =
 
     let empty =
-        { ShapeIndex = 0UL
+        { ShapeIndex = 0
           FrictionOpt = None
           RestitutionOpt = None
           CollisionCategoriesOpt = None
@@ -150,7 +150,7 @@ type BodyType =
 
 /// The properties needed to describe the physical part of a body.
 type BodyProperties =
-    { BodyIndex : uint64
+    { BodyIndex : int
       Center : Vector3
       Rotation : Quaternion
       BodyType : BodyType
@@ -264,14 +264,14 @@ type JointDevice =
     | JointWheel of JointWheel
 
 type JointProperties =
-    { JointIndex : uint64
+    { JointIndex : int
       JointDevice : JointDevice }
 
 [<RequireQualifiedAccess>]
 module JointProperties =
 
     let empty =
-        { JointIndex = Gen.id64
+        { JointIndex = 0
           JointDevice = JointEmpty }
 
 /// A message to the physics system to create a body.
@@ -357,6 +357,11 @@ type ApplyBodyTorqueMessage =
     { BodyId : BodyId
       Torque : Vector3 }
 
+/// An internally used message to the physics system to set the observed state of a body.
+type SetBodyObservedMessage =
+    { BodyId : BodyId
+      Observed : bool }
+
 /// A message from the physics system describing a body collision that took place.
 type BodyCollisionMessage =
     { BodyShapeSource : ShapeIndex
@@ -401,6 +406,7 @@ type PhysicsMessage =
     | ApplyBodyLinearImpulseMessage of ApplyBodyLinearImpulseMessage
     | ApplyBodyForceMessage of ApplyBodyForceMessage
     | ApplyBodyTorqueMessage of ApplyBodyTorqueMessage
+    | SetBodyObservedMessage of SetBodyObservedMessage
     | SetGravityMessage of Vector3
     | RebuildPhysicsHackMessage
 
@@ -421,8 +427,6 @@ type PhysicsEngine =
     /// Check that the body with the given physics id is on the ground.
     abstract IsBodyOnGround : BodyId -> bool
     /// Set whether a body's physics events are being observed.
-    abstract SetBodyObserved : bool -> BodyId -> unit
-    /// Pop all of the physics messages that have been enqueued.
     abstract PopMessages : unit -> PhysicsMessage UList * PhysicsEngine
     /// Clear all of the physics messages that have been enqueued.
     abstract ClearMessages : unit -> PhysicsEngine
@@ -445,7 +449,6 @@ type [<ReferenceEquality>] MockPhysicsEngine =
         member physicsEngine.GetBodyToGroundContactNormalOpt _ = failwith "No bodies in MockPhysicsEngine"
         member physicsEngine.GetBodyToGroundContactTangentOpt _ = failwith "No bodies in MockPhysicsEngine"
         member physicsEngine.IsBodyOnGround _ = failwith "No bodies in MockPhysicsEngine"
-        member physicsEngine.SetBodyObserved _ _ = failwith "No bodies in MockPhysicsEngine"
         member physicsEngine.PopMessages () = (UList.makeEmpty Functional, physicsEngine :> PhysicsEngine)
         member physicsEngine.ClearMessages () = physicsEngine :> PhysicsEngine
         member physicsEngine.EnqueueMessage _ = physicsEngine :> PhysicsEngine

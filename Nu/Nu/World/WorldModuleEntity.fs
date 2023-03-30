@@ -2060,31 +2060,6 @@ module WorldModuleEntity =
             changed <- changed || changed'
             struct (changed, world)
 
-        static member internal updateBodyObserved subscribing (bodySource : Entity) world =
-            let hasSubscription =
-                subscribing ||
-                let collisionEventAddress = atooa (Events.BodyCollision --> bodySource.EntityAddress)
-                match (World.getSubscriptions world).TryGetValue collisionEventAddress with
-                | (true, subscriptions) -> OMap.notEmpty subscriptions
-                | (false, _) ->
-                    let separationEventAddress = atooa (Events.BodySeparationExplicit --> bodySource.EntityAddress)
-                    match (World.getSubscriptions world).TryGetValue separationEventAddress with
-                    | (true, subscriptions) -> OMap.notEmpty subscriptions
-                    | (false, _) -> false
-            let bodyIdOpt =
-                let mutable property = Unchecked.defaultof<_>
-                if World.tryGetEntityProperty ("BodyId", bodySource, world, &property) then
-                    if property.PropertyType = typeof<BodyId>
-                    then Some (property.PropertyValue :?> BodyId)
-                    else None
-                else None
-            match (bodyIdOpt, hasSubscription) with
-            | (Some bodyId, true) ->
-                world.Subsystems.PhysicsEngine3d.SetBodyObserved hasSubscription bodyId
-                world.Subsystems.PhysicsEngine2d.SetBodyObserved hasSubscription bodyId
-                world
-            | (_, _) -> world
-
         static member internal divergeEntity entity world =
             let entityState = World.getEntityState entity world
             let entityState = EntityState.diverge entityState
@@ -2344,7 +2319,6 @@ module WorldModuleEntity =
 #if !DISABLE_ENTITY_POST_UPDATE
             let world = World.updateEntityPublishPostUpdateFlag entity world |> snd'
 #endif
-            let world = World.updateBodyObserved false entity world
 
             // update mount hierarchy
             let mountOpt = World.getEntityMountOpt entity world
