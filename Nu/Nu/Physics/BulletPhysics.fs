@@ -196,7 +196,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
             if compoundShape.ChildList.Count = 1 && not (compoundShape.ChildList.[0].ChildShape :? CompoundShape)
             then (compoundShape.ChildList.[0].ChildShape, mass, inertia)
             else (compoundShape, mass, inertia)
-        let userIndex = if bodyId.BodyIndex = Constants.Physics.InternalBodyIndex then -1 else 1
+        let userIndex = if bodyId.BodyIndex = Constants.Physics.InternalIndex then -1 else 1
         if not bodyProperties.Sensor then
             let motionState = new DefaultMotionState (Matrix4x4.CreateFromTrs (bodyProperties.Center, bodyProperties.Rotation, v3One))
             let constructionInfo = new RigidBodyConstructionInfo (mass, motionState, shape, inertia)
@@ -350,12 +350,12 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
         | (true, (:? RigidBody as body)) -> body.ApplyTorque applyBodyTorqueMessage.Torque
         | (_, _) -> ()
 
-    static member private setBodyObserved (setBodyObservedMessage : SetBodyObservedMessage) physicsEngine =
-        match physicsEngine.Bodies.TryGetValue setBodyObservedMessage.BodyId with
-        | (true, (_, body)) -> body.UserIndex <- if setBodyObservedMessage.Observed then 1 else -1
+    static member private setBodyObservable (setBodyObservableMessage : SetBodyObservableMessage) physicsEngine =
+        match physicsEngine.Bodies.TryGetValue setBodyObservableMessage.BodyId with
+        | (true, (_, body)) -> body.UserIndex <- if setBodyObservableMessage.Observable then 1 else -1
         | (false, _) ->
-            match physicsEngine.Ghosts.TryGetValue setBodyObservedMessage.BodyId with
-            | (true, ghost) -> ghost.UserIndex <- if setBodyObservedMessage.Observed then 1 else -1
+            match physicsEngine.Ghosts.TryGetValue setBodyObservableMessage.BodyId with
+            | (true, ghost) -> ghost.UserIndex <- if setBodyObservableMessage.Observable then 1 else -1
             | (false, _) -> ()
 
     static member private handlePhysicsMessage physicsEngine physicsMessage =
@@ -377,7 +377,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
         | ApplyBodyLinearImpulseMessage applyBodyLinearImpulseMessage -> BulletPhysicsEngine.applyBodyLinearImpulse applyBodyLinearImpulseMessage physicsEngine
         | ApplyBodyForceMessage applyBodyForceMessage -> BulletPhysicsEngine.applyBodyForce applyBodyForceMessage physicsEngine
         | ApplyBodyTorqueMessage applyBodyTorqueMessage -> BulletPhysicsEngine.applyBodyTorque applyBodyTorqueMessage physicsEngine
-        | SetBodyObservedMessage setBodyObservedMessage -> BulletPhysicsEngine.setBodyObserved setBodyObservedMessage physicsEngine
+        | SetBodyObservableMessage setBodyObservableMessage -> BulletPhysicsEngine.setBodyObservable setBodyObservableMessage physicsEngine
         | SetGravityMessage gravity ->
             physicsEngine.PhysicsContext.Gravity <- gravity
             for (gravityOverrideOpt, body) in physicsEngine.Bodies.Values do

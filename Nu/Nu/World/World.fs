@@ -104,7 +104,7 @@ module Nu =
                             World.updateEntityPublishPostUpdateFlag entity world |> snd'
 #endif
                         | "BodyCollision" | "BodySeparationExplicit" ->
-                            World.updateBodyObserved subscribing entity world
+                            World.updateBodyObservable subscribing entity world
                         | _ -> world
                     else world
                 let world =

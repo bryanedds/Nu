@@ -59,8 +59,8 @@ module Constants =
         let TransitionTime = 60L
         let RandMapSize = v2iDup 9
         let RoomSize = v2iDup 32
-        let AvatarCollisionShapeIndex = 1
-        let AvatarSensorShapeIndex = 2
+        let AvatarCollisionShapeIndex = 0
+        let AvatarSensorShapeIndex = 1
 #if DEV
         let AvatarWalkForce = 60000.0f
         let AvatarWalkForceMouse = 66000.0f
