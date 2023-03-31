@@ -1,5 +1,5 @@
 ﻿// Gaia - The Nu Game Engine editor.
-// Copyright (C) Bryan Edds, 2013-2020.
+// Copyright (C) Bryan Edds, 2013-2023.
 
 namespace Nu.Gaia
 open System

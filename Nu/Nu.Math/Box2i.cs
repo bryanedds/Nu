@@ -1,5 +1,5 @@
 ﻿//
-// Box2.cs
+// Box2i.cs
 //
 // Copyright (C) 2019 OpenTK
 //

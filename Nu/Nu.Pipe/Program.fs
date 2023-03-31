@@ -1,4 +1,7 @@
-﻿namespace NuPipe
+﻿// Nu Game Engine.
+// Copyright (C) Bryan Edds, 2013-2023.
+
+namespace NuPipe
 open System
 open Prime
 open Nu
