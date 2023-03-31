@@ -1,5 +1,5 @@
 ﻿// Nu Game Engine.
-// Copyright (C) Bryan Edds, 2013-2020.
+// Copyright (C) Bryan Edds, 2013-2023.
 
 #I __SOURCE_DIRECTORY__
 #r "nuget: Aether.Physics2D, 1.5.0"
@@ -359,7 +359,7 @@ let generateBindingsCode bindings =
 
     let header =
         "// Nu Game Engine.\n" +
-        "// Copyright (C) Bryan Edds, 2013-2020.\n" +
+        "// Copyright (C) Bryan Edds, 2013-2023.\n" +
         "\n" +
         "//*********************************************************************************************//\n" +
         "//                                                                                             //\n" +
