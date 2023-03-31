@@ -1038,7 +1038,33 @@ module RigidModelDispatcherModule =
              typeof<StaticModelFacet>]
 
         static member Properties =
-            [define Entity.BodyShape (BodyStaticModel { Verticeses = [||]; Indiceses = [||]; StaticModel = asset "" ""; TransformOpt = None; PropertiesOpt = None })
+            [define Entity.BodyShape
+                (BodyStaticModel
+                    { Verticeses =
+                        [|[|v3 -0.5f -0.5f 0.5f; v3 -0.5f 0.5f 0.5f; v3 -0.5f 0.5f -0.5f
+                            v3 -0.5f -0.5f -0.5f; v3 -0.5f -0.5f -0.5f; v3 -0.5f 0.5f -0.5f
+                            v3 0.5f 0.5f -0.5f; v3 0.5f -0.5f -0.5f; v3 0.5f -0.5f -0.5f
+                            v3 0.5f 0.5f -0.5f; v3 0.5f 0.5f 0.5f; v3 0.5f -0.5f 0.5f
+                            v3 0.5f -0.5f 0.5f; v3 0.5f 0.5f 0.5f; v3 -0.5f 0.5f 0.5f
+                            v3 -0.5f -0.5f 0.5f; v3 -0.5f -0.5f -0.5f; v3 0.5f -0.5f -0.5f
+                            v3 0.5f -0.5f 0.5f; v3 -0.5f -0.5f 0.5f; v3 0.5f 0.5f -0.5f
+                            v3 -0.5f 0.5f -0.5f; v3 -0.5f 0.5f 0.5f; v3 0.5f 0.5f 0.5f|]|]
+                      Indiceses =
+                        [|[|0; 1; 2
+                            0; 2; 3
+                            4; 5; 6
+                            4; 6; 7
+                            8; 9; 10
+                            8; 10; 11
+                            12; 13; 14
+                            12; 14; 15
+                            16; 17; 18
+                            16; 18; 19
+                            20; 21; 22
+                            20; 22; 23|]|]
+                      StaticModel = Assets.Default.StaticModel
+                      TransformOpt = None
+                      PropertiesOpt = None })
              define Entity.StaticModel Assets.Default.StaticModel
              define Entity.RenderStyle Deferred]
 
@@ -1067,7 +1093,34 @@ module RigidModelSurfaceDispatcherModule =
              typeof<StaticModelSurfaceFacet>]
 
         static member Properties =
-            [define Entity.BodyShape (BodyStaticModelSurface { Vertices = [||]; Indices = [||]; SurfaceIndex = -1; StaticModel = asset "" ""; TransformOpt = None; PropertiesOpt = None })
+            [define Entity.BodyShape
+                (BodyStaticModelSurface
+                    { Vertices =
+                        [|v3 -0.5f -0.5f 0.5f; v3 -0.5f 0.5f 0.5f; v3 -0.5f 0.5f -0.5f
+                          v3 -0.5f -0.5f -0.5f; v3 -0.5f -0.5f -0.5f; v3 -0.5f 0.5f -0.5f
+                          v3 0.5f 0.5f -0.5f; v3 0.5f -0.5f -0.5f; v3 0.5f -0.5f -0.5f
+                          v3 0.5f 0.5f -0.5f; v3 0.5f 0.5f 0.5f; v3 0.5f -0.5f 0.5f
+                          v3 0.5f -0.5f 0.5f; v3 0.5f 0.5f 0.5f; v3 -0.5f 0.5f 0.5f
+                          v3 -0.5f -0.5f 0.5f; v3 -0.5f -0.5f -0.5f; v3 0.5f -0.5f -0.5f
+                          v3 0.5f -0.5f 0.5f; v3 -0.5f -0.5f 0.5f; v3 0.5f 0.5f -0.5f
+                          v3 -0.5f 0.5f -0.5f; v3 -0.5f 0.5f 0.5f; v3 0.5f 0.5f 0.5f|]
+                      Indices =
+                        [|0; 1; 2
+                          0; 2; 3
+                          4; 5; 6
+                          4; 6; 7
+                          8; 9; 10
+                          8; 10; 11
+                          12; 13; 14
+                          12; 14; 15
+                          16; 17; 18
+                          16; 18; 19
+                          20; 21; 22
+                          20; 22; 23|]
+                      SurfaceIndex = 0
+                      StaticModel = Assets.Default.StaticModel
+                      TransformOpt = None
+                      PropertiesOpt = None })
              define Entity.SurfaceIndex 0
              define Entity.StaticModel Assets.Default.StaticModel
              define Entity.RenderStyle Deferred]
