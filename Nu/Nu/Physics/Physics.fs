@@ -3,9 +3,19 @@
 
 namespace Nu
 open System
+open System.Collections.Generic
 open System.Numerics
 open Prime
 open Nu
+
+/// A static model. Currently just used as a phantom type.
+type StaticModel = private { __ : unit }
+
+/// Uniquely identifies an Hacd (Hierarchical Approximate Convex Decomposition).
+type HacdId = { SurfaceIndex : int; StaticModel : StaticModel AssetTag  }
+
+/// A collection of identifiable Hacds (Hierarchical Approximate Convex Decompositions).
+type Hacds = Dictionary<HacdId, Vector3 array List>
 
 /// Identifies a body that can be found in a physics engine.
 type [<CustomEquality; NoComparison>] BodyId =
@@ -123,6 +133,23 @@ type BodyConvexHull =
       TransformOpt : Matrix4x4 option
       PropertiesOpt : BodyShapeProperties option }
 
+/// The shape of a physics body static model surface.
+type BodyStaticModelSurface =
+    { Vertices : Vector3 array
+      Indices : int array
+      SurfaceIndex : int
+      StaticModel : StaticModel AssetTag
+      TransformOpt : Matrix4x4 option
+      PropertiesOpt : BodyShapeProperties option }
+
+/// The shape of a physics body static model.
+type BodyStaticModel =
+    { Verticeses : Vector3 array array
+      Indiceses : int array array
+      StaticModel : StaticModel AssetTag
+      TransformOpt : Matrix4x4 option
+      PropertiesOpt : BodyShapeProperties option }
+
 /// The shape of a physics body.
 [<Syntax
     ("BodyEmpty BodyBox BodySphere BodyCapsule BodyConvexHull BodyShapes", "", "", "", "",
@@ -135,6 +162,8 @@ type BodyShape =
     | BodyCapsule of BodyCapsule
     | BodyBoxRounded of BodyBoxRounded
     | BodyConvexHull of BodyConvexHull
+    | BodyStaticModelSurface of BodyStaticModelSurface
+    | BodyStaticModel of BodyStaticModel
     | BodyShapes of BodyShape list
 
 /// The type of a physics body; Static, Kinematic, or Dynamic.
@@ -486,4 +515,6 @@ module Physics =
         | BodyCapsule bodyCapsule -> BodyCapsule { bodyCapsule with Height = size.Y * bodyCapsule.Height; Radius = size.Y * bodyCapsule.Radius; TransformOpt = scaleTranslation size bodyCapsule.TransformOpt }
         | BodyBoxRounded bodyBoxRounded -> BodyBoxRounded { bodyBoxRounded with Size = Vector3.Multiply (size, bodyBoxRounded.Size); Radius = size.X * bodyBoxRounded.Radius; TransformOpt = scaleTranslation size bodyBoxRounded.TransformOpt }
         | BodyConvexHull bodyConvexHull -> BodyConvexHull { bodyConvexHull with Vertices = Array.map (fun vertex -> size * vertex) bodyConvexHull.Vertices; TransformOpt = scaleTranslation size bodyConvexHull.TransformOpt }
+        | BodyStaticModelSurface bodyStaticModelSurface -> BodyStaticModelSurface { bodyStaticModelSurface with Vertices = Array.map (fun vertex -> size * vertex) bodyStaticModelSurface.Vertices; TransformOpt = scaleTranslation size bodyStaticModelSurface.TransformOpt }
+        | BodyStaticModel bodyStaticModel -> BodyStaticModel { bodyStaticModel with Verticeses = Array.map (Array.map (fun vertex -> size * vertex)) bodyStaticModel.Verticeses; TransformOpt = scaleTranslation size bodyStaticModel.TransformOpt }
         | BodyShapes bodyShapes -> BodyShapes (List.map (localizeBodyShape size) bodyShapes)

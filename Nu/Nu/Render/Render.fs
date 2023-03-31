@@ -20,9 +20,6 @@ type TileMap = private { __ : unit }
 /// A static model. Currently just used as a phantom type.
 type CubeMap = private { __ : unit }
 
-/// A static model. Currently just used as a phantom type.
-type StaticModel = private { __ : unit }
-
 /// An asset that is used for rendering.
 type RenderAsset =
     | TextureAsset of string * OpenGL.Texture.TextureMetadata * uint
