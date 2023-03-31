@@ -407,6 +407,7 @@ module WorldModule3 =
                  RigidModelDispatcher () :> EntityDispatcher
                  StaticModelHierarchyDispatcher () :> EntityDispatcher
                  RigidModelHierarchyDispatcher () :> EntityDispatcher
+                 EffectDispatcher3d () :> EntityDispatcher
                  BlockDispatcher3d () :> EntityDispatcher
                  BoxDispatcher3d () :> EntityDispatcher]
 
@@ -419,7 +420,7 @@ module WorldModule3 =
                  AnimatedSpriteFacet () :> Facet
                  TextFacet () :> Facet
                  BasicEmitterFacet2d () :> Facet
-                 EffectFacet2d () :> Facet
+                 EffectFacet () :> Facet
                  RigidBodyFacet () :> Facet
                  TileMapFacet () :> Facet
                  TmxMapFacet () :> Facet

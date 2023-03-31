@@ -655,7 +655,7 @@ and EmitterDescriptors<'a when 'a :> Particle and 'a : struct> =
 
 /// The default particle emitter.
 /// NOTE: ideally, this would be an abstract data type, but I feel that would discourage users from making their
-/// own emitters - it would looks like making an emitter would require a lot of additional boilerplate as well as
+/// own emitters - it would look like making an emitter would require a lot of additional boilerplate as well as
 /// making it harder to use this existing emitter as an example.
 and [<ReferenceEquality>] Emitter<'a when 'a :> Particle and 'a : equality and 'a : struct> =
     { mutable Body : Body // mutable for animation

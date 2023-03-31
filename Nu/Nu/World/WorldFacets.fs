@@ -556,7 +556,7 @@ module BasicEmitterFacet2dModule =
             World.enqueueRenderLayeredMessages2d particlesMessages world
 
 [<AutoOpen>]
-module EffectFacet2dModule =
+module EffectFacetModule =
 
     type RunMode =
         | RunEarly
@@ -588,6 +588,9 @@ module EffectFacet2dModule =
         member this.GetEffectOffset world : Vector3 = this.Get (nameof this.EffectOffset) world
         member this.SetEffectOffset (value : Vector3) world = this.Set (nameof this.EffectOffset) value world
         member this.EffectOffset = lens (nameof this.EffectOffset) this this.GetEffectOffset this.SetEffectOffset
+        member this.GetEffectRenderType world : RenderType = this.Get (nameof this.EffectRenderType) world
+        member this.SetEffectRenderType (value : RenderType) world = this.Set (nameof this.EffectRenderType) value world
+        member this.EffectRenderType = lens (nameof this.EffectRenderType) this this.GetEffectRenderType this.SetEffectRenderType
         member this.GetEffectHistoryMax world : int = this.Get (nameof this.EffectHistoryMax) world
         member this.SetEffectHistoryMax (value : int) world = this.Set (nameof this.EffectHistoryMax) value world
         member this.EffectHistoryMax = lens (nameof this.EffectHistoryMax) this this.GetEffectHistoryMax this.SetEffectHistoryMax
@@ -603,7 +606,7 @@ module EffectFacet2dModule =
             | Some effectStartTime -> effectStartTime
             | None -> GameTime.zero
 
-    type EffectFacet2d () =
+    type EffectFacet () =
         inherit Facet (false)
 
         static let setEffect effectSymbolOpt (entity : Entity) world =
@@ -624,6 +627,7 @@ module EffectFacet2dModule =
                     (entity.GetEffectCentered world)
                     (entity.GetEffectOffset world)
                     (entity.GetTransform world)
+                    (entity.GetEffectRenderType world)
                     (entity.GetParticleSystem world)
                     (entity.GetEffectHistoryMax world)
                     (entity.GetEffectHistory world)
@@ -692,6 +696,7 @@ module EffectFacet2dModule =
              define Entity.EffectDescriptor Effects.EffectDescriptor.empty
              define Entity.EffectCentered true
              define Entity.EffectOffset v3Zero
+             define Entity.EffectRenderType DeferredRenderType
              define Entity.EffectHistoryMax Constants.Effects.EffectHistoryMaxDefault
              variable Entity.EffectHistory (fun _ -> Nito.Collections.Deque<Effects.Slice> (inc Constants.Effects.EffectHistoryMaxDefault))
              nonPersistent Entity.EffectTags Map.empty]

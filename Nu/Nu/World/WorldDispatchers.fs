@@ -791,7 +791,7 @@ module EffectDispatcher2dModule =
         inherit EntityDispatcher2d (false, true, false)
 
         static member Facets =
-            [typeof<EffectFacet2d>]
+            [typeof<EffectFacet>]
 
         static member Properties =
             [define Entity.Centered true
@@ -1276,6 +1276,19 @@ module RigidModelHierarchyDispatcherModule =
                 else world
             let world = World.monitor synchronizeChildren (entity.ChangeEvent (nameof entity.StaticModel)) entity world
             world
+
+[<AutoOpen>]
+module EffectDispatcher3dModule =
+
+    type EffectDispatcher3d () =
+        inherit EntityDispatcher3d (true, false)
+
+        static member Facets =
+            [typeof<EffectFacet>]
+
+        static member Properties =
+            [define Entity.Centered true
+             define Entity.EffectDescriptor (scvalue<Effects.EffectDescriptor> "[Effect None [] [Contents [Shift 0] [[StaticModel [Resource Default StaticModel] [] Nil]]]]")]
 
 [<AutoOpen>]
 module BlockDispatcher3dModule =
