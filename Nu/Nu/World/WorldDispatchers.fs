@@ -1014,6 +1014,8 @@ module StaticBillboardDispatcherModule =
              define Entity.NormalImage Assets.Default.MaterialNormal
              define Entity.RenderStyle Deferred]
 
+// TODO: AnimatedBillboardDispatcher.
+
 [<AutoOpen>]
 module StaticModelDispatcherModule =
 
@@ -1038,7 +1040,8 @@ module RigidModelDispatcherModule =
              typeof<StaticModelFacet>]
 
         static member Properties =
-            [define Entity.BodyShape
+            [define Entity.BodyType Dynamic
+             define Entity.BodyShape
                 (BodyStaticModel
                     { Verticeses =
                         [|[|v3 -0.5f -0.5f 0.5f; v3 -0.5f 0.5f 0.5f; v3 -0.5f 0.5f -0.5f
@@ -1093,7 +1096,8 @@ module RigidModelSurfaceDispatcherModule =
              typeof<StaticModelSurfaceFacet>]
 
         static member Properties =
-            [define Entity.BodyShape
+            [define Entity.BodyType Dynamic
+             define Entity.BodyShape
                 (BodyStaticModelSurface
                     { Vertices =
                         [|v3 -0.5f -0.5f 0.5f; v3 -0.5f 0.5f 0.5f; v3 -0.5f 0.5f -0.5f
@@ -1298,4 +1302,5 @@ module BoxDispatcher3dModule =
              typeof<StaticModelFacet>]
 
         static member Properties =
-            [define Entity.StaticModel Assets.Default.StaticModel]
+            [define Entity.BodyType Dynamic
+             define Entity.StaticModel Assets.Default.StaticModel]
