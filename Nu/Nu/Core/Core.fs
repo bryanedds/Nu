@@ -8,8 +8,7 @@ open System.Diagnostics
 [<RequireQualifiedAccess>]
 module Core =
 
-    let mutable private LastTimeStamp =
-        Stopwatch.GetTimestamp ()
+    let mutable private LastTimeStamp = Stopwatch.GetTimestamp ()
 
     /// Get a time stamp at the highest-available resolution.
     let getTimeStamp () =

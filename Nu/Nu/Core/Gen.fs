@@ -6,14 +6,14 @@ open System
 open System.Collections.Generic
 open Prime
 
-[<AutoOpen>]
+[<RequireQualifiedAccess>]
 module Gen =
 
     let private Lock = obj ()
     let private Random = Random ()
-    let mutable private IdForEditor = 0UL
-    let mutable private Id64 = 0UL
     let mutable private Id32 = 0u
+    let mutable private Id64 = 0UL
+    let mutable private IdForEditor = 0UL
 
     /// Generates engine-specific values on-demand.
     type Gen =
@@ -143,6 +143,16 @@ module Gen =
             arr.[15] <- arr.[15] + byte offset                    
             Guid arr
 
+        /// Generate a unique non-zero 64-bit id.
+        static member id32 =
+            lock Lock (fun () ->
+                if Id32 = UInt32.MaxValue then failwith "Overflowed Gen.Id32."
+                Id32 <- inc Id32; Id32)
+
+        /// Generate a unique non-zero 64-bit id.
+        static member id64 =
+            lock Lock (fun () -> Id64 <- inc Id64; Id64)
+
         /// Derive a unique id and name if given none.
         static member id64AndNameIf nameOpt =
             let (id, name) =
@@ -191,16 +201,6 @@ module Gen =
             let id = Gen.idForEditor
             let truncatedName = dispatcherName.Replace ("Dispatcher", "")
             truncatedName + Gen.nameSeparator + id.ToString "D4"
-
-        /// Generate a unique non-zero 64-bit id.
-        static member id64 =
-            lock Lock (fun () -> Id64 <- inc Id64; Id64)
-
-        /// Generate a unique non-zero 64-bit id.
-        static member id32 =
-            lock Lock (fun () ->
-                if Id32 = UInt32.MaxValue then failwith "Overflowed Gen.Id32."
-                Id32 <- inc Id32; Id32)
 
 /// Generates engine-specific values on-demand.
 type Gen = Gen.Gen

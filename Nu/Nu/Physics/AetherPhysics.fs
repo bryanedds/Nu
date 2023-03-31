@@ -240,7 +240,7 @@ type [<ReferenceEquality>] AetherPhysicsEngine =
         | BodyBoxRounded bodyBoxRounded -> AetherPhysicsEngine.attachBodyBoxRounded bodySource bodyProperties bodyBoxRounded body |> Array.ofSeq
         | BodyConvexHull bodyConvexHull -> AetherPhysicsEngine.attachBodyConvexHull bodySource bodyProperties bodyConvexHull body |> Array.singleton
         | BodyShapes bodyShapes -> AetherPhysicsEngine.attachBodyShapes bodySource bodyProperties bodyShapes body
-        
+
     static member private createBody (createBodyMessage : CreateBodyMessage) physicsEngine =
 
         // get fields
