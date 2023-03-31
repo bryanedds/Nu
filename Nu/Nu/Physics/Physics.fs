@@ -133,19 +133,19 @@ type BodyConvexHull =
       TransformOpt : Matrix4x4 option
       PropertiesOpt : BodyShapeProperties option }
 
+/// The shape of a physics body static model.
+type BodyStaticModel =
+    { Verticeses : Vector3 array array
+      Indiceses : int array array
+      StaticModel : StaticModel AssetTag
+      TransformOpt : Matrix4x4 option
+      PropertiesOpt : BodyShapeProperties option }
+
 /// The shape of a physics body static model surface.
 type BodyStaticModelSurface =
     { Vertices : Vector3 array
       Indices : int array
       SurfaceIndex : int
-      StaticModel : StaticModel AssetTag
-      TransformOpt : Matrix4x4 option
-      PropertiesOpt : BodyShapeProperties option }
-
-/// The shape of a physics body static model.
-type BodyStaticModel =
-    { Verticeses : Vector3 array array
-      Indiceses : int array array
       StaticModel : StaticModel AssetTag
       TransformOpt : Matrix4x4 option
       PropertiesOpt : BodyShapeProperties option }
@@ -162,8 +162,8 @@ type BodyShape =
     | BodyCapsule of BodyCapsule
     | BodyBoxRounded of BodyBoxRounded
     | BodyConvexHull of BodyConvexHull
-    | BodyStaticModelSurface of BodyStaticModelSurface
     | BodyStaticModel of BodyStaticModel
+    | BodyStaticModelSurface of BodyStaticModelSurface
     | BodyShapes of BodyShape list
 
 /// The type of a physics body; Static, Kinematic, or Dynamic.

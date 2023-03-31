@@ -3,6 +3,7 @@
 
 namespace Nu
 open System
+open System.Collections.Generic
 open System.IO
 open System.Numerics
 open TiledSharp
@@ -1535,6 +1536,25 @@ module StaticModelFacetModule =
     type StaticModelFacet () =
         inherit Facet (false)
 
+        static let updateBodyShape evt world =
+            let entity = evt.Subscriber : Entity
+            let staticModel = entity.GetStaticModel world
+            match entity.TryGetProperty (nameof Entity.BodyShape) world with
+            | Some property when property.PropertyType = typeof<BodyShape> ->
+                let bodyShape = property.PropertyValue :?> BodyShape
+                if (match bodyShape with BodyStaticModel body -> body.StaticModel <> staticModel | _ -> false) then
+                    let verticeses = List ()
+                    let indiceses = List ()
+                    let staticModelMetadata = Metadata.getStaticModelMetadata staticModel
+                    for surface in staticModelMetadata.Surfaces do
+                        verticeses.Add surface.PhysicallyBasedGeometry.Vertices
+                        indiceses.Add surface.PhysicallyBasedGeometry.Indices
+                    let bodyStaticModel = { Verticeses = Array.ofSeq verticeses; Indiceses = Array.ofSeq indiceses; StaticModel = staticModel; TransformOpt = None; PropertiesOpt = None }
+                    let world = entity.SetBodyShape (BodyStaticModel bodyStaticModel) world
+                    (Cascade, world)
+                else (Cascade, world)
+            | _ -> (Cascade, world)
+
         static member Properties =
             [define Entity.InsetOpt None
              define Entity.StaticModel Assets.Default.StaticModel
@@ -1543,6 +1563,11 @@ module StaticModelFacetModule =
              define Entity.RoughnessOpt None
              define Entity.AmbientOcclusionOpt None
              define Entity.RenderStyle Deferred]
+
+        override this.Register (entity, world) =
+            let world = World.monitor updateBodyShape (entity.GetChangeEvent (nameof entity.StaticModel)) entity world
+            let world = World.monitor updateBodyShape (entity.GetChangeEvent (nameof entity.BodyShape)) entity world
+            world
 
         override this.Render (entity, world) =
             let mutable transform = entity.GetTransform world
@@ -1618,6 +1643,24 @@ module StaticModelSurfaceFacetModule =
     type StaticModelSurfaceFacet () =
         inherit Facet (false)
 
+        static let updateBodyShape evt world =
+            let entity = evt.Subscriber : Entity
+            let surfaceIndex = entity.GetSurfaceIndex world
+            let staticModel = entity.GetStaticModel world
+            match entity.TryGetProperty (nameof Entity.BodyShape) world with
+            | Some property when property.PropertyType = typeof<BodyShape> ->
+                let bodyShape = property.PropertyValue :?> BodyShape
+                if (match bodyShape with BodyStaticModelSurface body -> body.StaticModel <> staticModel | _ -> false) then
+                    let staticModelMetadata = Metadata.getStaticModelMetadata staticModel
+                    if surfaceIndex > -1 && surfaceIndex < staticModelMetadata.Surfaces.Length then
+                        let surface = staticModelMetadata.Surfaces.[surfaceIndex]
+                        let bodyStaticModel = { Vertices = surface.PhysicallyBasedGeometry.Vertices; Indices = surface.PhysicallyBasedGeometry.Indices; SurfaceIndex = surfaceIndex; StaticModel = staticModel; TransformOpt = None; PropertiesOpt = None }
+                        let world = entity.SetBodyShape (BodyStaticModelSurface bodyStaticModel) world
+                        (Cascade, world)
+                    else (Cascade, world)
+                else (Cascade, world)
+            | _ -> (Cascade, world)
+
         static member Properties =
             [define Entity.InsetOpt None
              define Entity.SurfaceIndex 0
@@ -1627,6 +1670,12 @@ module StaticModelSurfaceFacetModule =
              define Entity.RoughnessOpt None
              define Entity.AmbientOcclusionOpt None
              define Entity.RenderStyle Deferred]
+
+        override this.Register (entity, world) =
+            let world = World.monitor updateBodyShape (entity.GetChangeEvent (nameof entity.SurfaceIndex)) entity world
+            let world = World.monitor updateBodyShape (entity.GetChangeEvent (nameof entity.StaticModel)) entity world
+            let world = World.monitor updateBodyShape (entity.GetChangeEvent (nameof entity.BodyShape)) entity world
+            world
 
         override this.Render (entity, world) =
             match entity.GetSurfaceIndex world with

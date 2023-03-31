@@ -174,6 +174,18 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
         compoundShape.AddChildShape (Option.defaultValue m4Identity bodyConvexHull.TransformOpt, hull)
         (mass + mass', inertia + inertia')
 
+    static member private attachBodyStaticModel bodySource (bodyProperties : BodyProperties) (bodyStaticModel : BodyStaticModel) (compoundShape : CompoundShape) mass inertia (hacdCache : Hacds) =
+        if bodyStaticModel.Verticeses.Length = bodyStaticModel.Indiceses.Length then
+            Seq.fold (fun (mass, inertia) i ->
+                let vertices = bodyStaticModel.Verticeses.[i]
+                let indices = bodyStaticModel.Indiceses.[i]
+                let bodyStaticModelSurface = { Vertices = vertices; Indices = indices; SurfaceIndex = i; StaticModel = bodyStaticModel.StaticModel; TransformOpt = bodyStaticModel.TransformOpt; PropertiesOpt = bodyStaticModel.PropertiesOpt }
+                let (mass', inertia') = BulletPhysicsEngine.attachBodyStaticModelSurface bodySource bodyProperties bodyStaticModelSurface compoundShape mass inertia hacdCache
+                (mass + mass', inertia + inertia'))
+                (mass, inertia)
+                [0 .. dec bodyStaticModel.Verticeses.Length]
+        else failwith "Uneven number of vertices entries and indices entries for BodyStaticModel."
+
     static member private attachBodyStaticModelSurface bodySource (bodyProperties : BodyProperties) (bodyStaticModelSurface : BodyStaticModelSurface) (compoundShape : CompoundShape) mass inertia (hacdCache : Hacds) =
         let hacd =
             let hacdId = { SurfaceIndex = bodyStaticModelSurface.SurfaceIndex; StaticModel = bodyStaticModelSurface.StaticModel }
@@ -219,18 +231,6 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
             (mass, inertia)
             hacd
 
-    static member private attachBodyStaticModel bodySource (bodyProperties : BodyProperties) (bodyStaticModel : BodyStaticModel) (compoundShape : CompoundShape) mass inertia (hacdCache : Hacds) =
-        if bodyStaticModel.Verticeses.Length = bodyStaticModel.Indiceses.Length then
-            Seq.fold (fun (mass, inertia) i ->
-                let vertices = bodyStaticModel.Verticeses.[i]
-                let indices = bodyStaticModel.Indiceses.[i]
-                let bodyStaticModelSurface = { Vertices = vertices; Indices = indices; SurfaceIndex = i; StaticModel = bodyStaticModel.StaticModel; TransformOpt = bodyStaticModel.TransformOpt; PropertiesOpt = bodyStaticModel.PropertiesOpt }
-                let (mass', inertia') = BulletPhysicsEngine.attachBodyStaticModelSurface bodySource bodyProperties bodyStaticModelSurface compoundShape mass inertia hacdCache
-                (mass + mass', inertia + inertia'))
-                (mass, inertia)
-                [0 .. dec bodyStaticModel.Verticeses.Length]
-        else failwith "Uneven number of vertices entries and indices entries for BodyStaticModel."
-
     static member private attachBodyShapes bodySource bodyProperties bodyShapes compoundShape mass inertia hacdCache =
         List.fold (fun (mass, inertia) bodyShape ->
             let (mass', inertia') = BulletPhysicsEngine.attachBodyShape bodySource bodyProperties bodyShape compoundShape mass inertia hacdCache
@@ -246,8 +246,8 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
         | BodyCapsule bodyCapsule -> BulletPhysicsEngine.attachBodyCapsule bodySource bodyProperties bodyCapsule compoundShape masses inertia
         | BodyBoxRounded bodyBoxRounded -> BulletPhysicsEngine.attachBodyBoxRounded bodySource bodyProperties bodyBoxRounded compoundShape masses inertia
         | BodyConvexHull bodyConvexHull -> BulletPhysicsEngine.attachBodyConvexHull bodySource bodyProperties bodyConvexHull compoundShape masses inertia
-        | BodyStaticModelSurface bodyStaticModelSurface -> BulletPhysicsEngine.attachBodyStaticModelSurface bodySource bodyProperties bodyStaticModelSurface compoundShape masses inertia hacdCache
         | BodyStaticModel bodyStaticModel -> BulletPhysicsEngine.attachBodyStaticModel bodySource bodyProperties bodyStaticModel compoundShape masses inertia hacdCache
+        | BodyStaticModelSurface bodyStaticModelSurface -> BulletPhysicsEngine.attachBodyStaticModelSurface bodySource bodyProperties bodyStaticModelSurface compoundShape masses inertia hacdCache
         | BodyShapes bodyShapes -> BulletPhysicsEngine.attachBodyShapes bodySource bodyProperties bodyShapes compoundShape masses inertia hacdCache
 
     static member private createBody3 attachBodyShape (bodyId : BodyId) (bodyProperties : BodyProperties) physicsEngine =
