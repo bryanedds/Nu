@@ -207,18 +207,18 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
                 let hacd =
                     if hacdBuilder.Compute () then
                         let clusters = List ()
-                        for c in 0 .. dec hacdBuilder.NClusters do
-                            let trianglesLen = hacdBuilder.GetNTrianglesCH c * 3
+                        for i in 0 .. dec hacdBuilder.NClusters do
+                            let trianglesLen = hacdBuilder.GetNTrianglesCH i * 3
                             if trianglesLen > 0 then
                                 let triangles = Array.zeroCreate<int> trianglesLen
-                                let nVertices = hacdBuilder.GetNPointsCH c
+                                let nVertices = hacdBuilder.GetNPointsCH i
                                 let points = Array.zeroCreate<double> (nVertices * 3)                
-                                if hacdBuilder.GetCH (c, points, triangles) then
+                                if hacdBuilder.GetCH (i, points, triangles) then
                                     let vertices = Array.zeroCreate<Vector3> nVertices
-                                    let mutable vi3 = 0
-                                    for vi in  0 .. dec nVertices do
-                                        vertices.[vi] <- v3 (single points.[vi3]) (single points.[vi3 + 1]) (single points.[vi3 + 2])
-                                        vi3 <- vi3 + 3
+                                    for j in  0 .. dec nVertices do
+                                        let k = j * 3
+                                        let vertex = v3 (single points.[k]) (single points.[k + 1]) (single points.[k + 2])
+                                        vertices.[j] <- vertex
                                     clusters.Add vertices
                         clusters
                     else List ()
