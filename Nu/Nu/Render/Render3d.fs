@@ -17,7 +17,7 @@ open Nu
 /// The type of rendering used on a surface.
 type [<StructuralEquality; NoComparison; Struct>] RenderType =
     | DeferredRenderType
-    | ForwardRenderType of single * single
+    | ForwardRenderType of Sort : single * Subsort : single
 
 /// Materials used for rendering models.
 /// TODO: 3D: consider adding texture filter opts to override what's in the backing material.

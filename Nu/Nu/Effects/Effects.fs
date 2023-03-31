@@ -50,6 +50,8 @@ type Slice =
       Blend : Blend
       Glow : Color
       Flip : Flip
+      Brightness : single
+      Intensity : single
       Volume : single
       Enabled : bool
       Centered : bool }
@@ -146,6 +148,8 @@ and Aspect =
     | Blend of Blend
     | Glow of Color
     | Flip of Flip
+    | Brightness of single
+    | Intensity of single
     | Volume of single
     | Enableds of LogicApplicator * Playback * LogicKeyFrame array
     | Positions of TweenApplicator * TweenAlgorithm * Playback * Tween3KeyFrame array
@@ -168,6 +172,8 @@ and Content =
     | StaticSprite of Resource * Aspect array * Content
     | AnimatedSprite of Resource * Vector2i * int * int * GameTime * Playback * Aspect array * Content
     | TextSprite of Resource * string * Aspect array * Content
+    | StaticModel of Resource * Aspect array * Content
+    | Light of LightType * Aspect array * Content
     | SoundEffect of Resource * Aspect array * Content
     | Mount of Shift * Aspect array * Content
     | Repeat of Shift * Repetition * Aspect array * Content
@@ -245,6 +251,7 @@ module EffectSystem =
               EffectDelta : GameTime
               EffectProgressOffset : single
               EffectAbsolute : bool
+              EffectRenderType : RenderType
               EffectViews : View List
               EffectEnv : Definitions }
 
@@ -424,6 +431,8 @@ module EffectSystem =
         | Blend blend -> { slice with Blend = blend }
         | Glow glow -> { slice with Glow = glow }
         | Flip flip -> { slice with Flip = flip }
+        | Brightness brightness -> { slice with Brightness = brightness }
+        | Intensity intensity -> { slice with Intensity = intensity }
         | Volume volume -> { slice with Volume = volume }
         | Enableds (applicator, playback, keyFrames) ->
             if Array.notEmpty keyFrames then
@@ -649,6 +658,58 @@ module EffectSystem =
         // build implicitly mounted content
         evalContent content slice history effectSystem
 
+    and private evalStaticModel resource aspects content (slice : Slice) history effectSystem =
+
+        // pull image from resource
+        let staticModel = evalResource resource effectSystem
+
+        // eval aspects
+        let slice = evalAspects aspects slice effectSystem
+
+        // build model views
+        let effectSystem =
+            if slice.Enabled then
+                let staticModel = AssetTag.specialize<StaticModel> staticModel
+                let affineMatrix = Matrix4x4.CreateFromTrs (slice.Position, slice.Angles.RollPitchYaw, slice.Scale)
+                let insetOpt = if slice.Inset.Equals box2Zero then ValueNone else ValueSome slice.Inset
+                let renderMaterial =
+                    { AlbedoOpt = ValueSome slice.Color
+                      MetalnessOpt = ValueNone
+                      RoughnessOpt = ValueNone
+                      AmbientOcclusionOpt = ValueNone }
+                let modelView =
+                    Render3d
+                        (RenderStaticModelMessage
+                            (effectSystem.EffectAbsolute,
+                             affineMatrix,
+                             insetOpt,
+                             renderMaterial,
+                             effectSystem.EffectRenderType,
+                             staticModel))
+                addView modelView effectSystem
+            else effectSystem
+
+        // build implicitly mounted content
+        evalContent content slice history effectSystem
+
+    and private evalLight lightType aspects content (slice : Slice) history effectSystem =
+
+        // eval aspects
+        let slice = evalAspects aspects slice effectSystem
+
+        // build model views
+        let effectSystem =
+            if slice.Enabled then
+                let modelView =
+                    Render3d
+                        (RenderLightMessage3d
+                            (slice.Position, slice.Color, slice.Brightness, slice.Intensity, lightType))
+                addView modelView effectSystem
+            else effectSystem
+
+        // build implicitly mounted content
+        evalContent content slice history effectSystem
+
     and private evalSoundEffect resource aspects content slice history effectSystem =
 
         // pull sound from resource
@@ -760,6 +821,10 @@ module EffectSystem =
             evalAnimatedSprite resource celSize celRun celCount delay playback aspects content slice history effectSystem
         | TextSprite (resource, text, aspects, content) ->
             evalTextSprite resource text aspects content slice history effectSystem
+        | StaticModel (resource, aspects, content) ->
+            evalStaticModel resource aspects content slice history effectSystem
+        | Light (lightType, aspects, content) ->
+            evalLight lightType aspects content slice history effectSystem
         | SoundEffect (resource, aspects, content) ->
             evalSoundEffect resource aspects content slice history effectSystem
         | Mount (Shift shift, aspects, content) ->
@@ -806,11 +871,12 @@ module EffectSystem =
                 release effectSystem
         else release effectSystem
 
-    let make localTime delta absolute globalEnv =
+    let make localTime delta absolute renderType globalEnv =
         { EffectLocalTime = localTime
           EffectDelta = delta
           EffectProgressOffset = 0.0f
           EffectAbsolute = absolute
+          EffectRenderType = renderType
           EffectViews = List<View> ()
           EffectEnv = globalEnv }
 

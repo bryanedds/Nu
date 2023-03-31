@@ -63,6 +63,7 @@ module Effect =
               Centered_ : bool
               Offset_ : Vector3
               Transform_ : Transform
+              RenderType_ : RenderType
               ParticleSystem_ : ParticleSystem
               HistoryMax_ : int
               History_ : Effects.Slice Nito.Collections.Deque
@@ -72,6 +73,7 @@ module Effect =
 
         member this.StartTime = this.StartTime_
         member this.Transform = this.Transform_
+        member this.RenderType = this.RenderType_
         member this.Definitions = this.Definitions_
         member this.ParticleSystem = this.ParticleSystem_
         member this.HistoryMax = this.HistoryMax_
@@ -129,10 +131,12 @@ module Effect =
                   Blend = Transparent
                   Glow = Color.Zero
                   Flip = FlipNone
+                  Brightness = 1000.0f
+                  Intensity = 1.0f
                   Volume = Constants.Audio.SoundVolumeDefault
                   Enabled = true
                   Centered = effect.Centered_ }
-            let effectSystem = EffectSystem.make localTime delta transform.Absolute effect.Definitions_
+            let effectSystem = EffectSystem.make localTime delta transform.Absolute effect.RenderType_ effect.Definitions_
 
             // evaluate effect with effect system
             let (view, _) = EffectSystem.eval effect.Descriptor_ effectSlice effect.History_ effectSystem
@@ -203,11 +207,12 @@ module Effect =
         | Dead -> (Dead, effect, world)
 
     /// Make an effect.
-    let makePlus startTime centered offset transform particleSystem historyMax history definitions descriptor =
+    let makePlus startTime centered offset transform renderType particleSystem historyMax history definitions descriptor =
         { StartTime_ = startTime
           Centered_ = centered
           Offset_ = offset
           Transform_ = transform
+          RenderType_ = renderType
           ParticleSystem_ = particleSystem
           HistoryMax_ = historyMax
           History_ = history
@@ -216,11 +221,11 @@ module Effect =
           Descriptor_ = descriptor }
 
     /// Make an effect.
-    let make startTime offset transform descriptor =
-        makePlus startTime true offset transform ParticleSystem.empty Constants.Effects.EffectHistoryMaxDefault (Nito.Collections.Deque ()) Map.empty descriptor
+    let make startTime offset transform renderType descriptor =
+        makePlus startTime true offset transform renderType ParticleSystem.empty Constants.Effects.EffectHistoryMaxDefault (Nito.Collections.Deque ()) Map.empty descriptor
 
     /// The empty effect.
     let empty =
-        make GameTime.zero v3Zero (Transform.makeEmpty ()) EffectDescriptor.empty
+        make GameTime.zero v3Zero (Transform.makeEmpty ()) DeferredRenderType EffectDescriptor.empty
 
 type Effect = Effect.Effect
