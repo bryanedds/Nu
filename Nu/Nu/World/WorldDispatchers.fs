@@ -1028,6 +1028,21 @@ module StaticModelDispatcherModule =
              define Entity.RenderStyle Deferred]
 
 [<AutoOpen>]
+module RigidModelDispatcherModule =
+
+    type RigidModelDispatcher () =
+        inherit EntityDispatcher3d (true, false)
+
+        static member Facets =
+            [typeof<RigidBodyFacet>
+             typeof<StaticModelFacet>]
+
+        static member Properties =
+            [define Entity.BodyShape (BodyStaticModel { Verticeses = [||]; Indiceses = [||]; StaticModel = asset "" ""; TransformOpt = None; PropertiesOpt = None })
+             define Entity.StaticModel Assets.Default.StaticModel
+             define Entity.RenderStyle Deferred]
+
+[<AutoOpen>]
 module StaticModelSurfaceDispatcherModule =
 
     type StaticModelSurfaceDispatcher () =
@@ -1042,12 +1057,28 @@ module StaticModelSurfaceDispatcherModule =
              define Entity.RenderStyle Deferred]
 
 [<AutoOpen>]
+module RigidModelSurfaceDispatcherModule =
+
+    type RigidModelSurfaceDispatcher () =
+        inherit EntityDispatcher3d (true, false)
+
+        static member Facets =
+            [typeof<RigidBodyFacet>
+             typeof<StaticModelSurfaceFacet>]
+
+        static member Properties =
+            [define Entity.BodyShape (BodyStaticModelSurface { Vertices = [||]; Indices = [||]; SurfaceIndex = -1; StaticModel = asset "" ""; TransformOpt = None; PropertiesOpt = None })
+             define Entity.SurfaceIndex 0
+             define Entity.StaticModel Assets.Default.StaticModel
+             define Entity.RenderStyle Deferred]
+
+[<AutoOpen>]
 module StaticModelHierarchyDispatcherModule =
 
     type World with
 
         /// Attempt to import scene below the target entity.
-        static member tryImportScene static_ staticModel (parent : Either<Group, Entity>) world =
+        static member tryImportScene rigid staticModel (parent : Either<Group, Entity>) world =
             match Metadata.tryGetStaticModelMetadata staticModel with
             | Some staticModelMetadata ->
                 // Unity Scene Export Instructions:
@@ -1067,7 +1098,7 @@ module StaticModelHierarchyDispatcherModule =
                                 | Left group -> (names.Length > 0, names, group)
                                 | Right entity -> (true, Array.append entity.Surnames names, entity.Group)
                             let (child, world) = World.createEntity<EntityDispatcher3d> DefaultOverlay (Some surnames) group world
-                            let world = child.SetStatic static_ world
+                            let world = child.SetStatic true world
                             let world = if mountToParent then child.SetMountOpt (Some (Relation.makeParent ())) world else world
                             let world = child.QuickSize world
                             world' <- world
@@ -1087,7 +1118,7 @@ module StaticModelHierarchyDispatcherModule =
                             let world = child.SetPositionLocal position world
                             let world = child.SetRotationLocal rotation world
                             let world = child.SetScaleLocal scale world
-                            let world = child.SetStatic static_ world
+                            let world = child.SetStatic true world
                             let world = if mountToParent then child.SetMountOpt (Some (Relation.makeParent ())) world else world
                             let world = child.QuickSize world
                             world' <- world
@@ -1097,7 +1128,11 @@ module StaticModelHierarchyDispatcherModule =
                                 match parent with
                                 | Left group -> (surface.SurfaceNames.Length > 0, surface.SurfaceNames, group)
                                 | Right entity -> (true, Array.append entity.Surnames surface.SurfaceNames, entity.Group)
-                            let (child, world) = World.createEntity<StaticModelSurfaceDispatcher> DefaultOverlay (Some surnames) group world
+                            let (child, world) =
+                                if rigid
+                                then World.createEntity<RigidModelSurfaceDispatcher> DefaultOverlay (Some surnames) group world
+                                else World.createEntity<StaticModelSurfaceDispatcher> DefaultOverlay (Some surnames) group world
+                            let world = if rigid then child.SetBodyType Static world else world
                             let transform = surface.SurfaceMatrix
                             let position = transform.Translation
                             let mutable rotation = transform
@@ -1107,7 +1142,7 @@ module StaticModelHierarchyDispatcherModule =
                             let world = child.SetPositionLocal position world
                             let world = child.SetRotationLocal rotation world
                             let world = child.SetScaleLocal scale world
-                            let world = child.SetStatic static_ world
+                            let world = child.SetStatic true world
                             let world = if mountToParent then child.SetMountOpt (Some (Relation.makeParent ())) world else world
                             let world = child.SetSurfaceIndex i world
                             let world = child.SetStaticModel staticModel world
@@ -1127,6 +1162,37 @@ module StaticModelHierarchyDispatcherModule =
         member this.Loaded = lens (nameof this.Loaded) this this.GetLoaded this.SetLoaded
 
     type StaticModelHierarchyDispatcher () =
+        inherit EntityDispatcher3d (true, false)
+
+        static let destroyChildren (entity : Entity) world =
+            Seq.fold (fun world child ->
+                World.destroyEntity child world)
+                world (entity.GetChildren world)
+
+        static let synchronizeChildren evt world =
+            let entity = evt.Subscriber : Entity
+            let world = destroyChildren entity world
+            let world = World.tryImportScene false (entity.GetStaticModel world) (Right entity) world
+            (Cascade, world)
+
+        static member Properties =
+            [define Entity.StaticModel Assets.Default.StaticModel
+             define Entity.Loaded false]
+
+        override this.Register (entity, world) =
+            let world =
+                if not (entity.GetLoaded world) then
+                    let world = World.tryImportScene false (entity.GetStaticModel world) (Right entity) world
+                    let world = entity.SetLoaded true world
+                    world
+                else world
+            let world = World.monitor synchronizeChildren (entity.ChangeEvent (nameof entity.StaticModel)) entity world
+            world
+
+[<AutoOpen>]
+module RigidModelHierarchyDispatcherModule =
+
+    type RigidModelHierarchyDispatcher () =
         inherit EntityDispatcher3d (true, false)
 
         static let destroyChildren (entity : Entity) world =

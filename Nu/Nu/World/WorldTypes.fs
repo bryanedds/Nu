@@ -324,7 +324,7 @@ module WorldTypes =
         abstract TryGetHighlightBounds : Entity * World -> Box3 option
         default this.TryGetHighlightBounds (_, _) = None
 
-        /// Whether the dispatcher participates in a physics system.
+        /// Whether the dispatcher participates directly in a physics system (not counting its facets).
         member this.Physical = physical
 
         /// Whether the dispatcher uses a centered transform by default.

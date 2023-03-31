@@ -402,8 +402,11 @@ module WorldModule3 =
                  SkyBoxDispatcher () :> EntityDispatcher
                  StaticBillboardDispatcher () :> EntityDispatcher
                  StaticModelSurfaceDispatcher () :> EntityDispatcher
+                 RigidModelSurfaceDispatcher () :> EntityDispatcher
                  StaticModelDispatcher () :> EntityDispatcher
+                 RigidModelDispatcher () :> EntityDispatcher
                  StaticModelHierarchyDispatcher () :> EntityDispatcher
+                 RigidModelHierarchyDispatcher () :> EntityDispatcher
                  BlockDispatcher3d () :> EntityDispatcher
                  BoxDispatcher3d () :> EntityDispatcher]
 
