@@ -495,7 +495,7 @@ module Vector3i =
     let v3iUnitY = Vector3i.UnitY
     let v3iUnitZ = Vector3i.UnitZ
 
-/// The Vector3 value that can be plugged into the scripting language.
+/// The Vector3i value that can be plugged into the scripting language.
 type [<CustomEquality; CustomComparison>] Vector3iPluggable =
     { Vector3i : Vector3i }
 
