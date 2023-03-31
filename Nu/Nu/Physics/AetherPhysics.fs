@@ -210,7 +210,7 @@ type [<ReferenceEquality>] AetherPhysicsEngine =
             AetherPhysicsEngine.configureBodyShapeProperties bodyProperties bodyBoxRounded.PropertiesOpt bodyShape |> ignore
         Array.ofSeq bodyShapes
 
-    static member private attachBodyConvexHull bodySource bodyProperties bodyConvexHull (body : Body) =
+    static member private attachBodyConvexHull bodySource bodyProperties (bodyConvexHull : BodyConvexHull) (body : Body) =
         let transform = Option.defaultValue m4Identity bodyConvexHull.TransformOpt
         let vertices = Array.zeroCreate bodyConvexHull.Vertices.Length
         for i in 0 .. dec bodyConvexHull.Vertices.Length do
@@ -239,6 +239,8 @@ type [<ReferenceEquality>] AetherPhysicsEngine =
         | BodyCapsule bodyCapsule -> AetherPhysicsEngine.attachBodyCapsule bodySource bodyProperties bodyCapsule body |> Array.ofSeq
         | BodyBoxRounded bodyBoxRounded -> AetherPhysicsEngine.attachBodyBoxRounded bodySource bodyProperties bodyBoxRounded body |> Array.ofSeq
         | BodyConvexHull bodyConvexHull -> AetherPhysicsEngine.attachBodyConvexHull bodySource bodyProperties bodyConvexHull body |> Array.singleton
+        | BodyStaticModelSurface _ -> failwithumf ()
+        | BodyStaticModel _ -> failwithumf ()
         | BodyShapes bodyShapes -> AetherPhysicsEngine.attachBodyShapes bodySource bodyProperties bodyShapes body
 
     static member private createBody (createBodyMessage : CreateBodyMessage) physicsEngine =
