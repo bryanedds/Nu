@@ -12,6 +12,66 @@ open TiledSharp
 open Prime
 open Nu
 
+/// A mutable sprite value.
+type [<NoEquality; NoComparison; Struct>] Sprite =
+    { mutable Transform : Transform
+      mutable InsetOpt : Box2 ValueOption
+      mutable Image : Image AssetTag
+      mutable Color : Color
+      mutable Blend : Blend
+      mutable Glow : Color
+      mutable Flip : Flip }
+
+/// Describes how to render a sprite to the rendering system.
+type [<NoEquality; NoComparison>] SpriteDescriptor =
+    { mutable Transform : Transform
+      InsetOpt : Box2 ValueOption
+      Image : Image AssetTag
+      Color : Color
+      Blend : Blend
+      Glow : Color
+      Flip : Flip }
+
+/// Describes how to render multiple sprites to the rendering system.
+type [<NoEquality; NoComparison>] SpritesDescriptor =
+    { Sprites : Sprite SegmentedArray }
+
+/// Describes how to render multiple sprite descriptors to the rendering system.
+type [<NoEquality; NoComparison>] SpriteDescriptors =
+    { SpriteDescriptors : SpriteDescriptor SegmentedList }
+
+/// Describes an internally cached sprite used to avoid GC promotion of sprite descriptors.
+type [<NoEquality; NoComparison>] CachedSpriteDescriptor =
+    { mutable CachedSprite : Sprite }
+
+/// Describes how to render tile map tiles to the rendering system.
+type [<NoEquality; NoComparison>] TilesDescriptor =
+    { mutable Transform : Transform
+      Color : Color
+      Glow : Color
+      MapSize : Vector2i
+      Tiles : TmxLayerTile SegmentedList
+      TileSourceSize : Vector2i
+      TileSize : Vector2
+      TileAssets : (TmxTileset * Image AssetTag) array }
+
+/// Describes sprite-based particles.
+type [<NoEquality; NoComparison>] SpriteParticlesDescriptor =
+    { Absolute : bool
+      Elevation : single
+      Horizon : single
+      Blend : Blend
+      Image : Image AssetTag
+      Particles : Particle SegmentedArray }
+
+/// Describes how to render text to the rendering system.
+type [<NoEquality; NoComparison>] TextDescriptor =
+    { mutable Transform : Transform
+      Text : string
+      Font : Font AssetTag
+      Color : Color
+      Justification : Justification }
+
 /// Describes a 2d rendering operation.
 type [<ReferenceEquality>] RenderOperation2d =
     | RenderSprite of SpriteDescriptor

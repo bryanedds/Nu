@@ -159,7 +159,7 @@ module Effect =
                 Seq.choose (function SpawnEmitter (name, descriptor) -> Some (name, descriptor) | _ -> None) |>
                 Seq.choose (fun (name : string, descriptor : EmitterDescriptor) ->
                     match descriptor with
-                    | :? BasicEmitterDescriptor as descriptor ->
+                    | :? BasicSpriteEmitterDescriptor as descriptor ->
                         match World.tryMakeEmitter time descriptor.LifeTimeOpt descriptor.ParticleLifeTimeMaxOpt descriptor.ParticleRate descriptor.ParticleMax descriptor.Style world with
                         | Some (:? BasicStaticSpriteEmitter as emitter) ->
                             let emitter =
@@ -170,11 +170,18 @@ module Effect =
                                     ParticleSeed = descriptor.ParticleSeed
                                     Constraint = descriptor.Constraint }
                             Some (name, emitter :> Emitter)
+                        | _ -> None
+                    | :? BasicBillboardEmitterDescriptor as descriptor ->
+                        match World.tryMakeEmitter time descriptor.LifeTimeOpt descriptor.ParticleLifeTimeMaxOpt descriptor.ParticleRate descriptor.ParticleMax descriptor.Style world with
                         | Some (:? BasicStaticBillboardEmitter as emitter) ->
                             let emitter =
                                 { emitter with
                                     Body = descriptor.Body
-                                    Image = descriptor.Image
+                                    AlbedoImage = descriptor.AlbedoImage
+                                    MetalnessImage = descriptor.MetalnessImage
+                                    RoughnessImage = descriptor.RoughnessImage
+                                    AmbientOcclusionImage = descriptor.AmbientOcclusionImage
+                                    NormalImage = descriptor.NormalImage
                                     RenderType = emitter.RenderType
                                     ParticleSeed = descriptor.ParticleSeed
                                     Constraint = descriptor.Constraint }
@@ -214,7 +221,13 @@ module Effect =
                         let message =
                             RenderBillboardParticles
                                 (descriptor.Absolute,
-                                 descriptor.Image,
+                                 descriptor.AlbedoImage,
+                                 descriptor.MetalnessImage,
+                                 descriptor.RoughnessImage,
+                                 descriptor.AmbientOcclusionImage,
+                                 descriptor.NormalImage,
+                                 descriptor.MinFilterOpt,
+                                 descriptor.MagFilterOpt,
                                  descriptor.RenderType,
                                  descriptor.Particles)
                         World.enqueueRenderMessage3d message world)
