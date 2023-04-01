@@ -144,7 +144,7 @@ type [<ReferenceEquality>] GlRenderer2d =
           RenderSpriteShader : int * int * int * int * uint
           RenderSpriteQuad : uint * uint * uint
           RenderTextQuad : uint * uint * uint
-          mutable RenderSpriteBatchEnv : OpenGL.SpriteBatch.SpriteBatchEnv
+          RenderSpriteBatchEnv : OpenGL.SpriteBatch.SpriteBatchEnv
           RenderPackages : Packages<RenderAsset, unit>
           mutable RenderPackageCachedOpt : string * Package<RenderAsset, unit> // OPTIMIZATION: nullable for speed
           mutable RenderAssetCachedOpt : string * RenderAsset
