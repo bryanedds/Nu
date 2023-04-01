@@ -392,9 +392,9 @@ type [<ReferenceEquality>] GlRenderer2d =
             | TextureAsset (_, textureMetadata, texture) ->
                 GlRenderer2d.batchSprite absolute min size pivot rotation insetOpt textureMetadata texture color blend glow flip renderer
             | _ -> Log.trace "Cannot render sprite with a non-texture asset."
-        | _ -> Log.info ("SpriteDescriptor failed to render due to unloadable assets for '" + scstring image + "'.")
+        | _ -> Log.info ("Sprite failed to render due to unloadable asset for '" + scstring image + "'.")
 
-    /// Render particles.
+    /// Render sprite particles.
     static member renderSpriteParticles (blend : Blend, image : Image AssetTag, particles : Particle SegmentedArray, renderer) =
         let image = AssetTag.generalize image
         match GlRenderer2d.tryGetRenderAsset image renderer with
@@ -417,8 +417,8 @@ type [<ReferenceEquality>] GlRenderer2d =
                     let insetOpt = &particle.InsetOpt
                     GlRenderer2d.batchSprite absolute min size pivot rotation insetOpt textureMetadata texture color blend glow flip renderer
                     index <- inc index
-            | _ -> Log.trace "Cannot render particle with a non-texture asset."
-        | _ -> Log.info ("RenderDescriptors failed to render due to unloadable assets for '" + scstring image + "'.")
+            | _ -> Log.trace "Cannot render sprite particle with a non-texture asset."
+        | _ -> Log.info ("Sprite particles failed to render due to unloadable asset for '" + scstring image + "'.")
 
     /// Render tiles.
     static member renderTiles
