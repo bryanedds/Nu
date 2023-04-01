@@ -75,7 +75,7 @@ module CharacterDispatcher =
                 let perimeter = transform.Perimeter
                 let characterView =
                     Render2d (transform.Elevation, transform.Horizon, AssetTag.generalize character.AnimationSheet,
-                        SpriteDescriptor
+                        RenderSprite
                             { Transform = transform
                               InsetOpt = ValueSome (Character.getAnimationInset time character)
                               Image = character.AnimationSheet
@@ -100,7 +100,7 @@ module CharacterDispatcher =
                         afflictionTransform.Size <- Constants.Battle.AfflictionSize
                         afflictionTransform.Elevation <- transform.Elevation + 0.1f
                         Render2d (afflictionTransform.Elevation, afflictionTransform.Horizon, AssetTag.generalize afflictionImage,
-                            SpriteDescriptor
+                            RenderSprite
                                 { Transform = afflictionTransform
                                   InsetOpt = ValueSome afflictionInset
                                   Image = afflictionImage
@@ -126,7 +126,7 @@ module CharacterDispatcher =
                         chargeOrbTransform.Size <- Constants.Battle.ChargeOrbSize
                         chargeOrbTransform.Elevation <- transform.Elevation + 0.1f
                         Render2d (chargeOrbTransform.Elevation, chargeOrbTransform.Horizon, AssetTag.generalize chargeOrbImage,
-                            SpriteDescriptor
+                            RenderSprite
                                 { Transform = chargeOrbTransform
                                   InsetOpt = ValueSome chargeOrbInset
                                   Image = chargeOrbImage

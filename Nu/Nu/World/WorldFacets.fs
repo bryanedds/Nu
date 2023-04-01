@@ -250,73 +250,7 @@ module AnimatedSpriteFacetModule =
             (entity.GetCelSize world).V3
 
 [<AutoOpen>]
-module TextFacetModule =
-
-    type Entity with
-        member this.GetText world : string = this.Get (nameof this.Text) world
-        member this.SetText (value : string) world = this.Set (nameof this.Text) value world
-        member this.Text = lens (nameof this.Text) this this.GetText this.SetText
-        member this.GetFont world : Font AssetTag = this.Get (nameof this.Font) world
-        member this.SetFont (value : Font AssetTag) world = this.Set (nameof this.Font) value world
-        member this.Font = lens (nameof this.Font) this this.GetFont this.SetFont
-        member this.GetJustification world : Justification = this.Get (nameof this.Justification) world
-        member this.SetJustification (value : Justification) world = this.Set (nameof this.Justification) value world
-        member this.Justification = lens (nameof this.Justification) this this.GetJustification this.SetJustification
-        member this.GetTextMargin world : Vector2 = this.Get (nameof this.TextMargin) world
-        member this.SetTextMargin (value : Vector2) world = this.Set (nameof this.TextMargin) value world
-        member this.TextMargin = lens (nameof this.TextMargin) this this.GetTextMargin this.SetTextMargin
-        member this.GetTextColor world : Color = this.Get (nameof this.TextColor) world
-        member this.SetTextColor (value : Color) world = this.Set (nameof this.TextColor) value world
-        member this.TextColor = lens (nameof this.TextColor) this this.GetTextColor this.SetTextColor
-        member this.GetTextDisabledColor world : Color = this.Get (nameof this.TextDisabledColor) world
-        member this.SetTextDisabledColor (value : Color) world = this.Set (nameof this.TextDisabledColor) value world
-        member this.TextDisabledColor = lens (nameof this.TextDisabledColor) this this.GetTextDisabledColor this.SetTextDisabledColor
-        member this.GetTextOffset world : Vector2 = this.Get (nameof this.TextOffset) world
-        member this.SetTextOffset (value : Vector2) world = this.Set (nameof this.TextOffset) value world
-        member this.TextOffset = lens (nameof this.TextOffset) this this.GetTextOffset this.SetTextOffset
-
-    type TextFacet () =
-        inherit Facet (false)
-
-        static member Properties =
-            [define Entity.Text ""
-             define Entity.Font Assets.Default.Font
-             define Entity.Justification (Justified (JustifyCenter, JustifyMiddle))
-             define Entity.TextMargin v2Zero
-             define Entity.TextColor Color.Black
-             define Entity.TextDisabledColor (Color (0.25f, 0.25f, 0.25f, 0.75f))
-             define Entity.TextOffset v2Zero]
-
-        override this.Render (entity, world) =
-            let text = entity.GetText world
-            if not (String.IsNullOrWhiteSpace text) then
-                let mutable transform = entity.GetTransform world
-                let perimeter = transform.Perimeter // gui currently ignores rotation and scale
-                let horizon = transform.Horizon
-                let mutable textTransform = Transform.makeDefault false // centered-ness and offset is already baked into perimeterUnscaled
-                let margin = (entity.GetTextMargin world).V3
-                let offset = (entity.GetTextOffset world).V3
-                textTransform.Position <- perimeter.Min + margin + offset
-                textTransform.Size <- perimeter.Size - margin * 2.0f
-                textTransform.Elevation <- transform.Elevation + 0.5f // lift text above parent
-                textTransform.Absolute <- transform.Absolute
-                let font = entity.GetFont world
-                World.enqueueLayeredOperation2d
-                    { Elevation = textTransform.Elevation
-                      Horizon = horizon
-                      AssetTag = AssetTag.generalize font
-                      RenderOperation2d =
-                        RenderText
-                            { Transform = textTransform
-                              Text = text
-                              Font = font
-                              Color = if transform.Enabled then entity.GetTextColor world else entity.GetTextDisabledColor world
-                              Justification = entity.GetJustification world }}
-                    world
-            else world
-
-[<AutoOpen>]
-module BasicStaticSpriteEmitterFacet2dModule =
+module BasicStaticSpriteEmitterFacetModule =
 
     type Entity with
 
@@ -549,11 +483,82 @@ module BasicStaticSpriteEmitterFacet2dModule =
                 particleSystem |>
                 Particles.ParticleSystem.toParticlesDescriptors time |>
                 List.map (fun (descriptor : ParticlesDescriptor) ->
-                    { Elevation = descriptor.Elevation
-                      Horizon = descriptor.Horizon
-                      AssetTag = AssetTag.generalize descriptor.Image
-                      RenderOperation2d = ParticlesDescriptor descriptor })
+                    match descriptor with
+                    | SpriteParticlesDescriptor descriptor ->
+                        Some
+                            { Elevation = descriptor.Elevation
+                              Horizon = descriptor.Horizon
+                              AssetTag = AssetTag.generalize descriptor.Image
+                              RenderOperation2d = RenderSpriteParticles descriptor }
+                    | _ -> None) |>
+                List.definitize
             World.enqueueLayeredOperations2d particlesMessages world
+
+[<AutoOpen>]
+module TextFacetModule =
+
+    type Entity with
+        member this.GetText world : string = this.Get (nameof this.Text) world
+        member this.SetText (value : string) world = this.Set (nameof this.Text) value world
+        member this.Text = lens (nameof this.Text) this this.GetText this.SetText
+        member this.GetFont world : Font AssetTag = this.Get (nameof this.Font) world
+        member this.SetFont (value : Font AssetTag) world = this.Set (nameof this.Font) value world
+        member this.Font = lens (nameof this.Font) this this.GetFont this.SetFont
+        member this.GetJustification world : Justification = this.Get (nameof this.Justification) world
+        member this.SetJustification (value : Justification) world = this.Set (nameof this.Justification) value world
+        member this.Justification = lens (nameof this.Justification) this this.GetJustification this.SetJustification
+        member this.GetTextMargin world : Vector2 = this.Get (nameof this.TextMargin) world
+        member this.SetTextMargin (value : Vector2) world = this.Set (nameof this.TextMargin) value world
+        member this.TextMargin = lens (nameof this.TextMargin) this this.GetTextMargin this.SetTextMargin
+        member this.GetTextColor world : Color = this.Get (nameof this.TextColor) world
+        member this.SetTextColor (value : Color) world = this.Set (nameof this.TextColor) value world
+        member this.TextColor = lens (nameof this.TextColor) this this.GetTextColor this.SetTextColor
+        member this.GetTextDisabledColor world : Color = this.Get (nameof this.TextDisabledColor) world
+        member this.SetTextDisabledColor (value : Color) world = this.Set (nameof this.TextDisabledColor) value world
+        member this.TextDisabledColor = lens (nameof this.TextDisabledColor) this this.GetTextDisabledColor this.SetTextDisabledColor
+        member this.GetTextOffset world : Vector2 = this.Get (nameof this.TextOffset) world
+        member this.SetTextOffset (value : Vector2) world = this.Set (nameof this.TextOffset) value world
+        member this.TextOffset = lens (nameof this.TextOffset) this this.GetTextOffset this.SetTextOffset
+
+    type TextFacet () =
+        inherit Facet (false)
+
+        static member Properties =
+            [define Entity.Text ""
+             define Entity.Font Assets.Default.Font
+             define Entity.Justification (Justified (JustifyCenter, JustifyMiddle))
+             define Entity.TextMargin v2Zero
+             define Entity.TextColor Color.Black
+             define Entity.TextDisabledColor (Color (0.25f, 0.25f, 0.25f, 0.75f))
+             define Entity.TextOffset v2Zero]
+
+        override this.Render (entity, world) =
+            let text = entity.GetText world
+            if not (String.IsNullOrWhiteSpace text) then
+                let mutable transform = entity.GetTransform world
+                let perimeter = transform.Perimeter // gui currently ignores rotation and scale
+                let horizon = transform.Horizon
+                let mutable textTransform = Transform.makeDefault false // centered-ness and offset is already baked into perimeterUnscaled
+                let margin = (entity.GetTextMargin world).V3
+                let offset = (entity.GetTextOffset world).V3
+                textTransform.Position <- perimeter.Min + margin + offset
+                textTransform.Size <- perimeter.Size - margin * 2.0f
+                textTransform.Elevation <- transform.Elevation + 0.5f // lift text above parent
+                textTransform.Absolute <- transform.Absolute
+                let font = entity.GetFont world
+                World.enqueueLayeredOperation2d
+                    { Elevation = textTransform.Elevation
+                      Horizon = horizon
+                      AssetTag = AssetTag.generalize font
+                      RenderOperation2d =
+                        RenderText
+                            { Transform = textTransform
+                              Text = text
+                              Font = font
+                              Color = if transform.Enabled then entity.GetTextColor world else entity.GetTextDisabledColor world
+                              Justification = entity.GetJustification world }}
+                    world
+            else world
 
 [<AutoOpen>]
 module EffectFacetModule =
@@ -696,7 +701,7 @@ module EffectFacetModule =
              define Entity.EffectDescriptor Effects.EffectDescriptor.empty
              define Entity.EffectCentered true
              define Entity.EffectOffset v3Zero
-             define Entity.EffectRenderType DeferredRenderType
+             define Entity.EffectRenderType (ForwardRenderType (0.0f, 0.0f))
              define Entity.EffectHistoryMax Constants.Effects.EffectHistoryMaxDefault
              variable Entity.EffectHistory (fun _ -> Nito.Collections.Deque<Effects.Slice> (inc Constants.Effects.EffectHistoryMaxDefault))
              nonPersistent Entity.EffectTags Map.empty]
@@ -1529,6 +1534,211 @@ module StaticBillboardFacetModule =
                 (box3
                     (bounds.Min + bounds.Size * v3 0.0f 0.5f 0.0f)
                     (bounds.Size * v3 1.0f 0.5f 1.0f))
+
+[<AutoOpen>]
+module BasicStaticBillboardEmitterFacetModule =
+
+    type BasicStaticBillboardEmitterFacet () =
+        inherit Facet (false)
+
+        static let tryMakeEmitter (entity : Entity) world =
+            World.tryMakeEmitter
+                (World.getGameTime world)
+                (entity.GetEmitterLifeTimeOpt world)
+                (entity.GetParticleLifeTimeMaxOpt world)
+                (entity.GetParticleRate world)
+                (entity.GetParticleMax world)
+                (entity.GetEmitterStyle world)
+                world |>
+            Option.map cast<Particles.BasicStaticBillboardEmitter>
+
+        static let makeEmitter entity world =
+            match tryMakeEmitter entity world with
+            | Some emitter ->
+                let mutable transform = entity.GetTransform world
+                { emitter with
+                    Body =
+                        { Position = transform.Position
+                          Scale = transform.Scale
+                          Angles = transform.Angles
+                          LinearVelocity = v3Zero
+                          AngularVelocity = v3Zero
+                          Restitution = Constants.Particles.RestitutionDefault }
+                    Absolute = transform.Absolute
+                    Image = entity.GetEmitterImage world
+                    ParticleSeed = entity.GetBasicParticleSeed world
+                    Constraint = entity.GetEmitterConstraint world }
+            | None ->
+                Particles.BasicStaticBillboardEmitter.makeEmpty
+                    (World.getGameTime world)
+                    (entity.GetEmitterLifeTimeOpt world)
+                    (entity.GetParticleLifeTimeMaxOpt world)
+                    (entity.GetParticleRate world)
+                    (entity.GetParticleMax world)
+
+        static let updateParticleSystem updater (entity : Entity) world =
+            let particleSystem = entity.GetParticleSystem world
+            let particleSystem = updater particleSystem
+            let world = entity.SetParticleSystem particleSystem world
+            world
+
+        static let updateEmitter updater (entity : Entity) world =
+            updateParticleSystem (fun particleSystem ->
+                match Map.tryFind typeof<Particles.BasicStaticSpriteEmitter>.Name particleSystem.Emitters with
+                | Some (:? Particles.BasicStaticSpriteEmitter as emitter) ->
+                    let emitter = updater emitter
+                    { particleSystem with Emitters = Map.add typeof<Particles.BasicStaticSpriteEmitter>.Name (emitter :> Particles.Emitter) particleSystem.Emitters }
+                | _ -> particleSystem)
+                entity world
+
+        static let rec processOutput output entity world =
+            match output with
+            | Particles.OutputSound (volume, sound) -> World.enqueueAudioMessage (PlaySoundMessage { Volume = volume; Sound = sound }) world
+            | Particles.OutputEmitter (name, emitter) -> updateParticleSystem (fun ps -> { ps with Emitters = Map.add name emitter ps.Emitters }) entity world
+            | Particles.Outputs outputs -> SegmentedArray.fold (fun world output -> processOutput output entity world) world outputs
+
+        static let handleEmitterBlendChange evt world =
+            let emitterBlend = evt.Data.Value :?> Blend
+            let world = updateEmitter (fun emitter -> if emitter.Blend <> emitterBlend then { emitter with Blend = emitterBlend } else emitter) evt.Subscriber world
+            (Cascade, world)
+
+        static let handleEmitterImageChange evt world =
+            let emitterImage = evt.Data.Value :?> Image AssetTag
+            let world = updateEmitter (fun emitter -> if assetNeq emitter.Image emitterImage then { emitter with Image = emitterImage } else emitter) evt.Subscriber world
+            (Cascade, world)
+
+        static let handleEmitterLifeTimeOptChange evt world =
+            let emitterLifeTimeOpt = evt.Data.Value :?> GameTime
+            let world = updateEmitter (fun emitter -> if emitter.Life.LifeTimeOpt <> emitterLifeTimeOpt then { emitter with Life = { emitter.Life with LifeTimeOpt = emitterLifeTimeOpt }} else emitter) evt.Subscriber world
+            (Cascade, world)
+
+        static let handleParticleLifeTimeMaxOptChange evt world =
+            let particleLifeTimeMaxOpt = evt.Data.Value :?> GameTime
+            let world = updateEmitter (fun emitter -> if emitter.ParticleLifeTimeMaxOpt <> particleLifeTimeMaxOpt then { emitter with ParticleLifeTimeMaxOpt = particleLifeTimeMaxOpt } else emitter) evt.Subscriber world
+            (Cascade, world)
+
+        static let handleParticleRateChange evt world =
+            let particleRate = evt.Data.Value :?> single
+            let world = updateEmitter (fun emitter -> if emitter.ParticleRate <> particleRate then { emitter with ParticleRate = particleRate } else emitter) evt.Subscriber world
+            (Cascade, world)
+
+        static let handleParticleMaxChange evt world =
+            let particleMax = evt.Data.Value :?> int
+            let world = updateEmitter (fun emitter -> if emitter.ParticleRing.Length <> particleMax then Particles.BasicStaticSpriteEmitter.resize particleMax emitter else emitter) evt.Subscriber world
+            (Cascade, world)
+
+        static let handleBasicParticleSeedChange evt world =
+            let particleSeed = evt.Data.Value :?> Particles.BasicParticle
+            let world = updateEmitter (fun emitter -> if emitter.ParticleSeed <> particleSeed then { emitter with ParticleSeed = particleSeed } else emitter) evt.Subscriber world
+            (Cascade, world)
+
+        static let handleEmitterConstraintChange evt world =
+            let emitterConstraint = evt.Data.Value :?> Particles.Constraint
+            let world = updateEmitter (fun emitter -> if emitter.Constraint <> emitterConstraint then { emitter with Constraint = emitterConstraint } else emitter) evt.Subscriber world
+            (Cascade, world)
+
+        static let handleEmitterStyleChange evt world =
+            let entity = evt.Subscriber
+            let emitter = makeEmitter entity world
+            let world = updateEmitter (constant emitter) entity world
+            (Cascade, world)
+
+        static let handlePositionChange evt world =
+            let entity = evt.Subscriber : Entity
+            let particleSystem = entity.GetParticleSystem world
+            let particleSystem =
+                match Map.tryFind typeof<Particles.BasicStaticSpriteEmitter>.Name particleSystem.Emitters with
+                | Some (:? Particles.BasicStaticSpriteEmitter as emitter) ->
+                    let position = entity.GetPosition world
+                    let emitter =
+                        if v3Neq emitter.Body.Position position
+                        then { emitter with Body = { emitter.Body with Position = position }}
+                        else emitter
+                    { particleSystem with Emitters = Map.add typeof<Particles.BasicStaticSpriteEmitter>.Name (emitter :> Particles.Emitter) particleSystem.Emitters }
+                | _ -> particleSystem
+            let world = entity.SetParticleSystem particleSystem world
+            (Cascade, world)
+
+        static let handleRotationChange evt world =
+            let entity = evt.Subscriber : Entity
+            let particleSystem = entity.GetParticleSystem world
+            let particleSystem =
+                match Map.tryFind typeof<Particles.BasicStaticSpriteEmitter>.Name particleSystem.Emitters with
+                | Some (:? Particles.BasicStaticSpriteEmitter as emitter) ->
+                    let angles = entity.GetAngles world
+                    let emitter =
+                        if v3Neq emitter.Body.Angles angles
+                        then { emitter with Body = { emitter.Body with Angles = angles }}
+                        else emitter
+                    { particleSystem with Emitters = Map.add typeof<Particles.BasicStaticSpriteEmitter>.Name (emitter :> Particles.Emitter) particleSystem.Emitters }
+                | _ -> particleSystem
+            let world = entity.SetParticleSystem particleSystem world
+            (Cascade, world)
+
+        static member Properties =
+            [define Entity.SelfDestruct false
+             define Entity.EmitterBlend Transparent
+             define Entity.EmitterImage Assets.Default.Image
+             define Entity.EmitterLifeTimeOpt GameTime.zero
+             define Entity.ParticleLifeTimeMaxOpt (GameTime.ofSeconds 1.0f)
+             define Entity.ParticleRate (match Constants.GameTime.DesiredFrameRate with StaticFrameRate _ -> 1.0f | DynamicFrameRate _ -> 60.0f)
+             define Entity.ParticleMax 60
+             define Entity.BasicParticleSeed { Life = Particles.Life.make GameTime.zero (GameTime.ofSeconds 1.0f); Body = Particles.Body.defaultBody; Size = Constants.Engine.ParticleSize2dDefault; Offset = v3Zero; Inset = box2Zero; Color = Color.One; Glow = Color.Zero; Flip = FlipNone }
+             define Entity.EmitterConstraint Particles.Constraint.empty
+             define Entity.EmitterStyle "BasicStaticBillboardEmitter"
+             nonPersistent Entity.ParticleSystem Particles.ParticleSystem.empty]
+
+        override this.Register (entity, world) =
+            let emitter = makeEmitter entity world
+            let particleSystem = entity.GetParticleSystem world
+            let particleSystem = { particleSystem with Emitters = Map.add typeof<Particles.BasicStaticSpriteEmitter>.Name (emitter :> Particles.Emitter) particleSystem.Emitters }
+            let world = entity.SetParticleSystem particleSystem world
+            let world = World.monitor handlePositionChange (entity.GetChangeEvent (nameof entity.Position)) entity world
+            let world = World.monitor handleRotationChange (entity.GetChangeEvent (nameof entity.Rotation)) entity world
+            let world = World.monitor handleEmitterBlendChange (entity.GetChangeEvent (nameof entity.EmitterBlend)) entity world
+            let world = World.monitor handleEmitterImageChange (entity.GetChangeEvent (nameof entity.EmitterImage)) entity world
+            let world = World.monitor handleEmitterLifeTimeOptChange (entity.GetChangeEvent (nameof entity.EmitterLifeTimeOpt)) entity world
+            let world = World.monitor handleParticleLifeTimeMaxOptChange (entity.GetChangeEvent (nameof entity.ParticleLifeTimeMaxOpt)) entity world
+            let world = World.monitor handleParticleRateChange (entity.GetChangeEvent (nameof entity.ParticleRate)) entity world
+            let world = World.monitor handleParticleMaxChange (entity.GetChangeEvent (nameof entity.ParticleMax)) entity world
+            let world = World.monitor handleBasicParticleSeedChange (entity.GetChangeEvent (nameof entity.BasicParticleSeed)) entity world
+            let world = World.monitor handleEmitterConstraintChange (entity.GetChangeEvent (nameof entity.EmitterConstraint)) entity world
+            let world = World.monitor handleEmitterStyleChange (entity.GetChangeEvent (nameof entity.EmitterStyle)) entity world
+            world
+
+        override this.Unregister (entity, world) =
+            let particleSystem = entity.GetParticleSystem world
+            let particleSystem = { particleSystem with Emitters = Map.remove typeof<Particles.BasicStaticSpriteEmitter>.Name particleSystem.Emitters }
+            entity.SetParticleSystem particleSystem world
+
+        override this.Update (entity, world) =
+            if entity.GetEnabled world then
+                let delta = world.GameDelta
+                let time = world.GameTime
+                let particleSystem = entity.GetParticleSystem world
+                let (particleSystem, output) = Particles.ParticleSystem.run delta time particleSystem
+                let world = entity.SetParticleSystem particleSystem world
+                processOutput output entity world
+            else world
+
+        override this.Render (entity, world) =
+            let time = World.getGameTime world
+            let particleSystem = entity.GetParticleSystem world
+            let particlesMessages =
+                particleSystem |>
+                Particles.ParticleSystem.toParticlesDescriptors time |>
+                List.map (fun (descriptor : ParticlesDescriptor) ->
+                    match descriptor with
+                    | BillboardParticlesDescriptor descriptor ->
+                        Some
+                            (RenderBillboardParticles
+                                (descriptor.Absolute,
+                                 descriptor.Image,
+                                 descriptor.RenderType,
+                                 descriptor.Particles))
+                    | _ -> None) |>
+                List.definitize
+            World.enqueueRenderMessages3d particlesMessages world
 
 [<AutoOpen>]
 module StaticModelFacetModule =

@@ -108,7 +108,7 @@ module AvatarDispatcher =
             if entity.GetVisible world then
                 let mutable transform = entity.GetTransform world
                 Render2d (transform.Elevation, transform.Horizon, AssetTag.generalize avatar.AnimationSheet,
-                    SpriteDescriptor
+                    RenderSprite
                         { Transform = transform
                           InsetOpt = ValueSome (getSpriteInset entity world)
                           Image = avatar.AnimationSheet

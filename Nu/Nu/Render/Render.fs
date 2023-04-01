@@ -27,6 +27,11 @@ type RenderAsset =
     | CubeMapAsset of OpenGL.CubeMap.CubeMapMemoKey * uint * (uint * uint) option ref
     | StaticModelAsset of bool * OpenGL.PhysicallyBased.PhysicallyBasedStaticModel
 
+/// The type of rendering used on a surface.
+type [<StructuralEquality; NoComparison; Struct>] RenderType =
+    | DeferredRenderType
+    | ForwardRenderType of Sort : single * Subsort : single
+
 /// The blend mode of a sprite.
 [<Syntax
     ("Transparent Additive Overwrite", "", "", "", "",
@@ -127,9 +132,9 @@ type [<NoEquality; NoComparison>] TextDescriptor =
 
 /// Describes sprite-based particles.
 type [<NoEquality; NoComparison>] SpriteParticlesDescriptor =
-    { Elevation : single
+    { Absolute : bool
+      Elevation : single
       Horizon : single
-      Absolute : bool
       Blend : Blend
       Image : Image AssetTag
       Particles : Particle SegmentedArray }
@@ -138,6 +143,7 @@ type [<NoEquality; NoComparison>] SpriteParticlesDescriptor =
 type [<NoEquality; NoComparison>] BillboardParticlesDescriptor =
     { Absolute : bool
       Image : Image AssetTag
+      RenderType : RenderType
       Particles : Particle SegmentedArray }
 
 type [<NoEquality; NoComparison>] ParticlesDescriptor =

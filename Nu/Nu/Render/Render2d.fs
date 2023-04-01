@@ -17,10 +17,10 @@ type [<ReferenceEquality>] RenderOperation2d =
     | RenderSprite of SpriteDescriptor
     | RenderSprites of SpritesDescriptor
     | RenderSpriteDescriptors of SpriteDescriptors
-    | RenderCachedSprite of CachedSpriteDescriptor
     | RenderSpriteParticles of SpriteParticlesDescriptor
-    | RenderTiles of TilesDescriptor
+    | RenderCachedSprite of CachedSpriteDescriptor
     | RenderText of TextDescriptor
+    | RenderTiles of TilesDescriptor
     | RenderCallback2d of (Vector2 * Vector2 * Renderer2d -> unit)
 
 /// Describes a layered rendering operation to the 2d rendering system.
@@ -579,18 +579,18 @@ type [<ReferenceEquality>] GlRenderer2d =
             for index in 0 .. sprites.Length - 1 do
                 let sprite = sprites.[index]
                 GlRenderer2d.renderSprite (&sprite.Transform, &sprite.InsetOpt, sprite.Image, &sprite.Color, sprite.Blend, &sprite.Glow, sprite.Flip, renderer)
-        | RenderCachedSprite descriptor ->
-            GlRenderer2d.renderSprite (&descriptor.CachedSprite.Transform, &descriptor.CachedSprite.InsetOpt, descriptor.CachedSprite.Image, &descriptor.CachedSprite.Color, descriptor.CachedSprite.Blend, &descriptor.CachedSprite.Glow, descriptor.CachedSprite.Flip, renderer)
         | RenderSpriteParticles descriptor ->
             GlRenderer2d.renderSpriteParticles (descriptor.Blend, descriptor.Image, descriptor.Particles, renderer)
+        | RenderCachedSprite descriptor ->
+            GlRenderer2d.renderSprite (&descriptor.CachedSprite.Transform, &descriptor.CachedSprite.InsetOpt, descriptor.CachedSprite.Image, &descriptor.CachedSprite.Color, descriptor.CachedSprite.Blend, &descriptor.CachedSprite.Glow, descriptor.CachedSprite.Flip, renderer)
+        | RenderText descriptor ->
+            GlRenderer2d.renderText
+                (&descriptor.Transform, descriptor.Text, descriptor.Font, &descriptor.Color, descriptor.Justification, eyeCenter, eyeSize, renderer)
         | RenderTiles descriptor ->
             GlRenderer2d.renderTiles
                 (&descriptor.Transform, &descriptor.Color, &descriptor.Glow,
                  descriptor.MapSize, descriptor.Tiles, descriptor.TileSourceSize, descriptor.TileSize, descriptor.TileAssets,
                  eyeCenter, eyeSize, renderer)
-        | RenderText descriptor ->
-            GlRenderer2d.renderText
-                (&descriptor.Transform, descriptor.Text, descriptor.Font, &descriptor.Color, descriptor.Justification, eyeCenter, eyeSize, renderer)
         | RenderCallback2d callback ->
             GlRenderer2d.renderCallback callback eyeCenter eyeSize renderer
 

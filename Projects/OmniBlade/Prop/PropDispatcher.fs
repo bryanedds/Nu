@@ -265,7 +265,7 @@ module PropDispatcher =
                 let horizon = transform.Horizon
                 let assetTag = AssetTag.generalize image
                 Render2d (elevation, horizon, assetTag,
-                    SpriteDescriptor
+                    RenderSprite
                         { Transform = transform
                           InsetOpt = insetOpt
                           Image = image
