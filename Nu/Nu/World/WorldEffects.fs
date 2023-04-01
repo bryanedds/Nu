@@ -218,10 +218,15 @@ module Effect =
                               RenderOperation2d = RenderSpriteParticles descriptor }
                         World.enqueueLayeredOperation2d message world
                     | BillboardParticlesDescriptor descriptor ->
+                        let renderMaterial =
+                            { AlbedoOpt = descriptor.AlbedoOpt
+                              MetalnessOpt = descriptor.MetalnessOpt
+                              RoughnessOpt = descriptor.RoughnessOpt
+                              AmbientOcclusionOpt = descriptor.AmbientOcclusionOpt }
                         let message =
                             RenderBillboardParticles
                                 (descriptor.Absolute,
-                                 descriptor.RenderMaterial,
+                                 renderMaterial,
                                  descriptor.AlbedoImage,
                                  descriptor.MetalnessImage,
                                  descriptor.RoughnessImage,
