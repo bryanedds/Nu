@@ -97,21 +97,21 @@ and [<ReferenceEquality>] StaticModelSurfaceDescriptor =
 
 /// A message to the 3d renderer.
 and [<ReferenceEquality>] RenderMessage3d =
-    | CreateUserDefinedStaticModelMessage of StaticModelSurfaceDescriptor array * Box3 * StaticModel AssetTag
-    | DestroyUserDefinedStaticModelMessage of StaticModel AssetTag
-    | RenderSkyBoxMessage of CubeMap AssetTag
-    | RenderLightMessage3d of Vector3 * Color * single * single * LightType
-    | RenderBillboardMessage of bool * Matrix4x4 * Box2 voption * RenderMaterial * Image AssetTag * Image AssetTag * Image AssetTag * Image AssetTag * Image AssetTag * OpenGL.TextureMinFilter voption * OpenGL.TextureMagFilter voption * RenderType
-    | RenderBillboardsMessage of bool * (Matrix4x4 * Box2 voption) SegmentedList * RenderMaterial * Image AssetTag * Image AssetTag * Image AssetTag * Image AssetTag * Image AssetTag * OpenGL.TextureMinFilter voption * OpenGL.TextureMagFilter voption * RenderType
-    | RenderStaticModelSurfaceMessage of bool * Matrix4x4 * Box2 voption * RenderMaterial * RenderType * StaticModel AssetTag * int
-    | RenderStaticModelMessage of bool * Matrix4x4 * Box2 voption * RenderMaterial * RenderType * StaticModel AssetTag
-    | RenderStaticModelsMessage of bool * (Matrix4x4 * Box2 voption * RenderMaterial) SegmentedList * RenderType * StaticModel AssetTag
-    | RenderCachedStaticModelMessage of CachedStaticModelMessage
-    | RenderUserDefinedStaticModelMessage of bool * Matrix4x4 * Box2 voption * RenderMaterial * RenderType * StaticModelSurfaceDescriptor array * Box3
-    | RenderPostPassMessage3d of RenderPassMessage3d
-    | LoadRenderPackageMessage3d of string
-    | UnloadRenderPackageMessage3d of string
-    | ReloadRenderAssetsMessage3d
+    | CreateUserDefinedStaticModel of StaticModelSurfaceDescriptor array * Box3 * StaticModel AssetTag
+    | DestroyUserDefinedStaticModel of StaticModel AssetTag
+    | RenderSkyBox of CubeMap AssetTag
+    | RenderLight3d of Vector3 * Color * single * single * LightType
+    | RenderBillboard of bool * Matrix4x4 * Box2 voption * RenderMaterial * Image AssetTag * Image AssetTag * Image AssetTag * Image AssetTag * Image AssetTag * OpenGL.TextureMinFilter voption * OpenGL.TextureMagFilter voption * RenderType
+    | RenderBillboards of bool * (Matrix4x4 * Box2 voption) SegmentedList * RenderMaterial * Image AssetTag * Image AssetTag * Image AssetTag * Image AssetTag * Image AssetTag * OpenGL.TextureMinFilter voption * OpenGL.TextureMagFilter voption * RenderType
+    | RenderStaticModelSurface of bool * Matrix4x4 * Box2 voption * RenderMaterial * RenderType * StaticModel AssetTag * int
+    | RenderStaticModel of bool * Matrix4x4 * Box2 voption * RenderMaterial * RenderType * StaticModel AssetTag
+    | RenderStaticModels of bool * (Matrix4x4 * Box2 voption * RenderMaterial) SegmentedList * RenderType * StaticModel AssetTag
+    | RenderCachedStaticModel of CachedStaticModelMessage
+    | RenderUserDefinedStaticModel of bool * Matrix4x4 * Box2 voption * RenderMaterial * RenderType * StaticModelSurfaceDescriptor array * Box3
+    | RenderPostPass3d of RenderPassMessage3d
+    | LoadRenderPackage3d of string
+    | UnloadRenderPackage3d of string
+    | ReloadRenderAssets3d
 
 /// A sortable light.
 /// OPTIMIZATION: mutable field for caching distance squared.
@@ -934,16 +934,16 @@ type [<ReferenceEquality>] GlRenderer3d =
             let postPasses = hashSetPlus<RenderPassMessage3d> HashIdentity.Structural []
             for message in renderMessages do
                 match message with
-                | CreateUserDefinedStaticModelMessage (surfaceDescriptors, bounds, assetTag) ->
+                | CreateUserDefinedStaticModel (surfaceDescriptors, bounds, assetTag) ->
                     GlRenderer3d.tryCreateUserDefinedStaticModel surfaceDescriptors bounds assetTag renderer
-                | DestroyUserDefinedStaticModelMessage staticModel ->
+                | DestroyUserDefinedStaticModel staticModel ->
                     SegmentedList.add staticModel userDefinedStaticModelsToDestroy
-                | RenderSkyBoxMessage cubeMap ->
+                | RenderSkyBox cubeMap ->
                     SegmentedList.add cubeMap renderer.RenderTasks.RenderSkyBoxes
-                | RenderLightMessage3d (position, color, brightness, intensity, _) ->
+                | RenderLight3d (position, color, brightness, intensity, _) ->
                     let light = { SortableLightOrigin = position; SortableLightColor = color; SortableLightBrightness = brightness; SortableLightIntensity = intensity; SortableLightDistanceSquared = Single.MaxValue }
                     SegmentedList.add light renderer.RenderTasks.RenderLights
-                | RenderBillboardMessage (absolute, modelMatrix, insetOpt, renderMaterial, albedoImage, metalnessImage, roughnessImage, ambientOcclusionImage, normalImage, minFilterOpt, magFilterOpt, renderType) ->
+                | RenderBillboard (absolute, modelMatrix, insetOpt, renderMaterial, albedoImage, metalnessImage, roughnessImage, ambientOcclusionImage, normalImage, minFilterOpt, magFilterOpt, renderType) ->
                     let (albedoMetadata, albedoTexture) =
                         match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize albedoImage) renderer with
                         | ValueSome (TextureAsset (_, textureMetadata, texture)) -> (textureMetadata, texture)
@@ -981,7 +981,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                     let billboardSurface =
                         OpenGL.PhysicallyBased.CreatePhysicallyBasedSurface ([||], m4Identity, box3 (v3 -0.5f 0.0f -0.5f) v3One, billboardMaterial, renderer.RenderBillboardGeometry)
                     GlRenderer3d.categorizeBillboardSurface (absolute, eyeRotation, modelMatrix, insetOpt, albedoMetadata, renderMaterial, renderType, billboardSurface, renderer)
-                | RenderBillboardsMessage (absolute, billboards, renderMaterial, albedoImage, metalnessImage, roughnessImage, ambientOcclusionImage, normalImage, minFilterOpt, magFilterOpt, renderType) ->
+                | RenderBillboards (absolute, billboards, renderMaterial, albedoImage, metalnessImage, roughnessImage, ambientOcclusionImage, normalImage, minFilterOpt, magFilterOpt, renderType) ->
                     let (albedoMetadata, albedoTexture) =
                         match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize albedoImage) renderer with
                         | ValueSome (TextureAsset (_, textureMetadata, texture)) -> (textureMetadata, texture)
@@ -1017,30 +1017,30 @@ type [<ReferenceEquality>] GlRenderer3d =
                           TextureMagFilterOpt = magFilterOpt
                           TwoSided = false }
                     let billboardSurface =
-                        OpenGL.PhysicallyBased.CreatePhysicallyBasedSurface ([||], m4Identity, box3 (v3 -0.5f 0.0f -0.5f) v3One, billboardMaterial, renderer.RenderBillboardGeometry)
+                        OpenGL.PhysicallyBased.CreatePhysicallyBasedSurface ([||], m4Identity, box3 (v3 -0.5f -0.5f -0.5f) v3One, billboardMaterial, renderer.RenderBillboardGeometry)
                     for (modelMatrix, insetOpt) in billboards do
                         GlRenderer3d.categorizeBillboardSurface (absolute, eyeRotation, modelMatrix, insetOpt, albedoMetadata, renderMaterial, renderType, billboardSurface, renderer)
-                | RenderStaticModelSurfaceMessage (absolute, modelMatrix, insetOpt, renderMaterial, renderType, staticModel, surfaceIndex) ->
+                | RenderStaticModelSurface (absolute, modelMatrix, insetOpt, renderMaterial, renderType, staticModel, surfaceIndex) ->
                     GlRenderer3d.categorizeStaticModelSurfaceByIndex (absolute, &modelMatrix, insetOpt, &renderMaterial, renderType, staticModel, surfaceIndex, renderer)
-                | RenderStaticModelMessage (absolute, modelMatrix, insetOpt, renderMaterial, renderType, staticModel) ->
+                | RenderStaticModel (absolute, modelMatrix, insetOpt, renderMaterial, renderType, staticModel) ->
                     GlRenderer3d.categorizeStaticModel (absolute, &modelMatrix, insetOpt, &renderMaterial, renderType, staticModel, renderer)
-                | RenderStaticModelsMessage (absolute, parameters, renderType, staticModel) ->
+                | RenderStaticModels (absolute, parameters, renderType, staticModel) ->
                     for (modelMatrix, insetOpt, renderMaterial) in parameters do
                         GlRenderer3d.categorizeStaticModel (absolute, &modelMatrix, insetOpt, &renderMaterial, renderType, staticModel, renderer)
-                | RenderCachedStaticModelMessage d ->
+                | RenderCachedStaticModel d ->
                     GlRenderer3d.categorizeStaticModel (d.CachedStaticModelAbsolute, &d.CachedStaticModelAffineMatrix, d.CachedStaticModelInsetOpt, &d.CachedStaticModelRenderMaterial, d.CachedStaticModelRenderType, d.CachedStaticModel, renderer)
-                | RenderUserDefinedStaticModelMessage (absolute, modelMatrix, insetOpt, renderMaterial, renderType, surfaceDescriptors, bounds) ->
+                | RenderUserDefinedStaticModel (absolute, modelMatrix, insetOpt, renderMaterial, renderType, surfaceDescriptors, bounds) ->
                     let assetTag = asset Assets.Default.PackageName Gen.name // TODO: see if we should instead use a specialized package for temporary assets like these.
                     GlRenderer3d.tryCreateUserDefinedStaticModel surfaceDescriptors bounds assetTag renderer
                     GlRenderer3d.categorizeStaticModel (absolute, &modelMatrix, insetOpt, &renderMaterial, renderType, assetTag, renderer)
                     SegmentedList.add assetTag userDefinedStaticModelsToDestroy
-                | RenderPostPassMessage3d postPass ->
+                | RenderPostPass3d postPass ->
                     postPasses.Add postPass |> ignore<bool>
-                | LoadRenderPackageMessage3d hintPackageUse ->
+                | LoadRenderPackage3d hintPackageUse ->
                     GlRenderer3d.handleLoadRenderPackage hintPackageUse renderer
-                | UnloadRenderPackageMessage3d hintPackageDisuse ->
+                | UnloadRenderPackage3d hintPackageDisuse ->
                     GlRenderer3d.handleUnloadRenderPackage hintPackageDisuse renderer
-                | ReloadRenderAssetsMessage3d ->
+                | ReloadRenderAssets3d ->
                     GlRenderer3d.handleReloadRenderAssets renderer
 
             // sort absolute forward surfaces

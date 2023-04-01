@@ -411,8 +411,8 @@ module TmxMap =
                                     { Elevation = transform.Elevation
                                       Horizon = transform.HorizonUnscaled // ignoring scale and orientation for tile map
                                       AssetTag = AssetTag.make "" "" // just disregard asset for render ordering
-                                      RenderDescriptor2d =
-                                        TilesDescriptor
+                                      RenderOperation2d =
+                                        RenderTiles
                                             { Transform = transform
                                               Color = tileMapColor
                                               Glow = tileMapGlow

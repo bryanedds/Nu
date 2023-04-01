@@ -9,7 +9,7 @@ type EmitterDescriptor = interface end
 
 /// IO artifacts passively produced and consumed by Nu.
 type [<ReferenceEquality>] View =
-    | Render2d of single * single * obj AssetTag * RenderDescriptor2d
+    | Render2d of single * single * obj AssetTag * RenderOperation2d
     | Render3d of RenderMessage3d
     | PlaySound of single * Sound AssetTag
     | PlaySong of GameTime * GameTime * GameTime * single * Song AssetTag
