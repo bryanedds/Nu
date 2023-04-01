@@ -543,7 +543,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         if v3Neq eyeForward v3Zero then
             let billboardAngle = if Vector3.Dot (eyeForward, v3Right) >= 0.0f then -eyeForward.AngleBetween v3Forward else eyeForward.AngleBetween v3Forward
             let billboardRotation = Matrix4x4.CreateFromQuaternion (Quaternion.CreateFromAxisAngle (v3Up, billboardAngle))
-            let billboardMatrix = billboardRotation * affineMatrix
+            let billboardMatrix = affineMatrix * billboardRotation
             match renderType with
             | DeferredRenderType ->
                 if absolute then
@@ -1006,7 +1006,8 @@ type [<ReferenceEquality>] GlRenderer3d =
                 | RenderBillboards (absolute, billboards, renderMaterial, albedoImage, metalnessImage, roughnessImage, ambientOcclusionImage, normalImage, minFilterOpt, magFilterOpt, renderType) ->
                     let billboardMaterial = GlRenderer3d.makeBillboardMaterial renderMaterial albedoImage metalnessImage roughnessImage ambientOcclusionImage normalImage minFilterOpt magFilterOpt renderer
                     let billboardSurface = OpenGL.PhysicallyBased.CreatePhysicallyBasedSurface ([||], m4Identity, box3 (v3 -0.5f -0.5f -0.5f) v3One, billboardMaterial, renderer.RenderBillboardGeometry)
-                    for (modelMatrix, insetOpt) in billboards do GlRenderer3d.categorizeBillboardSurface (absolute, eyeRotation, modelMatrix, insetOpt, billboardMaterial.AlbedoMetadata, renderMaterial, renderType, billboardSurface, renderer)
+                    for (modelMatrix, insetOpt) in billboards do
+                        GlRenderer3d.categorizeBillboardSurface (absolute, eyeRotation, modelMatrix, insetOpt, billboardMaterial.AlbedoMetadata, renderMaterial, renderType, billboardSurface, renderer)
                 | RenderBillboardParticles (absolute, renderMaterial, albedoImage, metalnessImage, roughnessImage, ambientOcclusionImage, normalImage, minFilterOpt, magFilterOpt, renderType, particles) ->
                     // TODO: 3D: optimize this with some sort of batch renderer.
                     // TODO: 3D: see if we can figure out how to use particle.Transform.Offset?
