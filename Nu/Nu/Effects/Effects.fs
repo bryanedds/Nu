@@ -8,6 +8,8 @@ open System.Numerics
 open Prime
 open Nu
 
+// TODO: document all this!
+
 type [<StructuralEquality; StructuralComparison>] LogicApplicator =
     | Or
     | Nor
