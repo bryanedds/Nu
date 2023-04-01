@@ -7,10 +7,12 @@ open System
 open System.Collections
 open System.Collections.Generic
 
+// TODO: document this!
+// TODO: implement SegmentedList.remove.
+
 [<RequireQualifiedAccess>]
 module SegmentedList =
 
-    /// TODO: implement remove.
     type [<ReferenceEquality>] 'a SegmentedList =
         private
             { mutable TotalLength : int
