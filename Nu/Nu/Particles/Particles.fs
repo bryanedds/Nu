@@ -987,6 +987,7 @@ type BasicSpriteEmitterDescriptors =
 type [<ReferenceEquality>] StaticBillboardEmitter<'a when 'a :> Particle and 'a : equality and 'a : struct> =
     { mutable Body : Body // mutable for animation
       Absolute : bool
+      RenderMaterial : RenderMaterial
       AlbedoImage : Image AssetTag
       MetalnessImage : Image AssetTag
       RoughnessImage : Image AssetTag
@@ -1062,11 +1063,12 @@ type [<ReferenceEquality>] StaticBillboardEmitter<'a when 'a :> Particle and 'a 
 
     /// Make a basic particle emitter.
     static member make<'a>
-        time body absolute albedoImage metalnessImage roughnessImage ambientOcclusionImage normalImage minFilterOpt magFilterOpt renderType
+        time body absolute renderMaterial albedoImage metalnessImage roughnessImage ambientOcclusionImage normalImage minFilterOpt magFilterOpt renderType
         lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
         constrain particleInitializer particleBehavior particleBehaviors emitterBehavior emitterBehaviors toParticlesDescriptor : 'a StaticBillboardEmitter =
         { Body = body
           Absolute = absolute
+          RenderMaterial = renderMaterial
           AlbedoImage = albedoImage
           MetalnessImage = metalnessImage
           RoughnessImage = roughnessImage
@@ -1136,6 +1138,7 @@ module BasicStaticBillboardEmitter =
                 particle'.InsetOpt <- if particle.Inset.Equals box2Zero then ValueNone else ValueSome particle.Inset
                 particle'.Flip <- particle.Flip
         { Absolute = emitter.Absolute
+          RenderMaterial = emitter.RenderMaterial
           AlbedoImage = emitter.AlbedoImage
           MetalnessImage = emitter.MetalnessImage
           RoughnessImage = emitter.RoughnessImage
@@ -1152,16 +1155,17 @@ module BasicStaticBillboardEmitter =
 
     /// Make a basic static billboard particle emitter.
     let make
-        time body absolute albedoImage metalnessImage roughnessImage ambientOcclusionImage normalImage minFilterOpt maxFilterOpt renderType
+        time body absolute renderMaterial albedoImage metalnessImage roughnessImage ambientOcclusionImage normalImage minFilterOpt maxFilterOpt renderType
         lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
         constrain particleInitializer particleBehavior particleBehaviors emitterBehavior emitterBehaviors =
         BasicStaticBillboardEmitter.make
-            time body absolute albedoImage metalnessImage roughnessImage ambientOcclusionImage normalImage minFilterOpt maxFilterOpt renderType
+            time body absolute renderMaterial albedoImage metalnessImage roughnessImage ambientOcclusionImage normalImage minFilterOpt maxFilterOpt renderType
             lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
             constrain particleInitializer particleBehavior particleBehaviors emitterBehavior emitterBehaviors toParticlesDescriptor
 
     /// Make an empty basic billboard particle emitter.
     let makeEmpty time lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax =
+        let renderMaterial = RenderMaterial.empty
         let albedoImage = asset Assets.Default.PackageName Assets.Default.MaterialAlbedoName
         let metalnessImage = asset Assets.Default.PackageName Assets.Default.MaterialMetalnessName
         let roughnessImage = asset Assets.Default.PackageName Assets.Default.MaterialRoughnessName
@@ -1174,12 +1178,13 @@ module BasicStaticBillboardEmitter =
         let emitterBehavior = fun _ _ -> Output.empty
         let emitterBehaviors = Behaviors.empty
         make
-            time Body.defaultBody false albedoImage metalnessImage roughnessImage ambientOcclusionImage normalImage ValueNone ValueNone (ForwardRenderType (0.0f, 0.0f))
+            time Body.defaultBody false renderMaterial albedoImage metalnessImage roughnessImage ambientOcclusionImage normalImage ValueNone ValueNone (ForwardRenderType (0.0f, 0.0f))
             lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
             Constraint.empty particleInitializer particleBehavior particleBehaviors emitterBehavior emitterBehaviors
 
     /// Make the default basic billboard particle emitter.
     let makeDefault time lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax =
+        let renderMaterial = RenderMaterial.empty
         let albedoImage = asset Assets.Default.PackageName Assets.Default.MaterialAlbedoName
         let metalnessImage = asset Assets.Default.PackageName Assets.Default.MaterialMetalnessName
         let roughnessImage = asset Assets.Default.PackageName Assets.Default.MaterialRoughnessName
@@ -1229,7 +1234,7 @@ module BasicStaticBillboardEmitter =
         let emitterBehaviors =
             Behaviors.empty
         make
-            time Body.defaultBody false albedoImage metalnessImage roughnessImage ambientOcclusionImage normalImage ValueNone ValueNone (ForwardRenderType (0.0f, 0.0f))
+            time Body.defaultBody false renderMaterial albedoImage metalnessImage roughnessImage ambientOcclusionImage normalImage ValueNone ValueNone (ForwardRenderType (0.0f, 0.0f))
             lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
             Constraint.empty particleInitializer particleBehavior particleBehaviors emitterBehavior emitterBehaviors
 

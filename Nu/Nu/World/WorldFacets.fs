@@ -1451,12 +1451,12 @@ module StaticBillboardFacetModule =
         member this.GetRoughnessImage world : Image AssetTag = this.Get (nameof this.RoughnessImage) world
         member this.SetRoughnessImage (value : Image AssetTag) world = this.Set (nameof this.RoughnessImage) value world
         member this.RoughnessImage = lens (nameof this.RoughnessImage) this this.GetRoughnessImage this.SetRoughnessImage
-        member this.GetAmbientOcclusionImage world : Image AssetTag = this.Get (nameof this.AmbientOcclusionImage) world
-        member this.SetAmbientOcclusionImage (value : Image AssetTag) world = this.Set (nameof this.AmbientOcclusionImage) value world
-        member this.AmbientOcclusionImage = lens (nameof this.AmbientOcclusionImage) this this.GetAmbientOcclusionImage this.SetAmbientOcclusionImage
         member this.GetAmbientOcclusionOpt world : single option = this.Get (nameof this.AmbientOcclusionOpt) world
         member this.SetAmbientOcclusionOpt (value : single option) world = this.Set (nameof this.AmbientOcclusionOpt) value world
         member this.AmbientOcclusionOpt = lens (nameof this.AmbientOcclusionOpt) this this.GetAmbientOcclusionOpt this.SetAmbientOcclusionOpt
+        member this.GetAmbientOcclusionImage world : Image AssetTag = this.Get (nameof this.AmbientOcclusionImage) world
+        member this.SetAmbientOcclusionImage (value : Image AssetTag) world = this.Set (nameof this.AmbientOcclusionImage) value world
+        member this.AmbientOcclusionImage = lens (nameof this.AmbientOcclusionImage) this this.GetAmbientOcclusionImage this.SetAmbientOcclusionImage
         member this.GetNormalImage world : Image AssetTag = this.Get (nameof this.NormalImage) world
         member this.SetNormalImage (value : Image AssetTag) world = this.Set (nameof this.NormalImage) value world
         member this.NormalImage = lens (nameof this.NormalImage) this this.GetNormalImage this.SetNormalImage
@@ -1540,15 +1540,27 @@ module BasicStaticBillboardEmitterFacetModule =
 
     type Entity with
 
+        member this.GetEmitterAlbedoOpt world : Color option = this.Get (nameof this.EmitterAlbedoOpt) world
+        member this.SetEmitterAlbedoOpt (value : Color option) world = this.Set (nameof this.EmitterAlbedoOpt) value world
+        member this.EmitterAlbedoOpt = lens (nameof this.EmitterAlbedoOpt) this this.GetEmitterAlbedoOpt this.SetEmitterAlbedoOpt
         member this.GetEmitterAlbedoImage world : Image AssetTag = this.Get (nameof this.EmitterAlbedoImage) world
         member this.SetEmitterAlbedoImage (value : Image AssetTag) world = this.Set (nameof this.EmitterAlbedoImage) value world
         member this.EmitterAlbedoImage = lens (nameof this.EmitterAlbedoImage) this this.GetEmitterAlbedoImage this.SetEmitterAlbedoImage
+        member this.GetEmitterMetalnessOpt world : single option = this.Get (nameof this.EmitterMetalnessOpt) world
+        member this.SetEmitterMetalnessOpt (value : single option) world = this.Set (nameof this.EmitterMetalnessOpt) value world
+        member this.EmitterMetalnessOpt = lens (nameof this.EmitterMetalnessOpt) this this.GetEmitterMetalnessOpt this.SetEmitterMetalnessOpt
         member this.GetEmitterMetalnessImage world : Image AssetTag = this.Get (nameof this.EmitterMetalnessImage) world
         member this.SetEmitterMetalnessImage (value : Image AssetTag) world = this.Set (nameof this.EmitterMetalnessImage) value world
         member this.EmitterMetalnessImage = lens (nameof this.EmitterMetalnessImage) this this.GetEmitterMetalnessImage this.SetEmitterMetalnessImage
+        member this.GetEmitterRoughnessOpt world : single option = this.Get (nameof this.EmitterRoughnessOpt) world
+        member this.SetEmitterRoughnessOpt (value : single option) world = this.Set (nameof this.EmitterRoughnessOpt) value world
+        member this.EmitterRoughnessOpt = lens (nameof this.EmitterRoughnessOpt) this this.GetEmitterRoughnessOpt this.SetEmitterRoughnessOpt
         member this.GetEmitterRoughnessImage world : Image AssetTag = this.Get (nameof this.EmitterRoughnessImage) world
         member this.SetEmitterRoughnessImage (value : Image AssetTag) world = this.Set (nameof this.EmitterRoughnessImage) value world
         member this.EmitterRoughnessImage = lens (nameof this.EmitterRoughnessImage) this this.GetEmitterRoughnessImage this.SetEmitterRoughnessImage
+        member this.GetAmbientEmitterOcclusionOpt world : single option = this.Get (nameof this.AmbientEmitterOcclusionOpt) world
+        member this.SetAmbientEmitterOcclusionOpt (value : single option) world = this.Set (nameof this.AmbientEmitterOcclusionOpt) value world
+        member this.AmbientEmitterOcclusionOpt = lens (nameof this.AmbientEmitterOcclusionOpt) this this.GetAmbientEmitterOcclusionOpt this.SetAmbientEmitterOcclusionOpt
         member this.GetEmitterAmbientOcclusionImage world : Image AssetTag = this.Get (nameof this.EmitterAmbientOcclusionImage) world
         member this.SetEmitterAmbientOcclusionImage (value : Image AssetTag) world = this.Set (nameof this.EmitterAmbientOcclusionImage) value world
         member this.EmitterAmbientOcclusionImage = lens (nameof this.EmitterAmbientOcclusionImage) this this.GetEmitterAmbientOcclusionImage this.SetEmitterAmbientOcclusionImage
@@ -1755,9 +1767,15 @@ module BasicStaticBillboardEmitterFacetModule =
                 List.map (fun descriptor ->
                     match descriptor with
                     | Particles.BillboardParticlesDescriptor descriptor ->
+                        let renderMaterial =
+                            { AlbedoOpt = match entity.GetAlbedoOpt world with Some albedo -> ValueSome albedo | None -> ValueNone
+                              MetalnessOpt = match entity.GetMetalnessOpt world with Some metalness -> ValueSome metalness | None -> ValueNone
+                              RoughnessOpt = match entity.GetRoughnessOpt world with Some roughness -> ValueSome roughness | None -> ValueNone
+                              AmbientOcclusionOpt = match entity.GetAmbientOcclusionOpt world with Some ambientOcclusion -> ValueSome ambientOcclusion | None -> ValueNone }
                         Some
                             (RenderBillboardParticles
                                 (descriptor.Absolute,
+                                 renderMaterial,
                                  descriptor.AlbedoImage,
                                  descriptor.MetalnessImage,
                                  descriptor.RoughnessImage,
