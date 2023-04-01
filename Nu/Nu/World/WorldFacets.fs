@@ -734,6 +734,13 @@ module EffectFacetModule =
             else world
 #endif
 
+        override this.RayCast (ray, entity, world) =
+            if entity.GetIs3d world then
+                let intersectionOpt = ray.Intersects (entity.GetBounds world)
+                if intersectionOpt.HasValue then [|intersectionOpt.Value|]
+                else [||]
+            else [||]
+
 [<AutoOpen>]
 module RigidBodyFacetModule =
 
