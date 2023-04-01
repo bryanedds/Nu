@@ -1010,7 +1010,6 @@ type [<ReferenceEquality>] GlRenderer3d =
                         GlRenderer3d.categorizeBillboardSurface (absolute, eyeRotation, modelMatrix, insetOpt, billboardMaterial.AlbedoMetadata, renderMaterial, renderType, billboardSurface, renderer)
                 | RenderBillboardParticles (absolute, renderMaterial, albedoImage, metalnessImage, roughnessImage, ambientOcclusionImage, normalImage, minFilterOpt, magFilterOpt, renderType, particles) ->
                     // TODO: 3D: optimize this with some sort of batch renderer.
-                    // TODO: 3D: see if we can figure out how to use particle.Transform.Offset?
                     let billboardMaterial = GlRenderer3d.makeBillboardMaterial renderMaterial albedoImage metalnessImage roughnessImage ambientOcclusionImage normalImage minFilterOpt magFilterOpt renderer
                     for particle in particles do
                         let billboardMatrix =
