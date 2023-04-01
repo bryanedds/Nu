@@ -221,6 +221,7 @@ module Effect =
                         let message =
                             RenderBillboardParticles
                                 (descriptor.Absolute,
+                                 descriptor.RenderMaterial,
                                  descriptor.AlbedoImage,
                                  descriptor.MetalnessImage,
                                  descriptor.RoughnessImage,
