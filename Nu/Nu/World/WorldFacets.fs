@@ -1711,7 +1711,6 @@ module BasicStaticBillboardEmitterFacetModule =
 
         static member Properties =
             [define Entity.SelfDestruct false
-            
              define Entity.EmitterAlbedoOpt None
              define Entity.EmitterAlbedoImage Assets.Default.MaterialAlbedo
              define Entity.EmitterMetalnessOpt None
