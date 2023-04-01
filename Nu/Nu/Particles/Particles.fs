@@ -948,7 +948,8 @@ module BasicStaticSpriteEmitter =
                 (Behavior.ofSeq BasicParticle.body
                     [Transformer.force (Gravity gravity)
                      Transformer.force (Velocity Constraint.empty)])
-        let emitterBehavior = fun _ _ ->
+        let emitterBehavior = fun _ (emitter : BasicStaticSpriteEmitter) ->
+            emitter.Body.Angles <- emitter.Body.Angles + v3 0.0f 0.0f 0.1f
             Output.empty
         let emitterBehaviors =
             Behaviors.empty
