@@ -372,9 +372,6 @@ module Content =
     let entity<'entityDispatcher when 'entityDispatcher :> EntityDispatcher> entityName initializers =
         composite<'entityDispatcher> entityName initializers []
 
-    /// Describe a basic static sprite emitter with the given initializers.
-    let basicStaticSpriteEmitter entityName initializers = entity<BasicStaticSpriteEmitterDispatcher> entityName initializers
-
     /// Describe a 2d effect with the given initializers.
     let effect2d entityName initializers = entity<EffectDispatcher2d> entityName initializers
 
@@ -383,6 +380,9 @@ module Content =
 
     /// Describe an animated sprite with the given initializers.
     let animatedSprite entityName initializers = entity<AnimatedSpriteDispatcher> entityName initializers
+
+    /// Describe a basic static sprite emitter with the given initializers.
+    let basicStaticSpriteEmitter entityName initializers = entity<BasicStaticSpriteEmitterDispatcher> entityName initializers
 
     /// Describe an association of gui entities with the given initializers and content.
     let association entityName initializers content = composite<GuiDispatcher> entityName initializers content
@@ -437,6 +437,9 @@ module Content =
 
     /// Describe a static billboard with the given initializers.
     let staticBillboard entityName initializers = entity<StaticBillboardDispatcher> entityName initializers
+
+    /// Describe a basic static billboard emitter with the given initializers.
+    let basicStaticBillboardEmitter entityName initializers = entity<BasicStaticSpriteEmitterDispatcher> entityName initializers
 
     /// Describe a static model with the given initializers.
     let staticModel entityName initializers = entity<StaticModelDispatcher> entityName initializers
