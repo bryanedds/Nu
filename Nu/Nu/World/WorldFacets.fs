@@ -1558,9 +1558,9 @@ module BasicStaticBillboardEmitterFacetModule =
         member this.GetEmitterRoughnessImage world : Image AssetTag = this.Get (nameof this.EmitterRoughnessImage) world
         member this.SetEmitterRoughnessImage (value : Image AssetTag) world = this.Set (nameof this.EmitterRoughnessImage) value world
         member this.EmitterRoughnessImage = lens (nameof this.EmitterRoughnessImage) this this.GetEmitterRoughnessImage this.SetEmitterRoughnessImage
-        member this.GetAmbientEmitterOcclusionOpt world : single option = this.Get (nameof this.AmbientEmitterOcclusionOpt) world
-        member this.SetAmbientEmitterOcclusionOpt (value : single option) world = this.Set (nameof this.AmbientEmitterOcclusionOpt) value world
-        member this.AmbientEmitterOcclusionOpt = lens (nameof this.AmbientEmitterOcclusionOpt) this this.GetAmbientEmitterOcclusionOpt this.SetAmbientEmitterOcclusionOpt
+        member this.GetEmitterAmbientOcclusionOpt world : single option = this.Get (nameof this.EmitterAmbientOcclusionOpt) world
+        member this.SetEmitterAmbientOcclusionOpt (value : single option) world = this.Set (nameof this.EmitterAmbientOcclusionOpt) value world
+        member this.EmitterAmbientOcclusionOpt = lens (nameof this.EmitterAmbientOcclusionOpt) this this.GetEmitterAmbientOcclusionOpt this.SetEmitterAmbientOcclusionOpt
         member this.GetEmitterAmbientOcclusionImage world : Image AssetTag = this.Get (nameof this.EmitterAmbientOcclusionImage) world
         member this.SetEmitterAmbientOcclusionImage (value : Image AssetTag) world = this.Set (nameof this.EmitterAmbientOcclusionImage) value world
         member this.EmitterAmbientOcclusionImage = lens (nameof this.EmitterAmbientOcclusionImage) this this.GetEmitterAmbientOcclusionImage this.SetEmitterAmbientOcclusionImage
@@ -1711,9 +1711,14 @@ module BasicStaticBillboardEmitterFacetModule =
 
         static member Properties =
             [define Entity.SelfDestruct false
+            
+             define Entity.EmitterAlbedoOpt None
              define Entity.EmitterAlbedoImage Assets.Default.MaterialAlbedo
+             define Entity.EmitterMetalnessOpt None
              define Entity.EmitterMetalnessImage Assets.Default.MaterialMetalness
+             define Entity.EmitterRoughnessOpt None
              define Entity.EmitterRoughnessImage Assets.Default.MaterialRoughness
+             define Entity.EmitterAmbientOcclusionOpt None
              define Entity.EmitterAmbientOcclusionImage Assets.Default.MaterialAmbientOcclusion
              define Entity.EmitterNormalImage Assets.Default.MaterialNormal
              define Entity.EmitterLifeTimeOpt GameTime.zero
@@ -1768,10 +1773,10 @@ module BasicStaticBillboardEmitterFacetModule =
                     match descriptor with
                     | Particles.BillboardParticlesDescriptor descriptor ->
                         let renderMaterial =
-                            { AlbedoOpt = match entity.GetAlbedoOpt world with Some albedo -> ValueSome albedo | None -> ValueNone
-                              MetalnessOpt = match entity.GetMetalnessOpt world with Some metalness -> ValueSome metalness | None -> ValueNone
-                              RoughnessOpt = match entity.GetRoughnessOpt world with Some roughness -> ValueSome roughness | None -> ValueNone
-                              AmbientOcclusionOpt = match entity.GetAmbientOcclusionOpt world with Some ambientOcclusion -> ValueSome ambientOcclusion | None -> ValueNone }
+                            { AlbedoOpt = match entity.GetEmitterAlbedoOpt world with Some albedo -> ValueSome albedo | None -> ValueNone
+                              MetalnessOpt = match entity.GetEmitterMetalnessOpt world with Some metalness -> ValueSome metalness | None -> ValueNone
+                              RoughnessOpt = match entity.GetEmitterRoughnessOpt world with Some roughness -> ValueSome roughness | None -> ValueNone
+                              AmbientOcclusionOpt = match entity.GetEmitterAmbientOcclusionOpt world with Some ambientOcclusion -> ValueSome ambientOcclusion | None -> ValueNone }
                         Some
                             (RenderBillboardParticles
                                 (descriptor.Absolute,

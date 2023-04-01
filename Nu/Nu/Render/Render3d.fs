@@ -1005,6 +1005,8 @@ type [<ReferenceEquality>] GlRenderer3d =
                     let billboardSurface = OpenGL.PhysicallyBased.CreatePhysicallyBasedSurface ([||], m4Identity, box3 (v3 -0.5f -0.5f -0.5f) v3One, billboardMaterial, renderer.RenderBillboardGeometry)
                     for (modelMatrix, insetOpt) in billboards do GlRenderer3d.categorizeBillboardSurface (absolute, eyeRotation, modelMatrix, insetOpt, billboardMaterial.AlbedoMetadata, renderMaterial, renderType, billboardSurface, renderer)
                 | RenderBillboardParticles (absolute, renderMaterial, albedoImage, metalnessImage, roughnessImage, ambientOcclusionImage, normalImage, minFilterOpt, magFilterOpt, renderType, particles) ->
+                    // TODO: 3D: optimize this with some sort of batch renderer.
+                    // TODO: 3D: see if we can figure out how to use particle.Transform.Offset? and Size?
                     let billboardMaterial = GlRenderer3d.makeBillboardMaterial albedoImage metalnessImage roughnessImage ambientOcclusionImage normalImage minFilterOpt magFilterOpt renderMaterial renderer
                     for particle in particles do
                         let billboardMaterial = { billboardMaterial with Albedo = billboardMaterial.Albedo * particle.Color }
