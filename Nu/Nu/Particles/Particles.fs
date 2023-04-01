@@ -927,8 +927,8 @@ module BasicStaticSpriteEmitter =
             let particle = emitter.ParticleSeed
             particle.Body.Position <- emitter.Body.Position
             particle.Body.Angles <- emitter.Body.Angles
-            particle.Body.LinearVelocity <- (v3 (Gen.randomf - 0.5f) Gen.randomf (Gen.randomf - 0.5f)) * v3Dup 1000.0f * particleScalar
-            particle.Body.AngularVelocity <- v3 Gen.randomf Gen.randomf Gen.randomf - v3Dup 30.0f * particleScalar
+            particle.Body.LinearVelocity <- (v3 (Gen.randomf - 0.5f) Gen.randomf 0.0f) * v3Dup 1000.0f * particleScalar
+            particle.Body.AngularVelocity <- v3 0.0f 0.0f (Gen.randomf - 30.0f) * particleScalar
             particle
         let particleBehavior = fun time emitter ->
             let watermark = emitter.ParticleWatermark
@@ -949,7 +949,7 @@ module BasicStaticSpriteEmitter =
                     [Transformer.force (Gravity gravity)
                      Transformer.force (Velocity Constraint.empty)])
         let emitterBehavior = fun _ (emitter : BasicStaticSpriteEmitter) ->
-            emitter.Body.Angles <- emitter.Body.Angles + v3Dup 0.1f
+            emitter.Body.Angles <- emitter.Body.Angles + v3 0.0f 0.0f 0.1f
             Output.empty
         let emitterBehaviors =
             Behaviors.empty
@@ -1194,7 +1194,7 @@ module BasicStaticBillboardEmitter =
             { Life = Life.make GameTime.zero (GameTime.ofSeconds 2.0f)
               Body = Body.defaultBody
               Offset = v3Zero
-              Size = Constants.Engine.ParticleSize2dDefault
+              Size = Constants.Engine.ParticleSize3dDefault
               Inset = box2Zero
               Color = Color.One
               Glow = Color.Zero
@@ -1207,8 +1207,8 @@ module BasicStaticBillboardEmitter =
             let particle = emitter.ParticleSeed
             particle.Body.Position <- emitter.Body.Position
             particle.Body.Angles <- emitter.Body.Angles
-            particle.Body.LinearVelocity <- (v3 (Gen.randomf - 0.5f) Gen.randomf (Gen.randomf - 0.5f)) * v3Dup 1000.0f * particleScalar
-            particle.Body.AngularVelocity <- v3 Gen.randomf Gen.randomf Gen.randomf - v3Dup 30.0f * particleScalar
+            particle.Body.LinearVelocity <- (v3 (Gen.randomf - 0.5f) Gen.randomf (Gen.randomf - 0.5f)) * v3Dup 20.0f * particleScalar
+            particle.Body.AngularVelocity <- v3 0.0f 0.0f (Gen.randomf - 30.0f) * particleScalar
             particle
         let particleBehavior = fun time emitter ->
             let watermark = emitter.ParticleWatermark
@@ -1221,15 +1221,15 @@ module BasicStaticBillboardEmitter =
             Output.empty
         let gravity =
             match Constants.GameTime.DesiredFrameRate with
-            | StaticFrameRate frameRate -> v3 0.0f -Constants.Engine.Meter2d 0.0f / single frameRate
-            | DynamicFrameRate _ -> v3 0.0f -Constants.Engine.Meter2d 0.0f * Constants.Engine.Meter2d
+            | StaticFrameRate frameRate -> v3 0.0f -Constants.Engine.Meter3d 0.0f / single frameRate
+            | DynamicFrameRate _ -> v3 0.0f -Constants.Engine.Meter3d 0.0f * Constants.Engine.Meter3d
         let particleBehaviors =
             Behaviors.singleton
                 (Behavior.ofSeq BasicParticle.body
                     [Transformer.force (Gravity gravity)
                      Transformer.force (Velocity Constraint.empty)])
         let emitterBehavior = fun _ (emitter : BasicStaticBillboardEmitter) ->
-            emitter.Body.Angles <- emitter.Body.Angles + v3Dup 0.1f
+            emitter.Body.Angles <- emitter.Body.Angles + v3 0.0f 0.0f 0.1f
             Output.empty
         let emitterBehaviors =
             Behaviors.empty
