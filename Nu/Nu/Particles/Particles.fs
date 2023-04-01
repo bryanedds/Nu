@@ -644,14 +644,122 @@ and [<ReferenceEquality>] EmitterDescriptor<'a when 'a :> Particle and 'a : stru
 and EmitterDescriptors<'a when 'a :> Particle and 'a : struct> =
     Map<string, 'a EmitterDescriptor>
 
+/// A basic particle.
+type [<StructuralEquality; NoComparison; Struct>] BasicParticle =
+    { mutable Life : Life
+      mutable Body : Body
+      mutable Offset : Vector3
+      mutable Size : Vector3
+      mutable Inset : Box2
+      mutable Color : Color
+      mutable Glow : Color
+      mutable Flip : Flip }
+    interface Particle with member this.Life with get () = this.Life and set value = this.Life <- value
+
+[<RequireQualifiedAccess>]
+module BasicParticle =
+    let body = Scope.make (new In<_, _> (fun p v -> v <- p.Body)) (new Out<_, _> (fun v p -> p.Body <- v))
+    let position = Scope.make (new In<_, _> (fun p v -> v <- struct (p.Life, p.Body.Position))) (new Out<_, _> (fun v p -> p.Body.Position <- snd' v))
+    let scale = Scope.make (new In<_, _> (fun p v -> v <- struct (p.Life, p.Body.Scale))) (new Out<_, _> (fun v p -> p.Body.Scale <- snd' v))
+    let angles = Scope.make (new In<_, _> (fun p v -> v <- struct (p.Life, p.Body.Angles))) (new Out<_, _> (fun v p -> p.Body.Angles <- snd' v))
+    let offset = Scope.make (new In<_, _> (fun p v -> v <- struct (p.Life, p.Offset))) (new Out<_, _> (fun v p -> p.Offset <- snd' v))
+    let size = Scope.make (new In<_, _> (fun p v -> v <- struct (p.Life, p.Size))) (new Out<_, _> (fun v p -> p.Size <- snd' v))
+    let inset = Scope.make (new In<_, _> (fun p v -> v <- struct (p.Life, p.Inset))) (new Out<_, _> (fun v p -> p.Inset <- snd' v))
+    let color = Scope.make (new In<_, _> (fun p v -> v <- struct (p.Life, p.Color))) (new Out<_, _> (fun v p -> p.Color <- snd' v))
+    let glow = Scope.make (new In<_, _> (fun p v -> v <- struct (p.Life, p.Glow))) (new Out<_, _> (fun v p -> p.Glow <- snd' v))
+    let flipH =
+        Scope.make
+            (new In<_, _> (fun p v ->
+                let flipH = match p.Flip with FlipNone -> false | FlipH -> true | FlipV -> false | FlipHV -> true
+                v <- struct (p.Life, flipH)))
+            (new Out<_, _> (fun v p ->
+                let flip =
+                    match (p.Flip, snd' v) with
+                    | (FlipNone, true) -> FlipH
+                    | (FlipH, true) -> FlipH
+                    | (FlipV, true) -> FlipHV
+                    | (FlipHV, true) -> FlipHV
+                    | (FlipNone, false) -> FlipNone
+                    | (FlipH, false) -> FlipNone
+                    | (FlipV, false) -> FlipV
+                    | (FlipHV, false) -> FlipV
+                p.Flip <- flip))
+    let flipV =
+        Scope.make
+            (new In<_, _> (fun p v ->
+                let flipV = match p.Flip with FlipNone -> false | FlipH -> false | FlipV -> true | FlipHV -> true
+                v <- struct (p.Life, flipV)))
+            (new Out<_, _> (fun v p ->
+                let flip =
+                    match (p.Flip, snd' v) with
+                    | (FlipNone, true) -> FlipV
+                    | (FlipH, true) -> FlipHV
+                    | (FlipV, true) -> FlipV
+                    | (FlipHV, true) -> FlipHV
+                    | (FlipNone, false) -> FlipNone
+                    | (FlipH, false) -> FlipH
+                    | (FlipV, false) -> FlipNone
+                    | (FlipHV, false) -> FlipH
+                p.Flip <- flip))
+
+/// A particle system.
+/// TODO: consider making this an abstract data type?
+type [<ReferenceEquality>] ParticleSystem =
+    { Emitters : Map<string, Emitter> }
+    
+    /// Get the liveness of the particle system.
+    static member getLiveness time particleSystem =
+        let emittersLiveness =
+            Map.exists (fun _ (emitter : Emitter) ->
+                match emitter.GetLiveness time with Live -> true | Dead -> false)
+                particleSystem.Emitters
+        if emittersLiveness then Live else Dead
+
+    /// Add an emitter to the particle system.
+    static member add emitterId emitter particleSystem =
+        { particleSystem with Emitters = Map.add emitterId emitter particleSystem.Emitters }
+
+    /// Remove an emitter from the particle system.
+    static member remove emitterId particleSystem =
+        { particleSystem with Emitters = Map.remove emitterId particleSystem.Emitters }
+
+    /// Run the particle system.
+    static member run delta time particleSystem =
+        let (output, emitters) =
+            Map.fold (fun (output, emitters) emitterId (emitter : Emitter) ->
+                let (output2, emitter) = emitter.Run delta time
+                let emitters = match emitter.GetLiveness time with Live -> Map.add emitterId emitter emitters | Dead -> emitters
+                (output + output2, emitters))
+                (Output.empty, Map.empty)
+                particleSystem.Emitters
+        let particleSystem = { Emitters = emitters }
+        (particleSystem, output)
+
+    /// Convert the emitted particles to ParticlesDescriptors.
+    static member toParticlesDescriptors time particleSystem =
+        let descriptorsRev =
+            Map.fold (fun descriptors _ (emitter : Emitter) ->
+                (emitter.ToParticlesDescriptor time :: descriptors))
+                [] particleSystem.Emitters
+        List.rev descriptorsRev
+
+    /// The empty particle system.
+    static member empty =
+        { Emitters = Map.empty }
+
+/// Describes a basic emitter.
+type BasicEmitterDescriptor =
+    BasicParticle EmitterDescriptor
+
+/// Describes a map of basic emitters.
+type BasicEmitterDescriptors =
+    BasicParticle EmitterDescriptors
+
 /// The static sprite-based particle emitter.
-/// NOTE: ideally, this would be an abstract data type, but I feel that would discourage users from making their
-/// own emitters - it would look like making an emitter would require a lot of additional boilerplate as well as
-/// making it harder to use this existing emitter as an example.
-and [<ReferenceEquality>] StaticSpriteEmitter<'a when 'a :> Particle and 'a : equality and 'a : struct> =
+type [<ReferenceEquality>] StaticSpriteEmitter<'a when 'a :> Particle and 'a : equality and 'a : struct> =
     { mutable Body : Body // mutable for animation
-      Elevation : single
       Absolute : bool
+      Elevation : single
       Blend : Blend
       Image : Image AssetTag
       Life : Life
@@ -721,11 +829,11 @@ and [<ReferenceEquality>] StaticSpriteEmitter<'a when 'a :> Particle and 'a : eq
 
     /// Make a basic particle emitter.
     static member make<'a>
-        time body elevation absolute blend image lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
+        time body absolute elevation blend image lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
         constrain particleInitializer particleBehavior particleBehaviors emitterBehavior emitterBehaviors toParticlesDescriptor : 'a StaticSpriteEmitter =
         { Body = body
-          Elevation = elevation
           Absolute = absolute
+          Elevation = elevation
           Blend = blend
           Image = image
           Life = Life.make time lifeTimeOpt
@@ -758,72 +866,6 @@ and [<ReferenceEquality>] StaticSpriteEmitter<'a when 'a :> Particle and 'a : eq
                 { this with ParticleRing = SegmentedArray.zeroCreate<'a> particleMax } :> Emitter
             else this :> Emitter
 
-/// A basic particle.
-type [<StructuralEquality; NoComparison; Struct>] BasicParticle =
-    { mutable Life : Life
-      mutable Body : Body
-      mutable Offset : Vector3
-      mutable Size : Vector3
-      mutable Inset : Box2
-      mutable Color : Color
-      mutable Glow : Color
-      mutable Flip : Flip }
-    interface Particle with member this.Life with get () = this.Life and set value = this.Life <- value
-
-[<RequireQualifiedAccess>]
-module BasicParticle =
-    let body = Scope.make (new In<_, _> (fun p v -> v <- p.Body)) (new Out<_, _> (fun v p -> p.Body <- v))
-    let position = Scope.make (new In<_, _> (fun p v -> v <- struct (p.Life, p.Body.Position))) (new Out<_, _> (fun v p -> p.Body.Position <- snd' v))
-    let scale = Scope.make (new In<_, _> (fun p v -> v <- struct (p.Life, p.Body.Scale))) (new Out<_, _> (fun v p -> p.Body.Scale <- snd' v))
-    let angles = Scope.make (new In<_, _> (fun p v -> v <- struct (p.Life, p.Body.Angles))) (new Out<_, _> (fun v p -> p.Body.Angles <- snd' v))
-    let offset = Scope.make (new In<_, _> (fun p v -> v <- struct (p.Life, p.Offset))) (new Out<_, _> (fun v p -> p.Offset <- snd' v))
-    let size = Scope.make (new In<_, _> (fun p v -> v <- struct (p.Life, p.Size))) (new Out<_, _> (fun v p -> p.Size <- snd' v))
-    let inset = Scope.make (new In<_, _> (fun p v -> v <- struct (p.Life, p.Inset))) (new Out<_, _> (fun v p -> p.Inset <- snd' v))
-    let color = Scope.make (new In<_, _> (fun p v -> v <- struct (p.Life, p.Color))) (new Out<_, _> (fun v p -> p.Color <- snd' v))
-    let glow = Scope.make (new In<_, _> (fun p v -> v <- struct (p.Life, p.Glow))) (new Out<_, _> (fun v p -> p.Glow <- snd' v))
-    let flipH =
-        Scope.make
-            (new In<_, _> (fun p v ->
-                let flipH = match p.Flip with FlipNone -> false | FlipH -> true | FlipV -> false | FlipHV -> true
-                v <- struct (p.Life, flipH)))
-            (new Out<_, _> (fun v p ->
-                let flip =
-                    match (p.Flip, snd' v) with
-                    | (FlipNone, true) -> FlipH
-                    | (FlipH, true) -> FlipH
-                    | (FlipV, true) -> FlipHV
-                    | (FlipHV, true) -> FlipHV
-                    | (FlipNone, false) -> FlipNone
-                    | (FlipH, false) -> FlipNone
-                    | (FlipV, false) -> FlipV
-                    | (FlipHV, false) -> FlipV
-                p.Flip <- flip))
-    let flipV =
-        Scope.make
-            (new In<_, _> (fun p v ->
-                let flipV = match p.Flip with FlipNone -> false | FlipH -> false | FlipV -> true | FlipHV -> true
-                v <- struct (p.Life, flipV)))
-            (new Out<_, _> (fun v p ->
-                let flip =
-                    match (p.Flip, snd' v) with
-                    | (FlipNone, true) -> FlipV
-                    | (FlipH, true) -> FlipHV
-                    | (FlipV, true) -> FlipV
-                    | (FlipHV, true) -> FlipHV
-                    | (FlipNone, false) -> FlipNone
-                    | (FlipH, false) -> FlipH
-                    | (FlipV, false) -> FlipNone
-                    | (FlipHV, false) -> FlipH
-                p.Flip <- flip))
-
-/// Describes a basic emitter.
-type BasicEmitterDescriptor =
-    BasicParticle EmitterDescriptor
-
-/// Describes a map of basic emitters.
-type BasicEmitterDescriptors =
-    BasicParticle EmitterDescriptors
-
 /// A static sprite particle emitter.
 type BasicStaticSpriteEmitter =
     StaticSpriteEmitter<BasicParticle>
@@ -854,9 +896,9 @@ module BasicStaticSpriteEmitter =
                 particle'.Glow <- particle.Glow
                 particle'.InsetOpt <- if particle.Inset.Equals box2Zero then ValueNone else ValueSome particle.Inset
                 particle'.Flip <- particle.Flip
-        { Elevation = emitter.Elevation
+        { Absolute = emitter.Absolute
+          Elevation = emitter.Elevation
           Horizon = emitter.Body.Position.Y
-          Absolute = emitter.Absolute
           Blend = emitter.Blend
           Image = emitter.Image
           Particles = particles' }
@@ -883,7 +925,7 @@ module BasicStaticSpriteEmitter =
         let emitterBehavior = fun _ _ -> Output.empty
         let emitterBehaviors = Behaviors.empty
         make
-            time Body.defaultBody 0.0f false Transparent image lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
+            time Body.defaultBody false 0.0f Transparent image lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
             Constraint.empty particleInitializer particleBehavior particleBehaviors emitterBehavior emitterBehaviors
 
     /// Make the default basic sprite particle emitter.
@@ -933,55 +975,224 @@ module BasicStaticSpriteEmitter =
         let emitterBehaviors =
             Behaviors.empty
         make
-            time Body.defaultBody 0.0f false Transparent image lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
+            time Body.defaultBody false 0.0f Transparent image lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
             Constraint.empty particleInitializer particleBehavior particleBehaviors emitterBehavior emitterBehaviors
 
-module ParticleSystem =
+/// The static billboard-based particle emitter.
+type [<ReferenceEquality>] StaticBillboardEmitter<'a when 'a :> Particle and 'a : equality and 'a : struct> =
+    { mutable Body : Body // mutable for animation
+      Absolute : bool
+      Image : Image AssetTag
+      RenderType : RenderType
+      Life : Life
+      ParticleLifeTimeMaxOpt : GameTime // OPTIMIZATION: uses GameTime.zero to represent infinite particle life.
+      ParticleRate : single
+      mutable ParticleIndex : int // the current particle buffer insertion point
+      mutable ParticleWatermark : int // tracks the highest active particle index; never decreases.
+      ParticleRing : 'a SegmentedArray // operates as a ring-buffer
+      ParticleSeed : 'a
+      Constraint : Constraint
+      ParticleInitializer : GameTime -> 'a StaticBillboardEmitter -> 'a
+      ParticleBehavior : GameTime -> 'a StaticBillboardEmitter -> Output
+      ParticleBehaviors : Behaviors
+      EmitterBehavior : GameTime -> 'a StaticBillboardEmitter -> Output
+      EmitterBehaviors : Behaviors
+      ToParticlesDescriptor : GameTime -> 'a StaticBillboardEmitter -> BillboardParticlesDescriptor }
 
-    /// A particle system.
-    /// TODO: consider making this an abstract data type?
-    type [<ReferenceEquality>] ParticleSystem =
-        { Emitters : Map<string, Emitter> }
-    
-        /// Get the liveness of the particle system.
-        static member getLiveness time particleSystem =
-            let emittersLiveness =
-                Map.exists (fun _ (emitter : Emitter) ->
-                    match emitter.GetLiveness time with Live -> true | Dead -> false)
-                    particleSystem.Emitters
-            if emittersLiveness then Live else Dead
+    static member private emit time emitter =
+        let particle = &emitter.ParticleRing.[emitter.ParticleIndex]
+        particle <- emitter.ParticleInitializer time emitter
+        particle.Life <- Life.make time particle.Life.LifeTimeOpt
+        emitter.ParticleIndex <-
+            if emitter.ParticleIndex < dec emitter.ParticleRing.Length
+            then inc emitter.ParticleIndex
+            else 0
+        emitter.ParticleWatermark <-
+            if emitter.ParticleIndex <= emitter.ParticleWatermark
+            then emitter.ParticleWatermark
+            else emitter.ParticleIndex
 
-        /// Add an emitter to the particle system.
-        static member add emitterId emitter particleSystem =
-            { particleSystem with Emitters = Map.add emitterId emitter particleSystem.Emitters }
+    /// Determine emitter's liveness.
+    static member getLiveness time emitter =
+        if emitter.ParticleLifeTimeMaxOpt.NotZero then
+            if Life.getLiveness (time - emitter.ParticleLifeTimeMaxOpt) emitter.Life
+            then Live
+            else Dead
+        else Live
 
-        /// Remove an emitter from the particle system.
-        static member remove emitterId particleSystem =
-            { particleSystem with Emitters = Map.remove emitterId particleSystem.Emitters }
+    /// Run the emitter.
+    static member run delta time (emitter : 'a StaticBillboardEmitter) =
 
-        /// Run the particle system.
-        static member run delta time particleSystem =
-            let (output, emitters) =
-                Map.fold (fun (output, emitters) emitterId (emitter : Emitter) ->
-                    let (output2, emitter) = emitter.Run delta time
-                    let emitters = match emitter.GetLiveness time with Live -> Map.add emitterId emitter emitters | Dead -> emitters
-                    (output + output2, emitters))
-                    (Output.empty, Map.empty)
-                    particleSystem.Emitters
-            let particleSystem = { Emitters = emitters }
-            (particleSystem, output)
+        // determine local time
+        let localTime = time - emitter.Life.StartTime
+        let localTimePrevious = localTime - delta
 
-        /// Convert the emitted particles to ParticlesDescriptors.
-        static member toParticlesDescriptors time particleSystem =
-            let descriptorsRev =
-                Map.fold (fun descriptors _ (emitter : Emitter) ->
-                    (emitter.ToParticlesDescriptor time :: descriptors))
-                    [] particleSystem.Emitters
-            List.rev descriptorsRev
+        // emit new particles if live
+        if Life.getLiveness time emitter.Life then
+            let emitCount = single localTime * emitter.ParticleRate
+            let emitCountPrevious = single localTimePrevious * emitter.ParticleRate
+            let emitCount = int emitCount - int emitCountPrevious
+            for _ in 0 .. emitCount - 1 do StaticBillboardEmitter<'a>.emit time emitter
 
-        /// The empty particle system.
-        static member empty =
-            { Emitters = Map.empty }
+        // update emitter in-place
+        let output = emitter.EmitterBehavior time emitter
 
-/// A particle system.
-type ParticleSystem = ParticleSystem.ParticleSystem
+        // update emitter compositionally
+        let (output2, emitter) = Behaviors.run delta time emitter.EmitterBehaviors emitter.Constraint emitter
+
+        // update existing particles in-place
+        let output3 = emitter.ParticleBehavior time emitter
+
+        // update existing particles compositionally
+        let output4 = Behaviors.runMany delta time emitter.ParticleBehaviors emitter.Constraint emitter.ParticleRing
+
+        // fin
+        (output + output2 + output3 + output4, emitter)
+
+    /// Make a basic particle emitter.
+    static member make<'a>
+        time body absolute image renderType lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
+        constrain particleInitializer particleBehavior particleBehaviors emitterBehavior emitterBehaviors toParticlesDescriptor : 'a StaticBillboardEmitter =
+        { Body = body
+          Absolute = absolute
+          Image = image
+          RenderType = renderType
+          Life = Life.make time lifeTimeOpt
+          ParticleLifeTimeMaxOpt = particleLifeTimeMaxOpt
+          ParticleRate = particleRate
+          ParticleIndex = 0
+          ParticleWatermark = 0
+          ParticleRing = SegmentedArray.zeroCreate particleMax
+          ParticleSeed = particleSeed
+          Constraint = constrain
+          ParticleInitializer = particleInitializer
+          ParticleBehavior = particleBehavior
+          ParticleBehaviors = particleBehaviors
+          EmitterBehavior = emitterBehavior
+          EmitterBehaviors = emitterBehaviors
+          ToParticlesDescriptor = toParticlesDescriptor }
+
+    interface Emitter with
+        member this.GetLiveness time =
+            StaticBillboardEmitter<'a>.getLiveness time this
+        member this.Run delta time =
+            let (output, emitter) = StaticBillboardEmitter<'a>.run delta time this
+            (output, emitter :> Emitter)
+        member this.ToParticlesDescriptor time =
+            BillboardParticlesDescriptor (this.ToParticlesDescriptor time this)
+        member this.Resize particleMax =
+            if  this.ParticleRing.Length <> particleMax then
+                this.ParticleIndex <- 0
+                this.ParticleWatermark <- 0
+                { this with ParticleRing = SegmentedArray.zeroCreate<'a> particleMax } :> Emitter
+            else this :> Emitter
+
+/// A static billboard particle emitter.
+type BasicStaticBillboardEmitter =
+    StaticBillboardEmitter<BasicParticle>
+
+[<RequireQualifiedAccess>]
+module BasicStaticBillboardEmitter =
+
+    let private toParticlesDescriptor time (emitter : BasicStaticBillboardEmitter) =
+        let particles =
+            SegmentedArray.append
+                (if emitter.ParticleWatermark > emitter.ParticleIndex
+                    then SegmentedArray.skip emitter.ParticleIndex emitter.ParticleRing
+                    else SegmentedArray.empty)
+                (SegmentedArray.take emitter.ParticleIndex emitter.ParticleRing)
+        let particles' =
+            SegmentedArray.zeroCreate<Nu.Particle> particles.Length
+        for index in 0 .. particles.Length - 1 do
+            let particle = &particles.[index]
+            if Life.getLiveness time particle.Life then
+                let particle' = &particles'.[index]
+                particle'.Transform.Position <- particle.Body.Position
+                particle'.Transform.Scale <- particle.Body.Scale
+                particle'.Transform.Angles <- particle.Body.Angles
+                particle'.Transform.Offset <- particle.Offset
+                particle'.Transform.Size <- particle.Size
+                particle'.Transform.Centered <- true
+                particle'.Color <- particle.Color
+                particle'.Glow <- particle.Glow
+                particle'.InsetOpt <- if particle.Inset.Equals box2Zero then ValueNone else ValueSome particle.Inset
+                particle'.Flip <- particle.Flip
+        { Absolute = emitter.Absolute
+          Image = emitter.Image
+          RenderType = emitter.RenderType
+          Particles = particles' }
+
+    /// Resize the emitter.
+    let resize particleMax (emitter : BasicStaticBillboardEmitter) =
+        (emitter :> Emitter).Resize particleMax :?> BasicStaticBillboardEmitter
+
+    /// Make a basic static billboard particle emitter.
+    let make
+        time body absolute image renderType lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
+        constrain particleInitializer particleBehavior particleBehaviors emitterBehavior emitterBehaviors =
+        BasicStaticBillboardEmitter.make
+            time body absolute image renderType lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
+            constrain particleInitializer particleBehavior particleBehaviors emitterBehavior emitterBehaviors toParticlesDescriptor
+
+    /// Make an empty basic billboard particle emitter.
+    let makeEmpty time lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax =
+        let image = asset Assets.Default.PackageName Assets.Default.ImageName
+        let particleSeed = Unchecked.defaultof<BasicParticle>
+        let particleInitializer = fun _ (emitter : BasicStaticBillboardEmitter) -> emitter.ParticleSeed
+        let particleBehavior = fun _ _ -> Output.empty
+        let particleBehaviors = Behaviors.empty
+        let emitterBehavior = fun _ _ -> Output.empty
+        let emitterBehaviors = Behaviors.empty
+        make
+            time Body.defaultBody false image (ForwardRenderType (0.0f, 0.0f)) lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
+            Constraint.empty particleInitializer particleBehavior particleBehaviors emitterBehavior emitterBehaviors
+
+    /// Make the default basic billboard particle emitter.
+    let makeDefault time lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax =
+        let image = asset Assets.Default.PackageName Assets.Default.ImageName
+        let particleSeed =
+            { Life = Life.make GameTime.zero (GameTime.ofSeconds 2.0f)
+              Body = Body.defaultBody
+              Offset = v3Zero
+              Size = Constants.Engine.ParticleSize2dDefault
+              Inset = box2Zero
+              Color = Color.One
+              Glow = Color.Zero
+              Flip = FlipNone }
+        let particleScalar =
+            match Constants.GameTime.DesiredFrameRate with
+            | StaticFrameRate frameRate -> 1.0f / single frameRate
+            | DynamicFrameRate _ -> 1.0f
+        let particleInitializer = fun _ (emitter : BasicStaticBillboardEmitter) ->
+            let particle = emitter.ParticleSeed
+            particle.Body.Position <- emitter.Body.Position
+            particle.Body.Angles <- emitter.Body.Angles
+            particle.Body.LinearVelocity <- (v3 (Gen.randomf - 0.5f) Gen.randomf (Gen.randomf - 0.5f)) * v3Dup 1000.0f * particleScalar
+            particle.Body.AngularVelocity <- v3 Gen.randomf Gen.randomf Gen.randomf - v3Dup 30.0f * particleScalar
+            particle
+        let particleBehavior = fun time emitter ->
+            let watermark = emitter.ParticleWatermark
+            let mutable index = 0
+            while index <= watermark do
+                let particle = &emitter.ParticleRing.[index]
+                let progress = Life.getProgress time particle.Life
+                particle.Color.A <- 1.0f - progress
+                index <- inc index
+            Output.empty
+        let gravity =
+            match Constants.GameTime.DesiredFrameRate with
+            | StaticFrameRate frameRate -> v3 0.0f -Constants.Engine.Meter2d 0.0f / single frameRate
+            | DynamicFrameRate _ -> v3 0.0f -Constants.Engine.Meter2d 0.0f * Constants.Engine.Meter2d
+        let particleBehaviors =
+            Behaviors.singleton
+                (Behavior.ofSeq BasicParticle.body
+                    [Transformer.force (Gravity gravity)
+                     Transformer.force (Velocity Constraint.empty)])
+        let emitterBehavior = fun _ (emitter : BasicStaticBillboardEmitter) ->
+            emitter.Body.Angles <- emitter.Body.Angles + v3Dup 0.1f
+            Output.empty
+        let emitterBehaviors =
+            Behaviors.empty
+        make
+            time Body.defaultBody false image (ForwardRenderType (0.0f, 0.0f)) lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
+            Constraint.empty particleInitializer particleBehavior particleBehaviors emitterBehavior emitterBehaviors

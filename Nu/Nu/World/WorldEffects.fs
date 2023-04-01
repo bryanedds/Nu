@@ -161,7 +161,7 @@ module Effect =
                     match descriptor with
                     | :? BasicEmitterDescriptor as descriptor ->
                         match World.tryMakeEmitter time descriptor.LifeTimeOpt descriptor.ParticleLifeTimeMaxOpt descriptor.ParticleRate descriptor.ParticleMax descriptor.Style world with
-                        | Some (:? BasicEmitter as emitter) ->
+                        | Some (:? BasicStaticSpriteEmitter as emitter) ->
                             let emitter =
                                 { emitter with
                                     Body = descriptor.Body
@@ -169,7 +169,16 @@ module Effect =
                                     Image = descriptor.Image
                                     ParticleSeed = descriptor.ParticleSeed
                                     Constraint = descriptor.Constraint }
-                            Some (name, emitter)
+                            Some (name, emitter :> Emitter)
+                        | Some (:? BasicStaticBillboardEmitter as emitter) ->
+                            let emitter =
+                                { emitter with
+                                    Body = descriptor.Body
+                                    Image = descriptor.Image
+                                    RenderType = emitter.RenderType
+                                    ParticleSeed = descriptor.ParticleSeed
+                                    Constraint = descriptor.Constraint }
+                            Some (name, emitter :> Emitter)
                         | _ -> None
                     | _ -> None) |>
                 Seq.fold (fun particleSystem (name, emitter) ->
@@ -190,15 +199,26 @@ module Effect =
             let (effect, world) = processParticleSystemOutput output effect world
 
             // render particles
-            let particlesMessages =
-                particleSystem |>
-                ParticleSystem.toParticlesDescriptors time |>
-                List.map (fun (descriptor : ParticlesDescriptor) ->
-                    { Elevation = descriptor.Elevation
-                      Horizon = descriptor.Horizon
-                      AssetTag = AssetTag.generalize descriptor.Image
-                      RenderOperation2d = ParticlesDescriptor descriptor })
-            let world = World.enqueueLayeredOperations2d particlesMessages world
+            let descriptors = ParticleSystem.toParticlesDescriptors time particleSystem
+            let world =
+                List.fold (fun world descriptor ->
+                    match descriptor with
+                    | SpriteParticlesDescriptor descriptor ->
+                        let message =
+                            { Elevation = descriptor.Elevation
+                              Horizon = descriptor.Horizon
+                              AssetTag = AssetTag.generalize descriptor.Image
+                              RenderOperation2d = RenderSpriteParticles descriptor }
+                        World.enqueueLayeredOperation2d message world
+                    | BillboardParticlesDescriptor descriptor ->
+                        let message =
+                            RenderBillboardParticles
+                                (descriptor.Absolute,
+                                 descriptor.Image,
+                                 descriptor.RenderType,
+                                 descriptor.Particles)
+                        World.enqueueRenderMessage3d message world)
+                    world descriptors
 
             // fin
             (Live, effect, world)

@@ -33,7 +33,7 @@ module CharacterDispatcher =
             let inset = getSpriteInset character world
             let characterView =
                 Render3d (
-                    RenderBillboardMessage
+                    RenderBillboard
                         (transform.Absolute, transform.AffineMatrix, ValueSome inset, renderMaterial,
                          albedoImage, Assets.Default.MaterialMetalness, Assets.Default.MaterialRoughness, Assets.Default.MaterialRoughness, albedoImage,
                          ValueSome OpenGL.TextureMinFilter.NearestMipmapNearest, ValueSome OpenGL.TextureMagFilter.Nearest, DeferredRenderType))

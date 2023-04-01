@@ -14,14 +14,9 @@ open Nu
 // TODO: 3D: introduce records for a bunch of the tuples in this file! //
 /////////////////////////////////////////////////////////////////////////
 
-/// The type of rendering used on a surface.
-type [<StructuralEquality; NoComparison; Struct>] RenderType =
-    | DeferredRenderType
-    | ForwardRenderType of Sort : single * Subsort : single
-
 /// Materials used for rendering models.
 /// TODO: 3D: consider adding texture filter opts to override what's in the backing material.
-and [<StructuralEquality; NoComparison; Struct>] RenderMaterial =
+type [<StructuralEquality; NoComparison; Struct>] RenderMaterial =
     { AlbedoOpt : Color voption
       MetalnessOpt : single voption
       RoughnessOpt : single voption
@@ -103,6 +98,7 @@ and [<ReferenceEquality>] RenderMessage3d =
     | RenderLight3d of Vector3 * Color * single * single * LightType
     | RenderBillboard of bool * Matrix4x4 * Box2 voption * RenderMaterial * Image AssetTag * Image AssetTag * Image AssetTag * Image AssetTag * Image AssetTag * OpenGL.TextureMinFilter voption * OpenGL.TextureMagFilter voption * RenderType
     | RenderBillboards of bool * (Matrix4x4 * Box2 voption) SegmentedList * RenderMaterial * Image AssetTag * Image AssetTag * Image AssetTag * Image AssetTag * Image AssetTag * OpenGL.TextureMinFilter voption * OpenGL.TextureMagFilter voption * RenderType
+    | RenderBillboardParticles of bool * Image AssetTag * RenderType * Particle SegmentedArray
     | RenderStaticModelSurface of bool * Matrix4x4 * Box2 voption * RenderMaterial * RenderType * StaticModel AssetTag * int
     | RenderStaticModel of bool * Matrix4x4 * Box2 voption * RenderMaterial * RenderType * StaticModel AssetTag
     | RenderStaticModels of bool * (Matrix4x4 * Box2 voption * RenderMaterial) SegmentedList * RenderType * StaticModel AssetTag

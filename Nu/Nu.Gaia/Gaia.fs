@@ -477,12 +477,12 @@ module Gaia =
                 let image = Assets.Default.HighlightImage
                 let world =
                     World.enqueueRenderMessage2d
-                        (RenderLayeredMessage2d
+                        (LayeredOperation2d
                             { Elevation = elevation
                               Horizon = bounds.Bottom.Y
                               AssetTag = AssetTag.generalize image
-                              RenderDescriptor2d =
-                                SpriteDescriptor
+                              RenderOperation2d =
+                                RenderSprite
                                     { Transform = transform
                                       InsetOpt = ValueNone
                                       Image = image
@@ -498,7 +498,7 @@ module Gaia =
                 let renderMaterial = Unchecked.defaultof<_>
                 let renderType = ForwardRenderType (0.0f, Single.MinValue)
                 let staticModel = Assets.Default.HighlightModel
-                let world = World.enqueueRenderMessage3d (RenderStaticModelMessage (absolute, boundsMatrix, ValueNone, renderMaterial, renderType, staticModel)) world
+                let world = World.enqueueRenderMessage3d (RenderStaticModel (absolute, boundsMatrix, ValueNone, renderMaterial, renderType, staticModel)) world
                 (Cascade, world)
         | _ -> (Cascade, world)
 

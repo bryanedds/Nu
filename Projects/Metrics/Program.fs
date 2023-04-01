@@ -45,7 +45,7 @@ type MetricsEntityDispatcher () =
     override this.View (staticModel, entity, world) =
         let mutable transform = entity.GetTransform world
         let staticModelMatrix = transform.AffineMatrix
-        View.Render3d (RenderStaticModelMessage (false, staticModelMatrix, ValueNone, Unchecked.defaultof<_>, DeferredRenderType, staticModel))
+        View.Render3d (RenderStaticModel (false, staticModelMatrix, ValueNone, Unchecked.defaultof<_>, DeferredRenderType, staticModel))
 
     override this.GetQuickSize (entity, world) =
         let staticModel = entity.GetModelGeneric world
