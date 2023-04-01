@@ -31,10 +31,10 @@ module TransformMasks =
     let [<Literal>] CenteredMask =                  0b000001000000000000000000u
     let [<Literal>] StaticMask =                    0b000010000000000000000000u
     let [<Literal>] LightMask =                     0b000100000000000000000000u
-    let [<Literal>] RotationMatrixDirtyMask =       0b001000000000000000000000u
-    let [<Literal>] PerimeterOrientedDirtyMask =    0b010000000000000000000000u
-    let [<Literal>] AnglesDirtyMask =               0b100000000000000000000000u
-    let [<Literal>] FlagsDefault =                  0b011001110100000011010001u
+    let [<Literal>] AnglesDirtyMask =               0b001000000000000000000000u
+    let [<Literal>] RotationMatrixDirtyMask =       0b010000000000000000000000u
+    let [<Literal>] PerimeterOrientedDirtyMask =    0b100000000000000000000000u
+    let [<Literal>] FlagsDefault =                  0b110001110100000011010001u
 
 // NOTE: opening masks for succintness.
 open TransformMasks
@@ -256,12 +256,12 @@ type [<NoEquality; NoComparison>] Transform =
             this.AnglesDirty <- false
 
     member this.CleanRotationMatrix () =
-        if this.RotationMatrixDirty then
+        if isNull (this.RotationMatrixOpt_ :> obj) || this.RotationMatrixDirty then
             this.RotationMatrixOpt_ <- ref (Matrix4x4.CreateFromQuaternion this.Rotation_)
             this.RotationMatrixDirty <- false
 
     member this.CleanPerimeterOriented () =
-        if this.PerimeterOrientedDirty then
+        if isNull (this.PerimeterOrientedOpt_ :> obj) || this.PerimeterOrientedDirty then
             let perimeterOriented =
                 let perimeter = this.Perimeter
                 let rotation = this.Rotation_

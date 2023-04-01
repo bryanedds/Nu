@@ -1567,6 +1567,15 @@ module BasicStaticBillboardEmitterFacetModule =
         member this.GetEmitterNormalImage world : Image AssetTag = this.Get (nameof this.EmitterNormalImage) world
         member this.SetEmitterNormalImage (value : Image AssetTag) world = this.Set (nameof this.EmitterNormalImage) value world
         member this.EmitterNormalImage = lens (nameof this.EmitterNormalImage) this this.GetEmitterNormalImage this.SetEmitterNormalImage
+        member this.GetEmitterMinFilterOpt world : OpenGL.TextureMinFilter option = this.Get (nameof this.EmitterMinFilterOpt) world
+        member this.SetEmitterMinFilterOpt (value : OpenGL.TextureMinFilter option) world = this.Set (nameof this.EmitterMinFilterOpt) value world
+        member this.EmitterMinFilterOpt = lens (nameof this.EmitterMinFilterOpt) this this.GetEmitterMinFilterOpt this.SetEmitterMinFilterOpt
+        member this.GetEmitterMagFilterOpt world : OpenGL.TextureMagFilter option = this.Get (nameof this.EmitterMagFilterOpt) world
+        member this.SetEmitterMagFilterOpt (value : OpenGL.TextureMagFilter option) world = this.Set (nameof this.EmitterMagFilterOpt) value world
+        member this.EmitterMagFilterOpt = lens (nameof this.EmitterMagFilterOpt) this this.GetEmitterMagFilterOpt this.SetEmitterMagFilterOpt
+        member this.GetEmitterRenderType world : RenderType = this.Get (nameof this.EmitterRenderType) world
+        member this.SetEmitterRenderType (value : RenderType) world = this.Set (nameof this.EmitterRenderType) value world
+        member this.EmitterRenderType = lens (nameof this.EmitterRenderType) this this.GetEmitterRenderType this.SetEmitterRenderType
 
     type BasicStaticBillboardEmitterFacet () =
         inherit Facet (false)
@@ -1618,10 +1627,10 @@ module BasicStaticBillboardEmitterFacetModule =
 
         static let updateEmitter updater (entity : Entity) world =
             updateParticleSystem (fun particleSystem ->
-                match Map.tryFind typeof<Particles.BasicStaticSpriteEmitter>.Name particleSystem.Emitters with
-                | Some (:? Particles.BasicStaticSpriteEmitter as emitter) ->
+                match Map.tryFind typeof<Particles.BasicStaticBillboardEmitter>.Name particleSystem.Emitters with
+                | Some (:? Particles.BasicStaticBillboardEmitter as emitter) ->
                     let emitter = updater emitter
-                    { particleSystem with Emitters = Map.add typeof<Particles.BasicStaticSpriteEmitter>.Name (emitter :> Particles.Emitter) particleSystem.Emitters }
+                    { particleSystem with Emitters = Map.add typeof<Particles.BasicStaticBillboardEmitter>.Name (emitter :> Particles.Emitter) particleSystem.Emitters }
                 | _ -> particleSystem)
                 entity world
 
@@ -1631,14 +1640,64 @@ module BasicStaticBillboardEmitterFacetModule =
             | Particles.OutputEmitter (name, emitter) -> updateParticleSystem (fun ps -> { ps with Emitters = Map.add name emitter ps.Emitters }) entity world
             | Particles.Outputs outputs -> SegmentedArray.fold (fun world output -> processOutput output entity world) world outputs
 
-        static let handleEmitterBlendChange evt world =
-            let emitterBlend = evt.Data.Value :?> Blend
-            let world = updateEmitter (fun emitter -> if emitter.Blend <> emitterBlend then { emitter with Blend = emitterBlend } else emitter) evt.Subscriber world
+        static let handleEmitterAlbedoOptChange evt world =
+            let emitterAlbedoOpt = evt.Data.Value :?> Color option |> ValueOption.ofOption
+            let world = updateEmitter (fun emitter -> if emitter.AlbedoOpt <> emitterAlbedoOpt then { emitter with AlbedoOpt = emitterAlbedoOpt } else emitter) evt.Subscriber world
             (Cascade, world)
 
-        static let handleEmitterImageChange evt world =
-            let emitterImage = evt.Data.Value :?> Image AssetTag
-            let world = updateEmitter (fun emitter -> if assetNeq emitter.Image emitterImage then { emitter with Image = emitterImage } else emitter) evt.Subscriber world
+        static let handleEmitterAlbedoImageChange evt world =
+            let emitterAlbedoImage = evt.Data.Value :?> Image AssetTag
+            let world = updateEmitter (fun emitter -> if assetNeq emitter.AlbedoImage emitterAlbedoImage then { emitter with AlbedoImage = emitterAlbedoImage } else emitter) evt.Subscriber world
+            (Cascade, world)
+
+        static let handleEmitterMetalnessOptChange evt world =
+            let emitterMetalnessOpt = evt.Data.Value :?> single option |> ValueOption.ofOption
+            let world = updateEmitter (fun emitter -> if emitter.MetalnessOpt <> emitterMetalnessOpt then { emitter with MetalnessOpt = emitterMetalnessOpt } else emitter) evt.Subscriber world
+            (Cascade, world)
+
+        static let handleEmitterMetalnessImageChange evt world =
+            let emitterMetalnessImage = evt.Data.Value :?> Image AssetTag
+            let world = updateEmitter (fun emitter -> if assetNeq emitter.MetalnessImage emitterMetalnessImage then { emitter with MetalnessImage = emitterMetalnessImage } else emitter) evt.Subscriber world
+            (Cascade, world)
+
+        static let handleEmitterRoughnessOptChange evt world =
+            let emitterRoughnessOpt = evt.Data.Value :?> single option |> ValueOption.ofOption
+            let world = updateEmitter (fun emitter -> if emitter.RoughnessOpt <> emitterRoughnessOpt then { emitter with RoughnessOpt = emitterRoughnessOpt } else emitter) evt.Subscriber world
+            (Cascade, world)
+
+        static let handleEmitterRoughnessImageChange evt world =
+            let emitterRoughnessImage = evt.Data.Value :?> Image AssetTag
+            let world = updateEmitter (fun emitter -> if assetNeq emitter.RoughnessImage emitterRoughnessImage then { emitter with RoughnessImage = emitterRoughnessImage } else emitter) evt.Subscriber world
+            (Cascade, world)
+
+        static let handleEmitterAmbientOcclusionOptChange evt world =
+            let emitterAmbientOcclusionOpt = evt.Data.Value :?> single option |> ValueOption.ofOption
+            let world = updateEmitter (fun emitter -> if emitter.AmbientOcclusionOpt <> emitterAmbientOcclusionOpt then { emitter with AmbientOcclusionOpt = emitterAmbientOcclusionOpt } else emitter) evt.Subscriber world
+            (Cascade, world)
+
+        static let handleEmitterAmbientOcclusionImageChange evt world =
+            let emitterAmbientOcclusionImage = evt.Data.Value :?> Image AssetTag
+            let world = updateEmitter (fun emitter -> if assetNeq emitter.AmbientOcclusionImage emitterAmbientOcclusionImage then { emitter with AmbientOcclusionImage = emitterAmbientOcclusionImage } else emitter) evt.Subscriber world
+            (Cascade, world)
+
+        static let handleEmitterNormalImageChange evt world =
+            let emitterNormalImage = evt.Data.Value :?> Image AssetTag
+            let world = updateEmitter (fun emitter -> if assetNeq emitter.NormalImage emitterNormalImage then { emitter with NormalImage = emitterNormalImage } else emitter) evt.Subscriber world
+            (Cascade, world)
+
+        static let handleEmitterMinFilterOptChange evt world =
+            let emitterMinFilterOpt = evt.Data.Value :?> OpenGL.TextureMinFilter option |> ValueOption.ofOption
+            let world = updateEmitter (fun emitter -> if emitter.MinFilterOpt <> emitterMinFilterOpt then { emitter with MinFilterOpt = emitterMinFilterOpt } else emitter) evt.Subscriber world
+            (Cascade, world)
+
+        static let handleEmitterMagFilterOptChange evt world =
+            let emitterMagFilterOpt = evt.Data.Value :?> OpenGL.TextureMagFilter option |> ValueOption.ofOption
+            let world = updateEmitter (fun emitter -> if emitter.MagFilterOpt <> emitterMagFilterOpt then { emitter with MagFilterOpt = emitterMagFilterOpt } else emitter) evt.Subscriber world
+            (Cascade, world)
+
+        static let handleEmitterRenderTypeChange evt world =
+            let emitterRenderType = evt.Data.Value :?> RenderType
+            let world = updateEmitter (fun emitter -> if emitter.RenderType <> emitterRenderType then { emitter with RenderType = emitterRenderType } else emitter) evt.Subscriber world
             (Cascade, world)
 
         static let handleEmitterLifeTimeOptChange evt world =
@@ -1658,7 +1717,7 @@ module BasicStaticBillboardEmitterFacetModule =
 
         static let handleParticleMaxChange evt world =
             let particleMax = evt.Data.Value :?> int
-            let world = updateEmitter (fun emitter -> if emitter.ParticleRing.Length <> particleMax then Particles.BasicStaticSpriteEmitter.resize particleMax emitter else emitter) evt.Subscriber world
+            let world = updateEmitter (fun emitter -> if emitter.ParticleRing.Length <> particleMax then Particles.BasicStaticBillboardEmitter.resize particleMax emitter else emitter) evt.Subscriber world
             (Cascade, world)
 
         static let handleBasicParticleSeedChange evt world =
@@ -1681,14 +1740,14 @@ module BasicStaticBillboardEmitterFacetModule =
             let entity = evt.Subscriber : Entity
             let particleSystem = entity.GetParticleSystem world
             let particleSystem =
-                match Map.tryFind typeof<Particles.BasicStaticSpriteEmitter>.Name particleSystem.Emitters with
-                | Some (:? Particles.BasicStaticSpriteEmitter as emitter) ->
+                match Map.tryFind typeof<Particles.BasicStaticBillboardEmitter>.Name particleSystem.Emitters with
+                | Some (:? Particles.BasicStaticBillboardEmitter as emitter) ->
                     let position = entity.GetPosition world
                     let emitter =
                         if v3Neq emitter.Body.Position position
                         then { emitter with Body = { emitter.Body with Position = position }}
                         else emitter
-                    { particleSystem with Emitters = Map.add typeof<Particles.BasicStaticSpriteEmitter>.Name (emitter :> Particles.Emitter) particleSystem.Emitters }
+                    { particleSystem with Emitters = Map.add typeof<Particles.BasicStaticBillboardEmitter>.Name (emitter :> Particles.Emitter) particleSystem.Emitters }
                 | _ -> particleSystem
             let world = entity.SetParticleSystem particleSystem world
             (Cascade, world)
@@ -1697,14 +1756,14 @@ module BasicStaticBillboardEmitterFacetModule =
             let entity = evt.Subscriber : Entity
             let particleSystem = entity.GetParticleSystem world
             let particleSystem =
-                match Map.tryFind typeof<Particles.BasicStaticSpriteEmitter>.Name particleSystem.Emitters with
-                | Some (:? Particles.BasicStaticSpriteEmitter as emitter) ->
+                match Map.tryFind typeof<Particles.BasicStaticBillboardEmitter>.Name particleSystem.Emitters with
+                | Some (:? Particles.BasicStaticBillboardEmitter as emitter) ->
                     let angles = entity.GetAngles world
                     let emitter =
                         if v3Neq emitter.Body.Angles angles
                         then { emitter with Body = { emitter.Body with Angles = angles }}
                         else emitter
-                    { particleSystem with Emitters = Map.add typeof<Particles.BasicStaticSpriteEmitter>.Name (emitter :> Particles.Emitter) particleSystem.Emitters }
+                    { particleSystem with Emitters = Map.add typeof<Particles.BasicStaticBillboardEmitter>.Name (emitter :> Particles.Emitter) particleSystem.Emitters }
                 | _ -> particleSystem
             let world = entity.SetParticleSystem particleSystem world
             (Cascade, world)
@@ -1720,6 +1779,8 @@ module BasicStaticBillboardEmitterFacetModule =
              define Entity.EmitterAmbientOcclusionOpt None
              define Entity.EmitterAmbientOcclusionImage Assets.Default.MaterialAmbientOcclusion
              define Entity.EmitterNormalImage Assets.Default.MaterialNormal
+             define Entity.EmitterMinFilterOpt None
+             define Entity.EmitterMagFilterOpt None
              define Entity.EmitterLifeTimeOpt GameTime.zero
              define Entity.ParticleLifeTimeMaxOpt (GameTime.ofSeconds 1.0f)
              define Entity.ParticleRate (match Constants.GameTime.DesiredFrameRate with StaticFrameRate _ -> 1.0f | DynamicFrameRate _ -> 60.0f)
@@ -1732,12 +1793,22 @@ module BasicStaticBillboardEmitterFacetModule =
         override this.Register (entity, world) =
             let emitter = makeEmitter entity world
             let particleSystem = entity.GetParticleSystem world
-            let particleSystem = { particleSystem with Emitters = Map.add typeof<Particles.BasicStaticSpriteEmitter>.Name (emitter :> Particles.Emitter) particleSystem.Emitters }
+            let particleSystem = { particleSystem with Emitters = Map.add typeof<Particles.BasicStaticBillboardEmitter>.Name (emitter :> Particles.Emitter) particleSystem.Emitters }
             let world = entity.SetParticleSystem particleSystem world
             let world = World.monitor handlePositionChange (entity.GetChangeEvent (nameof entity.Position)) entity world
             let world = World.monitor handleRotationChange (entity.GetChangeEvent (nameof entity.Rotation)) entity world
-            let world = World.monitor handleEmitterBlendChange (entity.GetChangeEvent (nameof entity.EmitterBlend)) entity world
-            let world = World.monitor handleEmitterImageChange (entity.GetChangeEvent (nameof entity.EmitterImage)) entity world
+            let world = World.monitor handleEmitterAlbedoOptChange (entity.GetChangeEvent (nameof entity.EmitterAlbedoOpt)) entity world
+            let world = World.monitor handleEmitterAlbedoImageChange (entity.GetChangeEvent (nameof entity.EmitterAlbedoImage)) entity world
+            let world = World.monitor handleEmitterMetalnessOptChange (entity.GetChangeEvent (nameof entity.EmitterMetalnessOpt)) entity world
+            let world = World.monitor handleEmitterMetalnessImageChange (entity.GetChangeEvent (nameof entity.EmitterMetalnessImage)) entity world
+            let world = World.monitor handleEmitterRoughnessOptChange (entity.GetChangeEvent (nameof entity.EmitterRoughnessOpt)) entity world
+            let world = World.monitor handleEmitterRoughnessImageChange (entity.GetChangeEvent (nameof entity.EmitterRoughnessImage)) entity world
+            let world = World.monitor handleEmitterAmbientOcclusionOptChange (entity.GetChangeEvent (nameof entity.EmitterAmbientOcclusionOpt)) entity world
+            let world = World.monitor handleEmitterAmbientOcclusionImageChange (entity.GetChangeEvent (nameof entity.EmitterAmbientOcclusionImage)) entity world
+            let world = World.monitor handleEmitterNormalImageChange (entity.GetChangeEvent (nameof entity.EmitterNormalImage)) entity world
+            let world = World.monitor handleEmitterMinFilterOptChange (entity.GetChangeEvent (nameof entity.EmitterMinFilterOpt)) entity world
+            let world = World.monitor handleEmitterMagFilterOptChange (entity.GetChangeEvent (nameof entity.EmitterMagFilterOpt)) entity world
+            let world = World.monitor handleEmitterRenderTypeChange (entity.GetChangeEvent (nameof entity.EmitterRenderType)) entity world
             let world = World.monitor handleEmitterLifeTimeOptChange (entity.GetChangeEvent (nameof entity.EmitterLifeTimeOpt)) entity world
             let world = World.monitor handleParticleLifeTimeMaxOptChange (entity.GetChangeEvent (nameof entity.ParticleLifeTimeMaxOpt)) entity world
             let world = World.monitor handleParticleRateChange (entity.GetChangeEvent (nameof entity.ParticleRate)) entity world
@@ -1749,7 +1820,7 @@ module BasicStaticBillboardEmitterFacetModule =
 
         override this.Unregister (entity, world) =
             let particleSystem = entity.GetParticleSystem world
-            let particleSystem = { particleSystem with Emitters = Map.remove typeof<Particles.BasicStaticSpriteEmitter>.Name particleSystem.Emitters }
+            let particleSystem = { particleSystem with Emitters = Map.remove typeof<Particles.BasicStaticBillboardEmitter>.Name particleSystem.Emitters }
             entity.SetParticleSystem particleSystem world
 
         override this.Update (entity, world) =
