@@ -1013,9 +1013,14 @@ type [<ReferenceEquality>] GlRenderer3d =
                     // TODO: 3D: see if we can figure out how to use particle.Transform.Offset?
                     let billboardMaterial = GlRenderer3d.makeBillboardMaterial renderMaterial albedoImage metalnessImage roughnessImage ambientOcclusionImage normalImage minFilterOpt magFilterOpt renderer
                     for particle in particles do
+                        let billboardMatrix =
+                            Matrix4x4.CreateFromTrs
+                                (particle.Transform.Center,
+                                 particle.Transform.Rotation,
+                                 particle.Transform.Size * particle.Transform.Scale)
                         let billboardMaterial = { billboardMaterial with Albedo = billboardMaterial.Albedo * particle.Color }
-                        let billboardSurface = OpenGL.PhysicallyBased.CreatePhysicallyBasedSurface ([||], m4Identity, box3 (v3 -0.5f -0.5f -0.5f) v3One, billboardMaterial, renderer.RenderBillboardGeometry)
-                        GlRenderer3d.categorizeBillboardSurface (absolute, eyeRotation, particle.Transform.AffineMatrix, particle.InsetOpt, billboardMaterial.AlbedoMetadata, renderMaterial, renderType, billboardSurface, renderer)
+                        let billboardSurface = OpenGL.PhysicallyBased.CreatePhysicallyBasedSurface ([||], m4Identity, box3Zero, billboardMaterial, renderer.RenderBillboardGeometry)
+                        GlRenderer3d.categorizeBillboardSurface (absolute, eyeRotation, billboardMatrix, particle.InsetOpt, billboardMaterial.AlbedoMetadata, renderMaterial, renderType, billboardSurface, renderer)
                 | RenderStaticModelSurface (absolute, modelMatrix, insetOpt, renderMaterial, renderType, staticModel, surfaceIndex) ->
                     GlRenderer3d.categorizeStaticModelSurfaceByIndex (absolute, &modelMatrix, insetOpt, &renderMaterial, renderType, staticModel, surfaceIndex, renderer)
                 | RenderStaticModel (absolute, modelMatrix, insetOpt, renderMaterial, renderType, staticModel) ->

@@ -928,7 +928,7 @@ module BasicStaticSpriteEmitter =
             particle.Body.Position <- emitter.Body.Position
             particle.Body.Angles <- emitter.Body.Angles
             particle.Body.LinearVelocity <- (v3 (Gen.randomf - 0.5f) Gen.randomf 0.0f) * v3Dup 1000.0f * particleScalar
-            particle.Body.AngularVelocity <- v3 0.0f 0.0f (Gen.randomf * 10.0f) * particleScalar
+            particle.Body.AngularVelocity <- v3 0.0f 0.0f (Gen.randomf * 30.0f - 15.0f) * particleScalar
             particle
         let particleBehavior = fun time emitter ->
             let watermark = emitter.ParticleWatermark
@@ -1213,8 +1213,8 @@ module BasicStaticBillboardEmitter =
             let particle = emitter.ParticleSeed
             particle.Body.Position <- emitter.Body.Position
             particle.Body.Angles <- emitter.Body.Angles
-            particle.Body.LinearVelocity <- (v3 (Gen.randomf - 0.5f) Gen.randomf (Gen.randomf - 0.5f)) * v3Dup 20.0f * particleScalar
-            particle.Body.AngularVelocity <- v3 0.0f 0.0f (Gen.randomf * 10.0f) * particleScalar
+            particle.Body.LinearVelocity <- (v3 (Gen.randomf - 0.25f) Gen.randomf (Gen.randomf - 0.25f)) * v3Dup 20.0f * particleScalar
+            particle.Body.AngularVelocity <- v3 0.0f 0.0f (Gen.randomf * 30.0f - 15.0f) * particleScalar
             particle
         let particleBehavior = fun time emitter ->
             let watermark = emitter.ParticleWatermark
