@@ -186,12 +186,12 @@ module ButtonDispatcherModule =
             let mutable transform = entity.GetTransform world
             let mutable spriteTransform = Transform.makePerimeter transform.Perimeter transform.Offset transform.Elevation transform.Absolute transform.Centered
             let spriteImage = if entity.GetDown world then entity.GetDownImage world else entity.GetUpImage world
-            World.enqueueRenderLayeredMessage2d
+            World.enqueueLayeredOperation2d
                 { Elevation = spriteTransform.Elevation
                   Horizon = spriteTransform.Horizon
                   AssetTag = AssetTag.generalize spriteImage
-                  RenderDescriptor2d =
-                    SpriteDescriptor
+                  RenderOperation2d =
+                    RenderSprite
                         { Transform = spriteTransform
                           InsetOpt = ValueNone
                           Image = spriteImage
@@ -224,12 +224,12 @@ module LabelDispatcherModule =
             let mutable transform = entity.GetTransform world
             let mutable spriteTransform = Transform.makePerimeter transform.Perimeter transform.Offset transform.Elevation transform.Absolute transform.Centered
             let spriteImage = entity.GetLabelImage world
-            World.enqueueRenderLayeredMessage2d
+            World.enqueueLayeredOperation2d
                 { Elevation = spriteTransform.Elevation
                   Horizon = spriteTransform.Horizon
                   AssetTag = AssetTag.generalize spriteImage
-                  RenderDescriptor2d =
-                    SpriteDescriptor
+                  RenderOperation2d =
+                    RenderSprite
                         { Transform = spriteTransform
                           InsetOpt = ValueNone
                           Image = spriteImage
@@ -267,12 +267,12 @@ module TextDispatcherModule =
             | Some spriteImage ->
                 let mutable transform = entity.GetTransform world
                 let mutable spriteTransform = Transform.makePerimeter transform.Perimeter transform.Offset transform.Elevation transform.Absolute transform.Centered
-                World.enqueueRenderLayeredMessage2d
+                World.enqueueLayeredOperation2d
                     { Elevation = spriteTransform.Elevation
                       Horizon = spriteTransform.Horizon
                       AssetTag = AssetTag.generalize spriteImage
-                      RenderDescriptor2d =
-                        SpriteDescriptor
+                      RenderOperation2d =
+                        RenderSprite
                             { Transform = spriteTransform
                               InsetOpt = ValueNone
                               Image = spriteImage
@@ -400,12 +400,12 @@ module ToggleButtonDispatcherModule =
                 if entity.GetToggled world || entity.GetPressed world
                 then entity.GetToggledImage world
                 else entity.GetUntoggledImage world
-            World.enqueueRenderLayeredMessage2d
+            World.enqueueLayeredOperation2d
                 { Elevation = spriteTransform.Elevation
                   Horizon = spriteTransform.Horizon
                   AssetTag = AssetTag.generalize spriteImage
-                  RenderDescriptor2d =
-                    SpriteDescriptor
+                  RenderOperation2d =
+                    RenderSprite
                         { Transform = spriteTransform
                           InsetOpt = ValueNone
                           Image = spriteImage
@@ -524,12 +524,12 @@ module RadioButtonDispatcherModule =
                 if entity.GetDialed world || entity.GetPressed world
                 then entity.GetDialedImage world
                 else entity.GetUndialedImage world
-            World.enqueueRenderLayeredMessage2d
+            World.enqueueLayeredOperation2d
                 { Elevation = spriteTransform.Elevation
                   Horizon = spriteTransform.Horizon
                   AssetTag = AssetTag.generalize spriteImage
-                  RenderDescriptor2d =
-                    SpriteDescriptor
+                  RenderOperation2d =
+                    RenderSprite
                         { Transform = spriteTransform
                           InsetOpt = ValueNone
                           Image = spriteImage
@@ -718,12 +718,12 @@ module FillBarDispatcherModule =
             let borderImageColor = entity.GetBorderColor world * color
             let borderImage = entity.GetBorderImage world
             let world =
-                World.enqueueRenderLayeredMessage2d
+                World.enqueueLayeredOperation2d
                     { Elevation = borderTransform.Elevation
                       Horizon = horizon
                       AssetTag = AssetTag.generalize borderImage
-                      RenderDescriptor2d =
-                        SpriteDescriptor
+                      RenderOperation2d =
+                        RenderSprite
                             { Transform = borderTransform
                               InsetOpt = ValueNone
                               Image = borderImage
@@ -749,12 +749,12 @@ module FillBarDispatcherModule =
             let fillImageColor = entity.GetFillColor world * color
             let fillImage = entity.GetFillImage world
             let world =
-                World.enqueueRenderLayeredMessage2d
+                World.enqueueLayeredOperation2d
                     { Elevation = fillTransform.Elevation
                       Horizon = horizon
                       AssetTag = AssetTag.generalize fillImage
-                      RenderDescriptor2d =
-                          SpriteDescriptor
+                      RenderOperation2d =
+                          RenderSprite
                               { Transform = fillTransform
                                 InsetOpt = ValueNone
                                 Image = fillImage
@@ -773,13 +773,13 @@ module FillBarDispatcherModule =
             | None -> Constants.Engine.EntitySize2dDefault
 
 [<AutoOpen>]
-module BasicEmitterDispatcher2dModule =
+module BasicStaticSpriteEmitterDispatcherModule =
 
-    type BasicEmitterDispatcher2d () =
+    type BasicStaticSpriteEmitterDispatcher () =
         inherit EntityDispatcher2d (false, true, false)
 
         static member Facets =
-            [typeof<BasicEmitterFacet2d>]
+            [typeof<BasicStaticSpriteEmitterFacet>]
 
         static member Properties =
             [define Entity.Centered true]
@@ -900,12 +900,12 @@ module SideViewCharacterDispatcherModule =
                 else
                     let image = entity.GetSideViewCharacterWalkSheet world
                     struct (ValueSome (computeWalkCelInset world.GameTime animationDelay celSize celRun), image)
-            World.enqueueRenderLayeredMessage2d
+            World.enqueueLayeredOperation2d
                 { Elevation = transform.Elevation
                   Horizon = transform.Horizon
                   AssetTag = AssetTag.generalize image
-                  RenderDescriptor2d =
-                    SpriteDescriptor
+                  RenderOperation2d =
+                    RenderSprite
                         { Transform = transform
                           InsetOpt = insetOpt
                           Image = image
@@ -1276,6 +1276,18 @@ module RigidModelHierarchyDispatcherModule =
                 else world
             let world = World.monitor synchronizeChildren (entity.ChangeEvent (nameof entity.StaticModel)) entity world
             world
+
+[<AutoOpen>]
+module BasicStaticBillboardEmitterDispatcherModule =
+
+    type BasicStaticBillboardEmitterDispatcher () =
+        inherit EntityDispatcher3d (true, false)
+
+        static member Facets =
+            [typeof<BasicStaticBillboardEmitterFacet>]
+
+        static member Properties =
+            [define Entity.Centered true]
 
 [<AutoOpen>]
 module EffectDispatcher3dModule =

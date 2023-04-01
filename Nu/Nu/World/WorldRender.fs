@@ -28,34 +28,34 @@ module WorldRender =
             for message in messages do rendererProcess.EnqueueMessage2d message
             world
             
-        /// Enqueue a layered message for 2d rendering.
-        static member enqueueRenderLayeredMessage2d message world =
-            (World.getRendererProcess world).EnqueueMessage2d (RenderLayeredMessage2d message)
+        /// Enqueue a layered operation for 2d rendering.
+        static member enqueueLayeredOperation2d operation world =
+            (World.getRendererProcess world).EnqueueMessage2d (LayeredOperation2d operation)
             world
 
-        /// Enqueue multiple layered messages for 2d rendering, bypassing enqueueRenderMessage for speed.
-        static member enqueueRenderLayeredMessages2d (messages : RenderLayeredMessage2d seq) world =
+        /// Enqueue multiple layered operation for 2d rendering, bypassing enqueueRenderMessage for speed.
+        static member enqueueLayeredOperations2d (operations : LayeredOperation2d seq) world =
             let rendererProcess = World.getRendererProcess world
-            for message in messages do rendererProcess.EnqueueMessage2d (RenderLayeredMessage2d message)
+            for operation in operations do rendererProcess.EnqueueMessage2d (LayeredOperation2d operation)
             world
             
         /// Load an 2d render asset package. Should be used to avoid loading assets at inconvenient times (such as in the
         /// middle of game play!)
         [<FunctionBinding>]
         static member loadRenderPackageUse2d packageName world =
-            let loadRenderPackageUseMessage = LoadRenderPackageMessage2d packageName
+            let loadRenderPackageUseMessage = LoadRenderPackage2d packageName
             World.enqueueRenderMessage2d loadRenderPackageUseMessage world
             
         /// Unload a 2d render package should be unloaded since its assets will not be used again soon.
         [<FunctionBinding>]
         static member unloadRenderPackage2d packageName world =
-            let unloadRenderPackageMessage = UnloadRenderPackageMessage2d packageName
+            let unloadRenderPackageMessage = UnloadRenderPackage2d packageName
             World.enqueueRenderMessage2d unloadRenderPackageMessage world
 
         /// Send a message to the 2d renderer to reload its rendering assets.
         [<FunctionBinding>]
         static member reloadRenderAssets2d world =
-            let reloadRenderAssetsMessage = ReloadRenderAssetsMessage2d
+            let reloadRenderAssetsMessage = ReloadRenderAssets2d
             World.enqueueRenderMessage2d reloadRenderAssetsMessage world
 
         /// Enqueue a rendering message to the world.
@@ -72,17 +72,17 @@ module WorldRender =
         /// Send a message to the 3d renderer to reload its rendering assets.
         [<FunctionBinding>]
         static member reloadRenderAssets3d world =
-            let reloadRenderAssetsMessage = ReloadRenderAssetsMessage3d
+            let reloadRenderAssetsMessage = ReloadRenderAssets3d
             World.enqueueRenderMessage3d reloadRenderAssetsMessage world
 
         /// Send a message to the render to create the given user-defined static model.
         /// NOTE: this is available as a side-effect to allow use from inside a binding.
         static member createUserDefinedStaticModel staticModelSurfaces bounds assetTag world =
-            let message = CreateUserDefinedStaticModelMessage (staticModelSurfaces, bounds, assetTag)
+            let message = CreateUserDefinedStaticModel (staticModelSurfaces, bounds, assetTag)
             World.enqueueRenderMessage3d message world
 
         /// Send a message to the render to destroy the given user-defined static model.
         /// NOTE: this is available as a side-effect to allow use from inside a binding.
         static member destroyUserDefinedStaticModel assetTag world =
-            let message = DestroyUserDefinedStaticModelMessage assetTag
+            let message = DestroyUserDefinedStaticModel assetTag
             World.enqueueRenderMessage3d message world

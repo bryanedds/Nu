@@ -157,12 +157,12 @@ module StaticSpriteFacetModule =
         override this.Render (entity, world) =
             let mutable transform = entity.GetTransform world
             let staticImage = entity.GetStaticImage world
-            World.enqueueRenderLayeredMessage2d
+            World.enqueueLayeredOperation2d
                 { Elevation = transform.Elevation
                   Horizon = transform.Horizon
                   AssetTag = AssetTag.generalize staticImage
-                  RenderDescriptor2d =
-                    SpriteDescriptor
+                  RenderOperation2d =
+                    RenderSprite
                         { Transform = transform
                           InsetOpt = match entity.GetInsetOpt world with Some inset -> ValueSome inset | None -> ValueNone
                           Image = staticImage
@@ -231,12 +231,12 @@ module AnimatedSpriteFacetModule =
         override this.Render (entity, world) =
             let mutable transform = entity.GetTransform world
             let animationSheet = entity.GetAnimationSheet world
-            World.enqueueRenderLayeredMessage2d
+            World.enqueueLayeredOperation2d
                 { Elevation = transform.Elevation
                   Horizon = transform.Horizon
                   AssetTag = AssetTag.generalize animationSheet
-                  RenderDescriptor2d =
-                    SpriteDescriptor
+                  RenderOperation2d =
+                    RenderSprite
                         { Transform = transform
                           InsetOpt = match getSpriteInsetOpt entity world with Some inset -> ValueSome inset | None -> ValueNone
                           Image = animationSheet
@@ -301,12 +301,12 @@ module TextFacetModule =
                 textTransform.Elevation <- transform.Elevation + 0.5f // lift text above parent
                 textTransform.Absolute <- transform.Absolute
                 let font = entity.GetFont world
-                World.enqueueRenderLayeredMessage2d
+                World.enqueueLayeredOperation2d
                     { Elevation = textTransform.Elevation
                       Horizon = horizon
                       AssetTag = AssetTag.generalize font
-                      RenderDescriptor2d =
-                        TextDescriptor
+                      RenderOperation2d =
+                        RenderText
                             { Transform = textTransform
                               Text = text
                               Font = font
@@ -316,7 +316,7 @@ module TextFacetModule =
             else world
 
 [<AutoOpen>]
-module BasicEmitterFacet2dModule =
+module BasicStaticSpriteEmitterFacet2dModule =
 
     type Entity with
 
@@ -357,7 +357,7 @@ module BasicEmitterFacet2dModule =
         member this.SetParticleSystem (value : Particles.ParticleSystem) world = this.Set (nameof this.ParticleSystem) value world
         member this.ParticleSystem = lens (nameof this.ParticleSystem) this this.GetParticleSystem this.SetParticleSystem
 
-    type BasicEmitterFacet2d () =
+    type BasicStaticSpriteEmitterFacet () =
         inherit Facet (false)
 
         static let tryMakeEmitter (entity : Entity) world =
@@ -369,7 +369,7 @@ module BasicEmitterFacet2dModule =
                 (entity.GetParticleMax world)
                 (entity.GetEmitterStyle world)
                 world |>
-            Option.map cast<Particles.BasicEmitter>
+            Option.map cast<Particles.BasicStaticSpriteEmitter>
 
         static let makeEmitter entity world =
             match tryMakeEmitter entity world with
@@ -390,7 +390,7 @@ module BasicEmitterFacet2dModule =
                     ParticleSeed = entity.GetBasicParticleSeed world
                     Constraint = entity.GetEmitterConstraint world }
             | None ->
-                Particles.BasicEmitter2d.makeEmpty
+                Particles.BasicStaticSpriteEmitter.makeEmpty
                     (World.getGameTime world)
                     (entity.GetEmitterLifeTimeOpt world)
                     (entity.GetParticleLifeTimeMaxOpt world)
@@ -405,10 +405,10 @@ module BasicEmitterFacet2dModule =
 
         static let updateEmitter updater (entity : Entity) world =
             updateParticleSystem (fun particleSystem ->
-                match Map.tryFind typeof<Particles.BasicEmitter>.Name particleSystem.Emitters with
-                | Some (:? Particles.BasicEmitter as emitter) ->
+                match Map.tryFind typeof<Particles.BasicStaticSpriteEmitter>.Name particleSystem.Emitters with
+                | Some (:? Particles.BasicStaticSpriteEmitter as emitter) ->
                     let emitter = updater emitter
-                    { particleSystem with Emitters = Map.add typeof<Particles.BasicEmitter>.Name (emitter :> Particles.Emitter) particleSystem.Emitters }
+                    { particleSystem with Emitters = Map.add typeof<Particles.BasicStaticSpriteEmitter>.Name (emitter :> Particles.Emitter) particleSystem.Emitters }
                 | _ -> particleSystem)
                 entity world
 
@@ -445,7 +445,7 @@ module BasicEmitterFacet2dModule =
 
         static let handleParticleMaxChange evt world =
             let particleMax = evt.Data.Value :?> int
-            let world = updateEmitter (fun emitter -> if emitter.ParticleRing.Length <> particleMax then Particles.BasicEmitter2d.resize particleMax emitter else emitter) evt.Subscriber world
+            let world = updateEmitter (fun emitter -> if emitter.ParticleRing.Length <> particleMax then Particles.BasicStaticSpriteEmitter.resize particleMax emitter else emitter) evt.Subscriber world
             (Cascade, world)
 
         static let handleBasicParticleSeedChange evt world =
@@ -468,14 +468,14 @@ module BasicEmitterFacet2dModule =
             let entity = evt.Subscriber : Entity
             let particleSystem = entity.GetParticleSystem world
             let particleSystem =
-                match Map.tryFind typeof<Particles.BasicEmitter>.Name particleSystem.Emitters with
-                | Some (:? Particles.BasicEmitter as emitter) ->
+                match Map.tryFind typeof<Particles.BasicStaticSpriteEmitter>.Name particleSystem.Emitters with
+                | Some (:? Particles.BasicStaticSpriteEmitter as emitter) ->
                     let position = entity.GetPosition world
                     let emitter =
                         if v3Neq emitter.Body.Position position
                         then { emitter with Body = { emitter.Body with Position = position }}
                         else emitter
-                    { particleSystem with Emitters = Map.add typeof<Particles.BasicEmitter>.Name (emitter :> Particles.Emitter) particleSystem.Emitters }
+                    { particleSystem with Emitters = Map.add typeof<Particles.BasicStaticSpriteEmitter>.Name (emitter :> Particles.Emitter) particleSystem.Emitters }
                 | _ -> particleSystem
             let world = entity.SetParticleSystem particleSystem world
             (Cascade, world)
@@ -484,14 +484,14 @@ module BasicEmitterFacet2dModule =
             let entity = evt.Subscriber : Entity
             let particleSystem = entity.GetParticleSystem world
             let particleSystem =
-                match Map.tryFind typeof<Particles.BasicEmitter>.Name particleSystem.Emitters with
-                | Some (:? Particles.BasicEmitter as emitter) ->
+                match Map.tryFind typeof<Particles.BasicStaticSpriteEmitter>.Name particleSystem.Emitters with
+                | Some (:? Particles.BasicStaticSpriteEmitter as emitter) ->
                     let angles = entity.GetAngles world
                     let emitter =
                         if v3Neq emitter.Body.Angles angles
                         then { emitter with Body = { emitter.Body with Angles = angles }}
                         else emitter
-                    { particleSystem with Emitters = Map.add typeof<Particles.BasicEmitter>.Name (emitter :> Particles.Emitter) particleSystem.Emitters }
+                    { particleSystem with Emitters = Map.add typeof<Particles.BasicStaticSpriteEmitter>.Name (emitter :> Particles.Emitter) particleSystem.Emitters }
                 | _ -> particleSystem
             let world = entity.SetParticleSystem particleSystem world
             (Cascade, world)
@@ -504,15 +504,15 @@ module BasicEmitterFacet2dModule =
              define Entity.ParticleLifeTimeMaxOpt (GameTime.ofSeconds 1.0f)
              define Entity.ParticleRate (match Constants.GameTime.DesiredFrameRate with StaticFrameRate _ -> 1.0f | DynamicFrameRate _ -> 60.0f)
              define Entity.ParticleMax 60
-             define Entity.BasicParticleSeed { Life = Particles.Life.make GameTime.zero (GameTime.ofSeconds 1.0f); Body = Particles.Body.defaultBody2d; Size = Constants.Engine.ParticleSize2dDefault; Offset = v3Zero; Inset = box2Zero; Color = Color.One; Glow = Color.Zero; Flip = FlipNone }
+             define Entity.BasicParticleSeed { Life = Particles.Life.make GameTime.zero (GameTime.ofSeconds 1.0f); Body = Particles.Body.defaultBody; Size = Constants.Engine.ParticleSize2dDefault; Offset = v3Zero; Inset = box2Zero; Color = Color.One; Glow = Color.Zero; Flip = FlipNone }
              define Entity.EmitterConstraint Particles.Constraint.empty
-             define Entity.EmitterStyle "BasicEmitter2d"
+             define Entity.EmitterStyle "BasicStaticSpriteEmitter"
              nonPersistent Entity.ParticleSystem Particles.ParticleSystem.empty]
 
         override this.Register (entity, world) =
             let emitter = makeEmitter entity world
             let particleSystem = entity.GetParticleSystem world
-            let particleSystem = { particleSystem with Emitters = Map.add typeof<Particles.BasicEmitter>.Name (emitter :> Particles.Emitter) particleSystem.Emitters }
+            let particleSystem = { particleSystem with Emitters = Map.add typeof<Particles.BasicStaticSpriteEmitter>.Name (emitter :> Particles.Emitter) particleSystem.Emitters }
             let world = entity.SetParticleSystem particleSystem world
             let world = World.monitor handlePositionChange (entity.GetChangeEvent (nameof entity.Position)) entity world
             let world = World.monitor handleRotationChange (entity.GetChangeEvent (nameof entity.Rotation)) entity world
@@ -529,7 +529,7 @@ module BasicEmitterFacet2dModule =
 
         override this.Unregister (entity, world) =
             let particleSystem = entity.GetParticleSystem world
-            let particleSystem = { particleSystem with Emitters = Map.remove typeof<Particles.BasicEmitter>.Name particleSystem.Emitters }
+            let particleSystem = { particleSystem with Emitters = Map.remove typeof<Particles.BasicStaticSpriteEmitter>.Name particleSystem.Emitters }
             entity.SetParticleSystem particleSystem world
 
         override this.Update (entity, world) =
@@ -552,8 +552,8 @@ module BasicEmitterFacet2dModule =
                     { Elevation = descriptor.Elevation
                       Horizon = descriptor.Horizon
                       AssetTag = AssetTag.generalize descriptor.Image
-                      RenderDescriptor2d = ParticlesDescriptor descriptor })
-            World.enqueueRenderLayeredMessages2d particlesMessages world
+                      RenderOperation2d = ParticlesDescriptor descriptor })
+            World.enqueueLayeredOperations2d particlesMessages world
 
 [<AutoOpen>]
 module EffectFacetModule =
@@ -1021,7 +1021,7 @@ module TileMapFacetModule =
                         (entity.GetTileIndexOffsetRange world)
                         tileMapAsset.PackageName
                         tileMap
-                World.enqueueRenderLayeredMessages2d tileMapMessages world
+                World.enqueueLayeredOperations2d tileMapMessages world
             | None -> world
 
         override this.GetQuickSize (entity, world) =
@@ -1116,7 +1116,7 @@ module TmxMapFacetModule =
                     (entity.GetTileIndexOffsetRange world)
                     tmxPackage
                     tmxMap
-            World.enqueueRenderLayeredMessages2d tmxMapMessages world
+            World.enqueueLayeredOperations2d tmxMapMessages world
 
         override this.GetQuickSize (entity, world) =
             let tmxMap = entity.GetTmxMap world
@@ -1375,7 +1375,7 @@ module SkyBoxFacetModule =
 
         override this.Render (entity, world) =
             let cubeMap = entity.GetCubeMap world
-            World.enqueueRenderMessage3d (RenderSkyBoxMessage cubeMap) world
+            World.enqueueRenderMessage3d (RenderSkyBox cubeMap) world
 
 [<AutoOpen>]
 module LightFacet3dModule =
@@ -1407,7 +1407,7 @@ module LightFacet3dModule =
             let brightness = entity.GetBrightness world
             let intensity = entity.GetIntensity world
             let lightType = entity.GetLightType world
-            World.enqueueRenderMessage3d (RenderLightMessage3d (position, color, brightness, intensity, lightType)) world
+            World.enqueueRenderMessage3d (RenderLight3d (position, color, brightness, intensity, lightType)) world
 
         override this.RayCast (ray, entity, world) =
             let intersectionOpt = ray.Intersects (entity.GetBounds world)
@@ -1505,7 +1505,7 @@ module StaticBillboardFacetModule =
                 | Deferred -> DeferredRenderType
                 | Forward (sort, subsort) -> ForwardRenderType (sort, subsort)
             World.enqueueRenderMessage3d
-                (RenderBillboardMessage
+                (RenderBillboard
                     (absolute, affineMatrix, insetOpt, renderMaterial,
                      albedoImage, metalnessImage, roughnessImage, ambientOcclusionImage, normalImage,
                      minFilterOpt, magFilterOpt, renderType))
@@ -1589,7 +1589,7 @@ module StaticModelFacetModule =
                 match entity.GetRenderStyle world with
                 | Deferred -> DeferredRenderType
                 | Forward (sort, subsort) -> ForwardRenderType (sort, subsort)
-            World.enqueueRenderMessage3d (RenderStaticModelMessage (absolute, affineMatrix, insetOpt, renderMaterial, renderType, staticModel)) world
+            World.enqueueRenderMessage3d (RenderStaticModel (absolute, affineMatrix, insetOpt, renderMaterial, renderType, staticModel)) world
 
         override this.GetQuickSize (entity, world) =
             let staticModel = entity.GetStaticModel world
@@ -1700,7 +1700,7 @@ module StaticModelSurfaceFacetModule =
                     match entity.GetRenderStyle world with
                     | Deferred -> DeferredRenderType
                     | Forward (sort, subsort) -> ForwardRenderType (sort, subsort)
-                World.enqueueRenderMessage3d (RenderStaticModelSurfaceMessage (absolute, affineMatrix, insetOpt, renderMaterial, renderType, staticModel, surfaceIndex)) world
+                World.enqueueRenderMessage3d (RenderStaticModelSurface (absolute, affineMatrix, insetOpt, renderMaterial, renderType, staticModel, surfaceIndex)) world
 
         override this.GetQuickSize (entity, world) =
             let staticModel = Metadata.getStaticModelMetadata (entity.GetStaticModel world)

@@ -116,7 +116,7 @@ type RendererThread (createRenderer3d, createRenderer2d) =
                           CachedStaticModelRenderMaterial = Unchecked.defaultof<_>
                           CachedStaticModelRenderType = Unchecked.defaultof<_>
                           CachedStaticModel = Unchecked.defaultof<_> }
-                    let cachedStaticModelMessage = RenderCachedStaticModelMessage staticModelDescriptor
+                    let cachedStaticModelMessage = RenderCachedStaticModel staticModelDescriptor
                     cachedStaticModelMessages.Enqueue cachedStaticModelMessage
                 cachedStaticModelMessagesCapacity <- cachedStaticModelMessagesCapacity * 2
                 cachedStaticModelMessages.Dequeue ()
@@ -126,15 +126,15 @@ type RendererThread (createRenderer3d, createRenderer2d) =
         lock cachedStaticModelMessagesLock (fun () ->
             for message in messages do
                 match message with
-                | RenderCachedStaticModelMessage _ -> cachedStaticModelMessages.Enqueue message
+                | RenderCachedStaticModel _ -> cachedStaticModelMessages.Enqueue message
                 | _ -> ())
 
     let allocSpriteMessage () =
         lock cachedSpriteMessagesLock (fun () ->
             if cachedSpriteMessages.Count = 0 then
                 for _ in 0 .. dec cachedSpriteMessagesCapacity do
-                    let spriteDescriptor = CachedSpriteDescriptor { CachedSprite = Unchecked.defaultof<_> }
-                    let cachedSpriteMessage = RenderLayeredMessage2d { Elevation = 0.0f; Horizon = 0.0f; AssetTag = Unchecked.defaultof<_>; RenderDescriptor2d = spriteDescriptor }
+                    let spriteDescriptor = RenderCachedSprite { CachedSprite = Unchecked.defaultof<_> }
+                    let cachedSpriteMessage = LayeredOperation2d { Elevation = 0.0f; Horizon = 0.0f; AssetTag = Unchecked.defaultof<_>; RenderOperation2d = spriteDescriptor }
                     cachedSpriteMessages.Enqueue cachedSpriteMessage
                 cachedSpriteMessagesCapacity <- cachedSpriteMessagesCapacity * 2
                 cachedSpriteMessages.Dequeue ()
@@ -144,9 +144,9 @@ type RendererThread (createRenderer3d, createRenderer2d) =
         lock cachedSpriteMessagesLock (fun () ->
             for message in messages do
                 match message with
-                | RenderLayeredMessage2d layeredMessage ->
-                    match layeredMessage.RenderDescriptor2d with
-                    | CachedSpriteDescriptor _ -> cachedSpriteMessages.Enqueue message
+                | LayeredOperation2d opertion ->
+                    match opertion.RenderOperation2d with
+                    | RenderCachedSprite _ -> cachedSpriteMessages.Enqueue message
                     | _ -> ()
                 | _ -> ())
 
@@ -225,10 +225,10 @@ type RendererThread (createRenderer3d, createRenderer2d) =
         member this.EnqueueMessage3d message =
             if Option.isNone taskOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
             match message with
-            | RenderStaticModelMessage (absolute, affineMatrix, insetOpt, renderMaterial, renderType, staticModel) ->
+            | RenderStaticModel (absolute, affineMatrix, insetOpt, renderMaterial, renderType, staticModel) ->
                 let cachedStaticModelMessage = allocStaticModelMessage ()
                 match cachedStaticModelMessage with
-                | RenderCachedStaticModelMessage cachedDescriptor ->
+                | RenderCachedStaticModel cachedDescriptor ->
                     cachedDescriptor.CachedStaticModelAbsolute <- absolute
                     cachedDescriptor.CachedStaticModelAffineMatrix <- affineMatrix
                     cachedDescriptor.CachedStaticModelInsetOpt <- insetOpt
@@ -242,17 +242,17 @@ type RendererThread (createRenderer3d, createRenderer2d) =
         member this.EnqueueMessage2d message =
             if Option.isNone taskOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
             match message with
-            | RenderLayeredMessage2d layeredMessage ->
-                match layeredMessage.RenderDescriptor2d with
-                | SpriteDescriptor sprite ->
+            | LayeredOperation2d operation ->
+                match operation.RenderOperation2d with
+                | RenderSprite sprite ->
                     let cachedSpriteMessage = allocSpriteMessage ()
                     match cachedSpriteMessage with
-                    | RenderLayeredMessage2d cachedLayeredMessage ->
-                        match cachedLayeredMessage.RenderDescriptor2d with
-                        | CachedSpriteDescriptor descriptor ->
-                            cachedLayeredMessage.Elevation <- layeredMessage.Elevation
-                            cachedLayeredMessage.Horizon <- layeredMessage.Horizon
-                            cachedLayeredMessage.AssetTag <- layeredMessage.AssetTag
+                    | LayeredOperation2d cachedOperation ->
+                        match cachedOperation.RenderOperation2d with
+                        | RenderCachedSprite descriptor ->
+                            cachedOperation.Elevation <- operation.Elevation
+                            cachedOperation.Horizon <- operation.Horizon
+                            cachedOperation.AssetTag <- operation.AssetTag
                             descriptor.CachedSprite.Transform <- sprite.Transform
                             descriptor.CachedSprite.InsetOpt <- sprite.InsetOpt
                             descriptor.CachedSprite.Image <- sprite.Image

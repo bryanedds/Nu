@@ -372,8 +372,8 @@ module Content =
     let entity<'entityDispatcher when 'entityDispatcher :> EntityDispatcher> entityName initializers =
         composite<'entityDispatcher> entityName initializers []
 
-    /// Describe a 2d basic emitter with the given initializers.
-    let basicEmitter2d entityName initializers = entity<BasicEmitterDispatcher2d> entityName initializers
+    /// Describe a basic static sprite emitter with the given initializers.
+    let basicStaticSpriteEmitter entityName initializers = entity<BasicStaticSpriteEmitterDispatcher> entityName initializers
 
     /// Describe a 2d effect with the given initializers.
     let effect2d entityName initializers = entity<EffectDispatcher2d> entityName initializers

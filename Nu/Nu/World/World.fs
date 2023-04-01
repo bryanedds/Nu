@@ -391,7 +391,7 @@ module WorldModule3 =
                  FpsDispatcher () :> EntityDispatcher
                  FeelerDispatcher () :> EntityDispatcher
                  FillBarDispatcher () :> EntityDispatcher
-                 BasicEmitterDispatcher2d () :> EntityDispatcher
+                 BasicStaticSpriteEmitterDispatcher () :> EntityDispatcher
                  EffectDispatcher2d () :> EntityDispatcher
                  BlockDispatcher2d () :> EntityDispatcher
                  BoxDispatcher2d () :> EntityDispatcher
@@ -419,7 +419,7 @@ module WorldModule3 =
                  StaticSpriteFacet () :> Facet
                  AnimatedSpriteFacet () :> Facet
                  TextFacet () :> Facet
-                 BasicEmitterFacet2d () :> Facet
+                 BasicStaticSpriteEmitterFacet () :> Facet
                  EffectFacet () :> Facet
                  RigidBodyFacet () :> Facet
                  TileMapFacet () :> Facet
@@ -634,7 +634,7 @@ module WorldModule3 =
                         then RendererThread (createRenderer3d, createRenderer2d) :> RendererProcess
                         else RendererInline (createRenderer3d, createRenderer2d) :> RendererProcess
                     rendererProcess.Start ()
-                    rendererProcess.EnqueueMessage2d (LoadRenderPackageMessage2d Assets.Default.PackageName) // enqueue default package hint
+                    rendererProcess.EnqueueMessage2d (LoadRenderPackage2d Assets.Default.PackageName) // enqueue default package hint
                     let audioPlayer =
                         if SDL.SDL_WasInit SDL.SDL_INIT_AUDIO <> 0u
                         then SdlAudioPlayer.make () :> AudioPlayer

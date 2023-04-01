@@ -125,8 +125,8 @@ type [<NoEquality; NoComparison>] TextDescriptor =
       Color : Color
       Justification : Justification }
 
-/// Describes particles.
-type [<NoEquality; NoComparison>] ParticlesDescriptor =
+/// Describes sprite-based particles.
+type [<NoEquality; NoComparison>] SpriteParticlesDescriptor =
     { Elevation : single
       Horizon : single
       Absolute : bool
@@ -134,8 +134,18 @@ type [<NoEquality; NoComparison>] ParticlesDescriptor =
       Image : Image AssetTag
       Particles : Particle SegmentedArray }
 
+/// Describes billboard-based particles.
+type [<NoEquality; NoComparison>] BillboardParticlesDescriptor =
+    { Absolute : bool
+      Image : Image AssetTag
+      Particles : Particle SegmentedArray }
+
+type [<NoEquality; NoComparison>] ParticlesDescriptor =
+    | SpriteParticlesDescriptor of SpriteParticlesDescriptor
+    | BillboardParticlesDescriptor of BillboardParticlesDescriptor
+
 /// A renderer tag interface.
-and Renderer = interface end
+type Renderer = interface end
 
 /// Configures a renderer.
 type RendererConfig =

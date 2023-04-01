@@ -1009,12 +1009,12 @@ module WorldModule2 =
                 transform.Size <- size
                 transform.Elevation <- Single.MaxValue
                 transform.Absolute <- true
-                World.enqueueRenderLayeredMessage2d
+                World.enqueueLayeredOperation2d
                     { Elevation = transform.Elevation
                       Horizon = transform.Horizon
                       AssetTag = AssetTag.generalize dissolveImage
-                      RenderDescriptor2d =
-                        SpriteDescriptor
+                      RenderOperation2d =
+                        RenderSprite
                             { Transform = transform
                               InsetOpt = ValueNone
                               Image = dissolveImage

@@ -172,8 +172,9 @@ and Content =
     | StaticSprite of Resource * Aspect array * Content
     | AnimatedSprite of Resource * Vector2i * int * int * GameTime * Playback * Aspect array * Content
     | TextSprite of Resource * string * Aspect array * Content
+    | Billboard of Resource * Resource * Resource * Resource * Resource * OpenGL.TextureMinFilter voption * OpenGL.TextureMagFilter voption * Aspect array * Content
     | StaticModel of Resource * Aspect array * Content
-    | Light of LightType * Aspect array * Content
+    | Light3d of LightType * Aspect array * Content
     | SoundEffect of Resource * Aspect array * Content
     | Mount of Shift * Aspect array * Content
     | Repeat of Shift * Repetition * Aspect array * Content
@@ -577,7 +578,7 @@ module EffectSystem =
                 let mutable transform = Transform.makeIntuitive slice.Position slice.Scale slice.Offset slice.Size slice.Angles slice.Elevation effectSystem.EffectAbsolute slice.Centered
                 let spriteView =
                     Render2d (transform.Elevation, transform.Horizon, AssetTag.generalize image,
-                        SpriteDescriptor 
+                        RenderSprite
                             { Transform = transform
                               InsetOpt = if slice.Inset.Equals box2Zero then ValueNone else ValueSome slice.Inset
                               Image = AssetTag.specialize<Image> image
@@ -615,7 +616,7 @@ module EffectSystem =
                     let mutable transform = Transform.makeIntuitive slice.Position slice.Scale slice.Offset slice.Size slice.Angles slice.Elevation effectSystem.EffectAbsolute slice.Centered
                     let animatedSpriteView =
                         Render2d (transform.Elevation, transform.Horizon, AssetTag.generalize image,
-                            SpriteDescriptor
+                            RenderSprite
                                 { Transform = transform
                                   InsetOpt = ValueSome inset
                                   Image = AssetTag.specialize<Image> image
@@ -646,13 +647,61 @@ module EffectSystem =
                 let mutable transform = Transform.makeIntuitive slice.Position slice.Scale slice.Offset slice.Size slice.Angles slice.Elevation effectSystem.EffectAbsolute slice.Centered
                 let textView =
                     Render2d (transform.Elevation, transform.Horizon, font,
-                        TextDescriptor 
+                        RenderText
                             { Transform = transform
                               Text = text
                               Font = AssetTag.specialize<Font> font
                               Color = slice.Color
                               Justification = Justified (JustifyCenter, JustifyMiddle) })
                 addView textView effectSystem
+            else effectSystem
+
+        // build implicitly mounted content
+        evalContent content slice history effectSystem
+
+    and private evalBillboard resourceAlbedo resourceMetalness resourceRoughness resourceAmbientOcclusion resourceNormal minFilterOpt magFilterOpt aspects content (slice : Slice) history effectSystem =
+
+        // pull image from resource
+        let imageAlbedo = evalResource resourceAlbedo effectSystem
+        let imageMetalness = evalResource resourceMetalness effectSystem
+        let imageRoughness = evalResource resourceRoughness effectSystem
+        let imageAmbientOcclusion = evalResource resourceAmbientOcclusion effectSystem
+        let imageNormal = evalResource resourceNormal effectSystem
+
+        // eval aspects
+        let slice = evalAspects aspects slice effectSystem
+
+        // build model views
+        let effectSystem =
+            if slice.Enabled then
+                let imageAlbedo = AssetTag.specialize<Image> imageAlbedo
+                let imageMetalness = AssetTag.specialize<Image> imageMetalness
+                let imageRoughness = AssetTag.specialize<Image> imageRoughness
+                let imageAmbientOcclusion = AssetTag.specialize<Image> imageAmbientOcclusion
+                let imageNormal = AssetTag.specialize<Image> imageNormal
+                let affineMatrix = Matrix4x4.CreateFromTrs (slice.Position, slice.Angles.RollPitchYaw, slice.Scale)
+                let insetOpt = if slice.Inset.Equals box2Zero then ValueNone else ValueSome slice.Inset
+                let renderMaterial =
+                    { AlbedoOpt = ValueSome slice.Color
+                      MetalnessOpt = ValueNone
+                      RoughnessOpt = ValueNone
+                      AmbientOcclusionOpt = ValueNone }
+                let modelView =
+                    Render3d
+                        (RenderBillboard
+                            (effectSystem.EffectAbsolute,
+                             affineMatrix,
+                             insetOpt,
+                             renderMaterial,
+                             imageAlbedo,
+                             imageMetalness,
+                             imageRoughness,
+                             imageAmbientOcclusion,
+                             imageNormal,
+                             minFilterOpt,
+                             magFilterOpt,
+                             effectSystem.EffectRenderType))
+                addView modelView effectSystem
             else effectSystem
 
         // build implicitly mounted content
@@ -679,7 +728,7 @@ module EffectSystem =
                       AmbientOcclusionOpt = ValueNone }
                 let modelView =
                     Render3d
-                        (RenderStaticModelMessage
+                        (RenderStaticModel
                             (effectSystem.EffectAbsolute,
                              affineMatrix,
                              insetOpt,
@@ -692,7 +741,7 @@ module EffectSystem =
         // build implicitly mounted content
         evalContent content slice history effectSystem
 
-    and private evalLight lightType aspects content (slice : Slice) history effectSystem =
+    and private evalLight3d lightType aspects content (slice : Slice) history effectSystem =
 
         // eval aspects
         let slice = evalAspects aspects slice effectSystem
@@ -702,7 +751,7 @@ module EffectSystem =
             if slice.Enabled then
                 let modelView =
                     Render3d
-                        (RenderLightMessage3d
+                        (RenderLight3d
                             (slice.Position, slice.Color, slice.Brightness, slice.Intensity, lightType))
                 addView modelView effectSystem
             else effectSystem
@@ -821,10 +870,12 @@ module EffectSystem =
             evalAnimatedSprite resource celSize celRun celCount delay playback aspects content slice history effectSystem
         | TextSprite (resource, text, aspects, content) ->
             evalTextSprite resource text aspects content slice history effectSystem
+        | Billboard (resourceAlbedo, resourceMetalness, resourceRoughness, resourceAmbientOcclusion, resourceNormal, minFilterOpt, magFilterOpt, aspects, content) ->
+            evalBillboard resourceAlbedo resourceMetalness resourceRoughness resourceAmbientOcclusion resourceNormal minFilterOpt magFilterOpt aspects content slice history effectSystem
         | StaticModel (resource, aspects, content) ->
             evalStaticModel resource aspects content slice history effectSystem
-        | Light (lightType, aspects, content) ->
-            evalLight lightType aspects content slice history effectSystem
+        | Light3d (lightType, aspects, content) ->
+            evalLight3d lightType aspects content slice history effectSystem
         | SoundEffect (resource, aspects, content) ->
             evalSoundEffect resource aspects content slice history effectSystem
         | Mount (Shift shift, aspects, content) ->

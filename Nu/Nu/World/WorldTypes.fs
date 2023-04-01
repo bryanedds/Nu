@@ -1366,7 +1366,8 @@ module WorldTypes =
         abstract TryMakeEmitter : GameTime -> GameTime -> GameTime -> single -> int -> string -> Particles.Emitter option
         default this.TryMakeEmitter time lifeTimeOpt particleLifeTimeOpt particleRate particleMax emitterName =
             match emitterName with
-            | "BasicEmitter2d" -> Particles.BasicEmitter2d.makeDefault time lifeTimeOpt particleLifeTimeOpt particleRate particleMax :> Particles.Emitter |> Some
+            | "BasicStaticSpriteEmitter" -> Particles.BasicStaticSpriteEmitter.makeDefault time lifeTimeOpt particleLifeTimeOpt particleRate particleMax :> Particles.Emitter |> Some
+            | "BasicStaticBillboardEmitter" -> Particles.BasicStaticBillboardEmitter.makeDefault time lifeTimeOpt particleLifeTimeOpt particleRate particleMax :> Particles.Emitter |> Some
             | _ -> None
 
         /// Attempt to convert a sequence of entities to the given scenery entity, destroying all those that were

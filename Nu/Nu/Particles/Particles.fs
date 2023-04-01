@@ -127,16 +127,7 @@ type [<StructuralEquality; NoComparison; Struct>] Body =
       mutable Restitution : single }
 
     /// The default 2d body.
-    static member defaultBody2d =
-        { Position = v3Zero
-          Scale = v3One
-          Angles = v3Zero
-          LinearVelocity = v3Zero
-          AngularVelocity = v3Zero
-          Restitution = Constants.Particles.RestitutionDefault }
-
-    /// The default 3d body.
-    static member defaultBody3d =
+    static member defaultBody =
         { Position = v3Zero
           Scale = v3One
           Angles = v3Zero
@@ -653,11 +644,11 @@ and [<ReferenceEquality>] EmitterDescriptor<'a when 'a :> Particle and 'a : stru
 and EmitterDescriptors<'a when 'a :> Particle and 'a : struct> =
     Map<string, 'a EmitterDescriptor>
 
-/// The default particle emitter.
+/// The static sprite-based particle emitter.
 /// NOTE: ideally, this would be an abstract data type, but I feel that would discourage users from making their
 /// own emitters - it would look like making an emitter would require a lot of additional boilerplate as well as
 /// making it harder to use this existing emitter as an example.
-and [<ReferenceEquality>] Emitter<'a when 'a :> Particle and 'a : equality and 'a : struct> =
+and [<ReferenceEquality>] StaticSpriteEmitter<'a when 'a :> Particle and 'a : equality and 'a : struct> =
     { mutable Body : Body // mutable for animation
       Elevation : single
       Absolute : bool
@@ -671,12 +662,12 @@ and [<ReferenceEquality>] Emitter<'a when 'a :> Particle and 'a : equality and '
       ParticleRing : 'a SegmentedArray // operates as a ring-buffer
       ParticleSeed : 'a
       Constraint : Constraint
-      ParticleInitializer : GameTime -> 'a Emitter -> 'a
-      ParticleBehavior : GameTime -> 'a Emitter -> Output
+      ParticleInitializer : GameTime -> 'a StaticSpriteEmitter -> 'a
+      ParticleBehavior : GameTime -> 'a StaticSpriteEmitter -> Output
       ParticleBehaviors : Behaviors
-      EmitterBehavior : GameTime -> 'a Emitter -> Output
+      EmitterBehavior : GameTime -> 'a StaticSpriteEmitter -> Output
       EmitterBehaviors : Behaviors
-      ToParticlesDescriptor : GameTime -> 'a Emitter -> ParticlesDescriptor }
+      ToParticlesDescriptor : GameTime -> 'a StaticSpriteEmitter -> SpriteParticlesDescriptor }
 
     static member private emit time emitter =
         let particle = &emitter.ParticleRing.[emitter.ParticleIndex]
@@ -700,7 +691,7 @@ and [<ReferenceEquality>] Emitter<'a when 'a :> Particle and 'a : equality and '
         else Live
 
     /// Run the emitter.
-    static member run delta time (emitter : 'a Emitter) =
+    static member run delta time (emitter : 'a StaticSpriteEmitter) =
 
         // determine local time
         let localTime = time - emitter.Life.StartTime
@@ -711,7 +702,7 @@ and [<ReferenceEquality>] Emitter<'a when 'a :> Particle and 'a : equality and '
             let emitCount = single localTime * emitter.ParticleRate
             let emitCountPrevious = single localTimePrevious * emitter.ParticleRate
             let emitCount = int emitCount - int emitCountPrevious
-            for _ in 0 .. emitCount - 1 do Emitter<'a>.emit time emitter
+            for _ in 0 .. emitCount - 1 do StaticSpriteEmitter<'a>.emit time emitter
 
         // update emitter in-place
         let output = emitter.EmitterBehavior time emitter
@@ -731,7 +722,7 @@ and [<ReferenceEquality>] Emitter<'a when 'a :> Particle and 'a : equality and '
     /// Make a basic particle emitter.
     static member make<'a>
         time body elevation absolute blend image lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
-        constrain particleInitializer particleBehavior particleBehaviors emitterBehavior emitterBehaviors toParticlesDescriptor : 'a Emitter =
+        constrain particleInitializer particleBehavior particleBehaviors emitterBehavior emitterBehaviors toParticlesDescriptor : 'a StaticSpriteEmitter =
         { Body = body
           Elevation = elevation
           Absolute = absolute
@@ -754,19 +745,18 @@ and [<ReferenceEquality>] Emitter<'a when 'a :> Particle and 'a : equality and '
 
     interface Emitter with
         member this.GetLiveness time =
-            Emitter<'a>.getLiveness time this
+            StaticSpriteEmitter<'a>.getLiveness time this
         member this.Run delta time =
-            let (output, emitter) = Emitter<'a>.run delta time this
+            let (output, emitter) = StaticSpriteEmitter<'a>.run delta time this
             (output, emitter :> Emitter)
         member this.ToParticlesDescriptor time =
-            this.ToParticlesDescriptor time this
+            SpriteParticlesDescriptor (this.ToParticlesDescriptor time this)
         member this.Resize particleMax =
             if  this.ParticleRing.Length <> particleMax then
                 this.ParticleIndex <- 0
                 this.ParticleWatermark <- 0
                 { this with ParticleRing = SegmentedArray.zeroCreate<'a> particleMax } :> Emitter
             else this :> Emitter
-        end
 
 /// A basic particle.
 type [<StructuralEquality; NoComparison; Struct>] BasicParticle =
@@ -834,14 +824,14 @@ type BasicEmitterDescriptor =
 type BasicEmitterDescriptors =
     BasicParticle EmitterDescriptors
 
-/// A basic particle emitter.
-type BasicEmitter =
-    Emitter<BasicParticle>
+/// A static sprite particle emitter.
+type BasicStaticSpriteEmitter =
+    StaticSpriteEmitter<BasicParticle>
 
 [<RequireQualifiedAccess>]
-module BasicEmitter2d =
+module BasicStaticSpriteEmitter =
 
-    let private toParticlesDescriptor time (emitter : BasicEmitter) =
+    let private toParticlesDescriptor time (emitter : BasicStaticSpriteEmitter) =
         let particles =
             SegmentedArray.append
                 (if emitter.ParticleWatermark > emitter.ParticleIndex
@@ -872,36 +862,36 @@ module BasicEmitter2d =
           Particles = particles' }
 
     /// Resize the emitter.
-    let resize particleMax (emitter : BasicEmitter) =
-        (emitter :> Emitter).Resize particleMax :?> BasicEmitter
+    let resize particleMax (emitter : BasicStaticSpriteEmitter) =
+        (emitter :> Emitter).Resize particleMax :?> BasicStaticSpriteEmitter
 
-    /// Make a basic 2d particle emitter.
+    /// Make a basic static sprite particle emitter.
     let make
         time body elevation absolute blend image lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
         constrain particleInitializer particleBehavior particleBehaviors emitterBehavior emitterBehaviors =
-        BasicEmitter.make
+        BasicStaticSpriteEmitter.make
             time body elevation absolute blend image lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
             constrain particleInitializer particleBehavior particleBehaviors emitterBehavior emitterBehaviors toParticlesDescriptor
 
-    /// Make an empty basic 2d particle emitter.
+    /// Make an empty basic sprite particle emitter.
     let makeEmpty time lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax =
         let image = asset Assets.Default.PackageName Assets.Default.ImageName
         let particleSeed = Unchecked.defaultof<BasicParticle>
-        let particleInitializer = fun _ (emitter : BasicEmitter) -> emitter.ParticleSeed
+        let particleInitializer = fun _ (emitter : BasicStaticSpriteEmitter) -> emitter.ParticleSeed
         let particleBehavior = fun _ _ -> Output.empty
         let particleBehaviors = Behaviors.empty
         let emitterBehavior = fun _ _ -> Output.empty
         let emitterBehaviors = Behaviors.empty
         make
-            time Body.defaultBody2d 0.0f false Transparent image lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
+            time Body.defaultBody 0.0f false Transparent image lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
             Constraint.empty particleInitializer particleBehavior particleBehaviors emitterBehavior emitterBehaviors
 
-    /// Make the default basic 2d particle emitter.
+    /// Make the default basic sprite particle emitter.
     let makeDefault time lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax =
         let image = asset Assets.Default.PackageName Assets.Default.ImageName
         let particleSeed =
             { Life = Life.make GameTime.zero (GameTime.ofSeconds 2.0f)
-              Body = Body.defaultBody2d
+              Body = Body.defaultBody
               Offset = v3Zero
               Size = Constants.Engine.ParticleSize2dDefault
               Inset = box2Zero
@@ -912,7 +902,7 @@ module BasicEmitter2d =
             match Constants.GameTime.DesiredFrameRate with
             | StaticFrameRate frameRate -> 1.0f / single frameRate
             | DynamicFrameRate _ -> 1.0f
-        let particleInitializer = fun _ (emitter : BasicEmitter) ->
+        let particleInitializer = fun _ (emitter : BasicStaticSpriteEmitter) ->
             let particle = emitter.ParticleSeed
             particle.Body.Position <- emitter.Body.Position
             particle.Body.Angles <- emitter.Body.Angles
@@ -937,13 +927,13 @@ module BasicEmitter2d =
                 (Behavior.ofSeq BasicParticle.body
                     [Transformer.force (Gravity gravity)
                      Transformer.force (Velocity Constraint.empty)])
-        let emitterBehavior = fun _ (emitter : BasicEmitter) ->
+        let emitterBehavior = fun _ (emitter : BasicStaticSpriteEmitter) ->
             emitter.Body.Angles <- emitter.Body.Angles + v3Dup 0.1f
             Output.empty
         let emitterBehaviors =
             Behaviors.empty
         make
-            time Body.defaultBody2d 0.0f false Transparent image lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
+            time Body.defaultBody 0.0f false Transparent image lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
             Constraint.empty particleInitializer particleBehavior particleBehaviors emitterBehavior emitterBehaviors
 
 module ParticleSystem =

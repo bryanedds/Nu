@@ -12,31 +12,31 @@ open TiledSharp
 open Prime
 open Nu
 
-/// Describes what to render.
-type [<ReferenceEquality>] RenderDescriptor2d =
-    | SpriteDescriptor of SpriteDescriptor
-    | SpritesDescriptor of SpritesDescriptor
-    | SpriteDescriptors of SpriteDescriptors
-    | CachedSpriteDescriptor of CachedSpriteDescriptor
-    | ParticlesDescriptor of ParticlesDescriptor
-    | TilesDescriptor of TilesDescriptor
-    | TextDescriptor of TextDescriptor
-    | RenderCallbackDescriptor2d of (Vector2 * Vector2 * Renderer2d -> unit)
+/// Describes a 2d rendering operation.
+type [<ReferenceEquality>] RenderOperation2d =
+    | RenderSprite of SpriteDescriptor
+    | RenderSprites of SpritesDescriptor
+    | RenderSpriteDescriptors of SpriteDescriptors
+    | RenderCachedSprite of CachedSpriteDescriptor
+    | RenderSpriteParticles of SpriteParticlesDescriptor
+    | RenderTiles of TilesDescriptor
+    | RenderText of TextDescriptor
+    | RenderCallback2d of (Vector2 * Vector2 * Renderer2d -> unit)
 
-/// A layered message to the 2d rendering system.
+/// Describes a layered rendering operation to the 2d rendering system.
 /// NOTE: mutation is used only for internal sprite descriptor caching.
-and [<ReferenceEquality>] RenderLayeredMessage2d =
+and [<ReferenceEquality>] LayeredOperation2d =
     { mutable Elevation : single
       mutable Horizon : single
       mutable AssetTag : obj AssetTag
-      mutable RenderDescriptor2d : RenderDescriptor2d }
+      mutable RenderOperation2d : RenderOperation2d }
 
 /// A message to the 2d rendering system.
 and [<ReferenceEquality>] RenderMessage2d =
-    | RenderLayeredMessage2d of RenderLayeredMessage2d
-    | LoadRenderPackageMessage2d of string
-    | UnloadRenderPackageMessage2d of string
-    | ReloadRenderAssetsMessage2d
+    | LayeredOperation2d of LayeredOperation2d
+    | LoadRenderPackage2d of string
+    | UnloadRenderPackage2d of string
+    | ReloadRenderAssets2d
 
 /// The 2d renderer. Represents the 2d rendering system in Nu generally.
 and Renderer2d =
@@ -64,9 +64,9 @@ type [<ReferenceEquality>] MockRenderer2d =
     static member make () =
         { MockRenderer2d = () }
 
-/// Compares layered 2d render messages.
-type RenderLayeredMessage2dComparer () =
-    interface IComparer<RenderLayeredMessage2d> with
+/// Compares layered 2d operations.
+type LayeredOperation2dComparer () =
+    interface IComparer<LayeredOperation2d> with
         member this.Compare (left, right) =
             if left.Elevation < right.Elevation then -1
             elif left.Elevation > right.Elevation then 1
@@ -88,7 +88,7 @@ type [<ReferenceEquality>] GlRenderer2d =
           RenderPackages : Packages<RenderAsset, unit>
           mutable RenderPackageCachedOpt : string * Package<RenderAsset, unit> // OPTIMIZATION: nullable for speed
           mutable RenderAssetCachedOpt : string * RenderAsset
-          RenderLayeredMessages : RenderLayeredMessage2d List
+          RenderLayeredOperations : LayeredOperation2d List
           RenderShouldBeginFrame : bool
           RenderShouldEndFrame : bool }
 
@@ -218,17 +218,17 @@ type [<ReferenceEquality>] GlRenderer2d =
 
     static member private handleRenderMessage renderMessage renderer =
         match renderMessage with
-        | RenderLayeredMessage2d message -> renderer.RenderLayeredMessages.Add message
-        | LoadRenderPackageMessage2d hintPackageUse -> GlRenderer2d.handleLoadRenderPackage false hintPackageUse renderer
-        | UnloadRenderPackageMessage2d hintPackageDisuse -> GlRenderer2d.handleUnloadRenderPackage hintPackageDisuse renderer
-        | ReloadRenderAssetsMessage2d -> GlRenderer2d.handleReloadRenderAssets renderer
+        | LayeredOperation2d operation -> renderer.RenderLayeredOperations.Add operation
+        | LoadRenderPackage2d hintPackageUse -> GlRenderer2d.handleLoadRenderPackage false hintPackageUse renderer
+        | UnloadRenderPackage2d hintPackageDisuse -> GlRenderer2d.handleUnloadRenderPackage hintPackageDisuse renderer
+        | ReloadRenderAssets2d -> GlRenderer2d.handleReloadRenderAssets renderer
 
     static member private handleRenderMessages renderMessages renderer =
         for renderMessage in renderMessages do
             GlRenderer2d.handleRenderMessage renderMessage renderer
 
-    static member private sortRenderLayeredMessages renderer =
-        renderer.RenderLayeredMessages.Sort (RenderLayeredMessage2dComparer ())
+    static member private sortLayeredOperations renderer =
+        renderer.RenderLayeredOperations.Sort (LayeredOperation2dComparer ())
 
     /// Get the sprite shader created by OpenGL.Hl.CreateSpriteShader.
     static member getSpriteShader renderer =
@@ -335,7 +335,7 @@ type [<ReferenceEquality>] GlRenderer2d =
         | _ -> Log.info ("SpriteDescriptor failed to render due to unloadable assets for '" + scstring image + "'.")
 
     /// Render particles.
-    static member renderParticles (blend : Blend, image : Image AssetTag, particles : Particle SegmentedArray, renderer) =
+    static member renderSpriteParticles (blend : Blend, image : Image AssetTag, particles : Particle SegmentedArray, renderer) =
         let image = AssetTag.generalize image
         match GlRenderer2d.tryGetRenderAsset image renderer with
         | ValueSome renderAsset ->
@@ -567,36 +567,36 @@ type [<ReferenceEquality>] GlRenderer2d =
 
     static member private renderDescriptor descriptor eyeCenter eyeSize renderer =
         match descriptor with
-        | SpriteDescriptor descriptor ->
+        | RenderSprite descriptor ->
             GlRenderer2d.renderSprite (&descriptor.Transform, &descriptor.InsetOpt, descriptor.Image, &descriptor.Color, descriptor.Blend, &descriptor.Glow, descriptor.Flip, renderer)
-        | SpritesDescriptor descriptor ->
+        | RenderSprites descriptor ->
             let sprites = descriptor.Sprites
             for index in 0 .. sprites.Length - 1 do
                 let sprite = &sprites.[index]
                 GlRenderer2d.renderSprite (&sprite.Transform, &sprite.InsetOpt, sprite.Image, &sprite.Color, sprite.Blend, &sprite.Glow, sprite.Flip, renderer)
-        | SpriteDescriptors descriptor ->
+        | RenderSpriteDescriptors descriptor ->
             let sprites = descriptor.SpriteDescriptors
             for index in 0 .. sprites.Length - 1 do
                 let sprite = sprites.[index]
                 GlRenderer2d.renderSprite (&sprite.Transform, &sprite.InsetOpt, sprite.Image, &sprite.Color, sprite.Blend, &sprite.Glow, sprite.Flip, renderer)
-        | CachedSpriteDescriptor descriptor ->
+        | RenderCachedSprite descriptor ->
             GlRenderer2d.renderSprite (&descriptor.CachedSprite.Transform, &descriptor.CachedSprite.InsetOpt, descriptor.CachedSprite.Image, &descriptor.CachedSprite.Color, descriptor.CachedSprite.Blend, &descriptor.CachedSprite.Glow, descriptor.CachedSprite.Flip, renderer)
-        | ParticlesDescriptor descriptor ->
-            GlRenderer2d.renderParticles (descriptor.Blend, descriptor.Image, descriptor.Particles, renderer)
-        | TilesDescriptor descriptor ->
+        | RenderSpriteParticles descriptor ->
+            GlRenderer2d.renderSpriteParticles (descriptor.Blend, descriptor.Image, descriptor.Particles, renderer)
+        | RenderTiles descriptor ->
             GlRenderer2d.renderTiles
                 (&descriptor.Transform, &descriptor.Color, &descriptor.Glow,
                  descriptor.MapSize, descriptor.Tiles, descriptor.TileSourceSize, descriptor.TileSize, descriptor.TileAssets,
                  eyeCenter, eyeSize, renderer)
-        | TextDescriptor descriptor ->
+        | RenderText descriptor ->
             GlRenderer2d.renderText
                 (&descriptor.Transform, descriptor.Text, descriptor.Font, &descriptor.Color, descriptor.Justification, eyeCenter, eyeSize, renderer)
-        | RenderCallbackDescriptor2d callback ->
+        | RenderCallback2d callback ->
             GlRenderer2d.renderCallback callback eyeCenter eyeSize renderer
 
-    static member private renderLayeredMessages eyeCenter eyeSize renderer =
-        for message in renderer.RenderLayeredMessages do
-            GlRenderer2d.renderDescriptor message.RenderDescriptor2d eyeCenter eyeSize renderer
+    static member private renderLayeredOperations eyeCenter eyeSize renderer =
+        for operation in renderer.RenderLayeredOperations do
+            GlRenderer2d.renderDescriptor operation.RenderOperation2d eyeCenter eyeSize renderer
 
     /// Make a GlRenderer2d.
     static member make window config =
@@ -633,7 +633,7 @@ type [<ReferenceEquality>] GlRenderer2d =
               RenderPackages = dictPlus StringComparer.Ordinal []
               RenderPackageCachedOpt = Unchecked.defaultof<_>
               RenderAssetCachedOpt = Unchecked.defaultof<_>
-              RenderLayeredMessages = List ()
+              RenderLayeredOperations = List ()
               RenderShouldBeginFrame = config.ShouldBeginFrame
               RenderShouldEndFrame = config.ShouldEndFrame }
 
@@ -662,9 +662,9 @@ type [<ReferenceEquality>] GlRenderer2d =
 
             // render frame
             GlRenderer2d.handleRenderMessages renderMessages renderer
-            GlRenderer2d.sortRenderLayeredMessages renderer
-            GlRenderer2d.renderLayeredMessages eyeCenter eyeSize renderer
-            renderer.RenderLayeredMessages.Clear ()
+            GlRenderer2d.sortLayeredOperations renderer
+            GlRenderer2d.renderLayeredOperations eyeCenter eyeSize renderer
+            renderer.RenderLayeredOperations.Clear ()
 
             // end sprite batch frame
             OpenGL.SpriteBatch.EndSpriteBatchFrame renderer.RenderSpriteBatchEnv

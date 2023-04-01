@@ -17,9 +17,9 @@ module WorldView =
 
         static member internal renderView view world =
             match view with
-            | Render2d (elevation, horizon, assetTag, descriptor) ->
-                let message = { Elevation = elevation; Horizon = horizon; AssetTag = AssetTag.generalize assetTag; RenderDescriptor2d = descriptor }
-                World.enqueueRenderLayeredMessage2d message world
+            | Render2d (elevation, horizon, assetTag, operation) ->
+                let operation = { Elevation = elevation; Horizon = horizon; AssetTag = AssetTag.generalize assetTag; RenderOperation2d = operation }
+                World.enqueueLayeredOperation2d operation world
             | Render3d renderMessage -> World.enqueueRenderMessage3d renderMessage world
             | PlaySound (volume, assetTag) -> World.playSound volume assetTag world
             | PlaySong (fadeIn, fadeOut, start, volume, assetTag) -> World.playSong fadeIn fadeOut start volume assetTag world
@@ -197,8 +197,8 @@ module Effect =
                     { Elevation = descriptor.Elevation
                       Horizon = descriptor.Horizon
                       AssetTag = AssetTag.generalize descriptor.Image
-                      RenderDescriptor2d = ParticlesDescriptor descriptor })
-            let world = World.enqueueRenderLayeredMessages2d particlesMessages world
+                      RenderOperation2d = ParticlesDescriptor descriptor })
+            let world = World.enqueueLayeredOperations2d particlesMessages world
 
             // fin
             (Live, effect, world)
