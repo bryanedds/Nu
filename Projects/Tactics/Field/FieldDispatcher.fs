@@ -125,7 +125,7 @@ module FieldDispatcher =
                  Content.skyBox "SkyBox" []
                  for (index, (vertices, _)) in (Field.getOccupants field).Pairs do
                     Content.entity<CharacterDispatcher> ("Occupant+" + string index)
-                        [Entity.Position := vertices.Center]]]
+                        [Entity.Bottom := vertices.Center]]]
 
         override this.View (field, _, world) =
             let fieldMetadata = Field.getFieldMetadata field
