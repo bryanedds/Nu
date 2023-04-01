@@ -1010,6 +1010,9 @@ type [<ReferenceEquality>] GlRenderer3d =
                         GlRenderer3d.categorizeBillboardSurface (absolute, eyeRotation, modelMatrix, insetOpt, billboardMaterial.AlbedoMetadata, renderMaterial, renderType, billboardSurface, renderer)
                 | RenderBillboardParticles (absolute, renderMaterial, albedoImage, metalnessImage, roughnessImage, ambientOcclusionImage, normalImage, minFilterOpt, magFilterOpt, renderType, particles) ->
                     // TODO: 3D: optimize this with some sort of batch renderer.
+                    // TODO: 3D: account for Blend in billboards?
+                    // TODO: 3D: account for Glow in billboards as emissive?
+                    // TODO: 3D: account for Flip in billboards.
                     let billboardMaterial = GlRenderer3d.makeBillboardMaterial renderMaterial albedoImage metalnessImage roughnessImage ambientOcclusionImage normalImage minFilterOpt magFilterOpt renderer
                     for particle in particles do
                         let billboardMatrix =
