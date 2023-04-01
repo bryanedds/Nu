@@ -33,6 +33,13 @@ module EntityDispatcherModule =
             [define Entity.Size Constants.Engine.EntitySize3dDefault
              define Entity.Centered Constants.Engine.EntityCentered3dDefault]
 
+        override this.RayCast (ray, entity, world) =
+            if Array.isEmpty (entity.GetFacets world) then
+                let intersectionOpt = ray.Intersects (entity.GetBounds world)
+                if intersectionOpt.HasValue then [|intersectionOpt.Value|]
+                else [||]
+            else base.RayCast (ray, entity, world)
+
 [<AutoOpen>]
 module StaticSpriteDispatcherModule =
 

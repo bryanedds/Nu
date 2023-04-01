@@ -1864,6 +1864,11 @@ module BasicStaticBillboardEmitterFacetModule =
                 List.definitize
             World.enqueueRenderMessages3d particlesMessages world
 
+        override this.RayCast (ray, entity, world) =
+            let intersectionOpt = ray.Intersects (entity.GetBounds world)
+            if intersectionOpt.HasValue then [|intersectionOpt.Value|]
+            else [||]
+
 [<AutoOpen>]
 module StaticModelFacetModule =
 
