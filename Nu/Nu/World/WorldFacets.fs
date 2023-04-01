@@ -482,9 +482,9 @@ module BasicStaticSpriteEmitterFacetModule =
             let particlesMessages =
                 particleSystem |>
                 Particles.ParticleSystem.toParticlesDescriptors time |>
-                List.map (fun (descriptor : ParticlesDescriptor) ->
+                List.map (fun descriptor ->
                     match descriptor with
-                    | SpriteParticlesDescriptor descriptor ->
+                    | Particles.SpriteParticlesDescriptor descriptor ->
                         Some
                             { Elevation = descriptor.Elevation
                               Horizon = descriptor.Horizon
@@ -1538,6 +1538,24 @@ module StaticBillboardFacetModule =
 [<AutoOpen>]
 module BasicStaticBillboardEmitterFacetModule =
 
+    type Entity with
+
+        member this.GetEmitterAlbedoImage world : Image AssetTag = this.Get (nameof this.EmitterAlbedoImage) world
+        member this.SetEmitterAlbedoImage (value : Image AssetTag) world = this.Set (nameof this.EmitterAlbedoImage) value world
+        member this.EmitterAlbedoImage = lens (nameof this.EmitterAlbedoImage) this this.GetEmitterAlbedoImage this.SetEmitterAlbedoImage
+        member this.GetEmitterMetalnessImage world : Image AssetTag = this.Get (nameof this.EmitterMetalnessImage) world
+        member this.SetEmitterMetalnessImage (value : Image AssetTag) world = this.Set (nameof this.EmitterMetalnessImage) value world
+        member this.EmitterMetalnessImage = lens (nameof this.EmitterMetalnessImage) this this.GetEmitterMetalnessImage this.SetEmitterMetalnessImage
+        member this.GetEmitterRoughnessImage world : Image AssetTag = this.Get (nameof this.EmitterRoughnessImage) world
+        member this.SetEmitterRoughnessImage (value : Image AssetTag) world = this.Set (nameof this.EmitterRoughnessImage) value world
+        member this.EmitterRoughnessImage = lens (nameof this.EmitterRoughnessImage) this this.GetEmitterRoughnessImage this.SetEmitterRoughnessImage
+        member this.GetEmitterAmbientOcclusionImage world : Image AssetTag = this.Get (nameof this.EmitterAmbientOcclusionImage) world
+        member this.SetEmitterAmbientOcclusionImage (value : Image AssetTag) world = this.Set (nameof this.EmitterAmbientOcclusionImage) value world
+        member this.EmitterAmbientOcclusionImage = lens (nameof this.EmitterAmbientOcclusionImage) this this.GetEmitterAmbientOcclusionImage this.SetEmitterAmbientOcclusionImage
+        member this.GetEmitterNormalImage world : Image AssetTag = this.Get (nameof this.EmitterNormalImage) world
+        member this.SetEmitterNormalImage (value : Image AssetTag) world = this.Set (nameof this.EmitterNormalImage) value world
+        member this.EmitterNormalImage = lens (nameof this.EmitterNormalImage) this this.GetEmitterNormalImage this.SetEmitterNormalImage
+
     type BasicStaticBillboardEmitterFacet () =
         inherit Facet (false)
 
@@ -1565,7 +1583,11 @@ module BasicStaticBillboardEmitterFacetModule =
                           AngularVelocity = v3Zero
                           Restitution = Constants.Particles.RestitutionDefault }
                     Absolute = transform.Absolute
-                    Image = entity.GetEmitterImage world
+                    AlbedoImage = entity.GetEmitterAlbedoImage world
+                    MetalnessImage = entity.GetEmitterMetalnessImage world
+                    RoughnessImage = entity.GetEmitterRoughnessImage world
+                    AmbientOcclusionImage = entity.GetEmitterAmbientOcclusionImage world
+                    NormalImage = entity.GetEmitterNormalImage world
                     ParticleSeed = entity.GetBasicParticleSeed world
                     Constraint = entity.GetEmitterConstraint world }
             | None ->
@@ -1677,8 +1699,11 @@ module BasicStaticBillboardEmitterFacetModule =
 
         static member Properties =
             [define Entity.SelfDestruct false
-             define Entity.EmitterBlend Transparent
-             define Entity.EmitterImage Assets.Default.Image
+             define Entity.EmitterAlbedoImage Assets.Default.MaterialAlbedo
+             define Entity.EmitterMetalnessImage Assets.Default.MaterialMetalness
+             define Entity.EmitterRoughnessImage Assets.Default.MaterialRoughness
+             define Entity.EmitterAmbientOcclusionImage Assets.Default.MaterialAmbientOcclusion
+             define Entity.EmitterNormalImage Assets.Default.MaterialNormal
              define Entity.EmitterLifeTimeOpt GameTime.zero
              define Entity.ParticleLifeTimeMaxOpt (GameTime.ofSeconds 1.0f)
              define Entity.ParticleRate (match Constants.GameTime.DesiredFrameRate with StaticFrameRate _ -> 1.0f | DynamicFrameRate _ -> 60.0f)
@@ -1727,13 +1752,19 @@ module BasicStaticBillboardEmitterFacetModule =
             let particlesMessages =
                 particleSystem |>
                 Particles.ParticleSystem.toParticlesDescriptors time |>
-                List.map (fun (descriptor : ParticlesDescriptor) ->
+                List.map (fun descriptor ->
                     match descriptor with
-                    | BillboardParticlesDescriptor descriptor ->
+                    | Particles.BillboardParticlesDescriptor descriptor ->
                         Some
                             (RenderBillboardParticles
                                 (descriptor.Absolute,
-                                 descriptor.Image,
+                                 descriptor.AlbedoImage,
+                                 descriptor.MetalnessImage,
+                                 descriptor.RoughnessImage,
+                                 descriptor.AmbientOcclusionImage,
+                                 descriptor.NormalImage,
+                                 descriptor.MinFilterOpt,
+                                 descriptor.MagFilterOpt,
                                  descriptor.RenderType,
                                  descriptor.Particles))
                     | _ -> None) |>

@@ -141,6 +141,11 @@ type Particle =
     /// The life of the particle.
     abstract Life : Life with get, set
 
+/// Describes particles in varying forms.
+type [<NoEquality; NoComparison>] ParticlesDescriptor =
+    | SpriteParticlesDescriptor of SpriteParticlesDescriptor
+    | BillboardParticlesDescriptor of BillboardParticlesDescriptor
+
 /// The output of a behavior.
 type [<ReferenceEquality>] Output =
     | OutputEmitter of string * Emitter
@@ -626,24 +631,6 @@ type [<ReferenceEquality>] Behaviors =
                 behaviors.Behaviors
         outputs
 
-/// Describes an emitter.
-and [<ReferenceEquality>] EmitterDescriptor<'a when 'a :> Particle and 'a : struct> =
-    { Body : Body
-      Blend : Blend
-      Image : Image AssetTag
-      LifeTimeOpt : GameTime
-      ParticleLifeTimeMaxOpt : GameTime
-      ParticleRate : single
-      ParticleMax : int
-      ParticleSeed : 'a
-      Constraint : Constraint
-      Style : string }
-    interface EmitterDescriptor
-
-/// Describes a map of basic emitters.
-and EmitterDescriptors<'a when 'a :> Particle and 'a : struct> =
-    Map<string, 'a EmitterDescriptor>
-
 /// A basic particle.
 type [<StructuralEquality; NoComparison; Struct>] BasicParticle =
     { mutable Life : Life
@@ -746,14 +733,6 @@ type [<ReferenceEquality>] ParticleSystem =
     /// The empty particle system.
     static member empty =
         { Emitters = Map.empty }
-
-/// Describes a basic emitter.
-type BasicEmitterDescriptor =
-    BasicParticle EmitterDescriptor
-
-/// Describes a map of basic emitters.
-type BasicEmitterDescriptors =
-    BasicParticle EmitterDescriptors
 
 /// The static sprite-based particle emitter.
 type [<ReferenceEquality>] StaticSpriteEmitter<'a when 'a :> Particle and 'a : equality and 'a : struct> =
@@ -978,11 +957,43 @@ module BasicStaticSpriteEmitter =
             time Body.defaultBody false 0.0f Transparent image lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
             Constraint.empty particleInitializer particleBehavior particleBehaviors emitterBehavior emitterBehaviors
 
+/// Describes a sprite emitter.
+type [<ReferenceEquality>] SpriteEmitterDescriptor<'a when 'a :> Particle and 'a : struct> =
+    { Body : Body
+      Blend : Blend
+      Image : Image AssetTag
+      LifeTimeOpt : GameTime
+      ParticleLifeTimeMaxOpt : GameTime
+      ParticleRate : single
+      ParticleMax : int
+      ParticleSeed : 'a
+      Constraint : Constraint
+      Style : string }
+    interface EmitterDescriptor
+
+/// A map of basic sprite emitters.
+type SpriteEmitterDescriptors<'a when 'a :> Particle and 'a : struct> =
+    Map<string, 'a SpriteEmitterDescriptor>
+
+/// Describes a basic sprite emitter.
+type BasicSpriteEmitterDescriptor =
+    BasicParticle SpriteEmitterDescriptor
+
+/// A map of basic sprite emitters.
+type BasicSpriteEmitterDescriptors =
+    BasicParticle SpriteEmitterDescriptors
+
 /// The static billboard-based particle emitter.
 type [<ReferenceEquality>] StaticBillboardEmitter<'a when 'a :> Particle and 'a : equality and 'a : struct> =
     { mutable Body : Body // mutable for animation
       Absolute : bool
-      Image : Image AssetTag
+      AlbedoImage : Image AssetTag
+      MetalnessImage : Image AssetTag
+      RoughnessImage : Image AssetTag
+      AmbientOcclusionImage : Image AssetTag
+      NormalImage : Image AssetTag
+      MinFilterOpt : OpenGL.TextureMinFilter voption
+      MagFilterOpt : OpenGL.TextureMagFilter voption
       RenderType : RenderType
       Life : Life
       ParticleLifeTimeMaxOpt : GameTime // OPTIMIZATION: uses GameTime.zero to represent infinite particle life.
@@ -1051,11 +1062,18 @@ type [<ReferenceEquality>] StaticBillboardEmitter<'a when 'a :> Particle and 'a 
 
     /// Make a basic particle emitter.
     static member make<'a>
-        time body absolute image renderType lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
+        time body absolute albedoImage metalnessImage roughnessImage ambientOcclusionImage normalImage minFilterOpt magFilterOpt renderType
+        lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
         constrain particleInitializer particleBehavior particleBehaviors emitterBehavior emitterBehaviors toParticlesDescriptor : 'a StaticBillboardEmitter =
         { Body = body
           Absolute = absolute
-          Image = image
+          AlbedoImage = albedoImage
+          MetalnessImage = metalnessImage
+          RoughnessImage = roughnessImage
+          AmbientOcclusionImage = ambientOcclusionImage
+          MinFilterOpt = minFilterOpt
+          MagFilterOpt = magFilterOpt
+          NormalImage = normalImage
           RenderType = renderType
           Life = Life.make time lifeTimeOpt
           ParticleLifeTimeMaxOpt = particleLifeTimeMaxOpt
@@ -1118,7 +1136,13 @@ module BasicStaticBillboardEmitter =
                 particle'.InsetOpt <- if particle.Inset.Equals box2Zero then ValueNone else ValueSome particle.Inset
                 particle'.Flip <- particle.Flip
         { Absolute = emitter.Absolute
-          Image = emitter.Image
+          AlbedoImage = emitter.AlbedoImage
+          MetalnessImage = emitter.MetalnessImage
+          RoughnessImage = emitter.RoughnessImage
+          AmbientOcclusionImage = emitter.AmbientOcclusionImage
+          NormalImage = emitter.NormalImage
+          MinFilterOpt = emitter.MinFilterOpt
+          MagFilterOpt = emitter.MagFilterOpt
           RenderType = emitter.RenderType
           Particles = particles' }
 
@@ -1128,15 +1152,21 @@ module BasicStaticBillboardEmitter =
 
     /// Make a basic static billboard particle emitter.
     let make
-        time body absolute image renderType lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
+        time body absolute albedoImage metalnessImage roughnessImage ambientOcclusionImage normalImage minFilterOpt maxFilterOpt renderType
+        lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
         constrain particleInitializer particleBehavior particleBehaviors emitterBehavior emitterBehaviors =
         BasicStaticBillboardEmitter.make
-            time body absolute image renderType lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
+            time body absolute albedoImage metalnessImage roughnessImage ambientOcclusionImage normalImage minFilterOpt maxFilterOpt renderType
+            lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
             constrain particleInitializer particleBehavior particleBehaviors emitterBehavior emitterBehaviors toParticlesDescriptor
 
     /// Make an empty basic billboard particle emitter.
     let makeEmpty time lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax =
-        let image = asset Assets.Default.PackageName Assets.Default.ImageName
+        let albedoImage = asset Assets.Default.PackageName Assets.Default.MaterialAlbedoName
+        let metalnessImage = asset Assets.Default.PackageName Assets.Default.MaterialMetalnessName
+        let roughnessImage = asset Assets.Default.PackageName Assets.Default.MaterialRoughnessName
+        let ambientOcclusionImage = asset Assets.Default.PackageName Assets.Default.MaterialAmbientOcclusionName
+        let normalImage = asset Assets.Default.PackageName Assets.Default.MaterialNormalName
         let particleSeed = Unchecked.defaultof<BasicParticle>
         let particleInitializer = fun _ (emitter : BasicStaticBillboardEmitter) -> emitter.ParticleSeed
         let particleBehavior = fun _ _ -> Output.empty
@@ -1144,12 +1174,17 @@ module BasicStaticBillboardEmitter =
         let emitterBehavior = fun _ _ -> Output.empty
         let emitterBehaviors = Behaviors.empty
         make
-            time Body.defaultBody false image (ForwardRenderType (0.0f, 0.0f)) lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
+            time Body.defaultBody false albedoImage metalnessImage roughnessImage ambientOcclusionImage normalImage ValueNone ValueNone (ForwardRenderType (0.0f, 0.0f))
+            lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
             Constraint.empty particleInitializer particleBehavior particleBehaviors emitterBehavior emitterBehaviors
 
     /// Make the default basic billboard particle emitter.
     let makeDefault time lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax =
-        let image = asset Assets.Default.PackageName Assets.Default.ImageName
+        let albedoImage = asset Assets.Default.PackageName Assets.Default.MaterialAlbedoName
+        let metalnessImage = asset Assets.Default.PackageName Assets.Default.MaterialMetalnessName
+        let roughnessImage = asset Assets.Default.PackageName Assets.Default.MaterialRoughnessName
+        let ambientOcclusionImage = asset Assets.Default.PackageName Assets.Default.MaterialAmbientOcclusionName
+        let normalImage = asset Assets.Default.PackageName Assets.Default.MaterialNormalName
         let particleSeed =
             { Life = Life.make GameTime.zero (GameTime.ofSeconds 2.0f)
               Body = Body.defaultBody
@@ -1194,5 +1229,38 @@ module BasicStaticBillboardEmitter =
         let emitterBehaviors =
             Behaviors.empty
         make
-            time Body.defaultBody false image (ForwardRenderType (0.0f, 0.0f)) lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
+            time Body.defaultBody false albedoImage metalnessImage roughnessImage ambientOcclusionImage normalImage ValueNone ValueNone (ForwardRenderType (0.0f, 0.0f))
+            lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
             Constraint.empty particleInitializer particleBehavior particleBehaviors emitterBehavior emitterBehaviors
+
+/// Describes a billboard emitter.
+type [<ReferenceEquality>] BillboardEmitterDescriptor<'a when 'a :> Particle and 'a : struct> =
+    { Body : Body
+      AlbedoImage : Image AssetTag
+      MetalnessImage : Image AssetTag
+      RoughnessImage : Image AssetTag
+      AmbientOcclusionImage : Image AssetTag
+      NormalImage : Image AssetTag
+      MinFilterOpt : OpenGL.TextureMinFilter voption
+      MagFilterOpt : OpenGL.TextureMagFilter voption
+      RenderType : RenderType
+      LifeTimeOpt : GameTime
+      ParticleLifeTimeMaxOpt : GameTime
+      ParticleRate : single
+      ParticleMax : int
+      ParticleSeed : 'a
+      Constraint : Constraint
+      Style : string }
+    interface EmitterDescriptor
+
+/// A map of basic billboard emitters.
+type BillboardEmitterDescriptors<'a when 'a :> Particle and 'a : struct> =
+    Map<string, 'a BillboardEmitterDescriptor>
+
+/// Describes a basic billboard emitter.
+type BasicBillboardEmitterDescriptor =
+    BasicParticle BillboardEmitterDescriptor
+
+/// A map of basic billboard emitters.
+type BasicBillboardEmitterDescriptors =
+    BasicParticle BillboardEmitterDescriptors
