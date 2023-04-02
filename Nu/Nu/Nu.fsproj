@@ -68,6 +68,7 @@
 		<Compile Include="Reflection\OverlayRouter.fs" />
 		<Compile Include="AssetGraph\AssetTag.fs" />
 		<Compile Include="AssetGraph\AssetGraph.fs" />
+		<Compile Include="Metadata\Metadata.fs" />
 		<Compile Include="Physics\Physics.fs" />
 		<Compile Include="Physics\AetherPhysics.fs" />
 		<Compile Include="Physics\BulletPhysics.fs" />
@@ -77,7 +78,6 @@
 		<Compile Include="Render\RenderProcess.fs" />
 		<Compile Include="Audio\Audio.fs" />
 		<Compile Include="Symbolics\Symbolics.fs" />
-		<Compile Include="Metadata\Metadata.fs" />
 		<Compile Include="View\View.fs" />
 		<Compile Include="Behaviors\Behavior.fs" />
 		<Compile Include="Behaviors\Modifier.fs" />

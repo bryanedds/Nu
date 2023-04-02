@@ -10,6 +10,27 @@ open TiledSharp
 open Prime
 open Nu
 
+/// An image. Currently just used as a phantom type.
+type Image = private { __ : unit }
+
+/// A font. Currently just used as a phantom type.
+type Font = private { __ : unit }
+
+/// A tile map. Currently just used as a phantom type.
+type TileMap = private { __ : unit }
+
+/// A static model. Currently just used as a phantom type.
+type CubeMap = private { __ : unit }
+
+/// Song. Currently just used as a phantom type.
+type Song = private { __ : unit }
+
+/// Sound. Currently just used as a phantom type.
+type Sound = private { __ : unit }
+
+/// A static model. Currently just used as a phantom type.
+type StaticModel = private { __ : unit }
+
 /// Thrown when a tile set property is not found.
 exception TileSetPropertyNotFoundException of string
 
