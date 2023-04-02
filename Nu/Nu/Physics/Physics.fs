@@ -68,12 +68,12 @@ type [<CustomEquality; NoComparison>] BodyId =
     override this.GetHashCode () =
         BodyId.hash this
 
-/// Identified a body shape in a physics engine.
+/// Identifies a body shape in a physics engine.
 and ShapeIndex =
     { BodyId : BodyId
       ShapeIndex : int }
 
-/// Identified a joint in a physics engine.
+/// Identifies a joint in a physics engine.
 and JointId =
     { JointSource : Simulant
       JointIndex : int }
