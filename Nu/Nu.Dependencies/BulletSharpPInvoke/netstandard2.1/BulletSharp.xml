@@ -1,0 +1,69 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>BulletSharp</name>
+    </assembly>
+    <members>
+        <member name="F:BulletSharp.KinematicCharacterController.m_walkDirection">
+            this is the desired walk direction, set by the user
+        </member>
+        <member name="F:BulletSharp.KinematicCharacterController.m_manifoldArray">
+            keep track of the contact manifolds
+        </member>
+        <member name="M:BulletSharp.KinematicCharacterController.SetWalkDirection(System.Numerics.Vector3)">
+            <summary>
+            This should probably be called setPositionIncrementPerSimulatorStep.
+            This is neither a direction nor a velocity, but the amount to
+            increment the position each simulation iteration, regardless
+            of dt.
+            This call will reset any velocity set by setVelocityForTimeInterval().
+            </summary>
+        </member>
+        <member name="M:BulletSharp.KinematicCharacterController.SetVelocityForTimeInterval(System.Numerics.Vector3,System.Single)">
+            <summary>
+            Caller provides a velocity with which the character should move for
+            the given time period.  After the time period, velocity is reset
+            to zero.
+            This call will reset any walk direction set by setWalkDirection().
+            Negative time intervals will result in no motion.
+            </summary>
+        </member>
+        <member name="M:BulletSharp.KinematicCharacterController.ApplyImpulse(System.Numerics.Vector3@)">
+            <summary>
+            Calls Jump()
+            </summary>
+        </member>
+        <member name="P:BulletSharp.KinematicCharacterController.MaxSlope">
+            <summary>
+            The max slope determines the maximum angle that the controller can walk up.
+            The slope angle is measured in radians.
+            </summary>
+        </member>
+        <member name="T:BulletSharp.KinematicClosestNotMeRayResultCallback">
+            @todo Interact with dynamic objects,
+            Ride kinematicly animated platforms properly
+            More realistic (or maybe just a config option) falling
+             -> Should integrate falling velocity manually and use that in stepDown()
+            Support jumping
+            Support ducking
+        </member>
+        <member name="M:BulletSharp.MathUtil.GetComponent(System.Numerics.Vector3,System.Int32)">
+            <summary>
+            Gets the component at the specified index.
+            </summary>
+            <value>The value of the X, Y, or Z component, depending on the index.</value>
+            <param name="index">The index of the component to access. Use 0 for the X component, 1 for the Y component, and 2 for the Z component.</param>
+            <returns>The value of the component at the specified index.</returns>
+            <exception cref="T:System.ArgumentOutOfRangeException">Thrown when the <paramref name="index"/> is out of the range [0, 2].</exception>
+        </member>
+        <member name="M:BulletSharp.MathUtil.SetComponent(System.Numerics.Vector3@,System.Int32,System.Single)">
+            <summary>
+            Sets the component at the specified index.
+            </summary>
+            <value>The value of the X, Y, or Z component, depending on the index.</value>
+            <param name="index">The index of the component to access. Use 0 for the X component, 1 for the Y component, and 2 for the Z component.</param>
+            <param name="value">The new value of the component.</param>
+            <exception cref="T:System.ArgumentOutOfRangeException">Thrown when the <paramref name="index"/> is out of the range [0, 2].</exception>
+        </member>
+    </members>
+</doc>
