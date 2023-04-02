@@ -12,7 +12,7 @@ open Nu
 module CubeMap =
 
     /// The key identifying a cube map.
-    /// TODO: 3D: consider keeping the original cube map face list file path in key so that its faces can be changed when recreated.
+    /// TODO: consider keeping the original cube map face list file path in key so that its faces can be changed when recreated.
     type CubeMapMemoKey =
         string * string * string * string * string * string
 

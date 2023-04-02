@@ -1499,7 +1499,7 @@ module StaticBillboardFacetModule =
             let mutable transform = entity.GetTransform world
             let absolute = transform.Absolute
             let affineMatrix = transform.AffineMatrix
-            let insetOpt = match entity.GetInsetOpt world with Some inset -> ValueSome inset | None -> ValueNone // TODO: 3D: make converstion fn from option to voption and vice versa.
+            let insetOpt = match entity.GetInsetOpt world with Some inset -> ValueSome inset | None -> ValueNone // TODO: make converstion fn from option to voption and vice versa.
             let renderMaterial =
                 { AlbedoOpt = match entity.GetAlbedoOpt world with Some albedo -> ValueSome albedo | None -> ValueNone
                   MetalnessOpt = match entity.GetMetalnessOpt world with Some metalness -> ValueSome metalness | None -> ValueNone
@@ -1527,7 +1527,7 @@ module StaticBillboardFacetModule =
             v3 1.0f 1.0f 1.0f
 
         override this.RayCast (ray, entity, world) =
-            // TODO: 3D: intersect against oriented quad rather than box.
+            // TODO: intersect against oriented quad rather than box.
             match this.TryGetHighlightBounds (entity, world) with
             | Some bounds ->
                 let intersectionOpt = ray.Intersects bounds

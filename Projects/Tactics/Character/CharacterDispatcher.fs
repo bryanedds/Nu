@@ -43,7 +43,7 @@ module CharacterDispatcher =
             v3 1.0f 2.0f 1.0f
 
         override this.RayCast (ray, entity, world) =
-            // TODO: 3D: intersect against oriented quad rather than box.
+            // TODO: intersect against oriented quad rather than box.
             match this.TryGetHighlightBounds (entity, world) with
             | Some bounds ->
                 let intersectionOpt = ray.Intersects bounds

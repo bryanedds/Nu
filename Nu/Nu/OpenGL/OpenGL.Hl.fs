@@ -8,8 +8,11 @@ namespace Nu
 module OpenGL = let _ = ()
 
 namespace OpenGL
+open System
+#if DEBUG
 open System.Runtime.InteropServices
 open System.Text
+#endif
 open SDL2
 open Prime
 open Nu
@@ -17,8 +20,7 @@ open Nu
 [<RequireQualifiedAccess>]
 module Hl =
 
-    let mutable private AssertEnabled =
-        false
+    let mutable private AssertEnabled = false
 
     /// Cached buffers.
     let private CachedBuffers = System.Collections.Generic.Queue ()
@@ -60,7 +62,7 @@ module Hl =
 #else
     /// Listen to the OpenGL error stream.
     let AttachDebugMessageCallback () =
-        ()
+        () // nothing to do
 #endif
 
     /// Allocate a vertex array, generating one via OpenGL if no cached vertex array is available.

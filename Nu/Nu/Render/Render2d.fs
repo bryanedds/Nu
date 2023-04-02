@@ -188,7 +188,7 @@ type [<ReferenceEquality>] GlRenderer2d =
             else Log.debug ("Could not load font '" + asset.FilePath + "'."); None
         | _ -> None
 
-    // TODO: 3D: split this into two functions instead of passing reloading boolean.
+    // TODO: split this into two functions instead of passing reloading boolean.
     static member private tryLoadRenderPackage reloading packageName renderer =
         match AssetGraph.tryMakeFromFile Assets.Global.AssetGraphFilePath with
         | Right assetGraph ->
@@ -334,7 +334,7 @@ type [<ReferenceEquality>] GlRenderer2d =
                 let sx = inset.Size.X * texelWidth - borderWidth * 2.0f
                 let sy = -inset.Size.Y * texelHeight + borderHeight * 2.0f
                 Box2 (px, py, sx, sy)
-            | ValueNone -> Box2 (0.0f, 1.0f, 1.0f, -1.0f) // TODO: 3D: shouldn't we still be using borders?
+            | ValueNone -> Box2 (0.0f, 1.0f, 1.0f, -1.0f) // TODO: shouldn't we still be using borders?
 
         // compute a flipping flags
         let struct (flipH, flipV) =
@@ -667,7 +667,7 @@ type [<ReferenceEquality>] GlRenderer2d =
             // create SDL-OpenGL context if needed
             match window with
             | SglWindow window -> OpenGL.Hl.CreateSglContext window.SglWindow |> ignore<nativeint>
-            | WfglWindow _ -> () // TODO: 3D: see if we can make current the GL context here so that threaded OpenGL works in Gaia.
+            | WfglWindow _ -> () // TODO: see if we can make current the GL context here so that threaded OpenGL works in Gaia.
             OpenGL.Hl.Assert ()
 
             // listen to debug messages
