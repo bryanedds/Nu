@@ -57,7 +57,7 @@ module Option =
         | ValueNone -> None
 
     /// Convert an Option to a ValueOption.
-    let toOption<'a> (opt : 'a option) =
+    let toValueOption<'a> (opt : 'a option) =
         match opt with
         | Some a -> ValueSome a
         | None -> ValueNone
