@@ -67,7 +67,7 @@ module PhysicallyBased =
             (int surface.PhysicallyBasedGeometry.PhysicallyBasedVao <<< 18)
 
         static member inline equals left right =
-            (match (left.SurfaceMaterial.TextureMinFilterOpt, right.SurfaceMaterial.TextureMinFilterOpt) with // TODO: 3D: implement voptEq.
+            (match (left.SurfaceMaterial.TextureMinFilterOpt, right.SurfaceMaterial.TextureMinFilterOpt) with // TODO: implement voptEq.
              | (ValueSome leftFilter, ValueSome rightFilter) -> leftFilter = rightFilter
              | (ValueNone, ValueNone) -> true
              | (_, _) -> false) &&
@@ -641,7 +641,7 @@ module PhysicallyBased =
                         Seq.toArray
 
                     // construct bounds and hierarchy
-                    // TODO: 3D: sanitize incoming names. Corrupted or incompatible names cause subtle hierarchy bugs.
+                    // TODO: sanitize incoming names. Corrupted or incompatible names cause subtle hierarchy bugs.
                     let lights = SegmentedList.make ()
                     let surfaces = SegmentedList.make ()
                     let mutable bounds = box3Zero
@@ -667,8 +667,8 @@ module PhysicallyBased =
                                                   LightMatrixIsIdentity = lightMatrix.IsIdentity
                                                   LightMatrix = lightMatrix
                                                   LightColor = color
-                                                  LightBrightness = if light.AttenuationConstant > 0.0f then light.AttenuationConstant else 1.0f // TODO: 3D: figure out how to populate this.
-                                                  LightIntensity = 1.0f // TODO: 3D: see if we can figure out how to populate this. Should it become Linear and / or Quadratic?
+                                                  LightBrightness = if light.AttenuationConstant > 0.0f then light.AttenuationConstant else 1.0f // TODO: figure out how to populate this.
+                                                  LightIntensity = 1.0f // TODO: see if we can figure out how to populate this. Should it become Linear and / or Quadratic?
                                                   PhysicallyBasedLightType = PointLight }
                                             SegmentedList.add physicallyBasedLight lights
                                             yield PhysicallyBasedLight physicallyBasedLight

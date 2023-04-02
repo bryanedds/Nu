@@ -483,7 +483,7 @@
 [define dot_Vector4i [u v] [+ [* u.X v.X] [* u.Y v.Y] [* u.Z v.Z] [* u.W v.W]]]
 [define -v4i- [v4i 0 0 0 0]]
 
-; Quaternion extensions. TODO: fix these functions as several are incorrect.
+; Quaternion extensions. TODO: P1: fix these functions as several are incorrect.
 [define empty_Quaternion [_] [quat 0 0 0 0]]
 [define identity_Quaternion [_] [quat 0 0 0 1]]
 [define negate_Quaternion [v] [quat [negate v.X] [negate v.Y] [negate v.Z] [negate v.W]]]

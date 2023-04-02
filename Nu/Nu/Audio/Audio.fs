@@ -133,7 +133,7 @@ type [<ReferenceEquality>] SdlAudioPlayer =
                 None
         | _ -> None
 
-    // TODO: 3D: split this into two functions instead of passing reloading boolean.
+    // TODO: split this into two functions instead of passing reloading boolean.
     static member private tryLoadAudioPackage reloading packageName audioPlayer =
         match AssetGraph.tryMakeFromFile Assets.Global.AssetGraphFilePath with
         | Right assetGraph ->

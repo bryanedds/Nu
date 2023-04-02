@@ -10,12 +10,16 @@ open SDL2
 open Prime
 open Nu
 
-/////////////////////////////////////////////////////////////////////////
-// TODO: 3D: introduce records for a bunch of the tuples in this file! //
-/////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////
+// TODO: introduce records for a bunch of the tuples in this file!                      //
+// TODO: optimize billboard rendering with some sort of batch renderer.                 //
+// TODO: account for Blend in billboards (at least alpha, overwrite, and additive)      //
+// TODO: account for Glow in billboards as emissive.                                    //
+// TODO: account for Flip in billboards.                                                //
+//////////////////////////////////////////////////////////////////////////////////////////
 
 /// Materials used for rendering models.
-/// TODO: 3D: consider adding texture filter opts to override what's in the backing material.
+/// TODO: consider adding texture filter opts to override what's in the backing material.
 type [<StructuralEquality; NoComparison; Struct>] RenderMaterial =
     { AlbedoOpt : Color voption
       MetalnessOpt : single voption
@@ -142,7 +146,7 @@ and [<ReferenceEquality>] SortableLight =
       mutable SortableLightDistanceSquared : single }
 
     /// Sort lights into array for uploading to OpenGL.
-    /// TODO: 3D: consider getting rid of allocation here.
+    /// TODO: consider getting rid of allocation here.
     static member sortLightsIntoArrays position lights =
         let lightOrigins = Array.zeroCreate<single> (Constants.Render.ShaderLightsMax * 3)
         let lightColors = Array.zeroCreate<single> (Constants.Render.ShaderLightsMax * 4)
@@ -302,7 +306,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             | None -> None
         | _ -> None
 
-    // TODO: 3D: split this into two functions instead of passing reloading boolean.
+    // TODO: split this into two functions instead of passing reloading boolean.
     static member private tryLoadRenderPackage reloading packageName renderer =
         match AssetGraph.tryMakeFromFile Assets.Global.AssetGraphFilePath with
         | Right assetGraph ->
@@ -675,7 +679,7 @@ type [<ReferenceEquality>] GlRenderer3d =
     static member private sortSurfaces eyeCenter (surfaces : struct (single * single * Matrix4x4 * Box2 * RenderMaterial * OpenGL.PhysicallyBased.PhysicallyBasedSurface) SegmentedList) =
         surfaces |>
         Seq.map (fun struct (sort, subsort, model, texCoordsOffset, renderMaterial, surface) -> struct (sort, subsort, model, texCoordsOffset, renderMaterial, surface, (model.Translation - eyeCenter).MagnitudeSquared)) |>
-        Seq.toArray |> // TODO: 3D: use a preallocated array to avoid allocating on the LOH.
+        Seq.toArray |> // TODO: use a preallocated array to avoid allocating on the LOH.
         Array.sortByDescending (fun struct (sort, subsort, _, _, _, _, distanceSquared) -> struct (sort, distanceSquared, subsort)) |>
         Array.map (fun struct (_, _, model, texCoordsOffset, renderMaterialOpt, surface, _) -> struct (model, texCoordsOffset, renderMaterialOpt, surface))
 
@@ -796,7 +800,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             // create SDL-OpenGL context if needed
             match window with
             | SglWindow window -> OpenGL.Hl.CreateSglContext window.SglWindow |> ignore<nativeint>
-            | WfglWindow _ -> () // TODO: 3D: see if we can make current the GL context here so that threaded OpenGL works in Gaia.
+            | WfglWindow _ -> () // TODO: see if we can make current the GL context here so that threaded OpenGL works in Gaia.
             OpenGL.Hl.Assert ()
 
             // listen to debug messages
@@ -1009,10 +1013,6 @@ type [<ReferenceEquality>] GlRenderer3d =
                     for (modelMatrix, insetOpt) in billboards do
                         GlRenderer3d.categorizeBillboardSurface (absolute, eyeRotation, modelMatrix, insetOpt, billboardMaterial.AlbedoMetadata, renderMaterial, renderType, billboardSurface, renderer)
                 | RenderBillboardParticles (absolute, renderMaterial, albedoImage, metalnessImage, roughnessImage, ambientOcclusionImage, normalImage, minFilterOpt, magFilterOpt, renderType, particles) ->
-                    // TODO: 3D: optimize this with some sort of batch renderer.
-                    // TODO: 3D: account for Blend in billboards?
-                    // TODO: 3D: account for Glow in billboards as emissive?
-                    // TODO: 3D: account for Flip in billboards.
                     let billboardMaterial = GlRenderer3d.makeBillboardMaterial renderMaterial albedoImage metalnessImage roughnessImage ambientOcclusionImage normalImage minFilterOpt magFilterOpt renderer
                     for particle in particles do
                         let billboardMatrix =

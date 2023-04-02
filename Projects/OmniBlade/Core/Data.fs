@@ -580,7 +580,7 @@ type Cue =
     | MoveState of int64 * CueTarget * Vector3 * Vector3 * MoveType
     | Warp of FieldType * Vector3 * Direction
     | WarpState
-    | Battle of BattleType * Advent Set // TODO: P1: consider using three Cues (start, end, post) in battle rather than advents directly...
+    | Battle of BattleType * Advent Set // TODO: consider using three Cues (start, end, post) in battle rather than advents directly...
     | BattleState
     | Dialog of string * bool
     | DialogState
