@@ -12,14 +12,14 @@ open Nu
 
 //////////////////////////////////////////////////////////////////////////////////////////
 // TODO: introduce records for a bunch of the tuples in this file!                      //
-// TODO: optimize billboard rendering with some sort of batch renderer.                 //
+// TODO: add texture filter opts to RenderMaterial.                                     //
 // TODO: account for Blend in billboards (at least alpha, overwrite, and additive)      //
 // TODO: account for Glow in billboards as emissive.                                    //
 // TODO: account for Flip in billboards.                                                //
+// TODO: optimize billboard rendering with some sort of batch renderer.                 //
 //////////////////////////////////////////////////////////////////////////////////////////
 
 /// Materials used for rendering models.
-/// TODO: consider adding texture filter opts to override what's in the backing material.
 type [<StructuralEquality; NoComparison; Struct>] RenderMaterial =
     { AlbedoOpt : Color voption
       MetalnessOpt : single voption
