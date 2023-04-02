@@ -9,7 +9,7 @@ open System
 /// TODO: consider moving into Prime.
 type [<AbstractClass; Sealed>] Branchless () =
 
-    static member inline private reinterpret<'a, 'b> (a : 'a) : 'b = (# "" a : 'b #)
+    static member inline reinterpret<'a, 'b> (a : 'a) : 'b = (# "" a : 'b #)
 
     /// Convert a bool as an int without branching.
     static member inline boolToInt (bool : bool) = Branchless.reinterpret bool : int
@@ -47,7 +47,7 @@ type [<AbstractClass; Sealed>] Branchless () =
         (Branchless.reinterpret bool : int) |> double
 
     /// Convert a double as a bool without branching.
-    static member inline singleToDouble (double : double) =
+    static member inline boolToDouble (double : double) =
         Branchless.reinterpret (int double) : bool
 
     /// Branchless min for ints.
