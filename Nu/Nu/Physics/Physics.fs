@@ -8,14 +8,14 @@ open System.Numerics
 open Prime
 open Nu
 
-/// Uniquely identifies an Hacd (Hierarchical Approximate Convex Decomposition).
-type HacdId = { SurfaceIndex : int; StaticModel : StaticModel AssetTag  }
+/// Uniquely identifies an hacd L0 cache entry.
+type HacdL0Key = { SurfaceIndex : int; StaticModel : StaticModel AssetTag  }
 
-/// The first level of hacd (Hierarchical Approximate Convex Decompositions) caching.
-type HacdCache = Dictionary<HacdId, Vector3 array List>
+/// The hacd (Hierarchical Approximate Convex Decompositions) L0 cache.
+type HacdL0Cache = Dictionary<HacdL0Key, Vector3 array List>
 
-/// Uniquely identifies geometry.
-type [<CustomEquality; NoComparison>] GeometryId =
+/// Uniquely identifies a hacd L0 cache entry.
+type [<CustomEquality; NoComparison>] HacdL1Key =
     { HashCode : int; PrimitiveType : OpenGL.PrimitiveType; Vertices : Vector3 array; Indices : int array }
     static member make primitiveType (vertices : Vector3 array) (indices : int array) =
         let mutable vertexSum = v3Zero
@@ -27,7 +27,7 @@ type [<CustomEquality; NoComparison>] GeometryId =
         { HashCode = hashCode; PrimitiveType = primitiveType; Vertices = vertices; Indices = indices }
     override this.Equals that =
         match that with
-        | :? GeometryId as that ->
+        | :? HacdL1Key as that ->
             this.HashCode = that.HashCode &&
             this.PrimitiveType = that.PrimitiveType &&
             this.Vertices === that.Vertices &&
@@ -35,8 +35,8 @@ type [<CustomEquality; NoComparison>] GeometryId =
         | _ -> false
     override this.GetHashCode () = this.HashCode
 
-/// The 2nd level of hacd (Hierarchical Approximate Convex Decompositions) caching.
-type HacdCacheLevel2 = Dictionary<GeometryId, Vector3 array List>
+/// The hacd (Hierarchical Approximate Convex Decompositions) L1 cache.
+type HacdL1Cache = Dictionary<HacdL1Key, Vector3 array List>
 
 /// Identifies a body that can be found in a physics engine.
 type [<CustomEquality; NoComparison>] BodyId =
