@@ -1762,7 +1762,8 @@ module Gaia =
                 else startForm.modeComboBox.Enabled <- false
             | None ->
                 startForm.modeComboBox.Items.Clear ()
-                startForm.modeComboBox.Enabled <- false)
+                startForm.modeComboBox.Enabled <- false
+                Directory.SetCurrentDirectory AppContext.BaseDirectory)
         startForm.binaryFilePathText.Text <- savedState.BinaryFilePath
         match savedState.EditModeOpt with
         | Some mode ->
