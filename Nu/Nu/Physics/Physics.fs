@@ -18,9 +18,12 @@ type HacdL0Cache = Dictionary<HacdL0Key, Vector3 array List>
 type [<CustomEquality; NoComparison>] HacdL1Key =
     { HashCode : int; PrimitiveType : OpenGL.PrimitiveType; Vertices : Vector3 array; Indices : int array }
     static member make primitiveType (vertices : Vector3 array) (indices : int array) =
-        let mutable vertexSum = v3Zero
-        for i in 0 .. dec vertices.Length do vertexSum <- vertexSum + vertices.[i]
-        let vertexHash = hash vertexSum
+        let mutable vertexHash = 0
+        for i in 0 .. dec vertices.Length do
+            let vertex = vertices.[i]
+            vertexHash <- vertexHash ^^^ Branchless.reinterpret<single, int> vertex.X
+            vertexHash <- vertexHash ^^^ Branchless.reinterpret<single, int> vertex.Y
+            vertexHash <- vertexHash ^^^ Branchless.reinterpret<single, int> vertex.Z
         let mutable indexHash = 0
         for i in 0 .. dec indices.Length do indexHash <- indexHash ^^^ indices.[i]
         let hashCode = hash primitiveType ^^^ vertexHash ^^^ indexHash
