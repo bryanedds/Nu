@@ -35,8 +35,8 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
           PhysicsDispatcher : Dispatcher
           BroadPhaseInterface : BroadphaseInterface
           ConstraintSolver : ConstraintSolver
-          HacdCache : HacdCache
-          HacdCacheLevel2 : HacdCacheLevel2
+          HacdL0Cache : HacdL0Cache
+          HacdL1Cache : HacdL1Cache
           PhysicsMessages : PhysicsMessage UList
           IntegrationMessages : IntegrationMessage List
           mutable RebuildingHack : bool }
@@ -176,7 +176,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
         (mass + mass', inertia + inertia')
 
     // TODO: add some error logging.
-    static member private attachBodyStaticModel bodySource (bodyProperties : BodyProperties) (bodyStaticModel : BodyStaticModel) (compoundShape : CompoundShape) mass inertia hacdCache hacdCacheLevel2 =
+    static member private attachBodyStaticModel bodySource (bodyProperties : BodyProperties) (bodyStaticModel : BodyStaticModel) (compoundShape : CompoundShape) mass inertia hacdL0 hacdL1 =
         match Metadata.tryGetStaticModelMetadata bodyStaticModel.StaticModel with
         | Some staticModelMetadata ->
             Seq.fold (fun (mass, inertia) i ->
@@ -186,17 +186,17 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
                     | Some transform -> transform * surface.SurfaceMatrix
                     | None -> surface.SurfaceMatrix
                 let bodyStaticModelSurface = { SurfaceIndex = i; StaticModel = bodyStaticModel.StaticModel; TransformOpt = Some transform; PropertiesOpt = bodyStaticModel.PropertiesOpt }
-                let (mass', inertia') = BulletPhysicsEngine.attachBodyStaticModelSurface bodySource bodyProperties bodyStaticModelSurface compoundShape mass inertia hacdCache hacdCacheLevel2
+                let (mass', inertia') = BulletPhysicsEngine.attachBodyStaticModelSurface bodySource bodyProperties bodyStaticModelSurface compoundShape mass inertia hacdL0 hacdL1
                 (mass + mass', inertia + inertia'))
                 (mass, inertia)
                 [0 .. dec staticModelMetadata.Surfaces.Length]
         | None -> (mass, inertia)
 
     // TODO: add some error logging.
-    static member private attachBodyStaticModelSurface bodySource (bodyProperties : BodyProperties) (bodyStaticModelSurface : BodyStaticModelSurface) (compoundShape : CompoundShape) mass inertia (hacdCache : HacdCache) (hacdCacheLevel2 : HacdCacheLevel2) =
+    static member private attachBodyStaticModelSurface bodySource (bodyProperties : BodyProperties) (bodyStaticModelSurface : BodyStaticModelSurface) (compoundShape : CompoundShape) mass inertia (hacdL0 : HacdL0Cache) (hacdL1 : HacdL1Cache) =
         let hacd =
             let hacdId = { SurfaceIndex = bodyStaticModelSurface.SurfaceIndex; StaticModel = bodyStaticModelSurface.StaticModel }
-            match hacdCache.TryGetValue hacdId with
+            match hacdL0.TryGetValue hacdId with
             | (false, _) ->
                 match Metadata.tryGetStaticModelMetadata bodyStaticModelSurface.StaticModel with
                 | Some staticModelMetadata ->
@@ -204,8 +204,8 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
                         bodyStaticModelSurface.SurfaceIndex < staticModelMetadata.Surfaces.Length then
                         let surface = staticModelMetadata.Surfaces.[bodyStaticModelSurface.SurfaceIndex]
                         let geometry = surface.PhysicallyBasedGeometry
-                        let geometryId = GeometryId.make geometry.PrimitiveType geometry.Vertices geometry.Indices
-                        match hacdCacheLevel2.TryGetValue geometryId with
+                        let hacdL1Key = HacdL1Key.make geometry.PrimitiveType geometry.Vertices geometry.Indices
+                        match hacdL1.TryGetValue hacdL1Key with
                         | (false, _) ->
                             use hacdBuilder =
                                 new Hacd
@@ -237,11 +237,11 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
                                                 clusters.Add vertices
                                     clusters
                                 else List ()
-                            hacdCacheLevel2.Add (geometryId, hacd)
-                            hacdCache.Add (hacdId, hacd)
+                            hacdL1.Add (hacdL1Key, hacd)
+                            hacdL0.Add (hacdId, hacd)
                             hacd
                         | (true, hacd) ->
-                            hacdCache.Add (hacdId, hacd)
+                            hacdL0.Add (hacdId, hacd)
                             hacd
                     else List ()
                 | None -> List ()
@@ -253,14 +253,14 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
             (mass, inertia)
             hacd
 
-    static member private attachBodyShapes bodySource bodyProperties bodyShapes compoundShape mass inertia hacdCache hacdCacheLevel2 =
+    static member private attachBodyShapes bodySource bodyProperties bodyShapes compoundShape mass inertia hacdL0 hacdL1 =
         List.fold (fun (mass, inertia) bodyShape ->
-            let (mass', inertia') = BulletPhysicsEngine.attachBodyShape bodySource bodyProperties bodyShape compoundShape mass inertia hacdCache hacdCacheLevel2
+            let (mass', inertia') = BulletPhysicsEngine.attachBodyShape bodySource bodyProperties bodyShape compoundShape mass inertia hacdL0 hacdL1
             (mass + mass', inertia + inertia'))
             (mass, inertia)
             bodyShapes
 
-    static member private attachBodyShape bodySource bodyProperties bodyShape compoundShape masses inertia hacdCache hacdCacheLevel2 =
+    static member private attachBodyShape bodySource bodyProperties bodyShape compoundShape masses inertia hacdL0 hacdL1 =
         match bodyShape with
         | BodyEmpty -> (masses, inertia)
         | BodyBox bodyBox -> BulletPhysicsEngine.attachBodyBox bodySource bodyProperties bodyBox compoundShape masses inertia
@@ -268,9 +268,9 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
         | BodyCapsule bodyCapsule -> BulletPhysicsEngine.attachBodyCapsule bodySource bodyProperties bodyCapsule compoundShape masses inertia
         | BodyBoxRounded bodyBoxRounded -> BulletPhysicsEngine.attachBodyBoxRounded bodySource bodyProperties bodyBoxRounded compoundShape masses inertia
         | BodyConvexHull bodyConvexHull -> BulletPhysicsEngine.attachBodyConvexHull bodySource bodyProperties bodyConvexHull compoundShape masses inertia
-        | BodyStaticModel bodyStaticModel -> BulletPhysicsEngine.attachBodyStaticModel bodySource bodyProperties bodyStaticModel compoundShape masses inertia hacdCache hacdCacheLevel2
-        | BodyStaticModelSurface bodyStaticModelSurface -> BulletPhysicsEngine.attachBodyStaticModelSurface bodySource bodyProperties bodyStaticModelSurface compoundShape masses inertia hacdCache hacdCacheLevel2
-        | BodyShapes bodyShapes -> BulletPhysicsEngine.attachBodyShapes bodySource bodyProperties bodyShapes compoundShape masses inertia hacdCache hacdCacheLevel2
+        | BodyStaticModel bodyStaticModel -> BulletPhysicsEngine.attachBodyStaticModel bodySource bodyProperties bodyStaticModel compoundShape masses inertia hacdL0 hacdL1
+        | BodyStaticModelSurface bodyStaticModelSurface -> BulletPhysicsEngine.attachBodyStaticModelSurface bodySource bodyProperties bodyStaticModelSurface compoundShape masses inertia hacdL0 hacdL1
+        | BodyShapes bodyShapes -> BulletPhysicsEngine.attachBodyShapes bodySource bodyProperties bodyShapes compoundShape masses inertia hacdL0 hacdL1
 
     static member private createBody3 attachBodyShape (bodyId : BodyId) (bodyProperties : BodyProperties) physicsEngine =
         let (shape, mass, inertia) =
@@ -304,7 +304,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
 
     static member private createBody4 bodyShape (bodyId : BodyId) bodyProperties physicsEngine =
         BulletPhysicsEngine.createBody3 (fun ps cs mass inertia ->
-            BulletPhysicsEngine.attachBodyShape bodyId.BodySource ps bodyShape cs mass inertia physicsEngine.HacdCache physicsEngine.HacdCacheLevel2)
+            BulletPhysicsEngine.attachBodyShape bodyId.BodySource ps bodyShape cs mass inertia physicsEngine.HacdL0Cache physicsEngine.HacdL1Cache)
             bodyId bodyProperties physicsEngine
 
     static member private createBody (createBodyMessage : CreateBodyMessage) physicsEngine =
@@ -561,8 +561,8 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
           PhysicsDispatcher = physicsDispatcher
           BroadPhaseInterface = broadPhaseInterface
           ConstraintSolver = constraintSolver
-          HacdCache = Dictionary HashIdentity.Structural
-          HacdCacheLevel2 = Dictionary HashIdentity.Structural
+          HacdL0Cache = Dictionary HashIdentity.Structural
+          HacdL1Cache = Dictionary HashIdentity.Structural
           PhysicsMessages = physicsMessages
           IntegrationMessages = List ()
           RebuildingHack = false }
