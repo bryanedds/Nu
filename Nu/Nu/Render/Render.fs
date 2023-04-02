@@ -8,18 +8,6 @@ open TiledSharp
 open Prime
 open Nu
 
-/// An image. Currently just used as a phantom type.
-type Image = private { __ : unit }
-
-/// A font. Currently just used as a phantom type.
-type Font = private { __ : unit }
-
-/// A tile map. Currently just used as a phantom type.
-type TileMap = private { __ : unit }
-
-/// A static model. Currently just used as a phantom type.
-type CubeMap = private { __ : unit }
-
 /// An asset that is used for rendering.
 type RenderAsset =
     | TextureAsset of string * OpenGL.Texture.TextureMetadata * uint

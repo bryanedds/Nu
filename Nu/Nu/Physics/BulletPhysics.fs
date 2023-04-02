@@ -174,56 +174,69 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
         compoundShape.AddChildShape (Option.defaultValue m4Identity bodyConvexHull.TransformOpt, hull)
         (mass + mass', inertia + inertia')
 
+    // TODO: add some error logging.
     static member private attachBodyStaticModel bodySource (bodyProperties : BodyProperties) (bodyStaticModel : BodyStaticModel) (compoundShape : CompoundShape) mass inertia (hacdCache : Hacds) =
-        if bodyStaticModel.Verticeses.Length = bodyStaticModel.Indiceses.Length then
+        match Metadata.tryGetStaticModelMetadata bodyStaticModel.StaticModel with
+        | Some staticModelMetadata ->
             Seq.fold (fun (mass, inertia) i ->
-                let vertices = bodyStaticModel.Verticeses.[i]
-                let indices = bodyStaticModel.Indiceses.[i]
-                let bodyStaticModelSurface = { Vertices = vertices; Indices = indices; SurfaceIndex = i; StaticModel = bodyStaticModel.StaticModel; TransformOpt = bodyStaticModel.TransformOpt; PropertiesOpt = bodyStaticModel.PropertiesOpt }
+                let surface = staticModelMetadata.Surfaces.[i]
+                let transform =
+                    match bodyStaticModel.TransformOpt with
+                    | Some transform -> transform * surface.SurfaceMatrix
+                    | None -> surface.SurfaceMatrix
+                let bodyStaticModelSurface = { SurfaceIndex = i; StaticModel = bodyStaticModel.StaticModel; TransformOpt = Some transform; PropertiesOpt = bodyStaticModel.PropertiesOpt }
                 let (mass', inertia') = BulletPhysicsEngine.attachBodyStaticModelSurface bodySource bodyProperties bodyStaticModelSurface compoundShape mass inertia hacdCache
                 (mass + mass', inertia + inertia'))
                 (mass, inertia)
-                [0 .. dec bodyStaticModel.Verticeses.Length]
-        else failwith "Uneven number of vertices entries and indices entries for BodyStaticModel."
+                [0 .. dec staticModelMetadata.Surfaces.Length]
+        | None -> (mass, inertia)
 
+    // TODO: add some error logging.
     static member private attachBodyStaticModelSurface bodySource (bodyProperties : BodyProperties) (bodyStaticModelSurface : BodyStaticModelSurface) (compoundShape : CompoundShape) mass inertia (hacdCache : Hacds) =
         let hacd =
             let hacdId = { SurfaceIndex = bodyStaticModelSurface.SurfaceIndex; StaticModel = bodyStaticModelSurface.StaticModel }
             match hacdCache.TryGetValue hacdId with
             | (true, clusters) -> clusters
             | (false, _) ->
-                use hacdBuilder =
-                    new Hacd
-                        (VerticesPerConvexHull = 100, // maximum number
-                         CompacityWeight = 0.1,
-                         VolumeWeight = 0,
-                         NClusters = 2,
-                         Concavity = 100,
-                         AddExtraDistPoints = false,
-                         AddFacesPoints = false,
-                         AddNeighboursDistPoints = false)
-                hacdBuilder.SetPoints bodyStaticModelSurface.Vertices
-                hacdBuilder.SetTriangles bodyStaticModelSurface.Indices
-                let hacd =
-                    if hacdBuilder.Compute () then
-                        let clusters = List ()
-                        for i in 0 .. dec hacdBuilder.NClusters do
-                            let trianglesLen = hacdBuilder.GetNTrianglesCH i * 3
-                            if trianglesLen > 0 then
-                                let triangles = Array.zeroCreate<int> trianglesLen
-                                let nVertices = hacdBuilder.GetNPointsCH i
-                                let points = Array.zeroCreate<double> (nVertices * 3)                
-                                if hacdBuilder.GetCH (i, points, triangles) then
-                                    let vertices = Array.zeroCreate<Vector3> nVertices
-                                    for j in  0 .. dec nVertices do
-                                        let k = j * 3
-                                        let vertex = v3 (single points.[k]) (single points.[k + 1]) (single points.[k + 2])
-                                        vertices.[j] <- vertex
-                                    clusters.Add vertices
-                        clusters
+                match Metadata.tryGetStaticModelMetadata bodyStaticModelSurface.StaticModel with
+                | Some staticModelMetadata ->
+                    if  bodyStaticModelSurface.SurfaceIndex > -1 &&
+                        bodyStaticModelSurface.SurfaceIndex < staticModelMetadata.Surfaces.Length then
+                        let surface = staticModelMetadata.Surfaces.[bodyStaticModelSurface.SurfaceIndex]
+                        use hacdBuilder =
+                            new Hacd
+                                (VerticesPerConvexHull = 100, // maximum number
+                                 CompacityWeight = 0.1,
+                                 VolumeWeight = 0,
+                                 NClusters = 2,
+                                 Concavity = 100,
+                                 AddExtraDistPoints = false,
+                                 AddFacesPoints = false,
+                                 AddNeighboursDistPoints = false)
+                        hacdBuilder.SetPoints surface.PhysicallyBasedGeometry.Vertices
+                        hacdBuilder.SetTriangles surface.PhysicallyBasedGeometry.Indices
+                        let hacd =
+                            if hacdBuilder.Compute () then
+                                let clusters = List ()
+                                for i in 0 .. dec hacdBuilder.NClusters do
+                                    let trianglesLen = hacdBuilder.GetNTrianglesCH i * 3
+                                    if trianglesLen > 0 then
+                                        let triangles = Array.zeroCreate<int> trianglesLen
+                                        let nVertices = hacdBuilder.GetNPointsCH i
+                                        let points = Array.zeroCreate<double> (nVertices * 3)                
+                                        if hacdBuilder.GetCH (i, points, triangles) then
+                                            let vertices = Array.zeroCreate<Vector3> nVertices
+                                            for j in  0 .. dec nVertices do
+                                                let k = j * 3
+                                                let vertex = v3 (single points.[k]) (single points.[k + 1]) (single points.[k + 2])
+                                                vertices.[j] <- vertex
+                                            clusters.Add vertices
+                                clusters
+                            else List ()
+                        hacdCache.Add (hacdId, hacd)
+                        hacd
                     else List ()
-                hacdCache.Add (hacdId, hacd)
-                hacd
+                | None -> List ()
         Seq.fold (fun (mass, inertia) cluster ->
             let bodyConvexHull = { Vertices = cluster; TransformOpt = bodyStaticModelSurface.TransformOpt; PropertiesOpt = bodyStaticModelSurface.PropertiesOpt }
             let (mass', inertia') = BulletPhysicsEngine.attachBodyConvexHull bodySource bodyProperties bodyConvexHull compoundShape mass inertia

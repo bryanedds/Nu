@@ -1891,13 +1891,7 @@ module StaticModelFacetModule =
             | Some property when property.PropertyType = typeof<BodyShape> ->
                 let bodyShape = property.PropertyValue :?> BodyShape
                 if (match bodyShape with BodyStaticModel body -> body.StaticModel <> staticModel | _ -> false) then
-                    let verticeses = List ()
-                    let indiceses = List ()
-                    let staticModelMetadata = Metadata.getStaticModelMetadata staticModel
-                    for surface in staticModelMetadata.Surfaces do
-                        verticeses.Add surface.PhysicallyBasedGeometry.Vertices
-                        indiceses.Add surface.PhysicallyBasedGeometry.Indices
-                    let bodyStaticModel = { Verticeses = Array.ofSeq verticeses; Indiceses = Array.ofSeq indiceses; StaticModel = staticModel; TransformOpt = None; PropertiesOpt = None }
+                    let bodyStaticModel = { StaticModel = staticModel; TransformOpt = None; PropertiesOpt = None }
                     let world = entity.SetBodyShape (BodyStaticModel bodyStaticModel) world
                     (Cascade, world)
                 else (Cascade, world)
@@ -1998,14 +1992,10 @@ module StaticModelSurfaceFacetModule =
             match entity.TryGetProperty (nameof Entity.BodyShape) world with
             | Some property when property.PropertyType = typeof<BodyShape> ->
                 let bodyShape = property.PropertyValue :?> BodyShape
-                if (match bodyShape with BodyStaticModelSurface body -> body.StaticModel <> staticModel | _ -> false) then
-                    let staticModelMetadata = Metadata.getStaticModelMetadata staticModel
-                    if surfaceIndex > -1 && surfaceIndex < staticModelMetadata.Surfaces.Length then
-                        let surface = staticModelMetadata.Surfaces.[surfaceIndex]
-                        let bodyStaticModel = { Vertices = surface.PhysicallyBasedGeometry.Vertices; Indices = surface.PhysicallyBasedGeometry.Indices; SurfaceIndex = surfaceIndex; StaticModel = staticModel; TransformOpt = None; PropertiesOpt = None }
-                        let world = entity.SetBodyShape (BodyStaticModelSurface bodyStaticModel) world
-                        (Cascade, world)
-                    else (Cascade, world)
+                if (match bodyShape with BodyStaticModelSurface body -> body.SurfaceIndex <> surfaceIndex || body.StaticModel <> staticModel | _ -> false) then
+                    let bodyStaticModel = { SurfaceIndex = surfaceIndex; StaticModel = staticModel; TransformOpt = None; PropertiesOpt = None }
+                    let world = entity.SetBodyShape (BodyStaticModelSurface bodyStaticModel) world
+                    (Cascade, world)
                 else (Cascade, world)
             | _ -> (Cascade, world)
 

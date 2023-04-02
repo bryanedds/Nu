@@ -9,12 +9,6 @@ open SDL2
 open Prime
 open Nu
 
-/// Song. Currently just used as a phantom type.
-type Song = private { __ : unit }
-
-/// Sound. Currently just used as a phantom type.
-type Sound = private { __ : unit }
-
 /// Descrides a song.
 type SongDescriptor =
     { FadeInTime: GameTime
