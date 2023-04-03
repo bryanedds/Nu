@@ -71,9 +71,9 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
         | Discontinuous ->
             object.CcdMotionThreshold <- 0.0f
             object.CcdSweptSphereRadius <- 0.0f
-        | Continuous continuous ->
-            object.CcdMotionThreshold <- continuous.MotionThreshold
-            object.CcdSweptSphereRadius <- continuous.SweptSphereRadius
+        | Continuous (motionThreshold, sweptSphereRadius) ->
+            object.CcdMotionThreshold <- motionThreshold
+            object.CcdSweptSphereRadius <- sweptSphereRadius
         match bodyProperties.BodyType with
         | Static ->
             object.CollisionFlags <- object.CollisionFlags ||| CollisionFlags.StaticObject
@@ -246,6 +246,8 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
                     else List ()
                 | None -> List ()
             | (true, clusters) -> clusters
+        let bodySubstance = match bodyProperties.Substance with Density d -> Density (d / single hacd.Count) | Mass m -> Mass (m / single hacd.Count)
+        let bodyProperties = { bodyProperties with Substance = bodySubstance }
         Seq.fold (fun (mass, inertia) cluster ->
             let bodyConvexHull = { Vertices = cluster; TransformOpt = bodyStaticModelSurface.TransformOpt; PropertiesOpt = bodyStaticModelSurface.PropertiesOpt }
             let (mass', inertia') = BulletPhysicsEngine.attachBodyConvexHull bodySource bodyProperties bodyConvexHull compoundShape mass inertia
@@ -276,9 +278,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
         let (shape, mass, inertia) =
             let compoundShape = new CompoundShape ()
             let (mass, inertia) = attachBodyShape bodyProperties compoundShape 0.0f v3Zero
-            if compoundShape.ChildList.Count = 1 && not (compoundShape.ChildList.[0].ChildShape :? CompoundShape)
-            then (compoundShape.ChildList.[0].ChildShape, mass, inertia)
-            else (compoundShape, mass, inertia)
+            (compoundShape, mass, inertia)
         let userIndex = if bodyId.BodyIndex = Constants.Physics.InternalIndex then -1 else 1
         if not bodyProperties.Sensor then
             let motionState = new DefaultMotionState (Matrix4x4.CreateFromTrs (bodyProperties.Center, bodyProperties.Rotation, v3One))

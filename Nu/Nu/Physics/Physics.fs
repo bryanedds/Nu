@@ -108,11 +108,6 @@ type Substance =
     | Mass of Mass : single
     | Density of Density : single
 
-/// Describes the attributes of continuous collision detection.
-type [<Struct>] Continuous =
-    { MotionThreshold : single
-      SweptSphereRadius : single }
-
 /// Describe the form of collision detection to use.
 [<Syntax
     ("DiscontinuousDetection ContinuousDetection", "", "", "", "",
@@ -121,7 +116,7 @@ type [<Struct>] Continuous =
      StructuralEquality; NoComparison; Struct>]
 type CollisionDetection =
     | Discontinuous
-    | Continuous of Continuous
+    | Continuous of MotionThreshold : single * SweptSphereRadius : single
 
 /// The shape of a physics body box.
 type BodyBox =
