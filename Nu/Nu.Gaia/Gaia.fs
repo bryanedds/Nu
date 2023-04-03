@@ -988,9 +988,9 @@ module Gaia =
                             if atMouse then
                                 let ray = viewport.MouseToWorld3d (entity.GetAbsolute world, mousePosition, eyeCenter, eyeRotation)
                                 let forward = Vector3.Transform (v3Forward, eyeRotation)
-                                let plane = plane3 (eyeCenter + forward * Constants.Engine.EyeCenter3dDefault.Z) -forward
+                                let plane = plane3 (eyeCenter + forward * Constants.Engine.EyeCenter3dOffset.Z) -forward
                                 (ray.Intersection plane).Value
-                            else eyeCenter + Vector3.Transform (v3Forward, eyeRotation) * Constants.Engine.EyeCenter3dDefault.Z
+                            else eyeCenter + Vector3.Transform (v3Forward, eyeRotation) * Constants.Engine.EyeCenter3dOffset.Z
                         entityTransform.Position <- entityPosition
                         entityTransform.Size <- entity.GetQuickSize world
                         if form.snap3dButton.Checked
@@ -1446,13 +1446,6 @@ module Gaia =
                 form.displayPanel.Focus () |> ignore<bool>
             if Keys.F5 = key then form.runButton.PerformClick ()
             if Keys.D3 = key && Keys.None = Control.ModifierKeys then form.snap3dButton.Checked <- form.snap3dButton.Checked
-            if Keys.X = key && Keys.None = Control.ModifierKeys then form.constrainXButton.Checked <- not form.constrainXButton.Checked
-            if Keys.Y = key && Keys.None = Control.ModifierKeys then form.constrainYButton.Checked <- not form.constrainYButton.Checked
-            if Keys.Z = key && Keys.None = Control.ModifierKeys then form.constrainZButton.Checked <- not form.constrainZButton.Checked
-            if Keys.C = key && Keys.None = Control.ModifierKeys then
-                form.constrainXButton.Checked <- false
-                form.constrainYButton.Checked <- false
-                form.constrainZButton.Checked <- false
             if Keys.Q = key && Keys.Control = Control.ModifierKeys then handleFormQuickSize form (EventArgs ())
             if Keys.N = key && Keys.Control = Control.ModifierKeys then handleFormNew form (EventArgs ())
             if Keys.O = key && Keys.Control = Control.ModifierKeys then handleFormOpen form (EventArgs ())
@@ -1483,6 +1476,13 @@ module Gaia =
             | :? ToolStripDropDown | :? TextBox -> ()
             // | :? ToolStripComboBox -> () // doesn't implement Control... not sure how to match.
             | _ ->
+                if Keys.X = key && Keys.None = Control.ModifierKeys then form.constrainXButton.Checked <- not form.constrainXButton.Checked
+                if Keys.Y = key && Keys.None = Control.ModifierKeys then form.constrainYButton.Checked <- not form.constrainYButton.Checked
+                if Keys.Z = key && Keys.None = Control.ModifierKeys then form.constrainZButton.Checked <- not form.constrainZButton.Checked
+                if Keys.C = key && Keys.None = Control.ModifierKeys then
+                    form.constrainXButton.Checked <- false
+                    form.constrainYButton.Checked <- false
+                    form.constrainZButton.Checked <- false
                 if Keys.A = key && Keys.Control = Control.ModifierKeys then handleFormSave true form (EventArgs ())
                 if Keys.Z = key && Keys.Control = Control.ModifierKeys then handleFormUndo form (EventArgs ())
                 if Keys.Y = key && Keys.Control = Control.ModifierKeys then handleFormRedo form (EventArgs ())
