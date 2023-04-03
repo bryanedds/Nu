@@ -2565,10 +2565,10 @@ module WorldModuleEntity =
                                 let viewport = Constants.Render.Viewport
                                 let ray = viewport.MouseToWorld3d (entityState.Absolute, rightClickPosition, eyeCenter, eyeRotation)
                                 let forward = Vector3.Transform (v3Forward, eyeRotation)
-                                let plane = plane3 (eyeCenter + forward * Constants.Engine.EyeCenter3dDefault.Z) -forward
+                                let plane = plane3 (eyeCenter + forward * Constants.Engine.EyeCenter3dOffset.Z) -forward
                                 let intersectionOpt = ray.Intersection plane
                                 intersectionOpt.Value
-                            else eyeCenter + Vector3.Transform (v3Forward, eyeRotation) * Constants.Engine.EyeCenter3dDefault.Z
+                            else eyeCenter + Vector3.Transform (v3Forward, eyeRotation) * Constants.Engine.EyeCenter3dOffset.Z
                         match snapsEir with
                         | Right (positionSnap, degreesSnap, scaleSnap) -> (position, Some (positionSnap, degreesSnap, scaleSnap))
                         | Left _ -> (position, None)
@@ -2576,6 +2576,9 @@ module WorldModuleEntity =
                 match snapsOpt with
                 | Some (positionSnap, degreesSnap, scaleSnap) -> entityState.Transform.Snap (positionSnap, degreesSnap, scaleSnap)
                 | None -> ()
+                entityState.PositionLocal <- v3Zero
+                entityState.RotationLocal <- quatIdentity
+                entityState.ScaleLocal <- v3One
                 let entity = Entity (group.GroupAddress <-- rtoa<Entity> surnames)
                 let world = World.addEntity false entityState entity world
                 (Some entity, world)
