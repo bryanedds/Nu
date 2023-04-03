@@ -4,22 +4,22 @@
 const int TexCoordsOffsetVerts = 6;
 
 const vec2 TexCoordsOffsetFilters[TexCoordsOffsetVerts] =
-  vec2[TexCoordsOffsetVerts](
-      vec2(1,1),
-      vec2(0,1),
-      vec2(0,0),
-      vec2(1,1),
-      vec2(0,0),
-      vec2(1,0));
+    vec2[TexCoordsOffsetVerts](
+        vec2(1,1),
+        vec2(0,1),
+        vec2(0,0),
+        vec2(1,1),
+        vec2(0,0),
+        vec2(1,0));
 
 const vec2 TexCoordsOffsetFilters2[TexCoordsOffsetVerts] =
-  vec2[TexCoordsOffsetVerts](
-      vec2(0,0),
-      vec2(1,0),
-      vec2(1,1),
-      vec2(0,0),
-      vec2(1,1),
-      vec2(0,1));
+    vec2[TexCoordsOffsetVerts](
+        vec2(0,0),
+        vec2(1,0),
+        vec2(1,1),
+        vec2(0,0),
+        vec2(1,1),
+        vec2(0,1));
 
 uniform mat4 view;
 uniform mat4 projection;
@@ -57,7 +57,7 @@ void main()
 const float PI = 3.141592654;
 const float REFLECTION_LOD_MAX = 5.0;
 const float GAMMA = 2.2;
-const int LIGHTS_MAX = 8;
+const int LIGHTS_MAX = 32;
 
 uniform vec3 eyeCenter;
 uniform sampler2D albedoTexture;

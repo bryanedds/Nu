@@ -4,22 +4,22 @@
 const int TexCoordsOffsetVerts = 6;
 
 const vec2 TexCoordsOffsetFilters[TexCoordsOffsetVerts] =
-  vec2[TexCoordsOffsetVerts](
-      vec2(1,1),
-      vec2(0,1),
-      vec2(0,0),
-      vec2(1,1),
-      vec2(0,0),
-      vec2(1,0));
+    vec2[TexCoordsOffsetVerts](
+        vec2(1,1),
+        vec2(0,1),
+        vec2(0,0),
+        vec2(1,1),
+        vec2(0,0),
+        vec2(1,0));
 
 const vec2 TexCoordsOffsetFilters2[TexCoordsOffsetVerts] =
-  vec2[TexCoordsOffsetVerts](
-      vec2(0,0),
-      vec2(1,0),
-      vec2(1,1),
-      vec2(0,0),
-      vec2(1,1),
-      vec2(0,1));
+    vec2[TexCoordsOffsetVerts](
+        vec2(0,0),
+        vec2(1,0),
+        vec2(1,1),
+        vec2(0,0),
+        vec2(1,1),
+        vec2(0,1));
 
 uniform mat4 view;
 uniform mat4 projection;
