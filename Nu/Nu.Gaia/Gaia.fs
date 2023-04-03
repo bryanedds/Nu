@@ -1725,21 +1725,22 @@ module Gaia =
                 try let dirName = Path.GetDirectoryName filePath
                     try Directory.SetCurrentDirectory dirName
                         let assembly = Assembly.Load (File.ReadAllBytes filePath)
-                        Some (filePath, dirName, assembly.GetTypes ())
+                        Right (Some (filePath, dirName, assembly.GetTypes ()))
                     with _ ->
                         let assembly = Assembly.LoadFrom filePath
-                        Some (filePath, dirName, assembly.GetTypes ())
-                with _ -> None
-            else None
+                        Right (Some (filePath, dirName, assembly.GetTypes ()))
+                with _ -> Left ()
+            else Right None
         match filePathAndDirNameAndTypesOpt with
-        | Some (filePath, dirName, types) ->
+        | Right (Some (filePath, dirName, types)) ->
             let pluginTypeOpt = Array.tryFind (fun (ty : Type) -> ty.IsSubclassOf typeof<NuPlugin>) types
             match pluginTypeOpt with
             | Some ty ->
                 let plugin = Activator.CreateInstance ty :?> NuPlugin
-                Some (filePath, dirName, plugin)
-            | None -> None
-        | None -> None
+                Right (Some (filePath, dirName, plugin))
+            | None -> Left ()
+        | Right None -> Right None
+        | Left () -> Left ()
 
     /// Select a target directory for the desired plugin and its assets.
     let selectNuPlugin () =
@@ -1752,7 +1753,7 @@ module Gaia =
         use startForm = new StartForm ()
         startForm.binaryFilePathText.TextChanged.Add (fun _ ->
             match trySelectTargetDirAndMakeNuPluginFromFilePathOpt startForm.binaryFilePathText.Text with
-            | Some (_, _, plugin) ->
+            | Right (Some (_, _, plugin)) ->
                 startForm.modeComboBox.Items.Clear ()
                 for kvp in plugin.EditModes do
                    startForm.modeComboBox.Items.Add (kvp.Key) |> ignore
@@ -1760,7 +1761,7 @@ module Gaia =
                     startForm.modeComboBox.SelectedIndex <- 0
                     startForm.modeComboBox.Enabled <- true
                 else startForm.modeComboBox.Enabled <- false
-            | None ->
+            | Right None | Left () ->
                 startForm.modeComboBox.Items.Clear ()
                 startForm.modeComboBox.Enabled <- false
                 Directory.SetCurrentDirectory AppContext.BaseDirectory)
@@ -1779,12 +1780,16 @@ module Gaia =
                   UseImperativeExecution = startForm.useImperativeExecutionCheckBox.Checked }
             let (targetDir, plugin) =
                 match trySelectTargetDirAndMakeNuPluginFromFilePathOpt startForm.binaryFilePathText.Text with
-                | Some (filePath, targetDir, plugin) ->
+                | Right (Some (filePath, targetDir, plugin)) ->
                     Constants.Override.fromAppConfig filePath
                     try File.WriteAllText (savedStateDirectory + "/" + Constants.Editor.SavedStateFilePath, scstring savedState)
                     with _ -> Log.info "Could not save editor state."
                     (targetDir, plugin)
-                | None ->
+                | Right None ->
+                    try File.WriteAllText (savedStateDirectory + "/" + Constants.Editor.SavedStateFilePath, scstring savedState)
+                    with _ -> Log.info "Could not save editor state."
+                    (".", NuPlugin ())
+                | Left () ->
                     if not (String.IsNullOrWhiteSpace startForm.binaryFilePathText.Text) then
                         Log.trace ("Invalid Nu Assembly: " + startForm.binaryFilePathText.Text)
                     (".", NuPlugin ())
