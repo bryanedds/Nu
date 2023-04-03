@@ -209,7 +209,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
                         | (false, _) ->
                             use hacdBuilder =
                                 new Hacd
-                                    (VerticesPerConvexHull = 100, // maximum number
+                                    (VerticesPerConvexHull = 128, // maximum number
                                      CompacityWeight = 0.1,
                                      VolumeWeight = 0,
                                      NClusters = 2,
