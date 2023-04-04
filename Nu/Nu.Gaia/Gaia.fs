@@ -28,7 +28,7 @@ module Gaia =
     let mutable private rightClickPosition = v2Zero
     let mutable private dragEntityState = DragEntityInactive
     let mutable private dragEyeState = DragEyeInactive
-    let mutable private otherSnaps = (Constants.Editor.Position3dSnapDefault, Constants.Editor.Degrees3dSnapDefault, Constants.Editor.Scale3dSnapDefault)
+    let mutable private otherSnaps = (Constants.Editor.Position2dSnapDefault, Constants.Editor.Degrees2dSnapDefault, Constants.Editor.Scale2dSnapDefault)
     let mutable private filePaths = Map.empty<Group Address, string>
     let mutable private targetDir = "."
     let mutable private selectedScreen = Screen "Screen" // TODO: see if this is necessary or if we can just use World.getSelectedScreen.
@@ -418,17 +418,15 @@ module Gaia =
 
     let private handleNuUpdate (form : GaiaForm) (_ : Event<unit, Game>) world =
         if not form.runButton.Checked || form.liveEditCheckBox.Checked then
-            let moveSpeed =
-                if World.isKeyboardCtrlDown world then 0.0f // ignore movement while ctrl pressed
-                elif World.isKeyboardKeyDown KeyboardKey.Return world then 0.5f
-                elif World.isKeyboardShiftDown world then 0.02f
-                else 0.12f
-            let turnSpeed =
-                if World.isKeyboardCtrlDown world then 0.0f // ignore turning while ctrl pressed
-                elif World.isKeyboardShiftDown world then 0.025f
-                else 0.05f
             let position = World.getEyeCenter3d world
             let rotation = World.getEyeRotation3d world
+            let moveSpeed =
+                if World.isKeyboardShiftDown world then 0.02f
+                elif World.isKeyboardKeyDown KeyboardKey.Return world then 0.5f
+                else 0.12f
+            let turnSpeed =
+                if World.isKeyboardShiftDown world then 0.025f
+                else 0.05f
             let world =
                 if World.isKeyboardKeyDown KeyboardKey.W world
                 then World.setEyeCenter3d (position + Vector3.Transform (v3Forward, rotation) * moveSpeed) world
@@ -1806,9 +1804,10 @@ module Gaia =
 
         // configure controls
         form.displayPanel.MaximumSize <- Drawing.Size (Constants.Render.ResolutionX, Constants.Render.ResolutionY)
-        form.positionSnapTextBox.Text <- scstring Constants.Editor.Position2dSnapDefault
-        form.degreesSnapTextBox.Text <- scstring Constants.Editor.Degrees2dSnapDefault
-        form.scaleSnapTextBox.Text <- scstring Constants.Editor.Scale2dSnapDefault
+        form.snap3dButton.Checked <- true
+        form.positionSnapTextBox.Text <- scstring Constants.Editor.Position3dSnapDefault
+        form.degreesSnapTextBox.Text <- scstring Constants.Editor.Degrees3dSnapDefault
+        form.scaleSnapTextBox.Text <- scstring Constants.Editor.Scale3dSnapDefault
         form.createElevationTextBox.Text <- scstring Constants.Editor.CreationElevationDefault
         form.propertyTabControl.SelectTab 3
 
