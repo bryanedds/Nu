@@ -55,7 +55,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
         physicsEngine.IntegrationMessages.Add integrationMessage
 
     static member private configureBodyShapeProperties (_ : BodyProperties) (_ : BodyShapeProperties option) (shape : ConvexInternalShape) =
-        shape.Margin <- 0.01f
+        shape.Margin <- 0.0f
 
     static member private configureCollisionObjectProperties (bodyProperties : BodyProperties) (object : CollisionObject) =
         match (bodyProperties.Sleeping, bodyProperties.Enabled) with
@@ -152,8 +152,8 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
 
     static member private attachBodyConvexHull bodySource (bodyProperties : BodyProperties) (bodyConvexHull : BodyConvexHull) (compoundShape : CompoundShape) mass inertia =
         let hull = new ConvexHullShape (bodyConvexHull.Vertices)
-        hull.OptimizeConvexHull ()
         BulletPhysicsEngine.configureBodyShapeProperties bodyProperties bodyConvexHull.PropertiesOpt hull
+        hull.OptimizeConvexHull ()
         hull.UserObject <-
             { BodyId = { BodySource = bodySource; BodyIndex = bodyProperties.BodyIndex }
               ShapeIndex = match bodyConvexHull.PropertiesOpt with Some p -> p.ShapeIndex | None -> 0 }
