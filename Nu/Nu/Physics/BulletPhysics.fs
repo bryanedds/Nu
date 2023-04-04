@@ -54,8 +54,8 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
         let integrationMessage = BodySeparationMessage bodySeparationMessage
         physicsEngine.IntegrationMessages.Add integrationMessage
 
-    static member private configureBodyShapeProperties (_ : BodyProperties) (_ : BodyShapeProperties option) (_ : ConvexInternalShape) =
-        () // NOTE: cannot configure bullet shapes on a per-shape basis.
+    static member private configureBodyShapeProperties (_ : BodyProperties) (_ : BodyShapeProperties option) (shape : ConvexInternalShape) =
+        shape.Margin <- 0.01f
 
     static member private configureCollisionObjectProperties (bodyProperties : BodyProperties) (object : CollisionObject) =
         match (bodyProperties.Sleeping, bodyProperties.Enabled) with
