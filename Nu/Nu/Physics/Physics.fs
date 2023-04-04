@@ -3,43 +3,9 @@
 
 namespace Nu
 open System
-open System.Collections.Generic
 open System.Numerics
 open Prime
 open Nu
-
-/// Uniquely identifies an hacd (Hierarchical Approximate Convex Decompositions) L0 cache entry.
-type HacdL0Key = { SurfaceIndex : int; StaticModel : StaticModel AssetTag  }
-
-/// The hacd (Hierarchical Approximate Convex Decompositions) L0 cache.
-type HacdL0Cache = Dictionary<HacdL0Key, Vector3 array List>
-
-/// Uniquely identifies a hacd (Hierarchical Approximate Convex Decompositions) L0 cache entry.
-type [<CustomEquality; NoComparison>] HacdL1Key =
-    { HashCode : int; PrimitiveType : OpenGL.PrimitiveType; Vertices : Vector3 array; Indices : int array }
-    static member make primitiveType (vertices : Vector3 array) (indices : int array) =
-        let mutable vertexHash = 0
-        for i in 0 .. dec vertices.Length do
-            let vertex = vertices.[i]
-            vertexHash <- vertexHash ^^^ Branchless.reinterpret vertex.X
-            vertexHash <- vertexHash ^^^ Branchless.reinterpret vertex.Y
-            vertexHash <- vertexHash ^^^ Branchless.reinterpret vertex.Z
-        let mutable indexHash = 0
-        for i in 0 .. dec indices.Length do indexHash <- indexHash ^^^ indices.[i]
-        let hashCode = hash primitiveType ^^^ vertexHash ^^^ indexHash
-        { HashCode = hashCode; PrimitiveType = primitiveType; Vertices = vertices; Indices = indices }
-    override this.Equals that =
-        match that with
-        | :? HacdL1Key as that ->
-            this.HashCode = that.HashCode &&
-            this.PrimitiveType = that.PrimitiveType &&
-            this.Vertices === that.Vertices &&
-            this.Indices === that.Indices
-        | _ -> false
-    override this.GetHashCode () = this.HashCode
-
-/// The hacd (Hierarchical Approximate Convex Decompositions) L1 cache.
-type HacdL1Cache = Dictionary<HacdL1Key, Vector3 array List>
 
 /// Identifies a body that can be found in a physics engine.
 type [<CustomEquality; NoComparison>] BodyId =
