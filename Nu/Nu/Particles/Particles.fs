@@ -1143,20 +1143,24 @@ module BasicStaticBillboardEmitter =
                 particle'.Glow <- particle.Glow
                 particle'.InsetOpt <- if particle.Inset.Equals box2Zero then ValueNone else ValueSome particle.Inset
                 particle'.Flip <- particle.Flip
-        { Absolute = emitter.Absolute
-          AlbedoOpt = emitter.AlbedoOpt
-          AlbedoImage = emitter.AlbedoImage
-          MetalnessOpt = emitter.MetalnessOpt
-          MetalnessImage = emitter.MetalnessImage
-          RoughnessOpt = emitter.RoughnessOpt
-          RoughnessImage = emitter.RoughnessImage
-          AmbientOcclusionOpt = emitter.AmbientOcclusionOpt
-          AmbientOcclusionImage = emitter.AmbientOcclusionImage
-          NormalImage = emitter.NormalImage
-          MinFilterOpt = emitter.MinFilterOpt
-          MagFilterOpt = emitter.MagFilterOpt
-          RenderType = emitter.RenderType
-          Particles = particles' }
+        let renderMaterial =
+            { AlbedoOpt = emitter.AlbedoOpt
+              MetalnessOpt = emitter.MetalnessOpt
+              RoughnessOpt = emitter.RoughnessOpt
+              AmbientOcclusionOpt = emitter.AmbientOcclusionOpt }
+        let descriptor =
+            { Absolute = emitter.Absolute
+              RenderMaterial = renderMaterial
+              AlbedoImage = emitter.AlbedoImage
+              MetalnessImage = emitter.MetalnessImage
+              RoughnessImage = emitter.RoughnessImage
+              AmbientOcclusionImage = emitter.AmbientOcclusionImage
+              NormalImage = emitter.NormalImage
+              MinFilterOpt = emitter.MinFilterOpt
+              MagFilterOpt = emitter.MagFilterOpt
+              RenderType = emitter.RenderType
+              Particles = particles' }
+        descriptor
 
     /// Resize the emitter.
     let resize particleMax (emitter : BasicStaticBillboardEmitter) =

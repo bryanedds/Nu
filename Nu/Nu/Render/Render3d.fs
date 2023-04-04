@@ -12,7 +12,6 @@ open Nu
 
 //////////////////////////////////////////////////////////////////////////////////////////
 // TODO: introduce records for a bunch of the tuples in this file!                      //
-// TODO: add texture filter opts to RenderMaterial.                                     //
 // TODO: account for Blend in billboards (at least alpha, overwrite, and additive)      //
 // TODO: account for Glow in billboards as emissive.                                    //
 // TODO: account for Flip in billboards.                                                //
@@ -35,13 +34,10 @@ type [<StructuralEquality; NoComparison; Struct>] RenderMaterial =
 /// Describes billboard-based particles.
 type [<NoEquality; NoComparison>] BillboardParticlesDescriptor =
     { Absolute : bool
-      AlbedoOpt : Color voption
+      RenderMaterial : RenderMaterial
       AlbedoImage : Image AssetTag
-      MetalnessOpt : single voption
       MetalnessImage : Image AssetTag
-      RoughnessOpt : single voption
       RoughnessImage : Image AssetTag
-      AmbientOcclusionOpt : single voption
       AmbientOcclusionImage : Image AssetTag
       NormalImage : Image AssetTag
       MinFilterOpt : OpenGL.TextureMinFilter voption
