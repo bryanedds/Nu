@@ -48,20 +48,20 @@ module PhysicallyBased =
     type [<CustomEquality; NoComparison>] PhysicallyBasedSurface =
         { mutable HashCode : int
           SurfaceNames : string array
-          SurfaceMatrixIsIdentity : bool // OPTIMIZATION: avoid matrix multiply when unecessary.
+          SurfaceMatrixIsIdentity : bool // OPTIMIZATION: avoid matrix multiply when unnecessary.
           SurfaceMatrix : Matrix4x4
           SurfaceBounds : Box3
           SurfaceMaterial : PhysicallyBasedMaterial
           PhysicallyBasedGeometry : PhysicallyBasedGeometry }
 
         static member inline hash surface =
-            (hash surface.SurfaceMaterial.TextureMinFilterOpt) ^^^
-            (hash surface.SurfaceMaterial.TextureMagFilterOpt <<< 2) ^^^
-            (int surface.SurfaceMaterial.AlbedoTexture <<< 4) ^^^
-            (int surface.SurfaceMaterial.MetalnessTexture <<< 6) ^^^
-            (int surface.SurfaceMaterial.RoughnessTexture <<< 8) ^^^
-            (int surface.SurfaceMaterial.AmbientOcclusionTexture <<< 10) ^^^
-            (int surface.SurfaceMaterial.NormalTexture <<< 12) ^^^
+            (int surface.SurfaceMaterial.AlbedoTexture) ^^^
+            (int surface.SurfaceMaterial.MetalnessTexture <<< 2) ^^^
+            (int surface.SurfaceMaterial.RoughnessTexture <<< 4) ^^^
+            (int surface.SurfaceMaterial.AmbientOcclusionTexture <<< 6) ^^^
+            (int surface.SurfaceMaterial.NormalTexture <<< 8) ^^^
+            (hash surface.SurfaceMaterial.TextureMinFilterOpt <<< 10) ^^^
+            (hash surface.SurfaceMaterial.TextureMagFilterOpt <<< 12) ^^^
             (hash surface.SurfaceMaterial.TwoSided <<< 14) ^^^
             (int surface.PhysicallyBasedGeometry.PrimitiveType <<< 16) ^^^
             (int surface.PhysicallyBasedGeometry.PhysicallyBasedVao <<< 18)
