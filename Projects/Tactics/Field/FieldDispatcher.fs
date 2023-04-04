@@ -81,10 +81,15 @@ module FieldDispatcher =
         override this.Command (_, command, _, world) =
             match command with
             | UpdateCommand ->
-                let moveSpeed = if World.isKeyboardKeyDown KeyboardKey.Return world then 0.5f elif World.isKeyboardShiftDown world then 0.02f else 0.12f
-                let turnSpeed = if World.isKeyboardShiftDown world then 0.025f else 0.05f
                 let position = World.getEyeCenter3d world
                 let rotation = World.getEyeRotation3d world
+                let moveSpeed =
+                    if World.isKeyboardShiftDown world then 0.02f
+                    elif World.isKeyboardKeyDown KeyboardKey.Return world then 0.5f
+                    else 0.12f
+                let turnSpeed =
+                    if World.isKeyboardShiftDown world then 0.025f
+                    else 0.05f
                 let world =
                     if World.isKeyboardKeyDown KeyboardKey.W world
                     then World.setEyeCenter3d (position + Vector3.Transform (v3Forward, rotation) * moveSpeed) world
