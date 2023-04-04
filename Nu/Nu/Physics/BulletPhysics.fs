@@ -55,7 +55,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
         physicsEngine.IntegrationMessages.Add integrationMessage
 
     static member private configureBodyShapeProperties (_ : BodyProperties) (_ : BodyShapeProperties option) (shape : ConvexInternalShape) =
-        shape.Margin <- 0.0f
+        shape.Margin <- Constants.Physics.CollisionMargin3d
 
     static member private configureCollisionObjectProperties (bodyProperties : BodyProperties) (object : CollisionObject) =
         match (bodyProperties.Sleeping, bodyProperties.Enabled) with
