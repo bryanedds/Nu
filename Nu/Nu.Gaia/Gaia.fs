@@ -28,7 +28,7 @@ module Gaia =
     let mutable private rightClickPosition = v2Zero
     let mutable private dragEntityState = DragEntityInactive
     let mutable private dragEyeState = DragEyeInactive
-    let mutable private otherSnaps = (Constants.Editor.Position2dSnapDefault, Constants.Editor.Degrees2dSnapDefault, Constants.Editor.Scale2dSnapDefault)
+    let mutable private otherSnaps = (Constants.Editor.Position3dSnapDefault, Constants.Editor.Degrees3dSnapDefault, Constants.Editor.Scale3dSnapDefault)
     let mutable private filePaths = Map.empty<Group Address, string>
     let mutable private targetDir = "."
     let mutable private selectedScreen = Screen "Screen" // TODO: see if this is necessary or if we can just use World.getSelectedScreen.
@@ -1804,10 +1804,9 @@ module Gaia =
 
         // configure controls
         form.displayPanel.MaximumSize <- Drawing.Size (Constants.Render.ResolutionX, Constants.Render.ResolutionY)
-        form.snap3dButton.Checked <- true
-        form.positionSnapTextBox.Text <- scstring Constants.Editor.Position3dSnapDefault
-        form.degreesSnapTextBox.Text <- scstring Constants.Editor.Degrees3dSnapDefault
-        form.scaleSnapTextBox.Text <- scstring Constants.Editor.Scale3dSnapDefault
+        form.positionSnapTextBox.Text <- scstring Constants.Editor.Position2dSnapDefault
+        form.degreesSnapTextBox.Text <- scstring Constants.Editor.Degrees2dSnapDefault
+        form.scaleSnapTextBox.Text <- scstring Constants.Editor.Scale2dSnapDefault
         form.createElevationTextBox.Text <- scstring Constants.Editor.CreationElevationDefault
         form.propertyTabControl.SelectTab 3
 
