@@ -2579,6 +2579,7 @@ module WorldModuleEntity =
                 entityState.PositionLocal <- v3Zero
                 entityState.RotationLocal <- quatIdentity
                 entityState.ScaleLocal <- v3One
+                entityState.MountOpt <- None
                 let entity = Entity (group.GroupAddress <-- rtoa<Entity> surnames)
                 let world = World.addEntity false entityState entity world
                 (Some entity, world)
