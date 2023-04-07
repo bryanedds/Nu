@@ -158,7 +158,7 @@ void main()
     vec3 color = lightAccum + ambient;
     color = color / (color + vec3(1.0));
     color = pow(color, vec3(1.0 / GAMMA));
-    color = color + emission;
+    color = color + emission * albedo.rgb;
 
     // write
     frag = vec4(color, 1.0);

@@ -23,7 +23,7 @@ type [<StructuralEquality; NoComparison; Struct>] RenderMaterial =
     { AlbedoOpt : Color voption
       MetalnessOpt : single voption
       RoughnessOpt : single voption
-      EmissionOpt : Color voption
+      EmissionOpt : single voption
       AmbientOcclusionOpt : single voption }
 
     static member empty =
@@ -109,7 +109,7 @@ and [<ReferenceEquality>] StaticModelSurfaceDescriptor =
       MetalnessImage : Image AssetTag
       Roughness : single
       RoughnessImage : Image AssetTag
-      Emission : Color
+      Emission : single
       EmissionImage : Image AssetTag
       AmbientOcclusion : single
       AmbientOcclusionImage : Image AssetTag
@@ -750,7 +750,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 renderer.RenderAlbedosFields.[i * 4 + 3] <- albedo.A
                 renderer.RenderMaterialsFields.[i * 4] <- metalness
                 renderer.RenderMaterialsFields.[i * 4 + 1] <- roughness
-                renderer.RenderMaterialsFields.[i * 4 + 2] <- emission.R
+                renderer.RenderMaterialsFields.[i * 4 + 2] <- emission
                 renderer.RenderMaterialsFields.[i * 4 + 3] <- ambientOcclusion
 
             // draw surfaces
@@ -792,7 +792,7 @@ type [<ReferenceEquality>] GlRenderer3d =
               MetalnessTexture = metalnessTexture
               Roughness = ValueOption.defaultValue 1.0f renderMaterial.RoughnessOpt
               RoughnessTexture = roughnessTexture
-              Emission = ValueOption.defaultValue Color.White renderMaterial.EmissionOpt
+              Emission = ValueOption.defaultValue 1.0f renderMaterial.EmissionOpt
               EmissionTexture = emissionTexture
               AmbientOcclusion = ValueOption.defaultValue 1.0f renderMaterial.AmbientOcclusionOpt
               AmbientOcclusionTexture = ambientOcclusionTexture
@@ -919,7 +919,7 @@ type [<ReferenceEquality>] GlRenderer3d =
               MetalnessTexture = OpenGL.Texture.TryCreateTextureFiltered ("Assets/Default/MaterialMetalness.png") |> Either.getRight |> snd
               Roughness = 1.0f
               RoughnessTexture = OpenGL.Texture.TryCreateTextureFiltered ("Assets/Default/MaterialRoughness.png") |> Either.getRight |> snd
-              Emission = Color.White
+              Emission = 1.0f
               EmissionTexture = OpenGL.Texture.TryCreateTextureFiltered ("Assets/Default/MaterialEmission.png") |> Either.getRight |> snd
               AmbientOcclusion = 1.0f
               AmbientOcclusionTexture = OpenGL.Texture.TryCreateTextureFiltered ("Assets/Default/MaterialAmbientOcclusion.png") |> Either.getRight |> snd
