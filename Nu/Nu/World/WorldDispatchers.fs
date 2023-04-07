@@ -52,7 +52,7 @@ module StaticSpriteDispatcherModule =
         static member Properties =
             [define Entity.StaticImage Assets.Default.Image6
              define Entity.Color Color.One
-             define Entity.Glow Color.Zero
+             define Entity.Emission Color.Zero
              define Entity.InsetOpt None
              define Entity.Flip FlipNone]
 
@@ -72,7 +72,7 @@ module AnimatedSpriteDispatcherModule =
              define Entity.AnimationDelay (GameTime.ofSeconds (1.0f / 15.0f))
              define Entity.AnimationSheet Assets.Default.Image6
              define Entity.Color Color.One
-             define Entity.Glow Color.Zero
+             define Entity.Emission Color.Zero
              define Entity.Flip FlipNone]
 
 [<AutoOpen>]
@@ -204,7 +204,7 @@ module ButtonDispatcherModule =
                           Image = spriteImage
                           Color = if transform.Enabled then Color.One else entity.GetDisabledColor world
                           Blend = Transparent
-                          Glow = Color.Zero
+                          Emission = Color.Zero
                           Flip = FlipNone }}
                 world
 
@@ -242,7 +242,7 @@ module LabelDispatcherModule =
                           Image = spriteImage
                           Color = if transform.Enabled then Color.One else entity.GetDisabledColor world
                           Blend = Transparent
-                          Glow = Color.Zero
+                          Emission = Color.Zero
                           Flip = FlipNone }}
                 world
 
@@ -285,7 +285,7 @@ module TextDispatcherModule =
                               Image = spriteImage
                               Color = if transform.Enabled then Color.One else entity.GetDisabledColor world
                               Blend = Transparent
-                              Glow = Color.Zero
+                              Emission = Color.Zero
                               Flip = FlipNone }}
                     world
             | None -> world
@@ -418,7 +418,7 @@ module ToggleButtonDispatcherModule =
                           Image = spriteImage
                           Color = if transform.Enabled then Color.One else entity.GetDisabledColor world
                           Blend = Transparent
-                          Glow = Color.Zero
+                          Emission = Color.Zero
                           Flip = FlipNone }}
                 world
 
@@ -542,7 +542,7 @@ module RadioButtonDispatcherModule =
                           Image = spriteImage
                           Color = if transform.Enabled then Color.One else entity.GetDisabledColor world
                           Blend = Transparent
-                          Glow = Color.Zero
+                          Emission = Color.Zero
                           Flip = FlipNone }}
                 world
 
@@ -736,7 +736,7 @@ module FillBarDispatcherModule =
                               Image = borderImage
                               Color = borderImageColor
                               Blend = Transparent
-                              Glow = Color.Zero
+                              Emission = Color.Zero
                               Flip = FlipNone }}
                     world
 
@@ -767,7 +767,7 @@ module FillBarDispatcherModule =
                                 Image = fillImage
                                 Color = fillImageColor
                                 Blend = Transparent
-                                Glow = Color.Zero
+                                Emission = Color.Zero
                                 Flip = FlipNone }}
                     world
 
@@ -918,7 +918,7 @@ module SideViewCharacterDispatcherModule =
                           Image = image
                           Color = Color.One
                           Blend = Transparent
-                          Glow = Color.Zero
+                          Emission = Color.Zero
                           Flip = if facingLeft then FlipH else FlipNone }}
                 world
 
@@ -939,7 +939,7 @@ module TileMapDispatcherModule =
              define Entity.CollisionCategories "1"
              define Entity.CollisionMask "@"
              define Entity.Color Color.One
-             define Entity.Glow Color.Zero
+             define Entity.Emission Color.Zero
              define Entity.TileLayerClearance 2.0f
              define Entity.TileIndexOffset 0
              define Entity.TileIndexOffsetRange (0, 0)
@@ -962,7 +962,7 @@ module TmxMapDispatcherModule =
              define Entity.CollisionCategories "1"
              define Entity.CollisionMask "@"
              define Entity.Color Color.One
-             define Entity.Glow Color.Zero
+             define Entity.Emission Color.Zero
              define Entity.TileLayerClearance 2.0f
              nonPersistent Entity.TmxMap (TmxMap.makeDefault ())]
 

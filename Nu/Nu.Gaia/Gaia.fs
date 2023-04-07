@@ -486,7 +486,7 @@ module Gaia =
                                       Image = image
                                       Color = Color.One
                                       Blend = Transparent
-                                      Glow = Color.Zero
+                                      Emission = Color.Zero
                                       Flip = FlipNone }})
                         world
                 (Cascade, world)

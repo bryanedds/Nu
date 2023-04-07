@@ -1020,7 +1020,7 @@ module WorldModule2 =
                               Image = dissolveImage
                               Color = color
                               Blend = Transparent
-                              Glow = Color.Zero
+                              Emission = Color.Zero
                               Flip = FlipNone }}
                     world
             | None -> world

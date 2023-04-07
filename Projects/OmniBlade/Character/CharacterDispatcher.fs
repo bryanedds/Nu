@@ -81,7 +81,7 @@ module CharacterDispatcher =
                               Image = character.AnimationSheet
                               Color = Character.getAnimationColor time character
                               Blend = Transparent
-                              Glow = Character.getAnimationGlow time character
+                              Emission = Character.getAnimationEmission time character
                               Flip = FlipNone })
                 let afflictionView =
                     match getAfflictionInsetOpt character world with
@@ -106,7 +106,7 @@ module CharacterDispatcher =
                                   Image = afflictionImage
                                   Color = Color.One
                                   Blend = Transparent
-                                  Glow = Color.Zero
+                                  Emission = Color.Zero
                                   Flip = FlipNone })
                     | None -> View.empty
                 let chargeOrbView =
@@ -132,7 +132,7 @@ module CharacterDispatcher =
                                   Image = chargeOrbImage
                                   Color = Color.One
                                   Blend = Transparent
-                                  Glow = Color.Zero
+                                  Emission = Color.Zero
                                   Flip = FlipNone })
                     | None -> View.empty
                 Views [|characterView; afflictionView; chargeOrbView|]

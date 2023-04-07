@@ -143,7 +143,7 @@ module FieldCue =
                                 | Sprite (_, _, color, _, _, _, _) ->
                                     Prop.updatePropState
                                         (function
-                                         | SpriteState (image, _, blend, glow, flip, _) -> SpriteState (image, color.MapA ((*) progress), blend, glow, flip, true)
+                                         | SpriteState (image, _, blend, emission, flip, _) -> SpriteState (image, color.MapA ((*) progress), blend, emission, flip, true)
                                          | propState -> propState)
                                         prop
                                 | _ -> prop)

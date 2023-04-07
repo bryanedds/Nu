@@ -136,9 +136,9 @@ module StaticSpriteFacetModule =
         member this.GetBlend world : Blend = this.Get (nameof this.Blend) world
         member this.SetBlend (value : Blend) world = this.Set (nameof this.Blend) value world
         member this.Blend = lens (nameof this.Blend) this this.GetBlend this.SetBlend
-        member this.GetGlow world : Color = this.Get (nameof this.Glow) world
-        member this.SetGlow (value : Color) world = this.Set (nameof this.Glow) value world
-        member this.Glow = lens (nameof this.Glow) this this.GetGlow this.SetGlow
+        member this.GetEmission world : Color = this.Get (nameof this.Emission) world
+        member this.SetEmission (value : Color) world = this.Set (nameof this.Emission) value world
+        member this.Emission = lens (nameof this.Emission) this this.GetEmission this.SetEmission
         member this.GetFlip world : Flip = this.Get (nameof this.Flip) world
         member this.SetFlip (value : Flip) world = this.Set (nameof this.Flip) value world
         member this.Flip = lens (nameof this.Flip) this this.GetFlip this.SetFlip
@@ -150,7 +150,7 @@ module StaticSpriteFacetModule =
             [define Entity.StaticImage Assets.Default.Image6
              define Entity.Color Color.One
              define Entity.Blend Transparent
-             define Entity.Glow Color.Zero
+             define Entity.Emission Color.Zero
              define Entity.InsetOpt None
              define Entity.Flip FlipNone]
 
@@ -168,7 +168,7 @@ module StaticSpriteFacetModule =
                           Image = staticImage
                           Color = entity.GetColor world
                           Blend = entity.GetBlend world
-                          Glow = entity.GetGlow world
+                          Emission = entity.GetEmission world
                           Flip = entity.GetFlip world }}
                 world
 
@@ -225,7 +225,7 @@ module AnimatedSpriteFacetModule =
              define Entity.AnimationSheet Assets.Default.Image6
              define Entity.Color Color.One
              define Entity.Blend Transparent
-             define Entity.Glow Color.Zero
+             define Entity.Emission Color.Zero
              define Entity.Flip FlipNone]
 
         override this.Render (entity, world) =
@@ -242,7 +242,7 @@ module AnimatedSpriteFacetModule =
                           Image = animationSheet
                           Color = entity.GetColor world
                           Blend = entity.GetBlend world
-                          Glow = entity.GetGlow world
+                          Emission = entity.GetEmission world
                           Flip = entity.GetFlip world }}
                 world
 
@@ -438,7 +438,7 @@ module BasicStaticSpriteEmitterFacetModule =
              define Entity.ParticleLifeTimeMaxOpt (GameTime.ofSeconds 1.0f)
              define Entity.ParticleRate (match Constants.GameTime.DesiredFrameRate with StaticFrameRate _ -> 1.0f | DynamicFrameRate _ -> 60.0f)
              define Entity.ParticleMax 60
-             define Entity.BasicParticleSeed { Life = Particles.Life.make GameTime.zero (GameTime.ofSeconds 1.0f); Body = Particles.Body.defaultBody; Size = Constants.Engine.ParticleSize2dDefault; Offset = v3Zero; Inset = box2Zero; Color = Color.One; Glow = Color.Zero; Flip = FlipNone }
+             define Entity.BasicParticleSeed { Life = Particles.Life.make GameTime.zero (GameTime.ofSeconds 1.0f); Body = Particles.Body.defaultBody; Size = Constants.Engine.ParticleSize2dDefault; Offset = v3Zero; Inset = box2Zero; Color = Color.One; Emission = Color.Zero; Flip = FlipNone }
              define Entity.EmitterConstraint Particles.Constraint.empty
              define Entity.EmitterStyle "BasicStaticSpriteEmitter"
              nonPersistent Entity.ParticleSystem Particles.ParticleSystem.empty]
@@ -962,7 +962,7 @@ module TileMapFacetModule =
              define Entity.CollisionCategories "1"
              define Entity.CollisionMask "@"
              define Entity.Color Color.One
-             define Entity.Glow Color.Zero
+             define Entity.Emission Color.Zero
              define Entity.TileLayerClearance 2.0f
              define Entity.TileIndexOffset 0
              define Entity.TileIndexOffsetRange (0, 0)
@@ -1027,7 +1027,7 @@ module TileMapFacetModule =
                         perimeterUnscaled.Min.V2
                         transform.Elevation
                         (entity.GetColor world)
-                        (entity.GetGlow world)
+                        (entity.GetEmission world)
                         (entity.GetTileLayerClearance world)
                         (entity.GetTileIndexOffset world)
                         (entity.GetTileIndexOffsetRange world)
@@ -1060,7 +1060,7 @@ module TmxMapFacetModule =
              define Entity.CollisionCategories "1"
              define Entity.CollisionMask "@"
              define Entity.Color Color.One
-             define Entity.Glow Color.Zero
+             define Entity.Emission Color.Zero
              define Entity.TileLayerClearance 2.0f
              define Entity.TileIndexOffset 0
              define Entity.TileIndexOffsetRange (0, 0)
@@ -1122,7 +1122,7 @@ module TmxMapFacetModule =
                     perimeterUnscaled.Min.V2
                     transform.Elevation
                     (entity.GetColor world)
-                    (entity.GetGlow world)
+                    (entity.GetEmission world)
                     (entity.GetTileLayerClearance world)
                     (entity.GetTileIndexOffset world)
                     (entity.GetTileIndexOffsetRange world)
@@ -1818,7 +1818,7 @@ module BasicStaticBillboardEmitterFacetModule =
              define Entity.ParticleLifeTimeMaxOpt (GameTime.ofSeconds 1.0f)
              define Entity.ParticleRate (match Constants.GameTime.DesiredFrameRate with StaticFrameRate _ -> 1.0f | DynamicFrameRate _ -> 60.0f)
              define Entity.ParticleMax 60
-             define Entity.BasicParticleSeed { Life = Particles.Life.make GameTime.zero (GameTime.ofSeconds 1.0f); Body = Particles.Body.defaultBody; Size = Constants.Engine.ParticleSize3dDefault; Offset = v3Zero; Inset = box2Zero; Color = Color.One; Glow = Color.Zero; Flip = FlipNone }
+             define Entity.BasicParticleSeed { Life = Particles.Life.make GameTime.zero (GameTime.ofSeconds 1.0f); Body = Particles.Body.defaultBody; Size = Constants.Engine.ParticleSize3dDefault; Offset = v3Zero; Inset = box2Zero; Color = Color.One; Emission = Color.Zero; Flip = FlipNone }
              define Entity.EmitterConstraint Particles.Constraint.empty
              define Entity.EmitterStyle "BasicStaticBillboardEmitter"
              nonPersistent Entity.ParticleSystem Particles.ParticleSystem.empty]

@@ -114,6 +114,6 @@ module AvatarDispatcher =
                           Image = avatar.AnimationSheet
                           Color = Color.One
                           Blend = Transparent
-                          Glow = Color.Zero
+                          Emission = Color.Zero
                           Flip = FlipNone })
             else View.empty

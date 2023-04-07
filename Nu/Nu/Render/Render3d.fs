@@ -13,7 +13,6 @@ open Nu
 //////////////////////////////////////////////////////////////////////////////////////////
 // TODO: introduce records for a bunch of the tuples in this file!                      //
 // TODO: account for Blend in billboards (at least alpha, overwrite, and additive)      //
-// TODO: account for Glow in billboards as emissive.                                    //
 // TODO: account for Flip in billboards.                                                //
 // TODO: optimize billboard rendering with some sort of batch renderer.                 //
 //////////////////////////////////////////////////////////////////////////////////////////
@@ -1033,7 +1032,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                                 (particle.Transform.Center,
                                  particle.Transform.Rotation,
                                  particle.Transform.Size * particle.Transform.Scale)
-                        let billboardMaterial = { billboardMaterial with Albedo = billboardMaterial.Albedo * particle.Color; Emission = particle.Glow.R }
+                        let billboardMaterial = { billboardMaterial with Albedo = billboardMaterial.Albedo * particle.Color; Emission = particle.Emission.R }
                         let billboardSurface = OpenGL.PhysicallyBased.CreatePhysicallyBasedSurface ([||], m4Identity, box3Zero, billboardMaterial, renderer.RenderBillboardGeometry)
                         GlRenderer3d.categorizeBillboardSurface (absolute, eyeRotation, billboardMatrix, particle.InsetOpt, billboardMaterial.AlbedoMetadata, renderMaterial, renderType, billboardSurface, renderer)
                 | RenderStaticModelSurface (absolute, modelMatrix, insetOpt, renderMaterial, renderType, staticModel, surfaceIndex) ->

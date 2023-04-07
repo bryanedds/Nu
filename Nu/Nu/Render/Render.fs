@@ -64,7 +64,7 @@ type [<NoEquality; NoComparison; Struct>] Particle =
     { mutable Transform : Transform
       mutable InsetOpt : Box2 ValueOption
       mutable Color : Color
-      mutable Glow : Color
+      mutable Emission : Color
       mutable Flip : Flip }
 
 /// A renderer tag interface.

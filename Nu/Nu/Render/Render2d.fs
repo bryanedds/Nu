@@ -19,7 +19,7 @@ type [<NoEquality; NoComparison; Struct>] Sprite =
       mutable Image : Image AssetTag
       mutable Color : Color
       mutable Blend : Blend
-      mutable Glow : Color
+      mutable Emission : Color
       mutable Flip : Flip }
 
 /// Describes how to render a sprite to the rendering system.
@@ -29,7 +29,7 @@ type [<NoEquality; NoComparison>] SpriteDescriptor =
       Image : Image AssetTag
       Color : Color
       Blend : Blend
-      Glow : Color
+      Emission : Color
       Flip : Flip }
 
 /// Describes how to render multiple sprites to the rendering system.
@@ -48,7 +48,7 @@ type [<NoEquality; NoComparison>] CachedSpriteDescriptor =
 type [<NoEquality; NoComparison>] TilesDescriptor =
     { mutable Transform : Transform
       Color : Color
-      Glow : Color
+      Emission : Color
       MapSize : Vector2i
       Tiles : TmxLayerTile SegmentedList
       TileSourceSize : Vector2i
@@ -317,7 +317,7 @@ type [<ReferenceEquality>] GlRenderer2d =
         texture
         (color : Color)
         blend
-        (glow : Color)
+        (emission : Color)
         flip
         renderer =
 
@@ -365,9 +365,9 @@ type [<ReferenceEquality>] GlRenderer2d =
         if color.A <> 0.0f then
             OpenGL.SpriteBatch.SubmitSpriteBatchSprite (absolute, min, size, pivot, rotation, &texCoords, &color, bfs, bfd, beq, texture, renderer.RenderSpriteBatchEnv)
 
-        // attempt to draw glow sprite
-        if glow.A <> 0.0f then
-            OpenGL.SpriteBatch.SubmitSpriteBatchSprite (absolute, min, size, pivot, rotation, &texCoords, &glow, OpenGL.BlendingFactor.SrcAlpha, OpenGL.BlendingFactor.One, OpenGL.BlendEquationMode.FuncAdd, texture, renderer.RenderSpriteBatchEnv)
+        // attempt to draw emission sprite
+        if emission.A <> 0.0f then
+            OpenGL.SpriteBatch.SubmitSpriteBatchSprite (absolute, min, size, pivot, rotation, &texCoords, &emission, OpenGL.BlendingFactor.SrcAlpha, OpenGL.BlendingFactor.One, OpenGL.BlendEquationMode.FuncAdd, texture, renderer.RenderSpriteBatchEnv)
 
     /// Render sprite.
     static member renderSprite
@@ -376,7 +376,7 @@ type [<ReferenceEquality>] GlRenderer2d =
          image : Image AssetTag,
          color : Color inref,
          blend : Blend,
-         glow : Color inref,
+         emission : Color inref,
          flip : Flip,
          renderer) =
         let absolute = transform.Absolute
@@ -390,7 +390,7 @@ type [<ReferenceEquality>] GlRenderer2d =
         | ValueSome renderAsset ->
             match renderAsset with
             | TextureAsset (_, textureMetadata, texture) ->
-                GlRenderer2d.batchSprite absolute min size pivot rotation insetOpt textureMetadata texture color blend glow flip renderer
+                GlRenderer2d.batchSprite absolute min size pivot rotation insetOpt textureMetadata texture color blend emission flip renderer
             | _ -> Log.trace "Cannot render sprite with a non-texture asset."
         | _ -> Log.info ("Sprite failed to render due to unloadable asset for '" + scstring image + "'.")
 
@@ -412,10 +412,10 @@ type [<ReferenceEquality>] GlRenderer2d =
                     let pivot = transform.Pivot.V2 * Constants.Render.VirtualScalar2
                     let rotation = transform.Angles.Z
                     let color = &particle.Color
-                    let glow = &particle.Glow
+                    let emission = &particle.Emission
                     let flip = particle.Flip
                     let insetOpt = &particle.InsetOpt
-                    GlRenderer2d.batchSprite absolute min size pivot rotation insetOpt textureMetadata texture color blend glow flip renderer
+                    GlRenderer2d.batchSprite absolute min size pivot rotation insetOpt textureMetadata texture color blend emission flip renderer
                     index <- inc index
             | _ -> Log.trace "Cannot render sprite particle with a non-texture asset."
         | _ -> Log.info ("Sprite particles failed to render due to unloadable asset for '" + scstring image + "'.")
@@ -424,7 +424,7 @@ type [<ReferenceEquality>] GlRenderer2d =
     static member renderTiles
         (transform : Transform byref,
          color : Color inref,
-         glow : Color inref,
+         emission : Color inref,
          mapSize : Vector2i,
          tiles : TmxLayerTile SegmentedList,
          tileSourceSize : Vector2i,
@@ -500,7 +500,7 @@ type [<ReferenceEquality>] GlRenderer2d =
                             let tileIdPosition = tileId * tileSourceSize.X
                             let tileSourcePosition = v2 (single (tileIdPosition % tileSetWidth)) (single (tileIdPosition / tileSetWidth * tileSourceSize.Y))
                             let inset = box2 tileSourcePosition (v2 (single tileSourceSize.X) (single tileSourceSize.Y))
-                            GlRenderer2d.batchSprite absolute tileMin tileSize tilePivot 0.0f (ValueSome inset) textureMetadata texture color Transparent glow flip renderer
+                            GlRenderer2d.batchSprite absolute tileMin tileSize tilePivot 0.0f (ValueSome inset) textureMetadata texture color Transparent emission flip renderer
                         | None -> ()
 
                 tileIndex <- inc tileIndex
@@ -628,27 +628,27 @@ type [<ReferenceEquality>] GlRenderer2d =
     static member private renderDescriptor descriptor eyeCenter eyeSize renderer =
         match descriptor with
         | RenderSprite descriptor ->
-            GlRenderer2d.renderSprite (&descriptor.Transform, &descriptor.InsetOpt, descriptor.Image, &descriptor.Color, descriptor.Blend, &descriptor.Glow, descriptor.Flip, renderer)
+            GlRenderer2d.renderSprite (&descriptor.Transform, &descriptor.InsetOpt, descriptor.Image, &descriptor.Color, descriptor.Blend, &descriptor.Emission, descriptor.Flip, renderer)
         | RenderSprites descriptor ->
             let sprites = descriptor.Sprites
             for index in 0 .. sprites.Length - 1 do
                 let sprite = &sprites.[index]
-                GlRenderer2d.renderSprite (&sprite.Transform, &sprite.InsetOpt, sprite.Image, &sprite.Color, sprite.Blend, &sprite.Glow, sprite.Flip, renderer)
+                GlRenderer2d.renderSprite (&sprite.Transform, &sprite.InsetOpt, sprite.Image, &sprite.Color, sprite.Blend, &sprite.Emission, sprite.Flip, renderer)
         | RenderSpriteDescriptors descriptor ->
             let sprites = descriptor.SpriteDescriptors
             for index in 0 .. sprites.Length - 1 do
                 let sprite = sprites.[index]
-                GlRenderer2d.renderSprite (&sprite.Transform, &sprite.InsetOpt, sprite.Image, &sprite.Color, sprite.Blend, &sprite.Glow, sprite.Flip, renderer)
+                GlRenderer2d.renderSprite (&sprite.Transform, &sprite.InsetOpt, sprite.Image, &sprite.Color, sprite.Blend, &sprite.Emission, sprite.Flip, renderer)
         | RenderSpriteParticles descriptor ->
             GlRenderer2d.renderSpriteParticles (descriptor.Blend, descriptor.Image, descriptor.Particles, renderer)
         | RenderCachedSprite descriptor ->
-            GlRenderer2d.renderSprite (&descriptor.CachedSprite.Transform, &descriptor.CachedSprite.InsetOpt, descriptor.CachedSprite.Image, &descriptor.CachedSprite.Color, descriptor.CachedSprite.Blend, &descriptor.CachedSprite.Glow, descriptor.CachedSprite.Flip, renderer)
+            GlRenderer2d.renderSprite (&descriptor.CachedSprite.Transform, &descriptor.CachedSprite.InsetOpt, descriptor.CachedSprite.Image, &descriptor.CachedSprite.Color, descriptor.CachedSprite.Blend, &descriptor.CachedSprite.Emission, descriptor.CachedSprite.Flip, renderer)
         | RenderText descriptor ->
             GlRenderer2d.renderText
                 (&descriptor.Transform, descriptor.Text, descriptor.Font, &descriptor.Color, descriptor.Justification, eyeCenter, eyeSize, renderer)
         | RenderTiles descriptor ->
             GlRenderer2d.renderTiles
-                (&descriptor.Transform, &descriptor.Color, &descriptor.Glow,
+                (&descriptor.Transform, &descriptor.Color, &descriptor.Emission,
                  descriptor.MapSize, descriptor.Tiles, descriptor.TileSourceSize, descriptor.TileSize, descriptor.TileAssets,
                  eyeCenter, eyeSize, renderer)
         | RenderCallback2d callback ->
