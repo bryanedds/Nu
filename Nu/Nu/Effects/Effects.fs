@@ -689,7 +689,7 @@ module EffectSystem =
                     { AlbedoOpt = ValueSome slice.Color
                       MetalnessOpt = ValueNone
                       RoughnessOpt = ValueNone
-                      EmissionOpt = ValueNone
+                      EmissionOpt = ValueSome slice.Glow.R
                       AmbientOcclusionOpt = ValueNone }
                 let modelView =
                     Render3d
@@ -731,7 +731,7 @@ module EffectSystem =
                     { AlbedoOpt = ValueSome slice.Color
                       MetalnessOpt = ValueNone
                       RoughnessOpt = ValueNone
-                      EmissionOpt = ValueNone
+                      EmissionOpt = ValueSome slice.Glow.R
                       AmbientOcclusionOpt = ValueNone }
                 let modelView =
                     Render3d
