@@ -313,7 +313,7 @@ module TmxMap =
               Sensor = false }
         bodyProperties
 
-    let getLayeredMessages2d time absolute (viewBounds : Box2) (tileMapPosition : Vector2) tileMapElevation tileMapColor tileMapGlow tileLayerClearance tileIndexOffset tileIndexOffsetRange tileMapPackage (tileMap : TmxMap) =
+    let getLayeredMessages2d time absolute (viewBounds : Box2) (tileMapPosition : Vector2) tileMapElevation tileMapColor tileMapEmission tileLayerClearance tileIndexOffset tileIndexOffsetRange tileMapPackage (tileMap : TmxMap) =
         let layers = List.ofSeq tileMap.TileLayers
         let tileSourceSize = v2i tileMap.TileWidth tileMap.TileHeight
         let tileSize = v2 (single tileMap.TileWidth) (single tileMap.TileHeight)
@@ -413,7 +413,7 @@ module TmxMap =
                                         RenderTiles
                                             { Transform = transform
                                               Color = tileMapColor
-                                              Glow = tileMapGlow
+                                              Emission = tileMapEmission
                                               MapSize = Vector2i (tileMap.Width, tileMap.Height)
                                               Tiles = tiles
                                               TileSourceSize = tileSourceSize

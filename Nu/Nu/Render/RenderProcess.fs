@@ -258,7 +258,7 @@ type RendererThread (createRenderer3d, createRenderer2d) =
                             descriptor.CachedSprite.Image <- sprite.Image
                             descriptor.CachedSprite.Color <- sprite.Color
                             descriptor.CachedSprite.Blend <- sprite.Blend
-                            descriptor.CachedSprite.Glow <- sprite.Glow
+                            descriptor.CachedSprite.Emission <- sprite.Emission
                             descriptor.CachedSprite.Flip <- sprite.Flip
                             messageBuffers2d.[messageBufferIndex].Add cachedSpriteMessage 
                         | _ -> failwithumf ()

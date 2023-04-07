@@ -76,13 +76,13 @@ module PropDispatcher =
         override this.View (prop, entity, world) =
             if entity.GetVisible world then
                 let mutable transform = entity.GetTransform world
-                let (background, image, color, blend, glow, insetOpt, flip) =
+                let (background, image, color, blend, emission, insetOpt, flip) =
                     match prop.Prop.PropData with
                     | Sprite _ ->
                         match prop.Prop.PropState with
-                        | SpriteState (image, color, blend, glow, flip, visible) ->
+                        | SpriteState (image, color, blend, emission, flip, visible) ->
                             let image = if visible then image else Assets.Default.ImageEmpty
-                            (false, image, color, blend, glow, ValueNone, flip)
+                            (false, image, color, blend, emission, ValueNone, flip)
                         | _ ->
                             (false, Assets.Default.ImageEmpty, Color.One, Transparent, Color.Zero, ValueNone, FlipNone)
                     | Portal (portalType, _, direction, _, _, _, requirements) ->
@@ -175,15 +175,15 @@ module PropDispatcher =
                         | CharacterState (characterColor, animationState) when prop.Advents.IsSupersetOf requirements->
                             let time = World.getUpdateTime world
                             let inset = CharacterAnimationState.inset time Constants.Gameplay.CharacterCelSize animationState
-                            let (color, glow) =
+                            let (color, emission) =
                                 if isEcho then
                                     let color = characterColor.MapA ((*) 0.4f)
-                                    let glowAmount = single (time % 120L) / 120.0f
-                                    let glowAmount = if glowAmount > 0.5f then 1.0f - glowAmount else glowAmount
-                                    let glow = characterColor.MapA ((*) glowAmount)
-                                    (color, glow)
+                                    let emissionAmount = single (time % 120L) / 120.0f
+                                    let emissionAmount = if emissionAmount > 0.5f then 1.0f - emissionAmount else emissionAmount
+                                    let emission = characterColor.MapA ((*) emissionAmount)
+                                    (color, emission)
                                 else (characterColor, Color.Zero)
-                            (false, animationState.AnimationSheet, color, Transparent, glow, ValueSome inset, FlipNone)
+                            (false, animationState.AnimationSheet, color, Transparent, emission, ValueSome inset, FlipNone)
                         | _ -> (false, Assets.Default.ImageEmpty, Color.One, Transparent, Color.Zero, ValueNone, FlipNone)
                     | Npc (npcType, directionOpt, _, requirements) | NpcBranching (npcType, directionOpt, _, requirements) ->
                         if prop.Advents.IsSupersetOf requirements && NpcType.exists prop.Advents npcType then
@@ -271,6 +271,6 @@ module PropDispatcher =
                           Image = image
                           Color = color
                           Blend = blend
-                          Glow = glow
+                          Emission = emission
                           Flip = flip })
             else View.empty

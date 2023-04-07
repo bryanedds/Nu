@@ -278,7 +278,7 @@ module Character =
             else color
         color
 
-    let getAnimationGlow time (character : Character) =
+    let getAnimationEmission time (character : Character) =
         let pulseTime = time % Constants.Battle.CharacterPulseDuration
         let pulseProgress = single pulseTime / single Constants.Battle.CharacterPulseDuration
         let pulseIntensity = byte (sin (pulseProgress * single Math.PI) * 255.0f)

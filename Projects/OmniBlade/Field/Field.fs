@@ -91,7 +91,7 @@ module Field =
 
     let private makePropState time propDescriptor =
         match propDescriptor.PropData with
-        | Sprite (_, image, color, blend, glow, flip, visible) -> SpriteState (image, color, blend, glow, flip, visible)
+        | Sprite (_, image, color, blend, emission, flip, visible) -> SpriteState (image, color, blend, emission, flip, visible)
         | Door _ -> DoorState false
         | Switch _ -> SwitchState false
         | Character (characterType, direction, _, _, _, _) ->

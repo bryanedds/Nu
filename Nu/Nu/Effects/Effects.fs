@@ -50,7 +50,7 @@ type Slice =
       Inset : Box2
       Color : Color
       Blend : Blend
-      Glow : Color
+      Emission : Color
       Flip : Flip
       Brightness : single
       Intensity : single
@@ -148,7 +148,7 @@ and Aspect =
     | Inset of Box2
     | Color of Color
     | Blend of Blend
-    | Glow of Color
+    | Emission of Color
     | Flip of Flip
     | Brightness of single
     | Intensity of single
@@ -164,7 +164,7 @@ and Aspect =
     | Elevations of TweenApplicator * TweenAlgorithm * Playback * TweenKeyFrame array
     | Insets of TweenApplicator * TweenAlgorithm * Playback * TweenBox2KeyFrame array
     | Colors of TweenApplicator * TweenAlgorithm * Playback * TweenCKeyFrame array
-    | Glows of TweenApplicator * TweenAlgorithm * Playback * TweenCKeyFrame array
+    | Emissions of TweenApplicator * TweenAlgorithm * Playback * TweenCKeyFrame array
     | Volumes of TweenApplicator * TweenAlgorithm * Playback * TweenKeyFrame array
     | Expand of string * Argument array
     | Aspects of Aspect array
@@ -207,8 +207,8 @@ type Definitions =
      "Rate " +
      "Shift " +
      "Resource Expand " +
-     "Enabled PositionAbsolute PositionRelative Translation Scale Offset Angles Degrees Size Elevation Inset Color Glow Volume " +
-     "Enableds Positions Translations Scales Offsets Angleses Degreeses Sizes Elevations Insets Colors Glows Volumes Aspects " +
+     "Enabled PositionAbsolute PositionRelative Translation Scale Offset Angles Degrees Size Elevation Inset Color Emission Volume " +
+     "Enableds Positions Translations Scales Offsets Angleses Degreeses Sizes Elevations Insets Colors Emissions Volumes Aspects " +
      "Expand " +
      "StaticSprite AnimatedSprite TextSprite SoundEffect Mount Repeat Emit Delay Segment Composite Tag Nil " +
      "View",
@@ -432,7 +432,7 @@ module EffectSystem =
         | Inset inset -> { slice with Inset = inset }
         | Color color -> { slice with Color = color }
         | Blend blend -> { slice with Blend = blend }
-        | Glow glow -> { slice with Glow = glow }
+        | Emission emission -> { slice with Emission = emission }
         | Flip flip -> { slice with Flip = flip }
         | Brightness brightness -> { slice with Brightness = brightness }
         | Intensity intensity -> { slice with Intensity = intensity }
@@ -523,7 +523,7 @@ module EffectSystem =
                 let applied = applyTween Color.Multiply Color.Divide Color.Pow Color.Modulo slice.Color (Nu.Color tweened) applicator
                 { slice with Color = applied }
             else slice
-        | Glows (applicator, algorithm, playback, keyFrames) ->
+        | Emissions (applicator, algorithm, playback, keyFrames) ->
             if Array.notEmpty keyFrames then
                 let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectLocalTime playback keyFrames
                 let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
@@ -586,7 +586,7 @@ module EffectSystem =
                               Image = AssetTag.specialize<Image> image
                               Color = slice.Color
                               Blend = slice.Blend
-                              Glow = slice.Glow
+                              Emission = slice.Emission
                               Flip = slice.Flip })
                 addView spriteView effectSystem
             else effectSystem
@@ -624,7 +624,7 @@ module EffectSystem =
                                   Image = AssetTag.specialize<Image> image
                                   Color = slice.Color
                                   Blend = slice.Blend
-                                  Glow = slice.Glow
+                                  Emission = slice.Emission
                                   Flip = slice.Flip })
                     addView animatedSpriteView effectSystem
                 else effectSystem
@@ -689,7 +689,7 @@ module EffectSystem =
                     { AlbedoOpt = ValueSome slice.Color
                       MetalnessOpt = ValueNone
                       RoughnessOpt = ValueNone
-                      EmissionOpt = ValueSome slice.Glow.R
+                      EmissionOpt = ValueSome slice.Emission.R
                       AmbientOcclusionOpt = ValueNone }
                 let modelView =
                     Render3d
@@ -731,7 +731,7 @@ module EffectSystem =
                     { AlbedoOpt = ValueSome slice.Color
                       MetalnessOpt = ValueNone
                       RoughnessOpt = ValueNone
-                      EmissionOpt = ValueSome slice.Glow.R
+                      EmissionOpt = ValueSome slice.Emission.R
                       AmbientOcclusionOpt = ValueNone }
                 let modelView =
                     Render3d

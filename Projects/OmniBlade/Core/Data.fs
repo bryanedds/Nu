@@ -548,12 +548,10 @@ type MoveType =
         | None -> (translation, 1)
 
 [<Syntax
-    ("Gold Item Items Advent Advents " +
-     "Wait Timed NoWait " +
-     "Fin PlaySound PlaySong FadeOutSong Face Glow Recruit Unseal " +
-     "AddItem RemoveItem AddAdvent RemoveAdvent " +
-     "Wait Animate Fade Warp Battle Dialog Prompt " +
-     "If Not Define Assign Parallel Sequence",
+    ("Fin PlaySound PlaySong FadeOutSong Face Recruit " +
+     "AddItem RemoveItem AddAdvent RemoveAdvent ReplaceAdvent " +
+     "Wait Fade Animate Move Warp Battle Dialog Prompt " +
+     "If Not Define Assign Expand Parallel Sequence",
      "", "", "", "",
      Constants.PrettyPrinter.DefaultThresholdMin,
      Constants.PrettyPrinter.DetailedThresholdMax)>]

@@ -639,7 +639,7 @@ type [<StructuralEquality; NoComparison; Struct>] BasicParticle =
       mutable Size : Vector3
       mutable Inset : Box2
       mutable Color : Color
-      mutable Glow : Color
+      mutable Emission : Color
       mutable Flip : Flip }
     interface Particle with member this.Life with get () = this.Life and set value = this.Life <- value
 
@@ -653,7 +653,7 @@ module BasicParticle =
     let size = Scope.make (new In<_, _> (fun p v -> v <- struct (p.Life, p.Size))) (new Out<_, _> (fun v p -> p.Size <- snd' v))
     let inset = Scope.make (new In<_, _> (fun p v -> v <- struct (p.Life, p.Inset))) (new Out<_, _> (fun v p -> p.Inset <- snd' v))
     let color = Scope.make (new In<_, _> (fun p v -> v <- struct (p.Life, p.Color))) (new Out<_, _> (fun v p -> p.Color <- snd' v))
-    let glow = Scope.make (new In<_, _> (fun p v -> v <- struct (p.Life, p.Glow))) (new Out<_, _> (fun v p -> p.Glow <- snd' v))
+    let emission = Scope.make (new In<_, _> (fun p v -> v <- struct (p.Life, p.Emission))) (new Out<_, _> (fun v p -> p.Emission <- snd' v))
     let flipH =
         Scope.make
             (new In<_, _> (fun p v ->
@@ -872,7 +872,7 @@ module BasicStaticSpriteEmitter =
                 particle'.Transform.Size <- particle.Size
                 particle'.Transform.Centered <- true
                 particle'.Color <- particle.Color
-                particle'.Glow <- particle.Glow
+                particle'.Emission <- particle.Emission
                 particle'.InsetOpt <- if particle.Inset.Equals box2Zero then ValueNone else ValueSome particle.Inset
                 particle'.Flip <- particle.Flip
         { Absolute = emitter.Absolute
@@ -917,7 +917,7 @@ module BasicStaticSpriteEmitter =
               Size = Constants.Engine.ParticleSize2dDefault
               Inset = box2Zero
               Color = Color.One
-              Glow = Color.Zero
+              Emission = Color.Zero
               Flip = FlipNone }
         let particleScalar =
             match Constants.GameTime.DesiredFrameRate with
@@ -1144,7 +1144,7 @@ module BasicStaticBillboardEmitter =
                 particle'.Transform.Size <- particle.Size
                 particle'.Transform.Centered <- true
                 particle'.Color <- particle.Color
-                particle'.Glow <- particle.Glow
+                particle'.Emission <- particle.Emission
                 particle'.InsetOpt <- if particle.Inset.Equals box2Zero then ValueNone else ValueSome particle.Inset
                 particle'.Flip <- particle.Flip
         let renderMaterial =
@@ -1216,7 +1216,7 @@ module BasicStaticBillboardEmitter =
               Size = Constants.Engine.ParticleSize3dDefault
               Inset = box2Zero
               Color = Color.One
-              Glow = Color.Zero
+              Emission = Color.Zero
               Flip = FlipNone }
         let particleScalar =
             match Constants.GameTime.DesiredFrameRate with

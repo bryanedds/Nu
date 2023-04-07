@@ -407,7 +407,7 @@ module BattleDispatcher =
                                     let results = Battle.evalTech sourceIndex targetIndex techType battle |> Triple.thd
                                     let (battle, sigs) =
                                         Map.fold (fun (battle, sigs) _ (_, _, _, _, _) ->
-                                            // TODO: glow effect
+                                            // TODO: emission effect
                                             (battle, sigs))
                                             (battle, [])
                                             results
