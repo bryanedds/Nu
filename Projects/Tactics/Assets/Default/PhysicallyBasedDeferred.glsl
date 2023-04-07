@@ -30,12 +30,12 @@ layout (location = 2) in vec3 normal;
 layout (location = 3) in mat4 model;
 layout (location = 7) in vec4 texCoordsOffset;
 layout (location = 8) in vec4 albedo;
-layout (location = 9) in vec3 material;
+layout (location = 9) in vec4 material;
 
 out vec3 positionOut;
 out vec2 texCoordsOut;
 out vec4 albedoOut;
-out vec3 materialOut;
+out vec4 materialOut;
 out vec3 normalOut;
 
 void main()
@@ -59,18 +59,19 @@ const float GAMMA = 2.2;
 uniform sampler2D albedoTexture;
 uniform sampler2D metalnessTexture;
 uniform sampler2D roughnessTexture;
+uniform sampler2D emissionTexture;
 uniform sampler2D ambientOcclusionTexture;
 uniform sampler2D normalTexture;
 
 in vec3 positionOut;
 in vec2 texCoordsOut;
 in vec4 albedoOut;
-in vec3 materialOut;
+in vec4 materialOut;
 in vec3 normalOut;
 
 layout (location = 0) out vec3 position;
 layout (location = 1) out vec3 albedo;
-layout (location = 2) out vec3 material;
+layout (location = 2) out vec4 material;
 layout (location = 3) out vec3 normal;
 
 vec3 getNormal()
@@ -103,8 +104,9 @@ void main()
     // compute material properties
     float metalness = texture(metalnessTexture, texCoordsOut).r * materialOut.r;
     float roughness = texture(roughnessTexture, texCoordsOut).r * materialOut.g;
-    float ambientOcclusion = texture(ambientOcclusionTexture, texCoordsOut).r * materialOut.b;
-    material = vec3(metalness, roughness, ambientOcclusion);
+    float emission = texture(emissionTexture, texCoordsOut).r * materialOut.b;
+    float ambientOcclusion = texture(ambientOcclusionTexture, texCoordsOut).r * materialOut.a;
+    material = vec4(metalness, roughness, emission, ambientOcclusion);
 
     // compute normal
     normal = getNormal();
