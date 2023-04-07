@@ -22,7 +22,7 @@ module PhysicallyBased =
           MetalnessTexture : uint
           Roughness : single
           RoughnessTexture : uint
-          Emission : Color
+          Emission : single
           EmissionTexture : uint
           AmbientOcclusion : single
           AmbientOcclusionTexture : uint
@@ -566,8 +566,8 @@ module PhysicallyBased =
             else defaultMaterial.RoughnessTexture
         let emission =
             if material.HasTextureEmissive && material.ColorEmissive.R <> 0.0f // NOTE: special case to presume 0.0f indicates missing parameter.
-            then Color (material.ColorEmissive.R, material.ColorEmissive.G, material.ColorEmissive.B, material.ColorEmissive.A)
-            else Color.White
+            then material.ColorEmissive.R
+            else 1.0f
         let (_, emissionTexture) = material.GetMaterialTexture (Assimp.TextureType.Emissive, 0)
         let emissionTexture =
             if renderable && not (String.IsNullOrEmpty emissionTexture.FilePath) then

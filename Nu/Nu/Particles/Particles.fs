@@ -993,7 +993,7 @@ type [<ReferenceEquality>] StaticBillboardEmitter<'a when 'a :> Particle and 'a 
       MetalnessImage : Image AssetTag
       RoughnessOpt : single voption
       RoughnessImage : Image AssetTag
-      EmissionOpt : Color voption
+      EmissionOpt : single voption
       EmissionImage : Image AssetTag
       AmbientOcclusionOpt : single voption
       AmbientOcclusionImage : Image AssetTag

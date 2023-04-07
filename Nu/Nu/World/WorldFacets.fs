@@ -1458,8 +1458,8 @@ module StaticBillboardFacetModule =
         member this.GetRoughnessImage world : Image AssetTag = this.Get (nameof this.RoughnessImage) world
         member this.SetRoughnessImage (value : Image AssetTag) world = this.Set (nameof this.RoughnessImage) value world
         member this.RoughnessImage = lens (nameof this.RoughnessImage) this this.GetRoughnessImage this.SetRoughnessImage
-        member this.GetEmissionOpt world : Color option = this.Get (nameof this.EmissionOpt) world
-        member this.SetEmissionOpt (value : Color option) world = this.Set (nameof this.EmissionOpt) value world
+        member this.GetEmissionOpt world : single option = this.Get (nameof this.EmissionOpt) world
+        member this.SetEmissionOpt (value : single option) world = this.Set (nameof this.EmissionOpt) value world
         member this.EmissionOpt = lens (nameof this.EmissionOpt) this this.GetEmissionOpt this.SetEmissionOpt
         member this.GetEmissionImage world : Image AssetTag = this.Get (nameof this.EmissionImage) world
         member this.SetEmissionImage (value : Image AssetTag) world = this.Set (nameof this.EmissionImage) value world
@@ -1572,8 +1572,8 @@ module BasicStaticBillboardEmitterFacetModule =
         member this.GetEmitterRoughnessImage world : Image AssetTag = this.Get (nameof this.EmitterRoughnessImage) world
         member this.SetEmitterRoughnessImage (value : Image AssetTag) world = this.Set (nameof this.EmitterRoughnessImage) value world
         member this.EmitterRoughnessImage = lens (nameof this.EmitterRoughnessImage) this this.GetEmitterRoughnessImage this.SetEmitterRoughnessImage
-        member this.GetEmitterEmissionOpt world : Color option = this.Get (nameof this.EmitterEmissionOpt) world
-        member this.SetEmitterEmissionOpt (value : Color option) world = this.Set (nameof this.EmitterEmissionOpt) value world
+        member this.GetEmitterEmissionOpt world : single option = this.Get (nameof this.EmitterEmissionOpt) world
+        member this.SetEmitterEmissionOpt (value : single option) world = this.Set (nameof this.EmitterEmissionOpt) value world
         member this.EmitterEmissionOpt = lens (nameof this.EmitterEmissionOpt) this this.GetEmitterEmissionOpt this.SetEmitterEmissionOpt
         member this.GetEmitterEmissionImage world : Image AssetTag = this.Get (nameof this.EmitterEmissionImage) world
         member this.SetEmitterEmissionImage (value : Image AssetTag) world = this.Set (nameof this.EmitterEmissionImage) value world
@@ -1692,7 +1692,7 @@ module BasicStaticBillboardEmitterFacetModule =
             (Cascade, world)
 
         static let handleEmitterEmissionOptChange evt world =
-            let emitterEmissionOpt = evt.Data.Value :?> Color option |> ValueOption.ofOption
+            let emitterEmissionOpt = evt.Data.Value :?> single option |> ValueOption.ofOption
             let world = updateEmitter (fun emitter -> if emitter.EmissionOpt <> emitterEmissionOpt then { emitter with EmissionOpt = emitterEmissionOpt } else emitter) evt.Subscriber world
             (Cascade, world)
 
