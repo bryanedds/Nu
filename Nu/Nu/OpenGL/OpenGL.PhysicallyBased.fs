@@ -22,6 +22,8 @@ module PhysicallyBased =
           MetalnessTexture : uint
           Roughness : single
           RoughnessTexture : uint
+          Emission : Color
+          EmissionTexture : uint
           AmbientOcclusion : single
           AmbientOcclusionTexture : uint
           NormalTexture : uint
@@ -58,13 +60,14 @@ module PhysicallyBased =
             (int surface.SurfaceMaterial.AlbedoTexture) ^^^
             (int surface.SurfaceMaterial.MetalnessTexture <<< 2) ^^^
             (int surface.SurfaceMaterial.RoughnessTexture <<< 4) ^^^
-            (int surface.SurfaceMaterial.AmbientOcclusionTexture <<< 6) ^^^
-            (int surface.SurfaceMaterial.NormalTexture <<< 8) ^^^
-            (hash surface.SurfaceMaterial.TextureMinFilterOpt <<< 10) ^^^
-            (hash surface.SurfaceMaterial.TextureMagFilterOpt <<< 12) ^^^
-            (hash surface.SurfaceMaterial.TwoSided <<< 14) ^^^
-            (int surface.PhysicallyBasedGeometry.PrimitiveType <<< 16) ^^^
-            (int surface.PhysicallyBasedGeometry.PhysicallyBasedVao <<< 18)
+            (int surface.SurfaceMaterial.EmissionTexture <<< 6) ^^^
+            (int surface.SurfaceMaterial.AmbientOcclusionTexture <<< 8) ^^^
+            (int surface.SurfaceMaterial.NormalTexture <<< 10) ^^^
+            (hash surface.SurfaceMaterial.TextureMinFilterOpt <<< 12) ^^^
+            (hash surface.SurfaceMaterial.TextureMagFilterOpt <<< 14) ^^^
+            (hash surface.SurfaceMaterial.TwoSided <<< 16) ^^^
+            (int surface.PhysicallyBasedGeometry.PrimitiveType <<< 18) ^^^
+            (int surface.PhysicallyBasedGeometry.PhysicallyBasedVao <<< 20)
 
         static member inline equals left right =
             (match (left.SurfaceMaterial.TextureMinFilterOpt, right.SurfaceMaterial.TextureMinFilterOpt) with // TODO: implement voptEq.
@@ -78,6 +81,7 @@ module PhysicallyBased =
             left.SurfaceMaterial.AlbedoTexture = right.SurfaceMaterial.AlbedoTexture &&
             left.SurfaceMaterial.MetalnessTexture = right.SurfaceMaterial.MetalnessTexture &&
             left.SurfaceMaterial.RoughnessTexture = right.SurfaceMaterial.RoughnessTexture &&
+            left.SurfaceMaterial.EmissionTexture = right.SurfaceMaterial.EmissionTexture &&
             left.SurfaceMaterial.AmbientOcclusionTexture = right.SurfaceMaterial.AmbientOcclusionTexture &&
             left.SurfaceMaterial.NormalTexture = right.SurfaceMaterial.NormalTexture &&
             left.SurfaceMaterial.TwoSided = right.SurfaceMaterial.TwoSided &&
@@ -138,6 +142,7 @@ module PhysicallyBased =
           AlbedoTextureUniform : int
           MetalnessTextureUniform : int
           RoughnessTextureUniform : int
+          EmissionTextureUniform : int
           AmbientOcclusionTextureUniform : int
           NormalTextureUniform : int
           IrradianceMapUniform : int
@@ -431,14 +436,14 @@ module PhysicallyBased =
                 Gl.VertexAttribDivisor (8u, 1u)
                 Hl.Assert ()
 
-                // create material buffer (used for metalness, roughness, and ambient occlusion in that order)
+                // create material buffer (used for metalness, roughness, emission, and ambient occlusion in that order)
                 let materialBuffer = Hl.AllocBuffer ()
                 Gl.BindBuffer (BufferTarget.ArrayBuffer, materialBuffer)
-                let materialDataPtr = GCHandle.Alloc ([|1.0f; 1.0f; 1.0f|], GCHandleType.Pinned)
-                try Gl.BufferData (BufferTarget.ArrayBuffer, uint (3 * sizeof<single>), materialDataPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
+                let materialDataPtr = GCHandle.Alloc ([|1.0f; 1.0f; 1.0f; 1.0f|], GCHandleType.Pinned)
+                try Gl.BufferData (BufferTarget.ArrayBuffer, uint (4 * sizeof<single>), materialDataPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
                 finally materialDataPtr.Free ()
                 Gl.EnableVertexAttribArray 9u
-                Gl.VertexAttribPointer (9u, 3, VertexAttribType.Float, false, 3 * sizeof<single>, nativeint 0)
+                Gl.VertexAttribPointer (9u, 4, VertexAttribType.Float, false, 4 * sizeof<single>, nativeint 0)
                 Gl.VertexAttribDivisor (9u, 1u)
                 Hl.Assert ()
 
@@ -559,6 +564,17 @@ module PhysicallyBased =
                 | Right (_, texture) -> texture
                 | Left _ -> defaultMaterial.RoughnessTexture
             else defaultMaterial.RoughnessTexture
+        let emission =
+            if material.HasTextureEmissive && material.ColorEmissive.R <> 0.0f // NOTE: special case to presume 0.0f indicates missing parameter.
+            then Color (material.ColorEmissive.R, material.ColorEmissive.G, material.ColorEmissive.B, material.ColorEmissive.A)
+            else Color.White
+        let (_, emissionTexture) = material.GetMaterialTexture (Assimp.TextureType.Emissive, 0)
+        let emissionTexture =
+            if renderable && not (String.IsNullOrEmpty emissionTexture.FilePath) then
+                match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + emissionTexture.FilePath, textureMemo) with
+                | Right (_, texture) -> texture
+                | Left _ -> defaultMaterial.EmissionTexture
+            else defaultMaterial.EmissionTexture
         let ambientOcclusion =
             if material.HasColorAmbient && material.ColorAmbient.R <> 0.0f // NOTE: special case to presume 0.0f indicates missing parameter.
             then material.ColorAmbient.R
@@ -584,6 +600,8 @@ module PhysicallyBased =
           MetalnessTexture = metalnessTexture
           Roughness = roughness
           RoughnessTexture = roughnessTexture
+          Emission = emission
+          EmissionTexture = emissionTexture
           AmbientOcclusion = ambientOcclusion
           AmbientOcclusionTexture = ambientOcclusionTexture
           NormalTexture = normalTexture
@@ -713,6 +731,7 @@ module PhysicallyBased =
         let albedoTextureUniform = Gl.GetUniformLocation (shader, "albedoTexture")
         let metalnessTextureUniform = Gl.GetUniformLocation (shader, "metalnessTexture")
         let roughnessTextureUniform = Gl.GetUniformLocation (shader, "roughnessTexture")
+        let emissionTextureUniform = Gl.GetUniformLocation (shader, "emissionTexture")
         let ambientOcclusionTextureUniform = Gl.GetUniformLocation (shader, "ambientOcclusionTexture")
         let normalTextureUniform = Gl.GetUniformLocation (shader, "normalTexture")
         let irradianceMapUniform = Gl.GetUniformLocation (shader, "irradianceMap")
@@ -730,6 +749,7 @@ module PhysicallyBased =
           AlbedoTextureUniform = albedoTextureUniform
           MetalnessTextureUniform = metalnessTextureUniform
           RoughnessTextureUniform = roughnessTextureUniform
+          EmissionTextureUniform = emissionTextureUniform
           AmbientOcclusionTextureUniform = ambientOcclusionTextureUniform
           NormalTextureUniform = normalTextureUniform
           IrradianceMapUniform = irradianceMapUniform
@@ -822,11 +842,12 @@ module PhysicallyBased =
         Gl.Uniform1 (shader.AlbedoTextureUniform, 0)
         Gl.Uniform1 (shader.MetalnessTextureUniform, 1)
         Gl.Uniform1 (shader.RoughnessTextureUniform, 2)
-        Gl.Uniform1 (shader.AmbientOcclusionTextureUniform, 3)
-        Gl.Uniform1 (shader.NormalTextureUniform, 4)
-        Gl.Uniform1 (shader.IrradianceMapUniform, 5)
-        Gl.Uniform1 (shader.EnvironmentFilterMapUniform, 6)
-        Gl.Uniform1 (shader.BrdfTextureUniform, 7)
+        Gl.Uniform1 (shader.EmissionTextureUniform, 3)
+        Gl.Uniform1 (shader.AmbientOcclusionTextureUniform, 4)
+        Gl.Uniform1 (shader.NormalTextureUniform, 5)
+        Gl.Uniform1 (shader.IrradianceMapUniform, 6)
+        Gl.Uniform1 (shader.EnvironmentFilterMapUniform, 7)
+        Gl.Uniform1 (shader.BrdfTextureUniform, 8)
         Gl.Uniform3 (shader.LightOriginsUniform, lightOrigins)
         Gl.Uniform1 (shader.LightBrightnessesUniform, lightBrightnesses)
         Gl.Uniform1 (shader.LightIntensitiesUniform, lightIntensities)
@@ -841,14 +862,16 @@ module PhysicallyBased =
         Gl.ActiveTexture TextureUnit.Texture2
         Gl.BindTexture (TextureTarget.Texture2d, material.RoughnessTexture)
         Gl.ActiveTexture TextureUnit.Texture3
-        Gl.BindTexture (TextureTarget.Texture2d, material.AmbientOcclusionTexture)
+        Gl.BindTexture (TextureTarget.Texture2d, material.EmissionTexture)
         Gl.ActiveTexture TextureUnit.Texture4
-        Gl.BindTexture (TextureTarget.Texture2d, material.NormalTexture)
+        Gl.BindTexture (TextureTarget.Texture2d, material.AmbientOcclusionTexture)
         Gl.ActiveTexture TextureUnit.Texture5
-        Gl.BindTexture (TextureTarget.TextureCubeMap, irradianceMap)
+        Gl.BindTexture (TextureTarget.Texture2d, material.NormalTexture)
         Gl.ActiveTexture TextureUnit.Texture6
-        Gl.BindTexture (TextureTarget.TextureCubeMap, environmentFilterMap)
+        Gl.BindTexture (TextureTarget.TextureCubeMap, irradianceMap)
         Gl.ActiveTexture TextureUnit.Texture7
+        Gl.BindTexture (TextureTarget.TextureCubeMap, environmentFilterMap)
+        Gl.ActiveTexture TextureUnit.Texture8
         Gl.BindTexture (TextureTarget.Texture2d, brdfTexture)
         Hl.Assert ()
 
@@ -890,7 +913,7 @@ module PhysicallyBased =
         // update materials buffer
         let materialsFieldsPtr = GCHandle.Alloc (materialsFields, GCHandleType.Pinned)
         try Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.MaterialBuffer)
-            Gl.BufferData (BufferTarget.ArrayBuffer, uint (surfacesCount * 3 * sizeof<single>), materialsFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
+            Gl.BufferData (BufferTarget.ArrayBuffer, uint (surfacesCount * 4 * sizeof<single>), materialsFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
         finally materialsFieldsPtr.Free ()
         Gl.BindBuffer (BufferTarget.ArrayBuffer, 0u)
         Hl.Assert ()
