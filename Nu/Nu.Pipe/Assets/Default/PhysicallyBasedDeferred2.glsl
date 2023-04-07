@@ -86,12 +86,13 @@ void main()
     // retrieve remaining data from geometry buffer
     vec3 position = texture(positionTexture, texCoordsOut).rgb;
     vec3 albedo = texture(albedoTexture, texCoordsOut).rgb;
-    vec3 material = texture(materialTexture, texCoordsOut).rgb;
+    vec4 material = texture(materialTexture, texCoordsOut);
 
     // compute materials
     float metalness = material.r;
     float roughness = material.g;
-    float ambientOcclusion = material.b;
+    vec3 emission = vec3(material.b);
+    float ambientOcclusion = material.a;
 
     // compute lighting profile
     vec3 v = normalize(eyeCenter - position);
@@ -153,10 +154,11 @@ void main()
     // compute ambient term
     vec3 ambient = (kD * diffuse + specular) * ambientOcclusion;
 
-    // compute color w/ tone mapping and gamma correction
-    vec3 color = ambient + lightAccum;
+    // compute color w/ tone mapping, gamma correction, and emission
+    vec3 color = lightAccum + ambient;
     color = color / (color + vec3(1.0));
     color = pow(color, vec3(1.0 / GAMMA));
+    color = color + emission * albedo.rgb;
 
     // write
     frag = vec4(color, 1.0);
