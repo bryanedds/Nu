@@ -41,6 +41,7 @@ module Assets =
         let [<Literal>] MaterialAlbedoName = "MaterialAlbedo"
         let [<Literal>] MaterialMetalnessName = "MaterialMetalness"
         let [<Literal>] MaterialRoughnessName = "MaterialRoughness"
+        let [<Literal>] MaterialEmissionName = "MaterialEmission"
         let [<Literal>] MaterialAmbientOcclusionName = "MaterialAmbientOcclusion"
         let [<Literal>] MaterialNormalName = "MaterialNormal"
         let [<Literal>] SkyBoxMapName = "SkyBoxMap"

@@ -180,6 +180,7 @@ module Effect =
                                     AlbedoImage = descriptor.AlbedoImage
                                     MetalnessImage = descriptor.MetalnessImage
                                     RoughnessImage = descriptor.RoughnessImage
+                                    EmissionImage = descriptor.EmissionImage
                                     AmbientOcclusionImage = descriptor.AmbientOcclusionImage
                                     NormalImage = descriptor.NormalImage
                                     RenderType = emitter.RenderType
@@ -225,6 +226,7 @@ module Effect =
                                  descriptor.AlbedoImage,
                                  descriptor.MetalnessImage,
                                  descriptor.RoughnessImage,
+                                 descriptor.EmissionImage,
                                  descriptor.AmbientOcclusionImage,
                                  descriptor.NormalImage,
                                  descriptor.MinFilterOpt,

@@ -28,6 +28,7 @@ module CharacterDispatcher =
                 { AlbedoOpt = ValueSome Color.White
                   MetalnessOpt = ValueSome 0.0f
                   RoughnessOpt = ValueSome 1.25f
+                  EmissionOpt = ValueSome Color.White
                   AmbientOcclusionOpt = ValueSome 1.0f }
             let albedoImage = asset "Field" "Jinn"
             let inset = getSpriteInset character world
@@ -35,7 +36,7 @@ module CharacterDispatcher =
                 Render3d (
                     RenderBillboard
                         (transform.Absolute, transform.AffineMatrix, ValueSome inset, renderMaterial,
-                         albedoImage, Assets.Default.MaterialMetalness, Assets.Default.MaterialRoughness, Assets.Default.MaterialRoughness, albedoImage,
+                         albedoImage, Assets.Default.MaterialMetalness, Assets.Default.MaterialRoughness, Assets.Default.MaterialRoughness, Assets.Default.MaterialEmission, albedoImage,
                          ValueSome OpenGL.TextureMinFilter.NearestMipmapNearest, ValueSome OpenGL.TextureMagFilter.Nearest, DeferredRenderType))
             characterView
 
