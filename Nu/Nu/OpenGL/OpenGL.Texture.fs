@@ -72,7 +72,7 @@ module Texture =
                       TextureTexelWidth = 1.0f / single bitmap.Width
                       TextureTexelHeight = 1.0f / single bitmap.Height
                       TextureInternalFormat = InternalFormat.Rgba8 }
-                Some (metadata, data.Scan0, { new IDisposable with member this.Dispose () = bitmap.Dispose () })
+                Some (metadata, data.Scan0, { new IDisposable with member this.Dispose () = bitmap.UnlockBits data; bitmap.Dispose () }) // NOTE: calling UnlockBits explicitly since I can't fiture out if Dispose does.
             with _ -> None
         else
             // NOTE: System.Drawing.Bitmap is not, AFAIK, available on non-Windows platforms, so we use a slower path here.

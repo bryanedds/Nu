@@ -1091,7 +1091,7 @@ module StaticModelHierarchyDispatcherModule =
     type World with
 
         /// Attempt to import scene below the target entity.
-        static member tryImportScene rigid staticModel (parent : Either<Group, Entity>) world =
+        static member tryImportScene rigid presence staticModel (parent : Either<Group, Entity>) world =
             match Metadata.tryGetStaticModelMetadata staticModel with
             | Some staticModelMetadata ->
                 let mutable (world', i) = (world, 0) // using mutation due to imperative API
@@ -1105,6 +1105,7 @@ module StaticModelHierarchyDispatcherModule =
                                 | Left group -> (names.Length > 0, names, group)
                                 | Right entity -> (true, Array.append entity.Surnames names, entity.Group)
                             let (child, world) = World.createEntity<EntityDispatcher3d> DefaultOverlay (Some surnames) group world
+                            let world = child.SetPresence presence world
                             let world = child.SetStatic true world
                             let world = if mountToParent then child.SetMountOpt (Some (Relation.makeParent ())) world else world
                             let world = child.QuickSize world
@@ -1125,6 +1126,7 @@ module StaticModelHierarchyDispatcherModule =
                             let world = child.SetPositionLocal position world
                             let world = child.SetRotationLocal rotation world
                             let world = child.SetScaleLocal scale world
+                            let world = child.SetPresence presence world
                             let world = child.SetStatic true world
                             let world = if mountToParent then child.SetMountOpt (Some (Relation.makeParent ())) world else world
                             let world = child.QuickSize world
@@ -1149,6 +1151,7 @@ module StaticModelHierarchyDispatcherModule =
                             let world = child.SetPositionLocal position world
                             let world = child.SetRotationLocal rotation world
                             let world = child.SetScaleLocal scale world
+                            let world = child.SetPresence presence world
                             let world = child.SetStatic true world
                             let world = if mountToParent then child.SetMountOpt (Some (Relation.makeParent ())) world else world
                             let world = child.SetSurfaceIndex i world
@@ -1165,6 +1168,9 @@ module StaticModelHierarchyDispatcherModule =
             | None -> world
 
     type Entity with
+        member this.GetPresenceConferred world : Presence = this.Get (nameof this.PresenceConferred) world
+        member this.SetPresenceConferred (value : Presence) world = this.Set (nameof this.PresenceConferred) value world
+        member this.PresenceConferred = lens (nameof this.PresenceConferred) this this.GetPresenceConferred this.SetPresenceConferred
         member this.GetLoaded world : bool = this.Get (nameof this.Loaded) world
         member this.SetLoaded (value : bool) world = this.Set (nameof this.Loaded) value world
         member this.Loaded = lens (nameof this.Loaded) this this.GetLoaded this.SetLoaded
@@ -1180,20 +1186,22 @@ module StaticModelHierarchyDispatcherModule =
         static let synchronizeChildren evt world =
             let entity = evt.Subscriber : Entity
             let world = destroyChildren entity world
-            let world = World.tryImportScene false (entity.GetStaticModel world) (Right entity) world
+            let world = World.tryImportScene false (entity.GetPresenceConferred world) (entity.GetStaticModel world) (Right entity) world
             (Cascade, world)
 
         static member Properties =
             [define Entity.StaticModel Assets.Default.StaticModel
+             define Entity.PresenceConferred Exposed
              define Entity.Loaded false]
 
         override this.Register (entity, world) =
             let world =
                 if not (entity.GetLoaded world) then
-                    let world = World.tryImportScene false (entity.GetStaticModel world) (Right entity) world
+                    let world = World.tryImportScene false (entity.GetPresence world) (entity.GetStaticModel world) (Right entity) world
                     let world = entity.SetLoaded true world
                     world
                 else world
+            let world = World.monitor synchronizeChildren (entity.ChangeEvent (nameof entity.Presence)) entity world
             let world = World.monitor synchronizeChildren (entity.ChangeEvent (nameof entity.StaticModel)) entity world
             world
 
@@ -1211,20 +1219,22 @@ module RigidModelHierarchyDispatcherModule =
         static let synchronizeChildren evt world =
             let entity = evt.Subscriber : Entity
             let world = destroyChildren entity world
-            let world = World.tryImportScene true (entity.GetStaticModel world) (Right entity) world
+            let world = World.tryImportScene true (entity.GetPresenceConferred world) (entity.GetStaticModel world) (Right entity) world
             (Cascade, world)
 
         static member Properties =
             [define Entity.StaticModel Assets.Default.StaticModel
+             define Entity.PresenceConferred Exposed
              define Entity.Loaded false]
 
         override this.Register (entity, world) =
             let world =
                 if not (entity.GetLoaded world) then
-                    let world = World.tryImportScene true (entity.GetStaticModel world) (Right entity) world
+                    let world = World.tryImportScene true (entity.GetPresence world) (entity.GetStaticModel world) (Right entity) world
                     let world = entity.SetLoaded true world
                     world
                 else world
+            let world = World.monitor synchronizeChildren (entity.ChangeEvent (nameof entity.Presence)) entity world
             let world = World.monitor synchronizeChildren (entity.ChangeEvent (nameof entity.StaticModel)) entity world
             world
 
