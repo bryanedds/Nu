@@ -46,7 +46,7 @@ module Engine =
     let [<Uniform>] QuadtreeDepth = 7
     let [<Uniform>] QuadtreeSize = Vector2 65536.0f // about .85 miles
     let [<Uniform>] OctreeDepth = 7
-    let [<Uniform>] OctreeSize = Vector3 512.0f // about 1/3 mile
+    let [<Uniform>] OctreeSize = Vector3 1024.0f // about 2/3 mile
     let [<Uniform>] mutable EventTracing = match ConfigurationManager.AppSettings.["EventTracing"] with null -> false | tracing -> scvalue<bool> tracing
     let [<Uniform>] mutable EventFilter = match ConfigurationManager.AppSettings.["EventFilter"] with null -> EventFilter.Empty | filter -> scvalue<EventFilter.Filter> filter
 
@@ -77,9 +77,9 @@ module Render =
     let [<Literal>] NearPlaneDistanceEnclosed = 0.1f
     let [<Literal>] FarPlaneDistanceEnclosed = 32.0f
     let [<Literal>] NearPlaneDistanceExposed = FarPlaneDistanceEnclosed
-    let [<Literal>] FarPlaneDistanceExposed = 128.0f
+    let [<Literal>] FarPlaneDistanceExposed = 256.0f
     let [<Literal>] NearPlaneDistanceImposter = FarPlaneDistanceExposed
-    let [<Literal>] FarPlaneDistanceImposter = 512.0f
+    let [<Literal>] FarPlaneDistanceImposter = 1024.0f
     let [<Literal>] NearPlaneDistanceOmnipresent = NearPlaneDistanceEnclosed
     let [<Literal>] FarPlaneDistanceOmnipresent = FarPlaneDistanceImposter
     let [<Uniform>] ViewportMargin (windowSize : Vector2i) = let size = Vector2i (ResolutionX, ResolutionY) in Vector2i ((windowSize.X - size.X) / 2, (windowSize.Y - size.Y) / 2)
