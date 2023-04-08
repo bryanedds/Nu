@@ -1201,7 +1201,7 @@ module StaticModelHierarchyDispatcherModule =
                     let world = entity.SetLoaded true world
                     world
                 else world
-            let world = World.monitor synchronizeChildren (entity.ChangeEvent (nameof entity.Presence)) entity world
+            let world = World.monitor synchronizeChildren (entity.ChangeEvent (nameof entity.PresenceConferred)) entity world
             let world = World.monitor synchronizeChildren (entity.ChangeEvent (nameof entity.StaticModel)) entity world
             world
 
@@ -1234,7 +1234,7 @@ module RigidModelHierarchyDispatcherModule =
                     let world = entity.SetLoaded true world
                     world
                 else world
-            let world = World.monitor synchronizeChildren (entity.ChangeEvent (nameof entity.Presence)) entity world
+            let world = World.monitor synchronizeChildren (entity.ChangeEvent (nameof entity.PresenceConferred)) entity world
             let world = World.monitor synchronizeChildren (entity.ChangeEvent (nameof entity.StaticModel)) entity world
             world
 
