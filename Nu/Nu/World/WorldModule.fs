@@ -685,12 +685,12 @@ module WorldModule =
             callback eventAddress subscriber world =
             World.choose (EventSystem.subscribe<'a, 's, World> callback eventAddress subscriber world)
 
-        /// Keep active a subscription for the lifetime of a simulant, and be provided with an unsubscription callback..
+        /// Keep active a subscription for the life span of a simulant.
         static member monitorPlus<'a, 's when 's :> Simulant>
             callback eventAddress subscriber world =
             mapSnd World.choose (EventSystem.monitorPlus<'a, 's, World> callback eventAddress subscriber world)
 
-        /// Keep active a subscription for the lifetime of a simulant.
+        /// Keep active a subscription for the life span of a simulant.
         static member monitor<'a, 's when 's :> Simulant>
             callback eventAddress subscriber world =
             World.choose (EventSystem.monitor<'a, 's, World> callback eventAddress subscriber world)
