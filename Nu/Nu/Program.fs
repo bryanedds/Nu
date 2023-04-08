@@ -20,7 +20,7 @@ module Program =
             // query user to create new project
             Console.Write "Create a new game with the Nu Game Engine? [y/n]: "
             let result = Console.ReadLine ()
-            match result.ToUpper () with
+            match result.ToUpperInvariant () with
             | "Y" ->
 
                 // execute name entry
@@ -60,7 +60,7 @@ module Program =
 
                         // substitute project guid in project file
                         let projectGuid = Gen.id
-                        let projectGuidStr = projectGuid.ToString().ToUpper()
+                        let projectGuidStr = projectGuid.ToString().ToUpperInvariant()
                         let newProjStr = File.ReadAllText newProj
                         let newProjStr = newProjStr.Replace("4DBBAA23-56BA-43CB-AB63-C45D5FC1016F", projectGuidStr)
                         File.WriteAllText (newProj, newProjStr)
