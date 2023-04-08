@@ -555,7 +555,7 @@ module PhysicallyBased =
             else defaultMaterial.MetalnessTexture
         let roughness =
             if material.HasShininess
-            then 1.0f - material.Shininess
+            then 1.0f - (min material.Shininess 1.0f)
             else 1.0f
         let (_, roughnessTexture) = material.GetMaterialTexture (Assimp.TextureType.Height, 0)
         let roughnessTexture =
