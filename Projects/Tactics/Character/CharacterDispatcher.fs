@@ -24,7 +24,7 @@ module CharacterDispatcher =
 
         override this.View (character, entity, world) =
             let mutable transform = entity.GetTransform world
-            let renderMaterial =
+            let properties =
                 { AlbedoOpt = ValueSome Color.White
                   MetalnessOpt = ValueSome 0.0f
                   RoughnessOpt = ValueSome 1.25f
@@ -35,7 +35,7 @@ module CharacterDispatcher =
             let characterView =
                 Render3d (
                     RenderBillboard
-                        (transform.Absolute, transform.AffineMatrix, ValueSome inset, renderMaterial,
+                        (transform.Absolute, transform.AffineMatrix, ValueSome inset, properties,
                          albedoImage, Assets.Default.MaterialMetalness, Assets.Default.MaterialRoughness, Assets.Default.MaterialRoughness, Assets.Default.MaterialEmission, albedoImage,
                          ValueSome OpenGL.TextureMinFilter.NearestMipmapNearest, ValueSome OpenGL.TextureMagFilter.Nearest, DeferredRenderType))
             characterView

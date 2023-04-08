@@ -685,7 +685,7 @@ module EffectSystem =
                 let imageNormal = AssetTag.specialize<Image> imageNormal
                 let affineMatrix = Matrix4x4.CreateFromTrs (slice.Position, slice.Angles.RollPitchYaw, slice.Scale)
                 let insetOpt = if slice.Inset.Equals box2Zero then ValueNone else ValueSome slice.Inset
-                let renderMaterial =
+                let properties =
                     { AlbedoOpt = ValueSome slice.Color
                       MetalnessOpt = ValueNone
                       RoughnessOpt = ValueNone
@@ -697,7 +697,7 @@ module EffectSystem =
                             (effectSystem.EffectAbsolute,
                              affineMatrix,
                              insetOpt,
-                             renderMaterial,
+                             properties,
                              imageAlbedo,
                              imageMetalness,
                              imageRoughness,
@@ -727,7 +727,7 @@ module EffectSystem =
                 let staticModel = AssetTag.specialize<StaticModel> staticModel
                 let affineMatrix = Matrix4x4.CreateFromTrs (slice.Position, slice.Angles.RollPitchYaw, slice.Scale)
                 let insetOpt = if slice.Inset.Equals box2Zero then ValueNone else ValueSome slice.Inset
-                let renderMaterial =
+                let properties =
                     { AlbedoOpt = ValueSome slice.Color
                       MetalnessOpt = ValueNone
                       RoughnessOpt = ValueNone
@@ -739,7 +739,7 @@ module EffectSystem =
                             (effectSystem.EffectAbsolute,
                              affineMatrix,
                              insetOpt,
-                             renderMaterial,
+                             properties,
                              effectSystem.EffectRenderType,
                              staticModel))
                 addView modelView effectSystem
