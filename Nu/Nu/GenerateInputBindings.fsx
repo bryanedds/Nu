@@ -37,13 +37,13 @@ let upperCaseToPascalCase (original : string) =
         // split by underscores
         (fun (str : string) -> str.Split ([|'_'|], StringSplitOptions.RemoveEmptyEntries)) |>
         // set first letter to uppercase
-        (fun (strs : string array) -> strs.Select(fun w -> startsWithLowerCaseChar.Replace (w, fun m -> m.Value.ToUpper ()))) |>
+        (fun (strs : string array) -> strs.Select(fun w -> startsWithLowerCaseChar.Replace (w, fun m -> m.Value.ToUpperInvariant ()))) |>
         // replace second and all following upper case letters to lower if there is no next lower (ABC -> Abc)
-        (fun (strs : string seq) -> strs.Select (fun w -> firstCharFollowedByUpperCasesOnly.Replace(w, fun m -> m.Value.ToLower ()))) |>
+        (fun (strs : string seq) -> strs.Select (fun w -> firstCharFollowedByUpperCasesOnly.Replace(w, fun m -> m.Value.ToLowerInvariant ()))) |>
         // set upper case the first lower case following a number (Ab9cd -> Ab9Cd)
-        (fun (strs : string seq) -> strs.Select(fun w -> lowerCaseNextToNumber.Replace(w, fun m -> m.Value.ToUpper ()))) |>
+        (fun (strs : string seq) -> strs.Select(fun w -> lowerCaseNextToNumber.Replace(w, fun m -> m.Value.ToUpperInvariant ()))) |>
         // lower second and next upper case letters except the last if it follows by any lower (ABcDEf -> AbcDef)
-        (fun (strs : string seq) -> strs.Select(fun w -> upperCaseInside.Replace(w, fun m -> m.Value.ToLower ())))
+        (fun (strs : string seq) -> strs.Select(fun w -> upperCaseInside.Replace(w, fun m -> m.Value.ToLowerInvariant ())))
     String.Concat pascalCase
 
 let enumEntries (ty : Type) =

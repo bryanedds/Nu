@@ -4,6 +4,7 @@
 namespace OpenGL
 open System
 open System.Collections.Generic
+open System.IO
 open System.Runtime.InteropServices
 open SDL2
 open Prime
@@ -58,9 +59,10 @@ module Texture =
     /// Attempt to create uploadable image data from the given file path.
     /// Don't forget to dispose the last field when finished with the image data.
     let TryCreateImageData (filePath : string) =
-        match Environment.OSVersion.Platform with
-        | PlatformID.Win32NT
-        | PlatformID.Win32Windows ->
+        let platform = Environment.OSVersion.Platform
+        let fileExtension = (Path.GetExtension filePath).ToUpperInvariant ()
+        if  (platform = PlatformID.Win32NT || platform = PlatformID.Win32Windows) &&
+            fileExtension <> ".TGA" (* NOTE: Drawing.Bitmap does not seem to support .tga loading. *) then
             // NOTE: System.Drawing.Bitmap is, AFAIK, only available on non-Windows platforms, so we use a fast path here.
             try let bitmap = new Drawing.Bitmap (filePath)
                 let data = bitmap.LockBits (Drawing.Rectangle (0, 0, bitmap.Width, bitmap.Height), Drawing.Imaging.ImageLockMode.ReadOnly, Drawing.Imaging.PixelFormat.Format32bppRgb)
@@ -72,7 +74,7 @@ module Texture =
                       TextureInternalFormat = InternalFormat.Rgba8 }
                 Some (metadata, data.Scan0, { new IDisposable with member this.Dispose () = bitmap.Dispose () })
             with _ -> None
-        | _ ->
+        else
             // NOTE: System.Drawing.Bitmap is not, AFAIK, available on non-Windows platforms, so we use a slower path here.
             let format = SDL.SDL_PIXELFORMAT_ARGB8888 // seems to be the right format on Ubuntu...
             let unconvertedPtr = SDL_image.IMG_Load filePath
@@ -118,8 +120,8 @@ module Texture =
             Gl.BindTexture (TextureTarget.Texture2d, texture)
             Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, int minFilter)
             Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, int magFilter)
-            Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureWrapS, int TextureWrapMode.ClampToEdge)
-            Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureWrapT, int TextureWrapMode.ClampToEdge)
+            Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureWrapS, int TextureWrapMode.Repeat)
+            Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureWrapT, int TextureWrapMode.Repeat)
             Gl.TexParameter (TextureTarget.Texture2d, LanguagePrimitives.EnumOfValue Gl.TEXTURE_MAX_ANISOTROPY, Constants.Render.TextureAnisotropyMax) // NOTE: tho an extension, this one's considered ubiquitous.
             if generateMipmaps then Gl.GenerateMipmap TextureTarget.Texture2d
             Right (metadata, texture)

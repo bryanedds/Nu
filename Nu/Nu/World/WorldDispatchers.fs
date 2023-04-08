@@ -1094,12 +1094,6 @@ module StaticModelHierarchyDispatcherModule =
         static member tryImportScene rigid staticModel (parent : Either<Group, Entity>) world =
             match Metadata.tryGetStaticModelMetadata staticModel with
             | Some staticModelMetadata ->
-                // Unity Scene Export Instructions:
-                // 1) have FBX Exporter package installed
-                // 2) be in PBR Unity Project
-                // 3) put all desired objects in empty root GameObject
-                // 4) export root GameObject
-                // 5) delete all fbx files except the one you exported
                 let mutable (world', i) = (world, 0) // using mutation due to imperative API
                 staticModelMetadata.PhysicallyBasedStaticHierarchy.Traverse (fun nodes ->
                     for node in nodes do
