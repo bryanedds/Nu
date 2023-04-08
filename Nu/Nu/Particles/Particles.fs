@@ -1147,7 +1147,7 @@ module BasicStaticBillboardEmitter =
                 particle'.Emission <- particle.Emission
                 particle'.InsetOpt <- if particle.Inset.Equals box2Zero then ValueNone else ValueSome particle.Inset
                 particle'.Flip <- particle.Flip
-        let renderMaterial =
+        let properties =
             { AlbedoOpt = emitter.AlbedoOpt
               MetalnessOpt = emitter.MetalnessOpt
               RoughnessOpt = emitter.RoughnessOpt
@@ -1155,7 +1155,7 @@ module BasicStaticBillboardEmitter =
               AmbientOcclusionOpt = emitter.AmbientOcclusionOpt }
         let descriptor =
             { Absolute = emitter.Absolute
-              RenderMaterial = renderMaterial
+              Properties = properties
               AlbedoImage = emitter.AlbedoImage
               MetalnessImage = emitter.MetalnessImage
               RoughnessImage = emitter.RoughnessImage

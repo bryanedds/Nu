@@ -493,10 +493,10 @@ module Gaia =
             else
                 let mutable boundsMatrix = Matrix4x4.CreateScale bounds.Size
                 boundsMatrix.Translation <- bounds.Center - Vector3.Transform (v3Forward * 0.01f, World.getEyeRotation3d world) // slightly closer to eye to prevent z-fighting with selected entity
-                let renderMaterial = Unchecked.defaultof<_>
+                let properties = Unchecked.defaultof<_>
                 let renderType = ForwardRenderType (0.0f, Single.MinValue)
                 let staticModel = Assets.Default.HighlightModel
-                let world = World.enqueueRenderMessage3d (RenderStaticModel (absolute, boundsMatrix, ValueNone, renderMaterial, renderType, staticModel)) world
+                let world = World.enqueueRenderMessage3d (RenderStaticModel (absolute, boundsMatrix, ValueNone, properties, renderType, staticModel)) world
                 (Cascade, world)
         | _ -> (Cascade, world)
 

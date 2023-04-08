@@ -534,7 +534,7 @@ module PhysicallyBased =
         let albedo =
             if material.HasColorDiffuse
             then color material.ColorDiffuse.R material.ColorDiffuse.G material.ColorDiffuse.B material.ColorDiffuse.A
-            else Color.White
+            else Constants.Render.AlbedoDefault
         let (_, albedoTexture) = material.GetMaterialTexture (Assimp.TextureType.Diffuse, 0)
         let (albedoMetadata, albedoTexture) =
             if renderable && not (String.IsNullOrEmpty albedoTexture.FilePath) then
@@ -545,7 +545,7 @@ module PhysicallyBased =
         let metalness =
             if material.HasColorSpecular
             then material.ColorSpecular.R
-            else 0.0f
+            else Constants.Render.MetalnessDefault
         let (_, metalnessTexture) = material.GetMaterialTexture (Assimp.TextureType.Specular, 0)
         let metalnessTexture =
             if renderable && not (String.IsNullOrEmpty metalnessTexture.FilePath) then
@@ -554,9 +554,9 @@ module PhysicallyBased =
                 | Left _ -> defaultMaterial.MetalnessTexture
             else defaultMaterial.MetalnessTexture
         let roughness =
-            if material.HasShininess
-            then 1.0f - (min material.Shininess 1.0f)
-            else 1.0f
+            if material.HasShininess && material.Shininess <= 1.0f // NOTE: special to ignore seemingly errant values.
+            then 1.0f - min material.Shininess 1.0f
+            else Constants.Render.RoughnessDefault
         let (_, roughnessTexture) = material.GetMaterialTexture (Assimp.TextureType.Height, 0)
         let roughnessTexture =
             if renderable && not (String.IsNullOrEmpty roughnessTexture.FilePath) then
@@ -567,7 +567,7 @@ module PhysicallyBased =
         let emission =
             if material.HasTextureEmissive && material.ColorEmissive.R <> 0.0f // NOTE: special case to presume 0.0f indicates missing parameter.
             then material.ColorEmissive.R
-            else 1.0f
+            else Constants.Render.EmissionDefault
         let (_, emissionTexture) = material.GetMaterialTexture (Assimp.TextureType.Emissive, 0)
         let emissionTexture =
             if renderable && not (String.IsNullOrEmpty emissionTexture.FilePath) then
@@ -578,7 +578,7 @@ module PhysicallyBased =
         let ambientOcclusion =
             if material.HasColorAmbient && material.ColorAmbient.R <> 0.0f // NOTE: special case to presume 0.0f indicates missing parameter.
             then material.ColorAmbient.R
-            else 1.0f
+            else Constants.Render.AmbientOcclusionDefault
         let (_, ambientOcclusionTexture) = material.GetMaterialTexture (Assimp.TextureType.Ambient, 0)
         let ambientOcclusionTexture =
             if renderable && not (String.IsNullOrEmpty ambientOcclusionTexture.FilePath) then

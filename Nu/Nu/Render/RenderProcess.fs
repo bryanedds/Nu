@@ -113,7 +113,7 @@ type RendererThread (createRenderer3d, createRenderer2d) =
                         { CachedStaticModelAbsolute = Unchecked.defaultof<_>
                           CachedStaticModelAffineMatrix = Unchecked.defaultof<_>
                           CachedStaticModelInsetOpt = Unchecked.defaultof<_>
-                          CachedStaticModelRenderMaterial = Unchecked.defaultof<_>
+                          CachedStaticModelProperties = Unchecked.defaultof<_>
                           CachedStaticModelRenderType = Unchecked.defaultof<_>
                           CachedStaticModel = Unchecked.defaultof<_> }
                     let cachedStaticModelMessage = RenderCachedStaticModel staticModelDescriptor
@@ -225,14 +225,14 @@ type RendererThread (createRenderer3d, createRenderer2d) =
         member this.EnqueueMessage3d message =
             if Option.isNone taskOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
             match message with
-            | RenderStaticModel (absolute, affineMatrix, insetOpt, renderMaterial, renderType, staticModel) ->
+            | RenderStaticModel (absolute, affineMatrix, insetOpt, properties, renderType, staticModel) ->
                 let cachedStaticModelMessage = allocStaticModelMessage ()
                 match cachedStaticModelMessage with
                 | RenderCachedStaticModel cachedDescriptor ->
                     cachedDescriptor.CachedStaticModelAbsolute <- absolute
                     cachedDescriptor.CachedStaticModelAffineMatrix <- affineMatrix
                     cachedDescriptor.CachedStaticModelInsetOpt <- insetOpt
-                    cachedDescriptor.CachedStaticModelRenderMaterial <- renderMaterial
+                    cachedDescriptor.CachedStaticModelProperties <- properties
                     cachedDescriptor.CachedStaticModelRenderType <- renderType
                     cachedDescriptor.CachedStaticModel <- staticModel
                     messageBuffers3d.[messageBufferIndex].Add cachedStaticModelMessage

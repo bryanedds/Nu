@@ -60,9 +60,9 @@ module Texture =
     /// Don't forget to dispose the last field when finished with the image data.
     let TryCreateImageData (filePath : string) =
         let platform = Environment.OSVersion.Platform
-        let fileExtension = (Path.GetExtension filePath).ToUpperInvariant ()
+        let fileExtension = Path.GetExtension filePath
         if  (platform = PlatformID.Win32NT || platform = PlatformID.Win32Windows) &&
-            fileExtension <> ".TGA" (* NOTE: Drawing.Bitmap does not seem to support .tga loading. *) then
+            fileExtension <> ".tga" (* NOTE: System.Drawing.Bitmap does not seem to support .tga loading. *) then
             // NOTE: System.Drawing.Bitmap is, AFAIK, only available on non-Windows platforms, so we use a fast path here.
             try let bitmap = new Drawing.Bitmap (filePath)
                 let data = bitmap.LockBits (Drawing.Rectangle (0, 0, bitmap.Width, bitmap.Height), Drawing.Imaging.ImageLockMode.ReadOnly, Drawing.Imaging.PixelFormat.Format32bppRgb)

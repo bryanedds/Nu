@@ -146,7 +146,7 @@ type [<ReferenceEquality>] GlRenderer2d =
           RenderTextQuad : uint * uint * uint
           RenderSpriteBatchEnv : OpenGL.SpriteBatch.SpriteBatchEnv
           RenderPackages : Packages<RenderAsset, unit>
-          mutable RenderPackageCachedOpt : string * Package<RenderAsset, unit> // OPTIMIZATION: nullable for speed
+          mutable RenderPackageCachedOpt : string * Package<RenderAsset, unit> // OPTIMIZATION: nullable for speed.
           mutable RenderAssetCachedOpt : string * RenderAsset
           RenderLayeredOperations : LayeredOperation2d List
           RenderShouldBeginFrame : bool
