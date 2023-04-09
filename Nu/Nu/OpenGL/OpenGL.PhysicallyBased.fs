@@ -574,22 +574,17 @@ module PhysicallyBased =
             if material.HasShininess && material.Shininess <= 1.0f // NOTE: special to ignore seemingly errant values.
             then 1.0f - min material.Shininess 1.0f
             else Constants.Render.RoughnessDefault
-        let mutable (_, roughnessTextureSlot) = material.GetMaterialTexture (Assimp.TextureType.Height, 0)
-        if isNull roughnessTextureSlot.FilePath then roughnessTextureSlot.FilePath <- "" // ensure not null
         let roughnessTexture =
             if renderable then
-                match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + roughnessTextureSlot.FilePath, textureMemo) with
+                match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + albedoTextureSlot.FilePath.Replace ("_bc", "_g"), textureMemo) with
                 | Right (_, texture) -> texture
                 | Left _ ->
-                    match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + albedoTextureSlot.FilePath.Replace ("_bc", "_g"), textureMemo) with
+                    match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + albedoTextureSlot.FilePath.Replace ("_bc", "_m_g"), textureMemo) with
                     | Right (_, texture) -> texture
                     | Left _ ->
-                        match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + albedoTextureSlot.FilePath.Replace ("_bc", "_m_g"), textureMemo) with
+                        match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + albedoTextureSlot.FilePath.Replace ("_bc", "_m_g_ao"), textureMemo) with
                         | Right (_, texture) -> texture
-                        | Left _ ->
-                            match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + albedoTextureSlot.FilePath.Replace ("_bc", "_m_g_ao"), textureMemo) with
-                            | Right (_, texture) -> texture
-                            | Left _ -> defaultMaterial.RoughnessTexture
+                        | Left _ -> defaultMaterial.RoughnessTexture
             else defaultMaterial.RoughnessTexture
 
         // attempt to load ambient occlusion info
@@ -631,7 +626,10 @@ module PhysicallyBased =
             if renderable && not (String.IsNullOrEmpty normalTextureSlot.FilePath) then
                 match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + normalTextureSlot.FilePath, textureMemo) with
                 | Right (_, texture) -> texture
-                | Left _ -> defaultMaterial.NormalTexture
+                | Left _ ->
+                    match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + albedoTextureSlot.FilePath.Replace ("_bc", "_n"), textureMemo) with
+                    | Right (_, texture) -> texture
+                    | Left _ -> defaultMaterial.NormalTexture
             else defaultMaterial.NormalTexture
 
         // fin
