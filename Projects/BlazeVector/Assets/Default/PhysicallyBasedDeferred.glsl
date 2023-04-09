@@ -31,12 +31,14 @@ layout (location = 3) in mat4 model;
 layout (location = 7) in vec4 texCoordsOffset;
 layout (location = 8) in vec4 albedo;
 layout (location = 9) in vec4 material;
+layout (location = 10) in int invertRoughness;
 
 out vec3 positionOut;
 out vec2 texCoordsOut;
 out vec4 albedoOut;
 out vec4 materialOut;
 out vec3 normalOut;
+flat out int invertRoughnessOut;
 
 void main()
 {
@@ -48,6 +50,7 @@ void main()
     albedoOut = albedo;
     materialOut = material;
     normalOut = transpose(inverse(mat3(model))) * normal;
+    invertRoughnessOut = invertRoughness;
     gl_Position = projection * view * vec4(positionOut, 1.0);
 }
 
@@ -68,6 +71,7 @@ in vec2 texCoordsOut;
 in vec4 albedoOut;
 in vec4 materialOut;
 in vec3 normalOut;
+flat in int invertRoughnessOut;
 
 layout (location = 0) out vec3 position;
 layout (location = 1) out vec3 albedo;
@@ -103,7 +107,10 @@ void main()
 
     // compute material properties
     float metalness = texture(metalnessTexture, texCoordsOut).r * materialOut.r;
-    float roughness = texture(roughnessTexture, texCoordsOut).g * materialOut.g;
+    float roughness =
+        invertRoughnessOut == 1 ? // allow for inverting roughness for unity compatibility
+        (1.0f - texture(roughnessTexture, texCoordsOut).g) * materialOut.g :
+        texture(roughnessTexture, texCoordsOut).g * materialOut.g;
     float ambientOcclusion = texture(ambientOcclusionTexture, texCoordsOut).b * materialOut.b;
     float emission = texture(emissionTexture, texCoordsOut).r * materialOut.a;
     material = vec4(metalness, roughness, ambientOcclusion, emission);

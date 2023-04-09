@@ -29,6 +29,7 @@ module PhysicallyBased =
           NormalTexture : uint
           TextureMinFilterOpt : OpenGL.TextureMinFilter voption
           TextureMagFilterOpt : OpenGL.TextureMagFilter voption
+          InvertRoughness : bool
           TwoSided : bool }
 
     /// Describes some physically-based geometry that's loaded into VRAM.
@@ -43,6 +44,7 @@ module PhysicallyBased =
           TexCoordsOffsetBuffer : uint
           AlbedoBuffer : uint
           MaterialBuffer : uint
+          InvertRoughnessBuffer : uint
           IndexBuffer : uint
           PhysicallyBasedVao : uint }
 
@@ -367,7 +369,7 @@ module PhysicallyBased =
     let CreatePhysicallyBasedGeometry (renderable, vertexData : single Memory, indexData : int Memory, bounds) =
 
         // make buffers
-        let (vertices, indices, vertexBuffer, modelBuffer, texCoordsOffsetBuffer, albedoBuffer, materialBuffer, indexBuffer, vao) =
+        let (vertices, indices, vertexBuffer, modelBuffer, texCoordsOffsetBuffer, albedoBuffer, materialBuffer, invertRoughnessBuffer, indexBuffer, vao) =
 
             // make renderable
             if renderable then
@@ -447,6 +449,17 @@ module PhysicallyBased =
                 Gl.VertexAttribDivisor (9u, 1u)
                 Hl.Assert ()
 
+                // create invert roughness buffer
+                let invertRoughnessBuffer = Hl.AllocBuffer ()
+                Gl.BindBuffer (BufferTarget.ArrayBuffer, invertRoughnessBuffer)
+                let invertRoughnessDataPtr = GCHandle.Alloc ([|1|], GCHandleType.Pinned)
+                try Gl.BufferData (BufferTarget.ArrayBuffer, uint (sizeof<int>), invertRoughnessDataPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
+                finally invertRoughnessDataPtr.Free ()
+                Gl.EnableVertexAttribArray 10u
+                Gl.VertexAttribPointer (10u, 1, VertexAttribType.Int, false, sizeof<int>, nativeint 0)
+                Gl.VertexAttribDivisor (10u, 1u)
+                Hl.Assert ()
+
                 // create index buffer
                 let indexBuffer = Hl.AllocBuffer ()
                 Gl.BindBuffer (BufferTarget.ElementArrayBuffer, indexBuffer)
@@ -464,7 +477,7 @@ module PhysicallyBased =
                 let indices = indexData.ToArray ()
 
                 // fin
-                ([||], indices, vertexBuffer, modelBuffer, texCoordsOffsetBuffer, albedoBuffer, materialBuffer, indexBuffer, vao)
+                ([||], indices, vertexBuffer, modelBuffer, texCoordsOffsetBuffer, albedoBuffer, materialBuffer, invertRoughnessBuffer, indexBuffer, vao)
 
             // fake buffers
             else
@@ -481,7 +494,7 @@ module PhysicallyBased =
                 let indices = indexData.ToArray ()
 
                 // fin
-                (vertices, indices, 0u, 0u, 0u, 0u, 0u, 0u, 0u)
+                (vertices, indices, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u)
 
         // make physically-based geometry
         let geometry =
@@ -495,6 +508,7 @@ module PhysicallyBased =
               TexCoordsOffsetBuffer = texCoordsOffsetBuffer
               AlbedoBuffer = albedoBuffer
               MaterialBuffer = materialBuffer
+              InvertRoughnessBuffer = invertRoughnessBuffer
               IndexBuffer = indexBuffer
               PhysicallyBasedVao = vao }
 
@@ -530,6 +544,8 @@ module PhysicallyBased =
         CreatePhysicallyBasedGeometry (renderable, vertexData.AsMemory (), indexData.AsMemory (), bounds)
 
     /// Create physically-based material from an assimp mesh. falling back on default in case of missing textures.
+    /// Uses file name-based inferences to look for non-albedo files as well as determining if roughness should be
+    /// inverted to smoothness (such as when a model is imported from an fbx exported from a Unity scene).
     let CreatePhysicallyBasedMaterial (renderable, dirPath, defaultMaterial, minFilterOpt, magFilterOpt, textureMemo, material : Assimp.Material) =
 
         // attempt to load albedo info
@@ -564,9 +580,12 @@ module PhysicallyBased =
                         match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + albedoTextureSlot.FilePath.Replace ("_bc", "_m_g"), textureMemo) with
                         | Right (_, texture) -> texture
                         | Left _ ->
-                            match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + albedoTextureSlot.FilePath.Replace ("_bc", "_m_g_ao"), textureMemo) with
+                            match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + albedoTextureSlot.FilePath.Replace ("_bc", "_m_ao_g"), textureMemo) with
                             | Right (_, texture) -> texture
-                            | Left _ -> defaultMaterial.MetalnessTexture
+                            | Left _ ->
+                                match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + albedoTextureSlot.FilePath.Replace ("BaseColor", "Metallic"), textureMemo) with
+                                | Right (_, texture) -> texture
+                                | Left _ -> defaultMaterial.MetalnessTexture
             else defaultMaterial.MetalnessTexture
 
         // attempt to load roughness info
@@ -574,18 +593,21 @@ module PhysicallyBased =
             if material.HasShininess && material.Shininess <= 1.0f // NOTE: special to ignore seemingly errant values.
             then 1.0f - min material.Shininess 1.0f
             else Constants.Render.RoughnessDefault
-        let roughnessTexture =
+        let (invertRoughness, roughnessTexture) =
             if renderable then
                 match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + albedoTextureSlot.FilePath.Replace ("_bc", "_g"), textureMemo) with
-                | Right (_, texture) -> texture
+                | Right (_, texture) -> (true, texture)
                 | Left _ ->
                     match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + albedoTextureSlot.FilePath.Replace ("_bc", "_m_g"), textureMemo) with
-                    | Right (_, texture) -> texture
+                    | Right (_, texture) -> (true, texture)
                     | Left _ ->
-                        match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + albedoTextureSlot.FilePath.Replace ("_bc", "_m_g_ao"), textureMemo) with
-                        | Right (_, texture) -> texture
-                        | Left _ -> defaultMaterial.RoughnessTexture
-            else defaultMaterial.RoughnessTexture
+                        match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + albedoTextureSlot.FilePath.Replace ("_bc", "_m_ao_g"), textureMemo) with
+                        | Right (_, texture) -> (true, texture)
+                        | Left _ ->
+                            match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + albedoTextureSlot.FilePath.Replace ("BaseColor", "Roughness"), textureMemo) with
+                            | Right (_, texture) -> (false, texture)
+                            | Left _ -> (false, defaultMaterial.RoughnessTexture)
+            else (false, defaultMaterial.RoughnessTexture)
 
         // attempt to load ambient occlusion info
         let ambientOcclusion =
@@ -599,9 +621,15 @@ module PhysicallyBased =
                 match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + ambientOcclusionTextureSlot.FilePath, textureMemo) with
                 | Right (_, texture) -> texture
                 | Left _ ->
-                    match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + albedoTextureSlot.FilePath.Replace ("_bc", "_m_g_ao"), textureMemo) with
+                    match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + albedoTextureSlot.FilePath.Replace ("_bc", "_ao"), textureMemo) with
                     | Right (_, texture) -> texture
-                    | Left _ -> defaultMaterial.AmbientOcclusionTexture
+                    | Left _ ->
+                        match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + albedoTextureSlot.FilePath.Replace ("_bc", "_m_ao_g"), textureMemo) with
+                        | Right (_, texture) -> texture
+                        | Left _ ->
+                            match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + albedoTextureSlot.FilePath.Replace ("BaseColor", "AO"), textureMemo) with
+                            | Right (_, texture) -> texture
+                            | Left _ -> defaultMaterial.AmbientOcclusionTexture
             else defaultMaterial.AmbientOcclusionTexture
 
         // attempt to load emission info
@@ -617,7 +645,10 @@ module PhysicallyBased =
                 | Left _ ->
                     match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + albedoTextureSlot.FilePath.Replace ("_bc", "_e"), textureMemo) with
                     | Right (_, texture) -> texture
-                    | Left _ -> defaultMaterial.EmissionTexture
+                    | Left _ ->
+                        match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + albedoTextureSlot.FilePath.Replace ("BaseColor", "Emission"), textureMemo) with
+                        | Right (_, texture) -> texture
+                        | Left _ -> defaultMaterial.EmissionTexture
             else defaultMaterial.EmissionTexture
 
         // attempt to load normal info
@@ -629,7 +660,10 @@ module PhysicallyBased =
                 | Left _ ->
                     match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + albedoTextureSlot.FilePath.Replace ("_bc", "_n"), textureMemo) with
                     | Right (_, texture) -> texture
-                    | Left _ -> defaultMaterial.NormalTexture
+                    | Left _ ->
+                        match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + albedoTextureSlot.FilePath.Replace ("BaseColor", "Normal"), textureMemo) with
+                        | Right (_, texture) -> texture
+                        | Left _ -> defaultMaterial.NormalTexture
             else defaultMaterial.NormalTexture
 
         // fin
@@ -647,6 +681,7 @@ module PhysicallyBased =
           NormalTexture = normalTexture
           TextureMinFilterOpt = minFilterOpt
           TextureMagFilterOpt = magFilterOpt
+          InvertRoughness = invertRoughness
           TwoSided = material.IsTwoSided }
 
     /// Create a physically-based surface.
@@ -850,6 +885,7 @@ module PhysicallyBased =
          texCoordsOffsetsFields : single array,
          albedosFields : single array,
          materialsFields : single array,
+         invertRoughnessesFields : int array,
          view : single array,
          projection : single array,
          blending,
@@ -955,6 +991,14 @@ module PhysicallyBased =
         try Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.MaterialBuffer)
             Gl.BufferData (BufferTarget.ArrayBuffer, uint (surfacesCount * 4 * sizeof<single>), materialsFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
         finally materialsFieldsPtr.Free ()
+        Gl.BindBuffer (BufferTarget.ArrayBuffer, 0u)
+        Hl.Assert ()
+
+        // update invert roughness buffer
+        let invertRoughnessesFieldsPtr = GCHandle.Alloc (invertRoughnessesFields, GCHandleType.Pinned)
+        try Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.InvertRoughnessBuffer)
+            Gl.BufferData (BufferTarget.ArrayBuffer, uint (surfacesCount * sizeof<int>), invertRoughnessesFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
+        finally invertRoughnessesFieldsPtr.Free ()
         Gl.BindBuffer (BufferTarget.ArrayBuffer, 0u)
         Hl.Assert ()
 
@@ -1106,6 +1150,7 @@ module PhysicallyBased =
         Hl.FreeBuffer geometry.TexCoordsOffsetBuffer
         Hl.FreeBuffer geometry.AlbedoBuffer
         Hl.FreeBuffer geometry.MaterialBuffer
+        Hl.FreeBuffer geometry.InvertRoughnessBuffer
         Hl.FreeBuffer geometry.IndexBuffer
         Gl.BindVertexArray 0u
         Hl.FreeVertexArray geometry.PhysicallyBasedVao

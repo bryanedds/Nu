@@ -115,6 +115,7 @@ and [<ReferenceEquality>] StaticModelSurfaceDescriptor =
       NormalImage : Image AssetTag
       TextureMinFilterOpt : OpenGL.TextureMinFilter voption
       TextureMagFilterOpt : OpenGL.TextureMagFilter voption
+      InvertRoughness : bool
       TwoSided : bool }
 
 /// A message to the 3d renderer.
@@ -228,7 +229,8 @@ type [<ReferenceEquality>] GlRenderer3d =
           mutable RenderModelsFields : single array
           mutable RenderTexCoordsOffsetsFields : single array
           mutable RenderAlbedosFields : single array
-          mutable PhysicallyBasedPropertiessFields : single array
+          mutable PhysicallyBasedMaterialsFields : single array
+          mutable PhysicallyBasedInvertRoughnessesFields : int array
           mutable RenderUserDefinedStaticModelFields : single array
           RenderTasks : RenderTasks
           RenderPackages : Packages<RenderAsset, GlPackageState3d>
@@ -449,6 +451,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                       NormalTexture = match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize surfaceDescriptor.NormalImage) renderer with ValueSome (TextureAsset (_, _, texture)) -> texture | _ -> renderer.RenderPhysicallyBasedMaterial.NormalTexture
                       TextureMinFilterOpt = surfaceDescriptor.TextureMinFilterOpt
                       TextureMagFilterOpt = surfaceDescriptor.TextureMagFilterOpt
+                      InvertRoughness = surfaceDescriptor.InvertRoughness
                       TwoSided = surfaceDescriptor.TwoSided }
 
                 // create vertex data, truncating it when required
@@ -724,10 +727,16 @@ type [<ReferenceEquality>] GlRenderer3d =
                 renderer.RenderAlbedosFields <- Array.zeroCreate<single> length
 
             // ensure we have a large enough materials fields array
-            let mutable length = renderer.PhysicallyBasedPropertiessFields.Length
+            let mutable length = renderer.PhysicallyBasedMaterialsFields.Length
             while parameters.Length * 4 > length do length <- length * 2
-            if renderer.PhysicallyBasedPropertiessFields.Length < length then
-                renderer.PhysicallyBasedPropertiessFields <- Array.zeroCreate<single> length
+            if renderer.PhysicallyBasedMaterialsFields.Length < length then
+                renderer.PhysicallyBasedMaterialsFields <- Array.zeroCreate<single> length
+
+            // ensure we have a large enough invert roughnesses fields array
+            let mutable length = renderer.PhysicallyBasedInvertRoughnessesFields.Length
+            while parameters.Length > length do length <- length * 2
+            if renderer.PhysicallyBasedInvertRoughnessesFields.Length < length then
+                renderer.PhysicallyBasedInvertRoughnessesFields <- Array.zeroCreate<int> length
 
             // blit parameters to field arrays
             for i in 0 .. dec parameters.Length do
@@ -747,15 +756,16 @@ type [<ReferenceEquality>] GlRenderer3d =
                 renderer.RenderAlbedosFields.[i * 4 + 1] <- albedo.G
                 renderer.RenderAlbedosFields.[i * 4 + 2] <- albedo.B
                 renderer.RenderAlbedosFields.[i * 4 + 3] <- albedo.A
-                renderer.PhysicallyBasedPropertiessFields.[i * 4] <- metalness
-                renderer.PhysicallyBasedPropertiessFields.[i * 4 + 1] <- roughness
-                renderer.PhysicallyBasedPropertiessFields.[i * 4 + 2] <- ambientOcclusion
-                renderer.PhysicallyBasedPropertiessFields.[i * 4 + 3] <- emission
+                renderer.PhysicallyBasedMaterialsFields.[i * 4] <- metalness
+                renderer.PhysicallyBasedMaterialsFields.[i * 4 + 1] <- roughness
+                renderer.PhysicallyBasedMaterialsFields.[i * 4 + 2] <- ambientOcclusion
+                renderer.PhysicallyBasedMaterialsFields.[i * 4 + 3] <- emission
+                renderer.PhysicallyBasedInvertRoughnessesFields.[i] <- if surface.SurfaceMaterial.InvertRoughness then 1 else 0
 
             // draw surfaces
             OpenGL.PhysicallyBased.DrawPhysicallyBasedSurfaces
-                (eyeCenter, parameters.Length, renderer.RenderModelsFields, renderer.RenderTexCoordsOffsetsFields, renderer.RenderAlbedosFields, renderer.PhysicallyBasedPropertiessFields, viewArray, projectionArray,
-                 blending, irradianceMap, environmentFilterMap, brdfTexture, lightOrigins, lightColors, lightBrightnesses, lightIntensities,
+                (eyeCenter, parameters.Length, renderer.RenderModelsFields, renderer.RenderTexCoordsOffsetsFields, renderer.RenderAlbedosFields, renderer.PhysicallyBasedMaterialsFields, renderer.PhysicallyBasedInvertRoughnessesFields,
+                 viewArray, projectionArray, blending, irradianceMap, environmentFilterMap, brdfTexture, lightOrigins, lightColors, lightBrightnesses, lightIntensities,
                  surface.SurfaceMaterial, surface.PhysicallyBasedGeometry, shader)
 
     static member inline private makeBillboardMaterial (properties : PhysicallyBasedProperties) albedoImage metalnessImage roughnessImage ambientOcclusionImage emissionImage normalImage minFilterOpt magFilterOpt renderer =
@@ -798,6 +808,7 @@ type [<ReferenceEquality>] GlRenderer3d =
               NormalTexture = normalTexture
               TextureMinFilterOpt = minFilterOpt
               TextureMagFilterOpt = magFilterOpt
+              InvertRoughness = false
               TwoSided = false }
         billboardMaterial
 
@@ -925,6 +936,7 @@ type [<ReferenceEquality>] GlRenderer3d =
               NormalTexture = OpenGL.Texture.TryCreateTextureFiltered ("Assets/Default/MaterialNormal.png") |> Either.getRight |> snd
               TextureMinFilterOpt = ValueNone
               TextureMagFilterOpt = ValueNone
+              InvertRoughness = false
               TwoSided = false }
 
         // create render tasks
@@ -961,7 +973,8 @@ type [<ReferenceEquality>] GlRenderer3d =
               RenderModelsFields = Array.zeroCreate<single> (16 * Constants.Render.GeometryBatchPrealloc)
               RenderTexCoordsOffsetsFields = Array.zeroCreate<single> (4 * Constants.Render.GeometryBatchPrealloc)
               RenderAlbedosFields = Array.zeroCreate<single> (4 * Constants.Render.GeometryBatchPrealloc)
-              PhysicallyBasedPropertiessFields = Array.zeroCreate<single> (4 * Constants.Render.GeometryBatchPrealloc)
+              PhysicallyBasedMaterialsFields = Array.zeroCreate<single> (4 * Constants.Render.GeometryBatchPrealloc)
+              PhysicallyBasedInvertRoughnessesFields = Array.zeroCreate<int> Constants.Render.GeometryBatchPrealloc
               RenderUserDefinedStaticModelFields = [||]
               RenderTasks = renderTasks
               RenderPackages = dictPlus StringComparer.Ordinal []

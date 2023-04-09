@@ -59,41 +59,43 @@ module Texture =
     /// Attempt to create uploadable image data from the given file path.
     /// Don't forget to dispose the last field when finished with the image data.
     let TryCreateImageData (filePath : string) =
-        let platform = Environment.OSVersion.Platform
-        let fileExtension = Path.GetExtension filePath
-        if  (platform = PlatformID.Win32NT || platform = PlatformID.Win32Windows) &&
-            fileExtension <> ".tga" (* NOTE: System.Drawing.Bitmap does not seem to support .tga loading. *) then
-            // NOTE: System.Drawing.Bitmap is, AFAIK, only available on non-Windows platforms, so we use a fast path here.
-            try let bitmap = new Drawing.Bitmap (filePath)
-                let data = bitmap.LockBits (Drawing.Rectangle (0, 0, bitmap.Width, bitmap.Height), Drawing.Imaging.ImageLockMode.ReadOnly, Drawing.Imaging.PixelFormat.Format32bppRgb)
-                let metadata =
-                    { TextureWidth = bitmap.Width
-                      TextureHeight = bitmap.Height
-                      TextureTexelWidth = 1.0f / single bitmap.Width
-                      TextureTexelHeight = 1.0f / single bitmap.Height
-                      TextureInternalFormat = InternalFormat.Rgba8 }
-                Some (metadata, data.Scan0, { new IDisposable with member this.Dispose () = bitmap.UnlockBits data; bitmap.Dispose () }) // NOTE: calling UnlockBits explicitly since I can't fiture out if Dispose does.
-            with _ -> None
-        else
-            // NOTE: System.Drawing.Bitmap is not, AFAIK, available on non-Windows platforms, so we use a slower path here.
-            let format = SDL.SDL_PIXELFORMAT_ARGB8888 // seems to be the right format on Ubuntu...
-            let unconvertedPtr = SDL_image.IMG_Load filePath
-            if unconvertedPtr <> nativeint 0 then
-                let unconverted = Marshal.PtrToStructure<SDL.SDL_Surface> unconvertedPtr
-                let metadata =
-                    { TextureWidth = unconverted.w
-                      TextureHeight = unconverted.h
-                      TextureTexelWidth = 1.0f / single unconverted.w
-                      TextureTexelHeight = 1.0f / single unconverted.h
-                      TextureInternalFormat = InternalFormat.Rgba8 }
-                let unconvertedFormat = Marshal.PtrToStructure<SDL.SDL_PixelFormat> unconverted.format
-                if unconvertedFormat.format <> format then
-                    let convertedPtr = SDL.SDL_ConvertSurfaceFormat (unconvertedPtr, format, 0u)
-                    let converted = Marshal.PtrToStructure<SDL.SDL_Surface> convertedPtr
-                    SDL.SDL_FreeSurface unconvertedPtr // no longer need this
-                    Some (metadata, converted.pixels, { new IDisposable with member this.Dispose () = SDL.SDL_FreeSurface convertedPtr })
-                else Some (metadata, unconverted.pixels, { new IDisposable with member this.Dispose () = SDL.SDL_FreeSurface unconvertedPtr })
-            else None
+        if File.Exists filePath then
+            let platform = Environment.OSVersion.Platform
+            let fileExtension = Path.GetExtension filePath
+            if  (platform = PlatformID.Win32NT || platform = PlatformID.Win32Windows) &&
+                fileExtension <> ".tga" (* NOTE: System.Drawing.Bitmap does not seem to support .tga loading. *) then
+                // NOTE: System.Drawing.Bitmap is, AFAIK, only available on non-Windows platforms, so we use a fast path here.
+                try let bitmap = new Drawing.Bitmap (filePath)
+                    let data = bitmap.LockBits (Drawing.Rectangle (0, 0, bitmap.Width, bitmap.Height), Drawing.Imaging.ImageLockMode.ReadOnly, Drawing.Imaging.PixelFormat.Format32bppRgb)
+                    let metadata =
+                        { TextureWidth = bitmap.Width
+                          TextureHeight = bitmap.Height
+                          TextureTexelWidth = 1.0f / single bitmap.Width
+                          TextureTexelHeight = 1.0f / single bitmap.Height
+                          TextureInternalFormat = InternalFormat.Rgba8 }
+                    Some (metadata, data.Scan0, { new IDisposable with member this.Dispose () = bitmap.UnlockBits data; bitmap.Dispose () }) // NOTE: calling UnlockBits explicitly since I can't fiture out if Dispose does.
+                with _ -> None
+            else
+                // NOTE: System.Drawing.Bitmap is not, AFAIK, available on non-Windows platforms, so we use a slower path here.
+                let format = SDL.SDL_PIXELFORMAT_ARGB8888 // seems to be the right format on Ubuntu...
+                let unconvertedPtr = SDL_image.IMG_Load filePath
+                if unconvertedPtr <> nativeint 0 then
+                    let unconverted = Marshal.PtrToStructure<SDL.SDL_Surface> unconvertedPtr
+                    let metadata =
+                        { TextureWidth = unconverted.w
+                          TextureHeight = unconverted.h
+                          TextureTexelWidth = 1.0f / single unconverted.w
+                          TextureTexelHeight = 1.0f / single unconverted.h
+                          TextureInternalFormat = InternalFormat.Rgba8 }
+                    let unconvertedFormat = Marshal.PtrToStructure<SDL.SDL_PixelFormat> unconverted.format
+                    if unconvertedFormat.format <> format then
+                        let convertedPtr = SDL.SDL_ConvertSurfaceFormat (unconvertedPtr, format, 0u)
+                        let converted = Marshal.PtrToStructure<SDL.SDL_Surface> convertedPtr
+                        SDL.SDL_FreeSurface unconvertedPtr // no longer need this
+                        Some (metadata, converted.pixels, { new IDisposable with member this.Dispose () = SDL.SDL_FreeSurface convertedPtr })
+                    else Some (metadata, unconverted.pixels, { new IDisposable with member this.Dispose () = SDL.SDL_FreeSurface unconvertedPtr })
+                else None
+        else None
 
     let private TryCreateTextureInternal (textureOpt, generateMipmaps, filePath : string) =
 
