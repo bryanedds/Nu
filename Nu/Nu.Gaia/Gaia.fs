@@ -1912,9 +1912,9 @@ module Gaia =
 
         // populate rollout tab texts
         handleRefreshEventFilterClick form (EventArgs ())
-        handleLoadPreludeClick form (EventArgs ())
-        handleLoadAssetGraphClick form (EventArgs ())
-        handleLoadOverlayerClick form (EventArgs ())
+        handleLoadPreludeClick form (EventArgs ()) // TODO: handle populating without reloading the actual content.
+        handleLoadAssetGraphClick form (EventArgs ()) // TODO: handle populating without reloading the actual content.
+        handleLoadOverlayerClick form (EventArgs ()) // TODO: handle populating without reloading the actual content.
 
         // finally, show and activate form
         form.Show ()
@@ -1934,7 +1934,9 @@ module Gaia =
             let world =
                 World.setEventFilter
                     (EventFilter.NotAny
-                        [EventFilter.Pattern (Rexpr "Update", [])
+                        [EventFilter.Pattern (Rexpr "PreUpdate", [])
+                         EventFilter.Pattern (Rexpr "Update", [])
+                         EventFilter.Pattern (Rexpr "PostUpdate", [])
                          EventFilter.Pattern (Rexpr "Render", [])
                          EventFilter.Pattern (Rexpr "Change", [])
                          EventFilter.Pattern (Rexpr "BodyTransform", [])
