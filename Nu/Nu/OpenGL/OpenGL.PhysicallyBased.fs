@@ -67,9 +67,10 @@ module PhysicallyBased =
             (int surface.SurfaceMaterial.NormalTexture <<< 10) ^^^
             (hash surface.SurfaceMaterial.TextureMinFilterOpt <<< 12) ^^^
             (hash surface.SurfaceMaterial.TextureMagFilterOpt <<< 14) ^^^
-            (hash surface.SurfaceMaterial.TwoSided <<< 16) ^^^
-            (int surface.PhysicallyBasedGeometry.PrimitiveType <<< 18) ^^^
-            (int surface.PhysicallyBasedGeometry.PhysicallyBasedVao <<< 20)
+            (hash surface.SurfaceMaterial.InvertRoughness <<< 16) ^^^
+            (hash surface.SurfaceMaterial.TwoSided <<< 18) ^^^
+            (int surface.PhysicallyBasedGeometry.PrimitiveType <<< 20) ^^^
+            (int surface.PhysicallyBasedGeometry.PhysicallyBasedVao <<< 22)
 
         static member inline equals left right =
             (match (left.SurfaceMaterial.TextureMinFilterOpt, right.SurfaceMaterial.TextureMinFilterOpt) with // TODO: implement voptEq.
@@ -86,6 +87,7 @@ module PhysicallyBased =
             left.SurfaceMaterial.AmbientOcclusionTexture = right.SurfaceMaterial.AmbientOcclusionTexture &&
             left.SurfaceMaterial.EmissionTexture = right.SurfaceMaterial.EmissionTexture &&
             left.SurfaceMaterial.NormalTexture = right.SurfaceMaterial.NormalTexture &&
+            left.SurfaceMaterial.InvertRoughness = right.SurfaceMaterial.InvertRoughness &&
             left.SurfaceMaterial.TwoSided = right.SurfaceMaterial.TwoSided &&
             left.PhysicallyBasedGeometry.PrimitiveType = right.PhysicallyBasedGeometry.PrimitiveType &&
             left.PhysicallyBasedGeometry.PhysicallyBasedVao = right.PhysicallyBasedGeometry.PhysicallyBasedVao
@@ -452,11 +454,11 @@ module PhysicallyBased =
                 // create invert roughness buffer
                 let invertRoughnessBuffer = Hl.AllocBuffer ()
                 Gl.BindBuffer (BufferTarget.ArrayBuffer, invertRoughnessBuffer)
-                let invertRoughnessDataPtr = GCHandle.Alloc ([|1|], GCHandleType.Pinned)
+                let invertRoughnessDataPtr = GCHandle.Alloc ([|0|], GCHandleType.Pinned)
                 try Gl.BufferData (BufferTarget.ArrayBuffer, uint (sizeof<int>), invertRoughnessDataPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
                 finally invertRoughnessDataPtr.Free ()
                 Gl.EnableVertexAttribArray 10u
-                Gl.VertexAttribPointer (10u, 1, VertexAttribType.Int, false, sizeof<int>, nativeint 0)
+                Gl.VertexAttribIPointer (10u, 1, VertexAttribType.Int, sizeof<int>, nativeint 0)
                 Gl.VertexAttribDivisor (10u, 1u)
                 Hl.Assert ()
 

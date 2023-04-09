@@ -751,8 +751,8 @@ type [<ReferenceEquality>] GlRenderer3d =
                 renderer.RenderAlbedosFields.[i * 4 + 2] <- albedo.B
                 renderer.RenderAlbedosFields.[i * 4 + 3] <- albedo.A
                 renderer.PhysicallyBasedMaterialsFields.[i * 4] <- metalness
-                renderer.PhysicallyBasedMaterialsFields.[i * 4 + 1] <- roughness
-                renderer.PhysicallyBasedMaterialsFields.[i * 4 + 2] <- ambientOcclusion
+                renderer.PhysicallyBasedMaterialsFields.[i * 4 + 1] <- ambientOcclusion
+                renderer.PhysicallyBasedMaterialsFields.[i * 4 + 2] <- roughness
                 renderer.PhysicallyBasedMaterialsFields.[i * 4 + 3] <- emission
                 renderer.PhysicallyBasedInvertRoughnessesFields.[i] <- if surface.SurfaceMaterial.InvertRoughness then 1 else 0
 
