@@ -23,14 +23,8 @@ type [<StructuralEquality; NoComparison; Struct>] PhysicallyBasedProperties =
       MetalnessOpt : single voption
       RoughnessOpt : single voption
       AmbientOcclusionOpt : single voption
-      EmissionOpt : single voption }
-
-    static member empty =
-        { AlbedoOpt = ValueNone
-          MetalnessOpt = ValueNone
-          RoughnessOpt = ValueNone
-          AmbientOcclusionOpt = ValueNone
-          EmissionOpt = ValueNone }
+      EmissionOpt : single voption
+      InvertRoughnessOpt : bool voption }
 
 /// Describes billboard-based particles.
 type [<NoEquality; NoComparison>] BillboardParticlesDescriptor =

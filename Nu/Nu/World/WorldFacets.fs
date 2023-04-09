@@ -1479,6 +1479,9 @@ module StaticBillboardFacetModule =
         member this.GetTextureMagFilterOpt world : OpenGL.TextureMagFilter option = this.Get (nameof this.TextureMagFilterOpt) world
         member this.SetTextureMagFilterOpt (value : OpenGL.TextureMagFilter option) world = this.Set (nameof this.TextureMagFilterOpt) value world
         member this.TextureMagFilterOpt = lens (nameof this.TextureMagFilterOpt) this this.GetTextureMagFilterOpt this.SetTextureMagFilterOpt
+        member this.GetInvertRoughnessOpt world : bool option = this.Get (nameof this.InvertRoughnessOpt) world
+        member this.SetInvertRoughnessOpt (value : bool option) world = this.Set (nameof this.InvertRoughnessOpt) value world
+        member this.InvertRoughnessOpt = lens (nameof this.InvertRoughnessOpt) this this.GetInvertRoughnessOpt this.SetInvertRoughnessOpt
         member this.GetRenderStyle world : RenderStyle = this.Get (nameof this.RenderStyle) world
         member this.SetRenderStyle (value : RenderStyle) world = this.Set (nameof this.RenderStyle) value world
         member this.RenderStyle = lens (nameof this.RenderStyle) this this.GetRenderStyle this.SetRenderStyle
@@ -1501,6 +1504,7 @@ module StaticBillboardFacetModule =
              define Entity.NormalImage Assets.Default.MaterialNormal
              define Entity.TextureMinFilterOpt None
              define Entity.TextureMagFilterOpt None
+             define Entity.InvertRoughnessOpt None
              define Entity.RenderStyle Deferred]
 
         override this.Render (entity, world) =
@@ -1513,7 +1517,8 @@ module StaticBillboardFacetModule =
                   MetalnessOpt = match entity.GetMetalnessOpt world with Some metalness -> ValueSome metalness | None -> ValueNone
                   RoughnessOpt = match entity.GetRoughnessOpt world with Some roughness -> ValueSome roughness | None -> ValueNone
                   AmbientOcclusionOpt = match entity.GetAmbientOcclusionOpt world with Some ambientOcclusion -> ValueSome ambientOcclusion | None -> ValueNone
-                  EmissionOpt = match entity.GetEmissionOpt world with Some emission -> ValueSome emission | None -> ValueNone }
+                  EmissionOpt = match entity.GetEmissionOpt world with Some emission -> ValueSome emission | None -> ValueNone
+                  InvertRoughnessOpt = match entity.GetInvertRoughnessOpt world with Some invertRoughness -> ValueSome invertRoughness | None -> ValueNone }
             let albedoImage = entity.GetAlbedoImage world
             let metalnessImage = entity.GetMetalnessImage world
             let roughnessImage = entity.GetRoughnessImage world
@@ -1593,6 +1598,9 @@ module BasicStaticBillboardEmitterFacetModule =
         member this.GetEmitterMagFilterOpt world : OpenGL.TextureMagFilter option = this.Get (nameof this.EmitterMagFilterOpt) world
         member this.SetEmitterMagFilterOpt (value : OpenGL.TextureMagFilter option) world = this.Set (nameof this.EmitterMagFilterOpt) value world
         member this.EmitterMagFilterOpt = lens (nameof this.EmitterMagFilterOpt) this this.GetEmitterMagFilterOpt this.SetEmitterMagFilterOpt
+        member this.GetEmitterInvertRoughnessOpt world : bool option = this.Get (nameof this.EmitterInvertRoughnessOpt) world
+        member this.SetEmitterInvertRoughnessOpt (value : bool option) world = this.Set (nameof this.EmitterInvertRoughnessOpt) value world
+        member this.EmitterInvertRoughnessOpt = lens (nameof this.EmitterInvertRoughnessOpt) this this.GetEmitterInvertRoughnessOpt this.SetEmitterInvertRoughnessOpt
         member this.GetEmitterRenderType world : RenderType = this.Get (nameof this.EmitterRenderType) world
         member this.SetEmitterRenderType (value : RenderType) world = this.Set (nameof this.EmitterRenderType) value world
         member this.EmitterRenderType = lens (nameof this.EmitterRenderType) this this.GetEmitterRenderType this.SetEmitterRenderType
@@ -1882,7 +1890,8 @@ module BasicStaticBillboardEmitterFacetModule =
                               MetalnessOpt = match entity.GetEmitterMetalnessOpt world with Some metalness -> ValueSome metalness | None -> ValueNone
                               RoughnessOpt = match entity.GetEmitterRoughnessOpt world with Some roughness -> ValueSome roughness | None -> ValueNone
                               AmbientOcclusionOpt = match entity.GetEmitterAmbientOcclusionOpt world with Some ambientOcclusion -> ValueSome ambientOcclusion | None -> ValueNone
-                              EmissionOpt = match entity.GetEmitterEmissionOpt world with Some emission -> ValueSome emission | None -> ValueNone }
+                              EmissionOpt = match entity.GetEmitterEmissionOpt world with Some emission -> ValueSome emission | None -> ValueNone
+                              InvertRoughnessOpt = match entity.GetEmitterInvertRoughnessOpt world with Some invertRoughness -> ValueSome invertRoughness | None -> ValueNone }
                         Some
                             (RenderBillboardParticles
                                 (descriptor.Absolute,
@@ -1938,6 +1947,7 @@ module StaticModelFacetModule =
              define Entity.RoughnessOpt None
              define Entity.AmbientOcclusionOpt None
              define Entity.EmissionOpt None
+             define Entity.InvertRoughnessOpt None
              define Entity.RenderStyle Deferred]
 
         override this.Register (entity, world) =
@@ -1956,7 +1966,8 @@ module StaticModelFacetModule =
                   MetalnessOpt = match entity.GetMetalnessOpt world with Some metalness -> ValueSome metalness | None -> ValueNone
                   RoughnessOpt = match entity.GetRoughnessOpt world with Some roughness -> ValueSome roughness | None -> ValueNone
                   AmbientOcclusionOpt = match entity.GetAmbientOcclusionOpt world with Some ambientOcclusion -> ValueSome ambientOcclusion | None -> ValueNone
-                  EmissionOpt = match entity.GetEmissionOpt world with Some emission -> ValueSome emission | None -> ValueNone }
+                  EmissionOpt = match entity.GetEmissionOpt world with Some emission -> ValueSome emission | None -> ValueNone
+                  InvertRoughnessOpt = match entity.GetInvertRoughnessOpt world with Some invertRoughness -> ValueSome invertRoughness | None -> ValueNone }
             let renderType =
                 match entity.GetRenderStyle world with
                 | Deferred -> DeferredRenderType
@@ -2043,6 +2054,7 @@ module StaticModelSurfaceFacetModule =
              define Entity.RoughnessOpt None
              define Entity.AmbientOcclusionOpt None
              define Entity.EmissionOpt None
+             define Entity.InvertRoughnessOpt None
              define Entity.RenderStyle Deferred]
 
         override this.Register (entity, world) =
@@ -2065,7 +2077,8 @@ module StaticModelSurfaceFacetModule =
                       MetalnessOpt = match entity.GetMetalnessOpt world with Some metalness -> ValueSome metalness | None -> ValueNone
                       RoughnessOpt = match entity.GetRoughnessOpt world with Some roughness -> ValueSome roughness | None -> ValueNone
                       AmbientOcclusionOpt = match entity.GetAmbientOcclusionOpt world with Some ambientOcclusion -> ValueSome ambientOcclusion | None -> ValueNone
-                      EmissionOpt = match entity.GetEmissionOpt world with Some emission -> ValueSome emission | None -> ValueNone }
+                      EmissionOpt = match entity.GetEmissionOpt world with Some emission -> ValueSome emission | None -> ValueNone
+                      InvertRoughnessOpt = match entity.GetInvertRoughnessOpt world with Some invertRoughness -> ValueSome invertRoughness | None -> ValueNone }
                 let renderType =
                     match entity.GetRenderStyle world with
                     | Deferred -> DeferredRenderType
