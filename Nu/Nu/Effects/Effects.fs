@@ -690,7 +690,8 @@ module EffectSystem =
                       MetalnessOpt = ValueNone
                       RoughnessOpt = ValueNone
                       AmbientOcclusionOpt = ValueNone
-                      EmissionOpt = ValueSome slice.Emission.R }
+                      EmissionOpt = ValueSome slice.Emission.R
+                      InvertRoughnessOpt = ValueNone }
                 let modelView =
                     Render3d
                         (RenderBillboard
@@ -732,7 +733,8 @@ module EffectSystem =
                       MetalnessOpt = ValueNone
                       RoughnessOpt = ValueNone
                       AmbientOcclusionOpt = ValueNone
-                      EmissionOpt = ValueSome slice.Emission.R }
+                      EmissionOpt = ValueSome slice.Emission.R
+                      InvertRoughnessOpt = ValueNone }
                 let modelView =
                     Render3d
                         (RenderStaticModel
