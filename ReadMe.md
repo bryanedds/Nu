@@ -25,11 +25,8 @@ A critical battle with evil itself!
 ![image](https://user-images.githubusercontent.com/1625560/212570637-69cfd2c9-3b61-4d7a-82ce-933582f130e5.png)
 Live editing a cutscene.
 
-![image](https://user-images.githubusercontent.com/1625560/181411155-d66b3c98-3506-42f7-8974-34b7eb5de877.png)
+![image](https://user-images.githubusercontent.com/1625560/230748810-8ed5f1de-910e-468c-be14-7db7ccb14dca.png)
 Editing a 3D scene imported from Unity in Nu's editor, Gaia.
-
-![image](https://user-images.githubusercontent.com/1625560/181410397-8b89a9bb-9007-4518-af6f-f11e56e58ab4.png)
-A Tactics-style game I'm working on with the new deferred, physically-based 3D renderer.
 
 Getting Started
 ===============
