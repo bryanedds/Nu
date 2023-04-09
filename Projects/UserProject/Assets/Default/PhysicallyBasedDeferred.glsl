@@ -103,10 +103,10 @@ void main()
 
     // compute material properties
     float metalness = texture(metalnessTexture, texCoordsOut).r * materialOut.r;
-    float roughness = texture(roughnessTexture, texCoordsOut).r * materialOut.g;
-    float emission = texture(emissionTexture, texCoordsOut).r * materialOut.b;
-    float ambientOcclusion = texture(ambientOcclusionTexture, texCoordsOut).r * materialOut.a;
-    material = vec4(metalness, roughness, emission, ambientOcclusion);
+    float roughness = texture(roughnessTexture, texCoordsOut).g * materialOut.g;
+    float ambientOcclusion = texture(ambientOcclusionTexture, texCoordsOut).b * materialOut.b;
+    float emission = texture(emissionTexture, texCoordsOut).r * materialOut.a;
+    material = vec4(metalness, roughness, ambientOcclusion, emission);
 
     // compute normal
     normal = getNormal();

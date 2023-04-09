@@ -146,9 +146,9 @@ void main()
 
     // compute material properties
     float metalness = texture(metalnessTexture, texCoordsOut).r * materialOut.r;
-    float roughness = texture(roughnessTexture, texCoordsOut).r * materialOut.g;
-    vec3 emission = vec3(texture(emissionTexture, texCoordsOut).r * materialOut.b);
-    float ambientOcclusion = texture(ambientOcclusionTexture, texCoordsOut).r * materialOut.a;
+    float roughness = texture(roughnessTexture, texCoordsOut).g * materialOut.g;
+    float ambientOcclusion = texture(ambientOcclusionTexture, texCoordsOut).b * materialOut.b;
+    vec3 emission = vec3(texture(emissionTexture, texCoordsOut).r * materialOut.a);
 
     // compute lighting profile
     vec3 n = getNormal();
