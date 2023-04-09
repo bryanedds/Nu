@@ -537,7 +537,7 @@ module PhysicallyBased =
             if material.HasColorDiffuse
             then color material.ColorDiffuse.R material.ColorDiffuse.G material.ColorDiffuse.B material.ColorDiffuse.A
             else Constants.Render.AlbedoDefault
-        let mutable (_, albedoTextureSlot) = material.GetMaterialTexture(Assimp.TextureType.Diffuse, 0)
+        let mutable (_, albedoTextureSlot) = material.GetMaterialTexture (Assimp.TextureType.Diffuse, 0)
         if isNull albedoTextureSlot.FilePath then albedoTextureSlot.FilePath <- "" // ensure not null
         let (albedoMetadata, albedoTexture) =
             if renderable then
