@@ -103,10 +103,10 @@ module Render =
     let [<Literal>] EnvironmentFilterResolution = 128
     let [<Literal>] EnvironmentFilterMips = 5 // NOTE: changing this requires changing the REFLECTION_LOD_MAX constants in shader code.
     let [<Uniform>] AlbedoDefault = Color.White
-    let [<Literal>] MetalnessDefault = 0.0f
-    let [<Literal>] RoughnessDefault = 0.25f
-    let [<Literal>] EmissionDefault = 1.0f
+    let [<Literal>] MetalnessDefault = 1.0f
+    let [<Literal>] RoughnessDefault = 1.0f
     let [<Literal>] AmbientOcclusionDefault = 1.0f
+    let [<Literal>] EmissionDefault = 1.0f
 
 [<RequireQualifiedAccess>]
 module Assimp =

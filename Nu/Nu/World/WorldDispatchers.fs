@@ -1016,10 +1016,10 @@ module StaticBillboardDispatcherModule =
              define Entity.MetalnessImage Assets.Default.MaterialMetalness
              define Entity.RoughnessOpt None
              define Entity.RoughnessImage Assets.Default.MaterialRoughness
-             define Entity.EmissionOpt None
-             define Entity.EmissionImage Assets.Default.MaterialEmission
              define Entity.AmbientOcclusionOpt None
              define Entity.AmbientOcclusionImage Assets.Default.MaterialAmbientOcclusion
+             define Entity.EmissionOpt None
+             define Entity.EmissionImage Assets.Default.MaterialEmission
              define Entity.NormalImage Assets.Default.MaterialNormal
              define Entity.RenderStyle Deferred]
 
@@ -1159,8 +1159,8 @@ module StaticModelHierarchyDispatcherModule =
                             let world = child.SetAlbedoOpt (Some surface.SurfaceMaterial.Albedo) world
                             let world = child.SetMetalnessOpt (Some surface.SurfaceMaterial.Metalness) world
                             let world = child.SetRoughnessOpt (Some surface.SurfaceMaterial.Roughness) world
-                            let world = child.SetEmissionOpt (Some surface.SurfaceMaterial.Emission) world
                             let world = child.SetAmbientOcclusionOpt (Some surface.SurfaceMaterial.AmbientOcclusion) world
+                            let world = child.SetEmissionOpt (Some surface.SurfaceMaterial.Emission) world
                             let world = child.QuickSize world
                             world' <- world
                             i <- inc i)
