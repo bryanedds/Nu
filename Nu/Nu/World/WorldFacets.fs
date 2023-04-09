@@ -1822,6 +1822,7 @@ module BasicStaticBillboardEmitterFacetModule =
              define Entity.EmitterNormalImage Assets.Default.MaterialNormal
              define Entity.EmitterMinFilterOpt None
              define Entity.EmitterMagFilterOpt None
+             define Entity.EmitterInvertRoughnessOpt None
              define Entity.EmitterLifeTimeOpt GameTime.zero
              define Entity.ParticleLifeTimeMaxOpt (GameTime.ofSeconds 1.0f)
              define Entity.ParticleRate (match Constants.GameTime.DesiredFrameRate with StaticFrameRate _ -> 1.0f | DynamicFrameRate _ -> 60.0f)
