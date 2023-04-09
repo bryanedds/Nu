@@ -90,8 +90,8 @@ void main()
 
     // compute materials
     float metalness = material.r;
-    float roughness = material.g;
-    float ambientOcclusion = material.b;
+    float ambientOcclusion = material.g;
+    float roughness = material.b;
     vec3 emission = vec3(material.a);
 
     // compute lighting profile

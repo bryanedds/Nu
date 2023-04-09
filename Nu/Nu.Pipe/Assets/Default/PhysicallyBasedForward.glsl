@@ -150,11 +150,9 @@ void main()
 
     // compute material properties
     float metalness = texture(metalnessTexture, texCoordsOut).r * materialOut.r;
-    float roughness =
-        invertRoughnessOut == 1 ? // allow for inverting roughness for unity compatibility
-        (1.0f - texture(roughnessTexture, texCoordsOut).g) * materialOut.g :
-        texture(roughnessTexture, texCoordsOut).g * materialOut.g;
-    float ambientOcclusion = texture(ambientOcclusionTexture, texCoordsOut).b * materialOut.b;
+    float ambientOcclusion = texture(ambientOcclusionTexture, texCoordsOut).g * materialOut.g;
+    float roughnessTex = texture(roughnessTexture, texCoordsOut).b;
+    float roughness = (invertRoughnessOut == 1 ? 1.0f - roughnessTex : roughnessTex) * materialOut.b;
     vec3 emission = vec3(texture(emissionTexture, texCoordsOut).r * materialOut.a);
 
     // compute lighting profile
