@@ -91,8 +91,8 @@ void main()
     // compute materials
     float metalness = material.r;
     float roughness = material.g;
-    vec3 emission = vec3(material.b);
-    float ambientOcclusion = material.a;
+    float ambientOcclusion = material.b;
+    vec3 emission = vec3(material.a);
 
     // compute lighting profile
     vec3 v = normalize(eyeCenter - position);
