@@ -257,6 +257,7 @@ module Field =
                   NormalImage = Assets.Default.MaterialNormal
                   TextureMinFilterOpt = ValueSome OpenGL.TextureMinFilter.NearestMipmapNearest
                   TextureMagFilterOpt = ValueSome OpenGL.TextureMagFilter.Nearest
+                  InvertRoughness = false
                   TwoSided = false }
 
             // fin
