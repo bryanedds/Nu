@@ -735,18 +735,16 @@ module Gaia =
         | 3 -> applyPropertyEditor2 form.entityPropertyGrid form
         | _ -> failwithumf ()
 
+    let private populatePreludeTextBox (form : GaiaForm) =
+        match World.tryReadPrelude () with
+        | Right (preludeStr, _) ->
+            form.preludeTextBox.Text <- preludeStr.Replace ("\n", "\r\n")
+        | Left error ->
+            MessageBox.Show ("Could not read prelude due to: " + error + "'.", "Failed to Read Prelude", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+
     let private tryReloadPrelude (_ : GaiaForm) world =
         let assetSourceDir = targetDir + "/../../.."
         World.tryReloadPrelude assetSourceDir targetDir world
-
-    let private tryLoadPrelude (form : GaiaForm) world =
-        match tryReloadPrelude form world with
-        | (Right preludeStr, world) ->
-            form.preludeTextBox.Text <- preludeStr.Replace ("\n", "\r\n")
-            world
-        | (Left error, world) ->
-            MessageBox.Show ("Could not load prelude due to: " + error + "'.", "Failed to Load Prelude", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
-            world
 
     let private trySavePrelude (form : GaiaForm) world =
         let oldWorld = world
@@ -758,6 +756,18 @@ module Gaia =
         with exn ->
             MessageBox.Show ("Could not save asset graph due to: " + scstring exn, "Failed to Save Asset Graph", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
             (false, World.choose oldWorld)
+
+    let private populateAssetGraphTextBox (form : GaiaForm) =
+        match AssetGraph.tryMakeFromFile (targetDir + "/" + Assets.Global.AssetGraphFilePath) with
+        | Right assetGraph ->
+            let selectionStart = form.assetGraphTextBox.SelectionStart
+            let packageDescriptorsStr = scstring (AssetGraph.getPackageDescriptors assetGraph)
+            let prettyPrinter = (SyntaxAttribute.defaultValue typeof<AssetGraph>).PrettyPrinter
+            let packageDescriptorsPretty = PrettyPrinter.prettyPrint packageDescriptorsStr prettyPrinter
+            form.assetGraphTextBox.Text <- packageDescriptorsPretty.Replace ("\n", "\r\n")
+            form.assetGraphTextBox.SelectionStart <- selectionStart
+        | Left error ->
+            MessageBox.Show ("Could not read asset graph due to: " + error + "'.", "Failed to Read Asset Graph", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
 
     let private tryReloadAssetGraph (_ : GaiaForm) world =
         let assetSourceDir = targetDir + "/../../.."
@@ -789,16 +799,29 @@ module Gaia =
             MessageBox.Show ("Could not save asset graph due to: " + scstring exn, "Failed to Save Asset Graph", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
             (false, World.choose oldWorld)
 
-    let private tryReloadOverlays form world =
-        let overlayDir = targetDir + "/../../.."
-        match World.tryReloadOverlays overlayDir targetDir world with
+    let private populateOverlayerTextBox (form : GaiaForm) =
+        let overlayerFilePath = targetDir + "/" + Assets.Global.OverlayerFilePath
+        match Overlayer.tryMakeFromFile [] overlayerFilePath with
+        | Right overlayer ->
+            let selectionStart = form.overlayerTextBox.SelectionStart
+            let extrinsicOverlaysStr = scstring (Overlayer.getExtrinsicOverlays overlayer)
+            let prettyPrinter = (SyntaxAttribute.defaultValue typeof<Overlay>).PrettyPrinter
+            let extrinsicOverlaysPretty = PrettyPrinter.prettyPrint extrinsicOverlaysStr prettyPrinter
+            form.overlayerTextBox.Text <- extrinsicOverlaysPretty.Replace ("\n", "\r\n")
+            form.overlayerTextBox.SelectionStart <- selectionStart
+        | Left error ->
+            MessageBox.Show ("Could not read overlayer due to: " + error + "'.", "Failed to Read Overlayer", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+
+    let private tryReloadOverlayer form world =
+        let overlayerDir = targetDir + "/../../.."
+        match World.tryReloadOverlayer overlayerDir targetDir world with
         | (Right overlayer, world) ->
             refreshOverlayComboBox form world
             (Right overlayer, world)
         | (Left error, world) -> (Left error, world)
 
     let private tryLoadOverlayer (form : GaiaForm) world =
-        match tryReloadOverlays form world with
+        match tryReloadOverlayer form world with
         | (Right overlayer, world) ->
             let selectionStart = form.overlayerTextBox.SelectionStart
             let extrinsicOverlaysStr = scstring (Overlayer.getExtrinsicOverlays overlayer)
@@ -822,6 +845,12 @@ module Gaia =
         with exn ->
             MessageBox.Show ("Could not save overlayer due to: " + scstring exn, "Failed to Save Overlayer", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
             (false, oldWorld)
+
+    let private populateEventFilterTextBox (form : GaiaForm) =
+        let eventFilterStr = scstring Constants.Editor.EventFilter
+        let prettyPrinter = (SyntaxAttribute.defaultValue typeof<EventFilter.Filter>).PrettyPrinter
+        let eventFilterPretty = PrettyPrinter.prettyPrint eventFilterStr prettyPrinter
+        form.eventFilterTextBox.Text <- eventFilterPretty.Replace ("\n", "\r\n")
 
     let private handleFormEntityPropertyGridSelectedObjectsChanged (form : GaiaForm) (_ : EventArgs) =
         refreshPropertyEditor form
@@ -1369,7 +1398,13 @@ module Gaia =
 
     let private handleLoadPreludeClick (form : GaiaForm) (_ : EventArgs) =
         Globals.nextPreUpdate $ fun world ->
-            tryLoadPrelude form world
+            match tryReloadPrelude form world with
+            | (Right preludeStr, world) ->
+                form.preludeTextBox.Text <- preludeStr.Replace ("\n", "\r\n")
+                world
+            | (Left error, world) ->
+                MessageBox.Show ("Could not load prelude due to: " + error + "'.", "Failed to Load Prelude", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+                world
 
     let private handleSaveAssetGraphClick (form : GaiaForm) (_ : EventArgs) =
         Globals.nextPreUpdate $ fun world ->
@@ -1390,7 +1425,7 @@ module Gaia =
         Globals.nextPreUpdate $ fun world ->
             match trySaveOverlayer form world with
             | (true, world) ->
-                match tryReloadOverlays form world with
+                match tryReloadOverlayer form world with
                 | (Right _, world) -> world
                 | (Left error, world) ->
                     MessageBox.Show ("Overlayer reload error due to: " + error + "'.", "Overlayer Reload Error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
@@ -1910,11 +1945,11 @@ module Gaia =
         form.createEntityComboBox.SelectedIndexChanged.Add (handleCreateEntityComboBoxSelectedIndexChanged form)
         form.Closing.Add (handleFormClosing form)
 
-        // populate rollout tab texts
-        handleRefreshEventFilterClick form (EventArgs ())
-        handleLoadPreludeClick form (EventArgs ()) // TODO: handle populating without reloading the actual content.
-        handleLoadAssetGraphClick form (EventArgs ()) // TODO: handle populating without reloading the actual content.
-        handleLoadOverlayerClick form (EventArgs ()) // TODO: handle populating without reloading the actual content.
+        // populate rollout tab text boxes
+        populateAssetGraphTextBox form
+        populateOverlayerTextBox form
+        populatePreludeTextBox form
+        populateEventFilterTextBox form
 
         // finally, show and activate form
         form.Show ()
@@ -1931,17 +1966,7 @@ module Gaia =
         | Right world ->
 
             // initialize event filter as not to flood the log
-            let world =
-                World.setEventFilter
-                    (EventFilter.NotAny
-                        [EventFilter.Pattern (Rexpr "PreUpdate", [])
-                         EventFilter.Pattern (Rexpr "Update", [])
-                         EventFilter.Pattern (Rexpr "PostUpdate", [])
-                         EventFilter.Pattern (Rexpr "Render", [])
-                         EventFilter.Pattern (Rexpr "Change", [])
-                         EventFilter.Pattern (Rexpr "BodyTransform", [])
-                         EventFilter.Pattern (Rexpr "Mouse/Move", [])])
-                    world
+            let world = World.setEventFilter Constants.Editor.EventFilter world
 
             // apply any selected mode
             let world =

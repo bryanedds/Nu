@@ -730,6 +730,10 @@ module WorldModule =
         static member evalManyWithLogging exprs localFrame simulant world =
             evalManyWithLogging exprs localFrame simulant world
 
+        /// Attempt to read a script.
+        static member tryReadScript scriptFilePath =
+            ScriptingSystem.tryReadScript scriptFilePath
+
         /// Attempt to evaluate a script.
         static member tryEvalScript scriptFilePath world =
             ScriptingSystem.tryEvalScript World.choose scriptFilePath world

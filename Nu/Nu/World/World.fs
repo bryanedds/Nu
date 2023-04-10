@@ -679,7 +679,7 @@ module WorldModule3 =
 
                     // try to load the prelude for the scripting language
                     match World.tryEvalPrelude world with
-                    | Right struct (_, world) ->
+                    | Right (_, world) ->
 
                         // register the game
                         let world = World.registerGame world
@@ -693,7 +693,7 @@ module WorldModule3 =
                         Right world
                     
                     // forward error messages
-                    | Left struct (error, _) -> Left error
+                    | Left (error, _) -> Left error
                 | Left error -> Left error
             | Left error -> Left error
 
