@@ -31,7 +31,7 @@ Editing a 3D scene imported from Unity in Nu's editor, Gaia.
 ![image](https://user-images.githubusercontent.com/1625560/231017431-c5e7a4df-f5a4-4a5e-b235-93e1e3f64ebf.png)
 3D scene screenshot from editor.
 
-![image](https://user-images.githubusercontent.com/1625560/231017789-e2f37aca-4b77-4c32-81b2-11c7edc0ecd8.png)
+![image](https://user-images.githubusercontent.com/1625560/231018049-5c4247aa-0940-4d18-9173-2780982c22f7.png)
 Another 3D scene screenshot from editor.
 
 Getting Started
