@@ -25,7 +25,7 @@ A critical battle with evil itself!
 ![image](https://user-images.githubusercontent.com/1625560/212570637-69cfd2c9-3b61-4d7a-82ce-933582f130e5.png)
 Live editing a cutscene.
 
-![image](https://user-images.githubusercontent.com/1625560/230748810-8ed5f1de-910e-468c-be14-7db7ccb14dca.png)
+![image](https://user-images.githubusercontent.com/1625560/230993984-9a75cd59-93b6-4b78-b8ef-3c9607407b4a.png)
 Editing a 3D scene imported from Unity in Nu's editor, Gaia.
 
 Getting Started
