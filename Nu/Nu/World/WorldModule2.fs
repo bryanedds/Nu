@@ -469,7 +469,7 @@ module WorldModule2 =
             Overlay.makeIntrinsicOverlays requiresFacetNames sourceTypes
 
         /// Try to reload the overlayer currently in use by the world.
-        static member tryReloadOverlays inputDirectory outputDirectory world =
+        static member tryReloadOverlayer inputDirectory outputDirectory world =
             
             // attempt to reload overlay file
             let inputOverlayerFilePath = inputDirectory + "/" + Assets.Global.OverlayerFilePath
@@ -509,8 +509,8 @@ module WorldModule2 =
             let outputPreludeFilePath = outputDirectory + "/" + Assets.Global.PreludeFilePath
             try File.Copy (inputPreludeFilePath, outputPreludeFilePath, true)
                 match World.tryEvalPrelude world with
-                | Right struct (preludeStr, world) -> (Right preludeStr, world)
-                | Left struct (error, world) -> (Left error, world)
+                | Right (preludeStr, world) -> (Right preludeStr, world)
+                | Left (error, world) -> (Left error, world)
             with exn -> (Left (scstring exn), World.choose world)
 
         /// Send a message to the subsystems to reload their existing assets.

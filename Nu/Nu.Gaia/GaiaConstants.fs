@@ -23,3 +23,12 @@ module Constants =
         let [<Literal>] DragMinimumSeconds = 0.2
         let [<Literal>] SavedStateFilePath = "GaiaState.txt"
         let [<Literal>] NonePick = "\"None\""
+        let [<Uniform>] EventFilter =
+            EventFilter.NotAny
+                [EventFilter.Pattern (Rexpr "PreUpdate", [])
+                 EventFilter.Pattern (Rexpr "Update", [])
+                 EventFilter.Pattern (Rexpr "PostUpdate", [])
+                 EventFilter.Pattern (Rexpr "Render", [])
+                 EventFilter.Pattern (Rexpr "Change", [])
+                 EventFilter.Pattern (Rexpr "BodyTransform", [])
+                 EventFilter.Pattern (Rexpr "Mouse/Move", [])]

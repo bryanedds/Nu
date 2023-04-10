@@ -360,6 +360,10 @@ module WorldScripting =
                 | _ -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Function '" + fnName + "' requires a Relation for its 2nd argument.", originOpt), world)
             | _ -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Function '" + fnName + "' requires a Function for its 1st argument.", originOpt), world)
 
+        /// Attempt to read the scripting prelude.
+        static member tryReadPrelude () =
+            World.tryReadScript Assets.Global.PreludeFilePath
+
         /// Attempt to evaluate the scripting prelude.
         static member tryEvalPrelude world =
             let oldLocalFrame = World.getLocalFrame world
@@ -367,14 +371,14 @@ module WorldScripting =
             let globalFrame = World.getGlobalFrame world
             World.setLocalFrame globalFrame world
             match World.tryEvalScript Assets.Global.PreludeFilePath world with
-            | Right struct (scriptStr, _, world) ->
+            | Right (scriptStr, _, world) ->
                 World.setLocalFrame oldLocalFrame world
                 let world = World.setScriptContext oldScriptContext world
-                Right struct (scriptStr, world)
-            | Left struct (error, world) ->
+                Right (scriptStr, world)
+            | Left (error, world) ->
                 World.setLocalFrame oldLocalFrame world
                 let world = World.setScriptContext oldScriptContext world
-                Left struct (error, world)
+                Left (error, world)
 
         static member internal evalV2Extrinsic fnName exprs originOpt world =
             match World.evalManyInternal exprs world with
