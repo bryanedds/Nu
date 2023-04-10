@@ -564,6 +564,22 @@ module PhysicallyBased =
                 | Left _ -> (defaultMaterial.AlbedoMetadata, defaultMaterial.AlbedoTexture)
             else (defaultMaterial.AlbedoMetadata, defaultMaterial.AlbedoTexture)
 
+        // infer possible alternate texture names
+        let albedoTextureDirName =      Path.GetDirectoryName albedoTextureSlot.FilePath
+        let albedoTextureFileName =     Path.GetFileName albedoTextureSlot.FilePath
+        let mTextureFilePath =          if albedoTextureFileName.Contains "_bc"         then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("_bc", "_m")               elif albedoTextureFileName.Contains "_d" then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("_d", "_m") else ""
+        let m_gTextureFilePath =        if albedoTextureFileName.Contains "_bc"         then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("_bc", "_m_g")             elif albedoTextureFileName.Contains "_d" then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("_d", "_m_g") else ""
+        let m_ao_gTextureFilePath =     if albedoTextureFileName.Contains "_bc"         then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("_bc", "_m_ao_g")          elif albedoTextureFileName.Contains "_d" then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("_d", "_m_ao_g") else ""
+        let gTextureFilePath =          if albedoTextureFileName.Contains "_bc"         then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("_bc", "_g")               elif albedoTextureFileName.Contains "_d" then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("_d", "_g") else ""
+        let aoTextureFilePath =         if albedoTextureFileName.Contains "_bc"         then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("_bc", "_ao")              elif albedoTextureFileName.Contains "_d" then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("_d", "_ao") else ""
+        let eTextureFilePath =          if albedoTextureFileName.Contains "_bc"         then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("_bc", "_e")               elif albedoTextureFileName.Contains "_d" then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("_d", "_e") else ""
+        let nTextureFilePath =          if albedoTextureFileName.Contains "_bc"         then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("_bc", "_n")               elif albedoTextureFileName.Contains "_d" then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("_d", "_n") else ""
+        let metallicTextureFilePath =   if albedoTextureFileName.Contains "BaseColor"   then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("BaseColor", "Metallic")   else ""
+        let roughnessTextureFilePath =  if albedoTextureFileName.Contains "BaseColor"   then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("BaseColor", "Roughness")  else ""
+        let aoTextureFilePath' =        if albedoTextureFileName.Contains "BaseColor"   then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("BaseColor", "AO")         else ""
+        let normalTextureFilePath =     if albedoTextureFileName.Contains "BaseColor"   then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("BaseColor", "Normal")     else ""
+        let emissionTextureFilePath =   if albedoTextureFileName.Contains "BaseColor"   then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("BaseColor", "Emission")   else ""
+
         // attempt to load metalness info
         let metalness =
             if material.HasColorSpecular
@@ -576,16 +592,16 @@ module PhysicallyBased =
                 match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + metalnessTextureSlot.FilePath, textureMemo) with
                 | Right (_, texture) -> texture
                 | Left _ ->
-                    match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + albedoTextureSlot.FilePath.Replace ("_bc", "_m"), textureMemo) with
+                    match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + mTextureFilePath, textureMemo) with
                     | Right (_, texture) -> texture
                     | Left _ ->
-                        match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + albedoTextureSlot.FilePath.Replace ("_bc", "_m_g"), textureMemo) with
+                        match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + m_gTextureFilePath, textureMemo) with
                         | Right (_, texture) -> texture
                         | Left _ ->
-                            match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + albedoTextureSlot.FilePath.Replace ("_bc", "_m_ao_g"), textureMemo) with
+                            match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + m_ao_gTextureFilePath, textureMemo) with
                             | Right (_, texture) -> texture
                             | Left _ ->
-                                match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + albedoTextureSlot.FilePath.Replace ("BaseColor", "Metallic"), textureMemo) with
+                                match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + metallicTextureFilePath, textureMemo) with
                                 | Right (_, texture) -> texture
                                 | Left _ -> defaultMaterial.MetalnessTexture
             else defaultMaterial.MetalnessTexture
@@ -595,20 +611,25 @@ module PhysicallyBased =
             if material.HasShininess && material.Shininess <= 1.0f // NOTE: special to ignore seemingly errant values.
             then 1.0f - min material.Shininess 1.0f
             else Constants.Render.RoughnessDefault
+        let mutable (_, roughnessTextureSlot) = material.GetMaterialTexture (Assimp.TextureType.Height, 0)
+        if isNull roughnessTextureSlot.FilePath then roughnessTextureSlot.FilePath <- "" // ensure not null
         let (invertRoughness, roughnessTexture) =
             if renderable then
-                match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + albedoTextureSlot.FilePath.Replace ("_bc", "_g"), textureMemo) with
-                | Right (_, texture) -> (true, texture)
+                match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + roughnessTextureSlot.FilePath, textureMemo) with
+                | Right (_, texture) -> (Path.GetFileName(roughnessTextureSlot.FilePath).Contains "_g", texture)
                 | Left _ ->
-                    match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + albedoTextureSlot.FilePath.Replace ("_bc", "_m_g"), textureMemo) with
+                    match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + gTextureFilePath, textureMemo) with
                     | Right (_, texture) -> (true, texture)
                     | Left _ ->
-                        match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + albedoTextureSlot.FilePath.Replace ("_bc", "_m_ao_g"), textureMemo) with
+                        match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + m_gTextureFilePath, textureMemo) with
                         | Right (_, texture) -> (true, texture)
                         | Left _ ->
-                            match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + albedoTextureSlot.FilePath.Replace ("BaseColor", "Roughness"), textureMemo) with
-                            | Right (_, texture) -> (false, texture)
-                            | Left _ -> (false, defaultMaterial.RoughnessTexture)
+                            match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + m_ao_gTextureFilePath, textureMemo) with
+                            | Right (_, texture) -> (true, texture)
+                            | Left _ ->
+                                match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + roughnessTextureFilePath, textureMemo) with
+                                | Right (_, texture) -> (false, texture)
+                                | Left _ -> (false, defaultMaterial.RoughnessTexture)
             else (false, defaultMaterial.RoughnessTexture)
 
         // attempt to load ambient occlusion info
@@ -623,13 +644,13 @@ module PhysicallyBased =
                 match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + ambientOcclusionTextureSlot.FilePath, textureMemo) with
                 | Right (_, texture) -> texture
                 | Left _ ->
-                    match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + albedoTextureSlot.FilePath.Replace ("_bc", "_ao"), textureMemo) with
+                    match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + aoTextureFilePath, textureMemo) with
                     | Right (_, texture) -> texture
                     | Left _ ->
-                        match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + albedoTextureSlot.FilePath.Replace ("_bc", "_m_ao_g"), textureMemo) with
+                        match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + m_ao_gTextureFilePath, textureMemo) with
                         | Right (_, texture) -> texture
                         | Left _ ->
-                            match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + albedoTextureSlot.FilePath.Replace ("BaseColor", "AO"), textureMemo) with
+                            match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + aoTextureFilePath', textureMemo) with
                             | Right (_, texture) -> texture
                             | Left _ -> defaultMaterial.AmbientOcclusionTexture
             else defaultMaterial.AmbientOcclusionTexture
@@ -645,10 +666,10 @@ module PhysicallyBased =
                 match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + emissionTextureSlot.FilePath, textureMemo) with
                 | Right (_, texture) -> texture
                 | Left _ ->
-                    match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + albedoTextureSlot.FilePath.Replace ("_bc", "_e"), textureMemo) with
+                    match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + eTextureFilePath, textureMemo) with
                     | Right (_, texture) -> texture
                     | Left _ ->
-                        match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + albedoTextureSlot.FilePath.Replace ("BaseColor", "Emission"), textureMemo) with
+                        match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + emissionTextureFilePath, textureMemo) with
                         | Right (_, texture) -> texture
                         | Left _ -> defaultMaterial.EmissionTexture
             else defaultMaterial.EmissionTexture
@@ -660,10 +681,10 @@ module PhysicallyBased =
                 match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + normalTextureSlot.FilePath, textureMemo) with
                 | Right (_, texture) -> texture
                 | Left _ ->
-                    match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + albedoTextureSlot.FilePath.Replace ("_bc", "_n"), textureMemo) with
+                    match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + nTextureFilePath, textureMemo) with
                     | Right (_, texture) -> texture
                     | Left _ ->
-                        match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + albedoTextureSlot.FilePath.Replace ("BaseColor", "Normal"), textureMemo) with
+                        match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + normalTextureFilePath, textureMemo) with
                         | Right (_, texture) -> texture
                         | Left _ -> defaultMaterial.NormalTexture
             else defaultMaterial.NormalTexture
