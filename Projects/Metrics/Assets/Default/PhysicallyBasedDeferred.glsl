@@ -108,8 +108,9 @@ void main()
     // compute material properties
     float metalness = texture(metalnessTexture, texCoordsOut).r * materialOut.r;
     float ambientOcclusion = texture(ambientOcclusionTexture, texCoordsOut).g * materialOut.g;
-    float roughnessTex = texture(roughnessTexture, texCoordsOut).b;
-    float roughness = (invertRoughnessOut == 1 ? 1.0f - roughnessTex : roughnessTex) * materialOut.b;
+    vec4 roughnessSample = texture(roughnessTexture, texCoordsOut);
+    float roughness = roughnessSample.a;
+    roughness = (invertRoughnessOut == 1 ? 1.0f - roughness : roughness) * materialOut.b;
     float emission = texture(emissionTexture, texCoordsOut).r * materialOut.a;
     material = vec4(metalness, ambientOcclusion, roughness, emission);
 
