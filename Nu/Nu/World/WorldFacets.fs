@@ -1446,12 +1446,12 @@ module StaticBillboardFacetModule =
         member this.GetAlbedoImage world : Image AssetTag = this.Get (nameof this.AlbedoImage) world
         member this.SetAlbedoImage (value : Image AssetTag) world = this.Set (nameof this.AlbedoImage) value world
         member this.AlbedoImage = lens (nameof this.AlbedoImage) this this.GetAlbedoImage this.SetAlbedoImage
-        member this.GetMetalnessOpt world : single option = this.Get (nameof this.MetalnessOpt) world
-        member this.SetMetalnessOpt (value : single option) world = this.Set (nameof this.MetalnessOpt) value world
-        member this.MetalnessOpt = lens (nameof this.MetalnessOpt) this this.GetMetalnessOpt this.SetMetalnessOpt
-        member this.GetMetalnessImage world : Image AssetTag = this.Get (nameof this.MetalnessImage) world
-        member this.SetMetalnessImage (value : Image AssetTag) world = this.Set (nameof this.MetalnessImage) value world
-        member this.MetalnessImage = lens (nameof this.MetalnessImage) this this.GetMetalnessImage this.SetMetalnessImage
+        member this.GetMetallicOpt world : single option = this.Get (nameof this.MetallicOpt) world
+        member this.SetMetallicOpt (value : single option) world = this.Set (nameof this.MetallicOpt) value world
+        member this.MetallicOpt = lens (nameof this.MetallicOpt) this this.GetMetallicOpt this.SetMetallicOpt
+        member this.GetMetallicImage world : Image AssetTag = this.Get (nameof this.MetallicImage) world
+        member this.SetMetallicImage (value : Image AssetTag) world = this.Set (nameof this.MetallicImage) value world
+        member this.MetallicImage = lens (nameof this.MetallicImage) this this.GetMetallicImage this.SetMetallicImage
         member this.GetRoughnessOpt world : single option = this.Get (nameof this.RoughnessOpt) world
         member this.SetRoughnessOpt (value : single option) world = this.Set (nameof this.RoughnessOpt) value world
         member this.RoughnessOpt = lens (nameof this.RoughnessOpt) this this.GetRoughnessOpt this.SetRoughnessOpt
@@ -1493,8 +1493,8 @@ module StaticBillboardFacetModule =
             [define Entity.InsetOpt None
              define Entity.AlbedoOpt None
              define Entity.AlbedoImage Assets.Default.MaterialAlbedo
-             define Entity.MetalnessOpt None
-             define Entity.MetalnessImage Assets.Default.MaterialMetalness
+             define Entity.MetallicOpt None
+             define Entity.MetallicImage Assets.Default.MaterialMetallic
              define Entity.RoughnessOpt None
              define Entity.RoughnessImage Assets.Default.MaterialRoughness
              define Entity.AmbientOcclusionOpt None
@@ -1514,13 +1514,13 @@ module StaticBillboardFacetModule =
             let insetOpt = match entity.GetInsetOpt world with Some inset -> ValueSome inset | None -> ValueNone // TODO: make converstion fn from option to voption and vice versa.
             let properties =
                 { AlbedoOpt = match entity.GetAlbedoOpt world with Some albedo -> ValueSome albedo | None -> ValueNone
-                  MetalnessOpt = match entity.GetMetalnessOpt world with Some metalness -> ValueSome metalness | None -> ValueNone
+                  MetallicOpt = match entity.GetMetallicOpt world with Some metallic -> ValueSome metallic | None -> ValueNone
                   RoughnessOpt = match entity.GetRoughnessOpt world with Some roughness -> ValueSome roughness | None -> ValueNone
                   AmbientOcclusionOpt = match entity.GetAmbientOcclusionOpt world with Some ambientOcclusion -> ValueSome ambientOcclusion | None -> ValueNone
                   EmissionOpt = match entity.GetEmissionOpt world with Some emission -> ValueSome emission | None -> ValueNone
                   InvertRoughnessOpt = match entity.GetInvertRoughnessOpt world with Some invertRoughness -> ValueSome invertRoughness | None -> ValueNone }
             let albedoImage = entity.GetAlbedoImage world
-            let metalnessImage = entity.GetMetalnessImage world
+            let metallicImage = entity.GetMetallicImage world
             let roughnessImage = entity.GetRoughnessImage world
             let ambientOcclusionImage = entity.GetAmbientOcclusionImage world
             let emissionImage = entity.GetEmissionImage world
@@ -1534,7 +1534,7 @@ module StaticBillboardFacetModule =
             World.enqueueRenderMessage3d
                 (RenderBillboard
                     (absolute, affineMatrix, insetOpt, properties,
-                     albedoImage, metalnessImage, roughnessImage, ambientOcclusionImage, emissionImage, normalImage,
+                     albedoImage, metallicImage, roughnessImage, ambientOcclusionImage, emissionImage, normalImage,
                      minFilterOpt, magFilterOpt, renderType))
                 world
 
@@ -1565,12 +1565,12 @@ module BasicStaticBillboardEmitterFacetModule =
         member this.GetEmitterAlbedoImage world : Image AssetTag = this.Get (nameof this.EmitterAlbedoImage) world
         member this.SetEmitterAlbedoImage (value : Image AssetTag) world = this.Set (nameof this.EmitterAlbedoImage) value world
         member this.EmitterAlbedoImage = lens (nameof this.EmitterAlbedoImage) this this.GetEmitterAlbedoImage this.SetEmitterAlbedoImage
-        member this.GetEmitterMetalnessOpt world : single option = this.Get (nameof this.EmitterMetalnessOpt) world
-        member this.SetEmitterMetalnessOpt (value : single option) world = this.Set (nameof this.EmitterMetalnessOpt) value world
-        member this.EmitterMetalnessOpt = lens (nameof this.EmitterMetalnessOpt) this this.GetEmitterMetalnessOpt this.SetEmitterMetalnessOpt
-        member this.GetEmitterMetalnessImage world : Image AssetTag = this.Get (nameof this.EmitterMetalnessImage) world
-        member this.SetEmitterMetalnessImage (value : Image AssetTag) world = this.Set (nameof this.EmitterMetalnessImage) value world
-        member this.EmitterMetalnessImage = lens (nameof this.EmitterMetalnessImage) this this.GetEmitterMetalnessImage this.SetEmitterMetalnessImage
+        member this.GetEmitterMetallicOpt world : single option = this.Get (nameof this.EmitterMetallicOpt) world
+        member this.SetEmitterMetallicOpt (value : single option) world = this.Set (nameof this.EmitterMetallicOpt) value world
+        member this.EmitterMetallicOpt = lens (nameof this.EmitterMetallicOpt) this this.GetEmitterMetallicOpt this.SetEmitterMetallicOpt
+        member this.GetEmitterMetallicImage world : Image AssetTag = this.Get (nameof this.EmitterMetallicImage) world
+        member this.SetEmitterMetallicImage (value : Image AssetTag) world = this.Set (nameof this.EmitterMetallicImage) value world
+        member this.EmitterMetallicImage = lens (nameof this.EmitterMetallicImage) this this.GetEmitterMetallicImage this.SetEmitterMetallicImage
         member this.GetEmitterRoughnessOpt world : single option = this.Get (nameof this.EmitterRoughnessOpt) world
         member this.SetEmitterRoughnessOpt (value : single option) world = this.Set (nameof this.EmitterRoughnessOpt) value world
         member this.EmitterRoughnessOpt = lens (nameof this.EmitterRoughnessOpt) this this.GetEmitterRoughnessOpt this.SetEmitterRoughnessOpt
@@ -1633,7 +1633,7 @@ module BasicStaticBillboardEmitterFacetModule =
                           Restitution = Constants.Particles.RestitutionDefault }
                     Absolute = transform.Absolute
                     AlbedoImage = entity.GetEmitterAlbedoImage world
-                    MetalnessImage = entity.GetEmitterMetalnessImage world
+                    MetallicImage = entity.GetEmitterMetallicImage world
                     RoughnessImage = entity.GetEmitterRoughnessImage world
                     AmbientOcclusionImage = entity.GetEmitterAmbientOcclusionImage world
                     EmissionImage = entity.GetEmitterEmissionImage world
@@ -1679,14 +1679,14 @@ module BasicStaticBillboardEmitterFacetModule =
             let world = updateEmitter (fun emitter -> if assetNeq emitter.AlbedoImage emitterAlbedoImage then { emitter with AlbedoImage = emitterAlbedoImage } else emitter) evt.Subscriber world
             (Cascade, world)
 
-        static let handleEmitterMetalnessOptChange evt world =
-            let emitterMetalnessOpt = evt.Data.Value :?> single option |> ValueOption.ofOption
-            let world = updateEmitter (fun emitter -> if emitter.MetalnessOpt <> emitterMetalnessOpt then { emitter with MetalnessOpt = emitterMetalnessOpt } else emitter) evt.Subscriber world
+        static let handleEmitterMetallicOptChange evt world =
+            let emitterMetallicOpt = evt.Data.Value :?> single option |> ValueOption.ofOption
+            let world = updateEmitter (fun emitter -> if emitter.MetallicOpt <> emitterMetallicOpt then { emitter with MetallicOpt = emitterMetallicOpt } else emitter) evt.Subscriber world
             (Cascade, world)
 
-        static let handleEmitterMetalnessImageChange evt world =
-            let emitterMetalnessImage = evt.Data.Value :?> Image AssetTag
-            let world = updateEmitter (fun emitter -> if assetNeq emitter.MetalnessImage emitterMetalnessImage then { emitter with MetalnessImage = emitterMetalnessImage } else emitter) evt.Subscriber world
+        static let handleEmitterMetallicImageChange evt world =
+            let emitterMetallicImage = evt.Data.Value :?> Image AssetTag
+            let world = updateEmitter (fun emitter -> if assetNeq emitter.MetallicImage emitterMetallicImage then { emitter with MetallicImage = emitterMetallicImage } else emitter) evt.Subscriber world
             (Cascade, world)
 
         static let handleEmitterRoughnessOptChange evt world =
@@ -1811,8 +1811,8 @@ module BasicStaticBillboardEmitterFacetModule =
             [define Entity.SelfDestruct false
              define Entity.EmitterAlbedoOpt None
              define Entity.EmitterAlbedoImage Assets.Default.MaterialAlbedo
-             define Entity.EmitterMetalnessOpt None
-             define Entity.EmitterMetalnessImage Assets.Default.MaterialMetalness
+             define Entity.EmitterMetallicOpt None
+             define Entity.EmitterMetallicImage Assets.Default.MaterialMetallic
              define Entity.EmitterRoughnessOpt None
              define Entity.EmitterRoughnessImage Assets.Default.MaterialRoughness
              define Entity.EmitterAmbientOcclusionOpt None
@@ -1841,8 +1841,8 @@ module BasicStaticBillboardEmitterFacetModule =
             let world = World.monitor handleRotationChange (entity.GetChangeEvent (nameof entity.Rotation)) entity world
             let world = World.monitor handleEmitterAlbedoOptChange (entity.GetChangeEvent (nameof entity.EmitterAlbedoOpt)) entity world
             let world = World.monitor handleEmitterAlbedoImageChange (entity.GetChangeEvent (nameof entity.EmitterAlbedoImage)) entity world
-            let world = World.monitor handleEmitterMetalnessOptChange (entity.GetChangeEvent (nameof entity.EmitterMetalnessOpt)) entity world
-            let world = World.monitor handleEmitterMetalnessImageChange (entity.GetChangeEvent (nameof entity.EmitterMetalnessImage)) entity world
+            let world = World.monitor handleEmitterMetallicOptChange (entity.GetChangeEvent (nameof entity.EmitterMetallicOpt)) entity world
+            let world = World.monitor handleEmitterMetallicImageChange (entity.GetChangeEvent (nameof entity.EmitterMetallicImage)) entity world
             let world = World.monitor handleEmitterRoughnessOptChange (entity.GetChangeEvent (nameof entity.EmitterRoughnessOpt)) entity world
             let world = World.monitor handleEmitterRoughnessImageChange (entity.GetChangeEvent (nameof entity.EmitterRoughnessImage)) entity world
             let world = World.monitor handleEmitterAmbientOcclusionOptChange (entity.GetChangeEvent (nameof entity.EmitterAmbientOcclusionOpt)) entity world
@@ -1888,7 +1888,7 @@ module BasicStaticBillboardEmitterFacetModule =
                     | Particles.BillboardParticlesDescriptor descriptor ->
                         let properties =
                             { AlbedoOpt = match entity.GetEmitterAlbedoOpt world with Some albedo -> ValueSome albedo | None -> ValueNone
-                              MetalnessOpt = match entity.GetEmitterMetalnessOpt world with Some metalness -> ValueSome metalness | None -> ValueNone
+                              MetallicOpt = match entity.GetEmitterMetallicOpt world with Some metallic -> ValueSome metallic | None -> ValueNone
                               RoughnessOpt = match entity.GetEmitterRoughnessOpt world with Some roughness -> ValueSome roughness | None -> ValueNone
                               AmbientOcclusionOpt = match entity.GetEmitterAmbientOcclusionOpt world with Some ambientOcclusion -> ValueSome ambientOcclusion | None -> ValueNone
                               EmissionOpt = match entity.GetEmitterEmissionOpt world with Some emission -> ValueSome emission | None -> ValueNone
@@ -1898,7 +1898,7 @@ module BasicStaticBillboardEmitterFacetModule =
                                 (descriptor.Absolute,
                                  properties,
                                  descriptor.AlbedoImage,
-                                 descriptor.MetalnessImage,
+                                 descriptor.MetallicImage,
                                  descriptor.RoughnessImage,
                                  descriptor.AmbientOcclusionImage,
                                  descriptor.EmissionImage,
@@ -1944,7 +1944,7 @@ module StaticModelFacetModule =
             [define Entity.InsetOpt None
              define Entity.StaticModel Assets.Default.StaticModel
              define Entity.AlbedoOpt None
-             define Entity.MetalnessOpt None
+             define Entity.MetallicOpt None
              define Entity.RoughnessOpt None
              define Entity.AmbientOcclusionOpt None
              define Entity.EmissionOpt None
@@ -1964,7 +1964,7 @@ module StaticModelFacetModule =
             let staticModel = entity.GetStaticModel world
             let properties =
                 { AlbedoOpt = match entity.GetAlbedoOpt world with Some albedo -> ValueSome albedo | None -> ValueNone
-                  MetalnessOpt = match entity.GetMetalnessOpt world with Some metalness -> ValueSome metalness | None -> ValueNone
+                  MetallicOpt = match entity.GetMetallicOpt world with Some metallic -> ValueSome metallic | None -> ValueNone
                   RoughnessOpt = match entity.GetRoughnessOpt world with Some roughness -> ValueSome roughness | None -> ValueNone
                   AmbientOcclusionOpt = match entity.GetAmbientOcclusionOpt world with Some ambientOcclusion -> ValueSome ambientOcclusion | None -> ValueNone
                   EmissionOpt = match entity.GetEmissionOpt world with Some emission -> ValueSome emission | None -> ValueNone
@@ -2051,7 +2051,7 @@ module StaticModelSurfaceFacetModule =
              define Entity.SurfaceIndex 0
              define Entity.StaticModel Assets.Default.StaticModel
              define Entity.AlbedoOpt None
-             define Entity.MetalnessOpt None
+             define Entity.MetallicOpt None
              define Entity.RoughnessOpt None
              define Entity.AmbientOcclusionOpt None
              define Entity.EmissionOpt None
@@ -2075,7 +2075,7 @@ module StaticModelSurfaceFacetModule =
                 let insetOpt = match entity.GetInsetOpt world with Some inset -> ValueSome inset | None -> ValueNone
                 let properties =
                     { AlbedoOpt = match entity.GetAlbedoOpt world with Some albedo -> ValueSome albedo | None -> ValueNone
-                      MetalnessOpt = match entity.GetMetalnessOpt world with Some metalness -> ValueSome metalness | None -> ValueNone
+                      MetallicOpt = match entity.GetMetallicOpt world with Some metallic -> ValueSome metallic | None -> ValueNone
                       RoughnessOpt = match entity.GetRoughnessOpt world with Some roughness -> ValueSome roughness | None -> ValueNone
                       AmbientOcclusionOpt = match entity.GetAmbientOcclusionOpt world with Some ambientOcclusion -> ValueSome ambientOcclusion | None -> ValueNone
                       EmissionOpt = match entity.GetEmissionOpt world with Some emission -> ValueSome emission | None -> ValueNone

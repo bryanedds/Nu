@@ -661,11 +661,11 @@ module EffectSystem =
         // build implicitly mounted content
         evalContent content slice history effectSystem
 
-    and private evalBillboard resourceAlbedo resourceMetalness resourceRoughness resourceAmbientOcclusion resourceEmission resourceNormal minFilterOpt magFilterOpt aspects content (slice : Slice) history effectSystem =
+    and private evalBillboard resourceAlbedo resourceMetallic resourceRoughness resourceAmbientOcclusion resourceEmission resourceNormal minFilterOpt magFilterOpt aspects content (slice : Slice) history effectSystem =
 
         // pull image from resource
         let imageAlbedo = evalResource resourceAlbedo effectSystem
-        let imageMetalness = evalResource resourceMetalness effectSystem
+        let imageMetallic = evalResource resourceMetallic effectSystem
         let imageRoughness = evalResource resourceRoughness effectSystem
         let imageAmbientOcclusion = evalResource resourceAmbientOcclusion effectSystem
         let imageEmission = evalResource resourceEmission effectSystem
@@ -678,7 +678,7 @@ module EffectSystem =
         let effectSystem =
             if slice.Enabled then
                 let imageAlbedo = AssetTag.specialize<Image> imageAlbedo
-                let imageMetalness = AssetTag.specialize<Image> imageMetalness
+                let imageMetallic = AssetTag.specialize<Image> imageMetallic
                 let imageRoughness = AssetTag.specialize<Image> imageRoughness
                 let imageAmbientOcclusion = AssetTag.specialize<Image> imageAmbientOcclusion
                 let imageEmission = AssetTag.specialize<Image> imageEmission
@@ -687,7 +687,7 @@ module EffectSystem =
                 let insetOpt = if slice.Inset.Equals box2Zero then ValueNone else ValueSome slice.Inset
                 let properties =
                     { AlbedoOpt = ValueSome slice.Color
-                      MetalnessOpt = ValueNone
+                      MetallicOpt = ValueNone
                       RoughnessOpt = ValueNone
                       AmbientOcclusionOpt = ValueNone
                       EmissionOpt = ValueSome slice.Emission.R
@@ -700,7 +700,7 @@ module EffectSystem =
                              insetOpt,
                              properties,
                              imageAlbedo,
-                             imageMetalness,
+                             imageMetallic,
                              imageRoughness,
                              imageAmbientOcclusion,
                              imageEmission,
@@ -730,7 +730,7 @@ module EffectSystem =
                 let insetOpt = if slice.Inset.Equals box2Zero then ValueNone else ValueSome slice.Inset
                 let properties =
                     { AlbedoOpt = ValueSome slice.Color
-                      MetalnessOpt = ValueNone
+                      MetallicOpt = ValueNone
                       RoughnessOpt = ValueNone
                       AmbientOcclusionOpt = ValueNone
                       EmissionOpt = ValueSome slice.Emission.R
@@ -879,8 +879,8 @@ module EffectSystem =
             evalAnimatedSprite resource celSize celRun celCount delay playback aspects content slice history effectSystem
         | TextSprite (resource, text, aspects, content) ->
             evalTextSprite resource text aspects content slice history effectSystem
-        | Billboard (resourceAlbedo, resourceMetalness, resourceRoughness, resourceAmbientOcclusion, resourceEmission, resourceNormal, minFilterOpt, magFilterOpt, aspects, content) ->
-            evalBillboard resourceAlbedo resourceMetalness resourceRoughness resourceAmbientOcclusion resourceEmission resourceNormal minFilterOpt magFilterOpt aspects content slice history effectSystem
+        | Billboard (resourceAlbedo, resourceMetallic, resourceRoughness, resourceAmbientOcclusion, resourceEmission, resourceNormal, minFilterOpt, magFilterOpt, aspects, content) ->
+            evalBillboard resourceAlbedo resourceMetallic resourceRoughness resourceAmbientOcclusion resourceEmission resourceNormal minFilterOpt magFilterOpt aspects content slice history effectSystem
         | StaticModel (resource, aspects, content) ->
             evalStaticModel resource aspects content slice history effectSystem
         | Light3d (lightType, aspects, content) ->

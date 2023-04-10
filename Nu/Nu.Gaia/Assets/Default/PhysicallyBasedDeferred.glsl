@@ -60,7 +60,7 @@ void main()
 const float GAMMA = 2.2;
 
 uniform sampler2D albedoTexture;
-uniform sampler2D metalnessTexture;
+uniform sampler2D metallicTexture;
 uniform sampler2D roughnessTexture;
 uniform sampler2D emissionTexture;
 uniform sampler2D ambientOcclusionTexture;
@@ -106,13 +106,13 @@ void main()
     if (alpha == 0.0f) discard;
 
     // compute material properties
-    float metalness = texture(metalnessTexture, texCoordsOut).r * materialOut.r;
+    float metallic = texture(metallicTexture, texCoordsOut).r * materialOut.r;
     float ambientOcclusion = texture(ambientOcclusionTexture, texCoordsOut).g * materialOut.g;
     vec4 roughnessSample = texture(roughnessTexture, texCoordsOut);
     float roughness = roughnessSample.a == 1.0f ? roughnessSample.b : roughnessSample.a;
     roughness = (invertRoughnessOut == 1 ? 1.0f - roughness : roughness) * materialOut.b;
     float emission = texture(emissionTexture, texCoordsOut).r * materialOut.a;
-    material = vec4(metalness, ambientOcclusion, roughness, emission);
+    material = vec4(metallic, ambientOcclusion, roughness, emission);
 
     // compute normal
     normal = getNormal();

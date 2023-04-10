@@ -26,7 +26,7 @@ module CharacterDispatcher =
             let mutable transform = entity.GetTransform world
             let properties =
                 { AlbedoOpt = ValueSome Color.White
-                  MetalnessOpt = ValueSome 0.0f
+                  MetallicOpt = ValueSome 0.0f
                   RoughnessOpt = ValueSome 1.25f
                   EmissionOpt = ValueSome 1.0f
                   AmbientOcclusionOpt = ValueSome 1.0f
@@ -37,7 +37,7 @@ module CharacterDispatcher =
                 Render3d (
                     RenderBillboard
                         (transform.Absolute, transform.AffineMatrix, ValueSome inset, properties,
-                         albedoImage, Assets.Default.MaterialMetalness, Assets.Default.MaterialRoughness, Assets.Default.MaterialRoughness, Assets.Default.MaterialEmission, albedoImage,
+                         albedoImage, Assets.Default.MaterialMetallic, Assets.Default.MaterialRoughness, Assets.Default.MaterialRoughness, Assets.Default.MaterialEmission, albedoImage,
                          ValueSome OpenGL.TextureMinFilter.NearestMipmapNearest, ValueSome OpenGL.TextureMagFilter.Nearest, DeferredRenderType))
             characterView
 

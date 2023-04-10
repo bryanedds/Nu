@@ -7,7 +7,7 @@ Ks 1.000000 0.000000 0.000000
 Ns 0.900000
 Ka 1.000000 0.000000 0.000000
 map_Kd StaticModelAlbedo.png
-map_Ks StaticModelMetalness.png
+map_Ks StaticModelMetallic.png
 map_Bump StaticModelRoughness.png
 map_Ka StaticModelAmbientOcclusion.png
 map_Kn StaticModelNormal.png

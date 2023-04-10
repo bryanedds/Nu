@@ -89,7 +89,7 @@ void main()
     vec4 material = texture(materialTexture, texCoordsOut);
 
     // compute materials
-    float metalness = material.r;
+    float metallic = material.r;
     float ambientOcclusion = material.g;
     float roughness = material.b;
     vec3 emission = vec3(material.a);
@@ -100,7 +100,7 @@ void main()
 
     // compute light ouput term
     // if dia-electric (plastic) use f0 of 0.04f and if metal, use the albedo color as f0.
-    vec3 f0 = mix(vec3(0.04), albedo, metalness);
+    vec3 f0 = mix(vec3(0.04), albedo, metallic);
     vec3 lightAccum = vec3(0.0);
     for (int i = 0; i < LIGHTS_MAX; ++i)
     {
@@ -129,7 +129,7 @@ void main()
         // compute diffusion
         vec3 kS = f;
         vec3 kD = vec3(1.0) - kS;
-        kD *= 1.0 - metalness;
+        kD *= 1.0 - metallic;
 
         // compute light scalar
         float nDotL = max(dot(normal, l), 0.0);
@@ -142,7 +142,7 @@ void main()
     vec3 f = fresnelSchlickRoughness(max(dot(normal, v), 0.0), f0, roughness);
     vec3 kS = f;
     vec3 kD = 1.0 - kS;
-    kD *= 1.0 - metalness;
+    kD *= 1.0 - metallic;
     vec3 irradiance = texture(irradianceMap, normal).rgb;
     vec3 diffuse = irradiance * albedo;
 
