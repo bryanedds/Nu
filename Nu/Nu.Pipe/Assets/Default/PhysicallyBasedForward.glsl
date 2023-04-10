@@ -64,7 +64,7 @@ const int LIGHTS_MAX = 32;
 
 uniform vec3 eyeCenter;
 uniform sampler2D albedoTexture;
-uniform sampler2D metalnessTexture;
+uniform sampler2D metallicTexture;
 uniform sampler2D roughnessTexture;
 uniform sampler2D emissionTexture;
 uniform sampler2D ambientOcclusionTexture;
@@ -149,7 +149,7 @@ void main()
     albedo.a = albedoSample.a * albedoOut.a;
 
     // compute material properties
-    float metalness = texture(metalnessTexture, texCoordsOut).r * materialOut.r;
+    float metallic = texture(metallicTexture, texCoordsOut).r * materialOut.r;
     float ambientOcclusion = texture(ambientOcclusionTexture, texCoordsOut).g * materialOut.g;
     vec4 roughnessSample = texture(roughnessTexture, texCoordsOut);
     float roughness = roughnessSample.a == 1.0f ? roughnessSample.b : roughnessSample.a;
@@ -163,7 +163,7 @@ void main()
 
     // compute lightAccum term
     // if dia-electric (plastic) use f0 of 0.04f and if metal, use the albedo color as f0.
-    vec3 f0 = mix(vec3(0.04), albedo.rgb, metalness);
+    vec3 f0 = mix(vec3(0.04), albedo.rgb, metallic);
     vec3 lightAccum = vec3(0.0);
     for (int i = 0; i < LIGHTS_MAX; ++i)
     {
@@ -192,7 +192,7 @@ void main()
         // compute diffusion
         vec3 kS = f;
         vec3 kD = vec3(1.0) - kS;
-        kD *= 1.0 - metalness;
+        kD *= 1.0 - metallic;
 
         // compute light scalar
         float nDotL = max(dot(n, l), 0.0);
@@ -205,7 +205,7 @@ void main()
     vec3 f = fresnelSchlickRoughness(max(dot(n, v), 0.0), f0, roughness);
     vec3 kS = f;
     vec3 kD = 1.0 - kS;
-    kD *= 1.0 - metalness;
+    kD *= 1.0 - metallic;
     vec3 irradiance = texture(irradianceMap, n).rgb;
     vec3 diffuse = irradiance * albedo.rgb;
     float alpha = albedo.a;

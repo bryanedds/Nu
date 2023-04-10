@@ -178,7 +178,7 @@ module Effect =
                                 { emitter with
                                     Body = descriptor.Body
                                     AlbedoImage = descriptor.AlbedoImage
-                                    MetalnessImage = descriptor.MetalnessImage
+                                    MetallicImage = descriptor.MetallicImage
                                     RoughnessImage = descriptor.RoughnessImage
                                     AmbientOcclusionImage = descriptor.AmbientOcclusionImage
                                     EmissionImage = descriptor.EmissionImage
@@ -224,7 +224,7 @@ module Effect =
                                 (descriptor.Absolute,
                                  descriptor.Properties,
                                  descriptor.AlbedoImage,
-                                 descriptor.MetalnessImage,
+                                 descriptor.MetallicImage,
                                  descriptor.RoughnessImage,
                                  descriptor.AmbientOcclusionImage,
                                  descriptor.EmissionImage,

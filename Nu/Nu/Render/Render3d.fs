@@ -20,7 +20,7 @@ open Nu
 /// Material properties for physically-based rendering.
 type [<StructuralEquality; NoComparison; Struct>] PhysicallyBasedProperties =
     { AlbedoOpt : Color voption
-      MetalnessOpt : single voption
+      MetallicOpt : single voption
       RoughnessOpt : single voption
       AmbientOcclusionOpt : single voption
       EmissionOpt : single voption
@@ -31,7 +31,7 @@ type [<NoEquality; NoComparison>] BillboardParticlesDescriptor =
     { Absolute : bool
       Properties : PhysicallyBasedProperties
       AlbedoImage : Image AssetTag
-      MetalnessImage : Image AssetTag
+      MetallicImage : Image AssetTag
       RoughnessImage : Image AssetTag
       AmbientOcclusionImage : Image AssetTag
       EmissionImage : Image AssetTag
@@ -98,8 +98,8 @@ and [<ReferenceEquality>] StaticModelSurfaceDescriptor =
       Bounds : Box3
       Albedo : Color
       AlbedoImage : Image AssetTag
-      Metalness : single
-      MetalnessImage : Image AssetTag
+      Metallic : single
+      MetallicImage : Image AssetTag
       Roughness : single
       RoughnessImage : Image AssetTag
       AmbientOcclusion : single
@@ -434,8 +434,8 @@ type [<ReferenceEquality>] GlRenderer3d =
                     { Albedo = surfaceDescriptor.Albedo
                       AlbedoMetadata = albedoMetadata
                       AlbedoTexture = albedoTexture
-                      Metalness = surfaceDescriptor.Metalness
-                      MetalnessTexture = match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize surfaceDescriptor.MetalnessImage) renderer with ValueSome (TextureAsset (_, _, texture)) -> texture | _ -> renderer.RenderPhysicallyBasedMaterial.MetalnessTexture
+                      Metallic = surfaceDescriptor.Metallic
+                      MetallicTexture = match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize surfaceDescriptor.MetallicImage) renderer with ValueSome (TextureAsset (_, _, texture)) -> texture | _ -> renderer.RenderPhysicallyBasedMaterial.MetallicTexture
                       Roughness = surfaceDescriptor.Roughness
                       RoughnessTexture = match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize surfaceDescriptor.RoughnessImage) renderer with ValueSome (TextureAsset (_, _, texture)) -> texture | _ -> renderer.RenderPhysicallyBasedMaterial.RoughnessTexture
                       AmbientOcclusion = surfaceDescriptor.AmbientOcclusion
@@ -740,9 +740,9 @@ type [<ReferenceEquality>] GlRenderer3d =
                 renderer.RenderTexCoordsOffsetsFields.[i * 4 + 1] <- texCoordsOffset.Min.Y
                 renderer.RenderTexCoordsOffsetsFields.[i * 4 + 2] <- texCoordsOffset.Min.X + texCoordsOffset.Size.X
                 renderer.RenderTexCoordsOffsetsFields.[i * 4 + 3] <- texCoordsOffset.Min.Y + texCoordsOffset.Size.Y
-                let (albedo, metalness, roughness, ambientOcclusion, emission) =
+                let (albedo, metallic, roughness, ambientOcclusion, emission) =
                     ((match properties.AlbedoOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterial.Albedo),
-                     (match properties.MetalnessOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterial.Metalness),
+                     (match properties.MetallicOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterial.Metallic),
                      (match properties.RoughnessOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterial.Roughness),
                      (match properties.AmbientOcclusionOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterial.AmbientOcclusion),
                      (match properties.EmissionOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterial.Emission))
@@ -750,7 +750,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 renderer.RenderAlbedosFields.[i * 4 + 1] <- albedo.G
                 renderer.RenderAlbedosFields.[i * 4 + 2] <- albedo.B
                 renderer.RenderAlbedosFields.[i * 4 + 3] <- albedo.A
-                renderer.PhysicallyBasedMaterialsFields.[i * 4] <- metalness
+                renderer.PhysicallyBasedMaterialsFields.[i * 4] <- metallic
                 renderer.PhysicallyBasedMaterialsFields.[i * 4 + 1] <- ambientOcclusion
                 renderer.PhysicallyBasedMaterialsFields.[i * 4 + 2] <- roughness
                 renderer.PhysicallyBasedMaterialsFields.[i * 4 + 3] <- emission
@@ -762,15 +762,15 @@ type [<ReferenceEquality>] GlRenderer3d =
                  viewArray, projectionArray, blending, irradianceMap, environmentFilterMap, brdfTexture, lightOrigins, lightColors, lightBrightnesses, lightIntensities,
                  surface.SurfaceMaterial, surface.PhysicallyBasedGeometry, shader)
 
-    static member inline private makeBillboardMaterial (properties : PhysicallyBasedProperties) albedoImage metalnessImage roughnessImage ambientOcclusionImage emissionImage normalImage minFilterOpt magFilterOpt renderer =
+    static member inline private makeBillboardMaterial (properties : PhysicallyBasedProperties) albedoImage metallicImage roughnessImage ambientOcclusionImage emissionImage normalImage minFilterOpt magFilterOpt renderer =
         let (albedoMetadata, albedoTexture) =
             match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize albedoImage) renderer with
             | ValueSome (TextureAsset (_, textureMetadata, texture)) -> (textureMetadata, texture)
             | _ -> (OpenGL.Texture.TextureMetadata.empty, renderer.RenderPhysicallyBasedMaterial.AlbedoTexture)
-        let metalnessTexture =
-            match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize metalnessImage) renderer with
+        let metallicTexture =
+            match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize metallicImage) renderer with
             | ValueSome (TextureAsset (_, _, texture)) -> texture
-            | _ -> renderer.RenderPhysicallyBasedMaterial.MetalnessTexture
+            | _ -> renderer.RenderPhysicallyBasedMaterial.MetallicTexture
         let roughnessTexture =
             match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize roughnessImage) renderer with
             | ValueSome (TextureAsset (_, _, texture)) -> texture
@@ -791,8 +791,8 @@ type [<ReferenceEquality>] GlRenderer3d =
             { Albedo = ValueOption.defaultValue Constants.Render.AlbedoDefault properties.AlbedoOpt
               AlbedoMetadata = albedoMetadata
               AlbedoTexture = albedoTexture
-              Metalness = ValueOption.defaultValue Constants.Render.MetalnessDefault properties.MetalnessOpt
-              MetalnessTexture = metalnessTexture
+              Metallic = ValueOption.defaultValue Constants.Render.MetallicDefault properties.MetallicOpt
+              MetallicTexture = metallicTexture
               Roughness = ValueOption.defaultValue Constants.Render.RoughnessDefault properties.RoughnessOpt
               RoughnessTexture = roughnessTexture
               AmbientOcclusion = ValueOption.defaultValue Constants.Render.AmbientOcclusionDefault properties.AmbientOcclusionOpt
@@ -919,8 +919,8 @@ type [<ReferenceEquality>] GlRenderer3d =
             { Albedo = Constants.Render.AlbedoDefault
               AlbedoMetadata = albedoMetadata
               AlbedoTexture = albedoTexture
-              Metalness = Constants.Render.MetalnessDefault
-              MetalnessTexture = OpenGL.Texture.TryCreateTextureFiltered ("Assets/Default/MaterialMetalness.png") |> Either.getRight |> snd
+              Metallic = Constants.Render.MetallicDefault
+              MetallicTexture = OpenGL.Texture.TryCreateTextureFiltered ("Assets/Default/MaterialMetallic.png") |> Either.getRight |> snd
               Roughness = Constants.Render.RoughnessDefault
               RoughnessTexture = OpenGL.Texture.TryCreateTextureFiltered ("Assets/Default/MaterialRoughness.png") |> Either.getRight |> snd
               AmbientOcclusion = Constants.Render.AmbientOcclusionDefault
@@ -1022,17 +1022,17 @@ type [<ReferenceEquality>] GlRenderer3d =
                 | RenderLight3d (position, color, brightness, intensity, _) ->
                     let light = { SortableLightOrigin = position; SortableLightColor = color; SortableLightBrightness = brightness; SortableLightIntensity = intensity; SortableLightDistanceSquared = Single.MaxValue }
                     SegmentedList.add light renderer.RenderTasks.RenderLights
-                | RenderBillboard (absolute, modelMatrix, insetOpt, properties, albedoImage, metalnessImage, roughnessImage, ambientOcclusionImage, emissionImage, normalImage, minFilterOpt, magFilterOpt, renderType) ->
-                    let billboardMaterial = GlRenderer3d.makeBillboardMaterial properties albedoImage metalnessImage roughnessImage ambientOcclusionImage emissionImage normalImage minFilterOpt magFilterOpt renderer
+                | RenderBillboard (absolute, modelMatrix, insetOpt, properties, albedoImage, metallicImage, roughnessImage, ambientOcclusionImage, emissionImage, normalImage, minFilterOpt, magFilterOpt, renderType) ->
+                    let billboardMaterial = GlRenderer3d.makeBillboardMaterial properties albedoImage metallicImage roughnessImage ambientOcclusionImage emissionImage normalImage minFilterOpt magFilterOpt renderer
                     let billboardSurface = OpenGL.PhysicallyBased.CreatePhysicallyBasedSurface ([||], m4Identity, box3 (v3 -0.5f 0.0f -0.5f) v3One, billboardMaterial, renderer.RenderBillboardGeometry)
                     GlRenderer3d.categorizeBillboardSurface (absolute, eyeRotation, modelMatrix, insetOpt, billboardMaterial.AlbedoMetadata, properties, renderType, billboardSurface, renderer)
-                | RenderBillboards (absolute, billboards, properties, albedoImage, metalnessImage, roughnessImage, ambientOcclusionImage, emissionImage, normalImage, minFilterOpt, magFilterOpt, renderType) ->
-                    let billboardMaterial = GlRenderer3d.makeBillboardMaterial properties albedoImage metalnessImage roughnessImage ambientOcclusionImage emissionImage normalImage minFilterOpt magFilterOpt renderer
+                | RenderBillboards (absolute, billboards, properties, albedoImage, metallicImage, roughnessImage, ambientOcclusionImage, emissionImage, normalImage, minFilterOpt, magFilterOpt, renderType) ->
+                    let billboardMaterial = GlRenderer3d.makeBillboardMaterial properties albedoImage metallicImage roughnessImage ambientOcclusionImage emissionImage normalImage minFilterOpt magFilterOpt renderer
                     let billboardSurface = OpenGL.PhysicallyBased.CreatePhysicallyBasedSurface ([||], m4Identity, box3 (v3 -0.5f -0.5f -0.5f) v3One, billboardMaterial, renderer.RenderBillboardGeometry)
                     for (modelMatrix, insetOpt) in billboards do
                         GlRenderer3d.categorizeBillboardSurface (absolute, eyeRotation, modelMatrix, insetOpt, billboardMaterial.AlbedoMetadata, properties, renderType, billboardSurface, renderer)
-                | RenderBillboardParticles (absolute, properties, albedoImage, metalnessImage, roughnessImage, ambientOcclusionImage, emissionImage, normalImage, minFilterOpt, magFilterOpt, renderType, particles) ->
-                    let billboardMaterial = GlRenderer3d.makeBillboardMaterial properties albedoImage metalnessImage roughnessImage ambientOcclusionImage emissionImage normalImage minFilterOpt magFilterOpt renderer
+                | RenderBillboardParticles (absolute, properties, albedoImage, metallicImage, roughnessImage, ambientOcclusionImage, emissionImage, normalImage, minFilterOpt, magFilterOpt, renderType, particles) ->
+                    let billboardMaterial = GlRenderer3d.makeBillboardMaterial properties albedoImage metallicImage roughnessImage ambientOcclusionImage emissionImage normalImage minFilterOpt magFilterOpt renderer
                     for particle in particles do
                         let billboardMatrix =
                             Matrix4x4.CreateFromTrs

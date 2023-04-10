@@ -18,8 +18,8 @@ module PhysicallyBased =
         { Albedo : Color
           AlbedoMetadata : Texture.TextureMetadata
           AlbedoTexture : uint
-          Metalness : single
-          MetalnessTexture : uint
+          Metallic : single
+          MetallicTexture : uint
           Roughness : single
           RoughnessTexture : uint
           AmbientOcclusion : single
@@ -60,7 +60,7 @@ module PhysicallyBased =
 
         static member inline hash surface =
             (int surface.SurfaceMaterial.AlbedoTexture) ^^^
-            (int surface.SurfaceMaterial.MetalnessTexture <<< 2) ^^^
+            (int surface.SurfaceMaterial.MetallicTexture <<< 2) ^^^
             (int surface.SurfaceMaterial.RoughnessTexture <<< 4) ^^^
             (int surface.SurfaceMaterial.AmbientOcclusionTexture <<< 6) ^^^
             (int surface.SurfaceMaterial.EmissionTexture <<< 7) ^^^
@@ -82,7 +82,7 @@ module PhysicallyBased =
              | (ValueNone, ValueNone) -> true
              | (_, _) -> false) &&
             left.SurfaceMaterial.AlbedoTexture = right.SurfaceMaterial.AlbedoTexture &&
-            left.SurfaceMaterial.MetalnessTexture = right.SurfaceMaterial.MetalnessTexture &&
+            left.SurfaceMaterial.MetallicTexture = right.SurfaceMaterial.MetallicTexture &&
             left.SurfaceMaterial.RoughnessTexture = right.SurfaceMaterial.RoughnessTexture &&
             left.SurfaceMaterial.AmbientOcclusionTexture = right.SurfaceMaterial.AmbientOcclusionTexture &&
             left.SurfaceMaterial.EmissionTexture = right.SurfaceMaterial.EmissionTexture &&
@@ -144,7 +144,7 @@ module PhysicallyBased =
           ProjectionUniform : int
           EyeCenterUniform : int
           AlbedoTextureUniform : int
-          MetalnessTextureUniform : int
+          MetallicTextureUniform : int
           RoughnessTextureUniform : int
           AmbientOcclusionTextureUniform : int
           EmissionTextureUniform : int
@@ -440,7 +440,7 @@ module PhysicallyBased =
                 Gl.VertexAttribDivisor (8u, 1u)
                 Hl.Assert ()
 
-                // create material buffer (used for metalness, roughness, ambient occlusion, and emission in that order)
+                // create material buffer (used for metallic, roughness, ambient occlusion, and emission in that order)
                 let materialBuffer = Hl.AllocBuffer ()
                 Gl.BindBuffer (BufferTarget.ArrayBuffer, materialBuffer)
                 let materialDataPtr = GCHandle.Alloc ([|1.0f; 1.0f; 1.0f; 1.0f|], GCHandleType.Pinned)
@@ -584,16 +584,16 @@ module PhysicallyBased =
         let normalTextureFilePath =     if hasBaseColor   then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("BaseColor", "Normal")     elif hasDiffuse   then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("BaseColor", "Normal") else ""    
         let emissionTextureFilePath =   if hasBaseColor   then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("BaseColor", "Emission")   elif hasDiffuse   then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("BaseColor", "Emission") else ""  
 
-        // attempt to load metalness info
-        let metalness =
+        // attempt to load metallic info
+        let metallic =
             if material.HasColorSpecular
             then material.ColorSpecular.R
-            else Constants.Render.MetalnessDefault
-        let mutable (_, metalnessTextureSlot) = material.GetMaterialTexture (Assimp.TextureType.Specular, 0)
-        if isNull metalnessTextureSlot.FilePath then metalnessTextureSlot.FilePath <- "" // ensure not null
-        let metalnessTexture =
+            else Constants.Render.MetallicDefault
+        let mutable (_, metallicTextureSlot) = material.GetMaterialTexture (Assimp.TextureType.Specular, 0)
+        if isNull metallicTextureSlot.FilePath then metallicTextureSlot.FilePath <- "" // ensure not null
+        let metallicTexture =
             if renderable then
-                match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + metalnessTextureSlot.FilePath, textureMemo) with
+                match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + metallicTextureSlot.FilePath, textureMemo) with
                 | Right (_, texture) -> texture
                 | Left _ ->
                     match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + mTextureFilePath, textureMemo) with
@@ -607,8 +607,8 @@ module PhysicallyBased =
                             | Left _ ->
                                 match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + metallicTextureFilePath, textureMemo) with
                                 | Right (_, texture) -> texture
-                                | Left _ -> defaultMaterial.MetalnessTexture
-            else defaultMaterial.MetalnessTexture
+                                | Left _ -> defaultMaterial.MetallicTexture
+            else defaultMaterial.MetallicTexture
 
         // attempt to load roughness info
         let roughness =
@@ -697,8 +697,8 @@ module PhysicallyBased =
         { Albedo = color albedo.R albedo.G albedo.B albedo.A
           AlbedoMetadata = albedoMetadata
           AlbedoTexture = albedoTexture
-          Metalness = metalness
-          MetalnessTexture = metalnessTexture
+          Metallic = metallic
+          MetallicTexture = metallicTexture
           Roughness = roughness
           RoughnessTexture = roughnessTexture
           AmbientOcclusion = ambientOcclusion
@@ -831,7 +831,7 @@ module PhysicallyBased =
         let projectionUniform = Gl.GetUniformLocation (shader, "projection")
         let eyeCenterUniform = Gl.GetUniformLocation (shader, "eyeCenter")
         let albedoTextureUniform = Gl.GetUniformLocation (shader, "albedoTexture")
-        let metalnessTextureUniform = Gl.GetUniformLocation (shader, "metalnessTexture")
+        let metallicTextureUniform = Gl.GetUniformLocation (shader, "metallicTexture")
         let roughnessTextureUniform = Gl.GetUniformLocation (shader, "roughnessTexture")
         let ambientOcclusionTextureUniform = Gl.GetUniformLocation (shader, "ambientOcclusionTexture")
         let emissionTextureUniform = Gl.GetUniformLocation (shader, "emissionTexture")
@@ -849,7 +849,7 @@ module PhysicallyBased =
           ProjectionUniform = projectionUniform
           EyeCenterUniform = eyeCenterUniform
           AlbedoTextureUniform = albedoTextureUniform
-          MetalnessTextureUniform = metalnessTextureUniform
+          MetallicTextureUniform = metallicTextureUniform
           RoughnessTextureUniform = roughnessTextureUniform
           AmbientOcclusionTextureUniform = ambientOcclusionTextureUniform
           EmissionTextureUniform = emissionTextureUniform
@@ -943,7 +943,7 @@ module PhysicallyBased =
         Gl.UniformMatrix4 (shader.ProjectionUniform, false, projection)
         Gl.Uniform3 (shader.EyeCenterUniform, eyeCenter.X, eyeCenter.Y, eyeCenter.Z)
         Gl.Uniform1 (shader.AlbedoTextureUniform, 0)
-        Gl.Uniform1 (shader.MetalnessTextureUniform, 1)
+        Gl.Uniform1 (shader.MetallicTextureUniform, 1)
         Gl.Uniform1 (shader.RoughnessTextureUniform, 2)
         Gl.Uniform1 (shader.AmbientOcclusionTextureUniform, 3)
         Gl.Uniform1 (shader.EmissionTextureUniform, 4)
@@ -961,7 +961,7 @@ module PhysicallyBased =
         Gl.ActiveTexture TextureUnit.Texture0
         Gl.BindTexture (TextureTarget.Texture2d, material.AlbedoTexture)
         Gl.ActiveTexture TextureUnit.Texture1
-        Gl.BindTexture (TextureTarget.Texture2d, material.MetalnessTexture)
+        Gl.BindTexture (TextureTarget.Texture2d, material.MetallicTexture)
         Gl.ActiveTexture TextureUnit.Texture2
         Gl.BindTexture (TextureTarget.Texture2d, material.RoughnessTexture)
         Gl.ActiveTexture TextureUnit.Texture3
