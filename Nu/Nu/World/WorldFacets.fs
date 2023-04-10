@@ -1961,7 +1961,6 @@ module StaticModelFacetModule =
             let absolute = transform.Absolute
             let affineMatrix = transform.AffineMatrix
             let insetOpt = match entity.GetInsetOpt world with Some inset -> ValueSome inset | None -> ValueNone
-            let staticModel = entity.GetStaticModel world
             let properties =
                 { AlbedoOpt = match entity.GetAlbedoOpt world with Some albedo -> ValueSome albedo | None -> ValueNone
                   MetallicOpt = match entity.GetMetallicOpt world with Some metallic -> ValueSome metallic | None -> ValueNone
@@ -1973,6 +1972,7 @@ module StaticModelFacetModule =
                 match entity.GetRenderStyle world with
                 | Deferred -> DeferredRenderType
                 | Forward (sort, subsort) -> ForwardRenderType (sort, subsort)
+            let staticModel = entity.GetStaticModel world
             World.enqueueRenderMessage3d (RenderStaticModel (absolute, affineMatrix, insetOpt, properties, renderType, staticModel)) world
 
         override this.GetQuickSize (entity, world) =
@@ -2071,7 +2071,6 @@ module StaticModelSurfaceFacetModule =
                 let mutable transform = entity.GetTransform world
                 let absolute = transform.Absolute
                 let affineMatrix = transform.AffineMatrix
-                let staticModel = entity.GetStaticModel world
                 let insetOpt = match entity.GetInsetOpt world with Some inset -> ValueSome inset | None -> ValueNone
                 let properties =
                     { AlbedoOpt = match entity.GetAlbedoOpt world with Some albedo -> ValueSome albedo | None -> ValueNone
@@ -2084,6 +2083,7 @@ module StaticModelSurfaceFacetModule =
                     match entity.GetRenderStyle world with
                     | Deferred -> DeferredRenderType
                     | Forward (sort, subsort) -> ForwardRenderType (sort, subsort)
+                let staticModel = entity.GetStaticModel world
                 World.enqueueRenderMessage3d (RenderStaticModelSurface (absolute, affineMatrix, insetOpt, properties, renderType, staticModel, surfaceIndex)) world
 
         override this.GetQuickSize (entity, world) =

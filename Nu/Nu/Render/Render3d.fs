@@ -142,15 +142,15 @@ and [<ReferenceEquality>] SortableLight =
 
     /// Sort lights into array for uploading to OpenGL.
     /// TODO: consider getting rid of allocation here.
-    static member sortLightsIntoArrays position lights =
-        let lightOrigins = Array.zeroCreate<single> (Constants.Render.ShaderLightsMax * 3)
-        let lightColors = Array.zeroCreate<single> (Constants.Render.ShaderLightsMax * 4)
-        let lightBrightnesses = Array.zeroCreate<single> (Constants.Render.ShaderLightsMax)
-        let lightIntensities = Array.zeroCreate<single> (Constants.Render.ShaderLightsMax)
+    static member sortLightsIntoArrays lightsMax position lights =
+        let lightOrigins = Array.zeroCreate<single> (lightsMax * 3)
+        let lightColors = Array.zeroCreate<single> (lightsMax * 4)
+        let lightBrightnesses = Array.zeroCreate<single> lightsMax
+        let lightIntensities = Array.zeroCreate<single> lightsMax
         for light in lights do
             light.SortableLightDistanceSquared <- (light.SortableLightOrigin - position).MagnitudeSquared
         let lightsSorted = lights |> Seq.toArray |> Array.sortBy (fun light -> light.SortableLightDistanceSquared)
-        for i in 0 .. dec Constants.Render.ShaderLightsMax do
+        for i in 0 .. dec lightsMax do
             if i < lightsSorted.Length then
                 let p = i * 3
                 let c = i * 4
@@ -1126,7 +1126,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
             // sort lights for deferred relative to eye center
             let (lightOrigins, lightColors, lightBrightnesses, lightIntensities) =
-                SortableLight.sortLightsIntoArrays eyeCenter renderer.RenderTasks.RenderLights
+                SortableLight.sortLightsIntoArrays Constants.Render.DeferredLightsMax eyeCenter renderer.RenderTasks.RenderLights
 
             // deferred render surfaces w/ absolute transforms
             for entry in renderer.RenderTasks.RenderSurfacesDeferredAbsolute do
@@ -1199,7 +1199,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             // forward render surfaces w/ absolute transforms
             for (model, texCoordsOffset, properties, surface) in renderer.RenderTasks.RenderSurfacesForwardAbsoluteSorted do
                 let (lightOrigins, lightColors, lightBrightnesses, lightIntensities) =
-                    SortableLight.sortLightsIntoArrays model.Translation renderer.RenderTasks.RenderLights
+                    SortableLight.sortLightsIntoArrays Constants.Render.ForwardLightsMax model.Translation renderer.RenderTasks.RenderLights
                 GlRenderer3d.renderPhysicallyBasedSurfaces
                     eyeCenter
                     viewAbsoluteArray
@@ -1221,7 +1221,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             // forward render surfaces w/ relative transforms
             for (model, texCoordsOffset, properties, surface) in renderer.RenderTasks.RenderSurfacesForwardRelativeSorted do
                 let (lightOrigins, lightColors, lightBrightnesses, lightIntensities) =
-                    SortableLight.sortLightsIntoArrays model.Translation renderer.RenderTasks.RenderLights
+                    SortableLight.sortLightsIntoArrays Constants.Render.ForwardLightsMax model.Translation renderer.RenderTasks.RenderLights
                 GlRenderer3d.renderPhysicallyBasedSurfaces
                     eyeCenter
                     viewRelativeArray
