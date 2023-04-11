@@ -661,14 +661,14 @@ module WorldModuleEntity =
                 let affineMatrixWorld = World.getEntityAffineMatrix mount world
                 let affineMatrixLocal = World.getEntityAffineMatrixLocal mounter world
                 let affineMatrix = affineMatrixLocal * affineMatrixWorld
-                let position = affineMatrix.Translation
-                let rotation = affineMatrix.Rotation
-                let scale = affineMatrix.Scale
-                let mutable transform = mounterState.Transform
-                transform.Position <- position
-                transform.Rotation <- rotation
-                transform.Scale <- scale
-                World.setEntityTransformByRef (&transform, mounterState, mounter, world) |> snd'
+                let mutable (scale, rotation, position) = (v3One, quatIdentity, v3Zero)
+                if Matrix4x4.Decompose (affineMatrix, &scale, &rotation, &position) then
+                    let mutable transform = mounterState.Transform
+                    transform.Position <- position
+                    transform.Rotation <- rotation
+                    transform.Scale <- scale
+                    World.setEntityTransformByRef (&transform, mounterState, mounter, world) |> snd'
+                else world
             else world
 
         static member internal propagateEntityProperties3 mountOpt entity world =
