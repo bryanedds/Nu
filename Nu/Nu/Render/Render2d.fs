@@ -384,7 +384,7 @@ type [<ReferenceEquality>] GlRenderer2d =
         let min = perimeter.Min.V2 * Constants.Render.VirtualScalar2
         let size = perimeter.Size.V2 * Constants.Render.VirtualScalar2
         let pivot = transform.Pivot.V2 * Constants.Render.VirtualScalar2
-        let rotation = transform.Angles.Z
+        let rotation = -transform.Angles.Z
         let image = AssetTag.generalize image
         match GlRenderer2d.tryGetRenderAsset image renderer with
         | ValueSome renderAsset ->
@@ -410,7 +410,7 @@ type [<ReferenceEquality>] GlRenderer2d =
                     let min = perimeter.Min.V2 * Constants.Render.VirtualScalar2
                     let size = perimeter.Size.V2 * Constants.Render.VirtualScalar2
                     let pivot = transform.Pivot.V2 * Constants.Render.VirtualScalar2
-                    let rotation = transform.Angles.Z
+                    let rotation = -transform.Angles.Z
                     let color = &particle.Color
                     let emission = &particle.Emission
                     let flip = particle.Flip
