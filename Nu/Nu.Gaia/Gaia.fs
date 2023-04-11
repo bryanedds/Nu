@@ -376,25 +376,38 @@ module Gaia =
             match tryMousePick mousePosition form world with
             | (Some (_, entity), world) ->
                 let world = Globals.pushPastWorld world
-                if entity.GetIs2d world then
-                    let viewport = World.getViewport world
-                    let eyeCenter = World.getEyeCenter2d world
-                    let eyeSize = World.getEyeSize2d world
-                    let mousePositionWorld = viewport.MouseToWorld2d (entity.GetAbsolute world, mousePosition, eyeCenter, eyeSize)
-                    let entityPosition = if entity.MountExists world then entity.GetPositionLocal world else entity.GetPosition world
-                    dragEntityState <- DragEntityPosition2d (DateTimeOffset.Now, mousePositionWorld, entityPosition.V2 + mousePositionWorld, entity)
+                if World.isKeyboardAltDown world then
+                    if entity.GetIs2d world then
+                        let viewport = World.getViewport world
+                        let eyeCenter = World.getEyeCenter2d world
+                        let eyeSize = World.getEyeSize2d world
+                        let mousePositionWorld = viewport.MouseToWorld2d (entity.GetAbsolute world, mousePosition, eyeCenter, eyeSize)
+                        let entityDegrees = if entity.MountExists world then entity.GetDegreesLocal world else entity.GetDegrees world
+                        dragEntityState <- DragEntityRotation2d (DateTimeOffset.Now, mousePositionWorld, entityDegrees.Z + mousePositionWorld.Y, entity)
+                        (handled, world)
+                    else
+                        (handled, world)
                 else
-                    let viewport = World.getViewport world
-                    let eyeCenter = World.getEyeCenter3d world
-                    let eyeRotation = World.getEyeRotation3d world
-                    let mouseRayWorld = viewport.MouseToWorld3d (entity.GetAbsolute world, mousePosition, eyeCenter, eyeRotation)
-                    let entityPosition = entity.GetPosition world
-                    let entityPlane = plane3 entityPosition (Vector3.Transform (v3Forward, World.getEyeRotation3d world))
-                    let intersectionOpt = mouseRayWorld.Intersection entityPlane
-                    if intersectionOpt.HasValue then
-                        let entityDragOffset = intersectionOpt.Value - entityPosition
-                        dragEntityState <- DragEntityPosition3d (DateTimeOffset.Now, entityDragOffset, entityPlane, entity)
-                (handled, world)
+                    if entity.GetIs2d world then
+                        let viewport = World.getViewport world
+                        let eyeCenter = World.getEyeCenter2d world
+                        let eyeSize = World.getEyeSize2d world
+                        let mousePositionWorld = viewport.MouseToWorld2d (entity.GetAbsolute world, mousePosition, eyeCenter, eyeSize)
+                        let entityPosition = if entity.MountExists world then entity.GetPositionLocal world else entity.GetPosition world
+                        dragEntityState <- DragEntityPosition2d (DateTimeOffset.Now, mousePositionWorld, entityPosition.V2 + mousePositionWorld, entity)
+                        (handled, world)
+                    else
+                        let viewport = World.getViewport world
+                        let eyeCenter = World.getEyeCenter3d world
+                        let eyeRotation = World.getEyeRotation3d world
+                        let mouseRayWorld = viewport.MouseToWorld3d (entity.GetAbsolute world, mousePosition, eyeCenter, eyeRotation)
+                        let entityPosition = entity.GetPosition world
+                        let entityPlane = plane3 entityPosition (Vector3.Transform (v3Forward, World.getEyeRotation3d world))
+                        let intersectionOpt = mouseRayWorld.Intersection entityPlane
+                        if intersectionOpt.HasValue then
+                            let entityDragOffset = intersectionOpt.Value - entityPosition
+                            dragEntityState <- DragEntityPosition3d (DateTimeOffset.Now, entityDragOffset, entityPlane, entity)
+                        (handled, world)
             | (None, world) -> (handled, world)
         else (Cascade, world)
 
@@ -1583,6 +1596,35 @@ module Gaia =
                     // form.entityPropertyGrid.Refresh ()
                     world
                 else world
+            | DragEntityRotation2d (time, mousePositionWorldOriginal, entityDragOffset, entity) ->
+                let localTime = DateTimeOffset.Now - time
+                if entity.Exists world && localTime.TotalSeconds >= Constants.Editor.DragMinimumSeconds then
+                    let mousePositionWorld = World.getMousePostion2dWorld (entity.GetAbsolute world) world
+                    let entityRotation = (entityDragOffset - mousePositionWorldOriginal.Y) + (mousePositionWorld.Y - mousePositionWorldOriginal.Y)
+                    let entityRotationSnapped =
+                        if not form.snap3dButton.Checked
+                        then Math.snapF (Triple.snd (getSnaps form)) entityRotation
+                        else entityRotation
+                    let world =
+                        if entity.MountExists world then
+                            let entityRotationDelta = entityRotationSnapped - (entity.GetDegreesLocal world).Z
+                            let entityRotation = (entity.GetDegreesLocal world).Z + entityRotationDelta
+                            entity.SetDegreesLocal (v3 0.0f 0.0f entityRotation) world
+                        else
+                            let entityRotationDelta = entityRotationSnapped - (entity.GetDegrees world).Z
+                            let entityRotation = (entity.GetDegrees world).Z + entityRotationDelta
+                            entity.SetDegrees (v3 0.0f 0.0f entityRotation) world
+                    let world =
+                        if  Option.isSome (entity.TryGetProperty "LinearVelocity" world) &&
+                            Option.isSome (entity.TryGetProperty "AngularVelocity" world) then
+                            let world = entity.SetLinearVelocity v3Zero world
+                            let world = entity.SetAngularVelocity v3Zero world
+                            world
+                        else world
+                    // NOTE: disabled the following line to fix perf issue caused by refreshing the property grid every frame
+                    // form.entityPropertyGrid.Refresh ()
+                    world
+                else world
             | DragEntityPosition3d (time, entityDragOffset, entityPlane, entity) ->
                 let localTime = DateTimeOffset.Now - time
                 if entity.Exists world && localTime.TotalSeconds >= Constants.Editor.DragMinimumSeconds then
@@ -1629,7 +1671,6 @@ module Gaia =
                         world
                     else world
                 else world
-            | DragEntityRotation2d _ -> world
             | DragEntityInactive -> world
         else world
 
@@ -1643,7 +1684,6 @@ module Gaia =
             world
         | DragEyeInactive -> world
 
-    // TODO: remove code duplication with below
     let private updateUndoButton (form : GaiaForm) world =
         if form.undoToolStripMenuItem.Enabled then
             if not (Globals.canUndo ()) then
