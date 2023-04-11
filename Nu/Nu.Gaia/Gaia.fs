@@ -1675,39 +1675,28 @@ module Gaia =
                     let intersectionOpt = mouseRayWorld.Intersection entityPlane
                     if intersectionOpt.HasValue then
                         let entityPosition = intersectionOpt.Value - entityDragOffset
+                        let entityPositionSnapped =
+                            if form.snap3dButton.Checked
+                            then Math.snapF3d (Triple.fst (getSnaps form)) entityPosition
+                            else entityPosition
+                        let entityPositionDelta = entityPositionSnapped - entity.GetPosition world
+                        let entityPositionConstrained =
+                            match (form.constrainXButton.Checked, form.constrainYButton.Checked, form.constrainZButton.Checked) with
+                            | (true, false, false) -> entity.GetPosition world + entityPositionDelta * v3Right
+                            | (false, true, false) -> entity.GetPosition world + entityPositionDelta * v3Up
+                            | (false, false, true) -> entity.GetPosition world + entityPositionDelta * v3Back
+                            | (true, true, false) -> entity.GetPosition world + entityPositionDelta * (v3Right + v3Up)
+                            | (false, true, true) -> entity.GetPosition world + entityPositionDelta * (v3Up + v3Back)
+                            | (_, _, _) -> entity.GetPosition world + entityPositionDelta
                         let world =
-                            if entity.MountExists world then
-                                let entityPositionDelta = entityPosition - entity.GetPositionLocal world
-                                let entityDegreesDeltaUnsnapped = entityPositionDelta * 10.0f
-                                let entityDegreesDelta =
-                                    if form.snap3dButton.Checked
-                                    then Math.snapF3d (Triple.snd (getSnaps form)) entityDegreesDeltaUnsnapped
-                                    else entityDegreesDeltaUnsnapped
-                                let entityDegreesConstrained =
-                                    match (form.constrainXButton.Checked, form.constrainYButton.Checked, form.constrainZButton.Checked) with
-                                    | (true, false, false) -> entity.GetDegreesLocal world + entityDegreesDelta * v3Right
-                                    | (false, true, false) -> entity.GetDegreesLocal world + entityDegreesDelta * v3Up
-                                    | (false, false, true) -> entity.GetDegreesLocal world + entityDegreesDelta * v3Back
-                                    | (true, true, false) -> entity.GetDegreesLocal world + entityDegreesDelta * (v3Right + v3Up)
-                                    | (false, true, true) -> entity.GetDegreesLocal world + entityDegreesDelta * (v3Up + v3Back)
-                                    | (_, _, _) -> entity.GetDegreesLocal world + entityDegreesDelta
-                                entity.SetDegreesLocal entityDegreesConstrained world
-                            else
-                                let entityPositionDelta = entityPosition - entity.GetPosition world
-                                let entityDegreesDeltaUnsnapped = entityPositionDelta * 10.0f
-                                let entityDegreesDelta =
-                                    if form.snap3dButton.Checked
-                                    then Math.snapF3d (Triple.snd (getSnaps form)) entityDegreesDeltaUnsnapped
-                                    else entityDegreesDeltaUnsnapped
-                                let entityDegreesConstrained =
-                                    match (form.constrainXButton.Checked, form.constrainYButton.Checked, form.constrainZButton.Checked) with
-                                    | (true, false, false) -> entity.GetDegrees world + entityDegreesDelta * v3Right
-                                    | (false, true, false) -> entity.GetDegrees world + entityDegreesDelta * v3Up
-                                    | (false, false, true) -> entity.GetDegrees world + entityDegreesDelta * v3Back
-                                    | (true, true, false) -> entity.GetDegrees world + entityDegreesDelta * (v3Right + v3Up)
-                                    | (false, true, true) -> entity.GetDegrees world + entityDegreesDelta * (v3Up + v3Back)
-                                    | (_, _, _) -> entity.GetDegrees world + entityDegreesDelta
-                                entity.SetDegrees entityDegreesConstrained world
+                            match Option.bind (tryResolve entity) (entity.GetMountOpt world) with
+                            | Some parent ->
+                                let entityPositionLocal = Vector3.Transform (entityPositionConstrained, parent.GetAffineMatrix world |> Matrix4x4.Inverse)
+                                let entityDegreesLocal = entityPositionLocal * 50.0f
+                                entity.SetDegreesLocal entityDegreesLocal world
+                            | None ->
+                                let entityDegrees = entityPositionConstrained * 50.0f
+                                entity.SetDegrees entityDegrees world
                         let world =
                             if  Option.isSome (entity.TryGetProperty "LinearVelocity" world) &&
                                 Option.isSome (entity.TryGetProperty "AngularVelocity" world) then
