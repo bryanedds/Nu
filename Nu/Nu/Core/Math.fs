@@ -1007,7 +1007,9 @@ module Matrix4x4 =
 
         /// The rotation extracted from an affine matrix.
         member inline this.Rotation =
-            Quaternion.CreateFromRotationMatrix this
+            let mutable (scale, rotation, position) = (v3One, quatIdentity, v3Zero)
+            if Matrix4x4.Decompose (this, &scale, &rotation, &position) then rotation
+            else quatIdentity
 
         /// Convert a Matrix4x4 to an array.
         member this.ToArray () =
