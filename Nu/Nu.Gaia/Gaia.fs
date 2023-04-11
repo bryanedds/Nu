@@ -390,7 +390,7 @@ module Gaia =
                         let eyeCenter = World.getEyeCenter3d world
                         let eyeRotation = World.getEyeRotation3d world
                         let mouseRayWorld = viewport.MouseToWorld3d (entity.GetAbsolute world, mousePosition, eyeCenter, eyeRotation)
-                        let entityPosition = entity.GetPosition world
+                        let entityPosition = if entity.MountExists world then entity.GetPositionLocal world else entity.GetPosition world
                         let entityPlane = plane3 entityPosition (Vector3.Transform (v3Forward, World.getEyeRotation3d world))
                         let intersectionOpt = mouseRayWorld.Intersection entityPlane
                         if intersectionOpt.HasValue then
@@ -403,7 +403,7 @@ module Gaia =
                         let eyeCenter = World.getEyeCenter2d world
                         let eyeSize = World.getEyeSize2d world
                         let mousePositionWorld = viewport.MouseToWorld2d (entity.GetAbsolute world, mousePosition, eyeCenter, eyeSize)
-                        let entityPosition = if entity.MountExists world then entity.GetPositionLocal world else entity.GetPosition world
+                        let entityPosition = entity.GetPosition world
                         dragEntityState <- DragEntityPosition2d (DateTimeOffset.Now, mousePositionWorld, entityPosition.V2 + mousePositionWorld, entity)
                         (handled, world)
                     else
@@ -411,15 +411,15 @@ module Gaia =
                         let eyeCenter = World.getEyeCenter3d world
                         let eyeRotation = World.getEyeRotation3d world
                         let mouseRayWorld = viewport.MouseToWorld3d (entity.GetAbsolute world, mousePosition, eyeCenter, eyeRotation)
-                        let entityPosition = if entity.MountExists world then entity.GetPositionLocal world else entity.GetPosition world
+                        let entityPosition = entity.GetPosition world
                         let entityPlane = plane3 entityPosition (Vector3.Transform (v3Forward, World.getEyeRotation3d world))
                         let intersectionOpt = mouseRayWorld.Intersection entityPlane
                         if intersectionOpt.HasValue then
                             let entityDragOffsetWorld = intersectionOpt.Value - entityPosition
-                            let entityMountTransformInverse = m4Identity
-                                //match Option.bind (tryResolve entity) (entity.GetMountOpt world) with
-                                //| Some mount -> Matrix4x4.Inverse (mount.GetAffineMatrix world)
-                                //| _ -> m4Identity
+                            let entityMountTransformInverse =
+                                match Option.bind (tryResolve entity) (entity.GetMountOpt world) with
+                                | Some mount -> Matrix4x4.Inverse (mount.GetAffineMatrix world)
+                                | _ -> m4Identity
                             let entityDragOffset = Vector3.Transform (entityDragOffsetWorld, entityMountTransformInverse)
                             dragEntityState <- DragEntityPosition3d (DateTimeOffset.Now, entityDragOffset, entityPlane, entity)
                         (handled, world)
@@ -1581,22 +1581,18 @@ module Gaia =
                         if not form.snap3dButton.Checked
                         then Math.snapF3d (Triple.fst (getSnaps form)) entityPosition.V3
                         else entityPosition.V3
+                    let entityPositionDelta = entityPositionSnapped - entity.GetPosition world
+                    let entityPositionConstrained =
+                        match (form.constrainXButton.Checked, form.constrainYButton.Checked, form.constrainZButton.Checked) with
+                        | (true, false, _) -> entity.GetPosition world + entityPositionDelta * v3Right
+                        | (false, true, _) -> entity.GetPosition world + entityPositionDelta * v3Up
+                        | (_, _, _) -> entity.GetPosition world + entityPositionDelta
                     let world =
-                        if entity.MountExists world then
-                            let entityPositionDelta = entityPositionSnapped - entity.GetPositionLocal world
-                            let entityPositionConstrained =
-                                match (form.constrainXButton.Checked, form.constrainYButton.Checked, form.constrainZButton.Checked) with
-                                | (true, false, _) -> entity.GetPositionLocal world + entityPositionDelta * v3Right
-                                | (false, true, _) -> entity.GetPositionLocal world + entityPositionDelta * v3Up
-                                | (_, _, _) -> entity.GetPositionLocal world + entityPositionDelta
-                            entity.SetPositionLocal entityPositionConstrained world
-                        else
-                            let entityPositionDelta = entityPositionSnapped - entity.GetPosition world
-                            let entityPositionConstrained =
-                                match (form.constrainXButton.Checked, form.constrainYButton.Checked, form.constrainZButton.Checked) with
-                                | (true, false, _) -> entity.GetPosition world + entityPositionDelta * v3Right
-                                | (false, true, _) -> entity.GetPosition world + entityPositionDelta * v3Up
-                                | (_, _, _) -> entity.GetPosition world + entityPositionDelta
+                        match Option.bind (tryResolve entity) (entity.GetMountOpt world) with
+                        | Some parent ->
+                            let entityPositionLocal = Vector3.Transform (entityPositionConstrained, parent.GetAffineMatrix world |> Matrix4x4.Inverse)
+                            entity.SetPositionLocal entityPositionLocal world
+                        | None ->
                             entity.SetPosition entityPositionConstrained world
                     let world =
                         if  Option.isSome (entity.TryGetProperty "LinearVelocity" world) &&
@@ -1649,28 +1645,21 @@ module Gaia =
                             if form.snap3dButton.Checked
                             then Math.snapF3d (Triple.fst (getSnaps form)) entityPosition
                             else entityPosition
+                        let entityPositionDelta = entityPositionSnapped - entity.GetPosition world
+                        let entityPositionConstrained =
+                            match (form.constrainXButton.Checked, form.constrainYButton.Checked, form.constrainZButton.Checked) with
+                            | (true, false, false) -> entity.GetPosition world + entityPositionDelta * v3Right
+                            | (false, true, false) -> entity.GetPosition world + entityPositionDelta * v3Up
+                            | (false, false, true) -> entity.GetPosition world + entityPositionDelta * v3Back
+                            | (true, true, false) -> entity.GetPosition world + entityPositionDelta * (v3Right + v3Up)
+                            | (false, true, true) -> entity.GetPosition world + entityPositionDelta * (v3Up + v3Back)
+                            | (_, _, _) -> entity.GetPosition world + entityPositionDelta
                         let world =
-                            if entity.MountExists world then
-                                let entityPositionDelta = entityPositionSnapped - entity.GetPositionLocal world
-                                let entityPositionConstrained =
-                                    match (form.constrainXButton.Checked, form.constrainYButton.Checked, form.constrainZButton.Checked) with
-                                    | (true, false, false) -> entity.GetPositionLocal world + entityPositionDelta * v3Right
-                                    | (false, true, false) -> entity.GetPositionLocal world + entityPositionDelta * v3Up
-                                    | (false, false, true) -> entity.GetPositionLocal world + entityPositionDelta * v3Back
-                                    | (true, true, false) -> entity.GetPositionLocal world + entityPositionDelta * (v3Right + v3Up)
-                                    | (false, true, true) -> entity.GetPositionLocal world + entityPositionDelta * (v3Up + v3Back)
-                                    | (_, _, _) -> entity.GetPositionLocal world + entityPositionDelta
-                                entity.SetPositionLocal entityPositionConstrained world
-                            else
-                                let entityPositionDelta = entityPositionSnapped - entity.GetPosition world
-                                let entityPositionConstrained =
-                                    match (form.constrainXButton.Checked, form.constrainYButton.Checked, form.constrainZButton.Checked) with
-                                    | (true, false, false) -> entity.GetPosition world + entityPositionDelta * v3Right
-                                    | (false, true, false) -> entity.GetPosition world + entityPositionDelta * v3Up
-                                    | (false, false, true) -> entity.GetPosition world + entityPositionDelta * v3Back
-                                    | (true, true, false) -> entity.GetPosition world + entityPositionDelta * (v3Right + v3Up)
-                                    | (false, true, true) -> entity.GetPosition world + entityPositionDelta * (v3Up + v3Back)
-                                    | (_, _, _) -> entity.GetPosition world + entityPositionDelta
+                            match Option.bind (tryResolve entity) (entity.GetMountOpt world) with
+                            | Some parent ->
+                                let entityPositionLocal = Vector3.Transform (entityPositionConstrained, parent.GetAffineMatrix world |> Matrix4x4.Inverse)
+                                entity.SetPositionLocal entityPositionLocal world
+                            | None ->
                                 entity.SetPosition entityPositionConstrained world
                         let world =
                             if  Option.isSome (entity.TryGetProperty "LinearVelocity" world) &&
@@ -1691,14 +1680,14 @@ module Gaia =
                     let intersectionOpt = mouseRayWorld.Intersection entityPlane
                     if intersectionOpt.HasValue then
                         let entityPosition = intersectionOpt.Value - entityDragOffset
-                        let entityPositionDelta = entityPosition - entity.GetPosition world
-                        let entityDegreesDeltaUnsnapped = entityPositionDelta * 10.0f
-                        let entityDegreesDelta =
-                            if form.snap3dButton.Checked
-                            then Math.snapF3d (Triple.snd (getSnaps form)) entityDegreesDeltaUnsnapped
-                            else entityDegreesDeltaUnsnapped
                         let world =
                             if entity.MountExists world then
+                                let entityPositionDelta = entityPosition - entity.GetPositionLocal world
+                                let entityDegreesDeltaUnsnapped = entityPositionDelta * 10.0f
+                                let entityDegreesDelta =
+                                    if form.snap3dButton.Checked
+                                    then Math.snapF3d (Triple.snd (getSnaps form)) entityDegreesDeltaUnsnapped
+                                    else entityDegreesDeltaUnsnapped
                                 let entityDegreesConstrained =
                                     match (form.constrainXButton.Checked, form.constrainYButton.Checked, form.constrainZButton.Checked) with
                                     | (true, false, false) -> entity.GetDegreesLocal world + entityDegreesDelta * v3Right
@@ -1709,7 +1698,12 @@ module Gaia =
                                     | (_, _, _) -> entity.GetDegreesLocal world + entityDegreesDelta
                                 entity.SetDegreesLocal entityDegreesConstrained world
                             else
-                                //let entityDegreesDelta = entityDegreesSnapped - entity.GetDegrees world
+                                let entityPositionDelta = entityPosition - entity.GetPosition world
+                                let entityDegreesDeltaUnsnapped = entityPositionDelta * 10.0f
+                                let entityDegreesDelta =
+                                    if form.snap3dButton.Checked
+                                    then Math.snapF3d (Triple.snd (getSnaps form)) entityDegreesDeltaUnsnapped
+                                    else entityDegreesDeltaUnsnapped
                                 let entityDegreesConstrained =
                                     match (form.constrainXButton.Checked, form.constrainYButton.Checked, form.constrainZButton.Checked) with
                                     | (true, false, false) -> entity.GetDegrees world + entityDegreesDelta * v3Right
