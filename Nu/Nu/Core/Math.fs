@@ -1043,7 +1043,7 @@ module Matrix4x4 =
     let m4Zero = Unchecked.defaultof<Matrix4x4>
 
     /// Create a matrix from translation, rotation, and scale.
-    let CreateFromTrs (translation : Vector3, rotation, scale : Vector3) =
+    let CreateFromTrs (translation, rotation, scale : Vector3) =
         let mutable trs = Matrix4x4.CreateFromQuaternion rotation
         trs.M11 <- trs.M11 * scale.X
         trs.M22 <- trs.M22 * scale.Y

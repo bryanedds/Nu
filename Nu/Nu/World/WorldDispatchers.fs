@@ -1117,15 +1117,14 @@ module StaticModelHierarchyDispatcherModule =
                                 | Left group -> (light.LightNames.Length > 0, light.LightNames, group)
                                 | Right entity -> (true, Array.append entity.Surnames light.LightNames, entity.Group)
                             let (child, world) = World.createEntity<LightDispatcher3d> DefaultOverlay (Some surnames) group world
-                            let transform = light.LightMatrix
-                            let position = transform.Translation
-                            let mutable rotation = transform
-                            rotation.Translation <- v3Zero
-                            let rotation = Quaternion.CreateFromRotationMatrix rotation
-                            let scale = transform.Scale
+                            let (position, rotation, world) =
+                                let transform = light.LightMatrix
+                                let mutable (scale, rotation, position) = (v3One, quatIdentity, v3Zero)
+                                if Matrix4x4.Decompose (transform, &scale, &rotation, &position)
+                                then (position, rotation, world)
+                                else (transform.Translation, quatIdentity, world) // use translation, even from invalid transform
                             let world = child.SetPositionLocal position world
                             let world = child.SetRotationLocal rotation world
-                            let world = child.SetScaleLocal scale world
                             let world = child.SetPresence presence world
                             let world = child.SetStatic true world
                             let world = if mountToParent then child.SetMountOpt (Some (Relation.makeParent ())) world else world
@@ -1142,12 +1141,12 @@ module StaticModelHierarchyDispatcherModule =
                                 then World.createEntity<RigidModelSurfaceDispatcher> DefaultOverlay (Some surnames) group world
                                 else World.createEntity<StaticModelSurfaceDispatcher> DefaultOverlay (Some surnames) group world
                             let world = if rigid then child.SetBodyType Static world else world
-                            let transform = surface.SurfaceMatrix
-                            let position = transform.Translation
-                            let mutable rotation = transform
-                            rotation.Translation <- v3Zero
-                            let rotation = Quaternion.CreateFromRotationMatrix rotation
-                            let scale = transform.Scale
+                            let (position, rotation, scale, world) =
+                                let transform = surface.SurfaceMatrix
+                                let mutable (scale, rotation, position) = (v3One, quatIdentity, v3Zero)
+                                if Matrix4x4.Decompose (transform, &scale, &rotation, &position)
+                                then (position, rotation, scale, world)
+                                else (transform.Translation, quatIdentity, transform.Scale, world) // use translation and scale, even from invalid transform
                             let world = child.SetPositionLocal position world
                             let world = child.SetRotationLocal rotation world
                             let world = child.SetScaleLocal scale world
