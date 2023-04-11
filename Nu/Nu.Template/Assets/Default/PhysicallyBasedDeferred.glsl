@@ -97,13 +97,9 @@ void main()
     // forward position
     position = positionOut;
 
-    // compute albedo without alpha
+    // compute albedo, excluding alpha
     vec4 albedoSample = texture(albedoTexture, texCoordsOut);
     albedo = pow(albedoSample.rgb * albedoOut.rgb, vec3(GAMMA));
-
-    // discard fragment if alpha is zero
-    float alpha = albedoSample.a * albedoOut.a;
-    if (alpha == 0.0f) discard;
 
     // compute material properties
     float metallic = texture(metallicTexture, texCoordsOut).r * materialOut.r;
