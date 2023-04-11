@@ -54,7 +54,7 @@ module internal Quadnode =
         node.Bounds.Intersects bounds
 
     let inline internal containsBounds (bounds : Box2) node =
-        node.Bounds.Combine bounds = node.Bounds
+        node.Bounds.Contains bounds = ContainmentType.Contains
 
     let rec internal addElement bounds element node =
         if isIntersectingBounds bounds node then

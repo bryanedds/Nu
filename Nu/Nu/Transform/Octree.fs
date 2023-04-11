@@ -71,7 +71,7 @@ module internal Octnode =
         frustum.Intersects node.Bounds
 
     let inline internal containsBox (bounds : Box3) node =
-        node.Bounds.Combine bounds = node.Bounds
+        node.Bounds.Contains bounds = ContainmentType.Contains
 
     let rec internal addElement bounds element node =
         if isIntersectingBox bounds node then

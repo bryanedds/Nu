@@ -50,6 +50,251 @@ namespace Nu
             Size = new Vector3(sizeX, sizeY, sizeZ);
         }
 
+        /// <summary>
+        ///   Check if this <see cref="Box3"/> contains another <see cref="Box3"/>.
+        /// </summary>
+        /// <param name="box">The <see cref="Box3"/> to test for overlap.</param>
+        /// <returns>
+        ///   A value indicating if this <see cref="Box3"/> contains,
+        ///   intersects with or is disjoint with <paramref name="box"/>.
+        /// </returns>
+        public ContainmentType Contains(Box3 box)
+        {
+            //test if all corner is in the same side of a face by just checking min and max
+            var min = Min;
+            var max = min + Size;
+            var min2 = box.Min;
+            var max2 = min2 + box.Size;
+            if (max2.X < Min.X
+                || min2.X > max.X
+                || max2.Y < min.Y
+                || min2.Y > max.Y
+                || max2.Z < min.Z
+                || min2.Z > max.Z)
+                return ContainmentType.Disjoint;
+
+
+            if (min2.X >= Min.X
+                && max2.X <= max.X
+                && min2.Y >= min.Y
+                && max2.Y <= max.Y
+                && min2.Z >= min.Z
+                && max2.Z <= max.Z)
+                return ContainmentType.Contains;
+
+            return ContainmentType.Intersects;
+        }
+
+        /// <summary>
+        ///   Check if this <see cref="Box3"/> contains another <see cref="Box3"/>.
+        /// </summary>
+        /// <param name="box">The <see cref="Box3"/> to test for overlap.</param>
+        /// <param name="result">
+        ///   A value indicating if this <see cref="Box3"/> contains,
+        ///   intersects with or is disjoint with <paramref name="box"/>.
+        /// </param>
+        public void Contains(ref Box3 box, out ContainmentType result)
+        {
+            result = Contains(box);
+        }
+
+        /// <summary>
+        ///   Check if this <see cref="Box3"/> contains a <see cref="Frustum"/>.
+        /// </summary>
+        /// <param name="frustum">The <see cref="Frustum"/> to test for overlap.</param>
+        /// <returns>
+        ///   A value indicating if this <see cref="Box3"/> contains,
+        ///   intersects with or is disjoint with <paramref name="frustum"/>.
+        /// </returns>
+        public ContainmentType Contains(Frustum frustum)
+        {
+            //TODO: bad done here need a fix. 
+            //Because question is not frustum contain box but reverse and this is not the same
+            int i;
+            ContainmentType contained;
+            Vector3[] corners = frustum.GetCorners();
+
+            // First we check if frustum is in box
+            for (i = 0; i < corners.Length; i++)
+            {
+                this.Contains(ref corners[i], out contained);
+                if (contained == ContainmentType.Disjoint)
+                    break;
+            }
+
+            if (i == corners.Length) // This means we checked all the corners and they were all contain or instersect
+                return ContainmentType.Contains;
+
+            if (i != 0)             // if i is not equal to zero, we can fastpath and say that this box intersects
+                return ContainmentType.Intersects;
+
+
+            // If we get here, it means the first (and only) point we checked was actually contained in the frustum.
+            // So we assume that all other points will also be contained. If one of the points is disjoint, we can
+            // exit immediately saying that the result is Intersects
+            i++;
+            for (; i < corners.Length; i++)
+            {
+                this.Contains(ref corners[i], out contained);
+                if (contained != ContainmentType.Contains)
+                    return ContainmentType.Intersects;
+
+            }
+
+            // If we get here, then we know all the points were actually contained, therefore result is Contains
+            return ContainmentType.Contains;
+        }
+
+        /// <summary>
+        ///   Check if this <see cref="Box3"/> contains a <see cref="Sphere"/>.
+        /// </summary>
+        /// <param name="sphere">The <see cref="Sphere"/> to test for overlap.</param>
+        /// <returns>
+        ///   A value indicating if this <see cref="Box3"/> contains,
+        ///   intersects with or is disjoint with <paramref name="sphere"/>.
+        /// </returns>
+        public ContainmentType Contains(Sphere sphere)
+        {
+            var min = Min;
+            var max = min + Size;
+            if (sphere.Center.X - Min.X >= sphere.Radius
+                && sphere.Center.Y - Min.Y >= sphere.Radius
+                && sphere.Center.Z - Min.Z >= sphere.Radius
+                && max.X - sphere.Center.X >= sphere.Radius
+                && max.Y - sphere.Center.Y >= sphere.Radius
+                && max.Z - sphere.Center.Z >= sphere.Radius)
+                return ContainmentType.Contains;
+
+            double dmin = 0;
+
+            double e = sphere.Center.X - Min.X;
+            if (e < 0)
+            {
+                if (e < -sphere.Radius)
+                {
+                    return ContainmentType.Disjoint;
+                }
+                dmin += e * e;
+            }
+            else
+            {
+                e = sphere.Center.X - max.X;
+                if (e > 0)
+                {
+                    if (e > sphere.Radius)
+                    {
+                        return ContainmentType.Disjoint;
+                    }
+                    dmin += e * e;
+                }
+            }
+
+            e = sphere.Center.Y - Min.Y;
+            if (e < 0)
+            {
+                if (e < -sphere.Radius)
+                {
+                    return ContainmentType.Disjoint;
+                }
+                dmin += e * e;
+            }
+            else
+            {
+                e = sphere.Center.Y - max.Y;
+                if (e > 0)
+                {
+                    if (e > sphere.Radius)
+                    {
+                        return ContainmentType.Disjoint;
+                    }
+                    dmin += e * e;
+                }
+            }
+
+            e = sphere.Center.Z - min.Z;
+            if (e < 0)
+            {
+                if (e < -sphere.Radius)
+                {
+                    return ContainmentType.Disjoint;
+                }
+                dmin += e * e;
+            }
+            else
+            {
+                e = sphere.Center.Z - max.Z;
+                if (e > 0)
+                {
+                    if (e > sphere.Radius)
+                    {
+                        return ContainmentType.Disjoint;
+                    }
+                    dmin += e * e;
+                }
+            }
+
+            if (dmin <= sphere.Radius * sphere.Radius)
+                return ContainmentType.Intersects;
+
+            return ContainmentType.Disjoint;
+        }
+
+        /// <summary>
+        ///   Check if this <see cref="Box3"/> contains a <see cref="Sphere"/>.
+        /// </summary>
+        /// <param name="sphere">The <see cref="Sphere"/> to test for overlap.</param>
+        /// <param name="result">
+        ///   A value indicating if this <see cref="Box3"/> contains,
+        ///   intersects with or is disjoint with <paramref name="sphere"/>.
+        /// </param>
+        public void Contains(ref Sphere sphere, out ContainmentType result)
+        {
+            result = this.Contains(sphere);
+        }
+
+        /// <summary>
+        ///   Check if this <see cref="Box3"/> contains a point.
+        /// </summary>
+        /// <param name="point">The <see cref="Vector3"/> to test.</param>
+        /// <returns>
+        ///   <see cref="ContainmentType.Contains"/> if this <see cref="Box3"/> contains
+        ///   <paramref name="point"/> or <see cref="ContainmentType.Disjoint"/> if it does not.
+        /// </returns>
+        public ContainmentType Contains(Vector3 point)
+        {
+            ContainmentType result;
+            this.Contains(ref point, out result);
+            return result;
+        }
+
+        /// <summary>
+        ///   Check if this <see cref="Box3"/> contains a point.
+        /// </summary>
+        /// <param name="point">The <see cref="Vector3"/> to test.</param>
+        /// <param name="result">
+        ///   <see cref="ContainmentType.Contains"/> if this <see cref="Box3"/> contains
+        ///   <paramref name="point"/> or <see cref="ContainmentType.Disjoint"/> if it does not.
+        /// </param>
+        public void Contains(ref Vector3 point, out ContainmentType result)
+        {
+            //first we get if point is out of box
+            var min = Min;
+            var max = min + Size;
+            if (point.X < min.X
+                || point.X > max.X
+                || point.Y < min.Y
+                || point.Y > max.Y
+                || point.Z < min.Z
+                || point.Z > max.Z)
+            {
+                result = ContainmentType.Disjoint;
+            }
+            else
+            {
+                result = ContainmentType.Contains;
+            }
+        }
+
         /// Gets a box with a min 0,0,0 with the a size of 0,0,0.
         /// </summary>
         public static readonly Box3 Zero = default(Box3);
