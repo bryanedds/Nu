@@ -210,24 +210,29 @@ module Gaia =
         | _ -> world
 
     let private selectEntity entity (form : GaiaForm) world =
+
+        // select entity in property grid
         Globals.World <- world // must be set for property grid
         let entityTds = { DescribedEntity = entity; Form = form }
         let previousGridItem = form.entityPropertyGrid.SelectedGridItem
         form.entityPropertyGrid.SelectedObject <- entityTds
+
+        // show selected entity in hierarchy
         tryShowSelectedEntityInHierarchy form
+
+        // show previous grid item or model if available
         let gridItems = dictPlus StringComparer.Ordinal []
-        try
-            for gridItem in form.entityPropertyGrid.SelectedGridItem.Parent.Parent.GridItems do
-                for gridItem in gridItem.GridItems do
-                    gridItems.Add (gridItem.Label, gridItem)
-            if notNull previousGridItem then
-                match gridItems.TryGetValue previousGridItem.Label with
-                | (true, gridItem) -> form.entityPropertyGrid.SelectedGridItem <- gridItem
-                | (false, _) -> if entity.GetModelGeneric<obj> world <> box () then form.entityPropertyGrid.SelectedGridItem <- gridItems.[Constants.Engine.ModelPropertyName]
-            elif entity.GetModelGeneric<obj> world <> box () then form.entityPropertyGrid.SelectedGridItem <- gridItems.[Constants.Engine.ModelPropertyName]
-            form.propertyTabControl.SelectTab 3
-        with :? NullReferenceException ->
-            Log.debug "Unexpected but known error for which we are looking for a reproduction case."
+        let gridEntry = form.entityPropertyGrid.SelectedGridItem.Parent
+        let gridEntry = if notNull gridEntry.Parent then gridEntry.Parent else gridEntry
+        for gridItem in gridEntry.GridItems do
+            for gridItem in gridItem.GridItems do
+                gridItems.Add (gridItem.Label, gridItem)
+        if notNull previousGridItem then
+            match gridItems.TryGetValue previousGridItem.Label with
+            | (true, gridItem) -> form.entityPropertyGrid.SelectedGridItem <- gridItem
+            | (false, _) -> if entity.GetModelGeneric<obj> world <> box () then form.entityPropertyGrid.SelectedGridItem <- gridItems.[Constants.Engine.ModelPropertyName]
+        elif entity.GetModelGeneric<obj> world <> box () then form.entityPropertyGrid.SelectedGridItem <- gridItems.[Constants.Engine.ModelPropertyName]
+        form.propertyTabControl.SelectTab 3
 
     let private deselectEntity (form : GaiaForm) world =
         Globals.World <- world // must be set for property grid
@@ -1474,6 +1479,10 @@ module Gaia =
 
     let private handleKeyboardInput key (form : GaiaForm) world =
         if Form.ActiveForm = (form :> Form) then
+            if Keys.Enter = key then
+                if  form.createEntityComboBox.Focused &&
+                    not form.createEntityComboBox.DroppedDown then
+                    handleFormCreateEntity false false None form (EventArgs ())
             if Keys.Escape = key then
                 if form.FocusedControl = form.displayPanel then deselectEntity form world
                 form.displayPanel.Focus () |> ignore<bool>
