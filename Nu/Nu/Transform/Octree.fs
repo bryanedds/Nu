@@ -328,9 +328,10 @@ module Octree =
             if isInNode then
                 let oldNode = findNode oldBounds tree
                 let newNode = findNode newBounds tree
-                if oldNode = newNode
-                then Octnode.updateElement oldBounds newBounds element oldNode
-                else Octnode.updateElement oldBounds newBounds element tree.Node
+                if oldNode <> newNode then
+                    Octnode.removeElement oldBounds element oldNode
+                    Octnode.addElement newBounds element newNode
+                else Octnode.updateElement oldBounds newBounds element oldNode
             else
                 Octnode.removeElement oldBounds element tree.Node |> ignore
                 tree.Omnipresent.Remove element |> ignore
