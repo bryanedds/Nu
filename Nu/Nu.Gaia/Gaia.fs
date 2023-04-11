@@ -231,7 +231,10 @@ module Gaia =
             match gridItems.TryGetValue previousGridItem.Label with
             | (true, gridItem) -> form.entityPropertyGrid.SelectedGridItem <- gridItem
             | (false, _) -> if entity.GetModelGeneric<obj> world <> box () then form.entityPropertyGrid.SelectedGridItem <- gridItems.[Constants.Engine.ModelPropertyName]
-        elif entity.GetModelGeneric<obj> world <> box () then form.entityPropertyGrid.SelectedGridItem <- gridItems.[Constants.Engine.ModelPropertyName]
+        elif entity.GetModelGeneric<obj> world <> box () then
+            form.entityPropertyGrid.SelectedGridItem <- gridItems.[Constants.Engine.ModelPropertyName]
+
+        // show entity property tab
         form.propertyTabControl.SelectTab 3
 
     let private deselectEntity (form : GaiaForm) world =
