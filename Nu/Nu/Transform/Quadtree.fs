@@ -225,9 +225,10 @@ module Quadtree =
             if isInNode then
                 let oldNode = findNode oldBounds tree
                 let newNode = findNode newBounds tree
-                if oldNode = newNode
-                then Quadnode.updateElement oldBounds newBounds element oldNode
-                else Quadnode.updateElement oldBounds newBounds element tree.Node
+                if oldNode <> newNode then
+                    Quadnode.removeElement oldBounds element oldNode
+                    Quadnode.addElement newBounds element newNode
+                else Quadnode.updateElement oldBounds newBounds element oldNode
             else
                 Quadnode.removeElement oldBounds element tree.Node |> ignore
                 tree.Omnipresent.Remove element |> ignore
