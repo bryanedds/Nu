@@ -171,9 +171,9 @@ module EffectDescriptors =
                  [|candle (PositionRelative (v3 0.0f altitude 0.0f))
                    candle (PositionRelative (v3 -halfWidth 0.0f 0.0f))
                    candle (PositionRelative (v3 halfWidth 0.0f 0.0f))
-                   staticEffect (PositionRelative (v3 0.0f 0.0f 0.0f)) (Degrees (v3 0.0f 0.0f 90.0f))
-                   staticEffect (PositionRelative (v3 -25.0f 50.0f 0.0f)) (Degrees (v3 0.0f 0.0f 30.0f))
-                   staticEffect (PositionRelative (v3 25.0f 50.0f 0.0f)) (Degrees (v3 0.0f 0.0f -30.0f))|]) }
+                   staticEffect (PositionRelative (v3 0.0f 0.0f 0.0f)) (Degrees (v3 0.0f 0.0f -90.0f))
+                   staticEffect (PositionRelative (v3 -25.0f 50.0f 0.0f)) (Degrees (v3 0.0f 0.0f -30.0f))
+                   staticEffect (PositionRelative (v3 25.0f 50.0f 0.0f)) (Degrees (v3 0.0f 0.0f 30.0f))|]) }
 
     let fire position position2 =
         let fireSize = Size (v3 64.0f 64.0f 0.0f)
