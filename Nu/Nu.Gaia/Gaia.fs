@@ -386,6 +386,16 @@ module Gaia =
                         dragEntityState <- DragEntityRotation2d (DateTimeOffset.Now, mousePositionWorld, entityDegrees.Z + mousePositionWorld.Y, entity)
                         (handled, world)
                     else
+                        let viewport = World.getViewport world
+                        let eyeCenter = World.getEyeCenter3d world
+                        let eyeRotation = World.getEyeRotation3d world
+                        let mouseRayWorld = viewport.MouseToWorld3d (entity.GetAbsolute world, mousePosition, eyeCenter, eyeRotation)
+                        let entityPosition = entity.GetPosition world
+                        let entityPlane = plane3 entityPosition (Vector3.Transform (v3Forward, World.getEyeRotation3d world))
+                        let intersectionOpt = mouseRayWorld.Intersection entityPlane
+                        if intersectionOpt.HasValue then
+                            let entityDragOffset = intersectionOpt.Value - entityPosition
+                            dragEntityState <- DragEntityRotation3d (DateTimeOffset.Now, entityDragOffset, entityPlane, entity)
                         (handled, world)
                 else
                     if entity.GetIs2d world then
@@ -416,9 +426,7 @@ module Gaia =
         else
             let handled = if World.getAdvancing world then Cascade else Resolve
             match dragEntityState with
-            | DragEntityPosition2d _
-            | DragEntityRotation2d _
-            | DragEntityPosition3d _ ->
+            | DragEntityPosition2d _ | DragEntityRotation2d _ | DragEntityPosition3d _ | DragEntityRotation3d _ ->
                 dragEntityState <- DragEntityInactive
                 form.entityPropertyGrid.Refresh ()
                 (handled, world)
@@ -1659,6 +1667,53 @@ module Gaia =
                                     | (false, true, true) -> entity.GetPosition world + entityPositionDelta * (v3Up + v3Back)
                                     | (_, _, _) -> entity.GetPosition world + entityPositionDelta
                                 entity.SetPosition entityPositionConstrained world
+                        let world =
+                            if  Option.isSome (entity.TryGetProperty "LinearVelocity" world) &&
+                                Option.isSome (entity.TryGetProperty "AngularVelocity" world) then
+                                let world = entity.SetLinearVelocity v3Zero world
+                                let world = entity.SetAngularVelocity v3Zero world
+                                world
+                            else world
+                        // NOTE: disabled the following line to fix perf issue caused by refreshing the property grid every frame
+                        // form.entityPropertyGrid.Refresh ()
+                        world
+                    else world
+                else world
+            | DragEntityRotation3d (time, entityDragOffset, entityPlane, entity) ->
+                let localTime = DateTimeOffset.Now - time
+                if entity.Exists world && localTime.TotalSeconds >= Constants.Editor.DragMinimumSeconds then
+                    let mouseRayWorld = World.getMouseRay3dWorld (entity.GetAbsolute world) world
+                    let intersectionOpt = mouseRayWorld.Intersection entityPlane
+                    if intersectionOpt.HasValue then
+                        let entityPosition = intersectionOpt.Value - entityDragOffset
+                        let entityPositionDelta = entityPosition - entity.GetPosition world
+                        let entityDegreesDeltaUnsnapped = entityPositionDelta * 10.0f
+                        let entityDegreesDelta =
+                            if form.snap3dButton.Checked
+                            then Math.snapF3d (Triple.snd (getSnaps form)) entityDegreesDeltaUnsnapped
+                            else entityDegreesDeltaUnsnapped
+                        let world =
+                            if entity.MountExists world then
+                                let entityDegreesConstrained =
+                                    match (form.constrainXButton.Checked, form.constrainYButton.Checked, form.constrainZButton.Checked) with
+                                    | (true, false, false) -> entity.GetDegreesLocal world + entityDegreesDelta * v3Right
+                                    | (false, true, false) -> entity.GetDegreesLocal world + entityDegreesDelta * v3Up
+                                    | (false, false, true) -> entity.GetDegreesLocal world + entityDegreesDelta * v3Back
+                                    | (true, true, false) -> entity.GetDegreesLocal world + entityDegreesDelta * (v3Right + v3Up)
+                                    | (false, true, true) -> entity.GetDegreesLocal world + entityDegreesDelta * (v3Up + v3Back)
+                                    | (_, _, _) -> entity.GetDegreesLocal world + entityDegreesDelta
+                                entity.SetDegreesLocal entityDegreesConstrained world
+                            else
+                                //let entityDegreesDelta = entityDegreesSnapped - entity.GetDegrees world
+                                let entityDegreesConstrained =
+                                    match (form.constrainXButton.Checked, form.constrainYButton.Checked, form.constrainZButton.Checked) with
+                                    | (true, false, false) -> entity.GetDegrees world + entityDegreesDelta * v3Right
+                                    | (false, true, false) -> entity.GetDegrees world + entityDegreesDelta * v3Up
+                                    | (false, false, true) -> entity.GetDegrees world + entityDegreesDelta * v3Back
+                                    | (true, true, false) -> entity.GetDegrees world + entityDegreesDelta * (v3Right + v3Up)
+                                    | (false, true, true) -> entity.GetDegrees world + entityDegreesDelta * (v3Up + v3Back)
+                                    | (_, _, _) -> entity.GetDegrees world + entityDegreesDelta
+                                entity.SetDegrees entityDegreesConstrained world
                         let world =
                             if  Option.isSome (entity.TryGetProperty "LinearVelocity" world) &&
                                 Option.isSome (entity.TryGetProperty "AngularVelocity" world) then
