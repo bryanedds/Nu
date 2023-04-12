@@ -257,8 +257,8 @@ module Field =
                   AmbientOcclusion = 1.0f
                   AmbientOcclusionImage = albedoTileSet.GetImageAsset tileMapPackageName
                   NormalImage = Assets.Default.MaterialNormal
-                  TextureMinFilterOpt = ValueSome OpenGL.TextureMinFilter.NearestMipmapNearest
-                  TextureMagFilterOpt = ValueSome OpenGL.TextureMagFilter.Nearest
+                  TextureMinFilterOpt = Some OpenGL.TextureMinFilter.NearestMipmapNearest
+                  TextureMagFilterOpt = Some OpenGL.TextureMagFilter.Nearest
                   InvertRoughness = false
                   TwoSided = false }
 

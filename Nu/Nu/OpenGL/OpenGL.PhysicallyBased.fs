@@ -27,8 +27,8 @@ module PhysicallyBased =
           Emission : single
           EmissionTexture : uint
           NormalTexture : uint
-          TextureMinFilterOpt : OpenGL.TextureMinFilter voption
-          TextureMagFilterOpt : OpenGL.TextureMagFilter voption
+          TextureMinFilterOpt : OpenGL.TextureMinFilter option
+          TextureMagFilterOpt : OpenGL.TextureMagFilter option
           InvertRoughness : bool
           TwoSided : bool }
 
@@ -74,12 +74,12 @@ module PhysicallyBased =
 
         static member inline equals left right =
             (match (left.SurfaceMaterial.TextureMinFilterOpt, right.SurfaceMaterial.TextureMinFilterOpt) with // TODO: implement voptEq.
-             | (ValueSome leftFilter, ValueSome rightFilter) -> leftFilter = rightFilter
-             | (ValueNone, ValueNone) -> true
+             | (Some leftFilter, Some rightFilter) -> leftFilter = rightFilter
+             | (None, None) -> true
              | (_, _) -> false) &&
             (match (left.SurfaceMaterial.TextureMagFilterOpt, right.SurfaceMaterial.TextureMagFilterOpt) with
-             | (ValueSome leftFilter, ValueSome rightFilter) -> leftFilter = rightFilter
-             | (ValueNone, ValueNone) -> true
+             | (Some leftFilter, Some rightFilter) -> leftFilter = rightFilter
+             | (None, None) -> true
              | (_, _) -> false) &&
             left.SurfaceMaterial.AlbedoTexture = right.SurfaceMaterial.AlbedoTexture &&
             left.SurfaceMaterial.MetallicTexture = right.SurfaceMaterial.MetallicTexture &&
@@ -721,7 +721,7 @@ module PhysicallyBased =
         let materials = Array.zeroCreate scene.Materials.Count
         for i in 0 .. dec scene.Materials.Count do
             if Option.isNone errorOpt then
-                let material = CreatePhysicallyBasedMaterial (renderable, dirPath, defaultMaterial, ValueNone, ValueNone, textureMemo, scene.Materials.[i])
+                let material = CreatePhysicallyBasedMaterial (renderable, dirPath, defaultMaterial, None, None, textureMemo, scene.Materials.[i])
                 materials.[i] <- material
         match errorOpt with
         | Some error -> Left error
@@ -982,11 +982,11 @@ module PhysicallyBased =
         for i in 0 .. dec 5 do
             Gl.ActiveTexture (LanguagePrimitives.EnumOfValue (int TextureUnit.Texture0 + i))
             match material.TextureMinFilterOpt with
-            | ValueSome minFilter -> Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, int minFilter)
-            | ValueNone -> ()
+            | Some minFilter -> Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, int minFilter)
+            | None -> ()
             match material.TextureMagFilterOpt with
-            | ValueSome magFilter -> Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, int magFilter)
-            | ValueNone -> ()
+            | Some magFilter -> Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, int magFilter)
+            | None -> ()
         Hl.Assert ()
 
         // update models buffer

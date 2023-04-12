@@ -174,7 +174,7 @@ and Content =
     | StaticSprite of Resource * Aspect array * Content
     | AnimatedSprite of Resource * Vector2i * int * int * GameTime * Playback * Aspect array * Content
     | TextSprite of Resource * string * Aspect array * Content
-    | Billboard of Resource * Resource * Resource * Resource * Resource * Resource * OpenGL.TextureMinFilter voption * OpenGL.TextureMagFilter voption * Aspect array * Content
+    | Billboard of Resource * Resource * Resource * Resource * Resource * Resource * OpenGL.TextureMinFilter option * OpenGL.TextureMagFilter option * Aspect array * Content
     | StaticModel of Resource * Aspect array * Content
     | Light3d of LightType * Aspect array * Content
     | SoundEffect of Resource * Aspect array * Content
@@ -684,14 +684,14 @@ module EffectSystem =
                 let imageEmission = AssetTag.specialize<Image> imageEmission
                 let imageNormal = AssetTag.specialize<Image> imageNormal
                 let affineMatrix = Matrix4x4.CreateFromTrs (slice.Position, slice.Angles.RollPitchYaw, slice.Scale)
-                let insetOpt = if slice.Inset.Equals box2Zero then ValueNone else ValueSome slice.Inset
+                let insetOpt = if slice.Inset.Equals box2Zero then None else Some slice.Inset
                 let properties =
-                    { AlbedoOpt = ValueSome slice.Color
-                      MetallicOpt = ValueNone
-                      RoughnessOpt = ValueNone
-                      AmbientOcclusionOpt = ValueNone
-                      EmissionOpt = ValueSome slice.Emission.R
-                      InvertRoughnessOpt = ValueNone }
+                    { AlbedoOpt = Some slice.Color
+                      MetallicOpt = None
+                      RoughnessOpt = None
+                      AmbientOcclusionOpt = None
+                      EmissionOpt = Some slice.Emission.R
+                      InvertRoughnessOpt = None }
                 let modelView =
                     Render3d
                         (RenderBillboard
@@ -727,14 +727,14 @@ module EffectSystem =
             if slice.Enabled then
                 let staticModel = AssetTag.specialize<StaticModel> staticModel
                 let affineMatrix = Matrix4x4.CreateFromTrs (slice.Position, slice.Angles.RollPitchYaw, slice.Scale)
-                let insetOpt = if slice.Inset.Equals box2Zero then ValueNone else ValueSome slice.Inset
+                let insetOpt = if slice.Inset.Equals box2Zero then None else Some slice.Inset
                 let properties =
-                    { AlbedoOpt = ValueSome slice.Color
-                      MetallicOpt = ValueNone
-                      RoughnessOpt = ValueNone
-                      AmbientOcclusionOpt = ValueNone
-                      EmissionOpt = ValueSome slice.Emission.R
-                      InvertRoughnessOpt = ValueNone }
+                    { AlbedoOpt = Some slice.Color
+                      MetallicOpt = None
+                      RoughnessOpt = None
+                      AmbientOcclusionOpt = None
+                      EmissionOpt = Some slice.Emission.R
+                      InvertRoughnessOpt = None }
                 let modelView =
                     Render3d
                         (RenderStaticModel
