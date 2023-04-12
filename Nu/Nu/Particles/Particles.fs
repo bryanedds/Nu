@@ -126,7 +126,7 @@ type [<StructuralEquality; NoComparison; Struct>] Body =
       mutable AngularVelocity : Vector3
       mutable Restitution : single }
 
-    /// The default 2d body.
+    /// The default body.
     static member defaultBody =
         { Position = v3Zero
           Scale = v3One

@@ -93,15 +93,15 @@ module Field =
                     let tileZero = tileSet.FirstGid
                     let tileCount = let opt = tileSet.TileCount in opt.GetValueOrDefault 0
                     match tileSetOpt with
+                    | Some _ -> ()
                     | None ->
                         if  tile.Gid >= tileZero &&
                             tile.Gid < tileZero + tileCount then
                             tileSetOpt <- Some tileSet
-                    | Some _ -> ()
                 let height =
                     match tileSetOpt with
-                    | None -> 0.0f
                     | Some tileSet -> single (tile.Gid - tileSet.FirstGid) * heightScalar
+                    | None -> 0.0f
                 let u = t * 6
                 let position = v3 (single i) height (single j) + offset
                 positions.[u] <- position
@@ -180,13 +180,11 @@ module Field =
                     let tileZero = tileSet.FirstGid
                     let tileCount = let opt = tileSet.TileCount in opt.GetValueOrDefault 0
                     match albedoTileSetOpt with
+                    | Some _ -> tileSetOpt <- albedoTileSetOpt
                     | None ->
-                        if tile.Gid = 0 then
-                            tileSetOpt <- Some tileSet // just use the first tile set for the empty tile
-                        elif tile.Gid >= tileZero && tile.Gid < tileZero + tileCount then
+                        if tile.Gid >= tileZero && tile.Gid < tileZero + tileCount then
                             tileSetOpt <- Some tileSet
                             albedoTileSetOpt <- tileSetOpt // use tile set that is first to be non-zero
-                    | Some _ -> tileSetOpt <- albedoTileSetOpt
                 match tileSetOpt with
                 | Some tileSet ->
                     let tileId = tile.Gid - tileSet.FirstGid

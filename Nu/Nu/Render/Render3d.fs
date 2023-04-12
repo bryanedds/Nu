@@ -11,7 +11,7 @@ open Prime
 open Nu
 
 //////////////////////////////////////////////////////////////////////////////////////////
-// TODO: introduce records for a bunch of the tuples in this file!                      //
+// TODO: introduce records for RenderTask cases.                                        //
 // TODO: account for Blend in billboards (at least alpha, overwrite, and additive)      //
 // TODO: account for Flip in billboards.                                                //
 // TODO: optimize billboard rendering with some sort of batch renderer.                 //
