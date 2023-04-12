@@ -11,11 +11,11 @@ open Prime
 open Nu
 
 //////////////////////////////////////////////////////////////////////////////////////////
-// TODO: introduce records for RenderTask cases.                                        //
+// TODO: add TwoSidedOpt as render message parameter.                                   //
 // TODO: account for Blend in billboards (at least alpha, overwrite, and additive)      //
 // TODO: account for Flip in billboards.                                                //
 // TODO: optimize billboard rendering with some sort of batch renderer.                 //
-// TODO: add TwoSidedOpt as render message parameter.                                   //
+// TODO: introduce records for RenderTask cases.                                        //
 //////////////////////////////////////////////////////////////////////////////////////////
 
 /// Surface properties for physically-based rendering.
