@@ -97,8 +97,9 @@ void main()
     // forward position
     position = positionOut;
 
-    // compute albedo, excluding alpha
+    // compute albedo, discarding on zero alpha
     vec4 albedoSample = texture(albedoTexture, texCoordsOut);
+    if (albedoSample.a == 0.0f) discard;
     albedo = pow(albedoSample.rgb * albedoOut.rgb, vec3(GAMMA));
 
     // compute material properties
