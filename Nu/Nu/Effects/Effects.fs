@@ -695,19 +695,19 @@ module EffectSystem =
                 let modelView =
                     Render3d
                         (RenderBillboard
-                            (effectSystem.EffectAbsolute,
-                             affineMatrix,
-                             insetOpt,
-                             properties,
-                             imageAlbedo,
-                             imageMetallic,
-                             imageRoughness,
-                             imageAmbientOcclusion,
-                             imageEmission,
-                             imageNormal,
-                             minFilterOpt,
-                             magFilterOpt,
-                             effectSystem.EffectRenderType))
+                            { Absolute = effectSystem.EffectAbsolute
+                              ModelMatrix = affineMatrix
+                              InsetOpt = insetOpt
+                              SurfaceProperties = properties
+                              AlbedoImage = imageAlbedo
+                              MetallicImage = imageMetallic
+                              RoughnessImage = imageRoughness
+                              AmbientOcclusionImage = imageAmbientOcclusion
+                              EmissionImage = imageEmission
+                              NormalImage = imageNormal
+                              MinFilterOpt = minFilterOpt
+                              MagFilterOpt = magFilterOpt
+                              RenderType = effectSystem.EffectRenderType })
                 addView modelView effectSystem
             else effectSystem
 
@@ -738,12 +738,12 @@ module EffectSystem =
                 let modelView =
                     Render3d
                         (RenderStaticModel
-                            (effectSystem.EffectAbsolute,
-                             affineMatrix,
-                             insetOpt,
-                             properties,
-                             effectSystem.EffectRenderType,
-                             staticModel))
+                            { Absolute = effectSystem.EffectAbsolute
+                              ModelMatrix = affineMatrix
+                              InsetOpt = insetOpt
+                              SurfaceProperties = properties
+                              RenderType = effectSystem.EffectRenderType
+                              StaticModel = staticModel })
                 addView modelView effectSystem
             else effectSystem
 
@@ -761,7 +761,11 @@ module EffectSystem =
                 let modelView =
                     Render3d
                         (RenderLight3d
-                            (slice.Position, slice.Color, slice.Brightness, slice.Intensity, lightType))
+                            { Center = slice.Position
+                              Color = slice.Color
+                              Brightness = slice.Brightness
+                              Intensity = slice.Intensity
+                              LightType = lightType })
                 addView modelView effectSystem
             else effectSystem
 

@@ -1387,7 +1387,7 @@ module SkyBoxFacetModule =
 
         override this.Render (entity, world) =
             let cubeMap = entity.GetCubeMap world
-            World.enqueueRenderMessage3d (RenderSkyBox cubeMap) world
+            World.enqueueRenderMessage3d (RenderSkyBox { CubeMap = cubeMap }) world
 
 [<AutoOpen>]
 module LightFacet3dModule =
@@ -1419,7 +1419,14 @@ module LightFacet3dModule =
             let brightness = entity.GetBrightness world
             let intensity = entity.GetIntensity world
             let lightType = entity.GetLightType world
-            World.enqueueRenderMessage3d (RenderLight3d (position, color, brightness, intensity, lightType)) world
+            World.enqueueRenderMessage3d
+                (RenderLight3d
+                    { Center = position
+                      Color = color
+                      Brightness = brightness
+                      Intensity = intensity
+                      LightType = lightType })
+                world
 
         override this.RayCast (ray, entity, world) =
             let intersectionOpt = ray.Intersects (entity.GetBounds world)
@@ -1511,7 +1518,7 @@ module StaticBillboardFacetModule =
             let mutable transform = entity.GetTransform world
             let absolute = transform.Absolute
             let affineMatrix = transform.AffineMatrix
-            let insetOpt = match entity.GetInsetOpt world with Some inset -> ValueSome inset | None -> ValueNone // TODO: make converstion fn from option to voption and vice versa.
+            let insetOpt = entity.GetInsetOpt world |> Option.toValueOption
             let properties =
                 { AlbedoOpt = match entity.GetAlbedoOpt world with Some albedo -> ValueSome albedo | None -> ValueNone
                   MetallicOpt = match entity.GetMetallicOpt world with Some metallic -> ValueSome metallic | None -> ValueNone
@@ -1533,9 +1540,9 @@ module StaticBillboardFacetModule =
                 | Forward (sort, subsort) -> ForwardRenderType (sort, subsort)
             World.enqueueRenderMessage3d
                 (RenderBillboard
-                    (absolute, affineMatrix, insetOpt, properties,
-                     albedoImage, metallicImage, roughnessImage, ambientOcclusionImage, emissionImage, normalImage,
-                     minFilterOpt, magFilterOpt, renderType))
+                    { Absolute = absolute; ModelMatrix = affineMatrix; InsetOpt = insetOpt; SurfaceProperties = properties
+                      AlbedoImage = albedoImage; MetallicImage = metallicImage; RoughnessImage = roughnessImage; AmbientOcclusionImage = ambientOcclusionImage; EmissionImage = emissionImage; NormalImage = normalImage
+                      MinFilterOpt = minFilterOpt; MagFilterOpt = magFilterOpt; RenderType = renderType })
                 world
 
         override this.GetQuickSize (_, _) =
@@ -1887,26 +1894,26 @@ module BasicStaticBillboardEmitterFacetModule =
                     match descriptor with
                     | Particles.BillboardParticlesDescriptor descriptor ->
                         let properties =
-                            { AlbedoOpt = match entity.GetEmitterAlbedoOpt world with Some albedo -> ValueSome albedo | None -> ValueNone
-                              MetallicOpt = match entity.GetEmitterMetallicOpt world with Some metallic -> ValueSome metallic | None -> ValueNone
-                              RoughnessOpt = match entity.GetEmitterRoughnessOpt world with Some roughness -> ValueSome roughness | None -> ValueNone
-                              AmbientOcclusionOpt = match entity.GetEmitterAmbientOcclusionOpt world with Some ambientOcclusion -> ValueSome ambientOcclusion | None -> ValueNone
-                              EmissionOpt = match entity.GetEmitterEmissionOpt world with Some emission -> ValueSome emission | None -> ValueNone
-                              InvertRoughnessOpt = match entity.GetEmitterInvertRoughnessOpt world with Some invertRoughness -> ValueSome invertRoughness | None -> ValueNone }
+                            { AlbedoOpt = match entity.GetEmitterAlbedoOpt world with Some albedo -> ValueSome albedo | None -> descriptor.SurfaceProperties.AlbedoOpt
+                              MetallicOpt = match entity.GetEmitterMetallicOpt world with Some metallic -> ValueSome metallic | None -> descriptor.SurfaceProperties.MetallicOpt
+                              RoughnessOpt = match entity.GetEmitterRoughnessOpt world with Some roughness -> ValueSome roughness | None -> descriptor.SurfaceProperties.RoughnessOpt
+                              AmbientOcclusionOpt = match entity.GetEmitterAmbientOcclusionOpt world with Some ambientOcclusion -> ValueSome ambientOcclusion | None -> descriptor.SurfaceProperties.AmbientOcclusionOpt
+                              EmissionOpt = match entity.GetEmitterEmissionOpt world with Some emission -> ValueSome emission | None -> descriptor.SurfaceProperties.EmissionOpt
+                              InvertRoughnessOpt = match entity.GetEmitterInvertRoughnessOpt world with Some invertRoughness -> ValueSome invertRoughness | None -> descriptor.SurfaceProperties.InvertRoughnessOpt }
                         Some
                             (RenderBillboardParticles
-                                (descriptor.Absolute,
-                                 properties,
-                                 descriptor.AlbedoImage,
-                                 descriptor.MetallicImage,
-                                 descriptor.RoughnessImage,
-                                 descriptor.AmbientOcclusionImage,
-                                 descriptor.EmissionImage,
-                                 descriptor.NormalImage,
-                                 descriptor.MinFilterOpt,
-                                 descriptor.MagFilterOpt,
-                                 descriptor.RenderType,
-                                 descriptor.Particles))
+                                { Absolute = descriptor.Absolute
+                                  SurfaceProperties = properties
+                                  AlbedoImage = descriptor.AlbedoImage
+                                  MetallicImage = descriptor.MetallicImage
+                                  RoughnessImage = descriptor.RoughnessImage
+                                  AmbientOcclusionImage = descriptor.AmbientOcclusionImage
+                                  EmissionImage = descriptor.EmissionImage
+                                  NormalImage = descriptor.NormalImage
+                                  MinFilterOpt = descriptor.MinFilterOpt
+                                  MagFilterOpt = descriptor.MagFilterOpt
+                                  RenderType = descriptor.RenderType
+                                  Particles = descriptor.Particles })
                     | _ -> None) |>
                 List.definitize
             World.enqueueRenderMessages3d particlesMessages world
@@ -1973,7 +1980,14 @@ module StaticModelFacetModule =
                 | Deferred -> DeferredRenderType
                 | Forward (sort, subsort) -> ForwardRenderType (sort, subsort)
             let staticModel = entity.GetStaticModel world
-            World.enqueueRenderMessage3d (RenderStaticModel (absolute, affineMatrix, insetOpt, properties, renderType, staticModel)) world
+            World.enqueueRenderMessage3d
+                (RenderStaticModel
+                    { Absolute = absolute
+                      ModelMatrix = affineMatrix
+                      InsetOpt = insetOpt
+                      SurfaceProperties = properties
+                      RenderType = renderType
+                      StaticModel = staticModel }) world
 
         override this.GetQuickSize (entity, world) =
             let staticModel = entity.GetStaticModel world
@@ -2084,7 +2098,16 @@ module StaticModelSurfaceFacetModule =
                     | Deferred -> DeferredRenderType
                     | Forward (sort, subsort) -> ForwardRenderType (sort, subsort)
                 let staticModel = entity.GetStaticModel world
-                World.enqueueRenderMessage3d (RenderStaticModelSurface (absolute, affineMatrix, insetOpt, properties, renderType, staticModel, surfaceIndex)) world
+                World.enqueueRenderMessage3d
+                    (RenderStaticModelSurface
+                        { Absolute = absolute
+                          ModelMatrix = affineMatrix
+                          InsetOpt = insetOpt
+                          SurfaceProperties = properties
+                          RenderType = renderType
+                          StaticModel = staticModel
+                          SurfaceIndex = surfaceIndex })
+                    world
 
         override this.GetQuickSize (entity, world) =
             let staticModel = Metadata.getStaticModelMetadata (entity.GetStaticModel world)

@@ -34,11 +34,21 @@ module CharacterDispatcher =
             let albedoImage = asset "Field" "Jinn"
             let inset = getSpriteInset character world
             let characterView =
-                Render3d (
-                    RenderBillboard
-                        (transform.Absolute, transform.AffineMatrix, ValueSome inset, properties,
-                         albedoImage, Assets.Default.MaterialMetallic, Assets.Default.MaterialRoughness, Assets.Default.MaterialRoughness, Assets.Default.MaterialEmission, albedoImage,
-                         ValueSome OpenGL.TextureMinFilter.NearestMipmapNearest, ValueSome OpenGL.TextureMagFilter.Nearest, DeferredRenderType))
+                Render3d
+                    (RenderBillboard
+                        { Absolute = transform.Absolute
+                          ModelMatrix = transform.AffineMatrix
+                          InsetOpt = ValueSome inset
+                          SurfaceProperties = properties
+                          AlbedoImage = albedoImage
+                          MetallicImage = Assets.Default.MaterialMetallic
+                          RoughnessImage = Assets.Default.MaterialRoughness
+                          AmbientOcclusionImage = Assets.Default.MaterialRoughness
+                          EmissionImage = Assets.Default.MaterialEmission
+                          NormalImage = albedoImage
+                          MinFilterOpt = ValueSome OpenGL.TextureMinFilter.NearestMipmapNearest
+                          MagFilterOpt = ValueSome OpenGL.TextureMagFilter.Nearest
+                          RenderType = DeferredRenderType })
             characterView
 
         override this.GetQuickSize (_, _) =

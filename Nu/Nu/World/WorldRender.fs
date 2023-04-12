@@ -76,13 +76,11 @@ module WorldRender =
             World.enqueueRenderMessage3d reloadRenderAssetsMessage world
 
         /// Send a message to the render to create the given user-defined static model.
-        /// NOTE: this is available as a side-effect to allow use from inside a binding.
-        static member createUserDefinedStaticModel staticModelSurfaces bounds assetTag world =
-            let message = CreateUserDefinedStaticModel (staticModelSurfaces, bounds, assetTag)
+        static member createUserDefinedStaticModel surfaceDescriptors bounds staticModel world =
+            let message = CreateUserDefinedStaticModel { SurfaceDescriptors = surfaceDescriptors; Bounds = bounds; StaticModel = staticModel }
             World.enqueueRenderMessage3d message world
 
         /// Send a message to the render to destroy the given user-defined static model.
-        /// NOTE: this is available as a side-effect to allow use from inside a binding.
-        static member destroyUserDefinedStaticModel assetTag world =
-            let message = DestroyUserDefinedStaticModel assetTag
+        static member destroyUserDefinedStaticModel staticModel world =
+            let message = DestroyUserDefinedStaticModel { StaticModel = staticModel }
             World.enqueueRenderMessage3d message world

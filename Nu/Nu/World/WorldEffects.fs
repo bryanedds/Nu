@@ -221,18 +221,18 @@ module Effect =
                     | BillboardParticlesDescriptor descriptor ->
                         let message =
                             RenderBillboardParticles
-                                (descriptor.Absolute,
-                                 descriptor.Properties,
-                                 descriptor.AlbedoImage,
-                                 descriptor.MetallicImage,
-                                 descriptor.RoughnessImage,
-                                 descriptor.AmbientOcclusionImage,
-                                 descriptor.EmissionImage,
-                                 descriptor.NormalImage,
-                                 descriptor.MinFilterOpt,
-                                 descriptor.MagFilterOpt,
-                                 descriptor.RenderType,
-                                 descriptor.Particles)
+                                { Absolute = descriptor.Absolute
+                                  SurfaceProperties = descriptor.SurfaceProperties
+                                  AlbedoImage = descriptor.AlbedoImage
+                                  MetallicImage = descriptor.MetallicImage
+                                  RoughnessImage = descriptor.RoughnessImage
+                                  AmbientOcclusionImage = descriptor.AmbientOcclusionImage
+                                  EmissionImage = descriptor.EmissionImage
+                                  NormalImage = descriptor.NormalImage
+                                  MinFilterOpt = descriptor.MinFilterOpt
+                                  MagFilterOpt = descriptor.MagFilterOpt
+                                  RenderType = descriptor.RenderType
+                                  Particles = descriptor.Particles }
                         World.enqueueRenderMessage3d message world)
                     world descriptors
 

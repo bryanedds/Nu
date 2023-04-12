@@ -111,9 +111,9 @@ type RendererThread (createRenderer3d, createRenderer2d) =
                 for _ in 0 .. dec cachedStaticModelMessagesCapacity do
                     let staticModelDescriptor =
                         { CachedStaticModelAbsolute = Unchecked.defaultof<_>
-                          CachedStaticModelAffineMatrix = Unchecked.defaultof<_>
+                          CachedStaticModelMatrix = Unchecked.defaultof<_>
                           CachedStaticModelInsetOpt = Unchecked.defaultof<_>
-                          CachedStaticModelProperties = Unchecked.defaultof<_>
+                          CachedStaticModelSurfaceProperties = Unchecked.defaultof<_>
                           CachedStaticModelRenderType = Unchecked.defaultof<_>
                           CachedStaticModel = Unchecked.defaultof<_> }
                     let cachedStaticModelMessage = RenderCachedStaticModel staticModelDescriptor
@@ -225,16 +225,16 @@ type RendererThread (createRenderer3d, createRenderer2d) =
         member this.EnqueueMessage3d message =
             if Option.isNone taskOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
             match message with
-            | RenderStaticModel (absolute, affineMatrix, insetOpt, properties, renderType, staticModel) ->
+            | RenderStaticModel rsm ->
                 let cachedStaticModelMessage = allocStaticModelMessage ()
                 match cachedStaticModelMessage with
                 | RenderCachedStaticModel cachedDescriptor ->
-                    cachedDescriptor.CachedStaticModelAbsolute <- absolute
-                    cachedDescriptor.CachedStaticModelAffineMatrix <- affineMatrix
-                    cachedDescriptor.CachedStaticModelInsetOpt <- insetOpt
-                    cachedDescriptor.CachedStaticModelProperties <- properties
-                    cachedDescriptor.CachedStaticModelRenderType <- renderType
-                    cachedDescriptor.CachedStaticModel <- staticModel
+                    cachedDescriptor.CachedStaticModelAbsolute <- rsm.Absolute
+                    cachedDescriptor.CachedStaticModelMatrix <- rsm.ModelMatrix
+                    cachedDescriptor.CachedStaticModelInsetOpt <- rsm.InsetOpt
+                    cachedDescriptor.CachedStaticModelSurfaceProperties <- rsm.SurfaceProperties
+                    cachedDescriptor.CachedStaticModelRenderType <- rsm.RenderType
+                    cachedDescriptor.CachedStaticModel <- rsm.StaticModel
                     messageBuffers3d.[messageBufferIndex].Add cachedStaticModelMessage
                 | _ -> failwithumf ()
             | _ -> messageBuffers3d.[messageBufferIndex].Add message

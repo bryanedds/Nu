@@ -50,8 +50,8 @@ type FieldTileVertices =
 
 type FieldMetadata =
     { FieldTileVerticesMap : Map<Vector2i, FieldTileVertices>
-      FieldUntraversableSurfaceDescriptor : StaticModelSurfaceDescriptor
-      FieldTraversableSurfaceDescriptor : StaticModelSurfaceDescriptor
+      FieldUntraversableSurfaceDescriptor : SurfaceDescriptor
+      FieldTraversableSurfaceDescriptor : SurfaceDescriptor
       FieldBounds : Box3 }
 
 [<RequireQualifiedAccess>]
