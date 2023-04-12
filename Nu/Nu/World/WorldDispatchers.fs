@@ -1019,7 +1019,6 @@ module StaticBillboardDispatcherModule =
              define Entity.NormalImage Assets.Default.MaterialNormal
              define Entity.TextureMinFilterOpt None
              define Entity.TextureMagFilterOpt None
-             define Entity.InvertRoughnessOpt None
              define Entity.RenderStyle Deferred]
 
 // TODO: AnimatedBillboardDispatcher.

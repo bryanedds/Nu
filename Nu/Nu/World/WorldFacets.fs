@@ -1475,9 +1475,6 @@ module StaticBillboardFacetModule =
         member this.GetTextureMagFilterOpt world : OpenGL.TextureMagFilter option = this.Get (nameof this.TextureMagFilterOpt) world
         member this.SetTextureMagFilterOpt (value : OpenGL.TextureMagFilter option) world = this.Set (nameof this.TextureMagFilterOpt) value world
         member this.TextureMagFilterOpt = lens (nameof this.TextureMagFilterOpt) this this.GetTextureMagFilterOpt this.SetTextureMagFilterOpt
-        member this.GetInvertRoughnessOpt world : bool option = this.Get (nameof this.InvertRoughnessOpt) world
-        member this.SetInvertRoughnessOpt (value : bool option) world = this.Set (nameof this.InvertRoughnessOpt) value world
-        member this.InvertRoughnessOpt = lens (nameof this.InvertRoughnessOpt) this this.GetInvertRoughnessOpt this.SetInvertRoughnessOpt
         member this.GetRenderStyle world : RenderStyle = this.Get (nameof this.RenderStyle) world
         member this.SetRenderStyle (value : RenderStyle) world = this.Set (nameof this.RenderStyle) value world
         member this.RenderStyle = lens (nameof this.RenderStyle) this this.GetRenderStyle this.SetRenderStyle
@@ -1496,7 +1493,6 @@ module StaticBillboardFacetModule =
              define Entity.NormalImage Assets.Default.MaterialNormal
              define Entity.TextureMinFilterOpt None
              define Entity.TextureMagFilterOpt None
-             define Entity.InvertRoughnessOpt None
              define Entity.RenderStyle Deferred]
 
         override this.Render (entity, world) =
@@ -1991,7 +1987,6 @@ module StaticModelSurfaceFacetModule =
              define Entity.SurfaceProperties Unchecked.defaultof<_>
              define Entity.SurfaceIndex 0
              define Entity.StaticModel Assets.Default.StaticModel
-             define Entity.InvertRoughnessOpt None
              define Entity.RenderStyle Deferred]
 
         override this.Register (entity, world) =
