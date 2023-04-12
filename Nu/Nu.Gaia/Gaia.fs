@@ -535,7 +535,16 @@ module Gaia =
                 let properties = Unchecked.defaultof<_>
                 let renderType = ForwardRenderType (0.0f, Single.MinValue)
                 let staticModel = Assets.Default.HighlightModel
-                let world = World.enqueueRenderMessage3d (RenderStaticModel (absolute, boundsMatrix, ValueNone, properties, renderType, staticModel)) world
+                let world =
+                    World.enqueueRenderMessage3d
+                        (RenderStaticModel
+                            { Absolute = absolute
+                              ModelMatrix = boundsMatrix
+                              InsetOpt = ValueNone
+                              SurfaceProperties = properties
+                              RenderType = renderType
+                              StaticModel = staticModel })
+                        world
                 (Cascade, world)
         | _ -> (Cascade, world)
 
@@ -1698,8 +1707,8 @@ module Gaia =
                         if entity.MountExists world then
                             let entityDegreesLocal = entity.GetDegreesLocal world
                             let entityDegreeLocal = (entityDegreesLocal * entityDragAxis).Magnitude
-                            let entityDegreeDelta = entityDegreeSnapped - entityDegreeLocal
-                            let entityDegreeLocal = entityDegreeLocal + entityDegreeDelta
+                            let entityDegreeLocalDelta = entityDegreeSnapped - entityDegreeLocal
+                            let entityDegreeLocal = entityDegreeLocal + entityDegreeLocalDelta
                             let entityDegreesLocal = entityDegreeLocal * entityDragAxis + entityDegreesLocal * (v3One - entityDragAxis)
                             entity.SetDegreesLocal entityDegreesLocal world
                         else
