@@ -48,8 +48,8 @@ module FieldDispatcher =
                   Emission = 1.0f
                   EmissionImage = Assets.Default.MaterialEmission
                   NormalImage = Assets.Default.MaterialNormal
-                  TextureMinFilterOpt = ValueSome OpenGL.TextureMinFilter.NearestMipmapNearest
-                  TextureMagFilterOpt = ValueSome OpenGL.TextureMagFilter.Nearest
+                  TextureMinFilterOpt = Some OpenGL.TextureMinFilter.NearestMipmapNearest
+                  TextureMagFilterOpt = Some OpenGL.TextureMagFilter.Nearest
                   InvertRoughness = false
                   TwoSided = false }
             descriptor
@@ -143,7 +143,7 @@ module FieldDispatcher =
                     (RenderUserDefinedStaticModel
                         { Absolute = false
                           ModelMatrix = m4Identity
-                          InsetOpt = ValueSome fieldTexCoordsOffset
+                          InsetOpt = Some fieldTexCoordsOffset
                           SurfaceProperties = Unchecked.defaultof<_>
                           RenderType = ForwardRenderType (0.0f, 0.0f)
                           SurfaceDescriptors = [|fieldMetadata.FieldUntraversableSurfaceDescriptor|]
@@ -153,7 +153,7 @@ module FieldDispatcher =
                     (RenderUserDefinedStaticModel
                         { Absolute = false
                           ModelMatrix = m4Identity
-                          InsetOpt = ValueSome fieldTexCoordsOffset
+                          InsetOpt = Some fieldTexCoordsOffset
                           SurfaceProperties = Unchecked.defaultof<_>
                           RenderType = ForwardRenderType (0.0f, -1.0f)
                           SurfaceDescriptors = [|fieldMetadata.FieldTraversableSurfaceDescriptor|]
@@ -166,7 +166,7 @@ module FieldDispatcher =
                         (RenderUserDefinedStaticModel
                             { Absolute = false
                               ModelMatrix = m4Identity
-                              InsetOpt = ValueNone
+                              InsetOpt = None
                               SurfaceProperties = Unchecked.defaultof<_>
                               RenderType = ForwardRenderType (-1.0f, 0.0f)
                               SurfaceDescriptors = [|highlightDescriptor|]

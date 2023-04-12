@@ -231,7 +231,7 @@ type RendererThread (createRenderer3d, createRenderer2d) =
                 | RenderCachedStaticModel cachedDescriptor ->
                     cachedDescriptor.CachedStaticModelAbsolute <- rsm.Absolute
                     cachedDescriptor.CachedStaticModelMatrix <- rsm.ModelMatrix
-                    cachedDescriptor.CachedStaticModelInsetOpt <- rsm.InsetOpt
+                    cachedDescriptor.CachedStaticModelInsetOpt <- ValueOption.ofOption rsm.InsetOpt
                     cachedDescriptor.CachedStaticModelSurfaceProperties <- rsm.SurfaceProperties
                     cachedDescriptor.CachedStaticModelRenderType <- rsm.RenderType
                     cachedDescriptor.CachedStaticModel <- rsm.StaticModel

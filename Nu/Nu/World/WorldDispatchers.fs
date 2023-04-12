@@ -1010,17 +1010,16 @@ module StaticBillboardDispatcherModule =
 
         static member Properties =
             [define Entity.InsetOpt None
-             define Entity.AlbedoOpt None
+             define Entity.SurfaceProperties Unchecked.defaultof<_>
              define Entity.AlbedoImage Assets.Default.MaterialAlbedo
-             define Entity.MetallicOpt None
              define Entity.MetallicImage Assets.Default.MaterialMetallic
-             define Entity.RoughnessOpt None
              define Entity.RoughnessImage Assets.Default.MaterialRoughness
-             define Entity.AmbientOcclusionOpt None
              define Entity.AmbientOcclusionImage Assets.Default.MaterialAmbientOcclusion
-             define Entity.EmissionOpt None
              define Entity.EmissionImage Assets.Default.MaterialEmission
              define Entity.NormalImage Assets.Default.MaterialNormal
+             define Entity.TextureMinFilterOpt None
+             define Entity.TextureMagFilterOpt None
+             define Entity.InvertRoughnessOpt None
              define Entity.RenderStyle Deferred]
 
 // TODO: AnimatedBillboardDispatcher.
@@ -1035,7 +1034,8 @@ module StaticModelDispatcherModule =
             [typeof<StaticModelFacet>]
 
         static member Properties =
-            [define Entity.StaticModel Assets.Default.StaticModel
+            [define Entity.SurfaceProperties Unchecked.defaultof<_>
+             define Entity.StaticModel Assets.Default.StaticModel
              define Entity.RenderStyle Deferred]
 
 [<AutoOpen>]
@@ -1051,6 +1051,7 @@ module RigidModelDispatcherModule =
         static member Properties =
             [define Entity.BodyType Dynamic
              define Entity.BodyShape (BodyStaticModel { StaticModel = Assets.Default.StaticModel; TransformOpt = None; PropertiesOpt = None })
+             define Entity.SurfaceProperties Unchecked.defaultof<_>
              define Entity.StaticModel Assets.Default.StaticModel
              define Entity.RenderStyle Deferred]
 
@@ -1064,7 +1065,8 @@ module StaticModelSurfaceDispatcherModule =
             [typeof<StaticModelSurfaceFacet>]
 
         static member Properties =
-            [define Entity.SurfaceIndex 0
+            [define Entity.SurfaceProperties Unchecked.defaultof<_>
+             define Entity.SurfaceIndex 0
              define Entity.StaticModel Assets.Default.StaticModel
              define Entity.RenderStyle Deferred]
 
@@ -1081,6 +1083,7 @@ module RigidModelSurfaceDispatcherModule =
         static member Properties =
             [define Entity.BodyType Dynamic
              define Entity.BodyShape (BodyStaticModelSurface { SurfaceIndex = 0; StaticModel = Assets.Default.StaticModel; TransformOpt = None; PropertiesOpt = None })
+             define Entity.SurfaceProperties Unchecked.defaultof<_>
              define Entity.SurfaceIndex 0
              define Entity.StaticModel Assets.Default.StaticModel
              define Entity.RenderStyle Deferred]
@@ -1155,20 +1158,14 @@ module StaticModelHierarchyDispatcherModule =
                             let world = if mountToParent then child.SetMountOpt (Some (Relation.makeParent ())) world else world
                             let world = child.SetSurfaceIndex i world
                             let world = child.SetStaticModel staticModel world
-                            let world = child.SetAlbedoOpt (Some surface.SurfaceMaterial.Albedo) world
-                            let world = child.SetMetallicOpt (Some surface.SurfaceMaterial.Metallic) world
-                            let world = child.SetRoughnessOpt (Some surface.SurfaceMaterial.Roughness) world
-                            let world = child.SetAmbientOcclusionOpt (Some surface.SurfaceMaterial.AmbientOcclusion) world
-                            let world = child.SetEmissionOpt (Some surface.SurfaceMaterial.Emission) world
-                            let world = child.SetInvertRoughnessOpt (Some surface.SurfaceMaterial.InvertRoughness) world
                             let surfaceProperties =
-                                { AlbedoOpt = ValueSome surface.SurfaceMaterial.Albedo
-                                  MetallicOpt = ValueSome surface.SurfaceMaterial.Metallic
-                                  RoughnessOpt = ValueSome surface.SurfaceMaterial.Roughness
-                                  AmbientOcclusionOpt = ValueSome surface.SurfaceMaterial.AmbientOcclusion
-                                  EmissionOpt = ValueSome surface.SurfaceMaterial.Emission
-                                  InvertRoughnessOpt = ValueSome surface.SurfaceMaterial.InvertRoughness }
-                            let world = child.SetSurfacePropertiesOverride (Some surfaceProperties) world
+                                { AlbedoOpt = Some surface.SurfaceMaterial.Albedo
+                                  MetallicOpt = Some surface.SurfaceMaterial.Metallic
+                                  RoughnessOpt = Some surface.SurfaceMaterial.Roughness
+                                  AmbientOcclusionOpt = Some surface.SurfaceMaterial.AmbientOcclusion
+                                  EmissionOpt = Some surface.SurfaceMaterial.Emission
+                                  InvertRoughnessOpt = Some surface.SurfaceMaterial.InvertRoughness }
+                            let world = child.SetSurfaceProperties surfaceProperties world
                             let world = child.QuickSize world
                             world' <- world
                             i <- inc i)

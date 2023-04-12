@@ -540,7 +540,7 @@ module Gaia =
                         (RenderStaticModel
                             { Absolute = absolute
                               ModelMatrix = boundsMatrix
-                              InsetOpt = ValueNone
+                              InsetOpt = None
                               SurfaceProperties = properties
                               RenderType = renderType
                               StaticModel = staticModel })

@@ -20,12 +20,12 @@ open Nu
 
 /// Surface properties for physically-based rendering.
 type [<StructuralEquality; NoComparison; SymbolicExpansion; Struct>] SurfaceProperties =
-    { AlbedoOpt : Color voption
-      MetallicOpt : single voption
-      RoughnessOpt : single voption
-      AmbientOcclusionOpt : single voption
-      EmissionOpt : single voption
-      InvertRoughnessOpt : bool voption }
+    { AlbedoOpt : Color option
+      MetallicOpt : single option
+      RoughnessOpt : single option
+      AmbientOcclusionOpt : single option
+      EmissionOpt : single option
+      InvertRoughnessOpt : bool option }
 
 /// Describes a static model surface.
 and [<NoEquality; NoComparison>] SurfaceDescriptor =
@@ -46,8 +46,8 @@ and [<NoEquality; NoComparison>] SurfaceDescriptor =
       Emission : single
       EmissionImage : Image AssetTag
       NormalImage : Image AssetTag
-      TextureMinFilterOpt : OpenGL.TextureMinFilter voption
-      TextureMagFilterOpt : OpenGL.TextureMagFilter voption
+      TextureMinFilterOpt : OpenGL.TextureMinFilter option
+      TextureMagFilterOpt : OpenGL.TextureMagFilter option
       InvertRoughness : bool
       TwoSided : bool }
 
@@ -61,8 +61,8 @@ type [<NoEquality; NoComparison>] BillboardParticlesDescriptor =
       AmbientOcclusionImage : Image AssetTag
       EmissionImage : Image AssetTag
       NormalImage : Image AssetTag
-      MinFilterOpt : OpenGL.TextureMinFilter voption
-      MagFilterOpt : OpenGL.TextureMagFilter voption
+      MinFilterOpt : OpenGL.TextureMinFilter option
+      MagFilterOpt : OpenGL.TextureMagFilter option
       RenderType : RenderType
       Particles : Particle SegmentedArray }
 
@@ -134,7 +134,7 @@ and [<ReferenceEquality>] RenderLight3d =
 and [<ReferenceEquality>] RenderBillboard =
     { Absolute : bool
       ModelMatrix : Matrix4x4
-      InsetOpt : Box2 voption
+      InsetOpt : Box2 option
       SurfaceProperties : SurfaceProperties
       AlbedoImage : Image AssetTag
       MetallicImage : Image AssetTag
@@ -142,13 +142,13 @@ and [<ReferenceEquality>] RenderBillboard =
       AmbientOcclusionImage : Image AssetTag
       EmissionImage : Image AssetTag
       NormalImage : Image AssetTag
-      MinFilterOpt : OpenGL.TextureMinFilter voption
-      MagFilterOpt : OpenGL.TextureMagFilter voption
+      MinFilterOpt : OpenGL.TextureMinFilter option
+      MagFilterOpt : OpenGL.TextureMagFilter option
       RenderType : RenderType }
 
 and [<ReferenceEquality>] RenderBillboards =
     { Absolute : bool
-      Billboards : (Matrix4x4 * Box2 voption) SegmentedList
+      Billboards : (Matrix4x4 * Box2 option) SegmentedList
       SurfaceProperties : SurfaceProperties
       AlbedoImage : Image AssetTag
       MetallicImage : Image AssetTag
@@ -156,8 +156,8 @@ and [<ReferenceEquality>] RenderBillboards =
       AmbientOcclusionImage : Image AssetTag
       EmissionImage : Image AssetTag
       NormalImage : Image AssetTag
-      MinFilterOpt : OpenGL.TextureMinFilter voption
-      MagFilterOpt : OpenGL.TextureMagFilter voption
+      MinFilterOpt : OpenGL.TextureMinFilter option
+      MagFilterOpt : OpenGL.TextureMagFilter option
       RenderType : RenderType }
 
 and [<ReferenceEquality>] RenderBillboardParticles =
@@ -169,15 +169,15 @@ and [<ReferenceEquality>] RenderBillboardParticles =
       AmbientOcclusionImage : Image AssetTag
       EmissionImage : Image AssetTag
       NormalImage : Image AssetTag
-      MinFilterOpt : OpenGL.TextureMinFilter voption
-      MagFilterOpt : OpenGL.TextureMagFilter voption
+      MinFilterOpt : OpenGL.TextureMinFilter option
+      MagFilterOpt : OpenGL.TextureMagFilter option
       RenderType : RenderType
       Particles : Particle SegmentedArray }
 
 and [<ReferenceEquality>] RenderStaticModelSurface =
     { Absolute : bool
       ModelMatrix : Matrix4x4
-      InsetOpt : Box2 voption
+      InsetOpt : Box2 option
       SurfaceProperties : SurfaceProperties
       RenderType : RenderType
       StaticModel : StaticModel AssetTag
@@ -186,21 +186,21 @@ and [<ReferenceEquality>] RenderStaticModelSurface =
 and [<ReferenceEquality>] RenderStaticModel =
     { Absolute : bool
       ModelMatrix : Matrix4x4
-      InsetOpt : Box2 voption
+      InsetOpt : Box2 option
       SurfaceProperties : SurfaceProperties
       RenderType : RenderType
       StaticModel : StaticModel AssetTag }
 
 and [<ReferenceEquality>] RenderStaticModels =
     { Absolute : bool
-      StaticModels : (Matrix4x4 * Box2 voption * SurfaceProperties) SegmentedList
+      StaticModels : (Matrix4x4 * Box2 option * SurfaceProperties) SegmentedList
       RenderType : RenderType
       StaticModel : StaticModel AssetTag }
 
 and [<ReferenceEquality>] RenderUserDefinedStaticModel =
     { Absolute : bool
       ModelMatrix : Matrix4x4
-      InsetOpt : Box2 voption
+      InsetOpt : Box2 option
       SurfaceProperties : SurfaceProperties
       RenderType : RenderType
       SurfaceDescriptors : SurfaceDescriptor array
@@ -618,7 +618,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         (absolute,
          eyeRotation : Quaternion,
          affineMatrix,
-         insetOpt : Box2 voption,
+         insetOpt : Box2 option,
          albedoMetadata : OpenGL.Texture.TextureMetadata,
          properties,
          renderType,
@@ -626,7 +626,7 @@ type [<ReferenceEquality>] GlRenderer3d =
          renderer) =
         let texCoordsOffset =
             match insetOpt with
-            | ValueSome inset ->
+            | Some inset ->
                 let texelWidth = albedoMetadata.TextureTexelWidth
                 let texelHeight = albedoMetadata.TextureTexelHeight
                 let px = inset.Min.X * texelWidth
@@ -634,7 +634,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 let sx = inset.Size.X * texelWidth
                 let sy = -inset.Size.Y * texelHeight
                 Box2 (px, py, sx, sy)
-            | ValueNone -> box2 v2Zero v2One // shouldn't we still be using borders?
+            | None -> box2 v2Zero v2One // shouldn't we still be using borders?
         let eyeForward =
             (Vector3.Transform (v3Forward, eyeRotation)).WithY 0.0f
         if v3Neq eyeForward v3Zero then
@@ -659,7 +659,7 @@ type [<ReferenceEquality>] GlRenderer3d =
     static member private categorizeStaticModelSurface
         (modelAbsolute,
          modelMatrix : Matrix4x4 inref,
-         insetOpt : Box2 voption,
+         insetOpt : Box2 option,
          properties : SurfaceProperties inref,
          renderType : RenderType,
          ignoreSurfaceMatrix,
@@ -671,7 +671,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             else surface.SurfaceMatrix * modelMatrix
         let texCoordsOffset =
             match insetOpt with
-            | ValueSome inset ->
+            | Some inset ->
                 let albedoMetadata = surface.SurfaceMaterial.AlbedoMetadata
                 let texelWidth = albedoMetadata.TextureTexelWidth
                 let texelHeight = albedoMetadata.TextureTexelHeight
@@ -680,7 +680,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 let sx = inset.Size.X * texelWidth
                 let sy = -inset.Size.Y * texelHeight
                 Box2 (px, py, sx, sy)
-            | ValueNone -> box2 v2Zero v2Zero
+            | None -> box2 v2Zero v2Zero
         match renderType with
         | DeferredRenderType ->
             if modelAbsolute then
@@ -699,7 +699,7 @@ type [<ReferenceEquality>] GlRenderer3d =
     static member private categorizeStaticModelSurfaceByIndex
         (modelAbsolute,
          modelMatrix : Matrix4x4 inref,
-         insetOpt : Box2 voption,
+         insetOpt : Box2 option,
          properties : SurfaceProperties inref,
          renderType : RenderType,
          staticModel : StaticModel AssetTag,
@@ -718,7 +718,7 @@ type [<ReferenceEquality>] GlRenderer3d =
     static member private categorizeStaticModel
         (modelAbsolute,
          modelMatrix : Matrix4x4 inref,
-         insetOpt : Box2 voption,
+         insetOpt : Box2 option,
          properties : SurfaceProperties inref,
          renderType,
          staticModel : StaticModel AssetTag,
@@ -835,11 +835,11 @@ type [<ReferenceEquality>] GlRenderer3d =
                 renderer.RenderTexCoordsOffsetsFields.[i * 4 + 2] <- texCoordsOffset.Min.X + texCoordsOffset.Size.X
                 renderer.RenderTexCoordsOffsetsFields.[i * 4 + 3] <- texCoordsOffset.Min.Y + texCoordsOffset.Size.Y
                 let (albedo, metallic, roughness, ambientOcclusion, emission) =
-                    ((match properties.AlbedoOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterial.Albedo),
-                     (match properties.MetallicOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterial.Metallic),
-                     (match properties.RoughnessOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterial.Roughness),
-                     (match properties.AmbientOcclusionOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterial.AmbientOcclusion),
-                     (match properties.EmissionOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterial.Emission))
+                    ((match properties.AlbedoOpt with Some value -> value | None -> surface.SurfaceMaterial.Albedo),
+                     (match properties.MetallicOpt with Some value -> value | None -> surface.SurfaceMaterial.Metallic),
+                     (match properties.RoughnessOpt with Some value -> value | None -> surface.SurfaceMaterial.Roughness),
+                     (match properties.AmbientOcclusionOpt with Some value -> value | None -> surface.SurfaceMaterial.AmbientOcclusion),
+                     (match properties.EmissionOpt with Some value -> value | None -> surface.SurfaceMaterial.Emission))
                 renderer.RenderAlbedosFields.[i * 4] <- albedo.R
                 renderer.RenderAlbedosFields.[i * 4 + 1] <- albedo.G
                 renderer.RenderAlbedosFields.[i * 4 + 2] <- albedo.B
@@ -882,16 +882,16 @@ type [<ReferenceEquality>] GlRenderer3d =
             | ValueSome (TextureAsset (_, _, texture)) -> texture
             | _ -> renderer.RenderPhysicallyBasedMaterial.NormalTexture
         let billboardMaterial : OpenGL.PhysicallyBased.PhysicallyBasedMaterial =
-            { Albedo = ValueOption.defaultValue Constants.Render.AlbedoDefault properties.AlbedoOpt
+            { Albedo = Option.defaultValue Constants.Render.AlbedoDefault properties.AlbedoOpt
               AlbedoMetadata = albedoMetadata
               AlbedoTexture = albedoTexture
-              Metallic = ValueOption.defaultValue Constants.Render.MetallicDefault properties.MetallicOpt
+              Metallic = Option.defaultValue Constants.Render.MetallicDefault properties.MetallicOpt
               MetallicTexture = metallicTexture
-              Roughness = ValueOption.defaultValue Constants.Render.RoughnessDefault properties.RoughnessOpt
+              Roughness = Option.defaultValue Constants.Render.RoughnessDefault properties.RoughnessOpt
               RoughnessTexture = roughnessTexture
-              AmbientOcclusion = ValueOption.defaultValue Constants.Render.AmbientOcclusionDefault properties.AmbientOcclusionOpt
+              AmbientOcclusion = Option.defaultValue Constants.Render.AmbientOcclusionDefault properties.AmbientOcclusionOpt
               AmbientOcclusionTexture = ambientOcclusionTexture
-              Emission = ValueOption.defaultValue Constants.Render.EmissionDefault properties.EmissionOpt
+              Emission = Option.defaultValue Constants.Render.EmissionDefault properties.EmissionOpt
               EmissionTexture = emissionTexture
               NormalTexture = normalTexture
               TextureMinFilterOpt = minFilterOpt
@@ -1022,8 +1022,8 @@ type [<ReferenceEquality>] GlRenderer3d =
               Emission = Constants.Render.EmissionDefault
               EmissionTexture = OpenGL.Texture.TryCreateTextureFiltered ("Assets/Default/MaterialEmission.png") |> Either.getRight |> snd
               NormalTexture = OpenGL.Texture.TryCreateTextureFiltered ("Assets/Default/MaterialNormal.png") |> Either.getRight |> snd
-              TextureMinFilterOpt = ValueNone
-              TextureMagFilterOpt = ValueNone
+              TextureMinFilterOpt = None
+              TextureMagFilterOpt = None
               InvertRoughness = false
               TwoSided = false }
 
@@ -1135,7 +1135,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                                  particle.Transform.Size * particle.Transform.Scale)
                         let billboardMaterial = { billboardMaterial with Albedo = billboardMaterial.Albedo * particle.Color; Emission = particle.Emission.R }
                         let billboardSurface = OpenGL.PhysicallyBased.CreatePhysicallyBasedSurface ([||], m4Identity, box3Zero, billboardMaterial, renderer.RenderBillboardGeometry)
-                        GlRenderer3d.categorizeBillboardSurface (rbps.Absolute, eyeRotation, billboardMatrix, particle.InsetOpt, billboardMaterial.AlbedoMetadata, rbps.SurfaceProperties, rbps.RenderType, billboardSurface, renderer)
+                        GlRenderer3d.categorizeBillboardSurface (rbps.Absolute, eyeRotation, billboardMatrix, Option.ofValueOption particle.InsetOpt, billboardMaterial.AlbedoMetadata, rbps.SurfaceProperties, rbps.RenderType, billboardSurface, renderer)
                 | RenderStaticModelSurface rsms ->
                     GlRenderer3d.categorizeStaticModelSurfaceByIndex (rsms.Absolute, &rsms.ModelMatrix, rsms.InsetOpt, &rsms.SurfaceProperties, rsms.RenderType, rsms.StaticModel, rsms.SurfaceIndex, renderer)
                 | RenderStaticModel rsm ->
@@ -1144,7 +1144,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                     for (modelMatrix, insetOpt, properties) in rsms.StaticModels do
                         GlRenderer3d.categorizeStaticModel (rsms.Absolute, &modelMatrix, insetOpt, &properties, rsms.RenderType, rsms.StaticModel, renderer)
                 | RenderCachedStaticModel d ->
-                    GlRenderer3d.categorizeStaticModel (d.CachedStaticModelAbsolute, &d.CachedStaticModelMatrix, d.CachedStaticModelInsetOpt, &d.CachedStaticModelSurfaceProperties, d.CachedStaticModelRenderType, d.CachedStaticModel, renderer)
+                    GlRenderer3d.categorizeStaticModel (d.CachedStaticModelAbsolute, &d.CachedStaticModelMatrix, Option.ofValueOption d.CachedStaticModelInsetOpt, &d.CachedStaticModelSurfaceProperties, d.CachedStaticModelRenderType, d.CachedStaticModel, renderer)
                 | RenderUserDefinedStaticModel renderUdsm ->
                     let assetTag = asset Assets.Default.PackageName Gen.name // TODO: see if we should instead use a specialized package for temporary assets like these.
                     GlRenderer3d.tryCreateUserDefinedStaticModel renderUdsm.SurfaceDescriptors renderUdsm.Bounds assetTag renderer
