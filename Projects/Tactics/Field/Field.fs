@@ -185,28 +185,32 @@ module Field =
                         if tile.Gid >= tileZero && tile.Gid < tileZero + tileCount then
                             tileSetOpt <- Some tileSet
                             albedoTileSetOpt <- tileSetOpt // use tile set that is first to be non-zero
-                match tileSetOpt with
-                | Some tileSet ->
-                    let tileId = tile.Gid - tileSet.FirstGid
-                    let tileImageWidth = let opt = tileSet.Image.Width in opt.Value
-                    let tileImageHeight = let opt = tileSet.Image.Height in opt.Value
-                    let tileWidthNormalized = single tileSet.TileWidth / single tileImageWidth
-                    let tileHeightNormalized = single tileSet.TileHeight / single tileImageHeight
-                    let tileXCount = let opt = tileSet.Columns in opt.Value
-                    let tileX = tileId % tileXCount
-                    let tileY = tileId / tileXCount + 1
-                    let texCoordX = single tileX * tileWidthNormalized
-                    let texCoordY = single tileY * tileHeightNormalized
-                    let texCoordX2 = texCoordX + tileWidthNormalized
-                    let texCoordY2 = texCoordY - tileHeightNormalized
-                    let u = t * 6
-                    texCoordses.[u] <- v2 texCoordX texCoordY
-                    texCoordses.[u+1] <- v2 texCoordX2 texCoordY
-                    texCoordses.[u+2] <- v2 texCoordX2 texCoordY2
-                    texCoordses.[u+3] <- v2 texCoordX texCoordY
-                    texCoordses.[u+4] <- v2 texCoordX2 texCoordY2
-                    texCoordses.[u+5] <- v2 texCoordX texCoordY2
-                | None -> ()
+                let tileSet =
+                    match tileSetOpt with
+                    | Some tileSet -> tileSet
+                    | None -> tileSets.[0] // use first tile set if the empty tile
+                let tileId =
+                    if tile.Gid = 0
+                    then 0 // special case for the empty tile
+                    else tile.Gid - tileSet.FirstGid
+                let tileImageWidth = let opt = tileSet.Image.Width in opt.Value
+                let tileImageHeight = let opt = tileSet.Image.Height in opt.Value
+                let tileWidthNormalized = single tileSet.TileWidth / single tileImageWidth
+                let tileHeightNormalized = single tileSet.TileHeight / single tileImageHeight
+                let tileXCount = let opt = tileSet.Columns in opt.Value
+                let tileX = tileId % tileXCount
+                let tileY = tileId / tileXCount + 1
+                let texCoordX = single tileX * tileWidthNormalized
+                let texCoordY = single tileY * tileHeightNormalized
+                let texCoordX2 = texCoordX + tileWidthNormalized
+                let texCoordY2 = texCoordY - tileHeightNormalized
+                let u = t * 6
+                texCoordses.[u] <- v2 texCoordX texCoordY
+                texCoordses.[u+1] <- v2 texCoordX2 texCoordY
+                texCoordses.[u+2] <- v2 texCoordX2 texCoordY2
+                texCoordses.[u+3] <- v2 texCoordX texCoordY
+                texCoordses.[u+4] <- v2 texCoordX2 texCoordY2
+                texCoordses.[u+5] <- v2 texCoordX texCoordY2
 
         // make normals array
         let normals = Array.zeroCreate<Vector3> (tileMapWidth * tileMapHeight * 6)
