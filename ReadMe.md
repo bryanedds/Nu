@@ -28,6 +28,9 @@ Live editing a cutscene.
 ![image](https://user-images.githubusercontent.com/1625560/231353650-32847d30-896f-4bc6-b8b3-cc27e784bdb3.png)
 Editing a 3D scene imported from Unity in Nu's editor, Gaia.
 
+Detailed physically-based rendering.
+![image](https://user-images.githubusercontent.com/1625560/231354416-52f55d49-dcac-4384-b7e2-efd0a3c6f791.png)
+
 ![image](https://user-images.githubusercontent.com/1625560/230993984-9a75cd59-93b6-4b78-b8ef-3c9607407b4a.png)
 Editing another scene imported from Unity.
 
