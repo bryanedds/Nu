@@ -48,7 +48,7 @@ module AvatarDispatcher =
              Entity.Presence == Omnipresent
              Entity.LinearDamping == 19.0f
              Entity.AngularFactor == v3Zero
-             Entity.GravityOverrideOpt == Some v3Zero
+             Entity.GravityOverride == Some v3Zero
              Entity.BodyShape := bodyShape
              Entity.UpdateEvent => Update]
 

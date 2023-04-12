@@ -871,7 +871,7 @@ module SideViewCharacterDispatcherModule =
              define Entity.CelRun 8
              define Entity.AnimationDelay (GameTime.ofSeconds (1.0f / 15.0f))
              define Entity.AngularFactor v3Zero
-             define Entity.GravityOverrideOpt (Some (Constants.Physics.Gravity2dDefault * 3.0f))
+             define Entity.GravityOverride (Some (Constants.Physics.Gravity2dDefault * 3.0f))
              define Entity.BodyShape (BodyCapsule { Height = 0.5f; Radius = 0.25f; TransformOpt = None; PropertiesOpt = None })
              define Entity.SideViewCharacterIdleImage Assets.Default.SideViewCharacterIdleImage
              define Entity.SideViewCharacterJumpImage Assets.Default.SideViewCharacterJumpImage
@@ -1160,6 +1160,15 @@ module StaticModelHierarchyDispatcherModule =
                             let world = child.SetRoughnessOpt (Some surface.SurfaceMaterial.Roughness) world
                             let world = child.SetAmbientOcclusionOpt (Some surface.SurfaceMaterial.AmbientOcclusion) world
                             let world = child.SetEmissionOpt (Some surface.SurfaceMaterial.Emission) world
+                            let world = child.SetInvertRoughnessOpt (Some surface.SurfaceMaterial.InvertRoughness) world
+                            let surfaceProperties =
+                                { AlbedoOpt = ValueSome surface.SurfaceMaterial.Albedo
+                                  MetallicOpt = ValueSome surface.SurfaceMaterial.Metallic
+                                  RoughnessOpt = ValueSome surface.SurfaceMaterial.Roughness
+                                  AmbientOcclusionOpt = ValueSome surface.SurfaceMaterial.AmbientOcclusion
+                                  EmissionOpt = ValueSome surface.SurfaceMaterial.Emission
+                                  InvertRoughnessOpt = ValueSome surface.SurfaceMaterial.InvertRoughness }
+                            let world = child.SetSurfacePropertiesOverride (Some surfaceProperties) world
                             let world = child.QuickSize world
                             world' <- world
                             i <- inc i)

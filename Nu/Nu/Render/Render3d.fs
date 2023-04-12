@@ -15,10 +15,11 @@ open Nu
 // TODO: account for Blend in billboards (at least alpha, overwrite, and additive)      //
 // TODO: account for Flip in billboards.                                                //
 // TODO: optimize billboard rendering with some sort of batch renderer.                 //
+// TODO: add TwoSidedOpt as render message parameter.                                   //
 //////////////////////////////////////////////////////////////////////////////////////////
 
-/// Material properties for physically-based rendering.
-type [<StructuralEquality; NoComparison; Struct>] SurfaceProperties =
+/// Surface properties for physically-based rendering.
+type [<StructuralEquality; NoComparison; SymbolicExpansion; Struct>] SurfaceProperties =
     { AlbedoOpt : Color voption
       MetallicOpt : single voption
       RoughnessOpt : single voption

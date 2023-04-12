@@ -781,9 +781,9 @@ module RigidBodyFacetModule =
         member this.GetSubstance world : Substance = this.Get (nameof this.Substance) world
         member this.SetSubstance (value : Substance) world = this.Set (nameof this.Substance) value world
         member this.Substance = lens (nameof this.Substance) this this.GetSubstance this.SetSubstance
-        member this.GetGravityOverrideOpt world : Vector3 option = this.Get (nameof this.GravityOverrideOpt) world
-        member this.SetGravityOverrideOpt (value : Vector3 option) world = this.Set (nameof this.GravityOverrideOpt) value world
-        member this.GravityOverrideOpt = lens (nameof this.GravityOverrideOpt) this this.GetGravityOverrideOpt this.SetGravityOverrideOpt
+        member this.GetGravityOverride world : Vector3 option = this.Get (nameof this.GravityOverride) world
+        member this.SetGravityOverride (value : Vector3 option) world = this.Set (nameof this.GravityOverride) value world
+        member this.GravityOverride = lens (nameof this.GravityOverride) this this.GetGravityOverride this.SetGravityOverride
         member this.GetCollisionDetection world : CollisionDetection = this.Get (nameof this.CollisionDetection) world
         member this.SetCollisionDetection (value : CollisionDetection) world = this.Set (nameof this.CollisionDetection) value world
         member this.CollisionDetection = lens (nameof this.CollisionDetection) this this.GetCollisionDetection this.SetCollisionDetection
@@ -833,7 +833,7 @@ module RigidBodyFacetModule =
              define Entity.AngularDamping 0.0f
              define Entity.AngularFactor v3One
              define Entity.Substance (Density 1.0f)
-             define Entity.GravityOverrideOpt None
+             define Entity.GravityOverride None
              define Entity.CollisionDetection Discontinuous
              define Entity.CollisionCategories "1"
              define Entity.CollisionMask "@"
@@ -862,7 +862,7 @@ module RigidBodyFacetModule =
             let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.AngularDamping)) entity world
             let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.AngularFactor)) entity world
             let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.Substance)) entity world
-            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.GravityOverrideOpt)) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.GravityOverride)) entity world
             let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.CollisionDetection)) entity world
             let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.CollisionCategories)) entity world
             let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.CollisionMask)) entity world
@@ -890,7 +890,7 @@ module RigidBodyFacetModule =
                   AngularDamping = entity.GetAngularDamping world
                   AngularFactor = entity.GetAngularFactor world
                   Substance = entity.GetSubstance world
-                  GravityOverrideOpt = entity.GetGravityOverrideOpt world
+                  GravityOverride = entity.GetGravityOverride world
                   CollisionDetection = entity.GetCollisionDetection world
                   CollisionCategories = Physics.categorizeCollisionMask (entity.GetCollisionCategories world)
                   CollisionMask = Physics.categorizeCollisionMask (entity.GetCollisionMask world)
@@ -1927,6 +1927,11 @@ module BasicStaticBillboardEmitterFacetModule =
 module StaticModelFacetModule =
 
     type Entity with
+
+        // OPTIMIZATION: override allows surface properties to be fetched with a single look-up.
+        member this.GetSurfacePropertiesOverride world : SurfaceProperties option = this.Get (nameof this.SurfacePropertiesOverride) world
+        member this.SetSurfacePropertiesOverride (value : SurfaceProperties option) world = this.Set (nameof this.SurfacePropertiesOverride) value world
+        member this.SurfacePropertiesOverride = lens (nameof this.SurfacePropertiesOverride) this this.GetSurfacePropertiesOverride this.SetSurfacePropertiesOverride
         member this.GetStaticModel world : StaticModel AssetTag = this.Get (nameof this.StaticModel) world
         member this.SetStaticModel (value : StaticModel AssetTag) world = this.Set (nameof this.StaticModel) value world
         member this.StaticModel = lens (nameof this.StaticModel) this this.GetStaticModel this.SetStaticModel
@@ -1949,14 +1954,15 @@ module StaticModelFacetModule =
 
         static member Properties =
             [define Entity.InsetOpt None
-             define Entity.StaticModel Assets.Default.StaticModel
+             define Entity.SurfacePropertiesOverride None
              define Entity.AlbedoOpt None
              define Entity.MetallicOpt None
              define Entity.RoughnessOpt None
              define Entity.AmbientOcclusionOpt None
              define Entity.EmissionOpt None
              define Entity.InvertRoughnessOpt None
-             define Entity.RenderStyle Deferred]
+             define Entity.RenderStyle Deferred
+             define Entity.StaticModel Assets.Default.StaticModel]
 
         override this.Register (entity, world) =
             let world = World.monitor updateBodyShape (entity.GetChangeEvent (nameof entity.StaticModel)) entity world
@@ -1969,12 +1975,15 @@ module StaticModelFacetModule =
             let affineMatrix = transform.AffineMatrix
             let insetOpt = match entity.GetInsetOpt world with Some inset -> ValueSome inset | None -> ValueNone
             let properties =
-                { AlbedoOpt = match entity.GetAlbedoOpt world with Some albedo -> ValueSome albedo | None -> ValueNone
-                  MetallicOpt = match entity.GetMetallicOpt world with Some metallic -> ValueSome metallic | None -> ValueNone
-                  RoughnessOpt = match entity.GetRoughnessOpt world with Some roughness -> ValueSome roughness | None -> ValueNone
-                  AmbientOcclusionOpt = match entity.GetAmbientOcclusionOpt world with Some ambientOcclusion -> ValueSome ambientOcclusion | None -> ValueNone
-                  EmissionOpt = match entity.GetEmissionOpt world with Some emission -> ValueSome emission | None -> ValueNone
-                  InvertRoughnessOpt = match entity.GetInvertRoughnessOpt world with Some invertRoughness -> ValueSome invertRoughness | None -> ValueNone }
+                match entity.GetSurfacePropertiesOverride world with
+                | Some properties -> properties
+                | None ->
+                    { AlbedoOpt = match entity.GetAlbedoOpt world with Some albedo -> ValueSome albedo | None -> ValueNone
+                      MetallicOpt = match entity.GetMetallicOpt world with Some metallic -> ValueSome metallic | None -> ValueNone
+                      RoughnessOpt = match entity.GetRoughnessOpt world with Some roughness -> ValueSome roughness | None -> ValueNone
+                      AmbientOcclusionOpt = match entity.GetAmbientOcclusionOpt world with Some ambientOcclusion -> ValueSome ambientOcclusion | None -> ValueNone
+                      EmissionOpt = match entity.GetEmissionOpt world with Some emission -> ValueSome emission | None -> ValueNone
+                      InvertRoughnessOpt = match entity.GetInvertRoughnessOpt world with Some invertRoughness -> ValueSome invertRoughness | None -> ValueNone }
             let renderType =
                 match entity.GetRenderStyle world with
                 | Deferred -> DeferredRenderType
@@ -2062,6 +2071,7 @@ module StaticModelSurfaceFacetModule =
 
         static member Properties =
             [define Entity.InsetOpt None
+             define Entity.SurfacePropertiesOverride None
              define Entity.SurfaceIndex 0
              define Entity.StaticModel Assets.Default.StaticModel
              define Entity.AlbedoOpt None
@@ -2087,12 +2097,15 @@ module StaticModelSurfaceFacetModule =
                 let affineMatrix = transform.AffineMatrix
                 let insetOpt = match entity.GetInsetOpt world with Some inset -> ValueSome inset | None -> ValueNone
                 let properties =
-                    { AlbedoOpt = match entity.GetAlbedoOpt world with Some albedo -> ValueSome albedo | None -> ValueNone
-                      MetallicOpt = match entity.GetMetallicOpt world with Some metallic -> ValueSome metallic | None -> ValueNone
-                      RoughnessOpt = match entity.GetRoughnessOpt world with Some roughness -> ValueSome roughness | None -> ValueNone
-                      AmbientOcclusionOpt = match entity.GetAmbientOcclusionOpt world with Some ambientOcclusion -> ValueSome ambientOcclusion | None -> ValueNone
-                      EmissionOpt = match entity.GetEmissionOpt world with Some emission -> ValueSome emission | None -> ValueNone
-                      InvertRoughnessOpt = match entity.GetInvertRoughnessOpt world with Some invertRoughness -> ValueSome invertRoughness | None -> ValueNone }
+                    match entity.GetSurfacePropertiesOverride world with
+                    | Some properties -> properties
+                    | None ->
+                        { AlbedoOpt = match entity.GetAlbedoOpt world with Some albedo -> ValueSome albedo | None -> ValueNone
+                          MetallicOpt = match entity.GetMetallicOpt world with Some metallic -> ValueSome metallic | None -> ValueNone
+                          RoughnessOpt = match entity.GetRoughnessOpt world with Some roughness -> ValueSome roughness | None -> ValueNone
+                          AmbientOcclusionOpt = match entity.GetAmbientOcclusionOpt world with Some ambientOcclusion -> ValueSome ambientOcclusion | None -> ValueNone
+                          EmissionOpt = match entity.GetEmissionOpt world with Some emission -> ValueSome emission | None -> ValueNone
+                          InvertRoughnessOpt = match entity.GetInvertRoughnessOpt world with Some invertRoughness -> ValueSome invertRoughness | None -> ValueNone }
                 let renderType =
                     match entity.GetRenderStyle world with
                     | Deferred -> DeferredRenderType
