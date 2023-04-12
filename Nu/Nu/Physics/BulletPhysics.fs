@@ -95,7 +95,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
         body.AngularVelocity <- bodyProperties.AngularVelocity
         body.AngularFactor <- if bodyProperties.BodyType = Static then v3Zero else bodyProperties.AngularFactor
         body.SetDamping (bodyProperties.LinearDamping, bodyProperties.AngularDamping)
-        body.Gravity <- match bodyProperties.GravityOverrideOpt with Some gravityOverride -> gravityOverride | None -> gravity
+        body.Gravity <- match bodyProperties.GravityOverride with Some gravityOverride -> gravityOverride | None -> gravity
 
     static member private attachBodyBox bodySource (bodyProperties : BodyProperties) (bodyBox : BodyBox) (compoundShape : CompoundShape) mass inertia =
         let box = new BoxShape (bodyBox.Size * 0.5f)
@@ -236,7 +236,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
             body.UserIndex <- userIndex
             BulletPhysicsEngine.configureBodyProperties bodyProperties body physicsEngine.PhysicsContext.Gravity
             physicsEngine.PhysicsContext.AddRigidBody (body, bodyProperties.CollisionCategories, bodyProperties.CollisionMask)
-            if physicsEngine.Bodies.TryAdd (bodyId, (bodyProperties.GravityOverrideOpt, body))
+            if physicsEngine.Bodies.TryAdd (bodyId, (bodyProperties.GravityOverride, body))
             then physicsEngine.Objects.Add (bodyId, body)
             else Log.debug ("Could not add body for '" + scstring bodyId + "'.")
         else
@@ -411,9 +411,9 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
         | SetBodyObservableMessage setBodyObservableMessage -> BulletPhysicsEngine.setBodyObservable setBodyObservableMessage physicsEngine
         | SetGravityMessage gravity ->
             physicsEngine.PhysicsContext.Gravity <- gravity
-            for (gravityOverrideOpt, body) in physicsEngine.Bodies.Values do
-                match gravityOverrideOpt with
-                | Some gravityOverride -> body.Gravity <- gravityOverride
+            for (gravityOverride, body) in physicsEngine.Bodies.Values do
+                match gravityOverride with
+                | Some gravity -> body.Gravity <- gravity
                 | None -> body.Gravity <- gravity
         | RebuildPhysicsHackMessage ->
             physicsEngine.RebuildingHack <- true

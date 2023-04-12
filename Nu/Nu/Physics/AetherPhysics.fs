@@ -267,7 +267,7 @@ type [<ReferenceEquality>] AetherPhysicsEngine =
 
         // attempt to add the body
         let bodyId = { BodySource = createBodyMessage.BodyId.BodySource; BodyIndex = bodyProperties.BodyIndex }
-        if not (physicsEngine.Bodies.TryAdd (bodyId, (bodyProperties.GravityOverrideOpt, body))) then
+        if not (physicsEngine.Bodies.TryAdd (bodyId, (bodyProperties.GravityOverride, body))) then
             Log.debug ("Could not add body for '" + scstring bodyId + "'.")
 
     static member private createBodies (createBodiesMessage : CreateBodiesMessage) physicsEngine =
@@ -439,11 +439,11 @@ type [<ReferenceEquality>] AetherPhysicsEngine =
                 physicsEngine.IntegrationMessages.Add bodyTransformMessage
 
     static member private applyGravity physicsStepAmount physicsEngine =
-        for (gravityOverrideOpt, body) in physicsEngine.Bodies.Values do
+        for (gravityOverride, body) in physicsEngine.Bodies.Values do
             if  body.BodyType = Dynamics.BodyType.Dynamic then
                 let gravity =
-                    match gravityOverrideOpt with
-                    | Some gravityOverride -> AetherPhysicsEngine.toPhysicsV2 gravityOverride
+                    match gravityOverride with
+                    | Some gravity -> AetherPhysicsEngine.toPhysicsV2 gravity
                     | None -> physicsEngine.PhysicsContext.Gravity
                 body.LinearVelocity <- body.LinearVelocity + physicsStepAmount * gravity
 

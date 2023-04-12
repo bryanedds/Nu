@@ -7,6 +7,7 @@ open System.ComponentModel
 open System.Windows.Forms
 open Prime
 open Nu
+open Nu.Declarative
 open Nu.Gaia
 open Nu.Gaia.Design
 
@@ -83,7 +84,7 @@ and EntityPropertyDescriptor (propertyDescriptor, attributes) =
             | "Surnames" ->
                 let surnames = value :?> string array
                 if Array.forall (fun (name : string) -> name.IndexOfAny Symbol.IllegalNameCharsArray = -1) surnames then
-                    let target = Entity (entity.Group.GroupAddress <-- rtoa surnames)
+                    let target = Nu.Entity (entity.Group.GroupAddress <-- rtoa surnames)
                     let world = World.renameEntityImmediate entity target world
                     Globals.World <- world // must be set for property grid
                     Globals.selectEntity target Globals.Form world
@@ -95,7 +96,7 @@ and EntityPropertyDescriptor (propertyDescriptor, attributes) =
                          MessageBoxButtons.OK) |>
                         ignore
                     world
-            
+
             // change the name property
             | Constants.Engine.NamePropertyName ->
                 let name = value :?> string
@@ -104,7 +105,7 @@ and EntityPropertyDescriptor (propertyDescriptor, attributes) =
                         entity.Group.GroupAddress.Names |>
                         flip Array.append (Array.allButLast entity.Surnames) |>
                         Array.add name
-                    let target = Entity targetNames
+                    let target = Nu.Entity targetNames
                     let world = World.renameEntityImmediate entity target world
                     Globals.World <- world // must be set for property grid
                     Globals.selectEntity target Globals.Form world
@@ -139,6 +140,21 @@ and EntityPropertyDescriptor (propertyDescriptor, attributes) =
                     | _ ->
                         let struct (_, _, world) = PropertyDescriptor.trySetValue propertyDescriptor value entity world
                         world
+                let world =
+                    // OPTIMIZATION: if overriden surface properties are changed, the override will become None.
+                    match propertyName with
+                    | nameof Entity.AlbedoOpt
+                    | nameof Entity.MetallicOpt
+                    | nameof Entity.RoughnessOpt
+                    | nameof Entity.AmbientOcclusionOpt
+                    | nameof Entity.EmissionOpt
+                    | nameof Entity.InvertRoughnessOpt ->
+                        match entity.TryGetProperty (nameof Entity.SurfacePropertiesOverride) world with
+                        | Some property when property.PropertyType = typeof<SurfaceProperties option> ->
+                            let surfacePropertyOverride = { PropertyType = typeof<SurfaceProperties option>; PropertyValue = None }
+                            entity.SetProperty (nameof Entity.SurfacePropertiesOverride) surfacePropertyOverride world
+                        | Some _ | None -> world
+                    | _ -> world
                 Globals.World <- world // must be set for property grid
                 entityTds.Form.entityPropertyGrid.Refresh ()
                 world

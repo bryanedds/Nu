@@ -176,7 +176,7 @@ type BodyProperties =
       AngularDamping : single
       AngularFactor : Vector3
       Substance : Substance
-      GravityOverrideOpt : Vector3 option
+      GravityOverride : Vector3 option
       CollisionDetection : CollisionDetection
       CollisionCategories : int
       CollisionMask : int

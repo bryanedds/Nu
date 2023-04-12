@@ -32,7 +32,7 @@ module Bullet =
              define Entity.Substance (Density 0.1f)
              define Entity.Restitution 0.5f
              define Entity.LinearDamping 0.0f
-             define Entity.GravityOverrideOpt (Some v3Zero)
+             define Entity.GravityOverride (Some v3Zero)
              define Entity.Bullet true
              define Entity.BodyShape (BodySphere { Radius = 0.5f; TransformOpt = None; PropertiesOpt = None })
              define Entity.StaticImage Assets.Gameplay.PlayerBulletImage]
@@ -88,7 +88,7 @@ module Enemy =
              define Entity.Friction 0.0f
              define Entity.AngularFactor v3Zero
              define Entity.LinearDamping 3.0f
-             define Entity.GravityOverrideOpt (Some v3Zero)
+             define Entity.GravityOverride (Some v3Zero)
              define Entity.BodyShape (BodyCapsule { Height = 0.5f; Radius = 0.25f; TransformOpt = None; PropertiesOpt = None })
              define Entity.CelCount 6
              define Entity.CelRun 4
@@ -198,7 +198,7 @@ module Player =
              define Entity.AngularFactor v3Zero
              define Entity.Friction 0.0f
              define Entity.LinearDamping 3.0f
-             define Entity.GravityOverrideOpt (Some v3Zero)
+             define Entity.GravityOverride (Some v3Zero)
              define Entity.BodyShape (BodyCapsule { Height = 0.5f; Radius = 0.25f; TransformOpt = None; PropertiesOpt = None })
              define Entity.CelCount 16
              define Entity.CelRun 4
