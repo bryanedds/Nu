@@ -77,7 +77,8 @@ uniform vec3 lightDirections[LIGHTS_MAX];
 uniform vec4 lightColors[LIGHTS_MAX];
 uniform float lightBrightnesses[LIGHTS_MAX];
 uniform float lightIntensities[LIGHTS_MAX];
-uniform float lightCutoffs[LIGHTS_MAX];
+uniform float lightConeInners[LIGHTS_MAX];
+uniform float lightConeOuters[LIGHTS_MAX];
 
 in vec3 positionOut;
 in vec2 texCoordsOut;
@@ -176,12 +177,13 @@ void main()
         float distanceSquared = dot(d, d);
         float attenuation = 1.0 / distanceSquared;
         float angle = acos(dot(lightDirections[i], l));
+        float coneDelta = lightConeOuters[i] - lightConeInners[i];
+        float coneBetween = angle - lightConeInners[i];
+        float coneScalar = clamp(1.0f - coneBetween / coneDelta, 0.0f, 1.0f);
         float intensity =
-            angle < lightCutoffs[i] ?
             // TODO: 3D: figure out an algorithm for intensity that doesn't create a black hole at origin like this one -
-            //pow(max(attenuation, 0.0001), 1.0 / lightIntensities[i]);
-            attenuation :
-            0.0f;
+            //pow(max(attenuation, 0.0001), 1.0 / lightIntensities[i]) * coneScalar;
+            attenuation * coneScalar;
         vec3 radiance = lightColors[i].rgb * lightBrightnesses[i] * intensity;
 
         // cook-torrance brdf
