@@ -761,7 +761,8 @@ module EffectSystem =
                 let modelView =
                     Render3d
                         (RenderLight3d
-                            { Center = slice.Position
+                            { Origin = slice.Position
+                              Direction = Vector3.Transform (v3Forward, Quaternion.CreateFromYawPitchRoll (slice.Angles.Z, slice.Angles.Y, slice.Angles.X))
                               Color = slice.Color
                               Brightness = slice.Brightness
                               Intensity = slice.Intensity

@@ -1415,13 +1415,15 @@ module LightFacet3dModule =
 
         override this.Render (entity, world) =
             let position = entity.GetPosition world
+            let rotation = entity.GetRotation world
             let color = entity.GetColor world
             let brightness = entity.GetBrightness world
             let intensity = entity.GetIntensity world
             let lightType = entity.GetLightType world
             World.enqueueRenderMessage3d
                 (RenderLight3d
-                    { Center = position
+                    { Origin = position
+                      Direction = Vector3.Transform (v3Forward, rotation)
                       Color = color
                       Brightness = brightness
                       Intensity = intensity
