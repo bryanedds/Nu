@@ -22,12 +22,6 @@ module Hl =
 
     let mutable private AssertEnabled = false
 
-    /// Cached buffers.
-    let private CachedBuffers = System.Collections.Generic.Queue ()
-
-    /// Cached vertex arrays.
-    let private CachedVertexArrays = System.Collections.Generic.Queue ()
-
     /// Initialize OpenGL.Hl.
     let InitAssert assertEnabled =
         AssertEnabled <- assertEnabled
@@ -64,26 +58,6 @@ module Hl =
     let AttachDebugMessageCallback () =
         () // nothing to do
 #endif
-
-    /// Allocate a vertex array, generating one via OpenGL if no cached vertex array is available.
-    let AllocVertexArray () =
-        if CachedVertexArrays.Count <> 0
-        then CachedVertexArrays.Dequeue ()
-        else Gl.GenVertexArray ()
-
-    /// Deallocate a vertex array into the vertex array cache.
-    let FreeVertexArray vertexArray =
-        CachedVertexArrays.Enqueue vertexArray
-
-    /// Allocate a buffer, generating one via OpenGL if no cached buffer is available.
-    let AllocBuffer () =
-        if CachedBuffers.Count <> 0
-        then CachedBuffers.Dequeue ()
-        else Gl.GenBuffer ()
-
-    /// Deallocate a buffer into the buffer cache.
-    let FreeBuffer buffer =
-        CachedBuffers.Enqueue buffer
 
     /// Create an SDL OpenGL context.
     let CreateSglContext window =
