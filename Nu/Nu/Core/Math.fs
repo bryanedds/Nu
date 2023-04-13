@@ -1216,11 +1216,12 @@ module Ray3 =
 
 /// Type of light.
 [<Syntax
-    ("PointLight SpotLight", "", "", "", "",
+    ("PointLight DirectionalLight SpotLight", "", "", "", "",
      Constants.PrettyPrinter.DefaultThresholdMin,
      Constants.PrettyPrinter.DefaultThresholdMax)>]
 type LightType =
     | PointLight
+    | DirectionalLight
     | SpotLight of single * single
 
 /// The input for a 2d ray cast operation.

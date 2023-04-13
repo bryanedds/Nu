@@ -157,6 +157,7 @@ module PhysicallyBased =
           LightColorsUniform : int
           LightBrightnessesUniform : int
           LightIntensitiesUniform : int
+          LightDirectionalsUniform : int
           LightConeInnersUniform : int
           LightConeOutersUniform : int
           PhysicallyBasedShader : uint }
@@ -176,6 +177,7 @@ module PhysicallyBased =
           LightColorsUniform : int
           LightBrightnessesUniform : int
           LightIntensitiesUniform : int
+          LightDirectionalsUniform : int
           LightConeInnersUniform : int
           LightConeOutersUniform : int
           PhysicallyBasedDeferred2Shader : uint }
@@ -854,6 +856,7 @@ module PhysicallyBased =
         let lightColorsUniform = Gl.GetUniformLocation (shader, "lightColors")
         let lightBrightnessesUniform = Gl.GetUniformLocation (shader, "lightBrightnesses")
         let lightIntensitiesUniform = Gl.GetUniformLocation (shader, "lightIntensities")
+        let lightDirectionalsUniform = Gl.GetUniformLocation (shader, "lightDirectionals")
         let lightConeInnersUniform = Gl.GetUniformLocation (shader, "lightConeInners")
         let lightConeOutersUniform = Gl.GetUniformLocation (shader, "lightConeOuters")
 
@@ -875,6 +878,7 @@ module PhysicallyBased =
           LightColorsUniform = lightColorsUniform
           LightBrightnessesUniform = lightBrightnessesUniform
           LightIntensitiesUniform = lightIntensitiesUniform
+          LightDirectionalsUniform = lightDirectionalsUniform
           LightConeInnersUniform = lightConeInnersUniform
           LightConeOutersUniform = lightConeOutersUniform
           PhysicallyBasedShader = shader }
@@ -899,6 +903,7 @@ module PhysicallyBased =
         let lightColorsUniform = Gl.GetUniformLocation (shader, "lightColors")
         let lightBrightnessesUniform = Gl.GetUniformLocation (shader, "lightBrightnesses")
         let lightIntensitiesUniform = Gl.GetUniformLocation (shader, "lightIntensities")
+        let lightDirectionalsUniform = Gl.GetUniformLocation (shader, "lightDirectionals")
         let lightConeInnersUniform = Gl.GetUniformLocation (shader, "lightConeInners")
         let lightConeOutersUniform = Gl.GetUniformLocation (shader, "lightConeOuters")
 
@@ -916,6 +921,7 @@ module PhysicallyBased =
           LightColorsUniform = lightColorsUniform
           LightBrightnessesUniform = lightBrightnessesUniform
           LightIntensitiesUniform = lightIntensitiesUniform
+          LightDirectionalsUniform = lightDirectionalsUniform
           LightConeInnersUniform = lightConeInnersUniform
           LightConeOutersUniform = lightConeOutersUniform
           PhysicallyBasedDeferred2Shader = shader }
@@ -946,6 +952,7 @@ module PhysicallyBased =
          lightColors : single array,
          lightBrightnesses : single array,
          lightIntensities : single array,
+         lightDirectionals : int array,
          lightConeInners : single array,
          lightConeOuters : single array,
          material : PhysicallyBasedMaterial,
@@ -981,6 +988,7 @@ module PhysicallyBased =
         Gl.Uniform4 (shader.LightColorsUniform, lightColors)
         Gl.Uniform1 (shader.LightBrightnessesUniform, lightBrightnesses)
         Gl.Uniform1 (shader.LightIntensitiesUniform, lightIntensities)
+        Gl.Uniform1 (shader.LightDirectionalsUniform, lightDirectionals)
         Gl.Uniform1 (shader.LightConeInnersUniform, lightConeInners)
         Gl.Uniform1 (shader.LightConeOutersUniform, lightConeOuters)
         Hl.Assert ()
@@ -1128,6 +1136,7 @@ module PhysicallyBased =
          lightColors : single array,
          lightBrightnesses : single array,
          lightIntensities : single array,
+         lightDirectionals : int array,
          lightConeInners : single array,
          lightConeOuters : single array,
          geometry : PhysicallyBasedGeometry,
@@ -1148,6 +1157,7 @@ module PhysicallyBased =
         Gl.Uniform4 (shader.LightColorsUniform, lightColors)
         Gl.Uniform1 (shader.LightBrightnessesUniform, lightBrightnesses)
         Gl.Uniform1 (shader.LightIntensitiesUniform, lightIntensities)
+        Gl.Uniform1 (shader.LightDirectionalsUniform, lightDirectionals)
         Gl.Uniform1 (shader.LightConeInnersUniform, lightConeInners)
         Gl.Uniform1 (shader.LightConeOutersUniform, lightConeOuters)
         Hl.Assert ()
