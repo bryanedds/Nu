@@ -377,12 +377,12 @@ module PhysicallyBased =
             if renderable then
 
                 // initialize vao
-                let vao = Hl.AllocVertexArray ()
+                let vao = Gl.GenVertexArray ()
                 Gl.BindVertexArray vao
                 Hl.Assert ()
 
                 // create vertex buffer
-                let vertexBuffer = Hl.AllocBuffer ()
+                let vertexBuffer = Gl.GenBuffer ()
                 let texCoordsOffset =   (3 (*position*)) * sizeof<single>
                 let normalOffset =      (3 (*position*) + 2 (*tex coords*)) * sizeof<single>
                 let vertexSize =        (3 (*position*) + 2 (*tex coords*) + 3 (*normal*)) * sizeof<single>
@@ -399,7 +399,7 @@ module PhysicallyBased =
                 Hl.Assert ()
 
                 // create model buffer
-                let modelBuffer = Hl.AllocBuffer ()
+                let modelBuffer = Gl.GenBuffer ()
                 Gl.BindBuffer (BufferTarget.ArrayBuffer, modelBuffer)
                 let modelDataPtr = GCHandle.Alloc (m4Identity.ToArray (), GCHandleType.Pinned)
                 try Gl.BufferData (BufferTarget.ArrayBuffer, uint (16 * sizeof<single>), modelDataPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
@@ -419,7 +419,7 @@ module PhysicallyBased =
                 Hl.Assert ()
 
                 // create texCoordsOffset buffer
-                let texCoordsOffsetBuffer = Hl.AllocBuffer ()
+                let texCoordsOffsetBuffer = Gl.GenBuffer ()
                 Gl.BindBuffer (BufferTarget.ArrayBuffer, texCoordsOffsetBuffer)
                 let texCoordsOffsetDataPtr = GCHandle.Alloc ([|0.0f; 0.0f; 0.0f; 0.0f|], GCHandleType.Pinned)
                 try Gl.BufferData (BufferTarget.ArrayBuffer, uint (4 * sizeof<single>), texCoordsOffsetDataPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
@@ -430,7 +430,7 @@ module PhysicallyBased =
                 Hl.Assert ()
 
                 // create albedo buffer
-                let albedoBuffer = Hl.AllocBuffer ()
+                let albedoBuffer = Gl.GenBuffer ()
                 Gl.BindBuffer (BufferTarget.ArrayBuffer, albedoBuffer)
                 let albedoDataPtr = GCHandle.Alloc ([|1.0f; 1.0f; 1.0f; 1.0f|], GCHandleType.Pinned)
                 try Gl.BufferData (BufferTarget.ArrayBuffer, uint (4 * sizeof<single>), albedoDataPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
@@ -441,7 +441,7 @@ module PhysicallyBased =
                 Hl.Assert ()
 
                 // create material buffer (used for metallic, roughness, ambient occlusion, and emission in that order)
-                let materialBuffer = Hl.AllocBuffer ()
+                let materialBuffer = Gl.GenBuffer ()
                 Gl.BindBuffer (BufferTarget.ArrayBuffer, materialBuffer)
                 let materialDataPtr = GCHandle.Alloc ([|1.0f; 1.0f; 1.0f; 1.0f|], GCHandleType.Pinned)
                 try Gl.BufferData (BufferTarget.ArrayBuffer, uint (4 * sizeof<single>), materialDataPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
@@ -452,7 +452,7 @@ module PhysicallyBased =
                 Hl.Assert ()
 
                 // create invert roughness buffer
-                let invertRoughnessBuffer = Hl.AllocBuffer ()
+                let invertRoughnessBuffer = Gl.GenBuffer ()
                 Gl.BindBuffer (BufferTarget.ArrayBuffer, invertRoughnessBuffer)
                 let invertRoughnessDataPtr = GCHandle.Alloc ([|0|], GCHandleType.Pinned)
                 try Gl.BufferData (BufferTarget.ArrayBuffer, uint (sizeof<int>), invertRoughnessDataPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
@@ -463,7 +463,7 @@ module PhysicallyBased =
                 Hl.Assert ()
 
                 // create index buffer
-                let indexBuffer = Hl.AllocBuffer ()
+                let indexBuffer = Gl.GenBuffer ()
                 Gl.BindBuffer (BufferTarget.ElementArrayBuffer, indexBuffer)
                 let indexDataSize = uint (indexData.Length * sizeof<uint>)
                 use indexDataHnd = indexData.Pin () in
@@ -1172,15 +1172,15 @@ module PhysicallyBased =
     /// Destroy physically-based geometry resources.
     let DestroyPhysicallyBasedGeometry geometry =
         Gl.BindVertexArray geometry.PhysicallyBasedVao
-        Hl.FreeBuffer geometry.VertexBuffer
-        Hl.FreeBuffer geometry.ModelBuffer
-        Hl.FreeBuffer geometry.TexCoordsOffsetBuffer
-        Hl.FreeBuffer geometry.AlbedoBuffer
-        Hl.FreeBuffer geometry.MaterialBuffer
-        Hl.FreeBuffer geometry.InvertRoughnessBuffer
-        Hl.FreeBuffer geometry.IndexBuffer
+        Gl.DeleteBuffers [|geometry.VertexBuffer|]
+        Gl.DeleteBuffers [|geometry.ModelBuffer|]
+        Gl.DeleteBuffers [|geometry.TexCoordsOffsetBuffer|]
+        Gl.DeleteBuffers [|geometry.AlbedoBuffer|]
+        Gl.DeleteBuffers [|geometry.MaterialBuffer|]
+        Gl.DeleteBuffers [|geometry.InvertRoughnessBuffer|]
+        Gl.DeleteBuffers [|geometry.IndexBuffer|]
         Gl.BindVertexArray 0u
-        Hl.FreeVertexArray geometry.PhysicallyBasedVao
+        Gl.DeleteVertexArrays [|geometry.PhysicallyBasedVao|]
 
     /// Destroy physically-based static model resources.
     let DestroyPhysicallyBasedStaticModel staticModel =

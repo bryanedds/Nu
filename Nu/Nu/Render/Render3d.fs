@@ -297,7 +297,6 @@ type [<ReferenceEquality>] private GlPackageState3d =
 type [<ReferenceEquality>] GlRenderer3d =
     private
         { RenderWindow : Window
-          RenderAssimp : Assimp.AssimpContext
           RenderSkyBoxShader : OpenGL.SkyBox.SkyBoxShader
           RenderIrradianceShader : OpenGL.SkyBox.SkyBoxShader
           RenderEnvironmentFilterShader : OpenGL.SkyBox.EnvironmentFilterShader
@@ -375,7 +374,8 @@ type [<ReferenceEquality>] GlRenderer3d =
 
     static member private tryLoadStaticModelAsset packageState (asset : obj Asset) renderer =
         GlRenderer3d.invalidateCaches renderer
-        match OpenGL.PhysicallyBased.TryCreatePhysicallyBasedStaticModel (true, asset.FilePath, renderer.RenderPhysicallyBasedMaterial, packageState.TextureMemo, renderer.RenderAssimp) with
+        use assimp = new Assimp.AssimpContext ()
+        match OpenGL.PhysicallyBased.TryCreatePhysicallyBasedStaticModel (true, asset.FilePath, renderer.RenderPhysicallyBasedMaterial, packageState.TextureMemo, assimp) with
         | Right staticModel -> Some staticModel
         | Left error -> Log.debug ("Could not load static model '" + asset.FilePath + "' due to: " + error); None
 
@@ -427,11 +427,15 @@ type [<ReferenceEquality>] GlRenderer3d =
                             | FontAsset _ -> () // not yet used in 3d renderer
                             | CubeMapAsset _ -> () // already reloaded via cube map memo
                             | StaticModelAsset (userDefined, staticModel) ->
-                                OpenGL.PhysicallyBased.DestroyPhysicallyBasedStaticModel staticModel
-                                OpenGL.Hl.Assert ()
-                                match GlRenderer3d.tryLoadStaticModelAsset renderPackage.PackageState asset renderer with
-                                | Some staticModel -> renderPackage.Assets.[asset.AssetTag.AssetName] <- StaticModelAsset (userDefined, staticModel)
-                                | None -> ()
+                                match Path.GetExtension asset.FilePath with
+                                | ".fbx" | ".obj" ->
+                                    renderPackage.Assets.Remove asset.AssetTag.AssetName |> ignore<bool>
+                                    OpenGL.PhysicallyBased.DestroyPhysicallyBasedStaticModel staticModel
+                                    OpenGL.Hl.Assert ()
+                                    match GlRenderer3d.tryLoadStaticModelAsset renderPackage.PackageState asset renderer with
+                                    | Some staticModel -> renderPackage.Assets.Add (asset.AssetTag.AssetName, StaticModelAsset (userDefined, staticModel))
+                                    | None -> ()
+                                | _ -> ()
                         | (false, _) -> ()
 
                 // otherwise create assets
@@ -1041,7 +1045,6 @@ type [<ReferenceEquality>] GlRenderer3d =
         // make renderer
         let renderer =
             { RenderWindow = window
-              RenderAssimp = new Assimp.AssimpContext ()
               RenderSkyBoxShader = skyBoxShader
               RenderIrradianceShader = irradianceShader
               RenderEnvironmentFilterShader = environmentFilterShader
@@ -1377,4 +1380,3 @@ type [<ReferenceEquality>] GlRenderer3d =
                 OpenGL.Texture.DeleteTexturesMemoized renderPackage.PackageState.TextureMemo
                 OpenGL.CubeMap.DeleteCubeMapsMemoized renderPackage.PackageState.CubeMapMemo
             renderer.RenderPackages.Clear ()
-            renderer.RenderAssimp.Dispose ()

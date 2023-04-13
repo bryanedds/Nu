@@ -253,7 +253,7 @@ module SpriteBatch =
     let CreateSpriteBatchEnv () =
 
         // create vao
-        let vao = Hl.AllocVertexArray ()
+        let vao = Gl.GenVertexArray ()
         Hl.Assert ()
 
         // create shader
