@@ -77,6 +77,7 @@ uniform vec3 lightDirections[LIGHTS_MAX];
 uniform vec4 lightColors[LIGHTS_MAX];
 uniform float lightBrightnesses[LIGHTS_MAX];
 uniform float lightIntensities[LIGHTS_MAX];
+uniform int lightDirectionals[LIGHTS_MAX];
 uniform float lightConeInners[LIGHTS_MAX];
 uniform float lightConeOuters[LIGHTS_MAX];
 
@@ -171,20 +172,29 @@ void main()
     for (int i = 0; i < LIGHTS_MAX; ++i)
     {
         // per-light radiance
-        vec3 d = lightOrigins[i] - positionOut;
-        vec3 l = normalize(d);
-        vec3 h = normalize(v + l);
-        float distanceSquared = dot(d, d);
-        float attenuation = 1.0 / distanceSquared;
-        float angle = acos(dot(lightDirections[i], l));
-        float coneDelta = lightConeOuters[i] - lightConeInners[i];
-        float coneBetween = angle - lightConeInners[i];
-        float coneScalar = clamp(1.0f - coneBetween / coneDelta, 0.0f, 1.0f);
-        float intensity =
-            // TODO: 3D: figure out an algorithm for intensity that doesn't create a black hole at origin like this one -
-            //pow(max(attenuation, 0.0001), 1.0 / lightIntensities[i]) * coneScalar;
-            attenuation * coneScalar;
-        vec3 radiance = lightColors[i].rgb * lightBrightnesses[i] * intensity;
+        vec3 d, l, h;
+        vec3 radiance;
+        if (lightDirectionals[i] == 1)
+        {
+            d = lightDirections[i];
+            l = d;
+            h = normalize(v + l);
+            radiance = lightColors[i].rgb * lightBrightnesses[i];
+        }
+        else
+        {
+            d = lightOrigins[i] - positionOut;
+            l = normalize(d);
+            h = normalize(v + l);
+            float distanceSquared = dot(d, d);
+            float attenuation = 1.0 / distanceSquared;
+            float angle = acos(dot(lightDirections[i], l));
+            float coneDelta = lightConeOuters[i] - lightConeInners[i];
+            float coneBetween = angle - lightConeInners[i];
+            float coneScalar = clamp(1.0f - coneBetween / coneDelta, 0.0f, 1.0f);
+            float intensity = attenuation * coneScalar;
+            radiance = lightColors[i].rgb * lightBrightnesses[i] * intensity;
+        }
 
         // cook-torrance brdf
         float ndf = distributionGGX(n, h, roughness);
