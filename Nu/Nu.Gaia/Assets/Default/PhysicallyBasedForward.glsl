@@ -157,7 +157,7 @@ void main()
     float ambientOcclusion = texture(ambientOcclusionTexture, texCoordsOut).g * materialOut.g;
     vec4 roughnessSample = texture(roughnessTexture, texCoordsOut);
     float roughness = roughnessSample.a == 1.0f ? roughnessSample.b : roughnessSample.a;
-    roughness = (invertRoughnessOut == 1 ? 1.0f - roughness : roughness) * materialOut.b;
+    roughness = (invertRoughnessOut == 0 ? roughness : 1.0f - roughness) * materialOut.b;
     vec3 emission = vec3(texture(emissionTexture, texCoordsOut).r * materialOut.a);
 
     // compute lighting profile
@@ -174,14 +174,7 @@ void main()
         // per-light radiance
         vec3 d, l, h;
         vec3 radiance;
-        if (lightDirectionals[i] == 1)
-        {
-            d = lightDirections[i];
-            l = d;
-            h = normalize(v + l);
-            radiance = lightColors[i].rgb * lightBrightnesses[i];
-        }
-        else
+        if (lightDirectionals[i] == 0)
         {
             d = lightOrigins[i] - positionOut;
             l = normalize(d);
@@ -194,6 +187,13 @@ void main()
             float coneScalar = clamp(1.0f - coneBetween / coneDelta, 0.0f, 1.0f);
             float intensity = attenuation * coneScalar;
             radiance = lightColors[i].rgb * lightBrightnesses[i] * intensity;
+        }
+        else
+        {
+            d = lightDirections[i];
+            l = d;
+            h = normalize(v + l);
+            radiance = lightColors[i].rgb * lightBrightnesses[i];
         }
 
         // cook-torrance brdf
