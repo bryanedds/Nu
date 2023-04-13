@@ -73,9 +73,11 @@ uniform samplerCube irradianceMap;
 uniform samplerCube environmentFilterMap;
 uniform sampler2D brdfTexture;
 uniform vec3 lightOrigins[LIGHTS_MAX];
+uniform vec3 lightDirections[LIGHTS_MAX];
 uniform vec4 lightColors[LIGHTS_MAX];
 uniform float lightBrightnesses[LIGHTS_MAX];
 uniform float lightIntensities[LIGHTS_MAX];
+uniform float lightCutoffs[LIGHTS_MAX];
 
 in vec3 positionOut;
 in vec2 texCoordsOut;
@@ -168,15 +170,18 @@ void main()
     for (int i = 0; i < LIGHTS_MAX; ++i)
     {
         // per-light radiance
-        vec3 l = normalize(lightOrigins[i] - positionOut);
-        vec3 h = normalize(v + l);
         vec3 d = lightOrigins[i] - positionOut;
+        vec3 l = normalize(d);
+        vec3 h = normalize(v + l);
         float distanceSquared = dot(d, d);
         float attenuation = 1.0 / distanceSquared;
+        float angle = acos(dot(lightDirections[i], l));
         float intensity =
+            angle < lightCutoffs[i] ?
             // TODO: 3D: figure out an algorithm for intensity that doesn't create a black hole at origin like this one -
-            // pow(max(attenuation, 0.0001), 1.0 / lightIntensities[i]);
-            attenuation;
+            //pow(max(attenuation, 0.0001), 1.0 / lightIntensities[i]);
+            attenuation :
+            0.0f;
         vec3 radiance = lightColors[i].rgb * lightBrightnesses[i] * intensity;
 
         // cook-torrance brdf
