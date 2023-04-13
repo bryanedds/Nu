@@ -111,14 +111,7 @@ void main()
         // per-light radiance
         vec3 d, l, h;
         vec3 radiance;
-        if (lightDirectionals[i] == 1)
-        {
-            d = lightDirections[i];
-            l = d;
-            h = normalize(v + l);
-            radiance = lightColors[i].rgb * lightBrightnesses[i];
-        }
-        else
+        if (lightDirectionals[i] == 0)
         {
             d = lightOrigins[i] - position;
             l = normalize(d);
@@ -131,6 +124,13 @@ void main()
             float coneScalar = clamp(1.0f - coneBetween / coneDelta, 0.0f, 1.0f);
             float intensity = attenuation * coneScalar;
             radiance = lightColors[i].rgb * lightBrightnesses[i] * intensity;
+        }
+        else
+        {
+            d = lightDirections[i];
+            l = d;
+            h = normalize(v + l);
+            radiance = lightColors[i].rgb * lightBrightnesses[i];
         }
 
         // cook-torrance brdf
