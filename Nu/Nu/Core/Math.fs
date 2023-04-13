@@ -1221,7 +1221,7 @@ module Ray3 =
      Constants.PrettyPrinter.DefaultThresholdMax)>]
 type LightType =
     | PointLight
-    | SpotLight of single
+    | SpotLight of single * single
 
 /// The input for a 2d ray cast operation.
 type [<StructuralEquality; NoComparison; Struct>] RayCast2Input =

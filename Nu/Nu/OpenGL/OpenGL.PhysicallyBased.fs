@@ -157,7 +157,8 @@ module PhysicallyBased =
           LightColorsUniform : int
           LightBrightnessesUniform : int
           LightIntensitiesUniform : int
-          LightCutoffsUniform : int
+          LightConeInnersUniform : int
+          LightConeOutersUniform : int
           PhysicallyBasedShader : uint }
 
     /// Describes a second pass of a deferred physically-based shader that's loaded into GPU.
@@ -175,7 +176,8 @@ module PhysicallyBased =
           LightColorsUniform : int
           LightBrightnessesUniform : int
           LightIntensitiesUniform : int
-          LightCutoffsUniform : int
+          LightConeInnersUniform : int
+          LightConeOutersUniform : int
           PhysicallyBasedDeferred2Shader : uint }
 
     /// Attempt to create physically-based from an assimp mesh.
@@ -788,7 +790,7 @@ module PhysicallyBased =
                                         | _ -> // just use point light for all lights right now
                                             let lightType =
                                                 match light.LightType with
-                                                | Assimp.LightSourceType.Point -> SpotLight light.AngleOuterCone
+                                                | Assimp.LightSourceType.Point -> SpotLight (light.AngleInnerCone, light.AngleOuterCone)
                                                 | _ -> PointLight
                                             let physicallyBasedLight =
                                                 { LightNames = names
@@ -852,7 +854,8 @@ module PhysicallyBased =
         let lightColorsUniform = Gl.GetUniformLocation (shader, "lightColors")
         let lightBrightnessesUniform = Gl.GetUniformLocation (shader, "lightBrightnesses")
         let lightIntensitiesUniform = Gl.GetUniformLocation (shader, "lightIntensities")
-        let lightCutoffsUniform = Gl.GetUniformLocation (shader, "lightCutoffs")
+        let lightConeInnersUniform = Gl.GetUniformLocation (shader, "lightConeInners")
+        let lightConeOutersUniform = Gl.GetUniformLocation (shader, "lightConeOuters")
 
         // make shader record
         { ViewUniform = viewUniform
@@ -872,7 +875,8 @@ module PhysicallyBased =
           LightColorsUniform = lightColorsUniform
           LightBrightnessesUniform = lightBrightnessesUniform
           LightIntensitiesUniform = lightIntensitiesUniform
-          LightCutoffsUniform = lightCutoffsUniform
+          LightConeInnersUniform = lightConeInnersUniform
+          LightConeOutersUniform = lightConeOutersUniform
           PhysicallyBasedShader = shader }
 
     /// Create a physically-based shader for the second step of deferred rendering.
@@ -895,7 +899,8 @@ module PhysicallyBased =
         let lightColorsUniform = Gl.GetUniformLocation (shader, "lightColors")
         let lightBrightnessesUniform = Gl.GetUniformLocation (shader, "lightBrightnesses")
         let lightIntensitiesUniform = Gl.GetUniformLocation (shader, "lightIntensities")
-        let lightCutoffsUniform = Gl.GetUniformLocation (shader, "lightCutoffs")
+        let lightConeInnersUniform = Gl.GetUniformLocation (shader, "lightConeInners")
+        let lightConeOutersUniform = Gl.GetUniformLocation (shader, "lightConeOuters")
 
         // make shader record
         { EyeCenterUniform = eyeCenterUniform
@@ -911,7 +916,8 @@ module PhysicallyBased =
           LightColorsUniform = lightColorsUniform
           LightBrightnessesUniform = lightBrightnessesUniform
           LightIntensitiesUniform = lightIntensitiesUniform
-          LightCutoffsUniform = lightCutoffsUniform
+          LightConeInnersUniform = lightConeInnersUniform
+          LightConeOutersUniform = lightConeOutersUniform
           PhysicallyBasedDeferred2Shader = shader }
 
     /// Create the first and second shaders for physically-based deferred rendering.
@@ -940,7 +946,8 @@ module PhysicallyBased =
          lightColors : single array,
          lightBrightnesses : single array,
          lightIntensities : single array,
-         lightCutoffs : single array,
+         lightConeInners : single array,
+         lightConeOuters : single array,
          material : PhysicallyBasedMaterial,
          geometry : PhysicallyBasedGeometry,
          shader : PhysicallyBasedShader) =
@@ -974,7 +981,8 @@ module PhysicallyBased =
         Gl.Uniform4 (shader.LightColorsUniform, lightColors)
         Gl.Uniform1 (shader.LightBrightnessesUniform, lightBrightnesses)
         Gl.Uniform1 (shader.LightIntensitiesUniform, lightIntensities)
-        Gl.Uniform1 (shader.LightCutoffsUniform, lightCutoffs)
+        Gl.Uniform1 (shader.LightConeInnersUniform, lightConeInners)
+        Gl.Uniform1 (shader.LightConeOutersUniform, lightConeOuters)
         Hl.Assert ()
 
         // setup textures
@@ -1120,7 +1128,8 @@ module PhysicallyBased =
          lightColors : single array,
          lightBrightnesses : single array,
          lightIntensities : single array,
-         lightCutoffs : single array,
+         lightConeInners : single array,
+         lightConeOuters : single array,
          geometry : PhysicallyBasedGeometry,
          shader : PhysicallyBasedDeferred2Shader) =
 
@@ -1139,7 +1148,8 @@ module PhysicallyBased =
         Gl.Uniform4 (shader.LightColorsUniform, lightColors)
         Gl.Uniform1 (shader.LightBrightnessesUniform, lightBrightnesses)
         Gl.Uniform1 (shader.LightIntensitiesUniform, lightIntensities)
-        Gl.Uniform1 (shader.LightCutoffsUniform, lightCutoffs)
+        Gl.Uniform1 (shader.LightConeInnersUniform, lightConeInners)
+        Gl.Uniform1 (shader.LightConeOutersUniform, lightConeOuters)
         Hl.Assert ()
 
         // setup textures

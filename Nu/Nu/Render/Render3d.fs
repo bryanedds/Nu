@@ -234,7 +234,8 @@ and [<ReferenceEquality>] SortableLight =
       SortableLightColor : Color
       SortableLightBrightness : single
       SortableLightIntensity : single
-      SortableLightCutoff : single
+      SortableLightConeInner : single
+      SortableLightConeOuter : single
       mutable SortableLightDistanceSquared : single }
 
     /// Sort lights into array for uploading to OpenGL.
@@ -245,7 +246,8 @@ and [<ReferenceEquality>] SortableLight =
         let lightColors = Array.zeroCreate<single> (lightsMax * 4)
         let lightBrightnesses = Array.zeroCreate<single> lightsMax
         let lightIntensities = Array.zeroCreate<single> lightsMax
-        let lightCutoffs = Array.zeroCreate<single> lightsMax
+        let lightConeInners = Array.zeroCreate<single> lightsMax
+        let lightConeOuters = Array.zeroCreate<single> lightsMax
         for light in lights do
             light.SortableLightDistanceSquared <- (light.SortableLightOrigin - position).MagnitudeSquared
         let lightsSorted = lights |> Seq.toArray |> Array.sortBy (fun light -> light.SortableLightDistanceSquared)
@@ -268,8 +270,9 @@ and [<ReferenceEquality>] SortableLight =
                 lightColors.[c+3] <- light.SortableLightColor.A
                 lightBrightnesses.[b] <- light.SortableLightBrightness
                 lightIntensities.[n] <- light.SortableLightIntensity
-                lightCutoffs.[n] <- light.SortableLightCutoff
-        (lightOrigins, lightDirections, lightColors, lightBrightnesses, lightIntensities, lightCutoffs)
+                lightConeInners.[n] <- light.SortableLightConeInner
+                lightConeOuters.[n] <- light.SortableLightConeOuter
+        (lightOrigins, lightDirections, lightColors, lightBrightnesses, lightIntensities, lightConeInners, lightConeOuters)
 
 /// The 3d renderer. Represents the 3d rendering system in Nu generally.
 and Renderer3d =
@@ -748,7 +751,8 @@ type [<ReferenceEquality>] GlRenderer3d =
                           SortableLightColor = light.LightColor
                           SortableLightBrightness = light.LightBrightness
                           SortableLightIntensity = light.LightIntensity
-                          SortableLightCutoff = match light.PhysicallyBasedLightType with PointLight -> single (2.0 * Math.PI) | SpotLight cutoff -> cutoff
+                          SortableLightConeInner = match light.PhysicallyBasedLightType with PointLight -> single (2.0 * Math.PI) | SpotLight (coneInner, _) -> coneInner
+                          SortableLightConeOuter = match light.PhysicallyBasedLightType with PointLight -> single (2.0 * Math.PI) | SpotLight (_, coneOuter) -> coneOuter
                           SortableLightDistanceSquared = Single.MaxValue }
                     SegmentedList.add light renderer.RenderTasks.RenderLights
                 for surface in modelAsset.Surfaces do
@@ -805,7 +809,8 @@ type [<ReferenceEquality>] GlRenderer3d =
         lightColors
         lightBrightnesses
         lightIntensities
-        lightCutoffs
+        lightConeInners
+        lightConeOuters
         (surface : OpenGL.PhysicallyBased.PhysicallyBasedSurface)
         shader
         renderer =
@@ -870,7 +875,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             // draw surfaces
             OpenGL.PhysicallyBased.DrawPhysicallyBasedSurfaces
                 (eyeCenter, parameters.Length, renderer.RenderModelsFields, renderer.RenderTexCoordsOffsetsFields, renderer.RenderAlbedosFields, renderer.PhysicallyBasedMaterialsFields, renderer.PhysicallyBasedInvertRoughnessesFields,
-                 viewArray, projectionArray, blending, irradianceMap, environmentFilterMap, brdfTexture, lightOrigins, lightDirections, lightColors, lightBrightnesses, lightIntensities, lightCutoffs,
+                 viewArray, projectionArray, blending, irradianceMap, environmentFilterMap, brdfTexture, lightOrigins, lightDirections, lightColors, lightBrightnesses, lightIntensities, lightConeInners, lightConeOuters,
                  surface.SurfaceMaterial, surface.PhysicallyBasedGeometry, shader)
 
     static member inline private makeBillboardMaterial (properties : SurfaceProperties) albedoImage metallicImage roughnessImage ambientOcclusionImage emissionImage normalImage minFilterOpt magFilterOpt renderer =
@@ -1136,7 +1141,8 @@ type [<ReferenceEquality>] GlRenderer3d =
                           SortableLightColor = rl3.Color
                           SortableLightBrightness = rl3.Brightness
                           SortableLightIntensity = rl3.Intensity
-                          SortableLightCutoff = match rl3.LightType with PointLight -> single (2.0 * Math.PI) | SpotLight cutoff -> cutoff
+                          SortableLightConeInner = match rl3.LightType with PointLight -> single (2.0 * Math.PI) | SpotLight (coneInner, _) -> coneInner
+                          SortableLightConeOuter = match rl3.LightType with PointLight -> single (2.0 * Math.PI) | SpotLight (_, coneOuter) -> coneOuter
                           SortableLightDistanceSquared = Single.MaxValue }
                     SegmentedList.add light renderer.RenderTasks.RenderLights
                 | RenderBillboard rb ->
@@ -1242,7 +1248,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 | None -> (renderer.RenderIrradianceMap, renderer.RenderEnvironmentFilterMap)
 
             // sort lights for deferred relative to eye center
-            let (lightOrigins, lightDirections, lightColors, lightBrightnesses, lightIntensities, lightCutoffs) =
+            let (lightOrigins, lightDirections, lightColors, lightBrightnesses, lightIntensities, lightConeInners, lightConeOuters) =
                 SortableLight.sortLightsIntoArrays Constants.Render.DeferredLightsMax eyeCenter renderer.RenderTasks.RenderLights
 
             // deferred render surfaces w/ absolute transforms
@@ -1261,7 +1267,8 @@ type [<ReferenceEquality>] GlRenderer3d =
                     lightColors
                     lightBrightnesses
                     lightIntensities
-                    lightCutoffs
+                    lightConeInners
+                    lightConeOuters
                     entry.Key
                     renderer.RenderPhysicallyBasedDeferredShader
                     renderer
@@ -1283,7 +1290,8 @@ type [<ReferenceEquality>] GlRenderer3d =
                     lightColors
                     lightBrightnesses
                     lightIntensities
-                    lightCutoffs
+                    lightConeInners
+                    lightConeOuters
                     entry.Key
                     renderer.RenderPhysicallyBasedDeferredShader
                     renderer
@@ -1306,7 +1314,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             // deferred render lighting quad
             OpenGL.PhysicallyBased.DrawPhysicallyBasedDeferred2Surface
                 (eyeCenter, positionTexture, albedoTexture, materialTexture, normalTexture,
-                 irradianceMap, environmentFilterMap, renderer.RenderBrdfTexture, lightOrigins, lightDirections, lightColors, lightBrightnesses, lightIntensities, lightCutoffs,
+                 irradianceMap, environmentFilterMap, renderer.RenderBrdfTexture, lightOrigins, lightDirections, lightColors, lightBrightnesses, lightIntensities, lightConeInners, lightConeOuters,
                  renderer.RenderPhysicallyBasedQuad, renderer.RenderPhysicallyBasedDeferred2Shader)
             OpenGL.Hl.Assert ()
 
@@ -1319,7 +1327,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
             // forward render surfaces w/ absolute transforms
             for (model, texCoordsOffset, properties, surface) in renderer.RenderTasks.RenderSurfacesForwardAbsoluteSorted do
-                let (lightOrigins, lightDirections, lightColors, lightBrightnesses, lightIntensities, lightCutoffs) =
+                let (lightOrigins, lightDirections, lightColors, lightBrightnesses, lightIntensities, lightConeInners, lightConeOuters) =
                     SortableLight.sortLightsIntoArrays Constants.Render.ForwardLightsMax model.Translation renderer.RenderTasks.RenderLights
                 GlRenderer3d.renderPhysicallyBasedSurfaces
                     eyeCenter
@@ -1335,7 +1343,8 @@ type [<ReferenceEquality>] GlRenderer3d =
                     lightDirections
                     lightBrightnesses
                     lightIntensities
-                    lightCutoffs
+                    lightConeInners
+                    lightConeOuters
                     surface
                     renderer.RenderPhysicallyBasedForwardShader
                     renderer
@@ -1343,7 +1352,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
             // forward render surfaces w/ relative transforms
             for (model, texCoordsOffset, properties, surface) in renderer.RenderTasks.RenderSurfacesForwardRelativeSorted do
-                let (lightOrigins, lightDirections, lightColors, lightBrightnesses, lightIntensities, lightCutoffs) =
+                let (lightOrigins, lightDirections, lightColors, lightBrightnesses, lightIntensities, lightConeInners, lightConeOuters) =
                     SortableLight.sortLightsIntoArrays Constants.Render.ForwardLightsMax model.Translation renderer.RenderTasks.RenderLights
                 GlRenderer3d.renderPhysicallyBasedSurfaces
                     eyeCenter
@@ -1359,7 +1368,8 @@ type [<ReferenceEquality>] GlRenderer3d =
                     lightColors
                     lightBrightnesses
                     lightIntensities
-                    lightCutoffs
+                    lightConeInners
+                    lightConeOuters
                     surface
                     renderer.RenderPhysicallyBasedForwardShader
                     renderer
