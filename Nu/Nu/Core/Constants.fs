@@ -106,7 +106,7 @@ module Render =
     let [<Uniform>] AlbedoDefault = Color.White
     let [<Literal>] MetallicDefault = 1.0f
     let [<Uniform>] RoughnessDefault = 0.5f
-    let [<Literal>] AmbientOcclusionDefault = 0.5f
+    let [<Literal>] AmbientOcclusionDefault = 1.0f
     let [<Literal>] EmissionDefault = 1.0f
 
 [<RequireQualifiedAccess>]

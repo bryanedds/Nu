@@ -24,6 +24,6 @@ out vec4 frag;
 uniform samplerCube cubeMap;
 
 void main()
-{    
+{
     frag = texture(cubeMap, texCoordsOut);
 }
