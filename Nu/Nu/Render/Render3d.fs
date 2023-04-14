@@ -640,7 +640,7 @@ type [<ReferenceEquality>] GlRenderer3d =
     static member private categorizeBillboardSurface
         (absolute,
          eyeRotation : Quaternion,
-         affineMatrix,
+         (affineMatrix: Matrix4x4),
          insetOpt : Box2 option,
          albedoMetadata : OpenGL.Texture.TextureMetadata,
          properties,
@@ -663,7 +663,10 @@ type [<ReferenceEquality>] GlRenderer3d =
         if v3Neq eyeForward v3Zero then
             let billboardAngle = if Vector3.Dot (eyeForward, v3Right) >= 0.0f then -eyeForward.AngleBetween v3Forward else eyeForward.AngleBetween v3Forward
             let billboardRotation = Matrix4x4.CreateFromQuaternion (Quaternion.CreateFromAxisAngle (v3Up, billboardAngle))
-            let billboardMatrix = billboardRotation * affineMatrix
+            let mutable affineRotation = affineMatrix
+            affineRotation.Translation <- v3Zero
+            let mutable billboardMatrix = affineMatrix * billboardRotation
+            billboardMatrix.Translation <- affineMatrix.Translation
             match renderType with
             | DeferredRenderType ->
                 if absolute then
