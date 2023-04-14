@@ -640,9 +640,10 @@ type [<ReferenceEquality>] GlRenderer3d =
     static member private categorizeBillboardSurface
         (absolute,
          eyeRotation : Quaternion,
-         (affineMatrix: Matrix4x4),
+         affineMatrix : Matrix4x4,
          insetOpt : Box2 option,
          albedoMetadata : OpenGL.Texture.TextureMetadata,
+         orientUp,
          properties,
          renderType,
          billboardSurface,
@@ -658,29 +659,30 @@ type [<ReferenceEquality>] GlRenderer3d =
                 let sy = -inset.Size.Y * texelHeight
                 Box2 (px, py, sx, sy)
             | None -> box2 v2Zero v2One // shouldn't we still be using borders?
-        let eyeForward =
-            (Vector3.Transform (v3Forward, eyeRotation)).WithY 0.0f
-        if v3Neq eyeForward v3Zero then
-            let billboardAngle = if Vector3.Dot (eyeForward, v3Right) >= 0.0f then -eyeForward.AngleBetween v3Forward else eyeForward.AngleBetween v3Forward
-            let billboardRotation = Matrix4x4.CreateFromQuaternion (Quaternion.CreateFromAxisAngle (v3Up, billboardAngle))
-            let mutable affineRotation = affineMatrix
-            affineRotation.Translation <- v3Zero
-            let mutable billboardMatrix = affineMatrix * billboardRotation
-            billboardMatrix.Translation <- affineMatrix.Translation
-            match renderType with
-            | DeferredRenderType ->
-                if absolute then
-                    match renderer.RenderTasks.RenderSurfacesDeferredAbsolute.TryGetValue billboardSurface with
-                    | (true, renderTasks) -> SegmentedList.add struct (billboardMatrix, texCoordsOffset, properties) renderTasks
-                    | (false, _) -> renderer.RenderTasks.RenderSurfacesDeferredAbsolute.Add (billboardSurface, SegmentedList.singleton (billboardMatrix, texCoordsOffset, properties))
-                else
-                    match renderer.RenderTasks.RenderSurfacesDeferredRelative.TryGetValue billboardSurface with
-                    | (true, renderTasks) -> SegmentedList.add struct (billboardMatrix, texCoordsOffset, properties) renderTasks
-                    | (false, _) -> renderer.RenderTasks.RenderSurfacesDeferredRelative.Add (billboardSurface, SegmentedList.singleton (billboardMatrix, texCoordsOffset, properties))
-            | ForwardRenderType (sort, subsort) ->
-                if absolute
-                then SegmentedList.add struct (sort, subsort, billboardMatrix, texCoordsOffset, properties, billboardSurface) renderer.RenderTasks.RenderSurfacesForwardAbsolute
-                else SegmentedList.add struct (sort, subsort, billboardMatrix, texCoordsOffset, properties, billboardSurface) renderer.RenderTasks.RenderSurfacesForwardRelative
+        let billboardRotation =
+            if orientUp then
+                let eyeForward = (Vector3.Transform (v3Forward, eyeRotation)).WithY 0.0f
+                let billboardAngle = if Vector3.Dot (eyeForward, v3Right) >= 0.0f then -eyeForward.AngleBetween v3Forward else eyeForward.AngleBetween v3Forward
+                Matrix4x4.CreateFromQuaternion (Quaternion.CreateFromAxisAngle (v3Up, billboardAngle))
+            else Matrix4x4.CreateFromQuaternion -eyeRotation
+        let mutable affineRotation = affineMatrix
+        affineRotation.Translation <- v3Zero
+        let mutable billboardMatrix = affineMatrix * billboardRotation
+        billboardMatrix.Translation <- affineMatrix.Translation
+        match renderType with
+        | DeferredRenderType ->
+            if absolute then
+                match renderer.RenderTasks.RenderSurfacesDeferredAbsolute.TryGetValue billboardSurface with
+                | (true, renderTasks) -> SegmentedList.add struct (billboardMatrix, texCoordsOffset, properties) renderTasks
+                | (false, _) -> renderer.RenderTasks.RenderSurfacesDeferredAbsolute.Add (billboardSurface, SegmentedList.singleton (billboardMatrix, texCoordsOffset, properties))
+            else
+                match renderer.RenderTasks.RenderSurfacesDeferredRelative.TryGetValue billboardSurface with
+                | (true, renderTasks) -> SegmentedList.add struct (billboardMatrix, texCoordsOffset, properties) renderTasks
+                | (false, _) -> renderer.RenderTasks.RenderSurfacesDeferredRelative.Add (billboardSurface, SegmentedList.singleton (billboardMatrix, texCoordsOffset, properties))
+        | ForwardRenderType (sort, subsort) ->
+            if absolute
+            then SegmentedList.add struct (sort, subsort, billboardMatrix, texCoordsOffset, properties, billboardSurface) renderer.RenderTasks.RenderSurfacesForwardAbsolute
+            else SegmentedList.add struct (sort, subsort, billboardMatrix, texCoordsOffset, properties, billboardSurface) renderer.RenderTasks.RenderSurfacesForwardRelative
 
     static member private categorizeStaticModelSurface
         (modelAbsolute,
@@ -1164,12 +1166,12 @@ type [<ReferenceEquality>] GlRenderer3d =
                 | RenderBillboard rb ->
                     let billboardMaterial = GlRenderer3d.makeBillboardMaterial rb.SurfaceProperties rb.AlbedoImage rb.MetallicImage rb.RoughnessImage rb.AmbientOcclusionImage rb.EmissionImage rb.NormalImage rb.MinFilterOpt rb.MagFilterOpt renderer
                     let billboardSurface = OpenGL.PhysicallyBased.CreatePhysicallyBasedSurface ([||], m4Identity, box3 (v3 -0.5f 0.5f -0.5f) v3One, billboardMaterial, renderer.RenderBillboardGeometry)
-                    GlRenderer3d.categorizeBillboardSurface (rb.Absolute, eyeRotation, rb.ModelMatrix, rb.InsetOpt, billboardMaterial.AlbedoMetadata, rb.SurfaceProperties, rb.RenderType, billboardSurface, renderer)
+                    GlRenderer3d.categorizeBillboardSurface (rb.Absolute, eyeRotation, rb.ModelMatrix, rb.InsetOpt, billboardMaterial.AlbedoMetadata, true, rb.SurfaceProperties, rb.RenderType, billboardSurface, renderer)
                 | RenderBillboards rbs ->
                     let billboardMaterial = GlRenderer3d.makeBillboardMaterial rbs.SurfaceProperties rbs.AlbedoImage rbs.MetallicImage rbs.RoughnessImage rbs.AmbientOcclusionImage rbs.EmissionImage rbs.NormalImage rbs.MinFilterOpt rbs.MagFilterOpt renderer
                     let billboardSurface = OpenGL.PhysicallyBased.CreatePhysicallyBasedSurface ([||], m4Identity, box3 (v3 -0.5f -0.5f -0.5f) v3One, billboardMaterial, renderer.RenderBillboardGeometry)
                     for (modelMatrix, insetOpt) in rbs.Billboards do
-                        GlRenderer3d.categorizeBillboardSurface (rbs.Absolute, eyeRotation, modelMatrix, insetOpt, billboardMaterial.AlbedoMetadata, rbs.SurfaceProperties, rbs.RenderType, billboardSurface, renderer)
+                        GlRenderer3d.categorizeBillboardSurface (rbs.Absolute, eyeRotation, modelMatrix, insetOpt, billboardMaterial.AlbedoMetadata, true, rbs.SurfaceProperties, rbs.RenderType, billboardSurface, renderer)
                 | RenderBillboardParticles rbps ->
                     let billboardMaterial = GlRenderer3d.makeBillboardMaterial rbps.SurfaceProperties rbps.AlbedoImage rbps.MetallicImage rbps.RoughnessImage rbps.AmbientOcclusionImage rbps.EmissionImage rbps.NormalImage rbps.MinFilterOpt rbps.MagFilterOpt renderer
                     for particle in rbps.Particles do
@@ -1180,7 +1182,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                                  particle.Transform.Size * particle.Transform.Scale)
                         let billboardMaterial = { billboardMaterial with Albedo = billboardMaterial.Albedo * particle.Color; Emission = particle.Emission.R }
                         let billboardSurface = OpenGL.PhysicallyBased.CreatePhysicallyBasedSurface ([||], m4Identity, box3Zero, billboardMaterial, renderer.RenderBillboardGeometry)
-                        GlRenderer3d.categorizeBillboardSurface (rbps.Absolute, eyeRotation, billboardMatrix, Option.ofValueOption particle.InsetOpt, billboardMaterial.AlbedoMetadata, rbps.SurfaceProperties, rbps.RenderType, billboardSurface, renderer)
+                        GlRenderer3d.categorizeBillboardSurface (rbps.Absolute, eyeRotation, billboardMatrix, Option.ofValueOption particle.InsetOpt, billboardMaterial.AlbedoMetadata, false, rbps.SurfaceProperties, rbps.RenderType, billboardSurface, renderer)
                 | RenderStaticModelSurface rsms ->
                     GlRenderer3d.categorizeStaticModelSurfaceByIndex (rsms.Absolute, &rsms.ModelMatrix, rsms.InsetOpt, &rsms.SurfaceProperties, rsms.RenderType, rsms.StaticModel, rsms.SurfaceIndex, renderer)
                 | RenderStaticModel rsm ->
