@@ -992,7 +992,7 @@ module LightDispatcher3dModule =
         static member Properties =
             [define Entity.Light true
              define Entity.Color Color.White
-             define Entity.Brightness 10.0f
+             define Entity.Brightness Constants.Render.BrightnessDefault
              define Entity.AttenuationLinear Constants.Render.AttenuationLinearDefault
              define Entity.AttenuationQuadratic Constants.Render.AttenuationQuadraticDefault
              define Entity.LightType PointLight]
