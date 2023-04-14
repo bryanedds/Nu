@@ -1147,12 +1147,12 @@ type [<CustomEquality; CustomComparison>] ColorPluggable =
             getType this.Color
 
         member this.ToSymbol () =
-            let col = Symbol.Atom ("col", ValueNone)
+            let color = Symbol.Atom ("color", ValueNone)
             let r = Symbol.Number (string this.Color.R, ValueNone)
             let g = Symbol.Number (string this.Color.G, ValueNone)
             let b = Symbol.Number (string this.Color.B, ValueNone)
             let a = Symbol.Number (string this.Color.A, ValueNone)
-            Symbol.Symbols ([col; r; g; b; a], ValueNone)
+            Symbol.Symbols ([color; r; g; b; a], ValueNone)
 
 /// Converts Color types.
 type ColorConverter () =
@@ -1164,12 +1164,12 @@ type ColorConverter () =
 
     override this.ConvertTo (_, _, source, destType) =
         if destType = typeof<Symbol> then
-            let col = source :?> Color
+            let color = source :?> Color
             Symbols
-                ([Number (string col.R, ValueNone)
-                  Number (string col.G, ValueNone)
-                  Number (string col.B, ValueNone)
-                  Number (string col.A, ValueNone)], ValueNone) :> obj
+                ([Number (string color.R, ValueNone)
+                  Number (string color.G, ValueNone)
+                  Number (string color.B, ValueNone)
+                  Number (string color.A, ValueNone)], ValueNone) :> obj
         elif destType = typeof<Color> then source
         else failconv "Invalid ColorConverter conversion to source." None
 
