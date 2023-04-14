@@ -993,7 +993,8 @@ module LightDispatcher3dModule =
             [define Entity.Light true
              define Entity.Color Color.White
              define Entity.Brightness 10.0f
-             define Entity.Intensity 1.0f
+             define Entity.AttenuationLinear Constants.Render.AttenuationLinearDefault
+             define Entity.AttenuationQuadratic Constants.Render.AttenuationQuadraticDefault
              define Entity.LightType PointLight]
 
         override this.GetQuickSize (_, _) =

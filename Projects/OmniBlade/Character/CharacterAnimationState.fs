@@ -15,7 +15,7 @@ type [<SymbolicExpansion>] CharacterAnimationState =
       Materializing : bool // whether the character is fading in
       Direction : Direction }
 
-    static member face direction state =
+    static member face direction (state : CharacterAnimationState) =
         { state with Direction = direction }
 
     static member setCharacterAnimationType timeOpt characterAnimationType state =
