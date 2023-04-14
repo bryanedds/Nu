@@ -1396,9 +1396,12 @@ module LightFacet3dModule =
         member this.GetBrightness world : single = this.Get (nameof this.Brightness) world
         member this.SetBrightness (value : single) world = this.Set (nameof this.Brightness) value world
         member this.Brightness = lens (nameof this.Brightness) this this.GetBrightness this.SetBrightness
-        member this.GetIntensity world : single = this.Get (nameof this.Intensity) world
-        member this.SetIntensity (value : single) world = this.Set (nameof this.Intensity) value world
-        member this.Intensity = lens (nameof this.Intensity) this this.GetIntensity this.SetIntensity
+        member this.GetAttenuationLinear world : single = this.Get (nameof this.AttenuationLinear) world
+        member this.SetAttenuationLinear (value : single) world = this.Set (nameof this.AttenuationLinear) value world
+        member this.AttenuationLinear = lens (nameof this.AttenuationLinear) this this.GetAttenuationLinear this.SetAttenuationLinear
+        member this.GetAttenuationQuadratic world : single = this.Get (nameof this.AttenuationQuadratic) world
+        member this.SetAttenuationQuadratic (value : single) world = this.Set (nameof this.AttenuationQuadratic) value world
+        member this.AttenuationQuadratic = lens (nameof this.AttenuationQuadratic) this this.GetAttenuationQuadratic this.SetAttenuationQuadratic
         member this.GetLightType world : LightType = this.Get (nameof this.LightType) world
         member this.SetLightType (value : LightType) world = this.Set (nameof this.LightType) value world
         member this.LightType = lens (nameof this.LightType) this this.GetLightType this.SetLightType
@@ -1409,8 +1412,9 @@ module LightFacet3dModule =
         static member Properties =
             [define Entity.Light true
              define Entity.Color Color.White
-             define Entity.Brightness 1000.0f
-             define Entity.Intensity 1.0f
+             define Entity.Brightness Constants.Render.BrightnessDefault
+             define Entity.AttenuationLinear Constants.Render.AttenuationLinearDefault
+             define Entity.AttenuationQuadratic Constants.Render.AttenuationQuadraticDefault
              define Entity.LightType PointLight]
 
         override this.Render (entity, world) =
@@ -1418,7 +1422,8 @@ module LightFacet3dModule =
             let rotation = entity.GetRotation world
             let color = entity.GetColor world
             let brightness = entity.GetBrightness world
-            let intensity = entity.GetIntensity world
+            let attenuationLinear = entity.GetAttenuationLinear world
+            let attenuationQuadratic = entity.GetAttenuationQuadratic world
             let lightType = entity.GetLightType world
             World.enqueueRenderMessage3d
                 (RenderLight3d
@@ -1426,7 +1431,8 @@ module LightFacet3dModule =
                       Direction = Vector3.Transform (v3Forward, rotation)
                       Color = color
                       Brightness = brightness
-                      Intensity = intensity
+                      AttenuationLinear = attenuationLinear
+                      AttenuationQuadratic = attenuationQuadratic
                       LightType = lightType })
                 world
 

@@ -122,7 +122,8 @@ module PhysicallyBased =
           LightMatrix : Matrix4x4
           LightColor : Color
           LightBrightness : single
-          LightIntensity : single
+          LightAttenuationLinear : single
+          LightAttenuationQuadratic : single
           PhysicallyBasedLightType : LightType }
 
     /// A part of a physically-based hierarchy.
@@ -156,7 +157,8 @@ module PhysicallyBased =
           LightDirectionsUniform : int
           LightColorsUniform : int
           LightBrightnessesUniform : int
-          LightIntensitiesUniform : int
+          LightAttenuationLinearsUniform : int
+          LightAttenuationQuadraticsUniform : int
           LightDirectionalsUniform : int
           LightConeInnersUniform : int
           LightConeOutersUniform : int
@@ -176,7 +178,8 @@ module PhysicallyBased =
           LightDirectionsUniform : int
           LightColorsUniform : int
           LightBrightnessesUniform : int
-          LightIntensitiesUniform : int
+          LightAttenuationLinearsUniform : int
+          LightAttenuationQuadraticsUniform : int
           LightDirectionalsUniform : int
           LightConeInnersUniform : int
           LightConeOutersUniform : int
@@ -799,8 +802,9 @@ module PhysicallyBased =
                                                   LightMatrixIsIdentity = lightMatrix.IsIdentity
                                                   LightMatrix = lightMatrix
                                                   LightColor = color
-                                                  LightBrightness = if light.AttenuationConstant > 0.0f then light.AttenuationConstant else 1.0f // TODO: figure out how to populate this.
-                                                  LightIntensity = 1.0f // TODO: see if we can figure out how to populate this. Should it become Linear and / or Quadratic?
+                                                  LightBrightness = Constants.Render.BrightnessDefault // TODO: figure out if we can populate this properly.
+                                                  LightAttenuationLinear = if light.AttenuationLinear > 0.0f then light.AttenuationLinear else Constants.Render.AttenuationLinearDefault
+                                                  LightAttenuationQuadratic = if light.AttenuationQuadratic > 0.0f then light.AttenuationQuadratic else Constants.Render.AttenuationQuadraticDefault
                                                   PhysicallyBasedLightType = lightType }
                                             SegmentedList.add physicallyBasedLight lights
                                             yield PhysicallyBasedLight physicallyBasedLight
@@ -855,7 +859,8 @@ module PhysicallyBased =
         let lightDirectionsUniform = Gl.GetUniformLocation (shader, "lightDirections")
         let lightColorsUniform = Gl.GetUniformLocation (shader, "lightColors")
         let lightBrightnessesUniform = Gl.GetUniformLocation (shader, "lightBrightnesses")
-        let lightIntensitiesUniform = Gl.GetUniformLocation (shader, "lightIntensities")
+        let lightAttenuationLinearsUniform = Gl.GetUniformLocation (shader, "lightAttenuationLinears")
+        let lightAttenuationQuadraticsUniform = Gl.GetUniformLocation (shader, "lightAttenuationQuadratics")
         let lightDirectionalsUniform = Gl.GetUniformLocation (shader, "lightDirectionals")
         let lightConeInnersUniform = Gl.GetUniformLocation (shader, "lightConeInners")
         let lightConeOutersUniform = Gl.GetUniformLocation (shader, "lightConeOuters")
@@ -877,7 +882,8 @@ module PhysicallyBased =
           LightDirectionsUniform = lightDirectionsUniform
           LightColorsUniform = lightColorsUniform
           LightBrightnessesUniform = lightBrightnessesUniform
-          LightIntensitiesUniform = lightIntensitiesUniform
+          LightAttenuationLinearsUniform = lightAttenuationLinearsUniform
+          LightAttenuationQuadraticsUniform = lightAttenuationQuadraticsUniform
           LightDirectionalsUniform = lightDirectionalsUniform
           LightConeInnersUniform = lightConeInnersUniform
           LightConeOutersUniform = lightConeOutersUniform
@@ -902,7 +908,8 @@ module PhysicallyBased =
         let lightDirectionsUniform = Gl.GetUniformLocation (shader, "lightDirections")
         let lightColorsUniform = Gl.GetUniformLocation (shader, "lightColors")
         let lightBrightnessesUniform = Gl.GetUniformLocation (shader, "lightBrightnesses")
-        let lightIntensitiesUniform = Gl.GetUniformLocation (shader, "lightIntensities")
+        let lightAttenuationLinearsUniform = Gl.GetUniformLocation (shader, "lightAttenuationLinears")
+        let lightAttenuationQuadraticsUniform = Gl.GetUniformLocation (shader, "lightAttenuationQuadratics")
         let lightDirectionalsUniform = Gl.GetUniformLocation (shader, "lightDirectionals")
         let lightConeInnersUniform = Gl.GetUniformLocation (shader, "lightConeInners")
         let lightConeOutersUniform = Gl.GetUniformLocation (shader, "lightConeOuters")
@@ -920,7 +927,8 @@ module PhysicallyBased =
           LightDirectionsUniform = lightDirectionsUniform
           LightColorsUniform = lightColorsUniform
           LightBrightnessesUniform = lightBrightnessesUniform
-          LightIntensitiesUniform = lightIntensitiesUniform
+          LightAttenuationLinearsUniform = lightAttenuationLinearsUniform
+          LightAttenuationQuadraticsUniform = lightAttenuationQuadraticsUniform
           LightDirectionalsUniform = lightDirectionalsUniform
           LightConeInnersUniform = lightConeInnersUniform
           LightConeOutersUniform = lightConeOutersUniform
@@ -951,7 +959,8 @@ module PhysicallyBased =
          lightDirections : single array,
          lightColors : single array,
          lightBrightnesses : single array,
-         lightIntensities : single array,
+         lightAttenuationLinears : single array,
+         lightAttenuationQuadratics : single array,
          lightDirectionals : int array,
          lightConeInners : single array,
          lightConeOuters : single array,
@@ -987,7 +996,8 @@ module PhysicallyBased =
         Gl.Uniform3 (shader.LightDirectionsUniform, lightDirections)
         Gl.Uniform4 (shader.LightColorsUniform, lightColors)
         Gl.Uniform1 (shader.LightBrightnessesUniform, lightBrightnesses)
-        Gl.Uniform1 (shader.LightIntensitiesUniform, lightIntensities)
+        Gl.Uniform1 (shader.LightAttenuationLinearsUniform, lightAttenuationLinears)
+        Gl.Uniform1 (shader.LightAttenuationQuadraticsUniform, lightAttenuationQuadratics)
         Gl.Uniform1 (shader.LightDirectionalsUniform, lightDirectionals)
         Gl.Uniform1 (shader.LightConeInnersUniform, lightConeInners)
         Gl.Uniform1 (shader.LightConeOutersUniform, lightConeOuters)
@@ -1135,7 +1145,8 @@ module PhysicallyBased =
          lightDirections : single array,
          lightColors : single array,
          lightBrightnesses : single array,
-         lightIntensities : single array,
+         lightAttenuationLinears : single array,
+         lightAttenuationQuadratics : single array,
          lightDirectionals : int array,
          lightConeInners : single array,
          lightConeOuters : single array,
@@ -1156,7 +1167,8 @@ module PhysicallyBased =
         Gl.Uniform3 (shader.LightDirectionsUniform, lightDirections)
         Gl.Uniform4 (shader.LightColorsUniform, lightColors)
         Gl.Uniform1 (shader.LightBrightnessesUniform, lightBrightnesses)
-        Gl.Uniform1 (shader.LightIntensitiesUniform, lightIntensities)
+        Gl.Uniform1 (shader.LightAttenuationLinearsUniform, lightAttenuationLinears)
+        Gl.Uniform1 (shader.LightAttenuationQuadraticsUniform, lightAttenuationQuadratics)
         Gl.Uniform1 (shader.LightDirectionalsUniform, lightDirectionals)
         Gl.Uniform1 (shader.LightConeInnersUniform, lightConeInners)
         Gl.Uniform1 (shader.LightConeOutersUniform, lightConeOuters)

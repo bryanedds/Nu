@@ -53,7 +53,8 @@ type Slice =
       Emission : Color
       Flip : Flip
       Brightness : single
-      Intensity : single
+      AttenuationLinear : single
+      AttenuationQuadratic : single
       Volume : single
       Enabled : bool
       Centered : bool }
@@ -151,7 +152,8 @@ and Aspect =
     | Emission of Color
     | Flip of Flip
     | Brightness of single
-    | Intensity of single
+    | AttenuationLinear of single
+    | AttenuationQuadratic of single
     | Volume of single
     | Enableds of LogicApplicator * Playback * LogicKeyFrame array
     | Positions of TweenApplicator * TweenAlgorithm * Playback * Tween3KeyFrame array
@@ -435,7 +437,8 @@ module EffectSystem =
         | Emission emission -> { slice with Emission = emission }
         | Flip flip -> { slice with Flip = flip }
         | Brightness brightness -> { slice with Brightness = brightness }
-        | Intensity intensity -> { slice with Intensity = intensity }
+        | AttenuationLinear attenuationLinear -> { slice with AttenuationLinear = attenuationLinear }
+        | AttenuationQuadratic attenuationQuadratic -> { slice with AttenuationQuadratic = attenuationQuadratic }
         | Volume volume -> { slice with Volume = volume }
         | Enableds (applicator, playback, keyFrames) ->
             if Array.notEmpty keyFrames then
@@ -765,7 +768,8 @@ module EffectSystem =
                               Direction = Vector3.Transform (v3Forward, Quaternion.CreateFromYawPitchRoll (slice.Angles.Z, slice.Angles.Y, slice.Angles.X))
                               Color = slice.Color
                               Brightness = slice.Brightness
-                              Intensity = slice.Intensity
+                              AttenuationLinear = slice.AttenuationLinear
+                              AttenuationQuadratic = slice.AttenuationQuadratic
                               LightType = lightType })
                 addView modelView effectSystem
             else effectSystem

@@ -60,6 +60,7 @@ void main()
 const float PI = 3.141592654;
 const float REFLECTION_LOD_MAX = 5.0;
 const float GAMMA = 2.2;
+const float ATTENUATION_CONSTANT = 1.0f;
 const int LIGHTS_MAX = 32;
 
 uniform vec3 eyeCenter;
@@ -76,7 +77,8 @@ uniform vec3 lightOrigins[LIGHTS_MAX];
 uniform vec3 lightDirections[LIGHTS_MAX];
 uniform vec4 lightColors[LIGHTS_MAX];
 uniform float lightBrightnesses[LIGHTS_MAX];
-uniform float lightIntensities[LIGHTS_MAX];
+uniform float lightAttenuationLinears[LIGHTS_MAX];
+uniform float lightAttenuationQuadratics[LIGHTS_MAX];
 uniform int lightDirectionals[LIGHTS_MAX];
 uniform float lightConeInners[LIGHTS_MAX];
 uniform float lightConeOuters[LIGHTS_MAX];
@@ -180,7 +182,8 @@ void main()
             l = normalize(d);
             h = normalize(v + l);
             float distanceSquared = dot(d, d);
-            float attenuation = 1.0 / distanceSquared;
+            float distance = sqrt(distanceSquared);
+            float attenuation = 1.0f / (ATTENUATION_CONSTANT + lightAttenuationLinears[i] * distance + lightAttenuationQuadratics[i] * distanceSquared);
             float angle = acos(dot(lightDirections[i], l));
             float coneDelta = lightConeOuters[i] - lightConeInners[i];
             float coneBetween = angle - lightConeInners[i];

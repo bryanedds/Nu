@@ -127,7 +127,7 @@ type [<SymbolicExpansion>] CharacterAnimationState =
       CharacterAnimationType : CharacterAnimationType
       Direction : Direction }
 
-    static member face direction state =
+    static member face direction (state : CharacterAnimationState) =
         { state with Direction = direction }
 
     static member setCharacterAnimationType timeOpt characterAnimationType state =
