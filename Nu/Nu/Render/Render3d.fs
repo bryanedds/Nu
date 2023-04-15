@@ -819,11 +819,11 @@ type [<ReferenceEquality>] GlRenderer3d =
         projectionArray
         (parameters : struct (Matrix4x4 * Box2 * SurfaceProperties) SegmentedList)
         blending
+        lightAmbientColor
+        lightAmbientBrightness
         irradianceMap
         environmentFilterMap
         brdfTexture
-        lightAmbientColor
-        lightAmbientBrightness
         lightOrigins
         lightDirections
         lightColors
@@ -897,7 +897,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             // draw surfaces
             OpenGL.PhysicallyBased.DrawPhysicallyBasedSurfaces
                 (eyeCenter, parameters.Length, renderer.RenderModelsFields, renderer.RenderTexCoordsOffsetsFields, renderer.RenderAlbedosFields, renderer.PhysicallyBasedMaterialsFields, renderer.PhysicallyBasedInvertRoughnessesFields,
-                 viewArray, projectionArray, blending, irradianceMap, environmentFilterMap, brdfTexture, lightAmbientColor, lightAmbientBrightness,
+                 viewArray, projectionArray, blending, lightAmbientColor, lightAmbientBrightness, irradianceMap, environmentFilterMap, brdfTexture,
                  lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightDirectionals, lightConeInners, lightConeOuters,
                  surface.SurfaceMaterial, surface.PhysicallyBasedGeometry, shader)
 
@@ -1293,11 +1293,11 @@ type [<ReferenceEquality>] GlRenderer3d =
                     projectionArray
                     entry.Value
                     false
+                    lightAmbientColor
+                    lightAmbientBrightness
                     irradianceMap
                     environmentFilterMap
                     renderer.RenderBrdfTexture
-                    lightAmbientColor
-                    lightAmbientBrightness
                     lightOrigins
                     lightDirections
                     lightColors
@@ -1320,11 +1320,11 @@ type [<ReferenceEquality>] GlRenderer3d =
                     projectionArray
                     entry.Value
                     false
+                    lightAmbientColor
+                    lightAmbientBrightness
                     irradianceMap
                     environmentFilterMap
                     renderer.RenderBrdfTexture
-                    lightAmbientColor
-                    lightAmbientBrightness
                     lightOrigins
                     lightDirections
                     lightColors
@@ -1355,8 +1355,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
             // deferred render lighting quad
             OpenGL.PhysicallyBased.DrawPhysicallyBasedDeferred2Surface
-                (eyeCenter, positionTexture, albedoTexture, materialTexture, normalTexture,
-                 irradianceMap, environmentFilterMap, renderer.RenderBrdfTexture, lightAmbientColor, lightAmbientBrightness,
+                (eyeCenter, lightAmbientColor, lightAmbientBrightness, positionTexture, albedoTexture, materialTexture, normalTexture, irradianceMap, environmentFilterMap, renderer.RenderBrdfTexture,
                  lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightDirectionals, lightConeInners, lightConeOuters,
                  renderer.RenderPhysicallyBasedQuad, renderer.RenderPhysicallyBasedDeferred2Shader)
             OpenGL.Hl.Assert ()
@@ -1379,11 +1378,11 @@ type [<ReferenceEquality>] GlRenderer3d =
                     projectionArray
                     (SegmentedList.singleton (model, texCoordsOffset, properties))
                     true
+                    lightAmbientColor
+                    lightAmbientBrightness
                     irradianceMap
                     environmentFilterMap
                     renderer.RenderBrdfTexture
-                    lightAmbientColor
-                    lightAmbientBrightness
                     lightOrigins
                     lightDirections
                     lightColors
@@ -1408,11 +1407,11 @@ type [<ReferenceEquality>] GlRenderer3d =
                     projectionArray
                     (SegmentedList.singleton (model, texCoordsOffset, properties))
                     true
+                    lightAmbientColor
+                    lightAmbientBrightness
                     irradianceMap
                     environmentFilterMap
                     renderer.RenderBrdfTexture
-                    lightAmbientColor
-                    lightAmbientBrightness
                     lightOrigins
                     lightDirections
                     lightColors

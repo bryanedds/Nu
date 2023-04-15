@@ -64,6 +64,8 @@ const float ATTENUATION_CONSTANT = 1.0f;
 const int LIGHTS_MAX = 32;
 
 uniform vec3 eyeCenter;
+uniform vec3 lightAmbientColor;
+uniform float lightAmbientBrightness;
 uniform sampler2D albedoTexture;
 uniform sampler2D metallicTexture;
 uniform sampler2D roughnessTexture;
@@ -73,8 +75,6 @@ uniform sampler2D normalTexture;
 uniform samplerCube irradianceMap;
 uniform samplerCube environmentFilterMap;
 uniform sampler2D brdfTexture;
-uniform vec3 lightAmbientColor;
-uniform float lightAmbientBrightness;
 uniform vec3 lightOrigins[LIGHTS_MAX];
 uniform vec3 lightDirections[LIGHTS_MAX];
 uniform vec3 lightColors[LIGHTS_MAX];
