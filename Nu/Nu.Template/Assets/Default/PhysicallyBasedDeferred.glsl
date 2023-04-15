@@ -31,13 +31,15 @@ layout (location = 3) in mat4 model;
 layout (location = 7) in vec4 texCoordsOffset;
 layout (location = 8) in vec4 albedo;
 layout (location = 9) in vec4 material;
-layout (location = 10) in int invertRoughness;
+layout (location = 10) in float height;
+layout (location = 11) in int invertRoughness;
 
 out vec3 positionOut;
 out vec2 texCoordsOut;
 out vec4 albedoOut;
 out vec4 materialOut;
 out vec3 normalOut;
+out float heightOut;
 flat out int invertRoughnessOut;
 
 void main()
@@ -50,6 +52,7 @@ void main()
     albedoOut = albedo;
     materialOut = material;
     normalOut = transpose(inverse(mat3(model))) * normal;
+    heightOut = height;
     invertRoughnessOut = invertRoughness;
     gl_Position = projection * view * vec4(positionOut, 1.0);
 }
@@ -65,12 +68,14 @@ uniform sampler2D roughnessTexture;
 uniform sampler2D emissionTexture;
 uniform sampler2D ambientOcclusionTexture;
 uniform sampler2D normalTexture;
+uniform sampler2D heightTexture;
 
 in vec3 positionOut;
 in vec2 texCoordsOut;
 in vec4 albedoOut;
 in vec4 materialOut;
 in vec3 normalOut;
+in float heightOut;
 flat in int invertRoughnessOut;
 
 layout (location = 0) out vec3 position;
@@ -102,13 +107,15 @@ void main()
     if (albedoSample.a == 0.0f) discard;
     albedo = pow(albedoSample.rgb, vec3(GAMMA)) * albedoOut.rgb;
 
+    float bullshit = texture(heightTexture, texCoordsOut).r * heightOut;
+
     // compute material properties
     float metallic = texture(metallicTexture, texCoordsOut).r * materialOut.r;
     float ambientOcclusion = texture(ambientOcclusionTexture, texCoordsOut).g * materialOut.g;
     vec4 roughnessSample = texture(roughnessTexture, texCoordsOut);
     float roughness = roughnessSample.a == 1.0f ? roughnessSample.b : roughnessSample.a;
     roughness = (invertRoughnessOut == 0 ? roughness : 1.0f - roughness) * materialOut.b;
-    float emission = texture(emissionTexture, texCoordsOut).r * materialOut.a;
+    float emission = texture(emissionTexture, texCoordsOut).r * materialOut.a * bullshit;
     material = vec4(metallic, ambientOcclusion, roughness, emission);
 
     // compute normal

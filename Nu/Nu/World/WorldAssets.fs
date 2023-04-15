@@ -46,6 +46,7 @@ module Assets =
         let [<Uniform>] MaterialAmbientOcclusion = asset<Image> PackageName Assets.Default.MaterialAmbientOcclusionName
         let [<Uniform>] MaterialEmission = asset<Image> PackageName Assets.Default.MaterialEmissionName
         let [<Uniform>] MaterialNormal = asset<Image> PackageName Assets.Default.MaterialNormalName
+        let [<Uniform>] MaterialHeight = asset<Image> PackageName Assets.Default.MaterialHeightName
         let [<Uniform>] SkyBoxMap = asset<CubeMap> PackageName Assets.Default.SkyBoxMapName
         let [<Uniform>] StaticModel = asset<StaticModel> PackageName Assets.Default.StaticModelName
         let [<Uniform>] HighlightModel = asset<StaticModel> PackageName Assets.Default.HighlightModelName

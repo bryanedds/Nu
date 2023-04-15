@@ -27,6 +27,8 @@ module PhysicallyBased =
           Emission : single
           EmissionTexture : uint
           NormalTexture : uint
+          Height : single
+          HeightTexture : uint
           TextureMinFilterOpt : OpenGL.TextureMinFilter option
           TextureMagFilterOpt : OpenGL.TextureMagFilter option
           InvertRoughness : bool
@@ -44,6 +46,7 @@ module PhysicallyBased =
           TexCoordsOffsetBuffer : uint
           AlbedoBuffer : uint
           MaterialBuffer : uint
+          HeightBuffer : uint
           InvertRoughnessBuffer : uint
           IndexBuffer : uint
           PhysicallyBasedVao : uint }
@@ -65,12 +68,13 @@ module PhysicallyBased =
             (int surface.SurfaceMaterial.AmbientOcclusionTexture <<< 6) ^^^
             (int surface.SurfaceMaterial.EmissionTexture <<< 7) ^^^
             (int surface.SurfaceMaterial.NormalTexture <<< 10) ^^^
-            (hash surface.SurfaceMaterial.TextureMinFilterOpt <<< 12) ^^^
-            (hash surface.SurfaceMaterial.TextureMagFilterOpt <<< 14) ^^^
-            (hash surface.SurfaceMaterial.InvertRoughness <<< 16) ^^^
-            (hash surface.SurfaceMaterial.TwoSided <<< 18) ^^^
-            (int surface.PhysicallyBasedGeometry.PrimitiveType <<< 20) ^^^
-            (int surface.PhysicallyBasedGeometry.PhysicallyBasedVao <<< 22)
+            (int surface.SurfaceMaterial.HeightTexture <<< 12) ^^^
+            (hash surface.SurfaceMaterial.TextureMinFilterOpt <<< 14) ^^^
+            (hash surface.SurfaceMaterial.TextureMagFilterOpt <<< 16) ^^^
+            (hash surface.SurfaceMaterial.InvertRoughness <<< 18) ^^^
+            (hash surface.SurfaceMaterial.TwoSided <<< 20) ^^^
+            (int surface.PhysicallyBasedGeometry.PrimitiveType <<< 22) ^^^
+            (int surface.PhysicallyBasedGeometry.PhysicallyBasedVao <<< 24)
 
         static member inline equals left right =
             (match (left.SurfaceMaterial.TextureMinFilterOpt, right.SurfaceMaterial.TextureMinFilterOpt) with // TODO: implement voptEq.
@@ -87,6 +91,7 @@ module PhysicallyBased =
             left.SurfaceMaterial.AmbientOcclusionTexture = right.SurfaceMaterial.AmbientOcclusionTexture &&
             left.SurfaceMaterial.EmissionTexture = right.SurfaceMaterial.EmissionTexture &&
             left.SurfaceMaterial.NormalTexture = right.SurfaceMaterial.NormalTexture &&
+            left.SurfaceMaterial.HeightTexture = right.SurfaceMaterial.HeightTexture &&
             left.SurfaceMaterial.InvertRoughness = right.SurfaceMaterial.InvertRoughness &&
             left.SurfaceMaterial.TwoSided = right.SurfaceMaterial.TwoSided &&
             left.PhysicallyBasedGeometry.PrimitiveType = right.PhysicallyBasedGeometry.PrimitiveType &&
@@ -152,6 +157,7 @@ module PhysicallyBased =
           AmbientOcclusionTextureUniform : int
           EmissionTextureUniform : int
           NormalTextureUniform : int
+          HeightTextureUniform : int
           IrradianceMapUniform : int
           EnvironmentFilterMapUniform : int
           BrdfTextureUniform : int
@@ -386,7 +392,7 @@ module PhysicallyBased =
     let CreatePhysicallyBasedGeometry (renderable, vertexData : single Memory, indexData : int Memory, bounds) =
 
         // make buffers
-        let (vertices, indices, vertexBuffer, modelBuffer, texCoordsOffsetBuffer, albedoBuffer, materialBuffer, invertRoughnessBuffer, indexBuffer, vao) =
+        let (vertices, indices, vertexBuffer, modelBuffer, texCoordsOffsetBuffer, albedoBuffer, materialBuffer, heightBuffer, invertRoughnessBuffer, indexBuffer, vao) =
 
             // make renderable
             if renderable then
@@ -466,15 +472,26 @@ module PhysicallyBased =
                 Gl.VertexAttribDivisor (9u, 1u)
                 Hl.Assert ()
 
+                // create height buffer
+                let heightBuffer = Gl.GenBuffer ()
+                Gl.BindBuffer (BufferTarget.ArrayBuffer, heightBuffer)
+                let heightDataPtr = GCHandle.Alloc ([|1.0f|], GCHandleType.Pinned)
+                try Gl.BufferData (BufferTarget.ArrayBuffer, uint (sizeof<single>), heightDataPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
+                finally heightDataPtr.Free ()
+                Gl.EnableVertexAttribArray 10u
+                Gl.VertexAttribPointer (10u, 1, VertexAttribType.Float, false, sizeof<single>, nativeint 0)
+                Gl.VertexAttribDivisor (10u, 1u)
+                Hl.Assert ()
+
                 // create invert roughness buffer
                 let invertRoughnessBuffer = Gl.GenBuffer ()
                 Gl.BindBuffer (BufferTarget.ArrayBuffer, invertRoughnessBuffer)
                 let invertRoughnessDataPtr = GCHandle.Alloc ([|0|], GCHandleType.Pinned)
                 try Gl.BufferData (BufferTarget.ArrayBuffer, uint (sizeof<int>), invertRoughnessDataPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
                 finally invertRoughnessDataPtr.Free ()
-                Gl.EnableVertexAttribArray 10u
-                Gl.VertexAttribIPointer (10u, 1, VertexAttribType.Int, sizeof<int>, nativeint 0)
-                Gl.VertexAttribDivisor (10u, 1u)
+                Gl.EnableVertexAttribArray 11u
+                Gl.VertexAttribIPointer (11u, 1, VertexAttribType.Int, sizeof<int>, nativeint 0)
+                Gl.VertexAttribDivisor (11u, 1u)
                 Hl.Assert ()
 
                 // create index buffer
@@ -494,7 +511,7 @@ module PhysicallyBased =
                 let indices = indexData.ToArray ()
 
                 // fin
-                ([||], indices, vertexBuffer, modelBuffer, texCoordsOffsetBuffer, albedoBuffer, materialBuffer, invertRoughnessBuffer, indexBuffer, vao)
+                ([||], indices, vertexBuffer, modelBuffer, texCoordsOffsetBuffer, albedoBuffer, materialBuffer, heightBuffer, invertRoughnessBuffer, indexBuffer, vao)
 
             // fake buffers
             else
@@ -511,7 +528,7 @@ module PhysicallyBased =
                 let indices = indexData.ToArray ()
 
                 // fin
-                (vertices, indices, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u)
+                (vertices, indices, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u)
 
         // make physically-based geometry
         let geometry =
@@ -525,6 +542,7 @@ module PhysicallyBased =
               TexCoordsOffsetBuffer = texCoordsOffsetBuffer
               AlbedoBuffer = albedoBuffer
               MaterialBuffer = materialBuffer
+              HeightBuffer = heightBuffer
               InvertRoughnessBuffer = invertRoughnessBuffer
               IndexBuffer = indexBuffer
               PhysicallyBasedVao = vao }
@@ -586,25 +604,27 @@ module PhysicallyBased =
         let has_d =                     albedoTextureFileName.Contains "_d"
         let hasBaseColor =              albedoTextureFileName.Contains "BaseColor"
         let hasAlbedo =                 albedoTextureFileName.Contains "Albedo"
-        let mTextureFilePath =          if has_bc         then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("_bc", "_m")               elif has_d        then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("_d", "_m") else ""
-        let m_gTextureFilePath =        if has_bc         then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("_bc", "_m_g")             elif has_d        then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("_d", "_m_g") else ""
-        let m_ao_gTextureFilePath =     if has_bc         then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("_bc", "_m_ao_g")          elif has_d        then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("_d", "_m_ao_g") else ""
-        let gTextureFilePath =          if has_bc         then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("_bc", "_g")               elif has_d        then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("_d", "_g") else ""
-        let aoTextureFilePath =         if has_bc         then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("_bc", "_ao")              elif has_d        then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("_d", "_ao") else ""
-        let eTextureFilePath =          if has_bc         then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("_bc", "_e")               elif has_d        then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("_d", "_e") else ""
-        let nTextureFilePath =          if has_bc         then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("_bc", "_n")               elif has_d        then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("_d", "_n") else ""
-        let metallicTextureFilePath =   if hasBaseColor   then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("BaseColor", "Metallic")   elif hasAlbedo    then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("BaseColor", "Metallic") else ""  
-        let roughnessTextureFilePath =  if hasBaseColor   then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("BaseColor", "Roughness")  elif hasAlbedo    then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("BaseColor", "Roughness") else "" 
-        let aoTextureFilePath' =        if hasBaseColor   then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("BaseColor", "AO")         elif hasAlbedo    then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("BaseColor", "AO") else ""        
-        let normalTextureFilePath =     if hasBaseColor   then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("BaseColor", "Normal")     elif hasAlbedo    then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("BaseColor", "Normal") else ""    
-        let emissionTextureFilePath =   if hasBaseColor   then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("BaseColor", "Emission")   elif hasAlbedo    then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("BaseColor", "Emission") else ""  
+        let mTextureFilePath =          if has_bc         then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("_bc", "_m")                 elif has_d      then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("_d", "_m") else ""
+        let m_gTextureFilePath =        if has_bc         then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("_bc", "_m_g")               elif has_d      then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("_d", "_m_g") else ""
+        let m_ao_gTextureFilePath =     if has_bc         then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("_bc", "_m_ao_g")            elif has_d      then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("_d", "_m_ao_g") else ""
+        let gTextureFilePath =          if has_bc         then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("_bc", "_g")                 elif has_d      then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("_d", "_g") else ""
+        let aoTextureFilePath =         if has_bc         then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("_bc", "_ao")                elif has_d      then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("_d", "_ao") else ""
+        let eTextureFilePath =          if has_bc         then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("_bc", "_e")                 elif has_d      then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("_d", "_e") else ""
+        let nTextureFilePath =          if has_bc         then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("_bc", "_n")                 elif has_d      then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("_d", "_n") else ""
+        let hTextureFilePath =          if has_bc         then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("_bc", "_h")                 elif has_d      then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("_d", "_h") else ""
+        let metallicTextureFilePath =   if hasBaseColor   then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("BaseColor", "Metallic")     elif hasAlbedo  then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("BaseColor", "Metallic") else ""  
+        let roughnessTextureFilePath =  if hasBaseColor   then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("BaseColor", "Roughness")    elif hasAlbedo  then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("BaseColor", "Roughness") else "" 
+        let aoTextureFilePath' =        if hasBaseColor   then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("BaseColor", "AO")           elif hasAlbedo  then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("BaseColor", "AO") else ""        
+        let normalTextureFilePath =     if hasBaseColor   then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("BaseColor", "Normal")       elif hasAlbedo  then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("BaseColor", "Normal") else ""    
+        let emissionTextureFilePath =   if hasBaseColor   then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("BaseColor", "Emission")     elif hasAlbedo  then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("BaseColor", "Emission") else ""  
+        let heightTextureFilePath =     if hasBaseColor   then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("BaseColor", "Height")       elif hasAlbedo  then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("BaseColor", "Height") else ""  
 
         // attempt to load metallic info
         let metallic =
             if material.HasColorSpecular
             then material.ColorSpecular.R
             else Constants.Render.MetallicDefault
-        let mutable (_, metallicTextureSlot) = material.GetMaterialTexture (Assimp.TextureType.Specular, 0)
+        let mutable (_, metallicTextureSlot) = material.GetMaterialTexture (Assimp.TextureType.Metalness, 0)
         if isNull metallicTextureSlot.FilePath then metallicTextureSlot.FilePath <- "" // ensure not null
         let metallicTexture =
             if renderable then
@@ -630,7 +650,7 @@ module PhysicallyBased =
             if material.HasShininess && material.Shininess <= 1.0f // NOTE: special to ignore seemingly errant values.
             then 1.0f - min material.Shininess 1.0f
             else Constants.Render.RoughnessDefault
-        let mutable (_, roughnessTextureSlot) = material.GetMaterialTexture (Assimp.TextureType.Height, 0)
+        let mutable (_, roughnessTextureSlot) = material.GetMaterialTexture (Assimp.TextureType.Roughness, 0)
         if isNull roughnessTextureSlot.FilePath then roughnessTextureSlot.FilePath <- "" // ensure not null
         let (invertRoughness, roughnessTexture) =
             if renderable then
@@ -708,6 +728,25 @@ module PhysicallyBased =
                         | Left _ -> defaultMaterial.NormalTexture
             else defaultMaterial.NormalTexture
 
+        // attempt to load height info
+        let height =
+            if material.HasBumpScaling && material.BumpScaling  <> 0.0f // NOTE: special case to presume 0.0f indicates missing parameter.
+            then material.BumpScaling
+            else Constants.Render.HeightDefault
+        let (_, heightTextureSlot) = material.GetMaterialTexture (Assimp.TextureType.Height, 0)
+        let heightTexture =
+            if renderable && not (String.IsNullOrEmpty heightTextureSlot.FilePath) then
+                match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + heightTextureSlot.FilePath, textureMemo) with
+                | Right (_, texture) -> texture
+                | Left _ ->
+                    match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + hTextureFilePath, textureMemo) with
+                    | Right (_, texture) -> texture
+                    | Left _ ->
+                        match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + heightTextureFilePath, textureMemo) with
+                        | Right (_, texture) -> texture
+                        | Left _ -> defaultMaterial.HeightTexture
+            else defaultMaterial.HeightTexture
+
         // fin
         { Albedo = color albedo.R albedo.G albedo.B albedo.A
           AlbedoMetadata = albedoMetadata
@@ -721,6 +760,8 @@ module PhysicallyBased =
           Emission = emission
           EmissionTexture = emissionTexture
           NormalTexture = normalTexture
+          Height = height
+          HeightTexture = heightTexture
           TextureMinFilterOpt = minFilterOpt
           TextureMagFilterOpt = magFilterOpt
           InvertRoughness = invertRoughness
@@ -858,6 +899,7 @@ module PhysicallyBased =
         let ambientOcclusionTextureUniform = Gl.GetUniformLocation (shader, "ambientOcclusionTexture")
         let emissionTextureUniform = Gl.GetUniformLocation (shader, "emissionTexture")
         let normalTextureUniform = Gl.GetUniformLocation (shader, "normalTexture")
+        let heightTextureUniform = Gl.GetUniformLocation (shader, "heightTexture")
         let irradianceMapUniform = Gl.GetUniformLocation (shader, "irradianceMap")
         let environmentFilterMapUniform = Gl.GetUniformLocation (shader, "environmentFilterMap")
         let brdfTextureUniform = Gl.GetUniformLocation (shader, "brdfTexture")
@@ -883,6 +925,7 @@ module PhysicallyBased =
           AmbientOcclusionTextureUniform = ambientOcclusionTextureUniform
           EmissionTextureUniform = emissionTextureUniform
           NormalTextureUniform = normalTextureUniform
+          HeightTextureUniform = heightTextureUniform
           IrradianceMapUniform = irradianceMapUniform
           EnvironmentFilterMapUniform = environmentFilterMapUniform
           BrdfTextureUniform = brdfTextureUniform
@@ -960,6 +1003,7 @@ module PhysicallyBased =
          texCoordsOffsetsFields : single array,
          albedosFields : single array,
          materialsFields : single array,
+         heightsFields : single array,
          invertRoughnessesFields : int array,
          view : single array,
          projection : single array,
@@ -1005,9 +1049,10 @@ module PhysicallyBased =
         Gl.Uniform1 (shader.AmbientOcclusionTextureUniform, 3)
         Gl.Uniform1 (shader.EmissionTextureUniform, 4)
         Gl.Uniform1 (shader.NormalTextureUniform, 5)
-        Gl.Uniform1 (shader.IrradianceMapUniform, 6)
-        Gl.Uniform1 (shader.EnvironmentFilterMapUniform, 7)
-        Gl.Uniform1 (shader.BrdfTextureUniform, 8)
+        Gl.Uniform1 (shader.HeightTextureUniform, 6)
+        Gl.Uniform1 (shader.IrradianceMapUniform, 7)
+        Gl.Uniform1 (shader.EnvironmentFilterMapUniform, 8)
+        Gl.Uniform1 (shader.BrdfTextureUniform, 9)
         Gl.Uniform3 (shader.LightOriginsUniform, lightOrigins)
         Gl.Uniform3 (shader.LightDirectionsUniform, lightDirections)
         Gl.Uniform3 (shader.LightColorsUniform, lightColors)
@@ -1033,10 +1078,12 @@ module PhysicallyBased =
         Gl.ActiveTexture TextureUnit.Texture5
         Gl.BindTexture (TextureTarget.Texture2d, material.NormalTexture)
         Gl.ActiveTexture TextureUnit.Texture6
-        Gl.BindTexture (TextureTarget.TextureCubeMap, irradianceMap)
+        Gl.BindTexture (TextureTarget.Texture2d, material.HeightTexture)
         Gl.ActiveTexture TextureUnit.Texture7
-        Gl.BindTexture (TextureTarget.TextureCubeMap, environmentFilterMap)
+        Gl.BindTexture (TextureTarget.TextureCubeMap, irradianceMap)
         Gl.ActiveTexture TextureUnit.Texture8
+        Gl.BindTexture (TextureTarget.TextureCubeMap, environmentFilterMap)
+        Gl.ActiveTexture TextureUnit.Texture9
         Gl.BindTexture (TextureTarget.Texture2d, brdfTexture)
         Hl.Assert ()
 
@@ -1083,7 +1130,15 @@ module PhysicallyBased =
         Gl.BindBuffer (BufferTarget.ArrayBuffer, 0u)
         Hl.Assert ()
 
-        // update invert roughness buffer
+        // update heights buffer
+        let heightsFieldsPtr = GCHandle.Alloc (heightsFields, GCHandleType.Pinned)
+        try Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.HeightBuffer)
+            Gl.BufferData (BufferTarget.ArrayBuffer, uint (surfacesCount * sizeof<int>), heightsFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
+        finally heightsFieldsPtr.Free ()
+        Gl.BindBuffer (BufferTarget.ArrayBuffer, 0u)
+        Hl.Assert ()
+
+        // update invert roughnesses buffer
         let invertRoughnessesFieldsPtr = GCHandle.Alloc (invertRoughnessesFields, GCHandleType.Pinned)
         try Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.InvertRoughnessBuffer)
             Gl.BufferData (BufferTarget.ArrayBuffer, uint (surfacesCount * sizeof<int>), invertRoughnessesFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)

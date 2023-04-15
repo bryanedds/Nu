@@ -44,6 +44,7 @@ module Assets =
         let [<Literal>] MaterialAmbientOcclusionName = "MaterialAmbientOcclusion"
         let [<Literal>] MaterialEmissionName = "MaterialEmission"
         let [<Literal>] MaterialNormalName = "MaterialNormal"
+        let [<Literal>] MaterialHeightName = "MaterialHeight"
         let [<Literal>] SkyBoxMapName = "SkyBoxMap"
         let [<Literal>] StaticModelName = "StaticModel"
         let [<Literal>] HighlightModelName = "HighlightModel"

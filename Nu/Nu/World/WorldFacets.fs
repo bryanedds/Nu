@@ -1493,6 +1493,9 @@ module StaticBillboardFacetModule =
         member this.GetNormalImage world : Image AssetTag = this.Get (nameof this.NormalImage) world
         member this.SetNormalImage (value : Image AssetTag) world = this.Set (nameof this.NormalImage) value world
         member this.NormalImage = lens (nameof this.NormalImage) this this.GetNormalImage this.SetNormalImage
+        member this.GetHeightImage world : Image AssetTag = this.Get (nameof this.HeightImage) world
+        member this.SetHeightImage (value : Image AssetTag) world = this.Set (nameof this.HeightImage) value world
+        member this.HeightImage = lens (nameof this.HeightImage) this this.GetHeightImage this.SetHeightImage
         member this.GetTextureMinFilterOpt world : OpenGL.TextureMinFilter option = this.Get (nameof this.TextureMinFilterOpt) world
         member this.SetTextureMinFilterOpt (value : OpenGL.TextureMinFilter option) world = this.Set (nameof this.TextureMinFilterOpt) value world
         member this.TextureMinFilterOpt = lens (nameof this.TextureMinFilterOpt) this this.GetTextureMinFilterOpt this.SetTextureMinFilterOpt
@@ -1515,6 +1518,7 @@ module StaticBillboardFacetModule =
              define Entity.AmbientOcclusionImage Assets.Default.MaterialAmbientOcclusion
              define Entity.EmissionImage Assets.Default.MaterialEmission
              define Entity.NormalImage Assets.Default.MaterialNormal
+             define Entity.HeightImage Assets.Default.MaterialHeight
              define Entity.TextureMinFilterOpt None
              define Entity.TextureMagFilterOpt None
              define Entity.RenderStyle Deferred]
@@ -1531,6 +1535,7 @@ module StaticBillboardFacetModule =
             let ambientOcclusionImage = entity.GetAmbientOcclusionImage world
             let emissionImage = entity.GetEmissionImage world
             let normalImage = entity.GetNormalImage world
+            let heightImage = entity.GetHeightImage world
             let minFilterOpt = entity.GetTextureMinFilterOpt world
             let magFilterOpt = entity.GetTextureMagFilterOpt world
             let renderType =
@@ -1540,7 +1545,7 @@ module StaticBillboardFacetModule =
             World.enqueueRenderMessage3d
                 (RenderBillboard
                     { Absolute = absolute; ModelMatrix = affineMatrix; InsetOpt = insetOpt; SurfaceProperties = properties
-                      AlbedoImage = albedoImage; MetallicImage = metallicImage; RoughnessImage = roughnessImage; AmbientOcclusionImage = ambientOcclusionImage; EmissionImage = emissionImage; NormalImage = normalImage
+                      AlbedoImage = albedoImage; MetallicImage = metallicImage; RoughnessImage = roughnessImage; AmbientOcclusionImage = ambientOcclusionImage; EmissionImage = emissionImage; NormalImage = normalImage; HeightImage = heightImage
                       MinFilterOpt = minFilterOpt; MagFilterOpt = magFilterOpt; RenderType = renderType })
                 world
 
@@ -1586,6 +1591,9 @@ module BasicStaticBillboardEmitterFacetModule =
         member this.GetEmitterNormalImage world : Image AssetTag = this.Get (nameof this.EmitterNormalImage) world
         member this.SetEmitterNormalImage (value : Image AssetTag) world = this.Set (nameof this.EmitterNormalImage) value world
         member this.EmitterNormalImage = lens (nameof this.EmitterNormalImage) this this.GetEmitterNormalImage this.SetEmitterNormalImage
+        member this.GetEmitterHeightImage world : Image AssetTag = this.Get (nameof this.EmitterHeightImage) world
+        member this.SetEmitterHeightImage (value : Image AssetTag) world = this.Set (nameof this.EmitterHeightImage) value world
+        member this.EmitterHeightImage = lens (nameof this.EmitterHeightImage) this this.GetEmitterHeightImage this.SetEmitterHeightImage
         member this.GetEmitterMinFilterOpt world : OpenGL.TextureMinFilter option = this.Get (nameof this.EmitterMinFilterOpt) world
         member this.SetEmitterMinFilterOpt (value : OpenGL.TextureMinFilter option) world = this.Set (nameof this.EmitterMinFilterOpt) value world
         member this.EmitterMinFilterOpt = lens (nameof this.EmitterMinFilterOpt) this this.GetEmitterMinFilterOpt this.SetEmitterMinFilterOpt
@@ -1629,6 +1637,7 @@ module BasicStaticBillboardEmitterFacetModule =
                     AmbientOcclusionImage = entity.GetEmitterAmbientOcclusionImage world
                     EmissionImage = entity.GetEmitterEmissionImage world
                     NormalImage = entity.GetEmitterNormalImage world
+                    HeightImage = entity.GetEmitterHeightImage world
                     ParticleSeed = entity.GetBasicParticleSeed world
                     Constraint = entity.GetEmitterConstraint world }
             | None ->
@@ -1693,6 +1702,11 @@ module BasicStaticBillboardEmitterFacetModule =
         static let handleEmitterNormalImageChange evt world =
             let emitterNormalImage = evt.Data.Value :?> Image AssetTag
             let world = updateEmitter (fun emitter -> if assetNeq emitter.NormalImage emitterNormalImage then { emitter with NormalImage = emitterNormalImage } else emitter) evt.Subscriber world
+            (Cascade, world)
+
+        static let handleEmitterHeightImageChange evt world =
+            let emitterHeightImage = evt.Data.Value :?> Image AssetTag
+            let world = updateEmitter (fun emitter -> if assetNeq emitter.HeightImage emitterHeightImage then { emitter with HeightImage = emitterHeightImage } else emitter) evt.Subscriber world
             (Cascade, world)
 
         static let handleEmitterMinFilterOptChange evt world =
@@ -1787,6 +1801,7 @@ module BasicStaticBillboardEmitterFacetModule =
              define Entity.EmitterAmbientOcclusionImage Assets.Default.MaterialAmbientOcclusion
              define Entity.EmitterEmissionImage Assets.Default.MaterialEmission
              define Entity.EmitterNormalImage Assets.Default.MaterialNormal
+             define Entity.EmitterHeightImage Assets.Default.MaterialHeight
              define Entity.EmitterMinFilterOpt None
              define Entity.EmitterMagFilterOpt None
              define Entity.EmitterLifeTimeOpt GameTime.zero
@@ -1812,6 +1827,7 @@ module BasicStaticBillboardEmitterFacetModule =
             let world = World.monitor handleEmitterAmbientOcclusionImageChange (entity.GetChangeEvent (nameof entity.EmitterAmbientOcclusionImage)) entity world
             let world = World.monitor handleEmitterEmissionImageChange (entity.GetChangeEvent (nameof entity.EmitterEmissionImage)) entity world
             let world = World.monitor handleEmitterNormalImageChange (entity.GetChangeEvent (nameof entity.EmitterNormalImage)) entity world
+            let world = World.monitor handleEmitterHeightImageChange (entity.GetChangeEvent (nameof entity.EmitterHeightImage)) entity world
             let world = World.monitor handleEmitterMinFilterOptChange (entity.GetChangeEvent (nameof entity.EmitterMinFilterOpt)) entity world
             let world = World.monitor handleEmitterMagFilterOptChange (entity.GetChangeEvent (nameof entity.EmitterMagFilterOpt)) entity world
             let world = World.monitor handleEmitterRenderTypeChange (entity.GetChangeEvent (nameof entity.EmitterRenderType)) entity world
@@ -1855,6 +1871,7 @@ module BasicStaticBillboardEmitterFacetModule =
                               RoughnessOpt = match emitterProperties.RoughnessOpt with Some roughness -> Some roughness | None -> descriptor.SurfaceProperties.RoughnessOpt
                               AmbientOcclusionOpt = match emitterProperties.AmbientOcclusionOpt with Some ambientOcclusion -> Some ambientOcclusion | None -> descriptor.SurfaceProperties.AmbientOcclusionOpt
                               EmissionOpt = match emitterProperties.EmissionOpt with Some emission -> Some emission | None -> descriptor.SurfaceProperties.EmissionOpt
+                              HeightOpt = match emitterProperties.HeightOpt with Some height -> Some height | None -> descriptor.SurfaceProperties.HeightOpt
                               InvertRoughnessOpt = match emitterProperties.InvertRoughnessOpt with Some invertRoughness -> Some invertRoughness | None -> descriptor.SurfaceProperties.InvertRoughnessOpt }
                         Some
                             (RenderBillboardParticles
@@ -1866,6 +1883,7 @@ module BasicStaticBillboardEmitterFacetModule =
                                   AmbientOcclusionImage = descriptor.AmbientOcclusionImage
                                   EmissionImage = descriptor.EmissionImage
                                   NormalImage = descriptor.NormalImage
+                                  HeightImage = descriptor.HeightImage
                                   MinFilterOpt = descriptor.MinFilterOpt
                                   MagFilterOpt = descriptor.MagFilterOpt
                                   RenderType = descriptor.RenderType

@@ -1018,6 +1018,7 @@ module StaticBillboardDispatcherModule =
              define Entity.AmbientOcclusionImage Assets.Default.MaterialAmbientOcclusion
              define Entity.EmissionImage Assets.Default.MaterialEmission
              define Entity.NormalImage Assets.Default.MaterialNormal
+             define Entity.HeightImage Assets.Default.MaterialHeight
              define Entity.TextureMinFilterOpt None
              define Entity.TextureMagFilterOpt None
              define Entity.RenderStyle Deferred]
@@ -1164,6 +1165,7 @@ module StaticModelHierarchyDispatcherModule =
                                   RoughnessOpt = Some surface.SurfaceMaterial.Roughness
                                   AmbientOcclusionOpt = Some surface.SurfaceMaterial.AmbientOcclusion
                                   EmissionOpt = Some surface.SurfaceMaterial.Emission
+                                  HeightOpt = Some surface.SurfaceMaterial.Height
                                   InvertRoughnessOpt = Some surface.SurfaceMaterial.InvertRoughness }
                             let world = child.SetSurfaceProperties surfaceProperties world
                             let world = child.QuickSize world
