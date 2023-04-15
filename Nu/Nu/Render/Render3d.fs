@@ -68,7 +68,7 @@ type [<NoEquality; NoComparison>] BillboardParticlesDescriptor =
 
 /// A collection of render tasks in a pass.
 and [<ReferenceEquality>] RenderTasks =
-    { RenderSkyBoxes : (Color * single * CubeMap AssetTag) SegmentedList
+    { RenderSkyBoxes : (Color * single * Color * single * CubeMap AssetTag) SegmentedList
       RenderLights : SortableLight SegmentedList
       RenderSurfacesDeferredAbsolute : Dictionary<OpenGL.PhysicallyBased.PhysicallyBasedSurface, struct (Matrix4x4 * Box2 * SurfaceProperties) SegmentedList>
       RenderSurfacesDeferredRelative : Dictionary<OpenGL.PhysicallyBased.PhysicallyBasedSurface, struct (Matrix4x4 * Box2 * SurfaceProperties) SegmentedList>
@@ -124,6 +124,8 @@ and [<ReferenceEquality>] DestroyUserDefinedStaticModel =
 and [<ReferenceEquality>] RenderSkyBox =
     { AmbientColor : Color
       AmbientBrightness : single
+      CubeMapColor : Color
+      CubeMapBrightness : single
       CubeMap : CubeMap AssetTag }
 
 and [<ReferenceEquality>] RenderLight3d =
@@ -1154,7 +1156,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 | DestroyUserDefinedStaticModel dudsm ->
                     SegmentedList.add dudsm.StaticModel userDefinedStaticModelsToDestroy
                 | RenderSkyBox rsb ->
-                    SegmentedList.add (rsb.AmbientColor, rsb.AmbientBrightness, rsb.CubeMap) renderer.RenderTasks.RenderSkyBoxes
+                    SegmentedList.add (rsb.AmbientColor, rsb.AmbientBrightness, rsb.CubeMapColor, rsb.CubeMapBrightness, rsb.CubeMap) renderer.RenderTasks.RenderSkyBoxes
                 | RenderLight3d rl3 ->
                     let light =
                         { SortableLightOrigin = rl3.Origin
@@ -1234,12 +1236,12 @@ type [<ReferenceEquality>] GlRenderer3d =
             // attempt to locate last sky box
             let (lightAmbientColor, lightAmbientBrightness, skyBoxOpt) =
                 match Seq.tryLast renderer.RenderTasks.RenderSkyBoxes with
-                | Some (lightAmbientColor, lightAmbientBrightness, cubeMap) ->
-                    match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize cubeMap) renderer with
+                | Some (lightAmbientColor, lightAmbientBrightness, cubeMapColor, cubeMapBrightness, cubeMapAsset) ->
+                    match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize cubeMapAsset) renderer with
                     | ValueSome asset ->
                         match asset with
                         | CubeMapAsset (_, cubeMap, cubeMapIrradianceAndEnvironmentMapOptRef) ->
-                            let cubeMapOpt = Some (cubeMap, cubeMapIrradianceAndEnvironmentMapOptRef)
+                            let cubeMapOpt = Some (cubeMapColor, cubeMapBrightness, cubeMap, cubeMapIrradianceAndEnvironmentMapOptRef)
                             (lightAmbientColor, lightAmbientBrightness, cubeMapOpt)
                         | _ ->
                             Log.debug "Could not utilize sky box due to mismatched cube map asset."
@@ -1255,7 +1257,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             // retrieve an irradiance map, preferably from the sky box
             let (irradianceMap, environmentFilterMap) =
                 match skyBoxOpt with
-                | Some (cubeMap, irradianceAndEnviconmentMapsOptRef) ->
+                | Some (_, _, cubeMap, irradianceAndEnviconmentMapsOptRef) ->
                     if Option.isNone irradianceAndEnviconmentMapsOptRef.Value then
                         let irradianceMap =
                             GlRenderer3d.createIrradianceMap
@@ -1361,8 +1363,9 @@ type [<ReferenceEquality>] GlRenderer3d =
 
             // attempt to render sky box
             match skyBoxOpt with
-            | Some (cubeMap, _) ->
-                OpenGL.SkyBox.DrawSkyBox (viewSkyBoxArray, projectionArray, cubeMap, renderer.RenderSkyBoxGeometry, renderer.RenderSkyBoxShader)
+            | Some (cubeMapColor, cubeMapBrightness, cubeMap, _) ->
+                let cubeMapColor = [|cubeMapColor.R; cubeMapColor.G; cubeMapColor.B|]
+                OpenGL.SkyBox.DrawSkyBox (viewSkyBoxArray, projectionArray, cubeMapColor, cubeMapBrightness, cubeMap, renderer.RenderSkyBoxGeometry, renderer.RenderSkyBoxShader)
                 OpenGL.Hl.Assert ()
             | None -> ()
 

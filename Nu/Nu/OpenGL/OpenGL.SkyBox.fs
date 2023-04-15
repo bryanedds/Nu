@@ -34,6 +34,8 @@ module SkyBox =
     type SkyBoxShader =
         { ViewUniform : int
           ProjectionUniform : int
+          ColorUniform : int
+          BrightnessUniform : int
           CubeMapUniform : int
           SkyBoxShader : uint }
 
@@ -43,6 +45,8 @@ module SkyBox =
           ProjectionUniform : int
           RoughnessUniform : int
           ResolutionUniform : int
+          ColorUniform : int
+          BrightnessUniform : int
           CubeMapUniform : int
           EnvironmentFilterShader : uint }
 
@@ -194,11 +198,15 @@ module SkyBox =
         // retrieve uniforms
         let viewUniform = Gl.GetUniformLocation (shader, "view")
         let projectionUniform = Gl.GetUniformLocation (shader, "projection")
+        let colorUniform = Gl.GetUniformLocation (shader, "color")
+        let brightnessUniform = Gl.GetUniformLocation (shader, "brightness")
         let cubeMapUniform = Gl.GetUniformLocation (shader, "cubeMap")
 
         // make shader record
         { ViewUniform = viewUniform
           ProjectionUniform = projectionUniform
+          ColorUniform = colorUniform
+          BrightnessUniform = brightnessUniform
           CubeMapUniform = cubeMapUniform
           SkyBoxShader = shader }
 
@@ -213,6 +221,8 @@ module SkyBox =
         let projectionUniform = Gl.GetUniformLocation (shader, "projection")
         let roughnessUniform = Gl.GetUniformLocation (shader, "roughness")
         let resolutionUniform = Gl.GetUniformLocation (shader, "resolution")
+        let colorUniform = Gl.GetUniformLocation (shader, "color")
+        let brightnessUniform = Gl.GetUniformLocation (shader, "brightness")
         let cubeMapUniform = Gl.GetUniformLocation (shader, "cubeMap")
 
         // make shader record
@@ -220,6 +230,8 @@ module SkyBox =
           ProjectionUniform = projectionUniform
           RoughnessUniform = roughnessUniform
           ResolutionUniform = resolutionUniform
+          ColorUniform = colorUniform
+          BrightnessUniform = brightnessUniform
           CubeMapUniform = cubeMapUniform
           EnvironmentFilterShader = shader }
 
@@ -227,6 +239,8 @@ module SkyBox =
     let DrawSkyBox
         (view : single array,
          projection : single array,
+         color : single array,
+         brightness : single,
          cubeMap : uint,
          geometry : SkyBoxGeometry,
          shader : SkyBoxShader) =
@@ -240,6 +254,8 @@ module SkyBox =
         Gl.UseProgram shader.SkyBoxShader
         Gl.UniformMatrix4 (shader.ViewUniform, false, view)
         Gl.UniformMatrix4 (shader.ProjectionUniform, false, projection)
+        Gl.Uniform3 (shader.ColorUniform, color)
+        Gl.Uniform1 (shader.BrightnessUniform, brightness)
         Gl.ActiveTexture TextureUnit.Texture0
         Gl.BindTexture (TextureTarget.TextureCubeMap, cubeMap)
         Hl.Assert ()
@@ -355,10 +371,11 @@ module SkyBox =
         let projection = (Matrix4x4.CreatePerspectiveFieldOfView (MathHelper.PiOver2, 1.0f, 0.1f, 10.0f)).ToArray ()
 
         // render faces to irradiant map
+        let color = [|1.0f; 1.0f; 1.0f|]
         for i in 0 .. dec 6 do
             let target = LanguagePrimitives.EnumOfValue (int TextureTarget.TextureCubeMapPositiveX + i)
             Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, target, irradianceMap, 0)
-            DrawSkyBox (views.[i], projection, skyBoxSurface.CubeMap, skyBoxSurface.SkyBoxGeometry, irradianceShader)
+            DrawSkyBox (views.[i], projection, color, 1.0f, skyBoxSurface.CubeMap, skyBoxSurface.SkyBoxGeometry, irradianceShader)
             Hl.Assert ()
 
         // restore viewport

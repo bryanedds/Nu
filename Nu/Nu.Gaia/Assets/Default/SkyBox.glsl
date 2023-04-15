@@ -21,9 +21,12 @@ in vec3 texCoordsOut;
 
 out vec4 frag;
 
+uniform vec3 color;
+uniform float brightness;
 uniform samplerCube cubeMap;
 
 void main()
-{    
-    frag = texture(cubeMap, texCoordsOut);
+{
+    vec4 color4 = vec4(color, 1.0f);
+    frag = texture(cubeMap, texCoordsOut) * color4 * brightness;
 }

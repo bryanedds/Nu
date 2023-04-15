@@ -1379,6 +1379,9 @@ module SkyBoxFacetModule =
         member this.GetAmbientBrightness world : single = this.Get (nameof this.AmbientBrightness) world
         member this.SetAmbientBrightness (value : single) world = this.Set (nameof this.AmbientBrightness) value world
         member this.AmbientBrightness = lens (nameof this.AmbientBrightness) this this.GetAmbientBrightness this.SetAmbientBrightness
+        member this.GetBrightness world : single = this.Get (nameof this.Brightness) world
+        member this.SetBrightness (value : single) world = this.Set (nameof this.Brightness) value world
+        member this.Brightness = lens (nameof this.Brightness) this this.GetBrightness this.SetBrightness
         member this.GetCubeMap world : CubeMap AssetTag = this.Get (nameof this.CubeMap) world
         member this.SetCubeMap (value : CubeMap AssetTag) world = this.Set (nameof this.CubeMap) value world
         member this.CubeMap = lens (nameof this.CubeMap) this this.GetCubeMap this.SetCubeMap
@@ -1391,6 +1394,8 @@ module SkyBoxFacetModule =
              define Entity.Presence Omnipresent
              define Entity.AmbientColor Color.White
              define Entity.AmbientBrightness 1.0f
+             define Entity.Color Color.White
+             define Entity.Brightness 1.0f
              define Entity.CubeMap Assets.Default.SkyBoxMap]
 
         override this.Render (entity, world) =
@@ -1398,6 +1403,8 @@ module SkyBoxFacetModule =
                 (RenderSkyBox
                     { AmbientColor = entity.GetAmbientColor world
                       AmbientBrightness = entity.GetAmbientBrightness world
+                      CubeMapColor = entity.GetColor world
+                      CubeMapBrightness = entity.GetBrightness world
                       CubeMap = entity.GetCubeMap world })
                 world
 
@@ -1405,9 +1412,6 @@ module SkyBoxFacetModule =
 module LightFacet3dModule =
 
     type Entity with
-        member this.GetBrightness world : single = this.Get (nameof this.Brightness) world
-        member this.SetBrightness (value : single) world = this.Set (nameof this.Brightness) value world
-        member this.Brightness = lens (nameof this.Brightness) this this.GetBrightness this.SetBrightness
         member this.GetAttenuationLinear world : single = this.Get (nameof this.AttenuationLinear) world
         member this.SetAttenuationLinear (value : single) world = this.Set (nameof this.AttenuationLinear) value world
         member this.AttenuationLinear = lens (nameof this.AttenuationLinear) this this.GetAttenuationLinear this.SetAttenuationLinear
