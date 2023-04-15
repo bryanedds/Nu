@@ -647,33 +647,34 @@ module PhysicallyBased =
             else defaultMaterial.MetallicTexture
 
         // attempt to load roughness info
+        let invertRoughness = has_bc || has_d // NOTE: assume texture from Unity export if it has this weird naming.
         let roughness =
             if material.HasShininess && material.Shininess <= 1.0f // NOTE: special to ignore seemingly errant values.
             then 1.0f - min material.Shininess 1.0f
             else Constants.Render.RoughnessDefault
         let mutable (_, roughnessTextureSlot) = material.GetMaterialTexture (Assimp.TextureType.Roughness, 0)
         if isNull roughnessTextureSlot.FilePath then roughnessTextureSlot.FilePath <- "" // ensure not null
-        let (invertRoughness, roughnessTexture) =
+        let roughnessTexture =
             if renderable then
                 match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + roughnessTextureSlot.FilePath, textureMemo) with
-                | Right (_, texture) -> (Path.GetFileName(roughnessTextureSlot.FilePath).Contains "_g", texture)
+                | Right (_, texture) -> texture
                 | Left _ ->
                     match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + gTextureFilePath, textureMemo) with
-                    | Right (_, texture) -> (true, texture)
+                    | Right (_, texture) -> texture
                     | Left _ ->
                         match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + sTextureFilePath, textureMemo) with
-                        | Right (_, texture) -> (true, texture)
+                        | Right (_, texture) -> texture
                         | Left _ ->
                             match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + m_gTextureFilePath, textureMemo) with
-                            | Right (_, texture) -> (true, texture)
+                            | Right (_, texture) -> texture
                             | Left _ ->
                                 match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + m_ao_gTextureFilePath, textureMemo) with
-                                | Right (_, texture) -> (true, texture)
+                                | Right (_, texture) -> texture
                                 | Left _ ->
                                     match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + roughnessTextureFilePath, textureMemo) with
-                                    | Right (_, texture) -> (false, texture)
-                                    | Left _ -> (false, defaultMaterial.RoughnessTexture)
-            else (false, defaultMaterial.RoughnessTexture)
+                                    | Right (_, texture) -> texture
+                                    | Left _ -> defaultMaterial.RoughnessTexture
+            else defaultMaterial.RoughnessTexture
 
         // attempt to load ambient occlusion info
         let ambientOcclusion =
