@@ -994,6 +994,7 @@ type [<ReferenceEquality>] StaticBillboardEmitter<'a when 'a :> Particle and 'a 
       AmbientOcclusionImage : Image AssetTag
       EmissionImage : Image AssetTag
       NormalImage : Image AssetTag
+      HeightImage : Image AssetTag
       MinFilterOpt : OpenGL.TextureMinFilter option
       MagFilterOpt : OpenGL.TextureMagFilter option
       RenderType : RenderType
@@ -1064,7 +1065,7 @@ type [<ReferenceEquality>] StaticBillboardEmitter<'a when 'a :> Particle and 'a 
 
     /// Make a basic particle emitter.
     static member make<'a>
-        time body absolute surfaceProperties albedoImage metallicImage roughnessImage ambientOcclusionImage emissionImage normalImage
+        time body absolute surfaceProperties albedoImage metallicImage roughnessImage ambientOcclusionImage emissionImage normalImage heightImage
         minFilterOpt magFilterOpt renderType lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
         constrain particleInitializer particleBehavior particleBehaviors emitterBehavior emitterBehaviors toParticlesDescriptor : 'a StaticBillboardEmitter =
         { Body = body
@@ -1075,9 +1076,10 @@ type [<ReferenceEquality>] StaticBillboardEmitter<'a when 'a :> Particle and 'a 
           RoughnessImage = roughnessImage
           AmbientOcclusionImage = ambientOcclusionImage
           EmissionImage = emissionImage
+          NormalImage = normalImage
+          HeightImage = heightImage
           MinFilterOpt = minFilterOpt
           MagFilterOpt = magFilterOpt
-          NormalImage = normalImage
           RenderType = renderType
           Life = Life.make time lifeTimeOpt
           ParticleLifeTimeMaxOpt = particleLifeTimeMaxOpt
@@ -1148,6 +1150,7 @@ module BasicStaticBillboardEmitter =
               AmbientOcclusionImage = emitter.AmbientOcclusionImage
               EmissionImage = emitter.EmissionImage
               NormalImage = emitter.NormalImage
+              HeightImage = emitter.HeightImage
               MinFilterOpt = emitter.MinFilterOpt
               MagFilterOpt = emitter.MagFilterOpt
               RenderType = emitter.RenderType
@@ -1160,11 +1163,11 @@ module BasicStaticBillboardEmitter =
 
     /// Make a basic static billboard particle emitter.
     let make
-        time body absolute surfaceProperties albedoImage metallicImage roughnessImage ambientOcclusionImage emissionImage normalImage
+        time body absolute surfaceProperties albedoImage metallicImage roughnessImage ambientOcclusionImage emissionImage normalImage heightImage
         minFilterOpt maxFilterOpt renderType lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
         constrain particleInitializer particleBehavior particleBehaviors emitterBehavior emitterBehaviors =
         BasicStaticBillboardEmitter.make
-            time body absolute surfaceProperties albedoImage metallicImage roughnessImage ambientOcclusionImage emissionImage normalImage
+            time body absolute surfaceProperties albedoImage metallicImage roughnessImage ambientOcclusionImage emissionImage normalImage heightImage
             minFilterOpt maxFilterOpt renderType lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
             constrain particleInitializer particleBehavior particleBehaviors emitterBehavior emitterBehaviors toParticlesDescriptor
 
@@ -1176,6 +1179,7 @@ module BasicStaticBillboardEmitter =
         let ambientOcclusionImage = asset Assets.Default.PackageName Assets.Default.MaterialAmbientOcclusionName
         let emissionImage = asset Assets.Default.PackageName Assets.Default.MaterialEmissionName
         let normalImage = asset Assets.Default.PackageName Assets.Default.MaterialNormalName
+        let heightImage = asset Assets.Default.PackageName Assets.Default.MaterialHeightName
         let particleSeed = Unchecked.defaultof<BasicParticle>
         let particleInitializer = fun _ (emitter : BasicStaticBillboardEmitter) -> emitter.ParticleSeed
         let particleBehavior = fun _ _ -> Output.empty
@@ -1183,7 +1187,7 @@ module BasicStaticBillboardEmitter =
         let emitterBehavior = fun _ _ -> Output.empty
         let emitterBehaviors = Behaviors.empty
         make
-            time Body.defaultBody false Unchecked.defaultof<_> albedoImage metallicImage roughnessImage ambientOcclusionImage emissionImage normalImage
+            time Body.defaultBody false Unchecked.defaultof<_> albedoImage metallicImage roughnessImage ambientOcclusionImage emissionImage normalImage heightImage
             None None (ForwardRenderType (0.0f, 0.0f)) lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
             Constraint.empty particleInitializer particleBehavior particleBehaviors emitterBehavior emitterBehaviors
 
@@ -1195,6 +1199,7 @@ module BasicStaticBillboardEmitter =
         let ambientOcclusionImage = asset Assets.Default.PackageName Assets.Default.MaterialAmbientOcclusionName
         let emissionImage = asset Assets.Default.PackageName Assets.Default.MaterialEmissionName
         let normalImage = asset Assets.Default.PackageName Assets.Default.MaterialNormalName
+        let heightImage = asset Assets.Default.PackageName Assets.Default.MaterialHeightName
         let particleSeed =
             { Life = Life.make GameTime.zero (GameTime.ofSeconds 2.0f)
               Body = Body.defaultBody
@@ -1239,7 +1244,7 @@ module BasicStaticBillboardEmitter =
         let emitterBehaviors =
             Behaviors.empty
         make
-            time Body.defaultBody false Unchecked.defaultof<_> albedoImage metallicImage roughnessImage ambientOcclusionImage emissionImage normalImage
+            time Body.defaultBody false Unchecked.defaultof<_> albedoImage metallicImage roughnessImage ambientOcclusionImage emissionImage normalImage heightImage
             None None (ForwardRenderType (0.0f, 0.0f)) lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
             Constraint.empty particleInitializer particleBehavior particleBehaviors emitterBehavior emitterBehaviors
 
@@ -1252,6 +1257,7 @@ type [<ReferenceEquality>] BillboardEmitterDescriptor<'a when 'a :> Particle and
       AmbientOcclusionImage : Image AssetTag
       EmissionImage : Image AssetTag
       NormalImage : Image AssetTag
+      HeightImage : Image AssetTag
       MinFilterOpt : OpenGL.TextureMinFilter voption
       MagFilterOpt : OpenGL.TextureMagFilter voption
       RenderType : RenderType

@@ -51,6 +51,7 @@ type Slice =
       Color : Color
       Blend : Blend
       Emission : Color
+      Height : single
       Flip : Flip
       Brightness : single
       AttenuationLinear : single
@@ -150,6 +151,7 @@ and Aspect =
     | Color of Color
     | Blend of Blend
     | Emission of Color
+    | Height of single
     | Flip of Flip
     | Brightness of single
     | AttenuationLinear of single
@@ -167,6 +169,7 @@ and Aspect =
     | Insets of TweenApplicator * TweenAlgorithm * Playback * TweenBox2KeyFrame array
     | Colors of TweenApplicator * TweenAlgorithm * Playback * TweenCKeyFrame array
     | Emissions of TweenApplicator * TweenAlgorithm * Playback * TweenCKeyFrame array
+    | Heights of TweenApplicator * TweenAlgorithm * Playback * TweenKeyFrame array
     | Volumes of TweenApplicator * TweenAlgorithm * Playback * TweenKeyFrame array
     | Expand of string * Argument array
     | Aspects of Aspect array
@@ -176,7 +179,7 @@ and Content =
     | StaticSprite of Resource * Aspect array * Content
     | AnimatedSprite of Resource * Vector2i * int * int * GameTime * Playback * Aspect array * Content
     | TextSprite of Resource * string * Aspect array * Content
-    | Billboard of Resource * Resource * Resource * Resource * Resource * Resource * OpenGL.TextureMinFilter option * OpenGL.TextureMagFilter option * Aspect array * Content
+    | Billboard of Resource * Resource * Resource * Resource * Resource * Resource * Resource * OpenGL.TextureMinFilter option * OpenGL.TextureMagFilter option * Aspect array * Content
     | StaticModel of Resource * Aspect array * Content
     | Light3d of LightType * Aspect array * Content
     | SoundEffect of Resource * Aspect array * Content
@@ -209,8 +212,8 @@ type Definitions =
      "Rate " +
      "Shift " +
      "Resource Expand " +
-     "Enabled PositionAbsolute PositionRelative Translation Scale Offset Angles Degrees Size Elevation Inset Color Emission Volume " +
-     "Enableds Positions Translations Scales Offsets Angleses Degreeses Sizes Elevations Insets Colors Emissions Volumes Aspects " +
+     "Enabled PositionAbsolute PositionRelative Translation Scale Offset Angles Degrees Size Elevation Inset Color Emission Height Volume " +
+     "Enableds Positions Translations Scales Offsets Angleses Degreeses Sizes Elevations Insets Colors Emissions Heights Volumes Aspects " +
      "Expand " +
      "StaticSprite AnimatedSprite TextSprite SoundEffect Mount Repeat Emit Delay Segment Composite Tag Nil " +
      "View",
@@ -435,6 +438,7 @@ module EffectSystem =
         | Color color -> { slice with Color = color }
         | Blend blend -> { slice with Blend = blend }
         | Emission emission -> { slice with Emission = emission }
+        | Height height -> { slice with Height = height }
         | Flip flip -> { slice with Flip = flip }
         | Brightness brightness -> { slice with Brightness = brightness }
         | AttenuationLinear attenuationLinear -> { slice with AttenuationLinear = attenuationLinear }
@@ -532,7 +536,15 @@ module EffectSystem =
                 let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
                 let tweened = tween Color.op_Multiply keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
                 let applied = applyTween Color.Multiply Color.Divide Color.Pow Color.Modulo slice.Color tweened applicator
-                { slice with Color = applied }
+                { slice with Emission = applied }
+            else slice
+        | Heights (applicator, algorithm, playback, keyFrames) ->
+            if Array.notEmpty keyFrames then
+                let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectLocalTime playback keyFrames
+                let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
+                let tweened = tween (fun (x, y) -> x * y) keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
+                let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) (fun (x, y) -> single (Math.Pow (double x, double y))) (fun (x, y) -> x % y) slice.Elevation tweened applicator
+                { slice with Height = applied }
             else slice
         | Volumes (applicator, algorithm, playback, keyFrames) ->
             if Array.notEmpty keyFrames then
@@ -664,7 +676,7 @@ module EffectSystem =
         // build implicitly mounted content
         evalContent content slice history effectSystem
 
-    and private evalBillboard resourceAlbedo resourceMetallic resourceRoughness resourceAmbientOcclusion resourceEmission resourceNormal minFilterOpt magFilterOpt aspects content (slice : Slice) history effectSystem =
+    and private evalBillboard resourceAlbedo resourceMetallic resourceRoughness resourceAmbientOcclusion resourceEmission resourceNormal resourceHeight minFilterOpt magFilterOpt aspects content (slice : Slice) history effectSystem =
 
         // pull image from resource
         let imageAlbedo = evalResource resourceAlbedo effectSystem
@@ -673,6 +685,7 @@ module EffectSystem =
         let imageAmbientOcclusion = evalResource resourceAmbientOcclusion effectSystem
         let imageEmission = evalResource resourceEmission effectSystem
         let imageNormal = evalResource resourceNormal effectSystem
+        let imageHeight = evalResource resourceHeight effectSystem
 
         // eval aspects
         let slice = evalAspects aspects slice effectSystem
@@ -686,6 +699,7 @@ module EffectSystem =
                 let imageAmbientOcclusion = AssetTag.specialize<Image> imageAmbientOcclusion
                 let imageEmission = AssetTag.specialize<Image> imageEmission
                 let imageNormal = AssetTag.specialize<Image> imageNormal
+                let imageHeight = AssetTag.specialize<Image> imageHeight
                 let affineMatrix = Matrix4x4.CreateFromTrs (slice.Position, slice.Angles.RollPitchYaw, slice.Scale)
                 let insetOpt = if slice.Inset.Equals box2Zero then None else Some slice.Inset
                 let properties =
@@ -694,6 +708,7 @@ module EffectSystem =
                       RoughnessOpt = None
                       AmbientOcclusionOpt = None
                       EmissionOpt = Some slice.Emission.R
+                      HeightOpt = Some slice.Height
                       InvertRoughnessOpt = None }
                 let modelView =
                     Render3d
@@ -708,6 +723,7 @@ module EffectSystem =
                               AmbientOcclusionImage = imageAmbientOcclusion
                               EmissionImage = imageEmission
                               NormalImage = imageNormal
+                              HeightImage = imageHeight
                               MinFilterOpt = minFilterOpt
                               MagFilterOpt = magFilterOpt
                               RenderType = effectSystem.EffectRenderType })
@@ -737,6 +753,7 @@ module EffectSystem =
                       RoughnessOpt = None
                       AmbientOcclusionOpt = None
                       EmissionOpt = Some slice.Emission.R
+                      HeightOpt = Some slice.Height
                       InvertRoughnessOpt = None }
                 let modelView =
                     Render3d
@@ -888,8 +905,8 @@ module EffectSystem =
             evalAnimatedSprite resource celSize celRun celCount delay playback aspects content slice history effectSystem
         | TextSprite (resource, text, aspects, content) ->
             evalTextSprite resource text aspects content slice history effectSystem
-        | Billboard (resourceAlbedo, resourceMetallic, resourceRoughness, resourceAmbientOcclusion, resourceEmission, resourceNormal, minFilterOpt, magFilterOpt, aspects, content) ->
-            evalBillboard resourceAlbedo resourceMetallic resourceRoughness resourceAmbientOcclusion resourceEmission resourceNormal minFilterOpt magFilterOpt aspects content slice history effectSystem
+        | Billboard (resourceAlbedo, resourceMetallic, resourceRoughness, resourceAmbientOcclusion, resourceEmission, resourceNormal, resourceHeight, minFilterOpt, magFilterOpt, aspects, content) ->
+            evalBillboard resourceAlbedo resourceMetallic resourceRoughness resourceAmbientOcclusion resourceEmission resourceNormal resourceHeight minFilterOpt magFilterOpt aspects content slice history effectSystem
         | StaticModel (resource, aspects, content) ->
             evalStaticModel resource aspects content slice history effectSystem
         | Light3d (lightType, aspects, content) ->
