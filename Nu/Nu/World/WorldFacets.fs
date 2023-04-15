@@ -1373,6 +1373,12 @@ module LayoutFacetModule =
 module SkyBoxFacetModule =
 
     type Entity with
+        member this.GetAmbientColor world : Color = this.Get (nameof this.AmbientColor) world
+        member this.SetAmbientColor (value : Color) world = this.Set (nameof this.AmbientColor) value world
+        member this.AmbientColor = lens (nameof this.AmbientColor) this this.GetAmbientColor this.SetAmbientColor
+        member this.GetAmbientBrightness world : single = this.Get (nameof this.AmbientBrightness) world
+        member this.SetAmbientBrightness (value : single) world = this.Set (nameof this.AmbientBrightness) value world
+        member this.AmbientBrightness = lens (nameof this.AmbientBrightness) this this.GetAmbientBrightness this.SetAmbientBrightness
         member this.GetCubeMap world : CubeMap AssetTag = this.Get (nameof this.CubeMap) world
         member this.SetCubeMap (value : CubeMap AssetTag) world = this.Set (nameof this.CubeMap) value world
         member this.CubeMap = lens (nameof this.CubeMap) this this.GetCubeMap this.SetCubeMap
@@ -1383,11 +1389,17 @@ module SkyBoxFacetModule =
         static member Properties =
             [define Entity.Absolute true
              define Entity.Presence Omnipresent
+             define Entity.AmbientColor Color.White
+             define Entity.AmbientBrightness 1.0f
              define Entity.CubeMap Assets.Default.SkyBoxMap]
 
         override this.Render (entity, world) =
-            let cubeMap = entity.GetCubeMap world
-            World.enqueueRenderMessage3d (RenderSkyBox { CubeMap = cubeMap }) world
+            World.enqueueRenderMessage3d
+                (RenderSkyBox
+                    { AmbientColor = entity.GetAmbientColor world
+                      AmbientBrightness = entity.GetAmbientBrightness world
+                      CubeMap = entity.GetCubeMap world })
+                world
 
 [<AutoOpen>]
 module LightFacet3dModule =
