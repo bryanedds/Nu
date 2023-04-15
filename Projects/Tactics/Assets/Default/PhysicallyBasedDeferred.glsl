@@ -100,7 +100,7 @@ void main()
     // compute albedo, discarding on zero alpha
     vec4 albedoSample = texture(albedoTexture, texCoordsOut);
     if (albedoSample.a == 0.0f) discard;
-    albedo = pow(albedoSample.rgb * albedoOut.rgb, vec3(GAMMA));
+    albedo = pow(albedoSample.rgb, vec3(GAMMA)) * albedoOut.rgb;
 
     // compute material properties
     float metallic = texture(metallicTexture, texCoordsOut).r * materialOut.r;

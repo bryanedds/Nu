@@ -29,9 +29,11 @@ uniform sampler2D normalTexture;
 uniform samplerCube irradianceMap;
 uniform samplerCube environmentFilterMap;
 uniform sampler2D brdfTexture;
+uniform vec3 lightAmbientColor;
+uniform float lightAmbientBrightness;
 uniform vec3 lightOrigins[LIGHTS_MAX];
 uniform vec3 lightDirections[LIGHTS_MAX];
-uniform vec4 lightColors[LIGHTS_MAX];
+uniform vec3 lightColors[LIGHTS_MAX];
 uniform float lightBrightnesses[LIGHTS_MAX];
 uniform float lightAttenuationLinears[LIGHTS_MAX];
 uniform float lightAttenuationQuadratics[LIGHTS_MAX];
@@ -126,14 +128,14 @@ void main()
             float coneBetween = angle - lightConeInners[i];
             float coneScalar = clamp(1.0f - coneBetween / coneDelta, 0.0f, 1.0f);
             float intensity = attenuation * coneScalar;
-            radiance = lightColors[i].rgb * lightBrightnesses[i] * intensity;
+            radiance = lightColors[i] * lightBrightnesses[i] * intensity;
         }
         else
         {
             d = lightDirections[i];
             l = d;
             h = normalize(v + l);
-            radiance = lightColors[i].rgb * lightBrightnesses[i];
+            radiance = lightColors[i] * lightBrightnesses[i];
         }
 
         // cook-torrance brdf
@@ -163,13 +165,13 @@ void main()
     vec3 kS = f;
     vec3 kD = 1.0 - kS;
     kD *= 1.0 - metallic;
-    vec3 irradiance = texture(irradianceMap, normal).rgb;
+    vec3 irradiance = texture(irradianceMap, normal).rgb * lightAmbientColor * lightAmbientBrightness;
     vec3 diffuse = irradiance * albedo;
 
     // compute specular term
-    vec3 environmentFilterColor = textureLod(environmentFilterMap, r, roughness * (REFLECTION_LOD_MAX - 1.0)).rgb;
+    vec3 environmentFilter = textureLod(environmentFilterMap, r, roughness * (REFLECTION_LOD_MAX - 1.0)).rgb * lightAmbientColor * lightAmbientBrightness;
     vec2 environmentBrdf = texture(brdfTexture, vec2(max(dot(normal, v), 0.0), roughness)).rg;
-    vec3 specular = environmentFilterColor * (f * environmentBrdf.x + environmentBrdf.y);
+    vec3 specular = environmentFilter * (f * environmentBrdf.x + environmentBrdf.y);
 
     // compute ambient term
     vec3 ambient = (kD * diffuse + specular) * ambientOcclusion;

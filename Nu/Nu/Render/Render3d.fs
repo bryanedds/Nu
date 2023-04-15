@@ -68,7 +68,7 @@ type [<NoEquality; NoComparison>] BillboardParticlesDescriptor =
 
 /// A collection of render tasks in a pass.
 and [<ReferenceEquality>] RenderTasks =
-    { RenderSkyBoxes : CubeMap AssetTag SegmentedList
+    { RenderSkyBoxes : (Color * single * CubeMap AssetTag) SegmentedList
       RenderLights : SortableLight SegmentedList
       RenderSurfacesDeferredAbsolute : Dictionary<OpenGL.PhysicallyBased.PhysicallyBasedSurface, struct (Matrix4x4 * Box2 * SurfaceProperties) SegmentedList>
       RenderSurfacesDeferredRelative : Dictionary<OpenGL.PhysicallyBased.PhysicallyBasedSurface, struct (Matrix4x4 * Box2 * SurfaceProperties) SegmentedList>
@@ -122,7 +122,9 @@ and [<ReferenceEquality>] DestroyUserDefinedStaticModel =
     { StaticModel : StaticModel AssetTag }
 
 and [<ReferenceEquality>] RenderSkyBox =
-    { CubeMap : CubeMap AssetTag }
+    { AmbientColor : Color
+      AmbientBrightness : single
+      CubeMap : CubeMap AssetTag }
 
 and [<ReferenceEquality>] RenderLight3d =
     { Origin : Vector3
@@ -818,6 +820,8 @@ type [<ReferenceEquality>] GlRenderer3d =
         irradianceMap
         environmentFilterMap
         brdfTexture
+        lightAmbientColor
+        lightAmbientBrightness
         lightOrigins
         lightDirections
         lightColors
@@ -891,7 +895,8 @@ type [<ReferenceEquality>] GlRenderer3d =
             // draw surfaces
             OpenGL.PhysicallyBased.DrawPhysicallyBasedSurfaces
                 (eyeCenter, parameters.Length, renderer.RenderModelsFields, renderer.RenderTexCoordsOffsetsFields, renderer.RenderAlbedosFields, renderer.PhysicallyBasedMaterialsFields, renderer.PhysicallyBasedInvertRoughnessesFields,
-                 viewArray, projectionArray, blending, irradianceMap, environmentFilterMap, brdfTexture, lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightDirectionals, lightConeInners, lightConeOuters,
+                 viewArray, projectionArray, blending, irradianceMap, environmentFilterMap, brdfTexture, lightAmbientColor, lightAmbientBrightness,
+                 lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightDirectionals, lightConeInners, lightConeOuters,
                  surface.SurfaceMaterial, surface.PhysicallyBasedGeometry, shader)
 
     static member inline private makeBillboardMaterial (properties : SurfaceProperties) albedoImage metallicImage roughnessImage ambientOcclusionImage emissionImage normalImage minFilterOpt magFilterOpt renderer =
@@ -1149,7 +1154,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 | DestroyUserDefinedStaticModel dudsm ->
                     SegmentedList.add dudsm.StaticModel userDefinedStaticModelsToDestroy
                 | RenderSkyBox rsb ->
-                    SegmentedList.add rsb.CubeMap renderer.RenderTasks.RenderSkyBoxes
+                    SegmentedList.add (rsb.AmbientColor, rsb.AmbientBrightness, rsb.CubeMap) renderer.RenderTasks.RenderSkyBoxes
                 | RenderLight3d rl3 ->
                     let light =
                         { SortableLightOrigin = rl3.Origin
@@ -1227,16 +1232,25 @@ type [<ReferenceEquality>] GlRenderer3d =
             OpenGL.Hl.Assert ()
 
             // attempt to locate last sky box
-            let skyBoxOpt =
+            let (lightAmbientColor, lightAmbientBrightness, skyBoxOpt) =
                 match Seq.tryLast renderer.RenderTasks.RenderSkyBoxes with
-                | Some cubeMap ->
+                | Some (lightAmbientColor, lightAmbientBrightness, cubeMap) ->
                     match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize cubeMap) renderer with
                     | ValueSome asset ->
                         match asset with
-                        | CubeMapAsset (_, cubeMap, cubeMapIrradianceAndEnvironmentMapOptRef) -> Some (cubeMap, cubeMapIrradianceAndEnvironmentMapOptRef)
-                        | _ -> Log.debug "Could not utilize sky box due to mismatched cube map asset."; None
-                    | ValueNone -> Log.debug "Could not utilize sky box due to non-existent cube map asset."; None
-                | None -> None
+                        | CubeMapAsset (_, cubeMap, cubeMapIrradianceAndEnvironmentMapOptRef) ->
+                            let cubeMapOpt = Some (cubeMap, cubeMapIrradianceAndEnvironmentMapOptRef)
+                            (lightAmbientColor, lightAmbientBrightness, cubeMapOpt)
+                        | _ ->
+                            Log.debug "Could not utilize sky box due to mismatched cube map asset."
+                            (lightAmbientColor, lightAmbientBrightness, None)
+                    | ValueNone ->
+                        Log.debug "Could not utilize sky box due to non-existent cube map asset."
+                        (lightAmbientColor, lightAmbientBrightness, None)
+                | None -> (Color.White, 1.0f, None)
+
+            // convert light ambient color representation
+            let lightAmbientColor = [|lightAmbientColor.R; lightAmbientColor.G; lightAmbientColor.B|]
 
             // retrieve an irradiance map, preferably from the sky box
             let (irradianceMap, environmentFilterMap) =
@@ -1280,6 +1294,8 @@ type [<ReferenceEquality>] GlRenderer3d =
                     irradianceMap
                     environmentFilterMap
                     renderer.RenderBrdfTexture
+                    lightAmbientColor
+                    lightAmbientBrightness
                     lightOrigins
                     lightDirections
                     lightColors
@@ -1305,6 +1321,8 @@ type [<ReferenceEquality>] GlRenderer3d =
                     irradianceMap
                     environmentFilterMap
                     renderer.RenderBrdfTexture
+                    lightAmbientColor
+                    lightAmbientBrightness
                     lightOrigins
                     lightDirections
                     lightColors
@@ -1336,7 +1354,8 @@ type [<ReferenceEquality>] GlRenderer3d =
             // deferred render lighting quad
             OpenGL.PhysicallyBased.DrawPhysicallyBasedDeferred2Surface
                 (eyeCenter, positionTexture, albedoTexture, materialTexture, normalTexture,
-                 irradianceMap, environmentFilterMap, renderer.RenderBrdfTexture, lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightDirectionals, lightConeInners, lightConeOuters,
+                 irradianceMap, environmentFilterMap, renderer.RenderBrdfTexture, lightAmbientColor, lightAmbientBrightness,
+                 lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightDirectionals, lightConeInners, lightConeOuters,
                  renderer.RenderPhysicallyBasedQuad, renderer.RenderPhysicallyBasedDeferred2Shader)
             OpenGL.Hl.Assert ()
 
@@ -1360,9 +1379,11 @@ type [<ReferenceEquality>] GlRenderer3d =
                     irradianceMap
                     environmentFilterMap
                     renderer.RenderBrdfTexture
-                    lightColors
+                    lightAmbientColor
+                    lightAmbientBrightness
                     lightOrigins
                     lightDirections
+                    lightColors
                     lightBrightnesses
                     lightAttenuationLinears
                     lightAttenuationQuadratics
@@ -1387,6 +1408,8 @@ type [<ReferenceEquality>] GlRenderer3d =
                     irradianceMap
                     environmentFilterMap
                     renderer.RenderBrdfTexture
+                    lightAmbientColor
+                    lightAmbientBrightness
                     lightOrigins
                     lightDirections
                     lightColors
