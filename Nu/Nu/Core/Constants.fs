@@ -108,7 +108,7 @@ module Render =
     let [<Literal>] AttenuationQuadraticDefault = 1.8f
     let [<Uniform>] AlbedoDefault = Color.White
     let [<Literal>] MetallicDefault = 1.0f
-    let [<Uniform>] RoughnessDefault = 0.5f
+    let [<Uniform>] RoughnessDefault = 1.0f
     let [<Literal>] AmbientOcclusionDefault = 1.0f
     let [<Literal>] EmissionDefault = 1.0f
 
