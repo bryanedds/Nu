@@ -608,16 +608,17 @@ module PhysicallyBased =
         let m_gTextureFilePath =        if has_bc         then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("_bc", "_m_g")               elif has_d      then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("_d", "_m_g") else ""
         let m_ao_gTextureFilePath =     if has_bc         then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("_bc", "_m_ao_g")            elif has_d      then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("_d", "_m_ao_g") else ""
         let gTextureFilePath =          if has_bc         then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("_bc", "_g")                 elif has_d      then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("_d", "_g") else ""
+        let sTextureFilePath =          if has_bc         then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("_bc", "_s")                 elif has_d      then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("_d", "_s") else ""
         let aoTextureFilePath =         if has_bc         then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("_bc", "_ao")                elif has_d      then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("_d", "_ao") else ""
         let eTextureFilePath =          if has_bc         then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("_bc", "_e")                 elif has_d      then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("_d", "_e") else ""
         let nTextureFilePath =          if has_bc         then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("_bc", "_n")                 elif has_d      then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("_d", "_n") else ""
         let hTextureFilePath =          if has_bc         then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("_bc", "_h")                 elif has_d      then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("_d", "_h") else ""
-        let metallicTextureFilePath =   if hasBaseColor   then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("BaseColor", "Metallic")     elif hasAlbedo  then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("BaseColor", "Metallic") else ""  
-        let roughnessTextureFilePath =  if hasBaseColor   then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("BaseColor", "Roughness")    elif hasAlbedo  then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("BaseColor", "Roughness") else "" 
-        let aoTextureFilePath' =        if hasBaseColor   then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("BaseColor", "AO")           elif hasAlbedo  then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("BaseColor", "AO") else ""        
-        let normalTextureFilePath =     if hasBaseColor   then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("BaseColor", "Normal")       elif hasAlbedo  then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("BaseColor", "Normal") else ""    
-        let emissionTextureFilePath =   if hasBaseColor   then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("BaseColor", "Emission")     elif hasAlbedo  then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("BaseColor", "Emission") else ""  
-        let heightTextureFilePath =     if hasBaseColor   then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("BaseColor", "Height")       elif hasAlbedo  then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("BaseColor", "Height") else ""  
+        let metallicTextureFilePath =   if hasBaseColor   then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("BaseColor", "Metallic")     elif hasAlbedo  then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("BaseColor", "Metallic") else ""
+        let roughnessTextureFilePath =  if hasBaseColor   then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("BaseColor", "Roughness")    elif hasAlbedo  then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("BaseColor", "Roughness") else ""
+        let aoTextureFilePath' =        if hasBaseColor   then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("BaseColor", "AO")           elif hasAlbedo  then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("BaseColor", "AO") else ""
+        let normalTextureFilePath =     if hasBaseColor   then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("BaseColor", "Normal")       elif hasAlbedo  then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("BaseColor", "Normal") else ""
+        let emissionTextureFilePath =   if hasBaseColor   then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("BaseColor", "Emission")     elif hasAlbedo  then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("BaseColor", "Emission") else ""
+        let heightTextureFilePath =     if hasBaseColor   then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("BaseColor", "Height")       elif hasAlbedo  then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("BaseColor", "Height") else ""
 
         // attempt to load metallic info
         let metallic =
@@ -660,15 +661,18 @@ module PhysicallyBased =
                     match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + gTextureFilePath, textureMemo) with
                     | Right (_, texture) -> (true, texture)
                     | Left _ ->
-                        match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + m_gTextureFilePath, textureMemo) with
+                        match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + sTextureFilePath, textureMemo) with
                         | Right (_, texture) -> (true, texture)
                         | Left _ ->
-                            match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + m_ao_gTextureFilePath, textureMemo) with
+                            match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + m_gTextureFilePath, textureMemo) with
                             | Right (_, texture) -> (true, texture)
                             | Left _ ->
-                                match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + roughnessTextureFilePath, textureMemo) with
-                                | Right (_, texture) -> (false, texture)
-                                | Left _ -> (false, defaultMaterial.RoughnessTexture)
+                                match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + m_ao_gTextureFilePath, textureMemo) with
+                                | Right (_, texture) -> (true, texture)
+                                | Left _ ->
+                                    match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + roughnessTextureFilePath, textureMemo) with
+                                    | Right (_, texture) -> (false, texture)
+                                    | Left _ -> (false, defaultMaterial.RoughnessTexture)
             else (false, defaultMaterial.RoughnessTexture)
 
         // attempt to load ambient occlusion info
@@ -699,9 +703,10 @@ module PhysicallyBased =
             if material.HasTextureEmissive && material.ColorEmissive.R <> 0.0f // NOTE: special case to presume 0.0f indicates missing parameter.
             then material.ColorEmissive.R
             else Constants.Render.EmissionDefault
-        let (_, emissionTextureSlot) = material.GetMaterialTexture (Assimp.TextureType.Emissive, 0)
+        let mutable (_, emissionTextureSlot) = material.GetMaterialTexture (Assimp.TextureType.Emissive, 0)
+        if isNull emissionTextureSlot.FilePath then emissionTextureSlot.FilePath <- "" // ensure not null
         let emissionTexture =
-            if renderable && not (String.IsNullOrEmpty emissionTextureSlot.FilePath) then
+            if renderable then
                 match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + emissionTextureSlot.FilePath, textureMemo) with
                 | Right (_, texture) -> texture
                 | Left _ ->
@@ -714,9 +719,10 @@ module PhysicallyBased =
             else defaultMaterial.EmissionTexture
 
         // attempt to load normal info
-        let (_, normalTextureSlot) = material.GetMaterialTexture (Assimp.TextureType.Normals, 0)
+        let mutable (_, normalTextureSlot) = material.GetMaterialTexture (Assimp.TextureType.Normals, 0)
+        if isNull normalTextureSlot.FilePath then normalTextureSlot.FilePath <- "" // ensure not null
         let normalTexture =
-            if renderable && not (String.IsNullOrEmpty normalTextureSlot.FilePath) then
+            if renderable then
                 match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + normalTextureSlot.FilePath, textureMemo) with
                 | Right (_, texture) -> texture
                 | Left _ ->
@@ -733,9 +739,10 @@ module PhysicallyBased =
             if material.HasBumpScaling && material.BumpScaling  <> 0.0f // NOTE: special case to presume 0.0f indicates missing parameter.
             then material.BumpScaling
             else Constants.Render.HeightDefault
-        let (_, heightTextureSlot) = material.GetMaterialTexture (Assimp.TextureType.Height, 0)
+        let mutable (_, heightTextureSlot) = material.GetMaterialTexture (Assimp.TextureType.Height, 0)
+        if isNull heightTextureSlot.FilePath then heightTextureSlot.FilePath <- "" // ensure not null
         let heightTexture =
-            if renderable && not (String.IsNullOrEmpty heightTextureSlot.FilePath) then
+            if renderable then
                 match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + heightTextureSlot.FilePath, textureMemo) with
                 | Right (_, texture) -> texture
                 | Left _ ->
