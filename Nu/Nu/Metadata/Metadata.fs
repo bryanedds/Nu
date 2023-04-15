@@ -98,7 +98,7 @@ module Metadata =
     let private tryGenerateTextureMetadata asset =
         if File.Exists asset.FilePath then
             let platform = Environment.OSVersion.Platform
-            let fileExtension = Path.GetExtension asset.FilePath
+            let fileExtension = Path.GetExtension(asset.FilePath).ToLowerInvariant()
             if  (platform = PlatformID.Win32NT || platform = PlatformID.Win32Windows) &&
                 fileExtension <> ".tga" (* NOTE: System.Drawing.Image does not seem to support .tga loading. *) then
                 // NOTE: System.Drawing.Image is, AFAIK, only available on non-Windows platforms, so we use a fast path here.
@@ -145,7 +145,7 @@ module Metadata =
             None
 
     let private tryGenerateAssetMetadata asset =
-        let extension = Path.GetExtension asset.FilePath
+        let extension = Path.GetExtension(asset.FilePath).ToLowerInvariant()
         let metadataOpt =
             match extension with
             | ".bmp"

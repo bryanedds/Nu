@@ -96,7 +96,7 @@ module AssetGraph =
         private
             { FilePathOpt : string option
               PackageDescriptors : Map<string, PackageDescriptor> }
-    
+
     let private getAssetExtension2 rawAssetExtension refinement =
         match refinement with
         | PsdToPng -> "png"
@@ -107,7 +107,7 @@ module AssetGraph =
         else rawAssetExtension
 
     let private writeMagickImageAsPng psdHack (filePath : string) (image : MagickImage) =
-        match Path.GetExtension filePath with
+        match Path.GetExtension(filePath).ToLowerInvariant() with
         | ".png" ->
             use stream = File.OpenWrite filePath
             if psdHack then
@@ -197,7 +197,7 @@ module AssetGraph =
                             yield! Directory.GetFiles (directory, "*." + extension, SearchOption.AllDirectories) }
                 for filePath in filePaths do
                     let filePath = filePath.Replace ("\\", "/") // normalize format
-                    let extension = (Path.GetExtension filePath).Replace (".", "")
+                    let extension = Path.GetExtension(filePath).Replace(".", "").ToLowerInvariant()
                     let assetName = (Path.GetFileNameWithoutExtension filePath)
                     let tag = AssetTag.make<obj> packageName assetName
                     let asset = Asset.make tag filePath refinements associations

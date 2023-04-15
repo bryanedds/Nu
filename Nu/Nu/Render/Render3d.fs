@@ -404,7 +404,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
     static member private tryLoadRenderAsset packageState (asset : obj Asset) renderer =
         GlRenderer3d.invalidateCaches renderer
-        match Path.GetExtension asset.FilePath with
+        match Path.GetExtension(asset.FilePath).ToLowerInvariant() with
         | ".bmp" | ".png" | ".tga" | ".jpg" | ".jpeg" | ".tif" | ".tiff" ->
             match GlRenderer3d.tryLoadTextureAsset packageState asset renderer with
             | Some (filePath, metadata, texture) -> Some (TextureAsset (filePath, metadata, texture))
@@ -450,7 +450,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                             | FontAsset _ -> () // not yet used in 3d renderer
                             | CubeMapAsset _ -> () // already reloaded via cube map memo
                             | StaticModelAsset (userDefined, staticModel) ->
-                                match Path.GetExtension asset.FilePath with
+                                match Path.GetExtension(asset.FilePath).ToLowerInvariant() with
                                 | ".fbx" | ".obj" ->
                                     renderPackage.Assets.Remove asset.AssetTag.AssetName |> ignore<bool>
                                     OpenGL.PhysicallyBased.DestroyPhysicallyBasedStaticModel staticModel
