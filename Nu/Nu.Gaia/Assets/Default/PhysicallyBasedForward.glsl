@@ -36,10 +36,10 @@ layout (location = 11) in int invertRoughness;
 
 out vec3 positionOut;
 out vec2 texCoordsOut;
-out vec4 albedoOut;
-out vec4 materialOut;
 out vec3 normalOut;
-out float heightOut;
+flat out vec4 albedoOut;
+flat out vec4 materialOut;
+flat out float heightOut;
 flat out int invertRoughnessOut;
 
 void main()
@@ -91,10 +91,10 @@ uniform float lightConeOuters[LIGHTS_MAX];
 
 in vec3 positionOut;
 in vec2 texCoordsOut;
-in vec4 albedoOut;
-in vec4 materialOut;
 in vec3 normalOut;
-in float heightOut;
+flat in vec4 albedoOut;
+flat in vec4 materialOut;
+flat in float heightOut;
 flat in int invertRoughnessOut;
 
 out vec4 frag;
