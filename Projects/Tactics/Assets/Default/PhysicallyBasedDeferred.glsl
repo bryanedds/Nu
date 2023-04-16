@@ -103,9 +103,9 @@ void main()
     // compute tex coords in parallax space
     vec3 eyeCenterTangent = toTangent * eyeCenter;
     vec3 positionTangent = toTangent * positionOut;
-    vec3 toEye = normalize(eyeCenterTangent - positionTangent);
+    vec3 toEyeTangent = normalize(eyeCenterTangent - positionTangent);
     float height = texture(heightTexture, texCoordsOut).r;
-    vec2 parallax = toEye.xy / toEye.z * height * heightOut;
+    vec2 parallax = toEyeTangent.xy / toEyeTangent.z * height * heightOut;
     vec2 texCoords = texCoordsOut - parallax;
 
     // compute albedo, discarding on zero alpha

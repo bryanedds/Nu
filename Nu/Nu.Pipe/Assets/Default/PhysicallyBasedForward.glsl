@@ -64,6 +64,8 @@ const float PI = 3.141592654;
 const float REFLECTION_LOD_MAX = 5.0;
 const float GAMMA = 2.2;
 const float ATTENUATION_CONSTANT = 1.0f;
+const float HEIGHT_LAYER_MIN = 4;
+const float HEIGHT_LAYER_MAX = 32;
 const int LIGHTS_MAX = 32;
 
 uniform vec3 eyeCenter;
@@ -152,13 +154,28 @@ void main()
     mat3 toWorld = mat3(tangent, binormal, normal);
     mat3 toTangent = transpose(toWorld);
 
-    // compute tex coords in parallax space
+    // compute tex coords in parallax occlusion space
     vec3 eyeCenterTangent = toTangent * eyeCenter;
     vec3 positionTangent = toTangent * positionOut;
-    vec3 toEye = normalize(eyeCenterTangent - positionTangent);
-    float height = texture(heightTexture, texCoordsOut).r;
-    vec2 parallax = toEye.xy / toEye.z * height * heightOut;
-    vec2 texCoords = texCoordsOut - parallax;
+    vec3 toEyeTangent = normalize(eyeCenterTangent - positionTangent);
+    float heightLayerCount = mix(HEIGHT_LAYER_MAX, HEIGHT_LAYER_MIN, abs(dot(vec3(0.0, 0.0, 1.0), toEyeTangent)));
+    float heightLayerClearance = 1.0 / heightLayerCount;
+    float heightLayerDepth = 0.0;
+    vec2 heightLayerStep = toEyeTangent.xy / toEyeTangent.z * heightOut;
+    vec2 texCoordsStep = heightLayerStep / heightLayerCount;
+    vec2 texCoords = texCoordsOut;
+    float height = texture(heightTexture, texCoords).r;
+    for (int i = 0; i < heightLayerCount && heightLayerDepth < height; ++i)
+    {
+        texCoords -= texCoordsStep;
+        height = texture(heightTexture, texCoords).r;
+        heightLayerDepth += heightLayerClearance;
+    }
+    vec2 texCoordsPrevious = texCoords + texCoordsStep;
+    float heightNext = height - heightLayerDepth;
+    float heightPrevious = texture(heightTexture, texCoordsPrevious).r - heightLayerDepth + heightLayerClearance;
+    float averagingWeight = heightNext / (heightNext - heightPrevious);
+    texCoords = texCoordsPrevious * averagingWeight + texCoords * (1.0 - averagingWeight);
 
     // compute albedo with alpha
     vec4 albedoSample = texture(albedoTexture, texCoords);
