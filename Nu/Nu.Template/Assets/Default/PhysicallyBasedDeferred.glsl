@@ -62,6 +62,7 @@ void main()
 
 const float GAMMA = 2.2;
 
+uniform vec3 eyeCenter;
 uniform sampler2D albedoTexture;
 uniform sampler2D metallicTexture;
 uniform sampler2D roughnessTexture;
@@ -83,41 +84,44 @@ layout (location = 1) out vec3 albedo;
 layout (location = 2) out vec4 material;
 layout (location = 3) out vec3 normal;
 
-vec3 getNormal()
-{
-    vec3 tangentNormal = texture(normalTexture, texCoordsOut).xyz * 2.0 - 1.0;
-    vec3 q1 = dFdx(positionOut);
-    vec3 q2 = dFdy(positionOut);
-    vec2 st1 = dFdx(texCoordsOut);
-    vec2 st2 = dFdy(texCoordsOut);
-    vec3 normal = normalize(normalOut);
-    vec3 tangent = normalize(q1 * st2.t - q2 * st1.t);
-    vec3 binormal = -normalize(cross(normal, tangent));
-    mat3 tbn = mat3(tangent, binormal, normal);
-    return normalize(tbn * tangentNormal);
-}
-
 void main()
 {
     // forward position
     position = positionOut;
 
+    // compute spatial converters
+    vec3 q1 = dFdx(positionOut);
+    vec3 q2 = dFdy(positionOut);
+    vec2 st1 = dFdx(texCoordsOut);
+    vec2 st2 = dFdy(texCoordsOut);
+    vec3 n = normalize(normalOut);
+    vec3 t = normalize(q1 * st2.t - q2 * st1.t);
+    vec3 b = -normalize(cross(n, t));
+    mat3 toWorld = mat3(t, b, n);
+    mat3 toTangent = transpose(toWorld);
+
+    // compute tex coords in parallax space
+    vec3 eyeCenterTangent = toTangent * eyeCenter;
+    vec3 positionTangent = toTangent * positionOut;
+    vec3 toEye = normalize(eyeCenterTangent - positionTangent);
+    float height = texture(heightTexture, texCoordsOut).r;
+    vec2 parallax = toEye.xy / toEye.z * height * heightOut;
+    vec2 texCoords = texCoordsOut - parallax;
+
     // compute albedo, discarding on zero alpha
-    vec4 albedoSample = texture(albedoTexture, texCoordsOut);
+    vec4 albedoSample = texture(albedoTexture, texCoords);
     if (albedoSample.a == 0.0f) discard;
     albedo = pow(albedoSample.rgb, vec3(GAMMA)) * albedoOut.rgb;
 
-    float bullshit = texture(heightTexture, texCoordsOut).r * heightOut;
-
     // compute material properties
-    float metallic = texture(metallicTexture, texCoordsOut).r * materialOut.r;
-    float ambientOcclusion = texture(ambientOcclusionTexture, texCoordsOut).g * materialOut.g;
-    vec4 roughnessSample = texture(roughnessTexture, texCoordsOut);
+    float metallic = texture(metallicTexture, texCoords).r * materialOut.r;
+    float ambientOcclusion = texture(ambientOcclusionTexture, texCoords).g * materialOut.g;
+    vec4 roughnessSample = texture(roughnessTexture, texCoords);
     float roughness = roughnessSample.a == 1.0f ? roughnessSample.b : roughnessSample.a;
     roughness = (invertRoughnessOut == 0 ? roughness : 1.0f - roughness) * materialOut.b;
-    float emission = texture(emissionTexture, texCoordsOut).r * materialOut.a * bullshit;
+    float emission = texture(emissionTexture, texCoords).r * materialOut.a;
     material = vec4(metallic, ambientOcclusion, roughness, emission);
 
     // compute normal
-    normal = getNormal();
+    normal = normalize(toWorld * (texture(normalTexture, texCoords).xyz * 2.0 - 1.0));
 }
