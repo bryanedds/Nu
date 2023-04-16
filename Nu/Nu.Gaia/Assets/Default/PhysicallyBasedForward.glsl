@@ -34,7 +34,7 @@ layout (location = 9) in vec4 material;
 layout (location = 10) in float height;
 layout (location = 11) in int invertRoughness;
 
-out vec3 positionOut;
+out vec4 positionOut;
 out vec2 texCoordsOut;
 out vec3 normalOut;
 flat out vec4 albedoOut;
@@ -44,7 +44,7 @@ flat out int invertRoughnessOut;
 
 void main()
 {
-    positionOut = vec3(model * vec4(position, 1.0));
+    positionOut = model * vec4(position, 1.0);
     int texCoordsOffsetIndex = gl_VertexID % TexCoordsOffsetVerts;
     vec2 texCoordsOffsetFilter = TexCoordsOffsetFilters[texCoordsOffsetIndex];
     vec2 texCoordsOffsetFilter2 = TexCoordsOffsetFilters2[texCoordsOffsetIndex];
@@ -54,7 +54,7 @@ void main()
     normalOut = mat3(model) * normal;
     heightOut = height;
     invertRoughnessOut = invertRoughness;
-    gl_Position = projection * view * vec4(positionOut, 1.0);
+    gl_Position = projection * view * positionOut;
 }
 
 #shader fragment
@@ -89,7 +89,7 @@ uniform int lightDirectionals[LIGHTS_MAX];
 uniform float lightConeInners[LIGHTS_MAX];
 uniform float lightConeOuters[LIGHTS_MAX];
 
-in vec3 positionOut;
+in vec4 positionOut;
 in vec2 texCoordsOut;
 in vec3 normalOut;
 flat in vec4 albedoOut;
@@ -142,8 +142,8 @@ vec3 fresnelSchlickRoughness(float cosTheta, vec3 f0, float roughness)
 void main()
 {
     // compute spatial converters
-    vec3 q1 = dFdx(positionOut);
-    vec3 q2 = dFdy(positionOut);
+    vec3 q1 = dFdx(positionOut.xyz);
+    vec3 q2 = dFdy(positionOut.xyz);
     vec2 st1 = dFdx(texCoordsOut);
     vec2 st2 = dFdy(texCoordsOut);
     vec3 normal = normalize(normalOut);
@@ -154,7 +154,7 @@ void main()
 
     // compute tex coords in parallax occlusion space
     vec3 eyeCenterTangent = toTangent * eyeCenter;
-    vec3 positionTangent = toTangent * positionOut;
+    vec3 positionTangent = toTangent * positionOut.xyz;
     vec3 toEyeTangent = normalize(eyeCenterTangent - positionTangent);
     float height = texture(heightTexture, texCoordsOut).r;
     vec2 parallax = toEyeTangent.xy * height * heightOut;
@@ -177,7 +177,7 @@ void main()
 
     // compute lighting profile
     vec3 n = normalize(toWorld * (texture(normalTexture, texCoords).xyz * 2.0 - 1.0));
-    vec3 v = normalize(eyeCenter - positionOut);
+    vec3 v = normalize(eyeCenter - positionOut.xyz);
     vec3 r = reflect(-v, n);
 
     // compute lightAccum term
@@ -191,7 +191,7 @@ void main()
         vec3 radiance;
         if (lightDirectionals[i] == 0)
         {
-            d = lightOrigins[i] - positionOut;
+            d = lightOrigins[i] - positionOut.xyz;
             l = normalize(d);
             h = normalize(v + l);
             float distanceSquared = dot(d, d);
