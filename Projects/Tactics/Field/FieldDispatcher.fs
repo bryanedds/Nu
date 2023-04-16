@@ -157,7 +157,7 @@ module FieldDispatcher =
                           ModelMatrix = m4Identity
                           InsetOpt = Some fieldTexCoordsOffset
                           SurfaceProperties = Unchecked.defaultof<_>
-                          RenderType = ForwardRenderType (0.0f, -1.0f)
+                          RenderType = ForwardRenderType (-1.0f, 0.0f)
                           SurfaceDescriptors = [|fieldMetadata.FieldTraversableSurfaceDescriptor|]
                           Bounds = fieldMetadata.FieldBounds })
             let fieldCursorView =
@@ -170,7 +170,7 @@ module FieldDispatcher =
                               ModelMatrix = m4Identity
                               InsetOpt = None
                               SurfaceProperties = Unchecked.defaultof<_>
-                              RenderType = ForwardRenderType (-1.0f, 0.0f)
+                              RenderType = ForwardRenderType (0.0f, -1.0f)
                               SurfaceDescriptors = [|highlightDescriptor|]
                               Bounds = highlightDescriptor.Bounds })
                 | None -> View.empty

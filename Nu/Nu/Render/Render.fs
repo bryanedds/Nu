@@ -18,7 +18,7 @@ type RenderAsset =
 /// The type of rendering used on a surface.
 type [<StructuralEquality; NoComparison; Struct>] RenderType =
     | DeferredRenderType
-    | ForwardRenderType of Sort : single * Subsort : single
+    | ForwardRenderType of Subsort : single * Sort : single
 
 /// The blend mode of a sprite.
 [<Syntax
