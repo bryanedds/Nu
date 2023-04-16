@@ -141,7 +141,7 @@ vec3 fresnelSchlickRoughness(float cosTheta, vec3 f0, float roughness)
 
 void main()
 {
-    // compute tangent space
+    // compute spatial converters
     vec3 q1 = dFdx(positionOut);
     vec3 q2 = dFdy(positionOut);
     vec2 st1 = dFdx(texCoordsOut);
@@ -149,11 +149,12 @@ void main()
     vec3 normal = normalize(normalOut);
     vec3 tangent = normalize(q1 * st2.t - q2 * st1.t);
     vec3 binormal = -normalize(cross(normal, tangent));
-    mat3 tbn = mat3(tangent, binormal, normal);
+    mat3 toWorld = mat3(tangent, binormal, normal);
+    mat3 toTangent = transpose(toWorld);
 
     // compute tex coords in parallax space
-    vec3 eyeCenterTangent = tbn * eyeCenter;
-    vec3 positionTangent = tbn * positionOut;
+    vec3 eyeCenterTangent = toTangent * eyeCenter;
+    vec3 positionTangent = toTangent * positionOut;
     vec3 toEye = normalize(eyeCenterTangent - positionTangent);
     float height = texture(heightTexture, texCoordsOut).r;
     vec2 parallax = toEye.xy / toEye.z * height * heightOut;
@@ -174,7 +175,7 @@ void main()
     vec3 emission = vec3(texture(emissionTexture, texCoords).r * materialOut.a);
 
     // compute lighting profile
-    vec3 n = normalize(tbn * (texture(normalTexture, texCoords).xyz * 2.0 - 1.0));
+    vec3 n = normalize(toWorld * (texture(normalTexture, texCoords).xyz * 2.0 - 1.0));
     vec3 v = normalize(eyeCenter - positionOut);
     vec3 r = reflect(-v, n);
 
