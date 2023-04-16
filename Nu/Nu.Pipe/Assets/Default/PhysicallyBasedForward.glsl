@@ -31,8 +31,8 @@ layout (location = 3) in mat4 model;
 layout (location = 7) in vec4 texCoordsOffset;
 layout (location = 8) in vec4 albedo;
 layout (location = 9) in vec4 material;
-layout (location = 11) in float height;
-layout (location = 10) in int invertRoughness;
+layout (location = 10) in float height;
+layout (location = 11) in int invertRoughness;
 
 out vec3 positionOut;
 out vec2 texCoordsOut;
@@ -99,20 +99,6 @@ flat in int invertRoughnessOut;
 
 out vec4 frag;
 
-vec3 getNormal()
-{
-    vec3 tangentNormal = texture(normalTexture, texCoordsOut).xyz * 2.0 - 1.0;
-    vec3 q1 = dFdx(positionOut);
-    vec3 q2 = dFdy(positionOut);
-    vec2 st1 = dFdx(texCoordsOut);
-    vec2 st2 = dFdy(texCoordsOut);
-    vec3 normal = normalize(normalOut);
-    vec3 tangent = normalize(q1 * st2.t - q2 * st1.t);
-    vec3 binormal = -normalize(cross(normal, tangent));
-    mat3 tbn = mat3(tangent, binormal, normal);
-    return normalize(tbn * tangentNormal);
-}
-
 float distributionGGX(vec3 normal, vec3 h, float roughness)
 {
     float a = roughness * roughness;
@@ -155,24 +141,40 @@ vec3 fresnelSchlickRoughness(float cosTheta, vec3 f0, float roughness)
 
 void main()
 {
+    // compute tangent space
+    vec3 q1 = dFdx(positionOut);
+    vec3 q2 = dFdy(positionOut);
+    vec2 st1 = dFdx(texCoordsOut);
+    vec2 st2 = dFdy(texCoordsOut);
+    vec3 normal = normalize(normalOut);
+    vec3 tangent = normalize(q1 * st2.t - q2 * st1.t);
+    vec3 binormal = -normalize(cross(normal, tangent));
+    mat3 tbn = mat3(tangent, binormal, normal);
+
+    // compute tex coords in parallax space
+    vec3 eyeCenterTangent = tbn * eyeCenter;
+    vec3 positionTangent = tbn * positionOut;
+    vec3 toEye = normalize(eyeCenterTangent - positionTangent);
+    float height = texture(heightTexture, texCoordsOut).r;
+    vec2 parallax = toEye.xy / toEye.z * height * heightOut;
+    vec2 texCoords = texCoordsOut - parallax;
+
     // compute albedo with alpha
-    vec4 albedoSample = texture(albedoTexture, texCoordsOut);
+    vec4 albedoSample = texture(albedoTexture, texCoords);
     vec4 albedo;
     albedo.rgb = pow(albedoSample.rgb, vec3(GAMMA)) * albedoOut.rgb;
     albedo.a = albedoSample.a * albedoOut.a;
 
-    float bullshit = texture(heightTexture, texCoordsOut).r * heightOut;
-
     // compute material properties
-    float metallic = texture(metallicTexture, texCoordsOut).r * materialOut.r;
-    float ambientOcclusion = texture(ambientOcclusionTexture, texCoordsOut).g * materialOut.g;
-    vec4 roughnessSample = texture(roughnessTexture, texCoordsOut);
+    float metallic = texture(metallicTexture, texCoords).r * materialOut.r;
+    float ambientOcclusion = texture(ambientOcclusionTexture, texCoords).g * materialOut.g;
+    vec4 roughnessSample = texture(roughnessTexture, texCoords);
     float roughness = roughnessSample.a == 1.0f ? roughnessSample.b : roughnessSample.a;
     roughness = (invertRoughnessOut == 0 ? roughness : 1.0f - roughness) * materialOut.b;
-    vec3 emission = vec3(texture(emissionTexture, texCoordsOut).r * materialOut.a) * bullshit;
+    vec3 emission = vec3(texture(emissionTexture, texCoords).r * materialOut.a);
 
     // compute lighting profile
-    vec3 n = getNormal();
+    vec3 n = normalize(tbn * (texture(normalTexture, texCoords).xyz * 2.0 - 1.0));
     vec3 v = normalize(eyeCenter - positionOut);
     vec3 r = reflect(-v, n);
 

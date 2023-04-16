@@ -621,10 +621,7 @@ module PhysicallyBased =
         let heightTextureFilePath =     if hasBaseColor   then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("BaseColor", "Height")       elif hasAlbedo  then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("BaseColor", "Height") else ""
 
         // attempt to load metallic info
-        let metallic =
-            if material.HasColorSpecular
-            then material.ColorSpecular.R
-            else Constants.Render.MetallicDefault
+        let metallic = Constants.Render.MetallicDefault
         let mutable (_, metallicTextureSlot) = material.GetMaterialTexture (Assimp.TextureType.Metalness, 0)
         if isNull metallicTextureSlot.FilePath then metallicTextureSlot.FilePath <- "" // ensure not null
         let metallicTexture =
@@ -648,10 +645,7 @@ module PhysicallyBased =
 
         // attempt to load roughness info
         let invertRoughness = has_bc || has_d // NOTE: assume texture from Unity export if it has this weird naming.
-        let roughness =
-            if material.HasShininess && material.Shininess <= 1.0f // NOTE: special to ignore seemingly errant values.
-            then 1.0f - min material.Shininess 1.0f
-            else Constants.Render.RoughnessDefault
+        let roughness = Constants.Render.RoughnessDefault
         let mutable (_, roughnessTextureSlot) = material.GetMaterialTexture (Assimp.TextureType.Roughness, 0)
         if isNull roughnessTextureSlot.FilePath then roughnessTextureSlot.FilePath <- "" // ensure not null
         let roughnessTexture =
@@ -677,10 +671,7 @@ module PhysicallyBased =
             else defaultMaterial.RoughnessTexture
 
         // attempt to load ambient occlusion info
-        let ambientOcclusion =
-            if material.HasColorAmbient && material.ColorAmbient.R <> 0.0f // NOTE: special case to presume 0.0f indicates missing parameter.
-            then material.ColorAmbient.R
-            else Constants.Render.AmbientOcclusionDefault
+        let ambientOcclusion = Constants.Render.AmbientOcclusionDefault
         let mutable (_, ambientOcclusionTextureSlot) = material.GetMaterialTexture (Assimp.TextureType.Ambient, 0)
         if isNull ambientOcclusionTextureSlot.FilePath then ambientOcclusionTextureSlot.FilePath <- "" // ensure not null
         let ambientOcclusionTexture =
@@ -700,10 +691,7 @@ module PhysicallyBased =
             else defaultMaterial.AmbientOcclusionTexture
 
         // attempt to load emission info
-        let emission =
-            if material.HasTextureEmissive && material.ColorEmissive.R <> 0.0f // NOTE: special case to presume 0.0f indicates missing parameter.
-            then material.ColorEmissive.R
-            else Constants.Render.EmissionDefault
+        let emission = Constants.Render.EmissionDefault
         let mutable (_, emissionTextureSlot) = material.GetMaterialTexture (Assimp.TextureType.Emissive, 0)
         if isNull emissionTextureSlot.FilePath then emissionTextureSlot.FilePath <- "" // ensure not null
         let emissionTexture =
@@ -736,10 +724,7 @@ module PhysicallyBased =
             else defaultMaterial.NormalTexture
 
         // attempt to load height info
-        let height =
-            if material.HasBumpScaling && material.BumpScaling  <> 0.0f // NOTE: special case to presume 0.0f indicates missing parameter.
-            then material.BumpScaling
-            else Constants.Render.HeightDefault
+        let height = Constants.Render.HeightDefault
         let mutable (_, heightTextureSlot) = material.GetMaterialTexture (Assimp.TextureType.Height, 0)
         if isNull heightTextureSlot.FilePath then heightTextureSlot.FilePath <- "" // ensure not null
         let heightTexture =

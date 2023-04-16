@@ -3,11 +3,11 @@
 
 newmtl Material
 Kd 1.000000 1.000000 1.000000
-Ks 1.000000 0.000000 0.000000
-Ns 0.900000
+Pm 1.000000 0.000000 0.000000
+Pr 1.000000
 Ka 1.000000 0.000000 0.000000
 map_Kd HighlightModelAlbedo.png
-map_Ks MaterialMetallic.png
-map_Bump MaterialRoughness.png
+map_Pm MaterialMetallic.png
+map_Pr MaterialRoughness.png
 map_Ka MaterialAmbientOcclusion.png
-map_Kn MaterialNormal.png
+norm MaterialNormal.png
