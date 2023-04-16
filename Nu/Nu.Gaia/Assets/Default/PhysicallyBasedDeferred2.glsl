@@ -21,13 +21,15 @@ const float GAMMA = 2.2;
 const float ATTENUATION_CONSTANT = 1.0f;
 const int LIGHTS_MAX = 96;
 
+uniform mat4 view;
+uniform mat4 projection;
 uniform vec3 eyeCenter;
 uniform vec3 lightAmbientColor;
 uniform float lightAmbientBrightness;
 uniform sampler2D positionTexture;
 uniform sampler2D albedoTexture;
 uniform sampler2D materialTexture;
-uniform sampler2D normalTexture;
+uniform sampler2D normalAndDepthTexture;
 uniform samplerCube irradianceMap;
 uniform samplerCube environmentFilterMap;
 uniform sampler2D brdfTexture;
@@ -44,6 +46,40 @@ uniform float lightConeOuters[LIGHTS_MAX];
 in vec2 texCoordsOut;
 
 out vec4 frag;
+
+// A single iteration of Bob Jenkins' One-At-A-Time hashing algorithm.
+uint hash( uint x )
+{
+    x += ( x << 10u );
+    x ^= ( x >>  6u );
+    x += ( x <<  3u );
+    x ^= ( x >> 11u );
+    x += ( x << 15u );
+    return x;
+}
+
+// Compound versions of the hashing algorithm I whipped together.
+uint hash(uvec2 v) { return hash( v.x ^ hash(v.y)); }
+uint hash(uvec3 v) { return hash( v.x ^ hash(v.y) ^ hash(v.z)); }
+uint hash(uvec4 v) { return hash( v.x ^ hash(v.y) ^ hash(v.z) ^ hash(v.w)); }
+
+// Construct a float with half-open range [0:1] using low 23 bits.
+// All zeroes yields 0.0, all ones yields the next smallest representable value below 1.0.
+float floatConstruct(uint m)
+{
+    const uint ieeeMantissa =   0x007FFFFFu;    // binary32 mantissa bitmask
+    const uint ieeeOne =        0x3F800000u;    // 1.0 in IEEE binary32
+    m &= ieeeMantissa;                          // Keep only mantissa bits (fractional part)
+    m |= ieeeOne;                               // Add fractional part to 1.0
+    float  f = uintBitsToFloat(m);              // Range [1:2]
+    return f - 1.0;                             // Range [0:1]
+}
+
+// Pseudo-random value in half-open range [0:1].
+float random(float x)   { return floatConstruct(hash(floatBitsToUint(x))); }
+float random(vec2 v)    { return floatConstruct(hash(floatBitsToUint(v))); }
+float random(vec3 v)    { return floatConstruct(hash(floatBitsToUint(v))); }
+float random(vec4 v)    { return floatConstruct(hash(floatBitsToUint(v))); }
 
 float distributionGGX(vec3 normal, vec3 h, float roughness)
 {
@@ -87,11 +123,13 @@ vec3 fresnelSchlickRoughness(float cosTheta, vec3 f0, float roughness)
 
 void main()
 {
-    // discard if geometry pixel was not written (equal to the buffer clearing color of white)
-    vec3 normal = texture(normalTexture, texCoordsOut).rgb;
-    if (normal == vec3(1.0, 1.0, 1.0)) discard;
+    // first, retrieve normal and depth values, allowing for early-out
+    vec4 normalAndDepth = texture(normalAndDepthTexture, texCoordsOut);
+    vec3 normal = normalAndDepth.rgb;
+    if (normal == vec3(1.0, 1.0, 1.0)) discard; // discard if geometry pixel was not written (equal to the buffer clearing color of white)
+    float depth = normalAndDepth.a;
 
-    // retrieve remaining data from geometry buffer
+    // retrieve remaining data from geometry buffers
     vec3 position = texture(positionTexture, texCoordsOut).rgb;
     vec3 albedo = texture(albedoTexture, texCoordsOut).rgb;
     vec4 material = texture(materialTexture, texCoordsOut);
@@ -160,6 +198,27 @@ void main()
         lightAccum += (kD * albedo / PI + specular) * radiance * nDotL;
     }
 
+    // compute screen space ambient term
+    const float ambientOcclusionStep = 0.05f;
+    float ambientOcclusionScreen = 1.0f;
+    for (float i = 0.0f; i < 1.0f; i += ambientOcclusionStep)
+    {
+        // generate a pseudo-random unit vector
+        float randomX = random(vec3(gl_FragCoord.x, gl_FragCoord.y, depth));
+        float randomY = random(vec3(gl_FragCoord.y, depth, gl_FragCoord.x));
+        float randomZ = random(vec3(depth, gl_FragCoord.x, gl_FragCoord.y));
+        vec3 randomVector = normalize(vec3(randomX, randomY, randomZ));
+
+        // construct a sample vector in the fragment's upper hemisphere that has a magnitude of i.
+        vec3 normalScreen = normalize(transpose(mat3(view)) * normal);
+        vec3 sampleVector = dot(normalScreen, randomVector) < 0.0f ? -randomVector : randomVector;
+        sampleVector *= i * 0.01f;
+        float sampleDepth = texture(normalAndDepthTexture, gl_FragCoord.xy + sampleVector.xy).a;
+
+        // occlude more if sampled depth is greater
+        if (sampleDepth > depth) ambientOcclusionScreen -= ambientOcclusionStep;
+    }
+
     // compute diffuse term
     vec3 f = fresnelSchlickRoughness(max(dot(normal, v), 0.0), f0, roughness);
     vec3 kS = f;
@@ -174,7 +233,7 @@ void main()
     vec3 specular = environmentFilter * (f * environmentBrdf.x + environmentBrdf.y);
 
     // compute ambient term
-    vec3 ambient = (kD * diffuse + specular) * ambientOcclusion;
+    vec3 ambient = (kD * diffuse + specular) * ambientOcclusion * ambientOcclusionScreen;
 
     // compute color w/ tone mapping, gamma correction, and emission
     vec3 color = lightAccum + ambient;

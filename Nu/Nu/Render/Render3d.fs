@@ -824,9 +824,9 @@ type [<ReferenceEquality>] GlRenderer3d =
         Array.map (fun struct (_, _, model, texCoordsOffset, propertiesOpt, surface, _) -> struct (model, texCoordsOffset, propertiesOpt, surface))
 
     static member private renderPhysicallyBasedSurfaces
-        eyeCenter
         viewArray
         projectionArray
+        eyeCenter
         (parameters : struct (Matrix4x4 * Box2 * SurfaceProperties) SegmentedList)
         blending
         lightAmbientColor
@@ -914,8 +914,8 @@ type [<ReferenceEquality>] GlRenderer3d =
 
             // draw surfaces
             OpenGL.PhysicallyBased.DrawPhysicallyBasedSurfaces
-                (eyeCenter, parameters.Length, renderer.RenderModelsFields, renderer.RenderTexCoordsOffsetsFields, renderer.RenderAlbedosFields, renderer.PhysicallyBasedMaterialsFields, renderer.PhysicallyBasedHeightsFields, renderer.PhysicallyBasedInvertRoughnessesFields,
-                 viewArray, projectionArray, blending, lightAmbientColor, lightAmbientBrightness, irradianceMap, environmentFilterMap, brdfTexture,
+                (viewArray, projectionArray, eyeCenter, parameters.Length, renderer.RenderModelsFields, renderer.RenderTexCoordsOffsetsFields, renderer.RenderAlbedosFields, renderer.PhysicallyBasedMaterialsFields, renderer.PhysicallyBasedHeightsFields, renderer.PhysicallyBasedInvertRoughnessesFields,
+                 blending, lightAmbientColor, lightAmbientBrightness, irradianceMap, environmentFilterMap, brdfTexture,
                  lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightDirectionals, lightConeInners, lightConeOuters,
                  surface.SurfaceMaterial, surface.PhysicallyBasedGeometry, shader)
 
@@ -1251,7 +1251,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             SegmentedList.clear renderer.RenderTasks.RenderSurfacesForwardRelative
 
             // setup geometry buffer
-            let (positionTexture, albedoTexture, materialTexture, normalTexture, geometryFramebuffer) = renderer.RenderGeometryFramebuffer
+            let (positionTexture, albedoTexture, materialTexture, normalAndDepthTexture, geometryFramebuffer) = renderer.RenderGeometryFramebuffer
             OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, geometryFramebuffer)
             OpenGL.Gl.Enable OpenGL.EnableCap.ScissorTest
             OpenGL.Gl.Scissor (viewportOffset.Bounds.Min.X, viewportOffset.Bounds.Min.Y, viewportOffset.Bounds.Size.X, viewportOffset.Bounds.Size.Y)
@@ -1315,9 +1315,9 @@ type [<ReferenceEquality>] GlRenderer3d =
             // deferred render surfaces w/ absolute transforms
             for entry in renderer.RenderTasks.RenderSurfacesDeferredAbsolute do
                 GlRenderer3d.renderPhysicallyBasedSurfaces
-                    eyeCenter
                     viewAbsoluteArray
                     projectionArray
+                    eyeCenter
                     entry.Value
                     false
                     lightAmbientColor
@@ -1342,9 +1342,9 @@ type [<ReferenceEquality>] GlRenderer3d =
             // deferred render surfaces w/ relative transforms
             for entry in renderer.RenderTasks.RenderSurfacesDeferredRelative do
                 GlRenderer3d.renderPhysicallyBasedSurfaces
-                    eyeCenter
                     viewRelativeArray
                     projectionArray
+                    eyeCenter
                     entry.Value
                     false
                     lightAmbientColor
@@ -1382,7 +1382,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
             // deferred render lighting quad
             OpenGL.PhysicallyBased.DrawPhysicallyBasedDeferred2Surface
-                (eyeCenter, lightAmbientColor, lightAmbientBrightness, positionTexture, albedoTexture, materialTexture, normalTexture, irradianceMap, environmentFilterMap, renderer.RenderBrdfTexture,
+                (viewRelativeArray, projectionArray, eyeCenter, lightAmbientColor, lightAmbientBrightness, positionTexture, albedoTexture, materialTexture, normalAndDepthTexture, irradianceMap, environmentFilterMap, renderer.RenderBrdfTexture,
                  lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightDirectionals, lightConeInners, lightConeOuters,
                  renderer.RenderPhysicallyBasedQuad, renderer.RenderPhysicallyBasedDeferred2Shader)
             OpenGL.Hl.Assert ()
@@ -1400,9 +1400,9 @@ type [<ReferenceEquality>] GlRenderer3d =
                 let (lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightDirectionals, lightConeInners, lightConeOuters) =
                     SortableLight.sortLightsIntoArrays Constants.Render.ForwardLightsMax model.Translation renderer.RenderTasks.RenderLights
                 GlRenderer3d.renderPhysicallyBasedSurfaces
-                    eyeCenter
                     viewAbsoluteArray
                     projectionArray
+                    eyeCenter
                     (SegmentedList.singleton (model, texCoordsOffset, properties))
                     true
                     lightAmbientColor
@@ -1429,9 +1429,9 @@ type [<ReferenceEquality>] GlRenderer3d =
                 let (lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightDirectionals, lightConeInners, lightConeOuters) =
                     SortableLight.sortLightsIntoArrays Constants.Render.ForwardLightsMax model.Translation renderer.RenderTasks.RenderLights
                 GlRenderer3d.renderPhysicallyBasedSurfaces
-                    eyeCenter
                     viewRelativeArray
                     projectionArray
+                    eyeCenter
                     (SegmentedList.singleton (model, texCoordsOffset, properties))
                     true
                     lightAmbientColor
