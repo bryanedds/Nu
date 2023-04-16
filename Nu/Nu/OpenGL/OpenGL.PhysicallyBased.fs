@@ -1141,7 +1141,7 @@ module PhysicallyBased =
         // update heights buffer
         let heightsFieldsPtr = GCHandle.Alloc (heightsFields, GCHandleType.Pinned)
         try Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.HeightBuffer)
-            Gl.BufferData (BufferTarget.ArrayBuffer, uint (surfacesCount * sizeof<int>), heightsFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
+            Gl.BufferData (BufferTarget.ArrayBuffer, uint (surfacesCount * sizeof<single>), heightsFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
         finally heightsFieldsPtr.Free ()
         Gl.BindBuffer (BufferTarget.ArrayBuffer, 0u)
         Hl.Assert ()
