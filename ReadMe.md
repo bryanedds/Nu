@@ -25,14 +25,11 @@ A critical battle with evil itself!
 ![image](https://user-images.githubusercontent.com/1625560/212570637-69cfd2c9-3b61-4d7a-82ce-933582f130e5.png)
 Live editing a cutscene.
 
-![image](https://user-images.githubusercontent.com/1625560/231353650-32847d30-896f-4bc6-b8b3-cc27e784bdb3.png)
+![image](https://user-images.githubusercontent.com/1625560/232184561-4a39511e-b5df-4f7a-bc57-44809898a664.png)
 Editing a 3D scene imported from Unity in Nu's editor, Gaia.
 
-![image](https://user-images.githubusercontent.com/1625560/231354416-52f55d49-dcac-4384-b7e2-efd0a3c6f791.png)
+![image](https://user-images.githubusercontent.com/1625560/232184477-dbb1102e-f4f5-4fd1-9008-57a07fe450f7.png)
 Effeicient, detailed 3D rendering with deferred physically-based rendering.
-
-![image](https://user-images.githubusercontent.com/1625560/230993984-9a75cd59-93b6-4b78-b8ef-3c9607407b4a.png)
-Editing another scene imported from Unity.
 
 ![image](https://user-images.githubusercontent.com/1625560/231017431-c5e7a4df-f5a4-4a5e-b235-93e1e3f64ebf.png)
 3D scene screenshot from editor.
