@@ -693,10 +693,10 @@ type [<ReferenceEquality>] GlRenderer3d =
                 match renderer.RenderTasks.RenderSurfacesDeferredRelative.TryGetValue billboardSurface with
                 | (true, renderTasks) -> SegmentedList.add struct (billboardMatrix, texCoordsOffset, properties) renderTasks
                 | (false, _) -> renderer.RenderTasks.RenderSurfacesDeferredRelative.Add (billboardSurface, SegmentedList.singleton (billboardMatrix, texCoordsOffset, properties))
-        | ForwardRenderType (sort, subsort) ->
+        | ForwardRenderType (subsort, sort) ->
             if absolute
-            then SegmentedList.add struct (sort, subsort, billboardMatrix, texCoordsOffset, properties, billboardSurface) renderer.RenderTasks.RenderSurfacesForwardAbsolute
-            else SegmentedList.add struct (sort, subsort, billboardMatrix, texCoordsOffset, properties, billboardSurface) renderer.RenderTasks.RenderSurfacesForwardRelative
+            then SegmentedList.add struct (subsort, sort, billboardMatrix, texCoordsOffset, properties, billboardSurface) renderer.RenderTasks.RenderSurfacesForwardAbsolute
+            else SegmentedList.add struct (subsort, sort, billboardMatrix, texCoordsOffset, properties, billboardSurface) renderer.RenderTasks.RenderSurfacesForwardRelative
 
     static member private categorizeStaticModelSurface
         (modelAbsolute,
@@ -733,10 +733,10 @@ type [<ReferenceEquality>] GlRenderer3d =
                 match renderer.RenderTasks.RenderSurfacesDeferredRelative.TryGetValue surface with
                 | (true, renderTasks) -> SegmentedList.add struct (surfaceMatrix, texCoordsOffset, properties) renderTasks
                 | (false, _) -> renderer.RenderTasks.RenderSurfacesDeferredRelative.Add (surface, SegmentedList.singleton (surfaceMatrix, texCoordsOffset, properties))
-        | ForwardRenderType (sort, subsort) ->
+        | ForwardRenderType (subsort, sort) ->
             if modelAbsolute
-            then SegmentedList.add struct (sort, subsort, surfaceMatrix, texCoordsOffset, properties, surface) renderer.RenderTasks.RenderSurfacesForwardAbsolute
-            else SegmentedList.add struct (sort, subsort, surfaceMatrix, texCoordsOffset, properties, surface) renderer.RenderTasks.RenderSurfacesForwardRelative
+            then SegmentedList.add struct (subsort, sort, surfaceMatrix, texCoordsOffset, properties, surface) renderer.RenderTasks.RenderSurfacesForwardAbsolute
+            else SegmentedList.add struct (subsort, sort, surfaceMatrix, texCoordsOffset, properties, surface) renderer.RenderTasks.RenderSurfacesForwardRelative
 
     static member private categorizeStaticModelSurfaceByIndex
         (modelAbsolute,
@@ -818,9 +818,9 @@ type [<ReferenceEquality>] GlRenderer3d =
 
     static member private sortSurfaces eyeCenter (surfaces : struct (single * single * Matrix4x4 * Box2 * SurfaceProperties * OpenGL.PhysicallyBased.PhysicallyBasedSurface) SegmentedList) =
         surfaces |>
-        Seq.map (fun struct (sort, subsort, model, texCoordsOffset, properties, surface) -> struct (sort, subsort, model, texCoordsOffset, properties, surface, (model.Translation - eyeCenter).MagnitudeSquared)) |>
+        Seq.map (fun struct (subsort, sort, model, texCoordsOffset, properties, surface) -> struct (subsort, sort, model, texCoordsOffset, properties, surface, (model.Translation - eyeCenter).MagnitudeSquared)) |>
         Seq.toArray |> // TODO: use a preallocated array to avoid allocating on the LOH.
-        Array.sortByDescending (fun struct (sort, subsort, _, _, _, _, distanceSquared) -> struct (sort, distanceSquared, subsort)) |>
+        Array.sortByDescending (fun struct (subsort, sort, _, _, _, _, distanceSquared) -> struct (sort, distanceSquared, subsort)) |>
         Array.map (fun struct (_, _, model, texCoordsOffset, propertiesOpt, surface, _) -> struct (model, texCoordsOffset, propertiesOpt, surface))
 
     static member private renderPhysicallyBasedSurfaces

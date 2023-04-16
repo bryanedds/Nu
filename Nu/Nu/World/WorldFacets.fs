@@ -1468,7 +1468,7 @@ module StaticBillboardFacetModule =
 
     type [<StructuralEquality; StructuralComparison>] RenderStyle =
         | Deferred
-        | Forward of single * single
+        | Forward of Subsort : single * Sort : single
 
     type Entity with
         // OPTIMIZATION: override allows surface properties to be fetched with a single look-up.
@@ -1541,7 +1541,7 @@ module StaticBillboardFacetModule =
             let renderType =
                 match entity.GetRenderStyle world with
                 | Deferred -> DeferredRenderType
-                | Forward (sort, subsort) -> ForwardRenderType (sort, subsort)
+                | Forward (subsort, sort) -> ForwardRenderType (subsort, sort)
             World.enqueueRenderMessage3d
                 (RenderBillboard
                     { Absolute = absolute; ModelMatrix = affineMatrix; InsetOpt = insetOpt; SurfaceProperties = properties
@@ -1942,7 +1942,7 @@ module StaticModelFacetModule =
             let renderType =
                 match entity.GetRenderStyle world with
                 | Deferred -> DeferredRenderType
-                | Forward (sort, subsort) -> ForwardRenderType (sort, subsort)
+                | Forward (subsort, sort) -> ForwardRenderType (subsort, sort)
             let staticModel = entity.GetStaticModel world
             World.enqueueRenderMessage3d
                 (RenderStaticModel
@@ -2049,7 +2049,7 @@ module StaticModelSurfaceFacetModule =
                 let renderType =
                     match entity.GetRenderStyle world with
                     | Deferred -> DeferredRenderType
-                    | Forward (sort, subsort) -> ForwardRenderType (sort, subsort)
+                    | Forward (subsort, sort) -> ForwardRenderType (subsort, sort)
                 let staticModel = entity.GetStaticModel world
                 World.enqueueRenderMessage3d
                     (RenderStaticModelSurface

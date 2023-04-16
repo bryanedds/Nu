@@ -165,6 +165,7 @@ void main()
     vec4 albedo;
     albedo.rgb = pow(albedoSample.rgb, vec3(GAMMA)) * albedoOut.rgb;
     albedo.a = albedoSample.a * albedoOut.a;
+    if (albedo.a == 0.0f) discard;
 
     // compute material properties
     float metallic = texture(metallicTexture, texCoords).r * materialOut.r;
