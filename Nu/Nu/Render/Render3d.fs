@@ -909,7 +909,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 renderer.PhysicallyBasedMaterialsFields.[i * 4 + 1] <- ambientOcclusion
                 renderer.PhysicallyBasedMaterialsFields.[i * 4 + 2] <- roughness
                 renderer.PhysicallyBasedMaterialsFields.[i * 4 + 3] <- emission
-                renderer.PhysicallyBasedHeightsFields.[i] <- height
+                renderer.PhysicallyBasedHeightsFields.[i] <- surface.SurfaceMaterial.AlbedoMetadata.TextureTexelHeight * height
                 renderer.PhysicallyBasedInvertRoughnessesFields.[i] <- if surface.SurfaceMaterial.InvertRoughness then 1 else 0
 
             // draw surfaces
