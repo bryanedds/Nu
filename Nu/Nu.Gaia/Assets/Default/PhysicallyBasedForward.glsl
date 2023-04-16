@@ -174,7 +174,7 @@ void main()
     vec3 emission = vec3(texture(emissionTexture, texCoords).r * materialOut.a);
 
     // compute lighting profile
-    vec3 n = normalize(tbn * texture(normalTexture, texCoords).xyz * 2.0 - 1.0);
+    vec3 n = normalize(tbn * (texture(normalTexture, texCoords).xyz * 2.0 - 1.0));
     vec3 v = normalize(eyeCenter - positionOut);
     vec3 r = reflect(-v, n);
 
