@@ -198,25 +198,34 @@ void main()
         lightAccum += (kD * albedo / PI + specular) * radiance * nDotL;
     }
 
+// This glsl code implements 'screen space ambient occlusion' in a fragment shader for the second pass of a deferred renderer. Find the bugs, if any.
+
     // compute screen space ambient term
-    const float ambientOcclusionStep = 0.05f;
+    const int ambientOcclusionSteps = 32;
+    const float ambientOcclusionPenalty = 1.0f / float(ambientOcclusionSteps);
+    float screenWidth = float(textureSize(normalAndDepthTexture, 0).x);
+    float ambientOcclusionRadius = screenWidth / 20.0f;
+    float ambientOcclusionStep = ambientOcclusionRadius / float(ambientOcclusionSteps);
     float ambientOcclusionScreen = 1.0f;
-    for (float i = 0.0f; i < 1.0f; i += ambientOcclusionStep)
+    mat4 viewProjection = projection * view;
+    for (int i = 0; i < ambientOcclusionSteps; ++i)
     {
-        // generate a pseudo-random unit vector
+        // generate a pseudo-random directional vector
         float randomX = random(vec3(gl_FragCoord.x, gl_FragCoord.y, depth));
         float randomY = random(vec3(gl_FragCoord.y, depth, gl_FragCoord.x));
         float randomZ = random(vec3(depth, gl_FragCoord.x, gl_FragCoord.y));
-        vec3 randomVector = normalize(vec3(randomX, randomY, randomZ));
+        vec3 randomDirection = normalize(vec3(randomX, randomY, randomZ));
 
-        // construct a sample vector in the fragment's upper hemisphere that has a magnitude of i.
-        vec3 normalScreen = normalize(transpose(mat3(view)) * normal);
-        vec3 sampleVector = dot(normalScreen, randomVector) < 0.0f ? -randomVector : randomVector;
-        sampleVector *= i * 0.01f;
-        float sampleDepth = texture(normalAndDepthTexture, gl_FragCoord.xy + sampleVector.xy).a;
+        // construct a sampling directional vector in the fragment's upper hemisphere with a decreasing magnitude that
+        // is biased toward the origin.
+        vec4 normalClipSpace = viewProjection * vec4(normal, 1.0f);
+        vec3 normalScreen = normalize(normalClipSpace.xyz / normalClipSpace.w);
+        vec3 sampleDirection = dot(normalScreen, randomDirection) < 0.0f ? -randomDirection : randomDirection;
+        sampleDirection *= ambientOcclusionRadius / float(i);
+        float sampleDepth = texture(normalAndDepthTexture, gl_FragCoord.xy + sampleDirection.xy).a;
 
-        // occlude more if sampled depth is greater
-        if (sampleDepth > depth) ambientOcclusionScreen -= ambientOcclusionStep;
+        // occlude more if sampled depth is nearer
+        if (sampleDepth < depth) ambientOcclusionScreen -= ambientOcclusionPenalty;
     }
 
     // compute diffuse term
