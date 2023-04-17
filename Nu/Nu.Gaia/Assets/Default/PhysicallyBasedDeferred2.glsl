@@ -47,39 +47,29 @@ in vec2 texCoordsOut;
 
 out vec4 frag;
 
-// A single iteration of Bob Jenkins' One-At-A-Time hashing algorithm.
-uint hash( uint x )
+//float random(vec2 seed)
+//{
+//    return fract(sin(dot(seed, vec2(12.9898, 78.233))) * 43758.5453);
+//}
+//
+//vec3 hemisphereSampleDirection(vec3 normal, vec2 seed)
+//{
+//    vec3 tangent = normalize(cross(normal, vec3(0.0, 0.0, 1.0)));
+//    vec3 bitangent = normalize(cross(normal, tangent));
+//    vec2 u = vec2(random(seed), random(seed + vec2(1.0, 0.0)));
+//    float r = sqrt(u.x);
+//    float theta = 2.0 * 3.141592 * u.y;
+//    vec3 direction = tangent * (r * cos(theta)) + bitangent * (r * sin(theta)) + normal * sqrt(max(0.0, 1.0 - u.x));
+//    return normalize(direction);
+//}
+
+float rand(vec2 co)
 {
-    x += ( x << 10u );
-    x ^= ( x >>  6u );
-    x += ( x <<  3u );
-    x ^= ( x >> 11u );
-    x += ( x << 15u );
-    return x;
+    float a = 12.9898, b = 78.233, c = 43758.5453;
+    float dt = dot(co.xy, vec2(a,b));
+    float sn = mod(dt, 3.141592);
+    return fract(sin(sn) * c);
 }
-
-// Compound versions of the hashing algorithm I whipped together.
-uint hash(uvec2 v) { return hash( v.x ^ hash(v.y)); }
-uint hash(uvec3 v) { return hash( v.x ^ hash(v.y) ^ hash(v.z)); }
-uint hash(uvec4 v) { return hash( v.x ^ hash(v.y) ^ hash(v.z) ^ hash(v.w)); }
-
-// Construct a float with half-open range [0:1] using low 23 bits.
-// All zeroes yields 0.0, all ones yields the next smallest representable value below 1.0.
-float floatConstruct(uint m)
-{
-    const uint ieeeMantissa =   0x007FFFFFu;    // binary32 mantissa bitmask
-    const uint ieeeOne =        0x3F800000u;    // 1.0 in IEEE binary32
-    m &= ieeeMantissa;                          // Keep only mantissa bits (fractional part)
-    m |= ieeeOne;                               // Add fractional part to 1.0
-    float  f = uintBitsToFloat(m);              // Range [1:2]
-    return f - 1.0;                             // Range [0:1]
-}
-
-// Pseudo-random value in half-open range [0:1].
-float random(float x)   { return floatConstruct(hash(floatBitsToUint(x))); }
-float random(vec2 v)    { return floatConstruct(hash(floatBitsToUint(v))); }
-float random(vec3 v)    { return floatConstruct(hash(floatBitsToUint(v))); }
-float random(vec4 v)    { return floatConstruct(hash(floatBitsToUint(v))); }
 
 float distributionGGX(vec3 normal, vec3 h, float roughness)
 {
@@ -198,32 +188,33 @@ void main()
         lightAccum += (kD * albedo / PI + specular) * radiance * nDotL;
     }
 
-// This glsl code implements 'screen space ambient occlusion' in a fragment shader for the second pass of a deferred renderer. Find the bugs, if any.
+// This glsl code attempts to implement 'screen space ambient occlusion' in a fragment shader for the second pass of a deferred renderer. Find the bugs, if any.
 
     // compute screen space ambient term
     const int ambientOcclusionSteps = 32;
     const float ambientOcclusionPenalty = 1.0f / float(ambientOcclusionSteps);
     float screenWidth = float(textureSize(normalAndDepthTexture, 0).x);
+    float screenWidthRecipricol = 1.0f / screenWidth;
     float ambientOcclusionRadius = screenWidth / 20.0f;
-    float ambientOcclusionStep = ambientOcclusionRadius / float(ambientOcclusionSteps);
     float ambientOcclusionScreen = 1.0f;
     mat4 viewProjection = projection * view;
-    for (int i = 0; i < ambientOcclusionSteps; ++i)
+        
+    for (int i = 1; i <= ambientOcclusionSteps; ++i)
     {
-        // generate a pseudo-random directional vector
-        float randomX = random(vec3(gl_FragCoord.x, gl_FragCoord.y, depth));
-        float randomY = random(vec3(gl_FragCoord.y, depth, gl_FragCoord.x));
-        float randomZ = random(vec3(depth, gl_FragCoord.x, gl_FragCoord.y));
-        vec3 randomDirection = normalize(vec3(randomX, randomY, randomZ));
-
+        // generate a sample direction using the hemisphere distribution
+        vec2 seed = vec2(gl_FragCoord.x, gl_FragCoord.y);
+        vec3 sampleDirection = hemisphereSampleDirection(normalize(normal), seed);
+        
         // construct a sampling directional vector in the fragment's upper hemisphere with a decreasing magnitude that
         // is biased toward the origin.
-        vec4 normalClipSpace = viewProjection * vec4(normal, 1.0f);
-        vec3 normalScreen = normalize(normalClipSpace.xyz / normalClipSpace.w);
-        vec3 sampleDirection = dot(normalScreen, randomDirection) < 0.0f ? -randomDirection : randomDirection;
-        sampleDirection *= ambientOcclusionRadius / float(i);
+        vec4 normalView = view * vec4(normal, 0.0);
+        vec3 normalViewNormalized = normalize(normalView.xyz);
+        vec4 normalClip = projection * vec4(normalViewNormalized, 0.0);
+        vec3 normalScreen = normalClip.xyz / normalClip.w;
+        sampleDirection = dot(normalScreen, sampleDirection) < 0.0f ? -sampleDirection : sampleDirection;
+        sampleDirection *= ambientOcclusionRadius / float(i) * screenWidthRecipricol;
         float sampleDepth = texture(normalAndDepthTexture, gl_FragCoord.xy + sampleDirection.xy).a;
-
+        
         // occlude more if sampled depth is nearer
         if (sampleDepth < depth) ambientOcclusionScreen -= ambientOcclusionPenalty;
     }
