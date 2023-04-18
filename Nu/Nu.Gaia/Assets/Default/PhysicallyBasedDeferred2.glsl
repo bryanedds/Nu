@@ -192,7 +192,8 @@ void main()
     {
         // get sample position in view space
         float s = float(i) * 3.0;
-        vec3 samplePositionView = tangentToView * vec3(hash(s), hash(s+1.0), hash(s+2.0)); // from tangent to view-space
+        vec3 direction = normalize(vec3(hash(s), hash(s+1.0), hash(s+2.0)));
+        vec3 samplePositionView = tangentToView * direction; // from tangent to view-space
         samplePositionView = positionView + samplePositionView * radius;
 
         // project sample position from view space to clip space
