@@ -20,8 +20,8 @@ const float REFLECTION_LOD_MAX = 5.0;
 const float GAMMA = 2.2;
 const float ATTENUATION_CONSTANT = 1.0f;
 const int LIGHTS_MAX = 96;
-const int SSAO_SAMPLES = 64;
-const float SSAO_RADIUS = 0.2;
+const int SSAO_SAMPLES = 32;
+const float SSAO_RADIUS = 0.5;
 const vec3 SSAO_TANGENTS[4] = vec3[4](
     vec3(1.0, 0.0, 0.0),
     vec3(-1.0, 0.0, 0.0),
