@@ -20,6 +20,13 @@ const float REFLECTION_LOD_MAX = 5.0;
 const float GAMMA = 2.2;
 const float ATTENUATION_CONSTANT = 1.0f;
 const int LIGHTS_MAX = 96;
+const int SSAO_SAMPLES = 64;
+const float SSAO_RADIUS = 0.25;
+const vec3 SSAO_TANGENTS[4] = vec3[4](
+    vec3(1.0, 0.0, 0.0),
+    vec3(-1.0, 0.0, 0.0),
+    vec3(0.0, 1.0, 0.0),
+    vec3(0.0, -1.0, 0.0));
 
 uniform mat4 view;
 uniform mat4 projection;
@@ -176,46 +183,45 @@ void main()
 
 // This glsl code attempts to implement 'screen space ambient occlusion' in a fragment shader for the second pass of a deferred renderer. Find the bugs, if any.
 
-    const int samples = 64;
-    const float radius = 0.25;
-
     float ambientOcclusionScreen = 0.0;
     vec3 positionView = (view * vec4(position, 1.0)).xyz;
-    vec3 tangent = vec3(1.0, 0.0, 0.0);
-    vec3 normalView = normalize(transpose(inverse(mat3(view))) * normal);
-    vec3 tangentView = normalize(tangent - dot(tangent, normalView) * normalView);
-    vec3 bitangentView = cross(normalView, tangentView);
-    mat3 tangentToView = mat3(tangentView, bitangentView, normalView);
-
-    // iterate over the sample kernel and calculate occlusion factor
-    for (int i = 0; i < samples; ++i)
+    for (int i = 0; i < 4; ++i)
     {
-        // get sample position in view space
-        float s = float(i) * 3.0;
-        vec3 direction = normalize(vec3(hash(s), hash(s+1.0), hash(s+2.0)));
-        vec3 samplePositionView = tangentToView * direction; // from tangent to view-space
-        samplePositionView = positionView + samplePositionView * radius;
+        vec3 normalView = normalize(transpose(inverse(mat3(view))) * normal);
+        vec3 tangentView = normalize(SSAO_TANGENTS[i] - dot(SSAO_TANGENTS[i], normalView) * normalView);
+        vec3 bitangentView = cross(normalView, tangentView);
+        mat3 tangentToView = mat3(tangentView, bitangentView, normalView);
 
-        // project sample position from view space to clip space
-        vec4 offset = vec4(samplePositionView, 1.0);
-        offset = projection * offset; // from view to clip-space
-        offset.xyz /= offset.w; // perspective divide
-        offset.xyz = offset.xyz * 0.5 + 0.5; // transform to range 0.0 - 1.0
-
-        // occlude only if offset is in texture range
-        if (offset.x >= 0.0f && offset.x < 1.0f && offset.y >= 0.0f && offset.y < 1.0f)
+        // iterate over the sample kernel and calculate occlusion factor
+        for (int j = 0; j < SSAO_SAMPLES / 4; ++j)
         {
-            // get sample depth
-            float sampleDepth = ((view * texture(positionTexture, offset.xy)).rgb).z;
+            // get sample position in view space
+            float s = float(j) * 3.0;
+            vec3 sampleDirection = normalize(vec3(hash(s), hash(s+1.0), hash(s+2.0))) * 2.0 - 1.0;
+            vec3 samplePositionView = tangentToView * sampleDirection; // from tangent to view-space
+            samplePositionView = positionView + samplePositionView * SSAO_RADIUS;
 
-            // range check
-            float rangeCheck = smoothstep(0.0, 1.0, radius / abs(positionView.z - sampleDepth));
+            // project sample position from view space to clip space
+            vec4 offset = vec4(samplePositionView, 1.0);
+            offset = projection * offset; // from view to clip-space
+            offset.xyz /= offset.w; // perspective divide
+            offset.xyz = offset.xyz * 0.5 + 0.5; // transform to range 0.0 - 1.0
 
-            // accumulate
-            ambientOcclusionScreen += (sampleDepth >= samplePositionView.z ? 1.0 : 0.0) * rangeCheck;
+            // occlude only if offset is in texture range
+            if (offset.x >= 0.0f && offset.x < 1.0f && offset.y >= 0.0f && offset.y < 1.0f)
+            {
+                // get sample depth
+                float sampleDepth = ((view * texture(positionTexture, offset.xy)).rgb).z;
+
+                // range check
+                float rangeCheck = smoothstep(0.0, 1.0, SSAO_RADIUS / abs(positionView.z - sampleDepth));
+
+                // accumulate
+                ambientOcclusionScreen += (sampleDepth >= samplePositionView.z ? 1.0 : 0.0) * rangeCheck;
+            }
         }
     }
-    ambientOcclusionScreen = 1.0 - (ambientOcclusionScreen / float(samples));
+    ambientOcclusionScreen = 1.0 - ambientOcclusionScreen / float(SSAO_SAMPLES);
 
     // compute diffuse term
     vec3 f = fresnelSchlickRoughness(max(dot(normal, v), 0.0), f0, roughness);
