@@ -57,14 +57,6 @@ float random(float seedX, float seedY)
     return fract(sin(dot(vec2(seedX, seedY), vec2(12.9898, 78.233))) * 43758.5453);
 }
 
-vec3 randomDirection(float seedX, float seedY, float seedZ)
-{
-    float x = random(seedX, seedY);
-    float y = random(seedY, seedZ);
-    float z = random(seedZ, (seedX + seedY) * 0.5f);
-    return normalize(vec3(x, y, z));
-}
-
 float distributionGGX(vec3 normal, vec3 h, float roughness)
 {
     float a = roughness * roughness;
@@ -186,21 +178,16 @@ void main()
 
     const int samples = 64;
     const float radius = 0.25;
-    const float bias = 0.025;
 
-    // get input for SSAO algorithm
+    float ambientOcclusionScreen = 0.0;
     vec3 positionView = (view * vec4(position, 1.0)).xyz;
+    vec3 tangent = vec3(1.0, 0.0, 0.0);
     vec3 normalView = normalize(transpose(inverse(mat3(view))) * normal);
-    vec3 sampleDirection = randomDirection(texCoordsOut.x, texCoordsOut.y, texCoordsOut.x + 0.5f);
-    if (dot(sampleDirection, normalView) < 0.0f) sampleDirection = -sampleDirection;
-
-    // create TBN change-of-basis matrix: from tangent-space to view-space
-    vec3 tangentView = normalize(sampleDirection - normalView * dot(sampleDirection, normalView)); // Q: why involve the sample diection in this calcuation?
+    vec3 tangentView = normalize(tangent - dot(tangent, normalView) * normalView);
     vec3 bitangentView = cross(normalView, tangentView);
     mat3 tangentToView = mat3(tangentView, bitangentView, normalView);
 
     // iterate over the sample kernel and calculate occlusion factor
-    float ambientOcclusionScreen = 0.0;
     for (int i = 0; i < samples; ++i)
     {
         // get sample position in view space
@@ -224,7 +211,7 @@ void main()
             float rangeCheck = smoothstep(0.0, 1.0, radius / abs(positionView.z - sampleDepth));
 
             // accumulate
-            ambientOcclusionScreen += (sampleDepth >= samplePositionView.z + bias ? 1.0 : 0.0) * rangeCheck;
+            ambientOcclusionScreen += (sampleDepth >= samplePositionView.z ? 1.0 : 0.0) * rangeCheck;
         }
     }
     ambientOcclusionScreen = 1.0 - (ambientOcclusionScreen / float(samples));
