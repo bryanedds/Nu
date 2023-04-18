@@ -21,7 +21,7 @@ const float GAMMA = 2.2;
 const float ATTENUATION_CONSTANT = 1.0f;
 const int LIGHTS_MAX = 96;
 const int SSAO_SAMPLES = 64;
-const float SSAO_RADIUS = 0.25;
+const float SSAO_RADIUS = 0.2;
 const vec3 SSAO_TANGENTS[4] = vec3[4](
     vec3(1.0, 0.0, 0.0),
     vec3(-1.0, 0.0, 0.0),
@@ -181,12 +181,12 @@ void main()
         lightAccum += (kD * albedo / PI + specular) * radiance * nDotL;
     }
 
-// This glsl code attempts to implement 'screen space ambient occlusion' in a fragment shader for the second pass of a deferred renderer. Find the bugs, if any.
-
+    // compute screen-space ambient occlusion
     float ambientOcclusionScreen = 0.0;
     vec3 positionView = (view * vec4(position, 1.0)).xyz;
     for (int i = 0; i < 4; ++i)
     {
+        // compute tangent basis for ssao operations
         vec3 normalView = normalize(transpose(inverse(mat3(view))) * normal);
         vec3 tangentView = normalize(SSAO_TANGENTS[i] - dot(SSAO_TANGENTS[i], normalView) * normalView);
         vec3 bitangentView = cross(normalView, tangentView);
@@ -210,13 +210,9 @@ void main()
             // occlude only if offset is in texture range
             if (offset.x >= 0.0f && offset.x < 1.0f && offset.y >= 0.0f && offset.y < 1.0f)
             {
-                // get sample depth
+                // get sample depth, perform range check, then accumulate
                 float sampleDepth = ((view * texture(positionTexture, offset.xy)).rgb).z;
-
-                // range check
                 float rangeCheck = smoothstep(0.0, 1.0, SSAO_RADIUS / abs(positionView.z - sampleDepth));
-
-                // accumulate
                 ambientOcclusionScreen += (sampleDepth >= samplePositionView.z ? 1.0 : 0.0) * rangeCheck;
             }
         }
