@@ -47,28 +47,22 @@ in vec2 texCoordsOut;
 
 out vec4 frag;
 
-//float random(vec2 seed)
-//{
-//    return fract(sin(dot(seed, vec2(12.9898, 78.233))) * 43758.5453);
-//}
-//
-//vec3 hemisphereSampleDirection(vec3 normal, vec2 seed)
-//{
-//    vec3 tangent = normalize(cross(normal, vec3(0.0, 0.0, 1.0)));
-//    vec3 bitangent = normalize(cross(normal, tangent));
-//    vec2 u = vec2(random(seed), random(seed + vec2(1.0, 0.0)));
-//    float r = sqrt(u.x);
-//    float theta = 2.0 * 3.141592 * u.y;
-//    vec3 direction = tangent * (r * cos(theta)) + bitangent * (r * sin(theta)) + normal * sqrt(max(0.0, 1.0 - u.x));
-//    return normalize(direction);
-//}
-
-float rand(vec2 co)
+float hash(float n)
 {
-    float a = 12.9898, b = 78.233, c = 43758.5453;
-    float dt = dot(co.xy, vec2(a,b));
-    float sn = mod(dt, 3.141592);
-    return fract(sin(sn) * c);
+    return fract(sin(n) * 43758.5453123);
+}
+
+float random(float seedX, float seedY)
+{
+    return fract(sin(dot(vec2(seedX, seedY), vec2(12.9898, 78.233))) * 43758.5453);
+}
+
+vec3 randomDirection(float seedX, float seedY, float seedZ)
+{
+    float x = random(seedX, seedY);
+    float y = random(seedY, seedZ);
+    float z = random(seedZ, (seedX + seedY) * 0.5f);
+    return normalize(vec3(x, y, z));
 }
 
 float distributionGGX(vec3 normal, vec3 h, float roughness)
@@ -190,34 +184,49 @@ void main()
 
 // This glsl code attempts to implement 'screen space ambient occlusion' in a fragment shader for the second pass of a deferred renderer. Find the bugs, if any.
 
-    // compute screen space ambient term
-    const int ambientOcclusionSteps = 32;
-    const float ambientOcclusionPenalty = 1.0f / float(ambientOcclusionSteps);
-    float screenWidth = float(textureSize(normalAndDepthTexture, 0).x);
-    float screenWidthRecipricol = 1.0f / screenWidth;
-    float ambientOcclusionRadius = screenWidth / 20.0f;
-    float ambientOcclusionScreen = 1.0f;
-    mat4 viewProjection = projection * view;
-        
-    for (int i = 1; i <= ambientOcclusionSteps; ++i)
+    const int samples = 64;
+    const float radius = 0.25;
+    const float bias = 0.025;
+
+    // get input for SSAO algorithm
+    vec3 positionView = (view * vec4(position, 1.0)).xyz;
+    vec3 normalView = normalize(transpose(inverse(mat3(view))) * normal);
+    vec3 sampleDirection = randomDirection(texCoordsOut.x, texCoordsOut.y, depth);
+
+    // create TBN change-of-basis matrix: from tangent-space to view-space
+    vec3 tangentView = normalize(sampleDirection - normalView * dot(sampleDirection, normalView)); // Q: why involve the sample diection in this calcuation?
+    vec3 bitangentView = cross(normalView, tangentView);
+    mat3 tangentToView = mat3(tangentView, bitangentView, normalView);
+
+    // iterate over the sample kernel and calculate occlusion factor
+    float ambientOcclusionScreen = 0.0;
+    for (int i = 0; i < samples; ++i)
     {
-        // generate a sample direction using the hemisphere distribution
-        vec2 seed = vec2(gl_FragCoord.x, gl_FragCoord.y);
-        vec3 sampleDirection = hemisphereSampleDirection(normalize(normal), seed);
-        
-        // construct a sampling directional vector in the fragment's upper hemisphere with a decreasing magnitude that
-        // is biased toward the origin.
-        vec4 normalView = view * vec4(normal, 0.0);
-        vec3 normalViewNormalized = normalize(normalView.xyz);
-        vec4 normalClip = projection * vec4(normalViewNormalized, 0.0);
-        vec3 normalScreen = normalClip.xyz / normalClip.w;
-        sampleDirection = dot(normalScreen, sampleDirection) < 0.0f ? -sampleDirection : sampleDirection;
-        sampleDirection *= ambientOcclusionRadius / float(i) * screenWidthRecipricol;
-        float sampleDepth = texture(normalAndDepthTexture, gl_FragCoord.xy + sampleDirection.xy).a;
-        
-        // occlude more if sampled depth is nearer
-        if (sampleDepth < depth) ambientOcclusionScreen -= ambientOcclusionPenalty;
+        // get sample position in view space
+        float s = float(i) * 3.0;
+        vec3 samplePositionView = tangentToView * vec3(hash(s), hash(s+1.0), hash(s+2.0)); // from tangent to view-space
+        samplePositionView = positionView + samplePositionView * radius;
+
+        // project sample position from view space to clip space
+        vec4 offset = vec4(samplePositionView, 1.0);
+        offset = projection * offset; // from view to clip-space
+        offset.xyz /= offset.w; // perspective divide
+        offset.xyz = offset.xyz * 0.5 + 0.5; // transform to range 0.0 - 1.0
+
+        // occlude only if offset is in texture range
+        if (offset.x >= 0.0f && offset.x < 1.0f && offset.y >= 0.0f && offset.y < 1.0f)
+        {
+            // get sample depth
+            float sampleDepth = ((view * texture(positionTexture, offset.xy)).rgb).z;
+
+            // range check
+            float rangeCheck = smoothstep(0.0, 1.0, radius / abs(positionView.z - sampleDepth));
+
+            // accumulate
+            ambientOcclusionScreen += (sampleDepth >= samplePositionView.z + bias ? 1.0 : 0.0) * rangeCheck;
+        }
     }
+    ambientOcclusionScreen = 1.0 - (ambientOcclusionScreen / float(samples));
 
     // compute diffuse term
     vec3 f = fresnelSchlickRoughness(max(dot(normal, v), 0.0), f0, roughness);
