@@ -191,7 +191,8 @@ void main()
     // get input for SSAO algorithm
     vec3 positionView = (view * vec4(position, 1.0)).xyz;
     vec3 normalView = normalize(transpose(inverse(mat3(view))) * normal);
-    vec3 sampleDirection = randomDirection(texCoordsOut.x, texCoordsOut.y, depth);
+    vec3 sampleDirection = randomDirection(texCoordsOut.x, texCoordsOut.y, texCoordsOut.x + 0.5f);
+    if (dot(sampleDirection, normalView) < 0.0f) sampleDirection = -sampleDirection;
 
     // create TBN change-of-basis matrix: from tangent-space to view-space
     vec3 tangentView = normalize(sampleDirection - normalView * dot(sampleDirection, normalView)); // Q: why involve the sample diection in this calcuation?
