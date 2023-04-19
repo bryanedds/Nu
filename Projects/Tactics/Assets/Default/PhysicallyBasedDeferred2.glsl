@@ -64,11 +64,6 @@ float hash(float n)
     return fract(sin(n) * 43758.5453123);
 }
 
-float random(float seedX, float seedY)
-{
-    return fract(sin(dot(vec2(seedX, seedY), vec2(12.9898, 78.233))) * 43758.5453);
-}
-
 float distributionGGX(vec3 normal, vec3 h, float roughness)
 {
     float a = roughness * roughness;
@@ -219,7 +214,9 @@ void main()
             ambientOcclusionScreen += (sampleDepth >= samplePositionView.z + SSAO_BIAS ? 1.0 : 0.0) * rangeCheck;
         }
     }
-    ambientOcclusionScreen = 1.0 - ambientOcclusionScreen / float(SSAO_SAMPLES) * SSAO;
+    ambientOcclusionScreen /= float(SSAO_SAMPLES);
+    ambientOcclusionScreen = 1.0 - ambientOcclusionScreen;
+    ambientOcclusionScreen = min(1.0, ambientOcclusionScreen * SSAO);
 
     // compute diffuse term
     vec3 f = fresnelSchlickRoughness(max(dot(normal, v), 0.0), f0, roughness);
