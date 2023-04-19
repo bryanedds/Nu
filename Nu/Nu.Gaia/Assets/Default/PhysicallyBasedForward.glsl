@@ -249,7 +249,7 @@ void main()
     vec3 specular = environmentFilter * (f * environmentBrdf.x + environmentBrdf.y);
 
     // compute ambient term
-    vec3 ambient = (kD * diffuse.rgb + specular) * ambientOcclusion;
+    vec3 ambient = kD * diffuse.rgb * ambientOcclusion + specular;
 
     // compute color w/ tone mapping, gamma correction, and emission
     vec3 color = lightAccum + ambient;
