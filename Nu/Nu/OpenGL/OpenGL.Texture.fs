@@ -109,6 +109,9 @@ module Texture =
             Gl.BindTexture (TextureTarget.Texture2d, texture)
             Gl.TexImage2D (TextureTarget.Texture2d, 0, metadata.TextureInternalFormat, metadata.TextureWidth, metadata.TextureHeight, 0, PixelFormat.Bgra, PixelType.UnsignedByte, imageData)
             if generateMipmaps then Gl.GenerateMipmap TextureTarget.Texture2d
+            Hl.Assert ()
+            Gl.PrioritizeTextures ([|texture|], [|1.0f|]);
+            ignore<ErrorCode> (Gl.GetError ()) // ignore errors from prioritize texture
             Gl.BindTexture (TextureTarget.Texture2d, 0u)
             Right (metadata, texture)
 
