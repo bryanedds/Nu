@@ -20,11 +20,14 @@ const float REFLECTION_LOD_MAX = 5.0;
 const float GAMMA = 2.2;
 const float ATTENUATION_CONSTANT = 1.0;
 const int LIGHTS_MAX = 96;
-const float SSAO = 1.25;
-const float SSAO_RADIUS = 0.2;
+const float SSAO = 1.5;
+const float SSAO_RADIUS = 1.0;
 const float SSAO_BIAS = 0.01;
 const int SSAO_SAMPLES = 96;
-const vec3 SSAO_TANGENTS[4] = vec3[4](
+const int SSAO_ITERATIONS = 4;
+const int SSAO_SUBSAMPLES = SSAO_SAMPLES / SSAO_ITERATIONS;
+const float SSAO_SUBSAMPLES_RECIPRICOL = 1.0 / float(SSAO_SUBSAMPLES);
+const vec3 SSAO_TANGENTS[SSAO_ITERATIONS] = vec3[SSAO_ITERATIONS](
     vec3(1.0, 0.0, 0.0),
     vec3(-1.0, 0.0, 0.0),
     vec3(0.0, 1.0, 0.0),
@@ -186,7 +189,7 @@ void main()
     // compute screen-space ambient occlusion
     float ambientOcclusionScreen = 0.0;
     vec3 positionView = (view * vec4(position, 1.0)).xyz;
-    for (int i = 0; i < 4; ++i)
+    for (int i = 0; i < SSAO_ITERATIONS; ++i)
     {
         // compute tangent basis for ssao operations
         vec3 normalView = normalize(transpose(inverse(mat3(view))) * normal);
@@ -195,11 +198,12 @@ void main()
         mat3 tangentToView = mat3(tangentView, bitangentView, normalView);
 
         // iterate over the sample kernel and calculate occlusion factor
-        for (int j = 0; j < SSAO_SAMPLES / 4; ++j)
+        for (int j = 0; j < SSAO_SUBSAMPLES; ++j)
         {
             // get sample position in view space
             float s = float(j) * 3.0;
             vec3 sampleDirection = normalize(vec3(hash(s), abs(hash(s+1.0)), hash(s+2.0))) * 2.0 - 1.0;
+            sampleDirection *= mix(SSAO_SUBSAMPLES_RECIPRICOL, 1.0f, j * SSAO_SUBSAMPLES_RECIPRICOL);
             vec3 samplePositionView = tangentToView * sampleDirection; // from tangent to view-space
             samplePositionView = positionView + samplePositionView * SSAO_RADIUS;
 
@@ -231,7 +235,7 @@ void main()
     vec3 specular = environmentFilter * (f * environmentBrdf.x + environmentBrdf.y);
 
     // compute ambient term
-    vec3 ambient = (kD * diffuse + specular) * ambientOcclusion * ambientOcclusionScreen;
+    vec3 ambient = kD * diffuse * ambientOcclusion * ambientOcclusionScreen + specular;
 
     // compute color w/ tone mapping, gamma correction, and emission
     vec3 color = lightAccum + ambient;
