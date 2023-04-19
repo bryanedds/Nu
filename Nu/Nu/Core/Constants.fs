@@ -92,6 +92,7 @@ module Render =
     let [<Literal>] OpenGlVersionMinor = 1
     let [<Literal>] OpenGlCore = true
     let [<Uniform>] GlslVersionPragma = "#version " + string OpenGlVersionMajor + string OpenGlVersionMinor + "0 " + if OpenGlCore then "core" else ""
+    let [<Literal>] TexturePriorityDefault = 0.5f // higher priority than (supposed) default, but not maximum. this value is arrived at through experimenting with a Windows NVidia driver.
     let [<Literal>] TextureAnisotropyMax = 8.0f
     let [<Literal>] SpriteBatchSize = 192
     let [<Literal>] SpriteBorderTexelScalar = 0.01f
