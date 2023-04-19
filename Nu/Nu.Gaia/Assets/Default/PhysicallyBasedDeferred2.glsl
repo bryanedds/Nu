@@ -22,6 +22,7 @@ const float ATTENUATION_CONSTANT = 1.0;
 const int LIGHTS_MAX = 96;
 const float SSAO = 1.25;
 const float SSAO_RADIUS = 0.2;
+const float SSAO_BIAS = 0.01;
 const int SSAO_SAMPLES = 96;
 const vec3 SSAO_TANGENTS[4] = vec3[4](
     vec3(1.0, 0.0, 0.0),
@@ -211,7 +212,7 @@ void main()
             // get sample depth, perform range check, then accumulate
             float sampleDepth = ((view * texture(positionTexture, offset.xy)).rgb).z;
             float rangeCheck = smoothstep(0.0, 1.0, SSAO_RADIUS / abs(positionView.z - sampleDepth));
-            ambientOcclusionScreen += (sampleDepth >= samplePositionView.z ? 1.0 : 0.0) * rangeCheck;
+            ambientOcclusionScreen += (sampleDepth >= samplePositionView.z + SSAO_BIAS ? 1.0 : 0.0) * rangeCheck;
         }
     }
     ambientOcclusionScreen = 1.0 - ambientOcclusionScreen / float(SSAO_SAMPLES) * SSAO;
