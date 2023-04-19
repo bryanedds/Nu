@@ -178,7 +178,8 @@ module Quadtree =
     /// A spatial structure that organizes elements on a 2d plane. TODO: document this.
     type [<ReferenceEquality>] Quadtree<'e when 'e : equality> =
         private
-            { Leaves : Dictionary<Vector2, 'e Quadnode>
+            { mutable HaveAnyElementsEverBeenAdded : bool // OPTIMIZATION: short-circuit any queries if no elements have ever been added to the tree.
+              Leaves : Dictionary<Vector2, 'e Quadnode>
               LeafSize : Vector2 // TODO: consider keeping the inverse of this to avoid divides.
               Omnipresent : 'e Quadelement HashSet
               Node : 'e Quadnode
@@ -195,6 +196,7 @@ module Quadtree =
         | (_, _) -> tree.Node
 
     let addElement (presence : Presence) bounds element tree =
+        tree.HaveAnyElementsEverBeenAdded <- true
         if presence.OmnipresentType then
             tree.Omnipresent.Remove element |> ignore
             tree.Omnipresent.Add element |> ignore
@@ -242,25 +244,35 @@ module Quadtree =
                 tree.Omnipresent.Add element |> ignore
 
     let getElementsOmnipresent set tree =
-        new QuadtreeEnumerable<'e> (new QuadtreeEnumerator<'e> (tree.Omnipresent, set)) :> 'e Quadelement IEnumerable
+        if tree.HaveAnyElementsEverBeenAdded then
+            new QuadtreeEnumerable<'e> (new QuadtreeEnumerator<'e> (tree.Omnipresent, set)) :> 'e Quadelement IEnumerable
+        else Seq.empty
 
     let getElementsAtPoint point set tree =
-        let node = findNode (box2 point v2Zero) tree
-        Quadnode.getElementsAtPoint point node set
-        new QuadtreeEnumerable<'e> (new QuadtreeEnumerator<'e> (tree.Omnipresent, set)) :> 'e Quadelement IEnumerable
+        if tree.HaveAnyElementsEverBeenAdded then
+            let node = findNode (box2 point v2Zero) tree
+            Quadnode.getElementsAtPoint point node set
+            new QuadtreeEnumerable<'e> (new QuadtreeEnumerator<'e> (tree.Omnipresent, set)) :> 'e Quadelement IEnumerable
+        else Seq.empty
 
     let getElementsInBounds bounds set tree =
-        Quadnode.getElementsInBounds true bounds tree.Node set
-        new QuadtreeEnumerable<'e> (new QuadtreeEnumerator<'e> (tree.Omnipresent, set)) :> 'e Quadelement IEnumerable
+        if tree.HaveAnyElementsEverBeenAdded then
+            Quadnode.getElementsInBounds true bounds tree.Node set
+            new QuadtreeEnumerable<'e> (new QuadtreeEnumerator<'e> (tree.Omnipresent, set)) :> 'e Quadelement IEnumerable
+        else Seq.empty
 
     let getElementsInView bounds set tree =
-        Quadnode.getElementsInBounds false bounds tree.Node set
-        let omnipresent = tree.Omnipresent |> Seq.filter (fun element -> element.Visible)
-        new QuadtreeEnumerable<'e> (new QuadtreeEnumerator<'e> (omnipresent, set)) :> 'e Quadelement IEnumerable
+        if tree.HaveAnyElementsEverBeenAdded then
+            Quadnode.getElementsInBounds false bounds tree.Node set
+            let omnipresent = tree.Omnipresent |> Seq.filter (fun element -> element.Visible)
+            new QuadtreeEnumerable<'e> (new QuadtreeEnumerator<'e> (omnipresent, set)) :> 'e Quadelement IEnumerable
+        else Seq.empty
 
     let getElementsInPlay bounds set tree =
-        Quadnode.getElementsInBounds true bounds tree.Node set
-        new QuadtreeEnumerable<'e> (new QuadtreeEnumerator<'e> (tree.Omnipresent, set)) :> 'e Quadelement IEnumerable
+        if tree.HaveAnyElementsEverBeenAdded then
+            Quadnode.getElementsInBounds true bounds tree.Node set
+            new QuadtreeEnumerable<'e> (new QuadtreeEnumerator<'e> (tree.Omnipresent, set)) :> 'e Quadelement IEnumerable
+        else Seq.empty
 
     let getDepth tree =
         tree.Depth
@@ -274,7 +286,8 @@ module Quadtree =
         for _ in 1 .. dec depth do leafSize <- leafSize * 0.5f
         let min = size * -0.5f + leafSize * 0.5f // OPTIMIZATION: offset min by half leaf size to minimize margin hits at origin.
         let bounds = box2 min size
-        { Leaves = leaves
+        { HaveAnyElementsEverBeenAdded = false
+          Leaves = leaves
           LeafSize = leafSize
           Omnipresent = HashSet HashIdentity.Structural
           Node = Quadnode.make<'e> depth bounds leaves

@@ -279,7 +279,8 @@ module Octree =
     /// A spatial structure that organizes elements in a 3d grid.
     type [<ReferenceEquality>] Octree<'e when 'e : equality> =
         private
-            { Leaves : Dictionary<Vector3, 'e Octnode>
+            { mutable HaveAnyElementsEverBeenAdded : bool // OPTIMIZATION: short-circuit any queries if no elements have ever been added to the tree.
+              Leaves : Dictionary<Vector3, 'e Octnode>
               LeafSize : Vector3 // TODO: consider keeping the inverse of this to avoid divides.
               Omnipresent : 'e Octelement HashSet
               Node : 'e Octnode
@@ -296,6 +297,7 @@ module Octree =
         | (_, _) -> tree.Node
 
     let addElement bounds (element : 'e Octelement) tree =
+        tree.HaveAnyElementsEverBeenAdded <- true
         let presence = element.Presence
         if presence.OmnipresentType then
             tree.Omnipresent.Remove element |> ignore
@@ -322,6 +324,7 @@ module Octree =
                 Octnode.removeElement bounds element node
 
     let updateElement (oldPresence : Presence) oldBounds (newPresence : Presence) newBounds element tree =
+        tree.HaveAnyElementsEverBeenAdded <- true
         let wasInNode = not oldPresence.OmnipresentType && Octnode.isIntersectingBox oldBounds tree.Node
         let isInNode = not newPresence.OmnipresentType && Octnode.isIntersectingBox newBounds tree.Node
         if wasInNode then
@@ -345,29 +348,41 @@ module Octree =
                 tree.Omnipresent.Add element |> ignore
 
     let getElementsOmnipresent (set : _ HashSet) tree =
-        new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (tree.Omnipresent, set)) :> 'e Octelement IEnumerable
+        if tree.HaveAnyElementsEverBeenAdded
+        then new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (tree.Omnipresent, set)) :> 'e Octelement IEnumerable
+        else Seq.empty
 
     let getElementsAtPoint point (set : _ HashSet) tree =
-        let node = findNode (box3 point v3Zero) tree
-        Octnode.getElementsAtPoint point node set
-        new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (tree.Omnipresent, set)) :> 'e Octelement IEnumerable
+        if tree.HaveAnyElementsEverBeenAdded then
+            let node = findNode (box3 point v3Zero) tree
+            Octnode.getElementsAtPoint point node set
+            new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (tree.Omnipresent, set)) :> 'e Octelement IEnumerable
+        else Seq.empty
 
     let getElementsInBounds bounds (set : _ HashSet) tree =
-        Octnode.getElementsInBox bounds tree.Node set
-        new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (tree.Omnipresent, set)) :> 'e Octelement IEnumerable
+        if tree.HaveAnyElementsEverBeenAdded then
+            Octnode.getElementsInBox bounds tree.Node set
+            new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (tree.Omnipresent, set)) :> 'e Octelement IEnumerable
+        else Seq.empty
 
     let getElementsInFrustum frustum (set : _ HashSet) tree =
-        Octnode.getElementsInFrustum frustum tree.Node set
-        new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (tree.Omnipresent, set)) :> 'e Octelement IEnumerable
+        if tree.HaveAnyElementsEverBeenAdded then
+            Octnode.getElementsInFrustum frustum tree.Node set
+            new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (tree.Omnipresent, set)) :> 'e Octelement IEnumerable
+        else Seq.empty
 
     let getElementsInView frustumEnclosed frustumExposed frustumImposter lightBox (set : _ HashSet) tree =
-        Octnode.getElementsInView frustumEnclosed frustumExposed frustumImposter lightBox tree.Node set
-        let omnipresent = tree.Omnipresent |> Seq.filter (fun element -> element.Visible)
-        new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (omnipresent, set)) :> 'e Octelement IEnumerable
+        if tree.HaveAnyElementsEverBeenAdded then
+            Octnode.getElementsInView frustumEnclosed frustumExposed frustumImposter lightBox tree.Node set
+            let omnipresent = tree.Omnipresent |> Seq.filter (fun element -> element.Visible)
+            new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (omnipresent, set)) :> 'e Octelement IEnumerable
+        else Seq.empty
 
     let getElementsInPlay playBox playFrustum (set : _ HashSet) tree =
-        Octnode.getElementsInPlay playBox playFrustum tree.Node set
-        new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (tree.Omnipresent, set)) :> 'e Octelement IEnumerable
+        if tree.HaveAnyElementsEverBeenAdded then
+            Octnode.getElementsInPlay playBox playFrustum tree.Node set
+            new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (tree.Omnipresent, set)) :> 'e Octelement IEnumerable
+        else Seq.empty
 
     let getDepth tree =
         tree.Depth
@@ -382,7 +397,8 @@ module Octree =
         for _ in 1 .. dec depth do leafSize <- leafSize * 0.5f
         let min = size * -0.5f + leafSize * 0.5f // OPTIMIZATION: offset min by half leaf size to minimize margin hits at origin.
         let bounds = box3 min size
-        { Leaves = leaves
+        { HaveAnyElementsEverBeenAdded = false
+          Leaves = leaves
           LeafSize = leafSize
           Omnipresent = HashSet HashIdentity.Structural
           Node = Octnode.make<'e> depth bounds leaves
