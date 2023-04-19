@@ -20,8 +20,9 @@ const float REFLECTION_LOD_MAX = 5.0;
 const float GAMMA = 2.2;
 const float ATTENUATION_CONSTANT = 1.0f;
 const int LIGHTS_MAX = 96;
-const int SSAO_SAMPLES = 32;
+const float SSAO = 1.0f;
 const float SSAO_RADIUS = 0.5;
+const int SSAO_SAMPLES = 32;
 const vec3 SSAO_TANGENTS[4] = vec3[4](
     vec3(1.0, 0.0, 0.0),
     vec3(-1.0, 0.0, 0.0),
@@ -217,7 +218,7 @@ void main()
             }
         }
     }
-    ambientOcclusionScreen = 1.0 - ambientOcclusionScreen / float(SSAO_SAMPLES);
+    ambientOcclusionScreen = 1.0 - ambientOcclusionScreen / float(SSAO_SAMPLES) * SSAO;
 
     // compute diffuse term
     vec3 f = fresnelSchlickRoughness(max(dot(normal, v), 0.0), f0, roughness);
