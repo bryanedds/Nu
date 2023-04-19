@@ -18,16 +18,30 @@ void main()
 const float PI = 3.141592654;
 const float REFLECTION_LOD_MAX = 5.0;
 const float GAMMA = 2.2;
-const float ATTENUATION_CONSTANT = 1.0f;
+const float ATTENUATION_CONSTANT = 1.0;
 const int LIGHTS_MAX = 96;
+const float SSAO = 1.5;
+const float SSAO_RADIUS = 0.5;
+const float SSAO_BIAS = 0.02;
+const int SSAO_SAMPLES = 96;
+const int SSAO_ITERATIONS = 4;
+const int SSAO_SUBSAMPLES = SSAO_SAMPLES / SSAO_ITERATIONS;
+const float SSAO_SUBSAMPLES_RECIPRICOL = 1.0 / float(SSAO_SUBSAMPLES);
+const vec3 SSAO_TANGENTS[SSAO_ITERATIONS] = vec3[SSAO_ITERATIONS](
+    vec3(1.0, 0.0, 0.0),
+    vec3(-1.0, 0.0, 0.0),
+    vec3(0.0, 1.0, 0.0),
+    vec3(0.0, -1.0, 0.0));
 
+uniform mat4 view;
+uniform mat4 projection;
 uniform vec3 eyeCenter;
 uniform vec3 lightAmbientColor;
 uniform float lightAmbientBrightness;
 uniform sampler2D positionTexture;
 uniform sampler2D albedoTexture;
 uniform sampler2D materialTexture;
-uniform sampler2D normalTexture;
+uniform sampler2D normalAndDepthTexture;
 uniform samplerCube irradianceMap;
 uniform samplerCube environmentFilterMap;
 uniform sampler2D brdfTexture;
@@ -44,6 +58,16 @@ uniform float lightConeOuters[LIGHTS_MAX];
 in vec2 texCoordsOut;
 
 out vec4 frag;
+
+float hash(float n)
+{
+    return fract(sin(n) * 43758.5453123);
+}
+
+float random(float seedX, float seedY)
+{
+    return fract(sin(dot(vec2(seedX, seedY), vec2(12.9898, 78.233))) * 43758.5453);
+}
 
 float distributionGGX(vec3 normal, vec3 h, float roughness)
 {
@@ -87,11 +111,13 @@ vec3 fresnelSchlickRoughness(float cosTheta, vec3 f0, float roughness)
 
 void main()
 {
-    // discard if geometry pixel was not written (equal to the buffer clearing color of white)
-    vec3 normal = texture(normalTexture, texCoordsOut).rgb;
-    if (normal == vec3(1.0, 1.0, 1.0)) discard;
+    // first, retrieve normal and depth values, allowing for early-out
+    vec4 normalAndDepth = texture(normalAndDepthTexture, texCoordsOut);
+    vec3 normal = normalAndDepth.rgb;
+    if (normal == vec3(1.0, 1.0, 1.0)) discard; // discard if geometry pixel was not written (equal to the buffer clearing color of white)
+    float depth = normalAndDepth.a;
 
-    // retrieve remaining data from geometry buffer
+    // retrieve remaining data from geometry buffers
     vec3 position = texture(positionTexture, texCoordsOut).rgb;
     vec3 albedo = texture(albedoTexture, texCoordsOut).rgb;
     vec4 material = texture(materialTexture, texCoordsOut);
@@ -160,6 +186,41 @@ void main()
         lightAccum += (kD * albedo / PI + specular) * radiance * nDotL;
     }
 
+    // compute screen-space ambient occlusion
+    float ambientOcclusionScreen = 0.0;
+    vec3 positionView = (view * vec4(position, 1.0)).xyz;
+    for (int i = 0; i < SSAO_ITERATIONS; ++i)
+    {
+        // compute tangent basis for ssao operations
+        vec3 normalView = normalize(transpose(inverse(mat3(view))) * normal);
+        vec3 tangentView = normalize(SSAO_TANGENTS[i] - dot(SSAO_TANGENTS[i], normalView) * normalView);
+        vec3 bitangentView = cross(normalView, tangentView);
+        mat3 tangentToView = mat3(tangentView, bitangentView, normalView);
+
+        // iterate over the sample kernel and calculate occlusion factor
+        for (int j = 0; j < SSAO_SUBSAMPLES; ++j)
+        {
+            // get sample position in view space
+            float s = float(j) * 3.0;
+            vec3 sampleDirection = normalize(vec3(hash(s), abs(hash(s+1.0)), hash(s+2.0))) * 2.0 - 1.0;
+            sampleDirection *= mix(SSAO_SUBSAMPLES_RECIPRICOL, 1.0f, j * SSAO_SUBSAMPLES_RECIPRICOL);
+            vec3 samplePositionView = tangentToView * sampleDirection; // from tangent to view-space
+            samplePositionView = positionView + samplePositionView * SSAO_RADIUS;
+
+            // project sample position from view space to clip space
+            vec4 offset = vec4(samplePositionView, 1.0);
+            offset = projection * offset; // from view to clip-space
+            offset.xyz /= offset.w; // perspective divide
+            offset.xyz = offset.xyz * 0.5 + 0.5; // transform to range 0.0 - 1.0
+
+            // get sample depth, perform range check, then accumulate
+            float sampleDepth = ((view * texture(positionTexture, offset.xy)).rgb).z;
+            float rangeCheck = smoothstep(0.0, 1.0, SSAO_RADIUS / abs(positionView.z - sampleDepth));
+            ambientOcclusionScreen += (sampleDepth >= samplePositionView.z + SSAO_BIAS ? 1.0 : 0.0) * rangeCheck;
+        }
+    }
+    ambientOcclusionScreen = 1.0 - ambientOcclusionScreen / float(SSAO_SAMPLES) * SSAO;
+
     // compute diffuse term
     vec3 f = fresnelSchlickRoughness(max(dot(normal, v), 0.0), f0, roughness);
     vec3 kS = f;
@@ -174,7 +235,7 @@ void main()
     vec3 specular = environmentFilter * (f * environmentBrdf.x + environmentBrdf.y);
 
     // compute ambient term
-    vec3 ambient = (kD * diffuse + specular) * ambientOcclusion;
+    vec3 ambient = (kD * diffuse + specular) * ambientOcclusion * ambientOcclusionScreen;
 
     // compute color w/ tone mapping, gamma correction, and emission
     vec3 color = lightAccum + ambient;
