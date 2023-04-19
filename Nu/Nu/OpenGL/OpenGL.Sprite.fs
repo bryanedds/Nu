@@ -23,14 +23,14 @@ module Sprite =
         let vertexShaderStr =
             [Constants.Render.GlslVersionPragma
              ""
-             "const int Verts = 4;"
+             "const int VERTS = 4;"
              ""
-             "const vec4 Filters[Verts] ="
-             "  vec4[Verts]("
-             "      vec4(1,1,0,0),"
-             "      vec4(1,1,1,0),"
-             "      vec4(1,1,1,1),"
-             "      vec4(1,1,0,1));"
+             "const vec4 FILTERS[VERTS] ="
+             "    vec4[VERTS]("
+             "        vec4(1.0, 1.0, 0.0, 0.0),"
+             "        vec4(1.0, 1.0, 1.0, 0.0),"
+             "        vec4(1.0, 1.0, 1.0, 1.0),"
+             "        vec4(1.0, 1.0, 0.0, 1.0));"
              ""
              "in vec2 position;"
              "uniform mat4 modelViewProjection;"
@@ -38,10 +38,10 @@ module Sprite =
              "out vec2 texCoords;"
              "void main()"
              "{"
-             "  int vertexId = gl_VertexID % Verts;"
-             "  vec4 filt = Filters[vertexId];"
-             "  gl_Position = modelViewProjection * vec4(position.x, position.y, 0, 1);"
-             "  texCoords = vec2(texCoords4.x * filt.x + texCoords4.z * filt.z, texCoords4.y * filt.y + texCoords4.w * filt.w);"
+             "    int vertexId = gl_VertexID % VERTS;"
+             "    vec4 filt = FILTERS[vertexId];"
+             "    gl_Position = modelViewProjection * vec4(position.x, position.y, 0, 1);"
+             "    texCoords = vec2(texCoords4.x * filt.x + texCoords4.z * filt.z, texCoords4.y * filt.y + texCoords4.w * filt.w);"
              "}"] |> String.join "\n"
 
         // fragment shader code
@@ -53,7 +53,7 @@ module Sprite =
              "out vec4 frag;"
              "void main()"
              "{"
-             "  frag = color * texture(tex, texCoords);"
+             "    frag = color * texture(tex, texCoords);"
              "}"] |> String.join "\n"
 
         // create shader
