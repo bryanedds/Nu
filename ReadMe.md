@@ -31,8 +31,8 @@ Editing a 3D scene imported from Unity in Nu's editor, Gaia.
 ![image](https://user-images.githubusercontent.com/1625560/232184477-dbb1102e-f4f5-4fd1-9008-57a07fe450f7.png)
 Effeicient, detailed 3D rendering with deferred physically-based rendering.
 
-![image](https://user-images.githubusercontent.com/1625560/231017431-c5e7a4df-f5a4-4a5e-b235-93e1e3f64ebf.png)
-3D scene screenshot from editor.
+![image](https://user-images.githubusercontent.com/1625560/233125412-56c8e9da-206d-4d0b-9269-e4d1fe606a19.png)
+3D scene screenshot from editor showing off the new SSAO implementation.
 
 ![image](https://user-images.githubusercontent.com/1625560/231018049-5c4247aa-0940-4d18-9173-2780982c22f7.png)
 Another 3D scene screenshot from editor.
