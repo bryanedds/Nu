@@ -658,6 +658,25 @@ type [<ReferenceEquality>] GlRenderer2d =
         for operation in renderer.RenderLayeredOperations do
             GlRenderer2d.renderDescriptor operation.RenderOperation2d eyeCenter eyeSize renderer
 
+    static member private render eyeCenter eyeSize renderMessages renderer =
+
+        // begin sprite batch frame
+        let viewport = Constants.Render.Viewport
+        let viewProjectionAbsolute = viewport.ViewProjection2d (true, eyeCenter, eyeSize)
+        let viewProjectionRelative = viewport.ViewProjection2d (false, eyeCenter, eyeSize)
+        OpenGL.SpriteBatch.BeginSpriteBatchFrame (&viewProjectionAbsolute, &viewProjectionRelative, renderer.RenderSpriteBatchEnv)
+        OpenGL.Hl.Assert ()
+
+        // render frame
+        GlRenderer2d.handleRenderMessages renderMessages renderer
+        GlRenderer2d.sortLayeredOperations renderer
+        GlRenderer2d.renderLayeredOperations eyeCenter eyeSize renderer
+        renderer.RenderLayeredOperations.Clear ()
+
+        // end sprite batch frame
+        OpenGL.SpriteBatch.EndSpriteBatchFrame renderer.RenderSpriteBatchEnv
+        OpenGL.Hl.Assert ()
+
     /// Make a GlRenderer2d.
     static member make window config =
 
@@ -713,22 +732,9 @@ type [<ReferenceEquality>] GlRenderer2d =
                 OpenGL.Hl.BeginFrame viewportOffset
                 OpenGL.Hl.Assert ()
 
-            // begin sprite batch frame
-            let viewport = Constants.Render.Viewport
-            let viewProjectionAbsolute = viewport.ViewProjection2d (true, eyeCenter, eyeSize)
-            let viewProjectionRelative = viewport.ViewProjection2d (false, eyeCenter, eyeSize)
-            OpenGL.SpriteBatch.BeginSpriteBatchFrame (&viewProjectionAbsolute, &viewProjectionRelative, renderer.RenderSpriteBatchEnv)
-            OpenGL.Hl.Assert ()
-
-            // render frame
-            GlRenderer2d.handleRenderMessages renderMessages renderer
-            GlRenderer2d.sortLayeredOperations renderer
-            GlRenderer2d.renderLayeredOperations eyeCenter eyeSize renderer
-            renderer.RenderLayeredOperations.Clear ()
-
-            // end sprite batch frame
-            OpenGL.SpriteBatch.EndSpriteBatchFrame renderer.RenderSpriteBatchEnv
-            OpenGL.Hl.Assert ()
+            // render only if there are messages
+            if renderMessages.Count > 0 then
+                GlRenderer2d.render eyeCenter eyeSize renderMessages renderer
 
             // end frame
             if renderer.RenderShouldEndFrame then
