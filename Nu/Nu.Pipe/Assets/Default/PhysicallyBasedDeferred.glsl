@@ -34,7 +34,7 @@ layout (location = 9) in vec4 material;
 layout (location = 10) in float height;
 layout (location = 11) in int invertRoughness;
 
-out vec3 positionOut;
+out vec4 positionOut;
 out vec2 texCoordsOut;
 out vec3 normalOut;
 flat out vec4 albedoOut;
@@ -44,7 +44,7 @@ flat out int invertRoughnessOut;
 
 void main()
 {
-    positionOut = vec3(model * vec4(position, 1.0));
+    positionOut = model * vec4(position, 1.0);
     int texCoordsOffsetIndex = gl_VertexID % TexCoordsOffsetVerts;
     vec2 texCoordsOffsetFilter = TexCoordsOffsetFilters[texCoordsOffsetIndex];
     vec2 texCoordsOffsetFilter2 = TexCoordsOffsetFilters2[texCoordsOffsetIndex];
@@ -54,7 +54,7 @@ void main()
     normalOut = transpose(inverse(mat3(model))) * normal;
     heightOut = height;
     invertRoughnessOut = invertRoughness;
-    gl_Position = projection * view * vec4(positionOut, 1.0);
+    gl_Position = projection * view * positionOut;
 }
 
 #shader fragment
@@ -71,7 +71,7 @@ uniform sampler2D ambientOcclusionTexture;
 uniform sampler2D normalTexture;
 uniform sampler2D heightTexture;
 
-in vec3 positionOut;
+in vec4 positionOut;
 in vec2 texCoordsOut;
 in vec3 normalOut;
 flat in vec4 albedoOut;
@@ -79,10 +79,10 @@ flat in vec4 materialOut;
 flat in float heightOut;
 flat in int invertRoughnessOut;
 
-layout (location = 0) out vec3 position;
+layout (location = 0) out vec4 position;
 layout (location = 1) out vec3 albedo;
 layout (location = 2) out vec4 material;
-layout (location = 3) out vec3 normal;
+layout (location = 3) out vec4 normalAndDepth;
 
 void main()
 {
@@ -90,8 +90,8 @@ void main()
     position = positionOut;
 
     // compute spatial converters
-    vec3 q1 = dFdx(positionOut);
-    vec3 q2 = dFdy(positionOut);
+    vec3 q1 = dFdx(positionOut.xyz);
+    vec3 q2 = dFdy(positionOut.xyz);
     vec2 st1 = dFdx(texCoordsOut);
     vec2 st2 = dFdy(texCoordsOut);
     vec3 n = normalize(normalOut);
@@ -102,7 +102,7 @@ void main()
 
     // compute tex coords in parallax space
     vec3 eyeCenterTangent = toTangent * eyeCenter;
-    vec3 positionTangent = toTangent * positionOut;
+    vec3 positionTangent = toTangent * positionOut.xyz;
     vec3 toEyeTangent = normalize(eyeCenterTangent - positionTangent);
     float height = texture(heightTexture, texCoordsOut).r;
     vec2 parallax = toEyeTangent.xy * height * heightOut;
@@ -122,6 +122,7 @@ void main()
     float emission = texture(emissionTexture, texCoords).r * materialOut.a;
     material = vec4(metallic, ambientOcclusion, roughness, emission);
 
-    // compute normal
-    normal = normalize(toWorld * (texture(normalTexture, texCoords).xyz * 2.0 - 1.0));
+    // compute normal and depth
+    normalAndDepth.xyz = normalize(toWorld * (texture(normalTexture, texCoords).xyz * 2.0 - 1.0));
+    normalAndDepth.a = gl_FragCoord.z;
 }
