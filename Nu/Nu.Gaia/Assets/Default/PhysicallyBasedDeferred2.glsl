@@ -18,9 +18,9 @@ void main()
 const float PI = 3.141592654;
 const float REFLECTION_LOD_MAX = 5.0;
 const float GAMMA = 2.2;
-const float ATTENUATION_CONSTANT = 1.0f;
+const float ATTENUATION_CONSTANT = 1.0;
 const int LIGHTS_MAX = 96;
-const float SSAO = 1.0f;
+const float SSAO = 1.0;
 const float SSAO_RADIUS = 0.5;
 const int SSAO_SAMPLES = 64;
 const vec3 SSAO_TANGENTS[4] = vec3[4](
@@ -198,7 +198,7 @@ void main()
         {
             // get sample position in view space
             float s = float(j) * 3.0;
-            vec3 sampleDirection = normalize(vec3(hash(s), hash(s+1.0), hash(s+2.0))) * 2.0 - 1.0;
+            vec3 sampleDirection = normalize(vec3(hash(s), abs(hash(s+1.0)), hash(s+2.0))) * 2.0 - 1.0;
             vec3 samplePositionView = tangentToView * sampleDirection; // from tangent to view-space
             samplePositionView = positionView + samplePositionView * SSAO_RADIUS;
 
@@ -208,14 +208,10 @@ void main()
             offset.xyz /= offset.w; // perspective divide
             offset.xyz = offset.xyz * 0.5 + 0.5; // transform to range 0.0 - 1.0
 
-            // occlude only if offset is in texture range
-            if (offset.x >= 0.0f && offset.x < 1.0f && offset.y >= 0.0f && offset.y < 1.0f)
-            {
-                // get sample depth, perform range check, then accumulate
-                float sampleDepth = ((view * texture(positionTexture, offset.xy)).rgb).z;
-                float rangeCheck = smoothstep(0.0, 1.0, SSAO_RADIUS / abs(positionView.z - sampleDepth));
-                ambientOcclusionScreen += (sampleDepth >= samplePositionView.z ? 1.0 : 0.0) * rangeCheck;
-            }
+            // get sample depth, perform range check, then accumulate
+            float sampleDepth = ((view * texture(positionTexture, offset.xy)).rgb).z;
+            float rangeCheck = smoothstep(0.0, 1.0, SSAO_RADIUS / abs(positionView.z - sampleDepth));
+            ambientOcclusionScreen += (sampleDepth >= samplePositionView.z ? 1.0 : 0.0) * rangeCheck;
         }
     }
     ambientOcclusionScreen = 1.0 - ambientOcclusionScreen / float(SSAO_SAMPLES) * SSAO;
