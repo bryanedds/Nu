@@ -227,13 +227,13 @@ void main()
         vec3 samplePositionView = positionView + sampleDirection;
 
         // project sample position from view space to clip space
-        vec4 offset = vec4(samplePositionView, 1.0);
-        offset = projection * offset; // from view to clip-space
-        offset.xyz /= offset.w; // perspective divide
-        offset.xyz = offset.xyz * 0.5 + 0.5; // transform to range 0.0 - 1.0
+        vec4 samplePositionClip = vec4(samplePositionView, 1.0);
+        samplePositionClip = projection * samplePositionClip; // from view to clip-space
+        samplePositionClip.xyz /= samplePositionClip.w; // perspective divide
+        samplePositionClip.xyz = samplePositionClip.xyz * 0.5 + 0.5; // transform to range 0.0 - 1.0
 
         // get sample depth, perform range check, then accumulate
-        float sampleDepth = ((view * texture(positionTexture, offset.xy)).rgb).z;
+        float sampleDepth = ((view * texture(positionTexture, samplePositionClip.xy)).rgb).z;
         float rangeCheck = smoothstep(0.0, 1.0, SSAO_RADIUS / abs(positionView.z - sampleDepth));
         ambientOcclusionScreen += (sampleDepth >= samplePositionView.z + SSAO_BIAS ? rangeCheck : 0.0);
     }
