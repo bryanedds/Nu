@@ -10,6 +10,8 @@ open System.Threading.Tasks
 open Prime
 open Nu
 
+// TODO: document more of the public ECS API.
+
 /// An unscheduled Ecs event callback.
 type private EcsCallbackUnscheduled<'d, 'w when 'w : not struct> =
     EcsEvent<'d, 'w> -> Ecs -> 'w -> 'w

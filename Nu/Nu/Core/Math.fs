@@ -13,6 +13,7 @@ open Nu
 module Vector2 =
 
     type Vector2 with
+
         member this.V3 = Vector3 (this.X, this.Y, 0.0f)
         member this.Magnitude = this.Length ()
         member this.MagnitudeSquared = this.LengthSquared ()
@@ -21,14 +22,17 @@ module Vector2 =
         member this.WithX x = Vector2 (x, this.Y)
         member this.WithY y = Vector2 (this.X, y)
         member this.Rotate r = Vector2 (cos r * this.X - sin r * this.Y, sin r * this.X + cos r * this.Y)
+
         member this.AngleBetween (that : Vector2) =
             let a = Vector2.Normalize this
             let b = Vector2.Normalize that
             acos (Vector2.Dot (a, b))
+
         static member Pow (a : Vector2, b : Vector2) =
             Vector2
                 (single (Math.Pow (double a.X, double b.X)),
                  single (Math.Pow (double a.Y, double b.Y)))
+
         static member Modulo (a : Vector2, b : Vector2) =
             Vector2
                 (a.X % b.X,
@@ -124,6 +128,7 @@ type Vector2Converter () =
 module Vector3 =
 
     type Vector3 with
+
         member this.V2 = Vector2 (this.X, this.Y)
         member this.Magnitude = this.Length ()
         member this.MagnitudeSquared = this.LengthSquared ()
@@ -134,15 +139,18 @@ module Vector3 =
         member this.WithY y = Vector3 (this.X, y, this.Z)
         member this.WithZ z = Vector3 (this.X, this.Y, z)
         member this.RollPitchYaw = MathHelper.RollPitchYaw &this
+
         member this.AngleBetween (that : Vector3) =
             let a = Vector3.Normalize this
             let b = Vector3.Normalize that
             acos (Vector3.Dot (a, b))
+
         static member Pow (a : Vector3, b : Vector3) =
             Vector3
                 (single (Math.Pow (double a.X, double b.X)),
                  single (Math.Pow (double a.Y, double b.Y)),
                  single (Math.Pow (double a.Z, double b.Z)))
+
         static member Modulo (a : Vector3, b : Vector3) =
             Vector3
                 (a.X % b.X,
@@ -247,6 +255,7 @@ type Vector3Converter () =
 module Vector4 =
 
     type Vector4 with
+
         member this.V3 = v3 this.X this.Y this.Z
         member this.Magnitude = this.Magnitude
         member this.MagnitudeSquared = this.LengthSquared ()
@@ -258,12 +267,14 @@ module Vector4 =
         member this.WithY y = Vector4 (this.X, y, this.Z, this.W)
         member this.WithZ z = Vector4 (this.X, this.Y, z, this.W)
         member this.WithW w = Vector4 (this.X, this.Y, this.Z, w)
+
         static member Pow (a : Vector4, b : Vector4) =
             Vector4
                 (single (Math.Pow (double a.X, double b.X)),
                  single (Math.Pow (double a.Y, double b.Y)),
                  single (Math.Pow (double a.Z, double b.Z)),
                  single (Math.Pow (double a.W, double b.W)))
+
         static member Modulo (a : Vector4, b : Vector4) =
             Vector4
                 (a.X % b.X,
@@ -365,15 +376,18 @@ type Vector4Converter () =
 module Vector2i =
 
     type Vector2i with
+
         member this.V3i = Vector3i (this.X, this.Y, 0)
         member this.MapX mapper = Vector2i (mapper this.X, this.Y)
         member this.MapY mapper = Vector2i (this.X, mapper this.Y)
         member this.WithX x = Vector2i (x, this.Y)
         member this.WithY y = Vector2i (this.X, y)
+
         static member Pow (a : Vector2i, b : Vector2i) =
             Vector2i
                 (pown a.X b.X,
                  pown a.Y b.Y)
+
         static member Modulo (a : Vector2i, b : Vector2i) =
             Vector2i
                 (a.X % b.X,
@@ -467,6 +481,7 @@ type Vector2iConverter () =
 module Vector3i =
 
     type Vector3i with
+
         member this.V2i = Vector2i (this.X, this.Y)
         member this.MapX mapper = Vector3i (mapper this.X, this.Y, this.Z)
         member this.MapY mapper = Vector3i (this.X, mapper this.Y, this.Z)
@@ -474,11 +489,13 @@ module Vector3i =
         member this.WithX x = Vector3i (x, this.Y, this.Z)
         member this.WithY y = Vector3i (this.X, y, this.Z)
         member this.WithZ z = Vector3i (this.X, this.Y, z)
+
         static member Pow (a : Vector3i, b : Vector3i) =
             Vector3i
                 (pown a.X b.X,
                  pown a.Y b.Y,
                  pown a.Z b.Z)
+
         static member Modulo (a : Vector3i, b : Vector3i) =
             Vector3i
                 (a.X % b.X,
@@ -576,6 +593,7 @@ type Vector3iConverter () =
 module Vector4i =
 
     type Vector4i with
+
         member this.MapX mapper = Vector4i (mapper this.X, this.Y, this.Z, this.W)
         member this.MapY mapper = Vector4i (this.X, mapper this.Y, this.Z, this.W)
         member this.MapZ mapper = Vector4i (this.X, this.Y, mapper this.Z, this.W)
@@ -584,12 +602,14 @@ module Vector4i =
         member this.WithY y = Vector4i (this.X, y, this.Z, this.W)
         member this.WithZ z = Vector4i (this.X, this.Y, z, this.W)
         member this.WithW w = Vector4i (this.X, this.Y, this.Z, w)
+
         static member Pow (a : Vector4i, b : Vector4i) =
             Vector4i
                 (pown a.X b.X,
                  pown a.Y b.Y,
                  pown a.Z b.Z,
                  pown a.W b.W)
+
         static member Modulo (a : Vector4i, b : Vector4i) =
             Vector4i
                 (a.X % b.X,
@@ -689,6 +709,7 @@ type Vector4iConverter () =
 
 [<AutoOpen>]
 module Quaternion =
+
     type Quaternion with
         member this.RollPitchYaw = MathHelper.RollPitchYaw &this
 
@@ -777,7 +798,9 @@ type QuaternionConverter () =
 
 [<AutoOpen>]
 module Box2 =
+
     type Box2 with
+
         member this.Max = this.Min + this.Size
         member this.Extent = this.Size * 0.5f
         member this.Width = this.Size.X
@@ -843,7 +866,9 @@ type Box2Converter () =
 
 [<AutoOpen>]
 module Box3 =
+
     type Box3 with
+
         member this.Max = this.Min + this.Size
         member this.Extent = this.Size * 0.5f
         member this.Width = this.Size.X
@@ -859,7 +884,16 @@ module Box3 =
         member this.BottomLeft = v3 this.Min.X this.Min.Y (this.Min.Z + this.Size.Z * 0.5f)
         member this.BottomRight = v3 (this.Min.X + this.Size.X) this.Min.Y (this.Min.Z + this.Size.Z * 0.5f)
         member this.IsEmpty = this.Equals Box3.Zero
-        member this.Translate translation = Box3 (this.Min + translation, this.Size)
+        member this.WithMin min = Box3 (min, this.Size)
+        member this.WithCenter center = this.Translate (center - this.Center)
+        member this.WithBottom bottom = this.Translate (bottom - this.Bottom)
+        member this.WithBottomLeft bottomLeft = this.Translate (bottomLeft - this.BottomLeft)
+        member this.WithSize size = Box3 (this.Min, size)
+        member this.Box2 = Box2 (v2 this.Min.X this.Min.Y, v2 this.Size.X this.Size.Y)
+
+        member this.Translate translation =
+            Box3 (this.Min + translation, this.Size)
+
         member this.Transform (transformation : Matrix4x4) =
             if not transformation.IsIdentity then
                 let corners = this.Corners
@@ -880,12 +914,6 @@ module Box3 =
                     maxZ <- max maxZ corner.Z
                 Box3 (minX, minY, minZ, maxX- minX, maxY - minY, maxZ - minZ)
             else this
-        member this.WithMin min = Box3 (min, this.Size)
-        member this.WithCenter center = this.Translate (center - this.Center)
-        member this.WithBottom bottom = this.Translate (bottom - this.Bottom)
-        member this.WithBottomLeft bottomLeft = this.Translate (bottomLeft - this.BottomLeft)
-        member this.WithSize size = Box3 (this.Min, size)
-        member this.Box2 = Box2 (v2 this.Min.X this.Min.Y, v2 this.Size.X this.Size.Y)
 
     let box3Zero = Box3.Zero
     let inline box3 min size = Box3 (min, size)
@@ -930,7 +958,9 @@ type Box3Converter () =
 
 [<AutoOpen>]
 module Box2i =
+
     type Box2i with
+
         member this.Max = this.Min + this.Size
         member this.Extent = this.Size / 2
         member this.Width = this.Size.X
@@ -1063,6 +1093,7 @@ module Matrix4x4 =
 module Color =
 
     type Color with
+
         member this.MapR mapper = Color (mapper this.R, this.G, this.B, this.A)
         member this.MapG mapper = Color (this.R, mapper this.G, this.B, this.A)
         member this.MapB mapper = Color (this.R, this.G, mapper this.B, this.A)
@@ -1087,12 +1118,14 @@ module Color =
         member this.WithG8 g = Color (this.R8, g, this.B8, this.A8)
         member this.WithB8 b = Color (this.R8, this.G8, b, this.A8)
         member this.WithA8 a = Color (this.R8, this.G8, this.B8, a)
+
         static member Pow (a : Color, b : Color) =
             Color
                 (single (Math.Pow (double a.R, double b.R)),
                  single (Math.Pow (double a.G, double b.G)),
                  single (Math.Pow (double a.B, double b.B)),
                  single (Math.Pow (double a.A, double b.A)))
+
         static member Modulo (a : Color, b : Color) =
             Color
                 (a.R % b.R,

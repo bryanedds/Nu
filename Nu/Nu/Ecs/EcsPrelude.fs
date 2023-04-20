@@ -273,7 +273,7 @@ and Term =
         else false
 
 /// Exposes a Construct-Inspect-Compare mini-language for subqueries.
-/// NOTE: Is no eq and no comp because I didn't feel like building a hash function. Could be tho.
+/// NOTE: Is NoEquality and NoComparison because I didn't feel like building a hash function. Could be tho.
 and [<NoEquality; NoComparison>] Subquery =
     | V3Ctor of Subquery * Subquery * Subquery
     | Box3Ctor of Subquery * Subquery
