@@ -227,8 +227,7 @@ void main()
         vec3 samplePositionView = positionView + sampleDirection;
 
         // project sample position from view space to clip space
-        vec4 samplePositionClip = vec4(samplePositionView, 1.0);
-        samplePositionClip = projection * samplePositionClip; // from view to clip-space
+        vec4 samplePositionClip = projection * vec4(samplePositionView, 1.0); // from view to clip-space
         samplePositionClip.xyz /= samplePositionClip.w; // perspective divide
         samplePositionClip.xyz = samplePositionClip.xyz * 0.5 + 0.5; // transform to range 0.0 - 1.0
 
