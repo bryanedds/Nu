@@ -600,7 +600,7 @@ module PhysicallyBased =
             else (defaultMaterial.AlbedoMetadata, defaultMaterial.AlbedoTexture)
 
         // infer possible alternate texture names
-        let albedoTextureDirName =      Path.GetDirectoryName albedoTextureSlot.FilePath
+        let albedoTextureDirName =      match Path.GetDirectoryName albedoTextureSlot.FilePath with null -> "" | dirName -> dirName
         let albedoTextureFileName =     Path.GetFileName albedoTextureSlot.FilePath
         let has_bc =                    albedoTextureFileName.Contains "_bc"
         let has_d =                     albedoTextureFileName.Contains "_d"
@@ -615,12 +615,12 @@ module PhysicallyBased =
         let eTextureFilePath =          if has_bc         then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("_bc", "_e")                 elif has_d      then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("_d", "_e") else ""
         let nTextureFilePath =          if has_bc         then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("_bc", "_n")                 elif has_d      then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("_d", "_n") else ""
         let hTextureFilePath =          if has_bc         then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("_bc", "_h")                 elif has_d      then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("_d", "_h") else ""
-        let metallicTextureFilePath =   if hasBaseColor   then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("BaseColor", "Metallic")     elif hasAlbedo  then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("BaseColor", "Metallic") else ""
-        let roughnessTextureFilePath =  if hasBaseColor   then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("BaseColor", "Roughness")    elif hasAlbedo  then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("BaseColor", "Roughness") else ""
-        let aoTextureFilePath' =        if hasBaseColor   then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("BaseColor", "AO")           elif hasAlbedo  then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("BaseColor", "AO") else ""
-        let normalTextureFilePath =     if hasBaseColor   then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("BaseColor", "Normal")       elif hasAlbedo  then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("BaseColor", "Normal") else ""
-        let emissionTextureFilePath =   if hasBaseColor   then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("BaseColor", "Emission")     elif hasAlbedo  then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("BaseColor", "Emission") else ""
-        let heightTextureFilePath =     if hasBaseColor   then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("BaseColor", "Height")       elif hasAlbedo  then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("BaseColor", "Height") else ""
+        let metallicTextureFilePath =   if hasBaseColor   then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("BaseColor", "Metallic")     elif hasAlbedo  then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("Albedo", "Metallic") else ""
+        let roughnessTextureFilePath =  if hasBaseColor   then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("BaseColor", "Roughness")    elif hasAlbedo  then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("Albedo", "Roughness") else ""
+        let aoTextureFilePath' =        if hasBaseColor   then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("BaseColor", "AO")           elif hasAlbedo  then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("Albedo", "AO") else ""
+        let normalTextureFilePath =     if hasBaseColor   then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("BaseColor", "Normal")       elif hasAlbedo  then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("Albedo", "Normal") else ""
+        let emissionTextureFilePath =   if hasBaseColor   then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("BaseColor", "Emission")     elif hasAlbedo  then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("Albedo", "Emission") else ""
+        let heightTextureFilePath =     if hasBaseColor   then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("BaseColor", "Height")       elif hasAlbedo  then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("Albedo", "Height") else ""
 
         // attempt to load metallic info
         let metallic = Constants.Render.MetallicDefault
