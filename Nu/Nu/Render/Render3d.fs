@@ -11,6 +11,7 @@ open Prime
 open Nu
 
 //////////////////////////////////////////////////////////////////////////////////////////
+// TODO: rename SurfaceProperties to MaterialProperties.                                //
 // TODO: add TwoSidedOpt as render message parameter.                                   //
 // TODO: account for Blend in billboards (at least alpha, overwrite, and additive)      //
 // TODO: account for Flip in billboards.                                                //

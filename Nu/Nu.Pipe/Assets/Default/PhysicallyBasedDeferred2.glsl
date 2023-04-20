@@ -20,18 +20,37 @@ const float REFLECTION_LOD_MAX = 5.0;
 const float GAMMA = 2.2;
 const float ATTENUATION_CONSTANT = 1.0;
 const int LIGHTS_MAX = 96;
-const float SSAO = 1.5;
+const float SSAO = 1.333;
 const float SSAO_RADIUS = 0.5;
-const float SSAO_BIAS = 0.02;
+const float SSAO_BIAS = 0.01;
 const int SSAO_SAMPLES = 96;
-const int SSAO_ITERATIONS = 4;
-const int SSAO_SUBSAMPLES = SSAO_SAMPLES / SSAO_ITERATIONS;
-const float SSAO_SUBSAMPLES_RECIPRICOL = 1.0 / float(SSAO_SUBSAMPLES);
-const vec3 SSAO_TANGENTS[SSAO_ITERATIONS] = vec3[SSAO_ITERATIONS](
-    vec3(1.0, 0.0, 0.0),
-    vec3(-1.0, 0.0, 0.0),
-    vec3(0.0, 1.0, 0.0),
-    vec3(0.0, -1.0, 0.0));
+const float SSAO_SAMPLES_INVERSE = 1.0 / float(SSAO_SAMPLES);
+
+vec3[SSAO_SAMPLES] SSAO_SAMPLE_DIRECTIONS = vec3[](
+    vec3(0.16628033, 0.98031127, 0.1090987), vec3(-0.73178808, -0.30931247, 0.60528424), vec3(0.05797729, -0.95963732, -0.27573171), vec3(0.83240714, -0.48937448, 0.25896714),
+    vec3(-0.54424764, 0.29322405, 0.78570088), vec3(0.7682875, -0.6353843, -0.07468267), vec3(-0.88601684, 0.31203889, -0.34169098), vec3(-0.88316705, -0.29226478, -0.36708327),
+    vec3(-0.75806223, -0.57716967, -0.30456295), vec3(-0.27128172, -0.86209868, 0.42658131), vec3(-0.22086532, -0.53516115, -0.81472868), vec3(0.42703992, 0.71746574, -0.55026034),
+    vec3(0.9359231, -0.02727632, -0.35178102), vec3(0.8210779, -0.56898764, 0.04045432), vec3(-0.55349622, -0.24700827, -0.79513649), vec3(-0.96813618, -0.11483972, -0.22411245),
+    vec3(-0.90443412, 0.23467092, 0.35696694), vec3(-0.67700226, -0.47685315, -0.55906321), vec3(0.96360764, -0.12112319, -0.23834743), vec3(-0.13367438, -0.83547148, -0.53240409),
+    vec3(0.27629185, 0.9501148, -0.1451443 ), vec3(-0.06949984, 0.99414051, -0.08414021), vec3(0.41758068, -0.88436643, -0.20611643), vec3(0.1080913, -0.98697543, 0.11580234),
+    vec3(0.92614116, -0.03146595, 0.37537357), vec3(0.1953031, -0.97656169, -0.08620548), vec3(-0.2363298, -0.93043551, -0.2803014 ), vec3(-0.18945285, -0.98097892, 0.03954832),
+    vec3(0.33922152, 0.80777186, 0.48003408), vec3(-0.77157015, -0.51573158, -0.37127888), vec3(0.49419218, -0.6539731, 0.57275781), vec3(-0.30255045, -0.94479081, -0.12463052),
+    vec3(0.38256372, 0.50147269, 0.776086), vec3(-0.52093203, 0.65556912, -0.54715596), vec3(-0.82166309, -0.53712316, -0.19158611), vec3(-0.05843224, 0.97212569, 0.2273377 ),
+    vec3(-0.72557985, -0.3508935, 0.59223811), vec3(0.07456534, 0.66294589, 0.74435879), vec3(-0.18699833, -0.48022118, -0.85606789), vec3(-0.97348632, -0.09776054, -0.20878801),
+    vec3(-0.52524914, 0.45615706, -0.71871028), vec3(0.09170391, -0.03913828, 0.99474815), vec3(-0.2468046, 0.82528938, 0.50736308), vec3(0.25914143, -0.31174538, -0.91317047),
+    vec3(-0.78617654, 0.48280039, 0.38333033), vec3(0.23595569, -0.24462351, -0.94020334), vec3(0.83675803, -0.20701828, -0.50659673), vec3(0.72094744, 0.63442062, 0.28012598),
+    vec3(0.65056219, -0.75502587, -0.08558727), vec3(0.32967887, -0.76845654, 0.54831097), vec3(-0.16275214, -0.98351949, -0.07592411), vec3(-0.21233449, -0.03247453, -0.97642807),
+    vec3(0.50823303, -0.72087949, 0.47158727), vec3(-0.6916743, -0.60842421, -0.39119645), vec3(0.74586961, -0.04063843, -0.66464078), vec3(-0.12465777, 0.48092895, -0.86795433),
+    vec3(0.05989327, -0.80092543, -0.59577847), vec3(-0.88521547, -0.43258009, -0.17180302), vec3(0.61371228, 0.75813784, -0.21964663), vec3(0.38108761, 0.6994238, 0.60440729),
+    vec3(-0.28849762, -0.08917015, -0.95319779), vec3(-0.37106589, 0.8725433, 0.31802352), vec3(0.66272525, -0.7201678, -0.20427001), vec3(-0.3991032, 0.87828506, 0.26523621),
+    vec3(-0.55767943, -0.16777643, -0.81325633), vec3(-0.76462043, -0.56213702, -0.31512292), vec3(-0.36184022, -0.13197954, 0.9227112 ), vec3(-0.57229405, -0.67560978, -0.46430111),
+    vec3(-0.37616852, -0.78392198, -0.49496419), vec3(0.63794469, -0.53653562, 0.55273611), vec3(0.9472977, 0.14148769, -0.28704415), vec3(0.74634471, -0.54525999, -0.38130754),
+    vec3(-0.30417697, 0.92931925, -0.20922226), vec3(-0.2077227, -0.36127262, 0.90901584), vec3(-0.17062094, -0.41011599, -0.89600709), vec3(0.87642291, -0.22738558, 0.4240449 ),
+    vec3(-0.6606408, -0.52617907, 0.53501332), vec3(0.46617216, -0.8148892, -0.34363632), vec3(-0.52490061, 0.07865526, -0.84734162), vec3(0.35224499, 0.93218048, 0.0823843 ),
+    vec3(0.6711024, 0.5717819, 0.47277569), vec3(0.30415247, -0.85081069, -0.42913759), vec3(-0.75866344, -0.38170469, -0.52773738), vec3(0.4388384, 0.89759687, 0.03937445),
+    vec3(-0.77581787, -0.62154051, -0.10982123), vec3(-0.63908292, 0.49880337, -0.58407057), vec3(-0.33957551, 0.93914362, 0.04858199), vec3(0.1108422, 0.65754083, -0.74541667),
+    vec3(-0.90282783, -0.2951247, -0.31190677), vec3(-0.21754245, 0.96337104, 0.15405321), vec3(-0.21695763, 0.71202469, -0.66876785), vec3(0.1464786, 0.31270654, 0.93883212),
+    vec3(-0.43173574, -0.87088326, -0.23551558), vec3(0.93189228, -0.04152137, -0.36085101), vec3(0.90774428, 0.30885884, 0.28341675), vec3(0.26065878, -0.7230991, -0.63901384));
 
 uniform mat4 view;
 uniform mat4 projection;
@@ -62,6 +81,19 @@ out vec4 frag;
 float hash(float n)
 {
     return fract(sin(n) * 43758.5453123);
+}
+
+vec3 randomDirection(float seedX, float seedY, float seedZ)
+{
+    vec3 seed = vec3(seedX, seedY, seedZ);
+    float r1 = hash(dot(seed, vec3(12.9898, 78.233, 45.164)));
+    float r2 = hash(dot(seed, vec3(94.766, 198.362, 27.285)));
+    float theta = 2.0 * 3.14159 * r1;
+    float phi = acos(2.0 * r2 - 1.0);
+    float x = sin(phi) * cos(theta);
+    float y = sin(phi) * sin(theta);
+    float z = cos(phi);
+    return vec3(x, y, z);
 }
 
 float distributionGGX(vec3 normal, vec3 h, float roughness)
@@ -184,39 +216,31 @@ void main()
     // compute screen-space ambient occlusion
     float ambientOcclusionScreen = 0.0;
     vec3 positionView = (view * vec4(position, 1.0)).xyz;
-    for (int i = 0; i < SSAO_ITERATIONS; ++i)
+    vec3 normalView = normalize(transpose(inverse(mat3(view))) * normal);
+    for (int i = 0; i < SSAO_SAMPLES; ++i)
     {
-        // compute tangent basis for ssao operations
-        vec3 normalView = normalize(transpose(inverse(mat3(view))) * normal);
-        vec3 tangentView = normalize(SSAO_TANGENTS[i] - dot(SSAO_TANGENTS[i], normalView) * normalView);
-        vec3 bitangentView = cross(normalView, tangentView);
-        mat3 tangentToView = mat3(tangentView, bitangentView, normalView);
+        // get sample position in view space
+        vec3 sampleDirection = SSAO_SAMPLE_DIRECTIONS[i];
+        sampleDirection *= SSAO_RADIUS; // scale by radius
+        sampleDirection *= mix(SSAO_SAMPLES_INVERSE, 1.0f, i * SSAO_SAMPLES_INVERSE); // linearaly increase sample distance from origin
+        sampleDirection = dot(sampleDirection, normalView) > 0.0f ? sampleDirection : -sampleDirection; // only sample from upper hemisphere
+        vec3 samplePositionView = positionView + sampleDirection;
 
-        // iterate over the sample kernel and calculate occlusion factor
-        for (int j = 0; j < SSAO_SUBSAMPLES; ++j)
-        {
-            // get sample position in view space
-            float s = float(j) * 3.0;
-            vec3 sampleDirection = normalize(vec3(hash(s), abs(hash(s+1.0)), hash(s+2.0))) * 2.0 - 1.0;
-            sampleDirection *= mix(SSAO_SUBSAMPLES_RECIPRICOL, 1.0f, j * SSAO_SUBSAMPLES_RECIPRICOL);
-            vec3 samplePositionView = tangentToView * sampleDirection; // from tangent to view-space
-            samplePositionView = positionView + samplePositionView * SSAO_RADIUS;
+        // project sample position from view space to clip space
+        vec4 offset = vec4(samplePositionView, 1.0);
+        offset = projection * offset; // from view to clip-space
+        offset.xyz /= offset.w; // perspective divide
+        offset.xyz = offset.xyz * 0.5 + 0.5; // transform to range 0.0 - 1.0
 
-            // project sample position from view space to clip space
-            vec4 offset = vec4(samplePositionView, 1.0);
-            offset = projection * offset; // from view to clip-space
-            offset.xyz /= offset.w; // perspective divide
-            offset.xyz = offset.xyz * 0.5 + 0.5; // transform to range 0.0 - 1.0
-
-            // get sample depth, perform range check, then accumulate
-            float sampleDepth = ((view * texture(positionTexture, offset.xy)).rgb).z;
-            float rangeCheck = smoothstep(0.0, 1.0, SSAO_RADIUS / abs(positionView.z - sampleDepth));
-            ambientOcclusionScreen += (sampleDepth >= samplePositionView.z + SSAO_BIAS ? 1.0 : 0.0) * rangeCheck;
-        }
+        // get sample depth, perform range check, then accumulate
+        float sampleDepth = ((view * texture(positionTexture, offset.xy)).rgb).z;
+        float rangeCheck = smoothstep(0.0, 1.0, SSAO_RADIUS / abs(positionView.z - sampleDepth));
+        ambientOcclusionScreen += (sampleDepth >= samplePositionView.z + SSAO_BIAS ? rangeCheck : 0.0);
     }
     ambientOcclusionScreen /= float(SSAO_SAMPLES);
+    ambientOcclusionScreen *= SSAO;
     ambientOcclusionScreen = 1.0 - ambientOcclusionScreen;
-    ambientOcclusionScreen = min(1.0, ambientOcclusionScreen * SSAO);
+    ambientOcclusionScreen = max(0.0, ambientOcclusionScreen);
 
     // compute diffuse term
     vec3 f = fresnelSchlickRoughness(max(dot(normal, v), 0.0), f0, roughness);
