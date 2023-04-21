@@ -67,7 +67,4 @@ module CharacterDispatcher =
 
         override this.TryGetHighlightBounds (entity, world) =
             let bounds = entity.GetBounds world
-            Some
-                (box3
-                    (bounds.Min + bounds.Size * v3 0.0f 0.0f 0.0f)
-                    (bounds.Size * v3 1.0f 1.0f 1.0f))
+            Some (box3 bounds.Min bounds.Size)
