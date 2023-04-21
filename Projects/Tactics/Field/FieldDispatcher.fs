@@ -41,7 +41,7 @@ module FieldDispatcher =
                   AlbedoImage = asset "Default" "HighlightModelAlbedo"
                   Metallic = 0.0f
                   MetallicImage = Assets.Default.MaterialMetallic
-                  Roughness = 1.2f
+                  Roughness = 0.5f
                   RoughnessImage = Assets.Default.MaterialRoughness
                   AmbientOcclusion = 1.0f
                   AmbientOcclusionImage = Assets.Default.MaterialAmbientOcclusion
@@ -59,25 +59,6 @@ module FieldDispatcher =
         override this.Initialize (_, _) =
             [Screen.UpdateEvent => UpdateMessage
              Screen.UpdateEvent => UpdateCommand]
-
-        override this.Register (game, world) =
-            let world = base.Register (game, world)
-            let population = 25
-            let spread = 15.0f
-            let offset = v3Dup spread * single population * 0.5f
-            let positions = Collections.Generic.List ()
-            for i in 0 .. population do
-                for j in 0 .. population do
-                    for k in 0 .. population do
-                        let random = v3 (Gen.randomf1 spread) (Gen.randomf1 spread) (Gen.randomf1 spread) - v3Dup (spread * 0.5f)
-                        let position = v3 (single i) (single j) (single k) * spread + random - offset
-                        positions.Add position
-            let world =
-                Seq.fold (fun world position ->
-                    let (staticModel, world) = World.createEntity<StaticModelDispatcher> NoOverlay None Simulants.FieldScene world
-                    staticModel.SetPosition position world)
-                    world positions
-            world
 
         override this.Message (field, message, _, world) =
             match message with
