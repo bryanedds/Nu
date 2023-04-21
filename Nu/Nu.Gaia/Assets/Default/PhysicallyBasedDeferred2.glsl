@@ -213,6 +213,7 @@ void main()
         lightAccum += (kD * albedo / PI + specular) * radiance * nDotL;
     }
 
+#if 0
     // compute screen space ambient occlusion
     float ambientOcclusionScreen = 0.0;
     vec3 positionView = (view * vec4(position, 1.0)).xyz;
@@ -243,6 +244,9 @@ void main()
     ambientOcclusionScreen *= SSAO;
     ambientOcclusionScreen = 1.0 - ambientOcclusionScreen;
     ambientOcclusionScreen = max(0.0, ambientOcclusionScreen);
+#else
+    float ambientOcclusionScreen = 1.0f;
+#endif
 
     // compute diffuse term
     vec3 f = fresnelSchlickRoughness(max(dot(normal, v), 0.0), f0, roughness);
