@@ -27,10 +27,10 @@ module CharacterDispatcher =
             let properties =
                 { AlbedoOpt = Some Color.White
                   MetallicOpt = Some 0.0f
-                  RoughnessOpt = Some 1.25f
+                  RoughnessOpt = Some 0.5f
                   AmbientOcclusionOpt = Some 1.0f
                   EmissionOpt = Some 1.0f
-                  HeightOpt = Some 1.0f
+                  HeightOpt = Some 0.0f
                   InvertRoughnessOpt = Some false }
             let albedoImage = asset "Field" "Jinn"
             let inset = getSpriteInset character world
@@ -54,7 +54,7 @@ module CharacterDispatcher =
             characterView
 
         override this.GetQuickSize (_, _) =
-            v3 1.0f 2.0f 1.0f
+            v3 1.0f 1.0f 1.0f
 
         override this.RayCast (ray, entity, world) =
             // TODO: intersect against oriented quad rather than box.
@@ -69,5 +69,5 @@ module CharacterDispatcher =
             let bounds = entity.GetBounds world
             Some
                 (box3
-                    (bounds.Min + bounds.Size * v3 0.0f 0.5f 0.0f)
-                    (bounds.Size * v3 1.0f 0.5f 1.0f))
+                    (bounds.Min + bounds.Size * v3 0.0f 0.0f 0.0f)
+                    (bounds.Size * v3 1.0f 1.0f 1.0f))
