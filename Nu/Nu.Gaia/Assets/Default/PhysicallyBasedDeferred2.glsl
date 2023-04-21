@@ -217,21 +217,23 @@ void main()
     vec3 positionView = (view * vec4(position, 1.0)).xyz;
     for (int i = 0; i < SSAO_SAMPLES; ++i)
     {
-        // compute sampling direction
+        // compute sampling direction in world space
         vec3 samplingDirection = SSAO_SAMPLING_DIRECTIONS[i];
         samplingDirection *= SSAO_RADIUS; // scale by radius
         samplingDirection *= mix(SSAO_SAMPLES_INVERSE, 1.0f, i * SSAO_SAMPLES_INVERSE); // linearly increase sampling distance from origin
         samplingDirection = dot(samplingDirection, normal) > 0.0f ? samplingDirection : -samplingDirection; // only sampling upper hemisphere
 
-        // compute sampling position
+        // compute sampling position in screen space
         vec3 samplingPosition = position + samplingDirection;
         vec3 samplingPositionView = (view * vec4(samplingPosition, 1.0)).xyz;
         vec4 samplingPositionClip = projection * vec4(samplingPositionView, 1.0);
         vec2 samplingPositionScreen = samplingPositionClip.xy / samplingPositionClip.w * 0.5 + 0.5;
 
-        // compute sample position, perform range check and accumulate if occluded
+        // sample position in view space
         vec3 samplePosition = texture(positionTexture, samplingPositionScreen).rgb;
         vec3 samplePositionView = (view * vec4(samplePosition, 1.0)).xyz;
+
+        // perform range check and accumulate if occluded
         float rangeCheck = smoothstep(0.0, 1.0, SSAO_RADIUS / abs(positionView.z - samplePositionView.z));
         ambientOcclusionScreen += samplePositionView.z >= samplingPositionView.z + SSAO_BIAS ? rangeCheck : 0.0;
     }

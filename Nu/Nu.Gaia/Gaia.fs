@@ -204,7 +204,10 @@ module Gaia =
                 if not (entity.GetAbsolute world) then
                     if entity.GetIs2d world
                     then World.setEyeCenter2d (entity.GetCenter world).V2 world
-                    else World.setEyeCenter3d (entity.GetPosition world + Constants.Engine.EyeCenter3dOffset) world
+                    else
+                        let eyeRotation = World.getEyeRotation3d world
+                        let eyeCenterOffset = Vector3.Transform (Constants.Engine.EyeCenter3dOffset, eyeRotation)
+                        World.setEyeCenter3d (entity.GetPosition world + eyeCenterOffset) world
                 else world
             world
         | _ -> world
