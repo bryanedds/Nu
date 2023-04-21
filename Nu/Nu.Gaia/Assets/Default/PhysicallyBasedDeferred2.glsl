@@ -216,24 +216,31 @@ void main()
     // compute screen-space ambient occlusion
     float ambientOcclusionScreen = 0.0;
     vec3 positionView = (view * vec4(position, 1.0)).xyz;
+    vec4 positionClip = projection * vec4(position, 1.0);
+    vec2 positionScreen = positionClip.xy / positionClip.w * 0.5 + 0.5;
     vec3 normalView = normalize(transpose(inverse(mat3(view))) * normal);
     for (int i = 0; i < SSAO_SAMPLES; ++i)
     {
-        // get sample position in view space
+        // compute sample direction
         vec3 sampleDirection = SSAO_SAMPLE_DIRECTIONS[i];
         sampleDirection *= SSAO_RADIUS; // scale by radius
         sampleDirection *= mix(SSAO_SAMPLES_INVERSE, 1.0f, i * SSAO_SAMPLES_INVERSE); // linearaly increase sample distance from origin
         sampleDirection = dot(sampleDirection, normalView) > 0.0f ? sampleDirection : -sampleDirection; // only sample from upper hemisphere
-        vec3 samplePositionView = positionView + sampleDirection;
 
-        // get sample depth in view space
+        // compute sample position
+        vec3 samplePositionView = positionView + sampleDirection;
         vec4 samplePositionClip = projection * vec4(samplePositionView, 1.0); // from view space to clip space
         vec2 samplePositionScreen = samplePositionClip.xy / samplePositionClip.w * 0.5 + 0.5; // from clip space to screen space
-        float sampleDepth = ((view * texture(positionTexture, samplePositionScreen)).rgb).z;
 
-        // perform range check and accumulate if occluded
-        float rangeCheck = smoothstep(0.0, 1.0, SSAO_RADIUS / abs(positionView.z - sampleDepth));
-        ambientOcclusionScreen += (sampleDepth >= samplePositionView.z + SSAO_BIAS ? rangeCheck : 0.0);
+        // only consider occlusion with screen range
+        //float sampleDistanceScreen = length(samplePositionScreen - positionScreen);
+        //if (sampleDistanceScreen < 0.25)
+        //{
+            // compute sample depth, perform range check and accumulate if occluded
+            float sampleDepth = ((view * texture(positionTexture, samplePositionScreen)).rgb).z;
+            float rangeCheck = smoothstep(0.0, 1.0, SSAO_RADIUS / abs(positionView.z - sampleDepth));
+            ambientOcclusionScreen += (sampleDepth >= samplePositionView.z + SSAO_BIAS ? rangeCheck : 0.0);
+        //}
     }
     ambientOcclusionScreen /= float(SSAO_SAMPLES);
     ambientOcclusionScreen *= SSAO;
