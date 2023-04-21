@@ -27,9 +27,9 @@ module CharacterDispatcher =
             let properties =
                 { AlbedoOpt = Some Color.White
                   MetallicOpt = Some 0.0f
-                  RoughnessOpt = Some 0.5f
+                  RoughnessOpt = Some 0.8f
                   AmbientOcclusionOpt = Some 1.0f
-                  EmissionOpt = Some 1.0f
+                  EmissionOpt = Some 0.0f
                   HeightOpt = Some 0.0f
                   InvertRoughnessOpt = Some false }
             let albedoImage = asset "Field" "Jinn"
@@ -46,11 +46,11 @@ module CharacterDispatcher =
                           RoughnessImage = Assets.Default.MaterialRoughness
                           AmbientOcclusionImage = Assets.Default.MaterialRoughness
                           EmissionImage = Assets.Default.MaterialEmission
-                          NormalImage = albedoImage
+                          NormalImage = Assets.Default.MaterialNormal
                           HeightImage = Assets.Default.MaterialHeight
                           MinFilterOpt = Some OpenGL.TextureMinFilter.NearestMipmapNearest
                           MagFilterOpt = Some OpenGL.TextureMagFilter.Nearest
-                          RenderType = DeferredRenderType })
+                          RenderType = ForwardRenderType (0.0f, 0.0f) })
             characterView
 
         override this.GetQuickSize (_, _) =
