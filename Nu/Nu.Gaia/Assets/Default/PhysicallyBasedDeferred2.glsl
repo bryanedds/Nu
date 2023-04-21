@@ -20,9 +20,9 @@ const float REFLECTION_LOD_MAX = 5.0;
 const float GAMMA = 2.2;
 const float ATTENUATION_CONSTANT = 1.0;
 const int LIGHTS_MAX = 96;
-const float SSAO = 1.333;
-const float SSAO_RADIUS = 0.5;
-const float SSAO_BIAS = 0.01;
+const float SSAO = 1.0;
+const float SSAO_RADIUS = 1.0;
+const float SSAO_BIAS = 0.025;
 const int SSAO_SAMPLES = 96;
 const float SSAO_SAMPLES_INVERSE = 1.0 / float(SSAO_SAMPLES);
 
@@ -213,11 +213,11 @@ void main()
         lightAccum += (kD * albedo / PI + specular) * radiance * nDotL;
     }
 
-    // compute screen-space ambient occlusion
+    // compute screen space ambient occlusion
     float ambientOcclusionScreen = 0.0;
     vec3 positionView = (view * vec4(position, 1.0)).xyz;
-    vec4 positionClip = projection * vec4(position, 1.0);
-    vec2 positionScreen = positionClip.xy / positionClip.w * 0.5 + 0.5;
+    //vec4 positionClip = projection * vec4(position, 1.0);
+    //vec2 positionScreen = positionClip.xy / positionClip.w * 0.5 + 0.5;
     vec3 normalView = normalize(transpose(inverse(mat3(view))) * normal);
     float depthView = positionView.z;
     for (int i = 0; i < SSAO_SAMPLES; ++i)
@@ -226,10 +226,11 @@ void main()
         vec3 samplingDirection = SSAO_SAMPLING_DIRECTIONS[i];
         samplingDirection *= SSAO_RADIUS; // scale by radius
         samplingDirection *= mix(SSAO_SAMPLES_INVERSE, 1.0f, i * SSAO_SAMPLES_INVERSE); // linearly increase sampling distance from origin
-        samplingDirection = dot(samplingDirection, normalView) > 0.0f ? samplingDirection : -samplingDirection; // only sampling upper hemisphere
+        samplingDirection = dot(samplingDirection, normal) > 0.0f ? samplingDirection : -samplingDirection; // only sampling upper hemisphere
 
         // compute sampling position
-        vec3 samplingPositionView = positionView + samplingDirection;
+        vec3 samplingPosition = position + samplingDirection;
+        vec3 samplingPositionView = (view * vec4(samplingPosition, 1.0)).xyz;
         vec4 samplingPositionClip = projection * vec4(samplingPositionView, 1.0);
         vec2 samplingPositionScreen = samplingPositionClip.xy / samplingPositionClip.w * 0.5 + 0.5;
 
