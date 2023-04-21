@@ -20,13 +20,12 @@ const float REFLECTION_LOD_MAX = 5.0;
 const float GAMMA = 2.2;
 const float ATTENUATION_CONSTANT = 1.0;
 const int LIGHTS_MAX = 96;
-const float SSAO = 1.0;
-const float SSAO_RADIUS = 1.0;
-const float SSAO_BIAS = 0.025;
+const float SSAO = 1.25;
+const float SSAO_RADIUS = 0.5;
+const float SSAO_BIAS = 0.01;
 const int SSAO_SAMPLES = 96;
 const float SSAO_SAMPLES_INVERSE = 1.0 / float(SSAO_SAMPLES);
-
-vec3[SSAO_SAMPLES] SSAO_SAMPLING_DIRECTIONS = vec3[](
+const vec3[SSAO_SAMPLES] SSAO_SAMPLING_DIRECTIONS = vec3[](
     vec3(0.16628033, 0.98031127, 0.1090987), vec3(-0.73178808, -0.30931247, 0.60528424), vec3(0.05797729, -0.95963732, -0.27573171), vec3(0.83240714, -0.48937448, 0.25896714),
     vec3(-0.54424764, 0.29322405, 0.78570088), vec3(0.7682875, -0.6353843, -0.07468267), vec3(-0.88601684, 0.31203889, -0.34169098), vec3(-0.88316705, -0.29226478, -0.36708327),
     vec3(-0.75806223, -0.57716967, -0.30456295), vec3(-0.27128172, -0.86209868, 0.42658131), vec3(-0.22086532, -0.53516115, -0.81472868), vec3(0.42703992, 0.71746574, -0.55026034),
@@ -213,12 +212,9 @@ void main()
         lightAccum += (kD * albedo / PI + specular) * radiance * nDotL;
     }
 
-#if 0
     // compute screen space ambient occlusion
     float ambientOcclusionScreen = 0.0;
     vec3 positionView = (view * vec4(position, 1.0)).xyz;
-    vec3 normalView = normalize(transpose(inverse(mat3(view))) * normal);
-    float depthView = positionView.z;
     for (int i = 0; i < SSAO_SAMPLES; ++i)
     {
         // compute sampling direction
@@ -233,20 +229,16 @@ void main()
         vec4 samplingPositionClip = projection * vec4(samplingPositionView, 1.0);
         vec2 samplingPositionScreen = samplingPositionClip.xy / samplingPositionClip.w * 0.5 + 0.5;
 
-        // compute sample depth, perform range check and accumulate if occluded
+        // compute sample position, perform range check and accumulate if occluded
         vec3 samplePosition = texture(positionTexture, samplingPositionScreen).rgb;
         vec3 samplePositionView = (view * vec4(samplePosition, 1.0)).xyz;
-        float sampleDepthView = samplePositionView.z;
-        float rangeCheck = smoothstep(0.0, 1.0, SSAO_RADIUS / abs(depthView - sampleDepthView));
-        ambientOcclusionScreen += (sampleDepthView >= depthView + SSAO_BIAS ? rangeCheck : 0.0);
+        float rangeCheck = smoothstep(0.0, 1.0, SSAO_RADIUS / abs(positionView.z - samplePositionView.z));
+        ambientOcclusionScreen += samplePositionView.z >= samplingPositionView.z + SSAO_BIAS ? rangeCheck : 0.0;
     }
     ambientOcclusionScreen /= float(SSAO_SAMPLES);
     ambientOcclusionScreen *= SSAO;
     ambientOcclusionScreen = 1.0 - ambientOcclusionScreen;
     ambientOcclusionScreen = max(0.0, ambientOcclusionScreen);
-#else
-    float ambientOcclusionScreen = 1.0f;
-#endif
 
     // compute diffuse term
     vec3 f = fresnelSchlickRoughness(max(dot(normal, v), 0.0), f0, roughness);
