@@ -226,12 +226,12 @@ void main()
         sampleDirection = dot(sampleDirection, normalView) > 0.0f ? sampleDirection : -sampleDirection; // only sample from upper hemisphere
         vec3 samplePositionView = positionView + sampleDirection;
 
-        // project sample position from view space to screen space
+        // get sample depth in view space
         vec4 samplePositionClip = projection * vec4(samplePositionView, 1.0); // from view space to clip space
         vec2 samplePositionScreen = samplePositionClip.xy / samplePositionClip.w * 0.5 + 0.5; // from clip space to screen space
-
-        // get sample depth, perform range check, then accumulate
         float sampleDepth = ((view * texture(positionTexture, samplePositionScreen)).rgb).z;
+
+        // perform range check and accumulate if occluded
         float rangeCheck = smoothstep(0.0, 1.0, SSAO_RADIUS / abs(positionView.z - sampleDepth));
         ambientOcclusionScreen += (sampleDepth >= samplePositionView.z + SSAO_BIAS ? rangeCheck : 0.0);
     }
