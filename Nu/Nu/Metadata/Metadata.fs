@@ -19,7 +19,7 @@ type Font = private { __ : unit }
 /// A tile map. Currently just used as a phantom type.
 type TileMap = private { __ : unit }
 
-/// A static model. Currently just used as a phantom type.
+/// A cube map. Currently just used as a phantom type.
 type CubeMap = private { __ : unit }
 
 /// Song. Currently just used as a phantom type.

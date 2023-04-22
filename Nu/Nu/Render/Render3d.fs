@@ -66,7 +66,8 @@ type [<NoEquality; NoComparison>] BillboardParticlesDescriptor =
 
 /// A collection of render tasks in a pass.
 and [<ReferenceEquality>] RenderTasks =
-    { RenderSkyBoxes : (Color * single * Color * single * CubeMap AssetTag) SegmentedList
+    { RenderCubeMapProbes : SegmentedDictionary<uint64, Vector3>
+      RenderSkyBoxes : (Color * single * Color * single * CubeMap AssetTag) SegmentedList
       RenderLights : SortableLight SegmentedList
       RenderSurfacesDeferredAbsolute : Dictionary<OpenGL.PhysicallyBased.PhysicallyBasedSurface, struct (Matrix4x4 * Box2 * MaterialProperties) SegmentedList>
       RenderSurfacesDeferredRelative : Dictionary<OpenGL.PhysicallyBased.PhysicallyBasedSurface, struct (Matrix4x4 * Box2 * MaterialProperties) SegmentedList>
@@ -118,6 +119,10 @@ and [<ReferenceEquality>] CreateUserDefinedStaticModel =
 
 and [<ReferenceEquality>] DestroyUserDefinedStaticModel =
     { StaticModel : StaticModel AssetTag }
+
+and [<ReferenceEquality>] RenderCubeMapProbe =
+    { Center : Vector3
+      CubeMapProbeId : uint64 }
 
 and [<ReferenceEquality>] RenderSkyBox =
     { AmbientColor : Color
@@ -217,6 +222,7 @@ and [<ReferenceEquality>] RenderUserDefinedStaticModel =
 and [<ReferenceEquality>] RenderMessage3d =
     | CreateUserDefinedStaticModel of CreateUserDefinedStaticModel
     | DestroyUserDefinedStaticModel of DestroyUserDefinedStaticModel
+    | RenderCubeMapProbe of RenderCubeMapProbe
     | RenderSkyBox of RenderSkyBox
     | RenderLight3d of RenderLight3d
     | RenderBillboard of RenderBillboard
@@ -327,6 +333,7 @@ type [<ReferenceEquality>] GlRenderer3d =
           RenderPhysicallyBasedForwardShader : OpenGL.PhysicallyBased.PhysicallyBasedShader
           RenderPhysicallyBasedDeferredShader : OpenGL.PhysicallyBased.PhysicallyBasedShader
           RenderPhysicallyBasedDeferred2Shader : OpenGL.PhysicallyBased.PhysicallyBasedDeferred2Shader
+          RenderProbeCubeMapFramebuffer : uint * uint
           RenderIrradianceFramebuffer : uint * uint
           RenderEnvironmentFilterFramebuffer : uint * uint
           RenderGeometryFramebuffer : uint * uint * uint * uint * uint
@@ -337,6 +344,7 @@ type [<ReferenceEquality>] GlRenderer3d =
           RenderEnvironmentFilterMap : uint
           RenderBrdfTexture : uint
           RenderPhysicallyBasedMaterial : OpenGL.PhysicallyBased.PhysicallyBasedMaterial
+          RenderProbeCubeMaps : Dictionary<uint64, uint * uint * uint>
           mutable RenderModelsFields : single array
           mutable RenderTexCoordsOffsetsFields : single array
           mutable RenderAlbedosFields : single array
@@ -790,10 +798,80 @@ type [<ReferenceEquality>] GlRenderer3d =
     static member getPhysicallyBasedShader renderer =
         renderer.RenderPhysicallyBasedForwardShader
 
+    /// Create a cube map for a probe.
+    static member createProbeCubeMap (currentViewport : Viewport) currentFramebuffer eyeCenter renderer =
+
+        // construct viewport
+        let viewport =
+            Viewport
+                (Constants.Render.NearPlaneDistanceEnclosed,
+                 Constants.Render.FarPlaneDistanceEnclosed,
+                 box2i v2iZero (v2iDup Constants.Render.ProbeCubeMapResolution))
+
+        // construct eye rotations
+        let eyeRotations =
+            [|(v3Right, v3Down)
+              (v3Left, v3Down)
+              (v3Up, v3Back)
+              (v3Down, v3Forward)
+              (v3Back, v3Down)
+              (v3Forward, v3Down)|]
+
+        // construct projection
+        let projection = Matrix4x4.CreatePerspectiveFieldOfView (MathHelper.PiOver2, 1.0f, viewport.NearDistance, viewport.FarDistance)
+
+        // create cube map to render to
+        let probeCubeMap = OpenGL.Gl.GenTexture ()
+        OpenGL.Gl.BindTexture (OpenGL.TextureTarget.TextureCubeMap, probeCubeMap)
+        OpenGL.Hl.Assert ()
+
+        // setup framebuffer
+        let (renderBuffer, framebuffer) = renderer.RenderProbeCubeMapFramebuffer
+        OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, framebuffer)
+        OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, renderBuffer)
+        OpenGL.Hl.Assert ()
+
+        // mutate viewport
+        OpenGL.Gl.Viewport (viewport.Bounds.Min.X, viewport.Bounds.Min.Y, viewport.Bounds.Width, viewport.Bounds.Height)
+        OpenGL.Hl.Assert ()
+
+        // render probe cube map faces
+        for i in 0 .. dec 6 do
+
+            // construct face view, projection, and viewport
+            let (eyeForward, eyeUp) = eyeRotations.[i]
+            let viewAbsolute = m4Identity
+            let viewRelative = Matrix4x4.CreateLookAt (eyeCenter, eyeCenter + eyeForward, eyeUp)
+            let viewSkyBox = Matrix4x4.Transpose (Matrix4x4.CreateLookAt (v3Zero, eyeForward, eyeUp)) // transpose = inverse rotation when rotation only
+
+            // set up cube face for rendering to
+            let target = LanguagePrimitives.EnumOfValue (int OpenGL.TextureTarget.TextureCubeMapPositiveX + i)
+            OpenGL.Gl.TexImage2D (target, 0, OpenGL.InternalFormat.Rgba32f, viewport.Bounds.Width, viewport.Bounds.Height, 0, OpenGL.PixelFormat.Rgba, OpenGL.PixelType.Float, nativeint 0)
+            OpenGL.Gl.TexParameter (OpenGL.TextureTarget.TextureCubeMap, OpenGL.TextureParameterName.TextureMinFilter, int OpenGL.TextureMinFilter.Linear)
+            OpenGL.Gl.TexParameter (OpenGL.TextureTarget.TextureCubeMap, OpenGL.TextureParameterName.TextureMagFilter, int OpenGL.TextureMagFilter.Linear)
+            OpenGL.Gl.TexParameter (OpenGL.TextureTarget.TextureCubeMap, OpenGL.TextureParameterName.TextureWrapS, int OpenGL.TextureWrapMode.ClampToEdge)
+            OpenGL.Gl.TexParameter (OpenGL.TextureTarget.TextureCubeMap, OpenGL.TextureParameterName.TextureWrapT, int OpenGL.TextureWrapMode.ClampToEdge)
+            OpenGL.Gl.TexParameter (OpenGL.TextureTarget.TextureCubeMap, OpenGL.TextureParameterName.TextureWrapR, int OpenGL.TextureWrapMode.ClampToEdge)
+            OpenGL.Hl.Assert ()
+
+            // render to cube map face
+            let target = LanguagePrimitives.EnumOfValue (int OpenGL.TextureTarget.TextureCubeMapPositiveX + i)
+            OpenGL.Gl.FramebufferTexture2D (OpenGL.FramebufferTarget.Framebuffer, OpenGL.FramebufferAttachment.ColorAttachment0, target, probeCubeMap, 0)
+            GlRenderer3d.render9 false eyeCenter viewAbsolute viewRelative viewSkyBox projection viewport framebuffer renderer
+            OpenGL.Hl.Assert ()
+
+        // teardown viewport
+        OpenGL.Gl.Viewport (currentViewport.Bounds.Min.X, currentViewport.Bounds.Min.Y, currentViewport.Bounds.Size.X, currentViewport.Bounds.Size.Y)
+        OpenGL.Hl.Assert ()
+
+        // teardown framebuffer
+        OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, currentFramebuffer)
+        probeCubeMap
+
     /// Create an irradiance map for a sky box.
-    static member createIrradianceMap currentViewportOffset currentFramebuffer renderbuffer framebuffer shader skyBoxSurface =
+    static member createIrradianceMap currentViewport currentFramebuffer renderbuffer framebuffer shader skyBoxSurface =
         OpenGL.SkyBox.CreateIrradianceMap
-            (currentViewportOffset,
+            (currentViewport,
              currentFramebuffer,
              Constants.Render.IrradianceMapResolution,
              Constants.Render.IrradianceMapResolution,
@@ -803,9 +881,9 @@ type [<ReferenceEquality>] GlRenderer3d =
              skyBoxSurface)
 
     /// Create an environment filter map for a sky box.
-    static member createEnvironmentFilterMap currentViewportOffset currentFramebuffer renderbuffer framebuffer shader skyBoxSurface =
+    static member createEnvironmentFilterMap currentViewport currentFramebuffer renderbuffer framebuffer shader skyBoxSurface =
         OpenGL.SkyBox.CreateEnvironmentFilterMap
-            (currentViewportOffset,
+            (currentViewport,
              currentFramebuffer,
              Constants.Render.EnvironmentFilterResolution,
              Constants.Render.EnvironmentFilterResolution,
@@ -970,7 +1048,288 @@ type [<ReferenceEquality>] GlRenderer3d =
               TwoSided = true }
         billboardMaterial
 
-    static member render eyeCenter (eyeRotation : Quaternion) windowSize renderMessages renderer =
+    static member private render9
+        topLevelRender
+        (eyeCenter : Vector3)
+        (viewAbsolute : Matrix4x4)
+        (viewRelative : Matrix4x4)
+        (viewSkyBox : Matrix4x4)
+        (projection : Matrix4x4)
+        (viewport : Viewport)
+        (framebuffer : uint)
+        renderer =
+
+        // compute matrix arrays
+        let viewAbsoluteArray = viewAbsolute.ToArray ()
+        let viewRelativeArray = viewRelative.ToArray ()
+        let viewSkyBoxArray = viewSkyBox.ToArray ()
+        let projectionArray = projection.ToArray ()
+
+        // collect all cube maps, rendering those that don't yet have an entry
+        let cubeMapProbes = List ()
+        for probeKvp in renderer.RenderTasks.RenderCubeMapProbes do
+            match renderer.RenderProbeCubeMaps.TryGetValue probeKvp.Key with
+            | (true, (irradianceMap, environmentFilterMap, cubeMap)) ->
+                cubeMapProbes.Add (irradianceMap, environmentFilterMap, cubeMap)
+            | (false, _) ->
+
+                // render probe cube map if in top level render
+                if topLevelRender then
+
+                    // create probe cube map
+                    let probeCubeMap =
+                        GlRenderer3d.createProbeCubeMap
+                            viewport
+                            framebuffer
+                            probeKvp.Value
+                            renderer
+
+                    // create irradiance map
+                    let irradianceMap =
+                        GlRenderer3d.createIrradianceMap
+                            viewport
+                            framebuffer
+                            (fst renderer.RenderIrradianceFramebuffer)
+                            (snd renderer.RenderIrradianceFramebuffer)
+                            renderer.RenderIrradianceShader
+                            (OpenGL.SkyBox.SkyBoxSurface.make probeCubeMap renderer.RenderSkyBoxGeometry)
+
+                    // create env filter map
+                    let environmentFilterMap =
+                        GlRenderer3d.createEnvironmentFilterMap
+                            viewport
+                            framebuffer
+                            (fst renderer.RenderEnvironmentFilterFramebuffer)
+                            (snd renderer.RenderEnvironmentFilterFramebuffer)
+                            renderer.RenderEnvironmentFilterShader
+                            (OpenGL.SkyBox.SkyBoxSurface.make probeCubeMap renderer.RenderSkyBoxGeometry)
+
+                    // add probe cube map
+                    renderer.RenderProbeCubeMaps.Add (probeKvp.Key, (irradianceMap, environmentFilterMap, probeCubeMap))
+
+        // destroy all cube maps that aren't tasked to render
+        for probeKvp in renderer.RenderProbeCubeMaps do
+            if not (SegmentedDictionary.containsKey probeKvp.Key renderer.RenderTasks.RenderCubeMapProbes) then
+                if topLevelRender then
+                    let (irradianceMap, environmentFilterMap, probeCubeMap) = probeKvp.Value
+                    OpenGL.Gl.DeleteTextures [|irradianceMap; environmentFilterMap; probeCubeMap|]
+
+        // attempt to locate last sky box
+        let (lightAmbientColor, lightAmbientBrightness, skyBoxOpt) =
+            match Seq.tryLast renderer.RenderTasks.RenderSkyBoxes with
+            | Some (lightAmbientColor, lightAmbientBrightness, cubeMapColor, cubeMapBrightness, cubeMapAsset) ->
+                match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize cubeMapAsset) renderer with
+                | ValueSome asset ->
+                    match asset with
+                    | CubeMapAsset (_, cubeMap, cubeMapIrradianceAndEnvironmentMapOptRef) ->
+                        let cubeMapOpt = Some (cubeMapColor, cubeMapBrightness, cubeMap, cubeMapIrradianceAndEnvironmentMapOptRef)
+                        (lightAmbientColor, lightAmbientBrightness, cubeMapOpt)
+                    | _ ->
+                        Log.debug "Could not utilize sky box due to mismatched cube map asset."
+                        (lightAmbientColor, lightAmbientBrightness, None)
+                | ValueNone ->
+                    Log.debug "Could not utilize sky box due to non-existent cube map asset."
+                    (lightAmbientColor, lightAmbientBrightness, None)
+            | None -> (Color.White, 1.0f, None)
+
+        // convert light ambient color representation
+        let lightAmbientColor = [|lightAmbientColor.R; lightAmbientColor.G; lightAmbientColor.B|]
+
+        // sort lights for deferred relative to eye center
+        let (lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightDirectionals, lightConeInners, lightConeOuters) =
+            SortableLight.sortLightsIntoArrays Constants.Render.DeferredLightsMax eyeCenter renderer.RenderTasks.RenderLights
+
+        // sort absolute forward surfaces
+        let forwardSurfacesSorted = GlRenderer3d.sortSurfaces eyeCenter renderer.RenderTasks.RenderSurfacesForwardAbsolute
+        SegmentedList.addMany forwardSurfacesSorted renderer.RenderTasks.RenderSurfacesForwardAbsoluteSorted
+        SegmentedList.clear renderer.RenderTasks.RenderSurfacesForwardAbsolute
+
+        // sort relative forward surfaces
+        let forwardSurfacesSorted = GlRenderer3d.sortSurfaces eyeCenter renderer.RenderTasks.RenderSurfacesForwardRelative
+        SegmentedList.addMany forwardSurfacesSorted renderer.RenderTasks.RenderSurfacesForwardRelativeSorted
+        SegmentedList.clear renderer.RenderTasks.RenderSurfacesForwardRelative
+
+        // setup geometry buffer
+        let (positionTexture, albedoTexture, materialTexture, normalAndDepthTexture, geometryFramebuffer) = renderer.RenderGeometryFramebuffer
+        OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, geometryFramebuffer)
+        OpenGL.Gl.Enable OpenGL.EnableCap.ScissorTest
+        OpenGL.Gl.Scissor (viewport.Bounds.Min.X, viewport.Bounds.Min.Y, viewport.Bounds.Size.X, viewport.Bounds.Size.Y)
+        OpenGL.Gl.ClearColor (Constants.Render.WindowClearColor.R, Constants.Render.WindowClearColor.G, Constants.Render.WindowClearColor.B, Constants.Render.WindowClearColor.A)
+        OpenGL.Gl.Clear (OpenGL.ClearBufferMask.ColorBufferBit ||| OpenGL.ClearBufferMask.DepthBufferBit ||| OpenGL.ClearBufferMask.StencilBufferBit)
+        OpenGL.Gl.Disable OpenGL.EnableCap.ScissorTest
+        OpenGL.Hl.Assert ()
+
+        // retrieve an irradiance map, preferably from the sky box
+        let (irradianceMap, environmentFilterMap) =
+            match skyBoxOpt with
+            | Some (_, _, cubeMap, irradianceAndEnviconmentMapsOptRef) ->
+                if Option.isNone irradianceAndEnviconmentMapsOptRef.Value then
+                    let irradianceMap =
+                        GlRenderer3d.createIrradianceMap
+                            viewport
+                            geometryFramebuffer
+                            (fst renderer.RenderIrradianceFramebuffer)
+                            (snd renderer.RenderIrradianceFramebuffer)
+                            renderer.RenderIrradianceShader
+                            (OpenGL.SkyBox.SkyBoxSurface.make cubeMap renderer.RenderSkyBoxGeometry)
+                    let environmentFilterMap =
+                        GlRenderer3d.createEnvironmentFilterMap
+                            viewport
+                            geometryFramebuffer
+                            (fst renderer.RenderEnvironmentFilterFramebuffer)
+                            (snd renderer.RenderEnvironmentFilterFramebuffer)
+                            renderer.RenderEnvironmentFilterShader
+                            (OpenGL.SkyBox.SkyBoxSurface.make cubeMap renderer.RenderSkyBoxGeometry)
+                    let result = (irradianceMap, environmentFilterMap)
+                    irradianceAndEnviconmentMapsOptRef.Value <- Some result
+                    result
+                else Option.get irradianceAndEnviconmentMapsOptRef.Value
+            | None -> (renderer.RenderIrradianceMap, renderer.RenderEnvironmentFilterMap)
+
+        // deferred render surfaces w/ absolute transforms if in top level render
+        if topLevelRender then
+            for entry in renderer.RenderTasks.RenderSurfacesDeferredAbsolute do
+                GlRenderer3d.renderPhysicallyBasedSurfaces
+                    viewAbsoluteArray
+                    projectionArray
+                    eyeCenter
+                    entry.Value
+                    false
+                    lightAmbientColor
+                    lightAmbientBrightness
+                    irradianceMap
+                    environmentFilterMap
+                    renderer.RenderBrdfTexture
+                    lightOrigins
+                    lightDirections
+                    lightColors
+                    lightBrightnesses
+                    lightAttenuationLinears
+                    lightAttenuationQuadratics
+                    lightDirectionals
+                    lightConeInners
+                    lightConeOuters
+                    entry.Key
+                    renderer.RenderPhysicallyBasedDeferredShader
+                    renderer
+                OpenGL.Hl.Assert ()
+
+        // deferred render surfaces w/ relative transforms
+        for entry in renderer.RenderTasks.RenderSurfacesDeferredRelative do
+            GlRenderer3d.renderPhysicallyBasedSurfaces
+                viewRelativeArray
+                projectionArray
+                eyeCenter
+                entry.Value
+                false
+                lightAmbientColor
+                lightAmbientBrightness
+                irradianceMap
+                environmentFilterMap
+                renderer.RenderBrdfTexture
+                lightOrigins
+                lightDirections
+                lightColors
+                lightBrightnesses
+                lightAttenuationLinears
+                lightAttenuationQuadratics
+                lightDirectionals
+                lightConeInners
+                lightConeOuters
+                entry.Key
+                renderer.RenderPhysicallyBasedDeferredShader
+                renderer
+            OpenGL.Hl.Assert ()
+
+        // copy depths from geometry framebuffer to main framebuffer
+        OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.ReadFramebuffer, geometryFramebuffer)
+        OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.DrawFramebuffer, framebuffer)
+        OpenGL.Gl.BlitFramebuffer
+            (0, 0, Constants.Render.ResolutionX, Constants.Render.ResolutionY,
+             0, 0, Constants.Render.ResolutionX, Constants.Render.ResolutionY,
+             OpenGL.ClearBufferMask.DepthBufferBit,
+             OpenGL.BlitFramebufferFilter.Nearest)
+        OpenGL.Hl.Assert ()
+
+        // switch to main framebuffer
+        OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, framebuffer)
+        OpenGL.Hl.Assert ()
+
+        // deferred render lighting quad
+        OpenGL.PhysicallyBased.DrawPhysicallyBasedDeferred2Surface
+            (viewRelativeArray, projectionArray, eyeCenter, lightAmbientColor, lightAmbientBrightness, positionTexture, albedoTexture, materialTexture, normalAndDepthTexture, irradianceMap, environmentFilterMap, renderer.RenderBrdfTexture,
+             lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightDirectionals, lightConeInners, lightConeOuters,
+             renderer.RenderPhysicallyBasedQuad, renderer.RenderPhysicallyBasedDeferred2Shader)
+        OpenGL.Hl.Assert ()
+
+        // attempt to render sky box
+        match skyBoxOpt with
+        | Some (cubeMapColor, cubeMapBrightness, cubeMap, _) ->
+            let cubeMapColor = [|cubeMapColor.R; cubeMapColor.G; cubeMapColor.B|]
+            OpenGL.SkyBox.DrawSkyBox (viewSkyBoxArray, projectionArray, cubeMapColor, cubeMapBrightness, cubeMap, renderer.RenderSkyBoxGeometry, renderer.RenderSkyBoxShader)
+            OpenGL.Hl.Assert ()
+        | None -> ()
+
+        // forward render surfaces w/ absolute transforms if in top level render
+        if topLevelRender then
+            for (model, texCoordsOffset, properties, surface) in renderer.RenderTasks.RenderSurfacesForwardAbsoluteSorted do
+                let (lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightDirectionals, lightConeInners, lightConeOuters) =
+                    SortableLight.sortLightsIntoArrays Constants.Render.ForwardLightsMax model.Translation renderer.RenderTasks.RenderLights
+                GlRenderer3d.renderPhysicallyBasedSurfaces
+                    viewAbsoluteArray
+                    projectionArray
+                    eyeCenter
+                    (SegmentedList.singleton (model, texCoordsOffset, properties))
+                    true
+                    lightAmbientColor
+                    lightAmbientBrightness
+                    irradianceMap
+                    environmentFilterMap
+                    renderer.RenderBrdfTexture
+                    lightOrigins
+                    lightDirections
+                    lightColors
+                    lightBrightnesses
+                    lightAttenuationLinears
+                    lightAttenuationQuadratics
+                    lightDirectionals
+                    lightConeInners
+                    lightConeOuters
+                    surface
+                    renderer.RenderPhysicallyBasedForwardShader
+                    renderer
+                OpenGL.Hl.Assert ()
+
+        // forward render surfaces w/ relative transforms
+        for (model, texCoordsOffset, properties, surface) in renderer.RenderTasks.RenderSurfacesForwardRelativeSorted do
+            let (lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightDirectionals, lightConeInners, lightConeOuters) =
+                SortableLight.sortLightsIntoArrays Constants.Render.ForwardLightsMax model.Translation renderer.RenderTasks.RenderLights
+            GlRenderer3d.renderPhysicallyBasedSurfaces
+                viewRelativeArray
+                projectionArray
+                eyeCenter
+                (SegmentedList.singleton (model, texCoordsOffset, properties))
+                true
+                lightAmbientColor
+                lightAmbientBrightness
+                irradianceMap
+                environmentFilterMap
+                renderer.RenderBrdfTexture
+                lightOrigins
+                lightDirections
+                lightColors
+                lightBrightnesses
+                lightAttenuationLinears
+                lightAttenuationQuadratics
+                lightDirectionals
+                lightConeInners
+                lightConeOuters
+                surface
+                renderer.RenderPhysicallyBasedForwardShader
+                renderer
+            OpenGL.Hl.Assert ()
+
+    static member render eyeCenter (eyeRotation : Quaternion) windowSize framebuffer renderMessages renderer =
 
         // compute the viewport with the given offset
         let viewportOffset = Constants.Render.ViewportOffset windowSize
@@ -978,14 +1337,10 @@ type [<ReferenceEquality>] GlRenderer3d =
         // compute view and projection
         let eyeTarget = eyeCenter + Vector3.Transform (v3Forward, eyeRotation)
         let viewAbsolute = m4Identity
-        let viewAbsoluteArray = viewAbsolute.ToArray ()
         let viewRelative = Matrix4x4.CreateLookAt (eyeCenter, eyeTarget, v3Up)
-        let viewRelativeArray = viewRelative.ToArray ()
         let viewSkyBox = Matrix4x4.CreateFromQuaternion (Quaternion.Inverse eyeRotation)
-        let viewSkyBoxArray = viewSkyBox.ToArray ()
         let viewport = Constants.Render.Viewport
         let projection = viewport.Projection3d Constants.Render.NearPlaneDistanceOmnipresent Constants.Render.FarPlaneDistanceOmnipresent
-        let projectionArray = projection.ToArray ()
         OpenGL.Hl.Assert ()
 
         // categorize messages
@@ -998,6 +1353,8 @@ type [<ReferenceEquality>] GlRenderer3d =
                 GlRenderer3d.tryCreateUserDefinedStaticModel cudsm.SurfaceDescriptors cudsm.Bounds cudsm.StaticModel renderer
             | DestroyUserDefinedStaticModel dudsm ->
                 SegmentedList.add dudsm.StaticModel userDefinedStaticModelsToDestroy
+            | RenderCubeMapProbe cmp ->
+                SegmentedDictionary.add cmp.CubeMapProbeId cmp.Center renderer.RenderTasks.RenderCubeMapProbes
             | RenderSkyBox rsb ->
                 SegmentedList.add (rsb.AmbientColor, rsb.AmbientBrightness, rsb.CubeMapColor, rsb.CubeMapBrightness, rsb.CubeMap) renderer.RenderTasks.RenderSkyBoxes
             | RenderLight3d rl3 ->
@@ -1057,219 +1414,9 @@ type [<ReferenceEquality>] GlRenderer3d =
             | ReloadRenderAssets3d ->
                 GlRenderer3d.handleReloadRenderAssets renderer
 
-        // sort absolute forward surfaces
-        let forwardSurfacesSorted = GlRenderer3d.sortSurfaces eyeCenter renderer.RenderTasks.RenderSurfacesForwardAbsolute
-        SegmentedList.addMany forwardSurfacesSorted renderer.RenderTasks.RenderSurfacesForwardAbsoluteSorted
-        SegmentedList.clear renderer.RenderTasks.RenderSurfacesForwardAbsolute
-
-        // sort relative forward surfaces
-        let forwardSurfacesSorted = GlRenderer3d.sortSurfaces eyeCenter renderer.RenderTasks.RenderSurfacesForwardRelative
-        SegmentedList.addMany forwardSurfacesSorted renderer.RenderTasks.RenderSurfacesForwardRelativeSorted
-        SegmentedList.clear renderer.RenderTasks.RenderSurfacesForwardRelative
-
-        // setup geometry buffer
-        let (positionTexture, albedoTexture, materialTexture, normalAndDepthTexture, geometryFramebuffer) = renderer.RenderGeometryFramebuffer
-        OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, geometryFramebuffer)
-        OpenGL.Gl.Enable OpenGL.EnableCap.ScissorTest
-        OpenGL.Gl.Scissor (viewportOffset.Bounds.Min.X, viewportOffset.Bounds.Min.Y, viewportOffset.Bounds.Size.X, viewportOffset.Bounds.Size.Y)
-        OpenGL.Gl.ClearColor (Constants.Render.WindowClearColor.R, Constants.Render.WindowClearColor.G, Constants.Render.WindowClearColor.B, Constants.Render.WindowClearColor.A)
-        OpenGL.Gl.Clear (OpenGL.ClearBufferMask.ColorBufferBit ||| OpenGL.ClearBufferMask.DepthBufferBit ||| OpenGL.ClearBufferMask.StencilBufferBit)
-        OpenGL.Gl.Disable OpenGL.EnableCap.ScissorTest
-        OpenGL.Hl.Assert ()
-
-        // attempt to locate last sky box
-        let (lightAmbientColor, lightAmbientBrightness, skyBoxOpt) =
-            match Seq.tryLast renderer.RenderTasks.RenderSkyBoxes with
-            | Some (lightAmbientColor, lightAmbientBrightness, cubeMapColor, cubeMapBrightness, cubeMapAsset) ->
-                match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize cubeMapAsset) renderer with
-                | ValueSome asset ->
-                    match asset with
-                    | CubeMapAsset (_, cubeMap, cubeMapIrradianceAndEnvironmentMapOptRef) ->
-                        let cubeMapOpt = Some (cubeMapColor, cubeMapBrightness, cubeMap, cubeMapIrradianceAndEnvironmentMapOptRef)
-                        (lightAmbientColor, lightAmbientBrightness, cubeMapOpt)
-                    | _ ->
-                        Log.debug "Could not utilize sky box due to mismatched cube map asset."
-                        (lightAmbientColor, lightAmbientBrightness, None)
-                | ValueNone ->
-                    Log.debug "Could not utilize sky box due to non-existent cube map asset."
-                    (lightAmbientColor, lightAmbientBrightness, None)
-            | None -> (Color.White, 1.0f, None)
-
-        // convert light ambient color representation
-        let lightAmbientColor = [|lightAmbientColor.R; lightAmbientColor.G; lightAmbientColor.B|]
-
-        // retrieve an irradiance map, preferably from the sky box
-        let (irradianceMap, environmentFilterMap) =
-            match skyBoxOpt with
-            | Some (_, _, cubeMap, irradianceAndEnviconmentMapsOptRef) ->
-                if Option.isNone irradianceAndEnviconmentMapsOptRef.Value then
-                    let irradianceMap =
-                        GlRenderer3d.createIrradianceMap
-                            viewportOffset
-                            geometryFramebuffer
-                            (fst renderer.RenderIrradianceFramebuffer)
-                            (snd renderer.RenderIrradianceFramebuffer)
-                            renderer.RenderIrradianceShader
-                            (OpenGL.SkyBox.SkyBoxSurface.make cubeMap renderer.RenderSkyBoxGeometry)
-                    let environmentFilterMap =
-                        GlRenderer3d.createEnvironmentFilterMap
-                            viewportOffset
-                            geometryFramebuffer
-                            (fst renderer.RenderEnvironmentFilterFramebuffer)
-                            (snd renderer.RenderEnvironmentFilterFramebuffer)
-                            renderer.RenderEnvironmentFilterShader
-                            (OpenGL.SkyBox.SkyBoxSurface.make cubeMap renderer.RenderSkyBoxGeometry)
-                    let result = (irradianceMap, environmentFilterMap)
-                    irradianceAndEnviconmentMapsOptRef.Value <- Some result
-                    result
-                else Option.get irradianceAndEnviconmentMapsOptRef.Value
-            | None -> (renderer.RenderIrradianceMap, renderer.RenderEnvironmentFilterMap)
-
-        // sort lights for deferred relative to eye center
-        let (lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightDirectionals, lightConeInners, lightConeOuters) =
-            SortableLight.sortLightsIntoArrays Constants.Render.DeferredLightsMax eyeCenter renderer.RenderTasks.RenderLights
-
-        // deferred render surfaces w/ absolute transforms
-        for entry in renderer.RenderTasks.RenderSurfacesDeferredAbsolute do
-            GlRenderer3d.renderPhysicallyBasedSurfaces
-                viewAbsoluteArray
-                projectionArray
-                eyeCenter
-                entry.Value
-                false
-                lightAmbientColor
-                lightAmbientBrightness
-                irradianceMap
-                environmentFilterMap
-                renderer.RenderBrdfTexture
-                lightOrigins
-                lightDirections
-                lightColors
-                lightBrightnesses
-                lightAttenuationLinears
-                lightAttenuationQuadratics
-                lightDirectionals
-                lightConeInners
-                lightConeOuters
-                entry.Key
-                renderer.RenderPhysicallyBasedDeferredShader
-                renderer
-            OpenGL.Hl.Assert ()
-
-        // deferred render surfaces w/ relative transforms
-        for entry in renderer.RenderTasks.RenderSurfacesDeferredRelative do
-            GlRenderer3d.renderPhysicallyBasedSurfaces
-                viewRelativeArray
-                projectionArray
-                eyeCenter
-                entry.Value
-                false
-                lightAmbientColor
-                lightAmbientBrightness
-                irradianceMap
-                environmentFilterMap
-                renderer.RenderBrdfTexture
-                lightOrigins
-                lightDirections
-                lightColors
-                lightBrightnesses
-                lightAttenuationLinears
-                lightAttenuationQuadratics
-                lightDirectionals
-                lightConeInners
-                lightConeOuters
-                entry.Key
-                renderer.RenderPhysicallyBasedDeferredShader
-                renderer
-            OpenGL.Hl.Assert ()
-
-        // copy depths from geometry framebuffer to main framebuffer
-        OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.ReadFramebuffer, geometryFramebuffer)
-        OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.DrawFramebuffer, 0u)
-        OpenGL.Gl.BlitFramebuffer
-            (0, 0, Constants.Render.ResolutionX, Constants.Render.ResolutionY,
-             0, 0, Constants.Render.ResolutionX, Constants.Render.ResolutionY,
-             OpenGL.ClearBufferMask.DepthBufferBit,
-             OpenGL.BlitFramebufferFilter.Nearest)
-        OpenGL.Hl.Assert ()
-
-        // switch to main framebuffer
-        OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, 0u)
-        OpenGL.Hl.Assert ()
-
-        // deferred render lighting quad
-        OpenGL.PhysicallyBased.DrawPhysicallyBasedDeferred2Surface
-            (viewRelativeArray, projectionArray, eyeCenter, lightAmbientColor, lightAmbientBrightness, positionTexture, albedoTexture, materialTexture, normalAndDepthTexture, irradianceMap, environmentFilterMap, renderer.RenderBrdfTexture,
-             lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightDirectionals, lightConeInners, lightConeOuters,
-             renderer.RenderPhysicallyBasedQuad, renderer.RenderPhysicallyBasedDeferred2Shader)
-        OpenGL.Hl.Assert ()
-
-        // attempt to render sky box
-        match skyBoxOpt with
-        | Some (cubeMapColor, cubeMapBrightness, cubeMap, _) ->
-            let cubeMapColor = [|cubeMapColor.R; cubeMapColor.G; cubeMapColor.B|]
-            OpenGL.SkyBox.DrawSkyBox (viewSkyBoxArray, projectionArray, cubeMapColor, cubeMapBrightness, cubeMap, renderer.RenderSkyBoxGeometry, renderer.RenderSkyBoxShader)
-            OpenGL.Hl.Assert ()
-        | None -> ()
-
-        // forward render surfaces w/ absolute transforms
-        for (model, texCoordsOffset, properties, surface) in renderer.RenderTasks.RenderSurfacesForwardAbsoluteSorted do
-            let (lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightDirectionals, lightConeInners, lightConeOuters) =
-                SortableLight.sortLightsIntoArrays Constants.Render.ForwardLightsMax model.Translation renderer.RenderTasks.RenderLights
-            GlRenderer3d.renderPhysicallyBasedSurfaces
-                viewAbsoluteArray
-                projectionArray
-                eyeCenter
-                (SegmentedList.singleton (model, texCoordsOffset, properties))
-                true
-                lightAmbientColor
-                lightAmbientBrightness
-                irradianceMap
-                environmentFilterMap
-                renderer.RenderBrdfTexture
-                lightOrigins
-                lightDirections
-                lightColors
-                lightBrightnesses
-                lightAttenuationLinears
-                lightAttenuationQuadratics
-                lightDirectionals
-                lightConeInners
-                lightConeOuters
-                surface
-                renderer.RenderPhysicallyBasedForwardShader
-                renderer
-            OpenGL.Hl.Assert ()
-
-        // forward render surfaces w/ relative transforms
-        for (model, texCoordsOffset, properties, surface) in renderer.RenderTasks.RenderSurfacesForwardRelativeSorted do
-            let (lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightDirectionals, lightConeInners, lightConeOuters) =
-                SortableLight.sortLightsIntoArrays Constants.Render.ForwardLightsMax model.Translation renderer.RenderTasks.RenderLights
-            GlRenderer3d.renderPhysicallyBasedSurfaces
-                viewRelativeArray
-                projectionArray
-                eyeCenter
-                (SegmentedList.singleton (model, texCoordsOffset, properties))
-                true
-                lightAmbientColor
-                lightAmbientBrightness
-                irradianceMap
-                environmentFilterMap
-                renderer.RenderBrdfTexture
-                lightOrigins
-                lightDirections
-                lightColors
-                lightBrightnesses
-                lightAttenuationLinears
-                lightAttenuationQuadratics
-                lightDirectionals
-                lightConeInners
-                lightConeOuters
-                surface
-                renderer.RenderPhysicallyBasedForwardShader
-                renderer
-            OpenGL.Hl.Assert ()
-
+        // render with probe cube map rendering
+        GlRenderer3d.render9 true eyeCenter viewAbsolute viewRelative viewSkyBox projection viewportOffset framebuffer renderer
+        
         // render post-passes
         let passParameters =
             { EyeCenter = eyeCenter
@@ -1333,6 +1480,14 @@ type [<ReferenceEquality>] GlRenderer3d =
             OpenGL.PhysicallyBased.CreatePhysicallyBasedDeferredShaders
                 (Constants.Paths.PhysicallyBasedDeferredShaderFilePath,
                  Constants.Paths.PhysicallyBasedDeferred2ShaderFilePath)
+        OpenGL.Hl.Assert ()
+
+        // crete probe cube map framebuffer
+        let probeCubeMapFramebuffer = OpenGL.Gl.GenFramebuffer ()
+        let probeCubeMapRenderbuffer = OpenGL.Gl.GenRenderbuffer ()
+        OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, probeCubeMapFramebuffer)
+        OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, probeCubeMapRenderbuffer)
+        OpenGL.Gl.RenderbufferStorage (OpenGL.RenderbufferTarget.Renderbuffer, OpenGL.InternalFormat.DepthComponent24, Constants.Render.ProbeCubeMapResolution, Constants.Render.ProbeCubeMapResolution)
         OpenGL.Hl.Assert ()
 
         // crete environment filter framebuffer
@@ -1432,7 +1587,8 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         // create render tasks
         let renderTasks =
-            { RenderSkyBoxes = SegmentedList.make ()
+            { RenderCubeMapProbes = SegmentedDictionary.make HashIdentity.Structural
+              RenderSkyBoxes = SegmentedList.make ()
               RenderLights = SegmentedList.make ()
               RenderSurfacesDeferredAbsolute = dictPlus HashIdentity.Structural []
               RenderSurfacesDeferredRelative = dictPlus HashIdentity.Structural []
@@ -1450,6 +1606,7 @@ type [<ReferenceEquality>] GlRenderer3d =
               RenderPhysicallyBasedForwardShader = forwardShader
               RenderPhysicallyBasedDeferredShader = deferredShader
               RenderPhysicallyBasedDeferred2Shader = deferred2Shader
+              RenderProbeCubeMapFramebuffer = (probeCubeMapRenderbuffer, probeCubeMapFramebuffer)
               RenderIrradianceFramebuffer = (irradianceRenderbuffer, irradianceFramebuffer)
               RenderEnvironmentFilterFramebuffer = (environmentFilterRenderbuffer, environmentFilterFramebuffer)
               RenderGeometryFramebuffer = geometryFramebuffer
@@ -1460,6 +1617,7 @@ type [<ReferenceEquality>] GlRenderer3d =
               RenderEnvironmentFilterMap = environmentFilterMap
               RenderBrdfTexture = brdfTexture
               RenderPhysicallyBasedMaterial = physicallyBasedMaterial
+              RenderProbeCubeMaps = dictPlus HashIdentity.Structural []
               RenderModelsFields = Array.zeroCreate<single> (16 * Constants.Render.GeometryBatchPrealloc)
               RenderTexCoordsOffsetsFields = Array.zeroCreate<single> (4 * Constants.Render.GeometryBatchPrealloc)
               RenderAlbedosFields = Array.zeroCreate<single> (4 * Constants.Render.GeometryBatchPrealloc)
@@ -1493,7 +1651,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
             // render only if there are messages
             if renderMessages.Count > 0 then
-                GlRenderer3d.render eyeCenter eyeRotation windowSize renderMessages renderer
+                GlRenderer3d.render eyeCenter eyeRotation windowSize 0u renderMessages renderer
 
             // end frame
             if renderer.RenderShouldEndFrame then

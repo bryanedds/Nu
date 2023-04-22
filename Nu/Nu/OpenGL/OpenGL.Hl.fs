@@ -82,14 +82,10 @@ module Hl =
         glContext
 
     /// Begin an OpenGL frame.
-    let BeginFrame (viewportOffset : Viewport) =
+    let BeginFrame (viewport : Viewport) =
 
         // set viewport
-        Gl.Viewport
-            (viewportOffset.Bounds.Min.X,
-             viewportOffset.Bounds.Min.Y,
-             viewportOffset.Bounds.Size.X,
-             viewportOffset.Bounds.Size.Y)
+        Gl.Viewport (viewport.Bounds.Min.X, viewport.Bounds.Min.Y, viewport.Bounds.Size.X, viewport.Bounds.Size.Y)
         Assert ()
 
         // bind buffer
@@ -104,10 +100,10 @@ module Hl =
         // clear drawing target
         Gl.Enable EnableCap.ScissorTest
         Gl.Scissor
-            (viewportOffset.Bounds.Min.X,
-             viewportOffset.Bounds.Min.Y,
-             viewportOffset.Bounds.Size.X,
-             viewportOffset.Bounds.Size.Y)
+            (viewport.Bounds.Min.X,
+             viewport.Bounds.Min.Y,
+             viewport.Bounds.Size.X,
+             viewport.Bounds.Size.Y)
         Gl.ClearColor (Constants.Render.WindowClearColor.R, Constants.Render.WindowClearColor.G, Constants.Render.WindowClearColor.B, Constants.Render.WindowClearColor.A)
         Gl.Clear (ClearBufferMask.ColorBufferBit)
         Gl.Disable EnableCap.ScissorTest
