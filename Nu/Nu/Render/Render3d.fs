@@ -66,7 +66,7 @@ type [<NoEquality; NoComparison>] BillboardParticlesDescriptor =
 
 /// A collection of render tasks in a pass.
 and [<ReferenceEquality>] RenderTasks =
-    { RenderCubeMapProbes : SegmentedDictionary<uint64, Vector3>
+    { RenderProbeCubeMaps : SegmentedDictionary<uint64, Vector3>
       RenderSkyBoxes : (Color * single * Color * single * CubeMap AssetTag) SegmentedList
       RenderLights : SortableLight SegmentedList
       RenderSurfacesDeferredAbsolute : Dictionary<OpenGL.PhysicallyBased.PhysicallyBasedSurface, struct (Matrix4x4 * Box2 * MaterialProperties) SegmentedList>
@@ -120,9 +120,9 @@ and [<ReferenceEquality>] CreateUserDefinedStaticModel =
 and [<ReferenceEquality>] DestroyUserDefinedStaticModel =
     { StaticModel : StaticModel AssetTag }
 
-and [<ReferenceEquality>] RenderCubeMapProbe =
+and [<ReferenceEquality>] RenderProbeCubeMap =
     { Center : Vector3
-      CubeMapProbeId : uint64 }
+      ProbeId : uint64 }
 
 and [<ReferenceEquality>] RenderSkyBox =
     { AmbientColor : Color
@@ -222,7 +222,7 @@ and [<ReferenceEquality>] RenderUserDefinedStaticModel =
 and [<ReferenceEquality>] RenderMessage3d =
     | CreateUserDefinedStaticModel of CreateUserDefinedStaticModel
     | DestroyUserDefinedStaticModel of DestroyUserDefinedStaticModel
-    | RenderCubeMapProbe of RenderCubeMapProbe
+    | RenderProbeCubeMap of RenderProbeCubeMap
     | RenderSkyBox of RenderSkyBox
     | RenderLight3d of RenderLight3d
     | RenderBillboard of RenderBillboard
@@ -344,7 +344,7 @@ type [<ReferenceEquality>] GlRenderer3d =
           RenderEnvironmentFilterMap : uint
           RenderBrdfTexture : uint
           RenderPhysicallyBasedMaterial : OpenGL.PhysicallyBased.PhysicallyBasedMaterial
-          RenderProbeCubeMaps : Dictionary<uint64, uint * uint * uint>
+          RenderProbeCubeMaps : Dictionary<uint64, Vector3 * uint * uint * uint>
           mutable RenderModelsFields : single array
           mutable RenderTexCoordsOffsetsFields : single array
           mutable RenderAlbedosFields : single array
@@ -1065,12 +1065,12 @@ type [<ReferenceEquality>] GlRenderer3d =
         let viewSkyBoxArray = viewSkyBox.ToArray ()
         let projectionArray = projection.ToArray ()
 
-        // collect all cube maps, rendering those that don't yet have an entry
-        let cubeMapProbes = List ()
-        for probeKvp in renderer.RenderTasks.RenderCubeMapProbes do
+        // collect all probe cube maps, rendering those that don't yet have an entry
+        let probeCubeMaps = List ()
+        for probeKvp in renderer.RenderTasks.RenderProbeCubeMaps do
             match renderer.RenderProbeCubeMaps.TryGetValue probeKvp.Key with
-            | (true, (irradianceMap, environmentFilterMap, cubeMap)) ->
-                cubeMapProbes.Add (irradianceMap, environmentFilterMap, cubeMap)
+            | (true, (center, irradianceMap, environmentFilterMap, cubeMap)) ->
+                probeCubeMaps.Add (center, irradianceMap, environmentFilterMap, cubeMap)
             | (false, _) ->
 
                 // render probe cube map if in top level render
@@ -1105,13 +1105,13 @@ type [<ReferenceEquality>] GlRenderer3d =
                             (OpenGL.SkyBox.SkyBoxSurface.make probeCubeMap renderer.RenderSkyBoxGeometry)
 
                     // add probe cube map
-                    renderer.RenderProbeCubeMaps.Add (probeKvp.Key, (irradianceMap, environmentFilterMap, probeCubeMap))
+                    renderer.RenderProbeCubeMaps.Add (probeKvp.Key, (probeKvp.Value, irradianceMap, environmentFilterMap, probeCubeMap))
 
-        // destroy all cube maps that aren't tasked to render
+        // destroy all probe cube maps that aren't tasked to render
         for probeKvp in renderer.RenderProbeCubeMaps do
-            if not (SegmentedDictionary.containsKey probeKvp.Key renderer.RenderTasks.RenderCubeMapProbes) then
+            if not (SegmentedDictionary.containsKey probeKvp.Key renderer.RenderTasks.RenderProbeCubeMaps) then
                 if topLevelRender then
-                    let (irradianceMap, environmentFilterMap, probeCubeMap) = probeKvp.Value
+                    let (_, irradianceMap, environmentFilterMap, probeCubeMap) = probeKvp.Value
                     OpenGL.Gl.DeleteTextures [|irradianceMap; environmentFilterMap; probeCubeMap|]
 
         // attempt to locate last sky box
@@ -1353,8 +1353,8 @@ type [<ReferenceEquality>] GlRenderer3d =
                 GlRenderer3d.tryCreateUserDefinedStaticModel cudsm.SurfaceDescriptors cudsm.Bounds cudsm.StaticModel renderer
             | DestroyUserDefinedStaticModel dudsm ->
                 SegmentedList.add dudsm.StaticModel userDefinedStaticModelsToDestroy
-            | RenderCubeMapProbe cmp ->
-                SegmentedDictionary.add cmp.CubeMapProbeId cmp.Center renderer.RenderTasks.RenderCubeMapProbes
+            | RenderProbeCubeMap cmp ->
+                SegmentedDictionary.add cmp.ProbeCubeMapId cmp.Center renderer.RenderTasks.RenderProbeCubeMaps
             | RenderSkyBox rsb ->
                 SegmentedList.add (rsb.AmbientColor, rsb.AmbientBrightness, rsb.CubeMapColor, rsb.CubeMapBrightness, rsb.CubeMap) renderer.RenderTasks.RenderSkyBoxes
             | RenderLight3d rl3 ->
@@ -1587,7 +1587,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         // create render tasks
         let renderTasks =
-            { RenderCubeMapProbes = SegmentedDictionary.make HashIdentity.Structural
+            { RenderProbeCubeMaps = SegmentedDictionary.make HashIdentity.Structural
               RenderSkyBoxes = SegmentedList.make ()
               RenderLights = SegmentedList.make ()
               RenderSurfacesDeferredAbsolute = dictPlus HashIdentity.Structural []
