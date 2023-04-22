@@ -66,8 +66,8 @@ type [<NoEquality; NoComparison>] BillboardParticlesDescriptor =
 
 /// A collection of render tasks in a pass.
 and [<ReferenceEquality>] RenderTasks =
-    { RenderProbeCubeMaps : SegmentedDictionary<uint64, Vector3>
-      RenderSkyBoxes : (Color * single * Color * single * CubeMap AssetTag) SegmentedList
+    { RenderSkyBoxes : (Color * single * Color * single * CubeMap AssetTag) SegmentedList
+      RenderLightProbes : SegmentedDictionary<uint64, Vector3>
       RenderLights : SortableLight SegmentedList
       RenderSurfacesDeferredAbsolute : Dictionary<OpenGL.PhysicallyBased.PhysicallyBasedSurface, struct (Matrix4x4 * Box2 * MaterialProperties) SegmentedList>
       RenderSurfacesDeferredRelative : Dictionary<OpenGL.PhysicallyBased.PhysicallyBasedSurface, struct (Matrix4x4 * Box2 * MaterialProperties) SegmentedList>
@@ -120,9 +120,9 @@ and [<ReferenceEquality>] CreateUserDefinedStaticModel =
 and [<ReferenceEquality>] DestroyUserDefinedStaticModel =
     { StaticModel : StaticModel AssetTag }
 
-and [<ReferenceEquality>] RenderProbeCubeMap =
-    { Center : Vector3
-      ProbeId : uint64 }
+and [<ReferenceEquality>] RenderLightProbe3d =
+    { Origin : Vector3
+      LightProbeId : uint64 }
 
 and [<ReferenceEquality>] RenderSkyBox =
     { AmbientColor : Color
@@ -222,8 +222,8 @@ and [<ReferenceEquality>] RenderUserDefinedStaticModel =
 and [<ReferenceEquality>] RenderMessage3d =
     | CreateUserDefinedStaticModel of CreateUserDefinedStaticModel
     | DestroyUserDefinedStaticModel of DestroyUserDefinedStaticModel
-    | RenderProbeCubeMap of RenderProbeCubeMap
     | RenderSkyBox of RenderSkyBox
+    | RenderLightProbe3d of RenderLightProbe3d
     | RenderLight3d of RenderLight3d
     | RenderBillboard of RenderBillboard
     | RenderBillboards of RenderBillboards
@@ -333,7 +333,7 @@ type [<ReferenceEquality>] GlRenderer3d =
           RenderPhysicallyBasedForwardShader : OpenGL.PhysicallyBased.PhysicallyBasedShader
           RenderPhysicallyBasedDeferredShader : OpenGL.PhysicallyBased.PhysicallyBasedShader
           RenderPhysicallyBasedDeferred2Shader : OpenGL.PhysicallyBased.PhysicallyBasedDeferred2Shader
-          RenderProbeCubeMapFramebuffer : uint * uint
+          RenderReflectionFramebuffer : uint * uint
           RenderIrradianceFramebuffer : uint * uint
           RenderEnvironmentFilterFramebuffer : uint * uint
           RenderGeometryFramebuffer : uint * uint * uint * uint * uint
@@ -344,7 +344,7 @@ type [<ReferenceEquality>] GlRenderer3d =
           RenderEnvironmentFilterMap : uint
           RenderBrdfTexture : uint
           RenderPhysicallyBasedMaterial : OpenGL.PhysicallyBased.PhysicallyBasedMaterial
-          RenderProbeCubeMaps : Dictionary<uint64, Vector3 * uint * uint * uint>
+          RenderLightMaps : Dictionary<uint64, Vector3 * uint * uint * uint>
           mutable RenderModelsFields : single array
           mutable RenderTexCoordsOffsetsFields : single array
           mutable RenderAlbedosFields : single array
@@ -798,15 +798,15 @@ type [<ReferenceEquality>] GlRenderer3d =
     static member getPhysicallyBasedShader renderer =
         renderer.RenderPhysicallyBasedForwardShader
 
-    /// Create a cube map for a probe.
-    static member createProbeCubeMap (currentViewport : Viewport) currentFramebuffer eyeCenter renderer =
+    /// Create a reflection map.
+    static member createReflectionMap (currentViewport : Viewport) currentFramebuffer origin renderer =
 
         // construct viewport
         let viewport =
             Viewport
                 (Constants.Render.NearPlaneDistanceEnclosed,
                  Constants.Render.FarPlaneDistanceEnclosed,
-                 box2i v2iZero (v2iDup Constants.Render.ProbeCubeMapResolution))
+                 box2i v2iZero (v2iDup Constants.Render.ReflectionMapResolution))
 
         // construct eye rotations
         let eyeRotations =
@@ -820,13 +820,13 @@ type [<ReferenceEquality>] GlRenderer3d =
         // construct projection
         let projection = Matrix4x4.CreatePerspectiveFieldOfView (MathHelper.PiOver2, 1.0f, viewport.NearDistance, viewport.FarDistance)
 
-        // create cube map to render to
-        let probeCubeMap = OpenGL.Gl.GenTexture ()
-        OpenGL.Gl.BindTexture (OpenGL.TextureTarget.TextureCubeMap, probeCubeMap)
+        // create cube map to render reflection to
+        let reflectionMap = OpenGL.Gl.GenTexture ()
+        OpenGL.Gl.BindTexture (OpenGL.TextureTarget.TextureCubeMap, reflectionMap)
         OpenGL.Hl.Assert ()
 
         // setup framebuffer
-        let (renderBuffer, framebuffer) = renderer.RenderProbeCubeMapFramebuffer
+        let (renderBuffer, framebuffer) = renderer.RenderReflectionFramebuffer
         OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, framebuffer)
         OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, renderBuffer)
         OpenGL.Hl.Assert ()
@@ -835,13 +835,13 @@ type [<ReferenceEquality>] GlRenderer3d =
         OpenGL.Gl.Viewport (viewport.Bounds.Min.X, viewport.Bounds.Min.Y, viewport.Bounds.Width, viewport.Bounds.Height)
         OpenGL.Hl.Assert ()
 
-        // render probe cube map faces
+        // render reflection map faces
         for i in 0 .. dec 6 do
 
             // construct face view, projection, and viewport
             let (eyeForward, eyeUp) = eyeRotations.[i]
             let viewAbsolute = m4Identity
-            let viewRelative = Matrix4x4.CreateLookAt (eyeCenter, eyeCenter + eyeForward, eyeUp)
+            let viewRelative = Matrix4x4.CreateLookAt (origin, origin + eyeForward, eyeUp)
             let viewSkyBox = Matrix4x4.Transpose (Matrix4x4.CreateLookAt (v3Zero, eyeForward, eyeUp)) // transpose = inverse rotation when rotation only
 
             // set up cube face for rendering to
@@ -856,8 +856,8 @@ type [<ReferenceEquality>] GlRenderer3d =
 
             // render to cube map face
             let target = LanguagePrimitives.EnumOfValue (int OpenGL.TextureTarget.TextureCubeMapPositiveX + i)
-            OpenGL.Gl.FramebufferTexture2D (OpenGL.FramebufferTarget.Framebuffer, OpenGL.FramebufferAttachment.ColorAttachment0, target, probeCubeMap, 0)
-            GlRenderer3d.render9 false eyeCenter viewAbsolute viewRelative viewSkyBox projection viewport framebuffer renderer
+            OpenGL.Gl.FramebufferTexture2D (OpenGL.FramebufferTarget.Framebuffer, OpenGL.FramebufferAttachment.ColorAttachment0, target, reflectionMap, 0)
+            GlRenderer3d.render9 false origin viewAbsolute viewRelative viewSkyBox projection viewport framebuffer renderer
             OpenGL.Hl.Assert ()
 
         // teardown viewport
@@ -866,9 +866,9 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         // teardown framebuffer
         OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, currentFramebuffer)
-        probeCubeMap
+        reflectionMap
 
-    /// Create an irradiance map for a sky box.
+    /// Create an irradiance map.
     static member createIrradianceMap currentViewport currentFramebuffer renderbuffer framebuffer shader skyBoxSurface =
         OpenGL.SkyBox.CreateIrradianceMap
             (currentViewport,
@@ -880,7 +880,7 @@ type [<ReferenceEquality>] GlRenderer3d =
              shader,
              skyBoxSurface)
 
-    /// Create an environment filter map for a sky box.
+    /// Create an environment filter map.
     static member createEnvironmentFilterMap currentViewport currentFramebuffer renderbuffer framebuffer shader skyBoxSurface =
         OpenGL.SkyBox.CreateEnvironmentFilterMap
             (currentViewport,
@@ -1065,23 +1065,22 @@ type [<ReferenceEquality>] GlRenderer3d =
         let viewSkyBoxArray = viewSkyBox.ToArray ()
         let projectionArray = projection.ToArray ()
 
-        // collect all probe cube maps, rendering those that don't yet have an entry
-        let probeCubeMaps = List ()
-        for probeKvp in renderer.RenderTasks.RenderProbeCubeMaps do
-            match renderer.RenderProbeCubeMaps.TryGetValue probeKvp.Key with
-            | (true, (center, irradianceMap, environmentFilterMap, cubeMap)) ->
-                probeCubeMaps.Add (center, irradianceMap, environmentFilterMap, cubeMap)
+        // collect all light maps, rendering those that don't yet have an entry
+        let lightMaps = List ()
+        for lightProbeKvp in renderer.RenderTasks.RenderLightProbes do
+            match renderer.RenderLightMaps.TryGetValue lightProbeKvp.Key with
+            | (true, value) -> lightMaps.Add value
             | (false, _) ->
 
-                // render probe cube map if in top level render
+                // render reflection map if in top level render
                 if topLevelRender then
 
-                    // create probe cube map
-                    let probeCubeMap =
-                        GlRenderer3d.createProbeCubeMap
+                    // create reflection map
+                    let reflectionMap =
+                        GlRenderer3d.createReflectionMap
                             viewport
                             framebuffer
-                            probeKvp.Value
+                            lightProbeKvp.Value
                             renderer
 
                     // create irradiance map
@@ -1092,7 +1091,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                             (fst renderer.RenderIrradianceFramebuffer)
                             (snd renderer.RenderIrradianceFramebuffer)
                             renderer.RenderIrradianceShader
-                            (OpenGL.SkyBox.SkyBoxSurface.make probeCubeMap renderer.RenderSkyBoxGeometry)
+                            (OpenGL.SkyBox.SkyBoxSurface.make reflectionMap renderer.RenderSkyBoxGeometry)
 
                     // create env filter map
                     let environmentFilterMap =
@@ -1102,17 +1101,17 @@ type [<ReferenceEquality>] GlRenderer3d =
                             (fst renderer.RenderEnvironmentFilterFramebuffer)
                             (snd renderer.RenderEnvironmentFilterFramebuffer)
                             renderer.RenderEnvironmentFilterShader
-                            (OpenGL.SkyBox.SkyBoxSurface.make probeCubeMap renderer.RenderSkyBoxGeometry)
+                            (OpenGL.SkyBox.SkyBoxSurface.make reflectionMap renderer.RenderSkyBoxGeometry)
 
-                    // add probe cube map
-                    renderer.RenderProbeCubeMaps.Add (probeKvp.Key, (probeKvp.Value, irradianceMap, environmentFilterMap, probeCubeMap))
+                    // add light maps
+                    renderer.RenderLightMaps.Add (lightProbeKvp.Key, (lightProbeKvp.Value, irradianceMap, environmentFilterMap, reflectionMap))
 
-        // destroy all probe cube maps that aren't tasked to render
-        for probeKvp in renderer.RenderProbeCubeMaps do
-            if not (SegmentedDictionary.containsKey probeKvp.Key renderer.RenderTasks.RenderProbeCubeMaps) then
+        // destroy all light maps that aren't tasked to render
+        for lightMapKvp in renderer.RenderLightMaps do
+            if not (SegmentedDictionary.containsKey lightMapKvp.Key renderer.RenderTasks.RenderLightProbes) then
                 if topLevelRender then
-                    let (_, irradianceMap, environmentFilterMap, probeCubeMap) = probeKvp.Value
-                    OpenGL.Gl.DeleteTextures [|irradianceMap; environmentFilterMap; probeCubeMap|]
+                    let (_, irradianceMap, environmentFilterMap, reflectionMap) = lightMapKvp.Value
+                    OpenGL.Gl.DeleteTextures [|irradianceMap; environmentFilterMap; reflectionMap|]
 
         // attempt to locate last sky box
         let (lightAmbientColor, lightAmbientBrightness, skyBoxOpt) =
@@ -1353,10 +1352,10 @@ type [<ReferenceEquality>] GlRenderer3d =
                 GlRenderer3d.tryCreateUserDefinedStaticModel cudsm.SurfaceDescriptors cudsm.Bounds cudsm.StaticModel renderer
             | DestroyUserDefinedStaticModel dudsm ->
                 SegmentedList.add dudsm.StaticModel userDefinedStaticModelsToDestroy
-            | RenderProbeCubeMap cmp ->
-                SegmentedDictionary.add cmp.ProbeCubeMapId cmp.Center renderer.RenderTasks.RenderProbeCubeMaps
             | RenderSkyBox rsb ->
                 SegmentedList.add (rsb.AmbientColor, rsb.AmbientBrightness, rsb.CubeMapColor, rsb.CubeMapBrightness, rsb.CubeMap) renderer.RenderTasks.RenderSkyBoxes
+            | RenderLightProbe3d lp ->
+                SegmentedDictionary.add lp.LightProbeId lp.Origin renderer.RenderTasks.RenderLightProbes
             | RenderLight3d rl3 ->
                 let light =
                     { SortableLightOrigin = rl3.Origin
@@ -1414,7 +1413,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             | ReloadRenderAssets3d ->
                 GlRenderer3d.handleReloadRenderAssets renderer
 
-        // render with probe cube map rendering
+        // top-level render
         GlRenderer3d.render9 true eyeCenter viewAbsolute viewRelative viewSkyBox projection viewportOffset framebuffer renderer
         
         // render post-passes
@@ -1482,12 +1481,12 @@ type [<ReferenceEquality>] GlRenderer3d =
                  Constants.Paths.PhysicallyBasedDeferred2ShaderFilePath)
         OpenGL.Hl.Assert ()
 
-        // crete probe cube map framebuffer
-        let probeCubeMapFramebuffer = OpenGL.Gl.GenFramebuffer ()
-        let probeCubeMapRenderbuffer = OpenGL.Gl.GenRenderbuffer ()
-        OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, probeCubeMapFramebuffer)
-        OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, probeCubeMapRenderbuffer)
-        OpenGL.Gl.RenderbufferStorage (OpenGL.RenderbufferTarget.Renderbuffer, OpenGL.InternalFormat.DepthComponent24, Constants.Render.ProbeCubeMapResolution, Constants.Render.ProbeCubeMapResolution)
+        // crete reflection map framebuffer
+        let reflectionMapFramebuffer = OpenGL.Gl.GenFramebuffer ()
+        let reflectionMapRenderbuffer = OpenGL.Gl.GenRenderbuffer ()
+        OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, reflectionMapFramebuffer)
+        OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, reflectionMapRenderbuffer)
+        OpenGL.Gl.RenderbufferStorage (OpenGL.RenderbufferTarget.Renderbuffer, OpenGL.InternalFormat.DepthComponent24, Constants.Render.ReflectionMapResolution, Constants.Render.ReflectionMapResolution)
         OpenGL.Hl.Assert ()
 
         // crete environment filter framebuffer
@@ -1587,8 +1586,8 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         // create render tasks
         let renderTasks =
-            { RenderProbeCubeMaps = SegmentedDictionary.make HashIdentity.Structural
-              RenderSkyBoxes = SegmentedList.make ()
+            { RenderSkyBoxes = SegmentedList.make ()
+              RenderLightProbes = SegmentedDictionary.make HashIdentity.Structural
               RenderLights = SegmentedList.make ()
               RenderSurfacesDeferredAbsolute = dictPlus HashIdentity.Structural []
               RenderSurfacesDeferredRelative = dictPlus HashIdentity.Structural []
@@ -1606,9 +1605,9 @@ type [<ReferenceEquality>] GlRenderer3d =
               RenderPhysicallyBasedForwardShader = forwardShader
               RenderPhysicallyBasedDeferredShader = deferredShader
               RenderPhysicallyBasedDeferred2Shader = deferred2Shader
-              RenderProbeCubeMapFramebuffer = (probeCubeMapRenderbuffer, probeCubeMapFramebuffer)
-              RenderIrradianceFramebuffer = (irradianceRenderbuffer, irradianceFramebuffer)
-              RenderEnvironmentFilterFramebuffer = (environmentFilterRenderbuffer, environmentFilterFramebuffer)
+              RenderReflectionFramebuffer = (reflectionMapRenderbuffer, reflectionMapFramebuffer) // TODO: store these in a struct so that they don't get mixed up!
+              RenderIrradianceFramebuffer = (irradianceRenderbuffer, irradianceFramebuffer) // TODO: store these in a struct so that they don't get mixed up!
+              RenderEnvironmentFilterFramebuffer = (environmentFilterRenderbuffer, environmentFilterFramebuffer) // TODO: store these in a struct so that they don't get mixed up!
               RenderGeometryFramebuffer = geometryFramebuffer
               RenderSkyBoxGeometry = skyBoxGeometry
               RenderBillboardGeometry = billboardGeometry
@@ -1617,7 +1616,7 @@ type [<ReferenceEquality>] GlRenderer3d =
               RenderEnvironmentFilterMap = environmentFilterMap
               RenderBrdfTexture = brdfTexture
               RenderPhysicallyBasedMaterial = physicallyBasedMaterial
-              RenderProbeCubeMaps = dictPlus HashIdentity.Structural []
+              RenderLightMaps = dictPlus HashIdentity.Structural []
               RenderModelsFields = Array.zeroCreate<single> (16 * Constants.Render.GeometryBatchPrealloc)
               RenderTexCoordsOffsetsFields = Array.zeroCreate<single> (4 * Constants.Render.GeometryBatchPrealloc)
               RenderAlbedosFields = Array.zeroCreate<single> (4 * Constants.Render.GeometryBatchPrealloc)
