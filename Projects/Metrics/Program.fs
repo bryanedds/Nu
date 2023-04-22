@@ -50,7 +50,7 @@ type MetricsEntityDispatcher () =
                 { Absolute = false
                   ModelMatrix = affineMatrix
                   InsetOpt = None
-                  SurfaceProperties = Unchecked.defaultof<_>
+                  MaterialProperties = Unchecked.defaultof<_>
                   RenderType = DeferredRenderType
                   StaticModel = staticModel })
 

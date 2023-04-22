@@ -238,30 +238,34 @@ module Field =
         match albedoTileSetOpt with
         | Some albedoTileSet ->
 
-            // create static model surface descriptor
+            // make material properties
+            let properties : OpenGL.PhysicallyBased.PhysicallyBasedMaterialProperties =
+                { Albedo = Color.White
+                  Metallic = 0.0f
+                  Roughness = 1.2f
+                  Emission = 1.0f
+                  AmbientOcclusion = 1.0f
+                  Height = 1.0f
+                  InvertRoughness = false }
+
+            // make static model surface descriptor
             let descriptor =
-                { Positions = positions
+                { MaterialProperties = properties
+                  Positions = positions
                   TexCoordses = texCoordses
                   Normals = normals
                   Indices = indices
                   AffineMatrix = m4Identity
                   Bounds = bounds
-                  Albedo = Color.White
                   AlbedoImage = albedoTileSet.GetImageAsset tileMapPackageName
-                  Metallic = 0.0f
                   MetallicImage = Assets.Default.MaterialMetallic
-                  Roughness = 1.2f
                   RoughnessImage = Assets.Default.MaterialRoughness
-                  Emission = 1.0f
                   EmissionImage = albedoTileSet.GetImageAsset tileMapPackageName
-                  AmbientOcclusion = 1.0f
                   AmbientOcclusionImage = albedoTileSet.GetImageAsset tileMapPackageName
                   NormalImage = Assets.Default.MaterialNormal
-                  Height = 1.0f
                   HeightImage = Assets.Default.MaterialHeight
                   TextureMinFilterOpt = Some OpenGL.TextureMinFilter.NearestMipmapNearest
                   TextureMagFilterOpt = Some OpenGL.TextureMagFilter.Nearest
-                  InvertRoughness = false
                   TwoSided = false }
 
             // fin
@@ -281,7 +285,7 @@ module Field =
             let traversableLayer = tileMap.Layers.["Traversable"] :?> TmxLayer
             let traversableHeightLayer = tileMap.Layers.["TraversableHeight"] :?> TmxLayer
             let (untraversableSurfaceDescriptor, _) = createFieldSurfaceDescriptorAndVertexMap tileMap.Width tileMap.Height tileSets untraversableLayer untraversableHeightLayer tileMapPackageName
-            let untraversableSurfaceDescriptor = { untraversableSurfaceDescriptor with Roughness = 0.1f }
+            let untraversableSurfaceDescriptor = { untraversableSurfaceDescriptor with MaterialProperties = { untraversableSurfaceDescriptor.MaterialProperties with Roughness = 0.1f }}
             let (traversableSurfaceDescriptor, traversableTileVerticesMap) = createFieldSurfaceDescriptorAndVertexMap tileMap.Width tileMap.Height tileSets traversableLayer traversableHeightLayer tileMapPackageName
             let bounds = let bounds = untraversableSurfaceDescriptor.Bounds in bounds.Combine traversableSurfaceDescriptor.Bounds
             let fieldMetadata =

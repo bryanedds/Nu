@@ -716,7 +716,7 @@ module EffectSystem =
                             { Absolute = effectSystem.EffectAbsolute
                               ModelMatrix = affineMatrix
                               InsetOpt = insetOpt
-                              SurfaceProperties = properties
+                              MaterialProperties = properties
                               AlbedoImage = imageAlbedo
                               MetallicImage = imageMetallic
                               RoughnessImage = imageRoughness
@@ -761,7 +761,7 @@ module EffectSystem =
                             { Absolute = effectSystem.EffectAbsolute
                               ModelMatrix = affineMatrix
                               InsetOpt = insetOpt
-                              SurfaceProperties = properties
+                              MaterialProperties = properties
                               RenderType = effectSystem.EffectRenderType
                               StaticModel = staticModel })
                 addView modelView effectSystem

@@ -987,7 +987,7 @@ type BasicSpriteEmitterDescriptors =
 type [<ReferenceEquality>] StaticBillboardEmitter<'a when 'a :> Particle and 'a : equality and 'a : struct> =
     { mutable Body : Body // mutable for animation
       Absolute : bool
-      SurfaceProperties : SurfaceProperties
+      MaterialProperties : MaterialProperties
       AlbedoImage : Image AssetTag
       MetallicImage : Image AssetTag
       RoughnessImage : Image AssetTag
@@ -1065,12 +1065,12 @@ type [<ReferenceEquality>] StaticBillboardEmitter<'a when 'a :> Particle and 'a 
 
     /// Make a basic particle emitter.
     static member make<'a>
-        time body absolute surfaceProperties albedoImage metallicImage roughnessImage ambientOcclusionImage emissionImage normalImage heightImage
+        time body absolute materialProperties albedoImage metallicImage roughnessImage ambientOcclusionImage emissionImage normalImage heightImage
         minFilterOpt magFilterOpt renderType lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
         constrain particleInitializer particleBehavior particleBehaviors emitterBehavior emitterBehaviors toParticlesDescriptor : 'a StaticBillboardEmitter =
         { Body = body
           Absolute = absolute
-          SurfaceProperties = surfaceProperties
+          MaterialProperties = materialProperties
           AlbedoImage = albedoImage
           MetallicImage = metallicImage
           RoughnessImage = roughnessImage
@@ -1143,7 +1143,7 @@ module BasicStaticBillboardEmitter =
                 particle'.Flip <- particle.Flip
         let descriptor =
             { BillboardParticlesDescriptor.Absolute = emitter.Absolute
-              SurfaceProperties = emitter.SurfaceProperties
+              MaterialProperties = emitter.MaterialProperties
               AlbedoImage = emitter.AlbedoImage
               MetallicImage = emitter.MetallicImage
               RoughnessImage = emitter.RoughnessImage
@@ -1163,11 +1163,11 @@ module BasicStaticBillboardEmitter =
 
     /// Make a basic static billboard particle emitter.
     let make
-        time body absolute surfaceProperties albedoImage metallicImage roughnessImage ambientOcclusionImage emissionImage normalImage heightImage
+        time body absolute materialProperties albedoImage metallicImage roughnessImage ambientOcclusionImage emissionImage normalImage heightImage
         minFilterOpt maxFilterOpt renderType lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
         constrain particleInitializer particleBehavior particleBehaviors emitterBehavior emitterBehaviors =
         BasicStaticBillboardEmitter.make
-            time body absolute surfaceProperties albedoImage metallicImage roughnessImage ambientOcclusionImage emissionImage normalImage heightImage
+            time body absolute materialProperties albedoImage metallicImage roughnessImage ambientOcclusionImage emissionImage normalImage heightImage
             minFilterOpt maxFilterOpt renderType lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
             constrain particleInitializer particleBehavior particleBehaviors emitterBehavior emitterBehaviors toParticlesDescriptor
 
