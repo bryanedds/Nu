@@ -1011,7 +1011,7 @@ module StaticBillboardDispatcherModule =
 
         static member Properties =
             [define Entity.InsetOpt None
-             define Entity.SurfaceProperties Unchecked.defaultof<_>
+             define Entity.MaterialProperties Unchecked.defaultof<_>
              define Entity.AlbedoImage Assets.Default.MaterialAlbedo
              define Entity.MetallicImage Assets.Default.MaterialMetallic
              define Entity.RoughnessImage Assets.Default.MaterialRoughness
@@ -1035,7 +1035,7 @@ module StaticModelDispatcherModule =
             [typeof<StaticModelFacet>]
 
         static member Properties =
-            [define Entity.SurfaceProperties Unchecked.defaultof<_>
+            [define Entity.MaterialProperties Unchecked.defaultof<_>
              define Entity.StaticModel Assets.Default.StaticModel
              define Entity.RenderStyle Deferred]
 
@@ -1052,7 +1052,7 @@ module RigidModelDispatcherModule =
         static member Properties =
             [define Entity.BodyType Dynamic
              define Entity.BodyShape (BodyStaticModel { StaticModel = Assets.Default.StaticModel; TransformOpt = None; PropertiesOpt = None })
-             define Entity.SurfaceProperties Unchecked.defaultof<_>
+             define Entity.MaterialProperties Unchecked.defaultof<_>
              define Entity.StaticModel Assets.Default.StaticModel
              define Entity.RenderStyle Deferred]
 
@@ -1066,7 +1066,7 @@ module StaticModelSurfaceDispatcherModule =
             [typeof<StaticModelSurfaceFacet>]
 
         static member Properties =
-            [define Entity.SurfaceProperties Unchecked.defaultof<_>
+            [define Entity.MaterialProperties Unchecked.defaultof<_>
              define Entity.SurfaceIndex 0
              define Entity.StaticModel Assets.Default.StaticModel
              define Entity.RenderStyle Deferred]
@@ -1084,7 +1084,7 @@ module RigidModelSurfaceDispatcherModule =
         static member Properties =
             [define Entity.BodyType Dynamic
              define Entity.BodyShape (BodyStaticModelSurface { SurfaceIndex = 0; StaticModel = Assets.Default.StaticModel; TransformOpt = None; PropertiesOpt = None })
-             define Entity.SurfaceProperties Unchecked.defaultof<_>
+             define Entity.MaterialProperties Unchecked.defaultof<_>
              define Entity.SurfaceIndex 0
              define Entity.StaticModel Assets.Default.StaticModel
              define Entity.RenderStyle Deferred]
@@ -1159,15 +1159,15 @@ module StaticModelHierarchyDispatcherModule =
                             let world = if mountToParent then child.SetMountOpt (Some (Relation.makeParent ())) world else world
                             let world = child.SetSurfaceIndex i world
                             let world = child.SetStaticModel staticModel world
-                            let surfaceProperties =
-                                { AlbedoOpt = Some surface.SurfaceMaterial.Albedo
-                                  MetallicOpt = Some surface.SurfaceMaterial.Metallic
-                                  RoughnessOpt = Some surface.SurfaceMaterial.Roughness
-                                  AmbientOcclusionOpt = Some surface.SurfaceMaterial.AmbientOcclusion
-                                  EmissionOpt = Some surface.SurfaceMaterial.Emission
-                                  HeightOpt = Some surface.SurfaceMaterial.Height
-                                  InvertRoughnessOpt = Some surface.SurfaceMaterial.InvertRoughness }
-                            let world = child.SetSurfaceProperties surfaceProperties world
+                            let materialProperties =
+                                { AlbedoOpt = Some surface.SurfaceMaterial.MaterialProperties.Albedo
+                                  MetallicOpt = Some surface.SurfaceMaterial.MaterialProperties.Metallic
+                                  RoughnessOpt = Some surface.SurfaceMaterial.MaterialProperties.Roughness
+                                  AmbientOcclusionOpt = Some surface.SurfaceMaterial.MaterialProperties.AmbientOcclusion
+                                  EmissionOpt = Some surface.SurfaceMaterial.MaterialProperties.Emission
+                                  HeightOpt = Some surface.SurfaceMaterial.MaterialProperties.Height
+                                  InvertRoughnessOpt = Some surface.SurfaceMaterial.MaterialProperties.InvertRoughness }
+                            let world = child.SetMaterialProperties materialProperties world
                             let world = child.QuickSize world
                             world' <- world
                             i <- inc i)

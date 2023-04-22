@@ -13,25 +13,29 @@ open Nu
 [<RequireQualifiedAccess>]
 module PhysicallyBased =
 
+    /// Describes the configurable properties of a physically-based material.
+    type [<StructuralEquality; NoComparison; Struct>] PhysicallyBasedMaterialProperties =
+        { Albedo : Color
+          Metallic : single
+          Roughness : single
+          AmbientOcclusion : single
+          Emission : single
+          Height : single
+          InvertRoughness : bool }
+
     /// Describes a physically-based material.
     type [<StructuralEquality; NoComparison; Struct>] PhysicallyBasedMaterial =
-        { Albedo : Color
+        { MaterialProperties : PhysicallyBasedMaterialProperties
           AlbedoMetadata : Texture.TextureMetadata
           AlbedoTexture : uint
-          Metallic : single
           MetallicTexture : uint
-          Roughness : single
           RoughnessTexture : uint
-          AmbientOcclusion : single
           AmbientOcclusionTexture : uint
-          Emission : single
           EmissionTexture : uint
           NormalTexture : uint
-          Height : single
           HeightTexture : uint
           TextureMinFilterOpt : OpenGL.TextureMinFilter option
           TextureMagFilterOpt : OpenGL.TextureMagFilter option
-          InvertRoughness : bool
           TwoSided : bool }
 
     /// Describes some physically-based geometry that's loaded into VRAM.
@@ -71,10 +75,9 @@ module PhysicallyBased =
             (int surface.SurfaceMaterial.HeightTexture <<< 12) ^^^
             (hash surface.SurfaceMaterial.TextureMinFilterOpt <<< 14) ^^^
             (hash surface.SurfaceMaterial.TextureMagFilterOpt <<< 16) ^^^
-            (hash surface.SurfaceMaterial.InvertRoughness <<< 18) ^^^
-            (hash surface.SurfaceMaterial.TwoSided <<< 20) ^^^
-            (int surface.PhysicallyBasedGeometry.PrimitiveType <<< 22) ^^^
-            (int surface.PhysicallyBasedGeometry.PhysicallyBasedVao <<< 24)
+            (hash surface.SurfaceMaterial.TwoSided <<< 18) ^^^
+            (int surface.PhysicallyBasedGeometry.PrimitiveType <<< 20) ^^^
+            (int surface.PhysicallyBasedGeometry.PhysicallyBasedVao <<< 22)
 
         static member inline equals left right =
             (match (left.SurfaceMaterial.TextureMinFilterOpt, right.SurfaceMaterial.TextureMinFilterOpt) with // TODO: implement voptEq.
@@ -92,7 +95,6 @@ module PhysicallyBased =
             left.SurfaceMaterial.EmissionTexture = right.SurfaceMaterial.EmissionTexture &&
             left.SurfaceMaterial.NormalTexture = right.SurfaceMaterial.NormalTexture &&
             left.SurfaceMaterial.HeightTexture = right.SurfaceMaterial.HeightTexture &&
-            left.SurfaceMaterial.InvertRoughness = right.SurfaceMaterial.InvertRoughness &&
             left.SurfaceMaterial.TwoSided = right.SurfaceMaterial.TwoSided &&
             left.PhysicallyBasedGeometry.PrimitiveType = right.PhysicallyBasedGeometry.PrimitiveType &&
             left.PhysicallyBasedGeometry.PhysicallyBasedVao = right.PhysicallyBasedGeometry.PhysicallyBasedVao
@@ -742,24 +744,28 @@ module PhysicallyBased =
                         | Left _ -> defaultMaterial.HeightTexture
             else defaultMaterial.HeightTexture
 
+        // make properties
+        let properties =
+            { Albedo = color albedo.R albedo.G albedo.B albedo.A
+              Metallic = metallic
+              Roughness = roughness
+              AmbientOcclusion = ambientOcclusion
+              Emission = emission
+              Height = height
+              InvertRoughness = invertRoughness }
+
         // fin
-        { Albedo = color albedo.R albedo.G albedo.B albedo.A
+        { MaterialProperties = properties
           AlbedoMetadata = albedoMetadata
           AlbedoTexture = albedoTexture
-          Metallic = metallic
           MetallicTexture = metallicTexture
-          Roughness = roughness
           RoughnessTexture = roughnessTexture
-          AmbientOcclusion = ambientOcclusion
           AmbientOcclusionTexture = ambientOcclusionTexture
-          Emission = emission
           EmissionTexture = emissionTexture
           NormalTexture = normalTexture
-          Height = height
           HeightTexture = heightTexture
           TextureMinFilterOpt = minFilterOpt
           TextureMagFilterOpt = magFilterOpt
-          InvertRoughness = invertRoughness
           TwoSided = material.IsTwoSided }
 
     /// Create a physically-based surface.

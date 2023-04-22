@@ -113,7 +113,7 @@ type RendererThread (createRenderer3d, createRenderer2d) =
                         { CachedStaticModelAbsolute = Unchecked.defaultof<_>
                           CachedStaticModelMatrix = Unchecked.defaultof<_>
                           CachedStaticModelInsetOpt = Unchecked.defaultof<_>
-                          CachedStaticModelSurfaceProperties = Unchecked.defaultof<_>
+                          CachedStaticModelMaterialProperties = Unchecked.defaultof<_>
                           CachedStaticModelRenderType = Unchecked.defaultof<_>
                           CachedStaticModel = Unchecked.defaultof<_> }
                     let cachedStaticModelMessage = RenderCachedStaticModel staticModelDescriptor
@@ -232,7 +232,7 @@ type RendererThread (createRenderer3d, createRenderer2d) =
                     cachedDescriptor.CachedStaticModelAbsolute <- rsm.Absolute
                     cachedDescriptor.CachedStaticModelMatrix <- rsm.ModelMatrix
                     cachedDescriptor.CachedStaticModelInsetOpt <- ValueOption.ofOption rsm.InsetOpt
-                    cachedDescriptor.CachedStaticModelSurfaceProperties <- rsm.SurfaceProperties
+                    cachedDescriptor.CachedStaticModelMaterialProperties <- rsm.MaterialProperties
                     cachedDescriptor.CachedStaticModelRenderType <- rsm.RenderType
                     cachedDescriptor.CachedStaticModel <- rsm.StaticModel
                     messageBuffers3d.[messageBufferIndex].Add cachedStaticModelMessage

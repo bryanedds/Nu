@@ -544,7 +544,7 @@ module Gaia =
                             { Absolute = absolute
                               ModelMatrix = boundsMatrix
                               InsetOpt = None
-                              SurfaceProperties = properties
+                              MaterialProperties = properties
                               RenderType = renderType
                               StaticModel = staticModel })
                         world

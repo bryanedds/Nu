@@ -225,7 +225,7 @@ module Effect =
                         let message =
                             RenderBillboardParticles
                                 { Absolute = descriptor.Absolute
-                                  SurfaceProperties = descriptor.SurfaceProperties
+                                  MaterialProperties = descriptor.MaterialProperties
                                   AlbedoImage = descriptor.AlbedoImage
                                   MetallicImage = descriptor.MetallicImage
                                   RoughnessImage = descriptor.RoughnessImage

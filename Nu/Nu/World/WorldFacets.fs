@@ -1472,9 +1472,9 @@ module StaticBillboardFacetModule =
 
     type Entity with
         // OPTIMIZATION: override allows surface properties to be fetched with a single look-up.
-        member this.GetSurfaceProperties world : SurfaceProperties = this.Get (nameof this.SurfaceProperties) world
-        member this.SetSurfaceProperties (value : SurfaceProperties) world = this.Set (nameof this.SurfaceProperties) value world
-        member this.SurfaceProperties = lens (nameof this.SurfaceProperties) this this.GetSurfaceProperties this.SetSurfaceProperties
+        member this.GetMaterialProperties world : MaterialProperties = this.Get (nameof this.MaterialProperties) world
+        member this.SetMaterialProperties (value : MaterialProperties) world = this.Set (nameof this.MaterialProperties) value world
+        member this.MaterialProperties = lens (nameof this.MaterialProperties) this this.GetMaterialProperties this.SetMaterialProperties
         member this.GetAlbedoImage world : Image AssetTag = this.Get (nameof this.AlbedoImage) world
         member this.SetAlbedoImage (value : Image AssetTag) world = this.Set (nameof this.AlbedoImage) value world
         member this.AlbedoImage = lens (nameof this.AlbedoImage) this this.GetAlbedoImage this.SetAlbedoImage
@@ -1511,7 +1511,7 @@ module StaticBillboardFacetModule =
 
         static member Properties =
             [define Entity.InsetOpt None
-             define Entity.SurfaceProperties Unchecked.defaultof<_>
+             define Entity.MaterialProperties Unchecked.defaultof<_>
              define Entity.AlbedoImage Assets.Default.MaterialAlbedo
              define Entity.MetallicImage Assets.Default.MaterialMetallic
              define Entity.RoughnessImage Assets.Default.MaterialRoughness
@@ -1528,7 +1528,7 @@ module StaticBillboardFacetModule =
             let absolute = transform.Absolute
             let affineMatrix = transform.AffineMatrix
             let insetOpt = entity.GetInsetOpt world
-            let properties = entity.GetSurfaceProperties world
+            let properties = entity.GetMaterialProperties world
             let albedoImage = entity.GetAlbedoImage world
             let metallicImage = entity.GetMetallicImage world
             let roughnessImage = entity.GetRoughnessImage world
@@ -1544,7 +1544,7 @@ module StaticBillboardFacetModule =
                 | Forward (subsort, sort) -> ForwardRenderType (subsort, sort)
             World.enqueueRenderMessage3d
                 (RenderBillboard
-                    { Absolute = absolute; ModelMatrix = affineMatrix; InsetOpt = insetOpt; SurfaceProperties = properties
+                    { Absolute = absolute; ModelMatrix = affineMatrix; InsetOpt = insetOpt; MaterialProperties = properties
                       AlbedoImage = albedoImage; MetallicImage = metallicImage; RoughnessImage = roughnessImage; AmbientOcclusionImage = ambientOcclusionImage; EmissionImage = emissionImage; NormalImage = normalImage; HeightImage = heightImage
                       MinFilterOpt = minFilterOpt; MagFilterOpt = magFilterOpt; RenderType = renderType })
                 world
@@ -1570,9 +1570,9 @@ module BasicStaticBillboardEmitterFacetModule =
 
     type Entity with
 
-        member this.GetEmitterSurfaceProperties world : SurfaceProperties = this.Get (nameof this.EmitterSurfaceProperties) world
-        member this.SetEmitterSurfaceProperties (value : SurfaceProperties) world = this.Set (nameof this.EmitterSurfaceProperties) value world
-        member this.EmitterSurfaceProperties = lens (nameof this.EmitterSurfaceProperties) this this.GetEmitterSurfaceProperties this.SetEmitterSurfaceProperties
+        member this.GetEmitterMaterialProperties world : MaterialProperties = this.Get (nameof this.EmitterMaterialProperties) world
+        member this.SetEmitterMaterialProperties (value : MaterialProperties) world = this.Set (nameof this.EmitterMaterialProperties) value world
+        member this.EmitterMaterialProperties = lens (nameof this.EmitterMaterialProperties) this this.GetEmitterMaterialProperties this.SetEmitterMaterialProperties
         member this.GetEmitterAlbedoImage world : Image AssetTag = this.Get (nameof this.EmitterAlbedoImage) world
         member this.SetEmitterAlbedoImage (value : Image AssetTag) world = this.Set (nameof this.EmitterAlbedoImage) value world
         member this.EmitterAlbedoImage = lens (nameof this.EmitterAlbedoImage) this this.GetEmitterAlbedoImage this.SetEmitterAlbedoImage
@@ -1669,9 +1669,9 @@ module BasicStaticBillboardEmitterFacetModule =
             | Particles.OutputEmitter (name, emitter) -> updateParticleSystem (fun ps -> { ps with Emitters = Map.add name emitter ps.Emitters }) entity world
             | Particles.Outputs outputs -> SegmentedArray.fold (fun world output -> processOutput output entity world) world outputs
 
-        static let handleEmitterSurfacePropertiesChange evt world =
-            let emitterSurfaceProperties = evt.Data.Value :?> SurfaceProperties
-            let world = updateEmitter (fun emitter -> if emitter.SurfaceProperties <> emitterSurfaceProperties then { emitter with SurfaceProperties = emitterSurfaceProperties } else emitter) evt.Subscriber world
+        static let handleEmitterMaterialPropertiesChange evt world =
+            let emitterMaterialProperties = evt.Data.Value :?> MaterialProperties
+            let world = updateEmitter (fun emitter -> if emitter.MaterialProperties <> emitterMaterialProperties then { emitter with MaterialProperties = emitterMaterialProperties } else emitter) evt.Subscriber world
             (Cascade, world)
 
         static let handleEmitterAlbedoImageChange evt world =
@@ -1794,7 +1794,7 @@ module BasicStaticBillboardEmitterFacetModule =
 
         static member Properties =
             [define Entity.SelfDestruct false
-             define Entity.EmitterSurfaceProperties Unchecked.defaultof<_>
+             define Entity.EmitterMaterialProperties Unchecked.defaultof<_>
              define Entity.EmitterAlbedoImage Assets.Default.MaterialAlbedo
              define Entity.EmitterMetallicImage Assets.Default.MaterialMetallic
              define Entity.EmitterRoughnessImage Assets.Default.MaterialRoughness
@@ -1820,7 +1820,7 @@ module BasicStaticBillboardEmitterFacetModule =
             let world = entity.SetParticleSystem particleSystem world
             let world = World.monitor handlePositionChange (entity.GetChangeEvent (nameof entity.Position)) entity world
             let world = World.monitor handleRotationChange (entity.GetChangeEvent (nameof entity.Rotation)) entity world
-            let world = World.monitor handleEmitterSurfacePropertiesChange (entity.GetChangeEvent (nameof entity.EmitterSurfaceProperties)) entity world
+            let world = World.monitor handleEmitterMaterialPropertiesChange (entity.GetChangeEvent (nameof entity.EmitterMaterialProperties)) entity world
             let world = World.monitor handleEmitterAlbedoImageChange (entity.GetChangeEvent (nameof entity.EmitterAlbedoImage)) entity world
             let world = World.monitor handleEmitterMetallicImageChange (entity.GetChangeEvent (nameof entity.EmitterMetallicImage)) entity world
             let world = World.monitor handleEmitterRoughnessImageChange (entity.GetChangeEvent (nameof entity.EmitterRoughnessImage)) entity world
@@ -1864,19 +1864,19 @@ module BasicStaticBillboardEmitterFacetModule =
                 List.map (fun descriptor ->
                     match descriptor with
                     | Particles.BillboardParticlesDescriptor descriptor ->
-                        let emitterProperties = entity.GetEmitterSurfaceProperties world
+                        let emitterProperties = entity.GetEmitterMaterialProperties world
                         let surfaceProperties =
-                            { AlbedoOpt = match emitterProperties.AlbedoOpt with Some albedo -> Some albedo | None -> descriptor.SurfaceProperties.AlbedoOpt
-                              MetallicOpt = match emitterProperties.MetallicOpt with Some metallic -> Some metallic | None -> descriptor.SurfaceProperties.MetallicOpt
-                              RoughnessOpt = match emitterProperties.RoughnessOpt with Some roughness -> Some roughness | None -> descriptor.SurfaceProperties.RoughnessOpt
-                              AmbientOcclusionOpt = match emitterProperties.AmbientOcclusionOpt with Some ambientOcclusion -> Some ambientOcclusion | None -> descriptor.SurfaceProperties.AmbientOcclusionOpt
-                              EmissionOpt = match emitterProperties.EmissionOpt with Some emission -> Some emission | None -> descriptor.SurfaceProperties.EmissionOpt
-                              HeightOpt = match emitterProperties.HeightOpt with Some height -> Some height | None -> descriptor.SurfaceProperties.HeightOpt
-                              InvertRoughnessOpt = match emitterProperties.InvertRoughnessOpt with Some invertRoughness -> Some invertRoughness | None -> descriptor.SurfaceProperties.InvertRoughnessOpt }
+                            { AlbedoOpt = match emitterProperties.AlbedoOpt with Some albedo -> Some albedo | None -> descriptor.MaterialProperties.AlbedoOpt
+                              MetallicOpt = match emitterProperties.MetallicOpt with Some metallic -> Some metallic | None -> descriptor.MaterialProperties.MetallicOpt
+                              RoughnessOpt = match emitterProperties.RoughnessOpt with Some roughness -> Some roughness | None -> descriptor.MaterialProperties.RoughnessOpt
+                              AmbientOcclusionOpt = match emitterProperties.AmbientOcclusionOpt with Some ambientOcclusion -> Some ambientOcclusion | None -> descriptor.MaterialProperties.AmbientOcclusionOpt
+                              EmissionOpt = match emitterProperties.EmissionOpt with Some emission -> Some emission | None -> descriptor.MaterialProperties.EmissionOpt
+                              HeightOpt = match emitterProperties.HeightOpt with Some height -> Some height | None -> descriptor.MaterialProperties.HeightOpt
+                              InvertRoughnessOpt = match emitterProperties.InvertRoughnessOpt with Some invertRoughness -> Some invertRoughness | None -> descriptor.MaterialProperties.InvertRoughnessOpt }
                         Some
                             (RenderBillboardParticles
                                 { Absolute = descriptor.Absolute
-                                  SurfaceProperties = surfaceProperties
+                                  MaterialProperties = surfaceProperties
                                   AlbedoImage = descriptor.AlbedoImage
                                   MetallicImage = descriptor.MetallicImage
                                   RoughnessImage = descriptor.RoughnessImage
@@ -1924,7 +1924,7 @@ module StaticModelFacetModule =
 
         static member Properties =
             [define Entity.InsetOpt None
-             define Entity.SurfaceProperties Unchecked.defaultof<_>
+             define Entity.MaterialProperties Unchecked.defaultof<_>
              define Entity.RenderStyle Deferred
              define Entity.StaticModel Assets.Default.StaticModel]
 
@@ -1938,7 +1938,7 @@ module StaticModelFacetModule =
             let absolute = transform.Absolute
             let affineMatrix = transform.AffineMatrix
             let insetOpt = entity.GetInsetOpt world
-            let properties = entity.GetSurfaceProperties world
+            let properties = entity.GetMaterialProperties world
             let renderType =
                 match entity.GetRenderStyle world with
                 | Deferred -> DeferredRenderType
@@ -1949,7 +1949,7 @@ module StaticModelFacetModule =
                     { Absolute = absolute
                       ModelMatrix = affineMatrix
                       InsetOpt = insetOpt
-                      SurfaceProperties = properties
+                      MaterialProperties = properties
                       RenderType = renderType
                       StaticModel = staticModel }) world
 
@@ -2026,7 +2026,7 @@ module StaticModelSurfaceFacetModule =
 
         static member Properties =
             [define Entity.InsetOpt None
-             define Entity.SurfaceProperties Unchecked.defaultof<_>
+             define Entity.MaterialProperties Unchecked.defaultof<_>
              define Entity.SurfaceIndex 0
              define Entity.StaticModel Assets.Default.StaticModel
              define Entity.RenderStyle Deferred]
@@ -2045,7 +2045,7 @@ module StaticModelSurfaceFacetModule =
                 let absolute = transform.Absolute
                 let affineMatrix = transform.AffineMatrix
                 let insetOpt = entity.GetInsetOpt world
-                let properties = entity.GetSurfaceProperties world
+                let properties = entity.GetMaterialProperties world
                 let renderType =
                     match entity.GetRenderStyle world with
                     | Deferred -> DeferredRenderType
@@ -2056,7 +2056,7 @@ module StaticModelSurfaceFacetModule =
                         { Absolute = absolute
                           ModelMatrix = affineMatrix
                           InsetOpt = insetOpt
-                          SurfaceProperties = properties
+                          MaterialProperties = properties
                           RenderType = renderType
                           StaticModel = staticModel
                           SurfaceIndex = surfaceIndex })
