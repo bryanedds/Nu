@@ -35,62 +35,26 @@ module LightMap =
         // create cube map to render reflection to
         let reflectionMap = Gl.GenTexture ()
         Gl.BindTexture (TextureTarget.TextureCubeMap, reflectionMap)
-        Hl.Assert ()
-
-        // setup buffers
-        Gl.BindRenderbuffer (RenderbufferTarget.Renderbuffer, renderbuffer)
-        Gl.BindFramebuffer (FramebufferTarget.Framebuffer, framebuffer)
-        Hl.Assert ()
-
-        // mutate viewport
-        Gl.Viewport (viewport.Bounds.Min.X, viewport.Bounds.Min.Y, viewport.Bounds.Width, viewport.Bounds.Height)
+        Gl.BindTexture (TextureTarget.TextureCubeMap, 0u)
         Hl.Assert ()
 
         // render reflection map faces
         for i in 0 .. dec 6 do
 
-            // construct face view, projection, and viewport
+            // render to cube map face
             let (eyeForward, eyeUp) = eyeRotations.[i]
             let viewAbsolute = m4Identity
             let viewRelative = Matrix4x4.CreateLookAt (origin, origin + eyeForward, eyeUp)
             let viewSkyBox = Matrix4x4.Transpose (Matrix4x4.CreateLookAt (v3Zero, eyeForward, eyeUp)) // transpose = inverse rotation when rotation only
-
-            // select cube map face for second pass
-            let proceedToSecondPass _ geometryFramebuffer =
-
-                // set up cube face for rendering to
-                let target = LanguagePrimitives.EnumOfValue (int TextureTarget.TextureCubeMapPositiveX + i)
-                Gl.TexImage2D (target, 0, InternalFormat.Rgba32f, viewport.Bounds.Width, viewport.Bounds.Height, 0, PixelFormat.Rgba, PixelType.Float, nativeint 0)
-                Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureMinFilter, int TextureMinFilter.Linear)
-                Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureMagFilter, int TextureMagFilter.Linear)
-                Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureWrapS, int TextureWrapMode.ClampToEdge)
-                Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureWrapT, int TextureWrapMode.ClampToEdge)
-                Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureWrapR, int TextureWrapMode.ClampToEdge)
-                Hl.Assert ()
-            
-                // copy depths from geometry framebuffer to texture
-                Gl.BindFramebuffer (FramebufferTarget.ReadFramebuffer, geometryFramebuffer)
-                Gl.FramebufferTexture2D (FramebufferTarget.DrawFramebuffer, FramebufferAttachment.ColorAttachment0, target, reflectionMap, 0)
-                Gl.BlitFramebuffer
-                    (viewport.Bounds.Min.X, viewport.Bounds.Min.Y, viewport.Bounds.Size.X, viewport.Bounds.Size.Y,
-                     viewport.Bounds.Min.X, viewport.Bounds.Min.Y, viewport.Bounds.Size.X, viewport.Bounds.Size.Y,
-                     ClearBufferMask.DepthBufferBit,
-                     BlitFramebufferFilter.Nearest)
-                Hl.Assert ()
-
-                // switch to texture buffer
-                Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, target, reflectionMap, 0)
-                Hl.Assert ()
-
-            // render to cube map face
-            render proceedToSecondPass false origin viewAbsolute viewRelative viewSkyBox projection viewport renderbuffer framebuffer
+            render false (Some (i, reflectionMap)) origin viewAbsolute viewRelative viewSkyBox projection viewport renderbuffer framebuffer
+            Gl.BindTexture (TextureTarget.TextureCubeMap, 0u)
             Hl.Assert ()
 
-        // teardown viewport
+        // teardown viewport. TODO: make the GlRenderer3d.renderInternal do this?
         Gl.Viewport (currentViewport.Bounds.Min.X, currentViewport.Bounds.Min.Y, currentViewport.Bounds.Size.X, currentViewport.Bounds.Size.Y)
         Hl.Assert ()
 
-        // teardown framebuffer
+        // teardown buffers. TODO: make the GlRenderer3d.renderInternal do this?
         Gl.BindRenderbuffer (RenderbufferTarget.Renderbuffer, currentRenderbuffer)
         Gl.BindFramebuffer (FramebufferTarget.Framebuffer, currentFramebuffer)
         reflectionMap
@@ -153,7 +117,7 @@ module LightMap =
         Gl.Viewport (currentViewport.Bounds.Min.X, currentViewport.Bounds.Min.Y, currentViewport.Bounds.Size.X, currentViewport.Bounds.Size.Y)
         Hl.Assert ()
 
-        // teardown framebuffer
+        // teardown buffers
         Gl.BindRenderbuffer (RenderbufferTarget.Renderbuffer, currentRenderbuffer)
         Gl.BindFramebuffer (FramebufferTarget.Framebuffer, currentFramebuffer)
         irradianceMap
@@ -294,7 +258,7 @@ module LightMap =
         Gl.Viewport (currentViewport.Bounds.Min.X, currentViewport.Bounds.Min.Y, currentViewport.Bounds.Size.X, currentViewport.Bounds.Size.Y)
         Hl.Assert ()
 
-        // teardown framebuffer
+        // teardown buffers
         Gl.BindRenderbuffer (RenderbufferTarget.Renderbuffer, currentRenderbuffer)
         Gl.BindFramebuffer (FramebufferTarget.Framebuffer, currentFramebuffer)
         environmentFilterMap

@@ -1049,8 +1049,8 @@ type [<ReferenceEquality>] GlRenderer3d =
 
     static member private renderInternal
         renderer
-        (proceedToSecondPass : uint -> uint -> unit)
         (topLevelRender : bool)
+        (reflectionMapOpt : (int * uint) option)
         (eyeCenter : Vector3)
         (viewAbsolute : Matrix4x4)
         (viewRelative : Matrix4x4)
@@ -1221,7 +1221,54 @@ type [<ReferenceEquality>] GlRenderer3d =
             OpenGL.Hl.Assert ()
 
         // proceed to the second pass of deferred rendering
-        proceedToSecondPass geometryRenderbuffer geometryFramebuffer
+        match reflectionMapOpt with
+        | None ->
+
+            // copy depths from geometry framebuffer to main framebuffer
+            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.ReadFramebuffer, geometryFramebuffer)
+            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.DrawFramebuffer, framebuffer)
+            OpenGL.Gl.BlitFramebuffer
+                (viewport.Bounds.Min.X, viewport.Bounds.Min.Y, viewport.Bounds.Size.X, viewport.Bounds.Size.Y,
+                 viewport.Bounds.Min.X, viewport.Bounds.Min.Y, viewport.Bounds.Size.X, viewport.Bounds.Size.Y,
+                 OpenGL.ClearBufferMask.DepthBufferBit,
+                 OpenGL.BlitFramebufferFilter.Nearest)
+            OpenGL.Hl.Assert ()
+
+            // switch to main framebuffer
+            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, framebuffer)
+            OpenGL.Hl.Assert ()
+
+        | Some (reflectionMapFace, reflectionMap) ->
+
+            // bind reflection map
+            OpenGL.Gl.BindTexture (OpenGL.TextureTarget.TextureCubeMap, reflectionMap)
+            OpenGL.Hl.Assert ()
+
+            // set up reflection map face for rendering to
+            let target = LanguagePrimitives.EnumOfValue (int OpenGL.TextureTarget.TextureCubeMapPositiveX + reflectionMapFace)
+            OpenGL.Gl.TexImage2D (target, 0, OpenGL.InternalFormat.Rgba32f, viewport.Bounds.Width, viewport.Bounds.Height, 0, OpenGL.PixelFormat.Rgba, OpenGL.PixelType.Float, nativeint 0)
+            OpenGL.Gl.TexParameter (OpenGL.TextureTarget.TextureCubeMap, OpenGL.TextureParameterName.TextureMinFilter, int OpenGL.TextureMinFilter.Linear)
+            OpenGL.Gl.TexParameter (OpenGL.TextureTarget.TextureCubeMap, OpenGL.TextureParameterName.TextureMagFilter, int OpenGL.TextureMagFilter.Linear)
+            OpenGL.Gl.TexParameter (OpenGL.TextureTarget.TextureCubeMap, OpenGL.TextureParameterName.TextureWrapS, int OpenGL.TextureWrapMode.ClampToEdge)
+            OpenGL.Gl.TexParameter (OpenGL.TextureTarget.TextureCubeMap, OpenGL.TextureParameterName.TextureWrapT, int OpenGL.TextureWrapMode.ClampToEdge)
+            OpenGL.Gl.TexParameter (OpenGL.TextureTarget.TextureCubeMap, OpenGL.TextureParameterName.TextureWrapR, int OpenGL.TextureWrapMode.ClampToEdge)
+            OpenGL.Hl.Assert ()
+            
+            // copy depths from geometry framebuffer to texture
+            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.ReadFramebuffer, geometryFramebuffer)
+            OpenGL.Gl.FramebufferTexture2D (OpenGL.FramebufferTarget.DrawFramebuffer, OpenGL.FramebufferAttachment.ColorAttachment0, target, reflectionMap, 0)
+            OpenGL.Gl.ClearColor (Constants.Render.WindowClearColor.R, 0.0f, Constants.Render.WindowClearColor.B, Constants.Render.WindowClearColor.A)
+            OpenGL.Gl.Clear (OpenGL.ClearBufferMask.ColorBufferBit ||| OpenGL.ClearBufferMask.DepthBufferBit ||| OpenGL.ClearBufferMask.StencilBufferBit)
+            OpenGL.Gl.BlitFramebuffer
+                (viewport.Bounds.Min.X, viewport.Bounds.Min.Y, viewport.Bounds.Size.X, viewport.Bounds.Size.Y,
+                 viewport.Bounds.Min.X, viewport.Bounds.Min.Y, viewport.Bounds.Size.X, viewport.Bounds.Size.Y,
+                 OpenGL.ClearBufferMask.DepthBufferBit,
+                 OpenGL.BlitFramebufferFilter.Nearest)
+            OpenGL.Hl.Assert ()
+
+            // switch to texture buffer
+            OpenGL.Gl.FramebufferTexture2D (OpenGL.FramebufferTarget.Framebuffer, OpenGL.FramebufferAttachment.ColorAttachment0, target, reflectionMap, 0)
+            OpenGL.Hl.Assert ()
 
         // deferred render lighting quad
         OpenGL.PhysicallyBased.DrawPhysicallyBasedDeferred2Surface
@@ -1234,7 +1281,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         match skyBoxOpt with
         | Some (cubeMapColor, cubeMapBrightness, cubeMap, _) ->
             let cubeMapColor = [|cubeMapColor.R; cubeMapColor.G; cubeMapColor.B|]
-            OpenGL.SkyBox.DrawSkyBox (viewSkyBoxArray, projectionArray, cubeMapColor, cubeMapBrightness, cubeMap, renderer.RenderCubeMapGeometry, renderer.RenderSkyBoxShader)
+            OpenGL.SkyBox.DrawSkyBox (viewSkyBoxArray, projectionArray, cubeMapColor, cubeMapBrightness, lightMap.ReflectionMap, renderer.RenderCubeMapGeometry, renderer.RenderSkyBoxShader)
             OpenGL.Hl.Assert ()
         | None -> ()
 
@@ -1385,25 +1432,8 @@ type [<ReferenceEquality>] GlRenderer3d =
             | ReloadRenderAssets3d ->
                 GlRenderer3d.handleReloadRenderAssets renderer
 
-        // compose preparation lambda
-        let proceedToSecondPass _ geometryFramebuffer =
-
-            // copy depths from geometry framebuffer to main framebuffer
-            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.ReadFramebuffer, geometryFramebuffer)
-            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.DrawFramebuffer, framebuffer)
-            OpenGL.Gl.BlitFramebuffer
-                (viewport.Bounds.Min.X, viewport.Bounds.Min.Y, viewport.Bounds.Size.X, viewport.Bounds.Size.Y,
-                 viewport.Bounds.Min.X, viewport.Bounds.Min.Y, viewport.Bounds.Size.X, viewport.Bounds.Size.Y,
-                 OpenGL.ClearBufferMask.DepthBufferBit,
-                 OpenGL.BlitFramebufferFilter.Nearest)
-            OpenGL.Hl.Assert ()
-
-            // switch to main framebuffer
-            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, framebuffer)
-            OpenGL.Hl.Assert ()
-
         // top-level render
-        GlRenderer3d.renderInternal renderer proceedToSecondPass true eyeCenter viewAbsolute viewRelative viewSkyBox projection viewportOffset renderbuffer framebuffer
+        GlRenderer3d.renderInternal renderer true None eyeCenter viewAbsolute viewRelative viewSkyBox projection viewportOffset renderbuffer framebuffer
         
         // render post-passes
         let passParameters =
@@ -1471,7 +1501,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                  Constants.Paths.PhysicallyBasedDeferred2ShaderFilePath)
         OpenGL.Hl.Assert ()
 
-        // crete reflection map framebuffer
+        // create reflection map framebuffer
         let reflectionMapRenderbuffer = OpenGL.Gl.GenRenderbuffer ()
         let reflectionMapFramebuffer = OpenGL.Gl.GenFramebuffer ()
         OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, reflectionMapRenderbuffer)
@@ -1479,7 +1509,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         OpenGL.Gl.RenderbufferStorage (OpenGL.RenderbufferTarget.Renderbuffer, OpenGL.InternalFormat.DepthComponent24, Constants.Render.ResolutionX, Constants.Render.ResolutionY)
         OpenGL.Hl.Assert ()
 
-        // crete environment filter framebuffer
+        // create environment filter framebuffer
         let irradianceRenderbuffer = OpenGL.Gl.GenRenderbuffer ()
         let irradianceFramebuffer = OpenGL.Gl.GenFramebuffer ()
         OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, irradianceRenderbuffer)
@@ -1487,7 +1517,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         OpenGL.Gl.RenderbufferStorage (OpenGL.RenderbufferTarget.Renderbuffer, OpenGL.InternalFormat.DepthComponent24, Constants.Render.IrradianceMapResolution, Constants.Render.IrradianceMapResolution)
         OpenGL.Hl.Assert ()
 
-        // crete environment filter framebuffer
+        // create environment filter framebuffer
         let environmentFilterRenderbuffer = OpenGL.Gl.GenRenderbuffer ()
         let environmentFilterFramebuffer = OpenGL.Gl.GenFramebuffer ()
         OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, environmentFilterRenderbuffer)
