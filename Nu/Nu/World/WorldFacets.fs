@@ -1409,6 +1409,38 @@ module SkyBoxFacetModule =
                 world
 
 [<AutoOpen>]
+module LightProbeFacet3dModule =
+
+    type Entity with
+        member this.GetStale world : bool = this.Get (nameof this.Stale) world
+        member this.SetStale (value : bool) world = this.Set (nameof this.Stale) value world
+        member this.Stale = lens (nameof this.Stale) this this.GetStale this.SetStale
+
+    type LightProbeFacet3d () =
+        inherit Facet (false)
+
+        static member Properties =
+            [define Entity.Presence Omnipresent
+             nonPersistent Entity.Stale true]
+
+        override this.Render (entity, world) =
+            let id = entity.GetId world
+            let position = entity.GetPosition world
+            let stale = entity.GetStale world
+            World.enqueueRenderMessage3d (RenderLightProbe3d { LightProbeId = id; Origin = position; Stale = stale }) world
+
+        override this.RayCast (ray, entity, world) =
+            let intersectionOpt = ray.Intersects (entity.GetBounds world)
+            if intersectionOpt.HasValue then [|intersectionOpt.Value|]
+            else [||]
+
+        override this.TryGetHighlightBounds (entity, world) =
+            Some (entity.GetBounds world)
+
+        override this.GetQuickSize (_, _) =
+            v3Dup 0.5f
+
+[<AutoOpen>]
 module LightFacet3dModule =
 
     type Entity with
