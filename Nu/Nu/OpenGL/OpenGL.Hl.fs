@@ -88,7 +88,8 @@ module Hl =
         Gl.Viewport (viewport.Bounds.Min.X, viewport.Bounds.Min.Y, viewport.Bounds.Size.X, viewport.Bounds.Size.Y)
         Assert ()
 
-        // bind buffer
+        // bind buffers
+        Gl.BindRenderbuffer (RenderbufferTarget.Renderbuffer, 0u)
         Gl.BindFramebuffer (FramebufferTarget.Framebuffer, 0u)
         Assert ()
 
