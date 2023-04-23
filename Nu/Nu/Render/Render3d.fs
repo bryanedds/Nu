@@ -16,13 +16,8 @@ open Nu
 // TODO: account for Flip in billboards.                                                //
 // TODO: optimize billboard rendering with some sort of batch renderer.                 //
 // TODO: introduce records for RenderTask cases.                                        //
+// TODO: make sure you're destroying ALL rendering resources at end, incl. light maps!  //
 //////////////////////////////////////////////////////////////////////////////////////////
-
-type [<StructuralEquality; NoComparison; Struct>] LightMap =
-    { Origin : Vector3
-      ReflectionMap : uint
-      IrradianceMap : uint
-      EnvironmentFilterMap : uint }
 
 /// Material properties for surfaces.
 type [<StructuralEquality; NoComparison; SymbolicExpansion; Struct>] MaterialProperties =
@@ -351,7 +346,7 @@ type [<ReferenceEquality>] GlRenderer3d =
           RenderEnvironmentFilterMap : uint
           RenderBrdfTexture : uint
           RenderPhysicallyBasedMaterial : OpenGL.PhysicallyBased.PhysicallyBasedMaterial
-          RenderLightMaps : Dictionary<uint64, LightMap>
+          RenderLightMaps : Dictionary<uint64, OpenGL.LightMap.LightMap>
           mutable RenderModelsFields : single array
           mutable RenderTexCoordsOffsetsFields : single array
           mutable RenderAlbedosFields : single array
@@ -877,25 +872,16 @@ type [<ReferenceEquality>] GlRenderer3d =
                         renderer.RenderEnvironmentFilterShader
                         (OpenGL.CubeMap.CubeMapSurface.make cubeMap renderer.RenderCubeMapGeometry)
                 irradianceAndEnvironmentMapsOptRef.Value <- Some (irradianceMap, environmentFilterMap)
-                { Origin = v3Zero
-                  ReflectionMap = cubeMap
-                  IrradianceMap = irradianceMap
-                  EnvironmentFilterMap = environmentFilterMap }
+                OpenGL.LightMap.CreateLightMap v3Zero cubeMap irradianceMap environmentFilterMap
             else
                 let (irradianceMap, environmentFilterMap) = Option.get irradianceAndEnvironmentMapsOptRef.Value
-                { Origin = v3Zero
-                  ReflectionMap = cubeMap
-                  IrradianceMap = irradianceMap
-                  EnvironmentFilterMap = environmentFilterMap }
+                OpenGL.LightMap.CreateLightMap v3Zero cubeMap irradianceMap environmentFilterMap
         | None ->
-            { Origin = v3Zero
-              ReflectionMap = renderer.RenderCubeMap
-              IrradianceMap = renderer.RenderIrradianceMap
-              EnvironmentFilterMap = renderer.RenderEnvironmentFilterMap }
+            OpenGL.LightMap.CreateLightMap v3Zero renderer.RenderCubeMap renderer.RenderIrradianceMap renderer.RenderEnvironmentFilterMap
 
     static member private sortLightMaps eyeCenter lightMaps =
         lightMaps |>
-        Seq.map (fun (lightMap : LightMap) -> (lightMap, (lightMap.Origin - eyeCenter).MagnitudeSquared)) |>
+        Seq.map (fun (lightMap : OpenGL.LightMap.LightMap) -> (lightMap, (lightMap.Origin - eyeCenter).MagnitudeSquared)) |>
         Seq.toArray |> // TODO: use a preallocated array to avoid allocating on the LOH.
         Array.sortByDescending snd |>
         Array.map fst
@@ -1127,12 +1113,8 @@ type [<ReferenceEquality>] GlRenderer3d =
                             renderer.RenderEnvironmentFilterShader
                             (OpenGL.CubeMap.CubeMapSurface.make reflectionMap renderer.RenderCubeMapGeometry)
 
-                    // construct light maps
-                    let lightMap =
-                        { Origin = lightProbeKvp.Value
-                          ReflectionMap = reflectionMap
-                          IrradianceMap = irradianceMap
-                          EnvironmentFilterMap = environmentFilterMap }
+                    // construct light map
+                    let lightMap = OpenGL.LightMap.CreateLightMap lightProbeKvp.Value reflectionMap irradianceMap environmentFilterMap
 
                     // add light maps
                     renderer.RenderLightMaps.Add (lightProbeKvp.Key, lightMap)
@@ -1141,10 +1123,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         for lightMapKvp in renderer.RenderLightMaps do
             if not (SegmentedDictionary.containsKey lightMapKvp.Key renderer.RenderTasks.RenderLightProbes) then
                 if topLevelRender then
-                    let lightMap = lightMapKvp.Value
-                    OpenGL.CubeMap.DeleteCubeMap lightMap.IrradianceMap
-                    OpenGL.CubeMap.DeleteCubeMap lightMap.EnvironmentFilterMap
-                    OpenGL.CubeMap.DeleteCubeMap lightMap.ReflectionMap
+                    OpenGL.LightMap.DestroyLightMap lightMapKvp.Value
 
         // sort light maps list relative to eye center
         let lightMapsSorted = GlRenderer3d.sortLightMaps eyeCenter lightMaps
