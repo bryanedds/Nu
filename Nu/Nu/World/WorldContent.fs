@@ -429,6 +429,9 @@ module Content =
     /// Describe a tmx map with the given initializers.
     let tmxMap entityName initializers = entity<TmxMapDispatcher> entityName initializers
 
+    /// Describe a 3d light probe with the given initializers.
+    let lightProbe3d entityName initializers = entity<LightProbeDispatcher3d> entityName initializers
+
     /// Describe a 3d light with the given initializers.
     let light3d entityName initializers = entity<LightDispatcher3d> entityName initializers
 

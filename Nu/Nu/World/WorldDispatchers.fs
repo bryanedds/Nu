@@ -981,6 +981,22 @@ module SkyBoxDispatcherModule =
              define Entity.CubeMap Assets.Default.SkyBoxMap]
 
 [<AutoOpen>]
+module LightProbeDispatcher3dModule =
+
+    type LightProbeDispatcher3d () =
+        inherit EntityDispatcher3d (true, false)
+
+        static member Facets =
+            [typeof<LightProbeFacet3d>]
+
+        static member Properties =
+            [define Entity.Presence Omnipresent
+             nonPersistent Entity.Stale true]
+
+        override this.GetQuickSize (_, _) =
+            v3Dup 0.5f
+
+[<AutoOpen>]
 module LightDispatcher3dModule =
 
     type LightDispatcher3d () =
