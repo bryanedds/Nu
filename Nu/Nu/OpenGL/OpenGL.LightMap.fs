@@ -307,7 +307,7 @@ module LightMap =
           EnvironmentFilterMap : uint }
 
     /// Create a light map.
-    let CreateLightMap origin irradianceMap environmentFilterMap reflectionMap =
+    let CreateLightMap origin reflectionMap irradianceMap environmentFilterMap =
         { Origin = origin
           ReflectionMap = reflectionMap
           IrradianceMap = irradianceMap
@@ -315,6 +315,6 @@ module LightMap =
 
     /// Destroy a light map.
     let DestroyLightMap lightMap =
+        CubeMap.DeleteCubeMap lightMap.ReflectionMap
         CubeMap.DeleteCubeMap lightMap.IrradianceMap
         CubeMap.DeleteCubeMap lightMap.EnvironmentFilterMap
-        CubeMap.DeleteCubeMap lightMap.ReflectionMap
