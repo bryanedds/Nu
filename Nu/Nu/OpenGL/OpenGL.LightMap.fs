@@ -278,3 +278,23 @@ module LightMap =
         // teardown framebuffer
         Gl.BindFramebuffer (FramebufferTarget.Framebuffer, currentFramebuffer)
         environmentFilterMap
+
+    /// A collection of maps consisting a light map.
+    type [<StructuralEquality; NoComparison; Struct>] LightMap =
+        { Origin : Vector3
+          ReflectionMap : uint
+          IrradianceMap : uint
+          EnvironmentFilterMap : uint }
+
+    /// Create a light map.
+    let CreateLightMap origin irradianceMap environmentFilterMap reflectionMap =
+        { Origin = origin
+          ReflectionMap = reflectionMap
+          IrradianceMap = irradianceMap
+          EnvironmentFilterMap = environmentFilterMap }
+
+    /// Destroy a light map.
+    let DestroyLightMap lightMap =
+        OpenGL.CubeMap.DeleteCubeMap lightMap.IrradianceMap
+        OpenGL.CubeMap.DeleteCubeMap lightMap.EnvironmentFilterMap
+        OpenGL.CubeMap.DeleteCubeMap lightMap.ReflectionMap
