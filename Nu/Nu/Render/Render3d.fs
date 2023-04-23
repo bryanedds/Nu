@@ -68,7 +68,7 @@ type [<NoEquality; NoComparison>] BillboardParticlesDescriptor =
 /// A collection of render tasks in a pass.
 and [<ReferenceEquality>] RenderTasks =
     { RenderSkyBoxes : (Color * single * Color * single * CubeMap AssetTag) SegmentedList
-      RenderLightProbes : SegmentedDictionary<uint64, Vector3>
+      RenderLightProbes : SegmentedDictionary<uint64, struct (Vector3 * bool)>
       RenderLights : SortableLight SegmentedList
       RenderSurfacesDeferredAbsolute : Dictionary<OpenGL.PhysicallyBased.PhysicallyBasedSurface, struct (Matrix4x4 * Box2 * MaterialProperties) SegmentedList>
       RenderSurfacesDeferredRelative : Dictionary<OpenGL.PhysicallyBased.PhysicallyBasedSurface, struct (Matrix4x4 * Box2 * MaterialProperties) SegmentedList>
@@ -122,8 +122,9 @@ and [<ReferenceEquality>] DestroyUserDefinedStaticModel =
     { StaticModel : StaticModel AssetTag }
 
 and [<ReferenceEquality>] RenderLightProbe3d =
-    { Origin : Vector3
-      LightProbeId : uint64 }
+    { LightProbeId : uint64
+      Origin : Vector3
+      Stale : bool }
 
 and [<ReferenceEquality>] RenderSkyBox =
     { AmbientColor : Color
@@ -1073,22 +1074,27 @@ type [<ReferenceEquality>] GlRenderer3d =
         let (lightAmbientColor, lightAmbientBrightness, skyBoxOpt) = GlRenderer3d.getLastSkyBoxOpt renderer
         let lightAmbientColor = [|lightAmbientColor.R; lightAmbientColor.G; lightAmbientColor.B|]
 
-        // collect all light maps, rendering those that don't yet have an entry
+        // collect light maps, rendering those that don't yet have an entry
         let lightMaps = List ()
         for lightProbeKvp in renderer.RenderTasks.RenderLightProbes do
-            match renderer.RenderLightMaps.TryGetValue lightProbeKvp.Key with
-            | (true, value) -> lightMaps.Add value
-            | (false, _) ->
+            let lightProbeId = lightProbeKvp.Key
+            let struct (lightProbeOrigin, lightProbeStale) = lightProbeKvp.Value
+            match renderer.RenderLightMaps.TryGetValue lightProbeId with
+            | (true, value) when not lightProbeStale -> lightMaps.Add value
+            | (found, valueOpt) ->
 
-                // render light maps if in top level render
+                // render light map if in top level render
                 if topLevelRender then
+
+                    // destroy light map if already exists
+                    if found then OpenGL.LightMap.DestroyLightMap valueOpt
 
                     // create reflection map
                     let reflectionMap =
                         GlRenderer3d.createReflectionMap
                             viewport
                             framebuffer
-                            lightProbeKvp.Value
+                            lightProbeOrigin
                             (fst renderer.RenderReflectionFramebuffer)
                             (snd renderer.RenderReflectionFramebuffer)
                             renderer
@@ -1114,18 +1120,18 @@ type [<ReferenceEquality>] GlRenderer3d =
                             (OpenGL.CubeMap.CubeMapSurface.make reflectionMap renderer.RenderCubeMapGeometry)
 
                     // construct light map
-                    let lightMap = OpenGL.LightMap.CreateLightMap lightProbeKvp.Value reflectionMap irradianceMap environmentFilterMap
+                    let lightMap = OpenGL.LightMap.CreateLightMap lightProbeOrigin reflectionMap irradianceMap environmentFilterMap
 
-                    // add light maps
+                    // add light map
                     renderer.RenderLightMaps.Add (lightProbeKvp.Key, lightMap)
 
-        // destroy all light maps that aren't tasked to render
+        // destroy light maps that aren't tasked to render
         for lightMapKvp in renderer.RenderLightMaps do
             if not (SegmentedDictionary.containsKey lightMapKvp.Key renderer.RenderTasks.RenderLightProbes) then
                 if topLevelRender then
                     OpenGL.LightMap.DestroyLightMap lightMapKvp.Value
 
-        // sort light maps list relative to eye center
+        // sort light maps relative to eye center
         let lightMapsSorted = GlRenderer3d.sortLightMaps eyeCenter lightMaps
 
         // sort lights for deferred relative to eye center
@@ -1316,7 +1322,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             | RenderSkyBox rsb ->
                 SegmentedList.add (rsb.AmbientColor, rsb.AmbientBrightness, rsb.CubeMapColor, rsb.CubeMapBrightness, rsb.CubeMap) renderer.RenderTasks.RenderSkyBoxes
             | RenderLightProbe3d lp ->
-                SegmentedDictionary.add lp.LightProbeId lp.Origin renderer.RenderTasks.RenderLightProbes
+                SegmentedDictionary.add lp.LightProbeId struct (lp.Origin, lp.Stale) renderer.RenderTasks.RenderLightProbes
             | RenderLight3d rl3 ->
                 let light =
                     { SortableLightOrigin = rl3.Origin
