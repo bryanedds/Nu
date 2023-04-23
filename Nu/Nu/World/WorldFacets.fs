@@ -1421,8 +1421,11 @@ module LightProbeFacet3dModule =
 
         static member Properties =
             [define Entity.Presence Omnipresent
-             nonPersistent Entity.Stale true]
+             define Entity.Stale true]
 
+        override this.Register (entity, world) =
+            entity.SetStale true world
+            
         override this.Render (entity, world) =
             let id = entity.GetId world
             let position = entity.GetPosition world
