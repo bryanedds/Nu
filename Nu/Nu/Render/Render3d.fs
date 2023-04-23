@@ -335,10 +335,13 @@ type [<ReferenceEquality>] GlRenderer3d =
           RenderPhysicallyBasedForwardShader : OpenGL.PhysicallyBased.PhysicallyBasedShader
           RenderPhysicallyBasedDeferredShader : OpenGL.PhysicallyBased.PhysicallyBasedShader
           RenderPhysicallyBasedDeferred2Shader : OpenGL.PhysicallyBased.PhysicallyBasedDeferred2Shader
-          RenderReflectionFramebuffer : uint * uint
-          RenderIrradianceFramebuffer : uint * uint
-          RenderEnvironmentFilterFramebuffer : uint * uint
-          RenderGeometryFramebuffer : uint * uint * uint * uint * uint
+          RenderReflectionRenderbuffer : uint
+          RenderReflectionFramebuffer : uint
+          RenderIrradianceRenderbuffer : uint
+          RenderIrradianceFramebuffer : uint
+          RenderEnvironmentFilterRenderbuffer : uint
+          RenderEnvironmentFilterFramebuffer : uint
+          RenderGeometryBuffers : uint * uint * uint * uint * uint * uint
           RenderCubeMapGeometry : OpenGL.CubeMap.CubeMapGeometry
           RenderBillboardGeometry : OpenGL.PhysicallyBased.PhysicallyBasedGeometry
           RenderPhysicallyBasedQuad : OpenGL.PhysicallyBased.PhysicallyBasedGeometry
@@ -797,24 +800,22 @@ type [<ReferenceEquality>] GlRenderer3d =
             | _ -> Log.trace "Cannot render static model with a non-model asset."
         | _ -> Log.info ("Cannot render static model due to unloadable assets for '" + scstring staticModel + "'.")
 
-    /// Get the physically-based shader.
-    static member private getPhysicallyBasedShader renderer =
-        renderer.RenderPhysicallyBasedForwardShader
-
     /// Create a reflection map.
-    static member private createReflectionMap (currentViewport : Viewport) currentFramebuffer origin renderbuffer framebuffer renderer =
+    static member private createReflectionMap (currentViewport : Viewport) currentRenderbuffer currentFramebuffer origin renderbuffer framebuffer renderer =
         OpenGL.LightMap.CreateReflectionMap
-            (GlRenderer3d.render9 renderer,
+            (GlRenderer3d.renderInternal renderer,
              currentViewport,
+             currentRenderbuffer,
              currentFramebuffer,
              origin,
              renderbuffer,
              framebuffer)
 
     /// Create an irradiance map.
-    static member private createIrradianceMap currentViewport currentFramebuffer renderbuffer framebuffer shader skyBoxSurface =
+    static member private createIrradianceMap currentViewport currentRenderbuffer currentFramebuffer renderbuffer framebuffer shader skyBoxSurface =
         OpenGL.LightMap.CreateIrradianceMap
             (currentViewport,
+             currentRenderbuffer,
              currentFramebuffer,
              Constants.Render.IrradianceMapResolution,
              Constants.Render.IrradianceMapResolution,
@@ -824,9 +825,10 @@ type [<ReferenceEquality>] GlRenderer3d =
              skyBoxSurface)
 
     /// Create an environment filter map.
-    static member private createEnvironmentFilterMap currentViewport currentFramebuffer renderbuffer framebuffer shader skyBoxSurface =
+    static member private createEnvironmentFilterMap currentViewport currentFramebuffer currentRenderbuffer renderbuffer framebuffer shader skyBoxSurface =
         OpenGL.LightMap.CreateEnvironmentFilterMap
             (currentViewport,
+             currentRenderbuffer,
              currentFramebuffer,
              Constants.Render.EnvironmentFilterResolution,
              Constants.Render.EnvironmentFilterResolution,
@@ -852,24 +854,26 @@ type [<ReferenceEquality>] GlRenderer3d =
                 (lightAmbientColor, lightAmbientBrightness, None)
         | None -> (Color.White, 1.0f, None)
 
-    static member private getLightMapFallback viewport geometryFramebuffer skyBoxOpt renderer =
+    static member private getLightMapFallback viewport geometryRenderbuffer geometryFramebuffer skyBoxOpt renderer =
         match skyBoxOpt with
         | Some (_, _, cubeMap, irradianceAndEnvironmentMapsOptRef : _ ref) ->
             if Option.isNone irradianceAndEnvironmentMapsOptRef.Value then
                 let irradianceMap =
                     GlRenderer3d.createIrradianceMap
                         viewport
+                        geometryRenderbuffer
                         geometryFramebuffer
-                        (fst renderer.RenderIrradianceFramebuffer)
-                        (snd renderer.RenderIrradianceFramebuffer)
+                        renderer.RenderIrradianceRenderbuffer
+                        renderer.RenderIrradianceFramebuffer
                         renderer.RenderIrradianceShader
                         (OpenGL.CubeMap.CubeMapSurface.make cubeMap renderer.RenderCubeMapGeometry)
                 let environmentFilterMap =
                     GlRenderer3d.createEnvironmentFilterMap
                         viewport
+                        geometryRenderbuffer
                         geometryFramebuffer
-                        (fst renderer.RenderEnvironmentFilterFramebuffer)
-                        (snd renderer.RenderEnvironmentFilterFramebuffer)
+                        renderer.RenderEnvironmentFilterRenderbuffer
+                        renderer.RenderEnvironmentFilterFramebuffer
                         renderer.RenderEnvironmentFilterShader
                         (OpenGL.CubeMap.CubeMapSurface.make cubeMap renderer.RenderCubeMapGeometry)
                 irradianceAndEnvironmentMapsOptRef.Value <- Some (irradianceMap, environmentFilterMap)
@@ -1043,15 +1047,17 @@ type [<ReferenceEquality>] GlRenderer3d =
               TwoSided = true }
         billboardMaterial
 
-    static member private render9
+    static member private renderInternal
         renderer
-        topLevelRender
+        (proceedToSecondPass : uint -> uint -> unit)
+        (topLevelRender : bool)
         (eyeCenter : Vector3)
         (viewAbsolute : Matrix4x4)
         (viewRelative : Matrix4x4)
         (viewSkyBox : Matrix4x4)
         (projection : Matrix4x4)
         (viewport : Viewport)
+        (renderbuffer : uint)
         (framebuffer : uint) =
 
         // compute matrix arrays
@@ -1061,7 +1067,8 @@ type [<ReferenceEquality>] GlRenderer3d =
         let projectionArray = projection.ToArray ()
 
         // setup geometry buffer
-        let (positionTexture, albedoTexture, materialTexture, normalAndDepthTexture, geometryFramebuffer) = renderer.RenderGeometryFramebuffer
+        let (positionTexture, albedoTexture, materialTexture, normalAndDepthTexture, geometryRenderbuffer, geometryFramebuffer) = renderer.RenderGeometryBuffers
+        OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, geometryRenderbuffer)
         OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, geometryFramebuffer)
         OpenGL.Gl.Enable OpenGL.EnableCap.ScissorTest
         OpenGL.Gl.Scissor (viewport.Bounds.Min.X, viewport.Bounds.Min.Y, viewport.Bounds.Size.X, viewport.Bounds.Size.Y)
@@ -1087,25 +1094,29 @@ type [<ReferenceEquality>] GlRenderer3d =
                 if topLevelRender then
 
                     // destroy light map if already exists
-                    if found then OpenGL.LightMap.DestroyLightMap valueOpt
+                    if found then
+                        OpenGL.LightMap.DestroyLightMap valueOpt
+                        renderer.RenderLightMaps.Remove lightProbeId |> ignore<bool>
 
                     // create reflection map
                     let reflectionMap =
                         GlRenderer3d.createReflectionMap
                             viewport
+                            renderbuffer
                             framebuffer
                             lightProbeOrigin
-                            (fst renderer.RenderReflectionFramebuffer)
-                            (snd renderer.RenderReflectionFramebuffer)
+                            renderer.RenderReflectionRenderbuffer
+                            renderer.RenderReflectionFramebuffer
                             renderer
 
                     // create irradiance map
                     let irradianceMap =
                         GlRenderer3d.createIrradianceMap
                             viewport
+                            renderbuffer
                             framebuffer
-                            (fst renderer.RenderIrradianceFramebuffer)
-                            (snd renderer.RenderIrradianceFramebuffer)
+                            renderer.RenderIrradianceRenderbuffer
+                            renderer.RenderIrradianceFramebuffer
                             renderer.RenderIrradianceShader
                             (OpenGL.CubeMap.CubeMapSurface.make reflectionMap renderer.RenderCubeMapGeometry)
 
@@ -1113,9 +1124,10 @@ type [<ReferenceEquality>] GlRenderer3d =
                     let environmentFilterMap =
                         GlRenderer3d.createEnvironmentFilterMap
                             viewport
+                            renderbuffer
                             framebuffer
-                            (fst renderer.RenderEnvironmentFilterFramebuffer)
-                            (snd renderer.RenderEnvironmentFilterFramebuffer)
+                            renderer.RenderEnvironmentFilterRenderbuffer
+                            renderer.RenderEnvironmentFilterFramebuffer
                             renderer.RenderEnvironmentFilterShader
                             (OpenGL.CubeMap.CubeMapSurface.make reflectionMap renderer.RenderCubeMapGeometry)
 
@@ -1123,7 +1135,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                     let lightMap = OpenGL.LightMap.CreateLightMap lightProbeOrigin reflectionMap irradianceMap environmentFilterMap
 
                     // add light map
-                    renderer.RenderLightMaps.Add (lightProbeKvp.Key, lightMap)
+                    renderer.RenderLightMaps.Add (lightProbeId, lightMap)
 
         // destroy light maps that aren't tasked to render
         for lightMapKvp in renderer.RenderLightMaps do
@@ -1150,7 +1162,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         SegmentedList.clear renderer.RenderTasks.RenderSurfacesForwardRelative
 
         // get light mapping elements
-        let lightMapFallback = GlRenderer3d.getLightMapFallback viewport geometryFramebuffer skyBoxOpt renderer
+        let lightMapFallback = GlRenderer3d.getLightMapFallback viewport geometryRenderbuffer geometryFramebuffer skyBoxOpt renderer
         let lightMap = Seq.headOrDefault lightMapsSorted lightMapFallback
 
         // deferred render surfaces w/ absolute transforms if in top level render
@@ -1208,19 +1220,8 @@ type [<ReferenceEquality>] GlRenderer3d =
                 renderer
             OpenGL.Hl.Assert ()
 
-        // copy depths from geometry framebuffer to main framebuffer
-        OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.ReadFramebuffer, geometryFramebuffer)
-        OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.DrawFramebuffer, framebuffer)
-        OpenGL.Gl.BlitFramebuffer
-            (0, 0, Constants.Render.ResolutionX, Constants.Render.ResolutionY,
-             0, 0, Constants.Render.ResolutionX, Constants.Render.ResolutionY,
-             OpenGL.ClearBufferMask.DepthBufferBit,
-             OpenGL.BlitFramebufferFilter.Nearest)
-        OpenGL.Hl.Assert ()
-
-        // switch to main framebuffer
-        OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, framebuffer)
-        OpenGL.Hl.Assert ()
+        // proceed to the second pass of deferred rendering
+        proceedToSecondPass geometryRenderbuffer geometryFramebuffer
 
         // deferred render lighting quad
         OpenGL.PhysicallyBased.DrawPhysicallyBasedDeferred2Surface
@@ -1296,7 +1297,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 renderer
             OpenGL.Hl.Assert ()
 
-    static member render eyeCenter (eyeRotation : Quaternion) windowSize framebuffer renderMessages renderer =
+    static member render eyeCenter (eyeRotation : Quaternion) windowSize renderbuffer framebuffer renderMessages renderer =
 
         // compute the viewport with the given offset
         let viewportOffset = Constants.Render.ViewportOffset windowSize
@@ -1384,8 +1385,25 @@ type [<ReferenceEquality>] GlRenderer3d =
             | ReloadRenderAssets3d ->
                 GlRenderer3d.handleReloadRenderAssets renderer
 
+        // compose preparation lambda
+        let proceedToSecondPass _ geometryFramebuffer =
+
+            // copy depths from geometry framebuffer to main framebuffer
+            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.ReadFramebuffer, geometryFramebuffer)
+            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.DrawFramebuffer, framebuffer)
+            OpenGL.Gl.BlitFramebuffer
+                (viewport.Bounds.Min.X, viewport.Bounds.Min.Y, viewport.Bounds.Size.X, viewport.Bounds.Size.Y,
+                 viewport.Bounds.Min.X, viewport.Bounds.Min.Y, viewport.Bounds.Size.X, viewport.Bounds.Size.Y,
+                 OpenGL.ClearBufferMask.DepthBufferBit,
+                 OpenGL.BlitFramebufferFilter.Nearest)
+            OpenGL.Hl.Assert ()
+
+            // switch to main framebuffer
+            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, framebuffer)
+            OpenGL.Hl.Assert ()
+
         // top-level render
-        GlRenderer3d.render9 renderer true eyeCenter viewAbsolute viewRelative viewSkyBox projection viewportOffset framebuffer
+        GlRenderer3d.renderInternal renderer proceedToSecondPass true eyeCenter viewAbsolute viewRelative viewSkyBox projection viewportOffset renderbuffer framebuffer
         
         // render post-passes
         let passParameters =
@@ -1454,31 +1472,31 @@ type [<ReferenceEquality>] GlRenderer3d =
         OpenGL.Hl.Assert ()
 
         // crete reflection map framebuffer
-        let reflectionMapFramebuffer = OpenGL.Gl.GenFramebuffer ()
         let reflectionMapRenderbuffer = OpenGL.Gl.GenRenderbuffer ()
-        OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, reflectionMapFramebuffer)
+        let reflectionMapFramebuffer = OpenGL.Gl.GenFramebuffer ()
         OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, reflectionMapRenderbuffer)
-        OpenGL.Gl.RenderbufferStorage (OpenGL.RenderbufferTarget.Renderbuffer, OpenGL.InternalFormat.DepthComponent24, Constants.Render.ReflectionMapResolution, Constants.Render.ReflectionMapResolution)
+        OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, reflectionMapFramebuffer)
+        OpenGL.Gl.RenderbufferStorage (OpenGL.RenderbufferTarget.Renderbuffer, OpenGL.InternalFormat.DepthComponent24, Constants.Render.ResolutionX, Constants.Render.ResolutionY)
         OpenGL.Hl.Assert ()
 
         // crete environment filter framebuffer
-        let irradianceFramebuffer = OpenGL.Gl.GenFramebuffer ()
         let irradianceRenderbuffer = OpenGL.Gl.GenRenderbuffer ()
-        OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, irradianceFramebuffer)
+        let irradianceFramebuffer = OpenGL.Gl.GenFramebuffer ()
         OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, irradianceRenderbuffer)
+        OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, irradianceFramebuffer)
         OpenGL.Gl.RenderbufferStorage (OpenGL.RenderbufferTarget.Renderbuffer, OpenGL.InternalFormat.DepthComponent24, Constants.Render.IrradianceMapResolution, Constants.Render.IrradianceMapResolution)
         OpenGL.Hl.Assert ()
 
         // crete environment filter framebuffer
-        let environmentFilterFramebuffer = OpenGL.Gl.GenFramebuffer ()
         let environmentFilterRenderbuffer = OpenGL.Gl.GenRenderbuffer ()
-        OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, environmentFilterFramebuffer)
+        let environmentFilterFramebuffer = OpenGL.Gl.GenFramebuffer ()
         OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, environmentFilterRenderbuffer)
+        OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, environmentFilterFramebuffer)
         OpenGL.Gl.RenderbufferStorage (OpenGL.RenderbufferTarget.Renderbuffer, OpenGL.InternalFormat.DepthComponent24, Constants.Render.EnvironmentFilterResolution, Constants.Render.EnvironmentFilterResolution)
         OpenGL.Hl.Assert ()
 
         // create geometry framebuffer
-        let geometryFramebuffer =
+        let geometryBuffers =
             match OpenGL.Framebuffer.TryCreateGeometryFramebuffer () with
             | Right geometryFramebuffer -> geometryFramebuffer
             | Left error -> failwith ("Could not create GlRenderer3d due to: " + error + ".")
@@ -1515,11 +1533,11 @@ type [<ReferenceEquality>] GlRenderer3d =
         OpenGL.Hl.Assert ()
 
         // create default irradiance map
-        let irradianceMap = GlRenderer3d.createIrradianceMap Constants.Render.Viewport 0u irradianceRenderbuffer irradianceFramebuffer irradianceShader skyBoxSurface
+        let irradianceMap = GlRenderer3d.createIrradianceMap Constants.Render.Viewport 0u 0u irradianceRenderbuffer irradianceFramebuffer irradianceShader skyBoxSurface
         OpenGL.Hl.Assert ()
 
         // create default environment filter map
-        let environmentFilterMap = GlRenderer3d.createEnvironmentFilterMap Constants.Render.Viewport 0u environmentFilterRenderbuffer environmentFilterFramebuffer environmentFilterShader skyBoxSurface
+        let environmentFilterMap = GlRenderer3d.createEnvironmentFilterMap Constants.Render.Viewport 0u 0u environmentFilterRenderbuffer environmentFilterFramebuffer environmentFilterShader skyBoxSurface
         OpenGL.Hl.Assert ()
 
         // create brdf texture
@@ -1577,10 +1595,13 @@ type [<ReferenceEquality>] GlRenderer3d =
               RenderPhysicallyBasedForwardShader = forwardShader
               RenderPhysicallyBasedDeferredShader = deferredShader
               RenderPhysicallyBasedDeferred2Shader = deferred2Shader
-              RenderReflectionFramebuffer = (reflectionMapRenderbuffer, reflectionMapFramebuffer) // TODO: store these in a struct so that they don't get mixed up!
-              RenderIrradianceFramebuffer = (irradianceRenderbuffer, irradianceFramebuffer) // TODO: store these in a struct so that they don't get mixed up!
-              RenderEnvironmentFilterFramebuffer = (environmentFilterRenderbuffer, environmentFilterFramebuffer) // TODO: store these in a struct so that they don't get mixed up!
-              RenderGeometryFramebuffer = geometryFramebuffer
+              RenderReflectionRenderbuffer = reflectionMapRenderbuffer
+              RenderReflectionFramebuffer = reflectionMapFramebuffer
+              RenderIrradianceRenderbuffer = irradianceRenderbuffer
+              RenderIrradianceFramebuffer = irradianceFramebuffer
+              RenderEnvironmentFilterRenderbuffer = environmentFilterRenderbuffer
+              RenderEnvironmentFilterFramebuffer = environmentFilterFramebuffer
+              RenderGeometryBuffers = geometryBuffers
               RenderCubeMapGeometry = cubeMapGeometry
               RenderBillboardGeometry = billboardGeometry
               RenderPhysicallyBasedQuad = physicallyBasedQuad
@@ -1623,7 +1644,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
             // render only if there are messages
             if renderMessages.Count > 0 then
-                GlRenderer3d.render eyeCenter eyeRotation windowSize 0u renderMessages renderer
+                GlRenderer3d.render eyeCenter eyeRotation windowSize 0u 0u renderMessages renderer
 
             // end frame
             if renderer.RenderShouldEndFrame then

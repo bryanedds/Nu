@@ -70,6 +70,13 @@ module Framebuffer =
     /// Create a geometry frame buffer.
     let TryCreateGeometryFramebuffer () =
 
+        // create render buffer with depth and stencil
+        let renderbuffer = Gl.GenRenderbuffer ()
+        Gl.BindRenderbuffer (RenderbufferTarget.Renderbuffer, renderbuffer)
+        Gl.RenderbufferStorage (RenderbufferTarget.Renderbuffer, InternalFormat.Depth24Stencil8, Constants.Render.ResolutionX, Constants.Render.ResolutionY)
+        Gl.FramebufferRenderbuffer (FramebufferTarget.Framebuffer, FramebufferAttachment.DepthStencilAttachment, RenderbufferTarget.Renderbuffer, renderbuffer)
+        Hl.Assert ()
+
         // create frame buffer object
         let framebuffer = Gl.GenFramebuffer ()
         Gl.BindFramebuffer (FramebufferTarget.Framebuffer, framebuffer)
@@ -125,15 +132,8 @@ module Framebuffer =
               int FramebufferAttachment.ColorAttachment1
               int FramebufferAttachment.ColorAttachment2
               int FramebufferAttachment.ColorAttachment3|]
-
-        // create depth and stencil buffers
-        let depthStencilBuffer = Gl.GenRenderbuffer ()
-        Gl.BindRenderbuffer (RenderbufferTarget.Renderbuffer, depthStencilBuffer)
-        Gl.RenderbufferStorage (RenderbufferTarget.Renderbuffer, InternalFormat.Depth24Stencil8, Constants.Render.ResolutionX, Constants.Render.ResolutionY)
-        Gl.FramebufferRenderbuffer (FramebufferTarget.Framebuffer, FramebufferAttachment.DepthStencilAttachment, RenderbufferTarget.Renderbuffer, depthStencilBuffer)
-        Hl.Assert ()
     
         // ensure framebuffer is complete
         if Gl.CheckFramebufferStatus FramebufferTarget.Framebuffer = FramebufferStatus.FramebufferComplete
-        then Right (position, albedo, material, normalAndDepth, framebuffer)
-        else Left ("Could not create complete geometry framebuffer.")
+        then Right (position, albedo, material, normalAndDepth, renderbuffer, framebuffer)
+        else Left "Could not create complete geometry framebuffer."
