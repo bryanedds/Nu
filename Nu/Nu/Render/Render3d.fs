@@ -1130,6 +1130,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             if not (SegmentedDictionary.containsKey lightMapKvp.Key renderer.RenderTasks.RenderLightProbes) then
                 if topLevelRender then
                     OpenGL.LightMap.DestroyLightMap lightMapKvp.Value
+                    renderer.RenderLightMaps.Remove lightMapKvp.Key |> ignore<bool>
 
         // sort light maps relative to eye center
         let lightMapsSorted = GlRenderer3d.sortLightMaps eyeCenter lightMaps
@@ -1322,6 +1323,9 @@ type [<ReferenceEquality>] GlRenderer3d =
             | RenderSkyBox rsb ->
                 SegmentedList.add (rsb.AmbientColor, rsb.AmbientBrightness, rsb.CubeMapColor, rsb.CubeMapBrightness, rsb.CubeMap) renderer.RenderTasks.RenderSkyBoxes
             | RenderLightProbe3d lp ->
+                if SegmentedDictionary.containsKey lp.LightProbeId renderer.RenderTasks.RenderLightProbes then
+                    Log.debugOnce ("Multiple light probe messages coming in with the same id of '" + string lp.LightProbeId + "'.")
+                    SegmentedDictionary.remove lp.LightProbeId renderer.RenderTasks.RenderLightProbes |> ignore<bool>
                 SegmentedDictionary.add lp.LightProbeId struct (lp.Origin, lp.Stale) renderer.RenderTasks.RenderLightProbes
             | RenderLight3d rl3 ->
                 let light =
@@ -1399,8 +1403,9 @@ type [<ReferenceEquality>] GlRenderer3d =
             OpenGL.Hl.Assert ()
 
         // clear render tasks
-        SegmentedList.clear renderer.RenderTasks.RenderLights
         SegmentedList.clear renderer.RenderTasks.RenderSkyBoxes
+        SegmentedDictionary.clear renderer.RenderTasks.RenderLightProbes
+        SegmentedList.clear renderer.RenderTasks.RenderLights
         renderer.RenderTasks.RenderSurfacesDeferredAbsolute.Clear ()
         renderer.RenderTasks.RenderSurfacesDeferredRelative.Clear ()
         SegmentedList.clear renderer.RenderTasks.RenderSurfacesForwardAbsoluteSorted

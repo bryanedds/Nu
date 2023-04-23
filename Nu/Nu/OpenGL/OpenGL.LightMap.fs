@@ -16,8 +16,8 @@ module LightMap =
         // construct viewport
         let viewport =
             Viewport
-                (Constants.Render.NearPlaneDistanceEnclosed,
-                 Constants.Render.FarPlaneDistanceEnclosed,
+                (Constants.Render.NearPlaneDistanceExposed,
+                 Constants.Render.FarPlaneDistanceExposed,
                  box2i v2iZero (v2iDup Constants.Render.ReflectionMapResolution))
 
         // construct eye rotations
@@ -40,6 +40,11 @@ module LightMap =
         // setup framebuffer
         OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, framebuffer)
         OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, renderBuffer)
+        OpenGL.Hl.Assert ()
+
+        // clear framebuffer
+        OpenGL.Gl.ClearColor (Constants.Render.WindowClearColor.R, Constants.Render.WindowClearColor.G, Constants.Render.WindowClearColor.B, Constants.Render.WindowClearColor.A)
+        OpenGL.Gl.Clear (OpenGL.ClearBufferMask.ColorBufferBit ||| OpenGL.ClearBufferMask.DepthBufferBit ||| OpenGL.ClearBufferMask.StencilBufferBit)
         OpenGL.Hl.Assert ()
 
         // mutate viewport
