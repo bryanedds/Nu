@@ -1473,7 +1473,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         let reflectionMapFramebuffer = OpenGL.Gl.GenFramebuffer ()
         OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, reflectionMapFramebuffer)
         //OpenGL.Gl.FramebufferRenderbuffer (OpenGL.FramebufferTarget.Framebuffer, OpenGL.FramebufferAttachment.DepthStencilAttachment, OpenGL.RenderbufferTarget.Renderbuffer, reflectionMapRenderbuffer)
-        Log.debugIf (fun () -> OpenGL.Gl.CheckFramebufferStatus OpenGL.FramebufferTarget.Framebuffer <> OpenGL.FramebufferStatus.FramebufferComplete) "Reflection map framebuffer is incomplete!"
+        Log.debugIf (fun () -> OpenGL.Gl.CheckFramebufferStatus OpenGL.FramebufferTarget.Framebuffer <> OpenGL.FramebufferStatus.FramebufferComplete) "Reflection framebuffer is incomplete!"
         OpenGL.Hl.Assert ()
 
         // create irradiance renderbuffer
@@ -1498,7 +1498,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         // create environment filter framebuffer
         let environmentFilterFramebuffer = OpenGL.Gl.GenFramebuffer ()
         OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, environmentFilterFramebuffer)
-        OpenGL.Gl.FramebufferRenderbuffer (OpenGL.FramebufferTarget.Framebuffer, OpenGL.FramebufferAttachment.DepthAttachment, OpenGL.RenderbufferTarget.Renderbuffer, environmentFilterRenderbuffer)
+        //OpenGL.Gl.FramebufferRenderbuffer (OpenGL.FramebufferTarget.Framebuffer, OpenGL.FramebufferAttachment.DepthAttachment, OpenGL.RenderbufferTarget.Renderbuffer, environmentFilterRenderbuffer)
         Log.debugIf (fun () -> OpenGL.Gl.CheckFramebufferStatus OpenGL.FramebufferTarget.Framebuffer <> OpenGL.FramebufferStatus.FramebufferComplete) "Environment filter framebuffer is incomplete!"
         OpenGL.Hl.Assert ()
 
