@@ -101,6 +101,7 @@ module Render =
     let [<Literal>] GeometryBatchPrealloc = 1024
     let [<Literal>] DeferredLightsMax = 96 // NOTE: much beyond this and we run out of room in the uniform buffer.
     let [<Literal>] ForwardLightsMax = 32
+    let [<Literal>] ReflectionMapResolution = 1024
     let [<Literal>] IrradianceMapResolution = 32
     let [<Literal>] EnvironmentFilterResolution = 128
     let [<Literal>] EnvironmentFilterMips = 5 // NOTE: changing this requires changing the REFLECTION_LOD_MAX constants in shader code.
