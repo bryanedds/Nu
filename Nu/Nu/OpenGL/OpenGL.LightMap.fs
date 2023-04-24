@@ -28,13 +28,14 @@ module LightMap =
         let reflectionMap = Gl.GenTexture()
         Gl.BindTexture (TextureTarget.TextureCubeMap, reflectionMap)
         Gl.FramebufferTexture (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, reflectionMap, 0)
+        Gl.FramebufferRenderbuffer (FramebufferTarget.Framebuffer, FramebufferAttachment.DepthStencilAttachment, RenderbufferTarget.Renderbuffer, renderbuffer)
         Hl.Assert ()
 
         // setup reflection map textures
         for i in 0 .. dec 6 do
             let target = LanguagePrimitives.EnumOfValue (int TextureTarget.TextureCubeMapPositiveX + i)
             Gl.TexImage2D (target, 0, InternalFormat.Rgba32f, resolution, resolution, 0, PixelFormat.Rgba, PixelType.Float, nativeint 0)
-            Gl.TexImage2D (target, 0, InternalFormat.Depth24Stencil8, resolution, resolution, 0, PixelFormat.DepthStencil, PixelType.Float, nativeint 0)
+            //Gl.TexImage2D (target, 0, InternalFormat.Depth24Stencil8, resolution, resolution, 0, PixelFormat.DepthStencil, PixelType.Float, nativeint 0)
             Hl.Assert ()
         Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureMinFilter, int TextureMinFilter.Linear)
         Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureMagFilter, int TextureMagFilter.Linear)
@@ -118,7 +119,7 @@ module LightMap =
         // create irradiance renderbuffer
         let renderbuffer = Gl.GenRenderbuffer ()
         Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, renderbuffer)
-        Gl.RenderbufferStorage (OpenGL.RenderbufferTarget.Renderbuffer, OpenGL.InternalFormat.DepthComponent24, resolution, resolution)
+        Gl.RenderbufferStorage (OpenGL.RenderbufferTarget.Renderbuffer, OpenGL.InternalFormat.DepthComponent16, resolution, resolution)
         Hl.Assert ()
 
         // create irradiance framebuffer
@@ -267,7 +268,7 @@ module LightMap =
         // create irradiance renderbuffer
         let renderbuffer = Gl.GenRenderbuffer ()
         Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, renderbuffer)
-        Gl.RenderbufferStorage (OpenGL.RenderbufferTarget.Renderbuffer, OpenGL.InternalFormat.DepthComponent24, resolution, resolution)
+        Gl.RenderbufferStorage (OpenGL.RenderbufferTarget.Renderbuffer, OpenGL.InternalFormat.DepthComponent16, resolution, resolution)
         Hl.Assert ()
 
         // create irradiance framebuffer
@@ -312,7 +313,7 @@ module LightMap =
         for i in 0 .. dec Constants.Render.EnvironmentFilterMips do
             let roughness = single i / single (dec Constants.Render.EnvironmentFilterMips)
             let resolution' = single resolution * pown 0.5f i
-            Gl.RenderbufferStorage (RenderbufferTarget.Renderbuffer, InternalFormat.DepthComponent24, int resolution, int resolution)
+            Gl.RenderbufferStorage (RenderbufferTarget.Renderbuffer, InternalFormat.DepthComponent16, int resolution, int resolution)
             Gl.Viewport (0, 0, int resolution', int resolution')
             for j in 0 .. dec 6 do
                 let target = LanguagePrimitives.EnumOfValue (int TextureTarget.TextureCubeMapPositiveX + j)
