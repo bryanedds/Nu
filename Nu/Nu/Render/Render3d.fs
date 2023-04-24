@@ -1033,6 +1033,9 @@ type [<ReferenceEquality>] GlRenderer3d =
 
     static member private renderInternal
         renderer
+        //(currentViewport : Viewport)
+        //(currentRenderbuffer : uint)
+        //(currentFramebuffer : uint)
         (topLevelRender : bool)
         (eyeCenter : Vector3)
         (viewAbsolute : Matrix4x4)
@@ -1130,6 +1133,10 @@ type [<ReferenceEquality>] GlRenderer3d =
         SegmentedList.addMany forwardSurfacesSorted renderer.RenderTasks.RenderSurfacesForwardRelativeSorted
         SegmentedList.clear renderer.RenderTasks.RenderSurfacesForwardRelative
 
+        // collect light mapping elements
+        let lightMapFallback = GlRenderer3d.getLightMapFallback geometryViewport renderbuffer framebuffer skyBoxOpt renderer
+        let lightMap = Seq.headOrDefault lightMapsSorted lightMapFallback
+
         // setup geometry viewport
         OpenGL.Gl.Viewport (geometryViewport.Bounds.Min.X, geometryViewport.Bounds.Min.Y, geometryViewport.Bounds.Width, geometryViewport.Bounds.Height)
         OpenGL.Hl.Assert ()
@@ -1144,10 +1151,6 @@ type [<ReferenceEquality>] GlRenderer3d =
         OpenGL.Gl.Clear (OpenGL.ClearBufferMask.ColorBufferBit ||| OpenGL.ClearBufferMask.DepthBufferBit ||| OpenGL.ClearBufferMask.StencilBufferBit)
         OpenGL.Gl.Disable OpenGL.EnableCap.ScissorTest
         OpenGL.Hl.Assert ()
-
-        // collect light mapping elements
-        let lightMapFallback = GlRenderer3d.getLightMapFallback geometryViewport geometryRenderbuffer geometryFramebuffer skyBoxOpt renderer
-        let lightMap = Seq.headOrDefault lightMapsSorted lightMapFallback
 
         // deferred render surfaces w/ absolute transforms if in top level render
         if topLevelRender then
@@ -1297,6 +1300,14 @@ type [<ReferenceEquality>] GlRenderer3d =
                 renderer
             OpenGL.Hl.Assert ()
 
+        //// teardown viewport
+        //OpenGL.Gl.Viewport (currentViewport.Bounds.Min.X, currentViewport.Bounds.Min.Y, currentViewport.Bounds.Size.X, currentViewport.Bounds.Size.Y)
+        //OpenGL.Hl.Assert ()
+        //
+        //// teardown buffers
+        //OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, currentRenderbuffer)
+        //OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, currentFramebuffer)
+
     static member render eyeCenter (eyeRotation : Quaternion) windowSize renderbuffer framebuffer renderMessages renderer =
 
         // categorize messages
@@ -1387,7 +1398,9 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         // top-level render
         GlRenderer3d.renderInternal
-            renderer true eyeCenter
+            renderer
+            //viewport renderbuffer framebuffer
+            true eyeCenter
             viewAbsolute viewRelative viewSkyBox
             projection viewportOffset
             projection viewportOffset

@@ -13,29 +13,29 @@ module LightMap =
     /// Create a reflection map.
     let CreateReflectionMap (render, currentViewport : Viewport, currentRenderbuffer, currentFramebuffer, geometryResolution, rasterResolution, origin) =
 
-        // create reflection map renderbuffer
-        let renderbuffer = Gl.GenRenderbuffer ()
-        Gl.BindRenderbuffer (RenderbufferTarget.Renderbuffer, renderbuffer)
+        // create reflection renderbuffer
+        let rasterRenderbuffer = Gl.GenRenderbuffer ()
+        Gl.BindRenderbuffer (RenderbufferTarget.Renderbuffer, rasterRenderbuffer)
         Gl.RenderbufferStorage (RenderbufferTarget.Renderbuffer, InternalFormat.Depth24Stencil8, rasterResolution, rasterResolution)
         Hl.Assert ()
 
-        // create reflection map framebuffer
-        let framebuffer = Gl.GenFramebuffer ()
-        Gl.BindFramebuffer (FramebufferTarget.Framebuffer, framebuffer)
-        Gl.FramebufferRenderbuffer (FramebufferTarget.Framebuffer, FramebufferAttachment.DepthStencilAttachment, RenderbufferTarget.Renderbuffer, renderbuffer)
+        // create reflection framebuffer
+        let rasterFramebuffer = Gl.GenFramebuffer ()
+        Gl.BindFramebuffer (FramebufferTarget.Framebuffer, rasterFramebuffer)
+        Gl.FramebufferRenderbuffer (FramebufferTarget.Framebuffer, FramebufferAttachment.DepthStencilAttachment, RenderbufferTarget.Renderbuffer, rasterRenderbuffer)
         Hl.Assert ()
 
-        // create reflection map texture
-        let reflectionMap = Gl.GenTexture()
-        Gl.BindTexture (TextureTarget.TextureCubeMap, reflectionMap)
-        Gl.FramebufferTexture (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, reflectionMap, 0)
+        // create reflection cube map
+        let rasterCubeMap = Gl.GenTexture()
+        Gl.BindTexture (TextureTarget.TextureCubeMap, rasterCubeMap)
+        Gl.FramebufferTexture (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, rasterCubeMap, 0)
         Hl.Assert ()
 
-        // setup reflection map textures
+        // setup reflection cube map textures
         for i in 0 .. dec 6 do
             let target = LanguagePrimitives.EnumOfValue (int TextureTarget.TextureCubeMapPositiveX + i)
             Gl.TexImage2D (target, 0, InternalFormat.Rgba32f, rasterResolution, rasterResolution, 0, PixelFormat.Rgba, PixelType.Float, nativeint 0)
-            Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, target, reflectionMap, 0)
+            Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, target, rasterCubeMap, 0)
             Hl.Assert ()
         Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureMinFilter, int TextureMinFilter.Linear)
         Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureMagFilter, int TextureMagFilter.Linear)
@@ -44,7 +44,7 @@ module LightMap =
         Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureWrapR, int TextureWrapMode.ClampToEdge)
         Hl.Assert ()
 
-        // assert framebuffer completion
+        // assert reflection framebuffer completion
         Log.debugIf (fun () -> Gl.CheckFramebufferStatus FramebufferTarget.Framebuffer <> FramebufferStatus.FramebufferComplete) "Reflection framebuffer is incomplete!"
         Hl.Assert ()
 
@@ -65,28 +65,31 @@ module LightMap =
         let geometryProjection = Matrix4x4.CreatePerspectiveFieldOfView (MathHelper.PiOver2, 1.0f, geometryViewport.NearDistance, geometryViewport.FarDistance)
         let rasterProjection = Matrix4x4.CreatePerspectiveFieldOfView (MathHelper.PiOver2, rasterViewport.AspectRatio, rasterViewport.NearDistance, rasterViewport.FarDistance)
 
-        // render reflection map faces
+        // render reflection cube map faces
         for i in 0 .. dec 6 do
 
-            // bind reflection textures for rendering
+            // bind reflection cube map face for rendering
             let target = LanguagePrimitives.EnumOfValue (int TextureTarget.TextureCubeMapPositiveX + i)
-            Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, target, reflectionMap, 0)
+            Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, target, rasterCubeMap, 0)
             Hl.Assert ()
 
-            // render to reflection map face
+            // render to reflection cube map face
             let (eyeForward, eyeUp) = eyeRotations.[i]
             let viewAbsolute = m4Identity
             let viewRelative = Matrix4x4.CreateLookAt (origin, origin + eyeForward, eyeUp)
             let viewSkyBox = Matrix4x4.Transpose (Matrix4x4.CreateLookAt (v3Zero, eyeForward, eyeUp)) // transpose = inverse rotation when rotation only
-            render false origin viewAbsolute viewRelative viewSkyBox geometryProjection geometryViewport rasterProjection rasterViewport renderbuffer framebuffer
+            render
+                //rasterViewport rasterRenderbuffer rasterFramebuffer
+                false origin
+                viewAbsolute viewRelative viewSkyBox
+                geometryProjection geometryViewport
+                rasterProjection rasterViewport
+                rasterRenderbuffer rasterFramebuffer
             Hl.Assert ()
 
             //// take a snapshot for testing
             //Hl.SaveFramebufferToBitmap rasterViewport.Bounds.Width rasterViewport.Bounds.Height ("Test" + string i + ".bmp")
             //Hl.Assert ()
-
-        // generate reflection map mipmaps
-        Gl.GenerateMipmap TextureTarget.TextureCubeMap
 
         // teardown attachments
         for i in 0 .. dec 6 do
@@ -94,16 +97,16 @@ module LightMap =
             Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, target, 0u, 0)
             Hl.Assert ()
 
-        // teardown viewport. TODO: have GlRenderer3d.renderInternal restore viewport instead?
+        // teardown viewport
         Gl.Viewport (currentViewport.Bounds.Min.X, currentViewport.Bounds.Min.Y, currentViewport.Bounds.Size.X, currentViewport.Bounds.Size.Y)
         Hl.Assert ()
 
-        // teardown buffers. TODO: have GlRenderer3d.renderInternal restore buffers instead?
+        // teardown buffers
         Gl.BindRenderbuffer (RenderbufferTarget.Renderbuffer, currentRenderbuffer)
         Gl.BindFramebuffer (FramebufferTarget.Framebuffer, currentFramebuffer)
-        Gl.DeleteRenderbuffers [|renderbuffer|]
-        Gl.DeleteFramebuffers [|framebuffer|]
-        reflectionMap
+        Gl.DeleteRenderbuffers [|rasterRenderbuffer|]
+        Gl.DeleteFramebuffers [|rasterFramebuffer|]
+        rasterCubeMap
 
     let CreateIrradianceMap
         (currentViewport : Viewport,
@@ -124,17 +127,17 @@ module LightMap =
         Gl.BindFramebuffer (FramebufferTarget.Framebuffer, framebuffer)
         Hl.Assert ()
 
-        // create irradiance map texture
-        let irradianceMap = Gl.GenTexture ()
-        Gl.BindTexture (TextureTarget.TextureCubeMap, irradianceMap)
-        Gl.FramebufferTexture (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, irradianceMap, 0)
+        // create irradiance cube map
+        let cubeMap = Gl.GenTexture ()
+        Gl.BindTexture (TextureTarget.TextureCubeMap, cubeMap)
+        Gl.FramebufferTexture (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, cubeMap, 0)
         Hl.Assert ()
 
         // setup irradiance cube map for rendering to
         for i in 0 .. dec 6 do
             let target = LanguagePrimitives.EnumOfValue (int TextureTarget.TextureCubeMapPositiveX + i)
             Gl.TexImage2D (target, 0, InternalFormat.Rgba16f, resolution, resolution, 0, PixelFormat.Rgba, PixelType.Float, nativeint 0)
-            Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, target, irradianceMap, 0)
+            Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, target, cubeMap, 0)
             Hl.Assert ()
         Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureMinFilter, int TextureMinFilter.Linear)
         Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureMagFilter, int TextureMagFilter.Linear)
@@ -143,7 +146,7 @@ module LightMap =
         Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureWrapR, int TextureWrapMode.ClampToEdge)
         Hl.Assert ()
 
-        // assert framebuffer completion
+        // assert irradiance framebuffer completion
         Log.debugIf (fun () -> Gl.CheckFramebufferStatus FramebufferTarget.Framebuffer <> FramebufferStatus.FramebufferComplete) "Irradiance framebuffer is incomplete!"
         Hl.Assert ()
 
@@ -161,10 +164,10 @@ module LightMap =
         Gl.Viewport (0, 0, resolution, resolution)
         Hl.Assert ()
 
-        // render faces to irradiant map
+        // render faces to irradiance cube map
         for i in 0 .. dec 6 do
             let target = LanguagePrimitives.EnumOfValue (int TextureTarget.TextureCubeMapPositiveX + i)
-            Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, target, irradianceMap, 0)
+            Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, target, cubeMap, 0)
             CubeMap.DrawCubeMap (views.[i], projection, cubeMapSurface.CubeMap, cubeMapSurface.CubeMapGeometry, irradianceShader)
             Hl.Assert ()
 
@@ -183,7 +186,7 @@ module LightMap =
         Gl.BindFramebuffer (FramebufferTarget.Framebuffer, currentFramebuffer)
         Gl.DeleteRenderbuffers [|renderbuffer|]
         Gl.DeleteFramebuffers [|framebuffer|]
-        irradianceMap
+        cubeMap
 
     /// Describes a environment filter shader that's loaded into GPU.
     type EnvironmentFilterShader =
@@ -269,28 +272,28 @@ module LightMap =
          environmentFilterShader,
          environmentFilterSurface : CubeMap.CubeMapSurface) =
 
-        // create irradiance renderbuffer
+        // create environment filter renderbuffer
         let renderbuffer = Gl.GenRenderbuffer ()
         Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, renderbuffer)
         Gl.RenderbufferStorage (OpenGL.RenderbufferTarget.Renderbuffer, OpenGL.InternalFormat.DepthComponent16, resolution, resolution)
         Hl.Assert ()
 
-        // create irradiance framebuffer
+        // create environment filter framebuffer
         let framebuffer = Gl.GenFramebuffer ()
         Gl.BindFramebuffer (FramebufferTarget.Framebuffer, framebuffer)
         Hl.Assert ()
 
-        // create environment filter map
-        let environmentFilterMap = Gl.GenTexture ()
-        Gl.BindTexture (TextureTarget.TextureCubeMap, environmentFilterMap)
-        Gl.FramebufferTexture (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, environmentFilterMap, 0)
+        // create environment filter cube map
+        let cubeMap = Gl.GenTexture ()
+        Gl.BindTexture (TextureTarget.TextureCubeMap, cubeMap)
+        Gl.FramebufferTexture (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, cubeMap, 0)
         Hl.Assert ()
 
         // setup environment filter cube map for rendering to
         for i in 0 .. dec 6 do
             let target = LanguagePrimitives.EnumOfValue (int TextureTarget.TextureCubeMapPositiveX + i)
             Gl.TexImage2D (target, 0, InternalFormat.Rgba16f, resolution, resolution, 0, PixelFormat.Rgba, PixelType.Float, nativeint 0)
-            Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, target, environmentFilterMap, 0)
+            Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, target, cubeMap, 0)
             Hl.Assert ()
         Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureMinFilter, int TextureMinFilter.LinearMipmapLinear)
         Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureMagFilter, int TextureMagFilter.Linear)
@@ -300,7 +303,7 @@ module LightMap =
         Gl.GenerateMipmap TextureTarget.TextureCubeMap
         Hl.Assert ()
 
-        // assert framebuffer completion
+        // assert environment filter framebuffer completion
         Log.debugIf (fun () -> Gl.CheckFramebufferStatus FramebufferTarget.Framebuffer <> FramebufferStatus.FramebufferComplete) "Irradiance framebuffer is incomplete!"
         Hl.Assert ()
 
@@ -314,7 +317,7 @@ module LightMap =
               (Matrix4x4.CreateLookAt (v3Zero, v3Forward, v3Down)).ToArray ()|]
         let projection = (Matrix4x4.CreatePerspectiveFieldOfView (MathHelper.PiOver2, 1.0f, 0.1f, 10.0f)).ToArray ()
 
-        // render environment filter map mips
+        // render environment filter cube map mips
         for mip in 0 .. dec Constants.Render.EnvironmentFilterMips do
             let mipRoughness = single mip / single (dec Constants.Render.EnvironmentFilterMips)
             let mipResolution = single resolution * pown 0.5f mip
@@ -322,7 +325,7 @@ module LightMap =
             Gl.Viewport (0, 0, int mipResolution, int mipResolution)
             for i in 0 .. dec 6 do
                 let target = LanguagePrimitives.EnumOfValue (int TextureTarget.TextureCubeMapPositiveX + i)
-                Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, target, environmentFilterMap, mip)
+                Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, target, cubeMap, mip)
                 DrawEnvironmentFilter (views.[i], projection, mipRoughness, mipResolution, environmentFilterSurface.CubeMap, environmentFilterSurface.CubeMapGeometry, environmentFilterShader)
                 Hl.Assert ()
 
@@ -341,7 +344,7 @@ module LightMap =
         Gl.BindFramebuffer (FramebufferTarget.Framebuffer, currentFramebuffer)
         Gl.DeleteRenderbuffers [|renderbuffer|]
         Gl.DeleteFramebuffers [|framebuffer|]
-        environmentFilterMap
+        cubeMap
 
     /// A collection of maps consisting a light map.
     type [<StructuralEquality; NoComparison; Struct>] LightMap =
