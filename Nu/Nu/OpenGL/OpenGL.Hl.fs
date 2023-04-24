@@ -112,16 +112,21 @@ module Hl =
     /// Save the current bound framebuffer to an image file.
     /// Only works on Windows platforms for now.
     /// TODO: make this work on non-Windows platforms!
-    let SaveFramebufferToImageFile (viewport : Viewport) (filePath : string) =
+    let SaveFramebufferToBitmap width height (filePath : string) =
         let platform = Environment.OSVersion.Platform
         if platform = PlatformID.Win32NT || platform = PlatformID.Win32Windows then
-            let pixelFloats = Array.zeroCreate<single> (viewport.Bounds.Width * viewport.Bounds.Height * 4)
+            let pixelFloats = Array.zeroCreate<single> (width * height * 4)
             let handle = GCHandle.Alloc (pixelFloats, GCHandleType.Pinned)
             try let pixelDataPtr = handle.AddrOfPinnedObject ()
-                Gl.ReadPixels (0, 0, viewport.Bounds.Width, viewport.Bounds.Height, PixelFormat.Rgba, PixelType.Float, pixelDataPtr)
-                use bitmap = new Drawing.Bitmap (viewport.Bounds.Width, viewport.Bounds.Height, Drawing.Imaging.PixelFormat.Format32bppArgb)
+                Gl.ReadPixels (0, 0, width, height, PixelFormat.Rgba, PixelType.Float, pixelDataPtr)
+                use bitmap = new Drawing.Bitmap (width, height, Drawing.Imaging.PixelFormat.Format32bppArgb)
                 let pixelBytes = Array.init pixelFloats.Length (fun i -> byte (pixelFloats.[i] * 255.0f))
-                let bitmapData = bitmap.LockBits (Drawing.Rectangle (0, 0, viewport.Bounds.Width, viewport.Bounds.Height), Drawing.Imaging.ImageLockMode.WriteOnly, Drawing.Imaging.PixelFormat.Format32bppArgb)
+                for i in 0 .. dec (pixelBytes.Length / 4) do // swap red and blue
+                    let j = i * 4
+                    let temp = pixelBytes.[j]
+                    pixelBytes.[j] <- pixelBytes.[j+2]
+                    pixelBytes.[j+2] <- temp
+                let bitmapData = bitmap.LockBits (Drawing.Rectangle (0, 0, width, height), Drawing.Imaging.ImageLockMode.WriteOnly, Drawing.Imaging.PixelFormat.Format32bppArgb)
                 Marshal.Copy (pixelBytes, 0, bitmapData.Scan0, pixelBytes.Length)
                 bitmap.UnlockBits bitmapData
                 bitmap.Save (filePath, Drawing.Imaging.ImageFormat.Bmp)
