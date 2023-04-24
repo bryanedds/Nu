@@ -1228,7 +1228,8 @@ type [<ReferenceEquality>] GlRenderer3d =
              OpenGL.BlitFramebufferFilter.Nearest)
         OpenGL.Hl.Assert ()
 
-        // switch to output framebuffer
+        // switch to output buffers
+        OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, renderbuffer) // NOTE: I have no idea if this line should exist or not!
         OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, framebuffer)
         OpenGL.Hl.Assert ()
 
