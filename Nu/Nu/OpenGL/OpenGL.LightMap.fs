@@ -20,8 +20,8 @@ module LightMap =
         let eyeRotations =
             [|(v3Right, v3Down)
               (v3Left, v3Down)
-              (v3Up, v3Back)
               (v3Down, v3Forward)
+              (v3Up, v3Back)
               (v3Back, v3Down)
               (v3Forward, v3Down)|]
 
@@ -109,6 +109,7 @@ module LightMap =
         for i in 0 .. dec 6 do
             let target = LanguagePrimitives.EnumOfValue (int TextureTarget.TextureCubeMapPositiveX + i)
             Gl.TexImage2D (target, 0, InternalFormat.Rgba16f, resolution, resolution, 0, PixelFormat.Rgba, PixelType.Float, nativeint 0)
+            //Gl.TexImage2D (target, 0, InternalFormat.DepthComponent24, resolution, resolution, 0, PixelFormat.DepthComponent, PixelType.Float, nativeint 0)
             Hl.Assert ()
         Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureMinFilter, int TextureMinFilter.Linear)
         Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureMagFilter, int TextureMagFilter.Linear)
@@ -247,6 +248,7 @@ module LightMap =
         for i in 0 .. dec 6 do
             let target = LanguagePrimitives.EnumOfValue (int TextureTarget.TextureCubeMapPositiveX + i)
             Gl.TexImage2D (target, 0, InternalFormat.Rgba16f, resolution, resolution, 0, PixelFormat.Rgba, PixelType.Float, nativeint 0)
+            //Gl.TexImage2D (target, 0, InternalFormat.DepthComponent24, resolution, resolution, 0, PixelFormat.DepthComponent, PixelType.Float, nativeint 0)
             Hl.Assert ()
         Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureMinFilter, int TextureMinFilter.LinearMipmapLinear)
         Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureMagFilter, int TextureMagFilter.Linear)
