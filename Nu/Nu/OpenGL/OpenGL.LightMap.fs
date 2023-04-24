@@ -79,11 +79,11 @@ module LightMap =
             let viewRelative = Matrix4x4.CreateLookAt (origin, origin + eyeForward, eyeUp)
             let viewSkyBox = Matrix4x4.Transpose (Matrix4x4.CreateLookAt (v3Zero, eyeForward, eyeUp)) // transpose = inverse rotation when rotation only
             render
-                //rasterViewport rasterRenderbuffer rasterFramebuffer
+                rasterViewport rasterRenderbuffer rasterFramebuffer
                 false origin
                 viewAbsolute viewRelative viewSkyBox
-                geometryProjection geometryViewport
-                rasterProjection rasterViewport
+                geometryViewport geometryProjection
+                rasterViewport rasterProjection
                 rasterRenderbuffer rasterFramebuffer
             Hl.Assert ()
 

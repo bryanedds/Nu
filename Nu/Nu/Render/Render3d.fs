@@ -1033,18 +1033,18 @@ type [<ReferenceEquality>] GlRenderer3d =
 
     static member private renderInternal
         renderer
-        //(currentViewport : Viewport)
-        //(currentRenderbuffer : uint)
-        //(currentFramebuffer : uint)
+        (currentViewport : Viewport)
+        (currentRenderbuffer : uint)
+        (currentFramebuffer : uint)
         (topLevelRender : bool)
         (eyeCenter : Vector3)
         (viewAbsolute : Matrix4x4)
         (viewRelative : Matrix4x4)
         (viewSkyBox : Matrix4x4)
-        (geometryProjection : Matrix4x4)
         (geometryViewport : Viewport)
-        (rasterProjection : Matrix4x4)
+        (geometryProjection : Matrix4x4)
         (rasterViewport : Viewport)
+        (rasterProjection : Matrix4x4)
         (renderbuffer : uint)
         (framebuffer : uint) =
 
@@ -1300,13 +1300,13 @@ type [<ReferenceEquality>] GlRenderer3d =
                 renderer
             OpenGL.Hl.Assert ()
 
-        //// teardown viewport
-        //OpenGL.Gl.Viewport (currentViewport.Bounds.Min.X, currentViewport.Bounds.Min.Y, currentViewport.Bounds.Size.X, currentViewport.Bounds.Size.Y)
-        //OpenGL.Hl.Assert ()
-        //
-        //// teardown buffers
-        //OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, currentRenderbuffer)
-        //OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, currentFramebuffer)
+        // teardown viewport
+        OpenGL.Gl.Viewport (currentViewport.Bounds.Min.X, currentViewport.Bounds.Min.Y, currentViewport.Bounds.Size.X, currentViewport.Bounds.Size.Y)
+        OpenGL.Hl.Assert ()
+        
+        // teardown buffers
+        OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, currentRenderbuffer)
+        OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, currentFramebuffer)
 
     static member render eyeCenter (eyeRotation : Quaternion) windowSize renderbuffer framebuffer renderMessages renderer =
 
@@ -1399,11 +1399,11 @@ type [<ReferenceEquality>] GlRenderer3d =
         // top-level render
         GlRenderer3d.renderInternal
             renderer
-            //viewport renderbuffer framebuffer
+            viewport renderbuffer framebuffer
             true eyeCenter
             viewAbsolute viewRelative viewSkyBox
-            projection viewportOffset
-            projection viewportOffset
+            viewportOffset projection
+            viewportOffset projection
             renderbuffer framebuffer
         
         // render post-passes
