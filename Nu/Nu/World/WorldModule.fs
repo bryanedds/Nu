@@ -509,6 +509,17 @@ module WorldModule =
         static member internal setOverlayRouter router world =
             World.updateAmbientState (AmbientState.setOverlayRouter router) world
 
+        [<FunctionBinding>]
+        static member getUnculledRenderRequested world =
+            World.getAmbientStateBy AmbientState.getUnculledRenderRequested world
+
+        [<FunctionBinding>]
+        static member requestUnculledRender world =
+            World.updateAmbientState AmbientState.requestUnculledRender world
+
+        static member internal acknowledgeUnculledRenderRequest world =
+            World.updateAmbientState AmbientState.acknowledgeUnculledRenderRequest world
+
     type World with // Quadtree
 
         static member internal getQuadtree world =

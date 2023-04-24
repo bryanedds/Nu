@@ -193,6 +193,14 @@ module internal Octnode =
                     getElementsInPlayFrustum playFrustum node set
         | ValueRight _ -> ()
 
+    let rec internal getElements node (set : 'e Octelement HashSet) =
+        match node.Children with
+        | ValueLeft nodes ->
+            for node in nodes do
+                getElements node set
+        | ValueRight children ->
+            set.UnionWith children
+
     let rec internal make<'e when 'e : equality> depth (bounds : Box3) (leaves : Dictionary<Vector3, 'e Octnode>) : 'e Octnode =
         if depth < 1 then failwith "Invalid depth for Octnode. Expected value of at least 1."
         let granularity = 2
@@ -382,6 +390,12 @@ module Octree =
     let getElementsInPlay playBox playFrustum (set : _ HashSet) tree =
         if tree.ElementsModified then
             Octnode.getElementsInPlay playBox playFrustum tree.Node set
+            new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (tree.Omnipresent, set)) :> 'e Octelement IEnumerable
+        else Seq.empty
+
+    let getElements (set : _ HashSet) tree =
+        if tree.ElementsModified then
+            Octnode.getElements tree.Node set
             new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (tree.Omnipresent, set)) :> 'e Octelement IEnumerable
         else Seq.empty
 

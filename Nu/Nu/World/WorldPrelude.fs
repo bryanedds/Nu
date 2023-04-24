@@ -218,7 +218,9 @@ module AmbientState =
               SdlDepsOpt : SdlDeps option
               Symbolics : Symbolics
               Overlayer : Overlayer
-              OverlayRouter : OverlayRouter }
+              // cache line 3
+              OverlayRouter : OverlayRouter
+              UnculledRenderRequested : bool }
 
     /// Get whether the engine is running imperatively.
     let getImperative (_ : 'w AmbientState) =
@@ -427,6 +429,19 @@ module AmbientState =
     let setOverlayRouter router state =
         { state with OverlayRouter = router }
 
+    /// Get whether an unculled render was requested.
+    let getUnculledRenderRequested state =
+        state.UnculledRenderRequested
+
+    /// Request an unculled render for the current frame.
+    let requestUnculledRender state =
+        { state with UnculledRenderRequested = true }
+
+    /// Acknowledge an unculled render request.
+    let acknowledgeUnculledRenderRequest state =
+        { state with UnculledRenderRequested = false }
+
+
     /// Make an ambient state value.
     let make imperative accompanied advancing symbolics overlayer overlayRouter sdlDepsOpt =
         Imperative <- imperative
@@ -443,7 +458,8 @@ module AmbientState =
           SdlDepsOpt = sdlDepsOpt
           Symbolics = symbolics
           Overlayer = overlayer
-          OverlayRouter = overlayRouter }
+          OverlayRouter = overlayRouter
+          UnculledRenderRequested = false }
 
 /// The ambient state of the world.
 type 'w AmbientState = 'w AmbientState.AmbientState
