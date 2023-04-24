@@ -335,8 +335,6 @@ type [<ReferenceEquality>] GlRenderer3d =
           RenderPhysicallyBasedForwardShader : OpenGL.PhysicallyBased.PhysicallyBasedShader
           RenderPhysicallyBasedDeferredShader : OpenGL.PhysicallyBased.PhysicallyBasedShader
           RenderPhysicallyBasedDeferred2Shader : OpenGL.PhysicallyBased.PhysicallyBasedDeferred2Shader
-          RenderEnvironmentFilterRenderbuffer : uint
-          RenderEnvironmentFilterFramebuffer : uint
           RenderGeometryBuffers : uint * uint * uint * uint * uint * uint
           RenderCubeMapGeometry : OpenGL.CubeMap.CubeMapGeometry
           RenderBillboardGeometry : OpenGL.PhysicallyBased.PhysicallyBasedGeometry
@@ -817,14 +815,12 @@ type [<ReferenceEquality>] GlRenderer3d =
              skyBoxSurface)
 
     /// Create an environment filter map.
-    static member private createEnvironmentFilterMap currentViewport currentFramebuffer currentRenderbuffer renderbuffer framebuffer shader skyBoxSurface =
+    static member private createEnvironmentFilterMap currentViewport currentFramebuffer currentRenderbuffer shader skyBoxSurface =
         OpenGL.LightMap.CreateEnvironmentFilterMap
             (currentViewport,
              currentRenderbuffer,
              currentFramebuffer,
              Constants.Render.EnvironmentFilterResolution,
-             renderbuffer,
-             framebuffer,
              shader,
              skyBoxSurface)
 
@@ -861,8 +857,6 @@ type [<ReferenceEquality>] GlRenderer3d =
                         viewport
                         geometryRenderbuffer
                         geometryFramebuffer
-                        renderer.RenderEnvironmentFilterRenderbuffer
-                        renderer.RenderEnvironmentFilterFramebuffer
                         renderer.RenderEnvironmentFilterShader
                         (OpenGL.CubeMap.CubeMapSurface.make cubeMap renderer.RenderCubeMapGeometry)
                 irradianceAndEnvironmentMapsOptRef.Value <- Some (irradianceMap, environmentFilterMap)
@@ -1110,8 +1104,6 @@ type [<ReferenceEquality>] GlRenderer3d =
                             viewport
                             renderbuffer
                             framebuffer
-                            renderer.RenderEnvironmentFilterRenderbuffer
-                            renderer.RenderEnvironmentFilterFramebuffer
                             renderer.RenderEnvironmentFilterShader
                             (OpenGL.CubeMap.CubeMapSurface.make reflectionMap renderer.RenderCubeMapGeometry)
 
@@ -1450,19 +1442,6 @@ type [<ReferenceEquality>] GlRenderer3d =
                  Constants.Paths.PhysicallyBasedDeferred2ShaderFilePath)
         OpenGL.Hl.Assert ()
 
-        // create environment filter renderbuffer
-        let environmentFilterRenderbuffer = OpenGL.Gl.GenRenderbuffer ()
-        OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, environmentFilterRenderbuffer)
-        OpenGL.Gl.RenderbufferStorage (OpenGL.RenderbufferTarget.Renderbuffer, OpenGL.InternalFormat.DepthComponent24, Constants.Render.EnvironmentFilterResolution, Constants.Render.EnvironmentFilterResolution)
-        OpenGL.Hl.Assert ()
-
-        // create environment filter framebuffer
-        let environmentFilterFramebuffer = OpenGL.Gl.GenFramebuffer ()
-        OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, environmentFilterFramebuffer)
-        //OpenGL.Gl.FramebufferRenderbuffer (OpenGL.FramebufferTarget.Framebuffer, OpenGL.FramebufferAttachment.DepthAttachment, OpenGL.RenderbufferTarget.Renderbuffer, environmentFilterRenderbuffer)
-        Log.debugIf (fun () -> OpenGL.Gl.CheckFramebufferStatus OpenGL.FramebufferTarget.Framebuffer <> OpenGL.FramebufferStatus.FramebufferComplete) "Environment filter framebuffer is incomplete!"
-        OpenGL.Hl.Assert ()
-
         // create geometry buffers
         let geometryBuffers =
             match OpenGL.Framebuffer.TryCreateGeometryBuffers () with
@@ -1505,7 +1484,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         OpenGL.Hl.Assert ()
 
         // create default environment filter map
-        let environmentFilterMap = GlRenderer3d.createEnvironmentFilterMap Constants.Render.Viewport 0u 0u environmentFilterRenderbuffer environmentFilterFramebuffer environmentFilterShader skyBoxSurface
+        let environmentFilterMap = GlRenderer3d.createEnvironmentFilterMap Constants.Render.Viewport 0u 0u environmentFilterShader skyBoxSurface
         OpenGL.Hl.Assert ()
 
         // create brdf texture
@@ -1563,8 +1542,6 @@ type [<ReferenceEquality>] GlRenderer3d =
               RenderPhysicallyBasedForwardShader = forwardShader
               RenderPhysicallyBasedDeferredShader = deferredShader
               RenderPhysicallyBasedDeferred2Shader = deferred2Shader
-              RenderEnvironmentFilterRenderbuffer = environmentFilterRenderbuffer
-              RenderEnvironmentFilterFramebuffer = environmentFilterFramebuffer
               RenderGeometryBuffers = geometryBuffers
               RenderCubeMapGeometry = cubeMapGeometry
               RenderBillboardGeometry = billboardGeometry
