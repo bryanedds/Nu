@@ -1467,42 +1467,45 @@ type [<ReferenceEquality>] GlRenderer3d =
         let reflectionMapRenderbuffer = OpenGL.Gl.GenRenderbuffer ()
         OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, reflectionMapRenderbuffer)
         OpenGL.Gl.RenderbufferStorage (OpenGL.RenderbufferTarget.Renderbuffer, OpenGL.InternalFormat.Depth24Stencil8, Constants.Render.ReflectionMapResolution, Constants.Render.ReflectionMapResolution)
-        //OpenGL.Gl.FramebufferRenderbuffer (OpenGL.FramebufferTarget.Framebuffer, OpenGL.FramebufferAttachment.DepthStencilAttachment, OpenGL.RenderbufferTarget.Renderbuffer, reflectionMapRenderbuffer)
         OpenGL.Hl.Assert ()
 
         // create reflection map framebuffer
         let reflectionMapFramebuffer = OpenGL.Gl.GenFramebuffer ()
         OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, reflectionMapFramebuffer)
+        //OpenGL.Gl.FramebufferRenderbuffer (OpenGL.FramebufferTarget.Framebuffer, OpenGL.FramebufferAttachment.DepthStencilAttachment, OpenGL.RenderbufferTarget.Renderbuffer, reflectionMapRenderbuffer)
+        Log.debugIf (fun () -> OpenGL.Gl.CheckFramebufferStatus OpenGL.FramebufferTarget.Framebuffer <> OpenGL.FramebufferStatus.FramebufferComplete) "Reflection map framebuffer is incomplete!"
         OpenGL.Hl.Assert ()
 
         // create irradiance renderbuffer
         let irradianceRenderbuffer = OpenGL.Gl.GenRenderbuffer ()
         OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, irradianceRenderbuffer)
         OpenGL.Gl.RenderbufferStorage (OpenGL.RenderbufferTarget.Renderbuffer, OpenGL.InternalFormat.DepthComponent24, Constants.Render.IrradianceMapResolution, Constants.Render.IrradianceMapResolution)
-        //OpenGL.Gl.FramebufferRenderbuffer (OpenGL.FramebufferTarget.Framebuffer, OpenGL.FramebufferAttachment.DepthAttachment, OpenGL.RenderbufferTarget.Renderbuffer, irradianceRenderbuffer)
         OpenGL.Hl.Assert ()
 
         // create irradiance framebuffer
         let irradianceFramebuffer = OpenGL.Gl.GenFramebuffer ()
         OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, irradianceFramebuffer)
+        //OpenGL.Gl.FramebufferRenderbuffer (OpenGL.FramebufferTarget.Framebuffer, OpenGL.FramebufferAttachment.DepthAttachment, OpenGL.RenderbufferTarget.Renderbuffer, irradianceRenderbuffer)
+        Log.debugIf (fun () -> OpenGL.Gl.CheckFramebufferStatus OpenGL.FramebufferTarget.Framebuffer <> OpenGL.FramebufferStatus.FramebufferComplete) "Irradiance framebuffer is incomplete!"
         OpenGL.Hl.Assert ()
 
         // create environment filter renderbuffer
         let environmentFilterRenderbuffer = OpenGL.Gl.GenRenderbuffer ()
         OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, environmentFilterRenderbuffer)
         OpenGL.Gl.RenderbufferStorage (OpenGL.RenderbufferTarget.Renderbuffer, OpenGL.InternalFormat.DepthComponent24, Constants.Render.EnvironmentFilterResolution, Constants.Render.EnvironmentFilterResolution)
-        //OpenGL.Gl.FramebufferRenderbuffer (OpenGL.FramebufferTarget.Framebuffer, OpenGL.FramebufferAttachment.DepthAttachment, OpenGL.RenderbufferTarget.Renderbuffer, environmentFilterRenderbuffer)
         OpenGL.Hl.Assert ()
 
         // create environment filter framebuffer
         let environmentFilterFramebuffer = OpenGL.Gl.GenFramebuffer ()
         OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, environmentFilterFramebuffer)
+        OpenGL.Gl.FramebufferRenderbuffer (OpenGL.FramebufferTarget.Framebuffer, OpenGL.FramebufferAttachment.DepthAttachment, OpenGL.RenderbufferTarget.Renderbuffer, environmentFilterRenderbuffer)
+        Log.debugIf (fun () -> OpenGL.Gl.CheckFramebufferStatus OpenGL.FramebufferTarget.Framebuffer <> OpenGL.FramebufferStatus.FramebufferComplete) "Environment filter framebuffer is incomplete!"
         OpenGL.Hl.Assert ()
 
         // create geometry buffers
         let geometryBuffers =
-            match OpenGL.Framebuffer.TryCreateGeometryFramebuffers () with
-            | Right geometryFramebuffer -> geometryFramebuffer
+            match OpenGL.Framebuffer.TryCreateGeometryBuffers () with
+            | Right geometryBuffers -> geometryBuffers
             | Left error -> failwith ("Could not create GlRenderer3d due to: " + error + ".")
         OpenGL.Hl.Assert ()
 
