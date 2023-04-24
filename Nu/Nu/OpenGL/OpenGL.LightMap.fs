@@ -168,6 +168,12 @@ module LightMap =
             CubeMap.DrawCubeMap (views.[i], projection, cubeMapSurface.CubeMap, cubeMapSurface.CubeMapGeometry, irradianceShader)
             Hl.Assert ()
 
+        // teardown attachments
+        for i in 0 .. dec 6 do
+            let target = LanguagePrimitives.EnumOfValue (int TextureTarget.TextureCubeMapPositiveX + i)
+            Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, target, 0u, 0)
+            Hl.Assert ()
+
         // teardown viewport
         Gl.Viewport (currentViewport.Bounds.Min.X, currentViewport.Bounds.Min.Y, currentViewport.Bounds.Size.X, currentViewport.Bounds.Size.Y)
         Hl.Assert ()
@@ -309,16 +315,22 @@ module LightMap =
         let projection = (Matrix4x4.CreatePerspectiveFieldOfView (MathHelper.PiOver2, 1.0f, 0.1f, 10.0f)).ToArray ()
 
         // render environment filter map mips
-        for i in 0 .. dec Constants.Render.EnvironmentFilterMips do
-            let roughness = single i / single (dec Constants.Render.EnvironmentFilterMips)
-            let resolution' = single resolution * pown 0.5f i
+        for mip in 0 .. dec Constants.Render.EnvironmentFilterMips do
+            let mipRoughness = single mip / single (dec Constants.Render.EnvironmentFilterMips)
+            let mipResolution = single resolution * pown 0.5f mip
             Gl.RenderbufferStorage (RenderbufferTarget.Renderbuffer, InternalFormat.DepthComponent16, int resolution, int resolution)
-            Gl.Viewport (0, 0, int resolution', int resolution')
-            for j in 0 .. dec 6 do
-                let target = LanguagePrimitives.EnumOfValue (int TextureTarget.TextureCubeMapPositiveX + j)
-                Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, target, environmentFilterMap, i)
-                DrawEnvironmentFilter (views.[j], projection, roughness, resolution', environmentFilterSurface.CubeMap, environmentFilterSurface.CubeMapGeometry, environmentFilterShader)
+            Gl.Viewport (0, 0, int mipResolution, int mipResolution)
+            for i in 0 .. dec 6 do
+                let target = LanguagePrimitives.EnumOfValue (int TextureTarget.TextureCubeMapPositiveX + i)
+                Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, target, environmentFilterMap, mip)
+                DrawEnvironmentFilter (views.[i], projection, mipRoughness, mipResolution, environmentFilterSurface.CubeMap, environmentFilterSurface.CubeMapGeometry, environmentFilterShader)
                 Hl.Assert ()
+
+        // teardown attachments
+        for i in 0 .. dec 6 do
+            let target = LanguagePrimitives.EnumOfValue (int TextureTarget.TextureCubeMapPositiveX + i)
+            Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, target, 0u, 0)
+            Hl.Assert ()
 
         // teardown viewport
         Gl.Viewport (currentViewport.Bounds.Min.X, currentViewport.Bounds.Min.Y, currentViewport.Bounds.Size.X, currentViewport.Bounds.Size.Y)
