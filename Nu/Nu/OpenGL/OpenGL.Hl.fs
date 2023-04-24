@@ -100,13 +100,9 @@ module Hl =
 
         // clear drawing target
         Gl.Enable EnableCap.ScissorTest
-        Gl.Scissor
-            (viewport.Bounds.Min.X,
-             viewport.Bounds.Min.Y,
-             viewport.Bounds.Size.X,
-             viewport.Bounds.Size.Y)
+        Gl.Scissor (viewport.Bounds.Min.X, viewport.Bounds.Min.Y, viewport.Bounds.Size.X, viewport.Bounds.Size.Y)
         Gl.ClearColor (Constants.Render.WindowClearColor.R, Constants.Render.WindowClearColor.G, Constants.Render.WindowClearColor.B, Constants.Render.WindowClearColor.A)
-        Gl.Clear (ClearBufferMask.ColorBufferBit)
+        Gl.Clear ClearBufferMask.ColorBufferBit
         Gl.Disable EnableCap.ScissorTest
 
     /// End an OpenGL frame.

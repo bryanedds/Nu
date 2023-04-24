@@ -1050,7 +1050,6 @@ type [<ReferenceEquality>] GlRenderer3d =
     static member private renderInternal
         renderer
         (topLevelRender : bool)
-        (reflectionMapOpt : (int * uint) option)
         (eyeCenter : Vector3)
         (viewAbsolute : Matrix4x4)
         (viewRelative : Matrix4x4)
@@ -1220,55 +1219,19 @@ type [<ReferenceEquality>] GlRenderer3d =
                 renderer
             OpenGL.Hl.Assert ()
 
-        // proceed to the second pass of deferred rendering
-        match reflectionMapOpt with
-        | None ->
+        // copy depths from geometry framebuffer to output framebuffer
+        OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.ReadFramebuffer, geometryFramebuffer)
+        OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.DrawFramebuffer, framebuffer)
+        OpenGL.Gl.BlitFramebuffer
+            (viewport.Bounds.Min.X, viewport.Bounds.Min.Y, viewport.Bounds.Size.X, viewport.Bounds.Size.Y,
+             viewport.Bounds.Min.X, viewport.Bounds.Min.Y, viewport.Bounds.Size.X, viewport.Bounds.Size.Y,
+             OpenGL.ClearBufferMask.DepthBufferBit,
+             OpenGL.BlitFramebufferFilter.Nearest)
+        OpenGL.Hl.Assert ()
 
-            // copy depths from geometry framebuffer to main framebuffer
-            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.ReadFramebuffer, geometryFramebuffer)
-            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.DrawFramebuffer, framebuffer)
-            OpenGL.Gl.BlitFramebuffer
-                (viewport.Bounds.Min.X, viewport.Bounds.Min.Y, viewport.Bounds.Size.X, viewport.Bounds.Size.Y,
-                 viewport.Bounds.Min.X, viewport.Bounds.Min.Y, viewport.Bounds.Size.X, viewport.Bounds.Size.Y,
-                 OpenGL.ClearBufferMask.DepthBufferBit,
-                 OpenGL.BlitFramebufferFilter.Nearest)
-            OpenGL.Hl.Assert ()
-
-            // switch to main framebuffer
-            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, framebuffer)
-            OpenGL.Hl.Assert ()
-
-        | Some (reflectionMapFace, reflectionMap) ->
-
-            // bind reflection map
-            OpenGL.Gl.BindTexture (OpenGL.TextureTarget.TextureCubeMap, reflectionMap)
-            OpenGL.Hl.Assert ()
-
-            // set up reflection map face for rendering to
-            let target = LanguagePrimitives.EnumOfValue (int OpenGL.TextureTarget.TextureCubeMapPositiveX + reflectionMapFace)
-            OpenGL.Gl.TexImage2D (target, 0, OpenGL.InternalFormat.Rgba32f, viewport.Bounds.Width, viewport.Bounds.Height, 0, OpenGL.PixelFormat.Rgba, OpenGL.PixelType.Float, nativeint 0)
-            OpenGL.Gl.TexParameter (OpenGL.TextureTarget.TextureCubeMap, OpenGL.TextureParameterName.TextureMinFilter, int OpenGL.TextureMinFilter.Linear)
-            OpenGL.Gl.TexParameter (OpenGL.TextureTarget.TextureCubeMap, OpenGL.TextureParameterName.TextureMagFilter, int OpenGL.TextureMagFilter.Linear)
-            OpenGL.Gl.TexParameter (OpenGL.TextureTarget.TextureCubeMap, OpenGL.TextureParameterName.TextureWrapS, int OpenGL.TextureWrapMode.ClampToEdge)
-            OpenGL.Gl.TexParameter (OpenGL.TextureTarget.TextureCubeMap, OpenGL.TextureParameterName.TextureWrapT, int OpenGL.TextureWrapMode.ClampToEdge)
-            OpenGL.Gl.TexParameter (OpenGL.TextureTarget.TextureCubeMap, OpenGL.TextureParameterName.TextureWrapR, int OpenGL.TextureWrapMode.ClampToEdge)
-            OpenGL.Hl.Assert ()
-            
-            // copy depths from geometry framebuffer to texture
-            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.ReadFramebuffer, geometryFramebuffer)
-            OpenGL.Gl.FramebufferTexture2D (OpenGL.FramebufferTarget.DrawFramebuffer, OpenGL.FramebufferAttachment.ColorAttachment0, target, reflectionMap, 0)
-            OpenGL.Gl.ClearColor (Constants.Render.WindowClearColor.R, 0.0f, Constants.Render.WindowClearColor.B, Constants.Render.WindowClearColor.A)
-            OpenGL.Gl.Clear (OpenGL.ClearBufferMask.ColorBufferBit ||| OpenGL.ClearBufferMask.DepthBufferBit ||| OpenGL.ClearBufferMask.StencilBufferBit)
-            OpenGL.Gl.BlitFramebuffer
-                (viewport.Bounds.Min.X, viewport.Bounds.Min.Y, viewport.Bounds.Size.X, viewport.Bounds.Size.Y,
-                 viewport.Bounds.Min.X, viewport.Bounds.Min.Y, viewport.Bounds.Size.X, viewport.Bounds.Size.Y,
-                 OpenGL.ClearBufferMask.DepthBufferBit,
-                 OpenGL.BlitFramebufferFilter.Nearest)
-            OpenGL.Hl.Assert ()
-
-            // switch to texture buffer
-            OpenGL.Gl.FramebufferTexture2D (OpenGL.FramebufferTarget.Framebuffer, OpenGL.FramebufferAttachment.ColorAttachment0, target, reflectionMap, 0)
-            OpenGL.Hl.Assert ()
+        // switch to output framebuffer
+        OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, framebuffer)
+        OpenGL.Hl.Assert ()
 
         // deferred render lighting quad
         OpenGL.PhysicallyBased.DrawPhysicallyBasedDeferred2Surface
@@ -1281,7 +1244,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         match skyBoxOpt with
         | Some (cubeMapColor, cubeMapBrightness, cubeMap, _) ->
             let cubeMapColor = [|cubeMapColor.R; cubeMapColor.G; cubeMapColor.B|]
-            OpenGL.SkyBox.DrawSkyBox (viewSkyBoxArray, projectionArray, cubeMapColor, cubeMapBrightness, lightMap.ReflectionMap, renderer.RenderCubeMapGeometry, renderer.RenderSkyBoxShader)
+            OpenGL.SkyBox.DrawSkyBox (viewSkyBoxArray, projectionArray, cubeMapColor, cubeMapBrightness, cubeMap, renderer.RenderCubeMapGeometry, renderer.RenderSkyBoxShader)
             OpenGL.Hl.Assert ()
         | None -> ()
 
@@ -1345,18 +1308,6 @@ type [<ReferenceEquality>] GlRenderer3d =
             OpenGL.Hl.Assert ()
 
     static member render eyeCenter (eyeRotation : Quaternion) windowSize renderbuffer framebuffer renderMessages renderer =
-
-        // compute the viewport with the given offset
-        let viewportOffset = Constants.Render.ViewportOffset windowSize
-
-        // compute view and projection
-        let eyeTarget = eyeCenter + Vector3.Transform (v3Forward, eyeRotation)
-        let viewAbsolute = m4Identity
-        let viewRelative = Matrix4x4.CreateLookAt (eyeCenter, eyeTarget, v3Up)
-        let viewSkyBox = Matrix4x4.CreateFromQuaternion (Quaternion.Inverse eyeRotation)
-        let viewport = Constants.Render.Viewport
-        let projection = viewport.Projection3d Constants.Render.NearPlaneDistanceOmnipresent Constants.Render.FarPlaneDistanceOmnipresent
-        OpenGL.Hl.Assert ()
 
         // categorize messages
         // TODO: consider implementing some exception safety for the stateful operations in this function.
@@ -1432,8 +1383,20 @@ type [<ReferenceEquality>] GlRenderer3d =
             | ReloadRenderAssets3d ->
                 GlRenderer3d.handleReloadRenderAssets renderer
 
+        // compute the viewport with the given offset
+        let viewportOffset = Constants.Render.ViewportOffset windowSize
+
+        // compute view and projection
+        let eyeTarget = eyeCenter + Vector3.Transform (v3Forward, eyeRotation)
+        let viewAbsolute = m4Identity
+        let viewRelative = Matrix4x4.CreateLookAt (eyeCenter, eyeTarget, v3Up)
+        let viewSkyBox = Matrix4x4.CreateFromQuaternion (Quaternion.Inverse eyeRotation)
+        let viewport = Constants.Render.Viewport
+        let projection = viewport.Projection3d Constants.Render.NearPlaneDistanceOmnipresent Constants.Render.FarPlaneDistanceOmnipresent
+        OpenGL.Hl.Assert ()
+
         // top-level render
-        GlRenderer3d.renderInternal renderer true None eyeCenter viewAbsolute viewRelative viewSkyBox projection viewportOffset renderbuffer framebuffer
+        GlRenderer3d.renderInternal renderer true eyeCenter viewAbsolute viewRelative viewSkyBox projection viewportOffset renderbuffer framebuffer
         
         // render post-passes
         let passParameters =

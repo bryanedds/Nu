@@ -32,32 +32,80 @@ module LightMap =
         // construct projection
         let projection = Matrix4x4.CreatePerspectiveFieldOfView (MathHelper.PiOver2, viewport.AspectRatio, viewport.NearDistance, viewport.FarDistance)
 
-        // create cube map to render reflection to
-        let reflectionMap = Gl.GenTexture ()
-        Gl.BindTexture (TextureTarget.TextureCubeMap, reflectionMap)
-        Gl.BindTexture (TextureTarget.TextureCubeMap, 0u)
+        // bind reflection buffers
+        Gl.BindRenderbuffer (RenderbufferTarget.Renderbuffer, renderbuffer)
+        Gl.BindFramebuffer (FramebufferTarget.Framebuffer, framebuffer)
+
+        // create reflection color map
+        let reflectionColorMap = Gl.GenTexture()
+        Gl.BindTexture (TextureTarget.TextureCubeMap, reflectionColorMap)
+        Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureMinFilter, int TextureMinFilter.LinearMipmapLinear)
+        Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureMagFilter, int TextureMagFilter.Linear)
+        Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureWrapS, int TextureWrapMode.ClampToEdge)
+        Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureWrapT, int TextureWrapMode.ClampToEdge)
+        Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureWrapR, int TextureWrapMode.ClampToEdge)
+
+        // create reflection depth map
+        let reflectionDepthMap = Gl.GenTexture ()
+        Gl.BindTexture (TextureTarget.TextureCubeMap, reflectionDepthMap)
+        Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureMinFilter, int TextureMinFilter.LinearMipmapLinear)
+        Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureMagFilter, int TextureMagFilter.Linear)
+        Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureWrapS, int TextureWrapMode.ClampToEdge)
+        Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureWrapT, int TextureWrapMode.ClampToEdge)
+        Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureWrapR, int TextureWrapMode.ClampToEdge)
+
+        // clear reflection buffers
+        Gl.ClearColor (Constants.Render.WindowClearColor.R, Constants.Render.WindowClearColor.G, Constants.Render.WindowClearColor.B, Constants.Render.WindowClearColor.A)
+        Gl.Clear (ClearBufferMask.ColorBufferBit ||| ClearBufferMask.DepthBufferBit ||| ClearBufferMask.StencilBufferBit)
         Hl.Assert ()
 
         // render reflection map faces
         for i in 0 .. dec 6 do
 
-            // render to cube map face
+            // create texture images for current face and attach them to the reflection framebuffer
+            let target = LanguagePrimitives.EnumOfValue (int TextureTarget.TextureCubeMapPositiveX + i)
+            Gl.TexImage2D (target, 0, InternalFormat.Rgba32f, viewport.Bounds.Width, viewport.Bounds.Height, 0, PixelFormat.Rgba, PixelType.Float, nativeint 0)
+            Gl.TexImage2D (target, 0, InternalFormat.DepthComponent24, viewport.Bounds.Width, viewport.Bounds.Height, 0, PixelFormat.DepthStencil, PixelType.Float, nativeint 0)
+            Gl.FramebufferTexture2D (FramebufferTarget.DrawFramebuffer, FramebufferAttachment.ColorAttachment0, target, reflectionColorMap, 0)
+            Gl.FramebufferTexture2D (FramebufferTarget.DrawFramebuffer, FramebufferAttachment.DepthStencilAttachment, target, reflectionDepthMap, 0)
+            Hl.Assert ()
+
+            // render to reflection map face
             let (eyeForward, eyeUp) = eyeRotations.[i]
             let viewAbsolute = m4Identity
             let viewRelative = Matrix4x4.CreateLookAt (origin, origin + eyeForward, eyeUp)
             let viewSkyBox = Matrix4x4.Transpose (Matrix4x4.CreateLookAt (v3Zero, eyeForward, eyeUp)) // transpose = inverse rotation when rotation only
-            render false (Some (i, reflectionMap)) origin viewAbsolute viewRelative viewSkyBox projection viewport renderbuffer framebuffer
-            Gl.BindTexture (TextureTarget.TextureCubeMap, 0u)
+            render false origin viewAbsolute viewRelative viewSkyBox projection viewport renderbuffer framebuffer
             Hl.Assert ()
 
-        // teardown viewport. TODO: make the GlRenderer3d.renderInternal do this?
+            // save reflection map face to file
+            Log.info "Remove this block of code."
+            use bitmap = new System.Drawing.Bitmap (viewport.Bounds.Size.X, viewport.Bounds.Size.Y, System.Drawing.Imaging.PixelFormat.Format24bppRgb)
+            let bitmapData = bitmap.LockBits (System.Drawing.Rectangle (0, 0, bitmap.Width, bitmap.Height), System.Drawing.Imaging.ImageLockMode.WriteOnly, System.Drawing.Imaging.PixelFormat.Format24bppRgb)
+            let target = LanguagePrimitives.EnumOfValue (int TextureTarget.TextureCubeMapPositiveX + i)
+            Gl.GetTexImage (target, 0, PixelFormat.Rgba, PixelType.UnsignedByte, bitmapData.Scan0)
+            bitmap.UnlockBits bitmapData
+            bitmap.RotateFlip (System.Drawing.RotateFlipType.RotateNoneFlipY)
+            bitmap.Save ("Test" + string i + ".bmp")
+
+        // generate reflection map mipmaps
+        Gl.GenerateMipmap TextureTarget.TextureCubeMap
+
+        // teardown attachments
+        for i in 0 .. dec 6 do
+            let target = LanguagePrimitives.EnumOfValue (int TextureTarget.TextureCubeMapPositiveX + i)
+            Gl.FramebufferTexture2D (FramebufferTarget.DrawFramebuffer, FramebufferAttachment.ColorAttachment0, target, 0u, 0)
+            Gl.FramebufferTexture2D (FramebufferTarget.DrawFramebuffer, FramebufferAttachment.DepthAttachment, target, 0u, 0)
+            Hl.Assert ()
+
+        // teardown viewport
         Gl.Viewport (currentViewport.Bounds.Min.X, currentViewport.Bounds.Min.Y, currentViewport.Bounds.Size.X, currentViewport.Bounds.Size.Y)
         Hl.Assert ()
 
-        // teardown buffers. TODO: make the GlRenderer3d.renderInternal do this?
+        // teardown buffers
         Gl.BindRenderbuffer (RenderbufferTarget.Renderbuffer, currentRenderbuffer)
         Gl.BindFramebuffer (FramebufferTarget.Framebuffer, currentFramebuffer)
-        reflectionMap
+        reflectionColorMap
 
     let CreateIrradianceMap
         (currentViewport : Viewport,
