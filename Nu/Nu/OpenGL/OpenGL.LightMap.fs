@@ -14,9 +14,9 @@ module LightMap =
     let CreateReflectionMap (render, currentViewport : Viewport, currentRenderbuffer, currentFramebuffer, resolution, origin) =
 
         // create reflection map framebuffer
-        let framebuffer = OpenGL.Gl.GenFramebuffer ()
-        OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, framebuffer)
-        OpenGL.Hl.Assert ()
+        let framebuffer = Gl.GenFramebuffer ()
+        Gl.BindFramebuffer (FramebufferTarget.Framebuffer, framebuffer)
+        Hl.Assert ()
 
         // create reflection map texture
         let reflectionMap = Gl.GenTexture()
@@ -37,12 +37,12 @@ module LightMap =
         Hl.Assert ()
 
         // create reflection map renderbuffer
-        let renderbuffer = OpenGL.Gl.GenRenderbuffer ()
-        OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, renderbuffer)
-        OpenGL.Gl.RenderbufferStorage (OpenGL.RenderbufferTarget.Renderbuffer, OpenGL.InternalFormat.Depth24Stencil8, Constants.Render.ReflectionMapResolution, Constants.Render.ReflectionMapResolution)
-        OpenGL.Gl.FramebufferRenderbuffer (OpenGL.FramebufferTarget.Framebuffer, OpenGL.FramebufferAttachment.DepthStencilAttachment, OpenGL.RenderbufferTarget.Renderbuffer, renderbuffer)
-        Log.debugIf (fun () -> OpenGL.Gl.CheckFramebufferStatus OpenGL.FramebufferTarget.Framebuffer <> OpenGL.FramebufferStatus.FramebufferComplete) "Reflection framebuffer is incomplete!"
-        OpenGL.Hl.Assert ()
+        let renderbuffer = Gl.GenRenderbuffer ()
+        Gl.BindRenderbuffer (RenderbufferTarget.Renderbuffer, renderbuffer)
+        Gl.RenderbufferStorage (RenderbufferTarget.Renderbuffer, InternalFormat.Depth24Stencil8, Constants.Render.ReflectionMapResolution, Constants.Render.ReflectionMapResolution)
+        Gl.FramebufferRenderbuffer (FramebufferTarget.Framebuffer, FramebufferAttachment.DepthStencilAttachment, RenderbufferTarget.Renderbuffer, renderbuffer)
+        Log.debugIf (fun () -> Gl.CheckFramebufferStatus FramebufferTarget.Framebuffer <> FramebufferStatus.FramebufferComplete) "Reflection framebuffer is incomplete!"
+        Hl.Assert ()
 
         // construct viewport
         let viewport = Viewport (Constants.Render.NearPlaneDistanceOmnipresent, Constants.Render.FarPlaneDistanceOmnipresent, box2i v2iZero (v2iDup resolution))
@@ -100,6 +100,8 @@ module LightMap =
         // teardown buffers
         Gl.BindRenderbuffer (RenderbufferTarget.Renderbuffer, currentRenderbuffer)
         Gl.BindFramebuffer (FramebufferTarget.Framebuffer, currentFramebuffer)
+        Gl.DeleteRenderbuffers [|renderbuffer|]
+        Gl.DeleteFramebuffers [|framebuffer|]
         reflectionMap
 
     let CreateIrradianceMap
