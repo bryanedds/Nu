@@ -18,12 +18,12 @@ module LightMap =
 
         // construct eye rotations
         let eyeRotations =
-            [|(v3Right, v3Down)
-              (v3Left, v3Down)
-              (v3Up, v3Back)
-              (v3Down, v3Forward)
-              (v3Back, v3Down)
-              (v3Forward, v3Down)|]
+            [|(v3Right, v3Down)     // right
+              (v3Left, v3Down)      // left
+              (v3Up, v3Forward)     // top
+              (v3Down, v3Back)      // bottom
+              (v3Back, v3Down)      // back
+              (v3Forward, v3Down)|] // front
 
         // construct projection
         let projection = Matrix4x4.CreatePerspectiveFieldOfView (MathHelper.PiOver2, viewport.AspectRatio, viewport.NearDistance, viewport.FarDistance)
@@ -70,6 +70,8 @@ module LightMap =
             let viewSkyBox = Matrix4x4.Transpose (Matrix4x4.CreateLookAt (v3Zero, eyeForward, eyeUp)) // transpose = inverse rotation when rotation only
             render false origin viewAbsolute viewRelative viewSkyBox projection viewport renderbuffer framebuffer
             Hl.Assert ()
+
+            Hl.SaveFramebufferToImageFile viewport ("Test" + string i + ".bmp")
 
         // generate reflection map mipmaps
         Gl.GenerateMipmap TextureTarget.TextureCubeMap
