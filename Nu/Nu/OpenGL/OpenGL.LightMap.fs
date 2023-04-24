@@ -27,6 +27,7 @@ module LightMap =
         // create reflection map texture
         let reflectionMap = Gl.GenTexture()
         Gl.BindTexture (TextureTarget.TextureCubeMap, reflectionMap)
+        Gl.FramebufferTexture (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, reflectionMap, 0)
         Hl.Assert ()
 
         // setup reflection map textures
@@ -42,7 +43,8 @@ module LightMap =
         Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureWrapR, int TextureWrapMode.ClampToEdge)
         Hl.Assert ()
 
-        //Log.debugIf (fun () -> Gl.CheckFramebufferStatus FramebufferTarget.Framebuffer <> FramebufferStatus.FramebufferComplete) "Reflection framebuffer is incomplete!"
+        // assert framebuffer completion
+        Log.debugIf (fun () -> Gl.CheckFramebufferStatus FramebufferTarget.Framebuffer <> FramebufferStatus.FramebufferComplete) "Reflection framebuffer is incomplete!"
         Hl.Assert ()
 
         // construct viewport
@@ -127,13 +129,13 @@ module LightMap =
         // create irradiance map texture
         let irradianceMap = Gl.GenTexture ()
         Gl.BindTexture (TextureTarget.TextureCubeMap, irradianceMap)
+        Gl.FramebufferTexture (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, irradianceMap, 0)
         Hl.Assert ()
 
         // setup irradiance cube map for rendering to
         for i in 0 .. dec 6 do
             let target = LanguagePrimitives.EnumOfValue (int TextureTarget.TextureCubeMapPositiveX + i)
             Gl.TexImage2D (target, 0, InternalFormat.Rgba16f, resolution, resolution, 0, PixelFormat.Rgba, PixelType.Float, nativeint 0)
-            //Gl.TexImage2D (target, 0, InternalFormat.DepthComponent24, resolution, resolution, 0, PixelFormat.DepthComponent, PixelType.Float, nativeint 0)
             Hl.Assert ()
         Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureMinFilter, int TextureMinFilter.Linear)
         Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureMagFilter, int TextureMagFilter.Linear)
@@ -142,8 +144,8 @@ module LightMap =
         Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureWrapR, int TextureWrapMode.ClampToEdge)
         Hl.Assert ()
 
-        // check framebuffer completeness
-        //Log.debugIf (fun () -> Gl.CheckFramebufferStatus FramebufferTarget.Framebuffer <> FramebufferStatus.FramebufferComplete) "Irradiance framebuffer is incomplete!"
+        // assert framebuffer completion
+        Log.debugIf (fun () -> Gl.CheckFramebufferStatus FramebufferTarget.Framebuffer <> FramebufferStatus.FramebufferComplete) "Irradiance framebuffer is incomplete!"
         Hl.Assert ()
 
         // compute views and projection
@@ -276,13 +278,13 @@ module LightMap =
         // create environment filter map
         let environmentFilterMap = Gl.GenTexture ()
         Gl.BindTexture (TextureTarget.TextureCubeMap, environmentFilterMap)
+        Gl.FramebufferTexture (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, environmentFilterMap, 0)
         Hl.Assert ()
 
         // setup environment filter cube map for rendering to
         for i in 0 .. dec 6 do
             let target = LanguagePrimitives.EnumOfValue (int TextureTarget.TextureCubeMapPositiveX + i)
             Gl.TexImage2D (target, 0, InternalFormat.Rgba16f, resolution, resolution, 0, PixelFormat.Rgba, PixelType.Float, nativeint 0)
-            //Gl.TexImage2D (target, 0, InternalFormat.DepthComponent24, resolution, resolution, 0, PixelFormat.DepthComponent, PixelType.Float, nativeint 0)
             Hl.Assert ()
         Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureMinFilter, int TextureMinFilter.LinearMipmapLinear)
         Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureMagFilter, int TextureMagFilter.Linear)
@@ -292,8 +294,8 @@ module LightMap =
         Gl.GenerateMipmap TextureTarget.TextureCubeMap
         Hl.Assert ()
 
-        // check framebuffer completeness
-        //Log.debugIf (fun () -> Gl.CheckFramebufferStatus FramebufferTarget.Framebuffer <> FramebufferStatus.FramebufferComplete) "Irradiance framebuffer is incomplete!"
+        // assert framebuffer completion
+        Log.debugIf (fun () -> Gl.CheckFramebufferStatus FramebufferTarget.Framebuffer <> FramebufferStatus.FramebufferComplete) "Irradiance framebuffer is incomplete!"
         Hl.Assert ()
 
         // compute views and projection
