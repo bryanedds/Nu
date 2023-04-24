@@ -108,3 +108,16 @@ module Hl =
     /// End an OpenGL frame.
     let EndFrame () =
         () // nothing to do
+
+    /// Save the current bound framebuffer to an image file.
+    /// Only works on Windows platforms for now.
+    /// TODO: make this work on non-Windows platforms!
+    let SaveFramebufferToImageFile (viewport : Viewport) target filePath =
+        let platform = Environment.OSVersion.Platform
+        if platform = PlatformID.Win32NT || platform = PlatformID.Win32Windows then
+            use bitmap = new Drawing.Bitmap (viewport.Bounds.Size.X, viewport.Bounds.Size.Y, Drawing.Imaging.PixelFormat.Format24bppRgb)
+            let bitmapData = bitmap.LockBits (Drawing.Rectangle (0, 0, bitmap.Width, bitmap.Height), Drawing.Imaging.ImageLockMode.WriteOnly, Drawing.Imaging.PixelFormat.Format24bppRgb)
+            Gl.GetTexImage (target, 0, PixelFormat.Rgba, PixelType.UnsignedByte, bitmapData.Scan0)
+            bitmap.UnlockBits bitmapData
+            bitmap.RotateFlip (Drawing.RotateFlipType.RotateNoneFlipY)
+            bitmap.Save filePath
