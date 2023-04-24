@@ -67,8 +67,8 @@ module Framebuffer =
         then Right (position, framebuffer)
         else Left ("Could not create complete HDR framebuffer.")
 
-    /// Create a geometry frame buffer.
-    let TryCreateGeometryFramebuffer () =
+    /// Create a geometry frame buffers.
+    let TryCreateGeometryFramebuffers () =
 
         // create render buffer with depth and stencil
         let renderbuffer = Gl.GenRenderbuffer ()

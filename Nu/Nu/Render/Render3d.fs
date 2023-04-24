@@ -1472,7 +1472,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         OpenGL.Gl.RenderbufferStorage (OpenGL.RenderbufferTarget.Renderbuffer, OpenGL.InternalFormat.DepthComponent24, Constants.Render.ResolutionX, Constants.Render.ResolutionY)
         OpenGL.Hl.Assert ()
 
-        // create environment filter framebuffer
+        // create irradiance framebuffer
         let irradianceRenderbuffer = OpenGL.Gl.GenRenderbuffer ()
         let irradianceFramebuffer = OpenGL.Gl.GenFramebuffer ()
         OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, irradianceRenderbuffer)
@@ -1490,7 +1490,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         // create geometry framebuffer
         let geometryBuffers =
-            match OpenGL.Framebuffer.TryCreateGeometryFramebuffer () with
+            match OpenGL.Framebuffer.TryCreateGeometryFramebuffers () with
             | Right geometryFramebuffer -> geometryFramebuffer
             | Left error -> failwith ("Could not create GlRenderer3d due to: " + error + ".")
         OpenGL.Hl.Assert ()
