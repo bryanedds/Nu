@@ -20,8 +20,8 @@ module LightMap =
         let eyeRotations =
             [|(v3Right, v3Down)
               (v3Left, v3Down)
-              (v3Down, v3Forward)
               (v3Up, v3Back)
+              (v3Down, v3Forward)
               (v3Back, v3Down)
               (v3Forward, v3Down)|]
 
