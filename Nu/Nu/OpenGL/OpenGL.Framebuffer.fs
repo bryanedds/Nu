@@ -67,8 +67,8 @@ module Framebuffer =
         then Right (position, framebuffer)
         else Left ("Could not create complete HDR framebuffer.")
 
-    /// Create geometry buffers.
-    let TryCreateGeometryBuffers () =
+    /// Create a geometry frame buffer.
+    let TryCreateGeometryFramebuffer () =
 
         // create frame buffer object
         let framebuffer = Gl.GenFramebuffer ()
@@ -126,7 +126,7 @@ module Framebuffer =
               int FramebufferAttachment.ColorAttachment2
               int FramebufferAttachment.ColorAttachment3|]
 
-        // create depth and stencil buffer
+        // create depth and stencil buffers
         let depthStencilBuffer = Gl.GenRenderbuffer ()
         Gl.BindRenderbuffer (RenderbufferTarget.Renderbuffer, depthStencilBuffer)
         Gl.RenderbufferStorage (RenderbufferTarget.Renderbuffer, InternalFormat.Depth24Stencil8, Constants.Render.ResolutionX, Constants.Render.ResolutionY)

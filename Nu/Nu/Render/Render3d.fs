@@ -329,7 +329,7 @@ type [<ReferenceEquality>] GlRenderer3d =
           RenderPhysicallyBasedDeferred2Shader : OpenGL.PhysicallyBased.PhysicallyBasedDeferred2Shader
           RenderIrradianceFramebuffer : uint * uint
           RenderEnvironmentFilterFramebuffer : uint * uint
-          RenderGeometryBuffers : uint * uint * uint * uint * uint
+          RenderGeometryFramebuffer : uint * uint * uint * uint * uint
           RenderSkyBoxGeometry : OpenGL.SkyBox.SkyBoxGeometry
           RenderBillboardGeometry : OpenGL.PhysicallyBased.PhysicallyBasedGeometry
           RenderPhysicallyBasedQuad : OpenGL.PhysicallyBased.PhysicallyBasedGeometry
@@ -1067,8 +1067,8 @@ type [<ReferenceEquality>] GlRenderer3d =
         SegmentedList.addMany forwardSurfacesSorted renderer.RenderTasks.RenderSurfacesForwardRelativeSorted
         SegmentedList.clear renderer.RenderTasks.RenderSurfacesForwardRelative
 
-        // setup geometry buffers
-        let (positionTexture, albedoTexture, materialTexture, normalAndDepthTexture, geometryFramebuffer) = renderer.RenderGeometryBuffers
+        // setup geometry buffer
+        let (positionTexture, albedoTexture, materialTexture, normalAndDepthTexture, geometryFramebuffer) = renderer.RenderGeometryFramebuffer
         OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, geometryFramebuffer)
         OpenGL.Gl.Enable OpenGL.EnableCap.ScissorTest
         OpenGL.Gl.Scissor (viewportOffset.Bounds.Min.X, viewportOffset.Bounds.Min.Y, viewportOffset.Bounds.Size.X, viewportOffset.Bounds.Size.Y)
@@ -1351,10 +1351,10 @@ type [<ReferenceEquality>] GlRenderer3d =
         OpenGL.Gl.RenderbufferStorage (OpenGL.RenderbufferTarget.Renderbuffer, OpenGL.InternalFormat.DepthComponent24, Constants.Render.EnvironmentFilterResolution, Constants.Render.EnvironmentFilterResolution)
         OpenGL.Hl.Assert ()
 
-        // create geometry buffers
-        let geometryBuffers =
-            match OpenGL.Framebuffer.TryCreateGeometryBuffers () with
-            | Right geometryBuffers -> geometryBuffers
+        // create geometry framebuffer
+        let geometryFramebuffer =
+            match OpenGL.Framebuffer.TryCreateGeometryFramebuffer () with
+            | Right geometryFramebuffer -> geometryFramebuffer
             | Left error -> failwith ("Could not create GlRenderer3d due to: " + error + ".")
         OpenGL.Hl.Assert ()
 
@@ -1452,7 +1452,7 @@ type [<ReferenceEquality>] GlRenderer3d =
               RenderPhysicallyBasedDeferred2Shader = deferred2Shader
               RenderIrradianceFramebuffer = (irradianceRenderbuffer, irradianceFramebuffer)
               RenderEnvironmentFilterFramebuffer = (environmentFilterRenderbuffer, environmentFilterFramebuffer)
-              RenderGeometryBuffers = geometryBuffers
+              RenderGeometryFramebuffer = geometryFramebuffer
               RenderSkyBoxGeometry = skyBoxGeometry
               RenderBillboardGeometry = billboardGeometry
               RenderPhysicallyBasedQuad = physicallyBasedQuad
