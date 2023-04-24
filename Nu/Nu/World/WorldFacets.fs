@@ -1419,11 +1419,15 @@ module LightProbeFacet3dModule =
     type LightProbeFacet3d () =
         inherit Facet (false)
 
+        static let handleStaleChange _ world =
+            let world = World.requestUnculledRender world
+            (Cascade, world)
+
         static member Properties =
-            [define Entity.Presence Omnipresent
-             define Entity.Stale true]
+            [define Entity.Stale true]
 
         override this.Register (entity, world) =
+            let world = World.monitor handleStaleChange (entity.GetChangeEvent (nameof entity.Stale)) entity world
             entity.SetStale true world
             
         override this.Render (entity, world) =

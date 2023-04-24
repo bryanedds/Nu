@@ -776,6 +776,9 @@ module WorldModule2 =
             let playBounds = World.getPlayBounds2d world
             World.getElements2dBy (Quadtree.getElementsInPlay playBounds set) world
 
+        static member private getElements2d set world =
+            World.getElements2dBy (Quadtree.getElements set) world
+
         static member private getEntities2dBy getElementsFromQuadtree world =
             let quadtree = World.getQuadtree world
             let (quadtree, quadtreeCache) = MutantCache.getMutant (fun () -> World.rebuildQuadtree world) quadtree
@@ -806,6 +809,10 @@ module WorldModule2 =
             let playBounds = World.getPlayBounds2d world
             World.getEntities2dBy (Quadtree.getElementsInPlay playBounds set) world
 
+        /// Get all 2d entities in the current selected screen, including all uncullable entities.
+        static member getEntities2d set world =
+            World.getEntities2dBy (Quadtree.getElements set) world
+
         static member private getElements3dBy getElementsFromOctree world =
             let octree = World.getOctree world
             let (octree, octreeCache) = MutantCache.getMutant (fun () -> World.rebuildOctree world) octree
@@ -823,6 +830,9 @@ module WorldModule2 =
             let frustumImposter = World.getEyeFrustum3dImposter world
             let lightBox = World.getLightBox3d world
             World.getElements3dBy (Octree.getElementsInView frustumEnclosed frustumExposed frustumImposter lightBox set) world
+
+        static member private getElements3d set world =
+            World.getElements3dBy (Octree.getElements set) world
 
         static member private getEntities3dBy getElementsFromOctree world =
             let octree = World.getOctree world
@@ -856,6 +866,10 @@ module WorldModule2 =
             let frustumImposter = World.getEyeFrustum3dImposter world
             let lightBox = World.getLightBox3d world
             World.getEntities3dBy (Octree.getElementsInView frustumEnclosed frustumExposed frustumImposter lightBox set) world
+
+        /// Get all 3d entities in the current selected screen, including all uncullable entities.
+        static member getEntities3d set world =
+            World.getEntities3dBy (Octree.getElements set) world
 
         static member private preUpdateSimulants world =
 
@@ -1033,14 +1047,18 @@ module WorldModule2 =
 
         static member private renderSimulants world =
 
+            // process unculled render request
+            let unculledRenderRequested = World.getUnculledRenderRequested world
+            let world = World.acknowledgeUnculledRenderRequest world
+
             // gather simulants
             RenderGatherTimer.Start ()
             let screens = match World.getOmniScreenOpt world with Some omniScreen -> [omniScreen] | None -> []
             let screens = match World.getSelectedScreenOpt world with Some selectedScreen -> selectedScreen :: screens | None -> screens
             let screens = List.rev screens
             let groups = Seq.concat (List.map (flip World.getGroups world) screens)
-            let (elements3d, world) = World.getElementsInView3d CachedHashSet3d world
-            let (elements2d, world) = World.getElementsInView2d CachedHashSet2d world
+            let (elements3d, world) = if unculledRenderRequested then World.getElements3d CachedHashSet3d world else World.getElementsInView3d CachedHashSet3d world
+            let (elements2d, world) = if unculledRenderRequested then World.getElements2d CachedHashSet2d world else World.getElementsInView2d CachedHashSet2d world
             RenderGatherTimer.Stop ()
 
             // render simulants breadth-first
@@ -1053,12 +1071,12 @@ module WorldModule2 =
             RenderEntitiesTimer.Start ()
             let world =
                 if World.getUnaccompanied world
-                then Seq.fold (fun world (element : Entity Octelement) -> World.renderEntity element.Entry world) world elements3d
-                else Seq.fold (fun world (element : Entity Octelement) -> if element.Entry.Group.GetVisible world then World.renderEntity element.Entry world else world) world elements3d
+                then Seq.fold (fun world (element : Entity Octelement) -> if element.Visible then World.renderEntity element.Entry world else world) world elements3d
+                else Seq.fold (fun world (element : Entity Octelement) -> if element.Visible && element.Entry.Group.GetVisible world then World.renderEntity element.Entry world else world) world elements3d
             let world =
                 if World.getUnaccompanied world
-                then Seq.fold (fun world (element : Entity Quadelement) -> World.renderEntity element.Entry world) world elements2d
-                else Seq.fold (fun world (element : Entity Quadelement) -> if element.Entry.Group.GetVisible world then World.renderEntity element.Entry world else world) world elements2d
+                then Seq.fold (fun world (element : Entity Quadelement) -> if element.Visible then World.renderEntity element.Entry world else world) world elements2d
+                else Seq.fold (fun world (element : Entity Quadelement) -> if element.Visible && element.Entry.Group.GetVisible world then World.renderEntity element.Entry world else world) world elements2d
             RenderEntitiesTimer.Stop ()
 
             // clear cached hash sets

@@ -96,6 +96,14 @@ module internal Quadnode =
                 if element.Visible || unfiltered then
                     set.Add element |> ignore
 
+    let rec internal getElements node (set : 'e Quadelement HashSet) =
+        match node.Children with
+        | ValueLeft nodes ->
+            for node in nodes do
+                getElements node set
+        | ValueRight children ->
+            set.UnionWith children
+
     let rec internal make<'e when 'e : equality> depth (bounds : Box2) (leaves : Dictionary<Vector2, 'e Quadnode>) =
         if depth < 1 then failwith "Invalid depth for Quadnode. Expected value of at least 1."
         let granularity = 2
@@ -273,6 +281,12 @@ module Quadtree =
     let getElementsInPlay bounds set tree =
         if tree.ElementsModified then
             Quadnode.getElementsInBounds true bounds tree.Node set
+            new QuadtreeEnumerable<'e> (new QuadtreeEnumerator<'e> (tree.Omnipresent, set)) :> 'e Quadelement IEnumerable
+        else Seq.empty
+
+    let getElements (set : _ HashSet) tree =
+        if tree.ElementsModified then
+            Quadnode.getElements tree.Node set
             new QuadtreeEnumerable<'e> (new QuadtreeEnumerator<'e> (tree.Omnipresent, set)) :> 'e Quadelement IEnumerable
         else Seq.empty
 
