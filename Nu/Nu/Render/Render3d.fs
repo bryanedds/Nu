@@ -335,8 +335,6 @@ type [<ReferenceEquality>] GlRenderer3d =
           RenderPhysicallyBasedForwardShader : OpenGL.PhysicallyBased.PhysicallyBasedShader
           RenderPhysicallyBasedDeferredShader : OpenGL.PhysicallyBased.PhysicallyBasedShader
           RenderPhysicallyBasedDeferred2Shader : OpenGL.PhysicallyBased.PhysicallyBasedDeferred2Shader
-          RenderIrradianceRenderbuffer : uint
-          RenderIrradianceFramebuffer : uint
           RenderEnvironmentFilterRenderbuffer : uint
           RenderEnvironmentFilterFramebuffer : uint
           RenderGeometryBuffers : uint * uint * uint * uint * uint * uint
@@ -809,14 +807,12 @@ type [<ReferenceEquality>] GlRenderer3d =
              origin)
 
     /// Create an irradiance map.
-    static member private createIrradianceMap currentViewport currentRenderbuffer currentFramebuffer renderbuffer framebuffer shader skyBoxSurface =
+    static member private createIrradianceMap currentViewport currentRenderbuffer currentFramebuffer shader skyBoxSurface =
         OpenGL.LightMap.CreateIrradianceMap
             (currentViewport,
              currentRenderbuffer,
              currentFramebuffer,
              Constants.Render.IrradianceMapResolution,
-             renderbuffer,
-             framebuffer,
              shader,
              skyBoxSurface)
 
@@ -858,8 +854,6 @@ type [<ReferenceEquality>] GlRenderer3d =
                         viewport
                         geometryRenderbuffer
                         geometryFramebuffer
-                        renderer.RenderIrradianceRenderbuffer
-                        renderer.RenderIrradianceFramebuffer
                         renderer.RenderIrradianceShader
                         (OpenGL.CubeMap.CubeMapSurface.make cubeMap renderer.RenderCubeMapGeometry)
                 let environmentFilterMap =
@@ -1107,8 +1101,6 @@ type [<ReferenceEquality>] GlRenderer3d =
                             viewport
                             renderbuffer
                             framebuffer
-                            renderer.RenderIrradianceRenderbuffer
-                            renderer.RenderIrradianceFramebuffer
                             renderer.RenderIrradianceShader
                             (OpenGL.CubeMap.CubeMapSurface.make reflectionMap renderer.RenderCubeMapGeometry)
 
@@ -1458,19 +1450,6 @@ type [<ReferenceEquality>] GlRenderer3d =
                  Constants.Paths.PhysicallyBasedDeferred2ShaderFilePath)
         OpenGL.Hl.Assert ()
 
-        // create irradiance renderbuffer
-        let irradianceRenderbuffer = OpenGL.Gl.GenRenderbuffer ()
-        OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, irradianceRenderbuffer)
-        OpenGL.Gl.RenderbufferStorage (OpenGL.RenderbufferTarget.Renderbuffer, OpenGL.InternalFormat.DepthComponent24, Constants.Render.IrradianceMapResolution, Constants.Render.IrradianceMapResolution)
-        OpenGL.Hl.Assert ()
-
-        // create irradiance framebuffer
-        let irradianceFramebuffer = OpenGL.Gl.GenFramebuffer ()
-        OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, irradianceFramebuffer)
-        //OpenGL.Gl.FramebufferRenderbuffer (OpenGL.FramebufferTarget.Framebuffer, OpenGL.FramebufferAttachment.DepthAttachment, OpenGL.RenderbufferTarget.Renderbuffer, irradianceRenderbuffer)
-        Log.debugIf (fun () -> OpenGL.Gl.CheckFramebufferStatus OpenGL.FramebufferTarget.Framebuffer <> OpenGL.FramebufferStatus.FramebufferComplete) "Irradiance framebuffer is incomplete!"
-        OpenGL.Hl.Assert ()
-
         // create environment filter renderbuffer
         let environmentFilterRenderbuffer = OpenGL.Gl.GenRenderbuffer ()
         OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, environmentFilterRenderbuffer)
@@ -1522,7 +1501,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         OpenGL.Hl.Assert ()
 
         // create default irradiance map
-        let irradianceMap = GlRenderer3d.createIrradianceMap Constants.Render.Viewport 0u 0u irradianceRenderbuffer irradianceFramebuffer irradianceShader skyBoxSurface
+        let irradianceMap = GlRenderer3d.createIrradianceMap Constants.Render.Viewport 0u 0u irradianceShader skyBoxSurface
         OpenGL.Hl.Assert ()
 
         // create default environment filter map
@@ -1584,8 +1563,6 @@ type [<ReferenceEquality>] GlRenderer3d =
               RenderPhysicallyBasedForwardShader = forwardShader
               RenderPhysicallyBasedDeferredShader = deferredShader
               RenderPhysicallyBasedDeferred2Shader = deferred2Shader
-              RenderIrradianceRenderbuffer = irradianceRenderbuffer
-              RenderIrradianceFramebuffer = irradianceFramebuffer
               RenderEnvironmentFilterRenderbuffer = environmentFilterRenderbuffer
               RenderEnvironmentFilterFramebuffer = environmentFilterFramebuffer
               RenderGeometryBuffers = geometryBuffers
