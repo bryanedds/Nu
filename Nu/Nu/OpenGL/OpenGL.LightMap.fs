@@ -16,6 +16,7 @@ module LightMap =
         // create reflection map framebuffer
         let framebuffer = Gl.GenFramebuffer ()
         Gl.BindFramebuffer (FramebufferTarget.Framebuffer, framebuffer)
+        Gl.RenderbufferStorage (RenderbufferTarget.Renderbuffer, InternalFormat.Depth24Stencil8, resolution, resolution)
         Hl.Assert ()
 
         // create reflection map texture
@@ -39,7 +40,6 @@ module LightMap =
         // create reflection map renderbuffer
         let renderbuffer = Gl.GenRenderbuffer ()
         Gl.BindRenderbuffer (RenderbufferTarget.Renderbuffer, renderbuffer)
-        Gl.RenderbufferStorage (RenderbufferTarget.Renderbuffer, InternalFormat.Depth24Stencil8, resolution, resolution)
         Gl.FramebufferRenderbuffer (FramebufferTarget.Framebuffer, FramebufferAttachment.DepthStencilAttachment, RenderbufferTarget.Renderbuffer, renderbuffer)
         Log.debugIf (fun () -> Gl.CheckFramebufferStatus FramebufferTarget.Framebuffer <> FramebufferStatus.FramebufferComplete) "Reflection framebuffer is incomplete!"
         Hl.Assert ()
@@ -113,9 +113,10 @@ module LightMap =
          cubeMapSurface : CubeMap.CubeMapSurface) =
 
         // create irradiance framebuffer
-        let framebuffer = OpenGL.Gl.GenFramebuffer ()
-        OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, framebuffer)
-        OpenGL.Hl.Assert ()
+        let framebuffer = Gl.GenFramebuffer ()
+        Gl.BindFramebuffer (FramebufferTarget.Framebuffer, framebuffer)
+        Gl.RenderbufferStorage (OpenGL.RenderbufferTarget.Renderbuffer, OpenGL.InternalFormat.DepthComponent24, resolution, resolution)
+        Hl.Assert ()
 
         // create irradiance map
         let irradianceMap = Gl.GenTexture ()
@@ -126,6 +127,7 @@ module LightMap =
         for i in 0 .. dec 6 do
             let target = LanguagePrimitives.EnumOfValue (int TextureTarget.TextureCubeMapPositiveX + i)
             Gl.TexImage2D (target, 0, InternalFormat.Rgba16f, resolution, resolution, 0, PixelFormat.Rgba, PixelType.Float, nativeint 0)
+            Gl.TexImage2D (target, 0, InternalFormat.DepthComponent24, resolution, resolution, 0, PixelFormat.DepthComponent, PixelType.Float, nativeint 0)
             Hl.Assert ()
         Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureMinFilter, int TextureMinFilter.Linear)
         Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureMagFilter, int TextureMagFilter.Linear)
@@ -135,8 +137,8 @@ module LightMap =
         Hl.Assert ()
 
         // check framebuffer completeness
-        Log.debugIf (fun () -> OpenGL.Gl.CheckFramebufferStatus OpenGL.FramebufferTarget.Framebuffer <> OpenGL.FramebufferStatus.FramebufferComplete) "Irradiance framebuffer is incomplete!"
-        OpenGL.Hl.Assert ()
+        Log.debugIf (fun () -> Gl.CheckFramebufferStatus FramebufferTarget.Framebuffer <> FramebufferStatus.FramebufferComplete) "Irradiance framebuffer is incomplete!"
+        Hl.Assert ()
 
         // compute views and projection
         let views =
@@ -250,10 +252,14 @@ module LightMap =
          currentRenderbuffer,
          currentFramebuffer,
          resolution,
-         renderbuffer,
-         framebuffer,
          environmentFilterShader,
          environmentFilterSurface : CubeMap.CubeMapSurface) =
+
+        // create irradiance framebuffer
+        let framebuffer = Gl.GenFramebuffer ()
+        Gl.BindFramebuffer (FramebufferTarget.Framebuffer, framebuffer)
+        Gl.RenderbufferStorage (OpenGL.RenderbufferTarget.Renderbuffer, OpenGL.InternalFormat.DepthComponent24, resolution, resolution)
+        Hl.Assert ()
 
         // create environment filter map
         let environmentFilterMap = Gl.GenTexture ()
@@ -264,7 +270,7 @@ module LightMap =
         for i in 0 .. dec 6 do
             let target = LanguagePrimitives.EnumOfValue (int TextureTarget.TextureCubeMapPositiveX + i)
             Gl.TexImage2D (target, 0, InternalFormat.Rgba16f, resolution, resolution, 0, PixelFormat.Rgba, PixelType.Float, nativeint 0)
-            //Gl.TexImage2D (target, 0, InternalFormat.DepthComponent24, resolution, resolution, 0, PixelFormat.DepthComponent, PixelType.Float, nativeint 0)
+            Gl.TexImage2D (target, 0, InternalFormat.DepthComponent24, resolution, resolution, 0, PixelFormat.DepthComponent, PixelType.Float, nativeint 0)
             Hl.Assert ()
         Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureMinFilter, int TextureMinFilter.LinearMipmapLinear)
         Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureMagFilter, int TextureMagFilter.Linear)
@@ -274,9 +280,8 @@ module LightMap =
         Gl.GenerateMipmap TextureTarget.TextureCubeMap
         Hl.Assert ()
 
-        // setup buffers
-        Gl.BindRenderbuffer (RenderbufferTarget.Renderbuffer, renderbuffer)
-        Gl.BindFramebuffer (FramebufferTarget.Framebuffer, framebuffer)
+        // check framebuffer completeness
+        Log.debugIf (fun () -> Gl.CheckFramebufferStatus FramebufferTarget.Framebuffer <> FramebufferStatus.FramebufferComplete) "Irradiance framebuffer is incomplete!"
         Hl.Assert ()
 
         // compute views and projection
@@ -308,6 +313,7 @@ module LightMap =
         // teardown buffers
         Gl.BindRenderbuffer (RenderbufferTarget.Renderbuffer, currentRenderbuffer)
         Gl.BindFramebuffer (FramebufferTarget.Framebuffer, currentFramebuffer)
+        Gl.DeleteFramebuffers [|framebuffer|]
         environmentFilterMap
 
     /// A collection of maps consisting a light map.
