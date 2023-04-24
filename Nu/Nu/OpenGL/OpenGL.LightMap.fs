@@ -81,9 +81,9 @@ module LightMap =
             render false origin viewAbsolute viewRelative viewSkyBox geometryProjection geometryViewport rasterProjection rasterViewport renderbuffer framebuffer
             Hl.Assert ()
 
-            // take a snapshot for testing
-            Hl.SaveFramebufferToBitmap rasterViewport.Bounds.Width rasterViewport.Bounds.Height ("Test" + string i + ".bmp")
-            Hl.Assert ()
+            //// take a snapshot for testing
+            //Hl.SaveFramebufferToBitmap rasterViewport.Bounds.Width rasterViewport.Bounds.Height ("Test" + string i + ".bmp")
+            //Hl.Assert ()
 
         // generate reflection map mipmaps
         Gl.GenerateMipmap TextureTarget.TextureCubeMap
