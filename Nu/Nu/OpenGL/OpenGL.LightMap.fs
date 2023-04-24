@@ -94,11 +94,11 @@ module LightMap =
             Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, target, 0u, 0)
             Hl.Assert ()
 
-        // teardown viewport
+        // teardown viewport. TODO: have GlRenderer3d.renderInternal restore viewport instead?
         Gl.Viewport (currentViewport.Bounds.Min.X, currentViewport.Bounds.Min.Y, currentViewport.Bounds.Size.X, currentViewport.Bounds.Size.Y)
         Hl.Assert ()
 
-        // teardown buffers
+        // teardown buffers. TODO: have GlRenderer3d.renderInternal restore buffers instead?
         Gl.BindRenderbuffer (RenderbufferTarget.Renderbuffer, currentRenderbuffer)
         Gl.BindFramebuffer (FramebufferTarget.Framebuffer, currentFramebuffer)
         Gl.DeleteRenderbuffers [|renderbuffer|]
