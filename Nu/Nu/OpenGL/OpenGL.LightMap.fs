@@ -22,20 +22,19 @@ module LightMap =
         // create reflection map framebuffer
         let framebuffer = Gl.GenFramebuffer ()
         Gl.BindFramebuffer (FramebufferTarget.Framebuffer, framebuffer)
+        Gl.FramebufferRenderbuffer (FramebufferTarget.Framebuffer, FramebufferAttachment.DepthStencilAttachment, RenderbufferTarget.Renderbuffer, renderbuffer)
         Hl.Assert ()
 
         // create reflection map texture
         let reflectionMap = Gl.GenTexture()
         Gl.BindTexture (TextureTarget.TextureCubeMap, reflectionMap)
         Gl.FramebufferTexture (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, reflectionMap, 0)
-        Gl.FramebufferRenderbuffer (FramebufferTarget.Framebuffer, FramebufferAttachment.DepthStencilAttachment, RenderbufferTarget.Renderbuffer, renderbuffer)
         Hl.Assert ()
 
         // setup reflection map textures
         for i in 0 .. dec 6 do
             let target = LanguagePrimitives.EnumOfValue (int TextureTarget.TextureCubeMapPositiveX + i)
             Gl.TexImage2D (target, 0, InternalFormat.Rgba32f, resolution, resolution, 0, PixelFormat.Rgba, PixelType.Float, nativeint 0)
-            //Gl.TexImage2D (target, 0, InternalFormat.Depth24Stencil8, resolution, resolution, 0, PixelFormat.DepthStencil, PixelType.Float, nativeint 0)
             Hl.Assert ()
         Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureMinFilter, int TextureMinFilter.Linear)
         Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureMagFilter, int TextureMagFilter.Linear)
