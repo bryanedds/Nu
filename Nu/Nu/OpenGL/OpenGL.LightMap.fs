@@ -11,7 +11,38 @@ open Nu
 module LightMap =
 
     /// Create a reflection map.
-    let CreateReflectionMap (render, currentViewport : Viewport, currentRenderbuffer, currentFramebuffer, resolution, origin, renderbuffer, framebuffer) =
+    let CreateReflectionMap (render, currentViewport : Viewport, currentRenderbuffer, currentFramebuffer, resolution, origin) =
+
+        // create reflection map framebuffer
+        let framebuffer = OpenGL.Gl.GenFramebuffer ()
+        OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, framebuffer)
+        OpenGL.Hl.Assert ()
+
+        // create reflection map texture
+        let reflectionMap = Gl.GenTexture()
+        Gl.BindTexture (TextureTarget.TextureCubeMap, reflectionMap)
+        Hl.Assert ()
+
+        // setup reflection map textures
+        for i in 0 .. dec 6 do
+            let target = LanguagePrimitives.EnumOfValue (int TextureTarget.TextureCubeMapPositiveX + i)
+            Gl.TexImage2D (target, 0, InternalFormat.Rgba32f, resolution, resolution, 0, PixelFormat.Rgba, PixelType.Float, nativeint 0)
+            Gl.TexImage2D (target, 0, InternalFormat.Depth24Stencil8, resolution, resolution, 0, PixelFormat.DepthStencil, PixelType.Float, nativeint 0)
+            Hl.Assert ()
+        Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureMinFilter, int TextureMinFilter.Linear)
+        Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureMagFilter, int TextureMagFilter.Linear)
+        Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureWrapS, int TextureWrapMode.ClampToEdge)
+        Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureWrapT, int TextureWrapMode.ClampToEdge)
+        Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureWrapR, int TextureWrapMode.ClampToEdge)
+        Hl.Assert ()
+
+        // create reflection map renderbuffer
+        let renderbuffer = OpenGL.Gl.GenRenderbuffer ()
+        OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, renderbuffer)
+        OpenGL.Gl.RenderbufferStorage (OpenGL.RenderbufferTarget.Renderbuffer, OpenGL.InternalFormat.Depth24Stencil8, Constants.Render.ReflectionMapResolution, Constants.Render.ReflectionMapResolution)
+        OpenGL.Gl.FramebufferRenderbuffer (OpenGL.FramebufferTarget.Framebuffer, OpenGL.FramebufferAttachment.DepthStencilAttachment, OpenGL.RenderbufferTarget.Renderbuffer, renderbuffer)
+        Log.debugIf (fun () -> OpenGL.Gl.CheckFramebufferStatus OpenGL.FramebufferTarget.Framebuffer <> OpenGL.FramebufferStatus.FramebufferComplete) "Reflection framebuffer is incomplete!"
+        OpenGL.Hl.Assert ()
 
         // construct viewport
         let viewport = Viewport (Constants.Render.NearPlaneDistanceOmnipresent, Constants.Render.FarPlaneDistanceOmnipresent, box2i v2iZero (v2iDup resolution))
@@ -28,29 +59,6 @@ module LightMap =
         // construct projection
         let projection = Matrix4x4.CreatePerspectiveFieldOfView (MathHelper.PiOver2, viewport.AspectRatio, viewport.NearDistance, viewport.FarDistance)
 
-        // create reflection map
-        let reflectionMap = Gl.GenTexture()
-        Gl.BindTexture (TextureTarget.TextureCubeMap, reflectionMap)
-        Hl.Assert ()
-
-        // setup reflection map for rendering to
-        for i in 0 .. dec 6 do
-            let target = LanguagePrimitives.EnumOfValue (int TextureTarget.TextureCubeMapPositiveX + i)
-            Gl.TexImage2D (target, 0, InternalFormat.Rgba32f, resolution, resolution, 0, PixelFormat.Rgba, PixelType.Float, nativeint 0)
-            Gl.TexImage2D (target, 0, InternalFormat.Depth24Stencil8, resolution, resolution, 0, PixelFormat.DepthStencil, PixelType.Float, nativeint 0)
-            Hl.Assert ()
-        Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureMinFilter, int TextureMinFilter.Linear)
-        Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureMagFilter, int TextureMagFilter.Linear)
-        Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureWrapS, int TextureWrapMode.ClampToEdge)
-        Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureWrapT, int TextureWrapMode.ClampToEdge)
-        Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureWrapR, int TextureWrapMode.ClampToEdge)
-        Hl.Assert ()
-
-        // setup buffers
-        Gl.BindRenderbuffer (RenderbufferTarget.Renderbuffer, renderbuffer)
-        Gl.BindFramebuffer (FramebufferTarget.Framebuffer, framebuffer)
-        Hl.Assert ()
-
         // mutate viewport
         Gl.Viewport (0, 0, resolution, resolution)
         Hl.Assert ()
@@ -58,7 +66,7 @@ module LightMap =
         // render reflection map faces
         for i in 0 .. dec 6 do
 
-            // create texture images for current face and attach them to the reflection framebuffer
+            // bind reflection textures for rendering
             let target = LanguagePrimitives.EnumOfValue (int TextureTarget.TextureCubeMapPositiveX + i)
             Gl.FramebufferTexture2D (FramebufferTarget.DrawFramebuffer, FramebufferAttachment.ColorAttachment0, target, reflectionMap, 0)
             Hl.Assert ()

@@ -335,8 +335,6 @@ type [<ReferenceEquality>] GlRenderer3d =
           RenderPhysicallyBasedForwardShader : OpenGL.PhysicallyBased.PhysicallyBasedShader
           RenderPhysicallyBasedDeferredShader : OpenGL.PhysicallyBased.PhysicallyBasedShader
           RenderPhysicallyBasedDeferred2Shader : OpenGL.PhysicallyBased.PhysicallyBasedDeferred2Shader
-          RenderReflectionRenderbuffer : uint
-          RenderReflectionFramebuffer : uint
           RenderIrradianceRenderbuffer : uint
           RenderIrradianceFramebuffer : uint
           RenderEnvironmentFilterRenderbuffer : uint
@@ -801,16 +799,14 @@ type [<ReferenceEquality>] GlRenderer3d =
         | _ -> Log.info ("Cannot render static model due to unloadable assets for '" + scstring staticModel + "'.")
 
     /// Create a reflection map.
-    static member private createReflectionMap (currentViewport : Viewport) currentRenderbuffer currentFramebuffer origin renderbuffer framebuffer renderer =
+    static member private createReflectionMap (currentViewport : Viewport) currentRenderbuffer currentFramebuffer origin renderer =
         OpenGL.LightMap.CreateReflectionMap
             (GlRenderer3d.renderInternal renderer,
              currentViewport,
              currentRenderbuffer,
              currentFramebuffer,
              Constants.Render.ReflectionMapResolution,
-             origin,
-             renderbuffer,
-             framebuffer)
+             origin)
 
     /// Create an irradiance map.
     static member private createIrradianceMap currentViewport currentRenderbuffer currentFramebuffer renderbuffer framebuffer shader skyBoxSurface =
@@ -1103,8 +1099,6 @@ type [<ReferenceEquality>] GlRenderer3d =
                             renderbuffer
                             framebuffer
                             lightProbeOrigin
-                            renderer.RenderReflectionRenderbuffer
-                            renderer.RenderReflectionFramebuffer
                             renderer
 
                     // create irradiance map
@@ -1464,19 +1458,6 @@ type [<ReferenceEquality>] GlRenderer3d =
                  Constants.Paths.PhysicallyBasedDeferred2ShaderFilePath)
         OpenGL.Hl.Assert ()
 
-        // create reflection map renderbuffer
-        let reflectionMapRenderbuffer = OpenGL.Gl.GenRenderbuffer ()
-        OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, reflectionMapRenderbuffer)
-        OpenGL.Gl.RenderbufferStorage (OpenGL.RenderbufferTarget.Renderbuffer, OpenGL.InternalFormat.Depth24Stencil8, Constants.Render.ReflectionMapResolution, Constants.Render.ReflectionMapResolution)
-        OpenGL.Hl.Assert ()
-
-        // create reflection map framebuffer
-        let reflectionMapFramebuffer = OpenGL.Gl.GenFramebuffer ()
-        OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, reflectionMapFramebuffer)
-        //OpenGL.Gl.FramebufferRenderbuffer (OpenGL.FramebufferTarget.Framebuffer, OpenGL.FramebufferAttachment.DepthStencilAttachment, OpenGL.RenderbufferTarget.Renderbuffer, reflectionMapRenderbuffer)
-        Log.debugIf (fun () -> OpenGL.Gl.CheckFramebufferStatus OpenGL.FramebufferTarget.Framebuffer <> OpenGL.FramebufferStatus.FramebufferComplete) "Reflection framebuffer is incomplete!"
-        OpenGL.Hl.Assert ()
-
         // create irradiance renderbuffer
         let irradianceRenderbuffer = OpenGL.Gl.GenRenderbuffer ()
         OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, irradianceRenderbuffer)
@@ -1603,8 +1584,6 @@ type [<ReferenceEquality>] GlRenderer3d =
               RenderPhysicallyBasedForwardShader = forwardShader
               RenderPhysicallyBasedDeferredShader = deferredShader
               RenderPhysicallyBasedDeferred2Shader = deferred2Shader
-              RenderReflectionRenderbuffer = reflectionMapRenderbuffer
-              RenderReflectionFramebuffer = reflectionMapFramebuffer
               RenderIrradianceRenderbuffer = irradianceRenderbuffer
               RenderIrradianceFramebuffer = irradianceFramebuffer
               RenderEnvironmentFilterRenderbuffer = environmentFilterRenderbuffer
