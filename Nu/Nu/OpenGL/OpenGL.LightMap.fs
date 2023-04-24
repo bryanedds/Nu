@@ -54,20 +54,16 @@ module LightMap =
 
         // construct eye rotations
         let eyeRotations =
-            [|(v3Right, v3Down)     // right    (+x)
-              (v3Left, v3Down)      // left     (-x)
-              (v3Up, v3Forward)     // top      (+y)
-              (v3Down, v3Back)      // bottom   (-y)
-              (v3Back, v3Down)      // back     (+z)
-              (v3Forward, v3Down)|] // front    (-z)
+            [|(v3Right, v3Down)     // (+x) right
+              (v3Left, v3Down)      // (-x) left
+              (v3Up, v3Forward)     // (+y) top
+              (v3Down, v3Back)      // (-y) bottom
+              (v3Back, v3Down)      // (+z) back
+              (v3Forward, v3Down)|] // (-z) front
 
         // construct projections
-        let geometryProjection = Matrix4x4.CreatePerspectiveFieldOfView (MathHelper.PiOver2, geometryViewport.AspectRatio, geometryViewport.NearDistance, geometryViewport.FarDistance)
+        let geometryProjection = Matrix4x4.CreatePerspectiveFieldOfView (MathHelper.PiOver2, 1.0f, geometryViewport.NearDistance, geometryViewport.FarDistance)
         let rasterProjection = Matrix4x4.CreatePerspectiveFieldOfView (MathHelper.PiOver2, rasterViewport.AspectRatio, rasterViewport.NearDistance, rasterViewport.FarDistance)
-
-        // mutate viewport
-        Gl.Viewport (0, 0, rasterResolution, rasterResolution)
-        Hl.Assert ()
 
         // render reflection map faces
         for i in 0 .. dec 6 do
