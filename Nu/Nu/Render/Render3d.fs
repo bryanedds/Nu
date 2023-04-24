@@ -1229,7 +1229,8 @@ type [<ReferenceEquality>] GlRenderer3d =
              OpenGL.BlitFramebufferFilter.Nearest)
         OpenGL.Hl.Assert ()
 
-        // switch to output framebuffer
+        // switch to output buffers
+        OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, renderbuffer)
         OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, framebuffer)
         OpenGL.Hl.Assert ()
 
@@ -1464,31 +1465,43 @@ type [<ReferenceEquality>] GlRenderer3d =
                  Constants.Paths.PhysicallyBasedDeferred2ShaderFilePath)
         OpenGL.Hl.Assert ()
 
-        // create reflection map framebuffer
+        // create reflection map renderbuffer
         let reflectionMapRenderbuffer = OpenGL.Gl.GenRenderbuffer ()
-        let reflectionMapFramebuffer = OpenGL.Gl.GenFramebuffer ()
         OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, reflectionMapRenderbuffer)
+        OpenGL.Gl.RenderbufferStorage (OpenGL.RenderbufferTarget.Renderbuffer, OpenGL.InternalFormat.Depth24Stencil8, Constants.Render.ResolutionX, Constants.Render.ResolutionY)
+        //OpenGL.Gl.FramebufferRenderbuffer (OpenGL.FramebufferTarget.Framebuffer, OpenGL.FramebufferAttachment.DepthStencilAttachment, OpenGL.RenderbufferTarget.Renderbuffer, reflectionMapRenderbuffer)
+        OpenGL.Hl.Assert ()
+
+        // create reflection map framebuffer
+        let reflectionMapFramebuffer = OpenGL.Gl.GenFramebuffer ()
         OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, reflectionMapFramebuffer)
-        OpenGL.Gl.RenderbufferStorage (OpenGL.RenderbufferTarget.Renderbuffer, OpenGL.InternalFormat.DepthComponent24, Constants.Render.ResolutionX, Constants.Render.ResolutionY)
+        OpenGL.Hl.Assert ()
+
+        // create irradiance renderbuffer
+        let irradianceRenderbuffer = OpenGL.Gl.GenRenderbuffer ()
+        OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, irradianceRenderbuffer)
+        OpenGL.Gl.RenderbufferStorage (OpenGL.RenderbufferTarget.Renderbuffer, OpenGL.InternalFormat.DepthComponent24, Constants.Render.IrradianceMapResolution, Constants.Render.IrradianceMapResolution)
+        //OpenGL.Gl.FramebufferRenderbuffer (OpenGL.FramebufferTarget.Framebuffer, OpenGL.FramebufferAttachment.DepthAttachment, OpenGL.RenderbufferTarget.Renderbuffer, irradianceRenderbuffer)
         OpenGL.Hl.Assert ()
 
         // create irradiance framebuffer
-        let irradianceRenderbuffer = OpenGL.Gl.GenRenderbuffer ()
         let irradianceFramebuffer = OpenGL.Gl.GenFramebuffer ()
-        OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, irradianceRenderbuffer)
         OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, irradianceFramebuffer)
-        OpenGL.Gl.RenderbufferStorage (OpenGL.RenderbufferTarget.Renderbuffer, OpenGL.InternalFormat.DepthComponent24, Constants.Render.IrradianceMapResolution, Constants.Render.IrradianceMapResolution)
         OpenGL.Hl.Assert ()
 
-        // create environment filter framebuffer
+        // create environment filter renderbuffer
         let environmentFilterRenderbuffer = OpenGL.Gl.GenRenderbuffer ()
-        let environmentFilterFramebuffer = OpenGL.Gl.GenFramebuffer ()
         OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, environmentFilterRenderbuffer)
-        OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, environmentFilterFramebuffer)
         OpenGL.Gl.RenderbufferStorage (OpenGL.RenderbufferTarget.Renderbuffer, OpenGL.InternalFormat.DepthComponent24, Constants.Render.EnvironmentFilterResolution, Constants.Render.EnvironmentFilterResolution)
+        //OpenGL.Gl.FramebufferRenderbuffer (OpenGL.FramebufferTarget.Framebuffer, OpenGL.FramebufferAttachment.DepthAttachment, OpenGL.RenderbufferTarget.Renderbuffer, environmentFilterRenderbuffer)
         OpenGL.Hl.Assert ()
 
-        // create geometry framebuffer
+        // create environment filter frame buffer
+        let environmentFilterFramebuffer = OpenGL.Gl.GenFramebuffer ()
+        OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, environmentFilterFramebuffer)
+        OpenGL.Hl.Assert ()
+
+        // create geometry buffers
         let geometryBuffers =
             match OpenGL.Framebuffer.TryCreateGeometryFramebuffers () with
             | Right geometryFramebuffer -> geometryFramebuffer
@@ -1509,7 +1522,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             | Left error -> failwith error
         OpenGL.Hl.Assert ()
 
-        // create cube ma geometry
+        // create cube map geometry
         let cubeMapGeometry = OpenGL.CubeMap.CreateCubeMapGeometry true
         OpenGL.Hl.Assert ()
 
