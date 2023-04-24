@@ -872,7 +872,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         lightMaps |>
         Seq.map (fun (lightMap : OpenGL.LightMap.LightMap) -> (lightMap, (lightMap.Origin - eyeCenter).MagnitudeSquared)) |>
         Seq.toArray |> // TODO: use a preallocated array to avoid allocating on the LOH.
-        Array.sortByDescending snd |>
+        Array.sortBy snd |>
         Array.map fst
 
     static member private sortSurfaces eyeCenter (surfaces : struct (single * single * Matrix4x4 * Box2 * MaterialProperties * OpenGL.PhysicallyBased.PhysicallyBasedSurface) SegmentedList) =
