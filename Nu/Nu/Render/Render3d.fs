@@ -801,6 +801,7 @@ type [<ReferenceEquality>] GlRenderer3d =
              currentViewport,
              currentRenderbuffer,
              currentFramebuffer,
+             Constants.Render.Resolution,
              Constants.Render.ReflectionMapResolution,
              origin)
 
@@ -1037,8 +1038,10 @@ type [<ReferenceEquality>] GlRenderer3d =
         (viewAbsolute : Matrix4x4)
         (viewRelative : Matrix4x4)
         (viewSkyBox : Matrix4x4)
-        (projection : Matrix4x4)
-        (viewport : Viewport)
+        (geometryProjection : Matrix4x4)
+        (geometryViewport : Viewport)
+        (rasterProjection : Matrix4x4)
+        (rasterViewport : Viewport)
         (renderbuffer : uint)
         (framebuffer : uint) =
 
@@ -1046,14 +1049,15 @@ type [<ReferenceEquality>] GlRenderer3d =
         let viewAbsoluteArray = viewAbsolute.ToArray ()
         let viewRelativeArray = viewRelative.ToArray ()
         let viewSkyBoxArray = viewSkyBox.ToArray ()
-        let projectionArray = projection.ToArray ()
+        let geometryProjectionArray = geometryProjection.ToArray ()
+        let rasterProjectionArray = rasterProjection.ToArray ()
 
         // setup geometry buffer
         let (positionTexture, albedoTexture, materialTexture, normalAndDepthTexture, geometryRenderbuffer, geometryFramebuffer) = renderer.RenderGeometryBuffers
         OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, geometryRenderbuffer)
         OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, geometryFramebuffer)
         OpenGL.Gl.Enable OpenGL.EnableCap.ScissorTest
-        OpenGL.Gl.Scissor (viewport.Bounds.Min.X, viewport.Bounds.Min.Y, viewport.Bounds.Size.X, viewport.Bounds.Size.Y)
+        OpenGL.Gl.Scissor (geometryViewport.Bounds.Min.X, geometryViewport.Bounds.Min.Y, geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y)
         OpenGL.Gl.ClearColor (Constants.Render.WindowClearColor.R, Constants.Render.WindowClearColor.G, Constants.Render.WindowClearColor.B, Constants.Render.WindowClearColor.A)
         OpenGL.Gl.Clear (OpenGL.ClearBufferMask.ColorBufferBit ||| OpenGL.ClearBufferMask.DepthBufferBit ||| OpenGL.ClearBufferMask.StencilBufferBit)
         OpenGL.Gl.Disable OpenGL.EnableCap.ScissorTest
@@ -1083,7 +1087,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                     // create reflection map
                     let reflectionMap =
                         GlRenderer3d.createReflectionMap
-                            viewport
+                            geometryViewport
                             renderbuffer
                             framebuffer
                             lightProbeOrigin
@@ -1092,7 +1096,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                     // create irradiance map
                     let irradianceMap =
                         GlRenderer3d.createIrradianceMap
-                            viewport
+                            geometryViewport
                             renderbuffer
                             framebuffer
                             renderer.RenderIrradianceShader
@@ -1101,7 +1105,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                     // create env filter map
                     let environmentFilterMap =
                         GlRenderer3d.createEnvironmentFilterMap
-                            viewport
+                            geometryViewport
                             renderbuffer
                             framebuffer
                             renderer.RenderEnvironmentFilterShader
@@ -1138,7 +1142,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         SegmentedList.clear renderer.RenderTasks.RenderSurfacesForwardRelative
 
         // get light mapping elements
-        let lightMapFallback = GlRenderer3d.getLightMapFallback viewport geometryRenderbuffer geometryFramebuffer skyBoxOpt renderer
+        let lightMapFallback = GlRenderer3d.getLightMapFallback geometryViewport geometryRenderbuffer geometryFramebuffer skyBoxOpt renderer
         let lightMap = Seq.headOrDefault lightMapsSorted lightMapFallback
 
         // deferred render surfaces w/ absolute transforms if in top level render
@@ -1146,7 +1150,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             for entry in renderer.RenderTasks.RenderSurfacesDeferredAbsolute do
                 GlRenderer3d.renderPhysicallyBasedSurfaces
                     viewAbsoluteArray
-                    projectionArray
+                    geometryProjectionArray
                     eyeCenter
                     entry.Value
                     false
@@ -1173,7 +1177,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         for entry in renderer.RenderTasks.RenderSurfacesDeferredRelative do
             GlRenderer3d.renderPhysicallyBasedSurfaces
                 viewRelativeArray
-                projectionArray
+                geometryProjectionArray
                 eyeCenter
                 entry.Value
                 false
@@ -1200,8 +1204,8 @@ type [<ReferenceEquality>] GlRenderer3d =
         OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.ReadFramebuffer, geometryFramebuffer)
         OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.DrawFramebuffer, framebuffer)
         OpenGL.Gl.BlitFramebuffer
-            (viewport.Bounds.Min.X, viewport.Bounds.Min.Y, viewport.Bounds.Size.X, viewport.Bounds.Size.Y,
-             viewport.Bounds.Min.X, viewport.Bounds.Min.Y, viewport.Bounds.Size.X, viewport.Bounds.Size.Y,
+            (geometryViewport.Bounds.Min.X, geometryViewport.Bounds.Min.Y, geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y,
+             rasterViewport.Bounds.Min.X, rasterViewport.Bounds.Min.Y, rasterViewport.Bounds.Size.X, rasterViewport.Bounds.Size.Y,
              OpenGL.ClearBufferMask.DepthBufferBit,
              OpenGL.BlitFramebufferFilter.Nearest)
         OpenGL.Hl.Assert ()
@@ -1213,7 +1217,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         // deferred render lighting quad
         OpenGL.PhysicallyBased.DrawPhysicallyBasedDeferred2Surface
-            (viewRelativeArray, projectionArray, eyeCenter, lightAmbientColor, lightAmbientBrightness, positionTexture, albedoTexture, materialTexture, normalAndDepthTexture, lightMap.IrradianceMap, lightMap.EnvironmentFilterMap, renderer.RenderBrdfTexture,
+            (viewRelativeArray, rasterProjectionArray, eyeCenter, lightAmbientColor, lightAmbientBrightness, positionTexture, albedoTexture, materialTexture, normalAndDepthTexture, lightMap.IrradianceMap, lightMap.EnvironmentFilterMap, renderer.RenderBrdfTexture,
              lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightDirectionals, lightConeInners, lightConeOuters,
              renderer.RenderPhysicallyBasedQuad, renderer.RenderPhysicallyBasedDeferred2Shader)
         OpenGL.Hl.Assert ()
@@ -1222,7 +1226,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         match skyBoxOpt with
         | Some (cubeMapColor, cubeMapBrightness, cubeMap, _) ->
             let cubeMapColor = [|cubeMapColor.R; cubeMapColor.G; cubeMapColor.B|]
-            OpenGL.SkyBox.DrawSkyBox (viewSkyBoxArray, projectionArray, cubeMapColor, cubeMapBrightness, cubeMap, renderer.RenderCubeMapGeometry, renderer.RenderSkyBoxShader)
+            OpenGL.SkyBox.DrawSkyBox (viewSkyBoxArray, rasterProjectionArray, cubeMapColor, cubeMapBrightness, cubeMap, renderer.RenderCubeMapGeometry, renderer.RenderSkyBoxShader)
             OpenGL.Hl.Assert ()
         | None -> ()
 
@@ -1233,7 +1237,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                     SortableLight.sortLightsIntoArrays Constants.Render.ForwardLightsMax model.Translation renderer.RenderTasks.RenderLights
                 GlRenderer3d.renderPhysicallyBasedSurfaces
                     viewAbsoluteArray
-                    projectionArray
+                    rasterProjectionArray
                     eyeCenter
                     (SegmentedList.singleton (model, texCoordsOffset, properties))
                     true
@@ -1262,7 +1266,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 SortableLight.sortLightsIntoArrays Constants.Render.ForwardLightsMax model.Translation renderer.RenderTasks.RenderLights
             GlRenderer3d.renderPhysicallyBasedSurfaces
                 viewRelativeArray
-                projectionArray
+                rasterProjectionArray
                 eyeCenter
                 (SegmentedList.singleton (model, texCoordsOffset, properties))
                 true
@@ -1374,7 +1378,12 @@ type [<ReferenceEquality>] GlRenderer3d =
         OpenGL.Hl.Assert ()
 
         // top-level render
-        GlRenderer3d.renderInternal renderer true eyeCenter viewAbsolute viewRelative viewSkyBox projection viewportOffset renderbuffer framebuffer
+        GlRenderer3d.renderInternal
+            renderer true eyeCenter
+            viewAbsolute viewRelative viewSkyBox
+            projection viewportOffset
+            projection viewportOffset
+            renderbuffer framebuffer
         
         // render post-passes
         let passParameters =

@@ -11,12 +11,12 @@ open Nu
 module LightMap =
 
     /// Create a reflection map.
-    let CreateReflectionMap (render, currentViewport : Viewport, currentRenderbuffer, currentFramebuffer, resolution, origin) =
+    let CreateReflectionMap (render, currentViewport : Viewport, currentRenderbuffer, currentFramebuffer, geometryResolution, rasterResolution, origin) =
 
         // create reflection map renderbuffer
         let renderbuffer = Gl.GenRenderbuffer ()
         Gl.BindRenderbuffer (RenderbufferTarget.Renderbuffer, renderbuffer)
-        Gl.RenderbufferStorage (RenderbufferTarget.Renderbuffer, InternalFormat.Depth24Stencil8, resolution, resolution)
+        Gl.RenderbufferStorage (RenderbufferTarget.Renderbuffer, InternalFormat.Depth24Stencil8, rasterResolution, rasterResolution)
         Hl.Assert ()
 
         // create reflection map framebuffer
@@ -34,7 +34,7 @@ module LightMap =
         // setup reflection map textures
         for i in 0 .. dec 6 do
             let target = LanguagePrimitives.EnumOfValue (int TextureTarget.TextureCubeMapPositiveX + i)
-            Gl.TexImage2D (target, 0, InternalFormat.Rgba32f, resolution, resolution, 0, PixelFormat.Rgba, PixelType.Float, nativeint 0)
+            Gl.TexImage2D (target, 0, InternalFormat.Rgba32f, rasterResolution, rasterResolution, 0, PixelFormat.Rgba, PixelType.Float, nativeint 0)
             Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, target, reflectionMap, 0)
             Hl.Assert ()
         Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureMinFilter, int TextureMinFilter.Linear)
@@ -48,23 +48,25 @@ module LightMap =
         Log.debugIf (fun () -> Gl.CheckFramebufferStatus FramebufferTarget.Framebuffer <> FramebufferStatus.FramebufferComplete) "Reflection framebuffer is incomplete!"
         Hl.Assert ()
 
-        // construct viewport
-        let viewport = Viewport (Constants.Render.NearPlaneDistanceOmnipresent, Constants.Render.FarPlaneDistanceOmnipresent, box2i v2iZero (v2iDup resolution))
+        // construct viewports
+        let geometryViewport = Viewport (Constants.Render.NearPlaneDistanceOmnipresent, Constants.Render.FarPlaneDistanceOmnipresent, box2i v2iZero geometryResolution)
+        let rasterViewport = Viewport (Constants.Render.NearPlaneDistanceOmnipresent, Constants.Render.FarPlaneDistanceOmnipresent, box2i v2iZero (v2iDup rasterResolution))
 
         // construct eye rotations
         let eyeRotations =
-            [|(v3Right, v3Down)     // right
-              (v3Left, v3Down)      // left
-              (v3Up, v3Forward)     // top
-              (v3Down, v3Back)      // bottom
-              (v3Back, v3Down)      // back
-              (v3Forward, v3Down)|] // front
+            [|(v3Right, v3Down)     // right    (+x)
+              (v3Left, v3Down)      // left     (-x)
+              (v3Up, v3Forward)     // top      (+y)
+              (v3Down, v3Back)      // bottom   (-y)
+              (v3Back, v3Down)      // back     (+z)
+              (v3Forward, v3Down)|] // front    (-z)
 
-        // construct projection
-        let projection = Matrix4x4.CreatePerspectiveFieldOfView (MathHelper.PiOver2, viewport.AspectRatio, viewport.NearDistance, viewport.FarDistance)
+        // construct projections
+        let geometryProjection = Matrix4x4.CreatePerspectiveFieldOfView (MathHelper.PiOver2, geometryViewport.AspectRatio, geometryViewport.NearDistance, geometryViewport.FarDistance)
+        let rasterProjection = Matrix4x4.CreatePerspectiveFieldOfView (MathHelper.PiOver2, rasterViewport.AspectRatio, rasterViewport.NearDistance, rasterViewport.FarDistance)
 
         // mutate viewport
-        Gl.Viewport (0, 0, resolution, resolution)
+        Gl.Viewport (0, 0, rasterResolution, rasterResolution)
         Hl.Assert ()
 
         // render reflection map faces
@@ -80,11 +82,11 @@ module LightMap =
             let viewAbsolute = m4Identity
             let viewRelative = Matrix4x4.CreateLookAt (origin, origin + eyeForward, eyeUp)
             let viewSkyBox = Matrix4x4.Transpose (Matrix4x4.CreateLookAt (v3Zero, eyeForward, eyeUp)) // transpose = inverse rotation when rotation only
-            render false origin viewAbsolute viewRelative viewSkyBox projection viewport renderbuffer framebuffer
+            render false origin viewAbsolute viewRelative viewSkyBox geometryProjection geometryViewport rasterProjection rasterViewport renderbuffer framebuffer
             Hl.Assert ()
 
             // take a snapshot for testing
-            Hl.SaveFramebufferToBitmap viewport.Bounds.Width viewport.Bounds.Height ("Test" + string i + ".bmp")
+            Hl.SaveFramebufferToBitmap rasterViewport.Bounds.Width rasterViewport.Bounds.Height ("Test" + string i + ".bmp")
             Hl.Assert ()
 
         // generate reflection map mipmaps
