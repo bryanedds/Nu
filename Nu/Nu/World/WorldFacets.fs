@@ -1419,12 +1419,16 @@ module LightProbeFacet3dModule =
     type LightProbeFacet3d () =
         inherit Facet (false)
 
-        static let handleStaleChange _ world =
-            let world = World.requestUnculledRender world
+        static let handleStaleChange (evt : Event<ChangeData, Entity>) world =
+            let world =
+                if evt.Data.Value :?> bool
+                then World.requestUnculledRender world
+                else world
             (Cascade, world)
 
         static member Properties =
-            [define Entity.Stale true]
+            [define Entity.Presence Omnipresent
+             define Entity.Stale true]
 
         override this.Register (entity, world) =
             let world = World.monitor handleStaleChange (entity.GetChangeEvent (nameof entity.Stale)) entity world
@@ -1434,8 +1438,8 @@ module LightProbeFacet3dModule =
             let id = entity.GetId world
             let position = entity.GetPosition world
             let stale = entity.GetStale world
-            let world = World.enqueueRenderMessage3d (RenderLightProbe3d { LightProbeId = id; Origin = position; Stale = stale }) world
-            entity.SetStale false world
+            let world = if stale then entity.SetStale false world else world
+            World.enqueueRenderMessage3d (RenderLightProbe3d { LightProbeId = id; Origin = position; Stale = stale }) world
 
         override this.RayCast (ray, entity, world) =
             let intersectionOpt = ray.Intersects (entity.GetBounds world)

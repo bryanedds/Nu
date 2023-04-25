@@ -990,7 +990,8 @@ module LightProbeDispatcher3dModule =
             [typeof<LightProbeFacet3d>]
 
         static member Properties =
-            [define Entity.Stale true]
+            [define Entity.Presence Omnipresent
+             define Entity.Stale true]
 
         override this.GetQuickSize (_, _) =
             v3Dup 0.5f
