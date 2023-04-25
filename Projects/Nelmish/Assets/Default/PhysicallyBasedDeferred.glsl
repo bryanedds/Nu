@@ -82,7 +82,7 @@ flat in int invertRoughnessOut;
 layout (location = 0) out vec4 position;
 layout (location = 1) out vec3 albedo;
 layout (location = 2) out vec4 material;
-layout (location = 3) out vec4 normalAndDepth;
+layout (location = 3) out vec4 normalAndHeight;
 
 void main()
 {
@@ -104,8 +104,8 @@ void main()
     vec3 eyeCenterTangent = toTangent * eyeCenter;
     vec3 positionTangent = toTangent * positionOut.xyz;
     vec3 toEyeTangent = normalize(eyeCenterTangent - positionTangent);
-    float height = texture(heightTexture, texCoordsOut).r;
-    vec2 parallax = toEyeTangent.xy * height * heightOut;
+    float height = texture(heightTexture, texCoordsOut).r * heightOut;
+    vec2 parallax = toEyeTangent.xy * height;
     vec2 texCoords = texCoordsOut - parallax;
 
     // compute albedo, discarding on zero alpha
@@ -122,7 +122,7 @@ void main()
     float emission = texture(emissionTexture, texCoords).r * materialOut.a;
     material = vec4(metallic, ambientOcclusion, roughness, emission);
 
-    // compute normal and depth
-    normalAndDepth.xyz = normalize(toWorld * (texture(normalTexture, texCoords).xyz * 2.0 - 1.0));
-    normalAndDepth.a = gl_FragCoord.z;
+    // compute normal and height
+    normalAndHeight.xyz = normalize(toWorld * (texture(normalTexture, texCoords).xyz * 2.0 - 1.0));
+    normalAndHeight.a = height;
 }
