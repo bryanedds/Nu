@@ -151,6 +151,8 @@ module PhysicallyBased =
         { ViewUniform : int
           ProjectionUniform : int
           EyeCenterUniform : int
+          LightMapLocalUniform : int
+          LightMapLocalOriginUniform : int
           LightAmbientColorUniform : int
           LightAmbientBrightnessUniform : int
           AlbedoTextureUniform : int
@@ -179,12 +181,14 @@ module PhysicallyBased =
         { ViewUniform : int
           ProjectionUniform : int
           EyeCenterUniform : int
+          LightMapLocalUniform : int
+          LightMapLocalOriginUniform : int
           LightAmbientColorUniform : int
           LightAmbientBrightnessUniform : int
           PositionTextureUniform : int
           AlbedoTextureUniform : int
           MaterialTextureUniform : int
-          NormalAndDepthTextureUniform : int
+          NormalAndHeightTextureUniform : int
           IrradianceMapUniform : int
           EnvironmentFilterMapUniform : int
           BrdfTextureUniform : int
@@ -892,6 +896,8 @@ module PhysicallyBased =
         let viewUniform = Gl.GetUniformLocation (shader, "view")
         let projectionUniform = Gl.GetUniformLocation (shader, "projection")
         let eyeCenterUniform = Gl.GetUniformLocation (shader, "eyeCenter")
+        let lightMapLocalUniform = Gl.GetUniformLocation (shader, "lightMapLocal")
+        let lightMapLocalOriginUniform = Gl.GetUniformLocation (shader, "lightMapLocalOrigin")
         let lightAmbientColorUniform = Gl.GetUniformLocation (shader, "lightAmbientColor")
         let lightAmbientBrightnessUniform = Gl.GetUniformLocation (shader, "lightAmbientBrightness")
         let albedoTextureUniform = Gl.GetUniformLocation (shader, "albedoTexture")
@@ -918,6 +924,8 @@ module PhysicallyBased =
         { ViewUniform = viewUniform
           ProjectionUniform = projectionUniform
           EyeCenterUniform = eyeCenterUniform
+          LightMapLocalUniform = lightMapLocalUniform
+          LightMapLocalOriginUniform = lightMapLocalOriginUniform
           LightAmbientColorUniform = lightAmbientColorUniform
           LightAmbientBrightnessUniform = lightAmbientBrightnessUniform
           AlbedoTextureUniform = albedoTextureUniform
@@ -951,12 +959,14 @@ module PhysicallyBased =
         let viewUniform = Gl.GetUniformLocation (shader, "view")
         let projectionUniform = Gl.GetUniformLocation (shader, "projection")
         let eyeCenterUniform = Gl.GetUniformLocation (shader, "eyeCenter")
+        let lightMapLocalUniform = Gl.GetUniformLocation (shader, "lightMapLocal")
+        let lightMapLocalOriginUniform = Gl.GetUniformLocation (shader, "lightMapLocalOrigin")
         let lightAmbientColorUniform = Gl.GetUniformLocation (shader, "lightAmbientColor")
         let lightAmbientBrightnessUniform = Gl.GetUniformLocation (shader, "lightAmbientBrightness")
         let positionTextureUniform = Gl.GetUniformLocation (shader, "positionTexture")
         let albedoTextureUniform = Gl.GetUniformLocation (shader, "albedoTexture")
         let materialTextureUniform = Gl.GetUniformLocation (shader, "materialTexture")
-        let normalAndDepthTextureUniform = Gl.GetUniformLocation (shader, "normalAndDepthTexture")
+        let normalAndHeightTextureUniform = Gl.GetUniformLocation (shader, "normalAndHeightTexture")
         let irradianceMapUniform = Gl.GetUniformLocation (shader, "irradianceMap")
         let environmentFilterMapUniform = Gl.GetUniformLocation (shader, "environmentFilterMap")
         let brdfTextureUniform = Gl.GetUniformLocation (shader, "brdfTexture")
@@ -974,12 +984,14 @@ module PhysicallyBased =
         { ViewUniform = viewUniform
           ProjectionUniform = projectionUniform
           EyeCenterUniform = eyeCenterUniform
+          LightMapLocalUniform = lightMapLocalUniform
+          LightMapLocalOriginUniform = lightMapLocalOriginUniform
           LightAmbientColorUniform = lightAmbientColorUniform
           LightAmbientBrightnessUniform = lightAmbientBrightnessUniform
           PositionTextureUniform = positionTextureUniform
           AlbedoTextureUniform = albedoTextureUniform
           MaterialTextureUniform = materialTextureUniform
-          NormalAndDepthTextureUniform = normalAndDepthTextureUniform
+          NormalAndHeightTextureUniform = normalAndHeightTextureUniform
           IrradianceMapUniform = irradianceMapUniform
           EnvironmentFilterMapUniform = environmentFilterMapUniform
           BrdfTextureUniform = brdfTextureUniform
@@ -1013,6 +1025,8 @@ module PhysicallyBased =
          heightsFields : single array,
          invertRoughnessesFields : int array,
          blending,
+         lightMapLocal : int,
+         lightMapLocalOrigin : single array,
          lightAmbientColor : single array,
          lightAmbientBrightness : single,
          irradianceMap : uint,
@@ -1046,6 +1060,8 @@ module PhysicallyBased =
         Gl.UniformMatrix4 (shader.ViewUniform, false, view)
         Gl.UniformMatrix4 (shader.ProjectionUniform, false, projection)
         Gl.Uniform3 (shader.EyeCenterUniform, eyeCenter.X, eyeCenter.Y, eyeCenter.Z)
+        Gl.Uniform1 (shader.LightMapLocalUniform, lightMapLocal)
+        Gl.Uniform3 (shader.LightMapLocalOriginUniform, lightMapLocalOrigin)
         Gl.Uniform3 (shader.LightAmbientColorUniform, lightAmbientColor)
         Gl.Uniform1 (shader.LightAmbientBrightnessUniform, lightAmbientBrightness)
         Gl.Uniform1 (shader.AlbedoTextureUniform, 0)
@@ -1212,12 +1228,14 @@ module PhysicallyBased =
         (view : single array,
          projection : single array,
          eyeCenter : Vector3,
+         lightMapLocal : int,
+         lightMapLocalOrigin : single array,
          lightAmbientColor : single array,
          lightAmbientBrightness : single,
          positionTexture : uint,
          albedoTexture : uint,
          materialTexture : uint,
-         normalAndDepthTexture : uint,
+         normalAndHeightTexture : uint,
          irradianceMap : uint,
          environmentFilterMap : uint,
          brdfTexture : uint,
@@ -1238,12 +1256,14 @@ module PhysicallyBased =
         Gl.UniformMatrix4 (shader.ViewUniform, false, view)
         Gl.UniformMatrix4 (shader.ProjectionUniform, false, projection)
         Gl.Uniform3 (shader.EyeCenterUniform, eyeCenter.X, eyeCenter.Y, eyeCenter.Z)
+        Gl.Uniform1 (shader.LightMapLocalUniform, lightMapLocal)
+        Gl.Uniform3 (shader.LightMapLocalOriginUniform, lightMapLocalOrigin)
         Gl.Uniform3 (shader.LightAmbientColorUniform, lightAmbientColor)
         Gl.Uniform1 (shader.LightAmbientBrightnessUniform, lightAmbientBrightness)
         Gl.Uniform1 (shader.PositionTextureUniform, 0)
         Gl.Uniform1 (shader.AlbedoTextureUniform, 1)
         Gl.Uniform1 (shader.MaterialTextureUniform, 2)
-        Gl.Uniform1 (shader.NormalAndDepthTextureUniform, 3)
+        Gl.Uniform1 (shader.NormalAndHeightTextureUniform, 3)
         Gl.Uniform1 (shader.IrradianceMapUniform, 4)
         Gl.Uniform1 (shader.EnvironmentFilterMapUniform, 5)
         Gl.Uniform1 (shader.BrdfTextureUniform, 6)
@@ -1266,7 +1286,7 @@ module PhysicallyBased =
         Gl.ActiveTexture TextureUnit.Texture2
         Gl.BindTexture (TextureTarget.Texture2d, materialTexture)
         Gl.ActiveTexture TextureUnit.Texture3
-        Gl.BindTexture (TextureTarget.Texture2d, normalAndDepthTexture)
+        Gl.BindTexture (TextureTarget.Texture2d, normalAndHeightTexture)
         Gl.ActiveTexture TextureUnit.Texture4
         Gl.BindTexture (TextureTarget.TextureCubeMap, irradianceMap)
         Gl.ActiveTexture TextureUnit.Texture5

@@ -888,6 +888,8 @@ type [<ReferenceEquality>] GlRenderer3d =
         eyeCenter
         (parameters : struct (Matrix4x4 * Box2 * MaterialProperties) SegmentedList)
         blending
+        lightMapLocal
+        lightMapLocalOrigin
         lightAmbientColor
         lightAmbientBrightness
         irradianceMap
@@ -975,7 +977,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             // draw surfaces
             OpenGL.PhysicallyBased.DrawPhysicallyBasedSurfaces
                 (viewArray, projectionArray, eyeCenter, parameters.Length, renderer.RenderModelsFields, renderer.RenderTexCoordsOffsetsFields, renderer.RenderAlbedosFields, renderer.PhysicallyBasedMaterialsFields, renderer.PhysicallyBasedHeightsFields, renderer.PhysicallyBasedInvertRoughnessesFields,
-                 blending, lightAmbientColor, lightAmbientBrightness, irradianceMap, environmentFilterMap, brdfTexture,
+                 blending, lightMapLocal, lightMapLocalOrigin, lightAmbientColor, lightAmbientBrightness, irradianceMap, environmentFilterMap, brdfTexture,
                  lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightDirectionals, lightConeInners, lightConeOuters,
                  surface.SurfaceMaterial, surface.PhysicallyBasedGeometry, shader)
 
@@ -1135,14 +1137,15 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         // collect light mapping elements
         let lightMapFallback = GlRenderer3d.getLightMapFallback geometryViewport renderbuffer framebuffer skyBoxOpt renderer
-        let lightMap = Seq.headOrDefault lightMapsSorted lightMapFallback
+        let (lightMapLocal, lightMap) = if Seq.isEmpty lightMapsSorted then (0, lightMapFallback) else (1, Seq.head lightMapsSorted)
+        let lightMapLocalOrigin = [|lightMap.Origin.X; lightMap.Origin.Y; lightMap.Origin.Z|]
 
         // setup geometry viewport
         OpenGL.Gl.Viewport (geometryViewport.Bounds.Min.X, geometryViewport.Bounds.Min.Y, geometryViewport.Bounds.Width, geometryViewport.Bounds.Height)
         OpenGL.Hl.Assert ()
 
         // setup geometry buffer
-        let (positionTexture, albedoTexture, materialTexture, normalAndDepthTexture, geometryRenderbuffer, geometryFramebuffer) = renderer.RenderGeometryBuffers
+        let (positionTexture, albedoTexture, materialTexture, normalAndHeightTexture, geometryRenderbuffer, geometryFramebuffer) = renderer.RenderGeometryBuffers
         OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, geometryRenderbuffer)
         OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, geometryFramebuffer)
         OpenGL.Gl.Enable OpenGL.EnableCap.ScissorTest
@@ -1161,6 +1164,8 @@ type [<ReferenceEquality>] GlRenderer3d =
                     eyeCenter
                     entry.Value
                     false
+                    lightMapLocal
+                    lightMapLocalOrigin
                     lightAmbientColor
                     lightAmbientBrightness
                     lightMap.IrradianceMap
@@ -1188,6 +1193,8 @@ type [<ReferenceEquality>] GlRenderer3d =
                 eyeCenter
                 entry.Value
                 false
+                lightMapLocal
+                lightMapLocalOrigin
                 lightAmbientColor
                 lightAmbientBrightness
                 lightMap.IrradianceMap
@@ -1228,7 +1235,8 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         // deferred render lighting quad
         OpenGL.PhysicallyBased.DrawPhysicallyBasedDeferred2Surface
-            (viewRelativeArray, rasterProjectionArray, eyeCenter, lightAmbientColor, lightAmbientBrightness, positionTexture, albedoTexture, materialTexture, normalAndDepthTexture, lightMap.IrradianceMap, lightMap.EnvironmentFilterMap, renderer.RenderBrdfTexture,
+            (viewRelativeArray, rasterProjectionArray, eyeCenter, lightMapLocal, lightMapLocalOrigin, lightAmbientColor, lightAmbientBrightness,
+             positionTexture, albedoTexture, materialTexture, normalAndHeightTexture, lightMap.IrradianceMap, lightMap.EnvironmentFilterMap, renderer.RenderBrdfTexture,
              lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightDirectionals, lightConeInners, lightConeOuters,
              renderer.RenderPhysicallyBasedQuad, renderer.RenderPhysicallyBasedDeferred2Shader)
         OpenGL.Hl.Assert ()
@@ -1252,6 +1260,8 @@ type [<ReferenceEquality>] GlRenderer3d =
                     eyeCenter
                     (SegmentedList.singleton (model, texCoordsOffset, properties))
                     true
+                    lightMapLocal
+                    lightMapLocalOrigin
                     lightAmbientColor
                     lightAmbientBrightness
                     lightMap.IrradianceMap
@@ -1281,6 +1291,8 @@ type [<ReferenceEquality>] GlRenderer3d =
                 eyeCenter
                 (SegmentedList.singleton (model, texCoordsOffset, properties))
                 true
+                lightMapLocal
+                lightMapLocalOrigin
                 lightAmbientColor
                 lightAmbientBrightness
                 lightMap.IrradianceMap

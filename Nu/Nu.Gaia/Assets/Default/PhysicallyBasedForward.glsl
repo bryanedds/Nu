@@ -67,6 +67,8 @@ const float ATTENUATION_CONSTANT = 1.0f;
 const int LIGHTS_MAX = 32;
 
 uniform vec3 eyeCenter;
+uniform int lightMapLocal;
+uniform vec3 lightMapLocalOrigin;
 uniform vec3 lightAmbientColor;
 uniform float lightAmbientBrightness;
 uniform sampler2D albedoTexture;
@@ -97,7 +99,7 @@ flat in vec4 materialOut;
 flat in float heightOut;
 flat in int invertRoughnessOut;
 
-out vec4 frag;
+out vec4 frag;  
 
 float distributionGGX(vec3 normal, vec3 h, float roughness)
 {
