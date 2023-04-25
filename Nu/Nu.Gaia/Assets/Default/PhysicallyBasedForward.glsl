@@ -68,6 +68,8 @@ const int LIGHTS_MAX = 32;
 
 uniform vec3 eyeCenter;
 uniform int lightMapLocal;
+uniform vec3 lightMapLocalMin;
+uniform vec3 lightMapLocalSize;
 uniform vec3 lightMapLocalOrigin;
 uniform vec3 lightAmbientColor;
 uniform float lightAmbientBrightness;

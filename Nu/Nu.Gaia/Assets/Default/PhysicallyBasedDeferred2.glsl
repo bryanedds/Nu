@@ -56,6 +56,8 @@ uniform mat4 view;
 uniform mat4 projection;
 uniform vec3 eyeCenter;
 uniform int lightMapLocal;
+uniform vec3 lightMapLocalMin;
+uniform vec3 lightMapLocalSize;
 uniform vec3 lightMapLocalOrigin;
 uniform vec3 lightAmbientColor;
 uniform float lightAmbientBrightness;
@@ -80,25 +82,27 @@ in vec2 texCoordsOut;
 
 out vec4 frag;
 
-vec3 parallaxCorrection(samplerCube cubeMap, vec3 cubeMapPositionWorld, vec3 positionWorld, vec3 eyeDirection, float heightWorld)
+vec3 parallaxCorrection(samplerCube cubeMap, vec3 positionWorld, vec3 normalWorld)
 {
-    // calculate the intersection point between the view vector and the cube map
-    float minIntersectionDistance = 0.0;
-    float maxIntersectionDistance = length(positionWorld - cubeMapPositionWorld);
-    float intersectionDistance = 0.5 * (minIntersectionDistance + maxIntersectionDistance);
-    vec3 intersectionPoint = positionWorld - cubeMapPositionWorld + eyeDirection * intersectionDistance;
+    vec3 directionWorld = positionWorld - eyeCenter;
+    vec3 reflectionWorld = reflect(directionWorld, normalWorld);
 
-    // calculate the normal vector of the cube map at the intersection point
-    vec3 cubeMapNormal = texture(cubeMap, intersectionPoint).xyz * 2.0 - 1.0;
+    // Find the ray intersection with box plane
+    vec3 firstPlaneIntersect = (lightMapLocalMin + lightMapLocalSize - positionWorld) / reflectionWorld;
+    vec3 secondPlaneIntersect = (lightMapLocalMin - positionWorld) / reflectionWorld;
 
-    // calculate the intersection point on the cube map
-    vec3 cubeMapIntersection = reflect(eyeDirection, cubeMapNormal);
+    // Get the furthest of these intersections along the ray
+    // (Ok because x/0 give +inf and -x/0 give –inf)
+    vec3 furthestPlane = max(firstPlaneIntersect, secondPlaneIntersect);
 
-    // calculate the parallax correction factor
-    float parallaxCorrectionFactor = PARALLAX_CORRECTION_SCALE * heightWorld / intersectionDistance;
+    // Find the closest far intersection
+    float distance = min(min(furthestPlane.x, furthestPlane.y), furthestPlane.z);
 
-    // calculate the corrected intersection point on the cube map
-    return cubeMapIntersection * parallaxCorrectionFactor;
+    // Get the intersection position
+    vec3 intersectPositionWorld = positionWorld + reflectionWorld * distance;
+
+    // Get corrected reflection
+    return intersectPositionWorld - lightMapLocalOrigin;
 }
 
 float distributionGGX(vec3 normal, vec3 h, float roughness)
@@ -160,12 +164,9 @@ void main()
     float roughness = material.b;
     vec3 emission = vec3(material.a);
 
-    // compute lighting profile
-    vec3 v = normalize(eyeCenter - position);
-
     // compute lightAccum term
-    // if dia-electric (plastic) use f0 of 0.04f and if metal, use the albedo color as f0.
-    vec3 f0 = mix(vec3(0.04), albedo, metallic);
+    vec3 v = normalize(eyeCenter - position);
+    vec3 f0 = mix(vec3(0.04), albedo, metallic); // if dia-electric (plastic) use f0 of 0.04f and if metal, use the albedo color as f0.
     vec3 lightAccum = vec3(0.0);
     for (int i = 0; i < LIGHTS_MAX; ++i)
     {
@@ -256,11 +257,7 @@ void main()
     vec3 diffuse = irradiance * albedo;
 
     // compute specular term
-    vec3 eyeDirection = normalize(position - eyeCenter);
-    vec3 r =
-        lightMapLocal != 0 ?
-        parallaxCorrection(irradianceMap, lightMapLocalOrigin, eyeCenter, eyeDirection, height) :
-        reflect(-v, normal);
+    vec3 r = lightMapLocal != 0 ? parallaxCorrection(irradianceMap, position, normal) : reflect(-v, normal);
     vec3 environmentFilter = textureLod(environmentFilterMap, r, roughness * (REFLECTION_LOD_MAX - 1.0)).rgb * lightAmbientColor * lightAmbientBrightness;
     vec2 environmentBrdf = texture(brdfTexture, vec2(max(dot(normal, v), 0.0), roughness)).rg;
     vec3 specular = environmentFilter * (f * environmentBrdf.x + environmentBrdf.y);

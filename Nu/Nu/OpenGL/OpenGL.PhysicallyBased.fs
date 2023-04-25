@@ -152,6 +152,8 @@ module PhysicallyBased =
           ProjectionUniform : int
           EyeCenterUniform : int
           LightMapLocalUniform : int
+          LightMapLocalMinUniform : int
+          LightMapLocalSizeUniform : int
           LightMapLocalOriginUniform : int
           LightAmbientColorUniform : int
           LightAmbientBrightnessUniform : int
@@ -182,6 +184,8 @@ module PhysicallyBased =
           ProjectionUniform : int
           EyeCenterUniform : int
           LightMapLocalUniform : int
+          LightMapLocalMinUniform : int
+          LightMapLocalSizeUniform : int
           LightMapLocalOriginUniform : int
           LightAmbientColorUniform : int
           LightAmbientBrightnessUniform : int
@@ -897,6 +901,8 @@ module PhysicallyBased =
         let projectionUniform = Gl.GetUniformLocation (shader, "projection")
         let eyeCenterUniform = Gl.GetUniformLocation (shader, "eyeCenter")
         let lightMapLocalUniform = Gl.GetUniformLocation (shader, "lightMapLocal")
+        let lightMapLocalMinUniform = Gl.GetUniformLocation (shader, "lightMapLocalMin")
+        let lightMapLocalSizeUniform = Gl.GetUniformLocation (shader, "lightMapLocalSize")
         let lightMapLocalOriginUniform = Gl.GetUniformLocation (shader, "lightMapLocalOrigin")
         let lightAmbientColorUniform = Gl.GetUniformLocation (shader, "lightAmbientColor")
         let lightAmbientBrightnessUniform = Gl.GetUniformLocation (shader, "lightAmbientBrightness")
@@ -925,6 +931,8 @@ module PhysicallyBased =
           ProjectionUniform = projectionUniform
           EyeCenterUniform = eyeCenterUniform
           LightMapLocalUniform = lightMapLocalUniform
+          LightMapLocalMinUniform = lightMapLocalMinUniform
+          LightMapLocalSizeUniform = lightMapLocalSizeUniform
           LightMapLocalOriginUniform = lightMapLocalOriginUniform
           LightAmbientColorUniform = lightAmbientColorUniform
           LightAmbientBrightnessUniform = lightAmbientBrightnessUniform
@@ -960,6 +968,8 @@ module PhysicallyBased =
         let projectionUniform = Gl.GetUniformLocation (shader, "projection")
         let eyeCenterUniform = Gl.GetUniformLocation (shader, "eyeCenter")
         let lightMapLocalUniform = Gl.GetUniformLocation (shader, "lightMapLocal")
+        let lightMapLocalMinUniform = Gl.GetUniformLocation (shader, "lightMapLocalMin")
+        let lightMapLocalSizeUniform = Gl.GetUniformLocation (shader, "lightMapLocalSize")
         let lightMapLocalOriginUniform = Gl.GetUniformLocation (shader, "lightMapLocalOrigin")
         let lightAmbientColorUniform = Gl.GetUniformLocation (shader, "lightAmbientColor")
         let lightAmbientBrightnessUniform = Gl.GetUniformLocation (shader, "lightAmbientBrightness")
@@ -985,6 +995,8 @@ module PhysicallyBased =
           ProjectionUniform = projectionUniform
           EyeCenterUniform = eyeCenterUniform
           LightMapLocalUniform = lightMapLocalUniform
+          LightMapLocalMinUniform = lightMapLocalMinUniform
+          LightMapLocalSizeUniform = lightMapLocalSizeUniform
           LightMapLocalOriginUniform = lightMapLocalOriginUniform
           LightAmbientColorUniform = lightAmbientColorUniform
           LightAmbientBrightnessUniform = lightAmbientBrightnessUniform
@@ -1026,6 +1038,8 @@ module PhysicallyBased =
          invertRoughnessesFields : int array,
          blending,
          lightMapLocal : int,
+         lightMapLocalMin : single array,
+         lightMapLocalSize : single array,
          lightMapLocalOrigin : single array,
          lightAmbientColor : single array,
          lightAmbientBrightness : single,
@@ -1061,6 +1075,8 @@ module PhysicallyBased =
         Gl.UniformMatrix4 (shader.ProjectionUniform, false, projection)
         Gl.Uniform3 (shader.EyeCenterUniform, eyeCenter.X, eyeCenter.Y, eyeCenter.Z)
         Gl.Uniform1 (shader.LightMapLocalUniform, lightMapLocal)
+        Gl.Uniform3 (shader.LightMapLocalMinUniform, lightMapLocalMin)
+        Gl.Uniform3 (shader.LightMapLocalSizeUniform, lightMapLocalSize)
         Gl.Uniform3 (shader.LightMapLocalOriginUniform, lightMapLocalOrigin)
         Gl.Uniform3 (shader.LightAmbientColorUniform, lightAmbientColor)
         Gl.Uniform1 (shader.LightAmbientBrightnessUniform, lightAmbientBrightness)
@@ -1229,6 +1245,8 @@ module PhysicallyBased =
          projection : single array,
          eyeCenter : Vector3,
          lightMapLocal : int,
+         lightMapLocalMin : single array,
+         lightMapLocalSize : single array,
          lightMapLocalOrigin : single array,
          lightAmbientColor : single array,
          lightAmbientBrightness : single,
@@ -1257,6 +1275,8 @@ module PhysicallyBased =
         Gl.UniformMatrix4 (shader.ProjectionUniform, false, projection)
         Gl.Uniform3 (shader.EyeCenterUniform, eyeCenter.X, eyeCenter.Y, eyeCenter.Z)
         Gl.Uniform1 (shader.LightMapLocalUniform, lightMapLocal)
+        Gl.Uniform3 (shader.LightMapLocalMinUniform, lightMapLocalMin)
+        Gl.Uniform3 (shader.LightMapLocalSizeUniform, lightMapLocalSize)
         Gl.Uniform3 (shader.LightMapLocalOriginUniform, lightMapLocalOrigin)
         Gl.Uniform3 (shader.LightAmbientColorUniform, lightAmbientColor)
         Gl.Uniform1 (shader.LightAmbientBrightnessUniform, lightAmbientBrightness)
