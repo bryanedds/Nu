@@ -67,6 +67,10 @@ const float ATTENUATION_CONSTANT = 1.0f;
 const int LIGHTS_MAX = 32;
 
 uniform vec3 eyeCenter;
+uniform int lightMapLocal;
+uniform vec3 lightMapLocalMin;
+uniform vec3 lightMapLocalSize;
+uniform vec3 lightMapLocalOrigin;
 uniform vec3 lightAmbientColor;
 uniform float lightAmbientBrightness;
 uniform sampler2D albedoTexture;
@@ -98,6 +102,18 @@ flat in float heightOut;
 flat in int invertRoughnessOut;
 
 out vec4 frag;
+
+vec3 parallaxCorrection(samplerCube cubeMap, vec3 positionWorld, vec3 normalWorld)
+{
+    vec3 directionWorld = positionWorld - eyeCenter;
+    vec3 reflectionWorld = reflect(directionWorld, normalWorld);
+    vec3 firstPlaneIntersect = (lightMapLocalMin + lightMapLocalSize - positionWorld) / reflectionWorld;
+    vec3 secondPlaneIntersect = (lightMapLocalMin - positionWorld) / reflectionWorld;
+    vec3 furthestPlane = max(firstPlaneIntersect, secondPlaneIntersect);
+    float distance = min(min(furthestPlane.x, furthestPlane.y), furthestPlane.z);
+    vec3 intersectPositionWorld = positionWorld + reflectionWorld * distance;
+    return intersectPositionWorld - lightMapLocalOrigin;
+}
 
 float distributionGGX(vec3 normal, vec3 h, float roughness)
 {
@@ -141,12 +157,15 @@ vec3 fresnelSchlickRoughness(float cosTheta, vec3 f0, float roughness)
 
 void main()
 {
+    // compute basic fragment data
+    vec3 position = positionOut.xyz;
+    vec3 normal = normalize(normalOut);
+
     // compute spatial converters
-    vec3 q1 = dFdx(positionOut.xyz);
-    vec3 q2 = dFdy(positionOut.xyz);
+    vec3 q1 = dFdx(position);
+    vec3 q2 = dFdy(position);
     vec2 st1 = dFdx(texCoordsOut);
     vec2 st2 = dFdy(texCoordsOut);
-    vec3 normal = normalize(normalOut);
     vec3 tangent = normalize(q1 * st2.t - q2 * st1.t);
     vec3 binormal = -normalize(cross(normal, tangent));
     mat3 toWorld = mat3(tangent, binormal, normal);
@@ -154,7 +173,7 @@ void main()
 
     // compute tex coords in parallax occlusion space
     vec3 eyeCenterTangent = toTangent * eyeCenter;
-    vec3 positionTangent = toTangent * positionOut.xyz;
+    vec3 positionTangent = toTangent * position;
     vec3 toEyeTangent = normalize(eyeCenterTangent - positionTangent);
     float height = texture(heightTexture, texCoordsOut).r;
     vec2 parallax = toEyeTangent.xy * height * heightOut;
@@ -176,13 +195,11 @@ void main()
     vec3 emission = vec3(texture(emissionTexture, texCoords).r * materialOut.a);
 
     // compute lighting profile
-    vec3 n = normalize(toWorld * (texture(normalTexture, texCoords).xyz * 2.0 - 1.0));
-    vec3 v = normalize(eyeCenter - positionOut.xyz);
-    vec3 r = reflect(-v, n);
 
     // compute lightAccum term
-    // if dia-electric (plastic) use f0 of 0.04f and if metal, use the albedo color as f0.
-    vec3 f0 = mix(vec3(0.04), albedo.rgb, metallic);
+    vec3 n = normalize(toWorld * (texture(normalTexture, texCoords).xyz * 2.0 - 1.0));
+    vec3 v = normalize(eyeCenter - position);
+    vec3 f0 = mix(vec3(0.04), albedo.rgb, metallic); // if dia-electric (plastic) use f0 of 0.04f and if metal, use the albedo color as f0.
     vec3 lightAccum = vec3(0.0);
     for (int i = 0; i < LIGHTS_MAX; ++i)
     {
@@ -191,7 +208,7 @@ void main()
         vec3 radiance;
         if (lightDirectionals[i] == 0)
         {
-            d = lightOrigins[i] - positionOut.xyz;
+            d = lightOrigins[i] - position;
             l = normalize(d);
             h = normalize(v + l);
             float distanceSquared = dot(d, d);
@@ -244,6 +261,7 @@ void main()
     float alpha = albedo.a;
 
     // compute specular term
+    vec3 r = lightMapLocal != 0 ? parallaxCorrection(environmentFilterMap, position, normal) : reflect(-v, normal);
     vec3 environmentFilter = textureLod(environmentFilterMap, r, roughness * (REFLECTION_LOD_MAX - 1.0)).rgb * lightAmbientColor * lightAmbientBrightness;
     vec2 environmentBrdf = texture(brdfTexture, vec2(max(dot(n, v), 0.0), roughness)).rg;
     vec3 specular = environmentFilter * (f * environmentBrdf.x + environmentBrdf.y);
