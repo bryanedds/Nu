@@ -87,21 +87,20 @@ vec3 parallaxCorrection(samplerCube cubeMap, vec3 positionWorld, vec3 normalWorl
     vec3 directionWorld = positionWorld - eyeCenter;
     vec3 reflectionWorld = reflect(directionWorld, normalWorld);
 
-    // Find the ray intersection with box plane
+    // find the ray intersection with box plane
     vec3 firstPlaneIntersect = (lightMapLocalMin + lightMapLocalSize - positionWorld) / reflectionWorld;
     vec3 secondPlaneIntersect = (lightMapLocalMin - positionWorld) / reflectionWorld;
 
-    // Get the furthest of these intersections along the ray
-    // (Ok because x/0 give +inf and -x/0 give –inf)
+    // get the furthest of these intersections along the ray (okay because x/0 give +inf and -x/0 give –inf)
     vec3 furthestPlane = max(firstPlaneIntersect, secondPlaneIntersect);
 
-    // Find the closest far intersection
+    // find the closest far intersection
     float distance = min(min(furthestPlane.x, furthestPlane.y), furthestPlane.z);
 
-    // Get the intersection position
+    // get the intersection position
     vec3 intersectPositionWorld = positionWorld + reflectionWorld * distance;
 
-    // Get corrected reflection
+    // get corrected reflection
     return intersectPositionWorld - lightMapLocalOrigin;
 }
 
