@@ -86,21 +86,11 @@ vec3 parallaxCorrection(samplerCube cubeMap, vec3 positionWorld, vec3 normalWorl
 {
     vec3 directionWorld = positionWorld - eyeCenter;
     vec3 reflectionWorld = reflect(directionWorld, normalWorld);
-
-    // find the ray intersection with box plane
     vec3 firstPlaneIntersect = (lightMapLocalMin + lightMapLocalSize - positionWorld) / reflectionWorld;
     vec3 secondPlaneIntersect = (lightMapLocalMin - positionWorld) / reflectionWorld;
-
-    // get the furthest of these intersections along the ray (okay because x/0 give +inf and -x/0 give –inf)
     vec3 furthestPlane = max(firstPlaneIntersect, secondPlaneIntersect);
-
-    // find the closest far intersection
     float distance = min(min(furthestPlane.x, furthestPlane.y), furthestPlane.z);
-
-    // get the intersection position
     vec3 intersectPositionWorld = positionWorld + reflectionWorld * distance;
-
-    // get corrected reflection
     return intersectPositionWorld - lightMapLocalOrigin;
 }
 
@@ -256,7 +246,7 @@ void main()
     vec3 diffuse = irradiance * albedo;
 
     // compute specular term
-    vec3 r = lightMapLocal != 0 ? parallaxCorrection(irradianceMap, position, normal) : reflect(-v, normal);
+    vec3 r = lightMapLocal != 0 ? parallaxCorrection(environmentFilterMap, position, normal) : reflect(-v, normal);
     vec3 environmentFilter = textureLod(environmentFilterMap, r, roughness * (REFLECTION_LOD_MAX - 1.0)).rgb * lightAmbientColor * lightAmbientBrightness;
     vec2 environmentBrdf = texture(brdfTexture, vec2(max(dot(normal, v), 0.0), roughness)).rg;
     vec3 specular = environmentFilter * (f * environmentBrdf.x + environmentBrdf.y);
