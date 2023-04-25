@@ -19,6 +19,7 @@ const float PI = 3.141592654;
 const float REFLECTION_LOD_MAX = 5.0;
 const float GAMMA = 2.2;
 const float ATTENUATION_CONSTANT = 1.0;
+const float PARALLAX_CORRECTION_SCALE = 0.02;
 const int LIGHTS_MAX = 96;
 const float SSAO = 1.25;
 const float SSAO_RADIUS = 0.5;
@@ -54,12 +55,14 @@ const vec3[SSAO_SAMPLES] SSAO_SAMPLING_DIRECTIONS = vec3[](
 uniform mat4 view;
 uniform mat4 projection;
 uniform vec3 eyeCenter;
+uniform int lightMapLocal;
+uniform vec3 lightMapLocalOrigin;
 uniform vec3 lightAmbientColor;
 uniform float lightAmbientBrightness;
 uniform sampler2D positionTexture;
 uniform sampler2D albedoTexture;
 uniform sampler2D materialTexture;
-uniform sampler2D normalAndDepthTexture;
+uniform sampler2D normalAndHeightTexture;
 uniform samplerCube irradianceMap;
 uniform samplerCube environmentFilterMap;
 uniform sampler2D brdfTexture;
@@ -77,22 +80,25 @@ in vec2 texCoordsOut;
 
 out vec4 frag;
 
-float hash(float n)
+vec3 parallaxCorrection(samplerCube cubeMap, vec3 cubeMapPositionWorld, vec3 positionWorld, vec3 eyeDirection, float heightWorld)
 {
-    return fract(sin(n) * 43758.5453123);
-}
+    // calculate the intersection point between the view vector and the cube map
+    float minIntersectionDistance = 0.0;
+    float maxIntersectionDistance = length(positionWorld - cubeMapPositionWorld);
+    float intersectionDistance = 0.5 * (minIntersectionDistance + maxIntersectionDistance);
+    vec3 intersectionPoint = positionWorld - cubeMapPositionWorld + eyeDirection * intersectionDistance;
 
-vec3 randomDirection(float seedX, float seedY, float seedZ)
-{
-    vec3 seed = vec3(seedX, seedY, seedZ);
-    float r1 = hash(dot(seed, vec3(12.9898, 78.233, 45.164)));
-    float r2 = hash(dot(seed, vec3(94.766, 198.362, 27.285)));
-    float theta = 2.0 * 3.14159 * r1;
-    float phi = acos(2.0 * r2 - 1.0);
-    float x = sin(phi) * cos(theta);
-    float y = sin(phi) * sin(theta);
-    float z = cos(phi);
-    return vec3(x, y, z);
+    // calculate the normal vector of the cube map at the intersection point
+    vec3 cubeMapNormal = texture(cubeMap, intersectionPoint).xyz * 2.0 - 1.0;
+
+    // calculate the intersection point on the cube map
+    vec3 cubeMapIntersection = reflect(eyeDirection, cubeMapNormal);
+
+    // calculate the parallax correction factor
+    float parallaxCorrectionFactor = PARALLAX_CORRECTION_SCALE * heightWorld / intersectionDistance;
+
+    // calculate the corrected intersection point on the cube map
+    return cubeMapIntersection * parallaxCorrectionFactor;
 }
 
 float distributionGGX(vec3 normal, vec3 h, float roughness)
@@ -137,11 +143,11 @@ vec3 fresnelSchlickRoughness(float cosTheta, vec3 f0, float roughness)
 
 void main()
 {
-    // first, retrieve normal and depth values, allowing for early-out
-    vec4 normalAndDepth = texture(normalAndDepthTexture, texCoordsOut);
-    vec3 normal = normalAndDepth.rgb;
+    // retrieve normal and height values first, allowing for early-out
+    vec4 normalAndHeight = texture(normalAndHeightTexture, texCoordsOut);
+    vec3 normal = normalAndHeight.rgb;
     if (normal == vec3(1.0, 1.0, 1.0)) discard; // discard if geometry pixel was not written (equal to the buffer clearing color of white)
-    float depth = normalAndDepth.a;
+    float height = normalAndHeight.a;
 
     // retrieve remaining data from geometry buffers
     vec3 position = texture(positionTexture, texCoordsOut).rgb;
@@ -156,7 +162,6 @@ void main()
 
     // compute lighting profile
     vec3 v = normalize(eyeCenter - position);
-    vec3 r = reflect(-v, normal);
 
     // compute lightAccum term
     // if dia-electric (plastic) use f0 of 0.04f and if metal, use the albedo color as f0.
@@ -251,6 +256,11 @@ void main()
     vec3 diffuse = irradiance * albedo;
 
     // compute specular term
+    vec3 eyeDirection = normalize(position - eyeCenter);
+    vec3 r =
+        lightMapLocal != 0 ?
+        parallaxCorrection(irradianceMap, lightMapLocalOrigin, eyeCenter, eyeDirection, height) :
+        reflect(-v, normal);
     vec3 environmentFilter = textureLod(environmentFilterMap, r, roughness * (REFLECTION_LOD_MAX - 1.0)).rgb * lightAmbientColor * lightAmbientBrightness;
     vec2 environmentBrdf = texture(brdfTexture, vec2(max(dot(normal, v), 0.0), roughness)).rg;
     vec3 specular = environmentFilter * (f * environmentBrdf.x + environmentBrdf.y);
