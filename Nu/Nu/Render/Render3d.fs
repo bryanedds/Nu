@@ -889,6 +889,8 @@ type [<ReferenceEquality>] GlRenderer3d =
         (parameters : struct (Matrix4x4 * Box2 * MaterialProperties) SegmentedList)
         blending
         lightMapLocal
+        lightMapLocalMin
+        lightMapLocalSize
         lightMapLocalOrigin
         lightAmbientColor
         lightAmbientBrightness
@@ -977,7 +979,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             // draw surfaces
             OpenGL.PhysicallyBased.DrawPhysicallyBasedSurfaces
                 (viewArray, projectionArray, eyeCenter, parameters.Length, renderer.RenderModelsFields, renderer.RenderTexCoordsOffsetsFields, renderer.RenderAlbedosFields, renderer.PhysicallyBasedMaterialsFields, renderer.PhysicallyBasedHeightsFields, renderer.PhysicallyBasedInvertRoughnessesFields,
-                 blending, lightMapLocal, lightMapLocalOrigin, lightAmbientColor, lightAmbientBrightness, irradianceMap, environmentFilterMap, brdfTexture,
+                 blending, lightMapLocal, lightMapLocalMin, lightMapLocalSize, lightMapLocalOrigin, lightAmbientColor, lightAmbientBrightness, irradianceMap, environmentFilterMap, brdfTexture,
                  lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightDirectionals, lightConeInners, lightConeOuters,
                  surface.SurfaceMaterial, surface.PhysicallyBasedGeometry, shader)
 
@@ -1138,6 +1140,8 @@ type [<ReferenceEquality>] GlRenderer3d =
         // collect light mapping elements
         let lightMapFallback = GlRenderer3d.getLightMapFallback geometryViewport renderbuffer framebuffer skyBoxOpt renderer
         let (lightMapLocal, lightMap) = if Seq.isEmpty lightMapsSorted then (0, lightMapFallback) else (1, Seq.head lightMapsSorted)
+        let lightMapLocalMin = [|lightMap.Origin.X - 5.0f; lightMap.Origin.Y - 5.0f; lightMap.Origin.Z - 5.0f|] // TODO: pass in bounds param for probes.
+        let lightMapLocalSize = [|10.0f; 10.0f; 10.0f|] // TODO: pass in bounds param for probes.
         let lightMapLocalOrigin = [|lightMap.Origin.X; lightMap.Origin.Y; lightMap.Origin.Z|]
 
         // setup geometry viewport
@@ -1165,6 +1169,8 @@ type [<ReferenceEquality>] GlRenderer3d =
                     entry.Value
                     false
                     lightMapLocal
+                    lightMapLocalMin
+                    lightMapLocalSize
                     lightMapLocalOrigin
                     lightAmbientColor
                     lightAmbientBrightness
@@ -1194,6 +1200,8 @@ type [<ReferenceEquality>] GlRenderer3d =
                 entry.Value
                 false
                 lightMapLocal
+                lightMapLocalMin
+                lightMapLocalSize
                 lightMapLocalOrigin
                 lightAmbientColor
                 lightAmbientBrightness
@@ -1235,7 +1243,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         // deferred render lighting quad
         OpenGL.PhysicallyBased.DrawPhysicallyBasedDeferred2Surface
-            (viewRelativeArray, rasterProjectionArray, eyeCenter, lightMapLocal, lightMapLocalOrigin, lightAmbientColor, lightAmbientBrightness,
+            (viewRelativeArray, rasterProjectionArray, eyeCenter, lightMapLocal, lightMapLocalMin, lightMapLocalSize, lightMapLocalOrigin, lightAmbientColor, lightAmbientBrightness,
              positionTexture, albedoTexture, materialTexture, normalAndHeightTexture, lightMap.IrradianceMap, lightMap.EnvironmentFilterMap, renderer.RenderBrdfTexture,
              lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightDirectionals, lightConeInners, lightConeOuters,
              renderer.RenderPhysicallyBasedQuad, renderer.RenderPhysicallyBasedDeferred2Shader)
@@ -1261,6 +1269,8 @@ type [<ReferenceEquality>] GlRenderer3d =
                     (SegmentedList.singleton (model, texCoordsOffset, properties))
                     true
                     lightMapLocal
+                    lightMapLocalMin
+                    lightMapLocalSize
                     lightMapLocalOrigin
                     lightAmbientColor
                     lightAmbientBrightness
@@ -1292,6 +1302,8 @@ type [<ReferenceEquality>] GlRenderer3d =
                 (SegmentedList.singleton (model, texCoordsOffset, properties))
                 true
                 lightMapLocal
+                lightMapLocalMin
+                lightMapLocalSize
                 lightMapLocalOrigin
                 lightAmbientColor
                 lightAmbientBrightness
