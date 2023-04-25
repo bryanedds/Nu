@@ -1902,7 +1902,7 @@ module WorldModuleEntity =
                                 if entityState.Imperative then world else World.setEntityState entityState entity world
                         else world
                 if changed
-                then World.publishEntityChange propertyName previous propertyOld.PropertyValue entityStateOpt.PublishChangeEvents entity world
+                then World.publishEntityChange propertyName previous value entityStateOpt.PublishChangeEvents entity world
                 else world
             else failwithf "Could not find entity '%s'." (scstring entity)
 
