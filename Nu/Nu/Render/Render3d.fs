@@ -1139,7 +1139,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         // collect light mapping elements
         let lightMapFallback = GlRenderer3d.getLightMapFallback geometryViewport renderbuffer framebuffer skyBoxOpt renderer
-        let (lightMapLocal, lightMap) = if Seq.isEmpty lightMapsSorted then (0, lightMapFallback) else (1, Seq.head lightMapsSorted)
+        let (lightMapLocal, lightMap) = if topLevelRender && Seq.notEmpty lightMapsSorted then (1, Seq.head lightMapsSorted) else (0, lightMapFallback)
         let lightMapLocalMin = [|lightMap.Origin.X - 5.0f; lightMap.Origin.Y - 5.0f; lightMap.Origin.Z - 5.0f|] // TODO: pass in bounds param for probes.
         let lightMapLocalSize = [|10.0f; 10.0f; 10.0f|] // TODO: pass in bounds param for probes.
         let lightMapLocalOrigin = [|lightMap.Origin.X; lightMap.Origin.Y; lightMap.Origin.Z|]
