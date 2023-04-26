@@ -88,7 +88,7 @@ module LightMap =
             Hl.Assert ()
 
             //// take a snapshot for testing
-            //Hl.SaveFramebufferToBitmap rasterViewport.Bounds.Width rasterViewport.Bounds.Height ("Test" + string i + ".bmp")
+            Hl.SaveFramebufferToBitmap rasterViewport.Bounds.Width rasterViewport.Bounds.Height ("Test" + string i + ".bmp")
             //Hl.Assert ()
 
         // teardown attachments
