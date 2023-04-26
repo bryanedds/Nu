@@ -834,37 +834,6 @@ type [<ReferenceEquality>] GlRenderer3d =
             | _ -> Log.trace "Cannot render static model with a non-model asset."
         | _ -> Log.info ("Cannot render static model due to unloadable assets for '" + scstring staticModel + "'.")
 
-    /// Create a reflection map.
-    static member private createReflectionMap (currentViewport : Viewport) currentRenderbuffer currentFramebuffer origin renderer =
-        OpenGL.LightMap.CreateReflectionMap
-            (GlRenderer3d.renderInternal renderer,
-             currentViewport,
-             currentRenderbuffer,
-             currentFramebuffer,
-             Constants.Render.Resolution,
-             Constants.Render.ReflectionMapResolution,
-             origin)
-
-    /// Create an irradiance map.
-    static member private createIrradianceMap currentViewport currentRenderbuffer currentFramebuffer shader skyBoxSurface =
-        OpenGL.LightMap.CreateIrradianceMap
-            (currentViewport,
-             currentRenderbuffer,
-             currentFramebuffer,
-             Constants.Render.IrradianceMapResolution,
-             shader,
-             skyBoxSurface)
-
-    /// Create an environment filter map.
-    static member private createEnvironmentFilterMap currentViewport currentFramebuffer currentRenderbuffer shader skyBoxSurface =
-        OpenGL.LightMap.CreateEnvironmentFilterMap
-            (currentViewport,
-             currentRenderbuffer,
-             currentFramebuffer,
-             Constants.Render.EnvironmentFilterResolution,
-             shader,
-             skyBoxSurface)
-
     static member private getLastSkyBoxOpt renderer =
         match Seq.tryLast renderer.RenderTasks.RenderSkyBoxes with
         | Some (lightAmbientColor, lightAmbientBrightness, cubeMapColor, cubeMapBrightness, cubeMapAsset) ->
@@ -1051,9 +1020,6 @@ type [<ReferenceEquality>] GlRenderer3d =
 
     static member private renderInternal
         renderer
-        (currentViewport : Viewport)
-        (currentRenderbuffer : uint)
-        (currentFramebuffer : uint)
         (topLevelRender : bool)
         (eyeCenter : Vector3)
         (viewAbsolute : Matrix4x4)
@@ -1090,21 +1056,17 @@ type [<ReferenceEquality>] GlRenderer3d =
 
                         // render irradiance map
                         let irradianceMap =
-                            GlRenderer3d.createIrradianceMap
-                                geometryViewport
-                                renderbuffer
-                                framebuffer
-                                renderer.RenderIrradianceShader
-                                (OpenGL.CubeMap.CubeMapSurface.make cubeMap renderer.RenderCubeMapGeometry)
+                            OpenGL.LightMap.CreateIrradianceMap
+                                (Constants.Render.IrradianceMapResolution,
+                                 renderer.RenderIrradianceShader,
+                                 OpenGL.CubeMap.CubeMapSurface.make cubeMap renderer.RenderCubeMapGeometry)
 
                         // render env filter map
                         let environmentFilterMap =
-                            GlRenderer3d.createEnvironmentFilterMap
-                                geometryViewport
-                                renderbuffer
-                                framebuffer
-                                renderer.RenderEnvironmentFilterShader
-                                (OpenGL.CubeMap.CubeMapSurface.make cubeMap renderer.RenderCubeMapGeometry)
+                            OpenGL.LightMap.CreateEnvironmentFilterMap
+                                (Constants.Render.EnvironmentFilterResolution,
+                                 renderer.RenderEnvironmentFilterShader,
+                                 OpenGL.CubeMap.CubeMapSurface.make cubeMap renderer.RenderCubeMapGeometry)
 
                         // add to cache and create light map
                         irradianceAndEnvironmentMapsOptRef.Value <- Some (irradianceMap, environmentFilterMap)
@@ -1147,30 +1109,25 @@ type [<ReferenceEquality>] GlRenderer3d =
 
                     // create reflection map
                     let reflectionMap =
-                        GlRenderer3d.createReflectionMap
-                            geometryViewport
-                            renderbuffer
-                            framebuffer
-                            lightProbeOrigin
-                            renderer
+                        OpenGL.LightMap.CreateReflectionMap
+                            (GlRenderer3d.renderInternal renderer,
+                             Constants.Render.Resolution,
+                             Constants.Render.ReflectionMapResolution,
+                             lightProbeOrigin)
 
                     // create irradiance map
                     let irradianceMap =
-                        GlRenderer3d.createIrradianceMap
-                            geometryViewport
-                            renderbuffer
-                            framebuffer
-                            renderer.RenderIrradianceShader
-                            (OpenGL.CubeMap.CubeMapSurface.make reflectionMap renderer.RenderCubeMapGeometry)
+                        OpenGL.LightMap.CreateIrradianceMap
+                            (Constants.Render.IrradianceMapResolution,
+                             renderer.RenderIrradianceShader,
+                             OpenGL.CubeMap.CubeMapSurface.make reflectionMap renderer.RenderCubeMapGeometry)
 
                     // create env filter map
                     let environmentFilterMap =
-                        GlRenderer3d.createEnvironmentFilterMap
-                            geometryViewport
-                            renderbuffer
-                            framebuffer
-                            renderer.RenderEnvironmentFilterShader
-                            (OpenGL.CubeMap.CubeMapSurface.make reflectionMap renderer.RenderCubeMapGeometry)
+                        OpenGL.LightMap.CreateEnvironmentFilterMap
+                            (Constants.Render.EnvironmentFilterResolution,
+                             renderer.RenderEnvironmentFilterShader,
+                             OpenGL.CubeMap.CubeMapSurface.make reflectionMap renderer.RenderCubeMapGeometry)
 
                     // construct light map
                     let lightMap = OpenGL.LightMap.CreateLightMap lightProbeBounds lightProbeOrigin reflectionMap irradianceMap environmentFilterMap
@@ -1423,14 +1380,6 @@ type [<ReferenceEquality>] GlRenderer3d =
                 renderer
             OpenGL.Hl.Assert ()
 
-        // teardown viewport
-        OpenGL.Gl.Viewport (currentViewport.Bounds.Min.X, currentViewport.Bounds.Min.Y, currentViewport.Bounds.Size.X, currentViewport.Bounds.Size.Y)
-        OpenGL.Hl.Assert ()
-        
-        // teardown buffers
-        OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, currentRenderbuffer)
-        OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, currentFramebuffer)
-
     static member render eyeCenter (eyeRotation : Quaternion) windowSize renderbuffer framebuffer renderMessages renderer =
 
         // categorize messages
@@ -1522,7 +1471,6 @@ type [<ReferenceEquality>] GlRenderer3d =
         // top-level render
         GlRenderer3d.renderInternal
             renderer
-            viewport renderbuffer framebuffer
             true eyeCenter
             viewAbsolute viewRelative viewSkyBox
             viewportOffset projection
@@ -1604,7 +1552,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         OpenGL.Hl.Assert ()
 
         // create white sky box cube map
-        let skyBoxMap =
+        let cubeMap =
             match 
                 OpenGL.CubeMap.TryCreateCubeMap
                     ("Assets/Default/Image9.bmp",
@@ -1629,16 +1577,16 @@ type [<ReferenceEquality>] GlRenderer3d =
         let physicallyBasedQuad = OpenGL.PhysicallyBased.CreatePhysicallyBasedQuad true
         OpenGL.Hl.Assert ()
 
-        // create sky box surface
-        let skyBoxSurface = OpenGL.CubeMap.CubeMapSurface.make skyBoxMap cubeMapGeometry
+        // create cube map surface
+        let cubeMapSurface = OpenGL.CubeMap.CubeMapSurface.make cubeMap cubeMapGeometry
         OpenGL.Hl.Assert ()
 
         // create default irradiance map
-        let irradianceMap = GlRenderer3d.createIrradianceMap Constants.Render.Viewport 0u 0u irradianceShader skyBoxSurface
+        let irradianceMap = OpenGL.LightMap.CreateIrradianceMap (Constants.Render.IrradianceMapResolution, irradianceShader, cubeMapSurface)
         OpenGL.Hl.Assert ()
 
         // create default environment filter map
-        let environmentFilterMap = GlRenderer3d.createEnvironmentFilterMap Constants.Render.Viewport 0u 0u environmentFilterShader skyBoxSurface
+        let environmentFilterMap = OpenGL.LightMap.CreateEnvironmentFilterMap (Constants.Render.EnvironmentFilterResolution, environmentFilterShader, cubeMapSurface)
         OpenGL.Hl.Assert ()
 
         // create brdf texture
@@ -1701,7 +1649,7 @@ type [<ReferenceEquality>] GlRenderer3d =
               RenderCubeMapGeometry = cubeMapGeometry
               RenderBillboardGeometry = billboardGeometry
               RenderPhysicallyBasedQuad = physicallyBasedQuad
-              RenderCubeMap = skyBoxSurface.CubeMap
+              RenderCubeMap = cubeMapSurface.CubeMap
               RenderIrradianceMap = irradianceMap
               RenderEnvironmentFilterMap = environmentFilterMap
               RenderBrdfTexture = brdfTexture
