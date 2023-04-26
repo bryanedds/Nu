@@ -240,6 +240,47 @@ and [<ReferenceEquality>] RenderMessage3d =
     | UnloadRenderPackage3d of string
     | ReloadRenderAssets3d
 
+/// A sortable light map.
+/// OPTIMIZATION: mutable field for caching distance squared.
+and [<ReferenceEquality>] SortableLightMap =
+    { SortableLightMap : int
+      SortableLightMapMin : Vector3
+      SortableLightMapSize : Vector3
+      SortableLightMapOrigin : Vector3
+      SortableLightMapIrradianceMap : uint
+      SortableLightMapEnvironmentFilterMap : uint
+      mutable SortableLightMapDistanceSquared : single }
+
+    /// Sort lights maps into array for uploading to OpenGL.
+    /// TODO: consider getting rid of allocation here.
+    static member sortLightsMapsIntoArrays lightMapsMax position lightMaps =
+        let lightMaps_ = Array.zeroCreate<int> lightMapsMax
+        let lightMapMins = Array.zeroCreate<single> (lightMapsMax * 3)
+        let lightMapSizes = Array.zeroCreate<single> (lightMapsMax * 3)
+        let lightMapOrigins = Array.zeroCreate<single> (lightMapsMax * 3)
+        let lightMapIrradianceMaps = Array.zeroCreate<uint> lightMapsMax
+        let lightMapEnvironmentFilterMaps = Array.zeroCreate<uint> lightMapsMax
+        for lightMap in lightMaps do
+            lightMap.SortableLightMapDistanceSquared <- (lightMap.SortableLightMapOrigin - position).MagnitudeSquared
+        let lightMapsSorted = lightMaps |> Seq.toArray |> Array.sortBy (fun light -> light.SortableLightMapDistanceSquared)
+        for i in 0 .. dec lightMapsMax do
+            if i < lightMapsSorted.Length then
+                let i3 = i * 3
+                let lightMap = lightMapsSorted.[i]
+                lightMaps_.[i] <- lightMap.SortableLightMap
+                lightMapMins.[i3] <- lightMap.SortableLightMapMin.X
+                lightMapMins.[i3+1] <- lightMap.SortableLightMapMin.Y
+                lightMapMins.[i3+2] <- lightMap.SortableLightMapMin.Z
+                lightMapSizes.[i3] <- lightMap.SortableLightMapSize.X
+                lightMapSizes.[i3+1] <- lightMap.SortableLightMapSize.Y
+                lightMapSizes.[i3+2] <- lightMap.SortableLightMapSize.Z
+                lightMapOrigins.[i3] <- lightMap.SortableLightMapOrigin.X
+                lightMapOrigins.[i3+1] <- lightMap.SortableLightMapOrigin.Y
+                lightMapOrigins.[i3+2] <- lightMap.SortableLightMapOrigin.Z
+                lightMapIrradianceMaps.[i] <- lightMap.SortableLightMapIrradianceMap
+                lightMapEnvironmentFilterMaps.[i] <- lightMap.SortableLightMapEnvironmentFilterMap
+        (lightMaps_, lightMapMins, lightMapSizes, lightMapOrigins, lightMapIrradianceMaps, lightMapEnvironmentFilterMaps)
+
 /// A sortable light.
 /// OPTIMIZATION: mutable field for caching distance squared.
 and [<ReferenceEquality>] SortableLight =
@@ -271,27 +312,25 @@ and [<ReferenceEquality>] SortableLight =
         let lightsSorted = lights |> Seq.toArray |> Array.sortBy (fun light -> light.SortableLightDistanceSquared)
         for i in 0 .. dec lightsMax do
             if i < lightsSorted.Length then
-                let p = i * 3
-                let c = i * 4
-                let b = i
-                let n = i
+                let i3 = i * 3
+                let i4 = i * 4
                 let light = lightsSorted.[i]
-                lightOrigins.[p] <- light.SortableLightOrigin.X
-                lightOrigins.[p+1] <- light.SortableLightOrigin.Y
-                lightOrigins.[p+2] <- light.SortableLightOrigin.Z
-                lightDirections.[p] <- light.SortableLightDirection.X
-                lightDirections.[p+1] <- light.SortableLightDirection.Y
-                lightDirections.[p+2] <- light.SortableLightDirection.Z
-                lightColors.[c] <- light.SortableLightColor.R
-                lightColors.[c+1] <- light.SortableLightColor.G
-                lightColors.[c+2] <- light.SortableLightColor.B
-                lightColors.[c+3] <- light.SortableLightColor.A
-                lightBrightnesses.[b] <- light.SortableLightBrightness
-                lightAttenuationLinears.[n] <- light.SortableLightAttenuationLinear
-                lightAttenuationQuadratics.[n] <- light.SortableLightAttenuationQuadratic
-                lightDirectionals.[n] <- light.SortableLightDirectional
-                lightConeInners.[n] <- light.SortableLightConeInner
-                lightConeOuters.[n] <- light.SortableLightConeOuter
+                lightOrigins.[i3] <- light.SortableLightOrigin.X
+                lightOrigins.[i3+1] <- light.SortableLightOrigin.Y
+                lightOrigins.[i3+2] <- light.SortableLightOrigin.Z
+                lightDirections.[i3] <- light.SortableLightDirection.X
+                lightDirections.[i3+1] <- light.SortableLightDirection.Y
+                lightDirections.[i3+2] <- light.SortableLightDirection.Z
+                lightColors.[i4] <- light.SortableLightColor.R
+                lightColors.[i4+1] <- light.SortableLightColor.G
+                lightColors.[i4+2] <- light.SortableLightColor.B
+                lightColors.[i4+3] <- light.SortableLightColor.A
+                lightBrightnesses.[i] <- light.SortableLightBrightness
+                lightAttenuationLinears.[i] <- light.SortableLightAttenuationLinear
+                lightAttenuationQuadratics.[i] <- light.SortableLightAttenuationQuadratic
+                lightDirectionals.[i] <- light.SortableLightDirectional
+                lightConeInners.[i] <- light.SortableLightConeInner
+                lightConeOuters.[i] <- light.SortableLightConeOuter
         (lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightDirectionals, lightConeInners, lightConeOuters)
 
 /// The 3d renderer. Represents the 3d rendering system in Nu generally.
@@ -888,10 +927,10 @@ type [<ReferenceEquality>] GlRenderer3d =
         eyeCenter
         (parameters : struct (Matrix4x4 * Box2 * MaterialProperties) SegmentedList)
         blending
-        lightMapLocal
-        lightMapLocalMin
-        lightMapLocalSize
-        lightMapLocalOrigin
+        lightMap
+        lightMapMin
+        lightMapSize
+        lightMapOrigin
         lightAmbientColor
         lightAmbientBrightness
         irradianceMap
@@ -979,7 +1018,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             // draw surfaces
             OpenGL.PhysicallyBased.DrawPhysicallyBasedSurfaces
                 (viewArray, projectionArray, eyeCenter, parameters.Length, renderer.RenderModelsFields, renderer.RenderTexCoordsOffsetsFields, renderer.RenderAlbedosFields, renderer.PhysicallyBasedMaterialsFields, renderer.PhysicallyBasedHeightsFields, renderer.PhysicallyBasedInvertRoughnessesFields,
-                 blending, lightMapLocal, lightMapLocalMin, lightMapLocalSize, lightMapLocalOrigin, lightAmbientColor, lightAmbientBrightness, irradianceMap, environmentFilterMap, brdfTexture,
+                 blending, lightMap, lightMapMin, lightMapSize, lightMapOrigin, lightAmbientColor, lightAmbientBrightness, irradianceMap, environmentFilterMap, brdfTexture,
                  Array.empty, Array.empty, Array.empty, Array.empty, Array.empty, Array.empty,
                  lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightDirectionals, lightConeInners, lightConeOuters,
                  surface.SurfaceMaterial, surface.PhysicallyBasedGeometry, shader)
@@ -1140,10 +1179,10 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         // collect light mapping elements
         let lightMapFallback = GlRenderer3d.getLightMapFallback geometryViewport renderbuffer framebuffer skyBoxOpt renderer
-        let (lightMapLocal, lightMap) = if topLevelRender && Seq.notEmpty lightMapsSorted then (1, Seq.head lightMapsSorted) else (0, lightMapFallback)
-        let lightMapLocalMin = [|lightMap.Origin.X - 5.0f; lightMap.Origin.Y - 5.0f; lightMap.Origin.Z - 5.0f|] // TODO: pass in bounds param for probes.
-        let lightMapLocalSize = [|10.0f; 10.0f; 10.0f|] // TODO: pass in bounds param for probes.
-        let lightMapLocalOrigin = [|lightMap.Origin.X; lightMap.Origin.Y; lightMap.Origin.Z|]
+        let (lightMap_, lightMap) = if topLevelRender && Seq.notEmpty lightMapsSorted then (1, Seq.head lightMapsSorted) else (0, lightMapFallback)
+        let lightMapMin = [|lightMap.Origin.X - 5.0f; lightMap.Origin.Y - 5.0f; lightMap.Origin.Z - 5.0f|] // TODO: pass in bounds param for probes.
+        let lightMapSize = [|10.0f; 10.0f; 10.0f|] // TODO: pass in bounds param for probes.
+        let lightMapOrigin = [|lightMap.Origin.X; lightMap.Origin.Y; lightMap.Origin.Z|]
 
         // setup geometry viewport
         OpenGL.Gl.Viewport (geometryViewport.Bounds.Min.X, geometryViewport.Bounds.Min.Y, geometryViewport.Bounds.Width, geometryViewport.Bounds.Height)
@@ -1169,10 +1208,10 @@ type [<ReferenceEquality>] GlRenderer3d =
                     eyeCenter
                     entry.Value
                     false
-                    lightMapLocal
-                    lightMapLocalMin
-                    lightMapLocalSize
-                    lightMapLocalOrigin
+                    lightMap_
+                    lightMapMin
+                    lightMapSize
+                    lightMapOrigin
                     lightAmbientColor
                     lightAmbientBrightness
                     lightMap.IrradianceMap
@@ -1200,10 +1239,10 @@ type [<ReferenceEquality>] GlRenderer3d =
                 eyeCenter
                 entry.Value
                 false
-                lightMapLocal
-                lightMapLocalMin
-                lightMapLocalSize
-                lightMapLocalOrigin
+                lightMap_
+                lightMapMin
+                lightMapSize
+                lightMapOrigin
                 lightAmbientColor
                 lightAmbientBrightness
                 lightMap.IrradianceMap
@@ -1244,7 +1283,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         // deferred render lighting quad
         OpenGL.PhysicallyBased.DrawPhysicallyBasedDeferred2Surface
-            (viewRelativeArray, rasterProjectionArray, eyeCenter, lightMapLocal, lightMapLocalMin, lightMapLocalSize, lightMapLocalOrigin, lightAmbientColor, lightAmbientBrightness,
+            (viewRelativeArray, rasterProjectionArray, eyeCenter, lightMap_, lightMapMin, lightMapSize, lightMapOrigin, lightAmbientColor, lightAmbientBrightness,
              positionTexture, albedoTexture, materialTexture, normalAndHeightTexture, lightMap.IrradianceMap, lightMap.EnvironmentFilterMap, renderer.RenderBrdfTexture,
              Array.empty, Array.empty, Array.empty, Array.empty, Array.empty, Array.empty,
              lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightDirectionals, lightConeInners, lightConeOuters,
@@ -1270,10 +1309,10 @@ type [<ReferenceEquality>] GlRenderer3d =
                     eyeCenter
                     (SegmentedList.singleton (model, texCoordsOffset, properties))
                     true
-                    lightMapLocal
-                    lightMapLocalMin
-                    lightMapLocalSize
-                    lightMapLocalOrigin
+                    lightMap_
+                    lightMapMin
+                    lightMapSize
+                    lightMapOrigin
                     lightAmbientColor
                     lightAmbientBrightness
                     lightMap.IrradianceMap
@@ -1303,10 +1342,10 @@ type [<ReferenceEquality>] GlRenderer3d =
                 eyeCenter
                 (SegmentedList.singleton (model, texCoordsOffset, properties))
                 true
-                lightMapLocal
-                lightMapLocalMin
-                lightMapLocalSize
-                lightMapLocalOrigin
+                lightMap_
+                lightMapMin
+                lightMapSize
+                lightMapOrigin
                 lightAmbientColor
                 lightAmbientBrightness
                 lightMap.IrradianceMap
