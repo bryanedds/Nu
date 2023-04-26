@@ -258,10 +258,10 @@ void main()
         lightAccum += (kD * albedo.rgb / PI + specular) * radiance * nDotL;
     }
 
-    // compute irradiance term
+    // compute irradiance
     vec3 irradiance = texture(irradianceMap, n).rgb;
 
-    // compute environment filter term
+    // compute environment filter
     vec3 r = lightMap != 0 ? parallaxCorrection(environmentFilterMap, position, normal) : reflect(-v, normal);
     vec3 environmentFilter = textureLod(environmentFilterMap, r, roughness * (REFLECTION_LOD_MAX - 1.0)).rgb;
 
