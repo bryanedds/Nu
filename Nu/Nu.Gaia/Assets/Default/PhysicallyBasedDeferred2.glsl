@@ -123,17 +123,16 @@ vec4 textureIrradiance(int index, vec3 direction)
 
 vec4 textureLodEnvironmentFilter(int index, vec3 direction, float lod)
 {
-    switch (index)
-    {
-        case 0: return texture(environmentFilterMapLocal, direction, lod);
-        case 1: return texture(environmentFilterMapLocal2, direction, lod);
-        case 2: return texture(environmentFilterMapLocal3, direction, lod);
-        case 3: return texture(environmentFilterMapLocal4, direction, lod);
-        case 4: return texture(environmentFilterMapLocal5, direction, lod);
-        case 5: return texture(environmentFilterMapLocal6, direction, lod);
-        case 6: return texture(environmentFilterMapLocal7, direction, lod);
-        case 7: return texture(environmentFilterMapLocal8, direction, lod);
-    }
+    vec4 result = vec4(0.0);
+    if (index == 0) result = texture(environmentFilterMapLocal, direction, lod);
+    if (index == 1) result = texture(environmentFilterMapLocal2, direction, lod);
+    if (index == 2) result = texture(environmentFilterMapLocal3, direction, lod);
+    if (index == 3) result = texture(environmentFilterMapLocal4, direction, lod);
+    if (index == 4) result = texture(environmentFilterMapLocal5, direction, lod);
+    if (index == 5) result = texture(environmentFilterMapLocal6, direction, lod);
+    if (index == 6) result = texture(environmentFilterMapLocal7, direction, lod);
+    if (index == 7) result = texture(environmentFilterMapLocal8, direction, lod);
+    return result;
 }
 
 vec3 parallaxCorrection(samplerCube cubeMap, vec3 positionWorld, vec3 normalWorld)
@@ -361,9 +360,18 @@ void main()
     }
     else if (lm2Index == -1)
     {
-        irradiance = textureIrradiance(0, normal).rgb;
-        vec3 r = reflect(-v, normal); //parallaxCorrection(environmentFilterMaps[lm1Index], position, normal);
-        environmentFilter = textureLodEnvironmentFilter(0, r, roughness * (REFLECTION_LOD_MAX - 1.0)).rgb;
+        irradiance = texture(irradianceMap, normal).rgb;
+        vec3 r = lightMap != 0 ? parallaxCorrection(environmentFilterMap, position, normal) : reflect(-v, normal);
+        //environmentFilter = textureLod(environmentFilterMapLocal, r, roughness * (REFLECTION_LOD_MAX - 1.0)).rgb;
+
+        if (lm1Index == 0) environmentFilter = textureLod(environmentFilterMapLocal, r, roughness * (REFLECTION_LOD_MAX - 1.0)).rgb;
+        if (lm1Index == 1) environmentFilter = textureLod(environmentFilterMapLocal2, r, roughness * (REFLECTION_LOD_MAX - 1.0)).rgb;
+        if (lm1Index == 2) environmentFilter = textureLod(environmentFilterMapLocal3, r, roughness * (REFLECTION_LOD_MAX - 1.0)).rgb;
+        if (lm1Index == 3) environmentFilter = textureLod(environmentFilterMapLocal4, r, roughness * (REFLECTION_LOD_MAX - 1.0)).rgb;
+        if (lm1Index == 4) environmentFilter = textureLod(environmentFilterMapLocal5, r, roughness * (REFLECTION_LOD_MAX - 1.0)).rgb;
+        if (lm1Index == 5) environmentFilter = textureLod(environmentFilterMapLocal6, r, roughness * (REFLECTION_LOD_MAX - 1.0)).rgb;
+        if (lm1Index == 6) environmentFilter = textureLod(environmentFilterMapLocal7, r, roughness * (REFLECTION_LOD_MAX - 1.0)).rgb;
+        if (lm1Index == 7) environmentFilter = textureLod(environmentFilterMapLocal8, r, roughness * (REFLECTION_LOD_MAX - 1.0)).rgb;
     }
     else
     {
@@ -378,8 +386,26 @@ void main()
         // compute blended environment filter
         vec3 r1 = reflect(-v, normal); //parallaxCorrection(environmentFilterMaps[lm1Index], position, normal);
         vec3 r2 = reflect(-v, normal); //parallaxCorrection(environmentFilterMaps[lm2Index], position, normal);
-        vec3 environmentFilter1 = textureLodEnvironmentFilter(lm1Index, r1, roughness * (REFLECTION_LOD_MAX - 1.0)).rgb;
-        vec3 environmentFilter2 = textureLodEnvironmentFilter(lm2Index, r2, roughness * (REFLECTION_LOD_MAX - 1.0)).rgb;
+        vec3 environmentFilter1; //= textureLodEnvironmentFilter(lm1Index, r1, roughness * (REFLECTION_LOD_MAX - 1.0)).rgb;
+        if (lm1Index == 0) environmentFilter1 = textureLod(environmentFilterMapLocal, r1, roughness * (REFLECTION_LOD_MAX - 1.0)).rgb;
+        if (lm1Index == 1) environmentFilter1 = textureLod(environmentFilterMapLocal2, r1, roughness * (REFLECTION_LOD_MAX - 1.0)).rgb;
+        if (lm1Index == 2) environmentFilter1 = textureLod(environmentFilterMapLocal3, r1, roughness * (REFLECTION_LOD_MAX - 1.0)).rgb;
+        if (lm1Index == 3) environmentFilter1 = textureLod(environmentFilterMapLocal4, r1, roughness * (REFLECTION_LOD_MAX - 1.0)).rgb;
+        if (lm1Index == 4) environmentFilter1 = textureLod(environmentFilterMapLocal5, r1, roughness * (REFLECTION_LOD_MAX - 1.0)).rgb;
+        if (lm1Index == 5) environmentFilter1 = textureLod(environmentFilterMapLocal6, r1, roughness * (REFLECTION_LOD_MAX - 1.0)).rgb;
+        if (lm1Index == 6) environmentFilter1 = textureLod(environmentFilterMapLocal7, r1, roughness * (REFLECTION_LOD_MAX - 1.0)).rgb;
+        if (lm1Index == 7) environmentFilter1 = textureLod(environmentFilterMapLocal8, r1, roughness * (REFLECTION_LOD_MAX - 1.0)).rgb;
+
+        vec3 environmentFilter2; //= textureLodEnvironmentFilter(lm2Index, r2, roughness * (REFLECTION_LOD_MAX - 1.0)).rgb;
+        if (lm2Index == 0) environmentFilter2 = textureLod(environmentFilterMapLocal, r2, roughness * (REFLECTION_LOD_MAX - 1.0)).rgb;
+        if (lm2Index == 1) environmentFilter2 = textureLod(environmentFilterMapLocal2, r2, roughness * (REFLECTION_LOD_MAX - 1.0)).rgb;
+        if (lm2Index == 2) environmentFilter2 = textureLod(environmentFilterMapLocal3, r2, roughness * (REFLECTION_LOD_MAX - 1.0)).rgb;
+        if (lm2Index == 3) environmentFilter2 = textureLod(environmentFilterMapLocal4, r2, roughness * (REFLECTION_LOD_MAX - 1.0)).rgb;
+        if (lm2Index == 4) environmentFilter2 = textureLod(environmentFilterMapLocal5, r2, roughness * (REFLECTION_LOD_MAX - 1.0)).rgb;
+        if (lm2Index == 5) environmentFilter2 = textureLod(environmentFilterMapLocal6, r2, roughness * (REFLECTION_LOD_MAX - 1.0)).rgb;
+        if (lm2Index == 6) environmentFilter2 = textureLod(environmentFilterMapLocal7, r2, roughness * (REFLECTION_LOD_MAX - 1.0)).rgb;
+        if (lm2Index == 7) environmentFilter2 = textureLod(environmentFilterMapLocal8, r2, roughness * (REFLECTION_LOD_MAX - 1.0)).rgb;
+
         environmentFilter = environmentFilter1 * (distance1 / distanceTotal) + environmentFilter2 * (distance2 / distanceTotal);
     }
 

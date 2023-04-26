@@ -1144,18 +1144,21 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         // add existing light maps to render tasks
         for lightMapKvp in renderer.RenderLightMaps do
-            let lightMap =
-                { SortableLightMap = 1
-                  SortableLightMapBounds = lightMapKvp.Value.Bounds
-                  SortableLightMapOrigin = lightMapKvp.Value.Origin
-                  SortableLightMapIrradianceMap = lightMapKvp.Value.IrradianceMap
-                  SortableLightMapEnvironmentFilterMap = lightMapKvp.Value.EnvironmentFilterMap
-                  SortableLightMapDistanceSquared = Single.MaxValue }
-            SegmentedList.add lightMap renderer.RenderTasks.RenderLightMaps
+            if topLevelRender then
+                let lightMap =
+                    { SortableLightMap = 1
+                      SortableLightMapBounds = lightMapKvp.Value.Bounds
+                      SortableLightMapOrigin = lightMapKvp.Value.Origin
+                      SortableLightMapIrradianceMap = lightMapKvp.Value.IrradianceMap
+                      SortableLightMapEnvironmentFilterMap = lightMapKvp.Value.EnvironmentFilterMap
+                      SortableLightMapDistanceSquared = Single.MaxValue }
+                SegmentedList.add lightMap renderer.RenderTasks.RenderLightMaps
 
         // sort light maps for deferred relative to eye center
         let (lightMaps_, lightMapMins, lightMapSizes, lightMapOrigins, lightMapIrradianceMaps, lightMapEnvironmentFilterMaps) =
-            SortableLightMap.sortLightMapsIntoArrays Constants.Render.DeferredLightMapsMax eyeCenter renderer.RenderTasks.RenderLightMaps
+            if topLevelRender
+            then SortableLightMap.sortLightMapsIntoArrays Constants.Render.DeferredLightMapsMax eyeCenter renderer.RenderTasks.RenderLightMaps
+            else (Array.zeroCreate Constants.Render.DeferredLightMapsMax, Array.zeroCreate Constants.Render.DeferredLightMapsMax, Array.zeroCreate Constants.Render.DeferredLightMapsMax, Array.zeroCreate Constants.Render.DeferredLightMapsMax, Array.zeroCreate Constants.Render.DeferredLightMapsMax, Array.zeroCreate Constants.Render.DeferredLightMapsMax)
 
         // sort lights for deferred relative to eye center
         let (lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightDirectionals, lightConeInners, lightConeOuters) =
