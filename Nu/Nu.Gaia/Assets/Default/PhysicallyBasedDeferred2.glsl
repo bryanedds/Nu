@@ -316,10 +316,8 @@ void main()
     else if (lm2Index == -1)
     {
         irradiance = texture(irradianceMaps[lm1Index], normal).rgb;
-        vec3 r = parallaxCorrection(environmentFilterMaps[lm1Index], position, normal);
+        vec3 r = reflect(-v, normal); //parallaxCorrection(environmentFilterMaps[lm1Index], position, normal);
         environmentFilter = textureLod(environmentFilterMaps[lm1Index], r, roughness * (REFLECTION_LOD_MAX - 1.0)).rgb;
-
-        discard;
     }
     else
     {
@@ -332,13 +330,11 @@ void main()
         irradiance = irradiance1 * (distance1 / distanceTotal) + irradiance2 * (distance2 / distanceTotal);
 
         // compute blended environment filter
-        vec3 r1 = parallaxCorrection(environmentFilterMaps[lm1Index], position, normal);
-        vec3 r2 = parallaxCorrection(environmentFilterMaps[lm2Index], position, normal);
+        vec3 r1 = reflect(-v, normal); //parallaxCorrection(environmentFilterMaps[lm1Index], position, normal);
+        vec3 r2 = reflect(-v, normal); //parallaxCorrection(environmentFilterMaps[lm2Index], position, normal);
         vec3 environmentFilter1 = textureLod(environmentFilterMaps[lm1Index], r1, roughness * (REFLECTION_LOD_MAX - 1.0)).rgb;
         vec3 environmentFilter2 = textureLod(environmentFilterMaps[lm2Index], r2, roughness * (REFLECTION_LOD_MAX - 1.0)).rgb;
         environmentFilter = environmentFilter1 * (distance1 / distanceTotal) + environmentFilter2 * (distance2 / distanceTotal);
-
-        discard;
     }
 
     // compute diffuse term
