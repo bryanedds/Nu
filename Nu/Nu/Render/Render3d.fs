@@ -864,10 +864,6 @@ type [<ReferenceEquality>] GlRenderer3d =
         eyeCenter
         (parameters : struct (Matrix4x4 * Box2 * MaterialProperties) SegmentedList)
         blending
-        lightMap
-        lightMapMin
-        lightMapSize
-        lightMapOrigin
         lightAmbientColor
         lightAmbientBrightness
         irradianceMap
@@ -961,7 +957,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             // draw surfaces
             OpenGL.PhysicallyBased.DrawPhysicallyBasedSurfaces
                 (viewArray, projectionArray, eyeCenter, parameters.Length, renderer.RenderModelsFields, renderer.RenderTexCoordsOffsetsFields, renderer.RenderAlbedosFields, renderer.PhysicallyBasedMaterialsFields, renderer.PhysicallyBasedHeightsFields, renderer.PhysicallyBasedInvertRoughnessesFields,
-                 blending, lightMap, lightMapMin, lightMapSize, lightMapOrigin, lightAmbientColor, lightAmbientBrightness, irradianceMap, environmentFilterMap, brdfTexture,
+                 blending, lightAmbientColor, lightAmbientBrightness, irradianceMap, environmentFilterMap, brdfTexture,
                  lightMaps, lightMapMins, lightMapSizes, lightMapOrigins, irradianceMaps, environmentFilterMaps,
                  lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightDirectionals, lightConeInners, lightConeOuters,
                  surface.SurfaceMaterial, surface.PhysicallyBasedGeometry, shader)
@@ -1086,11 +1082,6 @@ type [<ReferenceEquality>] GlRenderer3d =
             | None -> // otherwise, use the default maps
                 OpenGL.LightMap.CreateLightMap box3Zero v3Zero renderer.RenderCubeMap renderer.RenderIrradianceMap renderer.RenderEnvironmentFilterMap
 
-        // fallback light elements as arrays
-        let lightMapFallbackMin = [|lightMapFallback.Bounds.Min.X; lightMapFallback.Bounds.Min.Y; lightMapFallback.Bounds.Min.Z|]
-        let lightMapFallbackSize = [|lightMapFallback.Bounds.Size.X; lightMapFallback.Bounds.Size.Y; lightMapFallback.Bounds.Size.Z|]
-        let lightMapFallbackOrigin = [|lightMapFallback.Origin.X; lightMapFallback.Origin.Y; lightMapFallback.Origin.Z|]
-
         // collect light maps, rendering those that don't yet have an entry
         for lightProbeKvp in renderer.RenderTasks.RenderLightProbes do
             let lightProbeId = lightProbeKvp.Key
@@ -1198,10 +1189,6 @@ type [<ReferenceEquality>] GlRenderer3d =
                     eyeCenter
                     entry.Value
                     false
-                    0
-                    lightMapFallbackMin
-                    lightMapFallbackSize
-                    lightMapFallbackOrigin
                     lightAmbientColor
                     lightAmbientBrightness
                     lightMapFallback.IrradianceMap
@@ -1235,10 +1222,6 @@ type [<ReferenceEquality>] GlRenderer3d =
                 eyeCenter
                 entry.Value
                 false
-                0
-                lightMapFallbackMin
-                lightMapFallbackSize
-                lightMapFallbackOrigin
                 lightAmbientColor
                 lightAmbientBrightness
                 lightMapFallback.IrradianceMap
@@ -1285,7 +1268,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         // deferred render lighting quad
         OpenGL.PhysicallyBased.DrawPhysicallyBasedDeferred2Surface
-            (viewRelativeArray, rasterProjectionArray, eyeCenter, 0, lightMapFallbackMin, lightMapFallbackSize, lightMapFallbackOrigin, lightAmbientColor, lightAmbientBrightness,
+            (viewRelativeArray, rasterProjectionArray, eyeCenter, lightAmbientColor, lightAmbientBrightness,
              positionTexture, albedoTexture, materialTexture, normalAndHeightTexture, lightMapFallback.IrradianceMap, lightMapFallback.EnvironmentFilterMap, renderer.RenderBrdfTexture,
              lightMaps_, lightMapMins, lightMapSizes, lightMapOrigins, lightMapIrradianceMaps, lightMapEnvironmentFilterMaps,
              lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightDirectionals, lightConeInners, lightConeOuters,
@@ -1313,10 +1296,6 @@ type [<ReferenceEquality>] GlRenderer3d =
                     eyeCenter
                     (SegmentedList.singleton (model, texCoordsOffset, properties))
                     true
-                    0
-                    lightMapFallbackMin
-                    lightMapFallbackSize
-                    lightMapFallbackOrigin
                     lightAmbientColor
                     lightAmbientBrightness
                     lightMapFallback.IrradianceMap
@@ -1354,10 +1333,6 @@ type [<ReferenceEquality>] GlRenderer3d =
                 eyeCenter
                 (SegmentedList.singleton (model, texCoordsOffset, properties))
                 true
-                0
-                lightMapFallbackMin
-                lightMapFallbackSize
-                lightMapFallbackOrigin
                 lightAmbientColor
                 lightAmbientBrightness
                 lightMapFallback.IrradianceMap
