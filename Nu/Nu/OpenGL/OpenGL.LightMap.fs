@@ -87,7 +87,7 @@ module LightMap =
             Hl.Assert ()
 
             // take a snapshot for testing
-            Hl.SaveFramebufferToBitmap rasterViewport.Bounds.Width rasterViewport.Bounds.Height ("Test" + string i + ".bmp")
+            Hl.SaveFramebufferToBitmap rasterViewport.Bounds.Width rasterViewport.Bounds.Height ("Reflection." + string rasterCubeMap + "." + string i + ".bmp")
             Hl.Assert ()
 
         // teardown attachments
@@ -158,9 +158,15 @@ module LightMap =
 
         // render faces to irradiance cube map
         for i in 0 .. dec 6 do
+
+            // render face
             let target = LanguagePrimitives.EnumOfValue (int TextureTarget.TextureCubeMapPositiveX + i)
             Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, target, cubeMap, 0)
             CubeMap.DrawCubeMap (views.[i], projection, cubeMapSurface.CubeMap, cubeMapSurface.CubeMapGeometry, irradianceShader)
+            Hl.Assert ()
+
+            // take a snapshot for testing
+            Hl.SaveFramebufferToBitmap resolution resolution ("Irradiance." + string cubeMap + "." + string i + ".bmp")
             Hl.Assert ()
 
         // teardown attachments
@@ -309,10 +315,17 @@ module LightMap =
             Gl.RenderbufferStorage (RenderbufferTarget.Renderbuffer, InternalFormat.DepthComponent16, int resolution, int resolution)
             Gl.Viewport (0, 0, int mipResolution, int mipResolution)
             for i in 0 .. dec 6 do
+
+                // draw mip face
                 let target = LanguagePrimitives.EnumOfValue (int TextureTarget.TextureCubeMapPositiveX + i)
                 Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, target, cubeMap, mip)
                 DrawEnvironmentFilter (views.[i], projection, mipRoughness, mipResolution, environmentFilterSurface.CubeMap, environmentFilterSurface.CubeMapGeometry, environmentFilterShader)
                 Hl.Assert ()
+
+                // take a snapshot for testing
+                if mip = 0 then
+                    Hl.SaveFramebufferToBitmap resolution resolution ("EnvironmentFilter." + string cubeMap + "." + string mip + "." + string i + ".bmp")
+                    Hl.Assert ()
 
         // teardown attachments
         for i in 0 .. dec 6 do

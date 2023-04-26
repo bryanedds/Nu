@@ -1488,7 +1488,7 @@ module PhysicallyBased =
         Gl.ActiveTexture TextureUnit.Texture13
         Gl.BindTexture (TextureTarget.TextureCubeMap, environmentFilterMap)
         Gl.ActiveTexture TextureUnit.Texture14
-        Gl.BindTexture (TextureTarget.TextureCubeMap, environmentFilterMaps.[0])
+        Gl.BindTexture (TextureTarget.TextureCubeMap, environmentFilterMap)
         Gl.ActiveTexture TextureUnit.Texture15
         Gl.BindTexture (TextureTarget.TextureCubeMap, environmentFilterMaps.[1])
         Gl.ActiveTexture TextureUnit.Texture16
