@@ -107,6 +107,7 @@ module Render =
     let [<Literal>] IrradianceMapResolution = 32
     let [<Literal>] EnvironmentFilterResolution = 128
     let [<Literal>] EnvironmentFilterMips = 5 // NOTE: changing this requires changing the REFLECTION_LOD_MAX constants in shader code.
+    let [<Literal>] LightProbeSizeDefault = 8.0f
     let [<Literal>] BrightnessDefault = 10.0f
     let [<Literal>] AttenuationLinearDefault = 0.7f
     let [<Literal>] AttenuationQuadraticDefault = 1.8f

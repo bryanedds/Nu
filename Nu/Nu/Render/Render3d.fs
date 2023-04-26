@@ -1087,15 +1087,21 @@ type [<ReferenceEquality>] GlRenderer3d =
             let lightProbeId = lightProbeKvp.Key
             let struct (lightProbeOrigin, lightProbeBounds, lightProbeStale) = lightProbeKvp.Value
             match renderer.RenderLightMaps.TryGetValue lightProbeId with
-            | (true, _) when not lightProbeStale -> ()
-            | (found, valueOpt) ->
+            | (true, lightMap) when not lightProbeStale ->
+
+                // update values from probe if in top level render
+                if topLevelRender then
+                    let lightMap = OpenGL.LightMap.CreateLightMap lightProbeOrigin lightProbeBounds lightMap.ReflectionMap lightMap.IrradianceMap lightMap.EnvironmentFilterMap
+                    renderer.RenderLightMaps.[lightProbeId] <- lightMap
+
+            | (found, lightMapOpt) ->
 
                 // render light map if in top level render
                 if topLevelRender then
 
                     // destroy light map if already exists
                     if found then
-                        OpenGL.LightMap.DestroyLightMap valueOpt
+                        OpenGL.LightMap.DestroyLightMap lightMapOpt
                         renderer.RenderLightMaps.Remove lightProbeId |> ignore<bool>
 
                     // create reflection map
