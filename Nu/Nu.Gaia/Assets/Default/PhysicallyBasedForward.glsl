@@ -258,20 +258,24 @@ void main()
         lightAccum += (kD * albedo.rgb / PI + specular) * radiance * nDotL;
     }
 
+    // compute irradiance term
+    vec3 irradiance = texture(irradianceMap, n).rgb;
+
+    // compute environment filter term
+    vec3 r = lightMap != 0 ? parallaxCorrection(environmentFilterMap, position, normal) : reflect(-v, normal);
+    vec3 environmentFilter = textureLod(environmentFilterMap, r, roughness * (REFLECTION_LOD_MAX - 1.0)).rgb;
+
     // compute diffuse term
     vec3 f = fresnelSchlickRoughness(max(dot(n, v), 0.0), f0, roughness);
     vec3 kS = f;
     vec3 kD = 1.0 - kS;
     kD *= 1.0 - metallic;
-    vec3 irradiance = texture(irradianceMap, n).rgb * lightAmbientColor * lightAmbientBrightness;
-    vec3 diffuse = irradiance * albedo.rgb;
+    vec3 diffuse = irradiance * albedo.rgb * lightAmbientColor * lightAmbientBrightness;
     float alpha = albedo.a;
 
     // compute specular term
-    vec3 r = lightMap != 0 ? parallaxCorrection(environmentFilterMap, position, normal) : reflect(-v, normal);
-    vec3 environmentFilter = textureLod(environmentFilterMap, r, roughness * (REFLECTION_LOD_MAX - 1.0)).rgb * lightAmbientColor * lightAmbientBrightness;
     vec2 environmentBrdf = texture(brdfTexture, vec2(max(dot(n, v), 0.0), roughness)).rg;
-    vec3 specular = environmentFilter * (f * environmentBrdf.x + environmentBrdf.y);
+    vec3 specular = environmentFilter * (f * environmentBrdf.x + environmentBrdf.y) * lightAmbientColor * lightAmbientBrightness;
 
     // compute ambient term
     vec3 ambient = (kD * diffuse + specular) * ambientOcclusion;
