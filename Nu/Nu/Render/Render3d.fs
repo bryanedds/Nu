@@ -1187,14 +1187,15 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         // add existing light maps to render tasks
         for lightMapKvp in renderer.RenderLightMaps do
-            let lightMap =
-                { SortableLightMap = 1
-                  SortableLightMapBounds = lightMapKvp.Value.Bounds
-                  SortableLightMapOrigin = lightMapKvp.Value.Origin
-                  SortableLightMapIrradianceMap = lightMapKvp.Value.IrradianceMap
-                  SortableLightMapEnvironmentFilterMap = lightMapKvp.Value.EnvironmentFilterMap
-                  SortableLightMapDistanceSquared = Single.MaxValue }
-            SegmentedList.add lightMap renderer.RenderTasks.RenderLightMaps
+            if topLevelRender then
+                let lightMap =
+                    { SortableLightMap = 1
+                      SortableLightMapBounds = lightMapKvp.Value.Bounds
+                      SortableLightMapOrigin = lightMapKvp.Value.Origin
+                      SortableLightMapIrradianceMap = lightMapKvp.Value.IrradianceMap
+                      SortableLightMapEnvironmentFilterMap = lightMapKvp.Value.EnvironmentFilterMap
+                      SortableLightMapDistanceSquared = Single.MaxValue }
+                SegmentedList.add lightMap renderer.RenderTasks.RenderLightMaps
 
         // sort light maps for deferred relative to eye center
         let (lightMaps_, lightMapMins, lightMapSizes, lightMapOrigins, lightMapIrradianceMaps, lightMapEnvironmentFilterMaps) =
@@ -1547,6 +1548,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         // clear render tasks
         SegmentedList.clear renderer.RenderTasks.RenderSkyBoxes
         SegmentedDictionary.clear renderer.RenderTasks.RenderLightProbes
+        SegmentedList.clear renderer.RenderTasks.RenderLightMaps
         SegmentedList.clear renderer.RenderTasks.RenderLights
         renderer.RenderTasks.RenderSurfacesDeferredAbsolute.Clear ()
         renderer.RenderTasks.RenderSurfacesDeferredRelative.Clear ()
