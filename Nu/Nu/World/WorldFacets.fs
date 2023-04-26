@@ -1444,7 +1444,7 @@ module LightProbeFacet3dModule =
             let bounds = entity.GetProbeBounds world
             let stale = entity.GetProbeStale world
             let world = if stale then entity.SetProbeStale false world else world
-            World.enqueueRenderMessage3d (RenderLightProbe3d { LightProbeId = id; Bounds = bounds; Origin = position; Stale = stale }) world
+            World.enqueueRenderMessage3d (RenderLightProbe3d { LightProbeId = id; Origin = position; Bounds = bounds; Stale = stale }) world
 
         override this.RayCast (ray, entity, world) =
             let intersectionOpt = ray.Intersects (entity.GetBounds world)
