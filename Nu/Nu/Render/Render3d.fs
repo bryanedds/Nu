@@ -980,6 +980,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             OpenGL.PhysicallyBased.DrawPhysicallyBasedSurfaces
                 (viewArray, projectionArray, eyeCenter, parameters.Length, renderer.RenderModelsFields, renderer.RenderTexCoordsOffsetsFields, renderer.RenderAlbedosFields, renderer.PhysicallyBasedMaterialsFields, renderer.PhysicallyBasedHeightsFields, renderer.PhysicallyBasedInvertRoughnessesFields,
                  blending, lightMapLocal, lightMapLocalMin, lightMapLocalSize, lightMapLocalOrigin, lightAmbientColor, lightAmbientBrightness, irradianceMap, environmentFilterMap, brdfTexture,
+                 Array.empty, Array.empty, Array.empty, Array.empty, Array.empty, Array.empty,
                  lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightDirectionals, lightConeInners, lightConeOuters,
                  surface.SurfaceMaterial, surface.PhysicallyBasedGeometry, shader)
 
@@ -1245,6 +1246,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         OpenGL.PhysicallyBased.DrawPhysicallyBasedDeferred2Surface
             (viewRelativeArray, rasterProjectionArray, eyeCenter, lightMapLocal, lightMapLocalMin, lightMapLocalSize, lightMapLocalOrigin, lightAmbientColor, lightAmbientBrightness,
              positionTexture, albedoTexture, materialTexture, normalAndHeightTexture, lightMap.IrradianceMap, lightMap.EnvironmentFilterMap, renderer.RenderBrdfTexture,
+             Array.empty, Array.empty, Array.empty, Array.empty, Array.empty, Array.empty,
              lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightDirectionals, lightConeInners, lightConeOuters,
              renderer.RenderPhysicallyBasedQuad, renderer.RenderPhysicallyBasedDeferred2Shader)
         OpenGL.Hl.Assert ()
