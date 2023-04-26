@@ -11,7 +11,7 @@ open Nu
 module LightMap =
 
     /// Create a reflection map.
-    let CreateReflectionMap (render, currentViewport : Viewport, currentRenderbuffer, currentFramebuffer, geometryResolution, rasterResolution, origin) =
+    let CreateReflectionMap (render, geometryResolution, rasterResolution, origin) =
 
         // create reflection renderbuffer
         let rasterRenderbuffer = Gl.GenRenderbuffer ()
@@ -79,7 +79,6 @@ module LightMap =
             let viewRelative = Matrix4x4.CreateLookAt (origin, origin + eyeForward, eyeUp)
             let viewSkyBox = Matrix4x4.Transpose (Matrix4x4.CreateLookAt (v3Zero, eyeForward, eyeUp)) // transpose = inverse rotation when rotation only
             render
-                rasterViewport rasterRenderbuffer rasterFramebuffer
                 false origin
                 viewAbsolute viewRelative viewSkyBox
                 geometryViewport geometryProjection
@@ -87,9 +86,9 @@ module LightMap =
                 rasterRenderbuffer rasterFramebuffer
             Hl.Assert ()
 
-            //// take a snapshot for testing
+            // take a snapshot for testing
             Hl.SaveFramebufferToBitmap rasterViewport.Bounds.Width rasterViewport.Bounds.Height ("Test" + string i + ".bmp")
-            //Hl.Assert ()
+            Hl.Assert ()
 
         // teardown attachments
         for i in 0 .. dec 6 do
@@ -97,22 +96,15 @@ module LightMap =
             Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, target, 0u, 0)
             Hl.Assert ()
 
-        // teardown viewport
-        Gl.Viewport (currentViewport.Bounds.Min.X, currentViewport.Bounds.Min.Y, currentViewport.Bounds.Size.X, currentViewport.Bounds.Size.Y)
-        Hl.Assert ()
-
         // teardown buffers
-        Gl.BindRenderbuffer (RenderbufferTarget.Renderbuffer, currentRenderbuffer)
-        Gl.BindFramebuffer (FramebufferTarget.Framebuffer, currentFramebuffer)
+        Gl.BindRenderbuffer (RenderbufferTarget.Renderbuffer, 0u)
+        Gl.BindFramebuffer (FramebufferTarget.Framebuffer, 0u)
         Gl.DeleteRenderbuffers [|rasterRenderbuffer|]
         Gl.DeleteFramebuffers [|rasterFramebuffer|]
         rasterCubeMap
 
     let CreateIrradianceMap
-        (currentViewport : Viewport,
-         currentRenderbuffer,
-         currentFramebuffer,
-         resolution,
+        (resolution,
          irradianceShader,
          cubeMapSurface : CubeMap.CubeMapSurface) =
 
@@ -177,13 +169,9 @@ module LightMap =
             Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, target, 0u, 0)
             Hl.Assert ()
 
-        // teardown viewport
-        Gl.Viewport (currentViewport.Bounds.Min.X, currentViewport.Bounds.Min.Y, currentViewport.Bounds.Size.X, currentViewport.Bounds.Size.Y)
-        Hl.Assert ()
-
         // teardown buffers
-        Gl.BindRenderbuffer (RenderbufferTarget.Renderbuffer, currentRenderbuffer)
-        Gl.BindFramebuffer (FramebufferTarget.Framebuffer, currentFramebuffer)
+        Gl.BindRenderbuffer (RenderbufferTarget.Renderbuffer, 0u)
+        Gl.BindFramebuffer (FramebufferTarget.Framebuffer, 0u)
         Gl.DeleteRenderbuffers [|renderbuffer|]
         Gl.DeleteFramebuffers [|framebuffer|]
         cubeMap
@@ -265,10 +253,7 @@ module LightMap =
         Hl.Assert ()
 
     let CreateEnvironmentFilterMap
-        (currentViewport : Viewport,
-         currentRenderbuffer,
-         currentFramebuffer,
-         resolution,
+        (resolution,
          environmentFilterShader,
          environmentFilterSurface : CubeMap.CubeMapSurface) =
 
@@ -335,13 +320,9 @@ module LightMap =
             Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, target, 0u, 0)
             Hl.Assert ()
 
-        // teardown viewport
-        Gl.Viewport (currentViewport.Bounds.Min.X, currentViewport.Bounds.Min.Y, currentViewport.Bounds.Size.X, currentViewport.Bounds.Size.Y)
-        Hl.Assert ()
-
         // teardown buffers
-        Gl.BindRenderbuffer (RenderbufferTarget.Renderbuffer, currentRenderbuffer)
-        Gl.BindFramebuffer (FramebufferTarget.Framebuffer, currentFramebuffer)
+        Gl.BindRenderbuffer (RenderbufferTarget.Renderbuffer, 0u)
+        Gl.BindFramebuffer (FramebufferTarget.Framebuffer, 0u)
         Gl.DeleteRenderbuffers [|renderbuffer|]
         Gl.DeleteFramebuffers [|framebuffer|]
         cubeMap
