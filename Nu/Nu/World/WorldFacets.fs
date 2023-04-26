@@ -1412,14 +1412,17 @@ module SkyBoxFacetModule =
 module LightProbeFacet3dModule =
 
     type Entity with
-        member this.GetStale world : bool = this.Get (nameof this.Stale) world
-        member this.SetStale (value : bool) world = this.Set (nameof this.Stale) value world
-        member this.Stale = lens (nameof this.Stale) this this.GetStale this.SetStale
+        member this.GetProbeBounds world : Box3 = this.Get (nameof this.ProbeBounds) world
+        member this.SetProbeBounds (value : Box3) world = this.Set (nameof this.ProbeBounds) value world
+        member this.ProbeBounds = lens (nameof this.ProbeBounds) this this.GetProbeBounds this.SetProbeBounds
+        member this.GetProbeStale world : bool = this.Get (nameof this.ProbeStale) world
+        member this.SetProbeStale (value : bool) world = this.Set (nameof this.ProbeStale) value world
+        member this.ProbeStale = lens (nameof this.ProbeStale) this this.GetProbeStale this.SetProbeStale
 
     type LightProbeFacet3d () =
         inherit Facet (false)
 
-        static let handleStaleChange (evt : Event<ChangeData, Entity>) world =
+        static let handleProbeStaleChange (evt : Event<ChangeData, Entity>) world =
             let world =
                 if evt.Data.Value :?> bool
                 then World.requestUnculledRender world
@@ -1428,18 +1431,20 @@ module LightProbeFacet3dModule =
 
         static member Properties =
             [define Entity.Presence Omnipresent
-             define Entity.Stale true]
+             define Entity.ProbeBounds (box3 (v3Dup -5.f) (v3Dup 10.f))
+             define Entity.ProbeStale true]
 
         override this.Register (entity, world) =
-            let world = World.monitor handleStaleChange (entity.GetChangeEvent (nameof entity.Stale)) entity world
-            entity.SetStale true world
+            let world = World.monitor handleProbeStaleChange (entity.GetChangeEvent (nameof entity.ProbeStale)) entity world
+            entity.SetProbeStale true world
             
         override this.Render (entity, world) =
             let id = entity.GetId world
             let position = entity.GetPosition world
-            let stale = entity.GetStale world
-            let world = if stale then entity.SetStale false world else world
-            World.enqueueRenderMessage3d (RenderLightProbe3d { LightProbeId = id; Origin = position; Stale = stale }) world
+            let bounds = entity.GetProbeBounds world
+            let stale = entity.GetProbeStale world
+            let world = if stale then entity.SetProbeStale false world else world
+            World.enqueueRenderMessage3d (RenderLightProbe3d { LightProbeId = id; Bounds = bounds; Origin = position; Stale = stale }) world
 
         override this.RayCast (ray, entity, world) =
             let intersectionOpt = ray.Intersects (entity.GetBounds world)

@@ -68,7 +68,8 @@ type [<NoEquality; NoComparison>] BillboardParticlesDescriptor =
 /// A collection of render tasks in a pass.
 and [<ReferenceEquality>] RenderTasks =
     { RenderSkyBoxes : (Color * single * Color * single * CubeMap AssetTag) SegmentedList
-      RenderLightProbes : SegmentedDictionary<uint64, struct (Vector3 * bool)>
+      RenderLightProbes : SegmentedDictionary<uint64, struct (Box3 * Vector3 * bool)>
+      RenderLightMaps : SortableLightMap SegmentedList
       RenderLights : SortableLight SegmentedList
       RenderSurfacesDeferredAbsolute : Dictionary<OpenGL.PhysicallyBased.PhysicallyBasedSurface, struct (Matrix4x4 * Box2 * MaterialProperties) SegmentedList>
       RenderSurfacesDeferredRelative : Dictionary<OpenGL.PhysicallyBased.PhysicallyBasedSurface, struct (Matrix4x4 * Box2 * MaterialProperties) SegmentedList>
@@ -123,6 +124,7 @@ and [<ReferenceEquality>] DestroyUserDefinedStaticModel =
 
 and [<ReferenceEquality>] RenderLightProbe3d =
     { LightProbeId : uint64
+      Bounds : Box3
       Origin : Vector3
       Stale : bool }
 
@@ -244,16 +246,15 @@ and [<ReferenceEquality>] RenderMessage3d =
 /// OPTIMIZATION: mutable field for caching distance squared.
 and [<ReferenceEquality>] SortableLightMap =
     { SortableLightMap : int
-      SortableLightMapMin : Vector3
-      SortableLightMapSize : Vector3
+      SortableLightMapBounds : Box3
       SortableLightMapOrigin : Vector3
       SortableLightMapIrradianceMap : uint
       SortableLightMapEnvironmentFilterMap : uint
       mutable SortableLightMapDistanceSquared : single }
 
-    /// Sort lights maps into array for uploading to OpenGL.
+    /// Sort light maps into array for uploading to OpenGL.
     /// TODO: consider getting rid of allocation here.
-    static member sortLightsMapsIntoArrays lightMapsMax position lightMaps =
+    static member sortLightMapsIntoArrays lightMapsMax position lightMaps =
         let lightMaps_ = Array.zeroCreate<int> lightMapsMax
         let lightMapMins = Array.zeroCreate<single> (lightMapsMax * 3)
         let lightMapSizes = Array.zeroCreate<single> (lightMapsMax * 3)
@@ -268,12 +269,12 @@ and [<ReferenceEquality>] SortableLightMap =
                 let i3 = i * 3
                 let lightMap = lightMapsSorted.[i]
                 lightMaps_.[i] <- lightMap.SortableLightMap
-                lightMapMins.[i3] <- lightMap.SortableLightMapMin.X
-                lightMapMins.[i3+1] <- lightMap.SortableLightMapMin.Y
-                lightMapMins.[i3+2] <- lightMap.SortableLightMapMin.Z
-                lightMapSizes.[i3] <- lightMap.SortableLightMapSize.X
-                lightMapSizes.[i3+1] <- lightMap.SortableLightMapSize.Y
-                lightMapSizes.[i3+2] <- lightMap.SortableLightMapSize.Z
+                lightMapMins.[i3] <- lightMap.SortableLightMapBounds.Min.X
+                lightMapMins.[i3+1] <- lightMap.SortableLightMapBounds.Min.Y
+                lightMapMins.[i3+2] <- lightMap.SortableLightMapBounds.Min.Z
+                lightMapSizes.[i3] <- lightMap.SortableLightMapBounds.Size.X
+                lightMapSizes.[i3+1] <- lightMap.SortableLightMapBounds.Size.Y
+                lightMapSizes.[i3+2] <- lightMap.SortableLightMapBounds.Size.Z
                 lightMapOrigins.[i3] <- lightMap.SortableLightMapOrigin.X
                 lightMapOrigins.[i3+1] <- lightMap.SortableLightMapOrigin.Y
                 lightMapOrigins.[i3+2] <- lightMap.SortableLightMapOrigin.Z
@@ -881,39 +882,6 @@ type [<ReferenceEquality>] GlRenderer3d =
                 (lightAmbientColor, lightAmbientBrightness, None)
         | None -> (Color.White, 1.0f, None)
 
-    static member private getLightMapFallback viewport geometryRenderbuffer geometryFramebuffer skyBoxOpt renderer =
-        match skyBoxOpt with
-        | Some (_, _, cubeMap, irradianceAndEnvironmentMapsOptRef : _ ref) ->
-            if Option.isNone irradianceAndEnvironmentMapsOptRef.Value then
-                let irradianceMap =
-                    GlRenderer3d.createIrradianceMap
-                        viewport
-                        geometryRenderbuffer
-                        geometryFramebuffer
-                        renderer.RenderIrradianceShader
-                        (OpenGL.CubeMap.CubeMapSurface.make cubeMap renderer.RenderCubeMapGeometry)
-                let environmentFilterMap =
-                    GlRenderer3d.createEnvironmentFilterMap
-                        viewport
-                        geometryRenderbuffer
-                        geometryFramebuffer
-                        renderer.RenderEnvironmentFilterShader
-                        (OpenGL.CubeMap.CubeMapSurface.make cubeMap renderer.RenderCubeMapGeometry)
-                irradianceAndEnvironmentMapsOptRef.Value <- Some (irradianceMap, environmentFilterMap)
-                OpenGL.LightMap.CreateLightMap v3Zero cubeMap irradianceMap environmentFilterMap
-            else
-                let (irradianceMap, environmentFilterMap) = Option.get irradianceAndEnvironmentMapsOptRef.Value
-                OpenGL.LightMap.CreateLightMap v3Zero cubeMap irradianceMap environmentFilterMap
-        | None ->
-            OpenGL.LightMap.CreateLightMap v3Zero renderer.RenderCubeMap renderer.RenderIrradianceMap renderer.RenderEnvironmentFilterMap
-
-    static member private sortLightMaps eyeCenter lightMaps =
-        lightMaps |>
-        Seq.map (fun (lightMap : OpenGL.LightMap.LightMap) -> (lightMap, (lightMap.Origin - eyeCenter).MagnitudeSquared)) |>
-        Seq.toArray |> // TODO: use a preallocated array to avoid allocating on the LOH.
-        Array.sortBy snd |>
-        Array.map fst
-
     static member private sortSurfaces eyeCenter (surfaces : struct (single * single * Matrix4x4 * Box2 * MaterialProperties * OpenGL.PhysicallyBased.PhysicallyBasedSurface) SegmentedList) =
         surfaces |>
         Seq.map (fun struct (subsort, sort, model, texCoordsOffset, properties, surface) -> struct (subsort, sort, model, texCoordsOffset, properties, surface, (model.Translation - eyeCenter).MagnitudeSquared)) |>
@@ -936,6 +904,12 @@ type [<ReferenceEquality>] GlRenderer3d =
         irradianceMap
         environmentFilterMap
         brdfTexture
+        lightMaps
+        lightMapMins
+        lightMapSizes
+        lightMapOrigins
+        irradianceMaps
+        environmentFilterMaps
         lightOrigins
         lightDirections
         lightColors
@@ -1019,7 +993,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             OpenGL.PhysicallyBased.DrawPhysicallyBasedSurfaces
                 (viewArray, projectionArray, eyeCenter, parameters.Length, renderer.RenderModelsFields, renderer.RenderTexCoordsOffsetsFields, renderer.RenderAlbedosFields, renderer.PhysicallyBasedMaterialsFields, renderer.PhysicallyBasedHeightsFields, renderer.PhysicallyBasedInvertRoughnessesFields,
                  blending, lightMap, lightMapMin, lightMapSize, lightMapOrigin, lightAmbientColor, lightAmbientBrightness, irradianceMap, environmentFilterMap, brdfTexture,
-                 Array.empty, Array.empty, Array.empty, Array.empty, Array.empty, Array.empty,
+                 lightMaps, lightMapMins, lightMapSizes, lightMapOrigins, irradianceMaps, environmentFilterMaps,
                  lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightDirectionals, lightConeInners, lightConeOuters,
                  surface.SurfaceMaterial, surface.PhysicallyBasedGeometry, shader)
 
@@ -1103,13 +1077,64 @@ type [<ReferenceEquality>] GlRenderer3d =
         let (lightAmbientColor, lightAmbientBrightness, skyBoxOpt) = GlRenderer3d.getLastSkyBoxOpt renderer
         let lightAmbientColor = [|lightAmbientColor.R; lightAmbientColor.G; lightAmbientColor.B|]
 
+        // get fallback light map, rendering irradiance and environment filter maps if needed
+        let lightMapFallback =
+            match skyBoxOpt with
+            | Some (_, _, cubeMap, irradianceAndEnvironmentMapsOptRef : _ ref) ->
+
+                // render irradiance and env filter maps only if at top-level
+                if topLevelRender then
+
+                    // render irradiance and env filter maps
+                    if Option.isNone irradianceAndEnvironmentMapsOptRef.Value then
+
+                        // render irradiance map
+                        let irradianceMap =
+                            GlRenderer3d.createIrradianceMap
+                                geometryViewport
+                                renderbuffer
+                                framebuffer
+                                renderer.RenderIrradianceShader
+                                (OpenGL.CubeMap.CubeMapSurface.make cubeMap renderer.RenderCubeMapGeometry)
+
+                        // render env filter map
+                        let environmentFilterMap =
+                            GlRenderer3d.createEnvironmentFilterMap
+                                geometryViewport
+                                renderbuffer
+                                framebuffer
+                                renderer.RenderEnvironmentFilterShader
+                                (OpenGL.CubeMap.CubeMapSurface.make cubeMap renderer.RenderCubeMapGeometry)
+
+                        // add to cache and create light map
+                        irradianceAndEnvironmentMapsOptRef.Value <- Some (irradianceMap, environmentFilterMap)
+                        OpenGL.LightMap.CreateLightMap box3Zero v3Zero cubeMap irradianceMap environmentFilterMap
+
+                    else // otherwise, get the cached irradiance and env filter maps
+                        let (irradianceMap, environmentFilterMap) = Option.get irradianceAndEnvironmentMapsOptRef.Value
+                        OpenGL.LightMap.CreateLightMap box3Zero v3Zero cubeMap irradianceMap environmentFilterMap
+
+                else // otherwise, attempt to use the cached irradiance and env filter map or the default maps
+                    let (irradianceMap, environmentFilterMap) =
+                        match irradianceAndEnvironmentMapsOptRef.Value with
+                        | Some irradianceAndEnvironmentMaps -> irradianceAndEnvironmentMaps
+                        | None -> (renderer.RenderIrradianceMap, renderer.RenderEnvironmentFilterMap)
+                    OpenGL.LightMap.CreateLightMap box3Zero v3Zero cubeMap irradianceMap environmentFilterMap
+
+            | None -> // otherwise, use the default maps
+                OpenGL.LightMap.CreateLightMap box3Zero v3Zero renderer.RenderCubeMap renderer.RenderIrradianceMap renderer.RenderEnvironmentFilterMap
+
+        // fallback light elements as arrays
+        let lightMapFallbackMin = [|lightMapFallback.Bounds.Min.X; lightMapFallback.Bounds.Min.Y; lightMapFallback.Bounds.Min.Z|]
+        let lightMapFallbackSize = [|lightMapFallback.Bounds.Size.X; lightMapFallback.Bounds.Size.Y; lightMapFallback.Bounds.Size.Z|]
+        let lightMapFallbackOrigin = [|lightMapFallback.Origin.X; lightMapFallback.Origin.Y; lightMapFallback.Origin.Z|]
+
         // collect light maps, rendering those that don't yet have an entry
-        let lightMaps = List ()
         for lightProbeKvp in renderer.RenderTasks.RenderLightProbes do
             let lightProbeId = lightProbeKvp.Key
-            let struct (lightProbeOrigin, lightProbeStale) = lightProbeKvp.Value
+            let struct (lightProbeBounds, lightProbeOrigin, lightProbeStale) = lightProbeKvp.Value
             match renderer.RenderLightMaps.TryGetValue lightProbeId with
-            | (true, value) when not lightProbeStale -> lightMaps.Add value
+            | (true, _) when not lightProbeStale -> ()
             | (found, valueOpt) ->
 
                 // render light map if in top level render
@@ -1148,7 +1173,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                             (OpenGL.CubeMap.CubeMapSurface.make reflectionMap renderer.RenderCubeMapGeometry)
 
                     // construct light map
-                    let lightMap = OpenGL.LightMap.CreateLightMap lightProbeOrigin reflectionMap irradianceMap environmentFilterMap
+                    let lightMap = OpenGL.LightMap.CreateLightMap lightProbeBounds lightProbeOrigin reflectionMap irradianceMap environmentFilterMap
 
                     // add light map
                     renderer.RenderLightMaps.Add (lightProbeId, lightMap)
@@ -1160,8 +1185,20 @@ type [<ReferenceEquality>] GlRenderer3d =
                     OpenGL.LightMap.DestroyLightMap lightMapKvp.Value
                     renderer.RenderLightMaps.Remove lightMapKvp.Key |> ignore<bool>
 
-        // sort light maps relative to eye center
-        let lightMapsSorted = GlRenderer3d.sortLightMaps eyeCenter lightMaps
+        // add existing light maps to render tasks
+        for lightMapKvp in renderer.RenderLightMaps do
+            let lightMap =
+                { SortableLightMap = 1
+                  SortableLightMapBounds = lightMapKvp.Value.Bounds
+                  SortableLightMapOrigin = lightMapKvp.Value.Origin
+                  SortableLightMapIrradianceMap = lightMapKvp.Value.IrradianceMap
+                  SortableLightMapEnvironmentFilterMap = lightMapKvp.Value.EnvironmentFilterMap
+                  SortableLightMapDistanceSquared = Single.MaxValue }
+            SegmentedList.add lightMap renderer.RenderTasks.RenderLightMaps
+
+        // sort light maps for deferred relative to eye center
+        let (lightMaps_, lightMapMins, lightMapSizes, lightMapOrigins, lightMapIrradianceMaps, lightMapEnvironmentFilterMaps) =
+            SortableLightMap.sortLightMapsIntoArrays Constants.Render.DeferredLightMapsMax eyeCenter renderer.RenderTasks.RenderLightMaps
 
         // sort lights for deferred relative to eye center
         let (lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightDirectionals, lightConeInners, lightConeOuters) =
@@ -1176,13 +1213,6 @@ type [<ReferenceEquality>] GlRenderer3d =
         let forwardSurfacesSorted = GlRenderer3d.sortSurfaces eyeCenter renderer.RenderTasks.RenderSurfacesForwardRelative
         SegmentedList.addMany forwardSurfacesSorted renderer.RenderTasks.RenderSurfacesForwardRelativeSorted
         SegmentedList.clear renderer.RenderTasks.RenderSurfacesForwardRelative
-
-        // collect light mapping elements
-        let lightMapFallback = GlRenderer3d.getLightMapFallback geometryViewport renderbuffer framebuffer skyBoxOpt renderer
-        let (lightMap_, lightMap) = if topLevelRender && Seq.notEmpty lightMapsSorted then (1, Seq.head lightMapsSorted) else (0, lightMapFallback)
-        let lightMapMin = [|lightMap.Origin.X - 5.0f; lightMap.Origin.Y - 5.0f; lightMap.Origin.Z - 5.0f|] // TODO: pass in bounds param for probes.
-        let lightMapSize = [|10.0f; 10.0f; 10.0f|] // TODO: pass in bounds param for probes.
-        let lightMapOrigin = [|lightMap.Origin.X; lightMap.Origin.Y; lightMap.Origin.Z|]
 
         // setup geometry viewport
         OpenGL.Gl.Viewport (geometryViewport.Bounds.Min.X, geometryViewport.Bounds.Min.Y, geometryViewport.Bounds.Width, geometryViewport.Bounds.Height)
@@ -1208,15 +1238,21 @@ type [<ReferenceEquality>] GlRenderer3d =
                     eyeCenter
                     entry.Value
                     false
-                    lightMap_
-                    lightMapMin
-                    lightMapSize
-                    lightMapOrigin
+                    0
+                    lightMapFallbackMin
+                    lightMapFallbackSize
+                    lightMapFallbackOrigin
                     lightAmbientColor
                     lightAmbientBrightness
-                    lightMap.IrradianceMap
-                    lightMap.EnvironmentFilterMap
+                    lightMapFallback.IrradianceMap
+                    lightMapFallback.EnvironmentFilterMap
                     renderer.RenderBrdfTexture
+                    lightMaps_
+                    lightMapMins
+                    lightMapSizes
+                    lightMapOrigins
+                    lightMapIrradianceMaps
+                    lightMapEnvironmentFilterMaps
                     lightOrigins
                     lightDirections
                     lightColors
@@ -1239,15 +1275,21 @@ type [<ReferenceEquality>] GlRenderer3d =
                 eyeCenter
                 entry.Value
                 false
-                lightMap_
-                lightMapMin
-                lightMapSize
-                lightMapOrigin
+                0
+                lightMapFallbackMin
+                lightMapFallbackSize
+                lightMapFallbackOrigin
                 lightAmbientColor
                 lightAmbientBrightness
-                lightMap.IrradianceMap
-                lightMap.EnvironmentFilterMap
+                lightMapFallback.IrradianceMap
+                lightMapFallback.EnvironmentFilterMap
                 renderer.RenderBrdfTexture
+                lightMaps_
+                lightMapMins
+                lightMapSizes
+                lightMapOrigins
+                lightMapIrradianceMaps
+                lightMapEnvironmentFilterMaps
                 lightOrigins
                 lightDirections
                 lightColors
@@ -1283,9 +1325,9 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         // deferred render lighting quad
         OpenGL.PhysicallyBased.DrawPhysicallyBasedDeferred2Surface
-            (viewRelativeArray, rasterProjectionArray, eyeCenter, lightMap_, lightMapMin, lightMapSize, lightMapOrigin, lightAmbientColor, lightAmbientBrightness,
-             positionTexture, albedoTexture, materialTexture, normalAndHeightTexture, lightMap.IrradianceMap, lightMap.EnvironmentFilterMap, renderer.RenderBrdfTexture,
-             Array.empty, Array.empty, Array.empty, Array.empty, Array.empty, Array.empty,
+            (viewRelativeArray, rasterProjectionArray, eyeCenter, 0, lightMapFallbackMin, lightMapFallbackSize, lightMapFallbackOrigin, lightAmbientColor, lightAmbientBrightness,
+             positionTexture, albedoTexture, materialTexture, normalAndHeightTexture, lightMapFallback.IrradianceMap, lightMapFallback.EnvironmentFilterMap, renderer.RenderBrdfTexture,
+             lightMaps_, lightMapMins, lightMapSizes, lightMapOrigins, lightMapIrradianceMaps, lightMapEnvironmentFilterMaps,
              lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightDirectionals, lightConeInners, lightConeOuters,
              renderer.RenderPhysicallyBasedQuad, renderer.RenderPhysicallyBasedDeferred2Shader)
         OpenGL.Hl.Assert ()
@@ -1301,6 +1343,8 @@ type [<ReferenceEquality>] GlRenderer3d =
         // forward render surfaces w/ absolute transforms if in top level render
         if topLevelRender then
             for (model, texCoordsOffset, properties, surface) in renderer.RenderTasks.RenderSurfacesForwardAbsoluteSorted do
+                let (lightMaps_, lightMapMins, lightMapSizes, lightMapOrigins, lightMapIrradianceMaps, lightMapEnvironmentFilterMaps) =
+                    SortableLightMap.sortLightMapsIntoArrays Constants.Render.ForwardLightMapsMax model.Translation renderer.RenderTasks.RenderLightMaps
                 let (lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightDirectionals, lightConeInners, lightConeOuters) =
                     SortableLight.sortLightsIntoArrays Constants.Render.ForwardLightsMax model.Translation renderer.RenderTasks.RenderLights
                 GlRenderer3d.renderPhysicallyBasedSurfaces
@@ -1309,15 +1353,21 @@ type [<ReferenceEquality>] GlRenderer3d =
                     eyeCenter
                     (SegmentedList.singleton (model, texCoordsOffset, properties))
                     true
-                    lightMap_
-                    lightMapMin
-                    lightMapSize
-                    lightMapOrigin
+                    0
+                    lightMapFallbackMin
+                    lightMapFallbackSize
+                    lightMapFallbackOrigin
                     lightAmbientColor
                     lightAmbientBrightness
-                    lightMap.IrradianceMap
-                    lightMap.EnvironmentFilterMap
+                    lightMapFallback.IrradianceMap
+                    lightMapFallback.EnvironmentFilterMap
                     renderer.RenderBrdfTexture
+                    lightMaps_
+                    lightMapMins
+                    lightMapSizes
+                    lightMapOrigins
+                    lightMapIrradianceMaps
+                    lightMapEnvironmentFilterMaps
                     lightOrigins
                     lightDirections
                     lightColors
@@ -1334,6 +1384,8 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         // forward render surfaces w/ relative transforms
         for (model, texCoordsOffset, properties, surface) in renderer.RenderTasks.RenderSurfacesForwardRelativeSorted do
+            let (lightMaps_, lightMapMins, lightMapSizes, lightMapOrigins, lightMapIrradianceMaps, lightMapEnvironmentFilterMaps) =
+                SortableLightMap.sortLightMapsIntoArrays Constants.Render.ForwardLightMapsMax model.Translation renderer.RenderTasks.RenderLightMaps
             let (lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightDirectionals, lightConeInners, lightConeOuters) =
                 SortableLight.sortLightsIntoArrays Constants.Render.ForwardLightsMax model.Translation renderer.RenderTasks.RenderLights
             GlRenderer3d.renderPhysicallyBasedSurfaces
@@ -1342,15 +1394,21 @@ type [<ReferenceEquality>] GlRenderer3d =
                 eyeCenter
                 (SegmentedList.singleton (model, texCoordsOffset, properties))
                 true
-                lightMap_
-                lightMapMin
-                lightMapSize
-                lightMapOrigin
+                0
+                lightMapFallbackMin
+                lightMapFallbackSize
+                lightMapFallbackOrigin
                 lightAmbientColor
                 lightAmbientBrightness
-                lightMap.IrradianceMap
-                lightMap.EnvironmentFilterMap
+                lightMapFallback.IrradianceMap
+                lightMapFallback.EnvironmentFilterMap
                 renderer.RenderBrdfTexture
+                lightMaps_
+                lightMapMins
+                lightMapSizes
+                lightMapOrigins
+                lightMapIrradianceMaps
+                lightMapEnvironmentFilterMaps
                 lightOrigins
                 lightDirections
                 lightColors
@@ -1391,7 +1449,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 if SegmentedDictionary.containsKey lp.LightProbeId renderer.RenderTasks.RenderLightProbes then
                     Log.debugOnce ("Multiple light probe messages coming in with the same id of '" + string lp.LightProbeId + "'.")
                     SegmentedDictionary.remove lp.LightProbeId renderer.RenderTasks.RenderLightProbes |> ignore<bool>
-                SegmentedDictionary.add lp.LightProbeId struct (lp.Origin, lp.Stale) renderer.RenderTasks.RenderLightProbes
+                SegmentedDictionary.add lp.LightProbeId struct (lp.Bounds, lp.Origin, lp.Stale) renderer.RenderTasks.RenderLightProbes
             | RenderLight3d rl3 ->
                 let light =
                     { SortableLightOrigin = rl3.Origin
@@ -1620,6 +1678,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         let renderTasks =
             { RenderSkyBoxes = SegmentedList.make ()
               RenderLightProbes = SegmentedDictionary.make HashIdentity.Structural
+              RenderLightMaps = SegmentedList.make ()
               RenderLights = SegmentedList.make ()
               RenderSurfacesDeferredAbsolute = dictPlus HashIdentity.Structural []
               RenderSurfacesDeferredRelative = dictPlus HashIdentity.Structural []
