@@ -259,7 +259,7 @@ void main()
     }
 
     // compute irradiance
-    vec3 irradiance = texture(irradianceMap, n).rgb;
+    vec3 irradiance = texture(irradianceMap, normal).rgb;
 
     // compute environment filter
     vec3 r = lightMap != 0 ? parallaxCorrection(environmentFilterMap, position, normal) : reflect(-v, normal);

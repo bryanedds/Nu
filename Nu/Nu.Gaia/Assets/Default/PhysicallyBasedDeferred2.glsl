@@ -304,12 +304,49 @@ void main()
     //    }
     //}
 
+    // compute irradiance and environment filter terms
+    vec3 irradiance = vec3(0.0);
+    vec3 environmentFilter = vec3(0.0);
+    if (lm1Index == -1 && lm2Index == -1)
+    {
+        irradiance = texture(irradianceMap, normal).rgb;
+        vec3 r = lightMap != 0 ? parallaxCorrection(environmentFilterMap, position, normal) : reflect(-v, normal);
+        vec3 environmentFilter = textureLod(environmentFilterMap, r, roughness * (REFLECTION_LOD_MAX - 1.0)).rgb;
+    }
+    else if (lm2Index == -1)
+    {
+        irradiance = texture(irradianceMaps[lm1Index], normal).rgb;
+        vec3 r = parallaxCorrection(environmentFilterMaps[lm1Index], position, normal);
+        environmentFilter = textureLod(environmentFilterMaps[lm1Index], r, roughness * (REFLECTION_LOD_MAX - 1.0)).rgb;
+
+        discard;
+    }
+    else
+    {
+        // compute blended irradiance
+        float distance1 = sqrt(lm1DistanceSquared);
+        float distance2 = sqrt(lm2DistanceSquared);
+        float distanceTotal = distance1 + distance2;
+        vec3 irradiance1 = texture(irradianceMaps[lm1Index], normal).rgb;
+        vec3 irradiance2 = texture(irradianceMaps[lm2Index], normal).rgb;
+        irradiance = irradiance1 * (distance1 / distanceTotal) + irradiance2 * (distance2 / distanceTotal);
+
+        // compute blended environment filter
+        vec3 r1 = parallaxCorrection(environmentFilterMaps[lm1Index], position, normal);
+        vec3 r2 = parallaxCorrection(environmentFilterMaps[lm2Index], position, normal);
+        vec3 environmentFilter1 = textureLod(environmentFilterMaps[lm1Index], r1, roughness * (REFLECTION_LOD_MAX - 1.0)).rgb;
+        vec3 environmentFilter2 = textureLod(environmentFilterMaps[lm2Index], r2, roughness * (REFLECTION_LOD_MAX - 1.0)).rgb;
+        environmentFilter = environmentFilter1 * (distance1 / distanceTotal) + environmentFilter2 * (distance2 / distanceTotal);
+
+        discard;
+    }
+
     // compute irradiance
-    vec3 irradiance = texture(irradianceMap, normal).rgb;
+    irradiance = texture(irradianceMap, normal).rgb;
 
     // compute environment filter
     vec3 r = lightMap != 0 ? parallaxCorrection(environmentFilterMap, position, normal) : reflect(-v, normal);
-    vec3 environmentFilter = textureLod(environmentFilterMap, r, roughness * (REFLECTION_LOD_MAX - 1.0)).rgb * lightAmbientColor * lightAmbientBrightness;
+    environmentFilter = textureLod(environmentFilterMap, r, roughness * (REFLECTION_LOD_MAX - 1.0)).rgb;
 
     // compute diffuse term
     vec3 f = fresnelSchlickRoughness(max(dot(normal, v), 0.0), f0, roughness);
@@ -320,7 +357,7 @@ void main()
 
     // compute specular term
     vec2 environmentBrdf = texture(brdfTexture, vec2(max(dot(normal, v), 0.0), roughness)).rg;
-    vec3 specular = environmentFilter * (f * environmentBrdf.x + environmentBrdf.y);
+    vec3 specular = environmentFilter * (f * environmentBrdf.x + environmentBrdf.y) * lightAmbientColor * lightAmbientBrightness;
 
     // compute ambient term
     vec3 ambient = (kD * diffuse + specular) * ambientOcclusion * ambientOcclusionScreen;
