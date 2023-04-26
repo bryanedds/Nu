@@ -252,7 +252,7 @@ void main()
     {
         vec3 delta = lightMapOrigins[i] - position;
         float distanceSquared = dot(delta, delta);
-        if (distanceSquared < lm1DistanceSquared && textureSize(irradianceMaps[i], 0) != vec2(0))
+        if (distanceSquared < lm1DistanceSquared && lightMaps[i] != 0)
         {
             lm1Index = i;
             lm1DistanceSquared = distanceSquared;
@@ -266,7 +266,7 @@ void main()
     {
         vec3 delta = lightMapOrigins[i] - position;
         float distanceSquared = dot(delta, delta);
-        if (distanceSquared < lm2DistanceSquared && textureSize(irradianceMaps[i], 0) != vec2(0) && i != lm1Index)
+        if (distanceSquared < lm2DistanceSquared && lightMaps[i] != 0 && i != lm1Index)
         {
             lm2Index = i;
             lm2DistanceSquared = distanceSquared;
@@ -307,12 +307,15 @@ void main()
     }
     else if (lm2Index == -1)
     {
+        discard;
         irradiance = texture(irradianceMaps[lm1Index], normal).rgb;
         vec3 r = parallaxCorrection(environmentFilterMaps[lm1Index], position, normal);
         environmentFilter = textureLod(environmentFilterMaps[lm1Index], r, roughness * (REFLECTION_LOD_MAX - 1.0)).rgb;
     }
     else
     {
+        discard;
+
         // compute blended irradiance
         float distance1 = sqrt(lm1DistanceSquared);
         float distance2 = sqrt(lm2DistanceSquared);
