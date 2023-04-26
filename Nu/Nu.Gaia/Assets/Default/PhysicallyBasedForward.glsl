@@ -68,10 +68,6 @@ const int LIGHT_MAPS_MAX = 2;
 const int LIGHTS_MAX = 32;
 
 uniform vec3 eyeCenter;
-uniform int lightMap;
-uniform vec3 lightMapMin;
-uniform vec3 lightMapSize;
-uniform vec3 lightMapOrigin;
 uniform vec3 lightAmbientColor;
 uniform float lightAmbientBrightness;
 uniform sampler2D albedoTexture;
@@ -109,18 +105,6 @@ flat in float heightOut;
 flat in int invertRoughnessOut;
 
 out vec4 frag;
-
-vec3 parallaxCorrection(samplerCube cubeMap, vec3 positionWorld, vec3 normalWorld)
-{
-    vec3 directionWorld = positionWorld - eyeCenter;
-    vec3 reflectionWorld = reflect(directionWorld, normalWorld);
-    vec3 firstPlaneIntersect = (lightMapMin + lightMapSize - positionWorld) / reflectionWorld;
-    vec3 secondPlaneIntersect = (lightMapMin - positionWorld) / reflectionWorld;
-    vec3 furthestPlane = max(firstPlaneIntersect, secondPlaneIntersect);
-    float distance = min(min(furthestPlane.x, furthestPlane.y), furthestPlane.z);
-    vec3 intersectPositionWorld = positionWorld + reflectionWorld * distance;
-    return intersectPositionWorld - lightMapOrigin;
-}
 
 float distributionGGX(vec3 normal, vec3 h, float roughness)
 {
@@ -262,7 +246,7 @@ void main()
     vec3 irradiance = texture(irradianceMap, normal).rgb;
 
     // compute environment filter
-    vec3 r = lightMap != 0 ? parallaxCorrection(environmentFilterMap, position, normal) : reflect(-v, normal);
+    vec3 r = reflect(-v, normal);
     vec3 environmentFilter = textureLod(environmentFilterMap, r, roughness * (REFLECTION_LOD_MAX - 1.0)).rgb;
 
     // compute diffuse term
