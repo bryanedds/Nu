@@ -56,10 +56,10 @@ const vec3[SSAO_SAMPLES] SSAO_SAMPLING_DIRECTIONS = vec3[](
 uniform mat4 view;
 uniform mat4 projection;
 uniform vec3 eyeCenter;
-uniform int lightMapLocal;
-uniform vec3 lightMapLocalMin;
-uniform vec3 lightMapLocalSize;
-uniform vec3 lightMapLocalOrigin;
+uniform int lightMap;
+uniform vec3 lightMapMin;
+uniform vec3 lightMapSize;
+uniform vec3 lightMapOrigin;
 uniform vec3 lightAmbientColor;
 uniform float lightAmbientBrightness;
 uniform sampler2D positionTexture;
@@ -69,10 +69,10 @@ uniform sampler2D normalAndHeightTexture;
 uniform samplerCube irradianceMap;
 uniform samplerCube environmentFilterMap;
 uniform sampler2D brdfTexture;
-uniform int lightMapLocals[LIGHT_MAPS_MAX];
-uniform vec3 lightMapLocalMins[LIGHT_MAPS_MAX];
-uniform vec3 lightMapLocalSizes[LIGHT_MAPS_MAX];
-uniform vec3 lightMapLocalOrigins[LIGHT_MAPS_MAX];
+uniform int lightMaps[LIGHT_MAPS_MAX];
+uniform vec3 lightMapMins[LIGHT_MAPS_MAX];
+uniform vec3 lightMapSizes[LIGHT_MAPS_MAX];
+uniform vec3 lightMapOrigins[LIGHT_MAPS_MAX];
 uniform samplerCube irradianceMaps[LIGHT_MAPS_MAX];
 uniform samplerCube environmentFilterMaps[LIGHT_MAPS_MAX];
 uniform vec3 lightOrigins[LIGHTS_MAX];
@@ -93,12 +93,12 @@ vec3 parallaxCorrection(samplerCube cubeMap, vec3 positionWorld, vec3 normalWorl
 {
     vec3 directionWorld = positionWorld - eyeCenter;
     vec3 reflectionWorld = reflect(directionWorld, normalWorld);
-    vec3 firstPlaneIntersect = (lightMapLocalMin + lightMapLocalSize - positionWorld) / reflectionWorld;
-    vec3 secondPlaneIntersect = (lightMapLocalMin - positionWorld) / reflectionWorld;
+    vec3 firstPlaneIntersect = (lightMapMin + lightMapSize - positionWorld) / reflectionWorld;
+    vec3 secondPlaneIntersect = (lightMapMin - positionWorld) / reflectionWorld;
     vec3 furthestPlane = max(firstPlaneIntersect, secondPlaneIntersect);
     float distance = min(min(furthestPlane.x, furthestPlane.y), furthestPlane.z);
     vec3 intersectPositionWorld = positionWorld + reflectionWorld * distance;
-    return intersectPositionWorld - lightMapLocalOrigin;
+    return intersectPositionWorld - lightMapOrigin;
 }
 
 float distributionGGX(vec3 normal, vec3 h, float roughness)
@@ -253,7 +253,7 @@ void main()
     vec3 diffuse = irradiance * albedo;
 
     // compute specular term
-    vec3 r = lightMapLocal != 0 ? parallaxCorrection(environmentFilterMap, position, normal) : reflect(-v, normal);
+    vec3 r = lightMap != 0 ? parallaxCorrection(environmentFilterMap, position, normal) : reflect(-v, normal);
     vec3 environmentFilter = textureLod(environmentFilterMap, r, roughness * (REFLECTION_LOD_MAX - 1.0)).rgb * lightAmbientColor * lightAmbientBrightness;
     vec2 environmentBrdf = texture(brdfTexture, vec2(max(dot(normal, v), 0.0), roughness)).rg;
     vec3 specular = environmentFilter * (f * environmentBrdf.x + environmentBrdf.y);
