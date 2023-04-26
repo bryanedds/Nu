@@ -348,14 +348,16 @@ module LightMap =
 
     /// A collection of maps consisting a light map.
     type [<StructuralEquality; NoComparison; Struct>] LightMap =
-        { Origin : Vector3
+        { Bounds : Box3
+          Origin : Vector3
           ReflectionMap : uint
           IrradianceMap : uint
           EnvironmentFilterMap : uint }
 
     /// Create a light map.
-    let CreateLightMap origin reflectionMap irradianceMap environmentFilterMap =
-        { Origin = origin
+    let CreateLightMap bounds origin reflectionMap irradianceMap environmentFilterMap =
+        { Bounds = bounds
+          Origin = origin
           ReflectionMap = reflectionMap
           IrradianceMap = irradianceMap
           EnvironmentFilterMap = environmentFilterMap }
