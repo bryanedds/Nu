@@ -341,9 +341,6 @@ void main()
         discard;
     }
 
-    // compute irradiance
-    irradiance = texture(irradianceMap, normal).rgb;
-
     // compute environment filter
     vec3 r = lightMap != 0 ? parallaxCorrection(environmentFilterMap, position, normal) : reflect(-v, normal);
     environmentFilter = textureLod(environmentFilterMap, r, roughness * (REFLECTION_LOD_MAX - 1.0)).rgb;
