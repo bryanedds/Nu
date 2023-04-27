@@ -167,10 +167,10 @@ module PhysicallyBased =
           LightMapOriginsUniform : int
           LightMapMinsUniform : int
           LightMapSizesUniform : int
-          IrradianceMapLocalUniform : int
-          IrradianceMapLocal2Uniform : int
-          EnvironmentFilterMapLocalUniform : int
-          EnvironmentFilterMapLocal2Uniform : int
+          IrradianceMaps0Uniform : int
+          IrradianceMaps1Uniform : int
+          EnvironmentFilterMaps0Uniform : int
+          EnvironmentFilterMaps1Uniform : int
           LightOriginsUniform : int
           LightDirectionsUniform : int
           LightColorsUniform : int
@@ -200,22 +200,22 @@ module PhysicallyBased =
           LightMapOriginsUniform : int
           LightMapMinsUniform : int
           LightMapSizesUniform : int
-          IrradianceMapsUniform : int
+          IrradianceMaps0Uniform : int
+          IrradianceMaps1Uniform : int
           IrradianceMaps2Uniform : int
           IrradianceMaps3Uniform : int
           IrradianceMaps4Uniform : int
           IrradianceMaps5Uniform : int
           IrradianceMaps6Uniform : int
           IrradianceMaps7Uniform : int
-          IrradianceMaps8Uniform : int
-          EnvironmentFilterMapsUniform : int
+          EnvironmentFilterMaps0Uniform : int
+          EnvironmentFilterMaps1Uniform : int
           EnvironmentFilterMaps2Uniform : int
           EnvironmentFilterMaps3Uniform : int
           EnvironmentFilterMaps4Uniform : int
           EnvironmentFilterMaps5Uniform : int
           EnvironmentFilterMaps6Uniform : int
           EnvironmentFilterMaps7Uniform : int
-          EnvironmentFilterMaps8Uniform : int
           LightOriginsUniform : int
           LightDirectionsUniform : int
           LightColorsUniform : int
@@ -936,10 +936,10 @@ module PhysicallyBased =
         let lightMapOriginsUniform = Gl.GetUniformLocation (shader, "lightMapOrigins")
         let lightMapMinsUniform = Gl.GetUniformLocation (shader, "lightMapMins")
         let lightMapSizesUniform = Gl.GetUniformLocation (shader, "lightMapSizes")
-        let irradianceMapLocalUniform = Gl.GetUniformLocation (shader, "irradianceMapLocal")
-        let irradianceMapLocal2Uniform = Gl.GetUniformLocation (shader, "irradianceMapLocal2")
-        let environmentFilterMapLocalUniform = Gl.GetUniformLocation (shader, "environmentFilterMapLocal")
-        let environmentFilterMapLocal2Uniform = Gl.GetUniformLocation (shader, "environmentFilterMapLocal2")
+        let irradianceMaps0Uniform = Gl.GetUniformLocation (shader, "irradianceMaps[0]")
+        let irradianceMaps1Uniform = Gl.GetUniformLocation (shader, "irradianceMaps[1]")
+        let environmentFilterMaps0Uniform = Gl.GetUniformLocation (shader, "environmentFilterMaps[0]")
+        let environmentFilterMaps1Uniform = Gl.GetUniformLocation (shader, "environmentFilterMaps[1]")
         let lightOriginsUniform = Gl.GetUniformLocation (shader, "lightOrigins")
         let lightDirectionsUniform = Gl.GetUniformLocation (shader, "lightDirections")
         let lightColorsUniform = Gl.GetUniformLocation (shader, "lightColors")
@@ -970,10 +970,10 @@ module PhysicallyBased =
           LightMapOriginsUniform = lightMapOriginsUniform
           LightMapMinsUniform = lightMapMinsUniform
           LightMapSizesUniform = lightMapSizesUniform
-          IrradianceMapLocalUniform = irradianceMapLocalUniform
-          IrradianceMapLocal2Uniform = irradianceMapLocal2Uniform
-          EnvironmentFilterMapLocalUniform = environmentFilterMapLocalUniform
-          EnvironmentFilterMapLocal2Uniform = environmentFilterMapLocal2Uniform
+          IrradianceMaps0Uniform = irradianceMaps0Uniform
+          IrradianceMaps1Uniform = irradianceMaps1Uniform
+          EnvironmentFilterMaps0Uniform = environmentFilterMaps0Uniform
+          EnvironmentFilterMaps1Uniform = environmentFilterMaps1Uniform
           LightOriginsUniform = lightOriginsUniform
           LightDirectionsUniform = lightDirectionsUniform
           LightColorsUniform = lightColorsUniform
@@ -1008,22 +1008,22 @@ module PhysicallyBased =
         let lightMapOriginsUniform = Gl.GetUniformLocation (shader, "lightMapOrigins")
         let lightMapMinsUniform = Gl.GetUniformLocation (shader, "lightMapMins")
         let lightMapSizesUniform = Gl.GetUniformLocation (shader, "lightMapSizes")
-        let irradianceMapsUniform = Gl.GetUniformLocation (shader, "irradianceMaps[0]")
-        let irradianceMaps2Uniform = Gl.GetUniformLocation (shader, "irradianceMaps[1]")
-        let irradianceMaps3Uniform = Gl.GetUniformLocation (shader, "irradianceMaps[2]")
-        let irradianceMaps4Uniform = Gl.GetUniformLocation (shader, "irradianceMaps[3]")
-        let irradianceMaps5Uniform = Gl.GetUniformLocation (shader, "irradianceMaps[4]")
-        let irradianceMaps6Uniform = Gl.GetUniformLocation (shader, "irradianceMaps[5]")
-        let irradianceMaps7Uniform = Gl.GetUniformLocation (shader, "irradianceMaps[6]")
-        let irradianceMaps8Uniform = Gl.GetUniformLocation (shader, "irradianceMaps[7]")
-        let environmentFilterMapsUniform = Gl.GetUniformLocation (shader, "environmentFilterMaps[0]")
-        let environmentFilterMaps2Uniform = Gl.GetUniformLocation (shader, "environmentFilterMaps[1]")
-        let environmentFilterMaps3Uniform = Gl.GetUniformLocation (shader, "environmentFilterMaps[2]")
-        let environmentFilterMaps4Uniform = Gl.GetUniformLocation (shader, "environmentFilterMaps[3]")
-        let environmentFilterMaps5Uniform = Gl.GetUniformLocation (shader, "environmentFilterMaps[4]")
-        let environmentFilterMaps6Uniform = Gl.GetUniformLocation (shader, "environmentFilterMaps[5]")
-        let environmentFilterMaps7Uniform = Gl.GetUniformLocation (shader, "environmentFilterMaps[6]")
-        let environmentFilterMaps8Uniform = Gl.GetUniformLocation (shader, "environmentFilterMaps[7]")
+        let irradianceMaps0Uniform = Gl.GetUniformLocation (shader, "irradianceMaps[0]")
+        let irradianceMaps1Uniform = Gl.GetUniformLocation (shader, "irradianceMaps[1]")
+        let irradianceMaps2Uniform = Gl.GetUniformLocation (shader, "irradianceMaps[2]")
+        let irradianceMaps3Uniform = Gl.GetUniformLocation (shader, "irradianceMaps[3]")
+        let irradianceMaps4Uniform = Gl.GetUniformLocation (shader, "irradianceMaps[4]")
+        let irradianceMaps5Uniform = Gl.GetUniformLocation (shader, "irradianceMaps[5]")
+        let irradianceMaps6Uniform = Gl.GetUniformLocation (shader, "irradianceMaps[6]")
+        let irradianceMaps7Uniform = Gl.GetUniformLocation (shader, "irradianceMaps[7]")
+        let environmentFilterMaps0Uniform = Gl.GetUniformLocation (shader, "environmentFilterMaps[0]")
+        let environmentFilterMaps1Uniform = Gl.GetUniformLocation (shader, "environmentFilterMaps[1]")
+        let environmentFilterMaps2Uniform = Gl.GetUniformLocation (shader, "environmentFilterMaps[2]")
+        let environmentFilterMaps3Uniform = Gl.GetUniformLocation (shader, "environmentFilterMaps[3]")
+        let environmentFilterMaps4Uniform = Gl.GetUniformLocation (shader, "environmentFilterMaps[4]")
+        let environmentFilterMaps5Uniform = Gl.GetUniformLocation (shader, "environmentFilterMaps[5]")
+        let environmentFilterMaps6Uniform = Gl.GetUniformLocation (shader, "environmentFilterMaps[6]")
+        let environmentFilterMaps7Uniform = Gl.GetUniformLocation (shader, "environmentFilterMaps[7]")
         let lightOriginsUniform = Gl.GetUniformLocation (shader, "lightOrigins")
         let lightDirectionsUniform = Gl.GetUniformLocation (shader, "lightDirections")
         let lightColorsUniform = Gl.GetUniformLocation (shader, "lightColors")
@@ -1051,22 +1051,22 @@ module PhysicallyBased =
           LightMapOriginsUniform = lightMapOriginsUniform
           LightMapMinsUniform = lightMapMinsUniform
           LightMapSizesUniform = lightMapSizesUniform
-          IrradianceMapsUniform = irradianceMapsUniform
+          IrradianceMaps0Uniform = irradianceMaps0Uniform
+          IrradianceMaps1Uniform = irradianceMaps1Uniform
           IrradianceMaps2Uniform = irradianceMaps2Uniform
           IrradianceMaps3Uniform = irradianceMaps3Uniform
           IrradianceMaps4Uniform = irradianceMaps4Uniform
           IrradianceMaps5Uniform = irradianceMaps5Uniform
           IrradianceMaps6Uniform = irradianceMaps6Uniform
           IrradianceMaps7Uniform = irradianceMaps7Uniform
-          IrradianceMaps8Uniform = irradianceMaps8Uniform
-          EnvironmentFilterMapsUniform = environmentFilterMapsUniform
+          EnvironmentFilterMaps0Uniform = environmentFilterMaps0Uniform
+          EnvironmentFilterMaps1Uniform = environmentFilterMaps1Uniform
           EnvironmentFilterMaps2Uniform = environmentFilterMaps2Uniform
           EnvironmentFilterMaps3Uniform = environmentFilterMaps3Uniform
           EnvironmentFilterMaps4Uniform = environmentFilterMaps4Uniform
           EnvironmentFilterMaps5Uniform = environmentFilterMaps5Uniform
           EnvironmentFilterMaps6Uniform = environmentFilterMaps6Uniform
           EnvironmentFilterMaps7Uniform = environmentFilterMaps7Uniform
-          EnvironmentFilterMaps8Uniform = environmentFilterMaps8Uniform
           LightOriginsUniform = lightOriginsUniform
           LightDirectionsUniform = lightDirectionsUniform
           LightColorsUniform = lightColorsUniform
@@ -1152,10 +1152,10 @@ module PhysicallyBased =
         Gl.Uniform3 (shader.LightMapOriginsUniform, lightMapOrigins)
         Gl.Uniform3 (shader.LightMapMinsUniform, lightMapMins)
         Gl.Uniform3 (shader.LightMapSizesUniform, lightMapSizes)
-        Gl.Uniform1 (shader.IrradianceMapLocalUniform, 10)
-        Gl.Uniform1 (shader.IrradianceMapLocal2Uniform, 11)
-        Gl.Uniform1 (shader.EnvironmentFilterMapLocalUniform, 12)
-        Gl.Uniform1 (shader.EnvironmentFilterMapLocal2Uniform, 13)
+        Gl.Uniform1 (shader.IrradianceMaps0Uniform, 10)
+        Gl.Uniform1 (shader.IrradianceMaps1Uniform, 11)
+        Gl.Uniform1 (shader.EnvironmentFilterMaps0Uniform, 12)
+        Gl.Uniform1 (shader.EnvironmentFilterMaps1Uniform, 13)
         Gl.Uniform3 (shader.LightOriginsUniform, lightOrigins)
         Gl.Uniform3 (shader.LightDirectionsUniform, lightDirections)
         Gl.Uniform3 (shader.LightColorsUniform, lightColors)
@@ -1375,22 +1375,22 @@ module PhysicallyBased =
         Gl.Uniform3 (shader.LightMapOriginsUniform, lightMapOrigins)
         Gl.Uniform3 (shader.LightMapMinsUniform, lightMapMins)
         Gl.Uniform3 (shader.LightMapSizesUniform, lightMapSizes)
-        Gl.Uniform1 (shader.IrradianceMapsUniform, 7)
-        Gl.Uniform1 (shader.IrradianceMaps2Uniform, 8)
-        Gl.Uniform1 (shader.IrradianceMaps3Uniform, 9)
-        Gl.Uniform1 (shader.IrradianceMaps4Uniform, 10)
-        Gl.Uniform1 (shader.IrradianceMaps5Uniform, 11)
-        Gl.Uniform1 (shader.IrradianceMaps6Uniform, 12)
-        Gl.Uniform1 (shader.IrradianceMaps7Uniform, 13)
-        Gl.Uniform1 (shader.IrradianceMaps8Uniform, 14)
-        Gl.Uniform1 (shader.EnvironmentFilterMapsUniform, 15)
-        Gl.Uniform1 (shader.EnvironmentFilterMaps2Uniform, 16)
-        Gl.Uniform1 (shader.EnvironmentFilterMaps3Uniform, 17)
-        Gl.Uniform1 (shader.EnvironmentFilterMaps4Uniform, 18)
-        Gl.Uniform1 (shader.EnvironmentFilterMaps5Uniform, 19)
-        Gl.Uniform1 (shader.EnvironmentFilterMaps6Uniform, 20)
-        Gl.Uniform1 (shader.EnvironmentFilterMaps7Uniform, 21)
-        Gl.Uniform1 (shader.EnvironmentFilterMaps8Uniform, 22)
+        Gl.Uniform1 (shader.IrradianceMaps0Uniform, 7)
+        Gl.Uniform1 (shader.IrradianceMaps1Uniform, 8)
+        Gl.Uniform1 (shader.IrradianceMaps2Uniform, 9)
+        Gl.Uniform1 (shader.IrradianceMaps3Uniform, 10)
+        Gl.Uniform1 (shader.IrradianceMaps4Uniform, 11)
+        Gl.Uniform1 (shader.IrradianceMaps5Uniform, 12)
+        Gl.Uniform1 (shader.IrradianceMaps6Uniform, 13)
+        Gl.Uniform1 (shader.IrradianceMaps7Uniform, 14)
+        Gl.Uniform1 (shader.EnvironmentFilterMaps0Uniform, 15)
+        Gl.Uniform1 (shader.EnvironmentFilterMaps1Uniform, 16)
+        Gl.Uniform1 (shader.EnvironmentFilterMaps2Uniform, 17)
+        Gl.Uniform1 (shader.EnvironmentFilterMaps3Uniform, 18)
+        Gl.Uniform1 (shader.EnvironmentFilterMaps4Uniform, 19)
+        Gl.Uniform1 (shader.EnvironmentFilterMaps5Uniform, 20)
+        Gl.Uniform1 (shader.EnvironmentFilterMaps6Uniform, 21)
+        Gl.Uniform1 (shader.EnvironmentFilterMaps7Uniform, 22)
         Gl.Uniform3 (shader.LightOriginsUniform, lightOrigins)
         Gl.Uniform3 (shader.LightDirectionsUniform, lightDirections)
         Gl.Uniform3 (shader.LightColorsUniform, lightColors)
