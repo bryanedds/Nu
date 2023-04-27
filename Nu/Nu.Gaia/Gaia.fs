@@ -1083,7 +1083,7 @@ module Gaia =
                     | Some property when property.PropertyType = typeof<Box3> ->
                         let bounds =
                             box3
-                                (v3Dup Constants.Render.LightProbeSizeDefault * 0.5f + -entity.GetPosition world)
+                                (v3Dup Constants.Render.LightProbeSizeDefault * -0.5f + entity.GetPosition world)
                                 (v3Dup Constants.Render.LightProbeSizeDefault)
                         entity.SetProbeBounds bounds world
                     | Some _ | None -> world
