@@ -248,101 +248,68 @@ void main()
     ambientOcclusionScreen = 1.0 - ambientOcclusionScreen;
     ambientOcclusionScreen = max(0.0, ambientOcclusionScreen);
 
-    // compute first light map index
-    int lm1Index = -1;
-    float lm1DistanceSquared = FLOAT_MAX;
+    // compute nearest light map indices
+    int lm1 = -1;
+    int lm2 = -1;
+    float lmDistanceSquared1 = FLOAT_MAX;
+    float lmDistanceSquared2 = FLOAT_MAX;
     for (int i = 0; i < LIGHT_MAPS_MAX; ++i)
     {
         if (lightMaps[i] != 0)
         {
             vec3 delta = lightMapOrigins[i] - position;
             float distanceSquared = dot(delta, delta);
-            if (distanceSquared < lm1DistanceSquared)
+            if (distanceSquared < lmDistanceSquared1)
             {
-                lm1Index = i;
-                lm1DistanceSquared = distanceSquared;
+                lm2 = lm1;
+                lm1 = i;
+                lmDistanceSquared2 = lmDistanceSquared1;
+                lmDistanceSquared1 = distanceSquared;
+            }
+            else if (distanceSquared < lmDistanceSquared2)
+            {
+                lm2 = i;
+                lmDistanceSquared2 = distanceSquared;
             }
         }
     }
-
-    // compute second light map index
-    int lm2Index = -1;
-    float lm2DistanceSquared = FLOAT_MAX;
-    for (int i = 0; i < LIGHT_MAPS_MAX; ++i)
-    {
-        if (lightMaps[i] != 0)
-        {
-            vec3 delta = lightMapOrigins[i] - position;
-            float distanceSquared = dot(delta, delta);
-            if (distanceSquared < lm2DistanceSquared && i != lm1Index)
-            {
-                lm2Index = i;
-                lm2DistanceSquared = distanceSquared;
-            }
-        }
-    }
-
-    //int lm1Index = -1;
-    //int lm2Index = -1;
-    //float lm1DistanceSquared = FLOAT_MAX;
-    //float lm2DistanceSquared = FLOAT_MAX;
-    //for (int i = 0; i < LIGHT_MAPS_MAX; ++i)
-    //{
-    //    if (lightMaps[i] != 0)
-    //    {
-    //        vec3 delta = lightMapOrigins[i] - position;
-    //        float distanceSquared = dot(delta, delta);
-    //        if (distanceSquared < lm1DistanceSquared)
-    //        {
-    //            lm2Index = lm1Index;
-    //            lm2DistanceSquared = lm1DistanceSquared;
-    //            lm1Index = i;
-    //            lm1DistanceSquared = distanceSquared;
-    //        }
-    //        else if (distanceSquared < lm2DistanceSquared && i != lm1Index)
-    //        {
-    //            lm2Index = i;
-    //            lm2DistanceSquared = distanceSquared;
-    //        }
-    //    }
-    //}
 
     // ensure light maps are in their respective bounds
-    if (lm1Index != -1 && !inBounds(position, lightMapMins[lm1Index], lightMapSizes[lm1Index])) lm1Index = -1;
-    if (lm2Index != -1 && !inBounds(position, lightMapMins[lm2Index], lightMapSizes[lm1Index])) lm2Index = -1;
+    if (lm1 != -1 && !inBounds(position, lightMapMins[lm1], lightMapSizes[lm1])) lm1 = -1;
+    if (lm2 != -1 && !inBounds(position, lightMapMins[lm2], lightMapSizes[lm1])) lm2 = -1;
 
     // compute irradiance and environment filter terms
     vec3 irradiance = vec3(0.0);
     vec3 environmentFilter = vec3(0.0);
-    if (lm1Index == -1 && lm2Index == -1)
+    if (lm1 == -1 && lm2 == -1)
     {
         irradiance = texture(irradianceMap, normal).rgb;
         vec3 r = reflect(-v, normal);
         environmentFilter = textureLod(environmentFilterMap, r, roughness * (REFLECTION_LOD_MAX - 1.0)).rgb;
     }
-    else if (lm2Index == -1)
+    else if (lm2 == -1)
     {
-        irradiance = texture(irradianceMaps[lm1Index], normal).rgb;
-        vec3 r = parallaxCorrection(environmentFilterMaps[lm1Index], lightMapOrigins[lm1Index], lightMapMins[lm1Index], lightMapSizes[lm1Index], position, normal);
-        environmentFilter = textureLod(environmentFilterMaps[lm1Index], r, roughness * (REFLECTION_LOD_MAX - 1.0)).rgb;
+        irradiance = texture(irradianceMaps[lm1], normal).rgb;
+        vec3 r = parallaxCorrection(environmentFilterMaps[lm1], lightMapOrigins[lm1], lightMapMins[lm1], lightMapSizes[lm1], position, normal);
+        environmentFilter = textureLod(environmentFilterMaps[lm1], r, roughness * (REFLECTION_LOD_MAX - 1.0)).rgb;
     }
     else
     {
         // compute blended irradiance
-        float distance1 = sqrt(lm1DistanceSquared);
-        float distance2 = sqrt(lm2DistanceSquared);
+        float distance1 = sqrt(lmDistanceSquared1);
+        float distance2 = sqrt(lmDistanceSquared2);
         float distanceTotal = distance1 + distance2;
         float scalar1 = ((distanceTotal - distance1) / distanceTotal);
         float scalar2 = ((distanceTotal - distance2) / distanceTotal);
-        vec3 irradiance1 = texture(irradianceMaps[lm1Index], normal).rgb;
-        vec3 irradiance2 = texture(irradianceMaps[lm2Index], normal).rgb;
+        vec3 irradiance1 = texture(irradianceMaps[lm1], normal).rgb;
+        vec3 irradiance2 = texture(irradianceMaps[lm2], normal).rgb;
         irradiance = irradiance1 * scalar1 + irradiance2 * scalar2;
 
         // compute blended environment filter
-        vec3 r1 = parallaxCorrection(environmentFilterMaps[lm1Index], lightMapOrigins[lm1Index], lightMapMins[lm1Index], lightMapSizes[lm1Index], position, normal);
-        vec3 r2 = parallaxCorrection(environmentFilterMaps[lm2Index], lightMapOrigins[lm2Index], lightMapMins[lm2Index], lightMapSizes[lm2Index], position, normal);
-        vec3 environmentFilter1 = textureLod(environmentFilterMaps[lm1Index], r1, roughness * (REFLECTION_LOD_MAX - 1.0)).rgb;
-        vec3 environmentFilter2 = textureLod(environmentFilterMaps[lm2Index], r2, roughness * (REFLECTION_LOD_MAX - 1.0)).rgb;
+        vec3 r1 = parallaxCorrection(environmentFilterMaps[lm1], lightMapOrigins[lm1], lightMapMins[lm1], lightMapSizes[lm1], position, normal);
+        vec3 r2 = parallaxCorrection(environmentFilterMaps[lm2], lightMapOrigins[lm2], lightMapMins[lm2], lightMapSizes[lm2], position, normal);
+        vec3 environmentFilter1 = textureLod(environmentFilterMaps[lm1], r1, roughness * (REFLECTION_LOD_MAX - 1.0)).rgb;
+        vec3 environmentFilter2 = textureLod(environmentFilterMaps[lm2], r2, roughness * (REFLECTION_LOD_MAX - 1.0)).rgb;
         environmentFilter = environmentFilter1 * scalar1 + environmentFilter2 * scalar2;
     }
 
