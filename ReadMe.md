@@ -6,7 +6,7 @@ https://discord.gg/xd6RqAnqDD
 
 What is the **Nu Game Engine**?
 
-*"The Nu Game Engine is the world's first practical functional 2D and 3D cross-platform game engine built in F#. It offers a declarative Elm-style reactive programming API, as well as an algebraic ECS programming API for scalability. After finally reaching v1.3.0.4, the implementation has matured enough to prove both the efficacy and viability of functional programming techniques in games in terms of performance, programmability, and reliability. It currently utilizes SDL2, OpenGL, Aether 2D Physics, and Bullet 3D Physics."*
+*"The Nu Game Engine is the world's first practical functional 2D and 3D cross-platform game engine built in F#. It offers a declarative Elm-style programming API, as well as an algebraic ECS programming API for scalability. After finally reaching v1.3.0.4, the implementation has matured enough to prove both the efficacy and viability of functional programming techniques in games in terms of performance, programmability, and reliability. It currently utilizes SDL2, OpenGL, Aether 2D Physics, and Bullet 3D Physics."*
 
 This repository hosts several projects, including -
 
@@ -29,7 +29,7 @@ Live editing a cutscene.
 Editing a 3D scene imported from Unity in Nu's editor, Gaia.
 
 ![image](https://user-images.githubusercontent.com/1625560/232184477-dbb1102e-f4f5-4fd1-9008-57a07fe450f7.png)
-Effeicient, detailed 3D with deferred physically-based rendering.
+Efficient, detailed 3D with deferred physically-based rendering.
 
 ![image](https://user-images.githubusercontent.com/1625560/233125412-56c8e9da-206d-4d0b-9269-e4d1fe606a19.png)
 3D scene screenshot from editor showing off the new SSAO implementation.
