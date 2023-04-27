@@ -86,6 +86,15 @@ in vec2 texCoordsOut;
 
 out vec4 frag;
 
+bool inBounds(vec3 point, vec3 min, vec3 size)
+{
+    vec3 max = min + size;
+    return
+        point.x >= min.x && point.x <= max.x &&
+        point.y >= min.y && point.y <= max.y &&
+        point.z >= min.z && point.z <= max.z;
+}
+
 vec3 parallaxCorrection(samplerCube cubeMap, vec3 lightMapOrigin, vec3 lightMapMin, vec3 lightMapSize, vec3 positionWorld, vec3 normalWorld)
 {
     vec3 directionWorld = positionWorld - eyeCenter;
@@ -299,6 +308,10 @@ void main()
     //        }
     //    }
     //}
+
+    // ensure light maps are in their respective bounds
+    if (lm1Index != -1 && !inBounds(position, lightMapMins[lm1Index], lightMapSizes[lm1Index])) lm1Index = -1;
+    if (lm2Index != -1 && !inBounds(position, lightMapMins[lm2Index], lightMapSizes[lm1Index])) lm2Index = -1;
 
     // compute irradiance and environment filter terms
     vec3 irradiance = vec3(0.0);

@@ -462,8 +462,8 @@ module Gaia =
                 if World.isKeyboardShiftDown world then 0.025f
                 else 0.05f
             let world =
-                if  World.isKeyboardCtrlUp world &&
-                    World.isKeyboardAltUp world then
+                if  not (World.isKeyboardCtrlDown world) &&
+                    not (World.isKeyboardAltDown world) then
                     let world =
                         if World.isKeyboardKeyDown KeyboardKey.W world
                         then World.setEyeCenter3d (position + Vector3.Transform (v3Forward, rotation) * moveSpeed) world
