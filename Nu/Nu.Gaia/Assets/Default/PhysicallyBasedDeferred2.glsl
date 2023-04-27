@@ -88,11 +88,9 @@ out vec4 frag;
 
 bool inBounds(vec3 point, vec3 min, vec3 size)
 {
-    vec3 max = min + size;
     return
-        point.x >= min.x && point.x <= max.x &&
-        point.y >= min.y && point.y <= max.y &&
-        point.z >= min.z && point.z <= max.z;
+        all(greaterThanEqual(point, min)) &&
+        all(lessThanEqual(point, min + size));
 }
 
 vec3 parallaxCorrection(samplerCube cubeMap, vec3 lightMapOrigin, vec3 lightMapMin, vec3 lightMapSize, vec3 positionWorld, vec3 normalWorld)
