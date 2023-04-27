@@ -86,9 +86,9 @@ module LightMap =
                 rasterRenderbuffer rasterFramebuffer
             Hl.Assert ()
 
-            // take a snapshot for testing
-            Hl.SaveFramebufferToBitmap rasterViewport.Bounds.Width rasterViewport.Bounds.Height ("Reflection." + string rasterCubeMap + "." + string i + ".bmp")
-            Hl.Assert ()
+            //// take a snapshot for testing
+            //Hl.SaveFramebufferToBitmap rasterViewport.Bounds.Width rasterViewport.Bounds.Height ("Reflection." + string rasterCubeMap + "." + string i + ".bmp")
+            //Hl.Assert ()
 
         // teardown attachments
         for i in 0 .. dec 6 do
@@ -165,9 +165,9 @@ module LightMap =
             CubeMap.DrawCubeMap (views.[i], projection, cubeMapSurface.CubeMap, cubeMapSurface.CubeMapGeometry, irradianceShader)
             Hl.Assert ()
 
-            // take a snapshot for testing
-            Hl.SaveFramebufferToBitmap resolution resolution ("Irradiance." + string cubeMap + "." + string i + ".bmp")
-            Hl.Assert ()
+            //// take a snapshot for testing
+            //Hl.SaveFramebufferToBitmap resolution resolution ("Irradiance." + string cubeMap + "." + string i + ".bmp")
+            //Hl.Assert ()
 
         // teardown attachments
         for i in 0 .. dec 6 do
@@ -322,10 +322,10 @@ module LightMap =
                 DrawEnvironmentFilter (views.[i], projection, mipRoughness, mipResolution, environmentFilterSurface.CubeMap, environmentFilterSurface.CubeMapGeometry, environmentFilterShader)
                 Hl.Assert ()
 
-                // take a snapshot for testing
-                if mip = 0 then
-                    Hl.SaveFramebufferToBitmap resolution resolution ("EnvironmentFilter." + string cubeMap + "." + string mip + "." + string i + ".bmp")
-                    Hl.Assert ()
+                //// take a snapshot for testing
+                //if mip = 0 then
+                //    Hl.SaveFramebufferToBitmap resolution resolution ("EnvironmentFilter." + string cubeMap + "." + string mip + "." + string i + ".bmp")
+                //    Hl.Assert ()
 
         // teardown attachments
         for i in 0 .. dec 6 do
