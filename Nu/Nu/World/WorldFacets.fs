@@ -1431,7 +1431,7 @@ module LightProbeFacet3dModule =
 
         static member Properties =
             [define Entity.Presence Omnipresent
-             define Entity.ProbeBounds (box3 (v3Dup -5.f) (v3Dup 10.f))
+             define Entity.ProbeBounds (box3 (v3Dup Constants.Render.LightProbeSizeDefault * -0.5f) (v3Dup Constants.Render.LightProbeSizeDefault))
              define Entity.ProbeStale true]
 
         override this.Register (entity, world) =

@@ -462,49 +462,44 @@ module Gaia =
                 if World.isKeyboardShiftDown world then 0.025f
                 else 0.05f
             let world =
-                if  World.isKeyboardCtrlUp world &&
-                    World.isKeyboardAltUp world then
-                    let world =
-                        if World.isKeyboardKeyDown KeyboardKey.W world
-                        then World.setEyeCenter3d (position + Vector3.Transform (v3Forward, rotation) * moveSpeed) world
-                        else world
-                    let world =
-                        if World.isKeyboardKeyDown KeyboardKey.S world
-                        then World.setEyeCenter3d (position + Vector3.Transform (v3Back, rotation) * moveSpeed) world
-                        else world
-                    let world =
-                        if World.isKeyboardKeyDown KeyboardKey.A world
-                        then World.setEyeCenter3d (position + Vector3.Transform (v3Left, rotation) * moveSpeed) world
-                        else world
-                    let world =
-                        if World.isKeyboardKeyDown KeyboardKey.D world
-                        then World.setEyeCenter3d (position + Vector3.Transform (v3Right, rotation) * moveSpeed) world
-                        else world
-                    let world =
-                        if World.isKeyboardKeyDown KeyboardKey.Q world
-                        then World.setEyeRotation3d (rotation * Quaternion.CreateFromAxisAngle (v3Right, turnSpeed)) world
-                        else world
-                    let world =
-                        if World.isKeyboardKeyDown KeyboardKey.E world
-                        then World.setEyeRotation3d (rotation * Quaternion.CreateFromAxisAngle (v3Left, turnSpeed)) world
-                        else world
-                    let world =
-                        if World.isKeyboardKeyDown KeyboardKey.Up world
-                        then World.setEyeCenter3d (position + Vector3.Transform (v3Up, rotation) * moveSpeed) world
-                        else world
-                    let world =
-                        if World.isKeyboardKeyDown KeyboardKey.Down world
-                        then World.setEyeCenter3d (position + Vector3.Transform (v3Down, rotation) * moveSpeed) world
-                        else world
-                    let world =
-                        if World.isKeyboardKeyDown KeyboardKey.Left world
-                        then World.setEyeRotation3d (Quaternion.CreateFromAxisAngle (v3Up, turnSpeed) * rotation) world
-                        else world
-                    let world =
-                        if World.isKeyboardKeyDown KeyboardKey.Right world
-                        then World.setEyeRotation3d (Quaternion.CreateFromAxisAngle (v3Down, turnSpeed) * rotation) world
-                        else world
-                    world
+                if World.isKeyboardKeyDown KeyboardKey.W world
+                then World.setEyeCenter3d (position + Vector3.Transform (v3Forward, rotation) * moveSpeed) world
+                else world
+            let world =
+                if World.isKeyboardKeyDown KeyboardKey.S world
+                then World.setEyeCenter3d (position + Vector3.Transform (v3Back, rotation) * moveSpeed) world
+                else world
+            let world =
+                if World.isKeyboardKeyDown KeyboardKey.A world
+                then World.setEyeCenter3d (position + Vector3.Transform (v3Left, rotation) * moveSpeed) world
+                else world
+            let world =
+                if World.isKeyboardKeyDown KeyboardKey.D world
+                then World.setEyeCenter3d (position + Vector3.Transform (v3Right, rotation) * moveSpeed) world
+                else world
+            let world =
+                if World.isKeyboardKeyDown KeyboardKey.Q world
+                then World.setEyeRotation3d (rotation * Quaternion.CreateFromAxisAngle (v3Right, turnSpeed)) world
+                else world
+            let world =
+                if World.isKeyboardKeyDown KeyboardKey.E world
+                then World.setEyeRotation3d (rotation * Quaternion.CreateFromAxisAngle (v3Left, turnSpeed)) world
+                else world
+            let world =
+                if World.isKeyboardKeyDown KeyboardKey.Up world
+                then World.setEyeCenter3d (position + Vector3.Transform (v3Up, rotation) * moveSpeed) world
+                else world
+            let world =
+                if World.isKeyboardKeyDown KeyboardKey.Down world
+                then World.setEyeCenter3d (position + Vector3.Transform (v3Down, rotation) * moveSpeed) world
+                else world
+            let world =
+                if World.isKeyboardKeyDown KeyboardKey.Left world
+                then World.setEyeRotation3d (Quaternion.CreateFromAxisAngle (v3Up, turnSpeed) * rotation) world
+                else world
+            let world =
+                if World.isKeyboardKeyDown KeyboardKey.Right world
+                then World.setEyeRotation3d (Quaternion.CreateFromAxisAngle (v3Down, turnSpeed) * rotation) world
                 else world
             (Cascade, world)
         else (Cascade, world)

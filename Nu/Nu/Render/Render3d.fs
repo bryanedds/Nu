@@ -1367,7 +1367,6 @@ type [<ReferenceEquality>] GlRenderer3d =
     static member render eyeCenter (eyeRotation : Quaternion) windowSize renderbuffer framebuffer renderMessages renderer =
 
         // categorize messages
-        // TODO: consider implementing some exception safety for the stateful operations in this function.
         let userDefinedStaticModelsToDestroy = SegmentedList.make ()
         let postPasses = hashSetPlus<RenderPassMessage3d> HashIdentity.Structural []
         for message in renderMessages do
@@ -1535,7 +1534,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             | Left error -> failwith ("Could not create GlRenderer3d due to: " + error + ".")
         OpenGL.Hl.Assert ()
 
-        // create white sky box cube map
+        // create white cube map
         let cubeMap =
             match 
                 OpenGL.CubeMap.TryCreateCubeMap
