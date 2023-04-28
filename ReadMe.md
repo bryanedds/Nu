@@ -34,6 +34,9 @@ Efficient, detailed 3D with deferred physically-based rendering.
 ![image](https://user-images.githubusercontent.com/1625560/233125412-56c8e9da-206d-4d0b-9269-e4d1fe606a19.png)
 3D scene screenshot from editor showing off the new SSAO implementation.
 
+![image](https://user-images.githubusercontent.com/1625560/235253590-2f86a584-478a-4406-8df9-3a1e7daafcbe.png)
+Local light probes allow for efficient localized reflection and image-based lighting.
+
 ![image](https://user-images.githubusercontent.com/1625560/231018049-5c4247aa-0940-4d18-9173-2780982c22f7.png)
 Another 3D scene screenshot from editor.
 
