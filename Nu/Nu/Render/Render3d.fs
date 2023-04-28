@@ -16,7 +16,7 @@ open Nu
 // TODO: account for Flip in billboards.                                                //
 // TODO: optimize billboard rendering with some sort of batch renderer.                 //
 // TODO: introduce records for RenderTask cases.                                        //
-// TODO: make sure you're destroying ALL rendering resources at end, incl. light maps!  //
+// TODO: make sure we're destroying ALL rendering resources at end, incl. light maps!   //
 //////////////////////////////////////////////////////////////////////////////////////////
 
 /// Material properties for surfaces.
