@@ -78,6 +78,7 @@ uniform vec3 lightColors[LIGHTS_MAX];
 uniform float lightBrightnesses[LIGHTS_MAX];
 uniform float lightAttenuationLinears[LIGHTS_MAX];
 uniform float lightAttenuationQuadratics[LIGHTS_MAX];
+uniform float lightCutoffs[LIGHTS_MAX];
 uniform int lightDirectionals[LIGHTS_MAX];
 uniform float lightConeInners[LIGHTS_MAX];
 uniform float lightConeOuters[LIGHTS_MAX];
@@ -171,29 +172,28 @@ void main()
     for (int i = 0; i < LIGHTS_MAX; ++i)
     {
         // per-light radiance
-        vec3 d, l, h;
-        vec3 radiance;
+        vec3 d = lightOrigins[i] - position;
+        float distanceSquared = dot(d, d);
+        float distance = sqrt(distanceSquared);
+        float inRange = distance < lightCutoffs[i] ? 1.0 : 0.0;
+        vec3 l, h, radiance;
         if (lightDirectionals[i] == 0)
         {
-            d = lightOrigins[i] - position;
             l = normalize(d);
             h = normalize(v + l);
-            float distanceSquared = dot(d, d);
-            float distance = sqrt(distanceSquared);
             float attenuation = 1.0f / (ATTENUATION_CONSTANT + lightAttenuationLinears[i] * distance + lightAttenuationQuadratics[i] * distanceSquared);
             float angle = acos(dot(lightDirections[i], l));
             float coneDelta = lightConeOuters[i] - lightConeInners[i];
             float coneBetween = angle - lightConeInners[i];
-            float coneScalar = clamp(1.0f - coneBetween / coneDelta, 0.0f, 1.0f);
+            float coneScalar = clamp(1.0f - coneBetween / coneDelta, 0.0f, 1.0);
             float intensity = attenuation * coneScalar;
-            radiance = lightColors[i] * lightBrightnesses[i] * intensity;
+            radiance = lightColors[i] * lightBrightnesses[i] * intensity * inRange;
         }
         else
         {
-            d = lightDirections[i];
-            l = d;
+            l = lightDirections[i];
             h = normalize(v + l);
-            radiance = lightColors[i] * lightBrightnesses[i];
+            radiance = lightColors[i] * lightBrightnesses[i] * inRange;
         }
 
         // cook-torrance brdf

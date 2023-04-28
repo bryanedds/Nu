@@ -1467,6 +1467,9 @@ module LightFacet3dModule =
         member this.GetAttenuationQuadratic world : single = this.Get (nameof this.AttenuationQuadratic) world
         member this.SetAttenuationQuadratic (value : single) world = this.Set (nameof this.AttenuationQuadratic) value world
         member this.AttenuationQuadratic = lens (nameof this.AttenuationQuadratic) this this.GetAttenuationQuadratic this.SetAttenuationQuadratic
+        member this.GetCutoff world : single = this.Get (nameof this.Cutoff) world
+        member this.SetCutoff (value : single) world = this.Set (nameof this.Cutoff) value world
+        member this.Cutoff = lens (nameof this.Cutoff) this this.GetCutoff this.SetCutoff
         member this.GetLightType world : LightType = this.Get (nameof this.LightType) world
         member this.SetLightType (value : LightType) world = this.Set (nameof this.LightType) value world
         member this.LightType = lens (nameof this.LightType) this this.GetLightType this.SetLightType
@@ -1480,6 +1483,7 @@ module LightFacet3dModule =
              define Entity.Brightness Constants.Render.BrightnessDefault
              define Entity.AttenuationLinear Constants.Render.AttenuationLinearDefault
              define Entity.AttenuationQuadratic Constants.Render.AttenuationQuadraticDefault
+             define Entity.Cutoff Constants.Render.CutoffDefault
              define Entity.LightType PointLight]
 
         override this.Render (entity, world) =
@@ -1489,6 +1493,7 @@ module LightFacet3dModule =
             let brightness = entity.GetBrightness world
             let attenuationLinear = entity.GetAttenuationLinear world
             let attenuationQuadratic = entity.GetAttenuationQuadratic world
+            let cutoff = entity.GetCutoff world
             let lightType = entity.GetLightType world
             World.enqueueRenderMessage3d
                 (RenderLight3d
@@ -1498,6 +1503,7 @@ module LightFacet3dModule =
                       Brightness = brightness
                       AttenuationLinear = attenuationLinear
                       AttenuationQuadratic = attenuationQuadratic
+                      Cutoff = cutoff
                       LightType = lightType })
                 world
 
