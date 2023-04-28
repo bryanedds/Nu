@@ -290,8 +290,8 @@ void main()
         float distance1 = sqrt(dot(delta1, delta1));
         float distance2 = sqrt(dot(delta2, delta2));
         float distanceTotal = distance1 + distance2;
-        float scalar1 = (distanceTotal - distance1) / distanceTotal * 0.5;
-        float scalar2 = (distanceTotal - distance2) / distanceTotal * 0.5;
+        float scalar1 = (distanceTotal - distance1) / distanceTotal;
+        float scalar2 = (distanceTotal - distance2) / distanceTotal;
         vec3 irradiance1 = texture(irradianceMaps[lm1], n).rgb;
         vec3 irradiance2 = texture(irradianceMaps[lm2], n).rgb;
         irradiance = irradiance1 * scalar1 + irradiance2 * scalar2;

@@ -255,7 +255,7 @@ void main()
     float lmDistanceSquared2 = FLOAT_MAX;
     for (int i = 0; i < LIGHT_MAPS_MAX; ++i)
     {
-        if (lightMaps[i] != 0)
+        if (lightMaps[i] != 0 && inBounds(position, lightMapMins[i], lightMapSizes[i]))
         {
             vec3 delta = lightMapOrigins[i] - position;
             float distanceSquared = dot(delta, delta);
@@ -273,15 +273,6 @@ void main()
             }
         }
     }
-
-    // ensure light maps are in their respective bounds
-    if (lm1 != -1 && !inBounds(position, lightMapMins[lm1], lightMapSizes[lm1]))
-    {
-        lm1 = lm2;
-        lmDistanceSquared1 = lmDistanceSquared2;
-        lm2 = -1;
-    }
-    if (lm2 != -1 && !inBounds(position, lightMapMins[lm2], lightMapSizes[lm2])) lm2 = -1;
 
     // compute irradiance and environment filter terms
     vec3 irradiance = vec3(0.0);
@@ -304,8 +295,8 @@ void main()
         float distance1 = sqrt(lmDistanceSquared1);
         float distance2 = sqrt(lmDistanceSquared2);
         float distanceTotal = distance1 + distance2;
-        float scalar1 = (distanceTotal - distance1) / distanceTotal * 0.5;
-        float scalar2 = (distanceTotal - distance2) / distanceTotal * 0.5;
+        float scalar1 = (distanceTotal - distance1) / distanceTotal;
+        float scalar2 = (distanceTotal - distance2) / distanceTotal;
         vec3 irradiance1 = texture(irradianceMaps[lm1], normal).rgb;
         vec3 irradiance2 = texture(irradianceMaps[lm2], normal).rgb;
         irradiance = irradiance1 * scalar1 + irradiance2 * scalar2;
