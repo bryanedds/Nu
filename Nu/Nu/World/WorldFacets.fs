@@ -1432,7 +1432,7 @@ module LightProbeFacet3dModule =
         static member Properties =
             [define Entity.Presence Omnipresent
              define Entity.ProbeBounds (box3 (v3Dup Constants.Render.LightProbeSizeDefault * -0.5f) (v3Dup Constants.Render.LightProbeSizeDefault))
-             define Entity.ProbeStale true]
+             define Entity.ProbeStale false]
 
         override this.Register (entity, world) =
             let world = World.monitor handleProbeStaleChange (entity.GetChangeEvent (nameof entity.ProbeStale)) entity world
