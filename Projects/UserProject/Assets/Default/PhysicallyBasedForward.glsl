@@ -261,13 +261,11 @@ void main()
         lightAccum += (kD * albedo.rgb / PI + specular) * radiance * nDotL;
     }
 
-    // get available light map data
-    int lm1 = lightMaps[0] != 0 && inBounds(position, lightMapMins[0], lightMapSizes[0]) ? 0 : -1;
-    int lm2 = lightMaps[1] != 0 && inBounds(position, lightMapMins[1], lightMapSizes[1]) ? 1 : -1;
-    vec3 lmDelta1 = lightMapOrigins[0] - position;
-    vec3 lmDelta2 = lightMapOrigins[1] - position;
-    float lmDistanceSquared1 = dot(lmDelta1, lmDelta1);
-    float lmDistanceSquared2 = dot(lmDelta2, lmDelta2);
+    // determine light map indices, including their validity
+    int lm1 = lightMaps[0] != 0 ? 0 : -1;
+    int lm2 = lightMaps[1] != 0 ? 1 : -1;
+    if (lm1 != -1 && !inBounds(position, lightMapMins[lm1], lightMapSizes[lm1])) { lm1 = lm2; lm2 = -1; }
+    if (lm2 != -1 && !inBounds(position, lightMapMins[lm2], lightMapSizes[lm2])) lm2 = -1;
 
     // compute irradiance and environment filter terms
     vec3 irradiance = vec3(0.0);
@@ -287,11 +285,13 @@ void main()
     else
     {
         // compute blended irradiance
-        float distance1 = sqrt(lmDistanceSquared1);
-        float distance2 = sqrt(lmDistanceSquared2);
+        vec3 delta1 = lightMapOrigins[lm1] - position;
+        vec3 delta2 = lightMapOrigins[lm2] - position;
+        float distance1 = sqrt(dot(delta1, delta1));
+        float distance2 = sqrt(dot(delta2, delta2));
         float distanceTotal = distance1 + distance2;
-        float scalar1 = ((distanceTotal - distance1) / distanceTotal) * 0.5;
-        float scalar2 = ((distanceTotal - distance2) / distanceTotal) * 0.5;
+        float scalar1 = (distanceTotal - distance1) / distanceTotal * 0.5;
+        float scalar2 = (distanceTotal - distance2) / distanceTotal * 0.5;
         vec3 irradiance1 = texture(irradianceMaps[lm1], n).rgb;
         vec3 irradiance2 = texture(irradianceMaps[lm2], n).rgb;
         irradiance = irradiance1 * scalar1 + irradiance2 * scalar2;
