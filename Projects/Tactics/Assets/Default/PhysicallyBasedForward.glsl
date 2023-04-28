@@ -205,8 +205,6 @@ void main()
     roughness = (invertRoughnessOut == 0 ? roughness : 1.0f - roughness) * materialOut.b;
     vec3 emission = vec3(texture(emissionTexture, texCoords).r * materialOut.a);
 
-    // compute lighting profile
-
     // compute lightAccum term
     vec3 n = normalize(toWorld * (texture(normalTexture, texCoords).xyz * 2.0 - 1.0));
     vec3 v = normalize(eyeCenter - position);
