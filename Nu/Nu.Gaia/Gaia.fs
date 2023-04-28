@@ -756,6 +756,7 @@ module Gaia =
                     let strUnescaped = String.unescape strEscaped
                     let propertyValue = typeConverter.ConvertFromString strUnescaped
                     propertyDescriptor.SetValue (selectedObject, propertyValue)
+                    form.propertyValueTextBox.Focus () |> ignore<bool>
                 with
                 | :? ConversionException as exn ->
                     match exn.SymbolOpt with
@@ -763,6 +764,7 @@ module Gaia =
                         match Symbol.getOriginOpt symbol with
                         | ValueSome origin ->
                             form.propertyValueTextBox.SelectionStart <- int origin.Start.Index
+                            form.propertyValueTextBox.Focus () |> ignore<bool>
                         | ValueNone -> ()
                     | None -> ()
                     Log.info ("Invalid apply property operation due to: " + scstring exn)
