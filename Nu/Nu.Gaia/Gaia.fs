@@ -756,7 +756,6 @@ module Gaia =
                     let strUnescaped = String.unescape strEscaped
                     let propertyValue = typeConverter.ConvertFromString strUnescaped
                     propertyDescriptor.SetValue (selectedObject, propertyValue)
-                    form.propertyValueTextBox.Focus () |> ignore<bool>
                 with
                 | :? ConversionException as exn ->
                     match exn.SymbolOpt with
