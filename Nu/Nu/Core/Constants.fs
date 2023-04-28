@@ -111,6 +111,7 @@ module Render =
     let [<Literal>] BrightnessDefault = 10.0f
     let [<Literal>] AttenuationLinearDefault = 0.7f
     let [<Literal>] AttenuationQuadraticDefault = 1.8f
+    let [<Literal>] CutoffDefault = 8.0f
     let [<Uniform>] AlbedoDefault = Color.White
     let [<Literal>] MetallicDefault = 1.0f
     let [<Uniform>] RoughnessDefault = 1.0f

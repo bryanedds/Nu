@@ -135,6 +135,7 @@ module Effect =
                   Brightness = Constants.Render.BrightnessDefault
                   AttenuationLinear = Constants.Render.AttenuationLinearDefault
                   AttenuationQuadratic = Constants.Render.AttenuationQuadraticDefault
+                  Cutoff = Constants.Render.CutoffDefault
                   Volume = Constants.Audio.SoundVolumeDefault
                   Enabled = true
                   Centered = effect.Centered_ }
