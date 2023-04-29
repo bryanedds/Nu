@@ -21,10 +21,6 @@ module KeyedArray =
               mutable Removed_ : single // single to elide unecessary conversions
               mutable Threshold_ : single }
 
-        interface struct (bool * 'k * 'v) IEnumerable with
-            member this.GetEnumerator () = this.Values_.GetEnumerator ()
-            member this.GetEnumerator () = (this.Values_ :> _ IEnumerable).GetEnumerator ()
-
         /// The keyed array values.
         member this.Values =
             this.Values_
@@ -37,102 +33,94 @@ module KeyedArray =
         member this.Length =
             this.Current_
 
+        member private this.Overflowing =
+            this.Current_ = this.Values.Length
+
+        member private this.Underflowing =
+            this.Removed_ / single this.Keys_.Count >= 1.0f / this.Threshold_
+
+        member private this.Expand () =
+
+            // check overflow
+            if this.Overflowing then
+
+                // grow
+                let values = Array.zeroCreate (max 1 this.Current_ * int this.Threshold_)
+                Array.blit this.Values_ 0 values 0 this.Current_
+                this.Values_ <- values
+
+        member private this.Compact () =
+        
+            // check underflow
+            if this.Underflowing then
+
+                // reorg
+                let mutable current = 0
+                for key in Seq.toArray this.Keys_.Values do
+                    let index = this.Indices_.[key]
+                    let value = this.Values_.[index]
+                    this.Keys_.Remove index |> ignore
+                    this.Keys_.Add (current, key)
+                    this.Indices_.[key] <- current
+                    this.Values_.[current] <- value
+                    current <- inc current
+
+                // shrink
+                let values = Array.zeroCreate (int (single this.Current_ * (1.0f / this.Threshold_)))
+                Array.blit this.Values_ 0 values 0 values.Length
+                this.Values_ <- values
+
+                // clean up
+                this.Current_ <- current
+                this.Removed_ <- 0.0f
+
+        /// Add a keyed value, or update one if it already exists.
+        member this.Add (key, value) =
+            match this.Indices_.TryGetValue key with
+            | (false, _) ->
+                this.Expand ()
+                let index = this.Current_
+                this.Keys_.Add (index, key) |> ignore
+                this.Indices_.Add (key, index)
+                this.Values_.[index] <- struct (true, key, value)
+                this.Current_ <- inc this.Current_
+                index
+            | (true, index) ->
+                this.Values_.[index] <- struct (true, key, value)
+                index
+        
+        /// Remove a keyed value if it exists.
+        member this.Remove key =
+            match this.Indices_.TryGetValue key with
+            | (true, index) ->
+                this.Keys_.Remove index |> ignore
+                this.Indices_.Remove key |> ignore
+                this.Values_.[index] <- struct (false, key, Unchecked.defaultof<'v>)
+                this.Removed_ <- inc this.Removed_
+                this.Compact ()
+            | (false, _) -> ()
+        
+        /// Query that a keyed value exists.
+        member this.ContainsKey key =
+            this.Indices_.ContainsKey key
+        
+        /// Attempt to find a keyed value.
+        member this.TryFind key =
+            match this.Indices_.TryGetValue key with
+            | (true, index) -> Some this.Values_.[index]
+            | (false, _) -> None
+
+        /// Attempt to get a keyed value.
+        member this.TryGetValue (key, valueRef : _ outref) =
+            this.Indices_.TryGetValue (key, valueRef)
+
         /// Index a keyed value.
         member this.Item key =
             &this.Values_.[this.Indices_.[key]]
 
-    let private overflowing karr =
-        karr.Current_ = karr.Values.Length
-
-    let private underflowing karr =
-        karr.Removed_ / single karr.Keys_.Count >= 1.0f / karr.Threshold_
-
-    let private expand karr =
-
-        // check overflow
-        if overflowing karr then
-
-            // grow
-            let values = Array.zeroCreate (max 1 karr.Current_ * int karr.Threshold_)
-            Array.blit karr.Values_ 0 values 0 karr.Current_
-            karr.Values_ <- values
-
-    let private compact karr =
-        
-        // check underflow
-        if underflowing karr then
-
-            // reorg
-            let mutable current = 0
-            for key in Seq.toArray karr.Keys_.Values do
-                let index = karr.Indices_.[key]
-                let value = karr.Values_.[index]
-                karr.Keys_.Remove index |> ignore
-                karr.Keys_.Add (current, key)
-                karr.Indices_.[key] <- current
-                karr.Values_.[current] <- value
-                current <- inc current
-
-            // shrink
-            let values = Array.zeroCreate (int (single karr.Current_ * (1.0f / karr.Threshold_)))
-            Array.blit karr.Values_ 0 values 0 values.Length
-            karr.Values_ <- values
-
-            // clean up
-            karr.Current_ <- current
-            karr.Removed_ <- 0.0f
-
-    /// Get the keyed array values.
-    let getValues karr =
-        karr.Values_
-
-    /// Get the threshold for compaction.
-    let getThreshold karr =
-        karr.Threshold_
-    
-    /// Get the current number of values (some of which may be empty).
-    let getLength karr =
-        karr.Current_
-
-    /// Add a keyed value, or update one if it already exists.
-    let add key value karr =
-        match karr.Indices_.TryGetValue key with
-        | (false, _) ->
-            expand karr
-            let index = karr.Current_
-            karr.Keys_.Add (index, key) |> ignore
-            karr.Indices_.Add (key, index)
-            karr.Values_.[index] <- struct (true, key, value)
-            karr.Current_ <- inc karr.Current_
-            index
-        | (true, index) ->
-            karr.Values_.[index] <- struct (true, key, value)
-            index
-
-    /// Remove a keyed value if it exists.
-    let remove key karr =
-        match karr.Indices_.TryGetValue key with
-        | (true, index) ->
-            karr.Keys_.Remove index |> ignore
-            karr.Indices_.Remove key |> ignore
-            karr.Values_.[index] <- struct (false, key, Unchecked.defaultof<'v>)
-            karr.Removed_ <- inc karr.Removed_
-            compact karr
-        | (false, _) -> ()
-
-    /// Query that a keyed value exists.
-    let containsKey key karr =
-        karr.Indices_.ContainsKey key
-
-    /// Attempt to find a keyed value.
-    let tryFind key karr =
-        match karr.Indices_.TryGetValue key with
-        | (true, index) -> Some karr.Values_.[index]
-        | (false, _) -> None
-
-    /// Find a keyed value.
-    let find key (karr : KeyedArray<_, _>) =
-        &karr.[key]
+        interface struct (bool * 'k * 'v) IEnumerable with
+            member this.GetEnumerator () = this.Values_.GetEnumerator ()
+            member this.GetEnumerator () = (this.Values_ :> _ IEnumerable).GetEnumerator ()
 
     /// Make a KeyedArray with the given compaction threshold and initial capaticy.
     let make<'k, 'v when 'k : equality> threshold capacity : KeyedArray<'k, 'v> =
@@ -142,6 +130,38 @@ module KeyedArray =
           Current_ = 0
           Removed_ = 0.0f
           Threshold_ = threshold }
+
+    /// Get the keyed array values.
+    let getValues (karr : KeyedArray<'k, 'v>) =
+        karr.Values
+
+    /// Get the threshold for compaction.
+    let getThreshold (karr : KeyedArray<'k, 'v>) =
+        karr.Threshold
+    
+    /// Get the current number of values (some of which may be empty).
+    let getLength (karr : KeyedArray<'k, 'v>) =
+        karr.Length
+
+    /// Add a keyed value, or update one if it already exists.
+    let add key value (karr : KeyedArray<'k, 'v>) =
+        karr.Add (key, value)
+
+    /// Remove a keyed value if it exists.
+    let remove key (karr : KeyedArray<'k, 'v>) =
+        karr.Remove key
+
+    /// Query that a keyed value exists.
+    let containsKey key (karr : KeyedArray<'k, 'v>) =
+        karr.ContainsKey key
+
+    /// Attempt to find a keyed value.
+    let tryFind key (karr : KeyedArray<'k, 'v>) =
+        karr.TryFind key
+
+    /// Attempt to get a keyed value.
+    let tryGetValue (key, karr : KeyedArray<'k, 'v>, valueRef : _ outref) =
+        karr.TryGetValue (key, valueRef)
 
     /// Convert a keyed array to a sequence.
     let toSeq (karr : KeyedArray<_, _>) =
