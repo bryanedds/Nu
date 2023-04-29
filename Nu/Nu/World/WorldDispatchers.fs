@@ -1028,7 +1028,7 @@ module StaticBillboardDispatcherModule =
 
         static member Properties =
             [define Entity.InsetOpt None
-             define Entity.MaterialProperties Unchecked.defaultof<_>
+             define Entity.MaterialProperties MaterialProperties.empty
              define Entity.AlbedoImage Assets.Default.MaterialAlbedo
              define Entity.MetallicImage Assets.Default.MaterialMetallic
              define Entity.RoughnessImage Assets.Default.MaterialRoughness
@@ -1052,7 +1052,7 @@ module StaticModelDispatcherModule =
             [typeof<StaticModelFacet>]
 
         static member Properties =
-            [define Entity.MaterialProperties Unchecked.defaultof<_>
+            [define Entity.MaterialProperties MaterialProperties.empty
              define Entity.StaticModel Assets.Default.StaticModel
              define Entity.RenderStyle Deferred]
 
@@ -1069,7 +1069,7 @@ module RigidModelDispatcherModule =
         static member Properties =
             [define Entity.BodyType Dynamic
              define Entity.BodyShape (BodyStaticModel { StaticModel = Assets.Default.StaticModel; TransformOpt = None; PropertiesOpt = None })
-             define Entity.MaterialProperties Unchecked.defaultof<_>
+             define Entity.MaterialProperties MaterialProperties.empty
              define Entity.StaticModel Assets.Default.StaticModel
              define Entity.RenderStyle Deferred]
 
@@ -1083,7 +1083,7 @@ module StaticModelSurfaceDispatcherModule =
             [typeof<StaticModelSurfaceFacet>]
 
         static member Properties =
-            [define Entity.MaterialProperties Unchecked.defaultof<_>
+            [define Entity.MaterialProperties MaterialProperties.empty
              define Entity.SurfaceIndex 0
              define Entity.StaticModel Assets.Default.StaticModel
              define Entity.RenderStyle Deferred]
@@ -1101,7 +1101,7 @@ module RigidModelSurfaceDispatcherModule =
         static member Properties =
             [define Entity.BodyType Dynamic
              define Entity.BodyShape (BodyStaticModelSurface { SurfaceIndex = 0; StaticModel = Assets.Default.StaticModel; TransformOpt = None; PropertiesOpt = None })
-             define Entity.MaterialProperties Unchecked.defaultof<_>
+             define Entity.MaterialProperties MaterialProperties.empty
              define Entity.SurfaceIndex 0
              define Entity.StaticModel Assets.Default.StaticModel
              define Entity.RenderStyle Deferred]
