@@ -9,10 +9,8 @@ module OpenGL = let _ = ()
 
 namespace OpenGL
 open System
-#if DEBUG
 open System.Runtime.InteropServices
 open System.Text
-#endif
 open SDL2
 open Prime
 open Nu
