@@ -220,9 +220,6 @@ module Gaia =
         let previousGridItem = form.entityPropertyGrid.SelectedGridItem
         form.entityPropertyGrid.SelectedObject <- entityTds
 
-        // show selected entity in hierarchy
-        tryShowSelectedEntityInHierarchy form
-
         // show previous grid item or model if available
         let gridItems = dictPlus StringComparer.Ordinal []
         let gridEntry = form.entityPropertyGrid.SelectedGridItem.Parent
@@ -971,6 +968,7 @@ module Gaia =
                     let world = World.renameEntityImmediate source source' world
                     let world = refreshHierarchyTreeViewImmediate form world
                     selectEntity source' form world
+                    tryShowSelectedEntityInHierarchy form
                     world
                 elif draggedNode <> targetNodeOpt && not (containsNode draggedNode targetNodeOpt) then
                     if args.KeyState &&& 32 = 0 then // alt not pressed
@@ -980,6 +978,7 @@ module Gaia =
                         let world = source'.SetMountOptWithAdjustment (Some mount) world
                         let world = refreshHierarchyTreeViewImmediate form world
                         selectEntity source' form world
+                        tryShowSelectedEntityInHierarchy form
                         world
                     else // alt pressed
                         let next = Entity (selectedGroup.GroupAddress <-- Address.makeFromString targetNodeOpt.Name)
@@ -992,13 +991,14 @@ module Gaia =
                         let world = source'.SetMountOptWithAdjustment mountOpt world
                         let world = refreshHierarchyTreeViewImmediate form world
                         selectEntity source' form world
+                        tryShowSelectedEntityInHierarchy form
                         world
                 else world
             else
                 MessageBox.Show ("Cannot relocate a protected simulant (such as an entity created by the Elmish API).", "Protected Elmish Simulant", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
                 world
 
-    let private handleFormHierarchyTreeViewCollapseAllClick (form : GaiaForm) (_ : EventArgs) =
+    let private handleFormHierarchyTreeViewCollapseClick (form : GaiaForm) (_ : EventArgs) =
         form.hierarchyTreeView.CollapseAll ()
 
     let private handleFormHierarchyTreeViewNodeSelect (form : GaiaForm) (evt : TreeViewEventArgs) =
@@ -1090,6 +1090,7 @@ module Gaia =
                     | Some _ | None -> world
                 let world = refreshHierarchyTreeViewImmediate form world
                 selectEntity entity form world
+                tryShowSelectedEntityInHierarchy form
                 world
             with exn ->
                 let world = World.choose oldWorld
@@ -1109,6 +1110,9 @@ module Gaia =
                     MessageBox.Show ("Cannot destroy a protected simulant (such as an entity created by the Elmish API).", "Protected Elmish Simulant", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
                     world
             | _ -> world
+
+    let private handleFormSelectInHierarchy (form : GaiaForm) (_ : EventArgs) =
+        tryShowSelectedEntityInHierarchy form
 
     let private handleFormNew (form : GaiaForm) (_ : EventArgs) =
         use groupCreationForm = new GroupCreationForm ()
@@ -1250,7 +1254,10 @@ module Gaia =
             let snapsEir = getSnaps form |> if form.snap3dButton.Checked then Right else Left
             let (entityOpt, world) = World.pasteEntityFromClipboard atMouse rightClickPosition snapsEir surnamesOpt selectedGroup world
             match entityOpt with
-            | Some entity -> selectEntity entity form world; world
+            | Some entity ->
+                selectEntity entity form world
+                tryShowSelectedEntityInHierarchy form
+                world
             | None -> world
 
     let private handleFormQuickSize (form : GaiaForm) (_ : EventArgs) =
@@ -2026,7 +2033,8 @@ module Gaia =
         form.discardAssetGraphButton.Click.Add (handleLoadAssetGraphClick form)
         form.applyOverlayerButton.Click.Add (handleSaveOverlayerClick form)
         form.discardOverlayerButton.Click.Add (handleLoadOverlayerClick form)
-        form.hierarchyCollapseAllButton.Click.Add (handleFormHierarchyTreeViewCollapseAllClick form)
+        form.hierarchySelectButton.Click.Add (handleFormSelectInHierarchy form)
+        form.hierarchyCollapseButton.Click.Add (handleFormHierarchyTreeViewCollapseClick form)
         form.hierarchyTreeView.AfterSelect.Add (handleFormHierarchyTreeViewNodeSelect form)
         form.hierarchyTreeView.DoubleClick.Add (handleFormHierarchyTreeViewDoubleClick form)
         form.hierarchyTreeView.ItemDrag.Add (handleFormHierarchyTreeViewItemDrag form)
@@ -2039,6 +2047,7 @@ module Gaia =
         form.deleteContextMenuItem.Click.Add (handleFormDeleteEntity form)
         form.deleteToolStripMenuItem.Click.Add (handleFormDeleteEntity form)
         form.deleteInHierachyContextMenuItem.Click.Add (handleFormDeleteEntity form)
+        form.selectInHierarchyContextMenuItem.Click.Add (handleFormSelectInHierarchy form)
         form.newGroupToolStripMenuItem.Click.Add (handleFormNew form)
         form.saveGroupToolStripMenuItem.Click.Add (handleFormSave false form)
         form.saveGroupAsToolStripMenuItem.Click.Add (handleFormSave true form)
