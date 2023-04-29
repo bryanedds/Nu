@@ -63,9 +63,12 @@ void main()
 const float PI = 3.141592654;
 const float REFLECTION_LOD_MAX = 5.0;
 const float GAMMA = 2.2;
+const float OPAQUING_DISTANCE_BEGIN = 30.0;
+const float OPAQUING_DISTANCE_END = 32.0;
+const float OPAQUING_DISTANCE_RANGE = OPAQUING_DISTANCE_END - OPAQUING_DISTANCE_BEGIN;
 const float ATTENUATION_CONSTANT = 1.0f;
 const int LIGHT_MAPS_MAX = 2;
-const int LIGHTS_MAX = 32;
+const int LIGHTS_MAX = 16;
 
 uniform vec3 eyeCenter;
 uniform vec3 lightAmbientColor;
@@ -171,6 +174,7 @@ void main()
     // compute basic fragment data
     vec3 position = positionOut.xyz;
     vec3 normal = normalize(normalOut);
+    float distance = length(position - eyeCenter);
 
     // compute spatial converters
     vec3 q1 = dFdx(position);
@@ -196,6 +200,7 @@ void main()
     albedo.rgb = pow(albedoSample.rgb, vec3(GAMMA)) * albedoOut.rgb;
     albedo.a = albedoSample.a * albedoOut.a;
     if (albedo.a == 0.0f) discard;
+    albedo.a = mix(albedo.a, 1.0, clamp((distance - OPAQUING_DISTANCE_BEGIN) / OPAQUING_DISTANCE_RANGE, 0.0, 1.0));
 
     // compute material properties
     float metallic = texture(metallicTexture, texCoords).r * materialOut.r;
