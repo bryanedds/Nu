@@ -28,130 +28,129 @@
         /// </summary>
         private void InitializeComponent()
         {
-            this.binaryFilePathText = new System.Windows.Forms.TextBox();
-            this.label1 = new System.Windows.Forms.Label();
-            this.selectExecutable = new System.Windows.Forms.Button();
-            this.customButton = new System.Windows.Forms.Button();
-            this.defaultButton = new System.Windows.Forms.Button();
-            this.openFileDialog = new System.Windows.Forms.OpenFileDialog();
-            this.useImperativeExecutionCheckBox = new System.Windows.Forms.CheckBox();
-            this.modeComboBox = new System.Windows.Forms.ComboBox();
-            this.label2 = new System.Windows.Forms.Label();
-            this.SuspendLayout();
+            binaryFilePathText = new TextBox();
+            label1 = new Label();
+            selectExecutable = new Button();
+            customButton = new Button();
+            defaultButton = new Button();
+            openFileDialog = new OpenFileDialog();
+            useImperativeExecutionCheckBox = new CheckBox();
+            modeComboBox = new ComboBox();
+            label2 = new Label();
+            SuspendLayout();
             // 
             // binaryFilePathText
             // 
-            this.binaryFilePathText.Location = new System.Drawing.Point(16, 52);
-            this.binaryFilePathText.Margin = new System.Windows.Forms.Padding(2);
-            this.binaryFilePathText.Name = "binaryFilePathText";
-            this.binaryFilePathText.Size = new System.Drawing.Size(479, 23);
-            this.binaryFilePathText.TabIndex = 1;
+            binaryFilePathText.Location = new Point(16, 52);
+            binaryFilePathText.Margin = new Padding(2);
+            binaryFilePathText.Name = "binaryFilePathText";
+            binaryFilePathText.Size = new Size(479, 23);
+            binaryFilePathText.TabIndex = 1;
             // 
             // label1
             // 
-            this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(13, 21);
-            this.label1.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
-            this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(200, 15);
-            this.label1.TabIndex = 0;
-            this.label1.Text = "Select game\'s executable for editing.";
+            label1.AutoSize = true;
+            label1.Location = new Point(13, 21);
+            label1.Margin = new Padding(2, 0, 2, 0);
+            label1.Name = "label1";
+            label1.Size = new Size(200, 15);
+            label1.TabIndex = 0;
+            label1.Text = "Select game's executable for editing.";
             // 
             // selectExecutable
             // 
-            this.selectExecutable.Location = new System.Drawing.Point(500, 52);
-            this.selectExecutable.Margin = new System.Windows.Forms.Padding(2);
-            this.selectExecutable.Name = "selectExecutable";
-            this.selectExecutable.Size = new System.Drawing.Size(28, 23);
-            this.selectExecutable.TabIndex = 2;
-            this.selectExecutable.Text = "...";
-            this.selectExecutable.UseVisualStyleBackColor = true;
-            this.selectExecutable.Click += new System.EventHandler(this.button1_Click);
+            selectExecutable.Location = new Point(500, 52);
+            selectExecutable.Margin = new Padding(2);
+            selectExecutable.Name = "selectExecutable";
+            selectExecutable.Size = new Size(28, 23);
+            selectExecutable.TabIndex = 2;
+            selectExecutable.Text = "...";
+            selectExecutable.UseVisualStyleBackColor = true;
+            selectExecutable.Click += button1_Click;
             // 
             // customButton
             // 
-            this.customButton.Location = new System.Drawing.Point(306, 163);
-            this.customButton.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            this.customButton.Name = "customButton";
-            this.customButton.Size = new System.Drawing.Size(112, 27);
-            this.customButton.TabIndex = 6;
-            this.customButton.Text = "Use Settings";
-            this.customButton.UseVisualStyleBackColor = true;
-            this.customButton.Click += new System.EventHandler(this.customButton_Click);
+            customButton.Location = new Point(306, 163);
+            customButton.Margin = new Padding(4, 3, 4, 3);
+            customButton.Name = "customButton";
+            customButton.Size = new Size(112, 27);
+            customButton.TabIndex = 6;
+            customButton.Text = "Use Settings";
+            customButton.UseVisualStyleBackColor = true;
+            customButton.Click += customButton_Click;
             // 
             // defaultButton
             // 
-            this.defaultButton.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-            this.defaultButton.Location = new System.Drawing.Point(425, 163);
-            this.defaultButton.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            this.defaultButton.Name = "defaultButton";
-            this.defaultButton.Size = new System.Drawing.Size(106, 27);
-            this.defaultButton.TabIndex = 7;
-            this.defaultButton.Text = "Use Defaults";
-            this.defaultButton.UseVisualStyleBackColor = true;
+            defaultButton.DialogResult = DialogResult.Cancel;
+            defaultButton.Location = new Point(425, 163);
+            defaultButton.Margin = new Padding(4, 3, 4, 3);
+            defaultButton.Name = "defaultButton";
+            defaultButton.Size = new Size(106, 27);
+            defaultButton.TabIndex = 7;
+            defaultButton.Text = "Use Defaults";
+            defaultButton.UseVisualStyleBackColor = true;
             // 
             // openFileDialog
             // 
-            this.openFileDialog.Filter = "DLL files|*.dll|All files|*.*";
+            openFileDialog.Filter = "DLL files|*.dll|All files|*.*";
             // 
             // useImperativeExecutionCheckBox
             // 
-            this.useImperativeExecutionCheckBox.AutoSize = true;
-            this.useImperativeExecutionCheckBox.Location = new System.Drawing.Point(16, 126);
-            this.useImperativeExecutionCheckBox.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            this.useImperativeExecutionCheckBox.Name = "useImperativeExecutionCheckBox";
-            this.useImperativeExecutionCheckBox.Size = new System.Drawing.Size(310, 19);
-            this.useImperativeExecutionCheckBox.TabIndex = 5;
-            this.useImperativeExecutionCheckBox.Text = "Use Imperative Execution (faster, but no Undo / Redo)";
-            this.useImperativeExecutionCheckBox.UseVisualStyleBackColor = true;
+            useImperativeExecutionCheckBox.AutoSize = true;
+            useImperativeExecutionCheckBox.Location = new Point(16, 126);
+            useImperativeExecutionCheckBox.Margin = new Padding(4, 3, 4, 3);
+            useImperativeExecutionCheckBox.Name = "useImperativeExecutionCheckBox";
+            useImperativeExecutionCheckBox.Size = new Size(483, 19);
+            useImperativeExecutionCheckBox.TabIndex = 5;
+            useImperativeExecutionCheckBox.Text = "Use Imperative Execution (faster and no LOH compaction pauses, but no Undo / Redo)";
+            useImperativeExecutionCheckBox.UseVisualStyleBackColor = true;
             // 
             // modeComboBox
             // 
-            this.modeComboBox.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            this.modeComboBox.Enabled = false;
-            this.modeComboBox.FormattingEnabled = true;
-            this.modeComboBox.Location = new System.Drawing.Point(65, 89);
-            this.modeComboBox.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            this.modeComboBox.Name = "modeComboBox";
-            this.modeComboBox.Size = new System.Drawing.Size(465, 23);
-            this.modeComboBox.TabIndex = 4;
+            modeComboBox.DropDownStyle = ComboBoxStyle.DropDownList;
+            modeComboBox.Enabled = false;
+            modeComboBox.FormattingEnabled = true;
+            modeComboBox.Location = new Point(65, 89);
+            modeComboBox.Margin = new Padding(4, 3, 4, 3);
+            modeComboBox.Name = "modeComboBox";
+            modeComboBox.Size = new Size(465, 23);
+            modeComboBox.TabIndex = 4;
             // 
             // label2
             // 
-            this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(15, 93);
-            this.label2.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
-            this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(41, 15);
-            this.label2.TabIndex = 3;
-            this.label2.Text = "Mode:";
+            label2.AutoSize = true;
+            label2.Location = new Point(15, 93);
+            label2.Margin = new Padding(4, 0, 4, 0);
+            label2.Name = "label2";
+            label2.Size = new Size(41, 15);
+            label2.TabIndex = 3;
+            label2.Text = "Mode:";
             // 
             // StartForm
             // 
-            this.AcceptButton = this.customButton;
-            this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.CancelButton = this.defaultButton;
-            this.ClientSize = new System.Drawing.Size(545, 207);
-            this.ControlBox = false;
-            this.Controls.Add(this.label2);
-            this.Controls.Add(this.modeComboBox);
-            this.Controls.Add(this.useImperativeExecutionCheckBox);
-            this.Controls.Add(this.defaultButton);
-            this.Controls.Add(this.customButton);
-            this.Controls.Add(this.selectExecutable);
-            this.Controls.Add(this.label1);
-            this.Controls.Add(this.binaryFilePathText);
-            this.Margin = new System.Windows.Forms.Padding(2);
-            this.MaximizeBox = false;
-            this.MinimizeBox = false;
-            this.Name = "StartForm";
-            this.SizeGripStyle = System.Windows.Forms.SizeGripStyle.Hide;
-            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
-            this.Text = "Editor Start Configuration";
-            this.ResumeLayout(false);
-            this.PerformLayout();
-
+            AcceptButton = customButton;
+            AutoScaleDimensions = new SizeF(7F, 15F);
+            AutoScaleMode = AutoScaleMode.Font;
+            CancelButton = defaultButton;
+            ClientSize = new Size(545, 207);
+            ControlBox = false;
+            Controls.Add(label2);
+            Controls.Add(modeComboBox);
+            Controls.Add(useImperativeExecutionCheckBox);
+            Controls.Add(defaultButton);
+            Controls.Add(customButton);
+            Controls.Add(selectExecutable);
+            Controls.Add(label1);
+            Controls.Add(binaryFilePathText);
+            Margin = new Padding(2);
+            MaximizeBox = false;
+            MinimizeBox = false;
+            Name = "StartForm";
+            SizeGripStyle = SizeGripStyle.Hide;
+            StartPosition = FormStartPosition.CenterScreen;
+            Text = "Editor Start Configuration";
+            ResumeLayout(false);
+            PerformLayout();
         }
 
         #endregion
@@ -162,7 +161,7 @@
         public System.Windows.Forms.TextBox binaryFilePathText;
         public System.Windows.Forms.OpenFileDialog openFileDialog;
         public System.Windows.Forms.CheckBox useImperativeExecutionCheckBox;
-		private System.Windows.Forms.Label label2;
-		public System.Windows.Forms.ComboBox modeComboBox;
-	}
+        private System.Windows.Forms.Label label2;
+        public System.Windows.Forms.ComboBox modeComboBox;
+    }
 }

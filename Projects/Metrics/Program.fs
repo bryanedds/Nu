@@ -150,8 +150,8 @@ type MyGameDispatcher () =
         let world =
             Seq.fold (fun world position ->
                 let (entity, world) = World.createEntity<MetricsEntityDispatcher> NoOverlay (Some [|string Gen.id64|]) group world
-                let world = entity.SetScale (v3Dup 0.1f) world
                 let world = entity.SetPosition (position + v3 -12.0f -10.0f 0.0f) world
+                let world = entity.SetScale (v3Dup 0.1f) world
                 world)
                 world positions
 #endif

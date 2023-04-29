@@ -19,7 +19,7 @@ namespace Nu.Gaia.Design
 
         private void button1_Click(object sender, EventArgs e)
         {
-            if (openFileDialog.ShowDialog () == DialogResult.OK)
+            if (openFileDialog.ShowDialog() == DialogResult.OK)
             {
                 binaryFilePathText.Text = openFileDialog.FileName;
             }
