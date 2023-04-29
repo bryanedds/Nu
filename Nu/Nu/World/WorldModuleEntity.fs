@@ -2530,8 +2530,7 @@ module WorldModuleEntity =
 
         /// Copy an entity to the world's clipboard.
         static member copyEntityToClipboard entity world =
-            let entityState =
-                EntityState.makeFromEntityState None (World.getEntityState entity world)
+            let entityState = EntityState.makeFromEntityState None (World.getEntityState entity world)
             Clipboard <- Some (entityState :> obj)
 
         /// Cut an entity to the world's clipboard.
