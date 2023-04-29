@@ -767,7 +767,7 @@ module WorldTypes =
         static member makeFromEntityState surnamesOpt (entityStateOrig : EntityState) =
             let (id, surnames) = Gen.id64AndSurnamesIf surnamesOpt
             { entityStateOrig with
-                Xtension =
+                Xtension = // TODO: use the Xtension.makeFromXtension instead.
                     entityStateOrig.Xtension |>
                     Xtension.toSeq |>
                     Seq.map (fun (n, p) ->
