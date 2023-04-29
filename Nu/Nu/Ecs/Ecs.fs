@@ -1136,7 +1136,7 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
             for i in 0 .. dec archetype.Length do
                 let entityId = archetype.EntityIdStore.[i]
                 if entityId.Active then
-                    SegmentedList.add { ArchetypeIndex = i; Archetype = archetype } slots
+                    slots.Add { ArchetypeIndex = i; Archetype = archetype }
         slots
 
     member this.IndexEntities () =
@@ -1146,7 +1146,7 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
             for i in 0 .. dec archetype.Length do
                 let entityId = archetype.EntityIdStore.[i]
                 if entityId.Active then
-                    SegmentedList.add { EntityId = entityId.EntityId; Ecs = ecs } entities
+                    entities.Add { EntityId = entityId.EntityId; Ecs = ecs }
         entities
 
     member this.Iterate (statement : Statement<'c, 's>, ?compName, ?state : 's) : 's =

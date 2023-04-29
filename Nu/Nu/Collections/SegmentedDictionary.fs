@@ -28,10 +28,36 @@ module SegmentedDictionary =
             let index = Math.Abs (hashCode % 32) // TODO: use constant.
             this.Dictionaries.[index].[key]
 
+        member this.ContainsKey key =
+            let hashCode = this.Comparer.GetHashCode key
+            let index = Math.Abs (hashCode % 32) // TODO: use Prime's `modulus` operator instead?
+            this.Dictionaries.[index].ContainsKey key
+
+        member this.TryFind key =
+            let hashCode = this.Comparer.GetHashCode key
+            let index = Math.Abs (hashCode % 32)
+            match this.Dictionaries.[index].TryGetValue key with
+            | (true, value) -> Some value
+            | (false, _) -> None
+
         member this.TryGetValue (key, valueRef : _ outref) =
             let hashCode = this.Comparer.GetHashCode key
             let index = Math.Abs (hashCode % 32)
             this.Dictionaries.[index].TryGetValue (key, &valueRef)
+
+        member this.Add (key, value) =
+            let hashCode = this.Comparer.GetHashCode key
+            let index = Math.Abs (hashCode % 32)
+            this.Dictionaries.[index].Add (key, value)
+
+        member this.Remove key =
+            let hashCode = this.Comparer.GetHashCode key
+            let index = Math.Abs (hashCode % 32)
+            this.Dictionaries.[index].Remove key
+
+        member this.Clear () =
+            for dict in this.Dictionaries do
+                dict.Clear ()
 
         member this.GetEnumerator () =
             (Seq.concat this.Dictionaries).GetEnumerator ()
@@ -54,36 +80,23 @@ module SegmentedDictionary =
     let notEmpty sdict =
         length sdict > 0
 
-    let containsKey key sdict =
-        let hashCode = sdict.Comparer.GetHashCode key
-        let index = Math.Abs (hashCode % 32) // TODO: use Prime's `modulus` operator instead?
-        sdict.Dictionaries.[index].ContainsKey key
+    let containsKey key (sdict : SegmentedDictionary<'k, 'v>) =
+        sdict.ContainsKey key
 
-    let tryFind (key, sdict) =
-        let hashCode = sdict.Comparer.GetHashCode key
-        let index = Math.Abs (hashCode % 32)
-        match sdict.Dictionaries.[index].TryGetValue key with
-        | (true, value) -> Some value
-        | (false, _) -> None
+    let tryFind (key, sdict : SegmentedDictionary<'k, 'v>) =
+        sdict.TryFind key
 
-    let tryGetValue (key, sdict, valueRef : _ outref) =
-        let hashCode = sdict.Comparer.GetHashCode key
-        let index = Math.Abs (hashCode % 32)
-        sdict.Dictionaries.[index].TryGetValue (key, &valueRef)
+    let tryGetValue (key, sdict : SegmentedDictionary<'k, 'v>, valueRef : _ outref) =
+        sdict.TryGetValue (key, valueRef)
 
-    let add key value sdict =
-        let hashCode = sdict.Comparer.GetHashCode key
-        let index = Math.Abs (hashCode % 32)
-        sdict.Dictionaries.[index].Add (key, value)
+    let add key value (sdict : SegmentedDictionary<'k, 'v>) =
+        sdict.Add (key, value)
 
-    let remove key sdict =
-        let hashCode = sdict.Comparer.GetHashCode key
-        let index = Math.Abs (hashCode % 32)
-        sdict.Dictionaries.[index].Remove key
+    let remove key (sdict : SegmentedDictionary<'k, 'v>) =
+        sdict.Remove key
 
-    let clear sdict =
-        for dict in sdict.Dictionaries do
-            dict.Clear ()
+    let clear (sdict : SegmentedDictionary<'k, 'v>) =
+        sdict.Clear ()
 
     let toSeq sdict =
         Seq.concat sdict.Dictionaries
