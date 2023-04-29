@@ -28,6 +28,8 @@ type [<StructuralEquality; NoComparison; SymbolicExpansion; Struct>] MaterialPro
       EmissionOpt : single option
       HeightOpt : single option
       InvertRoughnessOpt : bool option }
+    static member empty =
+        Unchecked.defaultof<MaterialProperties>
 
 /// Describes a static model surface.
 and [<NoEquality; NoComparison>] SurfaceDescriptor =
