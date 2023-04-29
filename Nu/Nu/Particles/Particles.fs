@@ -578,7 +578,7 @@ type [<ReferenceEquality>] Behavior<'a, 'b when 'a : struct> =
     static member run delta time (constrain : Constraint) (behavior : Behavior<'a, 'b>) (target : 'a) =
         let targets = SegmentedArray.singleton target
         let output = Behavior<'a, 'b>.runMany delta time constrain behavior targets
-        let target = SegmentedArray.item 0 targets
+        let target = targets.[0]
         (output, target)
 
     interface Behavior with

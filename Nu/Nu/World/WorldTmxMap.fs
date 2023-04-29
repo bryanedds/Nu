@@ -389,7 +389,7 @@ module TmxMap =
                                                 makeLayerTile (xTileGid + xTileOffset) xTile.HorizontalFlip xTile.VerticalFlip xTile.DiagonalFlip
                                             | ValueNone ->
                                                 makeLayerTile xTileGid xTile.HorizontalFlip xTile.VerticalFlip xTile.DiagonalFlip
-                                        SegmentedList.add xTile tiles
+                                        tiles.Add xTile
                                 else xS <- xS + tileSize.X
                                 xO <- xO + tileSize.X
 

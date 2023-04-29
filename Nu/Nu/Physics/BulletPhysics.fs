@@ -457,19 +457,19 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
                     let contact = manifold.GetContactPoint j
                     normal <- normal - contact.NormalWorldOnB
                 normal <- normal / single numContacts
-                SegmentedDictionary.add collisionKey normal physicsEngine.Collisions
+                physicsEngine.Collisions.Add (collisionKey, normal)
 
         // create collision messages
         for entry in physicsEngine.Collisions do
             let (bodySourceA, bodySourceB) = entry.Key
-            if not (SegmentedDictionary.containsKey entry.Key collisionsOld) then
+            if not (collisionsOld.ContainsKey entry.Key) then
                 BulletPhysicsEngine.handleCollision physicsEngine bodySourceA bodySourceB entry.Value
                 BulletPhysicsEngine.handleCollision physicsEngine bodySourceB bodySourceA -entry.Value
 
         // create separation messages
         for entry in collisionsOld do
             let (bodySourceA, bodySourceB) = entry.Key
-            if not (SegmentedDictionary.containsKey entry.Key physicsEngine.Collisions) then
+            if not (physicsEngine.Collisions.ContainsKey entry.Key) then
                 BulletPhysicsEngine.handleSeparation physicsEngine bodySourceA bodySourceB
                 BulletPhysicsEngine.handleSeparation physicsEngine bodySourceB bodySourceA
 

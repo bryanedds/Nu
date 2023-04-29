@@ -23,6 +23,25 @@ module SegmentedHashSet =
                 length <- length + set.Count
             length
 
+        member this.Contains item =
+            let hashCode = hash item
+            let index = Math.Abs (hashCode % 32) // TODO: use Prime's `modulus` operator instead?
+            this.HashSets.[index].Contains item
+
+        member this.Add item =
+            let hashCode = hash item
+            let index = Math.Abs (hashCode % 32)
+            this.HashSets.[index].Add item
+
+        member this.Remove item =
+            let hashCode = hash item
+            let index = Math.Abs (hashCode % 32)
+            this.HashSets.[index].Remove item
+
+        member this.Clear () =
+            for set in this.HashSets do
+                set.Clear ()
+
         member this.GetEnumerator () =
             (Seq.concat this.HashSets).GetEnumerator ()
 
@@ -44,24 +63,17 @@ module SegmentedHashSet =
     let notEmpty sset =
         length sset > 0
 
-    let contains item sset =
-        let hashCode = hash item
-        let index = Math.Abs (hashCode % 32) // TODO: use Prime's `modulus` operator instead?
-        sset.HashSets.[index].Contains item
+    let contains item (sset : 'a SegmentedHashSet) =
+        sset.Contains item
 
-    let add item sset =
-        let hashCode = hash item
-        let index = Math.Abs (hashCode % 32)
-        sset.HashSets.[index].Add item
+    let add item (sset : 'a SegmentedHashSet) =
+        sset.Add item
 
-    let remove item sset =
-        let hashCode = hash item
-        let index = Math.Abs (hashCode % 32)
-        sset.HashSets.[index].Remove item
+    let remove item (sset : 'a SegmentedHashSet) =
+        sset.Remove item
 
-    let clear sset =
-        for set in sset.HashSets do
-            set.Clear ()
+    let clear (sset : 'a SegmentedHashSet) =
+        sset.Clear ()
 
     let toSeq sset =
         Seq.concat sset.HashSets

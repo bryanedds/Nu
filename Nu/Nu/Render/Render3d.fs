@@ -747,16 +747,16 @@ type [<ReferenceEquality>] GlRenderer3d =
         | DeferredRenderType ->
             if absolute then
                 match renderer.RenderTasks.RenderSurfacesDeferredAbsolute.TryGetValue billboardSurface with
-                | (true, renderTasks) -> SegmentedList.add struct (billboardMatrix, texCoordsOffset, properties) renderTasks
+                | (true, renderTasks) -> renderTasks.Add struct (billboardMatrix, texCoordsOffset, properties) 
                 | (false, _) -> renderer.RenderTasks.RenderSurfacesDeferredAbsolute.Add (billboardSurface, SegmentedList.singleton (billboardMatrix, texCoordsOffset, properties))
             else
                 match renderer.RenderTasks.RenderSurfacesDeferredRelative.TryGetValue billboardSurface with
-                | (true, renderTasks) -> SegmentedList.add struct (billboardMatrix, texCoordsOffset, properties) renderTasks
+                | (true, renderTasks) -> renderTasks.Add struct (billboardMatrix, texCoordsOffset, properties)
                 | (false, _) -> renderer.RenderTasks.RenderSurfacesDeferredRelative.Add (billboardSurface, SegmentedList.singleton (billboardMatrix, texCoordsOffset, properties))
         | ForwardRenderType (subsort, sort) ->
             if absolute
-            then SegmentedList.add struct (subsort, sort, billboardMatrix, texCoordsOffset, properties, billboardSurface) renderer.RenderTasks.RenderSurfacesForwardAbsolute
-            else SegmentedList.add struct (subsort, sort, billboardMatrix, texCoordsOffset, properties, billboardSurface) renderer.RenderTasks.RenderSurfacesForwardRelative
+            then renderer.RenderTasks.RenderSurfacesForwardAbsolute.Add struct (subsort, sort, billboardMatrix, texCoordsOffset, properties, billboardSurface)
+            else renderer.RenderTasks.RenderSurfacesForwardRelative.Add struct (subsort, sort, billboardMatrix, texCoordsOffset, properties, billboardSurface)
 
     static member private categorizeStaticModelSurface
         (modelAbsolute,
@@ -787,16 +787,16 @@ type [<ReferenceEquality>] GlRenderer3d =
         | DeferredRenderType ->
             if modelAbsolute then
                 match renderer.RenderTasks.RenderSurfacesDeferredAbsolute.TryGetValue surface with
-                | (true, renderTasks) -> SegmentedList.add struct (surfaceMatrix, texCoordsOffset, properties) renderTasks
+                | (true, renderTasks) -> renderTasks.Add struct (surfaceMatrix, texCoordsOffset, properties)
                 | (false, _) -> renderer.RenderTasks.RenderSurfacesDeferredAbsolute.Add (surface, SegmentedList.singleton (surfaceMatrix, texCoordsOffset, properties))
             else
                 match renderer.RenderTasks.RenderSurfacesDeferredRelative.TryGetValue surface with
-                | (true, renderTasks) -> SegmentedList.add struct (surfaceMatrix, texCoordsOffset, properties) renderTasks
+                | (true, renderTasks) -> renderTasks.Add struct (surfaceMatrix, texCoordsOffset, properties)
                 | (false, _) -> renderer.RenderTasks.RenderSurfacesDeferredRelative.Add (surface, SegmentedList.singleton (surfaceMatrix, texCoordsOffset, properties))
         | ForwardRenderType (subsort, sort) ->
             if modelAbsolute
-            then SegmentedList.add struct (subsort, sort, surfaceMatrix, texCoordsOffset, properties, surface) renderer.RenderTasks.RenderSurfacesForwardAbsolute
-            else SegmentedList.add struct (subsort, sort, surfaceMatrix, texCoordsOffset, properties, surface) renderer.RenderTasks.RenderSurfacesForwardRelative
+            then renderer.RenderTasks.RenderSurfacesForwardAbsolute.Add struct (subsort, sort, surfaceMatrix, texCoordsOffset, properties, surface)
+            else renderer.RenderTasks.RenderSurfacesForwardRelative.Add struct (subsort, sort, surfaceMatrix, texCoordsOffset, properties, surface)
 
     static member private categorizeStaticModelSurfaceByIndex
         (modelAbsolute,
@@ -843,7 +843,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                           SortableLightConeInner = match light.PhysicallyBasedLightType with SpotLight (coneInner, _) -> coneInner | _ -> single (2.0 * Math.PI)
                           SortableLightConeOuter = match light.PhysicallyBasedLightType with SpotLight (_, coneOuter) -> coneOuter | _ -> single (2.0 * Math.PI)
                           SortableLightDistanceSquared = Single.MaxValue }
-                    SegmentedList.add light renderer.RenderTasks.RenderLights
+                    renderer.RenderTasks.RenderLights.Add light
                 for surface in modelAsset.Surfaces do
                     GlRenderer3d.categorizeStaticModelSurface (modelAbsolute, &modelMatrix, insetOpt, &properties, renderType, false, surface, renderer)
             | _ -> Log.trace "Cannot render static model with a non-model asset."
@@ -1130,7 +1130,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
             // destroy cached light maps whose originating probe no longer exists
             for lightMapKvp in renderer.RenderLightMaps do
-                if not (SegmentedDictionary.containsKey lightMapKvp.Key renderer.RenderTasks.RenderLightProbes) then
+                if not (renderer.RenderTasks.RenderLightProbes.ContainsKey lightMapKvp.Key) then
                         OpenGL.LightMap.DestroyLightMap lightMapKvp.Value
                         renderer.RenderLightMaps.Remove lightMapKvp.Key |> ignore<bool>
 
@@ -1143,7 +1143,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                       SortableLightMapIrradianceMap = lightMapKvp.Value.IrradianceMap
                       SortableLightMapEnvironmentFilterMap = lightMapKvp.Value.EnvironmentFilterMap
                       SortableLightMapDistanceSquared = Single.MaxValue }
-                SegmentedList.add lightMap renderer.RenderTasks.RenderLightMaps
+                renderer.RenderTasks.RenderLightMaps.Add lightMap 
 
         // sort light maps for deferred rendering relative to eye center
         let (lightMaps_, lightMapOrigins, lightMapMins, lightMapSizes, lightMapIrradianceMaps, lightMapEnvironmentFilterMaps) =
@@ -1157,13 +1157,13 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         // sort absolute forward surfaces from far to near
         let forwardSurfacesSorted = GlRenderer3d.sortSurfaces eyeCenter renderer.RenderTasks.RenderSurfacesForwardAbsolute
-        SegmentedList.addMany forwardSurfacesSorted renderer.RenderTasks.RenderSurfacesForwardAbsoluteSorted
-        SegmentedList.clear renderer.RenderTasks.RenderSurfacesForwardAbsolute
+        renderer.RenderTasks.RenderSurfacesForwardAbsoluteSorted.AddRange forwardSurfacesSorted
+        renderer.RenderTasks.RenderSurfacesForwardAbsolute.Clear ()
 
         // sort relative forward surfaces from far to near
         let forwardSurfacesSorted = GlRenderer3d.sortSurfaces eyeCenter renderer.RenderTasks.RenderSurfacesForwardRelative
-        SegmentedList.addMany forwardSurfacesSorted renderer.RenderTasks.RenderSurfacesForwardRelativeSorted
-        SegmentedList.clear renderer.RenderTasks.RenderSurfacesForwardRelative
+        renderer.RenderTasks.RenderSurfacesForwardRelativeSorted.AddRange forwardSurfacesSorted
+        renderer.RenderTasks.RenderSurfacesForwardRelative.Clear ()
 
         // setup geometry viewport
         OpenGL.Gl.Viewport (geometryViewport.Bounds.Min.X, geometryViewport.Bounds.Min.Y, geometryViewport.Bounds.Width, geometryViewport.Bounds.Height)
@@ -1276,14 +1276,14 @@ type [<ReferenceEquality>] GlRenderer3d =
             | CreateUserDefinedStaticModel cudsm ->
                 GlRenderer3d.tryCreateUserDefinedStaticModel cudsm.SurfaceDescriptors cudsm.Bounds cudsm.StaticModel renderer
             | DestroyUserDefinedStaticModel dudsm ->
-                SegmentedList.add dudsm.StaticModel userDefinedStaticModelsToDestroy
+                userDefinedStaticModelsToDestroy.Add dudsm.StaticModel 
             | RenderSkyBox rsb ->
-                SegmentedList.add (rsb.AmbientColor, rsb.AmbientBrightness, rsb.CubeMapColor, rsb.CubeMapBrightness, rsb.CubeMap) renderer.RenderTasks.RenderSkyBoxes
+                renderer.RenderTasks.RenderSkyBoxes.Add (rsb.AmbientColor, rsb.AmbientBrightness, rsb.CubeMapColor, rsb.CubeMapBrightness, rsb.CubeMap)
             | RenderLightProbe3d lp ->
-                if SegmentedDictionary.containsKey lp.LightProbeId renderer.RenderTasks.RenderLightProbes then
+                if renderer.RenderTasks.RenderLightProbes.ContainsKey lp.LightProbeId then
                     Log.debugOnce ("Multiple light probe messages coming in with the same id of '" + string lp.LightProbeId + "'.")
-                    SegmentedDictionary.remove lp.LightProbeId renderer.RenderTasks.RenderLightProbes |> ignore<bool>
-                SegmentedDictionary.add lp.LightProbeId struct (lp.Origin, lp.Bounds, lp.Stale) renderer.RenderTasks.RenderLightProbes
+                    renderer.RenderTasks.RenderLightProbes.Remove lp.LightProbeId |> ignore<bool>
+                renderer.RenderTasks.RenderLightProbes.Add (lp.LightProbeId, struct (lp.Origin, lp.Bounds, lp.Stale))
             | RenderLight3d rl3 ->
                 let light =
                     { SortableLightOrigin = rl3.Origin
@@ -1297,7 +1297,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                       SortableLightConeInner = match rl3.LightType with SpotLight (coneInner, _) -> coneInner | _ -> single (2.0 * Math.PI)
                       SortableLightConeOuter = match rl3.LightType with SpotLight (_, coneOuter) -> coneOuter | _ -> single (2.0 * Math.PI)
                       SortableLightDistanceSquared = Single.MaxValue }
-                SegmentedList.add light renderer.RenderTasks.RenderLights
+                renderer.RenderTasks.RenderLights.Add light
             | RenderBillboard rb ->
                 let billboardMaterial = GlRenderer3d.makeBillboardMaterial rb.MaterialProperties rb.AlbedoImage rb.MetallicImage rb.RoughnessImage rb.AmbientOcclusionImage rb.EmissionImage rb.NormalImage rb.HeightImage rb.MinFilterOpt rb.MagFilterOpt renderer
                 let billboardSurface = OpenGL.PhysicallyBased.CreatePhysicallyBasedSurface ([||], m4Identity, box3 (v3 -0.5f 0.5f -0.5f) v3One, billboardMaterial, renderer.RenderBillboardGeometry)
@@ -1332,7 +1332,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 let assetTag = asset Assets.Default.PackageName Gen.name // TODO: see if we should instead use a specialized package for temporary assets like these.
                 GlRenderer3d.tryCreateUserDefinedStaticModel renderUdsm.SurfaceDescriptors renderUdsm.Bounds assetTag renderer
                 GlRenderer3d.categorizeStaticModel (renderUdsm.Absolute, &renderUdsm.ModelMatrix, renderUdsm.InsetOpt, &renderUdsm.MaterialProperties, renderUdsm.RenderType, assetTag, renderer)
-                SegmentedList.add assetTag userDefinedStaticModelsToDestroy
+                userDefinedStaticModelsToDestroy.Add assetTag
             | RenderPostPass3d postPass ->
                 postPasses.Add postPass |> ignore<bool>
             | LoadRenderPackage3d hintPackageUse ->
@@ -1379,14 +1379,14 @@ type [<ReferenceEquality>] GlRenderer3d =
             OpenGL.Hl.Assert ()
 
         // clear render tasks
-        SegmentedList.clear renderer.RenderTasks.RenderSkyBoxes
-        SegmentedDictionary.clear renderer.RenderTasks.RenderLightProbes
-        SegmentedList.clear renderer.RenderTasks.RenderLightMaps
-        SegmentedList.clear renderer.RenderTasks.RenderLights
+        renderer.RenderTasks.RenderSkyBoxes.Clear ()
+        renderer.RenderTasks.RenderLightProbes.Clear ()
+        renderer.RenderTasks.RenderLightMaps.Clear ()
+        renderer.RenderTasks.RenderLights.Clear ()
         renderer.RenderTasks.RenderSurfacesDeferredAbsolute.Clear ()
         renderer.RenderTasks.RenderSurfacesDeferredRelative.Clear ()
-        SegmentedList.clear renderer.RenderTasks.RenderSurfacesForwardAbsoluteSorted
-        SegmentedList.clear renderer.RenderTasks.RenderSurfacesForwardRelativeSorted
+        renderer.RenderTasks.RenderSurfacesForwardAbsoluteSorted.Clear ()
+        renderer.RenderTasks.RenderSurfacesForwardRelativeSorted.Clear ()
 
         // destroy user-defined static models
         for staticModel in userDefinedStaticModelsToDestroy do

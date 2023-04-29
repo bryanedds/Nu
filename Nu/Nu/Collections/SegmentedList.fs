@@ -22,6 +22,27 @@ module SegmentedList =
         member this.Length =
             this.TotalLength
 
+        member this.Add item =
+            let lastList = this.Lists.[dec this.Lists.Count]
+            if lastList.Count < this.ListCapacity then
+                lastList.Add item
+            else
+                let newList = List this.ListCapacity // since we filled one list, let's presume to fill another
+                newList.Add item
+                this.Lists.Add newList
+            this.TotalLength <- inc this.TotalLength
+
+        member this.AddRange (seq : 'a seq) =
+            for item in seq do
+                this.Add item
+
+        member this.Clear () =
+            let firstList = this.Lists.[0]
+            firstList.Clear ()
+            this.Lists.Clear ()
+            this.Lists.Add firstList
+            this.TotalLength <- 0
+
         member this.Item (i : int) =
             if i < this.TotalLength then
                 let j = i / this.ListCapacity
@@ -53,26 +74,17 @@ module SegmentedList =
     let item index (slist : 'a SegmentedList) =
         slist.[index]
 
-    let add item slist =
-        let lastList = slist.Lists.[dec slist.Lists.Count]
-        if lastList.Count < slist.ListCapacity then
-            lastList.Add item
-        else
-            let newList = List slist.ListCapacity // since we filled one list, let's presume to fill another
-            newList.Add item
-            slist.Lists.Add newList
-        slist.TotalLength <- inc slist.TotalLength
+    let add item (slist : 'a SegmentedList) =
+        slist.Add item
 
-    let addMany (seq : 'a seq) slist =
-        for item in seq do
-            add item slist
+    let addMany (seq : 'a seq) (slist : 'a SegmentedList) =
+        slist.AddRange seq
 
-    let clear slist =
-        let firstList = slist.Lists.[0]
-        firstList.Clear ()
-        slist.Lists.Clear ()
-        slist.Lists.Add firstList
-        slist.TotalLength <- 0
+    let clear (slist : 'a SegmentedList) =
+        slist.Clear ()
+
+    let append left (right : 'a SegmentedList) =
+        addMany right left
 
     let skip count (slist : 'a SegmentedList) =
         if count > slist.TotalLength then raise (ArgumentException ("Invalid argument.", nameof count))
@@ -87,9 +99,6 @@ module SegmentedList =
         for i in 0 .. dec slist.TotalLength - count do
             add slist.[i] result
         result
-
-    let append left (right : 'a SegmentedList) =
-        addMany right left
 
     let map mapper slist =
         let result = make ()

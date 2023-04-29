@@ -98,14 +98,14 @@ module SegmentedArray =
                     else Array.zeroCreate<'a> segmentRemainder)
         { TotalLength = length; SegmentSize = segmentSize; SegmentRemainder = segmentRemainder; Segments = segments }
 
+    let length sarray =
+        sarray.TotalLength
+
     let isEmpty sarray =
         sarray.TotalLength = 0
 
     let notEmpty sarray =
         sarray.TotalLength > 0
-
-    let length sarray =
-        sarray.TotalLength
 
     let item index (sarray : 'a SegmentedArray) =
         sarray.[index]

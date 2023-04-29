@@ -271,9 +271,9 @@ module PhysicallyBased =
                 for face in mesh.Faces do
                     let indices = face.Indices
                     if indices.Count = 3 then
-                        SegmentedList.add indices.[0] indexList
-                        SegmentedList.add indices.[1] indexList
-                        SegmentedList.add indices.[2] indexList
+                        indexList.Add indices.[0]
+                        indexList.Add indices.[1]
+                        indexList.Add indices.[2]
                 let indexData = Seq.toArray indexList
 
                 // fin
@@ -822,7 +822,7 @@ module PhysicallyBased =
         for mesh in scene.Meshes do
             if Option.isNone errorOpt then
                 match TryCreatePhysicallyBasedGeometry (renderable, mesh) with
-                | Right geometry -> SegmentedList.add geometry geometries
+                | Right geometry -> geometries.Add geometry 
                 | Left error -> errorOpt <- Some ("Could not load geometry for mesh in file name '" + filePath + "' due to: " + error)
         match errorOpt with
         | Some error -> Left error
@@ -884,7 +884,7 @@ module PhysicallyBased =
                                                   LightAttenuationQuadratic = if light.AttenuationQuadratic > 0.0f then light.AttenuationQuadratic else Constants.Render.AttenuationQuadraticDefault
                                                   LightCutoff = Constants.Render.CutoffDefault // TODO: figure out if we can populate this properly.
                                                   PhysicallyBasedLightType = lightType }
-                                            SegmentedList.add physicallyBasedLight lights
+                                            lights.Add physicallyBasedLight
                                             yield PhysicallyBasedLight physicallyBasedLight
 
                                 // collect surfaces
@@ -896,7 +896,7 @@ module PhysicallyBased =
                                     let geometry = geometries.[meshIndex]
                                     let surface = PhysicallyBasedSurface.make names surfaceMatrix geometry.Bounds material geometry
                                     bounds <- bounds.Combine (geometry.Bounds.Transform surfaceMatrix)
-                                    SegmentedList.add surface surfaces
+                                    surfaces.Add surface
                                     yield PhysicallyBasedSurface surface } |>
 
                             Seq.toArray |>
