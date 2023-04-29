@@ -2530,7 +2530,8 @@ module WorldModuleEntity =
 
         /// Copy an entity to the world's clipboard.
         static member copyEntityToClipboard entity world =
-            let entityState = World.getEntityState entity world
+            let entityState =
+                EntityState.makeFromEntityState None (World.getEntityState entity world)
             Clipboard <- Some (entityState :> obj)
 
         /// Cut an entity to the world's clipboard.
@@ -2542,8 +2543,7 @@ module WorldModuleEntity =
         static member pasteEntityFromClipboard atMouse rightClickPosition snapsEir surnamesOpt (group : Group) world =
             match Clipboard with
             | Some entityStateObj ->
-                let (id, surnames) = Gen.id64AndSurnamesIf surnamesOpt
-                let entityState = { (entityStateObj :?> EntityState) with Order = Core.getTimeStampUnique (); Id = id; Surnames = surnames }
+                let entityState = EntityState.makeFromEntityState surnamesOpt (entityStateObj :?> EntityState)
                 entityState.Protected <- false // ensure pasted entity is not protected in case user pastes an Elmish entity
                 let (position, snapsOpt) =
                     if entityState.Is2d then
@@ -2580,7 +2580,7 @@ module WorldModuleEntity =
                 entityState.RotationLocal <- quatIdentity
                 entityState.ScaleLocal <- v3One
                 entityState.MountOpt <- None
-                let entity = Entity (group.GroupAddress <-- rtoa<Entity> surnames)
+                let entity = Entity (group.GroupAddress <-- rtoa<Entity> entityState.Surnames)
                 let world = World.addEntity false entityState entity world
                 (Some entity, world)
             | None -> (None, world)

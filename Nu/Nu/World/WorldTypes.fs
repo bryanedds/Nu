@@ -763,11 +763,31 @@ module WorldTypes =
               Id = id
               Surnames = surnames }
 
+        /// Make a new entity state from an existing one.
+        static member makeFromEntityState surnamesOpt (entityStateOrig : EntityState) =
+            let (id, surnames) = Gen.id64AndSurnamesIf surnamesOpt
+            { entityStateOrig with
+                Xtension =
+                    entityStateOrig.Xtension |>
+                    Xtension.toSeq |>
+                    Seq.map (fun (n, p) ->
+                        let propertyValue =
+                            match p.PropertyValue with
+                            | :? DesignerProperty as dp -> { dp with DesignerType = dp.DesignerType } :> obj
+                            | value -> value
+                        (n, { p with PropertyValue = propertyValue })) |>
+                    flip Xtension.ofSeq entityStateOrig.Imperative
+                Order = Core.getTimeStampUnique ()
+                Id = id
+                Surnames = surnames }
+
         /// Copy an entity state.
+        /// This is used when we want to retain an old version of an entity state in face of mutation.
         static member inline copy (entityState : EntityState) =
             { entityState with EntityState.Dispatcher = entityState.Dispatcher }
 
         /// Copy an entity state, invalidating the incoming reference.
+        /// This is used when we want to retain an old version of an entity state in face of mutation.
         static member inline diverge (entityState : EntityState) =
             let entityState' = EntityState.copy entityState
             entityState.Transform.InvalidateFast () // OPTIMIZATION: invalidate fast.
