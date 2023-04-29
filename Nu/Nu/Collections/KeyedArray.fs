@@ -138,7 +138,7 @@ module KeyedArray =
     /// Get the threshold for compaction.
     let getThreshold (karr : KeyedArray<'k, 'v>) =
         karr.Threshold
-    
+
     /// Get the current number of values (some of which may be empty).
     let getLength (karr : KeyedArray<'k, 'v>) =
         karr.Length
@@ -187,4 +187,5 @@ module KeyedArray =
 
 /// A garbage-collected keyed array.
 /// TODO: once this is well-tested, let's consider moving into Prime.
+/// NOTE: not supported by SymbolicConverter.
 type KeyedArray<'k, 'v when 'k : equality> = KeyedArray.KeyedArray<'k, 'v>

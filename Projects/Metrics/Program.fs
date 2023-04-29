@@ -146,11 +146,13 @@ type MyGameDispatcher () =
                 for i in 0 .. dec 50 do
                     for j in 0 .. dec 50 do
                         for k in 0 .. dec 10 do
-                            yield v3 (single i * 4.0f + single k * 0.5f) (single j * 4.0f + single k * 0.5f) -200.0f }
+                            yield v3 (single i * 0.4f + single k * 0.05f) (single j * 0.4f + single k * 0.05f) -20.0f }
         let world =
             Seq.fold (fun world position ->
                 let (entity, world) = World.createEntity<MetricsEntityDispatcher> NoOverlay (Some [|string Gen.id64|]) group world
-                entity.SetPosition (position + v3 -120.0f -100.0f 0.0f) world)
+                let world = entity.SetScale (v3Dup 0.1f) world
+                let world = entity.SetPosition (position + v3 -12.0f -10.0f 0.0f) world
+                world)
                 world positions
 #endif
         let world = World.selectScreen (IdlingState world.GameTime) screen world
