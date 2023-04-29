@@ -28,6 +28,14 @@ type [<StructuralEquality; NoComparison; SymbolicExpansion; Struct>] MaterialPro
       EmissionOpt : single option
       HeightOpt : single option
       InvertRoughnessOpt : bool option }
+    static member defaultProperties =
+        { AlbedoOpt = Some Constants.Render.AlbedoDefault
+          MetallicOpt = Some Constants.Render.MetallicDefault
+          RoughnessOpt = Some Constants.Render.RoughnessDefault
+          AmbientOcclusionOpt = Some Constants.Render.AmbientOcclusionDefault
+          EmissionOpt = Some Constants.Render.EmissionDefault
+          HeightOpt = Some Constants.Render.HeightDefault
+          InvertRoughnessOpt = Some Constants.Render.InvertRoughnessDefault }
     static member empty =
         Unchecked.defaultof<MaterialProperties>
 
@@ -983,7 +991,7 @@ type [<ReferenceEquality>] GlRenderer3d =
               AmbientOcclusion = Option.defaultValue Constants.Render.AmbientOcclusionDefault properties.AmbientOcclusionOpt
               Emission = Option.defaultValue Constants.Render.EmissionDefault properties.EmissionOpt
               Height = Option.defaultValue Constants.Render.HeightDefault properties.HeightOpt
-              InvertRoughness = false }
+              InvertRoughness = Option.defaultValue Constants.Render.InvertRoughnessDefault properties.InvertRoughnessOpt }
         let billboardMaterial : OpenGL.PhysicallyBased.PhysicallyBasedMaterial =
             { MaterialProperties = properties
               AlbedoMetadata = albedoMetadata
@@ -1484,7 +1492,7 @@ type [<ReferenceEquality>] GlRenderer3d =
               AmbientOcclusion = Constants.Render.AmbientOcclusionDefault
               Emission = Constants.Render.EmissionDefault
               Height = Constants.Render.HeightDefault
-              InvertRoughness = false }
+              InvertRoughness = Constants.Render.InvertRoughnessDefault }
 
         // create default physically-based material
         let physicallyBasedMaterial : OpenGL.PhysicallyBased.PhysicallyBasedMaterial =

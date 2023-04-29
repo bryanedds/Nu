@@ -118,6 +118,7 @@ module Render =
     let [<Literal>] AmbientOcclusionDefault = 1.0f
     let [<Literal>] EmissionDefault = 1.0f
     let [<Literal>] HeightDefault = 1.0f
+    let [<Literal>] InvertRoughnessDefault = false
 
 [<RequireQualifiedAccess>]
 module Assimp =

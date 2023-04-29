@@ -1566,7 +1566,7 @@ module StaticBillboardFacetModule =
 
         static member Properties =
             [define Entity.InsetOpt None
-             define Entity.MaterialProperties MaterialProperties.empty
+             define Entity.MaterialProperties MaterialProperties.defaultProperties
              define Entity.AlbedoImage Assets.Default.MaterialAlbedo
              define Entity.MetallicImage Assets.Default.MaterialMetallic
              define Entity.RoughnessImage Assets.Default.MaterialRoughness
@@ -1849,7 +1849,7 @@ module BasicStaticBillboardEmitterFacetModule =
 
         static member Properties =
             [define Entity.SelfDestruct false
-             define Entity.EmitterMaterialProperties MaterialProperties.empty
+             define Entity.EmitterMaterialProperties MaterialProperties.defaultProperties
              define Entity.EmitterAlbedoImage Assets.Default.MaterialAlbedo
              define Entity.EmitterMetallicImage Assets.Default.MaterialMetallic
              define Entity.EmitterRoughnessImage Assets.Default.MaterialRoughness
@@ -1979,7 +1979,7 @@ module StaticModelFacetModule =
 
         static member Properties =
             [define Entity.InsetOpt None
-             define Entity.MaterialProperties MaterialProperties.empty
+             define Entity.MaterialProperties MaterialProperties.defaultProperties
              define Entity.RenderStyle Deferred
              define Entity.StaticModel Assets.Default.StaticModel]
 
@@ -2081,7 +2081,7 @@ module StaticModelSurfaceFacetModule =
 
         static member Properties =
             [define Entity.InsetOpt None
-             define Entity.MaterialProperties MaterialProperties.empty
+             define Entity.MaterialProperties MaterialProperties.defaultProperties
              define Entity.SurfaceIndex 0
              define Entity.StaticModel Assets.Default.StaticModel
              define Entity.RenderStyle Deferred]
