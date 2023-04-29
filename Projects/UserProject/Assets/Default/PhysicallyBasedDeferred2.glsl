@@ -24,8 +24,8 @@ const float PARALLAX_CORRECTION_SCALE = 0.02;
 const int LIGHT_MAPS_MAX = 8;
 const int LIGHTS_MAX = 64;
 const float SSAO = 1.25;
-const float SSAO_RADIUS = 0.5;
 const float SSAO_BIAS = 0.01;
+const float SSAO_RADIUS = 0.5;
 const int SSAO_SAMPLES = 48;
 const float SSAO_SAMPLES_INVERSE = 1.0 / float(SSAO_SAMPLES);
 const vec3[SSAO_SAMPLES] SSAO_SAMPLING_DIRECTIONS = vec3[](
@@ -231,7 +231,7 @@ void main()
         float rangeCheck = smoothstep(0.0, 1.0, SSAO_RADIUS / abs(positionView.z - samplePositionView.z));
         ambientOcclusionScreen += samplePositionView.z >= samplingPositionView.z + SSAO_BIAS ? rangeCheck : 0.0;
     }
-    ambientOcclusionScreen /= float(SSAO_SAMPLES);
+    ambientOcclusionScreen *= SSAO_SAMPLES_INVERSE;
     ambientOcclusionScreen *= SSAO;
     ambientOcclusionScreen = 1.0 - ambientOcclusionScreen;
     ambientOcclusionScreen = max(0.0, ambientOcclusionScreen);
@@ -283,8 +283,9 @@ void main()
         float distance1 = sqrt(lmDistanceSquared1);
         float distance2 = sqrt(lmDistanceSquared2);
         float distanceTotal = distance1 + distance2;
-        float scalar1 = (distanceTotal - distance1) / distanceTotal;
-        float scalar2 = (distanceTotal - distance2) / distanceTotal;
+        float distanceTotalInverse = 1.0 / distanceTotal;
+        float scalar1 = (distanceTotal - distance1) * distanceTotalInverse;
+        float scalar2 = (distanceTotal - distance2) * distanceTotalInverse;
         vec3 irradiance1 = texture(irradianceMaps[lm1], normal).rgb;
         vec3 irradiance2 = texture(irradianceMaps[lm2], normal).rgb;
         irradiance = irradiance1 * scalar1 + irradiance2 * scalar2;
