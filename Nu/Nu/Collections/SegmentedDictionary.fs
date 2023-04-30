@@ -12,21 +12,29 @@ open System.Collections.Generic
 [<RequireQualifiedAccess>]
 module SegmentedDictionary =
 
-    type [<ReferenceEquality>] SegmentedDictionary<'k, 'v when 'k : equality> =
+    type [<ReferenceEquality>] SegmentedDictionary<'k, 'v> =
         private
             { Dictionaries : Dictionary<'k, 'v> array
               Comparer : 'k IEqualityComparer }
 
-        member this.Length =
-            let mutable length = 0
+        member this.Count =
+            let mutable count = 0
             for set in this.Dictionaries do
-                length <- length + set.Count
-            length
+                count <- count + set.Count
+            count
 
-        member this.Item (key : 'k) : 'v =
-            let hashCode = this.Comparer.GetHashCode key
-            let index = Math.Abs (hashCode % 32) // TODO: use constant.
-            this.Dictionaries.[index].[key]
+        member this.Item
+            with get (key : 'k) =
+                let hashCode = this.Comparer.GetHashCode key
+                let index = Math.Abs (hashCode % 32) // TODO: use constant.
+                this.Dictionaries.[index].[key]
+            and set (key : 'k) (value : 'v) =
+                let hashCode = this.Comparer.GetHashCode key
+                let index = Math.Abs (hashCode % 32) // TODO: use constant.
+                this.Dictionaries.[index].[key] <- value
+
+        member this.Comparer_ =
+            this.Comparer
 
         member this.ContainsKey key =
             let hashCode = this.Comparer.GetHashCode key
@@ -67,18 +75,22 @@ module SegmentedDictionary =
             member this.GetEnumerator () = (Seq.concat this.Dictionaries).GetEnumerator () :> IEnumerator
 
     let make (comparer : 'k IEqualityComparer) =
-        let hashSets = Array.init 32 (fun _ -> Dictionary<'k, 'v> comparer)
-        { Dictionaries = hashSets
+        let dicts = Array.init 32 (fun _ -> Dictionary<'k, 'v> comparer)
+        { Dictionaries = dicts
           Comparer = comparer }
 
-    let length (sdict : SegmentedDictionary<'k, 'v>) =
-        sdict.Length
+    let makeFromSegmentedDictionary (sdict : SegmentedDictionary<'k, 'v>) =
+        { Dictionaries = Array.init 32 (fun i -> Dictionary<'k, 'v> (sdict.Dictionaries.[i], sdict.Comparer))
+          Comparer = sdict.Comparer }
+
+    let count (sdict : SegmentedDictionary<'k, 'v>) =
+        sdict.Count
 
     let isEmpty sdict =
-        length sdict = 0
+        count sdict = 0
 
     let notEmpty sdict =
-        length sdict > 0
+        count sdict > 0
 
     let containsKey key (sdict : SegmentedDictionary<'k, 'v>) =
         sdict.ContainsKey key
@@ -99,11 +111,13 @@ module SegmentedDictionary =
         sdict.Clear ()
 
     let toSeq sdict =
-        Seq.concat sdict.Dictionaries
+        sdict.Dictionaries |>
+        Seq.concat |>
+        Seq.map (fun kvp -> (kvp.Key, kvp.Value))
 
     let ofSeq comparer seq =
         let sdict = make comparer
-        for (kvp : KeyValuePair<'k, 'v>) in seq do add kvp.Key kvp.Value sdict
+        for (k, v) in seq do add k v sdict
         sdict
 
     let singleton comparer key value =
@@ -113,7 +127,7 @@ module SegmentedDictionary =
 
     let map<'k, 'v, 'u when 'k : equality and 'u : equality> comparer (mapper : 'k -> 'v -> 'u) (sdict : SegmentedDictionary<'k, 'v>) =
         toSeq sdict |>
-        Seq.map (fun kvp -> let value = mapper kvp.Key kvp.Value in KeyValuePair<'k, 'u> (kvp.Key, value)) |>
+        Seq.map (fun (k, v) -> (k, mapper k v)) |>
         ofSeq comparer
 
     let filter pred sdict =
@@ -122,4 +136,4 @@ module SegmentedDictionary =
     let fold folder sdict =
         Seq.fold folder (toSeq sdict)
 
-type SegmentedDictionary<'k, 'v when 'k : equality> = SegmentedDictionary.SegmentedDictionary<'k, 'v>
+type SegmentedDictionary<'k, 'v> = SegmentedDictionary.SegmentedDictionary<'k, 'v>
