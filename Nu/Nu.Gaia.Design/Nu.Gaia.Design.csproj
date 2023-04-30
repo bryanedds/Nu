@@ -21,8 +21,8 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-	  <PackageReference Include="System.Security.AccessControl" Version="6.0.0" />
-	  <PackageReference Include="System.Threading" Version="4.3.0" />
+		<PackageReference Include="System.Security.AccessControl" Version="6.0.0" />
+		<PackageReference Include="System.Threading" Version="4.3.0" />
 	</ItemGroup>
 
 	<ItemGroup>
