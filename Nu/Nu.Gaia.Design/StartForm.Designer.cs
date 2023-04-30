@@ -100,9 +100,9 @@
             useImperativeExecutionCheckBox.Location = new Point(16, 126);
             useImperativeExecutionCheckBox.Margin = new Padding(4, 3, 4, 3);
             useImperativeExecutionCheckBox.Name = "useImperativeExecutionCheckBox";
-            useImperativeExecutionCheckBox.Size = new Size(483, 19);
+            useImperativeExecutionCheckBox.Size = new Size(307, 19);
             useImperativeExecutionCheckBox.TabIndex = 5;
-            useImperativeExecutionCheckBox.Text = "Use Imperative Execution (faster and no LOH compaction pauses, but no Undo / Redo)";
+            useImperativeExecutionCheckBox.Text = "Use Imperative Execution (faster but no Undo / Redo)";
             useImperativeExecutionCheckBox.UseVisualStyleBackColor = true;
             // 
             // modeComboBox
