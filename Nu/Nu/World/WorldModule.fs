@@ -11,7 +11,7 @@ open Nu
 [<RequireQualifiedAccess>]
 module Simulants =
 
-    /// The game. Always exists.
+    /// The game. Always exists in the world.
     let Game = Game ()
 
 [<AutoOpen>]
