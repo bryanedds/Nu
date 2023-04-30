@@ -45,7 +45,7 @@ type [<StructuralEquality; NoComparison; Struct>] Life =
 type Constraint =
     | Box of Box3
     | Sphere of single * Vector3
-    | Constraints of Constraint SegmentedArray
+    | Constraints of Constraint SArray
 
     /// Combine two constraints.
     static member (+) (constrain, constrain2) =
@@ -53,10 +53,10 @@ type Constraint =
         | (true, true) -> constrain // OPTIMIZATION: elide ctor
         | (_, true) -> constrain
         | (true, _) -> constrain2
-        | (_, _) -> Constraints (SegmentedArray.ofList [constrain; constrain2])
+        | (_, _) -> Constraints (SArray.ofList [constrain; constrain2])
 
     /// The empty constraint.
-    static member empty = Constraints SegmentedArray.empty
+    static member empty = Constraints SArray.empty
 
     /// Checks that constraint is the empty constraint constant.
     static member isEmpty constrain =
@@ -150,7 +150,7 @@ type [<NoEquality; NoComparison>] ParticlesDescriptor =
 type [<ReferenceEquality>] Output =
     | OutputEmitter of string * Emitter
     | OutputSound of single * Sound AssetTag
-    | Outputs of Output SegmentedArray
+    | Outputs of Output SArray
 
     /// Combine two outputs.
     static member (+) (output, output2) =
@@ -158,10 +158,10 @@ type [<ReferenceEquality>] Output =
         | (true, true) -> output // OPTIMIZATION: elide ctor
         | (_, true) -> output
         | (true, _) -> output2
-        | (_, _) -> Outputs (SegmentedArray.ofList [output; output2])
+        | (_, _) -> Outputs (SArray.ofList [output; output2])
 
     /// The empty output.
-    static member empty = Outputs SegmentedArray.empty
+    static member empty = Outputs SArray.empty
 
     /// Checks that output is the empty output constant.
     static member isEmpty output =
@@ -190,13 +190,13 @@ and Emitter =
 
 /// Transforms a constrained value.
 type 'a Transformer =
-    GameTime -> GameTime -> Constraint -> 'a SegmentedArray -> Output
+    GameTime -> GameTime -> Constraint -> 'a SArray -> Output
 
 [<RequireQualifiedAccess>]
 module Transformer =
 
     /// Accelerate bodies both linearly and angularly.
-    let accelerate (delta : GameTime) (bodies : Body SegmentedArray) =
+    let accelerate (delta : GameTime) (bodies : Body SArray) =
         let mutable i = 0
         let scalar = single delta
         while i < dec bodies.Length do
@@ -206,7 +206,7 @@ module Transformer =
             i <- inc i
 
     /// Constrain bodies.
-    let rec constrain (delta : GameTime) c (bodies : Body SegmentedArray) =
+    let rec constrain (delta : GameTime) c (bodies : Body SArray) =
         let scalar = single delta
         match c with
         | Sphere (radius, center) ->
@@ -512,8 +512,8 @@ module Transformer =
 
 /// Scopes transformable values.
 type [<ReferenceEquality>] Scope<'a, 'b when 'a : struct> =
-    { In : 'a SegmentedArray -> 'b SegmentedArray
-      Out : Output -> 'b SegmentedArray -> 'a SegmentedArray -> Output }
+    { In : 'a SArray -> 'b SArray
+      Out : Output -> 'b SArray -> 'a SArray -> Output }
 
 type In<'a, 'b when 'a : struct> =
     delegate of 'a byref * 'b byref -> unit
@@ -527,14 +527,14 @@ module Scope =
     /// Make a scope with in-place in and out delegates.
     let inline make<'a, 'b when 'a : struct> (getField : In<'a, 'b>) (setField : Out<'a, 'b>) : Scope<'a, 'b> =
         { In =
-            fun (targets : 'a SegmentedArray) ->
-                let fields = SegmentedArray.zeroCreate targets.Length
+            fun (targets : 'a SArray) ->
+                let fields = SArray.zeroCreate targets.Length
                 let mutable i = 0
                 while i < dec targets.Length do
                     getField.Invoke (&targets.[i], &fields.[i])
                     i <- inc i
                 fields
-          Out = fun output fields (targets : 'a SegmentedArray) ->
+          Out = fun output fields (targets : 'a SArray) ->
             let mutable i = 0
             while i < dec targets.Length do
                 setField.Invoke (&fields.[i], &targets.[i])
@@ -565,7 +565,7 @@ type [<ReferenceEquality>] Behavior<'a, 'b when 'a : struct> =
 
     /// Run the behavior over targets.
     /// OPTIMIZATION: runs transformers in batches for better utilization of instruction cache.
-    static member runMany delta time (constrain : Constraint) (behavior : Behavior<'a, 'b>) (targets : 'a SegmentedArray) =
+    static member runMany delta time (constrain : Constraint) (behavior : Behavior<'a, 'b>) (targets : 'a SArray) =
         let fields = behavior.Scope.In targets
         let output =
             FStack.fold (fun output transformer ->
@@ -576,7 +576,7 @@ type [<ReferenceEquality>] Behavior<'a, 'b when 'a : struct> =
 
     /// Run the behavior over a single target.
     static member run delta time (constrain : Constraint) (behavior : Behavior<'a, 'b>) (target : 'a) =
-        let targets = SegmentedArray.singleton target
+        let targets = SArray.singleton target
         let output = Behavior<'a, 'b>.runMany delta time constrain behavior targets
         let target = targets.[0]
         (output, target)
@@ -586,7 +586,7 @@ type [<ReferenceEquality>] Behavior<'a, 'b when 'a : struct> =
             let (outputs, target) = Behavior<'a, 'b>.run delta time constrain this (targetObj :?> 'a)
             (outputs, target :> obj)
         member this.RunMany delta time constrain targetsObj =
-            Behavior<'a, 'b>.runMany delta time constrain this (targetsObj :?> 'a SegmentedArray)
+            Behavior<'a, 'b>.runMany delta time constrain this (targetsObj :?> 'a SArray)
 
 /// A composition of behaviors.
 type [<ReferenceEquality>] Behaviors =
@@ -623,7 +623,7 @@ type [<ReferenceEquality>] Behaviors =
         (outputs, targets :?> 'a)
 
     /// Run the behaviors over targets.
-    static member runMany delta time behaviors constrain (targets : 'a SegmentedArray) =
+    static member runMany delta time behaviors constrain (targets : 'a SArray) =
         let outputs =
             FStack.fold (fun output (behavior : Behavior) ->
                 output + behavior.RunMany delta time constrain targets)
@@ -746,7 +746,7 @@ type [<ReferenceEquality>] StaticSpriteEmitter<'a when 'a :> Particle and 'a : e
       ParticleRate : single
       mutable ParticleIndex : int // the current particle buffer insertion point
       mutable ParticleWatermark : int // tracks the highest active particle index; never decreases.
-      ParticleRing : 'a SegmentedArray // operates as a ring-buffer
+      ParticleRing : 'a SArray // operates as a ring-buffer
       ParticleSeed : 'a
       Constraint : Constraint
       ParticleInitializer : GameTime -> 'a StaticSpriteEmitter -> 'a
@@ -820,7 +820,7 @@ type [<ReferenceEquality>] StaticSpriteEmitter<'a when 'a :> Particle and 'a : e
           ParticleRate = particleRate
           ParticleIndex = 0
           ParticleWatermark = 0
-          ParticleRing = SegmentedArray.zeroCreate particleMax
+          ParticleRing = SArray.zeroCreate particleMax
           ParticleSeed = particleSeed
           Constraint = constrain
           ParticleInitializer = particleInitializer
@@ -842,7 +842,7 @@ type [<ReferenceEquality>] StaticSpriteEmitter<'a when 'a :> Particle and 'a : e
             if  this.ParticleRing.Length <> particleMax then
                 this.ParticleIndex <- 0
                 this.ParticleWatermark <- 0
-                { this with ParticleRing = SegmentedArray.zeroCreate<'a> particleMax } :> Emitter
+                { this with ParticleRing = SArray.zeroCreate<'a> particleMax } :> Emitter
             else this :> Emitter
 
 /// A static sprite particle emitter.
@@ -854,13 +854,13 @@ module BasicStaticSpriteEmitter =
 
     let private toParticlesDescriptor time (emitter : BasicStaticSpriteEmitter) =
         let particles =
-            SegmentedArray.append
+            SArray.append
                 (if emitter.ParticleWatermark > emitter.ParticleIndex
-                    then SegmentedArray.skip emitter.ParticleIndex emitter.ParticleRing
-                    else SegmentedArray.empty)
-                (SegmentedArray.take emitter.ParticleIndex emitter.ParticleRing)
+                    then SArray.skip emitter.ParticleIndex emitter.ParticleRing
+                    else SArray.empty)
+                (SArray.take emitter.ParticleIndex emitter.ParticleRing)
         let particles' =
-            SegmentedArray.zeroCreate<Nu.Particle> particles.Length
+            SArray.zeroCreate<Nu.Particle> particles.Length
         for index in 0 .. particles.Length - 1 do
             let particle = &particles.[index]
             if Life.getLiveness time particle.Life then
@@ -1003,7 +1003,7 @@ type [<ReferenceEquality>] StaticBillboardEmitter<'a when 'a :> Particle and 'a 
       ParticleRate : single
       mutable ParticleIndex : int // the current particle buffer insertion point
       mutable ParticleWatermark : int // tracks the highest active particle index; never decreases.
-      ParticleRing : 'a SegmentedArray // operates as a ring-buffer
+      ParticleRing : 'a SArray // operates as a ring-buffer
       ParticleSeed : 'a
       Constraint : Constraint
       ParticleInitializer : GameTime -> 'a StaticBillboardEmitter -> 'a
@@ -1086,7 +1086,7 @@ type [<ReferenceEquality>] StaticBillboardEmitter<'a when 'a :> Particle and 'a 
           ParticleRate = particleRate
           ParticleIndex = 0
           ParticleWatermark = 0
-          ParticleRing = SegmentedArray.zeroCreate particleMax
+          ParticleRing = SArray.zeroCreate particleMax
           ParticleSeed = particleSeed
           Constraint = constrain
           ParticleInitializer = particleInitializer
@@ -1108,7 +1108,7 @@ type [<ReferenceEquality>] StaticBillboardEmitter<'a when 'a :> Particle and 'a 
             if  this.ParticleRing.Length <> particleMax then
                 this.ParticleIndex <- 0
                 this.ParticleWatermark <- 0
-                { this with ParticleRing = SegmentedArray.zeroCreate<'a> particleMax } :> Emitter
+                { this with ParticleRing = SArray.zeroCreate<'a> particleMax } :> Emitter
             else this :> Emitter
 
 /// A static billboard particle emitter.
@@ -1120,13 +1120,13 @@ module BasicStaticBillboardEmitter =
 
     let private toParticlesDescriptor time (emitter : BasicStaticBillboardEmitter) =
         let particles =
-            SegmentedArray.append
+            SArray.append
                 (if emitter.ParticleWatermark > emitter.ParticleIndex
-                    then SegmentedArray.skip emitter.ParticleIndex emitter.ParticleRing
-                    else SegmentedArray.empty)
-                (SegmentedArray.take emitter.ParticleIndex emitter.ParticleRing)
+                    then SArray.skip emitter.ParticleIndex emitter.ParticleRing
+                    else SArray.empty)
+                (SArray.take emitter.ParticleIndex emitter.ParticleRing)
         let particles' =
-            SegmentedArray.zeroCreate<Nu.Particle> particles.Length
+            SArray.zeroCreate<Nu.Particle> particles.Length
         for index in 0 .. particles.Length - 1 do
             let particle = &particles.[index]
             if Life.getLiveness time particle.Life then

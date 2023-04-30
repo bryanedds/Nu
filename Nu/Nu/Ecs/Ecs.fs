@@ -671,7 +671,7 @@ and Ecs () =
 
         // register entities to archetype
         let mutable world = world
-        let entities = SegmentedArray.zeroCreate count
+        let entities = SArray.zeroCreate count
         for i in 0 .. dec count do
             let entity = this.MakeEntity ()
             let archetypeIndex =
@@ -697,7 +697,7 @@ and Ecs () =
             | (true, archetype) -> archetype
             | (false, _) -> createArchetype archetypeId
         let (firstIndex, lastIndex) = archetype.Read count stream
-        let entities = SegmentedArray.zeroCreate count
+        let entities = SArray.zeroCreate count
         for i in firstIndex .. lastIndex do
             let entity = this.MakeEntity ()
             entitySlots.TryAdd (entity.EntityId, { ArchetypeIndex = i; Archetype = archetype }) |> ignore<bool>
@@ -1130,7 +1130,7 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
             archetypes.Add (archetype.Id, archetype)
 
     member this.IndexEntitySlots () =
-        let slots = SegmentedList.make ()
+        let slots = SList.make ()
         for archetypeEntry in archetypes do
             let archetype = archetypeEntry.Value
             for i in 0 .. dec archetype.Length do
@@ -1140,7 +1140,7 @@ and Query (compNames : string HashSet, subqueries : Subquery seq, ecs : Ecs) as 
         slots
 
     member this.IndexEntities () =
-        let entities = SegmentedList.make ()
+        let entities = SList.make ()
         for archetypeEntry in archetypes do
             let archetype = archetypeEntry.Value
             for i in 0 .. dec archetype.Length do

@@ -267,7 +267,7 @@ module PhysicallyBased =
                 let bounds = box3 positionMin (positionMax - positionMin)
 
                 // populate triangle index data
-                let indexList = SegmentedList.make ()
+                let indexList = SList.make ()
                 for face in mesh.Faces do
                     let indices = face.Indices
                     if indices.Count = 3 then
@@ -818,7 +818,7 @@ module PhysicallyBased =
     /// Attempt to create physically-based geometries from an assimp scene.
     let TryCreatePhysicallyBasedGeometries (renderable, filePath, scene : Assimp.Scene) =
         let mutable errorOpt = None
-        let geometries = SegmentedList.make ()
+        let geometries = SList.make ()
         for mesh in scene.Meshes do
             if Option.isNone errorOpt then
                 match TryCreatePhysicallyBasedGeometry (renderable, mesh) with
@@ -850,8 +850,8 @@ module PhysicallyBased =
 
                     // construct bounds and hierarchy
                     // TODO: sanitize incoming names. Corrupted or incompatible names cause subtle hierarchy bugs.
-                    let lights = SegmentedList.make ()
-                    let surfaces = SegmentedList.make ()
+                    let lights = SList.make ()
+                    let surfaces = SList.make ()
                     let mutable bounds = box3Zero
                     let hierarchy =
                         scene.RootNode.Map ([||], m4Identity, fun node names surfaceMatrix ->

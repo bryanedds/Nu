@@ -133,8 +133,8 @@ module Quadtree =
     /// Provides an enumerator interface to the quadtree queries.
     type internal QuadtreeEnumerator<'e when 'e : equality> (uncullable : 'e Quadelement seq, cullable : 'e Quadelement seq) =
 
-        let uncullableArray = SegmentedArray.ofSeq uncullable // eagerly convert to segmented array to keep iteration valid
-        let cullableArray = SegmentedArray.ofSeq cullable // eagerly convert to segmented array to keep iteration valid
+        let uncullableArray = SArray.ofSeq uncullable // eagerly convert to segmented array to keep iteration valid
+        let cullableArray = SArray.ofSeq cullable // eagerly convert to segmented array to keep iteration valid
         let mutable cullableEnrValid = false
         let mutable uncullableEnrValid = false
         let mutable cullableEnr = Unchecked.defaultof<_>

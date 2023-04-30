@@ -37,10 +37,6 @@
 		<Compile Include="Core\Constants.fs" />
 		<Compile Include="Collections\ListTree.fs" />
 		<Compile Include="Collections\KeyedArray.fs" />
-		<Compile Include="Collections\SegmentedArray.fs" />
-		<Compile Include="Collections\SegmentedList.fs" />
-		<Compile Include="Collections\SegmentedHashSet.fs" />
-		<Compile Include="Collections\SegmentedDictionary.fs" />
 		<Compile Include="Collections\OrderedDictionary.fs" />
 		<Compile Include="Ecs\EcsPrelude.fs" />
 		<Compile Include="Ecs\Ecs.fs" />

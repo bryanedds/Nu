@@ -621,7 +621,7 @@ module WorldEntityModule =
                                 yield! getEntitiesRec entity world }
                     | None -> Seq.empty
                 | (false, _) -> Seq.empty
-            getEntitiesRec (group :> Simulant) world |> SegmentedList.ofSeq |> seq
+            getEntitiesRec (group :> Simulant) world |> SList.ofSeq |> seq
 
         /// Get all the entities directly parented by the group.
         [<FunctionBinding>]

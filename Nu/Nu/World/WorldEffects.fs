@@ -28,7 +28,7 @@ module WorldView =
             | SpawnEmitter (_, _) -> world
             | Nu.Tag _ -> world
             | Views views -> Array.fold (fun world view -> World.renderView view world) world views
-            | SegmentedViews views -> SegmentedArray.fold (fun world view -> World.renderView view world) world views
+            | SegmentedViews views -> SArray.fold (fun world view -> World.renderView view world) world views
 
 [<RequireQualifiedAccess>]
 module Effect =
@@ -91,7 +91,7 @@ module Effect =
             let effect = { effect with ParticleSystem_ = particleSystem }
             (effect, world)
         | Outputs outputs ->
-            SegmentedArray.fold (fun (effect, world) output ->
+            SArray.fold (fun (effect, world) output ->
                 processParticleSystemOutput output effect world)
                 (effect, world)
                 outputs

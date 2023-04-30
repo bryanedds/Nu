@@ -128,7 +128,7 @@ module WorldModule =
         /// Make the world.
         static member internal make plugin eventDelegate dispatchers subsystems scriptingEnv ambientState quadtree octree activeGameDispatcher =
             let config = AmbientState.getConfig ambientState
-            let entityStates = UMap.makeEmpty HashIdentity.Structural config
+            let entityStates = SUMap.makeEmpty HashIdentity.Structural config
             let groupStates = UMap.makeEmpty HashIdentity.Structural config
             let screenStates = UMap.makeEmpty HashIdentity.Structural config
             let gameState = GameState.make activeGameDispatcher
@@ -340,21 +340,21 @@ module WorldModule =
 
         /// Attempt to look up a value from the world's key value store.
         static member tryGetKeyedValue<'a> key world =
-            match World.getKeyValueStoreBy (UMap.tryFind key) world with
+            match World.getKeyValueStoreBy (SUMap.tryFind key) world with
             | Some value -> Some (value :?> 'a)
             | None -> None
 
         /// Look up a value from the world's key value store, throwing an exception if it is not found.
         static member getKeyedValue<'a> key world =
-            World.getKeyValueStoreBy (UMap.find key) world :?> 'a
+            World.getKeyValueStoreBy (SUMap.find key) world :?> 'a
 
         /// Add a value to the world's key value store.
         static member addKeyedValue<'a> key (value : 'a) world =
-            World.updateKeyValueStore (UMap.add key (value :> obj)) world
+            World.updateKeyValueStore (SUMap.add key (value :> obj)) world
 
         /// Remove a value from the world's key value store.
         static member removeKeyedValue key world =
-            World.updateKeyValueStore (UMap.remove key) world
+            World.updateKeyValueStore (SUMap.remove key) world
 
         /// Transform a value in the world's key value store if it exists.
         static member updateKeyedValue<'a> (updater : 'a -> 'a) key world =

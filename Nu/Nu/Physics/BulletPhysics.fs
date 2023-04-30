@@ -30,7 +30,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
           Bodies : BulletBodyDictionary
           Ghosts : BulletGhostDictionary
           Objects : BulletObjectDictionary
-          mutable Collisions : SegmentedDictionary<BodyId * BodyId, Vector3>
+          mutable Collisions : SDictionary<BodyId * BodyId, Vector3>
           CollisionConfiguration : CollisionConfiguration
           PhysicsDispatcher : Dispatcher
           BroadPhaseInterface : BroadphaseInterface
@@ -440,7 +440,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
 
         // create collision messages
         let collisionsOld = physicsEngine.Collisions
-        physicsEngine.Collisions <- SegmentedDictionary.make HashIdentity.Structural
+        physicsEngine.Collisions <- SDictionary.make HashIdentity.Structural
         let numManifolds = physicsEngine.PhysicsContext.Dispatcher.NumManifolds
         for i in 0 .. dec numManifolds do
             let manifold = physicsEngine.PhysicsContext.Dispatcher.GetManifoldByIndexInternal i
@@ -504,7 +504,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
           Bodies = OrderedDictionary HashIdentity.Structural
           Ghosts = OrderedDictionary HashIdentity.Structural
           Objects = OrderedDictionary HashIdentity.Structural
-          Collisions = SegmentedDictionary.make HashIdentity.Structural
+          Collisions = SDictionary.make HashIdentity.Structural
           CollisionConfiguration = collisionConfiguration
           PhysicsDispatcher = physicsDispatcher
           BroadPhaseInterface = broadPhaseInterface
@@ -594,7 +594,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
             BulletPhysicsEngine.handlePhysicsMessages physicsMessages physicsEngine
             BulletPhysicsEngine.integrate stepTime physicsEngine
             BulletPhysicsEngine.createIntegrationMessages physicsEngine
-            let integrationMessages = SegmentedArray.ofSeq physicsEngine.IntegrationMessages
+            let integrationMessages = SArray.ofSeq physicsEngine.IntegrationMessages
             physicsEngine.IntegrationMessages.Clear ()
             integrationMessages
 

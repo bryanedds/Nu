@@ -350,7 +350,7 @@ module BasicStaticSpriteEmitterFacetModule =
             match output with
             | Particles.OutputSound (volume, sound) -> World.enqueueAudioMessage (PlaySoundMessage { Volume = volume; Sound = sound }) world
             | Particles.OutputEmitter (name, emitter) -> updateParticleSystem (fun ps -> { ps with Emitters = Map.add name emitter ps.Emitters }) entity world
-            | Particles.Outputs outputs -> SegmentedArray.fold (fun world output -> processOutput output entity world) world outputs
+            | Particles.Outputs outputs -> SArray.fold (fun world output -> processOutput output entity world) world outputs
 
         static let handleEmitterBlendChange evt world =
             let emitterBlend = evt.Data.Value :?> Blend
@@ -1722,7 +1722,7 @@ module BasicStaticBillboardEmitterFacetModule =
             match output with
             | Particles.OutputSound (volume, sound) -> World.enqueueAudioMessage (PlaySoundMessage { Volume = volume; Sound = sound }) world
             | Particles.OutputEmitter (name, emitter) -> updateParticleSystem (fun ps -> { ps with Emitters = Map.add name emitter ps.Emitters }) entity world
-            | Particles.Outputs outputs -> SegmentedArray.fold (fun world output -> processOutput output entity world) world outputs
+            | Particles.Outputs outputs -> SArray.fold (fun world output -> processOutput output entity world) world outputs
 
         static let handleEmitterMaterialPropertiesChange evt world =
             let emitterMaterialProperties = evt.Data.Value :?> MaterialProperties

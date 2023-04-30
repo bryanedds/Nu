@@ -35,8 +35,8 @@ type GamepadButtonData =
 /// The data for a physics integration event.
 type IntegrationData =
     { /// The integration messages sourced from a physics engine.
-      /// Do NOT change the content of this collection as it is exposed as a SegmentedArray for speed.
-      IntegrationMessages : IntegrationMessage SegmentedArray }
+      /// Do NOT change the content of this collection as it is exposed as a SArray for speed.
+      IntegrationMessages : IntegrationMessage SArray }
 
 /// The data of a body transform event.
 type TransformData =

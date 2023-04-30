@@ -34,11 +34,11 @@ type [<NoEquality; NoComparison>] SpriteDescriptor =
 
 /// Describes how to render multiple sprites to the rendering system.
 type [<NoEquality; NoComparison>] SpritesDescriptor =
-    { Sprites : Sprite SegmentedArray }
+    { Sprites : Sprite SArray }
 
 /// Describes how to render multiple sprite descriptors to the rendering system.
 type [<NoEquality; NoComparison>] SpriteDescriptors =
-    { SpriteDescriptors : SpriteDescriptor SegmentedList }
+    { SpriteDescriptors : SpriteDescriptor SList }
 
 /// Describes an internally cached sprite used to avoid GC promotion of sprite descriptors.
 type [<NoEquality; NoComparison>] CachedSpriteDescriptor =
@@ -50,7 +50,7 @@ type [<NoEquality; NoComparison>] TilesDescriptor =
       Color : Color
       Emission : Color
       MapSize : Vector2i
-      Tiles : TmxLayerTile SegmentedList
+      Tiles : TmxLayerTile SList
       TileSourceSize : Vector2i
       TileSize : Vector2
       TileAssets : (TmxTileset * Image AssetTag) array }
@@ -62,7 +62,7 @@ type [<NoEquality; NoComparison>] SpriteParticlesDescriptor =
       Horizon : single
       Blend : Blend
       Image : Image AssetTag
-      Particles : Particle SegmentedArray }
+      Particles : Particle SArray }
 
 /// Describes how to render text to the rendering system.
 type [<NoEquality; NoComparison>] TextDescriptor =
@@ -395,7 +395,7 @@ type [<ReferenceEquality>] GlRenderer2d =
         | _ -> Log.info ("Sprite failed to render due to unloadable asset for '" + scstring image + "'.")
 
     /// Render sprite particles.
-    static member renderSpriteParticles (blend : Blend, image : Image AssetTag, particles : Particle SegmentedArray, renderer) =
+    static member renderSpriteParticles (blend : Blend, image : Image AssetTag, particles : Particle SArray, renderer) =
         let image = AssetTag.generalize image
         match GlRenderer2d.tryGetRenderAsset image renderer with
         | ValueSome renderAsset ->
@@ -426,7 +426,7 @@ type [<ReferenceEquality>] GlRenderer2d =
          color : Color inref,
          emission : Color inref,
          mapSize : Vector2i,
-         tiles : TmxLayerTile SegmentedList,
+         tiles : TmxLayerTile SList,
          tileSourceSize : Vector2i,
          tileSize : Vector2,
          tileAssets : (TmxTileset * Image AssetTag) array,
