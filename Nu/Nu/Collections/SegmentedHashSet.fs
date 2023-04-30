@@ -17,11 +17,11 @@ module SegmentedHashSet =
             { HashSets : 'a HashSet array
               Comparer : 'a IEqualityComparer }
 
-        member this.Length =
-            let mutable length = 0
+        member this.Count =
+            let mutable count = 0
             for set in this.HashSets do
-                length <- length + set.Count
-            length
+                count <- count + set.Count
+            count
 
         member this.Contains item =
             let hashCode = hash item
@@ -54,14 +54,14 @@ module SegmentedHashSet =
         { HashSets = hashSets
           Comparer = comparer }
 
-    let length (sset : 'a SegmentedHashSet) =
-        sset.Length
+    let count (sset : 'a SegmentedHashSet) =
+        sset.Count
 
     let isEmpty sset =
-        length sset = 0
+        count sset = 0
 
     let notEmpty sset =
-        length sset > 0
+        count sset > 0
 
     let contains item (sset : 'a SegmentedHashSet) =
         sset.Contains item
