@@ -360,7 +360,7 @@ module TmxMap =
                         if yO >= 0.0f && yI >= 0 && yI < tileMap.Height then
 
                             // accumulate strip tiles
-                            let tiles = SegmentedList.make ()
+                            let tiles = SList.make ()
                             let mutable xS = 0.0f
                             let mutable xO = r.X
                             while xO < r2.X + tileSize.X do

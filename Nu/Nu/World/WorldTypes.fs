@@ -767,16 +767,7 @@ module WorldTypes =
         static member makeFromEntityState surnamesOpt (entityStateOrig : EntityState) =
             let (id, surnames) = Gen.id64AndSurnamesIf surnamesOpt
             { entityStateOrig with
-                Xtension = // TODO: use the Xtension.makeFromXtension instead.
-                    entityStateOrig.Xtension |>
-                    Xtension.toSeq |>
-                    Seq.map (fun (n, p) ->
-                        let propertyValue =
-                            match p.PropertyValue with
-                            | :? DesignerProperty as dp -> { dp with DesignerType = dp.DesignerType } :> obj
-                            | value -> value
-                        (n, { p with PropertyValue = propertyValue })) |>
-                    flip Xtension.ofSeq entityStateOrig.Imperative
+                Xtension = Xtension.makeFromXtension entityStateOrig.Xtension
                 Order = Core.getTimeStampUnique ()
                 Id = id
                 Surnames = surnames }
@@ -1199,8 +1190,8 @@ module WorldTypes =
         internal
             { // cache line 1 (assuming 16 byte header)
               EventSystemDelegate : World EventSystemDelegate
-              EntityCachedOpt : KeyedCache<KeyValuePair<Entity, UMap<Entity, EntityState>>, EntityState>
-              EntityStates : UMap<Entity, EntityState>
+              EntityCachedOpt : KeyedCache<KeyValuePair<Entity, SUMap<Entity, EntityState>>, EntityState>
+              EntityStates : SUMap<Entity, EntityState>
               GroupStates : UMap<Group, GroupState>
               ScreenStates : UMap<Screen, ScreenState>
               GameState : GameState
@@ -1283,7 +1274,7 @@ module WorldTypes =
                 if namesLength >= 3 then
                     let entity = simulant :?> Entity
                     notNull (entity.EntityStateOpt :> obj) && not entity.EntityStateOpt.Invalidated ||
-                    UMap.containsKey (simulant :?> Entity) this.EntityStates
+                    SUMap.containsKey (simulant :?> Entity) this.EntityStates
                 else
                     match namesLength with
                     | 0 -> true

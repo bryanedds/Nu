@@ -234,8 +234,8 @@ module Octree =
     /// TODO: see if we can make this enumerator work when its results are evaluated multiple times in the debugger.
     type internal OctreeEnumerator<'e when 'e : equality> (uncullable : 'e Octelement seq, cullable : 'e Octelement seq) =
 
-        let uncullableArray = SegmentedArray.ofSeq uncullable // eagerly convert to segmented array to keep iteration valid
-        let cullableArray = SegmentedArray.ofSeq cullable // eagerly convert to segmented array to keep iteration valid
+        let uncullableArray = SArray.ofSeq uncullable // eagerly convert to segmented array to keep iteration valid
+        let cullableArray = SArray.ofSeq cullable // eagerly convert to segmented array to keep iteration valid
         let mutable cullableEnrValid = false
         let mutable uncullableEnrValid = false
         let mutable cullableEnr = Unchecked.defaultof<_>

@@ -443,7 +443,7 @@ type PhysicsEngine =
     /// Enqueue a message from an external source.
     abstract EnqueueMessage : PhysicsMessage -> PhysicsEngine
     /// Integrate the physics system one step.
-    abstract Integrate : GameTime -> PhysicsMessage UList -> IntegrationMessage SegmentedArray
+    abstract Integrate : GameTime -> PhysicsMessage UList -> IntegrationMessage SArray
     /// Handle physics clean up by freeing all created resources.
     abstract CleanUp : unit -> unit
 
@@ -462,7 +462,7 @@ type [<ReferenceEquality>] MockPhysicsEngine =
         member physicsEngine.PopMessages () = (UList.makeEmpty Functional, physicsEngine :> PhysicsEngine)
         member physicsEngine.ClearMessages () = physicsEngine :> PhysicsEngine
         member physicsEngine.EnqueueMessage _ = physicsEngine :> PhysicsEngine
-        member physicsEngine.Integrate _ _ = SegmentedArray.empty
+        member physicsEngine.Integrate _ _ = SArray.empty
         member physicsEngine.CleanUp () = ()
 
 [<RequireQualifiedAccess>]

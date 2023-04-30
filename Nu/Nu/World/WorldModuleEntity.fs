@@ -31,13 +31,13 @@ module WorldModuleEntity =
     // OPTIMIZATION: avoids closure allocation in tight-loop.
     type private KeyEquality () =
         inherit OptimizedClosures.FSharpFunc<
-            KeyValuePair<Entity, UMap<Entity, EntityState>>,
-            KeyValuePair<Entity, UMap<Entity, EntityState>>,
+            KeyValuePair<Entity, SUMap<Entity, EntityState>>,
+            KeyValuePair<Entity, SUMap<Entity, EntityState>>,
             bool> ()
         override this.Invoke _ = failwithumf ()
         override this.Invoke
-            (entityStateKey : KeyValuePair<Entity, UMap<Entity, EntityState>>,
-             entityStateKey2 : KeyValuePair<Entity, UMap<Entity, EntityState>>) =
+            (entityStateKey : KeyValuePair<Entity, SUMap<Entity, EntityState>>,
+             entityStateKey2 : KeyValuePair<Entity, SUMap<Entity, EntityState>>) =
             refEq entityStateKey.Key entityStateKey2.Key &&
             refEq entityStateKey.Value entityStateKey2.Value
     let private keyEquality = KeyEquality ()
@@ -47,7 +47,7 @@ module WorldModuleEntity =
     let mutable private getFreshKeyAndValueWorld = Unchecked.defaultof<World>
     let private getFreshKeyAndValue () =
         let mutable entityStateOpt = Unchecked.defaultof<_>
-        let _ = UMap.tryGetValue (getFreshKeyAndValueEntity, getFreshKeyAndValueWorld.EntityStates, &entityStateOpt)
+        let _ = SUMap.tryGetValue (getFreshKeyAndValueEntity, getFreshKeyAndValueWorld.EntityStates, &entityStateOpt)
         KeyValuePair (KeyValuePair (getFreshKeyAndValueEntity, getFreshKeyAndValueWorld.EntityStates), entityStateOpt)
     let private getFreshKeyAndValueCached =
         getFreshKeyAndValue
@@ -103,7 +103,7 @@ module WorldModuleEntity =
                 if not (UMap.containsKey (entity :> Simulant) simulants)
                 then UMap.add (entity :> Simulant) None simulants
                 else simulants
-            let entityStates = UMap.add entity entityState world.EntityStates
+            let entityStates = SUMap.add entity entityState world.EntityStates
             World.choose { world with Simulants = simulants; EntityStates = entityStates }
 
         static member private entityStateRemover (entity : Entity) world =
@@ -123,15 +123,15 @@ module WorldModuleEntity =
                     | None -> world.Simulants
                 | (false, _) -> world.Simulants
             let simulants = UMap.remove (entity :> Simulant) simulants
-            let entityStates = UMap.remove entity world.EntityStates
+            let entityStates = SUMap.remove entity world.EntityStates
             World.choose { world with Simulants = simulants; EntityStates = entityStates }
 
         static member private entityStateSetter entityState (entity : Entity) world =
 #if DEBUG
-            if not (UMap.containsKey entity world.EntityStates) then
+            if not (SUMap.containsKey entity world.EntityStates) then
                 failwith ("Cannot set the state of a non-existent entity '" + scstring entity + "'")
 #endif
-            let entityStates = UMap.add entity entityState world.EntityStates
+            let entityStates = SUMap.add entity entityState world.EntityStates
             World.choose { world with EntityStates = entityStates }
 
         static member private addEntityState entityState (entity : Entity) world =
@@ -598,7 +598,7 @@ module WorldModuleEntity =
 
         static member internal getEntityMounters entity world =
             match world.EntityMounts.TryGetValue entity with
-            | (true, mounters) -> Seq.filter (flip World.getEntityExists world) mounters |> SegmentedList.ofSeq |> seq
+            | (true, mounters) -> Seq.filter (flip World.getEntityExists world) mounters |> SList.ofSeq |> seq
             | (false, _) -> Seq.empty
 
         static member internal traverseEntityMounters effect entity (world : World) =

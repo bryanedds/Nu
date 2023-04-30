@@ -3,6 +3,7 @@
 
 namespace Nu
 open Nu
+open Prime
 
 /// A tag interface for describing an emitter.
 type EmitterDescriptor = interface end
@@ -18,7 +19,7 @@ type [<ReferenceEquality>] View =
     | SpawnEmitter of string * EmitterDescriptor
     | Tag of string * obj
     | Views of View array
-    | SegmentedViews of View SegmentedArray
+    | SegmentedViews of View SArray
 
 [<RequireQualifiedAccess>]
 module View =

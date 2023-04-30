@@ -73,20 +73,20 @@ type [<NoEquality; NoComparison>] BillboardParticlesDescriptor =
       MinFilterOpt : OpenGL.TextureMinFilter option
       MagFilterOpt : OpenGL.TextureMagFilter option
       RenderType : RenderType
-      Particles : Particle SegmentedArray }
+      Particles : Particle SArray }
 
 /// A collection of render tasks in a pass.
 and [<ReferenceEquality>] RenderTasks =
-    { RenderSkyBoxes : (Color * single * Color * single * CubeMap AssetTag) SegmentedList
-      RenderLightProbes : SegmentedDictionary<uint64, struct (Vector3 * Box3 * bool)>
-      RenderLightMaps : SortableLightMap SegmentedList
-      RenderLights : SortableLight SegmentedList
-      RenderSurfacesDeferredAbsolute : Dictionary<OpenGL.PhysicallyBased.PhysicallyBasedSurface, struct (Matrix4x4 * Box2 * MaterialProperties) SegmentedList>
-      RenderSurfacesDeferredRelative : Dictionary<OpenGL.PhysicallyBased.PhysicallyBasedSurface, struct (Matrix4x4 * Box2 * MaterialProperties) SegmentedList>
-      RenderSurfacesForwardAbsolute : struct (single * single * Matrix4x4 * Box2 * MaterialProperties * OpenGL.PhysicallyBased.PhysicallyBasedSurface) SegmentedList
-      RenderSurfacesForwardRelative : struct (single * single * Matrix4x4 * Box2 * MaterialProperties * OpenGL.PhysicallyBased.PhysicallyBasedSurface) SegmentedList
-      RenderSurfacesForwardAbsoluteSorted : struct (Matrix4x4 * Box2 * MaterialProperties * OpenGL.PhysicallyBased.PhysicallyBasedSurface) SegmentedList
-      RenderSurfacesForwardRelativeSorted : struct (Matrix4x4 * Box2 * MaterialProperties * OpenGL.PhysicallyBased.PhysicallyBasedSurface) SegmentedList }
+    { RenderSkyBoxes : (Color * single * Color * single * CubeMap AssetTag) SList
+      RenderLightProbes : SDictionary<uint64, struct (Vector3 * Box3 * bool)>
+      RenderLightMaps : SortableLightMap SList
+      RenderLights : SortableLight SList
+      RenderSurfacesDeferredAbsolute : Dictionary<OpenGL.PhysicallyBased.PhysicallyBasedSurface, struct (Matrix4x4 * Box2 * MaterialProperties) SList>
+      RenderSurfacesDeferredRelative : Dictionary<OpenGL.PhysicallyBased.PhysicallyBasedSurface, struct (Matrix4x4 * Box2 * MaterialProperties) SList>
+      RenderSurfacesForwardAbsolute : struct (single * single * Matrix4x4 * Box2 * MaterialProperties * OpenGL.PhysicallyBased.PhysicallyBasedSurface) SList
+      RenderSurfacesForwardRelative : struct (single * single * Matrix4x4 * Box2 * MaterialProperties * OpenGL.PhysicallyBased.PhysicallyBasedSurface) SList
+      RenderSurfacesForwardAbsoluteSorted : struct (Matrix4x4 * Box2 * MaterialProperties * OpenGL.PhysicallyBased.PhysicallyBasedSurface) SList
+      RenderSurfacesForwardRelativeSorted : struct (Matrix4x4 * Box2 * MaterialProperties * OpenGL.PhysicallyBased.PhysicallyBasedSurface) SList }
 
 /// The parameters for completing a render pass.
 and [<ReferenceEquality>] RenderPassParameters3d =
@@ -173,7 +173,7 @@ and [<ReferenceEquality>] RenderBillboard =
 
 and [<ReferenceEquality>] RenderBillboards =
     { Absolute : bool
-      Billboards : (Matrix4x4 * Box2 option) SegmentedList
+      Billboards : (Matrix4x4 * Box2 option) SList
       MaterialProperties : MaterialProperties
       AlbedoImage : Image AssetTag
       MetallicImage : Image AssetTag
@@ -199,7 +199,7 @@ and [<ReferenceEquality>] RenderBillboardParticles =
       MinFilterOpt : OpenGL.TextureMinFilter option
       MagFilterOpt : OpenGL.TextureMagFilter option
       RenderType : RenderType
-      Particles : Particle SegmentedArray }
+      Particles : Particle SArray }
 
 and [<ReferenceEquality>] RenderStaticModelSurface =
     { Absolute : bool
@@ -220,7 +220,7 @@ and [<ReferenceEquality>] RenderStaticModel =
 
 and [<ReferenceEquality>] RenderStaticModels =
     { Absolute : bool
-      StaticModels : (Matrix4x4 * Box2 option * MaterialProperties) SegmentedList
+      StaticModels : (Matrix4x4 * Box2 option * MaterialProperties) SList
       RenderType : RenderType
       StaticModel : StaticModel AssetTag }
 
@@ -748,11 +748,11 @@ type [<ReferenceEquality>] GlRenderer3d =
             if absolute then
                 match renderer.RenderTasks.RenderSurfacesDeferredAbsolute.TryGetValue billboardSurface with
                 | (true, renderTasks) -> renderTasks.Add struct (billboardMatrix, texCoordsOffset, properties) 
-                | (false, _) -> renderer.RenderTasks.RenderSurfacesDeferredAbsolute.Add (billboardSurface, SegmentedList.singleton (billboardMatrix, texCoordsOffset, properties))
+                | (false, _) -> renderer.RenderTasks.RenderSurfacesDeferredAbsolute.Add (billboardSurface, SList.singleton (billboardMatrix, texCoordsOffset, properties))
             else
                 match renderer.RenderTasks.RenderSurfacesDeferredRelative.TryGetValue billboardSurface with
                 | (true, renderTasks) -> renderTasks.Add struct (billboardMatrix, texCoordsOffset, properties)
-                | (false, _) -> renderer.RenderTasks.RenderSurfacesDeferredRelative.Add (billboardSurface, SegmentedList.singleton (billboardMatrix, texCoordsOffset, properties))
+                | (false, _) -> renderer.RenderTasks.RenderSurfacesDeferredRelative.Add (billboardSurface, SList.singleton (billboardMatrix, texCoordsOffset, properties))
         | ForwardRenderType (subsort, sort) ->
             if absolute
             then renderer.RenderTasks.RenderSurfacesForwardAbsolute.Add struct (subsort, sort, billboardMatrix, texCoordsOffset, properties, billboardSurface)
@@ -788,11 +788,11 @@ type [<ReferenceEquality>] GlRenderer3d =
             if modelAbsolute then
                 match renderer.RenderTasks.RenderSurfacesDeferredAbsolute.TryGetValue surface with
                 | (true, renderTasks) -> renderTasks.Add struct (surfaceMatrix, texCoordsOffset, properties)
-                | (false, _) -> renderer.RenderTasks.RenderSurfacesDeferredAbsolute.Add (surface, SegmentedList.singleton (surfaceMatrix, texCoordsOffset, properties))
+                | (false, _) -> renderer.RenderTasks.RenderSurfacesDeferredAbsolute.Add (surface, SList.singleton (surfaceMatrix, texCoordsOffset, properties))
             else
                 match renderer.RenderTasks.RenderSurfacesDeferredRelative.TryGetValue surface with
                 | (true, renderTasks) -> renderTasks.Add struct (surfaceMatrix, texCoordsOffset, properties)
-                | (false, _) -> renderer.RenderTasks.RenderSurfacesDeferredRelative.Add (surface, SegmentedList.singleton (surfaceMatrix, texCoordsOffset, properties))
+                | (false, _) -> renderer.RenderTasks.RenderSurfacesDeferredRelative.Add (surface, SList.singleton (surfaceMatrix, texCoordsOffset, properties))
         | ForwardRenderType (subsort, sort) ->
             if modelAbsolute
             then renderer.RenderTasks.RenderSurfacesForwardAbsolute.Add struct (subsort, sort, surfaceMatrix, texCoordsOffset, properties, surface)
@@ -866,7 +866,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 (lightAmbientColor, lightAmbientBrightness, None)
         | None -> (Color.White, 1.0f, None)
 
-    static member private sortSurfaces eyeCenter (surfaces : struct (single * single * Matrix4x4 * Box2 * MaterialProperties * OpenGL.PhysicallyBased.PhysicallyBasedSurface) SegmentedList) =
+    static member private sortSurfaces eyeCenter (surfaces : struct (single * single * Matrix4x4 * Box2 * MaterialProperties * OpenGL.PhysicallyBased.PhysicallyBasedSurface) SList) =
         surfaces |>
         Seq.map (fun struct (subsort, sort, model, texCoordsOffset, properties, surface) -> struct (subsort, sort, model, texCoordsOffset, properties, surface, (model.Translation - eyeCenter).MagnitudeSquared)) |>
         Seq.toArray |> // TODO: use a preallocated array to avoid allocating on the LOH.
@@ -874,7 +874,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         Array.map (fun struct (_, _, model, texCoordsOffset, propertiesOpt, surface, _) -> struct (model, texCoordsOffset, propertiesOpt, surface))
 
     static member private renderPhysicallyBasedSurfaces
-        viewArray projectionArray eyeCenter (parameters : struct (Matrix4x4 * Box2 * MaterialProperties) SegmentedList) blending
+        viewArray projectionArray eyeCenter (parameters : struct (Matrix4x4 * Box2 * MaterialProperties) SList) blending
         lightAmbientColor lightAmbientBrightness irradianceMap environmentFilterMap brdfTexture
         lightMaps lightMapOrigins lightMapMins lightMapSizes irradianceMaps environmentFilterMaps
         lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightDirectionals lightConeInners lightConeOuters
@@ -1245,7 +1245,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 let (lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightCutoffs, lightDirectionals, lightConeInners, lightConeOuters) =
                     SortableLight.sortLightsIntoArrays Constants.Render.ForwardLightsMax model.Translation renderer.RenderTasks.RenderLights
                 GlRenderer3d.renderPhysicallyBasedSurfaces
-                    viewAbsoluteArray rasterProjectionArray eyeCenter (SegmentedList.singleton (model, texCoordsOffset, properties)) true
+                    viewAbsoluteArray rasterProjectionArray eyeCenter (SList.singleton (model, texCoordsOffset, properties)) true
                     lightAmbientColor lightAmbientBrightness lightMapFallback.IrradianceMap lightMapFallback.EnvironmentFilterMap renderer.RenderBrdfTexture
                     lightMaps_ lightMapOrigins lightMapMins lightMapSizes lightMapIrradianceMaps lightMapEnvironmentFilterMaps
                     lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightDirectionals lightConeInners lightConeOuters
@@ -1259,7 +1259,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             let (lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightCutoffs, lightDirectionals, lightConeInners, lightConeOuters) =
                 SortableLight.sortLightsIntoArrays Constants.Render.ForwardLightsMax model.Translation renderer.RenderTasks.RenderLights
             GlRenderer3d.renderPhysicallyBasedSurfaces
-                viewRelativeArray rasterProjectionArray eyeCenter (SegmentedList.singleton (model, texCoordsOffset, properties)) true
+                viewRelativeArray rasterProjectionArray eyeCenter (SList.singleton (model, texCoordsOffset, properties)) true
                 lightAmbientColor lightAmbientBrightness lightMapFallback.IrradianceMap lightMapFallback.EnvironmentFilterMap renderer.RenderBrdfTexture
                 lightMaps_ lightMapOrigins lightMapMins lightMapSizes lightMapIrradianceMaps lightMapEnvironmentFilterMaps
                 lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightDirectionals lightConeInners lightConeOuters
@@ -1269,7 +1269,7 @@ type [<ReferenceEquality>] GlRenderer3d =
     static member render eyeCenter (eyeRotation : Quaternion) windowSize renderbuffer framebuffer renderMessages renderer =
 
         // categorize messages
-        let userDefinedStaticModelsToDestroy = SegmentedList.make ()
+        let userDefinedStaticModelsToDestroy = SList.make ()
         let postPasses = hashSetPlus<RenderPassMessage3d> HashIdentity.Structural []
         for message in renderMessages do
             match message with
@@ -1511,16 +1511,16 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         // create render tasks
         let renderTasks =
-            { RenderSkyBoxes = SegmentedList.make ()
-              RenderLightProbes = SegmentedDictionary.make HashIdentity.Structural
-              RenderLightMaps = SegmentedList.make ()
-              RenderLights = SegmentedList.make ()
+            { RenderSkyBoxes = SList.make ()
+              RenderLightProbes = SDictionary.make HashIdentity.Structural
+              RenderLightMaps = SList.make ()
+              RenderLights = SList.make ()
               RenderSurfacesDeferredAbsolute = dictPlus HashIdentity.Structural []
               RenderSurfacesDeferredRelative = dictPlus HashIdentity.Structural []
-              RenderSurfacesForwardAbsolute = SegmentedList.make ()
-              RenderSurfacesForwardRelative = SegmentedList.make ()
-              RenderSurfacesForwardAbsoluteSorted = SegmentedList.make ()
-              RenderSurfacesForwardRelativeSorted = SegmentedList.make () }
+              RenderSurfacesForwardAbsolute = SList.make ()
+              RenderSurfacesForwardRelative = SList.make ()
+              RenderSurfacesForwardAbsoluteSorted = SList.make ()
+              RenderSurfacesForwardRelativeSorted = SList.make () }
 
         // make renderer
         let renderer =

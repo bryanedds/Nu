@@ -211,7 +211,7 @@ module AmbientState =
               UpdateTime : int64
               TickDelta : int64
               // cache line 2
-              KeyValueStore : UMap<Guid, obj>
+              KeyValueStore : SUMap<Guid, obj>
               TickTime : int64
               TickWatch : Stopwatch
               Tasklets : OMap<Simulant, 'w Tasklet UList>
@@ -451,7 +451,7 @@ module AmbientState =
           Advancing = advancing
           UpdateTime = 0L
           TickDelta = 0L
-          KeyValueStore = UMap.makeEmpty HashIdentity.Structural config
+          KeyValueStore = SUMap.makeEmpty HashIdentity.Structural config
           TickTime = 0L
           TickWatch = if advancing then Stopwatch.StartNew () else Stopwatch ()
           Tasklets = OMap.makeEmpty HashIdentity.Structural config
