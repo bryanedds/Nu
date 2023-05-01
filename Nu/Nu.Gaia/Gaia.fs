@@ -534,7 +534,7 @@ module Gaia =
                           ModelMatrix = light.GetAffineMatrix world
                           InsetOpt = None
                           MaterialProperties = MaterialProperties.defaultProperties
-                          RenderType = ForwardRenderType (0.0f, Single.MinValue + 1.0f)
+                          RenderType = ForwardRenderType (0.0f, Single.MinValue / 2.0f)
                           StaticModel = Assets.Default.LightbulbModel })
                     world)
                 world lightsInGroup
