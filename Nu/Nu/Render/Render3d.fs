@@ -677,6 +677,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             let hierarchy = TreeNode (Array.map OpenGL.PhysicallyBased.PhysicallyBasedSurface surfaces)
             let staticModel : OpenGL.PhysicallyBased.PhysicallyBasedStaticModel =
                 { Bounds = bounds
+                  LightProbes = [||]
                   Lights = [||]
                   Surfaces = surfaces
                   PhysicallyBasedStaticHierarchy = hierarchy }
