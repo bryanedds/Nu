@@ -152,7 +152,10 @@ type [<ReferenceEquality>] SdlAudioPlayer =
                 // reload assets if specified
                 if reloading then
                     for asset in assets do
-                        if SdlAudioPlayer.tryFreeAudioAsset audioPackage.Assets.[asset.AssetTag.AssetName] audioPlayer then
+                        if  match audioPackage.Assets.TryGetValue asset.AssetTag.AssetName with
+                            | (true, audioAsset) -> SdlAudioPlayer.tryFreeAudioAsset audioAsset audioPlayer
+                            | (false, _) -> true
+                        then
                             match SdlAudioPlayer.tryLoadAudioAsset asset with
                             | Some audioAsset -> audioPackage.Assets.[asset.AssetTag.AssetName] <- audioAsset
                             | None -> ()
