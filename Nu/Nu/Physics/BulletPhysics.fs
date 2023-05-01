@@ -58,11 +58,9 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
         shape.Margin <- Constants.Physics.CollisionMargin3d
 
     static member private configureCollisionObjectProperties (bodyProperties : BodyProperties) (object : CollisionObject) =
-        match (bodyProperties.Sleeping, bodyProperties.Enabled) with
-        | (true, true) -> object.ActivationState <- ActivationState.IslandSleeping
-        | (true, false) -> object.ActivationState <- ActivationState.DisableSimulation
-        | (false, true) -> object.ActivationState <- ActivationState.ActiveTag
-        | (false, false) -> object.ActivationState <- ActivationState.DisableSimulation
+        match bodyProperties.Enabled with
+        | true -> object.ActivationState <- ActivationState.ActiveTag
+        | false -> object.ActivationState <- ActivationState.DisableSimulation
         object.Friction <- bodyProperties.Friction
         object.Restitution <- bodyProperties.Restitution
         match bodyProperties.CollisionDetection with

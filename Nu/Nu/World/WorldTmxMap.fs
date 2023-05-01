@@ -294,7 +294,6 @@ module TmxMap =
               Rotation = quatIdentity
               BodyShape = BodyShapes (getBodyShapes tileMapDescriptor)
               BodyType = BodyType.Static
-              Sleeping = true
               SleepingAllowed = true
               Enabled = enabled
               Friction = friction

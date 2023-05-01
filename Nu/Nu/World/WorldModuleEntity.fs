@@ -221,11 +221,11 @@ module WorldModuleEntity =
                 let elevationChanged = newTransform.Elevation <> oldTransform.Elevation
                 let overflowChanged = newTransform.Overflow <> oldTransform.Overflow
                 let centeredChanged = newTransform.Centered <> oldTransform.Centered
-                let perimeterUnscaledChanged = positionChanged || offsetChanged || sizeChanged || centeredChanged
+                let perimeterChanged = positionChanged || scaleChanged || offsetChanged || sizeChanged || centeredChanged
                 // OPTIMIZATION: eliding data for computed change events for speed.
                 let world = World.publishEntityChange (nameof Transform) () () publishChangeEvents entity world
                 let world =
-                    if perimeterUnscaledChanged then
+                    if perimeterChanged then
                         let world = World.publishEntityChange (nameof newTransform.Bounds) () () publishChangeEvents entity world
                         let world = World.publishEntityChange (nameof newTransform.PerimeterOriented) () () publishChangeEvents entity world
                         let world = World.publishEntityChange (nameof newTransform.Perimeter) () () publishChangeEvents entity world
