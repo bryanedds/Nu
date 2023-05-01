@@ -1492,7 +1492,7 @@ module LightFacet3dModule =
             World.enqueueRenderMessage3d
                 (RenderLight3d
                     { Origin = position
-                      Direction = Vector3.Transform (v3Forward, rotation)
+                      Direction = Vector3.Transform (v3Up, rotation)
                       Color = color
                       Brightness = brightness
                       AttenuationLinear = attenuationLinear

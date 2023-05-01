@@ -36,12 +36,12 @@ module Gaia =
 
     let private getPickableEntities2d world =
         let (entities, world) = World.getEntitiesInView2d (HashSet ()) world
-        let entitiesInGroup = entities |> Seq.filter (fun entity -> entity.GetVisible world && entity.Group = selectedGroup) |> Seq.toArray
+        let entitiesInGroup = entities |> Seq.filter (fun entity -> entity.Group = selectedGroup && entity.GetVisible world) |> Seq.toArray
         (entitiesInGroup, world)
 
     let private getPickableEntities3d world =
         let (entities, world) = World.getEntitiesInView3d (HashSet ()) world
-        let entitiesInGroup = entities |> Seq.filter (fun entity -> entity.GetVisible world && entity.Group = selectedGroup) |> Seq.toArray
+        let entitiesInGroup = entities |> Seq.filter (fun entity -> entity.Group = selectedGroup && entity.GetVisible world) |> Seq.toArray
         (entitiesInGroup, world)
 
     let private getSnaps (form : GaiaForm) =
@@ -519,17 +519,35 @@ module Gaia =
         else (Cascade, world)
 
     let private handleNuRender (form : GaiaForm) (_ : Event<unit, Game>) world =
-        match form.entityPropertyGrid.SelectedObject with
-        | null -> (Cascade, world)
-        | :? EntityTypeDescriptorSource as entityTds ->
-            let entity = entityTds.DescribedEntity
-            let absolute = entity.GetAbsolute world
-            let bounds = entity.GetHighlightBounds world
-            if entity.GetIs2d world then
-                let elevation = Single.MaxValue
-                let transform = Transform.makePerimeter bounds v3Zero elevation absolute false
-                let image = Assets.Default.HighlightImage
-                let world =
+
+        // render lights of the selected group in play
+        let (entities, world) = World.getLightsInPlay3d (HashSet ()) world
+        let lightsInGroup = entities |> Seq.filter (fun entity -> entity.Group = selectedGroup && entity.Has<LightFacet3d> world) |> Seq.toArray
+        let world =
+            Array.fold (fun world (light : Entity) ->
+                World.enqueueRenderMessage3d
+                    (RenderStaticModel
+                        { Absolute = false
+                          ModelMatrix = light.GetAffineMatrix world
+                          InsetOpt = None
+                          MaterialProperties = MaterialProperties.defaultProperties
+                          RenderType = ForwardRenderType (0.0f, Single.MinValue + 1.0f)
+                          StaticModel = Assets.Default.LightbulbModel })
+                    world)
+                world lightsInGroup
+
+        // render selection highlights
+        let world =
+            match form.entityPropertyGrid.SelectedObject with
+            | null -> world
+            | :? EntityTypeDescriptorSource as entityTds ->
+                let entity = entityTds.DescribedEntity
+                let absolute = entity.GetAbsolute world
+                let bounds = entity.GetHighlightBounds world
+                if entity.GetIs2d world then
+                    let elevation = Single.MaxValue
+                    let transform = Transform.makePerimeter bounds v3Zero elevation absolute false
+                    let image = Assets.Default.HighlightImage
                     World.enqueueRenderMessage2d
                         (LayeredOperation2d
                             { Elevation = elevation
@@ -545,26 +563,22 @@ module Gaia =
                                       Emission = Color.Zero
                                       Flip = FlipNone }})
                         world
-                (Cascade, world)
-            else
-                let mutable boundsMatrix = Matrix4x4.CreateScale (bounds.Size + v3Dup 0.01f) // slightly bigger to eye to prevent z-fighting with selected entity
-                boundsMatrix.Translation <- bounds.Center
-                let properties = Unchecked.defaultof<_>
-                let renderType = ForwardRenderType (0.0f, Single.MinValue)
-                let staticModel = Assets.Default.HighlightModel
-                let world =
+                else
+                    let mutable boundsMatrix = Matrix4x4.CreateScale (bounds.Size + v3Dup 0.01f) // slightly bigger to eye to prevent z-fighting with selected entity
+                    boundsMatrix.Translation <- bounds.Center
                     World.enqueueRenderMessage3d
                         (RenderStaticModel
                             { Absolute = absolute
                               ModelMatrix = boundsMatrix
                               InsetOpt = None
-                              MaterialProperties = properties
-                              RenderType = renderType
-                              StaticModel = staticModel })
+                              MaterialProperties = MaterialProperties.defaultProperties
+                              RenderType = ForwardRenderType (0.0f, Single.MinValue)
+                              StaticModel = Assets.Default.HighlightModel })
                         world
-                (Cascade, world)
-        | _ -> (Cascade, world)
+            | _ -> world
 
+        // fin
+        (Cascade, world)
     let private trySaveSelectedGroup filePath world =
         let oldWorld = world
         try World.writeGroupToFile filePath selectedGroup world

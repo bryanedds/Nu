@@ -867,6 +867,11 @@ module WorldModule2 =
             let lightBox = World.getLightBox3d world
             World.getEntities3dBy (Octree.getElementsInView frustumEnclosed frustumExposed frustumImposter lightBox set) world
 
+        /// Get all 3d light entities in the current 3d light box, including all uncullable lights.
+        static member getLightsInPlay3d set world =
+            let lightBox = World.getLightBox3d world
+            World.getEntities3dBy (Octree.getLightsInPlay lightBox set) world
+
         /// Get all 3d entities in the current selected screen, including all uncullable entities.
         static member getEntities3d set world =
             World.getEntities3dBy (Octree.getElements set) world

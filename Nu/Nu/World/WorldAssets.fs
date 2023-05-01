@@ -48,5 +48,6 @@ module Assets =
         let [<Uniform>] SkyBoxMap = asset<CubeMap> PackageName Assets.Default.SkyBoxMapName
         let [<Uniform>] StaticModel = asset<StaticModel> PackageName Assets.Default.StaticModelName
         let [<Uniform>] HighlightModel = asset<StaticModel> PackageName Assets.Default.HighlightModelName
+        let [<Uniform>] LightbulbModel = asset<StaticModel> PackageName Assets.Default.LightbulbModelName
         let [<Uniform>] Sound = asset<Sound> PackageName Assets.Default.SoundName
         let [<Uniform>] Song = asset<Song> PackageName Assets.Default.SongName

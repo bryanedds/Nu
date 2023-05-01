@@ -46,6 +46,7 @@ module Assets =
         let [<Literal>] SkyBoxMapName = "SkyBoxMap"
         let [<Literal>] StaticModelName = "StaticModel"
         let [<Literal>] HighlightModelName = "HighlightModel"
+        let [<Literal>] LightbulbModelName = "LightbulbModel"
         let [<Literal>] SoundName = "Sound"
         let [<Literal>] SongName = "Song"
         let [<Literal>] ImageString = "[Default Image]"
