@@ -244,8 +244,7 @@ type [<NoEquality; NoComparison>] Transform =
 
     member this.Pivot =
         let perimeter = this.Perimeter
-        let offsetScaled = this.Offset_ * this.Scale_
-        perimeter.Center + offsetScaled
+        -(perimeter.Center - perimeter.Size * this.Offset_)
 
     member this.CleanAngles () =
         if this.AnglesDirty then
@@ -276,7 +275,7 @@ type [<NoEquality; NoComparison>] Transform =
                     let mutable maxZ = Single.MinValue
                     for i in 0 .. dec 8 do // OPTIMIZATION: hard code to allow for loop unrolling.
                         let corner = &corners.[i]
-                        corner <- Vector3.Transform (corner - pivot, rotation) + pivot
+                        corner <- Vector3.Transform (corner + pivot, rotation) - pivot
                         minX <- min minX corner.X
                         minY <- min minY corner.Y
                         minZ <- min minZ corner.Z
