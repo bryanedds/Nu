@@ -10,4 +10,5 @@ map_Kd StaticModelAlbedo.png
 map_Pm StaticModelMetallic.png
 map_Pr StaticModelRoughness.png
 map_Ka StaticModelAmbientOcclusion.png
+map_Ke StaticModelEmission.png
 norm StaticModelNormal.png

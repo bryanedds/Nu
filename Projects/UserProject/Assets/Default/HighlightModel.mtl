@@ -10,4 +10,5 @@ map_Kd HighlightModelAlbedo.png
 map_Pm MaterialMetallic.png
 map_Pr MaterialRoughness.png
 map_Ka MaterialAmbientOcclusion.png
+map_Ke HighlightModelEmission.png
 norm MaterialNormal.png
