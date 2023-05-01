@@ -25,7 +25,7 @@ A critical battle with evil itself!
 ![image](https://user-images.githubusercontent.com/1625560/212570637-69cfd2c9-3b61-4d7a-82ce-933582f130e5.png)
 Live editing a cutscene.
 
-![image](https://user-images.githubusercontent.com/1625560/232184561-4a39511e-b5df-4f7a-bc57-44809898a664.png)
+![image](https://user-images.githubusercontent.com/1625560/235414619-2042f3f4-054d-4eb8-9802-a0731079b97f.png)
 Editing a 3D scene imported from Unity in Nu's editor, Gaia.
 
 ![image](https://user-images.githubusercontent.com/1625560/232184477-dbb1102e-f4f5-4fd1-9008-57a07fe450f7.png)
@@ -37,8 +37,11 @@ Efficient, detailed 3D with deferred physically-based rendering.
 ![image](https://user-images.githubusercontent.com/1625560/235253590-2f86a584-478a-4406-8df9-3a1e7daafcbe.png)
 Local light probes allow for efficient localized reflection and image-based lighting.
 
-![image](https://user-images.githubusercontent.com/1625560/231018049-5c4247aa-0940-4d18-9173-2780982c22f7.png)
+![image](https://user-images.githubusercontent.com/1625560/235414827-449055f9-19e9-49df-b063-73015359ceb2.png)
 Another 3D scene screenshot from editor.
+
+![image](https://user-images.githubusercontent.com/1625560/231018049-5c4247aa-0940-4d18-9173-2780982c22f7.png)
+And another 3D scene screenshot from editor.
 
 Getting Started
 ===============
