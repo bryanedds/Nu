@@ -872,7 +872,7 @@ module PhysicallyBased =
                                         | _ -> // just use point light for all lights right now
                                             let lightType =
                                                 match light.LightType with
-                                                | Assimp.LightSourceType.Point -> SpotLight (light.AngleInnerCone, light.AngleOuterCone)
+                                                | Assimp.LightSourceType.Spot -> SpotLight (light.AngleInnerCone, light.AngleOuterCone)
                                                 | _ -> PointLight
                                             let physicallyBasedLight =
                                                 { LightNames = names

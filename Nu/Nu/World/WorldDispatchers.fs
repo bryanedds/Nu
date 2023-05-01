@@ -1139,6 +1139,7 @@ module StaticModelHierarchyDispatcherModule =
                                 | Left group -> (light.LightNames.Length > 0, light.LightNames, group)
                                 | Right entity -> (true, Array.append entity.Surnames light.LightNames, entity.Group)
                             let (child, world) = World.createEntity<LightDispatcher3d> DefaultOverlay (Some surnames) group world
+                            let world = child.SetLightType light.PhysicallyBasedLightType world
                             let (position, rotation, world) =
                                 let transform = light.LightMatrix
                                 let mutable (scale, rotation, position) = (v3One, quatIdentity, v3Zero)
