@@ -522,7 +522,10 @@ module Gaia =
 
         // render lights of the selected group in play
         let (entities, world) = World.getLightsInPlay3d (HashSet ()) world
-        let lightsInGroup = entities |> Seq.filter (fun entity -> entity.Group = selectedGroup && entity.Has<LightFacet3d> world) |> Seq.toArray
+        let lightsInGroup =
+            entities |>
+            Seq.filter (fun entity -> entity.Group = selectedGroup && entity.GetLight world) |>
+            Seq.toArray
         let world =
             Array.fold (fun world (light : Entity) ->
                 World.enqueueRenderMessage3d

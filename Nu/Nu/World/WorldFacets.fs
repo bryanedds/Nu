@@ -1424,7 +1424,8 @@ module LightProbeFacet3dModule =
             (Cascade, world)
 
         static member Properties =
-            [define Entity.Presence Omnipresent
+            [define Entity.Light true
+             define Entity.Presence Omnipresent
              define Entity.ProbeBounds (box3 (v3Dup Constants.Render.LightProbeSizeDefault * -0.5f) (v3Dup Constants.Render.LightProbeSizeDefault))
              define Entity.ProbeStale false]
 
