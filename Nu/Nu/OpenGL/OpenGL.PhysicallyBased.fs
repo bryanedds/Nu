@@ -219,6 +219,14 @@ module PhysicallyBased =
           IrradianceMaps5Uniform : int
           IrradianceMaps6Uniform : int
           IrradianceMaps7Uniform : int
+          IrradianceMaps8Uniform : int
+          IrradianceMaps9Uniform : int
+          IrradianceMaps10Uniform : int
+          IrradianceMaps11Uniform : int
+          IrradianceMaps12Uniform : int
+          IrradianceMaps13Uniform : int
+          IrradianceMaps14Uniform : int
+          IrradianceMaps15Uniform : int
           EnvironmentFilterMaps0Uniform : int
           EnvironmentFilterMaps1Uniform : int
           EnvironmentFilterMaps2Uniform : int
@@ -227,6 +235,14 @@ module PhysicallyBased =
           EnvironmentFilterMaps5Uniform : int
           EnvironmentFilterMaps6Uniform : int
           EnvironmentFilterMaps7Uniform : int
+          EnvironmentFilterMaps8Uniform : int
+          EnvironmentFilterMaps9Uniform : int
+          EnvironmentFilterMaps10Uniform : int
+          EnvironmentFilterMaps11Uniform : int
+          EnvironmentFilterMaps12Uniform : int
+          EnvironmentFilterMaps13Uniform : int
+          EnvironmentFilterMaps14Uniform : int
+          EnvironmentFilterMaps15Uniform : int
           LightOriginsUniform : int
           LightDirectionsUniform : int
           LightColorsUniform : int
@@ -1050,6 +1066,14 @@ module PhysicallyBased =
         let irradianceMaps5Uniform = Gl.GetUniformLocation (shader, "irradianceMaps[5]")
         let irradianceMaps6Uniform = Gl.GetUniformLocation (shader, "irradianceMaps[6]")
         let irradianceMaps7Uniform = Gl.GetUniformLocation (shader, "irradianceMaps[7]")
+        let irradianceMaps8Uniform = Gl.GetUniformLocation (shader, "irradianceMaps[8]")
+        let irradianceMaps9Uniform = Gl.GetUniformLocation (shader, "irradianceMaps[9]")
+        let irradianceMaps10Uniform = Gl.GetUniformLocation (shader, "irradianceMaps[10]")
+        let irradianceMaps11Uniform = Gl.GetUniformLocation (shader, "irradianceMaps[11]")
+        let irradianceMaps12Uniform = Gl.GetUniformLocation (shader, "irradianceMaps[12]")
+        let irradianceMaps13Uniform = Gl.GetUniformLocation (shader, "irradianceMaps[13]")
+        let irradianceMaps14Uniform = Gl.GetUniformLocation (shader, "irradianceMaps[14]")
+        let irradianceMaps15Uniform = Gl.GetUniformLocation (shader, "irradianceMaps[15]")
         let environmentFilterMaps0Uniform = Gl.GetUniformLocation (shader, "environmentFilterMaps[0]")
         let environmentFilterMaps1Uniform = Gl.GetUniformLocation (shader, "environmentFilterMaps[1]")
         let environmentFilterMaps2Uniform = Gl.GetUniformLocation (shader, "environmentFilterMaps[2]")
@@ -1058,6 +1082,14 @@ module PhysicallyBased =
         let environmentFilterMaps5Uniform = Gl.GetUniformLocation (shader, "environmentFilterMaps[5]")
         let environmentFilterMaps6Uniform = Gl.GetUniformLocation (shader, "environmentFilterMaps[6]")
         let environmentFilterMaps7Uniform = Gl.GetUniformLocation (shader, "environmentFilterMaps[7]")
+        let environmentFilterMaps8Uniform = Gl.GetUniformLocation (shader, "environmentFilterMaps[8]")
+        let environmentFilterMaps9Uniform = Gl.GetUniformLocation (shader, "environmentFilterMaps[9]")
+        let environmentFilterMaps10Uniform = Gl.GetUniformLocation (shader, "environmentFilterMaps[10]")
+        let environmentFilterMaps11Uniform = Gl.GetUniformLocation (shader, "environmentFilterMaps[11]")
+        let environmentFilterMaps12Uniform = Gl.GetUniformLocation (shader, "environmentFilterMaps[12]")
+        let environmentFilterMaps13Uniform = Gl.GetUniformLocation (shader, "environmentFilterMaps[13]")
+        let environmentFilterMaps14Uniform = Gl.GetUniformLocation (shader, "environmentFilterMaps[14]")
+        let environmentFilterMaps15Uniform = Gl.GetUniformLocation (shader, "environmentFilterMaps[15]")
         let lightOriginsUniform = Gl.GetUniformLocation (shader, "lightOrigins")
         let lightDirectionsUniform = Gl.GetUniformLocation (shader, "lightDirections")
         let lightColorsUniform = Gl.GetUniformLocation (shader, "lightColors")
@@ -1094,6 +1126,14 @@ module PhysicallyBased =
           IrradianceMaps5Uniform = irradianceMaps5Uniform
           IrradianceMaps6Uniform = irradianceMaps6Uniform
           IrradianceMaps7Uniform = irradianceMaps7Uniform
+          IrradianceMaps8Uniform = irradianceMaps8Uniform
+          IrradianceMaps9Uniform = irradianceMaps9Uniform
+          IrradianceMaps10Uniform = irradianceMaps10Uniform
+          IrradianceMaps11Uniform = irradianceMaps11Uniform
+          IrradianceMaps12Uniform = irradianceMaps12Uniform
+          IrradianceMaps13Uniform = irradianceMaps13Uniform
+          IrradianceMaps14Uniform = irradianceMaps14Uniform
+          IrradianceMaps15Uniform = irradianceMaps15Uniform
           EnvironmentFilterMaps0Uniform = environmentFilterMaps0Uniform
           EnvironmentFilterMaps1Uniform = environmentFilterMaps1Uniform
           EnvironmentFilterMaps2Uniform = environmentFilterMaps2Uniform
@@ -1102,6 +1142,14 @@ module PhysicallyBased =
           EnvironmentFilterMaps5Uniform = environmentFilterMaps5Uniform
           EnvironmentFilterMaps6Uniform = environmentFilterMaps6Uniform
           EnvironmentFilterMaps7Uniform = environmentFilterMaps7Uniform
+          EnvironmentFilterMaps8Uniform = environmentFilterMaps8Uniform
+          EnvironmentFilterMaps9Uniform = environmentFilterMaps9Uniform
+          EnvironmentFilterMaps10Uniform = environmentFilterMaps10Uniform
+          EnvironmentFilterMaps11Uniform = environmentFilterMaps11Uniform
+          EnvironmentFilterMaps12Uniform = environmentFilterMaps12Uniform
+          EnvironmentFilterMaps13Uniform = environmentFilterMaps13Uniform
+          EnvironmentFilterMaps14Uniform = environmentFilterMaps14Uniform
+          EnvironmentFilterMaps15Uniform = environmentFilterMaps15Uniform
           LightOriginsUniform = lightOriginsUniform
           LightDirectionsUniform = lightDirectionsUniform
           LightColorsUniform = lightColorsUniform
@@ -1422,14 +1470,30 @@ module PhysicallyBased =
         Gl.Uniform1 (shader.IrradianceMaps5Uniform, 12)
         Gl.Uniform1 (shader.IrradianceMaps6Uniform, 13)
         Gl.Uniform1 (shader.IrradianceMaps7Uniform, 14)
-        Gl.Uniform1 (shader.EnvironmentFilterMaps0Uniform, 15)
-        Gl.Uniform1 (shader.EnvironmentFilterMaps1Uniform, 16)
-        Gl.Uniform1 (shader.EnvironmentFilterMaps2Uniform, 17)
-        Gl.Uniform1 (shader.EnvironmentFilterMaps3Uniform, 18)
-        Gl.Uniform1 (shader.EnvironmentFilterMaps4Uniform, 19)
-        Gl.Uniform1 (shader.EnvironmentFilterMaps5Uniform, 20)
-        Gl.Uniform1 (shader.EnvironmentFilterMaps6Uniform, 21)
-        Gl.Uniform1 (shader.EnvironmentFilterMaps7Uniform, 22)
+        Gl.Uniform1 (shader.IrradianceMaps8Uniform, 15)
+        Gl.Uniform1 (shader.IrradianceMaps9Uniform, 16)
+        Gl.Uniform1 (shader.IrradianceMaps10Uniform, 17)
+        Gl.Uniform1 (shader.IrradianceMaps11Uniform, 18)
+        Gl.Uniform1 (shader.IrradianceMaps12Uniform, 19)
+        Gl.Uniform1 (shader.IrradianceMaps13Uniform, 20)
+        Gl.Uniform1 (shader.IrradianceMaps14Uniform, 21)
+        Gl.Uniform1 (shader.IrradianceMaps15Uniform, 22)
+        Gl.Uniform1 (shader.EnvironmentFilterMaps0Uniform, 23)
+        Gl.Uniform1 (shader.EnvironmentFilterMaps1Uniform, 24)
+        Gl.Uniform1 (shader.EnvironmentFilterMaps2Uniform, 25)
+        Gl.Uniform1 (shader.EnvironmentFilterMaps3Uniform, 26)
+        Gl.Uniform1 (shader.EnvironmentFilterMaps4Uniform, 27)
+        Gl.Uniform1 (shader.EnvironmentFilterMaps5Uniform, 28)
+        Gl.Uniform1 (shader.EnvironmentFilterMaps6Uniform, 29)
+        Gl.Uniform1 (shader.EnvironmentFilterMaps7Uniform, 30)
+        Gl.Uniform1 (shader.EnvironmentFilterMaps8Uniform, 31)
+        Gl.Uniform1 (shader.EnvironmentFilterMaps9Uniform, 32)
+        Gl.Uniform1 (shader.EnvironmentFilterMaps10Uniform, 33)
+        Gl.Uniform1 (shader.EnvironmentFilterMaps11Uniform, 34)
+        Gl.Uniform1 (shader.EnvironmentFilterMaps12Uniform, 35)
+        Gl.Uniform1 (shader.EnvironmentFilterMaps13Uniform, 36)
+        Gl.Uniform1 (shader.EnvironmentFilterMaps14Uniform, 37)
+        Gl.Uniform1 (shader.EnvironmentFilterMaps15Uniform, 38)
         Gl.Uniform3 (shader.LightOriginsUniform, lightOrigins)
         Gl.Uniform3 (shader.LightDirectionsUniform, lightDirections)
         Gl.Uniform3 (shader.LightColorsUniform, lightColors)
@@ -1474,21 +1538,53 @@ module PhysicallyBased =
         Gl.ActiveTexture TextureUnit.Texture14
         Gl.BindTexture (TextureTarget.TextureCubeMap, irradianceMaps.[7])
         Gl.ActiveTexture TextureUnit.Texture15
-        Gl.BindTexture (TextureTarget.TextureCubeMap, environmentFilterMaps.[0])
+        Gl.BindTexture (TextureTarget.TextureCubeMap, irradianceMaps.[8])
         Gl.ActiveTexture TextureUnit.Texture16
-        Gl.BindTexture (TextureTarget.TextureCubeMap, environmentFilterMaps.[1])
+        Gl.BindTexture (TextureTarget.TextureCubeMap, irradianceMaps.[9])
         Gl.ActiveTexture TextureUnit.Texture17
-        Gl.BindTexture (TextureTarget.TextureCubeMap, environmentFilterMaps.[2])
+        Gl.BindTexture (TextureTarget.TextureCubeMap, irradianceMaps.[10])
         Gl.ActiveTexture TextureUnit.Texture18
-        Gl.BindTexture (TextureTarget.TextureCubeMap, environmentFilterMaps.[3])
+        Gl.BindTexture (TextureTarget.TextureCubeMap, irradianceMaps.[11])
         Gl.ActiveTexture TextureUnit.Texture19
-        Gl.BindTexture (TextureTarget.TextureCubeMap, environmentFilterMaps.[4])
+        Gl.BindTexture (TextureTarget.TextureCubeMap, irradianceMaps.[12])
         Gl.ActiveTexture TextureUnit.Texture20
-        Gl.BindTexture (TextureTarget.TextureCubeMap, environmentFilterMaps.[5])
+        Gl.BindTexture (TextureTarget.TextureCubeMap, irradianceMaps.[13])
         Gl.ActiveTexture TextureUnit.Texture21
-        Gl.BindTexture (TextureTarget.TextureCubeMap, environmentFilterMaps.[6])
+        Gl.BindTexture (TextureTarget.TextureCubeMap, irradianceMaps.[14])
         Gl.ActiveTexture TextureUnit.Texture22
+        Gl.BindTexture (TextureTarget.TextureCubeMap, irradianceMaps.[15])
+        Gl.ActiveTexture TextureUnit.Texture23
+        Gl.BindTexture (TextureTarget.TextureCubeMap, environmentFilterMaps.[0])
+        Gl.ActiveTexture TextureUnit.Texture24
+        Gl.BindTexture (TextureTarget.TextureCubeMap, environmentFilterMaps.[1])
+        Gl.ActiveTexture TextureUnit.Texture25
+        Gl.BindTexture (TextureTarget.TextureCubeMap, environmentFilterMaps.[2])
+        Gl.ActiveTexture TextureUnit.Texture26
+        Gl.BindTexture (TextureTarget.TextureCubeMap, environmentFilterMaps.[3])
+        Gl.ActiveTexture TextureUnit.Texture27
+        Gl.BindTexture (TextureTarget.TextureCubeMap, environmentFilterMaps.[4])
+        Gl.ActiveTexture TextureUnit.Texture28
+        Gl.BindTexture (TextureTarget.TextureCubeMap, environmentFilterMaps.[5])
+        Gl.ActiveTexture TextureUnit.Texture29
+        Gl.BindTexture (TextureTarget.TextureCubeMap, environmentFilterMaps.[6])
+        Gl.ActiveTexture TextureUnit.Texture30
         Gl.BindTexture (TextureTarget.TextureCubeMap, environmentFilterMaps.[7])
+        Gl.ActiveTexture TextureUnit.Texture31
+        Gl.BindTexture (TextureTarget.TextureCubeMap, environmentFilterMaps.[8])
+        Gl.ActiveTexture (int TextureUnit.Texture0 + 32 |> Branchless.reinterpret)
+        Gl.BindTexture (TextureTarget.TextureCubeMap, environmentFilterMaps.[9])
+        Gl.ActiveTexture (int TextureUnit.Texture0 + 33 |> Branchless.reinterpret)
+        Gl.BindTexture (TextureTarget.TextureCubeMap, environmentFilterMaps.[10])
+        Gl.ActiveTexture (int TextureUnit.Texture0 + 34 |> Branchless.reinterpret)
+        Gl.BindTexture (TextureTarget.TextureCubeMap, environmentFilterMaps.[11])
+        Gl.ActiveTexture (int TextureUnit.Texture0 + 35 |> Branchless.reinterpret)
+        Gl.BindTexture (TextureTarget.TextureCubeMap, environmentFilterMaps.[12])
+        Gl.ActiveTexture (int TextureUnit.Texture0 + 36 |> Branchless.reinterpret)
+        Gl.BindTexture (TextureTarget.TextureCubeMap, environmentFilterMaps.[13])
+        Gl.ActiveTexture (int TextureUnit.Texture0 + 37 |> Branchless.reinterpret)
+        Gl.BindTexture (TextureTarget.TextureCubeMap, environmentFilterMaps.[14])
+        Gl.ActiveTexture (int TextureUnit.Texture0 + 38 |> Branchless.reinterpret)
+        Gl.BindTexture (TextureTarget.TextureCubeMap, environmentFilterMaps.[15])
         Hl.Assert ()
 
         // setup geometry
@@ -1551,6 +1647,38 @@ module PhysicallyBased =
         Gl.ActiveTexture TextureUnit.Texture21
         Gl.BindTexture (TextureTarget.TextureCubeMap, 0u)
         Gl.ActiveTexture TextureUnit.Texture22
+        Gl.BindTexture (TextureTarget.TextureCubeMap, 0u)
+        Gl.ActiveTexture TextureUnit.Texture23
+        Gl.BindTexture (TextureTarget.TextureCubeMap, 0u)
+        Gl.ActiveTexture TextureUnit.Texture24
+        Gl.BindTexture (TextureTarget.TextureCubeMap, 0u)
+        Gl.ActiveTexture TextureUnit.Texture25
+        Gl.BindTexture (TextureTarget.TextureCubeMap, 0u)
+        Gl.ActiveTexture TextureUnit.Texture26
+        Gl.BindTexture (TextureTarget.TextureCubeMap, 0u)
+        Gl.ActiveTexture TextureUnit.Texture27
+        Gl.BindTexture (TextureTarget.TextureCubeMap, 0u)
+        Gl.ActiveTexture TextureUnit.Texture28
+        Gl.BindTexture (TextureTarget.TextureCubeMap, 0u)
+        Gl.ActiveTexture TextureUnit.Texture29
+        Gl.BindTexture (TextureTarget.TextureCubeMap, 0u)
+        Gl.ActiveTexture TextureUnit.Texture30
+        Gl.BindTexture (TextureTarget.TextureCubeMap, 0u)
+        Gl.ActiveTexture TextureUnit.Texture31
+        Gl.BindTexture (TextureTarget.TextureCubeMap, 0u)
+        Gl.ActiveTexture (int TextureUnit.Texture0 + 32 |> Branchless.reinterpret)
+        Gl.BindTexture (TextureTarget.TextureCubeMap, 0u)
+        Gl.ActiveTexture (int TextureUnit.Texture0 + 33 |> Branchless.reinterpret)
+        Gl.BindTexture (TextureTarget.TextureCubeMap, 0u)
+        Gl.ActiveTexture (int TextureUnit.Texture0 + 34 |> Branchless.reinterpret)
+        Gl.BindTexture (TextureTarget.TextureCubeMap, 0u)
+        Gl.ActiveTexture (int TextureUnit.Texture0 + 35 |> Branchless.reinterpret)
+        Gl.BindTexture (TextureTarget.TextureCubeMap, 0u)
+        Gl.ActiveTexture (int TextureUnit.Texture0 + 36 |> Branchless.reinterpret)
+        Gl.BindTexture (TextureTarget.TextureCubeMap, 0u)
+        Gl.ActiveTexture (int TextureUnit.Texture0 + 37 |> Branchless.reinterpret)
+        Gl.BindTexture (TextureTarget.TextureCubeMap, 0u)
+        Gl.ActiveTexture (int TextureUnit.Texture0 + 38 |> Branchless.reinterpret)
         Gl.BindTexture (TextureTarget.TextureCubeMap, 0u)
         Hl.Assert ()
 
