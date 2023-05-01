@@ -244,7 +244,7 @@ type [<NoEquality; NoComparison>] Transform =
 
     member this.Pivot =
         let perimeter = this.Perimeter
-        -(perimeter.Center - perimeter.Size * this.Offset_)
+        -perimeter.Center + perimeter.Size * this.Offset_
 
     member this.CleanAngles () =
         if this.AnglesDirty then
