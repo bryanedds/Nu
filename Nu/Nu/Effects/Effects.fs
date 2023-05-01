@@ -785,7 +785,7 @@ module EffectSystem =
                     Render3d
                         (RenderLight3d
                             { Origin = slice.Position
-                              Direction = Vector3.Transform (v3Forward, Quaternion.CreateFromYawPitchRoll (slice.Angles.Z, slice.Angles.Y, slice.Angles.X))
+                              Direction = Vector3.Transform (v3Up, Quaternion.CreateFromYawPitchRoll (slice.Angles.Z, slice.Angles.Y, slice.Angles.X))
                               Color = slice.Color
                               Brightness = slice.Brightness
                               AttenuationLinear = slice.AttenuationLinear

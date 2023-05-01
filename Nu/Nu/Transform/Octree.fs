@@ -400,6 +400,13 @@ module Octree =
             new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (tree.Omnipresent, set)) :> 'e Octelement IEnumerable
         else Seq.empty
 
+    let getLightsInPlay lightBox (set : _ HashSet) tree =
+        if tree.ElementsModified then
+            Octnode.getLightsInBox true lightBox tree.Node set
+            let omnipresent = tree.Omnipresent |> Seq.filter (fun element -> element.Light)
+            new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (omnipresent, set)) :> 'e Octelement IEnumerable
+        else Seq.empty
+
     let getDepth tree =
         tree.Depth
 
