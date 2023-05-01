@@ -88,7 +88,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
         BulletPhysicsEngine.configureCollisionObjectProperties bodyProperties body
         body.MotionState.WorldTransform <- Matrix4x4.CreateFromTrs (bodyProperties.Center, bodyProperties.Rotation, v3One)
         if bodyProperties.SleepingAllowed // TODO: see if we can find a more reliable way to disable sleeping.
-        then body.SetSleepingThresholds (0.8f, 1.0f) // TODO: move to constants?
+        then body.SetSleepingThresholds (Constants.Physics.SleepingThresholdLinear, Constants.Physics.SleepingThresholdAngular)
         else body.SetSleepingThresholds (0.0f, 0.0f)
         body.LinearVelocity <- bodyProperties.LinearVelocity
         body.LinearFactor <- if bodyProperties.BodyType = Static then v3Zero else v3One
