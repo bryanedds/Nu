@@ -431,7 +431,7 @@ module WorldModule2 =
                     let world = slideSprite.SetVisible true world
                     world
                 | None ->
-                    let world = slideSprite.SetStaticImage Assets.Default.Image5 world
+                    let world = slideSprite.SetStaticImage Assets.Default.NuSlide world
                     let world = slideSprite.SetVisible false world
                     world
             world

@@ -147,7 +147,7 @@ module StaticSpriteFacetModule =
         inherit Facet (false)
 
         static member Properties =
-            [define Entity.StaticImage Assets.Default.Image6
+            [define Entity.StaticImage Assets.Default.Box
              define Entity.Color Color.One
              define Entity.Blend Transparent
              define Entity.Emission Color.Zero
@@ -222,7 +222,7 @@ module AnimatedSpriteFacetModule =
              define Entity.CelRun 4
              define Entity.CelCount 16
              define Entity.AnimationDelay (GameTime.ofSeconds (1.0f / 15.0f))
-             define Entity.AnimationSheet Assets.Default.Image6
+             define Entity.AnimationSheet Assets.Default.Block
              define Entity.Color Color.One
              define Entity.Blend Transparent
              define Entity.Emission Color.Zero

@@ -784,7 +784,7 @@ module FieldDispatcher =
                  // backdrop sprite
                  Content.staticSprite "Backdrop"
                     [Entity.Perimeter := field.ViewBoundsAbsolute.Box3; Entity.Elevation == Single.MinValue; Entity.Absolute == true
-                     Entity.StaticImage == Assets.Default.Image9
+                     Entity.StaticImage == Assets.Default.White
                      Entity.Color :=
                         match Data.Value.Fields.TryGetValue field.FieldType with
                         | (true, fieldData) -> fieldData.FieldBackgroundColor
@@ -793,7 +793,7 @@ module FieldDispatcher =
                  // transition fade sprite
                  Content.staticSprite "Fade"
                     [Entity.Perimeter := field.ViewBoundsAbsolute.Box3; Entity.Elevation == Single.MaxValue; Entity.Absolute == true
-                     Entity.StaticImage == Assets.Default.Image8
+                     Entity.StaticImage == Assets.Default.Black
                      Entity.Visible := Option.isSome field.FieldTransitionOpt
                      Entity.Color :=
                         match field.FieldTransitionOpt with

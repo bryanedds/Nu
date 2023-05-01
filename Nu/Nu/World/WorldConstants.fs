@@ -13,7 +13,7 @@ module Dissolve =
     let Default =
         { IncomingTime = GameTime.ofSeconds 0.5f
           OutgoingTime = GameTime.ofSeconds 1.0f
-          DissolveImage = Assets.Default.Image8 }
+          DissolveImage = Assets.Default.Black }
 
 [<RequireQualifiedAccess>]
 module Slide =
@@ -22,7 +22,7 @@ module Slide =
     let Default =
         { DissolveDescriptor = Dissolve.Default
           IdlingTime = GameTime.ofSeconds 1.0f
-          SlideImageOpt = Some Assets.Default.Image5 }
+          SlideImageOpt = Some Assets.Default.NuSlide }
 
 [<RequireQualifiedAccess>]
 module Override =
