@@ -114,7 +114,6 @@ type [<ReferenceEquality>] AetherPhysicsEngine =
             bodyShape
 
     static member private configureBodyProperties (bodyProperties : BodyProperties) (body : Body) =
-        body.Awake <- not bodyProperties.Sleeping
         body.SleepingAllowed <- bodyProperties.SleepingAllowed
         body.Enabled <- bodyProperties.Enabled
         body.Position <- AetherPhysicsEngine.toPhysicsV2 bodyProperties.Center

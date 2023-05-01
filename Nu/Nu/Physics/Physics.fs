@@ -165,7 +165,6 @@ type BodyProperties =
       Rotation : Quaternion
       BodyType : BodyType
       BodyShape : BodyShape
-      Sleeping : bool
       SleepingAllowed : bool
       Enabled : bool
       Friction : single
