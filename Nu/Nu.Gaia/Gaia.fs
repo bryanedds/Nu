@@ -183,6 +183,7 @@ module Gaia =
             if Seq.notExists (fun (group : Group) -> group.Name = groupTabPage.Name) groups then
                 groupTabPages.RemoveByKey groupTabPage.Name
 
+    // TODO: factor out the duplicated node finding code.
     let private tryShowSelectedEntityInHierarchy (form : GaiaForm) =
         let pathOpt =
             match form.entityPropertyGrid.SelectedObject with
@@ -194,6 +195,20 @@ module Gaia =
             let nodeOpt = form.hierarchyTreeView.TryGetNodeFromPath path
             if notNull nodeOpt then
                 form.hierarchyTreeView.SelectedNode <- nodeOpt
+        | None -> ()
+
+    let private tryShowSelectedEntityInHierarchyIfVisible (form : GaiaForm) =
+        let pathOpt =
+            match form.entityPropertyGrid.SelectedObject with
+            | null -> None
+            | :? EntityTypeDescriptorSource as entityTds -> entityTds.DescribedEntity.Surnames |> String.join Constants.Address.SeparatorStr |> Some
+            | _ -> None
+        match pathOpt with
+        | Some path ->
+            let nodeOpt = form.hierarchyTreeView.TryGetNodeFromPath path
+            if notNull nodeOpt && nodeOpt.IsVisible then
+                form.hierarchyTreeView.SelectedNode <- nodeOpt
+            else form.hierarchyTreeView.SelectedNode <- null
         | None -> ()
 
     let private tryShowSelectedEntityInDisplay (form : GaiaForm) world =
@@ -303,6 +318,7 @@ module Gaia =
         match pickedOpt with
         | Some entity ->
             selectEntity entity form world
+            tryShowSelectedEntityInHierarchyIfVisible form
             (Some (0.0f, entity), world)
         | None ->
             let (entities3d, world) = getPickableEntities3d world
@@ -310,6 +326,7 @@ module Gaia =
             match pickedOpt with
             | Some (intersection, entity) ->
                 selectEntity entity form world
+                tryShowSelectedEntityInHierarchyIfVisible form
                 (Some (intersection, entity), world)
             | None -> (None, world)
 
