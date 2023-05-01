@@ -50,7 +50,7 @@ module StaticSpriteDispatcherModule =
             [typeof<StaticSpriteFacet>]
 
         static member Properties =
-            [define Entity.StaticImage Assets.Default.Image6
+            [define Entity.StaticImage Assets.Default.Box
              define Entity.Color Color.One
              define Entity.Emission Color.Zero
              define Entity.InsetOpt None
@@ -70,7 +70,7 @@ module AnimatedSpriteDispatcherModule =
              define Entity.CelRun 4
              define Entity.CelCount 16
              define Entity.AnimationDelay (GameTime.ofSeconds (1.0f / 15.0f))
-             define Entity.AnimationSheet Assets.Default.Image6
+             define Entity.AnimationSheet Assets.Default.Block // TODO: use proper animated sheet.
              define Entity.Color Color.One
              define Entity.Emission Color.Zero
              define Entity.Flip FlipNone]
@@ -179,8 +179,8 @@ module ButtonDispatcherModule =
         static member Properties =
             [define Entity.Down false
              define Entity.DownTextOffset v2Zero
-             define Entity.UpImage Assets.Default.Image
-             define Entity.DownImage Assets.Default.Image2
+             define Entity.UpImage Assets.Default.ButtonUp
+             define Entity.DownImage Assets.Default.ButtonDown
              define Entity.ClickSoundOpt (Some Assets.Default.Sound)
              define Entity.ClickSoundVolume Constants.Audio.SoundVolumeDefault]
 
@@ -225,7 +225,7 @@ module LabelDispatcherModule =
         inherit GuiDispatcher ()
 
         static member Properties =
-            [define Entity.LabelImage Assets.Default.Image3]
+            [define Entity.LabelImage Assets.Default.Label]
 
         override this.Render (entity, world) =
             let mutable transform = entity.GetTransform world
@@ -381,8 +381,8 @@ module ToggleButtonDispatcherModule =
              define Entity.ToggledTextOffset v2Zero
              define Entity.Pressed false
              define Entity.PressedTextOffset v2Zero
-             define Entity.UntoggledImage Assets.Default.Image
-             define Entity.ToggledImage Assets.Default.Image2
+             define Entity.UntoggledImage Assets.Default.ButtonUp
+             define Entity.ToggledImage Assets.Default.ButtonDown
              define Entity.ToggleSoundOpt (Some Assets.Default.Sound)
              define Entity.ToggleSoundVolume Constants.Audio.SoundVolumeDefault]
 
@@ -505,8 +505,8 @@ module RadioButtonDispatcherModule =
              define Entity.DialedTextOffset v2Zero
              define Entity.Pressed false
              define Entity.PressedTextOffset v2Zero
-             define Entity.UndialedImage Assets.Default.Image
-             define Entity.DialedImage Assets.Default.Image2
+             define Entity.UndialedImage Assets.Default.ButtonUp
+             define Entity.DialedImage Assets.Default.ButtonDown
              define Entity.DialSoundOpt (Some Assets.Default.Sound)
              define Entity.DialSoundVolume Constants.Audio.SoundVolumeDefault]
 
@@ -705,9 +705,9 @@ module FillBarDispatcherModule =
             [define Entity.Fill 0.0f
              define Entity.FillInset 0.0f
              define Entity.FillColor (Color (1.0f, 0.0f, 0.0f, 1.0f))
-             define Entity.FillImage Assets.Default.Image9
+             define Entity.FillImage Assets.Default.White
              define Entity.BorderColor (Color (0.0f, 0.0f, 0.0f, 1.0f))
-             define Entity.BorderImage Assets.Default.Image4]
+             define Entity.BorderImage Assets.Default.Border]
 
         override this.Render (entity, world) =
 
@@ -816,7 +816,7 @@ module BlockDispatcher2dModule =
 
         static member Properties =
             [define Entity.BodyType Static
-             define Entity.StaticImage Assets.Default.Image6]
+             define Entity.StaticImage Assets.Default.Block]
 
 [<AutoOpen>]
 module BoxDispatcher2dModule =
@@ -829,7 +829,7 @@ module BoxDispatcher2dModule =
              typeof<StaticSpriteFacet>]
 
         static member Properties =
-            [define Entity.StaticImage Assets.Default.Image6]
+            [define Entity.StaticImage Assets.Default.Box]
 
 [<AutoOpen>]
 module SideViewCharacterDispatcherModule =

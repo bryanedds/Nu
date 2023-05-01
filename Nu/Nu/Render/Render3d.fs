@@ -1441,12 +1441,12 @@ type [<ReferenceEquality>] GlRenderer3d =
         let cubeMap =
             match 
                 OpenGL.CubeMap.TryCreateCubeMap
-                    ("Assets/Default/Image9.bmp",
-                     "Assets/Default/Image9.bmp",
-                     "Assets/Default/Image9.bmp",
-                     "Assets/Default/Image9.bmp",
-                     "Assets/Default/Image9.bmp",
-                     "Assets/Default/Image9.bmp") with
+                    ("Assets/Default/White.bmp",
+                     "Assets/Default/White.bmp",
+                     "Assets/Default/White.bmp",
+                     "Assets/Default/White.bmp",
+                     "Assets/Default/White.bmp",
+                     "Assets/Default/White.bmp") with
             | Right cubeMap -> cubeMap
             | Left error -> failwith error
         OpenGL.Hl.Assert ()
