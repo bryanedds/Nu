@@ -207,7 +207,9 @@ type [<ReferenceEquality>] GlRenderer2d =
                 // reload assets if specified
                 if reloading then
                     for asset in assets do
-                        GlRenderer2d.freeRenderAsset renderPackage.Assets.[asset.AssetTag.AssetName] renderer
+                        match renderPackage.Assets.TryGetValue asset.AssetTag.AssetName with
+                        | (true, renderAsset) -> GlRenderer2d.freeRenderAsset renderAsset renderer
+                        | (false, _) -> ()
                         match GlRenderer2d.tryLoadRenderAsset asset renderer with
                         | Some renderAsset -> renderPackage.Assets.[asset.AssetTag.AssetName] <- renderAsset
                         | None -> ()
