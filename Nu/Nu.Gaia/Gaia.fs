@@ -1030,6 +1030,10 @@ module Gaia =
                 world
             else world
 
+    let private handleFormHierarchyTreeViewClick (form : GaiaForm) (evt : TreeNodeMouseClickEventArgs) =
+        if evt.Button = MouseButtons.Right then
+            form.hierarchyTreeView.SelectedNode <- evt.Node
+
     let private handleFormHierarchyTreeViewDoubleClick (form : GaiaForm) (_ : EventArgs) =
         Globals.nextPreUpdate $ fun world ->
             tryShowSelectedEntityInDisplay form world
@@ -2053,6 +2057,7 @@ module Gaia =
         form.hierarchySelectButton.Click.Add (handleFormSelectInHierarchy form)
         form.hierarchyCollapseButton.Click.Add (handleFormHierarchyTreeViewCollapseClick form)
         form.hierarchyTreeView.AfterSelect.Add (handleFormHierarchyTreeViewNodeSelect form)
+        form.hierarchyTreeView.NodeMouseClick.Add (handleFormHierarchyTreeViewClick form)
         form.hierarchyTreeView.DoubleClick.Add (handleFormHierarchyTreeViewDoubleClick form)
         form.hierarchyTreeView.ItemDrag.Add (handleFormHierarchyTreeViewItemDrag form)
         form.hierarchyTreeView.DragEnter.Add (handleFormHierarchyTreeViewDragEnter form)
