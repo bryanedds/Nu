@@ -122,6 +122,13 @@ module PhysicallyBased =
         override this.GetHashCode () =
             this.HashCode
 
+    /// A light probe inside a physically-based static model.
+    type PhysicallyBasedLightProbe =
+        { LightProbeNames : string array
+          LightProbeMatrixIsIdentity : bool
+          LightProbeMatrix : Matrix4x4
+          LightProbeBounds : Box3 }
+
     /// A light inside a physically-based static model.
     type PhysicallyBasedLight =
         { LightNames : string array
@@ -137,12 +144,14 @@ module PhysicallyBased =
     /// A part of a physically-based hierarchy.
     type PhysicallyBasedPart =
         | PhysicallyBasedNode of string array
+        | PhysicallyBasedLightProbe of PhysicallyBasedLightProbe
         | PhysicallyBasedLight of PhysicallyBasedLight
         | PhysicallyBasedSurface of PhysicallyBasedSurface
 
     /// A physically-based static model.
     type PhysicallyBasedStaticModel =
         { Bounds : Box3
+          LightProbes : PhysicallyBasedLightProbe array
           Lights : PhysicallyBasedLight array
           Surfaces : PhysicallyBasedSurface array
           PhysicallyBasedStaticHierarchy : PhysicallyBasedPart array TreeNode }
@@ -850,15 +859,33 @@ module PhysicallyBased =
 
                     // construct bounds and hierarchy
                     // TODO: sanitize incoming names. Corrupted or incompatible names cause subtle hierarchy bugs.
+                    let lightProbes = SList.make ()
                     let lights = SList.make ()
                     let surfaces = SList.make ()
                     let mutable bounds = box3Zero
                     let hierarchy =
-                        scene.RootNode.Map ([||], m4Identity, fun node names surfaceMatrix ->
+                        scene.RootNode.Map ([||], m4Identity, fun node names transform ->
                             seq {
 
                                 // collect node
                                 yield PhysicallyBasedNode names
+
+                                // attempt to collect light probe
+                                let lastNameLower = Array.last(names).ToLowerInvariant()
+                                if lastNameLower.Contains("probe") && not (lastNameLower.Contains("probes")) then
+                                    let names = Array.append names [|"LightProbe"|]
+                                    let lightProbeOrigin = transform.Translation
+                                    let lightProbeBounds =
+                                        box3
+                                            (v3Dup Constants.Render.LightProbeSizeDefault * -0.5f + lightProbeOrigin)
+                                            (v3Dup Constants.Render.LightProbeSizeDefault)
+                                    let lightProbe =
+                                        { LightProbeNames = names
+                                          LightProbeMatrixIsIdentity = transform.IsIdentity
+                                          LightProbeMatrix = transform
+                                          LightProbeBounds = lightProbeBounds }
+                                    lightProbes.Add lightProbe
+                                    yield PhysicallyBasedLightProbe lightProbe
 
                                 // collect light
                                 // NOTE: this is an n^2 algorithm to deal with nodes having no light information
@@ -889,13 +916,13 @@ module PhysicallyBased =
 
                                 // collect surfaces
                                 for i in 0 .. dec node.MeshIndices.Count do
-                                    let meshIndex = node.MeshIndices.[i]
                                     let names = Array.append names [|"Geometry" + if i > 0 then string i else ""|]
+                                    let meshIndex = node.MeshIndices.[i]
                                     let materialIndex = scene.Meshes.[meshIndex].MaterialIndex
                                     let material = materials.[materialIndex]
                                     let geometry = geometries.[meshIndex]
-                                    let surface = PhysicallyBasedSurface.make names surfaceMatrix geometry.Bounds material geometry
-                                    bounds <- bounds.Combine (geometry.Bounds.Transform surfaceMatrix)
+                                    let surface = PhysicallyBasedSurface.make names transform geometry.Bounds material geometry
+                                    bounds <- bounds.Combine (geometry.Bounds.Transform transform)
                                     surfaces.Add surface
                                     yield PhysicallyBasedSurface surface } |>
 
@@ -905,6 +932,7 @@ module PhysicallyBased =
                     // fin
                     Right
                         { Bounds = bounds
+                          LightProbes = Array.ofSeq lightProbes
                           Lights = Array.ofSeq lights
                           Surfaces = Array.ofSeq surfaces
                           PhysicallyBasedStaticHierarchy = hierarchy }

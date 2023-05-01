@@ -1132,6 +1132,19 @@ module StaticModelHierarchyDispatcherModule =
                             let world = if mountToParent then child.SetMountOpt (Some (Relation.makeParent ())) world else world
                             let world = child.QuickSize world
                             world' <- world
+                        | OpenGL.PhysicallyBased.PhysicallyBasedLightProbe lightProbe ->
+                            let world = world'
+                            let (mountToParent, surnames, group) =
+                                match parent with
+                                | Left group -> (lightProbe.LightProbeNames.Length > 0, lightProbe.LightProbeNames, group)
+                                | Right entity -> (true, Array.append entity.Surnames lightProbe.LightProbeNames, entity.Group)
+                            let (child, world) = World.createEntity<LightProbeDispatcher3d> DefaultOverlay (Some surnames) group world
+                            let world = child.SetProbeBounds lightProbe.LightProbeBounds world
+                            let world = child.SetPositionLocal lightProbe.LightProbeMatrix.Translation world
+                            let world = child.SetStatic true world
+                            let world = if mountToParent then child.SetMountOpt (Some (Relation.makeParent ())) world else world
+                            let world = child.QuickSize world
+                            world' <- world
                         | OpenGL.PhysicallyBased.PhysicallyBasedLight light ->
                             let world = world'
                             let (mountToParent, surnames, group) =
