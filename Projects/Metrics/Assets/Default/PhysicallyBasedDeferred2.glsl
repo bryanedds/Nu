@@ -171,10 +171,12 @@ void main()
             h = normalize(v + l);
             float attenuation = 1.0f / (ATTENUATION_CONSTANT + lightAttenuationLinears[i] * distance + lightAttenuationQuadratics[i] * distanceSquared);
             float angle = acos(dot(lightDirections[i], l));
-            float coneDelta = lightConeOuters[i] - lightConeInners[i];
-            float coneBetween = angle - lightConeInners[i];
-            float coneScalar = clamp(1.0f - coneBetween / coneDelta, 0.0f, 1.0);
-            float intensity = attenuation * coneScalar;
+            float halfConeInner = lightConeInners[i] * 0.5f;
+            float halfConeOuter = lightConeOuters[i] * 0.5f;
+            float halfConeDelta = halfConeOuter - halfConeInner;
+            float halfConeBetween = angle - halfConeInner;
+            float halfConeScalar = clamp(1.0f - halfConeBetween / halfConeDelta, 0.0f, 1.0);
+            float intensity = attenuation * halfConeScalar;
             radiance = lightColors[i] * lightBrightnesses[i] * intensity * inRange;
         }
         else
