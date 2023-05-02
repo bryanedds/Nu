@@ -470,7 +470,7 @@ type [<ReferenceEquality>] GlRenderer3d =
     static member private tryLoadRenderAsset packageState (asset : obj Asset) renderer =
         GlRenderer3d.invalidateCaches renderer
         match Path.GetExtension(asset.FilePath).ToLowerInvariant() with
-        | ".bmp" | ".png" | ".tga" | ".jpg" | ".jpeg" | ".tif" | ".tiff" ->
+        | ".bmp" | ".png" | ".jpg" | ".jpeg" | ".tga" | ".tif" | ".tiff" ->
             match GlRenderer3d.tryLoadTextureAsset packageState asset renderer with
             | Some (filePath, metadata, texture) -> Some (TextureAsset (filePath, metadata, texture))
             | None -> None

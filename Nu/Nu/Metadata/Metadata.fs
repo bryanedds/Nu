@@ -148,7 +148,7 @@ module Metadata =
         let extension = Path.GetExtension(asset.FilePath).ToLowerInvariant()
         let metadataOpt =
             match extension with
-            | ".bmp" | ".png" | ".tga" | ".jpg" | ".jpeg" | ".tif" | ".tiff" ->
+            | ".bmp" | ".png" | ".jpg" | ".jpeg" | ".tga" | ".tif" | ".tiff" ->
                 TextureTimer.Start ()
                 let metadataOpt = tryGenerateTextureMetadata asset
                 TextureTimer.Stop ()
