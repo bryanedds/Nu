@@ -1435,11 +1435,12 @@ module LightProbeFacet3dModule =
             
         override this.Render (entity, world) =
             let id = entity.GetId world
+            let enabled = entity.GetEnabled world
             let position = entity.GetPosition world
             let bounds = entity.GetProbeBounds world
             let stale = entity.GetProbeStale world
             let world = if stale then entity.SetProbeStale false world else world
-            World.enqueueRenderMessage3d (RenderLightProbe3d { LightProbeId = id; Origin = position; Bounds = bounds; Stale = stale }) world
+            World.enqueueRenderMessage3d (RenderLightProbe3d { LightProbeId = id; Enabled = enabled; Origin = position; Bounds = bounds; Stale = stale }) world
 
         override this.RayCast (ray, entity, world) =
             let intersectionOpt = ray.Intersects (entity.GetBounds world)
@@ -1482,25 +1483,27 @@ module LightFacet3dModule =
              define Entity.LightType PointLight]
 
         override this.Render (entity, world) =
-            let position = entity.GetPosition world
-            let rotation = entity.GetRotation world
-            let color = entity.GetColor world
-            let brightness = entity.GetBrightness world
-            let attenuationLinear = entity.GetAttenuationLinear world
-            let attenuationQuadratic = entity.GetAttenuationQuadratic world
-            let cutoff = entity.GetCutoff world
-            let lightType = entity.GetLightType world
-            World.enqueueRenderMessage3d
-                (RenderLight3d
-                    { Origin = position
-                      Direction = Vector3.Transform (v3Up, rotation)
-                      Color = color
-                      Brightness = brightness
-                      AttenuationLinear = attenuationLinear
-                      AttenuationQuadratic = attenuationQuadratic
-                      Cutoff = cutoff
-                      LightType = lightType })
-                world
+            if entity.GetEnabled world then
+                let position = entity.GetPosition world
+                let rotation = entity.GetRotation world
+                let color = entity.GetColor world
+                let brightness = entity.GetBrightness world
+                let attenuationLinear = entity.GetAttenuationLinear world
+                let attenuationQuadratic = entity.GetAttenuationQuadratic world
+                let cutoff = entity.GetCutoff world
+                let lightType = entity.GetLightType world
+                World.enqueueRenderMessage3d
+                    (RenderLight3d
+                        { Origin = position
+                          Direction = Vector3.Transform (v3Up, rotation)
+                          Color = color
+                          Brightness = brightness
+                          AttenuationLinear = attenuationLinear
+                          AttenuationQuadratic = attenuationQuadratic
+                          Cutoff = cutoff
+                          LightType = lightType })
+                    world
+            else world
 
         override this.RayCast (ray, entity, world) =
             let intersectionOpt = ray.Intersects (entity.GetBounds world)
