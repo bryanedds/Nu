@@ -27,10 +27,10 @@
 
 	<ItemGroup>
 		<Reference Include="OpenGL.Net">
-			<HintPath>..\..\Nu\Nu.Dependencies\OpenGL.NET.0.8.4\lib\netcoreapp2.2\OpenGL.Net.dll</HintPath>
+			<HintPath>..\..\Nu\Nu.Dependencies\OpenGL.NET\lib\netcoreapp2.2\OpenGL.Net.dll</HintPath>
 		</Reference>
 		<Reference Include="OpenGL.Net.WinForms">
-			<HintPath>..\..\Nu\Nu.Dependencies\OpenGL.NET.0.8.4\lib\net461\OpenGL.Net.WinForms.dll</HintPath>
+			<HintPath>..\..\Nu\Nu.Dependencies\OpenGL.NET\lib\net461\OpenGL.Net.WinForms.dll</HintPath>
 		</Reference>
 	</ItemGroup>
 
