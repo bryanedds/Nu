@@ -1,7 +1,7 @@
 [[Default
   [[Asset Font "Assets/Default/FreeMonoBold.024.ttf" [Render2d] []]
    [Assets Assets/Default [psd] [Render2d Render3d] [PsdToPng]]
-   [Assets Assets/Default [bmp png tga jpg jpeg tif tiff] [Render2d Render3d] []]
+   [Assets Assets/Default [bmp png jpg jpeg tga tif tiff] [Render2d Render3d] []]
    [Assets Assets/Default [cbm fbx obj mtl glsl] [Render3d] []]
    [Assets Assets/Default [wav ogg] [Audio] []]
    [Assets Assets/Default [nueffect nuscript csv] [Symbol] []]
@@ -9,25 +9,25 @@
  [Gui
   [[Asset Font "Assets/Gui/Fonts/Manaspc.024.ttf" [Render2d] []]
    [Assets Assets/Gui [psd] [Render2d] [PsdToPng]]
-   [Assets Assets/Gui [bmp png tga jpg jpeg tif tiff] [Render2d] []]
+   [Assets Assets/Gui [bmp png jpg jpeg tga tif tiff] [Render2d] []]
    [Assets Assets/Gui [wav ogg] [Audio] []]
    [Assets Assets/Gui [nueffect nuscript csv] [Symbol] []]
    [Assets Assets/Gui [nugroup tsx tmx] [] []]]]
  [Field
   [[Assets Assets/Field [psd] [Render2d] [PsdToPng]]
-   [Assets Assets/Field [bmp png tga jpg jpeg tif tiff] [Render2d] []]
+   [Assets Assets/Field [bmp png jpg jpeg tga tif tiff] [Render2d] []]
    [Assets Assets/Field [wav ogg] [Audio] []]
    [Assets Assets/Field [nueffect nuscript csv] [Symbol] []]
    [Assets Assets/Field [nugroup tsx tmx] [] []]]]
  [Battle
   [[Assets Assets/Battle [psd] [Render2d] [PsdToPng]]
-   [Assets Assets/Battle [bmp png tga jpg jpeg tif tiff] [Render2d] []]
+   [Assets Assets/Battle [bmp png jpg jpeg tga tif tiff] [Render2d] []]
    [Assets Assets/Battle [wav ogg] [Audio] []]
    [Assets Assets/Battle [nueffect nuscript csv] [Symbol] []]
    [Assets Assets/Battle [nugroup tsx tmx] [] []]]]
  [Castle
   [[Assets Assets/Castle [psd] [Render2d] [PsdToPng]]
-   [Assets Assets/Castle [bmp png tga jpg jpeg tif tiff] [Render2d] []]
+   [Assets Assets/Castle [bmp png jpg jpeg tga tif tiff] [Render2d] []]
    [Assets Assets/Castle [wav ogg] [Audio] []]
    [Assets Assets/Castle [nueffect nuscript csv] [Symbol] []]
    [Assets Assets/Castle [nugroup tsx tmx] [] []]]]

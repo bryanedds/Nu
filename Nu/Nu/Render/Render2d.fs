@@ -167,7 +167,7 @@ type [<ReferenceEquality>] GlRenderer2d =
     static member private tryLoadRenderAsset (asset : obj Asset) renderer =
         GlRenderer2d.invalidateCaches renderer
         match Path.GetExtension(asset.FilePath).ToLowerInvariant() with
-        | ".bmp" | ".png" | ".tga" | ".jpg" | ".jpeg" | ".tif" | ".tiff" ->
+        | ".bmp" | ".png" | ".jpg" | ".jpeg" | ".tga" | ".tif" | ".tiff" ->
             match OpenGL.Texture.TryCreateTextureUnfiltered asset.FilePath with
             | Right (textureMetadata, texture) ->
                 Some (TextureAsset (asset.FilePath, textureMetadata, texture))
