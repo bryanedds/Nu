@@ -9,8 +9,8 @@ open Nu
 [<RequireQualifiedAccess>]
 module Framebuffer =
 
-    /// Attempt to create a texture 2d framebuffer.
-    let TryCreateTextureFramebuffer () =
+    /// Attempt to create a texture 2d buffers.
+    let TryCreateTextureBuffers () =
 
         // create frame buffer object
         let framebuffer = Gl.GenFramebuffer ()
@@ -38,8 +38,13 @@ module Framebuffer =
         then Right (texture, framebuffer)
         else Left ("Could not create complete texture 2d framebuffer.")
 
-    /// Attempt to create an hdr framebuffer.
-    let TryCreateHdrFramebuffer () =
+    /// Destroy texture buffers.
+    let DestroyTextureBuffers (position, framebuffer) =
+        Gl.DeleteFramebuffers [|framebuffer|]
+        Gl.DeleteTextures [|position|]
+
+    /// Attempt to create hdr buffers.
+    let TryCreateHdrBuffers () =
 
         // create frame buffer object
         let framebuffer = Gl.GenFramebuffer ()
@@ -66,6 +71,11 @@ module Framebuffer =
         if Gl.CheckFramebufferStatus FramebufferTarget.Framebuffer = FramebufferStatus.FramebufferComplete
         then Right (position, framebuffer)
         else Left ("Could not create complete HDR framebuffer.")
+
+    /// Destroy hdr buffers.
+    let DestroyHdrFrameBuffers (position, framebuffer) =
+        Gl.DeleteFramebuffers [|framebuffer|]
+        Gl.DeleteTextures [|position|]
 
     /// Create a geometry buffers.
     let TryCreateGeometryBuffers () =
@@ -137,3 +147,12 @@ module Framebuffer =
         if Gl.CheckFramebufferStatus FramebufferTarget.Framebuffer = FramebufferStatus.FramebufferComplete
         then Right (position, albedo, material, normalAndHeight, renderbuffer, framebuffer)
         else Left "Could not create complete geometry framebuffer."
+
+    /// Destroy geometry buffers.
+    let DestroyGeometryBuffers (position, albedo, material, normalAndHeight, renderbuffer, framebuffer) =
+        Gl.DeleteRenderbuffers [|renderbuffer|]
+        Gl.DeleteFramebuffers [|framebuffer|]
+        Gl.DeleteTextures [|position|]
+        Gl.DeleteTextures [|albedo|]
+        Gl.DeleteTextures [|material|]
+        Gl.DeleteTextures [|normalAndHeight|]

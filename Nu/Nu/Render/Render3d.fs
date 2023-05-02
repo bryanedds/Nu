@@ -1494,9 +1494,6 @@ type [<ReferenceEquality>] GlRenderer3d =
             | Right (_, texture) -> texture
             | Left error -> failwith ("Could not load BRDF texture due to: " + error)
 
-        // get albedo metadata and texture
-        let (albedoMetadata, albedoTexture) = OpenGL.Texture.TryCreateTextureFiltered ("Assets/Default/MaterialAlbedo.png") |> Either.getRight
-
         // create default physically-based material properties
         let physicallyBasedMaterialProperties : OpenGL.PhysicallyBased.PhysicallyBasedMaterialProperties =
             { Albedo = Constants.Render.AlbedoDefault
@@ -1506,6 +1503,9 @@ type [<ReferenceEquality>] GlRenderer3d =
               Emission = Constants.Render.EmissionDefault
               Height = Constants.Render.HeightDefault
               InvertRoughness = Constants.Render.InvertRoughnessDefault }
+
+        // get albedo metadata and texture
+        let (albedoMetadata, albedoTexture) = OpenGL.Texture.TryCreateTextureFiltered ("Assets/Default/MaterialAlbedo.png") |> Either.getRight
 
         // create default physically-based material
         let physicallyBasedMaterial : OpenGL.PhysicallyBased.PhysicallyBasedMaterial =
@@ -1600,8 +1600,31 @@ type [<ReferenceEquality>] GlRenderer3d =
             | WfglWindow window -> window.WfglSwapWindow ()
 
         member renderer.CleanUp () =
-            let renderPackages = renderer.RenderPackages |> Seq.map (fun entry -> entry.Value)
-            for renderPackage in renderPackages do
+            OpenGL.Gl.DeleteProgram renderer.RenderSkyBoxShader.SkyBoxShader
+            OpenGL.Gl.DeleteProgram renderer.RenderIrradianceShader.CubeMapShader
+            OpenGL.Gl.DeleteProgram renderer.RenderEnvironmentFilterShader.EnvironmentFilterShader
+            OpenGL.Gl.DeleteProgram renderer.RenderPhysicallyBasedForwardShader.PhysicallyBasedShader
+            OpenGL.Gl.DeleteProgram renderer.RenderPhysicallyBasedDeferredShader.PhysicallyBasedShader
+            OpenGL.Gl.DeleteProgram renderer.RenderPhysicallyBasedDeferred2Shader.PhysicallyBasedDeferred2Shader
+            OpenGL.Gl.DeleteVertexArrays [|renderer.RenderCubeMapGeometry.CubeMapVao|] // TODO: also release vertex and index buffers?
+            OpenGL.Gl.DeleteVertexArrays [|renderer.RenderBillboardGeometry.PhysicallyBasedVao|] // TODO: also release vertex and index buffers?
+            OpenGL.Gl.DeleteVertexArrays [|renderer.RenderPhysicallyBasedQuad.PhysicallyBasedVao|] // TODO: also release vertex and index buffers?
+            OpenGL.CubeMap.DeleteCubeMap renderer.RenderCubeMap
+            OpenGL.CubeMap.DeleteCubeMap renderer.RenderIrradianceMap
+            OpenGL.CubeMap.DeleteCubeMap renderer.RenderEnvironmentFilterMap
+            OpenGL.Texture.DeleteTexture renderer.RenderBrdfTexture
+            OpenGL.Texture.DeleteTexture renderer.RenderPhysicallyBasedMaterial.AlbedoTexture
+            OpenGL.Texture.DeleteTexture renderer.RenderPhysicallyBasedMaterial.RoughnessTexture
+            OpenGL.Texture.DeleteTexture renderer.RenderPhysicallyBasedMaterial.MetallicTexture
+            OpenGL.Texture.DeleteTexture renderer.RenderPhysicallyBasedMaterial.AmbientOcclusionTexture
+            OpenGL.Texture.DeleteTexture renderer.RenderPhysicallyBasedMaterial.EmissionTexture
+            OpenGL.Texture.DeleteTexture renderer.RenderPhysicallyBasedMaterial.NormalTexture
+            OpenGL.Texture.DeleteTexture renderer.RenderPhysicallyBasedMaterial.HeightTexture
+            for lightMap in renderer.RenderLightMaps.Values do
+                OpenGL.LightMap.DestroyLightMap lightMap
+            renderer.RenderLightMaps.Clear ()
+            for renderPackage in renderer.RenderPackages.Values do
                 OpenGL.Texture.DeleteTexturesMemoized renderPackage.PackageState.TextureMemo
                 OpenGL.CubeMap.DeleteCubeMapsMemoized renderPackage.PackageState.CubeMapMemo
             renderer.RenderPackages.Clear ()
+            OpenGL.Framebuffer.DestroyGeometryBuffers renderer.RenderGeometryBuffers
