@@ -276,6 +276,7 @@ and [<ReferenceEquality>] SortableLightMap =
             lightMap.SortableLightMapDistanceSquared <- (lightMap.SortableLightMapOrigin - position).MagnitudeSquared
         let lightMapsSorted =
             lightMaps |>
+            Seq.filter (fun lightMap -> frustum.Intersects lightMap.SortableLightMapBounds) |>
             Seq.toArray |>
             Array.sortBy (fun light -> light.SortableLightMapDistanceSquared)
         for i in 0 .. dec lightMapsMax do
@@ -1015,6 +1016,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         renderer
         (topLevelRender : bool)
         (eyeCenter : Vector3)
+        (eyeRotation : Quaternion)
         (viewAbsolute : Matrix4x4)
         (viewRelative : Matrix4x4)
         (viewSkyBox : Matrix4x4)
@@ -1025,9 +1027,9 @@ type [<ReferenceEquality>] GlRenderer3d =
         (renderbuffer : uint)
         (framebuffer : uint) =
 
-        // compute view frustums
-        let viewAbsoluteFrustum = Frustum viewAbsolute
-        let viewRelativeFrustum = Frustum viewRelative
+        // compute frustums
+        let geometryFrustumAbsolute = geometryViewport.Frustum (Constants.Render.NearPlaneDistanceEnclosed, Constants.Render.FarPlaneDistanceExposed, v3Zero, quatIdentity)
+        let geometryFrustumRelative = geometryViewport.Frustum (Constants.Render.NearPlaneDistanceEnclosed, Constants.Render.FarPlaneDistanceExposed, eyeCenter, eyeRotation)
 
         // compute matrix arrays
         let viewAbsoluteArray = viewAbsolute.ToArray ()
@@ -1156,7 +1158,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         // sort light maps for deferred rendering relative to eye center
         let (lightMaps_, lightMapOrigins, lightMapMins, lightMapSizes, lightMapIrradianceMaps, lightMapEnvironmentFilterMaps) =
             if topLevelRender
-            then SortableLightMap.sortLightMapsIntoArrays viewRelativeFrustum Constants.Render.DeferredLightMapsMax eyeCenter renderer.RenderTasks.RenderLightMaps
+            then SortableLightMap.sortLightMapsIntoArrays geometryFrustumRelative Constants.Render.DeferredLightMapsMax eyeCenter renderer.RenderTasks.RenderLightMaps
             else (Array.zeroCreate Constants.Render.DeferredLightMapsMax, Array.zeroCreate Constants.Render.DeferredLightMapsMax, Array.zeroCreate Constants.Render.DeferredLightMapsMax, Array.zeroCreate Constants.Render.DeferredLightMapsMax, Array.zeroCreate Constants.Render.DeferredLightMapsMax, Array.zeroCreate Constants.Render.DeferredLightMapsMax)
 
         // sort lights for deferred rendering relative to eye center
@@ -1249,7 +1251,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         if topLevelRender then
             for (model, texCoordsOffset, properties, surface) in renderer.RenderTasks.RenderSurfacesForwardAbsoluteSorted do
                 let (lightMaps_, lightMapOrigins, lightMapMins, lightMapSizes, lightMapIrradianceMaps, lightMapEnvironmentFilterMaps) =
-                    SortableLightMap.sortLightMapsIntoArrays viewAbsoluteFrustum Constants.Render.ForwardLightMapsMax model.Translation renderer.RenderTasks.RenderLightMaps
+                    SortableLightMap.sortLightMapsIntoArrays geometryFrustumAbsolute Constants.Render.ForwardLightMapsMax model.Translation renderer.RenderTasks.RenderLightMaps
                 let (lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightCutoffs, lightDirectionals, lightConeInners, lightConeOuters) =
                     SortableLight.sortLightsIntoArrays Constants.Render.ForwardLightsMax model.Translation renderer.RenderTasks.RenderLights
                 GlRenderer3d.renderPhysicallyBasedSurfaces
@@ -1263,7 +1265,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         // forward render surfaces w/ relative transforms
         for (model, texCoordsOffset, properties, surface) in renderer.RenderTasks.RenderSurfacesForwardRelativeSorted do
             let (lightMaps_, lightMapOrigins, lightMapMins, lightMapSizes, lightMapIrradianceMaps, lightMapEnvironmentFilterMaps) =
-                SortableLightMap.sortLightMapsIntoArrays viewRelativeFrustum Constants.Render.ForwardLightMapsMax model.Translation renderer.RenderTasks.RenderLightMaps
+                SortableLightMap.sortLightMapsIntoArrays geometryFrustumRelative Constants.Render.ForwardLightMapsMax model.Translation renderer.RenderTasks.RenderLightMaps
             let (lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightCutoffs, lightDirectionals, lightConeInners, lightConeOuters) =
                 SortableLight.sortLightsIntoArrays Constants.Render.ForwardLightsMax model.Translation renderer.RenderTasks.RenderLights
             GlRenderer3d.renderPhysicallyBasedSurfaces
@@ -1365,7 +1367,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         // top-level render
         GlRenderer3d.renderInternal
             renderer
-            true eyeCenter
+            true eyeCenter eyeRotation
             viewAbsolute viewRelative viewSkyBox
             viewportOffset projection
             viewportOffset projection
