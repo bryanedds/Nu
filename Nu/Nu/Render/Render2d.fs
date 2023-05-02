@@ -141,9 +141,9 @@ type LayeredOperation2dComparer () =
 type [<ReferenceEquality>] GlRenderer2d =
     private
         { RenderWindow : Window
-          RenderSpriteShader : int * int * int * int * uint
-          RenderSpriteQuad : uint * uint * uint
-          RenderTextQuad : uint * uint * uint
+          RenderSpriteShader : int * int * int * int * uint // TODO: release these resources on clean-up.
+          RenderSpriteQuad : uint * uint * uint // TODO: release these resources on clean-up.
+          RenderTextQuad : uint * uint * uint // TODO: release these resources on clean-up.
           RenderSpriteBatchEnv : OpenGL.SpriteBatch.SpriteBatchEnv
           RenderPackages : Packages<RenderAsset, unit>
           mutable RenderPackageCachedOpt : string * Package<RenderAsset, unit> // OPTIMIZATION: nullable for speed.
