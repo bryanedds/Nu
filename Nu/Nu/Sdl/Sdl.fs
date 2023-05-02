@@ -14,7 +14,8 @@ type [<ReferenceEquality>] SglWindow =
 /// A window for rendering in Windows Forms.
 type [<ReferenceEquality>] WfglWindow =
     { WfglSwapWindow : unit -> unit
-      WfglWindow : nativeint }
+      WfglPanelWindow : nativeint
+      WfglSdlWindowOpt : nativeint option }
 
 /// A window for rendering.
 type [<ReferenceEquality>] Window =
@@ -154,10 +155,13 @@ module SdlDeps =
                         let window = SDL.SDL_CreateWindow (windowConfig.WindowTitle, windowConfig.WindowX, windowConfig.WindowY, sdlConfig.ViewW, sdlConfig.ViewH, windowConfig.WindowFlags)
                         Right window
                     | ExistingWindow window ->
-                        let windowSdl = SDL.SDL_CreateWindowFrom window.WfglWindow
-                        Left (windowSdl, window))
+                        let sdlWindow = SDL.SDL_CreateWindowFrom window.WfglPanelWindow
+                        let wfglWindow = { window with WfglSdlWindowOpt = Some sdlWindow }
+                        Left wfglWindow)
                 (fun windowOpt ->
-                    match windowOpt with Right window | Left (window, _) -> SDL.SDL_DestroyWindow window
+                    match windowOpt with
+                    | Right window -> SDL.SDL_DestroyWindow window
+                    | Left window -> SDL.SDL_DestroyWindow (Option.get window.WfglSdlWindowOpt)
                     destroy ()) with
             | Left error -> Left error
             | Right (contextOrWindow, destroy) ->
@@ -186,8 +190,8 @@ module SdlDeps =
                                 | Right window ->
                                     SDL.SDL_RaiseWindow window
                                     SglWindow { SglWindow = window }
-                                | Left (_, window) ->
-                                    WfglWindow window
+                                | Left wfglWindow ->
+                                    WfglWindow wfglWindow
                             Right { WindowOpt = Some context; Config = sdlConfig; Destroy = destroy }
 
 type SdlDeps = SdlDeps.SdlDeps

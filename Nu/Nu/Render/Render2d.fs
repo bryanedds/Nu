@@ -687,9 +687,12 @@ type [<ReferenceEquality>] GlRenderer2d =
 
             // create SDL-OpenGL context if needed
             match window with
-            | SglWindow window -> OpenGL.Hl.CreateSglContext window.SglWindow |> ignore<nativeint>
-            | WfglWindow _ -> () // TODO: see if we can make current the GL context here so that threaded OpenGL works in Gaia.
-            OpenGL.Hl.Assert ()
+            | SglWindow window ->
+                OpenGL.Hl.CreateSglContext window.SglWindow |> ignore<nativeint>
+                OpenGL.Hl.Assert ()
+            | WfglWindow _ ->
+                // TODO: see if we can make current the GL context here so that threaded OpenGL works in Gaia.
+                OpenGL.Hl.Assert ()
 
             // listen to debug messages
             OpenGL.Hl.AttachDebugMessageCallback ()
