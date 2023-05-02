@@ -1186,7 +1186,7 @@ module PhysicallyBased =
          irradianceMap : uint,
          environmentFilterMap : uint,
          brdfTexture : uint,
-         lightMaps : int array,
+         lightMapEnableds : int array,
          lightMapOrigins : single array,
          lightMapMins : single array,
          lightMapSizes : single array,
@@ -1233,7 +1233,7 @@ module PhysicallyBased =
         Gl.Uniform1 (shader.IrradianceMapUniform, 7)
         Gl.Uniform1 (shader.EnvironmentFilterMapUniform, 8)
         Gl.Uniform1 (shader.BrdfTextureUniform, 9)
-        Gl.Uniform1 (shader.LightMapsUniform, lightMaps)
+        Gl.Uniform1 (shader.LightMapsUniform, lightMapEnableds)
         Gl.Uniform3 (shader.LightMapOriginsUniform, lightMapOrigins)
         Gl.Uniform3 (shader.LightMapMinsUniform, lightMapMins)
         Gl.Uniform3 (shader.LightMapSizesUniform, lightMapSizes)
