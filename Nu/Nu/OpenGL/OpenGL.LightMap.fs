@@ -75,11 +75,13 @@ module LightMap =
 
             // render to reflection cube map face
             let (eyeForward, eyeUp) = eyeRotations.[i]
+            let eyeRotationMatrix = Matrix4x4.CreateLookAt (v3Zero, eyeForward, eyeUp)
+            let eyeRotation = Quaternion.CreateFromRotationMatrix eyeRotationMatrix
             let viewAbsolute = m4Identity
             let viewRelative = Matrix4x4.CreateLookAt (origin, origin + eyeForward, eyeUp)
-            let viewSkyBox = Matrix4x4.Transpose (Matrix4x4.CreateLookAt (v3Zero, eyeForward, eyeUp)) // transpose = inverse rotation when rotation only
+            let viewSkyBox = Matrix4x4.Transpose eyeRotationMatrix // transpose = inverse rotation when rotation only
             render
-                false origin
+                false origin eyeRotation
                 viewAbsolute viewRelative viewSkyBox
                 geometryViewport geometryProjection
                 rasterViewport rasterProjection
