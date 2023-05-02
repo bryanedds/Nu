@@ -11,7 +11,7 @@
 #r "nuget: Prime.Scripting, 9.5.0"
 #r "nuget: System.Configuration.ConfigurationManager, 7.0.0"
 #r "../../Nu/Nu.Dependencies/SDL2-CS/netstandard2.0/SDL2-CS.dll"
-#r "../../Nu/Nu.Dependencies/TiledSharp.1.0.2/lib/netstandard2.0/TiledSharp.dll"
+#r "../../Nu/Nu.Dependencies/TiledSharp/lib/netstandard2.0/TiledSharp.dll"
 #r "../../Nu/Nu.Math/bin/Debug/netstandard2.0/Nu.Math.dll"
 #r "../../Nu/Nu/bin/Debug/net7.0/Nu.dll"
 

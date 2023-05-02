@@ -215,19 +215,19 @@
 
 	<ItemGroup>
 		<Reference Include="AssimpNet">
-			<HintPath>..\Nu.Dependencies\AssimpNet.09-26-22\netstandard1.3\AssimpNet.dll</HintPath>
+			<HintPath>..\Nu.Dependencies\AssimpNet\netstandard1.3\AssimpNet.dll</HintPath>
 		</Reference>
 		<Reference Include="BulletSharpPInvoke">
 			<HintPath>..\Nu.Dependencies\BulletSharpPInvoke\netstandard2.1\BulletSharp.dll</HintPath>
 		</Reference>
 		<Reference Include="OpenGL.Net">
-			<HintPath>..\Nu.Dependencies\OpenGL.NET.0.8.4\lib\netcoreapp2.2\OpenGL.Net.dll</HintPath>
+			<HintPath>..\Nu.Dependencies\OpenGL.NET\lib\netcoreapp2.2\OpenGL.Net.dll</HintPath>
 		</Reference>
 		<Reference Include="SDL2-CS">
 			<HintPath>..\Nu.Dependencies\SDL2-CS\netstandard2.0\SDL2-CS.dll</HintPath>
 		</Reference>
 		<Reference Include="TiledSharp">
-			<HintPath>..\Nu.Dependencies\TiledSharp.1.0.2\lib\netstandard2.0\TiledSharp.dll</HintPath>
+			<HintPath>..\Nu.Dependencies\TiledSharp\lib\netstandard2.0\TiledSharp.dll</HintPath>
 		</Reference>
 		<PackageReference Include="Csv" Version="1.0.58" />
 		<PackageReference Include="FParsec" Version="1.0.3" />

@@ -107,7 +107,7 @@ module Sprite =
 
         // finalize vao
         Gl.EnableVertexAttribArray 0u
-        Gl.VertexAttribPointer (0u, 2, VertexAttribType.Float, false, vertexSize, nativeint 0)
+        Gl.VertexAttribPointer (0u, 2, VertexAttribPointerType.Float, false, vertexSize, nativeint 0)
         Gl.BindVertexArray 0u
         Hl.Assert ()
 
