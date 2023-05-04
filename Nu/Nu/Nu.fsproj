@@ -106,10 +106,9 @@
 		<Compile Include="World\WorldDispatchers.fs" />
 		<Compile Include="World\WorldContent.fs" />
 		<Compile Include="World\WorldScripting.fs" />
-		<Compile Include="World\WorldModule2.fs" />
 		<Compile Include="World\WorldConsole.fs" />
+		<Compile Include="World\WorldModule2.fs" />
 		<Compile Include="World\WorldBindings.fs" />
-		<Compile Include="World\WorldStream.fs" />
 		<Compile Include="World\World.fs" />
 		<Compile Include="Program.fs" />
 		<None Include="GenerateInputBindings.fsx" />
