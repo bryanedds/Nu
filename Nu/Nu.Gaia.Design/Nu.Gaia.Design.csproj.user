@@ -14,6 +14,9 @@
     <Compile Update="GroupCreationForm.cs">
       <SubType>Form</SubType>
     </Compile>
+    <Compile Update="SelectablePanel.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
     <Compile Update="StartForm.cs">
       <SubType>Form</SubType>
     </Compile>
