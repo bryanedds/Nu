@@ -126,12 +126,13 @@ module WorldModule =
             world.AssertChosen ()
 
         /// Make the world.
-        static member make plugin eventDelegate dispatchers subsystems scriptingEnv ambientState quadtree octree activeGameDispatcher =
+        static member make plugin eventDelegate dispatchers scriptingEnv quadtree octree ambientState physicsEngine2d physicsEngine3d rendererProcess audioPlayer activeGameDispatcher =
             let config = AmbientState.getConfig ambientState
             let entityStates = SUMap.makeEmpty HashIdentity.Structural config
             let groupStates = UMap.makeEmpty HashIdentity.Structural config
             let screenStates = UMap.makeEmpty HashIdentity.Structural config
             let gameState = GameState.make activeGameDispatcher
+            let subsystems = { PhysicsEngine2d = physicsEngine2d; PhysicsEngine3d = physicsEngine3d; RendererProcess = rendererProcess; AudioPlayer = audioPlayer }
             let simulants = UMap.singleton HashIdentity.Structural config (Simulants.Game :> Simulant) None
             let worldExtension = { DestructionListRev = []; Dispatchers = dispatchers; Plugin = plugin; ScriptingEnv = scriptingEnv; ScriptingContext = Game () }
             let world =
