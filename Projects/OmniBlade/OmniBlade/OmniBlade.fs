@@ -52,7 +52,7 @@ module OmniBlade =
             base.Register (game, world)
 
         override this.Initialize (model, _) =
-            [Game.DesiredScreen :=
+            [Simulants.Game.DesiredScreen :=
                 match model with
                 | Gui gui ->
                     match gui with

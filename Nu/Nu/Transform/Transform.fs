@@ -15,10 +15,10 @@ module TransformMasks =
     let [<Literal>] InvalidatedMask =               0b000000000000000000000100u
     let [<Literal>] AbsoluteMask =                  0b000000000000000000001000u
     let [<Literal>] ImperativeMask =                0b000000000000000000010000u
-    let [<Literal>] PublishChangeEventsMask =       0b000000000000000000100000u
-    let [<Literal>] EnabledMask =                   0b000000000000000001000000u
-    let [<Literal>] VisibleMask =                   0b000000000000000010000000u
-    let [<Literal>] AlwaysUpdateMask =              0b000000000000000100000000u
+    let [<Literal>] EnabledMask =                   0b000000000000000000100000u
+    let [<Literal>] VisibleMask =                   0b000000000000000001000000u
+    let [<Literal>] AlwaysUpdateMask =              0b000000000000000010000000u
+    let [<Literal>] PublishChangeEventsMask =       0b000000000000000100000000u
     let [<Literal>] PublishPreUpdatesMask =         0b000000000000001000000000u
     let [<Literal>] PublishUpdatesMask =            0b000000000000010000000000u
     let [<Literal>] PublishPostUpdatesMask =        0b000000000000100000000000u
@@ -34,7 +34,7 @@ module TransformMasks =
     let [<Literal>] AnglesDirtyMask =               0b001000000000000000000000u
     let [<Literal>] RotationMatrixDirtyMask =       0b010000000000000000000000u
     let [<Literal>] PerimeterOrientedDirtyMask =    0b100000000000000000000000u
-    let [<Literal>] FlagsDefault =                  0b110001110100000011010001u
+    let [<Literal>] FlagsDefault =                  0b110001110100000001110001u
 
 // NOTE: opening masks for succintness.
 open TransformMasks
