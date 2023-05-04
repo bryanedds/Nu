@@ -1154,8 +1154,8 @@ module WorldTypes =
                 | _ -> failwith "Invalid Entity comparison (comparee not of type Entity)."
 
     /// The world's dispatchers (including facets).
-    /// NOTE: it would be nice to encapsulate this structure, but doing so would non-trivially
-    /// increase the number of parameters of World.make.
+    /// NOTE: it would be nice to encapsulate this structure, but doing so would non-trivially increase the number of
+    /// parameters of World.make, which is already rather long.
     and [<ReferenceEquality>] Dispatchers =
         { Facets : Map<string, Facet>
           EntityDispatchers : Map<string, EntityDispatcher>

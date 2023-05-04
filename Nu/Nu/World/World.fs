@@ -3,6 +3,7 @@
 
 namespace Nu
 open System
+open System.Collections.Generic
 open System.Reflection
 open System.Threading
 open SDL2
@@ -490,11 +491,37 @@ module WorldModule3 =
                     world (World.getSimulants world)
             world
 
-        /// Make an empty world.
-        static member makeEmpty (config : WorldConfig) =
+        /// Make the world.
+        static member make config plugin eventDelegate dispatchers scriptingEnv quadtree octree ambientState physicsEngine2d physicsEngine3d rendererProcess audioPlayer activeGameDispatcher =
+            Nu.init config.NuConfig // ensure game engine is initialized
+            let config = AmbientState.getConfig ambientState
+            let entityStates = SUMap.makeEmpty HashIdentity.Structural config
+            let groupStates = UMap.makeEmpty HashIdentity.Structural config
+            let screenStates = UMap.makeEmpty HashIdentity.Structural config
+            let gameState = GameState.make activeGameDispatcher
+            let subsystems = { PhysicsEngine2d = physicsEngine2d; PhysicsEngine3d = physicsEngine3d; RendererProcess = rendererProcess; AudioPlayer = audioPlayer }
+            let simulants = UMap.singleton HashIdentity.Structural config (Simulants.Game :> Simulant) None
+            let worldExtension = { DestructionListRev = []; Dispatchers = dispatchers; Plugin = plugin; ScriptingEnv = scriptingEnv; ScriptingContext = Game () }
+            let world =
+                { EventSystemDelegate = eventDelegate
+                  EntityCachedOpt = KeyedCache.make (KeyValuePair (Unchecked.defaultof<Entity>, entityStates)) Unchecked.defaultof<EntityState>
+                  EntityStates = entityStates
+                  GroupStates = groupStates
+                  ScreenStates = screenStates
+                  GameState = gameState
+                  EntityMounts = UMap.makeEmpty HashIdentity.Structural config
+                  Quadtree = MutantCache.make id quadtree
+                  Octree = MutantCache.make id octree
+                  SelectedEcsOpt = None
+                  AmbientState = ambientState
+                  Subsystems = subsystems
+                  Simulants = simulants
+                  WorldExtension = worldExtension }
+            let world = { world with GameState = Reflection.attachProperties GameState.copy gameState.Dispatcher gameState world }
+            World.choose world
 
-            // ensure game engine is initialized
-            Nu.init config.NuConfig
+        /// Make an empty world.
+        static member makeEmpty config =
 
             // make the default plug-in
             let plugin = NuPlugin ()
@@ -549,7 +576,7 @@ module WorldModule3 =
             let octree = World.makeOctree ()
 
             // make the world
-            let world = World.make plugin eventDelegate dispatchers scriptingEnv quadtree octree ambientState physicsEngine2d physicsEngine3d rendererProcess audioPlayer (snd defaultGameDispatcher)
+            let world = World.make config plugin eventDelegate dispatchers scriptingEnv quadtree octree ambientState physicsEngine2d physicsEngine3d rendererProcess audioPlayer (snd defaultGameDispatcher)
 
             // finally, register the game
             World.registerGame world
@@ -565,10 +592,7 @@ module WorldModule3 =
 
         /// Attempt to make the world, returning either a Right World on success, or a Left string
         /// (with an error message) on failure.
-        static member tryMake (sdlDeps : SdlDeps) config (plugin : NuPlugin) =
-
-            // ensure game engine is initialized
-            Nu.init config.NuConfig
+        static member tryMake sdlDeps config (plugin : NuPlugin) =
 
             // attempt to create asset graph
             match AssetGraph.tryMakeFromFile Assets.Global.AssetGraphFilePath with
@@ -667,7 +691,7 @@ module WorldModule3 =
                     let octree = World.makeOctree ()
 
                     // make the world
-                    let world = World.make plugin eventSystem dispatchers scriptingEnv quadtree octree ambientState physicsEngine2d physicsEngine3d rendererProcess audioPlayer activeGameDispatcher
+                    let world = World.make config plugin eventSystem dispatchers scriptingEnv quadtree octree ambientState physicsEngine2d physicsEngine3d rendererProcess audioPlayer activeGameDispatcher
 
                     // add the keyed values
                     let (kvps, world) = plugin.MakeKeyedValues world

@@ -125,34 +125,6 @@ module WorldModule =
         static member assertChosen (world : World) =
             world.AssertChosen ()
 
-        /// Make the world.
-        static member make plugin eventDelegate dispatchers scriptingEnv quadtree octree ambientState physicsEngine2d physicsEngine3d rendererProcess audioPlayer activeGameDispatcher =
-            let config = AmbientState.getConfig ambientState
-            let entityStates = SUMap.makeEmpty HashIdentity.Structural config
-            let groupStates = UMap.makeEmpty HashIdentity.Structural config
-            let screenStates = UMap.makeEmpty HashIdentity.Structural config
-            let gameState = GameState.make activeGameDispatcher
-            let subsystems = { PhysicsEngine2d = physicsEngine2d; PhysicsEngine3d = physicsEngine3d; RendererProcess = rendererProcess; AudioPlayer = audioPlayer }
-            let simulants = UMap.singleton HashIdentity.Structural config (Simulants.Game :> Simulant) None
-            let worldExtension = { DestructionListRev = []; Dispatchers = dispatchers; Plugin = plugin; ScriptingEnv = scriptingEnv; ScriptingContext = Game () }
-            let world =
-                { EventSystemDelegate = eventDelegate
-                  EntityCachedOpt = KeyedCache.make (KeyValuePair (Unchecked.defaultof<Entity>, entityStates)) Unchecked.defaultof<EntityState>
-                  EntityStates = entityStates
-                  GroupStates = groupStates
-                  ScreenStates = screenStates
-                  GameState = gameState
-                  EntityMounts = UMap.makeEmpty HashIdentity.Structural config
-                  Quadtree = MutantCache.make id quadtree
-                  Octree = MutantCache.make id octree
-                  SelectedEcsOpt = None
-                  AmbientState = ambientState
-                  Subsystems = subsystems
-                  Simulants = simulants
-                  WorldExtension = worldExtension }
-            let world = { world with GameState = Reflection.attachProperties GameState.copy gameState.Dispatcher gameState world }
-            World.choose world
-
     type World with // Caching
 
         /// Get the optional cached entity.
