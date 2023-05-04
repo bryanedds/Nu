@@ -525,14 +525,13 @@ module WorldModule3 =
                   RebuildOctree = World.rebuildOctree }
 
             // make the world's subsystems
-            let subsystems =
-                { PhysicsEngine2d = MockPhysicsEngine.make ()
-                  PhysicsEngine3d = MockPhysicsEngine.make ()
-                  RendererProcess =
-                    RendererInline
-                        ((fun _ -> MockRenderer3d.make () :> Renderer3d),
-                         (fun _ -> MockRenderer2d.make () :> Renderer2d))
-                  AudioPlayer = MockAudioPlayer.make () }
+            let physicsEngine2d = MockPhysicsEngine.make ()
+            let physicsEngine3d = MockPhysicsEngine.make ()
+            let rendererProcess =
+                RendererInline
+                    ((fun _ -> MockRenderer3d.make () :> Renderer3d),
+                     (fun _ -> MockRenderer2d.make () :> Renderer2d))
+            let audioPlayer = MockAudioPlayer.make ()
 
             // make the world's scripting environment
             let scriptingEnv = Scripting.Env.make ()
@@ -550,7 +549,7 @@ module WorldModule3 =
             let octree = World.makeOctree ()
 
             // make the world
-            let world = World.make plugin eventDelegate dispatchers subsystems scriptingEnv ambientState quadtree octree (snd defaultGameDispatcher)
+            let world = World.make plugin eventDelegate dispatchers scriptingEnv quadtree octree ambientState physicsEngine2d physicsEngine3d rendererProcess audioPlayer (snd defaultGameDispatcher)
 
             // finally, register the game
             World.registerGame world
@@ -618,34 +617,29 @@ module WorldModule3 =
                     | None -> GameDispatcher ()
 
                 // make the world's subsystems
-                let subsystems =
-                    let physicsEngine2d = AetherPhysicsEngine.make config.Imperative Constants.Physics.Gravity2dDefault
-                    let physicsEngine3d = BulletPhysicsEngine.make config.Imperative Constants.Physics.Gravity3dDefault
-                    let createRenderer3d =
-                        fun config ->
-                            match SdlDeps.getWindowOpt sdlDeps with
-                            | Some window -> GlRenderer3d.make window config :> Renderer3d
-                            | None -> MockRenderer3d.make () :> Renderer3d
-                    let createRenderer2d =
-                        fun config ->
-                            match SdlDeps.getWindowOpt sdlDeps with
-                            | Some window -> GlRenderer2d.make window config :> Renderer2d
-                            | None -> MockRenderer2d.make () :> Renderer2d
-                    let rendererProcess =
-                        if config.NuConfig.Unaccompanied
-                        then RendererThread (createRenderer3d, createRenderer2d) :> RendererProcess
-                        else RendererInline (createRenderer3d, createRenderer2d) :> RendererProcess
-                    rendererProcess.Start ()
-                    rendererProcess.EnqueueMessage2d (LoadRenderPackage2d Assets.Default.PackageName) // enqueue default package hint
-                    let audioPlayer =
-                        if SDL.SDL_WasInit SDL.SDL_INIT_AUDIO <> 0u
-                        then SdlAudioPlayer.make () :> AudioPlayer
-                        else MockAudioPlayer.make () :> AudioPlayer
-                    audioPlayer.EnqueueMessage (LoadAudioPackageMessage Assets.Default.PackageName) // enqueue default package hint
-                    { PhysicsEngine2d = physicsEngine2d
-                      PhysicsEngine3d = physicsEngine3d
-                      RendererProcess = rendererProcess
-                      AudioPlayer = audioPlayer }
+                let physicsEngine2d = AetherPhysicsEngine.make config.Imperative Constants.Physics.Gravity2dDefault
+                let physicsEngine3d = BulletPhysicsEngine.make config.Imperative Constants.Physics.Gravity3dDefault
+                let createRenderer3d =
+                    fun config ->
+                        match SdlDeps.getWindowOpt sdlDeps with
+                        | Some window -> GlRenderer3d.make window config :> Renderer3d
+                        | None -> MockRenderer3d.make () :> Renderer3d
+                let createRenderer2d =
+                    fun config ->
+                        match SdlDeps.getWindowOpt sdlDeps with
+                        | Some window -> GlRenderer2d.make window config :> Renderer2d
+                        | None -> MockRenderer2d.make () :> Renderer2d
+                let rendererProcess =
+                    if config.NuConfig.Unaccompanied
+                    then RendererThread (createRenderer3d, createRenderer2d) :> RendererProcess
+                    else RendererInline (createRenderer3d, createRenderer2d) :> RendererProcess
+                rendererProcess.Start ()
+                rendererProcess.EnqueueMessage2d (LoadRenderPackage2d Assets.Default.PackageName) // enqueue default package hint
+                let audioPlayer =
+                    if SDL.SDL_WasInit SDL.SDL_INIT_AUDIO <> 0u
+                    then SdlAudioPlayer.make () :> AudioPlayer
+                    else MockAudioPlayer.make () :> AudioPlayer
+                audioPlayer.EnqueueMessage (LoadAudioPackageMessage Assets.Default.PackageName) // enqueue default package hint
 
                 // attempt to make the overlayer
                 let intrinsicOverlays = World.makeIntrinsicOverlays dispatchers.Facets dispatchers.EntityDispatchers
@@ -673,7 +667,7 @@ module WorldModule3 =
                     let octree = World.makeOctree ()
 
                     // make the world
-                    let world = World.make plugin eventSystem dispatchers subsystems scriptingEnv ambientState quadtree octree activeGameDispatcher
+                    let world = World.make plugin eventSystem dispatchers scriptingEnv quadtree octree ambientState physicsEngine2d physicsEngine3d rendererProcess audioPlayer activeGameDispatcher
 
                     // add the keyed values
                     let (kvps, world) = plugin.MakeKeyedValues world

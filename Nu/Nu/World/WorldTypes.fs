@@ -1154,6 +1154,8 @@ module WorldTypes =
                 | _ -> failwith "Invalid Entity comparison (comparee not of type Entity)."
 
     /// The world's dispatchers (including facets).
+    /// NOTE: it would be nice to encapsulate this structure, but doing so would non-trivially
+    /// increase the number of parameters of World.make.
     and [<ReferenceEquality>] Dispatchers =
         { Facets : Map<string, Facet>
           EntityDispatchers : Map<string, EntityDispatcher>
@@ -1166,7 +1168,7 @@ module WorldTypes =
           RebuildOctree : World -> Entity Octree }
 
     /// The subsystems contained by the engine.
-    and [<ReferenceEquality>] Subsystems =
+    and [<ReferenceEquality>] internal Subsystems =
         { PhysicsEngine2d : PhysicsEngine
           PhysicsEngine3d : PhysicsEngine
           RendererProcess : RendererProcess
@@ -1492,9 +1494,6 @@ type Entity = WorldTypes.Entity
 
 /// The world's dispatchers (including facets).
 type Dispatchers = WorldTypes.Dispatchers
-
-/// The subsystems contained by the engine.
-type Subsystems = WorldTypes.Subsystems
 
 /// The world, in a functional programming sense. Hosts the game object, the dependencies needed
 /// to implement a game, messages to by consumed by the various engine sub-systems, and general
