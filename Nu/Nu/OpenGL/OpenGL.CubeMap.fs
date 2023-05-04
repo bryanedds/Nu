@@ -58,16 +58,12 @@ module CubeMap =
             Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureWrapR, int TextureWrapMode.ClampToEdge)
             Right cubeMap
         | Some error ->
-            Texture.DeleteTexture cubeMap
+            Gl.DeleteTextures [|cubeMap|]
             Left error
 
     /// Attempt to create a cube map from 6 files.
     let TryCreateCubeMap (faceRightFilePath, faceLeftFilePath, faceTopFilePath, faceBottomFilePath, faceBackFilePath, faceFrontFilePath) =
         TryCreateCubeMapInternal (None, faceRightFilePath, faceLeftFilePath, faceTopFilePath, faceBottomFilePath, faceBackFilePath, faceFrontFilePath)
-
-    /// Delete a cube map.
-    let DeleteCubeMap (cubeMap : uint) =
-        Gl.DeleteTextures cubeMap
 
     /// Attempt to create a cube map from 6 files.
     let TryCreateCubeMapMemoized (cubeMapMemoKey, cubeMapMemo) =
@@ -107,14 +103,14 @@ module CubeMap =
     let DeleteCubeMapMemoized cubeMapKey (cubeMapMemo : CubeMapMemo) =
         match cubeMapMemo.CubeMaps.TryGetValue cubeMapKey with
         | (true, cubeMap) ->
-            DeleteCubeMap cubeMap
+            Gl.DeleteTextures [|cubeMap|]
             cubeMapMemo.CubeMaps.Remove cubeMapKey |> ignore<bool>
         | (false, _) -> ()
 
     /// Delete memoized cube maps.
     let DeleteCubeMapsMemoized (cubeMapMemo) =
         for entry in cubeMapMemo.CubeMaps do
-            DeleteCubeMap entry.Value
+            Gl.DeleteTextures [|entry.Value|]
         cubeMapMemo.CubeMaps.Clear ()
 
     /// Describes some cube map geometry that's loaded into VRAM.

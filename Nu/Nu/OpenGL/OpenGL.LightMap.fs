@@ -362,6 +362,7 @@ module LightMap =
 
     /// Destroy a light map.
     let DestroyLightMap lightMap =
-        CubeMap.DeleteCubeMap lightMap.ReflectionMap
-        CubeMap.DeleteCubeMap lightMap.IrradianceMap
-        CubeMap.DeleteCubeMap lightMap.EnvironmentFilterMap
+        Gl.DeleteTextures
+            [|lightMap.ReflectionMap
+              lightMap.IrradianceMap
+              lightMap.EnvironmentFilterMap|]

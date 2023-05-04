@@ -46,7 +46,7 @@ module Symbolics =
             Log.info ("Failed to load symbol file '" + asset.FilePath + "' for package '" + packageName + "' due to: " + scstring exn)
             None
 
-    /// Try to load a symbol package with the given name.
+    /// Attempt to load a symbol package with the given name.
     let tryLoadSymbolPackage packageName metadata symbolics =
         match AssetGraph.tryMakeFromFile Assets.Global.AssetGraphFilePath with
         | Right assetGraph ->
@@ -68,6 +68,7 @@ module Symbolics =
         | Left error ->
             Log.info ("Symbol package load failed due to unloadable asset graph due to: '" + error)
 
+    /// Attempt to load a symbol with the given asset tag.
     let tryLoadSymbol (assetTag : Symbol AssetTag) metadata symbolics =
         match Dictionary.tryFind assetTag.PackageName symbolics.SymbolPackages with
         | Some package -> Dictionary.tryFind assetTag.AssetName package.Assets
@@ -85,7 +86,7 @@ module Symbolics =
     /// Try to find a symbol with the given asset tag.
     let tryGetSymbol assetTag metadata symbolics =
         tryLoadSymbol assetTag metadata symbolics |> Option.map snd
-        
+
     /// Try to find the symbols with the given asset tags.
     let tryGetSymbols metadata assetTags symbolics =
         List.foldBack

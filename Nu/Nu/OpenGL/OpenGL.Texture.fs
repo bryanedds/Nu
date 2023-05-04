@@ -140,10 +140,6 @@ module Texture =
     let TryCreateTextureFiltered filePath =
         TryCreateTexture (TextureMinFilter.LinearMipmapLinear, TextureMagFilter.Linear, true, filePath)
 
-    /// Delete a texture.
-    let DeleteTexture (texture : uint) =
-        Gl.DeleteTextures texture
-
     /// Attempt to create a memoized texture from a file.
     let TryCreateTextureMemoized (minFilter, magFilter, generateMipmaps, filePath : string, textureMemo) =
 
@@ -187,5 +183,5 @@ module Texture =
     /// Delete memoized textures.
     let DeleteTexturesMemoized textureMemo =
         for entry in textureMemo.Textures do
-            DeleteTexture (snd entry.Value)
+            Gl.DeleteTextures [|snd entry.Value|]
         textureMemo.Textures.Clear ()

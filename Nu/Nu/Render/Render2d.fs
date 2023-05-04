@@ -159,7 +159,7 @@ type [<ReferenceEquality>] GlRenderer2d =
     static member private freeRenderAsset renderAsset renderer =
         GlRenderer2d.invalidateCaches renderer
         match renderAsset with
-        | TextureAsset (_, _, texture) -> OpenGL.Texture.DeleteTexture texture
+        | TextureAsset (_, _, texture) -> OpenGL.Gl.DeleteTextures [|texture|]
         | FontAsset (_, _, font) -> SDL_ttf.TTF_CloseFont font
         | CubeMapAsset _ -> ()
         | StaticModelAsset _ -> ()
