@@ -152,7 +152,4 @@ module Framebuffer =
     let DestroyGeometryBuffers (position, albedo, material, normalAndHeight, renderbuffer, framebuffer) =
         Gl.DeleteRenderbuffers [|renderbuffer|]
         Gl.DeleteFramebuffers [|framebuffer|]
-        Gl.DeleteTextures [|position|]
-        Gl.DeleteTextures [|albedo|]
-        Gl.DeleteTextures [|material|]
-        Gl.DeleteTextures [|normalAndHeight|]
+        Gl.DeleteTextures [|position; albedo; material; normalAndHeight|]

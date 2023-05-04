@@ -17,7 +17,7 @@ open Nu
 type [<StructuralEquality; NoComparison; Struct>] Presence =
     /// Inside an enclosed structure so you have to be close to see them.
     | Enclosed
-    /// Outside an enclosed structure so visible from a distance.
+    /// Outside an enclosed structure so visible near and from a distance.
     | Exposed
     /// Visible for great distances but invisible once as close as Exposed or Enclosed.
     | Imposter

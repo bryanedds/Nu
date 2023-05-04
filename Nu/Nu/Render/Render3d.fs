@@ -1612,17 +1612,17 @@ type [<ReferenceEquality>] GlRenderer3d =
             OpenGL.Gl.DeleteVertexArrays [|renderer.RenderCubeMapGeometry.CubeMapVao|] // TODO: also release vertex and index buffers?
             OpenGL.Gl.DeleteVertexArrays [|renderer.RenderBillboardGeometry.PhysicallyBasedVao|] // TODO: also release vertex and index buffers?
             OpenGL.Gl.DeleteVertexArrays [|renderer.RenderPhysicallyBasedQuad.PhysicallyBasedVao|] // TODO: also release vertex and index buffers?
-            OpenGL.CubeMap.DeleteCubeMap renderer.RenderCubeMap
-            OpenGL.CubeMap.DeleteCubeMap renderer.RenderIrradianceMap
-            OpenGL.CubeMap.DeleteCubeMap renderer.RenderEnvironmentFilterMap
-            OpenGL.Texture.DeleteTexture renderer.RenderBrdfTexture
-            OpenGL.Texture.DeleteTexture renderer.RenderPhysicallyBasedMaterial.AlbedoTexture
-            OpenGL.Texture.DeleteTexture renderer.RenderPhysicallyBasedMaterial.RoughnessTexture
-            OpenGL.Texture.DeleteTexture renderer.RenderPhysicallyBasedMaterial.MetallicTexture
-            OpenGL.Texture.DeleteTexture renderer.RenderPhysicallyBasedMaterial.AmbientOcclusionTexture
-            OpenGL.Texture.DeleteTexture renderer.RenderPhysicallyBasedMaterial.EmissionTexture
-            OpenGL.Texture.DeleteTexture renderer.RenderPhysicallyBasedMaterial.NormalTexture
-            OpenGL.Texture.DeleteTexture renderer.RenderPhysicallyBasedMaterial.HeightTexture
+            OpenGL.Gl.DeleteTextures [|renderer.RenderCubeMap|]
+            OpenGL.Gl.DeleteTextures [|renderer.RenderIrradianceMap|]
+            OpenGL.Gl.DeleteTextures [|renderer.RenderEnvironmentFilterMap|]
+            OpenGL.Gl.DeleteTextures [|renderer.RenderBrdfTexture|]
+            OpenGL.Gl.DeleteTextures [|renderer.RenderPhysicallyBasedMaterial.AlbedoTexture|]
+            OpenGL.Gl.DeleteTextures [|renderer.RenderPhysicallyBasedMaterial.RoughnessTexture|]
+            OpenGL.Gl.DeleteTextures [|renderer.RenderPhysicallyBasedMaterial.MetallicTexture|]
+            OpenGL.Gl.DeleteTextures [|renderer.RenderPhysicallyBasedMaterial.AmbientOcclusionTexture|]
+            OpenGL.Gl.DeleteTextures [|renderer.RenderPhysicallyBasedMaterial.EmissionTexture|]
+            OpenGL.Gl.DeleteTextures [|renderer.RenderPhysicallyBasedMaterial.NormalTexture|]
+            OpenGL.Gl.DeleteTextures [|renderer.RenderPhysicallyBasedMaterial.HeightTexture|]
             for lightMap in renderer.RenderLightMaps.Values do
                 OpenGL.LightMap.DestroyLightMap lightMap
             renderer.RenderLightMaps.Clear ()
