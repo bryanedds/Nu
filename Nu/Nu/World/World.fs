@@ -556,8 +556,8 @@ module WorldModule3 =
             let physicsEngine3d = MockPhysicsEngine.make ()
             let rendererProcess =
                 RendererInline
-                    ((fun _ -> MockRenderer3d.make () :> Renderer3d),
-                     (fun _ -> MockRenderer2d.make () :> Renderer2d))
+                    ((fun _ -> MockRenderer2d.make () :> Renderer2d),
+                     (fun _ -> MockRenderer3d.make () :> Renderer3d))
             let audioPlayer = MockAudioPlayer.make ()
 
             // make the world's scripting environment
@@ -655,8 +655,8 @@ module WorldModule3 =
                         | None -> MockRenderer2d.make () :> Renderer2d
                 let rendererProcess =
                     if config.NuConfig.Unaccompanied
-                    then RendererThread (createRenderer3d, createRenderer2d) :> RendererProcess
-                    else RendererInline (createRenderer3d, createRenderer2d) :> RendererProcess
+                    then RendererThread (createRenderer2d, createRenderer3d) :> RendererProcess
+                    else RendererInline (createRenderer2d, createRenderer3d) :> RendererProcess
                 rendererProcess.Start ()
                 rendererProcess.EnqueueMessage2d (LoadRenderPackage2d Assets.Default.PackageName) // enqueue default package hint
                 let audioPlayer =

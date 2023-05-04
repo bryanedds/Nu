@@ -25,7 +25,7 @@ type RendererProcess =
         end
 
 /// A non-threaded render process.
-type RendererInline (createRenderer3d, createRenderer2d) =
+type RendererInline (createRenderer2d, createRenderer3d) =
 
     let mutable started = false
     let mutable terminated = false
@@ -88,7 +88,7 @@ type RendererInline (createRenderer3d, createRenderer2d) =
             | None -> raise (InvalidOperationException "Redundant Terminate calls.")
 
 /// A threaded render process.
-type RendererThread (createRenderer3d, createRenderer2d) =
+type RendererThread (createRenderer2d, createRenderer3d) =
 
     let mutable taskOpt = None
     let [<VolatileField>] mutable started = false
