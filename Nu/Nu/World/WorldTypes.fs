@@ -1154,10 +1154,7 @@ module WorldTypes =
                 | _ -> failwith "Invalid Entity comparison (comparee not of type Entity)."
 
     /// The world's dispatchers (including facets).
-    /// 
-    /// I would prefer this type to be inlined in World, but it has been extracted to its own white-box
-    /// type for efficiency reasons.
-    and [<ReferenceEquality>] internal Dispatchers =
+    and [<ReferenceEquality>] Dispatchers =
         { Facets : Map<string, Facet>
           EntityDispatchers : Map<string, EntityDispatcher>
           GroupDispatchers : Map<string, GroupDispatcher>
@@ -1168,8 +1165,8 @@ module WorldTypes =
           RebuildQuadtree : World -> Entity Quadtree
           RebuildOctree : World -> Entity Octree }
 
-    /// The subsystems encapsulated by the engine.
-    and [<ReferenceEquality>] internal Subsystems =
+    /// The subsystems contained by the engine.
+    and [<ReferenceEquality>] Subsystems =
         { PhysicsEngine2d : PhysicsEngine
           PhysicsEngine3d : PhysicsEngine
           RendererProcess : RendererProcess
@@ -1492,6 +1489,12 @@ type Group = WorldTypes.Group
 /// OPTIMIZATION: Includes pre-constructed entity event addresses to avoid reconstructing
 /// new ones for each entity every frame.
 type Entity = WorldTypes.Entity
+
+/// The world's dispatchers (including facets).
+type Dispatchers = WorldTypes.Dispatchers
+
+/// The subsystems contained by the engine.
+type Subsystems = WorldTypes.Subsystems
 
 /// The world, in a functional programming sense. Hosts the game object, the dependencies needed
 /// to implement a game, messages to by consumed by the various engine sub-systems, and general
