@@ -138,7 +138,7 @@ namespace Nu.Gaia.Design
             //Gl.Flush();
 
             // swap
-            wglSwapBuffers(hdc);
+            Wgl.UnsafeNativeMethods.GdiSwapBuffersFast(hdc);
         }
 
         protected override void OnMouseDown(MouseEventArgs e)
@@ -155,10 +155,6 @@ namespace Nu.Gaia.Design
             if (keyData == Keys.A || keyData == Keys.D) return true;
             return base.IsInputKey(keyData);
         }
-
-        // NOTE: for some reason, OpenGL.Net does not seem to expose this function, so we retrieve it directly.
-        [DllImport("opengl32.dll")]
-        private static extern bool wglSwapBuffers(IntPtr hdc);
 
         [DllImport("user32.dll")]
         static extern IntPtr GetDC(IntPtr hwnd);

@@ -152,6 +152,8 @@ type RendererThread (createRenderer2d, createRenderer3d) =
 
     member private this.Run () =
 
+        //OpenGL.Wgl.MakeCurrent
+
         // create 3d renderer
         let renderer3d = createRenderer3d { ShouldInitializeContext = true; ShouldBeginFrame = true; ShouldEndFrame = false } : Renderer3d
 
