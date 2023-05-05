@@ -63,7 +63,7 @@ namespace Nu.Gaia.Design
             splitContainer9 = new SplitContainer();
             groupTabControl = new TabControl();
             tabPage = new TabPage();
-            displayPanel = new SelectablePanel();
+            displayPanel = new GlControl();
             rolloutTabControl = new TabControl();
             propertyEditorTabPage = new TabPage();
             propertyEditor = new SplitContainer();
@@ -253,7 +253,7 @@ namespace Nu.Gaia.Design
             // menuStrip
             // 
             menuStrip.Enabled = false;
-            menuStrip.Font = new Font("Segoe UI", 10F, FontStyle.Regular, GraphicsUnit.Point);
+            menuStrip.Font = new System.Drawing.Font("Segoe UI", 10F, FontStyle.Regular, GraphicsUnit.Point);
             menuStrip.Location = new Point(0, 0);
             menuStrip.Name = "menuStrip";
             menuStrip.Padding = new Padding(5, 2, 0, 2);
@@ -475,8 +475,8 @@ namespace Nu.Gaia.Design
             // hierarchySelectButton
             // 
             hierarchySelectButton.DisplayStyle = ToolStripItemDisplayStyle.Text;
-            hierarchySelectButton.Image = (Image)resources.GetObject("hierarchySelectButton.Image");
-            hierarchySelectButton.ImageTransparentColor = Color.Magenta;
+            hierarchySelectButton.Image = (System.Drawing.Image)resources.GetObject("hierarchySelectButton.Image");
+            hierarchySelectButton.ImageTransparentColor = System.Drawing.Color.Magenta;
             hierarchySelectButton.Name = "hierarchySelectButton";
             hierarchySelectButton.Size = new Size(42, 22);
             hierarchySelectButton.Text = "Select";
@@ -489,8 +489,8 @@ namespace Nu.Gaia.Design
             // hierarchyCollapseButton
             // 
             hierarchyCollapseButton.DisplayStyle = ToolStripItemDisplayStyle.Text;
-            hierarchyCollapseButton.Image = (Image)resources.GetObject("hierarchyCollapseButton.Image");
-            hierarchyCollapseButton.ImageTransparentColor = Color.Magenta;
+            hierarchyCollapseButton.Image = (System.Drawing.Image)resources.GetObject("hierarchyCollapseButton.Image");
+            hierarchyCollapseButton.ImageTransparentColor = System.Drawing.Color.Magenta;
             hierarchyCollapseButton.Name = "hierarchyCollapseButton";
             hierarchyCollapseButton.Size = new Size(56, 22);
             hierarchyCollapseButton.Text = "Collapse";
@@ -552,18 +552,13 @@ namespace Nu.Gaia.Design
             // 
             // displayPanel
             // 
-            displayPanel.BackColor = Color.FromArgb(64, 64, 64);
-            displayPanel.ColorBits = 32U;
+            displayPanel.BackColor = System.Drawing.Color.FromArgb(64, 64, 64);
             displayPanel.ContextMenuStrip = contextMenuStrip;
-            displayPanel.ContextVersion = null;
-            displayPanel.DepthBits = 24U;
             displayPanel.Dock = DockStyle.Fill;
             displayPanel.Location = new Point(0, 0);
             displayPanel.Margin = new Padding(2);
-            displayPanel.MultisampleBits = 0U;
             displayPanel.Name = "displayPanel";
             displayPanel.Size = new Size(1286, 627);
-            displayPanel.StencilBits = 8U;
             displayPanel.TabIndex = 0;
             // 
             // rolloutTabControl
@@ -695,7 +690,7 @@ namespace Nu.Gaia.Design
             // propertyValueTextBox
             // 
             propertyValueTextBox.Dock = DockStyle.Fill;
-            propertyValueTextBox.Font = new Font("Lucida Console", 9F, FontStyle.Regular, GraphicsUnit.Point);
+            propertyValueTextBox.Font = new System.Drawing.Font("Lucida Console", 9F, FontStyle.Regular, GraphicsUnit.Point);
             propertyValueTextBox.Location = new Point(0, 0);
             propertyValueTextBox.Multiline = true;
             propertyValueTextBox.Name = "propertyValueTextBox";
@@ -760,7 +755,7 @@ namespace Nu.Gaia.Design
             // assetGraphTextBox
             // 
             assetGraphTextBox.Dock = DockStyle.Fill;
-            assetGraphTextBox.Font = new Font("Lucida Console", 9F, FontStyle.Regular, GraphicsUnit.Point);
+            assetGraphTextBox.Font = new System.Drawing.Font("Lucida Console", 9F, FontStyle.Regular, GraphicsUnit.Point);
             assetGraphTextBox.Location = new Point(0, 0);
             assetGraphTextBox.Multiline = true;
             assetGraphTextBox.Name = "assetGraphTextBox";
@@ -825,7 +820,7 @@ namespace Nu.Gaia.Design
             // overlayerTextBox
             // 
             overlayerTextBox.Dock = DockStyle.Fill;
-            overlayerTextBox.Font = new Font("Lucida Console", 9F, FontStyle.Regular, GraphicsUnit.Point);
+            overlayerTextBox.Font = new System.Drawing.Font("Lucida Console", 9F, FontStyle.Regular, GraphicsUnit.Point);
             overlayerTextBox.Location = new Point(0, 0);
             overlayerTextBox.Multiline = true;
             overlayerTextBox.Name = "overlayerTextBox";
@@ -867,7 +862,7 @@ namespace Nu.Gaia.Design
             // evalInputTextBox
             // 
             evalInputTextBox.Dock = DockStyle.Fill;
-            evalInputTextBox.Font = new Font("Lucida Console", 9F, FontStyle.Regular, GraphicsUnit.Point);
+            evalInputTextBox.Font = new System.Drawing.Font("Lucida Console", 9F, FontStyle.Regular, GraphicsUnit.Point);
             evalInputTextBox.Location = new Point(0, 0);
             evalInputTextBox.Multiline = true;
             evalInputTextBox.Name = "evalInputTextBox";
@@ -933,7 +928,7 @@ namespace Nu.Gaia.Design
             // evalOutputTextBox
             // 
             evalOutputTextBox.Dock = DockStyle.Fill;
-            evalOutputTextBox.Font = new Font("Lucida Console", 9F, FontStyle.Regular, GraphicsUnit.Point);
+            evalOutputTextBox.Font = new System.Drawing.Font("Lucida Console", 9F, FontStyle.Regular, GraphicsUnit.Point);
             evalOutputTextBox.Location = new Point(0, 0);
             evalOutputTextBox.Multiline = true;
             evalOutputTextBox.Name = "evalOutputTextBox";
@@ -998,7 +993,7 @@ namespace Nu.Gaia.Design
             // preludeTextBox
             // 
             preludeTextBox.Dock = DockStyle.Fill;
-            preludeTextBox.Font = new Font("Lucida Console", 9F, FontStyle.Regular, GraphicsUnit.Point);
+            preludeTextBox.Font = new System.Drawing.Font("Lucida Console", 9F, FontStyle.Regular, GraphicsUnit.Point);
             preludeTextBox.Location = new Point(0, 0);
             preludeTextBox.Multiline = true;
             preludeTextBox.Name = "preludeTextBox";
@@ -1075,7 +1070,7 @@ namespace Nu.Gaia.Design
             // eventFilterTextBox
             // 
             eventFilterTextBox.Dock = DockStyle.Fill;
-            eventFilterTextBox.Font = new Font("Lucida Console", 9F, FontStyle.Regular, GraphicsUnit.Point);
+            eventFilterTextBox.Font = new System.Drawing.Font("Lucida Console", 9F, FontStyle.Regular, GraphicsUnit.Point);
             eventFilterTextBox.Location = new Point(0, 0);
             eventFilterTextBox.Multiline = true;
             eventFilterTextBox.Name = "eventFilterTextBox";
@@ -1211,7 +1206,7 @@ namespace Nu.Gaia.Design
             // 
             // positionSnapTextBox
             // 
-            positionSnapTextBox.Font = new Font("Tahoma", 8.25F, FontStyle.Regular, GraphicsUnit.Point);
+            positionSnapTextBox.Font = new System.Drawing.Font("Tahoma", 8.25F, FontStyle.Regular, GraphicsUnit.Point);
             positionSnapTextBox.Name = "positionSnapTextBox";
             positionSnapTextBox.Size = new Size(28, 25);
             positionSnapTextBox.ToolTipText = "The increments at which to snap entity position.";
@@ -1224,7 +1219,7 @@ namespace Nu.Gaia.Design
             // 
             // degreesSnapTextBox
             // 
-            degreesSnapTextBox.Font = new Font("Tahoma", 8.25F, FontStyle.Regular, GraphicsUnit.Point);
+            degreesSnapTextBox.Font = new System.Drawing.Font("Tahoma", 8.25F, FontStyle.Regular, GraphicsUnit.Point);
             degreesSnapTextBox.Name = "degreesSnapTextBox";
             degreesSnapTextBox.Size = new Size(28, 25);
             degreesSnapTextBox.ToolTipText = "The increments (in degrees) at which to snap entity rotation.";
@@ -1232,8 +1227,8 @@ namespace Nu.Gaia.Design
             // createEntityButton
             // 
             createEntityButton.DisplayStyle = ToolStripItemDisplayStyle.Text;
-            createEntityButton.Image = (Image)resources.GetObject("createEntityButton.Image");
-            createEntityButton.ImageTransparentColor = Color.Magenta;
+            createEntityButton.Image = (System.Drawing.Image)resources.GetObject("createEntityButton.Image");
+            createEntityButton.ImageTransparentColor = System.Drawing.Color.Magenta;
             createEntityButton.Name = "createEntityButton";
             createEntityButton.Size = new Size(45, 22);
             createEntityButton.Text = "Create";
@@ -1243,7 +1238,7 @@ namespace Nu.Gaia.Design
             // 
             createEntityComboBox.DropDownStyle = ComboBoxStyle.DropDownList;
             createEntityComboBox.DropDownWidth = 10;
-            createEntityComboBox.Font = new Font("Tahoma", 8.25F, FontStyle.Regular, GraphicsUnit.Point);
+            createEntityComboBox.Font = new System.Drawing.Font("Tahoma", 8.25F, FontStyle.Regular, GraphicsUnit.Point);
             createEntityComboBox.Name = "createEntityComboBox";
             createEntityComboBox.Size = new Size(198, 25);
             createEntityComboBox.ToolTipText = "The type of dispatcher to create an entity with.";
@@ -1257,7 +1252,7 @@ namespace Nu.Gaia.Design
             // overlayComboBox
             // 
             overlayComboBox.DropDownStyle = ComboBoxStyle.DropDownList;
-            overlayComboBox.Font = new Font("Tahoma", 8.25F, FontStyle.Regular, GraphicsUnit.Point);
+            overlayComboBox.Font = new System.Drawing.Font("Tahoma", 8.25F, FontStyle.Regular, GraphicsUnit.Point);
             overlayComboBox.Name = "overlayComboBox";
             overlayComboBox.Size = new Size(198, 25);
             overlayComboBox.ToolTipText = "The type of overlay to create an entity with.";
@@ -1273,15 +1268,15 @@ namespace Nu.Gaia.Design
             createElevationMinusButton.AutoSize = false;
             createElevationMinusButton.AutoToolTip = false;
             createElevationMinusButton.DisplayStyle = ToolStripItemDisplayStyle.Text;
-            createElevationMinusButton.Image = (Image)resources.GetObject("createElevationMinusButton.Image");
-            createElevationMinusButton.ImageTransparentColor = Color.Magenta;
+            createElevationMinusButton.Image = (System.Drawing.Image)resources.GetObject("createElevationMinusButton.Image");
+            createElevationMinusButton.ImageTransparentColor = System.Drawing.Color.Magenta;
             createElevationMinusButton.Name = "createElevationMinusButton";
             createElevationMinusButton.Size = new Size(17, 22);
             createElevationMinusButton.Text = "[-";
             // 
             // createElevationTextBox
             // 
-            createElevationTextBox.Font = new Font("Tahoma", 8.25F, FontStyle.Regular, GraphicsUnit.Point);
+            createElevationTextBox.Font = new System.Drawing.Font("Tahoma", 8.25F, FontStyle.Regular, GraphicsUnit.Point);
             createElevationTextBox.Name = "createElevationTextBox";
             createElevationTextBox.Size = new Size(23, 25);
             createElevationTextBox.ToolTipText = "The elevation to create an entity with.";
@@ -1291,8 +1286,8 @@ namespace Nu.Gaia.Design
             createElevationPlusButton.AutoSize = false;
             createElevationPlusButton.AutoToolTip = false;
             createElevationPlusButton.DisplayStyle = ToolStripItemDisplayStyle.Text;
-            createElevationPlusButton.Image = (Image)resources.GetObject("createElevationPlusButton.Image");
-            createElevationPlusButton.ImageTransparentColor = Color.Magenta;
+            createElevationPlusButton.Image = (System.Drawing.Image)resources.GetObject("createElevationPlusButton.Image");
+            createElevationPlusButton.ImageTransparentColor = System.Drawing.Color.Magenta;
             createElevationPlusButton.Name = "createElevationPlusButton";
             createElevationPlusButton.Size = new Size(17, 22);
             createElevationPlusButton.Text = "+]";
@@ -1305,8 +1300,8 @@ namespace Nu.Gaia.Design
             // quickSizeToolStripButton
             // 
             quickSizeToolStripButton.DisplayStyle = ToolStripItemDisplayStyle.Text;
-            quickSizeToolStripButton.Image = (Image)resources.GetObject("quickSizeToolStripButton.Image");
-            quickSizeToolStripButton.ImageTransparentColor = Color.Magenta;
+            quickSizeToolStripButton.Image = (System.Drawing.Image)resources.GetObject("quickSizeToolStripButton.Image");
+            quickSizeToolStripButton.ImageTransparentColor = System.Drawing.Color.Magenta;
             quickSizeToolStripButton.Name = "quickSizeToolStripButton";
             quickSizeToolStripButton.Size = new Size(65, 22);
             quickSizeToolStripButton.Text = "Quick Size";
@@ -1320,8 +1315,8 @@ namespace Nu.Gaia.Design
             // resetEyeButton
             // 
             resetEyeButton.DisplayStyle = ToolStripItemDisplayStyle.Text;
-            resetEyeButton.Image = (Image)resources.GetObject("resetEyeButton.Image");
-            resetEyeButton.ImageTransparentColor = Color.Magenta;
+            resetEyeButton.Image = (System.Drawing.Image)resources.GetObject("resetEyeButton.Image");
+            resetEyeButton.ImageTransparentColor = System.Drawing.Color.Magenta;
             resetEyeButton.Name = "resetEyeButton";
             resetEyeButton.Size = new Size(60, 22);
             resetEyeButton.Text = "Reset Eye";
@@ -1335,8 +1330,8 @@ namespace Nu.Gaia.Design
             // reloadAssetsButton
             // 
             reloadAssetsButton.DisplayStyle = ToolStripItemDisplayStyle.Text;
-            reloadAssetsButton.Image = (Image)resources.GetObject("reloadAssetsButton.Image");
-            reloadAssetsButton.ImageTransparentColor = Color.Magenta;
+            reloadAssetsButton.Image = (System.Drawing.Image)resources.GetObject("reloadAssetsButton.Image");
+            reloadAssetsButton.ImageTransparentColor = System.Drawing.Color.Magenta;
             reloadAssetsButton.Name = "reloadAssetsButton";
             reloadAssetsButton.Size = new Size(52, 22);
             reloadAssetsButton.Text = "[Assets]";
@@ -1351,9 +1346,9 @@ namespace Nu.Gaia.Design
             // 
             runButton.CheckOnClick = true;
             runButton.DisplayStyle = ToolStripItemDisplayStyle.Text;
-            runButton.Font = new Font("Segoe UI", 9F, FontStyle.Bold, GraphicsUnit.Point);
-            runButton.Image = (Image)resources.GetObject("runButton.Image");
-            runButton.ImageTransparentColor = Color.Magenta;
+            runButton.Font = new System.Drawing.Font("Segoe UI", 9F, FontStyle.Bold, GraphicsUnit.Point);
+            runButton.Image = (System.Drawing.Image)resources.GetObject("runButton.Image");
+            runButton.ImageTransparentColor = System.Drawing.Color.Magenta;
             runButton.Name = "runButton";
             runButton.Size = new Size(65, 22);
             runButton.Text = "[Run (F5)]";
@@ -1363,8 +1358,8 @@ namespace Nu.Gaia.Design
             // 
             liveEditCheckBox.CheckOnClick = true;
             liveEditCheckBox.DisplayStyle = ToolStripItemDisplayStyle.Text;
-            liveEditCheckBox.Image = (Image)resources.GetObject("liveEditCheckBox.Image");
-            liveEditCheckBox.ImageTransparentColor = Color.Magenta;
+            liveEditCheckBox.Image = (System.Drawing.Image)resources.GetObject("liveEditCheckBox.Image");
+            liveEditCheckBox.ImageTransparentColor = System.Drawing.Color.Magenta;
             liveEditCheckBox.Name = "liveEditCheckBox";
             liveEditCheckBox.Size = new Size(55, 22);
             liveEditCheckBox.Text = "Live Edit";
@@ -1386,8 +1381,8 @@ namespace Nu.Gaia.Design
             fileDropDownButton.AutoToolTip = false;
             fileDropDownButton.DisplayStyle = ToolStripItemDisplayStyle.Text;
             fileDropDownButton.DropDownItems.AddRange(new ToolStripItem[] { newGroupToolStripMenuItem, openGroupToolStripMenuItem, saveGroupToolStripMenuItem, saveGroupAsToolStripMenuItem, toolStripMenuItem7, clearGroupToolStripMenuItem, closeGroupToolStripMenuItem, toolStripMenuItem8, exitToolStripMenuItem });
-            fileDropDownButton.Image = (Image)resources.GetObject("fileDropDownButton.Image");
-            fileDropDownButton.ImageTransparentColor = Color.Magenta;
+            fileDropDownButton.Image = (System.Drawing.Image)resources.GetObject("fileDropDownButton.Image");
+            fileDropDownButton.ImageTransparentColor = System.Drawing.Color.Magenta;
             fileDropDownButton.Name = "fileDropDownButton";
             fileDropDownButton.Size = new Size(38, 22);
             fileDropDownButton.Text = "File";
@@ -1450,8 +1445,8 @@ namespace Nu.Gaia.Design
             editDropDownButton.AutoToolTip = false;
             editDropDownButton.DisplayStyle = ToolStripItemDisplayStyle.Text;
             editDropDownButton.DropDownItems.AddRange(new ToolStripItem[] { undoToolStripMenuItem, redoToolStripMenuItem, toolStripMenuItem9, cutToolStripMenuItem, copyToolStripMenuItem, pasteToolStripMenuItem, toolStripMenuItem10, createToolStripMenuItem, deleteToolStripMenuItem, quickSizeToolStripMenuItem, toolStripMenuItem11, startStopAdvancingToolStripMenuItem, toolStripMenuItem12, changeGroupNameToolStripMenuItem });
-            editDropDownButton.Image = (Image)resources.GetObject("editDropDownButton.Image");
-            editDropDownButton.ImageTransparentColor = Color.Magenta;
+            editDropDownButton.Image = (System.Drawing.Image)resources.GetObject("editDropDownButton.Image");
+            editDropDownButton.ImageTransparentColor = System.Drawing.Color.Magenta;
             editDropDownButton.Name = "editDropDownButton";
             editDropDownButton.Size = new Size(40, 22);
             editDropDownButton.Text = "Edit";
@@ -1552,8 +1547,8 @@ namespace Nu.Gaia.Design
             // 
             snap3dButton.CheckOnClick = true;
             snap3dButton.DisplayStyle = ToolStripItemDisplayStyle.Text;
-            snap3dButton.Image = (Image)resources.GetObject("snap3dButton.Image");
-            snap3dButton.ImageTransparentColor = Color.Magenta;
+            snap3dButton.Image = (System.Drawing.Image)resources.GetObject("snap3dButton.Image");
+            snap3dButton.ImageTransparentColor = System.Drawing.Color.Magenta;
             snap3dButton.Name = "snap3dButton";
             snap3dButton.Size = new Size(24, 22);
             snap3dButton.Text = "3d";
@@ -1567,7 +1562,7 @@ namespace Nu.Gaia.Design
             // 
             // scaleSnapTextBox
             // 
-            scaleSnapTextBox.Font = new Font("Tahoma", 8.25F, FontStyle.Regular, GraphicsUnit.Point);
+            scaleSnapTextBox.Font = new System.Drawing.Font("Tahoma", 8.25F, FontStyle.Regular, GraphicsUnit.Point);
             scaleSnapTextBox.Name = "scaleSnapTextBox";
             scaleSnapTextBox.Size = new Size(28, 25);
             scaleSnapTextBox.ToolTipText = "The increments at which to snap entity scaling.";
@@ -1587,8 +1582,8 @@ namespace Nu.Gaia.Design
             // 
             constrainXButton.CheckOnClick = true;
             constrainXButton.DisplayStyle = ToolStripItemDisplayStyle.Text;
-            constrainXButton.Image = (Image)resources.GetObject("constrainXButton.Image");
-            constrainXButton.ImageTransparentColor = Color.Magenta;
+            constrainXButton.Image = (System.Drawing.Image)resources.GetObject("constrainXButton.Image");
+            constrainXButton.ImageTransparentColor = System.Drawing.Color.Magenta;
             constrainXButton.Name = "constrainXButton";
             constrainXButton.Size = new Size(23, 22);
             constrainXButton.Text = "X";
@@ -1598,8 +1593,8 @@ namespace Nu.Gaia.Design
             // 
             constrainYButton.CheckOnClick = true;
             constrainYButton.DisplayStyle = ToolStripItemDisplayStyle.Text;
-            constrainYButton.Image = (Image)resources.GetObject("constrainYButton.Image");
-            constrainYButton.ImageTransparentColor = Color.Magenta;
+            constrainYButton.Image = (System.Drawing.Image)resources.GetObject("constrainYButton.Image");
+            constrainYButton.ImageTransparentColor = System.Drawing.Color.Magenta;
             constrainYButton.Name = "constrainYButton";
             constrainYButton.Size = new Size(23, 22);
             constrainYButton.Text = "Y";
@@ -1609,8 +1604,8 @@ namespace Nu.Gaia.Design
             // 
             constrainZButton.CheckOnClick = true;
             constrainZButton.DisplayStyle = ToolStripItemDisplayStyle.Text;
-            constrainZButton.Image = (Image)resources.GetObject("constrainZButton.Image");
-            constrainZButton.ImageTransparentColor = Color.Magenta;
+            constrainZButton.Image = (System.Drawing.Image)resources.GetObject("constrainZButton.Image");
+            constrainZButton.ImageTransparentColor = System.Drawing.Color.Magenta;
             constrainZButton.Name = "constrainZButton";
             constrainZButton.Size = new Size(23, 22);
             constrainZButton.Text = "Z";
@@ -1642,8 +1637,8 @@ namespace Nu.Gaia.Design
             // reloadCodeButton
             // 
             reloadCodeButton.DisplayStyle = ToolStripItemDisplayStyle.Text;
-            reloadCodeButton.Image = (Image)resources.GetObject("reloadCodeButton.Image");
-            reloadCodeButton.ImageTransparentColor = Color.Magenta;
+            reloadCodeButton.Image = (System.Drawing.Image)resources.GetObject("reloadCodeButton.Image");
+            reloadCodeButton.ImageTransparentColor = System.Drawing.Color.Magenta;
             reloadCodeButton.Name = "reloadCodeButton";
             reloadCodeButton.Size = new Size(47, 22);
             reloadCodeButton.Text = "[Code]";
@@ -1652,8 +1647,8 @@ namespace Nu.Gaia.Design
             // reloadAllButton
             // 
             reloadAllButton.DisplayStyle = ToolStripItemDisplayStyle.Text;
-            reloadAllButton.Image = (Image)resources.GetObject("reloadAllButton.Image");
-            reloadAllButton.ImageTransparentColor = Color.Magenta;
+            reloadAllButton.Image = (System.Drawing.Image)resources.GetObject("reloadAllButton.Image");
+            reloadAllButton.ImageTransparentColor = System.Drawing.Color.Magenta;
             reloadAllButton.Name = "reloadAllButton";
             reloadAllButton.Size = new Size(33, 22);
             reloadAllButton.Text = "[All]";
@@ -1668,8 +1663,8 @@ namespace Nu.Gaia.Design
             // 
             songPlaybackButton.CheckOnClick = true;
             songPlaybackButton.DisplayStyle = ToolStripItemDisplayStyle.Image;
-            songPlaybackButton.Image = (Image)resources.GetObject("songPlaybackButton.Image");
-            songPlaybackButton.ImageTransparentColor = Color.Magenta;
+            songPlaybackButton.Image = (System.Drawing.Image)resources.GetObject("songPlaybackButton.Image");
+            songPlaybackButton.ImageTransparentColor = System.Drawing.Color.Magenta;
             songPlaybackButton.Name = "songPlaybackButton";
             songPlaybackButton.Size = new Size(23, 22);
             songPlaybackButton.Text = "toolStripButton1";
@@ -1778,7 +1773,7 @@ namespace Nu.Gaia.Design
         #endregion
 
         public System.Windows.Forms.MenuStrip menuStrip;
-        public Nu.Gaia.Design.SelectablePanel displayPanel;
+        public GlControl displayPanel;
         public System.Windows.Forms.OpenFileDialog openFileDialog;
         public System.Windows.Forms.SaveFileDialog saveFileDialog;
         public System.Windows.Forms.ContextMenuStrip contextMenuStrip;

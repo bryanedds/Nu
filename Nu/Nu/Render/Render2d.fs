@@ -749,7 +749,7 @@ type [<ReferenceEquality>] GlRenderer2d =
         member renderer.Swap () =
             match renderer.RenderWindow with
             | SglWindow window -> SDL.SDL_GL_SwapWindow window.SglWindow
-            | WfglWindow window -> window.WfglSwapWindow ()
+            | WfglWindow window -> window.Swap ()
 
         member renderer.CleanUp () =
             OpenGL.SpriteBatch.DestroySpriteBatchEnv renderer.RenderSpriteBatchEnv

@@ -11,11 +11,13 @@ open Nu
 type [<ReferenceEquality>] SglWindow =
     { SglWindow : nativeint }
 
-/// A window for rendering in Windows Forms.
-type [<ReferenceEquality>] WfglWindow =
-    { WfglSwapWindow : unit -> unit
-      WfglPanelWindow : nativeint
-      WfglSdlWindowOpt : nativeint option }
+/// A OpenGL context created from a Windows Forms control.
+type WfglWindow =
+    interface
+        abstract member MakeContext : unit -> unit
+        abstract member DeleteContext : unit -> unit
+        abstract member Swap : unit -> unit
+        end
 
 /// A window for rendering.
 type [<ReferenceEquality>] Window =
@@ -140,28 +142,27 @@ module SdlDeps =
         | Right ((), destroy) ->
             match tryMakeSdlResourcePlus
                 (fun () ->
+                    SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_ACCELERATED_VISUAL, 1) |> ignore<int>
+                    SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_CONTEXT_MAJOR_VERSION, Constants.Render.OpenGlVersionMajor) |> ignore<int>
+                    SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_CONTEXT_MINOR_VERSION, Constants.Render.OpenGlVersionMinor) |> ignore<int>
+                    if Constants.Render.OpenGlCore then SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_CONTEXT_PROFILE_MASK, SDL.SDL_GLprofile.SDL_GL_CONTEXT_PROFILE_CORE) |> ignore<int>
+#if DEBUG
+                    SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_CONTEXT_FLAGS, int SDL.SDL_GLcontext.SDL_GL_CONTEXT_DEBUG_FLAG) |> ignore<int>
+#endif
+                    SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_DOUBLEBUFFER, 1) |> ignore<int>
+                    SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_DEPTH_SIZE, 24) |> ignore<int>
+                    SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_STENCIL_SIZE, 8) |> ignore<int>
                     match sdlConfig.ViewConfig with
                     | NewWindow windowConfig ->
-                        SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_ACCELERATED_VISUAL, 1) |> ignore<int>
-                        SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_CONTEXT_MAJOR_VERSION, Constants.Render.OpenGlVersionMajor) |> ignore<int>
-                        SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_CONTEXT_MINOR_VERSION, Constants.Render.OpenGlVersionMinor) |> ignore<int>
-                        if Constants.Render.OpenGlCore then SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_CONTEXT_PROFILE_MASK, SDL.SDL_GLprofile.SDL_GL_CONTEXT_PROFILE_CORE) |> ignore<int>
-#if DEBUG
-                        SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_CONTEXT_FLAGS, int SDL.SDL_GLcontext.SDL_GL_CONTEXT_DEBUG_FLAG) |> ignore<int>
-#endif
-                        SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_DOUBLEBUFFER, 1) |> ignore<int>
-                        SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_DEPTH_SIZE, 24) |> ignore<int>
-                        SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_STENCIL_SIZE, 8) |> ignore<int>
                         let window = SDL.SDL_CreateWindow (windowConfig.WindowTitle, windowConfig.WindowX, windowConfig.WindowY, sdlConfig.ViewW, sdlConfig.ViewH, windowConfig.WindowFlags)
                         Right window
                     | ExistingWindow window ->
-                        let sdlWindow = SDL.SDL_CreateWindowFrom window.WfglPanelWindow
-                        let wfglWindow = { window with WfglSdlWindowOpt = Some sdlWindow }
-                        Left wfglWindow)
+                        window.MakeContext ()
+                        Left window)
                 (fun windowOpt ->
                     match windowOpt with
                     | Right window -> SDL.SDL_DestroyWindow window
-                    | Left window -> SDL.SDL_DestroyWindow (Option.get window.WfglSdlWindowOpt)
+                    | Left (window : WfglWindow) -> window.DeleteContext ()
                     destroy ()) with
             | Left error -> Left error
             | Right (contextOrWindow, destroy) ->
