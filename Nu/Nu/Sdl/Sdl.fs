@@ -11,14 +11,6 @@ open Nu
 type [<ReferenceEquality>] SglWindow =
     { SglWindow : nativeint }
 
-/// A OpenGL context created from a Windows Forms control.
-type WfglWindow =
-    interface
-        abstract member MakeContext : unit -> unit
-        abstract member DeleteContext : unit -> unit
-        abstract member Swap : unit -> unit
-        end
-
 /// A window for rendering.
 type [<ReferenceEquality>] Window =
     | SglWindow of SglWindow
@@ -113,7 +105,11 @@ module SdlDeps =
             else
                 let error = "SDL2# resource creation failed due to '" + SDL.SDL_GetError () + "'."
                 Left error
-        | Left _ -> Right (resourceEir, destroy)
+        | Left (wfglWindow : WfglWindow) ->
+            if wfglWindow.Valid then Right (resourceEir, destroy)
+            else
+                let error = "SDL2# resource creation failed due to '" + SDL.SDL_GetError () + "'."
+                Left error
 
     /// Attempt to initalize an SDL resource.
     let internal tryMakeSdlResource create destroy =
@@ -142,22 +138,22 @@ module SdlDeps =
         | Right ((), destroy) ->
             match tryMakeSdlResourcePlus
                 (fun () ->
-                    SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_ACCELERATED_VISUAL, 1) |> ignore<int>
-                    SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_CONTEXT_MAJOR_VERSION, Constants.Render.OpenGlVersionMajor) |> ignore<int>
-                    SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_CONTEXT_MINOR_VERSION, Constants.Render.OpenGlVersionMinor) |> ignore<int>
-                    if Constants.Render.OpenGlCore then SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_CONTEXT_PROFILE_MASK, SDL.SDL_GLprofile.SDL_GL_CONTEXT_PROFILE_CORE) |> ignore<int>
-#if DEBUG
-                    SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_CONTEXT_FLAGS, int SDL.SDL_GLcontext.SDL_GL_CONTEXT_DEBUG_FLAG) |> ignore<int>
-#endif
-                    SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_DOUBLEBUFFER, 1) |> ignore<int>
-                    SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_DEPTH_SIZE, 24) |> ignore<int>
-                    SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_STENCIL_SIZE, 8) |> ignore<int>
                     match sdlConfig.ViewConfig with
                     | NewWindow windowConfig ->
+                        SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_ACCELERATED_VISUAL, 1) |> ignore<int>
+                        SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_CONTEXT_MAJOR_VERSION, Constants.OpenGl.VersionMajor) |> ignore<int>
+                        SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_CONTEXT_MINOR_VERSION, Constants.OpenGl.VersionMinor) |> ignore<int>
+                        if Constants.OpenGl.CoreProfile then SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_CONTEXT_PROFILE_MASK, SDL.SDL_GLprofile.SDL_GL_CONTEXT_PROFILE_CORE) |> ignore<int>
+    #if DEBUG
+                        SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_CONTEXT_FLAGS, int SDL.SDL_GLcontext.SDL_GL_CONTEXT_DEBUG_FLAG) |> ignore<int>
+    #endif
+                        SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_DOUBLEBUFFER, 1) |> ignore<int>
+                        SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_DEPTH_SIZE, 24) |> ignore<int>
+                        SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_STENCIL_SIZE, 8) |> ignore<int>
                         let window = SDL.SDL_CreateWindow (windowConfig.WindowTitle, windowConfig.WindowX, windowConfig.WindowY, sdlConfig.ViewW, sdlConfig.ViewH, windowConfig.WindowFlags)
                         Right window
                     | ExistingWindow window ->
-                        window.MakeContext ()
+                        if not (window.TryMakeContext ()) then Log.trace ("WfglWindow context creation failed.")
                         Left window)
                 (fun windowOpt ->
                     match windowOpt with
@@ -165,10 +161,10 @@ module SdlDeps =
                     | Left (window : WfglWindow) -> window.DeleteContext ()
                     destroy ()) with
             | Left error -> Left error
-            | Right (contextOrWindow, destroy) ->
+            | Right (window, destroy) ->
                 match tryMakeSdlGlobalResource
                     (fun () -> SDL_ttf.TTF_Init ())
-                    (fun () -> SDL_ttf.TTF_Quit (); destroy contextOrWindow) with
+                    (fun () -> SDL_ttf.TTF_Quit (); destroy window) with
                 | Left error -> Left error
                 | Right ((), destroy) ->
                     match tryMakeSdlGlobalResource
@@ -187,7 +183,7 @@ module SdlDeps =
                         | Right ((), destroy) ->
                             GamepadState.init ()
                             let context =
-                                match contextOrWindow with
+                                match window with
                                 | Right window ->
                                     SDL.SDL_RaiseWindow window
                                     SglWindow { SglWindow = window }

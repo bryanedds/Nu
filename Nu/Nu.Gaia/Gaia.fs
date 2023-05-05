@@ -2176,12 +2176,8 @@ module Gaia =
 
     /// Attempt to make Gaia's SDL dependencies.
     let tryMakeSdlDeps (form : GaiaForm) =
-        let wfglWindow =
-            { Wfgl = form.displayPanel
-              WfglPanelWindow = form.displayPanel.Handle
-              WfglSdlWindowOpt = None }
         let sdlConfig =
-            { ViewConfig = ExistingWindow wfglWindow
+            { ViewConfig = ExistingWindow form.displayPanel
               ViewW = Constants.Render.ResolutionX
               ViewH = Constants.Render.ResolutionY
               AudioChunkSize = Constants.Audio.BufferSizeDefault }
