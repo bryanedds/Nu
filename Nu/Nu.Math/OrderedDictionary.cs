@@ -3,8 +3,6 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 
-// TODO: remove this file once Prime is updated.
-
 namespace System.Collections.Generic
 {
     /// <summary>
