@@ -134,6 +134,9 @@ namespace Nu.Gaia.Design
             if (glContext == IntPtr.Zero)
                 throw new InvalidOperationException("Context does not exist.");
 
+            // flush (this shouldn't be necessary)
+            //Gl.Flush();
+
             // swap
             wglSwapBuffers(hdc);
         }
@@ -153,6 +156,7 @@ namespace Nu.Gaia.Design
             return base.IsInputKey(keyData);
         }
 
+        // NOTE: for some reason, OpenGL.Net does not seem to expose this function, so we retrieve it directly.
         [DllImport("opengl32.dll")]
         private static extern bool wglSwapBuffers(IntPtr hdc);
 
