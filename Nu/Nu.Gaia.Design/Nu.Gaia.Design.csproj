@@ -10,6 +10,7 @@
 		<PlatformTarget>AnyCPU</PlatformTarget>
 		<ServerGarbageCollection>true</ServerGarbageCollection>
 		<TieredPGO>true</TieredPGO>
+		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCpu'">
@@ -27,19 +28,11 @@
 
 	<ItemGroup>
 	  <ProjectReference Include="..\Nu.Math\Nu.Math.csproj" />
-	  <ProjectReference Include="..\Nu.Pipe\Nu.Pipe.fsproj" />
-	  <ProjectReference Include="..\Nu\Nu.fsproj" />
 	</ItemGroup>
 
 	<ItemGroup>
 		<Reference Include="OpenGL.Net">
 			<HintPath>..\..\Nu\Nu.Dependencies\OpenGL.NET\lib\netcoreapp2.2\OpenGL.Net.dll</HintPath>
-		</Reference>
-		<Reference Include="OpenGL.Net.WinForms">
-			<HintPath>..\..\Nu\Nu.Dependencies\OpenGL.NET\lib\net461\OpenGL.Net.WinForms.dll</HintPath>
-		</Reference>
-		<Reference Include="SDL2-CS">
-		  <HintPath>..\Nu.Dependencies\SDL2-CS\netstandard2.0\SDL2-CS.dll</HintPath>
 		</Reference>
 	</ItemGroup>
 
