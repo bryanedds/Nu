@@ -2177,7 +2177,7 @@ module Gaia =
     /// Attempt to make Gaia's SDL dependencies.
     let tryMakeSdlDeps (form : GaiaForm) =
         let wfglWindow =
-            { WfglSwapWindow = fun () -> form.displayPanel.Invalidate ()
+            { Wfgl = form.displayPanel
               WfglPanelWindow = form.displayPanel.Handle
               WfglSdlWindowOpt = None }
         let sdlConfig =
