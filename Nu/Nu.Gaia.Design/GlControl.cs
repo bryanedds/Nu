@@ -35,7 +35,7 @@ namespace Nu.Gaia.Design
             Trace.Assert(Wgl.CONTEXT_PROFILE_MASK_ARB == Glx.CONTEXT_PROFILE_MASK_ARB);
 
             // set pixel format
-            hdc = GetDC(Handle);
+            hdc = Wgl.UnsafeNativeMethods.GetDC(Handle);
             Wgl.PIXELFORMATDESCRIPTOR pfd = new Wgl.PIXELFORMATDESCRIPTOR();
             pfd.nSize = (short)sizeof(Wgl.PIXELFORMATDESCRIPTOR);
             pfd.nVersion = 1;
@@ -155,9 +155,6 @@ namespace Nu.Gaia.Design
             if (keyData == Keys.A || keyData == Keys.D) return true;
             return base.IsInputKey(keyData);
         }
-
-        [DllImport("user32.dll")]
-        static extern IntPtr GetDC(IntPtr hwnd);
 
         private nint hdc;
         private nint glContext;
