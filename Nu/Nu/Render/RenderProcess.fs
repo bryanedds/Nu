@@ -6,7 +6,6 @@ open System
 open System.Collections.Generic
 open System.Numerics
 open System.Threading
-open System.Threading.Tasks
 open Prime
 open Nu
 
@@ -90,7 +89,7 @@ type RendererInline (createRenderer2d, createRenderer3d) =
 /// A threaded render process.
 type RendererThread (createRenderer2d, createRenderer3d) =
 
-    let mutable taskOpt = None
+    let mutable threadOpt = None
     let [<VolatileField>] mutable started = false
     let [<VolatileField>] mutable terminated = false
     let [<VolatileField>] mutable submissionOpt = Option<RenderMessage3d List * RenderMessage2d List * Vector3 * Quaternion * Vector2 * Vector2 * Vector2i>.None
@@ -212,18 +211,20 @@ type RendererThread (createRenderer2d, createRenderer3d) =
         member this.Start () =
 
             // validate state
-            if Option.isSome taskOpt then raise (InvalidOperationException "Render process already started.")
+            if Option.isSome threadOpt then raise (InvalidOperationException "Render process already started.")
 
-            // start task
-            let task = new Task ((fun () -> this.Run ()), TaskCreationOptions.LongRunning)
-            taskOpt <- Some task
-            task.Start ()
+            // start thread
+            let thread = Thread (ThreadStart this.Run)
+            threadOpt <- Some thread
+            thread.Priority <- ThreadPriority.Highest
+            thread.IsBackground <- true
+            thread.Start ()
 
-            // wait for task to finish starting
+            // wait for thread to finish starting
             while not started do Thread.Sleep 1
 
         member this.EnqueueMessage3d message =
-            if Option.isNone taskOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
+            if Option.isNone threadOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
             match message with
             | RenderStaticModel rsm ->
                 let cachedStaticModelMessage = allocStaticModelMessage ()
@@ -240,7 +241,7 @@ type RendererThread (createRenderer2d, createRenderer3d) =
             | _ -> messageBuffers3d.[messageBufferIndex].Add message
 
         member this.EnqueueMessage2d message =
-            if Option.isNone taskOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
+            if Option.isNone threadOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
             match message with
             | LayeredOperation2d operation ->
                 match operation.RenderOperation2d with
@@ -267,12 +268,12 @@ type RendererThread (createRenderer2d, createRenderer3d) =
             | _ -> messageBuffers2d.[messageBufferIndex].Add message
 
         member this.ClearMessages () =
-            if Option.isNone taskOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
+            if Option.isNone threadOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
             messageBuffers3d.[messageBufferIndex].Clear ()
             messageBuffers2d.[messageBufferIndex].Clear ()
 
         member this.SubmitMessages eyeCenter3d eyeRotation3d eyeCenter2d eyeSize2d eyeMargin =
-            if Option.isNone taskOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
+            if Option.isNone threadOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
             while swap do Thread.Sleep 1
             let messages3d = messageBuffers3d.[messageBufferIndex]
             let messages2d = messageBuffers2d.[messageBufferIndex]
@@ -282,14 +283,14 @@ type RendererThread (createRenderer2d, createRenderer3d) =
             submissionOpt <- Some (messages3d, messages2d, eyeCenter3d, eyeRotation3d, eyeCenter2d, eyeSize2d, eyeMargin)
 
         member this.Swap () =
-            if Option.isNone taskOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
+            if Option.isNone threadOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
             if swap then raise (InvalidOperationException "Redundant Swap calls.")
             swap <- true
 
         member this.Terminate () =
-            if Option.isNone taskOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
-            let task = Option.get taskOpt
+            if Option.isNone threadOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
+            let thread = Option.get threadOpt
             if terminated then raise (InvalidOperationException "Redundant Terminate calls.")
             terminated <- true
-            task.Wait ()
-            taskOpt <- None
+            thread.Join ()
+            threadOpt <- None
