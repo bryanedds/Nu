@@ -85,8 +85,10 @@ namespace Nu.Gaia.Design
                 }
                 else
                 {
+#pragma warning disable CS0162 // Unreachable code detected
                     Debug.Assert(Wgl.CONTEXT_COMPATIBILITY_PROFILE_BIT_ARB == Glx.CONTEXT_COMPATIBILITY_PROFILE_BIT_ARB);
                     contextProfile |= Wgl.CONTEXT_COMPATIBILITY_PROFILE_BIT_ARB;
+#pragma warning restore CS0162 // Unreachable code detected
                 }
                 Debug.Assert(contextProfile == 0 || Gl.PlatformExtensions.CreateContextProfile_ARB);
                 if (contextProfile != 0) attributes.AddRange(new int[] { Wgl.CONTEXT_PROFILE_MASK_ARB, unchecked((int)contextProfile) });
