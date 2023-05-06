@@ -54,7 +54,7 @@ uniform sampler2D normalAndHeightTexture;
 uniform samplerCube irradianceMap;
 uniform samplerCube environmentFilterMap;
 uniform sampler2D brdfTexture;
-uniform int lightMaps[LIGHT_MAPS_MAX];
+uniform int lightMapEnableds[LIGHT_MAPS_MAX];
 uniform vec3 lightMapOrigins[LIGHT_MAPS_MAX];
 uniform vec3 lightMapMins[LIGHT_MAPS_MAX];
 uniform vec3 lightMapSizes[LIGHT_MAPS_MAX];
@@ -245,7 +245,7 @@ void main()
     float lmDistanceSquared2 = FLOAT_MAX;
     for (int i = 0; i < LIGHT_MAPS_MAX; ++i)
     {
-        if (lightMaps[i] != 0 && inBounds(position, lightMapMins[i], lightMapSizes[i]))
+        if (lightMapEnableds[i] != 0 && inBounds(position, lightMapMins[i], lightMapSizes[i]))
         {
             vec3 delta = lightMapOrigins[i] - position;
             float distanceSquared = dot(delta, delta);
