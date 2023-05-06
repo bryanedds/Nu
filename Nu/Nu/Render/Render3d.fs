@@ -77,10 +77,10 @@ type [<NoEquality; NoComparison>] BillboardParticlesDescriptor =
 
 /// A collection of render tasks in a pass.
 and [<ReferenceEquality>] RenderTasks =
-    { RenderSkyBoxes : (Color * single * Color * single * CubeMap AssetTag) SList
-      RenderLightProbes : SDictionary<uint64, struct (bool * Vector3 * Box3 * bool)>
-      RenderLightMaps : SortableLightMap SList
-      RenderLights : SortableLight SList
+    { RenderSkyBoxes : (Color * single * Color * single * CubeMap AssetTag) List
+      RenderLightProbes : Dictionary<uint64, struct (bool * Vector3 * Box3 * bool)>
+      RenderLightMaps : SortableLightMap List
+      RenderLights : SortableLight List
       RenderSurfacesDeferredAbsolute : Dictionary<OpenGL.PhysicallyBased.PhysicallyBasedSurface, struct (Matrix4x4 * Box2 * MaterialProperties) SList>
       RenderSurfacesDeferredRelative : Dictionary<OpenGL.PhysicallyBased.PhysicallyBasedSurface, struct (Matrix4x4 * Box2 * MaterialProperties) SList>
       RenderSurfacesForwardAbsolute : struct (single * single * Matrix4x4 * Box2 * MaterialProperties * OpenGL.PhysicallyBased.PhysicallyBasedSurface) SList
@@ -275,7 +275,7 @@ and [<ReferenceEquality>] SortableLightMap =
         let lightMapEnvironmentFilterMaps = Array.zeroCreate<uint> lightMapsMax
         for lightMap in lightMaps do
             lightMap.SortableLightMapDistanceSquared <- (lightMap.SortableLightMapOrigin - position).MagnitudeSquared
-        let lightMapsSorted = lightMaps |> Seq.toArray |> Array.sortBy (fun light -> light.SortableLightMapDistanceSquared)
+        let lightMapsSorted = lightMaps |> Array.sortBy (fun light -> light.SortableLightMapDistanceSquared)
         for i in 0 .. dec lightMapsMax do
             if i < lightMapsSorted.Length then
                 let i3 = i * 3
@@ -1153,10 +1153,11 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         // filter light map according to enabledness and intersection with the geometry frustum
         let lightMaps =
-            SList.filter (fun lightMap ->
+            renderer.RenderTasks.RenderLightMaps |>
+            Array.ofSeq |>
+            Array.filter (fun lightMap ->
                 lightMap.SortableLightMapEnabled &&
                 geometryFrustum.Intersects lightMap.SortableLightMapBounds)
-                renderer.RenderTasks.RenderLightMaps
 
         // sort light maps for deferred rendering relative to eye center
         let (lightMapEnableds, lightMapOrigins, lightMapMins, lightMapSizes, lightMapIrradianceMaps, lightMapEnvironmentFilterMaps) =
@@ -1166,7 +1167,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         // sort lights for deferred rendering relative to eye center
         let (lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightCutoffs, lightDirectionals, lightConeInners, lightConeOuters) =
-            SortableLight.sortLightsIntoArrays Constants.Render.DeferredLightsMax eyeCenter renderer.RenderTasks.RenderLights
+            SortableLight.sortLightsIntoArrays Constants.Render.LightsMax eyeCenter renderer.RenderTasks.RenderLights
 
         // sort absolute forward surfaces from far to near
         let forwardSurfacesSorted = GlRenderer3d.sortSurfaces eyeCenter renderer.RenderTasks.RenderSurfacesForwardAbsolute
@@ -1255,8 +1256,6 @@ type [<ReferenceEquality>] GlRenderer3d =
             for (model, texCoordsOffset, properties, surface) in renderer.RenderTasks.RenderSurfacesForwardAbsoluteSorted do
                 let (lightMapEnableds, lightMapOrigins, lightMapMins, lightMapSizes, lightMapIrradianceMaps, lightMapEnvironmentFilterMaps) =
                     SortableLightMap.sortLightMapsIntoArrays Constants.Render.ForwardLightMapsMax model.Translation lightMaps
-                let (lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightCutoffs, lightDirectionals, lightConeInners, lightConeOuters) =
-                    SortableLight.sortLightsIntoArrays Constants.Render.ForwardLightsMax model.Translation renderer.RenderTasks.RenderLights
                 GlRenderer3d.renderPhysicallyBasedSurfaces
                     viewAbsoluteArray rasterProjectionArray eyeCenter (SList.singleton (model, texCoordsOffset, properties)) true
                     lightAmbientColor lightAmbientBrightness lightMapFallback.IrradianceMap lightMapFallback.EnvironmentFilterMap renderer.RenderBrdfTexture
@@ -1269,8 +1268,6 @@ type [<ReferenceEquality>] GlRenderer3d =
         for (model, texCoordsOffset, properties, surface) in renderer.RenderTasks.RenderSurfacesForwardRelativeSorted do
             let (lightMapEnableds, lightMapOrigins, lightMapMins, lightMapSizes, lightMapIrradianceMaps, lightMapEnvironmentFilterMaps) =
                 SortableLightMap.sortLightMapsIntoArrays Constants.Render.ForwardLightMapsMax model.Translation lightMaps
-            let (lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightCutoffs, lightDirectionals, lightConeInners, lightConeOuters) =
-                SortableLight.sortLightsIntoArrays Constants.Render.ForwardLightsMax model.Translation renderer.RenderTasks.RenderLights
             GlRenderer3d.renderPhysicallyBasedSurfaces
                 viewRelativeArray rasterProjectionArray eyeCenter (SList.singleton (model, texCoordsOffset, properties)) true
                 lightAmbientColor lightAmbientBrightness lightMapFallback.IrradianceMap lightMapFallback.EnvironmentFilterMap renderer.RenderBrdfTexture
@@ -1527,10 +1524,10 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         // create render tasks
         let renderTasks =
-            { RenderSkyBoxes = SList.make ()
-              RenderLightProbes = SDictionary.make HashIdentity.Structural
-              RenderLightMaps = SList.make ()
-              RenderLights = SList.make ()
+            { RenderSkyBoxes = List ()
+              RenderLightProbes = Dictionary HashIdentity.Structural
+              RenderLightMaps = List ()
+              RenderLights = List ()
               RenderSurfacesDeferredAbsolute = dictPlus HashIdentity.Structural []
               RenderSurfacesDeferredRelative = dictPlus HashIdentity.Structural []
               RenderSurfacesForwardAbsolute = SList.make ()

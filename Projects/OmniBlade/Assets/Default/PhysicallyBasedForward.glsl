@@ -68,7 +68,7 @@ const float OPAQUING_DISTANCE_END = 32.0;
 const float OPAQUING_DISTANCE_RANGE = OPAQUING_DISTANCE_END - OPAQUING_DISTANCE_BEGIN;
 const float ATTENUATION_CONSTANT = 1.0f;
 const int LIGHT_MAPS_MAX = 2;
-const int LIGHTS_MAX = 16;
+const int LIGHTS_MAX = 64;
 
 uniform vec3 eyeCenter;
 uniform vec3 lightAmbientColor;
@@ -83,7 +83,7 @@ uniform sampler2D heightTexture;
 uniform samplerCube irradianceMap;
 uniform samplerCube environmentFilterMap;
 uniform sampler2D brdfTexture;
-uniform int lightMaps[LIGHT_MAPS_MAX];
+uniform int lightMapEnableds[LIGHT_MAPS_MAX];
 uniform vec3 lightMapOrigins[LIGHT_MAPS_MAX];
 uniform vec3 lightMapMins[LIGHT_MAPS_MAX];
 uniform vec3 lightMapSizes[LIGHT_MAPS_MAX];
@@ -269,8 +269,8 @@ void main()
     }
 
     // determine light map indices, including their validity
-    int lm1 = lightMaps[0] != 0 ? 0 : -1;
-    int lm2 = lightMaps[1] != 0 ? 1 : -1;
+    int lm1 = lightMapEnableds[0] != 0 ? 0 : -1;
+    int lm2 = lightMapEnableds[1] != 0 ? 1 : -1;
     if (lm1 != -1 && !inBounds(position, lightMapMins[lm1], lightMapSizes[lm1])) { lm1 = lm2; lm2 = -1; }
     if (lm2 != -1 && !inBounds(position, lightMapMins[lm2], lightMapSizes[lm2])) lm2 = -1;
 
