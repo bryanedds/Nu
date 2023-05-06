@@ -691,7 +691,7 @@ type [<ReferenceEquality>] GlRenderer2d =
                 OpenGL.Hl.CreateSglContext window.SglWindow |> ignore<nativeint>
                 OpenGL.Hl.Assert ()
             | WfglWindow window ->
-                if not (window.TryMakeContext ()) then failwith "Could not create OpenGL context."
+                window.CreateContext ()
                 OpenGL.Hl.Assert ()
 
             // listen to debug messages

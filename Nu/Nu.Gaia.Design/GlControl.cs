@@ -1,11 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
-using System.Runtime.InteropServices;
 using OpenGL;
-using Nu;
-using Microsoft.VisualBasic.ApplicationServices;
-using Microsoft.VisualBasic;
-using System.Windows.Forms;
+using SDL2;
 
 namespace Nu.Gaia.Design
 {
@@ -39,8 +35,26 @@ namespace Nu.Gaia.Design
 
         public bool OpenGlRobustAccess { get; set; } = false;
 
-        public bool TryMakeContext()
+        public void CreateSdlWindowFrom()
         {
+            // ensure only one window is created
+            if (sdlWindow != IntPtr.Zero)
+                throw new InvalidOperationException("SDL window already created.");
+
+            // attempt to create window
+            sdlWindow = SDL.SDL_CreateWindowFrom(Handle);
+
+            // ensure window was created
+            if (sdlWindow == IntPtr.Zero)
+                throw new InvalidOperationException("Failed to create SDL window.");
+        }
+
+        public void CreateContext()
+        {
+            // ensure sdl window exists
+            if (sdlWindow == IntPtr.Zero)
+                throw new InvalidOperationException("SDL window does not exist.");
+
             // ensure only one context is created
             if (glContext != IntPtr.Zero)
                 throw new InvalidOperationException("Context already created.");
@@ -108,25 +122,17 @@ namespace Nu.Gaia.Design
             // ensure we've got a valid context
             if (glContext != IntPtr.Zero)
             {
-                // make the context current and log success
+                // make the context current and write out info to console
+                // TODO: log instead of write to console?
                 Wgl.MakeCurrent(hdc, glContext);
                 var version = Gl.GetString(StringName.Version);
-                //Log.info("Initialized OpenGL " + version + ".");
-                return true;
+                Trace.WriteLine("Initialized OpenGL " + version + ".");
             }
             else
             {
                 // failed to initialize gl
-                Trace.Assert(false, "Failed to create OpenGL context.");
-                return false;
+                throw new InvalidOperationException("Failed to create OpenGL context.");
             }
-        }
-
-        public void DeleteContext()
-        {
-            // delete context if it exists
-            if (glContext != IntPtr.Zero)
-                Wgl.DeleteContext(glContext);
         }
 
         public void Swap()
@@ -135,11 +141,23 @@ namespace Nu.Gaia.Design
             if (glContext == IntPtr.Zero)
                 throw new InvalidOperationException("Context does not exist.");
 
-            // flush (this shouldn't be necessary)
-            //Gl.Flush();
+            // ensure sdl window exists
+            if (sdlWindow == IntPtr.Zero)
+                throw new InvalidOperationException("SDL window does not exist.");
 
             // swap
             Wgl.UnsafeNativeMethods.GdiSwapBuffersFast(hdc);
+        }
+
+        public void CleanUp()
+        {
+            // delete context if it exists
+            if (glContext != IntPtr.Zero)
+                Wgl.DeleteContext(glContext);
+
+            // delete window if it exists
+            if (sdlWindow != IntPtr.Zero)
+                SDL.SDL_DestroyWindow(sdlWindow);
         }
 
         protected override void OnMouseDown(MouseEventArgs e)
@@ -158,6 +176,7 @@ namespace Nu.Gaia.Design
         }
 
         private nint hdc;
+        private nint sdlWindow;
         private nint glContext;
     }
 }

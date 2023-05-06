@@ -34,6 +34,9 @@
 		<Reference Include="OpenGL.Net">
 			<HintPath>..\..\Nu\Nu.Dependencies\OpenGL.NET\lib\netcoreapp2.2\OpenGL.Net.dll</HintPath>
 		</Reference>
+		<Reference Include="SDL2-CS">
+		  <HintPath>..\Nu.Dependencies\SDL2-CS\netstandard2.0\SDL2-CS.dll</HintPath>
+		</Reference>
 	</ItemGroup>
 
 </Project>
