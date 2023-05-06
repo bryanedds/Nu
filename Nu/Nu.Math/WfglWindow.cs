@@ -24,7 +24,6 @@ namespace Nu
     /// </summary>
     public interface WfglWindow
     {
-        bool Valid { get; }
         bool TryMakeContext();
         void DeleteContext();
         void Swap();
