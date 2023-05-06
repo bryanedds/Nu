@@ -1224,7 +1224,8 @@ module WorldModule2 =
                                                                         | StaticFrameRate frameRate -> 1.0 / double frameRate - frameTimeSlop
                                                                         | DynamicFrameRate (Some frameRate) -> 1.0 / double frameRate - frameTimeSlop
                                                                         | DynamicFrameRate None -> Constants.GameTime.DesiredFrameTimeMinimum - frameTimeSlop
-                                                                    SpinWait.SpinUntil (fun () -> let e = FrameTimer.Elapsed in e.TotalSeconds >= frameTimeMinimum)
+                                                                    while let e = FrameTimer.Elapsed in e.TotalSeconds < frameTimeMinimum do
+                                                                        Thread.Yield () |> ignore<bool> // Thread.Yield for better timing accuracy.
                                                                 FrameTimer.Restart ()
 
                                                                 // process rendering (2/2)
