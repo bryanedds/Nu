@@ -9,7 +9,7 @@ open Nu
 [<RequireQualifiedAccess>]
 module Framebuffer =
 
-    /// Attempt to create a texture 2d buffers.
+    /// Attempt to create texture 2d buffers.
     let TryCreateTextureBuffers () =
 
         // create frame buffer object
