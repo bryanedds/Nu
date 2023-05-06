@@ -72,7 +72,7 @@ module Texture =
                           TextureHeight = bitmap.Height
                           TextureTexelWidth = 1.0f / single bitmap.Width
                           TextureTexelHeight = 1.0f / single bitmap.Height
-                          TextureInternalFormat = InternalFormat.Rgba8 }
+                          TextureInternalFormat = Constants.OpenGl.TextureUncompressedFormat }
                     Some (metadata, data.Scan0, { new IDisposable with member this.Dispose () = bitmap.UnlockBits data; bitmap.Dispose () }) // NOTE: calling UnlockBits explicitly since I can't fiture out if Dispose does.
                 with _ -> None
             else
@@ -86,7 +86,7 @@ module Texture =
                           TextureHeight = unconverted.h
                           TextureTexelWidth = 1.0f / single unconverted.w
                           TextureTexelHeight = 1.0f / single unconverted.h
-                          TextureInternalFormat = InternalFormat.Rgba8 }
+                          TextureInternalFormat = Constants.OpenGl.TextureUncompressedFormat }
                     let unconvertedFormat = Marshal.PtrToStructure<SDL.SDL_PixelFormat> unconverted.format
                     if unconvertedFormat.format <> format then
                         let convertedPtr = SDL.SDL_ConvertSurfaceFormat (unconvertedPtr, format, 0u)
@@ -97,7 +97,7 @@ module Texture =
                 else None
         else None
 
-    let private TryCreateTextureInternal (textureOpt, generateMipmaps, filePath : string) =
+    let private TryCreateTextureInternal (textureOpt, internalFormat, generateMipmaps, filePath : string) =
 
         // attmept to load image
         match TryCreateImageData filePath with
@@ -107,7 +107,7 @@ module Texture =
             use _ = disposer
             let texture = match textureOpt with Some texture -> texture | None -> Gl.GenTexture ()
             Gl.BindTexture (TextureTarget.Texture2d, texture)
-            Gl.TexImage2D (TextureTarget.Texture2d, 0, Constants.OpenGl.TextureInternalFormat, metadata.TextureWidth, metadata.TextureHeight, 0, PixelFormat.Bgra, PixelType.UnsignedByte, imageData)
+            Gl.TexImage2D (TextureTarget.Texture2d, 0, internalFormat, metadata.TextureWidth, metadata.TextureHeight, 0, PixelFormat.Bgra, PixelType.UnsignedByte, imageData)
             if generateMipmaps then Gl.GenerateMipmap TextureTarget.Texture2d
             Hl.Assert ()
             Gl.PrioritizeTextures ([|texture|], [|Constants.Render.TexturePriorityDefault|]);
@@ -119,8 +119,8 @@ module Texture =
         | None -> Left ("Missing file or unloadable image data '" + filePath + "'.")
 
     /// Attempt to create a texture from a file.
-    let TryCreateTexture (minFilter, magFilter, generateMipmaps, filePath) =
-        match TryCreateTextureInternal (None, generateMipmaps, filePath) with
+    let TryCreateTexture (internalFormat, minFilter, magFilter, generateMipmaps, filePath) =
+        match TryCreateTextureInternal (None, internalFormat, generateMipmaps, filePath) with
         | Right (metadata, texture) ->
             Gl.BindTexture (TextureTarget.Texture2d, texture)
             Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, int minFilter)
@@ -132,23 +132,31 @@ module Texture =
             Right (metadata, texture)
         | Left _ as error -> error
 
-    /// Attempt to create an unfiltered texture from a file.
-    let TryCreateTextureUnfiltered filePath =
-        TryCreateTexture (TextureMinFilter.Nearest, TextureMagFilter.Nearest, false, filePath)
+    /// Attempt to create a compressed, unfiltered texture from a file.
+    let TryCreateTextureCompressedUnfiltered filePath =
+        TryCreateTexture (Constants.OpenGl.TextureCompressedFormat, TextureMinFilter.Nearest, TextureMagFilter.Nearest, false, filePath)
 
-    /// Attempt to create a filtered texture from a file.
-    let TryCreateTextureFiltered filePath =
-        TryCreateTexture (TextureMinFilter.LinearMipmapLinear, TextureMagFilter.Linear, true, filePath)
+    /// Attempt to create an uncompressed, unfiltered texture from a file.
+    let TryCreateTextureUncompressedUnfiltered filePath =
+        TryCreateTexture (Constants.OpenGl.TextureUncompressedFormat, TextureMinFilter.Nearest, TextureMagFilter.Nearest, false, filePath)
+
+    /// Attempt to create a compressed, filtered texture from a file.
+    let TryCreateTextureCompressedFiltered filePath =
+        TryCreateTexture (Constants.OpenGl.TextureCompressedFormat, TextureMinFilter.LinearMipmapLinear, TextureMagFilter.Linear, true, filePath)
+
+    /// Attempt to create an uncompressed, filtered texture from a file.
+    let TryCreateTextureUncompressedFiltered filePath =
+        TryCreateTexture (Constants.OpenGl.TextureUncompressedFormat, TextureMinFilter.LinearMipmapLinear, TextureMagFilter.Linear, true, filePath)
 
     /// Attempt to create a memoized texture from a file.
-    let TryCreateTextureMemoized (minFilter, magFilter, generateMipmaps, filePath : string, textureMemo) =
+    let TryCreateTextureMemoized (internalFormat, minFilter, magFilter, generateMipmaps, filePath : string, textureMemo) =
 
         // memoize texture
         match textureMemo.Textures.TryGetValue filePath with
         | (false, _) ->
 
             // attempt to create texture
-            match TryCreateTexture (minFilter, magFilter, generateMipmaps, filePath) with
+            match TryCreateTexture (internalFormat, minFilter, magFilter, generateMipmaps, filePath) with
             | Right texture ->
                 textureMemo.Textures.Add (filePath, texture)
                 Right texture
@@ -157,20 +165,32 @@ module Texture =
         // already exists
         | (true, texture) -> Right texture
 
-    /// Attempt to create a memoized unfiltered texture from a file.
-    let TryCreateTextureMemoizedUnfiltered (filePath, textureMemo) =
-        TryCreateTextureMemoized (TextureMinFilter.Nearest, TextureMagFilter.Nearest, false, filePath, textureMemo)
+    /// Attempt to create a memoized, uncompressed, unfiltered texture from a file.
+    let TryCreateTextureMemoizedUncompressedUnfiltered (filePath, textureMemo) =
+        TryCreateTextureMemoized (Constants.OpenGl.TextureUncompressedFormat, TextureMinFilter.Nearest, TextureMagFilter.Nearest, false, filePath, textureMemo)
 
-    /// Attempt to create a memoized filtered texture from a file.
-    let TryCreateTextureMemoizedFiltered (filePath, textureMemo) =
-        TryCreateTextureMemoized (TextureMinFilter.LinearMipmapLinear, TextureMagFilter.Linear, true, filePath, textureMemo)
+    /// Attempt to create a memoized, compressed, unfiltered texture from a file.
+    let TryCreateTextureMemoizedCompressedUnfiltered (filePath, textureMemo) =
+        TryCreateTextureMemoized (Constants.OpenGl.TextureCompressedFormat, TextureMinFilter.Nearest, TextureMagFilter.Nearest, false, filePath, textureMemo)
+
+    /// Attempt to create a memoized, uncompressed, filtered texture from a file.
+    let TryCreateTextureMemoizedUncompressedFiltered (filePath, textureMemo) =
+        TryCreateTextureMemoized (Constants.OpenGl.TextureUncompressedFormat, TextureMinFilter.LinearMipmapLinear, TextureMagFilter.Linear, true, filePath, textureMemo)
+
+    /// Attempt to create a memoized, compressed, filtered texture from a file.
+    let TryCreateTextureMemoizedCompressedFiltered (filePath, textureMemo) =
+        TryCreateTextureMemoized (Constants.OpenGl.TextureCompressedFormat, TextureMinFilter.LinearMipmapLinear, TextureMagFilter.Linear, true, filePath, textureMemo)
 
     /// Recreate the memoized textures.
-    let RecreateTexturesMemoized generateMipmaps textureMemo =
+    let RecreateTexturesMemoized compressed generateMipmaps textureMemo =
+        let internalFormat =
+            if compressed
+            then Constants.OpenGl.TextureCompressedFormat
+            else Constants.OpenGl.TextureUncompressedFormat
         for entry in textureMemo.Textures do
             let filePath = entry.Key
             let (_, texture) = entry.Value
-            TryCreateTextureInternal (Some texture, generateMipmaps, filePath) |> ignore
+            TryCreateTextureInternal (Some texture, internalFormat, generateMipmaps, filePath) |> ignore
 
     /// Delete a memoized texture.
     let DeleteTextureMemoized textureKey (textureMemo : TextureMemo) =
