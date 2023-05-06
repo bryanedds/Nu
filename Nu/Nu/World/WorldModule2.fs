@@ -1143,7 +1143,7 @@ module WorldModule2 =
                 let world = preProcess world
                 PreProcessTimer.Stop ()
                 match liveness with
-                | Live ->                
+                | Live ->
                     let world = World.updateScreenTransition world
                     match World.getLiveness world with
                     | Live ->
@@ -1241,6 +1241,7 @@ module WorldModule2 =
                                                                 WorldModule.TaskletProcessingStarted <- false
                                                                 World.runWithoutCleanUp runWhile preProcess perProcess postProcess sdlDeps liveness false world
 
+                                                            // fin
                                                             | Dead -> world
                                                         | Dead -> world
                                                     | Dead -> world
