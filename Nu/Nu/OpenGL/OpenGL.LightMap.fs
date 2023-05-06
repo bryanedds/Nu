@@ -347,22 +347,19 @@ module LightMap =
         { Enabled : bool
           Origin : Vector3
           Bounds : Box3
-          ReflectionMap : uint
           IrradianceMap : uint
           EnvironmentFilterMap : uint }
 
     /// Create a light map.
-    let CreateLightMap enabled origin bounds reflectionMap irradianceMap environmentFilterMap =
+    let CreateLightMap enabled origin bounds irradianceMap environmentFilterMap =
         { Enabled = enabled
           Origin = origin
           Bounds = bounds
-          ReflectionMap = reflectionMap
           IrradianceMap = irradianceMap
           EnvironmentFilterMap = environmentFilterMap }
 
     /// Destroy a light map.
     let DestroyLightMap lightMap =
         Gl.DeleteTextures
-            [|lightMap.ReflectionMap
-              lightMap.IrradianceMap
+            [|lightMap.IrradianceMap
               lightMap.EnvironmentFilterMap|]

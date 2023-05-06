@@ -1061,28 +1061,28 @@ type [<ReferenceEquality>] GlRenderer3d =
 
                         // add to cache and create light map
                         irradianceAndEnvironmentMapsOptRef.Value <- Some (irradianceMap, environmentFilterMap)
-                        OpenGL.LightMap.CreateLightMap true v3Zero box3Zero cubeMap irradianceMap environmentFilterMap
+                        OpenGL.LightMap.CreateLightMap true v3Zero box3Zero irradianceMap environmentFilterMap
 
                     else // otherwise, get the cached irradiance and env filter maps
                         let (irradianceMap, environmentFilterMap) = Option.get irradianceAndEnvironmentMapsOptRef.Value
-                        OpenGL.LightMap.CreateLightMap true v3Zero box3Zero cubeMap irradianceMap environmentFilterMap
+                        OpenGL.LightMap.CreateLightMap true v3Zero box3Zero irradianceMap environmentFilterMap
 
                 // otherwise, use the default maps
-                | None -> OpenGL.LightMap.CreateLightMap true v3Zero box3Zero renderer.RenderCubeMap renderer.RenderIrradianceMap renderer.RenderEnvironmentFilterMap
+                | None -> OpenGL.LightMap.CreateLightMap true v3Zero box3Zero renderer.RenderIrradianceMap renderer.RenderEnvironmentFilterMap
 
             else // get whatever's available
                 match skyBoxOpt with
-                | Some (_, _, cubeMap, irradianceAndEnvironmentMapsOptRef : _ ref) ->
+                | Some (_, _, _, irradianceAndEnvironmentMapsOptRef : _ ref) ->
 
                     // attempt to use the cached irradiance and env filter map or the default maps
                     let (irradianceMap, environmentFilterMap) =
                         match irradianceAndEnvironmentMapsOptRef.Value with
                         | Some irradianceAndEnvironmentMaps -> irradianceAndEnvironmentMaps
                         | None -> (renderer.RenderIrradianceMap, renderer.RenderEnvironmentFilterMap)
-                    OpenGL.LightMap.CreateLightMap true v3Zero box3Zero cubeMap irradianceMap environmentFilterMap
+                    OpenGL.LightMap.CreateLightMap true v3Zero box3Zero irradianceMap environmentFilterMap
 
                 // otherwise, use the default maps
-                | None -> OpenGL.LightMap.CreateLightMap true v3Zero box3Zero renderer.RenderCubeMap renderer.RenderIrradianceMap renderer.RenderEnvironmentFilterMap
+                | None -> OpenGL.LightMap.CreateLightMap true v3Zero box3Zero renderer.RenderIrradianceMap renderer.RenderEnvironmentFilterMap
 
         // synchronize light maps from light probes if at top-level
         if topLevelRender then
@@ -1095,7 +1095,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 | (true, lightMap) when not lightProbeStale ->
 
                     // ensure cached light map values from probe are updated
-                    let lightMap = OpenGL.LightMap.CreateLightMap lightProbeEnabled lightProbeOrigin lightProbeBounds lightMap.ReflectionMap lightMap.IrradianceMap lightMap.EnvironmentFilterMap
+                    let lightMap = OpenGL.LightMap.CreateLightMap lightProbeEnabled lightProbeOrigin lightProbeBounds lightMap.IrradianceMap lightMap.EnvironmentFilterMap
                     renderer.RenderLightMaps.[lightProbeId] <- lightMap
 
                 // render (or re-render) cached light map from probe
@@ -1128,8 +1128,11 @@ type [<ReferenceEquality>] GlRenderer3d =
                              renderer.RenderEnvironmentFilterShader,
                              OpenGL.CubeMap.CubeMapSurface.make reflectionMap renderer.RenderCubeMapGeometry)
 
+                    // destroy reflection map
+                    OpenGL.Gl.DeleteTextures [|reflectionMap|]
+
                     // create light map
-                    let lightMap = OpenGL.LightMap.CreateLightMap lightProbeEnabled lightProbeOrigin lightProbeBounds reflectionMap irradianceMap environmentFilterMap
+                    let lightMap = OpenGL.LightMap.CreateLightMap lightProbeEnabled lightProbeOrigin lightProbeBounds irradianceMap environmentFilterMap
 
                     // add light map to cache
                     renderer.RenderLightMaps.Add (lightProbeId, lightMap)
