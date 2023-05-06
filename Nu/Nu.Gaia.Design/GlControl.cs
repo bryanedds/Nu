@@ -3,36 +3,23 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using OpenGL;
 using Nu;
+using Microsoft.VisualBasic.ApplicationServices;
+using Microsoft.VisualBasic;
+using System.Windows.Forms;
 
 namespace Nu.Gaia.Design
 {
     public partial class GlControl : UserControl, WfglWindow
     {
-        public GlControl()
+        public unsafe GlControl()
         {
+            // init
             InitializeComponent();
+
+            // configure control properties
             SetStyle(ControlStyles.Selectable, true);
             DoubleBuffered = true;
             TabStop = true;
-        }
-
-        public bool Valid => glContext != IntPtr.Zero;
-
-        public bool OpenGlForwardCompatible { get; set; } = false;
-
-        public bool OpenGlRobustAccess { get; set; } = false;
-
-        public unsafe bool TryMakeContext()
-        {
-            // ensure only one context is created
-            if (glContext != IntPtr.Zero)
-                throw new InvalidOperationException("Context already created.");
-
-            // ensure that basic wgl extensions are available
-            Trace.Assert(Wgl.CONTEXT_FLAGS_ARB == Glx.CONTEXT_FLAGS_ARB);
-            Trace.Assert(Wgl.CONTEXT_MAJOR_VERSION_ARB == Glx.CONTEXT_MAJOR_VERSION_ARB);
-            Trace.Assert(Wgl.CONTEXT_MINOR_VERSION_ARB == Glx.CONTEXT_MINOR_VERSION_ARB);
-            Trace.Assert(Wgl.CONTEXT_PROFILE_MASK_ARB == Glx.CONTEXT_PROFILE_MASK_ARB);
 
             // set pixel format
             hdc = Wgl.UnsafeNativeMethods.GetDC(Handle);
@@ -46,6 +33,23 @@ namespace Nu.Gaia.Design
             pfd.cStencilBits = 8;
             int format = Wgl.ChoosePixelFormat(hdc, ref pfd);
             Wgl.SetPixelFormat(hdc, format, ref pfd);
+        }
+
+        public bool OpenGlForwardCompatible { get; set; } = false;
+
+        public bool OpenGlRobustAccess { get; set; } = false;
+
+        public bool TryMakeContext()
+        {
+            // ensure only one context is created
+            if (glContext != IntPtr.Zero)
+                throw new InvalidOperationException("Context already created.");
+
+            // ensure that basic wgl extensions are available
+            Trace.Assert(Wgl.CONTEXT_FLAGS_ARB == Glx.CONTEXT_FLAGS_ARB);
+            Trace.Assert(Wgl.CONTEXT_MAJOR_VERSION_ARB == Glx.CONTEXT_MAJOR_VERSION_ARB);
+            Trace.Assert(Wgl.CONTEXT_MINOR_VERSION_ARB == Glx.CONTEXT_MINOR_VERSION_ARB);
+            Trace.Assert(Wgl.CONTEXT_PROFILE_MASK_ARB == Glx.CONTEXT_PROFILE_MASK_ARB);
 
             // create context
             if (Gl.PlatformExtensions.CreateContext_ARB)
@@ -120,12 +124,9 @@ namespace Nu.Gaia.Design
 
         public void DeleteContext()
         {
-            // ensure context exists
-            if (glContext == IntPtr.Zero)
-                throw new InvalidOperationException("Context does not exist.");
-
-            // delete
-            Wgl.DeleteContext(glContext);
+            // delete context if it exists
+            if (glContext != IntPtr.Zero)
+                Wgl.DeleteContext(glContext);
         }
 
         public void Swap()

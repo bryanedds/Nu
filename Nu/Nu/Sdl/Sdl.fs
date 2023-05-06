@@ -105,11 +105,7 @@ module SdlDeps =
             else
                 let error = "SDL2# resource creation failed due to '" + SDL.SDL_GetError () + "'."
                 Left error
-        | Left (wfglWindow : WfglWindow) ->
-            if wfglWindow.Valid then Right (resourceEir, destroy)
-            else
-                let error = "SDL2# resource creation failed due to '" + SDL.SDL_GetError () + "'."
-                Left error
+        | Left _ -> Right (resourceEir, destroy)
 
     /// Attempt to initalize an SDL resource.
     let internal tryMakeSdlResource create destroy =
@@ -152,9 +148,7 @@ module SdlDeps =
                         SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_STENCIL_SIZE, 8) |> ignore<int>
                         let window = SDL.SDL_CreateWindow (windowConfig.WindowTitle, windowConfig.WindowX, windowConfig.WindowY, sdlConfig.ViewW, sdlConfig.ViewH, windowConfig.WindowFlags)
                         Right window
-                    | ExistingWindow window ->
-                        if not (window.TryMakeContext ()) then Log.trace ("WfglWindow context creation failed.")
-                        Left window)
+                    | ExistingWindow window -> Left window)
                 (fun windowOpt ->
                     match windowOpt with
                     | Right window -> SDL.SDL_DestroyWindow window
