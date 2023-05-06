@@ -121,7 +121,8 @@ module OpenGl =
     let [<Literal>] VersionMinor = 1
     let [<Literal>] CoreProfile = true
     let [<Uniform>] GlslVersionPragma = "#version " + string VersionMajor + string VersionMinor + "0 " + if CoreProfile then "core" else ""
-    let [<Literal>] TextureInternalFormat = OpenGL.InternalFormat.CompressedRgbaS3tcDxt5Ext
+    let [<Literal>] TextureCompressedFormat = OpenGL.InternalFormat.CompressedRgba
+    let [<Literal>] TextureUncompressedFormat = OpenGL.InternalFormat.CompressedRgba
 
 [<RequireQualifiedAccess>]
 module Assimp =

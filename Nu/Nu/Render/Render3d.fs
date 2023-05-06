@@ -436,7 +436,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
     static member private tryLoadTextureAsset packageState (asset : obj Asset) renderer =
         GlRenderer3d.invalidateCaches renderer
-        match OpenGL.Texture.TryCreateTextureMemoizedFiltered (asset.FilePath, packageState.TextureMemo) with
+        match OpenGL.Texture.TryCreateTextureMemoizedCompressedFiltered (asset.FilePath, packageState.TextureMemo) with
         | Right (textureMetadata, texture) ->
             Some (asset.FilePath, textureMetadata, texture)
         | Left error ->
@@ -503,7 +503,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
                 // reload assets if specified
                 if reloading then
-                    OpenGL.Texture.RecreateTexturesMemoized true renderPackage.PackageState.TextureMemo
+                    OpenGL.Texture.RecreateTexturesMemoized true true renderPackage.PackageState.TextureMemo
                     OpenGL.Hl.Assert ()
                     OpenGL.CubeMap.RecreateCubeMapsMemoized renderPackage.PackageState.CubeMapMemo
                     OpenGL.Hl.Assert ()
@@ -1493,7 +1493,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         // create brdf texture
         let brdfTexture =
-            match OpenGL.Texture.TryCreateTextureUnfiltered (Constants.Paths.BrdfTextureFilePath) with
+            match OpenGL.Texture.TryCreateTextureCompressedUnfiltered (Constants.Paths.BrdfTextureFilePath) with
             | Right (_, texture) -> texture
             | Left error -> failwith ("Could not load BRDF texture due to: " + error)
 
@@ -1508,19 +1508,19 @@ type [<ReferenceEquality>] GlRenderer3d =
               InvertRoughness = Constants.Render.InvertRoughnessDefault }
 
         // get albedo metadata and texture
-        let (albedoMetadata, albedoTexture) = OpenGL.Texture.TryCreateTextureFiltered ("Assets/Default/MaterialAlbedo.png") |> Either.getRight
+        let (albedoMetadata, albedoTexture) = OpenGL.Texture.TryCreateTextureCompressedFiltered ("Assets/Default/MaterialAlbedo.png") |> Either.getRight
 
         // create default physically-based material
         let physicallyBasedMaterial : OpenGL.PhysicallyBased.PhysicallyBasedMaterial =
             { MaterialProperties = physicallyBasedMaterialProperties
               AlbedoMetadata = albedoMetadata
               AlbedoTexture = albedoTexture
-              MetallicTexture = OpenGL.Texture.TryCreateTextureFiltered ("Assets/Default/MaterialMetallic.png") |> Either.getRight |> snd
-              RoughnessTexture = OpenGL.Texture.TryCreateTextureFiltered ("Assets/Default/MaterialRoughness.png") |> Either.getRight |> snd
-              AmbientOcclusionTexture = OpenGL.Texture.TryCreateTextureFiltered ("Assets/Default/MaterialAmbientOcclusion.png") |> Either.getRight |> snd
-              EmissionTexture = OpenGL.Texture.TryCreateTextureFiltered ("Assets/Default/MaterialEmission.png") |> Either.getRight |> snd
-              NormalTexture = OpenGL.Texture.TryCreateTextureFiltered ("Assets/Default/MaterialNormal.png") |> Either.getRight |> snd
-              HeightTexture = OpenGL.Texture.TryCreateTextureFiltered ("Assets/Default/MaterialHeight.png") |> Either.getRight |> snd
+              MetallicTexture = OpenGL.Texture.TryCreateTextureCompressedFiltered ("Assets/Default/MaterialMetallic.png") |> Either.getRight |> snd
+              RoughnessTexture = OpenGL.Texture.TryCreateTextureCompressedFiltered ("Assets/Default/MaterialRoughness.png") |> Either.getRight |> snd
+              AmbientOcclusionTexture = OpenGL.Texture.TryCreateTextureCompressedFiltered ("Assets/Default/MaterialAmbientOcclusion.png") |> Either.getRight |> snd
+              EmissionTexture = OpenGL.Texture.TryCreateTextureCompressedFiltered ("Assets/Default/MaterialEmission.png") |> Either.getRight |> snd
+              NormalTexture = OpenGL.Texture.TryCreateTextureCompressedFiltered ("Assets/Default/MaterialNormal.png") |> Either.getRight |> snd
+              HeightTexture = OpenGL.Texture.TryCreateTextureCompressedFiltered ("Assets/Default/MaterialHeight.png") |> Either.getRight |> snd
               TextureMinFilterOpt = None
               TextureMagFilterOpt = None
               TwoSided = false }

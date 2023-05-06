@@ -269,7 +269,7 @@ module PhysicallyBased =
         if isNull albedoTextureSlot.FilePath then albedoTextureSlot.FilePath <- "" // ensure not null
         let (albedoMetadata, albedoTexture) =
             if renderable then
-                match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + albedoTextureSlot.FilePath, textureMemo) with
+                match Texture.TryCreateTextureMemoizedCompressedFiltered (dirPath + "/" + albedoTextureSlot.FilePath, textureMemo) with
                 | Right (textureMetadata, texture) -> (textureMetadata, texture)
                 | Left _ -> (defaultMaterial.AlbedoMetadata, defaultMaterial.AlbedoTexture)
             else (defaultMaterial.AlbedoMetadata, defaultMaterial.AlbedoTexture)
@@ -303,19 +303,19 @@ module PhysicallyBased =
         if isNull metallicTextureSlot.FilePath then metallicTextureSlot.FilePath <- "" // ensure not null
         let metallicTexture =
             if renderable then
-                match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + metallicTextureSlot.FilePath, textureMemo) with
+                match Texture.TryCreateTextureMemoizedCompressedFiltered (dirPath + "/" + metallicTextureSlot.FilePath, textureMemo) with
                 | Right (_, texture) -> texture
                 | Left _ ->
-                    match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + mTextureFilePath, textureMemo) with
+                    match Texture.TryCreateTextureMemoizedCompressedFiltered (dirPath + "/" + mTextureFilePath, textureMemo) with
                     | Right (_, texture) -> texture
                     | Left _ ->
-                        match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + m_gTextureFilePath, textureMemo) with
+                        match Texture.TryCreateTextureMemoizedCompressedFiltered (dirPath + "/" + m_gTextureFilePath, textureMemo) with
                         | Right (_, texture) -> texture
                         | Left _ ->
-                            match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + m_ao_gTextureFilePath, textureMemo) with
+                            match Texture.TryCreateTextureMemoizedCompressedFiltered (dirPath + "/" + m_ao_gTextureFilePath, textureMemo) with
                             | Right (_, texture) -> texture
                             | Left _ ->
-                                match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + metallicTextureFilePath, textureMemo) with
+                                match Texture.TryCreateTextureMemoizedCompressedFiltered (dirPath + "/" + metallicTextureFilePath, textureMemo) with
                                 | Right (_, texture) -> texture
                                 | Left _ -> defaultMaterial.MetallicTexture
             else defaultMaterial.MetallicTexture
@@ -327,22 +327,22 @@ module PhysicallyBased =
         if isNull roughnessTextureSlot.FilePath then roughnessTextureSlot.FilePath <- "" // ensure not null
         let roughnessTexture =
             if renderable then
-                match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + roughnessTextureSlot.FilePath, textureMemo) with
+                match Texture.TryCreateTextureMemoizedCompressedFiltered (dirPath + "/" + roughnessTextureSlot.FilePath, textureMemo) with
                 | Right (_, texture) -> texture
                 | Left _ ->
-                    match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + gTextureFilePath, textureMemo) with
+                    match Texture.TryCreateTextureMemoizedCompressedFiltered (dirPath + "/" + gTextureFilePath, textureMemo) with
                     | Right (_, texture) -> texture
                     | Left _ ->
-                        match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + sTextureFilePath, textureMemo) with
+                        match Texture.TryCreateTextureMemoizedCompressedFiltered (dirPath + "/" + sTextureFilePath, textureMemo) with
                         | Right (_, texture) -> texture
                         | Left _ ->
-                            match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + m_gTextureFilePath, textureMemo) with
+                            match Texture.TryCreateTextureMemoizedCompressedFiltered (dirPath + "/" + m_gTextureFilePath, textureMemo) with
                             | Right (_, texture) -> texture
                             | Left _ ->
-                                match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + m_ao_gTextureFilePath, textureMemo) with
+                                match Texture.TryCreateTextureMemoizedCompressedFiltered (dirPath + "/" + m_ao_gTextureFilePath, textureMemo) with
                                 | Right (_, texture) -> texture
                                 | Left _ ->
-                                    match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + roughnessTextureFilePath, textureMemo) with
+                                    match Texture.TryCreateTextureMemoizedCompressedFiltered (dirPath + "/" + roughnessTextureFilePath, textureMemo) with
                                     | Right (_, texture) -> texture
                                     | Left _ -> defaultMaterial.RoughnessTexture
             else defaultMaterial.RoughnessTexture
@@ -353,16 +353,16 @@ module PhysicallyBased =
         if isNull ambientOcclusionTextureSlot.FilePath then ambientOcclusionTextureSlot.FilePath <- "" // ensure not null
         let ambientOcclusionTexture =
             if renderable then
-                match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + ambientOcclusionTextureSlot.FilePath, textureMemo) with
+                match Texture.TryCreateTextureMemoizedCompressedFiltered (dirPath + "/" + ambientOcclusionTextureSlot.FilePath, textureMemo) with
                 | Right (_, texture) -> texture
                 | Left _ ->
-                    match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + aoTextureFilePath, textureMemo) with
+                    match Texture.TryCreateTextureMemoizedCompressedFiltered (dirPath + "/" + aoTextureFilePath, textureMemo) with
                     | Right (_, texture) -> texture
                     | Left _ ->
-                        match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + m_ao_gTextureFilePath, textureMemo) with
+                        match Texture.TryCreateTextureMemoizedCompressedFiltered (dirPath + "/" + m_ao_gTextureFilePath, textureMemo) with
                         | Right (_, texture) -> texture
                         | Left _ ->
-                            match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + aoTextureFilePath', textureMemo) with
+                            match Texture.TryCreateTextureMemoizedCompressedFiltered (dirPath + "/" + aoTextureFilePath', textureMemo) with
                             | Right (_, texture) -> texture
                             | Left _ -> defaultMaterial.AmbientOcclusionTexture
             else defaultMaterial.AmbientOcclusionTexture
@@ -373,13 +373,13 @@ module PhysicallyBased =
         if isNull emissionTextureSlot.FilePath then emissionTextureSlot.FilePath <- "" // ensure not null
         let emissionTexture =
             if renderable then
-                match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + emissionTextureSlot.FilePath, textureMemo) with
+                match Texture.TryCreateTextureMemoizedCompressedFiltered (dirPath + "/" + emissionTextureSlot.FilePath, textureMemo) with
                 | Right (_, texture) -> texture
                 | Left _ ->
-                    match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + eTextureFilePath, textureMemo) with
+                    match Texture.TryCreateTextureMemoizedCompressedFiltered (dirPath + "/" + eTextureFilePath, textureMemo) with
                     | Right (_, texture) -> texture
                     | Left _ ->
-                        match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + emissionTextureFilePath, textureMemo) with
+                        match Texture.TryCreateTextureMemoizedCompressedFiltered (dirPath + "/" + emissionTextureFilePath, textureMemo) with
                         | Right (_, texture) -> texture
                         | Left _ -> defaultMaterial.EmissionTexture
             else defaultMaterial.EmissionTexture
@@ -389,13 +389,13 @@ module PhysicallyBased =
         if isNull normalTextureSlot.FilePath then normalTextureSlot.FilePath <- "" // ensure not null
         let normalTexture =
             if renderable then
-                match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + normalTextureSlot.FilePath, textureMemo) with
+                match Texture.TryCreateTextureMemoizedCompressedFiltered (dirPath + "/" + normalTextureSlot.FilePath, textureMemo) with
                 | Right (_, texture) -> texture
                 | Left _ ->
-                    match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + nTextureFilePath, textureMemo) with
+                    match Texture.TryCreateTextureMemoizedCompressedFiltered (dirPath + "/" + nTextureFilePath, textureMemo) with
                     | Right (_, texture) -> texture
                     | Left _ ->
-                        match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + normalTextureFilePath, textureMemo) with
+                        match Texture.TryCreateTextureMemoizedCompressedFiltered (dirPath + "/" + normalTextureFilePath, textureMemo) with
                         | Right (_, texture) -> texture
                         | Left _ -> defaultMaterial.NormalTexture
             else defaultMaterial.NormalTexture
@@ -406,13 +406,13 @@ module PhysicallyBased =
         if isNull heightTextureSlot.FilePath then heightTextureSlot.FilePath <- "" // ensure not null
         let heightTexture =
             if renderable then
-                match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + heightTextureSlot.FilePath, textureMemo) with
+                match Texture.TryCreateTextureMemoizedCompressedFiltered (dirPath + "/" + heightTextureSlot.FilePath, textureMemo) with
                 | Right (_, texture) -> texture
                 | Left _ ->
-                    match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + hTextureFilePath, textureMemo) with
+                    match Texture.TryCreateTextureMemoizedCompressedFiltered (dirPath + "/" + hTextureFilePath, textureMemo) with
                     | Right (_, texture) -> texture
                     | Left _ ->
-                        match Texture.TryCreateTextureMemoizedFiltered (dirPath + "/" + heightTextureFilePath, textureMemo) with
+                        match Texture.TryCreateTextureMemoizedCompressedFiltered (dirPath + "/" + heightTextureFilePath, textureMemo) with
                         | Right (_, texture) -> texture
                         | Left _ -> defaultMaterial.HeightTexture
             else defaultMaterial.HeightTexture
