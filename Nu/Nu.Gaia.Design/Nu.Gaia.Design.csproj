@@ -27,16 +27,35 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <ProjectReference Include="..\Nu.Math\Nu.Math.csproj" />
+		<ProjectReference Include="..\Nu.Math\Nu.Math.csproj" />
+		<ProjectReference Include="..\Nu.Pipe\Nu.Pipe.fsproj" />
+		<ProjectReference Include="..\Nu\Nu.fsproj" />
 	</ItemGroup>
 
 	<ItemGroup>
+		<Reference Include="AssimpNet">
+			<HintPath>..\..\Nu\Nu.Dependencies\AssimpNet\netstandard1.3\AssimpNet.dll</HintPath>
+		</Reference>
+		<Reference Include="BulletSharpPInvoke">
+			<HintPath>..\..\Nu\Nu.Dependencies\BulletSharpPInvoke\netstandard2.1\BulletSharp.dll</HintPath>
+		</Reference>
 		<Reference Include="OpenGL.Net">
 			<HintPath>..\..\Nu\Nu.Dependencies\OpenGL.NET\lib\netcoreapp2.2\OpenGL.Net.dll</HintPath>
 		</Reference>
 		<Reference Include="SDL2-CS">
-		  <HintPath>..\Nu.Dependencies\SDL2-CS\netstandard2.0\SDL2-CS.dll</HintPath>
+			<HintPath>..\..\Nu\Nu.Dependencies\SDL2-CS\netstandard2.0\SDL2-CS.dll</HintPath>
 		</Reference>
+		<Reference Include="TiledSharp">
+			<HintPath>..\..\Nu\Nu.Dependencies\TiledSharp\lib\netstandard2.0\TiledSharp.dll</HintPath>
+		</Reference>
+		<PackageReference Include="Csv" Version="1.0.58" />
+		<PackageReference Include="FParsec" Version="1.0.3" />
+		<PackageReference Include="Aether.Physics2D" Version="1.5.0" />
+		<PackageReference Include="Magick.NET-Q8-x64" Version="7.5.0.1" />
+		<PackageReference Include="Nito.Collections.Deque" Version="1.1.0" />
+		<PackageReference Include="Prime" Version="9.6.0" />
+		<PackageReference Include="Prime.Scripting" Version="9.5.0" />
+		<PackageReference Include="System.Configuration.ConfigurationManager" Version="7.0.0" />
 	</ItemGroup>
 
 </Project>

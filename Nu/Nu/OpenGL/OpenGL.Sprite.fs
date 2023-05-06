@@ -21,7 +21,7 @@ module Sprite =
 
         // vertex shader code
         let vertexShaderStr =
-            [Constants.Render.GlslVersionPragma
+            [Constants.OpenGl.GlslVersionPragma
              ""
              "const int VERTS = 4;"
              ""
@@ -46,7 +46,7 @@ module Sprite =
 
         // fragment shader code
         let fragmentShaderStr =
-            [Constants.Render.GlslVersionPragma
+            [Constants.OpenGl.GlslVersionPragma
              "uniform sampler2D tex;"
              "uniform vec4 color;"
              "in vec2 texCoords;"
