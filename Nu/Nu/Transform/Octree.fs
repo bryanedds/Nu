@@ -42,22 +42,24 @@ module Octelement =
         member this.Presence = this.Presence_
         member this.Bounds = this.Bounds_
         member this.Entry = this.Entry_
-        member this.Intersects (eyeFrustumEnclosed : Frustum, eyeFrustumExposed : Frustum, eyeFrustumImposter : Frustum) =
-            match this.Presence_ with
-            | Enclosed -> eyeFrustumEnclosed.Intersects this.Bounds_
-            | Exposed -> eyeFrustumExposed.Intersects this.Bounds_ || eyeFrustumEnclosed.Intersects this.Bounds_ // TOOD: consider creating inclusive frustums so that only one check is necessary.
-            | Imposter -> eyeFrustumImposter.Intersects this.Bounds_
-            | Prominent -> eyeFrustumImposter.Intersects this.Bounds_ || eyeFrustumExposed.Intersects this.Bounds_ || eyeFrustumEnclosed.Intersects this.Bounds_ // TOOD: consider creating inclusive frustums so that only one check is necessary.
-            | Omnipresent -> true
         override this.GetHashCode () = this.HashCode_
         override this.Equals that = match that with :? Octelement<'e> as that -> this.Entry_.Equals that.Entry_ | _ -> false
-        static member make visible static_ light presence bounds (entry : 'e) =
-            let hashCode = entry.GetHashCode ()
-            let flags =
-                (if visible then VisibleMask else 0u) |||
-                (if static_ then StaticMask else 0u) |||
-                (if light then LightMask else 0u)
-            { HashCode_ = hashCode; Flags_ = flags; Presence_ = presence; Bounds_ = bounds; Entry_ = entry }
+
+    let intersects (eyeFrustumEnclosed : Frustum) (eyeFrustumExposed : Frustum) (eyeFrustumImposter : Frustum) element =
+        match element.Presence_ with
+        | Enclosed -> eyeFrustumEnclosed.Intersects element.Bounds_
+        | Exposed -> eyeFrustumExposed.Intersects element.Bounds_ || eyeFrustumEnclosed.Intersects element.Bounds_ // TOOD: consider creating inclusive frustums so that only one check is necessary.
+        | Imposter -> eyeFrustumImposter.Intersects element.Bounds_
+        | Prominent -> eyeFrustumImposter.Intersects element.Bounds_ || eyeFrustumExposed.Intersects element.Bounds_ || eyeFrustumEnclosed.Intersects element.Bounds_ // TOOD: consider creating inclusive frustums so that only one check is necessary.
+        | Omnipresent -> true
+
+    let make visible static_ light presence bounds (entry : 'e) =
+        let hashCode = entry.GetHashCode ()
+        let flags =
+            (if visible then VisibleMask else 0u) |||
+            (if static_ then StaticMask else 0u) |||
+            (if light then LightMask else 0u)
+        { HashCode_ = hashCode; Flags_ = flags; Presence_ = presence; Bounds_ = bounds; Entry_ = entry }
 
 /// An element in an octree.
 type Octelement<'e when 'e : equality> = Octelement.Octelement<'e>
