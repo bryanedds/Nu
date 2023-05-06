@@ -10,6 +10,15 @@ open Nu
 /// A window for rendering in SDL OpenGL.
 type [<ReferenceEquality>] SglWindow =
     { SglWindow : nativeint }
+    
+/// An interface for specifying a Windows Forms control that uses OpenGL.
+type WfglWindow =
+    interface
+        abstract member CreateSdlWindowFrom : unit -> unit
+        abstract member CreateContext : unit -> unit
+        abstract member Swap : unit -> unit
+        abstract member CleanUp : unit -> unit
+        end
 
 /// A window for rendering.
 type [<ReferenceEquality>] Window =

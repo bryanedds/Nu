@@ -88,7 +88,6 @@ module Render =
     let [<Uniform>] ViewportOffset (windowSize : Vector2i) = Viewport (NearPlaneDistanceOmnipresent, FarPlaneDistanceOmnipresent, Box2i(ViewportMargin windowSize, Resolution))
     let [<Uniform>] Viewport = Viewport (NearPlaneDistanceOmnipresent, FarPlaneDistanceOmnipresent, Box2i(v2iZero, Resolution))
     let [<Uniform>] WindowClearColor = Color.White // NOTE: do not change this color as the deferred2 renderer checks if normal color is equal to [1;1;1] to discard fragment.
-    let [<Uniform>] GlslVersionPragma = "#version " + string Constants.OpenGl.VersionMajor + string Constants.OpenGl.VersionMinor + "0 " + if Constants.OpenGl.CoreProfile then "core" else ""
     let [<Literal>] TexturePriorityDefault = 0.5f // higher priority than (supposed) default, but not maximum. this value is arrived at through experimenting with a Windows NVidia driver.
     let [<Literal>] TextureAnisotropyMax = 8.0f
     let [<Literal>] SpriteBatchSize = 192
@@ -115,6 +114,13 @@ module Render =
     let [<Literal>] EmissionDefault = 1.0f
     let [<Literal>] HeightDefault = 1.0f
     let [<Literal>] InvertRoughnessDefault = false
+
+module OpenGl =
+
+    let [<Literal>] VersionMajor = 4
+    let [<Literal>] VersionMinor = 1
+    let [<Literal>] CoreProfile = true
+    let [<Uniform>] GlslVersionPragma = "#version " + string VersionMajor + string VersionMinor + "0 " + if CoreProfile then "core" else ""
 
 [<RequireQualifiedAccess>]
 module Assimp =

@@ -56,7 +56,7 @@ module SpriteBatch =
 
         // vertex shader code
         let samplerVertexShaderStr =
-            [Constants.Render.GlslVersionPragma
+            [Constants.OpenGl.GlslVersionPragma
              ""
              "const int VERTS = 6;"
              ""
@@ -110,7 +110,7 @@ module SpriteBatch =
 
         // fragment shader code
         let samplerFragmentShaderStr =
-            [Constants.Render.GlslVersionPragma
+            [Constants.OpenGl.GlslVersionPragma
              "uniform sampler2D tex;"
              "in vec2 texCoords;"
              "in vec4 color;"
