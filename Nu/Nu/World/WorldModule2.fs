@@ -121,7 +121,7 @@ module WorldModule2 =
                 let light = entity.GetLight world
                 let presence = entity.GetPresence world
                 if entity.GetIs3d world then
-                    let element = Octelement.make visible static_ light presence entity
+                    let element = Octelement.make visible static_ light presence bounds entity
                     Octree.addElement bounds element octree
             octree
 
@@ -1074,14 +1074,35 @@ module WorldModule2 =
 
             // render entities
             RenderEntitiesTimer.Start ()
+            let eyeFrustumEnclosed = World.getEyeFrustum3dEnclosed world
+            let eyeFrustumExposed = World.getEyeFrustum3dExposed world
+            let eyeFrustumImposter = World.getEyeFrustum3dImposter world
             let world =
-                if World.getUnaccompanied world
-                then Seq.fold (fun world (element : Entity Octelement) -> if element.Visible then World.renderEntity element.Entry world else world) world elements3d
-                else Seq.fold (fun world (element : Entity Octelement) -> if element.Visible && element.Entry.Group.GetVisible world then World.renderEntity element.Entry world else world) world elements3d
+                if World.getUnaccompanied world then
+                    Seq.fold (fun world (element : Entity Octelement) ->
+                        if element.Visible && (unculledRenderRequested || element.Intersects (eyeFrustumEnclosed, eyeFrustumExposed, eyeFrustumImposter))
+                        then World.renderEntity element.Entry world
+                        else world)
+                        world elements3d
+                else
+                    Seq.fold (fun world (element : Entity Octelement) ->
+                        if element.Visible && (unculledRenderRequested || element.Intersects (eyeFrustumEnclosed, eyeFrustumExposed, eyeFrustumImposter)) && element.Entry.Group.GetVisible world
+                        then World.renderEntity element.Entry world
+                        else world)
+                        world elements3d
             let world =
-                if World.getUnaccompanied world
-                then Seq.fold (fun world (element : Entity Quadelement) -> if element.Visible then World.renderEntity element.Entry world else world) world elements2d
-                else Seq.fold (fun world (element : Entity Quadelement) -> if element.Visible && element.Entry.Group.GetVisible world then World.renderEntity element.Entry world else world) world elements2d
+                if World.getUnaccompanied world then
+                    Seq.fold (fun world (element : Entity Quadelement) ->
+                        if element.Visible
+                        then World.renderEntity element.Entry world
+                        else world)
+                        world elements2d
+                else
+                    Seq.fold (fun world (element : Entity Quadelement) ->
+                        if element.Visible && element.Entry.Group.GetVisible world
+                        then World.renderEntity element.Entry world
+                        else world)
+                        world elements2d
             RenderEntitiesTimer.Stop ()
 
             // clear cached hash sets
