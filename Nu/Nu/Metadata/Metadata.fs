@@ -41,7 +41,7 @@ type ImageFormat =
 /// Metadata for an asset. Useful to describe various attributes of an asset without having the
 /// full asset loaded into memory.
 type AssetMetadata =
-    | TextureMetadata of Vector2i * ImageFormat
+    | TextureMetadata of Vector2i
     | TileMapMetadata of string * (TmxTileset * Image AssetTag) array * TmxMap
     | StaticModelMetadata of OpenGL.PhysicallyBased.PhysicallyBasedStaticModel
     | SoundMetadata
@@ -104,13 +104,13 @@ module Metadata =
                 // NOTE: System.Drawing.Image is, AFAIK, only available on non-Windows platforms, so we use a fast path here.
                 use fileStream = new FileStream (asset.FilePath, FileMode.Open, FileAccess.Read, FileShare.Read)
                 use image = Drawing.Image.FromStream (fileStream, false, false)
-                Some (TextureMetadata (v2i image.Width image.Height, ImagingPixelFormat image.PixelFormat))
+                Some (TextureMetadata (v2i image.Width image.Height))
             else
                 // NOTE: System.Drawing.Image is not, AFAIK, available on non-Windows platforms, so we use a VERY slow path here.
                 match OpenGL.Texture.TryCreateImageData asset.FilePath with
                 | Some (metadata, _, disposer) ->
                     use _ = disposer
-                    Some (TextureMetadata (v2i metadata.TextureWidth metadata.TextureHeight, OpenGLInternalFormat metadata.TextureInternalFormat))
+                    Some (TextureMetadata (v2i metadata.TextureWidth metadata.TextureHeight))
                 | None ->
                     let errorMessage = "Failed to load texture metadata for '" + asset.FilePath + "."
                     Log.trace errorMessage
@@ -231,14 +231,7 @@ module Metadata =
     /// Try to get the texture metadata of the given asset.
     let tryGetTextureSize (assetTag : Image AssetTag) =
         match tryGetMetadata (AssetTag.generalize assetTag) with
-        | Some (TextureMetadata (size, _)) -> Some size
-        | None -> None
-        | _ -> None
-
-    /// Try to get the texture metadata of the given asset.
-    let tryGetTextureFormat (assetTag : Image AssetTag) =
-        match tryGetMetadata (AssetTag.generalize assetTag) with
-        | Some (TextureMetadata (_, format)) -> Some format
+        | Some (TextureMetadata size) -> Some size
         | None -> None
         | _ -> None
 

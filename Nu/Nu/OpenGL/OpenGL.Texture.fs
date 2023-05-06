@@ -22,16 +22,14 @@ module Texture =
         { TextureWidth : int
           TextureHeight : int
           TextureTexelWidth : single
-          TextureTexelHeight : single
-          TextureInternalFormat : InternalFormat }
+          TextureTexelHeight : single }
 
         /// Unpopulated texture data.
         static member empty =
             { TextureWidth = 0
               TextureHeight = 0
               TextureTexelWidth = 0.0f
-              TextureTexelHeight = 0.0f
-              TextureInternalFormat = Unchecked.defaultof<_> }
+              TextureTexelHeight = 0.0f }
 
     /// Memoizes texture loads.
     type [<ReferenceEquality>] TextureMemo =
@@ -71,8 +69,7 @@ module Texture =
                         { TextureWidth = bitmap.Width
                           TextureHeight = bitmap.Height
                           TextureTexelWidth = 1.0f / single bitmap.Width
-                          TextureTexelHeight = 1.0f / single bitmap.Height
-                          TextureInternalFormat = Constants.OpenGl.TextureUncompressedFormat }
+                          TextureTexelHeight = 1.0f / single bitmap.Height }
                     Some (metadata, data.Scan0, { new IDisposable with member this.Dispose () = bitmap.UnlockBits data; bitmap.Dispose () }) // NOTE: calling UnlockBits explicitly since I can't fiture out if Dispose does.
                 with _ -> None
             else
@@ -85,8 +82,7 @@ module Texture =
                         { TextureWidth = unconverted.w
                           TextureHeight = unconverted.h
                           TextureTexelWidth = 1.0f / single unconverted.w
-                          TextureTexelHeight = 1.0f / single unconverted.h
-                          TextureInternalFormat = Constants.OpenGl.TextureUncompressedFormat }
+                          TextureTexelHeight = 1.0f / single unconverted.h }
                     let unconvertedFormat = Marshal.PtrToStructure<SDL.SDL_PixelFormat> unconverted.format
                     if unconvertedFormat.format <> format then
                         let convertedPtr = SDL.SDL_ConvertSurfaceFormat (unconvertedPtr, format, 0u)
