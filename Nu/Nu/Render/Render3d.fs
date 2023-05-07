@@ -437,8 +437,11 @@ type [<ReferenceEquality>] GlRenderer3d =
     static member private tryLoadTextureAsset packageState (asset : obj Asset) renderer =
         GlRenderer3d.invalidateCaches renderer
         let internalFormat =
-            if asset.AssetTag.AssetName.EndsWith "_n" || asset.AssetTag.AssetName.EndsWith "Normal"
-            then Constants.OpenGl.UncompressedTextureFormat
+            if  asset.AssetTag.AssetName.EndsWith "_n" ||
+                asset.AssetTag.AssetName.EndsWith "_u" ||
+                asset.AssetTag.AssetName.EndsWith "Normal" ||
+                asset.AssetTag.AssetName.EndsWith "Uncompressed" then
+                Constants.OpenGl.UncompressedTextureFormat
             else Constants.OpenGl.CompressedColorTextureFormat
         match OpenGL.Texture.TryCreateTextureFilteredMemoized (internalFormat, asset.FilePath, packageState.TextureMemo) with
         | Right (textureMetadata, texture) ->
