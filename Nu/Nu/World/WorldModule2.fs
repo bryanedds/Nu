@@ -1080,13 +1080,13 @@ module WorldModule2 =
             let world =
                 if World.getUnaccompanied world then
                     Seq.fold (fun world (element : Entity Octelement) ->
-                        if element.Visible && (unculledRenderRequested || Octelement.intersects eyeFrustumEnclosed eyeFrustumExposed eyeFrustumImposter element)
+                        if element.Visible && (unculledRenderRequested || element.Light || Octelement.intersects eyeFrustumEnclosed eyeFrustumExposed eyeFrustumImposter element)
                         then World.renderEntity element.Entry world
                         else world)
                         world elements3d
                 else
                     Seq.fold (fun world (element : Entity Octelement) ->
-                        if element.Visible && (unculledRenderRequested || Octelement.intersects eyeFrustumEnclosed eyeFrustumExposed eyeFrustumImposter element) && element.Entry.Group.GetVisible world
+                        if element.Visible && (unculledRenderRequested || element.Light || Octelement.intersects eyeFrustumEnclosed eyeFrustumExposed eyeFrustumImposter element) && element.Entry.Group.GetVisible world
                         then World.renderEntity element.Entry world
                         else world)
                         world elements3d
