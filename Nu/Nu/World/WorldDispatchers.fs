@@ -992,7 +992,6 @@ module LightProbeDispatcher3dModule =
         static member Properties =
             [define Entity.Light true
              define Entity.Presence Omnipresent
-             define Entity.YWarp Constants.Render.LightProbeYWarpDefault
              define Entity.ProbeBounds (box3 (v3Dup Constants.Render.LightProbeSizeDefault * -0.5f) (v3Dup Constants.Render.LightProbeSizeDefault))
              define Entity.ProbeStale false]
 

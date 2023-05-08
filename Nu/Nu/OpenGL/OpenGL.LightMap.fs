@@ -346,16 +346,14 @@ module LightMap =
     type [<StructuralEquality; NoComparison; Struct>] LightMap =
         { Enabled : bool
           Origin : Vector3
-          YWarp : single
           Bounds : Box3
           IrradianceMap : uint
           EnvironmentFilterMap : uint }
 
     /// Create a light map.
-    let CreateLightMap enabled origin yWarp bounds irradianceMap environmentFilterMap =
+    let CreateLightMap enabled origin bounds irradianceMap environmentFilterMap =
         { Enabled = enabled
           Origin = origin
-          YWarp = yWarp
           Bounds = bounds
           IrradianceMap = irradianceMap
           EnvironmentFilterMap = environmentFilterMap }
