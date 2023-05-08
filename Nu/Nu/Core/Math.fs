@@ -15,6 +15,7 @@ module Vector2 =
     type Vector2 with
 
         member this.V3 = Vector3 (this.X, this.Y, 0.0f)
+        member this.Normalized = Vector2.Normalize this
         member this.Magnitude = this.Length ()
         member this.MagnitudeSquared = this.LengthSquared ()
         member this.MapX mapper = Vector2 (mapper this.X, this.Y)
@@ -130,6 +131,7 @@ module Vector3 =
     type Vector3 with
 
         member this.V2 = Vector2 (this.X, this.Y)
+        member this.Normalized = Vector3.Normalize this
         member this.Magnitude = this.Length ()
         member this.MagnitudeSquared = this.LengthSquared ()
         member this.MapX mapper = Vector3 (mapper this.X, this.Y, this.Z)
@@ -1034,6 +1036,22 @@ module Matrix4x4 =
                 (Vector3(this.M11, this.M21, this.M31).Magnitude,
                  Vector3(this.M12, this.M22, this.M32).Magnitude,
                  Vector3(this.M13, this.M23, this.M33).Magnitude)
+
+        /// The right vector of the matrix.
+        member inline this.Right =
+            v3 this.M11 this.M21 this.M31
+
+        /// The up vector of the matrix.
+        member inline this.Up =
+            v3 this.M12 this.M22 this.M32
+
+        /// The forward vector of the matrix.
+        member inline this.Forward =
+            v3 this.M13 this.M23 this.M33
+
+        /// Right, up, and forward matrix vectors.
+        member inline this.RightUpForward =
+            (this.Right, this.Up, this.Forward)
 
         /// The rotation extracted from an affine matrix.
         member inline this.Rotation =
