@@ -21,7 +21,7 @@ const float REFLECTION_LOD_MAX = 5.0;
 const float GAMMA = 2.2;
 const float ATTENUATION_CONSTANT = 1.0;
 const float PARALLAX_CORRECTION_SCALE = 0.02;
-const int LIGHT_MAPS_MAX = 16;
+const int LIGHT_MAPS_MAX = 32;
 const int LIGHTS_MAX = 64;
 const float SSAO = 1.25;
 const float SSAO_BIAS = 0.01;
@@ -245,25 +245,30 @@ void main()
     // compute nearest light map indices
     int lm1 = -1;
     int lm2 = -1;
-    float lmDistanceSquared1 = FLOAT_MAX;
-    float lmDistanceSquared2 = FLOAT_MAX;
+    float lmDistance1 = FLOAT_MAX;
+    float lmDistance2 = FLOAT_MAX;
     for (int i = 0; i < LIGHT_MAPS_MAX; ++i)
     {
-        if (lightMapEnableds[i] != 0 && inBounds(position, lightMapMins[i], lightMapSizes[i]))
+        vec3 min = lightMapMins[i];
+        vec3 size = lightMapSizes[i];
+        vec3 max = min + size;
+        if (lightMapEnableds[i] != 0 && inBounds(position, min, size))
         {
-            vec3 delta = lightMapOrigins[i] - position;
-            float distanceSquared = dot(delta, delta);
-            if (distanceSquared < lmDistanceSquared1)
+            float x = clamp(position.x, min.x, max.x);
+            float y = clamp(position.y, min.y, max.y);
+            float z = clamp(position.z, min.z, max.z);
+            float distance = length(position - vec3(x, y, z));
+            if (distance < lmDistance1)
             {
                 lm2 = lm1;
                 lm1 = i;
-                lmDistanceSquared2 = lmDistanceSquared1;
-                lmDistanceSquared1 = distanceSquared;
+                lmDistance2 = lmDistance1;
+                lmDistance1 = distance;
             }
-            else if (distanceSquared < lmDistanceSquared2)
+            else if (distance < lmDistance2)
             {
                 lm2 = i;
-                lmDistanceSquared2 = distanceSquared;
+                lmDistance2 = distance;
             }
         }
     }
@@ -286,8 +291,8 @@ void main()
     else
     {
         // compute blended irradiance
-        float distance1 = sqrt(lmDistanceSquared1);
-        float distance2 = sqrt(lmDistanceSquared2);
+        float distance1 = length(lightMapOrigins[lm1] - position);
+        float distance2 = length(lightMapOrigins[lm2] - position);
         float distanceTotal = distance1 + distance2;
         float distanceTotalInverse = 1.0 / distanceTotal;
         float scalar1 = (distanceTotal - distance1) * distanceTotalInverse;
