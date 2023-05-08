@@ -274,7 +274,9 @@ and [<ReferenceEquality>] SortableLightMap =
         let lightMapIrradianceMaps = Array.zeroCreate<uint> lightMapsMax
         let lightMapEnvironmentFilterMaps = Array.zeroCreate<uint> lightMapsMax
         for lightMap in lightMaps do
-            lightMap.SortableLightMapDistanceSquared <- (lightMap.SortableLightMapOrigin - position).MagnitudeSquared
+            let delta = lightMap.SortableLightMapOrigin - position
+            let deltaWarped = delta.MapY((*) 16.0f)
+            lightMap.SortableLightMapDistanceSquared <- deltaWarped.MagnitudeSquared
         let lightMapsSorted = lightMaps |> Array.sortBy (fun light -> light.SortableLightMapDistanceSquared)
         for i in 0 .. dec lightMapsMax do
             if i < lightMapsSorted.Length then
