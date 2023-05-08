@@ -266,6 +266,13 @@ and [<ReferenceEquality>] SortableLightMap =
       SortableLightMapEnvironmentFilterMap : uint
       mutable SortableLightMapDistanceSquared : single }
 
+    /// TODO: maybe put this somewhere general?
+    static member private distanceFromBounds (point: Vector3) (bounds : Box3) =
+        let x = min bounds.Max.X (max bounds.Min.X point.X)
+        let y = min bounds.Max.Y (max bounds.Min.Y point.Y)
+        let z = min bounds.Max.Z (max bounds.Min.Z point.Z)
+        (point - v3 x y z).MagnitudeSquared
+
     /// Sort light maps into array for uploading to OpenGL.
     /// TODO: consider getting rid of allocation here.
     static member sortLightMapsIntoArrays lightMapsMax position lightMaps =
@@ -276,9 +283,7 @@ and [<ReferenceEquality>] SortableLightMap =
         let lightMapIrradianceMaps = Array.zeroCreate<uint> lightMapsMax
         let lightMapEnvironmentFilterMaps = Array.zeroCreate<uint> lightMapsMax
         for lightMap in lightMaps do
-            let delta = lightMap.SortableLightMapOrigin - position
-            let deltaWarped = delta.MapY((*) lightMap.SortableLightMapYWarp)
-            lightMap.SortableLightMapDistanceSquared <- deltaWarped.MagnitudeSquared
+            lightMap.SortableLightMapDistanceSquared <- SortableLightMap.distanceFromBounds position lightMap.SortableLightMapBounds
         let lightMapsSorted = lightMaps |> Array.sortBy (fun light -> light.SortableLightMapDistanceSquared)
         for i in 0 .. dec lightMapsMax do
             if i < lightMapsSorted.Length then
@@ -1177,8 +1182,8 @@ type [<ReferenceEquality>] GlRenderer3d =
         // sort light maps for deferred rendering relative to eye center
         let (lightMapEnableds, lightMapOrigins, lightMapMins, lightMapSizes, lightMapIrradianceMaps, lightMapEnvironmentFilterMaps) =
             if topLevelRender
-            then SortableLightMap.sortLightMapsIntoArrays Constants.Render.DeferredLightMapsMax eyeCenter lightMaps
-            else (Array.zeroCreate Constants.Render.DeferredLightMapsMax, Array.zeroCreate Constants.Render.DeferredLightMapsMax, Array.zeroCreate Constants.Render.DeferredLightMapsMax, Array.zeroCreate Constants.Render.DeferredLightMapsMax, Array.zeroCreate Constants.Render.DeferredLightMapsMax, Array.zeroCreate Constants.Render.DeferredLightMapsMax)
+            then SortableLightMap.sortLightMapsIntoArrays Constants.Render.LightMapsMaxDeferred eyeCenter lightMaps
+            else (Array.zeroCreate Constants.Render.LightMapsMaxDeferred, Array.zeroCreate Constants.Render.LightMapsMaxDeferred, Array.zeroCreate Constants.Render.LightMapsMaxDeferred, Array.zeroCreate Constants.Render.LightMapsMaxDeferred, Array.zeroCreate Constants.Render.LightMapsMaxDeferred, Array.zeroCreate Constants.Render.LightMapsMaxDeferred)
 
         // sort lights for deferred rendering relative to eye center
         let (lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightCutoffs, lightDirectionals, lightConeInners, lightConeOuters) =
@@ -1270,7 +1275,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         if topLevelRender then
             for (model, texCoordsOffset, properties, surface) in renderer.RenderTasks.RenderSurfacesForwardAbsoluteSorted do
                 let (lightMapEnableds, lightMapOrigins, lightMapMins, lightMapSizes, lightMapIrradianceMaps, lightMapEnvironmentFilterMaps) =
-                    SortableLightMap.sortLightMapsIntoArrays Constants.Render.ForwardLightMapsMax model.Translation lightMaps
+                    SortableLightMap.sortLightMapsIntoArrays Constants.Render.LightMapsMaxForward model.Translation lightMaps
                 GlRenderer3d.renderPhysicallyBasedSurfaces
                     viewAbsoluteArray rasterProjectionArray eyeCenter (SList.singleton (model, texCoordsOffset, properties)) true
                     lightAmbientColor lightAmbientBrightness lightMapFallback.IrradianceMap lightMapFallback.EnvironmentFilterMap renderer.RenderBrdfTexture
@@ -1282,7 +1287,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         // forward render surfaces w/ relative transforms
         for (model, texCoordsOffset, properties, surface) in renderer.RenderTasks.RenderSurfacesForwardRelativeSorted do
             let (lightMapEnableds, lightMapOrigins, lightMapMins, lightMapSizes, lightMapIrradianceMaps, lightMapEnvironmentFilterMaps) =
-                SortableLightMap.sortLightMapsIntoArrays Constants.Render.ForwardLightMapsMax model.Translation lightMaps
+                SortableLightMap.sortLightMapsIntoArrays Constants.Render.LightMapsMaxForward model.Translation lightMaps
             GlRenderer3d.renderPhysicallyBasedSurfaces
                 viewRelativeArray rasterProjectionArray eyeCenter (SList.singleton (model, texCoordsOffset, properties)) true
                 lightAmbientColor lightAmbientBrightness lightMapFallback.IrradianceMap lightMapFallback.EnvironmentFilterMap renderer.RenderBrdfTexture
