@@ -1406,6 +1406,9 @@ module SkyBoxFacetModule =
 module LightProbeFacet3dModule =
 
     type Entity with
+        member this.GetYWarp world : single = this.Get (nameof this.YWarp) world
+        member this.SetYWarp (value : single) world = this.Set (nameof this.YWarp) value world
+        member this.YWarp = lens (nameof this.YWarp) this this.GetYWarp this.SetYWarp
         member this.GetProbeBounds world : Box3 = this.Get (nameof this.ProbeBounds) world
         member this.SetProbeBounds (value : Box3) world = this.Set (nameof this.ProbeBounds) value world
         member this.ProbeBounds = lens (nameof this.ProbeBounds) this this.GetProbeBounds this.SetProbeBounds
@@ -1426,6 +1429,7 @@ module LightProbeFacet3dModule =
         static member Properties =
             [define Entity.Light true
              define Entity.Presence Omnipresent
+             define Entity.YWarp Constants.Render.LightProbeYWarpDefault
              define Entity.ProbeBounds (box3 (v3Dup Constants.Render.LightProbeSizeDefault * -0.5f) (v3Dup Constants.Render.LightProbeSizeDefault))
              define Entity.ProbeStale false]
 
@@ -1437,10 +1441,11 @@ module LightProbeFacet3dModule =
             let id = entity.GetId world
             let enabled = entity.GetEnabled world
             let position = entity.GetPosition world
+            let yWarp = entity.GetYWarp world
             let bounds = entity.GetProbeBounds world
             let stale = entity.GetProbeStale world
             let world = if stale then entity.SetProbeStale false world else world
-            World.enqueueRenderMessage3d (RenderLightProbe3d { LightProbeId = id; Enabled = enabled; Origin = position; Bounds = bounds; Stale = stale }) world
+            World.enqueueRenderMessage3d (RenderLightProbe3d { LightProbeId = id; Enabled = enabled; Origin = position; YWarp = yWarp; Bounds = bounds; Stale = stale }) world
 
         override this.RayCast (ray, entity, world) =
             let intersectionOpt = ray.Intersects (entity.GetBounds world)
