@@ -135,7 +135,7 @@ void main()
     // retrieve normal and height values first, allowing for early-out
     vec4 normalAndHeight = texture(normalAndHeightTexture, texCoordsOut);
     vec3 normal = normalAndHeight.rgb;
-    if (normal == vec3(1.0, 1.0, 1.0)) discard; // discard if geometry pixel was not written (equal to the buffer clearing color of white)
+    if (normal == vec3(1.0)) discard; // discard if geometry pixel was not written (equal to the buffer clearing color of white)
     float height = normalAndHeight.a;
 
     // retrieve remaining data from geometry buffers
