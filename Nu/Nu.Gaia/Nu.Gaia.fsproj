@@ -59,9 +59,9 @@
 		<Reference Include="AssimpNet">
 			<HintPath>..\..\Nu\Nu.Dependencies\AssimpNet\netstandard1.3\AssimpNet.dll</HintPath>
 		</Reference>
-        <Reference Include="BulletSharpPInvoke">
-            <HintPath>..\..\Nu\Nu.Dependencies\BulletSharpPInvoke\netstandard2.1\BulletSharp.dll</HintPath>
-        </Reference>
+		<Reference Include="BulletSharpPInvoke">
+			<HintPath>..\..\Nu\Nu.Dependencies\BulletSharpPInvoke\netstandard2.1\BulletSharp.dll</HintPath>
+		</Reference>
 		<Reference Include="OpenGL.Net">
 			<HintPath>..\..\Nu\Nu.Dependencies\OpenGL.NET\lib\netcoreapp2.2\OpenGL.Net.dll</HintPath>
 		</Reference>
@@ -90,7 +90,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <PackageReference Update="FSharp.Core" Version="7.0.300-beta.23127.2" />
+		<PackageReference Update="FSharp.Core" Version="7.0.300-beta.23127.2" />
 	</ItemGroup>
-	
+
 </Project>
