@@ -55,6 +55,7 @@ module SpriteBatch =
     let private CreateSpriteBatchShader () =
 
         // vertex shader code
+        // TODO: let's put this code into a .glsl file and load it from there.
         let samplerVertexShaderStr =
             [Constants.OpenGl.GlslVersionPragma
              ""
