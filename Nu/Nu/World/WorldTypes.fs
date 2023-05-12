@@ -11,7 +11,7 @@ open Prime
 open Nu
 
 [<RequireQualifiedAccess>]
-module WorldTypes =
+module internal WorldTypes =
 
     // Debugging variables.
     let mutable internal Chosen = obj ()
