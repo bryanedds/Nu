@@ -417,46 +417,14 @@ module WorldModuleGame =
         /// Check that the given bounds is within the 3d eye's sight.
         [<FunctionBinding>]
         static member isBoundsInView3d light presence (bounds : Box3) world =
-            if light then
-                let lightBox = World.getLightBox3d world
-                lightBox.Intersects bounds
-            else
-                match presence with
-                | Enclosed ->
-                    let enclosedFrustum = World.getEyeFrustum3dEnclosed world
-                    let containment = enclosedFrustum.Contains bounds
-                    containment = ContainmentType.Contains ||
-                    containment = ContainmentType.Intersects
-                | Exposed ->
-                    let enclosedFrustum = World.getEyeFrustum3dEnclosed world
-                    let containment = enclosedFrustum.Contains bounds
-                    if  containment = ContainmentType.Contains ||
-                        containment = ContainmentType.Intersects then true
-                    else
-                        let exposedFrustum = World.getEyeFrustum3dExposed world
-                        let containment = exposedFrustum.Contains bounds
-                        containment = ContainmentType.Contains ||
-                        containment = ContainmentType.Intersects
-                | Imposter ->
-                    let imposterFrustum = World.getEyeFrustum3dImposter world
-                    let containment = imposterFrustum.Contains bounds
-                    containment = ContainmentType.Contains ||
-                    containment = ContainmentType.Intersects
-                | Prominent | Omnipresent ->
-                    let enclosedFrustum = World.getEyeFrustum3dEnclosed world
-                    let containment = enclosedFrustum.Contains bounds
-                    if  containment = ContainmentType.Contains ||
-                        containment = ContainmentType.Intersects then true
-                    else
-                        let exposedFrustum = World.getEyeFrustum3dExposed world
-                        let containment = exposedFrustum.Contains bounds
-                        if  containment = ContainmentType.Contains ||
-                            containment = ContainmentType.Intersects then true
-                        else
-                            let imposterFrustum = World.getEyeFrustum3dImposter world
-                            let containment = imposterFrustum.Contains bounds
-                            containment = ContainmentType.Contains ||
-                            containment = ContainmentType.Intersects
+            Presence.intersects3d
+                (World.getEyeFrustum3dEnclosed world)
+                (World.getEyeFrustum3dExposed world)
+                (World.getEyeFrustum3dImposter world)
+                (World.getLightBox3d world)
+                light
+                bounds
+                presence
 
         /// Check that the given bounds is within the 3d eye's play bounds.
         [<FunctionBinding>]

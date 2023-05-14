@@ -262,6 +262,7 @@ module EffectSystem =
               EffectDelta : GameTime
               EffectProgressOffset : single
               EffectAbsolute : bool
+              EffectPresence : Presence
               EffectRenderType : RenderType
               EffectViews : View List
               EffectEnv : Definitions }
@@ -764,6 +765,7 @@ module EffectSystem =
                         (RenderStaticModel
                             { Absolute = effectSystem.EffectAbsolute
                               ModelMatrix = affineMatrix
+                              Presence = effectSystem.EffectPresence
                               InsetOpt = insetOpt
                               MaterialProperties = properties
                               RenderType = effectSystem.EffectRenderType
@@ -962,11 +964,12 @@ module EffectSystem =
                 release effectSystem
         else release effectSystem
 
-    let make localTime delta absolute renderType globalEnv =
+    let make localTime delta absolute presence renderType globalEnv =
         { EffectLocalTime = localTime
           EffectDelta = delta
           EffectProgressOffset = 0.0f
           EffectAbsolute = absolute
+          EffectPresence = presence
           EffectRenderType = renderType
           EffectViews = List<View> ()
           EffectEnv = globalEnv }

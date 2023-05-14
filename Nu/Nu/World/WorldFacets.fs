@@ -1990,6 +1990,7 @@ module StaticModelFacetModule =
             let mutable transform = entity.GetTransform world
             let absolute = transform.Absolute
             let affineMatrix = transform.AffineMatrix
+            let presence = transform.Presence
             let insetOpt = entity.GetInsetOpt world
             let properties = entity.GetMaterialProperties world
             let renderType =
@@ -2001,6 +2002,7 @@ module StaticModelFacetModule =
                 (RenderStaticModel
                     { Absolute = absolute
                       ModelMatrix = affineMatrix
+                      Presence = presence
                       InsetOpt = insetOpt
                       MaterialProperties = properties
                       RenderType = renderType

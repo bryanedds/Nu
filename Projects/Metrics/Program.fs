@@ -45,10 +45,12 @@ type MetricsEntityDispatcher () =
     override this.View (staticModel, entity, world) =
         let mutable transform = entity.GetTransform world
         let affineMatrix = transform.AffineMatrix
+        let presence = transform.Presence
         View.Render3d
             (RenderStaticModel
                 { Absolute = false
                   ModelMatrix = affineMatrix
+                  Presence = presence
                   InsetOpt = None
                   MaterialProperties = Unchecked.defaultof<_>
                   RenderType = DeferredRenderType

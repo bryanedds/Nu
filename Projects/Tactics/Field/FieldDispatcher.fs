@@ -136,6 +136,7 @@ module FieldDispatcher =
                     (RenderUserDefinedStaticModel
                         { Absolute = false
                           ModelMatrix = m4Identity
+                          Presence = Prominent
                           InsetOpt = Some fieldTexCoordsOffset
                           MaterialProperties = Unchecked.defaultof<_>
                           RenderType = ForwardRenderType (0.0f, 0.0f)
@@ -146,6 +147,7 @@ module FieldDispatcher =
                     (RenderUserDefinedStaticModel
                         { Absolute = false
                           ModelMatrix = m4Identity
+                          Presence = Prominent
                           InsetOpt = Some fieldTexCoordsOffset
                           MaterialProperties = Unchecked.defaultof<_>
                           RenderType = ForwardRenderType (-1.0f, 0.0f)
@@ -159,6 +161,7 @@ module FieldDispatcher =
                         (RenderUserDefinedStaticModel
                             { Absolute = false
                               ModelMatrix = m4Identity
+                              Presence = Prominent
                               InsetOpt = None
                               MaterialProperties = Unchecked.defaultof<_>
                               RenderType = ForwardRenderType (0.0f, -1.0f)
