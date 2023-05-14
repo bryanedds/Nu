@@ -392,8 +392,6 @@ module ToggleButtonDispatcherModule =
             world
 
         override this.Update (entity, world) =
-
-            // update text offset regardless of enabled state
             let textOffset =
                 if entity.GetPressed world then entity.GetPressedTextOffset world
                 elif entity.GetToggled world then entity.GetToggledTextOffset world
@@ -516,8 +514,6 @@ module RadioButtonDispatcherModule =
             world
 
         override this.Update (entity, world) =
-
-            // update text offset regardless of enabled state
             let textOffset =
                 if entity.GetPressed world then entity.GetPressedTextOffset world
                 elif entity.GetDialed world then entity.GetDialedTextOffset world
@@ -802,7 +798,7 @@ module EffectDispatcher2dModule =
 
         static member Properties =
             [define Entity.Centered true
-             define Entity.EffectDescriptor (scvalue<Effects.EffectDescriptor> "[Effect None [] [Contents [Shift 0] [[StaticSprite [Resource Default Image] [] Nil]]]]")]
+             define Entity.EffectDescriptor (scvalue<Effects.EffectDescriptor> "[[EffectName Effect] [LifeTimeOpt None] [Definitions []] [Content [Contents [Shift 0] [[StaticSprite [Resource Default Image] [] Nil]]]]]")]
 
 [<AutoOpen>]
 module BlockDispatcher2dModule =
@@ -1301,7 +1297,7 @@ module EffectDispatcher3dModule =
 
         static member Properties =
             [define Entity.Centered true
-             define Entity.EffectDescriptor (scvalue<Effects.EffectDescriptor> "[Effect None [] [Contents [Shift 0] [[StaticModel [Resource Default StaticModel] [] Nil]]]]")]
+             define Entity.EffectDescriptor (scvalue<Effects.EffectDescriptor> "[[EffectName Effect] [LifeTimeOpt None] [Definitions []] [Content [Contents [Shift 0] [[StaticSprite [Resource Default Image] [] Nil]]]]]")]
 
 [<AutoOpen>]
 module BlockDispatcher3dModule =

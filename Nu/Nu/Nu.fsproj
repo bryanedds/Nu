@@ -85,7 +85,6 @@
 		<Compile Include="World\WorldAssets.fs" />
 		<Compile Include="World\WorldConstants.fs" />
 		<Compile Include="World\WorldEvents.fs" />
-		<Compile Include="World\WorldDescriptive.fs" />
 		<Compile Include="World\WorldModule.fs" />
 		<Compile Include="World\WorldModuleGame.fs" />
 		<Compile Include="World\WorldModuleScreen.fs" />
@@ -101,6 +100,7 @@
 		<Compile Include="World\WorldRender.fs" />
 		<Compile Include="World\WorldAudio.fs" />
 		<Compile Include="World\WorldTmxMap.fs" />
+		<Compile Include="World\WorldView.fs" />
 		<Compile Include="World\WorldEffects.fs" />
 		<Compile Include="World\WorldFacets.fs" />
 		<Compile Include="World\WorldDispatchers.fs" />

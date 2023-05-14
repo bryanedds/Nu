@@ -1187,6 +1187,90 @@ and Entity (entityAddress) =
             | :? Entity as that -> (this :> Entity IComparable).CompareTo that
             | _ -> failwith "Invalid Entity comparison (comparee not of type Entity)."
 
+/// Describes a generalized simulant value independent of the engine.
+/// Not used for serialization.
+and SimulantDescriptor =
+    { SimulantSurnamesOpt : string array option
+      SimulantDispatcherName : string
+      SimulantProperties : (string * Property) list
+      SimulantChildren : SimulantDescriptor list }
+
+/// Describes an entity value independent of the engine.
+/// Used to directly serialize an entity.
+and EntityDescriptor =
+    { EntityDispatcherName : string
+      EntityProperties : Map<string, Symbol>
+      EntityDescriptors : EntityDescriptor list }
+
+    /// Derive a name from the descriptor.
+    static member getNameOpt descriptor =
+        descriptor.EntityProperties |>
+        Map.tryFind Constants.Engine.NamePropertyName |>
+        Option.map symbolToValue<string>
+
+    /// Set a name for the descriptor.
+    static member setNameOpt nameOpt descriptor =
+        match nameOpt with
+        | Some name -> { descriptor with EntityProperties = Map.add Constants.Engine.NamePropertyName (valueToSymbol name) descriptor.EntityProperties }
+        | None -> { descriptor with EntityProperties = Map.remove Constants.Engine.NamePropertyName descriptor.EntityProperties }
+
+    /// The empty entity descriptor.
+    static member empty =
+        { EntityDispatcherName = String.Empty
+          EntityProperties = Map.empty
+          EntityDescriptors  = [] }
+
+/// Describes a group value independent of the engine.
+/// Used to directly serialize a group.
+and GroupDescriptor =
+    { GroupDispatcherName : string
+      GroupProperties : Map<string, Symbol>
+      EntityDescriptors : EntityDescriptor list }
+
+    /// Derive a name from the dispatcher.
+    static member getNameOpt dispatcher =
+        dispatcher.GroupProperties |>
+        Map.tryFind Constants.Engine.NamePropertyName |>
+        Option.map symbolToValue<string>
+
+    /// The empty group descriptor.
+    static member empty =
+        { GroupDispatcherName = String.Empty
+          GroupProperties = Map.empty
+          EntityDescriptors = [] }
+
+/// Describes a screen value independent of the engine.
+/// Used to directly serialize a screen.
+and ScreenDescriptor =
+    { ScreenDispatcherName : string
+      ScreenProperties : Map<string, Symbol>
+      GroupDescriptors : GroupDescriptor list }
+
+    /// Derive a name from the dispatcher.
+    static member getNameOpt dispatcher =
+        dispatcher.ScreenProperties |>
+        Map.tryFind Constants.Engine.NamePropertyName |>
+        Option.map symbolToValue<string>
+
+    /// The empty screen descriptor.
+    static member empty =
+        { ScreenDispatcherName = String.Empty
+          ScreenProperties = Map.empty
+          GroupDescriptors = [] }
+
+/// Describes a game value independent of the engine.
+/// Used to directly serialize a game.
+and GameDescriptor =
+    { GameDispatcherName : string
+      GameProperties : Map<string, Symbol>
+      ScreenDescriptors : ScreenDescriptor list }
+
+    /// The empty game descriptor.
+    static member empty =
+        { GameDispatcherName = String.Empty
+          GameProperties = Map.empty
+          ScreenDescriptors = [] }
+
 /// The world's dispatchers (including facets).
 /// NOTE: it would be nice to make this structure internal, but doing so would non-trivially increase the number of
 /// parameters of World.make, which is already rather long.

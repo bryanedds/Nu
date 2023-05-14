@@ -209,6 +209,7 @@ module WorldGroupModule =
 
         /// Destroy a group in the world immediately. Can be dangerous if existing in-flight publishing depends on the
         /// group's existence. Consider using World.destroyGroup instead.
+        [<FunctionBinding>]
         static member destroyGroupImmediate (group : Group) world =
             let world = World.tryRemoveSimulantFromDestruction group world
             EventSystemDelegate.cleanEventAddressCache group.GroupAddress
@@ -227,6 +228,7 @@ module WorldGroupModule =
 
         /// Destroy multiple groups in the world immediately. Can be dangerous if existing in-flight publishing depends
         /// on any of the groups' existences. Consider using World.destroyGroups instead.
+        [<FunctionBinding>]
         static member destroyGroupsImmediate (groups : Group seq) world =
             List.foldBack
                 (fun group world -> World.destroyGroupImmediate group world)

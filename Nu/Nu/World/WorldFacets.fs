@@ -582,7 +582,7 @@ module EffectFacetModule =
         member this.SetEffectDefinitions (value : Effects.Definitions) world = this.Set (nameof this.EffectDefinitions) value world
         member this.EffectDefinitions = lens (nameof this.EffectDefinitions) this this.GetEffectDefinitions this.SetEffectDefinitions
         member this.GetEffectDescriptor world : Effects.EffectDescriptor = this.Get (nameof this.EffectDescriptor) world
-        /// When RunMode is set to RunEarly, call this AFETER setting the rest of the entity's properties. This
+        /// When RunMode is set to RunEarly, call this AFTER setting the rest of the entity's properties. This
         /// is because setting the effect descriptin in RunEarly mode will immediately run the first frame of the
         /// effect due to a semantic limitation in Nu.
         member this.SetEffectDescriptor (value : Effects.EffectDescriptor) world = this.Set (nameof this.EffectDescriptor) value world

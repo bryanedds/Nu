@@ -13,7 +13,6 @@ module Engine =
 
     let [<Literal>] ExitCodeSuccess = 0
     let [<Literal>] ExitCodeFailure = 1
-    let [<Literal>] LohSize = 85000 // the approximate size of the .NET Large-Object Heap in bytes, although this seems misleading for some uses...
     let [<Literal>] Meter2d = 48.0f
     let [<Literal>] Meter3d = 1.0f
     let [<Literal>] GameSortPriority = Single.MaxValue

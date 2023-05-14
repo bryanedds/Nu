@@ -222,6 +222,7 @@ type Definitions =
      "", "", "", "",
      Constants.PrettyPrinter.DefaultThresholdMin,
      Constants.PrettyPrinter.CompositionalThresholdMax)>]
+[<SymbolicExpansion>]
 type EffectDescriptor =
     { EffectName : string
       LifeTimeOpt : GameTime option

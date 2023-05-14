@@ -1263,7 +1263,7 @@ module WorldModuleEntity =
 
         static member internal propagateEntityElevation entity world =
             World.traverseEntityMounters World.propagateEntityElevation3 entity world
-        
+
         static member internal setEntityElevation value entity world =
             let entityState = World.getEntityState entity world
             if value <> entityState.Transform.Elevation then
@@ -2236,6 +2236,7 @@ module WorldModuleEntity =
 
         /// Destroy an entity in the world immediately. Can be dangerous if existing in-flight publishing depends on
         /// the entity's existence. Consider using World.destroyEntity instead.
+        [<FunctionBinding>]
         static member destroyEntityImmediate entity world =
             World.destroyEntityImmediateInternal true entity world
 

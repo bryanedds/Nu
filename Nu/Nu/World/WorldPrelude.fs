@@ -441,7 +441,6 @@ module AmbientState =
     let acknowledgeUnculledRenderRequest state =
         { state with UnculledRenderRequested = false }
 
-
     /// Make an ambient state value.
     let make imperative accompanied advancing symbolics overlayer overlayRouter sdlDepsOpt =
         Imperative <- imperative
