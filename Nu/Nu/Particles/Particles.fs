@@ -632,7 +632,7 @@ type [<ReferenceEquality>] Behaviors =
         outputs
 
 /// A basic particle.
-type [<StructuralEquality; NoComparison; Struct>] BasicParticle =
+type [<StructuralEquality; NoComparison; SymbolicExpansion; Struct>] BasicParticle =
     { mutable Life : Life
       mutable Body : Body
       mutable Offset : Vector3

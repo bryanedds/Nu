@@ -647,6 +647,7 @@ module WorldEntityModule =
 
         /// Destroy multiple entities in the world immediately. Can be dangerous if existing in-flight publishing
         /// depends on any of the entities' existences. Consider using World.destroyEntities instead.
+        [<FunctionBinding>]
         static member destroyEntitiesImmediate (entities : Entity seq) world =
             List.foldBack
                 (fun entity world -> World.destroyEntityImmediate entity world)

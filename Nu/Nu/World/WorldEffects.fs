@@ -10,26 +10,6 @@ open Nu
 open Nu.Effects
 open Nu.Particles
 
-[<AutoOpen>]
-module WorldView =
-
-    type World with
-
-        static member internal renderView view world =
-            match view with
-            | Render2d (elevation, horizon, assetTag, operation) ->
-                let operation = { Elevation = elevation; Horizon = horizon; AssetTag = AssetTag.generalize assetTag; RenderOperation2d = operation }
-                World.enqueueLayeredOperation2d operation world
-            | Render3d renderMessage -> World.enqueueRenderMessage3d renderMessage world
-            | PlaySound (volume, assetTag) -> World.playSound volume assetTag world
-            | PlaySong (fadeIn, fadeOut, start, volume, assetTag) -> World.playSong fadeIn fadeOut start volume assetTag world
-            | FadeOutSong fade -> World.fadeOutSong fade world
-            | StopSong -> World.stopSong world
-            | SpawnEmitter (_, _) -> world
-            | Nu.Tag _ -> world
-            | Views views -> Array.fold (fun world view -> World.renderView view world) world views
-            | SegmentedViews views -> SArray.fold (fun world view -> World.renderView view world) world views
-
 [<RequireQualifiedAccess>]
 module Effect =
 

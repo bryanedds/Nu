@@ -11,6 +11,8 @@ open Nu
 [<RequireQualifiedAccess>]
 module Content =
 
+    /// Helps to track when content bound to event handlers needs to be updated due to LateBindings changing, such as
+    /// via code reloading.
     let mutable internal UpdateLateBindingsCount = 0
 
     let

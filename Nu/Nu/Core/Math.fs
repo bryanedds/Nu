@@ -1301,11 +1301,7 @@ type [<StructuralEquality; NoComparison; Struct>] Flip =
 [<RequireQualifiedAccess>]
 module Math =
 
-    open tainicom.Aether.Physics2D // NOTE: for implementation of some ray-cast code in terms of Aether.
-
     let mutable private Initialized = false
-
-    let Epsilon = 1.1920929E-07f
 
     /// Initializes the type converters found in Math.fs.
     let init () =

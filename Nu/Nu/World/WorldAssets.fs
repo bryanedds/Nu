@@ -19,7 +19,6 @@ module Assets =
     module Default =
 
         let [<Uniform>] PackageName = Assets.Default.PackageName
-        let [<Uniform>] Empty = asset<obj> PackageName Assets.Default.EmptyName
         let [<Uniform>] Image = asset<Image> PackageName Assets.Default.ImageName
         let [<Uniform>] ImageEmpty = asset<Image> PackageName Assets.Default.ImageEmptyName
         let [<Uniform>] Black = asset<Image> PackageName Assets.Default.BlackName
