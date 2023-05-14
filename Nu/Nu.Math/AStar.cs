@@ -70,7 +70,7 @@ namespace Nu
         }
     }
 
-    public interface IHasNeighbors<N>
+    public interface Neighborable<N>
     {
         IEnumerable<N> Neighbors { get; }
     }
@@ -82,7 +82,7 @@ namespace Nu
             Node destination,
             Func<Node, Node, float> distance,
             Func<Node, float> estimate)
-            where Node : IHasNeighbors<Node>
+            where Node : Neighborable<Node>
         {
             var closed = new HashSet<Node>();
             var queue = new PriorityQueue<float, Path<Node>>();
