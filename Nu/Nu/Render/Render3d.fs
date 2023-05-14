@@ -119,6 +119,7 @@ and [<CustomEquality; CustomComparison>] RenderPassMessage3d =
 and [<NoEquality; NoComparison>] CachedStaticModelMessage =
     { mutable CachedStaticModelAbsolute : bool
       mutable CachedStaticModelMatrix : Matrix4x4
+      mutable CachedStaticModelPresence : Presence
       mutable CachedStaticModelInsetOpt : Box2 voption
       mutable CachedStaticModelMaterialProperties : MaterialProperties
       mutable CachedStaticModelRenderType : RenderType
@@ -214,6 +215,7 @@ and [<ReferenceEquality>] RenderStaticModelSurface =
 and [<ReferenceEquality>] RenderStaticModel =
     { Absolute : bool
       ModelMatrix : Matrix4x4
+      Presence : Presence
       InsetOpt : Box2 option
       MaterialProperties : MaterialProperties
       RenderType : RenderType
@@ -221,13 +223,14 @@ and [<ReferenceEquality>] RenderStaticModel =
 
 and [<ReferenceEquality>] RenderStaticModels =
     { Absolute : bool
-      StaticModels : (Matrix4x4 * Box2 option * MaterialProperties) SList
+      StaticModels : (Matrix4x4 * Presence * Box2 option * MaterialProperties) SList
       RenderType : RenderType
       StaticModel : StaticModel AssetTag }
 
 and [<ReferenceEquality>] RenderUserDefinedStaticModel =
     { Absolute : bool
       ModelMatrix : Matrix4x4
+      Presence : Presence
       InsetOpt : Box2 option
       MaterialProperties : MaterialProperties
       RenderType : RenderType
@@ -362,7 +365,7 @@ and Renderer3d =
     /// The physically-based shader.
     abstract PhysicallyBasedShader : OpenGL.PhysicallyBased.PhysicallyBasedShader
     /// Render a frame of the game.
-    abstract Render : Vector3 -> Quaternion -> Vector2i -> RenderMessage3d List -> unit
+    abstract Render : bool -> Frustum -> Frustum -> Frustum -> Box3 -> Vector3 -> Quaternion -> Vector2i -> RenderMessage3d List -> unit
     /// Swap a rendered frame of the game.
     abstract Swap : unit -> unit
     /// Handle render clean up by freeing all loaded render assets.
@@ -375,7 +378,7 @@ type [<ReferenceEquality>] MockRenderer3d =
 
     interface Renderer3d with
         member renderer.PhysicallyBasedShader = Unchecked.defaultof<_>
-        member renderer.Render _ _ _ _ = ()
+        member renderer.Render _ _ _ _ _ _ _ _ _ = ()
         member renderer.Swap () = ()
         member renderer.CleanUp () = ()
 
@@ -780,13 +783,8 @@ type [<ReferenceEquality>] GlRenderer3d =
          insetOpt : Box2 option,
          properties : MaterialProperties inref,
          renderType : RenderType,
-         ignoreSurfaceMatrix,
          surface : OpenGL.PhysicallyBased.PhysicallyBasedSurface,
          renderer) =
-        let surfaceMatrix =
-            if ignoreSurfaceMatrix || surface.SurfaceMatrixIsIdentity
-            then modelMatrix
-            else surface.SurfaceMatrix * modelMatrix
         let texCoordsOffset =
             match insetOpt with
             | Some inset ->
@@ -803,16 +801,16 @@ type [<ReferenceEquality>] GlRenderer3d =
         | DeferredRenderType ->
             if modelAbsolute then
                 match renderer.RenderTasks.RenderSurfacesDeferredAbsolute.TryGetValue surface with
-                | (true, renderTasks) -> renderTasks.Add struct (surfaceMatrix, texCoordsOffset, properties)
-                | (false, _) -> renderer.RenderTasks.RenderSurfacesDeferredAbsolute.Add (surface, SList.singleton (surfaceMatrix, texCoordsOffset, properties))
+                | (true, renderTasks) -> renderTasks.Add struct (modelMatrix, texCoordsOffset, properties)
+                | (false, _) -> renderer.RenderTasks.RenderSurfacesDeferredAbsolute.Add (surface, SList.singleton (modelMatrix, texCoordsOffset, properties))
             else
                 match renderer.RenderTasks.RenderSurfacesDeferredRelative.TryGetValue surface with
-                | (true, renderTasks) -> renderTasks.Add struct (surfaceMatrix, texCoordsOffset, properties)
-                | (false, _) -> renderer.RenderTasks.RenderSurfacesDeferredRelative.Add (surface, SList.singleton (surfaceMatrix, texCoordsOffset, properties))
+                | (true, renderTasks) -> renderTasks.Add struct (modelMatrix, texCoordsOffset, properties)
+                | (false, _) -> renderer.RenderTasks.RenderSurfacesDeferredRelative.Add (surface, SList.singleton (modelMatrix, texCoordsOffset, properties))
         | ForwardRenderType (subsort, sort) ->
             if modelAbsolute
-            then renderer.RenderTasks.RenderSurfacesForwardAbsolute.Add struct (subsort, sort, surfaceMatrix, texCoordsOffset, properties, surface)
-            else renderer.RenderTasks.RenderSurfacesForwardRelative.Add struct (subsort, sort, surfaceMatrix, texCoordsOffset, properties, surface)
+            then renderer.RenderTasks.RenderSurfacesForwardAbsolute.Add struct (subsort, sort, modelMatrix, texCoordsOffset, properties, surface)
+            else renderer.RenderTasks.RenderSurfacesForwardRelative.Add struct (subsort, sort, modelMatrix, texCoordsOffset, properties, surface)
 
     static member private categorizeStaticModelSurfaceByIndex
         (modelAbsolute,
@@ -829,16 +827,22 @@ type [<ReferenceEquality>] GlRenderer3d =
             | StaticModelAsset (_, modelAsset) ->
                 if surfaceIndex > -1 && surfaceIndex < modelAsset.Surfaces.Length then
                     let surface = modelAsset.Surfaces.[surfaceIndex]
-                    GlRenderer3d.categorizeStaticModelSurface (modelAbsolute, &modelMatrix, insetOpt, &properties, renderType, true, surface, renderer)
+                    GlRenderer3d.categorizeStaticModelSurface (modelAbsolute, &modelMatrix, insetOpt, &properties, renderType, surface, renderer)
             | _ -> Log.trace "Cannot render static model surface with a non-model asset."
         | _ -> Log.info ("Cannot render static model surface due to unloadable assets for '" + scstring staticModel + "'.")
 
     static member private categorizeStaticModel
-        (modelAbsolute,
+        (skipCulling : bool,
+         frustumEnclosed : Frustum,
+         frustumExposed : Frustum,
+         frustumImposter : Frustum,
+         lightBox : Box3,
+         modelAbsolute : bool,
          modelMatrix : Matrix4x4 inref,
+         presence : Presence,
          insetOpt : Box2 option,
          properties : MaterialProperties inref,
-         renderType,
+         renderType : RenderType,
          staticModel : StaticModel AssetTag,
          renderer) =
         match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize staticModel) renderer with
@@ -847,21 +851,26 @@ type [<ReferenceEquality>] GlRenderer3d =
             | StaticModelAsset (_, modelAsset) ->
                 for light in modelAsset.Lights do
                     let lightMatrix = light.LightMatrix * modelMatrix
-                    let light =
-                        { SortableLightOrigin = lightMatrix.Translation
-                          SortableLightDirection = Vector3.Transform (v3Forward, lightMatrix.Rotation)
-                          SortableLightColor = light.LightColor
-                          SortableLightBrightness = light.LightBrightness
-                          SortableLightAttenuationLinear = light.LightAttenuationLinear
-                          SortableLightAttenuationQuadratic = light.LightAttenuationQuadratic
-                          SortableLightCutoff = light.LightCutoff
-                          SortableLightDirectional = match light.PhysicallyBasedLightType with DirectionalLight -> 1 | _ -> 0
-                          SortableLightConeInner = match light.PhysicallyBasedLightType with SpotLight (coneInner, _) -> coneInner | _ -> single (2.0 * Math.PI)
-                          SortableLightConeOuter = match light.PhysicallyBasedLightType with SpotLight (_, coneOuter) -> coneOuter | _ -> single (2.0 * Math.PI)
-                          SortableLightDistanceSquared = Single.MaxValue }
-                    renderer.RenderTasks.RenderLights.Add light
+                    let lightBounds = Box3 (lightMatrix.Translation - v3Dup light.LightCutoff, v3Dup light.LightCutoff * 2.0f)
+                    if skipCulling || Presence.intersects3d frustumEnclosed frustumExposed frustumImposter lightBox true lightBounds presence then
+                        let light =
+                            { SortableLightOrigin = lightMatrix.Translation
+                              SortableLightDirection = Vector3.Transform (v3Forward, lightMatrix.Rotation)
+                              SortableLightColor = light.LightColor
+                              SortableLightBrightness = light.LightBrightness
+                              SortableLightAttenuationLinear = light.LightAttenuationLinear
+                              SortableLightAttenuationQuadratic = light.LightAttenuationQuadratic
+                              SortableLightCutoff = light.LightCutoff
+                              SortableLightDirectional = match light.PhysicallyBasedLightType with DirectionalLight -> 1 | _ -> 0
+                              SortableLightConeInner = match light.PhysicallyBasedLightType with SpotLight (coneInner, _) -> coneInner | _ -> single (2.0 * Math.PI)
+                              SortableLightConeOuter = match light.PhysicallyBasedLightType with SpotLight (_, coneOuter) -> coneOuter | _ -> single (2.0 * Math.PI)
+                              SortableLightDistanceSquared = Single.MaxValue }
+                        renderer.RenderTasks.RenderLights.Add light
                 for surface in modelAsset.Surfaces do
-                    GlRenderer3d.categorizeStaticModelSurface (modelAbsolute, &modelMatrix, insetOpt, &properties, renderType, false, surface, renderer)
+                    let surfaceMatrix = if surface.SurfaceMatrixIsIdentity then modelMatrix else surface.SurfaceMatrix * modelMatrix
+                    let surfaceBounds = surface.SurfaceBounds.Transform surfaceMatrix
+                    if skipCulling || Presence.intersects3d frustumEnclosed frustumExposed frustumImposter lightBox false surfaceBounds presence then
+                        GlRenderer3d.categorizeStaticModelSurface (modelAbsolute, &surfaceMatrix, insetOpt, &properties, renderType, surface, renderer)
             | _ -> Log.trace "Cannot render static model with a non-model asset."
         | _ -> Log.info ("Cannot render static model due to unloadable assets for '" + scstring staticModel + "'.")
 
@@ -1293,7 +1302,8 @@ type [<ReferenceEquality>] GlRenderer3d =
                 surface renderer.RenderPhysicallyBasedForwardShader renderer
             OpenGL.Hl.Assert ()
 
-    static member render eyeCenter (eyeRotation : Quaternion) windowSize renderbuffer framebuffer renderMessages renderer =
+    /// Render 3d surfaces.
+    static member render skipCulling frustumEnclosed frustumExposed frustumImposter lightBox eyeCenter (eyeRotation : Quaternion) windowSize renderbuffer framebuffer renderMessages renderer =
 
         // categorize messages
         let userDefinedStaticModelsToDestroy = SList.make ()
@@ -1349,16 +1359,16 @@ type [<ReferenceEquality>] GlRenderer3d =
             | RenderStaticModelSurface rsms ->
                 GlRenderer3d.categorizeStaticModelSurfaceByIndex (rsms.Absolute, &rsms.ModelMatrix, rsms.InsetOpt, &rsms.MaterialProperties, rsms.RenderType, rsms.StaticModel, rsms.SurfaceIndex, renderer)
             | RenderStaticModel rsm ->
-                GlRenderer3d.categorizeStaticModel (rsm.Absolute, &rsm.ModelMatrix, rsm.InsetOpt, &rsm.MaterialProperties, rsm.RenderType, rsm.StaticModel, renderer)
+                GlRenderer3d.categorizeStaticModel (skipCulling, frustumEnclosed, frustumExposed, frustumImposter, lightBox, rsm.Absolute, &rsm.ModelMatrix, rsm.Presence, rsm.InsetOpt, &rsm.MaterialProperties, rsm.RenderType, rsm.StaticModel,  renderer)
             | RenderStaticModels rsms ->
-                for (modelMatrix, insetOpt, properties) in rsms.StaticModels do
-                    GlRenderer3d.categorizeStaticModel (rsms.Absolute, &modelMatrix, insetOpt, &properties, rsms.RenderType, rsms.StaticModel, renderer)
+                for (modelMatrix, presence, insetOpt, properties) in rsms.StaticModels do
+                    GlRenderer3d.categorizeStaticModel (skipCulling, frustumEnclosed, frustumExposed, frustumImposter, lightBox, rsms.Absolute, &modelMatrix, presence, insetOpt, &properties, rsms.RenderType, rsms.StaticModel, renderer)
             | RenderCachedStaticModel d ->
-                GlRenderer3d.categorizeStaticModel (d.CachedStaticModelAbsolute, &d.CachedStaticModelMatrix, Option.ofValueOption d.CachedStaticModelInsetOpt, &d.CachedStaticModelMaterialProperties, d.CachedStaticModelRenderType, d.CachedStaticModel, renderer)
+                GlRenderer3d.categorizeStaticModel (skipCulling, frustumEnclosed, frustumExposed, frustumImposter, lightBox, d.CachedStaticModelAbsolute, &d.CachedStaticModelMatrix, d.CachedStaticModelPresence, Option.ofValueOption d.CachedStaticModelInsetOpt, &d.CachedStaticModelMaterialProperties, d.CachedStaticModelRenderType, d.CachedStaticModel, renderer)
             | RenderUserDefinedStaticModel renderUdsm ->
                 let assetTag = asset Assets.Default.PackageName Gen.name // TODO: see if we should instead use a specialized package for temporary assets like these.
                 GlRenderer3d.tryCreateUserDefinedStaticModel renderUdsm.SurfaceDescriptors renderUdsm.Bounds assetTag renderer
-                GlRenderer3d.categorizeStaticModel (renderUdsm.Absolute, &renderUdsm.ModelMatrix, renderUdsm.InsetOpt, &renderUdsm.MaterialProperties, renderUdsm.RenderType, assetTag, renderer)
+                GlRenderer3d.categorizeStaticModel (skipCulling, frustumEnclosed, frustumExposed, frustumImposter, lightBox, renderUdsm.Absolute, &renderUdsm.ModelMatrix, renderUdsm.Presence, renderUdsm.InsetOpt, &renderUdsm.MaterialProperties, renderUdsm.RenderType, assetTag, renderer)
                 userDefinedStaticModelsToDestroy.Add assetTag
             | RenderPostPass3d postPass ->
                 postPasses.Add postPass |> ignore<bool>
@@ -1594,7 +1604,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         member renderer.PhysicallyBasedShader =
             renderer.RenderPhysicallyBasedForwardShader
 
-        member renderer.Render eyeCenter eyeRotation windowSize renderMessages =
+        member renderer.Render skipCulling frustumEnclosed frustumExposed frustumImposter lightBox eyeCenter eyeRotation windowSize renderMessages =
 
             // begin frame
             let viewportOffset = Constants.Render.ViewportOffset windowSize
@@ -1604,7 +1614,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
             // render only if there are messages
             if renderMessages.Count > 0 then
-                GlRenderer3d.render eyeCenter eyeRotation windowSize 0u 0u renderMessages renderer
+                GlRenderer3d.render skipCulling frustumEnclosed frustumExposed frustumImposter lightBox eyeCenter eyeRotation windowSize 0u 0u renderMessages renderer
 
             // end frame
             if renderer.RenderShouldEndFrame then

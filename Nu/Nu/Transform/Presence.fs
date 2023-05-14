@@ -30,6 +30,18 @@ type [<StructuralEquality; NoComparison; Struct>] Presence =
     member this.ImposterType with get () = match this with Imposter -> true | _ -> false
     member this.ProminentType with get () = match this with Prominent -> true | _ -> false
     member this.OmnipresentType with get () = match this with Omnipresent -> true | _ -> false
+    static member intersects3d (frustumEnclosed : Frustum) (frustumExposed : Frustum) (frustumImposter : Frustum) (lightBox : Box3) (light : bool) (bounds : Box3) presence =
+        if not light then
+            match presence with
+            | Enclosed -> frustumEnclosed.Intersects bounds
+            | Exposed -> frustumExposed.Intersects bounds || frustumEnclosed.Intersects bounds
+            | Imposter -> frustumImposter.Intersects bounds
+            | Prominent -> frustumImposter.Intersects bounds || frustumExposed.Intersects bounds || frustumEnclosed.Intersects bounds
+            | Omnipresent -> true
+        else
+            match presence with
+            | Enclosed | Exposed | Imposter | Prominent -> lightBox.Intersects bounds
+            | Omnipresent -> true
 
 [<AutoOpen>]
 module PresenceOperators =

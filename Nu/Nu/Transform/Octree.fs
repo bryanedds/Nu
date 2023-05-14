@@ -45,13 +45,8 @@ module Octelement =
         override this.GetHashCode () = this.HashCode_
         override this.Equals that = match that with :? Octelement<'e> as that -> this.Entry_.Equals that.Entry_ | _ -> false
 
-    let intersects (eyeFrustumEnclosed : Frustum) (eyeFrustumExposed : Frustum) (eyeFrustumImposter : Frustum) element =
-        match element.Presence_ with
-        | Enclosed -> eyeFrustumEnclosed.Intersects element.Bounds_
-        | Exposed -> eyeFrustumExposed.Intersects element.Bounds_ || eyeFrustumEnclosed.Intersects element.Bounds_ // TOOD: consider creating inclusive frustums so that only one check is necessary.
-        | Imposter -> eyeFrustumImposter.Intersects element.Bounds_
-        | Prominent -> eyeFrustumImposter.Intersects element.Bounds_ || eyeFrustumExposed.Intersects element.Bounds_ || eyeFrustumEnclosed.Intersects element.Bounds_ // TOOD: consider creating inclusive frustums so that only one check is necessary.
-        | Omnipresent -> true
+    let intersects frustumEnclosed frustumExposed frustumImposter lightBox (element : _ Octelement) =
+        Presence.intersects3d frustumEnclosed frustumExposed frustumImposter lightBox element.Light element.Bounds_ element.Presence_
 
     let make visible static_ light presence bounds (entry : 'e) =
         let hashCode = entry.GetHashCode ()

@@ -1050,11 +1050,7 @@ module WorldModule2 =
             | OutgoingState transitionTime -> World.renderScreenTransition5 transitionTime (World.getEyeCenter2d world) (World.getEyeSize2d world) screen (screen.GetOutgoing world) world
             | IdlingState _ -> world
 
-        static member private renderSimulants world =
-
-            // process unculled render request
-            let unculledRenderRequested = World.getUnculledRenderRequested world
-            let world = World.acknowledgeUnculledRenderRequest world
+        static member private renderSimulants skipCulling world =
 
             // gather simulants
             RenderGatherTimer.Start ()
@@ -1062,8 +1058,8 @@ module WorldModule2 =
             let screens = match World.getSelectedScreenOpt world with Some selectedScreen -> selectedScreen :: screens | None -> screens
             let screens = List.rev screens
             let groups = Seq.concat (List.map (flip World.getGroups world) screens)
-            let (elements3d, world) = if unculledRenderRequested then World.getElements3d CachedHashSet3d world else World.getElementsInView3d CachedHashSet3d world
-            let (elements2d, world) = if unculledRenderRequested then World.getElements2d CachedHashSet2d world else World.getElementsInView2d CachedHashSet2d world
+            let (elements3d, world) = if skipCulling then World.getElements3d CachedHashSet3d world else World.getElementsInView3d CachedHashSet3d world
+            let (elements2d, world) = if skipCulling then World.getElements2d CachedHashSet2d world else World.getElementsInView2d CachedHashSet2d world
             RenderGatherTimer.Stop ()
 
             // render simulants breadth-first
@@ -1077,18 +1073,19 @@ module WorldModule2 =
             let eyeFrustumEnclosed = World.getEyeFrustum3dEnclosed world
             let eyeFrustumExposed = World.getEyeFrustum3dExposed world
             let eyeFrustumImposter = World.getEyeFrustum3dImposter world
+            let lightBox = World.getLightBox3d world
             let world =
                 if World.getUnaccompanied world then
                     Seq.fold (fun world (element : Entity Octelement) ->
                         if  element.Visible &&
-                            (unculledRenderRequested || element.Light || Octelement.intersects eyeFrustumEnclosed eyeFrustumExposed eyeFrustumImposter element)
+                            (skipCulling || Octelement.intersects eyeFrustumEnclosed eyeFrustumExposed eyeFrustumImposter lightBox element)
                         then World.renderEntity element.Entry world
                         else world)
                         world elements3d
                 else
                     Seq.fold (fun world (element : Entity Octelement) ->
                         if  element.Visible &&
-                            (unculledRenderRequested || element.Light || Octelement.intersects eyeFrustumEnclosed eyeFrustumExposed eyeFrustumImposter element) &&
+                            (skipCulling || Octelement.intersects eyeFrustumEnclosed eyeFrustumExposed eyeFrustumImposter lightBox element) &&
                             element.Entry.Group.GetVisible world then
                             World.renderEntity element.Entry world
                         else world)
@@ -1219,7 +1216,9 @@ module WorldModule2 =
                                                         match World.getLiveness world with
                                                         | Live ->
                                                             RenderTimer.Start ()
-                                                            let world = World.renderSimulants world
+                                                            let skipCulling = World.getUnculledRenderRequested world
+                                                            let world = World.acknowledgeUnculledRenderRequest world
+                                                            let world = World.renderSimulants skipCulling world
                                                             RenderTimer.Stop ()
                                                             match World.getLiveness world with
                                                             | Live ->
@@ -1254,6 +1253,11 @@ module WorldModule2 =
 
                                                                 // process rendering (2/2)
                                                                 rendererProcess.SubmitMessages
+                                                                    skipCulling
+                                                                    (World.getEyeFrustum3dEnclosed world)
+                                                                    (World.getEyeFrustum3dExposed world)
+                                                                    (World.getEyeFrustum3dImposter world)
+                                                                    (World.getLightBox3d world)
                                                                     (World.getEyeCenter3d world)
                                                                     (World.getEyeRotation3d world)
                                                                     (World.getEyeCenter2d world)

@@ -532,6 +532,7 @@ module Gaia =
                     (RenderStaticModel
                         { Absolute = false
                           ModelMatrix = light.GetAffineMatrix world
+                          Presence = Prominent
                           InsetOpt = None
                           MaterialProperties = MaterialProperties.defaultProperties
                           RenderType = ForwardRenderType (0.0f, Single.MinValue / 2.0f)
@@ -573,6 +574,7 @@ module Gaia =
                         (RenderStaticModel
                             { Absolute = absolute
                               ModelMatrix = boundsMatrix
+                              Presence = Prominent
                               InsetOpt = None
                               MaterialProperties = MaterialProperties.defaultProperties
                               RenderType = ForwardRenderType (0.0f, Single.MinValue)

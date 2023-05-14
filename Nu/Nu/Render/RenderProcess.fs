@@ -18,7 +18,7 @@ type RendererProcess =
         abstract EnqueueMessage3d : RenderMessage3d -> unit
         abstract EnqueueMessage2d : RenderMessage2d -> unit
         abstract ClearMessages : unit -> unit
-        abstract SubmitMessages : Vector3 -> Quaternion -> Vector2 -> Vector2 -> Vector2i -> unit
+        abstract SubmitMessages : bool -> Frustum -> Frustum -> Frustum -> Box3 -> Vector3 -> Quaternion -> Vector2 -> Vector2 -> Vector2i -> unit
         abstract Swap : unit -> unit
         abstract Terminate : unit -> unit
         end
@@ -63,10 +63,10 @@ type RendererInline (createRenderer2d, createRenderer3d) =
             messages3d.Clear ()
             messages2d.Clear ()
 
-        member this.SubmitMessages eyeCenter3d eyeRotation3d eyeCenter2d eyeSize2d windowSize =
+        member this.SubmitMessages skipCulling frustumEnclosed frustumExposed frustumImposter lightBox eyeCenter3d eyeRotation3d eyeCenter2d eyeSize2d windowSize =
             match renderersOpt with
             | Some (renderer3d, renderer2d) ->
-                renderer3d.Render eyeCenter3d eyeRotation3d windowSize messages3d
+                renderer3d.Render skipCulling frustumEnclosed frustumExposed frustumImposter lightBox eyeCenter3d eyeRotation3d windowSize messages3d
                 messages3d.Clear ()
                 renderer2d.Render eyeCenter2d eyeSize2d windowSize messages2d
                 messages2d.Clear ()
@@ -92,7 +92,7 @@ type RendererThread (createRenderer2d, createRenderer3d) =
     let mutable threadOpt = None
     let [<VolatileField>] mutable started = false
     let [<VolatileField>] mutable terminated = false
-    let [<VolatileField>] mutable submissionOpt = Option<RenderMessage3d List * RenderMessage2d List * Vector3 * Quaternion * Vector2 * Vector2 * Vector2i>.None
+    let [<VolatileField>] mutable submissionOpt = Option<bool * Frustum * Frustum * Frustum * Box3 * RenderMessage3d List * RenderMessage2d List * Vector3 * Quaternion * Vector2 * Vector2 * Vector2i>.None
     let [<VolatileField>] mutable swap = false
     let mutable messageBufferIndex = 0
     let messageBuffers3d = [|List (); List ()|]
@@ -111,6 +111,7 @@ type RendererThread (createRenderer2d, createRenderer3d) =
                     let staticModelDescriptor =
                         { CachedStaticModelAbsolute = Unchecked.defaultof<_>
                           CachedStaticModelMatrix = Unchecked.defaultof<_>
+                          CachedStaticModelPresence = Unchecked.defaultof<_>
                           CachedStaticModelInsetOpt = Unchecked.defaultof<_>
                           CachedStaticModelMaterialProperties = Unchecked.defaultof<_>
                           CachedStaticModelRenderType = Unchecked.defaultof<_>
@@ -170,11 +171,11 @@ type RendererThread (createRenderer2d, createRenderer3d) =
             if not terminated then
 
                 // receie submission
-                let (messages3d, messages2d, eyeCenter3d, eyeRotation3d, eyeCenter2d, eyeSize2d, windowSize) = Option.get submissionOpt
+                let (skipCulling, frustumEnclosed, frustumExposed, frustumImposter, lightBox, messages3d, messages2d, eyeCenter3d, eyeRotation3d, eyeCenter2d, eyeSize2d, windowSize) = Option.get submissionOpt
                 submissionOpt <- None
 
                 // render 3d
-                renderer3d.Render eyeCenter3d eyeRotation3d windowSize messages3d
+                renderer3d.Render skipCulling frustumEnclosed frustumExposed frustumImposter lightBox eyeCenter3d eyeRotation3d windowSize messages3d
                 
                 // recover cached static model messages
                 freeStaticModelMessages messages3d
@@ -232,6 +233,7 @@ type RendererThread (createRenderer2d, createRenderer3d) =
                 | RenderCachedStaticModel cachedDescriptor ->
                     cachedDescriptor.CachedStaticModelAbsolute <- rsm.Absolute
                     cachedDescriptor.CachedStaticModelMatrix <- rsm.ModelMatrix
+                    cachedDescriptor.CachedStaticModelPresence <- rsm.Presence
                     cachedDescriptor.CachedStaticModelInsetOpt <- ValueOption.ofOption rsm.InsetOpt
                     cachedDescriptor.CachedStaticModelMaterialProperties <- rsm.MaterialProperties
                     cachedDescriptor.CachedStaticModelRenderType <- rsm.RenderType
@@ -272,7 +274,7 @@ type RendererThread (createRenderer2d, createRenderer3d) =
             messageBuffers3d.[messageBufferIndex].Clear ()
             messageBuffers2d.[messageBufferIndex].Clear ()
 
-        member this.SubmitMessages eyeCenter3d eyeRotation3d eyeCenter2d eyeSize2d eyeMargin =
+        member this.SubmitMessages skipCulling frustumEnclosed frustumExposed frustumImposter lightBox eyeCenter3d eyeRotation3d eyeCenter2d eyeSize2d eyeMargin =
             if Option.isNone threadOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
             while swap do Thread.Sleep 1
             let messages3d = messageBuffers3d.[messageBufferIndex]
@@ -280,7 +282,7 @@ type RendererThread (createRenderer2d, createRenderer3d) =
             messageBufferIndex <- if messageBufferIndex = 0 then 1 else 0
             messageBuffers3d.[messageBufferIndex].Clear ()
             messageBuffers2d.[messageBufferIndex].Clear ()
-            submissionOpt <- Some (messages3d, messages2d, eyeCenter3d, eyeRotation3d, eyeCenter2d, eyeSize2d, eyeMargin)
+            submissionOpt <- Some (skipCulling, frustumEnclosed, frustumExposed, frustumImposter, lightBox, messages3d, messages2d, eyeCenter3d, eyeRotation3d, eyeCenter2d, eyeSize2d, eyeMargin)
 
         member this.Swap () =
             if Option.isNone threadOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
