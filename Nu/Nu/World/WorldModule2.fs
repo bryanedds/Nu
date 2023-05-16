@@ -1070,24 +1070,17 @@ module WorldModule2 =
 
             // render entities
             RenderEntitiesTimer.Start ()
-            let eyeFrustumEnclosed = World.getEyeFrustum3dEnclosed world
-            let eyeFrustumExposed = World.getEyeFrustum3dExposed world
-            let eyeFrustumImposter = World.getEyeFrustum3dImposter world
-            let lightBox = World.getLightBox3d world
             let world =
                 if World.getUnaccompanied world then
                     Seq.fold (fun world (element : Entity Octelement) ->
-                        if  element.Visible &&
-                            (skipCulling || Octelement.intersects eyeFrustumEnclosed eyeFrustumExposed eyeFrustumImposter lightBox element)
+                        if element.Visible
                         then World.renderEntity element.Entry world
                         else world)
                         world elements3d
                 else
                     Seq.fold (fun world (element : Entity Octelement) ->
-                        if  element.Visible &&
-                            (skipCulling || Octelement.intersects eyeFrustumEnclosed eyeFrustumExposed eyeFrustumImposter lightBox element) &&
-                            element.Entry.Group.GetVisible world then
-                            World.renderEntity element.Entry world
+                        if element.Visible && element.Entry.Group.GetVisible world
+                        then World.renderEntity element.Entry world
                         else world)
                         world elements3d
             let world =
