@@ -24,7 +24,7 @@ module Octelement =
 
     /// An element in an octree.
     /// NOTE: we intentionally use incomplete equality semantics here so these can be stored in a HashSet.
-    type [<CustomEquality; NoComparison>] Octelement<'e when 'e : equality> =
+    type [<CustomEquality; NoComparison; Struct>] Octelement<'e when 'e : equality> =
         private
             { HashCode_ : int // OPTIMIZATION: cache hash code to increase look-up speed.
               Flags_ : uint

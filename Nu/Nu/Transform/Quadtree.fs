@@ -22,7 +22,7 @@ module Quadelement =
 
     /// An element in an quadtree.
     /// NOTE: we intentionally use incomplete equality semantics here so these can be stored in a HashSet.
-    type [<CustomEquality; NoComparison>] Quadelement<'e when 'e : equality> = 
+    type [<CustomEquality; NoComparison; Struct>] Quadelement<'e when 'e : equality> = 
         private
             { HashCode_ : int // OPTIMIZATION: cache hash code to increase look-up speed.
               Flags_ : uint
