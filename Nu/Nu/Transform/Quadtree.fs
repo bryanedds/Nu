@@ -125,12 +125,12 @@ module internal Quadnode =
     let rec internal make<'e when 'e : equality> depth (bounds : Box2) (leaves : Dictionary<Vector2, 'e Quadnode>) =
         if depth < 1 then failwith "Invalid depth for Quadnode. Expected value of at least 1."
         let granularity = 2
+        let childDepth = depth - 1
+        let childSize = v2 bounds.Size.X bounds.Size.Y / single granularity
         let children =
             if depth > 1 then
                 let (nodes : 'e Quadnode array) =
                     [|for i in 0 .. dec (granularity * granularity) do
-                        let childDepth = depth - 1
-                        let childSize = v2 bounds.Size.X bounds.Size.Y / single granularity
                         let childPosition = v2 bounds.Min.X bounds.Min.Y + v2 (childSize.X * single (i % granularity)) (childSize.Y * single (i / granularity))
                         let childBounds = box2 childPosition childSize
                         yield make childDepth childBounds leaves|]

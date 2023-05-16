@@ -43,9 +43,9 @@ module Engine =
     let [<Uniform>] EyeCenter3dDefault = Vector3 (0.0f, 1.0f, 4.0f)
     let [<Uniform>] EyeCenter3dOffset = Vector3 (0.0f, 0.0f, 1.5f)
     let [<Uniform>] QuadtreeDepth = 7
-    let [<Uniform>] QuadtreeSize = Vector2 65536.0f // about .85 miles
+    let [<Uniform>] QuadtreeSize = Vector2 131072.0f // about 1.7 miles
     let [<Uniform>] OctreeDepth = 7
-    let [<Uniform>] OctreeSize = Vector3 1024.0f // about 2/3 mile
+    let [<Uniform>] OctreeSize = Vector3 2048.0f // about 1.25 miles
     let [<Uniform>] mutable EventTracing = match ConfigurationManager.AppSettings.["EventTracing"] with null -> false | tracing -> scvalue<bool> tracing
     let [<Uniform>] mutable EventFilter = match ConfigurationManager.AppSettings.["EventFilter"] with null -> EventFilter.Empty | filter -> scvalue<EventFilter.Filter> filter
 
