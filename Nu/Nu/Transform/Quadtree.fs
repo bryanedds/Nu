@@ -42,63 +42,83 @@ type Quadelement<'e when 'e : equality> = Quadelement.Quadelement<'e>
 [<RequireQualifiedAccess>]
 module internal Quadnode =
 
-    type [<ReferenceEquality>] Quadnode<'e when 'e : equality> =
+    type [<Struct>] Quadnode<'e when 'e : equality> =
         private
             { Depth : int
               Bounds : Box2
               Children : ValueEither<'e Quadnode array, 'e Quadelement HashSet> }
 
-    let internal atPoint (point : Vector2) node =
+    let internal atPoint (point : Vector2) (node : 'e Quadnode inref) =
         node.Bounds.Intersects point
 
-    let internal isIntersectingBounds (bounds : Box2) node =
+    let internal isIntersectingBounds (bounds : Box2) (node : 'e Quadnode inref) =
         node.Bounds.Intersects bounds
 
-    let inline internal containsBounds (bounds : Box2) node =
+    let inline internal containsBounds (bounds : Box2) (node : 'e Quadnode inref) =
         node.Bounds.Contains bounds = ContainmentType.Contains
 
-    let rec internal addElement bounds element node =
-        if isIntersectingBounds bounds node then
+    let rec internal addElement bounds element (node : 'e Quadnode inref) =
+        if isIntersectingBounds bounds &node then
             match node.Children with
-            | ValueLeft nodes -> for node in nodes do addElement bounds element node
+            | ValueLeft nodes ->
+                for i in 0 .. dec nodes.Length do
+                    let node = &nodes.[i]
+                    addElement bounds element &node
             | ValueRight elements ->
                 elements.Remove element |> ignore
                 elements.Add element |> ignore
 
-    let rec internal removeElement bounds element node =
-        if isIntersectingBounds bounds node then
+    let rec internal removeElement bounds element (node : 'e Quadnode inref) =
+        if isIntersectingBounds bounds &node then
             match node.Children with
-            | ValueLeft nodes -> for node in nodes do removeElement bounds element node
+            | ValueLeft nodes ->
+                for i in 0 .. dec nodes.Length do
+                    let node = &nodes.[i]
+                    removeElement bounds element &node
             | ValueRight elements -> elements.Remove element |> ignore
 
-    let rec internal updateElement oldBounds newBounds element node =
+    let rec internal updateElement oldBounds newBounds element (node : 'e Quadnode inref) =
         match node.Children with
         | ValueLeft nodes ->
-            for node in nodes do
-                if isIntersectingBounds oldBounds node || isIntersectingBounds newBounds node then
-                    updateElement oldBounds newBounds element node
+            for i in 0 .. dec nodes.Length do
+                let node = &nodes.[i]
+                if isIntersectingBounds oldBounds &node || isIntersectingBounds newBounds &node then
+                    updateElement oldBounds newBounds element &node
         | ValueRight elements ->
-            if isIntersectingBounds newBounds node then
+            if isIntersectingBounds newBounds &node then
                 elements.Remove element |> ignore
                 elements.Add element |> ignore
-            elif isIntersectingBounds oldBounds node then
+            elif isIntersectingBounds oldBounds &node then
                 elements.Remove element |> ignore
 
-    let rec internal getElementsAtPoint point node (set : 'e Quadelement HashSet) =
-        match node.Children with
-        | ValueLeft nodes -> for node in nodes do if atPoint point node then getElementsAtPoint point node set
-        | ValueRight elements -> for element in elements do set.Add element |> ignore
-
-    let rec internal getElementsInBounds bounds node (set : 'e Quadelement HashSet) =
-        match node.Children with
-        | ValueLeft nodes -> for node in nodes do if isIntersectingBounds bounds node then getElementsInBounds bounds node set
-        | ValueRight elements -> for element in elements do set.Add element |> ignore
-
-    let rec internal getElements node (set : 'e Quadelement HashSet) =
+    let rec internal getElementsAtPoint point (set : 'e Quadelement HashSet) (node : 'e Quadnode inref) =
         match node.Children with
         | ValueLeft nodes ->
-            for node in nodes do
-                getElements node set
+            for i in 0 .. dec nodes.Length do
+                let node = &nodes.[i]
+                if atPoint point &node then
+                    getElementsAtPoint point set &node
+        | ValueRight elements ->
+            for element in elements do
+                set.Add element |> ignore
+
+    let rec internal getElementsInBounds bounds (set : 'e Quadelement HashSet) (node : 'e Quadnode inref) =
+        match node.Children with
+        | ValueLeft nodes ->
+            for i in 0 .. dec nodes.Length do
+                let node = &nodes.[i]
+                if isIntersectingBounds bounds &node then
+                    getElementsInBounds bounds set &node
+        | ValueRight elements ->
+            for element in elements do
+                set.Add element |> ignore
+
+    let rec internal getElements (set : 'e Quadelement HashSet) (node : 'e Quadnode inref) =
+        match node.Children with
+        | ValueLeft nodes ->
+            for i in 0 .. dec nodes.Length do
+                let node = &nodes.[i]
+                getElements set &node
         | ValueRight children ->
             set.UnionWith children
 
@@ -192,13 +212,13 @@ module Quadtree =
               Depth : int
               Bounds : Box2 }
 
-    let private findNode (bounds : Box2) tree =
+    let private findNode (bounds : Box2) tree : 'e Quadnode =
         let offset = -tree.Bounds.Min // use offset to bring div ops into positive space
         let divs = (bounds.Min + offset) / tree.LeafSize
         let evens = v2 (divs.X |> int |> single) (divs.Y |> int |> single)
         let leafKey = evens * tree.LeafSize - offset
         match tree.Leaves.TryGetValue leafKey with
-        | (true, leaf) when Quadnode.containsBounds bounds leaf -> leaf
+        | (true, leaf) when Quadnode.containsBounds bounds &leaf -> leaf
         | (_, _) -> tree.Node
 
     let addElement (presence : Presence) bounds element tree =
@@ -207,46 +227,46 @@ module Quadtree =
             tree.Omnipresent.Remove element |> ignore
             tree.Omnipresent.Add element |> ignore
         else
-            if not (Quadnode.isIntersectingBounds bounds tree.Node) then
+            if not (Quadnode.isIntersectingBounds bounds &tree.Node) then
                 Log.info "Element is outside the quadtree's containment area or is being added redundantly."
                 tree.Omnipresent.Remove element |> ignore
                 tree.Omnipresent.Add element |> ignore
             else
                 let node = findNode bounds tree
-                Quadnode.addElement bounds element node
+                Quadnode.addElement bounds element &node
 
     let removeElement (presence : Presence) bounds element tree =
         tree.ElementsModified <- true
         if presence.OmnipresentType then 
             tree.Omnipresent.Remove element |> ignore
         else
-            if not (Quadnode.isIntersectingBounds bounds tree.Node) then
+            if not (Quadnode.isIntersectingBounds bounds &tree.Node) then
                 Log.info "Element is outside the quadtree's containment area or is not present for removal."
                 tree.Omnipresent.Remove element |> ignore
             else
                 let node = findNode bounds tree
-                Quadnode.removeElement bounds element node
+                Quadnode.removeElement bounds element &node
 
     let updateElement (oldPresence : Presence) oldBounds (newPresence : Presence) newBounds element tree =
         tree.ElementsModified <- true
-        let wasInNode = not oldPresence.OmnipresentType && Quadnode.isIntersectingBounds oldBounds tree.Node
-        let isInNode = not newPresence.OmnipresentType && Quadnode.isIntersectingBounds newBounds tree.Node
+        let wasInNode = not oldPresence.OmnipresentType && Quadnode.isIntersectingBounds oldBounds &tree.Node
+        let isInNode = not newPresence.OmnipresentType && Quadnode.isIntersectingBounds newBounds &tree.Node
         if wasInNode then
             if isInNode then
                 let oldNode = findNode oldBounds tree
                 let newNode = findNode newBounds tree
                 if oldNode <> newNode then
-                    Quadnode.removeElement oldBounds element oldNode
-                    Quadnode.addElement newBounds element newNode
-                else Quadnode.updateElement oldBounds newBounds element oldNode
+                    Quadnode.removeElement oldBounds element &oldNode
+                    Quadnode.addElement newBounds element &newNode
+                else Quadnode.updateElement oldBounds newBounds element &oldNode
             else
-                Quadnode.removeElement oldBounds element tree.Node |> ignore
+                Quadnode.removeElement oldBounds element &tree.Node |> ignore
                 tree.Omnipresent.Remove element |> ignore
                 tree.Omnipresent.Add element |> ignore
         else
             if isInNode then
                 tree.Omnipresent.Remove element |> ignore
-                Quadnode.addElement newBounds element tree.Node
+                Quadnode.addElement newBounds element &tree.Node
             else
                 tree.Omnipresent.Remove element |> ignore
                 tree.Omnipresent.Add element |> ignore
@@ -259,31 +279,31 @@ module Quadtree =
     let getElementsAtPoint point set tree =
         if tree.ElementsModified then
             let node = findNode (box2 point v2Zero) tree
-            Quadnode.getElementsAtPoint point node set
+            Quadnode.getElementsAtPoint point set &node
             new QuadtreeEnumerable<'e> (new QuadtreeEnumerator<'e> (tree.Omnipresent, set)) :> 'e Quadelement IEnumerable
         else Seq.empty
 
     let getElementsInBounds bounds set tree =
         if tree.ElementsModified then
-            Quadnode.getElementsInBounds bounds tree.Node set
+            Quadnode.getElementsInBounds bounds set &tree.Node
             new QuadtreeEnumerable<'e> (new QuadtreeEnumerator<'e> (tree.Omnipresent, set)) :> 'e Quadelement IEnumerable
         else Seq.empty
 
     let getElementsInView bounds set tree =
         if tree.ElementsModified then
-            Quadnode.getElementsInBounds bounds tree.Node set
+            Quadnode.getElementsInBounds bounds set &tree.Node
             new QuadtreeEnumerable<'e> (new QuadtreeEnumerator<'e> (tree.Omnipresent, set)) :> 'e Quadelement IEnumerable
         else Seq.empty
 
     let getElementsInPlay bounds set tree =
         if tree.ElementsModified then
-            Quadnode.getElementsInBounds bounds tree.Node set
+            Quadnode.getElementsInBounds bounds set &tree.Node
             new QuadtreeEnumerable<'e> (new QuadtreeEnumerator<'e> (tree.Omnipresent, set)) :> 'e Quadelement IEnumerable
         else Seq.empty
 
     let getElements (set : _ HashSet) tree =
         if tree.ElementsModified then
-            Quadnode.getElements tree.Node set
+            Quadnode.getElements set &tree.Node
             new QuadtreeEnumerable<'e> (new QuadtreeEnumerator<'e> (tree.Omnipresent, set)) :> 'e Quadelement IEnumerable
         else Seq.empty
 

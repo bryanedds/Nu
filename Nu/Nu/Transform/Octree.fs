@@ -62,93 +62,104 @@ type Octelement<'e when 'e : equality> = Octelement.Octelement<'e>
 [<RequireQualifiedAccess>]
 module internal Octnode =
 
-    type [<ReferenceEquality>] Octnode<'e when 'e : equality> =
+    type [<Struct>] Octnode<'e when 'e : equality> =
         private
             { Depth : int
               Bounds : Box3
               Children : ValueEither<'e Octnode array, 'e Octelement HashSet> }
 
-    let internal atPoint (point : Vector3) node =
+    let internal atPoint (point : Vector3) (node : 'e Octnode inref) =
         node.Bounds.Intersects point
 
-    let internal isIntersectingBox (bounds : Box3) node =
+    let internal isIntersectingBox (bounds : Box3) (node : 'e Octnode inref) =
         node.Bounds.Intersects bounds
 
-    let inline internal isIntersectingFrustum (frustum : Frustum) node =
+    let inline internal isIntersectingFrustum (frustum : Frustum) (node : 'e Octnode inref) =
         frustum.Intersects node.Bounds
 
-    let inline internal containsBox (bounds : Box3) node =
+    let inline internal containsBox (bounds : Box3) (node : 'e Octnode inref) =
         node.Bounds.Contains bounds = ContainmentType.Contains
 
-    let rec internal addElement bounds element node =
-        if isIntersectingBox bounds node then
+    let rec internal addElement bounds element (node : 'e Octnode inref) =
+        if isIntersectingBox bounds &node then
             match node.Children with
-            | ValueLeft nodes -> for node in nodes do addElement bounds element node
+            | ValueLeft nodes ->
+                for i in 0 .. dec nodes.Length do
+                    let node = &nodes.[i]
+                    addElement bounds element &node
             | ValueRight elements ->
                 elements.Remove element |> ignore
                 elements.Add element |> ignore
 
-    let rec internal removeElement bounds element node =
-        if isIntersectingBox bounds node then
+    let rec internal removeElement bounds element (node : 'e Octnode inref) =
+        if isIntersectingBox bounds &node then
             match node.Children with
-            | ValueLeft nodes -> for node in nodes do removeElement bounds element node
+            | ValueLeft nodes ->
+                for i in 0 .. dec nodes.Length do
+                    let node = &nodes.[i]
+                    removeElement bounds element &node
             | ValueRight elements -> elements.Remove element |> ignore
 
-    let rec internal updateElement oldBounds newBounds element node =
+    let rec internal updateElement oldBounds newBounds element (node : 'e Octnode inref) =
         match node.Children with
         | ValueLeft nodes ->
-            for node in nodes do
-                if isIntersectingBox oldBounds node || isIntersectingBox newBounds node then
-                    updateElement oldBounds newBounds element node
+            for i in 0 .. dec nodes.Length do
+                let node = &nodes.[i]
+                if isIntersectingBox oldBounds &node || isIntersectingBox newBounds &node then
+                    updateElement oldBounds newBounds element &node
         | ValueRight elements ->
-            if isIntersectingBox newBounds node then
+            if isIntersectingBox newBounds &node then
                 elements.Remove element |> ignore
                 elements.Add element |> ignore
-            elif isIntersectingBox oldBounds node then
+            elif isIntersectingBox oldBounds &node then
                 elements.Remove element |> ignore
 
-    let rec internal getElementsAtPoint point node (set : 'e Octelement HashSet) =
+    let rec internal getElementsAtPoint point (set : 'e Octelement HashSet) (node : 'e Octnode inref) =
         match node.Children with
         | ValueLeft nodes ->
-            for node in nodes do
-                if atPoint point node then
-                    getElementsAtPoint point node set
+            for i in 0 .. dec nodes.Length do
+                let node = &nodes.[i]
+                if atPoint point &node then
+                    getElementsAtPoint point set &node
         | ValueRight elements ->
             for element in elements do
                 let bounds = element.Bounds
                 if bounds.Intersects point then
                     set.Add element |> ignore
 
-    let rec internal getElementsInBox box node (set : 'e Octelement HashSet) =
+    let rec internal getElementsInBox box (set : 'e Octelement HashSet) (node : 'e Octnode inref) =
         match node.Children with
         | ValueLeft nodes ->
-            for node in nodes do
-                if isIntersectingBox box node then
-                    getElementsInBox box node set
+            for i in 0 .. dec nodes.Length do
+                let node = &nodes.[i]
+                if isIntersectingBox box &node then
+                    getElementsInBox box set &node
         | ValueRight elements ->
             for element in elements do
                 let bounds = element.Bounds
                 if bounds.Intersects box then
                     set.Add element |> ignore
 
-    let rec internal getElementsInFrustum frustum node (set : 'e Octelement HashSet) =
+    let rec internal getElementsInFrustum frustum (set : 'e Octelement HashSet) (node : 'e Octnode inref) =
         match node.Children with
         | ValueLeft nodes ->
-            for node in nodes do
-                if isIntersectingFrustum frustum node then
-                    getElementsInFrustum frustum node set
+            for i in 0 .. dec nodes.Length do
+                let node = &nodes.[i]
+                if isIntersectingFrustum frustum &node then
+                    getElementsInFrustum frustum set &node
         | ValueRight elements ->
             for element in elements do
                 let bounds = element.Bounds
                 if frustum.Intersects bounds then
                     set.Add element |> ignore
 
-    let rec internal getElementsInPlayBox box node (set : 'e Octelement HashSet) =
+    let rec internal getElementsInPlayBox box (set : 'e Octelement HashSet) (node : 'e Octnode inref) =
         match node.Children with
         | ValueLeft nodes ->
-            for node in nodes do
-                if isIntersectingBox box node then
-                    getElementsInPlayBox box node set
+            for i in 0 .. dec nodes.Length do
+                let node = &nodes.[i]
+                if isIntersectingBox box &node then
+                    getElementsInPlayBox box set &node
         | ValueRight elements ->
             for element in elements do
                 if not element.Static then
@@ -156,12 +167,13 @@ module internal Octnode =
                     if bounds.Intersects box then
                         set.Add element |> ignore
 
-    let rec internal getLightsInBox box node (set : 'e Octelement HashSet) =
+    let rec internal getLightsInBox box (set : 'e Octelement HashSet) (node : 'e Octnode inref) =
         match node.Children with
         | ValueLeft nodes ->
-            for node in nodes do
-                if isIntersectingBox box node then
-                    getLightsInBox box node set
+            for i in 0 .. dec nodes.Length do
+                let node = &nodes.[i]
+                if isIntersectingBox box &node then
+                    getLightsInBox box set &node
         | ValueRight elements ->
             for element in elements do
                 if element.Light then
@@ -169,12 +181,13 @@ module internal Octnode =
                     if bounds.Intersects box then
                         set.Add element |> ignore
 
-    let rec internal getElementsInPlayFrustum frustum node (set : 'e Octelement HashSet) =
+    let rec internal getElementsInPlayFrustum frustum (set : 'e Octelement HashSet) (node : 'e Octnode inref) =
         match node.Children with
         | ValueLeft nodes ->
-            for node in nodes do
-                if isIntersectingFrustum frustum node then
-                    getElementsInPlayFrustum frustum node set
+            for i in 0 .. dec nodes.Length do
+                let node = &nodes.[i]
+                if isIntersectingFrustum frustum &node then
+                    getElementsInPlayFrustum frustum set &node
         | ValueRight elements ->
             for element in elements do
                 if not element.Static then
@@ -182,12 +195,13 @@ module internal Octnode =
                     if frustum.Intersects bounds then
                         set.Add element |> ignore
 
-    let rec internal getElementsInViewFrustum enclosed exposed imposter frustum node (set : 'e Octelement HashSet) =
+    let rec internal getElementsInViewFrustum enclosed exposed imposter frustum (set : 'e Octelement HashSet) (node : 'e Octnode inref) =
         match node.Children with
         | ValueLeft nodes ->
-            for node in nodes do
-                if isIntersectingFrustum frustum node then
-                    getElementsInViewFrustum enclosed exposed imposter frustum node set
+            for i in 0 .. dec nodes.Length do
+                let node = &nodes.[i]
+                if isIntersectingFrustum frustum &node then
+                    getElementsInViewFrustum enclosed exposed imposter frustum set &node
         | ValueRight elements ->
             for element in elements do
                 if enclosed then
@@ -203,36 +217,39 @@ module internal Octnode =
                         if frustum.Intersects element.Bounds then
                             set.Add element |> ignore
 
-    let rec internal getElementsInView frustumEnclosed frustumExposed frustumImposter lightBox node (set : 'e Octelement HashSet) =
+    let rec internal getElementsInView frustumEnclosed frustumExposed frustumImposter lightBox (set : 'e Octelement HashSet) (node : 'e Octnode inref) =
         match node.Children with
         | ValueLeft nodes ->
-            for node in nodes do
-                let intersectingEnclosed = isIntersectingFrustum frustumEnclosed node
-                let intersectingExposed = isIntersectingFrustum frustumExposed node
+            for i in 0 .. dec nodes.Length do
+                let node = &nodes.[i]
+                let intersectingEnclosed = isIntersectingFrustum frustumEnclosed &node
+                let intersectingExposed = isIntersectingFrustum frustumExposed &node
                 if intersectingEnclosed || intersectingExposed then
-                    if intersectingEnclosed then getElementsInViewFrustum true false false frustumEnclosed node set
-                    if intersectingExposed then getElementsInViewFrustum false true false frustumExposed node set
-                elif isIntersectingFrustum frustumImposter node then
-                    getElementsInViewFrustum false false true frustumImposter node set
-                if isIntersectingBox lightBox node then
-                    getLightsInBox lightBox node set
+                    if intersectingEnclosed then getElementsInViewFrustum true false false frustumEnclosed set &node
+                    if intersectingExposed then getElementsInViewFrustum false true false frustumExposed set &node
+                elif isIntersectingFrustum frustumImposter &node then
+                    getElementsInViewFrustum false false true frustumImposter set &node
+                if isIntersectingBox lightBox &node then
+                    getLightsInBox lightBox set &node
         | ValueRight _ -> ()
 
-    let rec internal getElementsInPlay playBox playFrustum node (set : 'e Octelement HashSet) =
+    let rec internal getElementsInPlay playBox playFrustum (set : 'e Octelement HashSet) (node : 'e Octnode inref) =
         match node.Children with
         | ValueLeft nodes ->
-            for node in nodes do
-                if isIntersectingBox playBox node then
-                    getElementsInPlayBox playBox node set
-                if isIntersectingFrustum playFrustum node then
-                    getElementsInPlayFrustum playFrustum node set
+            for i in 0 .. dec nodes.Length do
+                let node = &nodes.[i]
+                if isIntersectingBox playBox &node then
+                    getElementsInPlayBox playBox set &node
+                if isIntersectingFrustum playFrustum &node then
+                    getElementsInPlayFrustum playFrustum set &node
         | ValueRight _ -> ()
 
-    let rec internal getElements node (set : 'e Octelement HashSet) =
+    let rec internal getElements (set : 'e Octelement HashSet) (node : 'e Octnode inref) =
         match node.Children with
         | ValueLeft nodes ->
-            for node in nodes do
-                getElements node set
+            for i in 0 .. dec nodes.Length do
+                let node = &nodes.[i]
+                getElements set &node
         | ValueRight children ->
             set.UnionWith children
 
@@ -330,13 +347,13 @@ module Octree =
               Depth : int
               Bounds : Box3 }
 
-    let private findNode (bounds : Box3) tree =
+    let private findNode (bounds : Box3) tree : 'e Octnode =
         let offset = -tree.Bounds.Min // use offset to bring div ops into positive space
         let divs = (bounds.Min + offset) / tree.LeafSize
         let evens = v3 (divs.X |> int |> single) (divs.Y |> int |> single) (divs.Z |> int |> single)
         let leafKey = evens * tree.LeafSize - offset
         match tree.Leaves.TryGetValue leafKey with
-        | (true, leaf) when Octnode.containsBox bounds leaf -> leaf
+        | (true, leaf) when Octnode.containsBox bounds &leaf -> leaf
         | (_, _) -> tree.Node
 
     let addElement bounds (element : 'e Octelement) tree =
@@ -346,13 +363,13 @@ module Octree =
             tree.Omnipresent.Remove element |> ignore
             tree.Omnipresent.Add element |> ignore
         else
-            if not (Octnode.isIntersectingBox bounds tree.Node) then
+            if not (Octnode.isIntersectingBox bounds &tree.Node) then
                 Log.info "Element is outside the octree's containment area or is being added redundantly."
                 tree.Omnipresent.Remove element |> ignore
                 tree.Omnipresent.Add element |> ignore
             else
                 let node = findNode bounds tree
-                Octnode.addElement bounds element node
+                Octnode.addElement bounds element &node
 
     let removeElement bounds (element : 'e Octelement) tree =
         tree.ElementsModified <- true
@@ -360,33 +377,33 @@ module Octree =
         if presence.OmnipresentType then 
             tree.Omnipresent.Remove element |> ignore
         else
-            if not (Octnode.isIntersectingBox bounds tree.Node) then
+            if not (Octnode.isIntersectingBox bounds &tree.Node) then
                 Log.info "Element is outside the octree's containment area or is not present for removal."
                 tree.Omnipresent.Remove element |> ignore
             else
                 let node = findNode bounds tree
-                Octnode.removeElement bounds element node
+                Octnode.removeElement bounds element &node
 
     let updateElement (oldPresence : Presence) oldBounds (newPresence : Presence) newBounds element tree =
         tree.ElementsModified <- true
-        let wasInNode = not oldPresence.OmnipresentType && Octnode.isIntersectingBox oldBounds tree.Node
-        let isInNode = not newPresence.OmnipresentType && Octnode.isIntersectingBox newBounds tree.Node
+        let wasInNode = not oldPresence.OmnipresentType && Octnode.isIntersectingBox oldBounds &tree.Node
+        let isInNode = not newPresence.OmnipresentType && Octnode.isIntersectingBox newBounds &tree.Node
         if wasInNode then
             if isInNode then
                 let oldNode = findNode oldBounds tree
                 let newNode = findNode newBounds tree
                 if oldNode <> newNode then
-                    Octnode.removeElement oldBounds element oldNode
-                    Octnode.addElement newBounds element newNode
-                else Octnode.updateElement oldBounds newBounds element oldNode
+                    Octnode.removeElement oldBounds element &oldNode
+                    Octnode.addElement newBounds element &newNode
+                else Octnode.updateElement oldBounds newBounds element &oldNode
             else
-                Octnode.removeElement oldBounds element tree.Node |> ignore
+                Octnode.removeElement oldBounds element &tree.Node |> ignore
                 tree.Omnipresent.Remove element |> ignore
                 tree.Omnipresent.Add element |> ignore
         else
             if isInNode then
                 tree.Omnipresent.Remove element |> ignore
-                Octnode.addElement newBounds element tree.Node
+                Octnode.addElement newBounds element &tree.Node
             else
                 tree.Omnipresent.Remove element |> ignore
                 tree.Omnipresent.Add element |> ignore
@@ -399,43 +416,43 @@ module Octree =
     let getElementsAtPoint point (set : _ HashSet) tree =
         if tree.ElementsModified then
             let node = findNode (box3 point v3Zero) tree
-            Octnode.getElementsAtPoint point node set
+            Octnode.getElementsAtPoint point set &node
             new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (tree.Omnipresent, set)) :> 'e Octelement IEnumerable
         else Seq.empty
 
     let getElementsInBounds bounds (set : _ HashSet) tree =
         if tree.ElementsModified then
-            Octnode.getElementsInBox bounds tree.Node set
+            Octnode.getElementsInBox bounds set &tree.Node
             new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (tree.Omnipresent, set)) :> 'e Octelement IEnumerable
         else Seq.empty
 
     let getElementsInFrustum frustum (set : _ HashSet) tree =
         if tree.ElementsModified then
-            Octnode.getElementsInFrustum frustum tree.Node set
+            Octnode.getElementsInFrustum frustum set &tree.Node
             new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (tree.Omnipresent, set)) :> 'e Octelement IEnumerable
         else Seq.empty
 
     let getElementsInView frustumEnclosed frustumExposed frustumImposter lightBox (set : _ HashSet) tree =
         if tree.ElementsModified then
-            Octnode.getElementsInView frustumEnclosed frustumExposed frustumImposter lightBox tree.Node set
+            Octnode.getElementsInView frustumEnclosed frustumExposed frustumImposter lightBox set &tree.Node
             new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (tree.Omnipresent, set)) :> 'e Octelement IEnumerable
         else Seq.empty
 
     let getElementsInPlay playBox playFrustum (set : _ HashSet) tree =
         if tree.ElementsModified then
-            Octnode.getElementsInPlay playBox playFrustum tree.Node set
+            Octnode.getElementsInPlay playBox playFrustum set &tree.Node
             new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (tree.Omnipresent, set)) :> 'e Octelement IEnumerable
         else Seq.empty
 
     let getElements (set : _ HashSet) tree =
         if tree.ElementsModified then
-            Octnode.getElements tree.Node set
+            Octnode.getElements set &tree.Node
             new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (tree.Omnipresent, set)) :> 'e Octelement IEnumerable
         else Seq.empty
 
     let getLightsInPlay lightBox (set : _ HashSet) tree =
         if tree.ElementsModified then
-            Octnode.getLightsInBox lightBox tree.Node set
+            Octnode.getLightsInBox lightBox set &tree.Node
             let omnipresent = tree.Omnipresent |> Seq.filter (fun element -> element.Light)
             new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (omnipresent, set)) :> 'e Octelement IEnumerable
         else Seq.empty
