@@ -7,6 +7,7 @@
 		<PlatformTarget>AnyCPU</PlatformTarget>
 		<ServerGarbageCollection>true</ServerGarbageCollection>
 		<TieredPGO>true</TieredPGO>
+		<DisableFastUpToDateCheck>true</DisableFastUpToDateCheck>
 		<StartArguments>../.. . ../../Refinement True</StartArguments>
 	</PropertyGroup>
 
