@@ -89,13 +89,10 @@ module internal Quadnode =
         | ValueLeft nodes -> for node in nodes do if atPoint point node then getElementsAtPoint point node set
         | ValueRight elements -> for element in elements do set.Add element |> ignore
 
-    let rec internal getElementsInBounds unfiltered bounds node (set : 'e Quadelement HashSet) =
+    let rec internal getElementsInBounds bounds node (set : 'e Quadelement HashSet) =
         match node.Children with
-        | ValueLeft nodes -> for node in nodes do if isIntersectingBounds bounds node then getElementsInBounds unfiltered bounds node set
-        | ValueRight elements ->
-            for element in elements do
-                if element.Visible || unfiltered then
-                    set.Add element |> ignore
+        | ValueLeft nodes -> for node in nodes do if isIntersectingBounds bounds node then getElementsInBounds bounds node set
+        | ValueRight elements -> for element in elements do set.Add element |> ignore
 
     let rec internal getElements node (set : 'e Quadelement HashSet) =
         match node.Children with
@@ -268,20 +265,19 @@ module Quadtree =
 
     let getElementsInBounds bounds set tree =
         if tree.ElementsModified then
-            Quadnode.getElementsInBounds true bounds tree.Node set
+            Quadnode.getElementsInBounds bounds tree.Node set
             new QuadtreeEnumerable<'e> (new QuadtreeEnumerator<'e> (tree.Omnipresent, set)) :> 'e Quadelement IEnumerable
         else Seq.empty
 
     let getElementsInView bounds set tree =
         if tree.ElementsModified then
-            Quadnode.getElementsInBounds false bounds tree.Node set
-            let omnipresent = tree.Omnipresent |> Seq.filter (fun element -> element.Visible)
-            new QuadtreeEnumerable<'e> (new QuadtreeEnumerator<'e> (omnipresent, set)) :> 'e Quadelement IEnumerable
+            Quadnode.getElementsInBounds bounds tree.Node set
+            new QuadtreeEnumerable<'e> (new QuadtreeEnumerator<'e> (tree.Omnipresent, set)) :> 'e Quadelement IEnumerable
         else Seq.empty
 
     let getElementsInPlay bounds set tree =
         if tree.ElementsModified then
-            Quadnode.getElementsInBounds true bounds tree.Node set
+            Quadnode.getElementsInBounds bounds tree.Node set
             new QuadtreeEnumerable<'e> (new QuadtreeEnumerator<'e> (tree.Omnipresent, set)) :> 'e Quadelement IEnumerable
         else Seq.empty
 
