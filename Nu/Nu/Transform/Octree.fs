@@ -24,7 +24,7 @@ module Octelement =
 
     /// An element in an octree.
     /// NOTE: we intentionally use incomplete equality semantics here so these can be stored in a HashSet.
-    type [<CustomEquality; NoComparison>] Octelement<'e when 'e : equality> =
+    type [<CustomEquality; NoComparison; Struct>] Octelement<'e when 'e : equality> =
         private
             { HashCode_ : int // OPTIMIZATION: cache hash code to increase look-up speed.
               Flags_ : uint
@@ -64,49 +64,52 @@ module internal Octnode =
 
     type [<Struct>] Octnode<'e when 'e : equality> =
         private
-            { Depth : int
-              Bounds : Box3
-              Children : ValueEither<'e Octnode array, 'e Octelement HashSet> }
+            { Id_ : uint64
+              Depth_ : int
+              Bounds_ : Box3
+              Children_ : ValueEither<'e Octnode array, 'e Octelement HashSet> }
+
+        member this.Id = this.Id_
 
     let internal atPoint (point : Vector3) (node : 'e Octnode inref) =
-        node.Bounds.Intersects point
+        node.Bounds_.Intersects point
 
     let internal isIntersectingBox (bounds : Box3) (node : 'e Octnode inref) =
-        node.Bounds.Intersects bounds
+        node.Bounds_.Intersects bounds
 
     let inline internal isIntersectingFrustum (frustum : Frustum) (node : 'e Octnode inref) =
-        frustum.Intersects node.Bounds
+        frustum.Intersects node.Bounds_
 
     let inline internal containsBox (bounds : Box3) (node : 'e Octnode inref) =
-        node.Bounds.Contains bounds = ContainmentType.Contains
+        node.Bounds_.Contains bounds = ContainmentType.Contains
 
-    let rec internal addElement bounds element (node : 'e Octnode inref) =
+    let rec internal addElement bounds (element : 'e Octelement inref) (node : 'e Octnode inref) =
         if isIntersectingBox bounds &node then
-            match node.Children with
+            match node.Children_ with
             | ValueLeft nodes ->
                 for i in 0 .. dec nodes.Length do
                     let node = &nodes.[i]
-                    addElement bounds element &node
+                    addElement bounds &element &node
             | ValueRight elements ->
                 elements.Remove element |> ignore
                 elements.Add element |> ignore
 
-    let rec internal removeElement bounds element (node : 'e Octnode inref) =
+    let rec internal removeElement bounds (element : 'e Octelement inref) (node : 'e Octnode inref) =
         if isIntersectingBox bounds &node then
-            match node.Children with
+            match node.Children_ with
             | ValueLeft nodes ->
                 for i in 0 .. dec nodes.Length do
                     let node = &nodes.[i]
-                    removeElement bounds element &node
+                    removeElement bounds &element &node
             | ValueRight elements -> elements.Remove element |> ignore
 
-    let rec internal updateElement oldBounds newBounds element (node : 'e Octnode inref) =
-        match node.Children with
+    let rec internal updateElement oldBounds newBounds (element : 'e Octelement inref) (node : 'e Octnode inref) =
+        match node.Children_ with
         | ValueLeft nodes ->
             for i in 0 .. dec nodes.Length do
                 let node = &nodes.[i]
                 if isIntersectingBox oldBounds &node || isIntersectingBox newBounds &node then
-                    updateElement oldBounds newBounds element &node
+                    updateElement oldBounds newBounds &element &node
         | ValueRight elements ->
             if isIntersectingBox newBounds &node then
                 elements.Remove element |> ignore
@@ -115,7 +118,7 @@ module internal Octnode =
                 elements.Remove element |> ignore
 
     let rec internal getElementsAtPoint point (set : 'e Octelement HashSet) (node : 'e Octnode inref) =
-        match node.Children with
+        match node.Children_ with
         | ValueLeft nodes ->
             for i in 0 .. dec nodes.Length do
                 let node = &nodes.[i]
@@ -128,7 +131,7 @@ module internal Octnode =
                     set.Add element |> ignore
 
     let rec internal getElementsInBox box (set : 'e Octelement HashSet) (node : 'e Octnode inref) =
-        match node.Children with
+        match node.Children_ with
         | ValueLeft nodes ->
             for i in 0 .. dec nodes.Length do
                 let node = &nodes.[i]
@@ -141,7 +144,7 @@ module internal Octnode =
                     set.Add element |> ignore
 
     let rec internal getElementsInFrustum frustum (set : 'e Octelement HashSet) (node : 'e Octnode inref) =
-        match node.Children with
+        match node.Children_ with
         | ValueLeft nodes ->
             for i in 0 .. dec nodes.Length do
                 let node = &nodes.[i]
@@ -154,7 +157,7 @@ module internal Octnode =
                     set.Add element |> ignore
 
     let rec internal getElementsInPlayBox box (set : 'e Octelement HashSet) (node : 'e Octnode inref) =
-        match node.Children with
+        match node.Children_ with
         | ValueLeft nodes ->
             for i in 0 .. dec nodes.Length do
                 let node = &nodes.[i]
@@ -168,7 +171,7 @@ module internal Octnode =
                         set.Add element |> ignore
 
     let rec internal getLightsInBox box (set : 'e Octelement HashSet) (node : 'e Octnode inref) =
-        match node.Children with
+        match node.Children_ with
         | ValueLeft nodes ->
             for i in 0 .. dec nodes.Length do
                 let node = &nodes.[i]
@@ -182,7 +185,7 @@ module internal Octnode =
                         set.Add element |> ignore
 
     let rec internal getElementsInPlayFrustum frustum (set : 'e Octelement HashSet) (node : 'e Octnode inref) =
-        match node.Children with
+        match node.Children_ with
         | ValueLeft nodes ->
             for i in 0 .. dec nodes.Length do
                 let node = &nodes.[i]
@@ -196,7 +199,7 @@ module internal Octnode =
                         set.Add element |> ignore
 
     let rec internal getElementsInViewFrustum enclosed exposed imposter frustum (set : 'e Octelement HashSet) (node : 'e Octnode inref) =
-        match node.Children with
+        match node.Children_ with
         | ValueLeft nodes ->
             for i in 0 .. dec nodes.Length do
                 let node = &nodes.[i]
@@ -218,7 +221,7 @@ module internal Octnode =
                             set.Add element |> ignore
 
     let rec internal getElementsInView frustumEnclosed frustumExposed frustumImposter lightBox (set : 'e Octelement HashSet) (node : 'e Octnode inref) =
-        match node.Children with
+        match node.Children_ with
         | ValueLeft nodes ->
             for i in 0 .. dec nodes.Length do
                 let node = &nodes.[i]
@@ -234,7 +237,7 @@ module internal Octnode =
         | ValueRight _ -> ()
 
     let rec internal getElementsInPlay playBox playFrustum (set : 'e Octelement HashSet) (node : 'e Octnode inref) =
-        match node.Children with
+        match node.Children_ with
         | ValueLeft nodes ->
             for i in 0 .. dec nodes.Length do
                 let node = &nodes.[i]
@@ -245,7 +248,7 @@ module internal Octnode =
         | ValueRight _ -> ()
 
     let rec internal getElements (set : 'e Octelement HashSet) (node : 'e Octnode inref) =
-        match node.Children with
+        match node.Children_ with
         | ValueLeft nodes ->
             for i in 0 .. dec nodes.Length do
                 let node = &nodes.[i]
@@ -271,9 +274,10 @@ module internal Octnode =
                 ValueLeft (nodes |> Array.concat |> Array.concat)
             else ValueRight (HashSet<'e Octelement> HashIdentity.Structural)
         let node =
-            { Depth = depth
-              Bounds = bounds
-              Children = children }
+            { Id_ = Gen.id64
+              Depth_ = depth
+              Bounds_ = bounds
+              Children_ = children }
         if depth = 1 then leaves.Add (bounds.Min, node)
         node
 
@@ -369,7 +373,7 @@ module Octree =
                 tree.Omnipresent.Add element |> ignore
             else
                 let node = findNode bounds tree
-                Octnode.addElement bounds element &node
+                Octnode.addElement bounds &element &node
 
     let removeElement bounds (element : 'e Octelement) tree =
         tree.ElementsModified <- true
@@ -382,7 +386,7 @@ module Octree =
                 tree.Omnipresent.Remove element |> ignore
             else
                 let node = findNode bounds tree
-                Octnode.removeElement bounds element &node
+                Octnode.removeElement bounds &element &node
 
     let updateElement (oldPresence : Presence) oldBounds (newPresence : Presence) newBounds element tree =
         tree.ElementsModified <- true
@@ -392,18 +396,18 @@ module Octree =
             if isInNode then
                 let oldNode = findNode oldBounds tree
                 let newNode = findNode newBounds tree
-                if oldNode <> newNode then
-                    Octnode.removeElement oldBounds element &oldNode
-                    Octnode.addElement newBounds element &newNode
-                else Octnode.updateElement oldBounds newBounds element &oldNode
+                if oldNode.Id <> newNode.Id then
+                    Octnode.removeElement oldBounds &element &oldNode
+                    Octnode.addElement newBounds &element &newNode
+                else Octnode.updateElement oldBounds newBounds &element &newNode
             else
-                Octnode.removeElement oldBounds element &tree.Node |> ignore
+                Octnode.removeElement oldBounds &element &tree.Node |> ignore
                 tree.Omnipresent.Remove element |> ignore
                 tree.Omnipresent.Add element |> ignore
         else
             if isInNode then
                 tree.Omnipresent.Remove element |> ignore
-                Octnode.addElement newBounds element &tree.Node
+                Octnode.addElement newBounds &element &tree.Node
             else
                 tree.Omnipresent.Remove element |> ignore
                 tree.Omnipresent.Add element |> ignore
