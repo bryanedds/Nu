@@ -1316,23 +1316,23 @@ type [<ReferenceEquality>] GlRenderer3d =
                 userDefinedStaticModelsToDestroy.Add dudsm.StaticModel 
             | RenderSkyBox rsb ->
                 renderer.RenderTasks.RenderSkyBoxes.Add (rsb.AmbientColor, rsb.AmbientBrightness, rsb.CubeMapColor, rsb.CubeMapBrightness, rsb.CubeMap)
-            | RenderLightProbe3d lp ->
-                if renderer.RenderTasks.RenderLightProbes.ContainsKey lp.LightProbeId then
-                    Log.debugOnce ("Multiple light probe messages coming in with the same id of '" + string lp.LightProbeId + "'.")
-                    renderer.RenderTasks.RenderLightProbes.Remove lp.LightProbeId |> ignore<bool>
-                renderer.RenderTasks.RenderLightProbes.Add (lp.LightProbeId, struct (lp.Enabled, lp.Origin, lp.Bounds, lp.Stale))
-            | RenderLight3d rl3 ->
+            | RenderLightProbe3d rlp ->
+                if renderer.RenderTasks.RenderLightProbes.ContainsKey rlp.LightProbeId then
+                    Log.debugOnce ("Multiple light probe messages coming in with the same id of '" + string rlp.LightProbeId + "'.")
+                    renderer.RenderTasks.RenderLightProbes.Remove rlp.LightProbeId |> ignore<bool>
+                renderer.RenderTasks.RenderLightProbes.Add (rlp.LightProbeId, struct (rlp.Enabled, rlp.Origin, rlp.Bounds, rlp.Stale))
+            | RenderLight3d rl ->
                 let light =
-                    { SortableLightOrigin = rl3.Origin
-                      SortableLightDirection = rl3.Direction
-                      SortableLightColor = rl3.Color
-                      SortableLightBrightness = rl3.Brightness
-                      SortableLightAttenuationLinear = rl3.AttenuationLinear
-                      SortableLightAttenuationQuadratic = rl3.AttenuationQuadratic
-                      SortableLightCutoff = rl3.Cutoff
-                      SortableLightDirectional = match rl3.LightType with DirectionalLight -> 1 | _ -> 0
-                      SortableLightConeInner = match rl3.LightType with SpotLight (coneInner, _) -> coneInner | _ -> single (2.0 * Math.PI)
-                      SortableLightConeOuter = match rl3.LightType with SpotLight (_, coneOuter) -> coneOuter | _ -> single (2.0 * Math.PI)
+                    { SortableLightOrigin = rl.Origin
+                      SortableLightDirection = rl.Direction
+                      SortableLightColor = rl.Color
+                      SortableLightBrightness = rl.Brightness
+                      SortableLightAttenuationLinear = rl.AttenuationLinear
+                      SortableLightAttenuationQuadratic = rl.AttenuationQuadratic
+                      SortableLightCutoff = rl.Cutoff
+                      SortableLightDirectional = match rl.LightType with DirectionalLight -> 1 | _ -> 0
+                      SortableLightConeInner = match rl.LightType with SpotLight (coneInner, _) -> coneInner | _ -> single (2.0 * Math.PI)
+                      SortableLightConeOuter = match rl.LightType with SpotLight (_, coneOuter) -> coneOuter | _ -> single (2.0 * Math.PI)
                       SortableLightDistanceSquared = Single.MaxValue }
                 renderer.RenderTasks.RenderLights.Add light
             | RenderBillboard rb ->
@@ -1363,19 +1363,19 @@ type [<ReferenceEquality>] GlRenderer3d =
             | RenderStaticModels rsms ->
                 for (modelMatrix, presence, insetOpt, properties) in rsms.StaticModels do
                     GlRenderer3d.categorizeStaticModel (skipCulling, frustumEnclosed, frustumExposed, frustumImposter, lightBox, rsms.Absolute, &modelMatrix, presence, insetOpt, &properties, rsms.RenderType, rsms.StaticModel, renderer)
-            | RenderCachedStaticModel d ->
-                GlRenderer3d.categorizeStaticModel (skipCulling, frustumEnclosed, frustumExposed, frustumImposter, lightBox, d.CachedStaticModelAbsolute, &d.CachedStaticModelMatrix, d.CachedStaticModelPresence, Option.ofValueOption d.CachedStaticModelInsetOpt, &d.CachedStaticModelMaterialProperties, d.CachedStaticModelRenderType, d.CachedStaticModel, renderer)
+            | RenderCachedStaticModel rcsm ->
+                GlRenderer3d.categorizeStaticModel (skipCulling, frustumEnclosed, frustumExposed, frustumImposter, lightBox, rcsm.CachedStaticModelAbsolute, &rcsm.CachedStaticModelMatrix, rcsm.CachedStaticModelPresence, Option.ofValueOption rcsm.CachedStaticModelInsetOpt, &rcsm.CachedStaticModelMaterialProperties, rcsm.CachedStaticModelRenderType, rcsm.CachedStaticModel, renderer)
             | RenderUserDefinedStaticModel renderUdsm ->
                 let assetTag = asset Assets.Default.PackageName Gen.name // TODO: see if we should instead use a specialized package for temporary assets like these.
                 GlRenderer3d.tryCreateUserDefinedStaticModel renderUdsm.SurfaceDescriptors renderUdsm.Bounds assetTag renderer
                 GlRenderer3d.categorizeStaticModel (skipCulling, frustumEnclosed, frustumExposed, frustumImposter, lightBox, renderUdsm.Absolute, &renderUdsm.ModelMatrix, renderUdsm.Presence, renderUdsm.InsetOpt, &renderUdsm.MaterialProperties, renderUdsm.RenderType, assetTag, renderer)
                 userDefinedStaticModelsToDestroy.Add assetTag
-            | RenderPostPass3d postPass ->
-                postPasses.Add postPass |> ignore<bool>
-            | LoadRenderPackage3d hintPackageUse ->
-                GlRenderer3d.handleLoadRenderPackage hintPackageUse renderer
-            | UnloadRenderPackage3d hintPackageDisuse ->
-                GlRenderer3d.handleUnloadRenderPackage hintPackageDisuse renderer
+            | RenderPostPass3d rpp ->
+                postPasses.Add rpp |> ignore<bool>
+            | LoadRenderPackage3d lrp ->
+                GlRenderer3d.handleLoadRenderPackage lrp renderer
+            | UnloadRenderPackage3d urp ->
+                GlRenderer3d.handleUnloadRenderPackage urp renderer
             | ReloadRenderAssets3d ->
                 GlRenderer3d.handleReloadRenderAssets renderer
 
