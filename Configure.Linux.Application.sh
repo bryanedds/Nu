@@ -13,3 +13,6 @@ sudo apt install \
 # if this reports that the package can't be found, try the advice here - https://dev.to/solrevdev/unable-to-locate-package-dotnet-sdk-3-1-4b6
 sudo apt-get update
 sudo apt-get install -y dotnet-runtime-7.0
+
+# configure assimp
+sudo apt-get install libassimp-dev
