@@ -36,8 +36,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
           BroadPhaseInterface : BroadphaseInterface
           ConstraintSolver : ConstraintSolver
           PhysicsMessages : PhysicsMessage UList
-          IntegrationMessages : IntegrationMessage List
-          mutable RebuildingHack : bool }
+          IntegrationMessages : IntegrationMessage List }
 
     static member private handleCollision physicsEngine (bodyId : BodyId) (bodyId2 : BodyId) normal =
         let bodyCollisionMessage =
@@ -413,8 +412,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
                 match gravityOverride with
                 | Some gravity -> body.Gravity <- gravity
                 | None -> body.Gravity <- gravity
-        | RebuildPhysicsHackMessage ->
-            physicsEngine.RebuildingHack <- true
+        | ClearPhysicsMessageInternal ->
             for constrain in physicsEngine.Constraints.Values do physicsEngine.PhysicsContext.RemoveConstraint constrain
             physicsEngine.Objects.Clear ()
             physicsEngine.Constraints.Clear ()
@@ -486,7 +484,6 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
     static member private handlePhysicsMessages physicsMessages physicsEngine =
         for physicsMessage in physicsMessages do
             BulletPhysicsEngine.handlePhysicsMessage physicsEngine physicsMessage
-        physicsEngine.RebuildingHack <- false
 
     static member make imperative gravity =
         let config = if imperative then Imperative else Functional
@@ -508,8 +505,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
           BroadPhaseInterface = broadPhaseInterface
           ConstraintSolver = constraintSolver
           PhysicsMessages = physicsMessages
-          IntegrationMessages = List ()
-          RebuildingHack = false }
+          IntegrationMessages = List () }
 
     static member cleanUp physicsEngine =
         physicsEngine.PhysicsContext.Dispose ()

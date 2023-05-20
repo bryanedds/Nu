@@ -578,16 +578,27 @@ module WorldModule2 =
 
             // clear existing 3d physics messages and rebuild
             let world = World.updatePhysicsEngine3d (fun physicsEngine -> physicsEngine.ClearMessages ()) world
-            let world = World.enqueuePhysicsMessage3d RebuildPhysicsHackMessage world
+            let world = World.enqueuePhysicsMessage3d ClearPhysicsMessageInternal world
 
             // clear existing 2d physics messages and rebuild
             let world = World.updatePhysicsEngine2d (fun physicsEngine -> physicsEngine.ClearMessages ()) world
-            let world = World.enqueuePhysicsMessage2d RebuildPhysicsHackMessage world
+            let world = World.enqueuePhysicsMessage2d ClearPhysicsMessageInternal world
 
-            // propagate current physics state
-            let entities = World.getEntities1 world
-            let world = Seq.fold (fun world (entity : Entity) -> entity.PropagatePhysics world) world entities
-            world
+            // register the physics of entities in the current screen
+            match World.getSelectedScreenOpt world with
+            | Some screen ->
+                let groups = World.getGroups screen world
+                Seq.fold (fun world (group : Group) ->
+                    if group.Exists world then
+                        let entities = World.getEntitiesFlattened group world
+                        Seq.fold (fun world (entity : Entity) ->
+                            if entity.Exists world
+                            then World.registerEntityPhysics entity world
+                            else world)
+                            world entities
+                        else world)
+                    world groups
+            | None -> world
 
         static member private processTasklet simulant tasklet (taskletsNotRun : OMap<Simulant, World Tasklet UList>) (world : World) =
             let shouldRun =

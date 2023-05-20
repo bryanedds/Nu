@@ -27,8 +27,7 @@ type [<ReferenceEquality>] AetherPhysicsEngine =
           PhysicsMessages : PhysicsMessage UList
           IntegrationMessages : IntegrationMessage List
           CollisionHandler : OnCollisionEventHandler
-          SeparationHandler : OnSeparationEventHandler
-          mutable RebuildingHack : bool }
+          SeparationHandler : OnSeparationEventHandler }
 
     static member private toPixel value =
         value * Constants.Physics.PhysicsToPixelRatio
@@ -409,8 +408,7 @@ type [<ReferenceEquality>] AetherPhysicsEngine =
         | ApplyBodyTorqueMessage applyBodyTorqueMessage -> AetherPhysicsEngine.applyBodyTorque applyBodyTorqueMessage physicsEngine
         | SetBodyObservableMessage setBodyObservableMessage -> AetherPhysicsEngine.setBodyObservable setBodyObservableMessage physicsEngine
         | SetGravityMessage gravity -> physicsEngine.PhysicsContext.Gravity <- AetherPhysicsEngine.toPhysicsV2 gravity
-        | RebuildPhysicsHackMessage ->
-            physicsEngine.RebuildingHack <- true
+        | ClearPhysicsMessageInternal ->
             physicsEngine.PhysicsContext.Clear ()
             physicsEngine.Joints.Clear ()
             physicsEngine.Bodies.Clear ()
@@ -419,7 +417,6 @@ type [<ReferenceEquality>] AetherPhysicsEngine =
     static member private handlePhysicsMessages physicsMessages physicsEngine =
         for physicsMessage in physicsMessages do
             AetherPhysicsEngine.handlePhysicsMessage physicsEngine physicsMessage
-        physicsEngine.RebuildingHack <- false
 
     static member private createIntegrationMessages physicsEngine =
         // NOTE: P1: We should really be querying these bodies from the physics engine's internally-maintained
@@ -459,8 +456,7 @@ type [<ReferenceEquality>] AetherPhysicsEngine =
               PhysicsMessages = UList.makeEmpty config
               IntegrationMessages = integrationMessages
               CollisionHandler = collisionHandler
-              SeparationHandler = separationHandler
-              RebuildingHack = false }
+              SeparationHandler = separationHandler }
         physicsEngine :> PhysicsEngine
 
     interface PhysicsEngine with
