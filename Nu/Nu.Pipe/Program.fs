@@ -3,6 +3,7 @@
 
 namespace NuPipe
 open System
+open System.IO
 open Prime
 open Nu
 module Program =
@@ -10,9 +11,9 @@ module Program =
     let [<EntryPoint; STAThread>] main argv =
         match argv with
         | [|inputDirectory; outputDirectory; refinementDirectory; fullBuildStr|] ->
-            let fullBuild = fullBuildStr = scstring true
             match AssetGraph.tryMakeFromFile Assets.Global.AssetGraphFilePath with
             | Right assetGraph ->
+                let fullBuild = fullBuildStr = scstring true
                 AssetGraph.buildAssets inputDirectory outputDirectory refinementDirectory fullBuild assetGraph
                 Constants.Engine.ExitCodeSuccess
             | Left error ->

@@ -8,7 +8,7 @@
 		<ServerGarbageCollection>true</ServerGarbageCollection>
 		<TieredPGO>true</TieredPGO>
 		<DisableFastUpToDateCheck>true</DisableFastUpToDateCheck>
-		<StartArguments>../.. . ../../Refinement True</StartArguments>
+		<StartArguments>../../.. . ../../refinement True</StartArguments>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCpu'">

@@ -14,6 +14,9 @@ sudo apt install \
 sudo apt-get update
 sudo apt-get install -y dotnet-sdk-7.0
 
+# configure assimp
+sudo apt-get install libassimp-dev
+
 # configure F#
 sudo apt install fsharp
 
