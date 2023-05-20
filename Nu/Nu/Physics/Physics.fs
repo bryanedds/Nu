@@ -417,7 +417,7 @@ type PhysicsMessage =
     | ApplyBodyTorqueMessage of ApplyBodyTorqueMessage
     | SetBodyObservableMessage of SetBodyObservableMessage
     | SetGravityMessage of Vector3
-    | RebuildPhysicsHackMessage
+    | ClearPhysicsMessageInternal
 
 /// Represents a physics engine in Nu.
 type PhysicsEngine =
