@@ -860,7 +860,8 @@ module FieldDispatcher =
                  // menu button
                  Content.button "Menu"
                     [Entity.Position == v3 -450.0f -246.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v3 144.0f 48.0f 0.0f
-                     Entity.UpImage == Assets.Gui.ButtonShortUpImage; Entity.DownImage == Assets.Gui.ButtonShortDownImage
+                     Entity.UpImage == Assets.Gui.ButtonShortUpImage
+                     Entity.DownImage == Assets.Gui.ButtonShortDownImage
                      Entity.Text == "Menu"
                      Entity.Visible :=
                         field.Menu.MenuState = MenuClosed &&
@@ -874,7 +875,8 @@ module FieldDispatcher =
                  // party button
                  Content.button "Party"
                     [Entity.Position == v3 -72.0f -246.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v3 144.0f 48.0f 0.0f
-                     Entity.UpImage == Assets.Gui.ButtonShortUpImage; Entity.DownImage == Assets.Gui.ButtonShortDownImage
+                     Entity.UpImage == Assets.Gui.ButtonShortUpImage
+                     Entity.DownImage == Assets.Gui.ButtonShortDownImage
                      Entity.Visible :=
                         field.Menu.MenuState = MenuClosed &&
                         (Cue.notInterrupting field.Inventory field.Advents field.Cue || Option.isSome field.DialogOpt) &&
@@ -890,7 +892,8 @@ module FieldDispatcher =
                  // interact button
                  Content.button "Interact"
                     [Entity.Position == v3 306.0f -246.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v3 144.0f 48.0f 0.0f
-                     Entity.UpImage == Assets.Gui.ButtonShortUpImage; Entity.DownImage == Assets.Gui.ButtonShortDownImage
+                     Entity.UpImage == Assets.Gui.ButtonShortUpImage
+                     Entity.DownImage == Assets.Gui.ButtonShortDownImage
                      Entity.Visible :=
                         field.Menu.MenuState = MenuClosed &&
                         (Cue.notInterrupting field.Inventory field.Advents field.Cue || Option.isSome field.DialogOpt) &&
@@ -1050,19 +1053,22 @@ module FieldDispatcher =
                              Entity.Text == "Battle Speed"]
                          Content.radioButton "Wait"
                             [Entity.PositionLocal == v3 180.0f 372.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 144.0f 48.0f 0.0f
-                             Entity.UndialedImage == Assets.Gui.ButtonShortUpImage; Entity.DialedImage == Assets.Gui.ButtonShortDownImage
+                             Entity.UndialedImage == Assets.Gui.ButtonShortUpImage
+                             Entity.DialedImage == Assets.Gui.ButtonShortDownImage
                              Entity.Text == "Wait"
                              Entity.Dialed := match field.Options.BattleSpeed with WaitSpeed -> true | _ -> false
                              Entity.DialedEvent => MenuOptionsSelectBattleSpeed WaitSpeed]
                          Content.radioButton "Paced"
                             [Entity.PositionLocal == v3 408.0f 372.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 144.0f 48.0f 0.0f
-                             Entity.UndialedImage == Assets.Gui.ButtonShortUpImage; Entity.DialedImage == Assets.Gui.ButtonShortDownImage
+                             Entity.UndialedImage == Assets.Gui.ButtonShortUpImage
+                             Entity.DialedImage == Assets.Gui.ButtonShortDownImage
                              Entity.Text == "Paced"
                              Entity.Dialed := match field.Options.BattleSpeed with PacedSpeed -> true | _ -> false
                              Entity.DialedEvent => MenuOptionsSelectBattleSpeed PacedSpeed]
                          Content.radioButton "Swift"
                             [Entity.PositionLocal == v3 636.0f 372.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 144.0f 48.0f 0.0f
-                             Entity.UndialedImage == Assets.Gui.ButtonShortUpImage; Entity.DialedImage == Assets.Gui.ButtonShortDownImage
+                             Entity.UndialedImage == Assets.Gui.ButtonShortUpImage
+                             Entity.DialedImage == Assets.Gui.ButtonShortDownImage
                              Entity.Text == "Swift"
                              Entity.Dialed := match field.Options.BattleSpeed with SwiftSpeed -> true | _ -> false
                              Entity.DialedEvent => MenuOptionsSelectBattleSpeed SwiftSpeed]]
