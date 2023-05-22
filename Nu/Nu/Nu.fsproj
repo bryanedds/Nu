@@ -217,5 +217,5 @@
 	<ItemGroup>
 		<ProjectReference Include="..\Nu.Math\Nu.Math.csproj" />
 	</ItemGroup>
-	
+
 </Project>
