@@ -475,17 +475,21 @@ module Octree =
             not (MathHelper.IsPowerOfTwo size.Y) ||
             not (MathHelper.IsPowerOfTwo size.Z) then
             failwith "Invalid size for Octtree. Expected value whose components are a power of two."
-        let leaves = dictPlus HashIdentity.Structural []
+        let leafComparer = // OPTIMIZATION: avoid allocation on Equals calls.
+            { new IEqualityComparer<Vector3> with
+                member this.Equals (left, right) = left.Equals right
+                member this.GetHashCode v = v.GetHashCode () }
+        let leaves = dictPlus leafComparer []
         let mutable leafSize = size
         for _ in 1 .. dec depth do leafSize <- leafSize * 0.5f
-        let comparer = OctelementEqualityComparer<'e> ()
+        let elementComparer = OctelementEqualityComparer<'e> ()
         let min = size * -0.5f + leafSize * 0.5f // OPTIMIZATION: offset min by half leaf size to minimize margin hits at origin.
         let bounds = box3 min size
         { ElementsModified = false
           Leaves = leaves
           LeafSize = leafSize
-          Omnipresent = HashSet comparer
-          Node = Octnode.make<'e> comparer depth bounds leaves
+          Omnipresent = HashSet elementComparer
+          Node = Octnode.make<'e> elementComparer depth bounds leaves
           Depth = depth
           Bounds = bounds }
 
