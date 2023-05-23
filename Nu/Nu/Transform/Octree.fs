@@ -59,6 +59,12 @@ module Octelement =
 /// An element in an octree.
 type Octelement<'e when 'e : equality> = Octelement.Octelement<'e>
 
+/// Equality compares two octelements.
+type OctelementEqualityComparer<'e when 'e : equality> () =
+    interface 'e Octelement IEqualityComparer with
+        member this.Equals (left, right) = left.Entry = right.Entry // OPTIMIZATION: inline equality to avoid allocation.
+        member this.GetHashCode element = element.GetHashCode ()
+
 [<RequireQualifiedAccess>]
 module internal Octnode =
 
@@ -256,7 +262,7 @@ module internal Octnode =
         | ValueRight children ->
             set.UnionWith children
 
-    let rec internal make<'e when 'e : equality> depth (bounds : Box3) (leaves : Dictionary<Vector3, 'e Octnode>) : 'e Octnode =
+    let rec internal make<'e when 'e : equality> comparer depth (bounds : Box3) (leaves : Dictionary<Vector3, 'e Octnode>) : 'e Octnode =
         if depth < 1 then failwith "Invalid depth for Octnode. Expected value of at least 1."
         let granularity = 2
         let childDepth = depth - 1
@@ -270,9 +276,9 @@ module internal Octnode =
                                 let childOffset = v3 (childSize.X * single i) (childSize.Y * single j) (childSize.Z * single k)
                                 let childMin = bounds.Min + childOffset
                                 let childBounds = box3 childMin childSize
-                                yield make childDepth childBounds leaves|]|]|]
+                                yield make comparer childDepth childBounds leaves|]|]|]
                 ValueLeft (nodes |> Array.concat |> Array.concat)
-            else ValueRight (HashSet<'e Octelement> HashIdentity.Structural)
+            else ValueRight (HashSet<'e Octelement> (comparer : 'e OctelementEqualityComparer))
         let node =
             { Id_ = Gen.id64
               Depth_ = depth
@@ -472,13 +478,14 @@ module Octree =
         let leaves = dictPlus HashIdentity.Structural []
         let mutable leafSize = size
         for _ in 1 .. dec depth do leafSize <- leafSize * 0.5f
+        let comparer = OctelementEqualityComparer<'e> ()
         let min = size * -0.5f + leafSize * 0.5f // OPTIMIZATION: offset min by half leaf size to minimize margin hits at origin.
         let bounds = box3 min size
         { ElementsModified = false
           Leaves = leaves
           LeafSize = leafSize
-          Omnipresent = HashSet HashIdentity.Structural
-          Node = Octnode.make<'e> depth bounds leaves
+          Omnipresent = HashSet comparer
+          Node = Octnode.make<'e> comparer depth bounds leaves
           Depth = depth
           Bounds = bounds }
 

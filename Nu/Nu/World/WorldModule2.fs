@@ -64,16 +64,8 @@ module WorldModule2 =
     let private ScreenTransitionKeyboardKeyId = Gen.id
 
     (* Cached HashSets *)
-    type private QuadelementComparer () =
-        interface IEqualityComparer<Entity Quadelement> with
-            member this.GetHashCode element = element.GetHashCode ()
-            member this.Equals (element, element2) = Address.equals element.Entry.EntityAddress element2.Entry.EntityAddress
-    type private OctelementComparer () =
-        interface IEqualityComparer<Entity Octelement> with
-            member this.GetHashCode element = element.GetHashCode ()
-            member this.Equals (element, element2) = Address.equals element.Entry.EntityAddress element2.Entry.EntityAddress
-    let private CachedHashSet2d = HashSet (QuadelementComparer ())
-    let private CachedHashSet3d = HashSet (OctelementComparer ())
+    let private CachedHashSet2d = HashSet (QuadelementEqualityComparer ())
+    let private CachedHashSet3d = HashSet (OctelementEqualityComparer ())
 
     type World with
 
