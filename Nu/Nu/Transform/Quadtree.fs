@@ -39,6 +39,12 @@ module Quadelement =
 /// An element in a quadree.
 type Quadelement<'e when 'e : equality> = Quadelement.Quadelement<'e>
 
+/// Equality compares two quadelements.
+type QuadelementEqualityComparer<'e when 'e : equality> () =
+    interface 'e Quadelement IEqualityComparer with
+        member this.Equals (left, right) = left.Entry = right.Entry // OPTIMIZATION: inline equality to avoid allocation.
+        member this.GetHashCode element = element.GetHashCode ()
+
 [<RequireQualifiedAccess>]
 module internal Quadnode =
 
@@ -125,7 +131,7 @@ module internal Quadnode =
         | ValueRight children ->
             set.UnionWith children
 
-    let rec internal make<'e when 'e : equality> depth (bounds : Box2) (leaves : Dictionary<Vector2, 'e Quadnode>) =
+    let rec internal make<'e when 'e : equality> comparer depth (bounds : Box2) (leaves : Dictionary<Vector2, 'e Quadnode>) =
         if depth < 1 then failwith "Invalid depth for Quadnode. Expected value of at least 1."
         let granularity = 2
         let childDepth = depth - 1
@@ -136,9 +142,9 @@ module internal Quadnode =
                     [|for i in 0 .. dec (granularity * granularity) do
                         let childPosition = v2 bounds.Min.X bounds.Min.Y + v2 (childSize.X * single (i % granularity)) (childSize.Y * single (i / granularity))
                         let childBounds = box2 childPosition childSize
-                        yield make childDepth childBounds leaves|]
+                        yield make comparer childDepth childBounds leaves|]
                 ValueLeft nodes
-            else ValueRight (HashSet<'e Quadelement> HashIdentity.Structural)
+            else ValueRight (HashSet<'e Quadelement> (comparer : 'e QuadelementEqualityComparer))
         let node =
             { Id_ = Gen.id64
               Depth_ = depth
@@ -321,13 +327,14 @@ module Quadtree =
         let leaves = dictPlus HashIdentity.Structural []
         let mutable leafSize = size
         for _ in 1 .. dec depth do leafSize <- leafSize * 0.5f
+        let comparer = QuadelementEqualityComparer<'e> ()
         let min = size * -0.5f + leafSize * 0.5f // OPTIMIZATION: offset min by half leaf size to minimize margin hits at origin.
         let bounds = box2 min size
         { ElementsModified = false
           Leaves = leaves
           LeafSize = leafSize
-          Omnipresent = HashSet HashIdentity.Structural
-          Node = Quadnode.make<'e> depth bounds leaves
+          Omnipresent = HashSet comparer
+          Node = Quadnode.make<'e> comparer depth bounds leaves
           Depth = depth
           Bounds = bounds }
 
