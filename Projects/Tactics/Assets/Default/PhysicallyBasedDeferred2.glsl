@@ -23,7 +23,7 @@ const float ATTENUATION_CONSTANT = 1.0;
 const float PARALLAX_CORRECTION_SCALE = 0.02;
 const int LIGHT_MAPS_MAX = 12;
 const int LIGHTS_MAX = 64;
-const float SSAO = 1.5;
+const float SSAO = 1.4;
 const float SSAO_BIAS = 0.01;
 const float SSAO_RADIUS = 0.25;
 const int SSAO_SAMPLES = 32;
@@ -308,7 +308,7 @@ void main()
     vec3 specular = environmentFilter * (f * environmentBrdf.x + environmentBrdf.y) * lightAmbientColor * lightAmbientBrightness;
 
     // compute ambient term
-    vec3 ambient = (kD * diffuse * ambientOcclusion * ambientOcclusionScreen + specular);
+    vec3 ambient = (kD * diffuse + specular) * ambientOcclusion * ambientOcclusionScreen;
 
     // compute color w/ tone mapping, gamma correction, and emission
     vec3 color = lightAccum + ambient;
