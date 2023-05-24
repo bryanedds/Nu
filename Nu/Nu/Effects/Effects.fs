@@ -708,13 +708,13 @@ module EffectSystem =
                 let affineMatrix = Matrix4x4.CreateFromTrs (slice.Position, slice.Angles.RollPitchYaw, slice.Scale)
                 let insetOpt = if slice.Inset.Equals box2Zero then None else Some slice.Inset
                 let properties =
-                    { AlbedoOpt = Some slice.Color
-                      MetallicOpt = None
-                      RoughnessOpt = None
-                      AmbientOcclusionOpt = None
-                      EmissionOpt = Some slice.Emission.R
-                      HeightOpt = Some slice.Height
-                      InvertRoughnessOpt = None }
+                    { AlbedoOpt = ValueSome slice.Color
+                      MetallicOpt = ValueNone
+                      RoughnessOpt = ValueNone
+                      AmbientOcclusionOpt = ValueNone
+                      EmissionOpt = ValueSome slice.Emission.R
+                      HeightOpt = ValueSome slice.Height
+                      InvertRoughnessOpt = ValueNone }
                 let modelView =
                     Render3d
                         (RenderBillboard
@@ -753,13 +753,13 @@ module EffectSystem =
                 let affineMatrix = Matrix4x4.CreateFromTrs (slice.Position, slice.Angles.RollPitchYaw, slice.Scale)
                 let insetOpt = if slice.Inset.Equals box2Zero then None else Some slice.Inset
                 let properties =
-                    { AlbedoOpt = Some slice.Color
-                      MetallicOpt = None
-                      RoughnessOpt = None
-                      AmbientOcclusionOpt = None
-                      EmissionOpt = Some slice.Emission.R
-                      HeightOpt = Some slice.Height
-                      InvertRoughnessOpt = None }
+                    { AlbedoOpt = ValueSome slice.Color
+                      MetallicOpt = ValueNone
+                      RoughnessOpt = ValueNone
+                      AmbientOcclusionOpt = ValueNone
+                      EmissionOpt = ValueSome slice.Emission.R
+                      HeightOpt = ValueSome slice.Height
+                      InvertRoughnessOpt = ValueNone }
                 let modelView =
                     Render3d
                         (RenderStaticModel
