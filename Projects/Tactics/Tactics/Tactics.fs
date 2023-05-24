@@ -59,7 +59,7 @@ module TacticsGame =
                     | Title -> Desire Simulants.Title
                     | Credits -> Desire Simulants.Credits
                     | Pick -> Desire Simulants.Pick
-                    | Intro _ -> Desire Simulants.Field
+                    | Intro _ -> Desire Simulants.Intro
                 | Atlas atlas ->
                     match atlas.AtlasState with
                     | Playing ->
