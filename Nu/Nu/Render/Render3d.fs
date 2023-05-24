@@ -21,21 +21,21 @@ open Nu
 
 /// Material properties for surfaces.
 type [<StructuralEquality; NoComparison; SymbolicExpansion; Struct>] MaterialProperties =
-    { AlbedoOpt : Color option
-      MetallicOpt : single option
-      RoughnessOpt : single option
-      AmbientOcclusionOpt : single option
-      EmissionOpt : single option
-      HeightOpt : single option
-      InvertRoughnessOpt : bool option }
+    { AlbedoOpt : Color voption
+      MetallicOpt : single voption
+      RoughnessOpt : single voption
+      AmbientOcclusionOpt : single voption
+      EmissionOpt : single voption
+      HeightOpt : single voption
+      InvertRoughnessOpt : bool voption }
     static member defaultProperties =
-        { AlbedoOpt = Some Constants.Render.AlbedoDefault
-          MetallicOpt = Some Constants.Render.MetallicDefault
-          RoughnessOpt = Some Constants.Render.RoughnessDefault
-          AmbientOcclusionOpt = Some Constants.Render.AmbientOcclusionDefault
-          EmissionOpt = Some Constants.Render.EmissionDefault
-          HeightOpt = Some Constants.Render.HeightDefault
-          InvertRoughnessOpt = Some Constants.Render.InvertRoughnessDefault }
+        { AlbedoOpt = ValueSome Constants.Render.AlbedoDefault
+          MetallicOpt = ValueSome Constants.Render.MetallicDefault
+          RoughnessOpt = ValueSome Constants.Render.RoughnessDefault
+          AmbientOcclusionOpt = ValueSome Constants.Render.AmbientOcclusionDefault
+          EmissionOpt = ValueSome Constants.Render.EmissionDefault
+          HeightOpt = ValueSome Constants.Render.HeightDefault
+          InvertRoughnessOpt = ValueSome Constants.Render.InvertRoughnessDefault }
     static member empty =
         Unchecked.defaultof<MaterialProperties>
 
@@ -953,13 +953,13 @@ type [<ReferenceEquality>] GlRenderer3d =
                 renderer.RenderTexCoordsOffsetsFields.[i * 4 + 2] <- texCoordsOffset.Min.X + texCoordsOffset.Size.X
                 renderer.RenderTexCoordsOffsetsFields.[i * 4 + 3] <- texCoordsOffset.Min.Y + texCoordsOffset.Size.Y
                 let (albedo, metallic, roughness, ambientOcclusion, emission, height, invertRoughness) =
-                    ((match properties.AlbedoOpt with Some value -> value | None -> surface.SurfaceMaterial.MaterialProperties.Albedo),
-                     (match properties.MetallicOpt with Some value -> value | None -> surface.SurfaceMaterial.MaterialProperties.Metallic),
-                     (match properties.RoughnessOpt with Some value -> value | None -> surface.SurfaceMaterial.MaterialProperties.Roughness),
-                     (match properties.AmbientOcclusionOpt with Some value -> value | None -> surface.SurfaceMaterial.MaterialProperties.AmbientOcclusion),
-                     (match properties.EmissionOpt with Some value -> value | None -> surface.SurfaceMaterial.MaterialProperties.Emission),
-                     (match properties.HeightOpt with Some value -> value | None -> surface.SurfaceMaterial.MaterialProperties.Height),
-                     (match properties.InvertRoughnessOpt with Some value -> value | None -> surface.SurfaceMaterial.MaterialProperties.InvertRoughness))
+                    ((match properties.AlbedoOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterial.MaterialProperties.Albedo),
+                     (match properties.MetallicOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterial.MaterialProperties.Metallic),
+                     (match properties.RoughnessOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterial.MaterialProperties.Roughness),
+                     (match properties.AmbientOcclusionOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterial.MaterialProperties.AmbientOcclusion),
+                     (match properties.EmissionOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterial.MaterialProperties.Emission),
+                     (match properties.HeightOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterial.MaterialProperties.Height),
+                     (match properties.InvertRoughnessOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterial.MaterialProperties.InvertRoughness))
                 renderer.RenderAlbedosFields.[i * 4] <- albedo.R
                 renderer.RenderAlbedosFields.[i * 4 + 1] <- albedo.G
                 renderer.RenderAlbedosFields.[i * 4 + 2] <- albedo.B
@@ -1010,13 +1010,13 @@ type [<ReferenceEquality>] GlRenderer3d =
             | ValueSome (TextureAsset (_, _, texture)) -> texture
             | _ -> renderer.RenderPhysicallyBasedMaterial.HeightTexture
         let properties : OpenGL.PhysicallyBased.PhysicallyBasedMaterialProperties =
-            { Albedo = Option.defaultValue Constants.Render.AlbedoDefault properties.AlbedoOpt
-              Metallic = Option.defaultValue Constants.Render.MetallicDefault properties.MetallicOpt
-              Roughness = Option.defaultValue Constants.Render.RoughnessDefault properties.RoughnessOpt
-              AmbientOcclusion = Option.defaultValue Constants.Render.AmbientOcclusionDefault properties.AmbientOcclusionOpt
-              Emission = Option.defaultValue Constants.Render.EmissionDefault properties.EmissionOpt
-              Height = Option.defaultValue Constants.Render.HeightDefault properties.HeightOpt
-              InvertRoughness = Option.defaultValue Constants.Render.InvertRoughnessDefault properties.InvertRoughnessOpt }
+            { Albedo = ValueOption.defaultValue Constants.Render.AlbedoDefault properties.AlbedoOpt
+              Metallic = ValueOption.defaultValue Constants.Render.MetallicDefault properties.MetallicOpt
+              Roughness = ValueOption.defaultValue Constants.Render.RoughnessDefault properties.RoughnessOpt
+              AmbientOcclusion = ValueOption.defaultValue Constants.Render.AmbientOcclusionDefault properties.AmbientOcclusionOpt
+              Emission = ValueOption.defaultValue Constants.Render.EmissionDefault properties.EmissionOpt
+              Height = ValueOption.defaultValue Constants.Render.HeightDefault properties.HeightOpt
+              InvertRoughness = ValueOption.defaultValue Constants.Render.InvertRoughnessDefault properties.InvertRoughnessOpt }
         let billboardMaterial : OpenGL.PhysicallyBased.PhysicallyBasedMaterial =
             { MaterialProperties = properties
               AlbedoMetadata = albedoMetadata
