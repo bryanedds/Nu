@@ -1962,29 +1962,11 @@ module StaticModelFacetModule =
     type StaticModelFacet () =
         inherit Facet (false)
 
-        static let updateBodyShape evt world =
-            let entity = evt.Subscriber : Entity
-            let staticModel = entity.GetStaticModel world
-            match entity.TryGetProperty (nameof Entity.BodyShape) world with
-            | Some property when property.PropertyType = typeof<BodyShape> ->
-                let bodyShape = property.PropertyValue :?> BodyShape
-                if (match bodyShape with BodyStaticModel body -> body.StaticModel <> staticModel | _ -> false) then
-                    let bodyStaticModel = { StaticModel = staticModel; TransformOpt = None; PropertiesOpt = None }
-                    let world = entity.SetBodyShape (BodyStaticModel bodyStaticModel) world
-                    (Cascade, world)
-                else (Cascade, world)
-            | _ -> (Cascade, world)
-
         static member Properties =
             [define Entity.InsetOpt None
              define Entity.MaterialProperties MaterialProperties.defaultProperties
              define Entity.RenderStyle Deferred
              define Entity.StaticModel Assets.Default.StaticModel]
-
-        override this.Register (entity, world) =
-            let world = World.monitor updateBodyShape (entity.GetChangeEvent (nameof entity.StaticModel)) entity world // NOTE: utilized only if facet is paired with related physics functionality.
-            let world = World.monitor updateBodyShape (entity.GetChangeEvent (nameof entity.BodyShape)) entity world
-            world
 
         override this.Render (entity, world) =
             let mutable transform = entity.GetTransform world
@@ -2065,32 +2047,12 @@ module StaticModelSurfaceFacetModule =
     type StaticModelSurfaceFacet () =
         inherit Facet (false)
 
-        static let updateBodyShape evt world =
-            let entity = evt.Subscriber : Entity
-            let surfaceIndex = entity.GetSurfaceIndex world
-            let staticModel = entity.GetStaticModel world
-            match entity.TryGetProperty (nameof Entity.BodyShape) world with
-            | Some property when property.PropertyType = typeof<BodyShape> ->
-                let bodyShape = property.PropertyValue :?> BodyShape
-                if (match bodyShape with BodyStaticModelSurface body -> body.SurfaceIndex <> surfaceIndex || body.StaticModel <> staticModel | _ -> false) then
-                    let bodyStaticModel = { SurfaceIndex = surfaceIndex; StaticModel = staticModel; TransformOpt = None; PropertiesOpt = None }
-                    let world = entity.SetBodyShape (BodyStaticModelSurface bodyStaticModel) world
-                    (Cascade, world)
-                else (Cascade, world)
-            | _ -> (Cascade, world)
-
         static member Properties =
             [define Entity.InsetOpt None
              define Entity.MaterialProperties MaterialProperties.defaultProperties
              define Entity.SurfaceIndex 0
              define Entity.StaticModel Assets.Default.StaticModel
              define Entity.RenderStyle Deferred]
-
-        override this.Register (entity, world) =
-            let world = World.monitor updateBodyShape (entity.GetChangeEvent (nameof entity.SurfaceIndex)) entity world // NOTE: utilized only if facet is paired with related physics functionality.
-            let world = World.monitor updateBodyShape (entity.GetChangeEvent (nameof entity.StaticModel)) entity world
-            let world = World.monitor updateBodyShape (entity.GetChangeEvent (nameof entity.BodyShape)) entity world
-            world
 
         override this.Render (entity, world) =
             match entity.GetSurfaceIndex world with
