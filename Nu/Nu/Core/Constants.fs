@@ -45,7 +45,7 @@ module Engine =
     let [<Uniform>] QuadtreeDepth = 7
     let [<Uniform>] QuadtreeSize = Vector2 (512.0f * single (pown 2 QuadtreeDepth)) // about 0.85 miles
     let [<Uniform>] OctreeDepth = 7
-    let [<Uniform>] OctreeSize = Vector3 (16.0f * single (pown 2 OctreeDepth)) // about 0.61 miles
+    let [<Uniform>] OctreeSize = Vector3 (16.0f * single (pown 2 OctreeDepth)) // about 1.22 miles
     let [<Uniform>] mutable EventTracing = match ConfigurationManager.AppSettings.["EventTracing"] with null -> false | tracing -> scvalue<bool> tracing
     let [<Uniform>] mutable EventFilter = match ConfigurationManager.AppSettings.["EventFilter"] with null -> EventFilter.Empty | filter -> scvalue<EventFilter.Filter> filter
 
