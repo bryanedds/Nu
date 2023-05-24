@@ -58,6 +58,27 @@ module FieldDispatcher =
                   TwoSided = false }
             descriptor
 
+#if AD_HOC_METRICS
+        override this.Register (game, world) =
+            let world = base.Register (game, world)
+            let population = 100
+            let spread = 10.0f
+            let offset = v3Dup spread * single population * 0.5f
+            let positions =
+                [|for i in 0 .. dec population do
+                    for j in 0 .. dec population do
+                        for k in 0 .. dec population do
+                            let random = v3 (Gen.randomf1 spread) (Gen.randomf1 spread) (Gen.randomf1 spread) - v3Dup (spread * 0.5f)
+                            let position = v3 (single i) (single j) (single k) * spread + random - offset
+                            position|]
+            let world =
+                Seq.fold (fun world position ->
+                    let (staticModel, world) = World.createEntity<StaticModelDispatcher> NoOverlay None Simulants.FieldScene world
+                    staticModel.SetPosition position world)
+                    world positions
+            world
+#endif
+
         override this.Initialize (_, _) =
             [Screen.UpdateEvent => UpdateMessage
              Screen.UpdateEvent => UpdateCommand]

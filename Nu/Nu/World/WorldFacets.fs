@@ -1982,7 +1982,7 @@ module StaticModelFacetModule =
              define Entity.StaticModel Assets.Default.StaticModel]
 
         override this.Register (entity, world) =
-            let world = World.monitor updateBodyShape (entity.GetChangeEvent (nameof entity.StaticModel)) entity world
+            let world = World.monitor updateBodyShape (entity.GetChangeEvent (nameof entity.StaticModel)) entity world // NOTE: utilized only if facet is paired with related physics functionality.
             let world = World.monitor updateBodyShape (entity.GetChangeEvent (nameof entity.BodyShape)) entity world
             world
 
@@ -2087,7 +2087,7 @@ module StaticModelSurfaceFacetModule =
              define Entity.RenderStyle Deferred]
 
         override this.Register (entity, world) =
-            let world = World.monitor updateBodyShape (entity.GetChangeEvent (nameof entity.SurfaceIndex)) entity world
+            let world = World.monitor updateBodyShape (entity.GetChangeEvent (nameof entity.SurfaceIndex)) entity world // NOTE: utilized only if facet is paired with related physics functionality.
             let world = World.monitor updateBodyShape (entity.GetChangeEvent (nameof entity.StaticModel)) entity world
             let world = World.monitor updateBodyShape (entity.GetChangeEvent (nameof entity.BodyShape)) entity world
             world
