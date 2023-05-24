@@ -1059,6 +1059,16 @@ module RigidModelDispatcherModule =
     type RigidModelDispatcher () =
         inherit EntityDispatcher3d (true, false)
 
+        static let updateBodyShape evt world =
+            let entity = evt.Subscriber : Entity
+            let bodyShape = entity.GetBodyShape world
+            let staticModel = entity.GetStaticModel world
+            if (match bodyShape with BodyStaticModel body -> body.StaticModel <> staticModel | _ -> false) then
+                let bodyStaticModel = { StaticModel = staticModel; TransformOpt = None; PropertiesOpt = None }
+                let world = entity.SetBodyShape (BodyStaticModel bodyStaticModel) world
+                (Cascade, world)
+            else (Cascade, world)
+
         static member Facets =
             [typeof<RigidBodyFacet>
              typeof<StaticModelFacet>]
@@ -1069,6 +1079,11 @@ module RigidModelDispatcherModule =
              define Entity.MaterialProperties MaterialProperties.defaultProperties
              define Entity.StaticModel Assets.Default.StaticModel
              define Entity.RenderStyle Deferred]
+
+        override this.Register (entity, world) =
+            let world = World.monitor updateBodyShape (entity.GetChangeEvent (nameof entity.StaticModel)) entity world
+            let world = World.monitor updateBodyShape (entity.GetChangeEvent (nameof entity.BodyShape)) entity world
+            world
 
 [<AutoOpen>]
 module StaticModelSurfaceDispatcherModule =
@@ -1091,6 +1106,17 @@ module RigidModelSurfaceDispatcherModule =
     type RigidModelSurfaceDispatcher () =
         inherit EntityDispatcher3d (true, false)
 
+        static let updateBodyShape evt world =
+            let entity = evt.Subscriber : Entity
+            let bodyShape = entity.GetBodyShape world
+            let surfaceIndex = entity.GetSurfaceIndex world
+            let staticModel = entity.GetStaticModel world
+            if (match bodyShape with BodyStaticModelSurface body -> body.SurfaceIndex <> surfaceIndex || body.StaticModel <> staticModel | _ -> false) then
+                let bodyStaticModel = { SurfaceIndex = surfaceIndex; StaticModel = staticModel; TransformOpt = None; PropertiesOpt = None }
+                let world = entity.SetBodyShape (BodyStaticModelSurface bodyStaticModel) world
+                (Cascade, world)
+            else (Cascade, world)
+
         static member Facets =
             [typeof<RigidBodyFacet>
              typeof<StaticModelSurfaceFacet>]
@@ -1102,6 +1128,12 @@ module RigidModelSurfaceDispatcherModule =
              define Entity.SurfaceIndex 0
              define Entity.StaticModel Assets.Default.StaticModel
              define Entity.RenderStyle Deferred]
+
+        override this.Register (entity, world) =
+            let world = World.monitor updateBodyShape (entity.GetChangeEvent (nameof entity.SurfaceIndex)) entity world
+            let world = World.monitor updateBodyShape (entity.GetChangeEvent (nameof entity.StaticModel)) entity world
+            let world = World.monitor updateBodyShape (entity.GetChangeEvent (nameof entity.BodyShape)) entity world
+            world
 
 [<AutoOpen>]
 module StaticModelHierarchyDispatcherModule =
