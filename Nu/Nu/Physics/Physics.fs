@@ -476,7 +476,7 @@ module Physics =
     ///     2 = ERROR - input must be either @ or a binary number!
     let categorizeCollisionMask categoryMask =
         match categoryMask with
-        | "@" -> -1
+        | Constants.Engine.WildcardName -> -1
         | _ -> Convert.ToInt32 (categoryMask, 2)
 
     /// Localize a body shape to a specific size.

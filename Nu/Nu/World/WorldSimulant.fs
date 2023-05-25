@@ -203,7 +203,17 @@ module WorldSimulantModule =
         /// Check that a simulant exists in the world.
         [<FunctionBinding>]
         static member getExists (simulant : Simulant) (world : World) =
-            (world :> World EventSystem).GetSimulantExists simulant
+            let namesLength = simulant.SimulantAddress |> Address.getNames |> Array.length
+            if namesLength >= 3 then
+                let entity = simulant :?> Entity
+                notNull (entity.EntityStateOpt :> obj) && not entity.EntityStateOpt.Invalidated ||
+                SUMap.containsKey (simulant :?> Entity) world.EntityStates
+            else
+                match namesLength with
+                | 0 -> true
+                | 1 -> UMap.containsKey (simulant :?> Screen) world.ScreenStates
+                | 2 -> UMap.containsKey (simulant :?> Group) world.GroupStates
+                | _  -> failwithumf ()
 
         /// Determine if a simulant is contained by, or is the same as, the currently selected screen or the omni-screen.
         /// Game is always considered 'selected' as well.

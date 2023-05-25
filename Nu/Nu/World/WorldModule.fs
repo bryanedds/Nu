@@ -557,36 +557,71 @@ module WorldModule =
                 subsystems.PhysicsEngine2d.CleanUp ()
                 subsystems) world
 
-    type World with // EventSystem
+    type World with // EventSubsystem
 
-        /// Get event subscriptions.
+        static member internal getEventSubsystem world =
+            world.EventSubsystem
+
+        static member internal setEventSubsystem eventSystem world =
+            World.choose { world with EventSubsystem = eventSystem }
+
+        static member internal updateEventSubsystem updater world =
+            World.setEventSubsystem (updater world.EventSubsystem) world
+
+        static member internal boxCallback<'a, 's when 's :> Simulant> (callback : Callback<'a, 's>) : obj =
+            let boxableCallback = fun (evt : Event<obj, Simulant>) (world : World) ->
+                let evt =
+                    { Data = evt.Data :?> 'a
+                      Subscriber = evt.Subscriber :?> 's
+                      Publisher = evt.Publisher
+                      Address = Address.specialize<'a> evt.Address
+                      Trace = evt.Trace }
+                callback evt world
+            boxableCallback
+
+        static member internal getGlobalSimulantGeneralized world =
+            EventSubsystem.getGlobalSimulantGeneralized (World.getEventSubsystem world)
+
+        static member internal getEventState<'a> key world : 'a =
+            EventSubsystem.getEventState key (World.getEventSubsystem world)
+
+        static member internal addEventState<'a> key (state : 'a) world =
+            World.updateEventSubsystem (EventSubsystem.addEventState key state) world
+
+        static member internal removeEventState key world =
+            World.updateEventSubsystem (EventSubsystem.removeEventState key) world
+
         static member internal getSubscriptions world =
-            EventSystem.getSubscriptions<World> world
+            EventSubsystem.getSubscriptions (World.getEventSubsystem world)
 
-        /// Get event unsubscriptions.
+        static member internal setSubscriptions subscriptions world =
+            World.updateEventSubsystem (EventSubsystem.setSubscriptions subscriptions) world
+
         static member internal getUnsubscriptions world =
-            EventSystem.getUnsubscriptions<World> world
+            EventSubsystem.getUnsubscriptions (World.getEventSubsystem world)
+
+        static member internal setUnsubscriptions unsubscriptions world =
+            World.updateEventSubsystem (EventSubsystem.setUnsubscriptions unsubscriptions) world
 
         /// Get how events are being traced.
         static member getEventTracerOpt (world : World) =
-            EventSystem.getEventTracerOpt world
+            EventSubsystem.getEventTracerOpt world.EventSubsystem
 
         /// Set how events are being traced.
         static member setEventTracerOpt tracerOpt (world : World) =
-            World.choose (EventSystem.setEventTracerOpt tracerOpt world)
+            World.updateEventSubsystem (EventSubsystem.setEventTracerOpt tracerOpt) world
 
         /// Get the state of the event filter.
         [<FunctionBinding>]
         static member getEventFilter (world : World) =
-            EventSystem.getEventFilter world
+            EventSubsystem.getEventFilter (World.getEventSubsystem world)
 
         /// Set the state of the event filter.
         [<FunctionBinding>]
         static member setEventFilter filter (world : World) =
-            World.choose (EventSystem.setEventFilter filter world)
+            World.updateEventSubsystem (EventSubsystem.setEventFilter filter) world
 
         /// Publish an event with no subscription sorting.
-        /// OPTIMIZATION: unrolled publishPlus here for speed.
         static member publishPlus<'a, 'p when 'p :> Simulant>
             (eventData : 'a)
             (eventAddress : 'a Address)
@@ -601,17 +636,17 @@ module WorldModule =
 
 #if DEBUG
             // log event based on event filter
-            EventSystemDelegate.logEvent<World> eventAddressObj eventTrace world.EventSystemDelegate
+            EventSubsystem.logEvent eventAddressObj eventTrace world.EventSubsystem
 #endif
 
             // get subscriptions the fastest way possible
             // OPTIMIZATION: subscriptions nullable to elide allocation via Seq.empty.
             let subscriptionsOpt =
                 if hierarchical then
-                    EventSystemDelegate.getSubscriptionsSorted
-                        sortSubscriptionsByElevation eventAddressObj world.EventSystemDelegate world
+                    EventSubsystem.getSubscriptionsSorted
+                        sortSubscriptionsByElevation eventAddressObj world.EventSubsystem world
                 else
-                    let subscriptions = EventSystemDelegate.getSubscriptions world.EventSystemDelegate
+                    let subscriptions = EventSubsystem.getSubscriptions world.EventSubsystem
                     match UMap.tryFind eventAddressObj subscriptions with
                     | Some subscriptions -> OMap.toSeq subscriptions
                     | None -> null
@@ -631,16 +666,16 @@ module WorldModule =
                             let result =
                                 let namesLength = subscriber.SimulantAddress.Names.Length
                                 if namesLength >= 3
-                                then EventSystem.publishEvent<'a, 'p, Entity, World> subscriber publisher eventData eventAddress eventTrace subscriptionEntry.CallbackBoxed world
+                                then EventSubsystem.publishEvent<'a, 'p, Entity, World> subscriber publisher eventData eventAddress eventTrace subscriptionEntry.CallbackBoxed world
                                 else
                                     match namesLength with
                                     | 0 ->
                                         match subscriber with
-                                        | :? Game -> EventSystem.publishEvent<'a, 'p, Game, World> subscriber publisher eventData eventAddress eventTrace subscriptionEntry.CallbackBoxed world
-                                        | :? GlobalSimulantGeneralized -> EventSystem.publishEvent<'a, 'p, Simulant, World> subscriber publisher eventData eventAddress eventTrace subscriptionEntry.CallbackBoxed world
+                                        | :? Game -> EventSubsystem.publishEvent<'a, 'p, Game, World> subscriber publisher eventData eventAddress eventTrace subscriptionEntry.CallbackBoxed world
+                                        | :? GlobalSimulantGeneralized -> EventSubsystem.publishEvent<'a, 'p, Simulant, World> subscriber publisher eventData eventAddress eventTrace subscriptionEntry.CallbackBoxed world
                                         | _ -> failwithumf ()
-                                    | 1 -> EventSystem.publishEvent<'a, 'p, Screen, World> subscriber publisher eventData eventAddress eventTrace subscriptionEntry.CallbackBoxed world
-                                    | 2 -> EventSystem.publishEvent<'a, 'p, Group, World> subscriber publisher eventData eventAddress eventTrace subscriptionEntry.CallbackBoxed world
+                                    | 1 -> EventSubsystem.publishEvent<'a, 'p, Screen, World> subscriber publisher eventData eventAddress eventTrace subscriptionEntry.CallbackBoxed world
+                                    | 2 -> EventSubsystem.publishEvent<'a, 'p, Group, World> subscriber publisher eventData eventAddress eventTrace subscriptionEntry.CallbackBoxed world
                                     | _ -> failwithumf ()
                             handling <- fst result
                             world <- snd result
@@ -652,32 +687,88 @@ module WorldModule =
 
         /// Publish an event with no subscription sorting.
         static member publish<'a, 'p when 'p :> Simulant>
-            eventData eventAddress eventTrace publisher world =
+            (eventData : 'a) (eventAddress : 'a Address) eventTrace (publisher : 'p) (world : World) =
             World.publishPlus<'a, 'p> eventData eventAddress eventTrace publisher false false world
 
         /// Unsubscribe from an event.
         static member unsubscribe subscriptionId world =
-            World.choose (EventSystem.unsubscribe<World> subscriptionId world)
+            let (subscriptions, unsubscriptions) = (World.getSubscriptions world, World.getUnsubscriptions world)
+            match UMap.tryFind subscriptionId unsubscriptions with
+            | Some (eventAddress, _) ->
+                match UMap.tryFind eventAddress subscriptions with
+                | Some subscriptionEntries ->
+                    let subscriptions =
+                        let subscriptionEntries = OMap.remove subscriptionId subscriptionEntries
+                        if OMap.isEmpty subscriptionEntries
+                        then UMap.remove eventAddress subscriptions
+                        else UMap.add eventAddress subscriptionEntries subscriptions
+                    let unsubscriptions = UMap.remove subscriptionId unsubscriptions
+                    let world = World.setSubscriptions subscriptions world
+                    let world = World.setUnsubscriptions unsubscriptions world
+                    let world = WorldTypes.handleSubscribeAndUnsubscribeEvent false eventAddress Simulants.Game world :?> World
+                    world
+                | None -> world
+            | None -> world
 
         /// Subscribe to an event using the given subscriptionId, and be provided with an unsubscription callback.
         static member subscribePlus<'a, 's when 's :> Simulant>
-            subscriptionId callback eventAddress subscriber world =
-            mapSnd World.choose (EventSystem.subscribePlus<'a, 's, World> subscriptionId callback eventAddress subscriber world)
+            (subscriptionId : Guid)
+            (callback : Event<'a, 's> -> World -> Handling * World)
+            (eventAddress : 'a Address)
+            (subscriber : 's)
+            (world : World) =
+            if not (Address.isEmpty eventAddress) then
+                let eventAddressObj = atooa eventAddress
+                let (subscriptions, unsubscriptions) = (World.getSubscriptions world, World.getUnsubscriptions world)
+                let subscriptions =
+                    match UMap.tryFind eventAddressObj subscriptions with
+                    | Some subscriptionEntries ->
+                        match OMap.tryFind subscriptionId subscriptionEntries with
+                        | Some subscriptionEntry ->
+                            let subscriptionEntry = { subscriptionEntry with CallbackBoxed = World.boxCallback callback }
+                            let subscriptionEntries = OMap.add subscriptionId subscriptionEntry subscriptionEntries
+                            UMap.add eventAddressObj subscriptionEntries subscriptions
+                        | None ->
+                            let subscriptionEntry = { SubscriptionId = subscriptionId; Subscriber = subscriber; CallbackBoxed = World.boxCallback callback }
+                            let subscriptionEntries = OMap.add subscriptionId subscriptionEntry subscriptionEntries
+                            UMap.add eventAddressObj subscriptionEntries subscriptions
+                    | None ->
+                        let subscriptionEntry = { SubscriptionId = subscriptionId; Subscriber = subscriber; CallbackBoxed = World.boxCallback callback }
+                        UMap.add eventAddressObj (OMap.singleton HashIdentity.Structural (World.getCollectionConfig world) subscriptionId subscriptionEntry) subscriptions
+                let unsubscriptions = UMap.add subscriptionId (eventAddressObj, subscriber :> Simulant) unsubscriptions
+                let world = World.setSubscriptions subscriptions world
+                let world = World.setUnsubscriptions unsubscriptions world
+                let world = WorldTypes.handleSubscribeAndUnsubscribeEvent true eventAddressObj Simulants.Game world :?> World
+                (World.unsubscribe subscriptionId, world)
+            else failwith "Event name cannot be empty."
 
         /// Subscribe to an event.
         static member subscribe<'a, 's when 's :> Simulant>
-            callback eventAddress subscriber world =
-            World.choose (EventSystem.subscribe<'a, 's, World> callback eventAddress subscriber world)
+            (callback : Event<'a, 's> -> World -> Handling * World) (eventAddress : 'a Address) (subscriber : 's) world =
+            World.subscribePlus (makeGuid ()) callback eventAddress subscriber world |> snd
 
         /// Keep active a subscription for the life span of a simulant.
         static member monitorPlus<'a, 's when 's :> Simulant>
-            callback eventAddress subscriber world =
-            mapSnd World.choose (EventSystem.monitorPlus<'a, 's, World> callback eventAddress subscriber world)
+            (callback : Event<'a, 's> -> World -> Handling * World)
+            (eventAddress : 'a Address)
+            (subscriber : 's)
+            (world : World) =
+            let removalId = makeGuid ()
+            let monitorId = makeGuid ()
+            let world = World.subscribePlus<'a, 's> monitorId callback eventAddress subscriber world |> snd
+            let unsubscribe = fun (world : World) ->
+                let world = World.unsubscribe removalId world
+                let world = World.unsubscribe monitorId world
+                world
+            let callback' = fun _ eventSystem -> (Cascade, unsubscribe eventSystem)
+            let removingEventAddress = rtoa<obj> [|"Unregistering"; "Event"|] --> subscriber.SimulantAddress
+            let world = World.subscribePlus<obj, Simulant> removalId callback' removingEventAddress subscriber world |> snd
+            (unsubscribe, world)
 
         /// Keep active a subscription for the life span of a simulant.
         static member monitor<'a, 's when 's :> Simulant>
-            callback eventAddress subscriber world =
-            World.choose (EventSystem.monitor<'a, 's, World> callback eventAddress subscriber world)
+            (callback : Event<'a, 's> -> World -> Handling * World) (eventAddress : 'a Address) (subscriber : 's) (world : World) =
+            World.monitorPlus<'a, 's> callback eventAddress subscriber world |> snd
 
     type World with // Scripting
 

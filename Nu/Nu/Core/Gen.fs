@@ -15,6 +15,12 @@ module Gen =
     let mutable private Id64 = 0UL
     let mutable private IdForEditor = 0UL
 
+    /// The prefix of a generated name
+    let NamePrefix = "@"
+
+    /// The separator of a generated name
+    let NameSeparator = "-"
+
     /// Generates engine-specific values on-demand.
     type Gen =
         private | Gen of unit
@@ -108,20 +114,14 @@ module Gen =
             Array.map snd |>
             Array.toSeq
 
-        /// The prefix of a generated name
-        static member namePrefix = "@"
-
-        /// The separator of a generated name
-        static member nameSeparator = "-"
-
         /// Generate a unique name based on a 64-bit id.
         static member name =
-            Gen.namePrefix + string Gen.id64
+            NamePrefix + string Gen.id64
 
         /// Check that a name is generated from a 64-bit id.
         static member isNameGenerated (name : string) =
             let mutable p = 0UL
-            name.StartsWith Gen.namePrefix &&
+            name.StartsWith NamePrefix &&
             UInt64.TryParse (String.skip 1 name, &p)
 
         /// Generate a unique id.
@@ -167,7 +167,7 @@ module Gen =
                     (id, name)
                 | None ->
                     let id = Gen.id64
-                    let name = Gen.namePrefix + string id
+                    let name = NamePrefix + string id
                     (id, name)
             (id, name)
 
@@ -189,7 +189,7 @@ module Gen =
                 (id, surnames)
             | None ->
                 let id = Gen.id64
-                let name = Gen.namePrefix + string id
+                let name = NamePrefix + string id
                 (id, [|name|])
 
         /// Generate a unique non-zero 64-bit id for use in editor naming.
@@ -200,7 +200,7 @@ module Gen =
         static member nameForEditor (dispatcherName : string) =
             let id = Gen.idForEditor
             let truncatedName = dispatcherName.Replace ("Dispatcher", "")
-            truncatedName + Gen.nameSeparator + id.ToString "D4"
+            truncatedName + NameSeparator + id.ToString "D4"
 
 /// Generates engine-specific values on-demand.
 type Gen = Gen.Gen

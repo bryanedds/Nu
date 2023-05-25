@@ -84,7 +84,7 @@ type MountData =
 [<RequireQualifiedAccess>]
 module Events =
 
-    let Wildcard = Prime.Events.Wildcard
+    let Wildcard = ntoa<obj> Constants.Engine.WildcardName
     let Register = stoa<unit> "Register/Event"
     let Unregistering = stoa<unit> "Unregistering/Event"
     let Change propertyName = rtoa<ChangeData> [|"Change"; propertyName; "Event"|]
