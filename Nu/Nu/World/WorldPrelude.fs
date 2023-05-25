@@ -175,24 +175,6 @@ type [<ReferenceEquality>] WorldConfig =
           SdlConfig = SdlConfig.defaultConfig
           NuConfig = NuConfig.defaultConfig }
 
-[<RequireQualifiedAccess>]
-module EventTrace =
-
-    /// Record event only in debug mode.
-    let debug (moduleName : string) (functionName : string) (moreInfo : string) (eventTrace : EventTrace) =
-#if DEBUG
-        EventTrace.record moduleName functionName moreInfo eventTrace
-#else
-        ignore moduleName
-        ignore functionName
-        ignore moreInfo
-        eventTrace
-#endif
-
-    /// Record event only in all modes.
-    let trace moduleName functionName moreInfo eventTrace =
-        EventTrace.record moduleName functionName moreInfo eventTrace
-
 [<AutoOpen>]
 module AmbientState =
 

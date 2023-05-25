@@ -7,7 +7,7 @@
 #r "nuget: FParsec, 1.0.3"
 #r "nuget: Magick.NET-Q8-x64, 7.5.0.1"
 #r "nuget: Nito.Collections.Deque, 1.1.0"
-#r "nuget: Prime, 9.6.0"
+#r "nuget: Prime, 9.7.0"
 #r "nuget: Prime.Scripting, 9.5.0"
 #r "nuget: System.Configuration.ConfigurationManager, 7.0.0"
 #r "../../Nu/Nu.Dependencies/SDL2-CS/netstandard2.0/SDL2-CS.dll"

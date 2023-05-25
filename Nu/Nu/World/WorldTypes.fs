@@ -29,14 +29,19 @@ module internal WorldTypes =
     let mutable internal viewGroup = fun (_ : obj) (_ : obj) -> Array.create 0 (String.Empty, obj ())
     let mutable internal viewEntity = fun (_ : obj) (_ : obj) -> Array.create 0 (String.Empty, obj ())
 
-    // EventSystem F# reach-arounds.
-    let mutable internal handleSubscribeAndUnsubscribeEventHook : bool -> obj Address -> Simulant -> obj -> obj = Unchecked.defaultof<_>
+    // EventSubsystem F# reach-arounds.
+    let mutable internal isSelectedScreenIdling : obj -> bool = Unchecked.defaultof<_>
+    let mutable internal isSelectedScreenTransitioning : obj -> bool = Unchecked.defaultof<_>
+    let mutable internal handleSubscribeAndUnsubscribeEvent : bool -> obj Address -> Simulant -> obj -> obj = Unchecked.defaultof<_>
 
     // Entity F# reach-arounds.
     let mutable internal getEntityIs2d : obj -> obj -> bool = Unchecked.defaultof<_>
 
+/// The type of a subscription callback.
+type Callback<'a, 's when 's :> Simulant> = Event<'a, 's> -> World -> Handling * World
+
 /// Represents an unsubscription operation for an event.
-type Unsubscription = World -> World
+and Unsubscription = World -> World
 
 /// Specified the desired screen, if any, or whether to ignore screen desire functionality altogether.
 and DesiredScreen =
@@ -1306,7 +1311,7 @@ and [<ReferenceEquality>] internal WorldExtension =
 and [<ReferenceEquality>] World =
     internal
         { // cache line 1 (assuming 16 byte header)
-          EventSystemDelegate : World EventSystemDelegate
+          EventSubsystem : EventSubsystem
           EntityCachedOpt : KeyedCache<KeyValuePair<Entity, SUMap<Entity, EntityState>>, EntityState>
           EntityStates : SUMap<Entity, EntityState>
           GroupStates : UMap<Group, GroupState>
@@ -1377,57 +1382,6 @@ and [<ReferenceEquality>] World =
         internal this.AssertChosen () =
         if refNeq (this :> obj) WorldTypes.Chosen then
             Console.WriteLine "Fault"
-
-    interface World EventSystem with
-
-        member this.GetConfig () =
-            AmbientState.getConfig this.AmbientState
-
-        member this.GetLiveness () =
-            AmbientState.getLiveness this.AmbientState
-
-        member this.GetSimulantExists simulant =
-            let namesLength = simulant.SimulantAddress |> Address.getNames |> Array.length
-            if namesLength >= 3 then
-                let entity = simulant :?> Entity
-                notNull (entity.EntityStateOpt :> obj) && not entity.EntityStateOpt.Invalidated ||
-                SUMap.containsKey (simulant :?> Entity) this.EntityStates
-            else
-                match namesLength with
-                | 0 -> true
-                | 1 -> UMap.containsKey (simulant :?> Screen) this.ScreenStates
-                | 2 -> UMap.containsKey (simulant :?> Group) this.GroupStates
-                | _  -> failwithumf ()
-
-        member this.GetGlobalSimulantSpecialized () =
-            EventSystemDelegate.getGlobalSimulantSpecialized this.EventSystemDelegate
-
-        member this.GetGlobalSimulantGeneralized () =
-            EventSystemDelegate.getGlobalSimulantGeneralized this.EventSystemDelegate
-
-        member this.GetEventSystemDelegate () =
-            this.EventSystemDelegate
-
-        member this.UpdateEventSystemDelegate updater =
-            let this = { this with EventSystemDelegate = updater this.EventSystemDelegate }
-            this.Choose ()
-
-        member this.PublishEventHook (subscriber : Simulant) publisher eventData eventAddress eventTrace subscription world =
-            let (handling, world) =
-                match subscriber with
-                | :? Entity -> EventSystem.publishEvent<'a, 'p, Entity, World> subscriber publisher eventData eventAddress eventTrace subscription world
-                | :? Group -> EventSystem.publishEvent<'a, 'p, Group, World> subscriber publisher eventData eventAddress eventTrace subscription world
-                | :? Screen -> EventSystem.publishEvent<'a, 'p, Screen, World> subscriber publisher eventData eventAddress eventTrace subscription world
-                | :? Game -> EventSystem.publishEvent<'a, 'p, Game, World> subscriber publisher eventData eventAddress eventTrace subscription world
-                | :? GlobalSimulantGeneralized -> EventSystem.publishEvent<'a, 'p, Simulant, World> subscriber publisher eventData eventAddress eventTrace subscription world
-                | _ -> failwithumf ()
-            (handling, world.Choose ())
-
-        member this.SubscribeEventHook eventAddress subscriber world =
-            WorldTypes.handleSubscribeAndUnsubscribeEventHook true eventAddress subscriber world :?> World
-
-        member this.UnsubscribeEventHook eventAddress subscriber world =
-            WorldTypes.handleSubscribeAndUnsubscribeEventHook false eventAddress subscriber world :?> World
 
     interface World ScriptingSystem with
 

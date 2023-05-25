@@ -2078,7 +2078,7 @@ module WorldModuleEntity =
                     world facets
             let struct (_, world) = World.updateEntityPublishFlags entity world
             let eventTrace = EventTrace.debug "World" "registerEntity" "Register" EventTrace.empty
-            let eventAddresses = EventSystemDelegate.getEventAddresses1 (Events.Register --> entity)
+            let eventAddresses = EventSubsystem.getEventAddresses1 (Events.Register --> entity)
             let world = Array.fold (fun world eventAddress -> World.publish () eventAddress eventTrace entity world) world eventAddresses
             let eventTrace = EventTrace.debug "World" "registerEntity" "LifeCycle" EventTrace.empty
             let world = World.publish (RegisterData entity) (Events.LifeCycle (nameof Entity)) eventTrace entity world
@@ -2088,7 +2088,7 @@ module WorldModuleEntity =
             let eventTrace = EventTrace.debug "World" "unregisterEntity" "LifeCycle" EventTrace.empty
             let world = World.publish (UnregisteringData entity) (Events.LifeCycle (nameof Entity)) eventTrace entity world
             let eventTrace = EventTrace.debug "World" "unregister" "Unregistering" EventTrace.empty
-            let eventAddresses = EventSystemDelegate.getEventAddresses1 (Events.Unregistering --> entity)
+            let eventAddresses = EventSubsystem.getEventAddresses1 (Events.Unregistering --> entity)
             let world = Array.fold (fun world eventAddress -> World.publish () eventAddress eventTrace entity world) world eventAddresses
             let dispatcher = World.getEntityDispatcher entity world : EntityDispatcher
             let facets = World.getEntityFacets entity world
@@ -2215,7 +2215,7 @@ module WorldModuleEntity =
                     else world
 
                 // remove cached entity event addresses
-                EventSystemDelegate.cleanEventAddressCache entity.EntityAddress
+                EventSubsystem.cleanEventAddressCache entity.EntityAddress
 
                 // invalidate entity state
                 let entityState = World.getEntityState entity world

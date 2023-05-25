@@ -19,6 +19,7 @@ module Engine =
     let [<Uniform>] ScreenSortPriority = GameSortPriority - 1.0f
     let [<Uniform>] GroupSortPriority = ScreenSortPriority - 1.0f
     let [<Uniform>] EntitySortPriority = GroupSortPriority - 1.0f
+    let [<Literal>] WildcardName = "@"
     let [<Literal>] NamePropertyName = "Name"
     let [<Literal>] DispatcherPropertyName = "Dispatcher"
     let [<Literal>] PropertiesPropertyName = "Properties"

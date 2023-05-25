@@ -832,7 +832,7 @@ module RigidBodyFacetModule =
              define Entity.GravityOverride None
              define Entity.CollisionDetection Discontinuous
              define Entity.CollisionCategories "1"
-             define Entity.CollisionMask "@"
+             define Entity.CollisionMask Constants.Engine.WildcardName
              define Entity.BodyShape (BodyBox { Size = v3One; TransformOpt = None; PropertiesOpt = None })
              define Entity.Bullet false
              define Entity.Sensor false
@@ -954,7 +954,7 @@ module TileMapFacetModule =
              define Entity.Friction 0.0f
              define Entity.Restitution 0.0f
              define Entity.CollisionCategories "1"
-             define Entity.CollisionMask "@"
+             define Entity.CollisionMask Constants.Engine.WildcardName
              define Entity.Color Color.One
              define Entity.Emission Color.Zero
              define Entity.TileLayerClearance 2.0f
@@ -1052,7 +1052,7 @@ module TmxMapFacetModule =
              define Entity.Friction 0.0f
              define Entity.Restitution 0.0f
              define Entity.CollisionCategories "1"
-             define Entity.CollisionMask "@"
+             define Entity.CollisionMask Constants.Engine.WildcardName
              define Entity.Color Color.One
              define Entity.Emission Color.Zero
              define Entity.TileLayerClearance 2.0f

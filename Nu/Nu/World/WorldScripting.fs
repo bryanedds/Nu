@@ -13,7 +13,7 @@ open Nu
 
 /// The Stream value that can be plugged into the scripting language.
 type [<CustomEquality; CustomComparison>] StreamPluggable =
-    { Stream : Stream<obj, World> }
+    { Stream : obj Stream }
 
     static member equals _ _ = false
 

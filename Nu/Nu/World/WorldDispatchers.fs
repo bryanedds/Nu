@@ -933,7 +933,7 @@ module TileMapDispatcherModule =
              define Entity.Friction 0.0f
              define Entity.Restitution 0.0f
              define Entity.CollisionCategories "1"
-             define Entity.CollisionMask "@"
+             define Entity.CollisionMask Constants.Engine.WildcardName
              define Entity.Color Color.One
              define Entity.Emission Color.Zero
              define Entity.TileLayerClearance 2.0f
@@ -956,7 +956,7 @@ module TmxMapDispatcherModule =
              define Entity.Friction 0.0f
              define Entity.Restitution 0.0f
              define Entity.CollisionCategories "1"
-             define Entity.CollisionMask "@"
+             define Entity.CollisionMask Constants.Engine.WildcardName
              define Entity.Color Color.One
              define Entity.Emission Color.Zero
              define Entity.TileLayerClearance 2.0f

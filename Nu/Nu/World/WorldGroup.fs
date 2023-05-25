@@ -212,7 +212,7 @@ module WorldGroupModule =
         [<FunctionBinding>]
         static member destroyGroupImmediate (group : Group) world =
             let world = World.tryRemoveSimulantFromDestruction group world
-            EventSystemDelegate.cleanEventAddressCache group.GroupAddress
+            EventSubsystem.cleanEventAddressCache group.GroupAddress
             if World.getGroupExists group world then
                 let entities = World.getEntities group world
                 let world = World.unregisterGroup group world

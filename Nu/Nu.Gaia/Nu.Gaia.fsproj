@@ -77,7 +77,7 @@
 		<PackageReference Include="FSharp.Compiler.Service" Version="43.7.300-preview.23127.2" />
 		<PackageReference Include="Magick.NET-Q8-AnyCPU" Version="7.5.0.1" />
 		<PackageReference Include="Nito.Collections.Deque" Version="1.1.0" />
-		<PackageReference Include="Prime" Version="9.6.0" />
+		<PackageReference Include="Prime" Version="9.7.0" />
 		<PackageReference Include="Prime.Scripting" Version="9.5.0" />
 		<PackageReference Include="System.Configuration.ConfigurationManager" Version="7.0.0" />
 	</ItemGroup>
