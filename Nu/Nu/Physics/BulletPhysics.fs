@@ -35,6 +35,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
           PhysicsDispatcher : Dispatcher
           BroadPhaseInterface : BroadphaseInterface
           ConstraintSolver : ConstraintSolver
+          StaticModels : Dictionary<StaticModel AssetTag, OpenGL.PhysicallyBased.PhysicallyBasedStaticModel>
           PhysicsMessages : PhysicsMessage UList
           IntegrationMessages : IntegrationMessage List }
 
@@ -171,43 +172,43 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
         (mass + mass', inertia + inertia')
 
     // TODO: add some error logging.
-    static member private attachBodyStaticModel bodySource (bodyProperties : BodyProperties) (bodyStaticModel : BodyStaticModel) (compoundShape : CompoundShape) mass inertia =
-        match Metadata.tryGetStaticModelMetadata bodyStaticModel.StaticModel with
-        | Some staticModelMetadata ->
+    static member private attachBodyStaticModel bodySource (bodyProperties : BodyProperties) (bodyStaticModel : BodyStaticModel) (compoundShape : CompoundShape) mass inertia physicsEngine =
+        match physicsEngine.StaticModels.TryGetValue bodyStaticModel.StaticModel with
+        | (true, staticModel) ->
             Seq.fold (fun (mass, inertia) i ->
-                let surface = staticModelMetadata.Surfaces.[i]
+                let surface = staticModel.Surfaces.[i]
                 let transform =
                     match bodyStaticModel.TransformOpt with
                     | Some transform -> transform * surface.SurfaceMatrix
                     | None -> surface.SurfaceMatrix
                 let bodyStaticModelSurface = { SurfaceIndex = i; StaticModel = bodyStaticModel.StaticModel; TransformOpt = Some transform; PropertiesOpt = bodyStaticModel.PropertiesOpt }
-                let (mass', inertia') = BulletPhysicsEngine.attachBodyStaticModelSurface bodySource bodyProperties bodyStaticModelSurface compoundShape mass inertia
+                let (mass', inertia') = BulletPhysicsEngine.attachBodyStaticModelSurface bodySource bodyProperties bodyStaticModelSurface compoundShape mass inertia physicsEngine
                 (mass + mass', inertia + inertia'))
                 (mass, inertia)
-                [0 .. dec staticModelMetadata.Surfaces.Length]
-        | None -> (mass, inertia)
+                [0 .. dec staticModel.Surfaces.Length]
+        | (false, _) -> (mass, inertia)
 
     // TODO: add some error logging.
-    static member private attachBodyStaticModelSurface bodySource (bodyProperties : BodyProperties) (bodyStaticModelSurface : BodyStaticModelSurface) (compoundShape : CompoundShape) mass inertia =
-        match Metadata.tryGetStaticModelMetadata bodyStaticModelSurface.StaticModel with
-        | Some staticModelMetadata ->
+    static member private attachBodyStaticModelSurface bodySource (bodyProperties : BodyProperties) (bodyStaticModelSurface : BodyStaticModelSurface) (compoundShape : CompoundShape) mass inertia physicsEngine =
+        match physicsEngine.StaticModels.TryGetValue bodyStaticModelSurface.StaticModel with
+        | (true, staticModel) ->
             if  bodyStaticModelSurface.SurfaceIndex > -1 &&
-                bodyStaticModelSurface.SurfaceIndex < staticModelMetadata.Surfaces.Length then
-                let geometry = staticModelMetadata.Surfaces.[bodyStaticModelSurface.SurfaceIndex].PhysicallyBasedGeometry
+                bodyStaticModelSurface.SurfaceIndex < staticModel.Surfaces.Length then
+                let geometry = staticModel.Surfaces.[bodyStaticModelSurface.SurfaceIndex].PhysicallyBasedGeometry
                 let bodyConvexHull = { Vertices = geometry.Vertices; TransformOpt = bodyStaticModelSurface.TransformOpt; PropertiesOpt = bodyStaticModelSurface.PropertiesOpt }
                 let (mass', inertia') = BulletPhysicsEngine.attachBodyConvexHull bodySource bodyProperties bodyConvexHull compoundShape mass inertia
                 (mass + mass', inertia + inertia')
             else (mass, inertia)
-        | None -> (mass, inertia)
+        | (false, _) -> (mass, inertia)
 
-    static member private attachBodyShapes bodySource bodyProperties bodyShapes compoundShape mass inertia =
+    static member private attachBodyShapes bodySource bodyProperties bodyShapes compoundShape mass inertia physicsEngine =
         List.fold (fun (mass, inertia) bodyShape ->
-            let (mass', inertia') = BulletPhysicsEngine.attachBodyShape bodySource bodyProperties bodyShape compoundShape mass inertia
+            let (mass', inertia') = BulletPhysicsEngine.attachBodyShape bodySource bodyProperties bodyShape compoundShape mass inertia physicsEngine
             (mass + mass', inertia + inertia'))
             (mass, inertia)
             bodyShapes
 
-    static member private attachBodyShape bodySource bodyProperties bodyShape compoundShape masses inertia =
+    static member private attachBodyShape bodySource bodyProperties bodyShape compoundShape masses inertia physicsEngine =
         match bodyShape with
         | BodyEmpty -> (masses, inertia)
         | BodyBox bodyBox -> BulletPhysicsEngine.attachBodyBox bodySource bodyProperties bodyBox compoundShape masses inertia
@@ -215,9 +216,9 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
         | BodyCapsule bodyCapsule -> BulletPhysicsEngine.attachBodyCapsule bodySource bodyProperties bodyCapsule compoundShape masses inertia
         | BodyBoxRounded bodyBoxRounded -> BulletPhysicsEngine.attachBodyBoxRounded bodySource bodyProperties bodyBoxRounded compoundShape masses inertia
         | BodyConvexHull bodyConvexHull -> BulletPhysicsEngine.attachBodyConvexHull bodySource bodyProperties bodyConvexHull compoundShape masses inertia
-        | BodyStaticModel bodyStaticModel -> BulletPhysicsEngine.attachBodyStaticModel bodySource bodyProperties bodyStaticModel compoundShape masses inertia
-        | BodyStaticModelSurface bodyStaticModelSurface -> BulletPhysicsEngine.attachBodyStaticModelSurface bodySource bodyProperties bodyStaticModelSurface compoundShape masses inertia
-        | BodyShapes bodyShapes -> BulletPhysicsEngine.attachBodyShapes bodySource bodyProperties bodyShapes compoundShape masses inertia
+        | BodyStaticModel bodyStaticModel -> BulletPhysicsEngine.attachBodyStaticModel bodySource bodyProperties bodyStaticModel compoundShape masses inertia physicsEngine
+        | BodyStaticModelSurface bodyStaticModelSurface -> BulletPhysicsEngine.attachBodyStaticModelSurface bodySource bodyProperties bodyStaticModelSurface compoundShape masses inertia physicsEngine
+        | BodyShapes bodyShapes -> BulletPhysicsEngine.attachBodyShapes bodySource bodyProperties bodyShapes compoundShape masses inertia physicsEngine
 
     static member private createBody3 attachBodyShape (bodyId : BodyId) (bodyProperties : BodyProperties) physicsEngine =
         let (shape, mass, inertia) =
@@ -249,7 +250,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
 
     static member private createBody4 bodyShape (bodyId : BodyId) bodyProperties physicsEngine =
         BulletPhysicsEngine.createBody3 (fun ps cs mass inertia ->
-            BulletPhysicsEngine.attachBodyShape bodyId.BodySource ps bodyShape cs mass inertia)
+            BulletPhysicsEngine.attachBodyShape bodyId.BodySource ps bodyShape cs mass inertia physicsEngine)
             bodyId bodyProperties physicsEngine
 
     static member private createBody (createBodyMessage : CreateBodyMessage) physicsEngine =
@@ -485,7 +486,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
         for physicsMessage in physicsMessages do
             BulletPhysicsEngine.handlePhysicsMessage physicsEngine physicsMessage
 
-    static member make imperative gravity =
+    static member make imperative gravity staticModels =
         let config = if imperative then Imperative else Functional
         let physicsMessages = UList.makeEmpty config
         let collisionConfiguration = new DefaultCollisionConfiguration ()
@@ -504,6 +505,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
           PhysicsDispatcher = physicsDispatcher
           BroadPhaseInterface = broadPhaseInterface
           ConstraintSolver = constraintSolver
+          StaticModels = staticModels
           PhysicsMessages = physicsMessages
           IntegrationMessages = List () }
 

@@ -6,9 +6,6 @@ open System
 open Prime
 open Nu
 
-(* NOTE: The Render folder is placed up before the Metadata folder in order to prevent renderer code from accessing
-Metadata from another thread. Otherwise, the Render folder would be placed after the Physics folder. *)
-
 /// An asset that is used for rendering.
 type RenderAsset =
     | TextureAsset of string * OpenGL.Texture.TextureMetadata * uint
