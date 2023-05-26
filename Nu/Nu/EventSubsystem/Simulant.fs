@@ -18,7 +18,7 @@ module SimulantOperators =
 
         /// The names of the simulant.
         member this.Names = this.SimulantAddress.Names
-        
+
         /// Concatenate an address with a simulant's address, forcing the type of first address.
         static member acatff<'a> (address : 'a Address) (simulant : Simulant) =
             match box simulant with
