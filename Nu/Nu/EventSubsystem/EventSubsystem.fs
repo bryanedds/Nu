@@ -46,7 +46,9 @@ module EventSubsystem =
     let private EventAddressCache = Dictionary<obj, obj> HashIdentity.Structural
     let private EventAddressListCache = Dictionary<obj Address, obj List> HashIdentity.Structural
 
-    /// The event subsystem.
+    /// A functional publisher-neutral event system for handling simulation events in Nu.
+    /// Publisher-neutrality means that the user can subscribe to events regardless if the event source exists or not.
+    /// This decouples subscription lifetime from event source lifetime.
     type [<ReferenceEquality>] EventSubsystem =
         private
             { // cache line 1 (assuming 16 byte header)
@@ -215,7 +217,7 @@ module EventSubsystem =
                 struct (priority, subscription))
             subscriptionEntries
 
-    /// Publish an event directly.
+    /// Publish an event.
     let publishEvent<'a, 'p, 's, 'w when 'p :> Simulant and 's :> Simulant>
         (subscriber : Simulant) (publisher : 'p) (eventData : obj) (eventAddress : 'a Address) eventTrace (subscription : obj) (world : 'w) =
         let evt =
@@ -239,5 +241,7 @@ module EventSubsystem =
     let sortSubscriptionsNone (subscriptions : SubscriptionEntry array) (_ : 'w) =
         subscriptions
 
-/// The event subsystem.
+/// A functional publisher-neutral event system for handling simulation events in Nu.
+/// Publisher-neutrality means that the user can subscribe to events regardless if the event source exists or not.
+/// This decouples subscription lifetime from event source lifetime.
 type EventSubsystem = EventSubsystem.EventSubsystem
