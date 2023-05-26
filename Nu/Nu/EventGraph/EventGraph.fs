@@ -39,7 +39,7 @@ type UnsubscriptionEntries =
     UMap<Guid, obj Address * Simulant>
 
 [<RequireQualifiedAccess>]
-module EventSubsystem =
+module EventGraph =
 
     /// OPTIMIZATION: caches event address for fast wildcard address generation.
     let mutable private EventAddressCaching = false
@@ -49,7 +49,7 @@ module EventSubsystem =
     /// A functional publisher-neutral event system for handling simulation events in Nu.
     /// Publisher-neutrality means that the user can subscribe to events regardless if the event source exists or not.
     /// This decouples subscription lifetime from event source lifetime.
-    type [<ReferenceEquality>] EventSubsystem =
+    type [<ReferenceEquality>] EventGraph =
         private
             { // cache line 1 (assuming 16 byte header)
               Subscriptions : SubscriptionEntries
@@ -60,53 +60,53 @@ module EventSubsystem =
               GlobalSimulantGeneralized : GlobalSimulantGeneralized }
 
     /// Get the generalized global simulant of the event system.
-    let getGlobalSimulantGeneralized eventSubsystem =
-        eventSubsystem.GlobalSimulantGeneralized
+    let getGlobalSimulantGeneralized eventGraph =
+        eventGraph.GlobalSimulantGeneralized
 
     /// Get event state.
-    let getEventState<'a> key (eventSubsystem : EventSubsystem) =
-        let state = SUMap.find key eventSubsystem.EventStates
+    let getEventState<'a> key (eventGraph : EventGraph) =
+        let state = SUMap.find key eventGraph.EventStates
         state :?> 'a
 
     /// Add event state.
-    let addEventState<'a> key (state : 'a) (eventSubsystem : EventSubsystem) =
-        { eventSubsystem with EventStates = SUMap.add key (state :> obj) eventSubsystem.EventStates }
+    let addEventState<'a> key (state : 'a) (eventGraph : EventGraph) =
+        { eventGraph with EventStates = SUMap.add key (state :> obj) eventGraph.EventStates }
 
     /// Remove event state.
-    let removeEventState key (eventSubsystem : EventSubsystem) =
-        { eventSubsystem with EventStates = SUMap.remove key eventSubsystem.EventStates }
+    let removeEventState key (eventGraph : EventGraph) =
+        { eventGraph with EventStates = SUMap.remove key eventGraph.EventStates }
 
     /// Get subscriptions.
-    let getSubscriptions (eventSubsystem : EventSubsystem) =
-        eventSubsystem.Subscriptions
+    let getSubscriptions (eventGraph : EventGraph) =
+        eventGraph.Subscriptions
 
     /// Get unsubscriptions.
-    let getUnsubscriptions (eventSubsystem : EventSubsystem) =
-        eventSubsystem.Unsubscriptions
+    let getUnsubscriptions (eventGraph : EventGraph) =
+        eventGraph.Unsubscriptions
 
     /// Set subscriptions.
-    let internal setSubscriptions subscriptions (eventSubsystem : EventSubsystem) =
-        { eventSubsystem with Subscriptions = subscriptions }
+    let internal setSubscriptions subscriptions (eventGraph : EventGraph) =
+        { eventGraph with Subscriptions = subscriptions }
 
     /// Set unsubscriptions.
-    let internal setUnsubscriptions unsubscriptions (eventSubsystem : EventSubsystem) =
-        { eventSubsystem with Unsubscriptions = unsubscriptions }
+    let internal setUnsubscriptions unsubscriptions (eventGraph : EventGraph) =
+        { eventGraph with Unsubscriptions = unsubscriptions }
 
     /// Get how events are being traced.
-    let getEventTracerOpt (eventSubsystem : EventSubsystem) =
-        eventSubsystem.EventTracerOpt
+    let getEventTracerOpt (eventGraph : EventGraph) =
+        eventGraph.EventTracerOpt
 
     /// Set how events are being traced.
-    let setEventTracerOpt tracing (eventSubsystem : EventSubsystem) =
-        { eventSubsystem with EventTracerOpt = tracing }
+    let setEventTracerOpt tracing (eventGraph : EventGraph) =
+        { eventGraph with EventTracerOpt = tracing }
 
     /// Get the state of the event filter.
-    let getEventFilter (eventSubsystem : EventSubsystem) =
-        eventSubsystem.EventFilter
+    let getEventFilter (eventGraph : EventGraph) =
+        eventGraph.EventFilter
 
     /// Set the state of the event filter.
-    let setEventFilter filter (eventSubsystem : EventSubsystem) =
-        { eventSubsystem with EventFilter = filter }
+    let setEventFilter filter (eventGraph : EventGraph) =
+        { eventGraph with EventFilter = filter }
 
     /// Set whether event addresses are cached internally.
     let setEventAddressCaching caching =
@@ -152,7 +152,7 @@ module EventSubsystem =
         eventAddresses
 
     /// Get the wild-carded addresses of an event address.
-    let getEventAddresses2 (eventAddress : 'a Address) (_ : EventSubsystem) =
+    let getEventAddresses2 (eventAddress : 'a Address) (_ : EventGraph) =
         if EventAddressCaching then
             match EventAddressCache.TryGetValue eventAddress with
             | (false, _) ->
@@ -177,32 +177,32 @@ module EventSubsystem =
         else getEventAddresses1 eventAddress
 
     /// Get subscriptions for eventAddress sorted by publishSorter.
-    let getSubscriptionsSorted (publishSorter : SubscriptionSorter) eventAddress (eventSubsystem : EventSubsystem) (world : 'w) =
-        let eventSubscriptions = getSubscriptions eventSubsystem
-        let eventAddresses = getEventAddresses2 eventAddress eventSubsystem
+    let getSubscriptionsSorted (publishSorter : SubscriptionSorter) eventAddress (eventGraph : EventGraph) (world : 'w) =
+        let eventSubscriptions = getSubscriptions eventGraph
+        let eventAddresses = getEventAddresses2 eventAddress eventGraph
         let subscriptionOpts = Array.map (fun eventAddress -> UMap.tryFind eventAddress eventSubscriptions) eventAddresses
         let subscriptions = subscriptionOpts |> Array.definitize |> Array.map OMap.toSeq |> Seq.concat
         publishSorter subscriptions world
 
     /// Log an event.
-    let logEvent (address : obj Address) (trace : EventTrace) (eventSubsystem : EventSubsystem) =
-        match eventSubsystem.EventTracerOpt with
+    let logEvent (address : obj Address) (trace : EventTrace) (eventGraph : EventGraph) =
+        match eventGraph.EventTracerOpt with
         | Some tracer ->
             let addressStr = scstring address
             let traceRev = List.rev trace // for efficiency during normal execution, trace is cons'd up into a reversed list
-            if EventFilter.filter addressStr traceRev eventSubsystem.EventFilter then tracer (addressStr + "|" + scstring traceRev)
+            if EventFilter.filter addressStr traceRev eventGraph.EventFilter then tracer (addressStr + "|" + scstring traceRev)
         | None -> ()
 
     /// Make an event delegate.
     let make eventTracerOpt eventFilter globalSimulantGeneralized config =
-        let eventSubsystem =
+        let eventGraph =
             { Subscriptions = UMap.makeEmpty HashIdentity.Structural config
               Unsubscriptions = UMap.makeEmpty HashIdentity.Structural config
               EventStates = SUMap.makeEmpty HashIdentity.Structural config
               EventTracerOpt = eventTracerOpt
               EventFilter = eventFilter
               GlobalSimulantGeneralized = globalSimulantGeneralized }
-        eventSubsystem
+        eventGraph
 
     /// Get the subscriptions with the given sorting criteria.
     let getSortableSubscriptions
@@ -244,4 +244,4 @@ module EventSubsystem =
 /// A functional publisher-neutral event system for handling simulation events in Nu.
 /// Publisher-neutrality means that the user can subscribe to events regardless if the event source exists or not.
 /// This decouples subscription lifetime from event source lifetime.
-type EventSubsystem = EventSubsystem.EventSubsystem
+type EventGraph = EventGraph.EventGraph

@@ -4,7 +4,7 @@
 namespace Nu
 open System
 
-/// A participant in the observable-property system.
+/// A participant in the event graph.
 type Simulant =
     interface
         abstract member SimulantAddress : Simulant Address

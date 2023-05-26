@@ -29,7 +29,7 @@ module internal WorldTypes =
     let mutable internal viewGroup = fun (_ : obj) (_ : obj) -> Array.create 0 (String.Empty, obj ())
     let mutable internal viewEntity = fun (_ : obj) (_ : obj) -> Array.create 0 (String.Empty, obj ())
 
-    // EventSubsystem F# reach-arounds.
+    // EventGraph F# reach-arounds.
     let mutable internal isSelectedScreenIdling : obj -> bool = Unchecked.defaultof<_>
     let mutable internal isSelectedScreenTransitioning : obj -> bool = Unchecked.defaultof<_>
     let mutable internal handleSubscribeAndUnsubscribeEvent : bool -> obj Address -> Simulant -> obj -> obj = Unchecked.defaultof<_>
@@ -1431,7 +1431,7 @@ and [<ReferenceEquality>] internal WorldExtension =
 and [<ReferenceEquality>] World =
     internal
         { // cache line 1 (assuming 16 byte header)
-          EventSubsystem : EventSubsystem
+          EventGraph : EventGraph
           EntityCachedOpt : KeyedCache<KeyValuePair<Entity, SUMap<Entity, EntityState>>, EntityState>
           EntityStates : SUMap<Entity, EntityState>
           GroupStates : UMap<Group, GroupState>

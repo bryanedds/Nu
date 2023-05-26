@@ -209,7 +209,7 @@ module WorldScreenModule =
         [<FunctionBinding>]
         static member destroyScreenImmediate (screen : Screen) world =
             let world = World.tryRemoveSimulantFromDestruction screen world
-            EventSubsystem.cleanEventAddressCache screen.ScreenAddress
+            EventGraph.cleanEventAddressCache screen.ScreenAddress
             if World.getScreenExists screen world then
                 let groups = World.getGroups screen world
                 let world = World.unregisterScreen screen world

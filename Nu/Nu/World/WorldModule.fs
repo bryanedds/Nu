@@ -557,16 +557,16 @@ module WorldModule =
                 subsystems.PhysicsEngine2d.CleanUp ()
                 subsystems) world
 
-    type World with // EventSubsystem
+    type World with // EventGraph
 
-        static member internal getEventSubsystem world =
-            world.EventSubsystem
+        static member internal getEventGraph world =
+            world.EventGraph
 
-        static member internal setEventSubsystem eventSystem world =
-            World.choose { world with EventSubsystem = eventSystem }
+        static member internal setEventGraph eventSystem world =
+            World.choose { world with EventGraph = eventSystem }
 
-        static member internal updateEventSubsystem updater world =
-            World.setEventSubsystem (updater world.EventSubsystem) world
+        static member internal updateEventGraph updater world =
+            World.setEventGraph (updater world.EventGraph) world
 
         static member internal boxCallback<'a, 's when 's :> Simulant> (callback : Callback<'a, 's>) : obj =
             let boxableCallback = fun (evt : Event<obj, Simulant>) (world : World) ->
@@ -580,46 +580,46 @@ module WorldModule =
             boxableCallback
 
         static member internal getGlobalSimulantGeneralized world =
-            EventSubsystem.getGlobalSimulantGeneralized (World.getEventSubsystem world)
+            EventGraph.getGlobalSimulantGeneralized (World.getEventGraph world)
 
         static member internal getEventState<'a> key world : 'a =
-            EventSubsystem.getEventState key (World.getEventSubsystem world)
+            EventGraph.getEventState key (World.getEventGraph world)
 
         static member internal addEventState<'a> key (state : 'a) world =
-            World.updateEventSubsystem (EventSubsystem.addEventState key state) world
+            World.updateEventGraph (EventGraph.addEventState key state) world
 
         static member internal removeEventState key world =
-            World.updateEventSubsystem (EventSubsystem.removeEventState key) world
+            World.updateEventGraph (EventGraph.removeEventState key) world
 
         static member internal getSubscriptions world =
-            EventSubsystem.getSubscriptions (World.getEventSubsystem world)
+            EventGraph.getSubscriptions (World.getEventGraph world)
 
         static member internal setSubscriptions subscriptions world =
-            World.updateEventSubsystem (EventSubsystem.setSubscriptions subscriptions) world
+            World.updateEventGraph (EventGraph.setSubscriptions subscriptions) world
 
         static member internal getUnsubscriptions world =
-            EventSubsystem.getUnsubscriptions (World.getEventSubsystem world)
+            EventGraph.getUnsubscriptions (World.getEventGraph world)
 
         static member internal setUnsubscriptions unsubscriptions world =
-            World.updateEventSubsystem (EventSubsystem.setUnsubscriptions unsubscriptions) world
+            World.updateEventGraph (EventGraph.setUnsubscriptions unsubscriptions) world
 
         /// Get how events are being traced.
         static member getEventTracerOpt (world : World) =
-            EventSubsystem.getEventTracerOpt world.EventSubsystem
+            EventGraph.getEventTracerOpt world.EventGraph
 
         /// Set how events are being traced.
         static member setEventTracerOpt tracerOpt (world : World) =
-            World.updateEventSubsystem (EventSubsystem.setEventTracerOpt tracerOpt) world
+            World.updateEventGraph (EventGraph.setEventTracerOpt tracerOpt) world
 
         /// Get the state of the event filter.
         [<FunctionBinding>]
         static member getEventFilter (world : World) =
-            EventSubsystem.getEventFilter (World.getEventSubsystem world)
+            EventGraph.getEventFilter (World.getEventGraph world)
 
         /// Set the state of the event filter.
         [<FunctionBinding>]
         static member setEventFilter filter (world : World) =
-            World.updateEventSubsystem (EventSubsystem.setEventFilter filter) world
+            World.updateEventGraph (EventGraph.setEventFilter filter) world
 
         /// Publish an event with no subscription sorting.
         static member publishPlus<'a, 'p when 'p :> Simulant>
@@ -636,17 +636,17 @@ module WorldModule =
 
 #if DEBUG
             // log event based on event filter
-            EventSubsystem.logEvent eventAddressObj eventTrace world.EventSubsystem
+            EventGraph.logEvent eventAddressObj eventTrace world.EventGraph
 #endif
 
             // get subscriptions the fastest way possible
             // OPTIMIZATION: subscriptions nullable to elide allocation via Seq.empty.
             let subscriptionsOpt =
                 if hierarchical then
-                    EventSubsystem.getSubscriptionsSorted
-                        sortSubscriptionsByElevation eventAddressObj world.EventSubsystem world
+                    EventGraph.getSubscriptionsSorted
+                        sortSubscriptionsByElevation eventAddressObj world.EventGraph world
                 else
-                    let subscriptions = EventSubsystem.getSubscriptions world.EventSubsystem
+                    let subscriptions = EventGraph.getSubscriptions world.EventGraph
                     match UMap.tryFind eventAddressObj subscriptions with
                     | Some subscriptions -> OMap.toSeq subscriptions
                     | None -> null
@@ -666,16 +666,16 @@ module WorldModule =
                             let result =
                                 let namesLength = subscriber.SimulantAddress.Names.Length
                                 if namesLength >= 3
-                                then EventSubsystem.publishEvent<'a, 'p, Entity, World> subscriber publisher eventData eventAddress eventTrace subscriptionEntry.SubscriptionCallback world
+                                then EventGraph.publishEvent<'a, 'p, Entity, World> subscriber publisher eventData eventAddress eventTrace subscriptionEntry.SubscriptionCallback world
                                 else
                                     match namesLength with
                                     | 0 ->
                                         match subscriber with
-                                        | :? Game -> EventSubsystem.publishEvent<'a, 'p, Game, World> subscriber publisher eventData eventAddress eventTrace subscriptionEntry.SubscriptionCallback world
-                                        | :? GlobalSimulantGeneralized -> EventSubsystem.publishEvent<'a, 'p, Simulant, World> subscriber publisher eventData eventAddress eventTrace subscriptionEntry.SubscriptionCallback world
+                                        | :? Game -> EventGraph.publishEvent<'a, 'p, Game, World> subscriber publisher eventData eventAddress eventTrace subscriptionEntry.SubscriptionCallback world
+                                        | :? GlobalSimulantGeneralized -> EventGraph.publishEvent<'a, 'p, Simulant, World> subscriber publisher eventData eventAddress eventTrace subscriptionEntry.SubscriptionCallback world
                                         | _ -> failwithumf ()
-                                    | 1 -> EventSubsystem.publishEvent<'a, 'p, Screen, World> subscriber publisher eventData eventAddress eventTrace subscriptionEntry.SubscriptionCallback world
-                                    | 2 -> EventSubsystem.publishEvent<'a, 'p, Group, World> subscriber publisher eventData eventAddress eventTrace subscriptionEntry.SubscriptionCallback world
+                                    | 1 -> EventGraph.publishEvent<'a, 'p, Screen, World> subscriber publisher eventData eventAddress eventTrace subscriptionEntry.SubscriptionCallback world
+                                    | 2 -> EventGraph.publishEvent<'a, 'p, Group, World> subscriber publisher eventData eventAddress eventTrace subscriptionEntry.SubscriptionCallback world
                                     | _ -> failwithumf ()
                             handling <- fst result
                             world <- snd result
