@@ -238,7 +238,7 @@ module Nu =
             // init sortSubscriptionByElevation F# reach-around
             WorldModule.sortSubscriptionsByElevation <- fun subscriptions worldObj ->
                 let world = worldObj :?> World
-                EventSubsystem.sortSubscriptionsBy
+                EventGraph.sortSubscriptionsBy
                     (fun (simulant : Simulant) _ ->
                         match simulant with
                         | :? Entity as entity -> { SortElevation = entity.GetElevation world; SortHorizon = 0.0f; SortTarget = entity } :> IComparable
@@ -355,7 +355,7 @@ module Nu =
             Vsync.Init nuConfig.RunSynchronously
 
             // init event world caching
-            EventSubsystem.setEventAddressCaching true
+            EventGraph.setEventAddressCaching true
 
             // mark init flag
             Initialized <- true
@@ -494,7 +494,7 @@ module WorldModule3 =
             world
 
         /// Make the world.
-        static member make config plugin eventSubsystem dispatchers scriptingEnv quadtree octree ambientState physicsEngine2d physicsEngine3d rendererProcess audioPlayer activeGameDispatcher =
+        static member make config plugin eventGraph dispatchers scriptingEnv quadtree octree ambientState physicsEngine2d physicsEngine3d rendererProcess audioPlayer activeGameDispatcher =
             Nu.init config.NuConfig // ensure game engine is initialized
             let config = AmbientState.getConfig ambientState
             let entityStates = SUMap.makeEmpty HashIdentity.Structural config
@@ -505,7 +505,7 @@ module WorldModule3 =
             let simulants = UMap.singleton HashIdentity.Structural config (Simulants.Game :> Simulant) None
             let worldExtension = { DestructionListRev = []; Dispatchers = dispatchers; Plugin = plugin; ScriptingEnv = scriptingEnv; ScriptingContext = Game () }
             let world =
-                { EventSubsystem = eventSubsystem
+                { EventGraph = eventGraph
                   EntityCachedOpt = KeyedCache.make (KeyValuePair (Unchecked.defaultof<Entity>, entityStates)) Unchecked.defaultof<EntityState>
                   EntityStates = entityStates
                   GroupStates = groupStates
@@ -529,13 +529,13 @@ module WorldModule3 =
             let plugin = NuPlugin ()
 
             // make the world's event delegate
-            let eventSubsystem =
+            let eventGraph =
                 let eventTracing = Constants.Engine.EventTracing
                 let eventTracerOpt = if eventTracing then Some (Log.remark "Event") else None // NOTE: lambda expression is duplicated in multiple places...
                 let eventFilter = Constants.Engine.EventFilter
                 let globalSimulantGeneralized = { GsgAddress = atoa Simulants.Game.GameAddress }
                 let eventConfig = if config.Imperative then Imperative else Functional
-                EventSubsystem.make eventTracerOpt eventFilter globalSimulantGeneralized eventConfig
+                EventGraph.make eventTracerOpt eventFilter globalSimulantGeneralized eventConfig
 
             // make the default game dispatcher
             let defaultGameDispatcher = World.makeDefaultGameDispatcher ()
@@ -577,7 +577,7 @@ module WorldModule3 =
             let octree = World.makeOctree ()
 
             // make the world
-            let world = World.make config plugin eventSubsystem dispatchers scriptingEnv quadtree octree ambientState physicsEngine2d physicsEngine3d rendererProcess audioPlayer (snd defaultGameDispatcher)
+            let world = World.make config plugin eventGraph dispatchers scriptingEnv quadtree octree ambientState physicsEngine2d physicsEngine3d rendererProcess audioPlayer (snd defaultGameDispatcher)
 
             // finally, register the game
             World.registerGame world
@@ -602,15 +602,15 @@ module WorldModule3 =
                 // populate metadata
                 Metadata.generateMetadata config.Imperative assetGraph
 
-                // make the world's event subsystem
-                let eventSubsystem =
+                // make the world's event graph
+                let eventGraph =
                     let eventTracing = Constants.Engine.EventTracing
                     let eventTracerOpt = if eventTracing then Some (Log.remark "Event") else None
                     let eventFilter = Constants.Engine.EventFilter
                     let globalSimulant = Simulants.Game
                     let globalSimulantGeneralized = { GsgAddress = atoa globalSimulant.GameAddress }
                     let eventConfig = if config.Imperative then Imperative else Functional
-                    EventSubsystem.make eventTracerOpt eventFilter globalSimulantGeneralized eventConfig
+                    EventGraph.make eventTracerOpt eventFilter globalSimulantGeneralized eventConfig
                     
                 // make plug-in facets and dispatchers
                 let pluginAssemblies = [|(plugin.GetType ()).Assembly|]
@@ -699,7 +699,7 @@ module WorldModule3 =
                     let octree = World.makeOctree ()
 
                     // make the world
-                    let world = World.make config plugin eventSubsystem dispatchers scriptingEnv quadtree octree ambientState physicsEngine2d physicsEngine3d rendererProcess audioPlayer activeGameDispatcher
+                    let world = World.make config plugin eventGraph dispatchers scriptingEnv quadtree octree ambientState physicsEngine2d physicsEngine3d rendererProcess audioPlayer activeGameDispatcher
 
                     // add the keyed values
                     let (kvps, world) = plugin.MakeKeyedValues world
