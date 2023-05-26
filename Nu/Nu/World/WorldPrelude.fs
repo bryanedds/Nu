@@ -179,9 +179,11 @@ type [<ReferenceEquality>] WorldConfig =
 module AmbientState =
 
     /// Tracks whether the engine is running imperatively.
+    /// TODO: pack this flag into AmbientState.Advancing.
     let mutable private Imperative = true
 
     /// Tracks whether the engine is running accompanied by another program, such as an editor.
+    /// TODO: pack this flag into AmbientState.Advancing.
     let mutable private Accompanied = true
 
     /// The ambient state of the world.
