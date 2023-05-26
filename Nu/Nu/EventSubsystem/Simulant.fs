@@ -3,7 +3,6 @@
 
 namespace Nu
 open System
-open Prime
 
 /// A participant in the observable-property system.
 type Simulant =
