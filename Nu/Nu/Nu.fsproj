@@ -64,11 +64,10 @@
 		<Compile Include="Reflection\Reflection.fs" />
 		<Compile Include="Reflection\Overlayer.fs" />
 		<Compile Include="Reflection\OverlayRouter.fs" />
-		<Compile Include="Events\EventTrace.fs" />
-		<Compile Include="Events\EventSimulant.fs" />
-		<Compile Include="Events\EventSimulantLens.fs" />
+		<Compile Include="Events\Simulant.fs" />
+		<Compile Include="Events\Lens.fs" />
+		<Compile Include="Events\Signal.fs" />
 		<Compile Include="Events\EventSubsystem.fs" />
-		<Compile Include="Events\EventSignal.fs" />
 		<Compile Include="AssetGraph\AssetTag.fs" />
 		<Compile Include="AssetGraph\AssetGraph.fs" />
 		<Compile Include="Metadata\Metadata.fs" />

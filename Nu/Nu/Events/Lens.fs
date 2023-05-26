@@ -6,6 +6,12 @@ open System
 open Prime
 open Nu
 
+/// The data for a change in a simulant.
+type ChangeData =
+    { Name : string
+      Previous : obj
+      Value : obj }
+
 /// A generalized simulant lens.
 type 'w Lens =
     interface

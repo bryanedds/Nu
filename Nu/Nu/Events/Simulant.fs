@@ -29,12 +29,6 @@ module SimulantOperators =
         /// Concatenate an address with a simulant's address, forcing the type of first address.
         // Disabled due to extension types not supporting operators: static member (-->) (address, simulant : Simulant) = Simulant.acatff address simulant
 
-/// The data for a change in a simulant.
-type ChangeData =
-    { Name : string
-      Previous : obj
-      Value : obj }
-
 /// A simulant in the event system that is globalized and compatible with generalized events.
 type GlobalSimulantGeneralized =
     { GsgAddress : GlobalSimulantGeneralized Address }
