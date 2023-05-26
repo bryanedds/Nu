@@ -9,6 +9,9 @@ open TiledSharp
 open Prime
 open Nu
 
+(* NOTE: The Metadata folder is placed after the subsystems folders in order to prevent subsystem from accessing
+Metadata from another thread. *)
+
 /// Metadata for an asset. Useful to describe various attributes of an asset without having the
 /// full asset loaded into memory.
 type Metadata =

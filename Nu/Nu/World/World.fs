@@ -641,9 +641,19 @@ module WorldModule3 =
                     | Some (_, dispatcher) -> dispatcher
                     | None -> GameDispatcher ()
 
+                // grab the metadata of the static models so they can be provded to BulletPhysicsEngine
+                let staticModelsMetadata =
+                    seq {
+                        for (packageName, package) in (Metadata.getMetadataPackages ()).Pairs do
+                            for (assetName, metadata) in package.Pairs do
+                                match metadata with
+                                | StaticModelMetadata staticModel -> (asset packageName assetName, staticModel)
+                                | _ -> () } |>
+                    dictPlus HashIdentity.Structural
+
                 // make the world's subsystems
                 let physicsEngine2d = AetherPhysicsEngine.make config.Imperative Constants.Physics.Gravity2dDefault
-                let physicsEngine3d = BulletPhysicsEngine.make config.Imperative Constants.Physics.Gravity3dDefault
+                let physicsEngine3d = BulletPhysicsEngine.make config.Imperative Constants.Physics.Gravity3dDefault staticModelsMetadata
                 let createRenderer2d =
                     fun config ->
                         match SdlDeps.getWindowOpt sdlDeps with
