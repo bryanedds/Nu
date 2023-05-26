@@ -46,7 +46,7 @@ module EventGraph =
     let private EventAddressCache = Dictionary<obj, obj> HashIdentity.Structural
     let private EventAddressListCache = Dictionary<obj Address, obj List> HashIdentity.Structural
 
-    /// A functional publisher-neutral event system for handling simulation events in Nu.
+    /// A functional publisher-neutral mechanism for handling simulation events in Nu.
     /// Publisher-neutrality means that the user can subscribe to events regardless if the event source exists or not.
     /// This decouples subscription lifetime from event source lifetime.
     type [<ReferenceEquality>] EventGraph =
@@ -241,7 +241,7 @@ module EventGraph =
     let sortSubscriptionsNone (subscriptions : SubscriptionEntry array) (_ : 'w) =
         subscriptions
 
-/// A functional publisher-neutral event system for handling simulation events in Nu.
+/// A functional publisher-neutral event mechanism for handling simulation events in Nu.
 /// Publisher-neutrality means that the user can subscribe to events regardless if the event source exists or not.
 /// This decouples subscription lifetime from event source lifetime.
 type EventGraph = EventGraph.EventGraph
