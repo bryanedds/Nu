@@ -661,21 +661,21 @@ module WorldModule =
                     let (_, subscriptionEntry) = enr.Current
                     if  (match handling with Cascade -> true | Resolve -> false) &&
                         (match World.getLiveness world with Live -> true | Dead -> false) then
-                        let subscriber = subscriptionEntry.Subscriber
+                        let subscriber = subscriptionEntry.SubscriptionSubscriber
                         if not selectedOnly || isSelected subscriber world then
                             let result =
                                 let namesLength = subscriber.SimulantAddress.Names.Length
                                 if namesLength >= 3
-                                then EventSubsystem.publishEvent<'a, 'p, Entity, World> subscriber publisher eventData eventAddress eventTrace subscriptionEntry.CallbackBoxed world
+                                then EventSubsystem.publishEvent<'a, 'p, Entity, World> subscriber publisher eventData eventAddress eventTrace subscriptionEntry.SubscriptionCallback world
                                 else
                                     match namesLength with
                                     | 0 ->
                                         match subscriber with
-                                        | :? Game -> EventSubsystem.publishEvent<'a, 'p, Game, World> subscriber publisher eventData eventAddress eventTrace subscriptionEntry.CallbackBoxed world
-                                        | :? GlobalSimulantGeneralized -> EventSubsystem.publishEvent<'a, 'p, Simulant, World> subscriber publisher eventData eventAddress eventTrace subscriptionEntry.CallbackBoxed world
+                                        | :? Game -> EventSubsystem.publishEvent<'a, 'p, Game, World> subscriber publisher eventData eventAddress eventTrace subscriptionEntry.SubscriptionCallback world
+                                        | :? GlobalSimulantGeneralized -> EventSubsystem.publishEvent<'a, 'p, Simulant, World> subscriber publisher eventData eventAddress eventTrace subscriptionEntry.SubscriptionCallback world
                                         | _ -> failwithumf ()
-                                    | 1 -> EventSubsystem.publishEvent<'a, 'p, Screen, World> subscriber publisher eventData eventAddress eventTrace subscriptionEntry.CallbackBoxed world
-                                    | 2 -> EventSubsystem.publishEvent<'a, 'p, Group, World> subscriber publisher eventData eventAddress eventTrace subscriptionEntry.CallbackBoxed world
+                                    | 1 -> EventSubsystem.publishEvent<'a, 'p, Screen, World> subscriber publisher eventData eventAddress eventTrace subscriptionEntry.SubscriptionCallback world
+                                    | 2 -> EventSubsystem.publishEvent<'a, 'p, Group, World> subscriber publisher eventData eventAddress eventTrace subscriptionEntry.SubscriptionCallback world
                                     | _ -> failwithumf ()
                             handling <- fst result
                             world <- snd result
@@ -725,15 +725,15 @@ module WorldModule =
                     | Some subscriptionEntries ->
                         match OMap.tryFind subscriptionId subscriptionEntries with
                         | Some subscriptionEntry ->
-                            let subscriptionEntry = { subscriptionEntry with CallbackBoxed = World.boxCallback callback }
+                            let subscriptionEntry = { subscriptionEntry with SubscriptionCallback = World.boxCallback callback }
                             let subscriptionEntries = OMap.add subscriptionId subscriptionEntry subscriptionEntries
                             UMap.add eventAddressObj subscriptionEntries subscriptions
                         | None ->
-                            let subscriptionEntry = { SubscriptionId = subscriptionId; Subscriber = subscriber; CallbackBoxed = World.boxCallback callback }
+                            let subscriptionEntry = { SubscriptionCallback = World.boxCallback callback; SubscriptionSubscriber = subscriber; SubscriptionId = subscriptionId }
                             let subscriptionEntries = OMap.add subscriptionId subscriptionEntry subscriptionEntries
                             UMap.add eventAddressObj subscriptionEntries subscriptions
                     | None ->
-                        let subscriptionEntry = { SubscriptionId = subscriptionId; Subscriber = subscriber; CallbackBoxed = World.boxCallback callback }
+                        let subscriptionEntry = { SubscriptionCallback = World.boxCallback callback; SubscriptionSubscriber = subscriber; SubscriptionId = subscriptionId }
                         UMap.add eventAddressObj (OMap.singleton HashIdentity.Structural (World.getCollectionConfig world) subscriptionId subscriptionEntry) subscriptions
                 let unsubscriptions = UMap.add subscriptionId (eventAddressObj, subscriber :> Simulant) unsubscriptions
                 let world = World.setSubscriptions subscriptions world
