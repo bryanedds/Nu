@@ -532,7 +532,7 @@ module ContentOperators =
 #if !DEBUG
         inline
 #endif
-        (==) (lens : Lens<'a, 's, World>) (value : 'a) : InitializerContent =
+        (==) (lens : Lens<'a, 's>) (value : 'a) : InitializerContent =
         PropertyContent (PropertyContent.make true lens value)
 
     /// Define a property synchronizer.
@@ -540,7 +540,7 @@ module ContentOperators =
 #if !DEBUG
         inline
 #endif
-        (:=) (lens : Lens<'a, 's, World>) (value : 'a) : InitializerContent =
+        (:=) (lens : Lens<'a, 's>) (value : 'a) : InitializerContent =
         PropertyContent (PropertyContent.make false lens value)
 
     /// Define an event signal.

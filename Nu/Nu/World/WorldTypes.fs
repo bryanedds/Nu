@@ -43,6 +43,126 @@ type Callback<'a, 's when 's :> Simulant> = Event<'a, 's> -> World -> Handling *
 /// Represents an unsubscription operation for an event.
 and Unsubscription = World -> World
 
+/// The data for a change in a simulant.
+and ChangeData =
+    { Name : string
+      Previous : obj
+      Value : obj }
+
+/// A generalized simulant lens.
+and Lens =
+    interface
+        abstract Name : string
+        abstract This : Simulant
+        abstract Get : World -> obj
+        abstract SetOpt : (obj -> World -> World) voption
+        abstract TrySet : obj -> World -> World
+        abstract ChangeEvent : ChangeData Address
+        abstract Type : Type
+        end
+
+/// Describes a property of a simulant.
+/// Similar to a Haskell lens, but specialized to simulant properties.
+and [<ReferenceEquality>] Lens<'a, 's when 's :> Simulant> =
+    { Name : string
+      This : 's
+      Get : World -> 'a
+      SetOpt : ('a -> World -> World) voption }
+
+    interface Lens with
+        member this.Name = this.Name
+        member this.This = this.This :> Simulant
+        member this.Get world = this.Get world :> obj
+        member this.SetOpt = ValueOption.map (fun set -> fun (value : obj) world -> set (value :?> 'a) world) this.SetOpt
+        member this.TrySet value world = match this.SetOpt with ValueSome set -> set (value :?> 'a) world | ValueNone -> world
+        member this.ChangeEvent = this.ChangeEvent
+        member this.Type = typeof<'a>
+
+    member this.GetBy by world =
+        by (this.Get world)
+
+    member this.GetByWorld by world =
+        by (this.Get world) world
+
+    member this.TrySet value world =
+        match this.SetOpt with
+        | ValueSome setter -> (true, setter value world)
+        | ValueNone -> (false, world)
+
+    member this.Set value world =
+        match this.TrySet value world with
+        | (true, world) -> world
+        | (false, _) -> failwith ("Lens for '" + this.Name + "' is readonly.")
+
+    member this.TryUpdateWorld (updater : 'a -> World -> 'a) world =
+        let value = this.Get world
+        let value' = updater value world
+        this.TrySet value' world
+
+    member this.TryUpdateEffect (updater : 'a -> World -> ('a * World)) (world : World) =
+        let value = this.Get world
+        let (value', world) = updater value world
+        this.TrySet value' world
+
+    member this.TryUpdate (updater : 'a -> 'a) world =
+        this.TryUpdateWorld (fun value _ -> updater value) world
+
+    member this.UpdateEffect updater world =
+        match this.TryUpdateEffect updater world with
+        | (true, world) -> world
+        | (false, _) -> failwithumf ()
+
+    member this.UpdateWorld updater world =
+        match this.TryUpdateWorld updater world with
+        | (true, world) -> world
+        | (false, _) -> failwithumf ()
+
+    member this.Update updater world =
+        match this.TryUpdate updater world with
+        | (true, world) -> world
+        | (false, _) -> failwithumf ()
+
+    member this.ChangeEvent : ChangeData Address =
+        let names = [|Constants.Lens.ChangeName; this.Name; Constants.Lens.EventName|]
+        match box this.This with
+        | null ->
+            // HACK: this case is a hack to allow Nu to resolve events contextually.
+            let hashCode = Constants.Lens.ChangeNameHash ^^^ hash this.Name ^^^ Constants.Lens.EventNameHash
+            let changeEventAddress = { Names = names; HashCode = hashCode; Anonymous = true }
+            changeEventAddress 
+        | _ -> rtoa names --> this.This.SimulantAddress
+
+    member inline this.Type =
+        typeof<'a>
+
+    (* Lensing Operators *)
+    static member inline ( += ) (lens : Lens<_, _>, value) =  lens.Update (flip (+) value)
+    static member inline ( -= ) (lens : Lens<_, _>, value) =  lens.Update (flip (-) value)
+    static member inline ( *= ) (lens : Lens<_, _>, value) =  lens.Update (flip (*) value)
+    static member inline ( /= ) (lens : Lens<_, _>, value) =  lens.Update (flip (/) value)
+    static member inline ( %= ) (lens : Lens<_, _>, value) =  lens.Update (flip (%) value)
+    static member inline ( ~+ ) (lens : Lens<_, _>) =         lens.Update (~+)
+    static member inline ( ~- ) (lens : Lens<_, _>) =         lens.Update (~-)
+    static member inline ( !+ ) (lens : Lens<_, _>) =         lens.Update inc
+    static member inline ( !- ) (lens : Lens<_, _>) =         lens.Update dec
+
+    /// Set a lensed property.
+    static member inline (<--) (lens : Lens<_, _>, value) = lens.Set value
+
+    /// Get a lensed property.
+    /// TODO: see if this operator is actually useful / understandable.
+    static member inline (!.) (lens : Lens<_, _>) =
+        fun world -> lens.Get world
+
+/// A model-message-command-content (MMCC) signal tag type.
+and Signal = interface end
+
+/// A model-message-command-content (MMCC) message tag type.
+and Message = inherit Signal
+
+/// A model-message-command-content (MMCC) command tag type.
+and Command = inherit Signal
+
 /// Specified the desired screen, if any, or whether to ignore screen desire functionality altogether.
 and DesiredScreen =
     | Desire of Screen
@@ -406,7 +526,7 @@ and Facet (physical) =
 /// Describes a property to the Elmish content system.
 and [<ReferenceEquality>] PropertyContent =
     { PropertyInitializer : bool
-      PropertyLens : World Lens
+      PropertyLens : Lens
       PropertyValue : obj }
     static member inline make initializer lens value =
         { PropertyInitializer = initializer
@@ -1487,3 +1607,145 @@ and NuPlugin () =
         Array.concat
 
     interface LateBindings
+
+[<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
+module Lens =
+
+    let name<'a, 's when 's :> Simulant> (lens : Lens<'a, 's>) =
+        lens.Name
+
+    let get<'a, 's when 's :> Simulant> (lens : Lens<'a, 's>) world =
+        lens.Get world
+
+    let getBy<'a, 'b, 's when 's :> Simulant> by (lens : Lens<'a, 's>) world : 'b =
+        lens.GetBy by world
+
+    let getByWorld<'a, 'b, 's when 's :> Simulant> by (lens : Lens<'a, 's>) world : 'b =
+        lens.GetByWorld by world
+
+    let setOpt<'a, 's when 's :> Simulant> a (lens : Lens<'a, 's>) world =
+        match lens.SetOpt with
+        | ValueSome set -> set a world
+        | ValueNone -> world
+
+    let trySet<'a, 's when 's :> Simulant> a (lens : Lens<'a, 's>) world =
+        lens.TrySet a world
+
+    let set<'a, 's when 's :> Simulant> a (lens : Lens<'a, 's>) world =
+        lens.Set a world
+
+    let tryUpdateEffect<'a, 's when 's :> Simulant> updater (lens : Lens<'a, 's>) world =
+        lens.TryUpdateEffect updater world
+
+    let tryUpdateWorld<'a, 's when 's :> Simulant> updater (lens : Lens<'a, 's>) world =
+        lens.TryUpdateWorld updater world
+
+    let tryUpdate<'a, 's when 's :> Simulant> updater (lens : Lens<'a, 's>) world =
+        lens.TryUpdate updater world
+
+    let updateEffect<'a, 's when 's :> Simulant> updater (lens : Lens<'a, 's>) world =
+        lens.UpdateEffect updater world
+
+    let updateWorld<'a, 's when 's :> Simulant> updater (lens : Lens<'a, 's>) world =
+        lens.UpdateWorld updater world
+
+    let update<'a, 's when 's :> Simulant> updater (lens : Lens<'a, 's>) world =
+        lens.Update updater world
+
+    let changeEvent<'a, 's when 's :> Simulant> (lens : Lens<'a, 's>) =
+        lens.ChangeEvent
+
+    let ty<'a, 's when 's :> Simulant> (lens : Lens<'a, 's>) =
+        lens.Type
+
+    let make<'a, 's when 's :> Simulant> (name : string) (this : 's) (get : World -> 'a) set : Lens<'a, 's> =
+        { Name = name; This = this; Get = get; SetOpt = ValueSome set }
+
+    let makeReadOnly<'a, 's when 's :> Simulant> (name : string) (this : 's) (get : World -> 'a) : Lens<'a, 's> =
+        { Name = name; This = this; Get = get; SetOpt = ValueNone }
+
+[<AutoOpen>]
+module LensOperators =
+
+    /// Make a writable lens.
+    let lens<'a, 's when 's :> Simulant> name (this : 's) (get : World -> 'a) set =
+        Lens.make name this get set
+
+    /// Make a read-only lens.
+    let lensReadOnly<'a, 's when 's :> Simulant> name (this : 's) (get : World -> 'a) =
+        Lens.makeReadOnly name this get
+
+    /// Define a property along with its initial value.
+    let define (lens : Lens<'a, 's>) (value : 'a) =
+        PropertyDefinition.makeValidated lens.Name typeof<'a> (DefineExpr value)
+
+    /// Define a property along with its initial value, also initializing its global attributes as non-persistent.
+    let nonPersistent (lens : Lens<'a, 's>) (value : 'a) =
+        Reflection.initPropertyNonPersistent true lens.Name
+        define lens value
+
+    /// Define a variable property.
+    let variable (lens : Lens<'a, 's>) (var : World -> 'a) =
+        Reflection.initPropertyNonPersistent true lens.Name
+        PropertyDefinition.makeValidated lens.Name typeof<'a> (VariableExpr (fun world -> var (world :?> World) :> obj))
+
+    /// Define a computed property.
+    let computed (lens : Lens<'a, 's>) (get : 't -> World -> 'a) (setOpt : ('a -> 't -> World -> World) option) =
+        Reflection.initPropertyNonPersistent true lens.Name
+        let computedProperty =
+            ComputedProperty.make
+                typeof<'a>
+                (fun (target : obj) (world : obj) -> get (target :?> 't) (world :?> World) :> obj)
+                (match setOpt with
+                 | Some set -> Some (fun value (target : obj) (world : obj) -> set (value :?> 'a) (target :?> 't) (world :?> World) :> obj)
+                 | None -> None)
+        PropertyDefinition.makeValidated lens.Name typeof<ComputedProperty> (ComputedExpr computedProperty)
+
+[<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
+module Signal =
+
+    let rec
+        processSignal<'model, 'message, 'command, 's when 'message :> Message and 'command :> Command and 's :> Simulant>
+        (processMessage : 'model * 'message * 's * World -> Signal list * 'model)
+        (processCommand : 'model * 'command * 's * World -> Signal list * World)
+        (modelLens : Lens<'model, 's>)
+        (signal : Signal)
+        (simulant : 's)
+        (world : World) :
+        World =
+        match signal :> obj with
+        | :? 'message as message ->
+            let model = Lens.get modelLens world
+            let (signals, model) = processMessage (model, message, simulant, world)
+            let world = Lens.set model modelLens world
+            match signals with
+            | _ :: _ -> processSignals processMessage processCommand modelLens signals simulant world
+            | [] -> world
+        | :? 'command as command ->
+            let model = Lens.get modelLens world
+            let (signals, world) = processCommand (model, command, simulant, world)
+            match signals with
+            | _ :: _ -> processSignals processMessage processCommand modelLens signals simulant world
+            | [] -> world
+        | _ -> failwithumf ()
+
+    and processSignals processMessage processCommand modelLens signals simulant world =
+        List.fold
+            (fun world signal -> processSignal processMessage processCommand modelLens signal simulant world)
+            world signals
+
+[<AutoOpen>]
+module SignalOperators =
+
+    /// Signal constructor.
+    /// Wonky name because F# reserve `sig` as a keyword.
+    let inline signal<'s when 's :> Signal> (signal : 's) = signal :> Signal
+
+    /// Singleton signal-value pair constructor.
+    let inline withSignal (signal : Signal) value = ([signal], value)
+
+    /// Signals-value pair constructor.
+    let inline withSignals (signals : Signal list) value = (signals, value)
+
+    /// Signaless signals-value pair constructor.
+    let inline just value = (([] : Signal list), value)

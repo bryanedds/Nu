@@ -1,4 +1,4 @@
-﻿// Prime - A PRIMitivEs code library.
+﻿// Nu Game Engine.
 // Copyright (C) Bryan Edds, 2013-2023.
 
 namespace Nu
@@ -18,71 +18,9 @@ type [<StructuralEquality; NoComparison; Struct>] Handling =
 
 /// An entry in the subscription map.
 type [<ReferenceEquality>] SubscriptionEntry =
-    { SubscriptionId : Guid
-      Subscriber : Simulant
-      CallbackBoxed : obj }
-
-/// Conveys an event's trace information.
-type EventTrace = EventInfo list
-
-[<RequireQualifiedAccess>]
-module EventTrace =
-
-    /// Record an event trace.
-    let record moduleName functionName moreInfo eventTrace : EventTrace =
-        EventInfo.make moduleName functionName moreInfo :: eventTrace
-
-    /// Record event only in debug mode.
-    let debug (moduleName : string) (functionName : string) (moreInfo : string) (eventTrace : EventTrace) =
-#if DEBUG
-        record moduleName functionName moreInfo eventTrace
-#else
-        ignore moduleName
-        ignore functionName
-        ignore moreInfo
-        eventTrace
-#endif
-
-    /// Record event only in all modes.
-    let trace moduleName functionName moreInfo eventTrace =
-        record moduleName functionName moreInfo eventTrace
-
-    /// The empty event trace.
-    let empty : EventTrace = []
-
-/// The generalized event type (can be used to handle any event).
-type Event = Event<obj, Simulant>
-
-/// An event used by the event system.
-and Event<'a, 's when 's :> Simulant> =
-    { Data : 'a
-      Subscriber : 's
-      Publisher : Simulant
-      Address : 'a Address
-      Trace : EventTrace }
-
-[<RequireQualifiedAccess>]
-module Event =
-
-    /// Specialize an event.
-    let specialize<'a, 's when 's :> Simulant> (evt : Event) : Event<'a, 's> =
-        { Data = evt.Data :?> 'a
-          Subscriber = evt.Subscriber :?> 's
-          Publisher = evt.Publisher
-          Address = atoa evt.Address
-          Trace = evt.Trace }
-
-    /// Generalize an event.
-    let generalize (evt : Event<'a, 's>) : Event =
-        { Data = evt.Data :> obj
-          Subscriber = evt.Subscriber
-          Publisher = evt.Publisher
-          Address = atoa evt.Address
-          Trace = evt.Trace }
-
-/// Filters simulants for publishing.
-type 'w PublishFilter =
-    Simulant -> 'w -> bool
+    { SubscriptionCallback : obj
+      SubscriptionSubscriber : Simulant
+      SubscriptionId : Guid }
 
 /// Abstracts over a subscription sorting procedure.
 type SubscriptionSorter =
@@ -264,6 +202,7 @@ module EventSubsystem =
               GlobalSimulantGeneralized = globalSimulantGeneralized }
         eventSubsystem
 
+    /// Get the subscriptions with the given sorting criteria.
     let getSortableSubscriptions
         (getSortPriority : Simulant -> 'w -> IComparable)
         (subscriptionEntries : (Guid * SubscriptionEntry) seq)
@@ -272,7 +211,7 @@ module EventSubsystem =
             (fun (_, subscription : SubscriptionEntry) ->
                 // NOTE: we just take the sort priority of the first callback found when callbacks are compressed. This
                 // is semantically sub-optimal, but should be fine for all of our cases.
-                let priority = getSortPriority subscription.Subscriber world
+                let priority = getSortPriority subscription.SubscriptionSubscriber world
                 struct (priority, subscription))
             subscriptionEntries
 
