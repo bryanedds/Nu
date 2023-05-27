@@ -204,10 +204,10 @@ void main()
 
     // compute material properties
     float metallic = texture(metallicTexture, texCoords).r * materialOut.r;
-    float ambientOcclusion = texture(ambientOcclusionTexture, texCoords).g * materialOut.g;
+    float ambientOcclusion = texture(ambientOcclusionTexture, texCoords).b * materialOut.b;
     vec4 roughnessSample = texture(roughnessTexture, texCoords);
-    float roughness = roughnessSample.a == 1.0f ? roughnessSample.b : roughnessSample.a;
-    roughness = (invertRoughnessOut == 0 ? roughness : 1.0f - roughness) * materialOut.b;
+    float roughness = roughnessSample.a == 1.0f ? roughnessSample.g : roughnessSample.a;
+    roughness = (invertRoughnessOut == 0 ? roughness : 1.0f - roughness) * materialOut.g;
     vec3 emission = vec3(texture(emissionTexture, texCoords).r * materialOut.a);
 
     // compute lightAccum term

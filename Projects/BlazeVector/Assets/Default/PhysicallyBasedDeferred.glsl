@@ -115,12 +115,12 @@ void main()
 
     // compute material properties
     float metallic = texture(metallicTexture, texCoords).r * materialOut.r;
-    float ambientOcclusion = texture(ambientOcclusionTexture, texCoords).g * materialOut.g;
+    float ambientOcclusion = texture(ambientOcclusionTexture, texCoords).b * materialOut.b;
     vec4 roughnessSample = texture(roughnessTexture, texCoords);
-    float roughness = roughnessSample.a == 1.0f ? roughnessSample.b : roughnessSample.a;
-    roughness = (invertRoughnessOut == 0 ? roughness : 1.0f - roughness) * materialOut.b;
+    float roughness = roughnessSample.a == 1.0f ? roughnessSample.g : roughnessSample.a;
+    roughness = (invertRoughnessOut == 0 ? roughness : 1.0f - roughness) * materialOut.g;
     float emission = texture(emissionTexture, texCoords).r * materialOut.a;
-    material = vec4(metallic, ambientOcclusion, roughness, emission);
+    material = vec4(metallic, roughness, ambientOcclusion, emission);
 
     // compute normal and height
     normalAndHeight.xyz = normalize(toWorld * (texture(normalTexture, texCoords).xyz * 2.0 - 1.0));
