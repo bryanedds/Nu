@@ -18,11 +18,14 @@ open Nu
 [<RequireQualifiedAccess>]
 module Hl =
 
+    let mutable private Initialized = false
     let mutable private AssertEnabled = false
 
     /// Initialize OpenGL.Hl.
     let InitAssert assertEnabled =
-        AssertEnabled <- assertEnabled
+        if not Initialized then
+            AssertEnabled <- assertEnabled
+            Initialized <- true
 
     /// Assert a lack of Gl error. Has an generic parameter to enable value pass-through.
     let Assert (a : 'a) =

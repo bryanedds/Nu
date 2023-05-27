@@ -9,8 +9,8 @@ open Prime
 [<RequireQualifiedAccess>]
 module Gen =
 
-    let private Lock = obj ()
     let private Random = Random ()
+    let private RandomLock = obj ()
     let mutable private Id32 = 0u
     let mutable private Id64 = 0UL
     let mutable private IdForEditor = 0UL
@@ -27,62 +27,62 @@ module Gen =
 
         /// Get the next random number integer.
         static member random =
-            lock Lock (fun () -> Random.Next ())
+            lock RandomLock (fun () -> Random.Next ())
 
         /// Get the next random boolean.
         static member randomb =
-            lock Lock (fun () -> Random.Next () < Int32.MaxValue / 2)
+            lock RandomLock (fun () -> Random.Next () < Int32.MaxValue / 2)
 
         /// Get the next random byte.
         static member randomy =
-            lock Lock (fun () -> byte (Random.Next ()))
+            lock RandomLock (fun () -> byte (Random.Next ()))
 
         /// Get the next random unsigned.
         static member randomu =
-            lock Lock (fun () -> uint (Random.Next ()))
+            lock RandomLock (fun () -> uint (Random.Next ()))
 
         /// Get the next random long.
         static member randoml =
-            lock Lock (fun () -> int64 (Random.Next () <<< 32 ||| Random.Next ()))
+            lock RandomLock (fun () -> int64 (Random.Next () <<< 32 ||| Random.Next ()))
 
         /// Get the next random unsigned long.
         static member randomul =
-            lock Lock (fun () -> uint64 (Random.Next () <<< 32 ||| Random.Next ()))
+            lock RandomLock (fun () -> uint64 (Random.Next () <<< 32 ||| Random.Next ()))
 
         /// Get the next random single >= 0.0f and < 1.0f.
         static member randomf =
-            lock Lock (fun () -> single (Random.NextDouble ()))
+            lock RandomLock (fun () -> single (Random.NextDouble ()))
 
         /// Get the next random double >= 0.0 and < 1.0.
         static member randomd =
-            lock Lock (fun () -> Random.NextDouble ())
+            lock RandomLock (fun () -> Random.NextDouble ())
             
         /// Get the next random number integer below ceiling.
         static member random1 ceiling =
-            lock Lock (fun () -> Random.Next ceiling)
+            lock RandomLock (fun () -> Random.Next ceiling)
             
         /// Get the next random number single below ceiling.
         static member randomy1 (ceiling : byte) =
-            lock Lock (fun () -> byte (Random.Next (int ceiling)))
+            lock RandomLock (fun () -> byte (Random.Next (int ceiling)))
             
         /// Get the next random number single below ceiling.
         static member randomf1 ceiling =
-            lock Lock (fun () -> single (Random.NextDouble ()) * ceiling)
+            lock RandomLock (fun () -> single (Random.NextDouble ()) * ceiling)
             
         /// Get the next random number single below ceiling.
         static member randomd1 ceiling =
-            lock Lock (fun () -> Random.NextDouble () * ceiling)
+            lock RandomLock (fun () -> Random.NextDouble () * ceiling)
 
         /// Get the next random number integer GTE minValue and LT ceiling.
         static member random2 minValue ceiling =
-            lock Lock (fun () -> Random.Next (minValue, ceiling))
+            lock RandomLock (fun () -> Random.Next (minValue, ceiling))
 
         /// Get a random element from a sequence if there are any elements or None.
         /// If seq is large, this may allocate to the LOH.
         static member randomItemOpt seq =
             let arr = Seq.toArray seq
             if Array.notEmpty arr
-            then lock Lock (fun () -> Some arr.[Gen.random1 arr.Length])
+            then lock RandomLock (fun () -> Some arr.[Gen.random1 arr.Length])
             else None
 
         /// Get a random element from a sequence or a default if sequence is empty.
@@ -145,13 +145,13 @@ module Gen =
 
         /// Generate a unique non-zero 64-bit id.
         static member id32 =
-            lock Lock (fun () ->
+            lock RandomLock (fun () ->
                 if Id32 = UInt32.MaxValue then failwith "Overflowed Gen.Id32."
                 Id32 <- inc Id32; Id32)
 
         /// Generate a unique non-zero 64-bit id.
         static member id64 =
-            lock Lock (fun () -> Id64 <- inc Id64; Id64)
+            lock RandomLock (fun () -> Id64 <- inc Id64; Id64)
 
         /// Derive a unique id and name if given none.
         static member id64AndNameIf nameOpt =
@@ -194,7 +194,7 @@ module Gen =
 
         /// Generate a unique non-zero 64-bit id for use in editor naming.
         static member idForEditor =
-            lock Lock (fun () -> IdForEditor <- inc IdForEditor; IdForEditor)
+            lock RandomLock (fun () -> IdForEditor <- inc IdForEditor; IdForEditor)
 
         /// Generate a unique name for use in an editor.
         static member nameForEditor (dispatcherName : string) =
