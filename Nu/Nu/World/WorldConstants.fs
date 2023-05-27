@@ -38,6 +38,10 @@ module Override =
                 | nameof Engine.EntityCentered2dDefault -> Engine.EntityCentered2dDefault <- scvalue value
                 | nameof Engine.EntityCenteredGuiDefault -> Engine.EntityCenteredGuiDefault <- scvalue value
                 | nameof Engine.EntityCentered3dDefault -> Engine.EntityCentered3dDefault <- scvalue value
+                | nameof Engine.QuadnodeSize -> Engine.QuadnodeSize <- scvalue value
+                | nameof Engine.QuadtreeDepth -> Engine.QuadtreeDepth <- scvalue value
+                | nameof Engine.OctnodeSize -> Engine.OctnodeSize <- scvalue value
+                | nameof Engine.OctreeDepth -> Engine.OctreeDepth <- scvalue value
                 | nameof Engine.EventTracing -> Engine.EventTracing <- scvalue value
                 | nameof Engine.EventFilter -> Engine.EventFilter <- scvalue value
                 | _ -> ()

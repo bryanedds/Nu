@@ -43,10 +43,12 @@ module Engine =
     let [<Uniform>] ParticleSize3dDefault = Vector3 (0.1f, 0.1f, 0.1f)
     let [<Uniform>] EyeCenter3dDefault = Vector3 (0.0f, 1.0f, 4.0f)
     let [<Uniform>] EyeCenter3dOffset = Vector3 (0.0f, 0.0f, 1.5f)
-    let [<Uniform>] QuadtreeDepth = 7
-    let [<Uniform>] QuadtreeSize = Vector2 (512.0f * single (pown 2 QuadtreeDepth)) // about 0.85 miles
-    let [<Uniform>] OctreeDepth = 6
-    let [<Uniform>] OctreeSize = Vector3 (16.0f * single (pown 2 OctreeDepth)) // about 0.61 miles
+    let [<Uniform>] mutable QuadnodeSize = match ConfigurationManager.AppSettings.["QuadnodeSize"] with null -> 512.0f | size -> scvalue<single> size
+    let [<Uniform>] mutable QuadtreeDepth = match ConfigurationManager.AppSettings.["QuadtreeDepth"] with null -> 7 | depth -> scvalue<int> depth
+    let [<Uniform>] QuadtreeSize = Vector2 (QuadnodeSize * single (pown 2 QuadtreeDepth))
+    let [<Uniform>] mutable OctnodeSize = match ConfigurationManager.AppSettings.["OctnodeSize"] with null -> 16.0f | size -> scvalue<single> size
+    let [<Uniform>] mutable OctreeDepth = match ConfigurationManager.AppSettings.["OctreeDepth"] with null -> 6 | depth -> scvalue<int> depth
+    let [<Uniform>] OctreeSize = Vector3 (OctnodeSize * single (pown 2 OctreeDepth))
     let [<Uniform>] mutable EventTracing = match ConfigurationManager.AppSettings.["EventTracing"] with null -> false | tracing -> scvalue<bool> tracing
     let [<Uniform>] mutable EventFilter = match ConfigurationManager.AppSettings.["EventFilter"] with null -> EventFilter.Empty | filter -> scvalue<EventFilter.Filter> filter
 
