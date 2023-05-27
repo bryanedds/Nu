@@ -145,8 +145,8 @@ void main()
 
     // compute materials
     float metallic = material.r;
-    float ambientOcclusion = material.g;
-    float roughness = material.b;
+    float roughness = material.g;
+    float ambientOcclusion = material.b;
     vec3 emission = vec3(material.a);
 
     // compute lightAccum term
