@@ -30,7 +30,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
           Bodies : BulletBodyDictionary
           Ghosts : BulletGhostDictionary
           Objects : BulletObjectDictionary
-          mutable Collisions : SDictionary<BodyId * BodyId, Vector3>
+          Collisions : SDictionary<BodyId * BodyId, Vector3>
           CollisionConfiguration : CollisionConfiguration
           PhysicsDispatcher : Dispatcher
           BroadPhaseInterface : BroadphaseInterface
@@ -437,7 +437,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
 
         // create collision messages
         let collisionsOld = physicsEngine.Collisions
-        physicsEngine.Collisions <- SDictionary.make HashIdentity.Structural
+        physicsEngine.Collisions.Clear ()
         let numManifolds = physicsEngine.PhysicsContext.Dispatcher.NumManifolds
         for i in 0 .. dec numManifolds do
             let manifold = physicsEngine.PhysicsContext.Dispatcher.GetManifoldByIndexInternal i

@@ -12,8 +12,7 @@ open Nu
 [<RequireQualifiedAccess>]
 module Reflection =
 
-    let mutable private Initialized =
-        false
+    let mutable private Initialized = false
 
     /// A dictionary of all loaded assemblies.
     let private AssembliesLoaded =

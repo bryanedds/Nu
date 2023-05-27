@@ -57,7 +57,7 @@ module PhysicallyBased =
 
     /// Describes a renderable physically-based surface.
     type [<CustomEquality; NoComparison>] PhysicallyBasedSurface =
-        { mutable HashCode : int
+        { HashCode : int
           SurfaceNames : string array
           SurfaceMatrixIsIdentity : bool // OPTIMIZATION: avoid matrix multiply when unnecessary.
           SurfaceMatrix : Matrix4x4
@@ -100,7 +100,7 @@ module PhysicallyBased =
             left.PhysicallyBasedGeometry.PhysicallyBasedVao = right.PhysicallyBasedGeometry.PhysicallyBasedVao
 
         static member internal make names (surfaceMatrix : Matrix4x4) bounds material geometry =
-            let mutable result =
+            let result =
                 { HashCode = 0
                   SurfaceNames = names
                   SurfaceMatrixIsIdentity = surfaceMatrix.IsIdentity
@@ -108,8 +108,7 @@ module PhysicallyBased =
                   SurfaceBounds = bounds
                   SurfaceMaterial = material
                   PhysicallyBasedGeometry = geometry }
-            result.HashCode <- PhysicallyBasedSurface.hash result
-            result
+            { result with HashCode = PhysicallyBasedSurface.hash result }
 
         member this.Equals that =
             PhysicallyBasedSurface.equals this that

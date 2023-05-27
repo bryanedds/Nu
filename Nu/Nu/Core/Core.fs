@@ -4,11 +4,13 @@
 namespace Nu
 open System
 open System.Diagnostics
+open Prime
 
 [<RequireQualifiedAccess>]
 module Core =
 
     let mutable private LastTimeStamp = Stopwatch.GetTimestamp ()
+    let private LastTimeStampLock = obj ()
 
     /// Get a time stamp at the highest-available resolution.
     let getTimeStamp () =
@@ -16,10 +18,11 @@ module Core =
 
     /// Get a unique time stamp, spinning until the time stamp advances if need be.
     let getTimeStampUnique () =
-        let mutable nextStamp = getTimeStamp ()
-        while nextStamp = LastTimeStamp do nextStamp <- getTimeStamp ()
-        LastTimeStamp <- nextStamp
-        nextStamp
+        lock LastTimeStampLock $ fun () ->
+            let mutable nextStamp = getTimeStamp ()
+            while nextStamp = LastTimeStamp do nextStamp <- getTimeStamp ()
+            LastTimeStamp <- nextStamp
+            nextStamp
 
 [<AutoOpen>]
 module CoreOperators =
