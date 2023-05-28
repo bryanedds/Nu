@@ -31,4 +31,5 @@ module Constants =
                  EventFilter.Pattern (Rexpr "Render", [])
                  EventFilter.Pattern (Rexpr "Change", [])
                  EventFilter.Pattern (Rexpr "BodyTransform", [])
+                 EventFilter.Pattern (Rexpr "Integration", [])
                  EventFilter.Pattern (Rexpr "Mouse/Move", [])]

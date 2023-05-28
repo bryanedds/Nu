@@ -66,15 +66,15 @@ type [<StructuralEquality; StructuralComparison; CLIMutable>] EventInfo =
 
 /// Describes how events are filtered.
 [<Syntax
-    ("Any NotAny All Pattern Empty", "", "", "", "",
+    ("Empty Any NotAny All Pattern", "", "", "", "",
      Constants.PrettyPrinter.DefaultThresholdMin,
      Constants.PrettyPrinter.DefaultThresholdMax)>]
 type EventFilter =
+    | Empty
     | All of EventFilter list
     | Any of EventFilter list
     | NotAny of EventFilter list
     | Pattern of Rexpr * Rexpr list
-    | Empty
 
     /// Filter events.
     static member filter (addressStr : string) (traceRev : EventInfo list) eventFilter =
