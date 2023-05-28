@@ -56,7 +56,7 @@ module EventGraph =
               Unsubscriptions : UnsubscriptionEntries
               EventStates : SUMap<Guid, obj>
               EventTracerOpt : (string -> unit) option
-              EventFilter : EventFilter.Filter
+              EventFilter : EventFilter
               GlobalSimulantGeneralized : GlobalSimulantGeneralized }
 
     /// Get the generalized global simulant of the event system.

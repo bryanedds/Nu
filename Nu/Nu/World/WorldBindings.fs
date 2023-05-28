@@ -3035,7 +3035,7 @@ module WorldBindings =
         try
             let result = World.getEventFilter world
             let value = result
-            let value = ScriptingSystem.tryImport typeof<EventFilter.Filter> value world |> Option.get
+            let value = ScriptingSystem.tryImport typeof<EventFilter> value world |> Option.get
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getEventFilter' due to: " + scstring exn, ValueNone)
@@ -3045,8 +3045,8 @@ module WorldBindings =
         let oldWorld = world
         try
             let filter =
-                match ScriptingSystem.tryExport typeof<EventFilter.Filter> filter world with
-                | Some value -> value :?> EventFilter.Filter
+                match ScriptingSystem.tryExport typeof<EventFilter> filter world with
+                | Some value -> value :?> EventFilter
                 | None -> failwith "Invalid argument type for 'filter'; expecting a value convertable to Filter."
             let result = World.setEventFilter filter world
             struct (Scripting.Unit, result)
