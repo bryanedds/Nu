@@ -338,7 +338,6 @@ and [<ReferenceEquality>] SortableLight =
         for i in 0 .. dec lightsMax do
             if i < lightsSorted.Length then
                 let i3 = i * 3
-                let i4 = i * 4
                 let light = lightsSorted.[i]
                 lightOrigins.[i3] <- light.SortableLightOrigin.X
                 lightOrigins.[i3+1] <- light.SortableLightOrigin.Y
@@ -346,10 +345,9 @@ and [<ReferenceEquality>] SortableLight =
                 lightDirections.[i3] <- light.SortableLightDirection.X
                 lightDirections.[i3+1] <- light.SortableLightDirection.Y
                 lightDirections.[i3+2] <- light.SortableLightDirection.Z
-                lightColors.[i4] <- light.SortableLightColor.R
-                lightColors.[i4+1] <- light.SortableLightColor.G
-                lightColors.[i4+2] <- light.SortableLightColor.B
-                lightColors.[i4+3] <- light.SortableLightColor.A
+                lightColors.[i3] <- light.SortableLightColor.R
+                lightColors.[i3+1] <- light.SortableLightColor.G
+                lightColors.[i3+2] <- light.SortableLightColor.B
                 lightBrightnesses.[i] <- light.SortableLightBrightness
                 lightAttenuationLinears.[i] <- light.SortableLightAttenuationLinear
                 lightAttenuationQuadratics.[i] <- light.SortableLightAttenuationQuadratic
