@@ -64,27 +64,24 @@ type [<StructuralEquality; StructuralComparison; CLIMutable>] EventInfo =
           FunctionName = functionName
           MoreInfo = moreInfo }
 
-/// Event filtering.
-module EventFilter =
-
-    /// Describes how events are filtered.
-    [<Syntax
-        ("Any NotAny All Pattern Empty", "", "", "", "",
-         Constants.PrettyPrinter.DefaultThresholdMin,
-         Constants.PrettyPrinter.DefaultThresholdMax)>]
-    type Filter =
-        | All of Filter list
-        | Any of Filter list
-        | NotAny of Filter list
-        | Pattern of Rexpr * Rexpr list
-        | Empty
+/// Describes how events are filtered.
+[<Syntax
+    ("Any NotAny All Pattern Empty", "", "", "", "",
+     Constants.PrettyPrinter.DefaultThresholdMin,
+     Constants.PrettyPrinter.DefaultThresholdMax)>]
+type EventFilter =
+    | All of EventFilter list
+    | Any of EventFilter list
+    | NotAny of EventFilter list
+    | Pattern of Rexpr * Rexpr list
+    | Empty
 
     /// Filter events.
-    let rec filter (addressStr : string) (traceRev : EventInfo list) eventFilter =
+    static member filter (addressStr : string) (traceRev : EventInfo list) eventFilter =
         match eventFilter with
-        | All exprs -> List.fold (fun passed eventFilter -> passed && filter addressStr traceRev eventFilter) true exprs
-        | Any exprs -> List.fold (fun passed eventFilter -> passed || filter addressStr traceRev eventFilter) false exprs
-        | NotAny exprs -> not (List.fold (fun passed eventFilter -> passed || filter addressStr traceRev eventFilter) false exprs)
+        | All exprs -> List.fold (fun passed eventFilter -> passed && EventFilter.filter addressStr traceRev eventFilter) true exprs
+        | Any exprs -> List.fold (fun passed eventFilter -> passed || EventFilter.filter addressStr traceRev eventFilter) false exprs
+        | NotAny exprs -> not (List.fold (fun passed eventFilter -> passed || EventFilter.filter addressStr traceRev eventFilter) false exprs)
         | Pattern (addressRexpr, traceRexpr) ->
             if addressRexpr.IsMatch addressStr then
                 let mutable passes = true

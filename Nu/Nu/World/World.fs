@@ -33,8 +33,8 @@ module Nu =
             // init math module
             Math.init ()
 
-            // init OpenGL assertiveness
-            OpenGL.Hl.InitAssert
+            // init OpenGL assert mechanism
+            OpenGL.Hl.AssertInit
 #if DEBUG
                 nuConfig.Unaccompanied
 #else

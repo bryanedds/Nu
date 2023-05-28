@@ -615,24 +615,19 @@ module Stream =
     let [<DebuggerHidden; DebuggerStepThrough>] id (stream : _ Stream) = stream
 
     /// Take events from a stream only when World.getAdvancing evaluates to true.
-    let [<DebuggerHidden; DebuggerStepThrough>] whenAdvancing stream =
-        filterEvent (fun _ -> World.getAdvancing) stream
+    let [<DebuggerHidden; DebuggerStepThrough>] whenAdvancing stream = filterEvent (fun _ -> World.getAdvancing) stream
 
     /// Take events from a stream only when World.getHalted evaluates to true.
-    let [<DebuggerHidden; DebuggerStepThrough>] whenHalted stream =
-        filterEvent (fun _ -> World.getHalted) stream
+    let [<DebuggerHidden; DebuggerStepThrough>] whenHalted stream = filterEvent (fun _ -> World.getHalted) stream
 
     /// Take events from a stream only when the simulant is contained by, or is the same as,
     /// the currently selected screen. Game is always considered 'selected' as well.
-    let [<DebuggerHidden; DebuggerStepThrough>] whenSelected simulant stream =
-        filterEvent (fun _ -> World.isSelected simulant) stream
+    let [<DebuggerHidden; DebuggerStepThrough>] whenSelected simulant stream = filterEvent (fun _ -> World.isSelected simulant) stream
 
     /// Take events from a stream only when the currently selected screen is idling (that
     /// is, there is no screen transition in progress).
-    let [<DebuggerHidden; DebuggerStepThrough>] whenSelectedScreenIdling stream =
-        filterEvent (fun _ -> WorldTypes.isSelectedScreenIdling) stream
+    let [<DebuggerHidden; DebuggerStepThrough>] whenSelectedScreenIdling stream = filterEvent (fun _ -> WorldTypes.isSelectedScreenIdling) stream
     
     /// Take events from a stream only when the currently selected screen is transitioning
     /// (that is, there is a screen transition in progress).
-    let [<DebuggerHidden; DebuggerStepThrough>] whenSelectedScreenTransitioning stream =
-        filterEvent (fun _ -> WorldTypes.isSelectedScreenTransitioning) stream
+    let [<DebuggerHidden; DebuggerStepThrough>] whenSelectedScreenTransitioning stream = filterEvent (fun _ -> WorldTypes.isSelectedScreenTransitioning) stream
