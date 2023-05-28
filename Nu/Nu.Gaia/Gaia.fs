@@ -933,7 +933,7 @@ module Gaia =
 
     let private populateEventFilterTextBox (form : GaiaForm) =
         let eventFilterStr = scstring Constants.Editor.EventFilter
-        let prettyPrinter = (SyntaxAttribute.defaultValue typeof<EventFilter.Filter>).PrettyPrinter
+        let prettyPrinter = (SyntaxAttribute.defaultValue typeof<EventFilter>).PrettyPrinter
         let eventFilterPretty = PrettyPrinter.prettyPrint eventFilterStr prettyPrinter
         form.eventFilterTextBox.Text <- eventFilterPretty.Replace ("\n", "\r\n")
 
@@ -1473,9 +1473,9 @@ module Gaia =
     let private handleApplyEventFilterClick (form : GaiaForm) (_ : EventArgs) =
         Globals.nextPreUpdate $ fun world ->
             let oldWorld = world
-            try let eventFilter = scvalue<EventFilter.Filter> form.eventFilterTextBox.Text
+            try let eventFilter = scvalue<EventFilter> form.eventFilterTextBox.Text
                 let world = World.setEventFilter eventFilter world
-                let prettyPrinter = (SyntaxAttribute.defaultValue typeof<EventFilter.Filter>).PrettyPrinter
+                let prettyPrinter = (SyntaxAttribute.defaultValue typeof<EventFilter>).PrettyPrinter
                 let eventFilterPretty = PrettyPrinter.prettyPrint (scstring eventFilter) prettyPrinter
                 form.eventFilterTextBox.Text <- eventFilterPretty.Replace ("\n", "\r\n")
                 world
@@ -1488,7 +1488,7 @@ module Gaia =
         Globals.nextPreUpdate $ fun world ->
             let eventFilter = World.getEventFilter world
             let eventFilterStr = scstring eventFilter
-            let prettyPrinter = (SyntaxAttribute.defaultValue typeof<EventFilter.Filter>).PrettyPrinter
+            let prettyPrinter = (SyntaxAttribute.defaultValue typeof<EventFilter>).PrettyPrinter
             let eventFilterPretty = PrettyPrinter.prettyPrint eventFilterStr prettyPrinter
             form.eventFilterTextBox.Text <- eventFilterPretty.Replace ("\n", "\r\n")
             world
