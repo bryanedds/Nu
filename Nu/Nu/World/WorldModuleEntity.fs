@@ -601,7 +601,7 @@ module WorldModuleEntity =
             | (true, mounters) -> Seq.filter (flip World.getEntityExists world) mounters |> SList.ofSeq |> seq
             | (false, _) -> Seq.empty
 
-        static member internal traverseEntityMounters effect entity (world : World) =
+        static member internal traverseEntityMounters effect (entity : Entity) (world : World) =
             let mounters = World.getEntityMounters entity world
             Seq.fold (fun world mounter -> effect entity mounter world) world mounters
 
@@ -614,7 +614,7 @@ module WorldModuleEntity =
                 | None -> Seq.empty
             | (false, _) -> Seq.empty
 
-        static member internal traverseEntityChildren effect entity (world : World) =
+        static member internal traverseEntityChildren effect (entity : Entity) (world : World) =
             let mounters = World.getEntityChildren entity world
             Seq.fold (fun world mounter -> effect entity mounter world) world mounters
 
