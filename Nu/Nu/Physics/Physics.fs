@@ -420,6 +420,7 @@ type PhysicsMessage =
     | ClearPhysicsMessageInternal
 
 /// Represents a physics engine in Nu.
+/// TODO: consider seeing if we can make message methods side-effect rather than functional.
 type PhysicsEngine =
     /// Check that the physics engine contain the body with the given physics id.
     abstract BodyExists : BodyId -> bool
