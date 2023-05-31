@@ -1156,61 +1156,85 @@ module WorldModule2 =
             // run loop
             TotalTimer.Start ()
             if runWhile world then
+
+                // run user-defined pre-process callback
                 PreProcessTimer.Start ()
                 let world = preProcess world
                 PreProcessTimer.Stop ()
                 match liveness with
                 | Live ->
+
+                    // update screen transitioning process
                     let world = World.updateScreenTransition world
                     match World.getLiveness world with
                     | Live ->
+
+                        // process HID inputs
                         InputTimer.Start ()
                         let world = World.processInput world
                         InputTimer.Stop ()
                         match World.getLiveness world with
                         | Live ->
+
+                            // process physics (both 3d and 2d)
                             PhysicsTimer.Start ()
                             let world = World.processPhysics world
                             PhysicsTimer.Stop ()
                             match World.getLiveness world with
                             | Live ->
+
+                                // pre-update simulants
                                 PreUpdateTimer.Start ()
                                 let world = World.preUpdateSimulants world
                                 PreUpdateTimer.Stop ()
                                 match World.getLiveness world with
                                 | Live ->
+
+                                    // update simulants
                                     UpdateTimer.Start ()
                                     let world = World.updateSimulants world
                                     UpdateTimer.Stop ()
                                     match World.getLiveness world with
                                     | Live ->
+
+                                        // post-update simulants
                                         PostUpdateTimer.Start ()
                                         let world = World.postUpdateSimulants world
                                         PostUpdateTimer.Stop ()
                                         match World.getLiveness world with
                                         | Live ->
+
+                                            // run user-defined per-process callback
                                             PerProcessTimer.Start ()
                                             let world = perProcess world
                                             PerProcessTimer.Stop ()
                                             match World.getLiveness world with
                                             | Live ->
+
+                                                // process tasklets that have been scheduled and are ready to run
                                                 TaskletsTimer.Start ()
                                                 WorldModule.TaskletProcessingStarted <- true
                                                 let world = World.processTasklets world
                                                 TaskletsTimer.Stop ()
                                                 match World.getLiveness world with
                                                 | Live ->
+
+                                                    // destroy simulants that have been marked for destruction at the end of frame
                                                     DestructionTimer.Start ()
                                                     let world = World.destroySimulants world
                                                     DestructionTimer.Stop ()
                                                     match World.getLiveness world with
                                                     | Live ->
+                                                    
+                                                        // run engine and user-defined per-process callback
                                                         PostProcessTimer.Start ()
                                                         let world = World.postProcess world
                                                         let world = postProcess world
                                                         PostProcessTimer.Stop ()
                                                         match World.getLiveness world with
                                                         | Live ->
+
+                                                            // render simulants, skipping culling upon request (like if a light probe needs to be rendered)
                                                             RenderTimer.Start ()
                                                             let skipCulling = World.getUnculledRenderRequested world
                                                             let world = World.acknowledgeUnculledRenderRequest world
@@ -1260,7 +1284,7 @@ module WorldModule2 =
                                                                     (World.getEyeSize2d world)
                                                                     (World.getWindowSize world)
 
-                                                                // update counters and recur
+                                                                // update time and recur
                                                                 TotalTimer.Stop ()
                                                                 let world = World.updateTime world
                                                                 WorldModule.TaskletProcessingStarted <- false
