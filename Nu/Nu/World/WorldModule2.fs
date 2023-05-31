@@ -1116,8 +1116,8 @@ module WorldModule2 =
                     SDL.SDL_PollEvent &polledEvent <> 0 &&
                     (match fst result with Live -> true | Dead -> false) do
                     result <- World.processInput2 polledEvent (snd result)
-                result
-            else (Dead, world)
+                match fst result with Dead -> World.exit world | Live -> world
+            else World.exit world
 
         static member private processPhysics2d world =
             let physicsEngine = World.getPhysicsEngine2d world
@@ -1165,9 +1165,9 @@ module WorldModule2 =
                     match World.getLiveness world with
                     | Live ->
                         InputTimer.Start ()
-                        let (liveness, world) = World.processInput world
+                        let world = World.processInput world
                         InputTimer.Stop ()
-                        match liveness with
+                        match World.getLiveness world with
                         | Live ->
                             PhysicsTimer.Start ()
                             let world = World.processPhysics world
