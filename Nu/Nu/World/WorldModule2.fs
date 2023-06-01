@@ -1151,7 +1151,7 @@ module WorldModule2 =
         /// Run the game engine with threading with the given handlers, but don't clean up at the end, and return the world.
         static member runWithoutCleanUp runWhile preProcess perProcess postProcess (sdlDeps : SdlDeps) liveness firstFrame world =
 
-            // run loop
+            // run loop if user-defined run-while predicate passes
             TotalTimer.Start ()
             if runWhile world then
 
