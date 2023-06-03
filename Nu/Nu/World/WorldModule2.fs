@@ -747,19 +747,16 @@ module WorldModule2 =
                             let rotation = bodyTransformMessage.Rotation
                             let linearVelocity = bodyTransformMessage.LinearVelocity
                             let angularVelocity = bodyTransformMessage.AngularVelocity
-                            let world =
-                                if bodyId.BodyIndex = Constants.Physics.InternalIndex && not (entity.GetModelDriven world)
-                                then entity.ApplyPhysics center rotation linearVelocity angularVelocity world
-                                else world
-                            // TODO: P1: don't publish if PublishBodyTransformEvent is false.
-                            let transformData =
-                                { BodyCenter = center
-                                  BodyRotation = rotation
-                                  BodyLinearVelocity = linearVelocity
-                                  BodyAngularVelocity = angularVelocity }
-                            let transformAddress = Events.BodyTransform --> entity.EntityAddress
-                            let eventTrace = EventTrace.debug "World" "processIntegrationMessage" "" EventTrace.empty
-                            World.publish transformData transformAddress eventTrace Simulants.Game world
+                            if entity.GetModelDriven world || bodyId.BodyIndex <> Constants.Physics.InternalIndex then
+                                let transformData =
+                                    { BodyCenter = center
+                                      BodyRotation = rotation
+                                      BodyLinearVelocity = linearVelocity
+                                      BodyAngularVelocity = angularVelocity }
+                                let transformAddress = Events.BodyTransform --> entity.EntityAddress
+                                let eventTrace = EventTrace.debug "World" "processIntegrationMessage" "" EventTrace.empty
+                                World.publish transformData transformAddress eventTrace Simulants.Game world
+                            else entity.ApplyPhysics center rotation linearVelocity angularVelocity world
                         else world
                     | _ -> world
             | Dead -> world

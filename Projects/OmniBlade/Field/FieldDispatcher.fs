@@ -16,6 +16,7 @@ module FieldDispatcher =
         | Update
         | UpdateFieldTransition
         | UpdateAvatarBodyTracking
+        | AvatarBodyTransform of BodyTransformData
         | AvatarBodyCollision of BodyCollisionData
         | AvatarBodySeparationImplicit of BodySeparationImplicitData
         | AvatarBodySeparationExplicit of BodySeparationExplicitData
@@ -60,7 +61,9 @@ module FieldDispatcher =
         | PlaySound of int64 * single * Sound AssetTag
         | PlaySong of int64 * int64 * int64 * single * Song AssetTag
         | FadeOutSong of int64
-        | ScheduleSignal of int64 * Signal
+        | MoveAvatar of Vector3
+        | TravelAvatar of Vector3
+        | FaceAvatar of Direction
         | Nop
         interface Command
 
@@ -190,6 +193,7 @@ module FieldDispatcher =
              Screen.IncomingFinishEvent => ScreenTransitioning false
              Screen.OutgoingStartEvent => ScreenTransitioning true
              Screen.OutgoingFinishEvent => ScreenTransitioning false
+             Simulants.FieldSceneAvatar.BodyTransformEvent =|> fun evt -> AvatarBodyTransform evt.Data |> signal
              Simulants.FieldSceneAvatar.BodyCollisionEvent =|> fun evt -> AvatarBodyCollision evt.Data |> signal
              Simulants.FieldSceneAvatar.BodySeparationImplicitEvent =|> fun evt -> AvatarBodySeparationImplicit evt.Data |> signal
              Simulants.FieldSceneAvatar.BodySeparationExplicitEvent =|> fun evt -> AvatarBodySeparationExplicit evt.Data |> signal]
@@ -198,10 +202,6 @@ module FieldDispatcher =
 
             match message with
             | Update ->
-
-                // pull field state from avatar
-                let avatar = Simulants.FieldSceneAvatar.GetAvatar world
-                let field = if avatar =/= field.Avatar then Field.updateAvatar (constant avatar) field else field
 
                 // advance field time
                 let field = Field.advanceUpdateTime field
@@ -297,10 +297,6 @@ module FieldDispatcher =
 
             | UpdateFieldTransition ->
 
-                // pull field state from avatar
-                let avatar = Simulants.FieldSceneAvatar.GetAvatar world
-                let field = if avatar =/= field.Avatar then Field.updateAvatar (constant avatar) field else field
-
                 // check if transitioning
                 match field.FieldTransitionOpt with
                 | Some fieldTransition ->
@@ -325,14 +321,9 @@ module FieldDispatcher =
                                 match destinationData.FieldType with // HACK: pre-generate fields.
                                 | CastleConnector -> for i in 0 .. 2 do FieldData.tryGetTileMap field.OmniSeedState (Data.Value.Fields.[Castle i]) |> ignore
                                 | _ -> ()
-                                let field =
-                                    Field.updateFieldType (constant fieldTransition.FieldType) field world
-                                let field =
-                                    Field.updateAvatar (fun avatar ->
-                                        let avatar = Avatar.updateDirection (constant fieldTransition.FieldDirection) avatar
-                                        let avatar = Avatar.updateBottom (constant fieldTransition.FieldDestination) avatar
-                                        avatar)
-                                        field
+                                let field = Field.updateFieldType (constant fieldTransition.FieldType) field world
+                                let field = Field.updateAvatar (Avatar.updateDirection (constant fieldTransition.FieldDirection)) field
+                                let moveAvatar = MoveAvatar fieldTransition.FieldDestination
                                 let songCmd =
                                     match Field.getFieldSongOpt field with
                                     | Some fieldSong ->
@@ -340,7 +331,7 @@ module FieldDispatcher =
                                         | Some song when assetEq song fieldSong -> Nop
                                         | _ -> PlaySong (0L, 30L, 0L, Constants.Audio.SongVolumeDefault, fieldSong)
                                     | None -> Nop
-                                withSignal songCmd field
+                                withSignals [moveAvatar; songCmd] field
 
                             // finish transition
                             elif time = fieldTransition.FieldTransitionTime then
@@ -368,6 +359,23 @@ module FieldDispatcher =
                 let field = Field.updateAvatarCollidedPropIds (constant []) field
                 let field = Field.updateAvatarSeparatedPropIds (constant []) field
                 just field
+
+            | AvatarBodyTransform transform ->
+
+                // update avatar from transform
+                let time = World.getUpdateTime world
+                let avatar = field.Avatar
+                let avatar = Avatar.updateCenter (constant transform.BodyCenter) avatar
+                let avatar =
+                    let direction = Direction.ofVector3Biased transform.BodyLinearVelocity
+                    let speed = transform.BodyLinearVelocity.Magnitude
+                    if speed > Constants.Field.AvatarIdleSpeedMax then
+                        if direction <> avatar.Direction || avatar.CharacterAnimationType = IdleAnimation then
+                            let avatar = Avatar.updateDirection (constant direction) avatar
+                            Avatar.animate time WalkAnimation avatar
+                        else avatar
+                    else Avatar.animate time IdleAnimation avatar
+                just (Field.updateAvatar (constant avatar) field)
 
             | AvatarBodyCollision collision ->
 
@@ -647,32 +655,43 @@ module FieldDispatcher =
 
             match command with
             | ProcessKeyInput ->
-                if  Option.isNone field.FieldTransitionOpt &&
+                if  not (World.isSelectedScreenTransitioning world) &&
+                    field.Menu.MenuState = MenuClosed &&
+                    Cue.notInterrupting field.Inventory field.Advents field.Cue &&
+                    Option.isNone field.DialogOpt &&
+                    Option.isNone field.ShopOpt &&
+                    Option.isNone field.FieldTransitionOpt &&
                     Simulants.FieldSceneFeeler.GetTouched world |> not then
-                    let avatar = Simulants.FieldSceneAvatar
                     let force = v3Zero
                     let force = if World.isKeyboardKeyDown KeyboardKey.Right world || World.isKeyboardKeyDown KeyboardKey.D world then v3 Constants.Field.AvatarWalkForce 0.0f 0.0f + force else force
                     let force = if World.isKeyboardKeyDown KeyboardKey.Left world || World.isKeyboardKeyDown KeyboardKey.A world then v3 -Constants.Field.AvatarWalkForce 0.0f 0.0f + force else force
                     let force = if World.isKeyboardKeyDown KeyboardKey.Up world || World.isKeyboardKeyDown KeyboardKey.W world then v3 0.0f Constants.Field.AvatarWalkForce 0.0f + force else force
                     let force = if World.isKeyboardKeyDown KeyboardKey.Down world || World.isKeyboardKeyDown KeyboardKey.S world then v3 0.0f -Constants.Field.AvatarWalkForce 0.0f + force else force
-                    let world = avatar.Signal<Avatar, AvatarMessage, AvatarCommand> (TryTravel force) world
-                    let signal =
-                        if World.isKeyboardKeyDown KeyboardKey.Right world || World.isKeyboardKeyDown KeyboardKey.D world then TryFace Rightward
-                        elif World.isKeyboardKeyDown KeyboardKey.Left world || World.isKeyboardKeyDown KeyboardKey.A world then TryFace Leftward
-                        elif World.isKeyboardKeyDown KeyboardKey.Up world || World.isKeyboardKeyDown KeyboardKey.W world then TryFace Upward
-                        elif World.isKeyboardKeyDown KeyboardKey.Down world || World.isKeyboardKeyDown KeyboardKey.S world then TryFace Downward
-                        else Nil
-                    let world = avatar.Signal<Avatar, AvatarMessage, AvatarCommand> signal world
-                    just world
+                    let tryTravelAvatar = TravelAvatar force
+                    let directionOpt =
+                        if World.isKeyboardKeyDown KeyboardKey.Right world || World.isKeyboardKeyDown KeyboardKey.D world then Some Rightward
+                        elif World.isKeyboardKeyDown KeyboardKey.Left world || World.isKeyboardKeyDown KeyboardKey.A world then Some Leftward
+                        elif World.isKeyboardKeyDown KeyboardKey.Up world || World.isKeyboardKeyDown KeyboardKey.W world then Some Upward
+                        elif World.isKeyboardKeyDown KeyboardKey.Down world || World.isKeyboardKeyDown KeyboardKey.S world then Some Downward
+                        else None
+                    let tryFaceAvatar =
+                        match directionOpt with
+                        | Some direction -> FaceAvatar direction
+                        | None -> Nop
+                    withSignals [tryTravelAvatar; tryFaceAvatar] world
                 else just world
 
             | ProcessTouchInput position ->
-                if  Option.isNone field.FieldTransitionOpt && 
+                if  not (World.isSelectedScreenTransitioning world) &&
+                    field.Menu.MenuState = MenuClosed &&
+                    Cue.notInterrupting field.Inventory field.Advents field.Cue &&
+                    Option.isNone field.DialogOpt &&
+                    Option.isNone field.ShopOpt &&
+                    Option.isNone field.FieldTransitionOpt &&
                     World.isKeyboardKeyUp KeyboardKey.Right world && World.isKeyboardKeyUp KeyboardKey.D world &&
                     World.isKeyboardKeyUp KeyboardKey.Left world && World.isKeyboardKeyUp KeyboardKey.A world &&
                     World.isKeyboardKeyUp KeyboardKey.Up world && World.isKeyboardKeyUp KeyboardKey.W world &&
                     World.isKeyboardKeyUp KeyboardKey.Down world && World.isKeyboardKeyUp KeyboardKey.S world then
-                    let avatar = Simulants.FieldSceneAvatar
                     let lowerCenter = field.Avatar.LowerCenter
                     let viewport = World.getViewport world
                     let eyeCenter = World.getEyeCenter2d world
@@ -682,9 +701,9 @@ module FieldDispatcher =
                     if heading.Magnitude >= 6.0f then // TODO: make constant DeadZoneRadius.
                         let goalNormalized = Vector3.Normalize heading
                         let force = goalNormalized * Constants.Field.AvatarWalkForceMouse
-                        let world = avatar.Signal<Avatar, AvatarMessage, AvatarCommand> (TryTravel force) world
-                        let world = avatar.Signal<Avatar, AvatarMessage, AvatarCommand> (TryFace (Direction.ofVector3 heading)) world
-                        just world
+                        let tryTravelAvatar = TravelAvatar force :> Signal
+                        let tryFaceAvatar = FaceAvatar (Direction.ofVector3 heading) :> Signal
+                        withSignals [tryTravelAvatar; tryFaceAvatar] world
                     else just world
                 else just world
 
@@ -747,8 +766,26 @@ module FieldDispatcher =
                 let world = World.fadeOutSong fade world
                 just world
 
-            | ScheduleSignal (delay, signal) ->
-                let world = World.schedule delay (screen.Signal signal) screen world
+            | MoveAvatar bottom ->
+                let bodyBottomOffset = v3Up * Constants.Gameplay.CharacterSize.Y * 0.5f
+                let world = World.setBodyCenter (bottom + bodyBottomOffset) (Simulants.FieldSceneAvatar.GetBodyId world) world
+                just world
+
+            | TravelAvatar force ->
+                let world =
+                    if force <> v3Zero
+                    then World.applyBodyForce force v3Zero (Simulants.FieldSceneAvatar.GetBodyId world) world
+                    else world
+                just world
+
+            | FaceAvatar direction ->
+                let linearVelocity = World.getBodyLinearVelocity (Simulants.FieldSceneAvatar.GetBodyId world) world
+                let speed = linearVelocity.Magnitude
+                let field =
+                    if speed <= Constants.Field.AvatarIdleSpeedMax
+                    then Field.updateAvatar (Avatar.updateDirection (constant direction)) field
+                    else field
+                let world = screen.SetField field world
                 just world
 
             | Nop -> just world
@@ -761,13 +798,8 @@ module FieldDispatcher =
                 [// avatar
                  Content.entity<AvatarDispatcher> Simulants.FieldSceneAvatar.Name
                     [Entity.Position == v3Zero
-                     Entity.Elevation := Constants.Field.ForegroundElevation
+                     Entity.Elevation == Constants.Field.ForegroundElevation
                      Entity.Size == Constants.Gameplay.CharacterSize
-                     Entity.Enabled :=
-                        field.Menu.MenuState = MenuClosed &&
-                        Cue.notInterrupting field.Inventory field.Advents field.Cue &&
-                        Option.isNone field.DialogOpt &&
-                        Option.isNone field.ShopOpt
                      Entity.Avatar := field.Avatar]
 
                  // props
