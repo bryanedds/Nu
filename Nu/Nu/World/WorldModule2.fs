@@ -1110,14 +1110,14 @@ module WorldModule2 =
 
         static member private processInput world =
             if SDL.SDL_WasInit SDL.SDL_INIT_TIMER <> 0u then
-                let mutable result = (World.getLiveness world, world)
+                let mutable result = (Live, world)
                 let mutable polledEvent = SDL.SDL_Event ()
                 while
-                    (match fst result with Live -> true | Dead -> false) &&
-                    SDL.SDL_PollEvent &polledEvent <> 0 do
+                    SDL.SDL_PollEvent &polledEvent <> 0 &&
+                    (match fst result with Live -> true | Dead -> false) do
                     result <- World.processInput2 polledEvent (snd result)
-                match fst result with Dead -> World.exit world | Live -> world
-            else World.exit world
+                result
+            else (Dead, world)
 
         static member private processPhysics2d world =
             let physicsEngine = World.getPhysicsEngine2d world
@@ -1169,9 +1169,9 @@ module WorldModule2 =
 
                         // process HID inputs
                         InputTimer.Start ()
-                        let world = World.processInput world
+                        let (liveness, world) = World.processInput world
                         InputTimer.Stop ()
-                        match World.getLiveness world with
+                        match liveness with
                         | Live ->
 
                             // process physics (both 3d and 2d)
