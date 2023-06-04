@@ -523,10 +523,7 @@ module WorldModule3 =
             World.choose world
 
         /// Make an empty world.
-        static member makeEmpty config =
-
-            // make the default plug-in
-            let plugin = NuPlugin ()
+        static member makeEmpty config (plugin : NuPlugin) =
 
             // make the world's event delegate
             let eventGraph =
@@ -583,9 +580,9 @@ module WorldModule3 =
             World.registerGame world
 
         /// Make a default world with a default screen, group, and entity, such as for testing.
-        static member makeDefault () =
+        static member makeDefault plugin =
             let worldConfig = WorldConfig.defaultConfig
-            let world = World.makeEmpty worldConfig
+            let world = World.makeEmpty worldConfig plugin
             let (screen, world) = World.createScreen (Some (nameof Screen)) world
             let (group, world) = World.createGroup (Some (nameof Group)) screen world
             let world = World.createEntity DefaultOverlay (Some [|nameof Entity|]) group world |> snd

@@ -11,4 +11,4 @@ module Program =
     let [<EntryPoint; STAThread>] main _ =
         let nuConfig = { NuConfig.defaultConfig with Accompanied = true }
         Gaia.init nuConfig
-        Gaia.run nuConfig
+        Gaia.run nuConfig (GaiaPlugin ())

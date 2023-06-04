@@ -1550,7 +1550,7 @@ and [<ReferenceEquality>] World =
 
 /// Provides a way to make user-defined dispatchers, facets, and various other sorts of game-
 /// specific values and configurations.
-and NuPlugin () =
+and [<AbstractClass>] NuPlugin () =
 
     /// Provides a list of modes for setting game state via the editor.
     abstract EditModes : Map<string, World -> World>
