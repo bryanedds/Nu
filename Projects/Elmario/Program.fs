@@ -9,7 +9,7 @@ module Program =
 
         // this specifies the window configuration used to display the game
         let sdlWindowConfig = { SdlWindowConfig.defaultConfig with WindowTitle = "Elmario" }
-        
+
         // this specifies the configuration of the game engine's use of SDL
         let sdlConfig = { SdlConfig.defaultConfig with ViewConfig = NewWindow sdlWindowConfig }
 
@@ -21,6 +21,6 @@ module Program =
 
         // initialize Nu
         Nu.init worldConfig.NuConfig
-        
+
         // run the engine with the given config and plugin
         World.run worldConfig (ElmarioPlugin ())

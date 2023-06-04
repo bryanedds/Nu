@@ -42,6 +42,7 @@
 		<Compile Include="GaiaScreen.fs" />
 		<Compile Include="GaiaGame.fs" />
 		<Compile Include="Gaia.fs" />
+		<Compile Include="GaiaPlugin.fs" />
 		<Compile Include="Program.fs" />
 		<None Include="App.config" />
 		<Content Include="AssetGraph.nuag">

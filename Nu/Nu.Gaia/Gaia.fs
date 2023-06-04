@@ -1946,7 +1946,7 @@ module Gaia =
         | Left () -> Left ()
 
     /// Select a target directory for the desired plugin and its assets.
-    let selectNuPlugin () =
+    let selectNuPlugin gaiaPlugin =
         let savedState =
             try if File.Exists Constants.Editor.SavedStateFilePath
                 then scvalue (File.ReadAllText Constants.Editor.SavedStateFilePath)
@@ -1991,15 +1991,15 @@ module Gaia =
                 | Right None ->
                     try File.WriteAllText (savedStateDirectory + "/" + Constants.Editor.SavedStateFilePath, scstring savedState)
                     with _ -> Log.info "Could not save editor state."
-                    (".", NuPlugin ())
+                    (".", gaiaPlugin)
                 | Left () ->
                     if not (String.IsNullOrWhiteSpace startForm.binaryFilePathText.Text) then
                         Log.trace ("Invalid Nu Assembly: " + startForm.binaryFilePathText.Text)
-                    (".", NuPlugin ())
+                    (".", gaiaPlugin)
             (savedState, targetDir, plugin)
         else
             Directory.SetCurrentDirectory savedStateDirectory
-            (SavedState.defaultState, ".", NuPlugin ())
+            (SavedState.defaultState, ".", gaiaPlugin)
 
     /// Create a Gaia form.
     let createForm () =
@@ -2193,8 +2193,8 @@ module Gaia =
         Globals.init selectEntity
 
     /// Run Gaia.
-    let run nuConfig =
-        let (savedState, targetDir', plugin) = selectNuPlugin ()
+    let run nuConfig gaiaPlugin =
+        let (savedState, targetDir', plugin) = selectNuPlugin gaiaPlugin
         use form = createForm ()
         match tryMakeSdlDeps form with
         | Right (sdlConfig, sdlDeps) ->
