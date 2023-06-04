@@ -57,13 +57,13 @@ module FieldDispatcher =
         | ProcessKeyInput
         | ProcessTouchInput of Vector2
         | UpdateEye
+        | WarpAvatar of Vector3
+        | MoveAvatar of Vector3
+        | FaceAvatar of Direction
         | PlayFieldSong
         | PlaySound of int64 * single * Sound AssetTag
         | PlaySong of int64 * int64 * int64 * single * Song AssetTag
         | FadeOutSong of int64
-        | MoveAvatar of Vector3
-        | TravelAvatar of Vector3
-        | FaceAvatar of Direction
         | Nop
         interface Command
 
@@ -323,7 +323,7 @@ module FieldDispatcher =
                                 | _ -> ()
                                 let field = Field.updateFieldType (constant fieldTransition.FieldType) field world
                                 let field = Field.updateAvatar (Avatar.updateDirection (constant fieldTransition.FieldDirection)) field
-                                let moveAvatar = MoveAvatar fieldTransition.FieldDestination
+                                let warpAvatar = WarpAvatar fieldTransition.FieldDestination
                                 let songCmd =
                                     match Field.getFieldSongOpt field with
                                     | Some fieldSong ->
@@ -331,7 +331,7 @@ module FieldDispatcher =
                                         | Some song when assetEq song fieldSong -> Nop
                                         | _ -> PlaySong (0L, 30L, 0L, Constants.Audio.SongVolumeDefault, fieldSong)
                                     | None -> Nop
-                                withSignals [moveAvatar; songCmd] field
+                                withSignals [warpAvatar; songCmd] field
 
                             // finish transition
                             elif time = fieldTransition.FieldTransitionTime then
@@ -667,18 +667,18 @@ module FieldDispatcher =
                     let force = if World.isKeyboardKeyDown KeyboardKey.Left world || World.isKeyboardKeyDown KeyboardKey.A world then v3 -Constants.Field.AvatarWalkForce 0.0f 0.0f + force else force
                     let force = if World.isKeyboardKeyDown KeyboardKey.Up world || World.isKeyboardKeyDown KeyboardKey.W world then v3 0.0f Constants.Field.AvatarWalkForce 0.0f + force else force
                     let force = if World.isKeyboardKeyDown KeyboardKey.Down world || World.isKeyboardKeyDown KeyboardKey.S world then v3 0.0f -Constants.Field.AvatarWalkForce 0.0f + force else force
-                    let tryTravelAvatar = TravelAvatar force
+                    let moveAvatar = MoveAvatar force
                     let directionOpt =
                         if World.isKeyboardKeyDown KeyboardKey.Right world || World.isKeyboardKeyDown KeyboardKey.D world then Some Rightward
                         elif World.isKeyboardKeyDown KeyboardKey.Left world || World.isKeyboardKeyDown KeyboardKey.A world then Some Leftward
                         elif World.isKeyboardKeyDown KeyboardKey.Up world || World.isKeyboardKeyDown KeyboardKey.W world then Some Upward
                         elif World.isKeyboardKeyDown KeyboardKey.Down world || World.isKeyboardKeyDown KeyboardKey.S world then Some Downward
                         else None
-                    let tryFaceAvatar =
+                    let faceAvatar =
                         match directionOpt with
                         | Some direction -> FaceAvatar direction
                         | None -> Nop
-                    withSignals [tryTravelAvatar; tryFaceAvatar] world
+                    withSignals [moveAvatar; faceAvatar] world
                 else just world
 
             | ProcessTouchInput position ->
@@ -701,9 +701,9 @@ module FieldDispatcher =
                     if heading.Magnitude >= 6.0f then // TODO: make constant DeadZoneRadius.
                         let goalNormalized = Vector3.Normalize heading
                         let force = goalNormalized * Constants.Field.AvatarWalkForceMouse
-                        let tryTravelAvatar = TravelAvatar force :> Signal
-                        let tryFaceAvatar = FaceAvatar (Direction.ofVector3 heading) :> Signal
-                        withSignals [tryTravelAvatar; tryFaceAvatar] world
+                        let moveAvatar = MoveAvatar force :> Signal
+                        let faceAvatar = FaceAvatar (Direction.ofVector3 heading) :> Signal
+                        withSignals [moveAvatar; faceAvatar] world
                     else just world
                 else just world
 
@@ -716,6 +716,28 @@ module FieldDispatcher =
                     let world = World.constrainEyeBounds2d eyeBounds world
                     just world
                 else just world
+
+            | WarpAvatar bottom ->
+                let bodyBottomOffset = v3Up * Constants.Gameplay.CharacterSize.Y * 0.5f
+                let world = World.setBodyCenter (bottom + bodyBottomOffset) (Simulants.FieldSceneAvatar.GetBodyId world) world
+                just world
+
+            | MoveAvatar force ->
+                let world =
+                    if force <> v3Zero
+                    then World.applyBodyForce force v3Zero (Simulants.FieldSceneAvatar.GetBodyId world) world
+                    else world
+                just world
+
+            | FaceAvatar direction ->
+                let linearVelocity = World.getBodyLinearVelocity (Simulants.FieldSceneAvatar.GetBodyId world) world
+                let speed = linearVelocity.Magnitude
+                let field =
+                    if speed <= Constants.Field.AvatarIdleSpeedMax
+                    then Field.updateAvatar (Avatar.updateDirection (constant direction)) field
+                    else field
+                let world = screen.SetField field world
+                just world
 
             | PlayFieldSong ->
                 match Data.Value.Fields.TryGetValue field.FieldType with
@@ -764,28 +786,6 @@ module FieldDispatcher =
 
             | FadeOutSong fade ->
                 let world = World.fadeOutSong fade world
-                just world
-
-            | MoveAvatar bottom ->
-                let bodyBottomOffset = v3Up * Constants.Gameplay.CharacterSize.Y * 0.5f
-                let world = World.setBodyCenter (bottom + bodyBottomOffset) (Simulants.FieldSceneAvatar.GetBodyId world) world
-                just world
-
-            | TravelAvatar force ->
-                let world =
-                    if force <> v3Zero
-                    then World.applyBodyForce force v3Zero (Simulants.FieldSceneAvatar.GetBodyId world) world
-                    else world
-                just world
-
-            | FaceAvatar direction ->
-                let linearVelocity = World.getBodyLinearVelocity (Simulants.FieldSceneAvatar.GetBodyId world) world
-                let speed = linearVelocity.Magnitude
-                let field =
-                    if speed <= Constants.Field.AvatarIdleSpeedMax
-                    then Field.updateAvatar (Avatar.updateDirection (constant direction)) field
-                    else field
-                let world = screen.SetField field world
                 just world
 
             | Nop -> just world
