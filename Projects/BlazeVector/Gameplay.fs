@@ -59,7 +59,7 @@ module Enemy =
 
         static let die (enemy : Entity) world =
             let world = World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.ExplosionSound world
-            let world = World.publish () enemy.DyingEvent [] enemy world
+            let world = World.publish () enemy.DyingEvent enemy world
             World.destroyEntity enemy world
 
         static let handleUpdate evt world =

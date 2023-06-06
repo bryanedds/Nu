@@ -42,23 +42,23 @@ module WorldPhysics =
                 match message with
                 | CreateBodyMessage message ->
                     let eventTrace = EventTrace.debug "World" "enqueuePhysicsMessage2d" "" EventTrace.empty
-                    World.publish message.BodyId Events.BodyAdding eventTrace Simulants.Game world
+                    World.publishPlus message.BodyId Events.BodyAdding eventTrace Simulants.Game false false world
                 | CreateBodiesMessage message ->
                     let eventTrace = EventTrace.debug "World" "enqueuePhysicsMessage2d" "" EventTrace.empty
                     List.fold (fun world (bodyProperties : BodyProperties) ->
                         let bodyId = { BodySource = message.BodySource; BodyIndex = bodyProperties.BodyIndex }
-                        World.publish bodyId Events.BodyAdding eventTrace Simulants.Game world)
+                        World.publishPlus bodyId Events.BodyAdding eventTrace Simulants.Game false false world)
                         world message.BodiesProperties
                 | DestroyBodyMessage message ->
                     let eventTrace = EventTrace.debug "World" "enqueuePhysicsMessage2d" "" EventTrace.empty
-                    let world = World.publish { BodyId = message.BodyId } Events.BodySeparationImplicit eventTrace Simulants.Game world
-                    let world = World.publish message.BodyId Events.BodyRemoving eventTrace Simulants.Game world
+                    let world = World.publishPlus { BodyId = message.BodyId } Events.BodySeparationImplicit eventTrace Simulants.Game false false world
+                    let world = World.publishPlus message.BodyId Events.BodyRemoving eventTrace Simulants.Game false false world
                     world
                 | DestroyBodiesMessage message ->
                     let eventTrace = EventTrace.debug "World" "enqueuePhysicsMessage2d" "" EventTrace.empty
                     List.fold (fun world (bodyId : BodyId) ->
-                        let world = World.publish { BodyId = bodyId } Events.BodySeparationImplicit eventTrace Simulants.Game world
-                        let world = World.publish bodyId Events.BodyRemoving eventTrace Simulants.Game world
+                        let world = World.publishPlus { BodyId = bodyId } Events.BodySeparationImplicit eventTrace Simulants.Game false false world
+                        let world = World.publishPlus bodyId Events.BodyRemoving eventTrace Simulants.Game false false world
                         world)
                         world message.BodyIds
                 | _ -> world
@@ -74,23 +74,23 @@ module WorldPhysics =
                 match message with
                 | CreateBodyMessage message ->
                     let eventTrace = EventTrace.debug "World" "enqueuePhysicsMessage3d" "" EventTrace.empty
-                    World.publish message.BodyId Events.BodyAdding eventTrace Simulants.Game world
+                    World.publishPlus message.BodyId Events.BodyAdding eventTrace Simulants.Game false false world
                 | CreateBodiesMessage message ->
                     let eventTrace = EventTrace.debug "World" "enqueuePhysicsMessage3d" "" EventTrace.empty
                     List.fold (fun world (bodyProperties : BodyProperties) ->
                         let bodyId = { BodySource = message.BodySource; BodyIndex = bodyProperties.BodyIndex }
-                        World.publish bodyId Events.BodyAdding eventTrace Simulants.Game world)
+                        World.publishPlus bodyId Events.BodyAdding eventTrace Simulants.Game false false world)
                         world message.BodiesProperties
                 | DestroyBodyMessage message ->
                     let eventTrace = EventTrace.debug "World" "enqueuePhysicsMessage3d" "" EventTrace.empty
-                    let world = World.publish { BodyId = message.BodyId } Events.BodySeparationImplicit eventTrace Simulants.Game world
-                    let world = World.publish message.BodyId Events.BodyRemoving eventTrace Simulants.Game world
+                    let world = World.publishPlus { BodyId = message.BodyId } Events.BodySeparationImplicit eventTrace Simulants.Game false false world
+                    let world = World.publishPlus message.BodyId Events.BodyRemoving eventTrace Simulants.Game false false world
                     world
                 | DestroyBodiesMessage message ->
                     let eventTrace = EventTrace.debug "World" "enqueuePhysicsMessage3d" "" EventTrace.empty
                     List.fold (fun world (bodyId : BodyId) ->
-                        let world = World.publish { BodyId = bodyId } Events.BodySeparationImplicit eventTrace Simulants.Game world
-                        let world = World.publish bodyId Events.BodyRemoving eventTrace Simulants.Game world
+                        let world = World.publishPlus { BodyId = bodyId } Events.BodySeparationImplicit eventTrace Simulants.Game false false world
+                        let world = World.publishPlus bodyId Events.BodyRemoving eventTrace Simulants.Game false false world
                         world)
                         world message.BodyIds
                 | _ -> world
