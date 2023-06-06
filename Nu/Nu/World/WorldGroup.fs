@@ -102,9 +102,9 @@ module WorldGroupModule =
         /// Get a group's change event address.
         member this.GetChangeEvent propertyName = Events.Change propertyName --> this.GroupAddress
 
-        /// Try to signal a group.
-        member this.TrySignal<'message, 'command> (signal : Signal) world =
-            (this.GetDispatcher world).TrySignal (signal, this, world)
+        /// Send a signal to a group.
+        member this.Signal<'message, 'command> (signal : Signal) world =
+            (this.GetDispatcher world).Signal (signal, this, world)
 
     type World with
 

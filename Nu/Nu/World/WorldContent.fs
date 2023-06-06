@@ -47,7 +47,7 @@ module Content =
                         let eventAddress = if eventAddress.Anonymous then eventAddress --> simulant.SimulantAddress else eventAddress
                         let (unsubscribe, world) =
                             World.subscribePlus subscriptionId (fun (_ : Event) world ->
-                                let world = WorldModule.trySignal signalObj origin world
+                                let world = WorldModule.signal signalObj origin world
                                 (Cascade, world))
                                 eventAddress origin world
                         let world =
@@ -101,7 +101,7 @@ module Content =
                         let eventAddress = if eventAddress.Anonymous then eventAddress --> simulant.SimulantAddress else eventAddress
                         let (unsubscribe, world) =
                             World.subscribePlus subscriptionId (fun event world ->
-                                let world = WorldModule.trySignal (handler event) origin world
+                                let world = WorldModule.signal (handler event) origin world
                                 (Cascade, world))
                                 eventAddress origin world
                         let world =

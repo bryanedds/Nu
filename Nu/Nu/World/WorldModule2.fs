@@ -1333,8 +1333,8 @@ module EntityDispatcherModule2 =
 
     and Entity with
 
-        /// Send a signal to the entity.
-        member this.Signal<'model, 'message, 'command when 'message :> Message and 'command :> Command> signal world =
+        /// Send a signal to the entity, explicitly specifing MMCC types.
+        member this.SignalPlus<'model, 'message, 'command when 'message :> Message and 'command :> Command> signal world =
             World.signalEntity<'model, 'message, 'command> signal this world
 
     /// The elmish / MMCC dispatcher for entities.
@@ -1370,10 +1370,10 @@ module EntityDispatcherModule2 =
             let view = this.View (this.GetModel entity world, entity, world)
             World.renderView view world
 
-        override this.TrySignal (signalObj, entity, world) =
+        override this.Signal (signalObj, entity, world) =
             match signalObj with
-            | :? 'message as message -> entity.Signal<'model, 'message, 'command> message world
-            | :? 'command as command -> entity.Signal<'model, 'message, 'command> command world
+            | :? 'message as message -> entity.SignalPlus<'model, 'message, 'command> message world
+            | :? 'command as command -> entity.SignalPlus<'model, 'message, 'command> command world
             | _ -> Log.info ("Incorrect signal type received by entity (signal = '" + scstring signalObj + "'; entity = '" + scstring entity + "')."); world
 
         override this.TryGetInitialModelValue<'a> world =
@@ -1481,8 +1481,8 @@ module GroupDispatcherModule =
 
     and Group with
 
-        /// Send a signal to the group.
-        member this.Signal<'model, 'message, 'command when 'message :> Message and 'command :> Command> signal world =
+        /// Send a signal to the group, explicitly specifing MMCC types.
+        member this.SignalPlus<'model, 'message, 'command when 'message :> Message and 'command :> Command> signal world =
             World.signalGroup<'model, 'message, 'command> signal this world
 
     /// The elmish / MMCC dispatcher for groups.
@@ -1511,10 +1511,10 @@ module GroupDispatcherModule =
             let view = this.View (this.GetModel group world, group, world)
             World.renderView view world
 
-        override this.TrySignal (signalObj : obj, group, world) =
+        override this.Signal (signalObj : obj, group, world) =
             match signalObj with
-            | :? 'message as message -> group.Signal<'model, 'message, 'command> message world
-            | :? 'command as command -> group.Signal<'model, 'message, 'command> command world
+            | :? 'message as message -> group.SignalPlus<'model, 'message, 'command> message world
+            | :? 'command as command -> group.SignalPlus<'model, 'message, 'command> command world
             | _ -> Log.info ("Incorrect signal type received by group (signal = '" + scstring signalObj + "'; group = '" + scstring group + "')."); world
 
         override this.TryGetInitialModelValue<'a> world =
@@ -1564,8 +1564,8 @@ module ScreenDispatcherModule =
 
     and Screen with
 
-        /// Send a signal to the screen.
-        member this.Signal<'model, 'message, 'command when 'message :> Message and 'command :> Command> signal world =
+        /// Send a signal to the screen, explicitly specifing MMCC types.
+        member this.SignalPlus<'model, 'message, 'command when 'message :> Message and 'command :> Command> signal world =
             World.signalScreen<'model, 'message, 'command> signal this world
 
     /// The elmish / MMCC dispatcher for screens.
@@ -1594,10 +1594,10 @@ module ScreenDispatcherModule =
             let view = this.View (this.GetModel screen world, screen, world)
             World.renderView view world
 
-        override this.TrySignal (signalObj : obj, screen, world) =
+        override this.Signal (signalObj : obj, screen, world) =
             match signalObj with
-            | :? 'message as message -> screen.Signal<'model, 'message, 'command> message world
-            | :? 'command as command -> screen.Signal<'model, 'message, 'command> command world
+            | :? 'message as message -> screen.SignalPlus<'model, 'message, 'command> message world
+            | :? 'command as command -> screen.SignalPlus<'model, 'message, 'command> command world
             | _ -> Log.info ("Incorrect signal type received by screen (signal = '" + scstring signalObj + "'; screen = '" + scstring screen + "')."); world
 
         override this.TryGetInitialModelValue<'a> world =
@@ -1645,8 +1645,8 @@ module GameDispatcherModule =
 
     and Game with
 
-        /// Send a signal to the game.
-        member this.Signal<'model, 'message, 'command when 'message :> Message and 'command :> Command> signal world =
+        /// Send a signal to the game, explicitly specifing MMCC types.
+        member this.SignalPlus<'model, 'message, 'command when 'message :> Message and 'command :> Command> signal world =
             World.signalGame<'model, 'message, 'command> signal this world
 
     /// The elmish / MMCC dispatcher for games.
@@ -1684,10 +1684,10 @@ module GameDispatcherModule =
             let view = this.View (this.GetModel game world, game, world)
             World.renderView view world
 
-        override this.TrySignal (signalObj : obj, game, world) =
+        override this.Signal (signalObj : obj, game, world) =
             match signalObj with
-            | :? 'message as message -> game.Signal<'model, 'message, 'command> message world
-            | :? 'command as command -> game.Signal<'model, 'message, 'command> command world
+            | :? 'message as message -> game.SignalPlus<'model, 'message, 'command> message world
+            | :? 'command as command -> game.SignalPlus<'model, 'message, 'command> command world
             | _ -> Log.info ("Incorrect signal type received by game (signal = '" + scstring signalObj + "'; game = '" + scstring game + "')."); world
 
         override this.TryGetInitialModelValue<'a> world =
@@ -1722,21 +1722,21 @@ module WorldModule2' =
     type World with
 
         /// Send a signal to a simulant.
-        static member trySignal (signal : Signal) (simulant : Simulant) world =
+        static member signal (signal : Signal) (simulant : Simulant) world =
             match simulant with
-            | :? Entity as entity -> entity.TrySignal signal world
-            | :? Group as group -> group.TrySignal signal world
-            | :? Screen as screen -> screen.TrySignal signal world
-            | :? Game as game -> game.TrySignal signal world
+            | :? Entity as entity -> entity.Signal signal world
+            | :? Group as group -> group.Signal signal world
+            | :? Screen as screen -> screen.Signal signal world
+            | :? Game as game -> game.Signal signal world
             | _ -> failwithumf ()
 
-        /// Send a signal to a simulant.
-        static member signal<'model, 'message, 'command when 'message :> Message and 'command :> Command> signal (simulant : Simulant) world =
+        /// Send a signal to a simulant, explicitly specifing MMCC types.
+        static member signalPlus<'model, 'message, 'command when 'message :> Message and 'command :> Command> signal (simulant : Simulant) world =
             match simulant with
-            | :? Entity as entity -> entity.Signal<'model, 'message, 'command> signal world
-            | :? Group as group -> group.Signal<'model, 'message, 'command> signal world
-            | :? Screen as screen -> screen.Signal<'model, 'message, 'command> signal world
-            | :? Game as game -> game.Signal<'model, 'message, 'command> signal world
+            | :? Entity as entity -> entity.SignalPlus<'model, 'message, 'command> signal world
+            | :? Group as group -> group.SignalPlus<'model, 'message, 'command> signal world
+            | :? Screen as screen -> screen.SignalPlus<'model, 'message, 'command> signal world
+            | :? Game as game -> game.SignalPlus<'model, 'message, 'command> signal world
             | _ -> failwithumf ()
 
         static member internal updateLateBindings3 (latebindings : LateBindings) (simulant : Simulant) world =

@@ -329,13 +329,13 @@ module Nu =
                     World.unregisterEntityPhysics entity world)
                     world entities
 
-            // init trySignal F# reach-around
-            WorldModule.trySignal <- fun signalObj simulant world ->
+            // init signal F# reach-around
+            WorldModule.signal <- fun signalObj simulant world ->
                 match simulant with
-                | :? Entity as entity -> (entity.GetDispatcher world).TrySignal (signalObj, entity, world)
-                | :? Group as group -> (group.GetDispatcher world).TrySignal (signalObj, group, world)
-                | :? Screen as screen -> (screen.GetDispatcher world).TrySignal (signalObj, screen, world)
-                | :? Game as game -> (game.GetDispatcher world).TrySignal (signalObj, game, world)
+                | :? Entity as entity -> (entity.GetDispatcher world).Signal (signalObj, entity, world)
+                | :? Group as group -> (group.GetDispatcher world).Signal (signalObj, group, world)
+                | :? Screen as screen -> (screen.GetDispatcher world).Signal (signalObj, screen, world)
+                | :? Game as game -> (game.GetDispatcher world).Signal (signalObj, game, world)
                 | _ -> failwithumf ()
 
             // init life-cycle F# reach-arounds

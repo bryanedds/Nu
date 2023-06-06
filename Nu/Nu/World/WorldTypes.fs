@@ -259,9 +259,9 @@ and GameDispatcher () =
     abstract Render : Game * World -> World
     default this.Render (_, world) = world
 
-    /// Attempt to send a signal to a game.
-    abstract TrySignal : obj * Game * World -> World
-    default this.TrySignal (_, _, world) = world
+    /// Send a signal to a game.
+    abstract Signal : obj * Game * World -> World
+    default this.Signal (_, _, world) = world
 
     /// Attempt to get the initial model value if the dispatcher defines one.
     abstract TryGetInitialModelValue<'a> : World -> 'a option
@@ -299,9 +299,9 @@ and ScreenDispatcher () =
     abstract Render : Screen * World -> World
     default this.Render (_, world) = world
 
-    /// Attempt to send a signal to a screen.
-    abstract TrySignal : obj * Screen * World -> World
-    default this.TrySignal (_, _, world) = world
+    /// Send a signal to a screen.
+    abstract Signal : obj * Screen * World -> World
+    default this.Signal (_, _, world) = world
 
     /// Attempt to get the initial model value if the dispatcher defines one.
     abstract TryGetInitialModelValue<'a> : World -> 'a option
@@ -339,9 +339,9 @@ and GroupDispatcher () =
     abstract Render : Group * World -> World
     default this.Render (_, world) = world
 
-    /// Attempt to send a signal to a group.
-    abstract TrySignal : obj * Group * World -> World
-    default this.TrySignal (_, _, world) = world
+    /// Send a signal to a group.
+    abstract Signal : obj * Group * World -> World
+    default this.Signal (_, _, world) = world
 
     /// Attempt to get the initial model value if the dispatcher defines one.
     abstract TryGetInitialModelValue<'a> : World -> 'a option
@@ -422,9 +422,9 @@ and EntityDispatcher (is2d, isGui : bool, centered, physical) =
     abstract ApplyPhysics : Vector3 * Quaternion * Vector3 * Vector3 * Entity * World -> World
     default this.ApplyPhysics (_, _, _, _, _, world) = world
 
-    /// Attempt to send a signal to an entity.
-    abstract TrySignal : obj * Entity * World -> World
-    default this.TrySignal (_, _, world) = world
+    /// Send a signal to an entity.
+    abstract Signal : obj * Entity * World -> World
+    default this.Signal (_, _, world) = world
 
     /// Attempt to get the initial model value if the dispatcher defines one.
     abstract TryGetInitialModelValue<'a> : World -> 'a option

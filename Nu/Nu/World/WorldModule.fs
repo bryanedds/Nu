@@ -96,7 +96,7 @@ module WorldModule =
     let mutable internal unregisterScreenPhysics : Screen -> World -> World =
         Unchecked.defaultof<_>
         
-    let mutable internal trySignal : obj -> Simulant -> World -> World =
+    let mutable internal signal : obj -> Simulant -> World -> World =
         Unchecked.defaultof<_>
 
     let mutable internal register : Simulant -> World -> World =
