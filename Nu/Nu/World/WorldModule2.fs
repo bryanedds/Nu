@@ -145,14 +145,14 @@ module WorldModule2 =
                 match World.getSelectedScreenOpt world with
                 | Some selectedScreen ->
                     let eventTrace = EventTrace.debug "World" "selectScreen" "Deselecting" EventTrace.empty
-                    World.publish () (Events.Deselecting --> selectedScreen) eventTrace selectedScreen world
+                    World.publishPlus () (Events.Deselecting --> selectedScreen) eventTrace selectedScreen false false world
                 | None -> world
             match transitionStateAndScreenOpt with
             | Some (transitionState, screen) ->
                 let world = World.setScreenTransitionStatePlus transitionState screen world
                 let world = World.setSelectedScreen screen world
                 let eventTrace = EventTrace.debug "World" "selectScreen" "Select" EventTrace.empty
-                World.publish () (Events.Select --> screen) eventTrace screen world
+                World.publishPlus () (Events.Select --> screen) eventTrace screen false false world
             | None ->
                 World.setSelectedScreenOpt None world
 
@@ -249,14 +249,14 @@ module WorldModule2 =
                                 | _ -> World.playSong playSong.FadeInTime playSong.FadeOutTime GameTime.zero playSong.Volume playSong.Song world // play song when song is different
                             | None -> world
                         let eventTrace = EventTrace.debug "World" "updateScreenIncoming" "IncomingStart" EventTrace.empty
-                        World.publish () (Events.IncomingStart --> selectedScreen) eventTrace selectedScreen world
+                        World.publishPlus () (Events.IncomingStart --> selectedScreen) eventTrace selectedScreen false false world
                     else world
                 match World.getLiveness world with
                 | Live ->
                     if World.updateScreenTransition3 Incoming selectedScreen world then
                         let eventTrace = EventTrace.debug "World" "updateScreenIncoming" "IncomingFinish" EventTrace.empty
                         let world = World.setScreenTransitionStatePlus (IdlingState world.GameTime) selectedScreen world
-                        World.publish () (Events.IncomingFinish --> selectedScreen) eventTrace selectedScreen world
+                        World.publishPlus () (Events.IncomingFinish --> selectedScreen) eventTrace selectedScreen false false world
                     else world
                 | Dead -> world
             | Dead -> world
@@ -314,7 +314,7 @@ module WorldModule2 =
                                 | None -> world
                         | None -> world
                     let eventTrace = EventTrace.debug "World" "updateScreenTransition" "OutgoingStart" EventTrace.empty
-                    World.publish () (Events.OutgoingStart --> selectedScreen) eventTrace selectedScreen world
+                    World.publishPlus () (Events.OutgoingStart --> selectedScreen) eventTrace selectedScreen false false world
                 else world
             match World.getLiveness world with
             | Live ->
@@ -324,7 +324,7 @@ module WorldModule2 =
                         match World.getLiveness world with
                         | Live ->
                             let eventTrace = EventTrace.debug "World" "updateScreenOutgoing" "OutgoingFinish" EventTrace.empty
-                            World.publish () (Events.OutgoingFinish --> selectedScreen) eventTrace selectedScreen world
+                            World.publishPlus () (Events.OutgoingFinish --> selectedScreen) eventTrace selectedScreen false false world
                         | Dead -> world
                     match World.getLiveness world with
                     | Live ->
@@ -534,7 +534,7 @@ module WorldModule2 =
                     AssetGraph.buildAssets inputDirectory outputDirectory refinementDirectory false assetGraph
                     Metadata.generateMetadata (World.getImperative world) assetGraph
                     let world = World.reloadExistingAssets world
-                    let world = World.publish () Events.AssetsReload (EventTrace.debug "World" "publishAssetsReload" "" EventTrace.empty) Simulants.Game world
+                    let world = World.publishPlus () Events.AssetsReload (EventTrace.debug "World" "publishAssetsReload" "" EventTrace.empty) Simulants.Game false false world
                     (Right assetGraph, world)
 
                 // propagate errors
@@ -723,7 +723,7 @@ module WorldModule2 =
                                   Normal = bodyCollisionMessage.Normal }
                             let collisionAddress = Events.BodyCollision --> entity.EntityAddress
                             let eventTrace = EventTrace.debug "World" "processIntegrationMessage" "" EventTrace.empty
-                            World.publish collisionData collisionAddress eventTrace Simulants.Game world
+                            World.publishPlus collisionData collisionAddress eventTrace Simulants.Game false false world
                         else world
                     | _ -> world
                 | BodySeparationMessage bodySeparationMessage ->
@@ -735,7 +735,7 @@ module WorldModule2 =
                                   BodyShapeSeparatee = bodySeparationMessage.BodyShapeSource2 }
                             let separationAddress = Events.BodySeparationExplicit --> entity.EntityAddress
                             let eventTrace = EventTrace.debug "World" "processIntegrationMessage" "" EventTrace.empty
-                            World.publish explicit separationAddress eventTrace Simulants.Game world
+                            World.publishPlus explicit separationAddress eventTrace Simulants.Game false false world
                         else world
                     | _ -> world
                 | BodyTransformMessage bodyTransformMessage ->
@@ -755,7 +755,7 @@ module WorldModule2 =
                                       BodyAngularVelocity = angularVelocity }
                                 let transformAddress = Events.BodyTransform --> entity.EntityAddress
                                 let eventTrace = EventTrace.debug "World" "processIntegrationMessage" "" EventTrace.empty
-                                World.publish transformData transformAddress eventTrace Simulants.Game world
+                                World.publishPlus transformData transformAddress eventTrace Simulants.Game false false world
                             else entity.ApplyPhysics center rotation linearVelocity angularVelocity world
                         else world
                     | _ -> world
@@ -1123,7 +1123,7 @@ module WorldModule2 =
             let world = World.setPhysicsEngine2d physicsEngine world
             let integrationMessages = physicsEngine.Integrate world.GameDelta physicsMessages
             let eventTrace = EventTrace.debug "World" "processPhysics2d" "" EventTrace.empty
-            let world = World.publish { IntegrationMessages = integrationMessages } Events.Integration eventTrace Simulants.Game world
+            let world = World.publishPlus { IntegrationMessages = integrationMessages } Events.Integration eventTrace Simulants.Game false false world
             let world = Seq.fold (flip World.processIntegrationMessage) world integrationMessages
             world
 
@@ -1133,7 +1133,7 @@ module WorldModule2 =
             let world = World.setPhysicsEngine3d physicsEngine world
             let integrationMessages = physicsEngine.Integrate world.GameDelta physicsMessages
             let eventTrace = EventTrace.debug "World" "processPhysics3d" "" EventTrace.empty
-            let world = World.publish { IntegrationMessages = integrationMessages } Events.Integration eventTrace Simulants.Game world
+            let world = World.publishPlus { IntegrationMessages = integrationMessages } Events.Integration eventTrace Simulants.Game false false world
             let world = Seq.fold (flip World.processIntegrationMessage) world integrationMessages
             world
 

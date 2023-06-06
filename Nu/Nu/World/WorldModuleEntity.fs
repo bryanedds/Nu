@@ -634,7 +634,7 @@ module WorldModuleEntity =
                         world
                 let mountData = { Mount = newMount; Mounter = entity }
                 let eventTrace = EventTrace.debug "World" "addEntityToMounts" "" EventTrace.empty
-                World.publish mountData (Events.Mount --> newMount) eventTrace entity world
+                World.publishPlus mountData (Events.Mount --> newMount) eventTrace entity false false world
             | None -> world
 
         static member internal removeEntityFromMounts mountOpt entity world =
@@ -652,7 +652,7 @@ module WorldModuleEntity =
                     | (false, _) -> world
                 let mountData = { Mount = oldMount; Mounter = entity }
                 let eventTrace = EventTrace.debug "World" "removeEntityFromMounts" "" EventTrace.empty
-                World.publish mountData (Events.Unmount --> oldMount) eventTrace entity world
+                World.publishPlus mountData (Events.Unmount --> oldMount) eventTrace entity false false world
             | None -> world
 
         static member internal propagateEntityAffineMatrix3 mount mounter world =
@@ -710,7 +710,7 @@ module WorldModuleEntity =
 
                 // publish life cycle event unconditionally
                 let eventTrace = EventTrace.debug "World" "setEntityMount" "" EventTrace.empty
-                let world = World.publish (MountOptChangeData (previous, value, entity)) (Events.LifeCycle (nameof Entity)) eventTrace entity world
+                let world = World.publishPlus (MountOptChangeData (previous, value, entity)) (Events.LifeCycle (nameof Entity)) eventTrace entity false false world
                 struct (true, world)
 
             else struct (false, world)
@@ -2079,17 +2079,17 @@ module WorldModuleEntity =
             let struct (_, world) = World.updateEntityPublishFlags entity world
             let eventTrace = EventTrace.debug "World" "registerEntity" "Register" EventTrace.empty
             let eventAddresses = EventGraph.getEventAddresses1 (Events.Register --> entity)
-            let world = Array.fold (fun world eventAddress -> World.publish () eventAddress eventTrace entity world) world eventAddresses
+            let world = Array.fold (fun world eventAddress -> World.publishPlus () eventAddress eventTrace entity false false world) world eventAddresses
             let eventTrace = EventTrace.debug "World" "registerEntity" "LifeCycle" EventTrace.empty
-            let world = World.publish (RegisterData entity) (Events.LifeCycle (nameof Entity)) eventTrace entity world
+            let world = World.publishPlus (RegisterData entity) (Events.LifeCycle (nameof Entity)) eventTrace entity false false world
             world
 
         static member internal unregisterEntity (entity : Entity) world =
             let eventTrace = EventTrace.debug "World" "unregisterEntity" "LifeCycle" EventTrace.empty
-            let world = World.publish (UnregisteringData entity) (Events.LifeCycle (nameof Entity)) eventTrace entity world
+            let world = World.publishPlus (UnregisteringData entity) (Events.LifeCycle (nameof Entity)) eventTrace entity false false world
             let eventTrace = EventTrace.debug "World" "unregister" "Unregistering" EventTrace.empty
             let eventAddresses = EventGraph.getEventAddresses1 (Events.Unregistering --> entity)
-            let world = Array.fold (fun world eventAddress -> World.publish () eventAddress eventTrace entity world) world eventAddresses
+            let world = Array.fold (fun world eventAddress -> World.publishPlus () eventAddress eventTrace entity false false world) world eventAddresses
             let dispatcher = World.getEntityDispatcher entity world : EntityDispatcher
             let facets = World.getEntityFacets entity world
             let world = dispatcher.Unregister (entity, world)
