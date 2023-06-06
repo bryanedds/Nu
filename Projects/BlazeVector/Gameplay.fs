@@ -225,7 +225,7 @@ module Gameplay =
         | Quit
 
     type Gameplay =
-        { GameplayState : GameplayState
+        { State : GameplayState
           Score : int }
 
     type GameplayMessage =
@@ -246,7 +246,7 @@ module Gameplay =
         member this.Gameplay = this.ModelGeneric<Gameplay> ()
 
     type GameplayDispatcher () =
-        inherit ScreenDispatcher<Gameplay, GameplayMessage, GameplayCommand> ({ GameplayState = Quit; Score = 0 })
+        inherit ScreenDispatcher<Gameplay, GameplayMessage, GameplayCommand> ({ State = Quit; Score = 0 })
 
         static let [<Literal>] SectionName = "Section"
         static let [<Literal>] SectionCount = 16
@@ -275,8 +275,8 @@ module Gameplay =
         override this.Message (gameplay, message, _, _) =
             match message with
             | Score score -> just { gameplay with Score = gameplay.Score + score }
-            | StartQutting -> just { gameplay with GameplayState = Quitting }
-            | FinishQuitting -> just { gameplay with GameplayState = Quit }
+            | StartQutting -> just { gameplay with State = Quitting }
+            | FinishQuitting -> just { gameplay with State = Quit }
 
         override this.Command (gameplay, command, screen, world) =
 
@@ -317,7 +317,7 @@ module Gameplay =
                     else world
 
                 // update player fall
-                if Simulants.GameplayScenePlayer.HasFallen world && World.isSelectedScreenIdling world && gameplay.GameplayState = Playing then
+                if Simulants.GameplayScenePlayer.HasFallen world && World.isSelectedScreenIdling world && gameplay.State = Playing then
                     let world = World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.DeathSound world
                     withSignal StartQutting world
                 else just world
@@ -336,7 +336,7 @@ module Gameplay =
                      Entity.ClickEvent => StartQutting]]
 
              // the scene group while playing
-             match gameplay.GameplayState with
+             match gameplay.State with
              | Playing | Quitting ->
                 Content.group Simulants.GameplayScene.Name []
                     [Content.entity<PlayerDispatcher> Simulants.GameplayScenePlayer.Name
