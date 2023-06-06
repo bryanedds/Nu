@@ -13,4 +13,4 @@ type BlazeVectorPlugin () =
         Map.ofSeq
             [("Title", fun world -> Simulants.Game.SetModel Title world)
              ("Credits", fun world -> Simulants.Game.SetModel Credits world)
-             ("Gameplay", fun world -> Simulants.Game.SetModel (Gameplay { GameplayState = Playing; Score = 0 }) world)]
+             ("Gameplay", fun world -> Simulants.Game.SetModel (Gameplay { State = Playing; Score = 0 }) world)]
