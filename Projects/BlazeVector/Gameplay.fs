@@ -36,9 +36,9 @@ module Bullet =
              define Entity.BodyShape (BodySphere { Radius = 0.5f; TransformOpt = None; PropertiesOpt = None })
              define Entity.StaticImage Assets.Gameplay.PlayerBulletImage]
 
-        override this.Register (bullet, world) =
-            let world = World.monitor handleBodyCollision bullet.BodyCollisionEvent bullet world
-            let world = World.schedule BulletLifeTime (World.destroyEntity bullet) bullet world
+        override this.Register (entity, world) =
+            let world = World.monitor handleBodyCollision entity.BodyCollisionEvent entity world
+            let world = World.schedule BulletLifeTime (World.destroyEntity entity) entity world
             world
 
 [<AutoOpen>]
@@ -53,14 +53,14 @@ module Enemy =
     type EnemyDispatcher () =
         inherit EntityDispatcher2d (true)
 
-        static let move (enemy : Entity) world =
+        static let move (entity : Entity) world =
             let force = v3 -750.0f -5000.0f 0.0f
-            World.applyBodyForce force v3Zero (enemy.GetBodyId world) world
+            World.applyBodyForce force v3Zero (entity.GetBodyId world) world
 
-        static let die (enemy : Entity) world =
+        static let die (entity : Entity) world =
             let world = World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.ExplosionSound world
-            let world = World.publish () enemy.DyingEvent enemy world
-            World.destroyEntity enemy world
+            let world = World.publish () entity.DyingEvent entity world
+            World.destroyEntity entity world
 
         static let handleUpdate evt world =
             let enemy = evt.Subscriber : Entity
@@ -98,9 +98,9 @@ module Enemy =
              define Entity.AnimationSheet Assets.Gameplay.EnemyImage
              define Entity.Health 7]
 
-        override this.Register (enemy, world) =
-            let world = World.monitor handleUpdate enemy.UpdateEvent enemy world
-            let world = World.monitor handleBodyCollision enemy.BodyCollisionEvent enemy world
+        override this.Register (entity, world) =
+            let world = World.monitor handleUpdate entity.UpdateEvent entity world
+            let world = World.monitor handleBodyCollision entity.BodyCollisionEvent entity world
             world
 
 [<AutoOpen>]
@@ -124,9 +124,9 @@ module Player =
         static let [<Literal>] JumpForce = 3000.0f
         static let [<Literal>] BulletForce = 25.0f
 
-        static let createBullet (player : Entity) world =
-            let mutable playerTransform = player.GetTransform world
-            let (bullet, world) = World.createEntity<BulletDispatcher> NoOverlay None player.Group world // OPTIMIZATION: NoOverlay to avoid reflection.
+        static let createBullet (entity : Entity) world =
+            let mutable playerTransform = entity.GetTransform world
+            let (bullet, world) = World.createEntity<BulletDispatcher> NoOverlay None entity.Group world // OPTIMIZATION: NoOverlay to avoid reflection.
             let bulletPosition = playerTransform.Position + v3 (playerTransform.Size.X * 0.7f) 0.0f 0.0f
             let world = bullet.SetPosition bulletPosition world
             let world = bullet.SetElevation playerTransform.Elevation world
@@ -136,8 +136,8 @@ module Player =
             let world = World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.ShotSound world
             World.applyBodyLinearImpulse (v3 BulletForce 0.0f 0.0f) v3Zero (bullet.GetBodyId world) world
 
-        static let shootBullet (player : Entity) world =
-            let (bullet, world) = createBullet player world
+        static let shootBullet (entity : Entity) world =
+            let (bullet, world) = createBullet entity world
             propelBullet bullet world
 
         static let handleSpawnBullet evt world =
@@ -152,9 +152,9 @@ module Player =
                 else world
             (Cascade, world)
 
-        static let getLastTimeOnGround (player : Entity) world =
-            if not (World.isBodyOnGround (player.GetBodyId world) world)
-            then player.GetLastTimeOnGround world
+        static let getLastTimeOnGround (entity : Entity) world =
+            if not (World.isBodyOnGround (entity.GetBodyId world) world)
+            then entity.GetLastTimeOnGround world
             else World.getUpdateTime world
 
         static let handleMovement evt world =
@@ -209,11 +209,11 @@ module Player =
              nonPersistent Entity.LastTimeOnGround Int64.MinValue
              nonPersistent Entity.LastTimeJump Int64.MinValue]
 
-        override this.Register (player, world) =
-            let world = World.monitor handleSpawnBullet player.UpdateEvent player world
-            let world = World.monitor handleMovement player.UpdateEvent player world
-            let world = World.monitor handleJump Events.MouseLeftDown player world
-            let world = World.monitor handleJumpByKeyboardKey Events.KeyboardKeyDown player world
+        override this.Register (entity, world) =
+            let world = World.monitor handleSpawnBullet entity.UpdateEvent entity world
+            let world = World.monitor handleMovement entity.UpdateEvent entity world
+            let world = World.monitor handleJump Events.MouseLeftDown entity world
+            let world = World.monitor handleJumpByKeyboardKey Events.KeyboardKeyDown entity world
             world
 
 [<AutoOpen>]
