@@ -130,9 +130,9 @@ module WorldGameModule =
         /// Get a game's change event address.
         member this.GetChangeEvent propertyName = Events.Change propertyName
 
-        /// Try to signal a game.
-        member this.TrySignal<'message, 'command> (signal : Signal) world =
-            (this.GetDispatcher world).TrySignal (signal, this, world)
+        /// Send a signal to a game.
+        member this.Signal<'message, 'command> (signal : Signal) world =
+            (this.GetDispatcher world).Signal (signal, this, world)
 
     type World with
 

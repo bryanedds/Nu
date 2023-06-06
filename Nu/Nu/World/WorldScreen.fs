@@ -120,8 +120,8 @@ module WorldScreenModule =
         /// Get a screen's change event address.
         member this.GetChangeEvent propertyName = Events.Change propertyName --> this.ScreenAddress
 
-        /// Try to signal a screen.
-        member this.TrySignal signal world = (this.GetDispatcher world).TrySignal (signal, this, world)
+        /// Send a signal to a screen.
+        member this.Signal signal world = (this.GetDispatcher world).Signal (signal, this, world)
 
     type World with
 
