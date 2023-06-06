@@ -30,10 +30,10 @@ module RingMenuDispatcher =
     type RingMenuDispatcher () =
         inherit GuiDispatcher<RingMenu, Message, RingMenuCommand> ({ Items = Map.empty; Cancellable = false })
 
-        override this.Command (_, command, menu, world) =
+        override this.Command (_, command, entity, world) =
             match command with
-            | ItemCancel -> just (World.publishPlus () menu.CancelEvent [] menu true false world)
-            | ItemSelect item -> just (World.publishPlus item menu.ItemSelectEvent [] menu true false world)
+            | ItemCancel -> just (World.publishPlus () entity.CancelEvent [] entity true false world)
+            | ItemSelect item -> just (World.publishPlus item entity.ItemSelectEvent [] entity true false world)
 
         override this.Content (ringMenu, _) =
             let mutable i = -1

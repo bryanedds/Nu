@@ -29,10 +29,10 @@ module ReticlesDispatcher =
     type ReticlesDispatcher () =
         inherit GuiDispatcher<Reticles, Message, ReticlesCommand> (Map.empty)
 
-        override this.Command (_, command, rets, world) =
+        override this.Command (_, command, entity, world) =
             match command with
-            | TargetCancel -> just (World.publishPlus () rets.CancelEvent [] rets true false world)
-            | TargetSelect index -> just (World.publishPlus index rets.TargetSelectEvent [] rets true false world)
+            | TargetCancel -> just (World.publishPlus () entity.CancelEvent [] entity true false world)
+            | TargetSelect index -> just (World.publishPlus index entity.TargetSelectEvent [] entity true false world)
 
         override this.Content (reticles, _) =
             [Content.button "Cancel"
