@@ -12,10 +12,10 @@ open Nu
 module WorldModuleEntity =
 
     /// A reflective property getter.
-    type internal PropertyGetter = Entity -> World -> Property
+    type internal PropertyGetter = Entity -> World -> obj
 
     /// A reflective property setter.
-    type internal PropertySetter = Property -> Entity -> World -> struct (bool * World)
+    type internal PropertySetter = obj -> Entity -> World -> struct (bool * World)
 
     /// Reflective property getters / setters.
     let internal EntityGetters = Dictionary<string, PropertyGetter> StringComparer.Ordinal
@@ -1737,7 +1737,7 @@ module WorldModuleEntity =
             | null -> false
             | _ ->
                 match EntityGetters.TryGetValue propertyName with
-                | (true, getter) -> property <- getter entity world; true
+                | (true, getter) -> property.PropertyValue <- getter entity world; true
                 | (false, _) ->
                     if EntityState.tryGetProperty (propertyName, entityStateOpt, &property) then
                         if EntityState.containsRuntimeProperties entityStateOpt then
@@ -1911,26 +1911,26 @@ module WorldModuleEntity =
             | struct (true, changed, world) -> struct (changed, world)
             | struct (false, _, _) -> failwithf "Could not find property '%s'." propertyName
 
-        static member internal trySetEntityPropertyFast propertyName property entity world =
+        static member internal trySetEntityPropertyFast propertyName (property : Property) entity world =
             match EntitySetters.TryGetValue propertyName with
             | (true, setter) ->
                 if World.getEntityExists entity world
-                then setter property entity world |> snd'
+                then setter property.PropertyValue entity world |> snd'
                 else world
             | (false, _) -> World.trySetEntityXtensionPropertyFast propertyName property entity world
 
-        static member internal trySetEntityProperty propertyName property entity world =
+        static member internal trySetEntityProperty propertyName (property : Property) entity world =
             match EntitySetters.TryGetValue propertyName with
             | (true, setter) ->
                 if World.getEntityExists entity world then
-                    let struct (changed, world) = setter property entity world
+                    let struct (changed, world) = setter property.PropertyValue entity world
                     struct (true, changed, world)
                 else (false, false, world)
             | (false, _) -> World.trySetEntityXtensionProperty propertyName property entity world
 
-        static member internal setEntityPropertyFast propertyName property entity world =
+        static member internal setEntityPropertyFast propertyName (property : Property) entity world =
             match EntitySetters.TryGetValue propertyName with
-            | (true, setter) -> setter property entity world |> snd'
+            | (true, setter) -> setter property.PropertyValue entity world |> snd'
             | (false, _) -> World.trySetEntityXtensionPropertyFast propertyName property entity world
 
         static member internal setEntityProperty propertyName property entity world =
@@ -2587,115 +2587,115 @@ module WorldModuleEntity =
 
     /// Initialize property getters.
     let private initGetters () =
-        EntityGetters.["Dispatcher"] <- fun entity world -> { PropertyType = typeof<EntityDispatcher>; PropertyValue = World.getEntityDispatcher entity world }
-        EntityGetters.["Facets"] <- fun entity world -> { PropertyType = typeof<Facet array>; PropertyValue = World.getEntityFacets entity world }
-        EntityGetters.["Transform"] <- fun entity world -> { PropertyType = typeof<Transform>; PropertyValue = (World.getEntityState entity world).Transform }
-        EntityGetters.["Position"] <- fun entity world -> { PropertyType = typeof<Vector3>; PropertyValue = World.getEntityPosition entity world }
-        EntityGetters.["Center"] <- fun entity world -> { PropertyType = typeof<Vector3>; PropertyValue = World.getEntityCenter entity world }
-        EntityGetters.["Bottom"] <- fun entity world -> { PropertyType = typeof<Vector3>; PropertyValue = World.getEntityBottom entity world }
-        EntityGetters.["BottomLeft"] <- fun entity world -> { PropertyType = typeof<Vector3>; PropertyValue = World.getEntityBottomLeft entity world }
-        EntityGetters.["Min"] <- fun entity world -> { PropertyType = typeof<Vector3>; PropertyValue = World.getEntityMin entity world }
-        EntityGetters.["Max"] <- fun entity world -> { PropertyType = typeof<Vector3>; PropertyValue = World.getEntityMax entity world }
-        EntityGetters.["PositionLocal"] <- fun entity world -> { PropertyType = typeof<Vector3>; PropertyValue = World.getEntityPositionLocal entity world }
-        EntityGetters.["CenterLocal"] <- fun entity world -> { PropertyType = typeof<Vector3>; PropertyValue = World.getEntityCenterLocal entity world }
-        EntityGetters.["BottomLocal"] <- fun entity world -> { PropertyType = typeof<Vector3>; PropertyValue = World.getEntityBottomLocal entity world }
-        EntityGetters.["BottomLeftLocal"] <- fun entity world -> { PropertyType = typeof<Vector3>; PropertyValue = World.getEntityBottomLeftLocal entity world }
-        EntityGetters.["MinLocal"] <- fun entity world -> { PropertyType = typeof<Vector3>; PropertyValue = World.getEntityMinLocal entity world }
-        EntityGetters.["MaxLocal"] <- fun entity world -> { PropertyType = typeof<Vector3>; PropertyValue = World.getEntityMaxLocal entity world }
-        EntityGetters.["Rotation"] <- fun entity world -> { PropertyType = typeof<Quaternion>; PropertyValue = World.getEntityRotation entity world }
-        EntityGetters.["RotationLocal"] <- fun entity world -> { PropertyType = typeof<Quaternion>; PropertyValue = World.getEntityRotationLocal entity world }
-        EntityGetters.["Scale"] <- fun entity world -> { PropertyType = typeof<Vector3>; PropertyValue = World.getEntityScale entity world }
-        EntityGetters.["ScaleLocal"] <- fun entity world -> { PropertyType = typeof<Vector3>; PropertyValue = World.getEntityScaleLocal entity world }
-        EntityGetters.["Offset"] <- fun entity world -> { PropertyType = typeof<Vector3>; PropertyValue = World.getEntityOffset entity world }
-        EntityGetters.["Angles"] <- fun entity world -> { PropertyType = typeof<Vector3>; PropertyValue = World.getEntityAngles entity world }
-        EntityGetters.["AnglesLocal"] <- fun entity world -> { PropertyType = typeof<Vector3>; PropertyValue = World.getEntityAnglesLocal entity world }
-        EntityGetters.["Degrees"] <- fun entity world -> { PropertyType = typeof<Vector3>; PropertyValue = World.getEntityDegrees entity world }
-        EntityGetters.["DegreesLocal"] <- fun entity world -> { PropertyType = typeof<Vector3>; PropertyValue = World.getEntityDegreesLocal entity world }
-        EntityGetters.["Size"] <- fun entity world -> { PropertyType = typeof<Vector3>; PropertyValue = World.getEntitySize entity world }
-        EntityGetters.["Elevation"] <- fun entity world -> { PropertyType = typeof<single>; PropertyValue = World.getEntityElevation entity world }
-        EntityGetters.["ElevationLocal"] <- fun entity world -> { PropertyType = typeof<single>; PropertyValue = World.getEntityElevationLocal entity world }
-        EntityGetters.["Overflow"] <- fun entity world -> { PropertyType = typeof<single>; PropertyValue = World.getEntityOverflow entity world }
-        EntityGetters.["PerimeterUnscaled"] <- fun entity world -> { PropertyType = typeof<Box3>; PropertyValue = World.getEntityPerimeterUnscaled entity world }
-        EntityGetters.["Perimeter"] <- fun entity world -> { PropertyType = typeof<Box3>; PropertyValue = World.getEntityPerimeter entity world }
-        EntityGetters.["PerimeterOriented"] <- fun entity world -> { PropertyType = typeof<Box3>; PropertyValue = World.getEntityPerimeterOriented entity world }
-        EntityGetters.["Bounds"] <- fun entity world -> { PropertyType = typeof<Box3>; PropertyValue = World.getEntityBounds entity world }
-        EntityGetters.["Presence"] <- fun entity world -> { PropertyType = typeof<Presence>; PropertyValue = World.getEntityPresence entity world }
-        EntityGetters.["Absolute"] <- fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityAbsolute entity world }
-        EntityGetters.["Model"] <- fun entity world -> let designerProperty = World.getEntityModelProperty entity world in { PropertyType = designerProperty.DesignerType; PropertyValue = designerProperty.DesignerValue }
-        EntityGetters.["MountOpt"] <- fun entity world -> { PropertyType = typeof<Entity Relation option>; PropertyValue = World.getEntityMountOpt entity world }
-        EntityGetters.["Imperative"] <- fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityImperative entity world }
-        EntityGetters.["PublishChangeEvents"] <- fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPublishChangeEvents entity world }
-        EntityGetters.["Enabled"] <- fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityEnabled entity world }
-        EntityGetters.["EnabledLocal"] <- fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityEnabledLocal entity world }
-        EntityGetters.["Visible"] <- fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityVisible entity world }
-        EntityGetters.["VisibleLocal"] <- fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityVisibleLocal entity world }
-        EntityGetters.["AlwaysUpdate"] <- fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityAlwaysUpdate entity world }
-        EntityGetters.["PublishUpdates"] <- fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPublishUpdates entity world }
-        EntityGetters.["PublishPostUpdates"] <- fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPublishPostUpdates entity world }
-        EntityGetters.["PublishRenders"] <- fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPublishRenders entity world }
-        EntityGetters.["Protected"] <- fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityProtected entity world }
-        EntityGetters.["Persistent"] <- fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPersistent entity world }
-        EntityGetters.["Mounted"] <- fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityMounted entity world }
-        EntityGetters.["Is2d"] <- fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityIs2d entity world }
-        EntityGetters.["IsGui"] <- fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityIsGui entity world }
-        EntityGetters.["Is3d"] <- fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityIs3d entity world }
-        EntityGetters.["Centered"] <- fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityCentered entity world }
-        EntityGetters.["Static"] <- fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityStatic entity world }
-        EntityGetters.["Light"] <- fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityLight entity world }
-        EntityGetters.["Physical"] <- fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPhysical entity world }
-        EntityGetters.["Optimized"] <- fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityOptimized entity world }
-        EntityGetters.["Destroying"] <- fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityDestroying entity world }
-        EntityGetters.["OverlayNameOpt"] <- fun entity world -> { PropertyType = typeof<string option>; PropertyValue = World.getEntityOverlayNameOpt entity world }
-        EntityGetters.["FacetNames"] <- fun entity world -> { PropertyType = typeof<string Set>; PropertyValue = World.getEntityFacetNames entity world }
-        EntityGetters.["Order"] <- fun entity world -> { PropertyType = typeof<int64>; PropertyValue = World.getEntityOrder entity world }
-        EntityGetters.["Id"] <- fun entity world -> { PropertyType = typeof<Guid>; PropertyValue = World.getEntityId entity world }
-        EntityGetters.["Surnames"] <- fun entity world -> { PropertyType = typeof<string array>; PropertyValue = World.getEntitySurnames entity world }
-        EntityGetters.["Name"] <- fun entity world -> { PropertyType = typeof<string>; PropertyValue = World.getEntityName entity world }
+        EntityGetters.["Dispatcher"] <- fun entity world -> World.getEntityDispatcher entity world
+        EntityGetters.["Facets"] <- fun entity world -> World.getEntityFacets entity world
+        EntityGetters.["Transform"] <- fun entity world -> (World.getEntityState entity world).Transform
+        EntityGetters.["Position"] <- fun entity world -> World.getEntityPosition entity world
+        EntityGetters.["Center"] <- fun entity world -> World.getEntityCenter entity world
+        EntityGetters.["Bottom"] <- fun entity world -> World.getEntityBottom entity world
+        EntityGetters.["BottomLeft"] <- fun entity world -> World.getEntityBottomLeft entity world
+        EntityGetters.["Min"] <- fun entity world -> World.getEntityMin entity world
+        EntityGetters.["Max"] <- fun entity world -> World.getEntityMax entity world
+        EntityGetters.["PositionLocal"] <- fun entity world -> World.getEntityPositionLocal entity world
+        EntityGetters.["CenterLocal"] <- fun entity world -> World.getEntityCenterLocal entity world
+        EntityGetters.["BottomLocal"] <- fun entity world -> World.getEntityBottomLocal entity world
+        EntityGetters.["BottomLeftLocal"] <- fun entity world -> World.getEntityBottomLeftLocal entity world
+        EntityGetters.["MinLocal"] <- fun entity world -> World.getEntityMinLocal entity world
+        EntityGetters.["MaxLocal"] <- fun entity world -> World.getEntityMaxLocal entity world
+        EntityGetters.["Rotation"] <- fun entity world -> World.getEntityRotation entity world
+        EntityGetters.["RotationLocal"] <- fun entity world -> World.getEntityRotationLocal entity world
+        EntityGetters.["Scale"] <- fun entity world -> World.getEntityScale entity world
+        EntityGetters.["ScaleLocal"] <- fun entity world -> World.getEntityScaleLocal entity world
+        EntityGetters.["Offset"] <- fun entity world -> World.getEntityOffset entity world
+        EntityGetters.["Angles"] <- fun entity world -> World.getEntityAngles entity world
+        EntityGetters.["AnglesLocal"] <- fun entity world -> World.getEntityAnglesLocal entity world
+        EntityGetters.["Degrees"] <- fun entity world -> World.getEntityDegrees entity world
+        EntityGetters.["DegreesLocal"] <- fun entity world -> World.getEntityDegreesLocal entity world
+        EntityGetters.["Size"] <- fun entity world -> World.getEntitySize entity world
+        EntityGetters.["Elevation"] <- fun entity world -> World.getEntityElevation entity world
+        EntityGetters.["ElevationLocal"] <- fun entity world -> World.getEntityElevationLocal entity world
+        EntityGetters.["Overflow"] <- fun entity world -> World.getEntityOverflow entity world
+        EntityGetters.["PerimeterUnscaled"] <- fun entity world -> World.getEntityPerimeterUnscaled entity world
+        EntityGetters.["Perimeter"] <- fun entity world -> World.getEntityPerimeter entity world
+        EntityGetters.["PerimeterOriented"] <- fun entity world -> World.getEntityPerimeterOriented entity world
+        EntityGetters.["Bounds"] <- fun entity world -> World.getEntityBounds entity world
+        EntityGetters.["Presence"] <- fun entity world -> World.getEntityPresence entity world
+        EntityGetters.["Absolute"] <- fun entity world -> World.getEntityAbsolute entity world
+        EntityGetters.["Model"] <- fun entity world -> (World.getEntityModelProperty entity world).DesignerValue
+        EntityGetters.["MountOpt"] <- fun entity world -> World.getEntityMountOpt entity world
+        EntityGetters.["Imperative"] <- fun entity world -> World.getEntityImperative entity world
+        EntityGetters.["PublishChangeEvents"] <- fun entity world -> World.getEntityPublishChangeEvents entity world
+        EntityGetters.["Enabled"] <- fun entity world -> World.getEntityEnabled entity world
+        EntityGetters.["EnabledLocal"] <- fun entity world -> World.getEntityEnabledLocal entity world
+        EntityGetters.["Visible"] <- fun entity world -> World.getEntityVisible entity world
+        EntityGetters.["VisibleLocal"] <- fun entity world -> World.getEntityVisibleLocal entity world
+        EntityGetters.["AlwaysUpdate"] <- fun entity world -> World.getEntityAlwaysUpdate entity world
+        EntityGetters.["PublishUpdates"] <- fun entity world -> World.getEntityPublishUpdates entity world
+        EntityGetters.["PublishPostUpdates"] <- fun entity world -> World.getEntityPublishPostUpdates entity world
+        EntityGetters.["PublishRenders"] <- fun entity world -> World.getEntityPublishRenders entity world
+        EntityGetters.["Protected"] <- fun entity world -> World.getEntityProtected entity world
+        EntityGetters.["Persistent"] <- fun entity world -> World.getEntityPersistent entity world
+        EntityGetters.["Mounted"] <- fun entity world -> World.getEntityMounted entity world
+        EntityGetters.["Is2d"] <- fun entity world -> World.getEntityIs2d entity world
+        EntityGetters.["IsGui"] <- fun entity world -> World.getEntityIsGui entity world
+        EntityGetters.["Is3d"] <- fun entity world -> World.getEntityIs3d entity world
+        EntityGetters.["Centered"] <- fun entity world -> World.getEntityCentered entity world
+        EntityGetters.["Static"] <- fun entity world -> World.getEntityStatic entity world
+        EntityGetters.["Light"] <- fun entity world -> World.getEntityLight entity world
+        EntityGetters.["Physical"] <- fun entity world -> World.getEntityPhysical entity world
+        EntityGetters.["Optimized"] <- fun entity world -> World.getEntityOptimized entity world
+        EntityGetters.["Destroying"] <- fun entity world -> World.getEntityDestroying entity world
+        EntityGetters.["OverlayNameOpt"] <- fun entity world -> World.getEntityOverlayNameOpt entity world
+        EntityGetters.["FacetNames"] <- fun entity world -> World.getEntityFacetNames entity world
+        EntityGetters.["Order"] <- fun entity world -> World.getEntityOrder entity world
+        EntityGetters.["Id"] <- fun entity world -> World.getEntityId entity world
+        EntityGetters.["Surnames"] <- fun entity world -> World.getEntitySurnames entity world
+        EntityGetters.["Name"] <- fun entity world -> World.getEntityName entity world
 
     /// Initialize property setters.
     let private initSetters () =
-        EntitySetters.["Transform"] <- fun property entity world -> let mutable transform = property.PropertyValue :?> Transform in World.setEntityTransformByRef (&transform, World.getEntityState entity world, entity, world)
-        EntitySetters.["Position"] <- fun property entity world -> World.setEntityPosition (property.PropertyValue :?> Vector3) entity world
-        EntitySetters.["Center"] <- fun property entity world -> World.setEntityCenter (property.PropertyValue :?> Vector3) entity world
-        EntitySetters.["Bottom"] <- fun property entity world -> World.setEntityBottom (property.PropertyValue :?> Vector3) entity world
-        EntitySetters.["BottomLeft"] <- fun property entity world -> World.setEntityBottomLeft (property.PropertyValue :?> Vector3) entity world
-        EntitySetters.["Min"] <- fun property entity world -> World.setEntityMin (property.PropertyValue :?> Vector3) entity world
-        EntitySetters.["Max"] <- fun property entity world -> World.setEntityMax (property.PropertyValue :?> Vector3) entity world
-        EntitySetters.["PositionLocal"] <- fun property entity world -> World.setEntityPositionLocal (property.PropertyValue :?> Vector3) entity world
-        EntitySetters.["CenterLocal"] <- fun property entity world -> World.setEntityCenterLocal (property.PropertyValue :?> Vector3) entity world
-        EntitySetters.["BottomLocal"] <- fun property entity world -> World.setEntityBottomLocal (property.PropertyValue :?> Vector3) entity world
-        EntitySetters.["BottomLeftLocal"] <- fun property entity world -> World.setEntityBottomLeftLocal (property.PropertyValue :?> Vector3) entity world
-        EntitySetters.["MinLocal"] <- fun property entity world -> World.setEntityMinLocal (property.PropertyValue :?> Vector3) entity world
-        EntitySetters.["MaxLocal"] <- fun property entity world -> World.setEntityMaxLocal (property.PropertyValue :?> Vector3) entity world
-        EntitySetters.["Scale"] <- fun property entity world -> World.setEntityScale (property.PropertyValue :?> Vector3) entity world
-        EntitySetters.["ScaleLocal"] <- fun property entity world -> World.setEntityScaleLocal (property.PropertyValue :?> Vector3) entity world
-        EntitySetters.["Rotation"] <- fun property entity world -> World.setEntityRotation (property.PropertyValue :?> Quaternion) entity world
-        EntitySetters.["RotationLocal"] <- fun property entity world -> World.setEntityRotationLocal (property.PropertyValue :?> Quaternion) entity world
-        EntitySetters.["Offset"] <- fun property entity world -> World.setEntityOffset (property.PropertyValue :?> Vector3) entity world
-        EntitySetters.["Angles"] <- fun property entity world -> World.setEntityAngles (property.PropertyValue :?> Vector3) entity world
-        EntitySetters.["AnglesLocal"] <- fun property entity world -> World.setEntityAnglesLocal (property.PropertyValue :?> Vector3) entity world
-        EntitySetters.["Degrees"] <- fun property entity world -> World.setEntityDegrees (property.PropertyValue :?> Vector3) entity world
-        EntitySetters.["DegreesLocal"] <- fun property entity world -> World.setEntityDegreesLocal (property.PropertyValue :?> Vector3) entity world
-        EntitySetters.["Size"] <- fun property entity world -> World.setEntitySize (property.PropertyValue :?> Vector3) entity world
-        EntitySetters.["Elevation"] <- fun property entity world -> World.setEntityElevation (property.PropertyValue :?> single) entity world
-        EntitySetters.["ElevationLocal"] <- fun property entity world -> World.setEntityElevationLocal (property.PropertyValue :?> single) entity world
-        EntitySetters.["Overflow"] <- fun property entity world -> World.setEntityOverflow (property.PropertyValue :?> single) entity world
-        EntitySetters.["PerimeterUnscaled"] <- fun property entity world -> World.setEntityPerimeterUnscaled (property.PropertyValue :?> Box3) entity world
-        EntitySetters.["Perimeter"] <- fun property entity world -> World.setEntityPerimeter (property.PropertyValue :?> Box3) entity world
-        EntitySetters.["Presence"] <- fun property entity world -> World.setEntityPresence (property.PropertyValue :?> Presence) entity world
-        EntitySetters.["Absolute"] <- fun property entity world -> World.setEntityAbsolute (property.PropertyValue :?> bool) entity world
-        EntitySetters.["Model"] <- fun property entity world -> World.setEntityModelProperty false { DesignerType = property.PropertyType; DesignerValue = property.PropertyValue } entity world
-        EntitySetters.["MountOpt"] <- fun property entity world -> World.setEntityMountOpt (property.PropertyValue :?> Entity Relation option) entity world
-        EntitySetters.["Imperative"] <- fun property entity world -> World.setEntityImperative (property.PropertyValue :?> bool) entity world
-        EntitySetters.["Enabled"] <- fun property entity world -> World.setEntityEnabled (property.PropertyValue :?> bool) entity world
-        EntitySetters.["EnabledLocal"] <- fun property entity world -> World.setEntityEnabledLocal (property.PropertyValue :?> bool) entity world
-        EntitySetters.["Visible"] <- fun property entity world -> World.setEntityVisible (property.PropertyValue :?> bool) entity world
-        EntitySetters.["VisibleLocal"] <- fun property entity world -> World.setEntityVisibleLocal (property.PropertyValue :?> bool) entity world
-        EntitySetters.["Centered"] <- fun property entity world -> World.setEntityCentered (property.PropertyValue :?> bool) entity world
-        EntitySetters.["Static"] <- fun property entity world -> World.setEntityStatic (property.PropertyValue :?> bool) entity world
-        EntitySetters.["Light"] <- fun property entity world -> World.setEntityLight (property.PropertyValue :?> bool) entity world
-        EntitySetters.["AlwaysUpdate"] <- fun property entity world -> World.setEntityAlwaysUpdate (property.PropertyValue :?> bool) entity world
-        EntitySetters.["Persistent"] <- fun property entity world -> World.setEntityPersistent (property.PropertyValue :?> bool) entity world
+        EntitySetters.["Transform"] <- fun value entity world -> let mutable transform = value :?> Transform in World.setEntityTransformByRef (&transform, World.getEntityState entity world, entity, world)
+        EntitySetters.["Position"] <- fun value entity world -> World.setEntityPosition (value :?> Vector3) entity world
+        EntitySetters.["Center"] <- fun value entity world -> World.setEntityCenter (value :?> Vector3) entity world
+        EntitySetters.["Bottom"] <- fun value entity world -> World.setEntityBottom (value :?> Vector3) entity world
+        EntitySetters.["BottomLeft"] <- fun value entity world -> World.setEntityBottomLeft (value :?> Vector3) entity world
+        EntitySetters.["Min"] <- fun value entity world -> World.setEntityMin (value :?> Vector3) entity world
+        EntitySetters.["Max"] <- fun value entity world -> World.setEntityMax (value :?> Vector3) entity world
+        EntitySetters.["PositionLocal"] <- fun value entity world -> World.setEntityPositionLocal (value :?> Vector3) entity world
+        EntitySetters.["CenterLocal"] <- fun value entity world -> World.setEntityCenterLocal (value :?> Vector3) entity world
+        EntitySetters.["BottomLocal"] <- fun value entity world -> World.setEntityBottomLocal (value :?> Vector3) entity world
+        EntitySetters.["BottomLeftLocal"] <- fun value entity world -> World.setEntityBottomLeftLocal (value :?> Vector3) entity world
+        EntitySetters.["MinLocal"] <- fun value entity world -> World.setEntityMinLocal (value :?> Vector3) entity world
+        EntitySetters.["MaxLocal"] <- fun value entity world -> World.setEntityMaxLocal (value :?> Vector3) entity world
+        EntitySetters.["Scale"] <- fun value entity world -> World.setEntityScale (value :?> Vector3) entity world
+        EntitySetters.["ScaleLocal"] <- fun value entity world -> World.setEntityScaleLocal (value :?> Vector3) entity world
+        EntitySetters.["Rotation"] <- fun value entity world -> World.setEntityRotation (value :?> Quaternion) entity world
+        EntitySetters.["RotationLocal"] <- fun value entity world -> World.setEntityRotationLocal (value :?> Quaternion) entity world
+        EntitySetters.["Offset"] <- fun value entity world -> World.setEntityOffset (value :?> Vector3) entity world
+        EntitySetters.["Angles"] <- fun value entity world -> World.setEntityAngles (value :?> Vector3) entity world
+        EntitySetters.["AnglesLocal"] <- fun value entity world -> World.setEntityAnglesLocal (value :?> Vector3) entity world
+        EntitySetters.["Degrees"] <- fun value entity world -> World.setEntityDegrees (value :?> Vector3) entity world
+        EntitySetters.["DegreesLocal"] <- fun value entity world -> World.setEntityDegreesLocal (value :?> Vector3) entity world
+        EntitySetters.["Size"] <- fun value entity world -> World.setEntitySize (value :?> Vector3) entity world
+        EntitySetters.["Elevation"] <- fun value entity world -> World.setEntityElevation (value :?> single) entity world
+        EntitySetters.["ElevationLocal"] <- fun value entity world -> World.setEntityElevationLocal (value :?> single) entity world
+        EntitySetters.["Overflow"] <- fun value entity world -> World.setEntityOverflow (value :?> single) entity world
+        EntitySetters.["PerimeterUnscaled"] <- fun value entity world -> World.setEntityPerimeterUnscaled (value :?> Box3) entity world
+        EntitySetters.["Perimeter"] <- fun value entity world -> World.setEntityPerimeter (value :?> Box3) entity world
+        EntitySetters.["Presence"] <- fun value entity world -> World.setEntityPresence (value :?> Presence) entity world
+        EntitySetters.["Absolute"] <- fun value entity world -> World.setEntityAbsolute (value :?> bool) entity world
+        EntitySetters.["Model"] <- fun value entity world -> let dp = World.getEntityModelProperty entity world in World.setEntityModelProperty false { dp with DesignerValue = value } entity world
+        EntitySetters.["MountOpt"] <- fun value entity world -> World.setEntityMountOpt (value :?> Entity Relation option) entity world
+        EntitySetters.["Imperative"] <- fun value entity world -> World.setEntityImperative (value :?> bool) entity world
+        EntitySetters.["Enabled"] <- fun value entity world -> World.setEntityEnabled (value :?> bool) entity world
+        EntitySetters.["EnabledLocal"] <- fun value entity world -> World.setEntityEnabledLocal (value :?> bool) entity world
+        EntitySetters.["Visible"] <- fun value entity world -> World.setEntityVisible (value :?> bool) entity world
+        EntitySetters.["VisibleLocal"] <- fun value entity world -> World.setEntityVisibleLocal (value :?> bool) entity world
+        EntitySetters.["Centered"] <- fun value entity world -> World.setEntityCentered (value :?> bool) entity world
+        EntitySetters.["Static"] <- fun value entity world -> World.setEntityStatic (value :?> bool) entity world
+        EntitySetters.["Light"] <- fun value entity world -> World.setEntityLight (value :?> bool) entity world
+        EntitySetters.["AlwaysUpdate"] <- fun value entity world -> World.setEntityAlwaysUpdate (value :?> bool) entity world
+        EntitySetters.["Persistent"] <- fun value entity world -> World.setEntityPersistent (value :?> bool) entity world
 
     /// Initialize getters and setters
     let internal init () =
