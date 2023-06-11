@@ -27,9 +27,9 @@ type ElmarioDispatcher () =
     override this.Initialize (_, _) =
         [Game.UpdateEvent => Update
          Game.KeyboardKeyDownEvent =|> fun evt ->
-             if evt.Data.KeyboardKey = KeyboardKey.Up && not evt.Data.Repeated
-             then Jump :> Signal
-             else Nop :> Signal]
+            if evt.Data.KeyboardKey = KeyboardKey.Up && not evt.Data.Repeated
+            then Jump
+            else Nop]
 
     // here we handle the Elm-style commands
     override this.Command (_, command, _, world) =

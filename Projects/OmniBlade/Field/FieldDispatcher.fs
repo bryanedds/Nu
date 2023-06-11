@@ -701,8 +701,8 @@ module FieldDispatcher =
                     if heading.Magnitude >= 6.0f then // TODO: make constant DeadZoneRadius.
                         let goalNormalized = Vector3.Normalize heading
                         let force = goalNormalized * Constants.Field.AvatarWalkForceMouse
-                        let moveAvatar = MoveAvatar force :> Signal
-                        let faceAvatar = FaceAvatar (Direction.ofVector3 heading) :> Signal
+                        let moveAvatar = MoveAvatar force
+                        let faceAvatar = FaceAvatar (Direction.ofVector3 heading)
                         withSignals [moveAvatar; faceAvatar] world
                     else just world
                 else just world

@@ -45,8 +45,8 @@ module Gameplay =
              Screen.DeselectingEvent => FinishQuitting
              Game.KeyboardKeyDownEvent =|> fun evt ->
                 if evt.Data.KeyboardKey = KeyboardKey.Up && not evt.Data.Repeated
-                then Jump :> Signal
-                else Nop :> Signal]
+                then Jump
+                else Nop]
 
         // here we handle the above messages
         override this.Message (_, message, _, _) =
