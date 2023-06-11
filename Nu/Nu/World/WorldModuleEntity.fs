@@ -22,6 +22,7 @@ module WorldModuleEntity =
     let internal EntitySetters = Dictionary<string, PropertySetter> StringComparer.Ordinal
 
     /// Mutable clipboard that allows its state to persist beyond undo / redo.
+    /// TODO: put this in AmbientState instead of leaving it free-floating?
     let mutable private Clipboard : obj option = None
 
     /// Publishing IDs.
