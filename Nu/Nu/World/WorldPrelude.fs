@@ -35,7 +35,7 @@ type TileMapDescriptor =
       TileMapSizeF : Vector2
       TileMapPosition : Vector2 }
 
-/// The mannter in which a gui entity may be docked by a parent entity.
+/// The manner in which a gui entity may be docked by a parent entity.
 type DockType =
     | DockCenter
     | DockTop
