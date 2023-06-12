@@ -7,7 +7,6 @@ open System.ComponentModel
 open System.Windows.Forms
 open Prime
 open Nu
-open Nu.Declarative
 open Nu.Gaia
 open Nu.Gaia.Design
 

@@ -163,7 +163,7 @@ and Message = inherit Signal
 /// A model-message-command-content (MMCC) command tag type.
 and Command = inherit Signal
 
-/// Specified the desired screen, if any, or whether to ignore screen desire functionality altogether.
+/// Specifies the desired screen, if any, or whether to ignore screen desire functionality altogether.
 and DesiredScreen =
     | Desire of Screen
     | DesireNone
