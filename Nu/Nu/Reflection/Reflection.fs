@@ -523,6 +523,7 @@ module Reflection =
         let instrinsicFacetNames = getIntrinsicFacetNames sourceType
         attachIntrinsicFacetsViaNames copyTarget dispatcherMap facetMap instrinsicFacetNames target world
 
+    /// Initialize backing data utilized by reflection module.
     let init () =
 
         // initialize once
