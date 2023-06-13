@@ -1146,7 +1146,7 @@ module WorldModule2 =
             let world = World.unregisterGame world
             World.cleanUpSubsystems world |> ignore
 
-        /// Run the game engine with threading with the given handlers, but don't clean up at the end, and return the world.
+        /// Run the game engine with the given handlers, but don't clean up at the end, and return the world.
         static member runWithoutCleanUp runWhile preProcess perProcess postProcess (sdlDeps : SdlDeps) liveness firstFrame world =
 
             // run loop if user-defined run-while predicate passes
