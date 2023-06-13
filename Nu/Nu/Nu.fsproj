@@ -80,6 +80,7 @@
 		<Compile Include="Render\RenderProcess.fs" />
 		<Compile Include="Audio\Audio.fs" />
 		<Compile Include="Symbolics\Symbolics.fs" />
+		<Compile Include="Tmx\Tmx.fs" />
 		<Compile Include="Metadata\Metadata.fs" />
 		<Compile Include="View\View.fs" />
 		<Compile Include="Behaviors\Behavior.fs" />
