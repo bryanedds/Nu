@@ -60,12 +60,12 @@ module Field =
     type [<SymbolicExpansion>] Field =
         private
             { FieldState_ : FieldState
-              FieldScript : FieldScript
-              FieldTileMap : TileMap AssetTag
-              OccupantPositions : Map<OccupantIndex, Vector2i>
-              OccupantIndices : Map<Vector2i, OccupantIndex>
-              Occupants : Map<OccupantIndex, Occupant>
-              SelectedTile : Vector2i }
+              FieldScript_ : FieldScript
+              FieldTileMap_ : TileMap AssetTag
+              OccupantPositions_ : Map<OccupantIndex, Vector2i>
+              OccupantIndices_ : Map<Vector2i, OccupantIndex>
+              Occupants_ : Map<OccupantIndex, Occupant>
+              SelectedTile_ : Vector2i }
 
         member this.FieldState = this.FieldState_
 
@@ -309,13 +309,13 @@ module Field =
         | None -> failwith ("Field vertex index '" + scstring index + "' out of range.")
 
     let getFieldMetadata field =
-        getFieldMetadataInternal field.FieldTileMap
+        getFieldMetadataInternal field.FieldTileMap_
 
     let tryGetFieldTileVertices index field =
-        tryGetFieldTileVerticesInternal index field.FieldTileMap
+        tryGetFieldTileVerticesInternal index field.FieldTileMap_
 
     let getFieldTileVertices index field =
-        getFieldTileVerticesInternal index field.FieldTileMap
+        getFieldTileVerticesInternal index field.FieldTileMap_
 
     let tryGetFieldTileDataAtMouse field world =
         let mouseRay = World.getMouseRay3dWorld false world
@@ -339,9 +339,9 @@ module Field =
         intersections
 
     let getOccupants field =
-        field.OccupantPositions |>
-        Map.map (fun _ position -> getFieldTileVerticesInternal position field.FieldTileMap)  |>
-        flip Seq.zip field.Occupants |>
+        field.OccupantPositions_ |>
+        Map.map (fun _ position -> getFieldTileVerticesInternal position field.FieldTileMap_)  |>
+        flip Seq.zip field.Occupants_ |>
         Seq.map (fun (kvp, kvp2) -> (kvp.Key, (kvp.Value, kvp2.Value))) |>
         Map.ofSeq
 
@@ -349,13 +349,13 @@ module Field =
         match field.FieldState_ with
         | BattleState (BattleResult (_, result))
         | NarrativeState (NarrativeResult result) ->
-            match field.FieldScript with
+            match field.FieldScript_ with
             | FieldToBattle -> { field with FieldState_ = BattleState (BattleReady (world.UpdateTime + 60L)) }
             | FieldToNarrative -> { field with FieldState_ = NarrativeState (NarrativeResult false) }
-            | FieldCondition (consequent, alternative) -> advanceFieldScript { field with FieldScript = if result then consequent else alternative } world
+            | FieldCondition (consequent, alternative) -> advanceFieldScript { field with FieldScript_ = if result then consequent else alternative } world
             | FieldScripts scripts ->
                 match scripts with
-                | _ :: scripts -> advanceFieldScript { field with FieldScript = FieldScripts scripts } world
+                | _ :: scripts -> advanceFieldScript { field with FieldScript_ = FieldScripts scripts } world
                 | _ -> { field with FieldState_ = FieldQuitting (world.UpdateTime + 60L, result) }
         | _ -> field
 
@@ -368,12 +368,12 @@ module Field =
         let occupantPositions = occupants |> List.map (fun (position, index, _) -> (index, position)) |> Map.ofList
         let occupants = occupants |> List.map (fun (_, index, occupant) -> (index, occupant)) |> Map.ofList
         { FieldState_ = FieldReady updateTime
-          FieldScript = fieldScript
-          FieldTileMap = tileMap
-          OccupantIndices = occupantIndices
-          OccupantPositions = occupantPositions
-          Occupants = occupants
-          SelectedTile = v2iZero }
+          FieldScript_ = fieldScript
+          FieldTileMap_ = tileMap
+          OccupantIndices_ = occupantIndices
+          OccupantPositions_ = occupantPositions
+          Occupants_ = occupants
+          SelectedTile_ = v2iZero }
 
     let debug (world : World) =
         let occupants =
