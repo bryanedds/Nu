@@ -659,7 +659,7 @@ module WorldEntityModule =
         static member destroyEntities entities world =
             World.frame (World.destroyEntitiesImmediate entities) Simulants.Game world
 
-        /// Sort the given 2d entities.
+        /// Sort the given entities by 2d sorting priority.
         /// If there are a lot of entities, this may allocate in the LOH.
         static member sortEntities2d entities world =
             entities |>
@@ -669,7 +669,7 @@ module WorldEntityModule =
             Array.sortStableWith SortPriority.compare |>
             Array.map (fun p -> p.SortTarget :?> Entity)
 
-        /// Try to pick an entity at the given position.
+        /// Attempt to pick an entity at the given position.
         [<FunctionBinding>]
         static member tryPickEntity2d position entities world =
             let entitiesSorted = World.sortEntities2d entities world
@@ -683,7 +683,7 @@ module WorldEntityModule =
                     perimeterOriented.Intersects positionWorld)
                 entitiesSorted
 
-        /// Try to pick a 3d entity with the given ray.
+        /// Attempt to pick a 3d entity with the given ray.
         [<FunctionBinding>]
         static member tryPickEntity3d position entities world =
             let intersectionses =
@@ -754,7 +754,7 @@ module WorldEntityModule =
             let world = World.setEntityOrder (World.getEntityOrder entity2 world) entity world |> snd'
             World.setEntityOrder order entity2 world |> snd'
 
-        /// Insert an entity's order between previous and optionally next.
+        /// Insert an entity's order between optional previous entity and next entity.
         static member insertEntityOrder (entity : Entity) (previousOpt : Entity option) (next : Entity) world =
             let order = 
                 match previousOpt with

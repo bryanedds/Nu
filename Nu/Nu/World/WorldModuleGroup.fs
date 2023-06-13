@@ -332,10 +332,9 @@ module WorldModuleGroup =
                 World.removeGroupState group world
             else world
 
-        /// View all of the properties of a group.
-        static member viewGroupProperties group world =
+        static member internal viewGroupProperties group world =
             let state = World.getGroupState group world
-            World.viewProperties state
+            World.viewSimulantStateProperties state
 
     /// Initialize property getters.
     let private initGetters () =

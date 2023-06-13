@@ -132,8 +132,7 @@ module WorldSimulantModule =
             | :? Game -> World.registerGame world
             | _ -> failwithumf ()
 
-        /// Attempt to synchronize the content of the given simulant.
-        static member trySynchronize initializing (simulant : Simulant) (world : World) =
+        static member internal trySynchronize initializing (simulant : Simulant) (world : World) =
             match simulant with
             | :? Entity as entity -> (World.getEntityDispatcher entity world).TrySynchronize (initializing, entity, world)
             | :? Group as group -> (World.getGroupDispatcher group world).TrySynchronize (initializing, group, world)

@@ -467,7 +467,7 @@ module WorldModule =
         static member getOverlays world =
             World.getOverlayerBy Overlayer.getOverlays world
 
-        /// Attempt to get the given dispatcher's routed overlay name.
+        /// Attempt to get the given dispatcher's optional routed overlay name.
         [<FunctionBinding>]
         static member tryGetRoutedOverlayNameOpt dispatcherName world =
             World.getOverlayRouterBy (OverlayRouter.tryGetOverlayNameOpt dispatcherName) world
@@ -482,16 +482,19 @@ module WorldModule =
         static member internal setOverlayRouter router world =
             World.updateAmbientState (AmbientState.setOverlayRouter router) world
 
+        static member internal acknowledgeUnculledRenderRequest world =
+            World.updateAmbientState AmbientState.acknowledgeUnculledRenderRequest world
+
+        /// Get whether an unculled render was requested.
         [<FunctionBinding>]
         static member getUnculledRenderRequested world =
             World.getAmbientStateBy AmbientState.getUnculledRenderRequested world
 
+        /// Request an unculled render for the current frame, such as when a light probe needs to be rendered when its
+        /// relevant entities are in culling range.
         [<FunctionBinding>]
         static member requestUnculledRender world =
             World.updateAmbientState AmbientState.requestUnculledRender world
-
-        static member internal acknowledgeUnculledRenderRequest world =
-            World.updateAmbientState AmbientState.acknowledgeUnculledRenderRequest world
 
     type World with // Quadtree
 
@@ -607,7 +610,7 @@ module WorldModule =
         static member getEventTracerOpt (world : World) =
             EventGraph.getEventTracerOpt world.EventGraph
 
-        /// Set how events are being traced.
+        /// Set how events are being traced, if at all.
         static member setEventTracerOpt tracerOpt (world : World) =
             World.updateEventGraph (EventGraph.setEventTracerOpt tracerOpt) world
 
@@ -621,7 +624,7 @@ module WorldModule =
         static member setEventFilter filter (world : World) =
             World.updateEventGraph (EventGraph.setEventFilter filter) world
 
-        /// Publish an event with no subscription sorting.
+        /// Publish an event.
         static member publishPlus<'a, 'p when 'p :> Simulant>
             (eventData : 'a)
             (eventAddress : 'a Address)
@@ -710,7 +713,7 @@ module WorldModule =
                 | None -> world
             | None -> world
 
-        /// Subscribe to an event using the given subscriptionId, and be provided with an unsubscription callback.
+        /// Subscribe to an event using the given subscriptionId and be provided with an unsubscription callback.
         static member subscribePlus<'a, 's when 's :> Simulant>
             (subscriptionId : Guid)
             (callback : Event<'a, 's> -> World -> Handling * World)
@@ -843,7 +846,7 @@ module WorldModule =
     type World with // Debugging
 
         /// View the member properties of some SimulantState.
-        static member internal getMemberProperties (state : SimulantState) =
+        static member internal getSimulantStateMemberProperties (state : SimulantState) =
             state |>
             getType |>
             (fun ty -> ty.GetProperties ()) |>
@@ -851,7 +854,7 @@ module WorldModule =
             Array.toList
 
         /// View the xtension properties of some SimulantState.
-        static member internal getXtensionProperties (state : SimulantState) =
+        static member internal getSimulantStateXtensionProperties (state : SimulantState) =
             state.GetXtension () |>
             Xtension.toSeq |>
             List.ofSeq |>
@@ -859,26 +862,26 @@ module WorldModule =
             List.map (fun (name, property) -> (name, property.PropertyType, property.PropertyValue))
 
         /// Provides a full view of all the properties of some SimulantState.
-        static member internal getProperties state =
+        static member internal getSimulantStateProperties state =
             List.append
-                (World.getMemberProperties state)
-                (World.getXtensionProperties state)
+                (World.getSimulantStateMemberProperties state)
+                (World.getSimulantStateXtensionProperties state)
 
-        /// Present properties for viewing.
-        static member internal viewProperties state =
-            let properties = World.getProperties state
+        /// Present SimulantState properties for viewing.
+        static member internal viewSimulantStateProperties state =
+            let properties = World.getSimulantStateProperties state
             properties |> Array.ofList |> Array.map a_c |> Array.sortBy fst
 
     type World with // Handlers
 
-        /// Ignore all handled events.
+        /// Handle an event by doing nothing.
         static member handleAsPass<'a, 's when 's :> Simulant> (_ : Event<'a, 's>) (world : World) =
             (Cascade, world)
 
-        /// Swallow all handled events.
+        /// Handle an event by swallowing.
         static member handleAsSwallow<'a, 's when 's :> Simulant> (_ : Event<'a, 's>) (world : World) =
             (Resolve, world)
 
-        /// Handle event by exiting app.
+        /// Handle an event by exiting the application.
         static member handleAsExit<'a, 's when 's :> Simulant> (_ : Event<'a, 's>) (world : World) =
             (Resolve, World.exit world)

@@ -39,13 +39,13 @@ module WorldRender =
             for operation in operations do rendererProcess.EnqueueMessage2d (LayeredOperation2d operation)
             world
             
-        /// Load an 2d render asset package. Should be used to avoid loading assets at inconvenient times (such as in the
+        /// Load a 2d render asset package. Should be used to avoid loading assets at inconvenient times (such as in the
         /// middle of game play!)
         [<FunctionBinding>]
-        static member loadRenderPackageUse2d packageName world =
+        static member loadRenderPackage2d packageName world =
             let loadRenderPackageUseMessage = LoadRenderPackage2d packageName
             World.enqueueRenderMessage2d loadRenderPackageUseMessage world
-            
+
         /// Unload a 2d render package should be unloaded since its assets will not be used again soon.
         [<FunctionBinding>]
         static member unloadRenderPackage2d packageName world =
@@ -68,6 +68,19 @@ module WorldRender =
             let rendererProcess = World.getRendererProcess world
             for message in messages do rendererProcess.EnqueueMessage3d message
             world
+            
+        /// Load a 3d render asset package. Should be used to avoid loading assets at inconvenient times (such as in the
+        /// middle of game play!)
+        [<FunctionBinding>]
+        static member loadRenderPackage3d packageName world =
+            let loadRenderPackageUseMessage = LoadRenderPackage3d packageName
+            World.enqueueRenderMessage3d loadRenderPackageUseMessage world
+
+        /// Unload a 3d render package should be unloaded since its assets will not be used again soon.
+        [<FunctionBinding>]
+        static member unloadRenderPackage3d packageName world =
+            let unloadRenderPackageMessage = UnloadRenderPackage3d packageName
+            World.enqueueRenderMessage3d unloadRenderPackageMessage world
 
         /// Send a message to the 3d renderer to reload its rendering assets.
         [<FunctionBinding>]

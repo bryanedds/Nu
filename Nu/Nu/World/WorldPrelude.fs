@@ -413,6 +413,10 @@ module AmbientState =
     let setOverlayRouter router state =
         { state with OverlayRouter = router }
 
+    /// Acknowledge an unculled render request.
+    let acknowledgeUnculledRenderRequest state =
+        { state with UnculledRenderRequested = false }
+
     /// Get whether an unculled render was requested.
     let getUnculledRenderRequested state =
         state.UnculledRenderRequested
@@ -420,10 +424,6 @@ module AmbientState =
     /// Request an unculled render for the current frame.
     let requestUnculledRender state =
         { state with UnculledRenderRequested = true }
-
-    /// Acknowledge an unculled render request.
-    let acknowledgeUnculledRenderRequest state =
-        { state with UnculledRenderRequested = false }
 
     /// Make an ambient state value.
     let make imperative accompanied advancing symbolics overlayer overlayRouter sdlDepsOpt =

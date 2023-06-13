@@ -330,7 +330,7 @@ module WorldModuleGame =
         static member getSelectedScreenOpt world =
             (World.getGameState world).SelectedScreenOpt
 
-        /// Set the currently selected screen, if any.
+        /// Set the currently selected screen or None.
         static member setSelectedScreenOpt value world =
             World.setSelectedScreenOptPlus value world |> snd
 
@@ -550,10 +550,9 @@ module WorldModuleGame =
             let gameState = GameState.detachProperty propertyName gameState
             World.setGameState gameState world
 
-        /// View all of the properties of a game.
-        static member viewGameProperties world =
+        static member internal viewGameProperties world =
             let state = World.getGameState world
-            World.viewProperties state
+            World.viewSimulantStateProperties state
 
     /// Initialize property getters.
     let private initGetters () =
