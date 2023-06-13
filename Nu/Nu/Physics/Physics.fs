@@ -423,7 +423,7 @@ type PhysicsMessage =
 /// TODO: consider seeing if we can make message methods side-effect rather than functional.
 type PhysicsEngine =
     /// Check that the physics engine contain the body with the given physics id.
-    abstract BodyExists : BodyId -> bool
+    abstract GetBodyExists : BodyId -> bool
     /// Get the contact normals of the body with the given physics id.
     abstract GetBodyContactNormals : BodyId -> Vector3 list
     /// Get the linear velocity of the body with the given physics id.
@@ -452,7 +452,7 @@ type [<ReferenceEquality>] MockPhysicsEngine =
     private { MockPhysicsEngine : unit }
     static member make () = { MockPhysicsEngine = () }
     interface PhysicsEngine with
-        member physicsEngine.BodyExists _ = false
+        member physicsEngine.GetBodyExists _ = false
         member physicsEngine.GetBodyContactNormals _ = failwith "No bodies in MockPhysicsEngine"
         member physicsEngine.GetBodyLinearVelocity _ = failwith "No bodies in MockPhysicsEngine"
         member physicsEngine.GetBodyToGroundContactNormals _ = failwith "No bodies in MockPhysicsEngine"

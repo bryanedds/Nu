@@ -518,7 +518,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
 
     interface PhysicsEngine with
 
-        member physicsEngine.BodyExists bodyId =
+        member physicsEngine.GetBodyExists bodyId =
             physicsEngine.Objects.ContainsKey bodyId
 
         member physicsEngine.GetBodyContactNormals bodyId =

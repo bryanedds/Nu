@@ -461,7 +461,7 @@ type [<ReferenceEquality>] AetherPhysicsEngine =
 
     interface PhysicsEngine with
 
-        member physicsEngine.BodyExists bodyId =
+        member physicsEngine.GetBodyExists bodyId =
             physicsEngine.Bodies.ContainsKey bodyId
 
         member physicsEngine.GetBodyContactNormals bodyId =
