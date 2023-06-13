@@ -1302,21 +1302,15 @@ module WorldModule2 =
             else world
 
         /// Run the game engine with the given handler.
-        static member run4 runWhile (sdlDeps : SdlDeps) liveness world =
-            let result =
-                try let world = World.runWithoutCleanUp runWhile id id id sdlDeps liveness true world
-                    World.cleanUp world
-                    Constants.Engine.ExitCodeSuccess
-                with exn ->
-                    let world = World.choose world
-                    Log.trace (scstring exn)
-                    World.cleanUp world
-                    Constants.Engine.ExitCodeFailure
-#if RUN_LOOP_MULTITHREAD
-            // stops background threads
-            Environment.Exit result
-#endif
-            result
+        static member run3 (sdlDeps : SdlDeps) liveness world =
+            try let world = World.runWithoutCleanUp tautology id id id sdlDeps liveness true world
+                World.cleanUp world
+                Constants.Engine.ExitCodeSuccess
+            with exn ->
+                let world = World.choose world
+                Log.trace (scstring exn)
+                World.cleanUp world
+                Constants.Engine.ExitCodeFailure
 
 [<AutoOpen>]
 module EntityDispatcherModule2 =
