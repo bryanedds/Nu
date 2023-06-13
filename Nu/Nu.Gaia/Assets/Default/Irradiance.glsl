@@ -6,12 +6,12 @@ uniform mat4 projection;
 
 layout (location = 0) in vec3 position;
 
-out vec3 outPosition;
+out vec3 positionOut;
 
 void main()
 {
-    outPosition = position;  
-    gl_Position = projection * view * vec4(outPosition, 1.0);
+    positionOut = position;  
+    gl_Position = projection * view * vec4(positionOut, 1.0);
 }
 
 #shader fragment
@@ -21,7 +21,7 @@ const float PI = 3.14159265359;
 const float SAMPLE_DELTA = 0.025;
 const float TONE_UNMAP_SCALAR = 1.6225;
 
-in vec3 outPosition;
+in vec3 positionOut;
 
 out vec4 frag;
 
@@ -30,7 +30,7 @@ uniform samplerCube cubeMap;
 void main()
 {
     // compute normal
-    vec3 normal = normalize(outPosition);
+    vec3 normal = normalize(positionOut);
 
     // calculate tangent space
     vec3 up = vec3(0.0, 1.0, 0.0);
