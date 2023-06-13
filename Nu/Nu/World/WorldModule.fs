@@ -530,7 +530,7 @@ module WorldModule =
         static member getSelectedEcsOpt world =
             world.SelectedEcsOpt
 
-        /// Get the currently selected ECS or throw an exception.
+        /// Get the currently selected ECS (failing with an exception if there isn't one).
         static member getSelectedEcs world =
             match  world.SelectedEcsOpt with
             | Some selectedEcsOpt -> selectedEcsOpt

@@ -27,7 +27,7 @@ module WorldBindings =
         "setMasterAudioVolume setMasterSoundVolume setMasterSongVolume playSong playSound fadeOutSong " +
         "stopSong loadAudioPackage unloadAudioPackage reloadAudioAssets " +
         "loadRenderPackage2d unloadRenderPackage2d reloadRenderAssets2d reloadRenderAssets3d " +
-        "localizeBodyShape bodyExists getBodyContactNormals getBodyLinearVelocity " +
+        "localizeBodyShape getBodyExists getBodyContactNormals getBodyLinearVelocity " +
         "getBodyToGroundContactNormals getBodyToGroundContactNormalOpt getBodyToGroundContactTangentOpt isBodyOnGround " +
         "createBody createBodies destroyBody destroyBodies " +
         "createJoint createJoints destroyJoint destroyJoints " +
@@ -641,19 +641,19 @@ module WorldBindings =
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'localizeBodyShape' due to: " + scstring exn, ValueNone)
             struct (violation, World.choose oldWorld)
 
-    let bodyExists bodyId world =
+    let getBodyExists bodyId world =
         let oldWorld = world
         try
             let bodyId =
                 match ScriptingSystem.tryExport typeof<BodyId> bodyId world with
                 | Some value -> value :?> BodyId
                 | None -> failwith "Invalid argument type for 'bodyId'; expecting a value convertable to BodyId."
-            let result = World.bodyExists bodyId world
+            let result = World.getBodyExists bodyId world
             let value = result
             let value = ScriptingSystem.tryImport typeof<Boolean> value world |> Option.get
             struct (value, world)
         with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'bodyExists' due to: " + scstring exn, ValueNone)
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getBodyExists' due to: " + scstring exn, ValueNone)
             struct (violation, World.choose oldWorld)
 
     let getBodyContactNormals bodyId world =
@@ -3443,12 +3443,12 @@ module WorldBindings =
                 struct (violation, world)
         | Some violation -> struct (violation, world)
 
-    let evalBodyExistsBinding fnName exprs originOpt world =
+    let evalGetBodyExistsBinding fnName exprs originOpt world =
         let struct (evaleds, world) = World.evalManyInternal exprs world
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [|bodyId|] -> bodyExists bodyId world
+            | [|bodyId|] -> getBodyExists bodyId world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
                 struct (violation, world)
@@ -5104,7 +5104,7 @@ module WorldBindings =
              ("reloadRenderAssets2d", { Fn = evalReloadRenderAssets2dBinding; Pars = [||]; DocOpt = None })
              ("reloadRenderAssets3d", { Fn = evalReloadRenderAssets3dBinding; Pars = [||]; DocOpt = None })
              ("localizeBodyShape", { Fn = evalLocalizeBodyShapeBinding; Pars = [|"size"; "bodyShape"|]; DocOpt = None })
-             ("bodyExists", { Fn = evalBodyExistsBinding; Pars = [|"bodyId"|]; DocOpt = None })
+             ("getBodyExists", { Fn = evalGetBodyExistsBinding; Pars = [|"bodyId"|]; DocOpt = None })
              ("getBodyContactNormals", { Fn = evalGetBodyContactNormalsBinding; Pars = [|"bodyId"|]; DocOpt = None })
              ("getBodyLinearVelocity", { Fn = evalGetBodyLinearVelocityBinding; Pars = [|"bodyId"|]; DocOpt = None })
              ("getBodyToGroundContactNormals", { Fn = evalGetBodyToGroundContactNormalsBinding; Pars = [|"bodyId"|]; DocOpt = None })
