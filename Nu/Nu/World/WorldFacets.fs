@@ -1601,9 +1601,6 @@ module StaticBillboardFacetModule =
                       MinFilterOpt = minFilterOpt; MagFilterOpt = magFilterOpt; RenderType = renderType })
                 world
 
-        override this.GetQuickSize (_, _) =
-            v3 1.0f 1.0f 1.0f
-
         override this.RayCast (ray, entity, world) =
             // TODO: intersect against oriented quad rather than box.
             match this.TryGetHighlightBounds (entity, world) with
