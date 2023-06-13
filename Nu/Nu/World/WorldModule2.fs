@@ -1339,12 +1339,15 @@ module EntityDispatcherModule2 =
         new (is2d, isGui, centered, physical, initial : 'model) =
             EntityDispatcher<'model, 'message, 'command> (is2d, isGui, centered, physical, fun _ -> initial)
 
+        /// Get the entity's model.
         member this.GetModel (entity : Entity) world : 'model =
             entity.GetModelGeneric<'model> world
 
+        /// Set the entity's model.
         member this.SetModel (model : 'model) (entity : Entity) world =
             entity.SetModelGeneric<'model> model world
 
+        /// The entity's model lens.
         member this.Model (entity : Entity) =
             lens (nameof this.Model) entity (this.GetModel entity) (flip this.SetModel entity)
 
@@ -1486,12 +1489,15 @@ module GroupDispatcherModule =
         new (initial : 'model) =
             GroupDispatcher<'model, 'message, 'command> (fun _ -> initial)
 
+        /// Get the group's model.
         member this.GetModel (group : Group) world : 'model =
             group.GetModelGeneric<'model> world
 
+        /// Set the group's model.
         member this.SetModel (model : 'model) (group : Group) world =
             group.SetModelGeneric<'model> model world
 
+        /// The group's model lens.
         member this.Model (group : Group) =
             lens (nameof this.Model) group (this.GetModel group) (flip this.SetModel group)
 
@@ -1569,12 +1575,15 @@ module ScreenDispatcherModule =
         new (initial : 'model) =
             ScreenDispatcher<'model, 'message, 'command> (fun _ -> initial)
 
+        /// Get the screen's model.
         member this.GetModel (screen : Screen) world : 'model =
             screen.GetModelGeneric<'model> world
 
+        /// Set the screen's model.
         member this.SetModel (model : 'model) (screen : Screen) world =
             screen.SetModelGeneric<'model> model world
 
+        /// The screen's model lens.
         member this.Model (screen : Screen) =
             lens (nameof this.Model) screen (this.GetModel screen) (flip this.SetModel screen)
 
@@ -1659,12 +1668,15 @@ module GameDispatcherModule =
         new (initial : 'model) =
             GameDispatcher<'model, 'message, 'command> (fun _ -> initial)
 
+        /// Get the game's model.
         member this.GetModel (game : Game) world : 'model =
             game.GetModelGeneric<'model> world
 
+        /// Set the game's model.
         member this.SetModel (model : 'model) (game : Game) world =
             game.SetModelGeneric<'model> model world
 
+        /// The game's model lens.
         member this.Model (game : Game) =
             lens (nameof this.Model) game (this.GetModel game) (flip this.SetModel game)
 
