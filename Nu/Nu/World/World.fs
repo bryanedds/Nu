@@ -722,7 +722,8 @@ module WorldModule3 =
                 | Left error -> Left error
             | Left error -> Left error
 
-        /// Run the game engine, returning exit code upon termination.
+        /// Run the game engine, initializing dependencies as indicated by WorldConfig, and returning exit code upon
+        /// termination.
         static member run worldConfig plugin =
             match SdlDeps.tryMake worldConfig.SdlConfig with
             | Right sdlDeps ->

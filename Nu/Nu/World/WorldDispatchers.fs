@@ -1140,8 +1140,8 @@ module StaticModelHierarchyDispatcherModule =
 
     type World with
 
-        /// Attempt to import scene below the target entity.
-        static member tryImportScene rigid presence staticModel (parent : Either<Group, Entity>) world =
+        /// Attempt to import a static model hierarchy below the target entity.
+        static member tryImportHierarchy rigid presence staticModel (parent : Either<Group, Entity>) world =
             match Metadata.tryGetStaticModelMetadata staticModel with
             | Some staticModelMetadata ->
                 let mutable (world', i) = (world, 0) // using mutation due to imperative API
@@ -1254,7 +1254,7 @@ module StaticModelHierarchyDispatcherModule =
         static let synchronizeChildren evt world =
             let entity = evt.Subscriber : Entity
             let world = destroyChildren entity world
-            let world = World.tryImportScene false (entity.GetPresenceConferred world) (entity.GetStaticModel world) (Right entity) world
+            let world = World.tryImportHierarchy false (entity.GetPresenceConferred world) (entity.GetStaticModel world) (Right entity) world
             (Cascade, world)
 
         static member Properties =
@@ -1265,7 +1265,7 @@ module StaticModelHierarchyDispatcherModule =
         override this.Register (entity, world) =
             let world =
                 if not (entity.GetLoaded world) then
-                    let world = World.tryImportScene false (entity.GetPresence world) (entity.GetStaticModel world) (Right entity) world
+                    let world = World.tryImportHierarchy false (entity.GetPresence world) (entity.GetStaticModel world) (Right entity) world
                     let world = entity.SetLoaded true world
                     world
                 else world
@@ -1287,7 +1287,7 @@ module RigidModelHierarchyDispatcherModule =
         static let synchronizeChildren evt world =
             let entity = evt.Subscriber : Entity
             let world = destroyChildren entity world
-            let world = World.tryImportScene true (entity.GetPresenceConferred world) (entity.GetStaticModel world) (Right entity) world
+            let world = World.tryImportHierarchy true (entity.GetPresenceConferred world) (entity.GetStaticModel world) (Right entity) world
             (Cascade, world)
 
         static member Properties =
@@ -1298,7 +1298,7 @@ module RigidModelHierarchyDispatcherModule =
         override this.Register (entity, world) =
             let world =
                 if not (entity.GetLoaded world) then
-                    let world = World.tryImportScene true (entity.GetPresence world) (entity.GetStaticModel world) (Right entity) world
+                    let world = World.tryImportHierarchy true (entity.GetPresence world) (entity.GetStaticModel world) (Right entity) world
                     let world = entity.SetLoaded true world
                     world
                 else world

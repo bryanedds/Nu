@@ -196,7 +196,7 @@ module WorldScreenModule =
                 | None -> Seq.empty
             | (false, _) -> Seq.empty
 
-        /// Set the dissolve properties of a screen.
+        /// Set the dissolve aspects of a screen.
         [<FunctionBinding>]
         static member setScreenDissolve dissolveDescriptor songOpt (screen : Screen) world =
             let dissolveImageOpt = Some dissolveDescriptor.DissolveImage

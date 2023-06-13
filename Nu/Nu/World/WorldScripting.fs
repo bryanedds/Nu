@@ -957,7 +957,7 @@ module WorldScripting =
                 match World.tryGetState simulant world with
                 | Some state ->
                     let propStrs =
-                        World.getProperties state |>
+                        World.getSimulantStateProperties state |>
                         List.filter (fun (name, _, _) ->
                             match name with
                             | "Xtension" | "Dispatcher" | "Facets" | "ScriptFrame" | "ScriptFrameOpt" -> false

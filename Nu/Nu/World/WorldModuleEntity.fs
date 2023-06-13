@@ -202,7 +202,7 @@ module WorldModuleEntity =
 
         static member private publishEntityChanges entity world =
             let entityState = World.getEntityState entity world
-            let properties = World.getProperties entityState
+            let properties = World.getSimulantStateProperties entityState
             let publishChangeEvents = entityState.PublishChangeEvents
             if publishChangeEvents then
                 List.fold (fun world (propertyName, _, propertyValue) ->
@@ -2426,7 +2426,7 @@ module WorldModuleEntity =
             
         /// Try to set the entity's facet names from script.
         [<FunctionBinding "trySetEntityOverlayNameOpt">]
-        static member trySetEntityOverlayNameOptFromScript overlayNameOpt entity world =
+        static member internal trySetEntityOverlayNameOptFromScript overlayNameOpt entity world =
             match World.trySetEntityOverlayNameOpt overlayNameOpt entity world with
             | (Right _, world) -> world
             | (Left _, world) -> world
@@ -2451,26 +2451,14 @@ module WorldModuleEntity =
 
         /// Try to set the entity's facet names from script.
         [<FunctionBinding "trySetEntityFacetNames">]
-        static member trySetEntityFacetNamesFromScript facetNames entity world =
+        static member internal trySetEntityFacetNamesFromScript facetNames entity world =
             match World.trySetEntityFacetNames facetNames entity world with
             | (Right _, world) -> world
             | (Left _, world) -> world
 
-        /// View all of the properties of an entity.
-        static member viewEntityProperties entity world =
+        static member internal viewEntityProperties entity world =
             let state = World.getEntityState entity world
-            World.viewProperties state
-
-        /// Construct a screen reference in an optimized way.
-        /// OPTIMIZATION: attempt to avoid constructing a screen address on each call to decrease
-        /// address hashing.
-        static member internal makeScreenFast (entity : Entity) world =
-            match (World.getGameState world).SelectedScreenOpt with
-            | Some screen when screen.Name = Array.head (Address.getNames entity.EntityAddress) -> screen
-            | Some _ | None ->
-                match (World.getGameState world).OmniScreenOpt with
-                | Some omniScreen when omniScreen.Name = Array.head (Address.getNames entity.EntityAddress) -> omniScreen
-                | Some _ | None -> Screen (Array.head (entity.EntityAddress.Names))
+            World.viewSimulantStateProperties state
 
         static member internal updateEntityInEntityTree oldVisible oldStatic oldLight (oldPresence : Presence) oldBounds (entity : Entity) oldWorld world =
 

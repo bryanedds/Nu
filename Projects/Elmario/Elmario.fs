@@ -42,7 +42,7 @@ type ElmarioDispatcher () =
                     then World.applyBodyForce (v3 -2500.0f 0.0f 0.0f) v3Zero bodyId world
                     else World.applyBodyForce (v3 -750.0f 0.0f 0.0f) v3Zero bodyId world
                 just world
-            elif World.isKeyboardKeyDown KeyboardKey.Right world then
+            elif World. isKeyboardKeyDown KeyboardKey.Right world then
                 let world =
                     if World.isBodyOnGround bodyId world
                     then World.applyBodyForce (v3 2500.0f 0.0f 0.0f) v3Zero bodyId world

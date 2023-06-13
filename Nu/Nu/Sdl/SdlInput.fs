@@ -77,6 +77,10 @@ module internal MouseState =
         let (sdlMouseButtonState, _, _) = SDL.SDL_GetMouseState ()
         sdlMouseButtonState &&& sdlMouseButtonMask <> 0u
 
+    /// Check that the given mouse button is up.
+    let internal isButtonUp mouseButton =
+        not (isButtonDown mouseButton)
+
 [<RequireQualifiedAccess>]
 module KeyboardState =
 

@@ -25,6 +25,12 @@ module WorldInputModule =
             ignore (world : World)
             MouseState.isButtonDown mouseButton
 
+        /// Check that the given mouse button is up.
+        [<FunctionBinding>]
+        static member isMouseButtonUp mouseButton world =
+            ignore (world : World)
+            MouseState.isButtonUp mouseButton
+
         /// Get the position of the mouse.
         [<FunctionBinding>]
         static member getMousePosition world =

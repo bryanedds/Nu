@@ -542,6 +542,8 @@ module WorldModule2 =
             with exn -> (Left (scstring exn), World.choose world)
 
         /// Reload asset graph, build assets, then reload built assets.
+        /// Currently does not support reloading of song assets, and possibly others that are
+        /// locked by the engine's subsystems.
         [<FunctionBinding>]
         static member tryReloadAssets world =
             let targetDir = AppDomain.CurrentDomain.BaseDirectory
@@ -550,19 +552,11 @@ module WorldModule2 =
             | (Right _, world) -> (true, world)
             | (Left _, world) -> (false, world)
 
-        /// Clear all messages in all subsystems.
-        static member clearMessages world =
-             let world = World.updatePhysicsEngine3d (fun physicsEngine -> physicsEngine.ClearMessages ()) world
-             let world = World.updatePhysicsEngine2d (fun physicsEngine -> physicsEngine.ClearMessages ()) world
-             World.withRendererProcess (fun rendererProcess -> rendererProcess.ClearMessages ()) world
-             World.withAudioPlayer (fun audioPlayer -> audioPlayer.ClearMessages ()) world
-             world
-
-        /// Shelve the a world for background storage.
+        /// Shelve the world for background storage (such as for an undo / redo system).
         static member shelve world =
             World.shelveAmbientState world
 
-        /// Unshelve the state of a world.
+        /// Unshelve the world from background storage (such as for an undo / redo system).
         static member unshelve (world : World) =
 
             // sync tick watch state to advancing
@@ -1301,7 +1295,7 @@ module WorldModule2 =
                 | Dead -> world
             else world
 
-        /// Run the game engine with the given handler.
+        /// Run the game engine using the given dependencies and returning exit code upon termination.
         static member run3 (sdlDeps : SdlDeps) liveness world =
             try let world = World.runWithoutCleanUp tautology id id id sdlDeps liveness true world
                 World.cleanUp world
