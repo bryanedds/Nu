@@ -2,6 +2,7 @@
 // Copyright (C) Bryan Edds, 2013-2023.
 
 namespace Tactics
+open System
 open System.IO
 open Prime
 open Nu
