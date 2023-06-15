@@ -1760,7 +1760,7 @@ module Gaia =
                     let mousePositionWorld = World.getMousePostion2dWorld (entity.GetAbsolute world) world
                     let entityDegree = (entityDragOffset - mousePositionWorldOriginal.Y) + (mousePositionWorld.Y - mousePositionWorldOriginal.Y)
                     let entityDegreeSnapped =
-                        if not form.snap3dButton.Checked
+                        if form.snap3dButton.Checked
                         then Math.snapF (Triple.snd (getSnaps form)) entityDegree
                         else entityDegree
                     let world =
