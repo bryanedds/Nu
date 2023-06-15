@@ -11,7 +11,7 @@ type Occupant =
     | Character of Character
     | Chest of unit
 
-type [<StructuralEquality; StructuralComparison>] OccupantIndex =
+type OccupantIndex =
     | AllyIndex of int
     | EnemyIndex of int
     | ChestIndex of int
