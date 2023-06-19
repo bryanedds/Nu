@@ -1042,6 +1042,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         (viewSkyBox : Matrix4x4)
         (geometryViewport : Viewport)
         (geometryProjection : Matrix4x4)
+        (ssaoViewport : Viewport)
         (rasterViewport : Viewport)
         (rasterProjection : Matrix4x4)
         (renderbuffer : uint)
@@ -1134,6 +1135,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                         OpenGL.LightMap.CreateReflectionMap
                             (GlRenderer3d.renderInternal renderer,
                              Constants.Render.Resolution,
+                             Constants.Render.SsaoResolution,
                              Constants.Render.ReflectionMapResolution,
                              lightProbeOrigin)
 
@@ -1206,7 +1208,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         renderer.RenderTasks.RenderSurfacesForwardRelative.Clear ()
 
         // setup geometry viewport
-        OpenGL.Gl.Viewport (geometryViewport.Bounds.Min.X, geometryViewport.Bounds.Min.Y, geometryViewport.Bounds.Width, geometryViewport.Bounds.Height)
+        OpenGL.Gl.Viewport (geometryViewport.Bounds.Min.X, geometryViewport.Bounds.Min.Y, geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y)
         OpenGL.Hl.Assert ()
 
         // setup geometry buffer
@@ -1251,22 +1253,19 @@ type [<ReferenceEquality>] GlRenderer3d =
              OpenGL.BlitFramebufferFilter.Nearest)
         OpenGL.Hl.Assert ()
 
-
-        
-
-        // setup ssao buffer (for now we just use the geometry resolution)
+        // setup ssao buffer
         let (ssaoTexture, ssaoRenderbuffer, ssaoFramebuffer) = renderer.RenderSsaoBuffers
         OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, ssaoRenderbuffer)
         OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, ssaoFramebuffer)
         OpenGL.Gl.Enable OpenGL.EnableCap.ScissorTest
-        OpenGL.Gl.Scissor (geometryViewport.Bounds.Min.X, geometryViewport.Bounds.Min.Y, geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y)
+        OpenGL.Gl.Scissor (ssaoViewport.Bounds.Min.X, ssaoViewport.Bounds.Min.Y, ssaoViewport.Bounds.Size.X, ssaoViewport.Bounds.Size.Y)
         OpenGL.Gl.ClearColor (Constants.Render.WindowClearColor.R, Constants.Render.WindowClearColor.G, Constants.Render.WindowClearColor.B, Constants.Render.WindowClearColor.A)
         OpenGL.Gl.Clear (OpenGL.ClearBufferMask.ColorBufferBit ||| OpenGL.ClearBufferMask.DepthBufferBit ||| OpenGL.ClearBufferMask.StencilBufferBit)
         OpenGL.Gl.Disable OpenGL.EnableCap.ScissorTest
         OpenGL.Hl.Assert ()
 
-        // setup ssao viewport (for now we just use the geometry viewport)
-        OpenGL.Gl.Viewport (geometryViewport.Bounds.Min.X, geometryViewport.Bounds.Min.Y, geometryViewport.Bounds.Width, geometryViewport.Bounds.Height)
+        // setup ssao viewport
+        OpenGL.Gl.Viewport (ssaoViewport.Bounds.Min.X, ssaoViewport.Bounds.Min.Y, ssaoViewport.Bounds.Size.X, ssaoViewport.Bounds.Size.Y)
         OpenGL.Hl.Assert ()
 
         // switch to ssao buffers
@@ -1281,11 +1280,14 @@ type [<ReferenceEquality>] GlRenderer3d =
              renderer.RenderPhysicallyBasedQuad, renderer.RenderPhysicallyBasedDeferredSsaoShader)
         OpenGL.Hl.Assert ()
 
-
-
+        // generate ssao mips
+        OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, ssaoTexture)
+        OpenGL.Gl.GenerateMipmap OpenGL.TextureTarget.Texture2d
+        OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, 0u)
+        OpenGL.Hl.Assert ()
 
         // setup raster viewport
-        OpenGL.Gl.Viewport (rasterViewport.Bounds.Min.X, rasterViewport.Bounds.Min.Y, rasterViewport.Bounds.Width, rasterViewport.Bounds.Height)
+        OpenGL.Gl.Viewport (rasterViewport.Bounds.Min.X, rasterViewport.Bounds.Min.Y, rasterViewport.Bounds.Size.X, rasterViewport.Bounds.Size.Y)
         OpenGL.Hl.Assert ()
 
         // switch to raster buffers
@@ -1412,17 +1414,17 @@ type [<ReferenceEquality>] GlRenderer3d =
             | ReloadRenderAssets3d ->
                 GlRenderer3d.handleReloadRenderAssets renderer
 
-        // compute the viewport with the given offset
+        // compute the viewports for the given window size
+        let viewport = Constants.Render.Viewport
         let viewportOffset = Constants.Render.ViewportOffset windowSize
+        let ssaoViewportOffset = Constants.Render.SsaoViewportOffset windowSize
 
         // compute view and projection
         let eyeTarget = eyeCenter + Vector3.Transform (v3Forward, eyeRotation)
         let viewAbsolute = m4Identity
         let viewRelative = Matrix4x4.CreateLookAt (eyeCenter, eyeTarget, v3Up)
         let viewSkyBox = Matrix4x4.CreateFromQuaternion (Quaternion.Inverse eyeRotation)
-        let viewport = Constants.Render.Viewport
         let projection = viewport.Projection3d Constants.Render.NearPlaneDistanceOmnipresent Constants.Render.FarPlaneDistanceOmnipresent
-        OpenGL.Hl.Assert ()
 
         // top-level render
         GlRenderer3d.renderInternal
@@ -1430,9 +1432,10 @@ type [<ReferenceEquality>] GlRenderer3d =
             true eyeCenter eyeRotation
             viewAbsolute viewRelative viewSkyBox
             viewportOffset projection
+            ssaoViewportOffset
             viewportOffset projection
             renderbuffer framebuffer
-        
+
         // render post-passes
         let passParameters =
             { EyeCenter = eyeCenter
