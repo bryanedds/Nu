@@ -190,6 +190,14 @@ module PhysicallyBased =
           LightConeOutersUniform : int
           PhysicallyBasedShader : uint }
 
+    /// Describes an ssao pass of a deferred physically-based shader that's loaded into GPU.
+    type PhysicallyBasedDeferredSsaoShader =
+        { ViewUniform : int
+          ProjectionUniform : int
+          PositionTextureUniform : int
+          NormalAndHeightTextureUniform : int
+          PhysicallyBasedDeferredSsaoShader : uint }
+
     /// Describes a second pass of a deferred physically-based shader that's loaded into GPU.
     type PhysicallyBasedDeferred2Shader =
         { ViewUniform : int
@@ -201,6 +209,7 @@ module PhysicallyBased =
           AlbedoTextureUniform : int
           MaterialTextureUniform : int
           NormalAndHeightTextureUniform : int
+          SsaoTextureUniform : int
           IrradianceMapUniform : int
           EnvironmentFilterMapUniform : int
           BrdfTextureUniform : int
@@ -883,7 +892,7 @@ module PhysicallyBased =
 
                                 // attempt to collect light probe
                                 let lastNameLower = Array.last(names).ToLowerInvariant()
-                                if lastNameLower.Contains("probe") && not (lastNameLower.Contains("probes")) then
+                                if lastNameLower.Contains "probe" && not (lastNameLower.Contains "probes") then
                                     let names = Array.append names [|"LightProbe"|]
                                     let lightProbeOrigin = transform.Translation
                                     let lightProbeBounds =
@@ -1031,6 +1040,25 @@ module PhysicallyBased =
           PhysicallyBasedShader = shader }
 
     /// Create a physically-based shader for the second step of deferred rendering.
+    let CreatePhysicallyBasedDeferredSsaoShader (shaderFilePath : string) =
+
+        // create shader
+        let shader = Shader.CreateShaderFromFilePath shaderFilePath
+
+        // retrieve uniforms
+        let viewUniform = Gl.GetUniformLocation (shader, "view")
+        let projectionUniform = Gl.GetUniformLocation (shader, "projection")
+        let positionTextureUniform = Gl.GetUniformLocation (shader, "positionTexture")
+        let normalAndHeightTextureUniform = Gl.GetUniformLocation (shader, "normalAndHeightTexture")
+
+        // make shader record
+        { ViewUniform = viewUniform
+          ProjectionUniform = projectionUniform
+          PositionTextureUniform = positionTextureUniform
+          NormalAndHeightTextureUniform = normalAndHeightTextureUniform
+          PhysicallyBasedDeferredSsaoShader = shader }
+
+    /// Create a physically-based shader for the second step of deferred rendering.
     let CreatePhysicallyBasedDeferred2Shader (shaderFilePath : string) =
 
         // create shader
@@ -1046,6 +1074,7 @@ module PhysicallyBased =
         let albedoTextureUniform = Gl.GetUniformLocation (shader, "albedoTexture")
         let materialTextureUniform = Gl.GetUniformLocation (shader, "materialTexture")
         let normalAndHeightTextureUniform = Gl.GetUniformLocation (shader, "normalAndHeightTexture")
+        let ssaoTextureUniform = Gl.GetUniformLocation (shader, "ssaoTexture")
         let irradianceMapUniform = Gl.GetUniformLocation (shader, "irradianceMap")
         let environmentFilterMapUniform = Gl.GetUniformLocation (shader, "environmentFilterMap")
         let brdfTextureUniform = Gl.GetUniformLocation (shader, "brdfTexture")
@@ -1080,6 +1109,7 @@ module PhysicallyBased =
           AlbedoTextureUniform = albedoTextureUniform
           MaterialTextureUniform = materialTextureUniform
           NormalAndHeightTextureUniform = normalAndHeightTextureUniform
+          SsaoTextureUniform = ssaoTextureUniform
           IrradianceMapUniform = irradianceMapUniform
           EnvironmentFilterMapUniform = environmentFilterMapUniform
           BrdfTextureUniform = brdfTextureUniform
@@ -1102,10 +1132,11 @@ module PhysicallyBased =
           PhysicallyBasedDeferred2Shader = shader }
 
     /// Create the first and second shaders for physically-based deferred rendering.
-    let CreatePhysicallyBasedDeferredShaders (shaderFilePath, shader2FilePath) =
-        let shader = CreatePhysicallyBasedShader shaderFilePath // deferred shader 1 uses the same API as physically based shader
+    let CreatePhysicallyBasedDeferredShaders (shaderFilePath, shaderSsaoFilePath, shader2FilePath) =
+        let shader = CreatePhysicallyBasedShader shaderFilePath
+        let shaderSsao = CreatePhysicallyBasedDeferredSsaoShader shaderSsaoFilePath
         let shader2 = CreatePhysicallyBasedDeferred2Shader shader2FilePath
-        (shader, shader2)
+        (shader, shaderSsao, shader2)
 
     /// Draw a batch of physically-based surfaces.
     let DrawPhysicallyBasedSurfaces
@@ -1357,6 +1388,7 @@ module PhysicallyBased =
          albedoTexture : uint,
          materialTexture : uint,
          normalAndHeightTexture : uint,
+         ssaoTexture : uint,
          irradianceMap : uint,
          environmentFilterMap : uint,
          brdfTexture : uint,
@@ -1390,17 +1422,18 @@ module PhysicallyBased =
         Gl.Uniform1 (shader.AlbedoTextureUniform, 1)
         Gl.Uniform1 (shader.MaterialTextureUniform, 2)
         Gl.Uniform1 (shader.NormalAndHeightTextureUniform, 3)
-        Gl.Uniform1 (shader.IrradianceMapUniform, 4)
-        Gl.Uniform1 (shader.EnvironmentFilterMapUniform, 5)
-        Gl.Uniform1 (shader.BrdfTextureUniform, 6)
+        Gl.Uniform1 (shader.SsaoTextureUniform, 4)
+        Gl.Uniform1 (shader.IrradianceMapUniform, 5)
+        Gl.Uniform1 (shader.EnvironmentFilterMapUniform, 6)
+        Gl.Uniform1 (shader.BrdfTextureUniform, 7)
         Gl.Uniform1 (shader.LightMapEnabledsUniform, lightMapEnableds)
         Gl.Uniform3 (shader.LightMapOriginsUniform, lightMapOrigins)
         Gl.Uniform3 (shader.LightMapMinsUniform, lightMapMins)
         Gl.Uniform3 (shader.LightMapSizesUniform, lightMapSizes)
         for i in 0 .. dec Constants.Render.LightMapsMaxDeferred do
-            Gl.Uniform1 (shader.IrradianceMapsUniforms.[i], i + 7)
+            Gl.Uniform1 (shader.IrradianceMapsUniforms.[i], i + 8)
         for i in 0 .. dec Constants.Render.LightMapsMaxDeferred do
-            Gl.Uniform1 (shader.EnvironmentFilterMapsUniforms.[i], i + 7 + Constants.Render.LightMapsMaxDeferred)
+            Gl.Uniform1 (shader.EnvironmentFilterMapsUniforms.[i], i + 8 + Constants.Render.LightMapsMaxDeferred)
         Gl.Uniform3 (shader.LightOriginsUniform, lightOrigins)
         Gl.Uniform3 (shader.LightDirectionsUniform, lightDirections)
         Gl.Uniform3 (shader.LightColorsUniform, lightColors)
@@ -1423,16 +1456,18 @@ module PhysicallyBased =
         Gl.ActiveTexture TextureUnit.Texture3
         Gl.BindTexture (TextureTarget.Texture2d, normalAndHeightTexture)
         Gl.ActiveTexture TextureUnit.Texture4
-        Gl.BindTexture (TextureTarget.TextureCubeMap, irradianceMap)
+        Gl.BindTexture (TextureTarget.Texture2d, ssaoTexture)
         Gl.ActiveTexture TextureUnit.Texture5
-        Gl.BindTexture (TextureTarget.TextureCubeMap, environmentFilterMap)
+        Gl.BindTexture (TextureTarget.TextureCubeMap, irradianceMap)
         Gl.ActiveTexture TextureUnit.Texture6
+        Gl.BindTexture (TextureTarget.TextureCubeMap, environmentFilterMap)
+        Gl.ActiveTexture TextureUnit.Texture7
         Gl.BindTexture (TextureTarget.Texture2d, brdfTexture)
         for i in 0 .. dec Constants.Render.LightMapsMaxDeferred do
-            Gl.ActiveTexture (int TextureUnit.Texture0 + 7 + i |> Branchless.reinterpret)
+            Gl.ActiveTexture (int TextureUnit.Texture0 + 8 + i |> Branchless.reinterpret)
             Gl.BindTexture (TextureTarget.TextureCubeMap, irradianceMaps.[i])
         for i in 0 .. dec Constants.Render.LightMapsMaxDeferred do
-            Gl.ActiveTexture (int TextureUnit.Texture0 + 7 + i + Constants.Render.LightMapsMaxDeferred |> Branchless.reinterpret)
+            Gl.ActiveTexture (int TextureUnit.Texture0 + 8 + i + Constants.Render.LightMapsMaxDeferred |> Branchless.reinterpret)
             Gl.BindTexture (TextureTarget.TextureCubeMap, environmentFilterMaps.[i])
         Hl.Assert ()
 
@@ -1460,17 +1495,67 @@ module PhysicallyBased =
         Gl.ActiveTexture TextureUnit.Texture3
         Gl.BindTexture (TextureTarget.Texture2d, 0u)
         Gl.ActiveTexture TextureUnit.Texture4
-        Gl.BindTexture (TextureTarget.TextureCubeMap, 0u)
+        Gl.BindTexture (TextureTarget.Texture2d, 0u)
         Gl.ActiveTexture TextureUnit.Texture5
         Gl.BindTexture (TextureTarget.TextureCubeMap, 0u)
         Gl.ActiveTexture TextureUnit.Texture6
+        Gl.BindTexture (TextureTarget.TextureCubeMap, 0u)
+        Gl.ActiveTexture TextureUnit.Texture7
         Gl.BindTexture (TextureTarget.Texture2d, 0u)
         for i in 0 .. dec Constants.Render.LightMapsMaxDeferred do
-            Gl.ActiveTexture (int TextureUnit.Texture0 + 7 + i |> Branchless.reinterpret)
+            Gl.ActiveTexture (int TextureUnit.Texture0 + 8 + i |> Branchless.reinterpret)
             Gl.BindTexture (TextureTarget.TextureCubeMap, 0u)
         for i in 0 .. dec Constants.Render.LightMapsMaxDeferred do
-            Gl.ActiveTexture (int TextureUnit.Texture0 + 7 + i + Constants.Render.LightMapsMaxDeferred |> Branchless.reinterpret)
+            Gl.ActiveTexture (int TextureUnit.Texture0 + 8 + i + Constants.Render.LightMapsMaxDeferred |> Branchless.reinterpret)
             Gl.BindTexture (TextureTarget.TextureCubeMap, 0u)
+        Hl.Assert ()
+
+        // teardown shader
+        Gl.UseProgram 0u
+
+    /// Draw the ssao pass of a deferred physically-based surface.
+    let DrawPhysicallyBasedDeferredSsaoSurface
+        (view : single array,
+         projection : single array,
+         positionTexture : uint,
+         normalAndHeightTexture : uint,
+         geometry : PhysicallyBasedGeometry,
+         shader : PhysicallyBasedDeferredSsaoShader) =
+
+        // setup shader
+        Gl.UseProgram shader.PhysicallyBasedDeferredSsaoShader
+        Gl.UniformMatrix4 (shader.ViewUniform, false, view)
+        Gl.UniformMatrix4 (shader.ProjectionUniform, false, projection)
+        Gl.Uniform1 (shader.PositionTextureUniform, 0)
+        Gl.Uniform1 (shader.NormalAndHeightTextureUniform, 1)
+        Hl.Assert ()
+
+        // setup textures
+        Gl.ActiveTexture TextureUnit.Texture0
+        Gl.BindTexture (TextureTarget.Texture2d, positionTexture)
+        Gl.ActiveTexture TextureUnit.Texture1
+        Gl.BindTexture (TextureTarget.Texture2d, normalAndHeightTexture)
+        Hl.Assert ()
+
+        // setup geometry
+        Gl.BindVertexArray geometry.PhysicallyBasedVao
+        Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.VertexBuffer)
+        Gl.BindBuffer (BufferTarget.ElementArrayBuffer, geometry.IndexBuffer)
+        Hl.Assert ()
+
+        // draw geometry
+        Gl.DrawElements (geometry.PrimitiveType, geometry.ElementCount, DrawElementsType.UnsignedInt, nativeint 0)
+        Hl.Assert ()
+
+        // teardown geometry
+        Gl.BindVertexArray 0u
+        Hl.Assert ()
+
+        // teardown textures
+        Gl.ActiveTexture TextureUnit.Texture0
+        Gl.BindTexture (TextureTarget.Texture2d, 0u)
+        Gl.ActiveTexture TextureUnit.Texture1
+        Gl.BindTexture (TextureTarget.Texture2d, 0u)
         Hl.Assert ()
 
         // teardown shader
