@@ -165,7 +165,7 @@ module Framebuffer =
         // create ssao buffer
         let ssao = Gl.GenTexture ()
         Gl.BindTexture (TextureTarget.Texture2d, ssao)
-        Gl.TexImage2D (TextureTarget.Texture2d, 0, InternalFormat.R32f, Constants.Render.SsaoResolutionX, Constants.Render.SsaoResolutionY, 0, PixelFormat.Rgba, PixelType.Float, nativeint 0)
+        Gl.TexImage2D (TextureTarget.Texture2d, 0, InternalFormat.R32f, Constants.Render.SsaoResolutionX, Constants.Render.SsaoResolutionY, 0, PixelFormat.Red, PixelType.Float, nativeint 0)
         Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, int TextureMinFilter.LinearMipmapLinear)
         Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, int TextureMagFilter.Linear)
         Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureWrapS, int TextureWrapMode.ClampToEdge)
