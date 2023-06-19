@@ -1070,15 +1070,15 @@ type [<ReferenceEquality>] GlRenderer3d =
                         let irradianceMap =
                             OpenGL.LightMap.CreateIrradianceMap
                                 (Constants.Render.IrradianceMapResolution,
-                                    renderer.RenderIrradianceShader,
-                                    OpenGL.CubeMap.CubeMapSurface.make cubeMap renderer.RenderCubeMapGeometry)
+                                 renderer.RenderIrradianceShader,
+                                 OpenGL.CubeMap.CubeMapSurface.make cubeMap renderer.RenderCubeMapGeometry)
 
                         // render fallback env filter map
                         let environmentFilterMap =
                             OpenGL.LightMap.CreateEnvironmentFilterMap
                                 (Constants.Render.EnvironmentFilterResolution,
-                                    renderer.RenderEnvironmentFilterShader,
-                                    OpenGL.CubeMap.CubeMapSurface.make cubeMap renderer.RenderCubeMapGeometry)
+                                 renderer.RenderEnvironmentFilterShader,
+                                 OpenGL.CubeMap.CubeMapSurface.make cubeMap renderer.RenderCubeMapGeometry)
 
                         // add to cache and create light map
                         irradianceAndEnvironmentMapsOptRef.Value <- Some (irradianceMap, environmentFilterMap)
@@ -1161,8 +1161,8 @@ type [<ReferenceEquality>] GlRenderer3d =
             // destroy cached light maps whose originating probe no longer exists
             for lightMapKvp in renderer.RenderLightMaps do
                 if not (renderer.RenderTasks.RenderLightProbes.ContainsKey lightMapKvp.Key) then
-                        OpenGL.LightMap.DestroyLightMap lightMapKvp.Value
-                        renderer.RenderLightMaps.Remove lightMapKvp.Key |> ignore<bool>
+                    OpenGL.LightMap.DestroyLightMap lightMapKvp.Value
+                    renderer.RenderLightMaps.Remove lightMapKvp.Key |> ignore<bool>
 
             // collect tasked light maps from cached light maps
             for lightMapKvp in renderer.RenderLightMaps do
