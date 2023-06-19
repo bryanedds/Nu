@@ -46,7 +46,7 @@ uniform sampler2D normalAndHeightTexture;
 
 in vec2 texCoordsOut;
 
-out vec4 frag;
+out float frag;
 
 void main()
 {
@@ -88,5 +88,5 @@ void main()
     ambientOcclusionScreen = max(0.0, ambientOcclusionScreen);
 
     // write
-    frag = vec4(ambientOcclusionScreen, 0.0, 0.0, 0.0);
+    frag = ambientOcclusionScreen;
 }
