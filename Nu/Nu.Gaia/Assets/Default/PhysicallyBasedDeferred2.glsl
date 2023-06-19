@@ -129,8 +129,8 @@ void main()
     vec3 albedo = texture(albedoTexture, texCoordsOut).rgb;
     vec4 material = texture(materialTexture, texCoordsOut);
 
-    // retrieve data from ssao buffer
-    float ambientOcclusionScreen = texture(ssaoTexture, texCoordsOut).r;
+    // retrieve data from ssao buffer, smoothing in the process
+    float ambientOcclusionScreen = textureLod(ssaoTexture, texCoordsOut, 0.5).r;
 
     // compute materials
     float metallic = material.r;

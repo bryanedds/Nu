@@ -11,7 +11,7 @@ open Nu
 module LightMap =
 
     /// Create a reflection map.
-    let CreateReflectionMap (render, geometryResolution, rasterResolution, origin) =
+    let CreateReflectionMap (render, geometryResolution, ssaoResolution, rasterResolution, origin) =
 
         // create reflection renderbuffer
         let rasterRenderbuffer = Gl.GenRenderbuffer ()
@@ -50,6 +50,7 @@ module LightMap =
 
         // construct viewports
         let geometryViewport = Viewport (Constants.Render.NearPlaneDistanceOmnipresent, Constants.Render.FarPlaneDistanceOmnipresent, box2i v2iZero geometryResolution)
+        let ssaoViewport = Viewport (Constants.Render.NearPlaneDistanceOmnipresent, Constants.Render.FarPlaneDistanceOmnipresent, box2i v2iZero ssaoResolution)
         let rasterViewport = Viewport (Constants.Render.NearPlaneDistanceOmnipresent, Constants.Render.FarPlaneDistanceOmnipresent, box2i v2iZero (v2iDup rasterResolution))
 
         // construct eye rotations
@@ -84,6 +85,7 @@ module LightMap =
                 false origin eyeRotation
                 viewAbsolute viewRelative viewSkyBox
                 geometryViewport geometryProjection
+                ssaoViewport
                 rasterViewport rasterProjection
                 rasterRenderbuffer rasterFramebuffer
             Hl.Assert ()
