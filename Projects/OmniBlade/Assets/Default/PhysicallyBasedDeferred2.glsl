@@ -130,7 +130,7 @@ void main()
     vec4 material = texture(materialTexture, texCoordsOut);
 
     // retrieve data from ssao buffer, smoothing in the process
-    float ambientOcclusionScreen = textureLod(ssaoTexture, texCoordsOut, 0.5).r;
+    float ambientOcclusionScreen = (textureLod(ssaoTexture, texCoordsOut, 0.0).r + textureLod(ssaoTexture, texCoordsOut, 1.0).r) / 2.0;
 
     // compute materials
     float metallic = material.r;
