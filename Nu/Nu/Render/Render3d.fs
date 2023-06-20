@@ -115,6 +115,18 @@ and [<CustomEquality; CustomComparison>] RenderPassMessage3d =
         | _ -> false
     override this.GetHashCode () = hash this.RenderPassOrder
 
+/// Configures light mapping.
+and [<ReferenceEquality>] LightMappingConfig =
+    { LightMappingEnabled : bool }
+
+/// Configures SSAO.
+and [<ReferenceEquality>] SsaoConfig =
+    { SsaoEnabled : bool
+      SsaoIntensity : single
+      SsaoBias : single
+      SsaoRadius : single
+      SsaoSampleCount : int }
+
 /// An internally cached static model used to avoid GC promotion of static model messages.
 and [<NoEquality; NoComparison>] CachedStaticModelMessage =
     { mutable CachedStaticModelAbsolute : bool
@@ -253,6 +265,8 @@ and [<ReferenceEquality>] RenderMessage3d =
     | RenderCachedStaticModel of CachedStaticModelMessage
     | RenderUserDefinedStaticModel of RenderUserDefinedStaticModel
     | RenderPostPass3d of RenderPassMessage3d
+    | ConfigureLightMapping of LightMappingConfig
+    | ConfigureSsao of SsaoConfig
     | LoadRenderPackage3d of string
     | UnloadRenderPackage3d of string
     | ReloadRenderAssets3d
@@ -416,6 +430,8 @@ type [<ReferenceEquality>] GlRenderer3d =
           RenderEnvironmentFilterMap : uint
           RenderPhysicallyBasedMaterial : OpenGL.PhysicallyBased.PhysicallyBasedMaterial
           RenderLightMaps : Dictionary<uint64, OpenGL.LightMap.LightMap>
+          mutable RenderLightMappingConfig : LightMappingConfig
+          mutable RenderSsaoConfig : SsaoConfig
           mutable RenderModelsFields : single array
           mutable RenderTexCoordsOffsetsFields : single array
           mutable RenderAlbedosFields : single array
@@ -1475,6 +1491,10 @@ type [<ReferenceEquality>] GlRenderer3d =
                 userDefinedStaticModelsToDestroy.Add assetTag
             | RenderPostPass3d rpp ->
                 postPasses.Add rpp |> ignore<bool>
+            | ConfigureLightMapping lmc ->
+                renderer.RenderLightMappingConfig <- lmc
+            | ConfigureSsao cs ->
+                renderer.RenderSsaoConfig <- cs
             | LoadRenderPackage3d lrp ->
                 GlRenderer3d.handleLoadRenderPackage lrp renderer
             | UnloadRenderPackage3d urp ->
@@ -1680,6 +1700,18 @@ type [<ReferenceEquality>] GlRenderer3d =
               TextureMagFilterOpt = None
               TwoSided = false }
 
+        // make light mapping config
+        let lightMappingConfig =
+            { LightMappingEnabled = true }
+
+        // make ssao config
+        let ssaoConfig =
+            { SsaoEnabled = true
+              SsaoIntensity = 1.75f
+              SsaoBias = 0.1f
+              SsaoRadius = 0.25f
+              SsaoSampleCount = 64 }
+
         // create render tasks
         let renderTasks =
             { RenderSkyBoxes = List ()
@@ -1720,6 +1752,8 @@ type [<ReferenceEquality>] GlRenderer3d =
               RenderEnvironmentFilterMap = environmentFilterMap
               RenderPhysicallyBasedMaterial = physicallyBasedMaterial
               RenderLightMaps = dictPlus HashIdentity.Structural []
+              RenderLightMappingConfig = lightMappingConfig
+              RenderSsaoConfig = ssaoConfig
               RenderModelsFields = Array.zeroCreate<single> (16 * Constants.Render.GeometryBatchPrealloc)
               RenderTexCoordsOffsetsFields = Array.zeroCreate<single> (4 * Constants.Render.GeometryBatchPrealloc)
               RenderAlbedosFields = Array.zeroCreate<single> (4 * Constants.Render.GeometryBatchPrealloc)
