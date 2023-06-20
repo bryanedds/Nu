@@ -210,8 +210,7 @@ module PhysicallyBased =
 
     /// Describes an irradiance pass of a deferred physically-based shader that's loaded into GPU.
     type PhysicallyBasedDeferredIrradianceShader =
-        { EyeCenterUniform : int
-          NormalAndHeightTextureUniform : int
+        { NormalAndHeightTextureUniform : int
           LightMappingTextureUniform : int
           IrradianceMapUniform : int
           IrradianceMapsUniforms : int array
@@ -233,9 +232,7 @@ module PhysicallyBased =
 
     /// Describes a second pass of a deferred physically-based shader that's loaded into GPU.
     type PhysicallyBasedDeferred2Shader =
-        { ViewUniform : int
-          ProjectionUniform : int
-          EyeCenterUniform : int
+        { EyeCenterUniform : int
           LightAmbientColorUniform : int
           LightAmbientBrightnessUniform : int
           PositionTextureUniform : int
@@ -1066,7 +1063,7 @@ module PhysicallyBased =
           LightConeOutersUniform = lightConeOutersUniform
           PhysicallyBasedShader = shader }
 
-    /// Create a physically-based shader for the second step of deferred rendering.
+    /// Create a physically-based shader for the ssao pass of deferred rendering.
     let CreatePhysicallyBasedDeferredSsaoShader (shaderFilePath : string) =
 
         // create shader
@@ -1085,6 +1082,83 @@ module PhysicallyBased =
           NormalAndHeightTextureUniform = normalAndHeightTextureUniform
           PhysicallyBasedDeferredSsaoShader = shader }
 
+    /// Create a physically-based shader for the light mapping pass of deferred rendering.
+    let CreatePhysicallyBasedDeferredLightMappingShader (shaderFilePath : string) =
+
+        // create shader
+        let shader = Shader.CreateShaderFromFilePath shaderFilePath
+
+        // retrieve uniforms
+        let positionTextureUniform = Gl.GetUniformLocation (shader, "positionTexture")
+        let normalAndHeightTextureUniform = Gl.GetUniformLocation (shader, "normalAndHeightTexture")
+        let lightMapEnabledsUniform = Gl.GetUniformLocation (shader, "lightMapEnableds")
+        let lightMapOriginsUniform = Gl.GetUniformLocation (shader, "lightMapOrigins")
+        let lightMapMinsUniform = Gl.GetUniformLocation (shader, "lightMapMins")
+        let lightMapSizesUniform = Gl.GetUniformLocation (shader, "lightMapSizes")
+
+        // make shader record
+        { PositionTextureUniform = positionTextureUniform
+          NormalAndHeightTextureUniform = normalAndHeightTextureUniform
+          LightMapEnabledsUniform = lightMapEnabledsUniform
+          LightMapOriginsUniform = lightMapOriginsUniform
+          LightMapMinsUniform = lightMapMinsUniform
+          LightMapSizesUniform = lightMapSizesUniform
+          PhysicallyBasedDeferredLightMappingShader = shader }
+
+    /// Create a physically-based shader for the irradiance pass of deferred rendering.
+    let CreatePhysicallyBasedDeferredIrradianceShader (shaderFilePath : string) =
+
+        // create shader
+        let shader = Shader.CreateShaderFromFilePath shaderFilePath
+
+        // retrieve uniforms
+        let normalAndHeightTextureUniform = Gl.GetUniformLocation (shader, "normalAndHeightTexture")
+        let lightMappingTextureUniform = Gl.GetUniformLocation (shader, "lightMappingTexture")
+        let irradianceMapUniform = Gl.GetUniformLocation (shader, "irradianceMap")
+        let irradianceMapsUniforms =
+            Array.init Constants.Render.LightMapsMaxDeferred $ fun i ->
+                Gl.GetUniformLocation (shader, "irradianceMaps[" + string i + "]")
+
+        // make shader record
+        { NormalAndHeightTextureUniform = normalAndHeightTextureUniform
+          LightMappingTextureUniform = lightMappingTextureUniform
+          IrradianceMapUniform = irradianceMapUniform
+          IrradianceMapsUniforms = irradianceMapsUniforms
+          PhysicallyBasedDeferredIrradianceShader = shader }
+
+    /// Create a physically-based shader for the environment filter pass of deferred rendering.
+    let CreatePhysicallyBasedDeferredEnvironmentFilterShader (shaderFilePath : string) =
+
+        // create shader
+        let shader = Shader.CreateShaderFromFilePath shaderFilePath
+
+        // retrieve uniforms
+        let eyeCenterUniform = Gl.GetUniformLocation (shader, "eyeCenter")
+        let positionTextureUniform = Gl.GetUniformLocation (shader, "positionTexture")
+        let materialTextureUniform = Gl.GetUniformLocation (shader, "materialTexture")
+        let normalAndHeightTextureUniform = Gl.GetUniformLocation (shader, "normalAndHeightTexture")
+        let lightMappingTextureUniform = Gl.GetUniformLocation (shader, "lightMappingTexture")
+        let environmentFilterMapUniform = Gl.GetUniformLocation (shader, "environmentFilterMap")
+        let environmentFilterMapsUniforms =
+            Array.init Constants.Render.LightMapsMaxDeferred $ fun i ->
+                Gl.GetUniformLocation (shader, "environmentFilterMaps[" + string i + "]")
+        let lightMapOriginsUniform = Gl.GetUniformLocation (shader, "lightMapOrigins")
+        let lightMapMinsUniform = Gl.GetUniformLocation (shader, "lightMapMins")
+        let lightMapSizesUniform = Gl.GetUniformLocation (shader, "lightMapSizes")
+
+        // make shader record
+        { EyeCenterUniform = eyeCenterUniform
+          PositionTextureUniform = positionTextureUniform
+          MaterialTextureUniform = materialTextureUniform
+          NormalAndHeightTextureUniform = normalAndHeightTextureUniform
+          LightMappingTextureUniform = lightMappingTextureUniform
+          EnvironmentFilterMapUniform = environmentFilterMapUniform
+          EnvironmentFilterMapsUniforms = environmentFilterMapsUniforms
+          LightMapOriginsUniform = lightMapOriginsUniform
+          LightMapMinsUniform = lightMapMinsUniform
+          LightMapSizesUniform = lightMapSizesUniform
+          PhysicallyBasedDeferredEnvironmentFilterShader = shader }
+
     /// Create a physically-based shader for the second step of deferred rendering.
     let CreatePhysicallyBasedDeferred2Shader (shaderFilePath : string) =
 
@@ -1092,8 +1166,6 @@ module PhysicallyBased =
         let shader = Shader.CreateShaderFromFilePath shaderFilePath
 
         // retrieve uniforms
-        let viewUniform = Gl.GetUniformLocation (shader, "view")
-        let projectionUniform = Gl.GetUniformLocation (shader, "projection")
         let eyeCenterUniform = Gl.GetUniformLocation (shader, "eyeCenter")
         let lightAmbientColorUniform = Gl.GetUniformLocation (shader, "lightAmbientColor")
         let lightAmbientBrightnessUniform = Gl.GetUniformLocation (shader, "lightAmbientBrightness")
@@ -1117,9 +1189,7 @@ module PhysicallyBased =
         let lightConeOutersUniform = Gl.GetUniformLocation (shader, "lightConeOuters")
 
         // make shader record
-        { ViewUniform = viewUniform
-          ProjectionUniform = projectionUniform
-          EyeCenterUniform = eyeCenterUniform
+        { EyeCenterUniform = eyeCenterUniform
           LightAmbientColorUniform = lightAmbientColorUniform
           LightAmbientBrightnessUniform = lightAmbientBrightnessUniform
           PositionTextureUniform = positionTextureUniform
@@ -1143,11 +1213,14 @@ module PhysicallyBased =
           PhysicallyBasedDeferred2Shader = shader }
 
     /// Create the first and second shaders for physically-based deferred rendering.
-    let CreatePhysicallyBasedDeferredShaders (shaderFilePath, shaderSsaoFilePath, shader2FilePath) =
+    let CreatePhysicallyBasedDeferredShaders (shaderFilePath, shaderSsaoFilePath, shaderLightMappingFilePath, shaderIrradianceFilePath, shaderEnvironmentFilterFilePath, shader2FilePath) =
         let shader = CreatePhysicallyBasedShader shaderFilePath
         let shaderSsao = CreatePhysicallyBasedDeferredSsaoShader shaderSsaoFilePath
+        let shaderLightMapping = CreatePhysicallyBasedDeferredLightMappingShader shaderLightMappingFilePath
+        let shaderIrradiance = CreatePhysicallyBasedDeferredIrradianceShader shaderIrradianceFilePath
+        let shaderEnvironmentFilter = CreatePhysicallyBasedDeferredEnvironmentFilterShader shaderEnvironmentFilterFilePath
         let shader2 = CreatePhysicallyBasedDeferred2Shader shader2FilePath
-        (shader, shaderSsao, shader2)
+        (shader, shaderSsao, shaderLightMapping, shaderIrradiance, shaderEnvironmentFilter, shader2)
 
     /// Draw a batch of physically-based surfaces.
     let DrawPhysicallyBasedSurfaces
@@ -1390,9 +1463,7 @@ module PhysicallyBased =
 
     /// Draw a the second pass of a deferred physically-based surface.
     let DrawPhysicallyBasedDeferred2Surface
-        (view : single array,
-         projection : single array,
-         eyeCenter : Vector3,
+        (eyeCenter : Vector3,
          lightAmbientColor : single array,
          lightAmbientBrightness : single,
          positionTexture : uint,
@@ -1418,8 +1489,6 @@ module PhysicallyBased =
 
         // setup shader
         Gl.UseProgram shader.PhysicallyBasedDeferred2Shader
-        Gl.UniformMatrix4 (shader.ViewUniform, false, view)
-        Gl.UniformMatrix4 (shader.ProjectionUniform, false, projection)
         Gl.Uniform3 (shader.EyeCenterUniform, eyeCenter.X, eyeCenter.Y, eyeCenter.Z)
         Gl.Uniform3 (shader.LightAmbientColorUniform, lightAmbientColor)
         Gl.Uniform1 (shader.LightAmbientBrightnessUniform, lightAmbientBrightness)
@@ -1600,8 +1669,7 @@ module PhysicallyBased =
 
     /// Draw a the irradiance pass of a deferred physically-based surface.
     let DrawPhysicallyBasedDeferredIrradianceSurface
-        (eyeCenter : Vector3,
-         normalAndHeightTexture : uint,
+        (normalAndHeightTexture : uint,
          lightMappingTexture : uint,
          irradianceMap : uint,
          irradianceMaps : uint array,
@@ -1610,7 +1678,6 @@ module PhysicallyBased =
 
         // setup shader
         Gl.UseProgram shader.PhysicallyBasedDeferredIrradianceShader
-        Gl.Uniform3 (shader.EyeCenterUniform, eyeCenter.X, eyeCenter.Y, eyeCenter.Z)
         Gl.Uniform1 (shader.NormalAndHeightTextureUniform, 0)
         Gl.Uniform1 (shader.LightMappingTextureUniform, 1)
         Gl.Uniform1 (shader.IrradianceMapUniform, 2)
