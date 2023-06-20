@@ -94,7 +94,6 @@ module Render =
     let [<Uniform>] SsaoResolutionF = Vector2 (single SsaoResolutionX, single SsaoResolutionY)
     let [<Uniform>] SsaoResolution = Vector2i (SsaoResolutionX, SsaoResolutionY)
     let [<Uniform>] SsaoViewport = Nu.Viewport (NearPlaneDistanceOmnipresent, FarPlaneDistanceOmnipresent, Box2i(v2iZero, SsaoResolution))
-    let [<Uniform>] SsaoViewportOffset (windowSize : Vector2i) = Nu.Viewport (NearPlaneDistanceOmnipresent, FarPlaneDistanceOmnipresent, Box2i(ViewportMargin windowSize, SsaoResolution))
     let [<Uniform>] WindowClearColor = Color.White // NOTE: do not change this color as the deferred2 renderer checks if normal color is equal to [1;1;1] to discard fragment.
     let [<Literal>] TexturePriorityDefault = 0.5f // higher priority than (supposed) default, but not maximum. this value is arrived at through experimenting with a Windows NVidia driver.
     let [<Literal>] TextureAnisotropyMax = 8.0f

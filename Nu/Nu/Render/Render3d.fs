@@ -1231,19 +1231,13 @@ type [<ReferenceEquality>] GlRenderer3d =
         renderer.RenderTasks.RenderSurfacesForwardRelativeSorted.AddRange forwardSurfacesSorted
         renderer.RenderTasks.RenderSurfacesForwardRelative.Clear ()
 
-        // setup geometry viewport
-        OpenGL.Gl.Viewport (geometryViewport.Bounds.Min.X, geometryViewport.Bounds.Min.Y, geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y)
-        OpenGL.Hl.Assert ()
-
-        // setup geometry buffer
+        // setup geometry buffer and viewport
         let (positionTexture, albedoTexture, materialTexture, normalAndHeightTexture, geometryRenderbuffer, geometryFramebuffer) = renderer.RenderGeometryBuffers
         OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, geometryRenderbuffer)
         OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, geometryFramebuffer)
-        OpenGL.Gl.Enable OpenGL.EnableCap.ScissorTest
-        OpenGL.Gl.Scissor (geometryViewport.Bounds.Min.X, geometryViewport.Bounds.Min.Y, geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y)
         OpenGL.Gl.ClearColor (Constants.Render.WindowClearColor.R, Constants.Render.WindowClearColor.G, Constants.Render.WindowClearColor.B, Constants.Render.WindowClearColor.A)
         OpenGL.Gl.Clear (OpenGL.ClearBufferMask.ColorBufferBit ||| OpenGL.ClearBufferMask.DepthBufferBit ||| OpenGL.ClearBufferMask.StencilBufferBit)
-        OpenGL.Gl.Disable OpenGL.EnableCap.ScissorTest
+        OpenGL.Gl.Viewport (geometryViewport.Bounds.Min.X, geometryViewport.Bounds.Min.Y, geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y)
         OpenGL.Hl.Assert ()
 
         // deferred render surfaces w/ absolute transforms if in top level render
@@ -1271,18 +1265,13 @@ type [<ReferenceEquality>] GlRenderer3d =
             // but only if needed
             if renderer.RenderLightMappingConfig.LightMappingEnabled then
 
-                // setup light mapping buffer
+                // setup light mapping buffer and viewport
                 let (lightMappingTexture, lightMappingRenderbuffer, lightMappingFramebuffer) = renderer.RenderLightMappingBuffers
                 OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, lightMappingRenderbuffer)
                 OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, lightMappingFramebuffer)
-                OpenGL.Gl.Scissor (geometryViewport.Bounds.Min.X, geometryViewport.Bounds.Min.Y, geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y)
                 OpenGL.Gl.ClearColor (Constants.Render.WindowClearColor.R, Constants.Render.WindowClearColor.G, Constants.Render.WindowClearColor.B, Constants.Render.WindowClearColor.A)
                 OpenGL.Gl.Clear (OpenGL.ClearBufferMask.ColorBufferBit ||| OpenGL.ClearBufferMask.DepthBufferBit ||| OpenGL.ClearBufferMask.StencilBufferBit)
-                OpenGL.Hl.Assert ()
-
-                // switch to light mapping buffers
-                OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, lightMappingRenderbuffer)
-                OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, lightMappingFramebuffer)
+                OpenGL.Gl.Viewport (geometryViewport.Bounds.Min.X, geometryViewport.Bounds.Min.Y, geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y)
                 OpenGL.Hl.Assert ()
 
                 // deferred render light mapping quad
@@ -1291,8 +1280,6 @@ type [<ReferenceEquality>] GlRenderer3d =
                      lightMapEnableds, lightMapOrigins, lightMapMins, lightMapSizes,
                      renderer.RenderPhysicallyBasedQuad, renderer.RenderPhysicallyBasedDeferredLightMappingShader)
                 OpenGL.Hl.Assert ()
-
-                // fin
                 lightMappingTexture
 
             // just use black texture
@@ -1301,18 +1288,13 @@ type [<ReferenceEquality>] GlRenderer3d =
         // run irradiance pass
         let irradianceTexture =
 
-            // setup irradiance buffer
+            // setup irradiance buffer and viewport
             let (irradianceTexture, irradianceRenderbuffer, irradianceFramebuffer) = renderer.RenderIrradianceBuffers
             OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, irradianceRenderbuffer)
             OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, irradianceFramebuffer)
-            OpenGL.Gl.Scissor (geometryViewport.Bounds.Min.X, geometryViewport.Bounds.Min.Y, geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y)
             OpenGL.Gl.ClearColor (Constants.Render.WindowClearColor.R, Constants.Render.WindowClearColor.G, Constants.Render.WindowClearColor.B, Constants.Render.WindowClearColor.A)
             OpenGL.Gl.Clear (OpenGL.ClearBufferMask.ColorBufferBit ||| OpenGL.ClearBufferMask.DepthBufferBit ||| OpenGL.ClearBufferMask.StencilBufferBit)
-            OpenGL.Hl.Assert ()
-
-            // switch to irradiance buffers
-            OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, irradianceRenderbuffer)
-            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, irradianceFramebuffer)
+            OpenGL.Gl.Viewport (geometryViewport.Bounds.Min.X, geometryViewport.Bounds.Min.Y, geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y)
             OpenGL.Hl.Assert ()
 
             // deferred render irradiance quad
@@ -1321,29 +1303,18 @@ type [<ReferenceEquality>] GlRenderer3d =
                  lightMapFallback.IrradianceMap, lightMapIrradianceMaps,
                  renderer.RenderPhysicallyBasedQuad, renderer.RenderPhysicallyBasedDeferredIrradianceShader)
             OpenGL.Hl.Assert ()
-
-            // fin
             irradianceTexture
 
         // run environment filter pass
         let environmentFilterTexture =
 
-            // setup environment filter buffer
+            // setup environment filter buffer and viewport
             let (environmentFilterTexture, environmentFilterRenderbuffer, environmentFilterFramebuffer) = renderer.RenderEnvironmentFilterBuffers
             OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, environmentFilterRenderbuffer)
             OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, environmentFilterFramebuffer)
-            OpenGL.Gl.Scissor (geometryViewport.Bounds.Min.X, geometryViewport.Bounds.Min.Y, geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y)
             OpenGL.Gl.ClearColor (Constants.Render.WindowClearColor.R, Constants.Render.WindowClearColor.G, Constants.Render.WindowClearColor.B, Constants.Render.WindowClearColor.A)
             OpenGL.Gl.Clear (OpenGL.ClearBufferMask.ColorBufferBit ||| OpenGL.ClearBufferMask.DepthBufferBit ||| OpenGL.ClearBufferMask.StencilBufferBit)
-            OpenGL.Hl.Assert ()
-
-            // setup environment filter viewport
             OpenGL.Gl.Viewport (geometryViewport.Bounds.Min.X, geometryViewport.Bounds.Min.Y, geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y)
-            OpenGL.Hl.Assert ()
-
-            // switch to environment filter buffers
-            OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, environmentFilterRenderbuffer)
-            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, environmentFilterFramebuffer)
             OpenGL.Hl.Assert ()
 
             // deferred render environment filter quad
@@ -1354,8 +1325,6 @@ type [<ReferenceEquality>] GlRenderer3d =
                  lightMapOrigins, lightMapMins, lightMapSizes,
                  renderer.RenderPhysicallyBasedQuad, renderer.RenderPhysicallyBasedDeferredEnvironmentFilterShader)
             OpenGL.Hl.Assert ()
-
-            // fin
             environmentFilterTexture
 
         // run ssao pass
@@ -1364,24 +1333,13 @@ type [<ReferenceEquality>] GlRenderer3d =
             // but only if needed
             if renderer.RenderSsaoConfig.SsaoEnabled then
 
-                // setup ssao buffer
+                // setup ssao buffer and viewport
                 let (ssaoTexture, ssaoRenderbuffer, ssaoFramebuffer) = renderer.RenderSsaoBuffers
                 OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, ssaoRenderbuffer)
                 OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, ssaoFramebuffer)
-                OpenGL.Gl.Enable OpenGL.EnableCap.ScissorTest
-                OpenGL.Gl.Scissor (ssaoViewport.Bounds.Min.X, ssaoViewport.Bounds.Min.Y, ssaoViewport.Bounds.Size.X, ssaoViewport.Bounds.Size.Y)
                 OpenGL.Gl.ClearColor (Constants.Render.WindowClearColor.R, Constants.Render.WindowClearColor.G, Constants.Render.WindowClearColor.B, Constants.Render.WindowClearColor.A)
                 OpenGL.Gl.Clear (OpenGL.ClearBufferMask.ColorBufferBit ||| OpenGL.ClearBufferMask.DepthBufferBit ||| OpenGL.ClearBufferMask.StencilBufferBit)
-                OpenGL.Gl.Disable OpenGL.EnableCap.ScissorTest
-                OpenGL.Hl.Assert ()
-
-                // setup ssao viewport
                 OpenGL.Gl.Viewport (ssaoViewport.Bounds.Min.X, ssaoViewport.Bounds.Min.Y, ssaoViewport.Bounds.Size.X, ssaoViewport.Bounds.Size.Y)
-                OpenGL.Hl.Assert ()
-
-                // switch to ssao buffers
-                OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, ssaoRenderbuffer)
-                OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, ssaoFramebuffer)
                 OpenGL.Hl.Assert ()
 
                 // deferred render ssao quad
@@ -1397,22 +1355,18 @@ type [<ReferenceEquality>] GlRenderer3d =
                 OpenGL.Gl.GenerateMipmap OpenGL.TextureTarget.Texture2d
                 OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, 0u)
                 OpenGL.Hl.Assert ()
-
-                // fin
                 ssaoTexture
 
             // just use white texture
             else renderer.RenderWhiteTexture
 
-        // setup filter buffer
+        // setup filter buffer and viewport
         let (filterTexture, filterRenderbuffer, filterFramebuffer) = renderer.RenderFilterBuffers
         OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, filterRenderbuffer)
         OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, filterFramebuffer)
-        OpenGL.Gl.Enable OpenGL.EnableCap.ScissorTest
-        OpenGL.Gl.Scissor (geometryViewport.Bounds.Min.X, geometryViewport.Bounds.Min.Y, geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y)
         OpenGL.Gl.ClearColor (Constants.Render.WindowClearColor.R, Constants.Render.WindowClearColor.G, Constants.Render.WindowClearColor.B, Constants.Render.WindowClearColor.A)
         OpenGL.Gl.Clear (OpenGL.ClearBufferMask.ColorBufferBit ||| OpenGL.ClearBufferMask.DepthBufferBit ||| OpenGL.ClearBufferMask.StencilBufferBit)
-        OpenGL.Gl.Disable OpenGL.EnableCap.ScissorTest
+        OpenGL.Gl.Viewport (geometryViewport.Bounds.Min.X, geometryViewport.Bounds.Min.Y, geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y)
         OpenGL.Hl.Assert ()
 
         // copy depths from geometry framebuffer to filter framebuffer
@@ -1425,13 +1379,10 @@ type [<ReferenceEquality>] GlRenderer3d =
              OpenGL.BlitFramebufferFilter.Nearest)
         OpenGL.Hl.Assert ()
 
-        // setup filter viewport
-        OpenGL.Gl.Viewport (geometryViewport.Bounds.Min.X, geometryViewport.Bounds.Min.Y, geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y)
-        OpenGL.Hl.Assert ()
-
-        // switch to filter buffers
+        // restore filter buffer
         OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, filterRenderbuffer)
         OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, filterFramebuffer)
+        OpenGL.Gl.Viewport (geometryViewport.Bounds.Min.X, geometryViewport.Bounds.Min.Y, geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y)
         OpenGL.Hl.Assert ()
 
         // deferred render lighting quad
@@ -1473,13 +1424,10 @@ type [<ReferenceEquality>] GlRenderer3d =
                 surface renderer.RenderPhysicallyBasedForwardShader renderer
             OpenGL.Hl.Assert ()
 
-        // setup raster viewport
-        OpenGL.Gl.Viewport (rasterViewport.Bounds.Min.X, rasterViewport.Bounds.Min.Y, rasterViewport.Bounds.Size.X, rasterViewport.Bounds.Size.Y)
-        OpenGL.Hl.Assert ()
-
-        // switch to raster buffers
+        // setup to raster buffer and viewport
         OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, renderbuffer)
         OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, framebuffer)
+        OpenGL.Gl.Viewport (rasterViewport.Bounds.Min.X, rasterViewport.Bounds.Min.Y, rasterViewport.Bounds.Size.X, rasterViewport.Bounds.Size.Y)
         OpenGL.Hl.Assert ()
 
         // render filter quad
@@ -1571,8 +1519,8 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         // compute the viewports for the given window size
         let viewport = Constants.Render.Viewport
+        let ssaoViewport = Constants.Render.SsaoViewport
         let viewportOffset = Constants.Render.ViewportOffset windowSize
-        let ssaoViewportOffset = Constants.Render.SsaoViewportOffset windowSize
 
         // compute view and projection
         let eyeTarget = eyeCenter + Vector3.Transform (v3Forward, eyeRotation)
@@ -1586,8 +1534,8 @@ type [<ReferenceEquality>] GlRenderer3d =
             renderer
             true eyeCenter eyeRotation
             viewAbsolute viewRelative viewSkyBox
-            viewportOffset projection
-            ssaoViewportOffset
+            viewport projection
+            ssaoViewport
             viewportOffset projection
             renderbuffer framebuffer
 
