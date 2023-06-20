@@ -28,10 +28,10 @@ uniform sampler2D positionTexture;
 uniform sampler2D albedoTexture;
 uniform sampler2D materialTexture;
 uniform sampler2D normalAndHeightTexture;
-uniform sampler2D ssaoTexture;
 uniform sampler2D irradianceTexture;
 uniform sampler2D environmentFilterTexture;
 uniform sampler2D brdfTexture;
+uniform sampler2D ssaoTexture;
 uniform vec3 lightOrigins[LIGHTS_MAX];
 uniform vec3 lightDirections[LIGHTS_MAX];
 uniform vec3 lightColors[LIGHTS_MAX];
@@ -119,12 +119,10 @@ void main()
     vec3 albedo = texture(albedoTexture, texCoordsOut).rgb;
     vec4 material = texture(materialTexture, texCoordsOut);
 
-    // retrieve data from ssao buffer, smoothing it in the process
-    float ambientOcclusionScreen = (textureLod(ssaoTexture, texCoordsOut, 0.0).r + textureLod(ssaoTexture, texCoordsOut, 1.0).r) / 2.0;
-
-    // retrieve data from light mapping buffers
+    // retrieve data from intermediate buffers
     vec3 irradiance = texture(irradianceTexture, texCoordsOut).rgb;
     vec3 environmentFilter = texture(environmentFilterTexture, texCoordsOut).rgb;
+    float ssao = (textureLod(ssaoTexture, texCoordsOut, 0.0).r + textureLod(ssaoTexture, texCoordsOut, 1.0).r) / 2.0;
 
     // compute materials
     float metallic = material.r;
@@ -199,7 +197,7 @@ void main()
     vec3 specular = environmentFilter * (f * environmentBrdf.x + environmentBrdf.y) * lightAmbientColor * lightAmbientBrightness;
 
     // compute ambient term
-    vec3 ambient = (kD * diffuse + specular) * ambientOcclusion * ambientOcclusionScreen;
+    vec3 ambient = (kD * diffuse + specular) * ambientOcclusion * ssao;
 
     // compute color w/ tone mapping, gamma correction, and emission
     vec3 color = lightAccum + ambient;
