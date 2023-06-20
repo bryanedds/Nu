@@ -262,7 +262,7 @@ module PhysicallyBased =
     /// Describes an fxaa pass of a physically-based shader that's loaded into GPU.
     type PhysicallyBasedFxaaShader =
         { InputTextureUniform : int
-          FxaaShader : uint }
+          PhysicallyBasedFxaaShader : uint }
 
     /// Create physically-based material from an assimp mesh. falling back on default in case of missing textures.
     /// Uses file name-based inferences to look for non-albedo files as well as determining if roughness should be
@@ -1240,7 +1240,7 @@ module PhysicallyBased =
 
         // make shader record
         { InputTextureUniform = inputTextureUniform
-          FxaaShader = shader }
+          PhysicallyBasedFxaaShader = shader }
 
     /// Create the first and second shaders for physically-based deferred rendering.
     let CreatePhysicallyBasedDeferredShaders (shaderFilePath, shaderLightMappingFilePath, shaderIrradianceFilePath, shaderEnvironmentFilterFilePath, shaderSsaoFilePath, shader2FilePath) =
@@ -1850,7 +1850,7 @@ module PhysicallyBased =
          shader : PhysicallyBasedFxaaShader) =
 
         // setup shader
-        Gl.UseProgram shader.FxaaShader
+        Gl.UseProgram shader.PhysicallyBasedFxaaShader
         Gl.Uniform1 (shader.InputTextureUniform, 0)
         Hl.Assert ()
 

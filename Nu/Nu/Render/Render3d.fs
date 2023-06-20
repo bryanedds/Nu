@@ -409,18 +409,20 @@ type [<ReferenceEquality>] GlRenderer3d =
           RenderSkyBoxShader : OpenGL.SkyBox.SkyBoxShader
           RenderIrradianceShader : OpenGL.CubeMap.CubeMapShader
           RenderEnvironmentFilterShader : OpenGL.LightMap.EnvironmentFilterShader
-          RenderPhysicallyBasedForwardShader : OpenGL.PhysicallyBased.PhysicallyBasedShader
           RenderPhysicallyBasedDeferredShader : OpenGL.PhysicallyBased.PhysicallyBasedShader
           RenderPhysicallyBasedDeferredLightMappingShader : OpenGL.PhysicallyBased.PhysicallyBasedDeferredLightMappingShader
           RenderPhysicallyBasedDeferredIrradianceShader : OpenGL.PhysicallyBased.PhysicallyBasedDeferredIrradianceShader
           RenderPhysicallyBasedDeferredEnvironmentFilterShader : OpenGL.PhysicallyBased.PhysicallyBasedDeferredEnvironmentFilterShader
           RenderPhysicallyBasedDeferredSsaoShader : OpenGL.PhysicallyBased.PhysicallyBasedDeferredSsaoShader
           RenderPhysicallyBasedDeferred2Shader : OpenGL.PhysicallyBased.PhysicallyBasedDeferred2Shader
+          RenderPhysicallyBasedForwardShader : OpenGL.PhysicallyBased.PhysicallyBasedShader
+          RenderPhysicallyBasedFxaaShader : OpenGL.PhysicallyBased.PhysicallyBasedFxaaShader
           RenderGeometryBuffers : uint * uint * uint * uint * uint * uint
           RenderLightMappingBuffers : uint * uint * uint
           RenderIrradianceBuffers : uint * uint * uint
           RenderEnvironmentFilterBuffers : uint * uint * uint
           RenderSsaoBuffers : uint * uint * uint
+          RenderFilterBuffers : uint * uint * uint
           RenderCubeMapGeometry : OpenGL.CubeMap.CubeMapGeometry
           RenderBillboardGeometry : OpenGL.PhysicallyBased.PhysicallyBasedGeometry
           RenderPhysicallyBasedQuad : OpenGL.PhysicallyBased.PhysicallyBasedGeometry
@@ -1263,16 +1265,6 @@ type [<ReferenceEquality>] GlRenderer3d =
                 entry.Key renderer.RenderPhysicallyBasedDeferredShader renderer
             OpenGL.Hl.Assert ()
 
-        // copy depths from geometry framebuffer to raster framebuffer
-        OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.ReadFramebuffer, geometryFramebuffer)
-        OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.DrawFramebuffer, framebuffer)
-        OpenGL.Gl.BlitFramebuffer
-            (geometryViewport.Bounds.Min.X, geometryViewport.Bounds.Min.Y, geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y,
-             rasterViewport.Bounds.Min.X, rasterViewport.Bounds.Min.Y, rasterViewport.Bounds.Size.X, rasterViewport.Bounds.Size.Y,
-             OpenGL.ClearBufferMask.DepthBufferBit,
-             OpenGL.BlitFramebufferFilter.Nearest)
-        OpenGL.Hl.Assert ()
-
         // run light mapping pass
         let lightMappingTexture =
 
@@ -1412,13 +1404,34 @@ type [<ReferenceEquality>] GlRenderer3d =
             // just use white texture
             else renderer.RenderWhiteTexture
 
-        // setup raster viewport
-        OpenGL.Gl.Viewport (rasterViewport.Bounds.Min.X, rasterViewport.Bounds.Min.Y, rasterViewport.Bounds.Size.X, rasterViewport.Bounds.Size.Y)
+        // setup filter buffer
+        let (filterTexture, filterRenderbuffer, filterFramebuffer) = renderer.RenderFilterBuffers
+        OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, filterRenderbuffer)
+        OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, filterFramebuffer)
+        OpenGL.Gl.Enable OpenGL.EnableCap.ScissorTest
+        OpenGL.Gl.Scissor (geometryViewport.Bounds.Min.X, geometryViewport.Bounds.Min.Y, geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y)
+        OpenGL.Gl.ClearColor (Constants.Render.WindowClearColor.R, Constants.Render.WindowClearColor.G, Constants.Render.WindowClearColor.B, Constants.Render.WindowClearColor.A)
+        OpenGL.Gl.Clear (OpenGL.ClearBufferMask.ColorBufferBit ||| OpenGL.ClearBufferMask.DepthBufferBit ||| OpenGL.ClearBufferMask.StencilBufferBit)
+        OpenGL.Gl.Disable OpenGL.EnableCap.ScissorTest
         OpenGL.Hl.Assert ()
 
-        // switch to raster buffers
-        OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, renderbuffer)
-        OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, framebuffer)
+        // copy depths from geometry framebuffer to filter framebuffer
+        OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.ReadFramebuffer, geometryFramebuffer)
+        OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.DrawFramebuffer, filterFramebuffer)
+        OpenGL.Gl.BlitFramebuffer
+            (geometryViewport.Bounds.Min.X, geometryViewport.Bounds.Min.Y, geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y,
+             geometryViewport.Bounds.Min.X, geometryViewport.Bounds.Min.Y, geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y,
+             OpenGL.ClearBufferMask.DepthBufferBit,
+             OpenGL.BlitFramebufferFilter.Nearest)
+        OpenGL.Hl.Assert ()
+
+        // setup filter viewport
+        OpenGL.Gl.Viewport (geometryViewport.Bounds.Min.X, geometryViewport.Bounds.Min.Y, geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y)
+        OpenGL.Hl.Assert ()
+
+        // switch to filter buffers
+        OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, filterRenderbuffer)
+        OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, filterFramebuffer)
         OpenGL.Hl.Assert ()
 
         // deferred render lighting quad
@@ -1459,6 +1472,21 @@ type [<ReferenceEquality>] GlRenderer3d =
                 lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightDirectionals lightConeInners lightConeOuters
                 surface renderer.RenderPhysicallyBasedForwardShader renderer
             OpenGL.Hl.Assert ()
+
+        // setup raster viewport
+        OpenGL.Gl.Viewport (rasterViewport.Bounds.Min.X, rasterViewport.Bounds.Min.Y, rasterViewport.Bounds.Size.X, rasterViewport.Bounds.Size.Y)
+        OpenGL.Hl.Assert ()
+
+        // switch to raster buffers
+        OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, renderbuffer)
+        OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, framebuffer)
+        OpenGL.Hl.Assert ()
+
+        // render filter quad
+        OpenGL.PhysicallyBased.DrawPhysicallyBasedFxaaSurface
+            (filterTexture,
+             renderer.RenderPhysicallyBasedQuad, renderer.RenderPhysicallyBasedFxaaShader)
+        OpenGL.Hl.Assert ()
 
     /// Render 3d surfaces.
     static member render skipCulling frustumEnclosed frustumExposed frustumImposter lightBox eyeCenter (eyeRotation : Quaternion) windowSize renderbuffer framebuffer renderMessages renderer =
@@ -1622,10 +1650,6 @@ type [<ReferenceEquality>] GlRenderer3d =
         let environmentFilterShader = OpenGL.LightMap.CreateEnvironmentFilterShader Constants.Paths.EnvironmentFilterShaderFilePath
         OpenGL.Hl.Assert ()
 
-        // create forward shader
-        let forwardShader = OpenGL.PhysicallyBased.CreatePhysicallyBasedShader Constants.Paths.PhysicallyBasedForwardShaderFilePath
-        OpenGL.Hl.Assert ()
-
         // create deferred shaders
         let (deferredShader, deferredLightMappingShader, deferredIrradianceShader, deferredEnvironmentFilterShader, deferredSsaoShader, deferred2Shader) =
             OpenGL.PhysicallyBased.CreatePhysicallyBasedDeferredShaders
@@ -1635,6 +1659,14 @@ type [<ReferenceEquality>] GlRenderer3d =
                  Constants.Paths.PhysicallyBasedDeferredEnvironmentFilterShaderFilePath,
                  Constants.Paths.PhysicallyBasedDeferredSsaoShaderFilePath,
                  Constants.Paths.PhysicallyBasedDeferred2ShaderFilePath)
+        OpenGL.Hl.Assert ()
+
+        // create forward shader
+        let forwardShader = OpenGL.PhysicallyBased.CreatePhysicallyBasedShader Constants.Paths.PhysicallyBasedForwardShaderFilePath
+        OpenGL.Hl.Assert ()
+
+        // create fxaa shader
+        let fxaaShader = OpenGL.PhysicallyBased.CreatePhysicallyBasedFxaaShader Constants.Paths.PhysicallyBasedFxaaShaderFilePath
         OpenGL.Hl.Assert ()
 
         // create geometry buffers
@@ -1669,6 +1701,13 @@ type [<ReferenceEquality>] GlRenderer3d =
         let ssaoBuffers =
             match OpenGL.Framebuffer.TryCreateSsaoBuffers () with
             | Right ssaoBuffers -> ssaoBuffers
+            | Left error -> failwith ("Could not create GlRenderer3d due to: " + error + ".")
+        OpenGL.Hl.Assert ()
+
+        // create filter buffers
+        let filterBuffers =
+            match OpenGL.Framebuffer.TryCreateFilterBuffers () with
+            | Right filterBuffers -> filterBuffers
             | Left error -> failwith ("Could not create GlRenderer3d due to: " + error + ".")
         OpenGL.Hl.Assert ()
 
@@ -1784,18 +1823,20 @@ type [<ReferenceEquality>] GlRenderer3d =
               RenderSkyBoxShader = skyBoxShader
               RenderIrradianceShader = irradianceShader
               RenderEnvironmentFilterShader = environmentFilterShader
-              RenderPhysicallyBasedForwardShader = forwardShader
               RenderPhysicallyBasedDeferredShader = deferredShader
               RenderPhysicallyBasedDeferredLightMappingShader = deferredLightMappingShader
               RenderPhysicallyBasedDeferredIrradianceShader = deferredIrradianceShader
               RenderPhysicallyBasedDeferredEnvironmentFilterShader = deferredEnvironmentFilterShader
               RenderPhysicallyBasedDeferredSsaoShader = deferredSsaoShader
               RenderPhysicallyBasedDeferred2Shader = deferred2Shader
+              RenderPhysicallyBasedFxaaShader = fxaaShader
+              RenderPhysicallyBasedForwardShader = forwardShader
               RenderGeometryBuffers = geometryBuffers
               RenderLightMappingBuffers = lightMappingBuffers
               RenderIrradianceBuffers = irradianceBuffers
               RenderEnvironmentFilterBuffers = environmentFilterBuffers
               RenderSsaoBuffers = ssaoBuffers
+              RenderFilterBuffers = filterBuffers
               RenderCubeMapGeometry = cubeMapGeometry
               RenderBillboardGeometry = billboardGeometry
               RenderPhysicallyBasedQuad = physicallyBasedQuad
@@ -1858,9 +1899,11 @@ type [<ReferenceEquality>] GlRenderer3d =
             OpenGL.Gl.DeleteProgram renderer.RenderSkyBoxShader.SkyBoxShader
             OpenGL.Gl.DeleteProgram renderer.RenderIrradianceShader.CubeMapShader
             OpenGL.Gl.DeleteProgram renderer.RenderEnvironmentFilterShader.EnvironmentFilterShader
-            OpenGL.Gl.DeleteProgram renderer.RenderPhysicallyBasedForwardShader.PhysicallyBasedShader
             OpenGL.Gl.DeleteProgram renderer.RenderPhysicallyBasedDeferredShader.PhysicallyBasedShader
+            // TODO: P1: delete the other shaders!!!
             OpenGL.Gl.DeleteProgram renderer.RenderPhysicallyBasedDeferred2Shader.PhysicallyBasedDeferred2Shader
+            OpenGL.Gl.DeleteProgram renderer.RenderPhysicallyBasedFxaaShader.PhysicallyBasedFxaaShader
+            OpenGL.Gl.DeleteProgram renderer.RenderPhysicallyBasedForwardShader.PhysicallyBasedShader
             OpenGL.Gl.DeleteVertexArrays [|renderer.RenderCubeMapGeometry.CubeMapVao|] // TODO: also release vertex and index buffers?
             OpenGL.Gl.DeleteVertexArrays [|renderer.RenderBillboardGeometry.PhysicallyBasedVao|] // TODO: also release vertex and index buffers?
             OpenGL.Gl.DeleteVertexArrays [|renderer.RenderPhysicallyBasedQuad.PhysicallyBasedVao|] // TODO: also release vertex and index buffers?
@@ -1887,3 +1930,4 @@ type [<ReferenceEquality>] GlRenderer3d =
             OpenGL.Framebuffer.DestroyIrradianceBuffers renderer.RenderIrradianceBuffers
             OpenGL.Framebuffer.DestroyEnvironmentFilterBuffers renderer.RenderEnvironmentFilterBuffers
             OpenGL.Framebuffer.DestroySsaoBuffers renderer.RenderSsaoBuffers
+            OpenGL.Framebuffer.DestroyFilterBuffers renderer.RenderFilterBuffers
