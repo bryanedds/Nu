@@ -21,8 +21,6 @@ const float GAMMA = 2.2;
 const float ATTENUATION_CONSTANT = 1.0;
 const int LIGHTS_MAX = 64;
 
-uniform mat4 view;
-uniform mat4 projection;
 uniform vec3 eyeCenter;
 uniform vec3 lightAmbientColor;
 uniform float lightAmbientBrightness;

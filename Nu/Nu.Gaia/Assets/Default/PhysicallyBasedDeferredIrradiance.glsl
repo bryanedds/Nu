@@ -18,7 +18,6 @@ void main()
 const float PI = 3.141592654;
 const int LIGHT_MAPS_MAX = 24;
 
-uniform vec3 eyeCenter;
 uniform sampler2D normalAndHeightTexture;
 uniform sampler2D lightMappingTexture;
 uniform samplerCube irradianceMap;
@@ -27,18 +26,6 @@ uniform samplerCube irradianceMaps[LIGHT_MAPS_MAX];
 in vec2 texCoordsOut;
 
 out vec4 frag;
-
-vec3 parallaxCorrection(samplerCube cubeMap, vec3 lightMapOrigin, vec3 lightMapMin, vec3 lightMapSize, vec3 positionWorld, vec3 normalWorld)
-{
-    vec3 directionWorld = positionWorld - eyeCenter;
-    vec3 reflectionWorld = reflect(directionWorld, normalWorld);
-    vec3 firstPlaneIntersect = (lightMapMin + lightMapSize - positionWorld) / reflectionWorld;
-    vec3 secondPlaneIntersect = (lightMapMin - positionWorld) / reflectionWorld;
-    vec3 furthestPlane = max(firstPlaneIntersect, secondPlaneIntersect);
-    float distance = min(min(furthestPlane.x, furthestPlane.y), furthestPlane.z);
-    vec3 intersectPositionWorld = positionWorld + reflectionWorld * distance;
-    return intersectPositionWorld - lightMapOrigin;
-}
 
 void main()
 {
