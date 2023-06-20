@@ -172,12 +172,12 @@ module PhysicallyBased =
           BrdfTextureUniform : int
           IrradianceMapUniform : int
           EnvironmentFilterMapUniform : int
+          IrradianceMapsUniforms : int array
+          EnvironmentFilterMapsUniforms : int array
           LightMapEnabledsUniform : int
           LightMapOriginsUniform : int
           LightMapMinsUniform : int
           LightMapSizesUniform : int
-          IrradianceMapsUniforms : int array
-          EnvironmentFilterMapsUniforms : int array
           LightOriginsUniform : int
           LightDirectionsUniform : int
           LightColorsUniform : int
@@ -1008,16 +1008,16 @@ module PhysicallyBased =
         let brdfTextureUniform = Gl.GetUniformLocation (shader, "brdfTexture")
         let irradianceMapUniform = Gl.GetUniformLocation (shader, "irradianceMap")
         let environmentFilterMapUniform = Gl.GetUniformLocation (shader, "environmentFilterMap")
-        let lightMapEnabledsUniform = Gl.GetUniformLocation (shader, "lightMapEnableds")
-        let lightMapOriginsUniform = Gl.GetUniformLocation (shader, "lightMapOrigins")
-        let lightMapMinsUniform = Gl.GetUniformLocation (shader, "lightMapMins")
-        let lightMapSizesUniform = Gl.GetUniformLocation (shader, "lightMapSizes")
         let irradianceMapsUniforms =
             Array.init Constants.Render.LightMapsMaxForward $ fun i ->
                 Gl.GetUniformLocation (shader, "irradianceMaps[" + string i + "]")
         let environmentFilterMapsUniforms =
             Array.init Constants.Render.LightMapsMaxForward $ fun i ->
                 Gl.GetUniformLocation (shader, "environmentFilterMaps[" + string i + "]")
+        let lightMapEnabledsUniform = Gl.GetUniformLocation (shader, "lightMapEnableds")
+        let lightMapOriginsUniform = Gl.GetUniformLocation (shader, "lightMapOrigins")
+        let lightMapMinsUniform = Gl.GetUniformLocation (shader, "lightMapMins")
+        let lightMapSizesUniform = Gl.GetUniformLocation (shader, "lightMapSizes")
         let lightOriginsUniform = Gl.GetUniformLocation (shader, "lightOrigins")
         let lightDirectionsUniform = Gl.GetUniformLocation (shader, "lightDirections")
         let lightColorsUniform = Gl.GetUniformLocation (shader, "lightColors")
@@ -1045,12 +1045,12 @@ module PhysicallyBased =
           BrdfTextureUniform = brdfTextureUniform
           IrradianceMapUniform = irradianceMapUniform
           EnvironmentFilterMapUniform = environmentFilterMapUniform
+          IrradianceMapsUniforms = irradianceMapsUniforms
+          EnvironmentFilterMapsUniforms = environmentFilterMapsUniforms
           LightMapEnabledsUniform = lightMapEnabledsUniform
           LightMapOriginsUniform = lightMapOriginsUniform
           LightMapMinsUniform = lightMapMinsUniform
           LightMapSizesUniform = lightMapSizesUniform
-          IrradianceMapsUniforms = irradianceMapsUniforms
-          EnvironmentFilterMapsUniforms = environmentFilterMapsUniforms
           LightOriginsUniform = lightOriginsUniform
           LightDirectionsUniform = lightDirectionsUniform
           LightColorsUniform = lightColorsUniform
@@ -1240,12 +1240,12 @@ module PhysicallyBased =
          brdfTexture : uint,
          irradianceMap : uint,
          environmentFilterMap : uint,
+         irradianceMaps : uint array,
+         environmentFilterMaps : uint array,
          lightMapEnableds : int array,
          lightMapOrigins : single array,
          lightMapMins : single array,
          lightMapSizes : single array,
-         irradianceMaps : uint array,
-         environmentFilterMaps : uint array,
          lightOrigins : single array,
          lightDirections : single array,
          lightColors : single array,
@@ -1287,14 +1287,14 @@ module PhysicallyBased =
         Gl.Uniform1 (shader.BrdfTextureUniform, 7)
         Gl.Uniform1 (shader.IrradianceMapUniform, 8)
         Gl.Uniform1 (shader.EnvironmentFilterMapUniform, 9)
-        Gl.Uniform1 (shader.LightMapEnabledsUniform, lightMapEnableds)
-        Gl.Uniform3 (shader.LightMapOriginsUniform, lightMapOrigins)
-        Gl.Uniform3 (shader.LightMapMinsUniform, lightMapMins)
-        Gl.Uniform3 (shader.LightMapSizesUniform, lightMapSizes)
         for i in 0 .. dec Constants.Render.LightMapsMaxForward do
             Gl.Uniform1 (shader.IrradianceMapsUniforms.[i], i + 10)
         for i in 0 .. dec Constants.Render.LightMapsMaxForward do
             Gl.Uniform1 (shader.EnvironmentFilterMapsUniforms.[i], i + 10 + Constants.Render.LightMapsMaxForward)
+        Gl.Uniform1 (shader.LightMapEnabledsUniform, lightMapEnableds)
+        Gl.Uniform3 (shader.LightMapOriginsUniform, lightMapOrigins)
+        Gl.Uniform3 (shader.LightMapMinsUniform, lightMapMins)
+        Gl.Uniform3 (shader.LightMapSizesUniform, lightMapSizes)
         Gl.Uniform3 (shader.LightOriginsUniform, lightOrigins)
         Gl.Uniform3 (shader.LightDirectionsUniform, lightDirections)
         Gl.Uniform3 (shader.LightColorsUniform, lightColors)
