@@ -169,9 +169,9 @@ module PhysicallyBased =
           EmissionTextureUniform : int
           NormalTextureUniform : int
           HeightTextureUniform : int
+          BrdfTextureUniform : int
           IrradianceMapUniform : int
           EnvironmentFilterMapUniform : int
-          BrdfTextureUniform : int
           LightMapEnabledsUniform : int
           LightMapOriginsUniform : int
           LightMapMinsUniform : int
@@ -239,9 +239,9 @@ module PhysicallyBased =
           AlbedoTextureUniform : int
           MaterialTextureUniform : int
           NormalAndHeightTextureUniform : int
+          BrdfTextureUniform : int
           IrradianceTextureUniform : int
           EnvironmentFilterTextureUniform : int
-          BrdfTextureUniform : int
           SsaoTextureUniform : int
           LightOriginsUniform : int
           LightDirectionsUniform : int
@@ -1005,9 +1005,9 @@ module PhysicallyBased =
         let emissionTextureUniform = Gl.GetUniformLocation (shader, "emissionTexture")
         let normalTextureUniform = Gl.GetUniformLocation (shader, "normalTexture")
         let heightTextureUniform = Gl.GetUniformLocation (shader, "heightTexture")
+        let brdfTextureUniform = Gl.GetUniformLocation (shader, "brdfTexture")
         let irradianceMapUniform = Gl.GetUniformLocation (shader, "irradianceMap")
         let environmentFilterMapUniform = Gl.GetUniformLocation (shader, "environmentFilterMap")
-        let brdfTextureUniform = Gl.GetUniformLocation (shader, "brdfTexture")
         let lightMapEnabledsUniform = Gl.GetUniformLocation (shader, "lightMapEnableds")
         let lightMapOriginsUniform = Gl.GetUniformLocation (shader, "lightMapOrigins")
         let lightMapMinsUniform = Gl.GetUniformLocation (shader, "lightMapMins")
@@ -1042,9 +1042,9 @@ module PhysicallyBased =
           EmissionTextureUniform = emissionTextureUniform
           NormalTextureUniform = normalTextureUniform
           HeightTextureUniform = heightTextureUniform
+          BrdfTextureUniform = brdfTextureUniform
           IrradianceMapUniform = irradianceMapUniform
           EnvironmentFilterMapUniform = environmentFilterMapUniform
-          BrdfTextureUniform = brdfTextureUniform
           LightMapEnabledsUniform = lightMapEnabledsUniform
           LightMapOriginsUniform = lightMapOriginsUniform
           LightMapMinsUniform = lightMapMinsUniform
@@ -1173,9 +1173,9 @@ module PhysicallyBased =
         let albedoTextureUniform = Gl.GetUniformLocation (shader, "albedoTexture")
         let materialTextureUniform = Gl.GetUniformLocation (shader, "materialTexture")
         let normalAndHeightTextureUniform = Gl.GetUniformLocation (shader, "normalAndHeightTexture")
+        let brdfTextureUniform = Gl.GetUniformLocation (shader, "brdfTexture")
         let irradianceTextureUniform = Gl.GetUniformLocation (shader, "irradianceTexture")
         let environmentFilterTextureUniform = Gl.GetUniformLocation (shader, "environmentFilterTexture")
-        let brdfTextureUniform = Gl.GetUniformLocation (shader, "brdfTexture")
         let ssaoTextureUniform = Gl.GetUniformLocation (shader, "ssaoTexture")
         let lightOriginsUniform = Gl.GetUniformLocation (shader, "lightOrigins")
         let lightDirectionsUniform = Gl.GetUniformLocation (shader, "lightDirections")
@@ -1196,9 +1196,9 @@ module PhysicallyBased =
           AlbedoTextureUniform = albedoTextureUniform
           MaterialTextureUniform = materialTextureUniform
           NormalAndHeightTextureUniform = normalAndHeightTextureUniform
+          BrdfTextureUniform = brdfTextureUniform
           IrradianceTextureUniform = irradianceTextureUniform
           EnvironmentFilterTextureUniform = environmentFilterTextureUniform
-          BrdfTextureUniform = brdfTextureUniform
           SsaoTextureUniform = ssaoTextureUniform
           LightOriginsUniform = lightOriginsUniform
           LightDirectionsUniform = lightDirectionsUniform
@@ -1237,9 +1237,9 @@ module PhysicallyBased =
          blending,
          lightAmbientColor : single array,
          lightAmbientBrightness : single,
+         brdfTexture : uint,
          irradianceMap : uint,
          environmentFilterMap : uint,
-         brdfTexture : uint,
          lightMapEnableds : int array,
          lightMapOrigins : single array,
          lightMapMins : single array,
@@ -1284,9 +1284,9 @@ module PhysicallyBased =
         Gl.Uniform1 (shader.EmissionTextureUniform, 4)
         Gl.Uniform1 (shader.NormalTextureUniform, 5)
         Gl.Uniform1 (shader.HeightTextureUniform, 6)
-        Gl.Uniform1 (shader.IrradianceMapUniform, 7)
-        Gl.Uniform1 (shader.EnvironmentFilterMapUniform, 8)
-        Gl.Uniform1 (shader.BrdfTextureUniform, 9)
+        Gl.Uniform1 (shader.BrdfTextureUniform, 7)
+        Gl.Uniform1 (shader.IrradianceMapUniform, 8)
+        Gl.Uniform1 (shader.EnvironmentFilterMapUniform, 9)
         Gl.Uniform1 (shader.LightMapEnabledsUniform, lightMapEnableds)
         Gl.Uniform3 (shader.LightMapOriginsUniform, lightMapOrigins)
         Gl.Uniform3 (shader.LightMapMinsUniform, lightMapMins)
@@ -1323,11 +1323,11 @@ module PhysicallyBased =
         Gl.ActiveTexture TextureUnit.Texture6
         Gl.BindTexture (TextureTarget.Texture2d, material.HeightTexture)
         Gl.ActiveTexture TextureUnit.Texture7
-        Gl.BindTexture (TextureTarget.TextureCubeMap, irradianceMap)
-        Gl.ActiveTexture TextureUnit.Texture8
-        Gl.BindTexture (TextureTarget.TextureCubeMap, environmentFilterMap)
-        Gl.ActiveTexture TextureUnit.Texture9
         Gl.BindTexture (TextureTarget.Texture2d, brdfTexture)
+        Gl.ActiveTexture TextureUnit.Texture8
+        Gl.BindTexture (TextureTarget.TextureCubeMap, irradianceMap)
+        Gl.ActiveTexture TextureUnit.Texture9
+        Gl.BindTexture (TextureTarget.TextureCubeMap, environmentFilterMap)
         for i in 0 .. dec Constants.Render.LightMapsMaxForward do
             Gl.ActiveTexture (int TextureUnit.Texture0 + 10 + i |> Branchless.reinterpret)
             Gl.BindTexture (TextureTarget.TextureCubeMap, irradianceMaps.[i])
@@ -1708,9 +1708,9 @@ module PhysicallyBased =
          albedoTexture : uint,
          materialTexture : uint,
          normalAndHeightTexture : uint,
+         brdfTexture : uint,
          irradianceTexture : uint,
          environmentFilterTexture : uint,
-         brdfTexture : uint,
          ssaoTexture : uint,
          lightOrigins : single array,
          lightDirections : single array,
@@ -1734,9 +1734,9 @@ module PhysicallyBased =
         Gl.Uniform1 (shader.AlbedoTextureUniform, 1)
         Gl.Uniform1 (shader.MaterialTextureUniform, 2)
         Gl.Uniform1 (shader.NormalAndHeightTextureUniform, 3)
-        Gl.Uniform1 (shader.IrradianceTextureUniform, 4)
-        Gl.Uniform1 (shader.EnvironmentFilterTextureUniform, 5)
-        Gl.Uniform1 (shader.BrdfTextureUniform, 6)
+        Gl.Uniform1 (shader.BrdfTextureUniform, 4)
+        Gl.Uniform1 (shader.IrradianceTextureUniform, 5)
+        Gl.Uniform1 (shader.EnvironmentFilterTextureUniform, 6)
         Gl.Uniform1 (shader.SsaoTextureUniform, 7)
         Gl.Uniform3 (shader.LightOriginsUniform, lightOrigins)
         Gl.Uniform3 (shader.LightDirectionsUniform, lightDirections)
@@ -1760,11 +1760,11 @@ module PhysicallyBased =
         Gl.ActiveTexture TextureUnit.Texture3
         Gl.BindTexture (TextureTarget.Texture2d, normalAndHeightTexture)
         Gl.ActiveTexture TextureUnit.Texture4
-        Gl.BindTexture (TextureTarget.Texture2d, irradianceTexture)
-        Gl.ActiveTexture TextureUnit.Texture5
-        Gl.BindTexture (TextureTarget.Texture2d, environmentFilterTexture)
-        Gl.ActiveTexture TextureUnit.Texture6
         Gl.BindTexture (TextureTarget.Texture2d, brdfTexture)
+        Gl.ActiveTexture TextureUnit.Texture5
+        Gl.BindTexture (TextureTarget.Texture2d, irradianceTexture)
+        Gl.ActiveTexture TextureUnit.Texture6
+        Gl.BindTexture (TextureTarget.Texture2d, environmentFilterTexture)
         Gl.ActiveTexture TextureUnit.Texture7
         Gl.BindTexture (TextureTarget.Texture2d, ssaoTexture)
         Hl.Assert ()
