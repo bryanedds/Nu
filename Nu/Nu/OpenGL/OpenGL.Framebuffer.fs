@@ -193,3 +193,123 @@ module Framebuffer =
         Gl.DeleteRenderbuffers [|renderbuffer|]
         Gl.DeleteFramebuffers [|framebuffer|]
         Gl.DeleteTextures [|ssao|]
+
+    /// Create light mapping buffers.
+    let TryCreateLightMappingBuffers () =
+
+        // create frame buffer object
+        let framebuffer = Gl.GenFramebuffer ()
+        Gl.BindFramebuffer (FramebufferTarget.Framebuffer, framebuffer)
+        Hl.Assert ()
+
+        // create light mapping buffer
+        let lightMapping = Gl.GenTexture ()
+        Gl.BindTexture (TextureTarget.Texture2d, lightMapping)
+        Gl.TexImage2D (TextureTarget.Texture2d, 0, InternalFormat.Rgba32f, Constants.Render.ResolutionX, Constants.Render.ResolutionY, 0, PixelFormat.Rgba, PixelType.Float, nativeint 0)
+        Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, int TextureMinFilter.Nearest)
+        Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, int TextureMagFilter.Nearest)
+        Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureWrapS, int TextureWrapMode.ClampToEdge)
+        Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureWrapT, int TextureWrapMode.ClampToEdge)
+        Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2d, lightMapping, 0)
+        Hl.Assert ()
+
+        // associate draw buffers
+        Gl.DrawBuffers [|int FramebufferAttachment.ColorAttachment0|]
+
+        // create render buffer with depth and stencil
+        let renderbuffer = Gl.GenRenderbuffer ()
+        Gl.BindRenderbuffer (RenderbufferTarget.Renderbuffer, renderbuffer)
+        Gl.RenderbufferStorage (RenderbufferTarget.Renderbuffer, InternalFormat.Depth24Stencil8, Constants.Render.ResolutionX, Constants.Render.ResolutionY)
+        Gl.FramebufferRenderbuffer (FramebufferTarget.Framebuffer, FramebufferAttachment.DepthStencilAttachment, RenderbufferTarget.Renderbuffer, renderbuffer)
+        Hl.Assert ()
+
+        // ensure framebuffer is complete
+        if Gl.CheckFramebufferStatus FramebufferTarget.Framebuffer = FramebufferStatus.FramebufferComplete
+        then Right (lightMapping, renderbuffer, framebuffer)
+        else Left "Could not create complete geometry framebuffer."
+
+    /// Destroy light mapping buffers.
+    let DestroyLightMappingBuffers (lightMapIndices, renderbuffer, framebuffer) =
+        Gl.DeleteRenderbuffers [|renderbuffer|]
+        Gl.DeleteFramebuffers [|framebuffer|]
+        Gl.DeleteTextures [|lightMapIndices|]
+
+    /// Create irradiance buffers.
+    let TryCreateIrradianceBuffers () =
+
+        // create frame buffer object
+        let framebuffer = Gl.GenFramebuffer ()
+        Gl.BindFramebuffer (FramebufferTarget.Framebuffer, framebuffer)
+        Hl.Assert ()
+
+        // create irradiance buffer
+        let irradiance = Gl.GenTexture ()
+        Gl.BindTexture (TextureTarget.Texture2d, irradiance)
+        Gl.TexImage2D (TextureTarget.Texture2d, 0, InternalFormat.Rgba32f, Constants.Render.ResolutionX, Constants.Render.ResolutionY, 0, PixelFormat.Rgba, PixelType.Float, nativeint 0)
+        Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, int TextureMinFilter.Nearest)
+        Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, int TextureMagFilter.Nearest)
+        Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureWrapS, int TextureWrapMode.ClampToEdge)
+        Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureWrapT, int TextureWrapMode.ClampToEdge)
+        Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2d, irradiance, 0)
+        Hl.Assert ()
+
+        // associate draw buffers
+        Gl.DrawBuffers [|int FramebufferAttachment.ColorAttachment0|]
+
+        // create render buffer with depth and stencil
+        let renderbuffer = Gl.GenRenderbuffer ()
+        Gl.BindRenderbuffer (RenderbufferTarget.Renderbuffer, renderbuffer)
+        Gl.RenderbufferStorage (RenderbufferTarget.Renderbuffer, InternalFormat.Depth24Stencil8, Constants.Render.ResolutionX, Constants.Render.ResolutionY)
+        Gl.FramebufferRenderbuffer (FramebufferTarget.Framebuffer, FramebufferAttachment.DepthStencilAttachment, RenderbufferTarget.Renderbuffer, renderbuffer)
+        Hl.Assert ()
+
+        // ensure framebuffer is complete
+        if Gl.CheckFramebufferStatus FramebufferTarget.Framebuffer = FramebufferStatus.FramebufferComplete
+        then Right (irradiance, renderbuffer, framebuffer)
+        else Left "Could not create complete geometry framebuffer."
+
+    /// Destroy irradiance buffers.
+    let DestroyIrradianceBuffers (irradiance, renderbuffer, framebuffer) =
+        Gl.DeleteRenderbuffers [|renderbuffer|]
+        Gl.DeleteFramebuffers [|framebuffer|]
+        Gl.DeleteTextures [|irradiance|]
+
+    /// Create environment filter buffers.
+    let TryCreateEnvironmentFilterBuffers () =
+
+        // create frame buffer object
+        let framebuffer = Gl.GenFramebuffer ()
+        Gl.BindFramebuffer (FramebufferTarget.Framebuffer, framebuffer)
+        Hl.Assert ()
+
+        // create environmentFilter buffer
+        let environmentFilter = Gl.GenTexture ()
+        Gl.BindTexture (TextureTarget.Texture2d, environmentFilter)
+        Gl.TexImage2D (TextureTarget.Texture2d, 0, InternalFormat.Rgba32f, Constants.Render.ResolutionX, Constants.Render.ResolutionY, 0, PixelFormat.Rgba, PixelType.Float, nativeint 0)
+        Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, int TextureMinFilter.Nearest)
+        Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, int TextureMagFilter.Nearest)
+        Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureWrapS, int TextureWrapMode.ClampToEdge)
+        Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureWrapT, int TextureWrapMode.ClampToEdge)
+        Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2d, environmentFilter, 0)
+        Hl.Assert ()
+
+        // associate draw buffers
+        Gl.DrawBuffers [|int FramebufferAttachment.ColorAttachment0|]
+
+        // create render buffer with depth and stencil
+        let renderbuffer = Gl.GenRenderbuffer ()
+        Gl.BindRenderbuffer (RenderbufferTarget.Renderbuffer, renderbuffer)
+        Gl.RenderbufferStorage (RenderbufferTarget.Renderbuffer, InternalFormat.Depth24Stencil8, Constants.Render.ResolutionX, Constants.Render.ResolutionY)
+        Gl.FramebufferRenderbuffer (FramebufferTarget.Framebuffer, FramebufferAttachment.DepthStencilAttachment, RenderbufferTarget.Renderbuffer, renderbuffer)
+        Hl.Assert ()
+
+        // ensure framebuffer is complete
+        if Gl.CheckFramebufferStatus FramebufferTarget.Framebuffer = FramebufferStatus.FramebufferComplete
+        then Right (environmentFilter, renderbuffer, framebuffer)
+        else Left "Could not create complete geometry framebuffer."
+
+    /// Destroy environment filter buffers.
+    let DestroyEnvironmentFilterBuffers (environmentFilter, renderbuffer, framebuffer) =
+        Gl.DeleteRenderbuffers [|renderbuffer|]
+        Gl.DeleteFramebuffers [|framebuffer|]
+        Gl.DeleteTextures [|environmentFilter|]
