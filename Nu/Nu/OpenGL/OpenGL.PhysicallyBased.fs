@@ -243,15 +243,9 @@ module PhysicallyBased =
           MaterialTextureUniform : int
           NormalAndHeightTextureUniform : int
           SsaoTextureUniform : int
-          IrradianceMapUniform : int
-          EnvironmentFilterMapUniform : int
+          IrradianceTextureUniform : int
+          EnvironmentFilterTextureUniform : int
           BrdfTextureUniform : int
-          LightMapEnabledsUniform : int
-          LightMapOriginsUniform : int
-          LightMapMinsUniform : int
-          LightMapSizesUniform : int
-          IrradianceMapsUniforms : int array
-          EnvironmentFilterMapsUniforms : int array
           LightOriginsUniform : int
           LightDirectionsUniform : int
           LightColorsUniform : int
@@ -1108,19 +1102,9 @@ module PhysicallyBased =
         let materialTextureUniform = Gl.GetUniformLocation (shader, "materialTexture")
         let normalAndHeightTextureUniform = Gl.GetUniformLocation (shader, "normalAndHeightTexture")
         let ssaoTextureUniform = Gl.GetUniformLocation (shader, "ssaoTexture")
-        let irradianceMapUniform = Gl.GetUniformLocation (shader, "irradianceMap")
-        let environmentFilterMapUniform = Gl.GetUniformLocation (shader, "environmentFilterMap")
+        let irradianceTextureUniform = Gl.GetUniformLocation (shader, "irradianceTexture")
+        let environmentFilterTextureUniform = Gl.GetUniformLocation (shader, "environmentFilterTexture")
         let brdfTextureUniform = Gl.GetUniformLocation (shader, "brdfTexture")
-        let lightMapEnabledsUniform = Gl.GetUniformLocation (shader, "lightMapEnableds")
-        let lightMapOriginsUniform = Gl.GetUniformLocation (shader, "lightMapOrigins")
-        let lightMapMinsUniform = Gl.GetUniformLocation (shader, "lightMapMins")
-        let lightMapSizesUniform = Gl.GetUniformLocation (shader, "lightMapSizes")
-        let irradianceMapsUniforms =
-            Array.init Constants.Render.LightMapsMaxDeferred $ fun i ->
-                Gl.GetUniformLocation (shader, "irradianceMaps[" + string i + "]")
-        let environmentFilterMapsUniforms =
-            Array.init Constants.Render.LightMapsMaxDeferred $ fun i ->
-                Gl.GetUniformLocation (shader, "environmentFilterMaps[" + string i + "]")
         let lightOriginsUniform = Gl.GetUniformLocation (shader, "lightOrigins")
         let lightDirectionsUniform = Gl.GetUniformLocation (shader, "lightDirections")
         let lightColorsUniform = Gl.GetUniformLocation (shader, "lightColors")
@@ -1143,15 +1127,9 @@ module PhysicallyBased =
           MaterialTextureUniform = materialTextureUniform
           NormalAndHeightTextureUniform = normalAndHeightTextureUniform
           SsaoTextureUniform = ssaoTextureUniform
-          IrradianceMapUniform = irradianceMapUniform
-          EnvironmentFilterMapUniform = environmentFilterMapUniform
+          IrradianceTextureUniform = irradianceTextureUniform
+          EnvironmentFilterTextureUniform = environmentFilterTextureUniform
           BrdfTextureUniform = brdfTextureUniform
-          LightMapEnabledsUniform = lightMapEnabledsUniform
-          LightMapOriginsUniform = lightMapOriginsUniform
-          LightMapMinsUniform = lightMapMinsUniform
-          LightMapSizesUniform = lightMapSizesUniform
-          IrradianceMapsUniforms = irradianceMapsUniforms
-          EnvironmentFilterMapsUniforms = environmentFilterMapsUniforms
           LightOriginsUniform = lightOriginsUniform
           LightDirectionsUniform = lightDirectionsUniform
           LightColorsUniform = lightColorsUniform
@@ -1422,15 +1400,9 @@ module PhysicallyBased =
          materialTexture : uint,
          normalAndHeightTexture : uint,
          ssaoTexture : uint,
-         irradianceMap : uint,
-         environmentFilterMap : uint,
+         irradianceTexture : uint,
+         environmentFilterTexture : uint,
          brdfTexture : uint,
-         lightMapEnableds : int array,
-         lightMapOrigins : single array,
-         lightMapMins : single array,
-         lightMapSizes : single array,
-         irradianceMaps : uint array,
-         environmentFilterMaps : uint array,
          lightOrigins : single array,
          lightDirections : single array,
          lightColors : single array,
@@ -1456,17 +1428,9 @@ module PhysicallyBased =
         Gl.Uniform1 (shader.MaterialTextureUniform, 2)
         Gl.Uniform1 (shader.NormalAndHeightTextureUniform, 3)
         Gl.Uniform1 (shader.SsaoTextureUniform, 4)
-        Gl.Uniform1 (shader.IrradianceMapUniform, 5)
-        Gl.Uniform1 (shader.EnvironmentFilterMapUniform, 6)
+        Gl.Uniform1 (shader.IrradianceTextureUniform, 5)
+        Gl.Uniform1 (shader.EnvironmentFilterTextureUniform, 6)
         Gl.Uniform1 (shader.BrdfTextureUniform, 7)
-        Gl.Uniform1 (shader.LightMapEnabledsUniform, lightMapEnableds)
-        Gl.Uniform3 (shader.LightMapOriginsUniform, lightMapOrigins)
-        Gl.Uniform3 (shader.LightMapMinsUniform, lightMapMins)
-        Gl.Uniform3 (shader.LightMapSizesUniform, lightMapSizes)
-        for i in 0 .. dec Constants.Render.LightMapsMaxDeferred do
-            Gl.Uniform1 (shader.IrradianceMapsUniforms.[i], i + 8)
-        for i in 0 .. dec Constants.Render.LightMapsMaxDeferred do
-            Gl.Uniform1 (shader.EnvironmentFilterMapsUniforms.[i], i + 8 + Constants.Render.LightMapsMaxDeferred)
         Gl.Uniform3 (shader.LightOriginsUniform, lightOrigins)
         Gl.Uniform3 (shader.LightDirectionsUniform, lightDirections)
         Gl.Uniform3 (shader.LightColorsUniform, lightColors)
@@ -1491,17 +1455,11 @@ module PhysicallyBased =
         Gl.ActiveTexture TextureUnit.Texture4
         Gl.BindTexture (TextureTarget.Texture2d, ssaoTexture)
         Gl.ActiveTexture TextureUnit.Texture5
-        Gl.BindTexture (TextureTarget.TextureCubeMap, irradianceMap)
+        Gl.BindTexture (TextureTarget.Texture2d, irradianceTexture)
         Gl.ActiveTexture TextureUnit.Texture6
-        Gl.BindTexture (TextureTarget.TextureCubeMap, environmentFilterMap)
+        Gl.BindTexture (TextureTarget.Texture2d, environmentFilterTexture)
         Gl.ActiveTexture TextureUnit.Texture7
         Gl.BindTexture (TextureTarget.Texture2d, brdfTexture)
-        for i in 0 .. dec Constants.Render.LightMapsMaxDeferred do
-            Gl.ActiveTexture (int TextureUnit.Texture0 + 8 + i |> Branchless.reinterpret)
-            Gl.BindTexture (TextureTarget.TextureCubeMap, irradianceMaps.[i])
-        for i in 0 .. dec Constants.Render.LightMapsMaxDeferred do
-            Gl.ActiveTexture (int TextureUnit.Texture0 + 8 + i + Constants.Render.LightMapsMaxDeferred |> Branchless.reinterpret)
-            Gl.BindTexture (TextureTarget.TextureCubeMap, environmentFilterMaps.[i])
         Hl.Assert ()
 
         // setup geometry
@@ -1530,17 +1488,11 @@ module PhysicallyBased =
         Gl.ActiveTexture TextureUnit.Texture4
         Gl.BindTexture (TextureTarget.Texture2d, 0u)
         Gl.ActiveTexture TextureUnit.Texture5
-        Gl.BindTexture (TextureTarget.TextureCubeMap, 0u)
+        Gl.BindTexture (TextureTarget.Texture2d, 0u)
         Gl.ActiveTexture TextureUnit.Texture6
-        Gl.BindTexture (TextureTarget.TextureCubeMap, 0u)
+        Gl.BindTexture (TextureTarget.Texture2d, 0u)
         Gl.ActiveTexture TextureUnit.Texture7
         Gl.BindTexture (TextureTarget.Texture2d, 0u)
-        for i in 0 .. dec Constants.Render.LightMapsMaxDeferred do
-            Gl.ActiveTexture (int TextureUnit.Texture0 + 8 + i |> Branchless.reinterpret)
-            Gl.BindTexture (TextureTarget.TextureCubeMap, 0u)
-        for i in 0 .. dec Constants.Render.LightMapsMaxDeferred do
-            Gl.ActiveTexture (int TextureUnit.Texture0 + 8 + i + Constants.Render.LightMapsMaxDeferred |> Branchless.reinterpret)
-            Gl.BindTexture (TextureTarget.TextureCubeMap, 0u)
         Hl.Assert ()
 
         // teardown shader
