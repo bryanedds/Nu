@@ -58,7 +58,7 @@ void main()
     vec3 position = texture(positionTexture, texCoordsOut).rgb;
 
     // compute screen space ambient occlusion
-    float ambientOcclusionScreen = 0.0;
+    float ssao = 0.0;
     vec3 positionView = (view * vec4(position, 1.0)).xyz;
     for (int i = 0; i < SSAO_SAMPLES; ++i)
     {
@@ -80,13 +80,13 @@ void main()
 
         // perform range check and accumulate if occluded
         float rangeCheck = smoothstep(0.0, 1.0, SSAO_RADIUS / abs(positionView.z - samplePositionView.z));
-        ambientOcclusionScreen += samplePositionView.z >= samplingPositionView.z + SSAO_BIAS ? rangeCheck : 0.0;
+        ssao += samplePositionView.z >= samplingPositionView.z + SSAO_BIAS ? rangeCheck : 0.0;
     }
-    ambientOcclusionScreen *= SSAO_SAMPLES_INVERSE;
-    ambientOcclusionScreen *= SSAO;
-    ambientOcclusionScreen = 1.0 - ambientOcclusionScreen;
-    ambientOcclusionScreen = max(0.0, ambientOcclusionScreen);
+    ssao *= SSAO_SAMPLES_INVERSE;
+    ssao *= SSAO;
+    ssao = 1.0 - ssao;
+    ssao = max(0.0, ssao);
 
     // write
-    frag = ambientOcclusionScreen;
+    frag = ssao;
 }
