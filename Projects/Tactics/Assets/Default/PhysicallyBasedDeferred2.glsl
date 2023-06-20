@@ -47,25 +47,6 @@ in vec2 texCoordsOut;
 
 out vec4 frag;
 
-bool inBounds(vec3 point, vec3 min, vec3 size)
-{
-    return
-        all(greaterThanEqual(point, min)) &&
-        all(lessThanEqual(point, min + size));
-}
-
-vec3 parallaxCorrection(samplerCube cubeMap, vec3 lightMapOrigin, vec3 lightMapMin, vec3 lightMapSize, vec3 positionWorld, vec3 normalWorld)
-{
-    vec3 directionWorld = positionWorld - eyeCenter;
-    vec3 reflectionWorld = reflect(directionWorld, normalWorld);
-    vec3 firstPlaneIntersect = (lightMapMin + lightMapSize - positionWorld) / reflectionWorld;
-    vec3 secondPlaneIntersect = (lightMapMin - positionWorld) / reflectionWorld;
-    vec3 furthestPlane = max(firstPlaneIntersect, secondPlaneIntersect);
-    float distance = min(min(furthestPlane.x, furthestPlane.y), furthestPlane.z);
-    vec3 intersectPositionWorld = positionWorld + reflectionWorld * distance;
-    return intersectPositionWorld - lightMapOrigin;
-}
-
 float distributionGGX(vec3 normal, vec3 h, float roughness)
 {
     float a = roughness * roughness;
