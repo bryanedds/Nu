@@ -16,12 +16,8 @@ void main()
 #version 410 core
 
 const float PI = 3.141592654;
-const float SSAO_INTENSITY = 1.75;
-const float SSAO_BIAS = 0.01;
-const float SSAO_RADIUS = 0.25;
-const int SSAO_SAMPLES_COUNT = 64;
-const float SSAO_SAMPLES_COUNT_INVERSE = 1.0 / float(SSAO_SAMPLES_COUNT);
-const vec3[64] SSAO_SAMPLING_DIRECTIONS = vec3[](
+const int SSAO_SAMPLES_MAX = 64;
+const vec3[SSAO_SAMPLES_MAX] SSAO_SAMPLING_DIRECTIONS = vec3[](
     vec3(0.935, -0.0272, -0.351),   vec3(0.821, -0.568, 0.0404),    vec3(-0.553, -0.247, -0.795),   vec3(-0.968, -0.114, -0.224),
     vec3(0.276, 0.950, -0.145),     vec3(-0.069, 0.994, -0.0841),   vec3(0.417, -0.884, -0.206),    vec3(0.108, -0.986, 0.115),
     vec3(0.382, 0.501, 0.776),      vec3(-0.520, 0.655, -0.547),    vec3(-0.821, -0.537, -0.191),   vec3(-0.058, 0.972, 0.227),
@@ -43,6 +39,10 @@ uniform mat4 view;
 uniform mat4 projection;
 uniform sampler2D positionTexture;
 uniform sampler2D normalAndHeightTexture;
+uniform float ssaoIntensity;
+uniform float ssaoBias;
+uniform float ssaoRadius;
+uniform int ssaoSampleCount;
 
 in vec2 texCoordsOut;
 
@@ -57,15 +57,19 @@ void main()
     // retrieve remaining data from geometry buffers
     vec3 position = texture(positionTexture, texCoordsOut).rgb;
 
+    // ensure sample count is in range and pre-compute sample count inverse
+    int ssaoSampleCountCeil = max(0, min(SSAO_SAMPLES_MAX, ssaoSampleCount));
+    float ssaoSampleCountInverse = 1.0 / float(ssaoSampleCountCeil);
+
     // compute screen space ambient occlusion
     float ssao = 0.0;
     vec3 positionView = (view * vec4(position, 1.0)).xyz;
-    for (int i = 0; i < SSAO_SAMPLES_COUNT; ++i)
+    for (int i = 0; i < ssaoSampleCountCeil; ++i)
     {
         // compute sampling direction in world space
         vec3 samplingDirection = SSAO_SAMPLING_DIRECTIONS[i];
-        samplingDirection *= SSAO_RADIUS; // scale by radius
-        samplingDirection *= mix(SSAO_SAMPLES_COUNT_INVERSE, 1.0f, i * SSAO_SAMPLES_COUNT_INVERSE); // linearly increase sampling distance from origin
+        samplingDirection *= ssaoRadius; // scale by radius
+        samplingDirection *= mix(ssaoSampleCountInverse, 1.0f, i * ssaoSampleCountInverse); // linearly increase sampling distance from origin
         samplingDirection = dot(samplingDirection, normal) > 0.0f ? samplingDirection : -samplingDirection; // only sampling upper hemisphere
 
         // compute sampling position in screen space
@@ -79,11 +83,11 @@ void main()
         vec3 samplePositionView = (view * vec4(samplePosition, 1.0)).xyz;
 
         // perform range check and accumulate if occluded
-        float rangeCheck = smoothstep(0.0, 1.0, SSAO_RADIUS / abs(positionView.z - samplePositionView.z));
-        ssao += samplePositionView.z >= samplingPositionView.z + SSAO_BIAS ? rangeCheck : 0.0;
+        float rangeCheck = smoothstep(0.0, 1.0, ssaoRadius / abs(positionView.z - samplePositionView.z));
+        ssao += samplePositionView.z >= samplingPositionView.z + ssaoBias ? rangeCheck : 0.0;
     }
-    ssao *= SSAO_SAMPLES_COUNT_INVERSE;
-    ssao *= SSAO_INTENSITY;
+    ssao *= ssaoSampleCountInverse;
+    ssao *= ssaoIntensity;
     ssao = 1.0 - ssao;
     ssao = max(0.0, ssao);
 
