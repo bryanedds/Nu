@@ -1364,6 +1364,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         OpenGL.PhysicallyBased.DrawPhysicallyBasedDeferredSsaoSurface
             (viewRelativeArray, rasterProjectionArray,
              positionTexture, normalAndHeightTexture,
+             renderer.RenderSsaoConfig.SsaoIntensity, renderer.RenderSsaoConfig.SsaoBias, renderer.RenderSsaoConfig.SsaoRadius, renderer.RenderSsaoConfig.SsaoSampleCount,
              renderer.RenderPhysicallyBasedQuad, renderer.RenderPhysicallyBasedDeferredSsaoShader)
         OpenGL.Hl.Assert ()
 

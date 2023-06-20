@@ -228,6 +228,10 @@ module PhysicallyBased =
           ProjectionUniform : int
           PositionTextureUniform : int
           NormalAndHeightTextureUniform : int
+          SsaoIntensity : int
+          SsaoBias : int
+          SsaoRadius : int
+          SsaoSampleCount : int
           PhysicallyBasedDeferredSsaoShader : uint }
 
     /// Describes a second pass of a deferred physically-based shader that's loaded into GPU.
@@ -1151,12 +1155,20 @@ module PhysicallyBased =
         let projectionUniform = Gl.GetUniformLocation (shader, "projection")
         let positionTextureUniform = Gl.GetUniformLocation (shader, "positionTexture")
         let normalAndHeightTextureUniform = Gl.GetUniformLocation (shader, "normalAndHeightTexture")
+        let ssaoIntensity = Gl.GetUniformLocation (shader, "ssaoIntensity")
+        let ssaoBias = Gl.GetUniformLocation (shader, "ssaoBias")
+        let ssaoRadius = Gl.GetUniformLocation (shader, "ssaoRadius")
+        let ssaoSampleCount = Gl.GetUniformLocation (shader, "ssaoSampleCount")
 
         // make shader record
         { ViewUniform = viewUniform
           ProjectionUniform = projectionUniform
           PositionTextureUniform = positionTextureUniform
           NormalAndHeightTextureUniform = normalAndHeightTextureUniform
+          SsaoIntensity = ssaoIntensity
+          SsaoBias = ssaoBias
+          SsaoRadius = ssaoRadius
+          SsaoSampleCount = ssaoSampleCount
           PhysicallyBasedDeferredSsaoShader = shader }
 
     /// Create a physically-based shader for the second step of deferred rendering.
@@ -1657,6 +1669,10 @@ module PhysicallyBased =
          projection : single array,
          positionTexture : uint,
          normalAndHeightTexture : uint,
+         ssaoIntensity : single,
+         ssaoBias : single,
+         ssaoRadius : single,
+         ssaoSampleCount : int,
          geometry : PhysicallyBasedGeometry,
          shader : PhysicallyBasedDeferredSsaoShader) =
 
@@ -1666,6 +1682,10 @@ module PhysicallyBased =
         Gl.UniformMatrix4 (shader.ProjectionUniform, false, projection)
         Gl.Uniform1 (shader.PositionTextureUniform, 0)
         Gl.Uniform1 (shader.NormalAndHeightTextureUniform, 1)
+        Gl.Uniform1 (shader.SsaoIntensity, ssaoIntensity)
+        Gl.Uniform1 (shader.SsaoBias, ssaoBias)
+        Gl.Uniform1 (shader.SsaoRadius, ssaoRadius)
+        Gl.Uniform1 (shader.SsaoSampleCount, ssaoSampleCount)
         Hl.Assert ()
 
         // setup textures
