@@ -58,8 +58,8 @@ void main()
 
     // retrieve light mapping data
     vec4 lmData = texture(lightMappingTexture, texCoordsOut);
-    int lm1 = int(lmData.r);
-    int lm2 = int(lmData.g);
+    int lm1 = int(lmData.r) - 1;
+    int lm2 = int(lmData.g) - 1;
     float lm1Distance = lmData.b;
     float lm2Distance = lmData.a;
 

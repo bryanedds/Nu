@@ -72,6 +72,6 @@ void main()
         }
     }
 
-    // write
-    frag = vec4(float(lm1), float(lm2), sqrt(lm1DistanceSquared), sqrt(lm2DistanceSquared));
+    // write with indices starting at 0.0 rather than -1.0 so that a black texture can be passed in for no light mapping
+    frag = vec4(float(lm1 + 1), float(lm2 + 1), sqrt(lm1DistanceSquared), sqrt(lm2DistanceSquared));
 }
