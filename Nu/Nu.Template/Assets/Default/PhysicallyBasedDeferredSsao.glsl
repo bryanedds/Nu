@@ -16,7 +16,7 @@ void main()
 #version 410 core
 
 const float PI = 3.141592654;
-const float SSAO = 2.0;
+const float SSAO = 1.75;
 const float SSAO_BIAS = 0.01;
 const float SSAO_RADIUS = 0.25;
 const int SSAO_SAMPLES = 64;
