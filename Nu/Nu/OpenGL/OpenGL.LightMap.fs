@@ -186,7 +186,7 @@ module LightMap =
         Gl.DeleteFramebuffers [|framebuffer|]
         cubeMap
 
-    /// Describes a environment filter shader that's loaded into GPU.
+    /// Describes an environment filter shader that's loaded into GPU.
     type EnvironmentFilterShader =
         { ViewUniform : int
           ProjectionUniform : int
@@ -197,7 +197,7 @@ module LightMap =
           CubeMapUniform : int
           EnvironmentFilterShader : uint }
 
-    /// Create a environment filter shader.
+    /// Create an environment filter shader.
     let CreateEnvironmentFilterShader (shaderFilePath : string) =
 
         // create shader

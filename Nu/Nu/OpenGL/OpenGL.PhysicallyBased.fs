@@ -259,6 +259,11 @@ module PhysicallyBased =
           LightConeOutersUniform : int
           PhysicallyBasedDeferred2Shader : uint }
 
+    /// Describes an fxaa pass of a physically-based shader that's loaded into GPU.
+    type PhysicallyBasedFxaaShader =
+        { InputTextureUniform : int
+          FxaaShader : uint }
+
     /// Create physically-based material from an assimp mesh. falling back on default in case of missing textures.
     /// Uses file name-based inferences to look for non-albedo files as well as determining if roughness should be
     /// inverted to smoothness (such as when a model is imported from an fbx exported from a Unity scene).
@@ -1224,6 +1229,19 @@ module PhysicallyBased =
           LightConeOutersUniform = lightConeOutersUniform
           PhysicallyBasedDeferred2Shader = shader }
 
+    /// Create a physically-based shader for the fxaa pass of rendering.
+    let CreatePhysicallyBasedFxaaShader (shaderFilePath : string) =
+
+        // create shader
+        let shader = Shader.CreateShaderFromFilePath shaderFilePath
+
+        // retrieve uniforms
+        let inputTextureUniform = Gl.GetUniformLocation (shader, "inputTexture")
+
+        // make shader record
+        { InputTextureUniform = inputTextureUniform
+          FxaaShader = shader }
+
     /// Create the first and second shaders for physically-based deferred rendering.
     let CreatePhysicallyBasedDeferredShaders (shaderFilePath, shaderLightMappingFilePath, shaderIrradianceFilePath, shaderEnvironmentFilterFilePath, shaderSsaoFilePath, shader2FilePath) =
         let shader = CreatePhysicallyBasedShader shaderFilePath
@@ -1473,7 +1491,7 @@ module PhysicallyBased =
         Gl.Disable EnableCap.DepthTest
         Gl.DepthFunc DepthFunction.Less
 
-    /// Draw a the light mapping pass of a deferred physically-based surface.
+    /// Draw the light mapping pass of a deferred physically-based surface.
     let DrawPhysicallyBasedDeferredLightMappingSurface
         (positionTexture : uint,
          normalAndHeightTexture : uint,
@@ -1525,7 +1543,7 @@ module PhysicallyBased =
         // teardown shader
         Gl.UseProgram 0u
 
-    /// Draw a the irradiance pass of a deferred physically-based surface.
+    /// Draw the irradiance pass of a deferred physically-based surface.
     let DrawPhysicallyBasedDeferredIrradianceSurface
         (normalAndHeightTexture : uint,
          lightMappingTexture : uint,
@@ -1584,7 +1602,7 @@ module PhysicallyBased =
         // teardown shader
         Gl.UseProgram 0u
 
-    /// Draw a the environment filter pass of a deferred physically-based surface.
+    /// Draw the environment filter pass of a deferred physically-based surface.
     let DrawPhysicallyBasedDeferredEnvironmentFilterSurface
         (eyeCenter : Vector3,
          positionTexture : uint,
@@ -1719,7 +1737,7 @@ module PhysicallyBased =
         // teardown shader
         Gl.UseProgram 0u
 
-    /// Draw a the second pass of a deferred physically-based surface.
+    /// Draw the second pass of a deferred physically-based surface.
     let DrawPhysicallyBasedDeferred2Surface
         (eyeCenter : Vector3,
          lightAmbientColor : single array,
@@ -1819,6 +1837,44 @@ module PhysicallyBased =
         Gl.ActiveTexture TextureUnit.Texture6
         Gl.BindTexture (TextureTarget.Texture2d, 0u)
         Gl.ActiveTexture TextureUnit.Texture7
+        Gl.BindTexture (TextureTarget.Texture2d, 0u)
+        Hl.Assert ()
+
+        // teardown shader
+        Gl.UseProgram 0u
+
+    /// Draw the fxaa pass of a physically-based surface.
+    let DrawPhysicallyBasedFxaaSurface
+        (inputTexture : uint,
+         geometry : PhysicallyBasedGeometry,
+         shader : PhysicallyBasedFxaaShader) =
+
+        // setup shader
+        Gl.UseProgram shader.FxaaShader
+        Gl.Uniform1 (shader.InputTextureUniform, 0)
+        Hl.Assert ()
+
+        // setup textures
+        Gl.ActiveTexture TextureUnit.Texture0
+        Gl.BindTexture (TextureTarget.Texture2d, inputTexture)
+        Hl.Assert ()
+
+        // setup geometry
+        Gl.BindVertexArray geometry.PhysicallyBasedVao
+        Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.VertexBuffer)
+        Gl.BindBuffer (BufferTarget.ElementArrayBuffer, geometry.IndexBuffer)
+        Hl.Assert ()
+
+        // draw geometry
+        Gl.DrawElements (geometry.PrimitiveType, geometry.ElementCount, DrawElementsType.UnsignedInt, nativeint 0)
+        Hl.Assert ()
+
+        // teardown geometry
+        Gl.BindVertexArray 0u
+        Hl.Assert ()
+
+        // teardown textures
+        Gl.ActiveTexture TextureUnit.Texture0
         Gl.BindTexture (TextureTarget.Texture2d, 0u)
         Hl.Assert ()
 
