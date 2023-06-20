@@ -39,7 +39,7 @@ bool inBounds(vec3 point, vec3 min, vec3 size)
 
 void main()
 {
-    // retrieve normal and height values first, allowing for early-out
+    // retrieve normal value first, allowing for early-out
     vec3 normal = texture(normalAndHeightTexture, texCoordsOut).rgb;
     if (normal == vec3(1.0)) discard; // discard if geometry pixel was not written (equal to the buffer clearing color of white)
 
