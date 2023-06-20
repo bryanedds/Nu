@@ -411,9 +411,9 @@ type [<ReferenceEquality>] GlRenderer3d =
           RenderBillboardGeometry : OpenGL.PhysicallyBased.PhysicallyBasedGeometry
           RenderPhysicallyBasedQuad : OpenGL.PhysicallyBased.PhysicallyBasedGeometry
           RenderCubeMap : uint
+          RenderBrdfTexture : uint
           RenderIrradianceMap : uint
           RenderEnvironmentFilterMap : uint
-          RenderBrdfTexture : uint
           RenderPhysicallyBasedMaterial : OpenGL.PhysicallyBased.PhysicallyBasedMaterial
           RenderLightMaps : Dictionary<uint64, OpenGL.LightMap.LightMap>
           mutable RenderModelsFields : single array
@@ -906,7 +906,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
     static member private renderPhysicallyBasedSurfaces
         viewArray projectionArray eyeCenter (parameters : struct (Matrix4x4 * Box2 * MaterialProperties) SList) blending
-        lightAmbientColor lightAmbientBrightness irradianceMap environmentFilterMap brdfTexture
+        lightAmbientColor lightAmbientBrightness brdfTexture irradianceMap environmentFilterMap
         lightMapEnableds lightMapOrigins lightMapMins lightMapSizes irradianceMaps environmentFilterMaps
         lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightDirectionals lightConeInners lightConeOuters
         (surface : OpenGL.PhysicallyBased.PhysicallyBasedSurface) shader renderer =
@@ -981,7 +981,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             OpenGL.PhysicallyBased.DrawPhysicallyBasedSurfaces
                 (viewArray, projectionArray, eyeCenter, parameters.Length,
                  renderer.RenderModelsFields, renderer.RenderTexCoordsOffsetsFields, renderer.RenderAlbedosFields, renderer.PhysicallyBasedMaterialsFields, renderer.PhysicallyBasedHeightsFields, renderer.PhysicallyBasedInvertRoughnessesFields, blending,
-                 lightAmbientColor, lightAmbientBrightness, irradianceMap, environmentFilterMap, brdfTexture,
+                 lightAmbientColor, lightAmbientBrightness, brdfTexture, irradianceMap, environmentFilterMap,
                  lightMapEnableds, lightMapOrigins, lightMapMins, lightMapSizes, irradianceMaps, environmentFilterMaps,
                  lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightCutoffs, lightDirectionals, lightConeInners, lightConeOuters,
                  surface.SurfaceMaterial, surface.PhysicallyBasedGeometry, shader)
@@ -1233,7 +1233,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             for entry in renderer.RenderTasks.RenderSurfacesDeferredAbsolute do
                 GlRenderer3d.renderPhysicallyBasedSurfaces
                     viewAbsoluteArray geometryProjectionArray eyeCenter entry.Value false
-                    lightAmbientColor lightAmbientBrightness lightMapFallback.IrradianceMap lightMapFallback.EnvironmentFilterMap renderer.RenderBrdfTexture
+                    lightAmbientColor lightAmbientBrightness renderer.RenderBrdfTexture lightMapFallback.IrradianceMap lightMapFallback.EnvironmentFilterMap
                     lightMapEnableds lightMapOrigins lightMapMins lightMapSizes lightMapIrradianceMaps lightMapEnvironmentFilterMaps
                     lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightDirectionals lightConeInners lightConeOuters
                     entry.Key renderer.RenderPhysicallyBasedDeferredShader renderer
@@ -1243,7 +1243,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         for entry in renderer.RenderTasks.RenderSurfacesDeferredRelative do
             GlRenderer3d.renderPhysicallyBasedSurfaces
                 viewRelativeArray geometryProjectionArray eyeCenter entry.Value false
-                lightAmbientColor lightAmbientBrightness lightMapFallback.IrradianceMap lightMapFallback.EnvironmentFilterMap renderer.RenderBrdfTexture
+                lightAmbientColor lightAmbientBrightness renderer.RenderBrdfTexture lightMapFallback.IrradianceMap lightMapFallback.EnvironmentFilterMap
                 lightMapEnableds lightMapOrigins lightMapMins lightMapSizes lightMapIrradianceMaps lightMapEnvironmentFilterMaps
                 lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightDirectionals lightConeInners lightConeOuters
                 entry.Key renderer.RenderPhysicallyBasedDeferredShader renderer
@@ -1373,7 +1373,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         // deferred render lighting quad
         OpenGL.PhysicallyBased.DrawPhysicallyBasedDeferred2Surface
             (eyeCenter, lightAmbientColor, lightAmbientBrightness,
-             positionTexture, albedoTexture, materialTexture, normalAndHeightTexture, irradianceTexture, environmentFilterTexture, renderer.RenderBrdfTexture, ssaoTexture,
+             positionTexture, albedoTexture, materialTexture, normalAndHeightTexture, renderer.RenderBrdfTexture, irradianceTexture, environmentFilterTexture, ssaoTexture,
              lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightCutoffs, lightDirectionals, lightConeInners, lightConeOuters,
              renderer.RenderPhysicallyBasedQuad, renderer.RenderPhysicallyBasedDeferred2Shader)
         OpenGL.Hl.Assert ()
@@ -1393,7 +1393,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                     SortableLightMap.sortLightMapsIntoArrays Constants.Render.LightMapsMaxForward model.Translation lightMaps
                 GlRenderer3d.renderPhysicallyBasedSurfaces
                     viewAbsoluteArray rasterProjectionArray eyeCenter (SList.singleton (model, texCoordsOffset, properties)) true
-                    lightAmbientColor lightAmbientBrightness lightMapFallback.IrradianceMap lightMapFallback.EnvironmentFilterMap renderer.RenderBrdfTexture
+                    lightAmbientColor lightAmbientBrightness renderer.RenderBrdfTexture lightMapFallback.IrradianceMap lightMapFallback.EnvironmentFilterMap
                     lightMapEnableds lightMapOrigins lightMapMins lightMapSizes lightMapIrradianceMaps lightMapEnvironmentFilterMaps
                     lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightDirectionals lightConeInners lightConeOuters
                     surface renderer.RenderPhysicallyBasedForwardShader renderer
@@ -1405,7 +1405,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 SortableLightMap.sortLightMapsIntoArrays Constants.Render.LightMapsMaxForward model.Translation lightMaps
             GlRenderer3d.renderPhysicallyBasedSurfaces
                 viewRelativeArray rasterProjectionArray eyeCenter (SList.singleton (model, texCoordsOffset, properties)) true
-                lightAmbientColor lightAmbientBrightness lightMapFallback.IrradianceMap lightMapFallback.EnvironmentFilterMap renderer.RenderBrdfTexture
+                lightAmbientColor lightAmbientBrightness renderer.RenderBrdfTexture lightMapFallback.IrradianceMap lightMapFallback.EnvironmentFilterMap
                 lightMapEnableds lightMapOrigins lightMapMins lightMapSizes lightMapIrradianceMaps lightMapEnvironmentFilterMaps
                 lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightDirectionals lightConeInners lightConeOuters
                 surface renderer.RenderPhysicallyBasedForwardShader renderer
@@ -1643,6 +1643,13 @@ type [<ReferenceEquality>] GlRenderer3d =
         let cubeMapSurface = OpenGL.CubeMap.CubeMapSurface.make cubeMap cubeMapGeometry
         OpenGL.Hl.Assert ()
 
+        // create brdf texture
+        let brdfTexture =
+            match OpenGL.Texture.TryCreateTextureUnfiltered (Constants.OpenGl.UncompressedTextureFormat, Constants.Paths.BrdfTextureFilePath) with
+            | Right (_, texture) -> texture
+            | Left error -> failwith ("Could not load BRDF texture due to: " + error)
+        OpenGL.Hl.Assert ()
+
         // create default irradiance map
         let irradianceMap = OpenGL.LightMap.CreateIrradianceMap (Constants.Render.IrradianceMapResolution, irradianceShader, cubeMapSurface)
         OpenGL.Hl.Assert ()
@@ -1650,12 +1657,6 @@ type [<ReferenceEquality>] GlRenderer3d =
         // create default environment filter map
         let environmentFilterMap = OpenGL.LightMap.CreateEnvironmentFilterMap (Constants.Render.EnvironmentFilterResolution, environmentFilterShader, cubeMapSurface)
         OpenGL.Hl.Assert ()
-
-        // create brdf texture
-        let brdfTexture =
-            match OpenGL.Texture.TryCreateTextureUnfiltered (Constants.OpenGl.UncompressedTextureFormat, Constants.Paths.BrdfTextureFilePath) with
-            | Right (_, texture) -> texture
-            | Left error -> failwith ("Could not load BRDF texture due to: " + error)
 
         // create default physically-based material properties
         let physicallyBasedMaterialProperties : OpenGL.PhysicallyBased.PhysicallyBasedMaterialProperties =
@@ -1720,9 +1721,9 @@ type [<ReferenceEquality>] GlRenderer3d =
               RenderBillboardGeometry = billboardGeometry
               RenderPhysicallyBasedQuad = physicallyBasedQuad
               RenderCubeMap = cubeMapSurface.CubeMap
+              RenderBrdfTexture = brdfTexture
               RenderIrradianceMap = irradianceMap
               RenderEnvironmentFilterMap = environmentFilterMap
-              RenderBrdfTexture = brdfTexture
               RenderPhysicallyBasedMaterial = physicallyBasedMaterial
               RenderLightMaps = dictPlus HashIdentity.Structural []
               RenderModelsFields = Array.zeroCreate<single> (16 * Constants.Render.GeometryBatchPrealloc)
@@ -1781,9 +1782,9 @@ type [<ReferenceEquality>] GlRenderer3d =
             OpenGL.Gl.DeleteVertexArrays [|renderer.RenderBillboardGeometry.PhysicallyBasedVao|] // TODO: also release vertex and index buffers?
             OpenGL.Gl.DeleteVertexArrays [|renderer.RenderPhysicallyBasedQuad.PhysicallyBasedVao|] // TODO: also release vertex and index buffers?
             OpenGL.Gl.DeleteTextures [|renderer.RenderCubeMap|]
+            OpenGL.Gl.DeleteTextures [|renderer.RenderBrdfTexture|]
             OpenGL.Gl.DeleteTextures [|renderer.RenderIrradianceMap|]
             OpenGL.Gl.DeleteTextures [|renderer.RenderEnvironmentFilterMap|]
-            OpenGL.Gl.DeleteTextures [|renderer.RenderBrdfTexture|]
             OpenGL.Gl.DeleteTextures [|renderer.RenderPhysicallyBasedMaterial.AlbedoTexture|]
             OpenGL.Gl.DeleteTextures [|renderer.RenderPhysicallyBasedMaterial.RoughnessTexture|]
             OpenGL.Gl.DeleteTextures [|renderer.RenderPhysicallyBasedMaterial.MetallicTexture|]
