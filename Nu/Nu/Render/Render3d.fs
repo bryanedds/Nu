@@ -1702,15 +1702,15 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         // make light mapping config
         let lightMappingConfig =
-            { LightMappingEnabled = true }
+            { LightMappingEnabled = Constants.Render.LightMappingEnabledDefault }
 
         // make ssao config
         let ssaoConfig =
-            { SsaoEnabled = true
-              SsaoIntensity = 1.75f
-              SsaoBias = 0.1f
-              SsaoRadius = 0.25f
-              SsaoSampleCount = 64 }
+            { SsaoEnabled = Constants.Render.SsaoEnabledDefault
+              SsaoIntensity = Constants.Render.SsaoIntensityDefault
+              SsaoBias = Constants.Render.SsaoBiasDefault
+              SsaoRadius = Constants.Render.SsaoRadiusDefault
+              SsaoSampleCount = Constants.Render.SsaoSampleCountDefault }
 
         // create render tasks
         let renderTasks =
