@@ -1838,7 +1838,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             OpenGL.Gl.DeleteProgram renderer.RenderIrradianceShader.CubeMapShader
             OpenGL.Gl.DeleteProgram renderer.RenderEnvironmentFilterShader.EnvironmentFilterShader
             OpenGL.Gl.DeleteProgram renderer.RenderPhysicallyBasedDeferredGeometryShader.PhysicallyBasedShader
-            // TODO: P1: delete the other shaders!!!
+            // TODO: P1: delete the remaining shaders too!!!
             OpenGL.Gl.DeleteProgram renderer.RenderPhysicallyBasedDeferredLightingShader.PhysicallyBasedDeferredLightingShader
             OpenGL.Gl.DeleteProgram renderer.RenderPhysicallyBasedFxaaShader.PhysicallyBasedFxaaShader
             OpenGL.Gl.DeleteProgram renderer.RenderPhysicallyBasedForwardShader.PhysicallyBasedShader
