@@ -8,6 +8,8 @@ open FSharp.Core
 open Prime
 open Nu
 
+// TODO: document this!
+
 /// Provides for time-driven behavior.
 type 'a Behavior =
     | Behavior of (GameTime -> 'a)

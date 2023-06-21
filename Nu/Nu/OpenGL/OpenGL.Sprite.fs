@@ -20,6 +20,7 @@ module Sprite =
     let CreateSpriteShader () =
 
         // vertex shader code
+        // TODO: let's put this code into a .glsl file and load it from there.
         let vertexShaderStr =
             [Constants.OpenGl.GlslVersionPragma
              ""
