@@ -234,8 +234,8 @@ module PhysicallyBased =
           SsaoSampleCount : int
           PhysicallyBasedDeferredSsaoShader : uint }
 
-    /// Describes a second pass of a deferred physically-based shader that's loaded into GPU.
-    type PhysicallyBasedDeferred2Shader =
+    /// Describes the lighting pass of a deferred physically-based shader that's loaded into GPU.
+    type PhysicallyBasedDeferredLightingShader =
         { EyeCenterUniform : int
           LightAmbientColorUniform : int
           LightAmbientBrightnessUniform : int
@@ -257,7 +257,7 @@ module PhysicallyBased =
           LightDirectionalsUniform : int
           LightConeInnersUniform : int
           LightConeOutersUniform : int
-          PhysicallyBasedDeferred2Shader : uint }
+          PhysicallyBasedDeferredLightingShader : uint }
 
     /// Describes an fxaa pass of a physically-based shader that's loaded into GPU.
     type PhysicallyBasedFxaaShader =
@@ -1176,8 +1176,8 @@ module PhysicallyBased =
           SsaoSampleCount = ssaoSampleCount
           PhysicallyBasedDeferredSsaoShader = shader }
 
-    /// Create a physically-based shader for the second step of deferred rendering.
-    let CreatePhysicallyBasedDeferred2Shader (shaderFilePath : string) =
+    /// Create a physically-based shader for the lighting pass of deferred rendering.
+    let CreatePhysicallyBasedDeferredLightingShader (shaderFilePath : string) =
 
         // create shader
         let shader = Shader.CreateShaderFromFilePath shaderFilePath
@@ -1227,7 +1227,7 @@ module PhysicallyBased =
           LightDirectionalsUniform = lightDirectionalsUniform
           LightConeInnersUniform = lightConeInnersUniform
           LightConeOutersUniform = lightConeOutersUniform
-          PhysicallyBasedDeferred2Shader = shader }
+          PhysicallyBasedDeferredLightingShader = shader }
 
     /// Create a physically-based shader for the fxaa pass of rendering.
     let CreatePhysicallyBasedFxaaShader (shaderFilePath : string) =
@@ -1243,14 +1243,14 @@ module PhysicallyBased =
           PhysicallyBasedFxaaShader = shader }
 
     /// Create the first and second shaders for physically-based deferred rendering.
-    let CreatePhysicallyBasedDeferredShaders (shaderFilePath, shaderLightMappingFilePath, shaderIrradianceFilePath, shaderEnvironmentFilterFilePath, shaderSsaoFilePath, shader2FilePath) =
-        let shader = CreatePhysicallyBasedShader shaderFilePath
+    let CreatePhysicallyBasedDeferredShaders (shaderFilePath, shaderLightMappingFilePath, shaderIrradianceFilePath, shaderEnvironmentFilterFilePath, shaderSsaoFilePath, shaderLightingFilePath) =
+        let shaderGeometry = CreatePhysicallyBasedShader shaderFilePath
         let shaderLightMapping = CreatePhysicallyBasedDeferredLightMappingShader shaderLightMappingFilePath
         let shaderIrradiance = CreatePhysicallyBasedDeferredIrradianceShader shaderIrradianceFilePath
         let shaderEnvironmentFilter = CreatePhysicallyBasedDeferredEnvironmentFilterShader shaderEnvironmentFilterFilePath
         let shaderSsao = CreatePhysicallyBasedDeferredSsaoShader shaderSsaoFilePath
-        let shader2 = CreatePhysicallyBasedDeferred2Shader shader2FilePath
-        (shader, shaderLightMapping, shaderIrradiance, shaderEnvironmentFilter, shaderSsao, shader2)
+        let shaderLighting = CreatePhysicallyBasedDeferredLightingShader shaderLightingFilePath
+        (shaderGeometry, shaderLightMapping, shaderIrradiance, shaderEnvironmentFilter, shaderSsao, shaderLighting)
 
     /// Draw a batch of physically-based surfaces.
     let DrawPhysicallyBasedSurfaces
@@ -1737,8 +1737,8 @@ module PhysicallyBased =
         // teardown shader
         Gl.UseProgram 0u
 
-    /// Draw the second pass of a deferred physically-based surface.
-    let DrawPhysicallyBasedDeferred2Surface
+    /// Draw the lighting pass of a deferred physically-based surface.
+    let DrawPhysicallyBasedDeferredLightingSurface
         (eyeCenter : Vector3,
          lightAmbientColor : single array,
          lightAmbientBrightness : single,
@@ -1761,10 +1761,10 @@ module PhysicallyBased =
          lightConeInners : single array,
          lightConeOuters : single array,
          geometry : PhysicallyBasedGeometry,
-         shader : PhysicallyBasedDeferred2Shader) =
+         shader : PhysicallyBasedDeferredLightingShader) =
 
         // setup shader
-        Gl.UseProgram shader.PhysicallyBasedDeferred2Shader
+        Gl.UseProgram shader.PhysicallyBasedDeferredLightingShader
         Gl.Uniform3 (shader.EyeCenterUniform, eyeCenter.X, eyeCenter.Y, eyeCenter.Z)
         Gl.Uniform3 (shader.LightAmbientColorUniform, lightAmbientColor)
         Gl.Uniform1 (shader.LightAmbientBrightnessUniform, lightAmbientBrightness)

@@ -409,12 +409,12 @@ type [<ReferenceEquality>] GlRenderer3d =
           RenderSkyBoxShader : OpenGL.SkyBox.SkyBoxShader
           RenderIrradianceShader : OpenGL.CubeMap.CubeMapShader
           RenderEnvironmentFilterShader : OpenGL.LightMap.EnvironmentFilterShader
-          RenderPhysicallyBasedDeferredShader : OpenGL.PhysicallyBased.PhysicallyBasedShader
+          RenderPhysicallyBasedDeferredGeometryShader : OpenGL.PhysicallyBased.PhysicallyBasedShader
           RenderPhysicallyBasedDeferredLightMappingShader : OpenGL.PhysicallyBased.PhysicallyBasedDeferredLightMappingShader
           RenderPhysicallyBasedDeferredIrradianceShader : OpenGL.PhysicallyBased.PhysicallyBasedDeferredIrradianceShader
           RenderPhysicallyBasedDeferredEnvironmentFilterShader : OpenGL.PhysicallyBased.PhysicallyBasedDeferredEnvironmentFilterShader
           RenderPhysicallyBasedDeferredSsaoShader : OpenGL.PhysicallyBased.PhysicallyBasedDeferredSsaoShader
-          RenderPhysicallyBasedDeferred2Shader : OpenGL.PhysicallyBased.PhysicallyBasedDeferred2Shader
+          RenderPhysicallyBasedDeferredLightingShader : OpenGL.PhysicallyBased.PhysicallyBasedDeferredLightingShader
           RenderPhysicallyBasedForwardShader : OpenGL.PhysicallyBased.PhysicallyBasedShader
           RenderPhysicallyBasedFxaaShader : OpenGL.PhysicallyBased.PhysicallyBasedFxaaShader
           RenderGeometryBuffers : uint * uint * uint * uint * uint * uint
@@ -1247,7 +1247,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                     viewAbsoluteArray geometryProjectionArray eyeCenter entry.Value false
                     lightAmbientColor lightAmbientBrightness renderer.RenderBrdfTexture lightMapFallback.IrradianceMap lightMapFallback.EnvironmentFilterMap lightMapIrradianceMaps lightMapEnvironmentFilterMaps lightMapEnableds lightMapOrigins lightMapMins lightMapSizes
                     lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightDirectionals lightConeInners lightConeOuters
-                    entry.Key renderer.RenderPhysicallyBasedDeferredShader renderer
+                    entry.Key renderer.RenderPhysicallyBasedDeferredGeometryShader renderer
                 OpenGL.Hl.Assert ()
 
         // deferred render surfaces w/ relative transforms
@@ -1256,7 +1256,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 viewRelativeArray geometryProjectionArray eyeCenter entry.Value false
                 lightAmbientColor lightAmbientBrightness renderer.RenderBrdfTexture lightMapFallback.IrradianceMap lightMapFallback.EnvironmentFilterMap lightMapIrradianceMaps lightMapEnvironmentFilterMaps lightMapEnableds lightMapOrigins lightMapMins lightMapSizes
                 lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightDirectionals lightConeInners lightConeOuters
-                entry.Key renderer.RenderPhysicallyBasedDeferredShader renderer
+                entry.Key renderer.RenderPhysicallyBasedDeferredGeometryShader renderer
             OpenGL.Hl.Assert ()
 
         // run light mapping pass
@@ -1378,11 +1378,11 @@ type [<ReferenceEquality>] GlRenderer3d =
         OpenGL.Hl.Assert ()
 
         // deferred render lighting quad to filter buffer
-        OpenGL.PhysicallyBased.DrawPhysicallyBasedDeferred2Surface
+        OpenGL.PhysicallyBased.DrawPhysicallyBasedDeferredLightingSurface
             (eyeCenter, lightAmbientColor, lightAmbientBrightness,
              positionTexture, albedoTexture, materialTexture, normalAndHeightTexture, renderer.RenderBrdfTexture, irradianceTexture, environmentFilterTexture, ssaoTexture,
              lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightCutoffs, lightDirectionals, lightConeInners, lightConeOuters,
-             renderer.RenderPhysicallyBasedQuad, renderer.RenderPhysicallyBasedDeferred2Shader)
+             renderer.RenderPhysicallyBasedQuad, renderer.RenderPhysicallyBasedDeferredLightingShader)
         OpenGL.Hl.Assert ()
 
         // attempt to render sky box to filter buffer
@@ -1589,14 +1589,14 @@ type [<ReferenceEquality>] GlRenderer3d =
         OpenGL.Hl.Assert ()
 
         // create deferred shaders
-        let (deferredShader, deferredLightMappingShader, deferredIrradianceShader, deferredEnvironmentFilterShader, deferredSsaoShader, deferred2Shader) =
+        let (deferredGeometryShader, deferredLightMappingShader, deferredIrradianceShader, deferredEnvironmentFilterShader, deferredSsaoShader, deferredLightingShader) =
             OpenGL.PhysicallyBased.CreatePhysicallyBasedDeferredShaders
-                (Constants.Paths.PhysicallyBasedDeferredShaderFilePath,
+                (Constants.Paths.PhysicallyBasedDeferredGeometryShaderFilePath,
                  Constants.Paths.PhysicallyBasedDeferredLightMappingShaderFilePath,
                  Constants.Paths.PhysicallyBasedDeferredIrradianceShaderFilePath,
                  Constants.Paths.PhysicallyBasedDeferredEnvironmentFilterShaderFilePath,
                  Constants.Paths.PhysicallyBasedDeferredSsaoShaderFilePath,
-                 Constants.Paths.PhysicallyBasedDeferred2ShaderFilePath)
+                 Constants.Paths.PhysicallyBasedDeferredLightingShaderFilePath)
         OpenGL.Hl.Assert ()
 
         // create forward shader
@@ -1761,12 +1761,12 @@ type [<ReferenceEquality>] GlRenderer3d =
               RenderSkyBoxShader = skyBoxShader
               RenderIrradianceShader = irradianceShader
               RenderEnvironmentFilterShader = environmentFilterShader
-              RenderPhysicallyBasedDeferredShader = deferredShader
+              RenderPhysicallyBasedDeferredGeometryShader = deferredGeometryShader
               RenderPhysicallyBasedDeferredLightMappingShader = deferredLightMappingShader
               RenderPhysicallyBasedDeferredIrradianceShader = deferredIrradianceShader
               RenderPhysicallyBasedDeferredEnvironmentFilterShader = deferredEnvironmentFilterShader
               RenderPhysicallyBasedDeferredSsaoShader = deferredSsaoShader
-              RenderPhysicallyBasedDeferred2Shader = deferred2Shader
+              RenderPhysicallyBasedDeferredLightingShader = deferredLightingShader
               RenderPhysicallyBasedFxaaShader = fxaaShader
               RenderPhysicallyBasedForwardShader = forwardShader
               RenderGeometryBuffers = geometryBuffers
@@ -1837,9 +1837,9 @@ type [<ReferenceEquality>] GlRenderer3d =
             OpenGL.Gl.DeleteProgram renderer.RenderSkyBoxShader.SkyBoxShader
             OpenGL.Gl.DeleteProgram renderer.RenderIrradianceShader.CubeMapShader
             OpenGL.Gl.DeleteProgram renderer.RenderEnvironmentFilterShader.EnvironmentFilterShader
-            OpenGL.Gl.DeleteProgram renderer.RenderPhysicallyBasedDeferredShader.PhysicallyBasedShader
+            OpenGL.Gl.DeleteProgram renderer.RenderPhysicallyBasedDeferredGeometryShader.PhysicallyBasedShader
             // TODO: P1: delete the other shaders!!!
-            OpenGL.Gl.DeleteProgram renderer.RenderPhysicallyBasedDeferred2Shader.PhysicallyBasedDeferred2Shader
+            OpenGL.Gl.DeleteProgram renderer.RenderPhysicallyBasedDeferredLightingShader.PhysicallyBasedDeferredLightingShader
             OpenGL.Gl.DeleteProgram renderer.RenderPhysicallyBasedFxaaShader.PhysicallyBasedFxaaShader
             OpenGL.Gl.DeleteProgram renderer.RenderPhysicallyBasedForwardShader.PhysicallyBasedShader
             OpenGL.Gl.DeleteVertexArrays [|renderer.RenderCubeMapGeometry.CubeMapVao|] // TODO: also release vertex and index buffers?
