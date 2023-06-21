@@ -7,6 +7,8 @@ open FSharp.Core
 open Prime
 open Nu
 
+// TODO: document this!
+
 /// Modifies behaviors.
 /// TODO: implement arrow choice combinators.
 type Modifier<'a, 'b> =
