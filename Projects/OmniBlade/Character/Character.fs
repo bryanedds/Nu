@@ -225,7 +225,7 @@ module Character =
             // HACK: special case for Critical tech to get desired behavior of 1 more damage than normal attack in the
             // beginning of the game.
             match techData.TechType with
-            | Critical -> if efficacy = 4 then 2.0f else 1.0f
+            | Critical -> if source.Level <= 3 then 2.0f else 1.0f
             | _ -> 0.0f
         if techData.Curative then
             let healing = single efficacy * techScalar * splitScalar |> int |> max 1
