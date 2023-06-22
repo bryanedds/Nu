@@ -190,6 +190,8 @@ type [<ReferenceEquality>] GlRenderer2d =
 
     // TODO: split this into two functions instead of passing reloading boolean.
     static member private tryLoadRenderPackage reloading packageName renderer =
+
+        // attempt to make new asset graph and load its assets
         match AssetGraph.tryMakeFromFile Assets.Global.AssetGraphFilePath with
         | Right assetGraph ->
             match AssetGraph.tryCollectAssetsFromPackage (Some Constants.Associations.Render2d) packageName assetGraph with
@@ -221,6 +223,7 @@ type [<ReferenceEquality>] GlRenderer2d =
                         | Some renderAsset -> renderPackage.Assets.[asset.AssetTag.AssetName] <- renderAsset
                         | None -> ()
 
+            // handle error cases
             | Left failedAssetNames ->
                 Log.info ("Render package load failed due to unloadable assets '" + failedAssetNames + "' for package '" + packageName + "'.")
         | Left error ->
