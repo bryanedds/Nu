@@ -1564,7 +1564,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         // initialize context if directed
         if config.ShouldInitializeContext then
 
-            // create SDL-OpenGL context if needed
+            // create context
             match window with
             | SglWindow window ->
                 OpenGL.Hl.CreateSglContext window.SglWindow |> ignore<nativeint>
