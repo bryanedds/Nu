@@ -1684,7 +1684,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         let blackTexture =
             match OpenGL.Texture.TryCreateTextureUnfiltered (Constants.OpenGl.UncompressedTextureFormat, Constants.Paths.BlackTextureFilePath) with
             | Right (_, texture) -> texture
-            | Left error -> failwith ("Could not load white texture due to: " + error)
+            | Left error -> failwith ("Could not load black texture due to: " + error)
         OpenGL.Hl.Assert ()
 
         // create brdf texture
