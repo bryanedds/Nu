@@ -1166,7 +1166,7 @@ module WorldModule2 =
                         match World.getLiveness world with
                         | Live ->
 
-                            // process physics (both 3d and 2d)
+                            // process physics
                             PhysicsTimer.Start ()
                             let world = World.processPhysics world
                             PhysicsTimer.Stop ()
