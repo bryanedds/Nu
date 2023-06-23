@@ -1262,7 +1262,7 @@ and Entity (entityAddress) =
         else Entity (Array.take (dec namesLength) names) :> Simulant
 
     /// The cached entity state for imperative entities.
-    member this.EntityStateOpt
+    member internal this.EntityStateOpt
         with get () = entityStateOpt
         and set value = entityStateOpt <- value
 
