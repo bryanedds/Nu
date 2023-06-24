@@ -1261,11 +1261,6 @@ and Entity (entityAddress) =
         then Group (Array.take 2 names) :> Simulant
         else Entity (Array.take (dec namesLength) names) :> Simulant
 
-    /// The cached entity state for imperative entities.
-    member internal this.EntityStateOpt
-        with get () = entityStateOpt
-        and set value = entityStateOpt <- value
-
     /// Get the names of an entity.
     member this.Names = Address.getNames this.EntityAddress
 
@@ -1274,6 +1269,11 @@ and Entity (entityAddress) =
 
     /// Get the last name of an entity.
     member this.Name = Address.getNames this.EntityAddress |> Array.last
+
+    /// The cached entity state for imperative entities.
+    member internal this.EntityStateOpt
+        with get () = entityStateOpt
+        and set value = entityStateOpt <- value
 
     /// Get the latest value of an entity's properties.
     [<DebuggerBrowsable (DebuggerBrowsableState.RootHidden)>]
