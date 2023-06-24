@@ -5,6 +5,8 @@ open Nu
 open Nu.Declarative
 open BlazeVector
 
+// TODO: convert BlazeVector entities to the Elmish style.
+
 [<AutoOpen>]
 module Bullet =
 
