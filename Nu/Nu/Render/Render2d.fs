@@ -553,7 +553,7 @@ type [<ReferenceEquality>] GlRenderer2d =
                             // get text metrics
                             let mutable width = 0
                             let mutable height = 0
-                            SDL_ttf.TTF_SizeText (font, text, &width, &height) |> ignore
+                            SDL_ttf.TTF_SizeUNICODE (font, text, &width, &height) |> ignore
                             let width = single (width * Constants.Render.VirtualScalar)
                             let height = single (height * Constants.Render.VirtualScalar)
 
@@ -562,14 +562,14 @@ type [<ReferenceEquality>] GlRenderer2d =
                             | Unjustified wrapped ->
                                 let textSurfacePtr =
                                     if wrapped
-                                    then SDL_ttf.TTF_RenderText_Blended_Wrapped (font, text, colorSdl, uint32 size.X)
-                                    else SDL_ttf.TTF_RenderText_Blended (font, text, colorSdl)
+                                    then SDL_ttf.TTF_RenderUNICODE_Blended_Wrapped (font, text, colorSdl, uint32 size.X)
+                                    else SDL_ttf.TTF_RenderUNICODE_Blended (font, text, colorSdl)
                                 let textSurface = Marshal.PtrToStructure<SDL.SDL_Surface> textSurfacePtr
                                 let textSurfaceHeight = single (textSurface.h * Constants.Render.VirtualScalar)
                                 let offsetY = size.Y - textSurfaceHeight
                                 (v2 0.0f offsetY, textSurface, textSurfacePtr)
                             | Justified (h, v) ->
-                                let textSurfacePtr = SDL_ttf.TTF_RenderText_Blended (font, text, colorSdl)
+                                let textSurfacePtr = SDL_ttf.TTF_RenderUNICODE_Blended (font, text, colorSdl)
                                 let textSurface = Marshal.PtrToStructure<SDL.SDL_Surface> textSurfacePtr
                                 let offsetX =
                                     match h with
