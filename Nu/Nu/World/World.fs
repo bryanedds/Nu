@@ -552,10 +552,8 @@ module WorldModule3 =
             // make the world's subsystems
             let physicsEngine2d = MockPhysicsEngine.make ()
             let physicsEngine3d = MockPhysicsEngine.make ()
-            let rendererProcess =
-                RendererInline
-                    ((fun _ -> MockRenderer2d.make () :> Renderer2d),
-                     (fun _ -> MockRenderer3d.make () :> Renderer3d))
+            let rendererProcess = RendererInline () :> RendererProcess
+            rendererProcess.Start None // None implicates mock renderers
             let audioPlayer = MockAudioPlayer.make ()
 
             // make the world's scripting environment
