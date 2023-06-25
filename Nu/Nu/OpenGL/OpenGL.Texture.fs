@@ -58,6 +58,29 @@ module Texture =
             Marshal.Copy (rowTop, 0, pixelsBottom, surface.pitch)
             Marshal.Copy (rowBottom, 0, pixelsTop, surface.pitch)
 
+    /// Create a texture with raw image data.
+    let CreateTexture (internalFormat, width, height, pixelFormat, pixelType, minFilter : OpenGL.TextureMinFilter, magFilter : OpenGL.TextureMagFilter, generateMipmaps, imageData : nativeint) =
+        let texture = OpenGL.Gl.GenTexture ()
+        OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, texture)
+        OpenGL.Gl.TexImage2D (OpenGL.TextureTarget.Texture2d, 0, internalFormat, width, height, 0, pixelFormat, pixelType, imageData)
+        OpenGL.Gl.TexParameter (OpenGL.TextureTarget.Texture2d, OpenGL.TextureParameterName.TextureMinFilter, int minFilter)
+        OpenGL.Gl.TexParameter (OpenGL.TextureTarget.Texture2d, OpenGL.TextureParameterName.TextureMagFilter, int magFilter)
+        OpenGL.Gl.TexParameter (OpenGL.TextureTarget.Texture2d, OpenGL.TextureParameterName.TextureWrapS, int TextureWrapMode.Repeat)
+        OpenGL.Gl.TexParameter (OpenGL.TextureTarget.Texture2d, OpenGL.TextureParameterName.TextureWrapT, int TextureWrapMode.Repeat)
+        Hl.Assert ()
+        OpenGL.Gl.PrioritizeTextures ([|texture|], [|Constants.Render.TexturePriorityDefault|])
+        ignore<ErrorCode> (OpenGL.Gl.GetError ()) // ignore errors since certain uses of Gl.PrioritizeTextures can raise an InvalidOperation error for no reason that I have yet deciphered.
+        if generateMipmaps then Gl.GenerateMipmap TextureTarget.Texture2d
+        texture
+
+    /// Create a filtered texture with raw image data.
+    let CreateTextureFiltered (internalFormat, width, height, pixelFormat, pixelType, imageData : nativeint) =
+        CreateTexture (internalFormat, width, height, pixelFormat, pixelType, TextureMinFilter.LinearMipmapLinear, TextureMagFilter.Linear, true, imageData)
+
+    /// Create an unfiltered texture with raw image data.
+    let CreateTextureUnfiltered (internalFormat, width, height, pixelFormat, pixelType, imageData : nativeint) =
+        CreateTexture (internalFormat, width, height, pixelFormat, pixelType, TextureMinFilter.Nearest, TextureMagFilter.Nearest, false, imageData)
+
     /// Attempt to create uploadable image data from the given file path.
     /// Don't forget to dispose the last field when finished with the image data.
     let TryCreateImageData (internalFormat, generateMipmaps, filePath : string) =
@@ -114,7 +137,7 @@ module Texture =
             Gl.TexImage2D (TextureTarget.Texture2d, 0, internalFormat, metadata.TextureWidth, metadata.TextureHeight, 0, PixelFormat.Bgra, PixelType.UnsignedByte, imageData)
             if generateMipmaps then Gl.GenerateMipmap TextureTarget.Texture2d
             Hl.Assert ()
-            Gl.PrioritizeTextures ([|texture|], [|Constants.Render.TexturePriorityDefault|]);
+            Gl.PrioritizeTextures ([|texture|], [|Constants.Render.TexturePriorityDefault|])
             ignore<ErrorCode> (Gl.GetError ()) // ignore errors since certain uses of Gl.PrioritizeTextures can raise an InvalidOperation error for no reason that I have yet deciphered.
             Gl.BindTexture (TextureTarget.Texture2d, 0u)
             Right (metadata, texture)
