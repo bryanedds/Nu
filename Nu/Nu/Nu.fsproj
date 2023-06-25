@@ -58,7 +58,8 @@
 		<Compile Include="OpenGL\OpenGL.SkyBox.fs" />
 		<Compile Include="OpenGL\OpenGL.PhysicallyBased.fs" />
 		<Compile Include="OpenGL\OpenGL.SpriteBatch.fs" />
-		<Compile Include="ImGui\ImGui.fs" />
+		<Compile Include="ImGui\ImGuiRenderer.fs" />
+		<Compile Include="ImGui\ImGuiController.fs" />
 		<Compile Include="Sdl\SdlInputBindings.fs" />
 		<Compile Include="Sdl\SdlInput.fs" />
 		<Compile Include="Sdl\Sdl.fs" />
