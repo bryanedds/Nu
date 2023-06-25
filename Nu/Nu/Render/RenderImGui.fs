@@ -8,7 +8,7 @@ open Nu
 
     /// Renders ImGui view via OpenGL.
     /// NOTE: code in has a lot of mutability because it's ported from a port of a port...
-    type ImGuiRenderer (windowWidth : int, windowHeight : int) =
+    type RendererImGui (windowWidth : int, windowHeight : int) =
 
         let mutable vertexArrayObject = 0u
         let mutable vertexBufferSize = 8192u

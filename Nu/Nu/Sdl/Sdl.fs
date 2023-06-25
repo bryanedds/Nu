@@ -15,7 +15,7 @@ type [<ReferenceEquality>] SglWindow =
 type WfglWindow =
     interface
         abstract member CreateSdlWindowFrom : unit -> unit
-        abstract member CreateContext : unit -> unit
+        abstract member CreateWfglContext : unit -> unit
         abstract member Swap : unit -> unit
         abstract member CleanUp : unit -> unit
         end

@@ -58,7 +58,6 @@
 		<Compile Include="OpenGL\OpenGL.SkyBox.fs" />
 		<Compile Include="OpenGL\OpenGL.PhysicallyBased.fs" />
 		<Compile Include="OpenGL\OpenGL.SpriteBatch.fs" />
-		<Compile Include="ImGui\ImGuiRenderer.fs" />
 		<Compile Include="ImGui\ImGuiController.fs" />
 		<Compile Include="Sdl\SdlInputBindings.fs" />
 		<Compile Include="Sdl\SdlInput.fs" />
@@ -79,6 +78,7 @@
 		<Compile Include="Render\Render.fs" />
 		<Compile Include="Render\Render2d.fs" />
 		<Compile Include="Render\Render3d.fs" />
+		<Compile Include="Render\RenderImGui.fs" />
 		<Compile Include="Render\RenderProcess.fs" />
 		<Compile Include="Audio\Audio.fs" />
 		<Compile Include="Symbolics\Symbolics.fs" />
