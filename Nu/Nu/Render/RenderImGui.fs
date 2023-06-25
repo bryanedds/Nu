@@ -6,22 +6,46 @@ open Prime
 open ImGuiNET
 open Nu
 
-    /// Renders ImGui view via OpenGL.
-    /// NOTE: code in has a lot of mutability because it's ported from a port of a port...
-    type RendererImGui (windowWidth : int, windowHeight : int) =
+/// Renders an imgui view.
+/// NOTE: API is object-oriented / mutation-based because it's ported from a port of a port.
+type RendererImGui =
+    abstract Initialize : ImFontAtlasPtr -> unit
+    abstract Render : ImDrawDataPtr -> unit
+    abstract CleanUp : unit -> unit
 
-        let mutable vertexArrayObject = 0u
-        let mutable vertexBufferSize = 8192u
-        let mutable vertexBuffer = 0u
-        let mutable indexBufferSize = 2048u
-        let mutable indexBuffer = 0u
-        let mutable shader = 0u
-        let mutable shaderProjectionMatrixUniform = 0
-        let mutable shaderFontTextureUniform = 0
-        let mutable fontTextureWidth = 0
-        let mutable fontTextureHeight = 0
-        let mutable fontTexture = 0u
-        do ignore windowWidth
+/// A mock imgui renderer.
+type MockRendererImGui () =
+    interface RendererImGui with
+        member this.Initialize _ = ()
+        member this.Render _ = ()
+        member this.CleanUp () = ()
+
+[<RequireQualifiedAccess>]
+module MockRendererImGui =
+
+    /// Make a mock imgui renderer.
+    let make () =
+        let rendererImGui = MockRendererImGui ()
+        (rendererImGui :> RendererImGui).Initialize Unchecked.defaultof<_> // NOTE: bit of a hack to deal with the odd initialization structure implcated by imgui.
+        rendererImGui
+
+/// Renders an imgui view via OpenGL.
+type GlRendererImGui (windowWidth : int, windowHeight : int) =
+
+    let mutable vertexArrayObject = 0u
+    let mutable vertexBufferSize = 8192u
+    let mutable vertexBuffer = 0u
+    let mutable indexBufferSize = 2048u
+    let mutable indexBuffer = 0u
+    let mutable shader = 0u
+    let mutable shaderProjectionMatrixUniform = 0
+    let mutable shaderFontTextureUniform = 0
+    let mutable fontTextureWidth = 0
+    let mutable fontTextureHeight = 0
+    let mutable fontTexture = 0u
+    do ignore windowWidth
+
+    interface RendererImGui with
 
         member this.Initialize (fonts : ImFontAtlasPtr) =
         
@@ -105,26 +129,9 @@ open Nu
             fonts.SetTexID (nativeint fontTexture)
             fonts.ClearTexData ()
 
-        member this.Destroy () =
-
-            // destroy vao
-            OpenGL.Gl.BindVertexArray vertexArrayObject
-            OpenGL.Gl.DeleteBuffers [|vertexBuffer|]
-            OpenGL.Gl.DeleteBuffers [|indexBuffer|]
-            OpenGL.Gl.BindVertexArray 0u
-            OpenGL.Gl.DeleteVertexArrays [|vertexArrayObject|]
-            OpenGL.Hl.Assert ()
-
-            // destroy shader
-            OpenGL.Gl.DeleteProgram shader
-            OpenGL.Hl.Assert ()
-
-            // destroy font texture
-            OpenGL.Gl.DeleteTextures [|fontTexture|]
-
         member this.Render (drawData : ImDrawDataPtr) =
 
-            // attempt to draw im gui draw data
+            // attempt to draw imgui draw data
             let mutable vertexOffsetInVertices = 0
             let mutable indexOffsetInElements = 0
             if drawData.CmdListsCount <> 0 then
@@ -213,3 +220,29 @@ open Nu
                 // teardown state
                 OpenGL.Gl.Disable OpenGL.EnableCap.Blend
                 OpenGL.Gl.Disable OpenGL.EnableCap.ScissorTest
+
+        member this.CleanUp () =
+
+            // destroy vao
+            OpenGL.Gl.BindVertexArray vertexArrayObject
+            OpenGL.Gl.DeleteBuffers [|vertexBuffer|]
+            OpenGL.Gl.DeleteBuffers [|indexBuffer|]
+            OpenGL.Gl.BindVertexArray 0u
+            OpenGL.Gl.DeleteVertexArrays [|vertexArrayObject|]
+            OpenGL.Hl.Assert ()
+
+            // destroy shader
+            OpenGL.Gl.DeleteProgram shader
+            OpenGL.Hl.Assert ()
+
+            // destroy font texture
+            OpenGL.Gl.DeleteTextures [|fontTexture|]
+
+[<RequireQualifiedAccess>]
+module GlRendererImGui =
+
+    /// Make a gl-based imgui renderer.
+    let make fonts =
+        let rendererImGui = GlRendererImGui (Constants.Render.ResolutionX, Constants.Render.ResolutionY)
+        (rendererImGui :> RendererImGui).Initialize fonts
+        rendererImGui

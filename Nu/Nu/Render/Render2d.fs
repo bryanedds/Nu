@@ -105,8 +105,6 @@ and Renderer2d =
     abstract SpriteBatchEnvOpt : OpenGL.SpriteBatch.SpriteBatchEnv option
     /// Render a frame of the game.
     abstract Render : Vector2 -> Vector2 -> Vector2i -> RenderMessage2d List -> unit
-    /// Swap a rendered frame of the game.
-    abstract Swap : unit -> unit
     /// Handle render clean up by freeing all loaded render assets.
     abstract CleanUp : unit -> unit
 
@@ -118,7 +116,6 @@ type [<ReferenceEquality>] MockRenderer2d =
     interface Renderer2d with
         member renderer.SpriteBatchEnvOpt = None
         member renderer.Render _ _ _ _ = ()
-        member renderer.Swap () = ()
         member renderer.CleanUp () = ()
 
     static member make () =
@@ -716,11 +713,6 @@ type [<ReferenceEquality>] GlRenderer2d =
         member renderer.Render eyeCenter eyeSize _ renderMessages =
             if renderMessages.Count > 0 then
                 GlRenderer2d.render eyeCenter eyeSize renderMessages renderer
-
-        member renderer.Swap () =
-            match renderer.RenderWindow with
-            | SglWindow window -> SDL.SDL_GL_SwapWindow window.SglWindow
-            | WfglWindow window -> window.Swap ()
 
         member renderer.CleanUp () =
             OpenGL.SpriteBatch.DestroySpriteBatchEnv renderer.RenderSpriteBatchEnv
