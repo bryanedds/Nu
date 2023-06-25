@@ -14,7 +14,7 @@ type RendererProcess =
     interface
         abstract Started : bool
         abstract Terminated : bool
-        abstract Start : unit -> unit
+        abstract Start : Window option -> unit
         abstract EnqueueMessage3d : RenderMessage3d -> unit
         abstract EnqueueMessage2d : RenderMessage2d -> unit
         abstract ClearMessages : unit -> unit
@@ -24,7 +24,7 @@ type RendererProcess =
         end
 
 /// A non-threaded render process.
-type RendererInline (createRenderer2d, createRenderer3d) =
+type RendererInline () =
 
     let mutable started = false
     let mutable terminated = false
@@ -40,14 +40,52 @@ type RendererInline (createRenderer2d, createRenderer3d) =
         member this.Terminated =
             terminated
 
-        member this.Start () =
+        member this.Start windowOpt =
+
+            // ensure renderers not already created
             match renderersOpt with
-            | Some _ -> raise (InvalidOperationException "Redundant Start calls.")
             | None ->
-                let renderer3d = createRenderer3d { ShouldInitializeContext = true; ShouldBeginFrame = true; ShouldEndFrame = false }
-                let renderer2d = createRenderer2d { ShouldInitializeContext = false; ShouldBeginFrame = false; ShouldEndFrame = true }
-                renderersOpt <- Some (renderer3d, renderer2d)
+
+                // create renderers
+                match windowOpt with
+                | Some window ->
+                
+                    // create gl context
+                    match window with
+                    | SglWindow window ->
+                        OpenGL.Hl.CreateSglContext window.SglWindow |> ignore<nativeint>
+                        OpenGL.Hl.Assert ()
+                    | WfglWindow window ->
+                        window.CreateWfglContext ()
+                        OpenGL.Hl.Assert ()
+
+                    // listen to debug messages
+                    OpenGL.Hl.AttachDebugMessageCallback ()
+                    OpenGL.Hl.Assert ()
+
+                    // create 3d renderer
+                    let renderer3d = GlRenderer3d.make window :> Renderer3d
+                    OpenGL.Hl.Assert ()
+
+                    // create 2d renderer
+                    let renderer2d = GlRenderer2d.make window :> Renderer2d
+                    OpenGL.Hl.Assert ()
+
+                    // fin
+                    renderersOpt <- Some (renderer3d, renderer2d)
+
+                // create mock renderers
+                | None ->
+                    let renderer3d = MockRenderer3d.make () :> Renderer3d
+                    let renderer2d = MockRenderer2d.make () :> Renderer2d
+                    renderersOpt <- Some (renderer3d, renderer2d)
+                    OpenGL.Hl.Assert ()
+
+                // fin
                 started <- true
+
+            // fail on already created
+            | Some _ -> raise (InvalidOperationException "Redundant Start calls.")
 
         member this.EnqueueMessage3d message =
             match renderersOpt with
@@ -66,10 +104,26 @@ type RendererInline (createRenderer2d, createRenderer3d) =
         member this.SubmitMessages skipCulling frustumEnclosed frustumExposed frustumImposter lightBox eyeCenter3d eyeRotation3d eyeCenter2d eyeSize2d windowSize =
             match renderersOpt with
             | Some (renderer3d, renderer2d) ->
+                
+                // begin frame
+                let viewportOffset = Constants.Render.ViewportOffset windowSize
+                OpenGL.Hl.BeginFrame viewportOffset
+                OpenGL.Hl.Assert ()
+
+                // render 3d
                 renderer3d.Render skipCulling frustumEnclosed frustumExposed frustumImposter lightBox eyeCenter3d eyeRotation3d windowSize messages3d
                 messages3d.Clear ()
+                OpenGL.Hl.Assert ()
+
+                // render 2d
                 renderer2d.Render eyeCenter2d eyeSize2d windowSize messages2d
                 messages2d.Clear ()
+                OpenGL.Hl.Assert ()
+
+                // end frame
+                OpenGL.Hl.EndFrame ()
+                OpenGL.Hl.Assert ()
+
             | None -> raise (InvalidOperationException "Renderers are not yet or are no longer valid.")
 
         member this.Swap () =
@@ -87,7 +141,7 @@ type RendererInline (createRenderer2d, createRenderer3d) =
             | None -> raise (InvalidOperationException "Redundant Terminate calls.")
 
 /// A threaded render process.
-type RendererThread (createRenderer2d, createRenderer3d) =
+type RendererThread () =
 
     let mutable threadOpt = None
     let [<VolatileField>] mutable started = false
@@ -150,13 +204,42 @@ type RendererThread (createRenderer2d, createRenderer3d) =
                     | _ -> ()
                 | _ -> ())
 
-    member private this.Run () =
+    member private this.Run windowOpt =
 
-        // create 3d renderer
-        let renderer3d = createRenderer3d { ShouldInitializeContext = true; ShouldBeginFrame = true; ShouldEndFrame = false } : Renderer3d
+        // create renderers
+        let (renderer3d, renderer2d) =
+            match windowOpt with
+            | Some window ->
+                
+                // create gl context
+                match window with
+                | SglWindow window ->
+                    OpenGL.Hl.CreateSglContext window.SglWindow |> ignore<nativeint>
+                    OpenGL.Hl.Assert ()
+                | WfglWindow window ->
+                    window.CreateWfglContext ()
+                    OpenGL.Hl.Assert ()
 
-        // create 2d renderer
-        let renderer2d = createRenderer2d { ShouldInitializeContext = false; ShouldBeginFrame = false; ShouldEndFrame = true } : Renderer2d
+                // listen to debug messages
+                OpenGL.Hl.AttachDebugMessageCallback ()
+                OpenGL.Hl.Assert ()
+
+                // create 3d renderer
+                let renderer3d = GlRenderer3d.make window :> Renderer3d
+                OpenGL.Hl.Assert ()
+
+                // create 2d renderer
+                let renderer2d = GlRenderer2d.make window :> Renderer2d
+                OpenGL.Hl.Assert ()
+
+                // fin
+                (renderer3d, renderer2d)
+
+            // create mock renderers
+            | None ->
+                let renderer3d = MockRenderer3d.make () :> Renderer3d
+                let renderer2d = MockRenderer2d.make () :> Renderer2d
+                (renderer3d, renderer2d)
 
         // mark as started
         started <- true
@@ -173,18 +256,29 @@ type RendererThread (createRenderer2d, createRenderer3d) =
                 // receie submission
                 let (skipCulling, frustumEnclosed, frustumExposed, frustumImposter, lightBox, messages3d, messages2d, eyeCenter3d, eyeRotation3d, eyeCenter2d, eyeSize2d, windowSize) = Option.get submissionOpt
                 submissionOpt <- None
+                
+                // begin frame
+                let viewportOffset = Constants.Render.ViewportOffset windowSize
+                OpenGL.Hl.BeginFrame viewportOffset
+                OpenGL.Hl.Assert ()
 
                 // render 3d
                 renderer3d.Render skipCulling frustumEnclosed frustumExposed frustumImposter lightBox eyeCenter3d eyeRotation3d windowSize messages3d
+                OpenGL.Hl.Assert ()
                 
                 // recover cached static model messages
                 freeStaticModelMessages messages3d
 
                 // render 2d
                 renderer2d.Render eyeCenter2d eyeSize2d windowSize messages2d
+                OpenGL.Hl.Assert ()
             
                 // recover cached sprite messages
                 freeSpriteMessages messages2d
+
+                // end frame
+                OpenGL.Hl.EndFrame ()
+                OpenGL.Hl.Assert ()
 
                 // loop until swap is requested
                 while not swap && not terminated do Thread.Sleep 1
@@ -209,13 +303,13 @@ type RendererThread (createRenderer2d, createRenderer3d) =
         member this.Terminated =
             terminated
 
-        member this.Start () =
+        member this.Start window =
 
             // validate state
             if Option.isSome threadOpt then raise (InvalidOperationException "Render process already started.")
 
             // start thread
-            let thread = Thread (ThreadStart this.Run)
+            let thread = Thread (ThreadStart (fun () -> this.Run window))
             threadOpt <- Some thread
             thread.Priority <- ThreadPriority.Highest
             thread.IsBackground <- true

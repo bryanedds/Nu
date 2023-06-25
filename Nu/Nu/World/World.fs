@@ -651,18 +651,8 @@ module WorldModule3 =
                 // make the world's subsystems
                 let physicsEngine2d = AetherPhysicsEngine.make config.Imperative Constants.Physics.Gravity2dDefault
                 let physicsEngine3d = BulletPhysicsEngine.make config.Imperative Constants.Physics.Gravity3dDefault staticModelsMetadata
-                let createRenderer2d =
-                    fun config ->
-                        match SdlDeps.getWindowOpt sdlDeps with
-                        | Some window -> GlRenderer2d.make window config :> Renderer2d
-                        | None -> MockRenderer2d.make () :> Renderer2d
-                let createRenderer3d =
-                    fun config ->
-                        match SdlDeps.getWindowOpt sdlDeps with
-                        | Some window -> GlRenderer3d.make window config :> Renderer3d
-                        | None -> MockRenderer3d.make () :> Renderer3d
-                let rendererProcess = RendererThread (createRenderer2d, createRenderer3d) :> RendererProcess
-                rendererProcess.Start ()
+                let rendererProcess = RendererThread () :> RendererProcess
+                rendererProcess.Start (SdlDeps.getWindowOpt sdlDeps)
                 rendererProcess.EnqueueMessage2d (LoadRenderPackage2d Assets.Default.PackageName) // enqueue default package hint
                 let audioPlayer =
                     if SDL.SDL_WasInit SDL.SDL_INIT_AUDIO <> 0u

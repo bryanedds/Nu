@@ -49,7 +49,7 @@ namespace Nu.Gaia.Design
                 throw new InvalidOperationException("Failed to create SDL window.");
         }
 
-        public void CreateContext()
+        public void CreateWfglContext()
         {
             // ensure sdl window exists
             if (sdlWindow == IntPtr.Zero)
@@ -65,7 +65,7 @@ namespace Nu.Gaia.Design
             Trace.Assert(Wgl.CONTEXT_MINOR_VERSION_ARB == Glx.CONTEXT_MINOR_VERSION_ARB);
             Trace.Assert(Wgl.CONTEXT_PROFILE_MASK_ARB == Glx.CONTEXT_PROFILE_MASK_ARB);
 
-            // create context
+            // create gl context
             if (Gl.PlatformExtensions.CreateContext_ARB)
             {
                 // initialize gl context attributes
