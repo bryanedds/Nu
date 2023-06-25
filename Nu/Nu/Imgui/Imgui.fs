@@ -7,10 +7,7 @@ open System.Runtime.CompilerServices
 open Prime
 open Nu
 
-    /// <summary>
-    /// A modified version of Veldrid.ImGui's ImGuiRenderer.
-    /// Manages input for ImGui and handles rendering ImGui's DrawLists with Veldrid.
-    /// </summary>
+    ///
     type ImGuiController (initialWidth : int, initialHeight : int) as this =
 
         let mutable _windowWidth = initialWidth
@@ -21,7 +18,9 @@ open Nu
         let mutable _vertexBufferSize = 0u
         let mutable _indexBuffer = 0u
         let mutable _indexBufferSize = 0u
-        let mutable _fontTexture : Texture = null
+        let mutable _fontTextureWidth = 0
+        let mutable _fontTextureHeight = 0
+        let mutable _fontTexture = 0u
         let mutable _guiShader : GUIShader = null
         let mutable _windowWidth = initialWidth
         let mutable _windowHeight = initialHeight
@@ -64,7 +63,7 @@ open Nu
 
             this.RecreateFontDeviceTexture ()
 
-            let VertexSource =
+            let vertexStr =
                 [Constants.OpenGl.GlslVersionPragma
                  ""
                  "uniform mat4 projection_matrix;"
@@ -83,7 +82,7 @@ open Nu
                  "    texCoord = in_texCoord;"
                  "}"] |> String.join "\n"
 
-            let FragmentSource =
+            let fragmentStr =
                 [Constants.OpenGl.GlslVersionPragma
                  ""
                  "uniform sampler2D in_fontTexture;"
@@ -98,7 +97,8 @@ open Nu
                  "    outputColor = color * texture(in_fontTexture, texCoord);"
                  "}"] |> String.join "\n"
 
-            _guiShader = GUIShader ("ImGui", VertexSource, FragmentSource)
+            _guiShader <- OpenGL.Shader.CreateShaderFromStrs (vertexStr, fragmentStr)
+            OpenGL.Hl.Assert ()
 
             OpenGL.Gl.BindVertexArray _vertexArray
 
@@ -118,31 +118,29 @@ open Nu
             // We don't need to unbind the element buffer as that is connected to the vertex array
             // And you should not touch the element buffer when there is no vertex array bound.
 
-            Util.CheckGLError("End of ImGui setup")
+            OpenGL.Hl.Assert ()
 
         /// Recreates the device texture used to render text.
         member this.RecreateFontDeviceTexture () =
             let io = ImGui.GetIO ()
+            let fonts = io.Fonts
             let mutable pixels = Unchecked.defaultof<nativeint>
-            let mutable width = Unchecked.defaultof<_>
-            let mutable height = Unchecked.defaultof<_>
             let mutable bytesPerPixel = Unchecked.defaultof<_>
-            io.Fonts.GetTexDataAsRGBA32 (&pixels, &width, &height, &bytesPerPixel)
-            _fontTexture <- Texture ("ImGui Text Atlas", width, height, pixels)
-            _fontTexture.SetMagFilter TextureMagFilter.Linear
-            _fontTexture.SetMinFilter TextureMinFilter.Linear
-            io.Fonts.SetTexID (nativeint _fontTexture.GLTexture)
-            io.Fonts.ClearTexData ()
+            fonts.GetTexDataAsRGBA32 (&pixels, &_fontTextureWidth, &_fontTextureHeight, &bytesPerPixel)
+            _fontTexture <- OpenGL.Texture.CreateTexture (OpenGL.InternalFormat.Rgba32f, _fontTextureWidth, _fontTextureHeight, OpenGL.PixelFormat.Rgba, OpenGL.PixelType.Float, OpenGL.TextureMinFilter.Linear, OpenGL.TextureMagFilter.Linear, false, pixels)
+            fonts.SetTexID (nativeint _fontTexture)
+            fonts.ClearTexData ()
+            OpenGL.Hl.Assert ()
 
         /// Renders the ImGui draw list data.
         /// This method requires a <see cref="GraphicsDevice"/> because it may create new DeviceBuffers if the size of vertex
         /// or index data has increased beyond the capacity of the existing buffers.
         /// A <see cref="CommandList"/> is needed to submit drawing and resource update commands.
-        member this.Render () =
+        member this.Render (drawData : ImDrawDataPtr) =
             if  _frameBegun then
                 _frameBegun <- false
                 ImGui.Render ()
-                this.RenderImDrawData (ImGui.GetDrawData ())
+                this.RenderImDrawData drawData
                 Util.CheckGLError "Imgui Controller"
 
         /// Updates ImGui input and IO configuration state.
@@ -228,33 +226,32 @@ open Nu
 
                 let totalVBSize = uint (draw_data.TotalVtxCount * Unsafe.SizeOf<ImDrawVert>())
                 if totalVBSize > _vertexBufferSize then
-                    let newSize =  int (Math.Max (_vertexBufferSize * 1.5f, totalVBSize))
+                    let newSize = uint (Math.Max (_vertexBufferSize * 2u, totalVBSize))
                     OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, _vertexBuffer)
                     OpenGL.Gl.BufferData (OpenGL.BufferTarget.ArrayBuffer, newSize, nativeint 0, OpenGL.BufferUsage.DynamicDraw)
-                    OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, 0)
+                    OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, 0u)
                     _vertexBufferSize <- newSize
-                    Console.WriteLine $"Resized vertex buffer to new size {_vertexBufferSize}"
+                    OpenGL.Hl.Assert ()
 
-                let totalIBSize = uint (draw_data.TotalIdxCount * sizeof(ushort))
+                let totalIBSize = uint (draw_data.TotalIdxCount * sizeof<uint>)
                 if totalIBSize > _indexBufferSize then
-                    let newSize = int (Math.Max (_indexBufferSize * 1.5f, totalIBSize))
+                    let newSize = uint (Math.Max (_indexBufferSize * 2u, totalIBSize))
                     OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, _indexBuffer)
                     OpenGL.Gl.BufferData (OpenGL.BufferTarget.ArrayBuffer, newSize, nativeint 0, OpenGL.BufferUsage.DynamicDraw)
-                    OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, 0)
+                    OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, 0u)
                     _indexBufferSize <- newSize
-                    Console.WriteLine $"Resized index buffer to new size {_indexBufferSize}"
+                    OpenGL.Hl.Assert ()
 
-
+                let cmdListsRange = draw_data.CmdListsRange
                 for i in 0 .. dec draw_data.CmdListsCount do
-                    let cmd_list = draw_data.CmdListsRange.[i]
+                    let cmd_list = cmdListsRange.[i]
                     OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, _vertexBuffer)
-                    OpenGL.Gl.BufferSubData (OpenGL.BufferTarget.ArrayBuffer, (IntPtr)(vertexOffsetInVertices * Unsafe.SizeOf<ImDrawVert>()), cmd_list.VtxBuffer.Size * Unsafe.SizeOf<ImDrawVert>(), cmd_list.VtxBuffer.Data);
-                    Util.CheckGLError $"Data Vert {i}"
+                    OpenGL.Gl.BufferSubData (OpenGL.BufferTarget.ArrayBuffer, nativeint (vertexOffsetInVertices * Unsafe.SizeOf<ImDrawVert>()), uint (cmd_list.VtxBuffer.Size * Unsafe.SizeOf<ImDrawVert>()), cmd_list.VtxBuffer.Data)
                     OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, _indexBuffer)
-                    OpenGL.Gl.BufferSubData (OpenGL.BufferTarget.ArrayBuffer, (IntPtr)(indexOffsetInElements * sizeof(ushort)), cmd_list.IdxBuffer.Size * sizeof(ushort), cmd_list.IdxBuffer.Data);
-                    Util.CheckGLError $"Data Idx {i}"
-                    vertexOffsetInVertices <- vertexOffsetInVertices + uint cmd_list.VtxBuffer.Size
-                    indexOffsetInElements <- indexOffsetInElements + uint cmd_list.IdxBuffer.Size
+                    OpenGL.Gl.BufferSubData (OpenGL.BufferTarget.ArrayBuffer, nativeint (indexOffsetInElements * sizeof<uint>), uint (cmd_list.IdxBuffer.Size * sizeof<uint>), cmd_list.IdxBuffer.Data)
+                    vertexOffsetInVertices <- vertexOffsetInVertices + cmd_list.VtxBuffer.Size
+                    indexOffsetInElements <- indexOffsetInElements + cmd_list.IdxBuffer.Size
+                    OpenGL.Hl.Assert ()
 
                 OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, 0)
 
