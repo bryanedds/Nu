@@ -13,7 +13,7 @@ open Nu
 /// Describes a mouse button.
 type [<StructuralEquality; StructuralComparison>] MouseButton =
     | MouseLeft
-    | MouseCenter
+    | MouseMiddle
     | MouseRight
     | MouseX1
     | MouseX2
@@ -50,7 +50,7 @@ module internal MouseState =
     let toSdlButton mouseButton =
         match mouseButton with
         | MouseLeft -> SDL.SDL_BUTTON_LEFT
-        | MouseCenter -> SDL.SDL_BUTTON_MIDDLE
+        | MouseMiddle -> SDL.SDL_BUTTON_MIDDLE
         | MouseRight -> SDL.SDL_BUTTON_RIGHT
         | MouseX1 -> SDL.SDL_BUTTON_X1
         | MouseX2 -> SDL.SDL_BUTTON_X2
@@ -59,7 +59,7 @@ module internal MouseState =
     let toNuButton mouseButton =
         match mouseButton with
         | SDL.SDL_BUTTON_LEFT -> MouseLeft
-        | SDL.SDL_BUTTON_MIDDLE -> MouseCenter
+        | SDL.SDL_BUTTON_MIDDLE -> MouseMiddle
         | SDL.SDL_BUTTON_RIGHT -> MouseRight
         | SDL.SDL_BUTTON_X1 -> MouseX1
         | SDL.SDL_BUTTON_X2 -> MouseX2
@@ -136,7 +136,7 @@ module GamepadState =
         let indices = SDL.SDL_NumJoysticks ()
         Joysticks <-
             Array.map (fun joystick ->
-                // NOTE: we don't have a match call to SDL.SDL_JoystickClose, but it may not be necessary
+                // NOTE: we don't have a matching call to SDL.SDL_JoystickClose, but it may not be necessary
                 SDL.SDL_JoystickOpen joystick)
                 [|0 .. indices|]
 
