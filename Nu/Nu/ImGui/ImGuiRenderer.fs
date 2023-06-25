@@ -10,18 +10,18 @@ open Nu
     /// NOTE: code in has a lot of mutability because it's ported from a port of a port...
     type ImGuiRenderer (windowWidth : int, windowHeight : int) =
 
-        do ignore windowWidth
         let mutable vertexArrayObject = 0u
+        let mutable vertexBufferSize = 8192u
         let mutable vertexBuffer = 0u
-        let mutable vertexBufferSize = 10000u
+        let mutable indexBufferSize = 2048u
         let mutable indexBuffer = 0u
-        let mutable indexBufferSize = 2000u
         let mutable shader = 0u
         let mutable shaderProjectionMatrixUniform = 0
         let mutable shaderFontTextureUniform = 0
         let mutable fontTextureWidth = 0
         let mutable fontTextureHeight = 0
         let mutable fontTexture = 0u
+        do ignore windowWidth
 
         member this.Initialize (fonts : ImFontAtlasPtr) =
         
@@ -55,6 +55,7 @@ open Nu
             OpenGL.Hl.Assert ()
 
             // vertex shader code
+            // TODO: let's put this code into a .glsl file and load it from there.
             let vertexStr =
                 [Constants.OpenGl.GlslVersionPragma
                  ""
@@ -112,9 +113,11 @@ open Nu
             OpenGL.Gl.DeleteBuffers [|indexBuffer|]
             OpenGL.Gl.BindVertexArray 0u
             OpenGL.Gl.DeleteVertexArrays [|vertexArrayObject|]
+            OpenGL.Hl.Assert ()
 
             // destroy shader
             OpenGL.Gl.DeleteProgram shader
+            OpenGL.Hl.Assert ()
 
             // destroy font texture
             OpenGL.Gl.DeleteTextures [|fontTexture|]
@@ -189,12 +192,10 @@ open Nu
                         let pcmds = cmds.CmdBuffer
                         let pcmd = pcmds.[cmd]
                         if pcmd.UserCallback = nativeint 0 then
+                            let clip = pcmd.ClipRect
                             OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture0
                             OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, uint pcmd.TextureId)
-                            OpenGL.Hl.Assert ()
-                            let clip = pcmd.ClipRect
-                            OpenGL.Gl.Scissor(int clip.X, windowHeight - int clip.W, int (clip.Z - clip.X), int (clip.W - clip.Y))
-                            OpenGL.Hl.Assert ()
+                            OpenGL.Gl.Scissor (int clip.X, windowHeight - int clip.W, int (clip.Z - clip.X), int (clip.W - clip.Y))
                             OpenGL.Gl.DrawElementsBaseVertex (OpenGL.PrimitiveType.Triangles, int pcmd.ElemCount, OpenGL.DrawElementsType.UnsignedShort, nativeint (indexOffset * sizeof<uint16>), vertexOffset)
                             OpenGL.Hl.Assert ()
                         else raise (NotImplementedException ())
@@ -203,9 +204,11 @@ open Nu
 
                 // teardown shader
                 OpenGL.Gl.UseProgram 0u
+                OpenGL.Hl.Assert ()
 
                 // teardown vao
                 OpenGL.Gl.BindVertexArray 0u
+                OpenGL.Hl.Assert ()
 
                 // teardown state
                 OpenGL.Gl.Disable OpenGL.EnableCap.Blend
