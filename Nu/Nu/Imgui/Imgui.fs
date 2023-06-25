@@ -128,7 +128,7 @@ open Nu
             let mutable height = Unchecked.defaultof<_>
             let mutable bytesPerPixel = Unchecked.defaultof<_>
             io.Fonts.GetTexDataAsRGBA32 (&pixels, &width, &height, &bytesPerPixel)
-            _fontTexture = Texture ("ImGui Text Atlas", width, height, pixels)
+            _fontTexture <- Texture ("ImGui Text Atlas", width, height, pixels)
             _fontTexture.SetMagFilter TextureMagFilter.Linear
             _fontTexture.SetMinFilter TextureMinFilter.Linear
             io.Fonts.SetTexID (nativeint _fontTexture.GLTexture)
