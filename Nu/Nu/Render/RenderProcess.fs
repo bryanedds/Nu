@@ -7,6 +7,8 @@ open System.Collections.Generic
 open System.Numerics
 open System.Threading
 open Prime
+open SDL2
+open ImGuiNET
 open Nu
 
 /// A renderer process that may or may not be threaded.
@@ -14,7 +16,7 @@ type RendererProcess =
     interface
         abstract Started : bool
         abstract Terminated : bool
-        abstract Start : Window option -> unit
+        abstract Start : ImFontAtlasPtr option -> Window option -> unit
         abstract EnqueueMessage3d : RenderMessage3d -> unit
         abstract EnqueueMessage2d : RenderMessage2d -> unit
         abstract ClearMessages : unit -> unit
@@ -28,9 +30,10 @@ type RendererInline () =
 
     let mutable started = false
     let mutable terminated = false
+    let mutable windowOpt = Option<Window>.None
     let mutable messages3d = List ()
     let mutable messages2d = List ()
-    let mutable renderersOpt = Option<Renderer3d * Renderer2d>.None
+    let mutable renderersOpt = Option<Renderer3d * Renderer2d * RendererImGui>.None
 
     interface RendererProcess with
 
@@ -40,7 +43,7 @@ type RendererInline () =
         member this.Terminated =
             terminated
 
-        member this.Start windowOpt =
+        member this.Start fontsOpt windowOpt =
 
             // ensure renderers not already created
             match renderersOpt with
@@ -71,14 +74,22 @@ type RendererInline () =
                     let renderer2d = GlRenderer2d.make window :> Renderer2d
                     OpenGL.Hl.Assert ()
 
+                    // create imgui renderer
+                    let rendererImGui =
+                        match fontsOpt with
+                        | Some fonts -> GlRendererImGui.make fonts :> RendererImGui
+                        | None -> MockRendererImGui.make () :> RendererImGui
+                    OpenGL.Hl.Assert ()
+
                     // fin
-                    renderersOpt <- Some (renderer3d, renderer2d)
+                    renderersOpt <- Some (renderer3d, renderer2d, rendererImGui)
 
                 // create mock renderers
                 | None ->
                     let renderer3d = MockRenderer3d.make () :> Renderer3d
                     let renderer2d = MockRenderer2d.make () :> Renderer2d
-                    renderersOpt <- Some (renderer3d, renderer2d)
+                    let rendererImGui = MockRendererImGui.make () :> RendererImGui
+                    renderersOpt <- Some (renderer3d, renderer2d, rendererImGui)
                     OpenGL.Hl.Assert ()
 
                 // fin
@@ -103,7 +114,7 @@ type RendererInline () =
 
         member this.SubmitMessages skipCulling frustumEnclosed frustumExposed frustumImposter lightBox eyeCenter3d eyeRotation3d eyeCenter2d eyeSize2d windowSize =
             match renderersOpt with
-            | Some (renderer3d, renderer2d) ->
+            | Some (renderer3d, renderer2d, rendererImGui) ->
                 
                 // begin frame
                 let viewportOffset = Constants.Render.ViewportOffset windowSize
@@ -127,15 +138,19 @@ type RendererInline () =
             | None -> raise (InvalidOperationException "Renderers are not yet or are no longer valid.")
 
         member this.Swap () =
-            match renderersOpt with
-            | Some (_, renderer2d) -> renderer2d.Swap ()
-            | None -> raise (InvalidOperationException "Renderers are not yet or are no longer valid.")
+            match windowOpt with
+            | Some window ->
+                match window with
+                | SglWindow window -> SDL.SDL_GL_SwapWindow window.SglWindow
+                | WfglWindow window -> window.Swap ()
+            | None -> ()
 
         member this.Terminate () =
             match renderersOpt with
-            | Some (renderer3d, renderer2d) ->
+            | Some (renderer3d, renderer2d, rendererImGui) ->
                 renderer3d.CleanUp ()
                 renderer2d.CleanUp ()
+                rendererImGui.CleanUp ()
                 renderersOpt <- None
                 terminated <- true
             | None -> raise (InvalidOperationException "Redundant Terminate calls.")
@@ -204,10 +219,10 @@ type RendererThread () =
                     | _ -> ()
                 | _ -> ())
 
-    member private this.Run windowOpt =
+    member private this.Run fontsOpt windowOpt =
 
         // create renderers
-        let (renderer3d, renderer2d) =
+        let (renderer3d, renderer2d, rendererImGui) =
             match windowOpt with
             | Some window ->
                 
@@ -232,14 +247,21 @@ type RendererThread () =
                 let renderer2d = GlRenderer2d.make window :> Renderer2d
                 OpenGL.Hl.Assert ()
 
+                // create imgui renderer
+                let rendererImGui =
+                    match fontsOpt with
+                    | Some fonts -> GlRendererImGui.make fonts :> RendererImGui
+                    | None -> MockRendererImGui.make () :> RendererImGui
+
                 // fin
-                (renderer3d, renderer2d)
+                (renderer3d, renderer2d, rendererImGui)
 
             // create mock renderers
             | None ->
                 let renderer3d = MockRenderer3d.make () :> Renderer3d
                 let renderer2d = MockRenderer2d.make () :> Renderer2d
-                (renderer3d, renderer2d)
+                let rendererImGui = MockRendererImGui.make () :> RendererImGui
+                (renderer3d, renderer2d, rendererImGui)
 
         // mark as started
         started <- true
@@ -286,8 +308,13 @@ type RendererThread () =
                 // guard against early termination
                 if not terminated then
 
-                    // swap
-                    renderer2d.Swap ()
+                    // attempt to swap
+                    match windowOpt with
+                    | Some window ->
+                        match window with
+                        | SglWindow window -> SDL.SDL_GL_SwapWindow window.SglWindow
+                        | WfglWindow window -> window.Swap ()
+                    | None -> ()
 
                     // complete swap request
                     swap <- false
@@ -303,13 +330,13 @@ type RendererThread () =
         member this.Terminated =
             terminated
 
-        member this.Start window =
+        member this.Start fontsOpt windowOpt =
 
             // validate state
             if Option.isSome threadOpt then raise (InvalidOperationException "Render process already started.")
 
             // start thread
-            let thread = Thread (ThreadStart (fun () -> this.Run window))
+            let thread = Thread (ThreadStart (fun () -> this.Run fontsOpt windowOpt))
             threadOpt <- Some thread
             thread.Priority <- ThreadPriority.Highest
             thread.IsBackground <- true

@@ -553,7 +553,7 @@ module WorldModule3 =
             let physicsEngine2d = MockPhysicsEngine.make ()
             let physicsEngine3d = MockPhysicsEngine.make ()
             let rendererProcess = RendererInline () :> RendererProcess
-            rendererProcess.Start None // None implicates mock renderers
+            rendererProcess.Start None None // params implicate mock renderers
             let audioPlayer = MockAudioPlayer.make ()
 
             // make the world's scripting environment
@@ -650,7 +650,7 @@ module WorldModule3 =
                 let physicsEngine2d = AetherPhysicsEngine.make config.Imperative Constants.Physics.Gravity2dDefault
                 let physicsEngine3d = BulletPhysicsEngine.make config.Imperative Constants.Physics.Gravity3dDefault staticModelsMetadata
                 let rendererProcess = RendererThread () :> RendererProcess
-                rendererProcess.Start (SdlDeps.getWindowOpt sdlDeps)
+                rendererProcess.Start None (SdlDeps.getWindowOpt sdlDeps) // TODO: pass in imgui fonts.
                 rendererProcess.EnqueueMessage2d (LoadRenderPackage2d Assets.Default.PackageName) // enqueue default package hint
                 let audioPlayer =
                     if SDL.SDL_WasInit SDL.SDL_INIT_AUDIO <> 0u
