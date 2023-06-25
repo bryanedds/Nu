@@ -58,6 +58,7 @@
 		<Compile Include="OpenGL\OpenGL.SkyBox.fs" />
 		<Compile Include="OpenGL\OpenGL.PhysicallyBased.fs" />
 		<Compile Include="OpenGL\OpenGL.SpriteBatch.fs" />
+		<Compile Include="Imgui\Imgui.fs" />
 		<Compile Include="Sdl\SdlInputBindings.fs" />
 		<Compile Include="Sdl\SdlInput.fs" />
 		<Compile Include="Sdl\Sdl.fs" />
@@ -214,6 +215,7 @@
 		<PackageReference Include="Csv" Version="1.0.58" />
 		<PackageReference Include="FParsec" Version="1.0.3" />
 		<PackageReference Include="Aether.Physics2D" Version="1.5.0" />
+		<PackageReference Include="ImGui.NET" Version="1.89.5.2" />
 		<PackageReference Include="Magick.NET-Q8-AnyCPU" Version="7.5.0.1" />
 		<PackageReference Include="Nito.Collections.Deque" Version="1.1.0" />
 		<PackageReference Include="Prime" Version="9.7.0" />
