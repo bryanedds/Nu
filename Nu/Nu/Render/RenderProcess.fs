@@ -399,7 +399,6 @@ type RendererThread () =
 
         member this.SubmitMessages skipCulling frustumEnclosed frustumExposed frustumImposter lightBox eyeCenter3d eyeRotation3d eyeCenter2d eyeSize2d eyeMargin drawData =
             if Option.isNone threadOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
-            while swap do Thread.Yield () |> ignore<bool>
             let messages3d = messageBuffers3d.[messageBufferIndex]
             let messages2d = messageBuffers2d.[messageBufferIndex]
             messageBufferIndex <- if messageBufferIndex = 0 then 1 else 0
@@ -409,7 +408,6 @@ type RendererThread () =
 
         member this.Swap () =
             if Option.isNone threadOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
-            if swap then raise (InvalidOperationException "Redundant Swap calls.")
             swap <- true
             while swap do Thread.Yield () |> ignore<bool>
 
