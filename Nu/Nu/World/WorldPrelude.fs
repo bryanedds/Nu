@@ -137,7 +137,7 @@ type [<ReferenceEquality>] ReplaceProperty =
 type [<ReferenceEquality>] OverlayViewport =
     { ViewportBounds : Box2 }
 
-/// Specifies the aspect of simulatant editing to perform.
+/// Specifies an aspect of simulant editing to perform.
 type [<ReferenceEquality>] EditOperation =
     | AppendProperties
     | ReplaceProperty of ReplaceProperty
