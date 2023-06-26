@@ -73,7 +73,7 @@ type GlRendererImGui (windowWidth : int, windowHeight : int) =
             OpenGL.Gl.EnableVertexAttribArray 1u
             OpenGL.Gl.VertexAttribPointer (1u, 2, OpenGL.VertexAttribPointerType.Float, false, stride, 8)
             OpenGL.Gl.EnableVertexAttribArray 2u
-            OpenGL.Gl.VertexAttribPointer (2u, 4, OpenGL.VertexAttribPointerType.UnsignedShort, true, stride, 16)
+            OpenGL.Gl.VertexAttribPointer (2u, 4, OpenGL.VertexAttribPointerType.UnsignedByte, true, stride, 16)
             OpenGL.Hl.Assert ()
 
             // finalize vao
@@ -218,7 +218,6 @@ type GlRendererImGui (windowWidth : int, windowHeight : int) =
                 OpenGL.Hl.Assert ()
 
                 // teardown state
-                // TODO: make sure this is enough to put gl back into its default state!
                 OpenGL.Gl.BlendEquation OpenGL.BlendEquationMode.FuncAdd
                 OpenGL.Gl.BlendFunc (OpenGL.BlendingFactor.One, OpenGL.BlendingFactor.Zero)
                 OpenGL.Gl.Disable OpenGL.EnableCap.Blend
