@@ -271,6 +271,10 @@ and GameDispatcher () =
     abstract TrySynchronize : bool * Game * World -> World
     default this.TrySynchronize (_, _, world) = world
 
+    /// Participate in defining additional editing behavior for an entity via the ImGui API.
+    abstract Edit : Game * World -> World
+    default this.Edit (_, world) = world
+
 /// The default dispatcher for screens.
 and ScreenDispatcher () =
     inherit SimulantDispatcher ()
@@ -311,6 +315,10 @@ and ScreenDispatcher () =
     abstract TrySynchronize : bool * Screen * World -> World
     default this.TrySynchronize (_, _, world) = world
 
+    /// Participate in defining additional editing behavior for an entity via the ImGui API.
+    abstract Edit : Screen * World -> World
+    default this.Edit (_, world) = world
+
 /// The default dispatcher for groups.
 and GroupDispatcher () =
     inherit SimulantDispatcher ()
@@ -350,6 +358,10 @@ and GroupDispatcher () =
     /// Attempt to synchronize the content of a group.
     abstract TrySynchronize : bool * Group * World -> World
     default this.TrySynchronize (_, _, world) = world
+
+    /// Participate in defining additional editing behavior for an entity via the ImGui API.
+    abstract Edit : Group * World -> World
+    default this.Edit (_, world) = world
 
 /// The default dispatcher for entities.
 and EntityDispatcher (is2d, isGui : bool, centered, physical) =
@@ -449,6 +461,10 @@ and EntityDispatcher (is2d, isGui : bool, centered, physical) =
     abstract TryGetHighlightBounds : Entity * World -> Box3 option
     default this.TryGetHighlightBounds (_, _) = None
 
+    /// Participate in defining additional editing behavior for an entity via the ImGui API.
+    abstract Edit : Entity * World -> World
+    default this.Edit (_, world) = world
+
     /// Whether the dispatcher participates directly in a physics system (not counting its facets).
     member this.Physical = physical
 
@@ -517,6 +533,10 @@ and Facet (physical) =
         if WorldTypes.getEntityIs2d entity world
         then Constants.Engine.EntitySize2dDefault
         else Constants.Engine.EntitySize3dDefault
+
+    /// Participate in defining additional editing behavior for an entity via the ImGui API.
+    abstract Edit : Entity * World -> World
+    default this.Edit (_, world) = world
 
     /// Whether a facet participates in a physics system.
     member this.Physical = physical
@@ -660,7 +680,7 @@ and [<ReferenceEquality>] EntityContent =
 /// Generalized interface for simulant state.
 and SimulantState =
     interface
-        abstract member GetXtension : unit -> Xtension
+        abstract GetXtension : unit -> Xtension
         end
 
 /// Hosts the ongoing state of a game.
