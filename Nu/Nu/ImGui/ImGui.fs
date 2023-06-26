@@ -6,8 +6,9 @@ open ImGuiNET
 open Nu
 
 /// Wraps ImGui context, state, and calls.
+/// TODO: Make ImGui a mockable interface.
 /// NOTE: API is object-oriented / mutation-based because it's ported from a port of a port.
-type ImGui (windowWidth : int, windowHeight : int) as this =
+type ImGui (windowWidth : int, windowHeight : int) =
 
     let charsPressed =
         List<char> ()
@@ -25,12 +26,9 @@ type ImGui (windowWidth : int, windowHeight : int) as this =
         // make context current
         ImGui.SetCurrentContext context
 
-        // configure the imgui backend to presume the use of vertex offsets
-        let io = ImGui.GetIO ()
-        io.BackendFlags <- io.BackendFlags ||| ImGuiBackendFlags.RendererHasVtxOffset
-
         // configure key mappings
         // NOTE: I'm not sure this is necessary...
+        let io = ImGui.GetIO ()
         let keyMap = io.KeyMap
         keyMap.[int ImGuiKey.Tab] <- int KeyboardKey.Tab
         keyMap.[int ImGuiKey.LeftArrow] <- int KeyboardKey.Left
@@ -52,13 +50,19 @@ type ImGui (windowWidth : int, windowHeight : int) as this =
         keyMap.[int ImGuiKey.Y] <- int KeyboardKey.Y
         keyMap.[int ImGuiKey.Z] <- int KeyboardKey.Z
 
+        // configure the imgui backend to presume the use of vertex offsets
+        io.BackendFlags <- io.BackendFlags ||| ImGuiBackendFlags.RendererHasVtxOffset
+
+        // configure initial display size
+        io.DisplaySize <- v2 (single windowWidth) (single windowHeight)
+
         // add default font
         let fonts = io.Fonts
-        fonts.AddFontDefault () |> ignore
+        fonts.AddFontDefault () |> ignore<ImFontPtr>
 
-        // start the initial imgui frame
-        this.EndFrame 0.01f // TODO: see if we can pass 0.0f or even remove this line entirely.
-        this.BeginFrame ()
+    member this.Fonts =
+        let io = ImGui.GetIO ()
+        io.Fonts
 
     member this.BeginFrame () =
         ImGui.NewFrame ()

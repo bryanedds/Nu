@@ -1411,8 +1411,10 @@ and [<ReferenceEquality>] Dispatchers =
       RebuildOctree : World -> Entity Octree }
 
 /// The subsystems contained by the engine.
+/// TODO: Make ImGui a mockable interface.
 and [<ReferenceEquality>] internal Subsystems =
-    { PhysicsEngine2d : PhysicsEngine
+    { ImGui : ImGui
+      PhysicsEngine2d : PhysicsEngine
       PhysicsEngine3d : PhysicsEngine
       RendererProcess : RendererProcess
       AudioPlayer : AudioPlayer }
