@@ -297,7 +297,7 @@ type RendererThread () =
                 freeSpriteMessages messages2d
                 OpenGL.Hl.Assert ()
             
-                // recover imgui
+                // render imgui
                 rendererImGui.Render drawData
                 OpenGL.Hl.Assert ()
 
