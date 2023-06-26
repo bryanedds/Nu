@@ -1267,7 +1267,7 @@ module WorldModule2 =
                                                                         | DynamicFrameRate (Some frameRate) -> 1.0 / double frameRate - frameTimeSlop
                                                                         | DynamicFrameRate None -> Constants.GameTime.DesiredFrameTimeMinimum - frameTimeSlop
                                                                     while let e = FrameTimer.Elapsed in e.TotalSeconds < frameTimeMinimum do
-                                                                        Thread.Yield () |> ignore<bool> // use Yield rather than Sleep for better precision
+                                                                        Thread.Yield () |> ignore<bool>
                                                                 FrameTimer.Restart ()
 
                                                                 // process rendering (2/2)
