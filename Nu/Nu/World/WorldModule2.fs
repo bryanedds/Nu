@@ -1417,8 +1417,8 @@ module EntityDispatcherModule2 =
         default this.View (_, _, _) = View.empty
 
         /// Implements additional editing behavior for an entity via the ImGui API.
-        abstract Edit : 'model * Entity * World -> Signal list * 'model
-        default this.Edit (model, _, _) = just model
+        abstract Edit : 'model * EditOperation * Entity * World -> Signal list * 'model
+        default this.Edit (model, _, _, _) = just model
 
     and [<AbstractClass>] EntityDispatcher2d<'model, 'message, 'command when 'message :> Message and 'command :> Command> (centered, physical, makeInitial : World -> 'model) =
         inherit EntityDispatcher<'model, 'message, 'command> (true, false, centered, physical, makeInitial)
@@ -1561,8 +1561,8 @@ module GroupDispatcherModule =
         default this.View (_, _, _) = View.empty
 
         /// Implements additional editing behavior for a group via the ImGui API.
-        abstract Edit : 'model * Group * World -> Signal list * 'model
-        default this.Edit (model, _, _) = just model
+        abstract Edit : 'model * EditOperation * Group * World -> Signal list * 'model
+        default this.Edit (model, _, _, _) = just model
 
 [<AutoOpen>]
 module ScreenDispatcherModule =
@@ -1651,8 +1651,8 @@ module ScreenDispatcherModule =
         default this.View (_, _, _) = View.empty
 
         /// Implements additional editing behavior for a screen via the ImGui API.
-        abstract Edit : 'model * Screen * World -> Signal list * 'model
-        default this.Edit (model, _, _) = just model
+        abstract Edit : 'model * EditOperation * Screen * World -> Signal list * 'model
+        default this.Edit (model, _, _, _) = just model
 
 [<AutoOpen>]
 module GameDispatcherModule =
@@ -1742,8 +1742,8 @@ module GameDispatcherModule =
         default this.View (_, _, _) = View.empty
 
         /// Implements additional editing behavior for a game via the ImGui API.
-        abstract Edit : 'model * Game * World -> Signal list * 'model
-        default this.Edit (model, _, _) = just model
+        abstract Edit : 'model * EditOperation * Game * World -> Signal list * 'model
+        default this.Edit (model, _, _, _) = just model
 
 [<AutoOpen>]
 module WorldModule2' =

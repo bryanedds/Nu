@@ -223,6 +223,7 @@ and [<CustomEquality; CustomComparison>] SortPriority =
             | _ -> failwithumf ()
 
 /// Generalized interface tag for late-bound objects.
+/// TODO: consider renaming this to LateBound.
 and LateBindings = interface end
 
 /// Generalized interface tag for dispatchers.
@@ -272,8 +273,8 @@ and GameDispatcher () =
     default this.TrySynchronize (_, _, world) = world
 
     /// Participate in defining additional editing behavior for an entity via the ImGui API.
-    abstract Edit : Game * World -> World
-    default this.Edit (_, world) = world
+    abstract Edit : EditOperation * Game * World -> World
+    default this.Edit (_, _, world) = world
 
 /// The default dispatcher for screens.
 and ScreenDispatcher () =
@@ -316,8 +317,8 @@ and ScreenDispatcher () =
     default this.TrySynchronize (_, _, world) = world
 
     /// Participate in defining additional editing behavior for an entity via the ImGui API.
-    abstract Edit : Screen * World -> World
-    default this.Edit (_, world) = world
+    abstract Edit : EditOperation * Screen * World -> World
+    default this.Edit (_, _, world) = world
 
 /// The default dispatcher for groups.
 and GroupDispatcher () =
@@ -360,8 +361,8 @@ and GroupDispatcher () =
     default this.TrySynchronize (_, _, world) = world
 
     /// Participate in defining additional editing behavior for an entity via the ImGui API.
-    abstract Edit : Group * World -> World
-    default this.Edit (_, world) = world
+    abstract Edit : EditOperation * Group * World -> World
+    default this.Edit (_, _, world) = world
 
 /// The default dispatcher for entities.
 and EntityDispatcher (is2d, isGui : bool, centered, physical) =
@@ -462,8 +463,8 @@ and EntityDispatcher (is2d, isGui : bool, centered, physical) =
     default this.TryGetHighlightBounds (_, _) = None
 
     /// Participate in defining additional editing behavior for an entity via the ImGui API.
-    abstract Edit : Entity * World -> World
-    default this.Edit (_, world) = world
+    abstract Edit : EditOperation * Entity * World -> World
+    default this.Edit (_, _, world) = world
 
     /// Whether the dispatcher participates directly in a physics system (not counting its facets).
     member this.Physical = physical
@@ -535,8 +536,8 @@ and Facet (physical) =
         else Constants.Engine.EntitySize3dDefault
 
     /// Participate in defining additional editing behavior for an entity via the ImGui API.
-    abstract Edit : Entity * World -> World
-    default this.Edit (_, world) = world
+    abstract Edit : EditOperation * Entity * World -> World
+    default this.Edit (_, _, world) = world
 
     /// Whether a facet participates in a physics system.
     member this.Physical = physical
