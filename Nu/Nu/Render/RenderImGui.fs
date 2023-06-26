@@ -127,7 +127,7 @@ type GlRendererImGui (windowWidth : int, windowHeight : int) =
             let mutable pixels = Unchecked.defaultof<nativeint>
             let mutable bytesPerPixel = Unchecked.defaultof<_>
             fonts.GetTexDataAsRGBA32 (&pixels, &fontTextureWidth, &fontTextureHeight, &bytesPerPixel)
-            fontTexture <- OpenGL.Texture.CreateTexture (OpenGL.InternalFormat.Rgba32f, fontTextureWidth, fontTextureHeight, OpenGL.PixelFormat.Rgba, OpenGL.PixelType.Float, OpenGL.TextureMinFilter.Linear, OpenGL.TextureMagFilter.Linear, false, pixels)
+            fontTexture <- OpenGL.Texture.CreateTexture (OpenGL.InternalFormat.Rgba8, fontTextureWidth, fontTextureHeight, OpenGL.PixelFormat.Bgra, OpenGL.PixelType.UnsignedByte, OpenGL.TextureMinFilter.Nearest, OpenGL.TextureMagFilter.Nearest, false, pixels)
             fonts.SetTexID (nativeint fontTexture)
             fonts.ClearTexData ()
 
