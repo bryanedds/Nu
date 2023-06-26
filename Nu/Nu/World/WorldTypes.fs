@@ -1596,6 +1596,10 @@ and [<AbstractClass>] NuPlugin () =
     abstract PostProcess : World -> World
     default this.PostProcess world = world
 
+    /// A call-back for imgui processing based on the optional mode string.
+    abstract ImGuiProcess : World -> World
+    default this.ImGuiProcess world = world
+
     /// Birth facets / dispatchers of type 'a from plugin.
     member internal this.Birth<'a> assemblies =
         Array.map (fun (assembly : Assembly) ->

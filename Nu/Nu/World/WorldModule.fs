@@ -843,6 +843,9 @@ module WorldModule =
         static member internal postProcess world =
             world.WorldExtension.Plugin.PostProcess world
 
+        static member internal imGuiProcess world =
+            world.WorldExtension.Plugin.ImGuiProcess world
+
     type World with // Debugging
 
         /// View the member properties of some SimulantState.

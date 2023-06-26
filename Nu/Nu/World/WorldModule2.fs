@@ -1149,8 +1149,9 @@ module WorldModule2 =
             TotalTimer.Start ()
             if runWhile world then
 
-                // run user-defined pre-process callback
+                // run user-defined pre-process callbacks
                 PreProcessTimer.Start ()
+                let world = World.preProcess world
                 let world = preProcess world
                 PreProcessTimer.Stop ()
                 match liveness with
@@ -1196,8 +1197,9 @@ module WorldModule2 =
                                         match World.getLiveness world with
                                         | Live ->
 
-                                            // run user-defined per-process callback
+                                            // run user-defined per-process callbacks
                                             PerProcessTimer.Start ()
+                                            let world = World.perProcess world
                                             let world = perProcess world
                                             PerProcessTimer.Stop ()
                                             match World.getLiveness world with
@@ -1218,7 +1220,7 @@ module WorldModule2 =
                                                     match World.getLiveness world with
                                                     | Live ->
                                                     
-                                                        // run engine and user-defined per-process callback
+                                                        // run engine and user-defined per-process callbacks
                                                         PostProcessTimer.Start ()
                                                         let world = World.postProcess world
                                                         let world = postProcess world
@@ -1254,6 +1256,7 @@ module WorldModule2 =
                                                                 let imGui = World.getImGui world
                                                                 if not firstFrame then imGui.EndFrame (World.getClockDelta world)
                                                                 imGui.BeginFrame ()
+                                                                let world = World.imGuiProcess world
                                                                 imGui.InputFrame ()
                                                                 let drawData = imGui.RenderFrame ()
 
