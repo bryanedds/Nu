@@ -1252,11 +1252,10 @@ module WorldModule2 =
 
                                                                 // process imgui frame
                                                                 let imGui = World.getImGui world
-                                                                if firstFrame then imGui.BeginFrame ()
+                                                                if not firstFrame then imGui.EndFrame (World.getClockDelta world)
+                                                                imGui.BeginFrame ()
                                                                 imGui.InputFrame ()
                                                                 let drawData = imGui.RenderFrame ()
-                                                                imGui.EndFrame (World.getClockDelta world)
-                                                                imGui.BeginFrame ()
 
                                                                 // avoid updating faster than desired FPS
                                                                 if FrameTimer.IsRunning then
