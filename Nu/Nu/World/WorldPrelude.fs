@@ -131,7 +131,7 @@ type [<ReferenceEquality>] 'w Tasklet =
 /// replaced using a mutable flag which defaults to false (not replaced).
 type [<ReferenceEquality>] ReplaceProperty =
     { Property : Property
-      mutable PropertyReplaced : bool }
+      mutable Replaced : bool }
 
 /// Details the additional editing behavior for a simulant in a viewport.
 type [<ReferenceEquality>] OverlayViewport =
