@@ -661,6 +661,8 @@ module WorldModule2 =
                 | SDL.SDL_EventType.SDL_KEYDOWN ->
                     let keyboard = evt.key
                     let key = keyboard.keysym
+                    let sym = char key.sym
+                    if sym >= char 33 && sym <= char 126 then (World.getImGui world).HandleKeyChar sym // submit to imgui
                     let eventData = { KeyboardKey = key.scancode |> int |> enum<KeyboardKey>; Repeated = keyboard.repeat <> byte 0; Down = true }
                     let eventTrace = EventTrace.debug "World" "processInput" "KeyboardKeyDown" EventTrace.empty
                     let world = World.publishPlus eventData Events.KeyboardKeyDown eventTrace Simulants.Game true true world
@@ -1141,7 +1143,7 @@ module WorldModule2 =
             World.cleanUpSubsystems world |> ignore
 
         /// Run the game engine with the given handlers, but don't clean up at the end, and return the world.
-        static member runWithoutCleanUp runWhile preProcess perProcess postProcess (sdlDeps : SdlDeps) liveness firstFrame world =
+        static member runWithoutCleanUp runWhile preProcess perProcess postProcess liveness firstFrame world =
 
             // run loop if user-defined run-while predicate passes
             TotalTimer.Start ()
@@ -1248,6 +1250,14 @@ module WorldModule2 =
                                                                 let rendererProcess = World.getRendererProcess world
                                                                 if not firstFrame then rendererProcess.Swap ()
 
+                                                                // process imgui frame
+                                                                let imGui = World.getImGui world
+                                                                if firstFrame then imGui.BeginFrame ()
+                                                                imGui.InputFrame ()
+                                                                let drawData = imGui.RenderFrame ()
+                                                                imGui.EndFrame (World.getClockDelta world)
+                                                                imGui.BeginFrame ()
+
                                                                 // avoid updating faster than desired FPS
                                                                 if FrameTimer.IsRunning then
                                                                     let frameTimeSlop =
@@ -1273,12 +1283,13 @@ module WorldModule2 =
                                                                     (World.getEyeCenter2d world)
                                                                     (World.getEyeSize2d world)
                                                                     (World.getWindowSize world)
+                                                                    drawData
 
                                                                 // update time and recur
                                                                 TotalTimer.Stop ()
                                                                 let world = World.updateTime world
                                                                 WorldModule.TaskletProcessingStarted <- false
-                                                                World.runWithoutCleanUp runWhile preProcess perProcess postProcess sdlDeps liveness false world
+                                                                World.runWithoutCleanUp runWhile preProcess perProcess postProcess liveness false world
 
                                                             // fin
                                                             | Dead -> world
@@ -1295,9 +1306,9 @@ module WorldModule2 =
                 | Dead -> world
             else world
 
-        /// Run the game engine using the given dependencies and returning exit code upon termination.
-        static member run3 (sdlDeps : SdlDeps) liveness world =
-            try let world = World.runWithoutCleanUp tautology id id id sdlDeps liveness true world
+        /// Run the game engine using the given world and returning exit code upon termination.
+        static member runWithCleanUp liveness world =
+            try let world = World.runWithoutCleanUp tautology id id id liveness true world
                 World.cleanUp world
                 Constants.Engine.ExitCodeSuccess
             with exn ->

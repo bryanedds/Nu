@@ -108,6 +108,7 @@
 		<Compile Include="World\WorldPhysics.fs" />
 		<Compile Include="World\WorldRender.fs" />
 		<Compile Include="World\WorldAudio.fs" />
+		<Compile Include="World\WorldImGui.fs" />
 		<Compile Include="World\WorldTmxMap.fs" />
 		<Compile Include="World\WorldView.fs" />
 		<Compile Include="World\WorldEffects.fs" />

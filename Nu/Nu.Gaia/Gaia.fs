@@ -1854,13 +1854,13 @@ module Gaia =
         Application.DoEvents ()
         world
 
-    let rec private tryRun sdlDeps (form : GaiaForm) =
+    let rec private tryRun (form : GaiaForm) =
         try World.runWithoutCleanUp
                 tautology
                 (fun world -> let world = preUpdateEditorWorld form world in (Globals.World <- world; world))
                 (fun world -> let world = perUpdateEditorWorld form world in (Globals.World <- world; world))
                 (fun world -> let world = postUpdateEditorWorld form world in (Globals.World <- world; world))
-                sdlDeps Live true Globals.World |>
+                Live true Globals.World |>
                 ignore
         with exn ->
             match MessageBox.Show
@@ -1871,7 +1871,7 @@ module Gaia =
             | DialogResult.Yes ->
                 form.undoToolStripMenuItem.PerformClick ()
                 Globals.World <- World.choose Globals.World
-                tryRun sdlDeps form
+                tryRun form
             | _ -> Globals.World <- World.choose Globals.World
 
     let private refreshCreateContextMenuItemChildren atMouse inHierarchy (createContextMenuItem : ToolStripMenuItem) (form : GaiaForm) world =
@@ -1884,7 +1884,7 @@ module Gaia =
             let item = createContextMenuItem.DropDownItems.Add dispatcherName
             item.Click.Add (handleFormCreateEntity atMouse inHierarchy (Some dispatcherName) form)
 
-    let private run4 editModeOpt sdlDeps screen (form : GaiaForm) =
+    let private run3 editModeOpt screen (form : GaiaForm) =
         Globals.World <- World.subscribe (handleNuMouseRightDown form) Events.MouseRightDown Simulants.Game Globals.World
         Globals.World <- World.subscribe (handleNuEntityDragBegin form) Events.MouseLeftDown Simulants.Game Globals.World
         Globals.World <- World.subscribe (handleNuEntityDragEnd form) Events.MouseLeftUp Simulants.Game Globals.World
@@ -1918,7 +1918,7 @@ module Gaia =
                 let key = lParam |> Marshal.ReadInt32 |> enum<Keys>
                 handleKeyboardInput key form Globals.World
             GaiaForm.CallNextHookEx (form.HookId, nCode, wParam, lParam)) |> ignore
-        tryRun sdlDeps (form : GaiaForm)
+        tryRun (form : GaiaForm)
 
     /// Attempt to select a target directory for the desired plugin and its assets from the give file path.
     let trySelectTargetDirAndMakeNuPluginFromFilePathOpt filePathOpt =
@@ -2211,7 +2211,7 @@ module Gaia =
                 targetDir <- targetDir'
                 selectedScreen <- screen
                 selectedGroup <- Nu.World.getGroups screen world |> Seq.head
-                let _ = run4 savedState.EditModeOpt sdlDeps screen form
+                let _ = run3 savedState.EditModeOpt screen form
                 Constants.Engine.ExitCodeSuccess
             | Left error -> Log.trace error; Constants.Engine.ExitCodeFailure
         | Left error -> Log.trace error; Constants.Engine.ExitCodeFailure

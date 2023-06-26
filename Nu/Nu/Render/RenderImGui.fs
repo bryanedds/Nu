@@ -58,11 +58,13 @@ type GlRendererImGui (windowWidth : int, windowHeight : int) =
             vertexBuffer <- OpenGL.Gl.GenBuffer ()
             OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, vertexBuffer)
             OpenGL.Gl.BufferData (OpenGL.BufferTarget.ArrayBuffer, vertexBufferSize, nativeint 0, OpenGL.BufferUsage.DynamicDraw)
+            OpenGL.Hl.Assert ()
 
             // create index buffer
             indexBuffer <- OpenGL.Gl.GenBuffer ()
             OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ElementArrayBuffer, indexBuffer)
             OpenGL.Gl.BufferData (OpenGL.BufferTarget.ElementArrayBuffer, indexBufferSize, nativeint 0, OpenGL.BufferUsage.DynamicDraw)
+            OpenGL.Hl.Assert ()
 
             // configure vao
             let stride = Unsafe.SizeOf<ImDrawVert> ()
