@@ -7,7 +7,7 @@ open System
 /// A participant in the event graph.
 type Simulant =
     interface
-        abstract member SimulantAddress : Simulant Address
+        abstract SimulantAddress : Simulant Address
         end
 
 [<AutoOpen>]

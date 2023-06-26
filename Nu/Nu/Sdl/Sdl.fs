@@ -14,10 +14,10 @@ type [<ReferenceEquality>] SglWindow =
 /// An interface for specifying a Windows Forms control that uses OpenGL.
 type WfglWindow =
     interface
-        abstract member CreateSdlWindowFrom : unit -> unit
-        abstract member CreateWfglContext : unit -> unit
-        abstract member Swap : unit -> unit
-        abstract member CleanUp : unit -> unit
+        abstract CreateSdlWindowFrom : unit -> unit
+        abstract CreateWfglContext : unit -> unit
+        abstract Swap : unit -> unit
+        abstract CleanUp : unit -> unit
         end
 
 /// A window for rendering.

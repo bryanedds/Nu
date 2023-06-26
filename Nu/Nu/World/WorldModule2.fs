@@ -1393,28 +1393,32 @@ module EntityDispatcherModule2 =
             World.setEntityContent content entity world
 
         /// Initialize the game's own content.
-        abstract member Initialize : 'model * Entity -> InitializerContent list
+        abstract Initialize : 'model * Entity -> InitializerContent list
         default this.Initialize (_, _) = []
 
         /// The physics synchronization handler for the elmish / MMCC programming model.
-        abstract member Physics : Vector3 * Quaternion * Vector3 * Vector3 * 'model * Entity * World -> Signal list * 'model
+        abstract Physics : Vector3 * Quaternion * Vector3 * Vector3 * 'model * Entity * World -> Signal list * 'model
         default this.Physics (_, _, _, _, model, _, _) = just model
 
         /// The message handler of the elmish / MMCC programming model.
-        abstract member Message : 'model * 'message * Entity * World -> Signal list * 'model
+        abstract Message : 'model * 'message * Entity * World -> Signal list * 'model
         default this.Message (model, _, _, _) = just model
 
         /// The command handler of the elmish / MMCC programming model.
-        abstract member Command : 'model * 'command * Entity * World -> Signal list * World
+        abstract Command : 'model * 'command * Entity * World -> Signal list * World
         default this.Command (_, _, _, world) = just world
 
         /// The content specifier of the elmish / MMCC programming model.
-        abstract member Content : 'model * Entity -> EntityContent list
+        abstract Content : 'model * Entity -> EntityContent list
         default this.Content (_, _) = []
 
         /// Describes how the entity is to be viewed using the View API.
-        abstract member View : 'model * Entity * World -> View
+        abstract View : 'model * Entity * World -> View
         default this.View (_, _, _) = View.empty
+
+        /// Implements additional editing behavior for an entity via the ImGui API.
+        abstract Edit : 'model * Entity * World -> Signal list * 'model
+        default this.Edit (model, _, _) = just model
 
     and [<AbstractClass>] EntityDispatcher2d<'model, 'message, 'command when 'message :> Message and 'command :> Command> (centered, physical, makeInitial : World -> 'model) =
         inherit EntityDispatcher<'model, 'message, 'command> (true, false, centered, physical, makeInitial)
@@ -1537,24 +1541,28 @@ module GroupDispatcherModule =
             World.setGroupContent content group world
 
         /// Initialize the group's own content.
-        abstract member Initialize : 'model * Group -> InitializerContent list
+        abstract Initialize : 'model * Group -> InitializerContent list
         default this.Initialize (_, _) = []
 
         /// The message handler of the elmish / MMCC programming model.
-        abstract member Message : 'model * 'message * Group * World -> Signal list * 'model
+        abstract Message : 'model * 'message * Group * World -> Signal list * 'model
         default this.Message (model, _, _, _) = just model
 
         /// The command handler of the elmish / MMCC programming model.
-        abstract member Command : 'model * 'command * Group * World -> Signal list * World
+        abstract Command : 'model * 'command * Group * World -> Signal list * World
         default this.Command (_, _, _, world) = just world
 
         /// The content specifier of the elmish / MMCC programming model.
-        abstract member Content : 'model * Group -> EntityContent list
+        abstract Content : 'model * Group -> EntityContent list
         default this.Content (_, _) = []
 
         /// Describes how the group is to be viewed using the View API.
-        abstract member View : 'model * Group * World -> View
+        abstract View : 'model * Group * World -> View
         default this.View (_, _, _) = View.empty
+
+        /// Implements additional editing behavior for a group via the ImGui API.
+        abstract Edit : 'model * Group * World -> Signal list * 'model
+        default this.Edit (model, _, _) = just model
 
 [<AutoOpen>]
 module ScreenDispatcherModule =
@@ -1623,24 +1631,28 @@ module ScreenDispatcherModule =
             World.setScreenContent content screen world
 
         /// Initialize the screen's own content.
-        abstract member Initialize : 'model * Screen -> InitializerContent list
+        abstract Initialize : 'model * Screen -> InitializerContent list
         default this.Initialize (_, _) = []
 
         /// The message handler of the elmish / MMCC programming model.
-        abstract member Message : 'model * 'message * Screen * World -> Signal list * 'model
+        abstract Message : 'model * 'message * Screen * World -> Signal list * 'model
         default this.Message (model, _, _, _) = just model
 
         /// The command handler of the elmish / MMCC programming model.
-        abstract member Command : 'model * 'command * Screen * World -> Signal list * World
+        abstract Command : 'model * 'command * Screen * World -> Signal list * World
         default this.Command (_, _, _, world) = just world
 
         /// The content specifier of the elmish / MMCC programming model.
-        abstract member Content : 'model * Screen -> GroupContent list
+        abstract Content : 'model * Screen -> GroupContent list
         default this.Content (_, _) = []
 
         /// Describes how the screen is to be viewed using the View API.
-        abstract member View : 'model * Screen * World -> View
+        abstract View : 'model * Screen * World -> View
         default this.View (_, _, _) = View.empty
+
+        /// Implements additional editing behavior for a screen via the ImGui API.
+        abstract Edit : 'model * Screen * World -> Signal list * 'model
+        default this.Edit (model, _, _) = just model
 
 [<AutoOpen>]
 module GameDispatcherModule =
@@ -1710,24 +1722,28 @@ module GameDispatcherModule =
             synchronize initializing game world this |> snd
 
         /// Initialize the game's own content.
-        abstract member Initialize : 'model * Game -> InitializerContent list
+        abstract Initialize : 'model * Game -> InitializerContent list
         default this.Initialize (_, _) = []
 
         /// The message handler of the elmish / MMCC programming model.
-        abstract member Message : 'model * 'message * Game * World -> Signal list * 'model
+        abstract Message : 'model * 'message * Game * World -> Signal list * 'model
         default this.Message (model, _, _, _) = just model
 
         /// The command handler of the elmish / MMCC programming model.
-        abstract member Command : 'model * 'command * Game * World -> Signal list * World
+        abstract Command : 'model * 'command * Game * World -> Signal list * World
         default this.Command (_, _, _, world) = just world
 
         /// The content specifier of the elmish / MMCC programming model.
-        abstract member Content : 'model * Game -> ScreenContent list
+        abstract Content : 'model * Game -> ScreenContent list
         default this.Content (_, _) = []
 
         /// Describes how the game is to be viewed using the View API.
-        abstract member View : 'model * Game * World -> View
+        abstract View : 'model * Game * World -> View
         default this.View (_, _, _) = View.empty
+
+        /// Implements additional editing behavior for a game via the ImGui API.
+        abstract Edit : 'model * Game * World -> Signal list * 'model
+        default this.Edit (model, _, _) = just model
 
 [<AutoOpen>]
 module WorldModule2' =
