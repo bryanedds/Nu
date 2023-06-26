@@ -341,7 +341,6 @@ type RendererThread () =
             // start thread
             let thread = Thread (ThreadStart (fun () -> this.Run fontsOpt windowOpt))
             threadOpt <- Some thread
-            thread.Priority <- ThreadPriority.Highest
             thread.IsBackground <- true
             thread.Start ()
 
