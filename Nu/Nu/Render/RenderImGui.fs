@@ -127,7 +127,7 @@ type GlRendererImGui (windowWidth : int, windowHeight : int) =
             let mutable pixels = Unchecked.defaultof<nativeint>
             let mutable bytesPerPixel = Unchecked.defaultof<_>
             fonts.GetTexDataAsRGBA32 (&pixels, &fontTextureWidth, &fontTextureHeight, &bytesPerPixel)
-            fontTexture <- OpenGL.Texture.CreateTexture (OpenGL.InternalFormat.Rgba8, fontTextureWidth, fontTextureHeight, OpenGL.PixelFormat.Bgra, OpenGL.PixelType.UnsignedByte, OpenGL.TextureMinFilter.Nearest, OpenGL.TextureMagFilter.Nearest, false, pixels)
+            fontTexture <- OpenGL.Texture.CreateTexture (OpenGL.InternalFormat.Rgba8, fontTextureWidth, fontTextureHeight, OpenGL.PixelFormat.Rgba, OpenGL.PixelType.UnsignedByte, OpenGL.TextureMinFilter.Nearest, OpenGL.TextureMagFilter.Nearest, false, pixels)
             fonts.SetTexID (nativeint fontTexture)
             fonts.ClearTexData ()
 
@@ -173,12 +173,10 @@ type GlRendererImGui (windowWidth : int, windowHeight : int) =
                 let projectionArray = projection.ToArray ()
 
                 // setup state
-                OpenGL.Gl.Enable OpenGL.EnableCap.Blend
-                OpenGL.Gl.Enable OpenGL.EnableCap.ScissorTest
                 OpenGL.Gl.BlendEquation OpenGL.BlendEquationMode.FuncAdd
                 OpenGL.Gl.BlendFunc (OpenGL.BlendingFactor.SrcAlpha, OpenGL.BlendingFactor.OneMinusSrcAlpha)
-                OpenGL.Gl.Disable OpenGL.EnableCap.CullFace
-                OpenGL.Gl.Disable OpenGL.EnableCap.DepthTest
+                OpenGL.Gl.Enable OpenGL.EnableCap.Blend
+                OpenGL.Gl.Enable OpenGL.EnableCap.ScissorTest
                 OpenGL.Hl.Assert ()
 
                 // setup vao
@@ -220,6 +218,9 @@ type GlRendererImGui (windowWidth : int, windowHeight : int) =
                 OpenGL.Hl.Assert ()
 
                 // teardown state
+                // TODO: make sure this is enough to put gl back into its default state!
+                OpenGL.Gl.BlendEquation OpenGL.BlendEquationMode.FuncAdd
+                OpenGL.Gl.BlendFunc (OpenGL.BlendingFactor.One, OpenGL.BlendingFactor.Zero)
                 OpenGL.Gl.Disable OpenGL.EnableCap.Blend
                 OpenGL.Gl.Disable OpenGL.EnableCap.ScissorTest
 
