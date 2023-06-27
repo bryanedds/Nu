@@ -70,6 +70,26 @@ type GaiaPlugin () =
                 ImGui.Unindent ()
         ImGui.End ()
 
+        // TODO: implement in order of priority -
+        //
+        //  option & voption with custom checkbox header
+        //  Enums
+        //  AssetTag w/ picking
+        //  RenderStyle
+        //  Substance
+        //  SymbolicCompression
+        //  TmxMap
+        //  LightType
+        //  MaterialProperties
+        //
+        //  Layout
+        //  CollisionMask
+        //  CollisionCategories
+        //  CollisionDetection
+        //  BodyShape
+        //  JointDevice
+        //  DateTimeOffset?
+        //  Flag Enums
         ImGui.Begin "Properties" |> ignore<bool>
         match Globals.Form.entityPropertyGrid.SelectedObject with
         | null -> ()
@@ -92,10 +112,44 @@ type GaiaPlugin () =
                 | :? uint32 as i -> let mutable i' = int32 i in if ImGui.DragInt (property.DisplayName, &i') then property.SetValue (entityTds, uint32 i')
                 | :? int64 as i -> let mutable i' = int32 i in if ImGui.DragInt (property.DisplayName, &i') then property.SetValue (entityTds, int64 i')
                 | :? uint64 as i -> let mutable i' = int32 i in if ImGui.DragInt (property.DisplayName, &i') then property.SetValue (entityTds, uint64 i')
-                | :? single as s -> let mutable s' = s in if ImGui.DragFloat (property.DisplayName, &s') then property.SetValue (entityTds, s')
+                | :? single as f -> let mutable f' = single f in if ImGui.DragFloat (property.DisplayName, &f') then property.SetValue (entityTds, single f')
+                | :? double as f -> let mutable f' = single f in if ImGui.DragFloat (property.DisplayName, &f') then property.SetValue (entityTds, double f')
                 | :? Vector2 as v -> let mutable v' = v in if ImGui.DragFloat2 (property.DisplayName, &v') then property.SetValue (entityTds, v')
                 | :? Vector3 as v -> let mutable v' = v in if ImGui.DragFloat3 (property.DisplayName, &v') then property.SetValue (entityTds, v')
                 | :? Vector4 as v -> let mutable v' = v in if ImGui.DragFloat4 (property.DisplayName, &v') then property.SetValue (entityTds, v')
+                | :? Vector2i as v -> let mutable v' = v in if ImGui.DragInt2 (property.DisplayName, &v'.X) then property.SetValue (entityTds, v')
+                | :? Vector3i as v -> let mutable v' = v in if ImGui.DragInt3 (property.DisplayName, &v'.X) then property.SetValue (entityTds, v')
+                | :? Vector4i as v -> let mutable v' = v in if ImGui.DragInt4 (property.DisplayName, &v'.X) then property.SetValue (entityTds, v')
+                | :? Box2 as b ->
+                    ImGui.Text property.DisplayName
+                    let mutable min = v2 b.Min.X b.Min.Y
+                    let mutable size = v2 b.Size.X b.Size.Y
+                    ImGui.Indent ()
+                    if  ImGui.DragFloat2 ("Min", &min) ||
+                        ImGui.DragFloat2 ("Size", &size) then
+                        let b' = box2 min size
+                        property.SetValue (entityTds, b')
+                    ImGui.Unindent ()
+                | :? Box3 as b ->
+                    ImGui.Text property.DisplayName
+                    let mutable min = v3 b.Min.X b.Min.Y b.Min.Z
+                    let mutable size = v3 b.Size.X b.Size.Y b.Size.Z
+                    ImGui.Indent ()
+                    if  ImGui.DragFloat3 ("Min", &min) ||
+                        ImGui.DragFloat3 ("Size", &size) then
+                        let b' = box3 min size
+                        property.SetValue (entityTds, b')
+                    ImGui.Unindent ()
+                | :? Box2i as b ->
+                    ImGui.Text property.DisplayName
+                    let mutable min = v2i b.Min.X b.Min.Y
+                    let mutable size = v2i b.Size.X b.Size.Y
+                    ImGui.Indent ()
+                    if  ImGui.DragInt2 ("Min", &min.X) ||
+                        ImGui.DragInt2 ("Size", &size.X) then
+                        let b' = box2i min size
+                        property.SetValue (entityTds, b')
+                    ImGui.Unindent ()
                 | :? Quaternion as q ->
                     let mutable v = v4 q.X q.Y q.Z q.W
                     if ImGui.DragFloat4 (property.DisplayName, &v) then
