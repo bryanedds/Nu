@@ -46,6 +46,8 @@ Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "UserProject", "Projects\Use
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "Tactics", "Projects\Tactics\Tactics.fsproj", "{3892B965-B3A4-4F67-A085-E23B123A0CDA}"
 EndProject
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "Nu.Gaia.ImGui", "Nu\Nu.Gaia.ImGui\Nu.Gaia.ImGui.fsproj", "{11386F8B-C0AE-4F9A-B5FD-3112A704DC14}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -104,6 +106,10 @@ Global
 		{3892B965-B3A4-4F67-A085-E23B123A0CDA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3892B965-B3A4-4F67-A085-E23B123A0CDA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3892B965-B3A4-4F67-A085-E23B123A0CDA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{11386F8B-C0AE-4F9A-B5FD-3112A704DC14}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{11386F8B-C0AE-4F9A-B5FD-3112A704DC14}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{11386F8B-C0AE-4F9A-B5FD-3112A704DC14}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{11386F8B-C0AE-4F9A-B5FD-3112A704DC14}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -122,6 +128,7 @@ Global
 		{EDB2D29D-E63B-4C58-8DD1-C7FC356F726E} = {E3C4D6E1-0572-4D80-84A9-8001C21372D3}
 		{8533224E-E08B-4EA2-89DF-9D6D72C1374E} = {E3C4D6E1-0572-4D80-84A9-8001C21372D3}
 		{3892B965-B3A4-4F67-A085-E23B123A0CDA} = {E3C4D6E1-0572-4D80-84A9-8001C21372D3}
+		{11386F8B-C0AE-4F9A-B5FD-3112A704DC14} = {56988FA5-8358-442A-B027-A9767FF41FA8}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {ED68D660-D910-44E3-9438-9F91D738C947}
