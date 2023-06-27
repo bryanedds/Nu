@@ -1266,7 +1266,7 @@ module WorldModule2 =
                                                                 imGui.InputFrame ()
                                                                 let drawData = imGui.RenderFrame ()
 
-                                                                // avoid updating faster than desired FPS
+                                                                // avoid updating faster than desired
                                                                 if FrameTimer.IsRunning then
                                                                     while FrameTimer.Elapsed.TotalSeconds < Constants.GameTime.DesiredFrameTimeMinimum do
                                                                         Thread.Yield () |> ignore<bool>
