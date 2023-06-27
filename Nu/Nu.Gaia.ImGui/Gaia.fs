@@ -1585,9 +1585,26 @@ module Gaia =
             if ImGui.BeginMenuBar () then
                 if ImGui.BeginMenu "File" then
                     if ImGui.MenuItem ("New Group", "Ctrl+N") then ()
-                    if ImGui.MenuItem ("Delete Group", "Ctrl+X") then ()
-                    if ImGui.MenuItem ("Save Group", "Ctrl+S") then ()
                     if ImGui.MenuItem ("Open Group", "Ctrl+O") then ()
+                    if ImGui.MenuItem ("Save Group", "Ctrl+S") then ()
+                    if ImGui.MenuItem ("Save Group as...", "Ctrl+A") then ()
+                    if ImGui.MenuItem ("Close Group") then ()
+                    ImGui.Separator ()
+                    if ImGui.MenuItem ("Exit") then ()
+                    ImGui.EndMenu ()
+                if ImGui.BeginMenu "Edit" then
+                    if ImGui.MenuItem ("Undo", "Ctrl+Z") then ()
+                    if ImGui.MenuItem ("Redo", "Ctrl+Y") then ()
+                    ImGui.Separator ()
+                    if ImGui.MenuItem ("Cut", "Ctrl+X") then ()
+                    if ImGui.MenuItem ("Copy", "Ctrl+C") then ()
+                    if ImGui.MenuItem ("Paste", "Ctrl+V") then ()
+                    ImGui.Separator ()
+                    if ImGui.MenuItem ("Create", "Ctrl+E") then ()
+                    if ImGui.MenuItem ("Delete", "Ctrl+D") then ()
+                    if ImGui.MenuItem ("Quick Size", "Ctrl+Q") then ()
+                    ImGui.Separator ()
+                    if ImGui.MenuItem ("Run / Pause", "F5") then ()
                     ImGui.EndMenu ()
                 ImGui.EndMenuBar ()
             if ImGui.Button "Create" then createEntity false false None
