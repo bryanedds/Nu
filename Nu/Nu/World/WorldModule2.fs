@@ -661,8 +661,13 @@ module WorldModule2 =
                 | SDL.SDL_EventType.SDL_KEYDOWN ->
                     let keyboard = evt.key
                     let key = keyboard.keysym
-                    let sym = char key.sym
-                    if sym >= char 33 && sym <= char 126 then (World.getImGui world).HandleKeyChar sym // submit to imgui
+                    let sym = uint key.sym
+                    if sym >= 33u && sym <= 126u && keyboard.repeat = byte 0 then
+                        let keyChar =
+                            if KeyboardState.isShiftDown ()
+                            then char sym - char 32
+                            else char sym
+                        (World.getImGui world).HandleKeyChar keyChar
                     let eventData = { KeyboardKey = key.scancode |> int |> enum<KeyboardKey>; Repeated = keyboard.repeat <> byte 0; Down = true }
                     let eventTrace = EventTrace.debug "World" "processInput" "KeyboardKeyDown" EventTrace.empty
                     let world = World.publishPlus eventData Events.KeyboardKeyDown eventTrace Simulants.Game true true world

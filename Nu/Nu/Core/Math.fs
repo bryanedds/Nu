@@ -716,6 +716,7 @@ module Quaternion =
         member this.RollPitchYaw = MathHelper.RollPitchYaw &this
 
     let quatIdentity = Quaternion.Identity
+    let inline quat x y z w = Quaternion (x, y, z, w)
     let inline quatEq (q : Quaternion) (q2 : Quaternion) = q.Equals q2
     let inline quatNeq (q : Quaternion) (q2 : Quaternion) = not (q.Equals q2)
 
