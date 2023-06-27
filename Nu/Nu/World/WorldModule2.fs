@@ -1259,7 +1259,8 @@ module WorldModule2 =
 
                                                                 // process imgui frame
                                                                 let imGui = World.getImGui world
-                                                                if not firstFrame then imGui.EndFrame (World.getClockDelta world)
+                                                                let elapsed = max (single Constants.GameTime.DesiredFrameTimeMinimum) (World.getClockDelta world)
+                                                                if not firstFrame then imGui.EndFrame elapsed
                                                                 imGui.BeginFrame ()
                                                                 let world = World.imGuiProcess world
                                                                 imGui.InputFrame ()
@@ -1267,14 +1268,7 @@ module WorldModule2 =
 
                                                                 // avoid updating faster than desired FPS
                                                                 if FrameTimer.IsRunning then
-                                                                    let frameTimeSlop =
-                                                                        Constants.GameTime.DesiredFrameTimeSlop
-                                                                    let frameTimeMinimum =
-                                                                        match Constants.GameTime.DesiredFrameRate with
-                                                                        | StaticFrameRate frameRate -> 1.0 / double frameRate - frameTimeSlop
-                                                                        | DynamicFrameRate (Some frameRate) -> 1.0 / double frameRate - frameTimeSlop
-                                                                        | DynamicFrameRate None -> Constants.GameTime.DesiredFrameTimeMinimum - frameTimeSlop
-                                                                    while let e = FrameTimer.Elapsed in e.TotalSeconds < frameTimeMinimum do
+                                                                    while FrameTimer.Elapsed.TotalSeconds < Constants.GameTime.DesiredFrameTimeMinimum do
                                                                         Thread.Yield () |> ignore<bool>
                                                                 FrameTimer.Restart ()
 
