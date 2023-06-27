@@ -1860,6 +1860,7 @@ module Gaia =
                 (fun world -> let world = preUpdateEditorWorld form world in (Globals.World <- world; world))
                 (fun world -> let world = perUpdateEditorWorld form world in (Globals.World <- world; world))
                 (fun world -> let world = postUpdateEditorWorld form world in (Globals.World <- world; world))
+                id
                 Live true Globals.World |>
                 ignore
         with exn ->
