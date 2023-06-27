@@ -22,17 +22,26 @@ open Nu.Gaia
 module Gaia =
 
     // uses global variables for state because Gaia relies on Nu.Gaia.Globals to interoperate Nu and WinForms
-    let mutable internal propertyPickButtonClickHandler = EventHandler (fun _ _ -> ())
-    let mutable internal refreshHierarchyViewRequested = false // HACK: make sure hierarchy view isn't updated more than once per frame.
-    let mutable internal rightClickPosition = v2Zero
-    let mutable internal dragEntityState = DragEntityInactive
-    let mutable internal dragEyeState = DragEyeInactive
-    let mutable internal otherSnaps = (Constants.Editor.Position3dSnapDefault, Constants.Editor.Degrees3dSnapDefault, Constants.Editor.Scale3dSnapDefault)
-    let mutable internal filePaths = Map.empty<Group Address, string>
-    let mutable internal targetDir = "."
-    let mutable internal selectedScreen = Screen "Screen" // TODO: see if this is necessary or if we can just use World.getSelectedScreen.
-    let mutable internal selectedGroup = selectedScreen / "Group"
-    let mutable internal selectedEntityTdsOpt = None
+    let mutable private rightClickPosition = v2Zero
+    let mutable private dragEntityState = DragEntityInactive
+    let mutable private dragEyeState = DragEyeInactive
+    let mutable private snaps2d = (Constants.Editor.Position2dSnapDefault, Constants.Editor.Degrees2dSnapDefault, Constants.Editor.Scale2dSnapDefault)
+    let mutable private snaps3d = (Constants.Editor.Position3dSnapDefault, Constants.Editor.Degrees3dSnapDefault, Constants.Editor.Scale3dSnapDefault)
+    let mutable private snaps2dSelected = true
+    let mutable private filePaths = Map.empty<Group Address, string>
+    let mutable private targetDir = "."
+    let mutable private selectedScreen = Screen "Screen" // TODO: see if this is necessary or if we can just use World.getSelectedScreen.
+    let mutable private selectedGroup = selectedScreen / "Group"
+    let mutable private selectedEntityTdsOpt = None
+    let mutable private creationDispatcherName = null // this will be initialized on start
+    let mutable private creationOverlayName = "(Default Overlay)"
+    let mutable private creationElevation = 0.0f
+    let mutable private showInspector = false
+
+    let private getSnaps () =
+        if snaps2dSelected
+        then snaps2d
+        else snaps3d
 
     let private getPickableEntities2d () =
         let (entities, world) = World.getEntitiesInView2d (HashSet ()) Globals.World
@@ -776,89 +785,80 @@ module Gaia =
 
     let private handleFormHierarchyTreeViewDoubleClick (form : GaiaForm) (_ : EventArgs) =
         Globals.nextPreUpdate $ fun world ->
-            tryShowSelectedEntityInDisplay form world
+            tryShowSelectedEntityInDisplay form world*)
 
-    let private handleFormCreateEntity atMouse inHierarchy (dispatcherNameOpt : string option) (form : GaiaForm) (_ : EventArgs) =
-        form.displayPanel.Focus () |> ignore<bool>
-        Globals.nextPreUpdate $ fun world ->
-            let oldWorld = world
-            try let world = Globals.pushPastWorld world
-                let dispatcherName =
-                    match dispatcherNameOpt with
-                    | Some dispatcherName -> dispatcherName
-                    | None -> form.createEntityComboBox.Text
-                let overlayDescriptor =
-                    match form.overlayComboBox.Text with
-                    | "(Default Overlay)" -> DefaultOverlay
-                    | "(Routed Overlay)" -> RoutedOverlay
-                    | "(No Overlay)" -> NoOverlay
-                    | overlayName -> ExplicitOverlay overlayName
-                let name = generateEntityName dispatcherName selectedGroup world
-                let surnames =
-                    match form.entityPropertyGrid.SelectedObject with
-                    | null -> [|name|]
-                    | :? GroupTypeDescriptorSource -> [|name|]
-                    | :? EntityTypeDescriptorSource as entityTds when inHierarchy ->
-                        let parent = entityTds.DescribedEntity
-                        Array.add name parent.Surnames
-                    | _ -> [|name|]
-                let (entity, world) = World.createEntity5 dispatcherName overlayDescriptor (Some surnames) selectedGroup world
-                let (positionSnap, degreesSnap, scaleSnap) = getSnaps form
-                let viewport = World.getViewport world
-                let mousePosition = World.getMousePosition world
-                let mutable entityTransform = entity.GetTransform world
-                let world =
-                    if entity.GetIs2d world then
-                        let eyeCenter = World.getEyeCenter2d world
-                        let eyeSize = World.getEyeSize2d world
-                        let entityPosition =
-                            if atMouse
-                            then viewport.MouseToWorld2d (entity.GetAbsolute world, mousePosition, eyeCenter, eyeSize)
-                            else viewport.MouseToWorld2d (entity.GetAbsolute world, World.getEyeSize2d world * 0.5f, eyeCenter, eyeSize)
-                        entityTransform.Position <- entityPosition.V3
-                        entityTransform.Size <- entity.GetQuickSize world
-                        entityTransform.Elevation <- getCreationElevation form
-                        if not form.snap3dButton.Checked
-                        then entity.SetTransformSnapped positionSnap degreesSnap scaleSnap entityTransform world
-                        else entity.SetTransform entityTransform world
-                    else
-                        let eyeCenter = World.getEyeCenter3d world
-                        let eyeRotation = World.getEyeRotation3d world
-                        let entityPosition =
-                            if atMouse then
-                                let ray = viewport.MouseToWorld3d (entity.GetAbsolute world, mousePosition, eyeCenter, eyeRotation)
-                                let forward = Vector3.Transform (v3Forward, eyeRotation)
-                                let plane = plane3 (eyeCenter + forward * Constants.Engine.EyeCenter3dOffset.Z) -forward
-                                (ray.Intersection plane).Value
-                            else eyeCenter + Vector3.Transform (v3Forward, eyeRotation) * Constants.Engine.EyeCenter3dOffset.Z
-                        entityTransform.Position <- entityPosition
-                        entityTransform.Size <- entity.GetQuickSize world
-                        if form.snap3dButton.Checked
-                        then entity.SetTransformSnapped positionSnap degreesSnap scaleSnap entityTransform world
-                        else entity.SetTransform entityTransform world
-                let world =
-                    if inHierarchy
-                    then entity.SetMountOptWithAdjustment (Some (Relation.makeParent ())) world
-                    else world
-                let world =
-                    match entity.TryGetProperty (nameof entity.ProbeBounds) world with
-                    | Some property when property.PropertyType = typeof<Box3> ->
-                        let bounds =
-                            box3
-                                (v3Dup Constants.Render.LightProbeSizeDefault * -0.5f + entity.GetPosition world)
-                                (v3Dup Constants.Render.LightProbeSizeDefault)
-                        entity.SetProbeBounds bounds world
-                    | Some _ | None -> world
-                let world = refreshHierarchyTreeViewImmediate form world
-                selectEntity entity form world
-                tryShowSelectedEntityInHierarchy form
-                world
-            with exn ->
-                let world = World.choose oldWorld
-                MessageBox.Show (scstring exn, "Could Not Create Entity", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
-                world
+    let private createEntity atMouse inHierarchy (dispatcherNameOpt : string option) =
+        Globals.pushPastWorld ()
+        let dispatcherName =
+            match dispatcherNameOpt with
+            | Some dispatcherName -> dispatcherName
+            | None -> creationDispatcherName
+        let overlayDescriptor =
+            match creationOverlayName with
+            | "(Default Overlay)" -> DefaultOverlay
+            | "(Routed Overlay)" -> RoutedOverlay
+            | "(No Overlay)" -> NoOverlay
+            | overlayName -> ExplicitOverlay overlayName
+        let name = generateEntityName dispatcherName selectedGroup
+        let surnames =
+            match selectedEntityTdsOpt with
+            | Some entityTds when inHierarchy ->
+                let parent = entityTds.DescribedEntity
+                Array.add name parent.Surnames
+            | Some _ | None -> [|name|]
+        let (entity, world) = World.createEntity5 dispatcherName overlayDescriptor (Some surnames) selectedGroup Globals.World
+        let world = Globals.World <- world
+        let (positionSnap, degreesSnap, scaleSnap) = getSnaps ()
+        let viewport = World.getViewport Globals.World
+        let mousePosition = World.getMousePosition Globals.World
+        let mutable entityTransform = entity.GetTransform Globals.World
+        Globals.World <-
+            if entity.GetIs2d Globals.World then
+                let eyeCenter = World.getEyeCenter2d Globals.World
+                let eyeSize = World.getEyeSize2d Globals.World
+                let entityPosition =
+                    if atMouse
+                    then viewport.MouseToWorld2d (entity.GetAbsolute Globals.World, mousePosition, eyeCenter, eyeSize)
+                    else viewport.MouseToWorld2d (entity.GetAbsolute Globals.World, World.getEyeSize2d Globals.World, eyeCenter, eyeSize)
+                entityTransform.Position <- entityPosition.V3
+                entityTransform.Size <- entity.GetQuickSize Globals.World
+                entityTransform.Elevation <- creationElevation
+                if snaps2dSelected
+                then entity.SetTransformSnapped positionSnap degreesSnap scaleSnap entityTransform Globals.World
+                else entity.SetTransform entityTransform Globals.World
+            else
+                let eyeCenter = World.getEyeCenter3d Globals.World
+                let eyeRotation = World.getEyeRotation3d Globals.World
+                let entityPosition =
+                    if atMouse then
+                        let ray = viewport.MouseToWorld3d (entity.GetAbsolute Globals.World, mousePosition, eyeCenter, eyeRotation)
+                        let forward = Vector3.Transform (v3Forward, eyeRotation)
+                        let plane = plane3 (eyeCenter + forward * Constants.Engine.EyeCenter3dOffset.Z) -forward
+                        (ray.Intersection plane).Value
+                    else eyeCenter + Vector3.Transform (v3Forward, eyeRotation) * Constants.Engine.EyeCenter3dOffset.Z
+                entityTransform.Position <- entityPosition
+                entityTransform.Size <- entity.GetQuickSize Globals.World
+                if not snaps2dSelected
+                then entity.SetTransformSnapped positionSnap degreesSnap scaleSnap entityTransform Globals.World
+                else entity.SetTransform entityTransform Globals.World
+        Globals.World <-
+            if inHierarchy
+            then entity.SetMountOptWithAdjustment (Some (Relation.makeParent ())) Globals.World
+            else Globals.World
+        Globals.World <-
+            match entity.TryGetProperty (nameof entity.ProbeBounds) Globals.World with
+            | Some property when property.PropertyType = typeof<Box3> ->
+                let bounds =
+                    box3
+                        (v3Dup Constants.Render.LightProbeSizeDefault * -0.5f + entity.GetPosition Globals.World)
+                        (v3Dup Constants.Render.LightProbeSizeDefault)
+                entity.SetProbeBounds bounds Globals.World
+            | Some _ | None -> Globals.World
+        selectedEntityTdsOpt <- Some { DescribedEntity = entity }
+        //DUMMY
+        //tryShowSelectedEntityInHierarchy form
 
-    let private handleFormDeleteEntity (form : GaiaForm) (_ : EventArgs) =
+    (*let private handleFormDeleteEntity (form : GaiaForm) (_ : EventArgs) =
         Globals.nextPreUpdate $ fun world ->
             let world = Globals.pushPastWorld world
             match form.entityPropertyGrid.SelectedObject with
@@ -1581,55 +1581,66 @@ module Gaia =
 
         ImGui.DockSpaceOverViewport (ImGui.GetMainViewport (), ImGuiDockNodeFlags.PassthruCentralNode) |> ignore<uint>
 
-        ImGui.Begin "Gaia" |> ignore<bool>
-        ImGui.Text "Group:"
-        ImGui.SameLine ()
-        ImGui.Button "New" |> ignore<bool>
-        ImGui.SameLine ()
-        ImGui.Button "Delete" |> ignore<bool>
-        ImGui.SameLine ()
-        ImGui.Button "Save" |> ignore<bool>
-        ImGui.SameLine ()
-        ImGui.Button "Load" |> ignore<bool>
-        ImGui.SameLine ()
-        ImGui.Text "Entity:"
-        ImGui.SameLine ()
-        ImGui.Button "Create" |> ignore<bool>
-        ImGui.SameLine ()
-        let mutable item = 0
-        let dispatchers = World.getEntityDispatchers Globals.World |> Map.toKeyArray
-        ImGui.SetNextItemWidth 150.0f
-        ImGui.Combo ("", &item, dispatchers, dispatchers.Length) |> ignore<bool>
-        ImGui.SameLine ()
-        ImGui.Text "w/ Overlay"
-        ImGui.SameLine ()
-        let mutable item2 = 0
-        let overlays = Array.append [|"(Default Overlay)"; "(Routed Overlay)"; "(No Overlay)"|] (World.getOverlays Globals.World |> Map.toKeyArray)
-        ImGui.SetNextItemWidth 150.0f
-        ImGui.Combo ("", &item2, overlays, overlays.Length) |> ignore<bool>
-        ImGui.SameLine ()
-        ImGui.Button "Quick Size" |> ignore<bool>
-        ImGui.SameLine ()
-        if World.getHalted Globals.World
-        then ImGui.Button "Run" |> ignore<bool>
-        else ImGui.Button "Pause" |> ignore<bool>
-        ImGui.SameLine ()
-        ImGui.End ()
+        if ImGui.Begin ("Gaia", ImGuiWindowFlags.MenuBar) then
+            if ImGui.BeginMenuBar () then
+                if ImGui.BeginMenu "File" then
+                    if ImGui.MenuItem ("New Group", "Ctrl+N") then ()
+                    if ImGui.MenuItem ("Delete Group", "Ctrl+X") then ()
+                    if ImGui.MenuItem ("Save Group", "Ctrl+S") then ()
+                    if ImGui.MenuItem ("Open Group", "Ctrl+O") then ()
+                    ImGui.EndMenu ()
+                ImGui.EndMenuBar ()
+            if ImGui.Button "Create" then createEntity false false None
+            ImGui.SameLine ()
+            ImGui.SetNextItemWidth 150.0f
+            let creationDispatcherNames = World.getEntityDispatchers Globals.World |> Map.toKeyArray
+            if ImGui.BeginCombo ("##creationDispatcherName", creationDispatcherName) then
+                for dispatcherName in creationDispatcherNames do
+                    if ImGui.Selectable dispatcherName then
+                        creationDispatcherName <- dispatcherName
+                ImGui.EndCombo ()
+            ImGui.SameLine ()
+            ImGui.Text "w/ Overlay"
+            ImGui.SameLine ()
+            ImGui.SetNextItemWidth 150.0f
+            let overlayNames = Array.append [|"(Default Overlay)"; "(Routed Overlay)"; "(No Overlay)"|] (World.getOverlays Globals.World |> Map.toKeyArray)
+            if ImGui.BeginCombo ("##creationOverlayName", creationOverlayName) then
+                for overlayName in overlayNames do
+                    if ImGui.Selectable overlayName then
+                        creationDispatcherName <- overlayName
+                ImGui.EndCombo ()
+            ImGui.SameLine ()
+            ImGui.Text "@ Elevation"
+            ImGui.SameLine ()
+            ImGui.SetNextItemWidth 50.0f
+            ImGui.DragFloat ("##creationElevation", &creationElevation) |> ignore<bool>
+            ImGui.SameLine ()
+            ImGui.Button "Quick Size" |> ignore<bool>
+            ImGui.SameLine ()
+            if World.getHalted Globals.World
+            then ImGui.Button "Run" |> ignore<bool>
+            else ImGui.Button "Pause" |> ignore<bool>
+            ImGui.SameLine ()
+            ImGui.Text "Inspector"
+            ImGui.SameLine ()
+            ImGui.Checkbox ("##showInspector", &showInspector) |> ignore<bool>
+            ImGui.SameLine ()
+            ImGui.End ()
 
-        ImGui.Begin "Hierarchy" |> ignore<bool>
-        let entities =
-            World.getEntitiesSovereign selectedGroup Globals.World |>
-            Seq.map (fun entity -> ((entity.Surnames.Length, entity.GetOrder Globals.World), entity)) |>
-            Array.ofSeq |>
-            Array.sortBy fst |>
-            Array.map snd
-        for entity in entities do
-            ImGui.TreeNode entity.Name |> ignore<bool>
-            for child in entity.GetChildren Globals.World do
-                ImGui.Indent ()
-                ImGui.TreeNode child.Name |> ignore<bool>
-                ImGui.Unindent ()
-        ImGui.End ()
+        if ImGui.Begin "Hierarchy" then
+            let entities =
+                World.getEntitiesSovereign selectedGroup Globals.World |>
+                Seq.map (fun entity -> ((entity.Surnames.Length, entity.GetOrder Globals.World), entity)) |>
+                Array.ofSeq |>
+                Array.sortBy fst |>
+                Array.map snd
+            for entity in entities do
+                ImGui.TreeNode entity.Name |> ignore<bool>
+                for child in entity.GetChildren Globals.World do
+                    ImGui.Indent ()
+                    ImGui.TreeNode child.Name |> ignore<bool>
+                    ImGui.Unindent ()
+            ImGui.End ()
 
         // TODO: implement in order of priority -
         //
@@ -1651,98 +1662,101 @@ module Gaia =
         //  JointDevice
         //  DateTimeOffset?
         //  Flag Enums
-        ImGui.Begin "Properties" |> ignore<bool>
-        match selectedEntityTdsOpt with
-        | Some entityTds ->
-            let entity = entityTds.DescribedEntity
-            let makePropertyDescriptor = fun (epv, tcas) -> (EntityPropertyDescriptor (epv, Array.map (fun attr -> attr :> Attribute) tcas)) :> System.ComponentModel.PropertyDescriptor
-            let properties = PropertyDescriptor.getPropertyDescriptors<EntityState> makePropertyDescriptor (Some (entity, Globals.World))
-            for property in properties do
-                let ty = property.PropertyType
-                let converter = SymbolicConverter ty
-                let value = property.GetValue entityTds
-                let valueStr = converter.ConvertToString value
-                match value with
-                | :? bool as b -> let mutable b' = b in if ImGui.Checkbox (property.DisplayName, &b') then property.SetValue (entityTds, b')
-                | :? int8 as i -> let mutable i' = int32 i in if ImGui.DragInt (property.DisplayName, &i') then property.SetValue (entityTds, int8 i')
-                | :? uint8 as i -> let mutable i' = int32 i in if ImGui.DragInt (property.DisplayName, &i') then property.SetValue (entityTds, uint8 i')
-                | :? int16 as i -> let mutable i' = int32 i in if ImGui.DragInt (property.DisplayName, &i') then property.SetValue (entityTds, int16 i')
-                | :? uint16 as i -> let mutable i' = int32 i in if ImGui.DragInt (property.DisplayName, &i') then property.SetValue (entityTds, uint16 i')
-                | :? int32 as i -> let mutable i' = int32 i in if ImGui.DragInt (property.DisplayName, &i') then property.SetValue (entityTds, int32 i')
-                | :? uint32 as i -> let mutable i' = int32 i in if ImGui.DragInt (property.DisplayName, &i') then property.SetValue (entityTds, uint32 i')
-                | :? int64 as i -> let mutable i' = int32 i in if ImGui.DragInt (property.DisplayName, &i') then property.SetValue (entityTds, int64 i')
-                | :? uint64 as i -> let mutable i' = int32 i in if ImGui.DragInt (property.DisplayName, &i') then property.SetValue (entityTds, uint64 i')
-                | :? single as f -> let mutable f' = single f in if ImGui.DragFloat (property.DisplayName, &f') then property.SetValue (entityTds, single f')
-                | :? double as f -> let mutable f' = single f in if ImGui.DragFloat (property.DisplayName, &f') then property.SetValue (entityTds, double f')
-                | :? Vector2 as v -> let mutable v' = v in if ImGui.DragFloat2 (property.DisplayName, &v') then property.SetValue (entityTds, v')
-                | :? Vector3 as v -> let mutable v' = v in if ImGui.DragFloat3 (property.DisplayName, &v') then property.SetValue (entityTds, v')
-                | :? Vector4 as v -> let mutable v' = v in if ImGui.DragFloat4 (property.DisplayName, &v') then property.SetValue (entityTds, v')
-                | :? Vector2i as v -> let mutable v' = v in if ImGui.DragInt2 (property.DisplayName, &v'.X) then property.SetValue (entityTds, v')
-                | :? Vector3i as v -> let mutable v' = v in if ImGui.DragInt3 (property.DisplayName, &v'.X) then property.SetValue (entityTds, v')
-                | :? Vector4i as v -> let mutable v' = v in if ImGui.DragInt4 (property.DisplayName, &v'.X) then property.SetValue (entityTds, v')
-                | :? Box2 as b ->
-                    ImGui.Text property.DisplayName
-                    let mutable min = v2 b.Min.X b.Min.Y
-                    let mutable size = v2 b.Size.X b.Size.Y
-                    ImGui.Indent ()
-                    if  ImGui.DragFloat2 ("Min", &min) ||
-                        ImGui.DragFloat2 ("Size", &size) then
-                        let b' = box2 min size
-                        property.SetValue (entityTds, b')
-                    ImGui.Unindent ()
-                | :? Box3 as b ->
-                    ImGui.Text property.DisplayName
-                    let mutable min = v3 b.Min.X b.Min.Y b.Min.Z
-                    let mutable size = v3 b.Size.X b.Size.Y b.Size.Z
-                    ImGui.Indent ()
-                    if  ImGui.DragFloat3 ("Min", &min) ||
-                        ImGui.DragFloat3 ("Size", &size) then
-                        let b' = box3 min size
-                        property.SetValue (entityTds, b')
-                    ImGui.Unindent ()
-                | :? Box2i as b ->
-                    ImGui.Text property.DisplayName
-                    let mutable min = v2i b.Min.X b.Min.Y
-                    let mutable size = v2i b.Size.X b.Size.Y
-                    ImGui.Indent ()
-                    if  ImGui.DragInt2 ("Min", &min.X) ||
-                        ImGui.DragInt2 ("Size", &size.X) then
-                        let b' = box2i min size
-                        property.SetValue (entityTds, b')
-                    ImGui.Unindent ()
-                | :? Quaternion as q ->
-                    let mutable v = v4 q.X q.Y q.Z q.W
-                    if ImGui.DragFloat4 (property.DisplayName, &v) then
-                        let q' = quat v.X v.Y v.Z v.W
-                        property.SetValue (entityTds, q')
-                | :? Color as c ->
-                    let mutable v = v4 c.R c.G c.B c.A
-                    if ImGui.ColorEdit4 (property.DisplayName, &v) then
-                        let c' = color v.X v.Y v.Z v.W
-                        property.SetValue (entityTds, c')
-                | _ ->
-                    let mutable combo = false
-                    if FSharpType.IsUnion ty then
-                        let cases = FSharpType.GetUnionCases ty
-                        if Array.forall (fun (case : UnionCaseInfo) -> Array.isEmpty (case.GetFields ())) cases then
-                            combo <- true
-                            let caseNames = Array.map (fun (case : UnionCaseInfo) -> case.Name) cases
-                            let (unionCaseInfo, _) = FSharpValue.GetUnionFields (value, ty)
-                            let mutable tag = unionCaseInfo.Tag
-                            if ImGui.Combo (property.DisplayName, &tag, caseNames, caseNames.Length) then
-                                let value' = FSharpValue.MakeUnion (cases.[tag], [||])
-                                property.SetValue (entityTds, value')
-                    if not combo then
-                        let mutable valueStr' = valueStr
-                        if ImGui.InputText (property.Name, &valueStr', 131072u) then
-                            try let value' = converter.ConvertFromString valueStr'
-                                property.SetValue (entityTds, value')
-                            with _ -> ()
-        | None -> ()
-        ImGui.End ()
+        if ImGui.Begin "Properties" then
+            match selectedEntityTdsOpt with
+            | Some entityTds ->
+                let entity = entityTds.DescribedEntity
+                let makePropertyDescriptor = fun (epv, tcas) -> (EntityPropertyDescriptor (epv, Array.map (fun attr -> attr :> Attribute) tcas)) :> System.ComponentModel.PropertyDescriptor
+                let properties = PropertyDescriptor.getPropertyDescriptors<EntityState> makePropertyDescriptor (Some (entity, Globals.World))
+                for property in properties do
+                    let ty = property.PropertyType
+                    let converter = SymbolicConverter ty
+                    let value = property.GetValue entityTds
+                    let valueStr = converter.ConvertToString value
+                    match value with
+                    | :? bool as b -> let mutable b' = b in if ImGui.Checkbox (property.DisplayName, &b') then property.SetValue (entityTds, b')
+                    | :? int8 as i -> let mutable i' = int32 i in if ImGui.DragInt (property.DisplayName, &i') then property.SetValue (entityTds, int8 i')
+                    | :? uint8 as i -> let mutable i' = int32 i in if ImGui.DragInt (property.DisplayName, &i') then property.SetValue (entityTds, uint8 i')
+                    | :? int16 as i -> let mutable i' = int32 i in if ImGui.DragInt (property.DisplayName, &i') then property.SetValue (entityTds, int16 i')
+                    | :? uint16 as i -> let mutable i' = int32 i in if ImGui.DragInt (property.DisplayName, &i') then property.SetValue (entityTds, uint16 i')
+                    | :? int32 as i -> let mutable i' = int32 i in if ImGui.DragInt (property.DisplayName, &i') then property.SetValue (entityTds, int32 i')
+                    | :? uint32 as i -> let mutable i' = int32 i in if ImGui.DragInt (property.DisplayName, &i') then property.SetValue (entityTds, uint32 i')
+                    | :? int64 as i -> let mutable i' = int32 i in if ImGui.DragInt (property.DisplayName, &i') then property.SetValue (entityTds, int64 i')
+                    | :? uint64 as i -> let mutable i' = int32 i in if ImGui.DragInt (property.DisplayName, &i') then property.SetValue (entityTds, uint64 i')
+                    | :? single as f -> let mutable f' = single f in if ImGui.DragFloat (property.DisplayName, &f') then property.SetValue (entityTds, single f')
+                    | :? double as f -> let mutable f' = single f in if ImGui.DragFloat (property.DisplayName, &f') then property.SetValue (entityTds, double f')
+                    | :? Vector2 as v -> let mutable v' = v in if ImGui.DragFloat2 (property.DisplayName, &v') then property.SetValue (entityTds, v')
+                    | :? Vector3 as v -> let mutable v' = v in if ImGui.DragFloat3 (property.DisplayName, &v') then property.SetValue (entityTds, v')
+                    | :? Vector4 as v -> let mutable v' = v in if ImGui.DragFloat4 (property.DisplayName, &v') then property.SetValue (entityTds, v')
+                    | :? Vector2i as v -> let mutable v' = v in if ImGui.DragInt2 (property.DisplayName, &v'.X) then property.SetValue (entityTds, v')
+                    | :? Vector3i as v -> let mutable v' = v in if ImGui.DragInt3 (property.DisplayName, &v'.X) then property.SetValue (entityTds, v')
+                    | :? Vector4i as v -> let mutable v' = v in if ImGui.DragInt4 (property.DisplayName, &v'.X) then property.SetValue (entityTds, v')
+                    | :? Box2 as b ->
+                        ImGui.Text property.DisplayName
+                        let mutable min = v2 b.Min.X b.Min.Y
+                        let mutable size = v2 b.Size.X b.Size.Y
+                        ImGui.Indent ()
+                        if  ImGui.DragFloat2 ("Min", &min) ||
+                            ImGui.DragFloat2 ("Size", &size) then
+                            let b' = box2 min size
+                            property.SetValue (entityTds, b')
+                        ImGui.Unindent ()
+                    | :? Box3 as b ->
+                        ImGui.Text property.DisplayName
+                        let mutable min = v3 b.Min.X b.Min.Y b.Min.Z
+                        let mutable size = v3 b.Size.X b.Size.Y b.Size.Z
+                        ImGui.Indent ()
+                        if  ImGui.DragFloat3 ("Min", &min) ||
+                            ImGui.DragFloat3 ("Size", &size) then
+                            let b' = box3 min size
+                            property.SetValue (entityTds, b')
+                        ImGui.Unindent ()
+                    | :? Box2i as b ->
+                        ImGui.Text property.DisplayName
+                        let mutable min = v2i b.Min.X b.Min.Y
+                        let mutable size = v2i b.Size.X b.Size.Y
+                        ImGui.Indent ()
+                        if  ImGui.DragInt2 ("Min", &min.X) ||
+                            ImGui.DragInt2 ("Size", &size.X) then
+                            let b' = box2i min size
+                            property.SetValue (entityTds, b')
+                        ImGui.Unindent ()
+                    | :? Quaternion as q ->
+                        let mutable v = v4 q.X q.Y q.Z q.W
+                        if ImGui.DragFloat4 (property.DisplayName, &v) then
+                            let q' = quat v.X v.Y v.Z v.W
+                            property.SetValue (entityTds, q')
+                    | :? Color as c ->
+                        let mutable v = v4 c.R c.G c.B c.A
+                        if ImGui.ColorEdit4 (property.DisplayName, &v) then
+                            let c' = color v.X v.Y v.Z v.W
+                            property.SetValue (entityTds, c')
+                    | _ ->
+                        let mutable combo = false
+                        if FSharpType.IsUnion ty then
+                            let cases = FSharpType.GetUnionCases ty
+                            if Array.forall (fun (case : UnionCaseInfo) -> Array.isEmpty (case.GetFields ())) cases then
+                                combo <- true
+                                let caseNames = Array.map (fun (case : UnionCaseInfo) -> case.Name) cases
+                                let (unionCaseInfo, _) = FSharpValue.GetUnionFields (value, ty)
+                                let mutable tag = unionCaseInfo.Tag
+                                if ImGui.Combo (property.DisplayName, &tag, caseNames, caseNames.Length) then
+                                    let value' = FSharpValue.MakeUnion (cases.[tag], [||])
+                                    property.SetValue (entityTds, value')
+                        if not combo then
+                            let mutable valueStr' = valueStr
+                            if ImGui.InputText (property.Name, &valueStr', 131072u) then
+                                try let value' = converter.ConvertFromString valueStr'
+                                    property.SetValue (entityTds, value')
+                                with _ -> ()
+            | None -> ()
+            ImGui.End ()
 
-        ImGui.Begin "Property Editor" |> ignore<bool>
-        ImGui.End ()
+        if ImGui.Begin "Property Editor" then
+            ImGui.End ()
+
+        if showInspector then
+            ImGui.ShowStackToolWindow ()
 
         Globals.World
 
@@ -1884,6 +1898,7 @@ module Gaia =
                 targetDir <- targetDir'
                 selectedScreen <- screen
                 selectedGroup <- Nu.World.getGroups screen Globals.World |> Seq.head
+                creationDispatcherName <- Nu.World.getEntityDispatchers Globals.World |> Seq.head |> fun kvp -> kvp.Key
                 Globals.World <- World.subscribe handleNuMouseRightDown Events.MouseRightDown Simulants.Game Globals.World
                 Globals.World <- World.subscribe handleNuEntityDragBegin Events.MouseLeftDown Simulants.Game Globals.World
                 Globals.World <- World.subscribe handleNuEntityDragEnd Events.MouseLeftUp Simulants.Game Globals.World
