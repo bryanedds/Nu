@@ -609,6 +609,7 @@ module WorldModuleEntity =
             | (false, _) -> Seq.empty
 
         /// Traverse all of the entities directly parented by an entity.
+        [<FunctionBinding>]
         static member traverseEntityChildren effect (entity : Entity) (world : World) =
             let mounters = World.getEntityChildren entity world
             Seq.fold (fun world mounter -> effect entity mounter world) world mounters
@@ -621,6 +622,7 @@ module WorldModuleEntity =
             | (false, _) -> Seq.empty
 
         /// Traverse all of the entities directly mounted on an entity.
+        [<FunctionBinding>]
         static member traverseEntityMounters effect (entity : Entity) (world : World) =
             let mounters = World.getEntityMounters entity world
             Seq.fold (fun world mounter -> effect entity mounter world) world mounters
