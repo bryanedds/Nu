@@ -56,6 +56,9 @@ type ImGui (windowWidth : int, windowHeight : int) =
         // configure initial display size
         io.DisplaySize <- v2 (single windowWidth) (single windowHeight)
 
+        // configure docking enabled
+        io.ConfigFlags <- io.ConfigFlags ||| ImGuiConfigFlags.DockingEnable
+
         // add default font
         let fonts = io.Fonts
         fonts.AddFontDefault () |> ignore<ImFontPtr>

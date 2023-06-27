@@ -23,16 +23,16 @@ open Nu.Gaia.Design
 module Gaia =
 
     // uses global variables for state because Gaia relies on Nu.Gaia.Globals to interoperate Nu and WinForms
-    let mutable private propertyPickButtonClickHandler = EventHandler (fun _ _ -> ())
-    let mutable private refreshHierarchyViewRequested = false // HACK: make sure hierarchy view isn't updated more than once per frame.
-    let mutable private rightClickPosition = v2Zero
-    let mutable private dragEntityState = DragEntityInactive
-    let mutable private dragEyeState = DragEyeInactive
-    let mutable private otherSnaps = (Constants.Editor.Position3dSnapDefault, Constants.Editor.Degrees3dSnapDefault, Constants.Editor.Scale3dSnapDefault)
-    let mutable private filePaths = Map.empty<Group Address, string>
-    let mutable private targetDir = "."
-    let mutable private selectedScreen = Screen "Screen" // TODO: see if this is necessary or if we can just use World.getSelectedScreen.
-    let mutable private selectedGroup = selectedScreen / "Group"
+    let mutable internal propertyPickButtonClickHandler = EventHandler (fun _ _ -> ())
+    let mutable internal refreshHierarchyViewRequested = false // HACK: make sure hierarchy view isn't updated more than once per frame.
+    let mutable internal rightClickPosition = v2Zero
+    let mutable internal dragEntityState = DragEntityInactive
+    let mutable internal dragEyeState = DragEyeInactive
+    let mutable internal otherSnaps = (Constants.Editor.Position3dSnapDefault, Constants.Editor.Degrees3dSnapDefault, Constants.Editor.Scale3dSnapDefault)
+    let mutable internal filePaths = Map.empty<Group Address, string>
+    let mutable internal targetDir = "."
+    let mutable internal selectedScreen = Screen "Screen" // TODO: see if this is necessary or if we can just use World.getSelectedScreen.
+    let mutable internal selectedGroup = selectedScreen / "Group"
 
     let private getPickableEntities2d world =
         let (entities, world) = World.getEntitiesInView2d (HashSet ()) world
