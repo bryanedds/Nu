@@ -1712,10 +1712,10 @@ module Gaia =
                   SdlConfig = sdlConfig }
             match tryMakeWorld sdlDeps worldConfig plugin with
             | Right (screen, world) ->
-                Globals.World <- world
+                let world = Globals.World <- world
                 targetDir <- targetDir'
                 selectedScreen <- screen
-                selectedGroup <- Nu.World.getGroups screen world |> Seq.head
+                selectedGroup <- Nu.World.getGroups screen Globals.World |> Seq.head
                 Globals.World <- World.subscribe handleNuMouseRightDown Events.MouseRightDown Simulants.Game Globals.World
                 Globals.World <- World.subscribe handleNuEntityDragBegin Events.MouseLeftDown Simulants.Game Globals.World
                 Globals.World <- World.subscribe handleNuEntityDragEnd Events.MouseLeftUp Simulants.Game Globals.World
