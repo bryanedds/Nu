@@ -26,10 +26,21 @@ type ImGui (windowWidth : int, windowHeight : int) =
         // make context current
         ImGui.SetCurrentContext context
 
-        // configure key mappings
-        // NOTE: I'm not sure this is necessary...
+        // retrieve configuration targets
         let io = ImGui.GetIO ()
         let keyMap = io.KeyMap
+        let fonts = io.Fonts
+
+        // configure the imgui backend to presume the use of vertex offsets (necessary since we're using 16 bit indices)
+        io.BackendFlags <- io.BackendFlags ||| ImGuiBackendFlags.RendererHasVtxOffset
+
+        // configure initial display size
+        io.DisplaySize <- v2 (single windowWidth) (single windowHeight)
+
+        // configure docking enabled
+        io.ConfigFlags <- io.ConfigFlags ||| ImGuiConfigFlags.DockingEnable
+
+        // configure key mappings
         keyMap.[int ImGuiKey.Tab] <- int KeyboardKey.Tab
         keyMap.[int ImGuiKey.LeftArrow] <- int KeyboardKey.Left
         keyMap.[int ImGuiKey.RightArrow] <- int KeyboardKey.Right
@@ -50,17 +61,7 @@ type ImGui (windowWidth : int, windowHeight : int) =
         keyMap.[int ImGuiKey.Y] <- int KeyboardKey.Y
         keyMap.[int ImGuiKey.Z] <- int KeyboardKey.Z
 
-        // configure the imgui backend to presume the use of vertex offsets
-        io.BackendFlags <- io.BackendFlags ||| ImGuiBackendFlags.RendererHasVtxOffset
-
-        // configure initial display size
-        io.DisplaySize <- v2 (single windowWidth) (single windowHeight)
-
-        // configure docking enabled
-        io.ConfigFlags <- io.ConfigFlags ||| ImGuiConfigFlags.DockingEnable
-
         // add default font
-        let fonts = io.Fonts
         fonts.AddFontDefault () |> ignore<ImFontPtr>
 
     member this.Fonts =
