@@ -1598,23 +1598,41 @@ module Gaia =
                             | :? ConversionException -> ()
                 | Some _ | None -> ()
             | None -> ()
-            ImGui.End ()
 
-        if showAssetPicker then
-            ImGui.OpenPopup "Asset Picker"
-            if ImGui.BeginPopupModal ("Asset Picker", &showAssetPicker) then
-                ImGui.Text "Search"
-                ImGui.SameLine ()
-                ImGui.InputText ("##searchString", &assetPickerSearchStr, 4096u) |> ignore<bool>
-                //let assets = Metadata.getDiscoveredAssets ()
-                //for package in assets do
-                //    if ImGui.TreeNode package.Key then
-                //        for assetName in package.Value do
-                //            if assetName.Contains assetPickerSearchStr then
-                //                if ImGui.TreeNodeEx (assetName, ImGuiTreeNodeFlags.Leaf) then
-                //                    ImGui.TreePop ()
-                //        ImGui.TreePop ()
-                ImGui.EndPopup ()
+            //if showAssetPicker then
+            //    ImGui.OpenPopup "Asset Picker"
+            //    if ImGui.BeginPopupModal ("Asset Picker") then
+            //        ImGui.EndPopup ()
+
+            if showAssetPicker then
+                let title = "Choose an Asset..."
+                if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
+                if ImGui.BeginPopupModal (title, &showAssetPicker) then
+                    ImGui.Text "Search:"
+                    ImGui.SameLine ()
+                    ImGui.InputTextWithHint ("##searchString", "[enter search text]", &assetPickerSearchStr, 4096u) |> ignore<bool>
+                    let assets = Metadata.getDiscoveredAssets ()
+                    for package in assets do
+                        if ImGui.TreeNode package.Key then
+                            for assetName in package.Value do
+                                if (assetName.ToLowerInvariant ()).Contains (assetPickerSearchStr.ToLowerInvariant ()) then
+                                    if ImGui.TreeNodeEx (assetName, ImGuiTreeNodeFlags.Leaf) then
+                                        if ImGui.IsMouseDoubleClicked ImGuiMouseButton.Left && ImGui.IsItemHovered () then
+                                            match selectedEntityTdsOpt with
+                                            | Some entityTds ->
+                                                match propertyFocusedOpt with
+                                                | Some property when property.PropertyType <> typeof<ComputedProperty> ->
+                                                    let typeConverter = SymbolicConverter (false, None, property.PropertyType)
+                                                    let propertyValueStr = "[" + package.Key + " " + assetName + "]"
+                                                    let propertyValue = typeConverter.ConvertFromString propertyValueStr
+                                                    property.SetValue (entityTds, propertyValue)
+                                                | Some _ | None -> ()
+                                            | None -> ()
+                                            showAssetPicker <- false
+                                        ImGui.TreePop ()
+                            ImGui.TreePop ()
+                    ImGui.EndPopup ()
+            ImGui.End ()
 
 (*
             let assets = Metadata.getDiscoveredAssets ()
