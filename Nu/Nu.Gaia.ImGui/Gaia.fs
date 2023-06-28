@@ -1598,72 +1598,36 @@ module Gaia =
                             | :? ConversionException -> ()
                 | Some _ | None -> ()
             | None -> ()
-
-            //if showAssetPicker then
-            //    ImGui.OpenPopup "Asset Picker"
-            //    if ImGui.BeginPopupModal ("Asset Picker") then
-            //        ImGui.EndPopup ()
-
-            if showAssetPicker then
-                let title = "Choose an Asset..."
-                if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
-                if ImGui.BeginPopupModal (title, &showAssetPicker) then
-                    ImGui.Text "Search:"
-                    ImGui.SameLine ()
-                    ImGui.InputTextWithHint ("##searchString", "[enter search text]", &assetPickerSearchStr, 4096u) |> ignore<bool>
-                    let assets = Metadata.getDiscoveredAssets ()
-                    for package in assets do
-                        if ImGui.TreeNode package.Key then
-                            for assetName in package.Value do
-                                if (assetName.ToLowerInvariant ()).Contains (assetPickerSearchStr.ToLowerInvariant ()) then
-                                    if ImGui.TreeNodeEx (assetName, ImGuiTreeNodeFlags.Leaf) then
-                                        if ImGui.IsMouseDoubleClicked ImGuiMouseButton.Left && ImGui.IsItemHovered () then
-                                            match selectedEntityTdsOpt with
-                                            | Some entityTds ->
-                                                match propertyFocusedOpt with
-                                                | Some property when property.PropertyType <> typeof<ComputedProperty> ->
-                                                    let typeConverter = SymbolicConverter (false, None, property.PropertyType)
-                                                    let propertyValueStr = "[" + package.Key + " " + assetName + "]"
-                                                    let propertyValue = typeConverter.ConvertFromString propertyValueStr
-                                                    property.SetValue (entityTds, propertyValue)
-                                                | Some _ | None -> ()
-                                            | None -> ()
-                                            showAssetPicker <- false
-                                        ImGui.TreePop ()
-                            ImGui.TreePop ()
-                    ImGui.EndPopup ()
             ImGui.End ()
 
-(*
-            let assets = Metadata.getDiscoveredAssets ()
-        for package in assets do
-            let node = assetPicker.assetTreeView.Nodes.Add package.Key
-            for assetName in package.Value do
-                node.Nodes.Add assetName |> ignore
-        assetPicker.assetTreeView.DoubleClick.Add (fun _ -> assetPicker.DialogResult <- DialogResult.OK)
-        assetPicker.okButton.Click.Add (fun _ -> assetPicker.DialogResult <- DialogResult.OK)
-        assetPicker.cancelButton.Click.Add (fun _ -> assetPicker.Close ())
-        assetPicker.searchTextBox.TextChanged.Add(fun _ ->
-            assetPicker.assetTreeView.Nodes.Clear ()
-            for package in assets do
-                let node = assetPicker.assetTreeView.Nodes.Add package.Key
-                for assetName in package.Value do
-                    if assetName.Contains assetPicker.searchTextBox.Text then
-                        node.Nodes.Add assetName |> ignore
-            assetPicker.assetTreeView.ExpandAll ())
-        match assetPicker.ShowDialog () with
-        | DialogResult.OK ->
-            match assetPicker.assetTreeView.SelectedNode with
-            | null -> world
-            | selectedNode ->
-                match selectedNode.Parent with
-                | null -> world
-                | selectedNodeParent ->
-                    let assetTag = (AssetTag.make<obj> selectedNodeParent.Text selectedNode.Text)
-                    form.propertyValueTextBox.Text <- scstring assetTag
-                    form.applyPropertyButton.PerformClick ()
-                    world
-*)
+        if showAssetPicker then
+            let title = "Choose an Asset..."
+            if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
+            if ImGui.BeginPopupModal (title, &showAssetPicker) then
+                ImGui.Text "Search:"
+                ImGui.SameLine ()
+                ImGui.InputTextWithHint ("##searchString", "[enter search text]", &assetPickerSearchStr, 4096u) |> ignore<bool>
+                let assets = Metadata.getDiscoveredAssets ()
+                for package in assets do
+                    if ImGui.TreeNode package.Key then
+                        for assetName in package.Value do
+                            if (assetName.ToLowerInvariant ()).Contains (assetPickerSearchStr.ToLowerInvariant ()) then
+                                if ImGui.TreeNodeEx (assetName, ImGuiTreeNodeFlags.Leaf) then
+                                    if ImGui.IsMouseDoubleClicked ImGuiMouseButton.Left && ImGui.IsItemHovered () then
+                                        match selectedEntityTdsOpt with
+                                        | Some entityTds ->
+                                            match propertyFocusedOpt with
+                                            | Some property when property.PropertyType <> typeof<ComputedProperty> ->
+                                                let typeConverter = SymbolicConverter (false, None, property.PropertyType)
+                                                let propertyValueStr = "[" + package.Key + " " + assetName + "]"
+                                                let propertyValue = typeConverter.ConvertFromString propertyValueStr
+                                                property.SetValue (entityTds, propertyValue)
+                                            | Some _ | None -> ()
+                                        | None -> ()
+                                        showAssetPicker <- false
+                                    ImGui.TreePop ()
+                        ImGui.TreePop ()
+                ImGui.EndPopup ()
 
         if showInspector then
             ImGui.ShowStackToolWindow ()
