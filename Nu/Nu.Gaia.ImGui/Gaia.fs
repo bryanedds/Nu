@@ -1257,6 +1257,16 @@ module Gaia =
     let rec imGuiEntityHierarchy (entity : Entity) =
         let children = Globals.World |> entity.GetChildren |> Seq.toArray
         if ImGui.TreeNodeEx (entity.Name, if Array.notEmpty children then ImGuiTreeNodeFlags.None else ImGuiTreeNodeFlags.Leaf) then
+            if ImGui.IsMouseClicked ImGuiMouseButton.Left && ImGui.IsItemHovered () then
+                selectedEntityTdsOpt <- Some { DescribedEntity = entity }
+            if ImGui.IsMouseDoubleClicked ImGuiMouseButton.Left && ImGui.IsItemHovered () then
+                if not (entity.GetAbsolute Globals.World) then
+                    if entity.GetIs2d Globals.World then
+                        Globals.World <- World.setEyeCenter2d (entity.GetCenter Globals.World).V2 Globals.World
+                    else
+                        let eyeRotation = World.getEyeRotation3d Globals.World
+                        let eyeCenterOffset = Vector3.Transform (Constants.Engine.EyeCenter3dOffset, eyeRotation)
+                        Globals.World <- World.setEyeCenter3d (entity.GetPosition Globals.World + eyeCenterOffset) Globals.World
             if ImGui.BeginDragDropSource () then
                 let entityAddressStr = scstring entity.EntityAddress
                 dragDropPayloadOpt <- Some entityAddressStr
@@ -1295,8 +1305,7 @@ module Gaia =
                             //MessageBox.Show ("Cannot relocate a protected simulant (such as an entity created by the Elmish API).", "Protected Elmish Simulant", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
                             ()
                     | None -> ()
-            for child in children do
-                imGuiEntityHierarchy child
+            for child in children do imGuiEntityHierarchy child
             ImGui.TreePop ()
 
     let imGuiProcess world =
