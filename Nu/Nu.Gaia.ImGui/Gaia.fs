@@ -1415,9 +1415,14 @@ module Gaia =
             ImGui.SameLine ()
             if ImGui.Button "Quick Size" then ()
             ImGui.SameLine ()
-            if World.getHalted Globals.World
-            then if ImGui.Button "Run" then ()
-            else if ImGui.Button "Pause" then ()
+            if World.getHalted Globals.World then
+                if ImGui.Button "*Run*" then
+                    Globals.pushPastWorld ()
+                    Globals.World <- World.setAdvancing true Globals.World
+            else
+                if ImGui.Button "Pause" then
+                    Globals.pushPastWorld ()
+                    Globals.World <- World.setAdvancing false Globals.World
             ImGui.SameLine ()
             ImGui.Text "Inspector"
             ImGui.SameLine ()
