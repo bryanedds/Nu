@@ -37,6 +37,7 @@ module Gaia =
     let mutable private creationDispatcherName = null // this will be initialized on start
     let mutable private creationOverlayName = "(Default Overlay)"
     let mutable private creationElevation = 0.0f
+    let mutable private assetViewerSearchStr = ""
     let mutable private assetPickerSearchStr = ""
     let mutable private showAssetPicker = false
     let mutable private showInspector = false
@@ -1600,6 +1601,20 @@ module Gaia =
             | None -> ()
             ImGui.End ()
 
+        if ImGui.Begin "Asset Viewer" then
+            ImGui.Text "Search:"
+            ImGui.SameLine ()
+            ImGui.InputTextWithHint ("##searchString", "[enter search text]", &assetViewerSearchStr, 4096u) |> ignore<bool>
+            let assets = Metadata.getDiscoveredAssets ()
+            for package in assets do
+                if ImGui.TreeNode package.Key then
+                    for assetName in package.Value do
+                        if (assetName.ToLowerInvariant ()).Contains (assetViewerSearchStr.ToLowerInvariant ()) then
+                            if ImGui.TreeNodeEx (assetName, ImGuiTreeNodeFlags.Leaf) then
+                                ImGui.TreePop ()
+                    ImGui.TreePop ()
+            ImGui.End ()
+
         if showAssetPicker then
             let title = "Choose an Asset..."
             if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
@@ -1628,6 +1643,7 @@ module Gaia =
                                     ImGui.TreePop ()
                         ImGui.TreePop ()
                 ImGui.EndPopup ()
+            if ImGui.IsKeyPressed ImGuiKey.Escape then showAssetPicker <- false
 
         if showInspector then
             ImGui.ShowStackToolWindow ()
