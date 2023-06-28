@@ -47,28 +47,26 @@ module Globals =
     let canRedo () =
         List.notEmpty pastWorlds
 
-    let tryUndo world =
-        if not (Nu.World.getImperative world) then
+    let tryUndo () =
+        if not (Nu.World.getImperative World) then
             match pastWorlds with
             | pastWorld :: pastWorlds' ->
-                let futureWorld = Nu.World.shelve world
-                let world = Nu.World.unshelve pastWorld
+                let futureWorld = Nu.World.shelve World
+                World <- Nu.World.unshelve pastWorld
                 pastWorlds <- pastWorlds'
                 futureWorlds <- futureWorld :: futureWorlds
-                World <- world
-                (true, world)
-            | [] -> (false, world)
-        else (false, world)
+                true
+            | [] -> false
+        else false
 
-    let tryRedo world =
-        if not (Nu.World.getImperative world) then
+    let tryRedo () =
+        if not (Nu.World.getImperative World) then
             match futureWorlds with
             | futureWorld :: futureWorlds' ->
-                let pastWorld = Nu.World.shelve world
-                let world = Nu.World.unshelve futureWorld
+                let pastWorld = Nu.World.shelve World
+                World <- Nu.World.unshelve futureWorld
                 pastWorlds <- pastWorld :: pastWorlds
                 futureWorlds <- futureWorlds'
-                World <- world
-                (true, world)
-            | [] -> (false, world)
-        else (false, world)
+                true
+            | [] -> false
+        else false
