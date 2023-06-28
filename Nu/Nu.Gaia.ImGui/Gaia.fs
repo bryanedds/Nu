@@ -1385,6 +1385,20 @@ module Gaia =
             ImGui.End ()
 
         if ImGui.Begin "Hierarchy" then
+            if ImGui.BeginDragDropTarget () then
+                if not (NativePtr.isNullPtr (ImGui.AcceptDragDropPayload "Entity").NativePtr) then
+                    match dragDropPayloadOpt with
+                    | Some payload ->
+                        let sourceEntityAddressStr = payload
+                        let sourceEntity = Entity sourceEntityAddressStr
+                        if not (sourceEntity.GetProtected Globals.World) then
+                            let sourceEntity' = Entity (selectedGroup.GroupAddress <-- Address.makeFromName sourceEntity.Name)
+                            Globals.World <- sourceEntity.SetMountOptWithAdjustment None Globals.World
+                            Globals.World <- World.renameEntityImmediate sourceEntity sourceEntity' Globals.World
+                            selectedEntityTdsOpt <- Some { DescribedEntity = sourceEntity' }
+                            //DUMMY
+                            //tryShowSelectedEntityInHierarchy form
+                    | None -> ()
             let entities =
                 World.getEntitiesSovereign selectedGroup Globals.World |>
                 Seq.map (fun entity -> ((entity.Surnames.Length, entity.GetOrder Globals.World), entity)) |>
