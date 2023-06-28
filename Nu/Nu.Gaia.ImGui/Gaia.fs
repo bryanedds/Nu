@@ -27,6 +27,7 @@ module Gaia =
     let mutable private dragEyeState = DragEyeInactive
     let mutable private snaps2d = (Constants.Editor.Position2dSnapDefault, Constants.Editor.Degrees2dSnapDefault, Constants.Editor.Scale2dSnapDefault)
     let mutable private snaps3d = (Constants.Editor.Position3dSnapDefault, Constants.Editor.Degrees3dSnapDefault, Constants.Editor.Scale3dSnapDefault)
+    let mutable private propertyFocusedOpt = None
     let mutable private snaps2dSelected = true
     let mutable private filePaths = Map.empty<Group Address, string>
     let mutable private targetDir = "."
@@ -296,21 +297,21 @@ module Gaia =
         // fin
         (Cascade, Globals.World)
 
-    (*let private trySaveSelectedGroup filePath world =
-        let oldWorld = world
-        try World.writeGroupToFile filePath selectedGroup world
+    let private trySaveSelectedGroup filePath =
+        try World.writeGroupToFile filePath selectedGroup Globals.World
         with exn ->
-            World.choose oldWorld |> ignore
-            MessageBox.Show ("Could not save file due to: " + scstring exn, "File Save Error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+            //DUMMY
+            //MessageBox.Show ("Could not save file due to: " + scstring exn, "File Save Error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+            ()
 
-    let private tryLoadSelectedGroup (form : GaiaForm) filePath world =
+    let private tryLoadSelectedGroup filePath =
 
         // old world in case we need to rewind
-        let oldWorld = world
+        let oldWorld = Globals.World
 
         try // try to destroy current group
-            if not (selectedGroup.GetProtected world) then
-                let world = World.destroyGroupImmediate selectedGroup world
+            if not (selectedGroup.GetProtected Globals.World) then
+                Globals.World <- World.destroyGroupImmediate selectedGroup Globals.World
 
                 // load and add group, updating tab and selected group in the process
                 let groupDescriptorStr = File.ReadAllText filePath
@@ -320,44 +321,32 @@ module Gaia =
                     | Some (Atom (name, _)) -> name
                     | _ -> failwithumf ()
                 let group = selectedScreen / groupName
-                if not (group.Exists world) then
-                    let (group, world) = World.readGroup groupDescriptor None selectedScreen world
-                    form.groupTabControl.SelectedTab.Text <- group.Name
-                    form.groupTabControl.SelectedTab.Name <- group.Name
+                if not (group.Exists Globals.World) then
+                    let (group, world) = World.readGroup groupDescriptor None selectedScreen Globals.World
+                    let world = Globals.World <- world
                     selectedGroup <- group
-
-                    // refresh hierarchy view
-                    refreshHierarchyTreeView form world
-                    (Some group, world)
+                    Some group
             
                 // handle load failure
                 else
-                    let world = World.choose oldWorld
-                    MessageBox.Show ("Could not load group file with same name as an existing group", "File Load Error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
-                    (None, world)
+                    Globals.World <- World.choose oldWorld
+                    //DUMMY
+                    //MessageBox.Show ("Could not load group file with same name as an existing group", "File Load Error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+                    None
 
             else
-                MessageBox.Show ("Cannot load into a protected simulant (such as a group created by the Elmish API).", "File Load Error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
-                (None, world)
+                //DUMMY
+                //MessageBox.Show ("Cannot load into a protected simulant (such as a group created by the Elmish API).", "File Load Error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+                None
 
         // handle load failure
         with exn ->
-            let world = World.choose oldWorld
-            MessageBox.Show ("Could not load group file due to: " + scstring exn, "File Load Error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
-            (None, world)
+            Globals.World <- World.choose oldWorld
+            //DUMMY
+            //MessageBox.Show ("Could not load group file due to: " + scstring exn, "File Load Error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+            None
 
-    let private handleFormExit (form : GaiaForm) (_ : EventArgs) =
-        form.Close ()
-
-    let private handleFormCreateElevationPlusClick (form : GaiaForm) (_ : EventArgs) =
-        let elevation = snd (Single.TryParse form.createElevationTextBox.Text)
-        form.createElevationTextBox.Text <- scstring (elevation + 1.0f)
-
-    let private handleFormCreateElevationMinusClick (form : GaiaForm) (_ : EventArgs) =
-        let elevation = snd (Single.TryParse form.createElevationTextBox.Text)
-        form.createElevationTextBox.Text <- scstring (elevation - 1.0f)
-
-    let private handlePropertyPickAsset (form : GaiaForm) world =
+    (*let private handlePropertyPickAsset (form : GaiaForm) world =
         use assetPicker = new AssetPicker ()
         let assets = Metadata.getDiscoveredAssets ()
         for package in assets do
@@ -429,93 +418,9 @@ module Gaia =
     let private handlePropertyPickButton (propertyDescriptor : System.ComponentModel.PropertyDescriptor) entityTds form world =
         if propertyDescriptor.PropertyType.GetGenericTypeDefinition () = typedefof<_ AssetTag> then handlePropertyPickAsset form world
         elif propertyDescriptor.PropertyType = typeof<Entity Relation option> then handlePropertyPickParentNode propertyDescriptor entityTds form world
-        else world
+        else world*)
 
-    let private refreshPropertyEditor4 isEntity (propertyGrid : PropertyGrid) (form : GaiaForm) world =
-        match (propertyGrid.SelectedObject, propertyGrid.SelectedGridItem) with
-        | (null, _) | (_, null) ->
-            form.propertyEditor.Enabled <- false
-            form.propertyNameLabel.Text <- String.Empty
-            form.propertyDescriptionTextBox.Text <- String.Empty
-            form.propertyValueTextBox.Text <- String.Empty
-        | (selectedObject, selectedGridItem) ->
-            match selectedGridItem.GridItemType with
-            | GridItemType.Property ->
-                let ty = selectedGridItem.PropertyDescriptor.PropertyType
-                let typeConverter = SymbolicConverter (false, None, ty)
-                form.propertyEditor.Enabled <- not selectedGridItem.PropertyDescriptor.IsReadOnly
-                form.propertyNameLabel.Text <- selectedGridItem.Label
-                form.propertyDescriptionTextBox.Text <- selectedGridItem.PropertyDescriptor.Description
-                if ty <> typeof<ComputedProperty> && (notNull selectedGridItem.Value || FSharpType.isNullTrueValue ty) then
-                    let (_, _, prettyPrinter) =
-                        match (isEntity, selectedGridItem.Label) with
-                        | (true, Constants.Engine.OverlayNameOptPropertyName) ->
-                            let overlays = World.getOverlays world
-                            let overlayNames = overlays |> Map.toValueList |> List.map (fun overlay -> overlay.OverlayName)
-                            (String.concat " " overlayNames, "", PrettyPrinter.defaultPrinter)
-                        | (true, Constants.Engine.FacetNamesPropertyName) ->
-                            let facetNames = world |> World.getFacets |> Map.toKeyList
-                            (String.concat " " facetNames, "", PrettyPrinter.defaultPrinter)
-                        | (_, _) ->
-                            let syntax = SyntaxAttribute.defaultValue ty
-                            let keywords0 =
-                                if ty = typeof<Scripting.Expr>
-                                then syntax.Keywords0 + " " + WorldBindings.BindingKeywords
-                                else syntax.Keywords0
-                            (keywords0, syntax.Keywords1, syntax.PrettyPrinter)
-                    let selectionStart = form.propertyValueTextBox.SelectionStart
-                    let strUnescaped = typeConverter.ConvertToString selectedGridItem.Value
-                    let strEscaped = String.escape strUnescaped
-                    let strPretty = PrettyPrinter.prettyPrint strEscaped prettyPrinter
-                    form.propertyValueTextBox.Text <- strPretty.Replace ("\n", "\r\n")
-                    form.propertyValueTextBox.SelectionStart <- selectionStart
-                    form.pickPropertyButton.Visible <-
-                        selectedGridItem.PropertyDescriptor.PropertyType = typeof<Entity Relation option> ||
-                        (selectedGridItem.PropertyDescriptor.PropertyType.IsGenericType &&
-                         selectedGridItem.PropertyDescriptor.PropertyType.GetGenericTypeDefinition () = typedefof<_ AssetTag>)
-                    form.pickPropertyButton.Click.RemoveHandler propertyPickButtonClickHandler
-                    propertyPickButtonClickHandler <- EventHandler (fun _ _ ->
-                        if isEntity then
-                            let selectedEntityTds = selectedObject :?> EntityTypeDescriptorSource
-                            let handler = handlePropertyPickButton selectedGridItem.PropertyDescriptor selectedEntityTds form
-                            Globals.nextPreUpdate handler)
-                    form.pickPropertyButton.Click.AddHandler propertyPickButtonClickHandler
-            | _ ->
-                form.propertyEditor.Enabled <- false
-                form.propertyNameLabel.Text <- String.Empty
-                form.propertyDescriptionTextBox.Text <- String.Empty
-                form.propertyValueTextBox.Text <- String.Empty
-                form.pickPropertyButton.Visible <- false
-                form.pickPropertyButton.Click.RemoveHandler propertyPickButtonClickHandler
-
-    let private applyPropertyEditor2 (propertyGrid : PropertyGrid) (form : GaiaForm) =
-        match (propertyGrid.SelectedObject, propertyGrid.SelectedGridItem) with
-        | (null, _) -> ()
-        | (_, null) -> failwithumf ()
-        | (selectedObject, selectedGridItem) ->
-            match selectedGridItem.GridItemType with
-            | GridItemType.Property when form.propertyNameLabel.Text = selectedGridItem.Label ->
-                let propertyDescriptor = selectedGridItem.PropertyDescriptor
-                let typeConverter = SymbolicConverter (false, None, propertyDescriptor.PropertyType)
-                try let strEscaped = form.propertyValueTextBox.Text.TrimEnd ()
-                    let strUnescaped = String.unescape strEscaped
-                    let propertyValue = typeConverter.ConvertFromString strUnescaped
-                    propertyDescriptor.SetValue (selectedObject, propertyValue)
-                with
-                | :? ConversionException as exn ->
-                    match exn.SymbolOpt with
-                    | Some symbol ->
-                        match Symbol.getOriginOpt symbol with
-                        | ValueSome origin ->
-                            form.propertyValueTextBox.SelectionStart <- int origin.Start.Index
-                            form.propertyValueTextBox.Focus () |> ignore<bool>
-                        | ValueNone -> ()
-                    | None -> ()
-                    Log.info ("Invalid apply property operation due to: " + scstring exn)
-                | exn -> Log.info ("Invalid apply property operation due to: " + scstring exn)
-            | _ -> Log.trace "Invalid apply property operation (likely a code issue in Gaia)."
-
-    let private refreshPropertyEditor (form : GaiaForm) =
+    (*let private refreshPropertyEditor (form : GaiaForm) =
         let world = Globals.World // handle re-entry
         match form.propertyTabControl.SelectedIndex with
         | 0 -> refreshPropertyEditor4 false form.gamePropertyGrid form world
@@ -1523,9 +1428,9 @@ module Gaia =
                     if ImGui.MenuItem ("Open Group", "Ctrl+O") then ()
                     if ImGui.MenuItem ("Save Group", "Ctrl+S") then ()
                     if ImGui.MenuItem ("Save Group as...", "Ctrl+A") then ()
-                    if ImGui.MenuItem ("Close Group") then ()
+                    if ImGui.MenuItem "Close Group" then ()
                     ImGui.Separator ()
-                    if ImGui.MenuItem ("Exit") then ()
+                    if ImGui.MenuItem "Exit" then Globals.World <- World.exit Globals.World
                     ImGui.EndMenu ()
                 if ImGui.BeginMenu "Edit" then
                     if ImGui.MenuItem ("Undo", "Ctrl+Z") then ()
@@ -1582,7 +1487,7 @@ module Gaia =
             if ImGui.Checkbox ("##darkTheme", &darkTheme) then
                 if darkTheme
                 then ImGui.StyleColorsDark ()
-                else ImGui.StyleColorsClassic ()
+                else ImGui.StyleColorsLight ()
             ImGui.SameLine ()
             ImGui.End ()
 
@@ -1633,25 +1538,25 @@ module Gaia =
                     let value = property.GetValue entityTds
                     let valueStr = converter.ConvertToString value
                     match value with
-                    | :? bool as b -> let mutable b' = b in if ImGui.Checkbox (property.DisplayName, &b') then property.SetValue (entityTds, b')
-                    | :? int8 as i -> let mutable i' = int32 i in if ImGui.DragInt (property.DisplayName, &i') then property.SetValue (entityTds, int8 i')
-                    | :? uint8 as i -> let mutable i' = int32 i in if ImGui.DragInt (property.DisplayName, &i') then property.SetValue (entityTds, uint8 i')
-                    | :? int16 as i -> let mutable i' = int32 i in if ImGui.DragInt (property.DisplayName, &i') then property.SetValue (entityTds, int16 i')
-                    | :? uint16 as i -> let mutable i' = int32 i in if ImGui.DragInt (property.DisplayName, &i') then property.SetValue (entityTds, uint16 i')
-                    | :? int32 as i -> let mutable i' = int32 i in if ImGui.DragInt (property.DisplayName, &i') then property.SetValue (entityTds, int32 i')
-                    | :? uint32 as i -> let mutable i' = int32 i in if ImGui.DragInt (property.DisplayName, &i') then property.SetValue (entityTds, uint32 i')
-                    | :? int64 as i -> let mutable i' = int32 i in if ImGui.DragInt (property.DisplayName, &i') then property.SetValue (entityTds, int64 i')
-                    | :? uint64 as i -> let mutable i' = int32 i in if ImGui.DragInt (property.DisplayName, &i') then property.SetValue (entityTds, uint64 i')
-                    | :? single as f -> let mutable f' = single f in if ImGui.DragFloat (property.DisplayName, &f') then property.SetValue (entityTds, single f')
-                    | :? double as f -> let mutable f' = single f in if ImGui.DragFloat (property.DisplayName, &f') then property.SetValue (entityTds, double f')
-                    | :? Vector2 as v -> let mutable v' = v in if ImGui.DragFloat2 (property.DisplayName, &v') then property.SetValue (entityTds, v')
-                    | :? Vector3 as v -> let mutable v' = v in if ImGui.DragFloat3 (property.DisplayName, &v') then property.SetValue (entityTds, v')
-                    | :? Vector4 as v -> let mutable v' = v in if ImGui.DragFloat4 (property.DisplayName, &v') then property.SetValue (entityTds, v')
-                    | :? Vector2i as v -> let mutable v' = v in if ImGui.DragInt2 (property.DisplayName, &v'.X) then property.SetValue (entityTds, v')
-                    | :? Vector3i as v -> let mutable v' = v in if ImGui.DragInt3 (property.DisplayName, &v'.X) then property.SetValue (entityTds, v')
-                    | :? Vector4i as v -> let mutable v' = v in if ImGui.DragInt4 (property.DisplayName, &v'.X) then property.SetValue (entityTds, v')
+                    | :? bool as b -> let mutable b' = b in if ImGui.Checkbox (property.Name, &b') then property.SetValue (entityTds, b')
+                    | :? int8 as i -> let mutable i' = int32 i in if ImGui.DragInt (property.Name, &i') then property.SetValue (entityTds, int8 i')
+                    | :? uint8 as i -> let mutable i' = int32 i in if ImGui.DragInt (property.Name, &i') then property.SetValue (entityTds, uint8 i')
+                    | :? int16 as i -> let mutable i' = int32 i in if ImGui.DragInt (property.Name, &i') then property.SetValue (entityTds, int16 i')
+                    | :? uint16 as i -> let mutable i' = int32 i in if ImGui.DragInt (property.Name, &i') then property.SetValue (entityTds, uint16 i')
+                    | :? int32 as i -> let mutable i' = int32 i in if ImGui.DragInt (property.Name, &i') then property.SetValue (entityTds, int32 i')
+                    | :? uint32 as i -> let mutable i' = int32 i in if ImGui.DragInt (property.Name, &i') then property.SetValue (entityTds, uint32 i')
+                    | :? int64 as i -> let mutable i' = int32 i in if ImGui.DragInt (property.Name, &i') then property.SetValue (entityTds, int64 i')
+                    | :? uint64 as i -> let mutable i' = int32 i in if ImGui.DragInt (property.Name, &i') then property.SetValue (entityTds, uint64 i')
+                    | :? single as f -> let mutable f' = single f in if ImGui.DragFloat (property.Name, &f') then property.SetValue (entityTds, single f')
+                    | :? double as f -> let mutable f' = single f in if ImGui.DragFloat (property.Name, &f') then property.SetValue (entityTds, double f')
+                    | :? Vector2 as v -> let mutable v' = v in if ImGui.DragFloat2 (property.Name, &v') then property.SetValue (entityTds, v')
+                    | :? Vector3 as v -> let mutable v' = v in if ImGui.DragFloat3 (property.Name, &v') then property.SetValue (entityTds, v')
+                    | :? Vector4 as v -> let mutable v' = v in if ImGui.DragFloat4 (property.Name, &v') then property.SetValue (entityTds, v')
+                    | :? Vector2i as v -> let mutable v' = v in if ImGui.DragInt2 (property.Name, &v'.X) then property.SetValue (entityTds, v')
+                    | :? Vector3i as v -> let mutable v' = v in if ImGui.DragInt3 (property.Name, &v'.X) then property.SetValue (entityTds, v')
+                    | :? Vector4i as v -> let mutable v' = v in if ImGui.DragInt4 (property.Name, &v'.X) then property.SetValue (entityTds, v')
                     | :? Box2 as b ->
-                        ImGui.Text property.DisplayName
+                        ImGui.Text property.Name
                         let mutable min = v2 b.Min.X b.Min.Y
                         let mutable size = v2 b.Size.X b.Size.Y
                         ImGui.Indent ()
@@ -1661,7 +1566,7 @@ module Gaia =
                             property.SetValue (entityTds, b')
                         ImGui.Unindent ()
                     | :? Box3 as b ->
-                        ImGui.Text property.DisplayName
+                        ImGui.Text property.Name
                         let mutable min = v3 b.Min.X b.Min.Y b.Min.Z
                         let mutable size = v3 b.Size.X b.Size.Y b.Size.Z
                         ImGui.Indent ()
@@ -1671,7 +1576,7 @@ module Gaia =
                             property.SetValue (entityTds, b')
                         ImGui.Unindent ()
                     | :? Box2i as b ->
-                        ImGui.Text property.DisplayName
+                        ImGui.Text property.Name
                         let mutable min = v2i b.Min.X b.Min.Y
                         let mutable size = v2i b.Size.X b.Size.Y
                         ImGui.Indent ()
@@ -1682,12 +1587,12 @@ module Gaia =
                         ImGui.Unindent ()
                     | :? Quaternion as q ->
                         let mutable v = v4 q.X q.Y q.Z q.W
-                        if ImGui.DragFloat4 (property.DisplayName, &v) then
+                        if ImGui.DragFloat4 (property.Name, &v) then
                             let q' = quat v.X v.Y v.Z v.W
                             property.SetValue (entityTds, q')
                     | :? Color as c ->
                         let mutable v = v4 c.R c.G c.B c.A
-                        if ImGui.ColorEdit4 (property.DisplayName, &v) then
+                        if ImGui.ColorEdit4 (property.Name, &v) then
                             let c' = color v.X v.Y v.Z v.W
                             property.SetValue (entityTds, c')
                     | _ ->
@@ -1699,7 +1604,7 @@ module Gaia =
                                 let caseNames = Array.map (fun (case : UnionCaseInfo) -> case.Name) cases
                                 let (unionCaseInfo, _) = FSharpValue.GetUnionFields (value, ty)
                                 let mutable tag = unionCaseInfo.Tag
-                                if ImGui.Combo (property.DisplayName, &tag, caseNames, caseNames.Length) then
+                                if ImGui.Combo (property.Name, &tag, caseNames, caseNames.Length) then
                                     let value' = FSharpValue.MakeUnion (cases.[tag], [||])
                                     property.SetValue (entityTds, value')
                         if not combo then
@@ -1708,10 +1613,65 @@ module Gaia =
                                 try let value' = converter.ConvertFromString valueStr'
                                     property.SetValue (entityTds, value')
                                 with _ -> ()
+                    if ImGui.IsItemFocused () then propertyFocusedOpt <- Some property
             | None -> ()
             ImGui.End ()
 
         if ImGui.Begin "Property Editor" then
+            match selectedEntityTdsOpt with
+            | Some entityTds ->
+                match propertyFocusedOpt with
+                | Some property when property.PropertyType <> typeof<ComputedProperty> ->
+                    let typeConverter = SymbolicConverter (false, None, property.PropertyType)
+                    match property.GetValue entityTds with
+                    | null -> ()
+                    | propertyValue ->
+                        ImGui.Text property.Name
+                        ImGui.SameLine ()
+                        ImGui.Text ":"
+                        ImGui.SameLine ()
+                        ImGui.Text property.Description
+                        let propertyValueUnescaped = typeConverter.ConvertToString propertyValue
+                        let propertyValueEscaped = String.escape propertyValueUnescaped
+                        let mutable propertyValuePretty = PrettyPrinter.prettyPrint propertyValueEscaped PrettyPrinter.defaultPrinter
+                        ImGui.InputTextMultiline ("##propertyValuePretty", &propertyValuePretty, 131072u, v2 -1.0f 200.0f) |> ignore<bool>
+                        if ImGui.Button "Apply" then ()
+                        ImGui.SameLine ()
+                        if ImGui.Button "Reset" then ()
+                        if  property.PropertyType = typeof<Entity Relation option> ||
+                            (property.PropertyType.IsGenericType && property.PropertyType.GetGenericTypeDefinition () = typedefof<_ AssetTag>) then
+                            ImGui.SameLine ()
+                            if ImGui.Button "Pick" then ()
+                | Some _ | None -> ()
+            | None -> ()
+
+    (*let private applyPropertyEditor2 (propertyGrid : PropertyGrid) (form : GaiaForm) =
+        match (propertyGrid.SelectedObject, propertyGrid.SelectedGridItem) with
+        | (null, _) -> ()
+        | (_, null) -> failwithumf ()
+        | (selectedObject, selectedGridItem) ->
+            match selectedGridItem.GridItemType with
+            | GridItemType.Property when form.propertyNameLabel.Text = selectedGridItem.Label ->
+                let propertyDescriptor = selectedGridItem.PropertyDescriptor
+                let typeConverter = SymbolicConverter (false, None, propertyDescriptor.PropertyType)
+                try let strEscaped = form.propertyValueTextBox.Text.TrimEnd ()
+                    let strUnescaped = String.unescape strEscaped
+                    let propertyValue = typeConverter.ConvertFromString strUnescaped
+                    propertyDescriptor.SetValue (selectedObject, propertyValue)
+                with
+                | :? ConversionException as exn ->
+                    match exn.SymbolOpt with
+                    | Some symbol ->
+                        match Symbol.getOriginOpt symbol with
+                        | ValueSome origin ->
+                            form.propertyValueTextBox.SelectionStart <- int origin.Start.Index
+                            form.propertyValueTextBox.Focus () |> ignore<bool>
+                        | ValueNone -> ()
+                    | None -> ()
+                    Log.info ("Invalid apply property operation due to: " + scstring exn)
+                | exn -> Log.info ("Invalid apply property operation due to: " + scstring exn)
+            | _ -> Log.trace "Invalid apply property operation (likely a code issue in Gaia)."*)
+
             ImGui.End ()
 
         if showInspector then
