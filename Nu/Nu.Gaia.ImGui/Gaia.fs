@@ -37,6 +37,7 @@ module Gaia =
     let mutable private creationOverlayName = "(Default Overlay)"
     let mutable private creationElevation = 0.0f
     let mutable private showInspector = false
+    let mutable private darkTheme = false // TODO: load this from config
 
     let private getSnaps () =
         if snaps2dSelected
@@ -1575,6 +1576,13 @@ module Gaia =
             ImGui.Text "Inspector"
             ImGui.SameLine ()
             ImGui.Checkbox ("##showInspector", &showInspector) |> ignore<bool>
+            ImGui.SameLine ()
+            ImGui.Text "Dark"
+            ImGui.SameLine ()
+            if ImGui.Checkbox ("##darkTheme", &darkTheme) then
+                if darkTheme
+                then ImGui.StyleColorsDark ()
+                else ImGui.StyleColorsClassic ()
             ImGui.SameLine ()
             ImGui.End ()
 

@@ -32,29 +32,29 @@ type SavedState =
 [<RequireQualifiedAccess>]
 module Globals =
 
-    let mutable private PastWorlds = [] : World list
-    let mutable private FutureWorlds = [] : World list
+    let mutable private pastWorlds = [] : World list
+    let mutable private futureWorlds = [] : World list
     let mutable World = Unchecked.defaultof<World>
 
     let pushPastWorld () =
         World <- Nu.World.shelve World
-        PastWorlds <- World :: PastWorlds
-        FutureWorlds <- []
+        pastWorlds <- World :: pastWorlds
+        futureWorlds <- []
 
     let canUndo () =
-        List.notEmpty PastWorlds
+        List.notEmpty pastWorlds
 
     let canRedo () =
-        List.notEmpty PastWorlds
+        List.notEmpty pastWorlds
 
     let tryUndo world =
         if not (Nu.World.getImperative world) then
-            match PastWorlds with
+            match pastWorlds with
             | pastWorld :: pastWorlds' ->
                 let futureWorld = Nu.World.shelve world
                 let world = Nu.World.unshelve pastWorld
-                PastWorlds <- pastWorlds'
-                FutureWorlds <- futureWorld :: FutureWorlds
+                pastWorlds <- pastWorlds'
+                futureWorlds <- futureWorld :: futureWorlds
                 World <- world
                 (true, world)
             | [] -> (false, world)
@@ -62,12 +62,12 @@ module Globals =
 
     let tryRedo world =
         if not (Nu.World.getImperative world) then
-            match FutureWorlds with
+            match futureWorlds with
             | futureWorld :: futureWorlds' ->
                 let pastWorld = Nu.World.shelve world
                 let world = Nu.World.unshelve futureWorld
-                PastWorlds <- pastWorld :: PastWorlds
-                FutureWorlds <- futureWorlds'
+                pastWorlds <- pastWorld :: pastWorlds
+                futureWorlds <- futureWorlds'
                 World <- world
                 (true, world)
             | [] -> (false, world)
