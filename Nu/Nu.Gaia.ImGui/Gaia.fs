@@ -1574,44 +1574,21 @@ module Gaia =
                         ImGui.Text property.Description
                         let propertyValueUnescaped = typeConverter.ConvertToString propertyValue
                         let propertyValueEscaped = String.escape propertyValueUnescaped
-                        let mutable propertyValuePretty = PrettyPrinter.prettyPrint propertyValueEscaped PrettyPrinter.defaultPrinter
-                        ImGui.InputTextMultiline ("##propertyValuePretty", &propertyValuePretty, 131072u, v2 -1.0f 200.0f) |> ignore<bool>
-                        if ImGui.Button "Apply" then ()
-                        ImGui.SameLine ()
-                        if ImGui.Button "Reset" then ()
                         if  property.PropertyType = typeof<Entity Relation option> ||
                             (property.PropertyType.IsGenericType && property.PropertyType.GetGenericTypeDefinition () = typedefof<_ AssetTag>) then
                             ImGui.SameLine ()
                             if ImGui.Button "Pick" then ()
+                        let mutable propertyValuePretty = PrettyPrinter.prettyPrint propertyValueEscaped PrettyPrinter.defaultPrinter
+                        if ImGui.InputTextMultiline ("##propertyValuePretty", &propertyValuePretty, 131072u, v2 -1.0f -1.0f) then
+                            try let propertyValueEscaped = propertyValuePretty
+                                let propertyValueUnescaped = String.unescape propertyValueEscaped
+                                let propertyValue = typeConverter.ConvertFromString propertyValueUnescaped
+                                property.SetValue (entityTds, propertyValue)
+                            with
+                            | :? (*Parse*)Exception // TODO: use ParseException once Prime is updated.
+                            | :? ConversionException -> ()
                 | Some _ | None -> ()
             | None -> ()
-
-    (*let private applyPropertyEditor2 (propertyGrid : PropertyGrid) (form : GaiaForm) =
-        match (propertyGrid.SelectedObject, propertyGrid.SelectedGridItem) with
-        | (null, _) -> ()
-        | (_, null) -> failwithumf ()
-        | (selectedObject, selectedGridItem) ->
-            match selectedGridItem.GridItemType with
-            | GridItemType.Property when form.propertyNameLabel.Text = selectedGridItem.Label ->
-                let propertyDescriptor = selectedGridItem.PropertyDescriptor
-                let typeConverter = SymbolicConverter (false, None, propertyDescriptor.PropertyType)
-                try let strEscaped = form.propertyValueTextBox.Text.TrimEnd ()
-                    let strUnescaped = String.unescape strEscaped
-                    let propertyValue = typeConverter.ConvertFromString strUnescaped
-                    propertyDescriptor.SetValue (selectedObject, propertyValue)
-                with
-                | :? ConversionException as exn ->
-                    match exn.SymbolOpt with
-                    | Some symbol ->
-                        match Symbol.getOriginOpt symbol with
-                        | ValueSome origin ->
-                            form.propertyValueTextBox.SelectionStart <- int origin.Start.Index
-                            form.propertyValueTextBox.Focus () |> ignore<bool>
-                        | ValueNone -> ()
-                    | None -> ()
-                    Log.info ("Invalid apply property operation due to: " + scstring exn)
-                | exn -> Log.info ("Invalid apply property operation due to: " + scstring exn)
-            | _ -> Log.trace "Invalid apply property operation (likely a code issue in Gaia)."*)
 
             ImGui.End ()
 
