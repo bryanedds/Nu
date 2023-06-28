@@ -437,28 +437,6 @@ module Gaia =
         | 3 -> applyPropertyEditor2 form.entityPropertyGrid form
         | _ -> failwithumf ()
 
-    let private populatePreludeTextBox (form : GaiaForm) =
-        match World.tryReadPrelude () with
-        | Right (preludeStr, _) ->
-            form.preludeTextBox.Text <- preludeStr.Replace ("\n", "\r\n")
-        | Left error ->
-            MessageBox.Show ("Could not read prelude due to: " + error + "'.", "Failed to Read Prelude", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
-
-    let private tryReloadPrelude (_ : GaiaForm) world =
-        let assetSourceDir = targetDir + "/../../.."
-        World.tryReloadPrelude assetSourceDir targetDir world
-
-    let private trySavePrelude (form : GaiaForm) world =
-        let oldWorld = world
-        let preludeSourceDir = targetDir + "/../../.."
-        let preludeFilePath = preludeSourceDir + "/" + Assets.Global.PreludeFilePath
-        try let preludeStr = form.preludeTextBox.Text.TrimEnd ()
-            File.WriteAllText (preludeFilePath, preludeStr)
-            (true, world)
-        with exn ->
-            MessageBox.Show ("Could not save asset graph due to: " + scstring exn, "Failed to Save Asset Graph", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
-            (false, World.choose oldWorld)
-
     let private populateAssetGraphTextBox (form : GaiaForm) =
         match AssetGraph.tryMakeFromFile (targetDir + "/" + Assets.Global.AssetGraphFilePath) with
         | Right assetGraph ->
@@ -553,45 +531,6 @@ module Gaia =
         let prettyPrinter = (SyntaxAttribute.defaultValue typeof<EventFilter>).PrettyPrinter
         let eventFilterPretty = PrettyPrinter.prettyPrint eventFilterStr prettyPrinter
         form.eventFilterTextBox.Text <- eventFilterPretty.Replace ("\n", "\r\n")
-
-    let private handleFormEntityPropertyGridSelectedObjectsChanged (form : GaiaForm) (_ : EventArgs) =
-        refreshPropertyEditor form
-
-    let private handleFormEntityPropertyGridSelectedGridItemChanged (form : GaiaForm) (_ : EventArgs) =
-        refreshPropertyEditor form
-
-    let private handleFormGroupPropertyGridSelectedObjectsChanged (form : GaiaForm) (_ : EventArgs) =
-        refreshPropertyEditor form
-
-    let private handleFormGroupPropertyGridSelectedGridItemChanged (form : GaiaForm) (_ : EventArgs) =
-        refreshPropertyEditor form
-
-    let private handleFormScreenPropertyGridSelectedObjectsChanged (form : GaiaForm) (_ : EventArgs) =
-        refreshPropertyEditor form
-
-    let private handleFormScreenPropertyGridSelectedGridItemChanged (form : GaiaForm) (_ : EventArgs) =
-        refreshPropertyEditor form
-
-    let private handleFormGamePropertyGridSelectedObjectsChanged (form : GaiaForm) (_ : EventArgs) =
-        refreshPropertyEditor form
-
-    let private handleFormGamePropertyGridSelectedGridItemChanged (form : GaiaForm) (_ : EventArgs) =
-        refreshPropertyEditor form
-
-    let private handlePropertyTabControlSelectedIndexChanged (form : GaiaForm) (_ : EventArgs) =
-        let world = Globals.World // handle re-entry
-        match form.propertyTabControl.SelectedIndex with
-        | 0 -> refreshGamePropertyGrid form world
-        | 1 -> refreshScreenPropertyGrid form world
-        | 2 -> refreshGroupPropertyGrid form world
-        | 3 -> refreshEntityPropertyGrid form world
-        | _ -> failwithumf ()
-
-    let private handleFormPropertyRefreshClick (form : GaiaForm) (_ : EventArgs) =
-        refreshPropertyEditor form
-
-    let private handleFormPropertyApplyClick (form : GaiaForm) (_ : EventArgs) =
-        applyPropertyEditor form
 
     let private handleFormHierarchyTreeViewItemDrag (form : GaiaForm) (args : ItemDragEventArgs) =
         if args.Button = MouseButtons.Left then
@@ -1414,6 +1353,8 @@ module Gaia =
         world*)
 
     let imGuiProcess world =
+
+        // TODO: figure out some sort of exception handling strategy for Gaia interaction.
 
         let world = Globals.World <- world
 

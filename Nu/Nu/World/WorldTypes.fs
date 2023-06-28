@@ -43,6 +43,28 @@ type Callback<'a, 's when 's :> Simulant> = Event<'a, 's> -> World -> Handling *
 /// Represents an unsubscription operation for an event.
 and Unsubscription = World -> World
 
+/// Details additional editing behavior for an simulant's properties.
+and AppendProperties =
+    { PushPastWorld : World -> World }
+
+/// Details replacement for editing behavior for a simulant property, allowing the user to indicate that a property was
+/// replaced.
+and [<ReferenceEquality>] ReplaceProperty =
+    { PushPastWorld : World -> World
+      IndicateReplaced : World -> World
+      Property : Property }
+
+/// Details the additional editing behavior for a simulant in a viewport.
+and [<ReferenceEquality>] OverlayViewport =
+    { PushPastWorld : World -> World
+      ViewportBounds : Box2 }
+
+/// Specifies an aspect of simulant editing to perform.
+and [<ReferenceEquality>] EditOperation =
+    | AppendProperties 
+    | ReplaceProperty of ReplaceProperty
+    | OverlayViewport of OverlayViewport
+
 /// The data for a change in a simulant.
 and ChangeData =
     { Name : string
