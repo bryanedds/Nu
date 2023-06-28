@@ -1599,7 +1599,9 @@ module Gaia =
                         if (assetName.ToLowerInvariant ()).Contains (assetViewerSearchStr.ToLowerInvariant ()) then
                             ImGui.TreeNodeEx (assetName, ImGuiTreeNodeFlags.Leaf) |> ignore<bool>
                             if ImGui.BeginDragDropSource () then
-                                dragDropPayloadOpt <- Some ("[" + package.Key + " " + assetName + "]")
+                                let assetTagStr = "[" + package.Key + " " + assetName + "]"
+                                dragDropPayloadOpt <- Some assetTagStr
+                                ImGui.Text assetTagStr
                                 ImGui.SetDragDropPayload ("Asset", IntPtr.Zero, 0u) |> ignore<bool>
                                 ImGui.EndDragDropSource ()
                             ImGui.TreePop ()
