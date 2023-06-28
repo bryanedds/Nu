@@ -12,6 +12,7 @@ open System.Numerics
 open System.Reflection
 open System.Runtime.InteropServices
 open FSharp.Compiler.Interactive
+open FSharp.NativeInterop
 open FSharp.Reflection
 open Prime
 open ImGuiNET
@@ -42,6 +43,7 @@ module Gaia =
     let mutable private showAssetPicker = false
     let mutable private showInspector = false
     let mutable private darkTheme = false // TODO: load this from config
+    let mutable private dragDropPayloadOpt = None
 
     let private getSnaps () =
         if snaps2dSelected
@@ -351,39 +353,7 @@ module Gaia =
             //MessageBox.Show ("Could not load group file due to: " + scstring exn, "File Load Error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
             None
 
-    (*let private handlePropertyPickAsset (form : GaiaForm) world =
-        use assetPicker = new AssetPicker ()
-        let assets = Metadata.getDiscoveredAssets ()
-        for package in assets do
-            let node = assetPicker.assetTreeView.Nodes.Add package.Key
-            for assetName in package.Value do
-                node.Nodes.Add assetName |> ignore
-        assetPicker.assetTreeView.DoubleClick.Add (fun _ -> assetPicker.DialogResult <- DialogResult.OK)
-        assetPicker.okButton.Click.Add (fun _ -> assetPicker.DialogResult <- DialogResult.OK)
-        assetPicker.cancelButton.Click.Add (fun _ -> assetPicker.Close ())
-        assetPicker.searchTextBox.TextChanged.Add(fun _ ->
-            assetPicker.assetTreeView.Nodes.Clear ()
-            for package in assets do
-                let node = assetPicker.assetTreeView.Nodes.Add package.Key
-                for assetName in package.Value do
-                    if assetName.Contains assetPicker.searchTextBox.Text then
-                        node.Nodes.Add assetName |> ignore
-            assetPicker.assetTreeView.ExpandAll ())
-        match assetPicker.ShowDialog () with
-        | DialogResult.OK ->
-            match assetPicker.assetTreeView.SelectedNode with
-            | null -> world
-            | selectedNode ->
-                match selectedNode.Parent with
-                | null -> world
-                | selectedNodeParent ->
-                    let assetTag = (AssetTag.make<obj> selectedNodeParent.Text selectedNode.Text)
-                    form.propertyValueTextBox.Text <- scstring assetTag
-                    form.applyPropertyButton.PerformClick ()
-                    world
-        | _ -> world
-
-    let private handlePropertyPickParentNode (propertyDescriptor : System.ComponentModel.PropertyDescriptor) (entityTds : EntityTypeDescriptorSource) (form : GaiaForm) world =
+    (*let private handlePropertyPickParentNode (propertyDescriptor : System.ComponentModel.PropertyDescriptor) (entityTds : EntityTypeDescriptorSource) (form : GaiaForm) world =
         use entityPicker = new EntityPicker ()
         let surnamesStrs =
             World.getEntitiesFlattened selectedGroup world |>
@@ -419,28 +389,6 @@ module Gaia =
                     else form.applyPropertyButton.PerformClick (); world
             | _ -> world
         | _ -> world
-
-    let private handlePropertyPickButton (propertyDescriptor : System.ComponentModel.PropertyDescriptor) entityTds form world =
-        if propertyDescriptor.PropertyType.GetGenericTypeDefinition () = typedefof<_ AssetTag> then handlePropertyPickAsset form world
-        elif propertyDescriptor.PropertyType = typeof<Entity Relation option> then handlePropertyPickParentNode propertyDescriptor entityTds form world
-        else world*)
-
-    (*let private refreshPropertyEditor (form : GaiaForm) =
-        let world = Globals.World // handle re-entry
-        match form.propertyTabControl.SelectedIndex with
-        | 0 -> refreshPropertyEditor4 false form.gamePropertyGrid form world
-        | 1 -> refreshPropertyEditor4 false form.screenPropertyGrid form world
-        | 2 -> refreshPropertyEditor4 false form.groupPropertyGrid form world
-        | 3 -> refreshPropertyEditor4 true form.entityPropertyGrid form world
-        | _ -> failwithumf ()
-
-    let private applyPropertyEditor (form : GaiaForm) =
-        match form.propertyTabControl.SelectedIndex with
-        | 0 -> applyPropertyEditor2 form.gamePropertyGrid form
-        | 1 -> applyPropertyEditor2 form.screenPropertyGrid form
-        | 2 -> applyPropertyEditor2 form.groupPropertyGrid form
-        | 3 -> applyPropertyEditor2 form.entityPropertyGrid form
-        | _ -> failwithumf ()
 
     let private populateAssetGraphTextBox (form : GaiaForm) =
         match AssetGraph.tryMakeFromFile (targetDir + "/" + Assets.Global.AssetGraphFilePath) with
@@ -1477,6 +1425,7 @@ module Gaia =
         //  JointDevice
         //  DateTimeOffset?
         //  Flag Enums
+        //
         if ImGui.Begin "Properties" then
             match selectedEntityTdsOpt with
             | Some entityTds ->
@@ -1486,6 +1435,7 @@ module Gaia =
                 for property in properties do
                     let ty = property.PropertyType
                     let converter = SymbolicConverter ty
+                    let isPropertyAssetTag = property.PropertyType.IsGenericType && property.PropertyType.GetGenericTypeDefinition () = typedefof<_ AssetTag>
                     let value = property.GetValue entityTds
                     let valueStr = converter.ConvertToString value
                     match value with
@@ -1546,6 +1496,27 @@ module Gaia =
                         if ImGui.ColorEdit4 (property.Name, &v) then
                             let c' = color v.X v.Y v.Z v.W
                             property.SetValue (entityTds, c')
+                    | _ when isPropertyAssetTag ->
+                        let mutable valueStr' = valueStr
+                        if ImGui.InputText (property.Name, &valueStr', 4096u) then
+                            try let value' = converter.ConvertFromString valueStr'
+                                property.SetValue (entityTds, value')
+                            with
+                            | :? (*Parse*)Exception // TODO: use ParseException once Prime is updated.
+                            | :? ConversionException -> ()
+                        if ImGui.BeginDragDropTarget () then
+                            if not (NativePtr.isNullPtr (ImGui.AcceptDragDropPayload "Asset").NativePtr) then
+                                match dragDropPayloadOpt with
+                                | Some payload ->
+                                    try let propertyValueEscaped = payload
+                                        let propertyValueUnescaped = String.unescape propertyValueEscaped
+                                        let propertyValue = converter.ConvertFromString propertyValueUnescaped
+                                        property.SetValue (entityTds, propertyValue)
+                                    with
+                                    | :? (*Parse*)Exception // TODO: use ParseException once Prime is updated.
+                                    | :? ConversionException -> ()
+                                | None -> ()
+                            ImGui.EndDragDropTarget ()
                     | _ ->
                         let mutable combo = false
                         if FSharpType.IsUnion ty then
@@ -1563,7 +1534,9 @@ module Gaia =
                             if ImGui.InputText (property.Name, &valueStr', 131072u) then
                                 try let value' = converter.ConvertFromString valueStr'
                                     property.SetValue (entityTds, value')
-                                with _ -> ()
+                                with
+                                | :? (*Parse*)Exception // TODO: use ParseException once Prime is updated.
+                                | :? ConversionException -> ()
                     if ImGui.IsItemFocused () then propertyFocusedOpt <- Some property
             | None -> ()
             ImGui.End ()
@@ -1573,7 +1546,7 @@ module Gaia =
             | Some entityTds ->
                 match propertyFocusedOpt with
                 | Some property when property.PropertyType <> typeof<ComputedProperty> ->
-                    let typeConverter = SymbolicConverter (false, None, property.PropertyType)
+                    let converter = SymbolicConverter (false, None, property.PropertyType)
                     match property.GetValue entityTds with
                     | null -> ()
                     | propertyValue ->
@@ -1582,21 +1555,35 @@ module Gaia =
                         ImGui.Text ":"
                         ImGui.SameLine ()
                         ImGui.Text property.Description
-                        let propertyValueUnescaped = typeConverter.ConvertToString propertyValue
+                        let propertyValueUnescaped = converter.ConvertToString propertyValue
                         let propertyValueEscaped = String.escape propertyValueUnescaped
-                        if  property.PropertyType = typeof<Entity Relation option> ||
-                            (property.PropertyType.IsGenericType && property.PropertyType.GetGenericTypeDefinition () = typedefof<_ AssetTag>) then
+                        let isPropertyAssetTag = property.PropertyType.IsGenericType && property.PropertyType.GetGenericTypeDefinition () = typedefof<_ AssetTag>
+                        if isPropertyAssetTag then
                             ImGui.SameLine ()
                             if ImGui.Button "Pick" then showAssetPicker <- true
                         let mutable propertyValuePretty = PrettyPrinter.prettyPrint propertyValueEscaped PrettyPrinter.defaultPrinter
                         if ImGui.InputTextMultiline ("##propertyValuePretty", &propertyValuePretty, 131072u, v2 -1.0f -1.0f) then
                             try let propertyValueEscaped = propertyValuePretty
                                 let propertyValueUnescaped = String.unescape propertyValueEscaped
-                                let propertyValue = typeConverter.ConvertFromString propertyValueUnescaped
+                                let propertyValue = converter.ConvertFromString propertyValueUnescaped
                                 property.SetValue (entityTds, propertyValue)
                             with
                             | :? (*Parse*)Exception // TODO: use ParseException once Prime is updated.
                             | :? ConversionException -> ()
+                        if isPropertyAssetTag then
+                            if ImGui.BeginDragDropTarget () then
+                                if not (NativePtr.isNullPtr (ImGui.AcceptDragDropPayload "Asset").NativePtr) then
+                                    match dragDropPayloadOpt with
+                                    | Some payload ->
+                                        try let propertyValueEscaped = payload
+                                            let propertyValueUnescaped = String.unescape propertyValueEscaped
+                                            let propertyValue = converter.ConvertFromString propertyValueUnescaped
+                                            property.SetValue (entityTds, propertyValue)
+                                        with
+                                        | :? (*Parse*)Exception // TODO: use ParseException once Prime is updated.
+                                        | :? ConversionException -> ()
+                                    | None -> ()
+                                ImGui.EndDragDropTarget ()
                 | Some _ | None -> ()
             | None -> ()
             ImGui.End ()
@@ -1610,8 +1597,12 @@ module Gaia =
                 if ImGui.TreeNode package.Key then
                     for assetName in package.Value do
                         if (assetName.ToLowerInvariant ()).Contains (assetViewerSearchStr.ToLowerInvariant ()) then
-                            if ImGui.TreeNodeEx (assetName, ImGuiTreeNodeFlags.Leaf) then
-                                ImGui.TreePop ()
+                            ImGui.TreeNodeEx (assetName, ImGuiTreeNodeFlags.Leaf) |> ignore<bool>
+                            if ImGui.BeginDragDropSource () then
+                                dragDropPayloadOpt <- Some ("[" + package.Key + " " + assetName + "]")
+                                ImGui.SetDragDropPayload ("Asset", IntPtr.Zero, 0u) |> ignore<bool>
+                                ImGui.EndDragDropSource ()
+                            ImGui.TreePop ()
                     ImGui.TreePop ()
             ImGui.End ()
 
@@ -1633,9 +1624,9 @@ module Gaia =
                                         | Some entityTds ->
                                             match propertyFocusedOpt with
                                             | Some property when property.PropertyType <> typeof<ComputedProperty> ->
-                                                let typeConverter = SymbolicConverter (false, None, property.PropertyType)
+                                                let converter = SymbolicConverter (false, None, property.PropertyType)
                                                 let propertyValueStr = "[" + package.Key + " " + assetName + "]"
-                                                let propertyValue = typeConverter.ConvertFromString propertyValueStr
+                                                let propertyValue = converter.ConvertFromString propertyValueStr
                                                 property.SetValue (entityTds, propertyValue)
                                             | Some _ | None -> ()
                                         | None -> ()
