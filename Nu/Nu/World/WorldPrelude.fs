@@ -127,22 +127,6 @@ type [<ReferenceEquality>] 'w Tasklet =
     { ScheduledTime : GameTime
       ScheduledOp : 'w -> 'w }
 
-/// Details replacement for editing behavior for a simulant property, allowing the user to specify if a property was
-/// replaced using a mutable flag which defaults to false (not replaced).
-type [<ReferenceEquality>] ReplaceProperty =
-    { Property : Property
-      mutable Replaced : bool }
-
-/// Details the additional editing behavior for a simulant in a viewport.
-type [<ReferenceEquality>] OverlayViewport =
-    { ViewportBounds : Box2 }
-
-/// Specifies an aspect of simulant editing to perform.
-type [<ReferenceEquality>] EditOperation =
-    | AppendProperties
-    | ReplaceProperty of ReplaceProperty
-    | OverlayViewport of OverlayViewport
-
 /// Specifies that a module contains functions that need to be considered for binding generation.
 type [<AttributeUsage (AttributeTargets.Class); AllowNullLiteral>]
     ModuleBindingAttribute () =
