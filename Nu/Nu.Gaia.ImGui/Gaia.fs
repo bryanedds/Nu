@@ -34,7 +34,7 @@ module Gaia =
     let mutable private targetDir = "."
     let mutable private selectedScreen = Screen "Screen" // TODO: see if this is necessary or if we can just use World.getSelectedScreen.
     let mutable private selectedGroup = selectedScreen / "Group"
-    let mutable private selectedEntityTdsOpt = None
+    let mutable private selectedEntityTdsOpt = None // TODO: see if we can make this just a regular Entity reference.
     let mutable private creationDispatcherName = null // this will be initialized on start
     let mutable private creationOverlayName = "(Default Overlay)"
     let mutable private creationElevation = 0.0f
@@ -491,57 +491,6 @@ module Gaia =
 
     let private handleFormHierarchyTreeViewDragEnter (_ : GaiaForm) (args : DragEventArgs) =
         args.Effect <- args.AllowedEffect
-
-    let private handleFormHierarchyTreeViewDragDrop (form : GaiaForm) (args : DragEventArgs) =
-
-        // TODO: lift this out.
-        let rec containsNode (source : TreeNode) (target : TreeNode) =
-            if isNull target.Parent then false
-            elif target.Parent = source then true
-            else containsNode source target.Parent
-
-        Globals.nextPreUpdate $ fun world ->
-            let world = Globals.pushPastWorld world
-            let targetPoint = form.hierarchyTreeView.PointToClient (Point (args.X, args.Y))
-            let targetNodeOpt = form.hierarchyTreeView.GetNodeAt targetPoint
-            let draggedNode = args.Data.GetData typeof<TreeNode> :?> TreeNode
-            let source = Entity (selectedGroup.GroupAddress <-- Address.makeFromString draggedNode.Name)
-            if not (source.GetProtected world) then
-                if isNull targetNodeOpt then
-                    let source' = Entity (selectedGroup.GroupAddress <-- Address.makeFromString source.Name)
-                    let world = source.SetMountOptWithAdjustment None world
-                    let world = World.renameEntityImmediate source source' world
-                    let world = refreshHierarchyTreeViewImmediate form world
-                    selectEntity source' form world
-                    tryShowSelectedEntityInHierarchy form
-                    world
-                elif draggedNode <> targetNodeOpt && not (containsNode draggedNode targetNodeOpt) then
-                    if args.KeyState &&& 32 = 0 then // alt not pressed
-                        let source' = Entity (selectedGroup.GroupAddress <-- Address.makeFromString targetNodeOpt.Name) / source.Name
-                        let mount = Relation.makeParent ()
-                        let world = World.renameEntityImmediate source source' world
-                        let world = source'.SetMountOptWithAdjustment (Some mount) world
-                        let world = refreshHierarchyTreeViewImmediate form world
-                        selectEntity source' form world
-                        tryShowSelectedEntityInHierarchy form
-                        world
-                    else // alt pressed
-                        let next = Entity (selectedGroup.GroupAddress <-- Address.makeFromString targetNodeOpt.Name)
-                        let previousOpt = World.tryGetPreviousEntity next world
-                        let parentOpt = match next.Parent with :? Entity as parent -> Some parent | _ -> None
-                        let mountOpt = match parentOpt with Some _ -> Some (Relation.makeParent ()) | None -> None
-                        let source' = match parentOpt with Some parent -> parent / source.Name | None -> selectedGroup / source.Name
-                        let world = World.insertEntityOrder source previousOpt next world
-                        let world = World.renameEntityImmediate source source' world
-                        let world = source'.SetMountOptWithAdjustment mountOpt world
-                        let world = refreshHierarchyTreeViewImmediate form world
-                        selectEntity source' form world
-                        tryShowSelectedEntityInHierarchy form
-                        world
-                else world
-            else
-                MessageBox.Show ("Cannot relocate a protected simulant (such as an entity created by the Elmish API).", "Protected Elmish Simulant", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
-                world
 
     let private handleFormHierarchyTreeViewCollapseClick (form : GaiaForm) (_ : EventArgs) =
         form.hierarchyTreeView.CollapseAll ()
@@ -1305,6 +1254,51 @@ module Gaia =
         Application.DoEvents ()
         world*)
 
+    let rec imGuiEntityHierarchy (entity : Entity) =
+        let children = Globals.World |> entity.GetChildren |> Seq.toArray
+        if ImGui.TreeNodeEx (entity.Name, if Array.notEmpty children then ImGuiTreeNodeFlags.None else ImGuiTreeNodeFlags.Leaf) then
+            if ImGui.BeginDragDropSource () then
+                let entityAddressStr = scstring entity.EntityAddress
+                dragDropPayloadOpt <- Some entityAddressStr
+                ImGui.Text entity.Name
+                ImGui.SetDragDropPayload ("Entity", IntPtr.Zero, 0u) |> ignore<bool>
+                ImGui.EndDragDropSource ()
+            if ImGui.BeginDragDropTarget () then
+                if not (NativePtr.isNullPtr (ImGui.AcceptDragDropPayload "Entity").NativePtr) then
+                    match dragDropPayloadOpt with
+                    | Some payload ->
+                        let sourceEntityAddressStr = payload
+                        let sourceEntity = Entity sourceEntityAddressStr
+                        if not (sourceEntity.GetProtected Globals.World) then
+                            if ImGui.IsKeyPressed ImGuiKey.LeftAlt || ImGui.IsKeyPressed ImGuiKey.RightAlt then // alt pressed
+                                let next = Entity (selectedGroup.GroupAddress <-- Address.makeFromArray entity.Surnames)
+                                let previousOpt = World.tryGetPreviousEntity next Globals.World
+                                let parentOpt = match next.Parent with :? Entity as parent -> Some parent | _ -> None
+                                let mountOpt = match parentOpt with Some _ -> Some (Relation.makeParent ()) | None -> None
+                                let sourceEntity' = match parentOpt with Some parent -> parent / sourceEntity.Name | None -> selectedGroup / sourceEntity.Name
+                                Globals.World <- World.insertEntityOrder sourceEntity previousOpt next Globals.World
+                                Globals.World <- World.renameEntityImmediate sourceEntity sourceEntity' Globals.World
+                                Globals.World <- sourceEntity'.SetMountOptWithAdjustment mountOpt Globals.World
+                                selectedEntityTdsOpt <- Some { DescribedEntity = sourceEntity' }
+                                //DUMMY
+                                //tryShowSelectedEntityInHierarchy form
+                            else // alt not pressed
+                                let sourceEntity' = Entity (selectedGroup.GroupAddress <-- Address.makeFromArray entity.Surnames) / sourceEntity.Name
+                                let mount = Relation.makeParent ()
+                                Globals.World <- World.renameEntityImmediate sourceEntity sourceEntity' Globals.World
+                                Globals.World <- sourceEntity'.SetMountOptWithAdjustment (Some mount) Globals.World
+                                selectedEntityTdsOpt <- Some { DescribedEntity = sourceEntity' }
+                                //DUMMY
+                                //tryShowSelectedEntityInHierarchy form
+                        else
+                            //DUMMY
+                            //MessageBox.Show ("Cannot relocate a protected simulant (such as an entity created by the Elmish API).", "Protected Elmish Simulant", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+                            ()
+                    | None -> ()
+            for child in children do
+                imGuiEntityHierarchy child
+            ImGui.TreePop ()
+
     let imGuiProcess world =
 
         // TODO: figure out some sort of exception handling strategy for Gaia interaction.
@@ -1398,11 +1392,7 @@ module Gaia =
                 Array.sortBy fst |>
                 Array.map snd
             for entity in entities do
-                ImGui.TreeNode entity.Name |> ignore<bool>
-                for child in entity.GetChildren Globals.World do
-                    ImGui.Indent ()
-                    ImGui.TreeNode child.Name |> ignore<bool>
-                    ImGui.Unindent ()
+                imGuiEntityHierarchy entity
             ImGui.End ()
 
         // TODO: implement in order of priority -
