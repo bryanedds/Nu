@@ -204,46 +204,26 @@ module Gaia =
             let turnSpeed =
                 if World.isKeyboardShiftDown Globals.World then 0.025f
                 else 0.05f
-            Globals.World <-
-                if World.isKeyboardKeyDown KeyboardKey.W Globals.World
-                then World.setEyeCenter3d (position + Vector3.Transform (v3Forward, rotation) * moveSpeed) Globals.World
-                else Globals.World
-            Globals.World <-
-                if World.isKeyboardKeyDown KeyboardKey.S Globals.World
-                then World.setEyeCenter3d (position + Vector3.Transform (v3Back, rotation) * moveSpeed) Globals.World
-                else Globals.World
-            Globals.World <-
-                if World.isKeyboardKeyDown KeyboardKey.A Globals.World
-                then World.setEyeCenter3d (position + Vector3.Transform (v3Left, rotation) * moveSpeed) Globals.World
-                else Globals.World
-            Globals.World <-
-                if World.isKeyboardKeyDown KeyboardKey.D Globals.World
-                then World.setEyeCenter3d (position + Vector3.Transform (v3Right, rotation) * moveSpeed) Globals.World
-                else Globals.World
-            Globals.World <-
-                if World.isKeyboardKeyDown KeyboardKey.Q Globals.World
-                then World.setEyeRotation3d (rotation * Quaternion.CreateFromAxisAngle (v3Right, turnSpeed)) Globals.World
-                else Globals.World
-            Globals.World <-
-                if World.isKeyboardKeyDown KeyboardKey.E Globals.World
-                then World.setEyeRotation3d (rotation * Quaternion.CreateFromAxisAngle (v3Left, turnSpeed)) Globals.World
-                else Globals.World
-            Globals.World <-
-                if World.isKeyboardKeyDown KeyboardKey.Up Globals.World
-                then World.setEyeCenter3d (position + Vector3.Transform (v3Up, rotation) * moveSpeed) Globals.World
-                else Globals.World
-            Globals.World <-
-                if World.isKeyboardKeyDown KeyboardKey.Down Globals.World
-                then World.setEyeCenter3d (position + Vector3.Transform (v3Down, rotation) * moveSpeed) Globals.World
-                else Globals.World
-            Globals.World <-
-                if World.isKeyboardKeyDown KeyboardKey.Left Globals.World
-                then World.setEyeRotation3d (Quaternion.CreateFromAxisAngle (v3Up, turnSpeed) * rotation) Globals.World
-                else Globals.World
-            Globals.World <-
-                if World.isKeyboardKeyDown KeyboardKey.Right Globals.World
-                then World.setEyeRotation3d (Quaternion.CreateFromAxisAngle (v3Down, turnSpeed) * rotation) Globals.World
-                else Globals.World
+            if World.isKeyboardKeyDown KeyboardKey.W Globals.World then
+                Globals.World <- World.setEyeCenter3d (position + Vector3.Transform (v3Forward, rotation) * moveSpeed) Globals.World
+            if World.isKeyboardKeyDown KeyboardKey.S Globals.World then
+                Globals.World <- World.setEyeCenter3d (position + Vector3.Transform (v3Back, rotation) * moveSpeed) Globals.World
+            if World.isKeyboardKeyDown KeyboardKey.A Globals.World then
+                Globals.World <- World.setEyeCenter3d (position + Vector3.Transform (v3Left, rotation) * moveSpeed) Globals.World
+            if World.isKeyboardKeyDown KeyboardKey.D Globals.World then
+                Globals.World <- World.setEyeCenter3d (position + Vector3.Transform (v3Right, rotation) * moveSpeed) Globals.World
+            if World.isKeyboardKeyDown KeyboardKey.Q Globals.World then
+                Globals.World <- World.setEyeRotation3d (rotation * Quaternion.CreateFromAxisAngle (v3Right, turnSpeed)) Globals.World
+            if World.isKeyboardKeyDown KeyboardKey.E Globals.World then
+                Globals.World <- World.setEyeRotation3d (rotation * Quaternion.CreateFromAxisAngle (v3Left, turnSpeed)) Globals.World
+            if World.isKeyboardKeyDown KeyboardKey.Up Globals.World then
+                Globals.World <- World.setEyeCenter3d (position + Vector3.Transform (v3Up, rotation) * moveSpeed) Globals.World
+            if World.isKeyboardKeyDown KeyboardKey.Down Globals.World then
+                Globals.World <- World.setEyeCenter3d (position + Vector3.Transform (v3Down, rotation) * moveSpeed) Globals.World
+            if World.isKeyboardKeyDown KeyboardKey.Left Globals.World then
+                Globals.World <- World.setEyeRotation3d (Quaternion.CreateFromAxisAngle (v3Up, turnSpeed) * rotation) Globals.World
+            if World.isKeyboardKeyDown KeyboardKey.Right Globals.World then
+                Globals.World <- World.setEyeRotation3d (Quaternion.CreateFromAxisAngle (v3Down, turnSpeed) * rotation) Globals.World
             (Cascade, Globals.World)
         else (Cascade, Globals.World)
 
@@ -271,16 +251,16 @@ module Gaia =
                     Globals.World
 
         // render selection highlights
-        Globals.World <-
-            match selectedEntityTdsOpt with
-            | Some entityTds ->
-                let entity = entityTds.DescribedEntity
-                let absolute = entity.GetAbsolute Globals.World
-                let bounds = entity.GetHighlightBounds Globals.World
-                if entity.GetIs2d Globals.World then
-                    let elevation = Single.MaxValue
-                    let transform = Transform.makePerimeter bounds v3Zero elevation absolute false
-                    let image = Assets.Default.HighlightImage
+        match selectedEntityTdsOpt with
+        | Some entityTds ->
+            let entity = entityTds.DescribedEntity
+            let absolute = entity.GetAbsolute Globals.World
+            let bounds = entity.GetHighlightBounds Globals.World
+            if entity.GetIs2d Globals.World then
+                let elevation = Single.MaxValue
+                let transform = Transform.makePerimeter bounds v3Zero elevation absolute false
+                let image = Assets.Default.HighlightImage
+                Globals.World <-
                     World.enqueueRenderMessage2d
                         (LayeredOperation2d
                             { Elevation = elevation
@@ -296,9 +276,10 @@ module Gaia =
                                       Emission = Color.Zero
                                       Flip = FlipNone }})
                         Globals.World
-                else
-                    let mutable boundsMatrix = Matrix4x4.CreateScale (bounds.Size + v3Dup 0.01f) // slightly bigger to eye to prevent z-fighting with selected entity
-                    boundsMatrix.Translation <- bounds.Center
+            else
+                let mutable boundsMatrix = Matrix4x4.CreateScale (bounds.Size + v3Dup 0.01f) // slightly bigger to eye to prevent z-fighting with selected entity
+                boundsMatrix.Translation <- bounds.Center
+                Globals.World <-
                     World.enqueueRenderMessage3d
                         (RenderStaticModel
                             { Absolute = absolute
@@ -309,7 +290,7 @@ module Gaia =
                               RenderType = ForwardRenderType (0.0f, Single.MinValue)
                               StaticModel = Assets.Default.HighlightModel })
                         Globals.World
-            | None -> Globals.World
+        | None -> ()
 
         // fin
         (Cascade, Globals.World)
@@ -812,48 +793,44 @@ module Gaia =
         let viewport = World.getViewport Globals.World
         let mousePosition = World.getMousePosition Globals.World
         let mutable entityTransform = entity.GetTransform Globals.World
-        Globals.World <-
-            if entity.GetIs2d Globals.World then
-                let eyeCenter = World.getEyeCenter2d Globals.World
-                let eyeSize = World.getEyeSize2d Globals.World
-                let entityPosition =
-                    if atMouse
-                    then viewport.MouseToWorld2d (entity.GetAbsolute Globals.World, mousePosition, eyeCenter, eyeSize)
-                    else viewport.MouseToWorld2d (entity.GetAbsolute Globals.World, World.getEyeSize2d Globals.World, eyeCenter, eyeSize)
-                entityTransform.Position <- entityPosition.V3
-                entityTransform.Size <- entity.GetQuickSize Globals.World
-                entityTransform.Elevation <- creationElevation
-                if snaps2dSelected
-                then entity.SetTransformSnapped positionSnap degreesSnap scaleSnap entityTransform Globals.World
-                else entity.SetTransform entityTransform Globals.World
-            else
-                let eyeCenter = World.getEyeCenter3d Globals.World
-                let eyeRotation = World.getEyeRotation3d Globals.World
-                let entityPosition =
-                    if atMouse then
-                        let ray = viewport.MouseToWorld3d (entity.GetAbsolute Globals.World, mousePosition, eyeCenter, eyeRotation)
-                        let forward = Vector3.Transform (v3Forward, eyeRotation)
-                        let plane = plane3 (eyeCenter + forward * Constants.Engine.EyeCenter3dOffset.Z) -forward
-                        (ray.Intersection plane).Value
-                    else eyeCenter + Vector3.Transform (v3Forward, eyeRotation) * Constants.Engine.EyeCenter3dOffset.Z
-                entityTransform.Position <- entityPosition
-                entityTransform.Size <- entity.GetQuickSize Globals.World
-                if not snaps2dSelected
-                then entity.SetTransformSnapped positionSnap degreesSnap scaleSnap entityTransform Globals.World
-                else entity.SetTransform entityTransform Globals.World
-        Globals.World <-
-            if inHierarchy
-            then entity.SetMountOptWithAdjustment (Some (Relation.makeParent ())) Globals.World
-            else Globals.World
-        Globals.World <-
-            match entity.TryGetProperty (nameof entity.ProbeBounds) Globals.World with
-            | Some property when property.PropertyType = typeof<Box3> ->
-                let bounds =
-                    box3
-                        (v3Dup Constants.Render.LightProbeSizeDefault * -0.5f + entity.GetPosition Globals.World)
-                        (v3Dup Constants.Render.LightProbeSizeDefault)
-                entity.SetProbeBounds bounds Globals.World
-            | Some _ | None -> Globals.World
+        if entity.GetIs2d Globals.World then
+            let eyeCenter = World.getEyeCenter2d Globals.World
+            let eyeSize = World.getEyeSize2d Globals.World
+            let entityPosition =
+                if atMouse
+                then viewport.MouseToWorld2d (entity.GetAbsolute Globals.World, mousePosition, eyeCenter, eyeSize)
+                else viewport.MouseToWorld2d (entity.GetAbsolute Globals.World, World.getEyeSize2d Globals.World, eyeCenter, eyeSize)
+            entityTransform.Position <- entityPosition.V3
+            entityTransform.Size <- entity.GetQuickSize Globals.World
+            entityTransform.Elevation <- creationElevation
+            if snaps2dSelected
+            then Globals.World <- entity.SetTransformSnapped positionSnap degreesSnap scaleSnap entityTransform Globals.World
+            else Globals.World <- entity.SetTransform entityTransform Globals.World
+        else
+            let eyeCenter = World.getEyeCenter3d Globals.World
+            let eyeRotation = World.getEyeRotation3d Globals.World
+            let entityPosition =
+                if atMouse then
+                    let ray = viewport.MouseToWorld3d (entity.GetAbsolute Globals.World, mousePosition, eyeCenter, eyeRotation)
+                    let forward = Vector3.Transform (v3Forward, eyeRotation)
+                    let plane = plane3 (eyeCenter + forward * Constants.Engine.EyeCenter3dOffset.Z) -forward
+                    (ray.Intersection plane).Value
+                else eyeCenter + Vector3.Transform (v3Forward, eyeRotation) * Constants.Engine.EyeCenter3dOffset.Z
+            entityTransform.Position <- entityPosition
+            entityTransform.Size <- entity.GetQuickSize Globals.World
+            if not snaps2dSelected
+            then Globals.World <- entity.SetTransformSnapped positionSnap degreesSnap scaleSnap entityTransform Globals.World
+            else Globals.World <- entity.SetTransform entityTransform Globals.World
+        if inHierarchy then
+            Globals.World <- entity.SetMountOptWithAdjustment (Some (Relation.makeParent ())) Globals.World
+        match entity.TryGetProperty (nameof entity.ProbeBounds) Globals.World with
+        | Some property when property.PropertyType = typeof<Box3> ->
+            let bounds =
+                box3
+                    (v3Dup Constants.Render.LightProbeSizeDefault * -0.5f + entity.GetPosition Globals.World)
+                    (v3Dup Constants.Render.LightProbeSizeDefault)
+            Globals.World <- entity.SetProbeBounds bounds Globals.World
+        | Some _ | None -> ()
         selectedEntityTdsOpt <- Some { DescribedEntity = entity }
         //DUMMY
         //tryShowSelectedEntityInHierarchy form
@@ -1362,158 +1339,113 @@ module Gaia =
     let private handleFormClosing (_ : GaiaForm) (args : CancelEventArgs) =
         match MessageBox.Show ("Are you sure you want to close Gaia?", "Close Gaia?", MessageBoxButtons.OKCancel) with
         | DialogResult.Cancel -> args.Cancel <- true
-        | _ -> ()
+        | _ -> ()*)
 
-    let private updateEntityDrag (form : GaiaForm) world =
+    let private updateEntityDrag () =
 
-        if not (canEditWithMouse form world) then
+        if not (canEditWithMouse ()) then
             match dragEntityState with
             | DragEntityPosition2d (time, mousePositionWorldOriginal, entityDragOffset, entity) ->
                 let localTime = DateTimeOffset.Now - time
-                if entity.Exists world && localTime.TotalSeconds >= Constants.Editor.DragMinimumSeconds then
-                    let mousePositionWorld = World.getMousePostion2dWorld (entity.GetAbsolute world) world
+                if entity.Exists Globals.World && localTime.TotalSeconds >= Constants.Editor.DragMinimumSeconds then
+                    let mousePositionWorld = World.getMousePostion2dWorld (entity.GetAbsolute Globals.World) Globals.World
                     let entityPosition = (entityDragOffset - mousePositionWorldOriginal) + (mousePositionWorld - mousePositionWorldOriginal)
                     let entityPositionSnapped =
-                        if not form.snap3dButton.Checked
-                        then Math.snapF3d (Triple.fst (getSnaps form)) entityPosition.V3
+                        if snaps2dSelected
+                        then Math.snapF3d (Triple.fst (getSnaps ())) entityPosition.V3
                         else entityPosition.V3
-                    let entityPosition = entity.GetPosition world
+                    let entityPosition = entity.GetPosition Globals.World
                     let entityPositionDelta = entityPositionSnapped - entityPosition
-                    let entityPositionConstrained =
-                        match (form.constrainXButton.Checked, form.constrainYButton.Checked, form.constrainZButton.Checked) with
-                        | (true, false, _) -> entityPosition + entityPositionDelta * v3Right
-                        | (false, true, _) -> entityPosition + entityPositionDelta * v3Up
-                        | (_, _, _) -> entityPosition + entityPositionDelta
-                    let world =
-                        match Option.bind (tryResolve entity) (entity.GetMountOpt world) with
-                        | Some parent ->
-                            let entityPositionLocal = Vector3.Transform (entityPositionConstrained, parent.GetAffineMatrix world |> Matrix4x4.Inverse)
-                            entity.SetPositionLocal entityPositionLocal world
-                        | None ->
-                            entity.SetPosition entityPositionConstrained world
-                    let world =
-                        if  Option.isSome (entity.TryGetProperty "LinearVelocity" world) &&
-                            Option.isSome (entity.TryGetProperty "AngularVelocity" world) then
-                            let world = entity.SetLinearVelocity v3Zero world
-                            let world = entity.SetAngularVelocity v3Zero world
-                            world
-                        else world
-                    // NOTE: disabled the following line to fix perf issue caused by refreshing the property grid every frame
-                    // form.entityPropertyGrid.Refresh ()
-                    world
-                else world
+                    let entityPositionConstrained = entityPosition + entityPositionDelta
+                    match Option.bind (tryResolve entity) (entity.GetMountOpt Globals.World) with
+                    | Some parent ->
+                        let entityPositionLocal = Vector3.Transform (entityPositionConstrained, parent.GetAffineMatrix Globals.World |> Matrix4x4.Inverse)
+                        Globals.World <- entity.SetPositionLocal entityPositionLocal Globals.World
+                    | None ->
+                        Globals.World <- entity.SetPosition entityPositionConstrained Globals.World
+                    if  Option.isSome (entity.TryGetProperty "LinearVelocity" Globals.World) &&
+                        Option.isSome (entity.TryGetProperty "AngularVelocity" Globals.World) then
+                        Globals.World <- entity.SetLinearVelocity v3Zero Globals.World
+                        Globals.World <- entity.SetAngularVelocity v3Zero Globals.World
 
             | DragEntityRotation2d (time, mousePositionWorldOriginal, entityDragOffset, entity) ->
                 let localTime = DateTimeOffset.Now - time
-                if entity.Exists world && localTime.TotalSeconds >= Constants.Editor.DragMinimumSeconds then
-                    let mousePositionWorld = World.getMousePostion2dWorld (entity.GetAbsolute world) world
+                if entity.Exists Globals.World && localTime.TotalSeconds >= Constants.Editor.DragMinimumSeconds then
+                    let mousePositionWorld = World.getMousePostion2dWorld (entity.GetAbsolute Globals.World) Globals.World
                     let entityDegree = (entityDragOffset - mousePositionWorldOriginal.Y) + (mousePositionWorld.Y - mousePositionWorldOriginal.Y)
                     let entityDegreeSnapped =
-                        if not form.snap3dButton.Checked
-                        then Math.snapF (Triple.snd (getSnaps form)) entityDegree
+                        if snaps2dSelected
+                        then Math.snapF (Triple.snd (getSnaps ())) entityDegree
                         else entityDegree
-                    let entityDegree = (entity.GetDegreesLocal world).Z
-                    let world =
-                        if entity.MountExists world then
-                            let entityDegreeDelta = entityDegreeSnapped - entityDegree
-                            let entityDegreeLocal = entityDegree + entityDegreeDelta
-                            entity.SetDegreesLocal (v3 0.0f 0.0f entityDegreeLocal) world
-                        else
-                            let entityDegreeDelta = entityDegreeSnapped - entityDegree
-                            let entityDegree = entityDegree + entityDegreeDelta
-                            entity.SetDegrees (v3 0.0f 0.0f entityDegree) world
-                    let world =
-                        if  Option.isSome (entity.TryGetProperty "LinearVelocity" world) &&
-                            Option.isSome (entity.TryGetProperty "AngularVelocity" world) then
-                            let world = entity.SetLinearVelocity v3Zero world
-                            let world = entity.SetAngularVelocity v3Zero world
-                            world
-                        else world
-                    // NOTE: disabled the following line to fix perf issue caused by refreshing the property grid every frame
-                    // form.entityPropertyGrid.Refresh ()
-                    world
-                else world
+                    let entityDegree = (entity.GetDegreesLocal Globals.World).Z
+                    if entity.MountExists Globals.World then
+                        let entityDegreeDelta = entityDegreeSnapped - entityDegree
+                        let entityDegreeLocal = entityDegree + entityDegreeDelta
+                        Globals.World <- entity.SetDegreesLocal (v3 0.0f 0.0f entityDegreeLocal) Globals.World
+                    else
+                        let entityDegreeDelta = entityDegreeSnapped - entityDegree
+                        let entityDegree = entityDegree + entityDegreeDelta
+                        Globals.World <- entity.SetDegrees (v3 0.0f 0.0f entityDegree) Globals.World
+                    if  Option.isSome (entity.TryGetProperty "LinearVelocity" Globals.World) &&
+                        Option.isSome (entity.TryGetProperty "AngularVelocity" Globals.World) then
+                        Globals.World <- entity.SetLinearVelocity v3Zero Globals.World
+                        Globals.World <- entity.SetAngularVelocity v3Zero Globals.World
 
             | DragEntityPosition3d (time, entityDragOffset, entityPlane, entity) ->
                 let localTime = DateTimeOffset.Now - time
-                if entity.Exists world && localTime.TotalSeconds >= Constants.Editor.DragMinimumSeconds then
-                    let mouseRayWorld = World.getMouseRay3dWorld (entity.GetAbsolute world) world
+                if entity.Exists Globals.World && localTime.TotalSeconds >= Constants.Editor.DragMinimumSeconds then
+                    let mouseRayWorld = World.getMouseRay3dWorld (entity.GetAbsolute Globals.World) Globals.World
                     let intersectionOpt = mouseRayWorld.Intersection entityPlane
                     if intersectionOpt.HasValue then
                         let entityPosition = intersectionOpt.Value - entityDragOffset
                         let entityPositionSnapped =
-                            if form.snap3dButton.Checked
-                            then Math.snapF3d (Triple.fst (getSnaps form)) entityPosition
+                            if not snaps2dSelected
+                            then Math.snapF3d (Triple.fst (getSnaps ())) entityPosition
                             else entityPosition
-                        let entityPosition = entity.GetPosition world
+                        let entityPosition = entity.GetPosition Globals.World
                         let entityPositionDelta = entityPositionSnapped - entityPosition
-                        let entityPositionConstrained =
-                            match (form.constrainXButton.Checked, form.constrainYButton.Checked, form.constrainZButton.Checked) with
-                            | (true, false, false) -> entityPosition + entityPositionDelta * v3Right
-                            | (false, true, false) -> entityPosition + entityPositionDelta * v3Up
-                            | (false, false, true) -> entityPosition + entityPositionDelta * v3Back
-                            | (true, true, false) -> entityPosition + entityPositionDelta * (v3Right + v3Up)
-                            | (false, true, true) -> entityPosition + entityPositionDelta * (v3Up + v3Back)
-                            | (_, _, _) -> entityPosition + entityPositionDelta
-                        let world =
-                            match Option.bind (tryResolve entity) (entity.GetMountOpt world) with
-                            | Some parent ->
-                                let entityPositionLocal = Vector3.Transform (entityPositionConstrained, parent.GetAffineMatrix world |> Matrix4x4.Inverse)
-                                entity.SetPositionLocal entityPositionLocal world
-                            | None ->
-                                entity.SetPosition entityPositionConstrained world
-                        let world =
-                            if  Option.isSome (entity.TryGetProperty "LinearVelocity" world) &&
-                                Option.isSome (entity.TryGetProperty "AngularVelocity" world) then
-                                let world = entity.SetLinearVelocity v3Zero world
-                                let world = entity.SetAngularVelocity v3Zero world
-                                world
-                            else world
-                        // NOTE: disabled the following line to fix perf issue caused by refreshing the property grid every frame
-                        // form.entityPropertyGrid.Refresh ()
-                        world
-                    else world
-                else world
+                        let entityPositionConstrained = entityPosition + entityPositionDelta
+                        match Option.bind (tryResolve entity) (entity.GetMountOpt Globals.World) with
+                        | Some parent ->
+                            let entityPositionLocal = Vector3.Transform (entityPositionConstrained, parent.GetAffineMatrix Globals.World |> Matrix4x4.Inverse)
+                            Globals.World <- entity.SetPositionLocal entityPositionLocal Globals.World
+                        | None ->
+                            Globals.World <- entity.SetPosition entityPositionConstrained Globals.World
+                        if  Option.isSome (entity.TryGetProperty "LinearVelocity" Globals.World) &&
+                            Option.isSome (entity.TryGetProperty "AngularVelocity" Globals.World) then
+                            Globals.World <- entity.SetLinearVelocity v3Zero Globals.World
+                            Globals.World <- entity.SetAngularVelocity v3Zero Globals.World
 
             | DragEntityRotation3d (time, mousePositionWorldOriginal, entityDragOffset, entityDragAxis, entity) ->
                 let localTime = DateTimeOffset.Now - time
-                if entity.Exists world && localTime.TotalSeconds >= Constants.Editor.DragMinimumSeconds then
-                    let mousePositionWorld = World.getMousePostion2dWorld (entity.GetAbsolute world) world
+                if entity.Exists Globals.World && localTime.TotalSeconds >= Constants.Editor.DragMinimumSeconds then
+                    let mousePositionWorld = World.getMousePostion2dWorld (entity.GetAbsolute Globals.World) Globals.World
                     let entityDegree = (entityDragOffset - mousePositionWorldOriginal.Y) + (mousePositionWorld.Y - mousePositionWorldOriginal.Y)
                     let entityDegreeSnapped =
-                        if form.snap3dButton.Checked
-                        then Math.snapF (Triple.snd (getSnaps form)) entityDegree
-                        else entityDegree
-                    let world =
-                        if entity.MountExists world then
-                            let entityDegreesLocal = entity.GetDegreesLocal world
-                            let entityDegreeLocal = (entityDegreesLocal * entityDragAxis).Magnitude
-                            let entityDegreeLocalDelta = entityDegreeSnapped - entityDegreeLocal
-                            let entityDegreeLocal = entityDegreeLocal + entityDegreeLocalDelta
-                            let entityDegreesLocal = entityDegreeLocal * entityDragAxis + entityDegreesLocal * (v3One - entityDragAxis)
-                            entity.SetDegreesLocal entityDegreesLocal world
-                        else
-                            let entityDegrees = entity.GetDegrees world
-                            let entityDegree = (entityDegrees * entityDragAxis).Magnitude
-                            let entityDegreeDelta = entityDegreeSnapped - entityDegree
-                            let entityDegree = entityDegree + entityDegreeDelta
-                            let entityDegrees = entityDegree * entityDragAxis + entityDegrees * (v3One - entityDragAxis)
-                            entity.SetDegrees entityDegrees world
-                    let world =
-                        if  Option.isSome (entity.TryGetProperty "LinearVelocity" world) &&
-                            Option.isSome (entity.TryGetProperty "AngularVelocity" world) then
-                            let world = entity.SetLinearVelocity v3Zero world
-                            let world = entity.SetAngularVelocity v3Zero world
-                            world
-                        else world
-                    // NOTE: disabled the following line to fix perf issue caused by refreshing the property grid every frame
-                    // form.entityPropertyGrid.Refresh ()
-                    world
-                else world
-            | DragEntityInactive -> world
-        else world
+                        if not snaps2dSelected
+                        then Math.snapF (Triple.snd (getSnaps ())) entityDegree
+                        else entityDegree                    
+                    if entity.MountExists Globals.World then
+                        let entityDegreesLocal = entity.GetDegreesLocal Globals.World
+                        let entityDegreeLocal = (entityDegreesLocal * entityDragAxis).Magnitude
+                        let entityDegreeLocalDelta = entityDegreeSnapped - entityDegreeLocal
+                        let entityDegreeLocal = entityDegreeLocal + entityDegreeLocalDelta
+                        let entityDegreesLocal = entityDegreeLocal * entityDragAxis + entityDegreesLocal * (v3One - entityDragAxis)
+                        Globals.World <- entity.SetDegreesLocal entityDegreesLocal Globals.World
+                    else
+                        let entityDegrees = entity.GetDegrees Globals.World
+                        let entityDegree = (entityDegrees * entityDragAxis).Magnitude
+                        let entityDegreeDelta = entityDegreeSnapped - entityDegree
+                        let entityDegree = entityDegree + entityDegreeDelta
+                        let entityDegrees = entityDegree * entityDragAxis + entityDegrees * (v3One - entityDragAxis)
+                        Globals.World <- entity.SetDegrees entityDegrees Globals.World
+                    if  Option.isSome (entity.TryGetProperty "LinearVelocity" Globals.World) &&
+                        Option.isSome (entity.TryGetProperty "AngularVelocity" Globals.World) then
+                        Globals.World <- entity.SetLinearVelocity v3Zero Globals.World
+                        Globals.World <- entity.SetAngularVelocity v3Zero Globals.World
+            | DragEntityInactive -> ()
 
-    let private updateEyeDrag (_ : GaiaForm) world =
+    (*let private updateEyeDrag (_ : GaiaForm) world =
         match dragEyeState with
         | DragEyeCenter2d (entityDragOffset, mousePositionScreenOrig) ->
             let mousePositionScreen = World.getMousePosition2dScreen world
@@ -1579,6 +1511,8 @@ module Gaia =
 
         let world = Globals.World <- world
 
+        updateEntityDrag ()
+
         ImGui.DockSpaceOverViewport (ImGui.GetMainViewport (), ImGuiDockNodeFlags.PassthruCentralNode) |> ignore<uint>
 
         if ImGui.Begin ("Gaia", ImGuiWindowFlags.MenuBar) then
@@ -1632,11 +1566,11 @@ module Gaia =
             ImGui.SetNextItemWidth 50.0f
             ImGui.DragFloat ("##creationElevation", &creationElevation) |> ignore<bool>
             ImGui.SameLine ()
-            ImGui.Button "Quick Size" |> ignore<bool>
+            if ImGui.Button "Quick Size" then ()
             ImGui.SameLine ()
             if World.getHalted Globals.World
-            then ImGui.Button "Run" |> ignore<bool>
-            else ImGui.Button "Pause" |> ignore<bool>
+            then if ImGui.Button "Run" then ()
+            else if ImGui.Button "Pause" then ()
             ImGui.SameLine ()
             ImGui.Text "Inspector"
             ImGui.SameLine ()
