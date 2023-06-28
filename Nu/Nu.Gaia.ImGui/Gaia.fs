@@ -44,6 +44,7 @@ module Gaia =
     let mutable private showInspector = false
     let mutable private darkTheme = false // TODO: load this from config
     let mutable private dragDropPayloadOpt = None
+    let mutable private assetGraphStr = null // this will be initialized on start
 
     let private getSnaps () =
         if snaps2dSelected
@@ -353,86 +354,7 @@ module Gaia =
             //MessageBox.Show ("Could not load group file due to: " + scstring exn, "File Load Error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
             None
 
-    (*let private handlePropertyPickParentNode (propertyDescriptor : System.ComponentModel.PropertyDescriptor) (entityTds : EntityTypeDescriptorSource) (form : GaiaForm) world =
-        use entityPicker = new EntityPicker ()
-        let surnamesStrs =
-            World.getEntitiesFlattened selectedGroup world |>
-            Seq.filter (fun entity -> not (Gen.isNameGenerated entity.Name)) |>
-            Seq.map (fun entity -> entity.Surnames |> rtoa |> string) |>
-            flip Seq.append [Constants.Editor.NonePick] |>
-            Seq.toArray
-        entityPicker.entityListBox.Items.AddRange (Array.map box surnamesStrs)
-        entityPicker.entityListBox.DoubleClick.Add (fun _ -> entityPicker.DialogResult <- DialogResult.OK)
-        entityPicker.okButton.Click.Add (fun _ -> entityPicker.DialogResult <- DialogResult.OK)
-        entityPicker.cancelButton.Click.Add (fun _ -> entityPicker.Close ())
-        entityPicker.searchTextBox.TextChanged.Add(fun _ ->
-            entityPicker.entityListBox.Items.Clear ()
-            for namesStr in surnamesStrs do
-                if namesStr.Contains entityPicker.searchTextBox.Text || namesStr = Constants.Editor.NonePick then
-                    entityPicker.entityListBox.Items.Add namesStr |> ignore)
-        match entityPicker.ShowDialog () with
-        | DialogResult.OK ->
-            match entityPicker.entityListBox.SelectedItem with
-            | :? string as parentSurnamesStr ->
-                match parentSurnamesStr with
-                | Constants.Editor.NonePick ->
-                    entityTds.DescribedEntity.SetMountOptWithAdjustment None world
-                | _ ->
-                    let entity = entityTds.DescribedEntity
-                    let parent = Entity (string entity.Group.GroupAddress + Constants.Address.SeparatorStr + parentSurnamesStr)
-                    let parentRelation = Relation.relate entity.EntityAddress parent.EntityAddress
-                    if parentRelation <> Relation.makeCurrent () then
-                        form.propertyValueTextBox.Text <- scstring parentRelation
-                        if propertyDescriptor.Name = "MountOpt"
-                        then entity.SetMountOptWithAdjustment (Some parentRelation) world
-                        else form.applyPropertyButton.PerformClick (); world
-                    else form.applyPropertyButton.PerformClick (); world
-            | _ -> world
-        | _ -> world
-
-    let private populateAssetGraphTextBox (form : GaiaForm) =
-        match AssetGraph.tryMakeFromFile (targetDir + "/" + Assets.Global.AssetGraphFilePath) with
-        | Right assetGraph ->
-            let selectionStart = form.assetGraphTextBox.SelectionStart
-            let packageDescriptorsStr = scstring (AssetGraph.getPackageDescriptors assetGraph)
-            let prettyPrinter = (SyntaxAttribute.defaultValue typeof<AssetGraph>).PrettyPrinter
-            let packageDescriptorsPretty = PrettyPrinter.prettyPrint packageDescriptorsStr prettyPrinter
-            form.assetGraphTextBox.Text <- packageDescriptorsPretty.Replace ("\n", "\r\n")
-            form.assetGraphTextBox.SelectionStart <- selectionStart
-        | Left error ->
-            MessageBox.Show ("Could not read asset graph due to: " + error + "'.", "Failed to Read Asset Graph", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
-
-    let private tryReloadAssetGraph (_ : GaiaForm) world =
-        let assetSourceDir = targetDir + "/../../.."
-        World.tryReloadAssetGraph assetSourceDir targetDir Constants.Engine.RefinementDir world
-
-    let private tryLoadAssetGraph (form : GaiaForm) world =
-        match tryReloadAssetGraph form world with
-        | (Right assetGraph, world) ->
-            let selectionStart = form.assetGraphTextBox.SelectionStart
-            let packageDescriptorsStr = scstring (AssetGraph.getPackageDescriptors assetGraph)
-            let prettyPrinter = (SyntaxAttribute.defaultValue typeof<AssetGraph>).PrettyPrinter
-            let packageDescriptorsPretty = PrettyPrinter.prettyPrint packageDescriptorsStr prettyPrinter
-            form.assetGraphTextBox.Text <- packageDescriptorsPretty.Replace ("\n", "\r\n")
-            form.assetGraphTextBox.SelectionStart <- selectionStart
-            world
-        | (Left error, world) ->
-            MessageBox.Show ("Could not load asset graph due to: " + error + "'.", "Failed to Load Asset Graph", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
-            world
-
-    let private trySaveAssetGraph (form : GaiaForm) world =
-        let oldWorld = world
-        let assetSourceDir = targetDir + "/../../.."
-        let assetGraphFilePath = assetSourceDir + "/" + Assets.Global.AssetGraphFilePath
-        try let packageDescriptorsStr = form.assetGraphTextBox.Text.TrimEnd () |> scvalue<Map<string, PackageDescriptor>> |> scstring
-            let prettyPrinter = (SyntaxAttribute.defaultValue typeof<AssetGraph>).PrettyPrinter
-            File.WriteAllText (assetGraphFilePath, PrettyPrinter.prettyPrint packageDescriptorsStr prettyPrinter)
-            (true, world)
-        with exn ->
-            MessageBox.Show ("Could not save asset graph due to: " + scstring exn, "Failed to Save Asset Graph", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
-            (false, World.choose oldWorld)
-
-    let private populateOverlayerTextBox (form : GaiaForm) =
+    (*let private populateOverlayerTextBox (form : GaiaForm) =
         let overlayerFilePath = targetDir + "/" + Assets.Global.OverlayerFilePath
         match Overlayer.tryMakeFromFile [] overlayerFilePath with
         | Right overlayer ->
@@ -487,33 +409,7 @@ module Gaia =
 
     let private handleFormHierarchyTreeViewItemDrag (form : GaiaForm) (args : ItemDragEventArgs) =
         if args.Button = MouseButtons.Left then
-            form.DoDragDrop (args.Item, DragDropEffects.Move) |> ignore
-
-    let private handleFormHierarchyTreeViewDragEnter (_ : GaiaForm) (args : DragEventArgs) =
-        args.Effect <- args.AllowedEffect
-
-    let private handleFormHierarchyTreeViewCollapseClick (form : GaiaForm) (_ : EventArgs) =
-        form.hierarchyTreeView.CollapseAll ()
-
-    let private handleFormHierarchyTreeViewNodeSelect (form : GaiaForm) (evt : TreeViewEventArgs) =
-        Globals.nextPreUpdate $ fun world ->
-            if notNull form.hierarchyTreeView.SelectedNode then
-                let nodeKey = form.hierarchyTreeView.SelectedNode.Name
-                let address = Address.makeFromString nodeKey
-                let entity = Entity (selectedGroup.GroupAddress <-- atoa address)
-                if  entity.Exists world &&
-                    evt.Action <> TreeViewAction.Unknown then
-                    selectEntity entity form world
-                world
-            else world
-
-    let private handleFormHierarchyTreeViewClick (form : GaiaForm) (evt : TreeNodeMouseClickEventArgs) =
-        if evt.Button = MouseButtons.Right then
-            form.hierarchyTreeView.SelectedNode <- evt.Node
-
-    let private handleFormHierarchyTreeViewDoubleClick (form : GaiaForm) (_ : EventArgs) =
-        Globals.nextPreUpdate $ fun world ->
-            tryShowSelectedEntityInDisplay form world*)
+            form.DoDragDrop (args.Item, DragDropEffects.Move) |> ignore*)
 
     let private createEntity atMouse inHierarchy (dispatcherNameOpt : string option) =
         Globals.pushPastWorld ()
@@ -1621,6 +1517,31 @@ module Gaia =
                     ImGui.TreePop ()
             ImGui.End ()
 
+        if ImGui.Begin "Asset Graph" then
+            if ImGui.Button "Save" then
+                let assetSourceDir = targetDir + "/../../.."
+                let assetGraphFilePath = assetSourceDir + "/" + Assets.Global.AssetGraphFilePath
+                try let packageDescriptorsStr = assetGraphStr |> scvalue<Map<string, PackageDescriptor>> |> scstring
+                    let prettyPrinter = (SyntaxAttribute.defaultValue typeof<AssetGraph>).PrettyPrinter
+                    File.WriteAllText (assetGraphFilePath, PrettyPrinter.prettyPrint packageDescriptorsStr prettyPrinter)
+                with exn ->
+                    //DUMMY
+                    //MessageBox.Show ("Could not save asset graph due to: " + scstring exn, "Failed to Save Asset Graph", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+                    ()
+            ImGui.SameLine ()
+            if ImGui.Button "Load" then
+                match AssetGraph.tryMakeFromFile (targetDir + "/" + Assets.Global.AssetGraphFilePath) with
+                | Right assetGraph ->
+                    let packageDescriptorsStr = scstring (AssetGraph.getPackageDescriptors assetGraph)
+                    let prettyPrinter = (SyntaxAttribute.defaultValue typeof<AssetGraph>).PrettyPrinter
+                    assetGraphStr <- PrettyPrinter.prettyPrint packageDescriptorsStr prettyPrinter
+                | Left errer ->
+                    //DUMMY
+                    //MessageBox.Show ("Could not read asset graph due to: " + error + "'.", "Failed to Read Asset Graph", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+                    ()
+            ImGui.InputTextMultiline ("##assetGraphStr", &assetGraphStr, 131072u, v2 -1.0f -1.0f) |> ignore<bool>
+            ImGui.End ()
+
         if showAssetPicker then
             let title = "Choose an Asset..."
             if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
@@ -1795,6 +1716,16 @@ module Gaia =
                 selectedScreen <- screen
                 selectedGroup <- Nu.World.getGroups screen Globals.World |> Seq.head
                 creationDispatcherName <- Nu.World.getEntityDispatchers Globals.World |> Seq.head |> fun kvp -> kvp.Key
+                assetGraphStr <-
+                    match AssetGraph.tryMakeFromFile (targetDir + "/" + Assets.Global.AssetGraphFilePath) with
+                    | Right assetGraph ->
+                        let packageDescriptorsStr = scstring (AssetGraph.getPackageDescriptors assetGraph)
+                        let prettyPrinter = (SyntaxAttribute.defaultValue typeof<AssetGraph>).PrettyPrinter
+                        PrettyPrinter.prettyPrint packageDescriptorsStr prettyPrinter
+                    | Left errer ->
+                        //DUMMY
+                        //MessageBox.Show ("Could not read asset graph due to: " + error + "'.", "Failed to Read Asset Graph", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+                        ""
                 Globals.World <- World.subscribe handleNuMouseRightDown Events.MouseRightDown Simulants.Game Globals.World
                 Globals.World <- World.subscribe handleNuEntityDragBegin Events.MouseLeftDown Simulants.Game Globals.World
                 Globals.World <- World.subscribe handleNuEntityDragEnd Events.MouseLeftUp Simulants.Game Globals.World
