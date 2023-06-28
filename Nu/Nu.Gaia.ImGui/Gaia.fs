@@ -98,11 +98,13 @@ module Gaia =
         match evt.Data.Value :?> Screen option with
         | Some screen ->
             let groups = World.getGroups screen Globals.World
-            let (group, world) =
+            let group =
                 match Seq.tryHead groups with
-                | None -> World.createGroup (Some "Group") screen Globals.World
-                | Some group -> (group, Globals.World)
-            let world = Globals.World <- world
+                | Some group -> group
+                | None ->
+                    let (group, world) = World.createGroup (Some "Group") screen Globals.World
+                    let world = Globals.World <- world
+                    group
             selectedGroup <- group
             selectedScreen <- screen
             (Cascade, Globals.World)
@@ -1416,7 +1418,7 @@ module Gaia =
             if ImGui.Button "Quick Size" then ()
             ImGui.SameLine ()
             if World.getHalted Globals.World then
-                if ImGui.Button "*Run*" then
+                if ImGui.Button "<Run>" then
                     Globals.pushPastWorld ()
                     Globals.World <- World.setAdvancing true Globals.World
             else
