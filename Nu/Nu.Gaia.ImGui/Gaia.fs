@@ -37,6 +37,8 @@ module Gaia =
     let mutable private creationDispatcherName = null // this will be initialized on start
     let mutable private creationOverlayName = "(Default Overlay)"
     let mutable private creationElevation = 0.0f
+    let mutable private assetPickerSearchStr = ""
+    let mutable private showAssetPicker = false
     let mutable private showInspector = false
     let mutable private darkTheme = false // TODO: load this from config
 
@@ -1584,7 +1586,7 @@ module Gaia =
                         if  property.PropertyType = typeof<Entity Relation option> ||
                             (property.PropertyType.IsGenericType && property.PropertyType.GetGenericTypeDefinition () = typedefof<_ AssetTag>) then
                             ImGui.SameLine ()
-                            if ImGui.Button "Pick" then ()
+                            if ImGui.Button "Pick" then showAssetPicker <- true
                         let mutable propertyValuePretty = PrettyPrinter.prettyPrint propertyValueEscaped PrettyPrinter.defaultPrinter
                         if ImGui.InputTextMultiline ("##propertyValuePretty", &propertyValuePretty, 131072u, v2 -1.0f -1.0f) then
                             try let propertyValueEscaped = propertyValuePretty
@@ -1596,8 +1598,54 @@ module Gaia =
                             | :? ConversionException -> ()
                 | Some _ | None -> ()
             | None -> ()
-
             ImGui.End ()
+
+        if showAssetPicker then
+            ImGui.OpenPopup "Asset Picker"
+            if ImGui.BeginPopupModal ("Asset Picker", &showAssetPicker) then
+                ImGui.Text "Search"
+                ImGui.SameLine ()
+                ImGui.InputText ("##searchString", &assetPickerSearchStr, 4096u) |> ignore<bool>
+                //let assets = Metadata.getDiscoveredAssets ()
+                //for package in assets do
+                //    if ImGui.TreeNode package.Key then
+                //        for assetName in package.Value do
+                //            if assetName.Contains assetPickerSearchStr then
+                //                if ImGui.TreeNodeEx (assetName, ImGuiTreeNodeFlags.Leaf) then
+                //                    ImGui.TreePop ()
+                //        ImGui.TreePop ()
+                ImGui.EndPopup ()
+
+(*
+            let assets = Metadata.getDiscoveredAssets ()
+        for package in assets do
+            let node = assetPicker.assetTreeView.Nodes.Add package.Key
+            for assetName in package.Value do
+                node.Nodes.Add assetName |> ignore
+        assetPicker.assetTreeView.DoubleClick.Add (fun _ -> assetPicker.DialogResult <- DialogResult.OK)
+        assetPicker.okButton.Click.Add (fun _ -> assetPicker.DialogResult <- DialogResult.OK)
+        assetPicker.cancelButton.Click.Add (fun _ -> assetPicker.Close ())
+        assetPicker.searchTextBox.TextChanged.Add(fun _ ->
+            assetPicker.assetTreeView.Nodes.Clear ()
+            for package in assets do
+                let node = assetPicker.assetTreeView.Nodes.Add package.Key
+                for assetName in package.Value do
+                    if assetName.Contains assetPicker.searchTextBox.Text then
+                        node.Nodes.Add assetName |> ignore
+            assetPicker.assetTreeView.ExpandAll ())
+        match assetPicker.ShowDialog () with
+        | DialogResult.OK ->
+            match assetPicker.assetTreeView.SelectedNode with
+            | null -> world
+            | selectedNode ->
+                match selectedNode.Parent with
+                | null -> world
+                | selectedNodeParent ->
+                    let assetTag = (AssetTag.make<obj> selectedNodeParent.Text selectedNode.Text)
+                    form.propertyValueTextBox.Text <- scstring assetTag
+                    form.applyPropertyButton.PerformClick ()
+                    world
+*)
 
         if showInspector then
             ImGui.ShowStackToolWindow ()
