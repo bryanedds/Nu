@@ -108,3 +108,21 @@ type ImGui (windowWidth : int, windowHeight : int) =
 
     member this.HandleKeyChar (keyChar : char) =
         charsPressed.Add keyChar
+
+[<RequireQualifiedAccess>]
+module ImGui =
+
+    let IsCtrlPressed () =
+        ImGui.IsKeyPressed ImGuiKey.LeftCtrl ||
+        ImGui.IsKeyPressed ImGuiKey.RightCtrl
+
+    let IsAltPressed () =
+        ImGui.IsKeyPressed ImGuiKey.LeftAlt ||
+        ImGui.IsKeyPressed ImGuiKey.RightAlt
+
+    let IsShiftPressed () =
+        ImGui.IsKeyPressed ImGuiKey.LeftShift ||
+        ImGui.IsKeyPressed ImGuiKey.RightShift
+
+    let IsCtrlPlusKeyPressed (key : ImGuiKey) =
+        IsCtrlPressed () && ImGui.IsKeyPressed key
