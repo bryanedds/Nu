@@ -45,6 +45,7 @@ module Gaia =
     let mutable private darkTheme = false // TODO: load this from config
     let mutable private dragDropPayloadOpt = None
     let mutable private assetGraphStr = null // this will be initialized on start
+    let mutable private overlayerStr = null // this will be initialized on start
 
     let private getSnaps () =
         if snaps2dSelected
@@ -1542,6 +1543,45 @@ module Gaia =
             ImGui.InputTextMultiline ("##assetGraphStr", &assetGraphStr, 131072u, v2 -1.0f -1.0f) |> ignore<bool>
             ImGui.End ()
 
+        if ImGui.Begin "Overlayer" then
+            if ImGui.Button "Save" then
+                let overlayerSourceDir = targetDir + "/../../.."
+                let overlayerFilePath = overlayerSourceDir + "/" + Assets.Global.AssetGraphFilePath
+                try let overlays = scvalue<Overlay list> overlayerStr
+                    let prettyPrinter = (SyntaxAttribute.defaultValue typeof<Overlay>).PrettyPrinter
+                    File.WriteAllText (overlayerFilePath, PrettyPrinter.prettyPrint (scstring overlays) prettyPrinter)
+                with exn ->
+                    //DUMMY
+                    //MessageBox.Show ("Could not save asset graph due to: " + scstring exn, "Failed to Save Asset Graph", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+                    ()
+            ImGui.SameLine ()
+            if ImGui.Button "Load" then
+                let overlayerFilePath = targetDir + "/" + Assets.Global.OverlayerFilePath
+                match Overlayer.tryMakeFromFile [] overlayerFilePath with
+                | Right overlayer ->
+                    let extrinsicOverlaysStr = scstring (Overlayer.getExtrinsicOverlays overlayer)
+                    let prettyPrinter = (SyntaxAttribute.defaultValue typeof<Overlay>).PrettyPrinter
+                    overlayerStr <- PrettyPrinter.prettyPrint extrinsicOverlaysStr prettyPrinter
+                | Left error ->
+                    //DUMMY
+                    //MessageBox.Show ("Could not read overlayer due to: " + error + "'.", "Failed to Read Overlayer", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+                    ()
+            ImGui.InputTextMultiline ("##overlayerStr", &overlayerStr, 131072u, v2 -1.0f -1.0f) |> ignore<bool>
+            ImGui.End ()
+
+        if ImGui.Begin "Event Tracing" then
+            let mutable traceEvents = Globals.World |> World.getEventTracerOpt |> Option.isSome
+            if ImGui.Checkbox ("Trace Events", &traceEvents) then
+                Globals.World <- World.setEventTracerOpt (if traceEvents then Some (Log.remark "Event") else None) Globals.World
+            let eventFilter = World.getEventFilter Globals.World
+            let prettyPrinter = (SyntaxAttribute.defaultValue typeof<EventFilter>).PrettyPrinter
+            let mutable eventFilterStr = PrettyPrinter.prettyPrint (scstring eventFilter) prettyPrinter
+            if ImGui.InputTextMultiline ("##eventFilterStr", &eventFilterStr, 131072u, v2 -1.0f -1.0f) then
+                try let eventFilter = scvalue<EventFilter> eventFilterStr
+                    Globals.World <- World.setEventFilter eventFilter Globals.World
+                with _ -> ()
+            ImGui.End ()
+
         if showAssetPicker then
             let title = "Choose an Asset..."
             if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
@@ -1725,6 +1765,17 @@ module Gaia =
                     | Left errer ->
                         //DUMMY
                         //MessageBox.Show ("Could not read asset graph due to: " + error + "'.", "Failed to Read Asset Graph", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+                        ""
+                overlayerStr <-
+                    let overlayerFilePath = targetDir + "/" + Assets.Global.OverlayerFilePath
+                    match Overlayer.tryMakeFromFile [] overlayerFilePath with
+                    | Right overlayer ->
+                        let extrinsicOverlaysStr = scstring (Overlayer.getExtrinsicOverlays overlayer)
+                        let prettyPrinter = (SyntaxAttribute.defaultValue typeof<Overlay>).PrettyPrinter
+                        PrettyPrinter.prettyPrint extrinsicOverlaysStr prettyPrinter
+                    | Left error ->
+                        //DUMMY
+                        //MessageBox.Show ("Could not read overlayer due to: " + error + "'.", "Failed to Read Overlayer", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
                         ""
                 Globals.World <- World.subscribe handleNuMouseRightDown Events.MouseRightDown Simulants.Game Globals.World
                 Globals.World <- World.subscribe handleNuEntityDragBegin Events.MouseLeftDown Simulants.Game Globals.World
