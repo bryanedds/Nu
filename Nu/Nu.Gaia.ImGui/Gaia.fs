@@ -263,7 +263,7 @@ module Gaia =
 
         // render selection highlights
         match selectedEntityTdsOpt with
-        | Some entityTds ->
+        | Some entityTds when not (entityTds.DescribedEntity.Exists Globals.World) ->
             let entity = entityTds.DescribedEntity
             let absolute = entity.GetAbsolute Globals.World
             let bounds = entity.GetHighlightBounds Globals.World
@@ -301,7 +301,7 @@ module Gaia =
                               RenderType = ForwardRenderType (0.0f, Single.MinValue)
                               StaticModel = Assets.Default.HighlightModel })
                         Globals.World
-        | None -> ()
+        | Some _ | None -> ()
 
         // fin
         (Cascade, Globals.World)
@@ -370,7 +370,7 @@ module Gaia =
         let name = generateEntityName dispatcherName selectedGroup
         let surnames =
             match selectedEntityTdsOpt with
-            | Some entityTds when inHierarchy ->
+            | Some entityTds when not (entityTds.DescribedEntity.Exists Globals.World) && inHierarchy ->
                 let parent = entityTds.DescribedEntity
                 Array.add name parent.Surnames
             | Some _ | None -> [|name|]
@@ -975,8 +975,16 @@ module Gaia =
                     if ImGui.MenuItem "Exit" then Globals.World <- World.exit Globals.World
                     ImGui.EndMenu ()
                 if ImGui.BeginMenu "Edit" then
-                    if ImGui.MenuItem ("Undo", "Ctrl+Z") then Globals.tryUndo () |> ignore<bool>
-                    if ImGui.MenuItem ("Redo", "Ctrl+Y") then Globals.tryRedo () |> ignore<bool>
+                    if ImGui.MenuItem ("Undo", "Ctrl+Z") then
+                        if Globals.tryUndo () then
+                            match selectedEntityTdsOpt with
+                            | Some entityTds when not (entityTds.DescribedEntity.Exists Globals.World) -> selectedEntityTdsOpt <- None
+                            | Some _ | None -> ()
+                    if ImGui.MenuItem ("Redo", "Ctrl+Y") then
+                        if Globals.tryRedo () then
+                            match selectedEntityTdsOpt with
+                            | Some entityTds when not (entityTds.DescribedEntity.Exists Globals.World) -> selectedEntityTdsOpt <- None
+                            | Some _ | None -> ()
                     ImGui.Separator ()
                     if ImGui.MenuItem ("Cut", "Ctrl+X") then ()
                     if ImGui.MenuItem ("Copy", "Ctrl+C") then ()
@@ -1086,7 +1094,7 @@ module Gaia =
         //
         if ImGui.Begin "Properties" then
             match selectedEntityTdsOpt with
-            | Some entityTds ->
+            | Some entityTds when not (entityTds.DescribedEntity.Exists Globals.World) ->
                 let entity = entityTds.DescribedEntity
                 let makePropertyDescriptor = fun (epv, tcas) -> (EntityPropertyDescriptor (epv, Array.map (fun attr -> attr :> Attribute) tcas)) :> System.ComponentModel.PropertyDescriptor
                 let properties = PropertyDescriptor.getPropertyDescriptors<EntityState> makePropertyDescriptor (Some (entity, Globals.World))
@@ -1196,12 +1204,12 @@ module Gaia =
                                 | :? (*Parse*)Exception // TODO: use ParseException once Prime is updated.
                                 | :? ConversionException -> ()
                     if ImGui.IsItemFocused () then propertyFocusedOpt <- Some property
-            | None -> ()
+            | Some _ | None -> ()
             ImGui.End ()
 
         if ImGui.Begin "Property Editor" then
             match selectedEntityTdsOpt with
-            | Some entityTds ->
+            | Some entityTds when not (entityTds.DescribedEntity.Exists Globals.World) ->
                 match propertyFocusedOpt with
                 | Some property when property.PropertyType <> typeof<ComputedProperty> ->
                     let converter = SymbolicConverter (false, None, property.PropertyType)
@@ -1243,7 +1251,7 @@ module Gaia =
                                     | None -> ()
                                 ImGui.EndDragDropTarget ()
                 | Some _ | None -> ()
-            | None -> ()
+            | Some _ | None -> ()
             ImGui.End ()
 
         if ImGui.Begin "Asset Viewer" then
@@ -1345,7 +1353,7 @@ module Gaia =
                                 if ImGui.TreeNodeEx (assetName, ImGuiTreeNodeFlags.Leaf) then
                                     if ImGui.IsMouseDoubleClicked ImGuiMouseButton.Left && ImGui.IsItemHovered () then
                                         match selectedEntityTdsOpt with
-                                        | Some entityTds ->
+                                        | Some entityTds when not (entityTds.DescribedEntity.Exists Globals.World) ->
                                             match propertyFocusedOpt with
                                             | Some property when property.PropertyType <> typeof<ComputedProperty> ->
                                                 let converter = SymbolicConverter (false, None, property.PropertyType)
@@ -1353,7 +1361,7 @@ module Gaia =
                                                 let propertyValue = converter.ConvertFromString propertyValueStr
                                                 property.SetValue (entityTds, propertyValue)
                                             | Some _ | None -> ()
-                                        | None -> ()
+                                        | Some _ | None -> ()
                                         showAssetPicker <- false
                                     ImGui.TreePop ()
                         ImGui.TreePop ()
