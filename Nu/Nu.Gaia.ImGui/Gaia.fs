@@ -446,34 +446,6 @@ module Gaia =
                     world
             | _ -> world
 
-    let private handleFormClose (form : GaiaForm) (_ : EventArgs) =
-        Globals.nextPreUpdate $ fun world ->
-            match form.groupTabControl.TabPages.Count with
-            | 1 ->
-                MessageBox.Show ("Cannot close the only remaining group.", "Group Close Error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
-                world
-            | _ ->
-                let world = Globals.pushPastWorld world
-                let group = selectedGroup
-                if not (group.GetProtected world) then
-                    let world = World.destroyGroupImmediate group world
-                    deselectEntity form world
-                    form.groupTabControl.TabPages.RemoveByKey group.Name
-                    let groupTabControl = form.groupTabControl
-                    let groupTab = groupTabControl.SelectedTab
-                    selectedGroup <- selectedScreen / groupTab.Text
-                    filePaths <- Map.remove group.GroupAddress filePaths
-                    world
-                else
-                    MessageBox.Show ("Cannot close a protected group (such as one created by the Elmish API).", "Protected Elmish Simulant", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
-                    world
-
-    let private handleFormSongPlayback (form : GaiaForm) (_ : EventArgs) =
-        Globals.nextPreUpdate $ fun world ->
-            if form.songPlaybackButton.Checked
-            then World.setMasterSongVolume 1.0f world
-            else World.setMasterSongVolume 0.0f world
-
     let private handleFormCopy (form : GaiaForm) (_ : EventArgs) =
         Globals.nextPreUpdate $ fun world ->
             match form.entityPropertyGrid.SelectedObject with
@@ -642,25 +614,6 @@ module Gaia =
     let private handleFormReloadAll (form : GaiaForm) (args : EventArgs) =
         handleFormReloadAssets form args
         handleFormReloadCode form args
-
-    let private handleFormGroupTabDeselected (form : GaiaForm) (_ : EventArgs) =
-        Globals.nextPreUpdate $ fun world ->
-            deselectEntity form world
-            refreshEntityPropertyGrid form world
-            refreshGroupPropertyGrid form world
-            world
-
-    let private handleFormGroupTabSelected (form : GaiaForm) (_ : EventArgs) =
-        Globals.nextPreUpdate $ fun world ->
-            let selectedGroup' =
-                let groupTabControl = form.groupTabControl
-                let groupTab = groupTabControl.SelectedTab
-                selectedScreen / groupTab.Text
-            selectedGroup <- selectedGroup'
-            refreshEntityPropertyGrid form world
-            refreshHierarchyTreeView form world
-            selectGroup selectedGroup' form world
-            world
 
     let private handleKeyboardInput key (form : GaiaForm) world =
         if Form.ActiveForm = (form :> Form) then
@@ -1304,6 +1257,21 @@ module Gaia =
                 try let eventFilter = scvalue<EventFilter> eventFilterStr
                     Globals.World <- World.setEventFilter eventFilter Globals.World
                 with _ -> ()
+            ImGui.End ()
+
+        if ImGui.Begin "Audio" then
+            ImGui.Text "Master Sound Volume"
+            ImGui.SetNextItemWidth 250.0f
+            let mutable masterSoundVolume = World.getMasterSoundVolume Globals.World
+            if ImGui.SliderFloat ("##masterSoundVolume", &masterSoundVolume, 0.0f, 1.0f, "", ImGuiSliderFlags.Logarithmic) then Globals.World <- World.setMasterSoundVolume masterSoundVolume Globals.World
+            ImGui.SameLine ()
+            ImGui.Text (string masterSoundVolume)
+            ImGui.Text "Master Song Volume"
+            ImGui.SetNextItemWidth 250.0f
+            let mutable masterSongVolume = World.getMasterSongVolume Globals.World
+            if ImGui.SliderFloat ("##masterSongVolume", &masterSongVolume, 0.0f, 1.0f, "", ImGuiSliderFlags.Logarithmic) then Globals.World <- World.setMasterSongVolume masterSongVolume Globals.World
+            ImGui.SameLine ()
+            ImGui.Text (string masterSongVolume)
             ImGui.End ()
 
         if showAssetPicker then
