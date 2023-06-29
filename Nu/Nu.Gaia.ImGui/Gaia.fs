@@ -957,6 +957,18 @@ module Gaia =
                     if ImGui.MenuItem ("Run/Pause", "F5") then ()
                     ImGui.EndMenu ()
                 ImGui.EndMenuBar ()
+            ImGui.Text "Group:"
+            ImGui.SameLine ()
+            ImGui.SetNextItemWidth 100.0f
+            let groups = World.getGroups selectedScreen Globals.World
+            let mutable selectedGroupName = selectedGroup.Name
+            if ImGui.BeginCombo ("##selectedGroupAddressStr", selectedGroupName) then
+                for group in groups do
+                    if ImGui.Selectable group.Name then
+                        selectedEntityTdsOpt <- None
+                        selectedGroup <- group
+                ImGui.EndCombo ()
+            ImGui.SameLine ()
             if ImGui.Button "Create" then createEntity false false None
             ImGui.SameLine ()
             ImGui.SetNextItemWidth 150.0f
