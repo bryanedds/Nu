@@ -922,7 +922,15 @@ module Gaia =
                         | Some filePath -> groupFilePath <- filePath
                         | None -> groupFilePath <- ""
                         showSaveGroupDialog <- true
-                    if ImGui.MenuItem "Close Group" then ()
+                    if ImGui.MenuItem "Close Group" then
+                        let groups = Globals.World |> World.getGroups selectedScreen |> Set.ofSeq
+                        if not (selectedGroup.GetProtected Globals.World) && Set.count groups > 1 then
+                            Globals.pushPastWorld ()
+                            let groupsRemaining = Set.remove selectedGroup groups
+                            selectedEntityTdsOpt <- None
+                            Globals.World <- World.destroyGroupImmediate selectedGroup Globals.World
+                            filePaths <- Map.remove selectedGroup.GroupAddress filePaths
+                            selectedGroup <- Seq.head groupsRemaining
                     ImGui.Separator ()
                     if ImGui.MenuItem "Exit" then Globals.World <- World.exit Globals.World
                     ImGui.EndMenu ()
@@ -1343,19 +1351,6 @@ module Gaia =
                         //DUMMY
                         //MessageBox.Show ("Could not create group due to: " + scstring exn, "Group Creation Error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
                         ()
-                        
-                    //let world = Globals.pushPastWorld world
-                    //let group = selectedGroup
-                    //if not (group.GetProtected world) then
-                    //    let world = World.destroyGroupImmediate group world
-                    //    deselectEntity form world
-                    //    form.groupTabControl.TabPages.RemoveByKey group.Name
-                    //    let groupTabControl = form.groupTabControl
-                    //    let groupTab = groupTabControl.SelectedTab
-                    //    selectedGroup <- selectedScreen / groupTab.Text
-                    //    filePaths <- Map.remove group.GroupAddress filePaths
-                    //    world
-
                 if ImGui.IsKeyPressed ImGuiKey.Escape then showNewGroupDialog <- false
 
         if showOpenGroupDialog then
